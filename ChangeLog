@@ -1,0 +1,27 @@
+
+version 1.2 (2007-03-22)
+
+	- Finished the pidgin 2.0 porting
+	- Fixed a NTLM auth problem about the flags on challenge3.
+	- Fixed the Contact problem.
+	- Fixed the segmentation on network detection.
+	- Other minor bugs
+
+version 1.1 (2007-03-09)
+
+	- Fixed a bug in NOTIFY and SUBSCRIBE methods (401 error)
+	- Changed the method PUBLISH(don't aply in LCS) for SERVICE 
+	- Added new tags in transactions to cloned the LCS transactions.
+	- The MESSAGE method works. Now you can send a message to online user.
+
+version 1.0 (2007-03-04)
+
+	Gaim plug-in releases. First release using autoconf and automake.
+	Compiles with gaim-2beta5 (or newer). On Debian systeam you need
+	the gaim-dev package for compile it.
+
+	First version. Just added this functionalities:
+	- Authentication (just type NTLM)
+	- Presence (double sided)
+	- Retrieves all contacts from server (with groups)
+	- Delete contacts and groups
