@@ -1,9 +1,0 @@
-
-Receive messages
- - Implement the INVITE method 
-
-Correct status
- - The others person always see me as "Not disponible" 
-
-Notification when somebody added to me
- - When somebody added to me, I could receive a notification. Right now, just added and I see them.

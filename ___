@@ -1,6 +1,0 @@
-This is a clone-in-progress GIT working tree containing a GIT repository
-in the .git subdirectory. If you see this file and noone is fetching or
-cloning in this repository, the clone has been interrupted; you can restart
-it by issuing this command (it's enough as-is):
-
-	cg-fetch
