@@ -649,7 +649,7 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 	buf = g_strdup_printf("%s %s SIP/2.0\r\n"
 			"Via: SIP/2.0/%s %s:%d;branch=%s\r\n"
 			/* Don't know what epid is, but LCS wants it */
-			"From: <sip:%s@%s>;tag=%s;epid=1234567890\r\n"
+			"From: <sip:%s>;tag=%s;epid=1234567890\r\n"
 			"To: <%s>%s%s\r\n"
 			"Max-Forwards: 10\r\n"
 			"CSeq: %d %s\r\n"
@@ -664,7 +664,6 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 			sip->listenport,
 			branch,
 			sip->username,
-			sip->servername,
 			dialog ? dialog->ourtag : tag,
 			to,
 			dialog ? ";tag=" : "",
@@ -696,12 +695,13 @@ static char *get_contact_register(struct sipe_account_data  *sip) {
 }
 
 static char *get_contact(struct sipe_account_data  *sip) {
-        return g_strdup_printf("<sip:%s@%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->servername, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp");
+        //return g_strdup_printf("<sip:%s@%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->servername, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp");
+        return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp"); 
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire) {
 	char *uri = g_strdup_printf("sip:%s", sip->servername);
-	char *to = g_strdup_printf("sip:%s@%s", sip->username, sip->servername);
+	char *to = g_strdup_printf("sip:%s", sip->username);
 	char *contact = get_contact_register(sip);
 	//char *hdr = g_strdup_printf("Contact: %s\r\nExpires: %d\r\n", contact, expire);
        // char *hdr = g_strdup_printf("Contact: %s\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
@@ -902,7 +902,8 @@ static void sipe_subscribe_buddylist(struct sipe_account_data *sip) {
         gchar *contact = "Event: vnd-microsoft-roaming-contacts\r\nAccept: application/vnd-microsoft-roaming-contacts+xml\r\nSupported: com.microsoft.autoextend\r\nSupported: ms-benotify\r\nProxy-Require: ms-benotify\r\nSupported: ms-piggyback-first-notify\r\n";
 	gchar *to;
 	gchar *tmp;
-	to = g_strdup_printf("sip:%s@%s", sip->username, sip->servername);
+	//to = g_strdup_printf("sip:%s@%s", sip->username, sip->servername);
+        to = g_strdup_printf("sip:%s", sip->username); 
 
 	tmp = get_contact(sip);
 	contact = g_strdup_printf("%sContact: %s\r\n", contact, tmp);
@@ -1721,10 +1722,10 @@ static void sipe_login(GaimAccount *account)
 	if(!sip->udp)
 		sip->txbuf = gaim_circ_buffer_new(0);
 
-	userserver = g_strsplit(username, "@", 2);
+	userserver = g_strsplit(username, "@", 3);
 	gaim_connection_set_display_name(gc, userserver[0]);
-	sip->username = g_strdup(userserver[0]);
-	sip->servername = g_strdup(userserver[1]);
+        sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1])); 
+        sip->servername = g_strdup(userserver[2]);
 	sip->password = g_strdup(gaim_connection_get_password(gc));
 	g_strfreev(userserver);
 
