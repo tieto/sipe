@@ -35,6 +35,7 @@
 #include "proxy.h"
 #include "prpl.h"
 #include "gaim-compat.h"
+#include "sslconn.h"
 
 #include "sipmsg.h"
 
@@ -103,6 +104,8 @@ struct sipe_account_data {
 	GSList *watcher;
 	GSList *openconns;
 	gboolean udp;
+        gboolean use_ssl;
+        PurpleSslConnection *gsc;
 	struct sockaddr_in serveraddr;
 	int registerexpire;
 	gchar *realhostname;

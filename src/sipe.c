@@ -83,6 +83,10 @@ static void sipe_keep_alive(GaimConnection *gc) {
 
 static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc);
 
+static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond);
+static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error, 
+                                     gpointer data);
+
 static void send_notify(struct sipe_account_data *sip, struct sipe_watcher *);
 
 static void send_service(struct sipe_account_data *sip);
@@ -425,6 +429,33 @@ static void sipe_canwrite_cb(gpointer data, gint source, GaimInputCondition cond
 	gaim_circ_buffer_mark_read(sip->txbuf, written);
 }
 
+static void sipe_canwrite_cb_ssl(gpointer data, PurpleSslConnection *gsc, GaimInputCondition cond) {
+	GaimConnection *gc = data;
+	struct sipe_account_data *sip = gc->proto_data;
+	gsize max_write;
+	gssize written;
+
+	max_write = gaim_circ_buffer_get_max_read(sip->txbuf);
+
+	if(max_write == 0) {
+		gaim_input_remove(sip->tx_handler);
+		sip->tx_handler = 0;
+		return;
+	}
+
+	written = purple_ssl_write(sip->gsc, sip->txbuf->outptr, max_write);
+
+	if(written < 0 && errno == EAGAIN)
+		written = 0;
+	else if(written <= 0) {
+		/*TODO: do we really want to disconnect on a failure to write?*/
+		gaim_connection_error(gc, _("Could not write"));
+		return;
+	}
+
+	gaim_circ_buffer_mark_read(sip->txbuf, written);
+}
+
 static void sipe_input_cb(gpointer data, gint source, GaimInputCondition cond);
 
 static void send_later_cb(gpointer data, gint source, const gchar *error) {
@@ -459,15 +490,45 @@ static void send_later_cb(gpointer data, gint source, const gchar *error) {
 	conn->inputhandler = gaim_input_add(sip->fd, GAIM_INPUT_READ, sipe_input_cb, gc);
 }
 
+static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, GaimInputCondition cond) {
+	GaimConnection *gc = data;
+	struct sipe_account_data *sip;
+	struct sip_connection *conn;
+
+	if (!GAIM_CONNECTION_IS_VALID(gc))
+	{
+		   purple_ssl_close(gsc);
+		return;
+	}
+
+	sip = gc->proto_data;
+	sip->fd = gsc->fd;
+	sip->connecting = FALSE;
+
+	sipe_canwrite_cb_ssl(gc, gsc, GAIM_INPUT_WRITE);
+
+	/* If there is more to write now, we need to register a handler */
+	if(sip->txbuf->bufused > 0)
+		purple_ssl_input_add(gsc, sipe_canwrite_cb_ssl, gc);
+
+	conn = connection_create(sip, gsc->fd);
+	purple_ssl_input_add(sip->gsc, sipe_input_cb_ssl, gc);
+}
+
 
 static void sendlater(GaimConnection *gc, const char *buf) {
 	struct sipe_account_data *sip = gc->proto_data;
 
 	if(!sip->connecting) {
 		gaim_debug_info("sipe", "connecting to %s port %d\n", sip->realhostname ? sip->realhostname : "{NULL}", sip->realport);
-		if(gaim_proxy_connect(gc, sip->account, sip->realhostname, sip->realport, send_later_cb, gc) == NULL) {
-			gaim_connection_error(gc, _("Couldn't create socket"));
-		}
+                if(sip->use_ssl){
+                         sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, send_later_cb_ssl, sipe_ssl_connect_failure, sip->gc);      
+                }
+                else{
+			if(gaim_proxy_connect(gc, sip->account, sip->realhostname, sip->realport, send_later_cb, gc) == NULL) {
+				gaim_connection_error(gc, _("Couldn't create socket"));
+			}
+                 }
 		sip->connecting = TRUE;
 	}
 
@@ -497,8 +558,13 @@ static void sendout_pkt(GaimConnection *gc, const char *buf) {
 		if(sip->tx_handler) {
 			ret = -1;
 			errno = EAGAIN;
-		} else
+		} else{
+                  if(sip->gsc){
+                        ret = purple_ssl_write(sip->gsc, buf, writelen);
+                  }else{  
 			ret = write(sip->fd, buf, writelen);
+                  }
+               }
 
 		if (ret < 0 && errno == EAGAIN)
 			ret = 0;
@@ -508,10 +574,16 @@ static void sendout_pkt(GaimConnection *gc, const char *buf) {
 		}
 
 		if (ret < writelen) {
-			if(!sip->tx_handler)
-				sip->tx_handler = gaim_input_add(sip->fd,
+			if(!sip->tx_handler){
+                                if(sip->gsc){
+                                     purple_ssl_input_add(sip->gsc, sipe_canwrite_cb_ssl, gc);
+                                }
+                                else{ 
+					sip->tx_handler = gaim_input_add(sip->fd,
 					GAIM_INPUT_WRITE, sipe_canwrite_cb,
 					gc);
+                                 }
+                        }
 
 			/* XXX: is it OK to do this? You might get part of a request sent
 			   with part of another. */
@@ -1483,6 +1555,55 @@ static void sipe_udp_process(gpointer data, gint source, GaimInputCondition con)
 	}
 }
 
+static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
+{
+        PurpleConnection *gc = data;
+        struct sipe_account_data *sip = gc->proto_data;
+        int len;
+        static char buf[4096];
+
+        /* TODO: It should be possible to make this check unnecessary */
+        if(!PURPLE_CONNECTION_IS_VALID(gc)) {
+                purple_ssl_close(gsc);
+                return;
+        }
+
+        struct sip_connection *conn = connection_find(sip, sip->gsc->fd);
+	if(!conn) {
+		gaim_debug_error("sipe", "Connection not found!\n");
+		return;
+	}
+      
+
+        if(conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
+		conn->inbuflen += SIMPLE_BUF_INC;
+		conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
+	}
+
+        len = purple_ssl_read(gsc, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
+
+        if (len < 0 && errno == EAGAIN) {
+                /* Try again later */
+                return;
+        } else if (len < 0) {
+                purple_debug_info("sipe", "sipe_input_cb_ssl: read error\n");
+                connection_remove(sip, sip->gsc->fd); 
+                if(sip->fd == gsc->fd) sip->fd = -1;  
+                return;
+        } else if (len == 0) {
+                purple_connection_error(gc, _("Server has disconnected"));
+                connection_remove(sip, sip->gsc->fd);
+                if(sip->fd == gsc->fd) sip->fd = -1;
+                return;
+        }
+
+	conn->inbufused += len;
+	conn->inbuf[conn->inbufused] = '\0';
+
+        process_input(sip, conn);
+  
+}
+
 static void sipe_input_cb(gpointer data, gint source, GaimInputCondition cond)
 {
 	GaimConnection *gc = data;
@@ -1558,6 +1679,24 @@ static void login_cb(gpointer data, gint source, const gchar *error_message) {
 	conn->inputhandler = gaim_input_add(sip->fd, GAIM_INPUT_READ, sipe_input_cb, gc);
 }
 
+static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond) {
+	GaimConnection *gc = data;
+	struct sipe_account_data *sip;
+	struct sip_connection *conn;
+
+	if (!GAIM_CONNECTION_IS_VALID(gc))
+	{
+		purple_ssl_close(gsc);
+		return;
+	}
+
+	sip = gc->proto_data;
+        sip->fd = gsc->fd;
+        conn = connection_create(sip, sip->fd);
+
+        purple_ssl_input_add(gsc, sipe_input_cb_ssl, gc);
+}
+
 static guint sipe_ht_hash_nick(const char *nick) {
 	char *lc = g_utf8_strdown(nick, -1);
 	guint bucket = g_str_hash(lc);
@@ -1623,6 +1762,29 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data, const char *err
 	}
 }
 
+static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error, 
+                                     gpointer data)
+{
+        PurpleConnection *gc = data;
+        struct sipe_account_data *sip;
+
+        /* If the connection is already disconnected, we don't need to do anything else */
+        if(!PURPLE_CONNECTION_IS_VALID(gc))
+                return;
+
+        sip = gc->proto_data;
+        sip->gsc = NULL;
+
+        switch(error) {
+                case PURPLE_SSL_CONNECT_FAILED:
+                        purple_connection_error(gc, _("Connection Failed"));
+                        break;
+                case PURPLE_SSL_HANDSHAKE_FAILED:
+                        purple_connection_error(gc, _("SSL Handshake Failed"));
+                        break;
+        }
+}
+
 static void
 sipe_tcp_connect_listen_cb(int listenfd, gpointer data) {
 	struct sipe_account_data *sip = (struct sipe_account_data*) data;
@@ -1642,13 +1804,20 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data) {
 			sipe_newconn_cb, sip->gc);
 	gaim_debug_info("sipe", "connecting to %s port %d\n",
 			sip->realhostname, sip->realport);
-	/* open tcp connection to the server */
-	connect_data = gaim_proxy_connect(sip->gc, sip->account, sip->realhostname,
+	/* open tcp connection to the server */ 
+        if(sip->use_ssl){
+        	sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, login_cb_ssl, sipe_ssl_connect_failure, sip->gc);
+        }
+	else{
+          connect_data = gaim_proxy_connect(sip->gc, sip->account, sip->realhostname,
 			sip->realport, login_cb, sip->gc);
+        } 
 	if(connect_data == NULL) {
 		gaim_connection_error(sip->gc, _("Couldn't create socket"));
 	}
 }
+
+
 
 static void srvresolved(GaimSrvResponse *resp, int results, gpointer data) {
 	struct sipe_account_data *sip;
@@ -1709,23 +1878,36 @@ static void sipe_login(GaimAccount *account)
 
 	if (strpbrk(username, " \t\v\r\n") != NULL) {
 		gc->wants_to_die = TRUE;
-		gaim_connection_error(gc, _("SIP Exchange usernames may not contain whitespaces or @ symbols"));
+		gaim_connection_error(gc, _("SIP Exchange usernames may not contain whitespaces"));
 		return;
 	}
+
+        if(!gaim_account_get_bool(account, "ssl", FALSE)){
+           if (!purple_ssl_is_supported())
+           {
+                gc->wants_to_die = TRUE;
+                purple_connection_error(gc,
+                        _("SSL support is needed for SSL/TLS support. Please install a supported "
+                          "SSL library."));
+                return;
+           }
+        }
+
 
 	gc->proto_data = sip = g_new0(struct sipe_account_data, 1);
 	sip->gc = gc;
 	sip->account = account;
 	sip->registerexpire = 900;
 	sip->udp = gaim_account_get_bool(account, "udp", FALSE);
+        sip->use_ssl = gaim_account_get_bool(account, "ssl", FALSE);
 	/* TODO: is there a good default grow size? */
 	if(!sip->udp)
 		sip->txbuf = gaim_circ_buffer_new(0);
 
-	userserver = g_strsplit(username, "@", 3);
+	userserver = g_strsplit(username, "@", 2);
 	gaim_connection_set_display_name(gc, userserver[0]);
-        sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1])); 
-        sip->servername = g_strdup(userserver[2]);
+        sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL)); 
+        sip->servername = g_strdup(userserver[1]);
 	sip->password = g_strdup(gaim_connection_get_password(gc));
 	g_strfreev(userserver);
 
@@ -1740,10 +1922,16 @@ static void sipe_login(GaimAccount *account)
 		hosttoconnect = g_strdup(sip->servername);
 	} else {
 		hosttoconnect = g_strdup(gaim_account_get_string(account, "proxy", sip->servername));
+                 
 	}
 
+        gaim_debug_info("sipe", "HosttoConnect->%s\n", hosttoconnect);
+
+         
+       
 	sip->srv_query_data = gaim_srv_resolve("sip",
 			sip->udp ? "udp" : "tcp", hosttoconnect, srvresolved, sip);
+        
 	g_free(hosttoconnect);
 }
 
@@ -1915,21 +2103,29 @@ static void init_plugin(PurplePlugin *plugin)
 
         purple_plugin_register(plugin);
 
-	split = gaim_account_user_split_new(_("Server"), "", '@');
-	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
-
-	option = gaim_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+	//split = gaim_account_user_split_new(_("Server"), "", '@');
+	//prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
+        option = gaim_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+        option = gaim_account_option_string_new(_("Proxy Server"), "proxy", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	option = gaim_account_option_int_new(_("Connect port"), "port", 0);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	/*option = gaim_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
+
+        option = purple_account_option_bool_new(_("Use SSL/TLS"), "ssl", FALSE);
+        prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,option);
 
 	option = gaim_account_option_bool_new(_("Use UDP"), "udp", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	option = gaim_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
+        
+        option = gaim_account_option_int_new(_("Connect port"), "port", 5060);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	/*option = gaim_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = gaim_account_option_string_new(_("Proxy"), "proxy", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 	option = gaim_account_option_string_new(_("Auth User"), "authuser", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = gaim_account_option_string_new(_("Auth Domain"), "authdomain", "");
