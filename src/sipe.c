@@ -1685,7 +1685,7 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 	struct sipe_account_data *sip;
 	struct sip_connection *conn;
 
-	if (gc == NULL || gsc == NULL)
+	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
 		purple_ssl_close(gsc);
 		return;
@@ -1806,13 +1806,9 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data) {
 	gaim_debug_info("sipe", "connecting to %s port %d\n",
 			sip->realhostname, sip->realport);
 	/* open tcp connection to the server */ 
-        if(sip->use_ssl){
-        	sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, login_cb_ssl, sipe_ssl_connect_failure, sip->gc);
-        }
-	else{
-          connect_data = gaim_proxy_connect(sip->gc, sip->account, sip->realhostname,
+        connect_data = gaim_proxy_connect(sip->gc, sip->account, sip->realhostname,
 			sip->realport, login_cb, sip->gc);
-        } 
+        
 	if(connect_data == NULL) {
 		gaim_connection_error(sip->gc, _("Couldn't create socket"));
 	}
@@ -1928,13 +1924,16 @@ static void sipe_login(GaimAccount *account)
 		hosttoconnect = g_strdup(gaim_account_get_string(account, "proxy", sip->servername));
                  
 	}
-
+         /*SSL*/
         gaim_debug_info("sipe", "HosttoConnect->%s\n", hosttoconnect);
 
-         
-       
-	sip->srv_query_data = gaim_srv_resolve("sip",
+        if(sip->use_ssl){ 
+          sip->gsc = purple_ssl_connect(account,hosttoconnect, gaim_account_get_int(account, "port", 5061), login_cb_ssl, sipe_ssl_connect_failure, gc);
+        }
+        else{
+		sip->srv_query_data = gaim_srv_resolve("sip",
 			sip->udp ? "udp" : "tcp", hosttoconnect, srvresolved, sip);
+	}
         
 	g_free(hosttoconnect);
 }
