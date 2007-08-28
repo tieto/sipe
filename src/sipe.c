@@ -940,30 +940,31 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 				groups = xmlnode_get_attrib(item, "groups");
                         	parts = g_strsplit(groups, " ", 0); 
 				gaim_debug_info("sipe", "URI->%s,Groups->%s\n", uri, groups);
-
-                        	while(parts[i]) {
-			    		gaim_debug_info("sipe", "Groups->parts[i] %s\n", parts[i]);
-                                        if(!strcmp(gr[i].id,parts[i])){
-                                         gaim_debug_info("sipe", "Found Groups->gr[i].id(%s),gr[i].name_group (%s)\n",gr[i].id,gr[i].name_group);
+                                if(parts[i]!=NULL){
+                        		while(parts[i]) {
+			    			gaim_debug_info("sipe", "Groups->parts[i] %s\n", parts[i]);
+                                		if(!strcmp(gr[i].id,parts[i])){
+                                        		gaim_debug_info("sipe", "Found Groups->gr[i].id(%s),gr[i].name_group (%s)\n",gr[i].id,gr[i].name_group);
                                         
-				buddy_name = g_strdup_printf("sip:%s", uri);
+							buddy_name = g_strdup_printf("sip:%s", uri);
 
-				//b = gaim_find_buddy(sip->account, buddy_name); 
-                                b = gaim_find_buddy_in_group(sip->account, buddy_name, gr[i].g);
-				if(!b){
-					b = gaim_buddy_new(sip->account, buddy_name, uri);
-				}
-				g_free(buddy_name);
+							//b = gaim_find_buddy(sip->account, buddy_name); 
+                                			b = gaim_find_buddy_in_group(sip->account, buddy_name, gr[i].g);
+							if(!b){
+								b = gaim_buddy_new(sip->account, buddy_name, uri);
+							}
+							g_free(buddy_name);
 
-                                //sipe_add_buddy(sip->gc, b , gr[i].g);  
-				gaim_blist_add_buddy(b, NULL, gr[i].g, NULL);
-				gaim_blist_alias_buddy(b, uri);
-				bs = g_new0(struct sipe_buddy, 1);
-				bs->name = g_strdup(b->name);
-				g_hash_table_insert(sip->buddies, bs->name, bs);
-                                }
-                              i++;
-                             } 
+                                			//sipe_add_buddy(sip->gc, b , gr[i].g);  
+							gaim_blist_add_buddy(b, NULL, gr[i].g, NULL);
+							gaim_blist_alias_buddy(b, uri);
+							bs = g_new0(struct sipe_buddy, 1);
+							bs->name = g_strdup(b->name);
+							g_hash_table_insert(sip->buddies, bs->name, bs);
+                                		}
+                              			i++;
+                             		}
+				} 
 			}
 	     xmlnode_free(isc); 
 	} 
@@ -1684,7 +1685,7 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 	struct sipe_account_data *sip;
 	struct sip_connection *conn;
 
-	if (!GAIM_CONNECTION_IS_VALID(gc))
+	if (gc == NULL || gsc == NULL)
 	{
 		purple_ssl_close(gsc);
 		return;
@@ -1900,6 +1901,9 @@ static void sipe_login(GaimAccount *account)
 	sip->registerexpire = 900;
 	sip->udp = gaim_account_get_bool(account, "udp", FALSE);
         sip->use_ssl = gaim_account_get_bool(account, "ssl", FALSE);
+
+        gaim_debug_info("sipe", "sip->use_ssl->%d\n", sip->use_ssl); 
+        
 	/* TODO: is there a good default grow size? */
 	if(!sip->udp)
 		sip->txbuf = gaim_circ_buffer_new(0);
