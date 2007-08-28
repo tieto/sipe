@@ -265,8 +265,8 @@ gaim_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar 
 
 	/* LCS Stuff */
 	if(flags) {
-		//tmsg->flags = 0x409082d4;
-		tmsg->flags = 0x55828040;
+		tmsg->flags = 0x409082d4;
+		//tmsg->flags = 0x55828040;
 		gensesskey(sesskey, NULL);
 		memcpy(tmp, sesskey, 0x10);
 	}
