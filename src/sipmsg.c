@@ -23,6 +23,12 @@
 #ifndef _WIN32
 #include "sip-internal.h"
 #else /* _WIN32 */
+#ifdef _DLL
+#define _WS2TCPIP_H_
+#define _WINSOCK2API_
+#define _LIBC_INTERNAL_
+#endif /* _DLL */
+
 #include "internal.h"
 #endif /* _WIN32 */
 

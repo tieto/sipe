@@ -28,6 +28,12 @@
 #ifndef _WIN32
 #include "sip-internal.h"
 #else /* _WIN32 */
+#ifdef _DLL
+#define _WS2TCPIP_H_
+#define _WINSOCK2API_
+#define _LIBC_INTERNAL_
+#endif /* _DLL */
+
 #include "internal.h"
 #endif /* _WIN32 */
 
@@ -1564,6 +1570,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 {
         PurpleConnection *gc = data;
         struct sipe_account_data *sip = gc->proto_data;
+        struct sip_connection *conn = NULL;
         int len;
         static char buf[4096];
 
@@ -1573,11 +1580,11 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
                 return;
         }
 
-        struct sip_connection *conn = connection_find(sip, sip->gsc->fd);
-	if(!conn) {
-		gaim_debug_error("sipe", "Connection not found!\n");
-		return;
-	}
+        conn = connection_find(sip, sip->gsc->fd);
+	      if(!conn) {
+		      gaim_debug_error("sipe", "Connection not found!\n");
+		      return;
+	      }
       
 
         if(conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
