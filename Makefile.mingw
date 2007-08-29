@@ -1,0 +1,21 @@
+# Makefile.mingw
+#
+# Author: zup@sbox.tugraz.at
+# Date 8/28/07
+# Description: Top Makefile for win32 (mingw) port of LCS protocol plugin
+#
+
+export PIDGIN_TREE_TOP := ../pidgin-2.1.1
+include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
+
+.PHONY: all clean
+
+all: 
+	$(MAKE) -C src -f $(MINGW_MAKEFILE)
+
+clean:
+	$(MAKE) -C src -f $(MINGW_MAKEFILE) clean
+  
+rmbak:
+	rm -f *~
+	$(MAKE) -C src -f $(MINGW_MAKEFILE) rmbak

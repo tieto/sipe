@@ -23,6 +23,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef _WIN32
+#include "sip-internal.h"
+#else /* _WIN32 */
+#include "internal.h"
+#endif /* _WIN32 */
+
 #include <glib.h>
 #include <stdlib.h>
 #include "util.h"
@@ -30,9 +36,15 @@
 #include "cipher.h"
 #include <string.h>
 #include "sip-ntlm.h"
+#include "debug.h"
+
+#ifndef _WIN32
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#else /* _WIN32 */
+#include "network.h"
+#endif /* _WIN32 */
 
 #define NTLM_NEGOTIATE_NTLM2_KEY 0x00080000
 
@@ -279,6 +291,7 @@ gaim_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar 
 	return tmp;
 }
 
+#ifndef _WIN32
 const char *
 sipe_network_get_local_system_ip(void)
 {
@@ -330,3 +343,20 @@ sipe_network_get_local_system_ip(void)
         }
         return "0.0.0.0";
 }
+#else /* _WIN32 */
+const char *
+sipe_network_get_local_system_ip(void)
+{
+  char * return_value;
+  gaim_debug_info("sip-ntlm", "retrieving local ip...\n");
+  return_value = purple_network_get_my_ip(-1);
+  if (return_value == NULL)
+  {
+    gaim_debug_warning("sip-ntlm", "local ip not retrievable\n");
+    return "0.0.0.0";
+  }
+  gaim_debug_info("sip-ntlm", "local ip->%s\n", return_value);
+  return return_value;
+}
+#endif /* _WIN32 */
+
