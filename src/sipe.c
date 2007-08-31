@@ -701,6 +701,8 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 	gchar *branch = genbranch();
 	gchar *tag = NULL;
 	char *buf;
+        struct sipmsg *msg;
+        gchar *ptmp;
 
 	if(!strcmp(method, "REGISTER")) {
 		if(sip->regcallid) {
@@ -719,7 +721,11 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 	}
 	
 	if(!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method,"NOTIFY")) {
-	         buf = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"\r\n", sip->registrar.realm, sip->registrar.target);
+                 sip->registrar.nc=2;
+                 sip->registrar.type=2;  
+	         buf = auth_header(sip, &sip->registrar, method, url);
+/*g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"\r\n", sip->registrar.realm, sip->registrar.target);*/
+             
 	        auth = g_strdup_printf("Proxy-Authorization: %s", buf);
                 gaim_debug(GAIM_DEBUG_MISC, "sipe", "3 header %s", auth);
 	        g_free(buf);
@@ -1448,7 +1454,7 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 				fill_auth(sip, ptmp, &sip->proxy);
 				auth = auth_header(sip, &sip->proxy, trans->msg->method, trans->msg->target);
 				sipmsg_remove_header(trans->msg, "Proxy-Authorization");
-				sipmsg_add_header(trans->msg, "Proxy-Authorization", auth);
+				sipmsg_add_header_pos(trans->msg, "Proxy-Authorization", auth, 5);
 				g_free(auth);
 				resend = sipmsg_to_string(trans->msg);
 				/* resend request */

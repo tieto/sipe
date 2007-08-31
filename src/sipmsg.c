@@ -155,7 +155,12 @@ char *sipmsg_to_string(const struct sipmsg *msg) {
 	cur = msg->headers;
 	while(cur) {
 		elem = cur->data;
-		g_string_append_printf(outstr, "%s: %s\r\n", elem->name,
+                /*Todo: remove the LFCR in a good way*/
+                if(!strcmp(elem->name,"Proxy-Authorization"))
+                  g_string_append_printf(outstr, "%s: %s", elem->name,
+			elem->value);
+                else     
+		   g_string_append_printf(outstr, "%s: %s\r\n", elem->name,
 			elem->value);
 		cur = g_slist_next(cur);
 	}
