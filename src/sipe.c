@@ -100,6 +100,8 @@ static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorTyp
 static void send_notify(struct sipe_account_data *sip, struct sipe_watcher *);
 
 static void send_service(struct sipe_account_data *sip);
+static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * buddy_name);
+static void send_publish(struct sipe_account_data *sip);
 
 static void do_notifies(struct sipe_account_data *sip) {
 	GSList *tmp = sip->watcher;
@@ -273,7 +275,7 @@ static GList *sipe_status_types(GaimAccount *acc) {
 	return types;
 }
 
-static gchar *auth_header(struct sipe_account_data *sip,
+static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 		struct sip_auth *auth, const gchar *method, const gchar *target) {
 	gchar noncecount[9];
 	gchar *response;
@@ -296,18 +298,18 @@ static gchar *auth_header(struct sipe_account_data *sip,
 							auth->nonce, noncecount, NULL, auth->digest_session_key);
 		gaim_debug(GAIM_DEBUG_MISC, "sipe", "response %s\n", response);
 
-		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"\r\n", authuser, auth->realm, auth->nonce, target, noncecount, response);
+		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->nonce, target, noncecount, response);
 		g_free(response);
 		return ret;
 	} else if(auth->type == 2) { /* NTLM */
 		if(auth->nc == 3 && auth->nonce) {
 			/* TODO: Don't hardcode "gaim" as the hostname */
 			ret = gaim_ntlm_gen_type3_sipe(authuser, sip->password, "gaim", authdomain, (const guint8 *)auth->nonce, &auth->flags);
-			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"\r\n", auth->opaque, auth->realm, auth->target, ret);
+			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, ret);
 			g_free(ret);
 			return tmp;
 		}
-		tmp = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"\r\n", auth->realm, auth->target);
+		tmp = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth->realm, auth->target);
 		return tmp;
 	}
 
@@ -317,10 +319,21 @@ static gchar *auth_header(struct sipe_account_data *sip,
 						auth->nonce, noncecount, NULL, auth->digest_session_key);
 	gaim_debug(GAIM_DEBUG_MISC, "sipe", "response %s\n", response);
 
-	ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"\r\n", authuser, auth->realm, auth->nonce, target, noncecount, response);
+	ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->nonce, target, noncecount, response);
 	g_free(response);
 	return ret;
 }
+
+static gchar *auth_header(struct sipe_account_data *sip,
+		struct sip_auth *auth, const gchar *method, const gchar *target) {
+	gchar *with, *without;
+
+	without = auth_header_without_newline(sip, auth, method, target);
+	with = g_strdup_printf("%s\r\n", without);
+	g_free (without);
+	return with;
+}
+
 
 static char *parse_attribute(const char *attrname, const char *source) {
 	const char *tmp, *tmp2;
@@ -507,7 +520,7 @@ static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, GaimInput
 
 	if (!GAIM_CONNECTION_IS_VALID(gc))
 	{
-		   purple_ssl_close(gsc);
+		purple_ssl_close(gsc);
 		return;
 	}
 
@@ -644,9 +657,10 @@ static void send_sip_response(GaimConnection *gc, struct sipmsg *msg, int code,
 		gchar len[12];
 		sprintf(len, "%" G_GSIZE_FORMAT , strlen(body));
 		sipmsg_add_header(msg, "Content-Length", len);
-	}
-	else
+	} else {
 		sipmsg_add_header(msg, "Content-Length", "0");
+	}
+
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
 	while(tmp) {
 		name = ((struct siphdrelement*) (tmp->data))->name;
@@ -739,16 +753,16 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 			/* Don't know what epid is, but LCS wants it */
 			"From: <sip:%s>;tag=%s;epid=1234567890\r\n"
 			"To: <%s>%s%s\r\n"
-			"Max-Forwards: 10\r\n"
+			"Max-Forwards: 70\r\n"
 			"CSeq: %d %s\r\n"
 			"User-Agent: Gaim/" VERSION "\r\n"
 			"Call-ID: %s\r\n"
 			"%s%s"
-                        "Content-Length: %" G_GSIZE_FORMAT "\r\n\r\n%s",
+			"Content-Length: %" G_GSIZE_FORMAT "\r\n\r\n%s",
 			method,
 			url,
-			sip->udp ? "UDP" : "TCP",
-			sipe_network_get_local_system_ip(),
+			sip->use_ssl ? "TLS" : sip->udp ? "UDP" : "TCP",
+			purple_network_get_my_ip(-1),
 			sip->listenport,
 			branch,
 			sip->username,
@@ -779,12 +793,12 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 }
 
 static char *get_contact_register(struct sipe_account_data  *sip) {
-        return g_strdup_printf("<sip:%s:%d;transport=%s>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace", sipe_network_get_local_system_ip(),sip->listenport,  sip->udp ? "udp" : "tcp");
+        return g_strdup_printf("<sip:%s:%d;transport=%s>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");
 }
 
 static char *get_contact(struct sipe_account_data  *sip) {
         //return g_strdup_printf("<sip:%s@%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->servername, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp");
-        return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp"); 
+        return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire) {
@@ -864,18 +878,13 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 	return TRUE;
 }
 
-static void sipe_subscribe(struct sipe_account_data *sip, struct sipe_buddy *buddy) {
-        gchar *contact ="Accept: application/pidf+xml, application/xpidf+xml\r\nEvent: presence\r\n";
-	gchar *to;
-	gchar *tmp;
-       
-	if(strstr(buddy->name, "sip:"))
-		to = g_strdup(buddy->name);
-	else
-		to = g_strdup_printf("sip:%s", buddy->name);
-
-	tmp = get_contact(sip);
-	contact = g_strdup_printf("%sContact: %s\r\n", contact, tmp);
+static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * buddy_name) {
+	gchar *to = strstr(buddy_name, "sip:") ? g_strdup(buddy_name) : g_strdup_printf("sip:%s", buddy_name);
+	gchar *tmp = get_contact(sip);
+	gchar *contact = g_strdup_printf(
+		"Accept: application/pidf+xml, application/xpidf+xml\r\n"
+		"Event: presence\r\n"
+		"Contact: %s\r\n", tmp);
 	g_free(tmp);
 
 	/* subscribe to buddy presence
@@ -886,6 +895,10 @@ static void sipe_subscribe(struct sipe_account_data *sip, struct sipe_buddy *bud
 
 	g_free(to);
 	g_free(contact);
+}
+
+static void sipe_subscribe(struct sipe_account_data *sip, struct sipe_buddy *buddy) {
+	sipe_subscribe_to_name(sip, buddy->name);
 
 	/* resubscribe before subscription expires */
 	/* add some jitter */
@@ -1002,28 +1015,48 @@ static void sipe_subscribe_buddylist(struct sipe_account_data *sip) {
 	g_free(contact);
 }
 
-static void sipe_invite(struct sipe_account_data *sip, struct sipe_buddy *buddy) {
-	gchar *contact = "Supported: com.microsoft.rtc-multiparty\r\n";
+static void sipe_invite(struct sipe_account_data *sip, const char *name) {
+	gchar *hdr;
 	gchar *to;
-	gchar *tmp;
-	//to = g_strdup_printf("sip:%s@%s", sip->username, sip->servername);
+	gchar *contact;
+	gchar *body;
 
-        if(strstr(buddy->name, "sip:"))
-		to = g_strdup(buddy->name);
-	else
-		to = g_strdup_printf("sip:%s", buddy->name);
+	if(strstr(name, "sip:")) {
+		to = g_strdup(name);
+	} else {
+		to = g_strdup_printf("sip:%s", name);
+	}
 
-	tmp = get_contact(sip);
-	contact = g_strdup_printf("%sContact: %s\r\n", contact, tmp);
-	g_free(tmp);
+	contact = get_contact(sip);
+	hdr = g_strdup_printf(
+		"Contact: %s\r\n"
+		"Supported: com.microsoft.rtc-multiparty\r\n"
+		"Roster-Manager:sip:%s\r\n"
+		"Ms-Conversation-ID: AckwibOFOjjDdVR6S5e0xywMj6Kaww==\r\n" //temp
+		"ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA; \r\n" //temp
+		"Supported: ms-delayed-accept\r\n"
+		"Supported: ms-renders-isf\r\n"
+		"Supported: ms-renders-gif\r\n"
+		"Supported: ms-renders-mime-alternative\r\n"
+		"EndPoints: <sip:%s>, <%s>\r\n"
+		"Content-Type: application/sdp\r\n",
+		contact, sip->username, sip->username, to);
 
-        tmp = g_strdup_printf("Roster-Manager:sip:%s@%s\r\nEndPoints: <sip:%s@%s>, <sip:%s@%s>", sip->username, sip->servername,sip->username, sip->servername, buddy->name, sip->servername);
-        contact = g_strdup_printf("%sContact: %s\r\n", contact, tmp);
-	g_free(tmp);
- 
-	send_sip_request(sip->gc, "INVITE", to, to, contact, "", NULL, NULL);
+	body = g_strdup_printf(
+		"v=0\r\n"
+		"o=- 0 0 IN IP4 %s\r\n"
+		"s=session\r\n"
+		"c=IN IP4 %s\r\n"
+		"t=0 0\r\n"
+		"m=message %d sip null\r\n"
+		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml",
+		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1), 5061);
+
+	send_sip_request(sip->gc, "INVITE", to, to, hdr, body, NULL, NULL);
 
 	g_free(to);
+	g_free(body);
+	g_free(hdr);
 	g_free(contact);
 }
 
@@ -1108,7 +1141,9 @@ static int sipe_im_send(GaimConnection *gc, const char *who, const char *what, G
 	struct sipe_account_data *sip = gc->proto_data;
 	char *to = g_strdup(who);
 	char *text = gaim_unescape_html(what);
-	sipe_send_message(sip, to, text, NULL);
+	//sipe_send_message(sip, to, text, NULL);
+	//sipe_invite(sip, to);
+	gaim_debug_info("sipe", "sending IMs not implemented\n");
 	g_free(to);
 	g_free(text);
 	return 1;
@@ -1167,29 +1202,63 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 	g_free(from);
 }
 
+static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg) {
+	gchar *contact;
+	contact = get_contact(sip);
+	sipmsg_remove_header(msg, "Contact");
+	sipmsg_add_header(msg, "Contact", contact);
+
+	//sipmsg_remove_header(msg, "User-Agent");
+	//sipmsg_add_header_pos(msg, "User-Agent", g_strdup_printf("Gaim/" VERSION), 6);
+
+	send_sip_response(sip->gc, msg, 200, "OK", g_strdup_printf(
+		"v=0\r\n"
+		"o=- 0 0 IN IP4 %s\r\n"
+		"s=session\r\n"
+		"c=IN IP4 %s\r\n"
+		"t=0 0\r\n"
+		"m=message %d sip sip:%s\r\n"
+		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml",
+		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1),
+		//sip->realport, sip->username
+		5061, sip->username));
+
+	g_free(contact);
+}
+
 
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc) {
 	gchar *tmp;
+	const gchar *expires_header;
+	int expires;
+
+	expires_header = sipmsg_find_header(msg, "Expires");
+	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
 	gaim_debug(GAIM_DEBUG_MISC, "sipe", "in process register response response: %d\n", msg->response);
+	gaim_debug_info("sipe", "got response to REGISTER; expires = %d\n", expires);
+
 	switch (msg->response) {
 		case 200:
-			sip->registerstatus = 3;
-			gaim_connection_set_state(sip->gc, GAIM_CONNECTED);
+			if (expires == 0) {
+				sip->registerstatus = 0;
+			} else {
+				sip->registerstatus = 3;
+				gaim_connection_set_state(sip->gc, GAIM_CONNECTED);
 
-                       // if(sip->registerstatus < 3) { /* registered */
-				
-		      //} 
+				/* tell everybody we're online */
+				send_publish (sip);
 
-                        /* get buddies from blist */
-			sipe_get_buddies(sip->gc);
+				/* get buddies from blist */
+				sipe_get_buddies(sip->gc);
+				subscribe_timeout(sip);
 
-			subscribe_timeout(sip);
+				//sipe_subscribe_to_name(sip, sip->username);
 
-			tmp = sipmsg_find_header(msg, "Allow-Events");
-		        if(tmp && strstr(tmp, "vnd-microsoft-provisioning")){
-				sipe_subscribe_buddylist(sip);
+				tmp = sipmsg_find_header(msg, "Allow-Events");
+				if(tmp && strstr(tmp, "vnd-microsoft-provisioning")){
+					sipe_subscribe_buddylist(sip);
+				}
 			}
-
 			break;
 		case 401:
 			if(sip->registerstatus != 2) {
@@ -1202,7 +1271,11 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				tmp = sipmsg_find_header(msg, "WWW-Authenticate");
 				fill_auth(sip, tmp, &sip->registrar);
 				sip->registerstatus = 2;
-				do_register(sip);
+				if (sip->account->disconnecting) {
+					do_register_exp(sip, 0);
+				} else {
+					do_register(sip);
+				}
 			}
 			break;
 		}
@@ -1278,22 +1351,19 @@ static gchar *find_tag(const gchar *hdr) {
 }
 
 static gchar* gen_xpidf(struct sipe_account_data *sip) {
-	gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-			"<presence>\n"
-			"<presentity uri=\"sip:%s@%s;method=SUBSCRIBE\"/>\n"
-			"<display name=\"sip:%s@%s\"/>\n"
-			"<atom id=\"1234\">\n"
-			"<address uri=\"sip:%s@%s\">\n"
-			"<status status=\"%s\"/>\n"
-			"</address>\n"
-			"</atom>\n"
-			"</presence>\n",
+	gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+			"<presence>\r\n"
+			"<presentity uri=\"sip:%s;method=SUBSCRIBE\"/>\r\n"
+			"<display name=\"sip:%s\"/>\r\n"
+			"<atom id=\"1234\">\r\n"
+			"<address uri=\"sip:%s\">\r\n"
+			"<status status=\"%s\"/>\r\n"
+			"</address>\r\n"
+			"</atom>\r\n"
+			"</presence>\r\n",
 			sip->username,
-			sip->servername,
 			sip->username,
-			sip->servername,
 			sip->username,
-			sip->servername,
 			sip->status);
 	return doc;
 }
@@ -1301,21 +1371,21 @@ static gchar* gen_xpidf(struct sipe_account_data *sip) {
 
 
 static gchar* gen_pidf(struct sipe_account_data *sip) {
-         gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-                        "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" xmlns:ep=\"urn:ietf:params:xml:ns:pidf:status:rpid-status\" xmlns:ci=\"urn:ietf:params:xml:ns:pidf:cipid\" entity=\"sip:%s@%s\">\n"
-                        "<tuple id=\"0\">\n"
-                        "<status>\n"
-                        "<basic>open</basic>\n"
-                        "<ep:activities>\n"
-                        " <ep:activity>%s</ep:activity>\n"
+         gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
+                        "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" xmlns:ep=\"urn:ietf:params:xml:ns:pidf:status:rpid-status\" xmlns:ci=\"urn:ietf:params:xml:ns:pidf:cipid\" entity=\"sip:%s\">\r\n"
+                        "<tuple id=\"0\">\r\n"
+                        "<status>\r\n"
+                        "<basic>open</basic>\r\n"
+                        "<ep:activities>\r\n"
+                        " <ep:activity>%s</ep:activity>\r\n"
                         "</ep:activities>"
-                        "</status>\n"
-                        "</tuple>\n" 
-                        "<ci:display-name>FixXxeR</ci:display-name>\n"
+                        "</status>\r\n"
+                        "</tuple>\r\n" 
+                        "<ci:display-name>%s</ci:display-name>\r\n"
                         "</presence>",
                         sip->username,
-                        sip->servername,
-                        sip->status);
+                        sip->status,
+                        sip->username);
 	return doc;
 }
 
@@ -1334,10 +1404,36 @@ static gboolean process_service_response(struct sipe_account_data *sip, struct s
 	return TRUE;
 }
 
+static void send_publish(struct sipe_account_data *sip) {
+	gchar *uri = g_strdup_printf("sip:%s", sip->username);
+	gchar *doc = g_strdup_printf(
+		"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\"><publications uri=\"%s\"><publication categoryName=\"device\" instance=\"1617359818\" container=\"2\" version=\"0\" expireType=\"endpoint\"><device xmlns=\"http://schemas.microsoft.com/2006/09/sip/device\" endpointId=\"BB44F8D5-1540-547D-9ECE-6486D33DC804\"><capabilities preferred=\"false\" uri=\"%s\"><text capture=\"true\" render=\"true\" publish=\"false\"/><gifInk capture=\"false\" render=\"true\" publish=\"false\"/><isfInk capture=\"false\" render=\"true\" publish=\"false\"/></capabilities><timezone>%s</timezone><machineName>%s</machineName></device></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"2\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"3\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication></publications></publish>",
+		uri, uri,
+		"00:00:00-05:00", // TODO timezone
+		"PC" // TODO machine name
+	);
+
+	gchar *tmp = get_contact(sip);
+	gchar *hdr = g_strdup_printf("Contact: %s\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp);
+	g_free(tmp); 
+
+	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_service_response);
+	//sip->republish = time(NULL) + 500;
+
+	g_free(hdr);
+	g_free(uri);
+	g_free(doc);
+}
+
 static void send_service(struct sipe_account_data *sip) {
-	gchar *uri = g_strdup_printf("sip:%s@%s", sip->username, sip->servername);
+	//gchar *uri = g_strdup_printf("sip:%s@%s", sip->username, sip->servername);
+	gchar *uri = g_strdup_printf("sip:%s", sip->username);
+	//gchar *doc = gen_pidf(sip);
+
 	gchar *doc = gen_pidf(sip);
-        gchar *hdr = g_strdup("Content-Type: application/SOAP+xml\r\n");
+	gchar *hdr = g_strdup("Event: presence\r\nContent-Type: application/pidf+xml\r\n");
+
+        //gchar *hdr = g_strdup("Content-Type: application/SOAP+xml\r\n");
         gchar *tmp = get_contact(sip);
         hdr = g_strdup_printf("Contact: %s\r\n%s", tmp, hdr);
         g_free(tmp); 
@@ -1433,8 +1529,17 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 			process_incoming_notify(sip, msg);
 			found = TRUE;
 		} else if(!strcmp(msg->method, "SUBSCRIBE")) {
-                        gaim_debug_info("sipe","send->process_incoming_subscribe\n");
+			gaim_debug_info("sipe","send->process_incoming_subscribe\n");
 			process_incoming_subscribe(sip, msg);
+			found = TRUE;
+		} else if(!strcmp(msg->method, "INVITE")) {
+			gaim_debug_info("sipe","not calling unfinished send->process_incoming_invite\n");
+			//process_incoming_invite(sip, msg);
+			found = TRUE;
+		} else if(!strcmp(msg->method, "INFO")) {
+			// TODO implement this - keyboard activity
+			found = TRUE;
+		} else if(!strcmp(msg->method, "ACK")) {
 			found = TRUE;
 		} else {
 			send_sip_response(sip->gc, msg, 501, "Not implemented", NULL);
@@ -1574,34 +1679,35 @@ static void sipe_udp_process(gpointer data, gint source, GaimInputCondition con)
 
 static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
 {
-        PurpleConnection *gc = data;
-        struct sipe_account_data *sip = gc->proto_data;
-        struct sip_connection *conn = NULL;
-        int len;
-        static char buf[4096];
+	PurpleConnection *gc = data;
+	struct sipe_account_data *sip = gc->proto_data;
+	struct sip_connection *conn = NULL;
+	int len;
+	static char buf[4096];
 
-        /* TODO: It should be possible to make this check unnecessary */
-        if(!PURPLE_CONNECTION_IS_VALID(gc)) {
-                purple_ssl_close(gsc);
-                return;
-        }
+	/* TODO: It should be possible to make this check unnecessary */
+	if(!PURPLE_CONNECTION_IS_VALID(gc)) {
+		purple_ssl_close(gsc);
+		return;
+	}
 
-        conn = connection_find(sip, sip->gsc->fd);
-	      if(!conn) {
-		      gaim_debug_error("sipe", "Connection not found!\n");
-		      return;
-	      }
+	conn = connection_find(sip, sip->gsc->fd);
+	if(!conn) {
+		gaim_debug_error("sipe", "Connection not found!\n");
+		purple_ssl_close(gsc);
+		return;
+	}
       
 
-        if(conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
+	if(conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
 		conn->inbuflen += SIMPLE_BUF_INC;
 		conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
 	}
 
-        len = purple_ssl_read(gsc, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
+	len = purple_ssl_read(gsc, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
 
-        if (len < 0 && errno == EAGAIN) {
-                /* Try again later */
+	if (len < 0 && errno == EAGAIN) {
+		/* Try again later */
                 return;
         } else if (len < 0) {
                 purple_debug_info("sipe", "sipe_input_cb_ssl: read error\n");
@@ -1709,10 +1815,15 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 	}
 
 	sip = gc->proto_data;
-        sip->fd = gsc->fd;
-        conn = connection_create(sip, sip->fd);
+	sip->fd = gsc->fd;
+	conn = connection_create(sip, sip->fd);
+	sip->listenport = gaim_network_get_port_from_fd(sip->fd);
+	sip->listenfd = sip->fd;
+	sip->registertimeout = gaim_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
 
-        purple_ssl_input_add(gsc, sipe_input_cb_ssl, gc);
+	do_register(sip);
+
+	purple_ssl_input_add(gsc, sipe_input_cb_ssl, gc);
 }
 
 static guint sipe_ht_hash_nick(const char *nick) {
@@ -1817,7 +1928,8 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data) {
 	}
 
 	gaim_debug_info("sipe", "listenfd: %d\n", sip->listenfd);
-	sip->listenport = gaim_network_get_port_from_fd(sip->listenfd);
+	//sip->listenport = gaim_network_get_port_from_fd(sip->listenfd);
+	sip->listenport = purple_network_get_port_from_fd(sip->listenfd);
 	sip->listenpa = gaim_input_add(sip->listenfd, GAIM_INPUT_READ,
 			sipe_newconn_cb, sip->gc);
 	gaim_debug_info("sipe", "connecting to %s port %d\n",
