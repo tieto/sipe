@@ -1,5 +1,6 @@
 *Makefile
 *Makefile.in
+*Makefile.in.in
 *.la
 *.lo
 src/.deps
@@ -19,4 +20,3 @@ intltool-update.in
 ltmain.sh
 missing
 mkinstalldirs
-po/
