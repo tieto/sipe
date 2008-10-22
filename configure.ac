@@ -1,5 +1,3 @@
-
-
 # version of this package
 m4_define(pidgin_sipe_version,	1.2.0)
 
@@ -75,6 +73,7 @@ AM_CONDITIONAL(SIPE_STATIC, test $sipe_static = yes)
 AC_CONFIG_FILES(
 	[src/config.h]
 	[Makefile 
+	m4macros/Makefile
 	pixmaps/Makefile 
 	pixmaps/16/Makefile 
 	pixmaps/22/Makefile 
