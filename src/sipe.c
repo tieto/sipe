@@ -53,6 +53,7 @@
 
 #include "sipe.h"
 #include "sip-ntlm.h"
+#include "sipkrb5.h"
 
 #include "sipmsg.h"
 #include "dnssrv.h"
@@ -281,13 +282,24 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 	gchar *tmp;
 	const char *authdomain;
 	const char *authuser;
+	const char *krb5_realm;
+	const char *host;
+	gchar      *krb5_token;
 
 	authdomain = purple_account_get_string(sip->account, "authdomain", "");
 	authuser = purple_account_get_string(sip->account, "authuser", sip->username);
 
+	// XXX FIXME: get this info from the account dialogs
+	krb5_realm = "PUT_YOUR_REALM_HERE";
+	host       = "YOUROCS.DOMAIN.LOCAL";
+
+	krb5_token = purple_krb5_gen_auth_token(authuser, krb5_realm, sip->password, host, "sip");
+
 	if(!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
 	}
+
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "auth_header_without_newline - auth type: %d\r\n", auth->type);
 
 	if(auth->type == 1) { /* Digest */
 		sprintf(noncecount, "%08d", auth->nc++);
@@ -309,6 +321,16 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 		}
 		tmp = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth->realm, auth->target);
 		return tmp;
+	} else if (auth->type == 3) {
+		/* Kerberos */
+		if (auth->nc == 3) {
+			ret = krb5_token;
+			tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"\r", "SIP Communications Service", auth->target, ret);
+			g_free(ret);
+			purple_debug(PURPLE_DEBUG_MISC, "sipe", "returning from auth_header via Kerberos\r\n");
+			return tmp;
+		}
+		tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"\r", "SIP Communication Service", auth->target);
 	}
 
 	sprintf(noncecount, "%08d", auth->nc++);
@@ -355,8 +377,14 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	const char *authuser;
 	char *tmp;
 	gchar **parts;
+        const char *krb5_realm;
+        const char *host;
 
-	authuser = purple_account_get_string(sip->account, "authuser", sip->username);
+        // XXX FIXME: get this info from the account dialogs
+	krb5_realm = "PUT_YOUR_REALM_HERE";
+	host       = "YOUROCS.DOMAIN.LOCAL";
+
+	authuser   = purple_account_get_string(sip->account, "authuser", sip->username);
 
 	if(!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
@@ -400,6 +428,40 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
                 }
 		return;
 	}
+
+	if(!g_strncasecmp(hdr, "Kerberos", 8)) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "setting auth type to Kerberos (3)\r\n");
+		auth->type = 3;
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth - header: %s\r\n", hdr);
+		parts = g_strsplit(hdr+5, "\", ", 0);
+		i = 0;
+		while(parts[i]) {
+			purple_debug_info("sipe", "krb - parts[i] %s\n", parts[i]);
+			if((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
+				auth->nonce = g_memdup(purple_krb5_gen_auth_token(authuser, krb5_realm, sip->password, host, "sip"), 8);
+				g_free(tmp);
+			}
+			if((tmp = parse_attribute("targetname=\"", parts[i]))) {
+				auth->target = tmp;
+			} else if((tmp = parse_attribute("realm=\"", parts[i]))) {
+				auth->realm = tmp;
+			} else if((tmp = parse_attribute("opaque=\"", parts[i]))) {
+				auth->opaque = tmp;
+			}
+			i++;
+		}
+		g_strfreev(parts);
+		auth->nc = 3;
+		//if(!strstr(hdr, "gssapi-data")) {
+		//        auth->nc = 1;
+		//} else {
+		//        auth->nc = 3;
+		//}
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth - auth->nc: %d\r\n", auth->nc);
+		return;
+
+	}
+
 
 	auth->type = 1;
 	parts = g_strsplit(hdr, " ", 0);
@@ -727,15 +789,20 @@ static void send_sip_request(PurpleConnection *gc, const gchar *method,
 	if(addheaders) addh = addheaders;
 	if(sip->registrar.type && !strcmp(method, "REGISTER")) {
 		buf = auth_header(sip, &sip->registrar, method, url);
-		auth = g_strdup_printf("Authorization: %s", buf);
+		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+			auth = g_strdup_printf("Authorization: %s", buf);
+		} else {
+			auth = g_strdup_printf("Proxy-Authorization: %s", buf);
+		}
 		g_free(buf);
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "1 header %s", auth);
 	}
 	
 	if(!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method,"NOTIFY")) {
-                 sip->registrar.nc=2;
-                 sip->registrar.type=2;  
-	         buf = auth_header(sip, &sip->registrar, method, url);
+		sip->registrar.nc=2;
+		sip->registrar.type=2;
+		
+		buf = auth_header(sip, &sip->registrar, method, url);
 /*g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"\r\n", sip->registrar.realm, sip->registrar.target);*/
              
 	        auth = g_strdup_printf("Proxy-Authorization: %s", buf);
@@ -1226,7 +1293,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 
 
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc) {
-	gchar *tmp;
+	gchar *tmp, krb5_token;
 	const gchar *expires_header;
 	int expires;
 
@@ -1256,6 +1323,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				if(tmp && strstr(tmp, "vnd-microsoft-provisioning")){
 					sipe_subscribe_buddylist(sip);
 				}
+				
+				// Should we remove the transaction here?
+				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
+				//transactions_remove(sip, tc);
 			}
 			break;
 		case 401:
@@ -1266,7 +1337,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					purple_connection_error(sip->gc, _("Wrong Password"));
 					return TRUE;
 				}
-				tmp = sipmsg_find_header(msg, "WWW-Authenticate");
+				if (purple_account_get_bool(sip->account, "krb5", FALSE)) {
+					tmp = sipmsg_find_auth_header(msg, "NTLM");
+				} else {
+					tmp = sipmsg_find_auth_header(msg, "Kerberos");
+				}
+				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\r\n", tmp);
 				fill_auth(sip, tmp, &sip->registrar);
 				sip->registerstatus = 2;
 				if (sip->account->disconnecting) {
@@ -1572,7 +1648,7 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 					if(!strcmp(trans->msg->method, "REGISTER")) {
 						if(msg->response == 401) sip->registrar.retries++;
 						else sip->registrar.retries = 0;
-                                                purple_debug_info("sipe", "RE-REGISTER\n");
+                                                purple_debug_info("sipe", "RE-REGISTER CSeq: %d\r\n", sip->cseq);
 					} else {
 						if(msg->response == 401) {
 							gchar *resend, *auth, *ptmp;
@@ -1580,7 +1656,13 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 							if(sip->registrar.retries > 4) return;
 							sip->registrar.retries++;
 
-							ptmp = sipmsg_find_header(msg, "WWW-Authenticate");
+							if(purple_account_get_bool(sip->account, "krb5", FALSE)) {
+								ptmp = sipmsg_find_auth_header(msg, "NTLM");
+							} else {
+								ptmp = sipmsg_find_auth_header(msg, "Kerberos");
+							}
+
+							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\r\n", ptmp);
 
 							fill_auth(sip, ptmp, &sip->registrar);
 							auth = auth_header(sip, &sip->registrar, trans->msg->method, trans->msg->target);
@@ -1597,13 +1679,23 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 						}
 					}
 					if(trans->callback) {
+						purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - we have a transaction callback\r\n");
 						/* call the callback to process response*/
 						(trans->callback)(sip, msg, trans);
 					}
+					/* Not sure if this is needed or what needs to be done
+  					   but transactions seem to be removed prematurely so 
+  					   this only removes them if the response is 200 OK */
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - removing CSeq %d\r\n", sip->cseq);
 					transactions_remove(sip, trans);
+					
 				}
 			}
 			found = TRUE;
+			/* This is done because in an OCS2007 server trace the MS
+                         * Communicator client seems to reset the CSeq after an OK */
+
+			//sip->cseq=1;
 		} else {
 			purple_debug(PURPLE_DEBUG_MISC, "sipe", "received response to unknown transaction");
 		}
@@ -2250,6 +2342,13 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
         
         option = purple_account_option_int_new(_("Connect port"), "port", 5060);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	// XXX FIXME: Add code to programmatically determine if a KRB REALM is specified in /etc/krb5.conf
+	option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	/*option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);

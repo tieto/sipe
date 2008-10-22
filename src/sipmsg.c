@@ -228,3 +228,32 @@ gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name) {
 	return NULL;
 }
 
+/*
+ *  sipmsg_find_auth_header will return the particular WWW-Authenticate
+ *  header specified by *name.
+ *
+ *  Use this function when you want to look for a specific authentication
+ *  method such as NTLM or Kerberos
+ */
+
+gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
+        GSList *tmp;
+        struct siphdrelement *elem;
+        tmp = msg->headers;
+	int name_len = strlen(name);
+        while(tmp) {
+                elem = tmp->data;
+		purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
+                if(strcmp(elem->name,"WWW-Authenticate")==0) {
+			if (g_strncasecmp((gchar *)elem->value, name, name_len)) {
+				purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "elem->value: %s\r\n", elem->value);
+                        	return elem->value;
+			}
+                }
+		purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "moving to next header\r\n");
+                tmp = g_slist_next(tmp);
+        }
+	purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Did not found auth header %s\r\n", name);
+        return NULL;
+}
+

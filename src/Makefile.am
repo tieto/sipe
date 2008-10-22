@@ -8,6 +8,8 @@ libsipe_la_SOURCES = \
 	sip-internal.h	\
 	sip-ntlm.h	\
 	sip-ntlm.c	\
+	sipkrb5.h	\
+	sipkrb5.c	\
 	sipmsg.c \
 	sipmsg.h \
 	sipe.h \
@@ -18,10 +20,11 @@ AM_CFLAGS = $(st)
 libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(GLIB_CFLAGS) \
-        $(PIDGIN_CFLAGS) 
+        $(PIDGIN_CFLAGS) \
+	-I/usr/include/krb5
 
 libsipe_la_LDFLAGS = \
-	-module -avoid-version -no-undefined
+	-module -avoid-version -no-undefined -lkrb5
 
 libsipe_la_LIBADD = \
         $(GLIB_LIBS) $(PIDGIN_LIBS)

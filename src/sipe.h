@@ -59,7 +59,7 @@ struct sipe_buddy {
 };
 
 struct sip_auth {
-	int type; /* 1 = Digest / 2 = NTLM */
+	int type; /* 1 = Digest / 2 = NTLM / 3 = Kerberos */
 	gchar *nonce;
 	gchar *opaque;
 	gchar *realm;
