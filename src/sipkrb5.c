@@ -115,7 +115,6 @@ purple_krb5_gen_auth_token(const gchar *authuser,
 	// Clean up
 	krb5_free_principal(context, principal);
 	krb5_free_context(context);
-	
 
 	return krb5_token;
 }
