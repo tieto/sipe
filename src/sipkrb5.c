@@ -37,18 +37,21 @@
 
 #include "sipkrb5.h"
 
-
-gchar *purple_krb5_gen_auth_token(const gchar *authuser, const gchar *realm, const gchar * password, const gchar *hostname, const gchar *service) {
-
-/* 
- * Ideally we will check to see if a Kerberos ticket already exists in the 
- * default Kerberos credential cache.  Right now we re-do everything all 
- * the time.  
- *
- * XXX FIXME - Check for ticket already and create a KRB_AP_REQ from creds
- *             we already have.
- */
-
+gchar *
+purple_krb5_gen_auth_token(const gchar *authuser,
+			   const gchar *realm,
+			   const gchar * password,
+			   const gchar *hostname,
+			   const gchar *service)
+{
+	/* 
+	 * Ideally we will check to see if a Kerberos ticket already exists in the 
+	 * default Kerberos credential cache.  Right now we re-do everything all 
+	 * the time.  
+	 *
+	 * XXX FIXME - Check for ticket already and create a KRB_AP_REQ from creds
+	 *             we already have.
+	 */
 	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "entered Kerberos code\r\n");
 	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "hostname: %s, length: %d\r\n", (char *)hostname, strlen((char *)hostname));
 
@@ -79,10 +82,12 @@ gchar *purple_krb5_gen_auth_token(const gchar *authuser, const gchar *realm, con
 	// Initialize default credentials cache
 	krb5_cc_default(context, &ccdef);
 	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "Returned from krb5_cc_default\r\n");
+
 	if (retval = krb5_cc_initialize(context, ccdef, credentials.client)) {
 		com_err(progname, retval, "while initializing credentials cache\r\n");
 		return NULL;
 	}
+
 	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "Default credentials cache initialized\r\n");
 
 	// Store the TGT
@@ -114,4 +119,3 @@ gchar *purple_krb5_gen_auth_token(const gchar *authuser, const gchar *realm, con
 
 	return krb5_token;
 }
-

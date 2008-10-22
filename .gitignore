@@ -20,3 +20,4 @@ intltool-update.in
 ltmain.sh
 missing
 mkinstalldirs
+INSTALL
