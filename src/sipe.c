@@ -1,7 +1,7 @@
 /**
  * @file sip-exchange.c
  *
- * gaim
+ * purple
  *
  * Copyright (C) 2007 Anibal Avelar "Fixxxer"<avelar@gmail.com>
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
@@ -57,8 +57,6 @@
 #include "sipmsg.h"
 #include "dnssrv.h"
 
-#include "gaim-compat.h"
-
 static char *gentag() {
 	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
 }
@@ -76,16 +74,16 @@ static char *gencallid() {
 		rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
-static const char *sipe_list_icon(GaimAccount *a, GaimBuddy *b) {
+static const char *sipe_list_icon(PurpleAccount *a, PurpleBuddy *b) {
 	return "sipe";
 }
 
-static void sipe_keep_alive(GaimConnection *gc) {
+static void sipe_keep_alive(PurpleConnection *gc) {
 	struct sipe_account_data *sip = gc->proto_data;
 	if(sip->udp) { /* in case of UDP send a packet only with a 0 byte to
 			 remain in the NAT table */
 		gchar buf[2] = {0, 0};
-		gaim_debug_info("sipe", "sending keep alive\n");
+		purple_debug_info("sipe", "sending keep alive\n");
 		sendto(sip->fd, buf, 1, 0, (struct sockaddr*)&sip->serveraddr, sizeof(struct sockaddr_in));
 	}
 	return;
@@ -105,25 +103,25 @@ static void send_publish(struct sipe_account_data *sip);
 
 static void do_notifies(struct sipe_account_data *sip) {
 	GSList *tmp = sip->watcher;
-	gaim_debug_info("sipe", "do_notifies()\n");
+	purple_debug_info("sipe", "do_notifies()\n");
 	//if((sip->republish != -1) || sip->republish < time(NULL)) {
-	//	if(gaim_account_get_bool(sip->account, "doservice", TRUE)) {
+	//	if(purple_account_get_bool(sip->account, "doservice", TRUE)) {
 	//		send_service(sip);
 	//	}
 	//}
 
 	while(tmp) {
-		gaim_debug_info("sipe", "notifying %s\n", ((struct sipe_watcher*)tmp->data)->name);
+		purple_debug_info("sipe", "notifying %s\n", ((struct sipe_watcher*)tmp->data)->name);
 		send_notify(sip, tmp->data);
 		tmp = tmp->next;
 	}
 }
 
-static void sipe_set_status(GaimAccount *account, GaimStatus *status) {
-	GaimStatusPrimitive primitive = gaim_status_type_get_primitive(gaim_status_get_type(status));
+static void sipe_set_status(PurpleAccount *account, PurpleStatus *status) {
+	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(purple_status_get_type(status));
 	struct sipe_account_data *sip = NULL;
 
-	if (!gaim_status_is_active(status))
+	if (!purple_status_is_active(status))
 		return;
 
 	if (account->gc)
@@ -132,7 +130,7 @@ static void sipe_set_status(GaimAccount *account, GaimStatus *status) {
 	if (sip)
 	{
 		g_free(sip->status);
-		if (primitive == GAIM_STATUS_AVAILABLE)
+		if (primitive == PURPLE_STATUS_AVAILABLE)
 			sip->status = g_strdup("available");
 		else
 			sip->status = g_strdup("busy");
@@ -197,7 +195,7 @@ static struct sip_connection *connection_create(struct sipe_account_data *sip, i
 static void connection_remove(struct sipe_account_data *sip, int fd) {
 	struct sip_connection *conn = connection_find(sip, fd);
 	sip->openconns = g_slist_remove(sip->openconns, conn);
-	if(conn->inputhandler) gaim_input_remove(conn->inputhandler);
+	if(conn->inputhandler) purple_input_remove(conn->inputhandler);
 	g_free(conn->inbuf);
 	g_free(conn);
 }
@@ -212,44 +210,44 @@ static void connection_free_all(struct sipe_account_data *sip) {
 	}
 }
 
-static void sipe_add_buddy(GaimConnection *gc, GaimBuddy *buddy, GaimGroup *group)
+static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 	struct sipe_buddy *b;
 	if(strncmp("sip:", buddy->name, 4)) {
 		gchar *buf = g_strdup_printf("sip:%s", buddy->name);
-		gaim_blist_rename_buddy(buddy, buf);
+		purple_blist_rename_buddy(buddy, buf);
 		g_free(buf);
 	}
 	if(!g_hash_table_lookup(sip->buddies, buddy->name)) {
 		b = g_new0(struct sipe_buddy, 1);
-		gaim_debug_info("sipe", "sipe_add_buddy %s\n", buddy->name);
+		purple_debug_info("sipe", "sipe_add_buddy %s\n", buddy->name);
 		b->name = g_strdup(buddy->name);
 		g_hash_table_insert(sip->buddies, b->name, b);
 	} else {
-		gaim_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
+		purple_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
 	}
 }
 
-static void sipe_get_buddies(GaimConnection *gc) {
-	GaimBlistNode *gnode, *cnode, *bnode;
+static void sipe_get_buddies(PurpleConnection *gc) {
+	PurpleBlistNode *gnode, *cnode, *bnode;
 
-	gaim_debug_info("sipe", "sipe_get_buddies\n");
+	purple_debug_info("sipe", "sipe_get_buddies\n");
 
-	for(gnode = gaim_get_blist()->root; gnode; gnode = gnode->next) {
-		if(!GAIM_BLIST_NODE_IS_GROUP(gnode)) continue;
+	for(gnode = purple_get_blist()->root; gnode; gnode = gnode->next) {
+		if(!PURPLE_BLIST_NODE_IS_GROUP(gnode)) continue;
 		for(cnode = gnode->child; cnode; cnode = cnode->next) {
-			if(!GAIM_BLIST_NODE_IS_CONTACT(cnode)) continue;
+			if(!PURPLE_BLIST_NODE_IS_CONTACT(cnode)) continue;
 			for(bnode = cnode->child; bnode; bnode = bnode->next) {
-				if(!GAIM_BLIST_NODE_IS_BUDDY(bnode)) continue;
-				if(((GaimBuddy*)bnode)->account == gc->account)
-					sipe_add_buddy(gc, (GaimBuddy*)bnode, (GaimGroup *)gnode);
+				if(!PURPLE_BLIST_NODE_IS_BUDDY(bnode)) continue;
+				if(((PurpleBuddy*)bnode)->account == gc->account)
+					sipe_add_buddy(gc, (PurpleBuddy*)bnode, (PurpleGroup *)gnode);
 			}
 		}
 	}
 }
 
-static void sipe_remove_buddy(GaimConnection *gc, GaimBuddy *buddy, GaimGroup *group)
+static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 	struct sipe_buddy *b = g_hash_table_lookup(sip->buddies, buddy->name);
@@ -258,18 +256,18 @@ static void sipe_remove_buddy(GaimConnection *gc, GaimBuddy *buddy, GaimGroup *g
 	g_free(b);
 }
 
-static GList *sipe_status_types(GaimAccount *acc) {
-	GaimStatusType *type;
+static GList *sipe_status_types(PurpleAccount *acc) {
+	PurpleStatusType *type;
 	GList *types = NULL;
 
-	type = gaim_status_type_new_with_attrs(
-		GAIM_STATUS_AVAILABLE, NULL, NULL, TRUE, TRUE, FALSE,
-		"message", _("Message"), gaim_value_new(GAIM_TYPE_STRING),
+	type = purple_status_type_new_with_attrs(
+		PURPLE_STATUS_AVAILABLE, NULL, NULL, TRUE, TRUE, FALSE,
+		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
 
-	type = gaim_status_type_new_full(
-		GAIM_STATUS_OFFLINE, NULL, NULL, TRUE, TRUE, FALSE);
+	type = purple_status_type_new_full(
+		PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE, TRUE, FALSE);
 	types = g_list_append(types, type);
 
 	return types;
@@ -284,8 +282,8 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 	const char *authdomain;
 	const char *authuser;
 
-	authdomain = gaim_account_get_string(sip->account, "authdomain", "");
-	authuser = gaim_account_get_string(sip->account, "authuser", sip->username);
+	authdomain = purple_account_get_string(sip->account, "authdomain", "");
+	authuser = purple_account_get_string(sip->account, "authuser", sip->username);
 
 	if(!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
@@ -293,18 +291,18 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 
 	if(auth->type == 1) { /* Digest */
 		sprintf(noncecount, "%08d", auth->nc++);
-		response = gaim_cipher_http_digest_calculate_response(
+		response = purple_cipher_http_digest_calculate_response(
 							"md5", method, target, NULL, NULL,
 							auth->nonce, noncecount, NULL, auth->digest_session_key);
-		gaim_debug(GAIM_DEBUG_MISC, "sipe", "response %s\n", response);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "response %s\n", response);
 
 		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->nonce, target, noncecount, response);
 		g_free(response);
 		return ret;
 	} else if(auth->type == 2) { /* NTLM */
 		if(auth->nc == 3 && auth->nonce) {
-			/* TODO: Don't hardcode "gaim" as the hostname */
-			ret = gaim_ntlm_gen_type3_sipe(authuser, sip->password, "gaim", authdomain, (const guint8 *)auth->nonce, &auth->flags);
+			/* TODO: Don't hardcode "purple" as the hostname */
+			ret = purple_ntlm_gen_type3_sipe(authuser, sip->password, "purple", authdomain, (const guint8 *)auth->nonce, &auth->flags);
 			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, ret);
 			g_free(ret);
 			return tmp;
@@ -314,10 +312,10 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 	}
 
 	sprintf(noncecount, "%08d", auth->nc++);
-	response = gaim_cipher_http_digest_calculate_response(
+	response = purple_cipher_http_digest_calculate_response(
 						"md5", method, target, NULL, NULL,
 						auth->nonce, noncecount, NULL, auth->digest_session_key);
-	gaim_debug(GAIM_DEBUG_MISC, "sipe", "response %s\n", response);
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "response %s\n", response);
 
 	ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->nonce, target, noncecount, response);
 	g_free(response);
@@ -358,26 +356,26 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	char *tmp;
 	gchar **parts;
 
-	authuser = gaim_account_get_string(sip->account, "authuser", sip->username);
+	authuser = purple_account_get_string(sip->account, "authuser", sip->username);
 
 	if(!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
 	}
 
 	if(!hdr) {
-		gaim_debug_error("sipe", "fill_auth: hdr==NULL\n");
+		purple_debug_error("sipe", "fill_auth: hdr==NULL\n");
 		return;
 	}
 
 	if(!g_strncasecmp(hdr, "NTLM", 4)) {
-		gaim_debug_info("sipe", "found NTLM\n");
+		purple_debug_info("sipe", "found NTLM\n");
 		auth->type = 2;
 		parts = g_strsplit(hdr+5, "\", ", 0);
 		i = 0;
 		while(parts[i]) {
-			gaim_debug_info("sipe", "parts[i] %s\n", parts[i]);
+			purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
 			if((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
-				auth->nonce = g_memdup(gaim_ntlm_parse_type2_sipe(tmp, &auth->flags), 8);
+				auth->nonce = g_memdup(purple_ntlm_parse_type2_sipe(tmp, &auth->flags), 8);
 				g_free(tmp);
 			}
 			if((tmp = parse_attribute("targetname=\"",
@@ -416,25 +414,25 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	}
 	g_strfreev(parts);
 
-	gaim_debug(GAIM_DEBUG_MISC, "sipe", "nonce: %s realm: %s\n", auth->nonce ? auth->nonce : "(null)", auth->realm ? auth->realm : "(null)");
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "nonce: %s realm: %s\n", auth->nonce ? auth->nonce : "(null)", auth->realm ? auth->realm : "(null)");
 	if(auth->realm) {
-		auth->digest_session_key = gaim_cipher_http_digest_calculate_session_key(
+		auth->digest_session_key = purple_cipher_http_digest_calculate_session_key(
 				"md5", authuser, auth->realm, sip->password, auth->nonce, NULL);
 
 		auth->nc = 1;
 	}
 }
 
-static void sipe_canwrite_cb(gpointer data, gint source, GaimInputCondition cond) {
-	GaimConnection *gc = data;
+static void sipe_canwrite_cb(gpointer data, gint source, PurpleInputCondition cond) {
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = gc->proto_data;
 	gsize max_write;
 	gssize written;
 
-	max_write = gaim_circ_buffer_get_max_read(sip->txbuf);
+	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
 
 	if(max_write == 0) {
-		gaim_input_remove(sip->tx_handler);
+		purple_input_remove(sip->tx_handler);
 		sip->tx_handler = 0;
 		return;
 	}
@@ -445,23 +443,23 @@ static void sipe_canwrite_cb(gpointer data, gint source, GaimInputCondition cond
 		written = 0;
 	else if(written <= 0) {
 		/*TODO: do we really want to disconnect on a failure to write?*/
-		gaim_connection_error(gc, _("Could not write"));
+		purple_connection_error(gc, _("Could not write"));
 		return;
 	}
 
-	gaim_circ_buffer_mark_read(sip->txbuf, written);
+	purple_circ_buffer_mark_read(sip->txbuf, written);
 }
 
-static void sipe_canwrite_cb_ssl(gpointer data, PurpleSslConnection *gsc, GaimInputCondition cond) {
-	GaimConnection *gc = data;
+static void sipe_canwrite_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond) {
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = gc->proto_data;
 	gsize max_write;
 	gssize written;
 
-	max_write = gaim_circ_buffer_get_max_read(sip->txbuf);
+	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
 
 	if(max_write == 0) {
-		gaim_input_remove(sip->tx_handler);
+		purple_input_remove(sip->tx_handler);
 		sip->tx_handler = 0;
 		return;
 	}
@@ -472,21 +470,21 @@ static void sipe_canwrite_cb_ssl(gpointer data, PurpleSslConnection *gsc, GaimIn
 		written = 0;
 	else if(written <= 0) {
 		/*TODO: do we really want to disconnect on a failure to write?*/
-		gaim_connection_error(gc, _("Could not write"));
+		purple_connection_error(gc, _("Could not write"));
 		return;
 	}
 
-	gaim_circ_buffer_mark_read(sip->txbuf, written);
+	purple_circ_buffer_mark_read(sip->txbuf, written);
 }
 
-static void sipe_input_cb(gpointer data, gint source, GaimInputCondition cond);
+static void sipe_input_cb(gpointer data, gint source, PurpleInputCondition cond);
 
 static void send_later_cb(gpointer data, gint source, const gchar *error) {
-	GaimConnection *gc = data;
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip;
 	struct sip_connection *conn;
 
-	if (!GAIM_CONNECTION_IS_VALID(gc))
+	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
 		if (source >= 0)
 			close(source);
@@ -494,7 +492,7 @@ static void send_later_cb(gpointer data, gint source, const gchar *error) {
 	}
 
 	if(source < 0) {
-		gaim_connection_error(gc, _("Could not connect"));
+		purple_connection_error(gc, _("Could not connect"));
 		return;
 	}
 
@@ -502,23 +500,23 @@ static void send_later_cb(gpointer data, gint source, const gchar *error) {
 	sip->fd = source;
 	sip->connecting = FALSE;
 
-	sipe_canwrite_cb(gc, sip->fd, GAIM_INPUT_WRITE);
+	sipe_canwrite_cb(gc, sip->fd, PURPLE_INPUT_WRITE);
 
 	/* If there is more to write now, we need to register a handler */
 	if(sip->txbuf->bufused > 0)
-		sip->tx_handler = gaim_input_add(sip->fd, GAIM_INPUT_WRITE,
+		sip->tx_handler = purple_input_add(sip->fd, PURPLE_INPUT_WRITE,
 			sipe_canwrite_cb, gc);
 
 	conn = connection_create(sip, source);
-	conn->inputhandler = gaim_input_add(sip->fd, GAIM_INPUT_READ, sipe_input_cb, gc);
+	conn->inputhandler = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_input_cb, gc);
 }
 
-static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, GaimInputCondition cond) {
-	GaimConnection *gc = data;
+static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond) {
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip;
 	struct sip_connection *conn;
 
-	if (!GAIM_CONNECTION_IS_VALID(gc))
+	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
 		purple_ssl_close(gsc);
 		return;
@@ -528,7 +526,7 @@ static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, GaimInput
 	sip->fd = gsc->fd;
 	sip->connecting = FALSE;
 
-	sipe_canwrite_cb_ssl(gc, gsc, GAIM_INPUT_WRITE);
+	sipe_canwrite_cb_ssl(gc, gsc, PURPLE_INPUT_WRITE);
 
 	/* If there is more to write now, we need to register a handler */
 	if(sip->txbuf->bufused > 0)
@@ -539,37 +537,37 @@ static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, GaimInput
 }
 
 
-static void sendlater(GaimConnection *gc, const char *buf) {
+static void sendlater(PurpleConnection *gc, const char *buf) {
 	struct sipe_account_data *sip = gc->proto_data;
 
 	if(!sip->connecting) {
-		gaim_debug_info("sipe", "connecting to %s port %d\n", sip->realhostname ? sip->realhostname : "{NULL}", sip->realport);
+		purple_debug_info("sipe", "connecting to %s port %d\n", sip->realhostname ? sip->realhostname : "{NULL}", sip->realport);
                 if(sip->use_ssl){
                          sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, send_later_cb_ssl, sipe_ssl_connect_failure, sip->gc);      
                 }
                 else{
-			if(gaim_proxy_connect(gc, sip->account, sip->realhostname, sip->realport, send_later_cb, gc) == NULL) {
-				gaim_connection_error(gc, _("Couldn't create socket"));
+			if(purple_proxy_connect(gc, sip->account, sip->realhostname, sip->realport, send_later_cb, gc) == NULL) {
+				purple_connection_error(gc, _("Couldn't create socket"));
 			}
                  }
 		sip->connecting = TRUE;
 	}
 
-	if(gaim_circ_buffer_get_max_read(sip->txbuf) > 0)
-		gaim_circ_buffer_append(sip->txbuf, "\r\n", 2);
+	if(purple_circ_buffer_get_max_read(sip->txbuf) > 0)
+		purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
 
-	gaim_circ_buffer_append(sip->txbuf, buf, strlen(buf));
+	purple_circ_buffer_append(sip->txbuf, buf, strlen(buf));
 }
 
-static void sendout_pkt(GaimConnection *gc, const char *buf) {
+static void sendout_pkt(PurpleConnection *gc, const char *buf) {
 	struct sipe_account_data *sip = gc->proto_data;
 	time_t currtime = time(NULL);
 	int writelen = strlen(buf);
 
-	gaim_debug(GAIM_DEBUG_MISC, "sipe", "\n\nsending - %s\n######\n%s\n######\n\n", ctime(&currtime), buf);
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "\n\nsending - %s\n######\n%s\n######\n\n", ctime(&currtime), buf);
 	if(sip->udp) {
 		if(sendto(sip->fd, buf, writelen, 0, (struct sockaddr*)&sip->serveraddr, sizeof(struct sockaddr_in)) < writelen) {
-			gaim_debug_info("sipe", "could not send packet\n");
+			purple_debug_info("sipe", "could not send packet\n");
 		}
 	} else {
 		int ret;
@@ -602,8 +600,8 @@ static void sendout_pkt(GaimConnection *gc, const char *buf) {
                                      purple_ssl_input_add(sip->gsc, sipe_canwrite_cb_ssl, gc);
                                 }
                                 else{ 
-					sip->tx_handler = gaim_input_add(sip->fd,
-					GAIM_INPUT_WRITE, sipe_canwrite_cb,
+					sip->tx_handler = purple_input_add(sip->fd,
+					PURPLE_INPUT_WRITE, sipe_canwrite_cb,
 					gc);
                                  }
                         }
@@ -611,15 +609,15 @@ static void sendout_pkt(GaimConnection *gc, const char *buf) {
 			/* XXX: is it OK to do this? You might get part of a request sent
 			   with part of another. */
 			if(sip->txbuf->bufused > 0)
-				gaim_circ_buffer_append(sip->txbuf, "\r\n", 2);
+				purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
 
-			gaim_circ_buffer_append(sip->txbuf, buf + ret,
+			purple_circ_buffer_append(sip->txbuf, buf + ret,
 				writelen - ret);
 		}
 	}
 }
 
-static int sipe_send_raw(GaimConnection *gc, const char *buf, int len)
+static int sipe_send_raw(PurpleConnection *gc, const char *buf, int len)
 {
 	sendout_pkt(gc, buf);
 	return len;
@@ -642,7 +640,7 @@ static void sendout_sipmsg(struct sipe_account_data *sip, struct sipmsg *msg) {
 	g_string_free(outstr, TRUE);
 }
 
-static void send_sip_response(GaimConnection *gc, struct sipmsg *msg, int code,
+static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		const char *text, const char *body) {
 	GSList *tmp = msg->headers;
 	gchar *name;
@@ -705,7 +703,7 @@ static struct transaction *transactions_find(struct sipe_account_data *sip, stru
 	return NULL;
 }
 
-static void send_sip_request(GaimConnection *gc, const gchar *method,
+static void send_sip_request(PurpleConnection *gc, const gchar *method,
 		const gchar *url, const gchar *to, const gchar *addheaders,
 		const gchar *body, struct sip_dialog *dialog, TransCallback tc) {
 	struct sipe_account_data *sip = gc->proto_data;
@@ -731,7 +729,7 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 		buf = auth_header(sip, &sip->registrar, method, url);
 		auth = g_strdup_printf("Authorization: %s", buf);
 		g_free(buf);
-		gaim_debug(GAIM_DEBUG_MISC, "sipe", "1 header %s", auth);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "1 header %s", auth);
 	}
 	
 	if(!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method,"NOTIFY")) {
@@ -741,7 +739,7 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 /*g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"\r\n", sip->registrar.realm, sip->registrar.target);*/
              
 	        auth = g_strdup_printf("Proxy-Authorization: %s", buf);
-                gaim_debug(GAIM_DEBUG_MISC, "sipe", "3 header %s", auth);
+                purple_debug(PURPLE_DEBUG_MISC, "sipe", "3 header %s", auth);
 	        g_free(buf);
 	}
 
@@ -755,7 +753,7 @@ static void send_sip_request(GaimConnection *gc, const gchar *method,
 			"To: <%s>%s%s\r\n"
 			"Max-Forwards: 70\r\n"
 			"CSeq: %d %s\r\n"
-			"User-Agent: Gaim/" VERSION "\r\n"
+			"User-Agent: Purple/" VERSION "\r\n"
 			"Call-ID: %s\r\n"
 			"%s%s"
 			"Content-Length: %" G_GSIZE_FORMAT "\r\n\r\n%s",
@@ -836,7 +834,7 @@ static gchar *parse_from(const gchar *hdr) {
 	const gchar *tmp, *tmp2 = hdr;
 
 	if(!hdr) return NULL;
-	gaim_debug_info("sipe", "parsing address out of %s\n", hdr);
+	purple_debug_info("sipe", "parsing address out of %s\n", hdr);
 	tmp = strchr(hdr, '<');
 
 	/* i hate the different SIP UA behaviours... */
@@ -846,7 +844,7 @@ static gchar *parse_from(const gchar *hdr) {
 		if(tmp) {
 			from = g_strndup(tmp2, tmp - tmp2);
 		} else {
-			gaim_debug_info("sipe", "found < without > in From\n");
+			purple_debug_info("sipe", "found < without > in From\n");
 			return NULL;
 		}
 	} else {
@@ -857,7 +855,7 @@ static gchar *parse_from(const gchar *hdr) {
 			from = g_strdup(tmp2);
 		}
 	}
-	gaim_debug_info("sipe", "got %s\n", from);
+	purple_debug_info("sipe", "got %s\n", from);
 	return from;
 }
 
@@ -865,7 +863,7 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 	gchar *to;
 
 	if(msg->response == 200 || msg->response == 202) {
-                gaim_debug_info("sipe", "Devolvio un response %d\n", msg->response);
+                purple_debug_info("sipe", "Devolvio un response %d\n", msg->response);
 		return TRUE;
 	}
 
@@ -873,7 +871,7 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 
 	/* we can not subscribe -> user is offline (TODO unknown status?) */
 
-	gaim_prpl_got_user_status(sip->account, to, "offline", NULL);
+	purple_prpl_got_user_status(sip->account, to, "offline", NULL);
 	g_free(to);
 	return TRUE;
 }
@@ -909,8 +907,8 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	gchar *tmp;
 	xmlnode *item, *group, *isc;
 	const char *name_group, *group_id;
-	GaimBuddy *b;
-	GaimGroup *g = NULL;
+	PurpleBuddy *b;
+	PurpleGroup *g = NULL;
         gchar **parts;
         gchar *apn;
         int ng = 0, i;
@@ -924,8 +922,8 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	tmp = sipmsg_find_header(msg, "Event");
 	if(tmp && !strncmp(tmp, "vnd-microsoft-roaming-contacts", 30)){
 
-		gaim_debug_info("sipe", "sipe_add_lcs_contacts->%s-%d\n", msg->body, len);
-		/*Convert the contact from XML to Gaim Buddies*/
+		purple_debug_info("sipe", "sipe_add_lcs_contacts->%s-%d\n", msg->body, len);
+		/*Convert the contact from XML to Purple Buddies*/
 		isc = xmlnode_from_str(msg->body, len);
 
 		/* ToDo. Find for all groups */
@@ -938,25 +936,25 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
                         }
                         gr[ng].name_group = g_strdup(name_group);
                         gr[ng].id = g_strdup(group_id); 
-			gaim_debug_info("sipe", "name_group->%s\n", name_group);
-			g = gaim_find_group(name_group);
+			purple_debug_info("sipe", "name_group->%s\n", name_group);
+			g = purple_find_group(name_group);
 			if(!g) {
-				g = gaim_group_new(name_group);
-                                gaim_blist_add_group(g, NULL);
+				g = purple_group_new(name_group);
+                                purple_blist_add_group(g, NULL);
                         }
 		        if (!g) {
-			   g = gaim_find_group("General");
+			   g = purple_find_group("General");
 				if(!g) {
-					g = gaim_group_new("General");
-                                	gaim_blist_add_group(g, NULL);
+					g = purple_group_new("General");
+                                	purple_blist_add_group(g, NULL);
                          	}
 		        }
                         gr[ng].g = g;
                         ng++;
                 }
                 for(i = 0; i < ng;i++){
-                    gaim_debug_info("sipe", "id->%s\n", gr[i].id);
-                    gaim_debug_info("sipe", "id->%s\n", gr[i].name_group); 
+                    purple_debug_info("sipe", "id->%s\n", gr[i].id);
+                    purple_debug_info("sipe", "id->%s\n", gr[i].name_group); 
                 } 
                  
 		       for(item = xmlnode_get_child(isc, "contact"); item; item = xmlnode_get_next_twin(item))
@@ -968,25 +966,25 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 				name = xmlnode_get_attrib(item, "name");
 				groups = xmlnode_get_attrib(item, "groups");
                         	parts = g_strsplit(groups, " ", 0); 
-				gaim_debug_info("sipe", "URI->%s,Groups->%s\n", uri, groups);
+				purple_debug_info("sipe", "URI->%s,Groups->%s\n", uri, groups);
                                 if(parts[i]!=NULL){
                         		while(parts[i]) {
-			    			gaim_debug_info("sipe", "Groups->parts[i] %s\n", parts[i]);
+			    			purple_debug_info("sipe", "Groups->parts[i] %s\n", parts[i]);
                                 		if(!strcmp(gr[i].id,parts[i])){
-                                        		gaim_debug_info("sipe", "Found Groups->gr[i].id(%s),gr[i].name_group (%s)\n",gr[i].id,gr[i].name_group);
+                                        		purple_debug_info("sipe", "Found Groups->gr[i].id(%s),gr[i].name_group (%s)\n",gr[i].id,gr[i].name_group);
                                         
 							buddy_name = g_strdup_printf("sip:%s", uri);
 
-							//b = gaim_find_buddy(sip->account, buddy_name); 
-                                			b = gaim_find_buddy_in_group(sip->account, buddy_name, gr[i].g);
+							//b = purple_find_buddy(sip->account, buddy_name); 
+                                			b = purple_find_buddy_in_group(sip->account, buddy_name, gr[i].g);
 							if(!b){
-								b = gaim_buddy_new(sip->account, buddy_name, uri);
+								b = purple_buddy_new(sip->account, buddy_name, uri);
 							}
 							g_free(buddy_name);
 
                                 			//sipe_add_buddy(sip->gc, b , gr[i].g);  
-							gaim_blist_add_buddy(b, NULL, gr[i].g, NULL);
-							gaim_blist_alias_buddy(b, uri);
+							purple_blist_add_buddy(b, NULL, gr[i].g, NULL);
+							purple_blist_alias_buddy(b, uri);
 							bs = g_new0(struct sipe_buddy, 1);
 							bs->name = g_strdup(b->name);
 							g_hash_table_insert(sip->buddies, bs->name, bs);
@@ -1062,9 +1060,9 @@ static void sipe_invite(struct sipe_account_data *sip, const char *name) {
 
 static void sipe_buddy_resub(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip) {
 	time_t curtime = time(NULL);
-	gaim_debug_info("sipe", "buddy resub\n");
+	purple_debug_info("sipe", "buddy resub\n");
 	if(buddy->resubscribe < curtime) {
-		gaim_debug(GAIM_DEBUG_MISC, "sipe", "sipe_buddy_resub %s\n", name);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_buddy_resub %s\n", name);
 		sipe_subscribe(sip, buddy);
 	}
 }
@@ -1075,7 +1073,7 @@ static gboolean resend_timeout(struct sipe_account_data *sip) {
 	while(tmp) {
 		struct transaction *trans = tmp->data;
 		tmp = tmp->next;
-		gaim_debug_info("sipe", "have open transaction age: %d\n", currtime- trans->time);
+		purple_debug_info("sipe", "have open transaction age: %d\n", currtime- trans->time);
 		if((currtime - trans->time > 5) && trans->retries >= 1) {
 			/* TODO 408 */
 		} else {
@@ -1137,13 +1135,13 @@ static void sipe_send_message(struct sipe_account_data *sip, const char *to, con
 	g_free(fullto);
 }
 
-static int sipe_im_send(GaimConnection *gc, const char *who, const char *what, GaimMessageFlags flags) {
+static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what, PurpleMessageFlags flags) {
 	struct sipe_account_data *sip = gc->proto_data;
 	char *to = g_strdup(who);
-	char *text = gaim_unescape_html(what);
+	char *text = purple_unescape_html(what);
 	//sipe_send_message(sip, to, text, NULL);
 	//sipe_invite(sip, to);
-	gaim_debug_info("sipe", "sending IMs not implemented\n");
+	purple_debug_info("sipe", "sending IMs not implemented\n");
 	g_free(to);
 	g_free(text);
 	return 1;
@@ -1158,7 +1156,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 	if(!from) return;
 
-	gaim_debug_info("sipe", "got message from %s: %s\n", from, msg->body);
+	purple_debug_info("sipe", "got message from %s: %s\n", from, msg->body);
 
 	contenttype = sipmsg_find_header(msg, "Content-Type");
 	if(!contenttype || !strncmp(contenttype, "text/plain", 10) || !strncmp(contenttype, "text/html", 9)) {
@@ -1172,21 +1170,21 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		gchar *statedata;
 
 		if(!isc) {
-			gaim_debug_info("sipe", "process_incoming_message: can not parse iscomposing\n");
+			purple_debug_info("sipe", "process_incoming_message: can not parse iscomposing\n");
 			return;
 		}
 
 		state = xmlnode_get_child(isc, "state");
 
 		if(!state) {
-			gaim_debug_info("sipe", "process_incoming_message: no state found\n");
+			purple_debug_info("sipe", "process_incoming_message: no state found\n");
 			xmlnode_free(isc);
 			return;
 		}
 
 		statedata = xmlnode_get_data(state);
 		if(statedata) {
-			if(strstr(statedata, "active")) serv_got_typing(sip->gc, from, 0, GAIM_TYPING);
+			if(strstr(statedata, "active")) serv_got_typing(sip->gc, from, 0, PURPLE_TYPING);
 			else serv_got_typing_stopped(sip->gc, from);
 
 			g_free(statedata);
@@ -1196,7 +1194,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		found = TRUE;
 	}
 	if(!found) {
-		gaim_debug_info("sipe", "got unknown mime-type");
+		purple_debug_info("sipe", "got unknown mime-type");
 		send_sip_response(sip->gc, msg, 415, "Unsupported media type", NULL);
 	}
 	g_free(from);
@@ -1209,7 +1207,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	sipmsg_add_header(msg, "Contact", contact);
 
 	//sipmsg_remove_header(msg, "User-Agent");
-	//sipmsg_add_header_pos(msg, "User-Agent", g_strdup_printf("Gaim/" VERSION), 6);
+	//sipmsg_add_header_pos(msg, "User-Agent", g_strdup_printf("Purple/" VERSION), 6);
 
 	send_sip_response(sip->gc, msg, 200, "OK", g_strdup_printf(
 		"v=0\r\n"
@@ -1234,8 +1232,8 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 	expires_header = sipmsg_find_header(msg, "Expires");
 	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
-	gaim_debug(GAIM_DEBUG_MISC, "sipe", "in process register response response: %d\n", msg->response);
-	gaim_debug_info("sipe", "got response to REGISTER; expires = %d\n", expires);
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "in process register response response: %d\n", msg->response);
+	purple_debug_info("sipe", "got response to REGISTER; expires = %d\n", expires);
 
 	switch (msg->response) {
 		case 200:
@@ -1243,7 +1241,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				sip->registerstatus = 0;
 			} else {
 				sip->registerstatus = 3;
-				gaim_connection_set_state(sip->gc, GAIM_CONNECTED);
+				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
 				/* tell everybody we're online */
 				send_publish (sip);
@@ -1262,10 +1260,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			break;
 		case 401:
 			if(sip->registerstatus != 2) {
-				gaim_debug_info("sipe", "REGISTER retries %d\n", sip->registrar.retries);
+				purple_debug_info("sipe", "REGISTER retries %d\n", sip->registrar.retries);
 				if(sip->registrar.retries > 3) {
 					sip->gc->wants_to_die = TRUE;
-					gaim_connection_error(sip->gc, _("Wrong Password"));
+					purple_connection_error(sip->gc, _("Wrong Password"));
 					return TRUE;
 				}
 				tmp = sipmsg_find_header(msg, "WWW-Authenticate");
@@ -1297,29 +1295,29 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	pidf = xmlnode_from_str(msg->body, msg->bodylen);
 
 	if(!pidf) {
-		gaim_debug_info("sipe", "process_incoming_notify: no parseable pidf\n");
+		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf\n");
 		return;
 	}
 
-        gaim_debug_info("sipe", "process_incoming_notify: body(%s)\n",msg->body);
+        purple_debug_info("sipe", "process_incoming_notify: body(%s)\n",msg->body);
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple")))
 		if ((status = xmlnode_get_child(tuple, "status")))
 			basicstatus = xmlnode_get_child(status, "basic");
 
 	if(!basicstatus) {
-		gaim_debug_info("sipe", "process_incoming_notify: no basic found\n");
+		purple_debug_info("sipe", "process_incoming_notify: no basic found\n");
 		xmlnode_free(pidf);
 		return;
 	}
 
 	tmp2 = xmlnode_get_data(basicstatus);
 
-        gaim_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n",tmp2);
+        purple_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n",tmp2);
 
 
 	if(!tmp2) {
-		gaim_debug_info("sipe", "process_incoming_notify: no basic data found\n");
+		purple_debug_info("sipe", "process_incoming_notify: no basic data found\n");
 		xmlnode_free(pidf);
 		return;
 	}
@@ -1330,8 +1328,8 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 
 	g_free(tmp2);
 
-	if(isonline) gaim_prpl_got_user_status(sip->account, from, "available", NULL);
-	else gaim_prpl_got_user_status(sip->account, from, "offline", NULL);
+	if(isonline) purple_prpl_got_user_status(sip->account, from, "available", NULL);
+	else purple_prpl_got_user_status(sip->account, from, "offline", NULL);
 
 	xmlnode_free(pidf);
 
@@ -1464,7 +1462,7 @@ static void process_incoming_subscribe(struct sipe_account_data *sip, struct sip
 	if(!watcher) { /* new subscription */
 		gchar *acceptheader = sipmsg_find_header(msg, "Accept");
 		gboolean needsxpidf = FALSE;
-		if(!gaim_privacy_check(sip->account, from)) {
+		if(!purple_privacy_check(sip->account, from)) {
 			send_sip_response(sip->gc, msg, 202, "Ok", NULL);
 			goto privend;
 		}
@@ -1506,7 +1504,7 @@ static void process_incoming_subscribe(struct sipe_account_data *sip, struct sip
 	tmp = get_contact(sip);
 	sipmsg_add_header(msg, "Contact", tmp);
 	g_free(tmp);
-	gaim_debug_info("sipe", "got subscribe: name %s ourtag %s theirtag %s callid %s\n", watcher->name, watcher->dialog.ourtag, watcher->dialog.theirtag, watcher->dialog.callid);
+	purple_debug_info("sipe", "got subscribe: name %s ourtag %s theirtag %s callid %s\n", watcher->name, watcher->dialog.ourtag, watcher->dialog.theirtag, watcher->dialog.callid);
 	send_sip_response(sip->gc, msg, 200, "Ok", NULL);
 	send_notify(sip, watcher);
 privend:
@@ -1519,21 +1517,21 @@ privend:
 
 static void process_input_message(struct sipe_account_data *sip, struct sipmsg *msg) {
 	gboolean found = FALSE;
-        gaim_debug_info("sipe", "msg->response(%d),msg->method(%s)\n",msg->response,msg->method);
+        purple_debug_info("sipe", "msg->response(%d),msg->method(%s)\n",msg->response,msg->method);
 	if(msg->response == 0) { /* request */
 		if(!strcmp(msg->method, "MESSAGE")) {
 			process_incoming_message(sip, msg);
 			found = TRUE;
 		} else if(!strcmp(msg->method, "NOTIFY")) {
-                        gaim_debug_info("sipe","send->process_incoming_notify\n");
+                        purple_debug_info("sipe","send->process_incoming_notify\n");
 			process_incoming_notify(sip, msg);
 			found = TRUE;
 		} else if(!strcmp(msg->method, "SUBSCRIBE")) {
-			gaim_debug_info("sipe","send->process_incoming_subscribe\n");
+			purple_debug_info("sipe","send->process_incoming_subscribe\n");
 			process_incoming_subscribe(sip, msg);
 			found = TRUE;
 		} else if(!strcmp(msg->method, "INVITE")) {
-			gaim_debug_info("sipe","not calling unfinished send->process_incoming_invite\n");
+			purple_debug_info("sipe","not calling unfinished send->process_incoming_invite\n");
 			//process_incoming_invite(sip, msg);
 			found = TRUE;
 		} else if(!strcmp(msg->method, "INFO")) {
@@ -1568,13 +1566,13 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 			} else {
 				if(msg->response == 100) {
 					/* ignore provisional response */
-					gaim_debug_info("sipe", "got trying response\n");
+					purple_debug_info("sipe", "got trying response\n");
 				} else {
 					sip->proxy.retries = 0;
 					if(!strcmp(trans->msg->method, "REGISTER")) {
 						if(msg->response == 401) sip->registrar.retries++;
 						else sip->registrar.retries = 0;
-                                                gaim_debug_info("sipe", "RE-REGISTER\n");
+                                                purple_debug_info("sipe", "RE-REGISTER\n");
 					} else {
 						if(msg->response == 401) {
 							gchar *resend, *auth, *ptmp;
@@ -1607,11 +1605,11 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 			}
 			found = TRUE;
 		} else {
-			gaim_debug(GAIM_DEBUG_MISC, "sipe", "received response to unknown transaction");
+			purple_debug(PURPLE_DEBUG_MISC, "sipe", "received response to unknown transaction");
 		}
 	}
 	if(!found) {
-		gaim_debug(GAIM_DEBUG_MISC, "sipe", "received a unknown sip message with method %s and response %d\n", msg->method, msg->response);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "received a unknown sip message with method %s and response %d\n", msg->method, msg->response);
 	}
 }
 
@@ -1637,7 +1635,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		time_t currtime = time(NULL);
 		cur += 2;
 		cur[0] = '\0';
-		gaim_debug_info("sipe", "\n\nreceived - %s\n######\n%s\n#######\n\n", ctime(&currtime), conn->inbuf);
+		purple_debug_info("sipe", "\n\nreceived - %s\n######\n%s\n#######\n\n", ctime(&currtime), conn->inbuf);
 		msg = sipmsg_parse_header(conn->inbuf);
 		cur[0] = '\r';
 		cur += 2;
@@ -1654,15 +1652,15 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			sipmsg_free(msg);
 			return;
 		}
-		gaim_debug(GAIM_DEBUG_MISC, "sipe", "in process response response: %d\n", msg->response);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "in process response response: %d\n", msg->response);
 		process_input_message(sip, msg);
 	} else {
-		gaim_debug(GAIM_DEBUG_MISC, "sipe", "received a incomplete sip msg: %s\n", conn->inbuf);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "received a incomplete sip msg: %s\n", conn->inbuf);
 	}
 }
 
-static void sipe_udp_process(gpointer data, gint source, GaimInputCondition con) {
-	GaimConnection *gc = data;
+static void sipe_udp_process(gpointer data, gint source, PurpleInputCondition con) {
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sipmsg *msg;
 	int len;
@@ -1671,7 +1669,7 @@ static void sipe_udp_process(gpointer data, gint source, GaimInputCondition con)
 	static char buffer[65536];
 	if((len = recv(source, buffer, sizeof(buffer) - 1, 0)) > 0) {
 		buffer[len] = '\0';
-		gaim_debug_info("sipe", "\n\nreceived - %s\n######\n%s\n#######\n\n", ctime(&currtime), buffer);
+		purple_debug_info("sipe", "\n\nreceived - %s\n######\n%s\n#######\n\n", ctime(&currtime), buffer);
 		msg = sipmsg_parse_msg(buffer);
 		if(msg) process_input_message(sip, msg);
 	}
@@ -1693,7 +1691,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 
 	conn = connection_find(sip, sip->gsc->fd);
 	if(!conn) {
-		gaim_debug_error("sipe", "Connection not found!\n");
+		purple_debug_error("sipe", "Connection not found!\n");
 		purple_ssl_close(gsc);
 		return;
 	}
@@ -1728,14 +1726,14 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
   
 }
 
-static void sipe_input_cb(gpointer data, gint source, GaimInputCondition cond)
+static void sipe_input_cb(gpointer data, gint source, PurpleInputCondition cond)
 {
-	GaimConnection *gc = data;
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = gc->proto_data;
 	int len;
 	struct sip_connection *conn = connection_find(sip, source);
 	if(!conn) {
-		gaim_debug_error("sipe", "Connection not found!\n");
+		purple_debug_error("sipe", "Connection not found!\n");
 		return;
 	}
 
@@ -1749,7 +1747,7 @@ static void sipe_input_cb(gpointer data, gint source, GaimInputCondition cond)
 	if(len < 0 && errno == EAGAIN)
 		return;
 	else if(len <= 0) {
-		gaim_debug_info("sipe", "sipe_input_cb: read error\n");
+		purple_debug_info("sipe", "sipe_input_cb: read error\n");
 		connection_remove(sip, source);
 		if(sip->fd == source) sip->fd = -1;
 		return;
@@ -1762,8 +1760,8 @@ static void sipe_input_cb(gpointer data, gint source, GaimInputCondition cond)
 }
 
 /* Callback for new connections on incoming TCP port */
-static void sipe_newconn_cb(gpointer data, gint source, GaimInputCondition cond) {
-	GaimConnection *gc = data;
+static void sipe_newconn_cb(gpointer data, gint source, PurpleInputCondition cond) {
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_connection *conn;
 
@@ -1771,15 +1769,15 @@ static void sipe_newconn_cb(gpointer data, gint source, GaimInputCondition cond)
 
 	conn = connection_create(sip, newfd);
 
-	conn->inputhandler = gaim_input_add(newfd, GAIM_INPUT_READ, sipe_input_cb, gc);
+	conn->inputhandler = purple_input_add(newfd, PURPLE_INPUT_READ, sipe_input_cb, gc);
 }
 
 static void login_cb(gpointer data, gint source, const gchar *error_message) {
-	GaimConnection *gc = data;
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip;
 	struct sip_connection *conn;
 
-	if (!GAIM_CONNECTION_IS_VALID(gc))
+	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
 		if (source >= 0)
 			close(source);
@@ -1787,7 +1785,7 @@ static void login_cb(gpointer data, gint source, const gchar *error_message) {
 	}
 
 	if(source < 0) {
-		gaim_connection_error(gc, _("Could not connect"));
+		purple_connection_error(gc, _("Could not connect"));
 		return;
 	}
 
@@ -1796,15 +1794,15 @@ static void login_cb(gpointer data, gint source, const gchar *error_message) {
 
 	conn = connection_create(sip, source);
 
-	sip->registertimeout = gaim_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
+	sip->registertimeout = purple_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
 
 	do_register(sip);
 
-	conn->inputhandler = gaim_input_add(sip->fd, GAIM_INPUT_READ, sipe_input_cb, gc);
+	conn->inputhandler = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_input_cb, gc);
 }
 
 static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond) {
-	GaimConnection *gc = data;
+	PurpleConnection *gc = data;
 	struct sipe_account_data *sip;
 	struct sip_connection *conn;
 
@@ -1817,9 +1815,9 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 	sip = gc->proto_data;
 	sip->fd = gsc->fd;
 	conn = connection_create(sip, sip->fd);
-	sip->listenport = gaim_network_get_port_from_fd(sip->fd);
+	sip->listenport = purple_network_get_port_from_fd(sip->fd);
 	sip->listenfd = sip->fd;
-	sip->registertimeout = gaim_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
+	sip->registertimeout = purple_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
 
 	do_register(sip);
 
@@ -1835,7 +1833,7 @@ static guint sipe_ht_hash_nick(const char *nick) {
 }
 
 static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2) {
-	return (gaim_utf8_strcasecmp(nick1, nick2) == 0);
+	return (purple_utf8_strcasecmp(nick1, nick2) == 0);
 }
 
 static void sipe_udp_host_resolved_listen_cb(int listenfd, gpointer data) {
@@ -1844,19 +1842,19 @@ static void sipe_udp_host_resolved_listen_cb(int listenfd, gpointer data) {
 	sip->listen_data = NULL;
 
 	if(listenfd == -1) {
-		gaim_connection_error(sip->gc, _("Could not create listen socket"));
+		purple_connection_error(sip->gc, _("Could not create listen socket"));
 		return;
 	}
 
 	sip->fd = listenfd;
 
-	sip->listenport = gaim_network_get_port_from_fd(sip->fd);
+	sip->listenport = purple_network_get_port_from_fd(sip->fd);
 	sip->listenfd = sip->fd;
 
-	sip->listenpa = gaim_input_add(sip->fd, GAIM_INPUT_READ, sipe_udp_process, sip->gc);
+	sip->listenpa = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_udp_process, sip->gc);
 
-	sip->resendtimeout = gaim_timeout_add(2500, (GSourceFunc) resend_timeout, sip);
-	sip->registertimeout = gaim_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
+	sip->resendtimeout = purple_timeout_add(2500, (GSourceFunc) resend_timeout, sip);
+	sip->registertimeout = purple_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
 	do_register(sip);
 }
 
@@ -1867,7 +1865,7 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data, const char *err
 	sip->query_data = NULL;
 
 	if (!hosts || !hosts->data) {
-		gaim_connection_error(sip->gc, _("Couldn't resolve host"));
+		purple_connection_error(sip->gc, _("Couldn't resolve host"));
 		return;
 	}
 
@@ -1883,10 +1881,10 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data, const char *err
 	}
 
 	/* create socket for incoming connections */
-	sip->listen_data = gaim_network_listen_range(5060, 5160, SOCK_DGRAM,
+	sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_DGRAM,
 				sipe_udp_host_resolved_listen_cb, sip);
 	if (sip->listen_data == NULL) {
-		gaim_connection_error(sip->gc, _("Could not create listen socket"));
+		purple_connection_error(sip->gc, _("Could not create listen socket"));
 		return;
 	}
 }
@@ -1917,35 +1915,35 @@ static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorTyp
 static void
 sipe_tcp_connect_listen_cb(int listenfd, gpointer data) {
 	struct sipe_account_data *sip = (struct sipe_account_data*) data;
-	GaimProxyConnectData *connect_data;
+	PurpleProxyConnectData *connect_data;
 
 	sip->listen_data = NULL;
 
 	sip->listenfd = listenfd;
 	if(sip->listenfd == -1) {
-		gaim_connection_error(sip->gc, _("Could not create listen socket"));
+		purple_connection_error(sip->gc, _("Could not create listen socket"));
 		return;
 	}
 
-	gaim_debug_info("sipe", "listenfd: %d\n", sip->listenfd);
-	//sip->listenport = gaim_network_get_port_from_fd(sip->listenfd);
+	purple_debug_info("sipe", "listenfd: %d\n", sip->listenfd);
+	//sip->listenport = purple_network_get_port_from_fd(sip->listenfd);
 	sip->listenport = purple_network_get_port_from_fd(sip->listenfd);
-	sip->listenpa = gaim_input_add(sip->listenfd, GAIM_INPUT_READ,
+	sip->listenpa = purple_input_add(sip->listenfd, PURPLE_INPUT_READ,
 			sipe_newconn_cb, sip->gc);
-	gaim_debug_info("sipe", "connecting to %s port %d\n",
+	purple_debug_info("sipe", "connecting to %s port %d\n",
 			sip->realhostname, sip->realport);
 	/* open tcp connection to the server */ 
-        connect_data = gaim_proxy_connect(sip->gc, sip->account, sip->realhostname,
+        connect_data = purple_proxy_connect(sip->gc, sip->account, sip->realhostname,
 			sip->realport, login_cb, sip->gc);
         
 	if(connect_data == NULL) {
-		gaim_connection_error(sip->gc, _("Couldn't create socket"));
+		purple_connection_error(sip->gc, _("Couldn't create socket"));
 	}
 }
 
 
 
-static void srvresolved(GaimSrvResponse *resp, int results, gpointer data) {
+static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data) {
 	struct sipe_account_data *sip;
 	gchar *hostname;
 	int port;
@@ -1953,7 +1951,7 @@ static void srvresolved(GaimSrvResponse *resp, int results, gpointer data) {
 	sip = data;
 	sip->srv_query_data = NULL;
 
-	port = gaim_account_get_int(sip->account, "port", 0);
+	port = purple_account_get_int(sip->account, "port", 0);
 
 	/* find the host to connect to */
 	if(results) {
@@ -1962,10 +1960,10 @@ static void srvresolved(GaimSrvResponse *resp, int results, gpointer data) {
 			port = resp->port;
 		g_free(resp);
 	} else {
-		if(!gaim_account_get_bool(sip->account, "useproxy", FALSE)) {
+		if(!purple_account_get_bool(sip->account, "useproxy", FALSE)) {
 			hostname = g_strdup(sip->servername);
 		} else {
-			hostname = g_strdup(gaim_account_get_string(sip->account, "proxy", sip->servername));
+			hostname = g_strdup(purple_account_get_string(sip->account, "proxy", sip->servername));
 		}
 	}
 
@@ -1976,39 +1974,39 @@ static void srvresolved(GaimSrvResponse *resp, int results, gpointer data) {
 	/* TCP case */
 	if(!sip->udp) {
 		/* create socket for incoming connections */
-		sip->listen_data = gaim_network_listen_range(5060, 5160, SOCK_STREAM,
+		sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
 					sipe_tcp_connect_listen_cb, sip);
 		if (sip->listen_data == NULL) {
-			gaim_connection_error(sip->gc, _("Could not create listen socket"));
+			purple_connection_error(sip->gc, _("Could not create listen socket"));
 			return;
 		}
 	} else { /* UDP */
-		gaim_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
+		purple_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
 
-		sip->query_data = gaim_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
+		sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
 		if (sip->query_data == NULL) {
-			gaim_connection_error(sip->gc, _("Could not resolve hostname"));
+			purple_connection_error(sip->gc, _("Could not resolve hostname"));
 		}
 	}
 }
 
-static void sipe_login(GaimAccount *account)
+static void sipe_login(PurpleAccount *account)
 {
-	GaimConnection *gc;
+	PurpleConnection *gc;
 	struct sipe_account_data *sip;
 	gchar **userserver;
 	gchar *hosttoconnect;
 
-	const char *username = gaim_account_get_username(account);
-	gc = gaim_account_get_connection(account);
+	const char *username = purple_account_get_username(account);
+	gc = purple_account_get_connection(account);
 
 	if (strpbrk(username, " \t\v\r\n") != NULL) {
 		gc->wants_to_die = TRUE;
-		gaim_connection_error(gc, _("SIP Exchange usernames may not contain whitespaces"));
+		purple_connection_error(gc, _("SIP Exchange usernames may not contain whitespaces"));
 		return;
 	}
 
-        if(!gaim_account_get_bool(account, "ssl", FALSE)){
+        if(!purple_account_get_bool(account, "ssl", FALSE)){
            if (!purple_ssl_is_supported())
            {
                 gc->wants_to_die = TRUE;
@@ -2024,50 +2022,50 @@ static void sipe_login(GaimAccount *account)
 	sip->gc = gc;
 	sip->account = account;
 	sip->registerexpire = 900;
-	sip->udp = gaim_account_get_bool(account, "udp", FALSE);
-        sip->use_ssl = gaim_account_get_bool(account, "ssl", FALSE);
+	sip->udp = purple_account_get_bool(account, "udp", FALSE);
+        sip->use_ssl = purple_account_get_bool(account, "ssl", FALSE);
 
-        gaim_debug_info("sipe", "sip->use_ssl->%d\n", sip->use_ssl); 
+        purple_debug_info("sipe", "sip->use_ssl->%d\n", sip->use_ssl); 
         
 	/* TODO: is there a good default grow size? */
 	if(!sip->udp)
-		sip->txbuf = gaim_circ_buffer_new(0);
+		sip->txbuf = purple_circ_buffer_new(0);
 
 	userserver = g_strsplit(username, "@", 2);
-	gaim_connection_set_display_name(gc, userserver[0]);
+	purple_connection_set_display_name(gc, userserver[0]);
         sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL)); 
         sip->servername = g_strdup(userserver[1]);
-	sip->password = g_strdup(gaim_connection_get_password(gc));
+	sip->password = g_strdup(purple_connection_get_password(gc));
 	g_strfreev(userserver);
 
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
 
-	gaim_connection_update_progress(gc, _("Connecting"), 1, 2);
+	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
 	/* TODO: Set the status correctly. */
 	sip->status = g_strdup("available");
 
-	if(!gaim_account_get_bool(account, "useproxy", FALSE)) {
+	if(!purple_account_get_bool(account, "useproxy", FALSE)) {
 		hosttoconnect = g_strdup(sip->servername);
 	} else {
-		hosttoconnect = g_strdup(gaim_account_get_string(account, "proxy", sip->servername));
+		hosttoconnect = g_strdup(purple_account_get_string(account, "proxy", sip->servername));
                  
 	}
          /*SSL*/
-        gaim_debug_info("sipe", "HosttoConnect->%s\n", hosttoconnect);
+        purple_debug_info("sipe", "HosttoConnect->%s\n", hosttoconnect);
 
         if(sip->use_ssl){ 
-          sip->gsc = purple_ssl_connect(account,hosttoconnect, gaim_account_get_int(account, "port", 5061), login_cb_ssl, sipe_ssl_connect_failure, gc);
+          sip->gsc = purple_ssl_connect(account,hosttoconnect, purple_account_get_int(account, "port", 5061), login_cb_ssl, sipe_ssl_connect_failure, gc);
         }
         else{
-		sip->srv_query_data = gaim_srv_resolve("sip",
+		sip->srv_query_data = purple_srv_resolve("sip",
 			sip->udp ? "udp" : "tcp", hosttoconnect, srvresolved, sip);
 	}
         
 	g_free(hosttoconnect);
 }
 
-static void sipe_close(GaimConnection *gc)
+static void sipe_close(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 
@@ -2077,13 +2075,13 @@ static void sipe_close(GaimConnection *gc)
 		connection_free_all(sip);
 
 		if (sip->query_data != NULL)
-			gaim_dnsquery_destroy(sip->query_data);
+			purple_dnsquery_destroy(sip->query_data);
 
 		if (sip->srv_query_data != NULL)
-			gaim_srv_cancel(sip->srv_query_data);
+			purple_srv_cancel(sip->srv_query_data);
 
 		if (sip->listen_data != NULL)
-			gaim_network_listen_cancel(sip->listen_data);
+			purple_network_listen_cancel(sip->listen_data);
 
 		g_free(sip->servername);
 		g_free(sip->username);
@@ -2099,22 +2097,22 @@ static void sipe_close(GaimConnection *gc)
 		g_free(sip->proxy.realm);
 		g_free(sip->proxy.digest_session_key);
 		if(sip->txbuf)
-			gaim_circ_buffer_destroy(sip->txbuf);
+			purple_circ_buffer_destroy(sip->txbuf);
 		g_free(sip->realhostname);
-		if(sip->listenpa) gaim_input_remove(sip->listenpa);
-		if(sip->tx_handler) gaim_input_remove(sip->tx_handler);
-		if(sip->resendtimeout) gaim_timeout_remove(sip->resendtimeout);
-		if(sip->registertimeout) gaim_timeout_remove(sip->registertimeout);
+		if(sip->listenpa) purple_input_remove(sip->listenpa);
+		if(sip->tx_handler) purple_input_remove(sip->tx_handler);
+		if(sip->resendtimeout) purple_timeout_remove(sip->resendtimeout);
+		if(sip->registertimeout) purple_timeout_remove(sip->registertimeout);
 	}
 	g_free(gc->proto_data);
 	gc->proto_data = NULL;
 }
 
 /* not needed since privacy is checked for every subscribe */
-static void dummy_add_deny(GaimConnection *gc, const char *name) {
+static void dummy_add_deny(PurpleConnection *gc, const char *name) {
 }
 
-static void dummy_permit_deny(GaimConnection *gc) {
+static void dummy_permit_deny(PurpleConnection *gc) {
 }
 
 static gboolean sipe_plugin_load(PurplePlugin *plugin) {
@@ -2199,7 +2197,7 @@ static PurplePluginProtocolInfo prpl_info =
 };
 
 
-static GaimPluginInfo info = {
+static PurplePluginInfo info = {
 	PURPLE_PLUGIN_MAGIC,
 	PURPLE_MAJOR_VERSION,
 	PURPLE_MINOR_VERSION,
@@ -2235,32 +2233,32 @@ static void init_plugin(PurplePlugin *plugin)
 
         purple_plugin_register(plugin);
 
-	//split = gaim_account_user_split_new(_("Server"), "", '@');
+	//split = purple_account_user_split_new(_("Server"), "", '@');
 	//prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
-        option = gaim_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
+        option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-        option = gaim_account_option_string_new(_("Proxy Server"), "proxy", "");
+        option = purple_account_option_string_new(_("Proxy Server"), "proxy", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	/*option = gaim_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 
         option = purple_account_option_bool_new(_("Use SSL/TLS"), "ssl", FALSE);
         prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,option);
 
-	option = gaim_account_option_bool_new(_("Use UDP"), "udp", FALSE);
+	option = purple_account_option_bool_new(_("Use UDP"), "udp", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
         
-        option = gaim_account_option_int_new(_("Connect port"), "port", 5060);
+        option = purple_account_option_int_new(_("Connect port"), "port", 5060);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	/*option = gaim_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
+	/*option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	option = gaim_account_option_string_new(_("Proxy"), "proxy", "");
+	option = purple_account_option_string_new(_("Proxy"), "proxy", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
-	option = gaim_account_option_string_new(_("Auth User"), "authuser", "");
+	option = purple_account_option_string_new(_("Auth User"), "authuser", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	option = gaim_account_option_string_new(_("Auth Domain"), "authdomain", "");
+	option = purple_account_option_string_new(_("Auth Domain"), "authdomain", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	my_protocol = plugin;
 

@@ -34,12 +34,11 @@
 #include "network.h"
 #include "proxy.h"
 #include "prpl.h"
-#include "gaim-compat.h"
 #include "sslconn.h"
 
 #include "sipmsg.h"
 
-#define SIMPLE_BUF_INC 1024
+#define SIMPLE_BUF_INC 2048
 
 struct sip_dialog {
 	gchar *ourtag;
@@ -74,13 +73,13 @@ struct sip_auth {
 };
 
 struct sipe_account_data {
-	GaimConnection *gc;
+	PurpleConnection *gc;
 	gchar *servername;
 	gchar *username;
 	gchar *password;
-	GaimDnsQueryData *query_data;
-	GaimSrvQueryData *srv_query_data;
-	GaimNetworkListenData *listen_data;
+	PurpleDnsQueryData *query_data;
+	PurpleSrvQueryData *srv_query_data;
+	PurpleNetworkListenData *listen_data;
 	int fd;
 	int cseq;
 	time_t reregister;
@@ -96,8 +95,8 @@ struct sipe_account_data {
 	guint registertimeout;
 	guint resendtimeout;
 	gboolean connecting;
-	GaimAccount *account;
-	GaimCircBuffer *txbuf;
+	PurpleAccount *account;
+	PurpleCircBuffer *txbuf;
 	guint tx_handler;
 	gchar *regcallid;
 	GSList *transactions;
@@ -137,7 +136,7 @@ struct transaction {
 struct sipe_group {
 	gchar *name_group;
 	gchar *id;
-        GaimGroup *g;
+        PurpleGroup *g;
 };
 
 #endif /* _PIDGIN_SIPE_H */

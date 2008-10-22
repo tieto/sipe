@@ -23,8 +23,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _GAIM_NTLM_SIPE_H
-#define _GAIM_NTLM_SIPE_H
+#ifndef _PURPLE_NTLM_SIPE_H
+#define _PURPLE_NTLM_SIPE_H
 
 /**
  * Generates the base64 encoded type 1 message needed for NTLM authentication
@@ -33,7 +33,7 @@
  * @param domain The domain to authenticate to
  * @return base64 encoded string to send to the server. has to be freed with g_free
  */
-gchar *gaim_ntlm_gen_type1_sipe(gchar *hostname, gchar *domain);
+gchar *purple_ntlm_gen_type1_sipe(gchar *hostname, gchar *domain);
 
 /**
  * Parses the ntlm type 2 message
@@ -41,7 +41,7 @@ gchar *gaim_ntlm_gen_type1_sipe(gchar *hostname, gchar *domain);
  * @param type2 String containing the base64 encoded type2 message
  * @return The nonce for use in message type3
  */
-gchar *gaim_ntlm_parse_type2_sipe(gchar *type2, guint32 *flags);
+gchar *purple_ntlm_parse_type2_sipe(gchar *type2, guint32 *flags);
 
 /**
  * Generates a type3 message
@@ -50,20 +50,10 @@ gchar *gaim_ntlm_parse_type2_sipe(gchar *type2, guint32 *flags);
  * @param passw The password
  * @param hostname The hostname
  * @param domain The domain to authenticate against
- * @param nonce The nonce returned by gaim_ntlm_parse_type2
- * @param flags Pointer to the flags returned by gaim_ntlm_parse_type2
+ * @param nonce The nonce returned by purple_ntlm_parse_type2
+ * @param flags Pointer to the flags returned by purple_ntlm_parse_type2
  * @return A base64 encoded type3 message
  */
-gchar *gaim_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags);
+gchar *purple_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags);
 
-/**
- * Returns the IP address of the local system.
- *
- * This returns the value for real IP (avoid the 400 LCS error)
- *
- * @return The local real IP address
- */
-
-const char *sipe_network_get_local_system_ip(void);
-
-#endif /* _GAIM_NTLM_SIPE_H */
+#endif /* _PURPLE_NTLM_SIPE_H */

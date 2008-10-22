@@ -38,7 +38,6 @@
 #include <glib.h>
 #include <stdlib.h>
 #include "util.h"
-#include "gaim-compat.h"
 #include "cipher.h"
 #include <string.h>
 #include "sip-ntlm.h"
@@ -114,10 +113,10 @@ struct type3_message {
 #endif
 };
 
-gchar *gaim_ntlm_parse_type2_sipe(gchar *type2, guint32 *flags) {
+gchar *purple_ntlm_parse_type2_sipe(gchar *type2, guint32 *flags) {
 	gsize retlen;
 	static gchar nonce[8];
-	struct type2_message *tmsg = (struct type2_message*)gaim_base64_decode((char*)type2, &retlen);
+	struct type2_message *tmsg = (struct type2_message*)purple_base64_decode((char*)type2, &retlen);
 	memcpy(nonce, tmsg->nonce, 8);
 	if(flags) *flags = tmsg->flags;
 	g_free(tmsg);
@@ -140,15 +139,15 @@ static void setup_des_key(unsigned char key_56[], char *key)
  * helper function for gaim cipher.c
  */
 static void des_ecb_encrypt(char *plaintext, char *result, char *key) {
-	GaimCipher *cipher;
-	GaimCipherContext *context;
+	PurpleCipher *cipher;
+	PurpleCipherContext *context;
 	gsize outlen;
 	
-	cipher = gaim_ciphers_find_cipher("des");
-	context = gaim_cipher_context_new(cipher, NULL);
-	gaim_cipher_context_set_key(context, (guchar*)key);
-	gaim_cipher_context_encrypt(context, (guchar*)plaintext, 8, (guchar*)result, &outlen);
-	gaim_cipher_context_destroy(context);
+	cipher = purple_ciphers_find_cipher("des");
+	context = purple_cipher_context_new(cipher, NULL);
+	purple_cipher_context_set_key(context, (guchar*)key);
+	purple_cipher_context_encrypt(context, (guchar*)plaintext, 8, (guchar*)result, &outlen);
+	purple_cipher_context_destroy(context);
 }
 
 /*
@@ -181,7 +180,7 @@ static void gensesskey(char *buffer, char *oldkey) {
 }
 
 gchar *
-gaim_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
+purple_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
 {
 	char  lm_pw[14];
 	unsigned char lm_hpw[21];
@@ -198,8 +197,8 @@ gaim_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar 
 	unsigned char nt_hpw[21];
 	int lennt;
 	char  nt_pw[128];
-	GaimCipher *cipher;
-	GaimCipherContext *context;
+	PurpleCipher *cipher;
+	PurpleCipherContext *context;
 	char *tmp = 0;
 	int idx = 0;
 
@@ -266,11 +265,11 @@ gaim_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar 
 		nt_pw[2*idx+1] = 0;
 	}
 
-	cipher = gaim_ciphers_find_cipher("md4");
-	context = gaim_cipher_context_new(cipher, NULL);
-	gaim_cipher_context_append(context, (guchar*)nt_pw, 2*lennt);
-	gaim_cipher_context_digest(context, 21, (guchar*)nt_hpw, NULL);
-	gaim_cipher_context_destroy(context);
+	cipher = purple_ciphers_find_cipher("md4");
+	context = purple_cipher_context_new(cipher, NULL);
+	purple_cipher_context_append(context, (guchar*)nt_pw, 2*lennt);
+	purple_cipher_context_digest(context, 21, (guchar*)nt_hpw, NULL);
+	purple_cipher_context_destroy(context);
 
 	memset(nt_hpw+16, 0, 5);
 
@@ -292,77 +291,8 @@ gaim_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar 
 	/*tmsg->flags2 = 0x0a280105;
 	tmsg->flags3 = 0x0f000000;*/
 
-	tmp = gaim_base64_encode((guchar*) tmsg, msglen);
+	tmp = purple_base64_encode((guchar*) tmsg, msglen);
 	g_free(tmsg);
 	return tmp;
 }
-
-#ifndef _WIN32
-const char *
-sipe_network_get_local_system_ip(void)
-{
-	static char ip[16];
-	char buffer[1024];
-	struct ifconf ifc;
-	struct ifreq *ifr;
-	struct sockaddr_in *sinptr;
-	guint32 lhost = htonl(127 * 256 * 256 * 256 + 1);
-	long unsigned int add;
-	int source;
-        int num_ifreq;
-        int i;
-        int vpnc = 0;
-
-        source = socket(PF_INET,SOCK_DGRAM, 0);
-
-        ifc.ifc_len = sizeof(buffer);
-        ifc.ifc_req = (struct ifreq *)buffer;
-        ioctl(source, SIOCGIFCONF, &ifc);
-	num_ifreq = ifc.ifc_len / sizeof(struct ifreq);
-	for ( ifr = ifc.ifc_req, i = 0 ; i < num_ifreq; ifr++, i++ ) {
-	     gaim_debug_warning("sip-ntlm", "%d:name->%s\n",i,ifr->ifr_name);
-	     if (!strncmp(ifr->ifr_name,"tun",3)) {
-	         vpnc = 1;
-                 gaim_debug_warning("sip-ntlm", "There is a tunnel %d:name->%s\n",i,ifr->ifr_name); 
-	     }
-        }
-        for ( ifr = ifc.ifc_req, i = 0 ; i < num_ifreq; ifr++, i++ ) {
-	     if((ifr->ifr_flags & IFF_UP) != 0 || 
-	       (ifr->ifr_flags & IFF_LOOPBACK) ||
-	       (ifr->ifr_flags & (IFF_BROADCAST | IFF_POINTOPOINT)) == 0)
-               continue;
-	       if(!strncmp(ifr->ifr_name,"eth",3)  && vpnc == 1)
-               continue;
-	       if (ifr->ifr_addr.sa_family == AF_INET){
-                   sinptr = (struct sockaddr_in *)&ifr->ifr_addr;
-                   if (!strncmp(ifr->ifr_name,"tun",3) || !strncmp(ifr->ifr_name,"eth",3)){
-            	       add = ntohl(sinptr->sin_addr.s_addr);
-		       g_snprintf(ip, 16, "%lu.%lu.%lu.%lu",
-		                        ((add >> 24) & 255),
-		                        ((add >> 16) & 255),
-		                         ((add >> 8) & 255),
-		                                 add & 255);
-		       gaim_debug_warning("sip-ntlm", "ip->%s\n",ip);
-		       return ip;
-		   }
-               }
-        }
-        return "0.0.0.0";
-}
-#else /* _WIN32 */
-const char *
-sipe_network_get_local_system_ip(void)
-{
-  char * return_value;
-  gaim_debug_info("sip-ntlm", "retrieving local ip...\n");
-  return_value = purple_network_get_my_ip(-1);
-  if (return_value == NULL)
-  {
-    gaim_debug_warning("sip-ntlm", "local ip not retrievable\n");
-    return "0.0.0.0";
-  }
-  gaim_debug_info("sip-ntlm", "local ip->%s\n", return_value);
-  return return_value;
-}
-#endif /* _WIN32 */
 
