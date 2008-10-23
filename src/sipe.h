@@ -74,7 +74,7 @@ struct sip_auth {
 
 struct sipe_account_data {
 	PurpleConnection *gc;
-	gchar *servername;
+	gchar *sipdomain;
 	gchar *username;
 	gchar *password;
 	PurpleDnsQueryData *query_data;

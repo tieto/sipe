@@ -896,13 +896,13 @@ static char *get_contact_register(struct sipe_account_data  *sip)
 
 static char *get_contact(struct sipe_account_data  *sip)
 {
-        //return g_strdup_printf("<sip:%s@%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->servername, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp");
+        //return g_strdup_printf("<sip:%s@%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->sipdomain, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp");
         return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
 {
-	char *uri = g_strdup_printf("sip:%s", sip->servername);
+	char *uri = g_strdup_printf("sip:%s", sip->sipdomain);
 	char *to = g_strdup_printf("sip:%s", sip->username);
 	char *contact = get_contact_register(sip);
 	//char *hdr = g_strdup_printf("Contact: %s\r\nExpires: %d\r\n", contact, expire);
@@ -1115,7 +1115,7 @@ static void sipe_subscribe_buddylist(struct sipe_account_data *sip)
         gchar *contact = "Event: vnd-microsoft-roaming-contacts\r\nAccept: application/vnd-microsoft-roaming-contacts+xml\r\nSupported: com.microsoft.autoextend\r\nSupported: ms-benotify\r\nProxy-Require: ms-benotify\r\nSupported: ms-piggyback-first-notify\r\n";
 	gchar *to;
 	gchar *tmp;
-	//to = g_strdup_printf("sip:%s@%s", sip->username, sip->servername);
+	//to = g_strdup_printf("sip:%s@%s", sip->username, sip->sipdomain);
         to = g_strdup_printf("sip:%s", sip->username); 
 
 	tmp = get_contact(sip);
@@ -1562,7 +1562,7 @@ static void send_publish(struct sipe_account_data *sip)
 
 static void send_service(struct sipe_account_data *sip)
 {
-	//gchar *uri = g_strdup_printf("sip:%s@%s", sip->username, sip->servername);
+	//gchar *uri = g_strdup_printf("sip:%s@%s", sip->username, sip->sipdomain);
 	gchar *uri = g_strdup_printf("sip:%s", sip->username);
 	//gchar *doc = gen_pidf(sip);
 
@@ -2127,9 +2127,9 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 		g_free(resp);
 	} else {
 		if (!purple_account_get_bool(sip->account, "useproxy", FALSE)) {
-			hostname = g_strdup(sip->servername);
+			hostname = g_strdup(sip->sipdomain);
 		} else {
-			hostname = g_strdup(purple_account_get_string(sip->account, "proxy", sip->servername));
+			hostname = g_strdup(purple_account_get_string(sip->account, "proxy", sip->sipdomain));
 		}
 	}
 
@@ -2200,7 +2200,7 @@ static void sipe_login(PurpleAccount *account)
 	userserver = g_strsplit(username, "@", 2);
 	purple_connection_set_display_name(gc, userserver[0]);
         sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL)); 
-        sip->servername = g_strdup(userserver[1]);
+        sip->sipdomain = g_strdup(userserver[1]);
 	sip->password = g_strdup(purple_connection_get_password(gc));
 	g_strfreev(userserver);
 
@@ -2212,9 +2212,9 @@ static void sipe_login(PurpleAccount *account)
 	sip->status = g_strdup("available");
 
 	if (!purple_account_get_bool(account, "useproxy", FALSE)) {
-		hosttoconnect = g_strdup(sip->servername);
+		hosttoconnect = g_strdup(sip->sipdomain);
 	} else {
-		hosttoconnect = g_strdup(purple_account_get_string(account, "proxy", sip->servername));
+		hosttoconnect = g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain));
                  
 	}
          /*SSL*/
@@ -2249,7 +2249,7 @@ static void sipe_close(PurpleConnection *gc)
 		if (sip->listen_data != NULL)
 			purple_network_listen_cancel(sip->listen_data);
 
-		g_free(sip->servername);
+		g_free(sip->sipdomain);
 		g_free(sip->username);
 		g_free(sip->password);
 		g_free(sip->registrar.nonce);
