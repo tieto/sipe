@@ -306,9 +306,21 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 	authdomain = purple_account_get_string(sip->account, "authdomain", "");
 	authuser = purple_account_get_string(sip->account, "authuser", sip->username);
 
-	// XXX FIXME: get this info from the account dialogs
-	krb5_realm = "PUT_YOUR_REALM_HERE";
-	host       = "YOUROCS.DOMAIN.LOCAL";
+	// XXX FIXME: Get this info from the account dialogs and/or /etc/krb5.conf
+	//            and do error checking
+
+	// KRB realm should always be uppercase
+	krb5_realm = g_strup(purple_account_get_string(sip->account, "krb5_realm", ""));
+
+	if (sip->realhostname) {
+		host = sip->realhostname;
+	} else if (purple_account_get_bool(sip->account, "use_proxy", TRUE)) {
+		host = purple_account_get_string(sip->account, "proxy", "");
+	} else {
+		host = sip->sipdomain;
+	}
+
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "auth_header_without_newline - SIP host: %s\r\n", host);
 
 	krb5_token = purple_krb5_gen_auth_token(authuser, krb5_realm, sip->password, host, "sip");
 
@@ -400,9 +412,19 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
         const char *krb5_realm;
         const char *host;
 
-        // XXX FIXME: get this info from the account dialogs
-	krb5_realm = "PUT_YOUR_REALM_HERE";
-	host       = "YOUROCS.DOMAIN.LOCAL";
+        // XXX FIXME: Get this info from the account dialogs and/or /etc/krb5.conf
+        //            and do error checking
+
+	// KRB realm should always be uppercase
+	krb5_realm = g_strup(purple_account_get_string(sip->account, "krb5_realm", ""));
+
+	if (sip->realhostname) {
+		host = sip->realhostname;
+	} else if (purple_account_get_bool(sip->account, "use_proxy", TRUE)) {
+		host = purple_account_get_string(sip->account, "proxy", "");
+	} else {
+		host = sip->sipdomain;
+	}
 
 	authuser   = purple_account_get_string(sip->account, "authuser", sip->username);
 
@@ -477,7 +499,6 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		//} else {
 		//        auth->nc = 3;
 		//}
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth - auth->nc: %d\r\n", auth->nc);
 		return;
 
 	}
@@ -2122,13 +2143,16 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 	/* find the host to connect to */
 	if (results) {
 		hostname = g_strdup(resp->hostname);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - SRV hostname: %s\r\n", hostname);
 		if (!port)
 			port = resp->port;
 		g_free(resp);
 	} else {
 		if (!purple_account_get_bool(sip->account, "useproxy", FALSE)) {
+			purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using sipdomain\r\n");
 			hostname = g_strdup(sip->sipdomain);
 		} else {
+			purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using specified SIP proxy\r\n");
 			hostname = g_strdup(purple_account_get_string(sip->account, "proxy", sip->sipdomain));
 		}
 	}
@@ -2138,22 +2162,22 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 	if (!sip->realport) sip->realport = 5060;
 
 	/* TCP case */
-	if (!sip->udp) {
-		/* create socket for incoming connections */
-		sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
-					sipe_tcp_connect_listen_cb, sip);
-		if (sip->listen_data == NULL) {
-			purple_connection_error(sip->gc, _("Could not create listen socket"));
-			return;
-		}
-	} else { /* UDP */
-		purple_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
+	//if (!sip->udp) {
+	//	/* create socket for incoming connections */
+	//	sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
+	//				sipe_tcp_connect_listen_cb, sip);
+	//	if (sip->listen_data == NULL) {
+	//		purple_connection_error(sip->gc, _("Could not create listen socket"));
+	//		return;
+	//	}
+	//} else { /* UDP */
+	//	purple_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
 
-		sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
-		if (sip->query_data == NULL) {
-			purple_connection_error(sip->gc, _("Could not resolve hostname"));
-		}
-	}
+	//	sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
+	//	if (sip->query_data == NULL) {
+	//		purple_connection_error(sip->gc, _("Could not resolve hostname"));
+	//	}
+	//}
 }
 
 static void sipe_login(PurpleAccount *account)
@@ -2204,6 +2228,20 @@ static void sipe_login(PurpleAccount *account)
 	sip->password = g_strdup(purple_connection_get_password(gc));
 	g_strfreev(userserver);
 
+	if (sip->use_ssl) {
+		// Communicator queries _sipinternaltls._tcp.domain.com and uses that
+		// information to connect to the OCS server.
+		//
+		// XXX FIXME: eventually we should also query for sipexternaltls as well
+		//            if Pidgin is not on the local LAN
+		//  This doesn't quite work as advertised yet so make sure your have 
+		//  your OCS FQDN in the proxy setting in the SIPE account settings
+		//
+		sip->srv_query_data = purple_srv_resolve("sipinternaltls", "tcp", sip->sipdomain, srvresolved, sip);
+	}
+
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - realhostname: %s\r\n", sip->realhostname);
+
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
 
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
@@ -2212,6 +2250,7 @@ static void sipe_login(PurpleAccount *account)
 	sip->status = g_strdup("available");
 
 	if (!purple_account_get_bool(account, "useproxy", FALSE)) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - checking realhostname again: %s\r\n", sip->realhostname);
 		hosttoconnect = g_strdup(sip->sipdomain);
 	} else {
 		hosttoconnect = g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain));
