@@ -24,5 +24,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  */
 
+#ifndef _PIDGIN_SIPE_KRB5_H
+#define _PIDGIN_SIPE_KRB5_H
 
-gchar *purple_krb5_gen_auth_token(const gchar *authuser, const gchar *realm, const gchar *password, const gchar *hostname, const gchar *service);
+struct sipe_krb5_auth {
+	const char * authuser;
+	const char * realm;
+	char * password;
+	const char * hostname;
+	const char * service;
+
+	char * token;
+	gchar * base64_token;
+
+	//gss_ctx_id_t * gss_context;
+};
+
+void purple_krb5_init_auth(struct sipe_krb5_auth *, const char *authuser, const char *realm, char *password, const char *hostname, const char *service);
+void purple_krb5_gen_auth_token(struct sipe_krb5_auth * auth);
+
+#endif /* _PIDGIN_SIPE_KRB5_H */

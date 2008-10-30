@@ -244,8 +244,8 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
         while(tmp) {
                 elem = tmp->data;
 		purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
-                if(strcmp(elem->name,"WWW-Authenticate")==0) {
-			if (g_strncasecmp((gchar *)elem->value, name, name_len)) {
+                if(elem && elem->name && !strcmp(elem->name,"WWW-Authenticate")) {
+			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
 				purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "elem->value: %s\r\n", elem->value);
                         	return elem->value;
 			}

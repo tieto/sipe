@@ -37,12 +37,36 @@
 
 #include "sipkrb5.h"
 
-gchar *
-purple_krb5_gen_auth_token(const gchar *authuser,
-			   const gchar *realm,
-			   const gchar * password,
-			   const gchar *hostname,
-			   const gchar *service)
+void log_krb5_error(krb5_context ctx, krb5_error_code err, char * msg)
+{
+	const char * err_msg = krb5_get_error_message(ctx, err);
+	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "%s; error: %s\n", msg, err_msg);
+	krb5_free_error_message(ctx, err_msg);
+}
+
+void
+purple_krb5_init_auth(struct sipe_krb5_auth * auth,
+		      const char *authuser,
+		      const char *realm,
+		      char *password,
+		      const char *hostname,
+		      const char *service)
+{
+	auth->authuser = authuser;
+	auth->realm = realm;
+	auth->password = password;
+	auth->hostname = hostname;
+	auth->service = service;
+
+	auth->token = NULL;
+	auth->base64_token = NULL;
+	//auth->gss_context = NULL;
+
+	purple_krb5_gen_auth_token(auth);
+}
+
+void
+purple_krb5_gen_auth_token(struct sipe_krb5_auth * auth)
 {
 	/* 
 	 * Ideally we will check to see if a Kerberos ticket already exists in the 
@@ -52,11 +76,6 @@ purple_krb5_gen_auth_token(const gchar *authuser,
 	 * XXX FIXME - Check for ticket already and create a KRB_AP_REQ from creds
 	 *             we already have.
 	 */
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "entered Kerberos code\r\n");
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "hostname: %s, length: %d\r\n", (char *)hostname, strlen((char *)hostname));
-
-
-	gchar		*krb5_token;
 
 	krb5_context	context;
 	krb5_principal	principal;
@@ -68,53 +87,69 @@ purple_krb5_gen_auth_token(const gchar *authuser,
 	memset(&credentials, 0, sizeof(krb5_creds));
 
 	// Initialize the KRB context
-	krb5_init_context(&context);
-
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "KRB context initialized\r\n");
-
-	// Build a Kerberos principal and get a TGT if there isn't one already
-	krb5_build_principal(context, &principal, strlen(realm), realm, authuser, NULL);
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "KRB principal built\r\n");
-
-	krb5_get_init_creds_password(context, &credentials, principal, (char *)password, NULL, NULL, 0, NULL, NULL);
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "Got TGT\r\n");
-
-	// Initialize default credentials cache
-	krb5_cc_default(context, &ccdef);
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "Returned from krb5_cc_default\r\n");
-
-	if (retval = krb5_cc_initialize(context, ccdef, credentials.client)) {
-		com_err(progname, retval, "while initializing credentials cache\r\n");
-		return NULL;
+	if (retval = krb5_init_context(&context)) {
+		log_krb5_error(context, retval, "krb5_init_context");
+		return;
 	}
 
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "Default credentials cache initialized\r\n");
+	// Build a Kerberos principal and get a TGT if there isn't one already
+	if (retval = krb5_build_principal(context, &principal, strlen(auth->realm), auth->realm, auth->authuser, NULL)) {
+		log_krb5_error(context, retval, "krb5_build_principal");
+		goto free_context;
+	}
+
+	if (retval = krb5_get_init_creds_password(context, &credentials, principal, auth->password, NULL, NULL, 0, NULL, NULL)) {
+		log_krb5_error(context, retval, "krb5_get_init_creds_password");
+		goto free_principal;
+	}
+
+	// Initialize default credentials cache
+	if (retval = krb5_cc_default(context, &ccdef)) {
+		log_krb5_error(context, retval, "krb5_cc_default");
+		goto free_principal;
+	}
+
+	if (credentials.client == NULL) {
+		log_krb5_error(context, retval, "credentials.client == NULL");
+		goto free_principal;
+	}
+
+	if (retval = krb5_cc_initialize(context, ccdef, credentials.client)) {
+		log_krb5_error(context, retval, "krb5_cc_initialize");
+		goto free_principal;
+	}
 
 	// Store the TGT
-	krb5_cc_store_cred(context, ccdef, &credentials);
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "Stored TGT\r\n");
+	if (retval = krb5_cc_store_cred(context, ccdef, &credentials)) {
+		log_krb5_error(context, retval, "krb5_cc_store_cred");
+		goto free_principal;
+	}
 
 	// Prepare the AP-REQ
 	krb5_data		inbuf, ap_req;
 	krb5_auth_context	auth_context = NULL;
 
-	inbuf.data = (char *)hostname;
-	inbuf.length = strlen((char *)hostname);
+	inbuf.data = (char *)auth->hostname;
+	inbuf.length = strlen((char *)auth->hostname);
 	
-	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "Setup inbuf data - hostname: %s, length: %d\r\n", (char *)hostname, strlen((char *)hostname));
-
-	if ((retval = krb5_mk_req(context, &auth_context, AP_OPTS_MUTUAL_REQUIRED, (char *)service, (char *)hostname, &inbuf, ccdef, &ap_req))) {
-		purple_debug(PURPLE_DEBUG_MISC, "purple_krb5_gen_auth_token", "problem generating the KRB_AP_REQ\r\n");
-		return NULL;
+	if ((retval = krb5_mk_req(context, &auth_context, AP_OPTS_MUTUAL_REQUIRED, (char *)auth->service, (char *)auth->hostname, &inbuf, ccdef, &ap_req))) {
+		log_krb5_error(context, retval, "krb5_mk_req");
+		goto free_principal;
 	}
 
-	krb5_token = purple_base64_encode((gchar *)ap_req.data, ap_req.length);
+	auth->token = (char *)ap_req.data;
+	auth->base64_token = purple_base64_encode(auth->token, ap_req.length);
 
-	purple_debug(PURPLE_DEBUG_MISC, "purple_krb5_gen_auth_token", "token %s\r\n", (char *)krb5_token);
+	// Initialize the GSS layer
+	//initialize_gss(auth, &(credentials.server));
+
+	purple_debug(PURPLE_DEBUG_MISC, "sipkrb5", "generated krb5 auth token and initialized GSS context\n");
 
 	// Clean up
+	free_principal:
 	krb5_free_principal(context, principal);
-	krb5_free_context(context);
 
-	return krb5_token;
+	free_context:
+	krb5_free_context(context);
 }
+

@@ -290,6 +290,8 @@ static GList *sipe_status_types(PurpleAccount *acc)
 	return types;
 }
 
+static struct sipe_krb5_auth krb5_auth;
+
 static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 		struct sip_auth *auth, const gchar *method, const gchar *target)
 {
@@ -322,7 +324,8 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 
 	purple_debug(PURPLE_DEBUG_MISC, "sipe", "auth_header_without_newline - SIP host: %s\r\n", host);
 
-	krb5_token = purple_krb5_gen_auth_token(authuser, krb5_realm, sip->password, host, "sip");
+	purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
+	krb5_token = krb5_auth.base64_token;
 
 	if (!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
@@ -354,12 +357,12 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 		/* Kerberos */
 		if (auth->nc == 3) {
 			ret = krb5_token;
-			tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"\r", "SIP Communications Service", auth->target, ret);
+			tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", "SIP Communications Service", auth->target, ret);
 			g_free(ret);
 			purple_debug(PURPLE_DEBUG_MISC, "sipe", "returning from auth_header via Kerberos\r\n");
 			return tmp;
 		}
-		tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"\r", "SIP Communication Service", auth->target);
+		tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", "SIP Communication Service", auth->target);
 	}
 
 	sprintf(noncecount, "%08d", auth->nc++);
@@ -475,12 +478,13 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "setting auth type to Kerberos (3)\r\n");
 		auth->type = 3;
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth - header: %s\r\n", hdr);
-		parts = g_strsplit(hdr+5, "\", ", 0);
+		parts = g_strsplit(hdr+9, "\", ", 0);
 		i = 0;
 		while (parts[i]) {
 			purple_debug_info("sipe", "krb - parts[i] %s\n", parts[i]);
 			if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
-				auth->nonce = g_memdup(purple_krb5_gen_auth_token(authuser, krb5_realm, sip->password, host, "sip"), 8);
+				purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
+				auth->nonce = g_memdup(krb5_auth.base64_token, 8);
 				g_free(tmp);
 			}
 			if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
@@ -1196,7 +1200,6 @@ static void sipe_invite(struct sipe_account_data *sip, const char *name)
 static void sipe_buddy_resub(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
 {
 	time_t curtime = time(NULL);
-	purple_debug_info("sipe", "buddy resub\n");
 	if (buddy->resubscribe < curtime) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_buddy_resub %s\n", name);
 		sipe_subscribe(sip, buddy);
@@ -1412,7 +1415,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					purple_connection_error(sip->gc, _("Wrong Password"));
 					return TRUE;
 				}
-				if (purple_account_get_bool(sip->account, "krb5", FALSE)) {
+				if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
 					tmp = sipmsg_find_auth_header(msg, "NTLM");
 				} else {
 					tmp = sipmsg_find_auth_header(msg, "Kerberos");
@@ -1741,7 +1744,7 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 							if (sip->registrar.retries > 4) return;
 							sip->registrar.retries++;
 
-							if (purple_account_get_bool(sip->account, "krb5", FALSE)) {
+							if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
 								ptmp = sipmsg_find_auth_header(msg, "NTLM");
 							} else {
 								ptmp = sipmsg_find_auth_header(msg, "Kerberos");

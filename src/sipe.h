@@ -38,7 +38,7 @@
 
 #include "sipmsg.h"
 
-#define SIMPLE_BUF_INC 2048
+#define SIMPLE_BUF_INC 4096
 
 struct sip_dialog {
 	gchar *ourtag;
