@@ -32,6 +32,7 @@ struct sipmsg {
 	GSList *headers;
 	int bodylen;
 	gchar *body;
+	gchar *signature;
 };
 
 struct siphdrelement {
@@ -39,12 +40,15 @@ struct siphdrelement {
 	gchar *value;
 };
 
+static gchar * empty_string = "";
+
 struct sipmsg *sipmsg_parse_msg(const gchar *msg);
 struct sipmsg *sipmsg_parse_header(const gchar *header);
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value);
 void sipmsg_add_header_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos);
 void sipmsg_free(struct sipmsg *msg);
 gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name);
+gchar * sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def);
 gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_remove_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_print(const struct sipmsg *msg);

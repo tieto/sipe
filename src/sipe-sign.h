@@ -1,13 +1,10 @@
 /*
- * sipkrb5.c - Methods for Using Kerberos Authentication with SIP
- * per MS SIPAE
- *
- * http://msdn.microsoft.com/en-us/library/cc431510.aspx
+ * sipe-sign.h
  *
  */
 
 /* 
- * Copyright (C)2008 Andrew Rechenberg
+ * Copyright (C) 2008 Novell, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +21,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  */
 
-#ifndef _PIDGIN_SIPE_KRB5_H
-#define _PIDGIN_SIPE_KRB5_H
+#ifndef _PIDGIN_SIPE_SIGN_H
+#define _PIDGIN_SIPE_SIGN_H
 
 #include <glib.h>
 #include <time.h>
@@ -40,25 +37,23 @@
 #include "sslconn.h"
 
 #include "sipmsg.h"
-#include <gssapi.h>
 
-struct sipe_krb5_auth {
-	const char * authuser;
-	const char * realm;
-	char * password;
-	const char * hostname;
-	const char * service;
-
-	char * token;
-	gchar * base64_token;
-
-	gss_ctx_id_t * gss_context;
+struct sipmsg_breakdown {
+	struct sipmsg * msg;
+	gchar * rand;
+	gchar * num;
+	gchar * realm;
+	gchar * target_name;
+	gchar * call_id;
+	gchar * cseq;
+	gchar * from_url;
+	gchar * from_tag;
+	gchar * to_tag;
+	gchar * expires;
 };
 
-void purple_krb5_init_auth(struct sipe_krb5_auth *, const char *authuser, const char *realm, char *password, const char *hostname, const char *service);
-void purple_krb5_gen_auth_token(struct sipe_krb5_auth * auth);
+void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target);
+gchar* sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd);
+void sipmsg_breakdown_free(struct sipmsg_breakdown * msg);
 
-gchar * purple_krb5_get_mic(struct sipe_krb5_auth * auth, char * msg);
-gchar * purple_krb5_get_mic_for_sipmsg(struct sipe_krb5_auth * auth, struct sipmsg * msg);
-
-#endif /* _PIDGIN_SIPE_KRB5_H */
+#endif /* _PIDGIN_SIPE_SIGN_H */

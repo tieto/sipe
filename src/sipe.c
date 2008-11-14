@@ -56,6 +56,7 @@
 #include "sipkrb5.h"
 
 #include "sipmsg.h"
+#include "sipe-sign.h"
 #include "dnssrv.h"
 
 static char *gentag()
@@ -290,11 +291,11 @@ static GList *sipe_status_types(PurpleAccount *acc)
 	return types;
 }
 
-static struct sipe_krb5_auth krb5_auth;
-
-static gchar *auth_header_without_newline(struct sipe_account_data *sip,
-		struct sip_auth *auth, const gchar *method, const gchar *target)
+//static struct sipe_krb5_auth krb5_auth;
+static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg, gboolean force_reauth)
 {
+	const gchar *method = msg->method;
+	const gchar *target = msg->target;
 	gchar noncecount[9];
 	gchar *response;
 	gchar *ret;
@@ -303,7 +304,7 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 	const char *authuser;
 	const char *krb5_realm;
 	const char *host;
-	gchar      *krb5_token;
+	gchar      *krb5_token = NULL;
 
 	authdomain = purple_account_get_string(sip->account, "authdomain", "");
 	authuser = purple_account_get_string(sip->account, "authuser", sip->username);
@@ -312,7 +313,7 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 	//            and do error checking
 
 	// KRB realm should always be uppercase
-	krb5_realm = g_strup(purple_account_get_string(sip->account, "krb5_realm", ""));
+	//krb5_realm = g_strup(purple_account_get_string(sip->account, "krb5_realm", ""));
 
 	if (sip->realhostname) {
 		host = sip->realhostname;
@@ -322,16 +323,21 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 		host = sip->sipdomain;
 	}
 
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "auth_header_without_newline - SIP host: %s\r\n", host);
+	/*gboolean new_auth = krb5_auth.gss_context == NULL;
+	if (new_auth) {
+		purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
+	}
+  
+	if (new_auth || force_reauth) {
+		krb5_token = krb5_auth.base64_token;
+	}
 
 	purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
-	krb5_token = krb5_auth.base64_token;
+	krb5_token = krb5_auth.base64_token;*/
 
 	if (!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
 	}
-
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "auth_header_without_newline - auth type: %d\r\n", auth->type);
 
 	if (auth->type == 1) { /* Digest */
 		sprintf(noncecount, "%08d", auth->nc++);
@@ -344,22 +350,44 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 		g_free(response);
 		return ret;
 	} else if (auth->type == 2) { /* NTLM */
-		if (auth->nc == 3 && auth->nonce) {
-			/* TODO: Don't hardcode "purple" as the hostname */
-			ret = purple_ntlm_gen_type3_sipe(authuser, sip->password, "purple", authdomain, (const guint8 *)auth->nonce, &auth->flags);
-			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, ret);
-			g_free(ret);
+		// If we have a signature for the message, include that
+		if (msg->signature) {
+			tmp = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", response=\"%s\"", auth->realm, auth->target, msg->signature);
 			return tmp;
 		}
+
+		if (auth->nc == 3 && auth->nonce) {
+			/* TODO: Don't hardcode "purple" as the hostname */
+			gchar * gssapi_data = purple_ntlm_gen_authenticate(authuser, sip->password, "purple", authdomain, (const guint8 *)auth->nonce, &auth->flags);
+			//auth->ntlm_key = purple_ntlm_get_key();
+			//printf ("ntlmkey == now NULL? %i\n", auth->ntlm_key == NULL);
+			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, gssapi_data);
+			g_free(gssapi_data);
+			return tmp;
+		}
+
 		tmp = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth->realm, auth->target);
 		return tmp;
 	} else if (auth->type == 3) {
 		/* Kerberos */
 		if (auth->nc == 3) {
-			ret = krb5_token;
-			tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", "SIP Communications Service", auth->target, ret);
-			g_free(ret);
-			purple_debug(PURPLE_DEBUG_MISC, "sipe", "returning from auth_header via Kerberos\r\n");
+			/*if (new_auth || force_reauth) {
+				printf ("krb5 token not NULL, so adding gssapi-data attribute; op = %s\n", auth->opaque);
+				if (auth->opaque) {
+					tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", opaque=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", "SIP Communications Service", auth->opaque, auth->target, krb5_token);
+				} else {
+					tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", "SIP Communications Service", auth->target, krb5_token);
+				}
+			} else {
+				//gchar * mic = purple_krb5_get_mic_for_sipmsg(&krb5_auth, msg);
+				gchar * mic = "MICTODO";
+				printf ("krb5 token is NULL, so adding response attribute with mic = %s, op=%s\n", mic, auth->opaque);
+				//tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", opaque=\"%s\", targetname=\"%s\", response=\"%s\"", "SIP Communications Service", auth->opaque, auth->target, mic);
+				//tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", opaque=\"%s\", targetname=\"%s\"", "SIP Communications Service",
+						//auth->opaque ? auth->opaque : "", auth->target);
+				tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\"", "SIP Communications Service", auth->target);
+				//g_free(mic);
+			}*/
 			return tmp;
 		}
 		tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", "SIP Communication Service", auth->target);
@@ -376,12 +404,11 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip,
 	return ret;
 }
 
-static gchar *auth_header(struct sipe_account_data *sip,
-		struct sip_auth *auth, const gchar *method, const gchar *target)
+static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg, gboolean force_reauth)
 {
 	gchar *with, *without;
 
-	without = auth_header_without_newline(sip, auth, method, target);
+	without = auth_header_without_newline(sip, auth, msg, force_reauth);
 	with = g_strdup_printf("%s\r\n", without);
 	g_free (without);
 	return with;
@@ -419,7 +446,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
         //            and do error checking
 
 	// KRB realm should always be uppercase
-	krb5_realm = g_strup(purple_account_get_string(sip->account, "krb5_realm", ""));
+	/*krb5_realm = g_strup(purple_account_get_string(sip->account, "krb5_realm", ""));
 
 	if (sip->realhostname) {
 		host = sip->realhostname;
@@ -427,7 +454,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		host = purple_account_get_string(sip->account, "proxy", "");
 	} else {
 		host = sip->sipdomain;
-	}
+	}*/
 
 	authuser   = purple_account_get_string(sip->account, "authuser", sip->username);
 
@@ -441,14 +468,13 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	}
 
 	if (!g_strncasecmp(hdr, "NTLM", 4)) {
-		purple_debug_info("sipe", "found NTLM\n");
 		auth->type = 2;
 		parts = g_strsplit(hdr+5, "\", ", 0);
 		i = 0;
 		while (parts[i]) {
-			purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
+			//purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
 			if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
-				auth->nonce = g_memdup(purple_ntlm_parse_type2_sipe(tmp, &auth->flags), 8);
+				auth->nonce = g_memdup(purple_ntlm_parse_challenge(tmp, &auth->flags), 8);
 				g_free(tmp);
 			}
 			if ((tmp = parse_attribute("targetname=\"",
@@ -483,8 +509,10 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		while (parts[i]) {
 			purple_debug_info("sipe", "krb - parts[i] %s\n", parts[i]);
 			if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
-				purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
-				auth->nonce = g_memdup(krb5_auth.base64_token, 8);
+				/*if (krb5_auth.gss_context == NULL) {
+					purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
+				}
+				auth->nonce = g_memdup(krb5_auth.base64_token, 8);*/
 				g_free(tmp);
 			}
 			if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
@@ -504,9 +532,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		//        auth->nc = 3;
 		//}
 		return;
-
 	}
-
 
 	auth->type = 1;
 	parts = g_strsplit(hdr, " ", 0);
@@ -774,6 +800,9 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 		sipmsg_add_header(msg, "Content-Length", "0");
 	}
 
+	//gchar * mic = purple_krb5_get_mic_for_sipmsg(&krb5_auth, msg);
+	//gchar * mic = "MICTODO";
+
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
 	while (tmp) {
 		name = ((struct siphdrelement*) (tmp->data))->name;
@@ -794,11 +823,11 @@ static void transactions_remove(struct sipe_account_data *sip, struct transactio
 	g_free(trans);
 }
 
-static void transactions_add_buf(struct sipe_account_data *sip, const gchar *buf, void *callback)
+static void transactions_add_buf(struct sipe_account_data *sip, const struct sipmsg *msg, void *callback)
 {
 	struct transaction *trans = g_new0(struct transaction, 1);
 	trans->time = time(NULL);
-	trans->msg = sipmsg_parse_msg(buf);
+	trans->msg = msg;
 	trans->cseq = sipmsg_find_header(trans->msg, "CSeq");
 	trans->callback = callback;
 	sip->transactions = g_slist_append(sip->transactions, trans);
@@ -827,7 +856,6 @@ static void send_sip_request(PurpleConnection *gc, const gchar *method,
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	char *callid = dialog ? g_strdup(dialog->callid) : gencallid();
-	char *auth = NULL;
 	const char *addh = "";
 	gchar *branch = genbranch();
 	gchar *tag = NULL;
@@ -844,42 +872,25 @@ static void send_sip_request(PurpleConnection *gc, const gchar *method,
 	}
 
 	if (addheaders) addh = addheaders;
-	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
-		buf = auth_header(sip, &sip->registrar, method, url);
-		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
-			auth = g_strdup_printf("Authorization: %s", buf);
-		} else {
-			auth = g_strdup_printf("Proxy-Authorization: %s", buf);
-		}
-		g_free(buf);
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "1 header %s", auth);
-	}
-	
-	if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method,"NOTIFY")) {
-		sip->registrar.nc=2;
-		sip->registrar.type=2;
-		
-		buf = auth_header(sip, &sip->registrar, method, url);
-/*g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"\r\n", sip->registrar.realm, sip->registrar.target);*/
-             
-	        auth = g_strdup_printf("Proxy-Authorization: %s", buf);
-                purple_debug(PURPLE_DEBUG_MISC, "sipe", "3 header %s", auth);
-	        g_free(buf);
-	}
+
 
 	if (!dialog)
 		tag = gentag();
 
 	buf = g_strdup_printf("%s %s SIP/2.0\r\n"
 			"Via: SIP/2.0/%s %s:%d;branch=%s\r\n"
-			/* Don't know what epid is, but LCS wants it */
+			/* epid Identifies a unique endpoint for the user. Used by
+			 * the server to determine the correct SA to use for
+			 * signing an outgoing response.
+			 * TODO: generate a random epid
+			 * */
 			"From: <sip:%s>;tag=%s;epid=1234567890\r\n"
 			"To: <%s>%s%s\r\n"
 			"Max-Forwards: 70\r\n"
 			"CSeq: %d %s\r\n"
 			"User-Agent: Purple/" VERSION "\r\n"
 			"Call-ID: %s\r\n"
-			"%s%s"
+			"%s"
 			"Content-Length: %" G_GSIZE_FORMAT "\r\n\r\n%s",
 			method,
 			url,
@@ -895,23 +906,67 @@ static void send_sip_request(PurpleConnection *gc, const gchar *method,
 			++sip->cseq,
 			method,
 			callid,
-			auth ? auth : "",
 			addh,
 			strlen(body),
 			body);
 
+
+	//printf ("parsing msg buf:\n%s\n\n", buf);
+	msg = sipmsg_parse_msg(buf);
+
+	g_free(buf);
 	g_free(tag);
-	g_free(auth);
 	g_free(branch);
 	g_free(callid);
 
+	if (purple_ntlm_authorized()) {
+		struct sipmsg_breakdown msgbd;
+		msgbd.msg = msg;
+		sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
+		gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
+
+		printf ("Have signature_input_str: %s\n", signature_input_str);
+		if (signature_input_str != NULL) {
+			msg->signature = purple_ntlm_signature_make (signature_input_str, 0, NULL);
+		}
+		msg->signature = NULL;
+
+		g_free(signature_input_str);
+		sipmsg_breakdown_free(&msgbd);
+	} else {
+		printf ("registrar ntlm_key is null.  proxies? %i\n", sip->proxy.ntlm_key == NULL);
+	}
+
+	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
+		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
+		printf("1.for sig %s got auth buf %s\n", msg->signature, buf);
+		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+			sipmsg_add_header(msg, "Authorization", buf);
+		} else {
+			sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
+			//sipmsg_add_header_pos(msg, "Authorization", buf, 5);
+		}
+		g_free(buf);
+	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method,"NOTIFY")) {
+		sip->registrar.nc=3;
+		sip->registrar.type=2;
+		
+		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
+		printf("2.for sig %s got auth buf %s\n", msg->signature, buf);
+		//buf = auth_header(sip, &sip->proxy, msg, FALSE);
+		sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
+		//sipmsg_add_header(msg, "Authorization", buf);
+	        g_free(buf);
+	}
+
+
+	buf = sipmsg_to_string (msg);
+
 	/* add to ongoing transactions */
 
-	transactions_add_buf(sip, buf, tc);
+	transactions_add_buf(sip, msg, tc);
 
 	sendout_pkt(gc, buf);
-
-	g_free(buf);
 }
 
 static char *get_contact_register(struct sipe_account_data  *sip)
@@ -993,7 +1048,6 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 	gchar *to;
 
 	if (msg->response == 200 || msg->response == 202) {
-                purple_debug_info("sipe", "Devolvio un response %d\n", msg->response);
 		return TRUE;
 	}
 
@@ -1377,7 +1431,6 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 	expires_header = sipmsg_find_header(msg, "Expires");
 	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "in process register response response: %d\n", msg->response);
 	purple_debug_info("sipe", "got response to REGISTER; expires = %d\n", expires);
 
 	switch (msg->response) {
@@ -1492,16 +1545,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 }
 
+
 static gchar *find_tag(const gchar *hdr)
 {
-	const gchar *tmp = strstr(hdr, ";tag="), *tmp2;
-
-	if (!tmp) return NULL;
-	tmp += 5;
-	if ((tmp2 = strchr(tmp, ';'))) {
-		return g_strndup(tmp, tmp2 - tmp);
-	}
-	return g_strdup(tmp);
+	return sipmsg_find_part_of_header (hdr, ";tag=", ";", NULL);
 }
 
 static gchar* gen_xpidf(struct sipe_account_data *sip)
@@ -1719,7 +1766,7 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 				ptmp = sipmsg_find_header(msg, "Proxy-Authenticate");
 
 				fill_auth(sip, ptmp, &sip->proxy);
-				auth = auth_header(sip, &sip->proxy, trans->msg->method, trans->msg->target);
+				auth = auth_header(sip, &sip->proxy, trans->msg, TRUE);
 				sipmsg_remove_header(trans->msg, "Proxy-Authorization");
 				sipmsg_add_header_pos(trans->msg, "Proxy-Authorization", auth, 5);
 				g_free(auth);
@@ -1753,7 +1800,7 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\r\n", ptmp);
 
 							fill_auth(sip, ptmp, &sip->registrar);
-							auth = auth_header(sip, &sip->registrar, trans->msg->method, trans->msg->target);
+							auth = auth_header(sip, &sip->registrar, trans->msg, TRUE);
 							sipmsg_remove_header(trans->msg, "Proxy-Authorization");
 							sipmsg_add_header(trans->msg, "Proxy-Authorization", auth);
 							
@@ -1832,8 +1879,34 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			sipmsg_free(msg);
 			return;
 		}
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "in process response response: %d\n", msg->response);
+
+		//gchar * mic = purple_krb5_get_mic_for_sipmsg(&krb5_auth, msg);
+		//printf ("\nWe think MIC for incoming should be: %s\n\n", mic);
+		//g_free(mic);
+		//if (purple_ntlm_authorized()) {
+		if (1) {
+			struct sipmsg_breakdown msgbd;
+			msgbd.msg = msg;
+			sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
+			gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
+
+			printf ("Have signature_input_str for incoming msg: %s\n", signature_input_str);
+			if (signature_input_str != NULL) {
+				guint64 srand = g_ascii_strtoull (msgbd.rand, NULL, 16);
+				printf ("Have srand = %ld\n", srand);
+				msg->signature = purple_ntlm_signature_make (signature_input_str, srand, sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL));
+			}
+
+			g_free(signature_input_str);
+			sipmsg_breakdown_free(&msgbd);
+
+
+		} else {
+			printf ("registrar ntlm_key is null.  proxies? %i\n", sip->proxy.ntlm_key == NULL);
+		}
+
 		process_input_message(sip, msg);
+
 	} else {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "received a incomplete sip msg: %s\n", conn->inbuf);
 	}

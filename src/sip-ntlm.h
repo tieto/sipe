@@ -26,6 +26,16 @@
 #ifndef _PURPLE_NTLM_SIPE_H
 #define _PURPLE_NTLM_SIPE_H
 
+/* Negotiate flag required in connectionless NTLM
+ *   0x00000001 = NTLMSSP_NEGOTIATE_UNICODE	(A)
+ *   0x00000010 = NTLMSSP_NEGOTIATE_SIGN	(D)
+ *   0x00000040 = NTLMSSP_NEGOTIATE_DATAGRAM	(F)
+ *   0x00000200 = NTLMSSP_NEGOTIATE_NTLM	(H)
+ *   0x00008000 = NTLMSSP_NEGOTIATE_ALWAYS_SIGN (M)
+ *   0x40000000 = NTLMSSP_NEGOTIATE_KEY_EXCH	(W)
+ */
+#define NEGOTIATE_FLAGS 0x40008250
+
 /**
  * Generates the base64 encoded type 1 message needed for NTLM authentication
  *
@@ -38,22 +48,27 @@ gchar *purple_ntlm_gen_type1_sipe(gchar *hostname, gchar *domain);
 /**
  * Parses the ntlm type 2 message
  *
- * @param type2 String containing the base64 encoded type2 message
- * @return The nonce for use in message type3
+ * @param challenge String containing the base64 encoded challenge message
+ * @return The nonce for use in message authenticate
  */
-gchar *purple_ntlm_parse_type2_sipe(gchar *type2, guint32 *flags);
+gchar *purple_ntlm_parse_challenge(gchar *challenge, guint32 *flags);
 
 /**
- * Generates a type3 message
+ * Generates a authenticate message
  *
  * @param username The username
  * @param passw The password
  * @param hostname The hostname
  * @param domain The domain to authenticate against
- * @param nonce The nonce returned by purple_ntlm_parse_type2
- * @param flags Pointer to the flags returned by purple_ntlm_parse_type2
- * @return A base64 encoded type3 message
+ * @param nonce The nonce returned by purple_ntlm_parse_challenge
+ * @param flags Pointer to the flags returned by purple_ntlm_parse_challenge
+ * @return A base64 encoded authenticate message
  */
-gchar *purple_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags);
+gchar *purple_ntlm_gen_authenticate(const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags);
+
+long purple_ntlm_gen_crc32 (char * msg);
+gchar* purple_ntlm_get_key ();
+
+gchar * purple_ntlm_signature_make (char * buf, guint64 rand, char * rspauth);
 
 #endif /* _PURPLE_NTLM_SIPE_H */

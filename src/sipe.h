@@ -70,6 +70,7 @@ struct sip_auth {
 	int nc;
 	gchar *digest_session_key;
 	int retries;
+	gchar *ntlm_key;
 };
 
 struct sipe_account_data {

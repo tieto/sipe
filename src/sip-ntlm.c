@@ -42,6 +42,7 @@
 #include <string.h>
 #include "sip-ntlm.h"
 #include "debug.h"
+#include <zlib.h>
 
 #ifndef _WIN32
 #include <sys/ioctl.h>
@@ -53,54 +54,72 @@
 
 #define NTLM_NEGOTIATE_NTLM2_KEY 0x00080000
 
-struct type2_message {
+struct challenge_message {
 	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
 	guint8  type;            /* 0x02 */
 	guint8  zero1[7];
 	short   msg_len;         /* 0x28 */
 	guint8  zero2[2];
-	guint32   flags;           /* 0x8201 */
+	guint32 flags;           /* 0x8201 */
 
-	guint8  nonce[8];        /* nonce */
+	guint8  nonce[8];
 	guint8  zero[8];
 };
 
-struct type3_message {
+struct authenticate_message {
 	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
+	//guint32 type;            /* 0x03 */
 	guint8  type;            /* 0x03 */
 	guint8  zero1[3];
-
-	short   lm_resp_len1;    /* LanManager response length (always 0x18)*/
-	short   lm_resp_len2;    /* LanManager response length (always 0x18)*/
-	short   lm_resp_off;     /* LanManager response offset */
+	
+	guint16 lm_resp_len1;    /* LanManager response length (always 0x18)*/
+	guint16 lm_resp_len2;    /* LanManager response length (always 0x18)*/
+	//guint32 lm_resp_off;     /* LanManager response offset */
+	guint16 lm_resp_off;     /* LanManager response offset */
 	guint8  zero2[2];
 
-	short   nt_resp_len1;    /* NT response length (always 0x18) */
-	short   nt_resp_len2;    /* NT response length (always 0x18) */
-	short   nt_resp_off;     /* NT response offset */
+	/* NtChallengeResponseFields */
+	guint16 nt_resp_len1;    /* NT response length (always 0x18) */
+	guint16 nt_resp_len2;    /* NT response length (always 0x18) */
+	//guint32 nt_resp_off;     /* NT response offset */
+	guint16 nt_resp_off;     /* NT response offset */
 	guint8  zero3[2];
 
-	short   dom_len1;        /* domain string length */
-	short   dom_len2;        /* domain string length */
-	short   dom_off;         /* domain string offset (always 0x40) */
+	/* DomainNameFields */
+	guint16 dom_len1;        /* domain string length */
+	guint16 dom_len2;        /* domain string length */
+	//guint32 dom_off;         /* domain string offset (always 0x40) */
+	guint16 dom_off;         /* domain string offset (always 0x40) */
 	guint8  zero4[2];
 
-	short   user_len1;       /* username string length */
-	short   user_len2;       /* username string length */
-	short   user_off;        /* username string offset */
+	/* UserNameFields */
+	guint16 user_len1;       /* username string length */
+	guint16 user_len2;       /* username string length */
+	//guint32 user_off;        /* username string offset */
+	guint16 user_off;        /* username string offset */
 	guint8  zero5[2];
 
-	short   host_len1;       /* host string length */
-	short   host_len2;       /* host string length */
-	short   host_off;        /* host string offset */
+	/* WorkstationFields */
+	guint16 host_len1;       /* host string length */
+	guint16 host_len2;       /* host string length */
+	//guint32 host_off;        /* host string offset */
+	guint16 host_off;        /* host string offset */
 	guint8  zero6[2];
 
-	short   sess_len1;
-	short	sess_len2;
-	short   sess_off;         /* message length */
+	/* EncryptedRandomSessionKeyFields */
+	guint16	sess_len1;
+	guint16	sess_len2;
+	//guint32 sess_off;
+	guint16 sess_off;
 	guint8  zero7[2];
 
-	guint32   flags;           /* 0x8201 */
+	guint32 flags;
+
+	// don't care values
+	// version
+	// mic
+
+	// payload
 /*	guint32  flags2;  unknown, used in windows messenger
 	guint32  flags3; */
 
@@ -113,17 +132,9 @@ struct type3_message {
 #endif
 };
 
-gchar *purple_ntlm_parse_type2_sipe(gchar *type2, guint32 *flags) {
-	gsize retlen;
-	static gchar nonce[8];
-	struct type2_message *tmsg = (struct type2_message*)purple_base64_decode((char*)type2, &retlen);
-	memcpy(nonce, tmsg->nonce, 8);
-	if(flags) *flags = tmsg->flags;
-	g_free(tmsg);
-	return nonce;
-}
+/* Private Methods */
 
-static void setup_des_key(unsigned char key_56[], char *key)
+static void setup_des_key(const unsigned char key_56[], char *key)
 {
 	key[0] = key_56[0];
 	key[1] = ((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1);
@@ -135,10 +146,8 @@ static void setup_des_key(unsigned char key_56[], char *key)
 	key[7] =  (key_56[6] << 1) & 0xFF;
 }
 
-/*
- * helper function for gaim cipher.c
- */
-static void des_ecb_encrypt(char *plaintext, char *result, char *key) {
+static void des_ecb_encrypt(const char *plaintext, char *result, const char *key)
+{
 	PurpleCipher *cipher;
 	PurpleCipherContext *context;
 	gsize outlen;
@@ -150,149 +159,344 @@ static void des_ecb_encrypt(char *plaintext, char *result, char *key) {
 	purple_cipher_context_destroy(context);
 }
 
-/*
- * takes a 21 byte array and treats it as 3 56-bit DES keys. The
- * 8 byte plaintext is encrypted with each key and the resulting 24
- * bytes are stored in the results array.
- */
-static void calc_resp(unsigned char *keys, unsigned char *plaintext, unsigned char *results)
+// (k = 7 byte key, d = 8 byte data) returns 8 bytes in results
+void
+DES (const char *k, const char *d, char * results)
 {
-	guchar key[8];
-	setup_des_key(keys, (char*)key);
-	des_ecb_encrypt((char*)plaintext, (char*)results, (char*)key);
-
-	setup_des_key(keys+7, (char*)key);
-	des_ecb_encrypt((char*)plaintext, (char*)(results+8), (char*)key);
-
-	setup_des_key(keys+14, (char*)key);
-	des_ecb_encrypt((char*)plaintext, (char*)(results+16), (char*)key);
+	char key[8];
+	setup_des_key(k, key);
+	des_ecb_encrypt(d, results, key);
 }
 
-static void gensesskey(char *buffer, char *oldkey) {
-	int i = 0;
-	if(oldkey == NULL) {
-		for(i=0; i<16; i++) {
-			buffer[i] = (char)(rand() & 0xff);
-		}
-	} else {
-		memcpy(buffer, oldkey, 16);
+// (K = 21 byte key, D = 8 bytes of data) returns 24 bytes in results:
+void
+DESL (char *k, const char *d, char * results)
+{
+	char keys[21];
+
+	// Copy the first 16 bytes
+	memcpy(keys, k, 16);
+
+	// Zero out the last 5 bytes of the key
+	memset(keys + 16, 0, 5);
+
+	DES(keys,      d, results);
+	DES(keys + 7,  d, results + 8);
+	DES(keys + 14, d, results + 16);
+}
+
+void
+MD4 (const char * d, int len, char * result)
+{
+	PurpleCipher * cipher = purple_ciphers_find_cipher("md4");
+	PurpleCipherContext * context = purple_cipher_context_new(cipher, NULL);
+	purple_cipher_context_append(context, (guchar*)d, len);
+	purple_cipher_context_digest(context, len, (guchar*)result, NULL);
+	purple_cipher_context_destroy(context);
+}
+
+
+void
+NTOWFv1 (const char* password, const char *user, const char *domain, char * result)
+{
+	int i;
+	int len = strlen(password);
+	char unicode_password[128];
+
+	// Convert password to unicode
+	// FIXME this will only work for LATIN1 passwords
+	for (i = 0; i < len; i++) {
+		unicode_password[2 * i] = password[i];
+		unicode_password[2 * i + 1] = 0;
 	}
+
+	// MD4 the password
+	MD4 (unicode_password, 2 * len, result);
+}
+
+void
+MD5 (const char * d, int len, char * result)
+{
+	PurpleCipher * cipher = purple_ciphers_find_cipher("md5");
+	PurpleCipherContext * context = purple_cipher_context_new(cipher, NULL);
+	purple_cipher_context_append(context, (guchar*)d, len);
+	purple_cipher_context_digest(context, len, (guchar*)result, NULL);
+	purple_cipher_context_destroy(context);
+}
+
+void
+RC4K (const char * k, const char * d, char * result)
+{
+	PurpleCipherContext * context = purple_cipher_context_new_by_name("rc4", NULL);
+	purple_cipher_context_set_option(context, "key_len", (gpointer)16);
+	purple_cipher_context_set_key(context, k);
+	purple_cipher_context_encrypt(context, (const guchar *)d, 16, result, NULL);
+	purple_cipher_context_destroy(context);
+}
+
+void
+KXKEY (const char * session_base_key, const char * lm_challenge_resonse, char * key_exchange_key)
+{
+	// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
+	memcpy(key_exchange_key, session_base_key, 16);
+}
+
+void
+SIGNKEY (const char * random_session_key, gboolean client, char * result)
+{
+	char * magic = client
+		? "session key to client-to-server signing key magic constant"
+		: "session key to server-to-client signing key magic constant";
+
+	int len = 16 + strlen(magic);
+	char md5_input [len];
+	memcpy(md5_input, random_session_key, 16);
+
+	MD5 (md5_input, len, result);
+}
+
+void
+LMOWFv1 (const char *password, const char *user, const char *domain, char *result)
+{
+	/* "KGS!@#$%" */
+	unsigned char magic[] = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
+	char uppercase_password[14];
+
+	int len = strlen(password);
+	if (len > 14) {
+		len = 14;
+	}
+
+	// Uppercase password
+	int i;
+	for (i = 0; i < len; i++) {
+		uppercase_password[i] = g_ascii_toupper(password[i]);
+	}
+ 
+	// Zero the rest
+	for (; i < 14; i++) {
+		uppercase_password[i] = 0;
+	}
+	
+	DES (uppercase_password, magic, result);
+	DES (uppercase_password + 7, magic, result + 8);
+}
+
+static void
+NONCE(char *buffer, int num)
+{
+	int i;
+	for (i = 0; i < num; i++) {
+		buffer[i] = (char)(rand() & 0xff);
+	}
+}
+
+/* End Private Methods */
+
+gchar *purple_ntlm_parse_challenge(gchar *challenge, guint32 *flags) {
+	gsize retlen;
+	static gchar nonce[8];
+	struct challenge_message *tmsg = (struct challenge_message*)purple_base64_decode((char*)challenge, &retlen);
+	memcpy(nonce, tmsg->nonce, 8);
+
+	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", tmsg->flags, tmsg->flags & NEGOTIATE_FLAGS == NEGOTIATE_FLAGS);
+
+	if (flags) {
+		*flags = tmsg->flags;
+	}
+	g_free(tmsg);
+	return nonce;
+}
+
+void
+print_hex_array_title(char * title, char * msg, int num)
+{
+	printf("%s:\n", title);
+	print_hex_array(msg, num);
+}
+
+void
+print_hex_array(char * msg, int num)
+{
+	int k;
+	for (k = 0; k < num; k++) {
+		printf("%02X", msg[k]&0xff);
+	}
+	printf("\n");
+}
+
+long
+CRC32 (char * msg)
+{
+	long crc = crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, msg, strlen(msg));
+	char * ptr = (char*) &crc;
+	//return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | (ptr[3] & 0xff);
+	return crc;
+}
+
+static gchar master_key [16];
+gchar*
+purple_ntlm_get_key ()
+{
+	return master_key;
+}
+
+static gboolean ntlm_authorized = FALSE;
+gboolean
+purple_ntlm_authorized ()
+{
+	return ntlm_authorized;
+}
+
+static char client_signing_key [16];
+static char server_signing_key [16];
+
+gchar *
+purple_ntlm_signature_make (char * buf, guint64 rand, char * rspauth)
+{
+	return NULL;
 }
 
 gchar *
-purple_ntlm_gen_type3_sipe(const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
+purple_ntlm_signature_gen (char * buf, char * signing_key, guint32 random_pad, long sequence, char * rspauth, int key_len)
 {
-	char  lm_pw[14];
-	unsigned char lm_hpw[21];
-	char sesskey[16];
-	const guint8 *sessionnonce = nonce;
-	gchar key[8];
-	int msglen = sizeof(struct type3_message)+
-		strlen(domain) + strlen(username)+
-		strlen(hostname) + 24 +24 + ((flags) ? 16 : 0);
-	struct type3_message *tmsg = g_malloc0(msglen);
-	int   len = strlen(passw);
-	unsigned char lm_resp[24], nt_resp[24];
-	unsigned char magic[] = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
-	unsigned char nt_hpw[21];
-	int lennt;
-	char  nt_pw[128];
-	PurpleCipher *cipher;
-	PurpleCipherContext *context;
-	char *tmp = 0;
-	int idx = 0;
+	// Sequence is hardcoded to be 100 from trial-and-error apparently this is what
+	// Microsoft OCS requires.
+	//long sequence = 100;
+	//printf("purple_ntlm_signature_make on msg %s with rspauth=%s\n", buf, rspauth);
 
-	/* type3 message initialization */
-	tmsg->protocol[0] = 'N';
-	tmsg->protocol[1] = 'T';
-	tmsg->protocol[2] = 'L';
-	tmsg->protocol[3] = 'M';
-	tmsg->protocol[4] = 'S';
-	tmsg->protocol[5] = 'S';
-	tmsg->protocol[6] = 'P';
-	tmsg->type = 0x03;
-	tmsg->lm_resp_len1 = tmsg->lm_resp_len2 = 0x18;
-	tmsg->lm_resp_off = sizeof(struct type3_message) + strlen(domain) + strlen(username) + strlen(hostname);
-	tmsg->nt_resp_len1 = tmsg->nt_resp_len2 = 0x18;
-	tmsg->nt_resp_off = sizeof(struct type3_message) + strlen(domain) + strlen(username) + strlen(hostname) + 0x18;
+	// SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
 
-	tmsg->dom_len1 = tmsg->dom_len2 = strlen(domain);
-	tmsg->dom_off = 0x40;
+	// Encrypt the buf; create a new rc4 context based on the session_key
+	PurpleCipherContext *rc4 = purple_cipher_context_new_by_name("rc4", NULL);
+	purple_cipher_context_set_option(rc4, "key_len", key_len);
+	//purple_cipher_context_set_key(rc4, server_signing_key);
+	purple_cipher_context_set_key(rc4, signing_key);
 
-	tmsg->user_len1 = tmsg->user_len2 = strlen(username);
-	tmsg->user_off = sizeof(struct type3_message) + strlen(domain);
+	size_t data_len = 12, data_out_len;
+	gint32 crc = CRC32(buf);
+	gint32 plaintext [3] = {sequence, crc, 0};
+	//print_hex_array_title("plaintext", plaintext, 12);
+	guchar result [16];
+	gint32 * res_ptr = result;
 
-	tmsg->host_len1 = tmsg->host_len2 = strlen(hostname);
-	tmsg->host_off = sizeof(struct type3_message) + strlen(domain) + strlen(username);
+	purple_cipher_context_encrypt(rc4, (const guchar *)plaintext, data_len, result+4, &data_out_len);
+	purple_cipher_context_destroy(rc4);
 
-	if(flags) {
-		tmsg->sess_off = sizeof(struct type3_message) + strlen(domain) + strlen(username) + strlen(hostname) + 0x18 + 0x18;
-		tmsg->sess_len1 = tmsg->sess_len2 = 0x10;
+	//print_hex_array_title("full cipher text", result+4, data_out_len);
+
+	// Highest four bytes are the Version
+	//res_ptr[0] = 0x01000000;
+	res_ptr[0] = 0x00000001;
+
+	// Replace the first four bytes of the ciphertext with a counter value
+	// currently set to this hardcoded value
+	//res_ptr[1] = 0x78010900;
+	//res_ptr[1] = 0x00090178;
+	res_ptr[1] = 0x00000000; // temp - just for testing
+	//res_ptr[1] = random_pad; // temp - just for testing
+
+	gchar signature [32];
+	int i, j;
+	for (i = 0, j = 0; i < 16; i++, j+=2) {
+		g_sprintf(&signature[j], "%02X", result[i]);
 	}
 
-	tmsg->flags = 0x8200;
+	if (rspauth) {
+		printf("%s\n", rspauth+16);
+		printf("%s\n\n", signature+16);
+	}
 
-	tmp = ((char*) tmsg) + sizeof(struct type3_message);
+	//printf ("signature: %s\n", signature);
+	return g_strdup(signature);
+}
+
+gchar *
+purple_ntlm_gen_authenticate(const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
+{
+	int msglen = sizeof(struct authenticate_message) + strlen(domain) + strlen(user)+ strlen(hostname) + 24 +24 + 16;
+	struct authenticate_message *tmsg = g_malloc0(msglen);
+	char *tmp;
+	int i;
+
+	/* authenticate message initialization */
+	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
+	tmsg->type = 3;
+
+	/* Set Negotiate Flags */
+	tmsg->flags = NEGOTIATE_FLAGS;
+
+	/* Domain */
+	tmsg->dom_len1 = tmsg->dom_len2 = strlen(domain);
+	tmsg->dom_off = sizeof(struct authenticate_message);
+	tmp = ((char*) tmsg) + tmsg->dom_off;
 	strcpy(tmp, domain);
-	tmp += strlen(domain);
-	strcpy(tmp, username);
-	tmp += strlen(username);
+	tmp += tmsg->dom_len1;
+
+	/* User */
+	tmsg->user_len1 = tmsg->user_len2 = strlen(user);
+	tmsg->user_off = tmsg->dom_off + tmsg->dom_len1;
+	strcpy(tmp, user);
+	tmp += tmsg->user_len1;
+
+	/* Host */
+	tmsg->host_len1 = tmsg->host_len2 = strlen(hostname);
+	tmsg->host_off = tmsg->user_off + tmsg->user_len1;
 	strcpy(tmp, hostname);
-	tmp += strlen(hostname);
+	tmp += tmsg->host_len1;
 
 	/* LM */
-	if (len > 14)  len = 14;
+	tmsg->lm_resp_len1 = tmsg->lm_resp_len2 = 24;
+	tmsg->lm_resp_off = tmsg->host_off + tmsg->host_len1;
 
-	for (idx=0; idx<len; idx++)
-		lm_pw[idx] = g_ascii_toupper(passw[idx]);
-	for (; idx<14; idx++)
-		lm_pw[idx] = 0;
+	char response_key_lm [16];
+	LMOWFv1 (password, user, domain, response_key_lm);
+	char lm_challenge_response [24];
+	DESL (response_key_lm, nonce, lm_challenge_response);
+	memcpy(tmp, lm_challenge_response, 24);
+	tmp += 24;
 
-	setup_des_key((unsigned char*)lm_pw, (char*)key);
-	des_ecb_encrypt((char*)magic, (char*)lm_hpw, (char*)key);
+	/* NT */
+	tmsg->nt_resp_len1 = tmsg->nt_resp_len2 = 24;
+	tmsg->nt_resp_off = tmsg->lm_resp_off + tmsg->lm_resp_len1;
 
-	setup_des_key((unsigned char*)(lm_pw+7), (char*)key);
-	des_ecb_encrypt((char*)magic, (char*)lm_hpw+8, (char*)key);
+	char response_key_nt [16];
+	NTOWFv1 (password, user, domain, response_key_nt);
+	char nt_challenge_response [24];
+	DESL (response_key_nt, nonce, nt_challenge_response);
+	memcpy(tmp, nt_challenge_response, 24);
+	tmp += 24;
 
-	memset(lm_hpw+16, 0, 5);
-	calc_resp(lm_hpw, (guchar*)sessionnonce, lm_resp);
+	/* Session Key */
+	tmsg->sess_len1 = tmsg->sess_len2 = 16;
+	tmsg->sess_off = tmsg->nt_resp_off + tmsg->nt_resp_len1;
 
-	/* NTLM */
-	lennt = strlen(passw);
-	for (idx=0; idx<lennt; idx++)
-	{
-		nt_pw[2*idx]   = passw[idx];
-		nt_pw[2*idx+1] = 0;
-	}
+	char session_base_key [16];
+	MD4(response_key_nt, 16, session_base_key);
 
-	cipher = purple_ciphers_find_cipher("md4");
-	context = purple_cipher_context_new(cipher, NULL);
-	purple_cipher_context_append(context, (guchar*)nt_pw, 2*lennt);
-	purple_cipher_context_digest(context, 21, (guchar*)nt_hpw, NULL);
-	purple_cipher_context_destroy(context);
+	char key_exchange_key [16];
+	KXKEY(session_base_key, lm_challenge_response, key_exchange_key);
 
-	memset(nt_hpw+16, 0, 5);
+	char exported_session_key[16];
+	NONCE (exported_session_key, 16);
 
+	char encrypted_random_session_key [16];
+	RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
+	memcpy(tmp, encrypted_random_session_key, 16);
+	tmp += 16;
 
-	calc_resp(nt_hpw, (guchar*)sessionnonce, nt_resp);
-	memcpy(tmp, lm_resp, 0x18);
-	tmp += 0x18;
-	memcpy(tmp, nt_resp, 0x18);
-	tmp += 0x18;
+	/* Generate Signing Keys */
+	SIGNKEY(exported_session_key, TRUE, client_signing_key);
+	print_hex_array_title("client sign key", client_signing_key, 16);
 
-	/* LCS Stuff */
-	if(flags) {
-		tmsg->flags = 0x409082d4;
-		//tmsg->flags = 0x55828040;
-		gensesskey(sesskey, NULL);
-		memcpy(tmp, sesskey, 0x10);
-	}
-
-	/*tmsg->flags2 = 0x0a280105;
-	tmsg->flags3 = 0x0f000000;*/
+	SIGNKEY(exported_session_key, FALSE, server_signing_key);
+	print_hex_array_title("server sign key", server_signing_key, 16);
 
 	tmp = purple_base64_encode((guchar*) tmsg, msglen);
+	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE message\n");
 	g_free(tmsg);
 	return tmp;
 }
+
 

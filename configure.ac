@@ -73,8 +73,8 @@ AM_CONDITIONAL(SIPE_STATIC, test $sipe_static = yes)
 AC_CONFIG_FILES(
 	[src/config.h]
 	[Makefile 
-	m4macros/Makefile
 	pixmaps/Makefile 
+	m4macros/Makefile
 	pixmaps/16/Makefile 
 	pixmaps/22/Makefile 
 	pixmaps/48/Makefile 

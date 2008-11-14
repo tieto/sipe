@@ -21,3 +21,4 @@ ltmain.sh
 missing
 mkinstalldirs
 INSTALL
+m4macros/Makefile.in

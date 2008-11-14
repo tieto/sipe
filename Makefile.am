@@ -1,6 +1,6 @@
 EXTRA_DIST = LICENSE
 
-SUBDIRS = src pixmaps
+SUBDIRS = src pixmaps m4macros
 
 CLEANFILES = \
 	intltool-extract \
@@ -24,3 +24,6 @@ MAINTAINERCLEANFILES = \
 	intltool-merge.in   \
 	intltool-update.in  \
 	mkinstalldirs
+
+tests:
+	pushd src; make tests; popd;

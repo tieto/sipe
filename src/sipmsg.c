@@ -155,10 +155,10 @@ char *sipmsg_to_string(const struct sipmsg *msg) {
 	while(cur) {
 		elem = cur->data;
                 /*Todo: remove the LFCR in a good way*/
-                if(!strcmp(elem->name,"Proxy-Authorization"))
+                /*if(!strcmp(elem->name,"Proxy-Authorization"))
                   g_string_append_printf(outstr, "%s: %s", elem->name,
 			elem->value);
-                else     
+                else     */
 		   g_string_append_printf(outstr, "%s: %s\r\n", elem->name,
 			elem->value);
 		cur = g_slist_next(cur);
@@ -228,6 +228,38 @@ gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name) {
 	return NULL;
 }
 
+gchar *
+sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def)
+{
+	if (!hdr) {
+		return NULL;
+	}
+
+	//printf("partof %s w/ %s before and %s after\n", hdr, before, after);
+	const char *tmp;
+	const char *tmp2;
+
+	tmp = before == NULL ? hdr : strstr(hdr, before);
+	if (!tmp) {
+		//printf ("not found, returning null\n");
+		return def;
+	}
+
+	if (before != NULL) {
+		tmp += strlen(before);
+		//printf ("tmp now %s\n", tmp);
+	}
+
+	if (after != NULL && (tmp2 = strstr(tmp, after))) {
+		gchar * res = g_strndup(tmp, tmp2 - tmp);
+		//printf("returning %s\n", res);
+		return res;
+	}
+	gchar * res2 = g_strdup(tmp);
+	//printf("returning %s\n", res2);
+	return res2;
+}
+
 /*
  *  sipmsg_find_auth_header will return the particular WWW-Authenticate
  *  header specified by *name.
@@ -243,14 +275,14 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	int name_len = strlen(name);
         while(tmp) {
                 elem = tmp->data;
-		purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
+		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
                 if(elem && elem->name && !strcmp(elem->name,"WWW-Authenticate")) {
 			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
-				purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "elem->value: %s\r\n", elem->value);
+				//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "elem->value: %s\r\n", elem->value);
                         	return elem->value;
 			}
                 }
-		purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "moving to next header\r\n");
+		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "moving to next header\r\n");
                 tmp = g_slist_next(tmp);
         }
 	purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Did not found auth header %s\r\n", name);
