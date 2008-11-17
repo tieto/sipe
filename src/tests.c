@@ -5,6 +5,35 @@
 #include "sip-internal.h"
 #include "sip-ntlm.c"
 
+static int successes = 0;
+static int failures = 0;
+
+void assert_equal(char * expected, char * got, int len, gboolean stringify)
+{
+	gchar * res = got;
+	gchar to_str[len*2];
+
+	if (stringify) {
+		int i, j;
+		for (i = 0, j = 0; i < len; i++, j+=2) {
+			g_sprintf(&to_str[j], "%02X", (got[i]&0xff));
+		}
+		len *= 2;
+		res = to_str;
+	}
+
+	printf("expected: %s\n", expected);
+	printf("received: %s\n", res);
+
+	if (strncmp(expected, res, len) == 0) {
+		successes++;
+		printf("PASSED\n");
+	} else {
+		failures++;
+		printf("FAILED\n");
+	}
+}
+
 int main()
 {
 	printf ("Starting Tests\n");
@@ -28,63 +57,52 @@ int main()
 	printf ("\nTesting LMOWFv1()\n");
 	char response_key_lm [16];
 	LMOWFv1 (password, user, domain, response_key_lm);
-	printf("E52CAC67419A9A224A3B108F3FA6CB6D\n");
-	print_hex_array(response_key_lm, 16);
+	assert_equal("E52CAC67419A9A224A3B108F3FA6CB6D", response_key_lm, 16, TRUE);
 
 	printf ("\nTesting LM Response Generation\n");
 	char lm_challenge_response [24];
 	DESL (response_key_lm, nonce, lm_challenge_response);
-	printf("98DEF7B87F88AA5DAFE2DF779688A172DEF11C7D5CCDEF13\n");
-	print_hex_array(lm_challenge_response, 24);
+	assert_equal("98DEF7B87F88AA5DAFE2DF779688A172DEF11C7D5CCDEF13", lm_challenge_response, 24, TRUE);
 
 	printf ("\n\nTesting NTOWFv1()\n");
 	char response_key_nt [16];
 	NTOWFv1 (password, user, domain, response_key_nt);
-	printf("A4F49C406510BDCAB6824EE7C30FD852\n");
-	print_hex_array(response_key_nt, 16);
+	assert_equal("A4F49C406510BDCAB6824EE7C30FD852", response_key_nt, 16, TRUE);
 
 	printf ("\nTesting NT Response Generation\n");
 	char nt_challenge_response [24];
 	DESL (response_key_nt, nonce, nt_challenge_response);
-	printf("67C43011F30298A2AD35ECE64F16331C44BDBED927841F94\n");
-	print_hex_array(nt_challenge_response, 24);
+	assert_equal("67C43011F30298A2AD35ECE64F16331C44BDBED927841F94", nt_challenge_response, 24, TRUE);
 
 	printf ("\n\nTesting Session Base Key and Key Exchange Generation\n");
 	char session_base_key [16];
 	MD4(response_key_nt, 16, session_base_key);
 	char key_exchange_key [16];
 	KXKEY(session_base_key, lm_challenge_response, key_exchange_key);
-	printf("D87262B0CDE4B1CB7499BECCCDF10784\n");
-	print_hex_array(session_base_key, 16);
-	print_hex_array(key_exchange_key, 16);
+	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", session_base_key, 16, TRUE);
+	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", key_exchange_key, 16, TRUE);
 
 	printf ("\n\nTesting Encrypted Session Key Generation\n");
 	char encrypted_random_session_key [16];
 	RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
-	printf("518822B1B3F350C8958682ECBB3E3CB7\n");
-	print_hex_array(encrypted_random_session_key, 16);
+	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
 
 	/* End tests from the MS-SIPE document */
 
 	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm1Signing
 	printf ("\n\nTesting Signature Algorithm\n");
 	char sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
-	purple_ntlm_signature_gen ("jCIFS", sk, 0, 0, "0100000078010900397420FE0E5A0F89", 8);
+	assert_equal ("0100000078010900397420FE0E5A0F89", gen_signature ("jCIFS", sk, 0x00090178, 0, 8), 32, FALSE);
 
+	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
+	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
+	char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
+	char exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
+	assert_equal (
+		"0100000000000000BF2E52667DDF6DED",
+		gen_signature(msg1, exported_session_key2, 0, 100, 16),
+		32, FALSE
+	);
 
-	// Test signing of SIPE message
-	printf ("\n\nTesting SIPE Message Signing\n");
-	char signing_key [] = {0x2C, 0x9F, 0x5B, 0x3C, 0x95, 0x12, 0x70, 0xFF, 0x4D, 0x64, 0x85, 0x4D, 0x7C, 0x2E, 0x53, 0x8B};
-	char * msg1 = "<NTLM><F09C1A30><1><SIP Communications Service><ocs1.ocs.provo.novell.com><813CgE29BaFA37i186Bm8CC3t1A2AbDB34x0A66x><3><REGISTER><sip:gabriel@ocs.provo.novell.com><5628647192><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
-	char * rsp = "0100000000000000787BB2B9B80C5CEA";
-	guint32 random_pad = 0xF09C1A30;
-	purple_ntlm_signature_gen (msg1, signing_key, random_pad, 100, rsp, 5);
-	purple_ntlm_signature_gen (msg1, signing_key, random_pad, 100, rsp, 8);
-	purple_ntlm_signature_gen (msg1, signing_key, random_pad, 100, rsp, 16);
-	purple_ntlm_signature_gen (msg1, signing_key, random_pad, 0, rsp, 5);
-	purple_ntlm_signature_gen (msg1, signing_key, random_pad, 0, rsp, 8);
-	purple_ntlm_signature_gen (msg1, signing_key, random_pad, 0, rsp, 16);
-
-
-	printf ("\nFinished With Tests\n");
+	printf ("\nFinished With Tests; %d successs %d failures\n", successes, failures);
 }

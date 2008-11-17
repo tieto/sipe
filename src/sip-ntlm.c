@@ -248,11 +248,12 @@ SIGNKEY (const char * random_session_key, gboolean client, char * result)
 		? "session key to client-to-server signing key magic constant"
 		: "session key to server-to-client signing key magic constant";
 
-	int len = 16 + strlen(magic);
-	char md5_input [len];
+	int len = strlen(magic);
+	char md5_input [16 + len];
 	memcpy(md5_input, random_session_key, 16);
+	memcpy(md5_input + 16, magic, len);
 
-	MD5 (md5_input, len, result);
+	MD5 (md5_input, len + 16, result);
 }
 
 void
@@ -320,7 +321,7 @@ print_hex_array(char * msg, int num)
 {
 	int k;
 	for (k = 0; k < num; k++) {
-		printf("%02X", msg[k]&0xff);
+		printf("0x%02X, ", msg[k]&0xff);
 	}
 	printf("\n");
 }
@@ -359,7 +360,7 @@ purple_ntlm_signature_make (char * buf, guint64 rand, char * rspauth)
 }
 
 gchar *
-purple_ntlm_signature_gen (char * buf, char * signing_key, guint32 random_pad, long sequence, char * rspauth, int key_len)
+gen_signature (char * buf, char * signing_key, guint32 random_pad, long sequence, int key_len)
 {
 	// Sequence is hardcoded to be 100 from trial-and-error apparently this is what
 	// Microsoft OCS requires.
@@ -376,7 +377,7 @@ purple_ntlm_signature_gen (char * buf, char * signing_key, guint32 random_pad, l
 
 	size_t data_len = 12, data_out_len;
 	gint32 crc = CRC32(buf);
-	gint32 plaintext [3] = {sequence, crc, 0};
+	gint32 plaintext [3] = {0, crc, sequence};
 	//print_hex_array_title("plaintext", plaintext, 12);
 	guchar result [16];
 	gint32 * res_ptr = result;
@@ -394,8 +395,8 @@ purple_ntlm_signature_gen (char * buf, char * signing_key, guint32 random_pad, l
 	// currently set to this hardcoded value
 	//res_ptr[1] = 0x78010900;
 	//res_ptr[1] = 0x00090178;
-	res_ptr[1] = 0x00000000; // temp - just for testing
-	//res_ptr[1] = random_pad; // temp - just for testing
+	//res_ptr[1] = 0x00000000; // temp - just for testing
+	res_ptr[1] = random_pad; // temp - just for testing
 
 	gchar signature [32];
 	int i, j;
@@ -403,14 +404,18 @@ purple_ntlm_signature_gen (char * buf, char * signing_key, guint32 random_pad, l
 		g_sprintf(&signature[j], "%02X", result[i]);
 	}
 
-	if (rspauth) {
-		printf("%s\n", rspauth+16);
-		printf("%s\n\n", signature+16);
-	}
-
-	//printf ("signature: %s\n", signature);
 	return g_strdup(signature);
 }
+
+gboolean
+verify_signature (char * buf, char * signing_key, guint32 random_pad, long sequence, char * rspauth, int key_len)
+{
+	gchar sig = gen_signature (buf, signing_key, random_pad, sequence, key_len);
+	gboolean ret = strncmp(sig + 16, rspauth + 16, 16) == 0;
+	g_free(sig);
+	return ret;
+}
+
 
 gchar *
 purple_ntlm_gen_authenticate(const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
@@ -477,12 +482,15 @@ purple_ntlm_gen_authenticate(const gchar *user, const gchar *password, const gch
 
 	char key_exchange_key [16];
 	KXKEY(session_base_key, lm_challenge_response, key_exchange_key);
+	print_hex_array_title("session base key", session_base_key, 16);
 
 	char exported_session_key[16];
 	NONCE (exported_session_key, 16);
+	print_hex_array_title("exported session key", exported_session_key, 16);
 
 	char encrypted_random_session_key [16];
 	RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
+	print_hex_array_title("encrypted randomsesion key", encrypted_random_session_key, 16);
 	memcpy(tmp, encrypted_random_session_key, 16);
 	tmp += 16;
 
@@ -498,5 +506,3 @@ purple_ntlm_gen_authenticate(const gchar *user, const gchar *password, const gch
 	g_free(tmsg);
 	return tmp;
 }
-
-
