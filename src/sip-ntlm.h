@@ -1,12 +1,16 @@
 /**
- * @file ntlm-sipe.h
+ * @file sip-ntlm.h
  * 
- * gaim
+ * pidgin-sipe
  *
+ * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
- * ntlm structs are taken from NTLM description on 
- * http://www.innovation.ch/java/ntlm.html 
+ *
+ * Implemented with reference to the follow documentation:
+ *   - http://davenport.sourceforge.net/ntlm.html
+ *   - MS-NLMP: http://msdn.microsoft.com/en-us/library/cc207842.aspx
+ *   - MS-SIPE: http://msdn.microsoft.com/en-us/library/cc246115.aspx
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

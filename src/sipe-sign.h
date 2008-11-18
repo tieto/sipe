@@ -1,9 +1,8 @@
 /*
- * sipe-sign.h
+ * @file sipe-sign.h
  *
- */
-
-/* 
+ * pidgin-sipe
+ *
  * Copyright (C) 2008 Novell, Inc.
  *
  * This program is free software; you can redistribute it and/or modify

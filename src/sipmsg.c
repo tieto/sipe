@@ -3,6 +3,7 @@
  *
  * gaim
  *
+ * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
  * This program is free software; you can redistribute it and/or modify

@@ -1,10 +1,17 @@
 /**
- * @file ntlm.c
+ * @file sip-ntlm.c
  *
- * gaim
+ * pidgin-sipe
  *
+ * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
+ *
+ * Implemented with reference to the follow documentation:
+ *   - http://davenport.sourceforge.net/ntlm.html
+ *   - MS-NLMP: http://msdn.microsoft.com/en-us/library/cc207842.aspx
+ *   - MS-SIPE: http://msdn.microsoft.com/en-us/library/cc246115.aspx
+ *
  * hashing done according to description of NTLM on
  * http://www.innovation.ch/java/ntlm.html
  *

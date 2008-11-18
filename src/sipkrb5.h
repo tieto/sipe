@@ -1,13 +1,17 @@
 /*
- * sipkrb5.c - Methods for Using Kerberos Authentication with SIP
- * per MS SIPAE
+ * @file sipkrb5.h
  *
- * http://msdn.microsoft.com/en-us/library/cc431510.aspx
+ * Methods for using Kerberos authentication and signing with SIPE,
+ * implemented with reference to
+ *   - MS-SIPE: http://msdn.microsoft.com/en-us/library/cc431510.aspx
  *
- */
-
-/* 
- * Copyright (C)2008 Andrew Rechenberg
+ * Authentication is known to be working, but the signing does not work at
+ * all yet.
+ *
+ * pidgin-sipe
+ *
+ * Copyright (C) 2008 Novell, Inc.
+ * Copyright (C) 2008 Andrew Rechenberg
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

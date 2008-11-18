@@ -1,8 +1,9 @@
 /**
- * @file sip-exchange.c
+ * @file sipe.c
  *
- * purple
+ * pidgin-sipe
  *
+ * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2007 Anibal Avelar "Fixxxer"<avelar@gmail.com>
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
