@@ -33,6 +33,8 @@ struct sipmsg {
 	int bodylen;
 	gchar *body;
 	gchar *signature;
+	gchar *rand;
+	gchar *num;
 };
 
 struct siphdrelement {

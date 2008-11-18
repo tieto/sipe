@@ -352,15 +352,15 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 	} else if (auth->type == 2) { /* NTLM */
 		// If we have a signature for the message, include that
 		if (msg->signature) {
-			tmp = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", response=\"%s\"", auth->realm, auth->target, msg->signature);
+			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
 			return tmp;
 		}
 
-		if (auth->nc == 3 && auth->nonce) {
+		if (auth->nc == 3 && auth->nonce && auth->ntlm_key == NULL) {
 			/* TODO: Don't hardcode "purple" as the hostname */
-			gchar * gssapi_data = purple_ntlm_gen_authenticate(authuser, sip->password, "purple", authdomain, (const guint8 *)auth->nonce, &auth->flags);
-			//auth->ntlm_key = purple_ntlm_get_key();
-			//printf ("ntlmkey == now NULL? %i\n", auth->ntlm_key == NULL);
+			const gchar * ntlm_key;
+			gchar * gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, "purple", authdomain, (const guint8 *)auth->nonce, &auth->flags);
+			auth->ntlm_key = ntlm_key;
 			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, gssapi_data);
 			g_free(gssapi_data);
 			return tmp;
@@ -780,6 +780,60 @@ static void sendout_sipmsg(struct sipe_account_data *sip, struct sipmsg *msg)
 	g_string_free(outstr, TRUE);
 }
 
+static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data *sip, const gchar *method)
+{
+	gchar * buf;
+	if (sip->registrar.ntlm_key) {
+		struct sipmsg_breakdown msgbd;
+		msgbd.msg = msg;
+		sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
+		msgbd.rand = g_strdup("0878F41B");
+		sip->registrar.ntlm_num++;
+		msgbd.num = g_strdup_printf("%d", sip->registrar.ntlm_num);
+		printf("ntlm_num is %d, msgbd.num is %s\n", sip->registrar.ntlm_num, msgbd.num);
+		gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
+		if (signature_input_str != NULL) {
+			printf("Have signature input str: %s\n", signature_input_str);
+			msg->signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
+			msg->rand = g_strdup(msgbd.rand);
+			msg->num = g_strdup(msgbd.num);
+		}
+		sipmsg_breakdown_free(&msgbd);
+	}
+
+	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
+		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
+		printf("1.for sig %s got auth buf %s\n", msg->signature, buf);
+		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+			sipmsg_add_header(msg, "Authorization", buf);
+		} else {
+			sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
+			//sipmsg_add_header_pos(msg, "Authorization", buf, 5);
+		}
+		g_free(buf);
+	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method,"NOTIFY") || !strcmp(method, "ACK") || !strcmp(method, "BYE") || !strcmp(method, "INFO")) {
+		sip->registrar.nc=3;
+		sip->registrar.type=2;
+		
+		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
+		printf("2.for sig %s got auth buf %s\n", msg->signature, buf);
+		//buf = auth_header(sip, &sip->proxy, msg, FALSE);
+		sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
+		//sipmsg_add_header(msg, "Authorization", buf);
+	        g_free(buf);
+	} else {
+		purple_debug_info("sipe", "not adding auth header to msg w/ method %s\n", method);
+	}
+}
+
+static char *get_contact(struct sipe_account_data  *sip)
+{
+        //return g_strdup_printf("<sip:%s@%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->sipdomain, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp");
+        return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
+}
+
+
+
 static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		const char *text, const char *body)
 {
@@ -787,6 +841,13 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	gchar *name;
 	gchar *value;
 	GString *outstr = g_string_new("");
+	struct sipe_account_data *sip = gc->proto_data;
+
+	gchar *contact;
+	contact = get_contact(sip);
+	sipmsg_remove_header(msg, "Contact");
+	sipmsg_add_header(msg, "Contact", contact);
+	g_free(contact);
 
 	/* When sending the acknowlegements and errors, the content length from the original
 	   message is still here, but there is no body; we need to make sure we're sending the
@@ -802,6 +863,10 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 
 	//gchar * mic = purple_krb5_get_mic_for_sipmsg(&krb5_auth, msg);
 	//gchar * mic = "MICTODO";
+	msg->response = code;
+
+	sipmsg_remove_header(msg, "Authentication-Info");
+	sign_outgoing_message(msg, sip, msg->method);
 
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
 	while (tmp) {
@@ -849,6 +914,7 @@ static struct transaction *transactions_find(struct sipe_account_data *sip, stru
 
 	return NULL;
 }
+
 
 static void send_sip_request(PurpleConnection *gc, const gchar *method,
 		const gchar *url, const gchar *to, const gchar *addheaders,
@@ -919,46 +985,7 @@ static void send_sip_request(PurpleConnection *gc, const gchar *method,
 	g_free(branch);
 	g_free(callid);
 
-	if (purple_ntlm_authorized()) {
-		struct sipmsg_breakdown msgbd;
-		msgbd.msg = msg;
-		sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
-		gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
-
-		printf ("Have signature_input_str: %s\n", signature_input_str);
-		if (signature_input_str != NULL) {
-			msg->signature = purple_ntlm_signature_make (signature_input_str, 0, NULL);
-		}
-		msg->signature = NULL;
-
-		g_free(signature_input_str);
-		sipmsg_breakdown_free(&msgbd);
-	} else {
-		printf ("registrar ntlm_key is null.  proxies? %i\n", sip->proxy.ntlm_key == NULL);
-	}
-
-	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
-		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
-		printf("1.for sig %s got auth buf %s\n", msg->signature, buf);
-		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
-			sipmsg_add_header(msg, "Authorization", buf);
-		} else {
-			sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
-			//sipmsg_add_header_pos(msg, "Authorization", buf, 5);
-		}
-		g_free(buf);
-	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method,"NOTIFY")) {
-		sip->registrar.nc=3;
-		sip->registrar.type=2;
-		
-		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
-		printf("2.for sig %s got auth buf %s\n", msg->signature, buf);
-		//buf = auth_header(sip, &sip->proxy, msg, FALSE);
-		sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
-		//sipmsg_add_header(msg, "Authorization", buf);
-	        g_free(buf);
-	}
-
+	sign_outgoing_message (msg, sip, method);
 
 	buf = sipmsg_to_string (msg);
 
@@ -972,12 +999,6 @@ static void send_sip_request(PurpleConnection *gc, const gchar *method,
 static char *get_contact_register(struct sipe_account_data  *sip)
 {
         return g_strdup_printf("<sip:%s:%d;transport=%s>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");
-}
-
-static char *get_contact(struct sipe_account_data  *sip)
-{
-        //return g_strdup_printf("<sip:%s@%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->sipdomain, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp");
-        return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
@@ -1400,14 +1421,6 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	gchar *contact;
-	contact = get_contact(sip);
-	sipmsg_remove_header(msg, "Contact");
-	sipmsg_add_header(msg, "Contact", contact);
-
-	//sipmsg_remove_header(msg, "User-Agent");
-	//sipmsg_add_header_pos(msg, "User-Agent", g_strdup_printf("Purple/" VERSION), 6);
-
 	send_sip_response(sip->gc, msg, 200, "OK", g_strdup_printf(
 		"v=0\r\n"
 		"o=- 0 0 IN IP4 %s\r\n"
@@ -1415,12 +1428,11 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		"c=IN IP4 %s\r\n"
 		"t=0 0\r\n"
 		"m=message %d sip sip:%s\r\n"
-		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml",
+		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml\r\n",
+		//"a=accept-types:text/rtf application/x-ms-ink image/gif multipart/alternative application/ms-imdn+xml\r\n",
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1),
 		//sip->realport, sip->username
 		5061, sip->username));
-
-	g_free(contact);
 }
 
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
@@ -1742,13 +1754,18 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 			process_incoming_subscribe(sip, msg);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "INVITE")) {
-			purple_debug_info("sipe","not calling unfinished send->process_incoming_invite\n");
-			//process_incoming_invite(sip, msg);
+			process_incoming_invite(sip, msg);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "INFO")) {
 			// TODO implement this - keyboard activity
+			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "ACK")) {
+			// ACK's don't need any response
+			//send_sip_response(sip->gc, msg, 200, "OK", NULL);
+			found = TRUE;
+		} else if (!strcmp(msg->method, "BYE")) {
+			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 			found = TRUE;
 		} else {
 			send_sip_response(sip->gc, msg, 501, "Not implemented", NULL);
@@ -1880,29 +1897,26 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			return;
 		}
 
-		//gchar * mic = purple_krb5_get_mic_for_sipmsg(&krb5_auth, msg);
-		//printf ("\nWe think MIC for incoming should be: %s\n\n", mic);
-		//g_free(mic);
-		//if (purple_ntlm_authorized()) {
-		if (1) {
+		if (sip->registrar.ntlm_key) {
 			struct sipmsg_breakdown msgbd;
 			msgbd.msg = msg;
 			sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
 			gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
-
-			printf ("Have signature_input_str for incoming msg: %s\n", signature_input_str);
+			gchar * signature;
 			if (signature_input_str != NULL) {
-				guint64 srand = g_ascii_strtoull (msgbd.rand, NULL, 16);
-				printf ("Have srand = %ld\n", srand);
-				msg->signature = purple_ntlm_signature_make (signature_input_str, srand, sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL));
+				signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
 			}
 
-			g_free(signature_input_str);
+			gchar * rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
+			if (signature != NULL && rspauth != NULL) {
+				if (purple_ntlm_verify_signature (signature, rspauth)) {
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message signature validated\n");
+				} else {
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message signature is invalid.  Received %s but generated %s\n", rspauth, signature);
+				}
+			}
+
 			sipmsg_breakdown_free(&msgbd);
-
-
-		} else {
-			printf ("registrar ntlm_key is null.  proxies? %i\n", sip->proxy.ntlm_key == NULL);
 		}
 
 		process_input_message(sip, msg);

@@ -3,6 +3,7 @@
 #include <zlib.h>
 
 #include "sip-internal.h"
+#include "sipe-sign.h"
 #include "sip-ntlm.c"
 
 static int successes = 0;
@@ -92,7 +93,11 @@ int main()
 	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm1Signing
 	printf ("\n\nTesting Signature Algorithm\n");
 	char sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
-	assert_equal ("0100000078010900397420FE0E5A0F89", gen_signature ("jCIFS", sk, 0x00090178, 0, 8), 32, FALSE);
+	assert_equal (
+		"0100000078010900397420FE0E5A0F89",
+		purple_ntlm_gen_signature ("jCIFS", sk, 0x00090178, 0, 8),
+		32, FALSE
+	);
 
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
@@ -100,9 +105,21 @@ int main()
 	char exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 	assert_equal (
 		"0100000000000000BF2E52667DDF6DED",
-		gen_signature(msg1, exported_session_key2, 0, 100, 16),
+		purple_ntlm_gen_signature(msg1, exported_session_key2, 0, 100, 16),
 		32, FALSE
 	);
+
+	// Verify parsing of message and signature verification
+	printf ("\n\nTesting MS-SIPE Example Message Parsing, Signing, and Verification\n");
+	char * msg2 = "SIP/2.0 200 OK\r\nms-keep-alive: UAS; tcp=no; hop-hop=yes; end-end=no; timeout=300\r\nAuthentication-Info: NTLM rspauth=\"0100000000000000BF2E52667DDF6DED\", srand=\"0878F41B\", snum=\"1\", opaque=\"4452DFB0\", qop=\"auth\", targetname=\"ocs1.ocs.provo.novell.com\", realm=\"SIP Communications Service\"\r\nFrom: \"Gabriel Burt\"<sip:gabriel@ocs.provo.novell.com>;tag=2947328781;epid=1234567890\r\nTo: <sip:gabriel@ocs.provo.novell.com>;tag=B816D65C2300A32CFA6D371F2AF537FD\r\nCall-ID: 8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx\r\nCSeq: 3 REGISTER\r\nVia: SIP/2.0/TLS 164.99.194.49:10409;branch=z9hG4bKE0E37DBAF252C3255BAD;received=164.99.195.20;ms-received-port=10409;ms-received-cid=1E00\r\nContact: <sip:164.99.195.20:10409;transport=tls;ms-received-cid=1E00>;expires=900\r\nExpires: 900\r\nAllow-Events: vnd-microsoft-provisioning,vnd-microsoft-roaming-contacts,vnd-microsoft-roaming-ACL,presence,presence.wpending,vnd-microsoft-roaming-self,vnd-microsoft-provisioning-v2\r\nSupported: adhoclist\r\nServer: RTC/3.0\r\nSupported: com.microsoft.msrtc.presence\r\nContent-Length: 0\r\n\r\n";
+	struct sipmsg * msg = sipmsg_parse_msg(msg2);
+	struct sipmsg_breakdown msgbd;
+	msgbd.msg = msg;
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
+	gchar * sig = purple_ntlm_sipe_gen_signature (&msgbd, exported_session_key2);
+	sipmsg_breakdown_free(&msgbd);
+	assert_equal ("0100000000000000BF2E52667DDF6DED", sig, 32, FALSE);
+	printf("purple_ntlm_verify_signature result = %i\n", purple_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
 
 	printf ("\nFinished With Tests; %d successs %d failures\n", successes, failures);
 }

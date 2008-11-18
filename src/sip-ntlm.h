@@ -37,15 +37,6 @@
 #define NEGOTIATE_FLAGS 0x40008250
 
 /**
- * Generates the base64 encoded type 1 message needed for NTLM authentication
- *
- * @param hostname Your hostname
- * @param domain The domain to authenticate to
- * @return base64 encoded string to send to the server. has to be freed with g_free
- */
-gchar *purple_ntlm_gen_type1_sipe(gchar *hostname, gchar *domain);
-
-/**
  * Parses the ntlm type 2 message
  *
  * @param challenge String containing the base64 encoded challenge message
@@ -64,11 +55,8 @@ gchar *purple_ntlm_parse_challenge(gchar *challenge, guint32 *flags);
  * @param flags Pointer to the flags returned by purple_ntlm_parse_challenge
  * @return A base64 encoded authenticate message
  */
-gchar *purple_ntlm_gen_authenticate(const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags);
+gchar *purple_ntlm_gen_authenticate(const gchar **ntlm_key, const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags);
 
-long purple_ntlm_gen_crc32 (char * msg);
-gchar* purple_ntlm_get_key ();
-
-gchar * purple_ntlm_signature_make (char * buf, guint64 rand, char * rspauth);
+gchar * purple_ntlm_sipe_signature_make (char * msg, char * signing_key);
 
 #endif /* _PURPLE_NTLM_SIPE_H */
