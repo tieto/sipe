@@ -318,13 +318,6 @@ gchar *purple_ntlm_parse_challenge(gchar *challenge, guint32 *flags) {
 }
 
 void
-print_hex_array_title(char * title, char * msg, int num)
-{
-	printf("%s:\n", title);
-	print_hex_array(msg, num);
-}
-
-void
 print_hex_array(char * msg, int num)
 {
 	int k;
@@ -332,6 +325,13 @@ print_hex_array(char * msg, int num)
 		printf("0x%02X, ", msg[k]&0xff);
 	}
 	printf("\n");
+}
+
+void
+print_hex_array_title(char * title, char * msg, int num)
+{
+	printf("%s:\n", title);
+	print_hex_array(msg, num);
 }
 
 long
@@ -351,12 +351,12 @@ purple_ntlm_gen_signature (char * buf, char * signing_key, guint32 random_pad, l
 
 	guchar result [16];
 	PurpleCipherContext *rc4 = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(rc4, "key_len", key_len);
+	purple_cipher_context_set_option(rc4, "key_len", (gpointer)key_len);
 	purple_cipher_context_set_key(rc4, signing_key);
 	purple_cipher_context_encrypt(rc4, (const guchar *)plaintext, 12, result+4, NULL);
 	purple_cipher_context_destroy(rc4);
 
-	gint32 * res_ptr = result;
+	gint32 * res_ptr = (gint32 *)result;
 	// Highest four bytes are the Version
 	res_ptr[0] = 0x00000001;
 

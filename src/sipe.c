@@ -361,7 +361,7 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 			/* TODO: Don't hardcode "purple" as the hostname */
 			const gchar * ntlm_key;
 			gchar * gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, "purple", authdomain, (const guint8 *)auth->nonce, &auth->flags);
-			auth->ntlm_key = ntlm_key;
+			auth->ntlm_key = (gchar *)ntlm_key;
 			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, gssapi_data);
 			g_free(gssapi_data);
 			return tmp;
@@ -893,7 +893,7 @@ static void transactions_add_buf(struct sipe_account_data *sip, const struct sip
 {
 	struct transaction *trans = g_new0(struct transaction, 1);
 	trans->time = time(NULL);
-	trans->msg = msg;
+	trans->msg = (struct sipmsg *)msg;
 	trans->cseq = sipmsg_find_header(trans->msg, "CSeq");
 	trans->callback = callback;
 	sip->transactions = g_slist_append(sip->transactions, trans);

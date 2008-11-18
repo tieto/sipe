@@ -243,7 +243,7 @@ sipmsg_find_part_of_header(const char *hdr, const char * before, const char * af
 	tmp = before == NULL ? hdr : strstr(hdr, before);
 	if (!tmp) {
 		//printf ("not found, returning null\n");
-		return def;
+		return (gchar *)def;
 	}
 
 	if (before != NULL) {
