@@ -656,7 +656,7 @@ static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 
 	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
-		purple_ssl_close(gsc);
+		if(gsc) purple_ssl_close(gsc);
 		return;
 	}
 
@@ -723,7 +723,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
                   if (sip->gsc){
                         ret = purple_ssl_write(sip->gsc, buf, writelen);
                   }else{  
-			ret = write(sip->fd, buf, writelen);
+			            ret = write(sip->fd, buf, writelen);
                   }
                }
 
@@ -1213,15 +1213,12 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 
 static void sipe_subscribe_buddylist(struct sipe_account_data *sip)
 {
-        gchar *contact = "Event: vnd-microsoft-roaming-contacts\r\nAccept: application/vnd-microsoft-roaming-contacts+xml\r\nSupported: com.microsoft.autoextend\r\nSupported: ms-benotify\r\nProxy-Require: ms-benotify\r\nSupported: ms-piggyback-first-notify\r\n";
-	gchar *to;
-	gchar *tmp;
-	//to = g_strdup_printf("sip:%s@%s", sip->username, sip->sipdomain);
-        to = g_strdup_printf("sip:%s", sip->username); 
-
-	tmp = get_contact(sip);
+    gchar *contact = "Event: vnd-microsoft-roaming-contacts\r\nAccept: application/vnd-microsoft-roaming-contacts+xml\r\nSupported: com.microsoft.autoextend\r\nSupported: ms-benotify\r\nProxy-Require: ms-benotify\r\nSupported: ms-piggyback-first-notify\r\n";
+	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *tmp = get_contact(sip);
 	contact = g_strdup_printf("%sContact: %s\r\n", contact, tmp);
 	g_free(tmp);
+	
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, contact, "", NULL, sipe_add_lcs_contacts);
 	g_free(to);
 	g_free(contact);
@@ -1358,9 +1355,9 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	struct sipe_account_data *sip = gc->proto_data;
 	char *to = g_strdup(who);
 	char *text = purple_unescape_html(what);
-	//sipe_send_message(sip, to, text, NULL);
+	sipe_send_message(sip, to, text, NULL);
 	//sipe_invite(sip, to);
-	purple_debug_info("sipe", "sending IMs not implemented\n");
+	/*purple_debug_info("sipe", "sending IMs not implemented\n");*/
 	g_free(to);
 	g_free(text);
 	return 1;
@@ -1457,8 +1454,8 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				/* tell everybody we're online */
 				send_publish (sip);
 
-				/* get buddies from blist */
-				sipe_get_buddies(sip->gc);
+				/* get buddies from blist; Has a bug */
+				/*sipe_get_buddies(sip->gc);*/
 				subscribe_timeout(sip);
 
 				//sipe_subscribe_to_name(sip, sip->username);
@@ -1470,7 +1467,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
-				//transactions_remove(sip, tc);
+				transactions_remove(sip, tc);
 			}
 			break;
 		case 401:
@@ -1840,7 +1837,8 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
   					   but transactions seem to be removed prematurely so 
   					   this only removes them if the response is 200 OK */
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - removing CSeq %d\r\n", sip->cseq);
-					transactions_remove(sip, trans);
+					/*Has a bug and it's unneccesary*/
+                    /*transactions_remove(sip, trans);*/
 					
 				}
 			}
@@ -1954,14 +1952,15 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 
 	/* TODO: It should be possible to make this check unnecessary */
 	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
-		purple_ssl_close(gsc);
+		if (gsc) purple_ssl_close(gsc);
 		return;
 	}
 
-	conn = connection_find(sip, sip->gsc->fd);
+	if (sip->gsc) 
+		conn = connection_find(sip, sip->gsc->fd);
 	if (!conn) {
 		purple_debug_error("sipe", "Connection not found!\n");
-		purple_ssl_close(gsc);
+		if (sip->gsc) purple_ssl_close(sip->gsc);
 		return;
 	}
       
@@ -1978,13 +1977,17 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
                 return;
         } else if (len < 0) {
                 purple_debug_info("sipe", "sipe_input_cb_ssl: read error\n");
-                connection_remove(sip, sip->gsc->fd); 
-                if (sip->fd == gsc->fd) sip->fd = -1;  
+                if (sip->gsc){ 
+					connection_remove(sip, sip->gsc->fd); 
+                    if (sip->fd == gsc->fd) sip->fd = -1; 
+				}
                 return;
         } else if (len == 0) {
                 purple_connection_error(gc, _("Server has disconnected"));
-                connection_remove(sip, sip->gsc->fd);
-                if (sip->fd == gsc->fd) sip->fd = -1;
+			    if (sip->gsc){
+                	connection_remove(sip, sip->gsc->fd);
+                	if (sip->fd == gsc->fd) sip->fd = -1;
+				}
                 return;
         }
 
@@ -2080,7 +2083,7 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 
 	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
-		purple_ssl_close(gsc);
+		if (gsc) purple_ssl_close(gsc);
 		return;
 	}
 
