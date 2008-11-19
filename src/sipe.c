@@ -85,7 +85,12 @@ static char *gencallid()
 
 static gchar *find_tag(const gchar *hdr)
 {
-	return sipmsg_find_part_of_header (hdr, ";tag=", ";", NULL);
+	gchar * tag = sipmsg_find_part_of_header (hdr, "tag=", ";", NULL);
+	if (!tag) {
+		// In case it's at the end and there's no trailing ;
+		tag = sipmsg_find_part_of_header (hdr, "tag=", NULL, NULL);
+	}
+	return tag;
 }
 
 
@@ -988,8 +993,8 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			method,
 			callid,
 			addh,
-			strlen(body),
-			body);
+			body ? strlen(body) : 0,
+			body ? body : "");
 
 
 	//printf ("parsing msg buf:\n%s\n\n", buf);
@@ -1338,12 +1343,20 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	}
 
 
-	dialog->callid = sipmsg_find_header(trans->msg, "Call-ID");
-	dialog->ourtag = find_tag(sipmsg_find_header(trans->msg, "From"));
-	dialog->theirtag = find_tag(sipmsg_find_header(trans->msg, "To"));
+	dialog->callid = sipmsg_find_header(msg, "Call-ID");
+	dialog->ourtag = find_tag(sipmsg_find_header(msg, "From"));
+	dialog->theirtag = find_tag(sipmsg_find_header(msg, "To"));
 	if (!dialog->theirepid) {
-		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(trans->msg, "To"), "epid=", NULL, NULL);
+		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "To"), "epid=", ";", NULL);
 	}
+	if (!dialog->theirepid) {
+		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "To"), "epid=", NULL, NULL);
+	}
+
+	//gchar * hdr = g_strdup_printf("Record-Route: %s\r\n", sipmsg_find_header(msg, "Record-Route"));
+	gchar * hdr = NULL;
+	send_sip_request(sip->gc, "ACK", session->with, session->with, hdr, NULL, dialog, NULL);
+	//g_free(hdr);
 
 	session->outgoing_invite = NULL;
 
@@ -1379,15 +1392,6 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
 		"Contact: %s\r\n"
-		"Supported: com.microsoft.rtc-multiparty\r\n"
-		"Roster-Manager:sip:%s\r\n"
-		//"Ms-Conversation-ID: AckwibOFOjjDdVR6S5e0xywMj6Kaww==\r\n" //temp
-		"ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA; \r\n" //temp
-		"Supported: ms-delayed-accept\r\n"
-		"Supported: ms-renders-isf\r\n"
-		"Supported: ms-renders-gif\r\n"
-		"Supported: ms-renders-mime-alternative\r\n"
-		"EndPoints: <sip:%s>, <%s>\r\n"
 		"Content-Type: application/sdp\r\n",
 		contact, sip->username, sip->username, to);
 
