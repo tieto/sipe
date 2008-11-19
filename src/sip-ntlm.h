@@ -10,7 +10,7 @@
  * Implemented with reference to the follow documentation:
  *   - http://davenport.sourceforge.net/ntlm.html
  *   - MS-NLMP: http://msdn.microsoft.com/en-us/library/cc207842.aspx
- *   - MS-SIPE: http://msdn.microsoft.com/en-us/library/cc246115.aspx
+ *   - MS-SIP : http://msdn.microsoft.com/en-us/library/cc246115.aspx
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

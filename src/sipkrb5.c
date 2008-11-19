@@ -3,7 +3,7 @@
  *
  * Methods for using Kerberos authentication and signing with SIPE,
  * implemented with reference to
- *   - MS-SIPE: http://msdn.microsoft.com/en-us/library/cc431510.aspx
+ *   - MS-SIP: http://msdn.microsoft.com/en-us/library/cc431510.aspx
  *
  * Authentication is known to be working, but the signing does not work at
  * all yet.

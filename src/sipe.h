@@ -41,10 +41,23 @@
 
 #define SIMPLE_BUF_INC 4096
 
+
+struct sip_im_session {
+	gchar * with;
+	struct sip_dialog * outgoing_dialog;
+	struct sip_dialog * incoming_dialog;
+	struct transaction * outgoing_invite;
+
+	GSList *outgoing_message_queue;
+};
+
+// dialog is the new term for call-leg
 struct sip_dialog {
 	gchar *ourtag;
 	gchar *theirtag;
+	gchar *theirepid;
 	gchar *callid;
+	int cseq;
 };
 
 struct sipe_watcher {
@@ -104,6 +117,7 @@ struct sipe_account_data {
 	gchar *regcallid;
 	GSList *transactions;
 	GSList *watcher;
+	GSList *im_sessions;
 	GSList *openconns;
 	gboolean udp;
         gboolean use_ssl;
