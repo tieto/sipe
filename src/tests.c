@@ -8,7 +8,7 @@
  * Implemented with reference to the follow documentation:
  *   - http://davenport.sourceforge.net/ntlm.html
  *   - MS-NLMP: http://msdn.microsoft.com/en-us/library/cc207842.aspx
- *   - MS-SIPE: http://msdn.microsoft.com/en-us/library/cc246115.aspx
+ *   - MS-SIP : http://msdn.microsoft.com/en-us/library/cc246115.aspx
  *
  * Build and run with `make tests`
  *
@@ -145,7 +145,8 @@ int main()
 	struct sipmsg_breakdown msgbd;
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
-	gchar * sig = purple_ntlm_sipe_gen_signature (&msgbd, exported_session_key2);
+	gchar * msg_str = sipmsg_breakdown_get_string(&msgbd);
+	gchar * sig = purple_ntlm_sipe_signature_make (msg_str, exported_session_key2);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", sig, 32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", purple_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
