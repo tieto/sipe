@@ -68,6 +68,11 @@ static char *gentag()
 	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
+static char *getuuid()
+{
+	return g_strdup_printf("01010101");  //TODO Should be taken from the MAC ADDRESS
+}
+
 static char *genbranch()
 {
 	return g_strdup_printf("z9hG4bK%04X%04X%04X%04X%04X",
@@ -839,8 +844,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 static char *get_contact(struct sipe_account_data  *sip)
 {
-        //return g_strdup_printf("<sip:%s@%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->sipdomain, sip->listenport, sipe_network_get_local_system_ip() , sip->udp ? "udp" : "tcp");
-        return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
+         return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
 }
 
 
@@ -975,7 +979,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			branch ? branch : "",
 			sip->username,
 			ourtag ? ourtag : "",
-			"1234567890", // TODO generate one per account/login
+			getuuid(), // TODO generate one per account/login
 			to,
 			theirtag ? ";tag=" : "",
 			theirtag ? theirtag : "",
@@ -1013,7 +1017,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 
 static char *get_contact_register(struct sipe_account_data  *sip)
 {
-        return g_strdup_printf("<sip:%s:%d;transport=%s>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");
+        return g_strdup_printf("<sip:%s:%d;transport=%s>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace; +sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp",generateUUIDfromEPID(getuuid()));
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
@@ -1291,9 +1295,9 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	//hdr = g_strdup("Content-Type: text/rtf\r\n");
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA\r\nSupported: timer\r\n");
 
-        /*tmp = get_contact(sip);
+        tmp = get_contact(sip);
 	hdr = g_strdup_printf("Contact: %s\r\n%s", tmp, hdr);
-	g_free(tmp);*/
+	g_free(tmp);
 
 	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msg, session->outgoing_dialog, NULL);
 
@@ -1806,7 +1810,7 @@ static void send_publish(struct sipe_account_data *sip)
 	);
 
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Contact: %s\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp);
+	gchar *hdr = g_strdup_printf("Contact: %s; +sip.instance=\"<urn:uuid:%s>\"\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp,generateUUIDfromEPID(getuuid()));
 	g_free(tmp); 
 
 	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_service_response);
@@ -1828,7 +1832,7 @@ static void send_service(struct sipe_account_data *sip)
 
         //gchar *hdr = g_strdup("Content-Type: application/SOAP+xml\r\n");
         gchar *tmp = get_contact(sip);
-        hdr = g_strdup_printf("Contact: %s\r\n%s", tmp, hdr);
+        hdr = g_strdup_printf("Contact: %s\r\n%s; +sip.instance=\"<urn:uuid:%s>\"", tmp, hdr,generateUUIDfromEPID(getuuid()));
         g_free(tmp); 
 	send_sip_request(sip->gc, "SERVICE", uri, uri,
 		hdr,
