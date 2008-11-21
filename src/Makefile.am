@@ -15,7 +15,9 @@ libsipe_la_SOURCES = \
 	sipe.h \
 	sipe.c \
 	sipe-sign.h \
-	sipe-sign.c
+	sipe-sign.c \
+	uuid.h \
+	uuid.c
 
 AM_CFLAGS = $(st) 
 

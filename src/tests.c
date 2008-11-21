@@ -35,6 +35,8 @@
 #include "sipe-sign.h"
 #include "sip-ntlm.c"
 
+#include "uuid.h"
+
 static int successes = 0;
 static int failures = 0;
 
@@ -150,6 +152,20 @@ int main()
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", sig, 32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", purple_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
+
+
+	/* begin tests from MS-SIPRE */
+
+	const char *testEpid = "01010101";
+	const char *expectedUUID = "4b1682a8-f968-5701-83fc-7c6741dc6697";
+	char *calcUUID = generateUUIDfromEPID(testEpid);
+
+	printf("\n\nTesting MS-SIPRE uuid derivation\n");
+
+	assert_equal(expectedUUID, calcUUID, strlen(expectedUUID), FALSE);
+	g_free(calcUUID);
+
+	/* end tests from MS-SIPRE */
 
 	printf ("\nFinished With Tests; %d successs %d failures\n", successes, failures);
 }
