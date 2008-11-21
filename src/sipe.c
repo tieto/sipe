@@ -948,7 +948,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *theirepid = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
-
+	gchar *useragent = purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 	if (!strcmp(method, "REGISTER")) {
 		if (sip->regcallid) {
 			g_free(callid);
@@ -966,7 +966,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			"To: <%s>%s%s%s%s\r\n"
 			"Max-Forwards: 70\r\n"
 			"CSeq: %d %s\r\n"
-			"User-Agent: Purple/" VERSION "\r\n"
+			"User-Agent: %s\r\n"
 			"Call-ID: %s\r\n"
 			"%s%s"
 			"Content-Length: %" G_GSIZE_FORMAT "\r\n\r\n%s",
@@ -987,6 +987,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			theirepid ? theirepid : "",
 			dialog ? ++dialog->cseq : ++sip->cseq,
 			method,
+			useragent,
 			callid,
 			dialog && dialog->route ? dialog->route : "",
 			addh,
@@ -2749,6 +2750,9 @@ static void init_plugin(PurplePlugin *plugin)
         option = purple_account_option_bool_new(_("Use SSL/TLS"), "ssl", FALSE);
         prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,option);
 
+	option = purple_account_option_string_new(_("UserAgent"), "useragent", "Purple/" VERSION);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,option);
+    
 	option = purple_account_option_bool_new(_("Use UDP"), "udp", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
         
