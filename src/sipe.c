@@ -102,13 +102,12 @@ static const char *sipe_list_icon(PurpleAccount *a, PurpleBuddy *b)
 static void sipe_keep_alive(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = gc->proto_data;
-	if (sip->udp) { /* in case of UDP send a packet only with a 0 byte to
-			 remain in the NAT table */
+	if (sip->udp) {
+		/* in case of UDP send a packet only with a 0 byte to remain in the NAT table */
 		gchar buf[2] = {0, 0};
 		purple_debug_info("sipe", "sending keep alive\n");
 		sendto(sip->fd, buf, 1, 0, (struct sockaddr*)&sip->serveraddr, sizeof(struct sockaddr_in));
 	}
-	return;
 }
 
 static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc);
@@ -806,10 +805,8 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		msgbd.rand = g_strdup("0878F41B");
 		sip->registrar.ntlm_num++;
 		msgbd.num = g_strdup_printf("%d", sip->registrar.ntlm_num);
-		printf("ntlm_num is %d, msgbd.num is %s\n", sip->registrar.ntlm_num, msgbd.num);
 		gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
 		if (signature_input_str != NULL) {
-			printf("Have signature input str: %s\n", signature_input_str);
 			msg->signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
 			msg->rand = g_strdup(msgbd.rand);
 			msg->num = g_strdup(msgbd.num);
@@ -819,7 +816,6 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
 		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
-		printf("1.for sig %s got auth buf %s\n", msg->signature, buf);
 		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
 			sipmsg_add_header(msg, "Authorization", buf);
 		} else {
@@ -832,7 +828,6 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		sip->registrar.type=2;
 		
 		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
-		printf("2.for sig %s got auth buf %s\n", msg->signature, buf);
 		//buf = auth_header(sip, &sip->proxy, msg, FALSE);
 		sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
 		//sipmsg_add_header(msg, "Authorization", buf);
@@ -944,11 +939,11 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	char *buf;
         struct sipmsg *msg;
         gchar *ptmp;
-	gchar *branch    = genbranch();
 	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : gentag();
 	gchar *theirtag  = dialog && dialog->theirtag  ? g_strdup(dialog->theirtag)  : NULL;
 	gchar *theirepid = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
+	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 
 	if (!strcmp(method, "REGISTER")) {
 		if (sip->regcallid) {
@@ -962,28 +957,25 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	if (addheaders) addh = addheaders;
 
 	buf = g_strdup_printf("%s %s SIP/2.0\r\n"
-			"Via: SIP/2.0/%s %s:%d;branch=%s\r\n"
-			/* epid Identifies a unique endpoint for the user. Used by
-			 * the server to determine the correct SA to use for
-			 * signing an outgoing response.
-			 * TODO: generate a random epid
-			 * */
-			"From: <sip:%s>;tag=%s;epid=1234567890\r\n"
+			"Via: SIP/2.0/%s %s:%d%s%s\r\n"
+			"From: <sip:%s>;tag=%s;epid=%s\r\n"
 			"To: <%s>%s%s%s%s\r\n"
 			"Max-Forwards: 70\r\n"
 			"CSeq: %d %s\r\n"
 			"User-Agent: Purple/" VERSION "\r\n"
 			"Call-ID: %s\r\n"
-			"%s"
+			"%s%s"
 			"Content-Length: %" G_GSIZE_FORMAT "\r\n\r\n%s",
 			method,
-			url,
+			dialog && dialog->request ? dialog->request : url,
 			sip->use_ssl ? "TLS" : sip->udp ? "UDP" : "TCP",
 			purple_network_get_my_ip(-1),
 			sip->listenport,
-			branch,
+			branch ? ";branch=" : "",
+			branch ? branch : "",
 			sip->username,
 			ourtag ? ourtag : "",
+			"1234567890", // TODO generate one per account/login
 			to,
 			theirtag ? ";tag=" : "",
 			theirtag ? theirtag : "",
@@ -992,6 +984,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			dialog ? ++dialog->cseq : ++sip->cseq,
 			method,
 			callid,
+			dialog && dialog->route ? dialog->route : "",
 			addh,
 			body ? strlen(body) : 0,
 			body ? body : "");
@@ -1247,14 +1240,17 @@ static void sipe_subscribe_buddylist(struct sipe_account_data *sip)
 
 /* IM Session (INVITE and MESSAGE methods) */
 
-static struct sip_im_session * find_im_session (struct sipe_account_data *sip, const char *who, struct transaction * trans)
+static struct sip_im_session * find_im_session (struct sipe_account_data *sip, const char *who)
 {
+	if (sip == NULL || who == NULL) {
+		return NULL;
+	}
+
 	struct sip_im_session *session;
 	GSList *entry = sip->im_sessions;
 	while (entry) {
 		session = entry->data;
-		if ((who != NULL && !strcmp(who, session->with)) ||
-			(trans != NULL && trans == session->outgoing_invite)) {
+		if ((who != NULL && !strcmp(who, session->with))) {
 			return session;
 		}
 		entry = entry->next;
@@ -1264,7 +1260,7 @@ static struct sip_im_session * find_im_session (struct sipe_account_data *sip, c
 
 static struct sip_im_session * find_or_create_im_session (struct sipe_account_data *sip, const char *who)
 {
-	struct sip_im_session *session = find_im_session(sip, who, NULL);
+	struct sip_im_session *session = find_im_session(sip, who);
 	if (!session) {
 		session = g_new0(struct sip_im_session, 1);
 		session->with = g_strdup(who);
@@ -1273,7 +1269,13 @@ static struct sip_im_session * find_or_create_im_session (struct sipe_account_da
 	return session;
 }
 
-static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_session * session, const char *msg, const char *type)
+static void im_session_destroy(struct sipe_account_data *sip, struct sip_im_session * session)
+{
+	sip->im_sessions = g_slist_remove(sip->im_sessions, session);
+	// TODO free session resources
+}
+
+static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_session * session, const char *msg)
 {
 	gchar *hdr;
 	gchar *fullto;
@@ -1285,12 +1287,9 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 		fullto = g_strdup(session->with);
 	}
 
-	if (type) {
-		hdr = g_strdup_printf("Content-Type: %s\r\n", type);
-	} else {
-		//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
-		hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA\r\n");
-	}
+	hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
+	//hdr = g_strdup("Content-Type: text/rtf\r\n");
+	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA\r\nSupported: timer\r\n");
 
         /*tmp = get_contact(sip);
 	hdr = g_strdup_printf("Contact: %s\r\n%s", tmp, hdr);
@@ -1306,26 +1305,24 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 static void
 sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * session)
 {
-	// Outgoing dialog is setup, so send the message directly
 	GSList *entry = session->outgoing_message_queue;
-	GSList *next;
 	while (entry) {
 		char *queued_msg = entry->data;
-		sipe_send_message(sip, session, queued_msg, NULL);
+		sipe_send_message(sip, session, queued_msg);
 
 		// Remove from the queue and free the string
-		next = entry->next;
-		session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, entry);
+		entry = session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
 		g_free(queued_msg);
-
-		entry = next;
 	}
 }
 
 static gboolean
 process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
-	struct sip_im_session * session = find_im_session(sip, NULL, trans);
+	gchar * with = parse_from(sipmsg_find_header(msg, "To"));
+	struct sip_im_session * session = find_im_session(sip, with);
+	g_free(with);
+
 	if (!session) {
 		purple_debug_info("sipe", "process_invite_response: unable to find IM session\n");
 		return FALSE;
@@ -1333,6 +1330,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 
 	if (msg->response != 200) {
 		purple_debug_info("sipe", "process_invite_response: INVITE response not 200, ignoring\n");
+		im_session_destroy(sip, session);
 		return FALSE;
 	}
 
@@ -1341,7 +1339,6 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		purple_debug_info("sipe", "process_invite_response: session outgoign dialog is NULL\n");
 		return FALSE;
 	}
-
 
 	dialog->callid = sipmsg_find_header(msg, "Call-ID");
 	dialog->ourtag = find_tag(sipmsg_find_header(msg, "From"));
@@ -1353,10 +1350,11 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "To"), "epid=", NULL, NULL);
 	}
 
-	//gchar * hdr = g_strdup_printf("Record-Route: %s\r\n", sipmsg_find_header(msg, "Record-Route"));
-	gchar * hdr = NULL;
-	send_sip_request(sip->gc, "ACK", session->with, session->with, hdr, NULL, dialog, NULL);
-	//g_free(hdr);
+	dialog->request = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Record-Route"), "<", ">", NULL);
+	dialog->route = g_strdup_printf("Route: %s\r\n", sipmsg_find_header(msg, "Contact"));
+	dialog->cseq = 0;
+
+	send_sip_request(sip->gc, "ACK", session->with, session->with, NULL, NULL, dialog, NULL);
 
 	session->outgoing_invite = NULL;
 
@@ -1392,6 +1390,14 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
 		"Contact: %s\r\n"
+		//"Supported: ms-conf-invite\r\n"
+		//"Supported: ms-delayed-accept\r\n"
+		//"Supported: ms-renders-isf\r\n"
+		//"Supported: ms-renders-gif\r\n"
+		//"Supported: ms-renders-mime-alternative\r\n"*/
+		//"Supported: timer\r\n"
+		//"Supported: ms-sender\r\n"
+		//"Supported: ms-early-media\r\n"
 		"Content-Type: application/sdp\r\n",
 		contact, sip->username, sip->username, to);
 
@@ -1414,29 +1420,55 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	g_free(contact);
 }
 
+static void
+im_session_close (struct sipe_account_data *sip, struct sip_im_session * session)
+{
+	if (session) {
+		send_sip_request(sip->gc, "BYE", session->with, session->with, NULL, NULL, session->outgoing_dialog, NULL);
+		im_session_destroy(sip, session);
+	}
+}
+
+static void
+sipe_convo_closed(PurpleConnection * gc, const char *who)
+{
+	struct sipe_account_data *sip = gc->proto_data;
+
+	purple_debug_info("sipe", "conversation with %s closed\n", who);
+	im_session_close(sip, find_im_session(sip, who));
+}
+
+static void
+im_session_close_all (struct sipe_account_data *sip)
+{
+	GSList *entry = sip->im_sessions;
+	while (entry) {
+		im_session_close (sip, entry->data);
+		entry = sip->im_sessions;
+	}
+}
+
 static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what, PurpleMessageFlags flags)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	char *to = g_strdup(who);
 	char *text = purple_unescape_html(what);
 
-	printf("sipe_im_send find/create session with %s\n", who);
 	struct sip_im_session * session = find_or_create_im_session(sip, who);
 
 	// Queue the message
 	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, text);
 
-	if (!session->outgoing_invite) {
+	if (session->outgoing_dialog && session->outgoing_dialog->callid) {
+		sipe_im_process_queue(sip, session);
+	} else if (!session->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
 		sipe_invite(sip, session);
-	} else if (session->outgoing_dialog && session->outgoing_dialog->callid) {
-		sipe_im_process_queue(sip, session);
 	}
 
 	g_free(to);
 	return 1;
 }
-
 
 
 /* End IM Session (INVITE and MESSAGE methods) */
@@ -1554,7 +1586,6 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	gchar * from = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "<", ">", NULL);
-	printf("sipe_im_send find/create session with %s\n", from);
 	struct sip_im_session * session = find_or_create_im_session (sip, from);
 	if (session) {
 		struct sip_dialog * dialog = g_new0(struct sip_dialog, 1);
@@ -1562,7 +1593,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		dialog->ourtag = find_tag(sipmsg_find_header(msg, "To"));
 		dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
 		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
-		printf("incoming dialog epid set to %s\n", dialog->theirepid);
+		printf("Created incoming dialog and set epid to %s\n", dialog->theirepid);
 
 		session->incoming_dialog = dialog;
 	} else {
@@ -1914,6 +1945,16 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 			found = TRUE;
 		} else if (!strcmp(msg->method, "BYE")) {
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
+
+			gchar * from = parse_from(sipmsg_find_header(msg, "From"));
+			struct sip_im_session * session = find_im_session (sip, from);
+			g_free(from);
+
+			if (session) {
+				// TODO Let the user know the other user left the conversation?
+				im_session_destroy(sip, session);
+			}
+
 			found = TRUE;
 		} else {
 			send_sip_response(sip->gc, msg, 501, "Not implemented", NULL);
@@ -2044,10 +2085,6 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		} else {
 			sipmsg_free(msg);
 			return;
-		}
-
-		if (msg->body) {
-			printf("and msg body:\n%s\n", msg->body);
 		}
 
 		// Verify the signature before processing it
@@ -2525,6 +2562,9 @@ static void sipe_close(PurpleConnection *gc)
 	struct sipe_account_data *sip = gc->proto_data;
 
 	if (sip) {
+		/* leave all conversations */
+		im_session_close_all(sip);
+
 		/* unregister */
 		do_register_exp(sip, 0);
 		connection_free_all(sip);
@@ -2637,8 +2677,8 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* group_buddy */
 	NULL,					/* rename_group */
 	NULL,					/* buddy_free */
-	NULL,					/* convo_closed */ // TODO
-	NULL,					/* normalize */
+	sipe_convo_closed,			/* convo_closed */
+	purple_normalize_nocase,		/* normalize */
 	NULL,					/* set_buddy_icon */
 	NULL,					/* remove_group */
 	NULL,					/* get_cb_real_name */
@@ -2666,7 +2706,7 @@ static PurplePluginInfo info = {
 	NULL,                                             /**< dependencies   */
 	PURPLE_PRIORITY_DEFAULT,                          /**< priority       */
         "prpl-sipe",                                   	  /**< id             */
-	"SIPE",                                           /**< name           */
+	"Microsoft LCS/OCS",				  /**< name           */
 	VERSION,                                          /**< version        */
 	N_("SIP/SIMPLE Exchange Protocol Plugin"),        /**  summary        */
 	N_("The SIP/SIMPLE Exchange Protocol Plugin"),    /**  description    */
