@@ -4,10 +4,10 @@ m4_define(pidgin_sipe_version,	1.2.0)
 # lower and upper-bound versions of Pidgin
 m4_define(pidgin_version_max,		2.0.0)
 
-AC_INIT
-AM_INIT_AUTOMAKE(pidgin_sipe, pidgin_sipe_version)
+AC_INIT([pidgin-sipe], [1.2.0])
 
 AC_PREREQ([2.50])
+AM_INIT_AUTOMAKE([1.9 dist-bzip2 tar-ustar])
 
 AC_DISABLE_STATIC
 
