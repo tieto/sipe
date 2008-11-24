@@ -39,14 +39,14 @@ static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
 static void readUUID(const char *string, uuid_t *uuid)
 {
 	int i;
-	sscanf(string, "%08x-%04x-%04x-%02x%02x-", &uuid->time_low
+	sscanf(string, "%08x-%04hx-%04hx-%02hhx%02hhx-", &uuid->time_low
 			, &uuid->time_mid, &uuid->time_hi_and_version
 			, &uuid->clock_seq_hi_and_reserved
 			, &uuid->clock_seq_low );
 
 	for(i=0;i<6;i++)
 	{
-			sscanf(&string[UUID_OFFSET_TO_LAST_SEGMENT+i*2], "%02x", &uuid->node[i]);
+		sscanf(&string[UUID_OFFSET_TO_LAST_SEGMENT+i*2], "%02hhx", &uuid->node[i]);
 	}
 }
 
@@ -60,7 +60,7 @@ static void printUUID(uuid_t *uuid, char *string)
 			);
 	for(i=0;i<6;i++)
 	{
-			sprintf(string, "%s%02x", string, uuid->node[i]);
+		sprintf(string, "%s%02x", string, uuid->node[i]);
 	}
 }
 
