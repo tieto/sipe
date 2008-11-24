@@ -38,6 +38,7 @@
 #include "sslconn.h"
 
 #include "sipmsg.h"
+#include "uuid.h"
 
 #define SIMPLE_BUF_INC 4096
 

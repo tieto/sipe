@@ -68,10 +68,9 @@ static char *gentag()
 	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
-static char *getuuid()
+static gchar *get_epid()
 {
-	//return g_strdup_printf("01010101");  //TODO Should be taken from the MAC ADDRESS
-	return get_macaddr();
+	return sipe_uuid_get_macaddr();
 }
 
 static char *genbranch()
@@ -975,7 +974,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			branch ? branch : "",
 			sip->username,
 			ourtag ? ourtag : "",
-			getuuid(), // TODO generate one per account/login
+			get_epid(), // TODO generate one per account/login
 			to,
 			theirtag ? ";tag=" : "",
 			theirtag ? theirtag : "",
@@ -1014,7 +1013,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 
 static char *get_contact_register(struct sipe_account_data  *sip)
 {
-        return g_strdup_printf("<sip:%s:%d;transport=%s>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace; +sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp",generateUUIDfromEPID(getuuid()));
+        return g_strdup_printf("<sip:%s:%d;transport=%s>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace; +sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp",generateUUIDfromEPID(get_epid()));
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
@@ -1801,13 +1800,13 @@ static void send_publish(struct sipe_account_data *sip)
 	gchar *uri = g_strdup_printf("sip:%s", sip->username);
 	gchar *doc = g_strdup_printf(
 		"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\"><publications uri=\"%s\"><publication categoryName=\"device\" instance=\"1617359818\" container=\"2\" version=\"0\" expireType=\"endpoint\"><device xmlns=\"http://schemas.microsoft.com/2006/09/sip/device\" endpointId=\"%s\"><capabilities preferred=\"false\" uri=\"%s\"><text capture=\"true\" render=\"true\" publish=\"false\"/><gifInk capture=\"false\" render=\"true\" publish=\"false\"/><isfInk capture=\"false\" render=\"true\" publish=\"false\"/></capabilities><timezone>%s</timezone><machineName>%s</machineName></device></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"2\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"3\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication></publications></publish>",
-		uri, generateUUIDfromEPID(getuuid()), uri,
+		uri, generateUUIDfromEPID(get_epid()), uri,
 		"00:00:00-05:00", // TODO timezone
 		"PC" // TODO machine name
 	);
 
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Contact: %s; +sip.instance=\"<urn:uuid:%s>\"\r\nAccept: application/ms-location-profile-definition+xml\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp,generateUUIDfromEPID(getuuid()));
+	gchar *hdr = g_strdup_printf("Contact: %s; +sip.instance=\"<urn:uuid:%s>\"\r\nAccept: application/ms-location-profile-definition+xml\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp,generateUUIDfromEPID(get_epid()));
 	g_free(tmp); 
 
 	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_service_response);
@@ -1828,7 +1827,7 @@ static void send_service(struct sipe_account_data *sip)
 
         //gchar *hdr = g_strdup("Content-Type: application/SOAP+xml\r\n");
         gchar *tmp = get_contact(sip);
-        hdr = g_strdup_printf("Contact: %s\r\n%s; +sip.instance=\"<urn:uuid:%s>\"", tmp, hdr,generateUUIDfromEPID(getuuid()));
+        hdr = g_strdup_printf("Contact: %s\r\n%s; +sip.instance=\"<urn:uuid:%s>\"", tmp, hdr,generateUUIDfromEPID(get_epid()));
         g_free(tmp); 
 	send_sip_request(sip->gc, "SERVICE", uri, uri,
 		hdr,
@@ -2034,10 +2033,6 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 				}
 			}
 			found = TRUE;
-			/* This is done because in an OCS2007 server trace the MS
-                         * Communicator client seems to reset the CSeq after an OK */
-
-			//sip->cseq=1;
 		} else {
 			purple_debug(PURPLE_DEBUG_MISC, "sipe", "received response to unknown transaction");
 		}

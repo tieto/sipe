@@ -36,7 +36,7 @@ static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
 
 #define UUID_OFFSET_TO_LAST_SEGMENT 24
 
-static void readUUID(const char *string, uuid_t *uuid)
+void readUUID(const char *string, uuid_t *uuid)
 {
 	int i;
 	sscanf(string, "%08x-%04hx-%04hx-%02hhx%02hhx-", &uuid->time_low
@@ -50,7 +50,7 @@ static void readUUID(const char *string, uuid_t *uuid)
 	}
 }
 
-static void printUUID(uuid_t *uuid, char *string)
+void printUUID(uuid_t *uuid, char *string)
 {
 	int i;
 	sprintf(string, "%08x-%04x-%04x-%02x%02x-", uuid->time_low
@@ -64,7 +64,7 @@ static void printUUID(uuid_t *uuid, char *string)
 	}
 }
 
-static void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
+void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
 {
 	memcpy(uuid, hash, sizeof(uuid_t));
 	uuid->time_hi_and_version &= 0x0FFF;
@@ -73,7 +73,7 @@ static void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
 	uuid->clock_seq_hi_and_reserved |= 0x80;
 }
 
-char *generateUUIDfromEPID(const char *epid)
+char *generateUUIDfromEPID(const gchar *epid)
 {
 	uuid_t result;
 	PurpleCipherContext *ctx;
@@ -82,11 +82,15 @@ char *generateUUIDfromEPID(const char *epid)
 
 	readUUID(epid_ns_uuid, &result);
 	memcpy(buf, &result, sizeof(uuid_t));
+	printf("have epid == NULL? %i\n", epid == NULL);
+	printf("have epid: '%s'\n", epid);
+	printf("have sizeof uuid_t: %d\n", sizeof(uuid_t));
 	sprintf(&buf[sizeof(uuid_t)], epid);
 
 	ctx = purple_cipher_context_new_by_name("sha1", NULL);
 	purple_cipher_context_append(ctx, buf, strlen(buf));
 	purple_cipher_context_digest(ctx, sizeof(hash), hash, NULL);
+	purple_cipher_context_destroy(ctx);
 
 	createUUIDfromHash(&result, hash);
 	printUUID(&result, buf);
@@ -136,7 +140,7 @@ long mac_addr_sys (const char *addr)
     return 0;
 }
 
-gchar *get_macaddr()
+gchar * sipe_uuid_get_macaddr()
 {
 	guchar addr[6];
 	long mac_add = mac_addr_sys(addr);
@@ -147,7 +151,9 @@ gchar *get_macaddr()
 		for (i = 0,j=0; i < 6; i++,j+=2) {
 			g_sprintf(&nmac[j], "%02X", addr[i]);
 		}
+		printf("Returning mac: '%s'\n", nmac);
 		return g_strdup(nmac);
 	}
+	printf("Returning default mac\n");
 	return g_strdup_printf("01010101");  //Default
 }

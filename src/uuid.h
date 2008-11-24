@@ -16,8 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef UUID_H_
-#define UUID_H_
+#ifndef SIPE_UUID_H_
+#define SIPE_UUID_H_
 
 #pragma pack(push, 1)
 
@@ -32,6 +32,8 @@ typedef struct _uuid_t {
 
 #pragma pack(pop)
 
-char *generateUUIDfromEPID(const char *epid);
+char * generateUUIDfromEPID(const gchar *epid);
 
-#endif /* UUID_H_ */
+gchar * sipe_uuid_get_macaddr();
+
+#endif /* SIPE_UUID_H_ */
