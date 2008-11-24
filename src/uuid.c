@@ -138,10 +138,9 @@ long mac_addr_sys (const char *addr)
 
 gchar *get_macaddr()
 {
-
 	guchar addr[6];
 	long mac_add = mac_addr_sys(addr);
-	gchar nmac[6];
+	gchar nmac[13];
 	
 	if (mac_add == 0){
 		int i,j;
