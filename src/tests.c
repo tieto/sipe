@@ -161,9 +161,20 @@ int main()
 	char *calcUUID = generateUUIDfromEPID(testEpid);
 
 	printf("\n\nTesting MS-SIPRE uuid derivation\n");
-
+	
 	assert_equal(expectedUUID, calcUUID, strlen(expectedUUID), FALSE);
 	g_free(calcUUID);
+	
+	guchar addr[6];
+	long mac = mac_addr_sys(addr);
+	gchar nmac[6];
+	
+	int i,j;
+	for (i = 0,j=0; i < 6; i++,j+=2) {
+		g_sprintf(&nmac[j], "%02X", addr[i]);
+	}
+
+	printf("Mac: %s\n", g_strdup(nmac));
 
 	/* end tests from MS-SIPRE */
 

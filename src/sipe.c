@@ -70,7 +70,8 @@ static char *gentag()
 
 static char *getuuid()
 {
-	return g_strdup_printf("01010101");  //TODO Should be taken from the MAC ADDRESS
+	//return g_strdup_printf("01010101");  //TODO Should be taken from the MAC ADDRESS
+	return get_macaddr();
 }
 
 static char *genbranch()
@@ -131,11 +132,6 @@ static void do_notifies(struct sipe_account_data *sip)
 {
 	GSList *tmp = sip->watcher;
 	purple_debug_info("sipe", "do_notifies()\n");
-	//if ((sip->republish != -1) || sip->republish < time(NULL)) {
-	//	if (purple_account_get_bool(sip->account, "doservice", TRUE)) {
-	//		send_service(sip);
-	//	}
-	//}
 
 	while (tmp) {
 		purple_debug_info("sipe", "notifying %s\n", ((struct sipe_watcher*)tmp->data)->name);
@@ -828,7 +824,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 			//sipmsg_add_header_pos(msg, "Authorization", buf, 5);
 		}
 		g_free(buf);
-	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method,"NOTIFY") || !strcmp(method, "ACK") || !strcmp(method, "BYE") || !strcmp(method, "INFO")) {
+	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO")) {
 		sip->registrar.nc=3;
 		sip->registrar.type=2;
 		
@@ -1804,19 +1800,18 @@ static void send_publish(struct sipe_account_data *sip)
 {
 	gchar *uri = g_strdup_printf("sip:%s", sip->username);
 	gchar *doc = g_strdup_printf(
-		"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\"><publications uri=\"%s\"><publication categoryName=\"device\" instance=\"1617359818\" container=\"2\" version=\"0\" expireType=\"endpoint\"><device xmlns=\"http://schemas.microsoft.com/2006/09/sip/device\" endpointId=\"BB44F8D5-1540-547D-9ECE-6486D33DC804\"><capabilities preferred=\"false\" uri=\"%s\"><text capture=\"true\" render=\"true\" publish=\"false\"/><gifInk capture=\"false\" render=\"true\" publish=\"false\"/><isfInk capture=\"false\" render=\"true\" publish=\"false\"/></capabilities><timezone>%s</timezone><machineName>%s</machineName></device></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"2\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"3\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication></publications></publish>",
-		uri, uri,
+		"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\"><publications uri=\"%s\"><publication categoryName=\"device\" instance=\"1617359818\" container=\"2\" version=\"0\" expireType=\"endpoint\"><device xmlns=\"http://schemas.microsoft.com/2006/09/sip/device\" endpointId=\"%s\"><capabilities preferred=\"false\" uri=\"%s\"><text capture=\"true\" render=\"true\" publish=\"false\"/><gifInk capture=\"false\" render=\"true\" publish=\"false\"/><isfInk capture=\"false\" render=\"true\" publish=\"false\"/></capabilities><timezone>%s</timezone><machineName>%s</machineName></device></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"2\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"3\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication></publications></publish>",
+		uri, generateUUIDfromEPID(getuuid()), uri,
 		"00:00:00-05:00", // TODO timezone
 		"PC" // TODO machine name
 	);
 
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Contact: %s; +sip.instance=\"<urn:uuid:%s>\"\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp,generateUUIDfromEPID(getuuid()));
+	gchar *hdr = g_strdup_printf("Contact: %s; +sip.instance=\"<urn:uuid:%s>\"\r\nAccept: application/ms-location-profile-definition+xml\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp,generateUUIDfromEPID(getuuid()));
 	g_free(tmp); 
 
 	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_service_response);
 	//sip->republish = time(NULL) + 500;
-
 	g_free(hdr);
 	g_free(uri);
 	g_free(doc);
@@ -1925,7 +1920,7 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 			process_incoming_message(sip, msg);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "NOTIFY")) {
-                        purple_debug_info("sipe","send->process_incoming_notify\n");
+            purple_debug_info("sipe","send->process_incoming_notify\n");
 			process_incoming_notify(sip, msg);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "SUBSCRIBE")) {
