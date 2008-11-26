@@ -125,7 +125,7 @@ static void send_notify(struct sipe_account_data *sip, struct sipe_watcher *);
 
 static void send_service(struct sipe_account_data *sip);
 static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * buddy_name);
-static void send_publish(struct sipe_account_data *sip);
+static void send_publish(struct sipe_account_data *sip,struct sipmsg *msg);
 
 static void do_notifies(struct sipe_account_data *sip)
 {
@@ -843,6 +843,11 @@ static char *get_contact(struct sipe_account_data  *sip)
 }
 
 
+static char *get_contact_service(struct sipe_account_data  *sip)
+{
+	      return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp",generateUUIDfromEPID(get_epid()));
+        //return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
+}
 
 static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		const char *text, const char *body)
@@ -1013,7 +1018,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 
 static char *get_contact_register(struct sipe_account_data  *sip)
 {
-        return g_strdup_printf("<sip:%s:%d;transport=%s>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace; +sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp",generateUUIDfromEPID(get_epid()));
+        return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp",generateUUIDfromEPID(get_epid()));
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
@@ -1024,7 +1029,7 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	//char *hdr = g_strdup_printf("Contact: %s\r\nExpires: %d\r\n", contact, expire);
        // char *hdr = g_strdup_printf("Contact: %s\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
         //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, adhoclist\r\nms-keep-alive: UAC;hop-hop=yes\r\nEvent: registration\r\nAllow-Events: presence\r\n", contact);
-        char *hdr = g_strdup_printf("Contact: %s\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
+    char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
 	g_free(contact);
 
 	sip->registerstatus = 1;
@@ -1633,7 +1638,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
 				/* tell everybody we're online */
-				send_publish (sip);
+				send_publish (sip,msg);
 
 				/* get buddies from blist; Has a bug */
 				/*sipe_get_buddies(sip->gc);*/
@@ -1795,7 +1800,7 @@ static gboolean process_service_response(struct sipe_account_data *sip, struct s
 	return TRUE;
 }
 
-static void send_publish(struct sipe_account_data *sip)
+static void send_publish(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	gchar *uri = g_strdup_printf("sip:%s", sip->username);
 	gchar *doc = g_strdup_printf(
@@ -1805,8 +1810,9 @@ static void send_publish(struct sipe_account_data *sip)
 		"PC" // TODO machine name
 	);
 
-	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Contact: %s; +sip.instance=\"<urn:uuid:%s>\"\r\nAccept: application/ms-location-profile-definition+xml\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp,generateUUIDfromEPID(get_epid()));
+	gchar *tmp = get_contact_service(sip);
+	
+	gchar *hdr = g_strdup_printf("Contact: %s\r\nAccept: application/ms-location-profile-definition+xml\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp);
 	g_free(tmp); 
 
 	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_service_response);
@@ -1910,7 +1916,7 @@ privend:
 	g_free(expire);
 }
 
-static void process_input_message(struct sipe_account_data *sip, struct sipmsg *msg)
+static void process_input_message(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gboolean found = FALSE;
         purple_debug_info("sipe", "msg->response(%d),msg->method(%s)\n",msg->response,msg->method);
@@ -2018,6 +2024,12 @@ static void process_input_message(struct sipe_account_data *sip, struct sipmsg *
 							g_free(resend);
 						}
 					}
+					
+					gchar *contact = sipmsg_find_header(msg, "Contact");
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "Get Server Contact Header:%s\r\n",contact);
+					msg->contact = contact;
+					
+					
 					if (trans->callback) {
 						purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - we have a transaction callback\r\n");
 						/* call the callback to process response*/
