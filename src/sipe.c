@@ -153,9 +153,11 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 	if (sip)
 	{
 		g_free(sip->status);
-		if (primitive == PURPLE_STATUS_AVAILABLE)
+		if (primitive == PURPLE_STATUS_AWAY)
+			sip->status = g_strdup("away");
+		else if (primitive == PURPLE_STATUS_AVAILABLE)
 			sip->status = g_strdup("available");
-		else
+		else if (primitive == PURPLE_STATUS_UNAVAILABLE)
 			sip->status = g_strdup("busy");
 
 		do_notifies(sip);
@@ -198,12 +200,14 @@ static struct sipe_watcher *watcher_create(struct sipe_account_data *sip,
 	watcher->dialog.theirtag = g_strdup(theirtag);
 	watcher->needsxpidf = needsxpidf;
 	sip->watcher = g_slist_append(sip->watcher, watcher);
+	printf("\n\nADDING WATCHER for %s\n\n", name);
 	return watcher;
 }
 
 static void watcher_remove(struct sipe_account_data *sip, const gchar *name)
 {
 	struct sipe_watcher *watcher = watcher_find(sip, name);
+	printf("\n\nREMOVING WATCHER for %s\n\n", name);
 	sip->watcher = g_slist_remove(sip->watcher, watcher);
 	g_free(watcher->name);
 	g_free(watcher->dialog.callid);
@@ -292,12 +296,28 @@ static GList *sipe_status_types(PurpleAccount *acc)
 	PurpleStatusType *type;
 	GList *types = NULL;
 
+	// Available
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_AVAILABLE, NULL, NULL, TRUE, TRUE, FALSE,
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
 
+	// Away
+	type = purple_status_type_new_with_attrs(
+		PURPLE_STATUS_AWAY, NULL, NULL, TRUE, TRUE, FALSE,
+		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
+		NULL);
+	types = g_list_append(types, type);
+
+	// Busy
+	type = purple_status_type_new_with_attrs(
+		PURPLE_STATUS_UNAVAILABLE, "busy", _("Busy"), TRUE, TRUE, FALSE,
+		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
+		NULL);
+	types = g_list_append(types, type);
+
+	// Offline
 	type = purple_status_type_new_full(
 		PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE, TRUE, FALSE);
 	types = g_list_append(types, type);
@@ -1111,11 +1131,8 @@ static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * b
 		"Contact: %s\r\n", tmp);
 	g_free(tmp);
 
-	/* subscribe to buddy presence
-	 * we dont need to know the status so we do not need a callback */
-
-	send_sip_request(sip->gc, "SUBSCRIBE", to, to, contact, "", NULL,
-		process_subscribe_response);
+	/* subscribe to buddy presence */
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, contact, "", NULL, process_subscribe_response);
 
 	g_free(to);
 	g_free(contact);
@@ -1232,15 +1249,14 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 
 static void sipe_subscribe_buddylist(struct sipe_account_data *sip)
 {
-    gchar *contact = "Event: vnd-microsoft-roaming-contacts\r\nAccept: application/vnd-microsoft-roaming-contacts+xml\r\nSupported: com.microsoft.autoextend\r\nSupported: ms-benotify\r\nProxy-Require: ms-benotify\r\nSupported: ms-piggyback-first-notify\r\n";
 	gchar *to = g_strdup_printf("sip:%s", sip->username); 
 	gchar *tmp = get_contact(sip);
-	contact = g_strdup_printf("%sContact: %s\r\n", contact, tmp);
+	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-contacts\r\nAccept: application/vnd-microsoft-roaming-contacts+xml\r\nSupported: com.microsoft.autoextend\r\nSupported: ms-benotify\r\nProxy-Require: ms-benotify\r\nSupported: ms-piggyback-first-notify\r\nContact: %s\r\n", tmp);
 	g_free(tmp);
 	
-	send_sip_request(sip->gc, "SUBSCRIBE", to, to, contact, "", NULL, sipe_add_lcs_contacts);
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_add_lcs_contacts);
 	g_free(to);
-	g_free(contact);
+	g_free(hdr);
 }
 
 /* IM Session (INVITE and MESSAGE methods) */
@@ -1688,16 +1704,19 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	gchar *from;
 	gchar *fromhdr;
 	gchar *tmp2;
+	gchar *activity;
 	xmlnode *pidf;
 	xmlnode *basicstatus = NULL, *tuple, *status;
 	gboolean isonline = FALSE;
 
 	fromhdr = sipmsg_find_header(msg, "From");
 	from = parse_from(fromhdr);
-	if (!from) return;
+
+	if (!from) {
+		return;
+	}
 
 	pidf = xmlnode_from_str(msg->body, msg->bodylen);
-
 	if (!pidf) {
 		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf\n");
 		return;
@@ -1705,9 +1724,11 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 
         purple_debug_info("sipe", "process_incoming_notify: body(%s)\n",msg->body);
 
-	if ((tuple = xmlnode_get_child(pidf, "tuple")))
-		if ((status = xmlnode_get_child(tuple, "status")))
+	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
+		if ((status = xmlnode_get_child(tuple, "status"))) {
 			basicstatus = xmlnode_get_child(status, "basic");
+		}
+	}
 
 	if (!basicstatus) {
 		purple_debug_info("sipe", "process_incoming_notify: no basic found\n");
@@ -1716,28 +1737,53 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	}
 
 	tmp2 = xmlnode_get_data(basicstatus);
-
-        purple_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n",tmp2);
-
-
 	if (!tmp2) {
 		purple_debug_info("sipe", "process_incoming_notify: no basic data found\n");
 		xmlnode_free(pidf);
 		return;
 	}
 
+        purple_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n", tmp2);
 	if (strstr(tmp2, "open")) {
 		isonline = TRUE;
 	}
 
-	g_free(tmp2);
+	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
+		if ((status = xmlnode_get_child(tuple, "status"))) {
+			if (basicstatus = xmlnode_get_child(status, "activities")) {
+				if (basicstatus = xmlnode_get_child(basicstatus, "activity")) {
+					activity = xmlnode_get_data(basicstatus);
+				}
+			}
+		}
+	}
+        purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
 
-	if (isonline) purple_prpl_got_user_status(sip->account, from, "available", NULL);
-	else purple_prpl_got_user_status(sip->account, from, "offline", NULL);
+	if (isonline) {
+		gchar * status_id;
+		if (activity) {
+			if (strstr(activity, "busy")) {
+				status_id = "busy";
+			} else if (strstr(activity, "away")) {
+				status_id = "away";
+			}
+		}
+
+		if (!status_id) {
+			status_id = "available";
+		}
+
+		purple_debug_info("sipe", "process_incoming_notify: status_id(%s)\n", status_id);
+		purple_prpl_got_user_status(sip->account, from, status_id, NULL);
+	} else {
+		purple_prpl_got_user_status(sip->account, from, "offline", NULL);
+	}
 
 	xmlnode_free(pidf);
-
 	g_free(from);
+	g_free(tmp2);
+	g_free(activity);
+
 	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 }
 
