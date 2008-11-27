@@ -1704,7 +1704,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	gchar *from;
 	gchar *fromhdr;
 	gchar *tmp2;
-	gchar *activity;
+	gchar *activity = g_strdup("available");
 	xmlnode *pidf;
 	xmlnode *basicstatus = NULL, *tuple, *status;
 	gboolean isonline = FALSE;
@@ -1767,6 +1767,9 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			} else if (strstr(activity, "away")) {
 				status_id = "away";
 			}
+                        else{
+                                status_id = "available"; 
+                        }
 		}
 
 		if (!status_id) {
