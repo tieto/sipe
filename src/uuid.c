@@ -53,14 +53,16 @@ void readUUID(const char *string, uuid_t *uuid)
 void printUUID(uuid_t *uuid, char *string)
 {
 	int i;
+	size_t pos;
 	sprintf(string, "%08x-%04x-%04x-%02x%02x-", uuid->time_low
 			, uuid->time_mid, uuid->time_hi_and_version
 			, uuid->clock_seq_hi_and_reserved
 			, uuid->clock_seq_low
 			);
+	pos = strlen(string);
 	for(i=0;i<6;i++)
 	{
-		sprintf(string, "%s%02x", string, uuid->node[i]);
+		pos += sprintf(&string[pos], "%02x", uuid->node[i]);
 	}
 }
 
