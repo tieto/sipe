@@ -150,8 +150,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 	if (account->gc)
 		sip = account->gc->proto_data;
 
-	if (sip)
-	{
+	if (sip) {
 		g_free(sip->status);
 		if (primitive == PURPLE_STATUS_AWAY)
 			sip->status = g_strdup("away");
@@ -2766,7 +2765,8 @@ static PurplePluginInfo info = {
 	VERSION,                                          /**< version        */
 	N_("SIP/SIMPLE Exchange Protocol Plugin"),        /**  summary        */
 	N_("The SIP/SIMPLE Exchange Protocol Plugin"),    /**  description    */
-	"Anibal Avelar <avelar@gmail.com>",         	  /**< author         */
+	"Anibal Avelar <avelar@gmail.com>, "         	  /**< author         */
+	"Gabriel Burt <gburt@novell.com>",         	  /**< author         */
 	PURPLE_WEBSITE,                                   /**< homepage       */
 	sipe_plugin_load,                                 /**< load           */
 	sipe_plugin_unload,                               /**< unload         */

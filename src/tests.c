@@ -34,6 +34,7 @@
 #include "sip-internal.h"
 #include "sipe-sign.h"
 #include "sip-ntlm.c"
+#include "sipe.h"
 
 #include "uuid.h"
 

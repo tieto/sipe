@@ -159,4 +159,59 @@ struct sipe_group {
         PurpleGroup *g;
 };
 
+#define sipe_soap(method, body) \
+"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
+  "<SOAP-ENV:Body>" \
+    "<m:" method " xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\">" \
+      body \
+    "</m:" method ">" \
+  "</SOAP-ENV:Body>" \
+"</SOAP-ENV:Envelope>"
+
+/* 000 - 099 There is no information about the activity of the user
+   100 - 149 The user is away
+   150 - 199 The user is out to lunch
+   200 - 299 The user is idle
+   300 - 399 The user will be right back
+   400 - 499 The user is active
+   500 - 599 The user is already participating in a communications session
+   600 - 699 The user is busy
+   700 - 749 The user is away
+   800 - 999 The user is active */
+#define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
+        "<m:presentity m:uri=\"%s\">"\
+          "<m:availability m:aggregate=\"300\" m:description=\"online\" />"\
+          "<m:activity m:aggregate=\"%03d\" m:description=\"%s\" m:note=\"%s\" />"\
+          "<email xmlns=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" email=\"%s\" />"\
+          "<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" name=\"%s\" />"\
+          "<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" "\
+		"namespace=\"rtcsample\">"\
+    			"&lt;![CDATA[<applicationname>RTC Sample</applicationdata>]]&gt;"\
+          "</rtc:devicedata>"\
+        "</m:presentity>")
+
+#define SIPE_SOAP_SET_CONTACT sipe_soap("setContact", \
+	"<m:displayName>%s</m:displayName>"\
+	"<m:groups>%s</m:groups>"\
+	"<m:subscribed>%s</m:subscribed>"\
+	"<m:URI>%s</m:URI>"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
+#define SIPE_SOAP_DEL_CONTACT sipe_soap("deleteContact", \
+	"<m:URI>%s</m:URI>"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
+#define SIPE_SOAP_ADD_GROUP sipe_soap("addGroup", \
+	"<m:name>%s</m:name>"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
+#define SIPE_SOAP_MOD_GROUP sipe_soap("modifyGroup", \
+	"<m:groupID>%d</m:groupID>"\
+	"<m:name>%s</m:name>"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
+#define SIPE_SOAP_DEL_GROUP sipe_soap("deleteGroup", \
+	"<m:groupID>%d</m:groupID>"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
 #endif /* _PIDGIN_SIPE_H */
