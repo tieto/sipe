@@ -42,6 +42,8 @@
 
 #define SIMPLE_BUF_INC 4096
 
+#define SIPE_TYPING_RECV_TIMEOUT 6
+#define SIPE_TYPING_SEND_TIMEOUT 4
 
 struct sip_im_session {
 	gchar * with;
@@ -112,6 +114,8 @@ struct sipe_account_data {
 	int listenpa;
 	int delta_num;
 	gchar *status;
+	int status_version;
+	int availability_code;
 	GHashTable *buddies;
 	guint registertimeout;
 	guint resendtimeout;
@@ -168,6 +172,56 @@ struct group_user_context {
 	gchar * user_name;
 };
 
+#define SIPE_SEND_TYPING \
+"<?xml version=\"1.0\"?>"\
+"<KeyboardActivity>"\
+  "<status status=\"type\" />"\
+"</KeyboardActivity>"
+
+#define SIPE_SEND_PUBLISH \
+	"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\">"\
+	  "<publications uri=\"%s\">"\
+	      "<publication categoryName=\"state\" instance=\"906391354\" container=\"2\" version=\"%d\" expireType=\"endpoint\">"\
+	        "<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\">"\
+		  "<availability>%d</availability>"\
+		  "<endpointLocation></endpointLocation>"\
+		"</state>"\
+	      "</publication>"\
+	      "<publication categoryName=\"state\" instance=\"906391356\" container=\"0\" version=\"%d\" expireType=\"endpoint\">"\
+	        "<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"true\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"userState\">"\
+		  "<availability>%d</availability>"\
+		  "<endpointLocation></endpointLocation>"\
+		"</state>"\
+	      "</publication>"\
+	    "</publications>"\
+	"</publish>"
+
+	      /*"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"%d\" expireType=\"static\">"\
+	        "<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
+		  "<body type=\"personal\" uri=\"\">%s</body>"\
+		"</note>"\
+	      "</publication>"\
+	      "<publication categoryName=\"note\" instance=\"0\" container=\"200\" version=\"%d\" expireType=\"static\">"\
+	        "<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
+		  "<body type=\"personal\" uri=\"\">%s</body>"\
+		"</note>"\
+	      "</publication>"\
+	      "<publication categoryName=\"note\" instance=\"0\" container=\"300\" version=\"%d\" expireType=\"static\">"\
+	        "<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
+		  "<body type=\"personal\" uri=\"\">%s</body>"\
+		"</note>"\
+	      "</publication>"\*/
+
+#define SOAP_SEND_CLEAR_NOTES \
+"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\">"\
+  "<publications uri=\"sip:bob@contoso.com\">"\
+	"<publication categoryName=\"note\" instance=\"0\" container=\"300\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
+	"<publication categoryName=\"note\" instance=\"0\" container=\"200\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
+	"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
+  "</publications>"\
+"</publish>"
+
+
 #define sipe_soap(method, body) \
 "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
   "<SOAP-ENV:Body>" \
@@ -176,28 +230,6 @@ struct group_user_context {
     "</m:" method ">" \
   "</SOAP-ENV:Body>" \
 "</SOAP-ENV:Envelope>"
-
-/* 000 - 099 There is no information about the activity of the user
-   100 - 149 The user is away
-   150 - 199 The user is out to lunch
-   200 - 299 The user is idle
-   300 - 399 The user will be right back
-   400 - 499 The user is active
-   500 - 599 The user is already participating in a communications session
-   600 - 699 The user is busy
-   700 - 749 The user is away
-   800 - 999 The user is active */
-#define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
-        "<m:presentity m:uri=\"%s\">"\
-          "<m:availability m:aggregate=\"300\" m:description=\"online\" />"\
-          "<m:activity m:aggregate=\"%03d\" m:description=\"%s\" m:note=\"%s\" />"\
-          "<email xmlns=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" email=\"%s\" />"\
-          "<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" name=\"%s\" />"\
-          "<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" "\
-		"namespace=\"rtcsample\">"\
-    			"&lt;![CDATA[<applicationname>RTC Sample</applicationdata>]]&gt;"\
-          "</rtc:devicedata>"\
-        "</m:presentity>")
 
 #define SIPE_SOAP_SET_CONTACT sipe_soap("setContact", \
 	"<m:displayName>%s</m:displayName>"\

@@ -126,7 +126,7 @@ static void sipe_close(PurpleConnection *gc);
 
 static void send_service(struct sipe_account_data *sip);
 static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * buddy_name);
-static void send_publish(struct sipe_account_data *sip,struct sipmsg *msg);
+static void send_publish(struct sipe_account_data *sip, char * msg);
 
 static void do_notifies(struct sipe_account_data *sip)
 {
@@ -137,30 +137,6 @@ static void do_notifies(struct sipe_account_data *sip)
 		purple_debug_info("sipe", "notifying %s\n", ((struct sipe_watcher*)tmp->data)->name);
 		send_notify(sip, tmp->data);
 		tmp = tmp->next;
-	}
-}
-
-static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
-{
-	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(purple_status_get_type(status));
-	struct sipe_account_data *sip = NULL;
-
-	if (!purple_status_is_active(status))
-		return;
-
-	if (account->gc)
-		sip = account->gc->proto_data;
-
-	if (sip) {
-		g_free(sip->status);
-		if (primitive == PURPLE_STATUS_AWAY)
-			sip->status = g_strdup("away");
-		else if (primitive == PURPLE_STATUS_AVAILABLE)
-			sip->status = g_strdup("available");
-		else if (primitive == PURPLE_STATUS_UNAVAILABLE)
-			sip->status = g_strdup("busy");
-
-		do_notifies(sip);
 	}
 }
 
@@ -985,7 +961,8 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	//char *hdr = g_strdup_printf("Contact: %s\r\nExpires: %d\r\n", contact, expire);
        // char *hdr = g_strdup_printf("Contact: %s\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
         //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, adhoclist\r\nms-keep-alive: UAC;hop-hop=yes\r\nEvent: registration\r\nAllow-Events: presence\r\n", contact);
-    char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
+    //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
+    char *hdr = g_strdup_printf("Contact: %s\r\nSupported: gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
 	g_free(contact);
 
 	sip->registerstatus = 1;
@@ -1224,6 +1201,45 @@ static void sipe_subscribe(struct sipe_account_data *sip, struct sipe_buddy *bud
 	/* resubscribe before subscription expires */
 	/* add some jitter */
 	buddy->resubscribe = time(NULL)+1140+(rand()%50);
+}
+
+static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
+{
+	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(purple_status_get_type(status));
+	struct sipe_account_data *sip = NULL;
+
+	if (!purple_status_is_active(status))
+		return;
+
+	if (account->gc)
+		sip = account->gc->proto_data;
+
+	int activity_code;
+	if (sip) {
+		/* Unknown: 0 to 2999. Availability is undefined.
+		 * Online: 3000 to 4499. Willing and able to communicate.
+		 * Idle: 4500 to 5999. Willing but potentially unable to communicate.
+		 * Busy: 6000 to 7499. Able but potentially unwilling to communicate.
+		 * BusyIdle: 7500 to 8999. Able but potentially unwilling to communicate.
+		 * DoNotDisturb: 9000 to 11999. Able but potentially unwilling to communicate.
+		 * Away: 12000 to 17999. Willing but unable to communicate.
+		 * Offline: 18000 and higher. Not available to communicate.
+		 */
+		g_free(sip->status);
+		if (primitive == PURPLE_STATUS_AWAY) {
+			sip->status = g_strdup("away");
+			sip->availability_code = 12000;
+		} else if (primitive == PURPLE_STATUS_AVAILABLE) {
+			sip->status = g_strdup("available");
+			sip->availability_code = 3000;
+		} else if (primitive == PURPLE_STATUS_UNAVAILABLE) {
+			sip->status = g_strdup("busy");
+			sip->availability_code = 6000;
+		}
+
+		char *msg = purple_status_get_attr_string(status, "message");
+		send_publish(sip, msg);
+	}
 }
 
 static void
@@ -1715,6 +1731,26 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 
 /* End IM Session (INVITE and MESSAGE methods) */
 
+static unsigned int
+sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
+{
+	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
+
+	if (state == PURPLE_NOT_TYPING)
+		return 0;
+
+	struct sip_im_session * session = find_im_session(sip, who);
+
+	if (session && session->outgoing_dialog) {
+		send_sip_request(gc, "INFO", who, who,
+			"Content-Type: application/xml\r\n",
+			SIPE_SEND_TYPING, session->outgoing_dialog, NULL);
+	}
+
+	return SIPE_TYPING_SEND_TIMEOUT;
+}
+
+
 static void sipe_buddy_resub(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
 {
 	time_t curtime = time(NULL);
@@ -1827,6 +1863,12 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
+	// Only accept text invitations
+	if (msg->body && !strstr(msg->body, "m=message")) {
+		send_sip_response(sip->gc, msg, 501, "Not implemented", NULL);
+		return;
+	}
+
 	gchar * from = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "<", ">", NULL);
 	struct sip_im_session * session = find_or_create_im_session (sip, from);
 	if (session) {
@@ -1875,7 +1917,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
 				/* tell everybody we're online */
-				send_publish (sip,msg);
+				sip->status = g_strdup("available");
+				sip->availability_code = 3000;
+				send_publish(sip, NULL);
 
 				/* get buddies from blist; Has a bug */
 				subscribe_timeout(sip);
@@ -2092,15 +2136,21 @@ static gboolean process_service_response(struct sipe_account_data *sip, struct s
 	return TRUE;
 }
 
-static void send_publish(struct sipe_account_data *sip, struct sipmsg *msg)
+static void send_clear_notes(struct sipe_account_data *sip)
+{
+}
+
+static void send_publish(struct sipe_account_data *sip, char * msg)
 {
 	gchar *uri = g_strdup_printf("sip:%s", sip->username);
-	gchar *doc = g_strdup_printf(
-		"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\"><publications uri=\"%s\"><publication categoryName=\"device\" instance=\"1617359818\" container=\"2\" version=\"0\" expireType=\"endpoint\"><device xmlns=\"http://schemas.microsoft.com/2006/09/sip/device\" endpointId=\"%s\"><capabilities preferred=\"false\" uri=\"%s\"><text capture=\"true\" render=\"true\" publish=\"false\"/><gifInk capture=\"false\" render=\"true\" publish=\"false\"/><isfInk capture=\"false\" render=\"true\" publish=\"false\"/></capabilities><timezone>%s</timezone><machineName>%s</machineName></device></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"2\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication><publication categoryName=\"state\" instance=\"906391356\" container=\"3\" version=\"0\" expireType=\"endpoint\"><state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\"><availability>3500</availability><endpointLocation></endpointLocation></state></publication></publications></publish>",
-		uri, generateUUIDfromEPID(get_epid()), uri,
-		"00:00:00-05:00", // TODO timezone
-		"PC" // TODO machine name
+	gchar *doc = g_strdup_printf(SIPE_SEND_PUBLISH, uri,
+		sip->status_version, sip->availability_code,
+		sip->status_version, sip->availability_code
+		//sip->status_version, msg ? msg : "",
+		//sip->status_version, msg ? msg : "",
+		//sip->status_version, msg ? msg : ""
 	);
+	sip->status_version++;
 
 	gchar *tmp = get_contact_service(sip);
 	
@@ -2235,9 +2285,8 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 			// TODO needs work
 			gchar * from = parse_from(sipmsg_find_header(msg, "From"));
 			if (from) {
-				serv_got_typing(sip->gc, from, 0, PURPLE_TYPING);
+				serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
 			}
-			printf("INFO body:\n%s\n", msg->body);
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "ACK")) {
@@ -2319,11 +2368,6 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							g_free(resend);
 						}
 					}
-					
-					gchar *contact = sipmsg_find_header(msg, "Contact");
-					purple_debug(PURPLE_DEBUG_MISC, "sipe", "Get Server Contact Header:%s\r\n",contact);
-					msg->contact = contact;
-					
 					
 					if (trans->callback) {
 						purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - we have a transaction callback\r\n");
@@ -2590,7 +2634,7 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 	conn = connection_create(sip, sip->fd);
 	sip->listenport = purple_network_get_port_from_fd(sip->fd);
 	sip->listenfd = sip->fd;
-	sip->registertimeout = purple_timeout_add((rand()%100)+3*1000, (GSourceFunc)subscribe_timeout, sip);
+	sip->registertimeout = purple_timeout_add((rand()%100) + 1000, (GSourceFunc)subscribe_timeout, sip);
 
 	do_register(sip);
 
@@ -2942,8 +2986,8 @@ static PurplePluginProtocolInfo prpl_info =
 	NO_BUDDY_ICONS,				/* icon_spec */
 	sipe_list_icon,				/* list_icon */
 	NULL,					/* list_emblems */
-	NULL,					/* status_text */
-	NULL,					/* tooltip_text */
+	NULL,					/* status_text */	// TODO maybe
+	NULL,					/* tooltip_text */	// TODO maybe
 	sipe_status_types,			/* away_states */
 	NULL,					/* blist_node_menu */
 	NULL,					/* chat_info */
@@ -2951,12 +2995,11 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_login,				/* login */
 	sipe_close,				/* close */
 	sipe_im_send,				/* send_im */
-	NULL,					/* set_info */
-//	sipe_typing,				/* send_typing */
-        NULL,					/* send_typing */
-	NULL,					/* get_info */
+	NULL,					/* set_info */		// TODO maybe
+        sipe_send_typing,			/* send_typing */	// TODO
+	NULL,					/* get_info */		// TODO maybe
 	sipe_set_status,			/* set_status */
-	NULL,					/* set_idle */
+	NULL,					/* set_idle */		// TODO 
 	NULL,					/* change_passwd */
 	sipe_add_buddy,				/* add_buddy */
 	NULL,					/* add_buddies */
@@ -2976,9 +3019,9 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* chat_send */
 	sipe_keep_alive,			/* keepalive */
 	NULL,					/* register_user */
-	NULL,					/* get_cb_info */
-	NULL,					/* get_cb_away */
-	NULL,					/* alias_buddy */
+	NULL,					/* get_cb_info */	// TODO?
+	NULL,					/* get_cb_away */	// TODO?
+	NULL,					/* alias_buddy */	// TODO
 	sipe_group_buddy,			/* group_buddy */
 	sipe_rename_group,			/* rename_group */
 	NULL,					/* buddy_free */
@@ -2986,7 +3029,7 @@ static PurplePluginProtocolInfo prpl_info =
 	purple_normalize_nocase,		/* normalize */
 	NULL,					/* set_buddy_icon */
 	sipe_remove_group,			/* remove_group */
-	NULL,					/* get_cb_real_name */
+	NULL,					/* get_cb_real_name */	// TODO?
 	NULL,					/* set_chat_topic */
 	NULL,					/* find_blist_chat */
 	NULL,					/* roomlist_get_list */

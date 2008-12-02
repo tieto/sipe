@@ -36,7 +36,6 @@ struct sipmsg {
 	gchar *signature;
 	gchar *rand;
 	gchar *num;
-	gchar *contact;
 };
 
 struct siphdrelement {
