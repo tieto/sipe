@@ -73,6 +73,7 @@ struct sipe_watcher {
 struct sipe_buddy {
 	gchar *name;
 	time_t resubscribe;
+	int group_id;
 };
 
 struct sip_auth {
@@ -109,6 +110,7 @@ struct sipe_account_data {
 	int listenfd;
 	int listenport;
 	int listenpa;
+	int delta_num;
 	gchar *status;
 	GHashTable *buddies;
 	guint registertimeout;
@@ -122,6 +124,7 @@ struct sipe_account_data {
 	GSList *watcher;
 	GSList *im_sessions;
 	GSList *openconns;
+	GSList *groups;
 	gboolean udp;
         gboolean use_ssl;
         PurpleSslConnection *gsc;
@@ -151,12 +154,18 @@ struct transaction {
 	gchar *cseq;
 	struct sipmsg *msg;
 	TransCallback callback;
+	void * payload;
 };
 
 struct sipe_group {
-	gchar *name_group;
-	gchar *id;
-        PurpleGroup *g;
+	gchar *name;
+	int id;
+        PurpleGroup *purple_group;
+};
+
+struct group_user_context {
+	gchar * group_name;
+	gchar * user_name;
 };
 
 #define sipe_soap(method, body) \
@@ -192,9 +201,10 @@ struct sipe_group {
 
 #define SIPE_SOAP_SET_CONTACT sipe_soap("setContact", \
 	"<m:displayName>%s</m:displayName>"\
-	"<m:groups>%s</m:groups>"\
+	"<m:groups>%d</m:groups>"\
 	"<m:subscribed>%s</m:subscribed>"\
 	"<m:URI>%s</m:URI>"\
+	"<m:externalURI />"\
 	"<m:deltaNum>%d</m:deltaNum>")
 
 #define SIPE_SOAP_DEL_CONTACT sipe_soap("deleteContact", \
@@ -203,11 +213,13 @@ struct sipe_group {
 
 #define SIPE_SOAP_ADD_GROUP sipe_soap("addGroup", \
 	"<m:name>%s</m:name>"\
+	"<m:externalURI />"\
 	"<m:deltaNum>%d</m:deltaNum>")
 
 #define SIPE_SOAP_MOD_GROUP sipe_soap("modifyGroup", \
 	"<m:groupID>%d</m:groupID>"\
 	"<m:name>%s</m:name>"\
+	"<m:externalURI />"\
 	"<m:deltaNum>%d</m:deltaNum>")
 
 #define SIPE_SOAP_DEL_GROUP sipe_soap("deleteGroup", \
