@@ -176,14 +176,12 @@ static struct sipe_watcher *watcher_create(struct sipe_account_data *sip,
 	watcher->dialog.theirtag = g_strdup(theirtag);
 	watcher->needsxpidf = needsxpidf;
 	sip->watcher = g_slist_append(sip->watcher, watcher);
-	printf("\n\nADDING WATCHER for %s\n\n", name);
 	return watcher;
 }
 
 static void watcher_remove(struct sipe_account_data *sip, const gchar *name)
 {
 	struct sipe_watcher *watcher = watcher_find(sip, name);
-	printf("\n\nREMOVING WATCHER for %s\n\n", name);
 	sip->watcher = g_slist_remove(sip->watcher, watcher);
 	g_free(watcher->name);
 	g_free(watcher->dialog.callid);
@@ -1025,14 +1023,12 @@ static gchar *parse_from(const gchar *hdr)
 
 static xmlnode * xmlnode_get_descendent(xmlnode * parent, ...)
 {
-	printf("IN xmlnode_get_descendent\n");
 	va_list args;
 	xmlnode * node;
 	const gchar * name;
 
 	va_start(args, parent);
 	while ((name = va_arg(args, const char *)) != NULL) {
-		printf("IN xmlnode_get_descendent => name = %s\n", name);
 		node = xmlnode_get_child(parent, name);
 		if (node == NULL) return NULL;
 		parent = node;
@@ -1040,23 +1036,6 @@ static xmlnode * xmlnode_get_descendent(xmlnode * parent, ...)
 	va_end(args);
 
 	return node;
-}
-
-static void
-sipe_group_set_user (struct sipe_account_data *sip, struct sipe_group * group, const gchar * who)
-{
-	struct sipe_buddy *buddy = g_hash_table_lookup(sip->buddies, who);
-	PurpleBuddy * purple_buddy = purple_find_buddy (sip->account, who);
-	if (buddy && group && purple_buddy) {
-		// Set the user as being in this group
-		gchar * body = g_strdup_printf(SIPE_SOAP_SET_CONTACT,
-			purple_buddy_get_alias(purple_buddy),
-			group ? group->id : 1,
-			"true", buddy->name, sip->delta_num++
-		);
-		send_soap_request(sip, body);
-		g_free(body);
-	}
 }
 
 static struct sipe_group * sipe_group_add (struct sipe_account_data *sip, struct sipe_group * group)
@@ -1074,49 +1053,6 @@ static struct sipe_group * sipe_group_add (struct sipe_account_data *sip, struct
 	} else {
 		purple_debug_info("sipe", "did not add group %s\n", group->name);
 	}
-}
-
-static gboolean process_add_group_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
-{
-	printf("IN process_add_group_response\n");
-	if (msg->response == 200) {
-		printf("IN process_add_group_response => 200\n");
-		struct sipe_group * group = g_new0(struct sipe_group, 1);
-
-		struct group_user_context * ctx = (struct group_user_context*)tc->payload;
-		group->name = ctx->group_name;
-
-		xmlnode * xml = xmlnode_from_str(msg->body, msg->bodylen);
-		if (!xml) return FALSE;
-		printf("IN process_add_group_response => have xml\n");
-
-		xmlnode * node = xmlnode_get_descendent(xml, "Body", "addGroup", "groupID", NULL);
-		if (!node) return FALSE;
-		printf("IN process_add_group_response => have node\n");
-
-		char * group_id = xmlnode_get_data(node);
-		printf("got GROUP ID from Envelope etc - %s\n", group_id);
-		if (!group_id) return FALSE;
-
-		group->id = (int)g_ascii_strtod(group_id, NULL);
-
-		sipe_group_add(sip, group);
-		sipe_group_set_user(sip, group, ctx->user_name);
-
-		g_free(ctx);
-		xmlnode_free(xml);
-	}
-}
-
-static struct sipe_group * sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar * who)
-{
-	struct group_user_context * ctx = g_new0(struct group_user_context, 1);
-	ctx->group_name = g_strdup(name);
-	ctx->user_name = g_strdup(who);
-
-	gchar * body = g_strdup_printf(SIPE_SOAP_ADD_GROUP, name, sip->delta_num++);
-	send_soap_request_with_cb(sip, body, process_add_group_response, ctx);
-	g_free(body);
 }
 
 static struct sipe_group * sipe_group_find_by_id (struct sipe_account_data *sip, int id)
@@ -1165,6 +1101,68 @@ sipe_group_rename (struct sipe_account_data *sip, struct sipe_group * group, gch
 	g_free(group->name);
 	group->name = g_strdup(name);
 }
+
+static void
+sipe_group_set_user (struct sipe_account_data *sip, struct sipe_group * group, const gchar * who)
+{
+	struct sipe_buddy *buddy = g_hash_table_lookup(sip->buddies, who);
+	PurpleBuddy * purple_buddy = purple_find_buddy (sip->account, who);
+  
+	if (!group) {
+		group = sipe_group_find_by_id (sip, buddy->group_id);
+	}
+	buddy->group_id = group ? group->id : 1;
+
+	if (buddy && purple_buddy) {
+		gchar * alias = purple_buddy_get_alias(purple_buddy);
+		purple_debug_info("sipe", "Saving buddy %s with alias %s and group_id %d\n", who, alias, buddy->group_id);
+		gchar * body = g_strdup_printf(SIPE_SOAP_SET_CONTACT,
+			alias, buddy->group_id, "true", buddy->name, sip->delta_num++
+		);
+		send_soap_request(sip, body);
+		g_free(body);
+	}
+}
+
+static gboolean process_add_group_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
+{
+	if (msg->response == 200) {
+		struct sipe_group * group = g_new0(struct sipe_group, 1);
+
+		struct group_user_context * ctx = (struct group_user_context*)tc->payload;
+		group->name = ctx->group_name;
+
+		xmlnode * xml = xmlnode_from_str(msg->body, msg->bodylen);
+		if (!xml) return FALSE;
+
+		xmlnode * node = xmlnode_get_descendent(xml, "Body", "addGroup", "groupID", NULL);
+		if (!node) return FALSE;
+
+		char * group_id = xmlnode_get_data(node);
+		if (!group_id) return FALSE;
+
+		group->id = (int)g_ascii_strtod(group_id, NULL);
+
+		sipe_group_add(sip, group);
+		sipe_group_set_user(sip, group, ctx->user_name);
+
+		g_free(ctx);
+		xmlnode_free(xml);
+	}
+}
+
+static struct sipe_group * sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar * who)
+{
+	struct group_user_context * ctx = g_new0(struct group_user_context, 1);
+	ctx->group_name = g_strdup(name);
+	ctx->user_name = g_strdup(who);
+
+	gchar * body = g_strdup_printf(SIPE_SOAP_ADD_GROUP, name, sip->delta_num++);
+	send_soap_request_with_cb(sip, body, process_add_group_response, ctx);
+	g_free(body);
+}
+
+
 
 static gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
@@ -1246,6 +1244,13 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 		char *msg = purple_status_get_attr_string(status, "message");
 		send_publish(sip, msg);
 	}
+}
+
+static void
+sipe_alias_buddy(PurpleConnection *gc, const char *name, const char *alias)
+{
+	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
+	sipe_group_set_user(sip, NULL, name);
 }
 
 static void
@@ -1471,7 +1476,12 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 			g_free(buddy_name);
 
 			purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
-			purple_blist_alias_buddy(b, uri);
+
+			if (name != NULL && strlen(name) != 0) {
+				purple_blist_alias_buddy(b, name);
+			} else {
+				purple_blist_alias_buddy(b, uri);
+			}
 
 			struct sipe_buddy * buddy = g_new0(struct sipe_buddy, 1);
 			buddy->name = g_strdup(b->name);
@@ -2087,7 +2097,6 @@ static void process_incoming_benotify(struct sipe_account_data *sip, struct sipm
 	char * delta_num = xmlnode_get_attrib(xml, "deltaNum");
 	if (delta_num) {
 		sip->delta_num = (int)g_ascii_strtod(delta_num, NULL);
-		printf("Parsed out new delta num: %d\n", sip->delta_num);
 	}
 
 	xmlnode_free(xml);
@@ -2448,8 +2457,6 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			sipmsg_free(msg);
 			return;
 		}
-
-		printf("body: %s\n", msg->body);
 
 		// Verify the signature before processing it
 		if (sip->registrar.ntlm_key) {
@@ -3037,7 +3044,7 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// TODO?
 	NULL,					/* get_cb_away */	// TODO?
-	NULL,					/* alias_buddy */	// TODO
+	sipe_alias_buddy,			/* alias_buddy */	// TODO
 	sipe_group_buddy,			/* group_buddy */
 	sipe_rename_group,			/* rename_group */
 	NULL,					/* buddy_free */

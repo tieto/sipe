@@ -84,9 +84,6 @@ char *generateUUIDfromEPID(const gchar *epid)
 
 	readUUID(epid_ns_uuid, &result);
 	memcpy(buf, &result, sizeof(uuid_t));
-	printf("have epid == NULL? %i\n", epid == NULL);
-	printf("have epid: '%s'\n", epid);
-	printf("have sizeof uuid_t: %d\n", sizeof(uuid_t));
 	sprintf(&buf[sizeof(uuid_t)], epid);
 
 	ctx = purple_cipher_context_new_by_name("sha1", NULL);
@@ -153,9 +150,7 @@ gchar * sipe_uuid_get_macaddr()
 		for (i = 0,j=0; i < 6; i++,j+=2) {
 			g_sprintf(&nmac[j], "%02X", addr[i]);
 		}
-		printf("Returning mac: '%s'\n", nmac);
 		return g_strdup(nmac);
 	}
-	printf("Returning default mac\n");
 	return g_strdup_printf("01010101");  //Default
 }
