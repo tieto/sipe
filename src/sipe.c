@@ -858,12 +858,17 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	char *buf;
         struct sipmsg *msg;
         gchar *ptmp;
-	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : gentag();
+	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
 	gchar *theirtag  = dialog && dialog->theirtag  ? g_strdup(dialog->theirtag)  : NULL;
 	gchar *theirepid = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *useragent = purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
+
+	if (!ourtag && !dialog) {
+		ourtag = gentag();
+	}
+
 	if (!strcmp(method, "REGISTER")) {
 		if (sip->regcallid) {
 			g_free(callid);
@@ -877,7 +882,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 
 	buf = g_strdup_printf("%s %s SIP/2.0\r\n"
 			"Via: SIP/2.0/%s %s:%d%s%s\r\n"
-			"From: <sip:%s>;tag=%s;epid=%s\r\n"
+			"From: <sip:%s>%s%s;epid=%s\r\n"
 			"To: <%s>%s%s%s%s\r\n"
 			"Max-Forwards: 70\r\n"
 			"CSeq: %d %s\r\n"
@@ -893,6 +898,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
 			sip->username,
+			ourtag ? ";tag=" : "",
 			ourtag ? ourtag : "",
 			get_epid(), // TODO generate one per account/login
 			to,
@@ -1553,7 +1559,7 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	hdr = g_strdup_printf("Contact: %s\r\n%s", tmp, hdr);
 	g_free(tmp);
 
-	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msg, session->outgoing_dialog, NULL);
+	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msg, session->dialog, NULL);
 
 	g_free(hdr);
 	g_free(fullto);
@@ -1574,6 +1580,27 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 	}
 }
 
+static void
+sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outgoing)
+{
+	gchar *us = outgoing ? "From" : "To";
+	gchar *them = outgoing ? "To" : "From";
+
+	dialog->callid = sipmsg_find_header(msg, "Call-ID");
+	dialog->ourtag = find_tag(sipmsg_find_header(msg, us));
+	dialog->theirtag = find_tag(sipmsg_find_header(msg, them));
+	if (!dialog->theirepid) {
+		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, them), "epid=", ";", NULL);
+	}
+	if (!dialog->theirepid) {
+		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, them), "epid=", NULL, NULL);
+	}
+
+	dialog->request = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Record-Route"), "<", ">", NULL);
+	dialog->route = g_strdup_printf("Route: %s\r\n", sipmsg_find_header(msg, "Contact"));
+}
+
+
 static gboolean
 process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
@@ -1592,30 +1619,17 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		return FALSE;
 	}
 
-	struct sip_dialog * dialog = session->outgoing_dialog;
+	struct sip_dialog * dialog = session->dialog;
 	if (!dialog) {
 		purple_debug_info("sipe", "process_invite_response: session outgoign dialog is NULL\n");
 		return FALSE;
 	}
 
-	dialog->callid = sipmsg_find_header(msg, "Call-ID");
-	dialog->ourtag = find_tag(sipmsg_find_header(msg, "From"));
-	dialog->theirtag = find_tag(sipmsg_find_header(msg, "To"));
-	if (!dialog->theirepid) {
-		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "To"), "epid=", ";", NULL);
-	}
-	if (!dialog->theirepid) {
-		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "To"), "epid=", NULL, NULL);
-	}
-
-	dialog->request = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Record-Route"), "<", ">", NULL);
-	dialog->route = g_strdup_printf("Route: %s\r\n", sipmsg_find_header(msg, "Contact"));
+	sipe_parse_dialog(msg, dialog, TRUE);
 	dialog->cseq = 0;
 
 	send_sip_request(sip->gc, "ACK", session->with, session->with, NULL, NULL, dialog, NULL);
-
 	session->outgoing_invite = NULL;
-
 	sipe_im_process_queue(sip, session);
 
 	return TRUE;
@@ -1629,6 +1643,11 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	gchar *contact;
 	gchar *body;
 
+	if (session->dialog) {
+		purple_debug_info("sipe", "session with %s already has a dialog open\n", session->with);
+		return;
+	}
+
 	if (strstr(session->with, "sip:")) {
 		to = g_strdup(session->with);
 	} else {
@@ -1636,14 +1655,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	}
 
 	// Setup the outgoing dialog w/ the epid from the incoming dialog (if any)
-	struct sip_dialog * dialog = g_new0(struct sip_dialog, 1);
-	if (session->incoming_dialog) {
-		printf("incoming dialog epid is %s\n", session->incoming_dialog->theirepid);
-		dialog->theirepid = session->incoming_dialog->theirepid;
-	} else {
-		printf("incoming dialog is NULL\n");
-	}
-	session->outgoing_dialog = dialog;
+	session->dialog = g_new0(struct sip_dialog, 1);
 
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
@@ -1670,7 +1682,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1), 5061);
 
 	session->outgoing_invite = send_sip_request(sip->gc, "INVITE",
-		to, to, hdr, body, session->outgoing_dialog, process_invite_response);
+		to, to, hdr, body, session->dialog, process_invite_response);
 
 	g_free(to);
 	g_free(body);
@@ -1682,7 +1694,7 @@ static void
 im_session_close (struct sipe_account_data *sip, struct sip_im_session * session)
 {
 	if (session) {
-		send_sip_request(sip->gc, "BYE", session->with, session->with, NULL, NULL, session->outgoing_dialog, NULL);
+		send_sip_request(sip->gc, "BYE", session->with, session->with, NULL, NULL, session->dialog, NULL);
 		im_session_destroy(sip, session);
 	}
 }
@@ -1717,7 +1729,7 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	// Queue the message
 	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, text);
 
-	if (session->outgoing_dialog && session->outgoing_dialog->callid) {
+	if (session->dialog && session->dialog->callid) {
 		sipe_im_process_queue(sip, session);
 	} else if (!session->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
@@ -1741,10 +1753,10 @@ sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 
 	struct sip_im_session * session = find_im_session(sip, who);
 
-	if (session && session->outgoing_dialog) {
+	if (session && session->dialog) {
 		send_sip_request(gc, "INFO", who, who,
 			"Content-Type: application/xml\r\n",
-			SIPE_SEND_TYPING, session->outgoing_dialog, NULL);
+			SIPE_SEND_TYPING, session->dialog, NULL);
 	}
 
 	return SIPE_TYPING_SEND_TIMEOUT;
@@ -1872,14 +1884,18 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar * from = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "<", ">", NULL);
 	struct sip_im_session * session = find_or_create_im_session (sip, from);
 	if (session) {
-		struct sip_dialog * dialog = g_new0(struct sip_dialog, 1);
-		dialog->callid = sipmsg_find_header(msg, "Call-ID");
-		dialog->ourtag = find_tag(sipmsg_find_header(msg, "To"));
-		dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
-		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
-		printf("Created incoming dialog and set epid to %s\n", dialog->theirepid);
+		if (session->dialog) {
+			purple_debug_info("sipe", "process_incoming_invite, session already has dialog!\n");
+		} else {
+			session->dialog = g_new0(struct sip_dialog, 1);
 
-		session->incoming_dialog = dialog;
+			sipe_parse_dialog(msg, session->dialog, FALSE);
+
+			session->dialog->callid = sipmsg_find_header(msg, "Call-ID");
+			session->dialog->ourtag = find_tag(sipmsg_find_header(msg, "To"));
+			session->dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
+			session->dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
+		}
 	} else {
 		purple_debug_info("sipe", "process_incoming_invite, failed to find or create IM session\n");
 	}

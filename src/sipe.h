@@ -47,8 +47,7 @@
 
 struct sip_im_session {
 	gchar * with;
-	struct sip_dialog * outgoing_dialog;
-	struct sip_dialog * incoming_dialog;
+	struct sip_dialog * dialog;
 	struct transaction * outgoing_invite;
 
 	GSList *outgoing_message_queue;
