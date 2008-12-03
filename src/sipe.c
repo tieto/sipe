@@ -768,7 +768,6 @@ static char *get_contact_service(struct sipe_account_data  *sip)
 static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		const char *text, const char *body)
 {
-	GSList *tmp = msg->headers;
 	gchar *name;
 	gchar *value;
 	GString *outstr = g_string_new("");
@@ -800,6 +799,7 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	sign_outgoing_message(msg, sip, msg->method);
 
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
+	GSList *tmp = msg->headers;
 	while (tmp) {
 		name = ((struct siphdrelement*) (tmp->data))->name;
 		value = ((struct siphdrelement*) (tmp->data))->value;
