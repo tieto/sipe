@@ -494,8 +494,10 @@ static void sipe_canwrite_cb(gpointer data, gint source, PurpleInputCondition co
 	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
 
 	if (max_write == 0) {
-		purple_input_remove(sip->tx_handler);
-		sip->tx_handler = 0;
+                if (sip->tx_handler != 0){ 
+		        purple_input_remove(sip->tx_handler);
+		        sip->tx_handler = 0;
+                }
 		return;
 	}
 
@@ -522,12 +524,14 @@ static void sipe_canwrite_cb_ssl(gpointer data, PurpleSslConnection *gsc, Purple
 	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
 
 	if (max_write == 0) {
-		purple_input_remove(sip->tx_handler);
-		sip->tx_handler = 0;
-		return;
+                if (sip->tx_handler != 0){ 
+		        purple_input_remove(sip->tx_handler);
+		        sip->tx_handler = 0;
+		        return;
+                }
 	}
 
-	written = purple_ssl_write(sip->gsc, sip->txbuf->outptr, max_write);
+	written = purple_ssl_write(gsc, sip->txbuf->outptr, max_write);
 
 	if (written < 0 && errno == EAGAIN)
 		written = 0;
@@ -568,8 +572,7 @@ static void send_later_cb(gpointer data, gint source, const gchar *error)
 
 	/* If there is more to write now, we need to register a handler */
 	if (sip->txbuf->bufused > 0)
-		sip->tx_handler = purple_input_add(sip->fd, PURPLE_INPUT_WRITE,
-			sipe_canwrite_cb, gc);
+		sip->tx_handler = purple_input_add(sip->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb, gc);
 
 	conn = connection_create(sip, source);
 	conn->inputhandler = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_input_cb, gc);
@@ -588,16 +591,17 @@ static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 	}
 
 	sip = gc->proto_data;
+        sip->gsc = gsc; 
 	sip->fd = gsc->fd;
 	sip->connecting = FALSE;
 
-	sipe_canwrite_cb_ssl(gc, gsc, PURPLE_INPUT_WRITE);
+	sipe_canwrite_cb_ssl(gc, sip->gsc, PURPLE_INPUT_WRITE);
 
-	/* If there is more to write now, we need to register a handler */
+	/* If there is more to write now*/
 	if (sip->txbuf->bufused > 0)
-		purple_ssl_input_add(gsc, sipe_canwrite_cb_ssl, gc);
+                purple_ssl_input_add(sip->gsc, sipe_canwrite_cb_ssl, gc);
 
-	conn = connection_create(sip, gsc->fd);
+	conn = connection_create(sip, sip->gsc->fd);
 	purple_ssl_input_add(sip->gsc, sipe_input_cb_ssl, gc);
 }
 
@@ -650,7 +654,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
                   if (sip->gsc){
                         ret = purple_ssl_write(sip->gsc, buf, writelen);
                   }else{  
-			            ret = write(sip->fd, buf, writelen);
+			ret = write(sip->fd, buf, writelen);
                   }
                }
 
@@ -664,7 +668,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 		if (ret < writelen) {
 			if (!sip->tx_handler){
                                 if (sip->gsc){
-                                     purple_ssl_input_add(sip->gsc, sipe_canwrite_cb_ssl, gc);
+                                        purple_ssl_input_add(sip->gsc, sipe_canwrite_cb_ssl, gc);
                                 }
                                 else{ 
 					sip->tx_handler = purple_input_add(sip->fd,
@@ -861,7 +865,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *theirepid = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
-	gchar *useragent = purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
+	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 
 	if (!ourtag && !dialog) {
 		ourtag = gentag();
@@ -2059,16 +2063,13 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
         purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
 
 	if (isonline) {
-		gchar * status_id;
+		gchar * status_id = NULL;
 		if (activity) {
 			if (strstr(activity, "busy")) {
 				status_id = "busy";
 			} else if (strstr(activity, "away")) {
 				status_id = "away";
 			}
-                        else{
-                                status_id = "available"; 
-                        }
 		}
 
 		if (!status_id) {
@@ -2476,7 +2477,9 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 					process_input_message(sip, msg);
 				} else {
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature is invalid.  Received %s but generated %s; Ignoring message\n", rspauth, signature);
-					sipe_close(sip->gc);
+					char *buf = g_strdup_printf(_("Received %s but generated %s; Please go to the Account Manager and re-enable the account"),rspauth, signature );
+                                        purple_notify_error(sip->gc, _("Invalid Message Signature"),_("Invalid Message Signature"),buf); 
+                                        sipe_close(sip->gc);
 				}
 			}
 
@@ -2517,25 +2520,24 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 
 	/* TODO: It should be possible to make this check unnecessary */
 	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
-		if (gsc) purple_ssl_close(gsc);
+		purple_ssl_close(gsc);
 		return;
 	}
 
-	if (sip->gsc) 
-		conn = connection_find(sip, sip->gsc->fd);
+	if (gsc && sip) 
+		conn = connection_find(sip, gsc->fd);
 	if (!conn) {
 		purple_debug_error("sipe", "Connection not found!\n");
-		if (sip->gsc) purple_ssl_close(sip->gsc);
+		if (gsc) purple_ssl_close(gsc);
 		return;
 	}
-      
 
 	if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
 		conn->inbuflen += SIMPLE_BUF_INC;
 		conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
 	}
 
-	len = purple_ssl_read(gsc, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
+	len = purple_ssl_read(sip->gsc, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
 
 	if (len < 0 && errno == EAGAIN) {
 		/* Try again later */
@@ -2543,16 +2545,17 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
         } else if (len < 0) {
                 purple_debug_info("sipe", "sipe_input_cb_ssl: read error\n");
                 if (sip->gsc){ 
-					connection_remove(sip, sip->gsc->fd); 
+		    connection_remove(sip, sip->gsc->fd); 
                     if (sip->fd == gsc->fd) sip->fd = -1; 
-				}
+                    purple_debug_info("sipe", "sipe_input_cb_ssl: connection_remove\n"); 
+		}
                 return;
         } else if (len == 0) {
                 purple_connection_error(gc, _("Server has disconnected"));
-			    if (sip->gsc){
+		if (sip->gsc){
                 	connection_remove(sip, sip->gsc->fd);
                 	if (sip->fd == gsc->fd) sip->fd = -1;
-				}
+		}
                 return;
         }
 
@@ -2654,14 +2657,15 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 
 	sip = gc->proto_data;
 	sip->fd = gsc->fd;
+        sip->gsc = gsc;  
 	conn = connection_create(sip, sip->fd);
 	sip->listenport = purple_network_get_port_from_fd(sip->fd);
 	sip->listenfd = sip->fd;
 	sip->registertimeout = purple_timeout_add((rand()%100) + 1000, (GSourceFunc)subscribe_timeout, sip);
 
 	do_register(sip);
-
-	purple_ssl_input_add(gsc, sipe_input_cb_ssl, gc);
+        if(sip)
+            purple_ssl_input_add(sip->gsc, sipe_input_cb_ssl, gc);
 }
 
 static guint sipe_ht_hash_nick(const char *nick)
@@ -3079,8 +3083,8 @@ static PurplePluginInfo info = {
         "prpl-sipe",                                   	  /**< id             */
 	"Microsoft LCS/OCS",				  /**< name           */
 	VERSION,                                          /**< version        */
-	N_("SIP/SIMPLE Exchange Protocol Plugin"),        /**  summary        */
-	N_("The SIP/SIMPLE Exchange Protocol Plugin"),    /**  description    */
+	N_("SIP/SIMPLE OCS/LCS Protocol Plugin"),        /**  summary        */
+	N_("The SIP/SIMPLE LCS/OCS Protocol Plugin"),    /**  description    */
 	"Anibal Avelar <avelar@gmail.com>, "         	  /**< author         */
 	"Gabriel Burt <gburt@novell.com>",         	  /**< author         */
 	PURPLE_WEBSITE,                                   /**< homepage       */
