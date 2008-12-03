@@ -514,7 +514,7 @@ static void sipe_canwrite_cb(gpointer data, gint source, PurpleInputCondition co
 	purple_circ_buffer_mark_read(sip->txbuf, written);
 }
 
-static void sipe_canwrite_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
+static void sipe_canwrite_cb_ssl(gpointer data, gint src, PurpleInputCondition cond)
 {
 	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = gc->proto_data;
@@ -524,14 +524,14 @@ static void sipe_canwrite_cb_ssl(gpointer data, PurpleSslConnection *gsc, Purple
 	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
 
 	if (max_write == 0) {
-                if (sip->tx_handler != 0){ 
+                if (sip->tx_handler != 0) { 
 		        purple_input_remove(sip->tx_handler);
 		        sip->tx_handler = 0;
 		        return;
                 }
 	}
 
-	written = purple_ssl_write(gsc, sip->txbuf->outptr, max_write);
+	written = purple_ssl_write(sip->gsc, sip->txbuf->outptr, max_write);
 
 	if (written < 0 && errno == EAGAIN)
 		written = 0;
@@ -595,11 +595,13 @@ static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 	sip->fd = gsc->fd;
 	sip->connecting = FALSE;
 
-	sipe_canwrite_cb_ssl(gc, sip->gsc, PURPLE_INPUT_WRITE);
+	sipe_canwrite_cb_ssl(gc, sip->gsc->fd, PURPLE_INPUT_WRITE);
 
-	/* If there is more to write now*/
+	/* If there is more to write now */
 	if (sip->txbuf->bufused > 0)
-                purple_ssl_input_add(sip->gsc, sipe_canwrite_cb_ssl, gc);
+	{
+                sip->tx_handler = purple_input_add(sip->gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
+	}
 
 	conn = connection_create(sip, sip->gsc->fd);
 	purple_ssl_input_add(sip->gsc, sipe_input_cb_ssl, gc);
@@ -668,7 +670,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 		if (ret < writelen) {
 			if (!sip->tx_handler){
                                 if (sip->gsc){
-                                        purple_ssl_input_add(sip->gsc, sipe_canwrite_cb_ssl, gc);
+                                        sip->tx_handler = purple_input_add(sip->gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
                                 }
                                 else{ 
 					sip->tx_handler = purple_input_add(sip->fd,
@@ -2437,7 +2439,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 	}
 
 	/* Received a full Header? */
-	if ((cur = strstr(conn->inbuf, "\r\n\r\n")) != NULL) {
+	while ((cur = strstr(conn->inbuf, "\r\n\r\n")) != NULL) {
 		time_t currtime = time(NULL);
 		cur += 2;
 		cur[0] = '\0';
@@ -2487,9 +2489,6 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		} else {
 			process_input_message(sip, msg);
 		}
-
-	} else {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "received a incomplete sip msg: %s\n", conn->inbuf);
 	}
 }
 
@@ -2824,23 +2823,27 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 	sip->realport = port;
 	if (!sip->realport) sip->realport = 5060;
 
-	/* TCP case */
-	//if (!sip->udp) {
-	//	/* create socket for incoming connections */
-	//	sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
-	//				sipe_tcp_connect_listen_cb, sip);
-	//	if (sip->listen_data == NULL) {
-	//		purple_connection_error(sip->gc, _("Could not create listen socket"));
-	//		return;
-	//	}
-	//} else { /* UDP */
-	//	purple_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
+	if (!sip->use_ssl)
+	{
 
-	//	sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
-	//	if (sip->query_data == NULL) {
-	//		purple_connection_error(sip->gc, _("Could not resolve hostname"));
-	//	}
-	//}
+	/* TCP case */
+	if (!sip->udp) {
+			/* create socket for incoming connections */
+			sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
+						sipe_tcp_connect_listen_cb, sip);
+			if (sip->listen_data == NULL) {
+				purple_connection_error(sip->gc, _("Could not create listen socket"));
+				return;
+			}
+		} else { /* UDP */
+			purple_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
+	
+			sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
+			if (sip->query_data == NULL) {
+				purple_connection_error(sip->gc, _("Could not resolve hostname"));
+			}
+		}
+	}
 }
 
 static void sipe_login(PurpleAccount *account)
