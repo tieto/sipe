@@ -1233,29 +1233,36 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 	int activity_code;
 	if (sip) {
-		/* Unknown: 0 to 2999. Availability is undefined.
-		 * Online: 3000 to 4499. Willing and able to communicate.
-		 * Idle: 4500 to 5999. Willing but potentially unable to communicate.
-		 * Busy: 6000 to 7499. Able but potentially unwilling to communicate.
-		 * BusyIdle: 7500 to 8999. Able but potentially unwilling to communicate.
-		 * DoNotDisturb: 9000 to 11999. Able but potentially unwilling to communicate.
-		 * Away: 12000 to 17999. Willing but unable to communicate.
-		 * Offline: 18000 and higher. Not available to communicate.
-		 */
+		/* From MS-SIP, section 2.2.1:
+		000 - 099 There is no information about the activity of the user
+		100 - 149 The user is away
+		150 - 199 The user is out to lunch
+		200 - 299 The user is idle
+		300 - 399 The user will be right back
+		400 - 499 The user is active
+		500 - 599 The user is already participating in a communications session
+		600 - 699 The user is busy
+		700 - 749 The user is away
+		800 - 999 The user is active
+		*/
 		g_free(sip->status);
 		if (primitive == PURPLE_STATUS_AWAY) {
 			sip->status = g_strdup("away");
-			sip->availability_code = 12000;
+			sip->availability_code = 100;
 		} else if (primitive == PURPLE_STATUS_AVAILABLE) {
 			sip->status = g_strdup("available");
-			sip->availability_code = 3000;
+			sip->availability_code = 400;
 		} else if (primitive == PURPLE_STATUS_UNAVAILABLE) {
 			sip->status = g_strdup("busy");
-			sip->availability_code = 6000;
+			sip->availability_code = 600;
 		}
 
 		char *msg = purple_status_get_attr_string(status, "message");
-		send_publish(sip, msg);
+		gchar *name = g_strdup_printf("sip: sip:%s", sip->username); 
+		gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, 200, sip->availability_code, msg);
+		send_soap_request(sip, body);
+		g_free(name);
+		g_free(body);
 	}
 }
 
