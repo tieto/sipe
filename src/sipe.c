@@ -2608,10 +2608,8 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 					process_input_message(sip, msg);
 				} else {
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature is invalid.  Received %s but generated %s; Ignoring message\n", rspauth, signature);
-					char *buf = g_strdup_printf(_("Received a message with an incorrect signature.  You have been logged out from your '%s' account.  Please re-enable this account to try again."),
-						sip->username);
-                                        purple_notify_error(sip->gc, _("Invalid Message Signature"), _("Invalid Message Signature"),buf); 
-                                        sipe_close(sip->gc);
+					purple_connection_error(sip->gc, _("Invalid message signature received"));
+					sip->gc->wants_to_die = TRUE;
 				}
 			}
 
@@ -3016,9 +3014,13 @@ static void resolve_next_service(struct sipe_account_data *sip,
 	} else {
 		sip->service_data++;
 		if (sip->service_data->service == NULL) {
-			/* Nothing more to try */
-			sip->gc->wants_to_die = TRUE;
-			purple_connection_error(sip->gc, _("Couldn't determine server from service record"));
+			/* Try connecting to the SIP hostname directly */
+			purple_debug(PURPLE_DEBUG_MISC, "sipe", "no SRV records found; using SIP domain as fallback\n");
+			// If SSL is supported, default to using it; OCS servers aren't configured
+			// by default to accept TCP
+			sip->use_ssl = purple_ssl_is_supported();
+			gchar * hostname = g_strdup(sip->sipdomain);
+			create_connection(sip, hostname, 0);
 			return;
 		}
 	}
@@ -3029,7 +3031,6 @@ static void resolve_next_service(struct sipe_account_data *sip,
 						 sip->sipdomain,
 						 srvresolved, sip);
 }
-
 
 static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 {
