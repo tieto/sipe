@@ -115,6 +115,7 @@ struct sipe_account_data {
 	gchar *status;
 	int status_version;
 	int availability_code;
+	gchar *contact;
 	GHashTable *buddies;
 	guint registertimeout;
 	guint resendtimeout;

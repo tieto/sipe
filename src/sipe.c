@@ -57,7 +57,9 @@
 
 #include "sipe.h"
 #include "sip-ntlm.h"
-#include "sipkrb5.h"
+#ifdef USE_KERBEROS
+ #include "sipkrb5.h"
+#endif /*USE_KERBEROS*/
 
 #include "sipmsg.h"
 #include "sipe-sign.h"
@@ -757,7 +759,9 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 static char *get_contact(struct sipe_account_data  *sip)
 {
-         return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
+	return g_strdup_printf("<%s>",sip->contact);
+	/*g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");*/
+		
 }
 
 
@@ -970,7 +974,12 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
        // char *hdr = g_strdup_printf("Contact: %s\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
         //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, adhoclist\r\nms-keep-alive: UAC;hop-hop=yes\r\nEvent: registration\r\nAllow-Events: presence\r\n", contact);
     //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
-    char *hdr = g_strdup_printf("Contact: %s\r\nSupported: gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
+    char *hdr = g_strdup_printf("Contact: %s\r\n"
+								"Supported: gruu-10, adhoclist\r\n"
+								"Event: registration\r\n"
+								"Allow-Events: presence\r\n"
+								"ms-keep-alive: UAC;hop-hop=yes\r\n"
+								"Expires: %d\r\n", contact,expire);
 	g_free(contact);
 
 	sip->registerstatus = 1;
@@ -1502,14 +1511,68 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	return 0;
 }
 
-static void sipe_subscribe_buddylist(struct sipe_account_data *sip)
+static void sipe_subscribe_buddylist(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username); 
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-contacts\r\nAccept: application/vnd-microsoft-roaming-contacts+xml\r\nSupported: com.microsoft.autoextend\r\nSupported: ms-benotify\r\nProxy-Require: ms-benotify\r\nSupported: ms-piggyback-first-notify\r\nContact: %s\r\n", tmp);
+	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-contacts\r\n"
+								 "Accept: application/vnd-microsoft-roaming-contacts+xml\r\n"
+								 "Supported: com.microsoft.autoextend\r\n"
+								 "Supported: ms-benotify\r\n"
+								 "Proxy-Require: ms-benotify\r\n"
+								 "Supported: ms-piggyback-first-notify\r\n"
+								 "Contact: %s\r\n", tmp);
 	g_free(tmp);
 	
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_add_lcs_contacts);
+	g_free(to);
+	g_free(hdr);
+}
+
+static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
+{
+	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *tmp = get_contact(sip);
+	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-self\r\n"
+								 "Accept: application/vnd-microsoft-roaming-self+xml\r\n"
+								 "Supported: com.microsoft.autoextend\r\n"
+								 "Supported: ms-benotify\r\n"
+								 "Proxy-Require: ms-benotify\r\n"
+								 "Supported: ms-piggyback-first-notify\r\n"
+								 "Contact: %s\r\n"
+								 "Content-Type: application/vnd-microsoft-roaming-self+xml\r\n"
+								 ,tmp);
+	
+	g_free(tmp);
+	
+	gchar *body=g_strdup("<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roaming type=\"subscribers\"/></roamingList>");
+
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
+	g_free(body);					 
+	g_free(to);
+	g_free(hdr);
+}
+
+static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,struct sipmsg *msg)
+{
+	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *tmp = get_contact(sip);
+	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-provisioning-v2\r\n"
+								 "Accept: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
+								 "Supported: com.microsoft.autoextend\r\n"
+								 "Supported: ms-benotify\r\n"
+								 "Proxy-Require: ms-benotify\r\n"
+								 "Supported: ms-piggyback-first-notify\r\n"
+								 "Expires: 0\r\n"
+								 "Contact: %s\r\n"
+								 "Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
+								 ,tmp);
+	
+	g_free(tmp);
+	
+	gchar *body=g_strdup("<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\"><provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/><provisioningGroup name=\"ucPolicy\"/></provisioningGroupList>");
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
+	g_free(body);					 
 	g_free(to);
 	g_free(hdr);
 }
@@ -1925,8 +1988,8 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 	expires_header = sipmsg_find_header(msg, "Expires");
 	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
-	purple_debug_info("sipe", "got response to REGISTER; expires = %d\n", expires);
-
+	purple_debug_info("sipe", "process_register_response: got response to REGISTER; expires = %d\n", expires);
+					
 	switch (msg->response) {
 		case 200:
 			if (expires == 0) {
@@ -1934,11 +1997,16 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			} else {
 				sip->registerstatus = 3;
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
-
+				
 				/* tell everybody we're online */
 				sip->status = g_strdup("available");
 				sip->availability_code = 3000;
-				send_publish(sip, NULL);
+				
+			    gchar *gruu = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "gruu=\"", "\"", NULL);
+				if(gruu){
+	    		   purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response: Get Server Gruu :%s\r\n",gruu);
+				   sip->contact = g_strdup(gruu);
+				}
 
 				/* get buddies from blist; Has a bug */
 				subscribe_timeout(sip);
@@ -1947,8 +2015,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				tmp = sipmsg_find_header(msg, "Allow-Events");
 				if (tmp && strstr(tmp, "vnd-microsoft-provisioning")){
-					sipe_subscribe_buddylist(sip);
+					sipe_subscribe_buddylist(sip,msg);
 				}
+				
+				sipe_subscribe_roaming_self(sip,msg);
+				sipe_subscribe_roaming_provisioning(sip,msg);
+				send_publish(sip, NULL);
 				
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
@@ -2142,6 +2214,7 @@ static void send_notify(struct sipe_account_data *sip, struct sipe_watcher *watc
 
 static gboolean process_service_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
+	
 	if (msg->response != 200 && msg->response != 408) {
 		/* never send again */
 		sip->republish = -1;
@@ -2165,11 +2238,11 @@ static void send_publish(struct sipe_account_data *sip, char * msg)
 	);
 	sip->status_version++;
 
-	gchar *tmp = get_contact_service(sip);
+	gchar *tmp = get_contact(sip);
 	
-	gchar *hdr = g_strdup_printf("Contact: %s\r\nAccept: application/ms-location-profile-definition+xml\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp);
+	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
+								 "Content-Type: application/msrtc-category-publish+xml\r\n", tmp);
 	g_free(tmp); 
-
 	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_service_response);
 	//sip->republish = time(NULL) + 500;
 	g_free(hdr);
@@ -3136,10 +3209,10 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 	
 	// TODO commented out so won't show in the preferences until we fix krb message signing
-	/*option = purple_account_option_string_new(_("Auth User"), "authuser", "");
+	option = purple_account_option_string_new(_("Auth User"), "authuser", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = purple_account_option_string_new(_("Auth Domain"), "authdomain", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	my_protocol = plugin;
 }
 
