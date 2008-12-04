@@ -759,7 +759,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 static char *get_contact(struct sipe_account_data  *sip)
 {
-	return g_strdup_printf("<%s>",sip->contact);
+	return g_strdup(sip->contact);
 	/*g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");*/
 		
 }
@@ -2012,7 +2012,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			    gchar *gruu = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "gruu=\"", "\"", NULL);
 				if(gruu){
 	    		   purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response: Get Server Gruu :%s\r\n",gruu);
-				   sip->contact = g_strdup(gruu);
+				   sip->contact = g_strdup_printf("<%s>", gruu);
+				} else {
+				   sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");
 				}
 
 				/* get buddies from blist; Has a bug */
