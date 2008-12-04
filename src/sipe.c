@@ -218,8 +218,6 @@ static void connection_free_all(struct sipe_account_data *sip)
 	}
 }
 
-
-//static struct sipe_krb5_auth krb5_auth;
 static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg, gboolean force_reauth)
 {
 	const gchar *method = msg->method;
@@ -1027,7 +1025,7 @@ static gchar *parse_from(const gchar *hdr)
 	return from;
 }
 
-static xmlnode * xmlnode_get_descendent(xmlnode * parent, ...)
+static xmlnode * xmlnode_get_descendant(xmlnode * parent, ...)
 {
 	va_list args;
 	xmlnode * node;
@@ -1141,7 +1139,7 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 		xmlnode * xml = xmlnode_from_str(msg->body, msg->bodylen);
 		if (!xml) return FALSE;
 
-		xmlnode * node = xmlnode_get_descendent(xml, "Body", "addGroup", "groupID", NULL);
+		xmlnode * node = xmlnode_get_descendant(xml, "Body", "addGroup", "groupID", NULL);
 		if (!node) return FALSE;
 
 		char * group_id = xmlnode_get_data(node);
@@ -1412,8 +1410,6 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 		return FALSE;
 	}
 
-	purple_debug_info("sipe", "sipe_add_lcs_contacts->%s-%d\n", msg->body, len);
-
 	/* Convert the contact from XML to Purple Buddies */
 	xmlnode * isc = xmlnode_from_str(msg->body, len);
 	if (!isc) {
@@ -1664,26 +1660,17 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 		return;
 	}
 
+	session->dialog = g_new0(struct sip_dialog, 1);
+
 	if (strstr(session->with, "sip:")) {
 		to = g_strdup(session->with);
 	} else {
 		to = g_strdup_printf("sip:%s", session->with);
 	}
 
-	// Setup the outgoing dialog w/ the epid from the incoming dialog (if any)
-	session->dialog = g_new0(struct sip_dialog, 1);
-
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
 		"Contact: %s\r\n"
-		//"Supported: ms-conf-invite\r\n"
-		//"Supported: ms-delayed-accept\r\n"
-		//"Supported: ms-renders-isf\r\n"
-		//"Supported: ms-renders-gif\r\n"
-		//"Supported: ms-renders-mime-alternative\r\n"*/
-		//"Supported: timer\r\n"
-		//"Supported: ms-sender\r\n"
-		//"Supported: ms-early-media\r\n"
 		"Content-Type: application/sdp\r\n",
 		contact, sip->username, sip->username, to);
 
@@ -1694,8 +1681,9 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 		"c=IN IP4 %s\r\n"
 		"t=0 0\r\n"
 		"m=message %d sip null\r\n"
-		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml\r\n",
-		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1), 5061);
+		"a=accept-types:text/plain text/html image/gif "
+		"multipart/alternative application/im-iscomposing+xml\r\n",
+		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1), sip->realport);
 
 	session->outgoing_invite = send_sip_request(sip->gc, "INVITE",
 		to, to, hdr, body, session->dialog, process_invite_response);
@@ -1926,8 +1914,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		"m=message %d sip sip:%s\r\n"
 		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml\r\n",
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1),
-		//sip->realport, sip->username
-		5061, sip->username));
+		sip->realport, sip->username));
 }
 
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
@@ -2017,8 +2004,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf\n");
 		return;
 	}
-
-        purple_debug_info("sipe", "process_incoming_notify: body(%s)\n",msg->body);
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
 		if ((status = xmlnode_get_child(tuple, "status"))) {
@@ -2223,7 +2208,6 @@ static void process_incoming_subscribe(struct sipe_account_data *sip, struct sip
 	gboolean tagadded = FALSE;
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *expire = sipmsg_find_header(msg, "Expire");
-    //    gchar *ms-received-port =find_received_port(sipmsg_find_header(msg, "Contact"));
 	gchar *tmp;
 	struct sipe_watcher *watcher = watcher_find(sip, from);
 	if (!ourtag) {
@@ -2459,6 +2443,10 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		} else {
 			sipmsg_free(msg);
 			return;
+		}
+
+		if (msg->body) {
+			purple_debug_info("sipe", "body:\n%s", msg->body);
 		}
 
 		// Verify the signature before processing it
@@ -2806,8 +2794,9 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 	if (results) {
 		hostname = g_strdup(resp->hostname);
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - SRV hostname: %s\r\n", hostname);
-		if (!port)
+		if (!port) {
 			port = resp->port;
+		}
 		g_free(resp);
 	} else {
 		if (!purple_account_get_bool(sip->account, "useproxy", FALSE)) {
@@ -2819,23 +2808,23 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 		}
 	}
 
+	port = port ? port : 5060;
 	sip->realhostname = hostname;
 	sip->realport = port;
-	if (!sip->realport) sip->realport = 5060;
 
-	if (!sip->use_ssl)
-	{
-
-	/* TCP case */
-	if (!sip->udp) {
+	if (!sip->use_ssl) {
+		if (!sip->udp) {
+			/* TCP case */
 			/* create socket for incoming connections */
 			sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
 						sipe_tcp_connect_listen_cb, sip);
+
 			if (sip->listen_data == NULL) {
 				purple_connection_error(sip->gc, _("Could not create listen socket"));
 				return;
 			}
-		} else { /* UDP */
+		} else {
+			/* UDP */
 			purple_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
 	
 			sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
@@ -2927,8 +2916,7 @@ static void sipe_login(PurpleAccount *account)
 
         if (sip->use_ssl){ 
           sip->gsc = purple_ssl_connect(account,hosttoconnect, purple_account_get_int(account, "port", 5061), login_cb_ssl, sipe_ssl_connect_failure, gc);
-        }
-        else{
+        } else {
 		sip->srv_query_data = purple_srv_resolve("sip",
 			sip->udp ? "udp" : "tcp", hosttoconnect, srvresolved, sip);
 	}
@@ -3016,8 +3004,8 @@ static PurplePluginProtocolInfo prpl_info =
 	NO_BUDDY_ICONS,				/* icon_spec */
 	sipe_list_icon,				/* list_icon */
 	NULL,					/* list_emblems */
-	NULL,					/* status_text */	// TODO maybe
-	NULL,					/* tooltip_text */	// TODO maybe
+	NULL,					/* status_text */	// TODO
+	NULL,					/* tooltip_text */	// add custom info to contact tooltip
 	sipe_status_types,			/* away_states */
 	NULL,					/* blist_node_menu */
 	NULL,					/* chat_info */
@@ -3026,10 +3014,10 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_close,				/* close */
 	sipe_im_send,				/* send_im */
 	NULL,					/* set_info */		// TODO maybe
-        sipe_send_typing,			/* send_typing */	// TODO
+	sipe_send_typing,			/* send_typing */
 	NULL,					/* get_info */		// TODO maybe
 	sipe_set_status,			/* set_status */
-	NULL,					/* set_idle */		// TODO 
+	NULL,					/* set_idle */
 	NULL,					/* change_passwd */
 	sipe_add_buddy,				/* add_buddy */
 	NULL,					/* add_buddies */
@@ -3049,9 +3037,9 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* chat_send */
 	sipe_keep_alive,			/* keepalive */
 	NULL,					/* register_user */
-	NULL,					/* get_cb_info */	// TODO?
-	NULL,					/* get_cb_away */	// TODO?
-	sipe_alias_buddy,			/* alias_buddy */	// TODO
+	NULL,					/* get_cb_info */	// deprecated
+	NULL,					/* get_cb_away */	// deprecated
+	sipe_alias_buddy,			/* alias_buddy */
 	sipe_group_buddy,			/* group_buddy */
 	sipe_rename_group,			/* rename_group */
 	NULL,					/* buddy_free */
@@ -3121,35 +3109,38 @@ static void init_plugin(PurplePlugin *plugin)
 	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 
-        option = purple_account_option_bool_new(_("Use SSL/TLS"), "ssl", FALSE);
-        prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,option);
-
-	option = purple_account_option_string_new(_("UserAgent"), "useragent", "Purple/" VERSION);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,option);
+	option = purple_account_option_string_new(_("User Agent"), "useragent", "Purple/" VERSION);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
     
 	option = purple_account_option_bool_new(_("Use UDP"), "udp", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
         
-        option = purple_account_option_int_new(_("Connect port"), "port", 5060);
+        option = purple_account_option_bool_new(_("Use SSL/TLS"), "ssl", TRUE);
+        prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+        option = purple_account_option_int_new(_("Port"), "port", 5061);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
+	// TODO commented out so won't show in the preferences until we fix krb message signing
+	/*option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// XXX FIXME: Add code to programmatically determine if a KRB REALM is specified in /etc/krb5.conf
 	option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	*/
 
 	/*option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = purple_account_option_string_new(_("Proxy"), "proxy", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
-	option = purple_account_option_string_new(_("Auth User"), "authuser", "");
+	
+	// TODO commented out so won't show in the preferences until we fix krb message signing
+	/*option = purple_account_option_string_new(_("Auth User"), "authuser", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = purple_account_option_string_new(_("Auth Domain"), "authdomain", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 	my_protocol = plugin;
-
 }
 
 /* I had to redefined the function for it load, but works */
