@@ -93,6 +93,12 @@ struct sip_auth {
 	int ntlm_num;
 };
 
+struct sipe_service_data {
+	const char *service;
+	const char *transport;
+	gboolean use_ssl;
+};
+
 struct sipe_account_data {
 	PurpleConnection *gc;
 	gchar *sipdomain;
@@ -100,6 +106,7 @@ struct sipe_account_data {
 	gchar *password;
 	PurpleDnsQueryData *query_data;
 	PurpleSrvQueryData *srv_query_data;
+	const struct sipe_service_data *service_data;
 	PurpleNetworkListenData *listen_data;
 	int fd;
 	int cseq;
