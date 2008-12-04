@@ -209,7 +209,7 @@ void sipmsg_remove_header(struct sipmsg *msg, const gchar *name) {
 	while(tmp) {
 		elem = tmp->data;
 		// OCS2005 can send the same header in either all caps or mixed case
-		if(strcasecmp(elem->name, name)==0) {
+		if (g_ascii_strcasecmp(elem->name, name)==0) {
 			msg->headers = g_slist_remove(msg->headers, elem);
 			g_free(elem->name);
 			g_free(elem->value);
@@ -228,7 +228,7 @@ gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name) {
 	while(tmp) {
 		elem = tmp->data;
 		// OCS2005 can send the same header in either all caps or mixed case
-		if(strcasecmp(elem->name,name)==0) {
+		if (g_ascii_strcasecmp(elem->name,name)==0) {
 			return elem->value;
 		}
 		tmp = g_slist_next(tmp);
@@ -247,7 +247,7 @@ sipmsg_find_part_of_header(const char *hdr, const char * before, const char * af
 	const char *tmp;
 	const char *tmp2;
 
-	tmp = before == NULL ? hdr : strcasestr(hdr, before);
+	tmp = before == NULL ? hdr : strstr(hdr, before);
 	if (!tmp) {
 		//printf ("not found, returning null\n");
 		return (gchar *)def;
@@ -258,7 +258,7 @@ sipmsg_find_part_of_header(const char *hdr, const char * before, const char * af
 		//printf ("tmp now %s\n", tmp);
 	}
 
-	if (after != NULL && (tmp2 = strcasestr(tmp, after))) {
+	if (after != NULL && (tmp2 = strstr(tmp, after))) {
 		gchar * res = g_strndup(tmp, tmp2 - tmp);
 		//printf("returning %s\n", res);
 		return res;
@@ -284,7 +284,7 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
         while(tmp) {
                 elem = tmp->data;
 		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
-                if(elem && elem->name && !strcasecmp(elem->name,"WWW-Authenticate")) {
+                if (elem && elem->name && !g_ascii_strcasecmp(elem->name,"WWW-Authenticate")) {
 			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
 				//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "elem->value: %s\r\n", elem->value);
                         	return elem->value;

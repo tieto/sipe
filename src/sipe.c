@@ -1042,7 +1042,8 @@ static xmlnode * xmlnode_get_descendant(xmlnode * parent, ...)
 	return node;
 }
 
-static struct sipe_group * sipe_group_add (struct sipe_account_data *sip, struct sipe_group * group)
+static void
+sipe_group_add (struct sipe_account_data *sip, struct sipe_group * group)
 {
 	PurpleGroup * purple_group = purple_find_group(group->name);
 	if (!purple_group) {
@@ -1152,10 +1153,12 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 
 		g_free(ctx);
 		xmlnode_free(xml);
+		return TRUE;
 	}
+	return FALSE;
 }
 
-static struct sipe_group * sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar * who)
+static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar * who)
 {
 	struct group_user_context * ctx = g_new0(struct group_user_context, 1);
 	ctx->group_name = g_strdup(name);
@@ -1165,8 +1168,6 @@ static struct sipe_group * sipe_group_create (struct sipe_account_data *sip, gch
 	send_soap_request_with_cb(sip, body, process_add_group_response, ctx);
 	g_free(body);
 }
-
-
 
 static gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
@@ -2467,8 +2468,9 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 					process_input_message(sip, msg);
 				} else {
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature is invalid.  Received %s but generated %s; Ignoring message\n", rspauth, signature);
-					char *buf = g_strdup_printf(_("Received %s but generated %s; Please go to the Account Manager and re-enable the account"),rspauth, signature );
-                                        purple_notify_error(sip->gc, _("Invalid Message Signature"),_("Invalid Message Signature"),buf); 
+					char *buf = g_strdup_printf(_("Received a message with an incorrect signature.  You have been logged out from your '%s' account.  Please re-enable this account to try again."),
+						sip->username);
+                                        purple_notify_error(sip->gc, _("Invalid Message Signature"), _("Invalid Message Signature"),buf); 
                                         sipe_close(sip->gc);
 				}
 			}
