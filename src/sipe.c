@@ -243,7 +243,7 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 
 	if (sip->realhostname) {
 		host = sip->realhostname;
-	} else if (purple_account_get_bool(sip->account, "use_proxy", TRUE)) {
+	} else if (purple_account_get_bool(sip->account, "useproxy", TRUE)) {
 		host = purple_account_get_string(sip->account, "proxy", "");
 	} else {
 		host = sip->sipdomain;
@@ -376,7 +376,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 
 	if (sip->realhostname) {
 		host = sip->realhostname;
-	} else if (purple_account_get_bool(sip->account, "use_proxy", TRUE)) {
+	} else if (purple_account_get_bool(sip->account, "useproxy", TRUE)) {
 		host = purple_account_get_string(sip->account, "proxy", "");
 	} else {
 		host = sip->sipdomain;
@@ -2778,61 +2778,77 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data)
 }
 
 
+static void create_connection(struct sipe_account_data *sip, gchar *hostname, int port)
+{
+	PurpleAccount *account = sip->account;
+	PurpleConnection *gc = sip->gc;
+
+	if (purple_account_get_bool(account, "useport", FALSE)) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "create_connection - using specified SIP port\n");
+		port = purple_account_get_int(account, "port", 0);
+	} else {
+		port = port ? port : sip->use_ssl ? 5061 : 5060;
+	}
+
+	sip->realhostname = hostname;
+	sip->realport = port;
+
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "create_connection - hostname: %s port: %d\n",
+		     hostname, port);
+
+	if (sip->use_ssl) {
+		/* SSL case */
+		purple_debug_info("sipe", "using SSL\n");
+		sip->gsc = purple_ssl_connect(account, hostname, port,
+					      login_cb_ssl, sipe_ssl_connect_failure, gc);
+		if (sip->gsc == NULL) {
+			purple_connection_error(gc, _("Could not create SSL context"));
+			return;
+		}
+	} else if (sip->udp) {
+		/* UDP case */
+		purple_debug_info("sipe", "using UDP\n");
+	
+		sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
+		if (sip->query_data == NULL) {
+			purple_connection_error(gc, _("Could not resolve hostname"));
+		}
+	} else {
+		/* TCP case */
+		purple_debug_info("sipe", "using TCP\n");
+		/* create socket for incoming connections */
+		sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
+							       sipe_tcp_connect_listen_cb, sip);
+		if (sip->listen_data == NULL) {
+			purple_connection_error(gc, _("Could not create listen socket"));
+			return;
+		}
+	}
+}
 
 static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 {
-	struct sipe_account_data *sip;
-	gchar *hostname;
-	int port;
+	struct sipe_account_data *sip = data;
+	gchar *hostname = NULL;
+	int port = 0;
 
-	sip = data;
 	sip->srv_query_data = NULL;
-
-	port = purple_account_get_int(sip->account, "port", 0);
 
 	/* find the host to connect to */
 	if (results) {
 		hostname = g_strdup(resp->hostname);
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - SRV hostname: %s\r\n", hostname);
-		if (!port) {
-			port = resp->port;
-		}
+		port = resp->port;
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - SRV hostname: %s port: %d\n",
+			     hostname, port);
 		g_free(resp);
-	} else {
-		if (!purple_account_get_bool(sip->account, "useproxy", FALSE)) {
-			purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using sipdomain\r\n");
-			hostname = g_strdup(sip->sipdomain);
-		} else {
-			purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using specified SIP proxy\r\n");
-			hostname = g_strdup(purple_account_get_string(sip->account, "proxy", sip->sipdomain));
-		}
 	}
 
-	port = port ? port : 5060;
-	sip->realhostname = hostname;
-	sip->realport = port;
-
-	if (!sip->use_ssl) {
-		if (!sip->udp) {
-			/* TCP case */
-			/* create socket for incoming connections */
-			sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
-						sipe_tcp_connect_listen_cb, sip);
-
-			if (sip->listen_data == NULL) {
-				purple_connection_error(sip->gc, _("Could not create listen socket"));
-				return;
-			}
-		} else {
-			/* UDP */
-			purple_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
-	
-			sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
-			if (sip->query_data == NULL) {
-				purple_connection_error(sip->gc, _("Could not resolve hostname"));
-			}
-		}
+	if (hostname == NULL) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using SIP domain as fallback\n");
+		hostname = g_strdup(sip->sipdomain);
 	}
+
+	create_connection(sip, hostname, port);
 }
 
 static void sipe_login(PurpleAccount *account)
@@ -2840,7 +2856,7 @@ static void sipe_login(PurpleAccount *account)
 	PurpleConnection *gc;
 	struct sipe_account_data *sip;
 	gchar **userserver;
-	gchar *hosttoconnect;
+	const char *transport;
 
 	const char *username = purple_account_get_username(account);
 	gc = purple_account_get_connection(account);
@@ -2867,11 +2883,11 @@ static void sipe_login(PurpleAccount *account)
 	sip->gc = gc;
 	sip->account = account;
 	sip->registerexpire = 900;
-	sip->udp = purple_account_get_bool(account, "udp", FALSE);
-        sip->use_ssl = purple_account_get_bool(account, "ssl", FALSE);
 
-        purple_debug_info("sipe", "sip->use_ssl->%d\n", sip->use_ssl); 
-        
+	transport = purple_account_get_string(account, "transport", "");
+	sip->udp = strcmp(transport, "udp") == 0;
+	sip->use_ssl = strcmp(transport, "ssl") == 0;
+
 	/* TODO: is there a good default grow size? */
 	if (!sip->udp)
 		sip->txbuf = purple_circ_buffer_new(0);
@@ -2883,7 +2899,17 @@ static void sipe_login(PurpleAccount *account)
 	sip->password = g_strdup(purple_connection_get_password(gc));
 	g_strfreev(userserver);
 
-	if (sip->use_ssl) {
+	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
+
+	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
+
+	/* TODO: Set the status correctly. */
+	sip->status = g_strdup("available");
+
+	if (purple_account_get_bool(account, "useproxy", FALSE)) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - using specified SIP proxy\n");
+		create_connection(sip, g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain)), 0);
+	} else if (sip->use_ssl) {
 		// Communicator queries _sipinternaltls._tcp.domain.com and uses that
 		// information to connect to the OCS server.
 		//
@@ -2892,36 +2918,12 @@ static void sipe_login(PurpleAccount *account)
 		//  This doesn't quite work as advertised yet so make sure your have 
 		//  your OCS FQDN in the proxy setting in the SIPE account settings
 		//
-		sip->srv_query_data = purple_srv_resolve("sipinternaltls", "tcp", sip->sipdomain, srvresolved, sip);
-	}
-
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - realhostname: %s\r\n", sip->realhostname);
-
-	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
-
-	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
-
-	/* TODO: Set the status correctly. */
-	sip->status = g_strdup("available");
-
-	if (!purple_account_get_bool(account, "useproxy", FALSE)) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - checking realhostname again: %s\r\n", sip->realhostname);
-		hosttoconnect = g_strdup(sip->sipdomain);
+		sip->srv_query_data = purple_srv_resolve("sipinternaltls", "tcp",
+							 sip->sipdomain, srvresolved, sip);
 	} else {
-		hosttoconnect = g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain));
-                 
+		sip->srv_query_data = purple_srv_resolve("sip", sip->udp ? "udp" : "tcp",
+							 sip->sipdomain, srvresolved, sip);
 	}
-         /*SSL*/
-        purple_debug_info("sipe", "HosttoConnect->%s\n", hosttoconnect);
-
-        if (sip->use_ssl){ 
-          sip->gsc = purple_ssl_connect(account,hosttoconnect, purple_account_get_int(account, "port", 5061), login_cb_ssl, sipe_ssl_connect_failure, gc);
-        } else {
-		sip->srv_query_data = purple_srv_resolve("sip",
-			sip->udp ? "udp" : "tcp", hosttoconnect, srvresolved, sip);
-	}
-        
-	g_free(hosttoconnect);
 }
 
 static void sipe_close(PurpleConnection *gc)
@@ -3096,29 +3098,43 @@ static void init_plugin(PurplePlugin *plugin)
 {
 	PurpleAccountUserSplit *split;
 	PurpleAccountOption *option;
+	GList *list = NULL;
+	PurpleKeyValuePair *kvp;	
 
         purple_plugin_register(plugin);
 
 	//split = purple_account_user_split_new(_("Server"), "", '@');
 	//prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
+
         option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
         option = purple_account_option_string_new(_("Proxy Server"), "proxy", "");
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	option = purple_account_option_bool_new(_("Use port"), "useport", FALSE);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	option = purple_account_option_int_new(_("Port"), "port", 5061);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	kvp = g_new0(PurpleKeyValuePair, 1);
+	kvp->key = g_strdup("Use UDP");
+	kvp->value = g_strdup("udp");
+	list = g_list_append(list, kvp);
+	kvp = g_new0(PurpleKeyValuePair, 1);
+	kvp->key = g_strdup("Use TCP");
+	kvp->value = g_strdup("tcp");
+	list = g_list_append(list, kvp);
+	kvp = g_new0(PurpleKeyValuePair, 1);
+	kvp->key = g_strdup("Use SSL/TLS");
+	kvp->value = g_strdup("ssl");
+	list = g_list_append(list, kvp);
+	option = purple_account_option_list_new(_("Transport"), "transport", list);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 
 	option = purple_account_option_string_new(_("User Agent"), "useragent", "Purple/" VERSION);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-    
-	option = purple_account_option_bool_new(_("Use UDP"), "udp", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-        
-        option = purple_account_option_bool_new(_("Use SSL/TLS"), "ssl", TRUE);
-        prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-        option = purple_account_option_int_new(_("Port"), "port", 5061);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// TODO commented out so won't show in the preferences until we fix krb message signing
@@ -3130,11 +3146,6 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	*/
 
-	/*option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	option = purple_account_option_string_new(_("Proxy"), "proxy", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
-	
 	// TODO commented out so won't show in the preferences until we fix krb message signing
 	/*option = purple_account_option_string_new(_("Auth User"), "authuser", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
