@@ -2938,8 +2938,18 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 	purple_debug(PURPLE_DEBUG_MISC, "sipe", "create_connection - hostname: %s port: %d\n",
 		     hostname, port);
 
+	/* TODO: is there a good default grow size? */
+	if (!sip->udp)
+		sip->txbuf = purple_circ_buffer_new(0);
+
 	if (sip->use_ssl) {
 		/* SSL case */
+		if (!purple_ssl_is_supported()) {
+			gc->wants_to_die = TRUE;
+			purple_connection_error(gc, _("SSL support is needed for SSL/TLS support. Please install a supported SSL library."));
+			return;
+		}
+
 		purple_debug_info("sipe", "using SSL\n");
 		sip->gsc = purple_ssl_connect(account, hostname, port,
 					      login_cb_ssl, sipe_ssl_connect_failure, gc);
@@ -2968,29 +2978,79 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 	}
 }
 
+/* Service list for autodection */
+static const struct sipe_service_data service_autodetect[] = {
+	{ "sipinternaltls", "tcp", 1 }, /* for internal TLS connections */
+	{ "sipinternal",    "tcp", 0 }, /* for internal TCP connections */
+	{ "sip",            "tls", 1 }, /* for external TLS connections */
+	{ "sip",            "tcp", 0 }, /*.for external TCP connections */
+	{ NULL,             NULL,  0 }
+};
+
+/* Service list for SSL/TLS */
+static const struct sipe_service_data service_tls[] = {
+	{ "sipinternaltls", "tcp", 1 }, /* for internal TLS connections */
+	{ "sip",            "tls", 1 }, /* for external TLS connections */
+	{ NULL,             NULL,  0 }
+};
+
+/* Service list for TCP */
+static const struct sipe_service_data service_tcp[] = {
+	{ "sipinternal",    "tcp", 0 }, /* for internal TCP connections */
+	{ "sip",            "tcp", 0 }, /*.for external TCP connections */
+	{ NULL,             NULL,  0 }
+};
+
+/* Service list for UDP */
+static const struct sipe_service_data service_udp[] = {
+	{ "sip",            "udp", 0 },
+	{ NULL,             NULL,  0 }
+};
+
+static void srvresolved(PurpleSrvResponse *, int, gpointer);
+static void resolve_next_service(struct sipe_account_data *sip,
+				 const struct sipe_service_data *start)
+{
+	if (start) {
+		sip->service_data = start;
+	} else {
+		sip->service_data++;
+		if (sip->service_data->service == NULL) {
+			/* Nothing more to try */
+			sip->gc->wants_to_die = TRUE;
+			purple_connection_error(sip->gc, _("Couldn't determine server from service record"));
+			return;
+		}
+	}
+
+	/* Try to resolve next service */
+	sip->srv_query_data = purple_srv_resolve(sip->service_data->service,
+						 sip->service_data->transport,
+						 sip->sipdomain,
+						 srvresolved, sip);
+}
+
+
 static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 {
 	struct sipe_account_data *sip = data;
-	gchar *hostname = NULL;
-	int port = 0;
 
 	sip->srv_query_data = NULL;
 
 	/* find the host to connect to */
 	if (results) {
-		hostname = g_strdup(resp->hostname);
-		port = resp->port;
+		gchar *hostname = g_strdup(resp->hostname);
+		int port = resp->port;
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - SRV hostname: %s port: %d\n",
 			     hostname, port);
 		g_free(resp);
-	}
 
-	if (hostname == NULL) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using SIP domain as fallback\n");
-		hostname = g_strdup(sip->sipdomain);
-	}
+		sip->use_ssl = sip->service_data->use_ssl;
 
-	create_connection(sip, hostname, port);
+		create_connection(sip, hostname, port);
+	} else {
+		resolve_next_service(sip, NULL);
+	}
 }
 
 static void sipe_login(PurpleAccount *account)
@@ -3014,22 +3074,6 @@ static void sipe_login(PurpleAccount *account)
 	sip->account = account;
 	sip->registerexpire = 900;
 
-	transport = purple_account_get_string(account, "transport", "ssl");
-	sip->udp = strcmp(transport, "udp") == 0;
-	sip->use_ssl = strcmp(transport, "ssl") == 0;
-
-        if (sip->use_ssl && !purple_ssl_is_supported()) {
-                gc->wants_to_die = TRUE;
-                purple_connection_error(gc,
-                        _("SSL support is needed for SSL/TLS support. Please install a supported "
-                          "SSL library or edit the account and choose a different Transport."));
-                return;
-        }
-
-	/* TODO: is there a good default grow size? */
-	if (!sip->udp)
-		sip->txbuf = purple_circ_buffer_new(0);
-
 	userserver = g_strsplit(username, "@", 2);
 	purple_connection_set_display_name(gc, userserver[0]);
         sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL)); 
@@ -3044,23 +3088,22 @@ static void sipe_login(PurpleAccount *account)
 	/* TODO: Set the status correctly. */
 	sip->status = g_strdup("available");
 
+	transport = purple_account_get_string(account, "transport", "auto");
+
 	if (purple_account_get_bool(account, "useproxy", FALSE)) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - using specified SIP proxy\n");
+		sip->udp = strcmp(transport, "udp") == 0;
+		sip->use_ssl = strcmp(transport, "tls") == 0;
 		create_connection(sip, g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain)), 0);
-	} else if (sip->use_ssl) {
-		// Communicator queries _sipinternaltls._tcp.domain.com and uses that
-		// information to connect to the OCS server.
-		//
-		// XXX FIXME: eventually we should also query for sipexternaltls as well
-		//            if Pidgin is not on the local LAN
-		//  This doesn't quite work as advertised yet so make sure your have 
-		//  your OCS FQDN in the proxy setting in the SIPE account settings
-		//
-		sip->srv_query_data = purple_srv_resolve("sipinternaltls", "tcp",
-							 sip->sipdomain, srvresolved, sip);
+	} else if (strcmp(transport, "auto") == 0) {
+		resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
+	} else if (strcmp(transport, "tls") == 0) {
+		resolve_next_service(sip, service_tls);
+	} else if (strcmp(transport, "tcp") == 0) {
+		resolve_next_service(sip, service_tcp);
 	} else {
-		sip->srv_query_data = purple_srv_resolve("sip", sip->udp ? "udp" : "tcp",
-							 sip->sipdomain, srvresolved, sip);
+		sip->udp = 1;
+		resolve_next_service(sip, service_udp);
 	}
 }
 
@@ -3251,10 +3294,10 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = purple_account_option_list_new(_("Transport"), "transport", NULL);
-	// First item is the default; SSL is best default
-	purple_account_option_add_list_item(option, _("Use SSL/TLS"), "ssl");
-	purple_account_option_add_list_item(option, _("Use TCP"), "tcp");
-	purple_account_option_add_list_item(option, _("Use UDP"), "udp");
+	purple_account_option_add_list_item(option, _("Auto"), "auto");
+	purple_account_option_add_list_item(option, _("SSL/TLS"), "tls");
+	purple_account_option_add_list_item(option, _("TCP"), "tcp");
+	purple_account_option_add_list_item(option, _("UDP"), "udp");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
