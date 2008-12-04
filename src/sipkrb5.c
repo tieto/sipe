@@ -28,6 +28,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  */
 
+#ifdef USE_KERBEROS
+
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
@@ -424,3 +426,5 @@ purple_krb5_get_mic_for_sipmsg(struct sipe_krb5_auth * auth, struct sipmsg * msg
 	sipmsg_breakdown_free(&sipbd);
 	return mic;
 }*/
+
+#endif /*USE_KERBEROS*/
