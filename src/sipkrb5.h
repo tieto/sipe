@@ -28,8 +28,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  */
 
-#ifndef _PIDGIN_SIPE_KRB5_H
-#define _PIDGIN_SIPE_KRB5_H
+#ifdef USE_KERBEROS
 
 #include <glib.h>
 #include <time.h>
@@ -65,4 +64,4 @@ void purple_krb5_gen_auth_token(struct sipe_krb5_auth * auth);
 gchar * purple_krb5_get_mic(struct sipe_krb5_auth * auth, char * msg);
 gchar * purple_krb5_get_mic_for_sipmsg(struct sipe_krb5_auth * auth, struct sipmsg * msg);
 
-#endif /* _PIDGIN_SIPE_KRB5_H */
+#endif /*USE_KERBEROS*/

@@ -57,7 +57,9 @@
 
 #include "sipe.h"
 #include "sip-ntlm.h"
-#include "sipkrb5.h"
+#ifdef USE_KERBEROS
+ #include "sipkrb5.h"
+#endif /*USE_KERBEROS*/
 
 #include "sipmsg.h"
 #include "sipe-sign.h"
@@ -243,7 +245,7 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 
 	if (sip->realhostname) {
 		host = sip->realhostname;
-	} else if (purple_account_get_bool(sip->account, "use_proxy", TRUE)) {
+	} else if (purple_account_get_bool(sip->account, "useproxy", TRUE)) {
 		host = purple_account_get_string(sip->account, "proxy", "");
 	} else {
 		host = sip->sipdomain;
@@ -376,7 +378,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 
 	if (sip->realhostname) {
 		host = sip->realhostname;
-	} else if (purple_account_get_bool(sip->account, "use_proxy", TRUE)) {
+	} else if (purple_account_get_bool(sip->account, "useproxy", TRUE)) {
 		host = purple_account_get_string(sip->account, "proxy", "");
 	} else {
 		host = sip->sipdomain;
@@ -757,7 +759,9 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 static char *get_contact(struct sipe_account_data  *sip)
 {
-         return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
+	return g_strdup(sip->contact);
+	/*g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");*/
+		
 }
 
 
@@ -970,7 +974,12 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
        // char *hdr = g_strdup_printf("Contact: %s\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
         //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, adhoclist\r\nms-keep-alive: UAC;hop-hop=yes\r\nEvent: registration\r\nAllow-Events: presence\r\n", contact);
     //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
-    char *hdr = g_strdup_printf("Contact: %s\r\nSupported: gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
+    char *hdr = g_strdup_printf("Contact: %s\r\n"
+								"Supported: gruu-10, adhoclist\r\n"
+								"Event: registration\r\n"
+								"Allow-Events: presence\r\n"
+								"ms-keep-alive: UAC;hop-hop=yes\r\n"
+								"Expires: %d\r\n", contact,expire);
 	g_free(contact);
 
 	sip->registerstatus = 1;
@@ -1225,29 +1234,36 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 	int activity_code;
 	if (sip) {
-		/* Unknown: 0 to 2999. Availability is undefined.
-		 * Online: 3000 to 4499. Willing and able to communicate.
-		 * Idle: 4500 to 5999. Willing but potentially unable to communicate.
-		 * Busy: 6000 to 7499. Able but potentially unwilling to communicate.
-		 * BusyIdle: 7500 to 8999. Able but potentially unwilling to communicate.
-		 * DoNotDisturb: 9000 to 11999. Able but potentially unwilling to communicate.
-		 * Away: 12000 to 17999. Willing but unable to communicate.
-		 * Offline: 18000 and higher. Not available to communicate.
-		 */
+		/* From MS-SIP, section 2.2.1:
+		000 - 099 There is no information about the activity of the user
+		100 - 149 The user is away
+		150 - 199 The user is out to lunch
+		200 - 299 The user is idle
+		300 - 399 The user will be right back
+		400 - 499 The user is active
+		500 - 599 The user is already participating in a communications session
+		600 - 699 The user is busy
+		700 - 749 The user is away
+		800 - 999 The user is active
+		*/
 		g_free(sip->status);
 		if (primitive == PURPLE_STATUS_AWAY) {
 			sip->status = g_strdup("away");
-			sip->availability_code = 12000;
+			sip->availability_code = 100;
 		} else if (primitive == PURPLE_STATUS_AVAILABLE) {
 			sip->status = g_strdup("available");
-			sip->availability_code = 3000;
+			sip->availability_code = 400;
 		} else if (primitive == PURPLE_STATUS_UNAVAILABLE) {
 			sip->status = g_strdup("busy");
-			sip->availability_code = 6000;
+			sip->availability_code = 600;
 		}
 
 		char *msg = purple_status_get_attr_string(status, "message");
-		send_publish(sip, msg);
+		gchar *name = g_strdup_printf("sip: sip:%s", sip->username); 
+		gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, 200, sip->availability_code, msg);
+		send_soap_request(sip, body);
+		g_free(name);
+		g_free(body);
 	}
 }
 
@@ -1503,14 +1519,68 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	return 0;
 }
 
-static void sipe_subscribe_buddylist(struct sipe_account_data *sip)
+static void sipe_subscribe_buddylist(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username); 
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-contacts\r\nAccept: application/vnd-microsoft-roaming-contacts+xml\r\nSupported: com.microsoft.autoextend\r\nSupported: ms-benotify\r\nProxy-Require: ms-benotify\r\nSupported: ms-piggyback-first-notify\r\nContact: %s\r\n", tmp);
+	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-contacts\r\n"
+								 "Accept: application/vnd-microsoft-roaming-contacts+xml\r\n"
+								 "Supported: com.microsoft.autoextend\r\n"
+								 "Supported: ms-benotify\r\n"
+								 "Proxy-Require: ms-benotify\r\n"
+								 "Supported: ms-piggyback-first-notify\r\n"
+								 "Contact: %s\r\n", tmp);
 	g_free(tmp);
 	
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_add_lcs_contacts);
+	g_free(to);
+	g_free(hdr);
+}
+
+static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
+{
+	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *tmp = get_contact(sip);
+	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-self\r\n"
+								 "Accept: application/vnd-microsoft-roaming-self+xml\r\n"
+								 "Supported: com.microsoft.autoextend\r\n"
+								 "Supported: ms-benotify\r\n"
+								 "Proxy-Require: ms-benotify\r\n"
+								 "Supported: ms-piggyback-first-notify\r\n"
+								 "Contact: %s\r\n"
+								 "Content-Type: application/vnd-microsoft-roaming-self+xml\r\n"
+								 ,tmp);
+	
+	g_free(tmp);
+	
+	gchar *body=g_strdup("<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roaming type=\"subscribers\"/></roamingList>");
+
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
+	g_free(body);					 
+	g_free(to);
+	g_free(hdr);
+}
+
+static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,struct sipmsg *msg)
+{
+	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *tmp = get_contact(sip);
+	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-provisioning-v2\r\n"
+								 "Accept: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
+								 "Supported: com.microsoft.autoextend\r\n"
+								 "Supported: ms-benotify\r\n"
+								 "Proxy-Require: ms-benotify\r\n"
+								 "Supported: ms-piggyback-first-notify\r\n"
+								 "Expires: 0\r\n"
+								 "Contact: %s\r\n"
+								 "Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
+								 ,tmp);
+	
+	g_free(tmp);
+	
+	gchar *body=g_strdup("<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\"><provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/><provisioningGroup name=\"ucPolicy\"/></provisioningGroupList>");
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
+	g_free(body);					 
 	g_free(to);
 	g_free(hdr);
 }
@@ -1926,8 +1996,8 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 	expires_header = sipmsg_find_header(msg, "Expires");
 	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
-	purple_debug_info("sipe", "got response to REGISTER; expires = %d\n", expires);
-
+	purple_debug_info("sipe", "process_register_response: got response to REGISTER; expires = %d\n", expires);
+					
 	switch (msg->response) {
 		case 200:
 			if (expires == 0) {
@@ -1935,11 +2005,18 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			} else {
 				sip->registerstatus = 3;
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
-
+				
 				/* tell everybody we're online */
 				sip->status = g_strdup("available");
 				sip->availability_code = 3000;
-				send_publish(sip, NULL);
+				
+			    gchar *gruu = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "gruu=\"", "\"", NULL);
+				if(gruu){
+	    		   purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response: Get Server Gruu :%s\r\n",gruu);
+				   sip->contact = g_strdup_printf("<%s>", gruu);
+				} else {
+				   sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");
+				}
 
 				/* get buddies from blist; Has a bug */
 				subscribe_timeout(sip);
@@ -1948,8 +2025,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				tmp = sipmsg_find_header(msg, "Allow-Events");
 				if (tmp && strstr(tmp, "vnd-microsoft-provisioning")){
-					sipe_subscribe_buddylist(sip);
+					sipe_subscribe_buddylist(sip,msg);
 				}
+				
+				sipe_subscribe_roaming_self(sip,msg);
+				sipe_subscribe_roaming_provisioning(sip,msg);
+				send_publish(sip, NULL);
 				
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
@@ -2143,6 +2224,7 @@ static void send_notify(struct sipe_account_data *sip, struct sipe_watcher *watc
 
 static gboolean process_service_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
+	
 	if (msg->response != 200 && msg->response != 408) {
 		/* never send again */
 		sip->republish = -1;
@@ -2166,11 +2248,11 @@ static void send_publish(struct sipe_account_data *sip, char * msg)
 	);
 	sip->status_version++;
 
-	gchar *tmp = get_contact_service(sip);
+	gchar *tmp = get_contact(sip);
 	
-	gchar *hdr = g_strdup_printf("Contact: %s\r\nAccept: application/ms-location-profile-definition+xml\r\nContent-Type: application/msrtc-category-publish+xml\r\n", tmp);
+	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
+								 "Content-Type: application/msrtc-category-publish+xml\r\n", tmp);
 	g_free(tmp); 
-
 	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_service_response);
 	//sip->republish = time(NULL) + 500;
 	g_free(hdr);
@@ -2780,61 +2862,77 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data)
 }
 
 
+static void create_connection(struct sipe_account_data *sip, gchar *hostname, int port)
+{
+	PurpleAccount *account = sip->account;
+	PurpleConnection *gc = sip->gc;
+
+	if (purple_account_get_bool(account, "useport", FALSE)) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "create_connection - using specified SIP port\n");
+		port = purple_account_get_int(account, "port", 0);
+	} else {
+		port = port ? port : sip->use_ssl ? 5061 : 5060;
+	}
+
+	sip->realhostname = hostname;
+	sip->realport = port;
+
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "create_connection - hostname: %s port: %d\n",
+		     hostname, port);
+
+	if (sip->use_ssl) {
+		/* SSL case */
+		purple_debug_info("sipe", "using SSL\n");
+		sip->gsc = purple_ssl_connect(account, hostname, port,
+					      login_cb_ssl, sipe_ssl_connect_failure, gc);
+		if (sip->gsc == NULL) {
+			purple_connection_error(gc, _("Could not create SSL context"));
+			return;
+		}
+	} else if (sip->udp) {
+		/* UDP case */
+		purple_debug_info("sipe", "using UDP\n");
+	
+		sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
+		if (sip->query_data == NULL) {
+			purple_connection_error(gc, _("Could not resolve hostname"));
+		}
+	} else {
+		/* TCP case */
+		purple_debug_info("sipe", "using TCP\n");
+		/* create socket for incoming connections */
+		sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
+							       sipe_tcp_connect_listen_cb, sip);
+		if (sip->listen_data == NULL) {
+			purple_connection_error(gc, _("Could not create listen socket"));
+			return;
+		}
+	}
+}
 
 static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 {
-	struct sipe_account_data *sip;
-	gchar *hostname;
-	int port;
+	struct sipe_account_data *sip = data;
+	gchar *hostname = NULL;
+	int port = 0;
 
-	sip = data;
 	sip->srv_query_data = NULL;
-
-	port = purple_account_get_int(sip->account, "port", 0);
 
 	/* find the host to connect to */
 	if (results) {
 		hostname = g_strdup(resp->hostname);
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - SRV hostname: %s\r\n", hostname);
-		if (!port) {
-			port = resp->port;
-		}
+		port = resp->port;
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - SRV hostname: %s port: %d\n",
+			     hostname, port);
 		g_free(resp);
-	} else {
-		if (!purple_account_get_bool(sip->account, "useproxy", FALSE)) {
-			purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using sipdomain\r\n");
-			hostname = g_strdup(sip->sipdomain);
-		} else {
-			purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using specified SIP proxy\r\n");
-			hostname = g_strdup(purple_account_get_string(sip->account, "proxy", sip->sipdomain));
-		}
 	}
 
-	port = port ? port : 5060;
-	sip->realhostname = hostname;
-	sip->realport = port;
-
-	if (!sip->use_ssl) {
-		if (!sip->udp) {
-			/* TCP case */
-			/* create socket for incoming connections */
-			sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
-						sipe_tcp_connect_listen_cb, sip);
-
-			if (sip->listen_data == NULL) {
-				purple_connection_error(sip->gc, _("Could not create listen socket"));
-				return;
-			}
-		} else {
-			/* UDP */
-			purple_debug_info("sipe", "using udp with server %s and port %d\n", hostname, port);
-	
-			sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
-			if (sip->query_data == NULL) {
-				purple_connection_error(sip->gc, _("Could not resolve hostname"));
-			}
-		}
+	if (hostname == NULL) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "srvresolved - using SIP domain as fallback\n");
+		hostname = g_strdup(sip->sipdomain);
 	}
+
+	create_connection(sip, hostname, port);
 }
 
 static void sipe_login(PurpleAccount *account)
@@ -2842,7 +2940,7 @@ static void sipe_login(PurpleAccount *account)
 	PurpleConnection *gc;
 	struct sipe_account_data *sip;
 	gchar **userserver;
-	gchar *hosttoconnect;
+	const char *transport;
 
 	const char *username = purple_account_get_username(account);
 	gc = purple_account_get_connection(account);
@@ -2869,11 +2967,11 @@ static void sipe_login(PurpleAccount *account)
 	sip->gc = gc;
 	sip->account = account;
 	sip->registerexpire = 900;
-	sip->udp = purple_account_get_bool(account, "udp", FALSE);
-        sip->use_ssl = purple_account_get_bool(account, "ssl", FALSE);
 
-        purple_debug_info("sipe", "sip->use_ssl->%d\n", sip->use_ssl); 
-        
+	transport = purple_account_get_string(account, "transport", "");
+	sip->udp = strcmp(transport, "udp") == 0;
+	sip->use_ssl = strcmp(transport, "ssl") == 0;
+
 	/* TODO: is there a good default grow size? */
 	if (!sip->udp)
 		sip->txbuf = purple_circ_buffer_new(0);
@@ -2885,7 +2983,17 @@ static void sipe_login(PurpleAccount *account)
 	sip->password = g_strdup(purple_connection_get_password(gc));
 	g_strfreev(userserver);
 
-	if (sip->use_ssl) {
+	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
+
+	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
+
+	/* TODO: Set the status correctly. */
+	sip->status = g_strdup("available");
+
+	if (purple_account_get_bool(account, "useproxy", FALSE)) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - using specified SIP proxy\n");
+		create_connection(sip, g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain)), 0);
+	} else if (sip->use_ssl) {
 		// Communicator queries _sipinternaltls._tcp.domain.com and uses that
 		// information to connect to the OCS server.
 		//
@@ -2894,36 +3002,12 @@ static void sipe_login(PurpleAccount *account)
 		//  This doesn't quite work as advertised yet so make sure your have 
 		//  your OCS FQDN in the proxy setting in the SIPE account settings
 		//
-		sip->srv_query_data = purple_srv_resolve("sipinternaltls", "tcp", sip->sipdomain, srvresolved, sip);
-	}
-
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - realhostname: %s\r\n", sip->realhostname);
-
-	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
-
-	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
-
-	/* TODO: Set the status correctly. */
-	sip->status = g_strdup("available");
-
-	if (!purple_account_get_bool(account, "useproxy", FALSE)) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - checking realhostname again: %s\r\n", sip->realhostname);
-		hosttoconnect = g_strdup(sip->sipdomain);
+		sip->srv_query_data = purple_srv_resolve("sipinternaltls", "tcp",
+							 sip->sipdomain, srvresolved, sip);
 	} else {
-		hosttoconnect = g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain));
-                 
+		sip->srv_query_data = purple_srv_resolve("sip", sip->udp ? "udp" : "tcp",
+							 sip->sipdomain, srvresolved, sip);
 	}
-         /*SSL*/
-        purple_debug_info("sipe", "HosttoConnect->%s\n", hosttoconnect);
-
-        if (sip->use_ssl){ 
-          sip->gsc = purple_ssl_connect(account,hosttoconnect, purple_account_get_int(account, "port", 5061), login_cb_ssl, sipe_ssl_connect_failure, gc);
-        } else {
-		sip->srv_query_data = purple_srv_resolve("sip",
-			sip->udp ? "udp" : "tcp", hosttoconnect, srvresolved, sip);
-	}
-        
-	g_free(hosttoconnect);
 }
 
 static void sipe_close(PurpleConnection *gc)
@@ -3098,29 +3182,43 @@ static void init_plugin(PurplePlugin *plugin)
 {
 	PurpleAccountUserSplit *split;
 	PurpleAccountOption *option;
+	GList *list = NULL;
+	PurpleKeyValuePair *kvp;	
 
         purple_plugin_register(plugin);
 
 	//split = purple_account_user_split_new(_("Server"), "", '@');
 	//prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
+
         option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
         option = purple_account_option_string_new(_("Proxy Server"), "proxy", "");
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	option = purple_account_option_bool_new(_("Use port"), "useport", FALSE);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	option = purple_account_option_int_new(_("Port"), "port", 5061);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	kvp = g_new0(PurpleKeyValuePair, 1);
+	kvp->key = g_strdup("Use UDP");
+	kvp->value = g_strdup("udp");
+	list = g_list_append(list, kvp);
+	kvp = g_new0(PurpleKeyValuePair, 1);
+	kvp->key = g_strdup("Use TCP");
+	kvp->value = g_strdup("tcp");
+	list = g_list_append(list, kvp);
+	kvp = g_new0(PurpleKeyValuePair, 1);
+	kvp->key = g_strdup("Use SSL/TLS");
+	kvp->value = g_strdup("ssl");
+	list = g_list_append(list, kvp);
+	option = purple_account_option_list_new(_("Transport"), "transport", list);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 
 	option = purple_account_option_string_new(_("User Agent"), "useragent", "Purple/" VERSION);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-    
-	option = purple_account_option_bool_new(_("Use UDP"), "udp", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-        
-        option = purple_account_option_bool_new(_("Use SSL/TLS"), "ssl", TRUE);
-        prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-        option = purple_account_option_int_new(_("Port"), "port", 5061);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// TODO commented out so won't show in the preferences until we fix krb message signing
@@ -3132,16 +3230,11 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	*/
 
-	/*option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	option = purple_account_option_string_new(_("Proxy"), "proxy", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
-	
 	// TODO commented out so won't show in the preferences until we fix krb message signing
-	/*option = purple_account_option_string_new(_("Auth User"), "authuser", "");
+	option = purple_account_option_string_new(_("Auth User"), "authuser", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = purple_account_option_string_new(_("Auth Domain"), "authdomain", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	my_protocol = plugin;
 }
 

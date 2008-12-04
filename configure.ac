@@ -43,6 +43,40 @@ if test "$enable_debug" = yes; then
    AC_DEFINE(DEBUG, 1, [Define if debugging is enabled.])
 fi
 
+AC_ARG_WITH(krb5, [AC_HELP_STRING([--with-krb5=PREFIX], [compile sipe plugin with Kerberos 5 support])], kerberos="$withval", kerberos="no")
+
+dnl #######################################################################
+dnl # Check for Kerberos
+dnl #######################################################################
+AC_SUBST(KRB5_CFLAGS)
+AC_SUBST(KRB5_LDFLAGS)
+AC_SUBST(KRB5_LIBS)
+
+if test "$kerberos" != "no" ; then
+        if test "$kerberos" != "yes" ; then
+                KRB5_CFLAGS="-I${kerberos}/include"
+                KRB5_LDFLAGS="-L${kerberos}/lib"
+                AC_DEFINE(USE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
+        fi
+        orig_LDFLAGS="$LDFLAGS"
+        LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
+        AC_CHECK_LIB(krb5, krb5_rd_req,
+                        [KRB5_LIBS="-lkrb5"],
+                        [AC_CHECK_LIB(krb5, krb5_rd_req,
+                                [KRB5_LIBS="-lkrb5"],
+                                [AC_ERROR(Kerberos 5 libraries not found)],
+                                )],
+                        -lkrb5)
+        AC_CHECK_LIB(gssapi_krb5, gss_krb5_export_lucid_sec_context,
+                        [KRB5_LIBS="$KRB5_LIBS -lgssapi_krb5"],
+                        [AC_CHECK_LIB(gssapi, gss_krb5_export_lucid_sec_context,
+                                [KRB5_LIBS="$KRB5_LIBS -lgssapi_krb5"],
+                                [AC_ERROR(GSSAPI libraries not found)],
+                                )],
+                        -lgssapi_krb5)
+fi
+
+
 # Check for Pidgin
 PKG_CHECK_MODULES(libpurple,
 [pidgin >= pidgin_version_max],
@@ -85,14 +119,22 @@ AC_OUTPUT()
 
 
 echo
-echo -n "Simple Exchange linking mode... : "
+echo -n "Simple SIPE linking mode... : "
 if test "$sipe_static" = "yes" ; then
    echo "static"
-   echo "Simple Exchange library...      : $SIPE_LIBA"
+   echo "Simple SIPE library...      : $SIPE_LIBA"
 else
    echo "dynamic"
 fi
 
+if test "$kerberos" = "yes" ; then
+echo
+echo "Compiled with kerberos 5 support"
+echo "LDFLAGS :$KRB5_LDFLAGS"
+echo "CFLAGS  :$KRB5_CFLAGS"
+echo "LIBS    :$KRB5_LIBS"
+echo
+fi
 echo
 echo configure complete, now run \`make\`
 echo

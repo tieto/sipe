@@ -115,6 +115,7 @@ struct sipe_account_data {
 	gchar *status;
 	int status_version;
 	int availability_code;
+	gchar *contact;
 	GHashTable *buddies;
 	guint registertimeout;
 	guint resendtimeout;
@@ -256,5 +257,14 @@ struct group_user_context {
 #define SIPE_SOAP_DEL_GROUP sipe_soap("deleteGroup", \
 	"<m:groupID>%d</m:groupID>"\
 	"<m:deltaNum>%d</m:deltaNum>")
+
+#define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
+	"<m:presentity m:uri=\"%s\">"\
+	"<m:availability m:aggregate=\"%d\"/>"\
+	"<m:activity m:aggregate=\"%d\" m:note=\"%s\"/>"\
+	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" name=\"USER-DESKTOP\"/>"\
+	"<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" namespace=\"rtcService\">"\
+	"&lt;![CDATA[<caps><renders_gif/><renders_isf/></caps>]]&gt;</rtc:devicedata>"\
+	"</m:presentity>")
 
 #endif /* _PIDGIN_SIPE_H */

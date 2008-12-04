@@ -25,14 +25,14 @@ libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(PIDGIN_CFLAGS) \
-	-I/usr/include/krb5 \
-	-I/usr/include/gssapi
+	$(KRB5_CFLAGS)
 
 libsipe_la_LDFLAGS = \
-	-module -avoid-version -no-undefined -lkrb5 -lgssapi_krb5
+	-module -avoid-version -no-undefined \
+	$(KRB5_LDFLAGS)
 
 libsipe_la_LIBADD = \
-        $(GLIB_LIBS) $(PIDGIN_LIBS)
+        $(GLIB_LIBS) $(PIDGIN_LIBS) $(KRB5_LIBS)
 
 
 if SIPE_STATIC
