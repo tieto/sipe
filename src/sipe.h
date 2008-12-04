@@ -112,9 +112,9 @@ struct sipe_account_data {
 	int listenport;
 	int listenpa;
 	int delta_num;
+	int presence_method_version;
 	gchar *status;
 	int status_version;
-	int availability_code;
 	gchar *contact;
 	GHashTable *buddies;
 	guint registertimeout;
@@ -178,7 +178,7 @@ struct group_user_context {
   "<status status=\"type\" />"\
 "</KeyboardActivity>"
 
-#define SIPE_SEND_PUBLISH \
+#define SIPE_SEND_PRESENCE \
 	"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\">"\
 	  "<publications uri=\"%s\">"\
 	      "<publication categoryName=\"state\" instance=\"906391354\" container=\"2\" version=\"%d\" expireType=\"endpoint\">"\
@@ -193,10 +193,7 @@ struct group_user_context {
 		  "<endpointLocation></endpointLocation>"\
 		"</state>"\
 	      "</publication>"\
-	    "</publications>"\
-	"</publish>"
-
-	      /*"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"%d\" expireType=\"static\">"\
+	      "<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"%d\" expireType=\"static\">"\
 	        "<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
 		  "<body type=\"personal\" uri=\"\">%s</body>"\
 		"</note>"\
@@ -210,11 +207,16 @@ struct group_user_context {
 	        "<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
 		  "<body type=\"personal\" uri=\"\">%s</body>"\
 		"</note>"\
-	      "</publication>"\*/
+	      "</publication>"\
+	    "</publications>"\
+	"</publish>"
 
-#define SOAP_SEND_CLEAR_NOTES \
+
+#define SIPE_SEND_CLEAR_PRESENCE \
 "<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\">"\
-  "<publications uri=\"sip:bob@contoso.com\">"\
+  "<publications uri=\"%s\">"\
+	"<publication categoryName=\"state\" instance=\"906391354\" container=\"2\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
+	"<publication categoryName=\"state\" instance=\"906391356\" container=\"0\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
 	"<publication categoryName=\"note\" instance=\"0\" container=\"300\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
 	"<publication categoryName=\"note\" instance=\"0\" container=\"200\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
 	"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
