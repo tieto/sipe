@@ -2720,12 +2720,14 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 		return;
 	}
 
-	if (gsc && sip) 
+	if (sip->fd != -1) 
 		conn = connection_find(sip, gsc->fd);
 	if (!conn) {
-		purple_debug_error("sipe", "Connection not found!\n");
-		if (gsc) purple_ssl_close(gsc);
-		return;
+		purple_debug_error("sipe", "Connection not found; Please try to connect again.\n");
+		if (sip->fd != -1) purple_ssl_close(gsc); 
+                purple_connection_error(sip->gc, _("Connection not found; Please try to connect again.\n"));
+                sip->gc->wants_to_die = TRUE;
+                return; 
 	}
 
 	if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
