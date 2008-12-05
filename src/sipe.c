@@ -1965,6 +1965,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		sip->realport, sip->username));
 }
 
+static void sipe_connection_cleanup(struct sipe_account_data *);
+static void create_connection(struct sipe_account_data *, gchar *, int);
+
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	gchar *tmp, krb5_token;
@@ -2005,6 +2008,53 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
 				transactions_remove(sip, tc);
+			}
+			break;
+		case 301:
+			{
+				gchar *redirect = parse_from(sipmsg_find_header(msg, "Contact"));
+
+				if (redirect && (g_strncasecmp("sip:", redirect, 4) == 0)) {
+					gchar **parts = g_strsplit(redirect + 4, ";", 0);
+					gchar **tmp;
+					gchar *hostname;
+					int port = 0;
+					gboolean udp = 0;
+					gboolean tls = 0;
+					int i = 1;
+
+					tmp = g_strsplit(parts[0], ":", 0);
+					hostname = g_strdup(tmp[0]);
+					if (tmp[1]) port = strtoul(tmp[1], NULL, 10);
+					g_strfreev(tmp);
+
+					while (parts[i]) {
+						tmp = g_strsplit(parts[i], "=", 0);
+						if (tmp[1]) {
+							if (g_strcasecmp("transport", tmp[0]) == 0) {
+								if        (g_strcasecmp("tls", tmp[1]) == 0) {
+									tls = 1;
+								} else if (g_strcasecmp("udp", tmp[1]) == 0) {
+									udp = 1;
+								}
+							}
+						}
+						g_strfreev(tmp);
+						i++;
+					}
+					g_strfreev(parts);
+
+					purple_debug_info("sipe", "process_register_response: redirected to host %s port %d transport %s\n",
+							  hostname, port, tls ? "tls" : udp ? "udp" : "tcp");
+
+					/* Close old connection */
+					sipe_connection_cleanup(sip);
+
+					/* Create new connection */
+					sip->udp = udp;
+					sip->use_ssl = tls;
+					create_connection(sip, hostname, port);
+				}
 			}
 			break;
 		case 401:
@@ -3108,6 +3158,73 @@ static void sipe_login(PurpleAccount *account)
 	}
 }
 
+static void sipe_connection_cleanup(struct sipe_account_data *sip)
+{
+	connection_free_all(sip);
+
+	if (sip->query_data != NULL)
+		purple_dnsquery_destroy(sip->query_data);
+	sip->query_data == NULL;
+
+	if (sip->srv_query_data != NULL)
+		purple_srv_cancel(sip->srv_query_data);
+	sip->srv_query_data = NULL;
+
+	if (sip->listen_data != NULL)
+		purple_network_listen_cancel(sip->listen_data);
+	sip->listen_data = NULL;
+
+	g_free(sip->registrar.nonce);
+	sip->registrar.nonce = NULL;
+	g_free(sip->registrar.opaque);
+	sip->registrar.opaque = NULL;
+	g_free(sip->registrar.realm);
+	sip->registrar.realm = NULL;
+	g_free(sip->registrar.target);
+	sip->registrar.target = NULL;
+	g_free(sip->registrar.digest_session_key);
+	sip->registrar.digest_session_key = NULL;
+	g_free(sip->registrar.ntlm_key);
+	sip->registrar.ntlm_key = NULL;
+	sip->registrar.type = 0;
+	sip->registrar.retries = 0;
+
+	g_free(sip->proxy.nonce);
+	sip->proxy.nonce = NULL;
+	g_free(sip->proxy.opaque);
+	sip->proxy.opaque = NULL;
+	g_free(sip->proxy.realm);
+	sip->proxy.realm = NULL;
+	g_free(sip->proxy.target);
+	sip->proxy.target = NULL;
+	g_free(sip->proxy.digest_session_key);
+	sip->proxy.digest_session_key = NULL;
+	g_free(sip->proxy.ntlm_key);
+	sip->proxy.ntlm_key = NULL;
+	sip->proxy.type = 0;
+	sip->proxy.retries = 0;
+
+	if (sip->txbuf)
+		purple_circ_buffer_destroy(sip->txbuf);
+	sip->txbuf = NULL;
+
+	g_free(sip->realhostname);
+	sip->realhostname = NULL;
+
+	if (sip->listenpa)
+		purple_input_remove(sip->listenpa);
+	sip->listenpa = 0;
+	if (sip->tx_handler)
+		purple_input_remove(sip->tx_handler);
+	sip->tx_handler = 0;
+	if (sip->resendtimeout)
+		purple_timeout_remove(sip->resendtimeout);
+	sip->resendtimeout = 0;
+	if (sip->registertimeout)
+		purple_timeout_remove(sip->registertimeout);
+	sip->registertimeout = 0;
+}
+
 static void sipe_close(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = gc->proto_data;
@@ -3118,37 +3235,11 @@ static void sipe_close(PurpleConnection *gc)
 
 		/* unregister */
 		do_register_exp(sip, 0);
-		connection_free_all(sip);
 
-		if (sip->query_data != NULL)
-			purple_dnsquery_destroy(sip->query_data);
-
-		if (sip->srv_query_data != NULL)
-			purple_srv_cancel(sip->srv_query_data);
-
-		if (sip->listen_data != NULL)
-			purple_network_listen_cancel(sip->listen_data);
-
+		sipe_connection_cleanup(sip);
 		g_free(sip->sipdomain);
 		g_free(sip->username);
 		g_free(sip->password);
-		g_free(sip->registrar.nonce);
-		g_free(sip->registrar.opaque);
-		g_free(sip->registrar.target);
-		g_free(sip->registrar.realm);
-		g_free(sip->registrar.digest_session_key);
-		g_free(sip->proxy.nonce);
-		g_free(sip->proxy.opaque);
-		g_free(sip->proxy.target);
-		g_free(sip->proxy.realm);
-		g_free(sip->proxy.digest_session_key);
-		if (sip->txbuf)
-			purple_circ_buffer_destroy(sip->txbuf);
-		g_free(sip->realhostname);
-		if (sip->listenpa) purple_input_remove(sip->listenpa);
-		if (sip->tx_handler) purple_input_remove(sip->tx_handler);
-		if (sip->resendtimeout) purple_timeout_remove(sip->resendtimeout);
-		if (sip->registertimeout) purple_timeout_remove(sip->registertimeout);
 	}
 	g_free(gc->proto_data);
 	gc->proto_data = NULL;
