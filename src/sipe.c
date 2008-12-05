@@ -2080,6 +2080,25 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				}
 			}
 			break;
+		case 403:
+			{
+				gchar *warning = sipmsg_find_header(msg, "Warning");
+				if (warning != NULL) {
+					/* Example header:
+					   Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
+					*/
+					gchar **tmp = g_strsplit(warning, "\"", 0);
+					warning = g_strdup_printf("You have been rejected by the server: %s", tmp[1] ? tmp[1] : "no reason given");
+					g_strfreev(tmp);
+				} else {
+					warning = _("You have been rejected by the server");
+				}
+
+				sip->gc->wants_to_die = TRUE;
+				purple_connection_error(sip->gc, warning);
+				return TRUE;
+			}
+			break;
 		}
 	return TRUE;
 }
