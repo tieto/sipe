@@ -1,8 +1,17 @@
 Maintainers:
-Anibal Avelar "fixxxer" <debianmx@gmail.com>
-Gabriel Burt  <gburt@novell.com>
+Anibal Avelar "fixxxer" <debianmx at gmail dot com>
+Gabriel Burt  <gburt at novell dot com>
 
 Packager:
-Anibal Avelar "fixxxer" <debianmx@gmail.com>
+Anibal Avelar "fixxxer" <debianmx at gmail dot com>
+
+Crazy Patch Writers
+
+Stefan Becker <stefan.becker at nokia dot com>
+Sean E. Millichamp <sean at bruenor dot org>
+Daniel Beichl <daniel_beichl at gmx dot net>
+Andrew Rechenberg <therealdjflux at gmail dot com>
+Matthias Scharrer <matthias.scharrer at gmail dot com>
+Garett Shulman <garett.shulman at gmail dot com>
 
 Based in the initial Sip/Simple protocol gaim plugin from Thomas Butter <butter@uni-mannheim.de>
