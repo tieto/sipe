@@ -65,6 +65,10 @@
 #include "sipe-sign.h"
 #include "dnssrv.h"
 
+/* Keep in sync with sipe_transport_type! */
+static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
+#define TRANSPORT_DESCRIPTOR (transport_descriptor[sip->transport])
+
 static char *gentag()
 {
 	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
@@ -109,7 +113,7 @@ static const char *sipe_list_icon(PurpleAccount *a, PurpleBuddy *b)
 static void sipe_keep_alive(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = gc->proto_data;
-	if (sip->udp) {
+	if (sip->transport == SIPE_TRANSPORT_UDP) {
 		/* in case of UDP send a packet only with a 0 byte to remain in the NAT table */
 		gchar buf[2] = {0, 0};
 		purple_debug_info("sipe", "sending keep alive\n");
@@ -614,7 +618,7 @@ static void sendlater(PurpleConnection *gc, const char *buf)
 
 	if (!sip->connecting) {
 		purple_debug_info("sipe", "connecting to %s port %d\n", sip->realhostname ? sip->realhostname : "{NULL}", sip->realport);
-                if (sip->use_ssl){
+                if (sip->transport == SIPE_TRANSPORT_TLS){
                          sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, send_later_cb_ssl, sipe_ssl_connect_failure, sip->gc);      
                 } else {
 			if (purple_proxy_connect(gc, sip->account, sip->realhostname, sip->realport, send_later_cb, gc) == NULL) {
@@ -637,7 +641,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 	int writelen = strlen(buf);
 
 	purple_debug(PURPLE_DEBUG_MISC, "sipe", "\n\nsending - %s\n######\n%s\n######\n\n", ctime(&currtime), buf);
-	if (sip->udp) {
+	if (sip->transport == SIPE_TRANSPORT_UDP) {
 		if (sendto(sip->fd, buf, writelen, 0, (struct sockaddr*)&sip->serveraddr, sizeof(struct sockaddr_in)) < writelen) {
 			purple_debug_info("sipe", "could not send packet\n");
 		}
@@ -764,8 +768,8 @@ static char *get_contact(struct sipe_account_data  *sip)
 
 static char *get_contact_service(struct sipe_account_data  *sip)
 {
-	      return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp",generateUUIDfromEPID(get_epid()));
-        //return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp"); 
+  return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport, TRANSPORT_DESCRIPTOR, generateUUIDfromEPID(get_epid()));
+        //return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR); 
 }
 
 static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
@@ -895,7 +899,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			"Content-Length: %" G_GSIZE_FORMAT "\r\n\r\n%s",
 			method,
 			dialog && dialog->request ? dialog->request : url,
-			sip->use_ssl ? "TLS" : sip->udp ? "UDP" : "TCP",
+			TRANSPORT_DESCRIPTOR,
 			purple_network_get_my_ip(-1),
 			sip->listenport,
 			branch ? ";branch=" : "",
@@ -959,7 +963,7 @@ static void send_soap_request(struct sipe_account_data *sip, gchar *body)
 
 static char *get_contact_register(struct sipe_account_data  *sip)
 {
-        return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp",generateUUIDfromEPID(get_epid()));
+        return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  TRANSPORT_DESCRIPTOR, generateUUIDfromEPID(get_epid()));
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
@@ -1990,7 +1994,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				if(gruu) {
 					sip->contact = g_strdup_printf("<%s>", gruu);
 				} else {
-					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), sip->use_ssl ? "tls" : sip->udp ? "udp" : "tcp");
+					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
 				}
 
 				/* get buddies from blist; Has a bug */
@@ -2019,8 +2023,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					gchar **tmp;
 					gchar *hostname;
 					int port = 0;
-					gboolean udp = 0;
-					gboolean tls = 0;
+					sipe_transport_type transport = SIPE_TRANSPORT_TLS;
 					int i = 1;
 
 					tmp = g_strsplit(parts[0], ":", 0);
@@ -2032,10 +2035,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 						tmp = g_strsplit(parts[i], "=", 0);
 						if (tmp[1]) {
 							if (g_strcasecmp("transport", tmp[0]) == 0) {
-								if        (g_strcasecmp("tls", tmp[1]) == 0) {
-									tls = 1;
+								if        (g_strcasecmp("tcp", tmp[1]) == 0) {
+									transport = SIPE_TRANSPORT_TCP;
 								} else if (g_strcasecmp("udp", tmp[1]) == 0) {
-									udp = 1;
+									transport = SIPE_TRANSPORT_UDP;
 								}
 							}
 						}
@@ -2044,15 +2047,13 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					}
 					g_strfreev(parts);
 
-					purple_debug_info("sipe", "process_register_response: redirected to host %s port %d transport %s\n",
-							  hostname, port, tls ? "tls" : udp ? "udp" : "tcp");
-
 					/* Close old connection */
 					sipe_connection_cleanup(sip);
 
 					/* Create new connection */
-					sip->udp = udp;
-					sip->use_ssl = tls;
+					sip->transport = transport;
+					purple_debug_info("sipe", "process_register_response: redirected to host %s port %d transport %s\n",
+							  hostname, port, TRANSPORT_DESCRIPTOR);
 					create_connection(sip, hostname, port);
 				}
 			}
@@ -2082,7 +2083,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			break;
 		case 403:
 			{
-				gchar *warning = sipmsg_find_header(msg, "Warning");
+				const gchar *warning = sipmsg_find_header(msg, "Warning");
 				if (warning != NULL) {
 					/* Example header:
 					   Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
@@ -2998,7 +2999,7 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "create_connection - using specified SIP port\n");
 		port = purple_account_get_int(account, "port", 0);
 	} else {
-		port = port ? port : sip->use_ssl ? 5061 : 5060;
+	  port = port ? port : (sip->transport == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
 	}
 
 	sip->realhostname = hostname;
@@ -3008,10 +3009,10 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		     hostname, port);
 
 	/* TODO: is there a good default grow size? */
-	if (!sip->udp)
+	if (sip->transport != SIPE_TRANSPORT_UDP)
 		sip->txbuf = purple_circ_buffer_new(0);
 
-	if (sip->use_ssl) {
+	if (sip->transport == SIPE_TRANSPORT_TLS) {
 		/* SSL case */
 		if (!purple_ssl_is_supported()) {
 			gc->wants_to_die = TRUE;
@@ -3026,7 +3027,7 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 			purple_connection_error(gc, _("Could not create SSL context"));
 			return;
 		}
-	} else if (sip->udp) {
+	} else if (sip->transport == SIPE_TRANSPORT_UDP) {
 		/* UDP case */
 		purple_debug_info("sipe", "using UDP\n");
 	
@@ -3049,30 +3050,30 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 
 /* Service list for autodection */
 static const struct sipe_service_data service_autodetect[] = {
-	{ "sipinternaltls", "tcp", 1 }, /* for internal TLS connections */
-	{ "sipinternal",    "tcp", 0 }, /* for internal TCP connections */
-	{ "sip",            "tls", 1 }, /* for external TLS connections */
-	{ "sip",            "tcp", 0 }, /*.for external TCP connections */
+	{ "sipinternaltls", "tcp", SIPE_TRANSPORT_TLS }, /* for internal TLS connections */
+	{ "sipinternal",    "tcp", SIPE_TRANSPORT_TCP }, /* for internal TCP connections */
+	{ "sip",            "tls", SIPE_TRANSPORT_TLS }, /* for external TLS connections */
+	{ "sip",            "tcp", SIPE_TRANSPORT_TCP }, /*.for external TCP connections */
 	{ NULL,             NULL,  0 }
 };
 
 /* Service list for SSL/TLS */
 static const struct sipe_service_data service_tls[] = {
-	{ "sipinternaltls", "tcp", 1 }, /* for internal TLS connections */
-	{ "sip",            "tls", 1 }, /* for external TLS connections */
+	{ "sipinternaltls", "tcp", SIPE_TRANSPORT_TLS }, /* for internal TLS connections */
+	{ "sip",            "tls", SIPE_TRANSPORT_TLS }, /* for external TLS connections */
 	{ NULL,             NULL,  0 }
 };
 
 /* Service list for TCP */
 static const struct sipe_service_data service_tcp[] = {
-	{ "sipinternal",    "tcp", 0 }, /* for internal TCP connections */
-	{ "sip",            "tcp", 0 }, /*.for external TCP connections */
+	{ "sipinternal",    "tcp", SIPE_TRANSPORT_TCP }, /* for internal TCP connections */
+	{ "sip",            "tcp", SIPE_TRANSPORT_TCP }, /*.for external TCP connections */
 	{ NULL,             NULL,  0 }
 };
 
 /* Service list for UDP */
 static const struct sipe_service_data service_udp[] = {
-	{ "sip",            "udp", 0 },
+	{ "sip",            "udp", SIPE_TRANSPORT_UDP },
 	{ NULL,             NULL,  0 }
 };
 
@@ -3089,7 +3090,7 @@ static void resolve_next_service(struct sipe_account_data *sip,
 			purple_debug(PURPLE_DEBUG_MISC, "sipe", "no SRV records found; using SIP domain as fallback\n");
 			// If SSL is supported, default to using it; OCS servers aren't configured
 			// by default to accept TCP
-			sip->use_ssl = purple_ssl_is_supported();
+			sip->transport = purple_ssl_is_supported() ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
 			gchar * hostname = g_strdup(sip->sipdomain);
 			create_connection(sip, hostname, 0);
 			return;
@@ -3117,7 +3118,7 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 			     hostname, port);
 		g_free(resp);
 
-		sip->use_ssl = sip->service_data->use_ssl;
+		sip->transport = sip->service_data->type;
 
 		create_connection(sip, hostname, port);
 	} else {
@@ -3164,8 +3165,9 @@ static void sipe_login(PurpleAccount *account)
 
 	if (purple_account_get_bool(account, "useproxy", FALSE)) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - using specified SIP proxy\n");
-		sip->udp = strcmp(transport, "udp") == 0;
-		sip->use_ssl = strcmp(transport, "tls") == 0;
+		sip->transport = (strcmp(transport, "tls") == 0) ? SIPE_TRANSPORT_TLS :
+				 (strcmp(transport, "tcp") == 0) ? SIPE_TRANSPORT_TCP :
+								   SIPE_TRANSPORT_UDP;
 		create_connection(sip, g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain)), 0);
 	} else if (strcmp(transport, "auto") == 0) {
 		resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
@@ -3174,7 +3176,6 @@ static void sipe_login(PurpleAccount *account)
 	} else if (strcmp(transport, "tcp") == 0) {
 		resolve_next_service(sip, service_tcp);
 	} else {
-		sip->udp = 1;
 		resolve_next_service(sip, service_udp);
 	}
 }
