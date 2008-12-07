@@ -93,10 +93,16 @@ struct sip_auth {
 	int ntlm_num;
 };
 
+typedef enum {
+	SIPE_TRANSPORT_TLS,
+	SIPE_TRANSPORT_TCP,
+	SIPE_TRANSPORT_UDP,
+} sipe_transport_type;
+
 struct sipe_service_data {
 	const char *service;
 	const char *transport;
-	gboolean use_ssl;
+	sipe_transport_type type;
 };
 
 struct sipe_account_data {
@@ -136,8 +142,7 @@ struct sipe_account_data {
 	GSList *im_sessions;
 	GSList *openconns;
 	GSList *groups;
-	gboolean udp;
-        gboolean use_ssl;
+	sipe_transport_type transport;
         PurpleSslConnection *gsc;
 	struct sockaddr_in serveraddr;
 	int registerexpire;
