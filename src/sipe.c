@@ -1696,7 +1696,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 }
 
 
-static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * session)
+static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * session, gchar * msg_body)
 {
 	gchar *hdr;
 	gchar *to;
@@ -1716,11 +1716,16 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 		to = g_strdup_printf("sip:%s", session->with);
 	}
 
+	char * base64_msg = purple_base64_encode((guchar*) msg_body, strlen(msg_body));
+	char * ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT, base64_msg);
+	g_free(base64_msg);
+
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
-		"Contact: %s\r\n"
+		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
-		contact, sip->username, sip->username, to);
+		contact, ms_text_format, sip->username, sip->username, to);
+	g_free(ms_text_format);
 
 	body = g_strdup_printf(
 		"v=0\r\n"
@@ -1785,7 +1790,7 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		sipe_im_process_queue(sip, session);
 	} else if (!session->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sip, session);
+		sipe_invite(sip, session, text);
 	}
 
 	g_free(to);
@@ -2552,9 +2557,9 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 				sendout_pkt(sip->gc, resend);
 				g_free(resend);
 			} else {
-				if (msg->response == 100) {
+				if (msg->response == 100 || msg->response == 180) {
 					/* ignore provisional response */
-					purple_debug_info("sipe", "got trying response\n");
+					purple_debug_info("sipe", "got trying (%d) response\n", msg->response);
 				} else {
 					sip->proxy.retries = 0;
 					if (!strcmp(trans->msg->method, "REGISTER")) {
