@@ -1,6 +1,12 @@
-EXTRA_DIST = LICENSE
+SUBDIRS = src pixmaps m4macros po
 
-SUBDIRS = src pixmaps m4macros
+EXTRA_DIST = \
+	intltool-extract.in \
+	intltool-merge.in \
+	intltool-update.in \
+	AUTHORS \
+	README \
+	HACKING
 
 CLEANFILES = \
 	intltool-extract \

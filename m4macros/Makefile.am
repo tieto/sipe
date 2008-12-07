@@ -4,3 +4,6 @@
 
 #m4datadir=$(datadir)/aclocal
 #m4data_DATA=$(installed_m4)
+
+MAINTAINERCLEANFILES = \
+	Makefile.in

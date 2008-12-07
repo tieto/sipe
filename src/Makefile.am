@@ -3,6 +3,9 @@ pkgdir = $(libdir)/pidgin
 
 pkg_LTLIBRARIES = libsipe.la
 
+MAINTAINERCLEANFILES = \
+	Makefile.in
+
 libsipe_la_SOURCES = \
 	sip-prefix.h	\
 	sip-internal.h	\

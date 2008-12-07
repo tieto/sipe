@@ -12,9 +12,9 @@ AM_INIT_AUTOMAKE([1.9 dist-bzip2 tar-ustar])
 AC_DISABLE_STATIC
 
 AC_PROG_CC
-AC_PROG_INSTALL
+IT_PROG_INTLTOOL([0.35.0])
 AC_PROG_LIBTOOL
-LIBTOOL="$LIBTOOL --silent"
+AC_PROG_INSTALL
 
 AC_HEADER_STDC
 
@@ -103,12 +103,19 @@ AC_ARG_ENABLE(static-sipe,
 
 AM_CONDITIONAL(SIPE_STATIC, test $sipe_static = yes)
 
-# substitutions and generated files
+dnl i18n
+GETTEXT_PACKAGE=$PACKAGE
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE", [Gettext Package])
+AM_GLIB_GNU_GETTEXT
+
+dnl substitutions and generated files
 AC_CONFIG_FILES(
 	[src/config.h]
 	[Makefile 
 	pixmaps/Makefile 
 	m4macros/Makefile
+	po/Makefile.in
 	pixmaps/16/Makefile 
 	pixmaps/22/Makefile 
 	pixmaps/48/Makefile 
