@@ -1,0 +1,171 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-12-07 17:52-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+
+#. TODO: do we really want to disconnect on a failure to write?
+#: ../src/sipe.c:514 ../src/sipe.c:544
+msgid "Could not write"
+msgstr ""
+
+#: ../src/sipe.c:567 ../src/sipe.c:2834
+msgid "Could not connect"
+msgstr ""
+
+#: ../src/sipe.c:625 ../src/sipe.c:2993
+msgid "Couldn't create socket"
+msgstr ""
+
+#: ../src/sipe.c:1376 ../src/sipe.c:1383 ../src/sipe.c:1390
+msgid "Message"
+msgstr ""
+
+#: ../src/sipe.c:1389
+msgid "Busy"
+msgstr ""
+
+#: ../src/sipe.c:2071
+msgid "Wrong Password"
+msgstr ""
+
+#: ../src/sipe.c:2100
+msgid "You have been rejected by the server"
+msgstr ""
+
+#: ../src/sipe.c:2686
+msgid "Invalid message signature received"
+msgstr ""
+
+#: ../src/sipe.c:2734
+msgid "Connection not found; Please try to connect again.\n"
+msgstr ""
+
+#: ../src/sipe.c:2758
+msgid "Server has disconnected"
+msgstr ""
+
+#: ../src/sipe.c:2896 ../src/sipe.c:2939 ../src/sipe.c:2977 ../src/sipe.c:3050
+msgid "Could not create listen socket"
+msgstr ""
+
+#: ../src/sipe.c:2920
+msgid "Couldn't resolve host"
+msgstr ""
+
+#: ../src/sipe.c:2959
+msgid "Connection Failed"
+msgstr ""
+
+#: ../src/sipe.c:2962
+msgid "SSL Handshake Failed"
+msgstr ""
+
+#: ../src/sipe.c:3024
+msgid ""
+"SSL support is needed for SSL/TLS support. Please install a supported SSL "
+"library."
+msgstr ""
+
+#: ../src/sipe.c:3032
+msgid "Could not create SSL context"
+msgstr ""
+
+#: ../src/sipe.c:3041
+msgid "Could not resolve hostname"
+msgstr ""
+
+#: ../src/sipe.c:3146
+msgid "SIP Exchange usernames may not contain whitespaces"
+msgstr ""
+
+#: ../src/sipe.c:3164
+msgid "Connecting"
+msgstr ""
+
+#. *< type
+#. *< ui_requirement
+#. *< flags
+#. *< dependencies
+#. *< priority
+#. *< id
+#. *< name
+#. *< version
+#: ../src/sipe.c:3379
+msgid "SIP/SIMPLE OCS/LCS Protocol Plugin"
+msgstr ""
+
+#. *  summary
+#: ../src/sipe.c:3380
+msgid "The SIP/SIMPLE LCS/OCS Protocol Plugin"
+msgstr ""
+
+#: ../src/sipe.c:3405
+msgid "Use proxy"
+msgstr ""
+
+#: ../src/sipe.c:3407
+msgid "Proxy Server"
+msgstr ""
+
+#: ../src/sipe.c:3410
+msgid "Use non-standard port"
+msgstr ""
+
+#: ../src/sipe.c:3412
+msgid "Port"
+msgstr ""
+
+#: ../src/sipe.c:3415
+msgid "Transport"
+msgstr ""
+
+#: ../src/sipe.c:3416
+msgid "Auto"
+msgstr ""
+
+#: ../src/sipe.c:3417
+msgid "SSL/TLS"
+msgstr ""
+
+#: ../src/sipe.c:3418
+msgid "TCP"
+msgstr ""
+
+#: ../src/sipe.c:3419
+msgid "UDP"
+msgstr ""
+
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/sipe.c:3425
+msgid "User Agent"
+msgstr ""
+
+#. TODO commented out so won't show in the preferences until we fix krb message signing
+#. option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#.
+#. // XXX FIXME: Add code to programmatically determine if a KRB REALM is specified in /etc/krb5.conf
+#. option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#.
+#: ../src/sipe.c:3437
+msgid "Auth User"
+msgstr ""
+
+#: ../src/sipe.c:3439
+msgid "Auth Domain"
+msgstr ""

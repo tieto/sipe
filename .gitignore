@@ -26,3 +26,4 @@ INSTALL
 m4macros/Makefile.in
 po/POTFILES
 po/stamp-it
+*.gmo
