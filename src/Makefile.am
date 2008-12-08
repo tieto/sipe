@@ -28,6 +28,7 @@ libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(PIDGIN_CFLAGS) \
+        $(LOCALE_CPPFLAGS) \
 	$(KRB5_CFLAGS)
 
 libsipe_la_LDFLAGS = \

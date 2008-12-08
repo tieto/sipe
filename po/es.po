@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-12-07 17:52-0600\n"
+"POT-Creation-Date: 2008-12-07 18:43-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,81 +17,82 @@ msgstr ""
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
 #. TODO: do we really want to disconnect on a failure to write?
-#: ../src/sipe.c:514 ../src/sipe.c:544
+#: ../src/sipe.c:522 ../src/sipe.c:552
 msgid "Could not write"
 msgstr ""
 
-#: ../src/sipe.c:567 ../src/sipe.c:2834
+#: ../src/sipe.c:575 ../src/sipe.c:2843
 msgid "Could not connect"
 msgstr ""
 
-#: ../src/sipe.c:625 ../src/sipe.c:2993
+#: ../src/sipe.c:633 ../src/sipe.c:3002
 msgid "Couldn't create socket"
 msgstr ""
 
-#: ../src/sipe.c:1376 ../src/sipe.c:1383 ../src/sipe.c:1390
+#. Translators: noun
+#: ../src/sipe.c:1385 ../src/sipe.c:1392 ../src/sipe.c:1399
 msgid "Message"
 msgstr ""
 
-#: ../src/sipe.c:1389
+#: ../src/sipe.c:1398
 msgid "Busy"
 msgstr ""
 
-#: ../src/sipe.c:2071
+#: ../src/sipe.c:2080
 msgid "Wrong Password"
 msgstr ""
 
-#: ../src/sipe.c:2100
+#: ../src/sipe.c:2109
 msgid "You have been rejected by the server"
 msgstr ""
 
-#: ../src/sipe.c:2686
+#: ../src/sipe.c:2695
 msgid "Invalid message signature received"
 msgstr ""
 
-#: ../src/sipe.c:2734
+#: ../src/sipe.c:2743
 msgid "Connection not found; Please try to connect again.\n"
 msgstr ""
 
-#: ../src/sipe.c:2758
+#: ../src/sipe.c:2767
 msgid "Server has disconnected"
 msgstr ""
 
-#: ../src/sipe.c:2896 ../src/sipe.c:2939 ../src/sipe.c:2977 ../src/sipe.c:3050
+#: ../src/sipe.c:2905 ../src/sipe.c:2948 ../src/sipe.c:2986 ../src/sipe.c:3059
 msgid "Could not create listen socket"
 msgstr ""
 
-#: ../src/sipe.c:2920
+#: ../src/sipe.c:2929
 msgid "Couldn't resolve host"
 msgstr ""
 
-#: ../src/sipe.c:2959
+#: ../src/sipe.c:2968
 msgid "Connection Failed"
 msgstr ""
 
-#: ../src/sipe.c:2962
+#: ../src/sipe.c:2971
 msgid "SSL Handshake Failed"
 msgstr ""
 
-#: ../src/sipe.c:3024
+#: ../src/sipe.c:3033
 msgid ""
-"SSL support is needed for SSL/TLS support. Please install a supported SSL "
-"library."
-msgstr ""
-
-#: ../src/sipe.c:3032
-msgid "Could not create SSL context"
+"SSL support is not installed.  Either install SSL support or configure a "
+"different connection type in the account editor."
 msgstr ""
 
 #: ../src/sipe.c:3041
+msgid "Could not create SSL context"
+msgstr ""
+
+#: ../src/sipe.c:3050
 msgid "Could not resolve hostname"
 msgstr ""
 
-#: ../src/sipe.c:3146
+#: ../src/sipe.c:3155
 msgid "SIP Exchange usernames may not contain whitespaces"
 msgstr ""
 
-#: ../src/sipe.c:3164
+#: ../src/sipe.c:3173
 msgid "Connecting"
 msgstr ""
 
@@ -103,54 +104,55 @@ msgstr ""
 #. *< id
 #. *< name
 #. *< version
-#: ../src/sipe.c:3379
+#: ../src/sipe.c:3388
 msgid "SIP/SIMPLE OCS/LCS Protocol Plugin"
 msgstr ""
 
 #. *  summary
-#: ../src/sipe.c:3380
+#: ../src/sipe.c:3389
 msgid "The SIP/SIMPLE LCS/OCS Protocol Plugin"
 msgstr ""
 
-#: ../src/sipe.c:3405
+#: ../src/sipe.c:3420
 msgid "Use proxy"
 msgstr ""
 
-#: ../src/sipe.c:3407
+#: ../src/sipe.c:3422
 msgid "Proxy Server"
 msgstr ""
 
-#: ../src/sipe.c:3410
+#: ../src/sipe.c:3425
 msgid "Use non-standard port"
 msgstr ""
 
-#: ../src/sipe.c:3412
+#. Translators: noun (networking port)
+#: ../src/sipe.c:3428
 msgid "Port"
 msgstr ""
 
-#: ../src/sipe.c:3415
-msgid "Transport"
-msgstr ""
+#: ../src/sipe.c:3431
+msgid "Connection Type"
+msgstr "Tipo de conexión"
 
-#: ../src/sipe.c:3416
+#: ../src/sipe.c:3432
 msgid "Auto"
 msgstr ""
 
-#: ../src/sipe.c:3417
+#: ../src/sipe.c:3433
 msgid "SSL/TLS"
 msgstr ""
 
-#: ../src/sipe.c:3418
+#: ../src/sipe.c:3434
 msgid "TCP"
 msgstr ""
 
-#: ../src/sipe.c:3419
+#: ../src/sipe.c:3435
 msgid "UDP"
 msgstr ""
 
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/sipe.c:3425
+#: ../src/sipe.c:3441
 msgid "User Agent"
 msgstr ""
 
@@ -162,10 +164,10 @@ msgstr ""
 #. option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 #.
-#: ../src/sipe.c:3437
+#: ../src/sipe.c:3453
 msgid "Auth User"
 msgstr ""
 
-#: ../src/sipe.c:3439
+#: ../src/sipe.c:3455
 msgid "Auth Domain"
 msgstr ""

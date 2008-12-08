@@ -41,6 +41,14 @@
 #include "internal.h"
 #endif /* _WIN32 */
 
+#include <glib.h>
+
+#ifdef ENABLE_NLS
+#   include <glib/gi18n-lib.h>
+#else
+#   define _(String) ((const char *) (String))
+#endif /* ENABLE_NLS */
+
 #include "accountopt.h"
 #include "blist.h"
 #include "conversation.h"
@@ -1373,6 +1381,7 @@ static GList *sipe_status_types(PurpleAccount *acc)
 	// Available
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_AVAILABLE, NULL, NULL, TRUE, TRUE, FALSE,
+		// Translators: noun
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
@@ -3021,7 +3030,7 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		/* SSL case */
 		if (!purple_ssl_is_supported()) {
 			gc->wants_to_die = TRUE;
-			purple_connection_error(gc, _("SSL support is needed for SSL/TLS support. Please install a supported SSL library."));
+			purple_connection_error(gc, _("SSL support is not installed.  Either install SSL support or configure a different connection type in the account editor."));
 			return;
 		}
 
@@ -3400,6 +3409,12 @@ static void init_plugin(PurplePlugin *plugin)
 	PurpleAccountOption *option;
 	PurpleKeyValuePair *kvp;	
 
+#ifdef ENABLE_NLS
+	purple_debug_info(PACKAGE, "bindtextdomain = %s", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));
+	purple_debug_info(PACKAGE, "bind_textdomain_codeset = %s",
+		bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8"));
+#endif
+
         purple_plugin_register(plugin);
 
         option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
@@ -3409,10 +3424,11 @@ static void init_plugin(PurplePlugin *plugin)
 
 	option = purple_account_option_bool_new(_("Use non-standard port"), "useport", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	// Translators: noun (networking port)
 	option = purple_account_option_int_new(_("Port"), "port", 5061);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	option = purple_account_option_list_new(_("Transport"), "transport", NULL);
+	option = purple_account_option_list_new(_("Connection Type"), "transport", NULL);
 	purple_account_option_add_list_item(option, _("Auto"), "auto");
 	purple_account_option_add_list_item(option, _("SSL/TLS"), "tls");
 	purple_account_option_add_list_item(option, _("TCP"), "tcp");
