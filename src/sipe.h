@@ -143,12 +143,16 @@ struct sipe_account_data {
 	GSList *openconns;
 	GSList *groups;
 	sipe_transport_type transport;
-        PurpleSslConnection *gsc;
+    PurpleSslConnection *gsc;
 	struct sockaddr_in serveraddr;
 	int registerexpire;
 	gchar *realhostname;
 	int realport; /* port and hostname from SRV record */
 };
+
+struct sipe_find{
+    gchar *name;
+};   
 
 struct sip_connection {
 	int fd;
@@ -176,7 +180,7 @@ struct transaction {
 struct sipe_group {
 	gchar *name;
 	int id;
-        PurpleGroup *purple_group;
+    PurpleGroup *purple_group;
 };
 
 struct group_user_context {
@@ -282,5 +286,20 @@ struct group_user_context {
 	"<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" namespace=\"rtcService\">"\
 	"&lt;![CDATA[<caps><renders_gif/><renders_isf/></caps>]]&gt;</rtc:devicedata>"\
 	"</m:presentity>")
+
+#define SIPE_SOAP_SEARCH_CONTACT \
+    "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
+    "<SOAP-ENV:Body>" \
+    "<m:directorySearch xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\">" \
+    "<m:filter m:href=\"#searchArray\"/>"\
+    "<m:maxResults>%d</m:maxResults>"\
+    "</m:directorySearch>"\
+    "<m:Array xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" m:id=\"searchArray\">"\
+    "<m:row m:attrib=\"givenName\" m:value=\"%s\"/>"\
+    "</m:Array>"\
+    "</SOAP-ENV:Body>"\
+    "</SOAP-ENV:Envelope>"
+     
+    
 
 #endif /* _PIDGIN_SIPE_H */

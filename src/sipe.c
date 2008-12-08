@@ -3281,6 +3281,122 @@ static void sipe_close(PurpleConnection *gc)
 	gc->proto_data = NULL;
 }
 
+static void sipe_searchresults_add_buddy(PurpleConnection *gc, GList *row, void *user_data)
+{
+
+	purple_blist_request_add_buddy(purple_connection_get_account(gc),
+								 g_list_nth_data(row, 0), NULL, g_list_nth_data(row, 1));
+}
+
+static void process_search_contact_response(struct sipe_account_data *sip, struct sipmsg *msg,struct transaction *tc)
+{
+	PurpleNotifySearchResults *results;
+	PurpleNotifySearchColumn *column;
+	xmlnode *searchResults;
+	xmlnode *mrow;
+	xmlnode *directorySearch;
+	gchar *secondary,*uri,*displayName,*name,*country,*email;
+	
+	struct sipe_find * ctx = (struct sipe_find*)tc->payload;
+    name = ctx->name;
+	
+	searchResults = xmlnode_from_str(msg->body, msg->bodylen);
+	if (!searchResults) {
+		purple_debug_info("sipe", "process_search_contact_response: no parseable searchResults\n");
+		return;
+	}
+	
+	results = purple_notify_searchresults_new();
+
+	if (results == NULL) {
+		purple_debug_error("sipe", "purple_parse_searchreply: "
+						 "Unable to display the search results.\n");
+		purple_notify_error(sip->gc, NULL,
+						  _("Unable to display the search results."),
+						  NULL);
+		return;
+	}
+	
+	secondary = g_strdup_printf(
+					dngettext(PACKAGE, "The following contacts are associated with %s",
+						 "The following contacts are associated with %s",
+					name),
+					name);
+
+	column = purple_notify_searchresults_column_new(_("URI"));
+	purple_notify_searchresults_column_add(results, column);
+	
+	column = purple_notify_searchresults_column_new(_("Display Name"));
+	purple_notify_searchresults_column_add(results, column);
+	
+	column = purple_notify_searchresults_column_new(_("Country"));
+	purple_notify_searchresults_column_add(results, column);
+	
+	column = purple_notify_searchresults_column_new(_("Email"));
+	purple_notify_searchresults_column_add(results, column);
+	
+	for (mrow =  xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL); mrow; mrow = xmlnode_get_next_twin(mrow)) {
+		GList *row = NULL;
+		uri = xmlnode_get_attrib(mrow, "uri");
+		gchar **uri_name= g_strsplit(uri, ":", 2);
+		row = g_list_append(row, uri_name[1]);
+		displayName = xmlnode_get_attrib(mrow, "displayName");
+		row = g_list_append(row, displayName);
+		country = xmlnode_get_attrib(mrow, "country");
+		row = g_list_append(row, country);
+		email = xmlnode_get_attrib(mrow, "email");
+		row = g_list_append(row, email);
+		purple_notify_searchresults_row_add(results, row);
+	}
+
+	purple_notify_searchresults_button_add(results, PURPLE_NOTIFY_BUTTON_ADD,
+										 sipe_searchresults_add_buddy);
+	purple_notify_searchresults(sip->gc, NULL, NULL, secondary, results, NULL, NULL);
+
+	g_free(secondary);
+}
+
+static void sipe_search_by_name_with_cb(PurpleConnection *gc, const char *name)
+{
+	struct sipe_account_data *sip = gc->proto_data;
+    purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_search_by_name: %s\n",name);	
+	gchar * body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100, name);
+	struct sipe_find * ctx = g_new0(struct sipe_find, 1);
+	ctx->name = g_strdup(name);
+	send_soap_request_with_cb(sip, body, process_search_contact_response, ctx);
+	g_free(body);
+}
+
+static void sipe_show_find_contact(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	purple_request_input(gc, _("Find Contact by Name"),
+					   _("Search for a contact by name"),
+					   _("Type the name of the contact you are "
+						 "searching for."),
+					   NULL, FALSE, FALSE, NULL,
+					   _("_Search"), G_CALLBACK(sipe_search_by_name_with_cb),
+					   _("_Cancel"), NULL,
+					   purple_connection_get_account(gc), NULL, NULL,
+					   gc);
+}
+
+GList *sipe_actions(PurplePlugin *plugin, gpointer context)
+{
+	PurpleConnection *gc = (PurpleConnection *) context;
+	struct sipe_account_data *sip = gc->proto_data;
+	GList *menu = NULL;
+	PurplePluginAction *act;
+
+	act = purple_plugin_action_new(_("Search for Contact by Name..."),
+			sipe_show_find_contact);
+	menu = g_list_prepend(menu, act);
+
+	menu = g_list_reverse(menu);
+
+	return menu;
+}
+
 /* not needed since privacy is checked for every subscribe */
 static void dummy_add_deny(PurpleConnection *gc, const char *name) {
 }
@@ -3396,7 +3512,7 @@ static PurplePluginInfo info = {
 	NULL,                                             /**< ui_info        */
 	&prpl_info,                                       /**< extra_info     */
 	NULL,
-	NULL,
+	sipe_actions,
 	NULL,
         NULL,
         NULL,
