@@ -143,16 +143,12 @@ struct sipe_account_data {
 	GSList *openconns;
 	GSList *groups;
 	sipe_transport_type transport;
-    PurpleSslConnection *gsc;
+	PurpleSslConnection *gsc;
 	struct sockaddr_in serveraddr;
 	int registerexpire;
 	gchar *realhostname;
 	int realport; /* port and hostname from SRV record */
 };
-
-struct sipe_find{
-    gchar *name;
-};   
 
 struct sip_connection {
 	int fd;
