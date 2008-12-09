@@ -879,6 +879,20 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
+	gchar *route     = strdup("");
+
+	if (dialog && dialog->routes)
+	{
+		GSList *iter = dialog->routes;
+
+		while(iter)
+		{
+			char *tmp = route;
+			route = g_strdup_printf("%sRoute: <%s>\r\n", route, iter->data);
+			g_free(tmp);
+			iter = g_slist_next(iter);
+		}
+	}
 
 	if (!ourtag && !dialog) {
 		ourtag = gentag();
@@ -925,7 +939,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			method,
 			useragent,
 			callid,
-			dialog && dialog->route ? dialog->route : "",
+			route,
 			addh,
 			body ? strlen(body) : 0,
 			body ? body : "");
@@ -940,6 +954,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	g_free(theirepid);
 	g_free(branch);
 	g_free(callid);
+	g_free(route);
 
 	sign_outgoing_message (msg, sip, method);
 
@@ -1654,6 +1669,40 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 }
 
 static void
+sipe_get_route_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean outgoing)
+{
+        GSList *hdr = msg->headers;
+        struct siphdrelement *elem;
+        gchar *contact;
+
+        while(hdr)
+        {
+                elem = hdr->data;
+                if(!strcmp(elem->name, "Record-Route"))
+                {
+                        gchar *route = sipmsg_find_part_of_header(elem->value, "<", ">", NULL);
+                        dialog->routes = g_slist_append(dialog->routes, route);
+                }
+                hdr = g_slist_next(hdr);
+        }
+
+        if (outgoing)
+        {
+                dialog->routes = g_slist_reverse(dialog->routes);
+        }
+
+        if (dialog->routes)
+        {
+                dialog->request = dialog->routes->data;
+                dialog->routes = g_slist_remove(dialog->routes, dialog->routes->data);
+        }
+
+        contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);
+        dialog->routes = g_slist_append(dialog->routes, contact);
+}
+
+
+static void
 sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outgoing)
 {
 	gchar *us = outgoing ? "From" : "To";
@@ -1669,8 +1718,7 @@ sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outg
 		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, them), "epid=", NULL, NULL);
 	}
 
-	dialog->request = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Record-Route"), "<", ">", NULL);
-	dialog->route = g_strdup_printf("Route: %s\r\n", sipmsg_find_header(msg, "Contact"));
+	sipe_get_route_header(msg, dialog, outgoing);
 }
 
 

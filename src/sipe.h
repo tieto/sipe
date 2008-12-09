@@ -59,7 +59,7 @@ struct sip_dialog {
 	gchar *theirtag;
 	gchar *theirepid;
 	gchar *callid;
-	gchar *route;
+	GSList *routes;
 	gchar *request;
 	int cseq;
 };
