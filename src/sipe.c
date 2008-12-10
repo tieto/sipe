@@ -47,6 +47,8 @@
 #include <glib.h>
 
 #ifdef ENABLE_NLS
+#include <libintl.h>
+#   define _(String)  ((const char *) gettext (String))
 #else
 #   define _(String) ((const char *) (String))
 #endif /* ENABLE_NLS */
@@ -3567,8 +3569,8 @@ static PurplePluginInfo info = {
         "prpl-sipe",                                   	  /**< id             */
 	"Microsoft LCS/OCS",				  /**< name           */
 	VERSION,                                          /**< version        */
-	N_("SIP/SIMPLE OCS/LCS Protocol Plugin"),        /**  summary        */
-	N_("The SIP/SIMPLE LCS/OCS Protocol Plugin"),    /**  description    */
+	"SIP/SIMPLE OCS/LCS Protocol Plugin",             /**  summary        */
+	"The SIP/SIMPLE LCS/OCS Protocol Plugin",         /**  description    */
 	"Anibal Avelar <avelar@gmail.com>, "         	  /**< author         */
 	"Gabriel Burt <gburt@novell.com>",         	  /**< author         */
 	PURPLE_WEBSITE,                                   /**< homepage       */
