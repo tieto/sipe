@@ -22,7 +22,8 @@
  */
 
 #ifndef _WIN32
-#include "sip-internal.h"
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #else /* _WIN32 */
 #ifdef _DLL
 #define _WS2TCPIP_H_
@@ -32,6 +33,8 @@
 
 #include "internal.h"
 #endif /* _WIN32 */
+
+#include <string.h>
 
 #include "accountopt.h"
 #include "blist.h"

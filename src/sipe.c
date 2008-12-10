@@ -3,8 +3,8 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2008 Novell, Inc.
- * Copyright (C) 2007 Anibal Avelar "Fixxxer"<avelar@gmail.com>
+ * Copyright (C) 2008 Novell, Inc., Anibal Avelar <debianmx@gmail.com>
+ * Copyright (C) 2007 Anibal Avelar <avelar@gmail.com>
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
  * ***
@@ -30,8 +30,9 @@
  */
 
 #ifndef _WIN32
-#include "sip-internal.h"
-#else /* _WIN32 */
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#else
 #ifdef _DLL
 #define _WS2TCPIP_H_
 #define _WINSOCK2API_
@@ -41,6 +42,8 @@
 #include "internal.h"
 #endif /* _WIN32 */
 
+#include <errno.h>
+#include <string.h>
 #include <glib.h>
 
 #ifdef ENABLE_NLS
@@ -1151,7 +1154,7 @@ sipe_group_set_user (struct sipe_account_data *sip, struct sipe_group * group, c
 	buddy->group_id = group ? group->id : 1;
 
 	if (buddy && purple_buddy) {
-		gchar * alias = purple_buddy_get_alias(purple_buddy);
+		gchar * alias = (gchar *)purple_buddy_get_alias(purple_buddy);
 		purple_debug_info("sipe", "Saving buddy %s with alias %s and group_id %d\n", who, alias, buddy->group_id);
 		gchar * body = g_strdup_printf(SIPE_SOAP_SET_CONTACT,
 			alias, buddy->group_id, "true", buddy->name, sip->delta_num++
@@ -1284,9 +1287,9 @@ sipe_group_buddy(PurpleConnection *gc,
 		 const char *new_group_name)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	struct sipe_group * group = sipe_group_find_by_name(sip, new_group_name);
+	struct sipe_group * group = sipe_group_find_by_name(sip, g_strdup(new_group_name));
 	if (!group) {
-		sipe_group_create(sip, new_group_name, who);
+		sipe_group_create(sip, g_strdup(new_group_name), g_strdup(who));
 	} else {
 		sipe_group_set_user(sip, group, who);
 	}
@@ -1361,7 +1364,7 @@ sipe_rename_group(PurpleConnection *gc,
 		  GList *moved_buddies)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	struct sipe_group * s_group = sipe_group_find_by_name(sip, old_name);
+	struct sipe_group * s_group = sipe_group_find_by_name(sip, g_strdup(old_name));
 	if (group) {
 		sipe_group_rename(sip, s_group, group->name);
 	} else {
@@ -1437,7 +1440,7 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 		return FALSE;
 	}
 
-	char * delta_num = xmlnode_get_attrib(isc, "deltaNum");
+	gchar * delta_num = g_strdup(xmlnode_get_attrib(isc, "deltaNum"));
 	if (delta_num) {
 		sip->delta_num = (int)g_ascii_strtod(delta_num, NULL);
 	}
@@ -1447,7 +1450,7 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	for (group_node = xmlnode_get_child(isc, "group"); group_node; group_node = xmlnode_get_next_twin(group_node)) {
 		struct sipe_group * group = g_new0(struct sipe_group, 1);
 
-		group->name = xmlnode_get_attrib(group_node, "name");
+		group->name = g_strdup(xmlnode_get_attrib(group_node, "name"));
 		if (!strncmp(group->name, "~", 1)){
 			// TODO translate
 			group->name = "General";
@@ -1472,8 +1475,8 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	/* Parse contacts */
 	xmlnode *item;
 	for (item = xmlnode_get_child(isc, "contact"); item; item = xmlnode_get_next_twin(item)) {
-		char * uri = xmlnode_get_attrib(item, "uri");
-		char * name = xmlnode_get_attrib(item, "name");
+		gchar * uri = g_strdup(xmlnode_get_attrib(item, "uri"));
+		gchar * name = g_strdup(xmlnode_get_attrib(item, "name"));
 		gchar **item_groups = g_strsplit(xmlnode_get_attrib(item, "groups"), " ", 0);
 
 		struct sipe_group * group = NULL;
@@ -1896,7 +1899,7 @@ static gboolean resend_timeout(struct sipe_account_data *sip)
 	while (tmp) {
 		struct transaction *trans = tmp->data;
 		tmp = tmp->next;
-		purple_debug_info("sipe", "have open transaction age: %d\n", currtime- trans->time);
+		purple_debug_info("sipe", "have open transaction age: %ld\n", currtime-trans->time);
 		if ((currtime - trans->time > 5) && trans->retries >= 1) {
 			/* TODO 408 */
 		} else {
@@ -2150,7 +2153,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					   Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
 					*/
 					gchar **tmp = g_strsplit(warning, "\"", 0);
-					warning = g_strdup_printf("You have been rejected by the server: %s", tmp[1] ? tmp[1] : "no reason given");
+					warning = g_strdup_printf(_("You have been rejected by the server: %s"), tmp[1] ? tmp[1] : _("no reason given"));
 					g_strfreev(tmp);
 				} else {
 					warning = _("You have been rejected by the server");
@@ -2161,6 +2164,22 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				return TRUE;
 			}
 			break;
+                case 503:
+                        {
+				const gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+				if (warning != NULL) {
+					gchar *reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
+					warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
+					g_free(reason);
+				} else {
+					warning = _("Service unavailable: no reason given");
+				}
+
+				sip->gc->wants_to_die = TRUE;
+				purple_connection_error(sip->gc, warning);
+				return TRUE;
+			}
+			break;        
 		}
 	return TRUE;
 }
@@ -2265,7 +2284,7 @@ static void process_incoming_benotify(struct sipe_account_data *sip, struct sipm
 	xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!xml) return;
 
-	char * delta_num = xmlnode_get_attrib(xml, "deltaNum");
+	gchar * delta_num = g_strdup(xmlnode_get_attrib(xml, "deltaNum"));
 	if (delta_num) {
 		sip->delta_num = (int)g_ascii_strtod(delta_num, NULL);
 	}
@@ -2439,7 +2458,7 @@ static void send_presence_info(struct sipe_account_data *sip)
 	PurpleStatus * status = purple_account_get_active_status(sip->account);
 	if (!status) return;
 
-	char *note = purple_status_get_attr_string(status, "message");
+	gchar *note = g_strdup(purple_status_get_attr_string(status, "message"));
 
 	purple_debug_info("sipe", "sending presence info, version = %d\n", sip->presence_method_version);
 	if (sip->presence_method_version != 1) {
@@ -3335,7 +3354,7 @@ static void sipe_searchresults_add_buddy(PurpleConnection *gc, GList *row, void 
 								 g_list_nth_data(row, 0), NULL, g_list_nth_data(row, 1));
 }
 
-static void process_search_contact_response(struct sipe_account_data *sip, struct sipmsg *msg,struct transaction *tc)
+static gboolean process_search_contact_response(struct sipe_account_data *sip, struct sipmsg *msg,struct transaction *tc)
 {
 	PurpleNotifySearchResults *results;
 	PurpleNotifySearchColumn *column;
@@ -3349,7 +3368,7 @@ static void process_search_contact_response(struct sipe_account_data *sip, struc
 	if (!searchResults) {
 		purple_debug_info("sipe", "process_search_contact_response: no parseable searchResults\n");
 		g_free(name);
-		return;
+		return FALSE;
 	}
 	
 	results = purple_notify_searchresults_new();
@@ -3360,7 +3379,7 @@ static void process_search_contact_response(struct sipe_account_data *sip, struc
 
 		xmlnode_free(searchResults);
 		g_free(name);
-		return;
+		return FALSE;
 	}
 	
 	column = purple_notify_searchresults_column_new(_("User Name"));
@@ -3403,6 +3422,7 @@ static void process_search_contact_response(struct sipe_account_data *sip, struc
 	g_free(secondary);
 	xmlnode_free(searchResults);
 	g_free(name);
+    return TRUE;
 }
 
 static void sipe_search_by_name_with_cb(PurpleConnection *gc, const char *name)

@@ -44,6 +44,7 @@
 
 #define SIPE_TYPING_RECV_TIMEOUT 6
 #define SIPE_TYPING_SEND_TIMEOUT 4
+#define PURPLE_WEBSITE "http://pidgin.sf.im/"
 
 struct sip_im_session {
 	gchar * with;

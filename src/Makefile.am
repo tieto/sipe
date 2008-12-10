@@ -8,7 +8,6 @@ MAINTAINERCLEANFILES = \
 
 libsipe_la_SOURCES = \
 	sip-prefix.h	\
-	sip-internal.h	\
 	sip-ntlm.h	\
 	sip-ntlm.c	\
 	sipkrb5.h	\

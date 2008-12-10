@@ -5,7 +5,7 @@
  *
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
- * Modify        2007, Anibal Avelar <avelar@gmail.com>
+ * Modify        2007, Anibal Avelar <debianmx@gmail.com>
  *
  * Implemented with reference to the follow documentation:
  *   - http://davenport.sourceforge.net/ntlm.html
@@ -31,34 +31,29 @@
  */
 
 #ifndef _WIN32
-#include "sip-internal.h"
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 #else /* _WIN32 */
 #ifdef _DLL
 #define _WS2TCPIP_H_
 #define _WINSOCK2API_
 #define _LIBC_INTERNAL_
 #endif /* _DLL */
-
+#include "network.h"
 #include "internal.h"
 #endif /* _WIN32 */
 
 #include <glib.h>
 #include <stdlib.h>
-#include "util.h"
-#include "cipher.h"
 #include <string.h>
-#include "sip-ntlm.h"
-#include <zlib.h>
 #include <iconv.h>
 #include <langinfo.h>
+#include <zlib.h>
 
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#else /* _WIN32 */
-#include "network.h"
-#endif /* _WIN32 */
+#include "util.h"
+#include "cipher.h"
+#include "sip-ntlm.h"
 
 #define NTLM_NEGOTIATE_NTLM2_KEY 0x00080000
 

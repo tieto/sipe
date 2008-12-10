@@ -1,8 +1,21 @@
 
-version 1.3 (2007-08-28)
-	- Working in the TLS support
-	- Fixed LCS contacts problem reported by an user
-	- Patch to refer a Direct server and Proxy Server
+version 1.3.1 (2007-12-09)
+	- Locale/translations support
+	- Search contacts support
+	- Code cleaned
+	- LCS 2005 fixed send/receive messages;partially fixed
+
+version 1.3 (2008-12-04)
+	- TLS/SSL support 
+        - Fixed signing messages, thanks Gabriel Burt
+	- Fixed LCS contacts with add/remove/modify, thanks Gabriel Burt
+        - Added Presence support for OCS 2007 and LCS 2005
+	- A lot of patches to fix: 
+           +TLS connections, 
+           +Send/receive messages, 
+           +Full presence, 
+           +TCP connections and optimal options in Advanced tap.
+        - A lot bugs fixed
 
 version 1.2 (2007-03-22)
 
