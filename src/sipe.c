@@ -2754,13 +2754,19 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			}
 
 			gchar * rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
-			if (signature != NULL && rspauth != NULL) {
-				if (purple_ntlm_verify_signature (signature, rspauth)) {
-					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature validated\n");
-					process_input_message(sip, msg);
-				} else {
-					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature is invalid.  Received %s but generated %s; Ignoring message\n", rspauth, signature);
-					purple_connection_error(sip->gc, _("Invalid message signature received"));
+
+			if (signature != NULL) {
+				if (rspauth != NULL) {
+					if (purple_ntlm_verify_signature (signature, rspauth)) {
+						purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature validated\n");
+						process_input_message(sip, msg);
+					} else {
+						purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature is invalid.  Received %s but generated %s; Ignoring message\n", rspauth, signature);
+						purple_connection_error(sip->gc, _("Invalid message signature received"));
+						sip->gc->wants_to_die = TRUE;
+					}
+				} else if (msg->response == 401) {
+					purple_connection_error(sip->gc, _("Wrong Password"));
 					sip->gc->wants_to_die = TRUE;
 				}
 			}
