@@ -30,6 +30,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <glib.h>
 #ifndef _WIN32
 #include <sys/ioctl.h>
 #include <net/if.h>
@@ -44,13 +45,13 @@
 #include "internal.h"
 #endif /* _WIN32 */
 
-#include <glib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iconv.h>
 #include <langinfo.h>
 #include <zlib.h>
 
+#include "debug.h"
 #include "util.h"
 #include "cipher.h"
 #include "sip-ntlm.h"
