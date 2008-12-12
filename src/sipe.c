@@ -76,6 +76,7 @@
 #include "sipmsg.h"
 #include "sipe-sign.h"
 #include "dnssrv.h"
+#include "request.h"
 
 /* Keep in sync with sipe_transport_type! */
 static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
