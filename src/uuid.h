@@ -28,7 +28,7 @@ typedef struct _uuid_t {
    unsigned char  clock_seq_hi_and_reserved;
    unsigned char  clock_seq_low;
    unsigned char  node[6];
-} uuid_t;
+} sipe_uuid_t;
 
 #pragma pack(pop)
 

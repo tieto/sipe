@@ -36,7 +36,7 @@ static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
 
 #define UUID_OFFSET_TO_LAST_SEGMENT 24
 
-void readUUID(const char *string, uuid_t *uuid)
+void readUUID(const char *string, sipe_uuid_t *uuid)
 {
 	int i;
 	sscanf(string, "%08x-%04hx-%04hx-%02hhx%02hhx-", &uuid->time_low
@@ -50,7 +50,7 @@ void readUUID(const char *string, uuid_t *uuid)
 	}
 }
 
-void printUUID(uuid_t *uuid, char *string)
+void printUUID(sipe_uuid_t *uuid, char *string)
 {
 	int i;
 	size_t pos;
@@ -66,9 +66,9 @@ void printUUID(uuid_t *uuid, char *string)
 	}
 }
 
-void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
+void createUUIDfromHash(sipe_uuid_t *uuid, const unsigned char *hash)
 {
-	memcpy(uuid, hash, sizeof(uuid_t));
+	memcpy(uuid, hash, sizeof(sipe_uuid_t));
 	uuid->time_hi_and_version &= 0x0FFF;
 	uuid->time_hi_and_version |= 0x5000;
 	uuid->clock_seq_hi_and_reserved &= 0x3F;
@@ -77,13 +77,13 @@ void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
 
 char *generateUUIDfromEPID(const gchar *epid)
 {
-	uuid_t result;
+	sipe_uuid_t result;
 	PurpleCipherContext *ctx;
 	unsigned char hash[20];
 	char buf[512];
 
 	readUUID(epid_ns_uuid, &result);
-	memcpy(buf, &result, sizeof(uuid_t));
+	memcpy(buf, &result, sizeof(sipe_uuid_t));
 	sprintf(&buf[sizeof(uuid_t)], epid);
 
 	ctx = purple_cipher_context_new_by_name("sha1", NULL);
@@ -131,7 +131,7 @@ long mac_addr_sys (const char *addr)
 
     close(s);
     if (ok) {
-        bcopy( ifr.ifr_hwaddr.sa_data, addr, 6);
+        memmove( ifr.ifr_hwaddr.sa_data, addr, 6);
     }
     else {
         return -1;
