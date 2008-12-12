@@ -3110,6 +3110,13 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		}
 
 		purple_debug_info("sipe", "using SSL\n");
+
+		/* Redirect: delete old connction first */
+		if (sip->gsc) {
+		        purple_debug_info("sipe", "redirect-close-old gsc %08x gsc/fd %d sip %08x sip/fd %d\n", sip->gsc, sip->gsc->fd, sip, sip->fd);
+			purple_ssl_close(sip->gsc);
+		}
+
 		sip->gsc = purple_ssl_connect(account, hostname, port,
 					      login_cb_ssl, sipe_ssl_connect_failure, gc);
 		if (sip->gsc == NULL) {
