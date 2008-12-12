@@ -67,4 +67,9 @@ gchar *purple_ntlm_gen_authenticate(const gchar **ntlm_key, const gchar *usernam
 
 gchar * purple_ntlm_sipe_signature_make (char * msg, char * signing_key);
 
+gchar * purple_ntlm_gen_signature (char * buf, char * signing_key, guint32 random_pad, long sequence, int key_len);
+
+
+gboolean purple_ntlm_verify_signature (char * a, char * b);
+
 #endif /* _PURPLE_NTLM_SIPE_H */
