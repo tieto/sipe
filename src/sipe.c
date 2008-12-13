@@ -3375,6 +3375,17 @@ static void sipe_close(PurpleConnection *gc)
 	gc->proto_data = NULL;
 }
 
+static void sipe_searchresults_im_buddy(PurpleConnection *gc, GList *row, void *user_data)
+{
+	PurpleAccount *acct = purple_connection_get_account(gc);
+	char *id = g_strdup_printf("sip:%s", g_list_nth_data(row, 0));
+	PurpleConversation *conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_IM, id, acct);
+	if (conv == NULL)
+		conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, acct, id);
+	purple_conversation_present(conv);
+	g_free(id);
+}
+
 static void sipe_searchresults_add_buddy(PurpleConnection *gc, GList *row, void *user_data)
 {
 
@@ -3444,6 +3455,7 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 			"Found %d contacts matching '%s':", match_count),
 		match_count, name);
 
+	purple_notify_searchresults_button_add(results, PURPLE_NOTIFY_BUTTON_IM, sipe_searchresults_im_buddy);
 	purple_notify_searchresults_button_add(results, PURPLE_NOTIFY_BUTTON_ADD, sipe_searchresults_add_buddy);
 	purple_notify_searchresults(sip->gc, NULL, NULL, secondary, results, NULL, NULL);
 
