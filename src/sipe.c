@@ -3401,12 +3401,9 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	xmlnode *mrow;
 	xmlnode *directorySearch;
 	
-	gchar *name = (gchar *)tc->payload;
-	
 	searchResults = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!searchResults) {
 		purple_debug_info("sipe", "process_search_contact_response: no parseable searchResults\n");
-		g_free(name);
 		return FALSE;
 	}
 	
@@ -3417,7 +3414,6 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 		purple_notify_error(sip->gc, NULL, _("Unable to display the search results."), NULL);
 
 		xmlnode_free(searchResults);
-		g_free(name);
 		return FALSE;
 	}
 	
@@ -3451,9 +3447,9 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 
 	gchar *secondary = g_strdup_printf(
 		dngettext(GETTEXT_PACKAGE,
-			"Found %d contact matching '%s':",
-			"Found %d contacts matching '%s':", match_count),
-		match_count, name);
+			"Found %d contact:",
+			"Found %d contacts:", match_count),
+		match_count);
 
 	purple_notify_searchresults_button_add(results, PURPLE_NOTIFY_BUTTON_IM, sipe_searchresults_im_buddy);
 	purple_notify_searchresults_button_add(results, PURPLE_NOTIFY_BUTTON_ADD, sipe_searchresults_add_buddy);
@@ -3461,29 +3457,59 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 
 	g_free(secondary);
 	xmlnode_free(searchResults);
-	g_free(name);
-    return TRUE;
+	return TRUE;
 }
 
-static void sipe_search_by_name_with_cb(PurpleConnection *gc, const char *name)
+static gchar *sipe_search_create_row(PurpleRequestFields *fields, const char *attr)
+{
+	const char *value = purple_request_fields_get_string(fields, attr);
+	if (value == NULL)
+		return(g_strdup(""));
+	else
+		return(g_strdup_printf(SIPE_SOAP_SEARCH_ROW, attr, value));
+}
+
+static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fields)
 {
 	struct sipe_account_data *sip = gc->proto_data;
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_search_by_name: %s\n",name);
 
-	gchar * body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100, name);
-	send_soap_request_with_cb(sip, body, (TransCallback)process_search_contact_response, (void*)g_strdup(name));
+	gchar *given   = sipe_search_create_row(fields, "givenName");
+	gchar *sn      = sipe_search_create_row(fields, "sn");
+	gchar *company = sipe_search_create_row(fields, "company");
+
+	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100,
+				      given, sn, company);
+	send_soap_request_with_cb(sip, body, (TransCallback)process_search_contact_response, NULL);
 	g_free(body);
+	g_free(company);
+	g_free(sn);
+	g_free(given);
 }
 
 static void sipe_show_find_contact(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	purple_request_input(gc,
+	PurpleRequestFields *fields;
+	PurpleRequestFieldGroup *group;
+	PurpleRequestField *field;
+
+	fields = purple_request_fields_new();
+	group = purple_request_field_group_new(NULL);
+	purple_request_fields_add_group(fields, group);
+
+	field = purple_request_field_string_new("givenName", _("First Name"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("sn", _("Last Name"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+
+	purple_request_fields(gc,
 		_("Search"),
-		_("Search for a Contact by Name"),
-		_("Enter the first and/or last name of the person you wish to find:"),
-		NULL, FALSE, FALSE, NULL,
-		_("_Search"), G_CALLBACK(sipe_search_by_name_with_cb),
+		_("Search for a Contact"),
+		_("Enter the information of the person you wish to find. Empty fields will be ignored."),
+		fields,  
+		_("_Search"), G_CALLBACK(sipe_search_contact_with_cb),
 		_("_Cancel"), NULL,
 		purple_connection_get_account(gc), NULL, NULL, gc);
 }
@@ -3495,7 +3521,7 @@ GList *sipe_actions(PurplePlugin *plugin, gpointer context)
 	GList *menu = NULL;
 	PurplePluginAction *act;
 
-	act = purple_plugin_action_new(_("Search for Contact by Name..."), sipe_show_find_contact);
+	act = purple_plugin_action_new(_("Contact Search..."), sipe_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
 	menu = g_list_reverse(menu);

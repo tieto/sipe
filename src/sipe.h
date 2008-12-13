@@ -292,11 +292,11 @@ struct group_user_context {
     "<m:maxResults>%d</m:maxResults>"\
     "</m:directorySearch>"\
     "<m:Array xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" m:id=\"searchArray\">"\
-    "<m:row m:attrib=\"givenName\" m:value=\"%s\"/>"\
+    "%s%s%s"\
     "</m:Array>"\
     "</SOAP-ENV:Body>"\
     "</SOAP-ENV:Envelope>"
      
-    
+#define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"   
 
 #endif /* _PIDGIN_SIPE_H */
