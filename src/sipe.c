@@ -2735,6 +2735,8 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			memmove(conn->inbuf, cur, conn->inbuflen - (cur - conn->inbuf));
 			conn->inbufused = strlen(conn->inbuf);
 		} else {
+			purple_debug_info("sipe", "process_input: body too short (%d < %d, strlen %d) - ignoring message\n",
+					  restlen, msg->bodylen, strlen(conn->inbuf));
 			sipmsg_free(msg);
 			return;
 		}
@@ -2801,8 +2803,8 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_connection *conn = NULL;
-	int len;
-	static char buf[4096];
+	int readlen, len;
+	gboolean firstread = TRUE;
 
 	/* TODO: It should be possible to make this check unnecessary */
 	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
@@ -2820,36 +2822,46 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
                 return; 
 	}
 
-	if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
-		conn->inbuflen += SIMPLE_BUF_INC;
-		conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
-	}
-
-	len = purple_ssl_read(sip->gsc, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
-
-	if (len < 0 && errno == EAGAIN) {
-		/* Try again later */
-                return;
-        } else if (len < 0) {
-                purple_debug_info("sipe", "sipe_input_cb_ssl: read error\n");
-                if (sip->gsc){ 
-		    connection_remove(sip, sip->gsc->fd); 
-                    if (sip->fd == gsc->fd) sip->fd = -1; 
-                    purple_debug_info("sipe", "sipe_input_cb_ssl: connection_remove\n"); 
+	/* Read all available data from the SSL connection */
+	do {
+		/* Increase input buffer size as needed */
+		if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
+			conn->inbuflen += SIMPLE_BUF_INC;
+			conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
+			purple_debug_error("sipe", "sipe_input_cb_ssl: new input buffer length %d\n", conn->inbuflen);
 		}
-                return;
-        } else if (len == 0) {
-                purple_connection_error(gc, _("Server has disconnected"));
-		if (sip->gsc){
-                	connection_remove(sip, sip->gsc->fd);
-                	if (sip->fd == gsc->fd) sip->fd = -1;
-		}
-                return;
-        }
 
-	conn->inbufused += len;
+		/* Try to read as much as there is space left in the buffer */
+		readlen = conn->inbuflen - conn->inbufused - 1;
+		len = purple_ssl_read(sip->gsc, conn->inbuf + conn->inbufused, readlen);
+
+		if (len < 0 && errno == EAGAIN) {
+			/* Try again later */
+			return;
+		} else if (len < 0) {
+	                purple_debug_info("sipe", "sipe_input_cb_ssl: read error\n");
+			if (sip->gsc){ 
+			    connection_remove(sip, sip->gsc->fd); 
+			    if (sip->fd == gsc->fd) sip->fd = -1; 
+			    purple_debug_info("sipe", "sipe_input_cb_ssl: connection_remove\n"); 
+			}
+			return;
+		} else if (firstread && (len == 0)) {
+	                purple_connection_error(gc, _("Server has disconnected"));
+			if (sip->gsc){
+				connection_remove(sip, sip->gsc->fd);
+				if (sip->fd == gsc->fd) sip->fd = -1;
+			}
+			return;
+		}
+
+		conn->inbufused += len;
+		firstread == FALSE;
+
+	/* Equivalence indicates that there is possibly more data to read */
+	} while (len == readlen);
+
 	conn->inbuf[conn->inbufused] = '\0';
-
         process_input(sip, conn);
   
 }
