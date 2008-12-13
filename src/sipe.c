@@ -2856,7 +2856,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 		}
 
 		conn->inbufused += len;
-		firstread == FALSE;
+		firstread = FALSE;
 
 	/* Equivalence indicates that there is possibly more data to read */
 	} while (len == readlen);
