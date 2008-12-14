@@ -3399,7 +3399,6 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	PurpleNotifySearchColumn *column;
 	xmlnode *searchResults;
 	xmlnode *mrow;
-	xmlnode *directorySearch;
 
 	searchResults = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!searchResults) {
@@ -3449,11 +3448,18 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 		match_count++;
 	}
 
+	gboolean more = FALSE;
+	if ((mrow = xmlnode_get_descendant(searchResults, "Body", "directorySearch", "moreAvailable", NULL)) != NULL) {
+		char *data = xmlnode_get_data_unescaped(mrow);
+		more = (g_strcasecmp(data, "true") == 0);
+		g_free(data);
+	}
+
 	gchar *secondary = g_strdup_printf(
 		dngettext(GETTEXT_PACKAGE,
-			"Found %d contact:",
-			"Found %d contacts:", match_count),
-		match_count);
+			  "Found %d contact%s:",
+			  "Found %d contacts%s:", match_count),
+		match_count, more ? _(" (more matched your query)") : "");
 
 	purple_notify_searchresults_button_add(results, PURPLE_NOTIFY_BUTTON_IM, sipe_searchresults_im_buddy);
 	purple_notify_searchresults_button_add(results, PURPLE_NOTIFY_BUTTON_ADD, sipe_searchresults_add_buddy);
