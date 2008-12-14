@@ -114,6 +114,9 @@ AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE", [Gettext Package])
 AM_GLIB_GNU_GETTEXT
 
+dnl codeset
+AM_LANGINFO_CODESET
+
 dnl substitutions and generated files
 AC_CONFIG_FILES(
 	[src/config.h]
