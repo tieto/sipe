@@ -3400,13 +3400,13 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	xmlnode *searchResults;
 	xmlnode *mrow;
 	xmlnode *directorySearch;
-	
+
 	searchResults = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!searchResults) {
 		purple_debug_info("sipe", "process_search_contact_response: no parseable searchResults\n");
 		return FALSE;
 	}
-	
+
 	results = purple_notify_searchresults_new();
 
 	if (results == NULL) {
@@ -3416,19 +3416,22 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 		xmlnode_free(searchResults);
 		return FALSE;
 	}
-	
+
 	column = purple_notify_searchresults_column_new(_("User Name"));
 	purple_notify_searchresults_column_add(results, column);
-	
+
 	column = purple_notify_searchresults_column_new(_("Name"));
 	purple_notify_searchresults_column_add(results, column);
-	
+
+	column = purple_notify_searchresults_column_new(_("Company"));
+	purple_notify_searchresults_column_add(results, column);
+
 	column = purple_notify_searchresults_column_new(_("Country"));
 	purple_notify_searchresults_column_add(results, column);
-	
+
 	column = purple_notify_searchresults_column_new(_("Email"));
 	purple_notify_searchresults_column_add(results, column);
-	
+
 	int match_count = 0;
 	for (mrow =  xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL); mrow; mrow = xmlnode_get_next_twin(mrow)) {
 		GList *row = NULL;
@@ -3438,6 +3441,7 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 		g_strfreev(uri_parts);
 
 		row = g_list_append(row, g_strdup(xmlnode_get_attrib(mrow, "displayName")));
+		row = g_list_append(row, g_strdup(xmlnode_get_attrib(mrow, "company")));
 		row = g_list_append(row, g_strdup(xmlnode_get_attrib(mrow, "country")));
 		row = g_list_append(row, g_strdup(xmlnode_get_attrib(mrow, "email")));
 
@@ -3460,30 +3464,33 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	return TRUE;
 }
 
-static gchar *sipe_search_create_row(PurpleRequestFields *fields, const char *attr)
-{
-	const char *value = purple_request_fields_get_string(fields, attr);
-	if (value == NULL)
-		return(g_strdup(""));
-	else
-		return(g_strdup_printf(SIPE_SOAP_SEARCH_ROW, attr, value));
-}
-
 static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fields)
 {
-	struct sipe_account_data *sip = gc->proto_data;
+	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
+	gchar **attrs = g_new(gchar *, g_list_length(entries) + 1);
+	unsigned i = 0;
 
-	gchar *given   = sipe_search_create_row(fields, "givenName");
-	gchar *sn      = sipe_search_create_row(fields, "sn");
-	gchar *company = sipe_search_create_row(fields, "company");
+	do {
+		PurpleRequestField *field = entries->data;
+		const char *id = purple_request_field_get_id(field);
+		const char *value = purple_request_field_string_get_value(field);
 
-	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100,
-				      given, sn, company);
-	send_soap_request_with_cb(sip, body, (TransCallback)process_search_contact_response, NULL);
-	g_free(body);
-	g_free(company);
-	g_free(sn);
-	g_free(given);
+		purple_debug_info("sipe", "sipe_search_contact_with_cb: %s = '%s'\n", id, value);
+
+		if (value != NULL) attrs[i++] = g_strdup_printf(SIPE_SOAP_SEARCH_ROW, id, value);
+	} while ((entries = g_list_next(entries)) != NULL);
+	attrs[i] = NULL;
+
+	if (i > 0) {
+		gchar *query = g_strjoinv(NULL, attrs);
+		gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100, query);
+		send_soap_request_with_cb(gc->proto_data, body,
+					  (TransCallback) process_search_contact_response, NULL);
+		g_free(body);
+		g_free(query);
+	}
+
+	g_strfreev(attrs);
 }
 
 static void sipe_show_find_contact(PurplePluginAction *action)
@@ -3502,6 +3509,8 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 	field = purple_request_field_string_new("sn", _("Last Name"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("c", _("Country"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,

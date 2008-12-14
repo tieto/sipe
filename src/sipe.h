@@ -292,7 +292,7 @@ struct group_user_context {
     "<m:maxResults>%d</m:maxResults>"\
     "</m:directorySearch>"\
     "<m:Array xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" m:id=\"searchArray\">"\
-    "%s%s%s"\
+    "%s"\
     "</m:Array>"\
     "</SOAP-ENV:Body>"\
     "</SOAP-ENV:Envelope>"
