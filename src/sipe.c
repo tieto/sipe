@@ -598,33 +598,40 @@ static void send_later_cb(gpointer data, gint source, const gchar *error)
 	conn->inputhandler = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_input_cb, gc);
 }
 
-static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
+static struct sipe_account_data *sipe_setup_ssl(PurpleConnection *gc, PurpleSslConnection *gsc)
 {
-	PurpleConnection *gc = data;
 	struct sipe_account_data *sip;
 	struct sip_connection *conn;
 
 	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
-		if(gsc) purple_ssl_close(gsc);
-		return;
+		if (gsc) purple_ssl_close(gsc);
+		return NULL;
 	}
 
 	sip = gc->proto_data;
-        sip->gsc = gsc; 
 	sip->fd = gsc->fd;
+        sip->gsc = gsc;  
+        sip->listenport = purple_network_get_port_from_fd(gsc->fd);
 	sip->connecting = FALSE;
+	conn = connection_create(sip, gsc->fd);
 
-	sipe_canwrite_cb_ssl(gc, sip->gsc->fd, PURPLE_INPUT_WRITE);
+	purple_ssl_input_add(gsc, sipe_input_cb_ssl, gc);
+
+	return sip;
+}
+
+static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
+{
+	PurpleConnection *gc = data;
+	struct sipe_account_data *sip = sipe_setup_ssl(gc, gsc);
+
+	sipe_canwrite_cb_ssl(gc, gsc->fd, PURPLE_INPUT_WRITE);
 
 	/* If there is more to write now */
-	if (sip->txbuf->bufused > 0)
-	{
-                sip->tx_handler = purple_input_add(sip->gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
+	if (sip->txbuf->bufused > 0) {
+                sip->tx_handler = purple_input_add(gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
 	}
-
-	conn = connection_create(sip, sip->gsc->fd);
-	purple_ssl_input_add(sip->gsc, sipe_input_cb_ssl, gc);
 }
 
 
@@ -2811,18 +2818,18 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 
 	/* TODO: It should be possible to make this check unnecessary */
 	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
-		purple_ssl_close(gsc);
+		purple_ssl_close(sip->gsc);
+		sip->fd = -1;
+		sip->gsc = NULL;
 		return;
 	}
 
-	if (sip->fd != -1) 
-		conn = connection_find(sip, gsc->fd);
+	conn = connection_find(sip, gsc->fd);
 	if (!conn) {
 		purple_debug_error("sipe", "Connection not found; Please try to connect again.\n");
-		if (sip->fd != -1) purple_ssl_close(gsc); 
-                purple_connection_error(sip->gc, _("Connection not found; Please try to connect again.\n"));
-                sip->gc->wants_to_die = TRUE;
-                return; 
+		sip->gc->wants_to_die = TRUE;
+		purple_connection_error(sip->gc, _("Connection not found; Please try to connect again.\n"));
+		return; 
 	}
 
 	/* Read all available data from the SSL connection */
@@ -2831,7 +2838,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 		if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
 			conn->inbuflen += SIMPLE_BUF_INC;
 			conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
-			purple_debug_error("sipe", "sipe_input_cb_ssl: new input buffer length %d\n", conn->inbuflen);
+			purple_debug_info("sipe", "sipe_input_cb_ssl: new input buffer length %d\n", conn->inbuflen);
 		}
 
 		/* Try to read as much as there is space left in the buffer */
@@ -2842,19 +2849,14 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 			/* Try again later */
 			return;
 		} else if (len < 0) {
-	                purple_debug_info("sipe", "sipe_input_cb_ssl: read error\n");
-			if (sip->gsc){ 
-			    connection_remove(sip, sip->gsc->fd); 
-			    if (sip->fd == gsc->fd) sip->fd = -1; 
-			    purple_debug_info("sipe", "sipe_input_cb_ssl: connection_remove\n"); 
-			}
+			purple_debug_error("sipe", "SSL read error\n");
+			sip->gc->wants_to_die = TRUE;
+			purple_connection_error(sip->gc, _("SSL read error"));
 			return;
 		} else if (firstread && (len == 0)) {
-	                purple_connection_error(gc, _("Server has disconnected"));
-			if (sip->gsc){
-				connection_remove(sip, sip->gsc->fd);
-				if (sip->fd == gsc->fd) sip->fd = -1;
-			}
+			purple_debug_error("sipe", "Server has disconnected\n");
+			sip->gc->wants_to_die = TRUE;
+			purple_connection_error(sip->gc, _("Server has disconnected"));
 			return;
 		}
 
@@ -2948,27 +2950,10 @@ static void login_cb(gpointer data, gint source, const gchar *error_message)
 
 static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
 {
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip;
-	struct sip_connection *conn;
+	struct sipe_account_data *sip = sipe_setup_ssl(data, gsc);
 
-	if (!PURPLE_CONNECTION_IS_VALID(gc))
-	{
-		if (gsc) purple_ssl_close(gsc);
-		return;
-	}
-
-	sip = gc->proto_data;
-	sip->fd = gsc->fd;
-        sip->gsc = gsc;  
-	conn = connection_create(sip, sip->fd);
-	sip->listenport = purple_network_get_port_from_fd(sip->fd);
-	sip->listenfd = sip->fd;
 	sip->registertimeout = purple_timeout_add((rand()%100) + 1000, (GSourceFunc)subscribe_timeout, sip);
-
 	do_register(sip);
-        if(sip)
-            purple_ssl_input_add(sip->gsc, sipe_input_cb_ssl, gc);
 }
 
 static guint sipe_ht_hash_nick(const char *nick)
@@ -3051,6 +3036,7 @@ static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorTyp
                 return;
 
         sip = gc->proto_data;
+	sip->fd = -1;
         sip->gsc = NULL;
 
         switch(error) {
@@ -3125,12 +3111,6 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		}
 
 		purple_debug_info("sipe", "using SSL\n");
-
-		/* Redirect: delete old connction first */
-		if (sip->gsc) {
-		        purple_debug_info("sipe", "redirect-close-old gsc %08x gsc/fd %d sip %08x sip/fd %d\n", sip->gsc, sip->gsc->fd, sip, sip->fd);
-			purple_ssl_close(sip->gsc);
-		}
 
 		sip->gsc = purple_ssl_connect(account, hostname, port,
 					      login_cb_ssl, sipe_ssl_connect_failure, gc);
@@ -3307,6 +3287,10 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		purple_network_listen_cancel(sip->listen_data);
 	sip->listen_data = NULL;
 
+	if (sip->gsc != NULL)
+		purple_ssl_close(sip->gsc);
+	sip->gsc = NULL;
+
 	g_free(sip->registrar.nonce);
 	sip->registrar.nonce = NULL;
 	g_free(sip->registrar.opaque);
@@ -3356,6 +3340,8 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	if (sip->registertimeout)
 		purple_timeout_remove(sip->registertimeout);
 	sip->registertimeout = 0;
+
+	sip->fd = -1;
 }
 
 static void sipe_close(PurpleConnection *gc)
