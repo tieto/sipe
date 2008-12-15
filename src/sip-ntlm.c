@@ -50,7 +50,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iconv.h>
+#ifdef HAVE_LANGINFO_CODESET
 #include <langinfo.h>
+#endif /* HAVE_LANGINFO_CODESET */
 #include <zlib.h>
 
 #include "debug.h"
@@ -173,7 +175,11 @@ unicode_strconvcopy(char *dest, const char *source, int remlen)
 	char *outbuf = dest;
 	size_t inbytes = strlen(source);
 	size_t outbytes = remlen;
+#ifdef HAVE_LANGINFO_CODESET
 	char *sys_cp = nl_langinfo(CODESET);
+#else
+        char *sys_cp = SIPE_DEFAULT_CODESET;
+#endif /* HAVE_LANGINFO_CODESET */
 
 	/* fall back to utf-8 */
 	if (!sys_cp) sys_cp = "UTF8";

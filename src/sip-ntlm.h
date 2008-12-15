@@ -44,6 +44,8 @@
 #define NTLMSSP_SESSION_KEY_LEN  16
 #define MD4_DIGEST_LEN 16
 
+static char SIPE_DEFAULT_CODESET[] = "ANSI_X3.4-1968";
+
 /**
  * Parses the ntlm type 2 message
  *
