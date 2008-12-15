@@ -625,6 +625,7 @@ static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 {
 	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = sipe_setup_ssl(gc, gsc);
+	if (sip == NULL) return;
 
 	sipe_canwrite_cb_ssl(gc, gsc->fd, PURPLE_INPUT_WRITE);
 
@@ -2951,6 +2952,7 @@ static void login_cb(gpointer data, gint source, const gchar *error_message)
 static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
 {
 	struct sipe_account_data *sip = sipe_setup_ssl(data, gsc);
+	if (sip == NULL) return;
 
 	sip->registertimeout = purple_timeout_add((rand()%100) + 1000, (GSourceFunc)subscribe_timeout, sip);
 	do_register(sip);
