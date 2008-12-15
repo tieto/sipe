@@ -44,7 +44,10 @@ LIB_PATHS +=		-L$(GTK_TOP)/lib \
 ##
 C_SRC =			sipe.c \
 			sipmsg.c \
-			sip-ntlm.c
+			sip-ntlm.c \
+			sipe-sign.c \
+			uuid.c
+
 
 OBJECTS = 		$(C_SRC:%.c=%.o)
 
@@ -55,7 +58,8 @@ LIBS =	\
 			-lglib-2.0 \
 			-lws2_32 \
 			-lintl \
-			-lpurple
+			-lpurple \
+			-liconv
 
 include $(PIDGIN_COMMON_RULES)
 
