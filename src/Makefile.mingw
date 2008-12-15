@@ -44,8 +44,8 @@ LIB_PATHS +=		-L$(GTK_TOP)/lib \
 ##
 C_SRC =			sipe.c \
 			sipmsg.c \
-			sip-ntlm.c \
 			sipe-sign.c \
+			sip-ntlm.c \
 			uuid.c
 
 
