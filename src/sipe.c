@@ -31,7 +31,10 @@
 
 #ifndef _WIN32
 #include <sys/socket.h>
-#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <net/if.h>
 #else
 #ifdef _DLL
 #define _WS2TCPIP_H_
