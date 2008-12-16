@@ -2809,6 +2809,21 @@ static void sipe_udp_process(gpointer data, gint source, PurpleInputCondition co
 	}
 }
 
+static void sipe_invalidate_ssl_connection(PurpleConnection *gc, const char *msg, const char *debug)
+{
+	struct sipe_account_data *sip = gc->proto_data;
+	PurpleSslConnection *gsc = sip->gsc;
+
+	purple_debug_error("sipe", debug);
+	purple_connection_error(gc, msg);
+
+	/* Invalidate this connection. Next send will open a new one */
+	connection_remove(sip, gsc->fd);
+	purple_ssl_close(gsc);
+	sip->gsc = NULL;
+	sip->fd = -1;
+}
+
 static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
 {
 	PurpleConnection *gc = data;
@@ -2849,14 +2864,10 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 			/* Try again later */
 			return;
 		} else if (len < 0) {
-			purple_debug_error("sipe", "SSL read error\n");
-			gc->wants_to_die = TRUE;
-			purple_connection_error(gc, _("SSL read error"));
+			sipe_invalidate_ssl_connection(gc, _("SSL read error"), "SSL read error\n");
 			return;
 		} else if (firstread && (len == 0)) {
-			purple_debug_error("sipe", "Server has disconnected\n");
-			gc->wants_to_die = TRUE;
-			purple_connection_error(gc, _("Server has disconnected"));
+			sipe_invalidate_ssl_connection(gc, _("Server has disconnected"), "Server has disconnected\n");
 			return;
 		}
 
