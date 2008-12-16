@@ -29,8 +29,8 @@
 #include <et/com_err.h>
 #else
 #include <protocols/zephyr/com_err.h>
-#endif
 #include "internal.h"
+#endif
 #include "debug.h"
 #include "util.h"
 
