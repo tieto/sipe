@@ -2812,24 +2812,23 @@ static void sipe_udp_process(gpointer data, gint source, PurpleInputCondition co
 static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond)
 {
 	PurpleConnection *gc = data;
-	struct sipe_account_data *sip = gc->proto_data;
-	struct sip_connection *conn = NULL;
+	struct sipe_account_data *sip;
+	struct sip_connection *conn;
 	int readlen, len;
 	gboolean firstread = TRUE;
 
-	/* TODO: It should be possible to make this check unnecessary */
+	/* NOTE: This check *IS* necessary */
 	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
-		purple_ssl_close(sip->gsc);
-		sip->fd = -1;
-		sip->gsc = NULL;
+		purple_ssl_close(gsc);
 		return;
 	}
 
+	sip = gc->proto_data;
 	conn = connection_find(sip, gsc->fd);
-	if (!conn) {
+	if (conn == NULL) {
 		purple_debug_error("sipe", "Connection not found; Please try to connect again.\n");
-		sip->gc->wants_to_die = TRUE;
-		purple_connection_error(sip->gc, _("Connection not found; Please try to connect again.\n"));
+		gc->wants_to_die = TRUE;
+		purple_connection_error(gc, _("Connection not found; Please try to connect again.\n"));
 		return; 
 	}
 
@@ -2844,20 +2843,20 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 
 		/* Try to read as much as there is space left in the buffer */
 		readlen = conn->inbuflen - conn->inbufused - 1;
-		len = purple_ssl_read(sip->gsc, conn->inbuf + conn->inbufused, readlen);
+		len = purple_ssl_read(gsc, conn->inbuf + conn->inbufused, readlen);
 
 		if (len < 0 && errno == EAGAIN) {
 			/* Try again later */
 			return;
 		} else if (len < 0) {
 			purple_debug_error("sipe", "SSL read error\n");
-			sip->gc->wants_to_die = TRUE;
-			purple_connection_error(sip->gc, _("SSL read error"));
+			gc->wants_to_die = TRUE;
+			purple_connection_error(gc, _("SSL read error"));
 			return;
 		} else if (firstread && (len == 0)) {
 			purple_debug_error("sipe", "Server has disconnected\n");
-			sip->gc->wants_to_die = TRUE;
-			purple_connection_error(sip->gc, _("Server has disconnected"));
+			gc->wants_to_die = TRUE;
+			purple_connection_error(gc, _("Server has disconnected"));
 			return;
 		}
 
