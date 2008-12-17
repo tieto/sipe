@@ -59,7 +59,8 @@ LIBS =	\
 			-lws2_32 \
 			-lintl \
 			-lpurple \
-			-liconv
+			-liconv \
+			-lzlib
 
 include $(PIDGIN_COMMON_RULES)
 
