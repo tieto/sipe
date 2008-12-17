@@ -45,6 +45,8 @@
 #include "internal.h"
 #endif /* _WIN32 */
 
+#include <time.h>
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <glib.h>
@@ -126,17 +128,6 @@ static const char *sipe_list_icon(PurpleAccount *a, PurpleBuddy *b)
 	return "sipe";
 }
 
-static void sipe_keep_alive(PurpleConnection *gc)
-{
-	struct sipe_account_data *sip = gc->proto_data;
-	if (sip->transport == SIPE_TRANSPORT_UDP) {
-		/* in case of UDP send a packet only with a 0 byte to remain in the NAT table */
-		gchar buf[2] = {0, 0};
-		purple_debug_info("sipe", "sending keep alive\n");
-		sendto(sip->fd, buf, 1, 0, (struct sockaddr*)&sip->serveraddr, sizeof(struct sockaddr_in));
-	}
-}
-
 static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc);
 
 static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond);
@@ -149,6 +140,38 @@ static void sipe_close(PurpleConnection *gc);
 static void send_service(struct sipe_account_data *sip);
 static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * buddy_name);
 static void send_presence_info(struct sipe_account_data *sip);
+
+static void sendout_pkt(PurpleConnection *gc, const char *buf);
+
+static void sipe_keep_alive_timeout(struct sipe_account_data *sip, const gchar *hdr)
+{
+	gchar *timeout = sipmsg_find_part_of_header(hdr, "timeout=", ";", NULL);
+	if (timeout != NULL) {
+		sscanf(timeout, "%u", &sip->keepalive_timeout);
+		purple_debug_info("sipe", "server determined keep alive timeout is %u seconds\n",
+				  sip->keepalive_timeout);
+	}
+}
+
+static void sipe_keep_alive(PurpleConnection *gc)
+{
+	struct sipe_account_data *sip = gc->proto_data;
+	if (sip->transport == SIPE_TRANSPORT_UDP) {
+		/* in case of UDP send a packet only with a 0 byte to remain in the NAT table */
+		gchar buf[2] = {0, 0};
+		purple_debug_info("sipe", "sending keep alive\n");
+		sendto(sip->fd, buf, 1, 0, (struct sockaddr*)&sip->serveraddr, sizeof(struct sockaddr_in));
+	} else {
+		time_t now = time(NULL);
+		if ((sip->keepalive_timeout > 0) &&
+		    ((now - sip->last_keepalive) >= sip->keepalive_timeout) &&
+		    ((now - gc->last_received) >= sip->keepalive_timeout)) {
+			purple_debug_info("sipe", "sending keep alive\n");
+			sendout_pkt(gc, "\r\n\r\n");
+			sip->last_keepalive = now;
+		}
+	}
+}
 
 static void do_notifies(struct sipe_account_data *sip)
 {
@@ -587,6 +610,7 @@ static void send_later_cb(gpointer data, gint source, const gchar *error)
 	sip = gc->proto_data;
 	sip->fd = source;
 	sip->connecting = FALSE;
+	sip->last_keepalive = time(NULL);
 
 	sipe_canwrite_cb(gc, sip->fd, PURPLE_INPUT_WRITE);
 
@@ -614,6 +638,8 @@ static struct sipe_account_data *sipe_setup_ssl(PurpleConnection *gc, PurpleSslC
         sip->gsc = gsc;  
         sip->listenport = purple_network_get_port_from_fd(gsc->fd);
 	sip->connecting = FALSE;
+	sip->last_keepalive = time(NULL);
+
 	conn = connection_create(sip, gsc->fd);
 
 	purple_ssl_input_add(gsc, sipe_input_cb_ssl, gc);
@@ -2083,6 +2109,11 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sipe_subscribe_buddylist(sip, msg);
 				}
 				
+				tmp = sipmsg_find_header(msg, "ms-keep-alive");
+				if (tmp) {
+					sipe_keep_alive_timeout(sip, tmp);
+				}
+				
 				sipe_subscribe_roaming_self(sip, msg);
 				sipe_subscribe_roaming_provisioning(sip, msg);
 				sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
@@ -2949,6 +2980,7 @@ static void login_cb(gpointer data, gint source, const gchar *error_message)
 
 	sip = gc->proto_data;
 	sip->fd = source;
+	sip->last_keepalive = time(NULL);
 
 	conn = connection_create(sip, source);
 

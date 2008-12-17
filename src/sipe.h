@@ -119,6 +119,7 @@ struct sipe_account_data {
 	int cseq;
 	time_t reregister;
 	time_t republish;
+	time_t last_keepalive;
 	int registerstatus; /* 0 nothing, 1 first registration send, 2 auth received, 3 registered */
 	struct sip_auth registrar;
 	struct sip_auth proxy;
@@ -133,6 +134,7 @@ struct sipe_account_data {
 	GHashTable *buddies;
 	guint registertimeout;
 	guint resendtimeout;
+	guint keepalive_timeout;
 	gboolean connecting;
 	PurpleAccount *account;
 	PurpleCircBuffer *txbuf;
