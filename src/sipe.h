@@ -78,14 +78,22 @@ struct sipe_buddy {
 	int group_id;
 };
 
+typedef enum sipe_auth_type
+{
+	AUTH_TYPE_UNSET = 0,
+	AUTH_TYPE_DIGEST,
+	AUTH_TYPE_NTLM,
+	AUTH_TYPE_KERBEROS
+} sipe_auth_type;
+
 struct sip_auth {
-	int type; /* 1 = Digest / 2 = NTLM / 3 = Kerberos */
+	sipe_auth_type type;
 	gchar *nonce;
 	gchar *opaque;
 	gchar *realm;
 	gchar *target;
-        gchar *rspauth;
-        gchar *srand;
+	gchar *rspauth;
+	gchar *srand;
 	guint32 flags;
 	int nc;
 	gchar *digest_session_key;
@@ -298,7 +306,7 @@ struct group_user_context {
     "</m:Array>"\
     "</SOAP-ENV:Body>"\
     "</SOAP-ENV:Envelope>"
-     
-#define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"   
+
+#define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
 
 #endif /* _PIDGIN_SIPE_H */

@@ -313,7 +313,7 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 		authuser = sip->username;
 	}
 
-	if (auth->type == 1) { /* Digest */
+	if (auth->type == AUTH_TYPE_DIGEST) { /* Digest */
 		sprintf(noncecount, "%08d", auth->nc++);
 		response = purple_cipher_http_digest_calculate_response(
 							"md5", method, target, NULL, NULL,
@@ -323,7 +323,7 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->nonce, target, noncecount, response);
 		g_free(response);
 		return ret;
-	} else if (auth->type == 2) { /* NTLM */
+	} else if (auth->type == AUTH_TYPE_NTLM) { /* NTLM */
 		// If we have a signature for the message, include that
 		if (msg->signature) {
 			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
@@ -342,7 +342,7 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 
 		tmp = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth->realm, auth->target);
 		return tmp;
-	} else if (auth->type == 3) {
+	} else if (auth->type == AUTH_TYPE_KERBEROS) {
 		/* Kerberos */
 		if (auth->nc == 3) {
 			/*if (new_auth || force_reauth) {
@@ -442,7 +442,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	}
 
 	if (!g_strncasecmp(hdr, "NTLM", 4)) {
-		auth->type = 2;
+		auth->type = AUTH_TYPE_NTLM;
 		parts = g_strsplit(hdr+5, "\", ", 0);
 		i = 0;
 		while (parts[i]) {
@@ -476,7 +476,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 
 	if (!g_strncasecmp(hdr, "Kerberos", 8)) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "setting auth type to Kerberos (3)\r\n");
-		auth->type = 3;
+		auth->type = AUTH_TYPE_KERBEROS;
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth - header: %s\r\n", hdr);
 		parts = g_strsplit(hdr+9, "\", ", 0);
 		i = 0;
@@ -508,7 +508,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		return;
 	}
 
-	auth->type = 1;
+	auth->type = AUTH_TYPE_DIGEST;
 	parts = g_strsplit(hdr, " ", 0);
 	while (parts[i]) {
 		if ((tmp = parse_attribute("nonce=\"", parts[i]))) {
@@ -790,7 +790,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		sipmsg_breakdown_free(&msgbd);
 	}
 
-	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
+	if (sip->registrar.type != AUTH_TYPE_UNSET && !strcmp(method, "REGISTER")) {
 		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
 		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
 			sipmsg_add_header(msg, "Authorization", buf);
@@ -800,8 +800,8 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		}
 		g_free(buf);
 	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO")) {
-		sip->registrar.nc=3;
-		sip->registrar.type=2;
+		sip->registrar.nc = 3;
+		sip->registrar.type = AUTH_TYPE_NTLM;
 		
 		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
 		//buf = auth_header(sip, &sip->proxy, msg, FALSE);
@@ -3350,7 +3350,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	sip->registrar.digest_session_key = NULL;
 	g_free(sip->registrar.ntlm_key);
 	sip->registrar.ntlm_key = NULL;
-	sip->registrar.type = 0;
+	sip->registrar.type = AUTH_TYPE_UNSET;
 	sip->registrar.retries = 0;
 
 	g_free(sip->proxy.nonce);
@@ -3365,7 +3365,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	sip->proxy.digest_session_key = NULL;
 	g_free(sip->proxy.ntlm_key);
 	sip->proxy.ntlm_key = NULL;
-	sip->proxy.type = 0;
+	sip->proxy.type = AUTH_TYPE_UNSET;
 	sip->proxy.retries = 0;
 
 	if (sip->txbuf)
