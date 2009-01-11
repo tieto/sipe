@@ -331,9 +331,9 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 		}
 
 		if (auth->nc == 3 && auth->nonce && auth->ntlm_key == NULL) {
-			/* TODO: Don't hardcode "purple" as the hostname */
 			const gchar * ntlm_key;
-			gchar * gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, "purple", authdomain, (const guint8 *)auth->nonce, &auth->flags);
+			const gchar * hostname = purple_get_host_name();
+			gchar * gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, hostname, authdomain, (const guint8 *)auth->nonce, &auth->flags);
 			auth->ntlm_key = (gchar *)ntlm_key;
 			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, gssapi_data);
 			g_free(gssapi_data);
