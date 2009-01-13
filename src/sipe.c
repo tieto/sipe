@@ -134,10 +134,8 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error, 
                                      gpointer data);
 
-static void send_notify(struct sipe_account_data *sip, struct sipe_watcher *);
 static void sipe_close(PurpleConnection *gc);
 
-static void send_service(struct sipe_account_data *sip);
 static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * buddy_name);
 static void send_presence_info(struct sipe_account_data *sip);
 
@@ -173,18 +171,6 @@ static void sipe_keep_alive(PurpleConnection *gc)
 			sendout_pkt(gc, "\r\n\r\n");
 			sip->last_keepalive = now;
 		}
-	}
-}
-
-static void do_notifies(struct sipe_account_data *sip)
-{
-	GSList *tmp = sip->watcher;
-	purple_debug_info("sipe", "do_notifies()\n");
-
-	while (tmp) {
-		purple_debug_info("sipe", "notifying %s\n", ((struct sipe_watcher*)tmp->data)->name);
-		send_notify(sip, tmp->data);
-		tmp = tmp->next;
 	}
 }
 
@@ -266,7 +252,7 @@ static void connection_free_all(struct sipe_account_data *sip)
 	}
 }
 
-static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg, gboolean force_reauth)
+static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg)
 {
 	const gchar *method = msg->method;
 	const gchar *target = msg->target;
@@ -377,17 +363,6 @@ static gchar *auth_header_without_newline(struct sipe_account_data *sip, struct 
 	g_free(response);
 	return ret;
 }
-
-static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg, gboolean force_reauth)
-{
-	gchar *with, *without;
-
-	without = auth_header_without_newline(sip, auth, msg, force_reauth);
-	with = g_strdup_printf("%s\r\n", without);
-	g_free (without);
-	return with;
-}
-
 
 static char *parse_attribute(const char *attrname, const char *source)
 {
@@ -500,11 +475,6 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		}
 		g_strfreev(parts);
 		auth->nc = 3;
-		//if (!strstr(hdr, "gssapi-data")) {
-		//        auth->nc = 1;
-		//} else {
-		//        auth->nc = 3;
-		//}
 		return;
 	}
 
@@ -791,22 +761,19 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 	}
 
 	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
-		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
+		buf = auth_header(sip, &sip->registrar, msg);
 		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
 			sipmsg_add_header(msg, "Authorization", buf);
 		} else {
 			sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
-			//sipmsg_add_header_pos(msg, "Authorization", buf, 5);
 		}
 		g_free(buf);
 	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO")) {
 		sip->registrar.nc=3;
 		sip->registrar.type=2;
 		
-		buf = auth_header_without_newline(sip, &sip->registrar, msg, FALSE);
-		//buf = auth_header(sip, &sip->proxy, msg, FALSE);
+		buf = auth_header(sip, &sip->registrar, msg);
 		sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
-		//sipmsg_add_header(msg, "Authorization", buf);
 	        g_free(buf);
 	} else {
 		purple_debug_info("sipe", "not adding auth header to msg w/ method %s\n", method);
@@ -1015,7 +982,9 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 static void send_soap_request_with_cb(struct sipe_account_data *sip, gchar *body, TransCallback callback, void * payload)
 {
 	gchar *from = g_strdup_printf("sip:%s", sip->username); 
-	gchar *hdr = g_strdup("Content-Type: application/SOAP+xml\r\n");
+	gchar *contact = get_contact(sip);
+	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
+	                             "Content-Type: application/SOAP+xml\r\n",contact);
 
 	struct transaction * tr = send_sip_request(sip->gc, "SERVICE", from, from, hdr, body, NULL, callback);
 	tr->payload = payload;
@@ -1039,10 +1008,6 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	char *uri = g_strdup_printf("sip:%s", sip->sipdomain);
 	char *to = g_strdup_printf("sip:%s", sip->username);
 	char *contact = get_contact_register(sip);
-	//char *hdr = g_strdup_printf("Contact: %s\r\nExpires: %d\r\n", contact, expire);
-       // char *hdr = g_strdup_printf("Contact: %s\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
-        //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, adhoclist\r\nms-keep-alive: UAC;hop-hop=yes\r\nEvent: registration\r\nAllow-Events: presence\r\n", contact);
-    //char *hdr = g_strdup_printf("Contact: %s\r\nSupported: com.microsoft.msrtc.presence, gruu-10, adhoclist\r\nEvent: registration\r\nAllow-Events: presence\r\nms-keep-alive: UAC;hop-hop=yes\r\nExpires: %d\r\n", contact,expire);
     char *hdr = g_strdup_printf("Contact: %s\r\n"
 								"Supported: gruu-10, adhoclist\r\n"
 								"Event: registration\r\n"
@@ -2212,6 +2177,22 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				return TRUE;
 			}
 			break;
+			case 404:
+			{
+				const gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+				if (warning != NULL) {
+					gchar *reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
+					warning = g_strdup_printf(_("Not Found: %s. Please, contact with your Administrator"), reason ? reason : _("no reason given"));
+					g_free(reason);
+				} else {
+					warning = _("Not Found: Destination URI either not enabled for SIP or does not exist. Please, contact with your Administrator");
+				}
+
+				sip->gc->wants_to_die = TRUE;
+				purple_connection_error(sip->gc, warning);
+				return TRUE;
+			}
+			break;
                 case 503:
                         {
 				const gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
@@ -2382,24 +2363,6 @@ static gchar* gen_pidf(struct sipe_account_data *sip)
 	return doc;
 }
 
-static void send_notify(struct sipe_account_data *sip, struct sipe_watcher *watcher)
-{
-	gchar *doc = watcher->needsxpidf ? gen_xpidf(sip) : gen_pidf(sip);
-	gchar *hdr = watcher->needsxpidf ? "Event: presence\r\nContent-Type: application/xpidf+xml\r\n" : "Event: presence\r\nContent-Type: application/pidf+xml\r\n";
-	send_sip_request(sip->gc, "NOTIFY", watcher->name, watcher->name, hdr, doc, &watcher->dialog, NULL);
-	g_free(doc);
-}
-
-static gboolean process_service_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
-{
-	
-	if (msg->response != 200 && msg->response != 408) {
-		/* never send again */
-		sip->republish = -1;
-	}
-	return TRUE;
-}
-
 static void send_clear_notes(struct sipe_account_data *sip)
 {
 }
@@ -2516,99 +2479,6 @@ static void send_presence_info(struct sipe_account_data *sip)
 	}
 }
 
-static void send_service(struct sipe_account_data *sip)
-{
-	//gchar *uri = g_strdup_printf("sip:%s@%s", sip->username, sip->sipdomain);
-	gchar *uri = g_strdup_printf("sip:%s", sip->username);
-	//gchar *doc = gen_pidf(sip);
-
-	gchar *doc = gen_pidf(sip);
-	gchar *hdr = g_strdup("Event: presence\r\nContent-Type: application/pidf+xml\r\n");
-
-        //gchar *hdr = g_strdup("Content-Type: application/SOAP+xml\r\n");
-        gchar *tmp = get_contact(sip);
-        hdr = g_strdup_printf("Contact: %s\r\n%s; +sip.instance=\"<urn:uuid:%s>\"", tmp, hdr,generateUUIDfromEPID(get_epid()));
-        g_free(tmp); 
-	send_sip_request(sip->gc, "SERVICE", uri, uri,
-		hdr,
-		doc, NULL, process_service_response);
-	sip->republish = time(NULL) + 500;
-        g_free(hdr);
-	g_free(uri);
-	g_free(doc);
-}
-
-static void process_incoming_subscribe(struct sipe_account_data *sip, struct sipmsg *msg)
-{
-	const char *from_hdr = sipmsg_find_header(msg, "From");
-	gchar *from = parse_from(from_hdr);
-	gchar *theirtag = find_tag(from_hdr);
-	gchar *ourtag = find_tag(sipmsg_find_header(msg, "To"));
-	gboolean tagadded = FALSE;
-	gchar *callid = sipmsg_find_header(msg, "Call-ID");
-	gchar *expire = sipmsg_find_header(msg, "Expire");
-	gchar *tmp;
-	struct sipe_watcher *watcher = watcher_find(sip, from);
-	if (!ourtag) {
-		tagadded = TRUE;
-		ourtag = gentag();
-	}
-	if (!watcher) { /* new subscription */
-		gchar *acceptheader = sipmsg_find_header(msg, "Accept");
-		gboolean needsxpidf = FALSE;
-		if (!purple_privacy_check(sip->account, from)) {
-			send_sip_response(sip->gc, msg, 202, "Ok", NULL);
-			goto privend;
-		}
-		if (acceptheader) {
-			gchar *tmp = acceptheader;
-			gboolean foundpidf = FALSE;
-			gboolean foundxpidf = FALSE;
-			while (tmp && tmp < acceptheader + strlen(acceptheader)) {
-				gchar *tmp2 = strchr(tmp, ',');
-				if (tmp2) *tmp2 = '\0';
-				if (!strcmp("application/pidf+xml", tmp))
-					foundpidf = TRUE;
-				if (!strcmp("application/xpidf+xml", tmp))
-					foundxpidf = TRUE;
-				if (tmp2) {
-					*tmp2 = ',';
-					tmp = tmp2;
-					while (*tmp == ' ') tmp++;
-				} else
-					tmp = 0;
-			}
-			if (!foundpidf && foundxpidf) needsxpidf = TRUE;
-			g_free(acceptheader);
-		}
-		watcher = watcher_create(sip, from, callid, ourtag, theirtag, needsxpidf);
-	}
-	if (tagadded) {
-		gchar *to = g_strdup_printf("%s;tag=%s", sipmsg_find_header(msg, "To"), ourtag);
-		sipmsg_remove_header(msg, "To");
-		sipmsg_add_header(msg, "To", to);
-		g_free(to);
-	}
-	if (expire)
-		watcher->expire = time(NULL) + strtol(expire, NULL, 10);
-	else
-		watcher->expire = time(NULL) + 600;
-	//Fixxxer
-	sipmsg_remove_header(msg, "Contact");
-	tmp = get_contact(sip);
-	sipmsg_add_header(msg, "Contact", tmp);
-	g_free(tmp);
-	purple_debug_info("sipe", "got subscribe: name %s ourtag %s theirtag %s callid %s\n", watcher->name, watcher->dialog.ourtag, watcher->dialog.theirtag, watcher->dialog.callid);
-	send_sip_response(sip->gc, msg, 200, "Ok", NULL);
-	send_notify(sip, watcher);
-privend:
-	g_free(from);
-	g_free(theirtag);
-	g_free(ourtag);
-	g_free(callid);
-	g_free(expire);
-}
-
 static void process_input_message(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gboolean found = FALSE;
@@ -2624,10 +2494,6 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 		} else if (!strcmp(msg->method, "BENOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_benotify\n");
 			process_incoming_benotify(sip, msg);
-			found = TRUE;
-		} else if (!strcmp(msg->method, "SUBSCRIBE")) {
-			purple_debug_info("sipe","send->process_incoming_subscribe\n");
-			process_incoming_subscribe(sip, msg);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "INVITE")) {
 			process_incoming_invite(sip, msg);
@@ -2672,7 +2538,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 				ptmp = sipmsg_find_header(msg, "Proxy-Authenticate");
 
 				fill_auth(sip, ptmp, &sip->proxy);
-				auth = auth_header(sip, &sip->proxy, trans->msg, TRUE);
+				auth = auth_header(sip, &sip->proxy, trans->msg);
 				sipmsg_remove_header(trans->msg, "Proxy-Authorization");
 				sipmsg_add_header_pos(trans->msg, "Proxy-Authorization", auth, 5);
 				g_free(auth);
@@ -2706,7 +2572,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\r\n", ptmp);
 
 							fill_auth(sip, ptmp, &sip->registrar);
-							auth = auth_header(sip, &sip->registrar, trans->msg, TRUE);
+							auth = auth_header(sip, &sip->registrar, trans->msg);
 							sipmsg_remove_header(trans->msg, "Proxy-Authorization");
 							sipmsg_add_header(trans->msg, "Proxy-Authorization", auth);
 							
