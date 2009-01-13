@@ -28,7 +28,7 @@
 #include <netinet/in.h>
 #include <linux/if.h>
 
-#include <purple.h>
+#include <cipher.h>
 #include <glib.h>
 #include "uuid.h"
 
