@@ -236,7 +236,7 @@ static void connection_remove(struct sipe_account_data *sip, int fd)
 {
 	struct sip_connection *conn = connection_find(sip, fd);
 	sip->openconns = g_slist_remove(sip->openconns, conn);
-	if (conn->inputhandler) purple_input_remove(conn->inputhandler);
+	if (conn && conn->inputhandler) purple_input_remove(conn->inputhandler);
 	g_free(conn->inbuf);
 	g_free(conn);
 }
