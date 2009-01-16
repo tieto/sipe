@@ -2719,7 +2719,7 @@ static void sipe_invalidate_ssl_connection(PurpleConnection *gc, const char *msg
 
 	/* Invalidate this connection. Next send will open a new one */
 	connection_remove(sip, gsc->fd);
-	purple_ssl_close(gsc);
+	if (gsc) purple_ssl_close(gsc);
 	sip->gsc = NULL;
 	sip->fd = -1;
 }
