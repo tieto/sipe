@@ -235,10 +235,12 @@ static struct sip_connection *connection_create(struct sipe_account_data *sip, i
 static void connection_remove(struct sipe_account_data *sip, int fd)
 {
 	struct sip_connection *conn = connection_find(sip, fd);
-	sip->openconns = g_slist_remove(sip->openconns, conn);
-	if (conn && conn->inputhandler) purple_input_remove(conn->inputhandler);
-	g_free(conn->inbuf);
-	g_free(conn);
+	if (conn) {
+		sip->openconns = g_slist_remove(sip->openconns, conn);
+		if (conn->inputhandler) purple_input_remove(conn->inputhandler);
+		g_free(conn->inbuf);
+		g_free(conn);
+	}
 }
 
 static void connection_free_all(struct sipe_account_data *sip)
@@ -2718,8 +2720,10 @@ static void sipe_invalidate_ssl_connection(PurpleConnection *gc, const char *msg
 	purple_connection_error(gc, msg);
 
 	/* Invalidate this connection. Next send will open a new one */
-	connection_remove(sip, gsc->fd);
-	if (gsc) purple_ssl_close(gsc);
+	if (gsc) {
+		connection_remove(sip, gsc->fd);
+		purple_ssl_close(gsc);
+	}
 	sip->gsc = NULL;
 	sip->fd = -1;
 }
