@@ -146,6 +146,7 @@ struct sipe_account_data {
 	GSList *openconns;
 	GSList *groups;
 	sipe_transport_type transport;
+	gboolean auto_transport;
 	PurpleSslConnection *gsc;
 	struct sockaddr_in serveraddr;
 	int registerexpire;

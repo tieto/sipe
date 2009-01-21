@@ -3006,7 +3006,7 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "create_connection - using specified SIP port\n");
 		port = purple_account_get_int(account, "port", 0);
 	} else {
-	  port = port ? port : (sip->transport == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
+		port = port ? port : (sip->transport == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
 	}
 
 	sip->realhostname = hostname;
@@ -3096,9 +3096,14 @@ static void resolve_next_service(struct sipe_account_data *sip,
 		if (sip->service_data->service == NULL) {
 			/* Try connecting to the SIP hostname directly */
 			purple_debug(PURPLE_DEBUG_MISC, "sipe", "no SRV records found; using SIP domain as fallback\n");
-			// If SSL is supported, default to using it; OCS servers aren't configured
-			// by default to accept TCP
-			sip->transport = purple_ssl_is_supported() ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
+			if (sip->auto_transport) {
+				// If SSL is supported, default to using it; OCS servers aren't configured
+				// by default to accept TCP
+				// TODO: LCS 2007 is the opposite, only configured by default to accept TCP
+				sip->transport = purple_ssl_is_supported() ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
+				purple_debug(PURPLE_DEBUG_MISC, "sipe", "set transport type..\n");
+			}
+
 			gchar * hostname = g_strdup(sip->sipdomain);
 			create_connection(sip, hostname, 0);
 			return;
@@ -3170,14 +3175,15 @@ static void sipe_login(PurpleAccount *account)
 	sip->status = g_strdup("available");
 
 	transport = purple_account_get_string(account, "transport", "auto");
+	sip->transport = (strcmp(transport, "tls") == 0) ? SIPE_TRANSPORT_TLS :
+			 (strcmp(transport, "tcp") == 0) ? SIPE_TRANSPORT_TCP :
+							   SIPE_TRANSPORT_UDP;
 
 	if (purple_account_get_bool(account, "useproxy", FALSE)) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - using specified SIP proxy\n");
-		sip->transport = (strcmp(transport, "tls") == 0) ? SIPE_TRANSPORT_TLS :
-				 (strcmp(transport, "tcp") == 0) ? SIPE_TRANSPORT_TCP :
-								   SIPE_TRANSPORT_UDP;
 		create_connection(sip, g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain)), 0);
 	} else if (strcmp(transport, "auto") == 0) {
+		sip->auto_transport = TRUE;
 		resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
 	} else if (strcmp(transport, "tls") == 0) {
 		resolve_next_service(sip, service_tls);
