@@ -1087,6 +1087,108 @@ static xmlnode * xmlnode_get_descendant(xmlnode * parent, ...)
 	return node;
 }
 
+
+static void
+sipe_contact_set_acl (struct sipe_account_data *sip, gchar * who, gchar * rights)
+{
+	gchar * body = g_strdup_printf(SIPE_SOAP_ALLOW_DENY, who, rights, sip->acl_delta++);
+	send_soap_request(sip, body);
+	g_free(body);
+}
+
+static void
+sipe_contact_allow_deny (struct sipe_account_data *sip, gchar * who, gboolean allow)
+{
+	if (allow) {
+		purple_debug_info("sipe", "Authorizing contact %s\n", who);
+	} else {
+		purple_debug_info("sipe", "Blocking contact %s\n", who);
+	}
+
+	sipe_contact_set_acl (sip, who, allow ? "AA" : "BD");
+}
+
+static
+void sipe_auth_user_cb(void * data)
+{
+	struct sipe_auth_job * job = (struct sipe_auth_job *) data;
+	if (!job) return;
+
+	sipe_contact_allow_deny (job->sip, job->who, TRUE);
+	g_free(job);
+}
+
+static
+void sipe_deny_user_cb(void * data)
+{
+	struct sipe_auth_job * job = (struct sipe_auth_job *) data;
+	if (!job) return;
+
+	sipe_contact_allow_deny (job->sip, job->who, FALSE);
+	g_free(job);
+}
+
+static void
+sipe_add_permit(PurpleConnection *gc, const char *name)
+{
+	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
+	sipe_contact_allow_deny(sip, name, TRUE);
+}
+
+static void
+sipe_add_deny(PurpleConnection *gc, const char *name)
+{
+	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
+	sipe_contact_allow_deny(sip, name, FALSE);
+}
+
+/*static void
+sipe_remove_permit_deny(PurpleConnection *gc, const char *name)
+{
+	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
+	sipe_contact_set_acl(sip, name, "");
+}*/
+
+static void
+sipe_process_incoming_pending (struct sipe_account_data *sip, struct sipmsg * msg)
+{
+	// Ensure it's either not a response (eg it's a BENOTIFY) or that it's a 200 OK response
+	if (msg->response != 0 && msg->response != 200) return;
+
+	if (msg->bodylen == 0 || msg->body == NULL || !strcmp(sipmsg_find_header(msg, "Event"), "msrtc.wpending")) return;
+
+	xmlnode * watchers = xmlnode_from_str(msg->body, msg->bodylen);
+	if (!watchers) return;
+
+	xmlnode * watcher;
+	for (watcher = xmlnode_get_child(watchers, "watcher"); watcher; watcher = xmlnode_get_next_twin(watcher)) {
+		gchar * remote_user = g_strdup(xmlnode_get_attrib(watcher, "uri"));
+		gchar * alias = g_strdup(xmlnode_get_attrib(watcher, "displayName"));
+		gboolean on_list = g_hash_table_lookup(sip->buddies, remote_user) != NULL;
+		
+		// TODO pull out optional displayName to pass as alias
+		if (remote_user) {
+			struct sipe_auth_job * job = g_new0(struct sipe_auth_job, 1);
+			job->who = remote_user;
+			job->sip = sip;
+			purple_account_request_authorization(
+				sip->account,
+				remote_user,
+				NULL, // id
+				alias,
+				NULL, // message
+				on_list,
+				sipe_auth_user_cb,
+				sipe_deny_user_cb,
+				(void *) job);
+		}
+	}
+
+
+	xmlnode_free(watchers);
+	return;
+}
+
 static void
 sipe_group_add (struct sipe_account_data *sip, struct sipe_group * group)
 {
@@ -1145,7 +1247,7 @@ static void
 sipe_group_rename (struct sipe_account_data *sip, struct sipe_group * group, gchar * name)
 {
 	purple_debug_info("sipe", "Renaming group %s to %s\n", group->name, name);
-	gchar * body = g_strdup_printf(SIPE_SOAP_MOD_GROUP, group->id, name, sip->delta_num++);
+	gchar * body = g_strdup_printf(SIPE_SOAP_MOD_GROUP, group->id, name, sip->contacts_delta++);
 	send_soap_request(sip, body);
 	g_free(body);
 	g_free(group->name);
@@ -1167,7 +1269,7 @@ sipe_group_set_user (struct sipe_account_data *sip, struct sipe_group * group, c
 		gchar * alias = (gchar *)purple_buddy_get_alias(purple_buddy);
 		purple_debug_info("sipe", "Saving buddy %s with alias %s and group_id %d\n", who, alias, buddy->group_id);
 		gchar * body = g_strdup_printf(SIPE_SOAP_SET_CONTACT,
-			alias, buddy->group_id, "true", buddy->name, sip->delta_num++
+			alias, buddy->group_id, "true", buddy->name, sip->contacts_delta++
 		);
 		send_soap_request(sip, body);
 		g_free(body);
@@ -1209,7 +1311,7 @@ static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar
 	ctx->group_name = g_strdup(name);
 	ctx->user_name = g_strdup(who);
 
-	gchar * body = g_strdup_printf(SIPE_SOAP_ADD_GROUP, name, sip->delta_num++);
+	gchar * body = g_strdup_printf(SIPE_SOAP_ADD_GROUP, name, sip->contacts_delta++);
 	send_soap_request_with_cb(sip, body, process_add_group_response, ctx);
 	g_free(body);
 }
@@ -1358,7 +1460,7 @@ static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGr
 	g_hash_table_remove(sip->buddies, buddy->name);
 
 	if (b->name) {
-		gchar * body = g_strdup_printf(SIPE_SOAP_DEL_CONTACT, b->name, sip->delta_num++);
+		gchar * body = g_strdup_printf(SIPE_SOAP_DEL_CONTACT, b->name, sip->contacts_delta++);
 		send_soap_request(sip, body);
 		g_free(body);
 	}
@@ -1389,7 +1491,7 @@ sipe_remove_group(PurpleConnection *gc, PurpleGroup *group)
 	struct sipe_group * s_group = sipe_group_find_by_name(sip, group->name);
 	if (s_group) {
 		purple_debug_info("sipe", "Deleting group %s\n", group->name);
-		gchar * body = g_strdup_printf(SIPE_SOAP_DEL_GROUP, s_group->id, sip->delta_num++);
+		gchar * body = g_strdup_printf(SIPE_SOAP_DEL_GROUP, s_group->id, sip->contacts_delta++);
 		send_soap_request(sip, body);
 		g_free(body);
 
@@ -1450,9 +1552,9 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 		return FALSE;
 	}
 
-	gchar * delta_num = g_strdup(xmlnode_get_attrib(isc, "deltaNum"));
-	if (delta_num) {
-		sip->delta_num = (int)g_ascii_strtod(delta_num, NULL);
+	gchar * contacts_delta = g_strdup(xmlnode_get_attrib(isc, "deltaNum"));
+	if (contacts_delta) {
+		sip->contacts_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 	}
 
 	/* Parse groups */
@@ -1541,15 +1643,91 @@ static void sipe_subscribe_buddylist(struct sipe_account_data *sip,struct sipmsg
 	gchar *to = g_strdup_printf("sip:%s", sip->username); 
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-contacts\r\n"
-								 "Accept: application/vnd-microsoft-roaming-contacts+xml\r\n"
-								 "Supported: com.microsoft.autoextend\r\n"
-								 "Supported: ms-benotify\r\n"
-								 "Proxy-Require: ms-benotify\r\n"
-								 "Supported: ms-piggyback-first-notify\r\n"
-								 "Contact: %s\r\n", tmp);
+		"Accept: application/vnd-microsoft-roaming-contacts+xml\r\n"
+		"Supported: com.microsoft.autoextend\r\n"
+		"Supported: ms-benotify\r\n"
+		"Proxy-Require: ms-benotify\r\n"
+		"Supported: ms-piggyback-first-notify\r\n"
+		"Contact: %s\r\n", tmp);
 	g_free(tmp);
 	
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_add_lcs_contacts);
+	g_free(to);
+	g_free(hdr);
+}
+
+static gboolean
+sipe_process_pending_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
+{
+	sipe_process_incoming_pending (sip, msg);
+	return TRUE;
+}
+
+static void sipe_subscribe_pending_buddies(struct sipe_account_data *sip,struct sipmsg *msg)
+{
+	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *tmp = get_contact(sip);
+	gchar *hdr = g_strdup_printf("Event: presence.wpending\r\n"
+		"Accept: text/xml+msrtc.wpending\r\n"
+		"Supported: com.microsoft.autoextend\r\n"
+		"Supported: ms-benotify\r\n"
+		"Proxy-Require: ms-benotify\r\n"
+		"Supported: ms-piggyback-first-notify\r\n"
+		"Contact: %s\r\n", tmp);
+	g_free(tmp);
+	
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_process_pending_response);
+	g_free(to);
+	g_free(hdr);
+}
+
+static void process_incoming_benotify(struct sipe_account_data *sip, struct sipmsg *msg)
+{
+	gchar * event = sipmsg_find_header(msg, "Event");
+	if (!event) return;
+
+	if (!strcmp(event, "presence.wpending")) { 
+		sipe_process_incoming_pending (sip, msg);
+		return;
+	}
+
+	xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
+	if (!xml) return;
+
+	gchar * contacts_delta = g_strdup(xmlnode_get_attrib(xml, "deltaNum"));
+	if (contacts_delta) {
+		int new_delta = (int)g_ascii_strtod(contacts_delta, NULL);
+		if (!strcmp(event, "vnd-microsoft-roaming-ACL")) {
+			sip->acl_delta = new_delta;
+		} else {
+			sip->contacts_delta = new_delta;
+		}
+	}
+
+	xmlnode_free(xml);
+}
+
+static gboolean
+sipe_process_acl_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
+{
+	process_incoming_benotify (sip, msg);
+	return TRUE;
+}
+
+static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
+{
+	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *tmp = get_contact(sip);
+	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-ACL\r\n"
+		"Accept: application/vnd-microsoft-roaming-acls+xml\r\n"
+		"Supported: com.microsoft.autoextend\r\n"
+		"Supported: ms-benotify\r\n"
+		"Proxy-Require: ms-benotify\r\n"
+		"Supported: ms-piggyback-first-notify\r\n"
+		"Contact: %s\r\n", tmp);
+	g_free(tmp);
+	
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_process_acl_response);
 	g_free(to);
 	g_free(hdr);
 }
@@ -1559,14 +1737,13 @@ static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sip
 	gchar *to = g_strdup_printf("sip:%s", sip->username); 
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-self\r\n"
-								 "Accept: application/vnd-microsoft-roaming-self+xml\r\n"
-								 "Supported: com.microsoft.autoextend\r\n"
-								 "Supported: ms-benotify\r\n"
-								 "Proxy-Require: ms-benotify\r\n"
-								 "Supported: ms-piggyback-first-notify\r\n"
-								 "Contact: %s\r\n"
-								 "Content-Type: application/vnd-microsoft-roaming-self+xml\r\n"
-								 ,tmp);
+		"Accept: application/vnd-microsoft-roaming-self+xml\r\n"
+		"Supported: com.microsoft.autoextend\r\n"
+		"Supported: ms-benotify\r\n"
+		"Proxy-Require: ms-benotify\r\n"
+		"Supported: ms-piggyback-first-notify\r\n"
+		"Contact: %s\r\n"
+		"Content-Type: application/vnd-microsoft-roaming-self+xml\r\n", tmp);
 	
 	g_free(tmp);
 	
@@ -1583,15 +1760,14 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,st
 	gchar *to = g_strdup_printf("sip:%s", sip->username); 
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-provisioning-v2\r\n"
-								 "Accept: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
-								 "Supported: com.microsoft.autoextend\r\n"
-								 "Supported: ms-benotify\r\n"
-								 "Proxy-Require: ms-benotify\r\n"
-								 "Supported: ms-piggyback-first-notify\r\n"
-								 "Expires: 0\r\n"
-								 "Contact: %s\r\n"
-								 "Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
-								 ,tmp);
+		"Accept: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
+		"Supported: com.microsoft.autoextend\r\n"
+		"Supported: ms-benotify\r\n"
+		"Proxy-Require: ms-benotify\r\n"
+		"Supported: ms-piggyback-first-notify\r\n"
+		"Expires: 0\r\n"
+		"Contact: %s\r\n"
+		"Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n", tmp);
 	
 	g_free(tmp);
 	
@@ -2031,6 +2207,16 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	}
 	g_free(from);
 
+	sipmsg_remove_header(msg, "Ms-Conversation-ID");
+	sipmsg_remove_header(msg, "Ms-Text-Format");
+	sipmsg_remove_header(msg, "EndPoints");
+	sipmsg_remove_header(msg, "User-Agent");
+	sipmsg_remove_header(msg, "Roster-Manager");
+
+	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
+	//sipmsg_add_header(msg, "Supported", "ms-text-format");
+	//sipmsg_add_header(msg, "Supported", "ms-renders-gif");
+
 	send_sip_response(sip->gc, msg, 200, "OK", g_strdup_printf(
 		"v=0\r\n"
 		"o=- 0 0 IN IP4 %s\r\n"
@@ -2084,8 +2270,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sipe_keep_alive_timeout(sip, tmp);
 				}
 				
+				sipe_subscribe_acl(sip, msg);
 				sipe_subscribe_roaming_self(sip, msg);
 				sipe_subscribe_roaming_provisioning(sip, msg);
+				sipe_subscribe_pending_buddies(sip, msg);
 				sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
 				
 				// Should we remove the transaction here?
@@ -2310,20 +2498,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 }
 
-static void process_incoming_benotify(struct sipe_account_data *sip, struct sipmsg *msg)
-{
-	xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
-	if (!xml) return;
-
-	gchar * delta_num = g_strdup(xmlnode_get_attrib(xml, "deltaNum"));
-	if (delta_num) {
-		sip->delta_num = (int)g_ascii_strtod(delta_num, NULL);
-	}
-
-	xmlnode_free(xml);
-}
-
-
 static gchar* gen_xpidf(struct sipe_account_data *sip)
 {
 	gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
@@ -2511,6 +2685,10 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 		} else if (!strcmp(msg->method, "ACK")) {
 			// ACK's don't need any response
 			found = TRUE;
+		} else if (!strcmp(msg->method, "SUBSCRIBE")) {
+			// LCS 2005 sends us these - just respond 200 OK
+			found = TRUE;
+			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		} else if (!strcmp(msg->method, "BYE")) {
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 
@@ -3509,10 +3687,10 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* add_buddies */
 	sipe_remove_buddy,			/* remove_buddy */
 	NULL,					/* remove_buddies */
-	dummy_add_deny,				/* add_permit */
-	dummy_add_deny,				/* add_deny */
-	dummy_add_deny,				/* rem_permit */
-	dummy_add_deny,				/* rem_deny */
+	sipe_add_permit,			/* add_permit */
+	sipe_add_deny,				/* add_deny */
+	sipe_add_deny,				/* rem_permit */
+	sipe_add_permit,			/* rem_deny */
 	dummy_permit_deny,			/* set_permit_deny */
 	NULL,					/* join_chat */
 	NULL,					/* reject_chat */

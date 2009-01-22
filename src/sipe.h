@@ -126,7 +126,8 @@ struct sipe_account_data {
 	int listenfd;
 	int listenport;
 	int listenpa;
-	int delta_num;
+	int contacts_delta;
+	int acl_delta;
 	int presence_method_version;
 	gchar *status;
 	int status_version;
@@ -160,6 +161,11 @@ struct sip_connection {
 	int inbuflen;
 	int inbufused;
 	int inputhandler;
+};
+
+struct sipe_auth_job {
+	gchar * who;
+	struct sipe_account_data * sip;
 };
 
 struct transaction;
@@ -278,6 +284,14 @@ struct group_user_context {
 	"<m:groupID>%d</m:groupID>"\
 	"<m:deltaNum>%d</m:deltaNum>")
 
+// first/mask arg is sip:user@domain.com
+// second/rights arg is AA for allow, BD for deny
+#define SIPE_SOAP_ALLOW_DENY sipe_soap("setACE", \
+	"<m:type>USER</m:type>"\
+	"<m:mask>%s</m:mask>"\
+	"<m:rights>%s</m:rights>"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
 #define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
 	"<m:presentity m:uri=\"%s\">"\
 	"<m:availability m:aggregate=\"%d\"/>"\
@@ -288,17 +302,17 @@ struct group_user_context {
 	"</m:presentity>")
 
 #define SIPE_SOAP_SEARCH_CONTACT \
-    "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
-    "<SOAP-ENV:Body>" \
-    "<m:directorySearch xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\">" \
-    "<m:filter m:href=\"#searchArray\"/>"\
-    "<m:maxResults>%d</m:maxResults>"\
-    "</m:directorySearch>"\
-    "<m:Array xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" m:id=\"searchArray\">"\
-    "%s"\
-    "</m:Array>"\
-    "</SOAP-ENV:Body>"\
-    "</SOAP-ENV:Envelope>"
+	"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
+	"<SOAP-ENV:Body>" \
+	"<m:directorySearch xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\">" \
+	"<m:filter m:href=\"#searchArray\"/>"\
+	"<m:maxResults>%d</m:maxResults>"\
+	"</m:directorySearch>"\
+	"<m:Array xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" m:id=\"searchArray\">"\
+	"%s"\
+	"</m:Array>"\
+	"</SOAP-ENV:Body>"\
+	"</SOAP-ENV:Envelope>"
      
 #define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"   
 
