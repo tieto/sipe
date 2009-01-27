@@ -2265,11 +2265,16 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sipe_subscribe_buddylist(sip, msg);
 				}
 				
+				if (purple_account_get_bool(sip->account, "clientkeepalive", FALSE)) {
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "Setting user defined keepalive\n");
+					 sip->keepalive_timeout = purple_account_get_int(sip->account, "keepalive", 0);
+				} else {
 				tmp = sipmsg_find_header(msg, "ms-keep-alive");
 				if (tmp) {
-					sipe_keep_alive_timeout(sip, tmp);
+                                        sipe_keep_alive_timeout(sip, tmp);
+					}
 				}
-				
+
 				sipe_subscribe_acl(sip, msg);
 				sipe_subscribe_roaming_self(sip, msg);
 				sipe_subscribe_roaming_provisioning(sip, msg);
@@ -3806,6 +3811,10 @@ static void init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_string_new(_("Auth User"), "authuser", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = purple_account_option_string_new(_("Auth Domain"), "authdomain", "");
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	option = purple_account_option_bool_new(_("Use Client-specified Keepalive"), "clientkeepalive", FALSE);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	option = purple_account_option_int_new(_("Keepalive Timeout"), "keepalive", 300);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	my_protocol = plugin;
 }
