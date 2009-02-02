@@ -2250,10 +2250,29 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				sip->registerstatus = 3;
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 				
-				gchar *gruu = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "gruu=\"", "\"", NULL);
+				int i = 0;
+				gchar *contact_hdr = NULL;
+				gchar *gruu;
+				gchar * uuid = generateUUIDfromEPID(get_epid());
+				// There can be multiple Contact headers (one per location where the user is logged in) so 
+				// make sure to only get the one for this uuid
+				for (i = 0; contact_hdr = sipmsg_find_header_instance (msg, "Contact", i); i++) {
+					gchar * valid_contact = sipmsg_find_part_of_header (contact_hdr, uuid, NULL, NULL);
+					if (valid_contact) {
+						gruu = sipmsg_find_part_of_header(contact_hdr, "gruu=\"", "\"", NULL);
+						//purple_debug(PURPLE_DEBUG_MISC, "sipe", "got gruu %s from contact hdr w/ right uuid: %s\n", gruu, contact_hdr);
+						g_free(valid_contact);
+						break;
+					} else {
+						//purple_debug(PURPLE_DEBUG_MISC, "sipe", "ignoring contact hdr b/c not right uuid: %s\n", contact_hdr);
+					}
+				}
+
 				if(gruu) {
 					sip->contact = g_strdup_printf("<%s>", gruu);
+					g_free(gruu);
 				} else {
+					//purple_debug(PURPLE_DEBUG_MISC, "sipe", "didn't find gruu in a Contact hdr\n");
 					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
 				}
 
