@@ -2832,7 +2832,9 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 	}
 
 	/* Received a full Header? */
-	while ((cur = strstr(conn->inbuf, "\r\n\r\n")) != NULL) {
+	sip->processing_input = TRUE;
+	while (sip->processing_input &&
+	       ((cur = strstr(conn->inbuf, "\r\n\r\n")) != NULL)) {
 		time_t currtime = time(NULL);
 		cur += 2;
 		cur[0] = '\0';
@@ -3467,6 +3469,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	sip->registertimeout = 0;
 
 	sip->fd = -1;
+	sip->processing_input = FALSE;
 }
 
 static void sipe_close(PurpleConnection *gc)
