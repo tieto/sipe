@@ -92,6 +92,9 @@ PKG_CHECK_MODULES(PURPLE,
 AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_LIBS)
 
+dnl Check for com_err
+PKG_CHECK_MODULES(COM_ERR, [com_err],,)
+
 dnl Check for inet_aton
 AC_CHECK_FUNC(inet_aton, , [AC_CHECK_LIB(resolv, inet_aton, ,
                                          [AC_ERROR(inet_aton not found)])])
