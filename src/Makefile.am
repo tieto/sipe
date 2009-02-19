@@ -26,7 +26,7 @@ AM_CFLAGS = $(st)
 libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(GLIB_CFLAGS) \
-        $(PIDGIN_CFLAGS) \
+        $(PURPLE_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	$(KRB5_CFLAGS)
 
@@ -35,7 +35,7 @@ libsipe_la_LDFLAGS = \
 	$(KRB5_LDFLAGS)
 
 libsipe_la_LIBADD = \
-        $(GLIB_LIBS) $(PIDGIN_LIBS) $(KRB5_LIBS)
+        $(GLIB_LIBS) $(PURPLE_LIBS) $(KRB5_LIBS)
 
 
 if SIPE_STATIC
