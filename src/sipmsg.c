@@ -228,14 +228,22 @@ void sipmsg_remove_header(struct sipmsg *msg, const gchar *name) {
 }
 
 gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name) {
+	return sipmsg_find_header_instance (msg, name, 0);
+}
+
+gchar *sipmsg_find_header_instance(struct sipmsg *msg, const gchar *name, int which) {
 	GSList *tmp;
 	struct siphdrelement *elem;
 	tmp = msg->headers;
+	int i = 0;
 	while(tmp) {
 		elem = tmp->data;
 		// OCS2005 can send the same header in either all caps or mixed case
 		if (g_ascii_strcasecmp(elem->name,name)==0) {
-			return elem->value;
+			if (i == which) {
+				return elem->value;
+			}
+			i++;
 		}
 		tmp = g_slist_next(tmp);
 	}

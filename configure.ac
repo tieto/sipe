@@ -17,6 +17,11 @@ AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 
 AC_HEADER_STDC
+AC_CHECK_HEADER([zlib.h], 
+		[], 
+		[AC_MSG_ERROR([You must have zlib.h and zlib installed])])
+
+
 
 GAIM_MIN=pidgin_version_min
 GAIM_MAX=pidgin_version_max
@@ -77,18 +82,18 @@ if test "$kerberos" != "no" ; then
 fi
 
 
-# Check for Pidgin
-PKG_CHECK_MODULES(libpurple,
-[pidgin >= pidgin_version_max],
+# Check for Purple
+PKG_CHECK_MODULES(PURPLE,
+[purple >= pidgin_version_max],
 [
 	AC_DEFINE(HAVE_PIDGIN, 1, [Define if we've found pidgin.])
 ])
 
-PIDGIN_CFLAGS=`$PKG_CONFIG --cflags purple`
-PIDGIN_LIBS=`$PKG_CONFIG --libs purple`
+AC_SUBST(PURPLE_CFLAGS)
+AC_SUBST(PURPLE_LIBS)
 
-AC_SUBST(PIDGIN_CFLAGS)
-AC_SUBST(PIDGIN_LIBS)
+dnl Check for com_err
+PKG_CHECK_MODULES(COM_ERR, [com_err],,)
 
 dnl Check for inet_aton
 AC_CHECK_FUNC(inet_aton, , [AC_CHECK_LIB(resolv, inet_aton, ,
