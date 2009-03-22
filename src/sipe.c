@@ -3857,7 +3857,7 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 	}
 	else
 	{
-		return g_strdup("");
+		return NULL;
 	}
 }
 
