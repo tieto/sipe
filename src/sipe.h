@@ -74,6 +74,7 @@ struct sipe_watcher {
 
 struct sipe_buddy {
 	gchar *name;
+	gchar *annotation;
 	time_t resubscribe;
 	int group_id;
 };
@@ -322,7 +323,7 @@ struct group_user_context {
 	"</m:Array>"\
 	"</SOAP-ENV:Body>"\
 	"</SOAP-ENV:Envelope>"
-     
-#define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"   
+
+#define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
 
 #endif /* _PIDGIN_SIPE_H */

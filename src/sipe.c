@@ -71,6 +71,7 @@
 #include "version.h"
 #include "network.h"
 #include "xmlnode.h"
+#include "mime.h"
 
 #include "sipe.h"
 #include "sip-ntlm.h"
@@ -131,7 +132,7 @@ static const char *sipe_list_icon(PurpleAccount *a, PurpleBuddy *b)
 static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc);
 
 static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond);
-static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error, 
+static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error,
                                      gpointer data);
 
 static void sipe_close(PurpleConnection *gc);
@@ -289,7 +290,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 	if (new_auth) {
 		purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
 	}
-  
+
 	if (new_auth || force_reauth) {
 		krb5_token = krb5_auth.base64_token;
 	}
@@ -512,7 +513,7 @@ static void sipe_canwrite_cb(gpointer data, gint source, PurpleInputCondition co
 	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
 
 	if (max_write == 0) {
-                if (sip->tx_handler != 0){ 
+                if (sip->tx_handler != 0){
 		        purple_input_remove(sip->tx_handler);
 		        sip->tx_handler = 0;
                 }
@@ -542,7 +543,7 @@ static void sipe_canwrite_cb_ssl(gpointer data, gint src, PurpleInputCondition c
 	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
 
 	if (max_write == 0) {
-                if (sip->tx_handler != 0) { 
+                if (sip->tx_handler != 0) {
 		        purple_input_remove(sip->tx_handler);
 		        sip->tx_handler = 0;
 		        return;
@@ -610,7 +611,7 @@ static struct sipe_account_data *sipe_setup_ssl(PurpleConnection *gc, PurpleSslC
 
 	sip = gc->proto_data;
 	sip->fd = gsc->fd;
-        sip->gsc = gsc;  
+        sip->gsc = gsc;
         sip->listenport = purple_network_get_port_from_fd(gsc->fd);
 	sip->connecting = FALSE;
 	sip->last_keepalive = time(NULL);
@@ -644,7 +645,7 @@ static void sendlater(PurpleConnection *gc, const char *buf)
 	if (!sip->connecting) {
 		purple_debug_info("sipe", "connecting to %s port %d\n", sip->realhostname ? sip->realhostname : "{NULL}", sip->realport);
                 if (sip->transport == SIPE_TRANSPORT_TLS){
-                         sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, send_later_cb_ssl, sipe_ssl_connect_failure, sip->gc);      
+                         sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, send_later_cb_ssl, sipe_ssl_connect_failure, sip->gc);
                 } else {
 			if (purple_proxy_connect(gc, sip->account, sip->realhostname, sip->realport, send_later_cb, gc) == NULL) {
 				purple_connection_error(gc, _("Couldn't create socket"));
@@ -683,7 +684,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 		} else{
                   if (sip->gsc){
                         ret = purple_ssl_write(sip->gsc, buf, writelen);
-                  }else{  
+                  }else{
 			ret = write(sip->fd, buf, writelen);
                   }
                }
@@ -700,7 +701,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
                                 if (sip->gsc){
                                         sip->tx_handler = purple_input_add(sip->gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
                                 }
-                                else{ 
+                                else{
 					sip->tx_handler = purple_input_add(sip->fd,
 					PURPLE_INPUT_WRITE, sipe_canwrite_cb,
 					gc);
@@ -749,8 +750,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		struct sipmsg_breakdown msgbd;
 		msgbd.msg = msg;
 		sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
-		// TODO generate this
-		msgbd.rand = g_strdup("0878F41B");
+		msgbd.rand = g_strdup_printf("%08x", random());
 		sip->registrar.ntlm_num++;
 		msgbd.num = g_strdup_printf("%d", sip->registrar.ntlm_num);
 		gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
@@ -773,7 +773,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO")) {
 		sip->registrar.nc = 3;
 		sip->registrar.type = AUTH_TYPE_NTLM;
-		
+
 		buf = auth_header(sip, &sip->registrar, msg);
 		sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
 	        g_free(buf);
@@ -791,7 +791,7 @@ static char *get_contact(struct sipe_account_data  *sip)
 static char *get_contact_service(struct sipe_account_data  *sip)
 {
   return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport, TRANSPORT_DESCRIPTOR, generateUUIDfromEPID(get_epid()));
-        //return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR); 
+        //return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
 }
 
 static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
@@ -983,7 +983,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 
 static void send_soap_request_with_cb(struct sipe_account_data *sip, gchar *body, TransCallback callback, void * payload)
 {
-	gchar *from = g_strdup_printf("sip:%s", sip->username); 
+	gchar *from = g_strdup_printf("sip:%s", sip->username);
 	gchar *contact = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
 	                             "Content-Type: application/SOAP+xml\r\n",contact);
@@ -1089,7 +1089,7 @@ static xmlnode * xmlnode_get_descendant(xmlnode * parent, ...)
 
 
 static void
-sipe_contact_set_acl (struct sipe_account_data *sip, gchar * who, gchar * rights)
+sipe_contact_set_acl (struct sipe_account_data *sip, const gchar * who, gchar * rights)
 {
 	gchar * body = g_strdup_printf(SIPE_SOAP_ALLOW_DENY, who, rights, sip->acl_delta++);
 	send_soap_request(sip, body);
@@ -1097,7 +1097,7 @@ sipe_contact_set_acl (struct sipe_account_data *sip, gchar * who, gchar * rights
 }
 
 static void
-sipe_contact_allow_deny (struct sipe_account_data *sip, gchar * who, gboolean allow)
+sipe_contact_allow_deny (struct sipe_account_data *sip, const gchar * who, gboolean allow)
 {
 	if (allow) {
 		purple_debug_info("sipe", "Authorizing contact %s\n", who);
@@ -1165,7 +1165,7 @@ sipe_process_incoming_pending (struct sipe_account_data *sip, struct sipmsg * ms
 		gchar * remote_user = g_strdup(xmlnode_get_attrib(watcher, "uri"));
 		gchar * alias = g_strdup(xmlnode_get_attrib(watcher, "displayName"));
 		gboolean on_list = g_hash_table_lookup(sip->buddies, remote_user) != NULL;
-		
+
 		// TODO pull out optional displayName to pass as alias
 		if (remote_user) {
 			struct sipe_auth_job * job = g_new0(struct sipe_auth_job, 1);
@@ -1259,7 +1259,7 @@ sipe_group_set_user (struct sipe_account_data *sip, struct sipe_group * group, c
 {
 	struct sipe_buddy *buddy = g_hash_table_lookup(sip->buddies, who);
 	PurpleBuddy * purple_buddy = purple_find_buddy (sip->account, who);
-  
+
 	if (!group) {
 		group = sipe_group_find_by_id (sip, buddy->group_id);
 	}
@@ -1337,26 +1337,50 @@ static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * b
 {
 	gchar *to = strstr(buddy_name, "sip:") ? g_strdup(buddy_name) : g_strdup_printf("sip:%s", buddy_name);
 	gchar *tmp = get_contact(sip);
-	gchar *contact = g_strdup_printf(
-		"Accept: application/pidf+xml, application/xpidf+xml\r\n"
-		"Event: presence\r\n"
-		"Contact: %s\r\n", tmp);
+	gchar *contact;
+	gchar *content;
+
+
+	if (sip->presence_method_version == 1)
+	{
+		contact = g_strdup_printf(
+"Accept: application/msrtc-event-categories+xml, application/rlmi+xml, multipart/related\r\n"
+"Require: adhoclist, categoryList\r\n"
+"Supported: eventlist\r\n"
+"Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
+"Event: presence\r\n"
+"Contact: %s\r\n", tmp);
+
+		content = g_strdup_printf(
+"<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
+"<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
+"<resource uri=\"%s\"/>\n"
+"</adhocList>\n"
+"<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
+"<category name=\"note\"/>\n"
+"<category name=\"state\"/>\n"
+"</categoryList>\n"
+"</action>\n"
+"</batchSub>", sip->username, to
+		);
+	}
+	else
+	{
+		contact = g_strdup_printf(
+			"Accept: application/pidf+xml,  text/xml+msrtc.pidf, application/xpidf+xml\r\n"
+			"Event: presence\r\n"
+			"Contact: %s\r\n", tmp);
+
+		content = g_strdup("");
+	}
 	g_free(tmp);
 
 	/* subscribe to buddy presence */
-	send_sip_request(sip->gc, "SUBSCRIBE", to, to, contact, "", NULL, process_subscribe_response);
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, contact, content, NULL, process_subscribe_response);
 
+	g_free(content);
 	g_free(to);
 	g_free(contact);
-}
-
-static void sipe_subscribe(struct sipe_account_data *sip, struct sipe_buddy *buddy)
-{
-	sipe_subscribe_to_name(sip, buddy->name);
-
-	/* resubscribe before subscription expires */
-	/* add some jitter */
-	buddy->resubscribe = time(NULL)+1140+(rand()%50);
 }
 
 static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
@@ -1424,32 +1448,11 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 		purple_debug_info("sipe", "sipe_add_buddy %s\n", buddy->name);
 		b->name = g_strdup(buddy->name);
 		g_hash_table_insert(sip->buddies, b->name, b);
-
 		sipe_group_buddy(gc, b->name, NULL, group->name);
 	} else {
 		purple_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
 	}
 }
-
-// Not Used; Remove?
-/*static void sipe_get_buddies(PurpleConnection *gc)
-{
-	PurpleBlistNode *gnode, *cnode, *bnode;
-
-	purple_debug_info("sipe", "sipe_get_buddies\n");
-
-	for (gnode = purple_get_blist()->root; gnode; gnode = gnode->next) {
-		if (!PURPLE_BLIST_NODE_IS_GROUP(gnode)) continue;
-		for (cnode = gnode->child; cnode; cnode = cnode->next) {
-			if (!PURPLE_BLIST_NODE_IS_CONTACT(cnode)) continue;
-			for (bnode = cnode->child; bnode; bnode = bnode->next) {
-				if (!PURPLE_BLIST_NODE_IS_BUDDY(bnode)) continue;
-				if (((PurpleBuddy*)bnode)->account == gc->account)
-					sipe_add_buddy(gc, (PurpleBuddy*)bnode, (PurpleGroup *)gnode);
-			}
-		}
-	}
-}*/
 
 static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
@@ -1467,7 +1470,7 @@ static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGr
 
 	g_free(b->name);
 	g_free(b);
-}	
+}
 
 static void
 sipe_rename_group(PurpleConnection *gc,
@@ -1606,7 +1609,7 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 		if (group != NULL) {
 			char * buddy_name = g_strdup_printf("sip:%s", uri);
 
-			//b = purple_find_buddy(sip->account, buddy_name); 
+			//b = purple_find_buddy(sip->account, buddy_name);
 			PurpleBuddy *b = purple_find_buddy_in_group(sip->account, buddy_name, group->purple_group);
 			if (!b){
 				b = purple_buddy_new(sip->account, buddy_name, uri);
@@ -1633,14 +1636,14 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 		}
 	}
 
-	xmlnode_free(isc); 
+	xmlnode_free(isc);
 
 	return 0;
 }
 
 static void sipe_subscribe_buddylist(struct sipe_account_data *sip,struct sipmsg *msg)
 {
-	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-contacts\r\n"
 		"Accept: application/vnd-microsoft-roaming-contacts+xml\r\n"
@@ -1650,7 +1653,7 @@ static void sipe_subscribe_buddylist(struct sipe_account_data *sip,struct sipmsg
 		"Supported: ms-piggyback-first-notify\r\n"
 		"Contact: %s\r\n", tmp);
 	g_free(tmp);
-	
+
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_add_lcs_contacts);
 	g_free(to);
 	g_free(hdr);
@@ -1665,7 +1668,7 @@ sipe_process_pending_response(struct sipe_account_data *sip, struct sipmsg *msg,
 
 static void sipe_subscribe_pending_buddies(struct sipe_account_data *sip,struct sipmsg *msg)
 {
-	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Event: presence.wpending\r\n"
 		"Accept: text/xml+msrtc.wpending\r\n"
@@ -1675,7 +1678,7 @@ static void sipe_subscribe_pending_buddies(struct sipe_account_data *sip,struct 
 		"Supported: ms-piggyback-first-notify\r\n"
 		"Contact: %s\r\n", tmp);
 	g_free(tmp);
-	
+
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_process_pending_response);
 	g_free(to);
 	g_free(hdr);
@@ -1686,7 +1689,7 @@ static void process_incoming_benotify(struct sipe_account_data *sip, struct sipm
 	gchar * event = sipmsg_find_header(msg, "Event");
 	if (!event) return;
 
-	if (!strcmp(event, "presence.wpending")) { 
+	if (!strcmp(event, "presence.wpending")) {
 		sipe_process_incoming_pending (sip, msg);
 		return;
 	}
@@ -1716,7 +1719,7 @@ sipe_process_acl_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 
 static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
 {
-	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-ACL\r\n"
 		"Accept: application/vnd-microsoft-roaming-acls+xml\r\n"
@@ -1726,7 +1729,7 @@ static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
 		"Supported: ms-piggyback-first-notify\r\n"
 		"Contact: %s\r\n", tmp);
 	g_free(tmp);
-	
+
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_process_acl_response);
 	g_free(to);
 	g_free(hdr);
@@ -1734,7 +1737,7 @@ static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
 
 static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
 {
-	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-self\r\n"
 		"Accept: application/vnd-microsoft-roaming-self+xml\r\n"
@@ -1744,20 +1747,20 @@ static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sip
 		"Supported: ms-piggyback-first-notify\r\n"
 		"Contact: %s\r\n"
 		"Content-Type: application/vnd-microsoft-roaming-self+xml\r\n", tmp);
-	
+
 	g_free(tmp);
-	
+
 	gchar *body=g_strdup("<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roaming type=\"subscribers\"/></roamingList>");
 
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
-	g_free(body);					 
+	g_free(body);
 	g_free(to);
 	g_free(hdr);
 }
 
 static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,struct sipmsg *msg)
 {
-	gchar *to = g_strdup_printf("sip:%s", sip->username); 
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-provisioning-v2\r\n"
 		"Accept: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
@@ -1768,12 +1771,12 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,st
 		"Expires: 0\r\n"
 		"Contact: %s\r\n"
 		"Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n", tmp);
-	
+
 	g_free(tmp);
-	
+
 	gchar *body=g_strdup("<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\"><provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/><provisioningGroup name=\"ucPolicy\"/></provisioningGroupList>");
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
-	g_free(body);					 
+	g_free(body);
 	g_free(to);
 	g_free(hdr);
 }
@@ -2074,7 +2077,11 @@ static void sipe_buddy_resub(char *name, struct sipe_buddy *buddy, struct sipe_a
 	time_t curtime = time(NULL);
 	if (buddy->resubscribe < curtime) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_buddy_resub %s\n", name);
-		sipe_subscribe(sip, buddy);
+		sipe_subscribe_to_name(sip, buddy->name);
+
+		/* resubscribe before subscription expires */
+		/* add some jitter */
+		buddy->resubscribe = time(NULL)+1140+(rand()%50);
 	}
 }
 
@@ -2241,7 +2248,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 	expires_header = sipmsg_find_header(msg, "Expires");
 	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
 	purple_debug_info("sipe", "process_register_response: got response to REGISTER; expires = %d\n", expires);
-					
+
 	switch (msg->response) {
 		case 200:
 			if (expires == 0) {
@@ -2249,12 +2256,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			} else {
 				sip->registerstatus = 3;
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
-				
+
 				int i = 0;
 				gchar *contact_hdr = NULL;
 				gchar *gruu;
 				gchar * uuid = generateUUIDfromEPID(get_epid());
-				// There can be multiple Contact headers (one per location where the user is logged in) so 
+				// There can be multiple Contact headers (one per location where the user is logged in) so
 				// make sure to only get the one for this uuid
 				for (i = 0; contact_hdr = sipmsg_find_header_instance (msg, "Contact", i); i++) {
 					gchar * valid_contact = sipmsg_find_part_of_header (contact_hdr, uuid, NULL, NULL);
@@ -2283,14 +2290,14 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				if (tmp && strstr(tmp, "vnd-microsoft-provisioning")){
 					sipe_subscribe_buddylist(sip, msg);
 				}
-				
+
 				if (purple_account_get_bool(sip->account, "clientkeepalive", FALSE)) {
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "Setting user defined keepalive\n");
-					 sip->keepalive_timeout = purple_account_get_int(sip->account, "keepalive", 0);
+					sip->keepalive_timeout = purple_account_get_int(sip->account, "keepalive", 0);
 				} else {
 				tmp = sipmsg_find_header(msg, "ms-keep-alive");
 				if (tmp) {
-                                        sipe_keep_alive_timeout(sip, tmp);
+					sipe_keep_alive_timeout(sip, tmp);
 					}
 				}
 
@@ -2299,7 +2306,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				sipe_subscribe_roaming_provisioning(sip, msg);
 				sipe_subscribe_pending_buddies(sip, msg);
 				sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
-				
+
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
 				transactions_remove(sip, tc);
@@ -2422,15 +2429,85 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				purple_connection_error(sip->gc, warning);
 				return TRUE;
 			}
-			break;        
+			break;
 		}
 	return TRUE;
 }
 
-static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg)
+
+static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
-	gchar *from;
+	const char *uri;
+	xmlnode *xn_categories;
+	xmlnode *xn_category;
+	xmlnode *xn_node;
+
+	xn_categories = xmlnode_from_str(data, len);
+	uri = xmlnode_get_attrib(xn_categories, "uri");
+
+	for (xn_category = xmlnode_get_child(xn_categories, "category");
+		 xn_category ;
+		 xn_category = xmlnode_get_next_twin(xn_category) )
+	{
+		const char *attrVar = xmlnode_get_attrib(xn_category, "name");
+
+		if (!strcmp(attrVar, "note"))
+		{
+			xn_node = xmlnode_get_child(xn_category, "note");
+			if (!xn_node) continue;
+			xn_node = xmlnode_get_child(xn_node, "body");
+			if (!xn_node) continue;
+
+			char *note = xmlnode_get_data(xn_node);
+			struct sipe_buddy *sbuddy;
+
+			sbuddy = g_hash_table_lookup(sip->buddies, uri);
+			if (sbuddy && note)
+			{
+				if (sbuddy->annotation) { g_free(sbuddy->annotation); }
+				sbuddy->annotation = g_strdup(note);
+				// TODO: "available" should be replaced by the currently known state
+				purple_prpl_got_user_status(sip->account, uri, "available", NULL);
+			}
+		}
+		else if(!strcmp(attrVar, "state"))
+		{
+			xn_node = xmlnode_get_child(xn_category, "state");
+			if (!xn_node) continue;
+			xn_node = xmlnode_get_child(xn_node, "availability");
+			if (!xn_node) continue;
+
+			char *data = xmlnode_get_data(xn_node);
+			const char *activity;
+			int avail = atoi(data);
+
+			if (avail < 3000)
+				activity = "unknown";
+			else if (avail < 4500)
+				activity = "available";
+			else if (avail < 6000)
+				activity = "idle";
+			else if (avail < 7500)
+				activity = "busy";
+			else if (avail < 9000)
+				activity = "busy";
+			else if (avail < 12000)
+				activity = "dnd";
+			else if (avail < 18000)
+				activity = "away";
+			else
+				activity = "offline";
+
+			purple_prpl_got_user_status(sip->account, uri, activity, NULL);
+		}
+	}
+	xmlnode_free(xn_categories);
+}
+
+static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct sipmsg *msg)
+{
 	gchar *fromhdr;
+	gchar *from;
 	gchar *tmp2;
 	gchar *activity = g_strdup("available");
 	xmlnode *pidf;
@@ -2450,7 +2527,8 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		return;
 	}
 
-	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
+	if ((tuple = xmlnode_get_child(pidf, "tuple")))
+	{
 		if ((status = xmlnode_get_child(tuple, "status"))) {
 			basicstatus = xmlnode_get_child(status, "basic");
 		}
@@ -2469,7 +2547,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		return;
 	}
 
-        purple_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n", tmp2);
+	purple_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n", tmp2);
 	if (strstr(tmp2, "open")) {
 		isonline = TRUE;
 	}
@@ -2492,7 +2570,8 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			}
 		}
 	}
-        purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
+
+	purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
 
 	if (isonline) {
 		gchar * status_id = NULL;
@@ -2518,7 +2597,86 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	g_free(from);
 	g_free(tmp2);
 	g_free(activity);
+}
 
+static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct sipmsg *msg)
+{
+	const char *activity;
+	const char *note;
+	const char *activity_name;
+	gchar *uri;
+
+	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
+	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
+	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
+	xmlnode *xn_note = xmlnode_get_child(xn_userinfo, "note");
+
+	uri = g_strdup_printf("sip:%s", xmlnode_get_attrib(xn_presentity, "uri"));
+	activity = xmlnode_get_attrib(xn_activity, "aggregate");
+	if (xn_note)
+		note = xmlnode_get_data(xn_note);
+	else
+		note = "";
+
+	int act = atoi(activity);
+
+	if (act < 100)
+		activity_name = "away";
+	else if (act <= 400)
+		activity_name = "available";
+	else if (act <= 600)
+		activity_name = "busy";
+	else
+		activity_name = "available";
+
+	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
+	if (sbuddy)
+	{
+		if (sbuddy->annotation) { g_free(sbuddy->annotation); }
+		sbuddy->annotation = strdup(note);
+	}
+
+	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
+	xmlnode_free(xn_presentity);
+	g_free(uri);
+}
+
+static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg)
+{
+	char *ctype = sipmsg_find_header(msg, "Content-Type");
+
+	//printf("### incoming notify\nContent-Type: %s\n\n%s\n", ctype, msg->body);
+
+	if ( ctype && (  strstr(ctype, "application/rlmi+xml")
+				  || strstr(ctype, "application/msrtc-event-categories+xml") ) )
+	{
+		const char *content = msg->body;
+		unsigned length = msg->bodylen;
+		PurpleMimeDocument *mime = NULL;
+
+		if (strstr(ctype, "multipart"))
+		{
+			char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ctype, msg->body);
+			mime = purple_mime_document_parse(doc);
+			GList* parts = purple_mime_document_get_parts(mime);
+			content = purple_mime_part_get_data(parts->data);
+			length = purple_mime_part_get_length(parts->data);
+			g_free(doc);
+		}
+		process_incoming_notify_rlmi(sip, content, length);
+		if (mime)
+		{
+			purple_mime_document_free(mime);
+		}
+	}
+	else if(ctype && strstr(ctype, "text/xml+msrtc.pidf"))
+	{
+		process_incoming_notify_msrtc(sip, msg);
+	}
+	else
+	{
+		process_incoming_notify_pidf(sip, msg);
+	}
 	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 }
 
@@ -2554,7 +2712,7 @@ static gchar* gen_pidf(struct sipe_account_data *sip)
                         " <ep:activity>%s</ep:activity>\r\n"
                         "</ep:activities>"
                         "</status>\r\n"
-                        "</tuple>\r\n" 
+                        "</tuple>\r\n"
                         "<ci:display-name>%s</ci:display-name>\r\n"
                         "</presence>",
                         sip->username,
@@ -2589,7 +2747,7 @@ static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
 		code = 400;
 	}
 
-	gchar *name = g_strdup_printf("sip: sip:%s", sip->username); 
+	gchar *name = g_strdup_printf("sip: sip:%s", sip->username);
 	gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, 200, code, note);
 	send_soap_request_with_cb(sip, body, process_send_presence_info_v0_response, NULL);
 	g_free(name);
@@ -2622,7 +2780,7 @@ process_send_presence_info_v1_response(struct sipe_account_data *sip, struct sip
 
 		send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_clear_presence_response);
 
-		g_free(tmp); 
+		g_free(tmp);
 		g_free(hdr);
 		g_free(uri);
 		g_free(doc);
@@ -2658,7 +2816,7 @@ static void send_presence_info_v1(struct sipe_account_data *sip, char * note)
 
 	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_send_presence_info_v1_response);
 
-	g_free(tmp); 
+	g_free(tmp);
 	g_free(hdr);
 	g_free(uri);
 	g_free(doc);
@@ -2779,7 +2937,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							auth = auth_header(sip, &sip->registrar, trans->msg);
 							sipmsg_remove_header(trans->msg, "Proxy-Authorization");
 							sipmsg_add_header(trans->msg, "Proxy-Authorization", auth);
-							
+
 							//sipmsg_remove_header(trans->msg, "Authorization");
 							//sipmsg_add_header(trans->msg, "Authorization", auth);
 							g_free(auth);
@@ -2789,19 +2947,19 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							g_free(resend);
 						}
 					}
-					
+
 					if (trans->callback) {
 						purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - we have a transaction callback\r\n");
 						/* call the callback to process response*/
 						(trans->callback)(sip, msg, trans);
 					}
 					/* Not sure if this is needed or what needs to be done
-  					   but transactions seem to be removed prematurely so 
+  					   but transactions seem to be removed prematurely so
   					   this only removes them if the response is 200 OK */
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - removing CSeq %d\r\n", sip->cseq);
 					/*Has a bug and it's unneccesary*/
                     /*transactions_remove(sip, trans);*/
-					
+
 				}
 			}
 			found = TRUE;
@@ -2952,7 +3110,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 		purple_debug_error("sipe", "Connection not found; Please try to connect again.\n");
 		gc->wants_to_die = TRUE;
 		purple_connection_error(gc, _("Connection not found; Please try to connect again.\n"));
-		return; 
+		return;
 	}
 
 	/* Read all available data from the SSL connection */
@@ -2987,7 +3145,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInp
 
 	conn->inbuf[conn->inbufused] = '\0';
         process_input(sip, conn);
-  
+
 }
 
 static void sipe_input_cb(gpointer data, gint source, PurpleInputCondition cond)
@@ -3146,7 +3304,7 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data, const char *err
 	}
 }
 
-static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error, 
+static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error,
                                      gpointer data)
 {
         PurpleConnection *gc = data;
@@ -3191,10 +3349,10 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data)
 			sipe_newconn_cb, sip->gc);
 	purple_debug_info("sipe", "connecting to %s port %d\n",
 			sip->realhostname, sip->realport);
-	/* open tcp connection to the server */ 
+	/* open tcp connection to the server */
         connect_data = purple_proxy_connect(sip->gc, sip->account, sip->realhostname,
 			sip->realport, login_cb, sip->gc);
-        
+
 	if (connect_data == NULL) {
 		purple_connection_error(sip->gc, _("Couldn't create socket"));
 	}
@@ -3242,7 +3400,7 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 	} else if (sip->transport == SIPE_TRANSPORT_UDP) {
 		/* UDP case */
 		purple_debug_info("sipe", "using UDP\n");
-	
+
 		sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
 		if (sip->query_data == NULL) {
 			purple_connection_error(gc, _("Could not resolve hostname"));
@@ -3366,7 +3524,7 @@ static void sipe_login(PurpleAccount *account)
 
 	userserver = g_strsplit(username, "@", 2);
 	purple_connection_set_display_name(gc, userserver[0]);
-        sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL)); 
+        sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL));
         sip->sipdomain = g_strdup(userserver[1]);
 	sip->password = g_strdup(purple_connection_get_password(gc));
 	g_strfreev(userserver);
@@ -3640,7 +3798,7 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 		_("Search"),
 		_("Search for a Contact"),
 		_("Enter the information of the person you wish to find. Empty fields will be ignored."),
-		fields,  
+		fields,
 		_("_Search"), G_CALLBACK(sipe_search_contact_with_cb),
 		_("_Cancel"), NULL,
 		purple_connection_get_account(gc), NULL, NULL, gc);
@@ -3685,6 +3843,24 @@ static void sipe_plugin_destroy(PurplePlugin *plugin)
 {
 }
 
+static char *sipe_status_text(PurpleBuddy *buddy)
+{
+	struct sipe_account_data *sip;
+	struct sipe_buddy *sbuddy;
+
+	sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
+	sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
+
+	if (sbuddy && sbuddy->annotation)
+	{
+		return g_strdup(sbuddy->annotation);
+	}
+	else
+	{
+		return g_strdup("");
+	}
+}
+
 static PurplePlugin *my_protocol = NULL;
 
 static PurplePluginProtocolInfo prpl_info =
@@ -3695,7 +3871,7 @@ static PurplePluginProtocolInfo prpl_info =
 	NO_BUDDY_ICONS,				/* icon_spec */
 	sipe_list_icon,				/* list_icon */
 	NULL,					/* list_emblems */
-	NULL,					/* status_text */	// TODO
+	sipe_status_text,		/* status_text */
 	NULL,					/* tooltip_text */	// add custom info to contact tooltip
 	sipe_status_types,			/* away_states */
 	NULL,					/* blist_node_menu */
@@ -3787,7 +3963,7 @@ static void init_plugin(PurplePlugin *plugin)
 {
 	PurpleAccountUserSplit *split;
 	PurpleAccountOption *option;
-	PurpleKeyValuePair *kvp;	
+	PurpleKeyValuePair *kvp;
 
 #ifdef ENABLE_NLS
 	purple_debug_info(PACKAGE, "bindtextdomain = %s", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));
@@ -3843,9 +4019,9 @@ static void init_plugin(PurplePlugin *plugin)
 
 /* I had to redefined the function for it load, but works */
 gboolean purple_init_plugin(PurplePlugin *plugin){
- plugin->info = &(info); 
- init_plugin((plugin)); 
- sipe_plugin_load((plugin)); 
- return purple_plugin_register(plugin); 
+ plugin->info = &(info);
+ init_plugin((plugin));
+ sipe_plugin_load((plugin));
+ return purple_plugin_register(plugin);
 }
 
