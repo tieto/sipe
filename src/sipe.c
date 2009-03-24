@@ -2189,7 +2189,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	// Only accept text invitations
-	if (msg->body && !strstr(msg->body, "m=message")) {
+	if (msg->body && !(strstr(msg->body, "m=message") || strstr(msg->body, "m=x-ms-message"))) {
 		send_sip_response(sip->gc, msg, 501, "Not implemented", NULL);
 		return;
 	}
