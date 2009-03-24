@@ -2441,6 +2441,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode *xn_categories;
 	xmlnode *xn_category;
 	xmlnode *xn_node;
+	int changed = 0;
+	const char *activity = NULL;
 
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri");
@@ -2466,8 +2468,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			{
 				if (sbuddy->annotation) { g_free(sbuddy->annotation); }
 				sbuddy->annotation = g_strdup(note);
-				// TODO: "available" should be replaced by the currently known state
-				purple_prpl_got_user_status(sip->account, uri, "available", NULL);
+				changed = 1;
 			}
 		}
 		else if(!strcmp(attrVar, "state"))
@@ -2478,7 +2479,6 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			if (!xn_node) continue;
 
 			char *data = xmlnode_get_data(xn_node);
-			const char *activity;
 			int avail = atoi(data);
 
 			if (avail < 3000)
@@ -2498,8 +2498,12 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			else
 				activity = "offline";
 
-			purple_prpl_got_user_status(sip->account, uri, activity, NULL);
+			changed = 1;
 		}
+	}
+	if (changed)
+	{
+		purple_prpl_got_user_status(sip->account, uri, activity, NULL);
 	}
 	xmlnode_free(xn_categories);
 }
@@ -3861,6 +3865,17 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 	}
 }
 
+static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_info, gboolean full)
+{
+	char *annotation = sipe_status_text(buddy);
+
+	if (annotation)
+	{
+		purple_notify_user_info_add_pair( user_info, _("Note"), annotation );
+		g_free(annotation);
+	}
+}
+
 static PurplePlugin *my_protocol = NULL;
 
 static PurplePluginProtocolInfo prpl_info =
@@ -3871,8 +3886,8 @@ static PurplePluginProtocolInfo prpl_info =
 	NO_BUDDY_ICONS,				/* icon_spec */
 	sipe_list_icon,				/* list_icon */
 	NULL,					/* list_emblems */
-	sipe_status_text,		/* status_text */
-	NULL,					/* tooltip_text */	// add custom info to contact tooltip
+	sipe_status_text,			/* status_text */
+	sipe_tooltip_text,			/* tooltip_text */	// add custom info to contact tooltip
 	sipe_status_types,			/* away_states */
 	NULL,					/* blist_node_menu */
 	NULL,					/* chat_info */
