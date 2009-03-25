@@ -802,6 +802,8 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	GString *outstr = g_string_new("");
 	struct sipe_account_data *sip = gc->proto_data;
 
+	sipmsg_remove_header(msg, "ms-user-data");
+
 	gchar *contact;
 	contact = get_contact(sip);
 	sipmsg_remove_header(msg, "Contact");
