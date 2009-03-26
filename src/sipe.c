@@ -2256,6 +2256,8 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			if (expires == 0) {
 				sip->registerstatus = 0;
 			} else {
+				sip->reregister += expires - sip->registerexpire; //adjust to allowed expire
+				sip->registerexpire = expires;
 				sip->registerstatus = 3;
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
@@ -3240,7 +3242,7 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 	struct sipe_account_data *sip = sipe_setup_ssl(data, gsc);
 	if (sip == NULL) return;
 
-	sip->registertimeout = purple_timeout_add((rand()%100) + 1000, (GSourceFunc)subscribe_timeout, sip);
+	sip->registertimeout = purple_timeout_add((rand()%100) + 10*1000, (GSourceFunc)subscribe_timeout, sip);
 	do_register(sip);
 }
 
