@@ -2611,7 +2611,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 {
 	const char *availability;
 	const char *activity;
-	const char *note;
+	const char *note = NULL;
 	const char *activity_name;
 	gchar *uri;
 
@@ -2624,10 +2624,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	uri = g_strdup_printf("sip:%s", xmlnode_get_attrib(xn_presentity, "uri"));
 	availability = xmlnode_get_attrib(xn_availability, "aggregate");
 	activity = xmlnode_get_attrib(xn_activity, "aggregate");
-	if (xn_note)
+	if (xn_note) {
 		note = xmlnode_get_data(xn_note);
-	else
-		note = "";
+	}
 
 	int avl = atoi(availability);
 	int act = atoi(activity);
@@ -2648,7 +2647,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	if (sbuddy)
 	{
 		if (sbuddy->annotation) { g_free(sbuddy->annotation); }
-		sbuddy->annotation = strdup(note);
+		sbuddy->annotation = NULL;
+		if (note) { sbuddy->annotation = g_strdup(note); }
 	}
 
 	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
