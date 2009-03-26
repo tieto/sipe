@@ -2626,7 +2626,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	int avl = atoi(availability);
 	int act = atoi(activity);
 
-	if (act <= 100)
+	if (act <= 300)
 		activity_name = "away";
 	else if (act <= 400)
 		activity_name = "available";
