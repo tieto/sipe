@@ -2603,26 +2603,30 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 
 static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct sipmsg *msg)
 {
+	const char *availability;
 	const char *activity;
 	const char *note;
 	const char *activity_name;
 	gchar *uri;
 
 	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
+	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
 	xmlnode *xn_note = xmlnode_get_child(xn_userinfo, "note");
 
 	uri = g_strdup_printf("sip:%s", xmlnode_get_attrib(xn_presentity, "uri"));
+	availability = xmlnode_get_attrib(xn_availability, "aggregate");
 	activity = xmlnode_get_attrib(xn_activity, "aggregate");
 	if (xn_note)
 		note = xmlnode_get_data(xn_note);
 	else
 		note = "";
 
+	int avl = atoi(availability);
 	int act = atoi(activity);
 
-	if (act < 100)
+	if (act <= 100)
 		activity_name = "away";
 	else if (act <= 400)
 		activity_name = "available";
@@ -2630,6 +2634,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 		activity_name = "busy";
 	else
 		activity_name = "available";
+
+	if (avl == 0)
+		activity_name = "offline";
 
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
