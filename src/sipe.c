@@ -802,6 +802,8 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	GString *outstr = g_string_new("");
 	struct sipe_account_data *sip = gc->proto_data;
 
+	sipmsg_remove_header(msg, "ms-user-data");
+
 	gchar *contact;
 	contact = get_contact(sip);
 	sipmsg_remove_header(msg, "Contact");
@@ -2189,7 +2191,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	// Only accept text invitations
-	if (msg->body && !strstr(msg->body, "m=message")) {
+	if (msg->body && !(strstr(msg->body, "m=message") || strstr(msg->body, "m=x-ms-message"))) {
 		send_sip_response(sip->gc, msg, 501, "Not implemented", NULL);
 		return;
 	}
@@ -2254,6 +2256,8 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			if (expires == 0) {
 				sip->registerstatus = 0;
 			} else {
+				sip->reregister += expires - sip->registerexpire; //adjust to allowed expire
+				sip->registerexpire = expires;
 				sip->registerstatus = 3;
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
@@ -2605,26 +2609,30 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 
 static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct sipmsg *msg)
 {
+	const char *availability;
 	const char *activity;
 	const char *note;
 	const char *activity_name;
 	gchar *uri;
 
 	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
+	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
 	xmlnode *xn_note = xmlnode_get_child(xn_userinfo, "note");
 
 	uri = g_strdup_printf("sip:%s", xmlnode_get_attrib(xn_presentity, "uri"));
+	availability = xmlnode_get_attrib(xn_availability, "aggregate");
 	activity = xmlnode_get_attrib(xn_activity, "aggregate");
 	if (xn_note)
 		note = xmlnode_get_data(xn_note);
 	else
 		note = "";
 
+	int avl = atoi(availability);
 	int act = atoi(activity);
 
-	if (act < 100)
+	if (act <= 300)
 		activity_name = "away";
 	else if (act <= 400)
 		activity_name = "available";
@@ -2632,6 +2640,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 		activity_name = "busy";
 	else
 		activity_name = "available";
+
+	if (avl == 0)
+		activity_name = "offline";
 
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
@@ -3235,7 +3246,7 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 	struct sipe_account_data *sip = sipe_setup_ssl(data, gsc);
 	if (sip == NULL) return;
 
-	sip->registertimeout = purple_timeout_add((rand()%100) + 1000, (GSourceFunc)subscribe_timeout, sip);
+	sip->registertimeout = purple_timeout_add((rand()%100) + 10*1000, (GSourceFunc)subscribe_timeout, sip);
 	do_register(sip);
 }
 
