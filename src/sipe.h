@@ -65,13 +65,6 @@ struct sip_dialog {
 	int cseq;
 };
 
-struct sipe_watcher {
-	gchar *name;
-	time_t expire;
-	struct sip_dialog dialog;
-	gboolean needsxpidf;
-};
-
 struct sipe_buddy {
 	gchar *name;
 	gchar *annotation;
@@ -101,6 +94,7 @@ struct sip_auth {
 	int retries;
 	gchar *ntlm_key;
 	int ntlm_num;
+	time_t expires;
 };
 
 typedef enum {
@@ -151,7 +145,6 @@ struct sipe_account_data {
 	guint tx_handler;
 	gchar *regcallid;
 	GSList *transactions;
-	GSList *watcher;
 	GSList *im_sessions;
 	GSList *openconns;
 	GSList *groups;

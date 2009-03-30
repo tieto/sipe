@@ -187,42 +187,23 @@ static struct sip_connection *connection_find(struct sipe_account_data *sip, int
 	return NULL;
 }
 
-static struct sipe_watcher *watcher_find(struct sipe_account_data *sip,
-		const gchar *name)
+static void sipe_auth_free(struct sip_auth *auth)
 {
-	struct sipe_watcher *watcher;
-	GSList *entry = sip->watcher;
-	while (entry) {
-		watcher = entry->data;
-		if (!strcmp(name, watcher->name)) return watcher;
-		entry = entry->next;
-	}
-	return NULL;
-}
-
-static struct sipe_watcher *watcher_create(struct sipe_account_data *sip,
-		const gchar *name, const gchar *callid, const gchar *ourtag,
-		const gchar *theirtag, gboolean needsxpidf)
-{
-	struct sipe_watcher *watcher = g_new0(struct sipe_watcher, 1);
-	watcher->name = g_strdup(name);
-	watcher->dialog.callid = g_strdup(callid);
-	watcher->dialog.ourtag = g_strdup(ourtag);
-	watcher->dialog.theirtag = g_strdup(theirtag);
-	watcher->needsxpidf = needsxpidf;
-	sip->watcher = g_slist_append(sip->watcher, watcher);
-	return watcher;
-}
-
-static void watcher_remove(struct sipe_account_data *sip, const gchar *name)
-{
-	struct sipe_watcher *watcher = watcher_find(sip, name);
-	sip->watcher = g_slist_remove(sip->watcher, watcher);
-	g_free(watcher->name);
-	g_free(watcher->dialog.callid);
-	g_free(watcher->dialog.ourtag);
-	g_free(watcher->dialog.theirtag);
-	g_free(watcher);
+	g_free(auth->nonce);
+	auth->nonce = NULL;
+	g_free(auth->opaque);
+	auth->opaque = NULL;
+	g_free(auth->realm);
+	auth->realm = NULL;
+	g_free(auth->target);
+	auth->target = NULL;
+	g_free(auth->digest_session_key);
+	auth->digest_session_key = NULL;
+	g_free(auth->ntlm_key);
+	auth->ntlm_key = NULL;
+	auth->type = AUTH_TYPE_UNSET;
+	auth->retries = 0;
+	auth->expires = 0;
 }
 
 static struct sip_connection *connection_create(struct sipe_account_data *sip, int fd)
@@ -2111,25 +2092,24 @@ static gboolean subscribe_timeout(struct sipe_account_data *sip)
 {
 	GSList *tmp;
 	time_t curtime = time(NULL);
-	/* register again if first registration expires */
-	if (sip->reregister < curtime) {
+	/* register again if first registration or security token expires */
+	if ( (sip->reregister < curtime)
+	  || (sip->registrar.expires != 0 && sip->registrar.expires < curtime) )
+	{
+		/* time to do a full reauthentication? */
+		if (sip->registrar.expires < curtime)
+		{
+			/* we have to start a new authentication as the security token
+			 * is almost expired by sending a not signed REGISTER message */
+			purple_debug_info("sipe", "do a full reauthentication");
+			sipe_auth_free(&sip->registrar);
+			sip->registerstatus = 0;
+		}
 		do_register(sip);
 	}
+
 	/* check for every subscription if we need to resubscribe */
-	//Fixxxer we need resub?
 	g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_resub, (gpointer)sip);
-
-	/* remove a timed out suscriber */
-
-	tmp = sip->watcher;
-	while (tmp) {
-		struct sipe_watcher *watcher = tmp->data;
-		if (watcher->expire < curtime) {
-			watcher_remove(sip, watcher->name);
-			tmp = sip->watcher;
-		}
-		if (tmp) tmp = tmp->next;
-	}
 
 	return TRUE;
 }
@@ -2259,6 +2239,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				sip->reregister += expires - sip->registerexpire; //adjust to allowed expire
 				sip->registerexpire = expires;
 				sip->registerstatus = 3;
+				if (sip->registrar.expires == 0)
+				{
+					/* we have to reauthenticate as our security token expires
+					   after eight hours (be five minutes early) */
+					sip->registrar.expires = time(NULL) + (8 * 3600) - 360;
+				}
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
 				int i = 0;
@@ -2930,8 +2916,15 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 				} else {
 					sip->proxy.retries = 0;
 					if (!strcmp(trans->msg->method, "REGISTER")) {
-						if (msg->response == 401) sip->registrar.retries++;
-						else sip->registrar.retries = 0;
+						if (msg->response == 401)
+						{
+							sip->registrar.retries++;
+							sip->registrar.expires = 0;
+						}
+						else
+						{
+							sip->registrar.retries = 0;
+						}
                                                 purple_debug_info("sipe", "RE-REGISTER CSeq: %d\r\n", sip->cseq);
 					} else {
 						if (msg->response == 401) {
@@ -3591,35 +3584,8 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		purple_ssl_close(sip->gsc);
 	sip->gsc = NULL;
 
-	g_free(sip->registrar.nonce);
-	sip->registrar.nonce = NULL;
-	g_free(sip->registrar.opaque);
-	sip->registrar.opaque = NULL;
-	g_free(sip->registrar.realm);
-	sip->registrar.realm = NULL;
-	g_free(sip->registrar.target);
-	sip->registrar.target = NULL;
-	g_free(sip->registrar.digest_session_key);
-	sip->registrar.digest_session_key = NULL;
-	g_free(sip->registrar.ntlm_key);
-	sip->registrar.ntlm_key = NULL;
-	sip->registrar.type = AUTH_TYPE_UNSET;
-	sip->registrar.retries = 0;
-
-	g_free(sip->proxy.nonce);
-	sip->proxy.nonce = NULL;
-	g_free(sip->proxy.opaque);
-	sip->proxy.opaque = NULL;
-	g_free(sip->proxy.realm);
-	sip->proxy.realm = NULL;
-	g_free(sip->proxy.target);
-	sip->proxy.target = NULL;
-	g_free(sip->proxy.digest_session_key);
-	sip->proxy.digest_session_key = NULL;
-	g_free(sip->proxy.ntlm_key);
-	sip->proxy.ntlm_key = NULL;
-	sip->proxy.type = AUTH_TYPE_UNSET;
-	sip->proxy.retries = 0;
+	sipe_auth_free(&sip->registrar);
+	sipe_auth_free(&sip->proxy);
 
 	if (sip->txbuf)
 		purple_circ_buffer_destroy(sip->txbuf);
