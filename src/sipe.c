@@ -35,6 +35,12 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#ifdef ENABLE_NLS
+#	include <libintl.h>
+#	define _(String)  ((const char *) gettext (String))
+#else
+#   define _(String) ((const char *) (String))
+#endif /* ENABLE_NLS */
 #else
 #ifdef _DLL
 #define _WS2TCPIP_H_
@@ -51,12 +57,6 @@
 #include <string.h>
 #include <glib.h>
 
-#ifdef ENABLE_NLS
-#include <libintl.h>
-#   define _(String)  ((const char *) gettext (String))
-#else
-#   define _(String) ((const char *) (String))
-#endif /* ENABLE_NLS */
 
 #include "accountopt.h"
 #include "blist.h"
@@ -731,7 +731,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		struct sipmsg_breakdown msgbd;
 		msgbd.msg = msg;
 		sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
-		msgbd.rand = g_strdup_printf("%08x", random());
+		msgbd.rand = g_strdup_printf("%08x", g_random_int());
 		sip->registrar.ntlm_num++;
 		msgbd.num = g_strdup_printf("%d", sip->registrar.ntlm_num);
 		gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);

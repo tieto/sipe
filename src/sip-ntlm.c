@@ -53,7 +53,6 @@
 #ifdef HAVE_LANGINFO_CODESET
 #include <langinfo.h>
 #endif /* HAVE_LANGINFO_CODESET */
-#include <zlib.h>
 
 #include "debug.h"
 #include "util.h"
@@ -182,9 +181,12 @@ unicode_strconvcopy(char *dest, const char *source, int remlen)
 #endif /* HAVE_LANGINFO_CODESET */
 
 	/* fall back to utf-8 */
-	if (!sys_cp) sys_cp = "UTF8";
+	if (!sys_cp) sys_cp = "UTF-8";
 
-	fd = iconv_open("UTF16LE", sys_cp);
+	fd = iconv_open("UTF-16LE", sys_cp);
+	if( fd == (iconv_t)-1 ) {
+		purple_debug_error( "sipe", "iconv_open returned -1, cannot continue\n" );
+	}
 	iconv(fd, &inbuf, &inbytes, &outbuf, &outbytes);
 	iconv_close(fd);
 	return (remlen - outbytes);
@@ -351,10 +353,47 @@ print_hex_array_title(char * title, char * msg, int num)
 	print_hex_array(msg, num);
 }
 
+/* source copy from gg's common.c */
+static guint32 crc32_table[256];
+static int crc32_initialized = 0;
+
+static void crc32_make_table()
+{
+	guint32 h = 1;
+	unsigned int i, j;
+
+	memset(crc32_table, 0, sizeof(crc32_table));
+
+	for (i = 128; i; i >>= 1) {
+		h = (h >> 1) ^ ((h & 1) ? 0xedb88320L : 0);
+
+		for (j = 0; j < 256; j += 2 * i)
+			crc32_table[i + j] = crc32_table[j] ^ h;
+	}
+
+	crc32_initialized = 1;
+}
+
+static guint32 crc32(guint32 crc, const guint8 *buf, int len)
+{
+	if (!crc32_initialized)
+		crc32_make_table();
+
+	if (!buf || len < 0)
+		return crc;
+
+	crc ^= 0xffffffffL;
+
+	while (len--)
+		crc = (crc >> 8) ^ crc32_table[(crc ^ *buf++) & 0xff];
+
+	return crc ^ 0xffffffffL;
+}
+
 long
 CRC32 (char * msg)
 {
-	long crc = crc32(0L, Z_NULL, 0);
+	long crc = 0L;//crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, msg, strlen(msg));
 	char * ptr = (char*) &crc;
 	//return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | (ptr[3] & 0xff);

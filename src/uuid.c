@@ -22,11 +22,22 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+
+#ifndef _WIN32
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/if.h>
+#else
+#ifdef _DLL
+#define _WS2TCPIP_H_
+#define _WINSOCK2API_
+#define _LIBC_INTERNAL_
+#endif /* _DLL */
+
+#include "internal.h"
+#endif /* _WIN32 */
 
 #include <cipher.h>
 #include <glib.h>
@@ -98,6 +109,9 @@ char *generateUUIDfromEPID(const gchar *epid)
 
 long mac_addr_sys (const char *addr)
 {
+#ifdef _WIN32
+	return 0x0BB288B0;
+#else
 /* implementation for Linux */
     struct ifreq ifr;
     struct ifreq *IFR;
@@ -137,6 +151,7 @@ long mac_addr_sys (const char *addr)
         return -1;
     }
     return 0;
+#endif
 }
 
 gchar * sipe_uuid_get_macaddr()
