@@ -64,6 +64,7 @@ struct sip_dialog {
 	gchar *callid;
 	GSList *routes;
 	gchar *request;
+	GSList *supported; // counterparty capabilities
 	int cseq;
 };
 

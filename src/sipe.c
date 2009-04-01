@@ -1856,6 +1856,17 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 }
 
 static void
+sipe_im_remove_first_from_queue (struct sip_im_session * session)
+{
+	if (session->outgoing_message_queue) {
+		char *queued_msg = session->outgoing_message_queue->data;
+		// Remove from the queue and free the string
+		session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
+		g_free(queued_msg);
+	}
+}
+
+static void
 sipe_get_route_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean outgoing)
 {
         GSList *hdr = msg->headers;
@@ -1888,6 +1899,23 @@ sipe_get_route_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean o
         dialog->routes = g_slist_append(dialog->routes, contact);
 }
 
+static void
+sipe_get_supported_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean outgoing)
+{
+	GSList *hdr = msg->headers;
+	struct siphdrelement *elem;
+	while(hdr)
+	{
+		elem = hdr->data;
+		if(!strcmp(elem->name, "Supported")
+			&& !g_slist_find_custom(dialog->supported, elem->value, (GCompareFunc)strcmp))
+		{
+			dialog->supported = g_slist_append(dialog->supported, g_strdup(elem->value));
+
+		}
+		hdr = g_slist_next(hdr);
+	}
+}
 
 static void
 sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outgoing)
@@ -1906,6 +1934,7 @@ sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outg
 	}
 
 	sipe_get_route_header(msg, dialog, outgoing);
+	sipe_get_supported_header(msg, dialog, outgoing);
 }
 
 
@@ -1938,7 +1967,11 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 
 	send_sip_request(sip->gc, "ACK", session->with, session->with, NULL, NULL, dialog, NULL);
 	session->outgoing_invite = NULL;
-	sipe_im_process_queue(sip, session);
+	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)strcmp)) {
+		sipe_im_remove_first_from_queue(session);
+	} else {
+		sipe_im_process_queue(sip, session);
+	}
 
 	return TRUE;
 }
@@ -2762,7 +2795,7 @@ static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
 	}
 
 	gchar *name = g_strdup_printf("sip: sip:%s", sip->username);
-	gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, 200, code, note);
+	gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, 300, code, (note != NULL ? note : ""));
 	send_soap_request_with_cb(sip, body, process_send_presence_info_v0_response, NULL);
 	g_free(name);
 	g_free(body);
@@ -3750,7 +3783,7 @@ static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestField
 		const char *id = purple_request_field_get_id(field);
 		const char *value = purple_request_field_string_get_value(field);
 
-		purple_debug_info("sipe", "sipe_search_contact_with_cb: %s = '%s'\n", id, value);
+		purple_debug_info("sipe", "sipe_search_contact_with_cb: %s = '%s'\n", id, value ? value : "");
 
 		if (value != NULL) attrs[i++] = g_strdup_printf(SIPE_SOAP_SEARCH_ROW, id, value);
 	} while ((entries = g_list_next(entries)) != NULL);
