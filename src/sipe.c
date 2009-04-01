@@ -2782,7 +2782,7 @@ static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
 	}
 
 	gchar *name = g_strdup_printf("sip: sip:%s", sip->username);
-	gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, 200, code, note);
+	gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, 300, code, (note != NULL ? note : ""));
 	send_soap_request_with_cb(sip, body, process_send_presence_info_v0_response, NULL);
 	g_free(name);
 	g_free(body);
@@ -3770,7 +3770,7 @@ static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestField
 		const char *id = purple_request_field_get_id(field);
 		const char *value = purple_request_field_string_get_value(field);
 
-		purple_debug_info("sipe", "sipe_search_contact_with_cb: %s = '%s'\n", id, value);
+		purple_debug_info("sipe", "sipe_search_contact_with_cb: %s = '%s'\n", id, value ? value : "");
 
 		if (value != NULL) attrs[i++] = g_strdup_printf(SIPE_SOAP_SEARCH_ROW, id, value);
 	} while ((entries = g_list_next(entries)) != NULL);
