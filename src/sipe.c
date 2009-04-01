@@ -1843,6 +1843,17 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 }
 
 static void
+sipe_im_remove_first_from_queue (struct sip_im_session * session)
+{
+	if (session->outgoing_message_queue) {
+		char *queued_msg = session->outgoing_message_queue->data;
+		// Remove from the queue and free the string
+		session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
+		g_free(queued_msg);
+	}
+}
+
+static void
 sipe_get_route_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean outgoing)
 {
         GSList *hdr = msg->headers;
@@ -1875,6 +1886,23 @@ sipe_get_route_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean o
         dialog->routes = g_slist_append(dialog->routes, contact);
 }
 
+static void
+sipe_get_supported_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean outgoing)
+{
+	GSList *hdr = msg->headers;
+	struct siphdrelement *elem;
+	while(hdr)
+	{
+		elem = hdr->data;
+		if(!strcmp(elem->name, "Supported")
+			&& !g_slist_find_custom(dialog->supported, elem->value, (GCompareFunc)strcmp))
+		{
+			dialog->supported = g_slist_append(dialog->supported, g_strdup(elem->value));
+
+		}
+		hdr = g_slist_next(hdr);
+	}
+}
 
 static void
 sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outgoing)
@@ -1893,6 +1921,7 @@ sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outg
 	}
 
 	sipe_get_route_header(msg, dialog, outgoing);
+	sipe_get_supported_header(msg, dialog, outgoing);
 }
 
 
@@ -1925,7 +1954,11 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 
 	send_sip_request(sip->gc, "ACK", session->with, session->with, NULL, NULL, dialog, NULL);
 	session->outgoing_invite = NULL;
-	sipe_im_process_queue(sip, session);
+	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)strcmp)) {
+		sipe_im_remove_first_from_queue(session);
+	} else {
+		sipe_im_process_queue(sip, session);
+	}
 
 	return TRUE;
 }
