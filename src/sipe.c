@@ -302,7 +302,20 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 
 		if (auth->nc == 3 && auth->nonce && auth->ntlm_key == NULL) {
 			const gchar * ntlm_key;
-			const gchar * hostname = purple_get_host_name();
+#if GLIB_CHECK_VERSION(2,8,0)
+			const gchar * hostname = g_get_host_name();
+#else
+            static char hostname[256];
+			int ret = gethostname(hostname, sizeof(hostname));
+            hostname[sizeof(hostname) - 1] = '\0';
+            if (ret == -1 || hostname[0] == '\0') {
+                 purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name: %s.  Using \"localhost.\"\n");
+				 g_strerror(errno));
+				 strcpy(hostname, "localhost");
+			}
+#endif
+			/*const gchar * hostname = purple_get_host_name();*/
+			
 			gchar * gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, hostname, authdomain, (const guint8 *)auth->nonce, &auth->flags);
 			auth->ntlm_key = (gchar *)ntlm_key;
 			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, gssapi_data);
