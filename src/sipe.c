@@ -1368,7 +1368,7 @@ static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * b
 
 static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 {
-	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(purple_status_get_type(status));
+	const char *status_id = purple_status_get_id(status);
 	struct sipe_account_data *sip = NULL;
 
 	if (!purple_status_is_active(status))
@@ -1379,15 +1379,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 	if (sip) {
 		g_free(sip->status);
-
-		if (primitive == PURPLE_STATUS_AWAY) {
-			sip->status = g_strdup("away");
-		} else if (primitive == PURPLE_STATUS_AVAILABLE) {
-			sip->status = g_strdup("available");
-		} else if (primitive == PURPLE_STATUS_UNAVAILABLE) {
-			sip->status = g_strdup("busy");
-		}
-
+		sip->status = g_strdup(status_id);
 		send_presence_info(sip);
 	}
 }
@@ -1493,17 +1485,10 @@ static GList *sipe_status_types(PurpleAccount *acc)
 	PurpleStatusType *type;
 	GList *types = NULL;
 
-	// Available
+	// Online
 	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_AVAILABLE, NULL, NULL, TRUE, TRUE, FALSE,
+		PURPLE_STATUS_AVAILABLE, NULL, "Online", TRUE, TRUE, FALSE,
 		// Translators: noun
-		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
-		NULL);
-	types = g_list_append(types, type);
-
-	// Away
-	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_AWAY, NULL, NULL, TRUE, TRUE, FALSE,
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
@@ -1514,7 +1499,47 @@ static GList *sipe_status_types(PurpleAccount *acc)
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
+	
+	// Do Not Disturb
+	type = purple_status_type_new_with_attrs(
+		PURPLE_STATUS_UNAVAILABLE, "do-not-disturb", "Do Not Disturb", TRUE, TRUE, FALSE,
+		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
+		NULL);
+	types = g_list_append(types, type);
 
+	// Be Right Back
+	type = purple_status_type_new_with_attrs(
+		PURPLE_STATUS_AWAY, "be-right-back", _("Be Right Back"), TRUE, TRUE, FALSE,
+		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
+		NULL);
+	types = g_list_append(types, type);
+
+	// Away
+	type = purple_status_type_new_with_attrs(
+		PURPLE_STATUS_AWAY, NULL, NULL, TRUE, TRUE, FALSE,
+		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
+		NULL);
+	types = g_list_append(types, type);
+	
+	//On The Phone
+	type = purple_status_type_new_with_attrs(
+		PURPLE_STATUS_UNAVAILABLE, "on-the-phone", _("On The Phone"), TRUE, TRUE, FALSE,
+		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
+		NULL);
+	types = g_list_append(types, type);
+	
+	//Out To Lunch
+	type = purple_status_type_new_with_attrs(
+		PURPLE_STATUS_AWAY, "out-to-lunch", "Out To Lunch", TRUE, TRUE, FALSE,
+		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
+		NULL);
+	types = g_list_append(types, type);
+	
+	//Appear Offline
+	type = purple_status_type_new_full(
+		PURPLE_STATUS_INVISIBLE, NULL, "Appear Offline", TRUE, TRUE, FALSE);
+	types = g_list_append(types, type);
+	
 	// Offline
 	type = purple_status_type_new_full(
 		PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE, TRUE, FALSE);
@@ -2650,10 +2675,16 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	int avl = atoi(availability);
 	int act = atoi(activity);
 
-	if (act <= 300)
+	if (act <= 100)
 		activity_name = "away";
+	else if (act <= 150)
+		activity_name = "out-to-lunch";
+	else if (act <= 300)
+		activity_name = "be-right-back";
 	else if (act <= 400)
 		activity_name = "available";
+	else if (act <= 500)
+		activity_name = "on-the-phone";
 	else if (act <= 600)
 		activity_name = "busy";
 	else
@@ -2661,7 +2692,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 
 	if (avl == 0)
 		activity_name = "offline";
-
+		
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
 	{
@@ -2771,18 +2802,29 @@ process_send_presence_info_v0_response(struct sipe_account_data *sip, struct sip
 
 static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
 {
-	int code;
+	int availability, activity;
+	availability = 300; // online
+	activity = 400;  // Available
 	if (!strcmp(sip->status, "away")) {
-		code = 100;
+		activity = 100;
+	} else if (!strcmp(sip->status, "out-to-lunch")) {
+		activity = 150;
+	} else if (!strcmp(sip->status, "be-right-back")) {
+		activity = 300;
+	} else if (!strcmp(sip->status, "on-the-phone")) {
+		activity = 500;	
+	} else if (!strcmp(sip->status, "do-not-disturb")) {
+		activity = 600;
 	} else if (!strcmp(sip->status, "busy")) {
-		code = 600;
-	} else {
-		// Available
-		code = 400;
-	}
+		activity = 600;
+	} else if (!strcmp(sip->status, "invisible")) {
+		availability = 0; // offline
+		activity = 100;
+	}	
 
 	gchar *name = g_strdup_printf("sip: sip:%s", sip->username);
-	gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, 300, code, (note != NULL ? note : ""));
+	//@TODO: send user data - state; add hostname in upper case
+	gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, availability, activity, note ? note : "");
 	send_soap_request_with_cb(sip, body, process_send_presence_info_v0_response, NULL);
 	g_free(name);
 	g_free(body);
@@ -3559,6 +3601,9 @@ static void sipe_login(PurpleAccount *account)
 	}
 
 	gc->proto_data = sip = g_new0(struct sipe_account_data, 1);
+	//@TODO: support formatting
+	//gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
+	//	PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
 	sip->gc = gc;
 	sip->account = account;
 	sip->registerexpire = 900;
