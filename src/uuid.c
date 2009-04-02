@@ -145,7 +145,7 @@ long mac_addr_sys (const char *addr)
 
     close(s);
     if (ok) {
-        memmove( addr, ifr.ifr_hwaddr.sa_data, 6);
+        memmove((void *)addr, ifr.ifr_hwaddr.sa_data, 6);
     }
     else {
         return -1;
