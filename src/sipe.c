@@ -310,12 +310,12 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
             hostname[sizeof(hostname) - 1] = '\0';
             if (ret == -1 || hostname[0] == '\0') {
                  purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name: %s.  Using \"localhost.\"\n");
-				 g_strerror(errno));
+				 g_strerror(errno);
 				 strcpy(hostname, "localhost");
 			}
 #endif
 			/*const gchar * hostname = purple_get_host_name();*/
-			
+
 			gchar * gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, hostname, authdomain, (const guint8 *)auth->nonce, &auth->flags);
 			auth->ntlm_key = (gchar *)ntlm_key;
 			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, gssapi_data);
@@ -1512,10 +1512,10 @@ static GList *sipe_status_types(PurpleAccount *acc)
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
-	
-	// Do Not Disturb
+
+	// Do Not Disturb (Not let user set it)
 	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_UNAVAILABLE, "do-not-disturb", "Do Not Disturb", TRUE, TRUE, FALSE,
+		PURPLE_STATUS_UNAVAILABLE, "do-not-disturb", "Do Not Disturb", TRUE, FALSE, FALSE,
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
@@ -1533,26 +1533,26 @@ static GList *sipe_status_types(PurpleAccount *acc)
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
-	
+
 	//On The Phone
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_UNAVAILABLE, "on-the-phone", _("On The Phone"), TRUE, TRUE, FALSE,
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
-	
+
 	//Out To Lunch
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_AWAY, "out-to-lunch", "Out To Lunch", TRUE, TRUE, FALSE,
 		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
 		NULL);
 	types = g_list_append(types, type);
-	
+
 	//Appear Offline
 	type = purple_status_type_new_full(
 		PURPLE_STATUS_INVISIBLE, NULL, "Appear Offline", TRUE, TRUE, FALSE);
 	types = g_list_append(types, type);
-	
+
 	// Offline
 	type = purple_status_type_new_full(
 		PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE, TRUE, FALSE);
@@ -2705,7 +2705,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 
 	if (avl == 0)
 		activity_name = "offline";
-		
+
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
 	{
@@ -2714,6 +2714,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 		if (note) { sbuddy->annotation = g_strdup(note); }
 	}
 
+	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", activity_name);
 	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
 	xmlnode_free(xn_presentity);
 	g_free(uri);
@@ -2825,7 +2826,7 @@ static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
 	} else if (!strcmp(sip->status, "be-right-back")) {
 		activity = 300;
 	} else if (!strcmp(sip->status, "on-the-phone")) {
-		activity = 500;	
+		activity = 500;
 	} else if (!strcmp(sip->status, "do-not-disturb")) {
 		activity = 600;
 	} else if (!strcmp(sip->status, "busy")) {
@@ -2833,7 +2834,7 @@ static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
 	} else if (!strcmp(sip->status, "invisible")) {
 		availability = 0; // offline
 		activity = 100;
-	}	
+	}
 
 	gchar *name = g_strdup_printf("sip: sip:%s", sip->username);
 	//@TODO: send user data - state; add hostname in upper case
