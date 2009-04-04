@@ -2247,7 +2247,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		return;
 	}
 
-	gchar * from = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "<", ">", NULL);
+	gchar * from = parse_from(sipmsg_find_header(msg, "From"));
 	struct sip_im_session * session = find_or_create_im_session (sip, from);
 	if (session) {
 		if (session->dialog) {
@@ -2265,8 +2265,23 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	} else {
 		purple_debug_info("sipe", "process_incoming_invite, failed to find or create IM session\n");
 	}
+	
+	//ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk=
+	gchar * ms_text_format = sipmsg_find_header(msg, "ms-text-format");
+	if (ms_text_format && !strncmp(ms_text_format, "text/plain", 10)) {
+		//@TODO: message format
+		//gchar * msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
+		gchar * ms_body = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+		if (ms_body) {
+			gchar * body = purple_base64_decode(ms_body, NULL);
+			g_free(ms_body);
+			serv_got_im(sip->gc, from, body, 0, time(NULL));	
+			g_free(body);
+			sipmsg_add_header(msg, "Supported", "ms-text-format"); // accepts message reciept
+		}
+	}
 	g_free(from);
-
+	
 	sipmsg_remove_header(msg, "Ms-Conversation-ID");
 	sipmsg_remove_header(msg, "Ms-Text-Format");
 	sipmsg_remove_header(msg, "EndPoints");
@@ -2274,7 +2289,6 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	sipmsg_remove_header(msg, "Roster-Manager");
 
 	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
-	//sipmsg_add_header(msg, "Supported", "ms-text-format");
 	//sipmsg_add_header(msg, "Supported", "ms-renders-gif");
 
 	send_sip_response(sip->gc, msg, 200, "OK", g_strdup_printf(
