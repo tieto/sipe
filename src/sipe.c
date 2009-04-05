@@ -2199,7 +2199,15 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 	contenttype = sipmsg_find_header(msg, "Content-Type");
 	if (!contenttype || !strncmp(contenttype, "text/plain", 10) || !strncmp(contenttype, "text/html", 9)) {
-		serv_got_im(sip->gc, from, msg->body, 0, time(NULL));
+		gchar *msgr = sipmsg_find_part_of_header(contenttype, "msgr=", NULL, NULL);
+		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
+		g_free(msgr);
+		
+		gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, msg->body);
+		g_free(x_mms_im_format);
+	
+		serv_got_im(sip->gc, from, body_html, 0, time(NULL));
+		g_free(body_html);
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
 	}
@@ -2267,18 +2275,23 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	}
 	
 	//ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk=
-	gchar * ms_text_format = sipmsg_find_header(msg, "ms-text-format");
+	gchar *ms_text_format = sipmsg_find_header(msg, "ms-text-format");
 	if (ms_text_format && !strncmp(ms_text_format, "text/plain", 10)) {
-		//@TODO: message format
-		//gchar * msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
-		gchar * ms_body = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+		gchar *msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
+		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
+		g_free(msgr);
+		
+		gchar *ms_body = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
 		if (ms_body) {
-			gchar * body = purple_base64_decode(ms_body, NULL);
+			gchar *body = purple_base64_decode(ms_body, NULL);
 			g_free(ms_body);
-			serv_got_im(sip->gc, from, body, 0, time(NULL));	
-			g_free(body);
+			gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body);
+			g_free(body);			
+			serv_got_im(sip->gc, from, body_html, 0, time(NULL));	
+			g_free(body_html);
 			sipmsg_add_header(msg, "Supported", "ms-text-format"); // accepts message reciept
 		}
+		g_free(x_mms_im_format);
 	}
 	g_free(from);
 	

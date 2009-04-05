@@ -311,3 +311,163 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
         return NULL;
 }
 
+gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
+		if (!msgr) return NULL;		
+		gchar *msgr2 = g_strdup(msgr);
+		while (strlen(msgr2) % 4 != 0) msgr2 = strcat(msgr2, "=");
+		gsize * msgr_dec64_len;
+		guchar * msgr_dec64 = purple_base64_decode(msgr2, &msgr_dec64_len);
+		gchar * msgr_utf8 = g_convert(msgr_dec64, msgr_dec64_len, "UTF-8", "UTF-16LE", NULL, NULL, NULL);
+		g_free(msgr_dec64);
+		//g_free(msgr2);
+		gchar **lines = g_strsplit(msgr_utf8,"\r\n\r\n",0);
+		g_free(msgr_utf8);
+		//@TODO: make extraction like parsing of message headers.
+		gchar **parts = g_strsplit(lines[0],"X-MMS-IM-Format:",0);
+		gchar *x_mms_im_format = g_strdup(parts[1]);
+		g_strfreev(parts);
+		g_strfreev(lines);
+		gchar * tmp = x_mms_im_format;
+		if (x_mms_im_format) {
+			while(*x_mms_im_format==' ' || *x_mms_im_format=='\t') x_mms_im_format++;			
+		}
+		x_mms_im_format = g_strdup(x_mms_im_format);
+		g_free(tmp);
+		return x_mms_im_format;
+}
+
+void msn_parse_format(const char *mime, char **pre_ret, char **post_ret);
+
+gchar *sipmsg_apply_x_mms_im_format(x_mms_im_format, body) {
+		if (!x_mms_im_format) {
+			return body ? g_strdup(body) : NULL;
+		}
+		char *pre, *post;
+		msn_parse_format(x_mms_im_format, &pre, &post);
+		gchar *res = g_strdup_printf("%s%s%s", pre ? pre :  "", body ? body : "", post ? post : "");
+		g_free(pre);
+		g_free(post);
+		return res;
+}
+
+
+
+//------------------------------------------------------------------------------------------
+//TEMP solution to include it here (copy from purple's msn protocol
+//How to reuse msn's util methods from sipe?
+void
+msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
+{
+	char *cur;
+	GString *pre  = g_string_new(NULL);
+	GString *post = g_string_new(NULL);
+	unsigned int colors[3];
+
+	if (pre_ret  != NULL) *pre_ret  = NULL;
+	if (post_ret != NULL) *post_ret = NULL;
+
+	cur = strstr(mime, "FN=");
+
+	if (cur && (*(cur = cur + 3) != ';'))
+	{
+		pre = g_string_append(pre, "<FONT FACE=\"");
+
+		while (*cur && *cur != ';')
+		{
+			pre = g_string_append_c(pre, *cur);
+			cur++;
+		}
+
+		pre = g_string_append(pre, "\">");
+		post = g_string_prepend(post, "</FONT>");
+	}
+
+	cur = strstr(mime, "EF=");
+
+	if (cur && (*(cur = cur + 3) != ';'))
+	{
+		while (*cur && *cur != ';')
+		{
+			pre = g_string_append_c(pre, '<');
+			pre = g_string_append_c(pre, *cur);
+			pre = g_string_append_c(pre, '>');
+			post = g_string_prepend_c(post, '>');
+			post = g_string_prepend_c(post, *cur);
+			post = g_string_prepend_c(post, '/');
+			post = g_string_prepend_c(post, '<');
+			cur++;
+		}
+	}
+
+	cur = strstr(mime, "CO=");
+
+	if (cur && (*(cur = cur + 3) != ';'))
+	{
+		int i;
+
+		i = sscanf(cur, "%02x%02x%02x;", &colors[0], &colors[1], &colors[2]);
+
+		if (i > 0)
+		{
+			char tag[64];
+
+			if (i == 1)
+			{
+				colors[1] = 0;
+				colors[2] = 0;
+			}
+			else if (i == 2)
+			{
+				unsigned int temp = colors[0];
+
+				colors[0] = colors[1];
+				colors[1] = temp;
+				colors[2] = 0;
+			}
+			else if (i == 3)
+			{
+				unsigned int temp = colors[2];
+
+				colors[2] = colors[0];
+				colors[0] = temp;
+			}
+
+			g_snprintf(tag, sizeof(tag),
+					   "<FONT COLOR=\"#%02hhx%02hhx%02hhx\">",
+					   colors[0], colors[1], colors[2]);
+
+			pre = g_string_append(pre, tag);
+			post = g_string_prepend(post, "</FONT>");
+		}
+	}
+
+	cur = strstr(mime, "RL=");
+
+	if (cur && (*(cur = cur + 3) != ';'))
+	{
+		if (*cur == '1')
+		{
+			/* RTL text was received */
+			pre = g_string_append(pre, "<SPAN style=\"direction:rtl;text-align:right;\">");
+			post = g_string_prepend(post, "</SPAN>");
+		}
+	}
+
+	cur = g_strdup(purple_url_decode(pre->str));
+	g_string_free(pre, TRUE);
+
+	if (pre_ret != NULL)
+		*pre_ret = cur;
+	else
+		g_free(cur);
+
+	cur = g_strdup(purple_url_decode(post->str));
+	g_string_free(post, TRUE);
+
+	if (post_ret != NULL)
+		*post_ret = cur;
+	else
+		g_free(cur);
+}
+// End of TEMP
+

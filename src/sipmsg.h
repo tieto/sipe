@@ -57,4 +57,16 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_remove_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_print(const struct sipmsg *msg);
 char *sipmsg_to_string(const struct sipmsg *msg);
+/**
+ * Parses headers-like 'msgr' attribute of INVITE's 'ms_text_format' header.
+ * Then retrieves value of 'X-MMS-IM-Format'.
+ 
+ * 'msgr' typically looks like:
+ * X-MMS-IM-Format: FN=Microsoft%20Sans%20Serif; EF=BI; CO=800000; CS=0; PF=22
+ */
+gchar *sipmsg_get_x_mms_im_format(gchar *msgr);
+/**
+ * Translates X-MMS-IM format to HTML presentation.
+ */
+gchar *sipmsg_apply_x_mms_im_format(x_mms_im_format, body);
 #endif /* _PURPLE_SIPMSG_H */

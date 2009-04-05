@@ -1,7 +1,9 @@
 version <upcoming> (TBD)
 	- Support for Reuters Messaging environment (LCS2005 like).
 	- Introduced invisible mode (Appear Offline). Better status support.
-	- Fix for first message sent twice.	
+	- Support for incoming message format (font face, styles, color).
+	- Accepts first message from the first packet (INVITE). Counterparty's first message now can appear up to 2 sec earlier.
+	- Fix for first message sent twice issue.	
 
 version 1.3.3 (2009-02-09)
 	- Implemented keep alive support. Thanks Stefan Becker
