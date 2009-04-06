@@ -1843,7 +1843,7 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 {
 	gchar *hdr;
 	gchar *fullto;
-        gchar *tmp;
+	gchar *tmp;
 
 	if (strncmp("sip:", session->with, 4)) {
 		fullto = g_strdup_printf("sip:%s", session->with);
@@ -1851,15 +1851,32 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 		fullto = g_strdup(session->with);
 	}
 
-	hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
+	char *msgformat;
+	char *msgtext;
+	sipe_parse_html(msg, &msgformat, &msgtext);
+	g_free(msgtext);
+	msgtext = purple_markup_strip_html(msg); // temp fix for new lines in the msn_import_html utility
+
+	gchar *msgr_value = sipmsg_get_msgr_string(msgformat);
+	g_free(msgformat);
+	gchar *msgr = "";
+	if (msgr_value) {
+		msgr = g_strdup_printf(";msgr=%s", msgr_value);
+		g_free(msgr_value);
+	}
+
+	hdr = g_strdup_printf("Content-Type: text/plain; charset=UTF-8%s\r\n", msgr);
+	g_free(msgr);
+	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
 	//hdr = g_strdup("Content-Type: text/rtf\r\n");
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA\r\nSupported: timer\r\n");
 
-        tmp = get_contact(sip);
+	tmp = get_contact(sip);
 	hdr = g_strdup_printf("Contact: %s\r\n%s", tmp, hdr);
 	g_free(tmp);
 
-	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msg, session->dialog, NULL);
+	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msgtext, session->dialog, NULL);
+	g_free(msgtext);
 
 	g_free(hdr);
 	g_free(fullto);
@@ -2022,8 +2039,24 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 		to = g_strdup_printf("sip:%s", session->with);
 	}
 
-	char * base64_msg = purple_base64_encode((guchar*) msg_body, strlen(msg_body));
-	char * ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT, base64_msg);
+	char *msgformat;
+	char *msgtext;
+	sipe_parse_html(msg_body, &msgformat, &msgtext);
+	g_free(msgtext);
+	msgtext = purple_markup_strip_html(msg_body); // temp fix for new lines in the msn_import_html utility
+
+	gchar *msgr_value = sipmsg_get_msgr_string(msgformat);
+	g_free(msgformat);
+	gchar *msgr = "";
+	if (msgr_value) {
+		msgr = g_strdup_printf(";msgr=%s", msgr_value);
+		g_free(msgr_value);
+	}
+
+	char * base64_msg = purple_base64_encode((guchar*) msgtext, strlen(msgtext));
+	g_free(msgtext);
+	char * ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT, msgr, base64_msg);
+	g_free(msgr);
 	g_free(base64_msg);
 
 	contact = get_contact(sip);
@@ -2202,10 +2235,10 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		gchar *msgr = sipmsg_find_part_of_header(contenttype, "msgr=", NULL, NULL);
 		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
 		g_free(msgr);
-		
+
 		gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, msg->body);
 		g_free(x_mms_im_format);
-	
+
 		serv_got_im(sip->gc, from, body_html, 0, time(NULL));
 		g_free(body_html);
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
@@ -2273,28 +2306,28 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	} else {
 		purple_debug_info("sipe", "process_incoming_invite, failed to find or create IM session\n");
 	}
-	
+
 	//ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk=
 	gchar *ms_text_format = sipmsg_find_header(msg, "ms-text-format");
 	if (ms_text_format && !strncmp(ms_text_format, "text/plain", 10)) {
 		gchar *msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
 		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
 		g_free(msgr);
-		
+
 		gchar *ms_body = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
 		if (ms_body) {
 			gchar *body = purple_base64_decode(ms_body, NULL);
 			g_free(ms_body);
 			gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body);
-			g_free(body);			
-			serv_got_im(sip->gc, from, body_html, 0, time(NULL));	
+			g_free(body);
+			serv_got_im(sip->gc, from, body_html, 0, time(NULL));
 			g_free(body_html);
 			sipmsg_add_header(msg, "Supported", "ms-text-format"); // accepts message reciept
 		}
 		g_free(x_mms_im_format);
 	}
 	g_free(from);
-	
+
 	sipmsg_remove_header(msg, "Ms-Conversation-ID");
 	sipmsg_remove_header(msg, "Ms-Text-Format");
 	sipmsg_remove_header(msg, "EndPoints");
@@ -3642,9 +3675,8 @@ static void sipe_login(PurpleAccount *account)
 	}
 
 	gc->proto_data = sip = g_new0(struct sipe_account_data, 1);
-	//@TODO: support formatting
-	//gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
-	//	PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
+	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
+		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
 	sip->gc = gc;
 	sip->account = account;
 	sip->registerexpire = 900;
