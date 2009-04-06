@@ -1854,8 +1854,6 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	char *msgformat;
 	char *msgtext;
 	sipe_parse_html(msg, &msgformat, &msgtext);
-	g_free(msgtext);
-	msgtext = purple_markup_strip_html(msg); // temp fix for new lines in the msn_import_html utility
 
 	gchar *msgr_value = sipmsg_get_msgr_string(msgformat);
 	g_free(msgformat);
@@ -2042,8 +2040,6 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	char *msgformat;
 	char *msgtext;
 	sipe_parse_html(msg_body, &msgformat, &msgtext);
-	g_free(msgtext);
-	msgtext = purple_markup_strip_html(msg_body); // temp fix for new lines in the msn_import_html utility
 
 	gchar *msgr_value = sipmsg_get_msgr_string(msgformat);
 	g_free(msgformat);
@@ -2116,9 +2112,11 @@ im_session_close_all (struct sipe_account_data *sip)
 
 static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what, PurpleMessageFlags flags)
 {
+purple_debug_info("sipe", "sipe_im_send what=%s\n", what);
+
 	struct sipe_account_data *sip = gc->proto_data;
 	char *to = g_strdup(who);
-	char *text = purple_unescape_html(what);
+	char *text = g_strdup(what);
 
 	struct sip_im_session * session = find_or_create_im_session(sip, who);
 
