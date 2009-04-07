@@ -1854,6 +1854,7 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	char *msgformat;
 	char *msgtext;
 	sipe_parse_html(msg, &msgformat, &msgtext);
+	purple_debug_info("sipe", "sipe_send_message: msgformat=%s", msgformat);
 
 	gchar *msgr_value = sipmsg_get_msgr_string(msgformat);
 	g_free(msgformat);
@@ -2040,6 +2041,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	char *msgformat;
 	char *msgtext;
 	sipe_parse_html(msg_body, &msgformat, &msgtext);
+	purple_debug_info("sipe", "sipe_invite: msgformat=%s", msgformat);
 
 	gchar *msgr_value = sipmsg_get_msgr_string(msgformat);
 	g_free(msgformat);

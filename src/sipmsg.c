@@ -372,6 +372,12 @@ gchar *sipmsg_apply_x_mms_im_format(x_mms_im_format, body) {
 //------------------------------------------------------------------------------------------
 //TEMP solution to include it here (copy from purple's msn protocol
 //How to reuse msn's util methods from sipe?
+
+// from internal.h for linux compilation
+#ifndef _WIN32
+#define MSG_LEN 2048
+#define BUF_LEN MSG_LEN
+#endif
 void
 msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 {
