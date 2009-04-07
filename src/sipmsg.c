@@ -314,12 +314,16 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
 		if (!msgr) return NULL;
 		gchar *msgr2 = g_strdup(msgr);
-		while (strlen(msgr2) % 4 != 0) msgr2 = strcat(msgr2, "=");
+		while (strlen(msgr2) % 4 != 0) {
+			gchar *tmp_msgr2 = msgr2;
+			msgr2 = g_strdup_printf("%s=", msgr2);
+			g_free(tmp_msgr2);
+		}
 		gsize * msgr_dec64_len;
 		guchar * msgr_dec64 = purple_base64_decode(msgr2, &msgr_dec64_len);
 		gchar * msgr_utf8 = g_convert(msgr_dec64, msgr_dec64_len, "UTF-8", "UTF-16LE", NULL, NULL, NULL);
 		g_free(msgr_dec64);
-		//g_free(msgr2);
+		g_free(msgr2);
 		gchar **lines = g_strsplit(msgr_utf8,"\r\n\r\n",0);
 		g_free(msgr_utf8);
 		//@TODO: make extraction like parsing of message headers.
@@ -372,6 +376,12 @@ gchar *sipmsg_apply_x_mms_im_format(x_mms_im_format, body) {
 //------------------------------------------------------------------------------------------
 //TEMP solution to include it here (copy from purple's msn protocol
 //How to reuse msn's util methods from sipe?
+
+// from internal.h for linux compilation
+#ifndef _WIN32
+#define MSG_LEN 2048
+#define BUF_LEN MSG_LEN
+#endif
 void
 msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 {
