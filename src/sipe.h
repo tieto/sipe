@@ -200,7 +200,7 @@ struct group_user_context {
 	gchar * user_name;
 };
 
-#define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA;ms-body=%s\r\n"
+#define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"
 
 #define SIPE_SEND_TYPING \
 "<?xml version=\"1.0\"?>"\

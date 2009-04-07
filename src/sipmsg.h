@@ -1,11 +1,11 @@
 /**
  * @file sipmsg.h
- * 
+ *
  * gaim
  *
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -57,4 +57,35 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_remove_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_print(const struct sipmsg *msg);
 char *sipmsg_to_string(const struct sipmsg *msg);
+/**
+ * Parses headers-like 'msgr' attribute of INVITE's 'ms_text_format' header.
+ * Then retrieves value of 'X-MMS-IM-Format'.
+
+ * 'msgr' typically looks like:
+ * X-MMS-IM-Format: FN=Microsoft%20Sans%20Serif; EF=BI; CO=800000; CS=0; PF=22
+ */
+gchar *sipmsg_get_x_mms_im_format(gchar *msgr);
+
+/**
+ * Returns UTF-16LE/'modified base64' encoded X-MMS-IM-Format
+ * based on input x_mms_im_format.
+ */
+gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format);
+
+/**
+ * Translates X-MMS-IM format to HTML presentation.
+ */
+gchar *sipmsg_apply_x_mms_im_format(x_mms_im_format, body);
+
+#define sipe_parse_html            msn_import_html
+/**
+ * Parses the Purple message formatting (html) into the MSN format.
+ *
+ * @param html			The html message to format.
+ * @param attributes	The returned attributes string.
+ * @param message		The returned message string.
+ *
+ * @return The new message.
+ */
+void sipe_parse_html(const char *html, char **attributes, char **message);
 #endif /* _PURPLE_SIPMSG_H */
