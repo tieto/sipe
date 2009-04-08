@@ -1,24 +1,19 @@
-version <upcoming> (TBD)
-	- Support for Reuters Messaging environment (LCS2005 like).
-	- Support for message formatting (font face, style, color).
-	- Introduced invisible mode (Appear Offline). Better status support.	
-	- Accepts the first message from the first packet (INVITE). Counterparty's first message now can appear up to 2 sec earlier.
-	- Fix for the first message sent twice issue.	
-
-version 1.3.4 (2009-04-03)
+version 1.3.4 (TBD)
        - Fix segmentation fault caused by redirect
        - Added check for zlib.h, com_err and purple version on configure script,
-       - Fixes for Reuters servers LCS2005
-         + They response with m=x-ms-message rather than m=message
-         + Richer status support with reference to [MS-PRES] and work of 
-           official clients
-         + Fix for bug #2528391: First message is sent twice via LCS2005.
        - Added note to tooltip
        - Added timeout of security association after eight hours as described 
          in [MS-SIPAE] 3.2.2 Timers.
        - Updates to enable compilation in a Cygwin/MinGW environments
        - Fix a problem with the function purple_get_host_name() in libpurple 
          versions <  2.5.x
+       - Support for responses with m=x-ms-message rather than m=message
+       - Support for Reuters Messaging environment (LCS2005 like)
+       - Support for message formatting (font face, style, color).
+       - Introduced invisible mode (Appear Offline). Better status support.	
+         official clients
+       - Richer status support with reference to [MS-PRES] and work of 
+       - Fix for bug #2528391: Accepts the first message from the first packet (INVITE). Counterparty's first message now can appear up to 2 sec earlier.
 
 version 1.3.3 (2009-02-09)
 	- Implemented keep alive support. Thanks Stefan Becker
