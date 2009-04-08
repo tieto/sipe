@@ -2236,7 +2236,9 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
 		g_free(msgr);
 
-		gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, msg->body);
+		gchar *body_esc = g_markup_escape_text(msg->body, -1);
+		gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body_esc);
+		g_free(body_esc);
 		g_free(x_mms_im_format);
 
 		serv_got_im(sip->gc, from, body_html, 0, time(NULL));
@@ -2318,7 +2320,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		if (ms_body) {
 			gchar *body = purple_base64_decode(ms_body, NULL);
 			g_free(ms_body);
-			gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body);
+			gchar *body_esc = g_markup_escape_text(body, -1);
+			gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body_esc);
+			g_free(body_esc);
 			g_free(body);
 			serv_got_im(sip->gc, from, body_html, 0, time(NULL));
 			g_free(body_html);
@@ -3980,11 +3984,13 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 	struct sipe_buddy *sbuddy;
 
 	sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
-	sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
-
-	if (sbuddy && sbuddy->annotation)
+	if (sip)  //happens on pidgin exit
 	{
-		return g_strdup(sbuddy->annotation);
+		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
+		if (sbuddy && sbuddy->annotation)
+		{
+			return g_strdup(sbuddy->annotation);
+		}
 	}
 	else
 	{
