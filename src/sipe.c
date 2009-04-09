@@ -2696,7 +2696,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 {
 	gchar *fromhdr;
 	gchar *from;
-	gchar *tmp2;
+	gchar *getbasic = g_strdup("closed");
 	gchar *activity = g_strdup("available");
 	xmlnode *pidf;
 	xmlnode *basicstatus = NULL, *tuple, *status;
@@ -2711,7 +2711,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 
 	pidf = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!pidf) {
-		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf\n");
+		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf:%s\n",msg->body);
 		return;
 	}
 
@@ -2728,15 +2728,15 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 		return;
 	}
 
-	tmp2 = xmlnode_get_data(basicstatus);
-	if (!tmp2) {
+	getbasic = xmlnode_get_data(basicstatus);
+	if (!getbasic) {
 		purple_debug_info("sipe", "process_incoming_notify: no basic data found\n");
 		xmlnode_free(pidf);
 		return;
 	}
 
-	purple_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n", tmp2);
-	if (strstr(tmp2, "open")) {
+	purple_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n", getbasic);
+	if (strstr(getbasic, "open")) {
 		isonline = TRUE;
 	}
 
@@ -2783,7 +2783,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 
 	xmlnode_free(pidf);
 	g_free(from);
-	g_free(tmp2);
+	g_free(getbasic);
 	g_free(activity);
 }
 
@@ -2847,7 +2847,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 {
 	char *ctype = sipmsg_find_header(msg, "Content-Type");
 
-	//printf("### incoming notify\nContent-Type: %s\n\n%s\n", ctype, msg->body);
+	purple_debug_info("sipe", "process_incoming_notify: Content-Type: %s\n\n%s\n", ctype, msg->body);
 
 	if ( ctype && (  strstr(ctype, "application/rlmi+xml")
 				  || strstr(ctype, "application/msrtc-event-categories+xml") ) )
@@ -3236,9 +3236,9 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			return;
 		}
 
-		if (msg->body) {
+		/*if (msg->body) {
 			purple_debug_info("sipe", "body:\n%s", msg->body);
-		}
+		}*/
 
 		// Verify the signature before processing it
 		if (sip->registrar.ntlm_key) {
@@ -3440,7 +3440,6 @@ static void login_cb(gpointer data, gint source, const gchar *error_message)
 	conn = connection_create(sip, source);
 
 	sip->registertimeout = purple_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
-
 	do_register(sip);
 
 	conn->inputhandler = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_input_cb, gc);
