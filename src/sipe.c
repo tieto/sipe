@@ -1838,6 +1838,59 @@ static void im_session_destroy(struct sipe_account_data *sip, struct sip_im_sess
 	// TODO free session resources
 }
 
+static void sipe_present_message_undelivered_err(gchar *with, struct sipe_account_data *sip, gchar *message)
+{
+	char *msg, *msg_tmp;
+	msg_tmp = message ? purple_markup_strip_html(message) : NULL;
+	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
+	g_free(msg_tmp);
+	msg_tmp = g_strdup_printf( _("The following message could not be delivered to all recipients, "\
+			"possibly because one or more persons are offline:\n%s") ,
+			msg ? msg : "");
+	purple_conv_present_error(with, sip->account, msg_tmp);
+	g_free(msg);
+	g_free(msg_tmp);
+}
+
+static void sipe_im_remove_first_from_queue (struct sip_im_session * session);
+static void sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * session);
+
+static gboolean
+process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
+{
+	gboolean ret = TRUE;
+	gchar * with = parse_from(sipmsg_find_header(msg, "To"));
+	struct sip_im_session * session = find_im_session(sip, with);
+
+	if (!session) {
+		purple_debug_info("sipe", "process_message_response: unable to find IM session\n");
+		ret = FALSE;
+	}
+
+	if (msg->response != 200) {
+		purple_debug_info("sipe", "process_message_response: MESSAGE response not 200\n");
+
+		char *queued_msg;
+		if (session->outgoing_message_queue) {
+			queued_msg = session->outgoing_message_queue->data;
+		}
+		sipe_present_message_undelivered_err(with, sip, queued_msg);
+		im_session_destroy(sip, session);
+		ret = FALSE;
+	}
+
+	struct sip_dialog * dialog = session->dialog;
+	if (!dialog) {
+		purple_debug_info("sipe", "process_message_response: session outgoing dialog is NULL\n");
+		ret = FALSE;
+	}
+
+	sipe_im_remove_first_from_queue(session);
+	sipe_im_process_queue(sip, session);
+	g_free(with);
+	return ret;
+}
+
 static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_session * session, const char *msg)
 {
 	gchar *hdr;
@@ -1873,7 +1926,7 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	hdr = g_strdup_printf("Contact: %s\r\n%s", tmp, hdr);
 	g_free(tmp);
 
-	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msgtext, session->dialog, NULL);
+	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msgtext, session->dialog, process_message_response);
 	g_free(msgtext);
 
 	g_free(hdr);
@@ -1885,20 +1938,16 @@ static void
 sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * session)
 {
 	GSList *entry = session->outgoing_message_queue;
-	while (entry) {
+	if (entry) {
 		char *queued_msg = entry->data;
 		sipe_send_message(sip, session, queued_msg);
-
-		// Remove from the queue and free the string
-		entry = session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
-		g_free(queued_msg);
 	}
 }
 
 static void
 sipe_im_remove_first_from_queue (struct sip_im_session * session)
 {
-	if (session->outgoing_message_queue) {
+	if (session && session->outgoing_message_queue) {
 		char *queued_msg = session->outgoing_message_queue->data;
 		// Remove from the queue and free the string
 		session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
@@ -1983,22 +2032,31 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 {
 	gchar * with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_im_session * session = find_im_session(sip, with);
-	g_free(with);
 
 	if (!session) {
 		purple_debug_info("sipe", "process_invite_response: unable to find IM session\n");
+		g_free(with);
 		return FALSE;
 	}
 
 	if (msg->response != 200) {
-		purple_debug_info("sipe", "process_invite_response: INVITE response not 200, ignoring\n");
+		purple_debug_info("sipe", "process_invite_response: INVITE response not 200\n");
+
+		char *queued_msg;
+		if (session->outgoing_message_queue) {
+			queued_msg = session->outgoing_message_queue->data;
+		}
+		sipe_present_message_undelivered_err(with, sip, queued_msg);
+
 		im_session_destroy(sip, session);
+		g_free(with);
 		return FALSE;
 	}
 
 	struct sip_dialog * dialog = session->dialog;
 	if (!dialog) {
-		purple_debug_info("sipe", "process_invite_response: session outgoign dialog is NULL\n");
+		purple_debug_info("sipe", "process_invite_response: session outgoing dialog is NULL\n");
+		g_free(with);
 		return FALSE;
 	}
 
@@ -2013,6 +2071,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		sipe_im_process_queue(sip, session);
 	}
 
+	g_free(with);
 	return TRUE;
 }
 
