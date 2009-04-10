@@ -4078,6 +4078,10 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 		{
 			return g_strdup(sbuddy->annotation);
 		}
+		else
+		{
+			return NULL;
+		}
 	}
 	else
 	{
