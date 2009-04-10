@@ -898,7 +898,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 		while(iter)
 		{
 			char *tmp = route;
-			route = g_strdup_printf("%sRoute: <%s>\r\n", route, iter->data);
+			route = g_strdup_printf("%sRoute: <%s>\r\n", route, (char *)iter->data);
 			g_free(tmp);
 			iter = g_slist_next(iter);
 		}
@@ -1333,21 +1333,29 @@ static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * b
 {
 	gchar *to = strstr(buddy_name, "sip:") ? g_strdup(buddy_name) : g_strdup_printf("sip:%s", buddy_name);
 	gchar *tmp = get_contact(sip);
-	gchar *contact;
+	gchar *request;
 	gchar *content;
 
-
+  //Add the the extend SUBSCRIBE request 
 	if (sip->presence_method_version == 1)
 	{
-		contact = g_strdup_printf(
-"Accept: application/msrtc-event-categories+xml, application/rlmi+xml, multipart/related\r\n"
+		request = g_strdup_printf(
 "Require: adhoclist, categoryList\r\n"
 "Supported: eventlist\r\n"
-"Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
+"Accept: application/msrtc-event-categories+xml, application/xpidf+xml, text/xml+msrtc.pidf, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
 "Event: presence\r\n"
+"Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
 "Contact: %s\r\n", tmp);
+	}
+else{ //To send a single SUSCRIBE request
+		request = g_strdup_printf(
+"Accept: application/msrtc-event-categories+xml, application/xpidf+xml, text/xml+msrtc.pidf, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+"Event: presence\r\n"
+"Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
+"Contact: %s\r\n", tmp);
+}
 
-		content = g_strdup_printf(
+	content = g_strdup_printf(
 "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
 "<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
 "<resource uri=\"%s\"/>\n"
@@ -1359,24 +1367,15 @@ static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * b
 "</action>\n"
 "</batchSub>", sip->username, to
 		);
-	}
-	else
-	{
-		contact = g_strdup_printf(
-			"Accept: application/pidf+xml,  text/xml+msrtc.pidf, application/xpidf+xml\r\n"
-			"Event: presence\r\n"
-			"Contact: %s\r\n", tmp);
-
-		content = g_strdup("");
-	}
+	
 	g_free(tmp);
 
 	/* subscribe to buddy presence */
-	send_sip_request(sip->gc, "SUBSCRIBE", to, to, contact, content, NULL, process_subscribe_response);
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, request, content, NULL, process_subscribe_response);
 
 	g_free(content);
 	g_free(to);
-	g_free(contact);
+	g_free(request);
 }
 
 static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
@@ -2559,6 +2558,25 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 	return TRUE;
 }
 
+static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, const gchar *data, unsigned len)
+{
+	const char *uri,*state;
+	xmlnode *xn_list;
+	xmlnode *xn_resource;
+	xmlnode *xn_instance;
+		
+	xn_list = xmlnode_from_str(data, len);
+	xn_resource = xmlnode_get_child(xn_list, "resource");
+	if (!xn_resource) return;
+	xn_instance = xmlnode_get_child(xn_resource, "instance");
+	if (!xn_instance) return;
+	state = xmlnode_get_attrib(xn_instance, "state");
+	uri = xmlnode_get_attrib(xn_instance, "cid");
+	purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: uri(%s),state(%s)\n",uri,state);
+	sip->presence_method_version= 0;
+	sipe_subscribe_to_name(sip, uri);
+}
+	
 
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
@@ -2568,9 +2586,11 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode *xn_node;
 	int changed = 0;
 	const char *activity = NULL;
-
+		
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri");
+	
+	purple_debug_info("sipe", "process_incoming_notify_rlmi\n");
 
 	for (xn_category = xmlnode_get_child(xn_categories, "category");
 		 xn_category ;
@@ -2806,7 +2826,15 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			length = purple_mime_part_get_length(parts->data);
 			g_free(doc);
 		}
-		process_incoming_notify_rlmi(sip, content, length);
+		char *subscription_state = sipmsg_find_header(msg, "subscription-state");
+		if (strstr(subscription_state, "active")){
+		    process_incoming_notify_rlmi(sip, content, length);
+		}
+		else if (strstr(subscription_state, "terminated")){
+			purple_debug_info("sipe", "process_incoming_notify: subscription_state:%s\n\n",subscription_state);
+			process_incoming_notify_rlmi_resub(sip,content,length);
+		}
+
 		if (mime)
 		{
 			purple_mime_document_free(mime);
@@ -3172,7 +3200,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			conn->inbufused = strlen(conn->inbuf);
 		} else {
 			purple_debug_info("sipe", "process_input: body too short (%d < %d, strlen %d) - ignoring message\n",
-					  restlen, msg->bodylen, strlen(conn->inbuf));
+					  restlen, msg->bodylen, (int)strlen(conn->inbuf));
 			sipmsg_free(msg);
 			return;
 		}
@@ -3239,7 +3267,7 @@ static void sipe_invalidate_ssl_connection(PurpleConnection *gc, const char *msg
 	struct sipe_account_data *sip = gc->proto_data;
 	PurpleSslConnection *gsc = sip->gsc;
 
-	purple_debug_error("sipe", debug);
+	purple_debug_error("sipe", "%s",debug);
 	purple_connection_error(gc, msg);
 
 	/* Invalidate this connection. Next send will open a new one */
@@ -3788,7 +3816,7 @@ static void sipe_close(PurpleConnection *gc)
 static void sipe_searchresults_im_buddy(PurpleConnection *gc, GList *row, void *user_data)
 {
 	PurpleAccount *acct = purple_connection_get_account(gc);
-	char *id = g_strdup_printf("sip:%s", g_list_nth_data(row, 0));
+	char *id = g_strdup_printf("sip:%s", (char *)g_list_nth_data(row, 0));
 	PurpleConversation *conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_IM, id, acct);
 	if (conv == NULL)
 		conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, acct, id);
