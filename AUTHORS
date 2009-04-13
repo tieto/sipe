@@ -1,16 +1,20 @@
 Maintainers:
 
-Anibal Avelar "fixxxer" <debianmx at gmail dot com>
-Gabriel Burt  <gburt at novell dot com>
+Anibal Avelar <debianmx at gmail dot com>, upstream developer
+Gabriel Burt  <gburt at novell dot com>, developer
+Stefan Becker <stefan.becker at nokia dot com>, developer
+Daniel Beichl <daniel_beichl at gmx dot net>, developer
 
 Crazy Patch Writers
 Carl Seutter <cseutter at sbcglobal dot net>
-Stefan Becker <stefan.becker at nokia dot com>
 Sean E. Millichamp <sean at bruenor dot org>
-Daniel Beichl <daniel_beichl at gmx dot net>
 Andrew Rechenberg <therealdjflux at gmail dot com>
 Matthias Scharrer <matthias.scharrer at gmail dot com>
 Garett Shulman <garett.shulman at gmail dot com>
 Tyson Vinson <lornoss at gmail dot com>
+Andrew Schenck <lane_andrew at hotmail dot com>
+pier11 <pier11 at kinozal dot tv>
+naumand <naumand at dblonws18316 dot uk dot db dot com>
+Ivan Frade <ivan at kustu at (none)>
 
-Based in the initial Sip/Simple protocol gaim plugin from Thomas Butter <butter@uni-mannheim.de>
+Based in the initial Sip/Simple protocol gaim plugin from Thomas Butter <butter at uni-mannheim dot de>

@@ -14,6 +14,8 @@ version 1.3.4 (TBD)
          official clients
        - Richer status support with reference to [MS-PRES] and work of 
        - Fix for bug #2528391: Accepts the first message from the first packet (INVITE). Counterparty's first message now can appear up to 2 sec earlier.
+       - Fixed the offline contacts problem in OCS2007 following [MS-PRES]
+       - Added notification support for undelivered messages.
 
 version 1.3.3 (2009-02-09)
 	- Implemented keep alive support. Thanks Stefan Becker
