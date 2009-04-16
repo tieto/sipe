@@ -1,0 +1,121 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+
+	<Product Name='Pidgin SIPE plug-in 1.3.4' Id='EE2EDB04-2A94-11DE-9BE4-EE4856D89593' UpgradeCode='5B2EC7C8-2A9A-11DE-9AEE-4E8256D89593' Language='1033' Codepage='1252' Version='1.3.4' Manufacturer='http://sipe.sourceforge.net/'>
+
+		<Package Id='*' Keywords='Installer' Description="Pidgin SIPE plug-in 1.3.4 Installer" Comments='An Open Implementation of SIP/Simple protocol for Live Communications Server 2003/2005/2007' Manufacturer='http://sipe.sourceforge.net/' InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+
+		<Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" />
+		<Property Id='DiskPrompt' Value="Pidgin SIPE plug-in 1.3.4 Installation [1]" />  
+	
+		<Directory Id='TARGETDIR' Name='SourceDir'>
+		  <Directory Id='ProgramFilesFolder' Name='PFiles'>
+			<Directory Id='INSTALLDIR' Name='Pidgin'>
+			  
+			  <!-- SIPE dll -->
+			  <Directory Id='plugins' Name='plugins'>
+				<Component Id='MainExecutable' Guid='C0F1C152-2A98-11DE-9F53-817056D89593'>
+				  <File Id='LibsipeDLL' Name='libsipe.dll' DiskId='1'
+					Source='src\libsipe.dll' Vital='yes'>
+				  </File>
+				</Component>
+			  </Directory>
+			  
+			  <!-- Protocal Icons -->
+			  <Directory Id='pixmaps' Name='pixmaps'>
+			    <Directory Id='pidgin' Name='pidgin'>
+				  <Directory Id='protocols' Name='protocols'>
+					<Directory Id='sixteen' Name='16'>
+						<Component Id='PixmapsProtocols16icon' Guid='DF22ADA4-2A9C-11DE-A54B-FD9B56D89593'>
+						  <File Id='SipePNG16' Name='sipe.png' DiskId='1'
+							Source='pixmaps/16/sipe.png' Vital='yes' />
+						</Component>
+					</Directory>
+					<Directory Id='twenty.two' Name='22'>
+						<Component Id='PixmapsProtocols22icon' Guid='58A125D8-2A9E-11DE-912A-71AD56D89593'>
+						  <File Id='SipePNG22' Name='sipe.png' DiskId='1'
+							Source='pixmaps/22/sipe.png' Vital='yes' />
+						</Component>
+					</Directory>
+					<Directory Id='forty.eight' Name='48'>
+						<Component Id='PixmapsProtocols48icon' Guid='62BD24FE-2A9E-11DE-802B-E7AE56D89593'>
+						  <File Id='SipePNG48' Name='sipe.png' DiskId='1'
+							Source='pixmaps/48/sipe.png' Vital='yes' />
+						</Component>
+					</Directory>
+				  </Directory>
+				</Directory>
+			  </Directory>
+			  
+			  <!-- Translations -->
+			  <Directory Id='locale' Name='locale'>
+				<Directory Id='da' Name='da'>
+				  <Directory Id='da_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleDaLcMessages' Guid='2AE5620C-2A9F-11DE-930D-E5B556D89593'>
+						  <File Id='da.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/da.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
+				<Directory Id='de' Name='de'>
+				  <Directory Id='de_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleDeLcMessages' Guid='57D06CC0-2AA0-11DE-BACD-A7C056D89593'>
+						  <File Id='de.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/de.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
+				<Directory Id='es' Name='es'>
+				  <Directory Id='es_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleEsLcMessages' Guid='619F22C8-2AA0-11DE-B345-EFC056D89593'>
+						  <File Id='es.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/es.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
+				<Directory Id='fr' Name='fr'>
+				  <Directory Id='fr_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleFrLcMessages' Guid='675623F6-2AA0-11DE-892D-0FC156D89593'>
+						  <File Id='fr.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/fr.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
+				<Directory Id='hi' Name='hi'>
+				  <Directory Id='hi_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleHiLcMessages' Guid='6E3FDAD6-2AA0-11DE-AB1D-53C156D89593'>
+						  <File Id='hi.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/hi.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
+				<Directory Id='ta' Name='ta'>
+				  <Directory Id='ta_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleTaLcMessages' Guid='752DBD5E-2AA0-11DE-B49D-17C256D89593'>
+						  <File Id='ta.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/ta.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
+			  </Directory>
+			</Directory>
+		  </Directory>
+		</Directory>
+
+		<Feature Id='Complete' Level='1'>
+			<ComponentRef Id='MainExecutable' />
+			<ComponentRef Id='PixmapsProtocols16icon' />
+			<ComponentRef Id='PixmapsProtocols22icon' />
+			<ComponentRef Id='PixmapsProtocols48icon' />
+			<ComponentRef Id='LocaleDaLcMessages' />
+			<ComponentRef Id='LocaleDeLcMessages' />
+			<ComponentRef Id='LocaleEsLcMessages' />
+			<ComponentRef Id='LocaleFrLcMessages' />
+			<ComponentRef Id='LocaleHiLcMessages' />
+			<ComponentRef Id='LocaleTaLcMessages' />
+		</Feature>
+	
+		<!--Icon Id="sipe.png" SourceFile="pixmaps/16/sipe.png" /-->
+	
+	</Product>
+</Wix>
