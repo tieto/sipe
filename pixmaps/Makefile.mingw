@@ -1,0 +1,38 @@
+#
+# Makefile.mingw
+#
+# Description: Makefile for win32 (mingw) version of Pidgin pixmaps
+#
+
+OLD_PIDGIN_TREE_TOP := $(PIDGIN_TREE_TOP)
+PIDGIN_TREE_TOP := ../$(OLD_PIDGIN_TREE_TOP)
+
+include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
+
+datadir := $(PIDGIN_INSTALL_DIR)
+pidginprotocolpixdir = $(datadir)/pixmaps/pidgin/protocols
+
+PROTOCOLS_16 = \
+		16/sipe.png
+
+PROTOCOLS_22 = \
+		22/sipe.png
+
+PROTOCOLS_48 = \
+		48/sipe.png
+
+nobase_dist_pidginpixmap_DATA = \
+		$(PROTOCOLS_16) \
+		$(PROTOCOLS_22) \
+		$(PROTOCOLS_48) \
+
+.PHONY: install
+
+install:
+	if test '$(nobase_dist_pidginpixmap_DATA)'; then \
+	  list='$(nobase_dist_pidginpixmap_DATA)'; for file in $$list; do \
+	    dir=`dirname $$file`; \
+	    mkdir -p $(pidginprotocolpixdir)/$$dir; \
+	    cp $$file $(pidginprotocolpixdir)/$$dir/; \
+	  done; \
+	fi;

@@ -8,14 +8,21 @@
 export PIDGIN_TREE_TOP := ../pidgin-2.5.5
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
-.PHONY: all clean
+.PHONY: all clean install
 
 all: 
 	$(MAKE) -C src -f $(MINGW_MAKEFILE)
+	$(MAKE) -C po -f $(MINGW_MAKEFILE)
 
 clean:
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) clean
+	$(MAKE) -C po -f $(MINGW_MAKEFILE) clean
   
 rmbak:
 	rm -f *~
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) rmbak
+	
+install: all
+	$(MAKE) -C src -f $(MINGW_MAKEFILE) install
+	$(MAKE) -C po -f $(MINGW_MAKEFILE) install
+	$(MAKE) -C pixmaps -f $(MINGW_MAKEFILE) install
