@@ -4100,6 +4100,15 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	}
 }
 
+static GHashTable *
+sipe_get_account_text_table(PurpleAccount *account)
+{
+	GHashTable *table;
+	table = g_hash_table_new(g_str_hash, g_str_equal);
+	g_hash_table_insert(table, "login_label", (gpointer)_("Sign-In name..."));
+	return table;
+}
+
 static PurplePlugin *my_protocol = NULL;
 
 static PurplePluginProtocolInfo prpl_info =
@@ -4164,7 +4173,14 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* new_xfer */
 	NULL,					/* offline_message */
 	NULL,					/* whiteboard_prpl_ops */
-	sipe_send_raw,				/* send_raw */
+	sipe_send_raw,			/* send_raw */
+	NULL,					/* roomlist_room_serialize */
+	NULL,					/* unregister_user */
+	NULL,					/* send_attention */
+	NULL,					/* get_attention_types */
+
+	sizeof(PurplePluginProtocolInfo),       /* struct_size */
+	sipe_get_account_text_table, /* get_account_text_table */
 };
 
 
