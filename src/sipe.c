@@ -2867,7 +2867,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 {
 	char *ctype = sipmsg_find_header(msg, "Content-Type");
 
-	purple_debug_info("sipe", "process_incoming_notify: Content-Type: %s\n\n%s\n", ctype, msg->body);
+	purple_debug_info("sipe", "process_incoming_notify: Content-Type: %s\n\n%s\n", ctype ? ctype : "" , msg->body);
 
 	if ( ctype && (  strstr(ctype, "application/rlmi+xml")
 				  || strstr(ctype, "application/msrtc-event-categories+xml") ) )
