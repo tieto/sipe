@@ -116,6 +116,8 @@ struct sipe_account_data {
 	PurpleConnection *gc;
 	gchar *sipdomain;
 	gchar *username;
+	gchar *authdomain;
+	gchar *authuser;
 	gchar *password;
 	PurpleDnsQueryData *query_data;
 	PurpleSrvQueryData *srv_query_data;

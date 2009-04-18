@@ -250,8 +250,8 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 	const char *host;
 	gchar      *krb5_token = NULL;
 
-	authdomain = purple_account_get_string(sip->account, "authdomain", "");
-	authuser = purple_account_get_string(sip->account, "authuser", sip->username);
+	authdomain = sip->authdomain;
+	authuser = sip->authuser;
 
 	// XXX FIXME: Get this info from the account dialogs and/or /etc/krb5.conf
 	//            and do error checking
@@ -402,7 +402,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		host = sip->sipdomain;
 	}*/
 
-	authuser   = purple_account_get_string(sip->account, "authuser", sip->username);
+	authuser = sip->authuser;
 
 	if (!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
@@ -3752,7 +3752,7 @@ static void sipe_login(PurpleAccount *account)
 {
 	PurpleConnection *gc;
 	struct sipe_account_data *sip;
-	gchar **userserver;
+	gchar **signinname_login, **userserver, **domain_user;
 	const char *transport;
 
 	const char *username = purple_account_get_username(account);
@@ -3770,13 +3770,23 @@ static void sipe_login(PurpleAccount *account)
 	sip->gc = gc;
 	sip->account = account;
 	sip->registerexpire = 900;
-
-	userserver = g_strsplit(username, "@", 2);
+	
+	signinname_login = g_strsplit(username, ",", 2);
+	
+	userserver = g_strsplit(signinname_login[0], "@", 2);
 	purple_connection_set_display_name(gc, userserver[0]);
-        sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL));
-        sip->sipdomain = g_strdup(userserver[1]);
+    sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL));
+    sip->sipdomain = g_strdup(userserver[1]);
+	
+	domain_user = g_strsplit(signinname_login[1], "\\", 2);
+	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : "";
+	sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+	
 	sip->password = g_strdup(purple_connection_get_password(gc));
+	
 	g_strfreev(userserver);
+	g_strfreev(domain_user);
+	g_strfreev(signinname_login);
 
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
 
@@ -4105,7 +4115,7 @@ sipe_get_account_text_table(PurpleAccount *account)
 {
 	GHashTable *table;
 	table = g_hash_table_new(g_str_hash, g_str_equal);
-	g_hash_table_insert(table, "login_label", (gpointer)_("Sign-In name..."));
+	g_hash_table_insert(table, "login_label", (gpointer)_("Sign-In Name..."));
 	return table;
 }
 
@@ -4227,6 +4237,10 @@ static void init_plugin(PurplePlugin *plugin)
 #endif
 
         purple_plugin_register(plugin);
+		
+	split = purple_account_user_split_new(_("Login \n   domain\\user  or\n   someone@linux.com "), NULL, ',');
+	purple_account_user_split_set_reverse(split, FALSE);
+	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
         option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
@@ -4260,11 +4274,7 @@ static void init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	*/
-
-	option = purple_account_option_string_new(_("Auth User"), "authuser", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	option = purple_account_option_string_new(_("Auth Domain"), "authdomain", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	
 	option = purple_account_option_bool_new(_("Use Client-specified Keepalive"), "clientkeepalive", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = purple_account_option_int_new(_("Keepalive Timeout"), "keepalive", 300);
