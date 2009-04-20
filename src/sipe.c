@@ -1016,18 +1016,18 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 
 	sip->registerstatus = 1;
 
-	if (expire) {
-		sip->reregister = time(NULL) + expire - 50;
-	} else {
-		sip->reregister = time(NULL) + 600;
-	}
-
 	send_sip_request(sip->gc, "REGISTER", uri, to, hdr, "", NULL,
 		process_register_response);
 
 	g_free(hdr);
 	g_free(uri);
 	g_free(to);
+}
+
+static void do_register_cb(struct sipe_account_data *sip)
+{
+	do_register_exp(sip, sip->registerexpire);
+	sip->reregister_set = FALSE;
 }
 
 static void do_register(struct sipe_account_data *sip)
@@ -1312,15 +1312,60 @@ static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar
 	g_free(body);
 }
 
+/**
+  * A timer callback
+  * Should return FALSE if repetitive action is not needed
+  */
+gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
+{
+	purple_debug_info("sipe", "sipe_scheduled_exec: executing\n");
+	sched_action->sip->timeouts = g_slist_remove(sched_action->sip->timeouts, sched_action);
+	purple_debug_info("sipe", "sip->timeouts count:%d after removal\n",g_slist_length(sched_action->sip->timeouts));
+	(sched_action->action)(sched_action->sip, sched_action->payload);
+	gboolean ret = sched_action->repetitive;
+	g_free(sched_action);
+	return ret;
+}
+
+/**
+  * Do schedule action for execution in the future.
+  * Non repetitive execution.
+  *
+  * @param timeout in seconds
+  */
+void sipe_schedule_action(int timeout, Action action, struct sipe_account_data *sip, void * payload)
+{
+	struct scheduled_action *sched_action = g_new0(struct scheduled_action, 1);
+	sched_action->repetitive = FALSE;
+	sched_action->action = action;
+	sched_action->sip = sip;
+	sched_action->payload = payload;
+	sched_action->timeout_handler = purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action);
+	sip->timeouts = g_slist_append(sip->timeouts, sched_action);
+	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
+}
+
 static gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	gchar *to;
+	
+	to = parse_from(sipmsg_find_header(tc->msg, "To")); /* cant be NULL since it is our own msg */
 
-	if (msg->response == 200 || msg->response == 202) {
+	if (msg->response == 200 || msg->response == 202) {	
+	
+		const gchar *expires_header;
+		int expires;
+		expires_header = sipmsg_find_header(msg, "Expires");
+		expires = expires_header ? strtol(expires_header, NULL, 10) : 0;
+		g_free(expires_header);
+		
+		if (expires) {	
+			sipe_schedule_action(expires, sipe_subscribe_to_name, sip, to);
+			purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", to, expires);
+		}
+	
 		return TRUE;
 	}
-
-	to = parse_from(sipmsg_find_header(tc->msg, "To")); /* cant be NULL since it is our own msg */
 
 	/* we can not subscribe -> user is offline (TODO unknown status?) */
 
@@ -1336,7 +1381,7 @@ static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * b
 	gchar *request;
 	gchar *content;
 
-  //Add the the extend SUBSCRIBE request 
+  //Add the the extend SUBSCRIBE request
 	if (sip->presence_method_version == 1)
 	{
 		request = g_strdup_printf(
@@ -1367,7 +1412,7 @@ else{ //To send a single SUSCRIBE request
 "</action>\n"
 "</batchSub>", sip->username, to
 		);
-	
+
 	g_free(tmp);
 
 	/* subscribe to buddy presence */
@@ -1560,6 +1605,14 @@ static GList *sipe_status_types(PurpleAccount *acc)
 	return types;
 }
 
+/**
+  * A callback for g_hash_table_foreach
+  */
+static void sipe_buddy_subscribe(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
+{
+	sipe_subscribe_to_name(sip, buddy->name);
+}
+
 static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	int len = msg->bodylen;
@@ -1657,6 +1710,12 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	}
 
 	xmlnode_free(isc);
+
+	//subscribe to buddies
+	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
+		g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe, (gpointer)sip);
+		sip->subscribed_buddies = TRUE;
+	}
 
 	return 0;
 }
@@ -2216,20 +2275,6 @@ sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 	return SIPE_TYPING_SEND_TIMEOUT;
 }
 
-
-static void sipe_buddy_resub(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
-{
-	time_t curtime = time(NULL);
-	if (buddy->resubscribe < curtime) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_buddy_resub %s\n", name);
-		sipe_subscribe_to_name(sip, buddy->name);
-
-		/* resubscribe before subscription expires */
-		/* add some jitter */
-		buddy->resubscribe = time(NULL)+1140+(rand()%50);
-	}
-}
-
 static gboolean resend_timeout(struct sipe_account_data *sip)
 {
 	GSList *tmp = sip->transactions;
@@ -2250,30 +2295,16 @@ static gboolean resend_timeout(struct sipe_account_data *sip)
 	return TRUE;
 }
 
-static gboolean subscribe_timeout(struct sipe_account_data *sip)
+static void do_reauthenticate_cb(struct sipe_account_data *sip)
 {
-	GSList *tmp;
-	time_t curtime = time(NULL);
-	/* register again if first registration or security token expires */
-	if ( (sip->reregister < curtime)
-	  || (sip->registrar.expires != 0 && sip->registrar.expires < curtime) )
-	{
-		/* time to do a full reauthentication? */
-		if (sip->registrar.expires < curtime)
-		{
-			/* we have to start a new authentication as the security token
-			 * is almost expired by sending a not signed REGISTER message */
-			purple_debug_info("sipe", "do a full reauthentication");
-			sipe_auth_free(&sip->registrar);
-			sip->registerstatus = 0;
-		}
-		do_register(sip);
-	}
-
-	/* check for every subscription if we need to resubscribe */
-	g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_resub, (gpointer)sip);
-
-	return TRUE;
+	/* register again when security token expires */
+	/* we have to start a new authentication as the security token
+	 * is almost expired by sending a not signed REGISTER message */
+	purple_debug_info("sipe", "do a full reauthentication\n");
+	sipe_auth_free(&sip->registrar);
+	sip->registerstatus = 0;
+	do_register(sip);
+	sip->reauthenticate_set = FALSE;
 }
 
 static void process_incoming_message(struct sipe_account_data *sip, struct sipmsg *msg)
@@ -2429,15 +2460,24 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			if (expires == 0) {
 				sip->registerstatus = 0;
 			} else {
-				sip->reregister += expires - sip->registerexpire; //adjust to allowed expire
 				sip->registerexpire = expires;
+
+				if (!sip->reregister_set) {
+					sipe_schedule_action(expires, do_register_cb, sip, NULL);
+					purple_debug_info("sipe","scheduled reregister. timeout:%d\n", expires);
+					sip->reregister_set = TRUE;
+				}
+
 				sip->registerstatus = 3;
-				if (sip->registrar.expires == 0)
-				{
+
+				if (!sip->reauthenticate_set) {
 					/* we have to reauthenticate as our security token expires
 					   after eight hours (be five minutes early) */
-					sip->registrar.expires = time(NULL) + (8 * 3600) - 360;
+					sipe_schedule_action((8 * 3600) - 360, do_reauthenticate_cb, sip, NULL);
+					purple_debug_info("sipe","scheduled reauthentication. timeout:%d\n", ((8 * 3600) - 360));
+					sip->reauthenticate_set = TRUE;
 				}
+
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
 				int i = 0;
@@ -2466,12 +2506,17 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
 				}
 
-				/* get buddies from blist; Has a bug */
-				subscribe_timeout(sip);
-
-				tmp = sipmsg_find_header(msg, "Allow-Events");
-				if (tmp && strstr(tmp, "vnd-microsoft-provisioning")){
-					sipe_subscribe_buddylist(sip, msg);
+				if (!sip->subscribed) { //do it just once, not every re-register
+					tmp = sipmsg_find_header(msg, "Allow-Events");
+					if (tmp && strstr(tmp, "vnd-microsoft-provisioning")){
+						sipe_subscribe_buddylist(sip, msg);
+					}
+					sipe_subscribe_acl(sip, msg);
+					sipe_subscribe_roaming_self(sip, msg);
+					sipe_subscribe_roaming_provisioning(sip, msg);
+					sipe_subscribe_pending_buddies(sip, msg);
+					sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+					sip->subscribed = TRUE;
 				}
 
 				if (purple_account_get_bool(sip->account, "clientkeepalive", FALSE)) {
@@ -2483,12 +2528,6 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sipe_keep_alive_timeout(sip, tmp);
 					}
 				}
-
-				sipe_subscribe_acl(sip, msg);
-				sipe_subscribe_roaming_self(sip, msg);
-				sipe_subscribe_roaming_provisioning(sip, msg);
-				sipe_subscribe_pending_buddies(sip, msg);
-				sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
 
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
@@ -2623,7 +2662,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 	xmlnode *xn_list;
 	xmlnode *xn_resource;
 	xmlnode *xn_instance;
-		
+
 	xn_list = xmlnode_from_str(data, len);
 	xn_resource = xmlnode_get_child(xn_list, "resource");
 	if (!xn_resource) return;
@@ -2635,7 +2674,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 	sip->presence_method_version= 0;
 	sipe_subscribe_to_name(sip, uri);
 }
-	
+
 
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
@@ -2645,10 +2684,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode *xn_node;
 	int changed = 0;
 	const char *activity = NULL;
-		
+
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri");
-	
+
 	purple_debug_info("sipe", "process_incoming_notify_rlmi\n");
 
 	for (xn_category = xmlnode_get_child(xn_categories, "category");
@@ -3467,7 +3506,6 @@ static void login_cb(gpointer data, gint source, const gchar *error_message)
 
 	conn = connection_create(sip, source);
 
-	sip->registertimeout = purple_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
 	do_register(sip);
 
 	conn->inputhandler = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_input_cb, gc);
@@ -3478,7 +3516,6 @@ static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCon
 	struct sipe_account_data *sip = sipe_setup_ssl(data, gsc);
 	if (sip == NULL) return;
 
-	sip->registertimeout = purple_timeout_add((rand()%100) + 10*1000, (GSourceFunc)subscribe_timeout, sip);
 	do_register(sip);
 }
 
@@ -3515,7 +3552,6 @@ static void sipe_udp_host_resolved_listen_cb(int listenfd, gpointer data)
 	sip->listenpa = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_udp_process, sip->gc);
 
 	sip->resendtimeout = purple_timeout_add(2500, (GSourceFunc) resend_timeout, sip);
-	sip->registertimeout = purple_timeout_add((rand()%100)+10*1000, (GSourceFunc)subscribe_timeout, sip);
 	do_register(sip);
 }
 
@@ -3770,20 +3806,24 @@ static void sipe_login(PurpleAccount *account)
 	sip->gc = gc;
 	sip->account = account;
 	sip->registerexpire = 900;
-	
+	sip->reregister_set = FALSE;
+	sip->reauthenticate_set = FALSE;
+	sip->subscribed = FALSE;
+	sip->subscribed_buddies = FALSE;
+
 	signinname_login = g_strsplit(username, ",", 2);
-	
+
 	userserver = g_strsplit(signinname_login[0], "@", 2);
 	purple_connection_set_display_name(gc, userserver[0]);
     sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL));
     sip->sipdomain = g_strdup(userserver[1]);
-	
+
 	domain_user = g_strsplit(signinname_login[1], "\\", 2);
 	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : "";
 	sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : (signinname_login ? g_strdup(signinname_login[1]) : NULL);
-	
+
 	sip->password = g_strdup(purple_connection_get_password(gc));
-	
+
 	g_strfreev(userserver);
 	g_strfreev(domain_user);
 	g_strfreev(signinname_login);
@@ -3854,9 +3894,19 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	if (sip->resendtimeout)
 		purple_timeout_remove(sip->resendtimeout);
 	sip->resendtimeout = 0;
-	if (sip->registertimeout)
-		purple_timeout_remove(sip->registertimeout);
-	sip->registertimeout = 0;
+	if (sip->timeouts) {
+		struct scheduled_action *sched_action;
+		GSList *entry = sip->timeouts;
+		while (entry) {
+			sched_action = entry->data;
+			purple_debug_info("sipe", "purple_timeout_remove: handler=%d", sched_action->timeout_handler);
+			purple_timeout_remove(sched_action->timeout_handler);
+			g_free(sched_action);
+			entry = entry->next;
+		}
+	}
+	g_slist_free(sip->timeouts);
+
 
 	sip->fd = -1;
 	sip->processing_input = FALSE;
@@ -4237,7 +4287,7 @@ static void init_plugin(PurplePlugin *plugin)
 #endif
 
         purple_plugin_register(plugin);
-		
+
 	split = purple_account_user_split_new(_("Login \n   domain\\user  or\n   someone@linux.com "), NULL, ',');
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
@@ -4274,7 +4324,7 @@ static void init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	*/
-	
+
 	option = purple_account_option_bool_new(_("Use Client-specified Keepalive"), "clientkeepalive", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = purple_account_option_int_new(_("Keepalive Timeout"), "keepalive", 300);

@@ -71,7 +71,6 @@ struct sip_dialog {
 struct sipe_buddy {
 	gchar *name;
 	gchar *annotation;
-	time_t resubscribe;
 	int group_id;
 };
 
@@ -125,12 +124,14 @@ struct sipe_account_data {
 	PurpleNetworkListenData *listen_data;
 	int fd;
 	int cseq;
-	time_t reregister;
-	time_t republish;
 	time_t last_keepalive;
 	int registerstatus; /* 0 nothing, 1 first registration send, 2 auth received, 3 registered */
 	struct sip_auth registrar;
 	struct sip_auth proxy;
+	gboolean reregister_set; /* whether reregister timer set */
+	gboolean reauthenticate_set; /* whether reauthenticate timer set */
+	gboolean subscribed; /* whether subscribed to events, except buddies presence */
+	gboolean subscribed_buddies; /* whether subscribed to buddies presence */
 	int listenfd;
 	int listenport;
 	int listenpa;
@@ -141,9 +142,9 @@ struct sipe_account_data {
 	int status_version;
 	gchar *contact;
 	GHashTable *buddies;
-	guint registertimeout;
 	guint resendtimeout;
 	guint keepalive_timeout;
+	GSList *timeouts;
 	gboolean connecting;
 	PurpleAccount *account;
 	PurpleCircBuffer *txbuf;
@@ -174,6 +175,18 @@ struct sip_connection {
 struct sipe_auth_job {
 	gchar * who;
 	struct sipe_account_data * sip;
+};
+
+struct scheduled_action;
+
+typedef gboolean (*Action) (struct sipe_account_data *, struct scheduled_action *);
+
+struct scheduled_action {
+	guint timeout_handler;
+	gboolean repetitive;
+	Action action;
+	struct sipe_account_data * sip;
+	void * payload;
 };
 
 struct transaction;
