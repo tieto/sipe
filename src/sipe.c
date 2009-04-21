@@ -1353,15 +1353,17 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 
 	if (msg->response == 200 || msg->response == 202) {	
 	
-		const gchar *expires_header;
-		int expires;
-		expires_header = sipmsg_find_header(msg, "Expires");
-		expires = expires_header ? strtol(expires_header, NULL, 10) : 0;
-		g_free(expires_header);
-		
-		if (expires) {	
-			sipe_schedule_action(expires, sipe_subscribe_to_name, sip, to);
-			purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", to, expires);
+		if (g_hash_table_lookup(sip->buddies, to)) { //won't resub if buddy is eliminated		
+			const gchar *expires_header;
+			int expires;
+			expires_header = sipmsg_find_header(msg, "Expires");
+			expires = expires_header ? strtol(expires_header, NULL, 10) : 0;
+			g_free(expires_header);
+			
+			if (expires) {	
+				sipe_schedule_action(expires, sipe_subscribe_to_name, sip, to);
+				purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", to, expires);
+			}		
 		}
 	
 		return TRUE;
@@ -1481,6 +1483,7 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 		b->name = g_strdup(buddy->name);
 		g_hash_table_insert(sip->buddies, b->name, b);
 		sipe_group_buddy(gc, b->name, NULL, group->name);
+		sipe_subscribe_to_name(sip, b->name);
 	} else {
 		purple_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
 	}
@@ -1608,7 +1611,7 @@ static GList *sipe_status_types(PurpleAccount *acc)
 /**
   * A callback for g_hash_table_foreach
   */
-static void sipe_buddy_subscribe(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
+static void sipe_buddy_subscribe_cb(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
 {
 	sipe_subscribe_to_name(sip, buddy->name);
 }
@@ -1713,7 +1716,7 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
-		g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe, (gpointer)sip);
+		g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
 		sip->subscribed_buddies = TRUE;
 	}
 
@@ -2473,8 +2476,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				if (!sip->reauthenticate_set) {
 					/* we have to reauthenticate as our security token expires
 					   after eight hours (be five minutes early) */
-					sipe_schedule_action((8 * 3600) - 360, do_reauthenticate_cb, sip, NULL);
-					purple_debug_info("sipe","scheduled reauthentication. timeout:%d\n", ((8 * 3600) - 360));
+					guint reauth_timeout = (8 * 3600) - 360;
+					sipe_schedule_action(reauth_timeout, do_reauthenticate_cb, sip, NULL);
+					purple_debug_info("sipe","scheduled reauthentication. timeout:%d\n", reauth_timeout);
 					sip->reauthenticate_set = TRUE;
 				}
 
