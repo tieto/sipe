@@ -440,7 +440,7 @@ gboolean
 purple_ntlm_verify_signature (char * a, char * b)
 {
 	// Make sure the last 16 bytes match
-	gboolean ret = strncmp(a + 16, b + 16, 16) == 0;
+	gboolean ret = g_ascii_strncasecmp(a + 16, b + 16, 16) == 0;
 	return ret;
 }
 
