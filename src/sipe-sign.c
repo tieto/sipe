@@ -38,12 +38,12 @@
 
 void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target)
 {
+	gchar * hdr;
 	if (msg == NULL || msg->msg == NULL) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipmsg_breakdown_parse msg or msg->msg is NULL", "\n");
 		return;
 	}
 
-	gchar * hdr;
 
 	msg->rand = msg->num = msg->realm = msg->target_name = msg->call_id = 
 		msg->cseq = msg->from_url = msg->from_tag = msg->to_tag = msg->expires = empty_string;
@@ -63,16 +63,19 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 
 	msg->call_id = sipmsg_find_header(msg->msg, "Call-ID");
 
-	if (hdr = sipmsg_find_header(msg->msg, "CSeq")) {
+	hdr = sipmsg_find_header(msg->msg, "CSeq");
+	if (NULL != hdr) {
 		msg->cseq = sipmsg_find_part_of_header(hdr, NULL, " ", empty_string);
 	}
 
-	if (hdr = sipmsg_find_header(msg->msg, "From")) {
+	hdr = sipmsg_find_header(msg->msg, "From");
+	if (NULL != hdr) {
 		msg->from_url = sipmsg_find_part_of_header(hdr, "<", ">", empty_string);
 		msg->from_tag = sipmsg_find_part_of_header(hdr, ";tag=", ";", empty_string);
 	}
 
-	if (hdr = sipmsg_find_header(msg->msg, "To")) {
+	hdr = sipmsg_find_header(msg->msg, "To");
+	if (NULL != hdr) {
 		msg->to_tag = sipmsg_find_part_of_header(hdr, ";tag=", ";", empty_string);
 	}
 
@@ -110,13 +113,15 @@ sipmsg_breakdown_free(struct sipmsg_breakdown * msg)
 gchar *
 sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd)
 {
+	gchar *response_str;
+	gchar *msg;
 	if (msgbd->realm == empty_string || msgbd->realm == NULL) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "realm NULL, so returning NULL signature string\n");
 		return NULL;
 	}
 
-	gchar * response_str = msgbd->msg->response != 0 ? g_strdup_printf("<%d>", msgbd->msg->response) : empty_string;
-	gchar * msg = g_strdup_printf(
+	response_str = msgbd->msg->response != 0 ? g_strdup_printf("<%d>", msgbd->msg->response) : empty_string;
+	msg = g_strdup_printf(
 		"<%s><%s><%s><%s><%s><%s><%s><%s><%s><%s><%s>" // 1 - 11
 		"<%s>%s", // 12 - 13
 		"NTLM", msgbd->rand, msgbd->num, msgbd->realm, msgbd->target_name, msgbd->call_id, msgbd->cseq,

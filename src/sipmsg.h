@@ -43,19 +43,18 @@ struct siphdrelement {
 	gchar *value;
 };
 
-static gchar * empty_string = "";
 
 struct sipmsg *sipmsg_parse_msg(const gchar *msg);
 struct sipmsg *sipmsg_parse_header(const gchar *header);
+void sipmsg_print(const struct sipmsg *msg);
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value);
 void sipmsg_add_header_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos);
 void sipmsg_free(struct sipmsg *msg);
 gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name);
 gchar *sipmsg_find_header_instance(struct sipmsg *msg, const gchar *name, int which);
-gchar * sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def);
+gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def);
 gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_remove_header(struct sipmsg *msg, const gchar *name);
-void sipmsg_print(const struct sipmsg *msg);
 char *sipmsg_to_string(const struct sipmsg *msg);
 /**
  * Parses headers-like 'msgr' attribute of INVITE's 'ms_text_format' header.
@@ -75,7 +74,7 @@ gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format);
 /**
  * Translates X-MMS-IM format to HTML presentation.
  */
-gchar *sipmsg_apply_x_mms_im_format(x_mms_im_format, body);
+gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body);
 
 #define sipe_parse_html            msn_import_html
 /**
@@ -88,4 +87,7 @@ gchar *sipmsg_apply_x_mms_im_format(x_mms_im_format, body);
  * @return The new message.
  */
 void sipe_parse_html(const char *html, char **attributes, char **message);
+
+void msn_parse_format(const char *mime, char **pre_ret, char **post_ret);
+void msn_import_html(const char *html, char **attributes, char **message);
 #endif /* _PURPLE_SIPMSG_H */

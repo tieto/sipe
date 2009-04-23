@@ -75,6 +75,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	gchar *dummy;
 	gchar *dummy2;
 	gchar *tmp;
+	gchar *contentlength;
 	int i=1;
 	if(!lines[0]) return NULL;
 	parts = g_strsplit(lines[0], " ", 3);
@@ -117,7 +118,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		g_strfreev(parts);
 	}
 	g_strfreev(lines);
-	gchar *contentlength = sipmsg_find_header(msg, "Content-Length");
+	contentlength = sipmsg_find_header(msg, "Content-Length");
 	if (contentlength) {
 		msg->bodylen = strtol(contentlength,NULL,10);
 	} else {
@@ -180,6 +181,7 @@ char *sipmsg_to_string(const struct sipmsg *msg) {
 
 	return g_string_free(outstr, FALSE);
 }
+
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value) {
 	struct siphdrelement *element = g_new0(struct siphdrelement,1);
 	element->name = g_strdup(name);
@@ -234,8 +236,8 @@ gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name) {
 gchar *sipmsg_find_header_instance(struct sipmsg *msg, const gchar *name, int which) {
 	GSList *tmp;
 	struct siphdrelement *elem;
-	tmp = msg->headers;
 	int i = 0;
+	tmp = msg->headers;
 	while(tmp) {
 		elem = tmp->data;
 		// OCS2005 can send the same header in either all caps or mixed case
@@ -250,16 +252,15 @@ gchar *sipmsg_find_header_instance(struct sipmsg *msg, const gchar *name, int wh
 	return NULL;
 }
 
-gchar *
-sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def)
-{
+gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def) {
+	const char *tmp;
+	const char *tmp2;
+	gchar *res2;
 	if (!hdr) {
 		return NULL;
 	}
 
 	//printf("partof %s w/ %s before and %s after\n", hdr, before, after);
-	const char *tmp;
-	const char *tmp2;
 
 	tmp = before == NULL ? hdr : strstr(hdr, before);
 	if (!tmp) {
@@ -277,7 +278,7 @@ sipmsg_find_part_of_header(const char *hdr, const char * before, const char * af
 		//printf("returning %s\n", res);
 		return res;
 	}
-	gchar * res2 = g_strdup(tmp);
+	res2 = g_strdup(tmp);
 	//printf("returning %s\n", res2);
 	return res2;
 }
@@ -291,82 +292,96 @@ sipmsg_find_part_of_header(const char *hdr, const char * before, const char * af
  */
 
 gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
-        GSList *tmp;
-        struct siphdrelement *elem;
-        tmp = msg->headers;
+	GSList *tmp;
+	struct siphdrelement *elem;
 	int name_len = strlen(name);
-        while(tmp) {
-                elem = tmp->data;
+	tmp = msg->headers;
+	while(tmp) {
+		elem = tmp->data;
 		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
-                if (elem && elem->name && !g_ascii_strcasecmp(elem->name,"WWW-Authenticate")) {
+		if (elem && elem->name && !g_ascii_strcasecmp(elem->name,"WWW-Authenticate")) {
 			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
 				//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "elem->value: %s\r\n", elem->value);
-                        	return elem->value;
+				return elem->value;
 			}
-                }
+		}
 		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "moving to next header\r\n");
-                tmp = g_slist_next(tmp);
-        }
+		tmp = g_slist_next(tmp);
+	}
 	purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Did not found auth header %s\r\n", name);
-        return NULL;
+	return NULL;
 }
 
 gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
-		if (!msgr) return NULL;
-		gchar *msgr2 = g_strdup(msgr);
-		while (strlen(msgr2) % 4 != 0) {
-			gchar *tmp_msgr2 = msgr2;
-			msgr2 = g_strdup_printf("%s=", msgr2);
-			g_free(tmp_msgr2);
-		}
-		gsize * msgr_dec64_len;
-		guchar * msgr_dec64 = purple_base64_decode(msgr2, &msgr_dec64_len);
-		gchar * msgr_utf8 = g_convert(msgr_dec64, msgr_dec64_len, "UTF-8", "UTF-16LE", NULL, NULL, NULL);
-		g_free(msgr_dec64);
-		g_free(msgr2);
-		gchar **lines = g_strsplit(msgr_utf8,"\r\n\r\n",0);
-		g_free(msgr_utf8);
-		//@TODO: make extraction like parsing of message headers.
-		gchar **parts = g_strsplit(lines[0],"X-MMS-IM-Format:",0);
-		gchar *x_mms_im_format = g_strdup(parts[1]);
-		g_strfreev(parts);
-		g_strfreev(lines);
-		gchar * tmp = x_mms_im_format;
-		if (x_mms_im_format) {
-			while(*x_mms_im_format==' ' || *x_mms_im_format=='\t') x_mms_im_format++;
-		}
-		x_mms_im_format = g_strdup(x_mms_im_format);
-		g_free(tmp);
-		return x_mms_im_format;
+	gchar *msgr2;
+	gsize msgr_dec64_len;
+	guchar *msgr_dec64;
+	gchar *msgr_utf8;
+	gchar **lines;
+	gchar **parts;
+	gchar *x_mms_im_format;
+	gchar *tmp;
+
+	if (!msgr) return NULL;
+	msgr2 = g_strdup(msgr);
+	while (strlen(msgr2) % 4 != 0) {
+		gchar *tmp_msgr2 = msgr2;
+		msgr2 = g_strdup_printf("%s=", msgr2);
+		g_free(tmp_msgr2);
+	}
+	msgr_dec64 = purple_base64_decode(msgr2, &msgr_dec64_len);
+	msgr_utf8 = g_convert(msgr_dec64, msgr_dec64_len, "UTF-8", "UTF-16LE", NULL, NULL, NULL);
+	g_free(msgr_dec64);
+	g_free(msgr2);
+	lines = g_strsplit(msgr_utf8,"\r\n\r\n",0);
+	g_free(msgr_utf8);
+	//@TODO: make extraction like parsing of message headers.
+	parts = g_strsplit(lines[0],"X-MMS-IM-Format:",0);
+	x_mms_im_format = g_strdup(parts[1]);
+	g_strfreev(parts);
+	g_strfreev(lines);
+	tmp = x_mms_im_format;
+	if (x_mms_im_format) {
+		while(*x_mms_im_format==' ' || *x_mms_im_format=='\t') x_mms_im_format++;
+	}
+	x_mms_im_format = g_strdup(x_mms_im_format);
+	g_free(tmp);
+	return x_mms_im_format;
 }
 
 gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format) {
-		if (!x_mms_im_format) return NULL;
-		gchar *msgr_orig = g_strdup_printf("X-MMS-IM-Format: %s\r\n\r\n", x_mms_im_format);
-		gsize msgr_utf16_len;
-		gchar *msgr_utf16 = g_convert(msgr_orig, -1, "UTF-16LE", "UTF-8", NULL, &msgr_utf16_len, NULL);
-		g_free(msgr_orig);
-		gchar *msgr_enc = purple_base64_encode(msgr_utf16, msgr_utf16_len);
-		g_free(msgr_utf16);
-		int len = strlen(msgr_enc);
-		while (msgr_enc[len - 1] == '=') len--;
-		gchar *res = g_strndup(msgr_enc, len);
-		g_free(msgr_enc);
-		return res;
+	gchar *msgr_orig;
+	gsize msgr_utf16_len;
+	gchar *msgr_utf16;
+	gchar *msgr_enc;
+	gchar *res;
+	int len;
+
+	if (!x_mms_im_format) return NULL;
+	msgr_orig = g_strdup_printf("X-MMS-IM-Format: %s\r\n\r\n", x_mms_im_format);
+	msgr_utf16 = g_convert(msgr_orig, -1, "UTF-16LE", "UTF-8", NULL, &msgr_utf16_len, NULL);
+	g_free(msgr_orig);
+	msgr_enc = purple_base64_encode(msgr_utf16, msgr_utf16_len);
+	g_free(msgr_utf16);
+	len = strlen(msgr_enc);
+	while (msgr_enc[len - 1] == '=') len--;
+	res = g_strndup(msgr_enc, len);
+	g_free(msgr_enc);
+	return res;
 }
 
-void msn_parse_format(const char *mime, char **pre_ret, char **post_ret);
+gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
+	char *pre, *post;
+	gchar *res;
 
-gchar *sipmsg_apply_x_mms_im_format(x_mms_im_format, body) {
-		if (!x_mms_im_format) {
-			return body ? g_strdup(body) : NULL;
-		}
-		char *pre, *post;
-		msn_parse_format(x_mms_im_format, &pre, &post);
-		gchar *res = g_strdup_printf("%s%s%s", pre ? pre :  "", body ? body : "", post ? post : "");
-		g_free(pre);
-		g_free(post);
-		return res;
+	if (!x_mms_im_format) {
+		return body ? g_strdup(body) : NULL;
+	}
+	msn_parse_format(x_mms_im_format, &pre, &post);
+	res = g_strdup_printf("%s%s%s", pre ? pre :  "", body ? body : "", post ? post : "");
+	g_free(pre);
+	g_free(post);
+	return res;
 }
 
 

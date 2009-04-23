@@ -246,9 +246,9 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 	gchar *tmp;
 	const char *authdomain;
 	const char *authuser;
-	const char *krb5_realm;
+	//const char *krb5_realm;
 	const char *host;
-	gchar      *krb5_token = NULL;
+	//gchar      *krb5_token = NULL;
 
 	authdomain = sip->authdomain;
 	authuser = sip->authuser;
@@ -301,7 +301,8 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 		}
 
 		if (auth->nc == 3 && auth->nonce && auth->ntlm_key == NULL) {
-			const gchar * ntlm_key;
+			const gchar *ntlm_key;
+			gchar *gssapi_data;
 #if GLIB_CHECK_VERSION(2,8,0)
 			const gchar * hostname = g_get_host_name();
 #else
@@ -309,14 +310,14 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			int ret = gethostname(hostname, sizeof(hostname));
             hostname[sizeof(hostname) - 1] = '\0';
             if (ret == -1 || hostname[0] == '\0') {
-                 purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name: %s.  Using \"localhost.\"\n");
+                 purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
 				 g_strerror(errno);
 				 strcpy(hostname, "localhost");
 			}
 #endif
 			/*const gchar * hostname = purple_get_host_name();*/
 
-			gchar * gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, hostname, authdomain, (const guint8 *)auth->nonce, &auth->flags);
+			gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, hostname, authdomain, (const guint8 *)auth->nonce, &auth->flags);
 			auth->ntlm_key = (gchar *)ntlm_key;
 			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, gssapi_data);
 			g_free(gssapi_data);
@@ -385,8 +386,8 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	const char *authuser;
 	char *tmp;
 	gchar **parts;
-        const char *krb5_realm;
-        const char *host;
+	//const char *krb5_realm;
+	//const char *host;
 
         // XXX FIXME: Get this info from the account dialogs and/or /etc/krb5.conf
         //            and do error checking
@@ -742,12 +743,13 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 	gchar * buf;
 	if (sip->registrar.ntlm_key) {
 		struct sipmsg_breakdown msgbd;
+		gchar *signature_input_str;
 		msgbd.msg = msg;
 		sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
 		msgbd.rand = g_strdup_printf("%08x", g_random_int());
 		sip->registrar.ntlm_num++;
 		msgbd.num = g_strdup_printf("%d", sip->registrar.ntlm_num);
-		gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
+		signature_input_str = sipmsg_breakdown_get_string(&msgbd);
 		if (signature_input_str != NULL) {
 			msg->signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
 			msg->rand = g_strdup(msgbd.rand);
@@ -795,10 +797,11 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	gchar *value;
 	GString *outstr = g_string_new("");
 	struct sipe_account_data *sip = gc->proto_data;
+	gchar *contact;
+	GSList *tmp;
 
 	sipmsg_remove_header(msg, "ms-user-data");
 
-	gchar *contact;
 	contact = get_contact(sip);
 	sipmsg_remove_header(msg, "Contact");
 	sipmsg_add_header(msg, "Contact", contact);
@@ -824,7 +827,7 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	sign_outgoing_message(msg, sip, msg->method);
 
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
-	GSList *tmp = msg->headers;
+	tmp = msg->headers;
 	while (tmp) {
 		name = ((struct siphdrelement*) (tmp->data))->name;
 		value = ((struct siphdrelement*) (tmp->data))->value;
@@ -890,6 +893,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 	gchar *route     = strdup("");
+	struct transaction *trans;
 
 	if (dialog && dialog->routes)
 	{
@@ -971,7 +975,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	buf = sipmsg_to_string (msg);
 
 	/* add to ongoing transactions */
-	struct transaction * trans = transactions_add_buf(sip, msg, tc);
+	trans = transactions_add_buf(sip, msg, tc);
 	sendout_pkt(gc, buf);
 
 	return trans;
@@ -1148,15 +1152,16 @@ sipe_remove_permit_deny(PurpleConnection *gc, const char *name)
 static void
 sipe_process_incoming_pending (struct sipe_account_data *sip, struct sipmsg * msg)
 {
+	xmlnode *watchers;
+	xmlnode *watcher;
 	// Ensure it's either not a response (eg it's a BENOTIFY) or that it's a 200 OK response
 	if (msg->response != 0 && msg->response != 200) return;
 
 	if (msg->bodylen == 0 || msg->body == NULL || !strcmp(sipmsg_find_header(msg, "Event"), "msrtc.wpending")) return;
 
-	xmlnode * watchers = xmlnode_from_str(msg->body, msg->bodylen);
+	watchers = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!watchers) return;
 
-	xmlnode * watcher;
 	for (watcher = xmlnode_get_child(watchers, "watcher"); watcher; watcher = xmlnode_get_next_twin(watcher)) {
 		gchar * remote_user = g_strdup(xmlnode_get_attrib(watcher, "uri"));
 		gchar * alias = g_strdup(xmlnode_get_attrib(watcher, "displayName"));
@@ -1205,12 +1210,13 @@ sipe_group_add (struct sipe_account_data *sip, struct sipe_group * group)
 
 static struct sipe_group * sipe_group_find_by_id (struct sipe_account_data *sip, int id)
 {
+	struct sipe_group *group;
+	GSList *entry;
 	if (sip == NULL) {
 		return NULL;
 	}
 
-	struct sipe_group *group;
-	GSList *entry = sip->groups;
+	entry = sip->groups;
 	while (entry) {
 		group = entry->data;
 		if (group->id == id) {
@@ -1223,12 +1229,13 @@ static struct sipe_group * sipe_group_find_by_id (struct sipe_account_data *sip,
 
 static struct sipe_group * sipe_group_find_by_name (struct sipe_account_data *sip, gchar * name)
 {
+	struct sipe_group *group;
+	GSList *entry;
 	if (sip == NULL) {
 		return NULL;
 	}
 
-	struct sipe_group *group;
-	GSList *entry = sip->groups;
+	entry = sip->groups;
 	while (entry) {
 		group = entry->data;
 		if (!strcmp(group->name, name)) {
@@ -1242,8 +1249,9 @@ static struct sipe_group * sipe_group_find_by_name (struct sipe_account_data *si
 static void
 sipe_group_rename (struct sipe_account_data *sip, struct sipe_group * group, gchar * name)
 {
+	gchar *body;
 	purple_debug_info("sipe", "Renaming group %s to %s\n", group->name, name);
-	gchar * body = g_strdup_printf(SIPE_SOAP_MOD_GROUP, group->id, name, sip->contacts_delta++);
+	body = g_strdup_printf(SIPE_SOAP_MOD_GROUP, group->id, name, sip->contacts_delta++);
 	send_soap_request(sip, body);
 	g_free(body);
 	g_free(group->name);
@@ -1263,8 +1271,9 @@ sipe_group_set_user (struct sipe_account_data *sip, struct sipe_group * group, c
 
 	if (buddy && purple_buddy) {
 		gchar * alias = (gchar *)purple_buddy_get_alias(purple_buddy);
+		gchar *body;
 		purple_debug_info("sipe", "Saving buddy %s with alias %s and group_id %d\n", who, alias, buddy->group_id);
-		gchar * body = g_strdup_printf(SIPE_SOAP_SET_CONTACT,
+		body = g_strdup_printf(SIPE_SOAP_SET_CONTACT,
 			alias, buddy->group_id, "true", buddy->name, sip->contacts_delta++
 		);
 		send_soap_request(sip, body);
@@ -1278,15 +1287,18 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 		struct sipe_group * group = g_new0(struct sipe_group, 1);
 
 		struct group_user_context * ctx = (struct group_user_context*)tc->payload;
+		xmlnode *xml;
+		xmlnode *node;
+		char *group_id;
 		group->name = ctx->group_name;
 
-		xmlnode * xml = xmlnode_from_str(msg->body, msg->bodylen);
+		xml = xmlnode_from_str(msg->body, msg->bodylen);
 		if (!xml) return FALSE;
 
-		xmlnode * node = xmlnode_get_descendant(xml, "Body", "addGroup", "groupID", NULL);
+		node = xmlnode_get_descendant(xml, "Body", "addGroup", "groupID", NULL);
 		if (!node) return FALSE;
 
-		char * group_id = xmlnode_get_data(node);
+		group_id = xmlnode_get_data(node);
 		if (!group_id) return FALSE;
 
 		group->id = (int)g_ascii_strtod(group_id, NULL);
@@ -1304,10 +1316,11 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar * who)
 {
 	struct group_user_context * ctx = g_new0(struct group_user_context, 1);
+	gchar *body;
 	ctx->group_name = g_strdup(name);
 	ctx->user_name = g_strdup(who);
 
-	gchar * body = g_strdup_printf(SIPE_SOAP_ADD_GROUP, name, sip->contacts_delta++);
+	body = g_strdup_printf(SIPE_SOAP_ADD_GROUP, name, sip->contacts_delta++);
 	send_soap_request_with_cb(sip, body, process_add_group_response, ctx);
 	g_free(body);
 }
@@ -1528,8 +1541,9 @@ sipe_remove_group(PurpleConnection *gc, PurpleGroup *group)
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 	struct sipe_group * s_group = sipe_group_find_by_name(sip, group->name);
 	if (s_group) {
+		gchar *body;
 		purple_debug_info("sipe", "Deleting group %s\n", group->name);
-		gchar * body = g_strdup_printf(SIPE_SOAP_DEL_GROUP, s_group->id, sip->contacts_delta++);
+		body = g_strdup_printf(SIPE_SOAP_DEL_GROUP, s_group->id, sip->contacts_delta++);
 		send_soap_request(sip, body);
 		g_free(body);
 
@@ -1621,23 +1635,26 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	int len = msg->bodylen;
 
 	gchar *tmp = sipmsg_find_header(msg, "Event");
+	xmlnode *item;
+	xmlnode *isc;
+	gchar *contacts_delta;
+	xmlnode *group_node;
 	if (!tmp || strncmp(tmp, "vnd-microsoft-roaming-contacts", 30)) {
 		return FALSE;
 	}
 
 	/* Convert the contact from XML to Purple Buddies */
-	xmlnode * isc = xmlnode_from_str(msg->body, len);
+	isc = xmlnode_from_str(msg->body, len);
 	if (!isc) {
 		return FALSE;
 	}
 
-	gchar * contacts_delta = g_strdup(xmlnode_get_attrib(isc, "deltaNum"));
+	contacts_delta = g_strdup(xmlnode_get_attrib(isc, "deltaNum"));
 	if (contacts_delta) {
 		sip->contacts_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 	}
 
 	/* Parse groups */
-	xmlnode *group_node;
 	for (group_node = xmlnode_get_child(isc, "group"); group_node; group_node = xmlnode_get_next_twin(group_node)) {
 		struct sipe_group * group = g_new0(struct sipe_group, 1);
 
@@ -1655,16 +1672,16 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	// Make sure we have at least one group
 	if (g_slist_length(sip->groups) == 0) {
 		struct sipe_group * group = g_new0(struct sipe_group, 1);
+		PurpleGroup *purple_group;
 		// TODO translate
 		group->name = g_strdup("General");
 		group->id = 1;
-		PurpleGroup * purple_group = purple_group_new(group->name);
+		purple_group = purple_group_new(group->name);
 		purple_blist_add_group(purple_group, NULL);
 		sip->groups = g_slist_append(sip->groups, group);
 	}
 
 	/* Parse contacts */
-	xmlnode *item;
 	for (item = xmlnode_get_child(isc, "contact"); item; item = xmlnode_get_next_twin(item)) {
 		gchar * uri = g_strdup(xmlnode_get_attrib(item, "uri"));
 		gchar * name = g_strdup(xmlnode_get_attrib(item, "name"));
@@ -1684,6 +1701,7 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 
 		if (group != NULL) {
 			char * buddy_name = g_strdup_printf("sip:%s", uri);
+			struct sipe_buddy *buddy;
 
 			//b = purple_find_buddy(sip->account, buddy_name);
 			PurpleBuddy *b = purple_find_buddy_in_group(sip->account, buddy_name, group->purple_group);
@@ -1700,7 +1718,7 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 				purple_blist_alias_buddy(b, uri);
 			}
 
-			struct sipe_buddy * buddy = g_new0(struct sipe_buddy, 1);
+			buddy = g_new0(struct sipe_buddy, 1);
 			buddy->name = g_strdup(b->name);
 			buddy->group_id = group->id;
 			g_hash_table_insert(sip->buddies, buddy->name, buddy);
@@ -1769,6 +1787,8 @@ static void sipe_subscribe_pending_buddies(struct sipe_account_data *sip,struct 
 static void process_incoming_benotify(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	gchar * event = sipmsg_find_header(msg, "Event");
+	gchar *contacts_delta;
+	xmlnode *xml;
 	if (!event) return;
 
 	if (!strcmp(event, "presence.wpending")) {
@@ -1776,10 +1796,10 @@ static void process_incoming_benotify(struct sipe_account_data *sip, struct sipm
 		return;
 	}
 
-	xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
+	xml = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!xml) return;
 
-	gchar * contacts_delta = g_strdup(xmlnode_get_attrib(xml, "deltaNum"));
+	contacts_delta = g_strdup(xmlnode_get_attrib(xml, "deltaNum"));
 	if (contacts_delta) {
 		int new_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 		if (!strcmp(event, "vnd-microsoft-roaming-ACL")) {
@@ -1830,10 +1850,9 @@ static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sip
 		"Contact: %s\r\n"
 		"Content-Type: application/vnd-microsoft-roaming-self+xml\r\n", tmp);
 
-	g_free(tmp);
-
 	gchar *body=g_strdup("<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roaming type=\"subscribers\"/></roamingList>");
 
+	g_free(tmp);
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
 	g_free(body);
 	g_free(to);
@@ -1853,10 +1872,9 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,st
 		"Expires: 0\r\n"
 		"Contact: %s\r\n"
 		"Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n", tmp);
+	gchar *body = g_strdup("<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\"><provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/><provisioningGroup name=\"ucPolicy\"/></provisioningGroupList>");
 
 	g_free(tmp);
-
-	gchar *body=g_strdup("<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\"><provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/><provisioningGroup name=\"ucPolicy\"/></provisioningGroupList>");
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
 	g_free(body);
 	g_free(to);
@@ -1867,12 +1885,13 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,st
 
 static struct sip_im_session * find_im_session (struct sipe_account_data *sip, const char *who)
 {
+	struct sip_im_session *session;
+	GSList *entry;
 	if (sip == NULL || who == NULL) {
 		return NULL;
 	}
 
-	struct sip_im_session *session;
-	GSList *entry = sip->im_sessions;
+	entry = sip->im_sessions;
 	while (entry) {
 		session = entry->data;
 		if ((who != NULL && !strcmp(who, session->with))) {
@@ -1923,6 +1942,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	gboolean ret = TRUE;
 	gchar * with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_im_session * session = find_im_session(sip, with);
+	struct sip_dialog *dialog;
 
 	if (!session) {
 		purple_debug_info("sipe", "process_message_response: unable to find IM session\n");
@@ -1930,9 +1950,9 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	}
 
 	if (msg->response != 200) {
+		char *queued_msg;
 		purple_debug_info("sipe", "process_message_response: MESSAGE response not 200\n");
 
-		char *queued_msg;
 		if (session->outgoing_message_queue) {
 			queued_msg = session->outgoing_message_queue->data;
 		}
@@ -1941,7 +1961,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 		ret = FALSE;
 	}
 
-	struct sip_dialog * dialog = session->dialog;
+	dialog = session->dialog;
 	if (!dialog) {
 		purple_debug_info("sipe", "process_message_response: session outgoing dialog is NULL\n");
 		ret = FALSE;
@@ -1958,6 +1978,10 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	gchar *hdr;
 	gchar *fullto;
 	gchar *tmp;
+	char *msgformat;
+	char *msgtext;
+	gchar *msgr_value;
+	gchar *msgr;
 
 	if (strncmp("sip:", session->with, 4)) {
 		fullto = g_strdup_printf("sip:%s", session->with);
@@ -1965,14 +1989,12 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 		fullto = g_strdup(session->with);
 	}
 
-	char *msgformat;
-	char *msgtext;
 	sipe_parse_html(msg, &msgformat, &msgtext);
 	purple_debug_info("sipe", "sipe_send_message: msgformat=%s", msgformat);
 
-	gchar *msgr_value = sipmsg_get_msgr_string(msgformat);
+	msgr_value = sipmsg_get_msgr_string(msgformat);
+	msgr = "";
 	g_free(msgformat);
-	gchar *msgr = "";
 	if (msgr_value) {
 		msgr = g_strdup_printf(";msgr=%s", msgr_value);
 		g_free(msgr_value);
@@ -2094,6 +2116,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 {
 	gchar * with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_im_session * session = find_im_session(sip, with);
+	struct sip_dialog *dialog;
 
 	if (!session) {
 		purple_debug_info("sipe", "process_invite_response: unable to find IM session\n");
@@ -2102,9 +2125,9 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	}
 
 	if (msg->response != 200) {
+		char *queued_msg;
 		purple_debug_info("sipe", "process_invite_response: INVITE response not 200\n");
 
-		char *queued_msg;
 		if (session->outgoing_message_queue) {
 			queued_msg = session->outgoing_message_queue->data;
 		}
@@ -2115,7 +2138,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		return FALSE;
 	}
 
-	struct sip_dialog * dialog = session->dialog;
+	dialog = session->dialog;
 	if (!dialog) {
 		purple_debug_info("sipe", "process_invite_response: session outgoing dialog is NULL\n");
 		g_free(with);
@@ -2144,6 +2167,12 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	gchar *to;
 	gchar *contact;
 	gchar *body;
+	char *msgformat;
+	char *msgtext;
+	char *base64_msg;
+	char *ms_text_format;
+	gchar *msgr_value;
+	gchar *msgr;
 
 	if (session->dialog) {
 		purple_debug_info("sipe", "session with %s already has a dialog open\n", session->with);
@@ -2158,22 +2187,20 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 		to = g_strdup_printf("sip:%s", session->with);
 	}
 
-	char *msgformat;
-	char *msgtext;
 	sipe_parse_html(msg_body, &msgformat, &msgtext);
 	purple_debug_info("sipe", "sipe_invite: msgformat=%s", msgformat);
 
-	gchar *msgr_value = sipmsg_get_msgr_string(msgformat);
+	msgr_value = sipmsg_get_msgr_string(msgformat);
 	g_free(msgformat);
-	gchar *msgr = "";
+	msgr = "";
 	if (msgr_value) {
 		msgr = g_strdup_printf(";msgr=%s", msgr_value);
 		g_free(msgr_value);
 	}
 
-	char * base64_msg = purple_base64_encode((guchar*) msgtext, strlen(msgtext));
+	base64_msg = purple_base64_encode((guchar*) msgtext, strlen(msgtext));
+	ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT, msgr, base64_msg);
 	g_free(msgtext);
-	char * ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT, msgr, base64_msg);
 	g_free(msgr);
 	g_free(base64_msg);
 
@@ -2234,13 +2261,18 @@ im_session_close_all (struct sipe_account_data *sip)
 
 static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what, PurpleMessageFlags flags)
 {
+	struct sipe_account_data *sip;
+	char *to;
+	char *text;
+	struct sip_im_session *session;
+
 purple_debug_info("sipe", "sipe_im_send what=%s\n", what);
 
-	struct sipe_account_data *sip = gc->proto_data;
-	char *to = g_strdup(who);
-	char *text = g_strdup(what);
+	sip = gc->proto_data;
+	to = g_strdup(who);
+	text = g_strdup(what);
 
-	struct sip_im_session * session = find_or_create_im_session(sip, who);
+	session = find_or_create_im_session(sip, who);
 
 	// Queue the message
 	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, text);
@@ -2263,11 +2295,12 @@ static unsigned int
 sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
+	struct sip_im_session *session;
 
 	if (state == PURPLE_NOT_TYPING)
 		return 0;
 
-	struct sip_im_session * session = find_im_session(sip, who);
+	session = find_im_session(sip, who);
 
 	if (session && session->dialog) {
 		send_sip_request(gc, "INFO", who, who,
@@ -2326,10 +2359,10 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 	if (!contenttype || !strncmp(contenttype, "text/plain", 10) || !strncmp(contenttype, "text/html", 9)) {
 		gchar *msgr = sipmsg_find_part_of_header(contenttype, "msgr=", NULL, NULL);
 		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
-		g_free(msgr);
 
 		gchar *body_esc = g_markup_escape_text(msg->body, -1);
 		gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body_esc);
+		g_free(msgr);
 		g_free(body_esc);
 		g_free(x_mms_im_format);
 
@@ -2376,14 +2409,17 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
+	gchar *ms_text_format;
+	gchar *from;
+	struct sip_im_session *session;
 	// Only accept text invitations
 	if (msg->body && !(strstr(msg->body, "m=message") || strstr(msg->body, "m=x-ms-message"))) {
 		send_sip_response(sip->gc, msg, 501, "Not implemented", NULL);
 		return;
 	}
 
-	gchar * from = parse_from(sipmsg_find_header(msg, "From"));
-	struct sip_im_session * session = find_or_create_im_session (sip, from);
+	from = parse_from(sipmsg_find_header(msg, "From"));
+	session = find_or_create_im_session (sip, from);
 	if (session) {
 		if (session->dialog) {
 			purple_debug_info("sipe", "process_incoming_invite, session already has dialog!\n");
@@ -2402,18 +2438,18 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	}
 
 	//ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk=
-	gchar *ms_text_format = sipmsg_find_header(msg, "ms-text-format");
+	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
 	if (ms_text_format && !strncmp(ms_text_format, "text/plain", 10)) {
 		gchar *msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
 		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
-		g_free(msgr);
 
 		gchar *ms_body = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+		g_free(msgr);
 		if (ms_body) {
 			gchar *body = purple_base64_decode(ms_body, NULL);
-			g_free(ms_body);
 			gchar *body_esc = g_markup_escape_text(body, -1);
 			gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body_esc);
+			g_free(ms_body);
 			g_free(body_esc);
 			g_free(body);
 			serv_got_im(sip->gc, from, body_html, 0, time(NULL));
@@ -2490,7 +2526,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				gchar * uuid = generateUUIDfromEPID(get_epid());
 				// There can be multiple Contact headers (one per location where the user is logged in) so
 				// make sure to only get the one for this uuid
-				for (i = 0; contact_hdr = sipmsg_find_header_instance (msg, "Contact", i); i++) {
+				for (i = 0; (contact_hdr = sipmsg_find_header_instance (msg, "Contact", i)); i++) {
 					gchar * valid_contact = sipmsg_find_part_of_header (contact_hdr, uuid, NULL, NULL);
 					if (valid_contact) {
 						gruu = sipmsg_find_part_of_header(contact_hdr, "gruu=\"", "\"", NULL);
@@ -2702,13 +2738,14 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 
 		if (!strcmp(attrVar, "note"))
 		{
+			char *note;
+			struct sipe_buddy *sbuddy;
 			xn_node = xmlnode_get_child(xn_category, "note");
 			if (!xn_node) continue;
 			xn_node = xmlnode_get_child(xn_node, "body");
 			if (!xn_node) continue;
 
-			char *note = xmlnode_get_data(xn_node);
-			struct sipe_buddy *sbuddy;
+			note = xmlnode_get_data(xn_node);
 
 			sbuddy = g_hash_table_lookup(sip->buddies, uri);
 			if (sbuddy && note)
@@ -2720,13 +2757,15 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		}
 		else if(!strcmp(attrVar, "state"))
 		{
+			char *data;
+			int avail;
 			xn_node = xmlnode_get_child(xn_category, "state");
 			if (!xn_node) continue;
 			xn_node = xmlnode_get_child(xn_node, "availability");
 			if (!xn_node) continue;
 
-			char *data = xmlnode_get_data(xn_node);
-			int avail = atoi(data);
+			data = xmlnode_get_data(xn_node);
+			avail = atoi(data);
 
 			if (avail < 3000)
 				activity = "unknown";
@@ -2764,6 +2803,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 	xmlnode *pidf;
 	xmlnode *basicstatus = NULL, *tuple, *status;
 	gboolean isonline = FALSE;
+	xmlnode *display_name_node;
 
 	fromhdr = sipmsg_find_header(msg, "From");
 	from = parse_from(fromhdr);
@@ -2803,7 +2843,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 		isonline = TRUE;
 	}
 
-	xmlnode *display_name_node = xmlnode_get_child(pidf, "display-name");
+	display_name_node = xmlnode_get_child(pidf, "display-name");
 	if (display_name_node) {
 		PurpleBuddy * buddy = purple_find_buddy (sip->account, from);
 		char * display_name = xmlnode_get_data(display_name_node);
@@ -2814,8 +2854,8 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
 		if ((status = xmlnode_get_child(tuple, "status"))) {
-			if (basicstatus = xmlnode_get_child(status, "activities")) {
-				if (basicstatus = xmlnode_get_child(basicstatus, "activity")) {
+			if ((basicstatus = xmlnode_get_child(status, "activities"))) {
+				if ((basicstatus = xmlnode_get_child(basicstatus, "activity"))) {
 					activity = xmlnode_get_data(basicstatus);
 				}
 			}
@@ -2858,6 +2898,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	const char *activity_name;
 	gchar *uri;
 
+	int avl = atoi(availability);
+	int act = atoi(activity);
+	struct sipe_buddy *sbuddy;
+
 	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
 	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
@@ -2870,9 +2914,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	if (xn_note) {
 		note = xmlnode_get_data(xn_note);
 	}
-
-	int avl = atoi(availability);
-	int act = atoi(activity);
 
 	if (act <= 100)
 		activity_name = "away";
@@ -2892,7 +2933,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	if (avl == 0)
 		activity_name = "offline";
 
-	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
+	sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
 	{
 		if (sbuddy->annotation) { g_free(sbuddy->annotation); }
@@ -2918,17 +2959,19 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		const char *content = msg->body;
 		unsigned length = msg->bodylen;
 		PurpleMimeDocument *mime = NULL;
+		char *subscription_state;
 
 		if (strstr(ctype, "multipart"))
 		{
 			char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ctype, msg->body);
+			GList* parts;
 			mime = purple_mime_document_parse(doc);
-			GList* parts = purple_mime_document_get_parts(mime);
+			parts = purple_mime_document_get_parts(mime);
 			content = purple_mime_part_get_data(parts->data);
 			length = purple_mime_part_get_length(parts->data);
 			g_free(doc);
 		}
-		char *subscription_state = sipmsg_find_header(msg, "subscription-state");
+		subscription_state = sipmsg_find_header(msg, "subscription-state");
 		if (strstr(subscription_state, "active")){
 		    process_incoming_notify_rlmi(sip, content, length);
 		}
@@ -3010,9 +3053,10 @@ process_send_presence_info_v0_response(struct sipe_account_data *sip, struct sip
 
 static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
 {
-	int availability, activity;
-	availability = 300; // online
-	activity = 400;  // Available
+	int availability = 300; // online
+	int activity = 400;  // Available
+	gchar *name;
+	gchar *body;
 	if (!strcmp(sip->status, "away")) {
 		activity = 100;
 	} else if (!strcmp(sip->status, "out-to-lunch")) {
@@ -3030,9 +3074,9 @@ static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
 		activity = 100;
 	}
 
-	gchar *name = g_strdup_printf("sip: sip:%s", sip->username);
+	name = g_strdup_printf("sip: sip:%s", sip->username);
 	//@TODO: send user data - state; add hostname in upper case
-	gchar * body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, availability, activity, note ? note : "");
+	body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, availability, activity, note ? note : "");
 	send_soap_request_with_cb(sip, body, process_send_presence_info_v0_response, NULL);
 	g_free(name);
 	g_free(body);
@@ -3075,6 +3119,10 @@ process_send_presence_info_v1_response(struct sipe_account_data *sip, struct sip
 static void send_presence_info_v1(struct sipe_account_data *sip, char * note)
 {
 	int code;
+	gchar *uri;
+	gchar *doc;
+	gchar *tmp;
+	gchar *hdr;
 	if (!strcmp(sip->status, "away")) {
 		code = 12000;
 	} else if (!strcmp(sip->status, "busy")) {
@@ -3084,8 +3132,8 @@ static void send_presence_info_v1(struct sipe_account_data *sip, char * note)
 		code = 3000;
 	}
 
-	gchar *uri = g_strdup_printf("sip:%s", sip->username);
-	gchar *doc = g_strdup_printf(SIPE_SEND_PRESENCE, uri,
+	uri = g_strdup_printf("sip:%s", sip->username);
+	doc = g_strdup_printf(SIPE_SEND_PRESENCE, uri,
 		sip->status_version, code,
 		sip->status_version, code,
 		sip->status_version, note ? note : "",
@@ -3094,8 +3142,8 @@ static void send_presence_info_v1(struct sipe_account_data *sip, char * note)
 	);
 	sip->status_version++;
 
-	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
+	tmp = get_contact(sip);
+	hdr = g_strdup_printf("Contact: %s\r\n"
 		"Content-Type: application/msrtc-category-publish+xml\r\n", tmp);
 
 	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_send_presence_info_v1_response);
@@ -3109,9 +3157,10 @@ static void send_presence_info_v1(struct sipe_account_data *sip, char * note)
 static void send_presence_info(struct sipe_account_data *sip)
 {
 	PurpleStatus * status = purple_account_get_active_status(sip->account);
+	gchar *note;
 	if (!status) return;
 
-	gchar *note = g_strdup(purple_status_get_attr_string(status, "message"));
+	note = g_strdup(purple_status_get_attr_string(status, "message"));
 
 	purple_debug_info("sipe", "sending presence info, version = %d\n", sip->presence_method_version);
 	if (sip->presence_method_version != 1) {
@@ -3124,7 +3173,7 @@ static void send_presence_info(struct sipe_account_data *sip)
 static void process_input_message(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gboolean found = FALSE;
-        purple_debug_info("sipe", "msg->response(%d),msg->method(%s)\n",msg->response,msg->method);
+	purple_debug_info("sipe", "msg->response(%d),msg->method(%s)\n",msg->response,msg->method);
 	if (msg->response == 0) { /* request */
 		if (!strcmp(msg->method, "MESSAGE")) {
 			process_incoming_message(sip, msg);
@@ -3142,7 +3191,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 			found = TRUE;
 		} else if (!strcmp(msg->method, "INFO")) {
 			// TODO needs work
-			gchar * from = parse_from(sipmsg_find_header(msg, "From"));
+			gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 			if (from) {
 				serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
 			}
@@ -3156,10 +3205,12 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 			found = TRUE;
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		} else if (!strcmp(msg->method, "BYE")) {
+			struct sip_im_session *session;
+			gchar *from;
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 
-			gchar * from = parse_from(sipmsg_find_header(msg, "From"));
-			struct sip_im_session * session = find_im_session (sip, from);
+			from = parse_from(sipmsg_find_header(msg, "From"));
+			session = find_im_session (sip, from);
 			g_free(from);
 
 			if (session) {
@@ -3314,15 +3365,17 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		// Verify the signature before processing it
 		if (sip->registrar.ntlm_key) {
 			struct sipmsg_breakdown msgbd;
+			gchar *signature_input_str;
+			gchar *signature;
+			gchar *rspauth;
 			msgbd.msg = msg;
 			sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
-			gchar * signature_input_str = sipmsg_breakdown_get_string(&msgbd);
-			gchar * signature;
+			signature_input_str = sipmsg_breakdown_get_string(&msgbd);
 			if (signature_input_str != NULL) {
 				signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
 			}
 
-			gchar * rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
+			rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
 
 			if (signature != NULL) {
 				if (rspauth != NULL) {
@@ -3743,6 +3796,7 @@ static void resolve_next_service(struct sipe_account_data *sip,
 	} else {
 		sip->service_data++;
 		if (sip->service_data->service == NULL) {
+			gchar *hostname;
 			/* Try connecting to the SIP hostname directly */
 			purple_debug(PURPLE_DEBUG_MISC, "sipe", "no SRV records found; using SIP domain as fallback\n");
 			if (sip->auto_transport) {
@@ -3753,7 +3807,7 @@ static void resolve_next_service(struct sipe_account_data *sip,
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "set transport type..\n");
 			}
 
-			gchar * hostname = g_strdup(sip->sipdomain);
+			hostname = g_strdup(sip->sipdomain);
 			create_connection(sip, hostname, 0);
 			return;
 		}
@@ -3960,6 +4014,9 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	PurpleNotifySearchColumn *column;
 	xmlnode *searchResults;
 	xmlnode *mrow;
+	int match_count = 0;
+	gboolean more = FALSE;
+	gchar *secondary;
 
 	searchResults = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!searchResults) {
@@ -3992,7 +4049,6 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	column = purple_notify_searchresults_column_new(_("Email"));
 	purple_notify_searchresults_column_add(results, column);
 
-	int match_count = 0;
 	for (mrow =  xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL); mrow; mrow = xmlnode_get_next_twin(mrow)) {
 		GList *row = NULL;
 
@@ -4009,14 +4065,13 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 		match_count++;
 	}
 
-	gboolean more = FALSE;
 	if ((mrow = xmlnode_get_descendant(searchResults, "Body", "directorySearch", "moreAvailable", NULL)) != NULL) {
 		char *data = xmlnode_get_data_unescaped(mrow);
 		more = (g_strcasecmp(data, "true") == 0);
 		g_free(data);
 	}
 
-	gchar *secondary = g_strdup_printf(
+	secondary = g_strdup_printf(
 		dngettext(GETTEXT_PACKAGE,
 			  "Found %d contact%s:",
 			  "Found %d contacts%s:", match_count),
