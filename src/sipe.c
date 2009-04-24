@@ -243,7 +243,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 	gchar noncecount[9];
 	gchar *response;
 	gchar *ret;
-	gchar *tmp;
+	gchar *tmp = NULL;
 	const char *authdomain;
 	const char *authuser;
 	//const char *krb5_realm;
@@ -783,12 +783,14 @@ static char *get_contact(struct sipe_account_data  *sip)
 	return g_strdup(sip->contact);
 }
 
-
+/*
+ * unused. Needed?
 static char *get_contact_service(struct sipe_account_data  *sip)
 {
   return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport, TRANSPORT_DESCRIPTOR, generateUUIDfromEPID(get_epid()));
         //return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
 }
+*/
 
 static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		const char *text, const char *body)
@@ -884,8 +886,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	struct sipe_account_data *sip = gc->proto_data;
 	const char *addh = "";
 	char *buf;
-        struct sipmsg *msg;
-        gchar *ptmp;
+	struct sipmsg *msg;
 	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
 	gchar *theirtag  = dialog && dialog->theirtag  ? g_strdup(dialog->theirtag)  : NULL;
 	gchar *theirepid = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
@@ -1073,7 +1074,7 @@ static gchar *parse_from(const gchar *hdr)
 static xmlnode * xmlnode_get_descendant(xmlnode * parent, ...)
 {
 	va_list args;
-	xmlnode * node;
+	xmlnode * node = NULL;
 	const gchar * name;
 
 	va_start(args, parent);
@@ -1331,11 +1332,12 @@ static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar
   */
 gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
 {
+	gboolean ret;
 	purple_debug_info("sipe", "sipe_scheduled_exec: executing\n");
 	sched_action->sip->timeouts = g_slist_remove(sched_action->sip->timeouts, sched_action);
 	purple_debug_info("sipe", "sip->timeouts count:%d after removal\n",g_slist_length(sched_action->sip->timeouts));
 	(sched_action->action)(sched_action->sip, sched_action->payload);
-	gboolean ret = sched_action->repetitive;
+	ret = sched_action->repetitive;
 	g_free(sched_action);
 	return ret;
 }
@@ -1371,10 +1373,9 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 			int expires;
 			expires_header = sipmsg_find_header(msg, "Expires");
 			expires = expires_header ? strtol(expires_header, NULL, 10) : 0;
-			g_free(expires_header);
 			
 			if (expires) {	
-				sipe_schedule_action(expires, sipe_subscribe_to_name, sip, to);
+				sipe_schedule_action(expires, (Action) sipe_subscribe_to_name, sip, to);
 				purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", to, expires);
 			}		
 		}
@@ -1950,7 +1951,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	}
 
 	if (msg->response != 200) {
-		char *queued_msg;
+		gchar *queued_msg = NULL;
 		purple_debug_info("sipe", "process_message_response: MESSAGE response not 200\n");
 
 		if (session->outgoing_message_queue) {
@@ -2125,7 +2126,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	}
 
 	if (msg->response != 200) {
-		char *queued_msg;
+		gchar *queued_msg = NULL;
 		purple_debug_info("sipe", "process_invite_response: INVITE response not 200\n");
 
 		if (session->outgoing_message_queue) {
@@ -2208,7 +2209,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * s
 	hdr = g_strdup_printf(
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
-		contact, ms_text_format, sip->username, sip->username, to);
+		contact, ms_text_format);
 	g_free(ms_text_format);
 
 	body = g_strdup_printf(
@@ -2486,7 +2487,8 @@ static void create_connection(struct sipe_account_data *, gchar *, int);
 
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
-	gchar *tmp, krb5_token;
+	gchar *tmp;
+	//gchar krb5_token;
 	const gchar *expires_header;
 	int expires;
 
@@ -2499,10 +2501,15 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			if (expires == 0) {
 				sip->registerstatus = 0;
 			} else {
+				int i = 0;
+				gchar *contact_hdr = NULL;
+				gchar *gruu = NULL;
+				gchar *uuid;
+				
 				sip->registerexpire = expires;
 
 				if (!sip->reregister_set) {
-					sipe_schedule_action(expires, do_register_cb, sip, NULL);
+					sipe_schedule_action(expires, (Action) do_register_cb, sip, NULL);
 					purple_debug_info("sipe","scheduled reregister. timeout:%d\n", expires);
 					sip->reregister_set = TRUE;
 				}
@@ -2513,17 +2520,14 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					/* we have to reauthenticate as our security token expires
 					   after eight hours (be five minutes early) */
 					guint reauth_timeout = (8 * 3600) - 360;
-					sipe_schedule_action(reauth_timeout, do_reauthenticate_cb, sip, NULL);
+					sipe_schedule_action(reauth_timeout, (Action) do_reauthenticate_cb, sip, NULL);
 					purple_debug_info("sipe","scheduled reauthentication. timeout:%d\n", reauth_timeout);
 					sip->reauthenticate_set = TRUE;
 				}
 
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
-				int i = 0;
-				gchar *contact_hdr = NULL;
-				gchar *gruu;
-				gchar * uuid = generateUUIDfromEPID(get_epid());
+				uuid = generateUUIDfromEPID(get_epid());
 				// There can be multiple Contact headers (one per location where the user is logged in) so
 				// make sure to only get the one for this uuid
 				for (i = 0; (contact_hdr = sipmsg_find_header_instance (msg, "Contact", i)); i++) {
@@ -2896,9 +2900,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	const char *activity;
 	const char *note = NULL;
 	const char *activity_name;
-	int avl, act;
 	gchar *uri;
-
+	int avl;
+	int act;
 	struct sipe_buddy *sbuddy;
 
 	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
@@ -2910,6 +2914,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	uri = g_strdup_printf("sip:%s", xmlnode_get_attrib(xn_presentity, "uri"));
 	availability = xmlnode_get_attrib(xn_availability, "aggregate");
 	activity = xmlnode_get_attrib(xn_activity, "aggregate");
+	
 	if (xn_note) {
 		note = xmlnode_get_data(xn_note);
 	}
@@ -2998,6 +3003,9 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 }
 
+/*
+ * unused. Needed?
+
 static gchar* gen_xpidf(struct sipe_account_data *sip)
 {
 	gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
@@ -3038,10 +3046,7 @@ static gchar* gen_pidf(struct sipe_account_data *sip)
                         sip->username);
 	return doc;
 }
-
-static void send_clear_notes(struct sipe_account_data *sip)
-{
-}
+*/
 
 static gboolean
 process_send_presence_info_v0_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
@@ -3368,7 +3373,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		if (sip->registrar.ntlm_key) {
 			struct sipmsg_breakdown msgbd;
 			gchar *signature_input_str;
-			gchar *signature;
+			gchar *signature = NULL;
 			gchar *rspauth;
 			msgbd.msg = msg;
 			sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
@@ -3661,12 +3666,15 @@ static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorTyp
         sip->gsc = NULL;
 
         switch(error) {
-                case PURPLE_SSL_CONNECT_FAILED:
-                        purple_connection_error(gc, _("Connection Failed"));
-                        break;
-                case PURPLE_SSL_HANDSHAKE_FAILED:
-                        purple_connection_error(gc, _("SSL Handshake Failed"));
-                        break;
+			case PURPLE_SSL_CONNECT_FAILED:
+				purple_connection_error(gc, _("Connection Failed"));
+				break;
+			case PURPLE_SSL_HANDSHAKE_FAILED:
+				purple_connection_error(gc, _("SSL Handshake Failed"));
+				break;
+			case PURPLE_SSL_CERTIFICATE_INVALID:
+				purple_connection_error(gc, _("SSL Certificate Invalid"));
+				break;
         }
 }
 
@@ -4149,8 +4157,6 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 
 GList *sipe_actions(PurplePlugin *plugin, gpointer context)
 {
-	PurpleConnection *gc = (PurpleConnection *) context;
-	struct sipe_account_data *sip = gc->proto_data;
 	GList *menu = NULL;
 	PurplePluginAction *act;
 
@@ -4160,10 +4166,6 @@ GList *sipe_actions(PurplePlugin *plugin, gpointer context)
 	menu = g_list_reverse(menu);
 
 	return menu;
-}
-
-/* not needed since privacy is checked for every subscribe */
-static void dummy_add_deny(PurpleConnection *gc, const char *name) {
 }
 
 static void dummy_permit_deny(PurpleConnection *gc)
@@ -4314,7 +4316,7 @@ static PurplePluginInfo info = {
 	0,                                                /**< flags          */
 	NULL,                                             /**< dependencies   */
 	PURPLE_PRIORITY_DEFAULT,                          /**< priority       */
-        "prpl-sipe",                                   	  /**< id             */
+	"prpl-sipe",                                   	  /**< id             */
 	"Microsoft LCS/OCS",				  /**< name           */
 	VERSION,                                          /**< version        */
 	"SIP/SIMPLE OCS/LCS Protocol Plugin",             /**  summary        */
@@ -4330,32 +4332,31 @@ static PurplePluginInfo info = {
 	NULL,
 	sipe_actions,
 	NULL,
-        NULL,
-        NULL,
-        NULL
+	NULL,
+	NULL,
+	NULL
 };
 
 static void init_plugin(PurplePlugin *plugin)
 {
 	PurpleAccountUserSplit *split;
 	PurpleAccountOption *option;
-	PurpleKeyValuePair *kvp;
 
 #ifdef ENABLE_NLS
 	purple_debug_info(PACKAGE, "bindtextdomain = %s", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));
 	purple_debug_info(PACKAGE, "bind_textdomain_codeset = %s",
-		bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8"));
+	bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8"));
 #endif
 
-        purple_plugin_register(plugin);
+	purple_plugin_register(plugin);
 
 	split = purple_account_user_split_new(_("Login \n   domain\\user  or\n   someone@linux.com "), NULL, ',');
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
-        option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
+	option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-        option = purple_account_option_string_new(_("Proxy Server"), "proxy", "");
+	option = purple_account_option_string_new(_("Proxy Server"), "proxy", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = purple_account_option_bool_new(_("Use non-standard port"), "useport", FALSE);
