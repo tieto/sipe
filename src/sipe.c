@@ -2896,10 +2896,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	const char *activity;
 	const char *note = NULL;
 	const char *activity_name;
+	int avl, act;
 	gchar *uri;
 
-	int avl = atoi(availability);
-	int act = atoi(activity);
 	struct sipe_buddy *sbuddy;
 
 	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
@@ -2914,6 +2913,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	if (xn_note) {
 		note = xmlnode_get_data(xn_note);
 	}
+	
+	avl = atoi(availability);
+	act = atoi(activity);
 
 	if (act <= 100)
 		activity_name = "away";
