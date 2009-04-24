@@ -2954,11 +2954,11 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	g_free(uri);
 }
 
-static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg)
+static void process_incoming_notify_presence(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	char *ctype = sipmsg_find_header(msg, "Content-Type");
 
-	purple_debug_info("sipe", "process_incoming_notify: Content-Type: %s\n\n%s\n", ctype ? ctype : "" , msg->body);
+	purple_debug_info("sipe", "process_incoming_notify_presence: Content-Type: %s\n\n%s\n", ctype ? ctype : "" , msg->body);
 
 	if ( ctype && (  strstr(ctype, "application/rlmi+xml")
 				  || strstr(ctype, "application/msrtc-event-categories+xml") ) )
@@ -2983,7 +2983,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		    process_incoming_notify_rlmi(sip, content, length);
 		}
 		else if (strstr(subscription_state, "terminated")){
-			purple_debug_info("sipe", "process_incoming_notify: subscription_state:%s\n\n",subscription_state);
+			purple_debug_info("sipe", "process_incoming_notify_presence: subscription_state:%s\n\n",subscription_state);
 			process_incoming_notify_rlmi_resub(sip,content,length);
 		}
 
@@ -3003,9 +3003,30 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 }
 
+static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg)
+{
+	char *event = sipmsg_find_header(msg, "Event");
+
+	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
+
+	if (event && strstr(event, "presence"))
+	{
+		process_incoming_notify_presence(sip, msg);
+	}
+	else if (event && strstr(event, "vnd-microsoft-roaming-contacts"))
+	{
+		sipe_add_lcs_contacts(sip, msg, NULL);
+	}
+	else
+	{
+		purple_debug_info("sipe", "Unable to process NOTIFY. Event is not supported:%s\n", event ? event : "");
+		send_sip_response(sip->gc, msg, 200, "OK", NULL); // to keep server optimistic
+	}
+}
+
 /*
  * unused. Needed?
-
+ 
 static gchar* gen_xpidf(struct sipe_account_data *sip)
 {
 	gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
