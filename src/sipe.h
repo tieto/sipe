@@ -71,7 +71,7 @@ struct sip_dialog {
 struct sipe_buddy {
 	gchar *name;
 	gchar *annotation;
-	int group_id;
+	GSList *groups;
 };
 
 typedef enum sipe_auth_type
@@ -280,7 +280,7 @@ struct group_user_context {
 
 #define SIPE_SOAP_SET_CONTACT sipe_soap("setContact", \
 	"<m:displayName>%s</m:displayName>"\
-	"<m:groups>%d</m:groups>"\
+	"<m:groups>%s</m:groups>"\
 	"<m:subscribed>%s</m:subscribed>"\
 	"<m:URI>%s</m:URI>"\
 	"<m:externalURI />"\

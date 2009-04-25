@@ -1259,25 +1259,65 @@ sipe_group_rename (struct sipe_account_data *sip, struct sipe_group * group, gch
 	group->name = g_strdup(name);
 }
 
+/**
+ * Only appends if no such value already stored.
+ * Like Set in Java.
+ */
+GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func) {
+	GSList * res = list;
+	if (!g_slist_find_custom(list, data, func)) {
+		res = g_slist_insert_sorted(list, data, func);
+	}
+	return res;
+}
+
+static int
+sipe_group_compare(struct sipe_group *group1, struct sipe_group *group2) {
+	return group1->id - group2->id;
+}
+
+/**
+ * Returns string like "2 4 7 8" - group ids buddy belong to.
+ */
+static gchar *
+sipe_get_buddy_groups_string (struct sipe_buddy *buddy) {
+	int i = 0;
+	gchar *res;
+	//creating array from GList, converting int to gchar*
+	gchar **ids_arr = g_new(gchar *, g_slist_length(buddy->groups) + 1);
+	GSList *entry = buddy->groups;
+	while (entry) {
+		struct sipe_group * group = entry->data;
+		ids_arr[i] = g_strdup_printf("%d", group->id);
+		entry = entry->next;
+		i++;
+	}
+	ids_arr[i] = NULL;
+	res = g_strjoinv(" ", ids_arr);
+	g_strfreev(ids_arr);
+	return res;
+}
+
+/**
+  * Sends buddy update to server
+  */
 static void
-sipe_group_set_user (struct sipe_account_data *sip, struct sipe_group * group, const gchar * who)
+sipe_group_set_user (struct sipe_account_data *sip, const gchar * who)
 {
 	struct sipe_buddy *buddy = g_hash_table_lookup(sip->buddies, who);
-	PurpleBuddy * purple_buddy = purple_find_buddy (sip->account, who);
-
-	if (!group) {
-		group = sipe_group_find_by_id (sip, buddy->group_id);
-	}
-	buddy->group_id = group ? group->id : 1;
+	PurpleBuddy *purple_buddy = purple_find_buddy (sip->account, who);
 
 	if (buddy && purple_buddy) {
-		gchar * alias = (gchar *)purple_buddy_get_alias(purple_buddy);
+		gchar *alias = (gchar *)purple_buddy_get_alias(purple_buddy);
 		gchar *body;
-		purple_debug_info("sipe", "Saving buddy %s with alias %s and group_id %d\n", who, alias, buddy->group_id);
+		gchar *groups = sipe_get_buddy_groups_string(buddy);
+		purple_debug_info("sipe", "Saving buddy %s with alias %s and groups %s\n", who, alias, groups);
+		
 		body = g_strdup_printf(SIPE_SOAP_SET_CONTACT,
-			alias, buddy->group_id, "true", buddy->name, sip->contacts_delta++
+			alias, groups, "true", buddy->name, sip->contacts_delta++
 		);
 		send_soap_request(sip, body);
+		g_free(groups);
 		g_free(body);
 	}
 }
@@ -1291,6 +1331,7 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 		xmlnode *xml;
 		xmlnode *node;
 		char *group_id;
+		struct sipe_buddy *buddy;
 		group->name = ctx->group_name;
 
 		xml = xmlnode_from_str(msg->body, msg->bodylen);
@@ -1305,7 +1346,13 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 		group->id = (int)g_ascii_strtod(group_id, NULL);
 
 		sipe_group_add(sip, group);
-		sipe_group_set_user(sip, group, ctx->user_name);
+		
+		buddy = g_hash_table_lookup(sip->buddies, ctx->user_name);
+		if (buddy) {
+			buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
+		}
+		
+		sipe_group_set_user(sip, ctx->user_name);
 
 		g_free(ctx);
 		xmlnode_free(xml);
@@ -1461,7 +1508,7 @@ static void
 sipe_alias_buddy(PurpleConnection *gc, const char *name, const char *alias)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	sipe_group_set_user(sip, NULL, name);
+	sipe_group_set_user(sip, name);
 }
 
 static void
@@ -1470,19 +1517,44 @@ sipe_group_buddy(PurpleConnection *gc,
 		 const char *old_group_name,
 		 const char *new_group_name)
 {
-	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	struct sipe_group * group = sipe_group_find_by_name(sip, g_strdup(new_group_name));
-	if (!group) {
-		sipe_group_create(sip, g_strdup(new_group_name), g_strdup(who));
-	} else {
-		sipe_group_set_user(sip, group, who);
+ 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
+	struct sipe_buddy * buddy = g_hash_table_lookup(sip->buddies, who);
+	struct sipe_group * old_group = NULL;
+	struct sipe_group * new_group;
+	
+	purple_debug_info("sipe", "sipe_group_buddy[CB]: who:%s old_group_name:%s new_group_name:%s\n", 
+		who ? who : "", old_group_name ? old_group_name : "", new_group_name ? new_group_name : "");
+	
+	if(!buddy) { // buddy not in roaming list
+		return;
 	}
+	
+purple_debug_info("sipe", "sipe_group_buddy: g_slist_length(buddy->groups)0=%d\n", g_slist_length(buddy->groups));
+
+	if (old_group_name) {
+		old_group = sipe_group_find_by_name(sip, g_strdup(old_group_name));
+	}
+	new_group = sipe_group_find_by_name(sip, g_strdup(new_group_name));
+
+	if (old_group) {
+		buddy->groups = g_slist_remove(buddy->groups, old_group);
+		purple_debug_info("sipe", "buddy %s removed from old group %s\n", who, old_group_name);
+	}
+
+	if (!new_group) {
+ 		sipe_group_create(sip, g_strdup(new_group_name), g_strdup(who));
+ 	} else {
+		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
+		sipe_group_set_user(sip, who);
+ 	}
 }
 
 static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 	struct sipe_buddy *b;
+	
+	purple_debug_info("sipe", "sipe_add_buddy[CB]: buddy:%s group:%s\n", buddy ? buddy->name : "", group ? group->name : "");
 
 	// Prepend sip: if needed
 	if (strncmp("sip:", buddy->name, 4)) {
@@ -1497,28 +1569,54 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 		b->name = g_strdup(buddy->name);
 		g_hash_table_insert(sip->buddies, b->name, b);
 		sipe_group_buddy(gc, b->name, NULL, group->name);
-		sipe_subscribe_to_name(sip, b->name);
+		sipe_subscribe_to_name(sip, b->name); //@TODO should go to callback
 	} else {
 		purple_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
 	}
 }
 
+/**
+  * Unassociates buddy from group first.
+  * Then see if no groups left, removes buddy completely.
+  * Otherwise updates buddy groups on server.
+  */
 static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 	struct sipe_buddy *b = g_hash_table_lookup(sip->buddies, buddy->name);
-
+	struct sipe_group *g = NULL;
+	
+	purple_debug_info("sipe", "sipe_remove_buddy[CB]: buddy:%s group:%s\n", buddy ? buddy->name : "", group ? group->name : "");
+	
 	if (!b) return;
-	g_hash_table_remove(sip->buddies, buddy->name);
 
-	if (b->name) {
-		gchar * body = g_strdup_printf(SIPE_SOAP_DEL_CONTACT, b->name, sip->contacts_delta++);
-		send_soap_request(sip, body);
-		g_free(body);
+	if (group) {
+		g = sipe_group_find_by_name(sip, group->name);
 	}
 
-	g_free(b->name);
-	g_free(b);
+	if (g) {
+		b->groups = g_slist_remove(b->groups, g);
+		purple_debug_info("sipe", "buddy %s removed from group %s\n", buddy->name, g->name);
+	}
+	
+	if (g_slist_length(b->groups) < 1) {
+		g_hash_table_remove(sip->buddies, buddy->name);
+
+		if (b->name) {
+			gchar * body = g_strdup_printf(SIPE_SOAP_DEL_CONTACT, b->name, sip->contacts_delta++);
+			send_soap_request(sip, body);
+			g_free(body);
+		}
+		
+		g_free(b->name);
+		g_free(b->annotation);
+		g_slist_free(b->groups);
+		g_free(b);
+	} else {
+		//updates groups on server
+		sipe_group_set_user(sip, b->name);
+	}
+	
 }
 
 static void
@@ -1634,7 +1732,7 @@ static void sipe_buddy_subscribe_cb(char *name, struct sipe_buddy *buddy, struct
 static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	int len = msg->bodylen;
-
+	
 	gchar *tmp = sipmsg_find_header(msg, "Event");
 	xmlnode *item;
 	xmlnode *isc;
@@ -1643,6 +1741,8 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	if (!tmp || strncmp(tmp, "vnd-microsoft-roaming-contacts", 30)) {
 		return FALSE;
 	}
+	
+	purple_debug_info("sipe", "msg->body:%s\n", msg->body);
 
 	/* Convert the contact from XML to Purple Buddies */
 	isc = xmlnode_from_str(msg->body, len);
@@ -1686,49 +1786,66 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 	for (item = xmlnode_get_child(isc, "contact"); item; item = xmlnode_get_next_twin(item)) {
 		gchar * uri = g_strdup(xmlnode_get_attrib(item, "uri"));
 		gchar * name = g_strdup(xmlnode_get_attrib(item, "name"));
-		gchar **item_groups = g_strsplit(xmlnode_get_attrib(item, "groups"), " ", 0);
+		gchar * groups = g_strdup(xmlnode_get_attrib(item, "groups"));
+		gchar **item_groups;
+		struct sipe_group *group = NULL;
+		struct sipe_buddy *buddy = NULL;
+		int i = 0;
 
-		struct sipe_group * group = NULL;
-
-		// Find the first group this contact belongs to; that's where we'll place it in the buddy list
-		if (item_groups[0]) {
-			group = sipe_group_find_by_id(sip, g_ascii_strtod(item_groups[0], NULL));
+		// assign to group General if nothing else received
+		if(!groups || !strcmp("", groups) ) {
+			group = sipe_group_find_by_name(sip, "General");
+			groups = group ? g_strdup_printf("%d", group->id) : "1";
 		}
 
-		// If couldn't find the right group for this contact, just put them in the first group we have
-		if (group == NULL && g_slist_length(sip->groups) > 0) {
-			group = sip->groups->data;
-		}
+		item_groups = g_strsplit(groups, " ", 0);
 
-		if (group != NULL) {
-			char * buddy_name = g_strdup_printf("sip:%s", uri);
-			struct sipe_buddy *buddy;
+		while (item_groups[i]) {
+			group = sipe_group_find_by_id(sip, g_ascii_strtod(item_groups[i], NULL));
 
-			//b = purple_find_buddy(sip->account, buddy_name);
-			PurpleBuddy *b = purple_find_buddy_in_group(sip->account, buddy_name, group->purple_group);
-			if (!b){
-				b = purple_buddy_new(sip->account, buddy_name, uri);
+			// If couldn't find the right group for this contact, just put them in the first group we have
+			if (group == NULL && g_slist_length(sip->groups) > 0) {
+				group = sip->groups->data;
 			}
-			g_free(buddy_name);
 
-			purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
+			if (group != NULL) {
+				char * buddy_name = g_strdup_printf("sip:%s", uri);
 
-			if (name != NULL && strlen(name) != 0) {
-				purple_blist_alias_buddy(b, name);
+				//b = purple_find_buddy(sip->account, buddy_name);
+				PurpleBuddy *b = purple_find_buddy_in_group(sip->account, buddy_name, group->purple_group);
+				if (!b){
+					b = purple_buddy_new(sip->account, buddy_name, uri);
+					purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
+				}
+				g_free(buddy_name);
+
+				if (name != NULL && strlen(name) != 0) {
+					purple_blist_alias_buddy(b, name);
+				} else {
+					purple_blist_alias_buddy(b, uri);
+				}
+
+				if (!buddy) {
+					buddy = g_new0(struct sipe_buddy, 1);
+					buddy->name = g_strdup(b->name);
+					g_hash_table_insert(sip->buddies, buddy->name, buddy);
+				}
+
+				buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
+
+				purple_debug_info("sipe", "Added buddy %s to group %s\n", b->name, group->name);
 			} else {
-				purple_blist_alias_buddy(b, uri);
+				purple_debug_info("sipe", "No group found for contact %s!  Unable to add to buddy list\n",
+					name);
 			}
 
-			buddy = g_new0(struct sipe_buddy, 1);
-			buddy->name = g_strdup(b->name);
-			buddy->group_id = group->id;
-			g_hash_table_insert(sip->buddies, buddy->name, buddy);
-
-			purple_debug_info("sipe", "Added buddy %s to group %s\n", buddy->name, group->name);
-		} else {
-			purple_debug_info("sipe", "No group found for contact %s!  Unable to add to buddy list\n",
-				name);
+			i++;
 		}
+		g_strfreev(item_groups);
+		g_free(groups);
+		g_free(name);
+		g_free(uri);
+
 	}
 
 	xmlnode_free(isc);
@@ -3991,7 +4108,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		GSList *entry = sip->timeouts;
 		while (entry) {
 			sched_action = entry->data;
-			purple_debug_info("sipe", "purple_timeout_remove: handler=%d", sched_action->timeout_handler);
+			purple_debug_info("sipe", "purple_timeout_remove: handler=%d\n", sched_action->timeout_handler);
 			purple_timeout_remove(sched_action->timeout_handler);
 			g_free(sched_action);
 			entry = entry->next;
