@@ -1785,29 +1785,21 @@ static void sipe_subscribe_pending_buddies(struct sipe_account_data *sip,struct 
 	g_free(hdr);
 }
 
-static void process_incoming_benotify(struct sipe_account_data *sip, struct sipmsg *msg)
-{
-	gchar * event = sipmsg_find_header(msg, "Event");
+static void sipe_process_acl(struct sipe_account_data *sip, struct sipmsg *msg)
+{		
 	gchar *contacts_delta;
 	xmlnode *xml;
-	if (!event) return;
 
-	if (!strcmp(event, "presence.wpending")) {
-		sipe_process_incoming_pending (sip, msg);
+	xml = xmlnode_from_str(msg->body, msg->bodylen);
+	if (!xml) 
+	{
 		return;
 	}
 
-	xml = xmlnode_from_str(msg->body, msg->bodylen);
-	if (!xml) return;
-
 	contacts_delta = g_strdup(xmlnode_get_attrib(xml, "deltaNum"));
-	if (contacts_delta) {
-		int new_delta = (int)g_ascii_strtod(contacts_delta, NULL);
-		if (!strcmp(event, "vnd-microsoft-roaming-ACL")) {
-			sip->acl_delta = new_delta;
-		} else {
-			sip->contacts_delta = new_delta;
-		}
+	if (contacts_delta) 
+	{
+		sip->acl_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 	}
 
 	xmlnode_free(xml);
@@ -1816,7 +1808,7 @@ static void process_incoming_benotify(struct sipe_account_data *sip, struct sipm
 static gboolean
 sipe_process_acl_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
-	process_incoming_benotify (sip, msg);
+	sipe_process_acl(sip, msg);
 	return TRUE;
 }
 
@@ -3000,12 +2992,11 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
 	{
 		process_incoming_notify_pidf(sip, msg);
 	}
-	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 }
 
-static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg)
+static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean benotity)
 {
-	char *event = sipmsg_find_header(msg, "Event");
+	gchar *event = sipmsg_find_header(msg, "Event");
 
 	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
 
@@ -3017,10 +3008,22 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	{
 		sipe_add_lcs_contacts(sip, msg, NULL);
 	}
+	else if (event && strstr(event, "vnd-microsoft-roaming-ACL"))
+	{
+		sipe_process_acl(sip, msg);
+	}
+	else if (event && strstr(event, "presence.wpending"))
+	{
+		sipe_process_incoming_pending(sip, msg);
+	}
 	else
 	{
 		purple_debug_info("sipe", "Unable to process NOTIFY. Event is not supported:%s\n", event ? event : "");
-		send_sip_response(sip->gc, msg, 200, "OK", NULL); // to keep server optimistic
+	}	
+	
+	if(!benotity)
+	{
+		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 	}
 }
 
@@ -3208,11 +3211,11 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 			found = TRUE;
 		} else if (!strcmp(msg->method, "NOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_notify\n");
-			process_incoming_notify(sip, msg);
+			process_incoming_notify(sip, msg, FALSE);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "BENOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_benotify\n");
-			process_incoming_benotify(sip, msg);
+			process_incoming_notify(sip, msg, TRUE);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "INVITE")) {
 			process_incoming_invite(sip, msg);
