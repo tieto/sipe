@@ -1529,8 +1529,6 @@ sipe_group_buddy(PurpleConnection *gc,
 		return;
 	}
 	
-purple_debug_info("sipe", "sipe_group_buddy: g_slist_length(buddy->groups)0=%d\n", g_slist_length(buddy->groups));
-
 	if (old_group_name) {
 		old_group = sipe_group_find_by_name(sip, g_strdup(old_group_name));
 	}
@@ -1729,7 +1727,47 @@ static void sipe_buddy_subscribe_cb(char *name, struct sipe_buddy *buddy, struct
 	sipe_subscribe_to_name(sip, buddy->name);
 }
 
-static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
+/**
+  * Removes entries from purple buddy list
+  * that does not correspond ones in the roaming contact list.
+  */
+static void sipe_cleanup_local_blist(struct sipe_account_data *sip) {
+	GSList *buddies = purple_find_buddies(sip->account, NULL);
+	GSList *entry = buddies;
+	struct sipe_buddy *buddy;
+	PurpleBuddy *b;
+	PurpleGroup *g;
+	
+	purple_debug_info("sipe", "sipe_cleanup_local_blist: overall %d Purple buddies (including clones)\n", g_slist_length(buddies));
+	purple_debug_info("sipe", "sipe_cleanup_local_blist: %d sipe buddies (unique)\n", g_hash_table_size(sip->buddies));
+	while (entry) {
+		b = entry->data;
+		g = purple_buddy_get_group(b);
+		buddy = g_hash_table_lookup(sip->buddies, b->name);			
+		if(buddy) {
+			gboolean in_sipe_groups = FALSE;
+			GSList *entry2 = buddy->groups;
+			while (entry2) {
+				struct sipe_group *group = entry2->data;
+				if (!strcmp(group->name, g->name)) {
+					in_sipe_groups = TRUE;
+					break;
+				}
+				entry2 = entry2->next;
+			}
+			if(!in_sipe_groups) {
+				purple_debug_info("sipe", "*** REMOVING %s from Purple group: %s as not having this group in roaming list\n", b->name, g->name);
+				purple_blist_remove_buddy(b);
+			}			
+		} else {
+				purple_debug_info("sipe", "*** REMOVING %s from Purple group: %s as this buddy not in roaming list\n", b->name, g->name);
+				purple_blist_remove_buddy(b);
+		}
+		entry = entry->next;
+	}
+}
+
+static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	int len = msg->bodylen;
 	
@@ -1787,6 +1825,7 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 		gchar * uri = g_strdup(xmlnode_get_attrib(item, "uri"));
 		gchar * name = g_strdup(xmlnode_get_attrib(item, "name"));
 		gchar * groups = g_strdup(xmlnode_get_attrib(item, "groups"));
+		gchar * buddy_name = g_strdup_printf("sip:%s", uri);
 		gchar **item_groups;
 		struct sipe_group *group = NULL;
 		struct sipe_buddy *buddy = NULL;
@@ -1809,15 +1848,11 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 			}
 
 			if (group != NULL) {
-				char * buddy_name = g_strdup_printf("sip:%s", uri);
-
-				//b = purple_find_buddy(sip->account, buddy_name);
 				PurpleBuddy *b = purple_find_buddy_in_group(sip->account, buddy_name, group->purple_group);
 				if (!b){
 					b = purple_buddy_new(sip->account, buddy_name, uri);
 					purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
 				}
-				g_free(buddy_name);
 
 				if (name != NULL && strlen(name) != 0) {
 					purple_blist_alias_buddy(b, name);
@@ -1840,15 +1875,18 @@ static gboolean sipe_add_lcs_contacts(struct sipe_account_data *sip, struct sipm
 			}
 
 			i++;
-		}
+		} // while, contact groups
 		g_strfreev(item_groups);
 		g_free(groups);
 		g_free(name);
+		g_free(buddy_name);
 		g_free(uri);
 
-	}
+	} // for, contacts
 
 	xmlnode_free(isc);
+	
+	sipe_cleanup_local_blist(sip);	
 
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
@@ -1872,7 +1910,7 @@ static void sipe_subscribe_buddylist(struct sipe_account_data *sip,struct sipmsg
 		"Contact: %s\r\n", tmp);
 	g_free(tmp);
 
-	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_add_lcs_contacts);
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, sipe_process_roaming_contacts);
 	g_free(to);
 	g_free(hdr);
 }
@@ -1902,7 +1940,7 @@ static void sipe_subscribe_pending_buddies(struct sipe_account_data *sip,struct 
 	g_free(hdr);
 }
 
-static void sipe_process_acl(struct sipe_account_data *sip, struct sipmsg *msg)
+static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipmsg *msg)
 {		
 	gchar *contacts_delta;
 	xmlnode *xml;
@@ -1925,7 +1963,7 @@ static void sipe_process_acl(struct sipe_account_data *sip, struct sipmsg *msg)
 static gboolean
 sipe_process_acl_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
-	sipe_process_acl(sip, msg);
+	sipe_process_roaming_acl(sip, msg);
 	return TRUE;
 }
 
@@ -3123,11 +3161,11 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	}
 	else if (event && strstr(event, "vnd-microsoft-roaming-contacts"))
 	{
-		sipe_add_lcs_contacts(sip, msg, NULL);
+		sipe_process_roaming_contacts(sip, msg, NULL);
 	}
 	else if (event && strstr(event, "vnd-microsoft-roaming-ACL"))
 	{
-		sipe_process_acl(sip, msg);
+		sipe_process_roaming_acl(sip, msg);
 	}
 	else if (event && strstr(event, "presence.wpending"))
 	{
