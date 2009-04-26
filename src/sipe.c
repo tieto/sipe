@@ -1800,7 +1800,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		group->name = g_strdup(xmlnode_get_attrib(group_node, "name"));
 		if (!strncmp(group->name, "~", 1)){
 			// TODO translate
-			group->name = "General";
+			group->name = "Other Contacts";
 		}
 		group->name = g_strdup(group->name);
 		group->id = (int)g_ascii_strtod(xmlnode_get_attrib(group_node, "id"), NULL);
@@ -1813,7 +1813,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		struct sipe_group * group = g_new0(struct sipe_group, 1);
 		PurpleGroup *purple_group;
 		// TODO translate
-		group->name = g_strdup("General");
+		group->name = g_strdup("Other Contacts");
 		group->id = 1;
 		purple_group = purple_group_new(group->name);
 		purple_blist_add_group(purple_group, NULL);
@@ -1831,9 +1831,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		struct sipe_buddy *buddy = NULL;
 		int i = 0;
 
-		// assign to group General if nothing else received
+		// assign to group Other Contacts if nothing else received
 		if(!groups || !strcmp("", groups) ) {
-			group = sipe_group_find_by_name(sip, "General");
+			group = sipe_group_find_by_name(sip, "Other Contacts");
 			groups = group ? g_strdup_printf("%d", group->id) : "1";
 		}
 
@@ -1854,10 +1854,10 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 					purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
 				}
 
-				if (name != NULL && strlen(name) != 0) {
-					purple_blist_alias_buddy(b, name);
-				} else {
-					purple_blist_alias_buddy(b, uri);
+				if (!g_ascii_strcasecmp(uri, purple_buddy_get_alias(b))) {
+					if (name != NULL && strlen(name) != 0) {
+						purple_blist_alias_buddy(b, name);
+					}
 				}
 
 				if (!buddy) {
@@ -3045,9 +3045,12 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 {
 	const char *availability;
 	const char *activity;
+	const char *display_name = NULL;
+	const char *email = NULL;
 	const char *note = NULL;
 	const char *activity_name;
-	gchar *uri;
+	const char *name;
+	char *uri;
 	int avl;
 	int act;
 	struct sipe_buddy *sbuddy;
@@ -3055,13 +3058,33 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
 	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
+	xmlnode *xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
+	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");	
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
 	xmlnode *xn_note = xmlnode_get_child(xn_userinfo, "note");
 
-	uri = g_strdup_printf("sip:%s", xmlnode_get_attrib(xn_presentity, "uri"));
+	name = xmlnode_get_attrib(xn_presentity, "uri");
+	uri = g_strdup_printf("sip:%s", name);
 	availability = xmlnode_get_attrib(xn_availability, "aggregate");
 	activity = xmlnode_get_attrib(xn_activity, "aggregate");
-	
+	// updating display name if alias was just URI
+	if (xn_display_name) {
+		GSList *buddies = purple_find_buddies(sip->account, uri); //all buddies in different groups
+		GSList *entry = buddies;
+		PurpleBuddy *p_buddy;
+		display_name = xmlnode_get_attrib(xn_display_name, "displayName");
+		while (entry) {
+			p_buddy = entry->data;
+			if (!g_ascii_strcasecmp(name, purple_buddy_get_alias(p_buddy))) {
+				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, display_name);
+				purple_blist_alias_buddy(p_buddy, display_name);
+			}
+			entry = entry->next;
+		}		
+	}
+	if (xn_email) {
+		email = xmlnode_get_attrib(xn_email, "email");
+	}
 	if (xn_note) {
 		note = xmlnode_get_data(xn_note);
 	}
@@ -3105,7 +3128,7 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
 {
 	char *ctype = sipmsg_find_header(msg, "Content-Type");
 
-	purple_debug_info("sipe", "process_incoming_notify_presence: Content-Type: %s\n\n%s\n", ctype ? ctype : "" , msg->body);
+	purple_debug_info("sipe", "process_incoming_notify_presence: Content-Type: %s\n", ctype ? ctype : "");
 
 	if ( ctype && (  strstr(ctype, "application/rlmi+xml")
 				  || strstr(ctype, "application/msrtc-event-categories+xml") ) )
