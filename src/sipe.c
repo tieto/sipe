@@ -1040,6 +1040,10 @@ static void do_register(struct sipe_account_data *sip)
 	do_register_exp(sip, sip->registerexpire);
 }
 
+/**
+ *
+ * Needs to g_free() after use.
+ */
 static gchar *parse_from(const gchar *hdr)
 {
 	gchar *from;
@@ -2856,6 +2860,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 	return TRUE;
 }
 
+/*
 static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const char *uri,*state;
@@ -2874,7 +2879,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 	sip->presence_method_version= 0;
 	sipe_subscribe_to_name(sip, uri);
 }
-
+*/
 
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
@@ -3145,7 +3150,7 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
 		const char *content = msg->body;
 		unsigned length = msg->bodylen;
 		PurpleMimeDocument *mime = NULL;
-		char *subscription_state;
+		//char *subscription_state;
 
 		if (strstr(ctype, "multipart"))
 		{
@@ -3157,6 +3162,10 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
 			length = purple_mime_part_get_length(parts->data);
 			g_free(doc);
 		}
+		
+		process_incoming_notify_rlmi(sip, content, length);
+		
+/*
 		subscription_state = sipmsg_find_header(msg, "subscription-state");
 		if (strstr(subscription_state, "active")){
 		    process_incoming_notify_rlmi(sip, content, length);
@@ -3165,7 +3174,7 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
 			purple_debug_info("sipe", "process_incoming_notify_presence: subscription_state:%s\n\n",subscription_state);
 			process_incoming_notify_rlmi_resub(sip,content,length);
 		}
-
+*/
 		if (mime)
 		{
 			purple_mime_document_free(mime);
@@ -3184,29 +3193,57 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean benotity)
 {
 	gchar *event = sipmsg_find_header(msg, "Event");
-
+	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
+	
 	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
-
-	if (event && strstr(event, "presence"))
+	purple_debug_info("sipe", "process_incoming_notify: subscription_state:%s\n\n", subscription_state);
+	
+	if (!subscription_state || strstr(subscription_state, "active"))
 	{
-		process_incoming_notify_presence(sip, msg);
+		if (event && strstr(event, "presence"))
+		{
+			process_incoming_notify_presence(sip, msg);
+		}
+		else if (event && strstr(event, "vnd-microsoft-roaming-contacts"))
+		{
+			sipe_process_roaming_contacts(sip, msg, NULL);
+		}
+		else if (event && strstr(event, "vnd-microsoft-roaming-ACL"))
+		{
+			sipe_process_roaming_acl(sip, msg);
+		}
+		else if (event && strstr(event, "presence.wpending"))
+		{
+			sipe_process_incoming_pending(sip, msg);
+		}
+		else
+		{
+			purple_debug_info("sipe", "Unable to process NOTIFY. Event is not supported:%s\n", event ? event : "");
+		}	
 	}
-	else if (event && strstr(event, "vnd-microsoft-roaming-contacts"))
+	else if (strstr(subscription_state, "terminated"))
 	{
-		sipe_process_roaming_contacts(sip, msg, NULL);
-	}
-	else if (event && strstr(event, "vnd-microsoft-roaming-ACL"))
-	{
-		sipe_process_roaming_acl(sip, msg);
-	}
-	else if (event && strstr(event, "presence.wpending"))
-	{
-		sipe_process_incoming_pending(sip, msg);
+		if (event && strstr(event, "presence"))
+		{
+			// @TODO kill existing timer
+			gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+			purple_debug_info("sipe", "process_incoming_notify: Subsctiption to buddy %s was terminated. Resubscribing\n", from);
+			
+			//call it asynchronously to let this UAS answer request first. 1 sec delay.
+			sipe_schedule_action(1, (Action) sipe_subscribe_to_name, sip, from);
+			purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", from, 1);
+			g_free(from);
+		}
+		else
+		{
+			purple_debug_info("sipe", "Unable to process subscription termination. Event is not supported:%s\n", 
+				event ? event : "");
+		}
 	}
 	else
 	{
-		purple_debug_info("sipe", "Unable to process NOTIFY. Event is not supported:%s\n", event ? event : "");
-	}	
+		purple_debug_info("sipe", "Subscrintion state is not supported: %s\n", subscription_state);
+	}
 	
 	if(!benotity)
 	{
@@ -3413,6 +3450,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 			if (from) {
 				serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
 			}
+			g_free(from);
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "ACK")) {
