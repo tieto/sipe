@@ -1411,37 +1411,24 @@ void sipe_schedule_action(int timeout, Action action, struct sipe_account_data *
 	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
 }
 
-static void process_incoming_notify_presence(struct sipe_account_data *sip, struct sipmsg *msg);
+static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotity);
 
 static gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
-	gchar *to = parse_from(sipmsg_find_header(tc->msg, "To")); /* can't be NULL since it is our own msg */
-	
-	purple_debug_info("sipe","process_subscribe_response: body:\n%s\n", msg->body);
+	gchar *to;	
+	//purple_debug_info("sipe","process_subscribe_response: body:\n%s\n", msg->body);
 
-	if (msg->response == 200 || msg->response == 202) {	
-	
-		if (g_hash_table_lookup(sip->buddies, to)) { //won't resub if buddy is eliminated		
-			const gchar *expires_header;
-			int expires;
-			expires_header = sipmsg_find_header(msg, "Expires");
-			expires = expires_header ? strtol(expires_header, NULL, 10) : 0;
-			
-			if (expires) {	
-				sipe_schedule_action(expires, (Action) sipe_subscribe_to_name, sip, to);
-				purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", to, expires);
-			}		
-		}
-		
-		if (sipmsg_find_header(msg, "ms-piggyback-cseq")) {
-			process_incoming_notify_presence(sip, msg);
-		}
-	
+	if (msg->response == 200 || msg->response == 202) 
+	{	
+		if (sipmsg_find_header(msg, "ms-piggyback-cseq")) 
+		{
+			process_incoming_notify(sip, msg, FALSE, FALSE);
+		}	
 		return TRUE;
 	}
 
 	/* we can not subscribe -> user is offline (TODO unknown status?) */
-
+	to = parse_from(sipmsg_find_header(tc->msg, "To")); /* can't be NULL since it is our own msg */
 	purple_prpl_got_user_status(sip->account, to, "offline", NULL);
 	g_free(to);
 	return TRUE;
@@ -3190,13 +3177,30 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
 	}
 }
 
-static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean benotity)
+/**
+ * Dispatcher for all incoming subscription information
+ * whether it comes from NOTIFY, BENOTIFY requests or 
+ * piggy-backed to subscription's OK responce.
+ *
+ * @param request whether initiated from BE/NOTIFY request or OK-response message.
+ * @param benotity whether initiated from NOTIFY or BENOTIFY request.
+ */
+static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotity)
 {
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
+	gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
+	int expires = 0;
 	
 	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
 	purple_debug_info("sipe", "process_incoming_notify: subscription_state:%s\n\n", subscription_state);
+	
+	if (!request)
+	{
+		const gchar *expires_header;
+		expires_header = sipmsg_find_header(msg, "Expires");
+		expires = expires_header ? strtol(expires_header, NULL, 10) : 0;
+	}
 	
 	if (!subscription_state || strstr(subscription_state, "active"))
 	{
@@ -3221,18 +3225,24 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			purple_debug_info("sipe", "Unable to process NOTIFY. Event is not supported:%s\n", event ? event : "");
 		}	
 	}
-	else if (strstr(subscription_state, "terminated"))
+	
+	if ( 
+		(strstr(subscription_state, "terminated") || expires)	
+		 && g_hash_table_lookup(sip->buddies, who) 
+		)
 	{
 		if (event && strstr(event, "presence"))
 		{
-			// @TODO kill existing timer
-			gchar *from = parse_from(sipmsg_find_header(msg, "From"));
-			purple_debug_info("sipe", "process_incoming_notify: Subsctiption to buddy %s was terminated. Resubscribing\n", from);
+			int timeout = expires ? expires : 3;
 			
-			//call it asynchronously to let this UAS answer request first. 1 sec delay.
-			sipe_schedule_action(1, (Action) sipe_subscribe_to_name, sip, from);
-			purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", from, 1);
-			g_free(from);
+			if (strstr(subscription_state, "terminated"))
+			{
+				//@TODO kill existing timer
+				purple_debug_info("sipe", "process_incoming_notify: Subsctiption to buddy %s was terminated. Resubscribing\n", who);
+			}			
+			
+			sipe_schedule_action(timeout, (Action) sipe_subscribe_to_name, sip, who);
+			purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", who, timeout);
 		}
 		else
 		{
@@ -3240,12 +3250,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 				event ? event : "");
 		}
 	}
-	else
-	{
-		purple_debug_info("sipe", "Subscrintion state is not supported: %s\n", subscription_state);
-	}
 	
-	if(!benotity)
+	g_free(who);
+	
+	if (request && !benotity)
 	{
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 	}
@@ -3435,11 +3443,11 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 			found = TRUE;
 		} else if (!strcmp(msg->method, "NOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_notify\n");
-			process_incoming_notify(sip, msg, FALSE);
+			process_incoming_notify(sip, msg, TRUE, FALSE);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "BENOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_benotify\n");
-			process_incoming_notify(sip, msg, TRUE);
+			process_incoming_notify(sip, msg, TRUE, TRUE);
 			found = TRUE;
 		} else if (!strcmp(msg->method, "INVITE")) {
 			process_incoming_invite(sip, msg);
