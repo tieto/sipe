@@ -1407,11 +1407,13 @@ void sipe_schedule_action(int timeout, Action action, struct sipe_account_data *
 	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
 }
 
+static void process_incoming_notify_presence(struct sipe_account_data *sip, struct sipmsg *msg);
+
 static gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
-	gchar *to;
+	gchar *to = parse_from(sipmsg_find_header(tc->msg, "To")); /* can't be NULL since it is our own msg */
 	
-	to = parse_from(sipmsg_find_header(tc->msg, "To")); /* cant be NULL since it is our own msg */
+	purple_debug_info("sipe","process_subscribe_response: body:\n%s\n", msg->body);
 
 	if (msg->response == 200 || msg->response == 202) {	
 	
@@ -1425,6 +1427,10 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 				sipe_schedule_action(expires, (Action) sipe_subscribe_to_name, sip, to);
 				purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", to, expires);
 			}		
+		}
+		
+		if (sipmsg_find_header(msg, "ms-piggyback-cseq")) {
+			process_incoming_notify_presence(sip, msg);
 		}
 	
 		return TRUE;
@@ -1444,24 +1450,27 @@ static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * b
 	gchar *request;
 	gchar *content;
 
-  //Add the the extend SUBSCRIBE request
+	//Add the the extend SUBSCRIBE request
 	if (sip->presence_method_version == 1)
 	{
 		request = g_strdup_printf(
 "Require: adhoclist, categoryList\r\n"
 "Supported: eventlist\r\n"
 "Accept: application/msrtc-event-categories+xml, application/xpidf+xml, text/xml+msrtc.pidf, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+"Supported: ms-piggyback-first-notify\r\n"
 "Event: presence\r\n"
 "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
 "Contact: %s\r\n", tmp);
 	}
-else{ //To send a single SUSCRIBE request
+	else
+	{ //To send a single SUSCRIBE request
 		request = g_strdup_printf(
 "Accept: application/msrtc-event-categories+xml, application/xpidf+xml, text/xml+msrtc.pidf, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+"Supported: ms-piggyback-first-notify\r\n"
 "Event: presence\r\n"
 "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
 "Contact: %s\r\n", tmp);
-}
+	}
 
 	content = g_strdup_printf(
 "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
