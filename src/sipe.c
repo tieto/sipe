@@ -1041,8 +1041,11 @@ static void do_register(struct sipe_account_data *sip)
 }
 
 /**
- *
+ * Returns URI from provided To or From header.
+ * 
  * Needs to g_free() after use.
+ *
+ * @return URI with sip: prefix
  */
 static gchar *parse_from(const gchar *hdr)
 {
@@ -1397,18 +1400,49 @@ gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
   * Do schedule action for execution in the future.
   * Non repetitive execution.
   *
+  * @param name of action
   * @param timeout in seconds
   */
-void sipe_schedule_action(int timeout, Action action, struct sipe_account_data *sip, void * payload)
+void sipe_schedule_action(gchar *name, int timeout, Action action, struct sipe_account_data *sip, void * payload)
 {
-	struct scheduled_action *sched_action = g_new0(struct scheduled_action, 1);
+	struct scheduled_action *sched_action;
+	
+	purple_debug_info("sipe","scheduling action %s timeout:%d\n", name, timeout);
+	sched_action = g_new0(struct scheduled_action, 1);
 	sched_action->repetitive = FALSE;
+	sched_action->name = g_strdup(name);
 	sched_action->action = action;
 	sched_action->sip = sip;
 	sched_action->payload = payload;
 	sched_action->timeout_handler = purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action);
 	sip->timeouts = g_slist_append(sip->timeouts, sched_action);
 	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
+}
+
+/**
+  * Kills action timer effectively cancelling
+  * scheduled action
+  *
+  * @param name of action
+  */
+void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *name)
+{
+	struct scheduled_action *sched_action;
+	GSList *entry;
+
+	if (!sip->timeouts || !name) return;
+	
+	entry = sip->timeouts;
+	while (entry) {
+		sched_action = entry->data;
+		if(!strcmp(sched_action->name, name)) {
+			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
+			purple_timeout_remove(sched_action->timeout_handler);
+			g_free(sched_action->name);
+			g_free(sched_action);
+		}
+		entry = entry->next;
+	}
 }
 
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotity);
@@ -1598,6 +1632,10 @@ static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGr
 	}
 	
 	if (g_slist_length(b->groups) < 1) {
+		gchar *action_name = g_strdup_printf("<%s><%s>", "presence", buddy->name);		
+		sipe_cancel_scheduled_action(sip, action_name);
+		g_free(action_name);
+		
 		g_hash_table_remove(sip->buddies, buddy->name);
 
 		if (b->name) {
@@ -2656,8 +2694,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				sip->registerexpire = expires;
 
 				if (!sip->reregister_set) {
-					sipe_schedule_action(expires, (Action) do_register_cb, sip, NULL);
-					purple_debug_info("sipe","scheduled reregister. timeout:%d\n", expires);
+					gchar *action_name = g_strdup_printf("<%s>", "registration");
+					sipe_schedule_action(action_name, expires, (Action) do_register_cb, sip, NULL);
+					g_free(action_name);
 					sip->reregister_set = TRUE;
 				}
 
@@ -2666,9 +2705,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				if (!sip->reauthenticate_set) {
 					/* we have to reauthenticate as our security token expires
 					   after eight hours (be five minutes early) */
+					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
 					guint reauth_timeout = (8 * 3600) - 360;
-					sipe_schedule_action(reauth_timeout, (Action) do_reauthenticate_cb, sip, NULL);
-					purple_debug_info("sipe","scheduled reauthentication. timeout:%d\n", reauth_timeout);
+					sipe_schedule_action(action_name, reauth_timeout, (Action) do_reauthenticate_cb, sip, NULL);
+					g_free(action_name);
 					sip->reauthenticate_set = TRUE;
 				}
 
@@ -3234,15 +3274,16 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		if (event && strstr(event, "presence"))
 		{
 			int timeout = expires ? expires : 3;
+			gchar *action_name = g_strdup_printf("<%s><%s>", "presence", who);
 			
 			if (strstr(subscription_state, "terminated"))
 			{
-				//@TODO kill existing timer
+				sipe_cancel_scheduled_action(sip, action_name);
 				purple_debug_info("sipe", "process_incoming_notify: Subsctiption to buddy %s was terminated. Resubscribing\n", who);
 			}			
 			
-			sipe_schedule_action(timeout, (Action) sipe_subscribe_to_name, sip, who);
-			purple_debug_info("sipe","scheduled resub for buddy:%s timeout:%d\n", who, timeout);
+			sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_to_name, sip, who);
+			g_free(action_name);
 		}
 		else
 		{
@@ -4224,7 +4265,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		GSList *entry = sip->timeouts;
 		while (entry) {
 			sched_action = entry->data;
-			purple_debug_info("sipe", "purple_timeout_remove: handler=%d\n", sched_action->timeout_handler);
+			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
 			purple_timeout_remove(sched_action->timeout_handler);
 			g_free(sched_action);
 			entry = entry->next;

@@ -182,11 +182,17 @@ struct scheduled_action;
 typedef gboolean (*Action) (struct sipe_account_data *, struct scheduled_action *);
 
 struct scheduled_action {
+	/** 
+	 * Name of action.
+	 * Format is <Event>[<Data>...] 
+	 * Example:  <presence><sip:user@domain.com> or <registration>
+	 */
+	gchar *name;
 	guint timeout_handler;
 	gboolean repetitive;
 	Action action;
-	struct sipe_account_data * sip;
-	void * payload;
+	struct sipe_account_data *sip;
+	void *payload;
 };
 
 struct transaction;
