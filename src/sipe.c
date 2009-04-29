@@ -1392,6 +1392,7 @@ gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
 	purple_debug_info("sipe", "sip->timeouts count:%d after removal\n",g_slist_length(sched_action->sip->timeouts));
 	(sched_action->action)(sched_action->sip, sched_action->payload);
 	ret = sched_action->repetitive;
+	g_free(sched_action->name);
 	g_free(sched_action);
 	return ret;
 }
@@ -1427,19 +1428,19 @@ void sipe_schedule_action(gchar *name, int timeout, Action action, struct sipe_a
   */
 void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *name)
 {
-	struct scheduled_action *sched_action;
 	GSList *entry;
 
 	if (!sip->timeouts || !name) return;
 	
 	entry = sip->timeouts;
 	while (entry) {
-		sched_action = entry->data;
-		if(!strcmp(sched_action->name, name)) {
+		struct scheduled_action *sched_action = entry->data;
+		if(sched_action && !strcmp(sched_action->name, name)) {
 			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
 			purple_timeout_remove(sched_action->timeout_handler);
 			g_free(sched_action->name);
 			g_free(sched_action);
+			entry->data = NULL;
 		}
 		entry = entry->next;
 	}
@@ -4261,13 +4262,15 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		purple_timeout_remove(sip->resendtimeout);
 	sip->resendtimeout = 0;
 	if (sip->timeouts) {
-		struct scheduled_action *sched_action;
 		GSList *entry = sip->timeouts;
 		while (entry) {
-			sched_action = entry->data;
-			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
-			purple_timeout_remove(sched_action->timeout_handler);
-			g_free(sched_action);
+			struct scheduled_action *sched_action = entry->data;
+			if (sched_action) {
+				purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
+				purple_timeout_remove(sched_action->timeout_handler);
+				g_free(sched_action->name);
+				g_free(sched_action);
+			}
 			entry = entry->next;
 		}
 	}
