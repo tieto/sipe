@@ -1646,6 +1646,7 @@ static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGr
 		
 		g_free(b->name);
 		g_free(b->annotation);
+		g_free(b->device_name);
 		g_slist_free(b->groups);
 		g_free(b);
 	} else {
@@ -3087,8 +3088,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	const char *availability;
 	const char *activity;
 	const char *display_name = NULL;
-	const char *email = NULL;
-	const char *note = NULL;
 	const char *activity_name;
 	const char *name;
 	char *uri;
@@ -3097,37 +3096,59 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	struct sipe_buddy *sbuddy;
 
 	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
+	
 	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
 	xmlnode *xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
-	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");	
+	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
+	  const char *email = xn_email ? xmlnode_get_attrib(xn_email, "email") : NULL;
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
-	xmlnode *xn_note = xmlnode_get_child(xn_userinfo, "note");
+	  xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
+	    const char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
+	xmlnode *xn_devices = xmlnode_get_child(xn_presentity, "devices");
+	  xmlnode *xn_device_presence = xn_devices ? xmlnode_get_child(xn_devices, "devicePresence") : NULL;
+	    xmlnode *xn_device_name = xn_device_presence ? xmlnode_get_child(xn_device_presence, "deviceName") : NULL;
+		  const char *device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
 
 	name = xmlnode_get_attrib(xn_presentity, "uri");
 	uri = g_strdup_printf("sip:%s", name);
 	availability = xmlnode_get_attrib(xn_availability, "aggregate");
-	activity = xmlnode_get_attrib(xn_activity, "aggregate");
+	activity = xmlnode_get_attrib(xn_activity, "aggregate");	
+			
 	// updating display name if alias was just URI
 	if (xn_display_name) {
 		GSList *buddies = purple_find_buddies(sip->account, uri); //all buddies in different groups
 		GSList *entry = buddies;
 		PurpleBuddy *p_buddy;
 		display_name = xmlnode_get_attrib(xn_display_name, "displayName");
+		
 		while (entry) {
+			const char *email_str, *server_alias;
+			
 			p_buddy = entry->data;
+			
 			if (!g_ascii_strcasecmp(name, purple_buddy_get_alias(p_buddy))) {
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, display_name);
 				purple_blist_alias_buddy(p_buddy, display_name);
 			}
+		
+			server_alias = purple_buddy_get_server_alias(p_buddy);
+			if (display_name && 
+				( (server_alias && strcmp(display_name, server_alias))
+					|| !server_alias || strlen(server_alias) == 0 )
+				) {
+				purple_blist_server_alias_buddy(p_buddy, display_name);
+			}
+
+			if (email) {
+				email_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, "email");
+				if (!email_str || g_ascii_strcasecmp(email_str, email)) {
+					purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "email", email);
+				}
+			}
+			
 			entry = entry->next;
 		}		
-	}
-	if (xn_email) {
-		email = xmlnode_get_attrib(xn_email, "email");
-	}
-	if (xn_note) {
-		note = xmlnode_get_data(xn_note);
 	}
 	
 	avl = atoi(availability);
@@ -3157,6 +3178,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 		if (sbuddy->annotation) { g_free(sbuddy->annotation); }
 		sbuddy->annotation = NULL;
 		if (note) { sbuddy->annotation = g_strdup(note); }
+		
+		if (sbuddy->device_name) { g_free(sbuddy->device_name); }
+		sbuddy->device_name = NULL;
+		if (device_name) { sbuddy->device_name = g_strdup(device_name); }
 	}
 
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", activity_name);
@@ -4490,34 +4515,63 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 {
 	struct sipe_account_data *sip;
 	struct sipe_buddy *sbuddy;
-
+	char *text = NULL;
+	
 	sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
 	if (sip)  //happens on pidgin exit
 	{
 		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
 		if (sbuddy && sbuddy->annotation)
 		{
-			return g_strdup(sbuddy->annotation);
-		}
-		else
-		{
-			return NULL;
+			text = g_strdup(sbuddy->annotation);
 		}
 	}
-	else
-	{
-		return NULL;
-	}
+		
+	return text;
 }
 
 static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_info, gboolean full)
 {
-	char *annotation = sipe_status_text(buddy);
-
+	const PurplePresence *presence = purple_buddy_get_presence(buddy);
+	const PurpleStatus *status = purple_presence_get_active_status(presence);
+	struct sipe_account_data *sip;
+	struct sipe_buddy *sbuddy;
+	const char *email;
+	char *annotation = NULL;
+	char *device_name = NULL;
+	
+	sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
+	if (sip)  //happens on pidgin exit
+	{
+		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
+		if (sbuddy)
+		{
+			annotation = sbuddy->annotation ? g_strdup(sbuddy->annotation) : NULL;
+			device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
+		}
+	}
+	
+	//Layout
+	if (purple_presence_is_online(presence))
+	{
+		purple_notify_user_info_add_pair(user_info, _("Status"), purple_status_get_name(status));
+	}
+	
 	if (annotation)
 	{
 		purple_notify_user_info_add_pair( user_info, _("Note"), annotation );
 		g_free(annotation);
+	}
+	
+	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");	
+	if (email)
+	{
+		purple_notify_user_info_add_pair(user_info, _("Email"), email);
+	}
+	
+	if (device_name)
+	{
+		purple_notify_user_info_add_pair(user_info, _("Device"), device_name);
 	}
 }
 
@@ -4528,6 +4582,103 @@ sipe_get_account_text_table(PurpleAccount *account)
 	table = g_hash_table_new(g_str_hash, g_str_equal);
 	g_hash_table_insert(table, "login_label", (gpointer)_("Sign-In Name..."));
 	return table;
+}
+
+static PurpleBuddy *
+purple_blist_add_buddy_clone(PurpleGroup * group, PurpleBuddy * buddy)
+{
+	PurpleBuddy *clone;
+	const gchar *server_alias, *email;
+	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
+	
+	clone = purple_buddy_new(buddy->account, buddy->name, buddy->alias);
+	
+	purple_blist_add_buddy(clone, NULL, group, NULL);
+	
+	server_alias = g_strdup(purple_buddy_get_server_alias(buddy));
+	if (server_alias) {
+		purple_blist_server_alias_buddy(clone, server_alias);
+	}
+
+	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");
+	if (email) {
+		purple_blist_node_set_string((PurpleBlistNode *)clone, "email", email);
+	}
+
+	purple_presence_set_status_active(purple_buddy_get_presence(clone), purple_status_get_id(status), TRUE);
+	//for UI to update;
+	purple_prpl_got_user_status(clone->account, clone->name, purple_status_get_id(status), NULL);
+	return clone;
+}
+
+static void
+sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
+{
+	PurpleBuddy *buddy, *b;
+	PurpleConnection *gc;
+	PurpleGroup * group = purple_find_group(group_name);
+	
+	g_return_if_fail(PURPLE_BLIST_NODE_IS_BUDDY(node));
+	
+	buddy = (PurpleBuddy *)node;
+	
+	purple_debug_info("sipe", "sipe_buddy_menu_copy_to_cb: copying %s to %s\n", buddy->name, group_name);
+	gc = purple_account_get_connection(buddy->account);
+
+	b = purple_find_buddy_in_group(buddy->account, buddy->name, group);
+	if (!b){
+		b = purple_blist_add_buddy_clone(group, buddy);
+	}
+		 
+	sipe_group_buddy(gc, buddy->name, NULL, group_name);
+}
+
+/*
+ * A menu which appear when right-clicking on buddy in contact list.
+ */
+static GList *
+sipe_buddy_menu(PurpleBuddy *buddy) 
+{
+	PurpleBlistNode *g_node;
+	PurpleGroup *group, *gr_parent;
+	PurpleMenuAction *act;
+	GList *menu = NULL;
+	GList *menu_groups = NULL;
+	
+	gr_parent = purple_buddy_get_group(buddy);
+	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
+		if (g_node->type != PURPLE_BLIST_GROUP_NODE)
+			continue;
+
+		group = (PurpleGroup *)g_node;		
+		if (group == gr_parent)
+			continue;
+			
+		if (purple_find_buddy_in_group(buddy->account, buddy->name, group))
+			continue;
+			
+		act = purple_menu_action_new(purple_group_get_name(group),
+							   PURPLE_CALLBACK(sipe_buddy_menu_copy_to_cb),
+							   group->name, NULL);
+		menu_groups = g_list_prepend(menu_groups, act);
+	}	
+	menu_groups = g_list_reverse(menu_groups);
+	
+	act = purple_menu_action_new(_("Copy to"),
+							   NULL,
+							   NULL, menu_groups);
+	menu = g_list_prepend(menu, act);
+	menu = g_list_reverse(menu);
+	
+	return menu;
+}
+
+GList *sipe_blist_node_menu(PurpleBlistNode *node) {
+	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
+		return sipe_buddy_menu((PurpleBuddy *) node);
+	} else {
+		return NULL;
+	}
 }
 
 static PurplePlugin *my_protocol = NULL;
@@ -4543,7 +4694,7 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_status_text,			/* status_text */
 	sipe_tooltip_text,			/* tooltip_text */	// add custom info to contact tooltip
 	sipe_status_types,			/* away_states */
-	NULL,					/* blist_node_menu */
+	sipe_blist_node_menu,	/* blist_node_menu */
 	NULL,					/* chat_info */
 	NULL,					/* chat_info_defaults */
 	sipe_login,				/* login */
