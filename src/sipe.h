@@ -71,6 +71,7 @@ struct sip_dialog {
 struct sipe_buddy {
 	gchar *name;
 	gchar *annotation;
+	gchar *device_name;
 	GSList *groups;
 };
 
