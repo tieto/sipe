@@ -818,6 +818,7 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 		sprintf(len, "%" G_GSIZE_FORMAT , strlen(body));
 		sipmsg_add_header(msg, "Content-Length", len);
 	} else {
+		sipmsg_remove_header(msg, "Content-Type");
 		sipmsg_add_header(msg, "Content-Length", "0");
 	}
 
@@ -3322,6 +3323,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	
 	if (request && !benotity)
 	{
+		sipmsg_remove_header(msg, "Expires");
+		sipmsg_remove_header(msg, "subscription-state");
+		sipmsg_remove_header(msg, "Event");
+		sipmsg_remove_header(msg, "Require");
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 	}
 }
