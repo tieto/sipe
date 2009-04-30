@@ -2448,15 +2448,15 @@ im_session_close_all (struct sipe_account_data *sip)
 static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what, PurpleMessageFlags flags)
 {
 	struct sipe_account_data *sip;
-	char *to;
-	char *text;
+	gchar *to;
+	gchar *text;
 	struct sip_im_session *session;
-
-purple_debug_info("sipe", "sipe_im_send what=%s\n", what);
 
 	sip = gc->proto_data;
 	to = g_strdup(who);
 	text = g_strdup(what);
+
+	purple_debug_info("sipe", "sipe_im_send what='%s'\n", what);
 
 	session = find_or_create_im_session(sip, who);
 
@@ -2471,6 +2471,7 @@ purple_debug_info("sipe", "sipe_im_send what=%s\n", what);
 	}
 
 	g_free(to);
+	g_free(text);
 	return 1;
 }
 
@@ -4227,7 +4228,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 
 	if (sip->query_data != NULL)
 		purple_dnsquery_destroy(sip->query_data);
-	sip->query_data == NULL;
+	sip->query_data = NULL;
 
 	if (sip->srv_query_data != NULL)
 		purple_srv_cancel(sip->srv_query_data);
@@ -4694,9 +4695,9 @@ static void init_plugin(PurplePlugin *plugin)
 
 /* I had to redefined the function for it load, but works */
 gboolean purple_init_plugin(PurplePlugin *plugin){
- plugin->info = &(info);
- init_plugin((plugin));
- sipe_plugin_load((plugin));
- return purple_plugin_register(plugin);
+	plugin->info = &(info);
+	init_plugin((plugin));
+	sipe_plugin_load((plugin));
+	return purple_plugin_register(plugin);
 }
 
