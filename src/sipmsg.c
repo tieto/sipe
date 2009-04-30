@@ -99,7 +99,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		if(!parts[0] || !parts[1]) {
 			g_strfreev(parts);
 			g_strfreev(lines);
-			g_free(msg);
+			sipmsg_free(msg);
 			return NULL;
 		}
 		dummy = parts[1];
@@ -115,6 +115,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 			dummy2 = tmp;
 		}
 		sipmsg_add_header(msg, parts[0], dummy2);
+		g_free(dummy2);
 		g_strfreev(parts);
 	}
 	g_strfreev(lines);
@@ -125,6 +126,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		purple_debug_fatal("sipe", "sipmsg_parse_header(): Content-Length header not found\n");
 	}
 	if(msg->response) {
+		g_free(msg->method);
 		tmp = sipmsg_find_header(msg, "CSeq");
 		if(!tmp) {
 			/* SHOULD NOT HAPPEN */
@@ -205,6 +207,9 @@ void sipmsg_free(struct sipmsg *msg) {
 		g_free(elem->value);
 		g_free(elem);
 	}
+	g_free(msg->signature);
+	g_free(msg->rand);
+	g_free(msg->num);
 	g_free(msg->method);
 	g_free(msg->target);
 	g_free(msg->body);

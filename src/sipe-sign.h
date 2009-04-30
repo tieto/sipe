@@ -51,8 +51,6 @@ struct sipmsg_breakdown {
 	gchar * expires;
 };
 
-static gchar * empty_string = "";
-
 void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target);
 gchar* sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd);
 void sipmsg_breakdown_free(struct sipmsg_breakdown * msg);
