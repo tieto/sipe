@@ -1393,6 +1393,7 @@ gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
 	purple_debug_info("sipe", "sip->timeouts count:%d after removal\n",g_slist_length(sched_action->sip->timeouts));
 	(sched_action->action)(sched_action->sip, sched_action->payload);
 	ret = sched_action->repetitive;
+	g_free(sched_action->payload);
 	g_free(sched_action->name);
 	g_free(sched_action);
 	return ret;
@@ -1402,8 +1403,10 @@ gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
   * Do schedule action for execution in the future.
   * Non repetitive execution.
   *
-  * @param name of action
-  * @param timeout in seconds
+  * @param   name of action (will be copied)
+  * @param   timeout in seconds
+  * @action  callback function
+  * @payload callback data (can be NULL, otherwise caller must allocate memory)
   */
 void sipe_schedule_action(gchar *name, int timeout, Action action, struct sipe_account_data *sip, void * payload)
 {
@@ -1439,6 +1442,7 @@ void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *name)
 		if(sched_action && !strcmp(sched_action->name, name)) {
 			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
 			purple_timeout_remove(sched_action->timeout_handler);
+			g_free(sched_action->payload);
 			g_free(sched_action->name);
 			g_free(sched_action);
 			entry->data = NULL;
@@ -3309,7 +3313,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 				purple_debug_info("sipe", "process_incoming_notify: Subsctiption to buddy %s was terminated. Resubscribing\n", who);
 			}			
 			
-			sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_to_name, sip, who);
+			sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_to_name, sip, g_strdup(who));
 			g_free(action_name);
 		}
 		else
@@ -4298,6 +4302,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 			if (sched_action) {
 				purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
 				purple_timeout_remove(sched_action->timeout_handler);
+				g_free(sched_action->payload);
 				g_free(sched_action->name);
 				g_free(sched_action);
 			}
