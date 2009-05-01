@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='windows-1252'?>
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+	<!-- online GUID generator http://www.somacon.com/p113.php -->
 
 	<Product Name='Pidgin SIPE plug-in 1.3.4' Id='EE2EDB04-2A94-11DE-9BE4-EE4856D89593' UpgradeCode='5B2EC7C8-2A9A-11DE-9AEE-4E8256D89593' Language='1033' Codepage='1252' Version='1.3.4' Manufacturer='http://sipe.sourceforge.net/'>
 
@@ -97,6 +98,14 @@
 						</Component>				
 				  </Directory>
 				</Directory>
+				<Directory Id='zh_CN' Name='zh_CN'>
+				  <Directory Id='zh_CN_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleZhCnLcMessages' Guid='2762E448-361A-11DE-83ED-79A556D89593'>
+						  <File Id='zh_CN.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/zh_CN.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
 			  </Directory>
 			</Directory>
 		  </Directory>
@@ -113,6 +122,7 @@
 			<ComponentRef Id='LocaleFrLcMessages' />
 			<ComponentRef Id='LocaleHiLcMessages' />
 			<ComponentRef Id='LocaleTaLcMessages' />
+			<ComponentRef Id='LocaleZhCnLcMessages' />			
 		</Feature>
 	
 		<!--Icon Id="sipe.png" SourceFile="pixmaps/16/sipe.png" /-->

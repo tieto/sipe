@@ -8,7 +8,11 @@
 export PIDGIN_TREE_TOP := ../pidgin-2.5.5
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
-.PHONY: all clean install
+WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
+WXS_NAME := pidgin-sipe
+VERSION := 1.3.4
+
+.PHONY: all clean install msi
 
 all: 
 	$(MAKE) -C src -f $(MINGW_MAKEFILE)
@@ -17,6 +21,8 @@ all:
 clean:
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) clean
 	$(MAKE) -C po -f $(MINGW_MAKEFILE) clean
+	rm -f $(WXS_NAME).wix*
+	rm -f $(WXS_NAME)-$(VERSION).msi
   
 rmbak:
 	rm -f *~
@@ -26,3 +32,8 @@ install: all
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) install
 	$(MAKE) -C po -f $(MINGW_MAKEFILE) install
 	$(MAKE) -C pixmaps -f $(MINGW_MAKEFILE) install
+	
+msi: all
+	$(WIX3_HOME)/bin/candle $(WXS_NAME).wxs
+	$(WIX3_HOME)/bin/light $(WXS_NAME).wixobj
+	mv $(WXS_NAME).msi $(WXS_NAME)-$(VERSION).msi
