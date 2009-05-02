@@ -1502,7 +1502,9 @@ static void sipe_subscribe_to_name_batched(struct sipe_account_data *sip, const 
 	gchar *request;
 	gchar *content;
     request = g_strdup_printf(
-    "Require: adhoclist, categoryList\r\n"
+	// 2005 fix. We probably should not require a feature as we are backward compatible and support either response.
+	// But we declare (in Supported: eventlist) that we are able to recieve such messages.
+	//"Require: adhoclist, categoryList\r\n"
     "Supported: eventlist\r\n"
     "Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
     "Supported: ms-piggyback-first-notify\r\n"
@@ -2087,7 +2089,9 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 	gchar *tmp = get_contact(sip);
 	xmlnode *xml;
 	xmlnode *node;
-	const char * user;
+	const char *user;
+	gchar *hdr;
+	gchar *body;
 	
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 	
@@ -2097,14 +2101,14 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 	node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL);
 	if (!node) return;
 
-	user  = xmlnode_get_attrib(node, "user");
+	user = xmlnode_get_attrib(node, "user");
 	if (!user) return;
 	
-	gchar *hdr = g_strdup_printf(					 
+	hdr = g_strdup_printf(					 
 		"Contact: %s\r\n"
 		"Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", tmp);
 
-	gchar *body=g_strdup_printf(
+	body = g_strdup_printf(
 		"<setSubscribers xmlns=\"http://schemas.microsoft.com/2006/09/sip/presence-subscribers\">"
         "<subscriber user=\"%s\" acknowledged=\"true\"/>" 
         "</setSubscribers>",user);
@@ -3445,16 +3449,15 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			
 			purple_debug_info("sipe", "process_incoming_notify: cid(%s),state(%s)\n",uri,state);
 			
-			int timeout = expires ? expires : 3;
-			gchar *action_name = g_strdup_printf("<%s><%s>", "presence", uri);
-					
 			if(strstr(state, "resubscribe"))
-				{	
-					sipe_cancel_scheduled_action(sip, action_name);
-					purple_debug_info("sipe", "process_incoming_notify: Subscription to buddy %s was terminated. Resubscribing\n",  uri);
-					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_to_name_single, sip,  g_strdup(uri));
-					g_free(action_name);
-				}
+			{
+				int timeout = expires ? expires : 3;
+				gchar *action_name = g_strdup_printf("<%s><%s>", "presence", uri);				
+				sipe_cancel_scheduled_action(sip, action_name);
+				purple_debug_info("sipe", "process_incoming_notify: Subscription to buddy %s was terminated. Resubscribing\n",  uri);
+				sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_to_name_single, sip,  g_strdup(uri));
+				g_free(action_name);
+			}
 		}
 		else
 	   {
@@ -3587,11 +3590,13 @@ process_send_presence_info_v1_response(struct sipe_account_data *sip, struct sip
 		// TODO need to parse the version #'s?
 		gchar *uri = g_strdup_printf("sip:%s", sip->username);
 		gchar *doc = g_strdup_printf(SIPE_SEND_CLEAR_PRESENCE, uri);
+		gchar *tmp;
+		gchar *hdr;
 		
 		purple_debug_info("sipe", "process_send_presence_info_v1_response = %s\n", msg->body);
 
-		gchar *tmp = get_contact(sip);
-		gchar *hdr = g_strdup_printf("Contact: %s\r\n"
+		tmp = get_contact(sip);
+		hdr = g_strdup_printf("Contact: %s\r\n"
 			"Content-Type: application/msrtc-category-publish+xml\r\n", tmp);
 
 		send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_clear_presence_response);
