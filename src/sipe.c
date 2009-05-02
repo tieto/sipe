@@ -4801,6 +4801,53 @@ sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
 	sipe_group_buddy(gc, buddy->name, NULL, group_name);
 }
 
+static void
+sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
+{
+	const gchar *email;
+	purple_debug_info("sipe", "sipe_buddy_menu_send_email_cb: buddy->name=%s\n", buddy->name);
+
+	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");	
+	if (email)
+	{
+		char *mailto = g_strdup_printf("mailto:%s", email);
+		purple_debug_info("sipe", "sipe_buddy_menu_send_email_cb: going to call default mail client with email: %s\n", email);	
+#ifndef _WIN32
+		{
+			pid_t pid;
+			char *const parmList[] = {mailto, NULL};
+			if ((pid = fork()) == -1)
+			{
+				purple_debug_info("sipe", "fork() error\n");
+			}
+			else if (pid == 0) 
+			{
+				execvp("xdg-email", parmList);
+				purple_debug_info("sipe", "Return not expected. Must be an execvp() error.\n");
+			}
+		}
+#else	
+		{
+			BOOL ret;
+			_flushall();
+			errno = 0;
+			//@TODO resolve env variable %WINDIR% first
+			ret = spawnl(_P_NOWAIT, "c:/WINDOWS/system32/cmd", "/c", "start", mailto, NULL);
+			if (errno) 
+			{
+				purple_debug_info("sipe", "spawnl returned (%s)!\n", strerror(errno));
+			}
+		}
+#endif
+		
+		g_free(mailto);
+	}
+	else
+	{
+		purple_debug_info("sipe", "sipe_buddy_menu_send_email_cb: no email address stored for buddy=%s\n", buddy->name);
+	}
+}
+
 /*
  * A menu which appear when right-clicking on buddy in contact list.
  */
@@ -4812,6 +4859,11 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	PurpleMenuAction *act;
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
+	
+	act = purple_menu_action_new(_("Send Email..."),
+							   PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),
+							   NULL, NULL);
+	menu = g_list_prepend(menu, act);
 	
 	gr_parent = purple_buddy_get_group(buddy);
 	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
@@ -4831,7 +4883,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		menu_groups = g_list_prepend(menu_groups, act);
 	}	
 	menu_groups = g_list_reverse(menu_groups);
-	
+		
 	act = purple_menu_action_new(_("Copy to"),
 							   NULL,
 							   NULL, menu_groups);
