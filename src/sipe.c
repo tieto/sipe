@@ -137,7 +137,8 @@ static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorTyp
 
 static void sipe_close(PurpleConnection *gc);
 
-static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * buddy_name);
+static void sipe_subscribe_to_name_single(struct sipe_account_data *sip, const char * buddy_name);
+static void sipe_subscribe_to_name_batched(struct sipe_account_data *sip, const char * buddy_name);
 static void send_presence_info(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
@@ -1013,7 +1014,7 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	char *to = g_strdup_printf("sip:%s", sip->username);
 	char *contact = get_contact_register(sip);
     char *hdr = g_strdup_printf("Contact: %s\r\n"
-								"Supported: gruu-10, adhoclist\r\n"
+								"Supported: gruu-10, adhoclist, msrtc-event-categories\r\n"
 								"Event: registration\r\n"
 								"Allow-Events: presence\r\n"
 								"ms-keep-alive: UAC;hop-hop=yes\r\n"
@@ -1454,7 +1455,7 @@ void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *name)
 	}
 }
 
-static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotity);
+static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
 
 static gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
@@ -1477,46 +1478,89 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 	return TRUE;
 }
 
-static void sipe_subscribe_to_name(struct sipe_account_data *sip, const char * buddy_name)
+
+/**
+   *   Batch Category SUBSCRIBE [SIP-PRES] - msrtc-event-categories+xml
+   *   The user sends an initial batched category SUBSCRIBE request against all contacts on his roaming list
+   *   A batch category SUBSCRIBE request MUST have the same To-URI and From-URI.
+  */
+
+
+static void sipe_subscribe_to_name_batched(struct sipe_account_data *sip, const char * buddy_name){
+	gchar *resource_uri = strstr(buddy_name, "sip:") ? g_strdup(buddy_name) : g_strdup_printf("sip:%s", buddy_name);
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
+	gchar *tmp = get_contact(sip);
+	gchar *request;
+	gchar *content;
+    request = g_strdup_printf(
+    "Require: adhoclist, categoryList\r\n"
+    "Supported: eventlist\r\n"
+    "Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+    "Supported: ms-piggyback-first-notify\r\n"
+    "Supported: com.microsoft.autoextend\r\n"
+    "Supported: ms-benotify\r\n"
+    "Proxy-Require: ms-benotify\r\n"
+    "Event: presence\r\n"
+    "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
+    "Contact: %s\r\n", tmp);
+	
+	content = g_strdup_printf(
+    "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
+    "<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
+    "<resource uri=\"%s\"/>\n"
+    "</adhocList>\n"
+    "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
+    "<category name=\"note\"/>\n"
+    "<category name=\"state\"/>\n"
+    "</categoryList>\n"
+    "</action>\n"
+    "</batchSub>", sip->username, resource_uri
+		);
+	
+	g_free(tmp);
+
+	/* subscribe to buddy presence */
+	send_sip_request(sip->gc, "SUBSCRIBE", resource_uri,  resource_uri, request, content, NULL, process_subscribe_response);
+
+	g_free(content);
+	g_free(to);
+	g_free(request);
+}
+
+/**
+  * Single Category SUBSCRIBE [MS-PRES] ; To send when the server returns a 200 OK message with state="resubscribe" in response. 
+  * The user sends a single SUBSCRIBE request to the subscribed contact.	  
+  * The To-URI and the URI listed in the resource list MUST be the same for a single category SUBSCRIBE request.
+  *
+  */
+
+static void sipe_subscribe_to_name_single(struct sipe_account_data *sip, const char * buddy_name)
 {
 	gchar *to = strstr(buddy_name, "sip:") ? g_strdup(buddy_name) : g_strdup_printf("sip:%s", buddy_name);
 	gchar *tmp = get_contact(sip);
 	gchar *request;
 	gchar *content;
-
-	//Add the the extend SUBSCRIBE request
-	if (sip->presence_method_version == 1)
-	{
-		request = g_strdup_printf(
-"Require: adhoclist, categoryList\r\n"
-"Supported: eventlist\r\n"
-"Accept: application/msrtc-event-categories+xml, application/xpidf+xml, text/xml+msrtc.pidf, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
-"Supported: ms-piggyback-first-notify\r\n"
-"Event: presence\r\n"
-"Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
-"Contact: %s\r\n", tmp);
-	}
-	else
-	{ //To send a single SUSCRIBE request
-		request = g_strdup_printf(
-"Accept: application/msrtc-event-categories+xml, application/xpidf+xml, text/xml+msrtc.pidf, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
-"Supported: ms-piggyback-first-notify\r\n"
-"Event: presence\r\n"
-"Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
-"Contact: %s\r\n", tmp);
-	}
+    request = g_strdup_printf(								  
+    "Accept: application/msrtc-event-categories+xml,  text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+    "Supported: ms-piggyback-first-notify\r\n"
+    "Supported: com.microsoft.autoextend\r\n"
+    "Supported: ms-benotify\r\n"
+    "Proxy-Require: ms-benotify\r\n"								  
+    "Event: presence\r\n"
+    "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
+    "Contact: %s\r\n", tmp);
 
 	content = g_strdup_printf(
-"<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
-"<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
-"<resource uri=\"%s\"/>\n"
-"</adhocList>\n"
-"<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
-"<category name=\"note\"/>\n"
-"<category name=\"state\"/>\n"
-"</categoryList>\n"
-"</action>\n"
-"</batchSub>", sip->username, to
+     "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
+     "<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
+     "<resource uri=\"%s\"/>\n"
+     "</adhocList>\n"
+     "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
+     "<category name=\"note\"/>\n"
+     "<category name=\"state\"/>\n"
+     "</categoryList>\n"
+     "</action>\n"
+     "</batchSub>", sip->username, to
 		);
 
 	g_free(tmp);
@@ -1610,7 +1654,7 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 		b->name = g_strdup(buddy->name);
 		g_hash_table_insert(sip->buddies, b->name, b);
 		sipe_group_buddy(gc, b->name, NULL, group->name);
-		sipe_subscribe_to_name(sip, b->name); //@TODO should go to callback
+		sipe_subscribe_to_name_batched(sip, b->name); //@TODO should go to callback
 	} else {
 		purple_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
 	}
@@ -1772,7 +1816,7 @@ static GList *sipe_status_types(PurpleAccount *acc)
   */
 static void sipe_buddy_subscribe_cb(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
 {
-	sipe_subscribe_to_name(sip, buddy->name);
+	sipe_subscribe_to_name_batched(sip, buddy->name);
 }
 
 /**
@@ -1945,11 +1989,17 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	return 0;
 }
 
+
+
+ /**
+   *   Subscribe roaming contacts  
+   */
 static void sipe_subscribe_buddylist(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-contacts\r\n"
+	gchar *hdr = g_strdup_printf(
+		"Event: vnd-microsoft-roaming-contacts\r\n"
 		"Accept: application/vnd-microsoft-roaming-contacts+xml\r\n"
 		"Supported: com.microsoft.autoextend\r\n"
 		"Supported: ms-benotify\r\n"
@@ -1974,7 +2024,8 @@ static void sipe_subscribe_pending_buddies(struct sipe_account_data *sip,struct 
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Event: presence.wpending\r\n"
+	gchar *hdr = g_strdup_printf(
+		"Event: presence.wpending\r\n"
 		"Accept: text/xml+msrtc.wpending\r\n"
 		"Supported: com.microsoft.autoextend\r\n"
 		"Supported: ms-benotify\r\n"
@@ -2015,11 +2066,53 @@ sipe_process_acl_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	return TRUE;
 }
 
+/**
+  *   When we receive some self (BE) NOTIFY with a new subscriber
+  *   we sends a setSubscribers request to him [SIP-PRES]
+  *  
+  */
+
+static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
+{
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
+	gchar *tmp = get_contact(sip);
+	xmlnode *xml;
+	xmlnode *node;
+	const char * user;
+	
+	purple_debug_info("sipe", "sipe_process_roaming_self\n");
+	
+	xml = xmlnode_from_str(msg->body, msg->bodylen);
+	if (!xml) return;
+
+	node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL);
+	if (!node) return;
+
+	user  = xmlnode_get_attrib(node, "user");
+	if (!user) return;
+	
+	gchar *hdr = g_strdup_printf(					 
+		"Contact: %s\r\n"
+		"Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", tmp);
+
+	gchar *body=g_strdup_printf(
+		"<setSubscribers xmlns=\"http://schemas.microsoft.com/2006/09/sip/presence-subscribers\">"
+        "<subscriber user=\"%s\" acknowledged=\"true\"/>" 
+        "</setSubscribers>",user);
+
+	g_free(tmp);
+	send_sip_request(sip->gc, "SERVICE", to, to, hdr, body, NULL, NULL);
+	g_free(body);
+	g_free(to);
+	g_free(hdr);
+}
+
 static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-ACL\r\n"
+	gchar *hdr = g_strdup_printf(
+		"Event: vnd-microsoft-roaming-ACL\r\n"
 		"Accept: application/vnd-microsoft-roaming-acls+xml\r\n"
 		"Supported: com.microsoft.autoextend\r\n"
 		"Supported: ms-benotify\r\n"
@@ -2033,11 +2126,18 @@ static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
 	g_free(hdr);
 }
 
+/**
+  * To request for presence information about the user, access level settings that have already been configured by the user 
+  *  to control who has access to what information, and the list of contacts who currently have outstanding subscriptions.
+  *  We wait (BE)NOTIFY messages with some info change (categories,containers, subscribers) 
+  */
+
 static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-roaming-self\r\n"
+	gchar *hdr = g_strdup_printf(
+		"Event: vnd-microsoft-roaming-self\r\n"
 		"Accept: application/vnd-microsoft-roaming-self+xml\r\n"
 		"Supported: com.microsoft.autoextend\r\n"
 		"Supported: ms-benotify\r\n"
@@ -2046,7 +2146,11 @@ static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sip
 		"Contact: %s\r\n"
 		"Content-Type: application/vnd-microsoft-roaming-self+xml\r\n", tmp);
 
-	gchar *body=g_strdup("<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roaming type=\"subscribers\"/></roamingList>");
+	gchar *body=g_strdup(
+        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\">"
+        "<roaming type=\"categories\"/>"
+        "<roaming type=\"containers\"/>"
+        "<roaming type=\"subscribers\"/></roamingList>");
 
 	g_free(tmp);
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
@@ -2055,11 +2159,19 @@ static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sip
 	g_free(hdr);
 }
 
+/**  Subscription for provisioning information to help with initial
+   *  configuration. This subscription is a one-time query (denoted by the Expires header,
+   *  which asks for 0 seconds for the subscription lifetime). This subscription asks for server
+   *  configuration, meeting policies, and policy settings that Communicator must enforce. 
+   *   TODO: for what we need this information.
+   */
+
 static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
-	gchar *hdr = g_strdup_printf("Event: vnd-microsoft-provisioning-v2\r\n"
+	gchar *hdr = g_strdup_printf(
+		"Event: vnd-microsoft-provisioning-v2\r\n"
 		"Accept: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
 		"Supported: com.microsoft.autoextend\r\n"
 		"Supported: ms-benotify\r\n"
@@ -2068,7 +2180,11 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,st
 		"Expires: 0\r\n"
 		"Contact: %s\r\n"
 		"Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n", tmp);
-	gchar *body = g_strdup("<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\"><provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/><provisioningGroup name=\"ucPolicy\"/></provisioningGroupList>");
+	gchar *body = g_strdup(
+	    "<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\">"
+		"<provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/>"
+		"<provisioningGroup name=\"ucPolicy\"/>"
+		"</provisioningGroupList>");
 
 	g_free(tmp);
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, body, NULL, NULL);
@@ -2897,27 +3013,6 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 	return TRUE;
 }
 
-/*
-static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, const gchar *data, unsigned len)
-{
-	const char *uri,*state;
-	xmlnode *xn_list;
-	xmlnode *xn_resource;
-	xmlnode *xn_instance;
-
-	xn_list = xmlnode_from_str(data, len);
-	xn_resource = xmlnode_get_child(xn_list, "resource");
-	if (!xn_resource) return;
-	xn_instance = xmlnode_get_child(xn_resource, "instance");
-	if (!xn_instance) return;
-	state = xmlnode_get_attrib(xn_instance, "state");
-	uri = xmlnode_get_attrib(xn_instance, "cid");
-	purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: uri(%s),state(%s)\n",uri,state);
-	sip->presence_method_version= 0;
-	sipe_subscribe_to_name(sip, uri);
-}
-*/
-
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const char *uri;
@@ -2993,6 +3088,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	{
 		purple_prpl_got_user_status(sip->account, uri, activity, NULL);
 	}
+	
 	xmlnode_free(xn_categories);
 }
 
@@ -3226,16 +3322,6 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
 		
 		process_incoming_notify_rlmi(sip, content, length);
 		
-/*
-		subscription_state = sipmsg_find_header(msg, "subscription-state");
-		if (strstr(subscription_state, "active")){
-		    process_incoming_notify_rlmi(sip, content, length);
-		}
-		else if (strstr(subscription_state, "terminated")){
-			purple_debug_info("sipe", "process_incoming_notify_presence: subscription_state:%s\n\n",subscription_state);
-			process_incoming_notify_rlmi_resub(sip,content,length);
-		}
-*/
 		if (mime)
 		{
 			purple_mime_document_free(mime);
@@ -3257,13 +3343,17 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
  * piggy-backed to subscription's OK responce.
  *
  * @param request whether initiated from BE/NOTIFY request or OK-response message.
- * @param benotity whether initiated from NOTIFY or BENOTIFY request.
+ * @param benotify whether initiated from NOTIFY or BENOTIFY request.
  */
-static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotity)
+static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify)
 {
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
-	gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
+	const char *uri,*state;
+	xmlnode *xn_list;
+	xmlnode *xn_resource;
+	xmlnode *xn_instance;
+	
 	int expires = 0;
 	
 	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
@@ -3274,6 +3364,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		const gchar *expires_header;
 		expires_header = sipmsg_find_header(msg, "Expires");
 		expires = expires_header ? strtol(expires_header, NULL, 10) : 0;
+		purple_debug_info("sipe", "process_incoming_notify: expires:%d\n\n", expires);
 	}
 	
 	if (!subscription_state || strstr(subscription_state, "active"))
@@ -3286,6 +3377,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		{
 			sipe_process_roaming_contacts(sip, msg, NULL);
 		}
+		else if (event && strstr(event, "vnd-microsoft-roaming-self"))
+		{
+			sipe_process_roaming_self(sip, msg);
+		}
 		else if (event && strstr(event, "vnd-microsoft-roaming-ACL"))
 		{
 			sipe_process_roaming_acl(sip, msg);
@@ -3296,39 +3391,71 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		}
 		else
 		{
-			purple_debug_info("sipe", "Unable to process NOTIFY. Event is not supported:%s\n", event ? event : "");
+			purple_debug_info("sipe", "Unable to process (BE)NOTIFY. Event is not supported:%s\n", event ? event : "");
 		}	
 	}
 	
-	if ( 
-		(strstr(subscription_state, "terminated") || expires)	
-		 && g_hash_table_lookup(sip->buddies, who) 
-		)
-	{
-		if (event && strstr(event, "presence"))
-		{
-			int timeout = expires ? expires : 3;
-			gchar *action_name = g_strdup_printf("<%s><%s>", "presence", who);
+	//Subscription terminated and is not a (BE)NOTIFY; we need resub
+	if ( !request && !benotify && subscription_state && strstr(subscription_state, "terminated"))
+		{	
+		if(event && strstr(event, "presence")){
+				
+			const char *content = msg->body;
+			unsigned length = msg->bodylen;
+			PurpleMimeDocument *mime = NULL;
+	    	char *ctype = sipmsg_find_header(msg, "Content-Type");
 			
-			if (strstr(subscription_state, "terminated"))
+			purple_debug_info("sipe", "process_incoming_notify: ctype(%s)\n",ctype);	
+
+			if (ctype && strstr(ctype, "multipart"))
 			{
-				sipe_cancel_scheduled_action(sip, action_name);
-				purple_debug_info("sipe", "process_incoming_notify: Subsctiption to buddy %s was terminated. Resubscribing\n", who);
-			}			
+				char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ctype, msg->body);
+				GList* parts;
+				mime = purple_mime_document_parse(doc);
+				parts = purple_mime_document_get_parts(mime);
+				content = purple_mime_part_get_data(parts->data);
+				length = purple_mime_part_get_length(parts->data);
+				g_free(doc);
+			}
 			
-			sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_to_name, sip, g_strdup(who));
-			g_free(action_name);
+			xn_list = xmlnode_from_str(content, length);
+			xn_resource = xmlnode_get_child(xn_list, "resource");
+			if (!xn_resource) return;
+			xn_instance = xmlnode_get_child(xn_resource, "instance");
+			if (!xn_instance) return;
+			state = xmlnode_get_attrib(xn_instance, "state");
+			uri = xmlnode_get_attrib(xn_instance, "cid");
+			
+			purple_debug_info("sipe", "process_incoming_notify: cid(%s),state(%s)\n",uri,state);
+			
+			int timeout = expires ? expires : 3;
+			gchar *action_name = g_strdup_printf("<%s><%s>", "presence", uri);
+					
+			if(strstr(state, "resubscribe"))
+				{	
+					sipe_cancel_scheduled_action(sip, action_name);
+					purple_debug_info("sipe", "process_incoming_notify: Subscription to buddy %s was terminated. Resubscribing\n",  uri);
+					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_to_name_single, sip,  g_strdup(uri));
+					g_free(action_name);
+				}
 		}
 		else
-		{
-			purple_debug_info("sipe", "Unable to process subscription termination. Event is not supported:%s\n", 
+	   {
+				purple_debug_info("sipe", "Unable to process subscription termination. Event is not supported:%s\n", 
 				event ? event : "");
-		}
+	   }
 	}
 	
-	g_free(who);
+     //The server sends a (BE)NOTIFY with the status 'terminated'
+    if(request && subscription_state && strstr(subscription_state, "terminated") )
+    {
+		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+		purple_debug_info("sipe", "process_incoming_notify: (BE)NOTIFY says that subscription to buddy %s was terminated. \n",  from);		
+		g_free(from);
+	}
 	
-	if (request && !benotity)
+   //The client responses 'Ok' when receive a NOTIFY message (lcs2005) 
+	if (request && !benotify)
 	{
 		sipmsg_remove_header(msg, "Expires");
 		sipmsg_remove_header(msg, "subscription-state");
@@ -3443,6 +3570,8 @@ process_send_presence_info_v1_response(struct sipe_account_data *sip, struct sip
 		// TODO need to parse the version #'s?
 		gchar *uri = g_strdup_printf("sip:%s", sip->username);
 		gchar *doc = g_strdup_printf(SIPE_SEND_CLEAR_PRESENCE, uri);
+		
+		purple_debug_info("sipe", "process_send_presence_info_v1_response = %s\n", msg->body);
 
 		gchar *tmp = get_contact(sip);
 		gchar *hdr = g_strdup_printf("Contact: %s\r\n"
