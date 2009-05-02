@@ -4709,9 +4709,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	const PurpleStatus *status = purple_presence_get_active_status(presence);
 	struct sipe_account_data *sip;
 	struct sipe_buddy *sbuddy;
-	const char *email;
 	char *annotation = NULL;
-	char *device_name = NULL;
 	
 	sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
 	if (sip)  //happens on pidgin exit
@@ -4720,7 +4718,6 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		if (sbuddy)
 		{
 			annotation = sbuddy->annotation ? g_strdup(sbuddy->annotation) : NULL;
-			device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
 		}
 	}
 	
@@ -4736,16 +4733,6 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		g_free(annotation);
 	}
 	
-	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");	
-	if (email)
-	{
-		purple_notify_user_info_add_pair(user_info, _("Email"), email);
-	}
-	
-	if (device_name)
-	{
-		purple_notify_user_info_add_pair(user_info, _("Device"), device_name);
-	}
 }
 
 static GHashTable *
@@ -4906,6 +4893,65 @@ GList *sipe_blist_node_menu(PurpleBlistNode *node) {
 	}
 }
 
+static void sipe_get_info(PurpleConnection *gc, const char *username) {
+	PurpleNotifyUserInfo *info = purple_notify_user_info_new();
+	PurpleBuddy *pbuddy;
+	struct sipe_account_data *sip;
+	struct sipe_buddy *sbuddy;
+	const char *email;
+	const char *device_name = NULL;
+	const char *alias;
+	const char *server_alias;
+
+	purple_debug_info("sipe", "Fetching %s's user info for %s\n", username,
+                    gc->account->username);
+	
+	pbuddy = purple_find_buddy(gc->account, username);
+	alias = purple_buddy_get_local_alias(pbuddy);
+	server_alias = purple_buddy_get_server_alias(pbuddy);
+	
+	sip = (struct sipe_account_data *)gc->proto_data;
+	if (sip)
+	{
+		sbuddy = g_hash_table_lookup(sip->buddies, username);
+		if (sbuddy)
+		{
+			device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
+		}
+	}
+	
+	//Layout
+	if (server_alias)
+	{
+		purple_notify_user_info_add_pair(info, _("Nickname"), server_alias);
+	}
+
+	// same as server alias, do not present
+	alias = alias && server_alias && !strcmp(alias, server_alias) ? NULL : alias;
+	if (alias)
+	{
+		purple_notify_user_info_add_pair(info, _("Alias"), alias);
+	}	
+
+	email = purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email");	
+	if (email)
+	{
+		purple_notify_user_info_add_pair(info, _("Email"), email);
+	}
+	
+	if (device_name)
+	{
+		purple_notify_user_info_add_pair(info, _("Device"), device_name);
+	}  
+
+	/* show a buddy's user info in a nice dialog box */
+	purple_notify_userinfo(gc,        /* connection the buddy info came through */
+						 username,  /* buddy's username */
+						 info,      /* body */
+						 NULL,      /* callback called when dialog closed */
+						 NULL);     /* userdata for callback */
+}
+
 static PurplePlugin *my_protocol = NULL;
 
 static PurplePluginProtocolInfo prpl_info =
@@ -4927,7 +4973,7 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_im_send,				/* send_im */
 	NULL,					/* set_info */		// TODO maybe
 	sipe_send_typing,			/* send_typing */
-	NULL,					/* get_info */		// TODO maybe
+	sipe_get_info,			/* get_info */
 	sipe_set_status,			/* set_status */
 	NULL,					/* set_idle */
 	NULL,					/* change_passwd */
