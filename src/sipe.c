@@ -755,6 +755,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 			msg->signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
 			msg->rand = g_strdup(msgbd.rand);
 			msg->num = g_strdup(msgbd.num);
+			g_free(signature_input_str);
 		}
 		sipmsg_breakdown_free(&msgbd);
 	}
@@ -896,6 +897,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 	gchar *route     = strdup("");
+	gchar *epid      = get_epid(); // TODO generate one per account/login
 	struct transaction *trans;
 
 	if (dialog && dialog->routes)
@@ -946,7 +948,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			sip->username,
 			ourtag ? ";tag=" : "",
 			ourtag ? ourtag : "",
-			get_epid(), // TODO generate one per account/login
+			epid,
 			to,
 			theirtag ? ";tag=" : "",
 			theirtag ? theirtag : "",
@@ -972,6 +974,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	g_free(branch);
 	g_free(callid);
 	g_free(route);
+	g_free(epid);
 
 	sign_outgoing_message (msg, sip, method);
 
@@ -980,6 +983,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	/* add to ongoing transactions */
 	trans = transactions_add_buf(sip, msg, tc);
 	sendout_pkt(gc, buf);
+	g_free(buf);
 
 	return trans;
 }
@@ -1005,7 +1009,12 @@ static void send_soap_request(struct sipe_account_data *sip, gchar *body)
 
 static char *get_contact_register(struct sipe_account_data  *sip)
 {
-        return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  TRANSPORT_DESCRIPTOR, generateUUIDfromEPID(get_epid()));
+	char *epid = get_epid();
+	char *uuid = generateUUIDfromEPID(epid);
+	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  TRANSPORT_DESCRIPTOR, uuid);
+	g_free(uuid);
+	g_free(epid);
+	return(buf);
 }
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
@@ -2041,7 +2050,7 @@ static void sipe_subscribe_pending_buddies(struct sipe_account_data *sip,struct 
 
 static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipmsg *msg)
 {		
-	gchar *contacts_delta;
+	const gchar *contacts_delta;
 	xmlnode *xml;
 
 	xml = xmlnode_from_str(msg->body, msg->bodylen);
@@ -2050,7 +2059,7 @@ static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipms
 		return;
 	}
 
-	contacts_delta = g_strdup(xmlnode_get_attrib(xml, "deltaNum"));
+	contacts_delta = xmlnode_get_attrib(xml, "deltaNum");
 	if (contacts_delta) 
 	{
 		sip->acl_delta = (int)g_ascii_strtod(contacts_delta, NULL);
@@ -2815,6 +2824,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				int i = 0;
 				gchar *contact_hdr = NULL;
 				gchar *gruu = NULL;
+				gchar *epid;
 				gchar *uuid;
 				
 				sip->registerexpire = expires;
@@ -2840,7 +2850,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
-				uuid = generateUUIDfromEPID(get_epid());
+				epid = get_epid();
+				uuid = generateUUIDfromEPID(epid);
+				g_free(epid);
+
 				// There can be multiple Contact headers (one per location where the user is logged in) so
 				// make sure to only get the one for this uuid
 				for (i = 0; (contact_hdr = sipmsg_find_header_instance (msg, "Contact", i)); i++) {
@@ -2854,6 +2867,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 						//purple_debug(PURPLE_DEBUG_MISC, "sipe", "ignoring contact hdr b/c not right uuid: %s\n", contact_hdr);
 					}
 				}
+				g_free(uuid);
 
 				if(gruu) {
 					sip->contact = g_strdup_printf("<%s>", gruu);
@@ -3051,6 +3065,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				sbuddy->annotation = g_strdup(note);
 				changed = 1;
 			}
+
+			g_free(note);
 		}
 		else if(!strcmp(attrVar, "state"))
 		{
@@ -3063,6 +3079,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 
 			data = xmlnode_get_data(xn_node);
 			avail = atoi(data);
+			g_free(data);
 
 			if (avail < 3000)
 				activity = "unknown";
@@ -3846,6 +3863,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			if (signature_input_str != NULL) {
 				signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
 			}
+			g_free(signature_input_str);
 
 			rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
 
@@ -3863,12 +3881,16 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 					purple_connection_error(sip->gc, _("Wrong Password"));
 					sip->gc->wants_to_die = TRUE;
 				}
+				g_free(signature);
 			}
 
+			g_free(rspauth);
 			sipmsg_breakdown_free(&msgbd);
 		} else {
 			process_input_message(sip, msg);
 		}
+
+		sipmsg_free(msg);
 	}
 }
 
@@ -4348,8 +4370,8 @@ static void sipe_login(PurpleAccount *account)
 
 	userserver = g_strsplit(signinname_login[0], "@", 2);
 	purple_connection_set_display_name(gc, userserver[0]);
-    sip->username = g_strdup(g_strjoin("@", userserver[0], userserver[1], NULL));
-    sip->sipdomain = g_strdup(userserver[1]);
+	sip->username = g_strjoin("@", userserver[0], userserver[1], NULL);
+	sip->sipdomain = g_strdup(userserver[1]);
 
 	domain_user = g_strsplit(signinname_login[1], "\\", 2);
 	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : "";
@@ -4441,6 +4463,9 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	}
 	g_slist_free(sip->timeouts);
 
+	if (sip->contact)
+		g_free(sip->contact);
+	sip->contact = NULL;
 
 	sip->fd = -1;
 	sip->processing_input = FALSE;

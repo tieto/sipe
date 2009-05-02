@@ -36,6 +36,8 @@
 
 #include "sipe-sign.h"
 
+static gchar * const empty_string = "";
+
 void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target)
 {
 	gchar * hdr;
@@ -57,8 +59,8 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 		msg->realm  = sipmsg_find_part_of_header(hdr, "realm=\"", "\"", empty_string);
 		msg->target_name = sipmsg_find_part_of_header(hdr, "targetname=\"", "\"", empty_string);
 	} else {
-		msg->realm = realm;
-		msg->target_name = target;
+		msg->realm = g_strdup(realm);
+		msg->target_name = g_strdup(target);
 	}
 
 	msg->call_id = sipmsg_find_header(msg->msg, "Call-ID");
@@ -89,10 +91,10 @@ sipmsg_breakdown_free(struct sipmsg_breakdown * msg)
 		g_free(msg->rand);
 	if (msg->num != empty_string)
 		g_free(msg->num);
-	//if (msg->realm != empty_string)
-		//g_free(msg->realm);
-	//if (msg->target_name != empty_string)
-		//g_free(msg->target_name);
+	if (msg->realm != empty_string)
+		g_free(msg->realm);
+	if (msg->target_name != empty_string)
+		g_free(msg->target_name);
 
 	// straight from header
 	//g_free(msg->call_id);
