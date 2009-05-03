@@ -245,14 +245,11 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 	gchar *response;
 	gchar *ret;
 	gchar *tmp = NULL;
-	const char *authdomain;
-	const char *authuser;
+	const char *authdomain = sip->authdomain;
+	const char *authuser = sip->authuser;
 	//const char *krb5_realm;
 	const char *host;
 	//gchar      *krb5_token = NULL;
-
-	authdomain = sip->authdomain;
-	authuser = sip->authuser;
 
 	// XXX FIXME: Get this info from the account dialogs and/or /etc/krb5.conf
 	//            and do error checking
@@ -279,6 +276,10 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 
 	purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
 	krb5_token = krb5_auth.base64_token;*/
+
+	if (!authdomain) {
+		authdomain = "";
+	}
 
 	if (!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
@@ -1536,6 +1537,7 @@ static void sipe_subscribe_to_name_batched(struct sipe_account_data *sip, const 
 	g_free(content);
 	g_free(to);
 	g_free(request);
+	g_free(resource_uri);
 }
 
 /**
@@ -2085,8 +2087,8 @@ sipe_process_acl_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 
 static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
 {
-	gchar *to = g_strdup_printf("sip:%s", sip->username);
-	gchar *tmp = get_contact(sip);
+	gchar *to;
+	gchar *tmp;
 	xmlnode *xml;
 	xmlnode *node;
 	const char *user;
@@ -2099,11 +2101,19 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 	if (!xml) return;
 
 	node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL);
-	if (!node) return;
+	if (!node) {
+		xmlnode_free(xml);
+		return;
+	}
 
 	user = xmlnode_get_attrib(node, "user");
-	if (!user) return;
+	if (!user) {
+		xmlnode_free(xml);
+		return;
+	}
 	
+	to = g_strdup_printf("sip:%s", sip->username);
+	tmp = get_contact(sip);
 	hdr = g_strdup_printf(					 
 		"Contact: %s\r\n"
 		"Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", tmp);
@@ -2118,6 +2128,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 	g_free(body);
 	g_free(to);
 	g_free(hdr);
+	xmlnode_free(node);
 }
 
 static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
@@ -2240,8 +2251,38 @@ static struct sip_im_session * find_or_create_im_session (struct sipe_account_da
 
 static void im_session_destroy(struct sipe_account_data *sip, struct sip_im_session * session)
 {
+	struct sip_dialog *dialog = session->dialog;
+	GSList *entry;
+
 	sip->im_sessions = g_slist_remove(sip->im_sessions, session);
-	// TODO free session resources
+
+	if (dialog) {
+		entry = dialog->routes;
+		while (entry) {
+			g_free(entry->data);
+			entry = g_slist_remove(entry, entry->data);
+		}
+		entry = dialog->supported;
+		while (entry) {
+			g_free(entry->data);
+			entry = g_slist_remove(entry, entry->data);
+		}
+		g_free(dialog->callid);
+		g_free(dialog->ourtag);
+		g_free(dialog->theirtag);
+		g_free(dialog->theirepid);
+		g_free(dialog->request);
+	}
+	g_free(session->dialog);
+
+	entry = session->outgoing_message_queue;
+	while (entry) {
+		g_free(entry->data);
+		entry = g_slist_remove(entry, entry->data);
+	}
+
+	g_free(session->with);
+	g_free(session);
 }
 
 static void sipe_present_message_undelivered_err(gchar *with, struct sipe_account_data *sip, gchar *message)
@@ -2271,7 +2312,8 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 
 	if (!session) {
 		purple_debug_info("sipe", "process_message_response: unable to find IM session\n");
-		ret = FALSE;
+		g_free(with);
+		return FALSE;
 	}
 
 	if (msg->response != 200) {
@@ -2283,7 +2325,8 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 		}
 		sipe_present_message_undelivered_err(with, sip, queued_msg);
 		im_session_destroy(sip, session);
-		ret = FALSE;
+		g_free(with);
+		return FALSE;
 	}
 
 	dialog = session->dialog;
@@ -2318,26 +2361,25 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	purple_debug_info("sipe", "sipe_send_message: msgformat=%s", msgformat);
 
 	msgr_value = sipmsg_get_msgr_string(msgformat);
-	msgr = "";
 	g_free(msgformat);
 	if (msgr_value) {
 		msgr = g_strdup_printf(";msgr=%s", msgr_value);
 		g_free(msgr_value);
+	} else {
+		msgr = g_strdup("");
 	}
 
-	hdr = g_strdup_printf("Content-Type: text/plain; charset=UTF-8%s\r\n", msgr);
-	g_free(msgr);
+	tmp = get_contact(sip);
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
 	//hdr = g_strdup("Content-Type: text/rtf\r\n");
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA\r\nSupported: timer\r\n");
-
-	tmp = get_contact(sip);
-	hdr = g_strdup_printf("Contact: %s\r\n%s", tmp, hdr);
+	hdr = g_strdup_printf("Contact: %s\r\nContent-Type: text/plain; charset=UTF-8%s\r\n",
+			      tmp, msgr);
 	g_free(tmp);
+	g_free(msgr);
 
 	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msgtext, session->dialog, process_message_response);
 	g_free(msgtext);
-
 	g_free(hdr);
 	g_free(fullto);
 }
@@ -2421,7 +2463,7 @@ sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outg
 	gchar *us = outgoing ? "From" : "To";
 	gchar *them = outgoing ? "To" : "From";
 
-	dialog->callid = sipmsg_find_header(msg, "Call-ID");
+	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
 	dialog->ourtag = find_tag(sipmsg_find_header(msg, us));
 	dialog->theirtag = find_tag(sipmsg_find_header(msg, them));
 	if (!dialog->theirepid) {
@@ -2695,8 +2737,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		g_free(body_html);
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
-	}
-	if (!strncmp(contenttype, "application/im-iscomposing+xml", 30)) {
+	} else if (!strncmp(contenttype, "application/im-iscomposing+xml", 30)) {
 		xmlnode *isc = xmlnode_from_str(msg->body, msg->bodylen);
 		xmlnode *state;
 		gchar *statedata;
@@ -4397,7 +4438,7 @@ static void sipe_login(PurpleAccount *account)
 	sip->sipdomain = g_strdup(userserver[1]);
 
 	domain_user = g_strsplit(signinname_login[1], "\\", 2);
-	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : "";
+	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
 	sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : (signinname_login ? g_strdup(signinname_login[1]) : NULL);
 
 	sip->password = g_strdup(purple_connection_get_password(gc));
@@ -4489,6 +4530,9 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	if (sip->contact)
 		g_free(sip->contact);
 	sip->contact = NULL;
+	if (sip->regcallid)
+		g_free(sip->regcallid);
+	sip->regcallid = NULL;
 
 	sip->fd = -1;
 	sip->processing_input = FALSE;
@@ -4509,6 +4553,8 @@ static void sipe_close(PurpleConnection *gc)
 		g_free(sip->sipdomain);
 		g_free(sip->username);
 		g_free(sip->password);
+		g_free(sip->authdomain);
+		g_free(sip->authuser);
 	}
 	g_free(gc->proto_data);
 	gc->proto_data = NULL;
