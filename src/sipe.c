@@ -3115,8 +3115,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 
 static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	gchar *fromhdr;
-	gchar *from;
+	const gchar *uri;
 	gchar *getbasic = g_strdup("closed");
 	gchar *activity = g_strdup("available");
 	xmlnode *pidf;
@@ -3124,18 +3123,13 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 	gboolean isonline = FALSE;
 	xmlnode *display_name_node;
 
-	fromhdr = sipmsg_find_header(msg, "From");
-	from = parse_from(fromhdr);
-
-	if (!from) {
-		return;
-	}
-
 	pidf = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!pidf) {
 		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf:%s\n",msg->body);
 		return;
 	}
+			
+	uri = xmlnode_get_attrib(pidf, "entity");
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple")))
 	{
@@ -3163,13 +3157,38 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 	}
 
 	display_name_node = xmlnode_get_child(pidf, "display-name");
+	// updating display name if alias was just URI
 	if (display_name_node) {
-		PurpleBuddy * buddy = purple_find_buddy (sip->account, from);
+		GSList *buddies = purple_find_buddies(sip->account, uri); //all buddies in different groups
+		GSList *entry = buddies;
+		PurpleBuddy *p_buddy;
 		char * display_name = xmlnode_get_data(display_name_node);
-		if (buddy && display_name) {
-			purple_blist_server_alias_buddy (buddy, g_strdup(display_name));
-		}
-	}
+		
+		while (entry) {
+			const char *server_alias;
+			char *alias;
+			
+			p_buddy = entry->data;
+			
+			alias = (char *)purple_buddy_get_alias(p_buddy);
+			alias = alias ? g_strdup_printf("sip:%s", alias) : NULL;
+			if (!g_ascii_strcasecmp(uri, alias)) {
+				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, display_name);
+				purple_blist_alias_buddy(p_buddy, display_name);
+			}
+			g_free(alias);
+		
+			server_alias = purple_buddy_get_server_alias(p_buddy);
+			if (display_name && 
+				( (server_alias && strcmp(display_name, server_alias))
+					|| !server_alias || strlen(server_alias) == 0 )
+				) {
+				purple_blist_server_alias_buddy(p_buddy, display_name);
+			}
+
+			entry = entry->next;
+		}		
+	}	
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
 		if ((status = xmlnode_get_child(tuple, "status"))) {
@@ -3198,13 +3217,12 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 		}
 
 		purple_debug_info("sipe", "process_incoming_notify: status_id(%s)\n", status_id);
-		purple_prpl_got_user_status(sip->account, from, status_id, NULL);
+		purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
 	} else {
-		purple_prpl_got_user_status(sip->account, from, "offline", NULL);
+		purple_prpl_got_user_status(sip->account, uri, "offline", NULL);
 	}
 
 	xmlnode_free(pidf);
-	g_free(from);
 	g_free(getbasic);
 	g_free(activity);
 }
