@@ -4583,14 +4583,19 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	sip->processing_input = FALSE;
 }
 
+/**
+  * A callback for g_hash_table_foreach_remove
+  */
+gboolean sipe_buddy_remove(gpointer key, struct sipe_buddy *buddy, gpointer user_data)
+{
+	sipe_free_buddy(buddy);
+}
+
 static void sipe_close(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 
 	if (sip) {
-		GHashTableIter iter;
-		gpointer value;
-
 		/* leave all conversations */
 		im_session_close_all(sip);
 
@@ -4605,11 +4610,7 @@ static void sipe_close(PurpleConnection *gc)
 		g_free(sip->authuser);
 		g_free(sip->status);
 
-		g_hash_table_iter_init(&iter, sip->buddies);
-		while (g_hash_table_iter_next(&iter, NULL, &value)) {
-			g_hash_table_iter_remove(&iter);
-			sipe_free_buddy(value);
-		}
+		g_hash_table_foreach_remove(sip->buddies, (GHRFunc) sipe_buddy_remove, NULL);
 		g_hash_table_destroy(sip->buddies);
 	}
 	g_free(gc->proto_data);
