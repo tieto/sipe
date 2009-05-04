@@ -1509,57 +1509,56 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 
 
 static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
-    GList *entry = g_hash_table_get_values (sip->buddies);
-	struct sipe_buddy * buddy;
-    gchar *to = g_strdup_printf("sip:%s", sip->username);
-	gchar *tmp = get_contact(sip);
+	GList *buddies = g_hash_table_get_values(sip->buddies);
+	GList *entry = buddies;
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
+	gchar *contact = get_contact(sip);
 	gchar *request;
 	gchar *content;
-    gchar *resources_uri =  g_strdup("<adhocList>\n");
-	
+	gchar *resources_uri = g_strdup("");
+
 	purple_debug_info("sipe", " sipe_subscribe_to_buddies_batched buddies size (%d)\n", g_hash_table_size(sip->buddies));
 	while (entry) {
-		buddy = entry->data;		
+		struct sipe_buddy *buddy = entry->data;
+		gchar *tmp = resources_uri;
                 purple_debug_info("sipe", "sipe_subscribe_to_buddies_batched (%s)\n", buddy->name);
-                resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", resources_uri, buddy->name);		
+                resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", resources_uri, buddy->name);
+		g_free(tmp);
 		entry = entry->next;
 	}
-	
-      resources_uri =  g_strdup_printf("%s</adhocList>\n",resources_uri);
-	
-    request = g_strdup_printf(
-    "Require: adhoclist, categoryList\r\n"
-    "Supported: eventlist\r\n"
-    "Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
-    "Supported: ms-piggyback-first-notify\r\n"
-    "Supported: com.microsoft.autoextend\r\n"
-    "Supported: ms-benotify\r\n"
-    "Proxy-Require: ms-benotify\r\n"
-    "Event: presence\r\n"
-    "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
-    "Contact: %s\r\n", tmp);
+	g_list_free(buddies);
+
+	request = g_strdup_printf(
+				  "Require: adhoclist, categoryList\r\n"
+				  "Supported: eventlist\r\n"
+				  "Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+				  "Supported: ms-piggyback-first-notify\r\n"
+				  "Supported: com.microsoft.autoextend\r\n"
+				  "Supported: ms-benotify\r\n"
+				  "Proxy-Require: ms-benotify\r\n"
+				  "Event: presence\r\n"
+				  "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
+				  "Contact: %s\r\n", contact);
+	g_free(contact);
 	
 	content = g_strdup_printf(
-    "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
-    "<action name=\"subscribe\" id=\"63792024\">\n"
-    "%s"
-    "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
-    "<category name=\"note\"/>\n"
-    "<category name=\"state\"/>\n"
-    "</categoryList>\n"
-    "</action>\n"
-    "</batchSub>", sip->username, resources_uri
-		);
-	
-	g_free(tmp);
+				  "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
+				  "<action name=\"subscribe\" id=\"63792024\">\n"
+				  "<adhocList>\n%s</adhocList>\n"
+				  "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
+				  "<category name=\"note\"/>\n"
+				  "<category name=\"state\"/>\n"
+				  "</categoryList>\n"
+				  "</action>\n"
+				  "</batchSub>", sip->username, resources_uri);
 
 	/* subscribe to buddy presence */
 	//send_sip_request(sip->gc, "SUBSCRIBE", resource_uri,  resource_uri, request, content, NULL, process_subscribe_response);
-     send_sip_request(sip->gc, "SUBSCRIBE", to,  to, request, content, NULL, process_subscribe_response);
+	send_sip_request(sip->gc, "SUBSCRIBE", to,  to, request, content, NULL, process_subscribe_response);
 
 	g_free(content);
 	g_free(to);
-    g_free(resources_uri);
+	g_free(resources_uri);
 	g_free(request);
 }
 
@@ -1611,19 +1610,17 @@ static void sipe_subscribe_to_name_single(struct sipe_account_data *sip, const c
 
 static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 {
-	const char *status_id = purple_status_get_id(status);
-	struct sipe_account_data *sip = NULL;
-
 	if (!purple_status_is_active(status))
 		return;
 
-	if (account->gc)
-		sip = account->gc->proto_data;
+	if (account->gc) {
+		struct sipe_account_data *sip = account->gc->proto_data;
 
-	if (sip) {
-		g_free(sip->status);
-		sip->status = g_strdup(status_id);
-		send_presence_info(sip);
+		if (sip) {
+			g_free(sip->status);
+			sip->status = g_strdup(purple_status_get_id(status));
+			send_presence_info(sip);
+		}
 	}
 }
 
@@ -1696,6 +1693,15 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 	}
 }
 
+static void sipe_free_buddy(struct sipe_buddy *buddy)
+{
+	g_free(buddy->name);
+	g_free(buddy->annotation);
+	g_free(buddy->device_name);
+	g_slist_free(buddy->groups);
+	g_free(buddy);
+}
+
 /**
   * Unassociates buddy from group first.
   * Then see if no groups left, removes buddy completely.
@@ -1733,11 +1739,7 @@ static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGr
 			g_free(body);
 		}
 		
-		g_free(b->name);
-		g_free(b->annotation);
-		g_free(b->device_name);
-		g_slist_free(b->groups);
-		g_free(b);
+		sipe_free_buddy(b);
 	} else {
 		//updates groups on server
 		sipe_group_set_user(sip, b->name);
@@ -1924,13 +1926,13 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	/* Parse groups */
 	for (group_node = xmlnode_get_child(isc, "group"); group_node; group_node = xmlnode_get_next_twin(group_node)) {
 		struct sipe_group * group = g_new0(struct sipe_group, 1);
+		const char *name = xmlnode_get_attrib(group_node, "name");
 
-		group->name = g_strdup(xmlnode_get_attrib(group_node, "name"));
-		if (!strncmp(group->name, "~", 1)){
+		if (!strncmp(name, "~", 1)) {
 			// TODO translate
-			group->name = "Other Contacts";
+			name = "Other Contacts";
 		}
-		group->name = g_strdup(group->name);
+		group->name = g_strdup(name);
 		group->id = (int)g_ascii_strtod(xmlnode_get_attrib(group_node, "id"), NULL);
 
 		sipe_group_add(sip, group);
@@ -4586,6 +4588,9 @@ static void sipe_close(PurpleConnection *gc)
 	struct sipe_account_data *sip = gc->proto_data;
 
 	if (sip) {
+		GHashTableIter iter;
+		gpointer value;
+
 		/* leave all conversations */
 		im_session_close_all(sip);
 
@@ -4598,6 +4603,14 @@ static void sipe_close(PurpleConnection *gc)
 		g_free(sip->password);
 		g_free(sip->authdomain);
 		g_free(sip->authuser);
+		g_free(sip->status);
+
+		g_hash_table_iter_init(&iter, sip->buddies);
+		while (g_hash_table_iter_next(&iter, NULL, &value)) {
+			g_hash_table_iter_remove(&iter);
+			sipe_free_buddy(value);
+		}
+		g_hash_table_destroy(sip->buddies);
 	}
 	g_free(gc->proto_data);
 	gc->proto_data = NULL;
