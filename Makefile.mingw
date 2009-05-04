@@ -10,7 +10,7 @@ include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
 WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
-VERSION := 1.3.4
+VERSION := 1.3.5
 
 .PHONY: all clean install msi
 
@@ -34,6 +34,6 @@ install: all
 	$(MAKE) -C pixmaps -f $(MINGW_MAKEFILE) install
 	
 msi: all
-	$(WIX3_HOME)/bin/candle $(WXS_NAME).wxs
+	SIPE_VERSION=$(VERSION) $(WIX3_HOME)/bin/candle $(WXS_NAME).wxs
 	$(WIX3_HOME)/bin/light $(WXS_NAME).wixobj
 	mv $(WXS_NAME).msi $(WXS_NAME)-$(VERSION).msi
