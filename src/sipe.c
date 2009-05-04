@@ -151,6 +151,7 @@ static void sipe_keep_alive_timeout(struct sipe_account_data *sip, const gchar *
 		purple_debug_info("sipe", "server determined keep alive timeout is %u seconds\n",
 				  sip->keepalive_timeout);
 	}
+	g_free(timeout);
 }
 
 static void sipe_keep_alive(PurpleConnection *gc)
@@ -308,13 +309,13 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 #if GLIB_CHECK_VERSION(2,8,0)
 			const gchar * hostname = g_get_host_name();
 #else
-            static char hostname[256];
+			static char hostname[256];
 			int ret = gethostname(hostname, sizeof(hostname));
-            hostname[sizeof(hostname) - 1] = '\0';
-            if (ret == -1 || hostname[0] == '\0') {
-                 purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
-				 g_strerror(errno);
-				 strcpy(hostname, "localhost");
+			hostname[sizeof(hostname) - 1] = '\0';
+			if (ret == -1 || hostname[0] == '\0') {
+				purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
+				g_strerror(errno);
+				strcpy(hostname, "localhost");
 			}
 #endif
 			/*const gchar * hostname = purple_get_host_name();*/
@@ -423,18 +424,22 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		while (parts[i]) {
 			//purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
 			if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
+				g_free(auth->nonce);
 				auth->nonce = g_memdup(purple_ntlm_parse_challenge(tmp, &auth->flags), 8);
 				g_free(tmp);
 			}
 			if ((tmp = parse_attribute("targetname=\"",
 					parts[i]))) {
+				g_free(auth->target);
 				auth->target = tmp;
 			}
 			else if ((tmp = parse_attribute("realm=\"",
 					parts[i]))) {
+				g_free(auth->realm);
 				auth->realm = tmp;
 			}
 			else if ((tmp = parse_attribute("opaque=\"", parts[i]))) {
+				g_free(auth->opaque);
 				auth->opaque = tmp;
 			}
 			i++;
@@ -465,10 +470,13 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 				g_free(tmp);
 			}
 			if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
+				g_free(auth->target);
 				auth->target = tmp;
 			} else if ((tmp = parse_attribute("realm=\"", parts[i]))) {
+				g_free(auth->realm);
 				auth->realm = tmp;
 			} else if ((tmp = parse_attribute("opaque=\"", parts[i]))) {
+				g_free(auth->opaque);
 				auth->opaque = tmp;
 			}
 			i++;
@@ -482,9 +490,11 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	parts = g_strsplit(hdr, " ", 0);
 	while (parts[i]) {
 		if ((tmp = parse_attribute("nonce=\"", parts[i]))) {
+			g_free(auth->nonce);
 			auth->nonce = tmp;
 		}
 		else if ((tmp = parse_attribute("realm=\"", parts[i]))) {
+			g_free(auth->realm);
 			auth->realm = tmp;
 		}
 		i++;
@@ -493,6 +503,7 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 
 	purple_debug(PURPLE_DEBUG_MISC, "sipe", "nonce: %s realm: %s\n", auth->nonce ? auth->nonce : "(null)", auth->realm ? auth->realm : "(null)");
 	if (auth->realm) {
+		g_free(auth->digest_session_key);
 		auth->digest_session_key = purple_cipher_http_digest_calculate_session_key(
 				"md5", authuser, auth->realm, sip->password, auth->nonce, NULL);
 
@@ -1879,7 +1890,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	gchar *tmp = sipmsg_find_header(msg, "Event");
 	xmlnode *item;
 	xmlnode *isc;
-	gchar *contacts_delta;
+	const gchar *contacts_delta;
 	xmlnode *group_node;
 	if (!tmp || strncmp(tmp, "vnd-microsoft-roaming-contacts", 30)) {
 		return FALSE;
@@ -1893,7 +1904,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		return FALSE;
 	}
 
-	contacts_delta = g_strdup(xmlnode_get_attrib(isc, "deltaNum"));
+	contacts_delta = xmlnode_get_attrib(isc, "deltaNum");
 	if (contacts_delta) {
 		sip->contacts_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 	}
@@ -2777,6 +2788,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 {
 	gchar *ms_text_format;
 	gchar *from;
+	gchar *body;
 	struct sip_im_session *session;
 	// Only accept text invitations
 	if (msg->body && !(strstr(msg->body, "m=message") || strstr(msg->body, "m=x-ms-message"))) {
@@ -2794,7 +2806,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 
 			sipe_parse_dialog(msg, session->dialog, FALSE);
 
-			session->dialog->callid = sipmsg_find_header(msg, "Call-ID");
+			session->dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
 			session->dialog->ourtag = find_tag(sipmsg_find_header(msg, "To"));
 			session->dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
 			session->dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
@@ -2835,7 +2847,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
 	//sipmsg_add_header(msg, "Supported", "ms-renders-gif");
 
-	send_sip_response(sip->gc, msg, 200, "OK", g_strdup_printf(
+	body = g_strdup_printf(
 		"v=0\r\n"
 		"o=- 0 0 IN IP4 %s\r\n"
 		"s=session\r\n"
@@ -2844,7 +2856,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		"m=message %d sip sip:%s\r\n"
 		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml\r\n",
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1),
-		sip->realport, sip->username));
+		sip->realport, sip->username);
+	send_sip_response(sip->gc, msg, 200, "OK", body);
+	g_free(body);
 }
 
 static void sipe_connection_cleanup(struct sipe_account_data *);
@@ -2914,6 +2928,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				}
 				g_free(uuid);
 
+				g_free(sip->contact);
 				if(gruu) {
 					sip->contact = g_strdup_printf("<%s>", gruu);
 					g_free(gruu);
@@ -2992,6 +3007,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							  hostname, port, TRANSPORT_DESCRIPTOR);
 					create_connection(sip, hostname, port);
 				}
+				g_free(redirect);
 			}
 			break;
 		case 401:
@@ -3599,7 +3615,7 @@ process_send_presence_info_v0_response(struct sipe_account_data *sip, struct sip
 	return TRUE;
 }
 
-static void send_presence_info_v0(struct sipe_account_data *sip, char * note)
+static void send_presence_info_v0(struct sipe_account_data *sip, const char * note)
 {
 	int availability = 300; // online
 	int activity = 400;  // Available
@@ -3668,7 +3684,7 @@ process_send_presence_info_v1_response(struct sipe_account_data *sip, struct sip
 	return TRUE;
 }
 
-static void send_presence_info_v1(struct sipe_account_data *sip, char * note)
+static void send_presence_info_v1(struct sipe_account_data *sip, const char * note)
 {
 	int code;
 	gchar *uri;
@@ -3709,10 +3725,10 @@ static void send_presence_info_v1(struct sipe_account_data *sip, char * note)
 static void send_presence_info(struct sipe_account_data *sip)
 {
 	PurpleStatus * status = purple_account_get_active_status(sip->account);
-	gchar *note;
+	const gchar *note;
 	if (!status) return;
 
-	note = g_strdup(purple_status_get_attr_string(status, "message"));
+	note = purple_status_get_attr_string(status, "message");
 
 	purple_debug_info("sipe", "sending presence info, version = %d\n", sip->presence_method_version);
 	if (sip->presence_method_version != 1) {
