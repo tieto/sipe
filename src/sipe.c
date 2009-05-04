@@ -1011,6 +1011,7 @@ static void send_soap_request_with_cb(struct sipe_account_data *sip, gchar *body
 	tr->payload = payload;
 
 	g_free(from);
+	g_free(contact);
 	g_free(hdr);
 }
 
@@ -1507,10 +1508,15 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
    *   This header will be send only if adhoclist there is a "Supported: adhoclist" in REGISTER answer else will be send a Single Category SUBSCRIBE 
   */
 
+static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar **resources_uri)
+{
+	gchar *tmp = *resources_uri;
+	purple_debug_info("sipe", "sipe_subscribe_to_buddies_batched (%s)\n", name);
+        *resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", tmp, name);
+	g_free(tmp);
+}
 
 static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
-	GList *buddies = g_hash_table_get_values(sip->buddies);
-	GList *entry = buddies;
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *contact = get_contact(sip);
 	gchar *request;
@@ -1518,15 +1524,7 @@ static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 	gchar *resources_uri = g_strdup("");
 
 	purple_debug_info("sipe", " sipe_subscribe_to_buddies_batched buddies size (%d)\n", g_hash_table_size(sip->buddies));
-	while (entry) {
-		struct sipe_buddy *buddy = entry->data;
-		gchar *tmp = resources_uri;
-                purple_debug_info("sipe", "sipe_subscribe_to_buddies_batched (%s)\n", buddy->name);
-                resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", resources_uri, buddy->name);
-		g_free(tmp);
-		entry = entry->next;
-	}
-	g_list_free(buddies);
+	g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
 
 	request = g_strdup_printf(
 				  "Require: adhoclist, categoryList\r\n"
@@ -4586,7 +4584,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 /**
   * A callback for g_hash_table_foreach_remove
   */
-gboolean sipe_buddy_remove(gpointer key, struct sipe_buddy *buddy, gpointer user_data)
+static gboolean sipe_buddy_remove(gpointer key, struct sipe_buddy *buddy, gpointer user_data)
 {
 	sipe_free_buddy(buddy);
 }
