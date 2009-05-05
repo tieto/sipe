@@ -129,6 +129,8 @@ static const char *sipe_list_icon(PurpleAccount *a, PurpleBuddy *b)
 	return "sipe";
 }
 
+static void sipe_plugin_destroy(PurplePlugin *plugin);
+
 static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc);
 
 static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond);
@@ -4891,10 +4893,6 @@ static gboolean sipe_plugin_unload(PurplePlugin *plugin)
 }
 
 
-static void sipe_plugin_destroy(PurplePlugin *plugin)
-{
-}
-
 static char *sipe_status_text(PurpleBuddy *buddy)
 {
 	struct sipe_account_data *sip;
@@ -5270,6 +5268,25 @@ static PurplePluginInfo info = {
 	NULL,
 	NULL
 };
+
+static void sipe_plugin_destroy(PurplePlugin *plugin)
+{
+	GList *entry;
+
+	entry = prpl_info.protocol_options;
+	while (entry) {
+		purple_account_option_destroy(entry->data);
+		entry = g_list_delete_link(entry, entry);
+	}
+	prpl_info.protocol_options = NULL;
+
+	entry = prpl_info.user_splits;
+	while (entry) {
+		purple_account_user_split_destroy(entry->data);
+		entry = g_list_delete_link(entry, entry);
+	}
+	prpl_info.user_splits = NULL;
+}
 
 static void init_plugin(PurplePlugin *plugin)
 {
