@@ -2478,7 +2478,7 @@ sipe_get_route_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean o
         while(hdr)
         {
                 elem = hdr->data;
-                if(!strcmp(elem->name, "Record-Route"))
+                if(!g_ascii_strcasecmp(elem->name, "Record-Route"))
                 {
                         gchar *route = sipmsg_find_part_of_header(elem->value, "<", ">", NULL);
                         dialog->routes = g_slist_append(dialog->routes, route);
@@ -2509,7 +2509,7 @@ sipe_get_supported_header(struct sipmsg *msg, struct sip_dialog * dialog, gboole
 	while(hdr)
 	{
 		elem = hdr->data;
-		if(!strcmp(elem->name, "Supported")
+		if(!g_ascii_strcasecmp(elem->name, "Supported")
 			&& !g_slist_find_custom(dialog->supported, elem->value, (GCompareFunc)strcmp))
 		{
 			dialog->supported = g_slist_append(dialog->supported, g_strdup(elem->value));
@@ -3045,7 +3045,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                                 while(hdr)
                                 {
                                         elem = hdr->data;
-                                          if(!strcmp(elem->name, "Supported"))
+                                          if(!g_ascii_strcasecmp(elem->name, "Supported"))
                                          {      
                                                 if (strstr(elem->value, "msrtc-event-categories")){
                                                         sip->msrtc_event_categories = TRUE;
