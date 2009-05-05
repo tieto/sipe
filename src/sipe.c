@@ -2917,7 +2917,6 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 
 static void process_incoming_options(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	gchar *ms_text_format;
 	gchar *from;
 	gchar *body;
 	struct sip_im_session *session;
@@ -2942,12 +2941,13 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 		purple_debug_info("sipe", "process_incoming_invite, failed to find or create IM session\n");
 	}
 
-	g_free(from);
+	g_free(from);	
 
 	sipmsg_remove_header(msg, "Ms-Conversation-ID");
 	sipmsg_remove_header(msg, "EndPoints");
 	sipmsg_remove_header(msg, "User-Agent");
 
+	sipmsg_add_header(msg, "Allow", "INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, BENOTIFY");
 	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
 
 	body = g_strdup_printf(
