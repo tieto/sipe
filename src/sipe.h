@@ -119,6 +119,8 @@ struct sipe_account_data {
 	gchar *authdomain;
 	gchar *authuser;
 	gchar *password;
+	/** Allowed server events to subscribe. From register OK response. */
+	GSList *allow_events;
 	PurpleDnsQueryData *query_data;
 	PurpleSrvQueryData *srv_query_data;
 	const struct sipe_service_data *service_data;
