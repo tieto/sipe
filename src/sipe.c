@@ -1505,7 +1505,6 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar **resources_uri)
 {
 	gchar *tmp = *resources_uri;
-	purple_debug_info("sipe", "sipe_subscribe_to_buddies_batched (%s)\n", name);
         *resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", tmp, name);
 	g_free(tmp);
 }
@@ -3331,7 +3330,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
       }
 }
 
-static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct sipmsg *msg)
+static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const gchar *uri;
 	gchar *getbasic = g_strdup("closed");
@@ -3341,9 +3340,9 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 	gboolean isonline = FALSE;
 	xmlnode *display_name_node;
 
-	pidf = xmlnode_from_str(msg->body, msg->bodylen);
+	pidf = xmlnode_from_str(data, len);
 	if (!pidf) {
-		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf:%s\n",msg->body);
+		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf:%s\n",data);
 		return;
 	}
 			
@@ -3445,7 +3444,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 	g_free(activity);
 }
 
-static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct sipmsg *msg)
+static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const char *availability;
 	const char *activity;
@@ -3457,7 +3456,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	int act;
 	struct sipe_buddy *sbuddy;
 
-	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
+	xmlnode *xn_presentity = xmlnode_from_str(data, len);
 	
 	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
@@ -3571,44 +3570,48 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
                         const char *content_type;
 			GList* parts;
 			mime = purple_mime_document_parse(doc);
-                        parts = purple_mime_document_get_parts(mime);
-                        while(parts){
-			        content = purple_mime_part_get_data(parts->data);
-			        length = purple_mime_part_get_length(parts->data);
-                                content_type =purple_mime_part_get_field(parts->data,"Content-Type");
-                                if(content_type && strstr(content_type,"application/rlmi+xml"))
-                                {
-                                       process_incoming_notify_rlmi_resub(sip, content, length);
-                                 }
-                                else
-                                {
-                                        process_incoming_notify_rlmi(sip, content, length);
-                                 }
-                                parts = parts->next;   
-                        }
-                         g_free(doc);
+			parts = purple_mime_document_get_parts(mime);
+			while(parts) {
+				content = purple_mime_part_get_data(parts->data);
+				length = purple_mime_part_get_length(parts->data);
+				content_type =purple_mime_part_get_field(parts->data,"Content-Type");
+				if(content_type && strstr(content_type,"application/rlmi+xml"))
+				{
+					process_incoming_notify_rlmi_resub(sip, content, length);
+				}
+				else if(content_type && strstr(content_type, "text/xml+msrtc.pidf"))
+				{
+					process_incoming_notify_msrtc(sip, content, length);
+				}
+				else
+				{
+					process_incoming_notify_rlmi(sip, content, length);
+				}
+				parts = parts->next;   
+			}
+			g_free(doc);
 		
-		        if (mime)
-		        {
-			        purple_mime_document_free(mime);
-		        }
-                }
-                 else if(strstr(ctype, "application/msrtc-event-categories+xml") )
-                {
-                             process_incoming_notify_rlmi(sip, msg->body, msg->bodylen);
-                }
-                 else if(strstr(ctype, "application/rlmi+xml"))
-                {
-                             process_incoming_notify_rlmi_resub(sip, msg->body, msg->bodylen);   
-                }
+			if (mime)
+			{
+				purple_mime_document_free(mime);
+			}
+		}
+		else if(strstr(ctype, "application/msrtc-event-categories+xml") )
+		{
+			process_incoming_notify_rlmi(sip, msg->body, msg->bodylen);
+		}
+		else if(strstr(ctype, "application/rlmi+xml"))
+		{
+			process_incoming_notify_rlmi_resub(sip, msg->body, msg->bodylen);   
+		}
 	}
 	else if(ctype && strstr(ctype, "text/xml+msrtc.pidf"))
 	{
-		process_incoming_notify_msrtc(sip, msg);
+		process_incoming_notify_msrtc(sip, msg->body, msg->bodylen);
 	}
 	else
 	{
-		process_incoming_notify_pidf(sip, msg);
+		process_incoming_notify_pidf(sip, msg->body, msg->bodylen);
 	}
 }
 
