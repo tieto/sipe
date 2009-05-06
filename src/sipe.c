@@ -1358,9 +1358,8 @@ sipe_group_set_user (struct sipe_account_data *sip, const gchar * who)
 static gboolean process_add_group_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	if (msg->response == 200) {
-		struct sipe_group * group = g_new0(struct sipe_group, 1);
-
-		struct group_user_context * ctx = (struct group_user_context*)tc->payload;
+		struct sipe_group *group;
+		struct group_user_context *ctx = (struct group_user_context*)tc->payload;
 		xmlnode *xml;
 		xmlnode *node;
 		char *group_id;
@@ -1368,15 +1367,28 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 		group->name = ctx->group_name;
 
 		xml = xmlnode_from_str(msg->body, msg->bodylen);
-		if (!xml) return FALSE;
+		if (!xml) {
+			g_free(ctx);
+			return FALSE;
+		}
 
 		node = xmlnode_get_descendant(xml, "Body", "addGroup", "groupID", NULL);
-		if (!node) return FALSE;
+		if (!node) {
+			g_free(ctx);
+			xmlnode_free(xml);
+			return FALSE;
+		}
 
 		group_id = xmlnode_get_data(node);
-		if (!group_id) return FALSE;
+		if (!group_id) {
+			g_free(ctx);
+			xmlnode_free(xml);
+			return FALSE;
+		}
 
+		group = g_new0(struct sipe_group, 1);
 		group->id = (int)g_ascii_strtod(group_id, NULL);
+		g_free(group_id);
 
 		sipe_group_add(sip, group);
 		
@@ -2129,48 +2141,46 @@ sipe_process_acl_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 
 static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
 {
+	gchar *contact;
 	gchar *to;
-	gchar *tmp;
 	xmlnode *xml;
 	xmlnode *node;
-	const char *user;
-	gchar *hdr;
-	gchar *body;
 	
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 	
 	xml = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!xml) return;
 
-	node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL);
-	if (!node) {
-		xmlnode_free(xml);
-		return;
-	}
-
-	user = xmlnode_get_attrib(node, "user");
-	if (!user) {
-		xmlnode_free(xml);
-		return;
-	}
-	
+	contact = get_contact(sip);
 	to = g_strdup_printf("sip:%s", sip->username);
-	tmp = get_contact(sip);
-	hdr = g_strdup_printf(					 
-		"Contact: %s\r\n"
-		"Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", tmp);
 
-	body = g_strdup_printf(
-		"<setSubscribers xmlns=\"http://schemas.microsoft.com/2006/09/sip/presence-subscribers\">"
-        "<subscriber user=\"%s\" acknowledged=\"true\"/>" 
-        "</setSubscribers>",user);
+	for (node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL); node; node = xmlnode_get_next_twin(node)) {
+		const char *user;
+		gchar *hdr;
+		gchar *body;
 
-	g_free(tmp);
-	send_sip_request(sip->gc, "SERVICE", to, to, hdr, body, NULL, NULL);
-	g_free(body);
+		user = xmlnode_get_attrib(node, "user");
+		if (!user) continue;
+	
+		purple_debug_info("sipe", "sipe_process_roaming_self: user %s\n", user);
+
+		hdr = g_strdup_printf(					 
+				      "Contact: %s\r\n"
+				      "Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", contact);
+
+		body = g_strdup_printf(
+				       "<setSubscribers xmlns=\"http://schemas.microsoft.com/2006/09/sip/presence-subscribers\">"
+				       "<subscriber user=\"%s\" acknowledged=\"true\"/>" 
+				       "</setSubscribers>", user);
+
+		send_sip_request(sip->gc, "SERVICE", to, to, hdr, body, NULL, NULL);
+		g_free(body);
+		g_free(hdr);
+	}
+
 	g_free(to);
-	g_free(hdr);
-	xmlnode_free(node);
+	g_free(contact);
+	xmlnode_free(xml);
 }
 
 static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
@@ -3334,8 +3344,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	const gchar *uri;
-	gchar *getbasic = g_strdup("closed");
-	gchar *activity = g_strdup("available");
+	gchar *getbasic;
+	gchar *activity = NULL;
 	xmlnode *pidf;
 	xmlnode *basicstatus = NULL, *tuple, *status;
 	gboolean isonline = FALSE;
@@ -3373,6 +3383,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 	if (strstr(getbasic, "open")) {
 		isonline = TRUE;
 	}
+	g_free(getbasic);
 
 	display_name_node = xmlnode_get_child(pidf, "display-name");
 	// updating display name if alias was just URI
@@ -3390,7 +3401,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 			
 			alias = (char *)purple_buddy_get_alias(p_buddy);
 			alias = alias ? g_strdup_printf("sip:%s", alias) : NULL;
-			if (!g_ascii_strcasecmp(uri, alias)) {
+			if (!alias || !g_ascii_strcasecmp(uri, alias)) {
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, display_name);
 				purple_blist_alias_buddy(p_buddy, display_name);
 			}
@@ -3406,6 +3417,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 
 			entry = entry->next;
 		}		
+		g_free(display_name);
 	}	
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
@@ -3413,12 +3425,11 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 			if ((basicstatus = xmlnode_get_child(status, "activities"))) {
 				if ((basicstatus = xmlnode_get_child(basicstatus, "activity"))) {
 					activity = xmlnode_get_data(basicstatus);
+					purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
 				}
 			}
 		}
 	}
-
-	purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
 
 	if (isonline) {
 		gchar * status_id = NULL;
@@ -3440,9 +3451,8 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 		purple_prpl_got_user_status(sip->account, uri, "offline", NULL);
 	}
 
-	xmlnode_free(pidf);
-	g_free(getbasic);
 	g_free(activity);
+	xmlnode_free(pidf);
 }
 
 static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct sipmsg *msg)
@@ -3463,14 +3473,14 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
 	xmlnode *xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
 	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
-	  const char *email = xn_email ? xmlnode_get_attrib(xn_email, "email") : NULL;
+	const char *email = xn_email ? xmlnode_get_attrib(xn_email, "email") : NULL;
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
-	  xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
-	    const char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
+	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
+	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 	xmlnode *xn_devices = xmlnode_get_child(xn_presentity, "devices");
-	  xmlnode *xn_device_presence = xn_devices ? xmlnode_get_child(xn_devices, "devicePresence") : NULL;
-	    xmlnode *xn_device_name = xn_device_presence ? xmlnode_get_child(xn_device_presence, "deviceName") : NULL;
-		  const char *device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
+	xmlnode *xn_device_presence = xn_devices ? xmlnode_get_child(xn_devices, "devicePresence") : NULL;
+	xmlnode *xn_device_name = xn_device_presence ? xmlnode_get_child(xn_device_presence, "deviceName") : NULL;
+	const char *device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
 
 	name = xmlnode_get_attrib(xn_presentity, "uri");
 	uri = g_strdup_printf("sip:%s", name);
@@ -3548,6 +3558,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", activity_name);
 	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
+	g_free(note);
 	xmlnode_free(xn_presentity);
 	g_free(uri);
 }
