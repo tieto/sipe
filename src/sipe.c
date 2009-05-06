@@ -4736,6 +4736,8 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	int match_count = 0;
 	gboolean more = FALSE;
 	gchar *secondary;
+	
+	purple_debug_info("sipe", "process_search_contact_response: body:\n%s n", msg->body ? msg->body : "");
 
 	searchResults = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!searchResults) {
@@ -4825,6 +4827,7 @@ static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestField
 	if (i > 0) {
 		gchar *query = g_strjoinv(NULL, attrs);
 		gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100, query);
+		purple_debug_info("sipe", "sipe_search_contact_with_cb: body:\n%s n", body ? body : "");
 		send_soap_request_with_cb(gc->proto_data, body,
 					  (TransCallback) process_search_contact_response, NULL);
 		g_free(body);
@@ -5102,24 +5105,25 @@ GList *sipe_blist_node_menu(PurpleBlistNode *node) {
 	}
 }
 
-static void sipe_get_info(PurpleConnection *gc, const char *username) {
+static gboolean
+process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
+{
+	gboolean ret = TRUE;
+	char *username = (char *)trans->payload;
+	
 	PurpleNotifyUserInfo *info = purple_notify_user_info_new();
 	PurpleBuddy *pbuddy;
-	struct sipe_account_data *sip;
 	struct sipe_buddy *sbuddy;
-	const char *email;
-	const char *device_name = NULL;
 	const char *alias;
-	const char *server_alias;
-
-	purple_debug_info("sipe", "Fetching %s's user info for %s\n", username,
-                    gc->account->username);
-					
-	pbuddy = purple_find_buddy(gc->account, username);
-	alias = purple_buddy_get_local_alias(pbuddy);
-	server_alias = purple_buddy_get_server_alias(pbuddy);
+	char *server_alias = NULL;
+	char *email = NULL;
+	const char *device_name = NULL;
 	
-	sip = (struct sipe_account_data *)gc->proto_data;
+	purple_debug_info("sipe", "Fetching %s's user info for %s\n", username, sip->username);
+					
+	pbuddy = purple_find_buddy((PurpleAccount *)sip->account, username);
+	alias = purple_buddy_get_local_alias(pbuddy);
+	
 	if (sip)
 	{
 		//will query buddy UA's capabilities and send answer to log
@@ -5131,37 +5135,91 @@ static void sipe_get_info(PurpleConnection *gc, const char *username) {
 			device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
 		}
 	}
+
+	if (msg->response != 200) {
+		purple_debug_info("sipe", "process_options_response: SERVICE response is %d\n", msg->response);
+	} else {
+		xmlnode *searchResults;
+		xmlnode *mrow;
+		
+		purple_debug_info("sipe", "process_options_response: body:\n%s\n", msg->body ? msg->body : "");		
+		searchResults = xmlnode_from_str(msg->body, msg->bodylen);
+		if (!searchResults) {
+			purple_debug_info("sipe", "process_get_info_response: no parseable searchResults\n");
+		} else if ((mrow = xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL))) {
+			server_alias = g_strdup(xmlnode_get_attrib(mrow, "displayName"));
+			purple_notify_user_info_add_pair(info, _("Display Name"), server_alias);
+			purple_notify_user_info_add_pair(info, _("Job Title"), g_strdup(xmlnode_get_attrib(mrow, "title")));
+			purple_notify_user_info_add_pair(info, _("Office"), g_strdup(xmlnode_get_attrib(mrow, "office")));
+			purple_notify_user_info_add_pair(info, _("Business Phone"), g_strdup(xmlnode_get_attrib(mrow, "phone")));
+			purple_notify_user_info_add_pair(info, _("Company"), g_strdup(xmlnode_get_attrib(mrow, "company")));
+			purple_notify_user_info_add_pair(info, _("City"), g_strdup(xmlnode_get_attrib(mrow, "city")));
+			purple_notify_user_info_add_pair(info, _("State"), g_strdup(xmlnode_get_attrib(mrow, "state")));
+			purple_notify_user_info_add_pair(info, _("Country"), g_strdup(xmlnode_get_attrib(mrow, "country")));
+			email = g_strdup(xmlnode_get_attrib(mrow, "email"));
+			purple_notify_user_info_add_pair(info, _("E-Mail Address"), email);
+			if (!email || strcmp("", email)) {
+				if (!purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email")) {
+					purple_blist_node_set_string((PurpleBlistNode *)pbuddy, "email", email);
+				}
+			}
+		}
+		xmlnode_free(searchResults);
+	}
 	
-	//Layout
-	if (server_alias)
-	{
-		purple_notify_user_info_add_pair(info, _("Nickname"), server_alias);
+	purple_notify_user_info_add_section_break(info);
+	
+	if (!server_alias || !strcmp("", server_alias)) {
+		g_free(server_alias);
+		server_alias = g_strdup(purple_buddy_get_server_alias(pbuddy));
+		if (server_alias) {
+			purple_notify_user_info_add_pair(info, _("Display Name"), server_alias);
+		}
 	}
 
 	// same as server alias, do not present
-	alias = alias && server_alias && !strcmp(alias, server_alias) ? NULL : alias;
+	alias = (alias && server_alias && !strcmp(alias, server_alias)) ? NULL : alias;
 	if (alias)
 	{
 		purple_notify_user_info_add_pair(info, _("Alias"), alias);
 	}	
 
-	email = purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email");	
-	if (email)
-	{
-		purple_notify_user_info_add_pair(info, _("Email"), email);
+	if (!email || !strcmp("", email)) {
+		g_free(email);
+		email = g_strdup(purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email"));	
+		if (email) {
+			purple_notify_user_info_add_pair(info, _("E-Mail Address"), email);
+		}
 	}
 	
 	if (device_name)
 	{
 		purple_notify_user_info_add_pair(info, _("Device"), device_name);
 	}  
-
+	
 	/* show a buddy's user info in a nice dialog box */
-	purple_notify_userinfo(gc,        /* connection the buddy info came through */
+	purple_notify_userinfo(sip->gc,        /* connection the buddy info came through */
 						 username,  /* buddy's username */
 						 info,      /* body */
 						 NULL,      /* callback called when dialog closed */
-						 NULL);     /* userdata for callback */
+						 NULL);     /* userdata for callback */						 
+	
+	return ret;
+}
+
+/**
+ * AD search first, LDAP based
+ */
+static void sipe_get_info(PurpleConnection *gc, const char *username)
+{
+	char *row = g_strdup_printf(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
+	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 1, row);
+	
+	purple_debug_info("sipe", "sipe_get_contact_data: body:\n%s\n", body ? body : "");
+	send_soap_request_with_cb((struct sipe_account_data *)gc->proto_data, body,
+					  (TransCallback) process_get_info_response, (gpointer)g_strdup(username));
+	g_free(body);
+	g_free(row);
 }
 
 static PurplePlugin *my_protocol = NULL;
