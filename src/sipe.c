@@ -1037,8 +1037,8 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	char *uri = g_strdup_printf("sip:%s", sip->sipdomain);
 	char *to = g_strdup_printf("sip:%s", sip->username);
 	char *contact = get_contact_register(sip);
-    char *hdr = g_strdup_printf("Contact: %s\r\n"
-								"Supported: gruu-10, adhoclist, msrtc-event-categories\r\n"
+        char *hdr = g_strdup_printf("Contact: %s\r\n"
+								"Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
 								"Event: registration\r\n"
 								"Allow-Events: presence\r\n"
 								"ms-keep-alive: UAC;hop-hop=yes\r\n"
@@ -1502,14 +1502,6 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 	return TRUE;
 }
 
-
-/**
-   *   Batch Category SUBSCRIBE [SIP-PRES] - msrtc-event-categories+xml
-   *   The user sends an initial batched category SUBSCRIBE request against all contacts on his roaming list in only a request
-   *   A batch category SUBSCRIBE request MUST have the same To-URI and From-URI.
-   *   This header will be send only if adhoclist there is a "Supported: adhoclist" in REGISTER answer else will be send a Single Category SUBSCRIBE 
-  */
-
 static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar **resources_uri)
 {
 	gchar *tmp = *resources_uri;
@@ -1518,30 +1510,36 @@ static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar 
 	g_free(tmp);
 }
 
+/**
+   *   Support for Batch Category SUBSCRIBE [MS-PRES] - msrtc-event-categories+xml  OCS 2007
+   *   Support for Batch Category SUBSCRIBE [MS-SIP] - adrl+xml LCS 2005
+   *   The user sends an initial batched category SUBSCRIBE request against all contacts on his roaming list in only a request
+   *   A batch category SUBSCRIBE request MUST have the same To-URI and From-URI.
+   *   This header will be send only if adhoclist there is a "Supported: adhoclist" in REGISTER answer else will be send a Single Category SUBSCRIBE 
+  */
+
 static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *contact = get_contact(sip);
 	gchar *request;
 	gchar *content;
 	gchar *resources_uri = g_strdup("");
+        gchar *require =  g_strdup("adhoclist");
+        gchar *content_type = g_strdup("application/adrl+xml"); 
+        gchar *accept = g_strdup(" application/rlmi+xml, text/xml+msrtc.pidf, multipart/related"); 
 
-	purple_debug_info("sipe", " sipe_subscribe_to_buddies_batched buddies size (%d)\n", g_hash_table_size(sip->buddies));
 	g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
 
-	request = g_strdup_printf(
-				  "Require: adhoclist, categoryList\r\n"
-				  "Supported: eventlist\r\n"
-				  "Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
-				  "Supported: ms-piggyback-first-notify\r\n"
-				  "Supported: com.microsoft.autoextend\r\n"
-				  "Supported: ms-benotify\r\n"
-				  "Proxy-Require: ms-benotify\r\n"
-				  "Event: presence\r\n"
-				  "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
-				  "Contact: %s\r\n", contact);
-	g_free(contact);
-	
-	content = g_strdup_printf(
+        content =  g_strdup_printf(
+				  "<adhocList xmlns=\"urn:ietf:params:xml:ns:adrl\" uri=\"sip:%s\" name=\"sip:%s\">\n"
+                                  "<create>\n%s\n</create>\n"
+                                  "</adhocList>\n", sip->username,  sip->username, resources_uri); 
+
+        if(sip->msrtc_event_categories)
+        {
+                require  = g_strdup_printf("%s, categoryList", require);
+                content_type = g_strdup("application/msrtc-adrl-categorylist+xml"); 
+                content = g_strdup_printf(
 				  "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
 				  "<action name=\"subscribe\" id=\"63792024\">\n"
 				  "<adhocList>\n%s</adhocList>\n"
@@ -1550,7 +1548,25 @@ static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 				  "<category name=\"state\"/>\n"
 				  "</categoryList>\n"
 				  "</action>\n"
-				  "</batchSub>", sip->username, resources_uri);
+				  "</batchSub>", sip->username, resources_uri);  
+                 accept =   g_strdup("application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related");
+
+        }
+
+	request = g_strdup_printf(
+				  "Require: %s\r\n"
+				  "Supported: eventlist\r\n"
+				  "Accept: %s\r\n"
+				  "Supported: ms-piggyback-first-notify\r\n"
+				  "Supported: com.microsoft.autoextend\r\n"
+				  "Supported: ms-benotify\r\n"
+				  "Proxy-Require: ms-benotify\r\n"
+				  "Event: presence\r\n"
+				  "Content-Type: %s\r\n"
+				  "Contact: %s\r\n", require, accept, content_type, contact);
+	g_free(contact);
+        g_free(require);
+        g_free(accept);
 
 	/* subscribe to buddy presence */
 	//send_sip_request(sip->gc, "SUBSCRIBE", resource_uri,  resource_uri, request, content, NULL, process_subscribe_response);
@@ -2020,11 +2036,11 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
-                if(sip->msrtc_event_categories){
+                //if(sip->msrtc_event_categories){
 		        sipe_subscribe_to_buddies_batched(sip);
-                 }else{
-                        g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
-                 }
+                 //}else{
+                        //g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
+                 //}
                 sip->subscribed_buddies = TRUE;
 	}
 
