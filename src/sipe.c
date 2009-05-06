@@ -1531,9 +1531,9 @@ static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 	g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
 
         content =  g_strdup_printf(
-				  "<adhocList xmlns=\"urn:ietf:params:xml:ns:adrl\" uri=\"sip:%s\" name=\"sip:%s\">\n"
-                                  "<create>\n%s\n</create>\n"
-                                  "</adhocList>\n", sip->username,  sip->username, resources_uri); 
+				  "<adhoclist xmlns=\"urn:ietf:params:xml:ns:adrl\" uri=\"sip:%s\" name=\"sip:%s\">\n"
+                                  "<create xmlns=\"\">\n%s</create>\n"
+                                  "</adhoclist>\n", sip->username,  sip->username, resources_uri); 
 
         if(sip->msrtc_event_categories)
         {
