@@ -1037,8 +1037,8 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	char *uri = g_strdup_printf("sip:%s", sip->sipdomain);
 	char *to = g_strdup_printf("sip:%s", sip->username);
 	char *contact = get_contact_register(sip);
-    char *hdr = g_strdup_printf("Contact: %s\r\n"
-								"Supported: gruu-10, adhoclist, msrtc-event-categories\r\n"
+        char *hdr = g_strdup_printf("Contact: %s\r\n"
+								"Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
 								"Event: registration\r\n"
 								"Allow-Events: presence\r\n"
 								"ms-keep-alive: UAC;hop-hop=yes\r\n"
@@ -1358,9 +1358,8 @@ sipe_group_set_user (struct sipe_account_data *sip, const gchar * who)
 static gboolean process_add_group_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	if (msg->response == 200) {
-		struct sipe_group * group = g_new0(struct sipe_group, 1);
-
-		struct group_user_context * ctx = (struct group_user_context*)tc->payload;
+		struct sipe_group *group;
+		struct group_user_context *ctx = (struct group_user_context*)tc->payload;
 		xmlnode *xml;
 		xmlnode *node;
 		char *group_id;
@@ -1368,15 +1367,28 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 		group->name = ctx->group_name;
 
 		xml = xmlnode_from_str(msg->body, msg->bodylen);
-		if (!xml) return FALSE;
+		if (!xml) {
+			g_free(ctx);
+			return FALSE;
+		}
 
 		node = xmlnode_get_descendant(xml, "Body", "addGroup", "groupID", NULL);
-		if (!node) return FALSE;
+		if (!node) {
+			g_free(ctx);
+			xmlnode_free(xml);
+			return FALSE;
+		}
 
 		group_id = xmlnode_get_data(node);
-		if (!group_id) return FALSE;
+		if (!group_id) {
+			g_free(ctx);
+			xmlnode_free(xml);
+			return FALSE;
+		}
 
+		group = g_new0(struct sipe_group, 1);
 		group->id = (int)g_ascii_strtod(group_id, NULL);
+		g_free(group_id);
 
 		sipe_group_add(sip, group);
 		
@@ -1502,21 +1514,20 @@ static gboolean process_subscribe_response(struct sipe_account_data *sip, struct
 	return TRUE;
 }
 
+static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar **resources_uri)
+{
+	gchar *tmp = *resources_uri;
+        *resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", tmp, name);
+	g_free(tmp);
+}
 
 /**
-   *   Batch Category SUBSCRIBE [SIP-PRES] - msrtc-event-categories+xml
+   *   Support for Batch Category SUBSCRIBE [MS-PRES] - msrtc-event-categories+xml  OCS 2007
+   *   Support for Batch Category SUBSCRIBE [MS-SIP] - adrl+xml LCS 2005
    *   The user sends an initial batched category SUBSCRIBE request against all contacts on his roaming list in only a request
    *   A batch category SUBSCRIBE request MUST have the same To-URI and From-URI.
    *   This header will be send only if adhoclist there is a "Supported: adhoclist" in REGISTER answer else will be send a Single Category SUBSCRIBE 
   */
-
-static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar **resources_uri)
-{
-	gchar *tmp = *resources_uri;
-	purple_debug_info("sipe", "sipe_subscribe_to_buddies_batched (%s)\n", name);
-        *resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", tmp, name);
-	g_free(tmp);
-}
 
 static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
@@ -1524,33 +1535,47 @@ static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 	gchar *request;
 	gchar *content;
 	gchar *resources_uri = g_strdup("");
+	gchar *require = "";
+	gchar *accept = ""; 
+	gchar *content_type;
 
-	purple_debug_info("sipe", " sipe_subscribe_to_buddies_batched buddies size (%d)\n", g_hash_table_size(sip->buddies));
 	g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
 
+    if (sip->msrtc_event_categories) {
+		require = ", categoryList";
+		accept = ", application/msrtc-event-categories+xml, application/xpidf+xml, application/pidf+xml";
+                content_type = "application/msrtc-adrl-categorylist+xml";
+                content = g_strdup_printf(
+					  "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
+					  "<action name=\"subscribe\" id=\"63792024\">\n"
+					  "<adhocList>\n%s</adhocList>\n"
+					  "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
+					  "<category name=\"note\"/>\n"
+					  "<category name=\"state\"/>\n"
+					  "</categoryList>\n"
+					  "</action>\n"
+					  "</batchSub>", sip->username, resources_uri);  
+	} else {
+		content_type = "application/adrl+xml";
+        	content = g_strdup_printf(
+					  "<adhoclist xmlns=\"urn:ietf:params:xml:ns:adrl\" uri=\"sip:%s\" name=\"sip:%s\">\n"
+					  "<create xmlns=\"\">\n%s</create>\n"
+					  "</adhoclist>\n", sip->username,  sip->username, resources_uri); 
+	}
+	g_free(resources_uri);
+
 	request = g_strdup_printf(
-				  "Require: adhoclist, categoryList\r\n"
+				  "Require: adhoclist%s\r\n"
 				  "Supported: eventlist\r\n"
-				  "Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+				  "Accept:  application/rlmi+xml, multipart/related, text/xml+msrtc.pidf%s\r\n"
 				  "Supported: ms-piggyback-first-notify\r\n"
 				  "Supported: com.microsoft.autoextend\r\n"
 				  "Supported: ms-benotify\r\n"
 				  "Proxy-Require: ms-benotify\r\n"
 				  "Event: presence\r\n"
-				  "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
-				  "Contact: %s\r\n", contact);
+				  "Content-Type: %s\r\n"
+				  "Contact: %s\r\n", require, accept, content_type, contact);
 	g_free(contact);
-	
-	content = g_strdup_printf(
-				  "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
-				  "<action name=\"subscribe\" id=\"63792024\">\n"
-				  "<adhocList>\n%s</adhocList>\n"
-				  "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
-				  "<category name=\"note\"/>\n"
-				  "<category name=\"state\"/>\n"
-				  "</categoryList>\n"
-				  "</action>\n"
-				  "</batchSub>", sip->username, resources_uri);
 
 	/* subscribe to buddy presence */
 	//send_sip_request(sip->gc, "SUBSCRIBE", resource_uri,  resource_uri, request, content, NULL, process_subscribe_response);
@@ -1558,7 +1583,6 @@ static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 
 	g_free(content);
 	g_free(to);
-	g_free(resources_uri);
 	g_free(request);
 }
 
@@ -2020,11 +2044,11 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
-                if(sip->msrtc_event_categories){
+                //if(sip->msrtc_event_categories){
 		        sipe_subscribe_to_buddies_batched(sip);
-                 }else{
-                        g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
-                 }
+                 //}else{
+                        //g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
+                 //}
                 sip->subscribed_buddies = TRUE;
 	}
 
@@ -2116,48 +2140,46 @@ sipe_process_acl_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 
 static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
 {
+	gchar *contact;
 	gchar *to;
-	gchar *tmp;
 	xmlnode *xml;
 	xmlnode *node;
-	const char *user;
-	gchar *hdr;
-	gchar *body;
 	
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 	
 	xml = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!xml) return;
 
-	node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL);
-	if (!node) {
-		xmlnode_free(xml);
-		return;
-	}
-
-	user = xmlnode_get_attrib(node, "user");
-	if (!user) {
-		xmlnode_free(xml);
-		return;
-	}
-	
+	contact = get_contact(sip);
 	to = g_strdup_printf("sip:%s", sip->username);
-	tmp = get_contact(sip);
-	hdr = g_strdup_printf(					 
-		"Contact: %s\r\n"
-		"Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", tmp);
 
-	body = g_strdup_printf(
-		"<setSubscribers xmlns=\"http://schemas.microsoft.com/2006/09/sip/presence-subscribers\">"
-        "<subscriber user=\"%s\" acknowledged=\"true\"/>" 
-        "</setSubscribers>",user);
+	for (node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL); node; node = xmlnode_get_next_twin(node)) {
+		const char *user;
+		gchar *hdr;
+		gchar *body;
 
-	g_free(tmp);
-	send_sip_request(sip->gc, "SERVICE", to, to, hdr, body, NULL, NULL);
-	g_free(body);
+		user = xmlnode_get_attrib(node, "user");
+		if (!user) continue;
+	
+		purple_debug_info("sipe", "sipe_process_roaming_self: user %s\n", user);
+
+		hdr = g_strdup_printf(					 
+				      "Contact: %s\r\n"
+				      "Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", contact);
+
+		body = g_strdup_printf(
+				       "<setSubscribers xmlns=\"http://schemas.microsoft.com/2006/09/sip/presence-subscribers\">"
+				       "<subscriber user=\"%s\" acknowledged=\"true\"/>" 
+				       "</setSubscribers>", user);
+
+		send_sip_request(sip->gc, "SERVICE", to, to, hdr, body, NULL, NULL);
+		g_free(body);
+		g_free(hdr);
+	}
+
 	g_free(to);
-	g_free(hdr);
-	xmlnode_free(node);
+	g_free(contact);
+	xmlnode_free(xml);
 }
 
 static void sipe_subscribe_acl(struct sipe_account_data *sip,struct sipmsg *msg)
@@ -3319,19 +3341,19 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
       }
 }
 
-static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct sipmsg *msg)
+static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const gchar *uri;
-	gchar *getbasic = g_strdup("closed");
-	gchar *activity = g_strdup("available");
+	gchar *getbasic;
+	gchar *activity = NULL;
 	xmlnode *pidf;
 	xmlnode *basicstatus = NULL, *tuple, *status;
 	gboolean isonline = FALSE;
 	xmlnode *display_name_node;
 
-	pidf = xmlnode_from_str(msg->body, msg->bodylen);
+	pidf = xmlnode_from_str(data, len);
 	if (!pidf) {
-		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf:%s\n",msg->body);
+		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf:%s\n",data);
 		return;
 	}
 			
@@ -3361,6 +3383,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 	if (strstr(getbasic, "open")) {
 		isonline = TRUE;
 	}
+	g_free(getbasic);
 
 	display_name_node = xmlnode_get_child(pidf, "display-name");
 	// updating display name if alias was just URI
@@ -3378,7 +3401,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 			
 			alias = (char *)purple_buddy_get_alias(p_buddy);
 			alias = alias ? g_strdup_printf("sip:%s", alias) : NULL;
-			if (!g_ascii_strcasecmp(uri, alias)) {
+			if (!alias || !g_ascii_strcasecmp(uri, alias)) {
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, display_name);
 				purple_blist_alias_buddy(p_buddy, display_name);
 			}
@@ -3394,6 +3417,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 
 			entry = entry->next;
 		}		
+		g_free(display_name);
 	}	
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
@@ -3401,12 +3425,11 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 			if ((basicstatus = xmlnode_get_child(status, "activities"))) {
 				if ((basicstatus = xmlnode_get_child(basicstatus, "activity"))) {
 					activity = xmlnode_get_data(basicstatus);
+					purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
 				}
 			}
 		}
 	}
-
-	purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
 
 	if (isonline) {
 		gchar * status_id = NULL;
@@ -3428,12 +3451,11 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, struct s
 		purple_prpl_got_user_status(sip->account, uri, "offline", NULL);
 	}
 
-	xmlnode_free(pidf);
-	g_free(getbasic);
 	g_free(activity);
+	xmlnode_free(pidf);
 }
 
-static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct sipmsg *msg)
+static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const char *availability;
 	const char *activity;
@@ -3445,20 +3467,20 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 	int act;
 	struct sipe_buddy *sbuddy;
 
-	xmlnode *xn_presentity = xmlnode_from_str(msg->body, msg->bodylen);
+	xmlnode *xn_presentity = xmlnode_from_str(data, len);
 	
 	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
 	xmlnode *xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
 	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
-	  const char *email = xn_email ? xmlnode_get_attrib(xn_email, "email") : NULL;
+	const char *email = xn_email ? xmlnode_get_attrib(xn_email, "email") : NULL;
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
-	  xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
-	    const char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
+	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
+	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 	xmlnode *xn_devices = xmlnode_get_child(xn_presentity, "devices");
-	  xmlnode *xn_device_presence = xn_devices ? xmlnode_get_child(xn_devices, "devicePresence") : NULL;
-	    xmlnode *xn_device_name = xn_device_presence ? xmlnode_get_child(xn_device_presence, "deviceName") : NULL;
-		  const char *device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
+	xmlnode *xn_device_presence = xn_devices ? xmlnode_get_child(xn_devices, "devicePresence") : NULL;
+	xmlnode *xn_device_name = xn_device_presence ? xmlnode_get_child(xn_device_presence, "deviceName") : NULL;
+	const char *device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
 
 	name = xmlnode_get_attrib(xn_presentity, "uri");
 	uri = g_strdup_printf("sip:%s", name);
@@ -3536,6 +3558,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, struct 
 
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", activity_name);
 	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
+	g_free(note);
 	xmlnode_free(xn_presentity);
 	g_free(uri);
 }
@@ -3559,44 +3582,48 @@ static void process_incoming_notify_presence(struct sipe_account_data *sip, stru
                         const char *content_type;
 			GList* parts;
 			mime = purple_mime_document_parse(doc);
-                        parts = purple_mime_document_get_parts(mime);
-                        while(parts){
-			        content = purple_mime_part_get_data(parts->data);
-			        length = purple_mime_part_get_length(parts->data);
-                                content_type =purple_mime_part_get_field(parts->data,"Content-Type");
-                                if(content_type && strstr(content_type,"application/rlmi+xml"))
-                                {
-                                       process_incoming_notify_rlmi_resub(sip, content, length);
-                                 }
-                                else
-                                {
-                                        process_incoming_notify_rlmi(sip, content, length);
-                                 }
-                                parts = parts->next;   
-                        }
-                         g_free(doc);
+			parts = purple_mime_document_get_parts(mime);
+			while(parts) {
+				content = purple_mime_part_get_data(parts->data);
+				length = purple_mime_part_get_length(parts->data);
+				content_type =purple_mime_part_get_field(parts->data,"Content-Type");
+				if(content_type && strstr(content_type,"application/rlmi+xml"))
+				{
+					process_incoming_notify_rlmi_resub(sip, content, length);
+				}
+				else if(content_type && strstr(content_type, "text/xml+msrtc.pidf"))
+				{
+					process_incoming_notify_msrtc(sip, content, length);
+				}
+				else
+				{
+					process_incoming_notify_rlmi(sip, content, length);
+				}
+				parts = parts->next;   
+			}
+			g_free(doc);
 		
-		        if (mime)
-		        {
-			        purple_mime_document_free(mime);
-		        }
-                }
-                 else if(strstr(ctype, "application/msrtc-event-categories+xml") )
-                {
-                             process_incoming_notify_rlmi(sip, msg->body, msg->bodylen);
-                }
-                 else if(strstr(ctype, "application/rlmi+xml"))
-                {
-                             process_incoming_notify_rlmi_resub(sip, msg->body, msg->bodylen);   
-                }
+			if (mime)
+			{
+				purple_mime_document_free(mime);
+			}
+		}
+		else if(strstr(ctype, "application/msrtc-event-categories+xml") )
+		{
+			process_incoming_notify_rlmi(sip, msg->body, msg->bodylen);
+		}
+		else if(strstr(ctype, "application/rlmi+xml"))
+		{
+			process_incoming_notify_rlmi_resub(sip, msg->body, msg->bodylen);   
+		}
 	}
 	else if(ctype && strstr(ctype, "text/xml+msrtc.pidf"))
 	{
-		process_incoming_notify_msrtc(sip, msg);
+		process_incoming_notify_msrtc(sip, msg->body, msg->bodylen);
 	}
 	else
 	{
-		process_incoming_notify_pidf(sip, msg);
+		process_incoming_notify_pidf(sip, msg->body, msg->bodylen);
 	}
 }
 
@@ -4737,6 +4764,8 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	int match_count = 0;
 	gboolean more = FALSE;
 	gchar *secondary;
+	
+	purple_debug_info("sipe", "process_search_contact_response: body:\n%s n", msg->body ? msg->body : "");
 
 	searchResults = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!searchResults) {
@@ -4826,6 +4855,7 @@ static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestField
 	if (i > 0) {
 		gchar *query = g_strjoinv(NULL, attrs);
 		gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100, query);
+		purple_debug_info("sipe", "sipe_search_contact_with_cb: body:\n%s n", body ? body : "");
 		send_soap_request_with_cb(gc->proto_data, body,
 					  (TransCallback) process_search_contact_response, NULL);
 		g_free(body);
@@ -5103,24 +5133,25 @@ GList *sipe_blist_node_menu(PurpleBlistNode *node) {
 	}
 }
 
-static void sipe_get_info(PurpleConnection *gc, const char *username) {
+static gboolean
+process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
+{
+	gboolean ret = TRUE;
+	char *username = (char *)trans->payload;
+	
 	PurpleNotifyUserInfo *info = purple_notify_user_info_new();
 	PurpleBuddy *pbuddy;
-	struct sipe_account_data *sip;
 	struct sipe_buddy *sbuddy;
-	const char *email;
-	const char *device_name = NULL;
 	const char *alias;
-	const char *server_alias;
-
-	purple_debug_info("sipe", "Fetching %s's user info for %s\n", username,
-                    gc->account->username);
-					
-	pbuddy = purple_find_buddy(gc->account, username);
-	alias = purple_buddy_get_local_alias(pbuddy);
-	server_alias = purple_buddy_get_server_alias(pbuddy);
+	char *server_alias = NULL;
+	char *email = NULL;
+	const char *device_name = NULL;
 	
-	sip = (struct sipe_account_data *)gc->proto_data;
+	purple_debug_info("sipe", "Fetching %s's user info for %s\n", username, sip->username);
+					
+	pbuddy = purple_find_buddy((PurpleAccount *)sip->account, username);
+	alias = purple_buddy_get_local_alias(pbuddy);
+	
 	if (sip)
 	{
 		//will query buddy UA's capabilities and send answer to log
@@ -5132,37 +5163,91 @@ static void sipe_get_info(PurpleConnection *gc, const char *username) {
 			device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
 		}
 	}
+
+	if (msg->response != 200) {
+		purple_debug_info("sipe", "process_options_response: SERVICE response is %d\n", msg->response);
+	} else {
+		xmlnode *searchResults;
+		xmlnode *mrow;
+		
+		purple_debug_info("sipe", "process_options_response: body:\n%s\n", msg->body ? msg->body : "");		
+		searchResults = xmlnode_from_str(msg->body, msg->bodylen);
+		if (!searchResults) {
+			purple_debug_info("sipe", "process_get_info_response: no parseable searchResults\n");
+		} else if ((mrow = xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL))) {
+			server_alias = g_strdup(xmlnode_get_attrib(mrow, "displayName"));
+			purple_notify_user_info_add_pair(info, _("Display Name"), server_alias);
+			purple_notify_user_info_add_pair(info, _("Job Title"), g_strdup(xmlnode_get_attrib(mrow, "title")));
+			purple_notify_user_info_add_pair(info, _("Office"), g_strdup(xmlnode_get_attrib(mrow, "office")));
+			purple_notify_user_info_add_pair(info, _("Business Phone"), g_strdup(xmlnode_get_attrib(mrow, "phone")));
+			purple_notify_user_info_add_pair(info, _("Company"), g_strdup(xmlnode_get_attrib(mrow, "company")));
+			purple_notify_user_info_add_pair(info, _("City"), g_strdup(xmlnode_get_attrib(mrow, "city")));
+			purple_notify_user_info_add_pair(info, _("State"), g_strdup(xmlnode_get_attrib(mrow, "state")));
+			purple_notify_user_info_add_pair(info, _("Country"), g_strdup(xmlnode_get_attrib(mrow, "country")));
+			email = g_strdup(xmlnode_get_attrib(mrow, "email"));
+			purple_notify_user_info_add_pair(info, _("E-Mail Address"), email);
+			if (!email || strcmp("", email)) {
+				if (!purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email")) {
+					purple_blist_node_set_string((PurpleBlistNode *)pbuddy, "email", email);
+				}
+			}
+		}
+		xmlnode_free(searchResults);
+	}
 	
-	//Layout
-	if (server_alias)
-	{
-		purple_notify_user_info_add_pair(info, _("Nickname"), server_alias);
+	purple_notify_user_info_add_section_break(info);
+	
+	if (!server_alias || !strcmp("", server_alias)) {
+		g_free(server_alias);
+		server_alias = g_strdup(purple_buddy_get_server_alias(pbuddy));
+		if (server_alias) {
+			purple_notify_user_info_add_pair(info, _("Display Name"), server_alias);
+		}
 	}
 
 	// same as server alias, do not present
-	alias = alias && server_alias && !strcmp(alias, server_alias) ? NULL : alias;
+	alias = (alias && server_alias && !strcmp(alias, server_alias)) ? NULL : alias;
 	if (alias)
 	{
 		purple_notify_user_info_add_pair(info, _("Alias"), alias);
 	}	
 
-	email = purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email");	
-	if (email)
-	{
-		purple_notify_user_info_add_pair(info, _("Email"), email);
+	if (!email || !strcmp("", email)) {
+		g_free(email);
+		email = g_strdup(purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email"));	
+		if (email) {
+			purple_notify_user_info_add_pair(info, _("E-Mail Address"), email);
+		}
 	}
 	
 	if (device_name)
 	{
 		purple_notify_user_info_add_pair(info, _("Device"), device_name);
 	}  
-
+	
 	/* show a buddy's user info in a nice dialog box */
-	purple_notify_userinfo(gc,        /* connection the buddy info came through */
+	purple_notify_userinfo(sip->gc,        /* connection the buddy info came through */
 						 username,  /* buddy's username */
 						 info,      /* body */
 						 NULL,      /* callback called when dialog closed */
-						 NULL);     /* userdata for callback */
+						 NULL);     /* userdata for callback */						 
+	
+	return ret;
+}
+
+/**
+ * AD search first, LDAP based
+ */
+static void sipe_get_info(PurpleConnection *gc, const char *username)
+{
+	char *row = g_strdup_printf(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
+	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 1, row);
+	
+	purple_debug_info("sipe", "sipe_get_contact_data: body:\n%s\n", body ? body : "");
+	send_soap_request_with_cb((struct sipe_account_data *)gc->proto_data, body,
+					  (TransCallback) process_get_info_response, (gpointer)g_strdup(username));
+	g_free(body);
+	g_free(row);
 }
 
 static PurplePlugin *my_protocol = NULL;
