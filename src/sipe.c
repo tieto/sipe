@@ -1524,39 +1524,39 @@ static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 	gchar *request;
 	gchar *content;
 	gchar *resources_uri = g_strdup("");
-        gchar *require =  g_strdup("adhoclist");
-        gchar *content_type = g_strdup("application/adrl+xml"); 
-        gchar *accept = g_strdup(" application/rlmi+xml, text/xml+msrtc.pidf, multipart/related"); 
+	gchar *require = "";
+	gchar *accept = ""; 
+	gchar *content_type;
 
 	g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
 
-        content =  g_strdup_printf(
-				  "<adhoclist xmlns=\"urn:ietf:params:xml:ns:adrl\" uri=\"sip:%s\" name=\"sip:%s\">\n"
-                                  "<create xmlns=\"\">\n%s</create>\n"
-                                  "</adhoclist>\n", sip->username,  sip->username, resources_uri); 
-
-        if(sip->msrtc_event_categories)
-        {
-                require  = g_strdup_printf("%s, categoryList", require);
-                content_type = g_strdup("application/msrtc-adrl-categorylist+xml"); 
+    if (sip->msrtc_event_categories) {
+		require = ", categoryList";
+		accept = ", application/msrtc-event-categories+xml, application/xpidf+xml, application/pidf+xml";
+                content_type = "application/msrtc-adrl-categorylist+xml";
                 content = g_strdup_printf(
-				  "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
-				  "<action name=\"subscribe\" id=\"63792024\">\n"
-				  "<adhocList>\n%s</adhocList>\n"
-				  "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
-				  "<category name=\"note\"/>\n"
-				  "<category name=\"state\"/>\n"
-				  "</categoryList>\n"
-				  "</action>\n"
-				  "</batchSub>", sip->username, resources_uri);  
-                 accept =   g_strdup("application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related");
-
-        }
+					  "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
+					  "<action name=\"subscribe\" id=\"63792024\">\n"
+					  "<adhocList>\n%s</adhocList>\n"
+					  "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
+					  "<category name=\"note\"/>\n"
+					  "<category name=\"state\"/>\n"
+					  "</categoryList>\n"
+					  "</action>\n"
+					  "</batchSub>", sip->username, resources_uri);  
+	} else {
+		content_type = "application/adrl+xml";
+        	content = g_strdup_printf(
+					  "<adhoclist xmlns=\"urn:ietf:params:xml:ns:adrl\" uri=\"sip:%s\" name=\"sip:%s\">\n"
+					  "<create xmlns=\"\">\n%s</create>\n"
+					  "</adhoclist>\n", sip->username,  sip->username, resources_uri); 
+	}
+	g_free(resources_uri);
 
 	request = g_strdup_printf(
-				  "Require: %s\r\n"
+				  "Require: adhoclist%s\r\n"
 				  "Supported: eventlist\r\n"
-				  "Accept: %s\r\n"
+				  "Accept:  application/rlmi+xml, multipart/related, text/xml+msrtc.pidf%s\r\n"
 				  "Supported: ms-piggyback-first-notify\r\n"
 				  "Supported: com.microsoft.autoextend\r\n"
 				  "Supported: ms-benotify\r\n"
@@ -1565,8 +1565,6 @@ static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 				  "Content-Type: %s\r\n"
 				  "Contact: %s\r\n", require, accept, content_type, contact);
 	g_free(contact);
-        g_free(require);
-        g_free(accept);
 
 	/* subscribe to buddy presence */
 	//send_sip_request(sip->gc, "SUBSCRIBE", resource_uri,  resource_uri, request, content, NULL, process_subscribe_response);
@@ -1574,7 +1572,6 @@ static void sipe_subscribe_to_buddies_batched(struct sipe_account_data *sip){
 
 	g_free(content);
 	g_free(to);
-	g_free(resources_uri);
 	g_free(request);
 }
 
