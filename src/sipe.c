@@ -141,7 +141,7 @@ static void sipe_close(PurpleConnection *gc);
 
 static void sipe_subscribe_presence_single(struct sipe_account_data *sip, const char * buddy_name);
 static void sipe_subscribe_presence_batched(struct sipe_account_data *sip);
-static void send_presence_info(struct sipe_account_data *sip);
+static void send_presence_status(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
 
@@ -1633,7 +1633,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 		if (sip) {
 			g_free(sip->status);
 			sip->status = g_strdup(purple_status_get_id(status));
-			send_presence_info(sip);
+			send_presence_status(sip);
 		}
 	}
 }
@@ -3725,17 +3725,7 @@ static gchar* gen_pidf(struct sipe_account_data *sip)
 }
 */
 
-static gboolean
-process_send_presence_info_v0_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
-{
-	if (msg->response == 488) {
-		sip->presence_method_version = 1;
-		send_presence_info(sip);
-	}
-	return TRUE;
-}
-
-static void send_presence_info_v0(struct sipe_account_data *sip, const char * note)
+static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 {
 	int availability = 300; // online
 	int activity = 400;  // Available
@@ -3761,7 +3751,7 @@ static void send_presence_info_v0(struct sipe_account_data *sip, const char * no
 	name = g_strdup_printf("sip: sip:%s", sip->username);
 	//@TODO: send user data - state; add hostname in upper case
 	body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, availability, activity, note ? note : "");
-	send_soap_request_with_cb(sip, body, process_send_presence_info_v0_response, NULL);
+	send_soap_request_with_cb(sip, body, NULL , NULL);
 	g_free(name);
 	g_free(body);
 }
@@ -3772,13 +3762,13 @@ process_clear_presence_response(struct sipe_account_data *sip, struct sipmsg *ms
 	// Version(s) of presence info were out of date; tell the server to clear them, then we'll try again
 	if (msg->response == 200) {
 		sip->status_version = 0;
-		send_presence_info(sip);
+		send_presence_status(sip);
 	}
 	return TRUE;
 }
 
 static gboolean
-process_send_presence_info_v1_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
+process_send_presence_category_publish_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	if (msg->response == 409) {
 		// Version(s) of presence info were out of date; tell the server to clear them, then we'll try again
@@ -3788,7 +3778,7 @@ process_send_presence_info_v1_response(struct sipe_account_data *sip, struct sip
 		gchar *tmp;
 		gchar *hdr;
 
-		purple_debug_info("sipe", "process_send_presence_info_v1_response = %s\n", msg->body);
+		purple_debug_info("sipe", "process_send_presence_category_publish_response = %s\n", msg->body);
 
 		tmp = get_contact(sip);
 		hdr = g_strdup_printf("Contact: %s\r\n"
@@ -3804,7 +3794,7 @@ process_send_presence_info_v1_response(struct sipe_account_data *sip, struct sip
 	return TRUE;
 }
 
-static void send_presence_info_v1(struct sipe_account_data *sip, const char * note)
+static void send_presence_category_publish(struct sipe_account_data *sip, const char * note)
 {
 	int code;
 	gchar *uri;
@@ -3834,7 +3824,7 @@ static void send_presence_info_v1(struct sipe_account_data *sip, const char * no
 	hdr = g_strdup_printf("Contact: %s\r\n"
 		"Content-Type: application/msrtc-category-publish+xml\r\n", tmp);
 
-	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_send_presence_info_v1_response);
+	send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_send_presence_category_publish_response);
 
 	g_free(tmp);
 	g_free(hdr);
@@ -3842,7 +3832,7 @@ static void send_presence_info_v1(struct sipe_account_data *sip, const char * no
 	g_free(doc);
 }
 
-static void send_presence_info(struct sipe_account_data *sip)
+static void send_presence_status(struct sipe_account_data *sip)
 {
 	PurpleStatus * status = purple_account_get_active_status(sip->account);
 	const gchar *note;
@@ -3850,11 +3840,10 @@ static void send_presence_info(struct sipe_account_data *sip)
 
 	note = purple_status_get_attr_string(status, "message");
 
-	purple_debug_info("sipe", "sending presence info, version = %d\n", sip->presence_method_version);
-	if (sip->presence_method_version != 1) {
-		send_presence_info_v0(sip, note);
+        if(sip->msrtc_event_categories){
+		send_presence_category_publish(sip, note);
 	} else {
-		send_presence_info_v1(sip, note);
+		send_presence_soap(sip, note);
 	}
 }
 
