@@ -1034,16 +1034,18 @@ static char *get_contact_register(struct sipe_account_data  *sip)
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
 {
+	char *expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
 	char *uri = g_strdup_printf("sip:%s", sip->sipdomain);
 	char *to = g_strdup_printf("sip:%s", sip->username);
 	char *contact = get_contact_register(sip);
-        char *hdr = g_strdup_printf("Contact: %s\r\n"
+	char *hdr = g_strdup_printf("Contact: %s\r\n"
 								"Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
 								"Event: registration\r\n"
 								"Allow-Events: presence\r\n"
 								"ms-keep-alive: UAC;hop-hop=yes\r\n"
-								"Expires: %d\r\n", contact,expire);
+								"%s", contact, expires);
 	g_free(contact);
+	g_free(expires);
 
 	sip->registerstatus = 1;
 
@@ -1057,13 +1059,13 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 
 static void do_register_cb(struct sipe_account_data *sip)
 {
-	do_register_exp(sip, sip->registerexpire);
+	do_register_exp(sip, -1);
 	sip->reregister_set = FALSE;
 }
 
 static void do_register(struct sipe_account_data *sip)
 {
-	do_register_exp(sip, sip->registerexpire);
+	do_register_exp(sip, -1);
 }
 
 /**
@@ -2985,8 +2987,6 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				gchar *epid;
 				gchar *uuid;
 
-				sip->registerexpire = expires;
-
 				if (!sip->reregister_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "registration");
 					sipe_schedule_action(action_name, expires, (Action) do_register_cb, sip, NULL);
@@ -4562,7 +4562,6 @@ static void sipe_login(PurpleAccount *account)
 		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
 	sip->gc = gc;
 	sip->account = account;
-	sip->registerexpire = 900;
 	sip->reregister_set = FALSE;
 	sip->reauthenticate_set = FALSE;
 	sip->subscribed = FALSE;
