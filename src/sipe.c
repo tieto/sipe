@@ -3638,7 +3638,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		{
 			sipe_process_roaming_contacts(sip, msg, NULL);
 		}
-		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self"))
+		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self") && benotify)
 		{
 			sipe_process_roaming_self(sip, msg);
 		}
