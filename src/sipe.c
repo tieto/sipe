@@ -3243,8 +3243,6 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri");
 
-	purple_debug_info("sipe", "process_incoming_notify_rlmi\n");
-
 	for (xn_category = xmlnode_get_child(xn_categories, "category");
 		 xn_category ;
 		 xn_category = xmlnode_get_next_twin(xn_category) )
@@ -3261,8 +3259,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			if (!xn_node) continue;
 
 			note = xmlnode_get_data(xn_node);
-
-			sbuddy = g_hash_table_lookup(sip->buddies, uri);
+                        
+                        if(uri){
+			        sbuddy = g_hash_table_lookup(sip->buddies, uri);
+                        } 
 			if (sbuddy && note)
 			{
 				if (sbuddy->annotation) { g_free(sbuddy->annotation); }
@@ -3308,6 +3308,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	if (changed)
 	{
                 if(activity){
+                        purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n",activity);
 		        purple_prpl_got_user_status(sip->account, uri, activity, NULL);
                 }
 	}
