@@ -2586,7 +2586,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 }
 
 
-static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session * session, gchar * msg_body)
+static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *session, const gchar *msg_body)
 {
 	gchar *hdr;
 	gchar *to;
@@ -2688,25 +2688,23 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 {
 	struct sipe_account_data *sip;
 	gchar *to;
-	gchar *text;
 	struct sip_im_session *session;
 
 	sip = gc->proto_data;
 	to = g_strdup(who);
-	text = g_strdup(what);
 
 	purple_debug_info("sipe", "sipe_im_send what='%s'\n", what);
 
 	session = find_or_create_im_session(sip, who);
 
 	// Queue the message
-	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, text);
+	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, g_strdup(what));
 
 	if (session->dialog && session->dialog->callid) {
 		sipe_im_process_queue(sip, session);
 	} else if (!session->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sip, session, text);
+		sipe_invite(sip, session, what);
 	}
 
 	g_free(to);
@@ -2781,20 +2779,13 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 	purple_debug_info("sipe", "got message from %s: %s\n", from, msg->body);
 
 	contenttype = sipmsg_find_header(msg, "Content-Type");
-	if (!contenttype || !strncmp(contenttype, "text/plain", 10) || !strncmp(contenttype, "text/html", 9)) {
-		gchar *msgr = sipmsg_find_part_of_header(contenttype, "msgr=", NULL, NULL);
-		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
-
-		gchar *body_esc = g_markup_escape_text(msg->body, -1);
-		gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body_esc);
-		g_free(msgr);
-		g_free(body_esc);
-		g_free(x_mms_im_format);
-
-		serv_got_im(sip->gc, from, body_html, 0, time(NULL));
-		g_free(body_html);
+	if (!strncmp(contenttype, "text/plain", 10) || !strncmp(contenttype, "text/html", 9)) {
+	
+		gchar *html = get_html_message(contenttype, msg->body);		
+		serv_got_im(sip->gc, g_strdup(from), g_strdup(html), 0, time(NULL));
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
+		
 	} else if (!strncmp(contenttype, "application/im-iscomposing+xml", 30)) {
 		xmlnode *isc = xmlnode_from_str(msg->body, msg->bodylen);
 		xmlnode *state;
@@ -2867,24 +2858,15 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 
 	//ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk=
 	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
-	if (ms_text_format && !strncmp(ms_text_format, "text/plain", 10)) {
-		gchar *msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
-		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
-
-		gchar *ms_body = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
-		g_free(msgr);
-		if (ms_body) {
-			gchar *body = purple_base64_decode(ms_body, NULL);
-			gchar *body_esc = g_markup_escape_text(body, -1);
-			gchar *body_html = sipmsg_apply_x_mms_im_format(x_mms_im_format, body_esc);
-			g_free(ms_body);
-			g_free(body_esc);
-			g_free(body);
-			serv_got_im(sip->gc, from, body_html, 0, time(NULL));
-			g_free(body_html);
-			sipmsg_add_header(msg, "Supported", "ms-text-format"); // accepts message reciept
+	if (ms_text_format) {
+		if (!strncmp(ms_text_format, "text/plain", 10) || !strncmp(ms_text_format, "text/html", 9)) {
+		
+			gchar *html = get_html_message(ms_text_format, NULL);
+			if (html) {
+				serv_got_im(sip->gc, g_strdup(from), g_strdup(html), 0, time(NULL));
+				sipmsg_add_header(msg, "Supported", "ms-text-format"); // accepts message reciept				
+			}
 		}
-		g_free(x_mms_im_format);
 	}
 	g_free(from);
 
@@ -3969,7 +3951,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							g_free(resend);
 						}
 					}
-
+					
 					if (trans->callback) {
 						purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - we have a transaction callback\r\n");
 						/* call the callback to process response*/
@@ -3986,7 +3968,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 			}
 			found = TRUE;
 		} else {
-			purple_debug(PURPLE_DEBUG_MISC, "sipe", "received response to unknown transaction");
+			purple_debug(PURPLE_DEBUG_MISC, "sipe", "received response to unknown transaction\n");
 		}
 	}
 	if (!found) {

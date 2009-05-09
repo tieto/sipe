@@ -56,6 +56,18 @@ gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const ch
 gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_remove_header(struct sipmsg *msg, const gchar *name);
 char *sipmsg_to_string(const struct sipmsg *msg);
+
+/**
+ * Formats message to html if not yet.
+ * Either - keep as is if text/html, or escape text, or escape text and apply format string if any
+ *
+ * @param body in case of 'ms_text_format is Content-Type header' or NULL otherwise
+ * @param ms_text_format either ms-text-format ot Content-Type header.
+ *
+ * Allocates memory. Must be feed when done.
+ */
+gchar *get_html_message(const gchar *ms_text_format, const gchar *body);
+
 /**
  * Parses headers-like 'msgr' attribute of INVITE's 'ms_text_format' header.
  * Then retrieves value of 'X-MMS-IM-Format'.

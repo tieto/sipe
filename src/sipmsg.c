@@ -389,6 +389,45 @@ gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
 	return res;
 }
 
+//ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk=
+gchar *get_html_message(const gchar *ms_text_format, const gchar *body)
+{
+	gchar *tmp_html;
+	gchar *msgr;
+	gchar *res = body ? g_strdup(body) : sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+	if (body) {
+		res = g_strdup(body);
+	} else {
+		res = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+		if (!res) return NULL;
+		tmp_html = res;
+		res = purple_base64_decode(res, NULL);
+		g_free(tmp_html);		
+	}
+	
+	if (!res) {
+		return NULL;
+	}
+	
+	if (strncmp(ms_text_format, "text/html", 9)) { // NOT html
+		tmp_html = res;
+		res = g_markup_escape_text(res, -1); // as this is not html
+		g_free(tmp_html);			
+	}
+	
+	msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
+	if (msgr) {
+		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
+		g_free(msgr);
+		tmp_html = res;
+		res = sipmsg_apply_x_mms_im_format(x_mms_im_format, res);
+		g_free(tmp_html);
+		g_free(x_mms_im_format);
+	}
+	
+	return res;
+}
+
 
 
 
