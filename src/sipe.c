@@ -2710,7 +2710,6 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	}
 
 	g_free(to);
-	g_free(text);
 	return 1;
 }
 
