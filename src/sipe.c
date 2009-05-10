@@ -2084,6 +2084,60 @@ static void sipe_subscribe_presence_wpending(struct sipe_account_data *sip, stru
 	g_free(hdr);
 }
 
+/**
+ * Fires on deregistration event initiated by server.
+ * [MS-SIPREGE] SIP extension.
+ */
+//
+//	2007 Example
+// 
+//	Content-Type: text/registration-event
+//	subscription-state: terminated;expires=0 
+//	ms-diagnostics-public: 4141;reason="User disabled"
+//	
+//	deregistered;event=rejected
+//
+static void sipe_process_registration_notify(struct sipe_account_data *sip, struct sipmsg *msg)
+{
+	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	gchar *event = NULL;
+	const gchar *reason = NULL;
+	gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+	
+	warning = warning ? warning : sipmsg_find_header(msg, "ms-diagnostics-public");
+	purple_debug_info("sipe", "sipe_process_registration_notify: deregistration received.\n");
+	
+	if (!g_ascii_strncasecmp(contenttype, "text/registration-event", 23)) {
+		event = sipmsg_find_part_of_header(msg->body, "event=", NULL, NULL);
+		//@TODO have proper parameter extraction _by_name_ func, case insesitive.
+		event = event ? event : sipmsg_find_part_of_header(msg->body, "event=", ";", NULL);
+	} else {
+		purple_debug_info("sipe", "sipe_process_registration_notify: unknown content type, exiting.\n");
+		return;
+	}	
+	
+	if (warning != NULL) {
+		reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
+	} else { // for LCS2005
+		int error_id = 0;
+		if (event && !g_ascii_strcasecmp(event, "unregistered")) {
+			error_id = 4140; // [MS-SIPREGE]
+			reason = _("User logged out"); // [MS-OCER]
+		} else if (event && !g_ascii_strcasecmp(event, "rejected")) {
+			error_id = 4141;
+			reason = _("User disabled"); // [MS-OCER]
+		} else if (event && !g_ascii_strcasecmp(event, "deactivated")) {
+			error_id = 4142;
+			reason = _("User moved"); // [MS-OCER]
+		}
+	}
+	warning = g_strdup_printf(_("Unregistered by Server: %s."), reason ? reason : _("no reason given"));
+
+	sip->gc->wants_to_die = TRUE;
+	purple_connection_error(sip->gc, warning);
+	
+}
+
 static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	const gchar *contacts_delta;
@@ -3648,6 +3702,11 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 		purple_debug_info("sipe", "process_incoming_notify: (BE)NOTIFY says that subscription to buddy %s was terminated. \n",  from);
 		g_free(from);
+	}
+	
+	if (event && !g_ascii_strcasecmp(event, "registration-notify"))
+	{
+		sipe_process_registration_notify(sip, msg);
 	}
 
    //The client responses 'Ok' when receive a NOTIFY message (lcs2005)
