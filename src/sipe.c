@@ -2101,7 +2101,7 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 {
 	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 	gchar *event = NULL;
-	const gchar *reason = NULL;
+	gchar *reason = NULL;
 	gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
 	
 	warning = warning ? warning : sipmsg_find_header(msg, "ms-diagnostics-public");
@@ -2122,20 +2122,23 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 		int error_id = 0;
 		if (event && !g_ascii_strcasecmp(event, "unregistered")) {
 			error_id = 4140; // [MS-SIPREGE]
-			reason = _("User logged out"); // [MS-OCER]
+			reason = g_strdup(_("User logged out")); // [MS-OCER]
 		} else if (event && !g_ascii_strcasecmp(event, "rejected")) {
 			error_id = 4141;
-			reason = _("User disabled"); // [MS-OCER]
+			reason = g_strdup(_("User disabled")); // [MS-OCER]
 		} else if (event && !g_ascii_strcasecmp(event, "deactivated")) {
 			error_id = 4142;
-			reason = _("User moved"); // [MS-OCER]
+			reason = g_strdup(_("User moved")); // [MS-OCER]
 		}
 	}
+	g_free(event);
 	warning = g_strdup_printf(_("Unregistered by Server: %s."), reason ? reason : _("no reason given"));
+	g_free(reason);
 
 	sip->gc->wants_to_die = TRUE;
 	purple_connection_error(sip->gc, warning);
-	
+	g_free(warning);
+
 }
 
 static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipmsg *msg)
@@ -3184,7 +3187,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			break;
 		case 403:
 			{
-				const gchar *warning = sipmsg_find_header(msg, "Warning");
+				gchar *warning = sipmsg_find_header(msg, "Warning");
 				if (warning != NULL) {
 					/* Example header:
 					   Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
@@ -3193,43 +3196,46 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					warning = g_strdup_printf(_("You have been rejected by the server: %s"), tmp[1] ? tmp[1] : _("no reason given"));
 					g_strfreev(tmp);
 				} else {
-					warning = _("You have been rejected by the server");
+					warning = g_strdup(_("You have been rejected by the server"));
 				}
 
 				sip->gc->wants_to_die = TRUE;
 				purple_connection_error(sip->gc, warning);
+				g_free(warning);
 				return TRUE;
 			}
 			break;
 			case 404:
 			{
-				const gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+				gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
 				if (warning != NULL) {
 					gchar *reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
 					warning = g_strdup_printf(_("Not Found: %s. Please, contact with your Administrator"), reason ? reason : _("no reason given"));
 					g_free(reason);
 				} else {
-					warning = _("Not Found: Destination URI either not enabled for SIP or does not exist. Please, contact with your Administrator");
+					warning = g_strdup(_("Not Found: Destination URI either not enabled for SIP or does not exist. Please, contact with your Administrator"));
 				}
 
 				sip->gc->wants_to_die = TRUE;
 				purple_connection_error(sip->gc, warning);
+				g_free(warning);
 				return TRUE;
 			}
 			break;
                 case 503:
                         {
-				const gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+				gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
 				if (warning != NULL) {
 					gchar *reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
 					warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
 					g_free(reason);
 				} else {
-					warning = _("Service unavailable: no reason given");
+					warning = g_strdup(_("Service unavailable: no reason given"));
 				}
 
 				sip->gc->wants_to_die = TRUE;
 				purple_connection_error(sip->gc, warning);
+				g_free(warning);
 				return TRUE;
 			}
 			break;

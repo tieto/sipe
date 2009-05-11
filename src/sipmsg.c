@@ -394,7 +394,8 @@ gchar *get_html_message(const gchar *ms_text_format, const gchar *body)
 {
 	gchar *tmp_html;
 	gchar *msgr;
-	gchar *res = body ? g_strdup(body) : sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+	gchar *res;
+
 	if (body) {
 		res = g_strdup(body);
 	} else {
