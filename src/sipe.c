@@ -1304,7 +1304,7 @@ sipe_group_rename (struct sipe_account_data *sip, struct sipe_group * group, gch
 {
 	gchar *body;
 	purple_debug_info("sipe", "Renaming group %s to %s\n", group->name, name);
-	body = g_strdup_printf(SIPE_SOAP_MOD_GROUP, group->id, name, sip->contacts_delta++);
+	body = g_markup_printf_escaped(SIPE_SOAP_MOD_GROUP, group->id, name, sip->contacts_delta++);
 	send_soap_request(sip, body);
 	g_free(body);
 	g_free(group->name);
@@ -1365,7 +1365,7 @@ sipe_group_set_user (struct sipe_account_data *sip, const gchar * who)
 		gchar *groups = sipe_get_buddy_groups_string(buddy);
 		purple_debug_info("sipe", "Saving buddy %s with alias %s and groups %s\n", who, alias, groups);
 
-		body = g_strdup_printf(SIPE_SOAP_SET_CONTACT,
+		body = g_markup_printf_escaped(SIPE_SOAP_SET_CONTACT,
 			alias, groups, "true", buddy->name, sip->contacts_delta++
 		);
 		send_soap_request(sip, body);
@@ -1432,7 +1432,7 @@ static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar
 	ctx->group_name = g_strdup(name);
 	ctx->user_name = g_strdup(who);
 
-	body = g_strdup_printf(SIPE_SOAP_ADD_GROUP, name, sip->contacts_delta++);
+	body = g_markup_printf_escaped(SIPE_SOAP_ADD_GROUP, name, sip->contacts_delta++);
 	send_soap_request_with_cb(sip, body, process_add_group_response, ctx);
 	g_free(body);
 }
@@ -3840,7 +3840,7 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 
 	name = g_strdup_printf("sip: sip:%s", sip->username);
 	//@TODO: send user data - state; add hostname in upper case
-	body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE, name, availability, activity, note ? note : "");
+	body = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE, name, availability, activity, note ? note : "");
 	send_soap_request_with_cb(sip, body, NULL , NULL);
 	g_free(name);
 	g_free(body);
@@ -4913,7 +4913,7 @@ static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestField
 
 		purple_debug_info("sipe", "sipe_search_contact_with_cb: %s = '%s'\n", id, value ? value : "");
 
-		if (value != NULL) attrs[i++] = g_strdup_printf(SIPE_SOAP_SEARCH_ROW, id, value);
+		if (value != NULL) attrs[i++] = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, id, value);
 	} while ((entries = g_list_next(entries)) != NULL);
 	attrs[i] = NULL;
 
@@ -5305,7 +5305,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
  */
 static void sipe_get_info(PurpleConnection *gc, const char *username)
 {
-	char *row = g_strdup_printf(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
+	char *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
 	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 1, row);
 
 	purple_debug_info("sipe", "sipe_get_contact_data: body:\n%s\n", body ? body : "");
