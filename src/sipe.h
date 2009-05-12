@@ -54,6 +54,8 @@ struct sip_im_session {
 	struct transaction * outgoing_invite;
 
 	GSList *outgoing_message_queue;
+	/** Key is <Call-ID><CSeq><METHOD> */
+	GHashTable *unconfirmed_messages;
 };
 
 // dialog is the new term for call-leg
