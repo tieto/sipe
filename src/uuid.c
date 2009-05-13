@@ -35,8 +35,8 @@
 #define _WINSOCK2API_
 #define _LIBC_INTERNAL_
 #endif /* _DLL */
-
 #include "internal.h"
+#include <iphlpapi.h>
 #endif /* _WIN32 */
 
 #include <cipher.h>
@@ -107,11 +107,9 @@ char *generateUUIDfromEPID(const gchar *epid)
 	return g_strdup(buf);
 }
 
+#ifndef _WIN32
 long mac_addr_sys (const char *addr)
 {
-#ifdef _WIN32
-	return 0x0BB288B0;
-#else
 /* implementation for Linux */
     struct ifreq ifr;
     struct ifreq *IFR;
@@ -151,11 +149,43 @@ long mac_addr_sys (const char *addr)
         return -1;
     }
     return 0;
-#endif
 }
 
-gchar * sipe_uuid_get_macaddr()
+#else
+
+static char *get_mac_address_win(const char *ip_address)
 {
+	IP_ADAPTER_INFO AdapterInfo[16]; // for up to 16 NICs
+	DWORD ulOutBufLen = sizeof(AdapterInfo);
+    PIP_ADAPTER_INFO pAdapter = NULL;
+    DWORD dwRetVal = 0;
+    UINT i;
+	char *res = NULL;
+	
+	if ((dwRetVal = GetAdaptersInfo(AdapterInfo, &ulOutBufLen)) == NO_ERROR) {
+		pAdapter = AdapterInfo;
+		while (pAdapter) {
+			if (!g_ascii_strcasecmp(pAdapter->IpAddressList.IpAddress.String, ip_address)) {
+				gchar nmac[13];
+				for (i = 0; i < pAdapter->AddressLength; i++) {
+					g_sprintf(&nmac[(i*2)], "%02X", (int)pAdapter->Address[i]);
+				}
+				printf("NIC: %s, IP Address: %s, MAC Addres: %s\n", pAdapter->Description, pAdapter->IpAddressList.IpAddress.String, nmac);
+				res = g_strdup(nmac);
+			}
+			pAdapter = pAdapter->Next;
+		}
+	} else {
+		printf("GetAdaptersInfo failed with error: %d\n", dwRetVal);
+	}
+	//@TODO free AdapterInfo
+	return res;
+}
+#endif /* _WIN32 */
+
+gchar * sipe_uuid_get_macaddr(const char *ip_address)
+{
+#ifndef _WIN32
 	guchar addr[6];
 	long mac_add = mac_addr_sys(addr);
 	gchar nmac[13];
@@ -168,4 +198,7 @@ gchar * sipe_uuid_get_macaddr()
 		return g_strdup(nmac);
 	}
 	return g_strdup_printf("01010101");  //Default
+#else
+	return get_mac_address_win(ip_address);
+#endif /* _WIN32 */
 }

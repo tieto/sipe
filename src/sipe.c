@@ -112,7 +112,7 @@ static char *gentag()
 
 static gchar *get_epid()
 {
-	return sipe_uuid_get_macaddr();
+	return sipe_uuid_get_macaddr(purple_network_get_my_ip(-1));
 }
 
 static char *genbranch()
