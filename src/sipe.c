@@ -110,9 +110,12 @@ static char *gentag()
 	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
-static gchar *get_epid()
+static gchar *get_epid(struct sipe_account_data *sip)
 {
-	return sipe_uuid_get_macaddr(purple_network_get_my_ip(-1));
+	if (!sip->epid) {
+		sip->epid = sipe_uuid_get_macaddr(purple_network_get_my_ip(-1));
+	}
+	return g_strdup(sip->epid);
 }
 
 static char *genbranch()
@@ -928,7 +931,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 	gchar *route     = strdup("");
-	gchar *epid      = get_epid(); // TODO generate one per account/login
+	gchar *epid      = get_epid(sip); // TODO generate one per account/login
 	struct transaction *trans;
 
 	if (dialog && dialog->routes)
@@ -1041,7 +1044,7 @@ static void send_soap_request(struct sipe_account_data *sip, gchar *body)
 
 static char *get_contact_register(struct sipe_account_data  *sip)
 {
-	char *epid = get_epid();
+	char *epid = get_epid(sip);
 	char *uuid = generateUUIDfromEPID(epid);
 	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  TRANSPORT_DESCRIPTOR, uuid);
 	g_free(uuid);
@@ -3000,31 +3003,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 
 static void process_incoming_options(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	gchar *from;
 	gchar *body;
-	struct sip_im_session *session;
-
-
-	from = parse_from(sipmsg_find_header(msg, "From"));
-	session = find_or_create_im_session (sip, from);
-	if (session) {
-		if (session->dialog) {
-			purple_debug_info("sipe", "process_incoming_invite, session already has dialog!\n");
-		} else {
-			session->dialog = g_new0(struct sip_dialog, 1);
-
-			sipe_parse_dialog(msg, session->dialog, FALSE);
-
-			session->dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-			session->dialog->ourtag = find_tag(sipmsg_find_header(msg, "To"));
-			session->dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
-			session->dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
-		}
-	} else {
-		purple_debug_info("sipe", "process_incoming_options, failed to find or create IM session\n");
-	}
-
-	g_free(from);
 
 	sipmsg_remove_header(msg, "Ms-Conversation-ID");
 	sipmsg_remove_header(msg, "EndPoints");
@@ -3094,7 +3073,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
-				epid = get_epid();
+				epid = get_epid(sip);
 				uuid = generateUUIDfromEPID(epid);
 				g_free(epid);
 
@@ -4705,6 +4684,9 @@ static void sipe_login(PurpleAccount *account)
 static void sipe_connection_cleanup(struct sipe_account_data *sip)
 {
 	connection_free_all(sip);
+	
+	g_free(sip->epid);
+	sip->epid = NULL;
 
 	if (sip->query_data != NULL)
 		purple_dnsquery_destroy(sip->query_data);
