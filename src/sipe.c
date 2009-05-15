@@ -1932,10 +1932,6 @@ static void sipe_cleanup_local_blist(struct sipe_account_data *sip) {
 	}
 }
 
-static void sipe_get_AD_info(PurpleConnection *gc, const char *username, TransCallback callback);
-static gboolean
-process_get_AD_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans);
-
 static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	int len = msg->bodylen;
@@ -2021,12 +2017,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 					purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
 				}
 
-				if (!g_ascii_strcasecmp(uri, purple_buddy_get_alias(b))) { // if alias is 'bad'
-					if (name != NULL && strlen(name) != 0) { // can update it with 'name' attribute from roaming contact list 
+				if (!g_ascii_strcasecmp(uri, purple_buddy_get_alias(b))) {
+					if (name != NULL && strlen(name) != 0) {
 						purple_blist_alias_buddy(b, name);
-					} else {
-						// ask AD for Display Name if it is still 'bad'.
-						sipe_get_AD_info(sip->gc, buddy_name, (TransCallback) process_get_AD_info_response);
 					}
 				}
 
@@ -5188,63 +5181,6 @@ GList *sipe_blist_node_menu(PurpleBlistNode *node) {
 }
 
 static gboolean
-process_get_AD_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
-{
-	char *username = (char *)trans->payload;
-	PurpleBuddy *pbuddy;
-	const char *alias;
-	char *uri_alias;
-	char *display_name = NULL;
-	const char *server_alias = NULL;
-	char *email = NULL;
-
-	purple_debug_info("sipe", "Fetching %s's user info for %s\n", username, sip->username);
-
-	pbuddy = purple_find_buddy((PurpleAccount *)sip->account, username);
-	alias = purple_buddy_get_local_alias(pbuddy);
-
-	if (msg->response != 200) {
-		purple_debug_info("sipe", "process_AD_info_response: SERVICE response is %d\n", msg->response);
-	} else {
-		xmlnode *searchResults;
-		xmlnode *mrow;
-		
-		purple_debug_info("sipe", "process_AD_info_response: body:\n%s\n", msg->body ? msg->body : "");
-		searchResults = xmlnode_from_str(msg->body, msg->bodylen);
-		if (!searchResults) {
-			purple_debug_info("sipe", "process_AD_info_response: no parseable searchResults\n");
-		} else if ((mrow = xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL))) {
-			display_name = g_strdup(xmlnode_get_attrib(mrow, "displayName"));
-			
-			server_alias = purple_buddy_get_server_alias(pbuddy);
-			if (display_name &&
-				( (server_alias && strcmp(display_name, server_alias))
-					|| !server_alias || strlen(server_alias) == 0 )
-				) {
-				purple_blist_server_alias_buddy(pbuddy, display_name);
-			}
-			
-			uri_alias = g_strdup_printf("sip:%s", alias);
-			if (!g_ascii_strcasecmp(username, uri_alias)) { // 'bad' alias
-				purple_debug_info("sipe", "Replacing alias for %s with %s\n", username, display_name);
-				purple_blist_alias_buddy(pbuddy, display_name);
-			}
-			g_free(uri_alias);
-			
-			email = g_strdup(xmlnode_get_attrib(mrow, "email"));
-			if (!email || strcmp("", email)) {
-				if (!purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email")) {
-					purple_blist_node_set_string((PurpleBlistNode *)pbuddy, "email", email);
-				}
-			}
-		}
-		xmlnode_free(searchResults);
-	}
-
-	return TRUE;
-}
-
-static gboolean
 process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
 	gboolean ret = TRUE;
@@ -5276,12 +5212,12 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	}
 
 	if (msg->response != 200) {
-		purple_debug_info("sipe", "process_get_info_response: SERVICE response is %d\n", msg->response);
+		purple_debug_info("sipe", "process_options_response: SERVICE response is %d\n", msg->response);
 	} else {
 		xmlnode *searchResults;
 		xmlnode *mrow;
 
-		purple_debug_info("sipe", "process_get_info_response: body:\n%s\n", msg->body ? msg->body : "");
+		purple_debug_info("sipe", "process_options_response: body:\n%s\n", msg->body ? msg->body : "");
 		searchResults = xmlnode_from_str(msg->body, msg->bodylen);
 		if (!searchResults) {
 			purple_debug_info("sipe", "process_get_info_response: no parseable searchResults\n");
@@ -5347,22 +5283,18 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 }
 
 /**
- * AD search for particular user, LDAP based
+ * AD search first, LDAP based
  */
-static void sipe_get_AD_info(PurpleConnection *gc, const char *username, TransCallback callback)
+static void sipe_get_info(PurpleConnection *gc, const char *username)
 {
 	char *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
 	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 1, row);
 
 	purple_debug_info("sipe", "sipe_get_contact_data: body:\n%s\n", body ? body : "");
-	send_soap_request_with_cb((struct sipe_account_data *)gc->proto_data, body, callback, (gpointer)g_strdup(username));
+	send_soap_request_with_cb((struct sipe_account_data *)gc->proto_data, body,
+					  (TransCallback) process_get_info_response, (gpointer)g_strdup(username));
 	g_free(body);
 	g_free(row);
-}
-
-static void sipe_get_info(PurpleConnection *gc, const char *username)
-{
-	sipe_get_AD_info(gc, username, (TransCallback) process_get_info_response);
 }
 
 static PurplePlugin *my_protocol = NULL;
