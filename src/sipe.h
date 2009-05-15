@@ -147,7 +147,7 @@ struct sipe_account_data {
 	gchar *status;
 	int status_version;
 	gchar *contact;
-    gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
+        gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
 	GHashTable *buddies;
 	guint resendtimeout;
 	guint keepalive_timeout;

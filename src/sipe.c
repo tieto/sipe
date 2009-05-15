@@ -2184,6 +2184,47 @@ static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipms
 }
 
 /**
+  *   To parse the answer for the subscribed roaming-self [MS-PRES]
+  *
+  */
+
+static void sipe_process_roaming_self_subscribe(struct sipe_account_data *sip,struct sipmsg *msg)
+{
+	xmlnode *xml;
+	xmlnode *node;
+        char *display_name = NULL;
+        PurpleBuddy *pbuddy;
+        const char *alias;
+        char *uri_alias;
+        char *uri_user;
+    
+	purple_debug_info("sipe", "sipe_process_roaming_self_subscribe \n");
+
+	xml = xmlnode_from_str(msg->body, msg->bodylen);
+	if (!xml) return;
+
+	for (node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL); node; node = xmlnode_get_next_twin(node)) {
+		const char *user;
+
+		user = xmlnode_get_attrib(node, "user");
+		if (!user) continue;
+                 uri_user = g_strdup_printf("sip:%s", user); 
+                 pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri_user);
+                  if(pbuddy){
+                        alias = purple_buddy_get_local_alias(pbuddy);
+                        uri_alias = g_strdup_printf("sip:%s", alias);
+                        display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
+                        if (display_name && !g_ascii_strcasecmp(uri_user, uri_alias)) { // 'bad' alias
+                                purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri_user, display_name);
+                                purple_blist_alias_buddy(pbuddy, display_name);
+                        }
+                  }
+	}
+    
+	xmlnode_free(xml);
+}
+
+/**
   *   When we receive some self (BE) NOTIFY with a new subscriber
   *   we sends a setSubscribers request to him [SIP-PRES]
   *
@@ -2292,7 +2333,7 @@ static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sip
    *   TODO: for what we need this information.
    */
 
-static void sipe_subscribe_roaming_provisioning(struct sipe_account_data *sip,struct sipmsg *msg)
+static void sipe_subscribe_roaming_provisioning_v2(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
@@ -3033,9 +3074,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 	gchar *tmp;
 	//gchar krb5_token;
 	const gchar *expires_header;
-	int expires;
-    GSList *hdr = msg->headers;
-    struct siphdrelement *elem;
+	int expires, i;
+        GSList *hdr = msg->headers;
+        GSList *entry; 
+        struct siphdrelement *elem;
 
 	expires_header = sipmsg_find_header(msg, "Expires");
 	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
@@ -3046,7 +3088,6 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			if (expires == 0) {
 				sip->registerstatus = 0;
 			} else {
-				int i = 0;
 				gchar *contact_hdr = NULL;
 				gchar *gruu = NULL;
 				gchar *epid;
@@ -3112,19 +3153,42 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                                                 }
                                          purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s, %d\n", elem->value, sip->msrtc_event_categories);
                                         }
+                                        if(!g_ascii_strcasecmp(elem->name, "Allow-Events")){
+                                            gchar **caps = g_strsplit(elem->value,",",0);
+                                            i = 0;
+                                            while (caps[i]) {
+                                                sip->allow_events =  g_slist_append(sip->allow_events, caps[i]);
+                                                purple_debug(PURPLE_DEBUG_MISC, "sipe", "Allow-Events: %s\n", caps[i]);
+                                                i++;
+                                            }
+                                        }
                                         hdr = g_slist_next(hdr);
                                 }
 
 				if (!sip->subscribed) { //do it just once, not every re-register
-					tmp = sipmsg_find_header(msg, "Allow-Events");
-					sipe_options_request(sip, sip->sipdomain);
-					if (tmp && strstr(tmp, "vnd-microsoft-provisioning")){
-						sipe_subscribe_roaming_contacts(sip, msg);
-					}
-					sipe_subscribe_roaming_acl(sip, msg);
-					sipe_subscribe_roaming_self(sip, msg);
-					sipe_subscribe_roaming_provisioning(sip, msg);
-					sipe_subscribe_presence_wpending(sip, msg);
+					if(!sip->msrtc_event_categories){ //Only for LCS2005, on OCS2007 always backs the error 504 Server time-out
+                                                sipe_options_request(sip, sip->sipdomain);
+                                        }
+                                        entry = sip->allow_events; 
+                                        while (entry) {
+                                            tmp = entry->data;
+					    if (tmp && !g_ascii_strcasecmp(tmp, "vnd-microsoft-roaming-contacts")){
+                                                sipe_subscribe_roaming_contacts(sip, msg);
+                                            }
+                                             if(tmp && !g_ascii_strcasecmp(tmp,"vnd-microsoft-roaming-ACL")){
+					        sipe_subscribe_roaming_acl(sip, msg);
+                                             }
+                                             if(tmp && !g_ascii_strcasecmp(tmp,"vnd-microsoft-roaming-self")){
+                                                sipe_subscribe_roaming_self(sip, msg);
+                                             }
+                                              if(tmp && !g_ascii_strcasecmp(tmp,"vnd-microsoft-provisioning-v2")){
+					        sipe_subscribe_roaming_provisioning_v2(sip, msg);
+                                              } 
+                                              if(tmp && !g_ascii_strcasecmp(tmp,"presence.wpending")){
+                                                sipe_subscribe_presence_wpending(sip, msg);
+                                              }
+                                          entry = entry->next;
+                                        }
 					sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
 					sip->subscribed = TRUE;
 				}
@@ -3702,6 +3766,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self") && benotify)
 		{
 			sipe_process_roaming_self(sip, msg);
+		}
+                else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self") && !benotify && !request)
+		{
+			sipe_process_roaming_self_subscribe(sip, msg);
 		}
 		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-provisioning-v2"))
 		{
