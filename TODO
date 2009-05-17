@@ -1,9 +1,6 @@
 
-Receive messages
- - Implement the INVITE method 
-
-Correct status
- - The others person always see me as "Not disponible" 
-
-Notification when somebody added to me
- - When somebody added to me, I could receive a notification. Right now, just added and I see them.
+- Group Chat support
+- To send files
+- Kerberos Auth support
+- To fix the client sends (sometimes) duplicates messsages on LCS2007.
+- The "notes" gets  the correct version since the first request. LCS2007
