@@ -2,9 +2,10 @@
  * @file sipe.c
  *
  * pidgin-sipe
- *
+ * 
+ * Copyright (C) 2009 Anibal Avelar <debianmx@gmail.com>
  * Copyright (C) 2008 Novell, Inc., Anibal Avelar <debianmx@gmail.com>
- * Copyright (C) 2007 Anibal Avelar <avelar@gmail.com>
+ * Copyright (C) 2007 Anibal Avelar <debianmx@gmail.com>
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
  * ***
@@ -192,7 +193,7 @@ static void sipe_keep_alive(PurpleConnection *gc)
 		    && ((now - gc->last_received) >= sip->keepalive_timeout)
 #endif
 		    ) {
-			purple_debug_info("sipe", "sending keep alive\n");
+			purple_debug_info("sipe", "sending keep alive %d\n",sip->keepalive_timeout);
 			sendout_pkt(gc, "\r\n\r\n");
 			sip->last_keepalive = now;
 		}
@@ -1531,6 +1532,13 @@ static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar 
 	g_free(tmp);
 }
 
+static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer value, gchar **resources_uri)
+{
+	gchar *tmp = *resources_uri;
+        *resources_uri = g_strdup_printf("%s<resource uri=\"%s\"><context/></resource>\n", tmp, name);
+	g_free(tmp);
+}
+
 /**
    *   Support for Batch Category SUBSCRIBE [MS-PRES] - msrtc-event-categories+xml  OCS 2007
    *   Support for Batch Category SUBSCRIBE [MS-SIP] - adrl+xml LCS 2005
@@ -1547,11 +1555,12 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip){
 	gchar *resources_uri = g_strdup("");
 	gchar *require = "";
 	gchar *accept = "";
+        gchar *autoextend = "";
 	gchar *content_type;
 
-	g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
-
+	
     if (sip->msrtc_event_categories) {
+                g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
 		require = ", categoryList";
 		accept = ", application/msrtc-event-categories+xml, application/xpidf+xml, application/pidf+xml";
                 content_type = "application/msrtc-adrl-categorylist+xml";
@@ -1566,6 +1575,8 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip){
 					  "</action>\n"
 					  "</batchSub>", sip->username, resources_uri);
 	} else {
+                g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
+                autoextend =  "Supported: com.microsoft.autoextend\r\n";
 		content_type = "application/adrl+xml";
         	content = g_strdup_printf(
 					  "<adhoclist xmlns=\"urn:ietf:params:xml:ns:adrl\" uri=\"sip:%s\" name=\"sip:%s\">\n"
@@ -1579,12 +1590,11 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip){
 				  "Supported: eventlist\r\n"
 				  "Accept:  application/rlmi+xml, multipart/related, text/xml+msrtc.pidf%s\r\n"
 				  "Supported: ms-piggyback-first-notify\r\n"
-				  "Supported: com.microsoft.autoextend\r\n"
-				  "Supported: ms-benotify\r\n"
+				  "%sSupported: ms-benotify\r\n"
 				  "Proxy-Require: ms-benotify\r\n"
 				  "Event: presence\r\n"
 				  "Content-Type: %s\r\n"
-				  "Contact: %s\r\n", require, accept, content_type, contact);
+				  "Contact: %s\r\n", require, accept, autoextend, content_type, contact);
 	g_free(contact);
 
 	/* subscribe to buddy presence */
@@ -2183,50 +2193,11 @@ static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipms
 	xmlnode_free(xml);
 }
 
-/**
-  *   To parse the answer for the subscribed roaming-self [MS-PRES]
-  *
-  */
 
-static void sipe_process_roaming_self_subscribe(struct sipe_account_data *sip,struct sipmsg *msg)
-{
-	xmlnode *xml;
-	xmlnode *node;
-        char *display_name = NULL;
-        PurpleBuddy *pbuddy;
-        const char *alias;
-        char *uri_alias;
-        char *uri_user;
-    
-	purple_debug_info("sipe", "sipe_process_roaming_self_subscribe \n");
-
-	xml = xmlnode_from_str(msg->body, msg->bodylen);
-	if (!xml) return;
-
-	for (node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL); node; node = xmlnode_get_next_twin(node)) {
-		const char *user;
-
-		user = xmlnode_get_attrib(node, "user");
-		if (!user) continue;
-                 uri_user = g_strdup_printf("sip:%s", user); 
-                 pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri_user);
-                  if(pbuddy){
-                        alias = purple_buddy_get_local_alias(pbuddy);
-                        uri_alias = g_strdup_printf("sip:%s", alias);
-                        display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
-                        if (display_name && !g_ascii_strcasecmp(uri_user, uri_alias)) { // 'bad' alias
-                                purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri_user, display_name);
-                                purple_blist_alias_buddy(pbuddy, display_name);
-                        }
-                  }
-	}
-    
-	xmlnode_free(xml);
-}
 
 /**
   *   When we receive some self (BE) NOTIFY with a new subscriber
-  *   we sends a setSubscribers request to him [SIP-PRES]
+  *   we sends a setSubscribers request to him [SIP-PRES] 4.8
   *
   */
 
@@ -2236,6 +2207,11 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 	gchar *to;
 	xmlnode *xml;
 	xmlnode *node;
+        char *display_name = NULL;
+        PurpleBuddy *pbuddy;
+        const char *alias;
+        char *uri_alias;
+        char *uri_user;
 
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 
@@ -2247,26 +2223,41 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 
 	for (node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL); node; node = xmlnode_get_next_twin(node)) {
 		const char *user;
+                const char *acknowledged;
 		gchar *hdr;
 		gchar *body;
 
 		user = xmlnode_get_attrib(node, "user");
 		if (!user) continue;
+                 purple_debug_info("sipe", "sipe_process_roaming_self: user %s\n", user);
+                 uri_user = g_strdup_printf("sip:%s", user); 
+                 pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri_user);
+                  if(pbuddy){
+                        alias = purple_buddy_get_local_alias(pbuddy);
+                        uri_alias = g_strdup_printf("sip:%s", alias);
+                        display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
+                        if (display_name && !g_ascii_strcasecmp(uri_user, uri_alias)) { // 'bad' alias
+                                purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri_user, display_name);
+                                purple_blist_alias_buddy(pbuddy, display_name);
+                        }
+                 }
 
-		purple_debug_info("sipe", "sipe_process_roaming_self: user %s\n", user);
-
-		hdr = g_strdup_printf(
+	        acknowledged= xmlnode_get_attrib(node, "acknowledged");
+		if(!g_ascii_strcasecmp(acknowledged,"false")){
+                        purple_debug_info("sipe", "sipe_process_roaming_self: user added you %s\n", user);
+		        hdr = g_strdup_printf(
 				      "Contact: %s\r\n"
 				      "Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", contact);
 
-		body = g_strdup_printf(
+		        body = g_strdup_printf(
 				       "<setSubscribers xmlns=\"http://schemas.microsoft.com/2006/09/sip/presence-subscribers\">"
 				       "<subscriber user=\"%s\" acknowledged=\"true\"/>"
 				       "</setSubscribers>", user);
 
-		send_sip_request(sip->gc, "SERVICE", to, to, hdr, body, NULL, NULL);
-		g_free(body);
-		g_free(hdr);
+		        send_sip_request(sip->gc, "SERVICE", to, to, hdr, body, NULL, NULL);
+		        g_free(body);
+		        g_free(hdr);
+                }
 	}
 
 	g_free(to);
@@ -2306,7 +2297,6 @@ static void sipe_subscribe_roaming_self(struct sipe_account_data *sip,struct sip
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-roaming-self\r\n"
 		"Accept: application/vnd-microsoft-roaming-self+xml\r\n"
-		"Supported: com.microsoft.autoextend\r\n"
 		"Supported: ms-benotify\r\n"
 		"Proxy-Require: ms-benotify\r\n"
 		"Supported: ms-piggyback-first-notify\r\n"
@@ -3392,11 +3382,12 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
                         } 
 			if (sbuddy && note)
 			{
+                                purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s),note(%s)\n",uri,note);
 				if (sbuddy->annotation) { g_free(sbuddy->annotation); }
 				sbuddy->annotation = g_strdup(note);
-			}
-
-			g_free(note);
+                        }
+                        if(note)
+			   g_free(note);
 		}
 		else if(!strcmp(attrVar, "state"))
 		{
@@ -3790,13 +3781,9 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		{
 			sipe_process_roaming_contacts(sip, msg, NULL);
 		}
-		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self") && benotify)
+		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self") )
 		{
 			sipe_process_roaming_self(sip, msg);
-		}
-		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self") && !benotify && !request)
-		{
-			sipe_process_roaming_self_subscribe(sip, msg);
 		}
 		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL"))
 		{
