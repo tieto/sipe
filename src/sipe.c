@@ -2223,24 +2223,26 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 
 	for (node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL); node; node = xmlnode_get_next_twin(node)) {
 		const char *user;
-                const char *acknowledged;
+		const char *acknowledged;
 		gchar *hdr;
 		gchar *body;
 
 		user = xmlnode_get_attrib(node, "user");
 		if (!user) continue;
-                 purple_debug_info("sipe", "sipe_process_roaming_self: user %s\n", user);
-                 uri_user = g_strdup_printf("sip:%s", user); 
-                 pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri_user);
-                  if(pbuddy){
-                        alias = purple_buddy_get_local_alias(pbuddy);
-                        uri_alias = g_strdup_printf("sip:%s", alias);
-                        display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
-                        if (display_name && !g_ascii_strcasecmp(uri_user, uri_alias)) { // 'bad' alias
-                                purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri_user, display_name);
-                                purple_blist_alias_buddy(pbuddy, display_name);
-                        }
-                 }
+		purple_debug_info("sipe", "sipe_process_roaming_self: user %s\n", user);
+		uri_user = g_strdup_printf("sip:%s", user); 
+		pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri_user);
+		if(pbuddy){
+			alias = purple_buddy_get_local_alias(pbuddy);
+			uri_alias = g_strdup_printf("sip:%s", alias);
+			display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
+			if (display_name && !g_ascii_strcasecmp(uri_user, uri_alias)) { // 'bad' alias
+				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri_user, display_name);
+				purple_blist_alias_buddy(pbuddy, display_name);
+			}
+			g_free(uri_alias);
+		}
+		g_free(uri_user);
 
 	        acknowledged= xmlnode_get_attrib(node, "acknowledged");
 		if(!g_ascii_strcasecmp(acknowledged,"false")){
@@ -2664,14 +2666,18 @@ sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outg
 	gchar *us = outgoing ? "From" : "To";
 	gchar *them = outgoing ? "To" : "From";
 
+	g_free(dialog->callid);
+	g_free(dialog->ourtag);
+	g_free(dialog->theirtag);
+
 	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
 	dialog->ourtag = find_tag(sipmsg_find_header(msg, us));
 	dialog->theirtag = find_tag(sipmsg_find_header(msg, them));
 	if (!dialog->theirepid) {
 		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, them), "epid=", ";", NULL);
-	}
-	if (!dialog->theirepid) {
-		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, them), "epid=", NULL, NULL);
+		if (!dialog->theirepid) {
+			dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, them), "epid=", NULL, NULL);
+		}
 	}
 
 	sipe_get_route_header(msg, dialog, outgoing);
@@ -2942,9 +2948,10 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 	contenttype = sipmsg_find_header(msg, "Content-Type");
 	if (!strncmp(contenttype, "text/plain", 10) || !strncmp(contenttype, "text/html", 9)) {
-	
+
 		gchar *html = get_html_message(contenttype, msg->body);		
-		serv_got_im(sip->gc, g_strdup(from), g_strdup(html), 0, time(NULL));
+		serv_got_im(sip->gc, from, html, 0, time(NULL));
+		g_free(html);
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
 		
@@ -3025,8 +3032,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		
 			gchar *html = get_html_message(ms_text_format, NULL);
 			if (html) {
-				serv_got_im(sip->gc, g_strdup(from), g_strdup(html), 0, time(NULL));
-				sipmsg_add_header(msg, "Supported", "ms-text-format"); // accepts message reciept				
+				serv_got_im(sip->gc, from, html, 0, time(NULL));
+				g_free(html);
+				sipmsg_add_header(msg, "Supported", "ms-text-format"); // accepts message received
 			}
 		}
 	}
@@ -3159,21 +3167,21 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                                 while(hdr)
                                 {
                                         elem = hdr->data;
-                                          if(!g_ascii_strcasecmp(elem->name, "Supported"))
-                                         {
-                                                if (strstr(elem->value, "msrtc-event-categories")){
+					if (!g_ascii_strcasecmp(elem->name, "Supported")) {
+                                                if (strstr(elem->value, "msrtc-event-categories")) {
                                                         sip->msrtc_event_categories = TRUE;
                                                 }
-                                         purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s, %d\n", elem->value, sip->msrtc_event_categories);
+						purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s, %d\n", elem->value, sip->msrtc_event_categories);
                                         }
-                                        if(!g_ascii_strcasecmp(elem->name, "Allow-Events")){
-                                            gchar **caps = g_strsplit(elem->value,",",0);
-                                            i = 0;
-                                            while (caps[i]) {
-                                                sip->allow_events =  g_slist_append(sip->allow_events, caps[i]);
-                                                purple_debug(PURPLE_DEBUG_MISC, "sipe", "Allow-Events: %s\n", caps[i]);
-                                                i++;
-                                            }
+                                        if (!g_ascii_strcasecmp(elem->name, "Allow-Events")){
+						gchar **caps = g_strsplit(elem->value,",",0);
+						i = 0;
+						while (caps[i]) {
+							sip->allow_events =  g_slist_append(sip->allow_events, g_strdup(caps[i]));
+							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Allow-Events: %s\n", caps[i]);
+							i++;
+						}
+						g_strfreev(caps);
                                         }
                                         hdr = g_slist_next(hdr);
                                 }
@@ -3751,7 +3759,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 {
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
-	gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
 	const char *uri,*state;
 	xmlnode *xn_list;
 	xmlnode *xn_resource;
@@ -3799,9 +3806,8 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		}
 	}
 
-     //The server sends a (BE)NOTIFY with the status 'terminated'
-    if(request && subscription_state && strstr(subscription_state, "terminated") )
-    {
+	//The server sends a (BE)NOTIFY with the status 'terminated'
+	if(request && subscription_state && strstr(subscription_state, "terminated") ) {
 		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 		purple_debug_info("sipe", "process_incoming_notify: (BE)NOTIFY says that subscription to buddy %s was terminated. \n",  from);
 		g_free(from);
@@ -3836,9 +3842,11 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			else if (!g_ascii_strcasecmp(event, "presence") && 
 					g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
 			{
+				gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
 				gchar *action_name = g_strdup_printf("<%s><%s>", "presence", who);
 				sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip, who);
 				g_free(action_name);
+				g_free(who);
 			}
 		}
 	}
@@ -3848,7 +3856,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		sipe_process_registration_notify(sip, msg);
 	}
 
-   //The client responses 'Ok' when receive a NOTIFY message (lcs2005)
+	//The client responses 'Ok' when receive a NOTIFY message (lcs2005)
 	if (request && !benotify)
 	{
 		sipmsg_remove_header(msg, "Expires");
@@ -4850,6 +4858,13 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	}
 	g_slist_free(sip->timeouts);
 
+	if (sip->allow_events) {
+		GSList *entry = sip->allow_events;
+		while (entry) {
+			g_free(entry->data);
+			entry = entry->next;
+		}
+	}
 	g_slist_free(sip->allow_events);
 
 	if (sip->contact)
@@ -5599,3 +5614,11 @@ gboolean purple_init_plugin(PurplePlugin *plugin){
 	return purple_plugin_register(plugin);
 }
 
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/
