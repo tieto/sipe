@@ -4742,9 +4742,9 @@ static void sipe_login(PurpleAccount *account)
 	const char *username = purple_account_get_username(account);
 	gc = purple_account_get_connection(account);
 
-	if (strpbrk(username, " \t\v\r\n") != NULL) {
+	if (strpbrk(username, "\t\v\r\n") != NULL) {
 		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("SIP Exchange usernames may not contain whitespaces"));
+		purple_connection_error(gc, _("SIP Exchange username contains invalid characters"));
 		return;
 	}
 
@@ -4764,6 +4764,12 @@ static void sipe_login(PurpleAccount *account)
 	purple_connection_set_display_name(gc, userserver[0]);
 	sip->username = g_strjoin("@", userserver[0], userserver[1], NULL);
 	sip->sipdomain = g_strdup(userserver[1]);
+
+	if (strpbrk(sip->username, " \t\v\r\n") != NULL) {
+		gc->wants_to_die = TRUE;
+		purple_connection_error(gc, _("SIP Exchange usernames may not contain whitespaces"));
+		return;
+	}
 
 	domain_user = g_strsplit(signinname_login[1], "\\", 2);
 	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
