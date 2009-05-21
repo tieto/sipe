@@ -166,9 +166,8 @@ static void send_presence_status(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
 
-static void sipe_keep_alive_timeout(struct sipe_account_data *sip, const gchar *hdr)
+static void sipe_keep_alive_timeout(struct sipe_account_data *sip, gchar *timeout)
 {
-	gchar *timeout = sipmsg_find_part_of_header(hdr, "timeout=", ";", NULL);
 	if (timeout != NULL) {
 		sscanf(timeout, "%u", &sip->keepalive_timeout);
 		purple_debug_info("sipe", "server determined keep alive timeout is %u seconds\n",
@@ -1619,15 +1618,19 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, const 
 	gchar *tmp = get_contact(sip);
 	gchar *request;
 	gchar *content;
+        gchar *autoextend = "";
+
+    if (!sip->msrtc_event_categories)
+                autoextend = "Supported: com.microsoft.autoextend\r\n";
+    
     request = g_strdup_printf(
     "Accept: application/msrtc-event-categories+xml,  text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
     "Supported: ms-piggyback-first-notify\r\n"
-    "Supported: com.microsoft.autoextend\r\n"
-    "Supported: ms-benotify\r\n"
+    "%sSupported: ms-benotify\r\n"
     "Proxy-Require: ms-benotify\r\n"
     "Event: presence\r\n"
     "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
-    "Contact: %s\r\n", tmp);
+    "Contact: %s\r\n", autoextend,tmp);
 
 	content = g_strdup_printf(
      "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
@@ -3093,7 +3096,7 @@ static void create_connection(struct sipe_account_data *, gchar *, int);
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	gchar *tmp;
-	//gchar krb5_token;
+	gchar *timeout;
 	const gchar *expires_header;
 	int expires, i;
         GSList *hdr = msg->headers;
@@ -3216,15 +3219,19 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sip->subscribed = TRUE;
 				}
 
-				if (purple_account_get_bool(sip->account, "clientkeepalive", FALSE)) {
+				/*if (purple_account_get_bool(sip->account, "clientkeepalive", FALSE)) {
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "Setting user defined keepalive\n");
 					sip->keepalive_timeout = purple_account_get_int(sip->account, "keepalive", 0);
-				} else {
+				} else {*/
 				tmp = sipmsg_find_header(msg, "ms-keep-alive");
-				if (tmp) {
-					sipe_keep_alive_timeout(sip, tmp);
-					}
+                                timeout = sipmsg_find_part_of_header(tmp, "timeout=", ";", NULL);
+				if (timeout) {
+					sipe_keep_alive_timeout(sip, timeout);
 				}
+                                 else{
+                                        sipe_keep_alive_timeout(sip, g_strdup("300"));
+                                 }
+				/*}*/
 
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
@@ -3580,7 +3587,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	const char *availability;
 	const char *activity;
 	const char *display_name = NULL;
-	const char *activity_name;
+	const char *activity_name = NULL;
 	const char *name;
 	char *uri;
 	int avl;
@@ -3595,6 +3602,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
 	const char *email = xn_email ? xmlnode_get_attrib(xn_email, "email") : NULL;
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
+        xmlnode *xn_state = xn_userinfo ? xmlnode_get_descendant(xn_userinfo, "states", "state",  NULL):NULL;
+        const char *avail = xn_state ? xmlnode_get_attrib(xn_state, "avail") : NULL;    
+    
 	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 	xmlnode *xn_devices = xmlnode_get_child(xn_presentity, "devices");
@@ -3646,23 +3656,55 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	avl = atoi(availability);
 	act = atoi(activity);
 
-	if (act <= 100)
-		activity_name = SIPE_STATUS_ID_AWAY;
-	else if (act <= 150)
-		activity_name = SIPE_STATUS_ID_LUNCH;
-	else if (act <= 300)
-		activity_name = SIPE_STATUS_ID_BRB;
-	else if (act <= 400)
-		activity_name = SIPE_STATUS_ID_AVAILABLE;
-	else if (act <= 500)
-		activity_name = SIPE_STATUS_ID_ONPHONE;
-	else if (act <= 600)
-		activity_name = SIPE_STATUS_ID_BUSY;
-	else
-		activity_name = SIPE_STATUS_ID_AVAILABLE;
+        if(sip->msrtc_event_categories){
+             if (act == 100 && avl == 0)
+		        activity_name = SIPE_STATUS_ID_OFFLINE;
+	        else if (act == 100 && avl == 300)
+		        activity_name = SIPE_STATUS_ID_AWAY;
+	        else if (act == 300 && avl == 300)
+		        activity_name = SIPE_STATUS_ID_BRB;
+	        else if (act == 400 && avl == 300)
+		        activity_name = SIPE_STATUS_ID_AVAILABLE;
+	        else if (act == 500 && act == 300)
+		        activity_name = SIPE_STATUS_ID_ONPHONE;
+	        else if (act == 600 && avl == 300)
+		        activity_name = SIPE_STATUS_ID_BUSY;
+                else if (act == 0 && avl == 0){ //MSRTC elements are zero
+                    if(avail){  //Check for LegacyInterop elements
+                        avl = atoi(avail); 
+                        if(avl == 18500)
+                                activity_name = SIPE_STATUS_ID_OFFLINE;
+                        else if (avl == 3500)
+                                activity_name = SIPE_STATUS_ID_AVAILABLE;
+                        else if (avl == 15500)
+                                activity_name = SIPE_STATUS_ID_AWAY;
+                        else if (avl == 6500)
+                                activity_name = SIPE_STATUS_ID_BUSY;
+                        else if (avl == 12500)
+                                activity_name = SIPE_STATUS_ID_BRB;
+                    }
+                }
+        }
 
-	if (avl == 0)
-		activity_name = SIPE_STATUS_ID_OFFLINE;
+         if(activity_name == NULL){
+	        if (act <= 100)
+		        activity_name = SIPE_STATUS_ID_AWAY;
+	        else if (act <= 150)
+		        activity_name = SIPE_STATUS_ID_LUNCH;
+	        else if (act <= 300)
+		        activity_name = SIPE_STATUS_ID_BRB;
+	        else if (act <= 400)
+		        activity_name = SIPE_STATUS_ID_AVAILABLE;
+	        else if (act <= 500)
+		        activity_name = SIPE_STATUS_ID_ONPHONE;
+	        else if (act <= 600)
+		        activity_name = SIPE_STATUS_ID_BUSY;
+	        else
+		        activity_name = SIPE_STATUS_ID_AVAILABLE;
+
+	        if (avl == 0)
+		        activity_name = SIPE_STATUS_ID_OFFLINE;
+        }
 
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
@@ -3817,22 +3859,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		// For LSC 2005
 		if (event && !sip->msrtc_event_categories)
 		{
-			/*if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts") && 
-				g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-contacts", (GCompareFunc)g_ascii_strcasecmp))
-			{
-				gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-contacts");
-				sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_roaming_contacts, sip, msg);
-				g_free(action_name);
-			}
-			else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL") && 
-					g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL", (GCompareFunc)g_ascii_strcasecmp))
-			{
-				gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-ACL");
-				sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_roaming_acl, sip, msg);
-				g_free(action_name);
-			}
-			
-			else */if (!g_ascii_strcasecmp(event, "presence.wpending") && 
+		if (!g_ascii_strcasecmp(event, "presence.wpending") && 
 					g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
 			{
 				gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
@@ -5605,10 +5632,10 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	*/
 
-	option = purple_account_option_bool_new(_("Use Client-specified Keepalive"), "clientkeepalive", FALSE);
+	/*option = purple_account_option_bool_new(_("Use Client-specified Keepalive"), "clientkeepalive", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	option = purple_account_option_int_new(_("Keepalive Timeout"), "keepalive", 300);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 	my_protocol = plugin;
 }
 
