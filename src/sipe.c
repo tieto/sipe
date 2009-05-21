@@ -3448,17 +3448,17 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
         for (xn_resource = xmlnode_get_child(xn_list, "resource");
 		 xn_resource;
 		 xn_resource = xmlnode_get_next_twin(xn_resource) )
-	{
-                xn_instance = xmlnode_get_child(xn_resource, "instance");
+		{
+                uri = xmlnode_get_attrib(xn_resource, "uri");
+				xn_instance = xmlnode_get_child(xn_resource, "instance");
                 if (!xn_instance) return;
 
                 state = xmlnode_get_attrib(xn_instance, "state");
-                uri = xmlnode_get_attrib(xn_instance, "cid");
                 purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: uri(%s),state(%s)\n",uri,state);
                 if(strstr(state,"resubscribe")){
                         sipe_subscribe_presence_single(sip, uri);
                 }
-      }
+		}
 }
 
 static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gchar *data, unsigned len)
@@ -3759,11 +3759,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 {
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
-	const char *uri,*state;
-	xmlnode *xn_list;
-	xmlnode *xn_resource;
-	xmlnode *xn_instance;
-
 	int timeout = 0;
 
 	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
