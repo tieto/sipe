@@ -166,14 +166,15 @@ static void send_presence_status(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
 
-static void sipe_keep_alive_timeout(struct sipe_account_data *sip, gchar *timeout)
+static void sipe_keep_alive_timeout(struct sipe_account_data *sip, const char *timeout)
 {
 	if (timeout != NULL) {
 		sscanf(timeout, "%u", &sip->keepalive_timeout);
 		purple_debug_info("sipe", "server determined keep alive timeout is %u seconds\n",
 				  sip->keepalive_timeout);
+	} else {
+		sip->keepalive_timeout = 300;
 	}
-	g_free(timeout);
 }
 
 static void sipe_keep_alive(PurpleConnection *gc)
@@ -3096,7 +3097,6 @@ static void create_connection(struct sipe_account_data *, gchar *, int);
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 	gchar *tmp;
-	gchar *timeout;
 	const gchar *expires_header;
 	int expires, i;
         GSList *hdr = msg->headers;
@@ -3116,6 +3116,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				gchar *gruu = NULL;
 				gchar *epid;
 				gchar *uuid;
+				gchar *timeout;
 
 				if (!sip->reregister_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "registration");
@@ -3219,19 +3220,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sip->subscribed = TRUE;
 				}
 
-				/*if (purple_account_get_bool(sip->account, "clientkeepalive", FALSE)) {
-					purple_debug(PURPLE_DEBUG_MISC, "sipe", "Setting user defined keepalive\n");
-					sip->keepalive_timeout = purple_account_get_int(sip->account, "keepalive", 0);
-				} else {*/
-				tmp = sipmsg_find_header(msg, "ms-keep-alive");
-                                timeout = sipmsg_find_part_of_header(tmp, "timeout=", ";", NULL);
-				if (timeout) {
-					sipe_keep_alive_timeout(sip, timeout);
-				}
-                                 else{
-                                        sipe_keep_alive_timeout(sip, g_strdup("300"));
-                                 }
-				/*}*/
+				timeout = sipmsg_find_part_of_header(sipmsg_find_header(msg, "ms-keep-alive"),
+								     "timeout=", ";", NULL);
+				sipe_keep_alive_timeout(sip, timeout);
+				g_free(timeout);
 
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
@@ -5627,10 +5619,6 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	*/
 
-	/*option = purple_account_option_bool_new(_("Use Client-specified Keepalive"), "clientkeepalive", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	option = purple_account_option_int_new(_("Keepalive Timeout"), "keepalive", 300);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 	my_protocol = plugin;
 }
 
