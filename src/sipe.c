@@ -166,17 +166,6 @@ static void send_presence_status(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
 
-static void sipe_keep_alive_timeout(struct sipe_account_data *sip, const char *timeout)
-{
-	if (timeout != NULL) {
-		sscanf(timeout, "%u", &sip->keepalive_timeout);
-		purple_debug_info("sipe", "server determined keep alive timeout is %u seconds\n",
-				  sip->keepalive_timeout);
-	} else {
-		sip->keepalive_timeout = 300;
-	}
-}
-
 static void sipe_keep_alive(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = gc->proto_data;
@@ -3222,8 +3211,14 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				timeout = sipmsg_find_part_of_header(sipmsg_find_header(msg, "ms-keep-alive"),
 								     "timeout=", ";", NULL);
-				sipe_keep_alive_timeout(sip, timeout);
-				g_free(timeout);
+				if (timeout != NULL) {
+					sscanf(timeout, "%u", &sip->keepalive_timeout);
+					purple_debug_info("sipe", "server determined keep alive timeout is %u seconds\n",
+							  sip->keepalive_timeout);
+					g_free(timeout);
+				} else {
+					sip->keepalive_timeout = 300;
+				}
 
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
