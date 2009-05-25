@@ -2794,15 +2794,15 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 	g_free(key);
 
 	contact = get_contact(sip);
-        from = g_strdup_printf("sip:%s", sip->username);
+       /* from = g_strdup_printf("sip:%s", sip->username);*/
 	hdr = g_strdup_printf(
-                "Supported: ms-delayed-accept\r\n"
-                 "Roster-Manager: <%s>\r\n"
-                 "EndPoints: <%s>, <%s>\r\n"
-                 "Supported: com.microsoft.rtc-multiparty\r\n"             
+                /*"Supported: ms-delayed-accept\r\n"*/
+                 /*"Roster-Manager: <%s>\r\n"*/
+                 /*"EndPoints: <%s>, <%s>\r\n"*/
+                 /*"Supported: com.microsoft.rtc-multiparty\r\n"*/
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
-		to, to, from, contact, ms_text_format);
+		contact, ms_text_format);
 	g_free(ms_text_format);
 
 	body = g_strdup_printf(
@@ -2820,7 +2820,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 		to, to, hdr, body, session->dialog, process_invite_response);
 
 	g_free(to);
-        g_free(from);
+       /* g_free(from);*/
 	g_free(body);
 	g_free(hdr);
 	g_free(contact);
@@ -3795,10 +3795,20 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 {
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
+	gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
 	int timeout = 0;
 
 	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
 	purple_debug_info("sipe", "process_incoming_notify: subscription_state:%s\n\n", subscription_state);
+	
+	if (!request)
+	{
+		const gchar *expires_header;
+		expires_header = sipmsg_find_header(msg, "Expires");
+		timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
+		purple_debug_info("sipe", "process_incoming_notify: subscription expires:%d\n\n", timeout);
+		timeout = (timeout - 60) > 60 ? (timeout - 60) : timeout; // 1 min ahead of expiration
+	}
 
 	if (!subscription_state || strstr(subscription_state, "active"))
 	{
@@ -3835,44 +3845,45 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		g_free(from);
 	}
 	
-	//For OCS2007/LCS2005 we need to resubscribe the contacts before the expires time in seconds comes to 0
-        //Can be benotify, notify or 200 0k
-	if (event && subscription_state && strstr(subscription_state, "active") && !g_ascii_strcasecmp(event, "presence"))//Notify or Benotify
-	{
-		const gchar *expires_contact;
-		expires_contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "subscription-state"), "expires=", ";", NULL);
-		timeout = expires_contact ? strtol(expires_contact, NULL, 10) : 0;
-		if (timeout){
-			purple_debug_info("sipe", "process_incoming_notify: expires_contact:%d\n\n", timeout);
-			timeout = timeout  - 300;
-			if (timeout <= 0){  // Only when expires - 300 <= 0 secs
-				purple_debug_info("sipe", "process_incoming_notify: expires_contact needs re-subscribe:%d\n\n", timeout);
-                                if (g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp)){
-                                    gchar *who = parse_from(sipmsg_find_header(msg, "From"));
-                                    gchar *action_name = g_strdup_printf("<%s><%s>", "presence", who);
-                                    sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip, who);
-                                    g_free(action_name);
-                                    g_free(who);
-                                }
-			}
-		}
-	}
-         else if (!request  && !benotify && event && subscription_state && strstr(subscription_state, "active") && !g_ascii_strcasecmp(event, "presence.wpending")) //Ok 200
-         {
-		const gchar *expires_header;
-		expires_header = sipmsg_find_header(msg, "Expires");
-		timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
-                if(timeout){
-                    purple_debug_info("sipe", "process_incoming_notify: expires:%d\n\n", timeout);
-                    timeout = (timeout - 60) > 60 ? (timeout - 60) : timeout; // 1 min ahead of expiration
-                    if (g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
-                    {
-                        gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
-                        sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_wpending, sip, NULL);
-                        g_free(action_name);
-                    }
-                }
-         }
+	 if (timeout && event) {// For LSC 2005 and OCS 2007
+		 /*if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts") &&
+			 g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-contacts", (GCompareFunc)g_ascii_strcasecmp))
+		 {
+			 gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-contacts");
+			 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_roaming_contacts, sip, msg);
+			 g_free(action_name);
+		 }
+		 else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL") &&
+				  g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL", (GCompareFunc)g_ascii_strcasecmp))
+		 {
+			 gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-ACL");
+			 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_roaming_acl, sip, msg);
+			 g_free(action_name);
+		 }
+		 else*/
+		 if (!g_ascii_strcasecmp(event, "presence.wpending") &&
+			 g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
+		 {
+			 gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
+			 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_wpending, sip, NULL);
+			 g_free(action_name);
+		 }
+		 else if (!g_ascii_strcasecmp(event, "presence") &&
+				  g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
+		 {
+			 gchar *action_name = g_strdup_printf("<%s><%s>", "presence", who);
+			 gchar * my_self = g_strdup_printf("sip:%s",sip->username);
+			 if(!g_ascii_strcasecmp(who, my_self)){
+			 	sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip,NULL);
+			 	purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
+			 }else{
+				sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
+			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who,timeout);
+			 }
+			 g_free(action_name);
+			 g_free(my_self);
+		 }
+	 }
 	
 	if (event && !g_ascii_strcasecmp(event, "registration-notify"))
 	{
