@@ -2794,7 +2794,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 	g_free(key);
 
 	contact = get_contact(sip);
-        from = g_strdup_printf("<sip:%s>", sip->username);
+        from = g_strdup_printf("sip:%s", sip->username);
 	hdr = g_strdup_printf(
                 "Supported: ms-delayed-accept\r\n"
                  "Roster-Manager: <%s>\r\n"
