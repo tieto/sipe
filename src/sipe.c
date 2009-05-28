@@ -161,7 +161,7 @@ static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorTyp
 static void sipe_close(PurpleConnection *gc);
 
 static void sipe_subscribe_presence_single(struct sipe_account_data *sip, const char * buddy_name);
-static void sipe_subscribe_presence_batched(struct sipe_account_data *sip);
+static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, const char * buddy_name);
 static void send_presence_status(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
@@ -1524,7 +1524,13 @@ static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar 
 static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer value, gchar **resources_uri)
 {
 	gchar *tmp = *resources_uri;
-        *resources_uri = g_strdup_printf("%s<resource uri=\"%s\"><context/></resource>\n", tmp, name);
+	struct sipe_buddy *sbuddy = (struct sipe_buddy *)value; 
+	if(sbuddy){
+		if(!sbuddy->resubscribed){ //Only not resubscribed contacts; the first time everybody are included 
+			*resources_uri = g_strdup_printf("%s<resource uri=\"%s\"><context/></resource>\n", tmp, name);
+			sbuddy->resubscribed = FALSE;
+		}
+	}
 	g_free(tmp);
 }
 
@@ -1536,7 +1542,7 @@ static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer 
    *   This header will be send only if adhoclist there is a "Supported: adhoclist" in REGISTER answer else will be send a Single Category SUBSCRIBE
   */
 
-static void sipe_subscribe_presence_batched(struct sipe_account_data *sip){
+static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, const char * buddy_name){
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *contact = get_contact(sip);
 	gchar *request;
@@ -1549,7 +1555,14 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip){
 
 	
     if (sip->msrtc_event_categories) {
-                g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
+		
+		if(!buddy_name){
+			g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
+		}
+		else
+		{
+			sipe_subscribe_resource_uri_with_context(buddy_name,NULL, &resources_uri);
+		}
 		require = ", categoryList";
 		accept = ", application/msrtc-event-categories+xml, application/xpidf+xml, application/pidf+xml";
                 content_type = "application/msrtc-adrl-categorylist+xml";
@@ -1724,7 +1737,11 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 		b->name = g_strdup(buddy->name);
 		g_hash_table_insert(sip->buddies, b->name, b);
 		sipe_group_buddy(gc, b->name, NULL, group->name);
-		sipe_subscribe_presence_single(sip, b->name); //@TODO should go to callback
+		if(sip->batched_support){
+			sipe_subscribe_presence_batched(sip, b->name);
+		}else{
+			sipe_subscribe_presence_single(sip, b->name); //@TODO should go to callback
+		}
 	} else {
 		purple_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
 	}
@@ -2056,12 +2073,13 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
-                //if(sip->msrtc_event_categories){
-		        sipe_subscribe_presence_batched(sip);
-                 //}else{
-                        //g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
-                 //}
-                sip->subscribed_buddies = TRUE;
+		if(sip->batched_support){
+			sipe_subscribe_presence_batched(sip, NULL);
+		}
+		else{
+			g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
+		}
+		sip->subscribed_buddies = TRUE;
 	}
 
 	return 0;
@@ -3163,16 +3181,21 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
 				}
                                 sip->msrtc_event_categories = FALSE;
+								sip->batched_support = FALSE;
 
                                 while(hdr)
                                 {
-                                        elem = hdr->data;
-					if (!g_ascii_strcasecmp(elem->name, "Supported")) {
-                                                if (strstr(elem->value, "msrtc-event-categories")) {
-                                                        sip->msrtc_event_categories = TRUE;
-                                                }
-						purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s, %d\n", elem->value, sip->msrtc_event_categories);
-                                        }
+									elem = hdr->data;
+									if (!g_ascii_strcasecmp(elem->name, "Supported")) {
+										if (!g_ascii_strcasecmp(elem->value, "msrtc-event-categories")) {
+											sip->msrtc_event_categories = TRUE;
+											purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s: %d\n", elem->value,sip->msrtc_event_categories);
+										}
+										if (!g_ascii_strcasecmp(elem->value, "adhoclist")) {
+											sip->batched_support = TRUE;
+											purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s: %d\n", elem->value,sip->batched_support);
+										}
+									}
                                         if (!g_ascii_strcasecmp(elem->name, "Allow-Events")){
 						gchar **caps = g_strsplit(elem->value,",",0);
 						i = 0;
@@ -3450,6 +3473,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		 xn_resource;
 		 xn_resource = xmlnode_get_next_twin(xn_resource) )
 		{
+			    struct sipe_buddy *sbuddy; 
                 uri = xmlnode_get_attrib(xn_resource, "uri");
 				xn_instance = xmlnode_get_child(xn_resource, "instance");
                 if (!xn_instance) return;
@@ -3458,6 +3482,11 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
                 purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: uri(%s),state(%s)\n",uri,state);
                 if(strstr(state,"resubscribe")){
                         sipe_subscribe_presence_single(sip, uri);
+					    sbuddy = g_hash_table_lookup(sip->buddies, uri);
+					    if(sbuddy){
+							sbuddy->resubscribed = TRUE;
+						}
+					    
                 }
 		}
 }
@@ -3872,16 +3901,23 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 				  g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
 		 {
 			 gchar *action_name = g_strdup_printf("<%s><%s>", "presence", who);
-			 gchar * my_self = g_strdup_printf("sip:%s",sip->username);
-			 if(!g_ascii_strcasecmp(who, my_self)){
-			 	sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip,NULL);
-			 	purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
-			 }else{
+			 if(sip->batched_support){
+				 gchar *my_self = g_strdup_printf("sip:%s",sip->username);
+				 if(!g_ascii_strcasecmp(who, my_self)){
+					 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip,NULL);
+					 purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
+				 }
+				 else{
+					 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
+					 purple_debug_info("sipe", "Resubscription single contact with batched support(%s) in %d\n", who,timeout);
+				 }
+				  g_free(my_self);
+			 }
+			 else{
 				sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
 			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who,timeout);
 			 }
 			 g_free(action_name);
-			 g_free(my_self);
 		 }
 	 }
 	

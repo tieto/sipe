@@ -75,6 +75,7 @@ struct sipe_buddy {
 	gchar *annotation;
 	gchar *device_name;
 	GSList *groups;
+	gboolean resubscribed;
 };
 
 typedef enum sipe_auth_type
@@ -147,7 +148,8 @@ struct sipe_account_data {
 	gchar *status;
 	int status_version;
 	gchar *contact;
-        gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
+    gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
+	gboolean batched_support; /*if there is support for batched subscription*/
 	GHashTable *buddies;
 	guint resendtimeout;
 	guint keepalive_timeout;
