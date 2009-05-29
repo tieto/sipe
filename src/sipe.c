@@ -161,7 +161,7 @@ static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorTyp
 static void sipe_close(PurpleConnection *gc);
 
 static void sipe_subscribe_presence_single(struct sipe_account_data *sip, const char * buddy_name);
-static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, const char * buddy_name);
+static void sipe_subscribe_presence_batched(struct sipe_account_data *sip);
 static void send_presence_status(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
@@ -1542,7 +1542,7 @@ static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer 
    *   This header will be send only if adhoclist there is a "Supported: adhoclist" in REGISTER answer else will be send a Single Category SUBSCRIBE
   */
 
-static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, const char * buddy_name){
+static void sipe_subscribe_presence_batched(struct sipe_account_data *sip){
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *contact = get_contact(sip);
 	gchar *request;
@@ -1550,19 +1550,13 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, const
 	gchar *resources_uri = g_strdup("");
 	gchar *require = "";
 	gchar *accept = "";
-        gchar *autoextend = "";
+    gchar *autoextend = "";
 	gchar *content_type;
-
 	
     if (sip->msrtc_event_categories) {
 		
-		if(!buddy_name){
-			g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
-		}
-		else
-		{
-			sipe_subscribe_resource_uri_with_context(buddy_name,NULL, &resources_uri);
-		}
+		 g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
+		
 		require = ", categoryList";
 		accept = ", application/msrtc-event-categories+xml, application/xpidf+xml, application/pidf+xml";
                 content_type = "application/msrtc-adrl-categorylist+xml";
@@ -1737,11 +1731,7 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 		b->name = g_strdup(buddy->name);
 		g_hash_table_insert(sip->buddies, b->name, b);
 		sipe_group_buddy(gc, b->name, NULL, group->name);
-		if(sip->batched_support){
-			sipe_subscribe_presence_batched(sip, b->name);
-		}else{
-			sipe_subscribe_presence_single(sip, b->name); //@TODO should go to callback
-		}
+		sipe_subscribe_presence_single(sip, b->name); //@TODO should go to callback
 	} else {
 		purple_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
 	}
@@ -2074,7 +2064,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
 		if(sip->batched_support){
-			sipe_subscribe_presence_batched(sip, NULL);
+			sipe_subscribe_presence_batched(sip);
 		}
 		else{
 			g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
@@ -3904,7 +3894,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			 if(sip->batched_support){
 				 gchar *my_self = g_strdup_printf("sip:%s",sip->username);
 				 if(!g_ascii_strcasecmp(who, my_self)){
-					 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip,NULL);
+					 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip, NULL);
 					 purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
 				 }
 				 else{
