@@ -1049,11 +1049,11 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	char *to = g_strdup_printf("sip:%s", sip->username);
 	char *contact = get_contact_register(sip);
 	char *hdr = g_strdup_printf("Contact: %s\r\n"
-								"Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
-								"Event: registration\r\n"
-								"Allow-Events: presence\r\n"
-								"ms-keep-alive: UAC;hop-hop=yes\r\n"
-								"%s", contact, expires);
+				    "Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
+				    "Event: registration\r\n"
+				    "Allow-Events: presence\r\n"
+				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
+				    "%s", contact, expires);
 	g_free(contact);
 	g_free(expires);
 
@@ -2802,12 +2802,12 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 	g_free(key);
 
 	contact = get_contact(sip);
-       /* from = g_strdup_printf("sip:%s", sip->username);*/
+	/* from = g_strdup_printf("sip:%s", sip->username);*/
 	hdr = g_strdup_printf(
-                /*"Supported: ms-delayed-accept\r\n"*/
-                 /*"Roster-Manager: <%s>\r\n"*/
-                 /*"EndPoints: <%s>, <%s>\r\n"*/
-                 /*"Supported: com.microsoft.rtc-multiparty\r\n"*/
+		/*"Supported: ms-delayed-accept\r\n"*/
+		/*"Roster-Manager: <%s>\r\n"*/
+		/*"EndPoints: <%s>, <%s>\r\n"*/
+		/*"Supported: com.microsoft.rtc-multiparty\r\n"*/
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
 		contact, ms_text_format);
@@ -2828,7 +2828,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 		to, to, hdr, body, session->dialog, process_invite_response);
 
 	g_free(to);
-       /* g_free(from);*/
+	/* g_free(from);*/
 	g_free(body);
 	g_free(hdr);
 	g_free(contact);
@@ -3171,21 +3171,21 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
 				}
                                 sip->msrtc_event_categories = FALSE;
-								sip->batched_support = FALSE;
+				sip->batched_support = FALSE;
 
                                 while(hdr)
                                 {
-									elem = hdr->data;
-									if (!g_ascii_strcasecmp(elem->name, "Supported")) {
-										if (!g_ascii_strcasecmp(elem->value, "msrtc-event-categories")) {
-											sip->msrtc_event_categories = TRUE;
-											purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s: %d\n", elem->value,sip->msrtc_event_categories);
-										}
-										if (!g_ascii_strcasecmp(elem->value, "adhoclist")) {
-											sip->batched_support = TRUE;
-											purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s: %d\n", elem->value,sip->batched_support);
-										}
-									}
+					elem = hdr->data;
+					if (!g_ascii_strcasecmp(elem->name, "Supported")) {
+						if (!g_ascii_strcasecmp(elem->value, "msrtc-event-categories")) {
+							sip->msrtc_event_categories = TRUE;
+							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s: %d\n", elem->value,sip->msrtc_event_categories);
+						}
+						if (!g_ascii_strcasecmp(elem->value, "adhoclist")) {
+							sip->batched_support = TRUE;
+							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s: %d\n", elem->value,sip->batched_support);
+						}
+					}
                                         if (!g_ascii_strcasecmp(elem->name, "Allow-Events")){
 						gchar **caps = g_strsplit(elem->value,",",0);
 						i = 0;
@@ -3814,7 +3814,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 {
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
-	gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
 	int timeout = 0;
 
 	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
@@ -3890,6 +3889,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		 else if (!g_ascii_strcasecmp(event, "presence") &&
 				  g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
 		 {
+			 gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
 			 gchar *action_name = g_strdup_printf("<%s><%s>", "presence", who);
 			 if(sip->batched_support){
 				 gchar *my_self = g_strdup_printf("sip:%s",sip->username);
@@ -3908,6 +3908,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who,timeout);
 			 }
 			 g_free(action_name);
+			 /* "who" will be freed by the action we just scheduled */
 		 }
 	 }
 	
