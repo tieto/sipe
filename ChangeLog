@@ -1,3 +1,12 @@
+version 1.4.1 (2009-06-01)
+       - Patch for spaces in Login's username
+       - Fixed bugs #2793431, #2793688 for crash in process_incoming_notify_rlmi_resub
+       - Fixed the correct presence for contacts with the presenceMode="msrtc".
+       - Simplify keep alive timeout setting code
+       - Fixed the resubscription process in LCS2005 and OCS2005.
+       - Fixed the support for batched subscription
+       - Fixed a problem when you added a new contact on OCS2007
+       - Fixed potential memory leaks. Thank you Stefan
 version 1.4.0 (2009-05-17)
        - Simplified Account Settings Basic screen
        - Full support for presence using Batched Category Subscription for 
