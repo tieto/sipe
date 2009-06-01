@@ -2772,6 +2772,11 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 	session->dialog = g_new0(struct sip_dialog, 1);
 	session->dialog->callid = gencallid();
 
+	if (!(session->dialog->ourtag)) {
+		session->dialog->ourtag = gentag();
+	}
+	
+
 	if (strstr(session->with, "sip:")) {
 		to = g_strdup(session->with);
 	} else {

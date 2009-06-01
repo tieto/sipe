@@ -5,7 +5,7 @@
 # Description: Top Makefile for win32 (mingw) port of LCS protocol plugin
 #
 
-export PIDGIN_TREE_TOP := ../pidgin-2.5.5
+export PIDGIN_TREE_TOP := ../pidgin-2.5.6
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
 WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
