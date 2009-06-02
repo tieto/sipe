@@ -163,8 +163,6 @@ static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorTyp
 
 static void sipe_close(PurpleConnection *gc);
 
-static void sipe_subscribe_presence_single(struct sipe_account_data *sip, const char * buddy_name);
-static void sipe_subscribe_presence_batched(struct sipe_account_data *sip);
 static void send_presence_status(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
@@ -1534,7 +1532,6 @@ static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer 
 	if(sbuddy){
 		if(!sbuddy->resubscribed){ //Only not resubscribed contacts; the first time everybody are included 
 			*resources_uri = g_strdup_printf("%s<resource uri=\"%s\"><context/></resource>\n", tmp, name);
-			sbuddy->resubscribed = FALSE;
 		}
 	}
 	g_free(tmp);
@@ -3461,35 +3458,38 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode_free(xn_categories);
 }
 
- static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, const gchar *data, unsigned len)
+static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
-         const char *uri,*state;
-         xmlnode *xn_list;
-         xmlnode *xn_resource;
-         xmlnode *xn_instance;
-
-         xn_list = xmlnode_from_str(data, len);
+	xmlnode *xn_list;
+	xmlnode *xn_resource;
+	
+	xn_list = xmlnode_from_str(data, len);
 
         for (xn_resource = xmlnode_get_child(xn_list, "resource");
-		 xn_resource;
-		 xn_resource = xmlnode_get_next_twin(xn_resource) )
-		{
-			    struct sipe_buddy *sbuddy; 
-                uri = xmlnode_get_attrib(xn_resource, "uri");
-				xn_instance = xmlnode_get_child(xn_resource, "instance");
-                if (!xn_instance) return;
+	     xn_resource;
+	     xn_resource = xmlnode_get_next_twin(xn_resource) )
+	{
+		const char *uri, *state;
+		xmlnode *xn_instance;
 
+		xn_instance = xmlnode_get_child(xn_resource, "instance");
+                if (!xn_instance) continue;
+
+                uri = xmlnode_get_attrib(xn_resource, "uri");
                 state = xmlnode_get_attrib(xn_instance, "state");
-                purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: uri(%s),state(%s)\n",uri,state);
-                if(strstr(state,"resubscribe")){
+                purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: uri(%s),state(%s)\n", uri, state);
+
+                if (strstr(state, "resubscribe")) {
+			struct sipe_buddy *sbuddy;
                         sipe_subscribe_presence_single(sip, uri);
-					    sbuddy = g_hash_table_lookup(sip->buddies, uri);
-					    if(sbuddy){
-							sbuddy->resubscribed = TRUE;
-						}
-					    
+			sbuddy = g_hash_table_lookup(sip->buddies, uri);
+			if (sbuddy) {
+				sbuddy->resubscribed = TRUE;
+			}
                 }
-		}
+	}
+
+	xmlnode_free(xn_list);
 }
 
 static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gchar *data, unsigned len)
@@ -3907,6 +3907,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 				if(!g_ascii_strcasecmp(who, my_self)){
 					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip, NULL);
 					purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
+					g_free(who); /* unused */
 				}
 				else {
 					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
