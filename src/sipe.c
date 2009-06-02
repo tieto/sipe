@@ -106,6 +106,9 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 /* ???  PURPLE_STATUS_MOBILE */
 /* ???  PURPLE_STATUS_TUNE */
 
+/* Action name templates */
+#define ACTION_NAME_PRESENCE "<presence><%s>"
+
 static char *gentag()
 {
 	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
@@ -1434,7 +1437,7 @@ static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar
   * A timer callback
   * Should return FALSE if repetitive action is not needed
   */
-gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
+static gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
 {
 	gboolean ret;
 	purple_debug_info("sipe", "sipe_scheduled_exec: executing\n");
@@ -1449,37 +1452,12 @@ gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
 }
 
 /**
-  * Do schedule action for execution in the future.
-  * Non repetitive execution.
-  *
-  * @param   name of action (will be copied)
-  * @param   timeout in seconds
-  * @action  callback function
-  * @payload callback data (can be NULL, otherwise caller must allocate memory)
-  */
-void sipe_schedule_action(gchar *name, int timeout, Action action, struct sipe_account_data *sip, void * payload)
-{
-	struct scheduled_action *sched_action;
-
-	purple_debug_info("sipe","scheduling action %s timeout:%d\n", name, timeout);
-	sched_action = g_new0(struct scheduled_action, 1);
-	sched_action->repetitive = FALSE;
-	sched_action->name = g_strdup(name);
-	sched_action->action = action;
-	sched_action->sip = sip;
-	sched_action->payload = payload;
-	sched_action->timeout_handler = purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action);
-	sip->timeouts = g_slist_append(sip->timeouts, sched_action);
-	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
-}
-
-/**
   * Kills action timer effectively cancelling
   * scheduled action
   *
   * @param name of action
   */
-void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *name)
+static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *name)
 {
 	GSList *entry;
 
@@ -1501,6 +1479,34 @@ void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *name)
 			entry = entry->next;
 		}
 	}
+}
+
+/**
+  * Do schedule action for execution in the future.
+  * Non repetitive execution.
+  *
+  * @param   name of action (will be copied)
+  * @param   timeout in seconds
+  * @action  callback function
+  * @payload callback data (can be NULL, otherwise caller must allocate memory)
+  */
+static void sipe_schedule_action(gchar *name, int timeout, Action action, struct sipe_account_data *sip, void * payload)
+{
+	struct scheduled_action *sched_action;
+
+	/* Make sure each action only exists once */
+	sipe_cancel_scheduled_action(sip, name);
+
+	purple_debug_info("sipe","scheduling action %s timeout:%d\n", name, timeout);
+	sched_action = g_new0(struct scheduled_action, 1);
+	sched_action->repetitive = FALSE;
+	sched_action->name = g_strdup(name);
+	sched_action->action = action;
+	sched_action->sip = sip;
+	sched_action->payload = payload;
+	sched_action->timeout_handler = purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action);
+	sip->timeouts = g_slist_append(sip->timeouts, sched_action);
+	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
 }
 
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
@@ -1771,7 +1777,7 @@ static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGr
 	}
 
 	if (g_slist_length(b->groups) < 1) {
-		gchar *action_name = g_strdup_printf("<%s><%s>", "presence", buddy->name);
+		gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy->name);
 		sipe_cancel_scheduled_action(sip, action_name);
 		g_free(action_name);
 
@@ -3862,14 +3868,14 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	}
 
 	//The server sends a (BE)NOTIFY with the status 'terminated'
-	if(request && subscription_state && strstr(subscription_state, "terminated") ) {
+	if (request && subscription_state && strstr(subscription_state, "terminated") ) {
 		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 		purple_debug_info("sipe", "process_incoming_notify: (BE)NOTIFY says that subscription to buddy %s was terminated. \n",  from);
 		g_free(from);
 	}
 	
-	 if (timeout && event) {// For LSC 2005 and OCS 2007
-		 /*if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts") &&
+	if (timeout && event) {// For LSC 2005 and OCS 2007
+		/*if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts") &&
 			 g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-contacts", (GCompareFunc)g_ascii_strcasecmp))
 		 {
 			 gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-contacts");
@@ -3884,38 +3890,38 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			 g_free(action_name);
 		 }
 		 else*/
-		 if (!g_ascii_strcasecmp(event, "presence.wpending") &&
-			 g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
-		 {
-			 gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
-			 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_wpending, sip, NULL);
-			 g_free(action_name);
-		 }
-		 else if (!g_ascii_strcasecmp(event, "presence") &&
-				  g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
-		 {
-			 gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
-			 gchar *action_name = g_strdup_printf("<%s><%s>", "presence", who);
-			 if(sip->batched_support){
-				 gchar *my_self = g_strdup_printf("sip:%s",sip->username);
-				 if(!g_ascii_strcasecmp(who, my_self)){
-					 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip, NULL);
-					 purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
-				 }
-				 else{
-					 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
-					 purple_debug_info("sipe", "Resubscription single contact with batched support(%s) in %d\n", who,timeout);
-				 }
-				  g_free(my_self);
-			 }
-			 else{
+		if (!g_ascii_strcasecmp(event, "presence.wpending") &&
+		    g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
+		{
+			gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
+			sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_wpending, sip, NULL);
+			g_free(action_name);
+		}
+		else if (!g_ascii_strcasecmp(event, "presence") &&
+			 g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
+		{
+			gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
+			gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, who);
+			if(sip->batched_support) {
+				gchar *my_self = g_strdup_printf("sip:%s",sip->username);
+				if(!g_ascii_strcasecmp(who, my_self)){
+					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip, NULL);
+					purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
+				}
+				else {
+					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
+					purple_debug_info("sipe", "Resubscription single contact with batched support(%s) in %d\n", who,timeout);
+				}
+				g_free(my_self);
+			}
+			else {
 				sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
 			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who,timeout);
-			 }
-			 g_free(action_name);
-			 /* "who" will be freed by the action we just scheduled */
-		 }
-	 }
+			}
+			g_free(action_name);
+			/* "who" will be freed by the action we just scheduled */
+		}
+	}
 	
 	if (event && !g_ascii_strcasecmp(event, "registration-notify"))
 	{

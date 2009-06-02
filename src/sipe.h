@@ -231,10 +231,6 @@ struct group_user_context {
 
 GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func);
 
-gboolean sipe_scheduled_exec(struct scheduled_action *sched_action);
-
-void sipe_schedule_action(gchar *name, int timeout, Action action, struct sipe_account_data *sip, void * payload);
-
 GList *sipe_actions(PurplePlugin *plugin, gpointer context);
 
 gboolean purple_init_plugin(PurplePlugin *plugin);
