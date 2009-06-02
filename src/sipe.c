@@ -3907,7 +3907,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 				if(!g_ascii_strcasecmp(who, my_self)){
 					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip, NULL);
 					purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
-					g_free(who); /* unused */
 				}
 				else {
 					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
