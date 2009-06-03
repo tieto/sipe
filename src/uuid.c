@@ -157,6 +157,7 @@ static char *get_mac_address_win(const char *ip_address)
 {
 	IP_ADAPTER_INFO AdapterInfo[16]; // for up to 16 NICs
 	DWORD ulOutBufLen = sizeof(AdapterInfo);
+	PIP_ADAPTER_INFO pAdapter_res = NULL;
     PIP_ADAPTER_INFO pAdapter = NULL;
     DWORD dwRetVal = 0;
     UINT i;
@@ -164,20 +165,29 @@ static char *get_mac_address_win(const char *ip_address)
 	
 	if ((dwRetVal = GetAdaptersInfo(AdapterInfo, &ulOutBufLen)) == NO_ERROR) {
 		pAdapter = AdapterInfo;
+		pAdapter_res = pAdapter;
 		while (pAdapter) {
 			if (!g_ascii_strcasecmp(pAdapter->IpAddressList.IpAddress.String, ip_address)) {
-				gchar nmac[13];
-				for (i = 0; i < pAdapter->AddressLength; i++) {
-					g_sprintf(&nmac[(i*2)], "%02X", (int)pAdapter->Address[i]);
-				}
-				printf("NIC: %s, IP Address: %s, MAC Addres: %s\n", pAdapter->Description, pAdapter->IpAddressList.IpAddress.String, nmac);
-				res = g_strdup(nmac);
+				pAdapter_res = pAdapter;				
+				break;
 			}
 			pAdapter = pAdapter->Next;
 		}
 	} else {
 		printf("GetAdaptersInfo failed with error: %d\n", dwRetVal);
 	}
+	
+	if (pAdapter_res) {
+		gchar nmac[13];
+		for (i = 0; i < pAdapter_res->AddressLength; i++) {
+			g_sprintf(&nmac[(i*2)], "%02X", (int)pAdapter_res->Address[i]);
+			printf("NIC: %s, IP Address: %s, MAC Addres: %s\n", pAdapter_res->Description, pAdapter_res->IpAddressList.IpAddress.String, nmac);
+		}
+		res = g_strdup(nmac);
+	} else {
+		res = g_strdup("01010101");
+	}
+	
 	//@TODO free AdapterInfo
 	return res;
 }
