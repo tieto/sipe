@@ -1068,7 +1068,7 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	g_free(to);
 }
 
-static void do_register_cb(struct sipe_account_data *sip)
+static void do_register_cb(struct sipe_account_data *sip, void *unused)
 {
 	do_register_exp(sip, -1);
 	sip->reregister_set = FALSE;
@@ -1432,6 +1432,25 @@ static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar
 }
 
 /**
+  * Data structure for scheduled actions
+  */
+typedef void (*Action) (struct sipe_account_data *, void *);
+
+struct scheduled_action {
+	/** 
+	 * Name of action.
+	 * Format is <Event>[<Data>...] 
+	 * Example:  <presence><sip:user@domain.com> or <registration>
+	 */
+	gchar *name;
+	guint timeout_handler;
+	gboolean repetitive;
+	Action action;
+	struct sipe_account_data *sip;
+	void *payload;
+};
+
+/**
   * A timer callback
   * Should return FALSE if repetitive action is not needed
   */
@@ -1455,7 +1474,7 @@ static gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
   *
   * @param name of action
   */
-static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *name)
+static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, const gchar *name)
 {
 	GSList *entry;
 
@@ -1488,7 +1507,7 @@ static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, gchar *n
   * @action  callback function
   * @payload callback data (can be NULL, otherwise caller must allocate memory)
   */
-static void sipe_schedule_action(gchar *name, int timeout, Action action, struct sipe_account_data *sip, void * payload)
+static void sipe_schedule_action(const gchar *name, int timeout, Action action, struct sipe_account_data *sip, void *payload)
 {
 	struct scheduled_action *sched_action;
 
@@ -1545,7 +1564,8 @@ static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer 
    *   This header will be send only if adhoclist there is a "Supported: adhoclist" in REGISTER answer else will be send a Single Category SUBSCRIBE
   */
 
-static void sipe_subscribe_presence_batched(struct sipe_account_data *sip){
+static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, void *unused)
+{
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *contact = get_contact(sip);
 	gchar *request;
@@ -1612,7 +1632,7 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip){
   *
   */
 
-static void sipe_subscribe_presence_single(struct sipe_account_data *sip, const char * buddy_name)
+static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *buddy_name)
 {
 	gchar *to = strstr(buddy_name, "sip:") ? g_strdup(buddy_name) : g_strdup_printf("sip:%s", buddy_name);
 	gchar *tmp = get_contact(sip);
@@ -2067,7 +2087,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
 		if(sip->batched_support){
-			sipe_subscribe_presence_batched(sip);
+			sipe_subscribe_presence_batched(sip, NULL);
 		}
 		else{
 			g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
@@ -2100,7 +2120,7 @@ static void sipe_subscribe_roaming_contacts(struct sipe_account_data *sip,struct
 	g_free(hdr);
 }
 
-static void sipe_subscribe_presence_wpending(struct sipe_account_data *sip, struct sipmsg *msg)
+static void sipe_subscribe_presence_wpending(struct sipe_account_data *sip, void *unused)
 {
 	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *tmp = get_contact(sip);
@@ -2938,7 +2958,7 @@ static gboolean resend_timeout(struct sipe_account_data *sip)
 	return TRUE;
 }
 
-static void do_reauthenticate_cb(struct sipe_account_data *sip)
+static void do_reauthenticate_cb(struct sipe_account_data *sip, void *unused)
 {
 	/* register again when security token expires */
 	/* we have to start a new authentication as the security token
@@ -3132,7 +3152,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				if (!sip->reregister_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "registration");
-					sipe_schedule_action(action_name, expires, (Action) do_register_cb, sip, NULL);
+					sipe_schedule_action(action_name, expires, do_register_cb, sip, NULL);
 					g_free(action_name);
 					sip->reregister_set = TRUE;
 				}
@@ -3144,7 +3164,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					   after eight hours (be five minutes early) */
 					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
 					guint reauth_timeout = (8 * 3600) - 360;
-					sipe_schedule_action(action_name, reauth_timeout, (Action) do_reauthenticate_cb, sip, NULL);
+					sipe_schedule_action(action_name, reauth_timeout, do_reauthenticate_cb, sip, NULL);
 					g_free(action_name);
 					sip->reauthenticate_set = TRUE;
 				}
@@ -3481,7 +3501,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 
                 if (strstr(state, "resubscribe")) {
 			struct sipe_buddy *sbuddy;
-                        sipe_subscribe_presence_single(sip, uri);
+                        sipe_subscribe_presence_single(sip, (void *) uri);
 			sbuddy = g_hash_table_lookup(sip->buddies, uri);
 			if (sbuddy) {
 				sbuddy->resubscribed = TRUE;
@@ -3879,14 +3899,14 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			 g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-contacts", (GCompareFunc)g_ascii_strcasecmp))
 		 {
 			 gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-contacts");
-			 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_roaming_contacts, sip, msg);
+			 sipe_schedule_action(action_name, timeout, sipe_subscribe_roaming_contacts, sip, msg);
 			 g_free(action_name);
 		 }
 		 else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL") &&
 				  g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL", (GCompareFunc)g_ascii_strcasecmp))
 		 {
 			 gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-ACL");
-			 sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_roaming_acl, sip, msg);
+			 sipe_schedule_action(action_name, timeout, sipe_subscribe_roaming_acl, sip, msg);
 			 g_free(action_name);
 		 }
 		 else*/
@@ -3894,7 +3914,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		    g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
 		{
 			gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
-			sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_wpending, sip, NULL);
+			sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_wpending, sip, NULL);
 			g_free(action_name);
 		}
 		else if (!g_ascii_strcasecmp(event, "presence") &&
@@ -3905,17 +3925,18 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			if(sip->batched_support) {
 				gchar *my_self = g_strdup_printf("sip:%s",sip->username);
 				if(!g_ascii_strcasecmp(who, my_self)){
-					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_batched, sip, NULL);
+					sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_batched, sip, NULL);
 					purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
+					g_free(who); /* unused */
 				}
 				else {
-					sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
+					sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, sip, who);
 					purple_debug_info("sipe", "Resubscription single contact with batched support(%s) in %d\n", who,timeout);
 				}
 				g_free(my_self);
 			}
 			else {
-				sipe_schedule_action(action_name, timeout, (Action) sipe_subscribe_presence_single, sip, who);
+				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, sip, who);
 			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who,timeout);
 			}
 			g_free(action_name);
