@@ -181,8 +181,8 @@ static char *get_mac_address_win(const char *ip_address)
 		gchar nmac[13];
 		for (i = 0; i < pAdapter_res->AddressLength; i++) {
 			g_sprintf(&nmac[(i*2)], "%02X", (int)pAdapter_res->Address[i]);
-			printf("NIC: %s, IP Address: %s, MAC Addres: %s\n", pAdapter_res->Description, pAdapter_res->IpAddressList.IpAddress.String, nmac);
 		}
+		printf("NIC: %s, IP Address: %s, MAC Addres: %s\n", pAdapter_res->Description, pAdapter_res->IpAddressList.IpAddress.String, nmac);
 		res = g_strdup(nmac);
 	} else {
 		res = g_strdup("01010101");
