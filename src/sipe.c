@@ -3056,7 +3056,6 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
 	sipmsg_remove_header(msg, "To");
 	sipmsg_add_header(msg, "To", newHeader);
-	g_free(oldHeader);
 	g_free(newHeader);
 	
 	from = parse_from(sipmsg_find_header(msg, "From"));
@@ -3075,11 +3074,15 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 			//session->dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
 			//session->dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
 
-			if (!(session->dialog->ourtag)) { session->dialog->ourtag = newTag; }
+			if (!session->dialog->ourtag) {
+				session->dialog->ourtag = newTag;
+				newTag = NULL;
+			}
 		}
 	} else {
 		purple_debug_info("sipe", "process_incoming_invite, failed to find or create IM session\n");
 	}
+	g_free(newTag);
 
 	//ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk=
 	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
