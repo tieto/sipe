@@ -2704,6 +2704,11 @@ sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outg
 		}
 	}
 
+	// Catch a tag on the end of the To Header and get rid of it.
+	if (strstr(dialog->theirepid, "tag=")) {
+		dialog->theirepid = strtok(dialog->theirepid, ";");
+	}
+
 	sipe_get_route_header(msg, dialog, outgoing);
 	sipe_get_supported_header(msg, dialog, outgoing);
 }
@@ -3032,6 +3037,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *ms_text_format;
 	gchar *from;
 	gchar *body;
+	gchar *newTag = gentag();
 	struct sip_im_session *session;
 
 	purple_debug_info("sipe", "process_incoming_invite: body:\n%s!\n", msg->body ? msg->body : "");
@@ -3042,6 +3048,17 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		return;
 	}
 
+	// TODO There *must* be a better way to clean up the To header to add a tag...
+	purple_debug_info("sipe", "Adding a Tag to the To Header on Invite Request...\n");
+	gchar *oldHeader;
+	gchar *newHeader;
+	oldHeader = sipmsg_find_header(msg, "To"); 
+	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
+	sipmsg_remove_header(msg, "To");
+	sipmsg_add_header(msg, "To", newHeader);
+	g_free(oldHeader);
+	g_free(newHeader);
+	
 	from = parse_from(sipmsg_find_header(msg, "From"));
 	session = find_or_create_im_session (sip, from);
 	if (session) {
@@ -3052,10 +3069,13 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 
 			sipe_parse_dialog(msg, session->dialog, FALSE);
 
-			session->dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-			session->dialog->ourtag = find_tag(sipmsg_find_header(msg, "To"));
-			session->dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
-			session->dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
+			// This stuff is the same stuff that happens in the sipe_parse_dialog...
+			//session->dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+			//session->dialog->ourtag = find_tag(sipmsg_find_header(msg, "To"));
+			//session->dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
+			//session->dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
+
+			if (!(session->dialog->ourtag)) { session->dialog->ourtag = newTag; }
 		}
 	} else {
 		purple_debug_info("sipe", "process_incoming_invite, failed to find or create IM session\n");
@@ -3081,6 +3101,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	sipmsg_remove_header(msg, "EndPoints");
 	sipmsg_remove_header(msg, "User-Agent");
 	sipmsg_remove_header(msg, "Roster-Manager");
+	sipmsg_remove_header(msg, "P-Asserted-Identity");
 
 	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
 	//sipmsg_add_header(msg, "Supported", "ms-renders-gif");
