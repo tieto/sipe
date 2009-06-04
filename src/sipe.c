@@ -3914,8 +3914,13 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	//The server sends a (BE)NOTIFY with the status 'terminated'
 	if (request && subscription_state && strstr(subscription_state, "terminated") ) {
 		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+		gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, from);
 		purple_debug_info("sipe", "process_incoming_notify: (BE)NOTIFY says that subscription to buddy %s was terminated. \n",  from);
-		g_free(from);
+		/* TODO: should we only retry if the server hasn't
+		   supplied a reason for the termination? */
+		sipe_schedule_action(action_name, 300, sipe_subscribe_presence_single, sip, from);
+		g_free(action_name);
+		/* "from" will be freed by the action we just scheduled */
 	}
 	
 	if (timeout && event) {// For LSC 2005 and OCS 2007
