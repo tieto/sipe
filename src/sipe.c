@@ -1573,7 +1573,7 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, void 
 	gchar *resources_uri = g_strdup("");
 	gchar *require = "";
 	gchar *accept = "";
-    gchar *autoextend = "";
+        gchar *autoextend = "";
 	gchar *content_type;
 	
     if (sip->msrtc_event_categories) {
@@ -1634,7 +1634,7 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, void 
 
 static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *buddy_name)
 {
-	gchar *to = strstr(buddy_name, "sip:") ? g_strdup(buddy_name) : g_strdup_printf("sip:%s", buddy_name);
+	gchar *to = strstr((char *)buddy_name, "sip:") ? g_strdup((char *)buddy_name) : g_strdup_printf("sip:%s", (char *)buddy_name);
 	gchar *tmp = get_contact(sip);
 	gchar *request;
 	gchar *content;
@@ -3513,7 +3513,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 	     xn_resource;
 	     xn_resource = xmlnode_get_next_twin(xn_resource) )
 	{
-		const char *uri, *state;
+		const char *uri, *state, *poolFqdn, *cid;
 		xmlnode *xn_instance;
 
 		xn_instance = xmlnode_get_child(xn_resource, "instance");
@@ -3523,13 +3523,28 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
                 state = xmlnode_get_attrib(xn_instance, "state");
                 purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: uri(%s),state(%s)\n", uri, state);
 
+                cid = xmlnode_get_attrib(xn_instance, "cid");
+                if(cid){ //Only OCS2007
+                    uri = g_strdup(cid);
+                    purple_debug_info("sipe", "The user is from a different deployment; cid=%s\n", uri);
+                }
+            
+                 poolFqdn = xmlnode_get_attrib(xn_instance, "poolFqdn");
+                if(poolFqdn){ //[MS-PRES] Section 3.4.5.1.3 Processing Details
+                    uri = g_strdup(poolFqdn);
+                    purple_debug_info("sipe", "The user is from the same domain but is hosted on a different server or server pool; poolFqdn=%s\n", uri);
+                }
+                 
+
                 if (strstr(state, "resubscribe")) {
 			struct sipe_buddy *sbuddy;
                         sipe_subscribe_presence_single(sip, (void *) uri);
-			sbuddy = g_hash_table_lookup(sip->buddies, uri);
-			if (sbuddy) {
-				sbuddy->resubscribed = TRUE;
-			}
+			if(!poolFqdn){
+                            sbuddy = g_hash_table_lookup(sip->buddies, uri);
+                            if (sbuddy) {
+                                sbuddy->resubscribed = TRUE;
+                            }
+                        }
                 }
 	}
 
@@ -3914,13 +3929,8 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	//The server sends a (BE)NOTIFY with the status 'terminated'
 	if (request && subscription_state && strstr(subscription_state, "terminated") ) {
 		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
-		gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, from);
 		purple_debug_info("sipe", "process_incoming_notify: (BE)NOTIFY says that subscription to buddy %s was terminated. \n",  from);
-		/* TODO: should we only retry if the server hasn't
-		   supplied a reason for the termination? */
-		sipe_schedule_action(action_name, 300, sipe_subscribe_presence_single, sip, from);
-		g_free(action_name);
-		/* "from" will be freed by the action we just scheduled */
+                g_free(from);
 	}
 	
 	if (timeout && event) {// For LSC 2005 and OCS 2007
