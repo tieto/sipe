@@ -140,12 +140,16 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 	gchar *ntlm_key = ctx->key;
 	char *signature_hex = bytes_to_hex_str(&signature);
 	gchar *signature_calc = purple_ntlm_sipe_signature_make(message, ntlm_key);
+	sip_uint32 res;
 
 	if (purple_ntlm_verify_signature (signature_calc, signature_hex)) {
-		return SIP_SEC_E_OK;
+		res = SIP_SEC_E_OK;
 	} else {
-		return SIP_SEC_E_INTERNAL_ERROR;
+		res = SIP_SEC_E_INTERNAL_ERROR;
 	}
+	g_free(signature_calc);
+	g_free(signature_hex);
+	return(res);
 }
 
 sip_uint32
