@@ -391,7 +391,7 @@ static guint32 crc32(guint32 crc, const guint8 *buf, int len)
 }
 
 static long
-CRC32 (char * msg)
+CRC32 (const char * msg)
 {
 	long crc = 0L;//crc32(0L, Z_NULL, 0);
 	crc = crc32(crc, msg, strlen(msg));
@@ -401,7 +401,7 @@ CRC32 (char * msg)
 }
 
 gchar *
-purple_ntlm_gen_signature (char * buf, char * signing_key, guint32 random_pad, long sequence, int key_len)
+purple_ntlm_gen_signature (const char * buf, char * signing_key, guint32 random_pad, long sequence, int key_len)
 {
 	gint32 *res_ptr;
 	gint32 plaintext [] = {0, CRC32(buf), sequence};
@@ -433,7 +433,7 @@ purple_ntlm_gen_signature (char * buf, char * signing_key, guint32 random_pad, l
 }
 
 gchar *
-purple_ntlm_sipe_signature_make (char * msg, char * signing_key)
+purple_ntlm_sipe_signature_make (const char * msg, char * signing_key)
 {
 	return purple_ntlm_gen_signature(msg, signing_key, 0, 100, 16);
 }
@@ -447,7 +447,7 @@ purple_ntlm_verify_signature (char * a, char * b)
 }
 
 gchar *
-purple_ntlm_gen_authenticate(const gchar **ntlm_key, const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
+purple_ntlm_gen_authenticate(gchar **ntlm_key, const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
 {
 	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
 				+ strlen(user)+ strlen(hostname) + NTLMSSP_NT_OR_LM_KEY_LEN)

@@ -29,6 +29,7 @@ libsipe_la_SOURCES = \
 AM_CFLAGS = $(st) 
 
 libsipe_la_CFLAGS = \
+	-Werror \
         $(DEBUG_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(PURPLE_CFLAGS) \

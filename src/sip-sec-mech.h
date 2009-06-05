@@ -47,18 +47,18 @@ typedef struct sip_buffer_desc_struct {
 
 
 typedef sip_uint32 
-(*sip_sec_acquire_cred_func)(SipSecCred *cred_handle, char* sec_package, char* domain, char *username, char *password);
+(*sip_sec_acquire_cred_func)(SipSecCred *cred_handle, const char *sec_package, const char *domain, const char *username, const char *password);
 
 typedef sip_uint32
-(*sip_sec_init_sec_context_func)(SipSecCred cred_handle, char* sec_package, SipSecContext* context,
-						SipSecBuffer in_buff,
-						SipSecBuffer *out_buff,
-						char *service_name);
+(*sip_sec_init_sec_context_func)(SipSecCred cred_handle, const char *sec_package, SipSecContext *context,
+				 SipSecBuffer in_buff,
+				 SipSecBuffer *out_buff,
+				 const char *service_name);
 						
 typedef sip_uint32
-(*sip_sec_make_signature_func)(SipSecContext context, char *message, SipSecBuffer *signature);
+(*sip_sec_make_signature_func)(SipSecContext context, const char *message, SipSecBuffer *signature);
 							
 typedef sip_uint32
-(*sip_sec_verify_signature_func)(SipSecContext context,	char* message, SipSecBuffer signature);
+(*sip_sec_verify_signature_func)(SipSecContext context,	const char *message, SipSecBuffer signature);
 						
 #endif /* _SIP_SEC_MECH_H */

@@ -65,11 +65,11 @@ gchar *purple_ntlm_parse_challenge(gchar *challenge, guint32 *flags);
  * @param flags Pointer to the flags returned by purple_ntlm_parse_challenge
  * @return A base64 encoded authenticate message
  */
-gchar *purple_ntlm_gen_authenticate(const gchar **ntlm_key, const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags);
+gchar *purple_ntlm_gen_authenticate(gchar **ntlm_key, const gchar *username, const gchar *passw, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags);
 
-gchar * purple_ntlm_sipe_signature_make (char * msg, char * signing_key);
+gchar * purple_ntlm_sipe_signature_make (const char * msg, char * signing_key);
 
-gchar * purple_ntlm_gen_signature (char * buf, char * signing_key, guint32 random_pad, long sequence, int key_len);
+gchar * purple_ntlm_gen_signature (const char * buf, char * signing_key, guint32 random_pad, long sequence, int key_len);
 
 
 gboolean purple_ntlm_verify_signature (char * a, char * b);

@@ -75,7 +75,7 @@ int sip_sec_verify_signature(SipSecContext context, const char* mech, const char
  *
  * Allocates memory for 'bytes', must be freed after use 
  */
-void hex_str_to_bytes(char *hex_str, SipSecBuffer *bytes);
+void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes);
 
 /** Allocates memory for output, must be freed after use */
-char * bytes_to_hex_str(SipSecBuffer bytes);
+char *bytes_to_hex_str(SipSecBuffer bytes);

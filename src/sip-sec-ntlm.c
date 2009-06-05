@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 #include "debug.h"
 #ifdef _WIN32
 #include "libc_interface.h"
@@ -45,12 +46,12 @@ typedef struct credentials_ntlm_struct {
 
 typedef struct context_ntlm_struct {
 	int step;
-	const gchar *key;
+	gchar *key;
 } context_ntlm, *context_ntlm_t;
 
 
 sip_uint32
-sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, char* sec_package, char* domain, char *username, char *password)
+sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, const char *sec_package, const char *domain, const char *username, const char *password)
 {
 	credentials_ntlm_t credentials = (credentials_ntlm_t)malloc(sizeof(credentials_ntlm));
 	credentials->domain = strdup(domain);
@@ -61,10 +62,10 @@ sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, char* sec_package, char* dom
 }
 
 sip_uint32
-sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, char* sec_package, SipSecContext *context,
-						SipSecBuffer in_buff,
-						SipSecBuffer *out_buff,
-						char *service_name)
+sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, const char *sec_package, SipSecContext *context,
+			       SipSecBuffer in_buff,
+			       SipSecBuffer *out_buff,
+			       const char *service_name)
 {
 	context_ntlm_t ctx;
 	if (!*context) {
@@ -86,7 +87,7 @@ sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, char* sec_package, SipSec
 	else 
 	{
 		credentials_ntlm_t credentials = (credentials_ntlm_t)cred_handle;
-		const gchar *ntlm_key;
+		gchar *ntlm_key;
 		gchar *nonce;
 		guint32 flags;
 		
@@ -109,8 +110,8 @@ sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, char* sec_package, SipSec
 		input_toked_base64 = purple_base64_encode(in_buff.value, in_buff.length);
 		
 		nonce = g_memdup(purple_ntlm_parse_challenge(input_toked_base64, &flags), 8);	
-		gchar *gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, credentials->username, 
-								credentials->password, hostname, credentials->domain, (const guint8 *)nonce, &flags);
+		gchar *gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, credentials->username,
+								  credentials->password, hostname, credentials->domain, nonce, &flags);
 		
 		out_buff->value = purple_base64_decode(gssapi_data, &(out_buff->length));	
 
@@ -126,8 +127,8 @@ sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, char* sec_package, SipSec
  */
 sip_uint32
 sip_sec_make_signature__ntlm(SipSecContext context, 
-							char *message,
-							SipSecBuffer *signature)
+			     const char *message,
+			     SipSecBuffer *signature)
 {
 	context_ntlm_t ctx = (context_ntlm_t)context;
 	gchar *ntlm_key = ctx->key;
@@ -142,7 +143,9 @@ sip_sec_make_signature__ntlm(SipSecContext context,
  * @return SIP_SEC_E_OK on success
  */
 sip_uint32
-sip_sec_verify_signature__ntlm(SipSecContext context, char* message, SipSecBuffer signature)
+sip_sec_verify_signature__ntlm(SipSecContext context,
+			       const char *message,
+			       SipSecBuffer signature)
 {
 	context_ntlm_t ctx = (context_ntlm_t)context;
 	gchar *ntlm_key = ctx->key;

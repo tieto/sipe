@@ -76,9 +76,9 @@ guchar *purple_base64_decode(const char *str, gsize *ret_len);
 
 /* sip_sec API method */
 char * sip_sec_init_context(SipSecContext *context, const char* mech,
-								const char *domain, const char *username, const char *password,
-								const char *target,
-								const char *input_toked_base64)
+			    const char *domain, const char *username, const char *password,
+			    const char *target,
+			    const char *input_toked_base64)
 {	
 	SipSecCred cred_handle_p;
 	sip_uint32 ret2;
@@ -88,7 +88,7 @@ char * sip_sec_init_context(SipSecContext *context, const char* mech,
 	sip_sec_init_sec_context_func init_sec_context_func = !strncmp("Kerberos", mech, strlen(mech)) ? 
 						sip_sec_init_sec_context__Kerberos : sip_sec_init_sec_context__NTLM;
 						
-	ret2 = (*acquire_cred_func)(&cred_handle_p, mech, (char *)domain, (char *)username, password); 
+	ret2 = (*acquire_cred_func)(&cred_handle_p, mech, domain, username, password); 
 
 	char *service_name;
 	sip_uint32 ret3, ret4;
@@ -102,9 +102,9 @@ char * sip_sec_init_context(SipSecContext *context, const char* mech,
 	
 	*context = NULL;
 	ret3 = (*init_sec_context_func)(cred_handle_p, mech, context,
-									in_buff,
-									&out_buff,
-									target);
+					in_buff,
+					&out_buff,
+					target);
 	out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);											
 	//Type1 (empty) to send
 	
@@ -143,7 +143,7 @@ char * sip_sec_make_signature(SipSecContext context, const char* mech, const cha
 	//@TODO clean up buffers.
 	return signature_hex;
 }			
- 
+
 int sip_sec_verify_signature(SipSecContext context, const char* mech, const char* message, const char* signature_hex)
 {								
 	SipSecBuffer signature;
@@ -161,7 +161,7 @@ int sip_sec_verify_signature(SipSecContext context, const char* mech, const char
 
 // Utility Methods //
 
-void hex_str_to_bytes(char *hex_str, SipSecBuffer *bytes)
+void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes)
 {
 	guint8 *buff;
 	char two_digits[3];
@@ -180,7 +180,7 @@ void hex_str_to_bytes(char *hex_str, SipSecBuffer *bytes)
 	}
 }
 
-char * bytes_to_hex_str(SipSecBuffer bytes)
+char *bytes_to_hex_str(SipSecBuffer bytes)
 {
 	guint8 *buff = (guint8 *)bytes.value;
 	char res[bytes.length * 2 + 1];
