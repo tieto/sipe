@@ -45,42 +45,24 @@ typedef struct credentials_ntlm_struct {
 } credentials_ntlm, *credentials_ntlm_t;
 
 typedef struct context_ntlm_struct {
+	struct sip_sec_context_struct common;
 	int step;
 	gchar *key;
 } context_ntlm, *context_ntlm_t;
 
-
-sip_uint32
-sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, const char *sec_package, const char *domain, const char *username, const char *password)
-{
-	credentials_ntlm_t credentials = (credentials_ntlm_t)malloc(sizeof(credentials_ntlm));
-	credentials->domain = strdup(domain);
-	credentials->username = strdup(username);
-	credentials->password = strdup(password);
-	*cred_handle = credentials;
-	return SIP_SEC_E_OK;
-}
-
-sip_uint32
-sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, const char *sec_package, SipSecContext *context,
+static sip_uint32
+sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, SipSecContext context,
 			       SipSecBuffer in_buff,
 			       SipSecBuffer *out_buff,
 			       const char *service_name)
 {
-	context_ntlm_t ctx;
-	if (!*context) {
-		ctx = (context_ntlm_t)malloc(sizeof(context_ntlm));
-		ctx->step = 1;
-	} else {
-		ctx = *context;
-		ctx->step++;
-	}
+	context_ntlm_t ctx = context;
+	ctx->step++;
 	
 	if (ctx->step == 1) 
 	{
 		out_buff->length = 0;
 		out_buff->value = NULL;
-		*context = ctx;
 		// same behaviour as sspi
 		return SIP_SEC_I_CONTINUE_NEEDED;
 	} 
@@ -90,7 +72,7 @@ sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, const char *sec_package, 
 		gchar *ntlm_key;
 		gchar *nonce;
 		guint32 flags;
-		
+
 //@TODO refactor it somewhere to utils
 #if GLIB_CHECK_VERSION(2,8,0)
 		const gchar * hostname = g_get_host_name();
@@ -116,16 +98,21 @@ sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, const char *sec_package, 
 		out_buff->value = purple_base64_decode(gssapi_data, &(out_buff->length));	
 
 		ctx->key = ntlm_key;
-		*context = ctx;
 		return SIP_SEC_E_OK;
 	}
+}
+
+static void
+sip_sec_destroy_sec_context__ntlm(SipSecContext context)
+{
+	g_free(context);
 }
 
 /**
  * @param message a NULL terminated string to sign
  *
  */
-sip_uint32
+static sip_uint32
 sip_sec_make_signature__ntlm(SipSecContext context, 
 			     const char *message,
 			     SipSecBuffer *signature)
@@ -134,7 +121,9 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 	gchar *ntlm_key = ctx->key;
 	gchar *signature_hex = purple_ntlm_sipe_signature_make(message, ntlm_key);
 	
-	hex_str_to_bytes(signature_hex, signature);	
+	hex_str_to_bytes(signature_hex, signature);
+	g_free(signature_hex);
+
 	return SIP_SEC_E_OK;
 }
 
@@ -142,14 +131,14 @@ sip_sec_make_signature__ntlm(SipSecContext context,
  * @param message a NULL terminated string to check signature of
  * @return SIP_SEC_E_OK on success
  */
-sip_uint32
+static sip_uint32
 sip_sec_verify_signature__ntlm(SipSecContext context,
 			       const char *message,
 			       SipSecBuffer signature)
 {
 	context_ntlm_t ctx = (context_ntlm_t)context;
 	gchar *ntlm_key = ctx->key;
-	char *signature_hex = bytes_to_hex_str(signature);
+	char *signature_hex = bytes_to_hex_str(&signature);
 	gchar *signature_calc = purple_ntlm_sipe_signature_make(message, ntlm_key);
 
 	if (purple_ntlm_verify_signature (signature_calc, signature_hex)) {
@@ -157,4 +146,23 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 	} else {
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
+}
+
+sip_uint32
+sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, SipSecContext *ctx_handle, const char *domain, const char *username, const char *password)
+{
+	credentials_ntlm_t credentials = g_malloc(sizeof(credentials_ntlm));
+	context_ntlm_t context = g_malloc(sizeof(context_ntlm));
+	credentials->domain = strdup(domain);
+	credentials->username = strdup(username);
+	credentials->password = strdup(password);
+	*cred_handle = credentials;
+	context->common.init_context_func     = sip_sec_init_sec_context__ntlm;
+	context->common.destroy_context_func  = sip_sec_destroy_sec_context__ntlm;
+	context->common.make_signature_func   = sip_sec_make_signature__ntlm;
+	context->common.verify_signature_func = sip_sec_verify_signature__ntlm;
+	context->step = 0;
+	context->key = NULL;
+	*ctx_handle = context;
+	return SIP_SEC_E_OK;
 }

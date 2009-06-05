@@ -220,6 +220,8 @@ static void sipe_auth_free(struct sip_auth *auth)
 	auth->expires = 0;
 	g_free(auth->gssapi_data);
 	auth->gssapi_data = NULL;
+	sip_sec_destroy_context(auth->gssapi_context);
+	auth->gssapi_context = NULL; 
 }
 
 static struct sip_connection *connection_create(struct sipe_account_data *sip, int fd)
@@ -754,8 +756,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		msgbd.num = g_strdup_printf("%d", sip->registrar.ntlm_num);
 		signature_input_str = sipmsg_breakdown_get_string(&msgbd);
 		if (signature_input_str != NULL) {
-			gchar *mech = (sip->registrar.type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
-			char *signature_hex = sip_sec_make_signature(sip->registrar.gssapi_context, mech, signature_input_str);
+			char *signature_hex = sip_sec_make_signature(sip->registrar.gssapi_context, signature_input_str);
 			msg->signature = signature_hex;
 			msg->rand = g_strdup(msgbd.rand);
 			msg->num = g_strdup(msgbd.num);
@@ -4380,8 +4381,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
 
 			if (rspauth != NULL) {
-				gchar *mech = (sip->registrar.type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
-				if (!sip_sec_verify_signature(sip->registrar.gssapi_context, mech, signature_input_str, rspauth)) {
+				if (!sip_sec_verify_signature(sip->registrar.gssapi_context, signature_input_str, rspauth)) {
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature validated\n");
 					process_input_message(sip, msg);
 				} else {

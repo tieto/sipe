@@ -24,23 +24,4 @@
 #include "sip-sec-mech.h"
 
 sip_uint32 
-sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, const char *sec_package, const char *domain, const char *username, const char *password);
-
-sip_uint32
-sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, const char *sec_package, SipSecContext *context,
-			       SipSecBuffer in_buff,
-			       SipSecBuffer *out_buff,
-			       const char *service_name);
-
-/**
- * @param message a NULL terminated string to sign
- *
- */
-sip_uint32
-sip_sec_make_signature__ntlm(SipSecContext context, const char *message, SipSecBuffer *signature);
-
-/**
- * @param message a NULL terminated string to check signature of
- */
-sip_uint32
-sip_sec_verify_signature__ntlm(SipSecContext context, const char *message, SipSecBuffer signature);
+sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, SipSecContext *context, const char *domain, const char *username, const char *password);

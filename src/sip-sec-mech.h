@@ -47,18 +47,28 @@ typedef struct sip_buffer_desc_struct {
 
 
 typedef sip_uint32 
-(*sip_sec_acquire_cred_func)(SipSecCred *cred_handle, const char *sec_package, const char *domain, const char *username, const char *password);
+(*sip_sec_acquire_cred_func)(SipSecCred *cred_handle, SipSecContext *context, const char *domain, const char *username, const char *password);
 
 typedef sip_uint32
-(*sip_sec_init_sec_context_func)(SipSecCred cred_handle, const char *sec_package, SipSecContext *context,
-				 SipSecBuffer in_buff,
-				 SipSecBuffer *out_buff,
-				 const char *service_name);
-						
+(*sip_sec_init_context_func)(SipSecCred cred_handle, SipSecContext context,
+			     SipSecBuffer in_buff,
+			     SipSecBuffer *out_buff,
+			     const char *service_name);
+
+typedef void
+(*sip_sec_destroy_context_func)(SipSecContext context);
+
 typedef sip_uint32
 (*sip_sec_make_signature_func)(SipSecContext context, const char *message, SipSecBuffer *signature);
-							
+
 typedef sip_uint32
 (*sip_sec_verify_signature_func)(SipSecContext context,	const char *message, SipSecBuffer signature);
-						
+
+struct sip_sec_context_struct {
+	sip_sec_init_context_func     init_context_func;
+	sip_sec_destroy_context_func  destroy_context_func;
+	sip_sec_make_signature_func   make_signature_func;
+	sip_sec_verify_signature_func verify_signature_func;
+};
+
 #endif /* _SIP_SEC_MECH_H */
