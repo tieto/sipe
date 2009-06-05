@@ -410,7 +410,8 @@ purple_ntlm_gen_signature (char * buf, char * signing_key, guint32 random_pad, l
 	gchar signature [32];
 	int i, j;
 	PurpleCipherContext *rc4 = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(rc4, "key_len", (gpointer)key_len);
+	purple_cipher_context_set_option(rc4,"key_len", GINT_TO_POINTER(key_len));
+      
 	purple_cipher_context_set_key(rc4, signing_key);
 	purple_cipher_context_encrypt(rc4, (const guchar *)plaintext, 12, result+4, NULL);
 	purple_cipher_context_destroy(rc4);
@@ -524,7 +525,7 @@ purple_ntlm_gen_authenticate(const gchar **ntlm_key, const gchar *user, const gc
 	tmp += NTLMSSP_SESSION_KEY_LEN;
 
 	tmp = purple_base64_encode((guchar*) tmsg, msglen);
-	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE message\n");
+	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE message (%s)\n",purple_base64_encode(exported_session_key,16));
 	g_free(tmsg);
 	return tmp;
 }
