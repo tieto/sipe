@@ -16,6 +16,11 @@ libsipe_la_SOURCES = \
 	sipmsg.h \
 	sipe.h \
 	sipe.c \
+	sip-sec.h \
+	sip-sec.c \
+	sip-sec-mech.h \
+	sip-sec-ntlm.h \
+	sip-sec-ntlm.c \
 	sipe-sign.h \
 	sipe-sign.c \
 	uuid.h \

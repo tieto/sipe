@@ -75,6 +75,7 @@
 #include "mime.h"
 
 #include "sipe.h"
+#include "sip-sec.h"
 #include "sip-ntlm.h"
 #ifdef USE_KERBEROS
  #include "sipkrb5.h"
@@ -214,11 +215,11 @@ static void sipe_auth_free(struct sip_auth *auth)
 	auth->target = NULL;
 	g_free(auth->digest_session_key);
 	auth->digest_session_key = NULL;
-	g_free(auth->ntlm_key);
-	auth->ntlm_key = NULL;
 	auth->type = AUTH_TYPE_UNSET;
 	auth->retries = 0;
 	auth->expires = 0;
+	g_free(auth->gssapi_data);
+	auth->gssapi_data = NULL;
 }
 
 static struct sip_connection *connection_create(struct sipe_account_data *sip, int fd)
@@ -309,62 +310,33 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->nonce, target, noncecount, response);
 		g_free(response);
 		return ret;
-	} else if (auth->type == AUTH_TYPE_NTLM) { /* NTLM */
+	} else if (auth->type == AUTH_TYPE_NTLM || auth->type == AUTH_TYPE_KERBEROS) { /* NTLM */ /* Kerberos */
+		gchar *auth_protocol = (auth->type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
 		// If we have a signature for the message, include that
 		if (msg->signature) {
-			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
+			tmp = g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth_protocol, auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
 			return tmp;
 		}
 
-		if (auth->nc == 3 && auth->nonce && auth->ntlm_key == NULL) {
-			const gchar *ntlm_key;
+		if ((auth->type == AUTH_TYPE_NTLM && auth->nc == 3 && auth->gssapi_data && auth->gssapi_context == NULL) 
+			|| (auth->type == AUTH_TYPE_KERBEROS && auth->nc == 3)) {
 			gchar *gssapi_data;
-#if GLIB_CHECK_VERSION(2,8,0)
-			const gchar * hostname = g_get_host_name();
-#else
-			static char hostname[256];
-			int ret = gethostname(hostname, sizeof(hostname));
-			hostname[sizeof(hostname) - 1] = '\0';
-			if (ret == -1 || hostname[0] == '\0') {
-				purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
-				g_strerror(errno);
-				strcpy(hostname, "localhost");
-			}
-#endif
-			/*const gchar * hostname = purple_get_host_name();*/
+			gchar *opaque;
+			
+			gssapi_data = sip_sec_init_context(&(auth->gssapi_context), auth_protocol,
+								authdomain, authuser, sip->password,
+								auth->target,
+								auth->gssapi_data);			
 
-			gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, authuser, sip->password, hostname, authdomain, (const guint8 *)auth->nonce, &auth->flags);
-			auth->ntlm_key = (gchar *)ntlm_key;
-			tmp = g_strdup_printf("NTLM qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth->opaque, auth->realm, auth->target, gssapi_data);
+			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
+			tmp = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth_protocol, opaque, auth->realm, auth->target, gssapi_data);
+			g_free(opaque);
 			g_free(gssapi_data);
 			return tmp;
 		}
 
-		tmp = g_strdup_printf("NTLM qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth->realm, auth->target);
+		tmp = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth_protocol, auth->realm, auth->target);
 		return tmp;
-	} else if (auth->type == AUTH_TYPE_KERBEROS) {
-		/* Kerberos */
-		if (auth->nc == 3) {
-			/*if (new_auth || force_reauth) {
-				printf ("krb5 token not NULL, so adding gssapi-data attribute; op = %s\n", auth->opaque);
-				if (auth->opaque) {
-					tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", opaque=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", "SIP Communications Service", auth->opaque, auth->target, krb5_token);
-				} else {
-					tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", "SIP Communications Service", auth->target, krb5_token);
-				}
-			} else {
-				//gchar * mic = purple_krb5_get_mic_for_sipmsg(&krb5_auth, msg);
-				gchar * mic = "MICTODO";
-				printf ("krb5 token is NULL, so adding response attribute with mic = %s, op=%s\n", mic, auth->opaque);
-				//tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", opaque=\"%s\", targetname=\"%s\", response=\"%s\"", "SIP Communications Service", auth->opaque, auth->target, mic);
-				//tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", opaque=\"%s\", targetname=\"%s\"", "SIP Communications Service",
-						//auth->opaque ? auth->opaque : "", auth->target);
-				tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\"", "SIP Communications Service", auth->target);
-				//g_free(mic);
-			}*/
-			return tmp;
-		}
-		tmp = g_strdup_printf("Kerberos qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", "SIP Communication Service", auth->target);
 	}
 
 	sprintf(noncecount, "%08d", auth->nc++);
@@ -436,10 +408,13 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 		i = 0;
 		while (parts[i]) {
 			//purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
+			
 			if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
 				g_free(auth->nonce);
 				auth->nonce = g_memdup(purple_ntlm_parse_challenge(tmp, &auth->flags), 8);
-				g_free(tmp);
+						
+				g_free(auth->gssapi_data);
+				auth->gssapi_data = tmp;
 			}
 			if ((tmp = parse_attribute("targetname=\"",
 					parts[i]))) {
@@ -480,7 +455,9 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 					purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
 				}
 				auth->nonce = g_memdup(krb5_auth.base64_token, 8);*/
-				g_free(tmp);
+				
+				g_free(auth->gssapi_data);
+				auth->gssapi_data = tmp;
 			}
 			if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
 				g_free(auth->target);
@@ -767,7 +744,7 @@ static void sendout_sipmsg(struct sipe_account_data *sip, struct sipmsg *msg)
 static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data *sip, const gchar *method)
 {
 	gchar * buf;
-	if (sip->registrar.ntlm_key) {
+	if (sip->registrar.gssapi_context) {
 		struct sipmsg_breakdown msgbd;
 		gchar *signature_input_str;
 		msgbd.msg = msg;
@@ -777,7 +754,9 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		msgbd.num = g_strdup_printf("%d", sip->registrar.ntlm_num);
 		signature_input_str = sipmsg_breakdown_get_string(&msgbd);
 		if (signature_input_str != NULL) {
-			msg->signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
+			gchar *mech = (sip->registrar.type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
+			char *signature_hex = sip_sec_make_signature(sip->registrar.gssapi_context, mech, signature_input_str);
+			msg->signature = signature_hex;
 			msg->rand = g_strdup(msgbd.rand);
 			msg->num = g_strdup(msgbd.num);
 			g_free(signature_input_str);
@@ -790,12 +769,17 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
 			sipmsg_add_header(msg, "Authorization", buf);
 		} else {
-			sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
+			sipmsg_add_header_pos(msg, "Authorization", buf, 5); // What's the point in 5?
 		}
 		g_free(buf);
 	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO") || !strcmp(method, "OPTIONS")) {
 		sip->registrar.nc = 3;
-		sip->registrar.type = AUTH_TYPE_NTLM;
+		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+			sip->registrar.type = AUTH_TYPE_NTLM;
+		} else {
+			sip->registrar.type = AUTH_TYPE_KERBEROS;
+		}
+		
 
 		buf = auth_header(sip, &sip->registrar, msg);
 		sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
@@ -2781,7 +2765,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 {
 	gchar *hdr;
 	gchar *to;
-        gchar *from;
+    //gchar *from;
 	gchar *contact;
 	gchar *body;
 	char *msgformat;
@@ -3182,6 +3166,14 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				}
 
 				sip->registerstatus = 3;
+				
+				if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+					tmp = sipmsg_find_auth_header(msg, "NTLM");
+				} else {
+					tmp = sipmsg_find_auth_header(msg, "Kerberos");
+				}
+				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\r\n", tmp);
+				fill_auth(sip, tmp, &sip->registrar);
 
 				if (!sip->reauthenticate_set) {
 					/* we have to reauthenticate as our security token expires
@@ -3253,7 +3245,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				if (!sip->subscribed) { //do it just once, not every re-register
 					if(!sip->msrtc_event_categories){ //Only for LCS2005, on OCS2007 always backs the error 504 Server time-out
-						sipe_options_request(sip, sip->sipdomain);
+						//sipe_options_request(sip, sip->sipdomain);
 					}
 					entry = sip->allow_events; 
 					while (entry) {
@@ -3930,7 +3922,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	if (request && subscription_state && strstr(subscription_state, "terminated") ) {
 		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 		purple_debug_info("sipe", "process_incoming_notify: (BE)NOTIFY says that subscription to buddy %s was terminated. \n",  from);
-                g_free(from);
+		g_free(from);
 	}
 	
 	if (timeout && event) {// For LSC 2005 and OCS 2007
@@ -4377,37 +4369,31 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		}*/
 
 		// Verify the signature before processing it
-		if (sip->registrar.ntlm_key) {
+		if (sip->registrar.gssapi_context) {
 			struct sipmsg_breakdown msgbd;
 			gchar *signature_input_str;
-			gchar *signature = NULL;
 			gchar *rspauth;
 			msgbd.msg = msg;
 			sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
 			signature_input_str = sipmsg_breakdown_get_string(&msgbd);
-			if (signature_input_str != NULL) {
-				signature = purple_ntlm_sipe_signature_make (signature_input_str, sip->registrar.ntlm_key);
-			}
-			g_free(signature_input_str);
 
 			rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
 
-			if (signature != NULL) {
-				if (rspauth != NULL) {
-					if (purple_ntlm_verify_signature (signature, rspauth)) {
-						purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature validated\n");
-						process_input_message(sip, msg);
-					} else {
-						purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature is invalid.  Received %s but generated %s; Ignoring message\n", rspauth, signature);
-						purple_connection_error(sip->gc, _("Invalid message signature received"));
-						sip->gc->wants_to_die = TRUE;
-					}
-				} else if (msg->response == 401) {
-					purple_connection_error(sip->gc, _("Wrong Password"));
+			if (rspauth != NULL) {
+				gchar *mech = (sip->registrar.type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
+				if (!sip_sec_verify_signature(sip->registrar.gssapi_context, mech, signature_input_str, rspauth)) {
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature validated\n");
+					process_input_message(sip, msg);
+				} else {
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "incoming message's signature is invalid.\n");
+					purple_connection_error(sip->gc, _("Invalid message signature received"));
 					sip->gc->wants_to_die = TRUE;
 				}
-				g_free(signature);
+			} else if (msg->response == 401) {
+				purple_connection_error(sip->gc, _("Wrong Password"));
+				sip->gc->wants_to_die = TRUE;
 			}
+			g_free(signature_input_str);
 
 			g_free(rspauth);
 			sipmsg_breakdown_free(&msgbd);
@@ -4868,7 +4854,7 @@ static void sipe_login(PurpleAccount *account)
 {
 	PurpleConnection *gc;
 	struct sipe_account_data *sip;
-	gchar **signinname_login, **userserver, **domain_user;
+	gchar **signinname_login, **userserver, **domain_user, **user_realm;
 	const char *transport;
 
 	const char *username = purple_account_get_username(account);
@@ -4906,9 +4892,16 @@ static void sipe_login(PurpleAccount *account)
 	domain_user = g_strsplit(signinname_login[1], "\\", 2);
 	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
 	sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+	
+	user_realm = g_strsplit(sip->authuser, "@", 2);
+	if (user_realm && user_realm[1]) {
+		sip->authuser = g_strdup(user_realm[0]);
+		sip->authdomain = g_strdup(user_realm[1]);
+	}
 
 	sip->password = g_strdup(purple_connection_get_password(gc));
 
+	g_strfreev(user_realm);
 	g_strfreev(userserver);
 	g_strfreev(domain_user);
 	g_strfreev(signinname_login);
@@ -5729,7 +5722,8 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// TODO commented out so won't show in the preferences until we fix krb message signing
-	/*option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
+	/*
+	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// XXX FIXME: Add code to programmatically determine if a KRB REALM is specified in /etc/krb5.conf

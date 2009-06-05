@@ -88,6 +88,8 @@ typedef enum sipe_auth_type
 
 struct sip_auth {
 	sipe_auth_type type;
+	void* gssapi_context;
+	gchar *gssapi_data;
 	gchar *nonce;
 	gchar *opaque;
 	gchar *realm;
@@ -98,7 +100,6 @@ struct sip_auth {
 	int nc;
 	gchar *digest_session_key;
 	int retries;
-	gchar *ntlm_key;
 	int ntlm_num;
 	time_t expires;
 };

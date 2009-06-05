@@ -39,6 +39,7 @@
 
 struct sipmsg_breakdown {
 	struct sipmsg * msg;
+	gchar * protocol;
 	gchar * rand;
 	gchar * num;
 	gchar * realm;

@@ -46,6 +46,8 @@ C_SRC =			sipe.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-ntlm.c \
+			sip-sec.c \
+			sip-sec-ntlm.c \
 			uuid.c
 
 

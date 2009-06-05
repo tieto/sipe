@@ -54,11 +54,13 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 	    (hdr = sipmsg_find_header(msg->msg, "Proxy-Authenticate")) ||
 	    (hdr = sipmsg_find_header(msg->msg, "Proxy-Authentication-Info")) ||
 	    (hdr = sipmsg_find_header(msg->msg, "Authentication-Info")) ) {
+		msg->protocol = sipmsg_find_part_of_header(hdr, NULL, " ", empty_string);
 		msg->rand   = sipmsg_find_part_of_header(hdr, "rand=\"", "\"", empty_string);
 		msg->num    = sipmsg_find_part_of_header(hdr, "num=\"", "\"", empty_string);
 		msg->realm  = sipmsg_find_part_of_header(hdr, "realm=\"", "\"", empty_string);
 		msg->target_name = sipmsg_find_part_of_header(hdr, "targetname=\"", "\"", empty_string);
 	} else {
+		msg->protocol = strstr(target, "sip/") ? g_strdup("Kerberos") : g_strdup("NTLM");
 		msg->realm = g_strdup(realm);
 		msg->target_name = g_strdup(target);
 	}
@@ -87,6 +89,8 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 void
 sipmsg_breakdown_free(struct sipmsg_breakdown * msg)
 {
+	if (msg->protocol != empty_string)
+		g_free(msg->protocol);
 	if (msg->rand != empty_string)
 		g_free(msg->rand);
 	if (msg->num != empty_string)
@@ -126,7 +130,7 @@ sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd)
 	msg = g_strdup_printf(
 		"<%s><%s><%s><%s><%s><%s><%s><%s><%s><%s><%s>" // 1 - 11
 		"<%s>%s", // 12 - 13
-		"NTLM", msgbd->rand, msgbd->num, msgbd->realm, msgbd->target_name, msgbd->call_id, msgbd->cseq,
+		msgbd->protocol, msgbd->rand, msgbd->num, msgbd->realm, msgbd->target_name, msgbd->call_id, msgbd->cseq,
 		msgbd->msg->method, msgbd->from_url, msgbd->from_tag, msgbd->to_tag,
 		msgbd->expires ? msgbd->expires : empty_string, response_str
 	);
