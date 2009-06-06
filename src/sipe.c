@@ -1533,14 +1533,12 @@ static void sipe_subscribe_resource_uri(const char *name, gpointer value, gchar 
 
 static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer value, gchar **resources_uri)
 {
-	gchar *tmp = *resources_uri;
 	struct sipe_buddy *sbuddy = (struct sipe_buddy *)value; 
-	if(sbuddy){
-		if(!sbuddy->resubscribed){ //Only not resubscribed contacts; the first time everybody are included 
-			*resources_uri = g_strdup_printf("%s<resource uri=\"%s\"><context/></resource>\n", tmp, name);
-		}
+	if (sbuddy && !sbuddy->resubscribed) { // Only not resubscribed contacts; the first time everybody are included 
+		gchar *tmp = *resources_uri;
+		*resources_uri = g_strdup_printf("%s<resource uri=\"%s\"><context/></resource>\n", tmp, name);
+		g_free(tmp);
 	}
-	g_free(tmp);
 }
 
 /**
