@@ -60,38 +60,36 @@ char * sip_sec_init_context(SipSecContext *context, const char *mech,
 			    const char *input_toked_base64)
 {
 	SipSecCred cred_handle_p;
-	sip_uint32 ret2;
+	sip_uint32 ret;
+	SipSecBuffer in_buff;
+	SipSecBuffer out_buff;
+	gchar *out_buff_base64;
 
 	sip_sec_acquire_cred_func acquire_cred_func = !strncmp("Kerberos", mech, strlen(mech)) ? 
 						sip_sec_acquire_cred__Kerberos : sip_sec_acquire_cred__NTLM;
 						
-	ret2 = (*acquire_cred_func)(&cred_handle_p, context, domain, username, password);
+	ret = (*acquire_cred_func)(&cred_handle_p, context, domain, username, password);
 
-	char *service_name;
-	sip_uint32 ret3, ret4;
-	
-	SipSecBuffer in_buff;
 	in_buff.length = 0;
-	in_buff.value = NULL;
+	in_buff.value = NULL;	
+	out_buff.length = 0;
+	out_buff.value = NULL;
 	
-	SipSecBuffer out_buff;
-	gchar *out_buff_base64;
-	
-	ret3 = (*((struct sip_sec_context_struct *) *context)->init_context_func)(cred_handle_p, *context,
+	ret = (*((struct sip_sec_context_struct *) *context)->init_context_func)(cred_handle_p, *context,
 										  in_buff,
 										  &out_buff,
 										  target);
 	out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
 	//Type1 (empty) to send
+	free_bytes_buffer(&out_buff);
 
-	if (ret3 == SIP_SEC_I_CONTINUE_NEEDED) {
-		SipSecBuffer in_buff;
-		SipSecBuffer out_buff;
-		
+	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
 		//answer (Type2) 
-		in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));
+		in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));		
+		out_buff.length = 0;
+		out_buff.value = NULL;
 	
-		ret4 = (*((struct sip_sec_context_struct *) *context)->init_context_func)(cred_handle_p, *context,
+		ret = (*((struct sip_sec_context_struct *) *context)->init_context_func)(cred_handle_p, *context,
 											  in_buff,
 											  &out_buff,
 											  target);
@@ -99,6 +97,8 @@ char * sip_sec_init_context(SipSecContext *context, const char *mech,
 		// Type 3 to send
 		g_free(out_buff_base64);
 		out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
+		free_bytes_buffer(&in_buff);
+		free_bytes_buffer(&out_buff);
 	}	
 	
 	return out_buff_base64;	
@@ -113,12 +113,13 @@ sip_sec_destroy_context(SipSecContext context)
 char * sip_sec_make_signature(SipSecContext context, const char *message)
 {						
 	SipSecBuffer signature;
+	char *signature_hex;
 
 	if(((*((struct sip_sec_context_struct *) context)->make_signature_func)(context,	message, &signature)) != SIP_SEC_E_OK) {
 		purple_debug_info("sipe", "ERROR: sip_sec_make_signature failed. Unable to sign message!\n");
 		return NULL;
 	}
-	char *signature_hex = bytes_to_hex_str(&signature);
+	signature_hex = bytes_to_hex_str(&signature);
 	free_bytes_buffer(&signature);
 	return signature_hex;
 }
@@ -152,8 +153,7 @@ void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes)
 		two_digits[0] = hex_str[i * 2];
 		two_digits[1] = hex_str[i * 2 + 1];
 		two_digits[2] = '\0';
-		guint8 tmp = (guint8)strtoul(two_digits, NULL, 16);
-		buff[i] = tmp;		
+		buff[i] = (guint8)strtoul(two_digits, NULL, 16);	
 	}
 }
 

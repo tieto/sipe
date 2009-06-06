@@ -35,6 +35,8 @@
 #include "sip-sec-ntlm.h"
 #include "sip-ntlm.h"
 
+char *sipe_get_host_name();
+
 gchar *purple_base64_encode(const guchar *data, gsize len);
 guchar *purple_base64_decode(const char *str, gsize *ret_len);
 
@@ -49,6 +51,7 @@ typedef struct context_ntlm_struct {
 	int step;
 	gchar *key;
 } context_ntlm, *context_ntlm_t;
+
 
 static sip_uint32
 sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, SipSecContext context,
@@ -72,31 +75,16 @@ sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, SipSecContext context,
 		gchar *ntlm_key;
 		gchar *nonce;
 		guint32 flags;
-
-//@TODO refactor it somewhere to utils
-#if GLIB_CHECK_VERSION(2,8,0)
-		const gchar * hostname = g_get_host_name();
-#else
-		static char hostname[256];
-		int ret = gethostname(hostname, sizeof(hostname));
-		hostname[sizeof(hostname) - 1] = '\0';
-		if (ret == -1 || hostname[0] == '\0') {
-			purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
-			g_strerror(errno);
-			strcpy(hostname, "localhost");
-		}
-#endif
-		/*const gchar * hostname = purple_get_host_name();*/	
-		
 		gchar *input_toked_base64;
+		gchar *gssapi_data;
+		
 		input_toked_base64 = purple_base64_encode(in_buff.value, in_buff.length);
 		
 		nonce = g_memdup(purple_ntlm_parse_challenge(input_toked_base64, &flags), 8);	
-		gchar *gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, credentials->username,
-								  credentials->password, hostname, credentials->domain, nonce, &flags);
+		gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, credentials->username,
+								  credentials->password, sipe_get_host_name(), credentials->domain, nonce, &flags);
 		
-		out_buff->value = purple_base64_decode(gssapi_data, &(out_buff->length));	
-
+		out_buff->value = purple_base64_decode(gssapi_data, &(out_buff->length));
 		ctx->key = ntlm_key;
 		return SIP_SEC_E_OK;
 	}
@@ -157,10 +145,12 @@ sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, SipSecContext *ctx_handle, c
 {
 	credentials_ntlm_t credentials = g_malloc(sizeof(credentials_ntlm));
 	context_ntlm_t context = g_malloc(sizeof(context_ntlm));
+	
 	credentials->domain = strdup(domain);
 	credentials->username = strdup(username);
 	credentials->password = strdup(password);
 	*cred_handle = credentials;
+	
 	context->common.init_context_func     = sip_sec_init_sec_context__ntlm;
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__ntlm;
 	context->common.make_signature_func   = sip_sec_make_signature__ntlm;
@@ -168,5 +158,26 @@ sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, SipSecContext *ctx_handle, c
 	context->step = 0;
 	context->key = NULL;
 	*ctx_handle = context;
+	
 	return SIP_SEC_E_OK;
+}
+
+
+//@TODO refactor it somewhere to utils. Do we need compat with glib < 2.8 ?
+char *sipe_get_host_name()
+{
+#if GLIB_CHECK_VERSION(2,8,0)
+	const gchar * hostname = g_get_host_name();
+#else
+	static char hostname[256];
+	int ret = gethostname(hostname, sizeof(hostname));
+	hostname[sizeof(hostname) - 1] = '\0';
+	if (ret == -1 || hostname[0] == '\0') {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
+		g_strerror(errno);
+		strcpy(hostname, "localhost");
+	}
+#endif
+	/*const gchar * hostname = purple_get_host_name();*/
+	return (char *)hostname;
 }
