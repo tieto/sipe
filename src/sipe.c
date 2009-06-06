@@ -1431,6 +1431,7 @@ struct scheduled_action {
 	guint timeout_handler;
 	gboolean repetitive;
 	Action action;
+	GDestroyNotify destroy;
 	struct sipe_account_data *sip;
 	void *payload;
 };
@@ -1447,7 +1448,7 @@ static gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
 	purple_debug_info("sipe", "sip->timeouts count:%d after removal\n",g_slist_length(sched_action->sip->timeouts));
 	(sched_action->action)(sched_action->sip, sched_action->payload);
 	ret = sched_action->repetitive;
-	g_free(sched_action->payload);
+	(*sched_action->destroy)(sched_action->payload);
 	g_free(sched_action->name);
 	g_free(sched_action);
 	return ret;
@@ -1474,7 +1475,7 @@ static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, const gc
 			sip->timeouts = g_slist_delete_link(sip->timeouts, to_delete);
 			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
 			purple_timeout_remove(sched_action->timeout_handler);
-			g_free(sched_action->payload);
+			(*sched_action->destroy)(sched_action->payload);
 			g_free(sched_action->name);
 			g_free(sched_action);
 		} else {
@@ -1492,7 +1493,7 @@ static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, const gc
   * @action  callback function
   * @payload callback data (can be NULL, otherwise caller must allocate memory)
   */
-static void sipe_schedule_action(const gchar *name, int timeout, Action action, struct sipe_account_data *sip, void *payload)
+static void sipe_schedule_action(const gchar *name, int timeout, Action action, GDestroyNotify destroy, struct sipe_account_data *sip, void *payload)
 {
 	struct scheduled_action *sched_action;
 
@@ -1504,6 +1505,7 @@ static void sipe_schedule_action(const gchar *name, int timeout, Action action, 
 	sched_action->repetitive = FALSE;
 	sched_action->name = g_strdup(name);
 	sched_action->action = action;
+	sched_action->destroy = destroy ? destroy : g_free;
 	sched_action->sip = sip;
 	sched_action->payload = payload;
 	sched_action->timeout_handler = purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action);
@@ -1549,22 +1551,17 @@ static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer 
    *   This header will be send only if adhoclist there is a "Supported: adhoclist" in REGISTER answer else will be send a Single Category SUBSCRIBE
   */
 
-static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, void *unused)
+static void sipe_subscribe_presence_batched_to(struct sipe_account_data *sip, gchar *resources_uri, gchar *to)
 {
-	gchar *to = g_strdup_printf("sip:%s", sip->username);
 	gchar *contact = get_contact(sip);
 	gchar *request;
 	gchar *content;
-	gchar *resources_uri = g_strdup("");
 	gchar *require = "";
 	gchar *accept = "";
         gchar *autoextend = "";
 	gchar *content_type;
-	
-    if (sip->msrtc_event_categories) {
-		
-		 g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
-		
+
+	if (sip->msrtc_event_categories) {
 		require = ", categoryList";
 		accept = ", application/msrtc-event-categories+xml, application/xpidf+xml, application/pidf+xml";
                 content_type = "application/msrtc-adrl-categorylist+xml";
@@ -1579,7 +1576,6 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, void 
 					  "</action>\n"
 					  "</batchSub>", sip->username, resources_uri);
 	} else {
-                g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
                 autoextend =  "Supported: com.microsoft.autoextend\r\n";
 		content_type = "application/adrl+xml";
         	content = g_strdup_printf(
@@ -1588,7 +1584,7 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, void 
 					  "</adhoclist>\n", sip->username,  sip->username, resources_uri);
 	}
 	g_free(resources_uri);
-
+	
 	request = g_strdup_printf(
 				  "Require: adhoclist%s\r\n"
 				  "Supported: eventlist\r\n"
@@ -1608,6 +1604,51 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, void 
 	g_free(content);
 	g_free(to);
 	g_free(request);
+}
+
+static void sipe_subscribe_presence_batched(struct sipe_account_data *sip, void *unused)
+{
+	gchar *to = g_strdup_printf("sip:%s", sip->username);
+	gchar *resources_uri = g_strdup("");
+	if (sip->msrtc_event_categories) {
+		g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
+	} else {
+                g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
+	}
+	sipe_subscribe_presence_batched_to(sip, resources_uri, to);
+}
+
+struct presence_batched_routed {
+	gchar  *host;
+	GSList *buddies;
+};
+
+static void sipe_subscribe_presence_batched_routed_free(void *payload)
+{
+	struct presence_batched_routed *data = payload;
+	GSList *buddies = data->buddies;
+	while (buddies) {
+		g_free(buddies->data);
+		buddies = buddies->next;
+	}
+	g_slist_free(data->buddies);
+	g_free(data->host);
+	g_free(payload);
+}
+
+static void sipe_subscribe_presence_batched_routed(struct sipe_account_data *sip, void *payload)
+{
+	struct presence_batched_routed *data = payload;
+	GSList *buddies = data->buddies;
+	gchar *resources_uri = g_strdup("");
+	while (buddies) {
+		gchar *tmp = resources_uri;
+		resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", tmp, buddies->data);
+		g_free(tmp);
+		buddies = buddies->next;
+	}
+	sipe_subscribe_presence_batched_to(sip, resources_uri,
+					   g_strdup(data->host));
 }
 
 /**
@@ -3161,7 +3202,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				if (!sip->reregister_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "registration");
-					sipe_schedule_action(action_name, expires, do_register_cb, sip, NULL);
+					sipe_schedule_action(action_name, expires, do_register_cb, NULL, sip, NULL);
 					g_free(action_name);
 					sip->reregister_set = TRUE;
 				}
@@ -3181,7 +3222,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					   after eight hours (be five minutes early) */
 					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
 					guint reauth_timeout = (8 * 3600) - 360;
-					sipe_schedule_action(action_name, reauth_timeout, do_reauthenticate_cb, sip, NULL);
+					sipe_schedule_action(action_name, reauth_timeout, do_reauthenticate_cb, NULL, sip, NULL);
 					g_free(action_name);
 					sip->reauthenticate_set = TRUE;
 				}
@@ -3499,14 +3540,19 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 {
 	xmlnode *xn_list;
 	xmlnode *xn_resource;
-	
+	GHashTable *servers = g_hash_table_new_full(g_str_hash, g_str_equal,
+						    g_free, NULL);
+	GSList *server;
+	gchar *host;
+	GHashTableIter iter;
+
 	xn_list = xmlnode_from_str(data, len);
 
         for (xn_resource = xmlnode_get_child(xn_list, "resource");
 	     xn_resource;
 	     xn_resource = xmlnode_get_next_twin(xn_resource) )
 	{
-		const char *uri, *state, *poolFqdn, *cid;
+		const char *uri, *state;
 		xmlnode *xn_instance;
 
 		xn_instance = xmlnode_get_child(xn_resource, "instance");
@@ -3516,30 +3562,35 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
                 state = xmlnode_get_attrib(xn_instance, "state");
                 purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: uri(%s),state(%s)\n", uri, state);
 
-                cid = xmlnode_get_attrib(xn_instance, "cid");
-                if(cid){ //Only OCS2007
-                    uri = g_strdup(cid);
-                    purple_debug_info("sipe", "The user is from a different deployment; cid=%s\n", uri);
-                }
-            
-                 poolFqdn = xmlnode_get_attrib(xn_instance, "poolFqdn");
-                if(poolFqdn){ //[MS-PRES] Section 3.4.5.1.3 Processing Details
-                    uri = g_strdup(poolFqdn);
-                    purple_debug_info("sipe", "The user is from the same domain but is hosted on a different server or server pool; poolFqdn=%s\n", uri);
-                }
-                 
-
                 if (strstr(state, "resubscribe")) {
+			const char *poolFqdn = xmlnode_get_attrib(xn_instance, "poolFqdn");
 			struct sipe_buddy *sbuddy;
-                        sipe_subscribe_presence_single(sip, (void *) uri);
-			if(!poolFqdn){
-                            sbuddy = g_hash_table_lookup(sip->buddies, uri);
-                            if (sbuddy) {
+			if (poolFqdn) { //[MS-PRES] Section 3.4.5.1.3 Processing Details
+				gchar *user = g_strdup(uri);
+				host = g_strdup(poolFqdn);
+				server = g_hash_table_lookup(servers, host);
+				server = g_slist_append(server, user);
+				g_hash_table_insert(servers, host, server);
+			} else {
+				sipe_subscribe_presence_single(sip, (void *) uri);
+			}
+			sbuddy = g_hash_table_lookup(sip->buddies, uri);
+			if (sbuddy) {
                                 sbuddy->resubscribed = TRUE;
-                            }
-                        }
+			}
                 }
 	}
+
+	g_hash_table_iter_init(&iter, servers);
+	while (g_hash_table_iter_next(&iter, (gpointer) &host, (gpointer) &server)) {
+		struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
+                purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: pool(%s)\n", host);
+		payload->host    = g_strdup(host);
+		payload->buddies = server;
+		sipe_subscribe_presence_batched_routed(sip, payload);
+		sipe_subscribe_presence_batched_routed_free(payload);
+	}
+	g_hash_table_destroy(servers);
 
 	xmlnode_free(xn_list);
 }
@@ -3865,6 +3916,56 @@ static void sipe_process_presence(struct sipe_account_data *sip, struct sipmsg *
 	}
 }
 
+static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct sipmsg *msg, gchar *who, int timeout)
+{
+	char *ctype = sipmsg_find_header(msg, "Content-Type");
+	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, who);
+
+	purple_debug_info("sipe", "sipe_process_presence_timeout: Content-Type: %s\n", ctype ? ctype : "");
+
+	if (ctype &&
+	    strstr(ctype, "multipart") &&
+	    (strstr(ctype, "application/rlmi+xml") ||
+	     strstr(ctype, "application/msrtc-event-categories+xml"))) {
+		char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ctype, msg->body);
+		PurpleMimeDocument *mime = purple_mime_document_parse(doc);
+		GList *parts = purple_mime_document_get_parts(mime);
+		GSList *buddies = NULL;
+		struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
+
+		while (parts) {
+			xmlnode *xml = xmlnode_from_str(purple_mime_part_get_data(parts->data),
+							purple_mime_part_get_length(parts->data));
+			gchar *uri = g_strdup(xmlnode_get_attrib(xml, "uri"));
+
+			if (strstr(uri, "sip:") == NULL) {
+				gchar *tmp = uri;
+				uri = g_strdup_printf("sip:%s", tmp);
+				g_free(tmp);
+			}
+			buddies = g_slist_append(buddies, uri);
+			xmlnode_free(xml);
+
+			parts = parts->next;
+		}
+		g_free(doc);
+		if (mime) purple_mime_document_free(mime);
+
+		payload->host    = who;
+		payload->buddies = buddies;
+		sipe_schedule_action(action_name, timeout,
+				     sipe_subscribe_presence_batched_routed,
+				     sipe_subscribe_presence_batched_routed_free,
+				     sip, payload);
+		purple_debug_info("sipe", "Resubscription multiple contacts with batched support & route(%s) in %d\n", who, timeout);
+
+	} else {
+		sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, NULL, sip, who);
+		purple_debug_info("sipe", "Resubscription single contact with batched support(%s) in %d\n", who, timeout);
+	}
+	g_free(action_name);
+}
+
 /**
  * Dispatcher for all incoming subscription information
  * whether it comes from NOTIFY, BENOTIFY requests or
@@ -3931,14 +4032,14 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			 g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-contacts", (GCompareFunc)g_ascii_strcasecmp))
 		 {
 			 gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-contacts");
-			 sipe_schedule_action(action_name, timeout, sipe_subscribe_roaming_contacts, sip, msg);
+			 sipe_schedule_action(action_name, timeout, sipe_subscribe_roaming_contacts, NULL, sip, msg);
 			 g_free(action_name);
 		 }
 		 else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL") &&
 				  g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL", (GCompareFunc)g_ascii_strcasecmp))
 		 {
 			 gchar *action_name = g_strdup_printf("<%s>", "vnd-microsoft-roaming-ACL");
-			 sipe_schedule_action(action_name, timeout, sipe_subscribe_roaming_acl, sip, msg);
+			 sipe_schedule_action(action_name, timeout, sipe_subscribe_roaming_acl, NULL, sip, msg);
 			 g_free(action_name);
 		 }
 		 else*/
@@ -3946,7 +4047,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		    g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
 		{
 			gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
-			sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_wpending, sip, NULL);
+			sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_wpending, NULL, sip, NULL);
 			g_free(action_name);
 		}
 		else if (!g_ascii_strcasecmp(event, "presence") &&
@@ -3957,18 +4058,17 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			if(sip->batched_support) {
 				gchar *my_self = g_strdup_printf("sip:%s",sip->username);
 				if(!g_ascii_strcasecmp(who, my_self)){
-					sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_batched, sip, NULL);
+					sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_batched, NULL, sip, NULL);
 					purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
 					g_free(who); /* unused */
 				}
 				else {
-					sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, sip, who);
-					purple_debug_info("sipe", "Resubscription single contact with batched support(%s) in %d\n", who,timeout);
+					sipe_process_presence_timeout(sip, msg, who, timeout);
 				}
 				g_free(my_self);
 			}
 			else {
-				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, sip, who);
+				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, NULL, sip, who);
 			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who,timeout);
 			}
 			g_free(action_name);
@@ -4981,7 +5081,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 			struct scheduled_action *sched_action = entry->data;
 			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
 			purple_timeout_remove(sched_action->timeout_handler);
-			g_free(sched_action->payload);
+			(*sched_action->destroy)(sched_action->payload);
 			g_free(sched_action->name);
 			g_free(sched_action);
 			entry = entry->next;

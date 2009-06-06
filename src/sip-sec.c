@@ -119,6 +119,7 @@ char * sip_sec_make_signature(SipSecContext context, const char *message)
 		return NULL;
 	}
 	char *signature_hex = bytes_to_hex_str(&signature);
+	free_bytes_buffer(&signature);
 	return signature_hex;
 }
 
