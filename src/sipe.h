@@ -83,15 +83,11 @@ struct sip_auth {
 	SipSecAuthType type;
 	SipSecContext gssapi_context;
 	gchar *gssapi_data;
-	gchar *nonce;
 	gchar *opaque;
 	gchar *realm;
 	gchar *target;
-	gchar *rspauth;
-	gchar *srand;
 	guint32 flags;
 	int nc;
-	gchar *digest_session_key;
 	int retries;
 	int ntlm_num;
 	time_t expires;

@@ -203,16 +203,12 @@ static struct sip_connection *connection_find(struct sipe_account_data *sip, int
 
 static void sipe_auth_free(struct sip_auth *auth)
 {
-	g_free(auth->nonce);
-	auth->nonce = NULL;
 	g_free(auth->opaque);
 	auth->opaque = NULL;
 	g_free(auth->realm);
 	auth->realm = NULL;
 	g_free(auth->target);
 	auth->target = NULL;
-	g_free(auth->digest_session_key);
-	auth->digest_session_key = NULL;
 	auth->type = AUTH_TYPE_UNSET;
 	auth->retries = 0;
 	auth->expires = 0;
@@ -254,100 +250,63 @@ static void connection_free_all(struct sipe_account_data *sip)
 
 static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg)
 {
-	const gchar *method = msg->method;
-	const gchar *target = msg->target;
 	gchar noncecount[9];
+	const char *authuser = sip->authuser;
 	gchar *response;
 	gchar *ret;
-	gchar *tmp = NULL;
-	const char *authdomain = sip->authdomain;
-	const char *authuser = sip->authuser;
-	//const char *krb5_realm;
-	const char *host;
-	//gchar      *krb5_token = NULL;
-
-	// XXX FIXME: Get this info from the account dialogs and/or /etc/krb5.conf
-	//            and do error checking
-
-	// KRB realm should always be uppercase
-	//krb5_realm = g_strup(purple_account_get_string(sip->account, "krb5_realm", ""));
-
-	if (sip->realhostname) {
-		host = sip->realhostname;
-	} else if (purple_account_get_bool(sip->account, "useproxy", TRUE)) {
-		host = purple_account_get_string(sip->account, "proxy", "");
-	} else {
-		host = sip->sipdomain;
-	}
-
-	/*gboolean new_auth = krb5_auth.gss_context == NULL;
-	if (new_auth) {
-		purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
-	}
-
-	if (new_auth || force_reauth) {
-		krb5_token = krb5_auth.base64_token;
-	}
-
-	purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
-	krb5_token = krb5_auth.base64_token;*/
-
-	if (!authdomain) {
-		authdomain = "";
-	}
 
 	if (!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
 	}
 
-	if (auth->type == AUTH_TYPE_DIGEST) { /* Digest */
-		sprintf(noncecount, "%08d", auth->nc++);
-		response = purple_cipher_http_digest_calculate_response(
-							"md5", method, target, NULL, NULL,
-							auth->nonce, noncecount, NULL, auth->digest_session_key);
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "response %s\n", response);
-
-		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->nonce, target, noncecount, response);
-		g_free(response);
-		return ret;
-	} else if (auth->type == AUTH_TYPE_NTLM || auth->type == AUTH_TYPE_KERBEROS) { /* NTLM */ /* Kerberos */
+	if (auth->type == AUTH_TYPE_NTLM || auth->type == AUTH_TYPE_KERBEROS) { /* NTLM or Kerberos */
 		gchar *auth_protocol = (auth->type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
+
 		// If we have a signature for the message, include that
 		if (msg->signature) {
-			tmp = g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth_protocol, auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
-			return tmp;
+			return g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth_protocol, auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
 		}
 
 		if ((auth->type == AUTH_TYPE_NTLM && auth->nc == 3 && auth->gssapi_data && auth->gssapi_context == NULL) 
 			|| (auth->type == AUTH_TYPE_KERBEROS && auth->nc == 3)) {
 			gchar *gssapi_data;
 			gchar *opaque;
-			
+
 			gssapi_data = sip_sec_init_context(&(auth->gssapi_context), auth->type,
-							   authdomain, authuser, sip->password,
+							   sip->authdomain ? sip->authdomain : "", authuser, sip->password,
 							   auth->target,
 							   auth->gssapi_data);			
 
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
-			tmp = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth_protocol, opaque, auth->realm, auth->target, gssapi_data);
+			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth_protocol, opaque, auth->realm, auth->target, gssapi_data);
 			g_free(opaque);
 			g_free(gssapi_data);
-			return tmp;
+			return ret;
 		}
 
-		tmp = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth_protocol, auth->realm, auth->target);
-		return tmp;
+		return g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth_protocol, auth->realm, auth->target);
+
+	} else { /* Digest */
+
+		/* Calculate new session key */
+		if (!auth->opaque) {
+			purple_debug(PURPLE_DEBUG_MISC, "sipe", "Digest nonce: %s realm: %s\n", auth->gssapi_data, auth->realm);
+			auth->opaque = purple_cipher_http_digest_calculate_session_key("md5",
+										       authuser, auth->realm, sip->password,
+										       auth->gssapi_data, NULL);
+		}
+
+		sprintf(noncecount, "%08d", auth->nc++);
+		response = purple_cipher_http_digest_calculate_response("md5",
+									msg->method, msg->target, NULL, NULL,
+									auth->gssapi_data, noncecount, NULL,
+									auth->opaque);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "Digest response %s\n", response);
+
+		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->gssapi_data, msg->target, noncecount, response);
+		g_free(response);
+		return ret;
 	}
-
-	sprintf(noncecount, "%08d", auth->nc++);
-	response = purple_cipher_http_digest_calculate_response(
-						"md5", method, target, NULL, NULL,
-						auth->nonce, noncecount, NULL, auth->digest_session_key);
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "response %s\n", response);
-
-	ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->nonce, target, noncecount, response);
-	g_free(response);
-	return ret;
 }
 
 static char *parse_attribute(const char *attrname, const char *source)
@@ -370,32 +329,8 @@ static char *parse_attribute(const char *attrname, const char *source)
 
 static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth *auth)
 {
-	int i = 0;
-	const char *authuser;
-	char *tmp;
+	int i;
 	gchar **parts;
-
-	//const char *krb5_realm;
-	//const char *host;
-
-        // XXX FIXME: Get this info from the account dialogs and/or /etc/krb5.conf
-        //            and do error checking
-
-	// KRB realm should always be uppercase
-	/*krb5_realm = g_strup(purple_account_get_string(sip->account, "krb5_realm", ""));
-
-	if (sip->realhostname) {
-		host = sip->realhostname;
-	} else if (purple_account_get_bool(sip->account, "useproxy", TRUE)) {
-		host = purple_account_get_string(sip->account, "proxy", "");
-	} else {
-		host = sip->sipdomain;
-	}*/
-
-	authuser = sip->authuser;
-	if (!authuser || strlen(authuser) < 1) {
-		authuser = sip->username;
-	}
 
 	if (!hdr) {
 		purple_debug_error("sipe", "fill_auth: hdr==NULL\n");
@@ -420,49 +355,43 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 
 	parts = g_strsplit(hdr, "\", ", 0);
 	for (i = 0; parts[i]; i++) {
+		char *tmp;
+
 		//purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
 
 		if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
+			g_free(auth->gssapi_data);
+			auth->gssapi_data = tmp;
 
 			if (auth->type == AUTH_TYPE_NTLM) {
 				/* NTLM module extracts nonce from gssapi-data */
 				auth->nc = 3;
-			} /* else if (auth->type == AUTH_TYPE_KERBEROS) {
-				if (krb5_auth.gss_context == NULL) {
-					purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
-				}
-				g_free(auth->nonce);
-				auth->nonce = g_memdup(krb5_auth.base64_token, 8);
-			} */
+			}
 
-			g_free(auth->gssapi_data);
-			auth->gssapi_data = tmp;
 		} else if ((tmp = parse_attribute("nonce=\"", parts[i]))) {
 			/* Only used with AUTH_TYPE_DIGEST */
-			g_free(auth->nonce);
-			auth->nonce = tmp;
+			g_free(auth->gssapi_data);
+			auth->gssapi_data = tmp;
 		} else if ((tmp = parse_attribute("opaque=\"", parts[i]))) {
 			g_free(auth->opaque);
 			auth->opaque = tmp;
 		} else if ((tmp = parse_attribute("realm=\"", parts[i]))) {
 			g_free(auth->realm);
 			auth->realm = tmp;
+
+			if (auth->type == AUTH_TYPE_DIGEST) {
+				/* Throw away old session key */
+				g_free(auth->opaque);
+				auth->opaque = NULL;
+				auth->nc = 1;
+			}
+
 		} else if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
 			g_free(auth->target);
 			auth->target = tmp;
 		}
 	}
 	g_strfreev(parts);
-
-	if (auth->type == AUTH_TYPE_DIGEST) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "nonce: %s realm: %s\n", auth->nonce ? auth->nonce : "(null)", auth->realm ? auth->realm : "(null)");
-		if (auth->realm) {
-			g_free(auth->digest_session_key);
-			auth->digest_session_key = purple_cipher_http_digest_calculate_session_key(
-				"md5", authuser, auth->realm, sip->password, auth->nonce, NULL);
-			auth->nc = 1;
-		}
-	}
 
 	return;
 }
