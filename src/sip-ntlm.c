@@ -524,8 +524,11 @@ purple_ntlm_gen_authenticate(gchar **ntlm_key, const gchar *user, const gchar *p
 	memcpy(tmp, encrypted_random_session_key, 16);
 	tmp += NTLMSSP_SESSION_KEY_LEN;
 
+	tmp = purple_base64_encode(exported_session_key, 16);
+	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE message (%s)\n", tmp);
+	g_free(tmp);
+
 	tmp = purple_base64_encode((guchar*) tmsg, msglen);
-	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE message (%s)\n",purple_base64_encode(exported_session_key,16));
 	g_free(tmsg);
 	return tmp;
 }

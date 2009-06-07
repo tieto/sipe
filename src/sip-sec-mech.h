@@ -20,14 +20,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
-							
-/* Mechanism wrappers API  (Inspired by GSS-API) 
+
+
+/* Mechanism wrappers API  (Inspired by GSS-API)
  * All mechanisms should implement this API
  *
  * Current mechanisms are: Kerberos/GSS-API, sipe's NTLM and SSPI.
  */
- 
+
 #ifndef _SIP_SEC_MECH_H
 #define _SIP_SEC_MECH_H
 
@@ -37,20 +37,19 @@
 
 typedef unsigned long sip_uint32;
 
-typedef void* SipSecCred;
-typedef void* SipSecContext;
-
-typedef struct sip_buffer_desc_struct {
+typedef struct {
 	size_t length;
 	void *value;
 } SipSecBuffer;
 
 
-typedef sip_uint32 
-(*sip_sec_acquire_cred_func)(SipSecCred *cred_handle, SipSecContext *context, const char *domain, const char *username, const char *password);
+typedef SipSecContext
+(*sip_sec_acquire_cred_func)(const char *domain,
+			     const char *username,
+			     const char *password);
 
 typedef sip_uint32
-(*sip_sec_init_context_func)(SipSecCred cred_handle, SipSecContext context,
+(*sip_sec_init_context_func)(SipSecContext context,
 			     SipSecBuffer in_buff,
 			     SipSecBuffer *out_buff,
 			     const char *service_name);
@@ -59,16 +58,33 @@ typedef void
 (*sip_sec_destroy_context_func)(SipSecContext context);
 
 typedef sip_uint32
-(*sip_sec_make_signature_func)(SipSecContext context, const char *message, SipSecBuffer *signature);
+(*sip_sec_make_signature_func)(SipSecContext context,
+			       const char *message,
+			       SipSecBuffer *signature);
 
 typedef sip_uint32
-(*sip_sec_verify_signature_func)(SipSecContext context,	const char *message, SipSecBuffer signature);
+(*sip_sec_verify_signature_func)(SipSecContext context,
+				 const char *message,
+				 SipSecBuffer signature);
 
-struct sip_sec_context_struct {
+struct sip_sec_context {
 	sip_sec_init_context_func     init_context_func;
 	sip_sec_destroy_context_func  destroy_context_func;
 	sip_sec_make_signature_func   make_signature_func;
 	sip_sec_verify_signature_func verify_signature_func;
 };
+
+/// Utility methods (implemented in sip-sec.c)
+
+/**
+ * Converts a string of hex digits into bytes.
+ *
+ * Allocates memory for 'bytes', must be freed after use
+ */
+void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes);
+void free_bytes_buffer(SipSecBuffer *bytes);
+
+/** Allocates memory for output, must be freed after use */
+char *bytes_to_hex_str(SipSecBuffer *bytes);
 
 #endif /* _SIP_SEC_MECH_H */

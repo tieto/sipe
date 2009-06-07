@@ -21,10 +21,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "sip-sec-mech.h"
- 
-//// Sipe convenience methods //// 
- 
+/* Opaque type definition for security context */
+typedef struct sip_sec_context *SipSecContext;
+
+//// Sipe convenience methods ////
+
 /**
  * A convenience method for sipe.
  * Initializes security context.
@@ -40,17 +41,20 @@
  * @return base64 encoded output token to send to server.
  */
 char * sip_sec_init_context(SipSecContext *context, const char* mech,
-			    const char* domain, const char *username, const char *password,
+			    const char* domain,
+			    const char *username,
+			    const char *password,
 			    const char* target,
 			    const char* input_toked_base64);
 
 /**
  * A convenience method for sipe.
  * Destroys security context.
+ *
  * @param context (in,out) security context to destroy
  */
 void sip_sec_destroy_context(SipSecContext context);
-	
+
 /**
  * A convenience method for sipe.
  * Signs incoming message.
@@ -59,8 +63,9 @@ void sip_sec_destroy_context(SipSecContext context);
  *
  * @return signature for the message. Converted to Hex null terminated string;
  */
-char * sip_sec_make_signature(SipSecContext context, const char *message);
-	
+char * sip_sec_make_signature(SipSecContext context,
+			      const char *message);
+
 /**
  * A convenience method for sipe.
  * Verifies signature for the message.
@@ -69,19 +74,7 @@ char * sip_sec_make_signature(SipSecContext context, const char *message);
  * @param signature_hex (in) signature to test in Hex representation. Null terminated string. Example: "602306092A864886F71201020201011100FFFFFFFF1A306ACB7BE311827BBF7208D80D15E3"
  *
  * @return FALSE on error
- */ 
-int sip_sec_verify_signature(SipSecContext context, const char* mech, const char* signature_hex);	
-
-
-/// Utility methods
-
-/**
- * Converts a string of hex digits into bytes.
- *
- * Allocates memory for 'bytes', must be freed after use 
  */
-void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes);
-void free_bytes_buffer(SipSecBuffer *bytes);
-
-/** Allocates memory for output, must be freed after use */
-char *bytes_to_hex_str(SipSecBuffer *bytes);
+int sip_sec_verify_signature(SipSecContext context,
+			     const char* mech,
+			     const char* signature_hex);

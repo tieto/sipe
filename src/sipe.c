@@ -75,7 +75,6 @@
 #include "mime.h"
 
 #include "sipe.h"
-#include "sip-sec.h"
 #include "sip-ntlm.h"
 #ifdef USE_KERBEROS
  #include "sipkrb5.h"
@@ -2994,6 +2993,7 @@ static void do_reauthenticate_cb(struct sipe_account_data *sip, void *unused)
 	 * is almost expired by sending a not signed REGISTER message */
 	purple_debug_info("sipe", "do a full reauthentication\n");
 	sipe_auth_free(&sip->registrar);
+	sipe_auth_free(&sip->proxy);
 	sip->registerstatus = 0;
 	do_register(sip);
 	sip->reauthenticate_set = FALSE;

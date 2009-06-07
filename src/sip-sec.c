@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include "debug.h"
 #include "sip-sec.h"
+#include "sip-sec-mech.h"
 //#include "sip-sec-mech.h"
 
 #ifndef _WIN32
@@ -59,63 +60,51 @@ char * sip_sec_init_context(SipSecContext *context, const char *mech,
 			    const char *target,
 			    const char *input_toked_base64)
 {
-	SipSecCred cred_handle_p;
-	sip_uint32 ret;
-	SipSecBuffer in_buff;
-	SipSecBuffer out_buff;
+	SipSecBuffer in_buff  = {0, NULL};
+	SipSecBuffer out_buff = {0, NULL};
 	gchar *out_buff_base64;
+	sip_uint32 ret;
 
-	sip_sec_acquire_cred_func acquire_cred_func = !strncmp("Kerberos", mech, strlen(mech)) ? 
+	sip_sec_acquire_cred_func acquire_cred_func = !strncmp("Kerberos", mech, strlen(mech)) ?
 						sip_sec_acquire_cred__Kerberos : sip_sec_acquire_cred__NTLM;
-						
-	ret = (*acquire_cred_func)(&cred_handle_p, context, domain, username, password);
 
-	in_buff.length = 0;
-	in_buff.value = NULL;	
-	out_buff.length = 0;
-	out_buff.value = NULL;
-	
-	ret = (*((struct sip_sec_context_struct *) *context)->init_context_func)(cred_handle_p, *context,
-										  in_buff,
-										  &out_buff,
-										  target);
+	/* @TODO: Can *context != NULL actually happen? */
+	sip_sec_destroy_context(*context);
+	*context = (*acquire_cred_func)(domain, username, password);
+	if (!*context) return(NULL);
+
+	/* Type1 (empty) to send */
+	ret = (*(*context)->init_context_func)(*context, in_buff, &out_buff, target);
 	out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
-	//Type1 (empty) to send
 	free_bytes_buffer(&out_buff);
 
 	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
-		//answer (Type2) 
-		in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));		
-		out_buff.length = 0;
-		out_buff.value = NULL;
-	
-		ret = (*((struct sip_sec_context_struct *) *context)->init_context_func)(cred_handle_p, *context,
-											  in_buff,
-											  &out_buff,
-											  target);
-		
-		// Type 3 to send
+		/* Type 2 answer */
+		in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));
+		ret = (*(*context)->init_context_func)(*context, in_buff, &out_buff, target);
+		free_bytes_buffer(&in_buff);
+
+		/* Type 3 to send */
 		g_free(out_buff_base64);
 		out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
-		free_bytes_buffer(&in_buff);
 		free_bytes_buffer(&out_buff);
-	}	
-	
-	return out_buff_base64;	
+	}
+
+	return out_buff_base64;
 }
 
 void
 sip_sec_destroy_context(SipSecContext context)
 {
-	if (context) (*((struct sip_sec_context_struct *) context)->destroy_context_func)(context);
+	if (context) (*context->destroy_context_func)(context);
 }
 
 char * sip_sec_make_signature(SipSecContext context, const char *message)
-{						
+{
 	SipSecBuffer signature;
 	char *signature_hex;
 
-	if(((*((struct sip_sec_context_struct *) context)->make_signature_func)(context,	message, &signature)) != SIP_SEC_E_OK) {
+	if(((*context->make_signature_func)(context, message, &signature)) != SIP_SEC_E_OK) {
 		purple_debug_info("sipe", "ERROR: sip_sec_make_signature failed. Unable to sign message!\n");
 		return NULL;
 	}
@@ -124,17 +113,16 @@ char * sip_sec_make_signature(SipSecContext context, const char *message)
 	return signature_hex;
 }
 
-int sip_sec_verify_signature(SipSecContext context, const char* message, const char* signature_hex)
+int sip_sec_verify_signature(SipSecContext context, const char *message, const char *signature_hex)
 {
 	SipSecBuffer signature;
-
-	sip_uint32 res = SIP_SEC_E_INTERNAL_ERROR;
+	sip_uint32 res;
 
 	hex_str_to_bytes(signature_hex, &signature);
-	res = (*((struct sip_sec_context_struct *) context)->verify_signature_func)(context, message, signature);
+	res = (*context->verify_signature_func)(context, message, signature);
 	free_bytes_buffer(&signature);
 	return res;
-}								
+}
 
 
 // Utility Methods //
@@ -144,22 +132,24 @@ void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes)
 	guint8 *buff;
 	char two_digits[3];
 	int i;
-	
+
 	bytes->length = strlen(hex_str)/2;
 	bytes->value = g_malloc(bytes->length);
 
 	buff = (guint8 *)bytes->value;
-	for (i = 0; i < bytes->length; i++) {		
+	for (i = 0; i < bytes->length; i++) {
 		two_digits[0] = hex_str[i * 2];
 		two_digits[1] = hex_str[i * 2 + 1];
 		two_digits[2] = '\0';
-		buff[i] = (guint8)strtoul(two_digits, NULL, 16);	
+		buff[i] = (guint8)strtoul(two_digits, NULL, 16);
 	}
 }
 
 void free_bytes_buffer(SipSecBuffer *bytes)
 {
 	g_free(bytes->value);
+	bytes->length = 0;
+	bytes->value = NULL;
 }
 
 char *bytes_to_hex_str(SipSecBuffer *bytes)
@@ -173,3 +163,12 @@ char *bytes_to_hex_str(SipSecBuffer *bytes)
 	res[j] = '\0';
 	return res;
 }
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

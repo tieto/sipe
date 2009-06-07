@@ -21,7 +21,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "sip-sec-mech.h"
-
-sip_uint32 
-sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, SipSecContext *context, const char *domain, const char *username, const char *password);
+SipSecContext
+sip_sec_acquire_cred__ntlm(const char *domain,
+			   const char *username,
+			   const char *password);

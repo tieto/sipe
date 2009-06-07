@@ -32,6 +32,7 @@
 #endif //_WIN32
 
 #include "sip-sec.h"
+#include "sip-sec-mech.h"
 #include "sip-sec-ntlm.h"
 #include "sip-ntlm.h"
 
@@ -40,60 +41,60 @@ char *sipe_get_host_name();
 gchar *purple_base64_encode(const guchar *data, gsize len);
 guchar *purple_base64_decode(const char *str, gsize *ret_len);
 
-typedef struct credentials_ntlm_struct {
+/* Security context for NTLM */
+typedef struct _context_ntlm {
+	struct sip_sec_context common;
 	char* domain;
 	char *username;
 	char *password;
-} credentials_ntlm, *credentials_ntlm_t;
-
-typedef struct context_ntlm_struct {
-	struct sip_sec_context_struct common;
 	int step;
 	gchar *key;
-} context_ntlm, *context_ntlm_t;
-
+} *context_ntlm;
 
 static sip_uint32
-sip_sec_init_sec_context__ntlm(SipSecCred cred_handle, SipSecContext context,
+sip_sec_init_sec_context__ntlm(SipSecContext context,
 			       SipSecBuffer in_buff,
 			       SipSecBuffer *out_buff,
 			       const char *service_name)
 {
-	context_ntlm_t ctx = context;
+	context_ntlm ctx = (context_ntlm) context;
+
 	ctx->step++;
-	
-	if (ctx->step == 1) 
-	{
+	if (ctx->step == 1) {
 		out_buff->length = 0;
 		out_buff->value = NULL;
 		// same behaviour as sspi
 		return SIP_SEC_I_CONTINUE_NEEDED;
-	} 
-	else 
-	{
-		credentials_ntlm_t credentials = (credentials_ntlm_t)cred_handle;
+
+	} else 	{
 		gchar *ntlm_key;
 		gchar *nonce;
 		guint32 flags;
 		gchar *input_toked_base64;
 		gchar *gssapi_data;
-		
-		input_toked_base64 = purple_base64_encode(in_buff.value, in_buff.length);
-		
-		nonce = g_memdup(purple_ntlm_parse_challenge(input_toked_base64, &flags), 8);	
-		gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key, credentials->username,
-								  credentials->password, sipe_get_host_name(), credentials->domain, nonce, &flags);
-		
+
+		input_toked_base64 = purple_base64_encode(in_buff.value,
+							  in_buff.length);
+
+		nonce = g_memdup(purple_ntlm_parse_challenge(input_toked_base64, &flags), 8);
+		g_free(input_toked_base64);
+
+		gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key,
+							   ctx->username,
+							   ctx->password,
+							   sipe_get_host_name(),
+							   ctx->domain,
+							   nonce,
+							   &flags);
+		g_free(nonce);
+
 		out_buff->value = purple_base64_decode(gssapi_data, &(out_buff->length));
+		g_free(gssapi_data);
+
+		g_free(ctx->key);
 		ctx->key = ntlm_key;
 		return SIP_SEC_E_OK;
 	}
-}
-
-static void
-sip_sec_destroy_sec_context__ntlm(SipSecContext context)
-{
-	g_free(context);
 }
 
 /**
@@ -101,14 +102,13 @@ sip_sec_destroy_sec_context__ntlm(SipSecContext context)
  *
  */
 static sip_uint32
-sip_sec_make_signature__ntlm(SipSecContext context, 
+sip_sec_make_signature__ntlm(SipSecContext context,
 			     const char *message,
 			     SipSecBuffer *signature)
 {
-	context_ntlm_t ctx = (context_ntlm_t)context;
-	gchar *ntlm_key = ctx->key;
-	gchar *signature_hex = purple_ntlm_sipe_signature_make(message, ntlm_key);
-	
+	gchar *signature_hex = purple_ntlm_sipe_signature_make(message,
+							       ((context_ntlm) context)->key);
+
 	hex_str_to_bytes(signature_hex, signature);
 	g_free(signature_hex);
 
@@ -124,13 +124,12 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 			       const char *message,
 			       SipSecBuffer signature)
 {
-	context_ntlm_t ctx = (context_ntlm_t)context;
-	gchar *ntlm_key = ctx->key;
 	char *signature_hex = bytes_to_hex_str(&signature);
-	gchar *signature_calc = purple_ntlm_sipe_signature_make(message, ntlm_key);
+	gchar *signature_calc = purple_ntlm_sipe_signature_make(message,
+								((context_ntlm) context)->key);
 	sip_uint32 res;
 
-	if (purple_ntlm_verify_signature (signature_calc, signature_hex)) {
+	if (purple_ntlm_verify_signature(signature_calc, signature_hex)) {
 		res = SIP_SEC_E_OK;
 	} else {
 		res = SIP_SEC_E_INTERNAL_ERROR;
@@ -140,28 +139,36 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 	return(res);
 }
 
-sip_uint32
-sip_sec_acquire_cred__ntlm(SipSecCred *cred_handle, SipSecContext *ctx_handle, const char *domain, const char *username, const char *password)
+static void
+sip_sec_destroy_sec_context__ntlm(SipSecContext context)
 {
-	credentials_ntlm_t credentials = g_malloc(sizeof(credentials_ntlm));
-	context_ntlm_t context = g_malloc(sizeof(context_ntlm));
-	
-	credentials->domain = strdup(domain);
-	credentials->username = strdup(username);
-	credentials->password = strdup(password);
-	*cred_handle = credentials;
-	
+	context_ntlm ctx = (context_ntlm) context;
+
+	g_free(ctx->domain);
+	g_free(ctx->username);
+	g_free(ctx->password);
+	g_free(ctx->key);
+	g_free(ctx);
+}
+
+SipSecContext
+sip_sec_acquire_cred__ntlm(const char *domain,
+			   const char *username,
+			   const char *password)
+{
+	context_ntlm context = g_malloc0(sizeof(struct _context_ntlm));
+	if (!context) return(NULL);
+
 	context->common.init_context_func     = sip_sec_init_sec_context__ntlm;
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__ntlm;
 	context->common.make_signature_func   = sip_sec_make_signature__ntlm;
 	context->common.verify_signature_func = sip_sec_verify_signature__ntlm;
-	context->step = 0;
-	context->key = NULL;
-	*ctx_handle = context;
-	
-	return SIP_SEC_E_OK;
-}
+	context->domain   = strdup(domain);
+	context->username = strdup(username);
+	context->password = strdup(password);
 
+	return((SipSecContext) context);
+}
 
 //@TODO refactor it somewhere to utils. Do we need compat with glib < 2.8 ?
 char *sipe_get_host_name()
@@ -181,3 +188,12 @@ char *sipe_get_host_name()
 	/*const gchar * hostname = purple_get_host_name();*/
 	return (char *)hostname;
 }
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

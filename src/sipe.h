@@ -38,6 +38,7 @@
 #include "sslconn.h"
 
 #include "sipmsg.h"
+#include "sip-sec.h"
 #include "uuid.h"
 
 #define SIMPLE_BUF_INC 4096
@@ -88,7 +89,7 @@ typedef enum sipe_auth_type
 
 struct sip_auth {
 	sipe_auth_type type;
-	void* gssapi_context;
+	SipSecContext gssapi_context;
 	gchar *gssapi_data;
 	gchar *nonce;
 	gchar *opaque;
