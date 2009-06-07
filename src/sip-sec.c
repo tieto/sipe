@@ -26,15 +26,15 @@
 #include <string.h>
 #include <stdio.h>
 #include "debug.h"
+#include "util.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
-//#include "sip-sec-mech.h"
 
 #ifndef _WIN32
 #include "sip-sec-ntlm.h"
 #define sip_sec_acquire_cred__NTLM	sip_sec_acquire_cred__ntlm
 //#include "sip-sec-krb5.h"
-#define sip_sec_acquire_cred__Kerberos	NULL
+#define sip_sec_acquire_cred__Kerberos	sip_sec_acquire_cred__NONE
 
 #else //_WIN32
 #if 0 //with SSPI
@@ -45,17 +45,21 @@
 #else //with SSPI
 #include "sip-sec-ntlm.h"
 #define sip_sec_acquire_cred__NTLM	sip_sec_acquire_cred__ntlm
-#define sip_sec_acquire_cred__Kerberos	NULL
+#define sip_sec_acquire_cred__Kerberos	sip_sec_acquire_cred__NONE
 #endif //with SSPI
 
 #endif //_WIN32
 
-
-gchar *purple_base64_encode(const guchar *data, gsize len);
-guchar *purple_base64_decode(const char *str, gsize *ret_len);
+/* Dummy initialization hook */
+static SipSecContext sip_sec_acquire_cred__NONE(const char *domain,
+						const char *username,
+						const char *password)
+{
+	return(NULL);
+}
 
 /* sip_sec API method */
-char * sip_sec_init_context(SipSecContext *context, const char *mech,
+char * sip_sec_init_context(SipSecContext *context, SipSecAuthType type,
 			    const char *domain, const char *username, const char *password,
 			    const char *target,
 			    const char *input_toked_base64)
@@ -65,12 +69,17 @@ char * sip_sec_init_context(SipSecContext *context, const char *mech,
 	gchar *out_buff_base64;
 	sip_uint32 ret;
 
-	sip_sec_acquire_cred_func acquire_cred_func = !strncmp("Kerberos", mech, strlen(mech)) ?
-						sip_sec_acquire_cred__Kerberos : sip_sec_acquire_cred__NTLM;
+	/* Map authentication type to module initialization hook */
+	static const sip_sec_acquire_cred_func const auth_to_hook[] = {
+		sip_sec_acquire_cred__NONE,    /* AUTH_TYPE_UNSET    */
+		sip_sec_acquire_cred__NONE,    /* AUTH_TYPE_DIGEST   */
+		sip_sec_acquire_cred__NTLM,    /* AUTH_TYPE_NTLM     */
+		sip_sec_acquire_cred__Kerberos /* AUTH_TYPE_KERBEROS */
+	};
 
 	/* @TODO: Can *context != NULL actually happen? */
 	sip_sec_destroy_context(*context);
-	*context = (*acquire_cred_func)(domain, username, password);
+	*context = (*(auth_to_hook[type]))(domain, username, password);
 	if (!*context) return(NULL);
 
 	/* Type1 (empty) to send */

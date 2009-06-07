@@ -323,10 +323,10 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			gchar *gssapi_data;
 			gchar *opaque;
 			
-			gssapi_data = sip_sec_init_context(&(auth->gssapi_context), auth_protocol,
-								authdomain, authuser, sip->password,
-								auth->target,
-								auth->gssapi_data);			
+			gssapi_data = sip_sec_init_context(&(auth->gssapi_context), auth->type,
+							   authdomain, authuser, sip->password,
+							   auth->target,
+							   auth->gssapi_data);			
 
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
 			tmp = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth_protocol, opaque, auth->realm, auth->target, gssapi_data);
@@ -374,7 +374,6 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	const char *authuser;
 	char *tmp;
 	gchar **parts;
-	const char *split = "\", ";
 
 	//const char *krb5_realm;
 	//const char *host;
@@ -416,10 +415,10 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	} else {
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth: type Digest\n");
 		auth->type = AUTH_TYPE_DIGEST;
-		split = " ";
+		hdr += 7;
 	}
 
-	parts = g_strsplit(hdr, split, 0);
+	parts = g_strsplit(hdr, "\", ", 0);
 	for (i = 0; parts[i]; i++) {
 		//purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
 

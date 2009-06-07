@@ -24,6 +24,14 @@
 /* Opaque type definition for security context */
 typedef struct sip_sec_context *SipSecContext;
 
+typedef enum
+{
+	AUTH_TYPE_UNSET = 0,
+	AUTH_TYPE_DIGEST,
+	AUTH_TYPE_NTLM,
+	AUTH_TYPE_KERBEROS
+} SipSecAuthType;
+
 //// Sipe convenience methods ////
 
 /**
@@ -40,7 +48,8 @@ typedef struct sip_sec_context *SipSecContext;
  *
  * @return base64 encoded output token to send to server.
  */
-char *sip_sec_init_context(SipSecContext *context, const char* mech,
+char *sip_sec_init_context(SipSecContext *context,
+			   SipSecAuthType type,
 			   const char *domain,
 			   const char *username,
 			   const char *password,

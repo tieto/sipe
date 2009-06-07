@@ -79,16 +79,8 @@ struct sipe_buddy {
 	gboolean resubscribed;
 };
 
-typedef enum sipe_auth_type
-{
-	AUTH_TYPE_UNSET = 0,
-	AUTH_TYPE_DIGEST,
-	AUTH_TYPE_NTLM,
-	AUTH_TYPE_KERBEROS
-} sipe_auth_type;
-
 struct sip_auth {
-	sipe_auth_type type;
+	SipSecAuthType type;
 	SipSecContext gssapi_context;
 	gchar *gssapi_data;
 	gchar *nonce;
