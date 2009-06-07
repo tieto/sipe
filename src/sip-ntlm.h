@@ -52,7 +52,7 @@ static char SIPE_DEFAULT_CODESET[] = "ANSI_X3.4-1968";
  * @param challenge String containing the base64 encoded challenge message
  * @return The nonce for use in message authenticate
  */
-gchar *purple_ntlm_parse_challenge(gchar *challenge, guint32 *flags);
+gchar *purple_ntlm_parse_challenge(const char *challenge, guint32 *flags);
 
 /**
  * Generates a authenticate message

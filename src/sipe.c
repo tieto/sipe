@@ -75,7 +75,6 @@
 #include "mime.h"
 
 #include "sipe.h"
-#include "sip-ntlm.h"
 #ifdef USE_KERBEROS
  #include "sipkrb5.h"
 #endif /*USE_KERBEROS*/
@@ -375,6 +374,8 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	const char *authuser;
 	char *tmp;
 	gchar **parts;
+	const char *split = "\", ";
+
 	//const char *krb5_realm;
 	//const char *host;
 
@@ -393,7 +394,6 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	}*/
 
 	authuser = sip->authuser;
-
 	if (!authuser || strlen(authuser) < 1) {
 		authuser = sip->username;
 	}
@@ -404,102 +404,68 @@ static void fill_auth(struct sipe_account_data *sip, gchar *hdr, struct sip_auth
 	}
 
 	if (!g_strncasecmp(hdr, "NTLM", 4)) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth: type NTLM\n");
 		auth->type = AUTH_TYPE_NTLM;
-		parts = g_strsplit(hdr+5, "\", ", 0);
-		i = 0;
-		while (parts[i]) {
-			//purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
-			
-			if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
-				g_free(auth->nonce);
-				auth->nonce = g_memdup(purple_ntlm_parse_challenge(tmp, &auth->flags), 8);
-						
-				g_free(auth->gssapi_data);
-				auth->gssapi_data = tmp;
-			}
-			if ((tmp = parse_attribute("targetname=\"",
-					parts[i]))) {
-				g_free(auth->target);
-				auth->target = tmp;
-			}
-			else if ((tmp = parse_attribute("realm=\"",
-					parts[i]))) {
-				g_free(auth->realm);
-				auth->realm = tmp;
-			}
-			else if ((tmp = parse_attribute("opaque=\"", parts[i]))) {
-				g_free(auth->opaque);
-				auth->opaque = tmp;
-			}
-			i++;
-		}
-		g_strfreev(parts);
+		hdr += 5;
 		auth->nc = 1;
-		if (!strstr(hdr, "gssapi-data")) {
-			auth->nc = 1;
-		} else {
-			auth->nc = 3;
-                }
-		return;
+	} else	if (!g_strncasecmp(hdr, "Kerberos", 8)) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth: type Kerberos\n");
+		auth->type = AUTH_TYPE_KERBEROS;
+		hdr += 9;
+		auth->nc = 3;
+	} else {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth: type Digest\n");
+		auth->type = AUTH_TYPE_DIGEST;
+		split = " ";
 	}
 
-	if (!g_strncasecmp(hdr, "Kerberos", 8)) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "setting auth type to Kerberos (3)\r\n");
-		auth->type = AUTH_TYPE_KERBEROS;
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "fill_auth - header: %s\r\n", hdr);
-		parts = g_strsplit(hdr+9, "\", ", 0);
-		i = 0;
-		while (parts[i]) {
-			purple_debug_info("sipe", "krb - parts[i] %s\n", parts[i]);
-			if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
-				/*if (krb5_auth.gss_context == NULL) {
+	parts = g_strsplit(hdr, split, 0);
+	for (i = 0; parts[i]; i++) {
+		//purple_debug_info("sipe", "parts[i] %s\n", parts[i]);
+
+		if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
+
+			if (auth->type == AUTH_TYPE_NTLM) {
+				/* NTLM module extracts nonce from gssapi-data */
+				auth->nc = 3;
+			} /* else if (auth->type == AUTH_TYPE_KERBEROS) {
+				if (krb5_auth.gss_context == NULL) {
 					purple_krb5_init_auth(&krb5_auth, authuser, krb5_realm, sip->password, host, "sip");
 				}
-				auth->nonce = g_memdup(krb5_auth.base64_token, 8);*/
-				
-				g_free(auth->gssapi_data);
-				auth->gssapi_data = tmp;
-			}
-			if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
-				g_free(auth->target);
-				auth->target = tmp;
-			} else if ((tmp = parse_attribute("realm=\"", parts[i]))) {
-				g_free(auth->realm);
-				auth->realm = tmp;
-			} else if ((tmp = parse_attribute("opaque=\"", parts[i]))) {
-				g_free(auth->opaque);
-				auth->opaque = tmp;
-			}
-			i++;
-		}
-		g_strfreev(parts);
-		auth->nc = 3;
-		return;
-	}
+				g_free(auth->nonce);
+				auth->nonce = g_memdup(krb5_auth.base64_token, 8);
+			} */
 
-	auth->type = AUTH_TYPE_DIGEST;
-	parts = g_strsplit(hdr, " ", 0);
-	while (parts[i]) {
-		if ((tmp = parse_attribute("nonce=\"", parts[i]))) {
+			g_free(auth->gssapi_data);
+			auth->gssapi_data = tmp;
+		} else if ((tmp = parse_attribute("nonce=\"", parts[i]))) {
+			/* Only used with AUTH_TYPE_DIGEST */
 			g_free(auth->nonce);
 			auth->nonce = tmp;
-		}
-		else if ((tmp = parse_attribute("realm=\"", parts[i]))) {
+		} else if ((tmp = parse_attribute("opaque=\"", parts[i]))) {
+			g_free(auth->opaque);
+			auth->opaque = tmp;
+		} else if ((tmp = parse_attribute("realm=\"", parts[i]))) {
 			g_free(auth->realm);
 			auth->realm = tmp;
+		} else if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
+			g_free(auth->target);
+			auth->target = tmp;
 		}
-		i++;
 	}
 	g_strfreev(parts);
 
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "nonce: %s realm: %s\n", auth->nonce ? auth->nonce : "(null)", auth->realm ? auth->realm : "(null)");
-	if (auth->realm) {
-		g_free(auth->digest_session_key);
-		auth->digest_session_key = purple_cipher_http_digest_calculate_session_key(
+	if (auth->type == AUTH_TYPE_DIGEST) {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "nonce: %s realm: %s\n", auth->nonce ? auth->nonce : "(null)", auth->realm ? auth->realm : "(null)");
+		if (auth->realm) {
+			g_free(auth->digest_session_key);
+			auth->digest_session_key = purple_cipher_http_digest_calculate_session_key(
 				"md5", authuser, auth->realm, sip->password, auth->nonce, NULL);
-
-		auth->nc = 1;
+			auth->nc = 1;
+		}
 	}
+
+	return;
 }
 
 static void sipe_canwrite_cb(gpointer data, gint source, PurpleInputCondition cond)

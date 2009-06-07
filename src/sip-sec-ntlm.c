@@ -52,10 +52,10 @@ typedef struct _context_ntlm {
 } *context_ntlm;
 
 static sip_uint32
-sip_sec_init_sec_context__ntlm(SipSecContext context,
-			       SipSecBuffer in_buff,
-			       SipSecBuffer *out_buff,
-			       const char *service_name)
+sip_sec_init_sec_context_(SipSecContext context,
+			  SipSecBuffer in_buff,
+			  SipSecBuffer *out_buff,
+			  const char *service_name)
 {
 	context_ntlm ctx = (context_ntlm) context;
 
@@ -102,9 +102,9 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
  *
  */
 static sip_uint32
-sip_sec_make_signature__ntlm(SipSecContext context,
-			     const char *message,
-			     SipSecBuffer *signature)
+sip_sec_make_signature_(SipSecContext context,
+			const char *message,
+			SipSecBuffer *signature)
 {
 	gchar *signature_hex = purple_ntlm_sipe_signature_make(message,
 							       ((context_ntlm) context)->key);
@@ -120,9 +120,9 @@ sip_sec_make_signature__ntlm(SipSecContext context,
  * @return SIP_SEC_E_OK on success
  */
 static sip_uint32
-sip_sec_verify_signature__ntlm(SipSecContext context,
-			       const char *message,
-			       SipSecBuffer signature)
+sip_sec_verify_signature_(SipSecContext context,
+			  const char *message,
+			  SipSecBuffer signature)
 {
 	char *signature_hex = bytes_to_hex_str(&signature);
 	gchar *signature_calc = purple_ntlm_sipe_signature_make(message,
@@ -140,7 +140,7 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 }
 
 static void
-sip_sec_destroy_sec_context__ntlm(SipSecContext context)
+sip_sec_destroy_sec_context_(SipSecContext context)
 {
 	context_ntlm ctx = (context_ntlm) context;
 
@@ -159,10 +159,10 @@ sip_sec_acquire_cred__ntlm(const char *domain,
 	context_ntlm context = g_malloc0(sizeof(struct _context_ntlm));
 	if (!context) return(NULL);
 
-	context->common.init_context_func     = sip_sec_init_sec_context__ntlm;
-	context->common.destroy_context_func  = sip_sec_destroy_sec_context__ntlm;
-	context->common.make_signature_func   = sip_sec_make_signature__ntlm;
-	context->common.verify_signature_func = sip_sec_verify_signature__ntlm;
+	context->common.init_context_func     = sip_sec_init_sec_context_;
+	context->common.destroy_context_func  = sip_sec_destroy_sec_context_;
+	context->common.make_signature_func   = sip_sec_make_signature_;
+	context->common.verify_signature_func = sip_sec_verify_signature_;
 	context->domain   = strdup(domain);
 	context->username = strdup(username);
 	context->password = strdup(password);

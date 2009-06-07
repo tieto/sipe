@@ -40,12 +40,12 @@ typedef struct sip_sec_context *SipSecContext;
  *
  * @return base64 encoded output token to send to server.
  */
-char * sip_sec_init_context(SipSecContext *context, const char* mech,
-			    const char* domain,
-			    const char *username,
-			    const char *password,
-			    const char* target,
-			    const char* input_toked_base64);
+char *sip_sec_init_context(SipSecContext *context, const char* mech,
+			   const char *domain,
+			   const char *username,
+			   const char *password,
+			   const char *target,
+			   const char *input_toked_base64);
 
 /**
  * A convenience method for sipe.
@@ -63,8 +63,8 @@ void sip_sec_destroy_context(SipSecContext context);
  *
  * @return signature for the message. Converted to Hex null terminated string;
  */
-char * sip_sec_make_signature(SipSecContext context,
-			      const char *message);
+char *sip_sec_make_signature(SipSecContext context,
+			     const char *message);
 
 /**
  * A convenience method for sipe.
@@ -76,5 +76,5 @@ char * sip_sec_make_signature(SipSecContext context,
  * @return FALSE on error
  */
 int sip_sec_verify_signature(SipSecContext context,
-			     const char* mech,
-			     const char* signature_hex);
+			     const char *message,
+			     const char *signature_hex);

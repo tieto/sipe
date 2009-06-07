@@ -321,10 +321,10 @@ NONCE(char *buffer, int num)
 
 /* End Private Methods */
 
-gchar *purple_ntlm_parse_challenge(gchar *challenge, guint32 *flags) {
+gchar *purple_ntlm_parse_challenge(const char *challenge, guint32 *flags) {
 	gsize retlen;
 	static gchar nonce[8];
-	struct challenge_message *tmsg = (struct challenge_message*)purple_base64_decode((char*)challenge, &retlen);
+	struct challenge_message *tmsg = (struct challenge_message*)purple_base64_decode(challenge, &retlen);
 	memcpy(nonce, tmsg->nonce, 8);
 
 	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", tmsg->flags, (tmsg->flags & NEGOTIATE_FLAGS) == NEGOTIATE_FLAGS);
