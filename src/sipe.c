@@ -1534,7 +1534,7 @@ static void sipe_subscribe_presence_batched_routed(struct sipe_account_data *sip
 	gchar *resources_uri = g_strdup("");
 	while (buddies) {
 		gchar *tmp = resources_uri;
-		resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", tmp, buddies->data);
+		resources_uri = g_strdup_printf("%s<resource uri=\"%s\"/>\n", tmp, (char *) buddies->data);
 		g_free(tmp);
 		buddies = buddies->next;
 	}
@@ -2181,6 +2181,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri_user, display_name);
 				purple_blist_alias_buddy(pbuddy, display_name);
 			}
+			g_free(display_name);
 			g_free(uri_alias);
 		}
 		g_free(uri_user);
