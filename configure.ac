@@ -61,7 +61,6 @@ if test "$kerberos" != "no" ; then
         if test "$kerberos" != "yes" ; then
                 KRB5_CFLAGS="-I${kerberos}/include"
                 KRB5_LDFLAGS="-L${kerberos}/lib"
-                AC_DEFINE(USE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
         fi
         orig_LDFLAGS="$LDFLAGS"
         LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
@@ -79,8 +78,9 @@ if test "$kerberos" != "no" ; then
                                 [AC_ERROR(GSSAPI libraries not found)],
                                 )],
                         -lgssapi_krb5)
+	AC_DEFINE(USE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
 fi
-
+AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
 
 # Check for Purple
 PKG_CHECK_MODULES(PURPLE,
@@ -147,7 +147,7 @@ else
    echo "dynamic"
 fi
 
-if test "$kerberos" = "yes" ; then
+if test "$kerberos" != "no" ; then
 echo
 echo "Compiled with kerberos 5 support"
 echo "LDFLAGS :$KRB5_LDFLAGS"

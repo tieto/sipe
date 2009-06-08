@@ -656,19 +656,27 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
 		buf = auth_header(sip, &sip->registrar, msg);
+#ifdef USE_KERBEROS
 		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+#endif
 			sipmsg_add_header(msg, "Authorization", buf);
+#ifdef USE_KERBEROS
 		} else {
 			sipmsg_add_header_pos(msg, "Authorization", buf, 5); // What's the point in 5?
 		}
+#endif
 		g_free(buf);
 	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO") || !strcmp(method, "OPTIONS")) {
 		sip->registrar.nc = 3;
+#ifdef USE_KERBEROS
 		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+#endif
 			sip->registrar.type = AUTH_TYPE_NTLM;
+#ifdef USE_KERBEROS
 		} else {
 			sip->registrar.type = AUTH_TYPE_KERBEROS;
 		}
+#endif
 		
 
 		buf = auth_header(sip, &sip->registrar, msg);
@@ -723,8 +731,6 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 		sipmsg_add_header(msg, "Content-Length", "0");
 	}
 
-	//gchar * mic = purple_krb5_get_mic_for_sipmsg(&krb5_auth, msg);
-	//gchar * mic = "MICTODO";
 	msg->response = code;
 
 	sipmsg_remove_header(msg, "Authentication-Info");
@@ -3098,11 +3104,15 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				sip->registerstatus = 3;
 				
+#ifdef USE_KERBEROS
 				if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+#endif
 					tmp = sipmsg_find_auth_header(msg, "NTLM");
+#ifdef USE_KERBEROS
 				} else {
 					tmp = sipmsg_find_auth_header(msg, "Kerberos");
 				}
+#endif
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\r\n", tmp);
 				fill_auth(sip, tmp, &sip->registrar);
 
@@ -3273,11 +3283,15 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					purple_connection_error(sip->gc, _("Wrong Password"));
 					return TRUE;
 				}
+#ifdef USE_KERBEROS
 				if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+#endif
 					tmp = sipmsg_find_auth_header(msg, "NTLM");
+#ifdef USE_KERBEROS
 				} else {
 					tmp = sipmsg_find_auth_header(msg, "Kerberos");
 				}
+#endif
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\r\n", tmp);
 				fill_auth(sip, tmp, &sip->registrar);
 				sip->registerstatus = 2;
@@ -4265,11 +4279,15 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							if (sip->registrar.retries > 4) return;
 							sip->registrar.retries++;
 
+#ifdef USE_KERBEROS
 							if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+#endif
 								ptmp = sipmsg_find_auth_header(msg, "NTLM");
+#ifdef USE_KERBEROS
 							} else {
 								ptmp = sipmsg_find_auth_header(msg, "Kerberos");
 							}
+#endif
 
 							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\r\n", ptmp);
 
@@ -5712,15 +5730,10 @@ static void init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_string_new(_("User Agent"), "useragent", "Purple/" VERSION);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	// TODO commented out so won't show in the preferences until we fix krb message signing
-
+#ifdef USE_KERBEROS
 	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	/*
-	// XXX FIXME: Add code to programmatically determine if a KRB REALM is specified in /etc/krb5.conf
-	option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	*/
+#endif
 
 	my_protocol = plugin;
 }

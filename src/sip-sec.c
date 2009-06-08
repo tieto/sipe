@@ -34,8 +34,12 @@
 #include "sip-sec-ntlm.h"
 #define sip_sec_acquire_cred__NTLM	sip_sec_acquire_cred__ntlm
 
+#ifdef USE_KERBEROS
 #include "sip-sec-krb5.h"
 #define sip_sec_acquire_cred__Kerberos	sip_sec_acquire_cred__krb5
+#else
+#define sip_sec_acquire_cred__Kerberos	sip_sec_acquire_cred__NONE
+#endif
 
 #else //_WIN32
 #if 0 //with SSPI
