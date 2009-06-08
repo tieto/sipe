@@ -27,6 +27,7 @@ libsipe_la_SOURCES = \
 AM_CFLAGS = $(st) 
 
 libsipe_la_CFLAGS = \
+	-Wimplicit-function-declaration -Wformat \
 	-Werror \
         $(DEBUG_CFLAGS) \
         $(GLIB_CFLAGS) \

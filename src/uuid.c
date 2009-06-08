@@ -41,6 +41,7 @@
 
 #include <cipher.h>
 #include <glib.h>
+#include <glib/gprintf.h>
 #include "uuid.h"
 
 static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";

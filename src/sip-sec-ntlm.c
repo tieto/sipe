@@ -29,6 +29,7 @@
  */
 
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
