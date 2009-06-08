@@ -52,7 +52,6 @@
 #include "internal.h"
 #endif /* _WIN32 */
 
-#include <iconv.h>
 #ifdef HAVE_LANGINFO_CODESET
 #include <langinfo.h>
 #endif /* HAVE_LANGINFO_CODESET */
@@ -211,7 +210,7 @@ unicode_strconvcopy(gchar *dest, const gchar *source, int remlen)
 	if (!sys_cp) sys_cp = "UTF-8";
 
 	fd = g_iconv_open("UTF-16LE", sys_cp);
-	if( fd == (iconv_t)-1 ) {
+	if( fd == (GIConv)-1 ) {
 		purple_debug_error( "sipe", "iconv_open returned -1, cannot continue\n" );
 	}
 	g_iconv(fd, &inbuf, &inbytes, &outbuf, &outbytes);
