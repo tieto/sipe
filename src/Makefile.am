@@ -8,8 +8,6 @@ MAINTAINERCLEANFILES = \
 
 libsipe_la_SOURCES = \
 	sip-prefix.h	\
-	sipkrb5.h	\
-	sipkrb5.c	\
 	sipmsg.c \
 	sipmsg.h \
 	sipe.h \
@@ -19,6 +17,8 @@ libsipe_la_SOURCES = \
 	sip-sec-mech.h \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
+	sip-sec-krb5.h \
+	sip-sec-krb5.c \
 	sipe-sign.h \
 	sipe-sign.c \
 	uuid.h \

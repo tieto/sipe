@@ -75,10 +75,6 @@
 #include "mime.h"
 
 #include "sipe.h"
-#ifdef USE_KERBEROS
- #include "sipkrb5.h"
-#endif /*USE_KERBEROS*/
-
 #include "sipmsg.h"
 #include "sipe-sign.h"
 #include "dnssrv.h"
@@ -5717,10 +5713,10 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	// TODO commented out so won't show in the preferences until we fix krb message signing
-	/*
+
 	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
+	/*
 	// XXX FIXME: Add code to programmatically determine if a KRB REALM is specified in /etc/krb5.conf
 	option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
