@@ -96,7 +96,7 @@ char *generateUUIDfromEPID(const gchar *epid)
 
 	readUUID(epid_ns_uuid, &result);
 	memcpy(buf, &result, sizeof(sipe_uuid_t));
-	sprintf(&buf[sizeof(sipe_uuid_t)], epid);
+	strcpy(&buf[sizeof(sipe_uuid_t)], epid);
 
 	ctx = purple_cipher_context_new_by_name("sha1", NULL);
 	purple_cipher_context_append(ctx, buf, strlen(buf));
@@ -208,7 +208,7 @@ gchar * sipe_uuid_get_macaddr(const char *ip_address)
 		}
 		return g_strdup(nmac);
 	}
-	return g_strdup_printf("01010101");  //Default
+	return g_strdup("01010101");  //Default
 #else
 	return get_mac_address_win(ip_address);
 #endif /* _WIN32 */
