@@ -3429,6 +3429,16 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode_free(xn_categories);
 }
 
+static void sipe_subscribe_poolfqdn_resource_uri(const char *host, GSList *server, struct sipe_account_data *sip)
+{
+	struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
+	purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: pool(%s)\n", host);
+	payload->host    = g_strdup(host);
+	payload->buddies = server;
+	sipe_subscribe_presence_batched_routed(sip, payload);
+	sipe_subscribe_presence_batched_routed_free(payload);
+}
+
 static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	xmlnode *xn_list;
@@ -3437,7 +3447,6 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 						    g_free, NULL);
 	GSList *server;
 	gchar *host;
-	GHashTableIter iter;
 
 	xn_list = xmlnode_from_str(data, len);
 
@@ -3474,15 +3483,8 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
                 }
 	}
 
-	g_hash_table_iter_init(&iter, servers);
-	while (g_hash_table_iter_next(&iter, (gpointer) &host, (gpointer) &server)) {
-		struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
-                purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: pool(%s)\n", host);
-		payload->host    = g_strdup(host);
-		payload->buddies = server;
-		sipe_subscribe_presence_batched_routed(sip, payload);
-		sipe_subscribe_presence_batched_routed_free(payload);
-	}
+	/* Send out any deferred poolFqdn subscriptions */
+	g_hash_table_foreach(servers, (GHFunc) sipe_subscribe_poolfqdn_resource_uri, sip);
 	g_hash_table_destroy(servers);
 
 	xmlnode_free(xn_list);
