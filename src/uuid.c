@@ -99,7 +99,7 @@ char *generateUUIDfromEPID(const gchar *epid)
 	strcpy(&buf[sizeof(sipe_uuid_t)], epid);
 
 	ctx = purple_cipher_context_new_by_name("sha1", NULL);
-	purple_cipher_context_append(ctx, buf, strlen(buf));
+	purple_cipher_context_append(ctx, (guchar *) buf, strlen(buf));
 	purple_cipher_context_digest(ctx, sizeof(hash), hash, NULL);
 	purple_cipher_context_destroy(ctx);
 
@@ -109,7 +109,7 @@ char *generateUUIDfromEPID(const gchar *epid)
 }
 
 #ifndef _WIN32
-long mac_addr_sys (const char *addr)
+long mac_addr_sys (const unsigned char *addr)
 {
 /* implementation for Linux */
     struct ifreq ifr;

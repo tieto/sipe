@@ -145,7 +145,7 @@ void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes)
 {
 	guint8 *buff;
 	char two_digits[3];
-	int i;
+	size_t i;
 
 	bytes->length = strlen(hex_str)/2;
 	bytes->value = g_malloc(bytes->length);
@@ -170,7 +170,7 @@ char *bytes_to_hex_str(SipSecBuffer *bytes)
 {
 	guint8 *buff = (guint8 *)bytes->value;
 	char *res    = g_malloc(bytes->length * 2 + 1);
-	int i, j;
+	size_t i, j;
 	for (i = 0, j = 0; i < bytes->length; i++, j+=2) {
 		sprintf(&res[j], "%02X", buff[i]);
 	}

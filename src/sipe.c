@@ -173,9 +173,9 @@ static void sipe_keep_alive(PurpleConnection *gc)
 	} else {
 		time_t now = time(NULL);
 		if ((sip->keepalive_timeout > 0) &&
-		    ((now - sip->last_keepalive) >= sip->keepalive_timeout)
+		    ((guint) (now - sip->last_keepalive) >= sip->keepalive_timeout)
 #if PURPLE_VERSION_CHECK(2,4,0)
-		    && ((now - gc->last_received) >= sip->keepalive_timeout)
+		    && ((guint) (now - gc->last_received) >= sip->keepalive_timeout)
 #endif
 		    ) {
 			purple_debug_info("sipe", "sending keep alive %d\n",sip->keepalive_timeout);
@@ -5021,7 +5021,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 /**
   * A callback for g_hash_table_foreach_remove
   */
-static gboolean sipe_buddy_remove(gpointer key, struct sipe_buddy *buddy, gpointer user_data)
+static void sipe_buddy_remove(gpointer key, struct sipe_buddy *buddy, gpointer user_data)
 {
 	sipe_free_buddy(buddy);
 }

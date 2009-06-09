@@ -164,11 +164,13 @@ struct authenticate_message {
 #endif
 };
 
+#ifndef HAVE_LANGINFO_CODESET
 static char SIPE_DEFAULT_CODESET[] = "ANSI_X3.4-1968";
+#endif
 
 /* Private Methods */
 
-static void setup_des_key(const unsigned char key_56[], char *key)
+static void setup_des_key(const unsigned char key_56[], unsigned char *key)
 {
 	key[0] = key_56[0];
 	key[1] = ((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1);
@@ -180,7 +182,7 @@ static void setup_des_key(const unsigned char key_56[], char *key)
 	key[7] =  (key_56[6] << 1) & 0xFF;
 }
 
-static void des_ecb_encrypt(const char *plaintext, char *result, const char *key)
+static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *result, const unsigned char *key)
 {
 	PurpleCipher *cipher;
 	PurpleCipherContext *context;
@@ -221,18 +223,18 @@ unicode_strconvcopy(gchar *dest, const gchar *source, int remlen)
 
 // (k = 7 byte key, d = 8 byte data) returns 8 bytes in results
 static void
-DES (const char *k, const char *d, char * results)
+DES (const unsigned char *k, const unsigned char *d, unsigned char * results)
 {
-	char key[8];
+	unsigned char key[8];
 	setup_des_key(k, key);
 	des_ecb_encrypt(d, results, key);
 }
 
 // (K = 21 byte key, D = 8 bytes of data) returns 24 bytes in results:
 static void
-DESL (char *k, const char *d, char * results)
+DESL (unsigned char *k, const unsigned char *d, unsigned char * results)
 {
-	char keys[21];
+	unsigned char keys[21];
 
 	// Copy the first 16 bytes
 	memcpy(keys, k, 16);
@@ -246,7 +248,7 @@ DESL (char *k, const char *d, char * results)
 }
 
 static void
-MD4 (const char * d, int len, char * result)
+MD4 (const unsigned char * d, int len, unsigned char * result)
 {
 	PurpleCipher * cipher = purple_ciphers_find_cipher("md4");
 	PurpleCipherContext * context = purple_cipher_context_new(cipher, NULL);
@@ -257,12 +259,12 @@ MD4 (const char * d, int len, char * result)
 
 
 static void
-NTOWFv1 (const char* password, const char *user, const char *domain, char * result)
+NTOWFv1 (const char* password, const char *user, const char *domain, unsigned char * result)
 {
 	int len = 2 * strlen(password); // utf16 should not be more
-	char *unicode_password = g_new0(char, len);
+	unsigned char *unicode_password = g_new0(unsigned char, len);
 
-	len = unicode_strconvcopy(unicode_password, password, len);
+	len = unicode_strconvcopy((gchar *) unicode_password, password, len);
 	MD4 (unicode_password, len, result);
 	g_free(unicode_password);
 }
@@ -278,7 +280,7 @@ NTOWFv1 (const char* password, const char *user, const char *domain, char * resu
 // }
 
 static void
-RC4K (const char * k, const char * d, char * result)
+RC4K (const unsigned char * k, const unsigned char * d, unsigned char * result)
 {
 	PurpleCipherContext * context = purple_cipher_context_new_by_name("rc4", NULL);
 	purple_cipher_context_set_option(context, "key_len", (gpointer)16);
@@ -288,7 +290,7 @@ RC4K (const char * k, const char * d, char * result)
 }
 
 static void
-KXKEY (const char * session_base_key, const char * lm_challenge_resonse, char * key_exchange_key)
+KXKEY (const unsigned char * session_base_key, const unsigned char * lm_challenge_resonse, unsigned char * key_exchange_key)
 {
 	// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
 	memcpy(key_exchange_key, session_base_key, 16);
@@ -311,11 +313,11 @@ SIGNKEY (const char * random_session_key, gboolean client, char * result)
 }*/
 
 static void
-LMOWFv1 (const char *password, const char *user, const char *domain, char *result)
+LMOWFv1 (const char *password, const char *user, const char *domain, unsigned char *result)
 {
 	/* "KGS!@#$%" */
 	unsigned char magic[] = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
-	char uppercase_password[14];
+	unsigned char uppercase_password[14];
 	int i;
 
 	int len = strlen(password);
@@ -338,11 +340,11 @@ LMOWFv1 (const char *password, const char *user, const char *domain, char *resul
 }
 
 static void
-NONCE(char *buffer, int num)
+NONCE(unsigned char *buffer, int num)
 {
 	int i;
 	for (i = 0; i < num; i++) {
-		buffer[i] = (char)(rand() & 0xff);
+		buffer[i] = (rand() & 0xff);
 	}
 }
 
@@ -417,18 +419,18 @@ static guint32 crc32(guint32 crc, const guint8 *buf, int len)
 	return crc ^ 0xffffffffL;
 }
 
-static long
+static guint32
 CRC32 (const char * msg)
 {
-	long crc = 0L;//crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, msg, strlen(msg));
+	guint32 crc = 0L;//crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, (guint8 *) msg, strlen(msg));
 	//char * ptr = (char*) &crc;
 	//return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | (ptr[3] & 0xff);
 	return crc;
 }
 
 static gchar *
-purple_ntlm_gen_signature (const char * buf, char * signing_key, guint32 random_pad, long sequence, int key_len)
+purple_ntlm_gen_signature (const char * buf, unsigned char * signing_key, guint32 random_pad, long sequence, int key_len)
 {
 	gint32 *res_ptr;
 	gint32 plaintext [] = {0, CRC32(buf), sequence};
@@ -460,7 +462,7 @@ purple_ntlm_gen_signature (const char * buf, char * signing_key, guint32 random_
 }
 
 static gchar *
-purple_ntlm_sipe_signature_make (const char * msg, char * signing_key)
+purple_ntlm_sipe_signature_make (const char * msg, unsigned char * signing_key)
 {
 	return purple_ntlm_gen_signature(msg, signing_key, 0, 100, 16);
 }
@@ -474,7 +476,7 @@ purple_ntlm_verify_signature (char * a, char * b)
 }
 
 static gchar *
-purple_ntlm_gen_authenticate(gchar **ntlm_key, const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
+purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
 {
 	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
 				+ strlen(user)+ strlen(hostname) + NTLMSSP_NT_OR_LM_KEY_LEN)
@@ -482,14 +484,14 @@ purple_ntlm_gen_authenticate(gchar **ntlm_key, const gchar *user, const gchar *p
 	struct authenticate_message *tmsg = g_malloc0(msglen);
 	char *tmp;
 	int remlen;
-	char response_key_lm [16];
-	char lm_challenge_response [NTLMSSP_NT_OR_LM_KEY_LEN];
-	char response_key_nt [16];
-	char nt_challenge_response [NTLMSSP_NT_OR_LM_KEY_LEN];
-	char session_base_key [16];
-	char key_exchange_key [16];
-	char exported_session_key[16];
-	char encrypted_random_session_key [16];
+	unsigned char response_key_lm [16];
+	unsigned char lm_challenge_response [NTLMSSP_NT_OR_LM_KEY_LEN];
+	unsigned char response_key_nt [16];
+	unsigned char nt_challenge_response [NTLMSSP_NT_OR_LM_KEY_LEN];
+	unsigned char session_base_key [16];
+	unsigned char key_exchange_key [16];
+	unsigned char exported_session_key[16];
+	unsigned char encrypted_random_session_key [16];
 
 	/* authenticate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
@@ -545,7 +547,7 @@ purple_ntlm_gen_authenticate(gchar **ntlm_key, const gchar *user, const gchar *p
 
 	NONCE (exported_session_key, 16);
 
-	*ntlm_key = g_strndup (exported_session_key, 16);
+	*ntlm_key = (guchar *) g_strndup ((gchar *) exported_session_key, 16);
 
 	RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
 	memcpy(tmp, encrypted_random_session_key, 16);
@@ -576,7 +578,7 @@ typedef struct _context_ntlm {
 	char *username;
 	char *password;
 	int step;
-	gchar *key;
+	guchar *key;
 } *context_ntlm;
 
 static sip_uint32
@@ -595,8 +597,8 @@ sip_sec_init_sec_context_(SipSecContext context,
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
 	} else 	{
-		gchar *ntlm_key;
-		gchar *nonce;
+		guchar *ntlm_key;
+		guchar *nonce;
 		guint32 flags;
 		gchar *input_toked_base64;
 		gchar *gssapi_data;

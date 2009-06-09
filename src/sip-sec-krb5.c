@@ -343,7 +343,7 @@ sip_sec_krb5_obtain_tgt(const char *realm,
 	memset(&credentials, 0, sizeof(krb5_creds));
 
 	/* Obtait TGT */
-	if (ret = krb5_init_context(&context)) {
+	if ((ret = krb5_init_context(&context))) {
 		sip_sec_krb5_print_error("krb5_init_context", context, ret);
 	}
 	
