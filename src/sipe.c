@@ -3380,7 +3380,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		if (!strcmp(attrVar, "note"))
 		{
 			char *note;
-			struct sipe_buddy *sbuddy;
+			struct sipe_buddy *sbuddy = NULL;
 			xn_node = xmlnode_get_child(xn_category, "note");
 			if (!xn_node) continue;
 			xn_node = xmlnode_get_child(xn_node, "body");
