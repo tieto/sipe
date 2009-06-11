@@ -22,6 +22,4 @@
  */
 
 SipSecContext
-sip_sec_acquire_cred__ntlm(const char *domain,
-			   const char *username,
-			   const char *password);
+sip_sec_create_context__ntlm(const char *mech);

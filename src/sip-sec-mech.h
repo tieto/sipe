@@ -44,7 +44,11 @@ typedef struct {
 
 
 typedef SipSecContext
-(*sip_sec_acquire_cred_func)(const char *domain,
+(*sip_sec_create_context_func)(const char *mech);
+
+typedef sip_uint32
+(*sip_sec_acquire_cred_func)(SipSecContext context,
+			     const char *domain,
 			     const char *username,
 			     const char *password);
 
@@ -68,6 +72,7 @@ typedef sip_uint32
 				 SipSecBuffer signature);
 
 struct sip_sec_context {
+	sip_sec_acquire_cred_func     acquire_cred_func;
 	sip_sec_init_context_func     init_context_func;
 	sip_sec_destroy_context_func  destroy_context_func;
 	sip_sec_make_signature_func   make_signature_func;

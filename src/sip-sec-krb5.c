@@ -40,6 +40,67 @@ typedef struct _context_krb5 {
 
 void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor);
 
+/* sip-sec-mech.h API implementation for Kerberos/GSS-API */
+
+/**
+ * Obtains existing credentials stored in credentials cash in case of Kerberos
+ */
+static sip_uint32
+sip_sec_acquire_cred0__krb5(SipSecContext context,
+			    const char *domain,
+			    const char *username,
+			    const char *password)
+{
+	OM_uint32 ret;
+	OM_uint32 minor;
+	OM_uint32 expiry;
+	struct gss_cred_id_struct* credentials;
+
+	/* Acquire default user credentials */
+	ret = gss_acquire_cred(&minor,
+			       GSS_C_NO_NAME,
+			       GSS_C_INDEFINITE,
+			       GSS_C_NO_OID_SET,
+			       GSS_C_INITIATE,
+			       &credentials,
+			       NULL,
+			       &expiry);
+
+	if (GSS_ERROR(ret)) {
+		sip_sec_krb5_print_gss_error("gss_acquire_cred", ret, minor);
+		printf("ERROR: sip_sec_acquire_cred0__krb5: failed to acquire credentials. ret=%d\n", (int)ret);
+		return SIP_SEC_E_INTERNAL_ERROR;
+	} else {
+		((context_krb5)context)->cred_krb5 = credentials;
+		return SIP_SEC_E_OK;
+	}
+}
+
+void
+sip_sec_krb5_obtain_tgt(const char *realm,
+		        const char *username,
+			const char *password);
+
+/**
+ * Tries to obtain credentials from cache. On failure attemps to obtain TGT on its own.
+ */
+static sip_uint32
+sip_sec_acquire_cred__krb5(SipSecContext context,
+			   const char *domain,
+			   const char *username,
+			   const char *password)
+{
+	static sip_uint32 ret;
+	/* Attempt to get stored credentials, likely after user login to domain. */
+	ret = sip_sec_acquire_cred0__krb5(context, domain, username, password);
+	if (ret != SIP_SEC_E_OK) {
+		/* get TGT ourselves. */
+		sip_sec_krb5_obtain_tgt(g_ascii_strup(domain, -1), username, password);
+		ret = sip_sec_acquire_cred0__krb5(context, domain, username, password);
+	}
+	
+	return ret;
+}
 
 static sip_uint32
 sip_sec_init_sec_context__krb5(SipSecContext context,
@@ -210,70 +271,19 @@ sip_sec_destroy_sec_context__krb5(SipSecContext context)
 	g_free(ctx);
 }
 
-/**
- * Obtains existing credentials stored in credentials cash in case of Kerberos
- */
 SipSecContext
-sip_sec_acquire_cred0__krb5(const char *domain,
-			   const char *username,
-			   const char *password)
+sip_sec_create_context__krb5(const char *mech)
 {
-	OM_uint32 ret;
-	OM_uint32 minor;
-	OM_uint32 expiry;
-	struct gss_cred_id_struct* credentials;
-	
 	context_krb5 context = g_malloc0(sizeof(struct _context_krb5));
 	if (!context) return(NULL);
 
+	context->common.acquire_cred_func     = sip_sec_acquire_cred__krb5;
 	context->common.init_context_func     = sip_sec_init_sec_context__krb5;
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__krb5;
 	context->common.make_signature_func   = sip_sec_make_signature__krb5;
 	context->common.verify_signature_func = sip_sec_verify_signature__krb5;
 
-	/* Acquire default user credentials */
-	ret = gss_acquire_cred(&minor,
-			       GSS_C_NO_NAME,
-			       GSS_C_INDEFINITE,
-			       GSS_C_NO_OID_SET,
-			       GSS_C_INITIATE,
-			       &credentials,
-			       NULL,
-			       &expiry);
-
-	if (GSS_ERROR(ret)) {
-		sip_sec_krb5_print_gss_error("gss_acquire_cred", ret, minor);
-		printf("ERROR: sip_sec_acquire_cred0__krb5: failed to acquire credentials. ret=%d\n", (int)ret);
-		return NULL;
-	} else {
-		context->cred_krb5 = credentials;
-		return((SipSecContext) context);
-	}
-}
-
-void
-sip_sec_krb5_obtain_tgt(const char *realm,
-		        const char *username,
-			const char *password);
-
-/**
- * Tries to obtain credentials from cache. On failure attemps to obtain TGT on its own.
- */
-SipSecContext
-sip_sec_acquire_cred__krb5(const char *domain,
-			   const char *username,
-			   const char *password)
-{
-	SipSecContext ret;
-	/* Attempt to get stored credentials, likely after user login to domain. */
-	ret = sip_sec_acquire_cred0__krb5(domain, username, password);
-	if (!ret) {
-		/* get TGT ourselves. */
-		sip_sec_krb5_obtain_tgt(g_ascii_strup(domain, -1), username, password);
-		ret = sip_sec_acquire_cred0__krb5(domain, username, password);
-	}
-	
-	return ret;
+	return((SipSecContext) context);
 }
 
 

@@ -26,70 +26,92 @@
 #include <string.h>
 #include <stdio.h>
 #include "debug.h"
-#include "util.h"
+/* #include "util.h" */
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 
 #ifndef _WIN32
 #include "sip-sec-ntlm.h"
-#define sip_sec_acquire_cred__NTLM	sip_sec_acquire_cred__ntlm
+#define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 
 #ifdef USE_KERBEROS
 #include "sip-sec-krb5.h"
-#define sip_sec_acquire_cred__Kerberos	sip_sec_acquire_cred__krb5
+#define sip_sec_create_context__Kerberos	sip_sec_create_context__krb5
 #else
-#define sip_sec_acquire_cred__Kerberos	sip_sec_acquire_cred__NONE
+#define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
 #endif
 
 #else //_WIN32
 #if 0 //with SSPI
 #include "sip-sec-sspi.h"
-#define sip_sec_acquire_cred__NTLM	sip_sec_acquire_cred__sspi
-#define sip_sec_acquire_cred__Kerberos	sip_sec_acquire_cred__sspi
+#define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
+#define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
 
 #else //with SSPI
 #include "sip-sec-ntlm.h"
-#define sip_sec_acquire_cred__NTLM	sip_sec_acquire_cred__ntlm
-#define sip_sec_acquire_cred__Kerberos	sip_sec_acquire_cred__NONE
+#define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
+#define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
 #endif //with SSPI
 
 #endif //_WIN32
 
+gchar *purple_base64_encode(const guchar *data, gsize len);
+guchar *purple_base64_decode(const char *str, gsize *ret_len);
+
 /* Dummy initialization hook */
-static SipSecContext sip_sec_acquire_cred__NONE(const char *domain,
-						const char *username,
-						const char *password)
+static SipSecContext
+sip_sec_create_context__NONE(const char *mech)
 {
 	return(NULL);
 }
 
 /* sip_sec API method */
-char * sip_sec_init_context(SipSecContext *context, SipSecAuthType type,
-			    const char *domain, const char *username, const char *password,
-			    const char *target,
-			    const char *input_toked_base64)
+char *
+sip_sec_init_context(SipSecContext *context,
+		     SipSecAuthType type,
+		     const char *domain,
+		     const char *username,
+		     const char *password,
+		     const char *target,
+		     const char *input_toked_base64)
 {
 	SipSecBuffer in_buff  = {0, NULL};
 	SipSecBuffer out_buff = {0, NULL};
-	gchar *out_buff_base64;
+	gchar *out_buff_base64 = NULL;
 	sip_uint32 ret;
+	
+	const char *mech[] = {
+		"",        /* AUTH_TYPE_UNSET    */
+		"",    	   /* AUTH_TYPE_DIGEST   */
+		"NTLM",    /* AUTH_TYPE_NTLM     */
+		"Kerberos" /* AUTH_TYPE_KERBEROS */
+	};
 
 	/* Map authentication type to module initialization hook */
-	static const sip_sec_acquire_cred_func const auth_to_hook[] = {
-		sip_sec_acquire_cred__NONE,    /* AUTH_TYPE_UNSET    */
-		sip_sec_acquire_cred__NONE,    /* AUTH_TYPE_DIGEST   */
-		sip_sec_acquire_cred__NTLM,    /* AUTH_TYPE_NTLM     */
-		sip_sec_acquire_cred__Kerberos /* AUTH_TYPE_KERBEROS */
+	static const sip_sec_create_context_func const auth_to_hook[] = {
+		sip_sec_create_context__NONE,    /* AUTH_TYPE_UNSET    */
+		sip_sec_create_context__NONE,    /* AUTH_TYPE_DIGEST   */
+		sip_sec_create_context__NTLM,    /* AUTH_TYPE_NTLM     */
+		sip_sec_create_context__Kerberos /* AUTH_TYPE_KERBEROS */
 	};
 
 	/* @TODO: Can *context != NULL actually happen? */
 	sip_sec_destroy_context(*context);
-	*context = (*(auth_to_hook[type]))(domain, username, password);
+	
+	*context = (*(auth_to_hook[type]))(mech[type]);
 	if (!*context) return(NULL);
-
+	
+	ret = (*(*context)->acquire_cred_func)(*context, domain, username, password);
+	if (ret != SIP_SEC_E_OK) {
+		purple_debug_info("sipe", "ERROR: sip_sec_init_context failed to acquire credentials.\n");
+		return NULL;
+	}
+	
 	/* Type1 (empty) to send */
 	ret = (*(*context)->init_context_func)(*context, in_buff, &out_buff, target);
-	out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
+	if (ret == SIP_SEC_E_OK) {
+		out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
+	}
 	free_bytes_buffer(&out_buff);
 
 	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
@@ -103,7 +125,6 @@ char * sip_sec_init_context(SipSecContext *context, SipSecAuthType type,
 		out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
 		free_bytes_buffer(&out_buff);
 	}
-
 	return out_buff_base64;
 }
 
