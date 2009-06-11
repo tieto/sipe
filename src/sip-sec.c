@@ -42,7 +42,7 @@
 #endif
 
 #else //_WIN32
-#if 0 //with SSPI
+#if 1 //with SSPI
 #include "sip-sec-sspi.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi

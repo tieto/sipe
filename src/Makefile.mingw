@@ -25,6 +25,7 @@ endif
 endif
 
 DEFINES += -DGETTEXT_PACKAGE=\"pidgin-sipe\"
+DEFINES += -DUSE_KERBEROS=1
 ##
 ## INCLUDE PATHS
 ##
@@ -47,6 +48,7 @@ C_SRC =			sipe.c \
 			sipe-sign.c \
 			sip-sec.c \
 			sip-sec-ntlm.c \
+			sip-sec-sspi.c \
 			uuid.c
 
 
@@ -60,6 +62,7 @@ LIBS =	\
 			-lws2_32 \
 			-lintl \
 			-lIphlpapi \
+			-lSecur32 \
 			-lpurple
 
 include $(PIDGIN_COMMON_RULES)
