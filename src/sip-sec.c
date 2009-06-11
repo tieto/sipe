@@ -79,26 +79,22 @@ sip_sec_init_context(SipSecContext *context,
 	SipSecBuffer out_buff = {0, NULL};
 	gchar *out_buff_base64 = NULL;
 	sip_uint32 ret;
-	
-	const char *mech[] = {
-		"",        /* AUTH_TYPE_UNSET    */
-		"",    	   /* AUTH_TYPE_DIGEST   */
-		"NTLM",    /* AUTH_TYPE_NTLM     */
-		"Kerberos" /* AUTH_TYPE_KERBEROS */
-	};
 
-	/* Map authentication type to module initialization hook */
-	static const sip_sec_create_context_func const auth_to_hook[] = {
-		sip_sec_create_context__NONE,    /* AUTH_TYPE_UNSET    */
-		sip_sec_create_context__NONE,    /* AUTH_TYPE_DIGEST   */
-		sip_sec_create_context__NTLM,    /* AUTH_TYPE_NTLM     */
-		sip_sec_create_context__Kerberos /* AUTH_TYPE_KERBEROS */
+	/* Map authentication type to module initialization hook & name */
+	static const struct {
+		const sip_sec_create_context_func func;
+		const char *name;
+	} const auth_mapping[] = {
+		{sip_sec_create_context__NONE,     SIP_SEC_MECH_UNSET},    /* AUTH_TYPE_UNSET    */
+		{sip_sec_create_context__NONE,     SIP_SEC_MECH_DIGEST},   /* AUTH_TYPE_DIGEST   */
+		{sip_sec_create_context__NTLM,     SIP_SEC_MECH_NTLM},     /* AUTH_TYPE_NTLM     */
+		{sip_sec_create_context__Kerberos, SIP_SEC_MECH_KERBEROS}, /* AUTH_TYPE_KERBEROS */
 	};
 
 	/* @TODO: Can *context != NULL actually happen? */
 	sip_sec_destroy_context(*context);
-	
-	*context = (*(auth_to_hook[type]))(mech[type]);
+
+	*context = (*(auth_mapping[type].func))(auth_mapping[type].name);
 	if (!*context) return(NULL);
 	
 	ret = (*(*context)->acquire_cred_func)(*context, domain, username, password);

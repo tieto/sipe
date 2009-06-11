@@ -146,7 +146,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		     ISC_REQ_INTEGRITY |
 		     ISC_REQ_IDENTIFY);
 
-	if (!strcmp(ctx->mech, "NTLM")) {
+	if (!strcmp(ctx->mech, SIP_SEC_MECH_NTLM)) {
 		req_flags |= (ISC_REQ_DATAGRAM);
 	}
 

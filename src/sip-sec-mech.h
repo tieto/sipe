@@ -35,6 +35,12 @@
 #define SIP_SEC_E_INTERNAL_ERROR (-2146893052)
 #define SIP_SEC_I_CONTINUE_NEEDED 590610
 
+/* Mechanism names */
+#define SIP_SEC_MECH_UNSET    ""
+#define SIP_SEC_MECH_DIGEST   "Digest"
+#define SIP_SEC_MECH_NTLM     "NTLM"
+#define SIP_SEC_MECH_KERBEROS "Kerberos"
+
 typedef unsigned long sip_uint32;
 
 typedef struct {
