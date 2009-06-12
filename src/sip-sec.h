@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
+ 
 /* Opaque type definition for security context */
 typedef struct sip_sec_context *SipSecContext;
 
@@ -50,6 +50,7 @@ typedef enum
  */
 char *sip_sec_init_context(SipSecContext *context,
 			   SipSecAuthType type,
+			   const int  sso,
 			   const char *domain,
 			   const char *username,
 			   const char *password,

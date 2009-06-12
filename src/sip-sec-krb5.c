@@ -41,13 +41,20 @@ typedef struct _context_krb5 {
 
 void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor);
 
+void
+sip_sec_krb5_obtain_tgt(const char *realm,
+		        const char *username,
+			const char *password);
+
 /* sip-sec-mech.h API implementation for Kerberos/GSS-API */
 
 /**
- * Obtains existing credentials stored in credentials cash in case of Kerberos
+ * Depending on Single Sign-On flag (sso),
+ * obtains existing credentials stored in credentials cash in case of Kerberos,
+ * or attemps to obtain TGT on its own first.
  */
 static sip_uint32
-sip_sec_acquire_cred0__krb5(SipSecContext context,
+sip_sec_acquire_cred__krb5(SipSecContext context,
 			    const char *domain,
 			    const char *username,
 			    const char *password)
@@ -56,6 +63,11 @@ sip_sec_acquire_cred0__krb5(SipSecContext context,
 	OM_uint32 minor;
 	OM_uint32 expiry;
 	struct gss_cred_id_struct* credentials;
+	
+	if (!context->sso) {
+		/* Do not use default credentials, obtain a new one and store it in cache */
+		sip_sec_krb5_obtain_tgt(g_ascii_strup(domain, -1), username, password);
+	}
 
 	/* Acquire default user credentials */
 	ret = gss_acquire_cred(&minor,
@@ -75,32 +87,6 @@ sip_sec_acquire_cred0__krb5(SipSecContext context,
 		((context_krb5)context)->cred_krb5 = credentials;
 		return SIP_SEC_E_OK;
 	}
-}
-
-void
-sip_sec_krb5_obtain_tgt(const char *realm,
-		        const char *username,
-			const char *password);
-
-/**
- * Tries to obtain credentials from cache. On failure attemps to obtain TGT on its own.
- */
-static sip_uint32
-sip_sec_acquire_cred__krb5(SipSecContext context,
-			   const char *domain,
-			   const char *username,
-			   const char *password)
-{
-	static sip_uint32 ret;
-	/* Attempt to get stored credentials, likely after user login to domain. */
-	ret = sip_sec_acquire_cred0__krb5(context, domain, username, password);
-	if (ret != SIP_SEC_E_OK) {
-		/* get TGT ourselves. */
-		sip_sec_krb5_obtain_tgt(g_ascii_strup(domain, -1), username, password);
-		ret = sip_sec_acquire_cred0__krb5(context, domain, username, password);
-	}
-	
-	return ret;
 }
 
 static sip_uint32
@@ -339,8 +325,8 @@ sip_sec_krb5_print_error(const char *func,
  * 'ATLANTA.LOCAL' is a realm (domain) .
  */
 void
-sip_sec_krb5_obtain_tgt(const char *realm,
-		        const char *username,
+sip_sec_krb5_obtain_tgt(const char *realm_in,
+		        const char *username_in,
 			const char *password)
 {
 	krb5_context	context;
@@ -348,10 +334,29 @@ sip_sec_krb5_obtain_tgt(const char *realm,
 	krb5_creds	credentials;
 	krb5_ccache	ccdef;
 	krb5_error_code	ret;
+	char *realm = strdup(realm_in);
+	char *username = strdup(username_in);
+	gchar **domain_user;
+	gchar **user_realm;
 	
 	printf("sip_sec_krb5_obtain_tgt started\n");
 
 	memset(&credentials, 0, sizeof(krb5_creds));
+	
+	/* extracts realm as domain part of username 
+	 * either before '\' or after '@'
+	 */
+	domain_user = g_strsplit(username, "\\", 2);
+	realm =   (domain_user && domain_user[1]) ? g_ascii_strup(domain_user[0], -1) : g_strdup("");
+	username = (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : username;
+	
+	user_realm = g_strsplit(username, "@", 2);
+	if (user_realm && user_realm[1]) {
+		username = g_strdup(user_realm[0]);
+		realm = g_ascii_strup(user_realm[1], -1);
+	}
+	g_strfreev(user_realm);
+	g_strfreev(domain_user);
 
 	/* Obtait TGT */
 	if ((ret = krb5_init_context(&context))) {
@@ -361,6 +366,8 @@ sip_sec_krb5_obtain_tgt(const char *realm,
 	if (!ret && (ret = krb5_build_principal(context, &principal, strlen(realm), realm, username, NULL))) {
 		sip_sec_krb5_print_error("krb5_build_principal", context, ret);
 	}
+	g_free(username);
+	g_free(realm);
 
 	if (!ret && (ret = krb5_get_init_creds_password(context, &credentials, principal, (char *)password, NULL, NULL, 0, NULL, NULL))) { 
 		sip_sec_krb5_print_error("krb5_get_init_creds_password", context, ret);

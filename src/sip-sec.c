@@ -41,19 +41,18 @@
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
 #endif
 
-#else //_WIN32
-#if 1 //with SSPI
+#else /* _WIN32 */
+#ifdef USE_KERBEROS
 #include "sip-sec-sspi.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
-
-#else //with SSPI
+#else /* USE_KERBEROS */
 #include "sip-sec-ntlm.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
-#endif //with SSPI
+#endif /* USE_KERBEROS */
 
-#endif //_WIN32
+#endif /* _WIN32 */
 
 gchar *purple_base64_encode(const guchar *data, gsize len);
 guchar *purple_base64_decode(const char *str, gsize *ret_len);
@@ -69,6 +68,7 @@ sip_sec_create_context__NONE(SipSecAuthType type)
 char *
 sip_sec_init_context(SipSecContext *context,
 		     SipSecAuthType type,
+		     const int  sso,
 		     const char *domain,
 		     const char *username,
 		     const char *password,
@@ -94,12 +94,14 @@ sip_sec_init_context(SipSecContext *context,
 	*context = (*(auth_to_hook[type]))(type);
 	if (!*context) return(NULL);
 	
+	(*context)->sso = sso;
+
 	ret = (*(*context)->acquire_cred_func)(*context, domain, username, password);
 	if (ret != SIP_SEC_E_OK) {
 		purple_debug_info("sipe", "ERROR: sip_sec_init_context failed to acquire credentials.\n");
 		return NULL;
 	}
-	
+
 	/* Type1 (empty) to send */
 	ret = (*(*context)->init_context_func)(*context, in_buff, &out_buff, target);
 	if (ret == SIP_SEC_E_OK) {
@@ -153,7 +155,7 @@ int sip_sec_verify_signature(SipSecContext context, const char *message, const c
 }
 
 
-// Utility Methods //
+/* Utility Methods */
 
 void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes)
 {

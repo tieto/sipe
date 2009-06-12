@@ -268,10 +268,16 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			gchar *gssapi_data;
 			gchar *opaque;
 
-			gssapi_data = sip_sec_init_context(&(auth->gssapi_context), auth->type,
-							   sip->authdomain ? sip->authdomain : "", authuser, sip->password,
+			gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
+							   auth->type,
+							   purple_account_get_bool(sip->account, "sso", TRUE),
+							   sip->authdomain ? sip->authdomain : "",
+							   authuser,
+							   sip->password,
 							   auth->target,
-							   auth->gssapi_data);			
+							   auth->gssapi_data);
+			if (!gssapi_data)
+				return NULL;
 
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
 			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth_protocol, opaque, auth->realm, auth->target, gssapi_data);
@@ -4863,7 +4869,7 @@ static void sipe_login(PurpleAccount *account)
 {
 	PurpleConnection *gc;
 	struct sipe_account_data *sip;
-	gchar **signinname_login, **userserver, **domain_user, **user_realm;
+	gchar **signinname_login, **userserver;
 	const char *transport;
 
 	const char *username = purple_account_get_username(account);
@@ -4898,21 +4904,16 @@ static void sipe_login(PurpleAccount *account)
 		return;
 	}
 
-	domain_user = g_strsplit(signinname_login[1], "\\", 2);
-	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
-	sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+	/* Domain goes just fine as part of username for all 3 security mechanism.
+	 * In my globally distributed environment it does not work otherwise anyway.
+	 */
+	sip->authdomain = NULL;
+	/* Goes fine as user@domain.com */
+	sip->authuser = (signinname_login ? g_strdup(signinname_login[1]) : NULL);
 	
-	user_realm = g_strsplit(sip->authuser, "@", 2);
-	if (user_realm && user_realm[1]) {
-		sip->authuser = g_strdup(user_realm[0]);
-		sip->authdomain = g_strdup(user_realm[1]);
-	}
-
 	sip->password = g_strdup(purple_connection_get_password(gc));
 
-	g_strfreev(user_realm);
 	g_strfreev(userserver);
-	g_strfreev(domain_user);
 	g_strfreev(signinname_login);
 
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
@@ -5733,8 +5734,14 @@ static void init_plugin(PurplePlugin *plugin)
 #ifdef USE_KERBEROS
 	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#endif
 
+	/* Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms 
+	 * No login/password is taken into account if this option present,
+	 * instead used default credentials stored in OS.
+	 */
+	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#endif
 	my_protocol = plugin;
 }
 

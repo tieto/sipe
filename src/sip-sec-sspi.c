@@ -68,7 +68,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	TimeStamp expiry;
 	SEC_WINNT_AUTH_IDENTITY auth_identity;
 	context_sspi ctx = (context_sspi)context;
-	CredHandle *cred_handle2_p = g_malloc0(sizeof(CredHandle));
+	CredHandle *cred_handle = g_malloc0(sizeof(CredHandle));
 
 	if (username) {
 		if (!password) {
@@ -89,15 +89,15 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		auth_identity.Password = password;
 		auth_identity.PasswordLength = strlen(auth_identity.Password);
 	}
-
+	
 	ret = AcquireCredentialsHandle(	NULL,
 					(SEC_CHAR *)ctx->mech,
 					SECPKG_CRED_OUTBOUND,
 					NULL,
-					username ? &auth_identity : NULL,
+					(context->sso || !username) ? NULL : &auth_identity,
 					NULL,
 					NULL,
-					cred_handle2_p,
+					cred_handle,
 					&expiry
 					);
 
@@ -106,7 +106,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		ctx->cred_sspi = NULL;
 		return SIP_SEC_E_INTERNAL_ERROR;
 	} else {
-		ctx->cred_sspi = cred_handle2_p;
+		ctx->cred_sspi = cred_handle;
 		return SIP_SEC_E_OK;
 	}
 }
