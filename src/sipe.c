@@ -2563,16 +2563,22 @@ static void
 sipe_get_route_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean outgoing)
 {
         GSList *hdr = msg->headers;
-        struct siphdrelement *elem;
         gchar *contact;
 
-        while(hdr)
-        {
-                elem = hdr->data;
-                if(!g_ascii_strcasecmp(elem->name, "Record-Route"))
-                {
-                        gchar *route = sipmsg_find_part_of_header(elem->value, "<", ">", NULL);
-                        dialog->routes = g_slist_append(dialog->routes, route);
+        while(hdr) {
+                struct siphdrelement *elem = hdr->data;
+                if(!g_ascii_strcasecmp(elem->name, "Record-Route")) {
+			gchar **parts = g_strsplit(elem->value, ",", 0);
+			gchar **part = parts;
+
+			while (*part) {
+				gchar *route = sipmsg_find_part_of_header(*part, "<", ">", NULL);
+				purple_debug_info("sipe", "sipe_get_route_header: route %s \n", route);
+				dialog->routes = g_slist_append(dialog->routes, route);
+				part++;
+			}
+
+			g_strfreev(parts);
                 }
                 hdr = g_slist_next(hdr);
         }
