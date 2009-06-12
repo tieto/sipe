@@ -29,6 +29,7 @@
 
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
+#include "sip-sec-krb5.h"
 
 /* Security context for Kerberos */
 typedef struct _context_krb5 {
@@ -272,7 +273,7 @@ sip_sec_destroy_sec_context__krb5(SipSecContext context)
 }
 
 SipSecContext
-sip_sec_create_context__krb5(const char *mech)
+sip_sec_create_context__krb5(SipSecAuthType type)
 {
 	context_krb5 context = g_malloc0(sizeof(struct _context_krb5));
 	if (!context) return(NULL);

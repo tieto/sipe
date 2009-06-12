@@ -700,7 +700,7 @@ sip_sec_destroy_sec_context__ntlm(SipSecContext context)
 }
 
 SipSecContext
-sip_sec_create_context__ntlm(const char *mech)
+sip_sec_create_context__ntlm(SipSecAuthType type)
 {
 	context_ntlm context = g_malloc0(sizeof(struct _context_ntlm));
 	if (!context) return(NULL);

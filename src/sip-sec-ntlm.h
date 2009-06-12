@@ -22,4 +22,4 @@
  */
 
 SipSecContext
-sip_sec_create_context__ntlm(const char *mech);
+sip_sec_create_context__ntlm(SipSecAuthType type);

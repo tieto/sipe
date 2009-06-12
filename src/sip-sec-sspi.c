@@ -32,6 +32,10 @@
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 
+/* Mechanism names */
+#define SSPI_MECH_NTLM     "NTLM"
+#define SSPI_MECH_KERBEROS "Kerberos"
+
 #define ISC_REQ_IDENTIFY               0x00002000
 
 typedef struct _context_sspi {
@@ -146,7 +150,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		     ISC_REQ_INTEGRITY |
 		     ISC_REQ_IDENTIFY);
 
-	if (!strcmp(ctx->mech, SIP_SEC_MECH_NTLM)) {
+	if (!strcmp(ctx->mech, SSPI_MECH_NTLM)) {
 		req_flags |= (ISC_REQ_DATAGRAM);
 	}
 
@@ -294,7 +298,7 @@ sip_sec_verify_signature__sspi(SipSecContext context,
 }
 
 SipSecContext
-sip_sec_create_context__sspi(const char *mech)
+sip_sec_create_context__sspi(SipSecAuthType type)
 {
 	context_sspi context = g_malloc0(sizeof(struct _context_sspi));
 	if (!context) return(NULL);
@@ -304,7 +308,16 @@ sip_sec_create_context__sspi(const char *mech)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->mech = mech;
+	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM : SSPI_MECH_KERBEROS;
 
 	return((SipSecContext) context);
 }
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/
