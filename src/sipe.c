@@ -2485,7 +2485,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	g_free(key);
 	g_free(with);	
 	
-	sipe_im_process_queue(sip, session);
+	if (ret) sipe_im_process_queue(sip, session);
 	return ret;
 }
 
