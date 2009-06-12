@@ -4869,7 +4869,7 @@ static void sipe_login(PurpleAccount *account)
 {
 	PurpleConnection *gc;
 	struct sipe_account_data *sip;
-	gchar **signinname_login, **userserver;
+	gchar **signinname_login, **userserver, **domain_user;
 	const char *transport;
 
 	const char *username = purple_account_get_username(account);
@@ -4904,16 +4904,14 @@ static void sipe_login(PurpleAccount *account)
 		return;
 	}
 
-	/* Domain goes just fine as part of username for all 3 security mechanism.
-	 * In my globally distributed environment it does not work otherwise anyway.
-	 */
-	sip->authdomain = NULL;
-	/* Goes fine as user@domain.com */
-	sip->authuser = (signinname_login ? g_strdup(signinname_login[1]) : NULL);
-	
+	domain_user = g_strsplit(signinname_login[1], "\\", 2);
+	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
+	sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+
 	sip->password = g_strdup(purple_connection_get_password(gc));
 
 	g_strfreev(userserver);
+	g_strfreev(domain_user);
 	g_strfreev(signinname_login);
 
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
