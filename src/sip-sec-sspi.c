@@ -46,6 +46,9 @@ typedef struct _context_sspi {
 	const char *mech;
 } *context_sspi;
 
+static int
+sip_sec_get_interval_from_now_sec(TimeStamp timestamp);
+
 /** internal method */
 static void
 sip_sec_destroy_sspi_context(context_sspi context)
@@ -183,7 +186,10 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	}
 	
 	ctx->ctx_sspi = out_context;
-
+	if (!strcmp(ctx->mech, SSPI_MECH_KERBEROS)) {
+		context->expires = sip_sec_get_interval_from_now_sec(expiry);
+	}
+	
 	if (ret == SEC_I_CONTINUE_NEEDED) {
 		return SIP_SEC_I_CONTINUE_NEEDED;
 	} else	{
@@ -311,6 +317,30 @@ sip_sec_create_context__sspi(SipSecAuthType type)
 	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM : SSPI_MECH_KERBEROS;
 
 	return((SipSecContext) context);
+}
+
+/* Utility Functions */
+
+/** 
+ * Returns interval in seconds from now till provided value
+ */
+static int
+sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
+{
+	SYSTEMTIME stNow;
+	FILETIME ftNow;
+	ULARGE_INTEGER uliNow, uliTo;
+	
+	GetLocalTime(&stNow);
+	SystemTimeToFileTime(&stNow, &ftNow);
+	
+	uliNow.LowPart = ftNow.dwLowDateTime;
+	uliNow.HighPart = ftNow.dwHighDateTime;
+	
+	uliTo.LowPart = timestamp.LowPart;
+	uliTo.HighPart = timestamp.HighPart;
+	
+	return (int)((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
 }
 
 /*

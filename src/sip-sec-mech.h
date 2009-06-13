@@ -79,6 +79,8 @@ struct sip_sec_context {
 	sip_sec_verify_signature_func verify_signature_func;
 	/** Single Sign-On request flag 0=FALSE */
 	int sso;
+	/** Security Context expiration interval in seconds */
+	int expires;
 };
 
 /// Utility methods (implemented in sip-sec.c)
