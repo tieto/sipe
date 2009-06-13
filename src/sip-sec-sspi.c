@@ -31,6 +31,7 @@
 
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
+#include "sip-sec-sspi.h"
 
 /* Mechanism names */
 #define SSPI_MECH_NTLM     "NTLM"
@@ -48,6 +49,10 @@ typedef struct _context_sspi {
 
 static int
 sip_sec_get_interval_from_now_sec(TimeStamp timestamp);
+
+void
+sip_sec_sspi_print_error(const char *func,
+			 SECURITY_STATUS ret);
 
 /** internal method */
 static void
@@ -105,7 +110,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 					);
 
 	if (ret != SEC_E_OK) {
-		printf("ERROR: sip_sec_acquire_cred__sspi: failed to acquire credentials. ret=%d\n", (int)ret);
+		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandle", ret);
 		ctx->cred_sspi = NULL;
 		return SIP_SEC_E_INTERNAL_ERROR;
 	} else {
@@ -173,7 +178,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 
 	if (ret != SEC_E_OK && ret != SEC_I_CONTINUE_NEEDED) {
 		sip_sec_destroy_sspi_context(ctx);
-		printf("ERROR: sip_sec_init_sec_context__sspi: failed to initialize context. ret=%d\n", (int)ret);
+		sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: InitializeSecurityContext", ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
@@ -226,7 +231,7 @@ sip_sec_make_signature__sspi(SipSecContext context,
 					&context_sizes);
 
 	if (ret != SEC_E_OK) {
-		printf("ERROR: sip_sec_make_signature__sspi: QueryContextAttributes error. ret=%d\n", (int)ret);
+		sip_sec_sspi_print_error("sip_sec_make_signature__sspi: QueryContextAttributes", ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
@@ -247,12 +252,12 @@ sip_sec_make_signature__sspi(SipSecContext context,
 	buffs[1].cbBuffer = signature_buff_length;
 	buffs[1].pvBuffer = signature_buff;
 
-	ret = MakeSignature( ctx->ctx_sspi,
-				(ULONG)0,
-				&buffs_desc,
-				100);
+	ret = MakeSignature(ctx->ctx_sspi,
+			    (ULONG)0,
+			    &buffs_desc,
+			    100);
 	if (ret != SEC_E_OK) {
-		printf("ERROR: sip_sec_make_signature__sspi: MakeSignature error. ret=%d\n", (int)ret);
+		sip_sec_sspi_print_error("sip_sec_make_signature__sspi: MakeSignature", ret);
 		free(signature_buff);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
@@ -291,12 +296,12 @@ sip_sec_verify_signature__sspi(SipSecContext context,
 	buffs[1].pvBuffer = signature.value;
 
 	ret = VerifySignature(((context_sspi)context)->ctx_sspi,
-				 &buffs_desc,
-				 0,
-				 0);
+			      &buffs_desc,
+			      0,
+			      0);
 
 	if (ret != SEC_E_OK) {
-		printf("ERROR: sip_sec_verify_signature__sspi: failed to verify signature. ret=%d\n", (int)ret);
+		sip_sec_sspi_print_error("sip_sec_verify_signature__sspi: VerifySignature", ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
@@ -342,6 +347,31 @@ sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
 	
 	return (int)((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
 }
+
+void
+sip_sec_sspi_print_error(const char *func,
+			 SECURITY_STATUS ret)
+{
+	char *error_message;	
+	static char *buff;
+	int buff_length;
+
+	buff_length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+				    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				    FORMAT_MESSAGE_IGNORE_INSERTS,
+				    0,
+				    ret,
+				    0,
+				    (LPTSTR)&buff,
+				    16384,
+				    0);
+	error_message = g_strndup(buff, buff_length);
+	LocalFree(buff);
+
+	printf("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
+	g_free(error_message);
+}
+
 
 /*
   Local Variables:
