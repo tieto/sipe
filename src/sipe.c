@@ -3240,8 +3240,6 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					purple_debug_info("sipe", "server determined keep alive timeout is %u seconds\n",
 							  sip->keepalive_timeout);
 					g_free(timeout);
-				} else {
-					sip->keepalive_timeout = 300;
 				}
 
 				// Should we remove the transaction here?
