@@ -36,7 +36,6 @@ typedef struct _context_krb5 {
 	struct sip_sec_context common;
 	gss_cred_id_t cred_krb5;
 	gss_ctx_id_t ctx_krb5;
-	sip_uint32 expiry;
 } *context_krb5;
 
 void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor);
@@ -158,7 +157,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 		out_buff->length = output_token.length;
 		out_buff->value = output_token.value;
 
-		ctx->expiry = expiry;
+		context->expires = (int)expiry;
 		return SIP_SEC_E_OK;
 	}
 }

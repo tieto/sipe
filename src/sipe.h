@@ -86,11 +86,10 @@ struct sip_auth {
 	gchar *opaque;
 	gchar *realm;
 	gchar *target;
-	guint32 flags;
 	int nc;
 	int retries;
 	int ntlm_num;
-	time_t expires;
+	int expires;
 };
 
 typedef enum {
@@ -138,7 +137,7 @@ struct sipe_account_data {
 	gchar *status;
 	int status_version;
 	gchar *contact;
-    gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
+	gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
 	GHashTable *buddies;
 	guint resendtimeout;

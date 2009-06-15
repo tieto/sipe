@@ -45,10 +45,12 @@ typedef enum
  * @param domain (in) NTLM Domain/Kerberos Realm.
  * @param target (in) security target. Service principal name on case of Kerberos.
  * @param input_toked_base64 (in) base64 encoded input security token. This is Type2 NTLM message or NULL for Kerberos.
+ * @param expires (out) security context expiration time in seconds.
  *
  * @return base64 encoded output token to send to server.
  */
 char *sip_sec_init_context(SipSecContext *context,
+			   int *expires,
 			   SipSecAuthType type,
 			   const int  sso,
 			   const char *domain,

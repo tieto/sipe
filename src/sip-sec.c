@@ -67,6 +67,7 @@ sip_sec_create_context__NONE(SipSecAuthType type)
 /* sip_sec API method */
 char *
 sip_sec_init_context(SipSecContext *context,
+		     int *expires,
 		     SipSecAuthType type,
 		     const int  sso,
 		     const char *domain,
@@ -120,6 +121,9 @@ sip_sec_init_context(SipSecContext *context,
 		out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
 		free_bytes_buffer(&out_buff);
 	}
+	
+	*expires = (*context)->expires;
+
 	return out_buff_base64;
 }
 

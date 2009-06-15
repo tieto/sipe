@@ -269,6 +269,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			gchar *opaque;
 
 			gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
+							   &(auth->expires),
 							   auth->type,
 							   purple_account_get_bool(sip->account, "sso", TRUE),
 							   sip->authdomain ? sip->authdomain : "",
@@ -276,9 +277,9 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 							   sip->password,
 							   auth->target,
 							   auth->gssapi_data);
-			if (!gssapi_data)
+			if (!gssapi_data || !auth->gssapi_context)
 				return NULL;
-
+				
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
 			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth_protocol, opaque, auth->realm, auth->target, gssapi_data);
 			g_free(opaque);
@@ -2971,6 +2972,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *from;
 	gchar *body;
 	gchar *newTag = gentag();
+	gchar *oldHeader;
+	gchar *newHeader;
 	struct sip_im_session *session;
 
 	purple_debug_info("sipe", "process_incoming_invite: body:\n%s!\n", msg->body ? msg->body : "");
@@ -2983,8 +2986,6 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 
 	// TODO There *must* be a better way to clean up the To header to add a tag...
 	purple_debug_info("sipe", "Adding a Tag to the To Header on Invite Request...\n");
-	gchar *oldHeader;
-	gchar *newHeader;
 	oldHeader = sipmsg_find_header(msg, "To"); 
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
 	sipmsg_remove_header(msg, "To");
@@ -3129,10 +3130,16 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				fill_auth(sip, tmp, &sip->registrar);
 
 				if (!sip->reauthenticate_set) {
-					/* we have to reauthenticate as our security token expires
-					   after eight hours (be five minutes early) */
 					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
-					guint reauth_timeout = (8 * 3600) - 360;
+					guint reauth_timeout;
+					if (sip->registrar.type == AUTH_TYPE_KERBEROS && sip->registrar.expires > 0) {
+						/* assuming normal Kerberos ticket expiration of about 8-10 hours */
+						reauth_timeout = sip->registrar.expires - 300;
+					} else {
+						/* NTLM: we have to reauthenticate as our security token expires
+						after eight hours (be five minutes early) */
+						reauth_timeout = (8 * 3600) - 300;
+					}
 					sipe_schedule_action(action_name, reauth_timeout, do_reauthenticate_cb, NULL, sip, NULL);
 					g_free(action_name);
 					sip->reauthenticate_set = TRUE;
@@ -4277,7 +4284,6 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 						if (msg->response == 401)
 						{
 							sip->registrar.retries++;
-							sip->registrar.expires = 0;
 						}
 						else
 						{
