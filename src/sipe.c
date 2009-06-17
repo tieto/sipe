@@ -106,6 +106,7 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 
 static char *gentag()
 {
+	srand(time(NULL));
 	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
@@ -119,6 +120,7 @@ static gchar *get_epid(struct sipe_account_data *sip)
 
 static char *genbranch()
 {
+	srand(time(NULL));
 	return g_strdup_printf("z9hG4bK%04X%04X%04X%04X%04X",
 		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
 		rand() & 0xFFFF, rand() & 0xFFFF);
@@ -126,6 +128,7 @@ static char *genbranch()
 
 static char *gencallid()
 {
+	srand(time(NULL));
 	return g_strdup_printf("%04Xg%04Xa%04Xi%04Xm%04Xt%04Xb%04Xx%04Xx",
 		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
 		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
@@ -2638,7 +2641,7 @@ sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outg
 	}
 
 	// Catch a tag on the end of the To Header and get rid of it.
-	if (strstr(dialog->theirepid, "tag=")) {
+	if (dialog->theirepid && strstr(dialog->theirepid, "tag=")) {
 		dialog->theirepid = strtok(dialog->theirepid, ";");
 	}
 
