@@ -5707,9 +5707,10 @@ static void init_plugin(PurplePlugin *plugin)
 	PurpleAccountOption *option;
 
 #ifdef ENABLE_NLS
-	purple_debug_info(PACKAGE, "bindtextdomain = %s", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));
-	purple_debug_info(PACKAGE, "bind_textdomain_codeset = %s",
+	purple_debug_info(PACKAGE, "bindtextdomain = %s\n", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));
+	purple_debug_info(PACKAGE, "bind_textdomain_codeset = %s\n",
 	bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8"));
+	textdomain(GETTEXT_PACKAGE);
 #endif
 
 	purple_plugin_register(plugin);
