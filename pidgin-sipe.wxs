@@ -89,7 +89,23 @@
 							Source='po/hi.gmo' Vital='yes' />
 						</Component>				
 				  </Directory>
+				</Directory>				
+				<Directory Id='it' Name='it'>
+				  <Directory Id='it_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleItLcMessages' Guid='D02EDFEC-5CED-11DE-9027-84C456D89593'>
+						  <File Id='it.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/it.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
 				</Directory>
+				<Directory Id='ru' Name='ru'>
+				  <Directory Id='ru_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleRuLcMessages' Guid='DFF98418-5CED-11DE-93FA-18C556D89593'>
+						  <File Id='ru.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/ru.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>				
 				<Directory Id='ta' Name='ta'>
 				  <Directory Id='ta_LC_MESSAGES' Name='LC_MESSAGES'>
 						<Component Id='LocaleTaLcMessages' Guid='752DBD5E-2AA0-11DE-B49D-17C256D89593'>
@@ -121,6 +137,8 @@
 			<ComponentRef Id='LocaleEsLcMessages' />
 			<ComponentRef Id='LocaleFrLcMessages' />
 			<ComponentRef Id='LocaleHiLcMessages' />
+			<ComponentRef Id='LocaleItLcMessages' />
+			<ComponentRef Id='LocaleRuLcMessages' />
 			<ComponentRef Id='LocaleTaLcMessages' />
 			<ComponentRef Id='LocaleZhCnLcMessages' />			
 		</Feature>

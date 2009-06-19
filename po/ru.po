@@ -1,0 +1,255 @@
+# Russian translation for pidgin-sipe
+# Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
+# This file is distributed under the same license as the pidgin-sipe package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: pidgin-sipe\n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2008-12-16 13:43-0600\n"
+"PO-Revision-Date: 2009-06-19 15:15+0000\n"
+"Last-Translator: Andrey Nauman <Andrey.Nauman@gmail.com>\n"
+"Language-Team: Russian <ru@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Launchpad-Export-Date: 2009-06-19 15:32+0000\n"
+"X-Generator: Launchpad (build Unknown)\n"
+
+#. TODO: do we really want to disconnect on a failure to write?
+#: ../src/sipe.c:530 ../src/sipe.c:560
+msgid "Could not write"
+msgstr "Запись не удалась"
+
+#: ../src/sipe.c:2170
+#, c-format
+msgid "You have been rejected by the server: %s"
+msgstr "Вы были отвергнуты сервером:%s"
+
+#: ../src/sipe.c:2170 ../src/sipe.c:2186
+msgid "no reason given"
+msgstr "нет причины"
+
+#: ../src/sipe.c:2173
+msgid "You have been rejected by the server"
+msgstr "Вы были отвергнуты сервером"
+
+#: ../src/sipe.c:2186
+#, c-format
+msgid "Service unavailable: %s"
+msgstr "Служба недоступна: %s"
+
+#: ../src/sipe.c:2189
+msgid "Service unavailable: no reason given"
+msgstr "Служба недоступна: без объяснения причин"
+
+#: ../src/sipe.c:2846
+msgid "Connection not found; Please try to connect again.\n"
+msgstr "Соединение не найдено; Пожалуйста попробуйте подключиться заново\n"
+
+#: ../src/sipe.c:2867
+msgid "SSL read error"
+msgstr "Ошибка чтения SSL"
+
+#: ../src/sipe.c:2870
+msgid "Server has disconnected"
+msgstr "Сервер был отключен"
+
+#: ../src/sipe.c:3121
+msgid ""
+"SSL support is not installed.  Either install SSL support or configure a "
+"different connection type in the account editor."
+msgstr ""
+"Поддержка SSL не установлена. Либо установить поддержку SSL или настроить "
+"соединения различного типа в редакторе аккаунта."
+
+#: ../src/sipe.c:3130
+msgid "Could not create SSL context"
+msgstr "Не удалалось создать SSL свзяь"
+
+#: ../src/sipe.c:3244
+msgid "SIP Exchange usernames may not contain whitespaces"
+msgstr "SIP Exchange пользователя не может содержать пробелов"
+
+#: ../src/sipe.c:3461
+#, c-format
+msgid "Found %d contact%s:"
+msgid_plural "Found %d contacts%s:"
+msgstr[0] "Найден %d контакт%s:"
+msgstr[1] "Найдены %d контакта(ов)%s:"
+msgstr[2] "Найдены %d контакта(ов)%s:"
+
+#: ../src/sipe.c:3463
+msgid " (more matched your query)"
+msgstr " (больше соответствует вашему запросу)"
+
+#: ../src/sipe.c:3525
+msgid "Search for a Contact"
+msgstr "Поиск контакта"
+
+#: ../src/sipe.c:3540
+msgid "Contact Search..."
+msgstr "Поиск контакта"
+
+#: ../src/sipe.c:3689
+msgid "Use non-standard port"
+msgstr "Использовать не стандартный порт"
+
+#: ../src/sipe.c:583 ../src/sipe.c:2946
+msgid "Could not connect"
+msgstr "Не смог соединиться"
+
+#: ../src/sipe.c:649 ../src/sipe.c:3090
+msgid "Couldn't create socket"
+msgstr "Не смог создать сокет"
+
+#. Translators: noun
+#: ../src/sipe.c:1416 ../src/sipe.c:1423 ../src/sipe.c:1430
+msgid "Message"
+msgstr "Сообщение"
+
+#: ../src/sipe.c:1429
+msgid "Busy"
+msgstr "Занят"
+
+#: ../src/sipe.c:2144 ../src/sipe.c:2783
+msgid "Wrong Password"
+msgstr "Неправильный пароль"
+
+#: ../src/sipe.c:2779
+msgid "Invalid message signature received"
+msgstr "Неверная подпись сообщения"
+
+#: ../src/sipe.c:2992 ../src/sipe.c:3035 ../src/sipe.c:3074 ../src/sipe.c:3148
+msgid "Could not create listen socket"
+msgstr "Невозможно создать listen socket"
+
+#: ../src/sipe.c:3016
+msgid "Couldn't resolve host"
+msgstr "Невозможно определить хост"
+
+#: ../src/sipe.c:3056
+msgid "Connection Failed"
+msgstr "Соединение не удалось"
+
+#: ../src/sipe.c:3059
+msgid "SSL Handshake Failed"
+msgstr "SSL соединение не удалось"
+
+#: ../src/sipe.c:3139
+msgid "Could not resolve hostname"
+msgstr "Невозможно определить имя хоста"
+
+#: ../src/sipe.c:3262
+msgid "Connecting"
+msgstr "Соединение"
+
+#: ../src/sipe.c:3414
+msgid "Unable to display the search results."
+msgstr "Не могу отобразить результаты поиска"
+
+#: ../src/sipe.c:3420
+msgid "User Name"
+msgstr "Имя пользователя"
+
+#: ../src/sipe.c:3423
+msgid "Name"
+msgstr "Имя"
+
+#: ../src/sipe.c:3426 ../src/sipe.c:3518
+msgid "Company"
+msgstr "Компания"
+
+#: ../src/sipe.c:3429 ../src/sipe.c:3520
+msgid "Country"
+msgstr "Страна"
+
+#: ../src/sipe.c:3432
+msgid "Email"
+msgstr "Электронная почта"
+
+#: ../src/sipe.c:3514
+msgid "First Name"
+msgstr "Имя"
+
+#: ../src/sipe.c:3516
+msgid "Last Name"
+msgstr "Фамилия"
+
+#: ../src/sipe.c:3524
+msgid "Search"
+msgstr "Поиск"
+
+#: ../src/sipe.c:3526
+msgid ""
+"Enter the information of the person you wish to find. Empty fields will be "
+"ignored."
+msgstr ""
+"Введите информацию о человеке, которого вы хотите найти. Пустые поля будут "
+"проигнорированы."
+
+#: ../src/sipe.c:3528
+msgid "_Search"
+msgstr "_Поиск"
+
+#: ../src/sipe.c:3529
+msgid "_Cancel"
+msgstr "_Отмена"
+
+#: ../src/sipe.c:3684
+msgid "Use proxy"
+msgstr "Использовать прокси-сервер"
+
+#: ../src/sipe.c:3686
+msgid "Proxy Server"
+msgstr "Прокси-сервер"
+
+#. Translators: noun (networking port)
+#: ../src/sipe.c:3692
+msgid "Port"
+msgstr "Порт"
+
+#: ../src/sipe.c:3695
+msgid "Connection Type"
+msgstr "Тип соединения"
+
+#: ../src/sipe.c:3696
+msgid "Auto"
+msgstr "Автоматический"
+
+#: ../src/sipe.c:3697
+msgid "SSL/TLS"
+msgstr "SSL/TLS"
+
+#: ../src/sipe.c:3698
+msgid "TCP"
+msgstr "TCP"
+
+#: ../src/sipe.c:3699
+msgid "UDP"
+msgstr "UDP"
+
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/sipe.c:3705
+msgid "User Agent"
+msgstr "User Agent"
+
+#. TODO commented out so won't show in the preferences until we fix krb message signing
+#. option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. 
+#. // XXX FIXME: Add code to programmatically determine if a KRB REALM is specified in /etc/krb5.conf
+#. option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. 
+#: ../src/sipe.c:3717
+msgid "Auth User"
+msgstr "Пользователь для аутентификации"
+
+#: ../src/sipe.c:3719
+msgid "Auth Domain"
+msgstr "Домен для аутентификации"
