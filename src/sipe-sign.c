@@ -21,18 +21,11 @@
  */
 
 #include <glib.h>
-#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <ctype.h>
-#ifndef _WIN32
-#include <et/com_err.h>
-#else
-#include <protocols/zephyr/com_err.h>
+#ifdef _WIN32
 #include "internal.h"
 #endif
 #include "debug.h"
-#include "util.h"
 
 #include "sipe-sign.h"
 

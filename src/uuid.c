@@ -28,7 +28,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <linux/if.h>
+#include <net/if.h>
 #else
 #ifdef _DLL
 #define _WS2TCPIP_H_
@@ -134,7 +134,11 @@ long mac_addr_sys (const unsigned char *addr)
         strcpy(ifr.ifr_name, IFR->ifr_name);
         if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0) {
             if (! (ifr.ifr_flags & IFF_LOOPBACK)) {
-                if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
+#ifdef __FreeBSD__
+		if (ioctl(s, SIOCGIFMAC, &ifr) == 0) {
+#else
+		if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
+#endif
                     ok = 1;
                     break;
                 }
@@ -144,7 +148,7 @@ long mac_addr_sys (const unsigned char *addr)
 
     close(s);
     if (ok) {
-        memmove((void *)addr, ifr.ifr_hwaddr.sa_data, 6);
+	memmove((void *)addr, ifr.ifr_ifru.ifru_addr.sa_data, 6);
     }
     else {
         return -1;

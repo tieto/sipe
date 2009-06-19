@@ -23,18 +23,6 @@
 #ifndef _PIDGIN_SIPE_SIGN_H
 #define _PIDGIN_SIPE_SIGN_H
 
-#include <glib.h>
-#include <time.h>
-
-#include "cipher.h"
-#include "circbuffer.h"
-#include "dnsquery.h"
-#include "dnssrv.h"
-#include "network.h"
-#include "proxy.h"
-#include "prpl.h"
-#include "sslconn.h"
-
 #include "sipmsg.h"
 
 struct sipmsg_breakdown {
@@ -57,3 +45,4 @@ gchar* sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd);
 void sipmsg_breakdown_free(struct sipmsg_breakdown * msg);
 
 #endif /* _PIDGIN_SIPE_SIGN_H */
+
