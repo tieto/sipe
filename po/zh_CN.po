@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-04-29 18:28+0800\n"
-"PO-Revision-Date: 2009-04-29 18:53+0800\n"
+"POT-Creation-Date: 2009-06-22 10:32+0800\n"
+"PO-Revision-Date: 2009-06-22 11:27+0800\n"
 "Last-Translator: 神州散人 <kappa8086@gmail.com>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -16,275 +16,378 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:523
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:553
+#: ../src/sipe.c:428
+#: ../src/sipe.c:458
 msgid "Could not write"
 msgstr "无法写入"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:576
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3460
+#: ../src/sipe.c:481
+#: ../src/sipe.c:4589
 msgid "Could not connect"
 msgstr "无法连接"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:645
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3604
+#: ../src/sipe.c:550
+#: ../src/sipe.c:4733
 msgid "Couldn't create socket"
 msgstr "无法创建套接字"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1504
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1511
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1518
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1525
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1532
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1539
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1546
+#: ../src/sipe.c:1788
+msgid "Online"
+msgstr "在线"
+
+#: ../src/sipe.c:1790
+#: ../src/sipe.c:1797
+#: ../src/sipe.c:1804
+#: ../src/sipe.c:1811
+#: ../src/sipe.c:1818
+#: ../src/sipe.c:1825
+#: ../src/sipe.c:1832
 msgid "Message"
 msgstr "消息"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1510
+#: ../src/sipe.c:1796
 msgid "Busy"
 msgstr "忙碌"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1524
+#: ../src/sipe.c:1803
+msgid "Do Not Disturb"
+msgstr "请勿打扰"
+
+#: ../src/sipe.c:1810
 msgid "Be Right Back"
 msgstr "马上回来"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1538
+#: ../src/sipe.c:1824
 msgid "On The Phone"
 msgstr "接电话中"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:1847
+#: ../src/sipe.c:1831
+msgid "Out To Lunch"
+msgstr "外出就餐"
+
+#: ../src/sipe.c:1838
+msgid "Appear Offline"
+msgstr "显示离线"
+
+#: ../src/sipe.c:2110
+msgid "You have been signed off because you've signed in at another location"
+msgstr "您已被登出，原因是您已在另一地点登入"
+
+#: ../src/sipe.c:2113
+msgid "User disabled"
+msgstr "用户已禁止"
+
+#: ../src/sipe.c:2116
+msgid "User moved"
+msgstr "用户已移动"
+
+#: ../src/sipe.c:2120
+#, c-format
+msgid "Unregistered by Server: %s."
+msgstr "在以下服务器被取消注册：%s。"
+
+#: ../src/sipe.c:2120
+#: ../src/sipe.c:3333
+#: ../src/sipe.c:3350
+#: ../src/sipe.c:3367
+msgid "no reason given"
+msgstr "没有给出原因"
+
+#: ../src/sipe.c:2444
 #, c-format
 msgid ""
 "The following message could not be delivered to all recipients, possibly "
 "because one or more persons are offline:\n"
 "%s"
-msgstr "以下消息将没有被发送到所有收信人，可能的原因是有人不在线：\n"
+msgstr ""
+"以下消息将没有被发送到所有收信人，可能的原因是有人不在线：\n"
 "%s"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2547
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3295
+#: ../src/sipe.c:3303
+#: ../src/sipe.c:4421
 msgid "Wrong Password"
 msgstr "密码错误"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2573
+#: ../src/sipe.c:3333
 #, c-format
 msgid "You have been rejected by the server: %s"
-msgstr "您被服务器拒绝了：%s"
+msgstr "您被以下服务器拒绝了：%s"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2573
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2589
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2605
-msgid "no reason given"
-msgstr "没有给出原因"
-
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2576
+#: ../src/sipe.c:3336
 msgid "You have been rejected by the server"
 msgstr "您被服务器拒绝了"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2589
+#: ../src/sipe.c:3350
 #, c-format
 msgid "Not Found: %s. Please, contact with your Administrator"
 msgstr "%s 没找到。请和您的管理员联系"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2592
+#: ../src/sipe.c:3353
 msgid ""
 "Not Found: Destination URI either not enabled for SIP or does not exist. "
 "Please, contact with your Administrator"
 msgstr "没找到：目标 URI 对于 SIP 未启用或不存在。请和您的管理员联系"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2605
+#: ../src/sipe.c:3367
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "服务不可用：%s"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:2608
+#: ../src/sipe.c:3370
 msgid "Service unavailable: no reason given"
 msgstr "服务不可用：没有给出原因"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3291
+#: ../src/sipe.c:4417
 msgid "Invalid message signature received"
 msgstr "收到了无效的消息签名"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3360
+#: ../src/sipe.c:4489
 msgid "Connection not found; Please try to connect again.\n"
 msgstr "连接没找到；请重试连接。\n"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3381
+#: ../src/sipe.c:4510
 msgid "SSL read error"
 msgstr "SSL 读取错误"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3384
+#: ../src/sipe.c:4513
 msgid "Server has disconnected"
 msgstr "服务器已断开"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3506
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3549
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3588
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3662
+#: ../src/sipe.c:4633
+#: ../src/sipe.c:4675
+#: ../src/sipe.c:4717
+#: ../src/sipe.c:4791
 msgid "Could not create listen socket"
 msgstr "无法创建监听套接字"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3530
+#: ../src/sipe.c:4656
 msgid "Couldn't resolve host"
 msgstr "无法解析主机"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3570
+#: ../src/sipe.c:4696
 msgid "Connection Failed"
 msgstr "连接失败"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3573
+#: ../src/sipe.c:4699
 msgid "SSL Handshake Failed"
 msgstr "SSL 握手失败"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3635
+#: ../src/sipe.c:4702
+msgid "SSL Certificate Invalid"
+msgstr "SSL 证书无效"
+
+#: ../src/sipe.c:4764
 msgid ""
 "SSL support is not installed.  Either install SSL support or configure a "
 "different connection type in the account editor."
 msgstr "没有安装 SSL 支持。请安装 SSL 支持或在帐户编辑器里配置另外的连接类型。"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3644
+#: ../src/sipe.c:4773
 msgid "Could not create SSL context"
 msgstr "无法创建 SSL 环境"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3653
+#: ../src/sipe.c:4782
 msgid "Could not resolve hostname"
 msgstr "无法解析主机名"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3763
+#: ../src/sipe.c:4893
+msgid "SIP Exchange username contains invalid characters"
+msgstr "SIP Exchange 用户名包含无效字符"
+
+#: ../src/sipe.c:4916
 msgid "SIP Exchange usernames may not contain whitespaces"
 msgstr "SIP Exchange 用户名不允许包含空格"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3783
+#: ../src/sipe.c:4932
 msgid "Connecting"
 msgstr "正在连接"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3910
+#: ../src/sipe.c:5107
 msgid "Unable to display the search results."
 msgstr "无法显示搜索结果。"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3916
+#: ../src/sipe.c:5113
 msgid "User Name"
 msgstr "用户名"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3919
+#: ../src/sipe.c:5116
 msgid "Name"
 msgstr "名称"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3922
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4014
+#: ../src/sipe.c:5119
+#: ../src/sipe.c:5210
+#: ../src/sipe.c:5510
 msgid "Company"
 msgstr "公司"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3925
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4016
+#: ../src/sipe.c:5122
+#: ../src/sipe.c:5212
+#: ../src/sipe.c:5513
 msgid "Country"
 msgstr "国家"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3928
+#: ../src/sipe.c:5125
 msgid "Email"
 msgstr "电子邮件"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3957
+#: ../src/sipe.c:5152
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "已找到 %d 个联系人 %s："
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:3959
+#: ../src/sipe.c:5154
 msgid " (more matched your query)"
-msgstr " (与您的查询更匹配)"
+msgstr " (有更多与您的查询匹配)"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4010
+#: ../src/sipe.c:5206
 msgid "First Name"
 msgstr "姓"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4012
+#: ../src/sipe.c:5208
 msgid "Last Name"
 msgstr "名"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4020
+#: ../src/sipe.c:5216
 msgid "Search"
 msgstr "搜索"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4021
+#: ../src/sipe.c:5217
 msgid "Search for a Contact"
 msgstr "搜索联系人"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4022
+#: ../src/sipe.c:5218
 msgid ""
 "Enter the information of the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "输入您要查找的人的信息。空字段将被忽略。"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4024
+#: ../src/sipe.c:5220
 msgid "_Search"
 msgstr "搜索(_S)"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4025
+#: ../src/sipe.c:5221
 msgid "_Cancel"
 msgstr "取消(_C)"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4036
+#: ../src/sipe.c:5230
 msgid "Contact Search..."
 msgstr "联系人搜索..."
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4098
+#: ../src/sipe.c:5294
+msgid "Status"
+msgstr "状态"
+
+#: ../src/sipe.c:5299
 msgid "Note"
 msgstr "备注"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4215
+#: ../src/sipe.c:5310
+msgid "Sign-In Name..."
+msgstr "登入名..."
+
+#: ../src/sipe.c:5422
+msgid "Send Email..."
+msgstr "发送邮件..."
+
+#: ../src/sipe.c:5446
+msgid "Copy to"
+msgstr "复制到"
+
+#: ../src/sipe.c:5506
+#: ../src/sipe.c:5531
+msgid "Display Name"
+msgstr "显示名称"
+
+#: ../src/sipe.c:5507
+msgid "Job Title"
+msgstr "职称"
+
+#: ../src/sipe.c:5508
+msgid "Office"
+msgstr "职务"
+
+#: ../src/sipe.c:5509
+msgid "Business Phone"
+msgstr "工作电话"
+
+#: ../src/sipe.c:5511
+msgid "City"
+msgstr "城市"
+
+#: ../src/sipe.c:5512
+msgid "State"
+msgstr "省份"
+
+#: ../src/sipe.c:5515
+#: ../src/sipe.c:5546
+msgid "E-Mail Address"
+msgstr "电子邮件地址"
+
+#: ../src/sipe.c:5539
+msgid "Alias"
+msgstr "别名"
+
+#: ../src/sipe.c:5552
+msgid "Device"
+msgstr "设备"
+
+#: ../src/sipe.c:5718
+msgid ""
+"Login \n"
+"   domain\\user  or\n"
+"   someone@linux.com "
+msgstr ""
+"登录 \n"
+"	域\\用户  或\n"
+"	someone@linux.com "
+
+#: ../src/sipe.c:5722
 msgid "Use proxy"
 msgstr "使用代理"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4217
+#: ../src/sipe.c:5724
 msgid "Proxy Server"
 msgstr "代理服务器"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4220
+#: ../src/sipe.c:5727
 msgid "Use non-standard port"
 msgstr "使用非标准端口"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4223
+#: ../src/sipe.c:5730
 msgid "Port"
 msgstr "端口"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4226
+#: ../src/sipe.c:5733
 msgid "Connection Type"
 msgstr "连接类型"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4227
+#: ../src/sipe.c:5734
 msgid "Auto"
 msgstr "自动"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4228
+#: ../src/sipe.c:5735
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4229
+#: ../src/sipe.c:5736
 msgid "TCP"
 msgstr "TCP"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4230
+#: ../src/sipe.c:5737
 msgid "UDP"
 msgstr "UDP"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4236
+#: ../src/sipe.c:5743
 msgid "User Agent"
 msgstr "用户代理"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4248
-msgid "Auth User"
-msgstr "认证用户"
+#: ../src/sipe.c:5747
+msgid "Use Kerberos"
+msgstr "使用 Kerberos"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4250
-msgid "Auth Domain"
-msgstr "认证域"
+#: ../src/sipe.c:5754
+msgid "Use Single Sign-On"
+msgstr "使用单点登录"
 
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4252
-msgid "Use Client-specified Keepalive"
-msgstr "使用由客户端指定的保持在线设置"
-
-#: /home/kai/pidgin-sipe-1.3.4/src/sipe.c:4254
-msgid "Keepalive Timeout"
-msgstr "保持在线超时时间"
+ 	  	 
