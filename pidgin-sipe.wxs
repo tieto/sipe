@@ -50,6 +50,14 @@
 			  
 			  <!-- Translations -->
 			  <Directory Id='locale' Name='locale'>
+				<Directory Id='cs' Name='cs'>
+				  <Directory Id='cs_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleCsLcMessages' Guid='026FD274-5F21-11DE-BE4B-D76A56D89593'>
+						  <File Id='cs.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/cs.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
 				<Directory Id='da' Name='da'>
 				  <Directory Id='da_LC_MESSAGES' Name='LC_MESSAGES'>
 						<Component Id='LocaleDaLcMessages' Guid='2AE5620C-2A9F-11DE-930D-E5B556D89593'>
@@ -98,6 +106,14 @@
 						</Component>				
 				  </Directory>
 				</Directory>
+				<Directory Id='nb' Name='nb'>
+				  <Directory Id='nb_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleNbLcMessages' Guid='2B63CAE6-5F21-11DE-B69E-D46B56D89593'>
+						  <File Id='nb.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/nb.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
 				<Directory Id='ru' Name='ru'>
 				  <Directory Id='ru_LC_MESSAGES' Name='LC_MESSAGES'>
 						<Component Id='LocaleRuLcMessages' Guid='DFF98418-5CED-11DE-93FA-18C556D89593'>
@@ -132,12 +148,14 @@
 			<ComponentRef Id='PixmapsProtocols16icon' />
 			<ComponentRef Id='PixmapsProtocols22icon' />
 			<ComponentRef Id='PixmapsProtocols48icon' />
+			<ComponentRef Id='LocaleCsLcMessages' />
 			<ComponentRef Id='LocaleDaLcMessages' />
 			<ComponentRef Id='LocaleDeLcMessages' />
 			<ComponentRef Id='LocaleEsLcMessages' />
 			<ComponentRef Id='LocaleFrLcMessages' />
 			<ComponentRef Id='LocaleHiLcMessages' />
 			<ComponentRef Id='LocaleItLcMessages' />
+			<ComponentRef Id='LocaleNbLcMessages' />
 			<ComponentRef Id='LocaleRuLcMessages' />
 			<ComponentRef Id='LocaleTaLcMessages' />
 			<ComponentRef Id='LocaleZhCnLcMessages' />			
