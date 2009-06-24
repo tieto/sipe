@@ -106,7 +106,6 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 
 static char *gentag()
 {
-	srand(time(NULL));
 	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
@@ -120,7 +119,6 @@ static gchar *get_epid(struct sipe_account_data *sip)
 
 static char *genbranch()
 {
-	srand(time(NULL));
 	return g_strdup_printf("z9hG4bK%04X%04X%04X%04X%04X",
 		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
 		rand() & 0xFFFF, rand() & 0xFFFF);
@@ -128,7 +126,6 @@ static char *genbranch()
 
 static char *gencallid()
 {
-	srand(time(NULL));
 	return g_strdup_printf("%04Xg%04Xa%04Xi%04Xm%04Xt%04Xb%04Xx%04Xx",
 		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
 		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
@@ -813,6 +810,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 	gchar *route     = strdup("");
 	gchar *epid      = get_epid(sip); // TODO generate one per account/login
+	int cseq = dialog ? ++dialog->cseq : 1/* as Call-Id is new in this case */;
 	struct transaction *trans;
 
 	if (dialog && dialog->routes)
@@ -869,7 +867,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			theirtag ? theirtag : "",
 			theirepid ? ";epid=" : "",
 			theirepid ? theirepid : "",
-			dialog ? ++dialog->cseq : ++sip->cseq,
+			cseq,
 			method,
 			useragent,
 			callid,
@@ -1389,6 +1387,34 @@ static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, const gc
 	}
 }
 
+static void 
+sipe_schedule_action0(const gchar *name,
+		      int timeout,
+		      gboolean isSeconds,
+		      Action action,
+		      GDestroyNotify destroy,
+		      struct sipe_account_data *sip,
+		      void *payload)
+{
+	struct scheduled_action *sched_action;
+
+	/* Make sure each action only exists once */
+	sipe_cancel_scheduled_action(sip, name);
+
+	purple_debug_info("sipe","scheduling action %s timeout:%d(%s)\n", name, timeout, isSeconds ? "sec" : "msec");
+	sched_action = g_new0(struct scheduled_action, 1);
+	sched_action->repetitive = FALSE;
+	sched_action->name = g_strdup(name);
+	sched_action->action = action;
+	sched_action->destroy = destroy ? destroy : g_free;
+	sched_action->sip = sip;
+	sched_action->payload = payload;
+	sched_action->timeout_handler = isSeconds ? purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action) :
+						    purple_timeout_add(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action);
+	sip->timeouts = g_slist_append(sip->timeouts, sched_action);
+	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
+}
+
 /**
   * Do schedule action for execution in the future.
   * Non repetitive execution.
@@ -1398,25 +1424,31 @@ static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, const gc
   * @action  callback function
   * @payload callback data (can be NULL, otherwise caller must allocate memory)
   */
-static void sipe_schedule_action(const gchar *name, int timeout, Action action, GDestroyNotify destroy, struct sipe_account_data *sip, void *payload)
+static void 
+sipe_schedule_action(const gchar *name,
+		     int timeout,
+		     Action action,
+		     GDestroyNotify destroy,
+		     struct sipe_account_data *sip,
+		     void *payload)
 {
-	struct scheduled_action *sched_action;
-
-	/* Make sure each action only exists once */
-	sipe_cancel_scheduled_action(sip, name);
-
-	purple_debug_info("sipe","scheduling action %s timeout:%d\n", name, timeout);
-	sched_action = g_new0(struct scheduled_action, 1);
-	sched_action->repetitive = FALSE;
-	sched_action->name = g_strdup(name);
-	sched_action->action = action;
-	sched_action->destroy = destroy ? destroy : g_free;
-	sched_action->sip = sip;
-	sched_action->payload = payload;
-	sched_action->timeout_handler = purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action);
-	sip->timeouts = g_slist_append(sip->timeouts, sched_action);
-	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
+	sipe_schedule_action0(name, timeout, TRUE, action, destroy, sip, payload);
 }
+
+/**
+  * Same as sipe_schedule_action() but timeout is in milliseconds.
+  */
+static void 
+sipe_schedule_action_msec(const gchar *name,
+			  int timeout,
+			  Action action,
+			  GDestroyNotify destroy,
+			  struct sipe_account_data *sip,
+			  void *payload)
+{
+	sipe_schedule_action0(name, timeout, FALSE, action, destroy, sip, payload);
+}
+
 
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
 
@@ -1691,7 +1723,7 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 
 static void sipe_free_buddy(struct sipe_buddy *buddy)
 {
-	g_free(buddy->name);
+	// g_free(buddy->name); /* g_hash_table_foreach_remove does not like it */
 	g_free(buddy->annotation);
 	g_free(buddy->device_name);
 	g_slist_free(buddy->groups);
@@ -1851,7 +1883,9 @@ static GList *sipe_status_types(PurpleAccount *acc)
   */
 static void sipe_buddy_subscribe_cb(char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
 {
-	sipe_subscribe_presence_single(sip, buddy->name);
+	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy->name);
+	int timeout = (2000 * rand()) / RAND_MAX; /* random interval within 2 sec */
+	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, NULL, sip, buddy->name);
 }
 
 /**
@@ -5705,6 +5739,8 @@ static void init_plugin(PurplePlugin *plugin)
 {
 	PurpleAccountUserSplit *split;
 	PurpleAccountOption *option;
+	
+	srand(time(NULL));
 
 #ifdef ENABLE_NLS
 	purple_debug_info(PACKAGE, "bindtextdomain = %s\n", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));
