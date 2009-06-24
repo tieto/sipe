@@ -1,3 +1,24 @@
+version 1.5.0 (2009-06-24)
+       - Fixed bug #2800325 for crash if wrong IP manually typed into Pidgin.
+       - New Security Framework: dedicated to use plug-able security mechanisms.
+         + Added Kerberos/NTLM SSPI for Windows
+         + Added Kerberos MIT for Linux
+         + Fixed the NTLM native implementation for Linux
+       - New options on Advanced tab: Use Kerberos and Single Sign-on (for both
+ kerberos implements). 
+       - Fixed the --with-krb5 compilation option. Now pidgin-sipe can be compiled with krb5 support again.
+       - To send presence subscribe requests to poolFqdn servers
+       - Record-Route header can contain multiple routes. For CHOWA clients.
+       - Fixed 2 bugs with INVITE messages from incoming CHOWA clients.
+       - FreeBSD compatibility
+       - Fixed for 'same conversation ID' issue
+       - Fixed for Reuters(LCS2005) frequent disconnects
+       - Fixed many warnings on compilation.
+       - Fixed many potential memory leaks. Thank you Stefan
+       - Fixed I18n support and sync from launchpad
+         + Added 'it' and 'ru' translations
+         + Updated 'zh', 'cs', 'es' and 'nb' translations.
+
 version 1.4.1 (2009-06-01)
        - Patch for spaces in Login's username
        - Fixed bugs #2793431, #2793688 for crash in process_incoming_notify_rlmi_resub
@@ -29,7 +50,7 @@ version 1.4.0 (2009-05-17)
        - Fixed many warnings on compilation.
        - Fixed many potential memory leaks. Thank you Stefan
        - Fixed bug #2786479: some messages could not be delivered to all users.
-       - Fixed bug #2779386: fix for invalid NTLM signatire.
+       - Fixed bug #2779386: fix for invalid NTLM signature.
 
 version 1.3.4 (2009-04-13)
        - Fix segmentation fault caused by redirect
