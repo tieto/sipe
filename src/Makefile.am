@@ -31,7 +31,6 @@ endif
 AM_CFLAGS = $(st) 
 
 libsipe_la_CFLAGS = \
-	-Wall -Wextra -Wno-unused-parameter -Werror \
         $(DEBUG_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(PURPLE_CFLAGS) \

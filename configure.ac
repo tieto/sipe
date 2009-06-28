@@ -48,6 +48,9 @@ if test "$enable_debug" = yes; then
    AC_DEFINE(DEBUG, 1, [Define if debugging is enabled.])
 fi
 
+DEBUG_CFLAGS="${DEBUG_CFLAGS} -Wall -Wextra -Wno-unused-parameter"
+AC_SUBST(DEBUG_CFLAGS)
+
 AC_ARG_WITH(krb5, [AC_HELP_STRING([--with-krb5=PREFIX], [compile sipe plugin with Kerberos 5 support])], kerberos="$withval", kerberos="no")
 
 dnl #######################################################################
