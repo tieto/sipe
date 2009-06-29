@@ -2366,6 +2366,27 @@ static void sipe_subscribe_roaming_provisioning_v2(struct sipe_account_data *sip
 
 /* IM Session (INVITE and MESSAGE methods) */
 
+static struct sip_dialog *
+get_dialog (struct sip_im_session *session,
+	    const gchar *who)
+{
+	struct sip_dialog *dialog;
+	GSList *entry;
+	if (session == NULL || who == NULL) {
+		return NULL;
+	}
+
+	entry = session->dialogs;
+	while (entry) {
+		dialog = entry->data;
+		if (!strcmp(who, dialog->with)) {
+			return dialog;
+		}
+		entry = entry->next;
+	}
+	return NULL;
+}
+
 static struct sip_im_session * find_im_session (struct sipe_account_data *sip, const char *who)
 {
 	struct sip_im_session *session;
@@ -2397,31 +2418,40 @@ static struct sip_im_session * find_or_create_im_session (struct sipe_account_da
 	return session;
 }
 
+static void 
+free_dialog(struct sip_dialog *dialog)
+{
+	GSList *entry = dialog->routes;
+	g_free(dialog->with);
+	while (entry) {
+		g_free(entry->data);
+		entry = g_slist_remove(entry, entry->data);
+	}
+	entry = dialog->supported;
+	while (entry) {
+		g_free(entry->data);
+		entry = g_slist_remove(entry, entry->data);
+	}
+	g_free(dialog->callid);
+	g_free(dialog->ourtag);
+	g_free(dialog->theirtag);
+	g_free(dialog->theirepid);
+	g_free(dialog->request);
+	
+	g_free(dialog);
+}
+
 static void im_session_destroy(struct sipe_account_data *sip, struct sip_im_session * session)
 {
-	struct sip_dialog *dialog = session->dialog;
 	GSList *entry;
 
 	sip->im_sessions = g_slist_remove(sip->im_sessions, session);
 
-	if (dialog) {
-		entry = dialog->routes;
-		while (entry) {
-			g_free(entry->data);
-			entry = g_slist_remove(entry, entry->data);
-		}
-		entry = dialog->supported;
-		while (entry) {
-			g_free(entry->data);
-			entry = g_slist_remove(entry, entry->data);
-		}
-		g_free(dialog->callid);
-		g_free(dialog->ourtag);
-		g_free(dialog->theirtag);
-		g_free(dialog->theirepid);
-		g_free(dialog->request);
+	entry = session->dialogs;
+	while (entry) {
+		free_dialog(entry->data);
+		entry = g_slist_remove(entry, entry->data);
 	}
-	g_free(session->dialog);
 
 	entry = session->outgoing_message_queue;
 	while (entry) {
@@ -2503,7 +2533,8 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 		return FALSE;
 	}
 	
-	dialog = session->dialog;
+	dialog = get_dialog(session, with);
+	
 	if (!dialog) {
 		purple_debug_info("sipe", "process_message_response: session outgoing dialog is NULL\n");
 		g_free(with);
@@ -2571,7 +2602,7 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	g_free(tmp);
 	g_free(msgr);
 
-	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msgtext, session->dialog, process_message_response);
+	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msgtext, get_dialog(session, session->with), process_message_response);
 	g_free(msgtext);
 	g_free(hdr);
 	g_free(fullto);
@@ -2582,11 +2613,12 @@ static void
 sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * session)
 {
 	GSList *entry = session->outgoing_message_queue;
+	struct sip_dialog *dialog = get_dialog(session, session->with);
 	
-	if (session->outgoing_invite) return; //do not send messages until INVITE responded.
+	if (dialog->outgoing_invite) return; //do not send messages until INVITE responded.
 	
 	while (entry) {
-		char *key = g_strdup_printf("<%s><%d><MESSAGE>", session->dialog->callid, (session->dialog->cseq) + 1);
+		char *key = g_strdup_printf("<%s><%d><MESSAGE>", dialog->callid, (dialog->cseq) + 1);
 		char *queued_msg = entry->data;
 		g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(queued_msg));
 		purple_debug_info("sipe", "sipe_im_process_queue: added message %s to unconfirmed_messages(count=%d)\n", 
@@ -2701,7 +2733,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		return FALSE;
 	}
 
-	dialog = session->dialog;
+	dialog = get_dialog(session, with);
 	if (!dialog) {
 		purple_debug_info("sipe", "process_invite_response: session outgoing dialog is NULL\n");
 		g_free(with);
@@ -2726,7 +2758,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	
 	dialog->cseq = 0;
 	send_sip_request(sip->gc, "ACK", session->with, session->with, NULL, NULL, dialog, NULL);
-	session->outgoing_invite = NULL;
+	dialog->outgoing_invite = NULL;
 	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)g_ascii_strcasecmp)) {
 		purple_debug_info("sipe", "process_invite_response: remote system accepted message in INVITE\n");
 		if (session->outgoing_message_queue) {
@@ -2762,17 +2794,21 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 	gchar *msgr_value;
 	gchar *msgr;
 	char *key;
-
-	if (session->dialog) {
+	struct sip_dialog *dialog = get_dialog(session, session->with);
+	
+	if (dialog) {
 		purple_debug_info("sipe", "session with %s already has a dialog open\n", session->with);
 		return;
 	}
 
-	session->dialog = g_new0(struct sip_dialog, 1);
-	session->dialog->callid = gencallid();
+	dialog = g_new0(struct sip_dialog, 1);
+	session->dialogs = g_slist_append(session->dialogs, dialog);
+	
+	dialog->with = g_strdup(session->with);
+	dialog->callid = gencallid();
 
-	if (!(session->dialog->ourtag)) {
-		session->dialog->ourtag = gentag();
+	if (!(dialog->ourtag)) {
+		dialog->ourtag = gentag();
 	}
 	
 
@@ -2799,7 +2835,7 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 	g_free(msgr);
 	g_free(base64_msg);
 	
-	key = g_strdup_printf("<%s><%d><INVITE>", session->dialog->callid, (session->dialog->cseq) + 1);
+	key = g_strdup_printf("<%s><%d><INVITE>", dialog->callid, (dialog->cseq) + 1);
 	g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(msg_body));
 	purple_debug_info("sipe", "sipe_im_send: added message %s to unconfirmed_messages(count=%d)\n", 
 						key, g_hash_table_size(session->unconfirmed_messages));
@@ -2828,8 +2864,8 @@ static void sipe_invite(struct sipe_account_data *sip, struct sip_im_session *se
 		"multipart/alternative application/im-iscomposing+xml\r\n",
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1), sip->realport);
 
-	session->outgoing_invite = send_sip_request(sip->gc, "INVITE",
-		to, to, hdr, body, session->dialog, process_invite_response);
+	dialog->outgoing_invite = send_sip_request(sip->gc, "INVITE",
+		to, to, hdr, body, dialog, process_invite_response);
 
 	g_free(to);
 	/* g_free(from);*/
@@ -2842,7 +2878,7 @@ static void
 im_session_close (struct sipe_account_data *sip, struct sip_im_session * session)
 {
 	if (session) {
-		send_sip_request(sip->gc, "BYE", session->with, session->with, NULL, NULL, session->dialog, NULL);
+		send_sip_request(sip->gc, "BYE", session->with, session->with, NULL, NULL, get_dialog(session, session->with), NULL);
 		im_session_destroy(sip, session);
 	}
 }
@@ -2871,6 +2907,7 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	struct sipe_account_data *sip;
 	gchar *to;
 	struct sip_im_session *session;
+	struct sip_dialog *dialog;
 
 	sip = gc->proto_data;
 	to = g_strdup(who);
@@ -2878,13 +2915,14 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	purple_debug_info("sipe", "sipe_im_send what='%s'\n", what);
 
 	session = find_or_create_im_session(sip, who);
+	dialog = get_dialog(session, who);
 
 	// Queue the message
 	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, g_strdup(what));
 
-	if (session->dialog && session->dialog->callid) {
+	if (dialog && dialog->callid) {
 		sipe_im_process_queue(sip, session);
-	} else if (!session->outgoing_invite) {
+	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
 		sipe_invite(sip, session, what);
 	}
@@ -2900,16 +2938,18 @@ sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 	struct sip_im_session *session;
+	struct sip_dialog *dialog;
 
 	if (state == PURPLE_NOT_TYPING)
 		return 0;
 
 	session = find_im_session(sip, who);
+	dialog = get_dialog(session, who);
 
-	if (session && session->dialog) {
+	if (session && dialog) {
 		send_sip_request(gc, "INFO", who, who,
 			"Content-Type: application/xml\r\n",
-			SIPE_SEND_TYPING, session->dialog, NULL);
+			SIPE_SEND_TYPING, dialog, NULL);
 	}
 	return SIPE_TYPING_SEND_TIMEOUT;
 }
@@ -3013,6 +3053,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *oldHeader;
 	gchar *newHeader;
 	struct sip_im_session *session;
+	struct sip_dialog *dialog;
 
 	purple_debug_info("sipe", "process_incoming_invite: body:\n%s!\n", msg->body ? msg->body : "");
 
@@ -3033,21 +3074,18 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	from = parse_from(sipmsg_find_header(msg, "From"));
 	session = find_or_create_im_session (sip, from);
 	if (session) {
-		if (session->dialog) {
+		dialog = get_dialog(session, from);
+		if (dialog) {
 			purple_debug_info("sipe", "process_incoming_invite, session already has dialog!\n");
 		} else {
-			session->dialog = g_new0(struct sip_dialog, 1);
+			dialog = g_new0(struct sip_dialog, 1);
+			session->dialogs = g_slist_append(session->dialogs, dialog);
+	
+			dialog->with = g_strdup(from);
+			sipe_parse_dialog(msg, dialog, FALSE);
 
-			sipe_parse_dialog(msg, session->dialog, FALSE);
-
-			// This stuff is the same stuff that happens in the sipe_parse_dialog...
-			//session->dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-			//session->dialog->ourtag = find_tag(sipmsg_find_header(msg, "To"));
-			//session->dialog->theirtag = find_tag(sipmsg_find_header(msg, "From"));
-			//session->dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, "From"), "epid=", NULL, NULL);
-
-			if (!session->dialog->ourtag) {
-				session->dialog->ourtag = newTag;
+			if (!dialog->ourtag) {
+				dialog->ourtag = newTag;
 				newTag = NULL;
 			}
 		}
