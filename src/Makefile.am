@@ -32,6 +32,7 @@ AM_CFLAGS = $(st)
 
 libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
+        $(QUALITY_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(PURPLE_CFLAGS) \
         $(LOCALE_CPPFLAGS) \

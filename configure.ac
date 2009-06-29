@@ -41,15 +41,32 @@ export PKG_CONFIG_PATH
 
 # debug mode
 AC_ARG_ENABLE(debug,
-	[  --enable-debug	  compile with debugging support],,
-	enable_debug=no)
+	[AS_HELP_STRING([--enable-debug],
+			[compile with debugging support [default=no]])],
+	,
+	enable_debug="no")
 
 if test "$enable_debug" = yes; then
    AC_DEFINE(DEBUG, 1, [Define if debugging is enabled.])
 fi
 
-DEBUG_CFLAGS="${DEBUG_CFLAGS} -Wall -Wextra -Wno-unused-parameter"
+DEBUG_CFLAGS="${DEBUG_CFLAGS}"
 AC_SUBST(DEBUG_CFLAGS)
+
+# quality check mode
+# For people who are interested in finding bugs and not hiding them
+AC_ARG_ENABLE(quality-check,
+	[AS_HELP_STRING([--enable-quality-check],
+			[compile with compiler checks enabled [default=yes]])],
+	,
+	enable_quality_check="yes")
+
+if test "$enable_quality_check" = yes; then
+	QUALITY_CFLAGS="${QUALITY_CFLAGS} -Werror -Wall -Wextra -Wno-unused-parameter"
+else
+	QUALITY_CFLAGS="${QUALITY_CFLAGS}"
+fi
+AC_SUBST(QUALITY_CFLAGS)
 
 AC_ARG_WITH(krb5, [AC_HELP_STRING([--with-krb5=PREFIX], [compile sipe plugin with Kerberos 5 support])], kerberos="$withval", kerberos="no")
 
@@ -106,8 +123,10 @@ SIPE_LIBA=`$PKG_CONFIG sipe --variable=libarchive`
 AC_SUBST(SIPE_LIBA)
 
 AC_ARG_ENABLE(static-sipe,
-        [  --enable-static-sipe  statically link in Simple Exchange],
-	        sipe_static="yes", sipe_static="no")
+	[AS_HELP_STRING([--enable-static-sipe],
+			[statically linked plugin [default=no]])],
+	,
+	sipe_static="no")
 
 AM_CONDITIONAL(SIPE_STATIC, test $sipe_static = yes)
 
@@ -142,7 +161,7 @@ AC_OUTPUT()
 
 
 echo
-echo -n "Simple SIPE linking mode... : "
+echo -n "Simple SIPE linking mode : "
 if test "$sipe_static" = "yes" ; then
    echo "static"
    echo "Simple SIPE library...      : $SIPE_LIBA"
@@ -151,13 +170,25 @@ else
 fi
 
 if test "$kerberos" != "no" ; then
-echo
-echo "Compiled with kerberos 5 support"
-echo "LDFLAGS :$KRB5_LDFLAGS"
-echo "CFLAGS  :$KRB5_CFLAGS"
-echo "LIBS    :$KRB5_LIBS"
-echo
+  echo
+  echo "Compiling with kerberos 5 support"
+  echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"
+  echo "KRB5_CFLAGS    : $KRB5_CFLAGS"
+  echo "KRB5_LIBS      : $KRB5_LIBS"
 fi
+
+if test "$enable_debug" != "no"; then
+  echo
+  echo "Compiling with debugging enabled"
+  echo "DEBUG_CFLAGS   : $DEBUG_CFLAGS"
+fi
+
+if test -n "${QUALITY_CFLAGS}"; then
+  echo
+  echo "Compiling with compiler checks enabled"
+  echo "QUALITY_CFLAGS : $QUALITY_CFLAGS"
+fi
+
 echo
 echo configure complete, now run \`make\`
 echo
