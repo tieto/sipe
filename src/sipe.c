@@ -3072,9 +3072,21 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 	contenttype = sipmsg_find_header(msg, "Content-Type");
 	if (!strncmp(contenttype, "text/plain", 10) || !strncmp(contenttype, "text/html", 9)) {
-
-		gchar *html = get_html_message(contenttype, msg->body);		
-		serv_got_im(sip->gc, from, html, 0, time(NULL));
+	
+		gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		gchar *html = get_html_message(contenttype, msg->body);
+		
+		struct sip_im_session *session = find_chat_session(sip, callid);
+		if (!session) {
+			session = find_im_session(sip, from);
+		}
+		
+		if (session->is_multiparty) {
+			serv_got_chat_in(sip->gc, session->chat_id, from,
+				PURPLE_MESSAGE_RECV, html, time(NULL));
+		} else {			
+			serv_got_im(sip->gc, from, html, 0, time(NULL));
+		}
 		g_free(html);
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
@@ -3240,7 +3252,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, "SIPE Chat");
 		/* add self */
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
-			purple_account_get_username(sip->account), NULL,
+			g_strdup_printf("sip:%s", sip->username), NULL,
 			PURPLE_CBFLAGS_NONE, TRUE);
 	}
 	
