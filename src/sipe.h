@@ -53,12 +53,11 @@
 struct sip_im_session {
 	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
 	/** Call-Id identifying the conversation */
-	gchar *callid; /* Chat Id. For multiparty conversations */
-	/** Roster Manager */
+	int chat_id;
+	gchar *callid; /* For multiparty conversations */
+	/** Roster Manager URI */
 	gchar *roster_manager;
 	gboolean is_multiparty;
-	/** List of participant in conversation (URIs)  excluding self */
-	GSList *participants; /* EndPoints */
 	/** key is user (URI) */
 	GSList *dialogs;
 	//struct sip_dialog * dialog;
@@ -81,6 +80,7 @@ struct sip_dialog {
 	gchar *request;
 	GSList *supported; // counterparty capabilities
 	int cseq;
+	gboolean is_established;
 	struct transaction *outgoing_invite; //moved here
 };
 
