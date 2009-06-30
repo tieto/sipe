@@ -2599,7 +2599,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	}
 	
 	cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-	key = g_strdup_printf("<%s><%d><MESSAGE>", sipmsg_find_header(msg, "Call-ID"), atoi(cseq));
+	key = g_strdup_printf("<%s><%d><MESSAGE><%s>", sipmsg_find_header(msg, "Call-ID"), atoi(cseq), with);
 	g_free(cseq);
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
@@ -2622,21 +2622,14 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	return ret;
 }
 
-static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_session * session, const char *msg)
+static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *dialog, const char *msg)
 {
 	gchar *hdr;
-	gchar *fullto;
 	gchar *tmp;
 	char *msgformat;
 	char *msgtext;
 	gchar *msgr_value;
 	gchar *msgr;
-
-	if (strncmp("sip:", session->with, 4)) {
-		fullto = g_strdup_printf("sip:%s", session->with);
-	} else {
-		fullto = g_strdup(session->with);
-	}
 
 	sipe_parse_html(msg, &msgformat, &msgtext);
 	purple_debug_info("sipe", "sipe_send_message: msgformat=%s", msgformat);
@@ -2653,41 +2646,48 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_im_sessi
 	tmp = get_contact(sip);
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
 	//hdr = g_strdup("Content-Type: text/rtf\r\n");
-	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC0ASQBNAC0ARgBvAHIAbQBhAHQAOgAgAEYATgA9AE0AUwAlADIAMABTAGgAZQBsAGwAJQAyADAARABsAGcAJQAyADAAMgA7ACAARQBGAD0AOwAgAEMATwA9ADAAOwAgAEMAUwA9ADAAOwAgAFAARgA9ADAACgANAAoADQA\r\nSupported: timer\r\n");
-	hdr = g_strdup_printf("Contact: %s\r\nContent-Type: text/plain; charset=UTF-8%s\r\n",
-			      tmp, msgr);
+	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC....AoADQA\r\nSupported: timer\r\n");
+	hdr = g_strdup_printf("Contact: %s\r\nContent-Type: text/plain; charset=UTF-8%s\r\n", tmp, msgr);
 	g_free(tmp);
 	g_free(msgr);
 
-	send_sip_request(sip->gc, "MESSAGE", fullto, fullto, hdr, msgtext, get_dialog(session, session->with), process_message_response);
+	send_sip_request(sip->gc, "MESSAGE", dialog->with, dialog->with, hdr, msgtext, dialog, process_message_response);
 	g_free(msgtext);
 	g_free(hdr);
-	g_free(fullto);
 }
 
 
 static void
 sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * session)
 {
-	GSList *entry = session->outgoing_message_queue;
-	struct sip_dialog *dialog = get_dialog(session, session->with);
+	GSList *entry2 = session->outgoing_message_queue;	
+	while (entry2) {
+		char *queued_msg = entry2->data;
+		struct sip_dialog *dialog;
+		GSList *entry = session->dialogs;
+		
+		if (session->is_multiparty) {
+			serv_got_chat_in(sip->gc, session->chat_id, g_strdup_printf("sip:%s", sip->username),
+				PURPLE_MESSAGE_SEND, queued_msg, time(NULL));
+		}		
+
+		while (entry) {
+			char *key;
+			
+			dialog = entry->data;
+			if (dialog->outgoing_invite) continue; //do not send messages as INVITE is not responded.			
 	
-	if (!dialog) {
-		purple_debug_info("sipe", "exiting sipe_im_process_queue() as no dialog found");
-		return;
-	}
-	
-	if (dialog->outgoing_invite) return; //do not send messages until INVITE responded.
-	
-	while (entry) {
-		char *key = g_strdup_printf("<%s><%d><MESSAGE>", dialog->callid, (dialog->cseq) + 1);
-		char *queued_msg = entry->data;
-		g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(queued_msg));
-		purple_debug_info("sipe", "sipe_im_process_queue: added message %s to unconfirmed_messages(count=%d)\n", 
-							key, g_hash_table_size(session->unconfirmed_messages));
-		g_free(key);
-		sipe_send_message(sip, session, queued_msg);
-		entry = session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
+			key = g_strdup_printf("<%s><%d><MESSAGE><%s>", dialog->callid, (dialog->cseq) + 1, dialog->with);			
+			g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(queued_msg));
+			purple_debug_info("sipe", "sipe_im_process_queue: added message %s to unconfirmed_messages(count=%d)\n", 
+								key, g_hash_table_size(session->unconfirmed_messages));
+			g_free(key);
+			sipe_send_message(sip, dialog, queued_msg);						
+			
+			entry = entry->next;
+		}
+		
+		entry2 = session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
 		g_free(queued_msg);
 	}
 }
@@ -3014,13 +3014,9 @@ im_session_close_all (struct sipe_account_data *sip)
 
 static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what, PurpleMessageFlags flags)
 {
-	struct sipe_account_data *sip;
-	gchar *to;
+	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_im_session *session;
 	struct sip_dialog *dialog;
-
-	sip = gc->proto_data;
-	to = g_strdup(who);
 
 	purple_debug_info("sipe", "sipe_im_send what='%s'\n", what);
 
@@ -3037,7 +3033,23 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		sipe_invite(sip, session, who, what, FALSE);
 	}
 
-	g_free(to);
+	return 1;
+}
+
+static int sipe_chat_send(PurpleConnection *gc, int id, const char *what, PurpleMessageFlags flags)
+{
+	struct sipe_account_data *sip = gc->proto_data;
+	struct sip_im_session *session;
+
+	purple_debug_info("sipe", "sipe_chat_send what='%s'\n", what);
+
+	session = find_chat_session_by_id(sip, id);
+
+	// Queue the message
+	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, g_strdup(what));
+
+	sipe_im_process_queue(sip, session);
+
 	return 1;
 }
 
@@ -5952,7 +5964,7 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,			                /* chat_invite */
 	sipe_chat_leave,			/* chat_leave */
 	NULL,					/* chat_whisper */
-	NULL,					/* chat_send */
+	sipe_chat_send,				/* chat_send */
 	sipe_keep_alive,			/* keepalive */
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// deprecated
