@@ -673,7 +673,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		}
 #endif
 		g_free(buf);
-	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO") || !strcmp(method, "OPTIONS")) {
+	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO") || !strcmp(method, "OPTIONS") || !strcmp(method, "REFER")) {
 		sip->registrar.nc = 3;
 #ifdef USE_KERBEROS
 		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
@@ -810,10 +810,10 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 	gchar *route     = strdup("");
 	gchar *epid      = get_epid(sip); // TODO generate one per account/login
-	int cseq = dialog ? ++dialog->cseq :
-		/* This breaks OCS2007: own presence, contact search, ?
-		1 .* as Call-Id is new in this case */
-		++sip->cseq;
+       int cseq = dialog ? ++dialog->cseq :
+               /* This breaks OCS2007: own presence, contact search, ?
+               1 .* as Call-Id is new in this case */
+               ++sip->cseq;
 	struct transaction *trans;
 
 	if (dialog && dialog->routes)
@@ -2390,6 +2390,38 @@ get_dialog (struct sip_im_session *session,
 	return NULL;
 }
 
+/* EndPoints: "alice alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>;epid=ebca82d94d, <sip:carol@atlanta.local> */
+static gchar *
+get_end_points (struct sipe_account_data *sip,
+		struct sip_im_session *session)
+{
+	gchar *tmp = NULL;
+	gchar *res = g_strdup_printf("<sip:%s>", sip->username);
+	struct sip_dialog *dialog;
+	GSList *entry;
+	if (session == NULL) {
+		return NULL;
+	}
+
+	entry = session->dialogs;
+	while (entry) {
+		dialog = entry->data;
+		
+		tmp = res;
+		res = g_strdup_printf("%s, <%s>", res, dialog->with);
+		g_free(tmp);
+		
+		if (dialog->theirepid) {
+			tmp = res;
+			res = g_strdup_printf("%s;epid=%s", res, dialog->theirepid);
+			g_free(tmp);
+		}
+		
+		entry = entry->next;
+	}
+	return res;
+}
+
 static struct sip_im_session * 
 find_chat_session_by_id (struct sipe_account_data *sip, 
 			 int id)
@@ -2404,6 +2436,27 @@ find_chat_session_by_id (struct sipe_account_data *sip,
 	while (entry) {
 		session = entry->data;
 		if (id == session->chat_id) {
+			return session;
+		}
+		entry = entry->next;
+	}
+	return NULL;
+}
+
+static struct sip_im_session * 
+find_chat_session_by_name (struct sipe_account_data *sip, 
+		   const char *chat_name)
+{
+	struct sip_im_session *session;
+	GSList *entry;
+	if (sip == NULL || chat_name == NULL) {
+		return NULL;
+	}
+
+	entry = sip->im_sessions;
+	while (entry) {
+		session = entry->data;
+		if (!g_strcasecmp(chat_name, session->chat_name)) {
 			return session;
 		}
 		entry = entry->next;
@@ -2451,16 +2504,23 @@ static struct sip_im_session * find_im_session (struct sipe_account_data *sip, c
 	return NULL;
 }
 
+static struct sip_im_session *
+create_chat_session (struct sipe_account_data *sip)
+{
+	struct sip_im_session *session = g_new0(struct sip_im_session, 1);
+	session->is_multiparty = TRUE;
+	session->chat_id = rand();
+	session->unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	sip->im_sessions = g_slist_append(sip->im_sessions, session);
+	return session;
+}
+
 static struct sip_im_session * find_or_create_chat_session (struct sipe_account_data *sip, const char *callid)
 {
 	struct sip_im_session *session = find_chat_session(sip, callid);
 	if (!session) {
-		session = g_new0(struct sip_im_session, 1);
-		session->is_multiparty = TRUE;
-		session->chat_id = rand();
+		session = create_chat_session(sip);
 		session->callid = g_strdup(callid);
-		session->unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-		sip->im_sessions = g_slist_append(sip->im_sessions, session);
 	}
 	return session;
 }
@@ -2867,11 +2927,14 @@ sipe_invite(struct sipe_account_data *sip,
 {
 	gchar *hdr;
 	gchar *to;
-    //gchar *from;
 	gchar *contact;
 	gchar *body;
+	gchar *self = g_strdup_printf("sip:%s", sip->username);
 	char *ms_text_format = g_strdup("");
+	gchar *roster_manager;
+	gchar *end_points;
 	gchar *triggered;
+	gchar *require_multiparty;
 	struct sip_dialog *dialog = get_dialog(session, who);
 	
 	if (dialog && dialog->is_established) {
@@ -2897,7 +2960,6 @@ sipe_invite(struct sipe_account_data *sip,
 	} else {
 		to = g_strdup_printf("sip:%s", who);
 	}
-
 
 	if (msg_body) {
 		char *msgformat;
@@ -2932,18 +2994,25 @@ sipe_invite(struct sipe_account_data *sip,
 	}
 
 	contact = get_contact(sip);
-	/* from = g_strdup_printf("sip:%s", sip->username);*/
-	triggered = "TriggeredInvite: TRUE\r\n"
-		    "Require: com.microsoft.rtc-multiparty\r\n";
+	end_points = get_end_points(sip, session);
+	roster_manager = g_strdup_printf(
+		"Roster-Manager: %s\r\n"
+		"EndPoints: %s\r\n",
+		self,
+		end_points);	
+	triggered =
+		"TriggeredInvite: TRUE\r\n";
+	require_multiparty =
+		"Require: com.microsoft.rtc-multiparty\r\n";		
 	hdr = g_strdup_printf(
-		/*"Supported: ms-delayed-accept\r\n"*/
-		/*"Roster-Manager: <%s>\r\n"*/
-		/*"EndPoints: <%s>, <%s>\r\n"*/
-		/*"Supported: com.microsoft.rtc-multiparty\r\n"*/
+		"%s"
+		"%s"
 		"%s"
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
+		(session->roster_manager && !strcmp(session->roster_manager, self)) ? roster_manager : "",
 		is_triggered ? triggered : "",
+		is_triggered || session->is_multiparty ? require_multiparty : "",
 		contact,
 		ms_text_format);
 	g_free(ms_text_format);
@@ -2963,8 +3032,38 @@ sipe_invite(struct sipe_account_data *sip,
 		to, to, hdr, body, dialog, process_invite_response);
 
 	g_free(to);
-	/* g_free(from);*/
+	g_free(roster_manager);
+	g_free(end_points);
 	g_free(body);
+	g_free(hdr);
+	g_free(contact);
+}
+
+static void 
+sipe_refer(struct sipe_account_data *sip,
+	    struct sip_im_session *session,
+	    const gchar *who)
+{
+	gchar *hdr;
+	gchar *contact;
+	struct sip_dialog *dialog = get_dialog(session, session->roster_manager);
+
+	contact = get_contact(sip);
+	hdr = g_strdup_printf(
+		"Contact: %s\r\n"
+		"Refer-to: <%s>\r\n"
+		"Referred-By: <sip:%s>%s%s;epid=%s\r\n"
+		"Require: com.microsoft.rtc-multiparty\r\n",
+		contact,
+		who,
+		sip->username,
+		dialog->ourtag ? ";tag=" : "",
+		dialog->ourtag ? dialog->ourtag : "",
+		get_epid(sip));
+
+	send_sip_request(sip->gc, "REFER",
+		session->roster_manager, session->roster_manager, hdr, NULL, dialog, NULL);
+
 	g_free(hdr);
 	g_free(contact);
 }
@@ -3069,12 +3168,18 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 		session = find_im_session(sip, from);
 	}
 	
+	if (!session) {
+		return;
+	}
+	
 	if (!strncmp(contenttype, "application/x-ms-mim", 20)) {
 		xmlnode *xn_action 		= xmlnode_from_str(msg->body, msg->bodylen);
 		xmlnode *xn_request_rm 		= xmlnode_get_child(xn_action, "RequestRM");
 		//xmlnode *xn_request_rm_response = xmlnode_get_child(xn_action, "RequestRMResponse");
 		xmlnode *xn_set_rm 		= xmlnode_get_child(xn_action, "SetRM");
 		//xmlnode *xn_set_rm_response 	= xmlnode_get_child(xn_action, "SetRMResponse");
+		
+		sipmsg_remove_header(msg, "User-Agent");
 		
 		if (xn_request_rm) {
 			//const char *rm = xmlnode_get_attrib(xn_request_rm, "uri");
@@ -3101,6 +3206,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 			send_sip_response(sip->gc, msg, 200, "OK", body);
 			g_free(body);			
 		}
+		xmlnode_free(xn_action);
 		
 	} else {
 		/* looks like purple lacks typing notification for chat */
@@ -3285,7 +3391,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *oldHeader;
 	gchar *newHeader;
 	gboolean is_multiparty;
+	gboolean is_triggered = FALSE;
 	gboolean was_multiparty;
+	gboolean just_joined = FALSE;
 	gchar *from =		parse_from(sipmsg_find_header(msg, "From"));
 	gchar *to =		parse_from(sipmsg_find_header(msg, "To"));
 	gchar *callid = 	sipmsg_find_header(msg, "Call-ID");
@@ -3321,6 +3429,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		}	
 	}
 	if (trig_invite && !g_strcasecmp(trig_invite, "TRUE")) {
+		is_triggered = TRUE;
 		is_multiparty = TRUE;
 	}
 	
@@ -3371,6 +3480,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 				dialog->with = g_strdup(end_point);
 				dialog->theirepid = epid;
 				
+				just_joined = TRUE;
+				
 				/* send triggered INVITE */
 				sipe_invite(sip, session, end_point, NULL, TRUE);
 			} else {
@@ -3397,6 +3508,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 				dialog->ourtag = newTag;
 				newTag = NULL;
 			}
+			
+			just_joined = TRUE;
 		}
 	} else {
 		purple_debug_info("sipe", "process_incoming_invite, failed to find or create IM session\n");
@@ -3404,12 +3517,17 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(newTag);
 	
 	if (is_multiparty && !session->conv) {
+		gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		gchar *self = g_strdup_printf("sip:%s", sip->username);
 		/* create prpl chat */
-		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, "SIPE Chat");
+		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_name);
+		session->chat_name = g_strdup(chat_name);
 		/* add self */
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
-					  g_strdup_printf("sip:%s", sip->username), NULL,
+					  self, NULL,
 					  PURPLE_CBFLAGS_NONE, FALSE);
+		g_free(chat_name);
+		g_free(self);
 	}
 		
 	if (is_multiparty && !was_multiparty) {
@@ -3419,10 +3537,13 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 					  PURPLE_CBFLAGS_NONE, FALSE);	
 	}
 	
+	
 	/* add inviting party */
-	purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
+	if (just_joined) {
+		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
 				  from, NULL,
 				  PURPLE_CBFLAGS_NONE, TRUE);
+	}
 
 	/* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
 	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
@@ -5752,6 +5873,53 @@ sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
 }
 
 static void
+sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
+{
+	struct sipe_account_data *sip = buddy->account->gc->proto_data;
+	gchar *self = g_strdup_printf("sip:%s", sip->username);
+	gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+	struct sip_im_session *session;
+
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: buddy->name=%s\n", buddy->name);
+	
+	session = create_chat_session(sip);
+	session->roster_manager = g_strdup(self);
+	
+	session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, g_strdup(chat_name));
+	session->chat_name = g_strdup(chat_name);
+	purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
+	sipe_invite(sip, session, buddy->name, NULL, FALSE);
+	
+	g_free(chat_name);
+	g_free(self);
+}
+
+static void
+sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, const char *chat_name)
+{
+	struct sipe_account_data *sip = buddy->account->gc->proto_data;
+	struct sip_im_session *session;
+	gchar *self = g_strdup_printf("sip:%s", sip->username);
+	
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: buddy->name=%s\n", buddy->name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: chat_name=%s\n", chat_name);
+	
+	session = find_chat_session_by_name(sip, chat_name);
+	if (session->roster_manager) {
+		if (!strcmp(session->roster_manager, self)) {
+			sipe_invite(sip, session, buddy->name, NULL, FALSE);
+		} else {
+			sipe_refer(sip, session, buddy->name);
+		}
+	} else {
+		purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: no RM available\n");
+		// Elect RM
+	}
+	
+	g_free(self);
+}
+
+static void
 sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 {
 	const gchar *email;
@@ -5809,10 +5977,31 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	PurpleMenuAction *act;
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
+	struct sipe_account_data *sip = buddy->account->gc->proto_data;
+	struct sip_im_session *session;
+	GSList *entry;
+	gchar *self = g_strdup_printf("sip:%s", sip->username);
+	
+	act = purple_menu_action_new(_("New Chat"),
+				     PURPLE_CALLBACK(sipe_buddy_menu_chat_new_cb),
+				     NULL, NULL);
+	menu = g_list_prepend(menu, act);
+	
+	entry = sip->im_sessions;
+	while (entry) {
+		session = entry->data;
+		if (strcmp(self, buddy->name) && session->chat_name && !get_dialog(session, buddy->name)) {
+			act = purple_menu_action_new(g_strdup_printf(_("Invite to '%s'"), session->chat_name),
+								     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
+								     g_strdup(session->chat_name), NULL);
+			menu = g_list_prepend(menu, act);
+		}
+		entry = entry->next;
+	}
 
 	act = purple_menu_action_new(_("Send Email..."),
-							   PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),
-							   NULL, NULL);
+				     PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),
+				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
 
 	gr_parent = purple_buddy_get_group(buddy);
@@ -5840,6 +6029,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	menu = g_list_prepend(menu, act);
 	menu = g_list_reverse(menu);
 
+	g_free(self);
 	return menu;
 }
 

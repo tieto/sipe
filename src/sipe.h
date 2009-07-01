@@ -54,6 +54,8 @@ struct sip_im_session {
 	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
 	/** Call-Id identifying the conversation */
 	int chat_id;
+	/** Human readable chat name */
+	gchar *chat_name;
 	gchar *callid; /* For multiparty conversations */
 	/** Roster Manager URI */
 	gchar *roster_manager;
@@ -133,6 +135,7 @@ struct sipe_account_data {
 	PurpleNetworkListenData *listen_data;
 	int fd;
 	int cseq;
+	int chat_seq;
 	time_t last_keepalive;
 	int registerstatus; /* 0 nothing, 1 first registration send, 2 auth received, 3 registered */
 	struct sip_auth registrar;
