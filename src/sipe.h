@@ -49,10 +49,20 @@
 #define PURPLE_WEBSITE "http://pidgin.sf.im/"
 #endif
 
+/** Correspond to multy-party conversation */
 struct sip_im_session {
-	gchar * with;
-	struct sip_dialog * dialog;
-	struct transaction * outgoing_invite;
+	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
+	/** Call-Id identifying the conversation */
+	int chat_id;
+	gchar *callid; /* For multiparty conversations */
+	/** Roster Manager URI */
+	gchar *roster_manager;
+	gboolean is_multiparty;
+	/** key is user (URI) */
+	GSList *dialogs;
+	//struct sip_dialog * dialog;
+	/** Link to purple chat or IM */
+	PurpleConversation *conv;
 
 	GSList *outgoing_message_queue;
 	/** Key is <Call-ID><CSeq><METHOD> */
@@ -61,6 +71,7 @@ struct sip_im_session {
 
 // dialog is the new term for call-leg
 struct sip_dialog {
+	gchar *with; /* URI */ //added
 	gchar *ourtag;
 	gchar *theirtag;
 	gchar *theirepid;
@@ -69,6 +80,8 @@ struct sip_dialog {
 	gchar *request;
 	GSList *supported; // counterparty capabilities
 	int cseq;
+	gboolean is_established;
+	struct transaction *outgoing_invite; //moved here
 };
 
 struct sipe_buddy {
