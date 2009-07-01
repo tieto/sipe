@@ -3057,6 +3057,7 @@ static int sipe_chat_send(PurpleConnection *gc, int id, const char *what, Purple
 
 static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *msg)
 {
+	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	
@@ -3064,14 +3065,49 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 	if (!session) {
 		session = find_im_session(sip, from);
 	}
-		
-	/* looks like purple lacks typing notification for chat */
-	if (!session->is_multiparty) {
-		serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
-	}
 	
+	if (!strncmp(contenttype, "application/x-ms-mim", 20)) {
+		xmlnode *xn_action 		= xmlnode_from_str(msg->body, msg->bodylen);
+		xmlnode *xn_request_rm 		= xmlnode_get_child(xn_action, "RequestRM");
+		//xmlnode *xn_request_rm_response = xmlnode_get_child(xn_action, "RequestRMResponse");
+		xmlnode *xn_set_rm 		= xmlnode_get_child(xn_action, "SetRM");
+		//xmlnode *xn_set_rm_response 	= xmlnode_get_child(xn_action, "SetRMResponse");
+		
+		if (xn_request_rm) {
+			//const char *rm = xmlnode_get_attrib(xn_request_rm, "uri");
+			//int bid = atoi(xmlnode_get_attrib(xn_request_rm, "bid"));
+			gchar *body = g_strdup_printf(
+				"<?xml version=\"1.0\"?>\r\n"
+				"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
+				"<RequestRMResponse uri=\"sip:%s\" allow=\"%s\"/></action>\r\n",
+				sip->username,
+				TRUE ? "true" : "false");
+			send_sip_response(sip->gc, msg, 200, "OK", body);
+			g_free(body);			
+		} else if (xn_set_rm) {
+			gchar *body;
+			const char *rm = xmlnode_get_attrib(xn_set_rm, "uri");
+			g_free(session->roster_manager);
+			session->roster_manager = g_strdup(rm);
+			
+			body = g_strdup_printf(
+				"<?xml version=\"1.0\"?>\r\n"
+				"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
+				"<SetRMResponse uri=\"sip:%s\"/></action>\r\n",
+				sip->username);
+			send_sip_response(sip->gc, msg, 200, "OK", body);
+			g_free(body);			
+		}
+		
+	} else {
+		/* looks like purple lacks typing notification for chat */
+		if (!session->is_multiparty) {
+			serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
+		}
+		
+		send_sip_response(sip->gc, msg, 200, "OK", NULL);
+	}
 	g_free(from);
-	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 }
 
 static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *msg)
@@ -3090,6 +3126,11 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 	
 	if (!session) {
 		return;
+	}
+	
+	if (session->roster_manager && !g_strcasecmp(from, session->roster_manager)) {
+		g_free(session->roster_manager);
+		session->roster_manager = NULL;
 	}
 	
 	if (!session->is_multiparty) {
