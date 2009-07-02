@@ -3437,26 +3437,25 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 
 		if (!strcmp(attrVar, "note"))
 		{
-			char *note;
-			struct sipe_buddy *sbuddy = NULL;
-			xn_node = xmlnode_get_child(xn_category, "note");
-			if (!xn_node) continue;
-			xn_node = xmlnode_get_child(xn_node, "body");
-			if (!xn_node) continue;
+                        if (uri) {
+				struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
 
-			note = xmlnode_get_data(xn_node);
-                        
-                        if(uri){
-			        sbuddy = g_hash_table_lookup(sip->buddies, uri);
-                        } 
-			if (sbuddy && note)
-			{
-                                purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s),note(%s)\n",uri,note);
-				if (sbuddy->annotation) { g_free(sbuddy->annotation); }
-				sbuddy->annotation = g_strdup(note);
-                        }
-                        if(note)
-			   g_free(note);
+				if (sbuddy) {
+					char *note;
+
+					xn_node = xmlnode_get_child(xn_category, "note");
+					if (!xn_node) continue;
+					xn_node = xmlnode_get_child(xn_node, "body");
+					if (!xn_node) continue;
+					note = xmlnode_get_data(xn_node);
+					purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s),note(%s)\n",uri,note ? note : "");
+					g_free(sbuddy->annotation);
+					sbuddy->annotation = NULL;
+					if (note) sbuddy->annotation = g_strdup(note);
+					g_free(note);
+				}
+			}
+
 		}
 		else if(!strcmp(attrVar, "state"))
 		{
