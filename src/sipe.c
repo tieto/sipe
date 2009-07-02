@@ -2508,6 +2508,7 @@ static struct sip_im_session *
 create_chat_session (struct sipe_account_data *sip)
 {
 	struct sip_im_session *session = g_new0(struct sip_im_session, 1);
+	session->callid = gencallid();
 	session->is_multiparty = TRUE;
 	session->chat_id = rand();
 	session->unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
@@ -2839,6 +2840,33 @@ sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outg
 	sipe_get_supported_header(msg, dialog, outgoing);
 }
 
+static void
+sipe_refer_notify(struct sipe_account_data *sip,
+		  struct sip_im_session *session,
+		  const gchar *who,
+		  int status,
+		  const gchar *desc)
+{
+	gchar *hdr;
+	gchar *body;
+	struct sip_dialog *dialog = get_dialog(session, who);	
+	
+	hdr = g_strdup_printf(
+		"Event: refer\r\n"
+		"Subscription-State: %s\r\n"
+		"Content-Type: message/sipfrag\r\n",
+		status >= 200 ? "terminated" : "active");
+
+	body = g_strdup_printf(
+		"SIP/2.0 %d %s\r\n",
+		status, desc);
+
+	dialog->outgoing_invite = send_sip_request(sip->gc, "NOTIFY",
+		who, who, hdr, body, dialog, NULL);
+		
+	g_free(hdr);
+	g_free(body);
+}
 
 static gboolean
 process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
@@ -2849,8 +2877,11 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	char *cseq;
 	char *key;
 	gchar *message;
+	struct sipmsg *request_msg = trans->msg;
 	
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	gchar *referred_by = parse_from(sipmsg_find_header(request_msg, "Referred-By"));
+
 	session = find_chat_session(sip, callid);
 	if (!session) {
 		session = find_im_session(sip, with);
@@ -2890,6 +2921,10 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	dialog->outgoing_invite = NULL;
 	dialog->is_established = TRUE;
 	
+	if (referred_by) {
+		sipe_refer_notify(sip, session, referred_by, 200, "OK");
+	}
+	
 	/* add user to chat if it is a multiparty session */
 	if (session->is_multiparty) {
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
@@ -2914,6 +2949,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	
 	g_free(key);
 	g_free(with);
+	g_free(referred_by);
 	return TRUE;
 }
 
@@ -2943,7 +2979,7 @@ sipe_invite(struct sipe_account_data *sip,
 		purple_debug_info("sipe", "session with %s already has a dialog open\n", who);
 		return;
 	}
-
+	
 	if (!dialog) {
 		dialog = g_new0(struct sip_dialog, 1);
 		session->dialogs = g_slist_append(session->dialogs, dialog);
@@ -3276,13 +3312,14 @@ static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg 
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	gchar *refer_to = parse_from(sipmsg_find_header(msg, "Refer-to"));
-	gchar *referred_by = sipmsg_find_header(msg, "Referred-By");
+	gchar *referred_by = g_strdup(sipmsg_find_header(msg, "Referred-By"));
 	struct sip_im_session *session;
 	struct sip_dialog *dialog;
 	
 	session = find_chat_session(sip, callid);
 	dialog = get_dialog(session, from);
 
+	sipmsg_remove_header(msg, "User-Agent");
 	sipmsg_remove_header(msg, "Refer-to");
 	sipmsg_remove_header(msg, "Referred-By");
 	sipmsg_remove_header(msg, "Require");
@@ -3298,6 +3335,7 @@ static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg 
 	g_free(self);
 	g_free(from);
 	g_free(refer_to);
+	g_free(referred_by);
 }
 
 static unsigned int
