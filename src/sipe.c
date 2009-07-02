@@ -928,7 +928,7 @@ static char *get_contact_register(struct sipe_account_data  *sip)
 {
 	char *epid = get_epid(sip);
 	char *uuid = generateUUIDfromEPID(epid);
-	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  TRANSPORT_DESCRIPTOR, uuid);
+	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  TRANSPORT_DESCRIPTOR, uuid);
 	g_free(uuid);
 	g_free(epid);
 	return(buf);
@@ -2923,6 +2923,7 @@ sipe_invite(struct sipe_account_data *sip,
 	    struct sip_im_session *session,
 	    const gchar *who,
 	    const gchar *msg_body,
+	    const gchar *referred_by,
 	    const gboolean is_triggered)
 {
 	gchar *hdr;
@@ -2933,6 +2934,7 @@ sipe_invite(struct sipe_account_data *sip,
 	char *ms_text_format = g_strdup("");
 	gchar *roster_manager;
 	gchar *end_points;
+	gchar *referred_by_str;
 	gchar *triggered;
 	gchar *require_multiparty;
 	struct sip_dialog *dialog = get_dialog(session, who);
@@ -2999,7 +3001,12 @@ sipe_invite(struct sipe_account_data *sip,
 		"Roster-Manager: %s\r\n"
 		"EndPoints: %s\r\n",
 		self,
-		end_points);	
+		end_points);
+	referred_by_str = referred_by ? 
+		g_strdup_printf(
+			"Referred-By: %s\r\n",
+			referred_by)
+		: g_strdup("");
 	triggered =
 		"TriggeredInvite: TRUE\r\n";
 	require_multiparty =
@@ -3008,9 +3015,11 @@ sipe_invite(struct sipe_account_data *sip,
 		"%s"
 		"%s"
 		"%s"
+		"%s"
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
 		(session->roster_manager && !strcmp(session->roster_manager, self)) ? roster_manager : "",
+		referred_by_str,
 		is_triggered ? triggered : "",
 		is_triggered || session->is_multiparty ? require_multiparty : "",
 		contact,
@@ -3034,6 +3043,7 @@ sipe_invite(struct sipe_account_data *sip,
 	g_free(to);
 	g_free(roster_manager);
 	g_free(end_points);
+	g_free(referred_by_str);
 	g_free(body);
 	g_free(hdr);
 	g_free(contact);
@@ -3132,7 +3142,7 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		sipe_im_process_queue(sip, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sip, session, who, what, FALSE);
+		sipe_invite(sip, session, who, what, NULL, FALSE);
 	}
 
 	return 1;
@@ -3258,6 +3268,36 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 	}
 	
 	g_free(from);
+}
+
+static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg *msg)
+{
+	gchar *self = g_strdup_printf("sip:%s", sip->username);
+	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	gchar *refer_to = parse_from(sipmsg_find_header(msg, "Refer-to"));
+	gchar *referred_by = sipmsg_find_header(msg, "Referred-By");
+	struct sip_im_session *session;
+	struct sip_dialog *dialog;
+	
+	session = find_chat_session(sip, callid);
+	dialog = get_dialog(session, from);
+
+	sipmsg_remove_header(msg, "Refer-to");
+	sipmsg_remove_header(msg, "Referred-By");
+	sipmsg_remove_header(msg, "Require");
+	
+	if (!session || !dialog || !session->roster_manager || strcmp(session->roster_manager, self)) {
+		send_sip_response(sip->gc, msg, 500, "Server Internal Error", NULL);
+	} else {
+		send_sip_response(sip->gc, msg, 202, "Accepted", NULL);
+	
+		sipe_invite(sip, session, refer_to, NULL, referred_by, FALSE);
+	}
+
+	g_free(self);
+	g_free(from);
+	g_free(refer_to);
 }
 
 static unsigned int
@@ -3483,7 +3523,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 				just_joined = TRUE;
 				
 				/* send triggered INVITE */
-				sipe_invite(sip, session, end_point, NULL, TRUE);
+				sipe_invite(sip, session, end_point, NULL, NULL, TRUE);
 			} else {
 				dialog->theirepid = epid;
 			}
@@ -4747,6 +4787,9 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 		} else if (!strcmp(msg->method, "INVITE")) {
 			process_incoming_invite(sip, msg);
 			found = TRUE;
+		} else if (!strcmp(msg->method, "REFER")) {	
+			process_incoming_refer(sip, msg);
+			found = TRUE;
 		} else if (!strcmp(msg->method, "OPTIONS")) {
 			process_incoming_options(sip, msg);
 			found = TRUE;
@@ -5888,7 +5931,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, g_strdup(chat_name));
 	session->chat_name = g_strdup(chat_name);
 	purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
-	sipe_invite(sip, session, buddy->name, NULL, FALSE);
+	sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
 	
 	g_free(chat_name);
 	g_free(self);
@@ -5907,7 +5950,7 @@ sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, const char *chat_name)
 	session = find_chat_session_by_name(sip, chat_name);
 	if (session->roster_manager) {
 		if (!strcmp(session->roster_manager, self)) {
-			sipe_invite(sip, session, buddy->name, NULL, FALSE);
+			sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
 		} else {
 			sipe_refer(sip, session, buddy->name);
 		}
