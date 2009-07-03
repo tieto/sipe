@@ -2580,6 +2580,12 @@ static void im_session_destroy(struct sipe_account_data *sip, struct sip_im_sess
 		entry = g_slist_remove(entry, entry->data);
 	}
 	
+	entry = session->pending_invite_queue;
+	while (entry) {
+		g_free(entry->data);
+		entry = g_slist_remove(entry, entry->data);
+	}
+	
 	g_hash_table_destroy(session->unconfirmed_messages);
 
 	g_free(session->with);
@@ -2684,6 +2690,65 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	
 	if (ret) sipe_im_process_queue(sip, session);
 	return ret;
+}
+
+static gboolean
+sipe_is_election_finished(struct sipe_account_data *sip,
+			  struct sip_im_session *session);
+
+static void
+sipe_election_result(struct sipe_account_data *sip,
+		     void *sess);
+
+static gboolean
+process_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
+{
+	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	struct sip_dialog *dialog;	
+	struct sip_im_session *session;
+	
+	session = find_chat_session(sip, callid);	
+	if (!session) {
+		purple_debug_info("sipe", "process_info_response: failed find dialog for callid %s, exiting.", callid);
+		return FALSE;
+	}
+	
+	if (msg->response == 200 && !strncmp(contenttype, "application/x-ms-mim", 20)) {
+		xmlnode *xn_action 		= xmlnode_from_str(msg->body, msg->bodylen);
+		xmlnode *xn_request_rm_response = xmlnode_get_child(xn_action, "RequestRMResponse");
+		xmlnode *xn_set_rm_response 	= xmlnode_get_child(xn_action, "SetRMResponse");
+		
+		if (xn_request_rm_response) {
+			const char *with = xmlnode_get_attrib(xn_request_rm_response, "uri");
+			const char *allow = xmlnode_get_attrib(xn_request_rm_response, "allow");
+
+			dialog = get_dialog(session, with);
+			if (!dialog) {
+				purple_debug_info("sipe", "process_info_response: failed find dialog for %s, exiting.\n", with);
+				return FALSE;
+			}
+			
+			if (allow && !g_strcasecmp(allow, "true")) {
+				purple_debug_info("sipe", "process_info_response: %s has voted PRO\n", with);
+				dialog->election_vote = 1;
+			} else if (allow && !g_strcasecmp(allow, "false")) {
+				purple_debug_info("sipe", "process_info_response: %s has voted CONTRA\n", with);
+				dialog->election_vote = -1;
+			}
+			
+			if (sipe_is_election_finished(sip, session)) {
+				sipe_election_result(sip, session);
+			}
+			
+		} else if (xn_set_rm_response) {
+					
+		}
+		xmlnode_free(xn_action);
+		
+	}
+	
+	return TRUE;
 }
 
 static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *dialog, const char *msg)
@@ -3114,6 +3179,53 @@ sipe_refer(struct sipe_account_data *sip,
 	g_free(contact);
 }
 
+static void 
+sipe_send_election_request_rm(struct sipe_account_data *sip,
+			      struct sip_im_session *session,
+			      const gchar *who,
+			      int bid)
+{
+	gchar *hdr;
+	gchar *body;
+	struct sip_dialog *dialog = get_dialog(session, who);
+
+	hdr = "Content-Type: application/x-ms-mim\r\n";
+		
+	body = g_strdup_printf(		
+		"<?xml version=\"1.0\"?>\r\n"
+		"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
+		"<RequestRM uri=\"sip:%s\" bid=\"%d\"/></action>\r\n",
+		sip->username, bid);
+
+	send_sip_request(sip->gc, "INFO",
+		who, who, hdr, body, dialog, process_info_response);
+
+	g_free(body);
+}
+
+static void 
+sipe_send_election_set_rm(struct sipe_account_data *sip,
+			      struct sip_im_session *session,
+			      const gchar *who)
+{
+	gchar *hdr;
+	gchar *body;
+	struct sip_dialog *dialog = get_dialog(session, who);
+
+	hdr = "Content-Type: application/x-ms-mim\r\n";
+		
+	body = g_strdup_printf(		
+		"<?xml version=\"1.0\"?>\r\n"
+		"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
+		"<SetRM uri=\"sip:%s\"/></action>\r\n",
+		sip->username);
+
+	send_sip_request(sip->gc, "INFO",
+		who, who, hdr, body, dialog, process_info_response);
+
+	g_free(body);
+}
+
 static void
 im_session_close (struct sipe_account_data *sip, struct sip_im_session * session)
 {
@@ -3221,21 +3333,19 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 	if (!strncmp(contenttype, "application/x-ms-mim", 20)) {
 		xmlnode *xn_action 		= xmlnode_from_str(msg->body, msg->bodylen);
 		xmlnode *xn_request_rm 		= xmlnode_get_child(xn_action, "RequestRM");
-		//xmlnode *xn_request_rm_response = xmlnode_get_child(xn_action, "RequestRMResponse");
 		xmlnode *xn_set_rm 		= xmlnode_get_child(xn_action, "SetRM");
-		//xmlnode *xn_set_rm_response 	= xmlnode_get_child(xn_action, "SetRMResponse");
 		
 		sipmsg_remove_header(msg, "User-Agent");
 		
 		if (xn_request_rm) {
 			//const char *rm = xmlnode_get_attrib(xn_request_rm, "uri");
-			//int bid = atoi(xmlnode_get_attrib(xn_request_rm, "bid"));
+			int bid = atoi(xmlnode_get_attrib(xn_request_rm, "bid"));
 			gchar *body = g_strdup_printf(
 				"<?xml version=\"1.0\"?>\r\n"
 				"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
 				"<RequestRMResponse uri=\"sip:%s\" allow=\"%s\"/></action>\r\n",
 				sip->username,
-				TRUE ? "true" : "false");
+				session->bid < bid ? "true" : "false");
 			send_sip_response(sip->gc, msg, 200, "OK", body);
 			g_free(body);			
 		} else if (xn_set_rm) {
@@ -5974,29 +6084,172 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	g_free(self);
 }
 
+static gboolean
+sipe_is_election_finished(struct sipe_account_data *sip,
+			  struct sip_im_session *session)
+{
+	struct sip_dialog *dialog;
+	GSList *entry;
+	gboolean res = TRUE;
+
+	entry = session->dialogs;
+	while (entry) {
+		dialog = entry->data;
+		if (dialog->election_vote == 0) {
+			res = FALSE;
+			break;
+		}
+		entry = entry->next;
+	}
+	
+	if (res) {
+		session->is_voting_in_progress = FALSE;
+	}	
+	return res;
+}
+
+static void
+sipe_election_start(struct sipe_account_data *sip,
+		    struct sip_im_session *session)
+{
+	struct sip_dialog *dialog;
+	GSList *entry;
+	int election_timeout;
+	
+	if (session->is_voting_in_progress) {
+		purple_debug_info("sipe", "sipe_election_start: other election is in progress, exiting.\n");
+		return;
+	} else {
+		session->is_voting_in_progress = TRUE;
+	}
+	session->bid = rand();
+
+	purple_debug_info("sipe", "sipe_election_start: RM election has initiated. Our bid=%d\n", session->bid);
+
+	/* reset election_vote for each chat participant */
+	entry = session->dialogs;
+	while (entry) {
+		dialog = entry->data;
+		dialog->election_vote = 0;
+		entry = entry->next;
+	}
+	
+	entry = session->dialogs;
+	while (entry) {
+		dialog = entry->data;
+		/* send RequestRM to each chat participant*/
+		sipe_send_election_request_rm(sip, session, dialog->with, session->bid);
+		entry = entry->next;
+	}	
+	
+	election_timeout = 15; /* sec */
+	sipe_schedule_action("<+election-result>", election_timeout, sipe_election_result, NULL, sip, session);
+}
+
+/**
+ * @param who a URI to whom to invite to chat
+ */
+static void
+sipe_invite_to_chat(struct sipe_account_data *sip,
+		    struct sip_im_session *session,
+		    const char *who)
+{
+	gchar *self = g_strdup_printf("sip:%s", sip->username);
+
+	if (session->roster_manager) {
+		if (!strcmp(session->roster_manager, self)) {
+			sipe_invite(sip, session, who, NULL, NULL, FALSE);
+		} else {
+			sipe_refer(sip, session, who);
+		}
+	} else {
+		purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: no RM available\n");
+		
+		session->pending_invite_queue = slist_insert_unique_sorted(
+			session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
+
+		sipe_election_start(sip, session);
+	}
+	
+	g_free(self);
+}
+
+static void
+sipe_process_pending_invite_queue(struct sipe_account_data *sip,
+				  struct sip_im_session *session)
+{
+	gchar *invitee;
+	GSList *entry = session->pending_invite_queue;
+	
+	while (entry) {
+		invitee = entry->data;
+		sipe_invite_to_chat(sip, session, invitee);
+		entry = session->pending_invite_queue = g_slist_remove(session->pending_invite_queue, invitee);
+		g_free(invitee);
+	}
+}
+
+static void
+sipe_election_result(struct sipe_account_data *sip,
+		     void *sess)
+{
+	struct sip_im_session *session = (struct sip_im_session *)sess;
+	struct sip_dialog *dialog;
+	GSList *entry;
+	gchar * rival;
+	gboolean has_won = TRUE;
+	
+	if (session->roster_manager) {
+		purple_debug_info("sipe", 
+			"sipe_election_result: RM has already been elected in the meantime. It is %s\n", session->roster_manager);
+		return;
+	}
+	
+	session->is_voting_in_progress = FALSE;
+	
+	entry = session->dialogs;
+	while (entry) {
+		dialog = entry->data;
+		if (dialog->election_vote < 0) {
+			has_won = FALSE;
+			rival = dialog->with;
+			break;
+		}
+		entry = entry->next;
+	}
+	
+	if (has_won) {
+		purple_debug_info("sipe", "sipe_election_result: we have won RM election!\n");
+		
+		session->roster_manager = g_strdup_printf("sip:%s", sip->username);
+		
+		entry = session->dialogs;
+		while (entry) {
+			dialog = entry->data;
+			/* send SetRM to each chat participant*/
+			sipe_send_election_set_rm(sip, session, dialog->with);
+			entry = entry->next;
+		}
+	} else {
+		purple_debug_info("sipe", "sipe_election_result: we loose RM election to %s\n", rival);
+	}
+	session->bid = 0;
+	
+	sipe_process_pending_invite_queue(sip, session);
+}
+
 static void
 sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, const char *chat_name)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	struct sip_im_session *session;
-	gchar *self = g_strdup_printf("sip:%s", sip->username);
 	
 	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: buddy->name=%s\n", buddy->name);
 	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: chat_name=%s\n", chat_name);
 	
 	session = find_chat_session_by_name(sip, chat_name);
-	if (session->roster_manager) {
-		if (!strcmp(session->roster_manager, self)) {
-			sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
-		} else {
-			sipe_refer(sip, session, buddy->name);
-		}
-	} else {
-		purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: no RM available\n");
-		// Elect RM
-	}
 	
-	g_free(self);
+	sipe_invite_to_chat(sip, session, buddy->name);
 }
 
 static void
@@ -6113,7 +6366,9 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	return menu;
 }
 
-GList *sipe_blist_node_menu(PurpleBlistNode *node) {
+static GList *
+sipe_blist_node_menu(PurpleBlistNode *node)
+{
 	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
 		return sipe_buddy_menu((PurpleBuddy *) node);
 	} else {

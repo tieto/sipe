@@ -52,13 +52,15 @@
 /** Correspond to multy-party conversation */
 struct sip_im_session {
 	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
-	/** Call-Id identifying the conversation */
 	int chat_id;
 	/** Human readable chat name */
 	gchar *chat_name;
+	/** Call-Id identifying the conversation */
 	gchar *callid; /* For multiparty conversations */
 	/** Roster Manager URI */
 	gchar *roster_manager;
+	int bid;
+	gboolean is_voting_in_progress;
 	gboolean is_multiparty;
 	/** key is user (URI) */
 	GSList *dialogs;
@@ -69,11 +71,19 @@ struct sip_im_session {
 	GSList *outgoing_message_queue;
 	/** Key is <Call-ID><CSeq><METHOD> */
 	GHashTable *unconfirmed_messages;
+	
+	GSList *pending_invite_queue;
 };
 
 // dialog is the new term for call-leg
 struct sip_dialog {
-	gchar *with; /* URI */ //added
+	gchar *with; /* URI */
+	/** 
+	 *  >0 - pro
+	 *  <0 - contra
+	 *   0 - didn't participate
+	 */ 
+	int election_vote;
 	gchar *ourtag;
 	gchar *theirtag;
 	gchar *theirepid;
@@ -83,7 +93,7 @@ struct sip_dialog {
 	GSList *supported; // counterparty capabilities
 	int cseq;
 	gboolean is_established;
-	struct transaction *outgoing_invite; //moved here
+	struct transaction *outgoing_invite;
 };
 
 struct sipe_buddy {
