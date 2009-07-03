@@ -2553,7 +2553,7 @@ free_dialog(struct sip_dialog *dialog)
 		g_free(entry->data);
 		entry = g_slist_remove(entry, entry->data);
 	}
-	g_free(dialog->callid);
+
 	g_free(dialog->ourtag);
 	g_free(dialog->theirtag);
 	g_free(dialog->theirepid);
@@ -2589,6 +2589,9 @@ static void im_session_destroy(struct sipe_account_data *sip, struct sip_im_sess
 	g_hash_table_destroy(session->unconfirmed_messages);
 
 	g_free(session->with);
+	g_free(session->chat_name);
+	g_free(session->callid);
+	g_free(session->roster_manager);	
 	g_free(session);
 }
 
@@ -3664,7 +3667,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 				dialog = g_new0(struct sip_dialog, 1);
 				session->dialogs = g_slist_append(session->dialogs, dialog);
 		
-				dialog->callid = g_strdup(callid);
+				dialog->callid = session->callid;
 				dialog->with = g_strdup(end_point);
 				dialog->theirepid = epid;
 				
@@ -3688,7 +3691,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 			dialog = g_new0(struct sip_dialog, 1);
 			session->dialogs = g_slist_append(session->dialogs, dialog);
 	
-			dialog->callid = g_strdup(callid);
+			dialog->callid = session->callid;
 			dialog->with = g_strdup(from);
 			sipe_parse_dialog(msg, dialog, FALSE);
 
