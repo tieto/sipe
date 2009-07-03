@@ -1955,101 +1955,104 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	if (contacts_delta) {
 		sip->contacts_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 	}
+	
+	if (!strcmp(isc->name, "contactList")) {
 
-	/* Parse groups */
-	for (group_node = xmlnode_get_child(isc, "group"); group_node; group_node = xmlnode_get_next_twin(group_node)) {
-		struct sipe_group * group = g_new0(struct sipe_group, 1);
-		const char *name = xmlnode_get_attrib(group_node, "name");
+		/* Parse groups */
+		for (group_node = xmlnode_get_child(isc, "group"); group_node; group_node = xmlnode_get_next_twin(group_node)) {
+			struct sipe_group * group = g_new0(struct sipe_group, 1);
+			const char *name = xmlnode_get_attrib(group_node, "name");
 
-		if (!strncmp(name, "~", 1)) {
+			if (!strncmp(name, "~", 1)) {
+				// TODO translate
+				name = "Other Contacts";
+			}
+			group->name = g_strdup(name);
+			group->id = (int)g_ascii_strtod(xmlnode_get_attrib(group_node, "id"), NULL);
+
+			sipe_group_add(sip, group);
+		}
+
+		// Make sure we have at least one group
+		if (g_slist_length(sip->groups) == 0) {
+			struct sipe_group * group = g_new0(struct sipe_group, 1);
+			PurpleGroup *purple_group;
 			// TODO translate
-			name = "Other Contacts";
-		}
-		group->name = g_strdup(name);
-		group->id = (int)g_ascii_strtod(xmlnode_get_attrib(group_node, "id"), NULL);
-
-		sipe_group_add(sip, group);
-	}
-
-	// Make sure we have at least one group
-	if (g_slist_length(sip->groups) == 0) {
-		struct sipe_group * group = g_new0(struct sipe_group, 1);
-		PurpleGroup *purple_group;
-		// TODO translate
-		group->name = g_strdup("Other Contacts");
-		group->id = 1;
-		purple_group = purple_group_new(group->name);
-		purple_blist_add_group(purple_group, NULL);
-		sip->groups = g_slist_append(sip->groups, group);
-	}
-
-	/* Parse contacts */
-	for (item = xmlnode_get_child(isc, "contact"); item; item = xmlnode_get_next_twin(item)) {
-		gchar * uri = g_strdup(xmlnode_get_attrib(item, "uri"));
-		gchar * name = g_strdup(xmlnode_get_attrib(item, "name"));
-		gchar * groups = g_strdup(xmlnode_get_attrib(item, "groups"));
-		gchar * buddy_name = g_strdup_printf("sip:%s", uri);
-		gchar **item_groups;
-		struct sipe_group *group = NULL;
-		struct sipe_buddy *buddy = NULL;
-		int i = 0;
-
-		// assign to group Other Contacts if nothing else received
-		if(!groups || !strcmp("", groups) ) {
-			group = sipe_group_find_by_name(sip, "Other Contacts");
-			groups = group ? g_strdup_printf("%d", group->id) : "1";
+			group->name = g_strdup("Other Contacts");
+			group->id = 1;
+			purple_group = purple_group_new(group->name);
+			purple_blist_add_group(purple_group, NULL);
+			sip->groups = g_slist_append(sip->groups, group);
 		}
 
-		item_groups = g_strsplit(groups, " ", 0);
+		/* Parse contacts */
+		for (item = xmlnode_get_child(isc, "contact"); item; item = xmlnode_get_next_twin(item)) {
+			gchar * uri = g_strdup(xmlnode_get_attrib(item, "uri"));
+			gchar * name = g_strdup(xmlnode_get_attrib(item, "name"));
+			gchar * groups = g_strdup(xmlnode_get_attrib(item, "groups"));
+			gchar * buddy_name = g_strdup_printf("sip:%s", uri);
+			gchar **item_groups;
+			struct sipe_group *group = NULL;
+			struct sipe_buddy *buddy = NULL;
+			int i = 0;
 
-		while (item_groups[i]) {
-			group = sipe_group_find_by_id(sip, g_ascii_strtod(item_groups[i], NULL));
-
-			// If couldn't find the right group for this contact, just put them in the first group we have
-			if (group == NULL && g_slist_length(sip->groups) > 0) {
-				group = sip->groups->data;
+			// assign to group Other Contacts if nothing else received
+			if(!groups || !strcmp("", groups) ) {
+				group = sipe_group_find_by_name(sip, "Other Contacts");
+				groups = group ? g_strdup_printf("%d", group->id) : "1";
 			}
 
-			if (group != NULL) {
-				PurpleBuddy *b = purple_find_buddy_in_group(sip->account, buddy_name, group->purple_group);
-				if (!b){
-					b = purple_buddy_new(sip->account, buddy_name, uri);
-					purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
+			item_groups = g_strsplit(groups, " ", 0);
+
+			while (item_groups[i]) {
+				group = sipe_group_find_by_id(sip, g_ascii_strtod(item_groups[i], NULL));
+
+				// If couldn't find the right group for this contact, just put them in the first group we have
+				if (group == NULL && g_slist_length(sip->groups) > 0) {
+					group = sip->groups->data;
 				}
 
-				if (!g_ascii_strcasecmp(uri, purple_buddy_get_alias(b))) {
-					if (name != NULL && strlen(name) != 0) {
-						purple_blist_alias_buddy(b, name);
+				if (group != NULL) {
+					PurpleBuddy *b = purple_find_buddy_in_group(sip->account, buddy_name, group->purple_group);
+					if (!b){
+						b = purple_buddy_new(sip->account, buddy_name, uri);
+						purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
 					}
+
+					if (!g_ascii_strcasecmp(uri, purple_buddy_get_alias(b))) {
+						if (name != NULL && strlen(name) != 0) {
+							purple_blist_alias_buddy(b, name);
+						}
+					}
+
+					if (!buddy) {
+						buddy = g_new0(struct sipe_buddy, 1);
+						buddy->name = g_strdup(b->name);
+						g_hash_table_insert(sip->buddies, buddy->name, buddy);
+					}
+
+					buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
+
+					purple_debug_info("sipe", "Added buddy %s to group %s\n", b->name, group->name);
+				} else {
+					purple_debug_info("sipe", "No group found for contact %s!  Unable to add to buddy list\n",
+						name);
 				}
 
-				if (!buddy) {
-					buddy = g_new0(struct sipe_buddy, 1);
-					buddy->name = g_strdup(b->name);
-					g_hash_table_insert(sip->buddies, buddy->name, buddy);
-				}
+				i++;
+			} // while, contact groups
+			g_strfreev(item_groups);
+			g_free(groups);
+			g_free(name);
+			g_free(buddy_name);
+			g_free(uri);
 
-				buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
+		} // for, contacts
 
-				purple_debug_info("sipe", "Added buddy %s to group %s\n", b->name, group->name);
-			} else {
-				purple_debug_info("sipe", "No group found for contact %s!  Unable to add to buddy list\n",
-					name);
-			}
+		xmlnode_free(isc);
 
-			i++;
-		} // while, contact groups
-		g_strfreev(item_groups);
-		g_free(groups);
-		g_free(name);
-		g_free(buddy_name);
-		g_free(uri);
-
-	} // for, contacts
-
-	xmlnode_free(isc);
-
-	sipe_cleanup_local_blist(sip);
+		sipe_cleanup_local_blist(sip);	
+	}
 
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
