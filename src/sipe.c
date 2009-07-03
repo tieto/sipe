@@ -2382,7 +2382,7 @@ get_dialog (struct sip_im_session *session,
 	entry = session->dialogs;
 	while (entry) {
 		dialog = entry->data;
-		if (!strcmp(who, dialog->with)) {
+		if (dialog->with && !strcmp(who, dialog->with)) {
 			return dialog;
 		}
 		entry = entry->next;
@@ -2456,7 +2456,7 @@ find_chat_session_by_name (struct sipe_account_data *sip,
 	entry = sip->im_sessions;
 	while (entry) {
 		session = entry->data;
-		if (!g_strcasecmp(chat_name, session->chat_name)) {
+		if (session->chat_name && !g_strcasecmp(chat_name, session->chat_name)) {
 			return session;
 		}
 		entry = entry->next;
@@ -2477,7 +2477,7 @@ find_chat_session (struct sipe_account_data *sip,
 	entry = sip->im_sessions;
 	while (entry) {
 		session = entry->data;
-		if (!g_strcasecmp(callid, session->callid)) {
+		if (session->callid && !g_strcasecmp(callid, session->callid)) {
 			return session;
 		}
 		entry = entry->next;
@@ -2496,7 +2496,7 @@ static struct sip_im_session * find_im_session (struct sipe_account_data *sip, c
 	entry = sip->im_sessions;
 	while (entry) {
 		session = entry->data;
-		if ((who != NULL && session->with != NULL && !strcmp(who, session->with))) {
+		if (session->with && !strcmp(who, session->with)) {
 			return session;
 		}
 		entry = entry->next;
