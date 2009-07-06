@@ -2812,6 +2812,7 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 			char *key;
 			
 			dialog = entry->data;
+			entry = entry->next;
 			if (dialog->outgoing_invite) continue; //do not send messages as INVITE is not responded.			
 	
 			key = g_strdup_printf("<%s><%d><MESSAGE><%s>", dialog->callid, (dialog->cseq) + 1, dialog->with);			
@@ -2820,8 +2821,6 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 								key, g_hash_table_size(session->unconfirmed_messages));
 			g_free(key);
 			sipe_send_message(sip, dialog, queued_msg);						
-			
-			entry = entry->next;
 		}
 		
 		entry2 = session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
@@ -3312,9 +3311,11 @@ static int sipe_chat_send(PurpleConnection *gc, int id, const char *what, Purple
 	session = find_chat_session_by_id(sip, id);
 
 	// Queue the message
-	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, g_strdup(what));
-
-	sipe_im_process_queue(sip, session);
+	if (session) {
+		session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue,
+								 g_strdup(what));
+		sipe_im_process_queue(sip, session);
+	}
 
 	return 1;
 }
@@ -3531,7 +3532,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 			session = find_im_session(sip, from);
 		}
 		
-		if (session->is_multiparty) {
+		if (session && session->is_multiparty) {
 			serv_got_chat_in(sip->gc, session->chat_id, from,
 				PURPLE_MESSAGE_RECV, html, time(NULL));
 		} else {			
