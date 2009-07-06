@@ -3583,9 +3583,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *newTag = gentag();
 	gchar *oldHeader;
 	gchar *newHeader;
-	gboolean is_multiparty;
+	gboolean is_multiparty = FALSE;
 	gboolean is_triggered = FALSE;
-	gboolean was_multiparty;
+	gboolean was_multiparty = TRUE;
 	gboolean just_joined = FALSE;
 	gchar *from =		parse_from(sipmsg_find_header(msg, "From"));
 	gchar *to =		parse_from(sipmsg_find_header(msg, "To"));
@@ -3614,7 +3614,6 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(newHeader);
 	
 	/* EndPoints: "alice alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>;epid=ebca82d94d, <sip:carol@atlanta.local> */
-	is_multiparty = FALSE;
 	if (end_points_hdr) {
 		end_points = g_strsplit(end_points_hdr, ",", 0);
 		if (end_points[0] && end_points[1] && end_points[2]) {
@@ -3631,7 +3630,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	if (session && is_multiparty && !session->is_multiparty) {
 		g_free(session->with);
 		session->with = NULL;
-		was_multiparty = session->is_multiparty;
+		was_multiparty = FALSE;
 		session->is_multiparty = TRUE;
 		session->chat_id = rand();
 	}
