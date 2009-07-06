@@ -2049,10 +2049,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 
 		} // for, contacts
 
-		xmlnode_free(isc);
-
 		sipe_cleanup_local_blist(sip);	
 	}
+	xmlnode_free(isc);
 
 	//subscribe to buddies
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
