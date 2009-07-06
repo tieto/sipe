@@ -2544,8 +2544,12 @@ static struct sip_im_session * find_or_create_im_session (struct sipe_account_da
 static void 
 free_dialog(struct sip_dialog *dialog)
 {
-	GSList *entry = dialog->routes;
+	GSList *entry;
+
+	if (!dialog) return;
+
 	g_free(dialog->with);
+	entry = dialog->routes;
 	while (entry) {
 		g_free(entry->data);
 		entry = g_slist_remove(entry, entry->data);
