@@ -1726,7 +1726,7 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 
 static void sipe_free_buddy(struct sipe_buddy *buddy)
 {
-	// g_free(buddy->name); /* g_hash_table_foreach_remove does not like it */
+	g_free(buddy->name);
 	g_free(buddy->annotation);
 	g_free(buddy->device_name);
 	g_slist_free(buddy->groups);
@@ -2556,6 +2556,7 @@ free_dialog(struct sip_dialog *dialog)
 		entry = g_slist_remove(entry, entry->data);
 	}
 
+	g_free(dialog->callid);
 	g_free(dialog->ourtag);
 	g_free(dialog->theirtag);
 	g_free(dialog->theirepid);
@@ -2801,8 +2802,10 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 		GSList *entry = session->dialogs;
 		
 		if (session->is_multiparty) {
-			serv_got_chat_in(sip->gc, session->chat_id, g_strdup_printf("sip:%s", sip->username),
+			gchar *who = g_strdup_printf("sip:%s", sip->username);
+			serv_got_chat_in(sip->gc, session->chat_id, who,
 				PURPLE_MESSAGE_SEND, queued_msg, time(NULL));
+			g_free(who);
 		}		
 
 		while (entry) {
@@ -2950,7 +2953,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	struct sipmsg *request_msg = trans->msg;
 	
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
-	gchar *referred_by = parse_from(sipmsg_find_header(request_msg, "Referred-By"));
+	gchar *referred_by;
 
 	session = find_chat_session(sip, callid);
 	if (!session) {
@@ -2982,6 +2985,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 
 		sipe_present_message_undelivered_err(with, sip, message);		
 		im_session_destroy(sip, session);
+		g_free(key);
 		g_free(with);
 		return FALSE;
 	}
@@ -2991,8 +2995,10 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	dialog->outgoing_invite = NULL;
 	dialog->is_established = TRUE;
 	
+	referred_by = parse_from(sipmsg_find_header(request_msg, "Referred-By"));
 	if (referred_by) {
 		sipe_refer_notify(sip, session, referred_by, 200, "OK");
+		g_free(referred_by);
 	}
 	
 	/* add user to chat if it is a multiparty session */
@@ -3019,7 +3025,6 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	
 	g_free(key);
 	g_free(with);
-	g_free(referred_by);
 	return TRUE;
 }
 
@@ -3036,13 +3041,11 @@ sipe_invite(struct sipe_account_data *sip,
 	gchar *to;
 	gchar *contact;
 	gchar *body;
-	gchar *self = g_strdup_printf("sip:%s", sip->username);
+	gchar *self;
 	char *ms_text_format = g_strdup("");
 	gchar *roster_manager;
 	gchar *end_points;
 	gchar *referred_by_str;
-	gchar *triggered;
-	gchar *require_multiparty;
 	struct sip_dialog *dialog = get_dialog(session, who);
 	
 	if (dialog && dialog->is_established) {
@@ -3054,7 +3057,7 @@ sipe_invite(struct sipe_account_data *sip,
 		dialog = g_new0(struct sip_dialog, 1);
 		session->dialogs = g_slist_append(session->dialogs, dialog);
 		
-		dialog->callid = session->callid ? session->callid : gencallid();
+		dialog->callid = session->callid ? g_strdup(session->callid) : gencallid();
 		dialog->with = g_strdup(who);
 	}
 
@@ -3103,6 +3106,7 @@ sipe_invite(struct sipe_account_data *sip,
 
 	contact = get_contact(sip);
 	end_points = get_end_points(sip, session);
+	self = g_strdup_printf("sip:%s", sip->username);
 	roster_manager = g_strdup_printf(
 		"Roster-Manager: %s\r\n"
 		"EndPoints: %s\r\n",
@@ -3113,10 +3117,6 @@ sipe_invite(struct sipe_account_data *sip,
 			"Referred-By: %s\r\n",
 			referred_by)
 		: g_strdup("");
-	triggered =
-		"TriggeredInvite: TRUE\r\n";
-	require_multiparty =
-		"Require: com.microsoft.rtc-multiparty\r\n";		
 	hdr = g_strdup_printf(
 		"%s"
 		"%s"
@@ -3126,11 +3126,12 @@ sipe_invite(struct sipe_account_data *sip,
 		"Content-Type: application/sdp\r\n",
 		(session->roster_manager && !strcmp(session->roster_manager, self)) ? roster_manager : "",
 		referred_by_str,
-		is_triggered ? triggered : "",
-		is_triggered || session->is_multiparty ? require_multiparty : "",
+		is_triggered ? "TriggeredInvite: TRUE\r\n" : "",
+		is_triggered || session->is_multiparty ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
 		contact,
 		ms_text_format);
 	g_free(ms_text_format);
+	g_free(self);
 
 	body = g_strdup_printf(
 		"v=0\r\n"
@@ -3668,7 +3669,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 				dialog = g_new0(struct sip_dialog, 1);
 				session->dialogs = g_slist_append(session->dialogs, dialog);
 		
-				dialog->callid = session->callid;
+				dialog->callid = g_strdup(session->callid);
 				dialog->with = g_strdup(end_point);
 				dialog->theirepid = epid;
 				
@@ -3692,7 +3693,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 			dialog = g_new0(struct sip_dialog, 1);
 			session->dialogs = g_slist_append(session->dialogs, dialog);
 	
-			dialog->callid = session->callid;
+			dialog->callid = g_strdup(session->callid);
 			dialog->with = g_strdup(from);
 			sipe_parse_dialog(msg, dialog, FALSE);
 
@@ -5739,9 +5740,10 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 /**
   * A callback for g_hash_table_foreach_remove
   */
-static void sipe_buddy_remove(gpointer key, struct sipe_buddy *buddy, gpointer user_data)
+static gboolean sipe_buddy_remove(gpointer key, gpointer buddy, gpointer user_data)
 {
-	sipe_free_buddy(buddy);
+	sipe_free_buddy((struct sipe_buddy *) buddy);
+	return(TRUE);
 }
 
 static void sipe_close(PurpleConnection *gc)
@@ -5763,7 +5765,7 @@ static void sipe_close(PurpleConnection *gc)
 		g_free(sip->authuser);
 		g_free(sip->status);
 
-		g_hash_table_foreach_remove(sip->buddies, (GHRFunc) sipe_buddy_remove, NULL);
+		g_hash_table_foreach_steal(sip->buddies, sipe_buddy_remove, NULL);
 		g_hash_table_destroy(sip->buddies);
 	}
 	g_free(gc->proto_data);
@@ -6318,19 +6320,21 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	struct sip_im_session *session;
 	GSList *entry;
 	gchar *self = g_strdup_printf("sip:%s", sip->username);
-	
+
 	act = purple_menu_action_new(_("New Chat"),
 				     PURPLE_CALLBACK(sipe_buddy_menu_chat_new_cb),
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
-	
+
 	entry = sip->im_sessions;
 	while (entry) {
 		session = entry->data;
 		if (strcmp(self, buddy->name) && session->chat_name && !get_dialog(session, buddy->name)) {
-			act = purple_menu_action_new(g_strdup_printf(_("Invite to '%s'"), session->chat_name),
-								     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
-								     g_strdup(session->chat_name), NULL);
+			gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_name);
+			act = purple_menu_action_new(label,
+						     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
+						     g_strdup(session->chat_name), NULL);
+			g_free(label);
 			menu = g_list_prepend(menu, act);
 		}
 		entry = entry->next;
