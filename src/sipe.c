@@ -1726,7 +1726,7 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 
 static void sipe_free_buddy(struct sipe_buddy *buddy)
 {
-	g_free(buddy->name);
+	//g_free(buddy->name); /* this gives SIGTRAP on windows platform when sipe is closing */
 	g_free(buddy->annotation);
 	g_free(buddy->device_name);
 	g_slist_free(buddy->groups);
