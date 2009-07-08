@@ -182,13 +182,13 @@ static char *get_mac_address_win(const char *ip_address)
 		printf("GetAdaptersInfo failed with error: %d\n", dwRetVal);
 	}
 	
-	if (pAdapter_res) {
+	if (pAdapter_res && pAdapter_res->AddressLength) {
 		gchar nmac[13];
 		for (i = 0; i < pAdapter_res->AddressLength; i++) {
 			g_sprintf(&nmac[(i*2)], "%02X", (int)pAdapter_res->Address[i]);
 		}
-		printf("NIC: %s, IP Address: %s, MAC Addres: %s\n", pAdapter_res->Description, pAdapter_res->IpAddressList.IpAddress.String, nmac);
-		res = g_strdup(nmac);
+		res = g_strndup(nmac, pAdapter_res->AddressLength * 2);
+		printf("NIC: %s, IP Address: %s, MAC Address: %s\n", pAdapter_res->Description, pAdapter_res->IpAddressList.IpAddress.String, res);
 	} else {
 		res = g_strdup("01010101");
 	}
