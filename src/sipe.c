@@ -2212,7 +2212,8 @@ free_container(struct sipe_container *container)
 	while (entry) {
 		g_free(entry->data);
 		entry = g_slist_remove(entry, entry->data);
-	}	
+	}
+	g_free(container);
 }
 
 /**
