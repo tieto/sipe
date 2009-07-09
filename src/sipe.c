@@ -2321,17 +2321,18 @@ sipe_send_set_container_members(struct sipe_account_data *sip,
 		action,
 		type,
 		value_str);
+	g_free(value_str);
 
 	contact = get_contact(sip);
 	hdr = g_strdup_printf("Contact: %s\r\n"
 			      "Content-Type: application/msrtc-setcontainermembers+xml\r\n", contact);
+	g_free(contact);
 
 	send_sip_request(sip->gc, "SERVICE", self, self, hdr, body, NULL, NULL);
 
-	g_free(contact);
 	g_free(hdr);
-	g_free(self);
 	g_free(body);
+	g_free(self);
 }
 
 
