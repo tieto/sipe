@@ -1726,7 +1726,22 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 
 static void sipe_free_buddy(struct sipe_buddy *buddy)
 {
-	//g_free(buddy->name); /* this gives SIGTRAP on windows platform when sipe is closing */
+#ifndef _WIN32
+	 /*
+	  * We are calling g_hash_table_foreach_steal(). That means that no
+	  * key/value deallocation functions are called. Therefore the glib
+	  * hash code does not touch the key (buddy->name) or value (buddy)
+	  * of the to-be-deleted hash node at all. It follows that we
+	  *
+	  *   - MUST free the memory for the key ourselves and
+	  *   - ARE allowed to do it in this function
+	  *
+	  * Conclusion: glib must be broken on the Windows platform if sipe
+	  *             crashes with SIGTRAP when closing. You'll have to live
+	  *             with the memory leak until this is fixed.
+	  */
+	g_free(buddy->name);
+#endif
 	g_free(buddy->annotation);
 	g_free(buddy->device_name);
 	g_slist_free(buddy->groups);
@@ -5935,6 +5950,8 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 static gboolean sipe_buddy_remove(gpointer key, gpointer buddy, gpointer user_data)
 {
 	sipe_free_buddy((struct sipe_buddy *) buddy);
+
+	/* We must return TRUE as the key/value have already been deleted */
 	return(TRUE);
 }
 
