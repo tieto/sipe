@@ -129,6 +129,19 @@ struct sipe_service_data {
 	sipe_transport_type type;
 };
 
+/** MS-PRES container */ 
+struct sipe_container {
+	guint id;
+	guint version;
+	GSList *members;
+};
+/** MS-PRES container member */
+struct sipe_container_member {
+	/** user, domain, sameEnterprise, federated, publicCloud; everyone */
+	const gchar *type;
+	const gchar *value;
+};
+
 struct sipe_account_data {
 	PurpleConnection *gc;
 	gchar *sipdomain;
@@ -165,6 +178,7 @@ struct sipe_account_data {
 	gchar *contact;
 	gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
+	GSList *containers; /* MS-PRES containers */
 	GHashTable *buddies;
 	guint resendtimeout;
 	guint keepalive_timeout;

@@ -2186,20 +2186,57 @@ static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipms
 	xmlnode_free(xml);
 }
 
+static void
+free_container(struct sipe_container *container)
+{
+	GSList *entry;
 
+	if (!container) return;
+
+	entry = container->members;
+	while (entry) {
+		g_free(entry->data);
+		entry = g_slist_remove(entry, entry->data);
+	}	
+}
+
+/**
+ * Finds locally stored MS-PRES container by id
+ */
+static struct sipe_container *
+sipe_find_container(struct sipe_account_data *sip,
+		    guint id)
+{
+	struct sipe_container *container;
+	GSList *entry;
+	
+	if (sip == NULL) {
+		return NULL;
+	}
+
+	entry = sip->containers;
+	while (entry) {
+		container = entry->data;
+		if (id == container->id) {
+			return container;
+		}
+		entry = entry->next;
+	}
+	return NULL;	
+}
 
 /**
   *   When we receive some self (BE) NOTIFY with a new subscriber
   *   we sends a setSubscribers request to him [SIP-PRES] 4.8
   *
   */
-
-static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipmsg *msg)
+static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	gchar *contact;
 	gchar *to;
 	xmlnode *xml;
 	xmlnode *node;
+	xmlnode *node2;
         char *display_name = NULL;
         PurpleBuddy *pbuddy;
         const char *alias;
@@ -2213,7 +2250,34 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip,struct sipms
 
 	contact = get_contact(sip);
 	to = g_strdup_printf("sip:%s", sip->username);
+	
+	/* containers */
+	for (node = xmlnode_get_descendant(xml, "containers", "container", NULL); node; node = xmlnode_get_next_twin(node)) {
+		guint id = atoi(xmlnode_get_attrib(node, "id"));
+		struct sipe_container *container = sipe_find_container(sip, id);
+		
+		if (container) {
+			sip->containers = g_slist_remove(sip->containers, container);
+			purple_debug_info("sipe", "sipe_process_roaming_self: removed existing container id=%d v%d\n", container->id, container->version);
+			free_container(container);
+		}			
+		container = g_new0(struct sipe_container, 1);
+		container->id = id;
+		container->version = atoi(xmlnode_get_attrib(node, "version"));
+		sip->containers = g_slist_append(sip->containers, container);
+		purple_debug_info("sipe", "sipe_process_roaming_self: added container id=%d v%d\n", container->id, container->version);
+		
+		for (node2 = xmlnode_get_child(node, "member"); node2; node2 = xmlnode_get_next_twin(node2)) {		
+			struct sipe_container_member *member = g_new0(struct sipe_container_member, 1);
+			member->type = xmlnode_get_attrib(node2, "type");
+			member->value = xmlnode_get_attrib(node2, "value");
+			container->members = g_slist_append(container->members, member);
+			purple_debug_info("sipe", "sipe_process_roaming_self: added container member type=%s value=%s\n",
+				member->type, member->value ? member->value : "");
+		}
+	}
 
+	/* subscribers */
 	for (node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL); node; node = xmlnode_get_next_twin(node)) {
 		const char *user;
 		const char *acknowledged;
@@ -5730,6 +5794,15 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		}
 	}
 	g_slist_free(sip->allow_events);
+	
+	if (sip->containers) {
+		GSList *entry = sip->containers;
+		while (entry) {
+			free_container((struct sipe_container *)entry->data);
+			entry = entry->next;
+		}
+	}
+	g_slist_free(sip->containers);
 
 	if (sip->contact)
 		g_free(sip->contact);
