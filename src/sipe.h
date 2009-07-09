@@ -167,6 +167,7 @@ struct sipe_account_data {
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed; /* whether subscribed to events, except buddies presence */
 	gboolean subscribed_buddies; /* whether subscribed to buddies presence */
+	gboolean access_level_set; /* whether basic access level set */
 	int listenfd;
 	int listenport;
 	int listenpa;

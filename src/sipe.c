@@ -2201,6 +2201,35 @@ free_container(struct sipe_container *container)
 }
 
 /**
+ * Finds locally stored MS-PRES container member
+ */
+static struct sipe_container_member *
+sipe_find_container_member(struct sipe_container *container,
+			   const gchar *type,
+			   const gchar *value)
+{
+	struct sipe_container_member *member;
+	GSList *entry;
+	
+	if (container == NULL || type == NULL) {
+		return NULL;
+	}
+
+	entry = container->members;
+	while (entry) {
+		member = entry->data;
+		if (!g_strcasecmp(member->type, type)
+		    && ((!member->value && !value) 
+			|| (value && member->value && !g_strcasecmp(member->value, value)))
+		    ) {			
+			return member;
+		}
+		entry = entry->next;
+	}
+	return NULL;	
+}
+
+/**
  * Finds locally stored MS-PRES container by id
  */
 static struct sipe_container *
@@ -2224,6 +2253,71 @@ sipe_find_container(struct sipe_account_data *sip,
 	}
 	return NULL;	
 }
+
+/**
+ * Access Levels
+ * 32000 - Blocked
+ * 400   - Personal
+ * 300   - Team
+ * 200   - Company
+ * 100   - Public
+ */
+static int
+sipe_find_access_level(struct sipe_account_data *sip,
+		       const gchar *type,
+		       const gchar *value)
+{
+	guint containers[] = {32000, 400, 300, 200, 100};
+	int i = 0;
+	
+	for (i = 0; i < 5; i++) {
+		struct sipe_container_member *member;
+		struct sipe_container *container = sipe_find_container(sip, containers[i]);
+		if (!container) continue;
+			
+		member = sipe_find_container_member(container, type, value);
+		if (member) {
+			return containers[i];
+		}
+	}
+	
+	return -1;
+}
+
+static void
+sipe_send_set_container_members(struct sipe_account_data *sip,
+				guint container_id,
+				guint container_version,
+				const gchar* action,
+				const gchar* type,
+				const gchar* value)
+{
+	gchar *self = g_strdup_printf("sip:%s", sip->username);
+	gchar *value_str = value ? g_strdup_printf(" value=\"%s\"", value) : g_strdup("");
+	gchar *contact;
+	gchar *hdr;
+	gchar *body = g_strdup_printf(
+		"<setContainerMembers xmlns=\"http://schemas.microsoft.com/2006/09/sip/container-management\">"
+		"<container id=\"%d\" version=\"%d\"><member action=\"%s\" type=\"%s\"%s/></container>"
+		"</setContainerMembers>",
+		container_id,
+		container_version,
+		action,
+		type,
+		value_str);
+
+	contact = get_contact(sip);
+	hdr = g_strdup_printf("Contact: %s\r\n"
+			      "Content-Type: application/msrtc-setcontainermembers+xml\r\n", contact);
+
+	send_sip_request(sip->gc, "SERVICE", self, self, hdr, body, NULL, NULL);
+
+	g_free(contact);
+	g_free(hdr);
+	g_free(self);
+	g_free(body);
+}
+
 
 /**
   *   When we receive some self (BE) NOTIFY with a new subscriber
@@ -2275,6 +2369,26 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			purple_debug_info("sipe", "sipe_process_roaming_self: added container member type=%s value=%s\n",
 				member->type, member->value ? member->value : "");
 		}
+	}
+	
+	purple_debug_info("sipe", "sipe_process_roaming_self: sip->access_level_set=%s\n", sip->access_level_set ? "TRUE" : "FALSE");
+	if (!sip->access_level_set && xmlnode_get_child(xml, "containers")) {	
+		int sameEnterpriseAL = sipe_find_access_level(sip, "sameEnterprise", NULL);
+		int federatedAL      = sipe_find_access_level(sip, "federated", NULL);
+		purple_debug_info("sipe", "sipe_process_roaming_self: sameEnterpriseAL=%d\n", sameEnterpriseAL);
+		purple_debug_info("sipe", "sipe_process_roaming_self: federatedAL=%d\n", federatedAL);
+		/* initial set-up to let counterparties see your status */
+		if (sameEnterpriseAL < 0) {
+			struct sipe_container *container = sipe_find_container(sip, 200);
+			guint version = container ? container->version : 0;
+			sipe_send_set_container_members(sip, 200, version, "add", "sameEnterprise", NULL);
+		}
+		if (federatedAL < 0) {
+			struct sipe_container *container = sipe_find_container(sip, 100);
+			guint version = container ? container->version : 0;
+			sipe_send_set_container_members(sip, 100, version, "add", "federated", NULL);
+		}
+		sip->access_level_set = TRUE;
 	}
 
 	/* subscribers */
