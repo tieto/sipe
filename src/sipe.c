@@ -1113,9 +1113,9 @@ sipe_process_presence_wpending (struct sipe_account_data *sip, struct sipmsg * m
 			purple_account_request_authorization(
 				sip->account,
 				remote_user,
-				NULL, // id
+				_("you"), /* id */
 				alias,
-				NULL, // message
+				NULL, /* message */
 				on_list,
 				sipe_auth_user_cb,
 				sipe_deny_user_cb,
@@ -2418,24 +2418,26 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		user = xmlnode_get_attrib(node, "user");
 		if (!user) continue;
 		purple_debug_info("sipe", "sipe_process_roaming_self: user %s\n", user);
+		display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
 		uri_user = g_strdup_printf("sip:%s", user); 
 		pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri_user);
 		if(pbuddy){
 			alias = purple_buddy_get_local_alias(pbuddy);
 			uri_alias = g_strdup_printf("sip:%s", alias);
-			display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
 			if (display_name && !g_ascii_strcasecmp(uri_user, uri_alias)) { // 'bad' alias
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri_user, display_name);
 				purple_blist_alias_buddy(pbuddy, display_name);
 			}
-			g_free(display_name);
 			g_free(uri_alias);
 		}
-		g_free(uri_user);
 
 	        acknowledged= xmlnode_get_attrib(node, "acknowledged");
 		if(!g_ascii_strcasecmp(acknowledged,"false")){
                         purple_debug_info("sipe", "sipe_process_roaming_self: user added you %s\n", user);
+			if (!purple_find_buddy(sip->account, uri_user)) {
+				purple_account_request_add(sip->account, uri_user, _("you"), display_name, NULL);
+			}
+			
 		        hdr = g_strdup_printf(
 				      "Contact: %s\r\n"
 				      "Content-Type: application/msrtc-presence-setsubscriber+xml\r\n", contact);
@@ -2449,6 +2451,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		        g_free(body);
 		        g_free(hdr);
                 }
+		g_free(display_name);
+		g_free(uri_user);
 	}
 
 	g_free(to);
@@ -5998,7 +6002,7 @@ static void sipe_searchresults_add_buddy(PurpleConnection *gc, GList *row, void 
 {
 
 	purple_blist_request_add_buddy(purple_connection_get_account(gc),
-								 g_list_nth_data(row, 0), NULL, g_list_nth_data(row, 1));
+								 g_list_nth_data(row, 0), "Other Contacts", g_list_nth_data(row, 1));
 }
 
 static gboolean process_search_contact_response(struct sipe_account_data *sip, struct sipmsg *msg,struct transaction *tc)
