@@ -1979,8 +1979,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 			const char *name = xmlnode_get_attrib(group_node, "name");
 
 			if (!strncmp(name, "~", 1)) {
-				// TODO translate
-				name = "Other Contacts";
+				name = _("Other Contacts");
 			}
 			group->name = g_strdup(name);
 			group->id = (int)g_ascii_strtod(xmlnode_get_attrib(group_node, "id"), NULL);
@@ -1992,8 +1991,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		if (g_slist_length(sip->groups) == 0) {
 			struct sipe_group * group = g_new0(struct sipe_group, 1);
 			PurpleGroup *purple_group;
-			// TODO translate
-			group->name = g_strdup("Other Contacts");
+			group->name = g_strdup(_("Other Contacts"));
 			group->id = 1;
 			purple_group = purple_group_new(group->name);
 			purple_blist_add_group(purple_group, NULL);
@@ -2013,7 +2011,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 
 			// assign to group Other Contacts if nothing else received
 			if(!groups || !strcmp("", groups) ) {
-				group = sipe_group_find_by_name(sip, "Other Contacts");
+				group = sipe_group_find_by_name(sip, _("Other Contacts"));
 				groups = group ? g_strdup_printf("%d", group->id) : "1";
 			}
 
@@ -6002,7 +6000,7 @@ static void sipe_searchresults_add_buddy(PurpleConnection *gc, GList *row, void 
 {
 
 	purple_blist_request_add_buddy(purple_connection_get_account(gc),
-								 g_list_nth_data(row, 0), "Other Contacts", g_list_nth_data(row, 1));
+								 g_list_nth_data(row, 0), _("Other Contacts"), g_list_nth_data(row, 1));
 }
 
 static gboolean process_search_contact_response(struct sipe_account_data *sip, struct sipmsg *msg,struct transaction *tc)
