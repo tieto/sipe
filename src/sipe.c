@@ -731,7 +731,7 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	sipmsg_remove_header(msg, "Content-Length");
 	if (body) {
 		gchar len[12];
-		sprintf(len, "%" G_GSIZE_FORMAT , strlen(body));
+		sprintf(len, "%" G_GSIZE_FORMAT , (unsigned int)strlen(body));
 		sipmsg_add_header(msg, "Content-Length", len);
 	} else {
 		sipmsg_remove_header(msg, "Content-Type");
@@ -876,7 +876,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			callid,
 			route,
 			addh,
-			body ? strlen(body) : 0,
+			body ? (int)strlen(body) : 0,
 			body ? body : "");
 
 
@@ -1165,7 +1165,7 @@ static struct sipe_group * sipe_group_find_by_id (struct sipe_account_data *sip,
 	return NULL;
 }
 
-static struct sipe_group * sipe_group_find_by_name (struct sipe_account_data *sip, gchar * name)
+static struct sipe_group * sipe_group_find_by_name (struct sipe_account_data *sip, const gchar * name)
 {
 	struct sipe_group *group;
 	GSList *entry;
