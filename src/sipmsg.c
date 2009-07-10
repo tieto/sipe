@@ -288,6 +288,32 @@ gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const ch
 	return res2;
 }
 
+/*  To parse the EndPoints header in the INVITE request; there are some special cases;
+ *  the function removes the strings between " "; this to avoid that normal one chat session (two persons) will be try how multiparty sessions
+ *  Examples:
+ *  EndPoints: "alice alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>;epid=ebca82d94d, <sip:carol@atlanta.local> 
+ *  EndPoints: "alice, alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>
+ *  EndPoints: "alice alisson" <sip:alice@atlanta.local>, "Super, Man" <sip:super@atlanta.local>
+ */	
+
+gchar **sipmsg_parse_endpoints_header(char *end_points_hdr) {
+    gchar **end_points = g_strsplit(end_points_hdr, ",", 0);
+    end_points_hdr = NULL;    
+	while (*end_points) { 
+    	gchar *sip_contact = sipmsg_find_part_of_header(*end_points, "<", ">", NULL);  
+        gchar *epid = sipmsg_find_part_of_header(*end_points, "epid=", NULL, NULL);  
+        if(sip_contact){
+        	end_points_hdr = end_points_hdr? g_strdup_printf("%s,%s", end_points_hdr,sip_contact):g_strdup_printf("%s", sip_contact); 
+     	}
+        if(epid){
+        	end_points_hdr = epid? g_strdup_printf("%s;epid=%s", end_points_hdr,epid):""; 
+        }
+      	end_points++;
+    }
+    end_points = g_strsplit(end_points_hdr, ",", 0); 
+    return end_points;
+}
+
 /*
  *  sipmsg_find_auth_header will return the particular WWW-Authenticate
  *  header specified by *name.

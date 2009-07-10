@@ -731,7 +731,7 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	sipmsg_remove_header(msg, "Content-Length");
 	if (body) {
 		gchar len[12];
-		sprintf(len, "%" G_GSIZE_FORMAT , (unsigned int)strlen(body));
+		sprintf(len, "%" G_GSIZE_FORMAT , (long unsigned int)strlen(body));
 		sipmsg_add_header(msg, "Content-Length", len);
 	} else {
 		sipmsg_remove_header(msg, "Content-Type");
@@ -876,7 +876,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			callid,
 			route,
 			addh,
-			body ? (int)strlen(body) : 0,
+			body ? (long unsigned int)strlen(body) : 0,
 			body ? body : "");
 
 
@@ -3816,9 +3816,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	sipmsg_add_header(msg, "To", newHeader);
 	g_free(newHeader);
 	
-	/* EndPoints: "alice alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>;epid=ebca82d94d, <sip:carol@atlanta.local> */
 	if (end_points_hdr) {
-		end_points = g_strsplit(end_points_hdr, ",", 0);
+		end_points = sipmsg_parse_endpoints_header(end_points_hdr);
+ 
 		if (end_points[0] && end_points[1] && end_points[2]) {
 			is_multiparty = TRUE;
 		}	
