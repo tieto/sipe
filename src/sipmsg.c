@@ -356,30 +356,40 @@ gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const ch
 	return res2;
 }
 
-/*  To parse the EndPoints header in the INVITE request; there are some special cases;
- *  the function removes the strings between " "; this to avoid that normal one chat session (two persons) will be try how multiparty sessions
- *  Examples:
- *  EndPoints: "alice alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>;epid=ebca82d94d, <sip:carol@atlanta.local> 
- *  EndPoints: "alice, alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>
- *  EndPoints: "alice alisson" <sip:alice@atlanta.local>, "Super, Man" <sip:super@atlanta.local>
- */	
+/**
+ * Parse EndPoints header from INVITE request
+ * Returns a list of end points: contact URI plus optional epid.
+ * You must free the values and the list.
+ *
+ * Example headers:
+ * EndPoints: "alice alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>;epid=ebca82d94d, <sip:carol@atlanta.local>
+ * EndPoints: "alice, alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>
+ * EndPoints: "alice alisson" <sip:alice@atlanta.local>, "Super, Man" <sip:super@atlanta.local>
+ * 
+ * @param header (in) EndPoints header contents
+ * 
+ * @return GSList with struct sipendpoint as elements
+ */
+GSList *sipmsg_parse_endpoints_header(const gchar *header)
+{
+	GSList *list = NULL;
+	gchar **parts = g_strsplit(header, ",", 0);
+	gchar *part;
+	int i;
 
-gchar **sipmsg_parse_endpoints_header(char *end_points_hdr) {
-    gchar **end_points = g_strsplit(end_points_hdr, ",", 0);
-    end_points_hdr = NULL;    
-	while (*end_points) { 
-    	gchar *sip_contact = sipmsg_find_part_of_header(*end_points, "<", ">", NULL);  
-        gchar *epid = sipmsg_find_part_of_header(*end_points, "epid=", NULL, NULL);  
-        if(sip_contact){
-        	end_points_hdr = end_points_hdr? g_strdup_printf("%s,%s", end_points_hdr,sip_contact):g_strdup_printf("%s", sip_contact); 
-     	}
-        if(epid){
-        	end_points_hdr = epid? g_strdup_printf("%s;epid=%s", end_points_hdr,epid):""; 
-        }
-      	end_points++;
-    }
-    end_points = g_strsplit(end_points_hdr, ",", 0); 
-    return end_points;
+	for (i = 0; (part = parts[i]) != NULL; i++) {
+		/* Does the part contain a URI? */
+		gchar *contact = sipmsg_find_part_of_header(part, "<", ">", NULL);
+		if (contact) {
+			struct sipendpoint *end_point = g_new(struct sipendpoint, 1);
+			end_point->contact = contact;
+			end_point->epid = sipmsg_find_part_of_header(part, "epid=", NULL, NULL);
+			list = g_slist_append(list, end_point);
+		}
+	}
+	g_strfreev(parts);
+
+	return(list);
 }
 
 /*
@@ -920,3 +930,11 @@ msn_import_html(const char *html, char **attributes, char **message)
 }
 // End of TEMP
 
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

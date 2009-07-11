@@ -717,7 +717,7 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 
 	if (body) {
 		gchar len[12];
-		sprintf(len, "%" G_GSIZE_FORMAT , (long unsigned int)strlen(body));
+		sprintf(len, "%" G_GSIZE_FORMAT , (gsize) strlen(body));
 		sipmsg_add_header(msg, "Content-Length", len);
 	} else {
 		sipmsg_add_header(msg, "Content-Length", "0");
@@ -862,7 +862,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			callid,
 			route,
 			addh,
-			body ? (long unsigned int)strlen(body) : 0,
+			body ? (gsize) strlen(body) : 0,
 			body ? body : "");
 
 
@@ -3777,7 +3777,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *roster_manager = sipmsg_find_header(msg, "Roster-Manager");
 	gchar *end_points_hdr = sipmsg_find_header(msg, "EndPoints");
 	gchar *trig_invite = 	sipmsg_find_header(msg, "TriggeredInvite");
-	gchar **end_points = NULL;
+	GSList *end_points = NULL;
 	struct sip_im_session *session;
 	struct sip_dialog *dialog;
 
@@ -3800,9 +3800,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	if (end_points_hdr) {
 		end_points = sipmsg_parse_endpoints_header(end_points_hdr);
  
-		if (end_points[0] && end_points[1] && end_points[2]) {
+		if (g_slist_length(end_points) > 2) {
 			is_multiparty = TRUE;
-		}	
+		}
 	}
 	if (trig_invite && !g_strcasecmp(trig_invite, "TRUE")) {
 		is_triggered = TRUE;
@@ -3837,37 +3837,50 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	}
 	
 	if (is_multiparty && end_points) {
-		int i = 0;
-		while (end_points[i]) {
-			gchar *end_point = parse_from(end_points[i]);
-			gchar *epid = sipmsg_find_part_of_header(end_points[i], "epid=", ";", NULL);
-			
-			if (!g_strcasecmp(from, end_point) || !g_strcasecmp(to, end_point)) {
-				i++;
+		GSList *entry = end_points;
+		while (entry) {
+			struct sipendpoint *end_point = entry->data;
+			entry = entry->next;
+
+			if (!g_strcasecmp(from, end_point->contact) ||
+			    !g_strcasecmp(to,   end_point->contact))
 				continue;
-			}
-			
-			dialog = get_dialog(session, end_point);			
-			if (!dialog) {
+
+			dialog = get_dialog(session, end_point->contact);
+			if (dialog) {
+				g_free(dialog->theirepid);
+				dialog->theirepid = end_point->epid;
+				end_point->epid = NULL;
+			} else {
 				dialog = g_new0(struct sip_dialog, 1);
 				session->dialogs = g_slist_append(session->dialogs, dialog);
-		
+
 				dialog->callid = g_strdup(session->callid);
-				dialog->with = g_strdup(end_point);
-				dialog->theirepid = epid;
+				dialog->with = end_point->contact;
+				end_point->contact = NULL;
+				dialog->theirepid = end_point->epid;
+				end_point->epid = NULL;
 				
 				just_joined = TRUE;
 				
 				/* send triggered INVITE */
-				sipe_invite(sip, session, end_point, NULL, NULL, TRUE);
-			} else {
-				dialog->theirepid = epid;
+				sipe_invite(sip, session, dialog->with, NULL, NULL, TRUE);
 			}
-			
-			i++;
 		}
 	}
-	
+
+	if (end_points) {
+		GSList *entry = end_points;
+		while (entry) {
+			struct sipendpoint *end_point = entry->data;
+			entry = entry->next;
+			g_free(end_point->contact);
+			g_free(end_point->epid);
+			g_free(end_point);
+		}
+		g_slist_free(end_points);
+	}
+
 	if (session) {
 		dialog = get_dialog(session, from);
 		if (dialog) {
