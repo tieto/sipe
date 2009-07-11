@@ -114,7 +114,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 			g_free(dummy2);
 			dummy2 = tmp;
 		}
-		sipmsg_add_header(msg, parts[0], dummy2);
+		sipmsg_add_header_now(msg, parts[0], dummy2);
 		g_free(dummy2);
 		g_strfreev(parts);
 	}
@@ -184,18 +184,79 @@ char *sipmsg_to_string(const struct sipmsg *msg) {
 	return g_string_free(outstr, FALSE);
 }
 
-void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value) {
+/**
+ * Adds header to current message headers at specified position
+ */
+void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos) {
+	struct siphdrelement *element = g_new0(struct siphdrelement,1);
+	element->name = g_strdup(name);
+	element->value = g_strdup(value);
+	msg->headers = g_slist_insert(msg->headers, element,pos);
+}
+
+/**
+ * Adds header to current message headers
+ */
+void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *value) {
 	struct siphdrelement *element = g_new0(struct siphdrelement,1);
 	element->name = g_strdup(name);
 	element->value = g_strdup(value);
 	msg->headers = g_slist_append(msg->headers, element);
 }
 
-void sipmsg_add_header_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos) {
+/**
+ * Adds header to separate storage for future merge
+ */
+void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value) {
 	struct siphdrelement *element = g_new0(struct siphdrelement,1);
 	element->name = g_strdup(name);
 	element->value = g_strdup(value);
-	msg->headers = g_slist_insert(msg->headers, element,pos);
+	msg->new_headers = g_slist_append(msg->new_headers, element);
+}
+
+/**
+ * Removes header if it's not in keepers array
+ */
+void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]) {
+	GSList *entry;
+	struct siphdrelement *elem;
+
+	entry = msg->headers;
+	while(entry) {
+		int i = 0;
+		gboolean keeper = FALSE;
+
+		elem = entry->data;
+		while (keepers[i]) {
+			if (!g_strcasecmp(elem->name, keepers[i])) {
+				keeper = TRUE;
+				break;
+			}		
+			i++;
+		}
+		
+		if (!keeper) {
+			GSList *to_delete = entry;
+			purple_debug_info("sipe", "sipmsg_strip_headers: removing %s\n", elem->name);
+			entry = g_slist_next(entry);
+			msg->headers = g_slist_delete_link(msg->headers, to_delete);
+			g_free(elem->name);
+			g_free(elem->value);
+			g_free(elem);		
+		} else {
+			entry = g_slist_next(entry);
+		}
+	}
+}
+
+/**
+ * Merges newly added headers to message
+ */
+void sipmsg_merge_new_headers(struct sipmsg *msg) {
+	while(msg->new_headers) {
+		msg->headers = g_slist_append(msg->headers, msg->new_headers->data);
+		msg->new_headers = g_slist_remove(msg->new_headers, msg->new_headers->data);
+	}
 }
 
 void sipmsg_free(struct sipmsg *msg) {
@@ -203,6 +264,13 @@ void sipmsg_free(struct sipmsg *msg) {
 	while(msg->headers) {
 		elem = msg->headers->data;
 		msg->headers = g_slist_remove(msg->headers,elem);
+		g_free(elem->name);
+		g_free(elem->value);
+		g_free(elem);
+	}
+	while(msg->new_headers) {
+		elem = msg->new_headers->data;
+		msg->new_headers = g_slist_remove(msg->new_headers,elem);
 		g_free(elem->name);
 		g_free(elem->value);
 		g_free(elem);
@@ -216,7 +284,7 @@ void sipmsg_free(struct sipmsg *msg) {
 	g_free(msg);
 }
 
-void sipmsg_remove_header(struct sipmsg *msg, const gchar *name) {
+void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name) {
 	struct siphdrelement *elem;
 	GSList *tmp = msg->headers;
 	while(tmp) {

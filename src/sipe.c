@@ -663,15 +663,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
 		buf = auth_header(sip, &sip->registrar, msg);
-#ifdef USE_KERBEROS
-		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
-#endif
-			sipmsg_add_header(msg, "Authorization", buf);
-#ifdef USE_KERBEROS
-		} else {
-			sipmsg_add_header_pos(msg, "Authorization", buf, 5); // What's the point in 5?
-		}
-#endif
+		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 		g_free(buf);
 	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO") || !strcmp(method, "OPTIONS") || !strcmp(method, "REFER")) {
 		sip->registrar.nc = 3;
@@ -687,7 +679,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		
 
 		buf = auth_header(sip, &sip->registrar, msg);
-		sipmsg_add_header_pos(msg, "Proxy-Authorization", buf, 5);
+		sipmsg_add_header_now_pos(msg, "Proxy-Authorization", buf, 5);
 	        g_free(buf);
 	} else {
 		purple_debug_info("sipe", "not adding auth header to msg w/ method %s\n", method);
@@ -717,30 +709,24 @@ static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code
 	struct sipe_account_data *sip = gc->proto_data;
 	gchar *contact;
 	GSList *tmp;
-
-	sipmsg_remove_header(msg, "ms-user-data");
+	const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
 
 	contact = get_contact(sip);
-	sipmsg_remove_header(msg, "Contact");
 	sipmsg_add_header(msg, "Contact", contact);
 	g_free(contact);
 
-	/* When sending the acknowlegements and errors, the content length from the original
-	   message is still here, but there is no body; we need to make sure we're sending the
-	   correct content length */
-	sipmsg_remove_header(msg, "Content-Length");
 	if (body) {
 		gchar len[12];
 		sprintf(len, "%" G_GSIZE_FORMAT , (long unsigned int)strlen(body));
 		sipmsg_add_header(msg, "Content-Length", len);
 	} else {
-		sipmsg_remove_header(msg, "Content-Type");
 		sipmsg_add_header(msg, "Content-Length", "0");
 	}
 
 	msg->response = code;
 
-	sipmsg_remove_header(msg, "Authentication-Info");
+	sipmsg_strip_headers(msg, keepers);
+	sipmsg_merge_new_headers(msg);
 	sign_outgoing_message(msg, sip, msg->method);
 
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
@@ -3543,7 +3529,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 		xmlnode *xn_request_rm 		= xmlnode_get_child(xn_action, "RequestRM");
 		xmlnode *xn_set_rm 		= xmlnode_get_child(xn_action, "SetRM");
 		
-		sipmsg_remove_header(msg, "User-Agent");
+		sipmsg_add_header(msg, "Content-Type", "application/x-ms-mim");
 		
 		if (xn_request_rm) {
 			//const char *rm = xmlnode_get_attrib(xn_request_rm, "uri");
@@ -3636,11 +3622,6 @@ static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg 
 	
 	session = find_chat_session(sip, callid);
 	dialog = get_dialog(session, from);
-
-	sipmsg_remove_header(msg, "User-Agent");
-	sipmsg_remove_header(msg, "Refer-to");
-	sipmsg_remove_header(msg, "Referred-By");
-	sipmsg_remove_header(msg, "Require");
 	
 	if (!session || !dialog || !session->roster_manager || strcmp(session->roster_manager, self)) {
 		send_sip_response(sip->gc, msg, 500, "Server Internal Error", NULL);
@@ -3812,8 +3793,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	purple_debug_info("sipe", "Adding a Tag to the To Header on Invite Request...\n");
 	oldHeader = sipmsg_find_header(msg, "To"); 
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
-	sipmsg_remove_header(msg, "To");
-	sipmsg_add_header(msg, "To", newHeader);
+	sipmsg_remove_header_now(msg, "To");
+	sipmsg_add_header_now(msg, "To", newHeader);
 	g_free(newHeader);
 	
 	if (end_points_hdr) {
@@ -3960,16 +3941,9 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	}
 	g_free(from);
 
-	sipmsg_remove_header(msg, "Ms-Conversation-ID");
-	sipmsg_remove_header(msg, "Ms-Text-Format");
-	sipmsg_remove_header(msg, "EndPoints");
-	sipmsg_remove_header(msg, "User-Agent");
-	sipmsg_remove_header(msg, "Roster-Manager");
-	sipmsg_remove_header(msg, "P-Asserted-Identity");
-	sipmsg_remove_header(msg, "Require");
-	
-	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
 	sipmsg_add_header(msg, "Supported", "com.microsoft.rtc-multiparty");
+	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
+	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
 	body = g_strdup_printf(
 		"v=0\r\n"
@@ -3989,12 +3963,9 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 {
 	gchar *body;
 
-	sipmsg_remove_header(msg, "Ms-Conversation-ID");
-	sipmsg_remove_header(msg, "EndPoints");
-	sipmsg_remove_header(msg, "User-Agent");
-
-	sipmsg_add_header(msg, "Allow", "INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, BENOTIFY");
+	sipmsg_add_header(msg, "Allow", "INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY");
 	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
+	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
 	body = g_strdup_printf(
 		"v=0\r\n"
@@ -4933,10 +4904,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	//The client responses 'Ok' when receive a NOTIFY message (lcs2005)
 	if (request && !benotify)
 	{
-		sipmsg_remove_header(msg, "Expires");
-		sipmsg_remove_header(msg, "subscription-state");
-		sipmsg_remove_header(msg, "Event");
-		sipmsg_remove_header(msg, "Require");
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 	}
 }
@@ -5177,8 +5144,8 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 
 				fill_auth(sip, ptmp, &sip->proxy);
 				auth = auth_header(sip, &sip->proxy, trans->msg);
-				sipmsg_remove_header(trans->msg, "Proxy-Authorization");
-				sipmsg_add_header_pos(trans->msg, "Proxy-Authorization", auth, 5);
+				sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
+				sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
 				g_free(auth);
 				resend = sipmsg_to_string(trans->msg);
 				/* resend request */
@@ -5221,10 +5188,10 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 
 							fill_auth(sip, ptmp, &sip->registrar);
 							auth = auth_header(sip, &sip->registrar, trans->msg);
-							sipmsg_remove_header(trans->msg, "Proxy-Authorization");
-							sipmsg_add_header(trans->msg, "Proxy-Authorization", auth);
+							sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
+							sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
 
-							//sipmsg_remove_header(trans->msg, "Authorization");
+							//sipmsg_remove_header_now(trans->msg, "Authorization");
 							//sipmsg_add_header(trans->msg, "Authorization", auth);
 							g_free(auth);
 							resend = sipmsg_to_string(trans->msg);

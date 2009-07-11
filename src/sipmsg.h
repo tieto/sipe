@@ -31,6 +31,7 @@ struct sipmsg {
 	gchar *method;
 	gchar *target;
 	GSList *headers;
+	GSList *new_headers;
 	int bodylen;
 	gchar *body;
 	gchar *signature;
@@ -47,15 +48,18 @@ struct siphdrelement {
 struct sipmsg *sipmsg_parse_msg(const gchar *msg);
 struct sipmsg *sipmsg_parse_header(const gchar *header);
 void sipmsg_print(const struct sipmsg *msg);
+void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *value);
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value);
-void sipmsg_add_header_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos);
+void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos);
+void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]);
+void sipmsg_merge_new_headers(struct sipmsg *msg);
 void sipmsg_free(struct sipmsg *msg);
 gchar **sipmsg_parse_endpoints_header(char *end_points_hdr); 
 gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name);
 gchar *sipmsg_find_header_instance(struct sipmsg *msg, const gchar *name, int which);
 gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def);
 gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
-void sipmsg_remove_header(struct sipmsg *msg, const gchar *name);
+void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name);
 char *sipmsg_to_string(const struct sipmsg *msg);
 
 /**
