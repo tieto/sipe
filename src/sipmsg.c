@@ -302,11 +302,11 @@ void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name) {
 	return;
 }
 
-gchar *sipmsg_find_header(struct sipmsg *msg, const gchar *name) {
+gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name) {
 	return sipmsg_find_header_instance (msg, name, 0);
 }
 
-gchar *sipmsg_find_header_instance(struct sipmsg *msg, const gchar *name, int which) {
+gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which) {
 	GSList *tmp;
 	struct siphdrelement *elem;
 	int i = 0;

@@ -76,6 +76,8 @@
 
 #include "sipe.h"
 #include "sipe-conf.h"
+#include "sipe-dialog.h"
+#include "sipe-utils.h"
 #include "sipmsg.h"
 #include "sipe-sign.h"
 #include "dnssrv.h"
@@ -105,11 +107,6 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 /* Action name templates */
 #define ACTION_NAME_PRESENCE "<presence><%s>"
 
-static char *gentag()
-{
-	return g_strdup_printf("%04d%04d", rand() & 0xFFFF, rand() & 0xFFFF);
-}
-
 static gchar *get_epid(struct sipe_account_data *sip)
 {
 	if (!sip->epid) {
@@ -124,25 +121,6 @@ static char *genbranch()
 		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
 		rand() & 0xFFFF, rand() & 0xFFFF);
 }
-
-static char *gencallid()
-{
-	return g_strdup_printf("%04Xg%04Xa%04Xi%04Xm%04Xt%04Xb%04Xx%04Xx",
-		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
-		rand() & 0xFFFF, rand() & 0xFFFF, rand() & 0xFFFF,
-		rand() & 0xFFFF, rand() & 0xFFFF);
-}
-
-static gchar *find_tag(const gchar *hdr)
-{
-	gchar * tag = sipmsg_find_part_of_header (hdr, "tag=", ";", NULL);
-	if (!tag) {
-		// In case it's at the end and there's no trailing ;
-		tag = sipmsg_find_part_of_header (hdr, "tag=", NULL, NULL);
-	}
-	return tag;
-}
-
 
 static const char *sipe_list_icon(PurpleAccount *a, PurpleBuddy *b)
 {
@@ -170,7 +148,7 @@ static void sipe_keep_alive(PurpleConnection *gc)
 		/* in case of UDP send a packet only with a 0 byte to remain in the NAT table */
 		gchar buf[2] = {0, 0};
 		purple_debug_info("sipe", "sending keep alive\n");
-		sendto(sip->fd, buf, 1, 0, (struct sockaddr*)&sip->serveraddr, sizeof(struct sockaddr_in));
+		sendto(sip->fd, buf, 1, 0, sip->serveraddr, sizeof(struct sockaddr_in));
 	} else {
 		time_t now = time(NULL);
 		if ((sip->keepalive_timeout > 0) &&
@@ -565,7 +543,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 
 	purple_debug(PURPLE_DEBUG_MISC, "sipe", "\n\nsending - %s\n######\n%s\n######\n\n", ctime(&currtime), buf);
 	if (sip->transport == SIPE_TRANSPORT_UDP) {
-		if (sendto(sip->fd, buf, writelen, 0, (struct sockaddr*)&sip->serveraddr, sizeof(struct sockaddr_in)) < writelen) {
+		if (sendto(sip->fd, buf, writelen, 0, sip->serveraddr, sizeof(struct sockaddr_in)) < writelen) {
 			purple_debug_info("sipe", "could not send packet\n");
 		}
 	} else {
@@ -687,11 +665,6 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 	}
 }
 
-static char *get_contact(struct sipe_account_data  *sip)
-{
-	return g_strdup(sip->contact);
-}
-
 /*
  * unused. Needed?
 static char *get_contact_service(struct sipe_account_data  *sip)
@@ -701,8 +674,8 @@ static char *get_contact_service(struct sipe_account_data  *sip)
 }
 */
 
-static void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
-		const char *text, const char *body)
+void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
+		       const char *text, const char *body)
 {
 	gchar *name;
 	gchar *value;
@@ -780,7 +753,7 @@ static struct transaction *transactions_find(struct sipe_account_data *sip, stru
 	return NULL;
 }
 
-static struct transaction *
+struct transaction *
 send_sip_request(PurpleConnection *gc, const gchar *method,
 		const gchar *url, const gchar *to, const gchar *addheaders,
 		const gchar *body, struct sip_dialog *dialog, TransCallback tc)
@@ -955,44 +928,6 @@ static void do_register_cb(struct sipe_account_data *sip, void *unused)
 static void do_register(struct sipe_account_data *sip)
 {
 	do_register_exp(sip, -1);
-}
-
-/**
- * Returns URI from provided To or From header.
- *
- * Needs to g_free() after use.
- *
- * @return URI with sip: prefix
- */
-static gchar *parse_from(const gchar *hdr)
-{
-	gchar *from;
-	const gchar *tmp, *tmp2 = hdr;
-
-	if (!hdr) return NULL;
-	purple_debug_info("sipe", "parsing address out of %s\n", hdr);
-	tmp = strchr(hdr, '<');
-
-	/* i hate the different SIP UA behaviours... */
-	if (tmp) { /* sip address in <...> */
-		tmp2 = tmp + 1;
-		tmp = strchr(tmp2, '>');
-		if (tmp) {
-			from = g_strndup(tmp2, tmp - tmp2);
-		} else {
-			purple_debug_info("sipe", "found < without > in From\n");
-			return NULL;
-		}
-	} else {
-		tmp = strchr(tmp2, ';');
-		if (tmp) {
-			from = g_strndup(tmp2, tmp - tmp2);
-		} else {
-			from = g_strdup(tmp2);
-		}
-	}
-	purple_debug_info("sipe", "got %s\n", from);
-	return from;
 }
 
 static xmlnode * xmlnode_get_descendant(xmlnode * parent, ...)
@@ -1442,7 +1377,7 @@ sipe_schedule_action_msec(const gchar *name,
 
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
 
-static gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
+gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
 {
 		if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
 		{
@@ -2690,7 +2625,7 @@ static struct sip_im_session * find_im_session (struct sipe_account_data *sip, c
 	return NULL;
 }
 
-static struct sip_im_session *
+struct sip_im_session *
 create_chat_session (struct sipe_account_data *sip)
 {
 	struct sip_im_session *session = g_new0(struct sip_im_session, 1);
@@ -2725,36 +2660,7 @@ static struct sip_im_session * find_or_create_im_session (struct sipe_account_da
 	return session;
 }
 
-static void 
-free_dialog(struct sip_dialog *dialog)
-{
-	GSList *entry;
-
-	if (!dialog) return;
-
-	g_free(dialog->with);
-	g_free(dialog->endpoint_GUID);
-	entry = dialog->routes;
-	while (entry) {
-		g_free(entry->data);
-		entry = g_slist_remove(entry, entry->data);
-	}
-	entry = dialog->supported;
-	while (entry) {
-		g_free(entry->data);
-		entry = g_slist_remove(entry, entry->data);
-	}
-
-	g_free(dialog->callid);
-	g_free(dialog->ourtag);
-	g_free(dialog->theirtag);
-	g_free(dialog->theirepid);
-	g_free(dialog->request);
-	
-	g_free(dialog);
-}
-
-static void im_session_destroy(struct sipe_account_data *sip, struct sip_im_session * session)
+void im_session_destroy(struct sipe_account_data *sip, struct sip_im_session * session)
 {
 	GSList *entry;
 
@@ -3016,90 +2922,6 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 		entry2 = session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
 		g_free(queued_msg);
 	}
-}
-
-static void
-sipe_get_route_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean outgoing)
-{
-        GSList *hdr = msg->headers;
-        gchar *contact;
-
-        while(hdr) {
-                struct siphdrelement *elem = hdr->data;
-                if(!g_ascii_strcasecmp(elem->name, "Record-Route")) {
-			gchar **parts = g_strsplit(elem->value, ",", 0);
-			gchar **part = parts;
-
-			while (*part) {
-				gchar *route = sipmsg_find_part_of_header(*part, "<", ">", NULL);
-				purple_debug_info("sipe", "sipe_get_route_header: route %s \n", route);
-				dialog->routes = g_slist_append(dialog->routes, route);
-				part++;
-			}
-
-			g_strfreev(parts);
-                }
-                hdr = g_slist_next(hdr);
-        }
-
-        if (outgoing)
-        {
-                dialog->routes = g_slist_reverse(dialog->routes);
-        }
-
-        if (dialog->routes)
-        {
-                dialog->request = dialog->routes->data;
-                dialog->routes = g_slist_remove(dialog->routes, dialog->routes->data);
-        }
-
-        contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);
-        dialog->routes = g_slist_append(dialog->routes, contact);
-}
-
-static void
-sipe_get_supported_header(struct sipmsg *msg, struct sip_dialog * dialog, gboolean outgoing)
-{
-	GSList *hdr = msg->headers;
-	struct siphdrelement *elem;
-	while(hdr)
-	{
-		elem = hdr->data;
-		if(!g_ascii_strcasecmp(elem->name, "Supported")
-			&& !g_slist_find_custom(dialog->supported, elem->value, (GCompareFunc)g_ascii_strcasecmp))
-		{
-			dialog->supported = g_slist_append(dialog->supported, g_strdup(elem->value));
-
-		}
-		hdr = g_slist_next(hdr);
-	}
-}
-
-static void
-sipe_parse_dialog(struct sipmsg * msg, struct sip_dialog * dialog, gboolean outgoing)
-{
-	gchar *us = outgoing ? "From" : "To";
-	gchar *them = outgoing ? "To" : "From";
-
-	g_free(dialog->ourtag);
-	g_free(dialog->theirtag);
-
-	dialog->ourtag = find_tag(sipmsg_find_header(msg, us));
-	dialog->theirtag = find_tag(sipmsg_find_header(msg, them));
-	if (!dialog->theirepid) {
-		dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, them), "epid=", ";", NULL);
-		if (!dialog->theirepid) {
-			dialog->theirepid = sipmsg_find_part_of_header(sipmsg_find_header(msg, them), "epid=", NULL, NULL);
-		}
-	}
-
-	// Catch a tag on the end of the To Header and get rid of it.
-	if (dialog->theirepid && strstr(dialog->theirepid, "tag=")) {
-		dialog->theirepid = strtok(dialog->theirepid, ";");
-	}
-
-	sipe_get_route_header(msg, dialog, outgoing);
-	sipe_get_supported_header(msg, dialog, outgoing);
 }
 
 static void
@@ -5547,7 +5369,6 @@ static void sipe_udp_host_resolved_listen_cb(int listenfd, gpointer data)
 static void sipe_udp_host_resolved(GSList *hosts, gpointer data, const char *error_message)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data*) data;
-	int addr_size;
 
 	sip->query_data = NULL;
 
@@ -5556,10 +5377,9 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data, const char *err
 		return;
 	}
 
-	addr_size = GPOINTER_TO_INT(hosts->data);
 	hosts = g_slist_remove(hosts, hosts->data);
-	memcpy(&(sip->serveraddr), hosts->data, addr_size);
-	g_free(hosts->data);
+	g_free(sip->serveraddr);
+	sip->serveraddr = hosts->data;
 	hosts = g_slist_remove(hosts, hosts->data);
 	while (hosts) {
 		hosts = g_slist_remove(hosts, hosts->data);
@@ -5933,6 +5753,10 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	if (sip->regcallid)
 		g_free(sip->regcallid);
 	sip->regcallid = NULL;
+
+	if (sip->serveraddr)
+		g_free(sip->serveraddr);
+	sip->serveraddr = NULL;
 
 	sip->fd = -1;
 	sip->processing_input = FALSE;
@@ -6893,9 +6717,6 @@ gboolean purple_init_plugin(PurplePlugin *plugin){
 	sipe_plugin_load((plugin));
 	return purple_plugin_register(plugin);
 }
-
-/* A continuation of sipe.c related to 2007 conferencing, placed in separate text file */
-#include "sipe-conf.c"
 
 /*
   Local Variables:

@@ -1,9 +1,9 @@
 /**
- * @file sipe-conf.h
+ * @file sipe-utils.h
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 pier11 <pier11@kinozal.tv>
+ * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,12 +21,33 @@
  */
 
 /**
- * Processes incoming INVITE with 
- * Content-Type: application/ms-conf-invite+xml
- * i.e. invitation to join conference.
+ * Generate Call ID
  *
- * Server 2007+ functionality.
+ * @return Call ID. Must be g_free()'d.
  */
-void
-process_incoming_invite_conf(struct sipe_account_data *sip,
-			     struct sipmsg *msg);
+gchar *gencallid(void);
+
+/**
+ * Generate Tag
+ *
+ * @return Tag. Must be g_free()'d.
+ */
+gchar *gentag(void);
+
+/**
+ * Get contact information from SIPE account
+ *
+ * @param sip (in) SIPE account
+ *
+ * @return Contact. Must be g_free()'d.
+ */
+gchar *get_contact(const struct sipe_account_data *sip);
+
+/**
+ * Parses URI from SIP header
+ *
+ * @param hdr (in) To/From header
+ *
+ * @return URI with sip: prefix. Must be g_free()'d.
+ */
+gchar *parse_from(const gchar *hdr);
