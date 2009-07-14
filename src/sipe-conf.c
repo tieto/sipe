@@ -241,11 +241,11 @@ static void
 sipe_process_conference(struct sipe_account_data *sip,
 			struct sipmsg * msg)
 {
-	xmlnode *xn_conference_info;
-	xmlnode *node;
-	gchar *focus_uri;
-	struct sip_im_session *session;
-	struct sip_dialog *dialog;
+	xmlnode *xn_conference_info = NULL;
+	xmlnode *node = NULL;
+	gchar *focus_uri = NULL;
+	struct sip_im_session *session = NULL;
+	struct sip_dialog *dialog = NULL;
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -257,6 +257,23 @@ sipe_process_conference(struct sipe_account_data *sip,
 	focus_uri = g_strdup(xmlnode_get_attrib(xn_conference_info, "entity"));
 	session = find_conf_session(sip, focus_uri);
 	
+	if (!session) {
+		purple_debug_info("sipe", "sipe_process_conference: unable to find conf session with focus=%s\n", focus_uri);
+		g_free(focus_uri);
+		return;
+	}
+	
+	if (session->focus_uri && !session->conv) {
+		gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		/* create prpl chat */
+		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_name);
+		session->chat_name = g_strdup(chat_name);
+		/* @TODO ask for full state (re-subscribe) if it was a partial one -
+		 * this is to obtain full list of conference participants.
+		 */
+		g_free(chat_name);
+	}
+
 	/* IMMCU URI */
 	if (!session->im_mcu_uri) {
 		for (node = xmlnode_get_descendant(xn_conference_info, "conference-description", "conf-uris", "entry", NULL); 
@@ -272,14 +289,39 @@ sipe_process_conference(struct sipe_account_data *sip,
 			}
 		}
 	}
-	xmlnode_free(xn_conference_info);
 	
-	if (!session) {
-		purple_debug_info("sipe", "sipe_process_conference: unable to find conf session with focus=%s\n", focus_uri);
-		g_free(focus_uri);
-		return;
+	/* users */
+	for (node = xmlnode_get_descendant(xn_conference_info, "users", "user", NULL); node; node = xmlnode_get_next_twin(node)) {
+		xmlnode *endpoint = NULL;
+		gchar *user_uri = g_strdup(xmlnode_get_attrib(node, "entity"));
+		gchar *state = g_strdup(xmlnode_get_attrib(node, "state"));
+		gchar *alias = g_strdup(xmlnode_get_data(xmlnode_get_child(node, "display-text")));
+		gchar *role  = g_strdup(xmlnode_get_data(xmlnode_get_descendant(xn_conference_info, "roles", "entry", NULL)));
+		
+		if (!strcmp("deleted", state)) {
+			purple_conv_chat_remove_user(PURPLE_CONV_CHAT(session->conv),
+						     user_uri, NULL /* reason */);
+		} else {
+			/* endpoints */
+			for (endpoint = xmlnode_get_child(node, "endpoint"); endpoint; endpoint = xmlnode_get_next_twin(endpoint)) {	
+				if (!strcmp("chat", xmlnode_get_attrib(endpoint, "session-type"))) {
+					gchar *status = xmlnode_get_data(xmlnode_get_child(endpoint, "status"));
+					if (!strcmp("connected", status)) {
+						purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
+									  user_uri, NULL,
+									  PURPLE_CBFLAGS_NONE, FALSE);
+					}
+					break;
+				}
+			}
+		}
+		g_free(alias);
+		g_free(role);
+		g_free(user_uri);
+		g_free(state);
 	}
-	
+	xmlnode_free(xn_conference_info);
+		
 	dialog = get_dialog(session, session->im_mcu_uri);
 	if (!dialog) {
 		dialog = g_new0(struct sip_dialog, 1);
