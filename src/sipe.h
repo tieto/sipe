@@ -62,6 +62,9 @@ struct sip_im_session {
 	int bid;
 	gboolean is_voting_in_progress;
 	gboolean is_multiparty;
+	gchar *focus_uri;
+	guint request_id;
+	struct sip_dialog *focus_dialog;
 	/** key is user (URI) */
 	GSList *dialogs;
 	//struct sip_dialog * dialog;
@@ -78,6 +81,7 @@ struct sip_im_session {
 // dialog is the new term for call-leg
 struct sip_dialog {
 	gchar *with; /* URI */
+	gchar *endpoint_GUID;
 	/** 
 	 *  >0 - pro
 	 *  <0 - contra

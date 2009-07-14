@@ -75,6 +75,7 @@
 #include "mime.h"
 
 #include "sipe.h"
+#include "sipe-conf.h"
 #include "sipmsg.h"
 #include "sipe-sign.h"
 #include "dnssrv.h"
@@ -2732,6 +2733,7 @@ free_dialog(struct sip_dialog *dialog)
 	if (!dialog) return;
 
 	g_free(dialog->with);
+	g_free(dialog->endpoint_GUID);
 	entry = dialog->routes;
 	while (entry) {
 		g_free(entry->data);
@@ -2781,7 +2783,8 @@ static void im_session_destroy(struct sipe_account_data *sip, struct sip_im_sess
 	g_free(session->with);
 	g_free(session->chat_name);
 	g_free(session->callid);
-	g_free(session->roster_manager);	
+	g_free(session->roster_manager);
+	g_free(session->focus_uri);
 	g_free(session);
 }
 
@@ -3777,11 +3780,18 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *roster_manager = sipmsg_find_header(msg, "Roster-Manager");
 	gchar *end_points_hdr = sipmsg_find_header(msg, "EndPoints");
 	gchar *trig_invite = 	sipmsg_find_header(msg, "TriggeredInvite");
+	gchar *content_type = 	sipmsg_find_header(msg, "Content-Type");
 	GSList *end_points = NULL;
 	struct sip_im_session *session;
 	struct sip_dialog *dialog;
 
 	purple_debug_info("sipe", "process_incoming_invite: body:\n%s!\n", msg->body ? msg->body : "");
+
+	/* Invitation to join conference */
+	if (!strncmp(content_type, "application/ms-conf-invite+xml", 30)) {
+		process_incoming_invite_conf(sip, msg);
+		return;
+	}
 
 	/* Only accept text invitations */
 	if (msg->body && !(strstr(msg->body, "m=message") || strstr(msg->body, "m=x-ms-message"))) {
@@ -6883,6 +6893,9 @@ gboolean purple_init_plugin(PurplePlugin *plugin){
 	sipe_plugin_load((plugin));
 	return purple_plugin_register(plugin);
 }
+
+/* A continuation of sipe.c related to 2007 conferencing, placed in separate text file */
+#include "sipe-conf.c"
 
 /*
   Local Variables:
