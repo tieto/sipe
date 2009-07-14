@@ -27,7 +27,7 @@
  *
  * Server 2007+ functionality.
  */
-static void
+void
 process_incoming_invite_conf(struct sipe_account_data *sip,
 			     struct sipmsg *msg);
 			     
@@ -35,29 +35,6 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
  * Process of conference state
  * Content-Type: application/conference-info+xml
  */
-static void
+void
 sipe_process_conference(struct sipe_account_data *sip,
 			struct sipmsg * msg);
-
-/** 
- * AddUser request to Focus. 
- * Params:
- * focus_URI, from, request_id, focus_URI, from, endpoint_GUID
- */
-#define SIPE_SEND_CONF_ADD_USER \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<addUser>"\
-		"<conferenceKeys confEntity=\"%s\"/>"\
-		"<ci:user xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"%s\">"\
-			"<ci:roles>"\
-				"<ci:entry>attendee</ci:entry>"\
-			"</ci:roles>"\
-			"<ci:endpoint entity=\"{%s}\" xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\"/>"\
-		"</ci:user>"\
-	"</addUser>"\
-"</request>"

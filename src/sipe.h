@@ -79,28 +79,6 @@ struct sip_im_session {
 	GSList *pending_invite_queue;
 };
 
-// dialog is the new term for call-leg
-struct sip_dialog {
-	gchar *with; /* URI */
-	gchar *endpoint_GUID;
-	/** 
-	 *  >0 - pro
-	 *  <0 - contra
-	 *   0 - didn't participate
-	 */ 
-	int election_vote;
-	gchar *ourtag;
-	gchar *theirtag;
-	gchar *theirepid;
-	gchar *callid;
-	GSList *routes;
-	gchar *request;
-	GSList *supported; // counterparty capabilities
-	int cseq;
-	gboolean is_established;
-	struct transaction *outgoing_invite;
-};
-
 struct sipe_buddy {
 	gchar *name;
 	gchar *annotation;
@@ -201,7 +179,7 @@ struct sipe_account_data {
 	sipe_transport_type transport;
 	gboolean auto_transport;
 	PurpleSslConnection *gsc;
-	struct sockaddr_in serveraddr;
+	struct sockaddr *serveraddr;
 	gchar *realhostname;
 	int realport; /* port and hostname from SRV record */
 	gboolean processing_input;
@@ -255,6 +233,39 @@ GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc fu
 GList *sipe_actions(PurplePlugin *plugin, gpointer context);
 
 gboolean purple_init_plugin(PurplePlugin *plugin);
+
+/**
+ * THE BIG SPLIT - temporary interfaces
+ *
+ * Previously private functions in sipe.c that are
+ *  - waiting to be factored out to an appropriate module
+ *  - are needed by the already created new modules
+ */
+/* SIP send module? */
+struct transaction *
+send_sip_request(PurpleConnection *gc, const gchar *method,
+		 const gchar *url, const gchar *to, const gchar *addheaders,
+		 const gchar *body, struct sip_dialog *dialog, TransCallback tc);
+void
+send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
+		  const char *text, const char *body);
+void 
+sipe_invite(struct sipe_account_data *sip, struct sip_im_session *session,
+	    const gchar *who, const gchar *msg_body,
+	    const gchar *referred_by, const gboolean is_triggered);
+/* ??? module */
+gboolean process_subscribe_response(struct sipe_account_data *sip,
+				    struct sipmsg *msg,
+				    struct transaction *tc);
+/* Session module? */
+void
+im_session_destroy(struct sipe_account_data *sip,
+		   struct sip_im_session *session);
+struct sip_im_session *
+create_chat_session (struct sipe_account_data *sip);
+struct sip_dialog *
+get_dialog (struct sip_im_session *session, const gchar *who);
+/*** THE BIG SPLIT END ***/
 
 #define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"
 

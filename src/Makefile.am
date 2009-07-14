@@ -12,6 +12,12 @@ libsipe_la_SOURCES = \
 	sipmsg.h \
 	sipe.h \
 	sipe.c \
+	sipe-conf.h \
+	sipe-conf.c \
+	sipe-dialog.h \
+	sipe-dialog.c \
+	sipe-utils.h \
+	sipe-utils.c \
 	sip-sec.h \
 	sip-sec.c \
 	sip-sec-mech.h \
