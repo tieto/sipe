@@ -44,13 +44,15 @@ LIB_PATHS +=		-L$(GTK_TOP)/lib \
 ##  SOURCES, OBJECTS
 ##
 C_SRC =			sipe.c \
+			sipe-conf.c \
+			sipe-dialog.c \
+			sipe-utils.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
 			sip-sec-ntlm.c \
 			sip-sec-sspi.c \
 			uuid.c
-
 
 OBJECTS = 		$(C_SRC:%.c=%.o)
 

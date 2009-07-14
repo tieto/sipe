@@ -26,6 +26,10 @@
 #include "debug.h"
 #include "xmlnode.h"
 
+#ifdef _WIN32
+#include "internal.h"
+#endif
+
 #include "sipe.h"
 #include "sipe-utils.h"
 
