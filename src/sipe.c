@@ -754,10 +754,15 @@ static void transactions_remove(struct sipe_account_data *sip, struct transactio
 static struct transaction *
 transactions_add_buf(struct sipe_account_data *sip, const struct sipmsg *msg, void *callback)
 {
+	gchar *call_id = NULL;
+	gchar *cseq = NULL;
 	struct transaction *trans = g_new0(struct transaction, 1);
+	
 	trans->time = time(NULL);
 	trans->msg = (struct sipmsg *)msg;
-	trans->cseq = sipmsg_find_header(trans->msg, "CSeq");
+	call_id = sipmsg_find_header(trans->msg, "Call-ID");
+	cseq = sipmsg_find_header(trans->msg, "CSeq");
+	trans->key = g_strdup_printf("<%s><%s>", call_id, cseq);
 	trans->callback = callback;
 	sip->transactions = g_slist_append(sip->transactions, trans);
 	return trans;
@@ -767,11 +772,13 @@ static struct transaction *transactions_find(struct sipe_account_data *sip, stru
 {
 	struct transaction *trans;
 	GSList *transactions = sip->transactions;
+	gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	gchar *cseq = sipmsg_find_header(msg, "CSeq");
+	gchar *key = g_strdup_printf("<%s><%s>", call_id, cseq);
 
 	while (transactions) {
 		trans = transactions->data;
-		if (!strcmp(trans->cseq, cseq)) {
+		if (!g_strcasecmp(trans->key, key)) {
 			return trans;
 		}
 		transactions = transactions->next;
@@ -4856,6 +4863,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		else if (event && !g_ascii_strcasecmp(event, "presence.wpending"))
 		{
 			sipe_process_presence_wpending(sip, msg);
+		}
+		else if (event && !g_ascii_strcasecmp(event, "conference"))
+		{
+			sipe_process_conference(sip, msg);
 		}
 		else
 		{

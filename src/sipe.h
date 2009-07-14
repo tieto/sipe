@@ -63,6 +63,7 @@ struct sip_im_session {
 	gboolean is_voting_in_progress;
 	gboolean is_multiparty;
 	gchar *focus_uri;
+	gchar *im_mcu_uri;
 	guint request_id;
 	struct sip_dialog *focus_dialog;
 	/** key is user (URI) */
@@ -228,7 +229,11 @@ struct transaction {
 	int retries;
 	int transport; /* 0 = tcp, 1 = udp */
 	int fd;
-	gchar *cseq;
+	/** Not yet perfect, but surely better then plain CSeq
+	 * Format is: <Call-ID><CSeq>
+	 * (RFC3261 17.2.3 for matching server transactions: Request-URI, To tag, From tag, Call-ID, CSeq, and top Via)
+	 */
+	gchar *key;
 	struct sipmsg *msg;
 	TransCallback callback;
 	void * payload;

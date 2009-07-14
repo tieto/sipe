@@ -218,6 +218,7 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 	
 	session = create_chat_session(sip);
 	session->focus_uri = g_strdup(focus_uri);
+	session->is_multiparty = FALSE;
 	
 	/* temporaty dialog with invitor */
 	dialog = g_new0(struct sip_dialog, 1);
@@ -234,7 +235,65 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 	
 	g_free(from);
 	g_free(focus_uri);
-} 
+}
+
+static void
+sipe_process_conference(struct sipe_account_data *sip,
+			struct sipmsg * msg)
+{
+	xmlnode *xn_conference_info;
+	xmlnode *node;
+	gchar *focus_uri;
+	struct sip_im_session *session;
+	struct sip_dialog *dialog;
+
+	if (msg->response != 0 && msg->response != 200) return;
+
+	if (msg->bodylen == 0 || msg->body == NULL || strcmp(sipmsg_find_header(msg, "Event"), "conference")) return;
+
+	xn_conference_info = xmlnode_from_str(msg->body, msg->bodylen);
+	if (!xn_conference_info) return;
+	
+	focus_uri = g_strdup(xmlnode_get_attrib(xn_conference_info, "entity"));
+	session = find_conf_session(sip, focus_uri);
+	
+	/* IMMCU URI */
+	if (!session->im_mcu_uri) {
+		for (node = xmlnode_get_descendant(xn_conference_info, "conference-description", "conf-uris", "entry", NULL); 
+		     node; 
+		     node = xmlnode_get_next_twin(node))
+		{
+			gchar *purpose = xmlnode_get_data(xmlnode_get_child(node, "purpose"));
+			
+			if (purpose && !strcmp("chat", purpose)) {
+				session->im_mcu_uri = g_strdup(xmlnode_get_data(xmlnode_get_child(node, "uri")));
+				purple_debug_info("sipe", "sipe_process_conference: im_mcu_uri=%s\n", session->im_mcu_uri);
+				break;
+			}
+		}
+	}
+	xmlnode_free(xn_conference_info);
+	
+	if (!session) {
+		purple_debug_info("sipe", "sipe_process_conference: unable to find conf session with focus=%s\n", focus_uri);
+		g_free(focus_uri);
+		return;
+	}
+	
+	dialog = get_dialog(session, session->im_mcu_uri);
+	if (!dialog) {
+		dialog = g_new0(struct sip_dialog, 1);
+		session->dialogs = g_slist_append(session->dialogs, dialog);
+
+		dialog->callid = g_strdup(session->callid);
+		dialog->with = g_strdup(session->im_mcu_uri);
+		
+		/* send INVITE to IMMCU */
+		sipe_invite(sip, session, dialog->with, NULL, NULL, FALSE);
+	}
+	
+	g_free(focus_uri);
+}
 
 /*
   Local Variables:
