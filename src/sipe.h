@@ -63,6 +63,7 @@ struct sip_im_session {
 	gboolean is_voting_in_progress;
 	gboolean is_multiparty;
 	gchar *focus_uri;
+	gchar *im_mcu_uri;
 	guint request_id;
 	struct sip_dialog *focus_dialog;
 	/** key is user (URI) */
@@ -78,7 +79,6 @@ struct sip_im_session {
 	GSList *pending_invite_queue;
 };
 
-// dialog is the new term for call-leg
 struct sipe_buddy {
 	gchar *name;
 	gchar *annotation;
@@ -207,7 +207,11 @@ struct transaction {
 	int retries;
 	int transport; /* 0 = tcp, 1 = udp */
 	int fd;
-	gchar *cseq;
+	/** Not yet perfect, but surely better then plain CSeq
+	 * Format is: <Call-ID><CSeq>
+	 * (RFC3261 17.2.3 for matching server transactions: Request-URI, To tag, From tag, Call-ID, CSeq, and top Via)
+	 */
+	gchar *key;
 	struct sipmsg *msg;
 	TransCallback callback;
 	void * payload;
@@ -237,6 +241,7 @@ gboolean purple_init_plugin(PurplePlugin *plugin);
  *  - waiting to be factored out to an appropriate module
  *  - are needed by the already created new modules
  */
+/* SIP send module? */
 struct transaction *
 send_sip_request(PurpleConnection *gc, const gchar *method,
 		 const gchar *url, const gchar *to, const gchar *addheaders,
@@ -244,14 +249,22 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 void
 send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		  const char *text, const char *body);
+void 
+sipe_invite(struct sipe_account_data *sip, struct sip_im_session *session,
+	    const gchar *who, const gchar *msg_body,
+	    const gchar *referred_by, const gboolean is_triggered);
+/* ??? module */
 gboolean process_subscribe_response(struct sipe_account_data *sip,
 				    struct sipmsg *msg,
 				    struct transaction *tc);
+/* Session module? */
 void
 im_session_destroy(struct sipe_account_data *sip,
 		   struct sip_im_session *session);
 struct sip_im_session *
 create_chat_session (struct sipe_account_data *sip);
+struct sip_dialog *
+get_dialog (struct sip_im_session *session, const gchar *who);
 /*** THE BIG SPLIT END ***/
 
 #define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"

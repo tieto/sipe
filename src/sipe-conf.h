@@ -30,3 +30,11 @@
 void
 process_incoming_invite_conf(struct sipe_account_data *sip,
 			     struct sipmsg *msg);
+			     
+/** 
+ * Process of conference state
+ * Content-Type: application/conference-info+xml
+ */
+void
+sipe_process_conference(struct sipe_account_data *sip,
+			struct sipmsg * msg);

@@ -719,18 +719,24 @@ void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 
 static void transactions_remove(struct sipe_account_data *sip, struct transaction *trans)
 {
-	if (trans->msg) sipmsg_free(trans->msg);
 	sip->transactions = g_slist_remove(sip->transactions, trans);
+	if (trans->msg) sipmsg_free(trans->msg);
+	g_free(trans->key);
 	g_free(trans);
 }
 
 static struct transaction *
 transactions_add_buf(struct sipe_account_data *sip, const struct sipmsg *msg, void *callback)
 {
+	gchar *call_id = NULL;
+	gchar *cseq = NULL;
 	struct transaction *trans = g_new0(struct transaction, 1);
+	
 	trans->time = time(NULL);
 	trans->msg = (struct sipmsg *)msg;
-	trans->cseq = sipmsg_find_header(trans->msg, "CSeq");
+	call_id = sipmsg_find_header(trans->msg, "Call-ID");
+	cseq = sipmsg_find_header(trans->msg, "CSeq");
+	trans->key = g_strdup_printf("<%s><%s>", call_id, cseq);
 	trans->callback = callback;
 	sip->transactions = g_slist_append(sip->transactions, trans);
 	return trans;
@@ -740,16 +746,20 @@ static struct transaction *transactions_find(struct sipe_account_data *sip, stru
 {
 	struct transaction *trans;
 	GSList *transactions = sip->transactions;
+	gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	gchar *cseq = sipmsg_find_header(msg, "CSeq");
+	gchar *key = g_strdup_printf("<%s><%s>", call_id, cseq);
 
 	while (transactions) {
 		trans = transactions->data;
-		if (!strcmp(trans->cseq, cseq)) {
+		if (!g_strcasecmp(trans->key, key)) {
+			g_free(key);
 			return trans;
 		}
 		transactions = transactions->next;
 	}
 
+	g_free(key);
 	return NULL;
 }
 
@@ -929,24 +939,6 @@ static void do_register(struct sipe_account_data *sip)
 {
 	do_register_exp(sip, -1);
 }
-
-static xmlnode * xmlnode_get_descendant(xmlnode * parent, ...)
-{
-	va_list args;
-	xmlnode * node = NULL;
-	const gchar * name;
-
-	va_start(args, parent);
-	while ((name = va_arg(args, const char *)) != NULL) {
-		node = xmlnode_get_child(parent, name);
-		if (node == NULL) return NULL;
-		parent = node;
-	}
-	va_end(args);
-
-	return node;
-}
-
 
 static void
 sipe_contact_set_acl (struct sipe_account_data *sip, const gchar * who, gchar * rights)
@@ -2490,7 +2482,7 @@ static void sipe_subscribe_roaming_provisioning_v2(struct sipe_account_data *sip
 
 /* IM Session (INVITE and MESSAGE methods) */
 
-static struct sip_dialog *
+struct sip_dialog *
 get_dialog (struct sip_im_session *session,
 	    const gchar *who)
 {
@@ -2691,6 +2683,7 @@ void im_session_destroy(struct sipe_account_data *sip, struct sip_im_session * s
 	g_free(session->callid);
 	g_free(session->roster_manager);
 	g_free(session->focus_uri);
+	g_free(session->im_mcu_uri);
 	g_free(session);
 }
 
@@ -3040,7 +3033,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 }
 
 
-static void 
+void 
 sipe_invite(struct sipe_account_data *sip,
 	    struct sip_im_session *session,
 	    const gchar *who,
@@ -4678,6 +4671,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		else if (event && !g_ascii_strcasecmp(event, "presence.wpending"))
 		{
 			sipe_process_presence_wpending(sip, msg);
+		}
+		else if (event && !g_ascii_strcasecmp(event, "conference"))
+		{
+			sipe_process_conference(sip, msg);
 		}
 		else
 		{

@@ -24,6 +24,7 @@
 #include <glib.h>
 
 #include "debug.h"
+#include "xmlnode.h"
 
 #include "sipe.h"
 #include "sipe-utils.h"
@@ -78,6 +79,23 @@ gchar *parse_from(const gchar *hdr)
 	}
 	purple_debug_info("sipe", "got %s\n", from);
 	return from;
+}
+
+xmlnode *xmlnode_get_descendant(const xmlnode *parent, ...)
+{
+	va_list args;
+	xmlnode *node = NULL;
+	const gchar *name;
+
+	va_start(args, parent);
+	while ((name = va_arg(args, const char *)) != NULL) {
+		node = xmlnode_get_child(parent, name);
+		if (node == NULL) return NULL;
+		parent = node;
+	}
+	va_end(args);
+
+	return node;
 }
 
 /*

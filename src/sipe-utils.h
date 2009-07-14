@@ -51,3 +51,13 @@ gchar *get_contact(const struct sipe_account_data *sip);
  * @return URI with sip: prefix. Must be g_free()'d.
  */
 gchar *parse_from(const gchar *hdr);
+
+/**
+ * Find a XML node from the parent with the specified path
+ *
+ * @param parent (in) XML node to start search from
+ * @param ...    (in) Names of the descendant nodes
+ *
+ * @return descendant XML node
+ */
+xmlnode * xmlnode_get_descendant(const xmlnode *parent, ...);
