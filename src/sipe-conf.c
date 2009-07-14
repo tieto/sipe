@@ -21,6 +21,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef ENABLE_NLS
+#	include <libintl.h>
+#	define _(String)  ((const char *) gettext (String))
+#else
+#   define _(String) ((const char *) (String))
+#endif /* ENABLE_NLS */
+
 #include <string.h>
 #include <glib.h>
 
@@ -269,11 +276,11 @@ void process_incoming_invite_conf(struct sipe_account_data *sip,
 void sipe_process_conference(struct sipe_account_data *sip,
 			     struct sipmsg *msg)
 {
-	xmlnode *xn_conference_info = NULL;
-	xmlnode *node = NULL;
-	gchar *focus_uri = NULL;
-	struct sip_im_session *session = NULL;
-	struct sip_dialog *dialog = NULL;
+	xmlnode *xn_conference_info;
+	xmlnode *node;
+	const gchar *focus_uri;
+	struct sip_im_session *session;
+	struct sip_dialog *dialog;
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -284,22 +291,20 @@ void sipe_process_conference(struct sipe_account_data *sip,
 
 	focus_uri = xmlnode_get_attrib(xn_conference_info, "entity");
 	session = find_conf_session(sip, focus_uri);
-	
+
 	if (!session) {
 		purple_debug_info("sipe", "sipe_process_conference: unable to find conf session with focus=%s\n", focus_uri);
-		g_free(focus_uri);
 		return;
 	}
-	
+
 	if (session->focus_uri && !session->conv) {
 		gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_name);
-		session->chat_name = g_strdup(chat_name);
+		session->chat_name = chat_name;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.
 		 */
-		g_free(chat_name);
 	}
 
 	/* IMMCU URI */
@@ -309,7 +314,7 @@ void sipe_process_conference(struct sipe_account_data *sip,
 		     node = xmlnode_get_next_twin(node))
 		{
 			gchar *purpose = xmlnode_get_data(xmlnode_get_child(node, "purpose"));
-			
+
 			if (purpose && !strcmp("chat", purpose)) {
 				g_free(purpose);
 				session->im_mcu_uri = xmlnode_get_data(xmlnode_get_child(node, "uri"));
@@ -319,14 +324,12 @@ void sipe_process_conference(struct sipe_account_data *sip,
 			g_free(purpose);
 		}
 	}
-	
+
 	/* users */
 	for (node = xmlnode_get_descendant(xn_conference_info, "users", "user", NULL); node; node = xmlnode_get_next_twin(node)) {
 		xmlnode *endpoint = NULL;
-		gchar *user_uri = g_strdup(xmlnode_get_attrib(node, "entity"));
-		gchar *state = g_strdup(xmlnode_get_attrib(node, "state"));
-		gchar *alias = g_strdup(xmlnode_get_data(xmlnode_get_child(node, "display-text")));
-		gchar *role  = g_strdup(xmlnode_get_data(xmlnode_get_descendant(xn_conference_info, "roles", "entry", NULL)));
+		const gchar *user_uri = xmlnode_get_attrib(node, "entity");
+		const gchar *state = xmlnode_get_attrib(node, "state");
 		
 		if (!strcmp("deleted", state)) {
 			purple_conv_chat_remove_user(PURPLE_CONV_CHAT(session->conv),
@@ -345,10 +348,6 @@ void sipe_process_conference(struct sipe_account_data *sip,
 				}
 			}
 		}
-		g_free(alias);
-		g_free(role);
-		g_free(user_uri);
-		g_free(state);
 	}
 	xmlnode_free(xn_conference_info);
 
@@ -359,7 +358,7 @@ void sipe_process_conference(struct sipe_account_data *sip,
 
 		dialog->callid = g_strdup(session->callid);
 		dialog->with = g_strdup(session->im_mcu_uri);
-		
+
 		/* send INVITE to IMMCU */
 		sipe_invite(sip, session, dialog->with, NULL, NULL, FALSE);
 	}
