@@ -16,6 +16,7 @@ libsipe_la_SOURCES = \
 	sipe-conf.c \
 	sipe-dialog.h \
 	sipe-dialog.c \
+	sipe-nls.h \
 	sipe-utils.h \
 	sipe-utils.c \
 	sip-sec.h \

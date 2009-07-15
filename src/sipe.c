@@ -36,12 +36,6 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <net/if.h>
-#ifdef ENABLE_NLS
-#	include <libintl.h>
-#	define _(String)  ((const char *) gettext (String))
-#else
-#   define _(String) ((const char *) (String))
-#endif /* ENABLE_NLS */
 #else
 #ifdef _DLL
 #define _WS2TCPIP_H_
@@ -77,6 +71,7 @@
 #include "sipe.h"
 #include "sipe-conf.h"
 #include "sipe-dialog.h"
+#include "sipe-nls.h"
 #include "sipe-utils.h"
 #include "sipmsg.h"
 #include "sipe-sign.h"

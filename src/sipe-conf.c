@@ -21,25 +21,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _WIN32
-#ifdef ENABLE_NLS
-#	include <libintl.h>
-#	define _(String)  ((const char *) gettext (String))
-#else
-#   define _(String) ((const char *) (String))
-#endif /* ENABLE_NLS */
-#else
-#	include "internal.h"
-#endif /* _WIN32 */
-
 #include <string.h>
 #include <glib.h>
 
 #include "debug.h"
 
+#ifdef _WIN32
+#include "internal.h"
+#endif
+
 #include "sipe.h"
 #include "sipe-conf.h"
 #include "sipe-dialog.h"
+#include "sipe-nls.h"
 #include "sipe-utils.h"
 
 /** 
