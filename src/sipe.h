@@ -263,8 +263,6 @@ im_session_destroy(struct sipe_account_data *sip,
 		   struct sip_im_session *session);
 struct sip_im_session *
 create_chat_session (struct sipe_account_data *sip);
-struct sip_dialog *
-get_dialog (struct sip_im_session *session, const gchar *who);
 /*** THE BIG SPLIT END ***/
 
 #define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"
