@@ -85,6 +85,16 @@ gchar *parse_from(const gchar *hdr)
 	return from;
 }
 
+gchar *sip_uri_from_name(const gchar *name)
+{
+	return(g_strdup_printf("sip:%s", name));
+}
+
+gchar *sip_uri(const gchar *string)
+{
+	return(strstr(string, "sip:") ? g_strdup(string) : sip_uri_from_name(string));
+}
+
 xmlnode *xmlnode_get_descendant(const xmlnode *parent, ...)
 {
 	va_list args;

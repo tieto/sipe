@@ -53,6 +53,33 @@ gchar *get_contact(const struct sipe_account_data *sip);
 gchar *parse_from(const gchar *hdr);
 
 /**
+ * Create sip: URI from name
+ *
+ * @param name (in)
+ *
+ * @return URI with sip: prefix. Must be g_free()'d.
+ */
+gchar *sip_uri_from_name(const gchar *name);
+
+/**
+ * Create sip: URI from SIP account user name
+ *
+ * @param sip (in) SIP account data
+ *
+ * @return URI with sip: prefix. Must be g_free()'d.
+ */
+#define sip_uri_self(sip) (sip_uri_from_name(sip->username))
+
+/**
+ * Create sip: URI from name or sip: URI
+ *
+ * @param string (in) name or sip: URI
+ *
+ * @return URI with sip: prefix. Must be g_free()'d.
+ */
+gchar *sip_uri(const gchar *string);
+
+/**
  * Find a XML node from the parent with the specified path
  *
  * @param parent (in) XML node to start search from

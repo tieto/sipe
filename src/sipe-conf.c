@@ -213,7 +213,7 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
 	
 	/* @TODO put request_id to queue to further compare with incoming one */
 	/* focus_URI, from, request_id, focus_URI, from, endpoint_GUID */
-	self = g_strdup_printf("sip:%s", sip->username);
+	self = sip_uri_self(sip);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_ADD_USER,
 		session->focus_dialog->with,
