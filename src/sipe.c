@@ -3117,6 +3117,7 @@ sipe_invite(struct sipe_account_data *sip,
 			referred_by)
 		: g_strdup("");
 	hdr = g_strdup_printf(
+		"Supported: ms-sender\r\n"
 		"%s"
 		"%s"
 		"%s"
@@ -3140,7 +3141,7 @@ sipe_invite(struct sipe_account_data *sip,
 		"t=0 0\r\n"
 		"m=message %d sip null\r\n"
 		"a=accept-types:text/plain text/html image/gif "
-		"multipart/alternative application/im-iscomposing+xml\r\n",
+		"multipart/related application/im-iscomposing+xml\r\n",
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1), sip->realport);
 
 	dialog->outgoing_invite = send_sip_request(sip->gc, "INVITE",
@@ -3264,6 +3265,9 @@ sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_im_session * session = find_chat_session_by_id(sip, id);
+	if (session->focus_uri) {
+		conf_session_close(sip, session);
+	}
 	im_session_close(sip, session);
 }
 
@@ -3373,7 +3377,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 		
 	} else {
 		/* looks like purple lacks typing notification for chat */
-		if (!session->is_multiparty) {
+		if (!session->is_multiparty && !session->focus_uri) {
 			serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
 		}
 		
@@ -3517,8 +3521,10 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 	purple_debug_info("sipe", "got message from %s: %s\n", from, msg->body);
 
 	contenttype = sipmsg_find_header(msg, "Content-Type");
-	if (!strncmp(contenttype, "text/plain", 10) || !strncmp(contenttype, "text/html", 9)) {
-	
+	if (!strncmp(contenttype, "text/plain", 10) 
+	    || !strncmp(contenttype, "text/html", 9)
+	    || !strncmp(contenttype, "multipart/related", 21))
+	{	
 		gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *html = get_html_message(contenttype, msg->body);
 		
@@ -3527,7 +3533,14 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 			session = find_im_session(sip, from);
 		}
 		
-		if (session && session->is_multiparty) {
+		if (session && session->focus_uri) { /* a conference */
+			gchar *tmp = parse_from(sipmsg_find_header(msg, "Ms-Sender"));
+			gchar *sender = parse_from(tmp);
+			g_free(tmp);
+			serv_got_chat_in(sip->gc, session->chat_id, sender,
+				PURPLE_MESSAGE_RECV, html, time(NULL));
+			g_free(sender);
+		} else if (session && session->is_multiparty) { /* a multiparty chat */
 			serv_got_chat_in(sip->gc, session->chat_id, from,
 				PURPLE_MESSAGE_RECV, html, time(NULL));
 		} else {			
@@ -3785,7 +3798,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		"c=IN IP4 %s\r\n"
 		"t=0 0\r\n"
 		"m=message %d sip sip:%s\r\n"
-		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml\r\n",
+		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml\r\n",
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1),
 		sip->realport, sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
@@ -3807,7 +3820,7 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 		"c=IN IP4 0.0.0.0\r\n"
 		"t=0 0\r\n"
 		"m=message %d sip sip:%s\r\n"
-		"a=accept-types:text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml\r\n",
+		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml\r\n",
 		sip->realport, sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
 	g_free(body);

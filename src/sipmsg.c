@@ -46,6 +46,7 @@
 #include "notify.h"
 #include "prpl.h"
 #include "plugin.h"
+#include "mime.h"
 #include "util.h"
 #include "version.h"
 
@@ -495,12 +496,48 @@ gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
 	return res;
 }
 
-//ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk=
-gchar *get_html_message(const gchar *ms_text_format, const gchar *body)
+/* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
+gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 {
 	gchar *tmp_html;
 	gchar *msgr;
-	gchar *res;
+	gchar *res;	
+	gchar *ms_text_format = NULL;
+	gchar *body = NULL;
+	
+	if (!strncmp(ms_text_format_in, "multipart/related", 21)) {
+		char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ms_text_format_in, body_in);
+		PurpleMimeDocument *mime;
+		GList* parts;
+		
+		mime = purple_mime_document_parse(doc);
+		parts = purple_mime_document_get_parts(mime);
+		while (parts) {
+			const gchar *content = purple_mime_part_get_data(parts->data);
+			guint length = purple_mime_part_get_length(parts->data);
+			const gchar *content_type = purple_mime_part_get_field(parts->data, "Content-Type");
+			if (content_type && !strncmp(content_type, "text/plain", 10) && !ms_text_format) /* if no other format has stored */
+			{
+				ms_text_format = g_strdup(content_type);
+				body = g_strndup(content, length);
+			}
+			else if (content_type && !strncmp(ms_text_format, "text/html", 9)) /* preferred format */
+			{
+				g_free(ms_text_format);
+				g_free(body);
+				ms_text_format = g_strdup(content_type);
+				body = g_strndup(content, length);
+				break;
+			}
+			parts = parts->next;
+		}
+		g_free(doc);
+		if (mime)
+			purple_mime_document_free(mime);
+	} else {
+		ms_text_format = g_strdup(ms_text_format_in);
+		body = g_strdup(body_in);
+	}
 
 	if (body) {
 		res = g_strdup(body);
@@ -519,7 +556,7 @@ gchar *get_html_message(const gchar *ms_text_format, const gchar *body)
 	if (strncmp(ms_text_format, "text/html", 9)) { // NOT html
 		tmp_html = res;
 		res = g_markup_escape_text(res, -1); // as this is not html
-		g_free(tmp_html);			
+		g_free(tmp_html);		
 	}
 	
 	msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
@@ -531,6 +568,9 @@ gchar *get_html_message(const gchar *ms_text_format, const gchar *body)
 		g_free(tmp_html);
 		g_free(x_mms_im_format);
 	}
+	
+	g_free(ms_text_format);
+	g_free(body);
 	
 	return res;
 }

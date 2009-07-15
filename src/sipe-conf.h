@@ -38,3 +38,11 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 void
 sipe_process_conference(struct sipe_account_data *sip,
 			struct sipmsg * msg);
+
+/** 
+ * Invokes when we leave conversation.
+ * Usually by closing chat wingow.
+ */
+void
+conf_session_close(struct sipe_account_data *sip,
+		   struct sip_im_session *session);

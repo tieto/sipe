@@ -98,20 +98,28 @@ rand_guid()
 			rand() % 0xAAFF + 0x1111);
 }
 
+/**
+ * @param expires not respected if set to negative value (E.g. -1)
+ */
 static void
 sipe_subscribe_conference(struct sipe_account_data *sip,
-			  struct sip_im_session *session)
+			  struct sip_im_session *session,
+			  const int expires)
 {
+	gchar *expires_hdr = (expires >= 0) ? g_strdup_printf("Expires: %d\r\n", expires) : g_strdup("");
 	gchar *contact = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
 		"Event: conference\r\n"
+		"%s"
 		"Accept: application/conference-info+xml\r\n"
 		"Supported: com.microsoft.autoextend\r\n"
 		"Supported: ms-benotify\r\n"
 		"Proxy-Require: ms-benotify\r\n"
 		"Supported: ms-piggyback-first-notify\r\n"
 		"Contact: %s\r\n",
+		expires_hdr,
 		contact);
+	g_free(expires_hdr);
 	g_free(contact);
 
 	send_sip_request(sip->gc,
@@ -169,7 +177,7 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 		const gchar *code = xmlnode_get_attrib(xn_response, "code");
 		if (!strcmp(code, "success")) {
 			/* subscribe to focus */
-			sipe_subscribe_conference(sip, session);
+			sipe_subscribe_conference(sip, session, -1);
 		}
 		xmlnode_free(xn_response);
 	}
@@ -236,8 +244,9 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
 	g_free(hdr);
 }
 
-void process_incoming_invite_conf(struct sipe_account_data *sip,
-				  struct sipmsg *msg)
+void
+process_incoming_invite_conf(struct sipe_account_data *sip,
+			     struct sipmsg *msg)
 {
 	struct sip_im_session *session = NULL;
 	struct sip_dialog *dialog = NULL;
@@ -267,12 +276,13 @@ void process_incoming_invite_conf(struct sipe_account_data *sip,
 	send_sip_request(sip->gc, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
 	free_dialog(dialog);
 	
-	//add self to conf
+	/* add self to conf */
 	sipe_invite_conf_focus(sip, session);       
 }
 
-void sipe_process_conference(struct sipe_account_data *sip,
-			     struct sipmsg *msg)
+void
+sipe_process_conference(struct sipe_account_data *sip,
+			struct sipmsg *msg)
 {
 	xmlnode *xn_conference_info;
 	xmlnode *node;
@@ -357,10 +367,33 @@ void sipe_process_conference(struct sipe_account_data *sip,
 		dialog->callid = g_strdup(session->callid);
 		dialog->with = g_strdup(session->im_mcu_uri);
 
-		/* send INVITE to IMMCU */
+		/* send INVITE to IM MCU */
 		sipe_invite(sip, session, dialog->with, NULL, NULL, FALSE);
 	}
 }
+
+void
+conf_session_close(struct sipe_account_data *sip,
+		   struct sip_im_session *session)
+{
+	if (session) {
+		/* unsubscribe from focus */
+		sipe_subscribe_conference(sip, session, 0);
+		
+		if (session->focus_dialog) {
+			/* send BYE to focus */
+			send_sip_request(sip->gc,
+					 "BYE",
+					 session->focus_dialog->with,
+					 session->focus_dialog->with,
+					 NULL,
+					 NULL,
+					 session->focus_dialog,
+					 NULL);			
+		}
+	}
+}
+
 
 /*
   Local Variables:
