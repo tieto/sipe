@@ -156,7 +156,7 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 		return FALSE;
 	}
 	
-	sipe_parse_dialog(msg, session->focus_dialog, TRUE);
+	sipe_dialog_parse(session->focus_dialog, msg, TRUE);
 
 	if (msg->response >= 200) {
 		/* send ACK to focus */
@@ -221,7 +221,7 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
 	
 	/* @TODO put request_id to queue to further compare with incoming one */
 	/* focus_URI, from, request_id, focus_URI, from, endpoint_GUID */
-	self = g_strdup_printf("sip:%s", sip->username);
+	self = sip_uri_self(sip);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_ADD_USER,
 		session->focus_dialog->with,
@@ -270,11 +270,11 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 	dialog = g_new0(struct sip_dialog, 1);
 	dialog->callid = g_strdup(callid);
 	dialog->with = from;
-	sipe_parse_dialog(msg, dialog, FALSE);
+	sipe_dialog_parse(dialog, msg, FALSE);
 	
 	/* send BYE to invitor */
 	send_sip_request(sip->gc, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
-	free_dialog(dialog);
+	sipe_dialog_free(dialog);
 	
 	/* add self to conf */
 	sipe_invite_conf_focus(sip, session);       
@@ -359,10 +359,9 @@ sipe_process_conference(struct sipe_account_data *sip,
 	}
 	xmlnode_free(xn_conference_info);
 
-	dialog = get_dialog(session, session->im_mcu_uri);
+	dialog = sipe_dialog_find(session, session->im_mcu_uri);
 	if (!dialog) {
-		dialog = g_new0(struct sip_dialog, 1);
-		session->dialogs = g_slist_append(session->dialogs, dialog);
+		dialog = sipe_dialog_add(session);
 
 		dialog->callid = g_strdup(session->callid);
 		dialog->with = g_strdup(session->im_mcu_uri);

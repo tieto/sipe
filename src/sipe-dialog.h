@@ -20,6 +20,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Helper macros to iterate over dialog list in a SIP session */
+#define SIPE_DIALOG_FOREACH {                            \
+	GSList *entry = session->dialogs;                \
+	while (entry) {                                  \
+		struct sip_dialog *dialog = entry->data; \
+		entry = entry->next;
+#define SIPE_DIALOG_FOREACH_END }}
+
 /* dialog is the new term for call-leg */
 struct sip_dialog {
 	gchar *with; /* URI */
@@ -47,7 +55,56 @@ struct sip_dialog {
  *
  * @param dialog (in) Dialog to be freed. May be NULL.
  */
-void free_dialog(struct sip_dialog *dialog);
+void sipe_dialog_free(struct sip_dialog *dialog);
+
+/**
+ * Add a new, empty dialog to a session
+ *
+ * @param session (in)
+ *
+ * @return dialog the new dialog structure
+ */
+struct sip_dialog *sipe_dialog_add(struct sip_im_session *session);
+
+/**
+ * Find a dialog in a session
+ *
+ * @param session (in) may be NULL
+ * @param who (in) dialog identifier. May be NULL
+ *
+ * @return dialog the requested dialog or NULL
+ */
+struct sip_dialog *sipe_dialog_find(struct sip_im_session *session,
+				    const gchar *who);
+
+/**
+ * Remove a dialog from a session
+ *
+ * @param session (in) may be NULL
+ * @param who (in) dialog identifier. May be NULL
+ */
+void sipe_dialog_remove(struct sip_im_session *session, const gchar *who);
+
+/**
+ * Remove all dialogs frome a session
+ *
+ * @param session (in)
+ */
+void sipe_dialog_remove_all(struct sip_im_session *session);
+
+/**
+ * Does a session have any dialogs?
+ *
+ * @param session (in)
+ */
+#define sipe_dialog_any(session) (session->dialogs != NULL)
+
+/**
+ * Return first dialog of a session
+ *
+ * @param session (in)
+ */
+#define sipe_dialog_first(session) ((struct sip_dialog *)session->dialogs->data)
 
 /**
  * Fill dialog structure from SIP message
@@ -56,6 +113,6 @@ void free_dialog(struct sip_dialog *dialog);
  * @param dialog   (in,out) dialog to fill
  * @param outgoing (in)     outgoing or incoming message
  */
-void sipe_parse_dialog(const struct sipmsg *msg,
-		       struct sip_dialog *dialog,
+void sipe_dialog_parse(struct sip_dialog *dialog,
+		       const struct sipmsg *msg,		       
 		       gboolean outgoing);

@@ -33,7 +33,7 @@
 #include "sipe-dialog.h"
 #include "sipmsg.h"
 
-void free_dialog(struct sip_dialog *dialog)
+void sipe_dialog_free(struct sip_dialog *dialog)
 {
 	GSList *entry;
 
@@ -59,6 +59,44 @@ void free_dialog(struct sip_dialog *dialog)
 	g_free(dialog->request);
 
 	g_free(dialog);
+}
+
+struct sip_dialog *sipe_dialog_add(struct sip_im_session *session)
+{
+	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
+	session->dialogs = g_slist_append(session->dialogs, dialog);
+	return(dialog);
+}
+
+struct sip_dialog *sipe_dialog_find(struct sip_im_session *session,
+				    const gchar *who)
+{
+	if (session && who) {
+		SIPE_DIALOG_FOREACH {
+			if (dialog->with && !strcmp(who, dialog->with)) {
+				return dialog;
+			}
+		} SIPE_DIALOG_FOREACH_END;
+	}
+	return NULL;
+}
+
+void sipe_dialog_remove(struct sip_im_session *session, const gchar *who)
+{
+	struct sip_dialog *dialog = sipe_dialog_find(session, who);
+	if (dialog) {
+		session->dialogs = g_slist_remove(session->dialogs, dialog);
+		sipe_dialog_free(dialog);
+	}
+}
+
+void sipe_dialog_remove_all(struct sip_im_session *session)
+{
+	GSList *entry = session->dialogs;
+	while (entry) {
+		sipe_dialog_free(entry->data);
+		entry = g_slist_remove(entry, entry->data);
+	}
 }
 
 static void sipe_get_route_header(const struct sipmsg *msg,
@@ -129,8 +167,8 @@ static gchar *find_tag(const gchar *hdr)
 	return tag;
 }
 
-void sipe_parse_dialog(const struct sipmsg *msg,
-		       struct sip_dialog *dialog,
+void sipe_dialog_parse(struct sip_dialog *dialog,
+		       const struct sipmsg *msg,
 		       gboolean outgoing)
 {
 	gchar *us = outgoing ? "From" : "To";
