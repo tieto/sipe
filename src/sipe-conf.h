@@ -46,3 +46,11 @@ sipe_process_conference(struct sipe_account_data *sip,
 void
 conf_session_close(struct sipe_account_data *sip,
 		   struct sip_im_session *session);
+
+/** 
+ * Invoked to process message delivery notification
+ * in conference.
+ */		   
+void
+sipe_process_imdn(struct sipe_account_data *sip,
+		  struct sipmsg *msg);

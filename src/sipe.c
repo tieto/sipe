@@ -2547,7 +2547,7 @@ find_chat_session_by_name (struct sipe_account_data *sip,
 	return NULL;
 }
 
-static struct sip_im_session * 
+struct sip_im_session * 
 find_chat_session (struct sipe_account_data *sip, 
 		   const char *callid)
 {
@@ -2595,6 +2595,7 @@ create_chat_session (struct sipe_account_data *sip)
 	session->is_multiparty = TRUE;
 	session->chat_id = rand();
 	session->unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	session->conf_unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 	sip->im_sessions = g_slist_append(sip->im_sessions, session);
 	return session;
 }
@@ -2643,6 +2644,7 @@ void im_session_destroy(struct sipe_account_data *sip, struct sip_im_session * s
 	}
 	
 	g_hash_table_destroy(session->unconfirmed_messages);
+	g_hash_table_destroy(session->conf_unconfirmed_messages);
 
 	g_free(session->with);
 	g_free(session->chat_name);
@@ -2686,19 +2688,31 @@ static void sipe_options_request(struct sipe_account_data *sip, const char *who)
 	g_free(request);
 }
 
-static void sipe_present_message_undelivered_err(gchar *with, struct sipe_account_data *sip, gchar *message)
+void
+sipe_present_message_undelivered_err(struct sipe_account_data *sip,
+				     struct sip_im_session *session,
+				     const gchar *who,
+				     const gchar *message)
 {
+	PurpleConversation *conv;
 	char *msg, *msg_tmp;
 	msg_tmp = message ? purple_markup_strip_html(message) : NULL;
 	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
 	g_free(msg_tmp);
-	msg_tmp = g_strdup_printf( _("The following message could not be delivered to all recipients, "\
-			"possibly because one or more persons are offline:\n%s") ,
-			msg ? msg : "");
-	purple_conv_present_error(with, sip->account, msg_tmp);
+	msg_tmp = g_strdup_printf( _("This message was not delivered to %s because one or more recipients are offline:\n%s") ,
+			who ? who : "", msg ? msg : "");
+			
+	if (!session->conv) {
+		conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, session->with, sip->account);
+	} else {
+		conv = session->conv;
+	}
+	purple_conversation_write(conv, NULL, msg_tmp, PURPLE_MESSAGE_ERROR, time(NULL));
+	
 	g_free(msg);
 	g_free(msg_tmp);
 }
+
 
 static void sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * session);
 
@@ -2706,8 +2720,8 @@ static gboolean
 process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
 	gboolean ret = TRUE;
-	gchar * with = parse_from(sipmsg_find_header(msg, "To"));
-	struct sip_im_session * session = find_im_session(sip, with);
+	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+	struct sip_im_session *session = find_im_session(sip, with);
 	struct sip_dialog *dialog;
 	gchar *cseq;
 	char *key;
@@ -2731,16 +2745,23 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	g_free(cseq);
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
-	if (msg->response != 200) {
-		purple_debug_info("sipe", "process_message_response: MESSAGE response not 200\n");
+	if (msg->response >= 400) {
+		purple_debug_info("sipe", "process_message_response: MESSAGE response >= 400\n");
 
-		sipe_present_message_undelivered_err(with, sip, message);
+		sipe_present_message_undelivered_err(sip, session, with, message);
 		im_session_destroy(sip, session);
 		ret = FALSE;
 	} else {
+		gchar *message_id = sipmsg_find_header(msg, "Message-Id");
+		if (message_id) {
+			g_hash_table_insert(session->conf_unconfirmed_messages, g_strdup(message_id), g_strdup(message));
+			purple_debug_info("sipe", "process_message_response: added message with id %s to conf_unconfirmed_messages(count=%d)\n", 
+					  message_id, g_hash_table_size(session->conf_unconfirmed_messages));
+		}
+		
 		g_hash_table_remove(session->unconfirmed_messages, key);
 		purple_debug_info("sipe", "process_message_response: removed message %s from unconfirmed_messages(count=%d)\n", 
-					key, g_hash_table_size(session->unconfirmed_messages));
+				  key, g_hash_table_size(session->unconfirmed_messages));
 	}
 	
 	g_free(key);
@@ -2851,12 +2872,13 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_im_session * s
 	while (entry2) {
 		char *queued_msg = entry2->data;
 		
-		if (session->is_multiparty) {
+		/* for multiparty chat or conference */
+		if (session->is_multiparty || session->focus_uri) {
 			gchar *who = sip_uri_self(sip);
 			serv_got_chat_in(sip->gc, session->chat_id, who,
 				PURPLE_MESSAGE_SEND, queued_msg, time(NULL));
 			g_free(who);
-		}		
+		}
 
 		SIPE_DIALOG_FOREACH {
 			char *key;
@@ -2946,7 +2968,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	if (msg->response != 200) {
 		purple_debug_info("sipe", "process_invite_response: INVITE response not 200\n");
 
-		sipe_present_message_undelivered_err(with, sip, message);		
+		sipe_present_message_undelivered_err(sip, session, with, message);
 		im_session_destroy(sip, session);
 		g_free(key);
 		g_free(with);
@@ -3098,7 +3120,7 @@ sipe_invite(struct sipe_account_data *sip,
 		"t=0 0\r\n"
 		"m=message %d sip null\r\n"
 		"a=accept-types:text/plain text/html image/gif "
-		"multipart/related application/im-iscomposing+xml\r\n",
+		"multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1), sip->realport);
 
 	dialog->outgoing_invite = send_sip_request(sip->gc, "INVITE",
@@ -3208,7 +3230,7 @@ sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_im_session * session = find_chat_session_by_id(sip, id);
-	if (session->focus_uri) {
+	if (session && session->focus_uri) {
 		conf_session_close(sip, session);
 	}
 	im_session_close(sip, session);
@@ -3735,7 +3757,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		"c=IN IP4 %s\r\n"
 		"t=0 0\r\n"
 		"m=message %d sip sip:%s\r\n"
-		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml\r\n",
+		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
 		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1),
 		sip->realport, sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
@@ -3757,7 +3779,7 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 		"c=IN IP4 0.0.0.0\r\n"
 		"t=0 0\r\n"
 		"m=message %d sip sip:%s\r\n"
-		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml\r\n",
+		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
 		sip->realport, sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
 	g_free(body);
@@ -4574,12 +4596,18 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
  */
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify)
 {
+	gchar *content_type = sipmsg_find_header(msg, "Content-Type");
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
 	int timeout = 0;
 
 	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
-	purple_debug_info("sipe", "process_incoming_notify: subscription_state:%s\n\n", subscription_state);
+	purple_debug_info("sipe", "process_incoming_notify: subscription_state: %s\n\n", subscription_state ? subscription_state : "");
+	
+	/* implicit subscriptions */
+	if (content_type && purple_str_has_prefix(content_type, "application/ms-imdn+xml")) {
+		sipe_process_imdn(sip, msg);
+	}
 	
 	if (!request)
 	{
@@ -4615,10 +4643,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		else if (event && !g_ascii_strcasecmp(event, "conference"))
 		{
 			sipe_process_conference(sip, msg);
-		}
-		else
-		{
-			purple_debug_info("sipe", "Unable to process (BE)NOTIFY. Event is not supported:%s\n", event ? event : "");
 		}
 	}
 

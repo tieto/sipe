@@ -289,6 +289,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 	const gchar *focus_uri;
 	struct sip_im_session *session;
 	struct sip_dialog *dialog;
+	gboolean just_joined = FALSE;
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -310,6 +311,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_name);
 		session->chat_name = chat_name;
+		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.
 		 */
@@ -338,24 +340,36 @@ sipe_process_conference(struct sipe_account_data *sip,
 		xmlnode *endpoint = NULL;
 		const gchar *user_uri = xmlnode_get_attrib(node, "entity");
 		const gchar *state = xmlnode_get_attrib(node, "state");
+		PurpleConvChat *chat = PURPLE_CONV_CHAT(session->conv);
+		gboolean is_in_im_mcu = FALSE;
+		gchar *self = sip_uri_self(sip);
 		
 		if (!strcmp("deleted", state)) {
-			purple_conv_chat_remove_user(PURPLE_CONV_CHAT(session->conv),
-						     user_uri, NULL /* reason */);
+			if (purple_conv_chat_find_user(chat, user_uri)) {
+				purple_conv_chat_remove_user(chat, user_uri, NULL /* reason */);
+			}
 		} else {
 			/* endpoints */
 			for (endpoint = xmlnode_get_child(node, "endpoint"); endpoint; endpoint = xmlnode_get_next_twin(endpoint)) {	
 				if (!strcmp("chat", xmlnode_get_attrib(endpoint, "session-type"))) {
 					gchar *status = xmlnode_get_data(xmlnode_get_child(endpoint, "status"));
 					if (!strcmp("connected", status)) {
-						purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
-									  user_uri, NULL,
-									  PURPLE_CBFLAGS_NONE, FALSE);
+						is_in_im_mcu = TRUE;
+						if (!purple_conv_chat_find_user(chat, user_uri)) {
+							purple_conv_chat_add_user(chat, user_uri, NULL, PURPLE_CBFLAGS_NONE, 
+										  !just_joined && g_strcasecmp(user_uri, self));
+						}
 					}
 					break;
 				}
 			}
+			if (!is_in_im_mcu) {
+				if (purple_conv_chat_find_user(chat, user_uri)) {
+					purple_conv_chat_remove_user(chat, user_uri, NULL /* reason */);
+				}
+			}
 		}
+		g_free(self);
 	}
 	xmlnode_free(xn_conference_info);
 
@@ -391,6 +405,43 @@ conf_session_close(struct sipe_account_data *sip,
 					 NULL);			
 		}
 	}
+}
+
+void
+sipe_process_imdn(struct sipe_account_data *sip,
+		  struct sipmsg *msg)
+{
+	gchar *call_id = sipmsg_find_header(msg, "Call-ID");
+	static struct sip_im_session *session;
+	xmlnode *xn_imdn;
+	xmlnode *node;
+	gchar *message_id;
+	gchar *message;
+	
+	session = find_chat_session(sip, call_id);
+
+	xn_imdn = xmlnode_from_str(msg->body, msg->bodylen);
+	message_id = xmlnode_get_data(xmlnode_get_child(xn_imdn, "message-id"));
+	
+	message = g_hash_table_lookup(session->conf_unconfirmed_messages, message_id);
+	
+	/* recipient */
+	for (node = xmlnode_get_child(xn_imdn, "recipient"); node; node = xmlnode_get_next_twin(node)) {
+		gchar *tmp = parse_from(xmlnode_get_attrib(node, "uri"));
+		gchar *uri = parse_from(tmp);
+		sipe_present_message_undelivered_err(sip, session, uri, message);
+		g_free(tmp);
+		g_free(uri);
+	}
+	
+	xmlnode_free(xn_imdn);
+	
+	
+	
+	g_hash_table_remove(session->conf_unconfirmed_messages, message_id);
+	purple_debug_info("sipe", "sipe_process_imdn: removed message %s from conf_unconfirmed_messages(count=%d)\n", 
+			  message_id, g_hash_table_size(session->conf_unconfirmed_messages));
+	g_free(message_id);
 }
 
 

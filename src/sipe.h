@@ -73,8 +73,10 @@ struct sip_im_session {
 	PurpleConversation *conv;
 
 	GSList *outgoing_message_queue;
-	/** Key is <Call-ID><CSeq><METHOD> */
+	/** Key is <Call-ID><CSeq><METHOD><To> */
 	GHashTable *unconfirmed_messages;
+	/** Key is Message-Id */
+	GHashTable *conf_unconfirmed_messages;
 	
 	GSList *pending_invite_queue;
 };
@@ -275,6 +277,16 @@ im_session_destroy(struct sipe_account_data *sip,
 		   struct sip_im_session *session);
 struct sip_im_session *
 create_chat_session (struct sipe_account_data *sip);
+
+struct sip_im_session * 
+find_chat_session(struct sipe_account_data *sip, 
+		  const char *callid);
+		  
+void
+sipe_present_message_undelivered_err(struct sipe_account_data *sip,
+				     struct sip_im_session *session,
+				     const gchar *who,
+				     const gchar *message);
 /*** THE BIG SPLIT END ***/
 
 #define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"
