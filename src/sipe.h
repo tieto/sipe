@@ -241,6 +241,18 @@ gboolean purple_init_plugin(PurplePlugin *plugin);
  *  - waiting to be factored out to an appropriate module
  *  - are needed by the already created new modules
  */
+ 
+/* pier11:
+ *
+ * Since SIP (RFC3261) is extensible by its design,
+ * and MS specs prove just that (they all are defined as SIP extensions),
+ * it make sense to split functionality by extension (or close extension group).
+ * For example: conference, presence (MS-PRES), etc.
+ * 
+ * This way our code will not be monolithic, but potentially _reusable_. May be
+ * a top of other SIP core, and/or other front-end (Telepathy framework?).
+ */
+ 
 /* SIP send module? */
 struct transaction *
 send_sip_request(PurpleConnection *gc, const gchar *method,
