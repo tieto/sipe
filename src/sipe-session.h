@@ -31,6 +31,19 @@
 /** Correspond to multy-party conversation */
 struct sip_session {
 	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
+	/** key is user (URI) */
+	GSList *dialogs;
+	/** Link to purple chat or IM */
+	PurpleConversation *conv;
+	GSList *outgoing_message_queue;
+	/** Key is <Call-ID><CSeq><METHOD><To> */
+	GHashTable *unconfirmed_messages;
+	
+	/*
+	 * Miltiparty conversation related fields
+	 */
+	gboolean is_multiparty;
+	/** purple chat id */
 	int chat_id;
 	/** Human readable chat name */
 	gchar *chat_name;
@@ -40,24 +53,17 @@ struct sip_session {
 	gchar *roster_manager;
 	int bid;
 	gboolean is_voting_in_progress;
-	gboolean is_multiparty;
+	GSList *pending_invite_queue;
+	
+	/*
+	 * Conference related fields
+	 */
 	gchar *focus_uri;
 	gchar *im_mcu_uri;
 	guint request_id;
 	struct sip_dialog *focus_dialog;
-	/** key is user (URI) */
-	GSList *dialogs;
-	//struct sip_dialog * dialog;
-	/** Link to purple chat or IM */
-	PurpleConversation *conv;
-
-	GSList *outgoing_message_queue;
-	/** Key is <Call-ID><CSeq><METHOD><To> */
-	GHashTable *unconfirmed_messages;
 	/** Key is Message-Id */
 	GHashTable *conf_unconfirmed_messages;
-
-	GSList *pending_invite_queue;
 };
 
 /**

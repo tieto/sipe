@@ -2089,6 +2089,25 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 
 }
 
+static void sipe_process_provisioning_v2(struct sipe_account_data *sip, struct sipmsg *msg)
+{
+	xmlnode *xn_provision_group_list;
+	xmlnode *node;
+	
+	xn_provision_group_list = xmlnode_from_str(msg->body, msg->bodylen);
+	
+	/* provisionGroup */
+	for (node = xmlnode_get_child(xn_provision_group_list, "provisionGroup"); node; node = xmlnode_get_next_twin(node)) {
+		if (!strcmp("ServerConfiguration", xmlnode_get_attrib(node, "name"))) {
+			sip->focus_factory_uri = xmlnode_get_data(xmlnode_get_child(node, "focusFactoryUri"));
+			purple_debug_info("sipe", "sipe_process_provisioning_v2: sip->focus_factory_uri=%s\n",
+						   sip->focus_factory_uri ? sip->focus_factory_uri : "");
+			break;
+		}
+	}
+	xmlnode_free(xn_provision_group_list);
+}
+
 static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	const gchar *contacts_delta;
@@ -4475,6 +4494,12 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		timeout = (timeout - 60) > 60 ? (timeout - 60) : timeout; // 1 min ahead of expiration
 	}
 
+	/* for one off subscriptions (send with Expire: 0) */
+	if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-provisioning-v2"))
+	{
+		sipe_process_provisioning_v2(sip, msg);
+	}
+	
 	if (!subscription_state || strstr(subscription_state, "active"))
 	{
 		if (event && !g_ascii_strcasecmp(event, "presence"))
@@ -4485,10 +4510,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		{
 			sipe_process_roaming_contacts(sip, msg, NULL);
 		}
-		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self") )
+		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self"))
 		{
 			sipe_process_roaming_self(sip, msg);
-		}
+		}		
 		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL"))
 		{
 			sipe_process_roaming_acl(sip, msg);
@@ -5917,22 +5942,31 @@ static void
 sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
-	gchar *self = sip_uri_self(sip);
-	gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
-	struct sip_session *session;
 
 	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: buddy->name=%s\n", buddy->name);
 	
-	session = sipe_session_add_chat(sip);
-	session->roster_manager = g_strdup(self);
+	/* 2007+ conference */
+	if (sip->msrtc_event_categories)
+	{
+		sipe_conf_add(sip, buddy->name);		
+	}
+	else /* 2005- multiparty chat */
+	{
+		gchar *self = sip_uri_self(sip);
+		gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		struct sip_session *session;
 	
-	session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, g_strdup(chat_name));
-	session->chat_name = g_strdup(chat_name);
-	purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
-	sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
-	
-	g_free(chat_name);
-	g_free(self);
+		session = sipe_session_add_chat(sip);
+		session->roster_manager = g_strdup(self);
+		
+		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, g_strdup(chat_name));
+		session->chat_name = g_strdup(chat_name);
+		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
+		sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
+
+		g_free(chat_name);
+		g_free(self);
+	}
 }
 
 static gboolean
@@ -6013,10 +6047,10 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 			sipe_election_start(sip, session);
 		}
 		g_free(self);
-	}	
+	}
 }
 
-static void
+void
 sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 				  struct sip_session *session)
 {
