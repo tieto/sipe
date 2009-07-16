@@ -504,7 +504,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *
 	tmsg->dom_off = sizeof(struct authenticate_message);
 	tmp = ((char*) tmsg) + tmsg->dom_off;
 	remlen = ((char *)tmsg)+msglen-tmp;
-	tmsg->dom_len1 = tmsg->dom_len2 = unicode_strconvcopy(tmp, domain, remlen);
+	tmsg->dom_len1 = tmsg->dom_len2 = (guint16)unicode_strconvcopy(tmp, domain, remlen);
 	tmp += tmsg->dom_len1;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
