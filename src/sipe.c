@@ -3635,7 +3635,6 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 	const gchar *expires_header;
 	int expires, i;
         GSList *hdr = msg->headers;
-        GSList *entry; 
         struct siphdrelement *elem;
 
 	expires_header = sipmsg_find_header(msg, "Expires");
@@ -3748,31 +3747,48 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                                         hdr = g_slist_next(hdr);
                                 }
 
+				/* subscriptions */
 				if (!sip->subscribed) { //do it just once, not every re-register
-					if(!sip->msrtc_event_categories){ //Only for LCS2005, on OCS2007 always backs the error 504 Server time-out
-						//sipe_options_request(sip, sip->sipdomain);
+
+					if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-contacts",
+								(GCompareFunc)g_ascii_strcasecmp)) {
+						sipe_subscribe_roaming_contacts(sip, msg);
 					}
-					entry = sip->allow_events; 
-					while (entry) {
-						tmp = entry->data;
-						if (tmp && !g_ascii_strcasecmp(tmp, "vnd-microsoft-roaming-contacts")) {
-							sipe_subscribe_roaming_contacts(sip, msg);
-						}
-						if (tmp && !g_ascii_strcasecmp(tmp,"vnd-microsoft-roaming-ACL")) {
-							sipe_subscribe_roaming_acl(sip, msg);
-						}
-						if (tmp && !g_ascii_strcasecmp(tmp,"vnd-microsoft-roaming-self")) {
+				
+					/* For 2007+ it does not make sence to subscribe to:
+					 *   vnd-microsoft-roaming-ACL
+					 *   vnd-microsoft-provisioning (not v2)
+					 *   presence.wpending
+					 * These are for backward compatibility.
+					 */
+					if (sip->msrtc_event_categories)
+					{
+						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-self",
+									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_roaming_self(sip, msg);
 						}
-						if (tmp && !g_ascii_strcasecmp(tmp,"vnd-microsoft-provisioning-v2")) {
+						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-provisioning-v2",
+									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_roaming_provisioning_v2(sip, msg);
-						} else if (tmp && !g_ascii_strcasecmp(tmp,"vnd-microsoft-provisioning")) { // LSC2005
+						}						
+					}
+					/* For 2005- servers */
+					else 
+					{
+						//sipe_options_request(sip, sip->sipdomain);
+
+						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL",
+									(GCompareFunc)g_ascii_strcasecmp)) {
+							sipe_subscribe_roaming_acl(sip, msg);
+						}
+						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-provisioning",
+									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_roaming_provisioning(sip, msg);
 						}
-						if (tmp && !g_ascii_strcasecmp(tmp,"presence.wpending")) {
+						if (g_slist_find_custom(sip->allow_events, "presence.wpending",
+									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_presence_wpending(sip, msg);
 						}
-						entry = entry->next;
 					}
 					sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
 					sip->subscribed = TRUE;
