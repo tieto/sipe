@@ -135,7 +135,9 @@ static void sipe_get_route_header(const struct sipmsg *msg,
         }
 
         contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);
-        dialog->routes = g_slist_append(dialog->routes, contact);
+        if (contact) {
+		dialog->routes = g_slist_append(dialog->routes, contact);
+	}
 }
 
 static void

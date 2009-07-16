@@ -6137,8 +6137,9 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	menu = g_list_prepend(menu, act);
 
 	SIPE_SESSION_FOREACH {
-		if (strcmp(self, buddy->name) && session->chat_name &&
-		    !sipe_dialog_find(session, buddy->name)) {
+		if (strcmp(self, buddy->name) && session->chat_name && session->conv &&
+		    !purple_conv_chat_find_user(PURPLE_CONV_CHAT(session->conv), buddy->name))
+		{
 			gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_name);
 			act = purple_menu_action_new(label,
 						     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
