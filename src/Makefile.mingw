@@ -46,6 +46,7 @@ LIB_PATHS +=		-L$(GTK_TOP)/lib \
 C_SRC =			sipe.c \
 			sipe-conf.c \
 			sipe-dialog.c \
+			sipe-session.c \
 			sipe-utils.c \
 			sipmsg.c \
 			sipe-sign.c \

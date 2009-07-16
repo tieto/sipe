@@ -31,6 +31,7 @@
 
 #include "sipe.h"
 #include "sipe-dialog.h"
+#include "sipe-session.h"
 #include "sipmsg.h"
 
 void sipe_dialog_free(struct sip_dialog *dialog)
@@ -61,14 +62,14 @@ void sipe_dialog_free(struct sip_dialog *dialog)
 	g_free(dialog);
 }
 
-struct sip_dialog *sipe_dialog_add(struct sip_im_session *session)
+struct sip_dialog *sipe_dialog_add(struct sip_session *session)
 {
 	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
 	session->dialogs = g_slist_append(session->dialogs, dialog);
 	return(dialog);
 }
 
-struct sip_dialog *sipe_dialog_find(struct sip_im_session *session,
+struct sip_dialog *sipe_dialog_find(struct sip_session *session,
 				    const gchar *who)
 {
 	if (session && who) {
@@ -81,7 +82,7 @@ struct sip_dialog *sipe_dialog_find(struct sip_im_session *session,
 	return NULL;
 }
 
-void sipe_dialog_remove(struct sip_im_session *session, const gchar *who)
+void sipe_dialog_remove(struct sip_session *session, const gchar *who)
 {
 	struct sip_dialog *dialog = sipe_dialog_find(session, who);
 	if (dialog) {
@@ -90,7 +91,7 @@ void sipe_dialog_remove(struct sip_im_session *session, const gchar *who)
 	}
 }
 
-void sipe_dialog_remove_all(struct sip_im_session *session)
+void sipe_dialog_remove_all(struct sip_session *session)
 {
 	GSList *entry = session->dialogs;
 	while (entry) {

@@ -50,6 +50,9 @@ struct sip_dialog {
 	struct transaction *outgoing_invite;
 };
 
+/* Forward declaration */
+struct sip_session;
+
 /**
  * Free dialog structure
  *
@@ -64,7 +67,7 @@ void sipe_dialog_free(struct sip_dialog *dialog);
  *
  * @return dialog the new dialog structure
  */
-struct sip_dialog *sipe_dialog_add(struct sip_im_session *session);
+struct sip_dialog *sipe_dialog_add(struct sip_session *session);
 
 /**
  * Find a dialog in a session
@@ -74,7 +77,7 @@ struct sip_dialog *sipe_dialog_add(struct sip_im_session *session);
  *
  * @return dialog the requested dialog or NULL
  */
-struct sip_dialog *sipe_dialog_find(struct sip_im_session *session,
+struct sip_dialog *sipe_dialog_find(struct sip_session *session,
 				    const gchar *who);
 
 /**
@@ -83,14 +86,14 @@ struct sip_dialog *sipe_dialog_find(struct sip_im_session *session,
  * @param session (in) may be NULL
  * @param who (in) dialog identifier. May be NULL
  */
-void sipe_dialog_remove(struct sip_im_session *session, const gchar *who);
+void sipe_dialog_remove(struct sip_session *session, const gchar *who);
 
 /**
  * Remove all dialogs frome a session
  *
  * @param session (in)
  */
-void sipe_dialog_remove_all(struct sip_im_session *session);
+void sipe_dialog_remove_all(struct sip_session *session);
 
 /**
  * Does a session have any dialogs?

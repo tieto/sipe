@@ -20,6 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Forward declaration */
+struct sip_session;
+
 /**
  * Processes incoming INVITE with 
  * Content-Type: application/ms-conf-invite+xml
@@ -45,7 +48,7 @@ sipe_process_conference(struct sipe_account_data *sip,
  */
 void
 conf_session_close(struct sipe_account_data *sip,
-		   struct sip_im_session *session);
+		   struct sip_session *session);
 
 /** 
  * Invoked to process message delivery notification

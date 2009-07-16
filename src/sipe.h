@@ -49,38 +49,6 @@
 #define PURPLE_WEBSITE "http://pidgin.sf.im/"
 #endif
 
-/** Correspond to multy-party conversation */
-struct sip_im_session {
-	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
-	int chat_id;
-	/** Human readable chat name */
-	gchar *chat_name;
-	/** Call-Id identifying the conversation */
-	gchar *callid; /* For multiparty conversations */
-	/** Roster Manager URI */
-	gchar *roster_manager;
-	int bid;
-	gboolean is_voting_in_progress;
-	gboolean is_multiparty;
-	gchar *focus_uri;
-	gchar *im_mcu_uri;
-	guint request_id;
-	struct sip_dialog *focus_dialog;
-	/** key is user (URI) */
-	GSList *dialogs;
-	//struct sip_dialog * dialog;
-	/** Link to purple chat or IM */
-	PurpleConversation *conv;
-
-	GSList *outgoing_message_queue;
-	/** Key is <Call-ID><CSeq><METHOD><To> */
-	GHashTable *unconfirmed_messages;
-	/** Key is Message-Id */
-	GHashTable *conf_unconfirmed_messages;
-	
-	GSList *pending_invite_queue;
-};
-
 struct sipe_buddy {
 	gchar *name;
 	gchar *annotation;
@@ -175,7 +143,7 @@ struct sipe_account_data {
 	guint tx_handler;
 	gchar *regcallid;
 	GSList *transactions;
-	GSList *im_sessions;
+	GSList *sessions;
 	GSList *openconns;
 	GSList *groups;
 	sipe_transport_type transport;
@@ -254,6 +222,9 @@ gboolean purple_init_plugin(PurplePlugin *plugin);
  * This way our code will not be monolithic, but potentially _reusable_. May be
  * a top of other SIP core, and/or other front-end (Telepathy framework?).
  */
+/* Forward declarations */
+struct sip_session;
+struct sip_dialog;
  
 /* SIP send module? */
 struct transaction *
@@ -264,7 +235,7 @@ void
 send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		  const char *text, const char *body);
 void 
-sipe_invite(struct sipe_account_data *sip, struct sip_im_session *session,
+sipe_invite(struct sipe_account_data *sip, struct sip_session *session,
 	    const gchar *who, const gchar *msg_body,
 	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
@@ -273,18 +244,8 @@ gboolean process_subscribe_response(struct sipe_account_data *sip,
 				    struct transaction *tc);
 /* Session module? */
 void
-im_session_destroy(struct sipe_account_data *sip,
-		   struct sip_im_session *session);
-struct sip_im_session *
-create_chat_session (struct sipe_account_data *sip);
-
-struct sip_im_session * 
-find_chat_session(struct sipe_account_data *sip, 
-		  const char *callid);
-		  
-void
 sipe_present_message_undelivered_err(struct sipe_account_data *sip,
-				     struct sip_im_session *session,
+				     struct sip_session *session,
 				     const gchar *who,
 				     const gchar *message);
 /*** THE BIG SPLIT END ***/

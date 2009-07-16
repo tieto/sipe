@@ -34,6 +34,7 @@
 #include "sipe-conf.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
+#include "sipe-session.h"
 #include "sipe-utils.h"
 
 /** 
@@ -59,27 +60,6 @@
 	"</addUser>"\
 "</request>"
 
-static struct sip_im_session *
-find_conf_session(struct sipe_account_data *sip,
-		   const char *focus_uri)
-{
-	struct sip_im_session *session;
-	GSList *entry;
-	if (sip == NULL || focus_uri == NULL) {
-		return NULL;
-	}
-
-	entry = sip->im_sessions;
-	while (entry) {
-		session = entry->data;
-		if (session->focus_uri && !g_strcasecmp(focus_uri, session->focus_uri)) {
-			return session;
-		}
-		entry = entry->next;
-	}
-	return NULL;
-}
-
 /** 
  * Generates random GUID.
  * This method is borrowed from pidgin's msnutils.c 
@@ -103,7 +83,7 @@ rand_guid()
  */
 static void
 sipe_subscribe_conference(struct sipe_account_data *sip,
-			  struct sip_im_session *session,
+			  struct sip_session *session,
 			  const int expires)
 {
 	gchar *expires_hdr = (expires >= 0) ? g_strdup_printf("Expires: %d\r\n", expires) : g_strdup("");
@@ -139,10 +119,10 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 				   struct sipmsg *msg,
 				   struct transaction *trans)
 {
-	struct sip_im_session * session = NULL;
+	struct sip_session *session = NULL;
 	char *focus_uri = parse_from(sipmsg_find_header(msg, "To"));
 	
-	session = find_conf_session(sip, focus_uri);
+	session = sipe_session_find_conference(sip, focus_uri);
 	
 	if (!session) {
 		purple_debug_info("sipe", "process_invite_conf_focus_response: unable to find conf session with focus=%s\n", focus_uri);
@@ -169,7 +149,7 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 	if (msg->response >= 400) {
 		purple_debug_info("sipe", "process_invite_conf_focus_response: INVITE response is not 200. Failed to join focus.\n");
 		/* @TODO notify user of failure to join focus */				
-		im_session_destroy(sip, session);
+		sipe_session_remove(sip, session);
 		g_free(focus_uri);
 		return FALSE;
 	} else if (msg->response == 200) {
@@ -189,7 +169,7 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 /** Invite us to the focus */
 static void 
 sipe_invite_conf_focus(struct sipe_account_data *sip,
-		       struct sip_im_session *session)
+		       struct sip_session *session)
 {
 	gchar *hdr;
 	gchar *contact;
@@ -248,7 +228,7 @@ void
 process_incoming_invite_conf(struct sipe_account_data *sip,
 			     struct sipmsg *msg)
 {
-	struct sip_im_session *session = NULL;
+	struct sip_session *session = NULL;
 	struct sip_dialog *dialog = NULL;
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
@@ -262,7 +242,7 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 	purple_debug_info("sipe", "We have received invitation to Conference. Focus URI=%s\n", focus_uri);
 	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 	
-	session = create_chat_session(sip);
+	session = sipe_session_add_chat(sip);
 	session->focus_uri = focus_uri;
 	session->is_multiparty = FALSE;
 	
@@ -287,7 +267,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 	xmlnode *xn_conference_info;
 	xmlnode *node;
 	const gchar *focus_uri;
-	struct sip_im_session *session;
+	struct sip_session *session;
 	struct sip_dialog *dialog;
 	gboolean just_joined = FALSE;
 
@@ -299,7 +279,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 	if (!xn_conference_info) return;
 
 	focus_uri = xmlnode_get_attrib(xn_conference_info, "entity");
-	session = find_conf_session(sip, focus_uri);
+	session = sipe_session_find_conference(sip, focus_uri);
 
 	if (!session) {
 		purple_debug_info("sipe", "sipe_process_conference: unable to find conf session with focus=%s\n", focus_uri);
@@ -387,7 +367,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 
 void
 conf_session_close(struct sipe_account_data *sip,
-		   struct sip_im_session *session)
+		   struct sip_session *session)
 {
 	if (session) {
 		/* unsubscribe from focus */
@@ -412,13 +392,13 @@ sipe_process_imdn(struct sipe_account_data *sip,
 		  struct sipmsg *msg)
 {
 	gchar *call_id = sipmsg_find_header(msg, "Call-ID");
-	static struct sip_im_session *session;
+	static struct sip_session *session;
 	xmlnode *xn_imdn;
 	xmlnode *node;
 	gchar *message_id;
 	gchar *message;
 	
-	session = find_chat_session(sip, call_id);
+	session = sipe_session_find_chat_by_callid(sip, call_id);
 
 	xn_imdn = xmlnode_from_str(msg->body, msg->bodylen);
 	message_id = xmlnode_get_data(xmlnode_get_child(xn_imdn, "message-id"));
