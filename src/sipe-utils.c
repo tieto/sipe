@@ -49,6 +49,14 @@ gchar *gentag()
 	return g_strdup_printf("%04d%04d", RANDOM32BITS, RANDOM32BITS);
 }
 
+gchar *genconfid(void)
+{
+	return g_strdup_printf("%04X%04X%04X%04X%04X%04X%04X%04X",
+			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
+			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
+			       RANDOM32BITS, RANDOM32BITS);
+}
+
 gchar *get_contact(const struct sipe_account_data  *sip)
 {
 	return g_strdup(sip->contact);

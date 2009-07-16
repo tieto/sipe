@@ -24,6 +24,13 @@
 struct sip_session;
 
 /**
+ * Creates conference.
+ */
+void 
+sipe_conf_add(struct sipe_account_data *sip,
+	      const gchar* who);
+
+/**
  * Processes incoming INVITE with 
  * Content-Type: application/ms-conf-invite+xml
  * i.e. invitation to join conference.

@@ -38,6 +38,37 @@
 #include "sipe-utils.h"
 
 /** 
+ * Add Conference request to FocusFactory. 
+ * @param focus_factory_uri (%s) Ex.: sip:bob7@boston.local;gruu;opaque=app:conf:focusfactory
+ * @param from		    (%s) Ex.: sip:bob7@boston.local
+ * @param request_id	    (%d) Ex.: 1094520
+ * @param conference_id	    (%s) Ex.: 8386E6AEAAA41E4AA6627BA76D43B6D1
+ * @param expiry_time	    (%s) Ex.: 2009-07-13T17:57:09Z , Default: 7 hours
+ */
+#define SIPE_SEND_CONF_ADD \
+"<?xml version=\"1.0\"?>"\
+"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" "\
+	"xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
+	"C3PVersion=\"1\" "\
+	"to=\"%s\" "\
+	"from=\"%s\" "\
+	"requestId=\"%d\">"\
+	"<addConference>"\
+		"<ci:conference-info xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"\" xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\">"\
+			"<ci:conference-description>"\
+				"<ci:subject/>"\
+				"<msci:conference-id>%s</msci:conference-id>"\
+				"<msci:expiry-time>%s</msci:expiry-time>"\
+				"<msci:admission-policy>openAuthenticated</msci:admission-policy>"\
+			"</ci:conference-description>"\
+			"<msci:conference-view>"\
+				"<msci:entity-view entity=\"chat\"/>"\
+			"</msci:conference-view>"\
+		"</ci:conference-info>"\
+	"</addConference>"\
+"</request>"
+
+/** 
  * AddUser request to Focus. 
  * Params:
  * focus_URI, from, request_id, focus_URI, from, endpoint_GUID
@@ -320,6 +351,96 @@ sipe_invite_conf(struct sipe_account_data *sip,
 	g_free(hdr);
 }
 
+/** Create conference callback */
+static gboolean
+process_conf_add_response(struct sipe_account_data *sip,
+			  struct sipmsg *msg,
+			  struct transaction *trans)
+{
+	if (msg->response >= 400) {
+		purple_debug_info("sipe", "process_conf_add_response: SERVICE response is not 200. Failed to create conference.\n");
+		/* @TODO notify user of failure to create conference */				
+		return FALSE;
+	} 
+	if (msg->response == 200) {
+		xmlnode *xn_response = xmlnode_from_str(msg->body, msg->bodylen);
+		if (!strcmp("success", xmlnode_get_attrib(xn_response, "code")))
+		{
+			gchar *who = (gchar *)trans->payload;
+			struct sip_session *session;
+			xmlnode *xn_conference_info = xmlnode_get_descendant(xn_response, "addConference", "conference-info", NULL);
+			
+			session = sipe_session_add_chat(sip);
+			session->is_multiparty = FALSE;
+			session->focus_uri = g_strdup(xmlnode_get_attrib(xn_conference_info, "entity"));
+			purple_debug_info("sipe", "process_conf_add_response: session->focus_uri=%s\n",
+						   session->focus_uri ? session->focus_uri : "");
+						   
+			session->pending_invite_queue = slist_insert_unique_sorted(
+				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
+
+			/* add self to conf */
+			sipe_invite_conf_focus(sip, session);
+		}
+		xmlnode_free(xn_response);
+	}
+	
+	return TRUE;
+}
+
+/**
+ * Creates conference.
+ */
+void 
+sipe_conf_add(struct sipe_account_data *sip,
+	      const gchar* who)
+{
+	gchar *hdr;
+	gchar *conference_id;
+	gchar *contact;
+	gchar *body;
+	gchar *self;
+	struct transaction * tr;
+	struct sip_dialog *dialog = NULL;
+	time_t expiry = time(NULL) + 7*60*60; /* 7 hours */
+	const char *expiry_time;
+	
+	contact = get_contact(sip);
+	hdr = g_strdup_printf(
+		"Supported: ms-sender\r\n"
+		"Contact: %s\r\n"
+		"Content-Type: application/cccp+xml\r\n",
+		contact);
+	g_free(contact);
+	
+	expiry_time = purple_utf8_strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(&expiry));
+	self = sip_uri_self(sip);
+	conference_id = genconfid();
+	body = g_strdup_printf(
+		SIPE_SEND_CONF_ADD,
+		sip->focus_factory_uri,
+		self,
+		rand(),
+		conference_id,
+		expiry_time);
+	g_free(conference_id);
+	g_free(self);
+
+	tr = send_sip_request( sip->gc,
+			  "SERVICE",
+			  sip->focus_factory_uri,
+			  sip->focus_factory_uri,
+			  hdr,
+			  body,
+			  NULL,
+			  process_conf_add_response);
+	tr->payload = g_strdup(who);
+	
+	sipe_dialog_free(dialog);
+	g_free(body);
+	g_free(hdr);
+}
+
 void
 process_incoming_invite_conf(struct sipe_account_data *sip,
 			     struct sipmsg *msg)
@@ -391,7 +512,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 		 * this is to obtain full list of conference participants.
 		 */
 	}
-
+	
 	/* IMMCU URI */
 	if (!session->im_mcu_uri) {
 		for (node = xmlnode_get_descendant(xn_conference_info, "conference-description", "conf-uris", "entry", NULL); 
@@ -458,6 +579,8 @@ sipe_process_conference(struct sipe_account_data *sip,
 		/* send INVITE to IM MCU */
 		sipe_invite(sip, session, dialog->with, NULL, NULL, FALSE);
 	}
+	
+	sipe_process_pending_invite_queue(sip, session);
 }
 
 void

@@ -103,6 +103,7 @@ struct sipe_account_data {
 	gchar *authuser;
 	gchar *password;
 	gchar *epid;
+	gchar *focus_factory_uri;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
 	PurpleDnsQueryData *query_data;
@@ -248,6 +249,11 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 				     struct sip_session *session,
 				     const gchar *who,
 				     const gchar *message);
+				     
+				     
+void
+sipe_process_pending_invite_queue(struct sipe_account_data *sip,
+				  struct sip_session *session);
 /*** THE BIG SPLIT END ***/
 
 #define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"

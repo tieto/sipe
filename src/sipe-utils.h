@@ -35,6 +35,16 @@ gchar *gencallid(void);
 gchar *gentag(void);
 
 /**
+ * Generate conference-id
+ * 32 characters long. Value space is restricted to printable ASCII characters
+ *
+ * Ex.: 8386E6AEAAA41E4AA6627BA76D43B6D1
+ *
+ * @return conference-id. Must be g_free()'d.
+ */
+gchar *genconfid(void);
+
+/**
  * Get contact information from SIPE account
  *
  * @param sip (in) SIPE account
