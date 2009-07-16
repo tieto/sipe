@@ -41,6 +41,14 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 void
 sipe_process_conference(struct sipe_account_data *sip,
 			struct sipmsg * msg);
+			
+/**
+ * Invites counterparty to join conference.
+ */			
+void 
+sipe_invite_conf(struct sipe_account_data *sip,
+		 struct sip_session *session,
+		 const gchar* who);
 
 /** 
  * Invokes when we leave conversation.

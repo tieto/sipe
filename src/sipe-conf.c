@@ -60,6 +60,18 @@
 	"</addUser>"\
 "</request>"
 
+/**
+ * Invite counterparty to join conference.
+ */
+#define SIPE_SEND_CONF_INVITE \
+"<Conferencing version=\"2.0\">"\
+	"<focus-uri>%s</focus-uri>"\
+	"<subject/>"\
+	"<im available=\"true\">"\
+		"<first-im/>"\
+	"</im>"\
+"</Conferencing>"
+
 /** 
  * Generates random GUID.
  * This method is borrowed from pidgin's msnutils.c 
@@ -224,14 +236,96 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
 	g_free(hdr);
 }
 
+/** Invite counterparty to join conference callback */
+static gboolean
+process_invite_conf_response(struct sipe_account_data *sip,
+			     struct sipmsg *msg,
+			     struct transaction *trans)
+{
+	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
+	
+	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
+	dialog->with = parse_from(sipmsg_find_header(msg, "To"));	
+	sipe_dialog_parse(dialog, msg, TRUE);
+
+	if (msg->response >= 200) {
+		/* send ACK to counterparty */
+		dialog->cseq--;
+		send_sip_request(sip->gc, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+		dialog->outgoing_invite = NULL;
+		dialog->is_established = TRUE;
+	}
+	
+	if (msg->response >= 400) {
+		purple_debug_info("sipe", "process_invite_conf_focus_response: INVITE response is not 200. Failed to invite %s.\n", dialog->with);
+		/* @TODO notify user of failure to invite counterparty */				
+		sipe_dialog_free(dialog);
+		return FALSE;
+	} 
+	if (msg->response >= 200) {
+		/* send BYE to counterparty */
+		send_sip_request(sip->gc, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+	}
+	
+	sipe_dialog_free(dialog);
+	return TRUE;
+}
+
+/**
+ * Invites counterparty to join conference.
+ */
+void 
+sipe_invite_conf(struct sipe_account_data *sip,
+		 struct sip_session *session,
+		 const gchar* who)
+{
+	gchar *hdr;
+	gchar *contact;
+	gchar *body;
+	struct sip_dialog *dialog = NULL;
+	
+	/* It will be short lived special dialog. 
+	 * Will not be stored in session.
+	 */
+	dialog = g_new0(struct sip_dialog, 1);		
+	dialog->callid = gencallid();
+	dialog->with = g_strdup(who);
+	dialog->ourtag = gentag();
+
+	contact = get_contact(sip);
+	hdr = g_strdup_printf(
+		"Supported: ms-sender\r\n"
+		"Contact: %s\r\n"
+		"Content-Type: application/ms-conf-invite+xml\r\n",
+		contact);
+	g_free(contact);
+	
+	body = g_strdup_printf(
+		SIPE_SEND_CONF_INVITE,
+		session->focus_uri
+		);
+
+	send_sip_request( sip->gc,
+			  "INVITE",
+			  dialog->with,
+			  dialog->with,
+			  hdr,
+			  body,
+			  dialog,
+			  process_invite_conf_response);
+
+	sipe_dialog_free(dialog);
+	g_free(body);
+	g_free(hdr);
+}
+
 void
 process_incoming_invite_conf(struct sipe_account_data *sip,
 			     struct sipmsg *msg)
 {
 	struct sip_session *session = NULL;
 	struct sip_dialog *dialog = NULL;
-	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
-	gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	xmlnode *xn_conferencing = xmlnode_from_str(msg->body, msg->bodylen);
 	xmlnode *xn_focus_uri = xmlnode_get_child(xn_conferencing, "focus-uri");
 	char *focus_uri = xmlnode_get_data(xn_focus_uri);
@@ -246,18 +340,19 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 	session->focus_uri = focus_uri;
 	session->is_multiparty = FALSE;
 	
-	/* temporaty dialog with invitor */
+	/* temporary dialog with invitor */
 	dialog = g_new0(struct sip_dialog, 1);
-	dialog->callid = g_strdup(callid);
-	dialog->with = from;
-	sipe_dialog_parse(dialog, msg, FALSE);
+	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
+	dialog->with = parse_from(sipmsg_find_header(msg, "From"));
+	sipe_dialog_parse(dialog, msg, FALSE);	
 	
 	/* send BYE to invitor */
 	send_sip_request(sip->gc, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
 	sipe_dialog_free(dialog);
 	
 	/* add self to conf */
-	sipe_invite_conf_focus(sip, session);       
+	sipe_invite_conf_focus(sip, session);    
 }
 
 void

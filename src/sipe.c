@@ -5974,24 +5974,30 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 		    struct sip_session *session,
 		    const char *who)
 {
-	gchar *self = sip_uri_self(sip);
-
-	if (session->roster_manager) {
-		if (!strcmp(session->roster_manager, self)) {
-			sipe_invite(sip, session, who, NULL, NULL, FALSE);
+	/* a conference */
+	if (session->focus_uri)
+	{
+		sipe_invite_conf(sip, session, who);
+	} 
+	else /* a multi-party chat */
+	{
+		gchar *self = sip_uri_self(sip);
+		if (session->roster_manager) {
+			if (!strcmp(session->roster_manager, self)) {
+				sipe_invite(sip, session, who, NULL, NULL, FALSE);
+			} else {
+				sipe_refer(sip, session, who);
+			}
 		} else {
-			sipe_refer(sip, session, who);
-		}
-	} else {
-		purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: no RM available\n");
-		
-		session->pending_invite_queue = slist_insert_unique_sorted(
-			session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
+			purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: no RM available\n");
+			
+			session->pending_invite_queue = slist_insert_unique_sorted(
+				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
 
-		sipe_election_start(sip, session);
-	}
-	
-	g_free(self);
+			sipe_election_start(sip, session);
+		}
+		g_free(self);
+	}	
 }
 
 static void

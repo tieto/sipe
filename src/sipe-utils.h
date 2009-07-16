@@ -53,6 +53,15 @@ gchar *get_contact(const struct sipe_account_data *sip);
 gchar *parse_from(const gchar *hdr);
 
 /**
+ * Parses CSeq from SIP header
+ *
+ * @param hdr (in) CSeqm header
+ *
+ * @return int type CSeq value (i.e. without method).
+ */
+int parse_cseq(const gchar *hdr);
+
+/**
  * Create sip: URI from name
  *
  * @param name (in)
