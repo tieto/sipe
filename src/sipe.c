@@ -42,8 +42,6 @@
 #define _WINSOCK2API_
 #define _LIBC_INTERNAL_
 #endif /* _DLL */
-
-#include "internal.h"
 #endif /* _WIN32 */
 
 #include <time.h>
@@ -69,6 +67,7 @@
 #include "mime.h"
 
 #include "sipe.h"
+#include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
@@ -6027,10 +6026,10 @@ sipe_election_start(struct sipe_account_data *sip,
 /**
  * @param who a URI to whom to invite to chat
  */
-static void
+void
 sipe_invite_to_chat(struct sipe_account_data *sip,
 		    struct sip_session *session,
-		    const char *who)
+		    const gchar *who)
 {
 	/* a conference */
 	if (session->focus_uri)
@@ -6405,7 +6404,7 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* join_chat */
 	NULL,					/* reject_chat */
 	NULL,					/* get_chat_name */
-	NULL,			                /* chat_invite */
+	sipe_chat_invite,			/* chat_invite */
 	sipe_chat_leave,			/* chat_leave */
 	NULL,					/* chat_whisper */
 	sipe_chat_send,				/* chat_send */
