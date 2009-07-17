@@ -88,6 +88,29 @@
 "</request>"
 
 /**
+ * ModifyUserRoles request to Focus. Makes user a leader.
+ * @param focus_uri (%s)
+ * @param from (%s)
+ * @param request_id (%d)
+ * @param focus_uri (%s)
+ * @param who (%s)
+ */
+#define SIPE_SEND_CONF_MODIFY_USER_ROLES \
+"<?xml version=\"1.0\"?>"\
+"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
+	"C3PVersion=\"1\" "\
+	"to=\"%s\" "\
+	"from=\"%s\" "\
+	"requestId=\"%d\">"\
+	"<modifyUserRoles>"\
+		"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"\
+		"<user-roles xmlns=\"urn:ietf:params:xml:ns:conference-info\">"\
+			"<entry>presenter</entry>"\
+		"</user-roles>"\
+	"</modifyUserRoles>"\
+"</request>"
+
+/**
  * Invite counterparty to join conference.
  */
 #define SIPE_SEND_CONF_INVITE \
@@ -259,6 +282,47 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
 								  body,
 								  session->focus_dialog,
 								  process_invite_conf_focus_response);
+	g_free(body);
+	g_free(hdr);
+}
+
+/** Modify User Role */
+void
+sipe_conf_modify_user_role(struct sipe_account_data *sip,
+			   struct sip_session *session,
+			   const gchar* who)
+{
+	gchar *hdr;
+	gchar *body;
+	gchar *self;
+
+	if (!session->focus_dialog || !session->focus_dialog->is_established) {
+		purple_debug_info("sipe", "sipe_conf_modify_user_role: no dialog with focus, exiting.\n");
+		return;
+	}
+
+	hdr = g_strdup(
+		"Content-Type: application/cccp+xml\r\n");
+
+	/* @TODO put request_id to queue to further compare with incoming one */
+	self = sip_uri_self(sip);
+	body = g_strdup_printf(
+		SIPE_SEND_CONF_MODIFY_USER_ROLES,
+		session->focus_dialog->with,
+		self,
+		session->request_id++,
+		session->focus_dialog->with,
+		who);
+	g_free(self);
+
+	send_sip_request(sip->gc,
+			 "INFO",
+			 session->focus_dialog->with,
+			 session->focus_dialog->with,
+			 hdr,
+			 body,
+			 session->focus_dialog,
+			 NULL);
 	g_free(body);
 	g_free(hdr);
 }

@@ -6114,6 +6114,23 @@ sipe_election_result(struct sipe_account_data *sip,
 	sipe_process_pending_invite_queue(sip, session);
 }
 
+/**
+ * For 2007+ conference only.
+ */
+static void
+sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy, const char *chat_name)
+{
+	struct sipe_account_data *sip = buddy->account->gc->proto_data;
+	struct sip_session *session;
+
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_make_leader_cb: buddy->name=%s\n", buddy->name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_make_leader_cb: chat_name=%s\n", chat_name);
+
+	session = sipe_session_find_chat_by_name(sip, chat_name);
+
+	sipe_conf_modify_user_role(sip, session, buddy->name);
+}
+
 static void
 sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, const char *chat_name)
 {
@@ -6189,23 +6206,44 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	gchar *self = sip_uri_self(sip);
 
+	SIPE_SESSION_FOREACH {
+		if (strcmp(self, buddy->name) && session->chat_name && session->conv)
+		{
+			if (purple_conv_chat_find_user(PURPLE_CONV_CHAT(session->conv), buddy->name))
+			{
+				PurpleConvChatBuddyFlags flags;
+				PurpleConvChatBuddyFlags flags_us;
+				
+				flags = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), buddy->name);
+				flags_us = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), self);
+				if (session->focus_uri &&
+				    PURPLE_CBFLAGS_OP != (flags & PURPLE_CBFLAGS_OP) && /* Not conf OP */
+				    PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
+				{
+					gchar *label = g_strdup_printf(_("Make Leader of '%s'"), session->chat_name);
+					act = purple_menu_action_new(label,
+								     PURPLE_CALLBACK(sipe_buddy_menu_chat_make_leader_cb),
+								     g_strdup(session->chat_name), NULL);
+					g_free(label);
+					menu = g_list_prepend(menu, act);
+				}
+			}
+			else
+			{
+				gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_name);
+				act = purple_menu_action_new(label,
+							     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
+							     g_strdup(session->chat_name), NULL);
+				g_free(label);
+				menu = g_list_prepend(menu, act);
+			}
+		}
+	} SIPE_SESSION_FOREACH_END;	
+	
 	act = purple_menu_action_new(_("New Chat"),
 				     PURPLE_CALLBACK(sipe_buddy_menu_chat_new_cb),
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
-
-	SIPE_SESSION_FOREACH {
-		if (strcmp(self, buddy->name) && session->chat_name && session->conv &&
-		    !purple_conv_chat_find_user(PURPLE_CONV_CHAT(session->conv), buddy->name))
-		{
-			gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_name);
-			act = purple_menu_action_new(label,
-						     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
-						     g_strdup(session->chat_name), NULL);
-			g_free(label);
-			menu = g_list_prepend(menu, act);
-		}
-	} SIPE_SESSION_FOREACH_END;
 
 	act = purple_menu_action_new(_("Send Email..."),
 				     PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),

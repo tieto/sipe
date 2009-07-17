@@ -58,6 +58,16 @@ sipe_invite_conf(struct sipe_account_data *sip,
 		 const gchar* who);
 
 /** 
+ * Modify User Role.
+ * Sends request to Focus.
+ * INFO method is a carrier of application/cccp+xml
+ */	
+void
+sipe_conf_modify_user_role(struct sipe_account_data *sip,
+			   struct sip_session *session,
+			   const gchar* who);
+
+/** 
  * Invokes when we leave conversation.
  * Usually by closing chat wingow.
  */
