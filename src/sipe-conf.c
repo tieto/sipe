@@ -499,13 +499,16 @@ sipe_process_conference(struct sipe_account_data *sip,
 
 	if (session->focus_uri && !session->conv) {
 		gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		gchar *self = sip_uri_self(sip);
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_name);
 		session->chat_name = chat_name;
+		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.
 		 */
+		 g_free(self);
 	}
 
 	/* IM MCU URI */
