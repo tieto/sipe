@@ -504,19 +504,19 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *
 	tmsg->dom_off = sizeof(struct authenticate_message);
 	tmp = ((char*) tmsg) + tmsg->dom_off;
 	remlen = ((char *)tmsg)+msglen-tmp;
-	tmsg->dom_len1 = tmsg->dom_len2 = (guint16)unicode_strconvcopy(tmp, domain, remlen);
+	tmsg->dom_len1 = tmsg->dom_len2 = (guint16)unicode_strconvcopy((gchar *)tmp, domain, remlen);
 	tmp += tmsg->dom_len1;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
 	/* User */
 	tmsg->user_off = tmsg->dom_off + tmsg->dom_len1;
-	tmsg->user_len1 = tmsg->user_len2 = unicode_strconvcopy(tmp, user, remlen);
+	tmsg->user_len1 = tmsg->user_len2 = (guint16)unicode_strconvcopy((gchar *)tmp, user, remlen);
 	tmp += tmsg->user_len1;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
 	/* Host */
 	tmsg->host_off = tmsg->user_off + tmsg->user_len1;
-	tmsg->host_len1 = tmsg->host_len2 = unicode_strconvcopy(tmp, hostname, remlen);
+	tmsg->host_len1 = tmsg->host_len2 = (guint16)unicode_strconvcopy((gchar *)tmp, hostname, remlen);
 	tmp += tmsg->host_len1;
 
 	/* LM */
