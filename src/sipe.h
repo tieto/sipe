@@ -36,6 +36,9 @@
 #include "proxy.h"
 #include "prpl.h"
 #include "sslconn.h"
+#ifdef _WIN32
+#include "internal.h"
+#endif
 
 #include "sipmsg.h"
 #include "sip-sec.h"
@@ -82,7 +85,7 @@ struct sipe_service_data {
 	sipe_transport_type type;
 };
 
-/** MS-PRES container */ 
+/** MS-PRES container */
 struct sipe_container {
 	guint id;
 	guint version;
@@ -212,21 +215,21 @@ gboolean purple_init_plugin(PurplePlugin *plugin);
  *  - waiting to be factored out to an appropriate module
  *  - are needed by the already created new modules
  */
- 
+
 /* pier11:
  *
  * Since SIP (RFC3261) is extensible by its design,
  * and MS specs prove just that (they all are defined as SIP extensions),
  * it make sense to split functionality by extension (or close extension group).
  * For example: conference, presence (MS-PRES), etc.
- * 
+ *
  * This way our code will not be monolithic, but potentially _reusable_. May be
  * a top of other SIP core, and/or other front-end (Telepathy framework?).
  */
 /* Forward declarations */
 struct sip_session;
 struct sip_dialog;
- 
+
 /* SIP send module? */
 struct transaction *
 send_sip_request(PurpleConnection *gc, const gchar *method,
@@ -235,7 +238,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 void
 send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		  const char *text, const char *body);
-void 
+void
 sipe_invite(struct sipe_account_data *sip, struct sip_session *session,
 	    const gchar *who, const gchar *msg_body,
 	    const gchar *referred_by, const gboolean is_triggered);
@@ -243,14 +246,19 @@ sipe_invite(struct sipe_account_data *sip, struct sip_session *session,
 gboolean process_subscribe_response(struct sipe_account_data *sip,
 				    struct sipmsg *msg,
 				    struct transaction *tc);
+/* Chat module */
+void
+sipe_invite_to_chat(struct sipe_account_data *sip,
+		    struct sip_session *session,
+		    const gchar *who);
 /* Session module? */
 void
 sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 				     struct sip_session *session,
 				     const gchar *who,
 				     const gchar *message);
-				     
-				     
+
+
 void
 sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 				  struct sip_session *session);

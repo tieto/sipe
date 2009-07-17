@@ -26,10 +26,6 @@
 
 #include "debug.h"
 
-#ifdef _WIN32
-#include "internal.h"
-#endif
-
 #include "sipe.h"
 #include "sipe-conf.h"
 #include "sipe-dialog.h"

@@ -25,10 +25,6 @@
 
 #include "debug.h"
 
-#ifdef _WIN32
-#include "internal.h"
-#endif
-
 #include "sipe.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
@@ -76,8 +72,8 @@ sipe_session_find_chat_by_callid(struct sipe_account_data *sip,
 	return NULL;
 }
 
-struct sip_session * 
-sipe_session_find_chat_by_id(struct sipe_account_data *sip, 
+struct sip_session *
+sipe_session_find_chat_by_id(struct sipe_account_data *sip,
 			     int id)
 {
 	if (sip == NULL) {
@@ -171,7 +167,7 @@ sipe_session_remove(struct sipe_account_data *sip, struct sip_session *session)
 		entry = entry->next;
 	}
 	g_slist_free(session->outgoing_message_queue);
-	
+
 	entry = session->pending_invite_queue;
 	while (entry) {
 		g_free(entry->data);

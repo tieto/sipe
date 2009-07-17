@@ -33,8 +33,6 @@
 #define _WINSOCK2API_
 #define _LIBC_INTERNAL_
 #endif /* _DLL */
-
-#include "internal.h"
 #endif /* _WIN32 */
 
 #include <string.h>
@@ -232,10 +230,10 @@ void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]) {
 			if (!g_strcasecmp(elem->name, keepers[i])) {
 				keeper = TRUE;
 				break;
-			}		
+			}
 			i++;
 		}
-		
+
 		if (!keeper) {
 			GSList *to_delete = entry;
 			purple_debug_info("sipe", "sipmsg_strip_headers: removing %s\n", elem->name);
@@ -243,7 +241,7 @@ void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]) {
 			msg->headers = g_slist_delete_link(msg->headers, to_delete);
 			g_free(elem->name);
 			g_free(elem->value);
-			g_free(elem);		
+			g_free(elem);
 		} else {
 			entry = g_slist_next(entry);
 		}
@@ -366,9 +364,9 @@ gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const ch
  * EndPoints: "alice alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>;epid=ebca82d94d, <sip:carol@atlanta.local>
  * EndPoints: "alice, alisson" <sip:alice@atlanta.local>, <sip:bob@atlanta.local>
  * EndPoints: "alice alisson" <sip:alice@atlanta.local>, "Super, Man" <sip:super@atlanta.local>
- * 
+ *
  * @param header (in) EndPoints header contents
- * 
+ *
  * @return GSList with struct sipendpoint as elements
  */
 GSList *sipmsg_parse_endpoints_header(const gchar *header)
@@ -409,7 +407,7 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	while(tmp) {
 		elem = tmp->data;
 		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
-		if (elem && elem->name && 
+		if (elem && elem->name &&
 				(!g_ascii_strcasecmp(elem->name,"WWW-Authenticate")
 					|| !g_ascii_strcasecmp(elem->name,"Authentication-Info")) ) {
 			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
@@ -501,15 +499,15 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 {
 	gchar *tmp_html;
 	gchar *msgr;
-	gchar *res;	
+	gchar *res;
 	gchar *ms_text_format = NULL;
 	gchar *body = NULL;
-	
+
 	if (!strncmp(ms_text_format_in, "multipart/related", 21)) {
 		char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ms_text_format_in, body_in);
 		PurpleMimeDocument *mime;
 		GList* parts;
-		
+
 		mime = purple_mime_document_parse(doc);
 		parts = purple_mime_document_get_parts(mime);
 		while (parts) {
@@ -546,19 +544,19 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 		if (!res) return NULL;
 		tmp_html = res;
 		res = (gchar *) purple_base64_decode(res, NULL);
-		g_free(tmp_html);		
+		g_free(tmp_html);
 	}
-	
+
 	if (!res) {
 		return NULL;
 	}
-	
+
 	if (strncmp(ms_text_format, "text/html", 9)) { // NOT html
 		tmp_html = res;
 		res = g_markup_escape_text(res, -1); // as this is not html
-		g_free(tmp_html);		
+		g_free(tmp_html);
 	}
-	
+
 	msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
 	if (msgr) {
 		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
@@ -568,10 +566,10 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 		g_free(tmp_html);
 		g_free(x_mms_im_format);
 	}
-	
+
 	g_free(ms_text_format);
 	g_free(body);
-	
+
 	return res;
 }
 

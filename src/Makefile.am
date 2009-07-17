@@ -12,6 +12,8 @@ libsipe_la_SOURCES = \
 	sipmsg.h \
 	sipe.h \
 	sipe.c \
+	sipe-chat.h \
+	sipe-chat.c \
 	sipe-conf.h \
 	sipe-conf.c \
 	sipe-dialog.h \
