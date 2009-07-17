@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "connection.h"
+//#include "connection.h"
 
 #include "sipe.h"
 #include "sipe-chat.h"

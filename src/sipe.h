@@ -28,6 +28,10 @@
 #include <glib.h>
 #include <time.h>
 
+#ifdef _WIN32
+#include "internal.h"
+#endif
+
 #include "cipher.h"
 #include "circbuffer.h"
 #include "dnsquery.h"
@@ -36,9 +40,6 @@
 #include "proxy.h"
 #include "prpl.h"
 #include "sslconn.h"
-#ifdef _WIN32
-#include "internal.h"
-#endif
 
 #include "sipmsg.h"
 #include "sip-sec.h"

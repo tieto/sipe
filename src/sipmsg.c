@@ -21,32 +21,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _WIN32
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#else /* _WIN32 */
-#ifdef _DLL
-#define _WS2TCPIP_H_
-#define _WINSOCK2API_
-#define _LIBC_INTERNAL_
-#endif /* _DLL */
-#endif /* _WIN32 */
-
 #include <string.h>
+#include <glib.h>
 
-#include "accountopt.h"
-#include "blist.h"
-#include "conversation.h"
 #include "debug.h"
-#include "notify.h"
-#include "prpl.h"
-#include "plugin.h"
 #include "mime.h"
-#include "util.h"
-#include "version.h"
 
 #include "sipe.h"
 #include "sipmsg.h"

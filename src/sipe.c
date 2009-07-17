@@ -42,6 +42,7 @@
 #define _WINSOCK2API_
 #define _LIBC_INTERNAL_
 #endif /* _DLL */
+#include "internal.h"
 #endif /* _WIN32 */
 
 #include <time.h>
