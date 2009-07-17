@@ -43,7 +43,7 @@
  * @param from		    (%s) Ex.: sip:bob7@boston.local
  * @param request_id	    (%d) Ex.: 1094520
  * @param conference_id	    (%s) Ex.: 8386E6AEAAA41E4AA6627BA76D43B6D1
- * @param expiry_time	    (%s) Ex.: 2009-07-13T17:57:09Z , Default: 7 hours
+ * @param expiry_time	    (%s) Ex.: 2009-07-13T17:57:09Z , Default duration: 7 hours
  */
 #define SIPE_SEND_CONF_ADD \
 "<?xml version=\"1.0\"?>"\
@@ -512,7 +512,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 		 */
 	}
 
-	/* IMMCU URI */
+	/* IM MCU URI */
 	if (!session->im_mcu_uri) {
 		for (node = xmlnode_get_descendant(xn_conference_info, "conference-description", "conf-uris", "entry", NULL);
 		     node;
@@ -535,9 +535,15 @@ sipe_process_conference(struct sipe_account_data *sip,
 		xmlnode *endpoint = NULL;
 		const gchar *user_uri = xmlnode_get_attrib(node, "entity");
 		const gchar *state = xmlnode_get_attrib(node, "state");
+		gchar *role  = xmlnode_get_data(xmlnode_get_descendant(node, "roles", "entry", NULL));
+		PurpleConvChatBuddyFlags flags = PURPLE_CBFLAGS_NONE;
 		PurpleConvChat *chat = PURPLE_CONV_CHAT(session->conv);
 		gboolean is_in_im_mcu = FALSE;
 		gchar *self = sip_uri_self(sip);
+		
+		if (role && !strcmp(role, "presenter")) {
+			flags |= PURPLE_CBFLAGS_OP;
+		}
 
 		if (!strcmp("deleted", state)) {
 			if (purple_conv_chat_find_user(chat, user_uri)) {
@@ -551,8 +557,10 @@ sipe_process_conference(struct sipe_account_data *sip,
 					if (!strcmp("connected", status)) {
 						is_in_im_mcu = TRUE;
 						if (!purple_conv_chat_find_user(chat, user_uri)) {
-							purple_conv_chat_add_user(chat, user_uri, NULL, PURPLE_CBFLAGS_NONE,
+							purple_conv_chat_add_user(chat, user_uri, NULL, flags,
 										  !just_joined && g_strcasecmp(user_uri, self));
+						} else {
+							purple_conv_chat_user_set_flags(chat, user_uri, flags);
 						}
 					}
 					g_free(status);
@@ -565,6 +573,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 				}
 			}
 		}
+		g_free(role);
 		g_free(self);
 	}
 	xmlnode_free(xn_conference_info);
@@ -635,8 +644,6 @@ sipe_process_imdn(struct sipe_account_data *sip,
 	}
 
 	xmlnode_free(xn_imdn);
-
-
 
 	g_hash_table_remove(session->conf_unconfirmed_messages, message_id);
 	purple_debug_info("sipe", "sipe_process_imdn: removed message %s from conf_unconfirmed_messages(count=%d)\n",
