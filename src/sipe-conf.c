@@ -193,7 +193,7 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 	}
 
 	if (!session->focus_dialog) {
-		purple_debug_info("sipe", "process_invite_response: session's focus_dialog is NULL\n");
+		purple_debug_info("sipe", "process_invite_conf_focus_response: session's focus_dialog is NULL\n");
 		g_free(focus_uri);
 		return FALSE;
 	}
@@ -349,7 +349,7 @@ process_invite_conf_response(struct sipe_account_data *sip,
 	}
 
 	if (msg->response >= 400) {
-		purple_debug_info("sipe", "process_invite_conf_focus_response: INVITE response is not 200. Failed to invite %s.\n", dialog->with);
+		purple_debug_info("sipe", "process_invite_conf_response: INVITE response is not 200. Failed to invite %s.\n", dialog->with);
 		/* @TODO notify user of failure to invite counterparty */
 		sipe_dialog_free(dialog);
 		return FALSE;
