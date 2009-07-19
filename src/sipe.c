@@ -3263,17 +3263,10 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 		session->roster_manager = NULL;
 	}
 
-	if (!session->is_multiparty) {
-		// TODO Let the user know the other user left the conversation?
-		sipe_session_remove(sip, session);
-	} else {
-		sipe_dialog_remove(session, from);
-
+	/* This what BYE is essentially for - terminating dialog */
+	sipe_dialog_remove(session, from);
+	if (session->is_multiparty) {
 		purple_conv_chat_remove_user(PURPLE_CONV_CHAT(session->conv), from, NULL);
-
-		if (!sipe_dialog_any(session)) {
-			sipe_session_remove(sip, session);
-		}
 	}
 
 	g_free(from);
