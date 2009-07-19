@@ -2559,29 +2559,37 @@ static void sipe_options_request(struct sipe_account_data *sip, const char *who)
 	g_free(request);
 }
 
-void
-sipe_present_message_undelivered_err(struct sipe_account_data *sip,
-				     struct sip_session *session,
-				     const gchar *who,
-				     const gchar *message)
+static void
+sipe_present_err(struct sipe_account_data *sip,
+		 struct sip_session *session,
+		 const gchar *message)
 {
 	PurpleConversation *conv;
-	char *msg, *msg_tmp;
-	msg_tmp = message ? purple_markup_strip_html(message) : NULL;
-	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
-	g_free(msg_tmp);
-	msg_tmp = g_strdup_printf( _("This message was not delivered to %s because one or more recipients are offline:\n%s") ,
-			who ? who : "", msg ? msg : "");
 
 	if (!session->conv) {
 		conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, session->with, sip->account);
 	} else {
 		conv = session->conv;
 	}
-	purple_conversation_write(conv, NULL, msg_tmp, PURPLE_MESSAGE_ERROR, time(NULL));
+	purple_conversation_write(conv, NULL, message, PURPLE_MESSAGE_ERROR, time(NULL));
+}
 
-	g_free(msg);
+void
+sipe_present_message_undelivered_err(struct sipe_account_data *sip,
+				     struct sip_session *session,
+				     const gchar *who,
+				     const gchar *message)
+{
+	char *msg, *msg_tmp;
+	
+	msg_tmp = message ? purple_markup_strip_html(message) : NULL;
+	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
 	g_free(msg_tmp);
+	msg_tmp = g_strdup_printf( _("This message was not delivered to %s because one or more recipients are offline:\n%s") ,
+			who ? who : "", msg ? msg : "");
+	sipe_present_err(sip, session, msg_tmp);
+	g_free(msg_tmp);
+	g_free(msg);
 }
 
 
@@ -2617,10 +2625,16 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg, stru
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response >= 400) {
+		PurpleBuddy *pbuddy;
+		gchar *alias = with;
+		
 		purple_debug_info("sipe", "process_message_response: MESSAGE response >= 400\n");
+		
+		if ((pbuddy = purple_find_buddy(sip->account, with))) {
+			alias = (gchar *)purple_buddy_get_alias(pbuddy);
+		}
 
-		sipe_present_message_undelivered_err(sip, session, with, message);
-		sipe_session_remove(sip, session);
+		sipe_present_message_undelivered_err(sip, session, alias, message);
 		ret = FALSE;
 	} else {
 		gchar *message_id = sipmsg_find_header(msg, "Message-Id");
@@ -2837,10 +2851,25 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response != 200) {
+		PurpleBuddy *pbuddy;
+		gchar *alias = with;
+		
 		purple_debug_info("sipe", "process_invite_response: INVITE response not 200\n");
+		
+		if ((pbuddy = purple_find_buddy(sip->account, with))) {
+			alias = (gchar *)purple_buddy_get_alias(pbuddy);
+		}		
+		
+		if (message) {
+			sipe_present_message_undelivered_err(sip, session, alias, message);
+		} else {
+			gchar *tmp_msg = g_strdup_printf(_("Failed to invite %s"), alias);
+			sipe_present_err(sip, session, tmp_msg);
+			g_free(tmp_msg);
+		}
 
-		sipe_present_message_undelivered_err(sip, session, with, message);
-		sipe_session_remove(sip, session);
+		sipe_dialog_remove(session, with);
+		
 		g_free(key);
 		g_free(with);
 		return FALSE;
