@@ -3590,6 +3590,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_name);
 		session->chat_name = g_strdup(chat_name);
+		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		/* add self */
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
 					  self, NULL,
@@ -5991,6 +5992,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 
 		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, g_strdup(chat_name));
 		session->chat_name = g_strdup(chat_name);
+		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
 		sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
 
