@@ -103,6 +103,7 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 /* Action name templates */
 #define ACTION_NAME_PRESENCE "<presence><%s>"
 
+
 static gchar *get_epid(struct sipe_account_data *sip)
 {
 	if (!sip->epid) {
@@ -1264,7 +1265,9 @@ static gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
 	purple_debug_info("sipe", "sip->timeouts count:%d after removal\n",g_slist_length(sched_action->sip->timeouts));
 	(sched_action->action)(sched_action->sip, sched_action->payload);
 	ret = sched_action->repetitive;
-	(*sched_action->destroy)(sched_action->payload);
+	if (sched_action->destroy) {
+		(*sched_action->destroy)(sched_action->payload);
+	}
 	g_free(sched_action->name);
 	g_free(sched_action);
 	return ret;
@@ -1291,7 +1294,9 @@ static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, const gc
 			sip->timeouts = g_slist_delete_link(sip->timeouts, to_delete);
 			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
 			purple_timeout_remove(sched_action->timeout_handler);
-			(*sched_action->destroy)(sched_action->payload);
+			if (sched_action->destroy) {
+				(*sched_action->destroy)(sched_action->payload);
+			}
 			g_free(sched_action->name);
 			g_free(sched_action);
 		} else {
@@ -1319,7 +1324,6 @@ sipe_schedule_action0(const gchar *name,
 	sched_action->repetitive = FALSE;
 	sched_action->name = g_strdup(name);
 	sched_action->action = action;
-	sched_action->destroy = destroy ? destroy : g_free;
 	sched_action->sip = sip;
 	sched_action->payload = payload;
 	sched_action->timeout_handler = isSeconds ? purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action) :
@@ -1814,7 +1818,7 @@ static void sipe_buddy_subscribe_cb(char *name, struct sipe_buddy *buddy, struct
 	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy->name);
 	int time_range = (g_hash_table_size(sip->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 	int timeout = (time_range * rand()) / RAND_MAX; /* random period within the range */
-	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, NULL, sip, buddy->name);
+	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(buddy->name));
 }
 
 /**
@@ -4603,7 +4607,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 				g_free(my_self);
 			}
 			else {
-				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, NULL, sip, who);
+				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, who);
 			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who,timeout);
 			}
 			g_free(action_name);
@@ -5591,7 +5595,9 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 			struct scheduled_action *sched_action = entry->data;
 			purple_debug_info("sipe", "purple_timeout_remove: action name=%s\n", sched_action->name);
 			purple_timeout_remove(sched_action->timeout_handler);
-			(*sched_action->destroy)(sched_action->payload);
+			if (sched_action->destroy) {
+				(*sched_action->destroy)(sched_action->payload);
+			}
 			g_free(sched_action->name);
 			g_free(sched_action);
 			entry = entry->next;
