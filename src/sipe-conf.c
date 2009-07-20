@@ -542,6 +542,8 @@ sipe_process_conference(struct sipe_account_data *sip,
 {
 	xmlnode *xn_conference_info;
 	xmlnode *node;
+	xmlnode *xn_subject;
+	gchar *subject;
 	const gchar *focus_uri;
 	struct sip_session *session;
 	gboolean just_joined = FALSE;
@@ -573,6 +575,14 @@ sipe_process_conference(struct sipe_account_data *sip,
 		 * this is to obtain full list of conference participants.
 		 */
 		 g_free(self);
+	}
+	
+	/* subject */
+	if ((xn_subject = xmlnode_get_descendant(xn_conference_info, "conference-description", "subject", NULL))) {
+		subject = xmlnode_get_data(xn_subject);
+		purple_conv_chat_set_topic(PURPLE_CONV_CHAT(session->conv), NULL, subject);
+		purple_debug_info("sipe", "sipe_process_conference: subject=%s\n", subject ? subject : "");
+		g_free(subject);
 	}
 
 	/* IM MCU URI */
