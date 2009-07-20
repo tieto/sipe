@@ -1324,6 +1324,7 @@ sipe_schedule_action0(const gchar *name,
 	sched_action->repetitive = FALSE;
 	sched_action->name = g_strdup(name);
 	sched_action->action = action;
+	sched_action->destroy = destroy;
 	sched_action->sip = sip;
 	sched_action->payload = payload;
 	sched_action->timeout_handler = isSeconds ? purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action) :
