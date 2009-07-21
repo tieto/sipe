@@ -618,6 +618,11 @@ static void sendout_sipmsg(struct sipe_account_data *sip, struct sipmsg *msg)
 static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data *sip, const gchar *method)
 {
 	gchar * buf;
+	
+	if (sip->registrar.type == AUTH_TYPE_UNSET) {
+		return;
+	}
+	
 	if (sip->registrar.gssapi_context) {
 		struct sipmsg_breakdown msgbd;
 		gchar *signature_input_str;
@@ -3721,8 +3726,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					tmp = sipmsg_find_auth_header(msg, "Kerberos");
 				}
 #endif
-				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\r\n", tmp);
-				fill_auth(sip, tmp, &sip->registrar);
+				if (tmp) {
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\r\n", tmp);
+					fill_auth(sip, tmp, &sip->registrar);
+				}
 
 				if (!sip->reauthenticate_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
