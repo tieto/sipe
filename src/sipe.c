@@ -3113,8 +3113,13 @@ sipe_send_election_set_rm(struct sipe_account_data *sip,
 }
 
 static void
-im_session_close (struct sipe_account_data *sip, struct sip_session * session)
+sipe_session_close(struct sipe_account_data *sip,
+		   struct sip_session * session)
 {
+	if (session && session->focus_uri) {
+		conf_session_close(sip, session);
+	}
+	
 	if (session) {
 		SIPE_DIALOG_FOREACH {
 			/* @TODO slow down BYE message sending rate */
@@ -3127,12 +3132,21 @@ im_session_close (struct sipe_account_data *sip, struct sip_session * session)
 }
 
 static void
+sipe_session_close_all(struct sipe_account_data *sip)
+{
+	GSList *entry;
+	while ((entry = sip->sessions) != NULL) {
+		sipe_session_close(sip, entry->data);
+	}
+}
+
+static void
 sipe_convo_closed(PurpleConnection * gc, const char *who)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 
 	purple_debug_info("sipe", "conversation with %s closed\n", who);
-	im_session_close(sip, sipe_session_find_im(sip, who));
+	sipe_session_close(sip, sipe_session_find_im(sip, who));
 }
 
 static void
@@ -3140,10 +3154,8 @@ sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
-	if (session && session->focus_uri) {
-		conf_session_close(sip, session);
-	}
-	im_session_close(sip, session);
+
+	sipe_session_close(sip, session);
 }
 
 static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what, PurpleMessageFlags flags)
@@ -5667,6 +5679,7 @@ static void sipe_close(PurpleConnection *gc)
 
 	if (sip) {
 		/* leave all conversations */
+		sipe_session_close_all(sip);
 		sipe_session_remove_all(sip);
 
 		/* unregister */
