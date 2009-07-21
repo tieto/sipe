@@ -111,6 +111,27 @@
 "</request>"
 
 /**
+ * ModifyConferenceLock request to Focus. Locks/unlocks conference.
+ * @param focus_uri (%s)
+ * @param from (%s)
+ * @param request_id (%d)
+ * @param focus_uri (%s)
+ * @param locked (%s) "true" or "false" values applicable
+ */
+#define SIPE_SEND_CONF_MODIFY_CONF_LOCK \
+"<?xml version=\"1.0\"?>"\
+"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
+	"C3PVersion=\"1\" "\
+	"to=\"%s\" "\
+	"from=\"%s\" "\
+	"requestId=\"%d\">"\
+	"<modifyConferenceLock>"\
+		"<conferenceKeys confEntity=\"%s\"/>"\
+		"<locked>%s</locked>"\
+	"</modifyConferenceLock>"\
+"</request>"
+
+/**
  * Invite counterparty to join conference.
  * @param focus_uri (%s)
  * @param subject (%s) of conference
@@ -315,6 +336,47 @@ sipe_conf_modify_user_role(struct sipe_account_data *sip,
 		session->request_id++,
 		session->focus_dialog->with,
 		who);
+	g_free(self);
+
+	send_sip_request(sip->gc,
+			 "INFO",
+			 session->focus_dialog->with,
+			 session->focus_dialog->with,
+			 hdr,
+			 body,
+			 session->focus_dialog,
+			 NULL);
+	g_free(body);
+	g_free(hdr);
+}
+
+/** Modify Conference Lock */
+void
+sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
+				 struct sip_session *session,
+				 const gboolean locked)
+{
+	gchar *hdr;
+	gchar *body;
+	gchar *self;
+
+	if (!session->focus_dialog || !session->focus_dialog->is_established) {
+		purple_debug_info("sipe", "sipe_conf_modify_user_role: no dialog with focus, exiting.\n");
+		return;
+	}
+
+	hdr = g_strdup(
+		"Content-Type: application/cccp+xml\r\n");
+
+	/* @TODO put request_id to queue to further compare with incoming one */
+	self = sip_uri_self(sip);
+	body = g_strdup_printf(
+		SIPE_SEND_CONF_MODIFY_CONF_LOCK,
+		session->focus_dialog->with,
+		self,
+		session->request_id++,
+		session->focus_dialog->with,
+		locked ? "true" : "false");
 	g_free(self);
 
 	send_sip_request(sip->gc,
@@ -651,6 +713,27 @@ sipe_process_conference(struct sipe_account_data *sip,
 		g_free(role);
 		g_free(self);
 	}
+	
+	/* entity-view, locked */
+	for (node = xmlnode_get_descendant(xn_conference_info, "conference-view", "entity-view", NULL);
+	     node;
+	     node = xmlnode_get_next_twin(node)) {
+	
+		xmlnode *xn_type = xmlnode_get_descendant(node, "entity-state", "media", "entry", "type", NULL);
+		gchar *tmp;
+		if (xn_type && !strcmp("chat", (tmp = xmlnode_get_data(xn_type)))) {
+			xmlnode *xn_locked = xmlnode_get_descendant(node, "entity-state", "locked", NULL);
+			if (xn_locked) {
+				gchar *locked = xmlnode_get_data(xn_locked);
+				session->locked = (locked && !strcmp(locked, "true")) ? TRUE : FALSE;
+				/* @TODO in-chat notify user of lock status change */
+				purple_debug_info("sipe", "sipe_process_conference: session->locked=%s\n",
+						          session->locked ? "TRUE" : "FALSE");
+				g_free(locked);
+			}
+			g_free(tmp);
+		}
+	}	
 	xmlnode_free(xn_conference_info);
 
 	if (session->im_mcu_uri) {

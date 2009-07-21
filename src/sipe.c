@@ -6281,12 +6281,16 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 			}
 			else
 			{
-				gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_name);
-				act = purple_menu_action_new(label,
-							     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
-							     g_strdup(session->chat_name), NULL);
-				g_free(label);
-				menu = g_list_prepend(menu, act);
+				if (!session->focus_uri
+				    || (session->focus_uri && !session->locked))
+				{
+					gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_name);
+					act = purple_menu_action_new(label,
+								     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
+								     g_strdup(session->chat_name), NULL);
+					g_free(label);
+					menu = g_list_prepend(menu, act);
+				}
 			}
 		}
 	} SIPE_SESSION_FOREACH_END;	
@@ -6330,11 +6334,74 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	return menu;
 }
 
+static void
+sipe_conf_modify_lock(PurpleChat *chat, gboolean locked)
+{
+	struct sipe_account_data *sip = chat->account->gc->proto_data;
+	struct sip_session *session;
+
+	session = sipe_session_find_chat_by_name(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));	
+	sipe_conf_modify_conference_lock(sip, session, locked);
+}
+
+static void
+sipe_chat_menu_unlock_cb(PurpleChat *chat)
+{
+	purple_debug_info("sipe", "sipe_chat_menu_unlock_cb() called\n");
+	sipe_conf_modify_lock(chat, FALSE);
+}
+
+static void
+sipe_chat_menu_lock_cb(PurpleChat *chat)
+{
+	purple_debug_info("sipe", "sipe_chat_menu_lock_cb() called\n");	
+	sipe_conf_modify_lock(chat, TRUE);
+}
+
+static GList *
+sipe_chat_menu(PurpleChat *chat)
+{
+	PurpleMenuAction *act;
+	PurpleConvChatBuddyFlags flags_us;
+	GList *menu = NULL;
+	struct sipe_account_data *sip = chat->account->gc->proto_data;
+	struct sip_session *session;
+	gchar *self = sip_uri_self(sip);
+
+	session = sipe_session_find_chat_by_name(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
+	if (!session) return NULL;
+	
+	flags_us = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), self);
+
+	if (session->focus_uri
+	    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
+	{
+		if (session->locked) {
+			act = purple_menu_action_new(_("Unlock Conversation"),
+						     PURPLE_CALLBACK(sipe_chat_menu_unlock_cb),
+						     NULL, NULL);
+			menu = g_list_prepend(menu, act);
+		} else {
+			act = purple_menu_action_new(_("Lock Conversation"),
+						     PURPLE_CALLBACK(sipe_chat_menu_lock_cb),
+						     NULL, NULL);
+			menu = g_list_prepend(menu, act);	
+		}
+	}
+
+	menu = g_list_reverse(menu);
+	
+	g_free(self);
+	return menu;
+}
+
 static GList *
 sipe_blist_node_menu(PurpleBlistNode *node)
 {
 	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
 		return sipe_buddy_menu((PurpleBuddy *) node);
+	} else if(PURPLE_BLIST_NODE_IS_CHAT(node)) {
+		return sipe_chat_menu((PurpleChat *)node);
 	} else {
 		return NULL;
 	}

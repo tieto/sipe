@@ -68,6 +68,16 @@ sipe_conf_modify_user_role(struct sipe_account_data *sip,
 			   const gchar* who);
 
 /** 
+ * Modify Conference Lock.
+ * Sends request to Focus.
+ * INFO method is a carrier of application/cccp+xml
+ */				   
+void
+sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
+				 struct sip_session *session,
+				 const gboolean locked);
+
+/** 
  * Invokes when we leave conversation.
  * Usually by closing chat wingow.
  */
