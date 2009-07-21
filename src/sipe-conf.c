@@ -786,8 +786,17 @@ sipe_process_conference(struct sipe_account_data *sip,
 			xmlnode *xn_locked = xmlnode_get_descendant(node, "entity-state", "locked", NULL);
 			if (xn_locked) {
 				gchar *locked = xmlnode_get_data(xn_locked);
+				gboolean prev_locked = session->locked;
 				session->locked = (locked && !strcmp(locked, "true")) ? TRUE : FALSE;
-				/* @TODO in-chat notify user of lock status change */
+				if (prev_locked && !session->locked) {
+					sipe_present_info(sip, session, 
+						_("This conference is no longer locked. Additional participants can now join."));
+				}
+				if (!prev_locked && session->locked) {
+					sipe_present_info(sip, session, 
+						_("This conference is locked. Nobody else can join the conference while it is locked."));
+				}
+				
 				purple_debug_info("sipe", "sipe_process_conference: session->locked=%s\n",
 						          session->locked ? "TRUE" : "FALSE");
 				g_free(locked);

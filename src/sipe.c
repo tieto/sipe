@@ -2570,8 +2570,9 @@ static void sipe_options_request(struct sipe_account_data *sip, const char *who)
 }
 
 static void
-sipe_present_err(struct sipe_account_data *sip,
+sipe_notify_user(struct sipe_account_data *sip,
 		 struct sip_session *session,
+		 PurpleMessageFlags flags,
 		 const gchar *message)
 {
 	PurpleConversation *conv;
@@ -2581,7 +2582,23 @@ sipe_present_err(struct sipe_account_data *sip,
 	} else {
 		conv = session->conv;
 	}
-	purple_conversation_write(conv, NULL, message, PURPLE_MESSAGE_ERROR, time(NULL));
+	purple_conversation_write(conv, NULL, message, flags, time(NULL));
+}
+
+void
+sipe_present_info(struct sipe_account_data *sip,
+		 struct sip_session *session,
+		 const gchar *message)
+{
+	sipe_notify_user(sip, session, PURPLE_MESSAGE_SYSTEM, message);
+}
+
+static void
+sipe_present_err(struct sipe_account_data *sip,
+		 struct sip_session *session,
+		 const gchar *message)
+{
+	sipe_notify_user(sip, session, PURPLE_MESSAGE_ERROR, message);
 }
 
 void
