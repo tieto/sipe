@@ -132,6 +132,26 @@
 "</request>"
 
 /**
+ * ModifyConferenceLock request to Focus. Locks/unlocks conference.
+ * @param focus_uri (%s)
+ * @param from (%s)
+ * @param request_id (%d)
+ * @param focus_uri (%s)
+ * @param who (%s)
+ */
+#define SIPE_SEND_CONF_DELETE_USER \
+"<?xml version=\"1.0\"?>"\
+"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
+	"C3PVersion=\"1\" "\
+	"to=\"%s\" "\
+	"from=\"%s\" "\
+	"requestId=\"%d\">"\
+	"<deleteUser>"\
+		"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"\
+	"</deleteUser>"\
+"</request>"
+
+/**
  * Invite counterparty to join conference.
  * @param focus_uri (%s)
  * @param subject (%s) of conference
@@ -361,7 +381,7 @@ sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
 	gchar *self;
 
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
-		purple_debug_info("sipe", "sipe_conf_modify_user_role: no dialog with focus, exiting.\n");
+		purple_debug_info("sipe", "sipe_conf_modify_conference_lock: no dialog with focus, exiting.\n");
 		return;
 	}
 
@@ -377,6 +397,47 @@ sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
 		session->request_id++,
 		session->focus_dialog->with,
 		locked ? "true" : "false");
+	g_free(self);
+
+	send_sip_request(sip->gc,
+			 "INFO",
+			 session->focus_dialog->with,
+			 session->focus_dialog->with,
+			 hdr,
+			 body,
+			 session->focus_dialog,
+			 NULL);
+	g_free(body);
+	g_free(hdr);
+}
+
+/** Modify Delete User */
+void
+sipe_conf_delete_user(struct sipe_account_data *sip,
+		      struct sip_session *session,
+		      const gchar* who)
+{
+	gchar *hdr;
+	gchar *body;
+	gchar *self;
+
+	if (!session->focus_dialog || !session->focus_dialog->is_established) {
+		purple_debug_info("sipe", "sipe_conf_delete_user: no dialog with focus, exiting.\n");
+		return;
+	}
+
+	hdr = g_strdup(
+		"Content-Type: application/cccp+xml\r\n");
+
+	/* @TODO put request_id to queue to further compare with incoming one */
+	self = sip_uri_self(sip);
+	body = g_strdup_printf(
+		SIPE_SEND_CONF_DELETE_USER,
+		session->focus_dialog->with,
+		self,
+		session->request_id++,
+		session->focus_dialog->with,
+		who);
 	g_free(self);
 
 	send_sip_request(sip->gc,
