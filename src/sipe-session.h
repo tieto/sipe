@@ -60,6 +60,7 @@ struct sip_session {
 	 */
 	gchar *focus_uri;
 	gchar *im_mcu_uri;
+	gchar *subject;
 	guint request_id;
 	struct sip_dialog *focus_dialog;
 	/** Key is Message-Id */

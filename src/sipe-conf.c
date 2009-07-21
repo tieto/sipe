@@ -112,11 +112,13 @@
 
 /**
  * Invite counterparty to join conference.
+ * @param focus_uri (%s)
+ * @param subject (%s) of conference
  */
 #define SIPE_SEND_CONF_INVITE \
 "<Conferencing version=\"2.0\">"\
 	"<focus-uri>%s</focus-uri>"\
-	"<subject/>"\
+	"<subject>%s</subject>"\
 	"<im available=\"true\">"\
 		"<first-im/>"\
 	"</im>"\
@@ -394,7 +396,8 @@ sipe_invite_conf(struct sipe_account_data *sip,
 
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_INVITE,
-		session->focus_uri
+		session->focus_uri,
+		session->subject ? session->subject : ""
 		);
 
 	send_sip_request( sip->gc,
@@ -543,7 +546,6 @@ sipe_process_conference(struct sipe_account_data *sip,
 	xmlnode *xn_conference_info;
 	xmlnode *node;
 	xmlnode *xn_subject;
-	gchar *subject;
 	const gchar *focus_uri;
 	struct sip_session *session;
 	gboolean just_joined = FALSE;
@@ -579,10 +581,10 @@ sipe_process_conference(struct sipe_account_data *sip,
 	
 	/* subject */
 	if ((xn_subject = xmlnode_get_descendant(xn_conference_info, "conference-description", "subject", NULL))) {
-		subject = xmlnode_get_data(xn_subject);
-		purple_conv_chat_set_topic(PURPLE_CONV_CHAT(session->conv), NULL, subject);
-		purple_debug_info("sipe", "sipe_process_conference: subject=%s\n", subject ? subject : "");
-		g_free(subject);
+		g_free(session->subject);
+		session->subject = xmlnode_get_data(xn_subject);
+		purple_conv_chat_set_topic(PURPLE_CONV_CHAT(session->conv), NULL, session->subject);
+		purple_debug_info("sipe", "sipe_process_conference: subject=%s\n", session->subject ? session->subject : "");
 	}
 
 	/* IM MCU URI */

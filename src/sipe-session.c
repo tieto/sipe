@@ -184,6 +184,7 @@ sipe_session_remove(struct sipe_account_data *sip, struct sip_session *session)
 	g_free(session->roster_manager);
 	g_free(session->focus_uri);
 	g_free(session->im_mcu_uri);
+	g_free(session->subject);
 	g_free(session);
 }
 
