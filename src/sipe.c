@@ -3304,7 +3304,7 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 
 	/* This what BYE is essentially for - terminating dialog */
 	sipe_dialog_remove(session, from);
-	if (session->focus_uri) {
+	if (session->focus_uri && !g_strcasecmp(from, session->im_mcu_uri)) {
 		sipe_conf_immcu_closed(sip, session);
 	} else if (session->is_multiparty) {
 		purple_conv_chat_remove_user(PURPLE_CONV_CHAT(session->conv), from, NULL);
