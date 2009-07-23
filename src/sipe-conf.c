@@ -823,6 +823,15 @@ sipe_process_conference(struct sipe_account_data *sip,
 }
 
 void
+sipe_conf_immcu_closed(struct sipe_account_data *sip,
+		       struct sip_session *session)
+{
+	sipe_present_info(sip, session, 
+			  _("You have been disconnected from this conference."));
+	purple_conv_chat_clear_users(PURPLE_CONV_CHAT(session->conv));
+}
+
+void
 conf_session_close(struct sipe_account_data *sip,
 		   struct sip_session *session)
 {

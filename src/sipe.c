@@ -3209,7 +3209,7 @@ static int sipe_chat_send(PurpleConnection *gc, int id, const char *what, Purple
 	session = sipe_session_find_chat_by_id(sip, id);
 
 	// Queue the message
-	if (session) {
+	if (session && session->dialogs) {
 		session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue,
 								 g_strdup(what));
 		sipe_im_process_queue(sip, session);
@@ -3304,7 +3304,9 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 
 	/* This what BYE is essentially for - terminating dialog */
 	sipe_dialog_remove(session, from);
-	if (session->is_multiparty) {
+	if (session->focus_uri) {
+		sipe_conf_immcu_closed(sip, session);
+	} else if (session->is_multiparty) {
 		purple_conv_chat_remove_user(PURPLE_CONV_CHAT(session->conv), from, NULL);
 	}
 

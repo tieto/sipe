@@ -88,6 +88,14 @@ sipe_conf_delete_user(struct sipe_account_data *sip,
 		      const gchar* who);
 
 /** 
+ * Invokes when we are ejected from conference
+ * for example or conference has been timed out.
+ */
+void
+sipe_conf_immcu_closed(struct sipe_account_data *sip,
+		       struct sip_session *session);      
+	
+/** 
  * Invokes when we leave conversation.
  * Usually by closing chat wingow.
  */
