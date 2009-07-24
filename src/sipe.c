@@ -3546,9 +3546,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		session = sipe_session_find_or_add_im(sip, from);
 	}
 
-	if (!session->callid) {
-		session->callid = g_strdup(callid);
-	}
+	g_free(session->callid);
+	session->callid = g_strdup(callid);
 
 	session->is_multiparty = is_multiparty;
 	if (roster_manager) {
