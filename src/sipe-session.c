@@ -160,6 +160,7 @@ sipe_session_remove(struct sipe_account_data *sip, struct sip_session *session)
 	sip->sessions = g_slist_remove(sip->sessions, session);
 
 	sipe_dialog_remove_all(session);
+	sipe_dialog_free(session->focus_dialog);
 
 	entry = session->outgoing_message_queue;
 	while (entry) {
