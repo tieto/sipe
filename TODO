@@ -1,6 +1,3 @@
 
-- Group Chat support
 - To send files
-- Kerberos Auth support
-- To fix the client sends (sometimes) duplicates messsages on LCS2007.
 - The "notes" gets  the correct version since the first request. LCS2007
