@@ -4,6 +4,7 @@
  * pidgin-sipe
  *
  * Copyright (C) 2009 Anibal Avelar <debianmx@gmail.com>
+ * Copyright (C) 2009 pier11 <pier11@kinozal.tv>
  * Copyright (C) 2008 Novell, Inc., Anibal Avelar <debianmx@gmail.com>
  * Copyright (C) 2007 Anibal Avelar <debianmx@gmail.com>
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>

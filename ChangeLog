@@ -1,3 +1,23 @@
+version 1.6.0 (2009-07-26)
+       - Multi-party conversation (Chat) functionality for:
+         + OCS 2007+ as a conference [MS-CONFBAS], [MS-CONFIM], [MS-CONFPRO];
+	 + LCS 2005- as a multi-party chat.
+       - Fixed our status in OCS 2007+ environment as seen by others.
+       - Asks user if he wants add counterparty which added him to his contact list (OCS 2007+). User dialog wording improvement.
+Also defined default group in Add User dialog which appear after user search in catalog.
+       - More strict compilation warnings treatment.
+       - Started code split to functional modules.
+       - Tailored subscriptions for environment - eliminated not needed subscriptions in 2007 environment.
+       - Fixed session closing on unsuccessful message delivery.
+       - More correct incoming BYE processing.
+       - Fixed stealth bug when action payload got freed. Initial bug was that contact could not be removed.
+       - Fix handling of empty note text in incoming rlmi NOTIFY.
+       - patch for FreeBSD 7.x by jprather.
+       - Fix for wrong epid generation on Windows platform in case of missing MAC.
+       - Fix for Route processing.
+       - Improvements for compilation under ppc/ppc64 platfolrm.
+       - Fixed crash if work in non-authenticating environment.
+       
 version 1.5.0 (2009-06-24)
        - Fixed bug #2800325 for crash if wrong IP manually typed into Pidgin.
        - New Security Framework: dedicated to use plug-able security mechanisms.
