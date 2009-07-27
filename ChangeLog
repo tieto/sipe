@@ -1,4 +1,4 @@
-version 1.6.0 (2009-07-26)
+version 1.6.0 (2009-07-27)
        - Multi-party conversation (Chat) functionality for:
          + OCS 2007+ as a conference [MS-CONFBAS], [MS-CONFIM], [MS-CONFPRO];
 	 + LCS 2005- as a multi-party chat.
