@@ -31,7 +31,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  zlib-devel, libpurple-devel, libtool, intltool
+BuildRequires:  zlib-devel, libpurple-devel, libtool, intltool, gettext-devel
 BuildRequires:  krb5-devel
 # Required for com_err.h
 BuildRequires:  e2fsprogs-devel
