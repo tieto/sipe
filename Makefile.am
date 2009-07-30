@@ -6,7 +6,8 @@ EXTRA_DIST = \
 	intltool-update.in \
 	AUTHORS \
 	README \
-	HACKING
+	HACKING \
+	pidgin-sipe.spec
 
 CLEANFILES = \
 	intltool-extract \
