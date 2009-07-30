@@ -2,28 +2,29 @@
 # Example SPEC file to generate a RPM for pidgin-sipe.
 # It should work out-of-the-box on Fedora 10/11 and RHEL5.
 #
-#------------------------------ BUILD FROM GIT ------------------------------
-# Comment out the definition of %{git} to build from release version
+%if 0%{?_with_git:1}
+#------------------------------- BUILD FROM GIT -------------------------------
+# Add "--with git" to the rpmbuild command line to build from git
 #
 # Instructions how to access the repository: http://sipe.sourceforge.net/git/
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20090728gite895a0e
+%define git       20090730git4bc9d64
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
-#------------------------------ BUILD FROM GIT ------------------------------
-
+#------------------------------- BUILD FROM GIT -------------------------------
+%endif
 
 Name:           pidgin-sipe
 Summary:        Pidgin plugin for connecting to Microsoft LCS/OCS
 Version:        1.6.0
-%if %{?git:1}0
+%if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
 %else
 Release:        1%{?dist}
-Source:         http://download.sourceforge.net/pidgin-sipe/%{name}-%{version}.tar.bz2
+Source:         http://downloads.sourceforge.net/sipe/%{name}-%{version}.tar.bz2
 %endif
 Group:          Applications/Internet
 License:        GPLv2+
@@ -43,7 +44,7 @@ Live Communications Server 2003/2005 and Office Communications Server 2007.
 
 
 %prep
-%if %{?git:1}0
+%if 0%{?_with_git:1}
 %setup -q -n %{name}-%{git}
 %else
 %setup -q
@@ -51,7 +52,7 @@ Live Communications Server 2003/2005 and Office Communications Server 2007.
 
 
 %build
-%if %{?git:1}0
+%if 0%{?_with_git:1}
 # Copied from "rpmbuild --showrc" configure definition
 export CFLAGS="${CFLAGS:-%optflags}"
 ./autogen.sh --with-krb5
@@ -82,6 +83,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Jul 30 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
+- use "--with git" to build from git
+- corrected download URL for release archive
+- add missing BR gettext-devel
+
 * Wed Jul 29 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
 - use default rpmbuild CFLAGS also for git builds
 - merge with SPEC files created by mricon & jberanek
