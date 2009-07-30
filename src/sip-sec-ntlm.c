@@ -195,8 +195,8 @@ static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *resul
 	purple_cipher_context_destroy(context);
 }
 
-static guint16 
-unicode_strconvcopy(gchar *dest, const gchar *source, guint16 remlen)
+static int 
+unicode_strconvcopy(gchar *dest, const gchar *source, int remlen)
 {
 	GIConv fd;
 	gchar *inbuf = (gchar *) source;
@@ -261,7 +261,7 @@ MD4 (const unsigned char * d, int len, unsigned char * result)
 static void
 NTOWFv1 (const char* password, const char *user, const char *domain, unsigned char * result)
 {
-	guint16 len = 2 * strlen(password); // utf16 should not be more
+	int len = 2 * strlen(password); // utf16 should not be more
 	unsigned char *unicode_password = g_new0(unsigned char, len);
 
 	len = unicode_strconvcopy((gchar *) unicode_password, password, len);
@@ -483,7 +483,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *
 				+ NTLMSSP_SESSION_KEY_LEN;
 	struct authenticate_message *tmsg = g_malloc0(msglen);
 	char *tmp;
-	guint16 remlen;
+	int remlen;
 	unsigned char response_key_lm [16];
 	unsigned char lm_challenge_response [NTLMSSP_NT_OR_LM_KEY_LEN];
 	unsigned char response_key_nt [16];
@@ -504,19 +504,19 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *
 	tmsg->dom_off = sizeof(struct authenticate_message);
 	tmp = ((char*) tmsg) + tmsg->dom_off;
 	remlen = ((char *)tmsg)+msglen-tmp;
-	tmsg->dom_len1 = tmsg->dom_len2 = unicode_strconvcopy(tmp, domain, remlen);
+	tmsg->dom_len1 = tmsg->dom_len2 = (guint16)unicode_strconvcopy((gchar *)tmp, domain, remlen);
 	tmp += tmsg->dom_len1;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
 	/* User */
 	tmsg->user_off = tmsg->dom_off + tmsg->dom_len1;
-	tmsg->user_len1 = tmsg->user_len2 = unicode_strconvcopy(tmp, user, remlen);
+	tmsg->user_len1 = tmsg->user_len2 = (guint16)unicode_strconvcopy((gchar *)tmp, user, remlen);
 	tmp += tmsg->user_len1;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
 	/* Host */
 	tmsg->host_off = tmsg->user_off + tmsg->user_len1;
-	tmsg->host_len1 = tmsg->host_len2 = unicode_strconvcopy(tmp, hostname, remlen);
+	tmsg->host_len1 = tmsg->host_len2 = (guint16)unicode_strconvcopy((gchar *)tmp, hostname, remlen);
 	tmp += tmsg->host_len1;
 
 	/* LM */
