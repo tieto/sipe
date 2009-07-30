@@ -22,12 +22,12 @@ if [ -n "$1" ]; then
     echo "Using local repository under '$1'."
 fi
 rm -rf $CLONEDIR
-git clone -n $REFERENCE git://repo.or.cz/siplcs.git $CLONEDIR
+git clone -n $REFERENCE git+ssh://mob@repo.or.cz/srv/git/siplcs.git $CLONEDIR
 cd $CLONEDIR
 git checkout -q -b $CLONEDIR origin/$BRANCH
 
 # Create archive
-COMMIT=$(git log -n 1 --abbrev-commit --pretty=oneline | cut -d' ' -f1)
+COMMIT=$(git log -n 1 --abbrev-commit --pretty=oneline | cut -d' ' -f1| sed -e 's/\.//g')
 PREFIX=${PROJECT}-${TODAY}git${COMMIT}
 ARCHIVE=${PREFIX}.tar.bz2
 echo "Creating archive '$ARCHIVE'..."
