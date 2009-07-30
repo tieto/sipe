@@ -77,12 +77,15 @@ rm -rf $RPM_BUILD_ROOT
 
 %files -f %{name}.lang
 %defattr(-,root,root,-)
-%doc AUTHORS ChangeLog COPYING LICENSE NEWS README TODO
+%doc AUTHORS ChangeLog COPYING NEWS README TODO
 %{_libdir}/pidgin/libsipe.so
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 
 
 %changelog
+* Thu Jul 30 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
+- remove duplicate GPL2
+
 * Thu Jul 30 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
 - use "--with git" to build from git
 - corrected download URL for release archive
