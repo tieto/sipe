@@ -1,0 +1,28 @@
+--- share/telepathy/managers/haze.manager.orig	2009-07-27 21:30:13.000000000 +0100
++++ share/telepathy/managers/haze.manager	2009-07-27 21:22:16.000000000 +0100
+@@ -154,6 +154,25 @@
+ default-udp=false
+ default-useproxy=false
+ 
++[Protocol sipe]
++param-password=s required
++param-account=s required
++param-sso=b
++param-krb5=b
++param-useragent=s
++param-transport=s
++param-port=i
++param-useport=b
++param-proxy=s
++param-useproxy=b
++default-useproxy=false
++default-useport=false
++default-port=5061
++default-transport=tls
++default-useragent=Purple/1.5.0
++default-krb5=false
++default-sso=true
++
+ [Protocol yahoo]
+ param-account=s required
+ param-password=s required
