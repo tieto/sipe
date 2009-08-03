@@ -139,7 +139,7 @@ static void sipe_get_route_header(const struct sipmsg *msg,
 static void
 sipe_get_supported_header(const struct sipmsg *msg,
 			  struct sip_dialog *dialog,
-			  gboolean outgoing)
+			  SIPE_UNUSED_PARAMETER gboolean outgoing)
 {
 	GSList *hdr = msg->headers;
 	struct siphdrelement *elem;

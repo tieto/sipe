@@ -45,6 +45,8 @@
 #include "sip-sec.h"
 #include "uuid.h"
 
+#define SIPE_UNUSED_PARAMETER __attribute__((unused))
+
 #define SIMPLE_BUF_INC 4096
 
 #define SIPE_TYPING_RECV_TIMEOUT 6

@@ -27,7 +27,8 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 
-void sipe_chat_invite(PurpleConnection *gc, int id, const char *message,
+void sipe_chat_invite(PurpleConnection *gc, int id,
+		      SIPE_UNUSED_PARAMETER const char *message,
 		      const char *name)
 {
 	struct sipe_account_data *sip = gc->proto_data;

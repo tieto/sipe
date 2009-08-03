@@ -259,7 +259,7 @@ MD4 (const unsigned char * d, int len, unsigned char * result)
 
 
 static void
-NTOWFv1 (const char* password, const char *user, const char *domain, unsigned char * result)
+NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char * result)
 {
 	int len = 2 * strlen(password); // utf16 should not be more
 	unsigned char *unicode_password = g_new0(unsigned char, len);
@@ -290,7 +290,7 @@ RC4K (const unsigned char * k, const unsigned char * d, unsigned char * result)
 }
 
 static void
-KXKEY (const unsigned char * session_base_key, const unsigned char * lm_challenge_resonse, unsigned char * key_exchange_key)
+KXKEY (const unsigned char * session_base_key, SIPE_UNUSED_PARAMETER const unsigned char * lm_challenge_resonse, unsigned char * key_exchange_key)
 {
 	// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
 	memcpy(key_exchange_key, session_base_key, 16);
@@ -313,7 +313,7 @@ SIGNKEY (const char * random_session_key, gboolean client, char * result)
 }*/
 
 static void
-LMOWFv1 (const char *password, const char *user, const char *domain, unsigned char *result)
+LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
 {
 	/* "KGS!@#$%" */
 	unsigned char magic[] = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
@@ -476,7 +476,7 @@ purple_ntlm_verify_signature (char * a, char * b)
 }
 
 static gchar *
-purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, guint32 *flags)
+purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, SIPE_UNUSED_PARAMETER guint32 *flags)
 {
 	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
 				+ strlen(user)+ strlen(hostname) + NTLMSSP_NT_OR_LM_KEY_LEN)
@@ -601,7 +601,7 @@ static sip_uint32
 sip_sec_init_sec_context__ntlm(SipSecContext context,
 			  SipSecBuffer in_buff,
 			  SipSecBuffer *out_buff,
-			  const char *service_name)
+			  SIPE_UNUSED_PARAMETER const char *service_name)
 {
 	context_ntlm ctx = (context_ntlm) context;
 	
@@ -700,7 +700,7 @@ sip_sec_destroy_sec_context__ntlm(SipSecContext context)
 }
 
 SipSecContext
-sip_sec_create_context__ntlm(SipSecAuthType type)
+sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER SipSecAuthType type)
 {
 	context_ntlm context = g_malloc0(sizeof(struct _context_ntlm));
 	if (!context) return(NULL);

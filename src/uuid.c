@@ -204,6 +204,9 @@ gchar * sipe_uuid_get_macaddr(const char *ip_address)
 	guchar addr[6];
 	long mac_add = mac_addr_sys(addr);
 	gchar nmac[13];
+
+	/* unused parameter */
+	(void) ip_address;
 	
 	if (mac_add == 0){
 		int i,j;

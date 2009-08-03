@@ -258,7 +258,7 @@ sip_sec_destroy_sec_context__krb5(SipSecContext context)
 }
 
 SipSecContext
-sip_sec_create_context__krb5(SipSecAuthType type)
+sip_sec_create_context__krb5(SIPE_UNUSED_PARAMETER SipSecAuthType type)
 {
 	context_krb5 context = g_malloc0(sizeof(struct _context_krb5));
 	if (!context) return(NULL);

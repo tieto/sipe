@@ -52,10 +52,9 @@ Live Communications Server 2003/2005 and Office Communications Server 2007.
 
 
 %build
-# Copied from "rpmbuild --showrc" configure definition
-# Must append -Wno-unused-parameter as optflags contains overriding -Wall
-export CFLAGS="%optflags -Wno-unused-parameter"
 %if 0%{?_with_git:1}
+# Copied from "rpmbuild --showrc" configure definition
+export CFLAGS="${CFLAGS:-%optflags}"
 ./autogen.sh --with-krb5
 %else
 %configure --with-krb5

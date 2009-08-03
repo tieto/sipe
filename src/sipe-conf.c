@@ -222,7 +222,7 @@ sipe_subscribe_conference(struct sipe_account_data *sip,
 static gboolean
 process_invite_conf_focus_response(struct sipe_account_data *sip,
 				   struct sipmsg *msg,
-				   struct transaction *trans)
+				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	struct sip_session *session = NULL;
 	char *focus_uri = parse_from(sipmsg_find_header(msg, "To"));
@@ -456,7 +456,7 @@ sipe_conf_delete_user(struct sipe_account_data *sip,
 static gboolean
 process_invite_conf_response(struct sipe_account_data *sip,
 			     struct sipmsg *msg,
-			     struct transaction *trans)
+			     SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
 

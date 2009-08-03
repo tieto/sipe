@@ -59,7 +59,7 @@ guchar *purple_base64_decode(const char *str, gsize *ret_len);
 
 /* Dummy initialization hook */
 static SipSecContext
-sip_sec_create_context__NONE(SipSecAuthType type)
+sip_sec_create_context__NONE(SIPE_UNUSED_PARAMETER SipSecAuthType type)
 {
 	return(NULL);
 }

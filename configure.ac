@@ -62,7 +62,7 @@ AC_ARG_ENABLE(quality-check,
 	enable_quality_check="yes")
 
 if test "$enable_quality_check" = yes; then
-	QUALITY_CFLAGS="${QUALITY_CFLAGS} -Werror -Wall -Wextra -Wno-unused-parameter"
+	QUALITY_CFLAGS="${QUALITY_CFLAGS} -Werror -Wall -Wextra"
 else
 	QUALITY_CFLAGS="${QUALITY_CFLAGS}"
 fi
