@@ -865,6 +865,10 @@ sipe_process_imdn(struct sipe_account_data *sip,
 	gchar *message;
 
 	session = sipe_session_find_chat_by_callid(sip, call_id);
+	if (!session) {
+		purple_debug_info("sipe", "sipe_process_imdn: unable to find conf session with call_id=%s\n", call_id);
+		return;
+	}
 
 	xn_imdn = xmlnode_from_str(msg->body, msg->bodylen);
 	message_id = xmlnode_get_data(xmlnode_get_child(xn_imdn, "message-id"));
