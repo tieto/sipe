@@ -857,6 +857,7 @@ void
 sipe_process_imdn(struct sipe_account_data *sip,
 		  struct sipmsg *msg)
 {
+	gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 	gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	static struct sip_session *session;
 	xmlnode *xn_imdn;
@@ -866,7 +867,11 @@ sipe_process_imdn(struct sipe_account_data *sip,
 
 	session = sipe_session_find_chat_by_callid(sip, call_id);
 	if (!session) {
+		session = sipe_session_find_im(sip, with);
+	}
+	if (!session) {
 		purple_debug_info("sipe", "sipe_process_imdn: unable to find conf session with call_id=%s\n", call_id);
+		g_free(with);
 		return;
 	}
 
@@ -890,6 +895,7 @@ sipe_process_imdn(struct sipe_account_data *sip,
 	purple_debug_info("sipe", "sipe_process_imdn: removed message %s from conf_unconfirmed_messages(count=%d)\n",
 			  message_id, g_hash_table_size(session->conf_unconfirmed_messages));
 	g_free(message_id);
+	g_free(with);
 }
 
 

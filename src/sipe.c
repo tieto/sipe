@@ -3373,7 +3373,7 @@ sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 	session = sipe_session_find_im(sip, who);
 	dialog = sipe_dialog_find(session, who);
 
-	if (session && dialog) {
+	if (session && dialog && dialog->is_established) {
 		send_sip_request(gc, "INFO", who, who,
 			"Content-Type: application/xml\r\n",
 			SIPE_SEND_TYPING, dialog, NULL);
