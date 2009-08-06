@@ -70,7 +70,7 @@ struct sip_dialog *sipe_dialog_find(struct sip_session *session,
 {
 	if (session && who) {
 		SIPE_DIALOG_FOREACH {
-			if (dialog->with && !strcmp(who, dialog->with)) {
+			if (dialog->with && !g_ascii_strcasecmp(who, dialog->with)) {
 				return dialog;
 			}
 		} SIPE_DIALOG_FOREACH_END;

@@ -49,6 +49,7 @@ sipe_session_find_or_add_chat_by_callid(struct sipe_account_data *sip,
 {
 	struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
 	if (!session) {
+		purple_debug_info("sipe", "sipe_session_find_or_add_chat_by_callid: new session for %s\n", callid);
 		session = sipe_session_add_chat(sip);
 		session->callid = g_strdup(callid);
 	}
@@ -65,7 +66,7 @@ sipe_session_find_chat_by_callid(struct sipe_account_data *sip,
 
 	SIPE_SESSION_FOREACH {
 		if (session->callid &&
-		    !g_strcasecmp(callid, session->callid)) {
+		    !g_ascii_strcasecmp(callid, session->callid)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;
@@ -115,7 +116,7 @@ sipe_session_find_conference(struct sipe_account_data *sip,
 
 	SIPE_SESSION_FOREACH {
 		if (session->focus_uri &&
-		    !g_strcasecmp(focus_uri, session->focus_uri)) {
+		    !g_ascii_strcasecmp(focus_uri, session->focus_uri)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;
@@ -130,7 +131,7 @@ sipe_session_find_im(struct sipe_account_data *sip, const gchar *who)
 	}
 
 	SIPE_SESSION_FOREACH {
-		if (session->with && !strcmp(who, session->with)) {
+		if (session->with && !g_ascii_strcasecmp(who, session->with)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;
@@ -143,6 +144,7 @@ sipe_session_find_or_add_im(struct sipe_account_data *sip,
 {
 	struct sip_session *session = sipe_session_find_im(sip, who);
 	if (!session) {
+		purple_debug_info("sipe", "sipe_session_find_or_add_im: new session for %s\n", who);
 		session = g_new0(struct sip_session, 1);
 		session->is_multiparty = FALSE;
 		session->with = g_strdup(who);
