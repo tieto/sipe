@@ -32,9 +32,9 @@ typedef struct _uuid_t {
 
 #pragma pack(pop)
 
-char * generateUUIDfromEPID(const gchar *epid);
+char *generateUUIDfromEPID(const gchar *epid);
 
-gchar * sipe_uuid_get_macaddr();
+gchar *sipe_uuid_get_macaddr(const char *ip_address);
 
 
 void printUUID(sipe_uuid_t *uuid, char *string);
