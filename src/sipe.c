@@ -2850,8 +2850,7 @@ sipe_refer_notify(struct sipe_account_data *sip,
 		"SIP/2.0 %d %s\r\n",
 		status, desc);
 
-	dialog->outgoing_invite = send_sip_request(sip->gc, "NOTIFY",
-		who, who, hdr, body, dialog, NULL);
+	send_sip_request(sip->gc, "NOTIFY", who, who, hdr, body, dialog, NULL);
 
 	g_free(hdr);
 	g_free(body);
@@ -3004,7 +3003,7 @@ sipe_invite(struct sipe_account_data *sip,
 		char *key;
 
 		sipe_parse_html(msg_body, &msgformat, &msgtext);
-		purple_debug_info("sipe", "sipe_invite: msgformat=%s", msgformat);
+		purple_debug_info("sipe", "sipe_invite: msgformat=%s\n", msgformat);
 
 		msgr_value = sipmsg_get_msgr_string(msgformat);
 		g_free(msgformat);
@@ -3022,7 +3021,7 @@ sipe_invite(struct sipe_account_data *sip,
 
 		key = g_strdup_printf("<%s><%d><INVITE>", dialog->callid, (dialog->cseq) + 1);
 		g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(msg_body));
-		purple_debug_info("sipe", "sipe_im_send: added message %s to unconfirmed_messages(count=%d)\n",
+		purple_debug_info("sipe", "sipe_invite: added message %s to unconfirmed_messages(count=%d)\n",
 							key, g_hash_table_size(session->unconfirmed_messages));
 		g_free(key);
 	}
@@ -3667,8 +3666,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 					  PURPLE_CBFLAGS_NONE, FALSE);
 	}
 
-	/* add inviting party */
-	if (just_joined) {
+	/* add inviting party to chat */
+	if (just_joined && session->conv) {
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
 				  from, NULL,
 				  PURPLE_CBFLAGS_NONE, TRUE);
