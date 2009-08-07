@@ -3244,8 +3244,11 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	struct sip_session *session;
+	
+	purple_debug_info("sipe", "process_incoming_info: \n%s\n", msg->body ? msg->body : "");
 
-	struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
+	session = sipe_session_find_chat_by_callid(sip, callid);
 	if (!session) {
 		session = sipe_session_find_im(sip, from);
 	}
@@ -3291,7 +3294,15 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 	} else {
 		/* looks like purple lacks typing notification for chat */
 		if (!session->is_multiparty && !session->focus_uri) {
-			serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
+			xmlnode *xn_keyboard_activity  = xmlnode_from_str(msg->body, msg->bodylen);
+			const char *status = xmlnode_get_attrib(xmlnode_get_child(xn_keyboard_activity, "status"),
+								"status");			
+			if (status && !strcmp(status, "type")) {
+				serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
+			} else if (status && !strcmp(status, "idle")) {
+				serv_got_typing_stopped(sip->gc, from);
+			}
+			xmlnode_free(xn_keyboard_activity);
 		}
 
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
