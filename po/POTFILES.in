@@ -2,3 +2,4 @@
 [encoding: UTF-8]
 
 src/sipe.c
+src/sipe-conf.c
