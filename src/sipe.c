@@ -255,8 +255,11 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 							   sip->password,
 							   auth->target,
 							   auth->gssapi_data);
-			if (!gssapi_data || !auth->gssapi_context)
+			if (!gssapi_data || !auth->gssapi_context) {
+				sip->gc->wants_to_die = TRUE;
+				purple_connection_error(sip->gc, _("Failed to authenticate to server"));
 				return NULL;
+			}
 
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
 			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth_protocol, opaque, auth->realm, auth->target, gssapi_data);
@@ -652,7 +655,9 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
 		buf = auth_header(sip, &sip->registrar, msg);
-		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
+		if (buf) {
+			sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
+		}
 		g_free(buf);
 	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO") || !strcmp(method, "OPTIONS") || !strcmp(method, "REFER")) {
 		sip->registrar.nc = 3;
@@ -916,11 +921,19 @@ static char *get_contact_register(struct sipe_account_data  *sip)
 
 static void do_register_exp(struct sipe_account_data *sip, int expire)
 {
-	char *expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
-	char *uri = sip_uri_from_name(sip->sipdomain);
-	char *to = sip_uri_self(sip);
-	char *contact = get_contact_register(sip);
-	char *hdr = g_strdup_printf("Contact: %s\r\n"
+	char *uri;
+	char *expires;
+	char *to;
+	char *contact;
+	char *hdr;
+	
+	if (!sip->sipdomain) return;
+	
+	uri = sip_uri_from_name(sip->sipdomain);	
+	expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
+	to = sip_uri_self(sip);
+	contact = get_contact_register(sip);
+	hdr = g_strdup_printf("Contact: %s\r\n"
 				    "Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
 				    "Event: registration\r\n"
 				    "Allow-Events: presence\r\n"
@@ -5573,6 +5586,12 @@ static void sipe_login(PurpleAccount *account)
 	sip->subscribed_buddies = FALSE;
 
 	signinname_login = g_strsplit(username, ",", 2);
+	
+	if (!strstr(signinname_login[0], "@") || g_str_has_prefix(signinname_login[0], "@") || g_str_has_suffix(signinname_login[0], "@")) {
+		gc->wants_to_die = TRUE;
+		purple_connection_error(gc, _("Username should be valid SIP URI\nExample: user@company.com"));
+		return;
+	}
 
 	userserver = g_strsplit(signinname_login[0], "@", 2);
 	purple_connection_set_display_name(gc, userserver[0]);
@@ -5585,14 +5604,17 @@ static void sipe_login(PurpleAccount *account)
 		return;
 	}
 
-	domain_user = g_strsplit(signinname_login[1], "\\", 2);
-	sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
-	sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+	if (signinname_login[1] && strcmp(signinname_login[1], "")) {
+		domain_user = g_strsplit(signinname_login[1], "\\", 2);
+		sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
+		sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : 
+				  (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+		g_strfreev(domain_user);
+	}
 
 	sip->password = g_strdup(purple_connection_get_password(gc));
 
 	g_strfreev(userserver);
-	g_strfreev(domain_user);
 	g_strfreev(signinname_login);
 
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
@@ -5759,7 +5781,9 @@ static void sipe_close(PurpleConnection *gc)
 		sipe_session_remove_all(sip);
 
 		/* unregister */
-		do_register_exp(sip, 0);
+		if (PURPLE_CONNECTION_IS_CONNECTED(sip->gc)) {
+			do_register_exp(sip, 0);
+		}
 
 		sipe_connection_cleanup(sip);
 		g_free(sip->sipdomain);
@@ -6023,7 +6047,7 @@ sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 {
 	GHashTable *table;
 	table = g_hash_table_new(g_str_hash, g_str_equal);
-	g_hash_table_insert(table, "login_label", (gpointer)_("Sign-In Name..."));
+	g_hash_table_insert(table, "login_label", (gpointer)_("user@company.com"));
 	return table;
 }
 
@@ -6635,7 +6659,7 @@ static PurplePlugin *my_protocol = NULL;
 
 static PurplePluginProtocolInfo prpl_info =
 {
-	OPT_PROTO_CHAT_TOPIC,
+	OPT_PROTO_PASSWORD_OPTIONAL | OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	NO_BUDDY_ICONS,				/* icon_spec */
@@ -6771,11 +6795,11 @@ static void init_plugin(PurplePlugin *plugin)
 
 	purple_plugin_register(plugin);
 
-	split = purple_account_user_split_new(_("Login \n   domain\\user  or\n   someone@linux.com "), NULL, ',');
+	split = purple_account_user_split_new(_("Login \n   DOMAIN\\user  or\n   user@company.com "), NULL, ',');
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
-	option = purple_account_option_string_new(_("Server[:Port] (leave empty for auto-discovery)"), "server", "");
+	option = purple_account_option_string_new(_("Server[:Port]\n(Leave empty for auto-discovery)"), "server", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = purple_account_option_list_new(_("Connection Type"), "transport", NULL);
