@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20090801git77e1e6b
+%define git       20090808git16300ed
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -55,7 +55,7 @@ Live Communications Server 2003/2005 and Office Communications Server 2007.
 %if 0%{?_with_git:1}
 # Copied from "rpmbuild --showrc" configure definition
 export CFLAGS="${CFLAGS:-%optflags}"
-./autogen.sh --with-krb5
+./autogen.sh --prefix=/usr --with-krb5
 %else
 %configure --with-krb5
 %endif
@@ -83,6 +83,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sat Aug 08 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
+- fix prefix for git builds
+
 * Sat Aug 01 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
 - append -Wno-unused-parameter for GCC <4.4 compilation errors
 
