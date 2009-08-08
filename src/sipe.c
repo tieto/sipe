@@ -5406,17 +5406,13 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data)
 	}
 }
 
-
 static void create_connection(struct sipe_account_data *sip, gchar *hostname, int port)
 {
 	PurpleAccount *account = sip->account;
 	PurpleConnection *gc = sip->gc;
 
-	if (purple_account_get_bool(account, "useport", FALSE)) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "create_connection - using specified SIP port\n");
-		port = purple_account_get_int(account, "port", 0);
-	} else {
-		port = port ? port : (sip->transport == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
+	if (port == 0) {
+		port = (sip->transport == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
 	}
 
 	sip->realhostname = hostname;
@@ -5606,24 +5602,44 @@ static void sipe_login(PurpleAccount *account)
 	/* TODO: Set the status correctly. */
 	sip->status = g_strdup(SIPE_STATUS_ID_AVAILABLE);
 
-	transport = purple_account_get_string(account, "transport", "auto");
-	sip->transport = (strcmp(transport, "tls") == 0) ? SIPE_TRANSPORT_TLS :
-			 (strcmp(transport, "tcp") == 0) ? SIPE_TRANSPORT_TCP :
-							   SIPE_TRANSPORT_UDP;
+	sip->auto_transport = FALSE;
+	transport  = purple_account_get_string(account, "transport", "auto");
+	userserver = g_strsplit(purple_account_get_string(account, "server", ""), ":", 2);
+	if (userserver[0]) {
+		/* Use user specified server[:port] */
+		int port = 0;
 
-	if (purple_account_get_bool(account, "useproxy", FALSE)) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login - using specified SIP proxy\n");
-		create_connection(sip, g_strdup(purple_account_get_string(account, "proxy", sip->sipdomain)), 0);
-	} else if (strcmp(transport, "auto") == 0) {
-		sip->auto_transport = TRUE;
-		resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
-	} else if (strcmp(transport, "tls") == 0) {
-		resolve_next_service(sip, service_tls);
-	} else if (strcmp(transport, "tcp") == 0) {
-		resolve_next_service(sip, service_tcp);
+		if (userserver[1])
+			port = atoi(userserver[1]);
+
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login: user specified SIP server %s:%d\n",
+			     userserver[0], port);
+
+		if (strcmp(transport, "auto") == 0) {
+			sip->transport = purple_ssl_is_supported() ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
+		} else if (strcmp(transport, "tls") == 0) {
+			sip->transport = SIPE_TRANSPORT_TLS;
+		} else if (strcmp(transport, "tcp") == 0) {
+			sip->transport = SIPE_TRANSPORT_TCP;
+		} else {
+			sip->transport = SIPE_TRANSPORT_UDP;
+		}
+
+		create_connection(sip, g_strdup(userserver[0]), port);
 	} else {
-		resolve_next_service(sip, service_udp);
+		/* Server auto-discovery */
+		if (strcmp(transport, "auto") == 0) {
+			sip->auto_transport = TRUE;
+			resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
+		} else if (strcmp(transport, "tls") == 0) {
+			resolve_next_service(sip, service_tls);
+		} else if (strcmp(transport, "tcp") == 0) {
+			resolve_next_service(sip, service_tcp);
+		} else {
+			resolve_next_service(sip, service_udp);
+		}
 	}
+	g_strfreev(userserver);
 }
 
 static void sipe_connection_cleanup(struct sipe_account_data *sip)
@@ -6759,15 +6775,7 @@ static void init_plugin(PurplePlugin *plugin)
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
-	option = purple_account_option_bool_new(_("Use proxy"), "useproxy", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	option = purple_account_option_string_new(_("Proxy Server"), "proxy", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	option = purple_account_option_bool_new(_("Use non-standard port"), "useport", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	// Translators: noun (networking port)
-	option = purple_account_option_int_new(_("Port"), "port", 5061);
+	option = purple_account_option_string_new(_("Server[:Port] (leave empty for auto-discovery)"), "server", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = purple_account_option_list_new(_("Connection Type"), "transport", NULL);
