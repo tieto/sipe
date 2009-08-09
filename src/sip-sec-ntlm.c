@@ -60,8 +60,8 @@
 #include "util.h"
 #include "cipher.h"
 
+#include "sipe.h"
 #include "sipe-utils.h"
-#include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-ntlm.h"
 
