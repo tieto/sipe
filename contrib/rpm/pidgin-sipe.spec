@@ -32,7 +32,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  zlib-devel, libpurple-devel, libtool, intltool, gettext-devel
+BuildRequires:  libpurple-devel, libtool, intltool, gettext-devel
 BuildRequires:  krb5-devel
 # Required for com_err.h
 BuildRequires:  e2fsprogs-devel
@@ -83,6 +83,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sun Aug 09 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
+- removed unnecessary zlib-devel
+
 * Sat Aug 08 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
 - fix prefix for git builds
 

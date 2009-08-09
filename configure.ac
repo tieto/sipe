@@ -17,11 +17,6 @@ AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 
 AC_HEADER_STDC
-AC_CHECK_HEADER([zlib.h], 
-		[], 
-		[AC_MSG_ERROR([You must have zlib.h and zlib installed])])
-
-
 
 GAIM_MIN=pidgin_version_min
 GAIM_MAX=pidgin_version_max
