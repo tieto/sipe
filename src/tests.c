@@ -10,7 +10,13 @@
  *   - MS-NLMP: http://msdn.microsoft.com/en-us/library/cc207842.aspx
  *   - MS-SIP : http://msdn.microsoft.com/en-us/library/cc246115.aspx
  *
- * Build and run with `make tests`
+ * Build and run with (adjust as needed to your build platform!)
+ *
+ * $ gcc -I /usr/include/libpurple \
+ *       -I /usr/include/dbus-1.0 -I /usr/lib/dbus-1.0/include \
+ *       -I /usr/include/glib-2.0 -I /usr/lib/glib-2.0/include \
+ *       -o tests tests.c sipe-sign.c sipmsg.c sip-sec.c uuid.c -lpurple
+ * ./tests
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,20 +35,20 @@
 
 #include <glib.h>
 #include <stdlib.h>
-#include <zlib.h>
 
 #include "sipe-sign.h"
-#include "sip-ntlm.c"
-#include "sipe.h"
+#include "sip-sec-ntlm.c"
+
+#include "dbus-server.h"
 
 #include "uuid.h"
 
 static int successes = 0;
 static int failures = 0;
 
-void assert_equal(char * expected, char * got, int len, gboolean stringify)
+void assert_equal(const char * expected, const guchar * got, int len, gboolean stringify)
 {
-	gchar * res = got;
+	const gchar * res = (gchar *) got;
 	gchar to_str[len*2];
 
 	if (stringify) {
@@ -83,39 +89,39 @@ int main()
 	char * password = "Password";
 	char * user = "User";
 	char * domain = "Domain";
-	char nonce [] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
-	char exported_session_key[] = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55};
+	guchar nonce [] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
+	guchar exported_session_key[] = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55};
 
 	printf ("\nTesting LMOWFv1()\n");
-	char response_key_lm [16];
+	guchar response_key_lm [16];
 	LMOWFv1 (password, user, domain, response_key_lm);
 	assert_equal("E52CAC67419A9A224A3B108F3FA6CB6D", response_key_lm, 16, TRUE);
 
 	printf ("\nTesting LM Response Generation\n");
-	char lm_challenge_response [24];
+	guchar lm_challenge_response [24];
 	DESL (response_key_lm, nonce, lm_challenge_response);
 	assert_equal("98DEF7B87F88AA5DAFE2DF779688A172DEF11C7D5CCDEF13", lm_challenge_response, 24, TRUE);
 
 	printf ("\n\nTesting NTOWFv1()\n");
-	char response_key_nt [16];
+	guchar response_key_nt [16];
 	NTOWFv1 (password, user, domain, response_key_nt);
 	assert_equal("A4F49C406510BDCAB6824EE7C30FD852", response_key_nt, 16, TRUE);
 
 	printf ("\nTesting NT Response Generation\n");
-	char nt_challenge_response [24];
+	guchar nt_challenge_response [24];
 	DESL (response_key_nt, nonce, nt_challenge_response);
 	assert_equal("67C43011F30298A2AD35ECE64F16331C44BDBED927841F94", nt_challenge_response, 24, TRUE);
 
 	printf ("\n\nTesting Session Base Key and Key Exchange Generation\n");
-	char session_base_key [16];
+	guchar session_base_key [16];
 	MD4(response_key_nt, 16, session_base_key);
-	char key_exchange_key [16];
+	guchar key_exchange_key [16];
 	KXKEY(session_base_key, lm_challenge_response, key_exchange_key);
 	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", session_base_key, 16, TRUE);
 	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", key_exchange_key, 16, TRUE);
 
 	printf ("\n\nTesting Encrypted Session Key Generation\n");
-	char encrypted_random_session_key [16];
+	guchar encrypted_random_session_key [16];
 	RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
 	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
 
@@ -123,20 +129,20 @@ int main()
 
 	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm1Signing
 	printf ("\n\nTesting Signature Algorithm\n");
-	char sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
+	guchar sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
 	assert_equal (
 		"0100000078010900397420FE0E5A0F89",
-		purple_ntlm_gen_signature ("jCIFS", sk, 0x00090178, 0, 8),
+		(guchar *) purple_ntlm_gen_signature ("jCIFS", sk, 0x00090178, 0, 8),
 		32, FALSE
 	);
 
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
 	char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
-	char exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
+	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 	assert_equal (
 		"0100000000000000BF2E52667DDF6DED",
-		purple_ntlm_gen_signature(msg1, exported_session_key2, 0, 100, 16),
+		(guchar *) purple_ntlm_gen_signature(msg1, exported_session_key2, 0, 100, 16),
 		32, FALSE
 	);
 
@@ -150,7 +156,7 @@ int main()
 	gchar * msg_str = sipmsg_breakdown_get_string(&msgbd);
 	gchar * sig = purple_ntlm_sipe_signature_make (msg_str, exported_session_key2);
 	sipmsg_breakdown_free(&msgbd);
-	assert_equal ("0100000000000000BF2E52667DDF6DED", sig, 32, FALSE);
+	assert_equal ("0100000000000000BF2E52667DDF6DED", (guchar *) sig, 32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", purple_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
 
 
@@ -158,15 +164,14 @@ int main()
 
 	const char *testEpid = "01010101";
 	const char *expectedUUID = "4b1682a8-f968-5701-83fc-7c6741dc6697";
-	char *calcUUID = generateUUIDfromEPID(testEpid);
+	gchar *calcUUID = generateUUIDfromEPID(testEpid);
 
 	printf("\n\nTesting MS-SIPRE uuid derivation\n");
 	
-	assert_equal(expectedUUID, calcUUID, strlen(expectedUUID), FALSE);
+	assert_equal(expectedUUID, (guchar *) calcUUID, strlen(expectedUUID), FALSE);
 	g_free(calcUUID);
 	
 	guchar addr[6];
-	long mac = mac_addr_sys(addr);
 	gchar nmac[6];
 	
 	int i,j;
@@ -180,3 +185,12 @@ int main()
 
 	printf ("\nFinished With Tests; %d successs %d failures\n", successes, failures);
 }
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/
