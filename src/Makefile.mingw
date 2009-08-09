@@ -65,7 +65,6 @@ LIBS =	\
 			-lglib-2.0 \
 			-lws2_32 \
 			-lintl \
-			-lIphlpapi \
 			-lSecur32 \
 			-lpurple
 

@@ -36,7 +36,6 @@
 #define _LIBC_INTERNAL_
 #endif /* _DLL */
 #include "internal.h"
-#include <iphlpapi.h>
 #endif /* _WIN32 */
 
 #include <cipher.h>
