@@ -108,115 +108,35 @@ char *generateUUIDfromEPID(const gchar *epid)
 	return g_strdup(buf);
 }
 
-#ifndef _WIN32
-long mac_addr_sys (const unsigned char *addr)
+/**
+ * Generates epid from user SIP URI, hostname and IP address.
+ * Thus epid will be the same each start and
+ * not needed to be persistent.
+ * 
+ * Using MAC address proved to be poorly portable solution.
+ */
+char *sipe_get_epid(const char *self_sip_uri,
+			   const char *hostname,
+			   const char *ip_address)
 {
-/* implementation for Linux */
-    struct ifreq ifr;
-    struct ifreq *IFR;
-    struct ifconf ifc;
-    char buf[1024];
-    int s, i;
-    int ok = 0;
-
-    s = socket(AF_INET, SOCK_DGRAM, 0);
-    if (s==-1) {
-        return -1;
-    }
-
-    ifc.ifc_len = sizeof(buf);
-    ifc.ifc_buf = buf;
-    ioctl(s, SIOCGIFCONF, &ifc);
-
-    IFR = ifc.ifc_req;
-    for (i = ifc.ifc_len / sizeof(struct ifreq); --i >= 0; IFR++) {
-
-        strcpy(ifr.ifr_name, IFR->ifr_name);
-        if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0) {
-            if (! (ifr.ifr_flags & IFF_LOOPBACK)) {
-#ifdef __FreeBSD__
-		if (ioctl(s, SIOCGIFMAC, &ifr) == 0) {
-#else
-		if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
-#endif
-                    ok = 1;
-                    break;
-                }
-            }
-        }
-    }
-
-    close(s);
-    if (ok) {
-	memmove((void *)addr, ifr.ifr_ifru.ifru_addr.sa_data, 6);
-    }
-    else {
-        return -1;
-    }
-    return 0;
-}
-
-#else
-
-static char *get_mac_address_win(const char *ip_address)
-{
-	IP_ADAPTER_INFO AdapterInfo[16]; // for up to 16 NICs
-	DWORD ulOutBufLen = sizeof(AdapterInfo);
-	PIP_ADAPTER_INFO pAdapter_res = NULL;
-    PIP_ADAPTER_INFO pAdapter = NULL;
-    DWORD dwRetVal = 0;
-    UINT i;
-	char *res = NULL;
+	int i,j;
+	PurpleCipherContext *ctx;
+	unsigned char hash[20];
+	char out[11];
+	char *buf = g_strdup_printf("%s:%s:%s", self_sip_uri, hostname, ip_address);
 	
-	if ((dwRetVal = GetAdaptersInfo(AdapterInfo, &ulOutBufLen)) == NO_ERROR) {
-		pAdapter = AdapterInfo;
-		pAdapter_res = pAdapter;
-		while (pAdapter) {
-			if (!g_ascii_strcasecmp(pAdapter->IpAddressList.IpAddress.String, ip_address)) {
-				pAdapter_res = pAdapter;				
-				break;
-			}
-			pAdapter = pAdapter->Next;
-		}
-	} else {
-		printf("GetAdaptersInfo failed with error: %d\n", dwRetVal);
+	printf("epid buf=%s\n", buf);
+
+	ctx = purple_cipher_context_new_by_name("sha1", NULL);
+	purple_cipher_context_append(ctx, (guchar *)buf, strlen(buf));
+	purple_cipher_context_digest(ctx, sizeof(hash), hash, NULL);
+	purple_cipher_context_destroy(ctx);
+
+	for (i=15,j=0; i <=20; i++,j+=2) {
+		g_sprintf(&out[j], "%02x", hash[i]);
 	}
+	out[10] = 0;	
 	
-	if (pAdapter_res && pAdapter_res->AddressLength) {
-		gchar nmac[13];
-		for (i = 0; i < pAdapter_res->AddressLength; i++) {
-			g_sprintf(&nmac[(i*2)], "%02X", (int)pAdapter_res->Address[i]);
-		}
-		res = g_strndup(nmac, pAdapter_res->AddressLength * 2);
-		printf("NIC: %s, IP Address: %s, MAC Address: %s\n", pAdapter_res->Description, pAdapter_res->IpAddressList.IpAddress.String, res);
-	} else {
-		res = g_strdup("01010101");
-	}
-	
-	//@TODO free AdapterInfo
-	return res;
-}
-#endif /* _WIN32 */
-
-gchar * sipe_uuid_get_macaddr(const char *ip_address)
-{
-#ifndef _WIN32
-	guchar addr[6];
-	long mac_add = mac_addr_sys(addr);
-	gchar nmac[13];
-
-	/* unused parameter */
-	(void) ip_address;
-	
-	if (mac_add == 0){
-		int i,j;
-		for (i = 0,j=0; i < 6; i++,j+=2) {
-			g_sprintf(&nmac[j], "%02X", addr[i]);
-		}
-		return g_strdup(nmac);
-	}
-	return g_strdup("01010101");  //Default
-#else
-	return get_mac_address_win(ip_address);
-#endif /* _WIN32 */
+	g_free(buf);
+	return g_strdup(out);
 }

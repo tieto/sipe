@@ -128,6 +128,25 @@ xmlnode *xmlnode_get_descendant(const xmlnode *parent, ...)
 	return node;
 }
 
+//* @TODO Do we need compat with glib < 2.8 ? */
+char *sipe_get_host_name()
+{
+#if GLIB_CHECK_VERSION(2,8,0)
+	const gchar * hostname = g_get_host_name();
+#else
+	static char hostname[256];
+	int ret = gethostname(hostname, sizeof(hostname));
+	hostname[sizeof(hostname) - 1] = '\0';
+	if (ret == -1 || hostname[0] == '\0') {
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
+		g_strerror(errno);
+		strcpy(hostname, "localhost");
+	}
+#endif
+	/*const gchar * hostname = purple_get_host_name();*/
+	return (char *)hostname;
+}
+
 /*
   Local Variables:
   mode: c

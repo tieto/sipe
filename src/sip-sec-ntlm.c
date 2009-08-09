@@ -60,6 +60,7 @@
 #include "util.h"
 #include "cipher.h"
 
+#include "sipe-utils.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-ntlm.h"
@@ -569,7 +570,6 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *
  ***********************************************/
 
 /* sip-sec-mech.h API implementation for NTLM */
-static char *sipe_get_host_name();
 
 /* Security context for NTLM */
 typedef struct _context_ntlm {
@@ -714,24 +714,6 @@ sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER SipSecAuthType type)
 	return((SipSecContext) context);
 }
 
-//@TODO refactor it somewhere to utils. Do we need compat with glib < 2.8 ?
-char *sipe_get_host_name()
-{
-#if GLIB_CHECK_VERSION(2,8,0)
-	const gchar * hostname = g_get_host_name();
-#else
-	static char hostname[256];
-	int ret = gethostname(hostname, sizeof(hostname));
-	hostname[sizeof(hostname) - 1] = '\0';
-	if (ret == -1 || hostname[0] == '\0') {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
-		g_strerror(errno);
-		strcpy(hostname, "localhost");
-	}
-#endif
-	/*const gchar * hostname = purple_get_host_name();*/
-	return (char *)hostname;
-}
 
 /*
   Local Variables:

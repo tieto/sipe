@@ -108,7 +108,11 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 static gchar *get_epid(struct sipe_account_data *sip)
 {
 	if (!sip->epid) {
-		sip->epid = sipe_uuid_get_macaddr(purple_network_get_my_ip(-1));
+		gchar *self_sip_uri = sip_uri_self(sip);
+		sip->epid = sipe_get_epid(self_sip_uri,
+					  sipe_get_host_name(),
+					  purple_network_get_my_ip(-1));
+		g_free(self_sip_uri);
 	}
 	return g_strdup(sip->epid);
 }

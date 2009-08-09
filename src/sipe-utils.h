@@ -107,3 +107,8 @@ gchar *sip_uri(const gchar *string);
  * @return descendant XML node
  */
 xmlnode * xmlnode_get_descendant(const xmlnode *parent, ...);
+
+/**
+ * For glib < 2.8 compatibility
+ */
+char *sipe_get_host_name();

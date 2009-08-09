@@ -33,14 +33,13 @@ typedef struct _uuid_t {
 #pragma pack(pop)
 
 char *generateUUIDfromEPID(const gchar *epid);
-
-gchar *sipe_uuid_get_macaddr(const char *ip_address);
-
-
 void printUUID(sipe_uuid_t *uuid, char *string);
 void readUUID(const char *string, sipe_uuid_t *uuid);
 void createUUIDfromHash(sipe_uuid_t *uuid, const unsigned char *hash);
-long mac_addr_sys (const unsigned char *addr);
+
+char *sipe_get_epid(const char *self_sip_uri,
+		    const char *hostname,
+		    const char *ip_address);
 
 
 #endif /* SIPE_UUID_H_ */
