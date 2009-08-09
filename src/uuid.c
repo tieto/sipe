@@ -112,31 +112,44 @@ char *generateUUIDfromEPID(const gchar *epid)
  * Generates epid from user SIP URI, hostname and IP address.
  * Thus epid will be the same each start and
  * not needed to be persistent.
- * 
+ *
  * Using MAC address proved to be poorly portable solution.
  */
 char *sipe_get_epid(const char *self_sip_uri,
 			   const char *hostname,
 			   const char *ip_address)
 {
+#define SIPE_EPID_HASH_START 15
+#define SIPE_EPID_HASH_END   20
+#define SIPE_EPID_LENGTH     (2 * (SIPE_EPID_HASH_END - SIPE_EPID_HASH_START + 1))
+
 	int i,j;
 	PurpleCipherContext *ctx;
-	unsigned char hash[20];
-	char out[11];
+	unsigned char hash[SIPE_EPID_HASH_END];
+	char out[SIPE_EPID_LENGTH + 1];
 	char *buf = g_strdup_printf("%s:%s:%s", self_sip_uri, hostname, ip_address);
-	
-	printf("epid buf=%s\n", buf);
 
 	ctx = purple_cipher_context_new_by_name("sha1", NULL);
 	purple_cipher_context_append(ctx, (guchar *)buf, strlen(buf));
 	purple_cipher_context_digest(ctx, sizeof(hash), hash, NULL);
 	purple_cipher_context_destroy(ctx);
 
-	for (i=15,j=0; i <=20; i++,j+=2) {
+	for (i = SIPE_EPID_HASH_START, j = 0;
+	     i <= SIPE_EPID_HASH_END;
+	     i++, j += 2) {
 		g_sprintf(&out[j], "%02x", hash[i]);
 	}
-	out[10] = 0;	
-	
+	out[SIPE_EPID_LENGTH] = 0;
+
 	g_free(buf);
 	return g_strdup(out);
 }
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/
