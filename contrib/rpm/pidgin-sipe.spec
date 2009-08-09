@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20090808git16300ed
+%define git       20090809git7158106
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -33,9 +33,14 @@ URL:            http://sipe.sourceforge.net/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libpurple-devel, libtool, intltool, gettext-devel
-BuildRequires:  krb5-devel
 # Required for com_err.h
 BuildRequires:  e2fsprogs-devel
+
+# Configurable components
+%if !0%{?_without_kerberos:1}
+%define config_krb5 --with-krb5
+BuildRequires:  krb5-devel
+%endif
 
 
 %description
@@ -52,12 +57,18 @@ Live Communications Server 2003/2005 and Office Communications Server 2007.
 
 
 %build
+%define config_params %{?config_krb5:%{config_krb5}}
 %if 0%{?_with_git:1}
 # Copied from "rpmbuild --showrc" configure definition
 export CFLAGS="${CFLAGS:-%optflags}"
-./autogen.sh --prefix=/usr --with-krb5
+./autogen.sh --build=%{_build} --host=%{_host} \
+        --target=%{_target_platform} \
+        --prefix=%{_prefix} \
+        --datadir=%{_datadir} \
+        --libdir=%{_libdir} \
+	%{config_params}
 %else
-%configure --with-krb5
+%configure %{config_params}
 %endif
 
 make %{_smp_mflags}
@@ -83,6 +94,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sun Aug 09 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
+- refactor configure parameters
+- make kerberos configurable
+- don't hard code prefix for git builds
+
 * Sun Aug 09 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
 - removed unnecessary zlib-devel
 
