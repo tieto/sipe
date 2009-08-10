@@ -5573,6 +5573,8 @@ static void sipe_login(PurpleAccount *account)
 	const char *username = purple_account_get_username(account);
 	gc = purple_account_get_connection(account);
 
+	purple_debug_info("sipe", "sipe_login: username '%s'\n", username);
+
 	if (strpbrk(username, "\t\v\r\n") != NULL) {
 		gc->wants_to_die = TRUE;
 		purple_connection_error(gc, _("SIP Exchange username contains invalid characters"));
@@ -5590,6 +5592,7 @@ static void sipe_login(PurpleAccount *account)
 	sip->subscribed_buddies = FALSE;
 
 	signinname_login = g_strsplit(username, ",", 2);
+	purple_debug_info("sipe", "sipe_login: signinname[0] '%s'\n", signinname_login[0]);
 
 	if (!strstr(signinname_login[0], "@") || g_str_has_prefix(signinname_login[0], "@") || g_str_has_suffix(signinname_login[0], "@")) {
 		g_strfreev(signinname_login);
@@ -5600,13 +5603,16 @@ static void sipe_login(PurpleAccount *account)
 
 	if (signinname_login[1] && strcmp(signinname_login[1], "")) {
 		gchar **domain_user = g_strsplit(signinname_login[1], "\\", 2);
+		purple_debug_info("sipe", "sipe_login: signinname[1] '%s'\n", signinname_login[1]);
 		sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
 		sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) :
 				  (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+		purple_debug_info("sipe", "sipe_login: auth domain '%s' user '%s'\n", sip->authdomain, sip->authuser);
 		g_strfreev(domain_user);
 	}
 
 	userserver = g_strsplit(signinname_login[0], "@", 2);
+	purple_debug_info("sipe", "sipe_login: user '%s' server '%s'\n", userserver[0], userserver[1]);
 	purple_connection_set_display_name(gc, userserver[0]);
 	sip->username = g_strjoin("@", userserver[0], userserver[1], NULL);
 	sip->sipdomain = g_strdup(userserver[1]);
