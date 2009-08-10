@@ -89,6 +89,14 @@ struct sipe_service_data {
 };
 
 /** MS-PRES container */
+struct sipe_publication {
+	gchar *category;
+	guint instance;
+	guint container;
+	guint version;
+};
+
+/** MS-PRES container */
 struct sipe_container {
 	guint id;
 	guint version;
@@ -128,6 +136,8 @@ struct sipe_account_data {
 	gboolean subscribed; /* whether subscribed to events, except buddies presence */
 	gboolean subscribed_buddies; /* whether subscribed to buddies presence */
 	gboolean access_level_set; /* whether basic access level set */
+	GSList *our_publication_keys; /* [MS-PRES] */
+	GHashTable *our_publications; /* [MS-PRES] */
 	int listenfd;
 	int listenport;
 	int listenpa;

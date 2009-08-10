@@ -104,18 +104,12 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 /* Action name templates */
 #define ACTION_NAME_PRESENCE "<presence><%s>"
 
-
-static gchar *get_epid(struct sipe_account_data *sip)
-{
-	if (!sip->epid) {
-		gchar *self_sip_uri = sip_uri_self(sip);
-		sip->epid = sipe_get_epid(self_sip_uri,
-					  sipe_get_host_name(),
-					  purple_network_get_my_ip(-1));
-		g_free(self_sip_uri);
-	}
-	return g_strdup(sip->epid);
-}
+/* Our publication type keys. OCS 2007+
+ * Format: SIPE_PUB_{Category}[_{SubSategory}]
+ */
+#define SIPE_PUB_DEVICE		"000"
+#define SIPE_PUB_STATE_MACHINE	"100"
+#define SIPE_PUB_NOTE		"200"
 
 static char *genbranch()
 {
@@ -2305,6 +2299,42 @@ sipe_send_set_container_members(struct sipe_account_data *sip,
 	g_free(self);
 }
 
+static void
+free_publication(struct sipe_publication *publication)
+{
+	g_free(publication->category);
+	g_free(publication);
+}
+
+/* key is <category><instance><container> */
+static gboolean
+sipe_is_our_publication(struct sipe_account_data *sip,
+			const gchar *key)
+{
+	GSList *entry;
+	
+	/* filling keys for our publications if not yet cached */
+	if (!sip->our_publication_keys) {
+		guint device_instance = sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
+		guint machine_instance = sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
+		
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys, 
+			g_strdup_printf("<%s><%d><%d>", "device", device_instance, 2));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys, 
+			g_strdup_printf("<%s><%d><%d>", "state", machine_instance, 2));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys, 
+			g_strdup_printf("<%s><%d><%d>", "state", machine_instance, 3));
+	}
+	
+	entry = sip->our_publication_keys;
+	while (entry) {
+		if (!strcmp(entry->data, key)) {
+			return TRUE;
+		}		
+		entry = entry->next;
+	}
+	return FALSE;	
+}
 
 /**
   *   When we receive some self (BE) NOTIFY with a new subscriber
@@ -2323,6 +2353,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
         const char *alias;
         char *uri_alias;
         char *uri_user;
+	GHashTable *our_publications_tmp = NULL;
 
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 
@@ -2331,6 +2362,41 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 	contact = get_contact(sip);
 	to = sip_uri_self(sip);
+	
+	
+	/* categories */	
+	for (node = xmlnode_get_descendant(xml, "categories", "category", NULL); node; node = xmlnode_get_next_twin(node)) {
+		const gchar *name = xmlnode_get_attrib(node, "name");
+		guint instance = atoi(xmlnode_get_attrib(node, "instance"));
+		guint container = atoi(xmlnode_get_attrib(node, "container"));
+		guint version = atoi(xmlnode_get_attrib(node, "version"));
+		/* key is <category><instance><container> */
+		gchar *key = g_strdup_printf("<%s><%d><%d>", name, instance, container);
+		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version);		
+		if (sipe_is_our_publication(sip, key)) {
+			struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
+			publication->category = g_strdup(name);
+			publication->instance = instance;
+			publication->container = container;
+			publication->version = version;
+			
+			if (!our_publications_tmp) {
+				our_publications_tmp = g_hash_table_new_full(
+								g_str_hash, g_str_equal,
+								g_free,	(GDestroyNotify)free_publication);
+			}
+			g_hash_table_insert(our_publications_tmp, g_strdup(key), publication);
+			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version);
+		}
+		g_free(key);
+	}
+	if (our_publications_tmp) {
+		g_hash_table_destroy(sip->our_publications);
+		sip->our_publications = our_publications_tmp;
+		our_publications_tmp = NULL;
+	}
+	purple_debug_info("sipe", "sipe_process_roaming_self: sip->our_publications size=%d\n",
+		sip->our_publications ? g_hash_table_size(sip->our_publications) : -1);
 
 	/* containers */
 	for (node = xmlnode_get_descendant(xml, "containers", "container", NULL); node; node = xmlnode_get_next_twin(node)) {
@@ -5809,6 +5875,16 @@ static void sipe_close(PurpleConnection *gc)
 
 		g_hash_table_foreach_steal(sip->buddies, sipe_buddy_remove, NULL);
 		g_hash_table_destroy(sip->buddies);
+		g_hash_table_destroy(sip->our_publications);
+		
+		if (sip->our_publication_keys) {
+			GSList *entry = sip->our_publication_keys;
+			while (entry) {
+				g_free(entry->data);
+				entry = entry->next;
+			}
+		}
+		g_slist_free(sip->our_publication_keys);
 	}
 	g_free(gc->proto_data);
 	gc->proto_data = NULL;

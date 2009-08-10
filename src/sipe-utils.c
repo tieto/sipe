@@ -147,6 +147,30 @@ char *sipe_get_host_name()
 	return (char *)hostname;
 }
 
+gchar *
+get_epid(struct sipe_account_data *sip)
+{
+	if (!sip->epid) {
+		gchar *self_sip_uri = sip_uri_self(sip);
+		sip->epid = sipe_get_epid(self_sip_uri,
+					  sipe_get_host_name(),
+					  purple_network_get_my_ip(-1));
+		g_free(self_sip_uri);
+	}
+	return g_strdup(sip->epid);
+}
+
+guint
+sipe_get_pub_instance(struct sipe_account_data *sip,
+		      const char *publication_key)
+{
+	unsigned part_1;
+	unsigned part_2;
+	sscanf(get_epid(sip), "%08x", &part_1);
+	sscanf(publication_key, "%uh", &part_2);
+	return part_1 + part_2;
+}
+
 /*
   Local Variables:
   mode: c

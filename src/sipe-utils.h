@@ -21,6 +21,13 @@
  */
 
 /**
+ * Returns epid value.
+ * Uses cache.
+ */ 
+gchar *
+get_epid(struct sipe_account_data *sip);
+ 
+/**
  * Generate Call ID
  *
  * @return Call ID. Must be g_free()'d.
@@ -43,6 +50,17 @@ gchar *gentag(void);
  * @return conference-id. Must be g_free()'d.
  */
 gchar *genconfid(void);
+
+/**
+ * Returns instance value for particular publication type.
+ * It should be consistent for the same endpoint
+ * but different between distinct endpoints.
+ *
+ * See defined constants for keys patterned SIPE_PUB_*
+ */ 
+guint
+sipe_get_pub_instance(struct sipe_account_data *sip,
+		      const char *publication_key);
 
 /**
  * Get contact information from SIPE account
