@@ -12,7 +12,7 @@
  *   - http://davenport.sourceforge.net/ntlm.html
  *   - MS-NLMP: http://msdn.microsoft.com/en-us/library/cc207842.aspx
  *   - MS-SIP : http://msdn.microsoft.com/en-us/library/cc246115.aspx
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -104,7 +104,7 @@ struct authenticate_message {
 	//guint32 type;            /* 0x03 */
 	guint8  type;            /* 0x03 */
 	guint8  zero1[3];
-	
+
 	guint16 lm_resp_len1;    /* LanManager response length (always 0x18)*/
 	guint16 lm_resp_len2;    /* LanManager response length (always 0x18)*/
 	//guint32 lm_resp_off;     /* LanManager response offset */
@@ -188,7 +188,7 @@ static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *resul
 	PurpleCipher *cipher;
 	PurpleCipherContext *context;
 	gsize outlen;
-	
+
 	cipher = purple_ciphers_find_cipher("des");
 	context = purple_cipher_context_new(cipher, NULL);
 	purple_cipher_context_set_key(context, (guchar*)key);
@@ -196,7 +196,7 @@ static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *resul
 	purple_cipher_context_destroy(context);
 }
 
-static int 
+static int
 unicode_strconvcopy(gchar *dest, const gchar *source, int remlen)
 {
 	GIConv fd;
@@ -330,12 +330,12 @@ LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUS
 	for (i = 0; i < len; i++) {
 		uppercase_password[i] = g_ascii_toupper(password[i]);
 	}
- 
+
 	// Zero the rest
 	for (; i < 14; i++) {
 		uppercase_password[i] = 0;
 	}
-	
+
 	DES (uppercase_password, magic, result);
 	DES (uppercase_password + 7, magic, result + 8);
 }
@@ -441,7 +441,7 @@ purple_ntlm_gen_signature (const char * buf, unsigned char * signing_key, guint3
 	int i, j;
 	PurpleCipherContext *rc4 = purple_cipher_context_new_by_name("rc4", NULL);
 	purple_cipher_context_set_option(rc4,"key_len", GINT_TO_POINTER(key_len));
-      
+
 	purple_cipher_context_set_key(rc4, signing_key);
 	purple_cipher_context_encrypt(rc4, (const guchar *)plaintext, 12, result+4, NULL);
 	purple_cipher_context_destroy(rc4);
@@ -589,7 +589,10 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 			   const char *password)
 {
 	context_ntlm ctx = (context_ntlm)context;
-	
+
+	/* NTLM requires a password */
+	if (!password) return SIP_SEC_E_INTERNAL_ERROR;
+
 	ctx->domain   = strdup(domain);
 	ctx->username = strdup(username);
 	ctx->password = strdup(password);
@@ -604,7 +607,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			  SIPE_UNUSED_PARAMETER const char *service_name)
 {
 	context_ntlm ctx = (context_ntlm) context;
-	
+
 	purple_debug_info("sipe", "sip_sec_init_sec_context__ntlm: in use\n");
 
 	ctx->step++;

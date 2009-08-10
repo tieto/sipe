@@ -6669,7 +6669,7 @@ static PurplePlugin *my_protocol = NULL;
 
 static PurplePluginProtocolInfo prpl_info =
 {
-	OPT_PROTO_PASSWORD_OPTIONAL | OPT_PROTO_CHAT_TOPIC,
+	OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	NO_BUDDY_ICONS,				/* icon_spec */
