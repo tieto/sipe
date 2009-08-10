@@ -5591,22 +5591,26 @@ static void sipe_login(PurpleAccount *account)
 	sip->subscribed = FALSE;
 	sip->subscribed_buddies = FALSE;
 
+	/* username format: <username>,[<optional login>] */
 	signinname_login = g_strsplit(username, ",", 2);
 	purple_debug_info("sipe", "sipe_login: signinname[0] '%s'\n", signinname_login[0]);
 
-	if (!strstr(signinname_login[0], "@") || g_str_has_prefix(signinname_login[0], "@") || g_str_has_suffix(signinname_login[0], "@")) {
+	/* ensure that username format is name@domain */
+	if (!strchr(signinname_login[0], '@') || g_str_has_prefix(signinname_login[0], "@") || g_str_has_suffix(signinname_login[0], "@")) {
 		g_strfreev(signinname_login);
 		gc->wants_to_die = TRUE;
 		purple_connection_error(gc, _("Username should be valid SIP URI\nExample: user@company.com"));
 		return;
 	}
+	sip->username = g_strdup(signinname_login[0]);
 
-	if (signinname_login[1] && strcmp(signinname_login[1], "")) {
+	/* login name specified? */
+	if (signinname_login[1] && strlen(signinname_login[1])) {
 		gchar **domain_user = g_strsplit(signinname_login[1], "\\", 2);
+		gboolean has_domain = domain_user[1] != NULL;
 		purple_debug_info("sipe", "sipe_login: signinname[1] '%s'\n", signinname_login[1]);
-		sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
-		sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) :
-				  (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+		sip->authdomain = has_domain ? g_strdup(domain_user[0]) : NULL;
+		sip->authuser =   g_strdup(domain_user[has_domain ? 1 : 0]);
 		purple_debug_info("sipe", "sipe_login: auth domain '%s' user '%s'\n",
 				   sip->authdomain ? sip->authdomain : "", sip->authuser);
 		g_strfreev(domain_user);
@@ -5615,12 +5619,11 @@ static void sipe_login(PurpleAccount *account)
 	userserver = g_strsplit(signinname_login[0], "@", 2);
 	purple_debug_info("sipe", "sipe_login: user '%s' server '%s'\n", userserver[0], userserver[1]);
 	purple_connection_set_display_name(gc, userserver[0]);
-	sip->username = g_strjoin("@", userserver[0], userserver[1], NULL);
 	sip->sipdomain = g_strdup(userserver[1]);
 	g_strfreev(userserver);
 	g_strfreev(signinname_login);
 
-	if (strpbrk(sip->username, " \t\v\r\n") != NULL) {
+	if (strchr(sip->username, ' ') != NULL) {
 		gc->wants_to_die = TRUE;
 		purple_connection_error(gc, _("SIP Exchange usernames may not contain whitespaces"));
 		return;
@@ -6806,7 +6809,7 @@ static void init_plugin(PurplePlugin *plugin)
 
 	purple_plugin_register(plugin);
 
-	split = purple_account_user_split_new(_("Login \n   DOMAIN\\user  or\n   user@company.com "), NULL, ',');
+	split = purple_account_user_split_new(_("Login \n   user  or  DOMAIN\\user  or\n   user@company.com "), NULL, ',');
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
