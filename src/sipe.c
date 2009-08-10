@@ -2396,7 +2396,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		our_publications_tmp = NULL;
 	}
 	purple_debug_info("sipe", "sipe_process_roaming_self: sip->our_publications size=%d\n",
-		sip->our_publications ? g_hash_table_size(sip->our_publications) : -1);
+			  sip->our_publications ? (int) g_hash_table_size(sip->our_publications) : -1);
 
 	/* containers */
 	for (node = xmlnode_get_descendant(xml, "containers", "container", NULL); node; node = xmlnode_get_next_twin(node)) {
