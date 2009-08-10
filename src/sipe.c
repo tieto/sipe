@@ -633,11 +633,11 @@ static void sendout_sipmsg(struct sipe_account_data *sip, struct sipmsg *msg)
 static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data *sip, const gchar *method)
 {
 	gchar * buf;
-	
+
 	if (sip->registrar.type == AUTH_TYPE_UNSET) {
 		return;
 	}
-	
+
 	if (sip->registrar.gssapi_context) {
 		struct sipmsg_breakdown msgbd;
 		gchar *signature_input_str;
@@ -930,10 +930,10 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	char *to;
 	char *contact;
 	char *hdr;
-	
+
 	if (!sip->sipdomain) return;
-	
-	uri = sip_uri_from_name(sip->sipdomain);	
+
+	uri = sip_uri_from_name(sip->sipdomain);
 	expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
 	to = sip_uri_self(sip);
 	contact = get_contact_register(sip);
@@ -2642,7 +2642,7 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 				     const gchar *message)
 {
 	char *msg, *msg_tmp;
-	
+
 	msg_tmp = message ? purple_markup_strip_html(message) : NULL;
 	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
 	g_free(msg_tmp);
@@ -2689,9 +2689,9 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 	if (msg->response >= 400) {
 		PurpleBuddy *pbuddy;
 		gchar *alias = with;
-		
+
 		purple_debug_info("sipe", "process_message_response: MESSAGE response >= 400\n");
-		
+
 		if ((pbuddy = purple_find_buddy(sip->account, with))) {
 			alias = (gchar *)purple_buddy_get_alias(pbuddy);
 		}
@@ -2914,13 +2914,13 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	if (msg->response != 200) {
 		PurpleBuddy *pbuddy;
 		gchar *alias = with;
-		
+
 		purple_debug_info("sipe", "process_invite_response: INVITE response not 200\n");
-		
+
 		if ((pbuddy = purple_find_buddy(sip->account, with))) {
 			alias = (gchar *)purple_buddy_get_alias(pbuddy);
-		}		
-		
+		}
+
 		if (message) {
 			sipe_present_message_undelivered_err(sip, session, alias, message);
 		} else {
@@ -2930,7 +2930,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		}
 
 		sipe_dialog_remove(session, with);
-		
+
 		g_free(key);
 		g_free(with);
 		return FALSE;
@@ -3170,7 +3170,7 @@ sipe_session_close(struct sipe_account_data *sip,
 	if (session && session->focus_uri) {
 		conf_session_close(sip, session);
 	}
-	
+
 	if (session) {
 		SIPE_DIALOG_FOREACH {
 			/* @TODO slow down BYE message sending rate */
@@ -3262,7 +3262,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	struct sip_session *session;
-	
+
 	purple_debug_info("sipe", "process_incoming_info: \n%s\n", msg->body ? msg->body : "");
 
 	session = sipe_session_find_chat_by_callid(sip, callid);
@@ -3313,7 +3313,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 		if (!session->is_multiparty && !session->focus_uri) {
 			xmlnode *xn_keyboard_activity  = xmlnode_from_str(msg->body, msg->bodylen);
 			const char *status = xmlnode_get_attrib(xmlnode_get_child(xn_keyboard_activity, "status"),
-								"status");			
+								"status");
 			if (status && !strcmp(status, "type")) {
 				serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
 			} else if (status && !strcmp(status, "idle")) {
@@ -5567,7 +5567,7 @@ static void sipe_login(PurpleAccount *account)
 {
 	PurpleConnection *gc;
 	struct sipe_account_data *sip;
-	gchar **signinname_login, **userserver, **domain_user;
+	gchar **signinname_login, **userserver;
 	const char *transport;
 
 	const char *username = purple_account_get_username(account);
@@ -5590,17 +5590,28 @@ static void sipe_login(PurpleAccount *account)
 	sip->subscribed_buddies = FALSE;
 
 	signinname_login = g_strsplit(username, ",", 2);
-	
+
 	if (!strstr(signinname_login[0], "@") || g_str_has_prefix(signinname_login[0], "@") || g_str_has_suffix(signinname_login[0], "@")) {
+		g_strfreev(signinname_login);
 		gc->wants_to_die = TRUE;
 		purple_connection_error(gc, _("Username should be valid SIP URI\nExample: user@company.com"));
 		return;
+	}
+
+	if (signinname_login[1] && strcmp(signinname_login[1], "")) {
+		gchar **domain_user = g_strsplit(signinname_login[1], "\\", 2);
+		sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
+		sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) :
+				  (signinname_login ? g_strdup(signinname_login[1]) : NULL);
+		g_strfreev(domain_user);
 	}
 
 	userserver = g_strsplit(signinname_login[0], "@", 2);
 	purple_connection_set_display_name(gc, userserver[0]);
 	sip->username = g_strjoin("@", userserver[0], userserver[1], NULL);
 	sip->sipdomain = g_strdup(userserver[1]);
+	g_strfreev(userserver);
+	g_strfreev(signinname_login);
 
 	if (strpbrk(sip->username, " \t\v\r\n") != NULL) {
 		gc->wants_to_die = TRUE;
@@ -5608,18 +5619,7 @@ static void sipe_login(PurpleAccount *account)
 		return;
 	}
 
-	if (signinname_login[1] && strcmp(signinname_login[1], "")) {
-		domain_user = g_strsplit(signinname_login[1], "\\", 2);
-		sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
-		sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : 
-				  (signinname_login ? g_strdup(signinname_login[1]) : NULL);
-		g_strfreev(domain_user);
-	}
-
 	sip->password = g_strdup(purple_connection_get_password(gc));
-
-	g_strfreev(userserver);
-	g_strfreev(signinname_login);
 
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
 
@@ -6388,7 +6388,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 			{
 				PurpleConvChatBuddyFlags flags;
 				PurpleConvChatBuddyFlags flags_us;
-				
+
 				flags = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), buddy->name);
 				flags_us = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), self);
 				if (session->focus_uri
@@ -6402,7 +6402,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
-				
+
 				if (session->focus_uri
 				    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
 				{
@@ -6412,7 +6412,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 								     g_strdup(session->chat_name), NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
-				}				
+				}
 			}
 			else
 			{
@@ -6428,8 +6428,8 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				}
 			}
 		}
-	} SIPE_SESSION_FOREACH_END;	
-	
+	} SIPE_SESSION_FOREACH_END;
+
 	act = purple_menu_action_new(_("New Chat"),
 				     PURPLE_CALLBACK(sipe_buddy_menu_chat_new_cb),
 				     NULL, NULL);
@@ -6475,7 +6475,7 @@ sipe_conf_modify_lock(PurpleChat *chat, gboolean locked)
 	struct sipe_account_data *sip = chat->account->gc->proto_data;
 	struct sip_session *session;
 
-	session = sipe_session_find_chat_by_name(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));	
+	session = sipe_session_find_chat_by_name(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
 	sipe_conf_modify_conference_lock(sip, session, locked);
 }
 
@@ -6489,7 +6489,7 @@ sipe_chat_menu_unlock_cb(PurpleChat *chat)
 static void
 sipe_chat_menu_lock_cb(PurpleChat *chat)
 {
-	purple_debug_info("sipe", "sipe_chat_menu_lock_cb() called\n");	
+	purple_debug_info("sipe", "sipe_chat_menu_lock_cb() called\n");
 	sipe_conf_modify_lock(chat, TRUE);
 }
 
@@ -6505,7 +6505,7 @@ sipe_chat_menu(PurpleChat *chat)
 
 	session = sipe_session_find_chat_by_name(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
 	if (!session) return NULL;
-	
+
 	flags_us = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), self);
 
 	if (session->focus_uri
@@ -6520,12 +6520,12 @@ sipe_chat_menu(PurpleChat *chat)
 			act = purple_menu_action_new(_("Lock Conversation"),
 						     PURPLE_CALLBACK(sipe_chat_menu_lock_cb),
 						     NULL, NULL);
-			menu = g_list_prepend(menu, act);	
+			menu = g_list_prepend(menu, act);
 		}
 	}
 
 	menu = g_list_reverse(menu);
-	
+
 	g_free(self);
 	return menu;
 }
