@@ -5607,7 +5607,8 @@ static void sipe_login(PurpleAccount *account)
 		sip->authdomain = (domain_user && domain_user[1]) ? g_strdup(domain_user[0]) : NULL;
 		sip->authuser =   (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) :
 				  (signinname_login ? g_strdup(signinname_login[1]) : NULL);
-		purple_debug_info("sipe", "sipe_login: auth domain '%s' user '%s'\n", sip->authdomain, sip->authuser);
+		purple_debug_info("sipe", "sipe_login: auth domain '%s' user '%s'\n",
+				   sip->authdomain ? sip->authdomain : "", sip->authuser);
 		g_strfreev(domain_user);
 	}
 
