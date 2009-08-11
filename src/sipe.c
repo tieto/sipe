@@ -2310,28 +2310,28 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 			const gchar *key)
 {
 	GSList *entry;
-	
+
 	/* filling keys for our publications if not yet cached */
 	if (!sip->our_publication_keys) {
 		guint device_instance = sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
 		guint machine_instance = sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
-		
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys, 
+
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%d><%d>", "device", device_instance, 2));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys, 
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%d><%d>", "state", machine_instance, 2));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys, 
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%d><%d>", "state", machine_instance, 3));
 	}
-	
+
 	entry = sip->our_publication_keys;
 	while (entry) {
 		if (!strcmp(entry->data, key)) {
 			return TRUE;
-		}		
+		}
 		entry = entry->next;
 	}
-	return FALSE;	
+	return FALSE;
 }
 
 /**
@@ -2360,31 +2360,35 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 	contact = get_contact(sip);
 	to = sip_uri_self(sip);
-	
-	
-	/* categories */	
+
+
+	/* categories */
 	for (node = xmlnode_get_descendant(xml, "categories", "category", NULL); node; node = xmlnode_get_next_twin(node)) {
 		const gchar *name = xmlnode_get_attrib(node, "name");
-		guint instance = atoi(xmlnode_get_attrib(node, "instance"));
-		guint container = atoi(xmlnode_get_attrib(node, "container"));
-		guint version = atoi(xmlnode_get_attrib(node, "version"));
+		const gchar *container = xmlnode_get_attrib(node, "container");
+		const gchar *instance = xmlnode_get_attrib(node, "instance");
+		const gchar *version = xmlnode_get_attrib(node, "version");
+		guint version_int = version ? atoi(version) : 1;
+
+		if (!container || !instance) continue;
+
 		/* key is <category><instance><container> */
-		gchar *key = g_strdup_printf("<%s><%d><%d>", name, instance, container);
-		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version);		
+		gchar *key = g_strdup_printf("<%s><%s><%s>", name, instance, container);
+		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version_int);
 		if (sipe_is_our_publication(sip, key)) {
 			struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
 			publication->category = g_strdup(name);
-			publication->instance = instance;
-			publication->container = container;
-			publication->version = version;
-			
+			publication->instance = atoi(instance);
+			publication->container = atoi(container);
+			publication->version = version_int;
+
 			if (!our_publications_tmp) {
 				our_publications_tmp = g_hash_table_new_full(
 								g_str_hash, g_str_equal,
 								g_free,	(GDestroyNotify)free_publication);
 			}
 			g_hash_table_insert(our_publications_tmp, g_strdup(key), publication);
-			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version);
+			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version_int);
 		}
 		g_free(key);
 	}
@@ -5874,7 +5878,7 @@ static void sipe_close(PurpleConnection *gc)
 		g_hash_table_foreach_steal(sip->buddies, sipe_buddy_remove, NULL);
 		g_hash_table_destroy(sip->buddies);
 		g_hash_table_destroy(sip->our_publications);
-		
+
 		if (sip->our_publication_keys) {
 			GSList *entry = sip->our_publication_keys;
 			while (entry) {
