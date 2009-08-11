@@ -1845,8 +1845,9 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 static void sipe_buddy_subscribe_cb(SIPE_UNUSED_PARAMETER char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
 {
 	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy->name);
-	int time_range = (g_hash_table_size(sip->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
-	int timeout = (time_range * rand()) / RAND_MAX; /* random period within the range */
+	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
+	guint time_range = (g_hash_table_size(sip->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
+	guint timeout = ((guint) rand()) / (RAND_MAX / time_range); /* random period within the range */
 	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(buddy->name));
 }
 
