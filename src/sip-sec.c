@@ -151,6 +151,9 @@ int sip_sec_verify_signature(SipSecContext context, const char *message, const c
 {
 	SipSecBuffer signature;
 	sip_uint32 res;
+	
+	purple_debug_info("sipe", "sip_sec_verify_signature: message is:%s signature to verify is:%s\n",
+			  message ? message : "", signature_hex ? signature_hex : "");
 
 	hex_str_to_bytes(signature_hex, &signature);
 	res = (*context->verify_signature_func)(context, message, signature);
