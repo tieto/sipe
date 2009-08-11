@@ -32,7 +32,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libpurple-devel, libtool, intltool, gettext-devel
+BuildRequires:  libpurple-devel >= 2.5.0, libtool, intltool, gettext-devel
 # Required for com_err.h
 BuildRequires:  e2fsprogs-devel
 
@@ -62,10 +62,10 @@ Live Communications Server 2003/2005 and Office Communications Server 2007.
 # Copied from "rpmbuild --showrc" configure definition
 export CFLAGS="${CFLAGS:-%optflags}"
 ./autogen.sh --build=%{_build} --host=%{_host} \
-        --target=%{_target_platform} \
-        --prefix=%{_prefix} \
-        --datadir=%{_datadir} \
-        --libdir=%{_libdir} \
+	--target=%{_target_platform} \
+	--prefix=%{_prefix} \
+	--datadir=%{_datadir} \
+	--libdir=%{_libdir} \
 	%{config_params}
 %else
 %configure %{config_params}
@@ -94,6 +94,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Aug 11 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
+- require libpurple-devel >= 2.5.0
+
 * Sun Aug 09 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
 - refactor configure parameters
 - make kerberos configurable

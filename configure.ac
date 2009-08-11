@@ -1,8 +1,5 @@
-# version of this package
+dnl version of this package
 m4_define(pidgin_sipe_version,	1.6.0)
-
-# lower and upper-bound versions of Pidgin
-m4_define(pidgin_version_max,		2.0.0)
 
 AC_INIT([pidgin-sipe], [1.6.0])
 
@@ -18,23 +15,18 @@ AC_PROG_INSTALL
 
 AC_HEADER_STDC
 
-GAIM_MIN=pidgin_version_min
-GAIM_MAX=pidgin_version_max
-AC_SUBST(PIDGIN_MIN)
-AC_SUBST(PIDGIN_MAX)
-
-# tell pkgconfig to look in the same prefix we're installing this to,
-# as that's likely where gaim will be found if it's not in the default
-# pkgconfig path
+dnl tell pkgconfig to look in the same prefix we're installing this to,
+dnl as that's likely where libpurple will be found if it's not in the default
+dnl pkgconfig path
 PREFIX=$ac_default_prefix
 if test "$prefix" != "NONE"; then
-   PREFIX=$prefix
+	PREFIX=$prefix
 fi
 
 PKG_CONFIG_PATH="$PKG_CONFIG_PATH":"$PREFIX/lib/pkgconfig"
 export PKG_CONFIG_PATH
 
-# debug mode
+dnl debug mode
 AC_ARG_ENABLE(debug,
 	[AS_HELP_STRING([--enable-debug],
 			[compile with debugging support [default=no]])],
@@ -48,8 +40,8 @@ fi
 DEBUG_CFLAGS="${DEBUG_CFLAGS}"
 AC_SUBST(DEBUG_CFLAGS)
 
-# quality check mode
-# For people who are interested in finding bugs and not hiding them
+dnl quality check mode
+dnl For people who are interested in finding bugs and not hiding them
 AC_ARG_ENABLE(quality-check,
 	[AS_HELP_STRING([--enable-quality-check],
 			[compile with compiler checks enabled [default=yes]])],
@@ -65,9 +57,7 @@ AC_SUBST(QUALITY_CFLAGS)
 
 AC_ARG_WITH(krb5, [AC_HELP_STRING([--with-krb5=PREFIX], [compile sipe plugin with Kerberos 5 support])], kerberos="$withval", kerberos="no")
 
-dnl #######################################################################
-dnl # Check for Kerberos
-dnl #######################################################################
+dnl check for Kerberos
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
 AC_SUBST(KRB5_LIBS)
@@ -97,23 +87,20 @@ if test "$kerberos" != "no" ; then
 fi
 AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
 
-# Check for Purple
-PKG_CHECK_MODULES(PURPLE,
-[purple >= pidgin_version_max],
-[
-	AC_DEFINE(HAVE_PIDGIN, 1, [Define if we've found pidgin.])
-])
-
+dnl check for libpurple
+PKG_CHECK_MODULES(PURPLE, [purple >= 2.5.0],
+	[AC_DEFINE(HAVE_PIDGIN, 1, [Define if we've found libpurple])])
 AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_LIBS)
 
-dnl Check for com_err
+dnl check for com_err
 PKG_CHECK_MODULES(COM_ERR, [com_err],,)
 
-dnl Check for inet_aton
-AC_CHECK_FUNC(inet_aton, , [AC_CHECK_LIB(resolv, inet_aton, ,
-                                         [AC_ERROR(inet_aton not found)])])
+dnl check for inet_aton
+AC_CHECK_FUNC(inet_aton,,
+	[AC_CHECK_LIB(resolv, inet_aton,, [AC_ERROR(inet_aton not found)])])
 
+dnl static linking
 SIPE_LIBA=`$PKG_CONFIG sipe --variable=libarchive`
 AC_SUBST(SIPE_LIBA)
 
@@ -125,12 +112,12 @@ AC_ARG_ENABLE(static-sipe,
 
 AM_CONDITIONAL(SIPE_STATIC, test $sipe_static = yes)
 
+dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
 LOCALE_CPPFLAGS='-DLOCALEDIR=\"$(prefix)/$(DATADIRNAME)/locale\"'
 AC_SUBST([LOCALE_CPPFLAGS])
 AC_MSG_RESULT([$LOCALE_CPPFLAGS])
 
-dnl i18n
 GETTEXT_PACKAGE=$PACKAGE
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE", [Gettext Package])
@@ -152,40 +139,41 @@ AC_CONFIG_FILES(
 	src/Makefile]
 )
 
+dnl generate files
 AC_OUTPUT()
 
-
+dnl additional info for the user
 echo
 echo -n "Simple SIPE linking mode : "
 if test "$sipe_static" = "yes" ; then
-   echo "static"
-   echo "Simple SIPE library...      : $SIPE_LIBA"
+	echo "static"
+	echo "Simple SIPE library...      : $SIPE_LIBA"
 else
-   echo "dynamic"
+	echo "dynamic"
 fi
 
 if test "$kerberos" != "no" ; then
-  echo
-  echo "Compiling with kerberos 5 support"
-  echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"
-  echo "KRB5_CFLAGS    : $KRB5_CFLAGS"
-  echo "KRB5_LIBS      : $KRB5_LIBS"
+	echo
+	echo "Compiling with kerberos 5 support"
+	echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"
+	echo "KRB5_CFLAGS    : $KRB5_CFLAGS"
+	echo "KRB5_LIBS      : $KRB5_LIBS"
 fi
 
 if test "$enable_debug" != "no"; then
-  echo
-  echo "Compiling with debugging enabled"
-  echo "DEBUG_CFLAGS   : $DEBUG_CFLAGS"
+	echo
+	echo "Compiling with debugging enabled"
+	echo "DEBUG_CFLAGS   : $DEBUG_CFLAGS"
 fi
 
 if test -n "${QUALITY_CFLAGS}"; then
-  echo
-  echo "Compiling with compiler checks enabled"
-  echo "QUALITY_CFLAGS : $QUALITY_CFLAGS"
+	echo
+	echo "Compiling with compiler checks enabled"
+	echo "QUALITY_CFLAGS : $QUALITY_CFLAGS"
 fi
 
 echo
-echo configure complete, now run \`make\`
+echo "configure complete, now run 'make'"
 echo
 
-# The End.
+dnl The End.
