@@ -236,7 +236,7 @@ msgstr "Usar Kerberos"
 
 #: ../src/sipe.c:6891
 msgid "Login \n   user  or  DOMAIN\\user  or\n   user@company.com "
-msgstr "Login, DOMINIO\usuario ó usuario@company.com "
+msgstr "Login, DOMINIO\\usuario ó usuario@company.com "
 
 #: ../src/sipe.c:6895
 msgid "Server[:Port]\n(Leave empty for auto-discovery)"
