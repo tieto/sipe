@@ -5149,8 +5149,8 @@ static void send_presence_publish(struct sipe_account_data *sip, const char *pub
 static void
 send_publish_category_initial(struct sipe_account_data *sip)
 {
-	gchar *pub_device = sipe_publish_get_category_device(sip);
-	gchar *pub_machine = sipe_publish_get_category_state_machine(sip);
+	gchar *pub_device   = sipe_publish_get_category_device(sip);
+	gchar *pub_machine  = sipe_publish_get_category_state_machine(sip);
 	gchar *publications = g_strdup_printf("%s%s",
 					      pub_device,
 					      pub_machine);				      
@@ -5165,15 +5165,23 @@ static void
 send_presence_category_publish(struct sipe_account_data *sip,
 			       const char *note)
 {	
-	gchar *pub_machine = sipe_publish_get_category_state_machine(sip);
-	gchar *pub_user = sipe_publish_get_category_state_user(sip);
+	/** 
+	 * Whether user manually changed status or 
+	 * it was changed automatically due to user 
+	 * became inactive/active again
+	 */
+	gboolean is_machine = (sip->was_idle && !sip->is_idle) || (!sip->was_idle && sip->is_idle);
+	gchar *pub_state = is_machine ? sipe_publish_get_category_state_machine(sip) :
+					sipe_publish_get_category_state_user(sip);
 	gchar *pub_note = sipe_publish_get_category_note(sip, note);
-	gchar *publications = g_strdup_printf("%s%s%s",
-					      pub_machine,
-					      pub_user,
-					      pub_note);				      
-	g_free(pub_machine);
-	g_free(pub_user);
+	gchar *publications = g_strdup_printf("%s%s",
+					      pub_state,
+					      pub_note);
+
+	purple_debug_info("sipe", "send_presence_category_publish: sip->status: %s sip->is_idle:%s sip->was_idle:%s\n",
+			  sip->status, sip->is_idle ? "Y" : "N", sip->was_idle ? "Y" : "N");
+				      
+	g_free(pub_state);
 	g_free(pub_note);
 	
 	send_presence_publish(sip, publications);
