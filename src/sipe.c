@@ -109,7 +109,7 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
  */
 #define SIPE_PUB_DEVICE		"000"
 #define SIPE_PUB_STATE_MACHINE	"100"
-#define SIPE_PUB_NOTE		"200"
+#define SIPE_PUB_STATE_USER	"200"
 
 static char *genbranch()
 {
@@ -1583,6 +1583,8 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 
 static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 {
+	purple_debug_info("sipe", "sipe_set_status: status=%s\n", purple_status_get_id(status));
+	
 	if (!purple_status_is_active(status))
 		return;
 
@@ -1590,9 +1592,30 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 		struct sipe_account_data *sip = account->gc->proto_data;
 
 		if (sip) {
+			gchar *action_name;
 			g_free(sip->status);
 			sip->status = g_strdup(purple_status_get_id(status));
-			send_presence_status(sip);
+			
+			//send_presence_status(sip);
+			/* schedule 2 sec to capture idle flag */
+			action_name = g_strdup_printf("<%s>", "+set-status");
+			sipe_schedule_action(action_name, 2, (Action)send_presence_status, NULL, sip, NULL);
+			g_free(action_name);
+		}
+	}
+}
+static void
+sipe_set_idle(PurpleConnection * gc, 
+	      int time)
+{
+	purple_debug_info("sipe", "sipe_set_idle: time=%d\n", time);
+	
+	if (gc) {
+		struct sipe_account_data *sip = gc->proto_data;
+		
+		if (sip) {			
+			sip->was_idle = sip->is_idle;
+			sip->is_idle = (time > 0);
 		}
 	}
 }
@@ -2314,19 +2337,39 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 
 	/* filling keys for our publications if not yet cached */
 	if (!sip->our_publication_keys) {
-		guint device_instance = sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
-		guint machine_instance = sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
+		guint device_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
+		guint machine_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
+		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER);
 
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%d><%d>", "device", device_instance, 2));
+			g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2));
+			
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%d><%d>", "state", machine_instance, 2));
+			g_strdup_printf("<%s><%u><%u>", "state", machine_instance, 2));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%d><%d>", "state", machine_instance, 3));
+			g_strdup_printf("<%s><%u><%u>", "state", machine_instance, 3));
+			
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 2));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 3));
+			
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "note", 0, 200));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "note", 0, 300));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "note", 0, 400));
+			
+		//purple_debug_info("sipe", "sipe_is_our_publication: sip->our_publication_keys length=%d\n",
+		//	  sip->our_publication_keys ? (int) g_slist_length(sip->our_publication_keys) : -1);
 	}
 
+	//purple_debug_info("sipe", "sipe_is_our_publication: key=%s\n", key);
+	
 	entry = sip->our_publication_keys;
 	while (entry) {
+		//purple_debug_info("sipe", "   sipe_is_our_publication: entry->data=%s\n", entry->data);
 		if (!strcmp(entry->data, key)) {
 			return TRUE;
 		}
@@ -2334,6 +2377,9 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 	}
 	return FALSE;
 }
+
+static void
+send_publish_category_initial(struct sipe_account_data *sip);
 
 /**
   *   When we receive some self (BE) NOTIFY with a new subscriber
@@ -2352,7 +2398,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
         const char *alias;
         char *uri_alias;
         char *uri_user;
-	GHashTable *our_publications_tmp = NULL;
+	GSList *category_names = NULL;
 
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 
@@ -2364,39 +2410,63 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 
 	/* categories */
+	/* set list of categories participating in this XML */	
+	for (node = xmlnode_get_descendant(xml, "categories", "category", NULL); node; node = xmlnode_get_next_twin(node)) {
+		const gchar *name = xmlnode_get_attrib(node, "name");
+		category_names = slist_insert_unique_sorted(category_names, (gchar *)name, (GCompareFunc)strcmp);
+	}
+	purple_debug_info("sipe", "sipe_process_roaming_self: category_names length=%d\n",
+			  category_names ? (int) g_slist_length(category_names) : -1);
+	/* drop category information */
+	if (category_names) {
+		GSList *entry = category_names;
+		while (entry) {
+			GHashTable *cat_publications;
+			const gchar *category = entry->data;
+			entry = entry->next;
+			purple_debug_info("sipe", "sipe_process_roaming_self: dropping category: %s\n", category);
+			cat_publications = g_hash_table_lookup(sip->our_publications, category);
+			if (cat_publications) {
+				g_hash_table_remove(sip->our_publications, category);
+				purple_debug_info("sipe", "   sipe_process_roaming_self: dropped category: %s\n", category);
+			}
+		}
+	}
+	g_slist_free(category_names);
+	/* filling our categories reflected in roaming data */
 	for (node = xmlnode_get_descendant(xml, "categories", "category", NULL); node; node = xmlnode_get_next_twin(node)) {
 		const gchar *name = xmlnode_get_attrib(node, "name");
 		const gchar *container = xmlnode_get_attrib(node, "container");
 		const gchar *instance = xmlnode_get_attrib(node, "instance");
 		const gchar *version = xmlnode_get_attrib(node, "version");
-		guint version_int = version ? atoi(version) : 1;
+		guint version_int = version ? atoi(version) : 0;
+		gchar *key;
 
 		if (!container || !instance) continue;
 
 		/* key is <category><instance><container> */
-		gchar *key = g_strdup_printf("<%s><%s><%s>", name, instance, container);
+		key = g_strdup_printf("<%s><%s><%s>", name, instance, container);
 		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version_int);
 		if (sipe_is_our_publication(sip, key)) {
+			GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
+			
 			struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
 			publication->category = g_strdup(name);
 			publication->instance = atoi(instance);
 			publication->container = atoi(container);
 			publication->version = version_int;
 
-			if (!our_publications_tmp) {
-				our_publications_tmp = g_hash_table_new_full(
-								g_str_hash, g_str_equal,
-								g_free,	(GDestroyNotify)free_publication);
+			if (!cat_publications) {
+				cat_publications = g_hash_table_new_full(
+							g_str_hash, g_str_equal,
+							g_free,	(GDestroyNotify)free_publication);
+				g_hash_table_insert(sip->our_publications, g_strdup(name), cat_publications);
+				purple_debug_info("sipe", "sipe_process_roaming_self: added GHashTable cat=%s\n", name);
 			}
-			g_hash_table_insert(our_publications_tmp, g_strdup(key), publication);
+			g_hash_table_insert(cat_publications, g_strdup(key), publication);
 			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version_int);
 		}
 		g_free(key);
-	}
-	if (our_publications_tmp) {
-		g_hash_table_destroy(sip->our_publications);
-		sip->our_publications = our_publications_tmp;
-		our_publications_tmp = NULL;
 	}
 	purple_debug_info("sipe", "sipe_process_roaming_self: sip->our_publications size=%d\n",
 			  sip->our_publications ? (int) g_hash_table_size(sip->our_publications) : -1);
@@ -2497,6 +2567,16 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	g_free(to);
 	g_free(contact);
 	xmlnode_free(xml);
+	
+	/* Publish initial state if not yet.
+	 * Assuming this happens on initial responce to subscription to roaming-self
+	 * so we've already updated our roaming data in full.
+	 * Only for 2007+
+	 */
+	if (sip->msrtc_event_categories && !sip->initial_state_published) {
+		send_publish_category_initial(sip);
+		sip->initial_state_published = TRUE;
+	}
 }
 
 static void sipe_subscribe_roaming_acl(struct sipe_account_data *sip)
@@ -3995,7 +4075,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							sipe_subscribe_presence_wpending(sip, msg);
 						}
 					}
-					sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+					if(!sip->msrtc_event_categories) {
+						sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+					}
 					sip->subscribed = TRUE;
 				}
 
@@ -4901,42 +4983,156 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip, s
 	return TRUE;
 }
 
-static void send_presence_category_publish(struct sipe_account_data *sip, const char * note)
+/**
+ * Returns 'device' XML part for publication.
+ * Must be g_free'd after use.
+ */
+static gchar *
+sipe_publish_get_category_device(struct sipe_account_data *sip)
 {
-	int code;
+	gchar *uri;
+	gchar *doc;
+	gchar *epid = get_epid(sip);
+	gchar *uuid = generateUUIDfromEPID(epid);
+	guint device_instance = sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);	
+	/* key is <category><instance><container> */	
+	gchar *key = g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2);	
+	struct sipe_publication *publication = 
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "device"), key);
+		
+	g_free(key);
+ 
+	uri = sip_uri_self(sip);
+	doc = g_strdup_printf(SIPE_PUB_XML_DEVICE, 
+		device_instance,
+		publication ? publication->version : 0,
+		uuid,
+		uri,
+		"00:00:00+01:00", /* @TODO make timezone real*/
+		sipe_get_host_name()
+	);
+
+	g_free(uuid);
+	g_free(epid);
+
+	return doc;
+}
+
+/**
+ * A service method - use 
+ * - send_publish_get_category_state_machine and
+ * - send_publish_get_category_state_user instead.
+ * Must be g_free'd after use.
+ */
+static gchar *
+sipe_publish_get_category_state(struct sipe_account_data *sip,
+				gboolean is_user_state)
+{
+	int availability;
+	guint instance = is_user_state ? sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER) : 
+					 sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
+	/* key is <category><instance><container> */	
+	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
+	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
+	struct sipe_publication *publication_2 = 
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "state"), key_2);
+	struct sipe_publication *publication_3 = 
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "state"), key_3);
+		
+	g_free(key_2);
+	g_free(key_3);
+
+	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY) ||
+	    !strcmp(sip->status, SIPE_STATUS_ID_LUNCH)) {
+		availability = 12000;
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_DND)) {
+		availability =  9000;
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BUSY)) {
+		availability =  7500;
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_ONPHONE)) {
+		availability =  6000;
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BRB)) {
+		availability =  4500;
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_AVAILABLE)) {
+		availability =  3000;
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_UNKNOWN)) {
+		availability =     0;
+	} else {
+		// Offline or invisible
+		availability = 18000;
+	}
+	
+	return g_strdup_printf( is_user_state ? SIPE_PUB_XML_STATE_USER : SIPE_PUB_XML_STATE_MACHINE,
+				instance,
+				publication_2 ? publication_2->version : 0,
+				availability,
+				instance,
+				publication_3 ? publication_3->version : 0,
+				availability);
+}
+
+/**
+ * Returns 'machineState' XML part for publication.
+ * Must be g_free'd after use.
+ */
+static gchar *
+sipe_publish_get_category_state_machine(struct sipe_account_data *sip)
+{
+	return sipe_publish_get_category_state(sip, FALSE);
+}
+
+/**
+ * Returns 'userState' XML part for publication.
+ * Must be g_free'd after use.
+ */
+static gchar *
+sipe_publish_get_category_state_user(struct sipe_account_data *sip)
+{
+	return sipe_publish_get_category_state(sip, TRUE);
+}
+
+/**
+ * Returns 'note' XML part for publication.
+ * Must be g_free'd after use.
+ */
+static gchar *
+sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
+{
+	/* key is <category><instance><container> */			
+	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", 0, 200);
+	gchar *key_note_300 = g_strdup_printf("<%s><%u><%u>", "note", 0, 300);
+	gchar *key_note_400 = g_strdup_printf("<%s><%u><%u>", "note", 0, 300);	
+	struct sipe_publication *publication_note_200 = 
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_200);
+	struct sipe_publication *publication_note_300 = 
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_300);
+	struct sipe_publication *publication_note_400 = 
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_400);
+		
+	g_free(key_note_200);
+	g_free(key_note_300);
+	g_free(key_note_400);
+		
+	return g_strdup_printf(	SIPE_PUB_XML_NOTE,
+				publication_note_200 ? publication_note_200->version : 0,
+				note ? note : "",
+				publication_note_300 ? publication_note_300->version : 0,
+				note ? note : "",
+				publication_note_400 ? publication_note_400->version : 0,
+				note ? note : "");
+}
+
+static void send_presence_publish(struct sipe_account_data *sip, const char *publications)
+{
 	gchar *uri;
 	gchar *doc;
 	gchar *tmp;
 	gchar *hdr;
-	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY) ||
-	    !strcmp(sip->status, SIPE_STATUS_ID_LUNCH)) {
-		code = 12000;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_DND)) {
-		code =  9000;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BUSY)) {
-		code =  7500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_ONPHONE)) {
-		code =  6000;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BRB)) {
-		code =  4500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_AVAILABLE)) {
-		code =  3000;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_UNKNOWN)) {
-		code =     0;
-	} else {
-		// Offline or invisible
-		code = 18000;
-	}
-
+	
 	uri = sip_uri_self(sip);
-	doc = g_strdup_printf(SIPE_SEND_PRESENCE, uri,
-		sip->status_version, code,
-		sip->status_version, code,
-		sip->status_version, note ? note : "",
-		sip->status_version, note ? note : "",
-		sip->status_version, note ? note : ""
-	);
-	sip->status_version++;
+	doc = g_strdup_printf(SIPE_SEND_PRESENCE,
+		uri,
+		publications);
 
 	tmp = get_contact(sip);
 	hdr = g_strdup_printf("Contact: %s\r\n"
@@ -4948,6 +5144,40 @@ static void send_presence_category_publish(struct sipe_account_data *sip, const 
 	g_free(hdr);
 	g_free(uri);
 	g_free(doc);
+}
+
+static void
+send_publish_category_initial(struct sipe_account_data *sip)
+{
+	gchar *pub_device = sipe_publish_get_category_device(sip);
+	gchar *pub_machine = sipe_publish_get_category_state_machine(sip);
+	gchar *publications = g_strdup_printf("%s%s",
+					      pub_device,
+					      pub_machine);				      
+	g_free(pub_device);
+	g_free(pub_machine);
+	
+	send_presence_publish(sip, publications);
+	g_free(publications);
+}
+
+static void
+send_presence_category_publish(struct sipe_account_data *sip,
+			       const char *note)
+{	
+	gchar *pub_machine = sipe_publish_get_category_state_machine(sip);
+	gchar *pub_user = sipe_publish_get_category_state_user(sip);
+	gchar *pub_note = sipe_publish_get_category_note(sip, note);
+	gchar *publications = g_strdup_printf("%s%s%s",
+					      pub_machine,
+					      pub_user,
+					      pub_note);				      
+	g_free(pub_machine);
+	g_free(pub_user);
+	g_free(pub_note);
+	
+	send_presence_publish(sip, publications);
+	g_free(publications);
 }
 
 static void send_presence_status(struct sipe_account_data *sip)
@@ -5659,6 +5889,7 @@ static void sipe_login(PurpleAccount *account)
 	sip->reauthenticate_set = FALSE;
 	sip->subscribed = FALSE;
 	sip->subscribed_buddies = FALSE;
+	sip->initial_state_published = FALSE;
 
 	/* username format: <username>,[<optional login>] */
 	signinname_login = g_strsplit(username, ",", 2);
@@ -5701,6 +5932,8 @@ static void sipe_login(PurpleAccount *account)
 	sip->password = g_strdup(purple_connection_get_password(gc));
 
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
+	sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
+						      g_free, (GDestroyNotify)g_hash_table_destroy);
 
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
@@ -6761,7 +6994,7 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_status_text,			/* status_text */
 	sipe_tooltip_text,			/* tooltip_text */	// add custom info to contact tooltip
 	sipe_status_types,			/* away_states */
-	sipe_blist_node_menu,	/* blist_node_menu */
+	sipe_blist_node_menu,			/* blist_node_menu */
 	NULL,					/* chat_info */
 	NULL,					/* chat_info_defaults */
 	sipe_login,				/* login */
@@ -6769,9 +7002,9 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_im_send,				/* send_im */
 	NULL,					/* set_info */		// TODO maybe
 	sipe_send_typing,			/* send_typing */
-	sipe_get_info,			/* get_info */
+	sipe_get_info,				/* get_info */
 	sipe_set_status,			/* set_status */
-	NULL,					/* set_idle */
+	sipe_set_idle,				/* set_idle */
 	NULL,					/* change_passwd */
 	sipe_add_buddy,				/* add_buddy */
 	NULL,					/* add_buddies */
@@ -6812,7 +7045,7 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* new_xfer */
 	NULL,					/* offline_message */
 	NULL,					/* whiteboard_prpl_ops */
-	sipe_send_raw,			/* send_raw */
+	sipe_send_raw,				/* send_raw */
 	NULL,					/* roomlist_room_serialize */
 	NULL,					/* unregister_user */
 	NULL,					/* send_attention */

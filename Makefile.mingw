@@ -10,7 +10,7 @@ include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
 WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
-VERSION := 1.6.0
+VERSION := 1.6.1
 
 .PHONY: all clean install msi
 

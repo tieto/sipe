@@ -88,7 +88,7 @@ struct sipe_service_data {
 	sipe_transport_type type;
 };
 
-/** MS-PRES container */
+/** MS-PRES publication */
 struct sipe_publication {
 	gchar *category;
 	guint instance;
@@ -136,6 +136,7 @@ struct sipe_account_data {
 	gboolean subscribed; /* whether subscribed to events, except buddies presence */
 	gboolean subscribed_buddies; /* whether subscribed to buddies presence */
 	gboolean access_level_set; /* whether basic access level set */
+	gboolean initial_state_published; /* whether we published our initial state */
 	GSList *our_publication_keys; /* [MS-PRES] */
 	GHashTable *our_publications; /* [MS-PRES] */
 	int listenfd;
@@ -145,6 +146,8 @@ struct sipe_account_data {
 	int acl_delta;
 	int presence_method_version;
 	gchar *status;
+	gboolean is_idle;
+	gboolean was_idle;
 	int status_version;
 	gchar *contact;
 	gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
@@ -291,37 +294,16 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
   "<status status=\"type\" />"\
 "</KeyboardActivity>"
 
+/**
+ * Publishes categories.
+ * @param uri		(%s) Self URI. Ex.: sip:alice7@boston.local
+ * @param publications	(%s) XML publications
+ */
 #define SIPE_SEND_PRESENCE \
 	"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\">"\
-	  "<publications uri=\"%s\">"\
-	      "<publication categoryName=\"state\" instance=\"906391354\" container=\"2\" version=\"%d\" expireType=\"endpoint\">"\
-	        "<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\">"\
-		  "<availability>%d</availability>"\
-		  "<endpointLocation></endpointLocation>"\
-		"</state>"\
-	      "</publication>"\
-	      "<publication categoryName=\"state\" instance=\"906391356\" container=\"0\" version=\"%d\" expireType=\"endpoint\">"\
-	        "<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"true\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"userState\">"\
-		  "<availability>%d</availability>"\
-		  "<endpointLocation></endpointLocation>"\
-		"</state>"\
-	      "</publication>"\
-	      "<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"%d\" expireType=\"static\">"\
-	        "<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
-		  "<body type=\"personal\" uri=\"\">%s</body>"\
-		"</note>"\
-	      "</publication>"\
-	      "<publication categoryName=\"note\" instance=\"0\" container=\"200\" version=\"%d\" expireType=\"static\">"\
-	        "<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
-		  "<body type=\"personal\" uri=\"\">%s</body>"\
-		"</note>"\
-	      "</publication>"\
-	      "<publication categoryName=\"note\" instance=\"0\" container=\"300\" version=\"%d\" expireType=\"static\">"\
-	        "<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
-		  "<body type=\"personal\" uri=\"\">%s</body>"\
-		"</note>"\
-	      "</publication>"\
-	    "</publications>"\
+		"<publications uri=\"%s\">"\
+			"%s"\
+		"</publications>"\
 	"</publish>"
 
 
@@ -335,6 +317,100 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
   "</publications>"\
 "</publish>"
+
+/**
+ * Publishes 'device' category.
+ * @param instance	(%u) Ex.: 1938468728
+ * @param version	(%u) Ex.: 1
+ * @param endpointId	(%s) Ex.: C707E38E-1E10-5413-94D9-ECAC260A0269
+ * @param uri		(%s) Self URI. Ex.: sip:alice7@boston.local
+ * @param timezone	(%s) Ex.: 00:00:00+01:00
+ * @param machineName	(%s) Ex.: BOSTON-OCS07
+ */
+#define SIPE_PUB_XML_DEVICE \
+	"<publication categoryName=\"device\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
+		"<device xmlns=\"http://schemas.microsoft.com/2006/09/sip/device\" endpointId=\"%s\">"\
+			"<capabilities preferred=\"false\" uri=\"%s\">"\
+				"<text capture=\"true\" render=\"true\" publish=\"false\"/>"\
+				"<gifInk capture=\"false\" render=\"true\" publish=\"false\"/>"\
+				"<isfInk capture=\"false\" render=\"true\" publish=\"false\"/>"\
+			"</capabilities>"\
+			"<timezone>%s</timezone>"\
+			"<machineName>%s</machineName>"\
+		"</device>"\
+	"</publication>"
+
+/**
+ * Publishes 'machineState' category.
+ * @param instance	(%u) Ex.: 926460663
+ * @param version	(%u) Ex.: 22
+ * @param availability	(%d) Ex.: 3500
+ * @param instance	(%u) Ex.: 926460663
+ * @param version	(%u) Ex.: 22
+ * @param availability	(%d) Ex.: 3500
+ */
+#define SIPE_PUB_XML_STATE_MACHINE \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\">"\
+			"<availability>%d</availability>"\
+			"<endpointLocation/>"\
+		"</state>"\
+	"</publication>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\">"\
+			"<availability>%d</availability>"\
+			"<endpointLocation/>"\
+		"</state>"\
+	"</publication>"
+	
+/**
+ * Publishes 'userState' category.
+ * @param instance	(%u) User. Ex.: 536870912
+ * @param version	(%u) User Container 2. Ex.: 22
+ * @param availability	(%d) User Container 2. Ex.: 15500
+ * @param instance	(%u) User. Ex.: 536870912
+ * @param version	(%u) User Container 3.Ex.: 22
+ * @param availability	(%d) User Container 3. Ex.: 15500
+ */
+#define SIPE_PUB_XML_STATE_USER \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"static\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"true\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"userState\">"\
+			"<availability>%d</availability>"\
+			"<endpointLocation/>"\
+		"</state>"\
+	"</publication>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"static\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"true\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"userState\">"\
+			"<availability>%d</availability>"\
+			"<endpointLocation/>"\
+		"</state>"\
+	"</publication>"\
+	
+/**
+ * Publishes 'note' category.
+ * @param version	(%u) Ex.: 2
+ * @param body		(%s) Ex.: In the office
+ * @param version	(%u) Ex.: 2
+ * @param body		(%s) Ex.: In the office
+ * @param version	(%u) Ex.: 2
+ * @param body		(%s) Ex.: In the office
+ */
+#define SIPE_PUB_XML_NOTE \
+	"<publication categoryName=\"note\" instance=\"0\" container=\"200\" version=\"%d\" expireType=\"static\">"\
+		"<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
+			"<body type=\"personal\" uri=\"\">%s</body>"\
+		"</note>"\
+	"</publication>"\
+	"<publication categoryName=\"note\" instance=\"0\" container=\"300\" version=\"%d\" expireType=\"static\">"\
+		"<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
+			"<body type=\"personal\" uri=\"\">%s</body>"\
+		"</note>"\
+	"</publication>"\
+	"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"%d\" expireType=\"static\">"\
+		"<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
+			"<body type=\"personal\" uri=\"\">%s</body>"\
+		"</note>"\
+	"</publication>"
 
 
 #define sipe_soap(method, body) \
