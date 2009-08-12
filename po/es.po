@@ -9,7 +9,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2008-12-16 13:43-0600\n"
 "PO-Revision-Date: 2009-05-22 06:56+0000\n"
-"Last-Translator: Abel O'Rian <abel.orian@gmail.com>\n"
+"Last-Translator: Anibal Avelar <debianmx@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -22,129 +22,129 @@ msgstr ""
 msgid "Connection Type"
 msgstr "Tipo de conexión"
 
-#. TODO: do we really want to disconnect on a failure to write?
-#: ../src/sipe.c:530 ../src/sipe.c:560
+#: ../src/sipe.c:404 ../src/sipe.c:436
 msgid "Could not write"
 msgstr "No se pudo escribir"
 
-#: ../src/sipe.c:583 ../src/sipe.c:2946
+#: ../src/sipe.c:460 ../src/sipe.c:5346
 msgid "Could not connect"
 msgstr "No se pudo conectar"
 
-#: ../src/sipe.c:649 ../src/sipe.c:3090
+#: ../src/sipe.c:530 ../src/sipe.c:5491
 msgid "Couldn't create socket"
 msgstr "No se pudo crear el socket"
 
-#. Translators: noun
-#: ../src/sipe.c:1416 ../src/sipe.c:1423 ../src/sipe.c:1430
+#: ../src/sipe.c:1783 ../src/sipe.c:1790 ../src/sipe.c:1797 ../src/sipe.c:1804 ../src/sipe.c:1811 ../src/sipe.c:1818 ../src/sipe.c:1825
 msgid "Message"
 msgstr "Mensaje"
 
-#: ../src/sipe.c:1429
+#: ../src/sipe.c:1789
 msgid "Busy"
 msgstr "No disponible"
 
-#: ../src/sipe.c:2144 ../src/sipe.c:2783
+#: ../src/sipe.c:4066 ../src/sipe.c:5173
 msgid "Wrong Password"
 msgstr "Contraseña errónea"
 
-#: ../src/sipe.c:2170
+#: ../src/sipe.c:4096
 #, c-format
 msgid "You have been rejected by the server: %s"
-msgstr ""
+msgstr "Has sido rechazado por el servidor: %s"
 
-#: ../src/sipe.c:2170 ../src/sipe.c:2186
+#: ../src/sipe.c:4096 ../src/sipe.c:4113 ../src/sipe.c:4130
 msgid "no reason given"
-msgstr "no se comunicó razones"
+msgstr "sin dar razones"
 
-#: ../src/sipe.c:2173
+#: ../src/sipe.c:4099
 msgid "You have been rejected by the server"
-msgstr "Ha sido rechazado por el servidor"
+msgstr "Has sido rechazado por el servidor"
 
-#: ../src/sipe.c:2186
+#: ../src/sipe.c:4130
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Servicio no disponible: %s"
 
-#: ../src/sipe.c:2189
+#: ../src/sipe.c:4133
 msgid "Service unavailable: no reason given"
-msgstr ""
+msgstr "Servicio no disponible: sin dar razones"
 
-#: ../src/sipe.c:2779
+#: ../src/sipe.c:5169
 msgid "Invalid message signature received"
-msgstr "Firma recivida inválida"
+msgstr "Firma inválida recibida"
 
-#: ../src/sipe.c:2846
+#: ../src/sipe.c:5249
 msgid "Connection not found; Please try to connect again.\n"
-msgstr "Conexión no encontrada; por favor reintente.\n"
+msgstr "Conexión no encontrada; por favor vuelva intentar.\n"
 
-#: ../src/sipe.c:2867
+#: ../src/sipe.c:5264
 msgid "SSL read error"
 msgstr "error de lectura SSL"
 
-#: ../src/sipe.c:2870
+#: ../src/sipe.c:5267
 msgid "Server has disconnected"
-msgstr "El servidor se ha desconectado"
+msgstr "El servidor ha desconectado"
 
-#: ../src/sipe.c:2992 ../src/sipe.c:3035 ../src/sipe.c:3074 ../src/sipe.c:3148
+#: ../src/sipe.c:5391 ../src/sipe.c:5432 ../src/sipe.c:5475 ../src/sipe.c:5545
 msgid "Could not create listen socket"
 msgstr "No se pudo crear el socket de escucha"
 
-#: ../src/sipe.c:3016
+#: ../src/sipe.c:5414
 msgid "Couldn't resolve host"
-msgstr ""
+msgstr "No pudo resolver el nombre del sistema"
 
-#: ../src/sipe.c:3056
+#: ../src/sipe.c:5454
 msgid "Connection Failed"
 msgstr "Falló conexión"
 
-#: ../src/sipe.c:3059
+#: ../src/sipe.c:5457
 msgid "SSL Handshake Failed"
 msgstr "Se produjo un fallo en la negociación SSL"
 
-#: ../src/sipe.c:3121
+#: ../src/sipe.c:5518
 msgid ""
 "SSL support is not installed.  Either install SSL support or configure a "
 "different connection type in the account editor."
 msgstr ""
+"El soporte de SSL no esta instalado. Instala el soporte SSL o configura un"
+"diferente tipo de conexión en el editor de cuentas."
 
-#: ../src/sipe.c:3130
+#: ../src/sipe.c:5527
 msgid "Could not create SSL context"
-msgstr ""
+msgstr "No pudo crear el contexto SSL"
 
-#: ../src/sipe.c:3139
+#: ../src/sipe.c:5536
 msgid "Could not resolve hostname"
 msgstr "No se pudo resolver el nombre de sistema"
 
-#: ../src/sipe.c:3244
+#: ../src/sipe.c:5697
 msgid "SIP Exchange usernames may not contain whitespaces"
-msgstr ""
+msgstr "Los nombres de cuentas de SIP Exchange no contienen espacios"
 
-#: ../src/sipe.c:3262
+#: ../src/sipe.c:5705
 msgid "Connecting"
 msgstr "Conectando"
 
-#: ../src/sipe.c:3414
+#: ../src/sipe.c:5939
 msgid "Unable to display the search results."
 msgstr "No se puede mostrar los resultados de la búsqueda."
 
-#: ../src/sipe.c:3420
+#: ../src/sipe.c:5945
 msgid "User Name"
 msgstr "Usuario"
 
-#: ../src/sipe.c:3423
+#: ../src/sipe.c:5948
 msgid "Name"
 msgstr "Nombre"
 
-#: ../src/sipe.c:3426 ../src/sipe.c:3518
+#: ../src/sipe.c:5951 ../src/sipe.c:6042 ../src/sipe.c:6681
 msgid "Company"
 msgstr "Compañia"
 
-#: ../src/sipe.c:3429 ../src/sipe.c:3520
+#: ../src/sipe.c:5954 ../src/sipe.c:6044 ../src/sipe.c:6684
 msgid "Country"
 msgstr "País"
 
-#: ../src/sipe.c:3432
+#: ../src/sipe.c:5957
 msgid "Email"
 msgstr "Correo electrónico"
 
@@ -155,25 +155,25 @@ msgid_plural "Found %d contacts%s:"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../src/sipe.c:3463
+#: ../src/sipe.c:5986
 msgid " (more matched your query)"
-msgstr ""
+msgstr " (mas concidencias de tu búsqueda)"
 
-#: ../src/sipe.c:3514
+#: ../src/sipe.c:6038
 msgid "First Name"
 msgstr ""
 
-#: ../src/sipe.c:3516
+#: ../src/sipe.c:6040
 msgid "Last Name"
 msgstr ""
 
-#: ../src/sipe.c:3524
+#: ../src/sipe.c:6048
 msgid "Search"
 msgstr ""
 
-#: ../src/sipe.c:3525
+#: ../src/sipe.c:6049
 msgid "Search for a Contact"
-msgstr ""
+msgstr "Buscar un contacto"
 
 #: ../src/sipe.c:3526
 msgid ""
@@ -181,21 +181,21 @@ msgid ""
 "ignored."
 msgstr ""
 
-#: ../src/sipe.c:3528
+#: ../src/sipe.c:6052
 msgid "_Search"
 msgstr ""
 
-#: ../src/sipe.c:3529
+#: ../src/sipe.c:6053
 msgid "_Cancel"
 msgstr ""
 
-#: ../src/sipe.c:3540
+#: ../src/sipe.c:6063
 msgid "Contact Search..."
-msgstr ""
+msgstr "Búsqueda de Contactos..."
 
 #: ../src/sipe.c:3684
 msgid "Use proxy"
-msgstr ""
+msgstr "Usar proxy"
 
 #: ../src/sipe.c:3686
 msgid "Proxy Server"
@@ -226,24 +226,18 @@ msgstr ""
 msgid "UDP"
 msgstr ""
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/sipe.c:3705
+#: ../src/sipe.c:6908
 msgid "User Agent"
 msgstr ""
 
-#. TODO commented out so won't show in the preferences until we fix krb message signing
-#. option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#. 
-#. // XXX FIXME: Add code to programmatically determine if a KRB REALM is specified in /etc/krb5.conf
-#. option = purple_account_option_string_new(_("Kerberos Realm"), "krb5_realm", "");
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#. 
-#: ../src/sipe.c:3717
-msgid "Auth User"
-msgstr ""
+#: ../src/sipe.c:6912
+msgid "Use Kerberos"
+msgstr "Usar Kerberos"
 
-#: ../src/sipe.c:3719
-msgid "Auth Domain"
-msgstr ""
+#: ../src/sipe.c:6891
+msgid "Login \n   user  or  DOMAIN\\user  or\n   user@company.com "
+msgstr "Login, DOMINIO\usuario ó usuario@company.com "
+
+#: ../src/sipe.c:6895
+msgid "Server[:Port]\n(Leave empty for auto-discovery)"
+msgstr "Servidor[:Puerto]\n(Dejar vacio para autoconfiguración)"
