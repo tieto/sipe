@@ -1,4 +1,7 @@
 version 1.6.1 (2009-08-12)
+       - Fixed missing backslash in "es" translation file
+       - Support publication: modular publications
+       - Support publication: manual vs machine status publication
        - Fix timeout calculation in sipe_buddy_subscribe_cb(), make sure timeout is never 0 
        - Fixed crash in sipe_process_roaming_self()
        - Add purple >= 2.5.0 as configuration requirement
