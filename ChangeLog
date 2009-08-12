@@ -1,3 +1,13 @@
+version 1.6.1 (2009-??-??)
+	- Simplified account settings. Makes initial setup less confusing...
+	- Various bug fixes: CHOWA, message not delivered, epid generation,
+	  single buddy subscription timeouts, crashes
+	- Various build fixes
+	- Added convenience scripts for git build & snapshot
+	- Added RPM SPEC file
+	- Added telepathy-haze configuration files for Empathy support
+	- Updated translations: de
+
 version 1.6.0 (2009-07-27)
        - Multi-party conversation (Chat) functionality for:
          + OCS 2007+ as a conference [MS-CONFBAS], [MS-CONFIM], [MS-CONFPRO];
