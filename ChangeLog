@@ -1,3 +1,29 @@
+version 1.6.1 (2009-08-12)
+       - Fix timeout calculation in sipe_buddy_subscribe_cb(), make sure timeout is never 0 
+       - Fixed crash in sipe_process_roaming_self()
+       - Add purple >= 2.5.0 as configuration requirement
+       - Cleanup username handling in sipe_login()
+       - Make password mandatory again
+       - Fixed memory leaks in sipe_login() error paths
+       - Removed controversial dependency in windows branch used for old MAC code
+       - Got rid of MAC in epid generation
+       - Updated "es" translation
+       - Updated "de" translation
+       - Cleaned up connection configuration and setup
+       - More precise treatment of incoming typing info
+       - Fixed improvements reported in #2833015
+       - Fixed for "message was not delivered" reported in bug #2832551
+       - Fixed for CHOWA problems reported in bug #2795132
+       - Fixed for crash reported in bug #2795132
+       - Tag all unused function parameters
+       - Added Empathy support - telepathy-haze config for sipe 
+       - Code around GCC bug on ppc platforms
+       - License file cleanup
+       - Fixed ppc64 compilation errors
+       - Many refinements to the RPM SPEC file
+       - Added convenience script to (re)build from git repository
+       - Added convenience script for creating git snapshots
+
 version 1.6.0 (2009-07-27)
        - Multi-party conversation (Chat) functionality for:
          + OCS 2007+ as a conference [MS-CONFBAS], [MS-CONFIM], [MS-CONFPRO];
