@@ -4225,13 +4225,45 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 	return TRUE;
 }
 
+/**
+ * [MS-PRES] Table 3: Conversion of legacyInterop elements and attributes to MSRTC elements and attributes.
+ *
+ * Must be g_free'd after use.
+ */
+static char*
+sipe_get_status_by_availability(int avail)
+{
+	const char *activity;
+	
+	if (avail < 3000)
+		activity = SIPE_STATUS_ID_OFFLINE;
+	else if (avail < 4500)
+		activity = SIPE_STATUS_ID_AVAILABLE;
+	else if (avail < 6000)
+		activity = SIPE_STATUS_ID_AWAY;
+	else if (avail < 7500)
+		activity = SIPE_STATUS_ID_BUSY;
+	else if (avail < 9000)
+		activity = SIPE_STATUS_ID_AWAY;
+	else if (avail < 12000)
+		activity = SIPE_STATUS_ID_DND;
+	else if (avail < 15000)
+		activity = SIPE_STATUS_ID_BRB;
+	else if (avail < 18000)
+		activity = SIPE_STATUS_ID_AWAY;
+	else
+		activity = SIPE_STATUS_ID_OFFLINE;
+
+	return g_strdup(activity);
+}
+
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const char *uri;
 	xmlnode *xn_categories;
 	xmlnode *xn_category;
 	xmlnode *xn_node;
-	const char *activity = NULL;
+	char *activity = NULL;
 
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri");
@@ -4277,22 +4309,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			avail = atoi(data);
 			g_free(data);
 
-			if (avail < 3000)
-				activity = SIPE_STATUS_ID_UNKNOWN;
-			else if (avail < 4500)
-				activity = SIPE_STATUS_ID_AVAILABLE;
-			else if (avail < 6000)
-				activity = SIPE_STATUS_ID_BRB;
-			else if (avail < 7500)
-				activity = SIPE_STATUS_ID_ONPHONE;
-			else if (avail < 9000)
-				activity = SIPE_STATUS_ID_BUSY;
-			else if (avail < 12000)
-				activity = SIPE_STATUS_ID_DND;
-			else if (avail < 18000)
-				activity = SIPE_STATUS_ID_AWAY;
-			else
-				activity = SIPE_STATUS_ID_OFFLINE;
+			activity = sipe_get_status_by_availability(avail);
 		}
 	}
 	if(activity) {
@@ -4300,6 +4317,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		purple_prpl_got_user_status(sip->account, uri, activity, NULL);
 	}
 
+	g_free(activity);
 	xmlnode_free(xn_categories);
 }
 
@@ -4484,6 +4502,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	const char *activity;
 	const char *display_name = NULL;
 	const char *activity_name = NULL;
+	char *tmp = NULL;
 	const char *name;
 	char *uri;
 	int avl;
@@ -4552,55 +4571,35 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	avl = atoi(availability);
 	act = atoi(activity);
 
-        if(sip->msrtc_event_categories){
-             if (act == 100 && avl == 0)
-		        activity_name = SIPE_STATUS_ID_OFFLINE;
-	        else if (act == 100 && avl == 300)
-		        activity_name = SIPE_STATUS_ID_AWAY;
-	        else if (act == 300 && avl == 300)
-		        activity_name = SIPE_STATUS_ID_BRB;
-	        else if (act == 400 && avl == 300)
-		        activity_name = SIPE_STATUS_ID_AVAILABLE;
-	        else if (act == 500 && act == 300)
-		        activity_name = SIPE_STATUS_ID_ONPHONE;
-	        else if (act == 600 && avl == 300)
-		        activity_name = SIPE_STATUS_ID_BUSY;
-                else if (act == 0 && avl == 0){ //MSRTC elements are zero
-                    if(avail){  //Check for LegacyInterop elements
-                        avl = atoi(avail);
-                        if(avl == 18500)
-                                activity_name = SIPE_STATUS_ID_OFFLINE;
-                        else if (avl == 3500)
-                                activity_name = SIPE_STATUS_ID_AVAILABLE;
-                        else if (avl == 15500)
-                                activity_name = SIPE_STATUS_ID_AWAY;
-                        else if (avl == 6500)
-                                activity_name = SIPE_STATUS_ID_BUSY;
-                        else if (avl == 12500)
-                                activity_name = SIPE_STATUS_ID_BRB;
-                    }
-                }
-        }
+	/* [MS-SIP] 2.2.1, [MS-PRES] */
+	if (act < 150)
+		activity_name = SIPE_STATUS_ID_AWAY;
+	else if (act < 200)
+		activity_name = SIPE_STATUS_ID_LUNCH;
+	else if (act < 300)
+		activity_name = SIPE_STATUS_ID_AWAY;
+	else if (act < 400)
+		activity_name = SIPE_STATUS_ID_BRB;
+	else if (act < 500)
+		activity_name = SIPE_STATUS_ID_AVAILABLE;
+	else if (act < 600)
+		activity_name = SIPE_STATUS_ID_ONPHONE;
+	else if (act < 700)
+		activity_name = SIPE_STATUS_ID_BUSY;
+	else if (act < 800)
+		activity_name = SIPE_STATUS_ID_AWAY;
+	else
+		activity_name = SIPE_STATUS_ID_AVAILABLE;
 
-         if(activity_name == NULL){
-	        if (act <= 100)
-		        activity_name = SIPE_STATUS_ID_AWAY;
-	        else if (act <= 150)
-		        activity_name = SIPE_STATUS_ID_LUNCH;
-	        else if (act <= 300)
-		        activity_name = SIPE_STATUS_ID_BRB;
-	        else if (act <= 400)
-		        activity_name = SIPE_STATUS_ID_AVAILABLE;
-	        else if (act <= 500)
-		        activity_name = SIPE_STATUS_ID_ONPHONE;
-	        else if (act <= 600)
-		        activity_name = SIPE_STATUS_ID_BUSY;
-	        else
-		        activity_name = SIPE_STATUS_ID_AVAILABLE;
-
-	        if (avl == 0)
-		        activity_name = SIPE_STATUS_ID_OFFLINE;
-        }
+	if (avl < 100)
+		activity_name = SIPE_STATUS_ID_OFFLINE;
+		
+	if (act < 100 && avl < 100) { /* MSRTC elements are zero */	
+		if (avail) {
+			avl = atoi(avail);
+			activity_name = tmp = sipe_get_status_by_availability(avl);
+		}
+	}
 
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
@@ -4618,6 +4617,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
 	g_free(note);
 	xmlnode_free(xn_presentity);
+	g_free(tmp);
 	g_free(uri);
 }
 
@@ -5044,22 +5044,21 @@ sipe_publish_get_category_state(struct sipe_account_data *sip,
 
 	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY) ||
 	    !strcmp(sip->status, SIPE_STATUS_ID_LUNCH)) {
-		availability = 12000;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_DND)) {
-		availability =  9000;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BUSY)) {
-		availability =  7500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_ONPHONE)) {
-		availability =  6000;
+		availability = 15500;
 	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BRB)) {
-		availability =  4500;
+		availability = 12500;
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_DND)) {
+		availability =  9500;
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BUSY) ||
+		   !strcmp(sip->status, SIPE_STATUS_ID_ONPHONE)) {
+		availability =  6500;
 	} else if (!strcmp(sip->status, SIPE_STATUS_ID_AVAILABLE)) {
-		availability =  3000;
+		availability =  3500;
 	} else if (!strcmp(sip->status, SIPE_STATUS_ID_UNKNOWN)) {
 		availability =     0;
 	} else {
 		// Offline or invisible
-		availability = 18000;
+		availability = 18500;
 	}
 	
 	return g_strdup_printf( is_user_state ? SIPE_PUB_XML_STATE_USER : SIPE_PUB_XML_STATE_MACHINE,
