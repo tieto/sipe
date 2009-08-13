@@ -81,7 +81,7 @@ msgstr "Andere Kontakte"
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/sipe.c:2131
 msgid "you are already signed in at another location"
-msgstr "Sie haben sich bereits von einem anderen Ort haben"
+msgstr "Sie haben sich bereits von einem anderen Ort aus angemeldet"
 
 #: ../src/sipe.c:2134
 msgid "user disabled"
@@ -164,7 +164,7 @@ msgstr "Konnte den Listen-Socket nicht erzeugen"
 
 #: ../src/sipe.c:5652 ../src/sipe.c:5774
 msgid "Could not resolve hostname"
-msgstr "Konnte den Rechnernamen nicht auflösen"
+msgstr "Ein Server mit diesem Namen existiert nicht"
 
 #: ../src/sipe.c:5692
 msgid "Connection failed"
@@ -204,7 +204,7 @@ msgstr ""
 
 #: ../src/sipe.c:5936
 msgid "SIP Exchange user name contains whitespace"
-msgstr "SIP-Exchange-Benutzernamen enthält Leerzeichen"
+msgstr "SIP-Exchange-Benutzername enthält Leerzeichen"
 
 #: ../src/sipe.c:5946
 msgid "Connecting"
