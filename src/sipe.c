@@ -527,7 +527,7 @@ static void sendlater(PurpleConnection *gc, const char *buf)
                          sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, send_later_cb_ssl, sipe_ssl_connect_failure, sip->gc);
                 } else {
 			if (purple_proxy_connect(gc, sip->account, sip->realhostname, sip->realport, send_later_cb, gc) == NULL) {
-				purple_connection_error(gc, _("Couldn't create socket"));
+				purple_connection_error(gc, _("Could not create socket"));
 			}
                  }
 		sip->connecting = TRUE;
@@ -2128,17 +2128,17 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 		if (event && !g_ascii_strcasecmp(event, "unregistered")) {
 			error_id = 4140; // [MS-SIPREGE]
 			//reason = g_strdup(_("User logged out")); // [MS-OCER]
-			reason = g_strdup(_("You have been signed off because you've signed in at another location"));
+			reason = g_strdup(_("you are already signed in at another location"));
 		} else if (event && !g_ascii_strcasecmp(event, "rejected")) {
 			error_id = 4141;
-			reason = g_strdup(_("User disabled")); // [MS-OCER]
+			reason = g_strdup(_("user disabled")); // [MS-OCER]
 		} else if (event && !g_ascii_strcasecmp(event, "deactivated")) {
 			error_id = 4142;
-			reason = g_strdup(_("User moved")); // [MS-OCER]
+			reason = g_strdup(_("user moved")); // [MS-OCER]
 		}
 	}
 	g_free(event);
-	warning = g_strdup_printf(_("Unregistered by Server: %s."), reason ? reason : _("no reason given"));
+	warning = g_strdup_printf(_("You have been rejected by the server: %s"), reason ? reason : _("no reason given"));
 	g_free(reason);
 
 	sip->gc->wants_to_die = TRUE;
@@ -4145,7 +4145,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				purple_debug_info("sipe", "REGISTER retries %d\n", sip->registrar.retries);
 				if (sip->registrar.retries > 3) {
 					sip->gc->wants_to_die = TRUE;
-					purple_connection_error(sip->gc, _("Wrong Password"));
+					purple_connection_error(sip->gc, _("Wrong password"));
 					return TRUE;
 				}
 #ifdef USE_KERBEROS
@@ -4170,16 +4170,16 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 		case 403:
 			{
 				gchar *warning = sipmsg_find_header(msg, "Warning");
+				gchar **reason = NULL;
 				if (warning != NULL) {
 					/* Example header:
 					   Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
 					*/
-					gchar **tmp = g_strsplit(warning, "\"", 0);
-					warning = g_strdup_printf(_("You have been rejected by the server: %s"), tmp[1] ? tmp[1] : _("no reason given"));
-					g_strfreev(tmp);
-				} else {
-					warning = g_strdup(_("You have been rejected by the server"));
+					reason = g_strsplit(warning, "\"", 0);
 				}
+				warning = g_strdup_printf(_("You have been rejected by the server: %s"),
+							  (reason && reason[1]) ? reason[1] : _("no reason given"));
+				g_strfreev(reason);
 
 				sip->gc->wants_to_die = TRUE;
 				purple_connection_error(sip->gc, warning);
@@ -4190,13 +4190,14 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			case 404:
 			{
 				gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+				gchar *reason = NULL;
 				if (warning != NULL) {
-					gchar *reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
-					warning = g_strdup_printf(_("Not Found: %s. Please, contact with your Administrator"), reason ? reason : _("no reason given"));
-					g_free(reason);
-				} else {
-					warning = g_strdup(_("Not Found: Destination URI either not enabled for SIP or does not exist. Please, contact with your Administrator"));
+					reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
 				}
+				warning = g_strdup_printf(_("Not found: %s. Please contact your Administrator"),
+							  warning ? (reason ? reason : _("no reason given")) :
+							  _("SIP is either not enabled for the destination URI or it does not exist"));
+				g_free(reason);
 
 				sip->gc->wants_to_die = TRUE;
 				purple_connection_error(sip->gc, warning);
@@ -4207,13 +4208,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                 case 503:
                         {
 				gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+				gchar *reason = NULL;
 				if (warning != NULL) {
-					gchar *reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
-					warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
-					g_free(reason);
-				} else {
-					warning = g_strdup(_("Service unavailable: no reason given"));
+					reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
 				}
+				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
+				g_free(reason);
 
 				sip->gc->wants_to_die = TRUE;
 				purple_connection_error(sip->gc, warning);
@@ -5408,7 +5408,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 					sip->gc->wants_to_die = TRUE;
 				}
 			} else if (msg->response == 401) {
-				purple_connection_error(sip->gc, _("Wrong Password"));
+				purple_connection_error(sip->gc, _("Wrong password"));
 				sip->gc->wants_to_die = TRUE;
 			}
 			g_free(signature_input_str);
@@ -5478,7 +5478,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc,
 	if (conn == NULL) {
 		purple_debug_error("sipe", "Connection not found; Please try to connect again.\n");
 		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("Connection not found; Please try to connect again.\n"));
+		purple_connection_error(gc, _("Connection not found. Please try to connect again"));
 		return;
 	}
 
@@ -5649,7 +5649,7 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data,
 	sip->query_data = NULL;
 
 	if (!hosts || !hosts->data) {
-		purple_connection_error(sip->gc, _("Couldn't resolve host"));
+		purple_connection_error(sip->gc, _("Could not resolve hostname"));
 		return;
 	}
 
@@ -5689,13 +5689,13 @@ static void sipe_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *
 
         switch(error) {
 			case PURPLE_SSL_CONNECT_FAILED:
-				purple_connection_error(gc, _("Connection Failed"));
+				purple_connection_error(gc, _("Connection failed"));
 				break;
 			case PURPLE_SSL_HANDSHAKE_FAILED:
-				purple_connection_error(gc, _("SSL Handshake Failed"));
+				purple_connection_error(gc, _("SSL handshake failed"));
 				break;
 			case PURPLE_SSL_CERTIFICATE_INVALID:
-				purple_connection_error(gc, _("SSL Certificate Invalid"));
+				purple_connection_error(gc, _("SSL certificate invalid"));
 				break;
         }
 }
@@ -5726,7 +5726,7 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data)
 			sip->realport, login_cb, sip->gc);
 
 	if (connect_data == NULL) {
-		purple_connection_error(sip->gc, _("Couldn't create socket"));
+		purple_connection_error(sip->gc, _("Could not create socket"));
 	}
 }
 
@@ -5753,7 +5753,7 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		/* SSL case */
 		if (!purple_ssl_is_supported()) {
 			gc->wants_to_die = TRUE;
-			purple_connection_error(gc, _("SSL support is not installed.  Either install SSL support or configure a different connection type in the account editor."));
+			purple_connection_error(gc, _("SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"));
 			return;
 		}
 
@@ -5884,7 +5884,7 @@ static void sipe_login(PurpleAccount *account)
 
 	if (strpbrk(username, "\t\v\r\n") != NULL) {
 		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("SIP Exchange username contains invalid characters"));
+		purple_connection_error(gc, _("SIP Exchange user name contains invalid characters"));
 		return;
 	}
 
@@ -5907,7 +5907,7 @@ static void sipe_login(PurpleAccount *account)
 	if (!strchr(signinname_login[0], '@') || g_str_has_prefix(signinname_login[0], "@") || g_str_has_suffix(signinname_login[0], "@")) {
 		g_strfreev(signinname_login);
 		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("Username should be valid SIP URI\nExample: user@company.com"));
+		purple_connection_error(gc, _("User name should be a valid SIP URI\nExample: user@company.com"));
 		return;
 	}
 	sip->username = g_strdup(signinname_login[0]);
@@ -5933,7 +5933,7 @@ static void sipe_login(PurpleAccount *account)
 
 	if (strchr(sip->username, ' ') != NULL) {
 		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("SIP Exchange usernames may not contain whitespaces"));
+		purple_connection_error(gc, _("SIP Exchange user name contains whitespace"));
 		return;
 	}
 
@@ -6177,13 +6177,13 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 
 	if (results == NULL) {
 		purple_debug_error("sipe", "purple_parse_searchreply: Unable to display the search results.\n");
-		purple_notify_error(sip->gc, NULL, _("Unable to display the search results."), NULL);
+		purple_notify_error(sip->gc, NULL, _("Unable to display the search results"), NULL);
 
 		xmlnode_free(searchResults);
 		return FALSE;
 	}
 
-	column = purple_notify_searchresults_column_new(_("User Name"));
+	column = purple_notify_searchresults_column_new(_("User name"));
 	purple_notify_searchresults_column_add(results, column);
 
 	column = purple_notify_searchresults_column_new(_("Name"));
@@ -6276,9 +6276,9 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 	group = purple_request_field_group_new(NULL);
 	purple_request_fields_add_group(fields, group);
 
-	field = purple_request_field_string_new("givenName", _("First Name"), NULL, FALSE);
+	field = purple_request_field_string_new("givenName", _("First name"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("sn", _("Last Name"), NULL, FALSE);
+	field = purple_request_field_string_new("sn", _("Last name"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
@@ -6287,8 +6287,8 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 
 	purple_request_fields(gc,
 		_("Search"),
-		_("Search for a Contact"),
-		_("Enter the information of the person you wish to find. Empty fields will be ignored."),
+		_("Search for a contact"),
+		_("Enter the information for the person you wish to find. Empty fields will be ignored."),
 		fields,
 		_("_Search"), G_CALLBACK(sipe_search_contact_with_cb),
 		_("_Cancel"), NULL,
@@ -6301,7 +6301,7 @@ GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 	GList *menu = NULL;
 	PurplePluginAction *act;
 
-	act = purple_plugin_action_new(_("Contact Search..."), sipe_show_find_contact);
+	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
 	menu = g_list_reverse(menu);
@@ -6725,7 +6725,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				    && PURPLE_CBFLAGS_OP != (flags & PURPLE_CBFLAGS_OP)     /* Not conf OP */
 				    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
 				{
-					gchar *label = g_strdup_printf(_("Make Leader of '%s'"), session->chat_name);
+					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_name);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_make_leader_cb),
 								     g_strdup(session->chat_name), NULL);
@@ -6760,12 +6760,12 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		}
 	} SIPE_SESSION_FOREACH_END;
 
-	act = purple_menu_action_new(_("New Chat"),
+	act = purple_menu_action_new(_("New chat"),
 				     PURPLE_CALLBACK(sipe_buddy_menu_chat_new_cb),
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_menu_action_new(_("Send Email..."),
+	act = purple_menu_action_new(_("Send email..."),
 				     PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
@@ -6790,8 +6790,8 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	menu_groups = g_list_reverse(menu_groups);
 
 	act = purple_menu_action_new(_("Copy to"),
-							   NULL,
-							   NULL, menu_groups);
+				     NULL,
+				     NULL, menu_groups);
 	menu = g_list_prepend(menu, act);
 	menu = g_list_reverse(menu);
 
@@ -6842,12 +6842,12 @@ sipe_chat_menu(PurpleChat *chat)
 	    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
 	{
 		if (session->locked) {
-			act = purple_menu_action_new(_("Unlock Conversation"),
+			act = purple_menu_action_new(_("Unlock"),
 						     PURPLE_CALLBACK(sipe_chat_menu_unlock_cb),
 						     NULL, NULL);
 			menu = g_list_prepend(menu, act);
 		} else {
-			act = purple_menu_action_new(_("Lock Conversation"),
+			act = purple_menu_action_new(_("Lock"),
 						     PURPLE_CALLBACK(sipe_chat_menu_lock_cb),
 						     NULL, NULL);
 			menu = g_list_prepend(menu, act);
@@ -6915,16 +6915,16 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			purple_debug_info("sipe", "process_get_info_response: no parseable searchResults\n");
 		} else if ((mrow = xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL))) {
 			server_alias = g_strdup(xmlnode_get_attrib(mrow, "displayName"));
-			purple_notify_user_info_add_pair(info, _("Display Name"), server_alias);
-			purple_notify_user_info_add_pair(info, _("Job Title"), g_strdup(xmlnode_get_attrib(mrow, "title")));
+			purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
+			purple_notify_user_info_add_pair(info, _("Job title"), g_strdup(xmlnode_get_attrib(mrow, "title")));
 			purple_notify_user_info_add_pair(info, _("Office"), g_strdup(xmlnode_get_attrib(mrow, "office")));
-			purple_notify_user_info_add_pair(info, _("Business Phone"), g_strdup(xmlnode_get_attrib(mrow, "phone")));
+			purple_notify_user_info_add_pair(info, _("Business phone"), g_strdup(xmlnode_get_attrib(mrow, "phone")));
 			purple_notify_user_info_add_pair(info, _("Company"), g_strdup(xmlnode_get_attrib(mrow, "company")));
 			purple_notify_user_info_add_pair(info, _("City"), g_strdup(xmlnode_get_attrib(mrow, "city")));
 			purple_notify_user_info_add_pair(info, _("State"), g_strdup(xmlnode_get_attrib(mrow, "state")));
 			purple_notify_user_info_add_pair(info, _("Country"), g_strdup(xmlnode_get_attrib(mrow, "country")));
 			email = g_strdup(xmlnode_get_attrib(mrow, "email"));
-			purple_notify_user_info_add_pair(info, _("E-Mail Address"), email);
+			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
 			if (!email || strcmp("", email)) {
 				if (!purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email")) {
 					purple_blist_node_set_string((PurpleBlistNode *)pbuddy, "email", email);
@@ -6940,7 +6940,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 		g_free(server_alias);
 		server_alias = g_strdup(purple_buddy_get_server_alias(pbuddy));
 		if (server_alias) {
-			purple_notify_user_info_add_pair(info, _("Display Name"), server_alias);
+			purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
 		}
 	}
 
@@ -6955,7 +6955,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 		g_free(email);
 		email = g_strdup(purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email"));
 		if (email) {
-			purple_notify_user_info_add_pair(info, _("E-Mail Address"), email);
+			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
 		}
 	}
 
@@ -7111,6 +7111,8 @@ static void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 		entry = g_list_delete_link(entry, entry);
 	}
 	prpl_info.user_splits = NULL;
+
+	exit(0);
 }
 
 static void init_plugin(PurplePlugin *plugin)
@@ -7129,14 +7131,14 @@ static void init_plugin(PurplePlugin *plugin)
 
 	purple_plugin_register(plugin);
 
-	split = purple_account_user_split_new(_("Login \n   user  or  DOMAIN\\user  or\n   user@company.com "), NULL, ',');
+	split = purple_account_user_split_new(_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"), NULL, ',');
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
 
-	option = purple_account_option_string_new(_("Server[:Port]\n(Leave empty for auto-discovery)"), "server", "");
+	option = purple_account_option_string_new(_("Server[:Port]\n(leave empty for auto-discovery)"), "server", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	option = purple_account_option_list_new(_("Connection Type"), "transport", NULL);
+	option = purple_account_option_list_new(_("Connection type"), "transport", NULL);
 	purple_account_option_add_list_item(option, _("Auto"), "auto");
 	purple_account_option_add_list_item(option, _("SSL/TLS"), "tls");
 	purple_account_option_add_list_item(option, _("TCP"), "tcp");
