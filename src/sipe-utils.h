@@ -141,3 +141,5 @@ xmlnode * xmlnode_get_descendant(const xmlnode *parent, ...);
  * For glib < 2.8 compatibility
  */
 char *sipe_get_host_name();
+
+char* trim(char* b);

@@ -193,6 +193,20 @@ sipe_is_bad_alias(const char *uri,
 	return result;
 }
 
+char *trim(char *b)
+{
+	char *e = strrchr(b, '\0');
+	
+	while (b < e && isspace(*b))
+		++b;
+	while (e > b && isspace(*(e - 1)))
+		--e; 
+	*e='\0';
+	
+	return b;
+}
+
+
 /*
   Local Variables:
   mode: c
