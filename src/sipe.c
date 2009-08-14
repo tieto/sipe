@@ -2381,22 +2381,26 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 }
 
 /**
- * @param uri SIP URI with 'sip:' prefix
+ * Update user information
+ *
+ * @param uri          SIP URI with 'sip:' prefix
+ * @param display_name may be modified to strip white space
+ * @param email        may be modified to strip white space
  */
 static void
 sipe_update_user_info(struct sipe_account_data *sip,
 		      const char *uri,
-		      const char *display_name,
-		      const char *email)
+		      char *display_name,
+		      char *email)
 {
 	GSList *buddies = purple_find_buddies(sip->account, uri); /* all buddies in different groups */
 	GSList *entry = buddies;
 	PurpleBuddy *p_buddy;
-	char *disp_name = (char *)display_name;
-	char *email_tr = (char *)email;	
 	
-	disp_name = disp_name ? trim(disp_name) : NULL;
-	email_tr  = email_tr  ? trim(email_tr)  : NULL;
+	if (display_name)
+		display_name = trim(display_name);
+	if (email)
+		email = trim(email);
 
 	while (entry) {
 		const char *email_str;
@@ -2404,23 +2408,23 @@ sipe_update_user_info(struct sipe_account_data *sip,
 
 		p_buddy = entry->data;
 				  
-		if (disp_name && sipe_is_bad_alias(uri, purple_buddy_get_alias(p_buddy))) {
-			purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, disp_name);
-			purple_blist_alias_buddy(p_buddy, disp_name);
+		if (display_name && sipe_is_bad_alias(uri, purple_buddy_get_alias(p_buddy))) {
+			purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, display_name);
+			purple_blist_alias_buddy(p_buddy, display_name);
 		}
 
 		server_alias = purple_buddy_get_server_alias(p_buddy);
-		if (disp_name &&
-			( (server_alias && strcmp(disp_name, server_alias))
+		if (display_name &&
+			( (server_alias && strcmp(display_name, server_alias))
 				|| !server_alias || strlen(server_alias) == 0 )
 			) {
-			purple_blist_server_alias_buddy(p_buddy, disp_name);
+			purple_blist_server_alias_buddy(p_buddy, display_name);
 		}
 
-		if (email_tr) {
+		if (email) {
 			email_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, "email");
-			if (!email_str || g_ascii_strcasecmp(email_str, email_tr)) {
-				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "email", email_tr);
+			if (!email_str || g_ascii_strcasecmp(email_str, email)) {
+				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "email", email);
 			}
 		}
 
@@ -4526,7 +4530,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 {
 	const char *availability;
 	const char *activity;
-	const char *display_name = NULL;
 	const char *activity_name = NULL;
 	char *tmp = NULL;
 	const char *name;
@@ -4541,7 +4544,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
 	xmlnode *xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
 	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
-	const char *email = xn_email ? xmlnode_get_attrib(xn_email, "email") : NULL;
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
         xmlnode *xn_state = xn_userinfo ? xmlnode_get_descendant(xn_userinfo, "states", "state",  NULL):NULL;
         const char *avail = xn_state ? xmlnode_get_attrib(xn_state, "avail") : NULL;
@@ -4559,8 +4561,11 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	activity = xmlnode_get_attrib(xn_activity, "aggregate");
 
 	if (xn_display_name) {
-		display_name = xmlnode_get_attrib(xn_display_name, "displayName");
+		char *display_name = g_strdup(xmlnode_get_attrib(xn_display_name, "displayName"));
+		char *email        = xn_email ? g_strdup(xmlnode_get_attrib(xn_email, "email")) : NULL;
 		sipe_update_user_info(sip, uri, display_name, email);
+		g_free(email);
+		g_free(display_name);
 	}
 
 	avl = atoi(availability);

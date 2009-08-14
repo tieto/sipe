@@ -21,6 +21,7 @@
  */
 
 #include <string.h>
+#include <ctype.h>
 #include <glib.h>
 
 #include "debug.h"
@@ -195,7 +196,7 @@ sipe_is_bad_alias(const char *uri,
 
 char *trim(char *b)
 {
-	char *e = strrchr(b, '\0');
+	char *e = b + strlen(b);
 	
 	while (b < e && isspace(*b))
 		++b;
