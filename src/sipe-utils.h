@@ -117,6 +117,17 @@ gchar *sip_uri_from_name(const gchar *name);
 gchar *sip_uri(const gchar *string);
 
 /**
+ * Tries to figure out if contact alias which stored locally
+ * is just SIP URI, not a proper display name or local alias.
+ *
+ * @param uri SIP URI with 'sip:' prefix.
+ * @param alias as returned by purple.
+ */ 
+gboolean
+sipe_is_bad_alias(const char *uri,
+		  const char *alias);
+
+/**
  * Find a XML node from the parent with the specified path
  *
  * @param parent (in) XML node to start search from

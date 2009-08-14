@@ -171,6 +171,28 @@ sipe_get_pub_instance(struct sipe_account_data *sip,
 	return part_1 + part_2;
 }
 
+gboolean
+sipe_is_bad_alias(const char *uri,
+		  const char *alias)
+{
+	char *uri_alias;
+	gboolean result = FALSE;
+	
+	if (!uri) return FALSE;
+	if (!alias) return TRUE;
+
+	if (g_str_has_prefix(alias, "sip:") || g_str_has_prefix(alias, "sips:")) return TRUE;
+	
+	/* check if alias is just SIP URI but without 'sip:' prefix */
+	uri_alias = sip_uri_from_name(alias);
+	if (!g_ascii_strcasecmp(uri, uri_alias)) {
+		result = TRUE;
+	}
+	g_free(uri_alias);
+	
+	return result;
+}
+
 /*
   Local Variables:
   mode: c

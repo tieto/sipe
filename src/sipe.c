@@ -2395,8 +2395,6 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	xmlnode *node2;
         char *display_name = NULL;
         PurpleBuddy *pbuddy;
-        const char *alias;
-        char *uri_alias;
         char *uri_user;
 	GSList *category_names = NULL;
 
@@ -2524,20 +2522,17 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		gchar *hdr;
 		gchar *body;
 
-		user = xmlnode_get_attrib(node, "user");
+		user = xmlnode_get_attrib(node, "user"); /* without 'sip:' prefix */
 		if (!user) continue;
 		purple_debug_info("sipe", "sipe_process_roaming_self: user %s\n", user);
 		display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
 		uri_user = sip_uri_from_name(user);
 		pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri_user);
 		if(pbuddy){
-			alias = purple_buddy_get_local_alias(pbuddy);
-			uri_alias = sip_uri_from_name(alias);
-			if (display_name && !g_ascii_strcasecmp(uri_user, uri_alias)) { // 'bad' alias
+			if (display_name && sipe_is_bad_alias(uri_user, purple_buddy_get_alias(pbuddy))) {
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri_user, display_name);
 				purple_blist_alias_buddy(pbuddy, display_name);
 			}
-			g_free(uri_alias);
 		}
 
 	        acknowledged= xmlnode_get_attrib(node, "acknowledged");
@@ -4398,7 +4393,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 		return;
 	}
 
-	uri = xmlnode_get_attrib(pidf, "entity");
+	uri = xmlnode_get_attrib(pidf, "entity"); /* with 'sip:' prefix */
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple")))
 	{
@@ -4436,17 +4431,13 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 
 		while (entry) {
 			const char *server_alias;
-			char *alias;
 
 			p_buddy = entry->data;
-
-			alias = (char *)purple_buddy_get_alias(p_buddy);
-			alias = alias ? sip_uri_from_name(alias) : NULL;
-			if (!alias || !g_ascii_strcasecmp(uri, alias)) {
+			
+			if (sipe_is_bad_alias(uri, purple_buddy_get_alias(p_buddy))) {
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, display_name);
 				purple_blist_alias_buddy(p_buddy, display_name);
 			}
-			g_free(alias);
 
 			server_alias = purple_buddy_get_server_alias(p_buddy);
 			if (display_name &&
@@ -4527,7 +4518,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_device_name = xn_device_presence ? xmlnode_get_child(xn_device_presence, "deviceName") : NULL;
 	const char *device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
 
-	name = xmlnode_get_attrib(xn_presentity, "uri");
+	name = xmlnode_get_attrib(xn_presentity, "uri"); /* without 'sip:' prefix */
 	uri = sip_uri_from_name(name);
 	availability = xmlnode_get_attrib(xn_availability, "aggregate");
 	activity = xmlnode_get_attrib(xn_activity, "aggregate");
@@ -4543,8 +4534,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			const char *email_str, *server_alias;
 
 			p_buddy = entry->data;
-
-			if (!g_ascii_strcasecmp(name, purple_buddy_get_alias(p_buddy))) {
+					  
+			if (sipe_is_bad_alias(uri, purple_buddy_get_alias(p_buddy))) {
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, display_name);
 				purple_blist_alias_buddy(p_buddy, display_name);
 			}
