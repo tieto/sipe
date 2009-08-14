@@ -6708,6 +6708,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
+	gchar *email = NULL;
 	gchar *self = sip_uri_self(sip);
 
 	SIPE_SESSION_FOREACH {
@@ -6764,10 +6765,14 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_menu_action_new(_("Send email..."),
-				     PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),
-				     NULL, NULL);
-	menu = g_list_prepend(menu, act);
+	
+	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");
+	if (email) {
+		act = purple_menu_action_new(_("Send email..."),
+					     PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),
+					     NULL, NULL);
+		menu = g_list_prepend(menu, act);
+	}
 
 	gr_parent = purple_buddy_get_group(buddy);
 	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
