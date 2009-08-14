@@ -2393,8 +2393,10 @@ sipe_update_user_info(struct sipe_account_data *sip,
 	GSList *entry = buddies;
 	PurpleBuddy *p_buddy;
 	char *disp_name = (char *)display_name;
+	char *email_tr = (char *)email;	
 	
 	disp_name = disp_name ? trim(disp_name) : NULL;
+	email_tr  = email_tr  ? trim(email_tr)  : NULL;
 
 	while (entry) {
 		const char *email_str;
@@ -2415,10 +2417,10 @@ sipe_update_user_info(struct sipe_account_data *sip,
 			purple_blist_server_alias_buddy(p_buddy, disp_name);
 		}
 
-		if (email) {
+		if (email_tr) {
 			email_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, "email");
-			if (!email_str || g_ascii_strcasecmp(email_str, email)) {
-				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "email", email);
+			if (!email_str || g_ascii_strcasecmp(email_str, email_tr)) {
+				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "email", email_tr);
 			}
 		}
 
