@@ -6711,7 +6711,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
-	gchar *email = NULL;
+	const char *email;
 	gchar *self = sip_uri_self(sip);
 
 	SIPE_SESSION_FOREACH {
