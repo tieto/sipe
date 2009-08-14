@@ -28,7 +28,7 @@ fi
 (
     set -e
     echo -n "Configuring build with"
-    if [ -z "$@" ]; then
+    if [ $# -eq 0  ]; then
 	echo "out any options..."
     else
 	echo " '$@'..."
