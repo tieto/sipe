@@ -148,7 +148,6 @@ struct sipe_account_data {
 	gchar *status;
 	gboolean is_idle;
 	gboolean was_idle;
-	int status_version;
 	gchar *contact;
 	gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
@@ -306,15 +305,26 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 		"</publications>"\
 	"</publish>"
 
-
+/**
+ * Clears all our publications.
+ * @param uri		(%s) Self URI. Ex.: sip:alice7@boston.local
+ * @param instance	(%u) of Device. Ex.: 1938468721
+ * @param instance	(%u) of Machine Statue. Ex.: 1938468728
+ * @param instance	(%u) of Machine Statue. Ex.: 1938468728
+ * @param instance	(%u) of User Statue. Ex.: 1938468725
+ * @param instance	(%u) of User Statue. Ex.: 1938468725
+ */
 #define SIPE_SEND_CLEAR_PRESENCE \
 "<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\">"\
   "<publications uri=\"%s\">"\
-	"<publication categoryName=\"state\" instance=\"906391354\" container=\"2\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
-	"<publication categoryName=\"state\" instance=\"906391356\" container=\"0\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
-	"<publication categoryName=\"note\" instance=\"0\" container=\"300\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
-	"<publication categoryName=\"note\" instance=\"0\" container=\"200\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
-	"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"1\" expireType=\"static\" expires=\"0\" />"\
+	"<publication categoryName=\"device\" instance=\"%u\" container=\"2\" version=\"0\" expireType=\"time\" expires=\"0\" />"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"0\" expireType=\"time\" expires=\"0\" />"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"0\" expireType=\"time\" expires=\"0\" />"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"0\" expireType=\"time\" expires=\"0\" />"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"0\" expireType=\"time\" expires=\"0\" />"\
+	"<publication categoryName=\"note\" instance=\"0\" container=\"300\" version=\"0\" expireType=\"time\" expires=\"0\" />"\
+	"<publication categoryName=\"note\" instance=\"0\" container=\"200\" version=\"0\" expireType=\"time\" expires=\"0\" />"\
+	"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"0\" expireType=\"time\" expires=\"0\" />"\
   "</publications>"\
 "</publish>"
 

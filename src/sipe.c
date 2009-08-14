@@ -4952,7 +4952,9 @@ process_clear_presence_response(struct sipe_account_data *sip, struct sipmsg *ms
 {
 	// Version(s) of presence info were out of date; tell the server to clear them, then we'll try again
 	if (msg->response == 200) {
-		sip->status_version = 0;
+		g_hash_table_destroy(sip->our_publications);
+		sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
+							      g_free, (GDestroyNotify)g_hash_table_destroy);
 		send_presence_status(sip);
 	}
 	return TRUE;
@@ -4965,8 +4967,17 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip, s
 	if (msg->response == 409) {
 		// Version(s) of presence info were out of date; tell the server to clear them, then we'll try again
 		// TODO need to parse the version #'s?
+		guint device_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
+		guint machine_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
+		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER); 
 		gchar *uri = sip_uri_self(sip);
-		gchar *doc = g_strdup_printf(SIPE_SEND_CLEAR_PRESENCE, uri);
+		gchar *doc = g_strdup_printf(SIPE_SEND_CLEAR_PRESENCE,
+						uri,
+						device_instance,
+						machine_instance,
+						machine_instance,
+						user_instance,
+						user_instance);
 		gchar *tmp;
 		gchar *hdr;
 
@@ -6711,7 +6722,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
-	gchar *email = NULL;
+	const char *email = NULL;
 	gchar *self = sip_uri_self(sip);
 
 	SIPE_SESSION_FOREACH {
