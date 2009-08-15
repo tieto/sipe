@@ -1396,11 +1396,45 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg,
 				    SIPE_UNUSED_PARAMETER struct transaction *tc)
 {
-		if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
-		{
-			process_incoming_notify(sip, msg, FALSE, FALSE);
+	/* create/store subscription dialog if not yet */
+	if (msg->response == 200) {
+		struct sip_session *session;
+		struct sip_dialog *dialog;
+		gchar *event = sipmsg_find_header(msg, "Event");
+		gchar *callid = sipmsg_find_header(msg, "Call-ID");		
+		gchar *key = NULL;
+		
+		if (event && !g_ascii_strcasecmp(event, "presence")) {
+			gchar *to = parse_from(sipmsg_find_header(msg, "To"));
+			/* Subscription is identified by ACTION_NAME_PRESENCE key */
+			key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
+			g_free(to);
+		} else if (event) {
+			/* Subscription is identified by <event> key */
+			key = g_strdup_printf("<%s>", event);
 		}
-		return TRUE;
+		
+		session = sipe_session_find_or_add_im(sip, key);
+		dialog = sipe_dialog_find(session, key);
+		
+		g_free(session->callid);
+		session->callid = g_strdup(callid);
+
+		sipe_dialog_remove(session, key);
+
+		dialog = sipe_dialog_add(session);
+		dialog->callid = g_strdup(session->callid);
+		dialog->with = g_strdup(key);
+		sipe_dialog_parse(dialog, msg, TRUE);
+		
+		g_free(key);		
+	}
+	
+	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
+	{
+		process_incoming_notify(sip, msg, FALSE, FALSE);
+	}
+	return TRUE;
 }
 
 static void sipe_subscribe_resource_uri(const char *name,
