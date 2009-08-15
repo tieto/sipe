@@ -1398,7 +1398,6 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 {
 	/* create/store subscription dialog if not yet */
 	if (msg->response == 200) {
-		struct sip_session *session;
 		struct sip_dialog *dialog;
 		gchar *event = sipmsg_find_header(msg, "Event");
 		gchar *callid = sipmsg_find_header(msg, "Call-ID");		
@@ -1414,20 +1413,19 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 			key = g_strdup_printf("<%s>", event);
 		}
 		
-		session = sipe_session_find_or_add_im(sip, key);
-		dialog = sipe_dialog_find(session, key);
+		dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
+		if (dialog) {
+			g_hash_table_remove(sip->subscription_dialogs, key);
+		}
 		
-		g_free(session->callid);
-		session->callid = g_strdup(callid);
-
-		sipe_dialog_remove(session, key);
-
-		dialog = sipe_dialog_add(session);
-		dialog->callid = g_strdup(session->callid);
+		dialog = g_new0(struct sip_dialog, 1);
+		g_hash_table_insert(sip->subscription_dialogs, key, dialog);
+		
+		dialog->callid = g_strdup(callid);
 		dialog->with = g_strdup(key);
 		sipe_dialog_parse(dialog, msg, TRUE);
 		
-		g_free(key);		
+		g_free(key);	
 	}
 	
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
@@ -5989,6 +5987,8 @@ static void sipe_login(PurpleAccount *account)
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
 	sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 						      g_free, (GDestroyNotify)g_hash_table_destroy);
+	sip->subscription_dialogs = g_hash_table_new_full(g_str_hash, g_str_equal,
+							  g_free, (GDestroyNotify)sipe_dialog_free);
 
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
@@ -6167,6 +6167,7 @@ static void sipe_close(PurpleConnection *gc)
 		g_hash_table_foreach_steal(sip->buddies, sipe_buddy_remove, NULL);
 		g_hash_table_destroy(sip->buddies);
 		g_hash_table_destroy(sip->our_publications);
+		g_hash_table_destroy(sip->subscription_dialogs);
 
 		if (sip->our_publication_keys) {
 			GSList *entry = sip->our_publication_keys;
