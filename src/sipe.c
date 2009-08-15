@@ -1401,6 +1401,7 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 		struct sip_dialog *dialog;
 		gchar *event = sipmsg_find_header(msg, "Event");
 		gchar *callid = sipmsg_find_header(msg, "Call-ID");		
+		gchar *cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
 		gchar *key = NULL;
 		
 		if (event && !g_ascii_strcasecmp(event, "presence")) {
@@ -1423,12 +1424,14 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 		g_hash_table_insert(sip->subscription_dialogs, g_strdup(key), dialog);
 		
 		dialog->callid = g_strdup(callid);
+		dialog->cseq = atoi(cseq);
 		dialog->with = g_strdup(key);
 		sipe_dialog_parse(dialog, msg, TRUE);
 		
 		purple_debug_info("sipe", "process_subscribe_response: subscription dialog added for: %s\n", key);
 		
-		g_free(key);	
+		g_free(key);
+		g_free(cseq);
 	}
 	
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
