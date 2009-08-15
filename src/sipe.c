@@ -1416,14 +1416,17 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 		dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
 		if (dialog) {
 			g_hash_table_remove(sip->subscription_dialogs, key);
+			purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
 		}
 		
 		dialog = g_new0(struct sip_dialog, 1);
-		g_hash_table_insert(sip->subscription_dialogs, key, dialog);
+		g_hash_table_insert(sip->subscription_dialogs, g_strdup(key), dialog);
 		
 		dialog->callid = g_strdup(callid);
 		dialog->with = g_strdup(key);
 		sipe_dialog_parse(dialog, msg, TRUE);
+		
+		purple_debug_info("sipe", "process_subscribe_response: subscription dialog added for: %s\n", key);
 		
 		g_free(key);	
 	}
@@ -1464,6 +1467,7 @@ static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer 
 
 static void sipe_subscribe_presence_batched_to(struct sipe_account_data *sip, gchar *resources_uri, gchar *to)
 {
+	gchar *key;
 	gchar *contact = get_contact(sip);
 	gchar *request;
 	gchar *content;
@@ -1471,6 +1475,7 @@ static void sipe_subscribe_presence_batched_to(struct sipe_account_data *sip, gc
 	gchar *accept = "";
         gchar *autoextend = "";
 	gchar *content_type;
+	struct sip_dialog *dialog;
 
 	if (sip->msrtc_event_categories) {
 		require = ", categoryList";
@@ -1510,12 +1515,17 @@ static void sipe_subscribe_presence_batched_to(struct sipe_account_data *sip, gc
 	g_free(contact);
 
 	/* subscribe to buddy presence */
-	//send_sip_request(sip->gc, "SUBSCRIBE", resource_uri,  resource_uri, request, content, NULL, process_subscribe_response);
-	send_sip_request(sip->gc, "SUBSCRIBE", to,  to, request, content, NULL, process_subscribe_response);
+	/* Subscription is identified by ACTION_NAME_PRESENCE key */
+	key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
+	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
+	purple_debug_info("sipe", "sipe_subscribe_presence_batched_to: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
+	
+	send_sip_request(sip->gc, "SUBSCRIBE", to,  to, request, content, dialog, process_subscribe_response);
 
 	g_free(content);
 	g_free(to);
 	g_free(request);
+	g_free(key);
 }
 
 static void sipe_subscribe_presence_batched(struct sipe_account_data *sip,
@@ -1573,11 +1583,14 @@ static void sipe_subscribe_presence_batched_routed(struct sipe_account_data *sip
 
 static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *buddy_name)
 {
+	
+	gchar *key;
 	gchar *to = sip_uri((char *)buddy_name);
 	gchar *tmp = get_contact(sip);
 	gchar *request;
 	gchar *content;
         gchar *autoextend = "";
+	struct sip_dialog *dialog;
 
     if (!sip->msrtc_event_categories)
                 autoextend = "Supported: com.microsoft.autoextend\r\n";
@@ -1608,11 +1621,17 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 	g_free(tmp);
 
 	/* subscribe to buddy presence */
-	send_sip_request(sip->gc, "SUBSCRIBE", to, to, request, content, NULL, process_subscribe_response);
+	/* Subscription is identified by ACTION_NAME_PRESENCE key */
+	key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
+	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
+	purple_debug_info("sipe", "sipe_subscribe_presence_single: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
+	
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, request, content, dialog, process_subscribe_response);
 
 	g_free(content);
 	g_free(to);
 	g_free(request);
+	g_free(key);
 }
 
 static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
@@ -2106,6 +2125,8 @@ static void sipe_subscribe_roaming_contacts(struct sipe_account_data *sip)
 static void sipe_subscribe_presence_wpending(struct sipe_account_data *sip,
 					     SIPE_UNUSED_PARAMETER void *unused)
 {
+	gchar *key;
+	struct sip_dialog *dialog;
 	gchar *to = sip_uri_self(sip);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
@@ -2118,9 +2139,16 @@ static void sipe_subscribe_presence_wpending(struct sipe_account_data *sip,
 		"Contact: %s\r\n", tmp);
 	g_free(tmp);
 
-	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", NULL, process_subscribe_response);
+	/* Subscription is identified by <event> key */
+	key = g_strdup_printf("<%s>", "presence.wpending");
+	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
+	purple_debug_info("sipe", "sipe_subscribe_presence_wpending: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
+	
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", dialog, process_subscribe_response);
+	
 	g_free(to);
 	g_free(hdr);
+	g_free(key);
 }
 
 /**
