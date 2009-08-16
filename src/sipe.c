@@ -1400,10 +1400,10 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 	if (msg->response == 200) {
 		struct sip_dialog *dialog;
 		gchar *event = sipmsg_find_header(msg, "Event");
-		gchar *callid = sipmsg_find_header(msg, "Call-ID");		
+		gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
 		gchar *key = NULL;
-		
+
 		if (event && !g_ascii_strcasecmp(event, "presence")) {
 			gchar *to = parse_from(sipmsg_find_header(msg, "To"));
 			/* Subscription is identified by ACTION_NAME_PRESENCE key */
@@ -1413,27 +1413,27 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 			/* Subscription is identified by <event> key */
 			key = g_strdup_printf("<%s>", event);
 		}
-		
+
 		dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
 		if (dialog) {
 			g_hash_table_remove(sip->subscription_dialogs, key);
 			purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
 		}
-		
+
 		dialog = g_new0(struct sip_dialog, 1);
 		g_hash_table_insert(sip->subscription_dialogs, g_strdup(key), dialog);
-		
+
 		dialog->callid = g_strdup(callid);
 		dialog->cseq = atoi(cseq);
 		dialog->with = g_strdup(key);
 		sipe_dialog_parse(dialog, msg, TRUE);
-		
+
 		purple_debug_info("sipe", "process_subscribe_response: subscription dialog added for: %s\n", key);
-		
+
 		g_free(key);
 		g_free(cseq);
 	}
-	
+
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
 	{
 		process_incoming_notify(sip, msg, FALSE, FALSE);
@@ -1522,7 +1522,7 @@ static void sipe_subscribe_presence_batched_to(struct sipe_account_data *sip, gc
 	key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
 	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
 	purple_debug_info("sipe", "sipe_subscribe_presence_batched_to: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
-	
+
 	send_sip_request(sip->gc, "SUBSCRIBE", to,  to, request, content, dialog, process_subscribe_response);
 
 	g_free(content);
@@ -1586,7 +1586,7 @@ static void sipe_subscribe_presence_batched_routed(struct sipe_account_data *sip
 
 static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *buddy_name)
 {
-	
+
 	gchar *key;
 	gchar *to = sip_uri((char *)buddy_name);
 	gchar *tmp = get_contact(sip);
@@ -1628,7 +1628,7 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 	key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
 	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
 	purple_debug_info("sipe", "sipe_subscribe_presence_single: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
-	
+
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, request, content, dialog, process_subscribe_response);
 
 	g_free(content);
@@ -2146,9 +2146,9 @@ static void sipe_subscribe_presence_wpending(struct sipe_account_data *sip,
 	key = g_strdup_printf("<%s>", "presence.wpending");
 	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
 	purple_debug_info("sipe", "sipe_subscribe_presence_wpending: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
-	
+
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", dialog, process_subscribe_response);
-	
+
 	g_free(to);
 	g_free(hdr);
 	g_free(key);
@@ -3243,7 +3243,7 @@ sipe_invite(struct sipe_account_data *sip,
 	gchar *contact;
 	gchar *body;
 	gchar *self;
-	char *ms_text_format = g_strdup("");
+	char  *ms_text_format = NULL;
 	gchar *roster_manager;
 	gchar *end_points;
 	gchar *referred_by_str;
@@ -3324,7 +3324,7 @@ sipe_invite(struct sipe_account_data *sip,
 		is_triggered ? "TriggeredInvite: TRUE\r\n" : "",
 		is_triggered || session->is_multiparty ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
 		contact,
-		ms_text_format);
+		ms_text_format ? ms_text_format : "");
 	g_free(ms_text_format);
 	g_free(self);
 
@@ -5032,7 +5032,7 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip, s
 		// TODO need to parse the version #'s?
 		guint device_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
 		guint machine_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
-		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER); 
+		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER);
 		gchar *uri = sip_uri_self(sip);
 		gchar *doc = g_strdup_printf(SIPE_SEND_CLEAR_PRESENCE,
 						uri,
@@ -5078,6 +5078,7 @@ sipe_publish_get_category_device(struct sipe_account_data *sip)
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "device"), key);
 
 	g_free(key);
+	g_free(epid);
 
 	uri = sip_uri_self(sip);
 	doc = g_strdup_printf(SIPE_PUB_XML_DEVICE,
@@ -5089,8 +5090,8 @@ sipe_publish_get_category_device(struct sipe_account_data *sip)
 		sipe_get_host_name()
 	);
 
+	g_free(uri);
 	g_free(uuid);
-	g_free(epid);
 
 	return doc;
 }
@@ -6845,7 +6846,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
 
-	
+
 	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");
 	if (email) {
 		act = purple_menu_action_new(_("Send email..."),
