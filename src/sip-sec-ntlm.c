@@ -494,9 +494,6 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *
 	unsigned char exported_session_key[16];
 	unsigned char encrypted_random_session_key [16];
 
-	purple_debug_info("sipe", "purple_ntlm_gen_authenticate: user '%s' password '%s' (%d) hostname '%s' domain '%s'\n",
-			  user, password, strlen(password), hostname, domain);
-
 	/* authenticate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
 	tmsg->type = 3;
@@ -552,20 +549,6 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *
 	NONCE (exported_session_key, 16);
 
 	*ntlm_key = (guchar *) g_strndup ((gchar *) exported_session_key, 16);
-
-	{
-		char tmpbuf[2048];
-		int i,j;
-		for (i = 0, j = 0; (*ntlm_key)[i]; i++, j+=2) {
-			g_sprintf(&tmpbuf[j], "%02X", (*ntlm_key)[i]);
-		}
-		tmpbuf[j++] = ' ';
-		for (i = 0; nonce[i]; i++, j+=2) {
-			g_sprintf(&tmpbuf[j], "%02X", nonce[i]);
-		}
-		tmpbuf[j] = 0;
-		purple_debug_info("sipe", "purple_ntlm_gen_authenticate: '%s'\n", tmpbuf);
-	}
 
 	RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
 	memcpy(tmp, encrypted_random_session_key, 16);
@@ -696,18 +679,6 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 	gchar *signature_calc = purple_ntlm_sipe_signature_make(message,
 								((context_ntlm) context)->key);
 	sip_uint32 res;
-
-	purple_debug_info("sipe", "sip_sec_verify_signature__ntlm: sig %s verify %s\n", signature_calc, signature_hex);
-	{
-		char tmpbuf[2048];
-		guchar *key = ((context_ntlm) context)->key;
-		int i,j;
-		for (i = 0, j = 0; key[i]; i++, j+=2) {
-			g_sprintf(&tmpbuf[j], "%02X", key[i]);
-		}
-		tmpbuf[j] = 0;
-		purple_debug_info("sipe", "sip_sec_verify_signature__ntlm: key '%s'\n", tmpbuf);
-	}
 
 	if (purple_ntlm_verify_signature(signature_calc, signature_hex)) {
 		res = SIP_SEC_E_OK;

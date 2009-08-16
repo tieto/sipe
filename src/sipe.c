@@ -7195,6 +7195,8 @@ static void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 		entry = g_list_delete_link(entry, entry);
 	}
 	prpl_info.user_splits = NULL;
+
+	exit(0);
 }
 
 static void init_plugin(PurplePlugin *plugin)
