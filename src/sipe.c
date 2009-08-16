@@ -1399,41 +1399,42 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 	/* create/store subscription dialog if not yet */
 	if (msg->response == 200) {
 		struct sip_dialog *dialog;
+		gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+		gchar *callid = sipmsg_find_header(msg, "Call-ID");		
 		gchar *event = sipmsg_find_header(msg, "Event");
-		gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
 		gchar *key = NULL;
-
+		
 		if (event && !g_ascii_strcasecmp(event, "presence")) {
-			gchar *to = parse_from(sipmsg_find_header(msg, "To"));
 			/* Subscription is identified by ACTION_NAME_PRESENCE key */
-			key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
-			g_free(to);
+			key = g_strdup_printf(ACTION_NAME_PRESENCE, with);
 		} else if (event) {
 			/* Subscription is identified by <event> key */
 			key = g_strdup_printf("<%s>", event);
 		}
-
-		dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
+		
+		dialog = g_hash_table_lookup(sip->subscriptions, key);
 		if (dialog) {
-			g_hash_table_remove(sip->subscription_dialogs, key);
+			g_hash_table_remove(sip->subscriptions, key);
 			purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
 		}
-
-		dialog = g_new0(struct sip_dialog, 1);
-		g_hash_table_insert(sip->subscription_dialogs, g_strdup(key), dialog);
-
+		
+		dialog = (struct sip_dialog *)g_new0(struct sip_subscription, 1);
+		g_hash_table_insert(sip->subscriptions, g_strdup(key), dialog);
+		
 		dialog->callid = g_strdup(callid);
 		dialog->cseq = atoi(cseq);
-		dialog->with = g_strdup(key);
+		dialog->with = g_strdup(with);
+		((struct sip_subscription*)dialog)->event = g_strdup(event);
 		sipe_dialog_parse(dialog, msg, TRUE);
-
+		
 		purple_debug_info("sipe", "process_subscribe_response: subscription dialog added for: %s\n", key);
-
+		
 		g_free(key);
+		g_free(with);
 		g_free(cseq);
 	}
-
+	
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
 	{
 		process_incoming_notify(sip, msg, FALSE, FALSE);
@@ -1520,7 +1521,7 @@ static void sipe_subscribe_presence_batched_to(struct sipe_account_data *sip, gc
 	/* subscribe to buddy presence */
 	/* Subscription is identified by ACTION_NAME_PRESENCE key */
 	key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
-	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
+	dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
 	purple_debug_info("sipe", "sipe_subscribe_presence_batched_to: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
 
 	send_sip_request(sip->gc, "SUBSCRIBE", to,  to, request, content, dialog, process_subscribe_response);
@@ -1626,7 +1627,7 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 	/* subscribe to buddy presence */
 	/* Subscription is identified by ACTION_NAME_PRESENCE key */
 	key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
-	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
+	dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
 	purple_debug_info("sipe", "sipe_subscribe_presence_single: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
 
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, request, content, dialog, process_subscribe_response);
@@ -2144,7 +2145,7 @@ static void sipe_subscribe_presence_wpending(struct sipe_account_data *sip,
 
 	/* Subscription is identified by <event> key */
 	key = g_strdup_printf("<%s>", "presence.wpending");
-	dialog = g_hash_table_lookup(sip->subscription_dialogs, key);
+	dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
 	purple_debug_info("sipe", "sipe_subscribe_presence_wpending: subscription dialog for: %s is %s\n", key, dialog ? "Not NULL" : "NULL");
 
 	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, "", dialog, process_subscribe_response);
@@ -2791,6 +2792,35 @@ static void sipe_subscribe_roaming_provisioning_v2(struct sipe_account_data *sip
 	g_free(body);
 	g_free(to);
 	g_free(hdr);
+}
+
+static void
+sipe_unsubscribe(struct sipe_account_data *sip,
+		 void *subscription0)
+{
+	struct sip_subscription *subscription = (struct sip_subscription *)subscription0;
+	gchar *to = sip_uri_self(sip);
+	gchar *tmp = get_contact(sip);
+	gchar *hdr = g_strdup_printf(
+		"Event: %s\r\n"
+		"Expires: 0\r\n"
+		"Contact: %s\r\n", subscription->event, tmp);
+		
+	g_free(tmp);
+	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, NULL, (struct sip_dialog *)subscription, NULL);
+	g_free(to);
+	g_free(hdr);
+}
+
+static gboolean
+sipe_unsubscribe_cb(gchar *key,
+		    struct sip_subscription *subscription,
+		    struct sipe_account_data *sip)
+{
+	Sleep(1000 / 25); /* msec. 25 requests per sec */ 
+	sipe_unsubscribe(sip, subscription);	
+	
+	return TRUE;
 }
 
 /* IM Session (INVITE and MESSAGE methods) */
@@ -6019,8 +6049,8 @@ static void sipe_login(PurpleAccount *account)
 	sip->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
 	sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 						      g_free, (GDestroyNotify)g_hash_table_destroy);
-	sip->subscription_dialogs = g_hash_table_new_full(g_str_hash, g_str_equal,
-							  g_free, (GDestroyNotify)sipe_dialog_free);
+	sip->subscriptions = g_hash_table_new_full(g_str_hash, g_str_equal,
+						   g_free, (GDestroyNotify)sipe_subscription_free);
 
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
@@ -6183,8 +6213,11 @@ static void sipe_close(PurpleConnection *gc)
 		sipe_session_close_all(sip);
 		sipe_session_remove_all(sip);
 
-		/* unregister */
 		if (PURPLE_CONNECTION_IS_CONNECTED(sip->gc)) {
+			/* unsubscribe all */
+			g_hash_table_foreach(sip->subscriptions, (GHFunc)sipe_unsubscribe_cb, sip);
+
+			/* unregister */
 			do_register_exp(sip, 0);
 		}
 
@@ -6199,7 +6232,7 @@ static void sipe_close(PurpleConnection *gc)
 		g_hash_table_foreach_steal(sip->buddies, sipe_buddy_remove, NULL);
 		g_hash_table_destroy(sip->buddies);
 		g_hash_table_destroy(sip->our_publications);
-		g_hash_table_destroy(sip->subscription_dialogs);
+		g_hash_table_destroy(sip->subscriptions);
 
 		if (sip->our_publication_keys) {
 			GSList *entry = sip->our_publication_keys;

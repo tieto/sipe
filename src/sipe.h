@@ -139,7 +139,7 @@ struct sipe_account_data {
 	gboolean initial_state_published; /* whether we published our initial state */
 	GSList *our_publication_keys; /* [MS-PRES] */
 	GHashTable *our_publications; /* [MS-PRES] */
-	GHashTable *subscription_dialogs;
+	GHashTable *subscriptions;
 	int listenfd;
 	int listenport;
 	int listenpa;
