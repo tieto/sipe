@@ -60,8 +60,10 @@ void sipe_dialog_free(struct sip_dialog *dialog)
 
 void sipe_subscription_free(struct sip_subscription *subscription)
 {
+	if (!subscription) return;
+
 	g_free(subscription->event);
-	sipe_dialog_free((struct sip_dialog *)subscription);
+	sipe_dialog_free(&subscription->dialog);
 }
 
 struct sip_dialog *sipe_dialog_add(struct sip_session *session)
