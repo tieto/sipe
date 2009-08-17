@@ -1409,6 +1409,8 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 		if (event && !g_ascii_strcasecmp(event, "presence")) {
 			/* Subscription is identified by ACTION_NAME_PRESENCE key */
 			key = g_strdup_printf(ACTION_NAME_PRESENCE, with);
+			
+			/* @TODO drop participated buddies' just_added flag */
 		} else if (event) {
 			/* Subscription is identified by <event> key */
 			key = g_strdup_printf("<%s>", event);
@@ -1458,11 +1460,13 @@ static void sipe_subscribe_resource_uri(const char *name,
 static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer value, gchar **resources_uri)
 {
 	struct sipe_buddy *sbuddy = (struct sipe_buddy *)value;
-	if (sbuddy && !sbuddy->resubscribed) { // Only not resubscribed contacts; the first time everybody are included
-		gchar *tmp = *resources_uri;
-		*resources_uri = g_strdup_printf("%s<resource uri=\"%s\"><context/></resource>\n", tmp, name);
-		g_free(tmp);
-	}
+	gchar *context = sbuddy && sbuddy->just_added ? "></context></resource>" : "/>";
+	gchar *tmp = *resources_uri;
+	
+	if (sbuddy) sbuddy->just_added = FALSE; /* should be enought to include context one time */
+	
+	*resources_uri = g_strdup_printf("%s<resource uri=\"%s\"%s\n", tmp, name, context);
+	g_free(tmp);
 }
 
 /**
@@ -1598,7 +1602,11 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 	gchar *request;
 	gchar *content;
         gchar *autoextend = "";
-	struct sip_dialog *dialog;
+	struct sip_dialog *dialog;	
+	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, to);
+	gchar *context = sbuddy && sbuddy->just_added ? "></context></resource>" : "/>";
+	
+	if (sbuddy) sbuddy->just_added = FALSE;
 
     if (!sip->msrtc_event_categories)
                 autoextend = "Supported: com.microsoft.autoextend\r\n";
@@ -1615,7 +1623,7 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 	content = g_strdup_printf(
      "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
      "<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
-     "<resource uri=\"%s\"/>\n"
+     "<resource uri=\"%s\"%s\n"
      "</adhocList>\n"
      "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
      "<category name=\"contactCard\"/>\n"
@@ -1623,7 +1631,7 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
      "<category name=\"state\"/>\n"
      "</categoryList>\n"
      "</action>\n"
-     "</batchSub>", sip->username, to
+     "</batchSub>", context, sip->username, to
 		);
 
 	g_free(tmp);
@@ -1743,6 +1751,7 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 		b = g_new0(struct sipe_buddy, 1);
 		purple_debug_info("sipe", "sipe_add_buddy %s\n", buddy->name);
 		b->name = g_strdup(buddy->name);
+		b->just_added = TRUE;
 		g_hash_table_insert(sip->buddies, b->name, b);
 		sipe_group_buddy(gc, b->name, NULL, group->name);
 		sipe_subscribe_presence_single(sip, b->name); //@TODO should go to callback
@@ -4513,7 +4522,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 
                 if (strstr(state, "resubscribe")) {
 			const char *poolFqdn = xmlnode_get_attrib(xn_instance, "poolFqdn");
-			struct sipe_buddy *sbuddy;
+			
 			if (poolFqdn) { //[MS-PRES] Section 3.4.5.1.3 Processing Details
 				gchar *user = g_strdup(uri);
 				host = g_strdup(poolFqdn);
@@ -4522,10 +4531,6 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 				g_hash_table_insert(servers, host, server);
 			} else {
 				sipe_subscribe_presence_single(sip, (void *) uri);
-			}
-			sbuddy = g_hash_table_lookup(sip->buddies, uri);
-			if (sbuddy) {
-                                sbuddy->resubscribed = TRUE;
 			}
                 }
 	}

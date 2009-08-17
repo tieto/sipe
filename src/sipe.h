@@ -60,7 +60,8 @@ struct sipe_buddy {
 	gchar *annotation;
 	gchar *device_name;
 	GSList *groups;
-	gboolean resubscribed;
+	 /** flag to control sending 'context' element in 2007 subscriptions */
+	gboolean just_added;
 };
 
 struct sip_auth {
