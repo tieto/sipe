@@ -55,6 +55,9 @@ else
 fi
 AC_SUBST(QUALITY_CFLAGS)
 
+dnl Check for pkg-config before using it
+PKG_PROG_PKG_CONFIG
+
 AC_ARG_WITH(krb5, [AC_HELP_STRING([--with-krb5=PREFIX], [compile sipe plugin with Kerberos 5 support])], kerberos="$withval", kerberos="no")
 
 dnl check for Kerberos
@@ -92,9 +95,6 @@ PKG_CHECK_MODULES(PURPLE, [purple >= 2.5.0],
 	[AC_DEFINE(HAVE_PIDGIN, 1, [Define if we've found libpurple])])
 AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_LIBS)
-
-dnl check for com_err
-PKG_CHECK_MODULES(COM_ERR, [com_err],,)
 
 dnl check for inet_aton
 AC_CHECK_FUNC(inet_aton,,

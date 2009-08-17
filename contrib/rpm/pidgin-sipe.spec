@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20090809git7158106
+%define git       20090817gitc92a59a
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -18,7 +18,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin plugin for connecting to Microsoft LCS/OCS
-Version:        1.6.0
+Version:        1.6.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -33,8 +33,6 @@ URL:            http://sipe.sourceforge.net/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libpurple-devel >= 2.5.0, libtool, intltool, gettext-devel
-# Required for com_err.h
-BuildRequires:  e2fsprogs-devel
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
@@ -94,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Aug 17 2009 J. D. User <jduser@noreply.com> 1.6.1-*git*
+- com_err.h only required for kerberos
+
 * Tue Aug 11 2009 J. D. User <jduser@noreply.com> 1.6.0-*git*
 - require libpurple-devel >= 2.5.0
 
