@@ -1460,7 +1460,7 @@ static void sipe_subscribe_resource_uri(const char *name,
 static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer value, gchar **resources_uri)
 {
 	struct sipe_buddy *sbuddy = (struct sipe_buddy *)value;
-	gchar *context = sbuddy && sbuddy->just_added ? "></context></resource>" : "/>";
+	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
 	gchar *tmp = *resources_uri;
 	
 	if (sbuddy) sbuddy->just_added = FALSE; /* should be enought to include context one time */
@@ -1604,7 +1604,7 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
         gchar *autoextend = "";
 	struct sip_dialog *dialog;	
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, to);
-	gchar *context = sbuddy && sbuddy->just_added ? "></context></resource>" : "/>";
+	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
 	
 	if (sbuddy) sbuddy->just_added = FALSE;
 
