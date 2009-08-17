@@ -2803,8 +2803,8 @@ sipe_unsubscribe_cb(SIPE_UNUSED_PARAMETER gpointer key,
 		    gpointer value, gpointer user_data)
 {
 	struct sip_subscription *subscription = value;
+	struct sip_dialog *dialog = &subscription->dialog;
 	struct sipe_account_data *sip = user_data;
-	gchar *to = sip_uri_self(sip);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
 		"Event: %s\r\n"
@@ -2820,9 +2820,8 @@ sipe_unsubscribe_cb(SIPE_UNUSED_PARAMETER gpointer key,
 	usleep(1000000 / 25);
 #endif
 
-	send_sip_request(sip->gc, "SUBSCRIBE", to, to, hdr, NULL, &subscription->dialog, NULL);
+	send_sip_request(sip->gc, "SUBSCRIBE", dialog->with, dialog->with, hdr, NULL, dialog, NULL);
 	g_free(hdr);
-	g_free(to);
 }
 
 /* IM Session (INVITE and MESSAGE methods) */
