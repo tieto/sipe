@@ -87,14 +87,14 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		auth_identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
 
 		if ( domain && (strlen(domain) > 0) ) {
-			auth_identity.Domain = domain;
+			auth_identity.Domain = (unsigned char*)domain;
 			auth_identity.DomainLength = strlen(auth_identity.Domain);
 		}
 
-		auth_identity.User = username;
+		auth_identity.User = (unsigned char*)username;
 		auth_identity.UserLength = strlen(auth_identity.User);
 
-		auth_identity.Password = password;
+		auth_identity.Password = (unsigned char*)password;
 		auth_identity.PasswordLength = strlen(auth_identity.Password);
 	}
 	
