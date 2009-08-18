@@ -19,18 +19,26 @@
 #ifndef SIPE_UUID_H_
 #define SIPE_UUID_H_
 
+#ifdef __NetBSD__
+#pragma pack(1)
+#else
 #pragma pack(push, 1)
+#endif
 
 typedef struct _uuid_t {
-   unsigned       time_low;
-   unsigned short time_mid;
-   unsigned short time_hi_and_version;
-   unsigned char  clock_seq_hi_and_reserved;
-   unsigned char  clock_seq_low;
-   unsigned char  node[6];
+   guint32 time_low;
+   guint16 time_mid;
+   guint16 time_hi_and_version;
+   guint8  clock_seq_hi_and_reserved;
+   guint8  clock_seq_low;
+   guint8  node[6];
 } sipe_uuid_t;
 
+#ifdef __NetBSD__
+#pragma pack()
+#else
 #pragma pack(pop)
+#endif
 
 char *generateUUIDfromEPID(const gchar *epid);
 void printUUID(sipe_uuid_t *uuid, char *string);
