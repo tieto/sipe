@@ -1639,7 +1639,7 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
      "<category name=\"state\"/>\n"
      "</categoryList>\n"
      "</action>\n"
-     "</batchSub>", context, sip->username, to
+     "</batchSub>", sip->username, to, context
 		);
 
 	g_free(tmp);
@@ -4229,8 +4229,14 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 						}
 					}
 
-					/* Report our initial online status to server */
-					sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+					/* For 2007+ we publish our initial statuses only after
+					 * received our existing publications in sipe_process_roaming_self()
+					 * Only in this case we know versions of current publications made 
+					 * on our behalf.
+					 */
+					if(!sip->msrtc_event_categories) {
+						sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+					}
 
 					sip->subscribed = TRUE;
 				}
