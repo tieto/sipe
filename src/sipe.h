@@ -151,7 +151,7 @@ struct sipe_account_data {
 	gboolean is_idle;
 	gboolean was_idle;
 	gchar *contact;
-	gboolean msrtc_event_categories; /*if there is support for batched category subscription [SIP-PRES]*/
+	gboolean ocs2007; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
 	GSList *containers; /* MS-PRES containers */
 	GHashTable *buddies;
@@ -274,17 +274,17 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 				     struct sip_session *session,
 				     const gchar *who,
 				     const gchar *message);
-				     
+
 void
 sipe_present_info(struct sipe_account_data *sip,
 		 struct sip_session *session,
 		 const gchar *message);
-				     
+
 
 void
 sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 				  struct sip_session *session);
-				  
+
 /*** THE BIG SPLIT END ***/
 
 #define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"
@@ -374,7 +374,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 			"<endpointLocation/>"\
 		"</state>"\
 	"</publication>"
-	
+
 /**
  * Publishes 'userState' category.
  * @param instance	(%u) User. Ex.: 536870912
@@ -397,7 +397,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 			"<endpointLocation/>"\
 		"</state>"\
 	"</publication>"\
-	
+
 /**
  * Publishes 'note' category.
  * @param version	(%u) Ex.: 2

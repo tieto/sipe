@@ -1497,7 +1497,7 @@ static void sipe_subscribe_presence_batched_to(struct sipe_account_data *sip, gc
 	gchar *content_type;
 	struct sip_dialog *dialog;
 
-	if (sip->msrtc_event_categories) {
+	if (sip->ocs2007) {
 		require = ", categoryList";
 		accept = ", application/msrtc-event-categories+xml, application/xpidf+xml, application/pidf+xml";
                 content_type = "application/msrtc-adrl-categorylist+xml";
@@ -1553,7 +1553,7 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip,
 {
 	gchar *to = sip_uri_self(sip);
 	gchar *resources_uri = g_strdup("");
-	if (sip->msrtc_event_categories) {
+	if (sip->ocs2007) {
 		g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
 	} else {
                 g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
@@ -1616,7 +1616,7 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 
 	if (sbuddy) sbuddy->just_added = FALSE;
 
-    if (!sip->msrtc_event_categories)
+    if (!sip->ocs2007)
                 autoextend = "Supported: com.microsoft.autoextend\r\n";
 
     request = g_strdup_printf(
@@ -2700,7 +2700,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	 * so we've already updated our roaming data in full.
 	 * Only for 2007+
 	 */
-	if (sip->msrtc_event_categories && !sip->initial_state_published) {
+	if (sip->ocs2007 && !sip->initial_state_published) {
 		send_publish_category_initial(sip);
 		sip->initial_state_published = TRUE;
 	}
@@ -4156,7 +4156,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					//purple_debug(PURPLE_DEBUG_MISC, "sipe", "didn't find gruu in a Contact hdr\n");
 					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
 				}
-                                sip->msrtc_event_categories = FALSE;
+                                sip->ocs2007 = FALSE;
 				sip->batched_support = FALSE;
 
                                 while(hdr)
@@ -4164,12 +4164,13 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					elem = hdr->data;
 					if (!g_ascii_strcasecmp(elem->name, "Supported")) {
 						if (!g_ascii_strcasecmp(elem->value, "msrtc-event-categories")) {
-							sip->msrtc_event_categories = TRUE;
-							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s: %d\n", elem->value,sip->msrtc_event_categories);
+							/* We interpret this as OCS2007+ indicator */
+							sip->ocs2007 = TRUE;
+							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s (indicates OCS2007+)\n", elem->value);
 						}
 						if (!g_ascii_strcasecmp(elem->value, "adhoclist")) {
 							sip->batched_support = TRUE;
-							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s: %d\n", elem->value,sip->batched_support);
+							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s\n", elem->value);
 						}
 					}
                                         if (!g_ascii_strcasecmp(elem->name, "Allow-Events")){
@@ -4199,7 +4200,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					 *   presence.wpending
 					 * These are for backward compatibility.
 					 */
-					if (sip->msrtc_event_categories)
+					if (sip->ocs2007)
 					{
 						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-self",
 									(GCompareFunc)g_ascii_strcasecmp)) {
@@ -4230,7 +4231,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 						/* For 2007+ we publish our initial statuses only after
 						 * received our existing publications in sipe_process_roaming_self()
-						 * Only in this case we know versions of current publications made 
+						 * Only in this case we know versions of current publications made
 						 * on our behalf.
 						 */
 						sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
@@ -5321,7 +5322,7 @@ static void send_presence_status(struct sipe_account_data *sip)
 
 	note = purple_status_get_attr_string(status, "message");
 
-        if(sip->msrtc_event_categories){
+        if(sip->ocs2007){
 		send_presence_category_publish(sip, note);
 	} else {
 		send_presence_soap(sip, note);
@@ -6575,7 +6576,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: buddy->name=%s\n", buddy->name);
 
 	/* 2007+ conference */
-	if (sip->msrtc_event_categories)
+	if (sip->ocs2007)
 	{
 		sipe_conf_add(sip, buddy->name);
 	}
