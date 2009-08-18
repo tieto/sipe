@@ -4227,14 +4227,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_presence_wpending(sip, msg);
 						}
-					}
 
-					/* For 2007+ we publish our initial statuses only after
-					 * received our existing publications in sipe_process_roaming_self()
-					 * Only in this case we know versions of current publications made 
-					 * on our behalf.
-					 */
-					if(!sip->msrtc_event_categories) {
+						/* For 2007+ we publish our initial statuses only after
+						 * received our existing publications in sipe_process_roaming_self()
+						 * Only in this case we know versions of current publications made 
+						 * on our behalf.
+						 */
 						sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
 					}
 
