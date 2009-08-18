@@ -3,5 +3,4 @@
   #2823160: Ability to change the "Access Level" setting of a buddy 
   #2834403: OCS2007+: Authentication protocol v4 and v3 support
 - Bugs:
-  #         OCS2007: correct "notes" set at login (still valid???)
   #2834758: (sip-sec-ntlm.c) First NTLM signature check after startup fails

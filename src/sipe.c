@@ -1409,7 +1409,7 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 		if (event && !g_ascii_strcasecmp(event, "presence")) {
 			/* Subscription is identified by ACTION_NAME_PRESENCE key */
 			key = g_strdup_printf(ACTION_NAME_PRESENCE, with);
-			
+
 			/* @TODO drop participated buddies' just_added flag */
 		} else if (event) {
 			/* Subscription is identified by <event> key */
@@ -1462,9 +1462,9 @@ static void sipe_subscribe_resource_uri_with_context(const char *name, gpointer 
 	struct sipe_buddy *sbuddy = (struct sipe_buddy *)value;
 	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
 	gchar *tmp = *resources_uri;
-	
+
 	if (sbuddy) sbuddy->just_added = FALSE; /* should be enought to include context one time */
-	
+
 	*resources_uri = g_strdup_printf("%s<resource uri=\"%s\"%s\n", tmp, name, context);
 	g_free(tmp);
 }
@@ -1602,10 +1602,10 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 	gchar *request;
 	gchar *content;
         gchar *autoextend = "";
-	struct sip_dialog *dialog;	
+	struct sip_dialog *dialog;
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, to);
 	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
-	
+
 	if (sbuddy) sbuddy->just_added = FALSE;
 
     if (!sip->msrtc_event_categories)
@@ -1665,7 +1665,6 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 			g_free(sip->status);
 			sip->status = g_strdup(purple_status_get_id(status));
 
-			//send_presence_status(sip);
 			/* schedule 2 sec to capture idle flag */
 			action_name = g_strdup_printf("<%s>", "+set-status");
 			sipe_schedule_action(action_name, 2, (Action)send_presence_status, NULL, sip, NULL);
@@ -4221,9 +4220,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							sipe_subscribe_presence_wpending(sip, msg);
 						}
 					}
-					if(!sip->msrtc_event_categories) {
-						sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
-					}
+
+					/* Report our initial online status to server */
+					sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+
 					sip->subscribed = TRUE;
 				}
 
@@ -4522,7 +4522,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 
                 if (strstr(state, "resubscribe")) {
 			const char *poolFqdn = xmlnode_get_attrib(xn_instance, "poolFqdn");
-			
+
 			if (poolFqdn) { //[MS-PRES] Section 3.4.5.1.3 Processing Details
 				gchar *user = g_strdup(uri);
 				host = g_strdup(poolFqdn);
@@ -6060,8 +6060,7 @@ static void sipe_login(PurpleAccount *account)
 
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
-	/* TODO: Set the status correctly. */
-	sip->status = g_strdup(SIPE_STATUS_ID_AVAILABLE);
+	sip->status = g_strdup(purple_status_get_id(purple_account_get_active_status(account)));
 
 	sip->auto_transport = FALSE;
 	transport  = purple_account_get_string(account, "transport", "auto");
