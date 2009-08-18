@@ -886,9 +886,17 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	return trans;
 }
 
-static void send_soap_request_with_cb(struct sipe_account_data *sip, gchar *body, TransCallback callback, void * payload)
+/**
+ * @param from0	from URI (with 'sip:' prefix). Will be filled with self-URI if NULL passed.
+ */
+static void
+send_soap_request_with_cb(struct sipe_account_data *sip,
+			  gchar *from0,
+			  gchar *body,
+			  TransCallback callback,
+			  void *payload)
 {
-	gchar *from = sip_uri_self(sip);
+	gchar *from = from0 ? g_strdup(from0) : sip_uri_self(sip);
 	gchar *contact = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
 	                             "Content-Type: application/SOAP+xml\r\n",contact);
@@ -903,7 +911,7 @@ static void send_soap_request_with_cb(struct sipe_account_data *sip, gchar *body
 
 static void send_soap_request(struct sipe_account_data *sip, gchar *body)
 {
-	send_soap_request_with_cb(sip, body, NULL, NULL);
+	send_soap_request_with_cb(sip, NULL, body, NULL, NULL);
 }
 
 static char *get_contact_register(struct sipe_account_data  *sip)
@@ -1253,7 +1261,7 @@ static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar
 	ctx->user_name = g_strdup(who);
 
 	body = g_markup_printf_escaped(SIPE_SOAP_ADD_GROUP, name, sip->contacts_delta++);
-	send_soap_request_with_cb(sip, body, process_add_group_response, ctx);
+	send_soap_request_with_cb(sip, NULL, body, process_add_group_response, ctx);
 	g_free(body);
 }
 
@@ -5040,7 +5048,7 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 	name = g_strdup_printf("sip: sip:%s", sip->username);
 	//@TODO: send user data - state; add hostname in upper case
 	body = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE, name, availability, activity, note ? note : "");
-	send_soap_request_with_cb(sip, body, NULL , NULL);
+	send_soap_request(sip, body);
 	g_free(name);
 	g_free(body);
 }
@@ -6371,11 +6379,14 @@ static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestField
 	attrs[i] = NULL;
 
 	if (i > 0) {
+		struct sipe_account_data *sip = gc->proto_data;
+		gchar *domain_uri = sip_uri_from_name(sip->sipdomain);
 		gchar *query = g_strjoinv(NULL, attrs);
 		gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100, query);
 		purple_debug_info("sipe", "sipe_search_contact_with_cb: body:\n%s n", body ? body : "");
-		send_soap_request_with_cb(gc->proto_data, body,
+		send_soap_request_with_cb(sip, domain_uri, body,
 					  (TransCallback) process_search_contact_response, NULL);
+		g_free(domain_uri);
 		g_free(body);
 		g_free(query);
 	}
@@ -7102,12 +7113,15 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
  */
 static void sipe_get_info(PurpleConnection *gc, const char *username)
 {
+	struct sipe_account_data *sip = gc->proto_data;
+	gchar *domain_uri = sip_uri_from_name(sip->sipdomain);
 	char *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
 	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 1, row);
 
 	purple_debug_info("sipe", "sipe_get_contact_data: body:\n%s\n", body ? body : "");
-	send_soap_request_with_cb((struct sipe_account_data *)gc->proto_data, body,
-					  (TransCallback) process_get_info_response, (gpointer)g_strdup(username));
+	send_soap_request_with_cb(sip, domain_uri, body,
+				  (TransCallback) process_get_info_response, (gpointer)g_strdup(username));
+	g_free(domain_uri);
 	g_free(body);
 	g_free(row);
 }
