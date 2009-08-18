@@ -41,7 +41,7 @@ gchar *gencallid(void)
 			       RANDOM32BITS, RANDOM32BITS);
 }
 
-gchar *gentag()
+gchar *gentag(void)
 {
 	return g_strdup_printf("%04d%04d", RANDOM32BITS, RANDOM32BITS);
 }
@@ -130,7 +130,7 @@ xmlnode *xmlnode_get_descendant(const xmlnode *parent, ...)
 }
 
 //* @TODO Do we need compat with glib < 2.8 ? */
-char *sipe_get_host_name()
+char *sipe_get_host_name(void)
 {
 #if GLIB_CHECK_VERSION(2,8,0)
 	const gchar * hostname = g_get_host_name();
