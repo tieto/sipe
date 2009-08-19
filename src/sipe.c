@@ -677,15 +677,6 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 	}
 }
 
-/*
- * unused. Needed?
-static char *get_contact_service(struct sipe_account_data  *sip)
-{
-  return g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport, TRANSPORT_DESCRIPTOR, generateUUIDfromEPID(get_epid()));
-        //return g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
-}
-*/
-
 void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		       const char *text, const char *body)
 {
@@ -4978,51 +4969,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 	}
 }
-
-/*
- * unused. Needed?
-
-static gchar* gen_xpidf(struct sipe_account_data *sip)
-{
-	gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-			"<presence>\r\n"
-			"<presentity uri=\"sip:%s;method=SUBSCRIBE\"/>\r\n"
-			"<display name=\"sip:%s\"/>\r\n"
-			"<atom id=\"1234\">\r\n"
-			"<address uri=\"sip:%s\">\r\n"
-			"<status status=\"%s\"/>\r\n"
-			"</address>\r\n"
-			"</atom>\r\n"
-			"</presence>\r\n",
-			sip->username,
-			sip->username,
-			sip->username,
-			sip->status);
-	return doc;
-}
-
-
-
-static gchar* gen_pidf(struct sipe_account_data *sip)
-{
-         gchar *doc = g_strdup_printf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n"
-                        "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" xmlns:ep=\"urn:ietf:params:xml:ns:pidf:status:rpid-status\" xmlns:ci=\"urn:ietf:params:xml:ns:pidf:cipid\" entity=\"sip:%s\">\r\n"
-                        "<tuple id=\"0\">\r\n"
-                        "<status>\r\n"
-                        "<basic>open</basic>\r\n"
-                        "<ep:activities>\r\n"
-                        " <ep:activity>%s</ep:activity>\r\n"
-                        "</ep:activities>"
-                        "</status>\r\n"
-                        "</tuple>\r\n"
-                        "<ci:display-name>%s</ci:display-name>\r\n"
-                        "</presence>",
-                        sip->username,
-                        sip->status,
-                        sip->username);
-	return doc;
-}
-*/
 
 static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 {
