@@ -5195,6 +5195,12 @@ sipe_publish_get_category_state(struct sipe_account_data *sip,
 		// Offline or invisible
 		availability = 18500;
 	}
+	
+	if (publication_2 && (publication_2->availability == availability))
+	{
+		purple_debug_info("sipe", "sipe_publish_get_category_state: state has NOT changed. Exiting.\n");
+		return NULL; /* nothing to update */
+	}
 
 	return g_strdup_printf( is_user_state ? SIPE_PUB_XML_STATE_USER : SIPE_PUB_XML_STATE_MACHINE,
 				instance,
@@ -5253,6 +5259,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 	if (((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
 	    || (n1 && n2 && !strcmp(n1, n2))) /* or not empty and equal */
 	{
+		purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
 		return NULL; /* nothing to update */
 	}
 	
@@ -5296,7 +5303,7 @@ send_publish_category_initial(struct sipe_account_data *sip)
 	gchar *pub_machine  = sipe_publish_get_category_state_machine(sip);
 	gchar *publications = g_strdup_printf("%s%s",
 					      pub_device,
-					      pub_machine);
+					      pub_machine ? pub_machine : "");
 	g_free(pub_device);
 	g_free(pub_machine);
 
@@ -5317,9 +5324,16 @@ send_presence_category_publish(struct sipe_account_data *sip,
 	gchar *pub_state = is_machine ? sipe_publish_get_category_state_machine(sip) :
 					sipe_publish_get_category_state_user(sip);
 	gchar *pub_note = sipe_publish_get_category_note(sip, note);
-	gchar *publications = g_strdup_printf("%s%s",
-					      pub_state,
-					      pub_note ? pub_note : "");
+	gchar *publications;
+	
+	if (!pub_state && !pub_note) {
+		purple_debug_info("sipe", "send_presence_category_publish: nothing has changed. Exiting.\n");
+		return;
+	}
+	
+	publications = g_strdup_printf("%s%s",
+				       pub_state ? pub_state : "",
+				       pub_note ? pub_note : "");
 
 	purple_debug_info("sipe", "send_presence_category_publish: sip->status: %s sip->is_idle:%s sip->was_idle:%s\n",
 			  sip->status, sip->is_idle ? "Y" : "N", sip->was_idle ? "Y" : "N");
