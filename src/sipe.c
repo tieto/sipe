@@ -5059,52 +5059,95 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 }
 
 static gboolean
-process_clear_presence_response(struct sipe_account_data *sip, struct sipmsg *msg,
-				SIPE_UNUSED_PARAMETER struct transaction *tc)
+process_send_presence_category_publish_response(struct sipe_account_data *sip,
+						struct sipmsg *msg,
+						struct transaction *tc)
 {
-	// Version(s) of presence info were out of date; tell the server to clear them, then we'll try again
-	if (msg->response == 200) {
-		g_hash_table_destroy(sip->our_publications);
-		sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
-							      g_free, (GDestroyNotify)g_hash_table_destroy);
-		send_presence_status(sip);
-	}
-	return TRUE;
-}
+	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	
+	if (msg->response == 409 && g_str_has_prefix(contenttype, "application/msrtc-fault+xml")) {
+		struct sipmsg *msg_orig = tc->msg;
+		GHashTable *faults = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+		xmlnode *xn_fault;
+		xmlnode *node;
+		gchar *fault_code;
+		int index_our = 1; /* starts with 1 - our first publication */
+		xmlnode *xn_publish;
+		gboolean has_device_publication = FALSE;
+		
+		xn_fault = xmlnode_from_str(msg->body, msg->bodylen);	
+		
+		/* test if version mismatch fault */
+		fault_code = xmlnode_get_data(xmlnode_get_child(xn_fault, "Faultcode"));
+		if (strcmp(fault_code, "Client.BadCall.WrongDelta")) {
+			purple_debug_info("sipe", "process_send_presence_category_publish_response: unsupported fault code:%s returning.\n", fault_code);
+			g_hash_table_destroy(faults);
+			g_free(fault_code);
+			g_free(xn_fault);
+			return TRUE;
+		}
+		
+		/* accumulating information about faulty versions */
+		for (node = xmlnode_get_descendant(xn_fault, "details", "operation", NULL);
+		     node;
+		     node = xmlnode_get_next_twin(node))
+		{
+			const gchar *index = xmlnode_get_attrib(node, "index");
+			const gchar *curVersion = xmlnode_get_attrib(node, "curVersion");
+			
+			g_hash_table_insert(faults, g_strdup(index), g_strdup(curVersion));
+			purple_debug_info("sipe", "fault added: index:%s curVersion:%s\n", index, curVersion);
+		}
+		g_free(xn_fault);
+		
+		/* here we are parsing own request to figure out what publication
+		 * referensed here only by index went wrong
+		 */
+		xn_publish = xmlnode_from_str(msg_orig->body, msg_orig->bodylen);
 
-static gboolean
-process_send_presence_category_publish_response(struct sipe_account_data *sip, struct sipmsg *msg,
-						SIPE_UNUSED_PARAMETER struct transaction *tc)
-{
-	if (msg->response == 409) {
-		// Version(s) of presence info were out of date; tell the server to clear them, then we'll try again
-		// TODO need to parse the version #'s?
-		guint device_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
-		guint machine_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
-		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER);
-		gchar *uri = sip_uri_self(sip);
-		gchar *doc = g_strdup_printf(SIPE_SEND_CLEAR_PRESENCE,
-						uri,
-						device_instance,
-						machine_instance,
-						machine_instance,
-						user_instance,
-						user_instance);
-		gchar *tmp;
-		gchar *hdr;
+		/* publication */
+		for (node = xmlnode_get_descendant(xn_publish, "publications", "publication", NULL);
+		     node;
+		     node = xmlnode_get_next_twin(node))
+		{
+			gchar *idx = g_strdup_printf("%d", index_our);
+			const gchar *curVersion = g_hash_table_lookup(faults, idx);
+			const gchar *categoryName = xmlnode_get_attrib(node, "categoryName");
+			g_free(idx);
+			
+			if (!strcmp("device", categoryName)) {
+				has_device_publication = TRUE;
+			}
+			
+			if (curVersion) { /* fault exist on this index */			
+				const gchar *container = xmlnode_get_attrib(node, "container");
+				const gchar *instance = xmlnode_get_attrib(node, "instance");
+				/* key is <category><instance><container> */
+				gchar *key = g_strdup_printf("<%s><%s><%s>", categoryName, instance, container);
+				struct sipe_publication *publication =
+					g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, categoryName), key);
+					
+				purple_debug_info("sipe", "key is %s\n", key);
 
-		purple_debug_info("sipe", "process_send_presence_category_publish_response = %s\n", msg->body);
-
-		tmp = get_contact(sip);
-		hdr = g_strdup_printf("Contact: %s\r\n"
-			"Content-Type: application/msrtc-category-publish+xml\r\n", tmp);
-
-		send_sip_request(sip->gc, "SERVICE", uri, uri, hdr, doc, NULL, process_clear_presence_response);
-
-		g_free(tmp);
-		g_free(hdr);
-		g_free(uri);
-		g_free(doc);
+				if (publication) {
+					purple_debug_info("sipe", "Updating %s with version %s. Was %d before.\n",
+								  key, curVersion, publication->version);
+					/* updating publication's version to the correct one */
+					publication->version = atoi(curVersion);
+				}				
+				g_free(key);
+			}
+			index_our++;	
+		}
+		g_free(xn_publish);
+		g_hash_table_destroy(faults);
+		
+		/* rebublishing with right versions */
+		if (has_device_publication) {
+			send_publish_category_initial(sip);
+		} else {
+			send_presence_status(sip);
+		}
 	}
 	return TRUE;
 }
