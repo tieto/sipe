@@ -2402,6 +2402,7 @@ static void
 free_publication(struct sipe_publication *publication)
 {
 	g_free(publication->category);
+	g_free(publication->note);
 	g_free(publication);
 }
 
@@ -2581,6 +2582,24 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			publication->instance = atoi(instance);
 			publication->container = atoi(container);
 			publication->version = version_int;
+			/* filling publication->availability */
+			if (!strcmp(name, "state")) {
+				xmlnode *xn_avail = xmlnode_get_descendant(node, "state", "availability", NULL);
+				if (xn_avail) {
+					gchar *avail_str = xmlnode_get_data(xn_avail);
+					if (avail_str) {
+						publication->availability = atoi(avail_str);
+					}
+					g_free(avail_str);
+				}
+			}
+			/* filling publication->note */			
+			if (!strcmp(name, "note")) {
+				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
+				if (xn_body) {
+					publication->note = xmlnode_get_data(xn_body);
+				}
+			}
 
 			if (!cat_publications) {
 				cat_publications = g_hash_table_new_full(
@@ -5223,11 +5242,20 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_300);
 	struct sipe_publication *publication_note_400 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_400);
+		
+	const char *n1 = note;
+	const char *n2 = publication_note_200->note;
 
 	g_free(key_note_200);
 	g_free(key_note_300);
 	g_free(key_note_400);
-
+	
+	if (((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
+	    || (n1 && n2 && !strcmp(n1, n2))) /* or not empty and equal */
+	{
+		return NULL; /* nothing to update */
+	}
+	
 	return g_strdup_printf(	SIPE_PUB_XML_NOTE,
 				publication_note_200 ? publication_note_200->version : 0,
 				note ? note : "",
@@ -5291,7 +5319,7 @@ send_presence_category_publish(struct sipe_account_data *sip,
 	gchar *pub_note = sipe_publish_get_category_note(sip, note);
 	gchar *publications = g_strdup_printf("%s%s",
 					      pub_state,
-					      pub_note);
+					      pub_note ? pub_note : "");
 
 	purple_debug_info("sipe", "send_presence_category_publish: sip->status: %s sip->is_idle:%s sip->was_idle:%s\n",
 			  sip->status, sip->is_idle ? "Y" : "N", sip->was_idle ? "Y" : "N");

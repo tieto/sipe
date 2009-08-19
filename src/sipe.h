@@ -95,6 +95,10 @@ struct sipe_publication {
 	guint instance;
 	guint container;
 	guint version;
+	/** for 'state' category */
+	int availability;
+	/** for 'note' category */
+	gchar *note;
 };
 
 /** MS-PRES container */
