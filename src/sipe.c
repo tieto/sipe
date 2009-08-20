@@ -7234,6 +7234,10 @@ static PurplePluginProtocolInfo prpl_info =
 
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
 	sipe_get_account_text_table, /* get_account_text_table */
+#if PURPLE_VERSION_CHECK(2,6,0)
+	NULL,					/* initiate_media */
+	NULL,					/* get_media_caps */
+#endif
 };
 
 
