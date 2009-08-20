@@ -2593,7 +2593,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 					g_free(avail_str);
 				}
 			}
-			/* filling publication->note */			
+			/* filling publication->note */
 			if (!strcmp(name, "note")) {
 				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
 				if (xn_body) {
@@ -5029,69 +5029,69 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 						struct transaction *tc)
 {
 	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
-	
+
 	if (msg->response == 409 && g_str_has_prefix(contenttype, "application/msrtc-fault+xml")) {
-		struct sipmsg *msg_orig = tc->msg;
-		GHashTable *faults = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-		xmlnode *xn_fault;
+		xmlnode *xml;
 		xmlnode *node;
 		gchar *fault_code;
-		int index_our = 1; /* starts with 1 - our first publication */
-		xmlnode *xn_publish;
+		GHashTable *faults;
+		int index_our;
 		gboolean has_device_publication = FALSE;
-		
-		xn_fault = xmlnode_from_str(msg->body, msg->bodylen);	
-		
+
+		xml = xmlnode_from_str(msg->body, msg->bodylen);
+
 		/* test if version mismatch fault */
-		fault_code = xmlnode_get_data(xmlnode_get_child(xn_fault, "Faultcode"));
+		fault_code = xmlnode_get_data(xmlnode_get_child(xml, "Faultcode"));
 		if (strcmp(fault_code, "Client.BadCall.WrongDelta")) {
 			purple_debug_info("sipe", "process_send_presence_category_publish_response: unsupported fault code:%s returning.\n", fault_code);
-			g_hash_table_destroy(faults);
 			g_free(fault_code);
-			g_free(xn_fault);
+			xmlnode_free(xml);
 			return TRUE;
 		}
-		
+		g_free(fault_code);
+
 		/* accumulating information about faulty versions */
-		for (node = xmlnode_get_descendant(xn_fault, "details", "operation", NULL);
+		faults = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+		for (node = xmlnode_get_descendant(xml, "details", "operation", NULL);
 		     node;
 		     node = xmlnode_get_next_twin(node))
 		{
 			const gchar *index = xmlnode_get_attrib(node, "index");
 			const gchar *curVersion = xmlnode_get_attrib(node, "curVersion");
-			
+
 			g_hash_table_insert(faults, g_strdup(index), g_strdup(curVersion));
 			purple_debug_info("sipe", "fault added: index:%s curVersion:%s\n", index, curVersion);
 		}
-		g_free(xn_fault);
-		
+		xmlnode_free(xml);
+
 		/* here we are parsing own request to figure out what publication
 		 * referensed here only by index went wrong
 		 */
-		xn_publish = xmlnode_from_str(msg_orig->body, msg_orig->bodylen);
+		xml = xmlnode_from_str(tc->msg->body, tc->msg->bodylen);
 
 		/* publication */
-		for (node = xmlnode_get_descendant(xn_publish, "publications", "publication", NULL);
+		for (node = xmlnode_get_descendant(xml, "publications", "publication", NULL),
+		     index_our = 1; /* starts with 1 - our first publication */
 		     node;
-		     node = xmlnode_get_next_twin(node))
+		     node = xmlnode_get_next_twin(node), index_our++)
 		{
 			gchar *idx = g_strdup_printf("%d", index_our);
 			const gchar *curVersion = g_hash_table_lookup(faults, idx);
 			const gchar *categoryName = xmlnode_get_attrib(node, "categoryName");
 			g_free(idx);
-			
+
 			if (!strcmp("device", categoryName)) {
 				has_device_publication = TRUE;
 			}
-			
-			if (curVersion) { /* fault exist on this index */			
+
+			if (curVersion) { /* fault exist on this index */
 				const gchar *container = xmlnode_get_attrib(node, "container");
 				const gchar *instance = xmlnode_get_attrib(node, "instance");
 				/* key is <category><instance><container> */
 				gchar *key = g_strdup_printf("<%s><%s><%s>", categoryName, instance, container);
 				struct sipe_publication *publication =
 					g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, categoryName), key);
-					
+
 				purple_debug_info("sipe", "key is %s\n", key);
 
 				if (publication) {
@@ -5099,14 +5099,13 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 								  key, curVersion, publication->version);
 					/* updating publication's version to the correct one */
 					publication->version = atoi(curVersion);
-				}				
+				}
 				g_free(key);
 			}
-			index_our++;	
 		}
-		g_free(xn_publish);
+		xmlnode_free(xml);
 		g_hash_table_destroy(faults);
-		
+
 		/* rebublishing with right versions */
 		if (has_device_publication) {
 			send_publish_category_initial(sip);
@@ -5195,7 +5194,7 @@ sipe_publish_get_category_state(struct sipe_account_data *sip,
 		// Offline or invisible
 		availability = 18500;
 	}
-	
+
 	if (publication_2 && (publication_2->availability == availability))
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_state: state has NOT changed. Exiting.\n");
@@ -5248,21 +5247,21 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_300);
 	struct sipe_publication *publication_note_400 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_400);
-		
+
 	const char *n1 = note;
 	const char *n2 = publication_note_200->note;
 
 	g_free(key_note_200);
 	g_free(key_note_300);
 	g_free(key_note_400);
-	
+
 	if (((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
 	    || (n1 && n2 && !strcmp(n1, n2))) /* or not empty and equal */
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
 		return NULL; /* nothing to update */
 	}
-	
+
 	return g_strdup_printf(	SIPE_PUB_XML_NOTE,
 				publication_note_200 ? publication_note_200->version : 0,
 				note ? note : "",
@@ -5325,12 +5324,12 @@ send_presence_category_publish(struct sipe_account_data *sip,
 					sipe_publish_get_category_state_user(sip);
 	gchar *pub_note = sipe_publish_get_category_note(sip, note);
 	gchar *publications;
-	
+
 	if (!pub_state && !pub_note) {
 		purple_debug_info("sipe", "send_presence_category_publish: nothing has changed. Exiting.\n");
 		return;
 	}
-	
+
 	publications = g_strdup_printf("%s%s",
 				       pub_state ? pub_state : "",
 				       pub_note ? pub_note : "");
@@ -7233,7 +7232,9 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* get_attention_types */
 
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
-	sipe_get_account_text_table, /* get_account_text_table */
+
+	sipe_get_account_text_table,		/* get_account_text_table */
+
 #if PURPLE_VERSION_CHECK(2,6,0)
 	NULL,					/* initiate_media */
 	NULL,					/* get_media_caps */
