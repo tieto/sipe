@@ -81,6 +81,10 @@
 #include "dnssrv.h"
 #include "request.h"
 
+#if !PURPLE_VERSION_CHECK(2,5,0)
+#include "purple25-compat.h"
+#endif
+
 /* Keep in sync with sipe_transport_type! */
 static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define TRANSPORT_DESCRIPTOR (transport_descriptor[sip->transport])
@@ -7163,7 +7167,11 @@ static void sipe_get_info(PurpleConnection *gc, const char *username)
 
 static PurplePlugin *my_protocol = NULL;
 
+#if PURPLE_VERSION_CHECK(2,5,0)
 static PurplePluginProtocolInfo prpl_info =
+#else
+static Purple25CompatPluginProtocolInfo prpl_info =
+#endif
 {
 	OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
@@ -7230,8 +7238,11 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* unregister_user */
 	NULL,					/* send_attention */
 	NULL,					/* get_attention_types */
-
+#if PURPLE_VERSION_CHECK(2,5,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
+#else
+       sizeof(Purple25CompatPluginProtocolInfo),
+#endif
 
 	sipe_get_account_text_table,		/* get_account_text_table */
 

@@ -92,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Aug 21 2009 J. D. User <jduser@noreply.com> 1.6.1-*git*
+- reduce libpurple-devel requirement to >= 2.4.1
+
 * Mon Aug 17 2009 J. D. User <jduser@noreply.com> 1.6.1-*git*
 - com_err.h only required for kerberos
 

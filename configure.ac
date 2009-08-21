@@ -91,7 +91,7 @@ fi
 AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
 
 dnl check for libpurple
-PKG_CHECK_MODULES(PURPLE, [purple >= 2.5.0],
+PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.1],
 	[AC_DEFINE(HAVE_PIDGIN, 1, [Define if we've found libpurple])])
 AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_LIBS)
