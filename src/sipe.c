@@ -7252,13 +7252,16 @@ static PurplePluginInfo info = {
 	NULL,                                             /**< dependencies   */
 	PURPLE_PRIORITY_DEFAULT,                          /**< priority       */
 	"prpl-sipe",                                   	  /**< id             */
-	"Microsoft LCS/OCS",				  /**< name           */
+	"Office Communicator",                            /**< name           */
 	VERSION,                                          /**< version        */
-	"SIP/SIMPLE OCS/LCS Protocol Plugin",             /**  summary        */
-	"The SIP/SIMPLE LCS/OCS Protocol Plugin",         /**  description    */
-	"Anibal Avelar <avelar@gmail.com>, "         	  /**< author         */
-	"Gabriel Burt <gburt@novell.com>",         	  /**< author         */
-	PURPLE_WEBSITE,                                   /**< homepage       */
+	"Microsoft Office Communicator Protocol Plugin",  /**< summary        */
+	"A plugin for the extended SIP/SIMPLE protocol used by "          /**< description */
+	"Microsoft Live/Office Communications Server (LCS2005/OCS2007+)", /**< description */
+	"Anibal Avelar <avelar@gmail.com>, "              /**< author         */
+	"Gabriel Burt <gburt@novell.com>, "               /**< author         */
+	"Stefan Becker <stefan.becker@nokia.com>, "       /**< author         */
+	"pier11 <pier11@kinozal.tv>",                     /**< author         */
+	"http://sipe.sourceforge.net/",                   /**< homepage       */
 	sipe_plugin_load,                                 /**< load           */
 	sipe_plugin_unload,                               /**< unload         */
 	sipe_plugin_destroy,                              /**< destroy        */

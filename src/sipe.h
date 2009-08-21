@@ -51,9 +51,6 @@
 
 #define SIPE_TYPING_RECV_TIMEOUT 6
 #define SIPE_TYPING_SEND_TIMEOUT 4
-#ifndef _WIN32
-#define PURPLE_WEBSITE "http://pidgin.sf.im/"
-#endif
 
 struct sipe_buddy {
 	gchar *name;
