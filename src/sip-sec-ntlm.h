@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 pier11 <pier11@kinozal.tv>
+ * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
  * This program is free software; you can redistribute it and/or modify

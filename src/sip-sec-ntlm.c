@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 pier11 <pier11@kinozal.tv>
+ * Copyright (C) 2009 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>

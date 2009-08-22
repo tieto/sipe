@@ -4,7 +4,7 @@
  * pidgin-sipe
  *
  * Copyright (C) 2009 Anibal Avelar <debianmx@gmail.com>
- * Copyright (C) 2009 pier11 <pier11@kinozal.tv>
+ * Copyright (C) 2009 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc., Anibal Avelar <debianmx@gmail.com>
  * Copyright (C) 2007 Anibal Avelar <debianmx@gmail.com>
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
@@ -4379,6 +4379,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			}
 			break;
                 case 503:
+		case 504: /* Server time-out */
                         {
 				gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
 				gchar *reason = NULL;
@@ -7271,7 +7272,7 @@ static PurplePluginInfo info = {
 	"Anibal Avelar <avelar@gmail.com>, "              /**< author         */
 	"Gabriel Burt <gburt@novell.com>, "               /**< author         */
 	"Stefan Becker <stefan.becker@nokia.com>, "       /**< author         */
-	"pier11 <pier11@kinozal.tv>",                     /**< author         */
+	"pier11 <pier11@operamail.com>",                  /**< author         */
 	"http://sipe.sourceforge.net/",                   /**< homepage       */
 	sipe_plugin_load,                                 /**< load           */
 	sipe_plugin_unload,                               /**< unload         */
