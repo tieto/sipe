@@ -1874,60 +1874,55 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	PurpleStatusType *type;
 	GList *types = NULL;
 
-/* Translators: noun */
-#define SIPE_STATUS_ATTR_MESSAGE SIPE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING)
-
-	// Online
-	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_AVAILABLE, NULL, _("Online"), TRUE, TRUE, FALSE,
-		SIPE_STATUS_ATTR_MESSAGE, NULL);
+	/* Macros to reduce code repetition. */
+#define SIPE_ADD_STATUS(prim,id,name) type = purple_status_type_new_with_attrs( \
+		prim, id, name,             \
+		TRUE, TRUE, FALSE,          \
+		SIPE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
+		NULL);                      \
 	types = g_list_append(types, type);
-
-	// Busy
-	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_UNAVAILABLE, SIPE_STATUS_ID_BUSY, _("Busy"), TRUE, TRUE, FALSE,
-		SIPE_STATUS_ATTR_MESSAGE, NULL);
+#define SIPE_ADD_STATUS_NO_MSG(prim,id,name,user) type = purple_status_type_new( \
+		prim, id, name, user);      \
 	types = g_list_append(types, type);
+ 
+	/* Online */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
+			NULL, _("Online"));
 
-	// Do Not Disturb (not user settable)
-	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_UNAVAILABLE, SIPE_STATUS_ID_DND, _("Do Not Disturb"), TRUE, FALSE, FALSE,
-		SIPE_STATUS_ATTR_MESSAGE, NULL);
-	types = g_list_append(types, type);
+	/* Busy */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_STATUS_ID_BUSY, _("Busy"));
 
-	// Be Right Back
-	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_AWAY, SIPE_STATUS_ID_BRB, _("Be Right Back"), TRUE, TRUE, FALSE,
-		SIPE_STATUS_ATTR_MESSAGE, NULL);
-	types = g_list_append(types, type);
+	/* Do Not Disturb (not user settable) */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
+			       SIPE_STATUS_ID_DND, _("Do Not Disturb"),
+			       FALSE);
 
-	// Away
-	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_AWAY, NULL, NULL, TRUE, TRUE, FALSE,
-		SIPE_STATUS_ATTR_MESSAGE, NULL);
-	types = g_list_append(types, type);
+	/* Be Right Back */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			SIPE_STATUS_ID_BRB, _("Be Right Back"));
 
-	//On The Phone
-	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_UNAVAILABLE, SIPE_STATUS_ID_ONPHONE, _("On The Phone"), TRUE, TRUE, FALSE,
-		SIPE_STATUS_ATTR_MESSAGE, NULL);
-	types = g_list_append(types, type);
+	/* Away */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			NULL, NULL);
 
-	//Out To Lunch
-	type = purple_status_type_new_with_attrs(
-		PURPLE_STATUS_AWAY, SIPE_STATUS_ID_LUNCH, _("Out To Lunch"), TRUE, TRUE, FALSE,
-		SIPE_STATUS_ATTR_MESSAGE, NULL);
-	types = g_list_append(types, type);
+	/* On The Phone */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_STATUS_ID_ONPHONE, _("On The Phone"));
 
-	//Appear Offline
-	type = purple_status_type_new_full(
-		PURPLE_STATUS_INVISIBLE, NULL, _("Appear Offline"), TRUE, TRUE, FALSE);
-	types = g_list_append(types, type);
+	/* Out To Lunch */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			SIPE_STATUS_ID_LUNCH, _("Out To Lunch"));
 
-	// Offline
-	type = purple_status_type_new_full(
-		PURPLE_STATUS_OFFLINE, NULL, NULL, TRUE, TRUE, FALSE);
-	types = g_list_append(types, type);
+	/* Appear Offline */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_INVISIBLE,
+			       NULL, _("Appear Offline"),
+			       TRUE);
+
+	/* Offline */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_OFFLINE,
+			       NULL, NULL,
+			       TRUE);
 
 	return types;
 }
