@@ -1874,7 +1874,8 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	PurpleStatusType *type;
 	GList *types = NULL;
 
-	/* Macros to reduce code repetition. */
+	/* Macros to reduce code repetition.
+	   Translators: noun */
 #define SIPE_ADD_STATUS(prim,id,name) type = purple_status_type_new_with_attrs( \
 		prim, id, name,             \
 		TRUE, TRUE, FALSE,          \
@@ -1887,7 +1888,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
  
 	/* Online */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
-			NULL, _("Online"));
+			NULL, NULL);
 
 	/* Busy */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
@@ -1895,7 +1896,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* Do Not Disturb (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
-			       SIPE_STATUS_ID_DND, _("Do Not Disturb"),
+			       SIPE_STATUS_ID_DND, NULL,
 			       FALSE);
 
 	/* Be Right Back */
@@ -1916,7 +1917,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* Appear Offline */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_INVISIBLE,
-			       NULL, _("Appear Offline"),
+			       NULL, NULL,
 			       TRUE);
 
 	/* Offline */
