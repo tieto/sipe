@@ -106,6 +106,9 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 /* ???  PURPLE_STATUS_MOBILE */
 /* ???  PURPLE_STATUS_TUNE */
 
+/* Status attributes (see also sipe_status_types() */
+#define SIPE_STATUS_ATTR_ID_MESSAGE "message"
+
 /* Action name templates */
 #define ACTION_NAME_PRESENCE "<presence><%s>"
 
@@ -1871,54 +1874,49 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	PurpleStatusType *type;
 	GList *types = NULL;
 
+/* Translators: noun */
+#define SIPE_STATUS_ATTR_MESSAGE SIPE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING)
+
 	// Online
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_AVAILABLE, NULL, _("Online"), TRUE, TRUE, FALSE,
-		// Translators: noun
-		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
-		NULL);
+		SIPE_STATUS_ATTR_MESSAGE, NULL);
 	types = g_list_append(types, type);
 
 	// Busy
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_UNAVAILABLE, SIPE_STATUS_ID_BUSY, _("Busy"), TRUE, TRUE, FALSE,
-		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
-		NULL);
+		SIPE_STATUS_ATTR_MESSAGE, NULL);
 	types = g_list_append(types, type);
 
 	// Do Not Disturb (not user settable)
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_UNAVAILABLE, SIPE_STATUS_ID_DND, _("Do Not Disturb"), TRUE, FALSE, FALSE,
-		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
-		NULL);
+		SIPE_STATUS_ATTR_MESSAGE, NULL);
 	types = g_list_append(types, type);
 
 	// Be Right Back
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_AWAY, SIPE_STATUS_ID_BRB, _("Be Right Back"), TRUE, TRUE, FALSE,
-		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
-		NULL);
+		SIPE_STATUS_ATTR_MESSAGE, NULL);
 	types = g_list_append(types, type);
 
 	// Away
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_AWAY, NULL, NULL, TRUE, TRUE, FALSE,
-		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
-		NULL);
+		SIPE_STATUS_ATTR_MESSAGE, NULL);
 	types = g_list_append(types, type);
 
 	//On The Phone
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_UNAVAILABLE, SIPE_STATUS_ID_ONPHONE, _("On The Phone"), TRUE, TRUE, FALSE,
-		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
-		NULL);
+		SIPE_STATUS_ATTR_MESSAGE, NULL);
 	types = g_list_append(types, type);
 
 	//Out To Lunch
 	type = purple_status_type_new_with_attrs(
 		PURPLE_STATUS_AWAY, SIPE_STATUS_ID_LUNCH, _("Out To Lunch"), TRUE, TRUE, FALSE,
-		"message", _("Message"), purple_value_new(PURPLE_TYPE_STRING),
-		NULL);
+		SIPE_STATUS_ATTR_MESSAGE, NULL);
 	types = g_list_append(types, type);
 
 	//Appear Offline
@@ -5355,7 +5353,7 @@ static void send_presence_status(struct sipe_account_data *sip)
 	const gchar *note;
 	if (!status) return;
 
-	note = purple_status_get_attr_string(status, "message");
+	note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
 
         if(sip->ocs2007){
 		send_presence_category_publish(sip, note);
