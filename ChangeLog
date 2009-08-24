@@ -1,3 +1,22 @@
+version 1.6.2 (2009-08-23)
+       - Treat of 504 Server time-out error
+       - Decrease libpurple build prerequisites to >= 2.4.1
+       - Updated windows build to latest Pidgin 2.6.1
+       - Fix compilation errors against libpurple >= 2.6.0 API
+       - Publishing optimization
+       - Separate storage for subscription dialogs.
+       - Fixed '409 Conflict' case. We are extracting proper versions of our publications and updating local mirror with them.
+       - Fixed CSeq for subscription dialog.
+       - Fixed for unsubscribes
+       - Fixed for Active Directory search
+       - Make OCS2007+ conditionals self-documenting
+       - Fixed compilation problem on 64-bit and NetBSD platforms #2839689
+       - The 'context' element only for just added subscriptions #2836290
+       - Removed dependency on com_err.h  
+       - Fixed warnings on compilation.
+       - Fixed memory leaks.
+ 
+       - Updated "de" translation
 version 1.6.1 (2009-08-12)
        - Fixed missing backslash in "es" translation file
        - Support publication: modular publications
