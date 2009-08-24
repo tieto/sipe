@@ -18,89 +18,145 @@ msgstr ""
 "X-Launchpad-Export-Date: 2009-06-19 14:52+0000\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
-#: ../src/sipe.c:3695
-msgid "Connection Type"
-msgstr "Tipo de conexión"
+#: ../src/sipe.c:264
+msgid "Failed to authenticate to server"
+msgstr "Fallo autenticación con el servidor"
 
-#: ../src/sipe.c:404 ../src/sipe.c:436
+#: ../src/sipe.c:412 ../src/sipe.c:444
 msgid "Could not write"
-msgstr "No se pudo escribir"
+msgstr "No pudo escribir"
 
-#: ../src/sipe.c:460 ../src/sipe.c:5346
+#: ../src/sipe.c:468 ../src/sipe.c:5739
 msgid "Could not connect"
 msgstr "No se pudo conectar"
 
-#: ../src/sipe.c:530 ../src/sipe.c:5491
-msgid "Couldn't create socket"
+#: ../src/sipe.c:538 ../src/sipe.c:5884
+msgid "Could not create socket"
 msgstr "No se pudo crear el socket"
 
-#: ../src/sipe.c:1783 ../src/sipe.c:1790 ../src/sipe.c:1797 ../src/sipe.c:1804 ../src/sipe.c:1811 ../src/sipe.c:1818 ../src/sipe.c:1825
+#: ../src/sipe.c:1057 ../src/sipe.c:2682
+msgid "you"
+msgstr "usted"
+
+#: ../src/sipe.c:1882
 msgid "Message"
 msgstr "Mensaje"
 
-#: ../src/sipe.c:1789
+#: ../src/sipe.c:1895
 msgid "Busy"
 msgstr "No disponible"
 
-#: ../src/sipe.c:4066 ../src/sipe.c:5173
-msgid "Wrong Password"
-msgstr "Contraseña errónea"
+#: ../src/sipe.c:1904
+msgid "Be Right Back"
+msgstr "Regreso en un momento"
 
-#: ../src/sipe.c:4096
+#: ../src/sipe.c:1912
+msgid "On The Phone"
+msgstr "Al telefono"
+
+#: ../src/sipe.c:1916
+msgid "Out To Lunch"
+msgstr "Sali a comer"
+
+#: ../src/sipe.c:2015 ../src/sipe.c:2027 ../src/sipe.c:2047 ../src/sipe.c:6314
+msgid "Other Contacts"
+msgstr "Otros Contactos"
+
+#. [MS-SIPREGE]
+#. reason = g_strdup(_("User logged out")); // [MS-OCER]
+#: ../src/sipe.c:2206
+msgid "you are already signed in at another location"
+msgstr "usted esta conectado desde otra locación"
+
+#: ../src/sipe.c:2209
+msgid "user disabled"
+msgstr "usuario deshabilitado"
+
+#: ../src/sipe.c:2212
+msgid "user moved"
+msgstr "usuario movido"
+
+#: ../src/sipe.c:2216 ../src/sipe.c:4347
 #, c-format
 msgid "You have been rejected by the server: %s"
-msgstr "Has sido rechazado por el servidor: %s"
+msgstr "Usted ha sido rechazado por el servidor: %s"
 
-#: ../src/sipe.c:4096 ../src/sipe.c:4113 ../src/sipe.c:4130
+#: ../src/sipe.c:2216 ../src/sipe.c:4348 ../src/sipe.c:4365 ../src/sipe.c:4383
 msgid "no reason given"
 msgstr "sin dar razones"
 
-#: ../src/sipe.c:4099
-msgid "You have been rejected by the server"
-msgstr "Has sido rechazado por el servidor"
+#: ../src/sipe.c:2959
+#, c-format
+msgid ""
+"This message was not delivered to %s because one or more recipients are "
+"offline:\n"
+"%s"
+msgstr ""
+"Este mensaje no fue enviado a %s porque uno o mas recipientes están "
+"fuera de linea:\n"
+"%s"
 
-#: ../src/sipe.c:4130
+#: ../src/sipe.c:3237
+#, c-format
+msgid "Failed to invite %s"
+msgstr "Fallo la invitación para %s"
+
+#: ../src/sipe.c:4315 ../src/sipe.c:5566
+msgid "Wrong Password"
+msgstr "Contraseña errónea"
+
+#: ../src/sipe.c:4364
+#, c-format
+msgid "Not found: %s. Please contact your Administrator"
+msgstr "No encontro: %s. Por favor, contacta a tu administrador."
+
+#: ../src/sipe.c:4366
+msgid "SIP is either not enabled for the destination URI or it does not exist"
+msgstr ""
+"SIP esta no habilitado para el URI de destino o el URI no existe."
+
+#: ../src/sipe.c:4383
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Servicio no disponible: %s"
-
-#: ../src/sipe.c:4133
-msgid "Service unavailable: no reason given"
-msgstr "Servicio no disponible: sin dar razones"
 
 #: ../src/sipe.c:5169
 msgid "Invalid message signature received"
 msgstr "Firma inválida recibida"
 
-#: ../src/sipe.c:5249
+#: ../src/sipe.c:5636
 msgid "Connection not found; Please try to connect again.\n"
 msgstr "Conexión no encontrada; por favor vuelva intentar.\n"
 
-#: ../src/sipe.c:5264
+#: ../src/sipe.c:5657
 msgid "SSL read error"
 msgstr "error de lectura SSL"
 
-#: ../src/sipe.c:5267
+#: ../src/sipe.c:5660
 msgid "Server has disconnected"
 msgstr "El servidor ha desconectado"
 
-#: ../src/sipe.c:5391 ../src/sipe.c:5432 ../src/sipe.c:5475 ../src/sipe.c:5545
+#: ../src/sipe.c:5784 ../src/sipe.c:5825 ../src/sipe.c:5868 ../src/sipe.c:5938
 msgid "Could not create listen socket"
 msgstr "No se pudo crear el socket de escucha"
 
-#: ../src/sipe.c:5414
-msgid "Couldn't resolve host"
+#: ../src/sipe.c:5807 ../src/sipe.c:5929
+msgid "Could not resolve hostname"
 msgstr "No pudo resolver el nombre del sistema"
 
-#: ../src/sipe.c:5454
+#: ../src/sipe.c:5847
 msgid "Connection Failed"
 msgstr "Falló conexión"
 
-#: ../src/sipe.c:5457
+#: ../src/sipe.c:5850
 msgid "SSL Handshake Failed"
 msgstr "Se produjo un fallo en la negociación SSL"
 
-#: ../src/sipe.c:5518
+#: ../src/sipe.c:5853
+msgid "SSL certificate invalid"
+msgstr "Certificado SSL inválido"
+
+#: ../src/sipe.c:5911
 msgid ""
 "SSL support is not installed.  Either install SSL support or configure a "
 "different connection type in the account editor."
@@ -108,136 +164,253 @@ msgstr ""
 "El soporte de SSL no esta instalado. Instala el soporte SSL o configura un"
 "diferente tipo de conexión en el editor de cuentas."
 
-#: ../src/sipe.c:5527
+#: ../src/sipe.c:5920
 msgid "Could not create SSL context"
 msgstr "No pudo crear el contexto SSL"
 
-#: ../src/sipe.c:5536
-msgid "Could not resolve hostname"
-msgstr "No se pudo resolver el nombre de sistema"
+#: ../src/sipe.c:6042
+msgid "SIP Exchange user name contains invalid characters"
+msgstr "El nombre de usuario de SIP Exchange contiene caracteres inválidos"
 
-#: ../src/sipe.c:5697
+#: ../src/sipe.c:6065
+msgid ""
+"User name should be a valid SIP URI\n"
+"Example: user@company.com"
+msgstr ""
+"El nombre de usuario debe ser un SIP URI válido\n"
+"Ejemplo: usuario@dominio.com"
+
+#: ../src/sipe.c:6091
 msgid "SIP Exchange usernames may not contain whitespaces"
 msgstr "Los nombres de cuentas de SIP Exchange no contienen espacios"
 
-#: ../src/sipe.c:5705
+#: ../src/sipe.c:6103
 msgid "Connecting"
 msgstr "Conectando"
 
-#: ../src/sipe.c:5939
+#: ../src/sipe.c:6340
 msgid "Unable to display the search results."
 msgstr "No se puede mostrar los resultados de la búsqueda."
 
-#: ../src/sipe.c:5945
+#: ../src/sipe.c:6346
 msgid "User Name"
 msgstr "Usuario"
 
-#: ../src/sipe.c:5948
+#: ../src/sipe.c:6349
 msgid "Name"
 msgstr "Nombre"
 
-#: ../src/sipe.c:5951 ../src/sipe.c:6042 ../src/sipe.c:6681
+#: ../src/sipe.c:6352 ../src/sipe.c:6446 ../src/sipe.c:7090
 msgid "Company"
 msgstr "Compañia"
 
-#: ../src/sipe.c:5954 ../src/sipe.c:6044 ../src/sipe.c:6684
+#: ../src/sipe.c:6355 ../src/sipe.c:6448 ../src/sipe.c:7093
 msgid "Country"
 msgstr "País"
 
-#: ../src/sipe.c:5957
+#: ../src/sipe.c:6358
 msgid "Email"
 msgstr "Correo electrónico"
 
-#: ../src/sipe.c:3461
+#: ../src/sipe.c:6385
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../src/sipe.c:5986
+#: ../src/sipe.c:6387
 msgid " (more matched your query)"
 msgstr " (mas concidencias de tu búsqueda)"
 
-#: ../src/sipe.c:6038
+#: ../src/sipe.c:6442
 msgid "First Name"
 msgstr ""
 
-#: ../src/sipe.c:6040
+#: ../src/sipe.c:6444
 msgid "Last Name"
 msgstr ""
 
-#: ../src/sipe.c:6048
+#: ../src/sipe.c:6452
 msgid "Search"
 msgstr ""
 
-#: ../src/sipe.c:6049
+#: ../src/sipe.c:6453
 msgid "Search for a Contact"
 msgstr "Buscar un contacto"
 
-#: ../src/sipe.c:3526
+#: ../src/sipe.c:6454
 msgid ""
 "Enter the information of the person you wish to find. Empty fields will be "
 "ignored."
 msgstr ""
 
-#: ../src/sipe.c:6052
+#: ../src/sipe.c:6456
 msgid "_Search"
 msgstr ""
 
-#: ../src/sipe.c:6053
+#: ../src/sipe.c:6457
 msgid "_Cancel"
 msgstr ""
 
-#: ../src/sipe.c:6063
+#: ../src/sipe.c:6467
 msgid "Contact Search..."
 msgstr "Búsqueda de Contactos..."
 
-#: ../src/sipe.c:3684
-msgid "Use proxy"
-msgstr "Usar proxy"
+#: ../src/sipe.c:6531
+msgid "Status"
+msgstr "Status"
 
-#: ../src/sipe.c:3686
-msgid "Proxy Server"
+#: ../src/sipe.c:6536
+msgid "Note"
+msgstr "Nota"
+
+#: ../src/sipe.c:6547
+msgid "user@company.com"
+msgstr "usuario@dominio.com"
+
+#: ../src/sipe.c:6892
+#, c-format
+msgid "Make leader of '%s'"
+msgstr "Hazte líder de '%s'"
+
+#: ../src/sipe.c:6903
+#, c-format
+msgid "Remove from '%s'"
+msgstr "Eliminar de '%s'"
+
+#: ../src/sipe.c:6916
+#, c-format
+msgid "Invite to '%s'"
+msgstr "Invitar a '%s'"
+
+#: ../src/sipe.c:6927
+msgid "New chat"
+msgstr "Chat nuevo"
+
+#: ../src/sipe.c:6935
+msgid "Send email..."
+msgstr "Enviar E-Mail..."
+
+#: ../src/sipe.c:6960
+msgid "Copy to"
+msgstr "Copiar a"
+
+#: ../src/sipe.c:7013
+msgid "Unlock"
+msgstr "Desbloquear"
+
+#: ../src/sipe.c:7018
+msgid "Lock"
+msgstr "Bloquear"
+
+#: ../src/sipe.c:7086 ../src/sipe.c:7111
+msgid "Display name"
+msgstr "Display Name"
+
+#: ../src/sipe.c:7087
+msgid "Job title"
+msgstr "Puesto"
+
+#: ../src/sipe.c:7088
+msgid "Office"
+msgstr "Oficina"
+
+#: ../src/sipe.c:7089
+msgid "Business phone"
+msgstr "Telefono de oficina"
+
+#: ../src/sipe.c:7091
+msgid "City"
+msgstr "Ciudad"
+
+#: ../src/sipe.c:7092
+msgid "State"
+msgstr "Estado"
+
+#: ../src/sipe.c:7095 ../src/sipe.c:7126
+msgid "E-Mail address"
+msgstr "Dirección de E-Mail"
+
+#: ../src/sipe.c:7119
+msgid "Alias"
+msgstr "Alias"
+
+#: ../src/sipe.c:7132
+msgid "Device"
+msgstr "Dispositivo"
+
+#: ../src/sipe.c:7319
+msgid ""
+"Login\n"
+"   user  or  DOMAIN\\user  or\n"
+"   user@company.com"
 msgstr ""
+"Login\n"
+"   usuario o DOMINIO\\usuario o\n"
+"   usuario@dominio.com"
 
-#: ../src/sipe.c:3689
-msgid "Use non-standard port"
+#: ../src/sipe.c:7323
+msgid ""
+"Server[:Port]\n"
+"(leave empty for auto-discovery)"
 msgstr ""
+"Server[:Port]\n"
+"(dejar vacio para autoconfiguración)"
 
-#. Translators: noun (networking port)
-#: ../src/sipe.c:3692
-msgid "Port"
-msgstr ""
+#: ../src/sipe.c:7326
+msgid "Connection type"
+msgstr "Tipo de conexión"
 
-#: ../src/sipe.c:3696
+#: ../src/sipe.c:7327
 msgid "Auto"
-msgstr ""
+msgstr "Automático"
 
-#: ../src/sipe.c:3697
+#: ../src/sipe.c:7328
 msgid "SSL/TLS"
-msgstr ""
+msgstr "SSL/TLS"
 
-#: ../src/sipe.c:3698
+#: ../src/sipe.c:7329
 msgid "TCP"
-msgstr ""
+msgstr "TCP"
 
-#: ../src/sipe.c:3699
+#: ../src/sipe.c:7330
 msgid "UDP"
-msgstr ""
+msgstr "UDP"
 
-#: ../src/sipe.c:6908
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/sipe.c:7336
 msgid "User Agent"
-msgstr ""
+msgstr "User Agent"
 
-#: ../src/sipe.c:6912
+#: ../src/sipe.c:7340
 msgid "Use Kerberos"
 msgstr "Usar Kerberos"
 
-#: ../src/sipe.c:6891
-msgid "Login \n   user  or  DOMAIN\\user  or\n   user@company.com "
-msgstr "Login, DOMINIO\\usuario ó usuario@company.com "
+#. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
+#. * No login/password is taken into account if this option present,
+#. * instead used default credentials stored in OS.
+#.
+#: ../src/sipe.c:7347
+msgid "Use Single Sign-On"
+msgstr "Usar Single Sign-On"
 
-#: ../src/sipe.c:6895
-msgid "Server[:Port]\n(Leave empty for auto-discovery)"
-msgstr "Servidor[:Puerto]\n(Dejar vacio para autoconfiguración)"
+#: ../src/sipe-conf.c:793
+msgid ""
+"This conference is no longer locked. Additional participants can now join."
+msgstr ""
+"Esta conferencia no esta bloqueada. Mas participantes pueden ahora unirse."
+
+#: ../src/sipe-conf.c:797
+msgid ""
+"This conference is locked. Nobody else can join the conference while it is "
+"locked."
+msgstr ""
+"Esta conferencia esta bloqueada. Nadie mas puede unirse a la conferencia "
+"mientras esta bloqueada."
+
+#: ../src/sipe-conf.c:830
+msgid "You have been disconnected from this conference."
+msgstr "Usted ha sido desconectado de esta conferencia."
+
