@@ -81,8 +81,9 @@
 #include "dnssrv.h"
 #include "request.h"
 
+/* Backward compatibility when compiling against 2.4.x API */
 #if !PURPLE_VERSION_CHECK(2,5,0)
-#include "purple25-compat.h"
+#define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
 #endif
 
 /* Keep in sync with sipe_transport_type! */
@@ -6539,6 +6540,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 
 }
 
+#if PURPLE_VERSION_CHECK(2,5,0)
 static GHashTable *
 sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 {
@@ -6547,6 +6549,7 @@ sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 	g_hash_table_insert(table, "login_label", (gpointer)_("user@company.com"));
 	return table;
 }
+#endif
 
 static PurpleBuddy *
 purple_blist_add_buddy_clone(PurpleGroup * group, PurpleBuddy * buddy)
@@ -7162,11 +7165,7 @@ static void sipe_get_info(PurpleConnection *gc, const char *username)
 
 static PurplePlugin *my_protocol = NULL;
 
-#if PURPLE_VERSION_CHECK(2,5,0)
 static PurplePluginProtocolInfo prpl_info =
-#else
-static Purple25CompatPluginProtocolInfo prpl_info =
-#endif
 {
 	OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
@@ -7233,17 +7232,17 @@ static Purple25CompatPluginProtocolInfo prpl_info =
 	NULL,					/* unregister_user */
 	NULL,					/* send_attention */
 	NULL,					/* get_attention_types */
-#if PURPLE_VERSION_CHECK(2,5,0)
-	sizeof(PurplePluginProtocolInfo),       /* struct_size */
-#else
-       sizeof(Purple25CompatPluginProtocolInfo),
+#if !PURPLE_VERSION_CHECK(2,5,0)
+	/* Backward compatibility when compiling against 2.4.x API */
+	(void (*)(void))			/* _purple_reserved4 */
 #endif
-
+	sizeof(PurplePluginProtocolInfo),       /* struct_size */
+#if PURPLE_VERSION_CHECK(2,5,0)
 	sipe_get_account_text_table,		/* get_account_text_table */
-
 #if PURPLE_VERSION_CHECK(2,6,0)
 	NULL,					/* initiate_media */
 	NULL,					/* get_media_caps */
+#endif
 #endif
 };
 
