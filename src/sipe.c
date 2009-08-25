@@ -5340,6 +5340,7 @@ static void send_presence_status(struct sipe_account_data *sip)
 	if (!status) return;
 
 	note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
+	purple_debug_info("sipe", "send_presence_status: note: '%s'\n", note ? note : "");
 
         if(sip->ocs2007){
 		send_presence_category_publish(sip, note);
@@ -6523,7 +6524,10 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 
 	if (annotation)
 	{
-		purple_notify_user_info_add_pair( user_info, _("Note"), annotation );
+		gchar *escaped = g_markup_escape_text(annotation, -1);
+		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s' escaped: '%s'\n", buddy->name, annotation, escaped);
+		purple_notify_user_info_add_pair(user_info, _("Note"), escaped);
+		g_free(escaped);
 		g_free(annotation);
 	}
 
