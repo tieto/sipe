@@ -5523,9 +5523,10 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 			memmove(conn->inbuf, cur, conn->inbuflen - (cur - conn->inbuf));
 			conn->inbufused = strlen(conn->inbuf);
 		} else {
-			purple_debug_info("sipe", "process_input: body too short (%d < %d, strlen %d) - ignoring message\n",
-					  restlen, msg->bodylen, (int)strlen(conn->inbuf));
+			if (msg){
+                           purple_debug_info("sipe", "process_input: body too short (%d < %d, strlen %d) - ignoring message\n", restlen, msg->bodylen, (int)strlen(conn->inbuf));
 			sipmsg_free(msg);
+                        }
 			return;
 		}
 
