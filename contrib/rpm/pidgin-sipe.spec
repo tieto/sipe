@@ -18,7 +18,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin plugin for connecting to Microsoft LCS/OCS
-Version:        1.6.1
+Version:        1.6.2
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
