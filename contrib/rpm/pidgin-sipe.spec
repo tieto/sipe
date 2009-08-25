@@ -32,7 +32,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libpurple-devel >= 2.4.1, libtool, intltool, gettext-devel, krb5-devel
+BuildRequires:  libpurple-devel >= 2.4.1, libtool, intltool, gettext-devel
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
