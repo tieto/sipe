@@ -6524,10 +6524,19 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 
 	if (annotation)
 	{
-		gchar *escaped = g_markup_escape_text(annotation, -1);
-		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s' escaped: '%s'\n", buddy->name, annotation, escaped);
-		purple_notify_user_info_add_pair(user_info, _("Note"), escaped);
-		g_free(escaped);
+		/* Tooltip does not know how to handle markup like <br> */
+		gchar *s = annotation;
+		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s'\n", buddy->name, annotation);
+		while ((s = strchr(s, '<')) != NULL) {
+			if (!g_ascii_strncasecmp(s, "<br>", 4)) {
+				*s = '\n';
+				strcpy(s + 1, s + 4);
+			}
+			s++;
+		}
+		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s'\n", buddy->name, annotation);
+
+		purple_notify_user_info_add_pair(user_info, _("Note"), annotation);
 		g_free(annotation);
 	}
 
