@@ -5251,13 +5251,13 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 		return NULL; /* nothing to update */
 	}
 
-	return g_strdup_printf(	SIPE_PUB_XML_NOTE,
-				publication_note_200 ? publication_note_200->version : 0,
-				note ? note : "",
-				publication_note_300 ? publication_note_300->version : 0,
-				note ? note : "",
-				publication_note_400 ? publication_note_400->version : 0,
-				note ? note : "");
+	return g_markup_printf_escaped(SIPE_PUB_XML_NOTE,
+				       publication_note_200 ? publication_note_200->version : 0,
+				       note ? note : "",
+				       publication_note_300 ? publication_note_300->version : 0,
+				       note ? note : "",
+				       publication_note_400 ? publication_note_400->version : 0,
+				       note ? note : "");
 }
 
 static void send_presence_publish(struct sipe_account_data *sip, const char *publications)
