@@ -4656,7 +4656,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	const char *availability;
 	const char *activity;
 	const char *activity_name = NULL;
-	char *tmp = NULL;
 	const char *name;
 	char *uri;
 	int avl;
@@ -4670,8 +4669,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
 	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
-        xmlnode *xn_state = xn_userinfo ? xmlnode_get_descendant(xn_userinfo, "states", "state",  NULL):NULL;
-        const char *avail = xn_state ? xmlnode_get_attrib(xn_state, "avail") : NULL;
 
 	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
@@ -4719,13 +4716,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	if (avl < 100)
 		activity_name = SIPE_STATUS_ID_OFFLINE;
 
-	if (act < 100 && avl < 100) { /* MSRTC elements are zero */
-		if (avail) {
-			avl = atoi(avail);
-			activity_name = tmp = sipe_get_status_by_availability(avl);
-		}
-	}
-
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
 	{
@@ -4742,7 +4732,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
 	g_free(note);
 	xmlnode_free(xn_presentity);
-	g_free(tmp);
 	g_free(uri);
 }
 
