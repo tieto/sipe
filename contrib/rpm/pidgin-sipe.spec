@@ -18,7 +18,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin plugin for connecting to Microsoft LCS/OCS
-Version:        1.6.1
+Version:        1.6.2
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -32,7 +32,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libpurple-devel >= 2.4.1, libtool, intltool, gettext-devel
+BuildRequires:  libpurple-devel >= 2.4.1, libtool, intltool, gettext-devel, krb5-devel
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
