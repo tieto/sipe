@@ -60,7 +60,7 @@ msgstr "Sali a comer"
 
 #: ../src/sipe.c:2015 ../src/sipe.c:2027 ../src/sipe.c:2047 ../src/sipe.c:6314
 msgid "Other Contacts"
-msgstr "Otros Contactos"
+msgstr "Other Contacts"
 
 #. [MS-SIPREGE]
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]

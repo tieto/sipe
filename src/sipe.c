@@ -5514,7 +5514,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		cur[0] = '\r';
 		cur += 2;
 		restlen = conn->inbufused - (cur - conn->inbuf);
-		if (restlen >= msg->bodylen) {
+		if (msg && restlen >= msg->bodylen) {
 			dummy = g_malloc(msg->bodylen + 1);
 			memcpy(dummy, cur, msg->bodylen);
 			dummy[msg->bodylen] = '\0';
