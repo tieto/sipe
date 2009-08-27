@@ -1741,28 +1741,31 @@ sipe_group_buddy(PurpleConnection *gc,
 
 static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
-	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	struct sipe_buddy *b;
-
 	purple_debug_info("sipe", "sipe_add_buddy[CB]: buddy:%s group:%s\n", buddy ? buddy->name : "", group ? group->name : "");
 
-	// Prepend sip: if needed
-	if (strncmp("sip:", buddy->name, 4)) {
-		gchar *buf = sip_uri_from_name(buddy->name);
-		purple_blist_rename_buddy(buddy, buf);
-		g_free(buf);
-	}
+	/* libpurple can call us with undefined buddy or group */
+	if (buddy && group) {
+		struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 
-	if (!g_hash_table_lookup(sip->buddies, buddy->name)) {
-		b = g_new0(struct sipe_buddy, 1);
-		purple_debug_info("sipe", "sipe_add_buddy %s\n", buddy->name);
-		b->name = g_strdup(buddy->name);
-		b->just_added = TRUE;
-		g_hash_table_insert(sip->buddies, b->name, b);
-		sipe_group_buddy(gc, b->name, NULL, group->name);
-		sipe_subscribe_presence_single(sip, b->name); //@TODO should go to callback
-	} else {
-		purple_debug_info("sipe", "buddy %s already in internal list\n", buddy->name);
+		/* Prepend sip: if needed */
+		if (strncmp("sip:", buddy->name, 4)) {
+			gchar *buf = sip_uri_from_name(buddy->name);
+			purple_blist_rename_buddy(buddy, buf);
+			g_free(buf);
+		}
+
+		if (!g_hash_table_lookup(sip->buddies, buddy->name)) {
+			struct sipe_buddy *b = g_new0(struct sipe_buddy, 1);
+			purple_debug_info("sipe", "sipe_add_buddy: adding %s\n", buddy->name);
+			b->name = g_strdup(buddy->name);
+			b->just_added = TRUE;
+			g_hash_table_insert(sip->buddies, b->name, b);
+			sipe_group_buddy(gc, b->name, NULL, group->name);
+			/* @TODO should go to callback */
+			sipe_subscribe_presence_single(sip, b->name);
+		} else {
+			purple_debug_info("sipe", "sipe_add_buddy: buddy %s already in internal list\n", buddy->name);
+		}
 	}
 }
 
@@ -1886,7 +1889,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 #define SIPE_ADD_STATUS_NO_MSG(prim,id,name,user) type = purple_status_type_new( \
 		prim, id, name, user);      \
 	types = g_list_append(types, type);
- 
+
 	/* Online */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
 			NULL, NULL);
