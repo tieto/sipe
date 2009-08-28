@@ -32,7 +32,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libpurple-devel >= 2.4.1, libtool, intltool, gettext-devel
+BuildRequires:  libpurple-devel >= 2.3.1, libtool, intltool, gettext-devel
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
@@ -92,6 +92,12 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Aug 28 2009 J. D. User <jduser@noreply.com> 1.6.2-*git*
+- reduce libpurple-devel requirement to >= 2.3.1
+
+* Mon Aug 24 2009 J. D. User <jduser@noreply.com> 1.6.2
+- update to 1.6.2
+
 * Fri Aug 21 2009 J. D. User <jduser@noreply.com> 1.6.1-*git*
 - reduce libpurple-devel requirement to >= 2.4.1
 
