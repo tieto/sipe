@@ -200,9 +200,9 @@ char *trim(char *b)
 {
 	char *e = b + strlen(b);
 
-	while (b < e && isspace(((int) *b)))
+	while (b < e && isspace((unsigned char) *b))
 		++b;
-	while (e > b && isspace(((int) *(e - 1))))
+	while (e > b && isspace((unsigned char) *(e - 1)))
 		--e;
 	*e='\0';
 
