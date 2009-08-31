@@ -142,4 +142,11 @@ xmlnode * xmlnode_get_descendant(const xmlnode *parent, ...);
  */
 char *sipe_get_host_name(void);
 
-char* trim(char* b);
+/**
+ * Strip white space from the beginning and end of a string
+ *
+ * @param b string to be trimmed (may be modified)
+ *
+ * @return trimmed string
+ */
+char *trim(char *b);
