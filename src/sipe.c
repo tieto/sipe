@@ -5243,7 +5243,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_400);
 
 	const char *n1 = note;
-	const char *n2 = publication_note_200->note;
+	const char *n2 = publication_note_200 ? publication_note_200->note : NULL;
 
 	g_free(key_note_200);
 	g_free(key_note_300);
