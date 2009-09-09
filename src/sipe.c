@@ -3838,7 +3838,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	gchar *ms_text_format;
+	/* gchar *ms_text_format; */
 	gchar *body;
 	gchar *newTag;
 	gchar *oldHeader;
@@ -4018,6 +4018,10 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	}
 
 	/* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
+	
+	/* This used only in 2005 official client, not 2007 or Reuters.
+	   Commented out as interfering with audit of messages which only is applied to regular MESSAGEs.
+	 
 	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
 	if (ms_text_format) {
 		if (!strncmp(ms_text_format, "text/plain", 10) || !strncmp(ms_text_format, "text/html", 9)) {
@@ -4035,6 +4039,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 			}
 		}
 	}
+	*/
+	
 	g_free(from);
 
 	sipmsg_add_header(msg, "Supported", "com.microsoft.rtc-multiparty");
