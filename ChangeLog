@@ -1,3 +1,16 @@
+version 1.6.3 (2009-09-09)
+       - Added missing krb5-devel BuildRequires to the RPM spec file.
+       - Cleanup of source code compatibility for libpurple 2.4.x
+       - Fixed for msrtc statuses, bug #2843985 
+       - Fixed HTML markup in note, bug #2841095
+       - Fixed a segmentation fauls when the function sipmsg_parse_header backs
+a null value.
+       - Possible fixed a crash when SIPE account added, bug #2844545
+       - Reduced libpurple build requisite to >= 2.3.1 
+       - Fixed NetBSD compilation errors in sipe-utils.c, bug #2847380
+       - Updated zh_CN translation
+       - Fixed a crash when pidgin auto-away fires, bug #2849156
+
 version 1.6.2 (2009-08-23)
        - Treat of 504 Server time-out error
        - Decrease libpurple build prerequisites to >= 2.4.1

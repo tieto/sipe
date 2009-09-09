@@ -1,7 +1,7 @@
 dnl version of this package
-m4_define(pidgin_sipe_version,	1.6.2)
+m4_define(pidgin_sipe_version,	1.6.3)
 
-AC_INIT([pidgin-sipe], [1.6.2])
+AC_INIT([pidgin-sipe], [1.6.3])
 
 AC_PREREQ([2.50])
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 tar-ustar])

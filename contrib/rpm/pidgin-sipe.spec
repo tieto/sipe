@@ -18,7 +18,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin plugin for connecting to Microsoft LCS/OCS
-Version:        1.6.2
+Version:        1.6.3
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -92,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Sep 09 2009 J. D. User <jduser@noreply.com> 1.6.3
+- update to 1.6.3
+
 * Fri Aug 28 2009 J. D. User <jduser@noreply.com> 1.6.2-*git*
 - reduce libpurple-devel requirement to >= 2.3.1
 
