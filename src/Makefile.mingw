@@ -54,6 +54,7 @@ C_SRC =			sipe.c \
 			sip-sec.c \
 			sip-sec-ntlm.c \
 			sip-sec-sspi.c \
+			sip-csta.c \
 			uuid.c
 
 OBJECTS = 		$(C_SRC:%.c=%.o)
