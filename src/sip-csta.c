@@ -83,7 +83,7 @@
 /**
  * Sends CSTA make call request to SIP/CSTA Gateway.
  * @param line_uri (%s) Ex.: tel:73124;phone-context=dialstring;partition=BE_BRS_INT
- * @param calling_number (%s) Ex.: tel:+3222220220
+ * @param to_tel_uri (%s) Ex.: tel:+3222220220
  */
 #define SIP_SEND_CSTA_MAKE_CALL \
 "<?xml version=\"1.0\"?>"\
@@ -338,7 +338,8 @@ sip_csta_free(struct sip_csta *csta)
 	g_free(csta->gateway_status);
 	g_free(csta->monitor_cross_ref_id);
 	g_free(csta->line_status);
-	g_free(csta->called_uri);
+	g_free(csta->to_tel_uri);
+	g_free(csta->call_id);	
 	
 	g_free(csta);
 }
@@ -361,6 +362,88 @@ sip_csta_close(struct sipe_account_data *sip)
 	}
 	
 	sip_csta_free(sip->csta);
+}
+
+
+
+/** Make Call's callback */
+static gboolean
+process_csta_make_call_response(struct sipe_account_data *sip,
+				struct sipmsg *msg,
+				SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	if (!sip->csta) {
+		purple_debug_info("sipe", "process_csta_make_call_response: sip->csta is not initializzed, exiting\n");
+		return FALSE;
+	}
+
+	if (msg->response >= 400) {
+		purple_debug_info("sipe", "process_csta_make_call_response: Make Call response is not 200. Failed to make call.\n");
+		/* @TODO notify user of failure to make call */
+		return FALSE;
+	}
+	else if (msg->response == 200) {
+		xmlnode *xml;
+		xmlnode *xn_calling_device;
+		gchar *device_id;
+		
+		purple_debug_info("sipe", "process_csta_make_call_response: SUCCESS\n");
+		
+		xml = xmlnode_from_str(msg->body, msg->bodylen);
+		xn_calling_device = xmlnode_get_child(xml, "callingDevice");
+		device_id = xmlnode_get_data(xmlnode_get_child(xn_calling_device, "deviceID"));
+		if (!strcmp(sip->csta->line_uri, device_id)) {
+			g_free(sip->csta->call_id);
+			sip->csta->call_id = xmlnode_get_data(xmlnode_get_child(xn_calling_device, "callID"));
+			purple_debug_info("sipe", "process_csta_make_call_response: call_id=%s\n", sip->csta->call_id ? sip->csta->call_id : "");
+		}
+		g_free(device_id);
+		xmlnode_free(xml);
+	}
+
+	return TRUE;
+}
+
+/** Make Call */
+void
+sip_csta_make_call(struct sipe_account_data *sip,
+		   const gchar* to_tel_uri)
+{
+	gchar *hdr;
+	gchar *body;
+	
+	if (!to_tel_uri) {
+		purple_debug_info("sipe", "sip_csta_make_call: no tel URI parameter provided, exiting.\n");
+		return;
+	}
+
+	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
+		purple_debug_info("sipe", "sip_csta_make_call: no dialog with CSTA, exiting.\n");
+		return;
+	}
+	
+	g_free(sip->csta->to_tel_uri);
+	sip->csta->to_tel_uri = g_strdup(to_tel_uri);
+
+	hdr = g_strdup(
+		"Content-Disposition: signal;handling=required\r\n"
+		"Content-Type: application/csta+xml\r\n");
+
+	body = g_strdup_printf(
+		SIP_SEND_CSTA_MAKE_CALL,
+		sip->csta->line_uri,
+		sip->csta->to_tel_uri);
+
+	send_sip_request(sip->gc,
+			 "INFO",
+			 sip->csta->dialog->with,
+			 sip->csta->dialog->with,
+			 hdr,
+			 body,
+			 sip->csta->dialog,
+			 process_csta_make_call_response);
+	g_free(body);
+	g_free(hdr);
 }
 
 

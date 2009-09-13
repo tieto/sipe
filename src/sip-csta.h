@@ -32,10 +32,14 @@ struct sip_csta {
 	gchar *monitor_cross_ref_id;
 	gchar *line_status;
 	/** destination tel: URI */
-	gchar *called_uri;
+	gchar *to_tel_uri;
+	gchar *call_id;
 };
 
-/** Initializes GSTA */
+/** Initializes GSTA 
+ * @param line_uri (in) our line tel URI.            Ex.: tel:73124;phone-context=dialstring;partition=BE_BRS_INT
+ * @param server   (in) SIP URI of SIP/CSTA Gateway. Ex.: sip:73124@euuklhccups01.eu.company.local
+ */
 void
 sip_csta_open(struct sipe_account_data *sip,
 	      const gchar *line_uri,
@@ -44,3 +48,10 @@ sip_csta_open(struct sipe_account_data *sip,
 /** Closes GSTA */
 void
 sip_csta_close(struct sipe_account_data *sip);
+
+/** Makes Call
+ * @param to_tel_uri (in) tel URI of called party. Ex.: tel:+3222220220
+ */
+void
+sip_csta_make_call(struct sipe_account_data *sip,
+		   const gchar* to_tel_uri);
