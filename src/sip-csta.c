@@ -92,6 +92,56 @@ sip_csta_initialize(struct sipe_account_data *sip,
 	}
 }
 
+/** a callback */
+static gboolean
+process_invite_csta_gateway_response(struct sipe_account_data *sip,
+				     struct sipmsg *msg,
+				     SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	if (!sip->csta) {
+		purple_debug_info("sipe", "process_invite_csta_gateway_response: sip->csta is not initializzed, exiting\n");
+		return FALSE;
+	}
+
+	if (!sip->csta->dialog) {
+		purple_debug_info("sipe", "process_invite_csta_gateway_response: GSTA dialog is NULL, exiting\n");
+		return FALSE;
+	}
+
+	sipe_dialog_parse(sip->csta->dialog, msg, TRUE);
+
+	if (msg->response >= 200) {
+		/* send ACK to CSTA */
+		sip->csta->dialog->cseq = 0;
+		send_sip_request(sip->gc, "ACK", sip->csta->dialog->with, sip->csta->dialog->with, NULL, NULL, sip->csta->dialog, NULL);
+		sip->csta->dialog->outgoing_invite = NULL;
+		sip->csta->dialog->is_established = TRUE;
+	}
+
+	if (msg->response >= 400) {
+		purple_debug_info("sipe", "process_invite_csta_gateway_response: INVITE response is not 200. Failed to join CSTA.\n");
+		/* @TODO notify user of failure to join CSTA */
+		return FALSE;
+	}
+	else if (msg->response == 200) {
+		xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
+		g_free(sip->csta->gateway_status);
+		sip->csta->gateway_status = xmlnode_get_data(xmlnode_get_child(xml, "systemStatus"));
+		purple_debug_info("sipe", "process_invite_csta_gateway_response: gateway_status=%s\n",
+				  sip->csta->gateway_status ? sip->csta->gateway_status : "");
+		if (!g_ascii_strcasecmp(sip->csta->gateway_status, "normal")) {
+			//sip_csta_monitor_start(sip);
+		} else {
+			purple_debug_info("sipe", "process_invite_csta_gateway_response: ERRIR: CSTA status is %s, won't continue.\n",
+					  sip->csta->gateway_status);
+			/* @TODO notify user of failure to join CSTA */
+		}
+		xmlnode_free(xml);
+	}
+
+	return TRUE;
+}
+
 /** Creates long living dialog with SIP/CSTA Gateway */
 /*  should be re-entrant as require to sent re-invites every 10 min to refresh */
 static void
@@ -134,7 +184,7 @@ sipe_invite_csta_gateway(struct sipe_account_data *sip)
 							      hdr,
 							      body,
 							      sip->csta->dialog,
-							      NULL /*process_invite_csta_gateway_response*/);
+							      process_invite_csta_gateway_response);
 	g_free(body);
 	g_free(hdr);
 }
