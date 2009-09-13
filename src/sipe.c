@@ -2547,16 +2547,16 @@ sipe_update_user_info(struct sipe_account_data *sip,
 			gchar *phone_display_node = "phone-display"; /* work phone by default */
 			if (phone_type && !strcmp(phone_type, "mobile")) {
 				phone_node = "phone-mobile";
-				phone_node = "phone-mobile-display";
+				phone_display_node = "phone-mobile-display";
 			} else if (phone_type && !strcmp(phone_type, "home")) {
 				phone_node = "phone-home";
-				phone_node = "phone-home-display";
+				phone_display_node = "phone-home-display";
 			} else if (phone_type && !strcmp(phone_type, "other")) {
 				phone_node = "phone-other";
-				phone_node = "phone-other-display";
+				phone_display_node = "phone-other-display";
 			} else if (phone_type && !strcmp(phone_type, "custom1")) {
 				phone_node = "phone-custom1";
-				phone_node = "phone-custom1-display";
+				phone_display_node = "phone-custom1-display";
 			} 
 			
 			phone_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, phone_node);
