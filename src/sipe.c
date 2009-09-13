@@ -2488,12 +2488,14 @@ sipe_is_our_publication(struct sipe_account_data *sip,
  * @param uri          SIP URI with 'sip:' prefix
  * @param display_name may be modified to strip white space
  * @param email        may be modified to strip white space
+ * @param phone_number may be modified to strip white space
  */
 static void
 sipe_update_user_info(struct sipe_account_data *sip,
 		      const char *uri,
 		      char *display_name,
-		      char *email)
+		      char *email,
+		      char *phone_number)
 {
 	GSList *buddies = purple_find_buddies(sip->account, uri); /* all buddies in different groups */
 	GSList *entry = buddies;
@@ -2503,9 +2505,12 @@ sipe_update_user_info(struct sipe_account_data *sip,
 		display_name = trim(display_name);
 	if (email)
 		email = trim(email);
+	if (phone_number)
+		phone_number = trim(phone_number);
 
 	while (entry) {
 		const char *email_str;
+		const char *phone_number_str;
 		const char *server_alias;
 
 		p_buddy = entry->data;
@@ -2527,6 +2532,13 @@ sipe_update_user_info(struct sipe_account_data *sip,
 			email_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, "email");
 			if (!email_str || g_ascii_strcasecmp(email_str, email)) {
 				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "email", email);
+			}
+		}
+		
+		if (phone_number) {
+			phone_number_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, "phone");
+			if (!phone_number_str || g_ascii_strcasecmp(phone_number_str, phone_number)) {
+				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "phone", phone_number);
 			}
 		}
 
@@ -2701,7 +2713,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
 		uri = sip_uri_from_name(user);
 
-		sipe_update_user_info(sip, uri, display_name, NULL);
+		sipe_update_user_info(sip, uri, display_name, NULL, NULL);
 
 	        acknowledged= xmlnode_get_attrib(node, "acknowledged");
 		if(!g_ascii_strcasecmp(acknowledged,"false")){
@@ -4486,7 +4498,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				char* email = xmlnode_get_data(
 					xmlnode_get_child(identity, "email"));
 
-				sipe_update_user_info(sip, uri, display_name, email);
+				sipe_update_user_info(sip, uri, display_name, email, NULL);
 
 				g_free(display_name);
 				g_free(email);
@@ -4645,7 +4657,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 	display_name_node = xmlnode_get_child(pidf, "display-name");
 	if (display_name_node) {
 		char * display_name = xmlnode_get_data(display_name_node);
-		sipe_update_user_info(sip, uri, display_name, NULL);
+		sipe_update_user_info(sip, uri, display_name, NULL, NULL);
 		g_free(display_name);
 	}
 
@@ -4701,6 +4713,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
 	xmlnode *xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
 	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
+	xmlnode *xn_phone_number = xmlnode_get_child(xn_presentity, "phoneNumber");
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
 
 	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
@@ -4718,7 +4731,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	if (xn_display_name) {
 		char *display_name = g_strdup(xmlnode_get_attrib(xn_display_name, "displayName"));
 		char *email        = xn_email ? g_strdup(xmlnode_get_attrib(xn_email, "email")) : NULL;
-		sipe_update_user_info(sip, uri, display_name, email);
+		char *phone_number = xn_phone_number ? g_strdup(xmlnode_get_attrib(xn_phone_number, "number")) : NULL;
+		sipe_update_user_info(sip, uri, display_name, email, phone_number);
 		g_free(email);
 		g_free(display_name);
 	}
@@ -7091,27 +7105,28 @@ static gboolean
 process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
 	gboolean ret = TRUE;
-	char *username = (char *)trans->payload;
+	char *uri = (char *)trans->payload;
 
 	PurpleNotifyUserInfo *info = purple_notify_user_info_new();
 	PurpleBuddy *pbuddy;
 	struct sipe_buddy *sbuddy;
 	const char *alias;
 	char *server_alias = NULL;
+	char *phone_number = NULL;
 	char *email = NULL;
 	const char *device_name = NULL;
 
-	purple_debug_info("sipe", "Fetching %s's user info for %s\n", username, sip->username);
+	purple_debug_info("sipe", "Fetching %s's user info for %s\n", uri, sip->username);
 
-	pbuddy = purple_find_buddy((PurpleAccount *)sip->account, username);
+	pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri);
 	alias = purple_buddy_get_local_alias(pbuddy);
 
 	if (sip)
 	{
 		//will query buddy UA's capabilities and send answer to log
-		sipe_options_request(sip, username);
+		sipe_options_request(sip, uri);
 
-		sbuddy = g_hash_table_lookup(sip->buddies, username);
+		sbuddy = g_hash_table_lookup(sip->buddies, uri);
 		if (sbuddy)
 		{
 			device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
@@ -7132,19 +7147,17 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			server_alias = g_strdup(xmlnode_get_attrib(mrow, "displayName"));
 			purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
 			purple_notify_user_info_add_pair(info, _("Job title"), g_strdup(xmlnode_get_attrib(mrow, "title")));
-			purple_notify_user_info_add_pair(info, _("Office"), g_strdup(xmlnode_get_attrib(mrow, "office")));
-			purple_notify_user_info_add_pair(info, _("Business phone"), g_strdup(xmlnode_get_attrib(mrow, "phone")));
+			purple_notify_user_info_add_pair(info, _("Office"), g_strdup(xmlnode_get_attrib(mrow, "office")));			
+			phone_number = g_strdup(xmlnode_get_attrib(mrow, "phone"));
+			purple_notify_user_info_add_pair(info, _("Business phone"), phone_number);			
 			purple_notify_user_info_add_pair(info, _("Company"), g_strdup(xmlnode_get_attrib(mrow, "company")));
 			purple_notify_user_info_add_pair(info, _("City"), g_strdup(xmlnode_get_attrib(mrow, "city")));
 			purple_notify_user_info_add_pair(info, _("State"), g_strdup(xmlnode_get_attrib(mrow, "state")));
 			purple_notify_user_info_add_pair(info, _("Country"), g_strdup(xmlnode_get_attrib(mrow, "country")));
 			email = g_strdup(xmlnode_get_attrib(mrow, "email"));
 			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
-			if (!email || strcmp("", email)) {
-				if (!purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email")) {
-					purple_blist_node_set_string((PurpleBlistNode *)pbuddy, "email", email);
-				}
-			}
+			
+			sipe_update_user_info(sip, uri, server_alias, email, phone_number);
 		}
 		xmlnode_free(searchResults);
 	}
@@ -7181,7 +7194,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 
 	/* show a buddy's user info in a nice dialog box */
 	purple_notify_userinfo(sip->gc,        /* connection the buddy info came through */
-						 username,  /* buddy's username */
+						 uri,  /* buddy's URI */
 						 info,      /* body */
 						 NULL,      /* callback called when dialog closed */
 						 NULL);     /* userdata for callback */
