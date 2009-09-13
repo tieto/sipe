@@ -300,6 +300,11 @@ msgstr "Zu '%s' einladen"
 msgid "New chat"
 msgstr "Neuer Chat"
 
+#: ../src/sipe.c:7012
+#, c-format
+msgid "Call %s"
+msgstr "%s anrufen"
+
 #: ../src/sipe.c:6935
 msgid "Send email..."
 msgstr "Sende E-Mail..."
