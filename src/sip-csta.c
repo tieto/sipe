@@ -53,6 +53,22 @@
 "</RequestSystemStatus>"
 
 /**
+ * Sends CSTA GetCSTAFeatures request to SIP/CSTA Gateway.
+ * @param line_uri (%s) Ex.: tel:73124;phone-context=dialstring;partition=BE_BRS_INT
+ */
+#define SIP_SEND_CSTA_GET_CSTA_FEATURES \
+"<?xml version=\"1.0\"?>"\
+"<GetCSTAFeatures xmlns=\"http://www.ecma-international.org/standards/ecma-323/csta/ed3\">"\
+	"<extensions>"\
+		"<privateData>"\
+			"<private>"\
+				"<lcs:line xmlns:lcs=\"http://schemas.microsoft.com/Lcs/2005/04/RCCExtension\">%s</lcs:line>"\
+			"</private>"\
+		"</privateData>"\
+	"</extensions>"\
+"</GetCSTAFeatures>"
+
+/**
  * Sends CSTA start monitor request to SIP/CSTA Gateway.
  * @param line_uri (%s) Ex.: tel:73124;phone-context=dialstring;partition=BE_BRS_INT
  */
@@ -90,6 +106,56 @@ sip_csta_initialize(struct sipe_account_data *sip,
 	} else {
 		purple_debug_info("sipe", "sip_csta_initialize: sip->csta is already instantiated, exiting.\n");
 	}
+}
+
+/** get CSTA feautures's callback */
+static gboolean
+process_csta_get_features_response(struct sipe_account_data *sip,
+				   struct sipmsg *msg,
+				   SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	if (msg->response >= 400) {
+		purple_debug_info("sipe", "process_csta_get_features_response: Get CSTA features response is not 200. Failed to get features.\n");
+		/* @TODO notify user of failure to get CSTA features */
+		return FALSE;
+	}
+	else if (msg->response == 200) {
+		purple_debug_info("sipe", "process_csta_get_features_response:\n%s\n", msg->body ? msg->body : "");
+	}
+
+	return TRUE;
+}
+
+/** get CSTA feautures */
+static void
+sip_csta_get_features(struct sipe_account_data *sip)
+{
+	gchar *hdr;
+	gchar *body;
+
+	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
+		purple_debug_info("sipe", "sip_csta_get_features: no dialog with CSTA, exiting.\n");
+		return;
+	}
+
+	hdr = g_strdup(
+		"Content-Disposition: signal;handling=required\r\n"
+		"Content-Type: application/csta+xml\r\n");
+
+	body = g_strdup_printf(
+		SIP_SEND_CSTA_GET_CSTA_FEATURES,
+		sip->csta->line_uri);
+
+	send_sip_request(sip->gc,
+			 "INFO",
+			 sip->csta->dialog->with,
+			 sip->csta->dialog->with,
+			 hdr,
+			 body,
+			 sip->csta->dialog,
+			 process_csta_get_features_response);
+	g_free(body);
+	g_free(hdr);
 }
 
 /** Monitor Start's callback */
@@ -190,6 +256,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 		purple_debug_info("sipe", "process_invite_csta_gateway_response: gateway_status=%s\n",
 				  sip->csta->gateway_status ? sip->csta->gateway_status : "");
 		if (!g_ascii_strcasecmp(sip->csta->gateway_status, "normal")) {
+			sip_csta_get_features(sip);
 			sip_csta_monitor_start(sip);
 		} else {
 			purple_debug_info("sipe", "process_invite_csta_gateway_response: ERRIR: CSTA status is %s, won't continue.\n",
