@@ -4733,6 +4733,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		char *email        = xn_email ? g_strdup(xmlnode_get_attrib(xn_email, "email")) : NULL;
 		char *phone_number = xn_phone_number ? g_strdup(xmlnode_get_attrib(xn_phone_number, "number")) : NULL;
 		sipe_update_user_info(sip, uri, display_name, email, phone_number);
+		g_free(phone_number);
 		g_free(email);
 		g_free(display_name);
 	}
@@ -7197,9 +7198,8 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 		}
 	}
 
-	// same as server alias, do not present
-	alias = (alias && server_alias && !strcmp(alias, server_alias)) ? NULL : alias;
-	if (alias)
+	/* present alias if it differs from server alias */
+	if (alias && (!server_alias || strcmp(alias, server_alias)))
 	{
 		purple_notify_user_info_add_pair(info, _("Alias"), alias);
 	}
