@@ -110,7 +110,7 @@ sip_csta_initialize(struct sipe_account_data *sip,
 
 /** get CSTA feautures's callback */
 static gboolean
-process_csta_get_features_response(struct sipe_account_data *sip,
+process_csta_get_features_response(SIPE_UNUSED_PARAMETER struct sipe_account_data *sip,
 				   struct sipmsg *msg,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
