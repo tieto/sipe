@@ -2265,7 +2265,7 @@ sipe_process_provisioning(struct sipe_account_data *sip,
 			const gchar *server = xmlnode_get_attrib(node, "server");
 			purple_debug_info("sipe", "sipe_process_provisioning: line_uri=%s server=%s\n", line_uri, server);
 			sip_csta_open(sip, line_uri, server);
-		}		
+		}
 	}
 	xmlnode_free(xn_provision);
 }
@@ -2534,7 +2534,7 @@ sipe_update_user_info(struct sipe_account_data *sip,
 				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "email", email);
 			}
 		}
-		
+
 		if (phone_number && strlen(phone_number) > 0) {
 			phone_number_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, "phone");
 			if (!phone_number_str || g_ascii_strcasecmp(phone_number_str, phone_number)) {
@@ -4074,10 +4074,10 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	}
 
 	/* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
-	
+
 	/* This used only in 2005 official client, not 2007 or Reuters.
 	   Commented out as interfering with audit of messages which only is applied to regular MESSAGEs.
-	 
+
 	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
 	if (ms_text_format) {
 		if (!strncmp(ms_text_format, "text/plain", 10) || !strncmp(ms_text_format, "text/html", 9)) {
@@ -4096,7 +4096,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		}
 	}
 	*/
-	
+
 	g_free(from);
 
 	sipmsg_add_header(msg, "Supported", "com.microsoft.rtc-multiparty");
@@ -6325,7 +6325,7 @@ static void sipe_close(PurpleConnection *gc)
 		/* leave all conversations */
 		sipe_session_close_all(sip);
 		sipe_session_remove_all(sip);
-		
+
 		if (sip->csta) {
 			sip_csta_close(sip);
 		}
@@ -7038,7 +7038,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
-	
+
 	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");
 	if (email) {
 		act = purple_menu_action_new(_("Send email..."),
@@ -7159,10 +7159,10 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	PurpleBuddy *pbuddy;
 	struct sipe_buddy *sbuddy;
 	const char *alias;
+	char *device_name = NULL;
 	char *server_alias = NULL;
 	char *phone_number = NULL;
 	char *email = NULL;
-	const char *device_name = NULL;
 
 	purple_debug_info("sipe", "Fetching %s's user info for %s\n", uri, sip->username);
 
@@ -7193,19 +7193,22 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			purple_debug_info("sipe", "process_get_info_response: no parseable searchResults\n");
 		} else if ((mrow = xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL))) {
 			server_alias = g_strdup(xmlnode_get_attrib(mrow, "displayName"));
-			purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
-			purple_notify_user_info_add_pair(info, _("Job title"), g_strdup(xmlnode_get_attrib(mrow, "title")));
-			purple_notify_user_info_add_pair(info, _("Office"), g_strdup(xmlnode_get_attrib(mrow, "office")));			
-			phone_number = g_strdup(xmlnode_get_attrib(mrow, "phone"));
-			purple_notify_user_info_add_pair(info, _("Business phone"), phone_number);			
-			purple_notify_user_info_add_pair(info, _("Company"), g_strdup(xmlnode_get_attrib(mrow, "company")));
-			purple_notify_user_info_add_pair(info, _("City"), g_strdup(xmlnode_get_attrib(mrow, "city")));
-			purple_notify_user_info_add_pair(info, _("State"), g_strdup(xmlnode_get_attrib(mrow, "state")));
-			purple_notify_user_info_add_pair(info, _("Country"), g_strdup(xmlnode_get_attrib(mrow, "country")));
 			email = g_strdup(xmlnode_get_attrib(mrow, "email"));
-			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
-			
+			phone_number = g_strdup(xmlnode_get_attrib(mrow, "phone"));
+
+			/* trims its parameters, so call first */
 			sipe_update_user_info(sip, uri, server_alias, email, phone_number);
+
+			purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
+			purple_notify_user_info_add_pair(info, _("Job title"), xmlnode_get_attrib(mrow, "title"));
+			purple_notify_user_info_add_pair(info, _("Office"), xmlnode_get_attrib(mrow, "office"));
+			purple_notify_user_info_add_pair(info, _("Business phone"), phone_number);
+			purple_notify_user_info_add_pair(info, _("Company"), xmlnode_get_attrib(mrow, "company"));
+			purple_notify_user_info_add_pair(info, _("City"), xmlnode_get_attrib(mrow, "city"));
+			purple_notify_user_info_add_pair(info, _("State"), xmlnode_get_attrib(mrow, "state"));
+			purple_notify_user_info_add_pair(info, _("Country"), xmlnode_get_attrib(mrow, "country"));
+			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
+
 		}
 		xmlnode_free(searchResults);
 	}
@@ -7240,11 +7243,16 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	}
 
 	/* show a buddy's user info in a nice dialog box */
-	purple_notify_userinfo(sip->gc,        /* connection the buddy info came through */
-						 uri,  /* buddy's URI */
-						 info,      /* body */
-						 NULL,      /* callback called when dialog closed */
-						 NULL);     /* userdata for callback */
+	purple_notify_userinfo(sip->gc,   /* connection the buddy info came through */
+			       uri,       /* buddy's URI */
+			       info,      /* body */
+			       NULL,      /* callback called when dialog closed */
+			       NULL);     /* userdata for callback */
+
+	g_free(phone_number);
+	g_free(server_alias);
+	g_free(email);
+	g_free(device_name);
 
 	return ret;
 }
