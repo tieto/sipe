@@ -72,6 +72,7 @@
 #include "sipe.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
+#include "sip-csta.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
@@ -2246,6 +2247,27 @@ static void sipe_process_provisioning_v2(struct sipe_account_data *sip, struct s
 		}
 	}
 	xmlnode_free(xn_provision_group_list);
+}
+
+/** for 2005 system */
+static void
+sipe_process_provisioning(struct sipe_account_data *sip,
+			  struct sipmsg *msg)
+{
+	xmlnode *xn_provision;
+	xmlnode *node;
+
+	xn_provision = xmlnode_from_str(msg->body, msg->bodylen);
+	if ((node = xmlnode_get_child(xn_provision, "user"))) {
+		purple_debug_info("sipe", "sipe_process_provisioning: uri=%s\n", xmlnode_get_attrib(node, "uri"));
+		if ((node = xmlnode_get_child(node, "line"))) {
+			const gchar *line_uri = xmlnode_get_attrib(node, "uri");
+			const gchar *server = xmlnode_get_attrib(node, "server");
+			purple_debug_info("sipe", "sipe_process_provisioning: line_uri=%s server=%s\n", line_uri, server);
+			sip_csta_open(sip, line_uri, server);
+		}		
+	}
+	xmlnode_free(xn_provision);
 }
 
 static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipmsg *msg)
@@ -4892,6 +4914,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	{
 		sipe_process_provisioning_v2(sip, msg);
 	}
+	else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-provisioning"))
+	{
+		sipe_process_provisioning(sip, msg);
+	}
 
 	if (!subscription_state || strstr(subscription_state, "active"))
 	{
@@ -6262,6 +6288,10 @@ static void sipe_close(PurpleConnection *gc)
 		/* leave all conversations */
 		sipe_session_close_all(sip);
 		sipe_session_remove_all(sip);
+		
+		if (sip->csta) {
+			sip_csta_close(sip);
+		}
 
 		if (PURPLE_CONNECTION_IS_CONNECTED(sip->gc)) {
 			/* unsubscribe all */

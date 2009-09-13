@@ -29,9 +29,12 @@
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include "debug.h"
 
+#include "sipe.h"
+#include "sipe-dialog.h"
+#include "sip-csta.h"
+#include "sipe-utils.h"
 
 /**
  * Sends CSTA RequestSystemStatus request to SIP/CSTA Gateway.
@@ -73,6 +76,114 @@
     "<calledDirectoryNumber>%s</calledDirectoryNumber>"\
     "<autoOriginate>doNotPrompt</autoOriginate>"\
 "</MakeCall>"
+
+
+static void
+sip_csta_initialize(struct sipe_account_data *sip,
+		    const gchar *line_uri,
+		    const gchar *server)
+{
+	if(!sip->csta) {
+		sip->csta = g_new0(struct sip_csta, 1);
+		sip->csta->line_uri = g_strdup(line_uri);
+		sip->csta->gateway_uri = g_strdup(server);
+	} else {
+		purple_debug_info("sipe", "sip_csta_initialize: sip->csta is already instantiated, exiting.\n");
+	}
+}
+
+/** Creates long living dialog with SIP/CSTA Gateway */
+/*  should be re-entrant as require to sent re-invites every 10 min to refresh */
+static void
+sipe_invite_csta_gateway(struct sipe_account_data *sip)
+{
+	gchar *hdr;
+	gchar *contact;
+	gchar *body;
+
+	if (!sip->csta) {
+		purple_debug_info("sipe", "sipe_invite_csta_gateway: sip->csta is uninitialized, exiting\n");
+		return;
+	}
+
+	if(!sip->csta->dialog) {
+		sip->csta->dialog = g_new0(struct sip_dialog, 1);
+		sip->csta->dialog->callid = gencallid();
+		sip->csta->dialog->with = g_strdup(sip->csta->gateway_uri);
+	}
+	if (!(sip->csta->dialog->ourtag)) {
+		sip->csta->dialog->ourtag = gentag();
+	}
+
+	contact = get_contact(sip);
+	hdr = g_strdup_printf(
+		"Contact: %s\r\n"
+		"Content-Disposition: signal;handling=required\r\n"
+		"Content-Type: application/csta+xml\r\n",
+		contact);
+	g_free(contact);
+
+	body = g_strdup_printf(
+		SIP_SEND_CSTA_REQUEST_SYSTEM_STATUS,
+		sip->csta->line_uri);
+
+	sip->csta->dialog->outgoing_invite = send_sip_request(sip->gc,
+							      "INVITE",
+							      sip->csta->dialog->with,
+							      sip->csta->dialog->with,
+							      hdr,
+							      body,
+							      sip->csta->dialog,
+							      NULL /*process_invite_csta_gateway_response*/);
+	g_free(body);
+	g_free(hdr);
+}
+
+void
+sip_csta_open(struct sipe_account_data *sip,
+	      const gchar *line_uri,
+	      const gchar *server)
+{
+	sip_csta_initialize(sip, line_uri, server);
+	sipe_invite_csta_gateway(sip);
+}
+
+static void
+sip_csta_free(struct sip_csta *csta)
+{
+	if (!csta) return;
+	
+	g_free(csta->line_uri);
+	g_free(csta->gateway_uri);
+	
+	sipe_dialog_free(csta->dialog);
+	
+	g_free(csta->gateway_status);
+	g_free(csta->line_status);
+	g_free(csta->called_uri);
+	
+	g_free(csta);
+}
+
+void
+sip_csta_close(struct sipe_account_data *sip)
+{
+	/* @TODO stop monitor */
+	
+	if (sip->csta && sip->csta->dialog) {
+		/* send BYE to CSTA */
+		send_sip_request(sip->gc,
+				 "BYE",
+				 sip->csta->dialog->with,
+				 sip->csta->dialog->with,
+				 NULL,
+				 NULL,
+				 sip->csta->dialog,
+				 NULL);
+	}
+	
+	sip_csta_free(sip->csta);
+}
 
 
 

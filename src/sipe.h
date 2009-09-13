@@ -133,6 +133,7 @@ struct sipe_account_data {
 	int registerstatus; /* 0 nothing, 1 first registration send, 2 auth received, 3 registered */
 	struct sip_auth registrar;
 	struct sip_auth proxy;
+	struct sip_csta *csta; /* For RCC - Remote Call Control */
 	gboolean reregister_set; /* whether reregister timer set */
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed; /* whether subscribed to events, except buddies presence */
