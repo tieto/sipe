@@ -92,6 +92,66 @@ sip_csta_initialize(struct sipe_account_data *sip,
 	}
 }
 
+/** Monitor Start's callback */
+static gboolean
+process_csta_monitor_start_response(struct sipe_account_data *sip,
+				    struct sipmsg *msg,
+				    SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	if (!sip->csta) {
+		purple_debug_info("sipe", "process_csta_monitor_start_response: sip->csta is not initializzed, exiting\n");
+		return FALSE;
+	}
+
+	if (msg->response >= 400) {
+		purple_debug_info("sipe", "process_csta_monitor_start_response: Monitor Start response is not 200. Failed to start monitor.\n");
+		/* @TODO notify user of failure to start monitor */
+		return FALSE;
+	}
+	else if (msg->response == 200) {
+		xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
+		g_free(sip->csta->monitor_cross_ref_id);
+		sip->csta->monitor_cross_ref_id = xmlnode_get_data(xmlnode_get_child(xml, "monitorCrossRefID"));
+		purple_debug_info("sipe", "process_csta_monitor_start_response: monitor_cross_ref_id=%s\n",
+				  sip->csta->monitor_cross_ref_id ? sip->csta->monitor_cross_ref_id : "");
+		xmlnode_free(xml);
+	}
+
+	return TRUE;
+}
+
+/** Monitor Start */
+static void
+sip_csta_monitor_start(struct sipe_account_data *sip)
+{
+	gchar *hdr;
+	gchar *body;
+
+	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
+		purple_debug_info("sipe", "sip_csta_monitor_start: no dialog with CSTA, exiting.\n");
+		return;
+	}
+
+	hdr = g_strdup(
+		"Content-Disposition: signal;handling=required\r\n"
+		"Content-Type: application/csta+xml\r\n");
+
+	body = g_strdup_printf(
+		SIP_SEND_CSTA_MONITOR_START,
+		sip->csta->line_uri);
+
+	send_sip_request(sip->gc,
+			 "INFO",
+			 sip->csta->dialog->with,
+			 sip->csta->dialog->with,
+			 hdr,
+			 body,
+			 sip->csta->dialog,
+			 process_csta_monitor_start_response);
+	g_free(body);
+	g_free(hdr);
+}
+
 /** a callback */
 static gboolean
 process_invite_csta_gateway_response(struct sipe_account_data *sip,
@@ -130,7 +190,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 		purple_debug_info("sipe", "process_invite_csta_gateway_response: gateway_status=%s\n",
 				  sip->csta->gateway_status ? sip->csta->gateway_status : "");
 		if (!g_ascii_strcasecmp(sip->csta->gateway_status, "normal")) {
-			//sip_csta_monitor_start(sip);
+			sip_csta_monitor_start(sip);
 		} else {
 			purple_debug_info("sipe", "process_invite_csta_gateway_response: ERRIR: CSTA status is %s, won't continue.\n",
 					  sip->csta->gateway_status);
@@ -209,6 +269,7 @@ sip_csta_free(struct sip_csta *csta)
 	sipe_dialog_free(csta->dialog);
 	
 	g_free(csta->gateway_status);
+	g_free(csta->monitor_cross_ref_id);
 	g_free(csta->line_status);
 	g_free(csta->called_uri);
 	

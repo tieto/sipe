@@ -29,6 +29,7 @@ struct sip_csta {
 	struct sip_dialog *dialog;
 
 	gchar *gateway_status;
+	gchar *monitor_cross_ref_id;
 	gchar *line_status;
 	/** destination tel: URI */
 	gchar *called_uri;
