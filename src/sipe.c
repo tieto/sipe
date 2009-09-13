@@ -2650,6 +2650,28 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version_int);
 		}
 		g_free(key);
+		
+		/* userProperties published by server from AD */
+		if (!sip->csta && !strcmp(name, "userProperties")) {
+			xmlnode *line;
+			/* line, for Remote Call Control (RCC) */
+			for (line = xmlnode_get_descendant(node, "userProperties", "lines", "line", NULL); line; line = xmlnode_get_next_twin(line)) {
+				const gchar *line_server = xmlnode_get_attrib(line, "lineServer");
+				const gchar *line_type = xmlnode_get_attrib(line, "lineType");
+				gchar *line_uri;
+				
+				if (!line_server || (strcmp(line_type, "Rcc") && strcmp(line_type, "Dual"))) continue;
+				
+				line_uri = xmlnode_get_data(line);
+				if (line_uri) {
+					purple_debug_info("sipe", "sipe_process_roaming_self: line_uri=%s server=%s\n", line_uri, line_server);
+					sip_csta_open(sip, line_uri, line_server);
+				}
+				g_free(line_uri);
+				
+				break;
+			}
+		}
 	}
 	purple_debug_info("sipe", "sipe_process_roaming_self: sip->our_publications size=%d\n",
 			  sip->our_publications ? (int) g_hash_table_size(sip->our_publications) : -1);
