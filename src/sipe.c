@@ -2521,21 +2521,21 @@ sipe_update_user_info(struct sipe_account_data *sip,
 		}
 
 		server_alias = purple_buddy_get_server_alias(p_buddy);
-		if (display_name &&
+		if (display_name && strlen(display_name) > 0 &&
 			( (server_alias && strcmp(display_name, server_alias))
 				|| !server_alias || strlen(server_alias) == 0 )
 			) {
 			purple_blist_server_alias_buddy(p_buddy, display_name);
 		}
 
-		if (email) {
+		if (email && strlen(email) > 0) {
 			email_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, "email");
 			if (!email_str || g_ascii_strcasecmp(email_str, email)) {
 				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "email", email);
 			}
 		}
 		
-		if (phone_number) {
+		if (phone_number && strlen(phone_number) > 0) {
 			phone_number_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, "phone");
 			if (!phone_number_str || g_ascii_strcasecmp(phone_number_str, phone_number)) {
 				purple_blist_node_set_string((PurpleBlistNode *)p_buddy, "phone", phone_number);
@@ -6875,6 +6875,20 @@ sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, const char *chat_name)
 }
 
 static void
+sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy)
+{
+	struct sipe_account_data *sip = buddy->account->gc->proto_data;
+	const gchar *phone;
+	purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: buddy->name=%s\n", buddy->name);
+
+	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone");
+	if (phone) {
+		purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: going to call number: %s\n", phone);
+		sip_csta_make_call(sip, phone);
+	}
+}
+
+static void
 sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 {
 	const gchar *email;
@@ -6934,6 +6948,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	GList *menu_groups = NULL;
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	const char *email;
+	const char *phone;
 	gchar *self = sip_uri_self(sip);
 
 	SIPE_SESSION_FOREACH {
@@ -6991,6 +7006,16 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	menu = g_list_prepend(menu, act);
 
 
+	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone");
+	if (sip->csta && phone) {
+		gchar *label = g_strdup_printf(_("Call %s"), phone);
+		act = purple_menu_action_new(label,
+					     PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb),
+					     NULL, NULL);
+		g_free(label);
+		menu = g_list_prepend(menu, act);
+	}
+	
 	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");
 	if (email) {
 		act = purple_menu_action_new(_("Send email..."),
