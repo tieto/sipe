@@ -81,6 +81,16 @@
 "</MonitorStart>"
 
 /**
+ * Sends CSTA stop monitor request to SIP/CSTA Gateway.
+ * @param monitor_cross_ref_id (%s) Ex.: 99fda87c
+ */
+#define SIP_SEND_CSTA_MONITOR_STOP \
+"<?xml version=\"1.0\"?>"\
+"<MonitorStop xmlns=\"http://www.ecma-international.org/standards/ecma-323/csta/ed3\">"\
+	"<monitorCrossRefID>%s</monitorCrossRefID>"\
+"</MonitorStop>"
+
+/**
  * Sends CSTA make call request to SIP/CSTA Gateway.
  * @param line_uri (%s) Ex.: tel:73124;phone-context=dialstring;partition=BE_BRS_INT
  * @param to_tel_uri (%s) Ex.: tel:+3222220220
@@ -218,6 +228,38 @@ sip_csta_monitor_start(struct sipe_account_data *sip)
 	g_free(hdr);
 }
 
+/** Monitor Stop */
+static void
+sip_csta_monitor_stop(struct sipe_account_data *sip)
+{
+	gchar *hdr;
+	gchar *body;
+
+	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
+		purple_debug_info("sipe", "sip_csta_monitor_stop: no dialog with CSTA, exiting.\n");
+		return;
+	}
+
+	hdr = g_strdup(
+		"Content-Disposition: signal;handling=required\r\n"
+		"Content-Type: application/csta+xml\r\n");
+
+	body = g_strdup_printf(
+		SIP_SEND_CSTA_MONITOR_STOP,
+		sip->csta->monitor_cross_ref_id);
+
+	send_sip_request(sip->gc,
+			 "INFO",
+			 sip->csta->dialog->with,
+			 sip->csta->dialog->with,
+			 hdr,
+			 body,
+			 sip->csta->dialog,
+			 NULL);
+	g_free(body);
+	g_free(hdr);
+}
+
 /** a callback */
 static gboolean
 process_invite_csta_gateway_response(struct sipe_account_data *sip,
@@ -347,7 +389,9 @@ sip_csta_free(struct sip_csta *csta)
 void
 sip_csta_close(struct sipe_account_data *sip)
 {
-	/* @TODO stop monitor */
+	if (sip->csta) {
+		sip_csta_monitor_stop(sip);
+	}
 	
 	if (sip->csta && sip->csta->dialog) {
 		/* send BYE to CSTA */
