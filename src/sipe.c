@@ -1750,6 +1750,11 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 	if (buddy && group) {
 		struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 
+		/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
+		gchar *buddy_name = g_ascii_strdown(buddy->name, -1);
+		purple_blist_rename_buddy(buddy, buddy_name);
+		g_free(buddy_name);
+
 		/* Prepend sip: if needed */
 		if (strncmp("sip:", buddy->name, 4)) {
 			gchar *buf = sip_uri_from_name(buddy->name);
@@ -2040,25 +2045,31 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 
 		/* Parse contacts */
 		for (item = xmlnode_get_child(isc, "contact"); item; item = xmlnode_get_next_twin(item)) {
-			gchar * uri = g_strdup(xmlnode_get_attrib(item, "uri"));
-			gchar * name = g_strdup(xmlnode_get_attrib(item, "name"));
-			gchar * groups = g_strdup(xmlnode_get_attrib(item, "groups"));
-			gchar * buddy_name = sip_uri_from_name(uri);
-			gchar **item_groups;
-			struct sipe_group *group = NULL;
+			const gchar *uri = xmlnode_get_attrib(item, "uri");
+			const gchar *name = xmlnode_get_attrib(item, "name");
+			gchar *buddy_name;
 			struct sipe_buddy *buddy = NULL;
+			gchar *tmp;
+			gchar **item_groups;
 			int i = 0;
 
-			// assign to group Other Contacts if nothing else received
-			if(!groups || !strcmp("", groups) ) {
-				group = sipe_group_find_by_name(sip, _("Other Contacts"));
-				groups = group ? g_strdup_printf("%d", group->id) : "1";
-			}
+			/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
+			tmp = sip_uri_from_name(uri);
+			buddy_name = g_ascii_strdown(tmp, -1);
+			g_free(tmp);
 
-			item_groups = g_strsplit(groups, " ", 0);
+			/* assign to group Other Contacts if nothing else received */
+			tmp = g_strdup(xmlnode_get_attrib(item, "groups"));
+			if(!tmp || !strcmp("", tmp) ) {
+				g_free(tmp);
+				struct sipe_group *group = sipe_group_find_by_name(sip, _("Other Contacts"));
+				tmp = group ? g_strdup_printf("%d", group->id) : g_strdup("1");
+			}
+			item_groups = g_strsplit(tmp, " ", 0);
+			g_free(tmp);
 
 			while (item_groups[i]) {
-				group = sipe_group_find_by_id(sip, g_ascii_strtod(item_groups[i], NULL));
+				struct sipe_group *group = sipe_group_find_by_id(sip, g_ascii_strtod(item_groups[i], NULL));
 
 				// If couldn't find the right group for this contact, just put them in the first group we have
 				if (group == NULL && g_slist_length(sip->groups) > 0) {
@@ -2070,11 +2081,15 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 					if (!b){
 						b = purple_buddy_new(sip->account, buddy_name, uri);
 						purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
+
+						purple_debug_info("sipe", "Created new buddy %s with alias %s\n", buddy_name, uri);
 					}
 
 					if (!g_ascii_strcasecmp(uri, purple_buddy_get_alias(b))) {
 						if (name != NULL && strlen(name) != 0) {
 							purple_blist_alias_buddy(b, name);
+
+							purple_debug_info("sipe", "Replaced buddy %s alias with %s\n", buddy_name, name);
 						}
 					}
 
@@ -2095,10 +2110,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 				i++;
 			} // while, contact groups
 			g_strfreev(item_groups);
-			g_free(groups);
-			g_free(name);
 			g_free(buddy_name);
-			g_free(uri);
 
 		} // for, contacts
 
@@ -2519,10 +2531,8 @@ sipe_update_user_info(struct sipe_account_data *sip,
 		      const char *property_name,
 		      char *property_value)
 {
-	GSList *buddies = purple_find_buddies(sip->account, uri); /* all buddies in different groups */
-	GSList *entry = buddies;
-	PurpleBuddy *p_buddy;
-	
+	GSList *entry = purple_find_buddies(sip->account, uri); /* all buddies in different groups */
+
 	if (!property_name || strlen(property_name) == 0) return;
 
 	if (property_value)
@@ -2531,8 +2541,7 @@ sipe_update_user_info(struct sipe_account_data *sip,
 	while (entry) {
 		const char *prop_str;
 		const char *server_alias;
-
-		p_buddy = entry->data;
+		PurpleBuddy *p_buddy = entry->data;
 
 		/* for Display Name */
 		if (!strcmp(property_name, ALIAS_PROP)) {
@@ -2550,13 +2559,13 @@ sipe_update_user_info(struct sipe_account_data *sip,
 			}
 		}
 		/* for other properties */
-		else {		
+		else {
 			if (property_value && strlen(property_value) > 0) {
 				prop_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, property_name);
 				if (!prop_str || g_ascii_strcasecmp(prop_str, property_value)) {
 					purple_blist_node_set_string((PurpleBlistNode *)p_buddy, property_name, property_value);
 				}
-			}		
+			}
 		}
 
 		entry = entry->next;
@@ -2667,7 +2676,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version_int);
 		}
 		g_free(key);
-		
+
 		/* userProperties published by server from AD */
 		if (!sip->csta && !strcmp(name, "userProperties")) {
 			xmlnode *line;
@@ -2676,16 +2685,16 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				const gchar *line_server = xmlnode_get_attrib(line, "lineServer");
 				const gchar *line_type = xmlnode_get_attrib(line, "lineType");
 				gchar *line_uri;
-				
+
 				if (!line_server || (strcmp(line_type, "Rcc") && strcmp(line_type, "Dual"))) continue;
-				
+
 				line_uri = xmlnode_get_data(line);
 				if (line_uri) {
 					purple_debug_info("sipe", "sipe_process_roaming_self: line_uri=%s server=%s\n", line_uri, line_server);
 					sip_csta_open(sip, line_uri, line_server);
 				}
 				g_free(line_uri);
-				
+
 				break;
 			}
 		}
@@ -4588,7 +4597,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				const char *phone_type = xmlnode_get_attrib(node, "type");
 				char* phone = xmlnode_get_data(xmlnode_get_child(node, "uri"));
 				char* phone_display_string = xmlnode_get_data(xmlnode_get_child(node, "displayString"));
-		
+
 				gchar *phone_node = PHONE_PROP; /* work phone by default */
 				gchar *phone_display_node = PHONE_DISPLAY_PROP; /* work phone by default */
 				if (phone_type && !strcmp(phone_type, "mobile")) {
@@ -4604,10 +4613,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					phone_node = PHONE_CUSTOM1_PROP;
 					phone_display_node = PHONE_CUSTOM1_DISPLAY_PROP;
 				}
-				
+
 				sipe_update_user_info(sip, uri, phone_node, phone);
 				sipe_update_user_info(sip, uri, phone_display_node, phone_display_string);
-				
+
 				g_free(phone);
 				g_free(phone_display_string);
 			}
@@ -4622,7 +4631,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					char* state = xmlnode_get_data(xmlnode_get_child(node, "state"));
 					char* zipcode = xmlnode_get_data(xmlnode_get_child(node, "zipcode"));
 					char* country_code = xmlnode_get_data(xmlnode_get_child(node, "countryCode"));
-					
+
 					sipe_update_user_info(sip, uri, ADDRESS_STREET_PROP, street);
 					sipe_update_user_info(sip, uri, ADDRESS_CITY_PROP, city);
 					sipe_update_user_info(sip, uri, ADDRESS_STATE_PROP, state);
@@ -4634,7 +4643,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					g_free(state);
 					g_free(zipcode);
 					g_free(country_code);
-				
+
 					break;
 				}
 			}
@@ -4872,7 +4881,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
 		sipe_update_user_info(sip, uri, EMAIL_PROP, email);
 		sipe_update_user_info(sip, uri, PHONE_PROP, phone_number);
-		
+
 		g_free(phone_number);
 		g_free(email);
 		g_free(display_name);
@@ -6804,7 +6813,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 
-	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: buddy->name=%s\n", buddy->name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_new_cb: buddy->name=%s\n", buddy->name);
 
 	/* 2007+ conference */
 	if (sip->ocs2007)
@@ -6900,7 +6909,7 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 				sipe_refer(sip, session, who);
 			}
 		} else {
-			purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: no RM available\n");
+			purple_debug_info("sipe", "sipe_buddy_menu_chat_invite: no RM available\n");
 
 			session->pending_invite_queue = slist_insert_unique_sorted(
 				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
@@ -6993,8 +7002,8 @@ sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy, const char *chat_name)
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	struct sip_session *session;
 
-	purple_debug_info("sipe", "sipe_buddy_menu_chat_make_leader_cb: buddy->name=%s\n", buddy->name);
-	purple_debug_info("sipe", "sipe_buddy_menu_chat_make_leader_cb: chat_name=%s\n", chat_name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_remove_cb: buddy->name=%s\n", buddy->name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_remove_cb: chat_name=%s\n", chat_name);
 
 	session = sipe_session_find_chat_by_name(sip, chat_name);
 
@@ -7002,13 +7011,13 @@ sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy, const char *chat_name)
 }
 
 static void
-sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, const char *chat_name)
+sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, char *chat_name)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	struct sip_session *session;
 
-	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: buddy->name=%s\n", buddy->name);
-	purple_debug_info("sipe", "sipe_buddy_menu_chat_cb: chat_name=%s\n", chat_name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: buddy->name=%s\n", buddy->name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: chat_name=%s\n", chat_name);
 
 	session = sipe_session_find_chat_by_name(sip, chat_name);
 
@@ -7092,7 +7101,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	gchar *self = sip_uri_self(sip);
 
 	SIPE_SESSION_FOREACH {
-		if (strcmp(self, buddy->name) && session->chat_name && session->conv)
+		if (g_ascii_strcasecmp(self, buddy->name) && session->chat_name && session->conv)
 		{
 			if (purple_conv_chat_find_user(PURPLE_CONV_CHAT(session->conv), buddy->name))
 			{
@@ -7154,7 +7163,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
-	
+
 	/* mobile phone */
 	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-mobile");
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-mobile-display");
@@ -7164,7 +7173,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
-	
+
 	/* home phone */
 	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-home");
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-home-display");
@@ -7174,7 +7183,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
-	
+
 	/* other phone */
 	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-other");
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-other-display");
@@ -7184,7 +7193,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
-	
+
 	/* custom1 phone */
 	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-custom1");
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-custom1-display");
@@ -7264,11 +7273,12 @@ sipe_chat_menu(PurpleChat *chat)
 	GList *menu = NULL;
 	struct sipe_account_data *sip = chat->account->gc->proto_data;
 	struct sip_session *session;
-	gchar *self = sip_uri_self(sip);
+	gchar *self;
 
 	session = sipe_session_find_chat_by_name(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
 	if (!session) return NULL;
 
+	self = sip_uri_self(sip);
 	flags_us = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), self);
 
 	if (session->focus_uri
@@ -7319,7 +7329,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	char *server_alias = NULL;
 	char *phone_number = NULL;
 	char *email = NULL;
-	char *site;
+	const char *site;
 
 	purple_debug_info("sipe", "Fetching %s's user info for %s\n", uri, sip->username);
 
@@ -7362,7 +7372,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 				sipe_update_user_info(sip, uri, ALIAS_PROP, server_alias);
 				sipe_update_user_info(sip, uri, EMAIL_PROP, email);
 				sipe_update_user_info(sip, uri, PHONE_PROP, phone_number);
-			}			
+			}
 
 			if (server_alias && strlen(server_alias) > 0) {
 				purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
@@ -7372,7 +7382,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			}
 			if ((value = xmlnode_get_attrib(mrow, "office")) && strlen(value) > 0) {
 				purple_notify_user_info_add_pair(info, _("Office"), value);
-			}			
+			}
 			if (phone_number && strlen(phone_number) > 0) {
 				purple_notify_user_info_add_pair(info, _("Business phone"), phone_number);
 			}
@@ -7419,8 +7429,8 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
 		}
 	}
-	
-	site = g_strdup(purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "site"));
+
+	site = purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "site");
 	if (site) {
 		purple_notify_user_info_add_pair(info, _("Site"), site);
 	}
