@@ -4557,7 +4557,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				g_free(email);
 			}
 			/* phone */
-			for (node = xmlnode_get_child(xn_category, "phone"); node; node = xmlnode_get_next_twin(node)) {
+			for (node = xmlnode_get_descendant(xn_category, "contactCard", "phone", NULL);
+			     node;
+			     node = xmlnode_get_next_twin(node))
+			{
 				const char *phone_type = xmlnode_get_attrib(node, "type");
 				char* phone = xmlnode_get_data(xmlnode_get_child(node, "uri"));
 				char* phone_display_string = xmlnode_get_data(xmlnode_get_child(node, "displayString"));
