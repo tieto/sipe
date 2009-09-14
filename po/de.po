@@ -300,10 +300,30 @@ msgstr "Zu '%s' einladen"
 msgid "New chat"
 msgstr "Neuer Chat"
 
-#: ../src/sipe.c:7012
+#: ../src/sipe.c:7162
 #, c-format
-msgid "Call %s"
-msgstr "%s anrufen"
+msgid "Work %s"
+msgstr "Telefon (Arbeit) %s"
+
+#: ../src/sipe.c:7172
+#, c-format
+msgid "Mobile %s"
+msgstr "Telefon (Handy) %s"
+
+#: ../src/sipe.c:7182
+#, c-format
+msgid "Home %s"
+msgstr "Telefon (Privat) %s"
+
+#: ../src/sipe.c:7192
+#, c-format
+msgid "Other %s"
+msgstr "Telefon %s"
+
+#: ../src/sipe.c:7202
+#, c-format
+msgid "Custom1 %s"
+msgstr "Telefon (benutzerdefiniert) %s"
 
 #: ../src/sipe.c:6935
 msgid "Send email..."
@@ -352,6 +372,10 @@ msgstr "E-Mail Adresse"
 #: ../src/sipe.c:7119
 msgid "Alias"
 msgstr "Alias"
+
+#: ../src/sipe.c:7437
+msgid "Site"
+msgstr "Standort"
 
 #: ../src/sipe.c:7132
 msgid "Device"
