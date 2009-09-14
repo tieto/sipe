@@ -2561,9 +2561,9 @@ sipe_update_user_info(struct sipe_account_data *sip,
 		/* for other properties */
 		else {
 			if (property_value && strlen(property_value) > 0) {
-				prop_str = purple_blist_node_get_string((PurpleBlistNode *)p_buddy, property_name);
+				prop_str = purple_blist_node_get_string(&p_buddy->node, property_name);
 				if (!prop_str || g_ascii_strcasecmp(prop_str, property_value)) {
-					purple_blist_node_set_string((PurpleBlistNode *)p_buddy, property_name, property_value);
+					purple_blist_node_set_string(&p_buddy->node, property_name, property_value);
 				}
 			}
 		}
@@ -4598,8 +4598,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				char* phone = xmlnode_get_data(xmlnode_get_child(node, "uri"));
 				char* phone_display_string = xmlnode_get_data(xmlnode_get_child(node, "displayString"));
 
-				gchar *phone_node = PHONE_PROP; /* work phone by default */
-				gchar *phone_display_node = PHONE_DISPLAY_PROP; /* work phone by default */
+				const char *phone_node = PHONE_PROP; /* work phone by default */
+				const char *phone_display_node = PHONE_DISPLAY_PROP; /* work phone by default */
 				if (phone_type && !strcmp(phone_type, "mobile")) {
 					phone_node = PHONE_MOBILE_PROP;
 					phone_display_node = PHONE_MOBILE_DISPLAY_PROP;
@@ -6775,9 +6775,9 @@ purple_blist_add_buddy_clone(PurpleGroup * group, PurpleBuddy * buddy)
 		purple_blist_server_alias_buddy(clone, server_alias);
 	}
 
-	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");
+	email = purple_blist_node_get_string(&buddy->node, EMAIL_PROP);
 	if (email) {
-		purple_blist_node_set_string((PurpleBlistNode *)clone, "email", email);
+		purple_blist_node_set_string(&clone->node, EMAIL_PROP, email);
 	}
 
 	purple_presence_set_status_active(purple_buddy_get_presence(clone), purple_status_get_id(status), TRUE);
@@ -7042,7 +7042,7 @@ sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 	const gchar *email;
 	purple_debug_info("sipe", "sipe_buddy_menu_send_email_cb: buddy->name=%s\n", buddy->name);
 
-	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");
+	email = purple_blist_node_get_string(&buddy->node, EMAIL_PROP);
 	if (email)
 	{
 		char *mailto = g_strdup_printf("mailto:%s", email);
@@ -7117,7 +7117,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_name);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_make_leader_cb),
-								     g_strdup(session->chat_name), NULL);
+								     session->chat_name, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -7128,7 +7128,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 					gchar *label = g_strdup_printf(_("Remove from '%s'"), session->chat_name);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_remove_cb),
-								     g_strdup(session->chat_name), NULL);
+								     session->chat_name, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -7141,7 +7141,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 					gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_name);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
-								     g_strdup(session->chat_name), NULL);
+								     session->chat_name, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -7154,57 +7154,59 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
 
-	/* work phone */
-	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone");
-	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-display");
-	if (sip->csta && phone) {
-		gchar *label = g_strdup_printf(_("Work %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
-		g_free(label);
-		menu = g_list_prepend(menu, act);
+	if (sip->csta) {
+		/* work phone */
+		phone = purple_blist_node_get_string(&buddy->node, PHONE_PROP);
+		phone_display_string = purple_blist_node_get_string(&buddy->node, PHONE_DISPLAY_PROP);
+		if (phone) {
+			gchar *label = g_strdup_printf(_("Work %s"), phone_display_string ? phone_display_string : phone);
+			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
+			g_free(label);
+			menu = g_list_prepend(menu, act);
+		}
+
+		/* mobile phone */
+		phone = purple_blist_node_get_string(&buddy->node, PHONE_MOBILE_PROP);
+		phone_display_string = purple_blist_node_get_string(&buddy->node, PHONE_MOBILE_DISPLAY_PROP);
+		if (phone) {
+			gchar *label = g_strdup_printf(_("Mobile %s"), phone_display_string ? phone_display_string : phone);
+			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
+			g_free(label);
+			menu = g_list_prepend(menu, act);
+		}
+
+		/* home phone */
+		phone = purple_blist_node_get_string(&buddy->node, PHONE_HOME_PROP);
+		phone_display_string = purple_blist_node_get_string(&buddy->node, PHONE_HOME_DISPLAY_PROP);
+		if (phone) {
+			gchar *label = g_strdup_printf(_("Home %s"), phone_display_string ? phone_display_string : phone);
+			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
+			g_free(label);
+			menu = g_list_prepend(menu, act);
+		}
+
+		/* other phone */
+		phone = purple_blist_node_get_string(&buddy->node, PHONE_OTHER_PROP);
+		phone_display_string = purple_blist_node_get_string(&buddy->node, PHONE_OTHER_DISPLAY_PROP);
+		if (phone) {
+			gchar *label = g_strdup_printf(_("Other %s"), phone_display_string ? phone_display_string : phone);
+			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
+			g_free(label);
+			menu = g_list_prepend(menu, act);
+		}
+
+		/* custom1 phone */
+		phone = purple_blist_node_get_string(&buddy->node, PHONE_CUSTOM1_PROP);
+		phone_display_string = purple_blist_node_get_string(&buddy->node, PHONE_MOBILE_DISPLAY_PROP);
+		if (phone) {
+			gchar *label = g_strdup_printf(_("Custom1 %s"), phone_display_string ? phone_display_string : phone);
+			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
+			g_free(label);
+			menu = g_list_prepend(menu, act);
+		}
 	}
 
-	/* mobile phone */
-	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-mobile");
-	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-mobile-display");
-	if (sip->csta && phone) {
-		gchar *label = g_strdup_printf(_("Mobile %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
-		g_free(label);
-		menu = g_list_prepend(menu, act);
-	}
-
-	/* home phone */
-	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-home");
-	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-home-display");
-	if (sip->csta && phone) {
-		gchar *label = g_strdup_printf(_("Home %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
-		g_free(label);
-		menu = g_list_prepend(menu, act);
-	}
-
-	/* other phone */
-	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-other");
-	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-other-display");
-	if (sip->csta && phone) {
-		gchar *label = g_strdup_printf(_("Other %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
-		g_free(label);
-		menu = g_list_prepend(menu, act);
-	}
-
-	/* custom1 phone */
-	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-custom1");
-	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-custom1-display");
-	if (sip->csta && phone) {
-		gchar *label = g_strdup_printf(_("Custom1 %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
-		g_free(label);
-		menu = g_list_prepend(menu, act);
-	}
-
-	email = purple_blist_node_get_string((PurpleBlistNode *)buddy, "email");
+	email = purple_blist_node_get_string(&buddy->node, EMAIL_PROP);
 	if (email) {
 		act = purple_menu_action_new(_("Send email..."),
 					     PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),
@@ -7424,13 +7426,13 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 
 	if (!email || !strcmp("", email)) {
 		g_free(email);
-		email = g_strdup(purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "email"));
+		email = g_strdup(purple_blist_node_get_string(&pbuddy->node, EMAIL_PROP));
 		if (email) {
 			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
 		}
 	}
 
-	site = purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "site");
+	site = purple_blist_node_get_string(&pbuddy->node, SITE_PROP);
 	if (site) {
 		purple_notify_user_info_add_pair(info, _("Site"), site);
 	}
