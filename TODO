@@ -4,3 +4,11 @@
   #2834403: OCS2007+: Authentication protocol v4 and v3 support
 - Bugs:
   #2834758: (sip-sec-ntlm.c) First NTLM signature check after startup fails
+  
+Call Control:
+- reflect line sate in buddy's info (parse incoming CSTA info)
+- add MonitorStop command
+- parse phones added by customer in his Communicator (different for 2005, 2007)
+- answer incoming call (logs required)
+- (?) work with multiple phone lines (not the first one)
+- (?) Call transfer set up, other RCC features from Communicator.
