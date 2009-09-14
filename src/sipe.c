@@ -6939,13 +6939,11 @@ sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, const char *chat_name)
 }
 
 static void
-sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy)
+sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy, const char *phone)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
-	const gchar *phone;
-	purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: buddy->name=%s\n", buddy->name);
 
-	phone = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone");
+	purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: buddy->name=%s\n", buddy->name);
 	if (phone) {
 		purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: going to call number: %s\n", phone);
 		sip_csta_make_call(sip, phone);
@@ -7075,7 +7073,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-display");
 	if (sip->csta && phone) {
 		gchar *label = g_strdup_printf(_("Work %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), NULL, NULL);
+		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
@@ -7085,7 +7083,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-mobile-display");
 	if (sip->csta && phone) {
 		gchar *label = g_strdup_printf(_("Mobile %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), NULL, NULL);
+		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
@@ -7095,7 +7093,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-home-display");
 	if (sip->csta && phone) {
 		gchar *label = g_strdup_printf(_("Home %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), NULL, NULL);
+		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
@@ -7105,7 +7103,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-other-display");
 	if (sip->csta && phone) {
 		gchar *label = g_strdup_printf(_("Other %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), NULL, NULL);
+		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
@@ -7115,7 +7113,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	phone_display_string = purple_blist_node_get_string((PurpleBlistNode *)buddy, "phone-custom1-display");
 	if (sip->csta && phone) {
 		gchar *label = g_strdup_printf(_("Custom1 %s"), phone_display_string ? phone_display_string : phone);
-		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), NULL, NULL);
+		act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), g_strdup(phone), NULL);
 		g_free(label);
 		menu = g_list_prepend(menu, act);
 	}
