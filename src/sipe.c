@@ -2497,12 +2497,15 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 #define PHONE_CUSTOM1_DISPLAY_PROP	"phone-custom1-display"
 #define SITE_PROP			"site"
 #define COMPANY_PROP			"company"
+#define DEPARTMENT_PROP			"department"
+#define TITLE_PROP			"title"
+#define OFFICE_PROP			"office"
 /** implies work address */
 #define ADDRESS_STREET_PROP		"address-street"
 #define ADDRESS_CITY_PROP		"address-city"
 #define ADDRESS_STATE_PROP		"address-state"
 #define ADDRESS_ZIPCODE_PROP		"address-zipcode"
-#define ADDRESS_COUNTRYCODE_PROP	"address-countryCode"
+#define ADDRESS_COUNTRYCODE_PROP	"address-country-code"
 /**
  * Update user information
  *
@@ -4528,18 +4531,54 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		if (!strcmp(attrVar, "contactCard"))
 		{
 			xmlnode *node;
-			xmlnode *identity = xmlnode_get_descendant(xn_category, "contactCard", "identity", NULL);
-			if (identity) {
+			/* identity - Display Name and email */
+			node = xmlnode_get_descendant(xn_category, "contactCard", "identity", NULL);
+			if (node) {
 				char* display_name = xmlnode_get_data(
-					xmlnode_get_descendant(identity, "name", "displayName",  NULL));
+					xmlnode_get_descendant(node, "name", "displayName",  NULL));
 				char* email = xmlnode_get_data(
-					xmlnode_get_child(identity, "email"));
+					xmlnode_get_child(node, "email"));
 
 				sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
 				sipe_update_user_info(sip, uri, EMAIL_PROP, email);
 
 				g_free(display_name);
 				g_free(email);
+			}
+			/* company */
+			node = xmlnode_get_descendant(xn_category, "contactCard", "company", NULL);
+			if (node) {
+				char* company = xmlnode_get_data(node);
+				sipe_update_user_info(sip, uri, COMPANY_PROP, company);
+				g_free(company);
+			}
+			/* department */
+			node = xmlnode_get_descendant(xn_category, "contactCard", "department", NULL);
+			if (node) {
+				char* department = xmlnode_get_data(node);
+				sipe_update_user_info(sip, uri, DEPARTMENT_PROP, department);
+				g_free(department);
+			}
+			/* title */
+			node = xmlnode_get_descendant(xn_category, "contactCard", "title", NULL);
+			if (node) {
+				char* title = xmlnode_get_data(node);
+				sipe_update_user_info(sip, uri, TITLE_PROP, title);
+				g_free(title);
+			}
+			/* office */
+			node = xmlnode_get_descendant(xn_category, "contactCard", "office", NULL);
+			if (node) {
+				char* office = xmlnode_get_data(node);
+				sipe_update_user_info(sip, uri, OFFICE_PROP, office);
+				g_free(office);
+			}
+			/* site (url) */
+			node = xmlnode_get_descendant(xn_category, "contactCard", "url", NULL);
+			if (node) {
+				char* site = xmlnode_get_data(node);
+				sipe_update_user_info(sip, uri, SITE_PROP, site);
+				g_free(site);
 			}
 			/* phone */
 			for (node = xmlnode_get_descendant(xn_category, "contactCard", "phone", NULL);
@@ -4571,6 +4610,33 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				
 				g_free(phone);
 				g_free(phone_display_string);
+			}
+			/* address */
+			for (node = xmlnode_get_descendant(xn_category, "contactCard", "address", NULL);
+			     node;
+			     node = xmlnode_get_next_twin(node))
+			{
+				if (!strcmp(xmlnode_get_attrib(node, "type"), "work")) {
+					char* street = xmlnode_get_data(xmlnode_get_child(node, "street"));
+					char* city = xmlnode_get_data(xmlnode_get_child(node, "city"));
+					char* state = xmlnode_get_data(xmlnode_get_child(node, "state"));
+					char* zipcode = xmlnode_get_data(xmlnode_get_child(node, "zipcode"));
+					char* country_code = xmlnode_get_data(xmlnode_get_child(node, "countryCode"));
+					
+					sipe_update_user_info(sip, uri, ADDRESS_STREET_PROP, street);
+					sipe_update_user_info(sip, uri, ADDRESS_CITY_PROP, city);
+					sipe_update_user_info(sip, uri, ADDRESS_STATE_PROP, state);
+					sipe_update_user_info(sip, uri, ADDRESS_ZIPCODE_PROP, zipcode);
+					sipe_update_user_info(sip, uri, ADDRESS_COUNTRYCODE_PROP, country_code);
+
+					g_free(street);
+					g_free(city);
+					g_free(state);
+					g_free(zipcode);
+					g_free(country_code);
+				
+					break;
+				}
 			}
 		}
 		/* note */
