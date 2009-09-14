@@ -7319,6 +7319,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	char *server_alias = NULL;
 	char *phone_number = NULL;
 	char *email = NULL;
+	char *site;
 
 	purple_debug_info("sipe", "Fetching %s's user info for %s\n", uri, sip->username);
 
@@ -7348,6 +7349,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 		if (!searchResults) {
 			purple_debug_info("sipe", "process_get_info_response: no parseable searchResults\n");
 		} else if ((mrow = xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL))) {
+			const char *value;
 			server_alias = g_strdup(xmlnode_get_attrib(mrow, "displayName"));
 			email = g_strdup(xmlnode_get_attrib(mrow, "email"));
 			phone_number = g_strdup(xmlnode_get_attrib(mrow, "phone"));
@@ -7362,15 +7364,33 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 				sipe_update_user_info(sip, uri, PHONE_PROP, phone_number);
 			}			
 
-			purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
-			purple_notify_user_info_add_pair(info, _("Job title"), xmlnode_get_attrib(mrow, "title"));
-			purple_notify_user_info_add_pair(info, _("Office"), xmlnode_get_attrib(mrow, "office"));
-			purple_notify_user_info_add_pair(info, _("Business phone"), phone_number);
-			purple_notify_user_info_add_pair(info, _("Company"), xmlnode_get_attrib(mrow, "company"));
-			purple_notify_user_info_add_pair(info, _("City"), xmlnode_get_attrib(mrow, "city"));
-			purple_notify_user_info_add_pair(info, _("State"), xmlnode_get_attrib(mrow, "state"));
-			purple_notify_user_info_add_pair(info, _("Country"), xmlnode_get_attrib(mrow, "country"));
-			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
+			if (server_alias && strlen(server_alias) > 0) {
+				purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
+			}
+			if ((value = xmlnode_get_attrib(mrow, "title")) && strlen(value) > 0) {
+				purple_notify_user_info_add_pair(info, _("Job title"), value);
+			}
+			if ((value = xmlnode_get_attrib(mrow, "office")) && strlen(value) > 0) {
+				purple_notify_user_info_add_pair(info, _("Office"), value);
+			}			
+			if (phone_number && strlen(phone_number) > 0) {
+				purple_notify_user_info_add_pair(info, _("Business phone"), phone_number);
+			}
+			if ((value = xmlnode_get_attrib(mrow, "company")) && strlen(value) > 0) {
+				purple_notify_user_info_add_pair(info, _("Company"), value);
+			}
+			if ((value = xmlnode_get_attrib(mrow, "city")) && strlen(value) > 0) {
+				purple_notify_user_info_add_pair(info, _("City"), value);
+			}
+			if ((value = xmlnode_get_attrib(mrow, "state")) && strlen(value) > 0) {
+				purple_notify_user_info_add_pair(info, _("State"), value);
+			}
+			if ((value = xmlnode_get_attrib(mrow, "country")) && strlen(value) > 0) {
+				purple_notify_user_info_add_pair(info, _("Country"), value);
+			}
+			if (email && strlen(email) > 0) {
+				purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
+			}
 
 		}
 		xmlnode_free(searchResults);
@@ -7399,9 +7419,13 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
 		}
 	}
+	
+	site = g_strdup(purple_blist_node_get_string((PurpleBlistNode *)pbuddy, "site"));
+	if (site) {
+		purple_notify_user_info_add_pair(info, _("Site"), site);
+	}
 
-	if (device_name)
-	{
+	if (device_name) {
 		purple_notify_user_info_add_pair(info, _("Device"), device_name);
 	}
 
