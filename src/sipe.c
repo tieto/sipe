@@ -2590,9 +2590,9 @@ sipe_update_user_phone(struct sipe_account_data *sip,
 {
 	const char *phone_node = PHONE_PROP; /* work phone by default */
 	const char *phone_display_node = PHONE_DISPLAY_PROP; /* work phone by default */
-	
+
 	if(!phone || strlen(phone) == 0) return;
-	
+
 	if (phone_type && (!strcmp(phone_type, "mobile") ||  !strcmp(phone_type, "cell"))) {
 		phone_node = PHONE_MOBILE_PROP;
 		phone_display_node = PHONE_MOBILE_DISPLAY_PROP;
@@ -4638,9 +4638,9 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				const char *phone_type = xmlnode_get_attrib(node, "type");
 				char* phone = xmlnode_get_data(xmlnode_get_child(node, "uri"));
 				char* phone_display_string = xmlnode_get_data(xmlnode_get_child(node, "displayString"));
-				
+
 				sipe_update_user_phone(sip, uri, phone_type, phone, phone_display_string);
-				
+
 				g_free(phone);
 				g_free(phone_display_string);
 			}
@@ -4914,7 +4914,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(email);
 		g_free(display_name);
 	}
-	
+
 	if (xn_contact) {
 		/* tel */
 		xmlnode *node;
@@ -4923,9 +4923,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			/* Ex.: <tel type="work">tel:+3222220000</tel> */
 			const char *phone_type = xmlnode_get_attrib(node, "type");
 			char* phone = xmlnode_get_data(node);
-			
+
 			sipe_update_user_phone(sip, uri, phone_type, phone, NULL);
-			
+
 			g_free(phone);
 		}
 	}
@@ -7074,11 +7074,11 @@ sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy, const char *phone)
 
 	purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: buddy->name=%s\n", buddy->name);
 	if (phone) {
-		char *tel_uri = sip_to_tel_uri((char *)phone);
-		
-		purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: going to call number: %s\n", tel_uri);
+		char *tel_uri = sip_to_tel_uri(phone);
+
+		purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: going to call number: %s\n", tel_uri ? tel_uri : "");
 		sip_csta_make_call(sip, tel_uri);
-		
+
 		g_free(tel_uri);
 	}
 }
@@ -7422,7 +7422,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 				sipe_update_user_info(sip, uri, ALIAS_PROP, server_alias);
 				sipe_update_user_info(sip, uri, EMAIL_PROP, email);
 				sipe_update_user_info(sip, uri, PHONE_PROP, tel_uri);
-				sipe_update_user_info(sip, uri, PHONE_DISPLAY_PROP, phone_number);				
+				sipe_update_user_info(sip, uri, PHONE_DISPLAY_PROP, phone_number);
 				g_free(tel_uri);
 			}
 

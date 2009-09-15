@@ -105,28 +105,24 @@
 
 
 gchar *
-sip_to_tel_uri(gchar *phone)
-{	
-	if (!phone || strlen(phone) == 0)    return phone;
-	if (g_str_has_prefix(phone, "tel:")) return phone;
-	
-	{
-		int i;
-		int j = 0;
-		gchar tel_uri[strlen(phone) + 4];
-		tel_uri[j++] = 't';
-		tel_uri[j++] = 'e';
-		tel_uri[j++] = 'l';
-		tel_uri[j++] = ':';
-		for (i = 0; i < strlen(phone); i++) {
-			if (phone[i] == ' ') continue;
-			if (phone[i] == '(') continue;
-			if (phone[i] == ')') continue;
-			if (phone[i] == '-') continue;
-			tel_uri[j++] = phone[i];
+sip_to_tel_uri(const gchar *phone)
+{
+	if (!phone || strlen(phone) == 0) return NULL;
+
+	if (g_str_has_prefix(phone, "tel:")) {
+		return g_strdup(phone);
+	} else {
+		gchar *tel_uri = g_malloc(strlen(phone) + 4);
+		gchar *dest_p = g_stpcpy(tel_uri, "tel:");
+		for (; *phone; phone++) {
+			if (*phone == ' ') continue;
+			if (*phone == '(') continue;
+			if (*phone == ')') continue;
+			if (*phone == '-') continue;
+			*dest_p++ = *phone;
 		}
-		tel_uri[j++] = '\0';
-		return g_strndup(tel_uri, j);
+		*dest_p = '\0';
+		return tel_uri;
 	}
 }
 
@@ -201,7 +197,7 @@ process_csta_monitor_start_response(struct sipe_account_data *sip,
 				    SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	purple_debug_info("sipe", "process_csta_monitor_start_response:\n%s\n", msg->body ? msg->body : "");
-	
+
 	if (!sip->csta) {
 		purple_debug_info("sipe", "process_csta_monitor_start_response: sip->csta is not initializzed, exiting\n");
 		return FALSE;
@@ -295,7 +291,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 				     SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	purple_debug_info("sipe", "process_invite_csta_gateway_response:\n%s\n", msg->body ? msg->body : "");
-	
+
 	if (!sip->csta) {
 		purple_debug_info("sipe", "process_invite_csta_gateway_response: sip->csta is not initializzed, exiting\n");
 		return FALSE;
@@ -401,18 +397,18 @@ static void
 sip_csta_free(struct sip_csta *csta)
 {
 	if (!csta) return;
-	
+
 	g_free(csta->line_uri);
 	g_free(csta->gateway_uri);
-	
+
 	sipe_dialog_free(csta->dialog);
-	
+
 	g_free(csta->gateway_status);
 	g_free(csta->monitor_cross_ref_id);
 	g_free(csta->line_status);
 	g_free(csta->to_tel_uri);
-	g_free(csta->call_id);	
-	
+	g_free(csta->call_id);
+
 	g_free(csta);
 }
 
@@ -422,7 +418,7 @@ sip_csta_close(struct sipe_account_data *sip)
 	if (sip->csta) {
 		sip_csta_monitor_stop(sip);
 	}
-	
+
 	if (sip->csta && sip->csta->dialog) {
 		/* send BYE to CSTA */
 		send_sip_request(sip->gc,
@@ -434,7 +430,7 @@ sip_csta_close(struct sipe_account_data *sip)
 				 sip->csta->dialog,
 				 NULL);
 	}
-	
+
 	sip_csta_free(sip->csta);
 }
 
@@ -447,7 +443,7 @@ process_csta_make_call_response(struct sipe_account_data *sip,
 				SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	purple_debug_info("sipe", "process_csta_make_call_response:\n%s\n", msg->body ? msg->body : "");
-	
+
 	if (!sip->csta) {
 		purple_debug_info("sipe", "process_csta_make_call_response: sip->csta is not initializzed, exiting\n");
 		return FALSE;
@@ -462,9 +458,9 @@ process_csta_make_call_response(struct sipe_account_data *sip,
 		xmlnode *xml;
 		xmlnode *xn_calling_device;
 		gchar *device_id;
-		
+
 		purple_debug_info("sipe", "process_csta_make_call_response: SUCCESS\n");
-		
+
 		xml = xmlnode_from_str(msg->body, msg->bodylen);
 		xn_calling_device = xmlnode_get_child(xml, "callingDevice");
 		device_id = xmlnode_get_data(xmlnode_get_child(xn_calling_device, "deviceID"));
@@ -487,7 +483,7 @@ sip_csta_make_call(struct sipe_account_data *sip,
 {
 	gchar *hdr;
 	gchar *body;
-	
+
 	if (!to_tel_uri) {
 		purple_debug_info("sipe", "sip_csta_make_call: no tel URI parameter provided, exiting.\n");
 		return;
@@ -497,7 +493,7 @@ sip_csta_make_call(struct sipe_account_data *sip,
 		purple_debug_info("sipe", "sip_csta_make_call: no dialog with CSTA, exiting.\n");
 		return;
 	}
-	
+
 	g_free(sip->csta->to_tel_uri);
 	sip->csta->to_tel_uri = g_strdup(to_tel_uri);
 
