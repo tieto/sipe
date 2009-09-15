@@ -103,6 +103,21 @@
     "<autoOriginate>doNotPrompt</autoOriginate>"\
 "</MakeCall>"
 
+/**
+ * Sends CSTA ClearConnection request to SIP/CSTA Gateway.
+ * @param call_id   (%s)  Ex.: 0_99f261b4
+ * @param device_id (%s)  Same as in OriginatedEvent, DeliveredEvent notifications.
+ *                        Ex.: tel:73124;phone-context=dialstring
+ */
+#define SIP_SEND_CSTA_CLEAR_CONNECTION \
+"<?xml version=\"1.0\"?>"\
+"<ClearConnection xmlns=\"http://www.ecma-international.org/standards/ecma-323/csta/ed3\">"\
+	"<connectionToBeCleared>"\
+		"<callID>%s</callID>"\
+		"<deviceID>%s</deviceID>"\
+	"</connectionToBeCleared>"\
+"</ClearConnection>"
+
 
 gchar *
 sip_to_tel_uri(const gchar *phone)
