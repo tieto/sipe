@@ -104,6 +104,32 @@
 "</MakeCall>"
 
 
+gchar *
+sip_to_tel_uri(gchar *phone)
+{	
+	if (!phone || strlen(phone) == 0)    return phone;
+	if (g_str_has_prefix(phone, "tel:")) return phone;
+	
+	{
+		int i;
+		int j = 0;
+		gchar tel_uri[strlen(phone) + 4];
+		tel_uri[j++] = 't';
+		tel_uri[j++] = 'e';
+		tel_uri[j++] = 'l';
+		tel_uri[j++] = ':';
+		for (i = 0; i < strlen(phone); i++) {
+			if (phone[i] == ' ') continue;
+			if (phone[i] == '(') continue;
+			if (phone[i] == ')') continue;
+			if (phone[i] == '-') continue;
+			tel_uri[j++] = phone[i];
+		}
+		tel_uri[j++] = '\0';
+		return g_strndup(tel_uri, j);
+	}
+}
+
 static void
 sip_csta_initialize(struct sipe_account_data *sip,
 		    const gchar *line_uri,

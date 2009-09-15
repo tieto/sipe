@@ -36,6 +36,18 @@ struct sip_csta {
 	gchar *call_id;
 };
 
+/** Transform telephone number representation
+ *  to tel: URI form.
+ *  Removes white space, parenthesis ( ), hyphen - symbols
+ *
+ *  Must be g_free()'d after use.
+ *
+ * @param phone Ex. +32 2 245 00 00
+ * @return Ex. tel:+3222450000
+ */
+gchar *
+sip_to_tel_uri(gchar *phone);
+
 /** Initializes GSTA 
  * @param line_uri (in) our line tel URI.            Ex.: tel:73124;phone-context=dialstring;partition=BE_BRS_INT
  * @param server   (in) SIP URI of SIP/CSTA Gateway. Ex.: sip:73124@euuklhccups01.eu.company.local

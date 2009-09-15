@@ -4877,11 +4877,14 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		char *display_name = g_strdup(xmlnode_get_attrib(xn_display_name, "displayName"));
 		char *email        = xn_email ? g_strdup(xmlnode_get_attrib(xn_email, "email")) : NULL;
 		char *phone_number = xn_phone_number ? g_strdup(xmlnode_get_attrib(xn_phone_number, "number")) : NULL;
+		char *tel_uri      = sip_to_tel_uri(phone_number);
 
 		sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
 		sipe_update_user_info(sip, uri, EMAIL_PROP, email);
-		sipe_update_user_info(sip, uri, PHONE_PROP, phone_number);
+		sipe_update_user_info(sip, uri, PHONE_PROP, tel_uri);
+		sipe_update_user_info(sip, uri, PHONE_DISPLAY_PROP, phone_number);
 
+		g_free(tel_uri);
 		g_free(phone_number);
 		g_free(email);
 		g_free(display_name);
@@ -7370,10 +7373,13 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			 * it has cleaner tel: URIs at least
 			 */
 			if (!sip->ocs2007) {
+				char *tel_uri = sip_to_tel_uri(phone_number);
 				/* trims its parameters, so call first */
 				sipe_update_user_info(sip, uri, ALIAS_PROP, server_alias);
 				sipe_update_user_info(sip, uri, EMAIL_PROP, email);
-				sipe_update_user_info(sip, uri, PHONE_PROP, phone_number);
+				sipe_update_user_info(sip, uri, PHONE_PROP, tel_uri);
+				sipe_update_user_info(sip, uri, PHONE_DISPLAY_PROP, phone_number);				
+				g_free(tel_uri);
 			}
 
 			if (server_alias && strlen(server_alias) > 0) {
