@@ -7074,8 +7074,12 @@ sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy, const char *phone)
 
 	purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: buddy->name=%s\n", buddy->name);
 	if (phone) {
-		purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: going to call number: %s\n", phone);
-		sip_csta_make_call(sip, phone);
+		char *tel_uri = sip_to_tel_uri((char *)phone);
+		
+		purple_debug_info("sipe", "sipe_buddy_menu_make_call_cb: going to call number: %s\n", tel_uri);
+		sip_csta_make_call(sip, tel_uri);
+		
+		g_free(tel_uri);
 	}
 }
 
@@ -7240,7 +7244,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 
 		/* custom1 phone */
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_CUSTOM1_PROP);
-		phone_display_string = purple_blist_node_get_string(&buddy->node, PHONE_MOBILE_DISPLAY_PROP);
+		phone_display_string = purple_blist_node_get_string(&buddy->node, PHONE_CUSTOM1_DISPLAY_PROP);
 		if (phone) {
 			gchar *label = g_strdup_printf(_("Custom1 %s"), phone_display_string ? phone_display_string : phone);
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
