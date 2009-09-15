@@ -7,7 +7,6 @@
   
 Call Control:
 - reflect line sate in buddy's info (parse incoming CSTA info)
-- parse phones added by customer in his Communicator (different for 2005, 2007)
 - change user state to On Call when line is active and then back
 - answer incoming call (logs required)
 - (?) work with multiple phone lines (not the first one)
