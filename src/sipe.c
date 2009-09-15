@@ -2572,6 +2572,47 @@ sipe_update_user_info(struct sipe_account_data *sip,
 	}
 }
 
+/**
+ * Update user phone
+ * Suitable for both 2005 and 2007 systems.
+ *
+ * @param uri                   buddy SIP URI with 'sip:' prefix whose info we want to change.
+ * @param phone_type
+ * @param phone                 may be modified to strip white space
+ * @param phone_display_string  may be modified to strip white space
+ */
+static void
+sipe_update_user_phone(struct sipe_account_data *sip,
+		       const char *uri,
+		       const gchar *phone_type,
+		       gchar *phone,
+		       gchar *phone_display_string)
+{
+	const char *phone_node = PHONE_PROP; /* work phone by default */
+	const char *phone_display_node = PHONE_DISPLAY_PROP; /* work phone by default */
+	
+	if(!phone || strlen(phone) == 0) return;
+	
+	if (phone_type && (!strcmp(phone_type, "mobile") ||  !strcmp(phone_type, "cell"))) {
+		phone_node = PHONE_MOBILE_PROP;
+		phone_display_node = PHONE_MOBILE_DISPLAY_PROP;
+	} else if (phone_type && !strcmp(phone_type, "home")) {
+		phone_node = PHONE_HOME_PROP;
+		phone_display_node = PHONE_HOME_DISPLAY_PROP;
+	} else if (phone_type && !strcmp(phone_type, "other")) {
+		phone_node = PHONE_OTHER_PROP;
+		phone_display_node = PHONE_OTHER_DISPLAY_PROP;
+	} else if (phone_type && !strcmp(phone_type, "custom1")) {
+		phone_node = PHONE_CUSTOM1_PROP;
+		phone_display_node = PHONE_CUSTOM1_DISPLAY_PROP;
+	}
+
+	sipe_update_user_info(sip, uri, phone_node, phone);
+	if (phone_display_string) {
+		sipe_update_user_info(sip, uri, phone_display_node, phone_display_string);
+	}
+}
+
 static void
 send_publish_category_initial(struct sipe_account_data *sip);
 
@@ -4597,26 +4638,9 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				const char *phone_type = xmlnode_get_attrib(node, "type");
 				char* phone = xmlnode_get_data(xmlnode_get_child(node, "uri"));
 				char* phone_display_string = xmlnode_get_data(xmlnode_get_child(node, "displayString"));
-
-				const char *phone_node = PHONE_PROP; /* work phone by default */
-				const char *phone_display_node = PHONE_DISPLAY_PROP; /* work phone by default */
-				if (phone_type && !strcmp(phone_type, "mobile")) {
-					phone_node = PHONE_MOBILE_PROP;
-					phone_display_node = PHONE_MOBILE_DISPLAY_PROP;
-				} else if (phone_type && !strcmp(phone_type, "home")) {
-					phone_node = PHONE_HOME_PROP;
-					phone_display_node = PHONE_HOME_DISPLAY_PROP;
-				} else if (phone_type && !strcmp(phone_type, "other")) {
-					phone_node = PHONE_OTHER_PROP;
-					phone_display_node = PHONE_OTHER_DISPLAY_PROP;
-				} else if (phone_type && !strcmp(phone_type, "custom1")) {
-					phone_node = PHONE_CUSTOM1_PROP;
-					phone_display_node = PHONE_CUSTOM1_DISPLAY_PROP;
-				}
-
-				sipe_update_user_info(sip, uri, phone_node, phone);
-				sipe_update_user_info(sip, uri, phone_display_node, phone_display_string);
-
+				
+				sipe_update_user_phone(sip, uri, phone_type, phone, phone_display_string);
+				
 				g_free(phone);
 				g_free(phone_display_string);
 			}
@@ -4861,6 +4885,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_phone_number = xmlnode_get_child(xn_presentity, "phoneNumber");
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
 
+	xmlnode *xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
 	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 	xmlnode *xn_devices = xmlnode_get_child(xn_presentity, "devices");
@@ -4888,6 +4913,21 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(phone_number);
 		g_free(email);
 		g_free(display_name);
+	}
+	
+	if (xn_contact) {
+		/* tel */
+		xmlnode *node;
+		for (node = xmlnode_get_child(xn_contact, "tel"); node; node = xmlnode_get_next_twin(node))
+		{
+			/* Ex.: <tel type="work">tel:+3222220000</tel> */
+			const char *phone_type = xmlnode_get_attrib(node, "type");
+			char* phone = xmlnode_get_data(node);
+			
+			sipe_update_user_phone(sip, uri, phone_type, phone, NULL);
+			
+			g_free(phone);
+		}
 	}
 
 	avl = atoi(availability);
