@@ -174,6 +174,8 @@ process_csta_monitor_start_response(struct sipe_account_data *sip,
 				    struct sipmsg *msg,
 				    SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	purple_debug_info("sipe", "process_csta_monitor_start_response:\n%s\n", msg->body ? msg->body : "");
+	
 	if (!sip->csta) {
 		purple_debug_info("sipe", "process_csta_monitor_start_response: sip->csta is not initializzed, exiting\n");
 		return FALSE;
@@ -266,6 +268,8 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 				     struct sipmsg *msg,
 				     SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	purple_debug_info("sipe", "process_invite_csta_gateway_response:\n%s\n", msg->body ? msg->body : "");
+	
 	if (!sip->csta) {
 		purple_debug_info("sipe", "process_invite_csta_gateway_response: sip->csta is not initializzed, exiting\n");
 		return FALSE;
@@ -416,6 +420,8 @@ process_csta_make_call_response(struct sipe_account_data *sip,
 				struct sipmsg *msg,
 				SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	purple_debug_info("sipe", "process_csta_make_call_response:\n%s\n", msg->body ? msg->body : "");
+	
 	if (!sip->csta) {
 		purple_debug_info("sipe", "process_csta_make_call_response: sip->csta is not initializzed, exiting\n");
 		return FALSE;

@@ -2061,8 +2061,8 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 			/* assign to group Other Contacts if nothing else received */
 			tmp = g_strdup(xmlnode_get_attrib(item, "groups"));
 			if(!tmp || !strcmp("", tmp) ) {
-				g_free(tmp);
 				struct sipe_group *group = sipe_group_find_by_name(sip, _("Other Contacts"));
+				g_free(tmp);
 				tmp = group ? g_strdup_printf("%d", group->id) : g_strdup("1");
 			}
 			item_groups = g_strsplit(tmp, " ", 0);
