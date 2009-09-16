@@ -540,111 +540,81 @@ sip_csta_make_call(struct sipe_account_data *sip,
 	g_free(hdr);
 }
 
+static void
+sip_csta_update_id_and_status(struct sip_csta *csta,
+			      xmlnode *node,
+			      const char *status)
+{
+	gchar *call_id = xmlnode_get_data(xmlnode_get_child(node, "callID"));
+
+	if (call_id && csta->call_id && strcmp(call_id, csta->call_id)) {
+		purple_debug_info("sipe", "sipe_csta_update_id_and_status: callID (%s) does not match\n", call_id ? call_id : "");
+	}
+	else
+	{
+		/* free old line status */
+		g_free(csta->line_status);
+		csta->line_status = NULL;
+
+		if (status) {
+			/* save deviceID */
+			gchar *device_id = xmlnode_get_data(xmlnode_get_child(node, "deviceID"));
+			purple_debug_info("sipe", "sipe_csta_update_id_and_status: device_id=(%s)\n", device_id ? device_id : "");
+			if (device_id) {
+				g_free(csta->device_id);
+				csta->device_id = device_id;
+			}
+
+			/* set new line status */
+			csta->line_status = g_strdup(status);
+		}
+	}
+
+	g_free(call_id);
+}
+
 void
 process_incoming_info_csta(struct sipe_account_data *sip,
 			   struct sipmsg *msg)
 {
-	xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);	
+	xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
 	gchar *monitor_cross_ref_id = xmlnode_get_data(xmlnode_get_child(xml, "monitorCrossRefID"));
-	
-	if(!sip->csta || (monitor_cross_ref_id 
+
+	if(!sip->csta || (monitor_cross_ref_id
 			  && sip->csta->monitor_cross_ref_id
 			  && strcmp(monitor_cross_ref_id, sip->csta->monitor_cross_ref_id)))
 	{
 		purple_debug_info("sipe", "process_incoming_info_csta: monitorCrossRefID (%s) does not match, exiting\n",
 				   monitor_cross_ref_id ? monitor_cross_ref_id : "");
-		return;
 	}
-	
-	if (!strcmp(xml->name, "OriginatedEvent"))
+	else
 	{
-		gchar *device_id;
-		gchar *call_id = xmlnode_get_data(xmlnode_get_descendant(xml, "originatedConnection", "callID", NULL));
-		if (call_id && sip->csta->call_id && strcmp(call_id, sip->csta->call_id)) {
-			purple_debug_info("sipe", "process_incoming_info_csta: callID (%s) does not match, exiting\n",
-				   call_id ? call_id : "");
-			return;
+		if (!strcmp(xml->name, "OriginatedEvent"))
+		{
+			sip_csta_update_id_and_status(sip->csta,
+						      xmlnode_get_child(xml, "originatedConnection"),
+						      ORIGINATED_CSTA_STATUS);
 		}
-		
-		/* save deviceID */
-		device_id = xmlnode_get_data(xmlnode_get_descendant(xml, "originatedConnection", "deviceID", NULL));
-		purple_debug_info("sipe", "process_incoming_info_csta: device_id=(%s)\n", device_id ? device_id : "");
-		if (device_id) {
-			g_free(sip->csta->device_id);
-			sip->csta->device_id = g_strdup(device_id);
+		else if (!strcmp(xml->name, "DeliveredEvent"))
+		{
+			sip_csta_update_id_and_status(sip->csta,
+						      xmlnode_get_child(xml, "connection"),
+						      DELIVERED_CSTA_STATUS);
 		}
-		g_free(device_id);
-		
-		/* set line status */
-		g_free(sip->csta->line_status);
-		sip->csta->line_status = g_strdup(ORIGINATED_CSTA_STATUS);
-		
-		g_free(call_id);
+		else if (!strcmp(xml->name, "EstablishedEvent"))
+		{
+			sip_csta_update_id_and_status(sip->csta,
+						      xmlnode_get_child(xml, "establishedConnection"),
+						      ESTABLISHED_CSTA_STATUS);
+		}
+		else if (!strcmp(xml->name, "ConnectionClearedEvent"))
+		{
+			sip_csta_update_id_and_status(sip->csta,
+						      xmlnode_get_child(xml, "droppedConnection"),
+						      NULL);
+		}
 	}
-	else if (!strcmp(xml->name, "DeliveredEvent"))
-	{
-		gchar *device_id;
-		gchar *call_id = xmlnode_get_data(xmlnode_get_descendant(xml, "connection", "callID", NULL));
-		if (call_id && sip->csta->call_id && strcmp(call_id, sip->csta->call_id)) {
-			purple_debug_info("sipe", "process_incoming_info_csta: callID (%s) does not match, exiting\n",
-				   call_id ? call_id : "");
-			return;
-		}
-		
-		/* save deviceID */
-		device_id = xmlnode_get_data(xmlnode_get_descendant(xml, "connection", "deviceID", NULL));
-		purple_debug_info("sipe", "process_incoming_info_csta: device_id=(%s)\n", device_id ? device_id : "");
-		if (device_id) {
-			g_free(sip->csta->device_id);
-			sip->csta->device_id = g_strdup(device_id);
-		}
-		g_free(device_id);
-		
-		/* set line status */
-		g_free(sip->csta->line_status);
-		sip->csta->line_status = g_strdup(DELIVERED_CSTA_STATUS);
-		
-		g_free(call_id);	
-	}
-	else if (!strcmp(xml->name, "EstablishedEvent"))
-	{
-		gchar *device_id;
-		gchar *call_id = xmlnode_get_data(xmlnode_get_descendant(xml, "establishedConnection", "callID", NULL));
-		if (call_id && sip->csta->call_id && strcmp(call_id, sip->csta->call_id)) {
-			purple_debug_info("sipe", "process_incoming_info_csta: callID (%s) does not match, exiting\n",
-				   call_id ? call_id : "");
-			return;
-		}		
-		
-		/* save deviceID */
-		device_id = xmlnode_get_data(xmlnode_get_descendant(xml, "establishedConnection", "deviceID", NULL));
-		purple_debug_info("sipe", "process_incoming_info_csta: device_id=(%s)\n", device_id ? device_id : "");
-		if (device_id) {
-			g_free(sip->csta->device_id);
-			sip->csta->device_id = g_strdup(device_id);
-		}
-		g_free(device_id);
-		
-		/* set line status */
-		g_free(sip->csta->line_status);
-		sip->csta->line_status = g_strdup(ESTABLISHED_CSTA_STATUS);
-		
-		g_free(call_id);	
-	}	
-	else if (!strcmp(xml->name, "ConnectionClearedEvent"))
-	{
-		gchar *call_id = xmlnode_get_data(xmlnode_get_descendant(xml, "droppedConnection", "callID", NULL));
-		if (call_id && sip->csta->call_id && strcmp(call_id, sip->csta->call_id)) {
-			purple_debug_info("sipe", "process_incoming_info_csta: callID (%s) does not match, exiting\n",
-				   call_id ? call_id : "");
-			return;
-		}
-		
-		/* clear line status */
-		g_free(sip->csta->line_status);
 
-		g_free(call_id);
-	}
 	g_free(monitor_cross_ref_id);
 	xmlnode_free(xml);
 }
