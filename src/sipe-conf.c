@@ -479,9 +479,16 @@ process_invite_conf_response(struct sipe_account_data *sip,
 		sipe_dialog_free(dialog);
 		return FALSE;
 	}
+
 	if (msg->response >= 200) {
-		/* send BYE to counterparty */
-		send_sip_request(sip->gc, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+		struct sip_session *session = sipe_session_find_im(sip, dialog->with);
+		struct sip_dialog *im_dialog = sipe_dialog_find(session, dialog->with);
+
+		/* close IM session to counterparty */
+		if (im_dialog) {
+			send_sip_request(sip->gc, "BYE", im_dialog->with, im_dialog->with, NULL, NULL, im_dialog, NULL);
+			sipe_dialog_remove(session, dialog->with);
+		}
 	}
 
 	sipe_dialog_free(dialog);

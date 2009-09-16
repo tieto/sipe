@@ -79,6 +79,7 @@ struct sip_dialog *sipe_dialog_find(struct sip_session *session,
 	if (session && who) {
 		SIPE_DIALOG_FOREACH {
 			if (dialog->with && !g_ascii_strcasecmp(who, dialog->with)) {
+				purple_debug_info("sipe", "sipe_dialog_find who='%s'\n", who);
 				return dialog;
 			}
 		} SIPE_DIALOG_FOREACH_END;
@@ -90,6 +91,7 @@ void sipe_dialog_remove(struct sip_session *session, const gchar *who)
 {
 	struct sip_dialog *dialog = sipe_dialog_find(session, who);
 	if (dialog) {
+		purple_debug_info("sipe", "sipe_dialog_remove who='%s' with='%s'\n", who, dialog->with ? dialog->with : "");
 		session->dialogs = g_slist_remove(session->dialogs, dialog);
 		sipe_dialog_free(dialog);
 	}
