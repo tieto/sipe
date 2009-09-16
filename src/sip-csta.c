@@ -127,7 +127,7 @@ sip_to_tel_uri(const gchar *phone)
 	if (g_str_has_prefix(phone, "tel:")) {
 		return g_strdup(phone);
 	} else {
-		gchar *tel_uri = g_malloc(strlen(phone) + 4);
+		gchar *tel_uri = g_malloc(strlen(phone) + 4 + 1);
 		gchar *dest_p = g_stpcpy(tel_uri, "tel:");
 		for (; *phone; phone++) {
 			if (*phone == ' ') continue;
