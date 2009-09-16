@@ -7212,7 +7212,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
 
-	if (sip->csta) {
+	if (sip->csta && !sip->csta->line_status) {
 		/* work phone */
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_PROP);
 		phone_display_string = purple_blist_node_get_string(&buddy->node, PHONE_DISPLAY_PROP);
