@@ -30,6 +30,7 @@ struct sip_csta {
 
 	gchar *gateway_status;
 	gchar *monitor_cross_ref_id;
+	
 	gchar *line_status;
 	/** destination tel: URI */
 	gchar *to_tel_uri;

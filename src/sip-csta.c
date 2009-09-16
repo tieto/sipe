@@ -37,9 +37,10 @@
 #include "sipe-utils.h"
 
 
-#define ORIGINATED_CSTA_STATUS   "originated"
-#define DELIVERED_CSTA_STATUS    "delivered"
-#define ESTABLISHED_CSTA_STATUS  "established"
+#define ORIGINATED_CSTA_STATUS          "originated"
+#define DELIVERED_CSTA_STATUS           "delivered"
+#define ESTABLISHED_CSTA_STATUS         "established"
+#define CONNECTION_CLEARED_CSTA_STATUS  "connectionCleared"
 
 
 /**
@@ -556,7 +557,18 @@ sip_csta_update_id_and_status(struct sip_csta *csta,
 		g_free(csta->line_status);
 		csta->line_status = NULL;
 
-		if (status) {
+		if (!strcmp(status, CONNECTION_CLEARED_CSTA_STATUS))
+		{
+			/* clean up cleared connection */
+			g_free(csta->to_tel_uri);
+			csta->to_tel_uri = NULL;
+			g_free(csta->call_id);
+			csta->call_id = NULL;
+			g_free(csta->device_id);
+			csta->device_id = NULL;
+		}
+		else
+		{
 			/* save deviceID */
 			gchar *device_id = xmlnode_get_data(xmlnode_get_child(node, "deviceID"));
 			purple_debug_info("sipe", "sipe_csta_update_id_and_status: device_id=(%s)\n", device_id ? device_id : "");
@@ -611,7 +623,7 @@ process_incoming_info_csta(struct sipe_account_data *sip,
 		{
 			sip_csta_update_id_and_status(sip->csta,
 						      xmlnode_get_child(xml, "droppedConnection"),
-						      NULL);
+						      CONNECTION_CLEARED_CSTA_STATUS);
 		}
 	}
 
