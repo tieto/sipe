@@ -34,6 +34,8 @@ struct sip_csta {
 	/** destination tel: URI */
 	gchar *to_tel_uri;
 	gchar *call_id;
+	/* our device ID as reported by SIP/CSTA gateway */
+	gchar *device_id;
 };
 
 /** Transform telephone number representation
@@ -67,3 +69,9 @@ sip_csta_close(struct sipe_account_data *sip);
 void
 sip_csta_make_call(struct sipe_account_data *sip,
 		   const gchar* to_tel_uri);
+
+/** Processes incoming CSTA commands
+ */		   
+void
+process_incoming_info_csta(struct sipe_account_data *sip,
+			   struct sipmsg *msg);

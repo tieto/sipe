@@ -3699,11 +3699,19 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 {
 	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
-	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	gchar *from;
 	struct sip_session *session;
 
 	purple_debug_info("sipe", "process_incoming_info: \n%s\n", msg->body ? msg->body : "");
+	
+	/* Call Control protocol */
+	if (g_str_has_prefix(contenttype, "application/csta+xml"))
+	{
+		process_incoming_info_csta(sip, msg);
+		return;
+	}
 
+	from = parse_from(sipmsg_find_header(msg, "From"));
 	session = sipe_session_find_chat_by_callid(sip, callid);
 	if (!session) {
 		session = sipe_session_find_im(sip, from);
@@ -3713,7 +3721,8 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 		return;
 	}
 
-	if (!strncmp(contenttype, "application/x-ms-mim", 20)) {
+	if (g_str_has_prefix(contenttype, "application/x-ms-mim"))
+	{
 		xmlnode *xn_action 		= xmlnode_from_str(msg->body, msg->bodylen);
 		xmlnode *xn_request_rm 		= xmlnode_get_child(xn_action, "RequestRM");
 		xmlnode *xn_set_rm 		= xmlnode_get_child(xn_action, "SetRM");
@@ -3747,7 +3756,9 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 		}
 		xmlnode_free(xn_action);
 
-	} else {
+	}
+	else 
+	{
 		/* looks like purple lacks typing notification for chat */
 		if (!session->is_multiparty && !session->focus_uri) {
 			xmlnode *xn_keyboard_activity  = xmlnode_from_str(msg->body, msg->bodylen);
