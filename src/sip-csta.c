@@ -147,6 +147,18 @@ sip_to_tel_uri(const gchar *phone)
 	}
 }
 
+gchar *
+sip_tel_uri_denormalize(const gchar *tel_uri)
+{
+	if (!tel_uri) return NULL;
+	
+	if (g_str_has_prefix(tel_uri, "tel:")) {
+		return g_strdup(tel_uri + 4);
+	} else {
+		return g_strdup(tel_uri);
+	}
+}
+
 static void
 sip_csta_initialize(struct sipe_account_data *sip,
 		    const gchar *line_uri,

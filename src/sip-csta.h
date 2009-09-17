@@ -51,6 +51,21 @@ struct sip_csta {
 gchar *
 sip_to_tel_uri(const gchar *phone);
 
+
+/** Transform telephone number from tel: URI representation
+ *  to more human readable form.
+ *  Removes tel: prefix if such exist.
+ *  (Maybe will add spaces in the future according to local
+ *  phone patterns.)
+ *
+ *  Must be g_free()'d after use.
+ *
+ * @param tel_uri Ex. tel:+3222450000
+ * @return Ex. +3222450000
+ */
+gchar *
+sip_tel_uri_denormalize(const gchar *tel_uri);
+
 /** Initializes GSTA
  * @param line_uri (in) our line tel URI.            Ex.: tel:73124;phone-context=dialstring;partition=BE_BRS_INT
  * @param server   (in) SIP URI of SIP/CSTA Gateway. Ex.: sip:73124@euuklhccups01.eu.company.local

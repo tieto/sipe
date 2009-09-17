@@ -150,3 +150,10 @@ char *sipe_get_host_name(void);
  * @return trimmed string
  */
 char *trim(char *b);
+
+/**
+ * Checks if provided string is empty - NULL, zero size or just series of white spaces.
+ * Doesn't modify input string.
+ */
+gboolean
+is_empty(const char *st);

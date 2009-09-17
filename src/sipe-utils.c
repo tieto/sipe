@@ -209,6 +209,28 @@ char *trim(char *b)
 	return b;
 }
 
+gboolean
+is_empty(const char *st)
+{
+	if (!st || strlen(st) == 0)
+	{
+		return TRUE;
+	}
+	/* suspecious leading or trailing staces */
+	else if (isspace((unsigned char) *st) ||
+		 isspace((unsigned char) *(st + strlen(st) - 1)))
+	{
+		/* to not modify original string */
+		char *dup = g_strdup(st);
+		if (strlen(trim(dup)) == 0) {
+			g_free(dup);
+			return TRUE;
+		}
+		g_free(dup);
+	}
+	return FALSE;
+}
+
 
 /*
   Local Variables:
