@@ -92,18 +92,21 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define TRANSPORT_DESCRIPTOR (transport_descriptor[sip->transport])
 
 /* Status identifiers (see also: sipe_status_types()) */
-#define SIPE_STATUS_ID_UNKNOWN     purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET)     /* Unset (primitive) */
-#define SIPE_STATUS_ID_OFFLINE     purple_primitive_get_id_from_type(PURPLE_STATUS_OFFLINE)   /* Offline (primitive) */
-#define SIPE_STATUS_ID_AVAILABLE   purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) /* Online */
+#define SIPE_STATUS_ID_UNKNOWN        purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET)     /* Unset (primitive) */
+#define SIPE_STATUS_ID_OFFLINE        purple_primitive_get_id_from_type(PURPLE_STATUS_OFFLINE)   /* Offline (primitive) */
+#define SIPE_STATUS_ID_AVAILABLE      purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) /* Online */
 /*      PURPLE_STATUS_UNAVAILABLE: */
-#define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
-#define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
-#define SIPE_STATUS_ID_ONPHONE     "on-the-phone"                                             /* On The Phone */
-#define SIPE_STATUS_ID_INVISIBLE   purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) /* Appear Offline */
+#define SIPE_STATUS_ID_BUSY           "busy"                                                     /* Busy */
+#define SIPE_STATUS_ID_DND            "do-not-disturb"                                           /* Do Not Disturb */
+#define SIPE_STATUS_ID_ONPHONE        "on-the-phone"                                             /* On The Phone */
+#define SIPE_STATUS_ID_IN_CONFERENCE  "in-a-conference"                                          /* In a Conference */
+#define SIPE_STATUS_ID_IN_MEETING     "in-a-meeting"                                             /* In a Meeting */
+#define SIPE_STATUS_ID_OUT_OF_OFFICE  "out-of-office"                                            /* Out of Office */
+#define SIPE_STATUS_ID_INVISIBLE      purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) /* Appear Offline */
 /*      PURPLE_STATUS_AWAY: */
-#define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
-#define SIPE_STATUS_ID_AWAY        purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY)      /* Away (primitive) */
-#define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
+#define SIPE_STATUS_ID_BRB            "be-right-back"                                            /* Be Right Back */
+#define SIPE_STATUS_ID_AWAY           purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY)      /* Away (primitive) */
+#define SIPE_STATUS_ID_LUNCH          "out-to-lunch"                                             /* Out To Lunch */
 /* ???  PURPLE_STATUS_EXTENDED_AWAY */
 /* ???  PURPLE_STATUS_MOBILE */
 /* ???  PURPLE_STATUS_TUNE */
@@ -1906,8 +1909,18 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* Busy */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			SIPE_STATUS_ID_BUSY, _("Busy"));
+			SIPE_STATUS_ID_BUSY, _("Busy"));			
 
+	/* In a conference (not user settable) */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
+			       SIPE_STATUS_ID_IN_CONFERENCE, _("In a Conference"),
+			       FALSE);	
+	
+	/* In a meeting (not user settable) */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
+			       SIPE_STATUS_ID_IN_MEETING, _("In a Meeting"),
+			       FALSE);
+			       
 	/* Do Not Disturb (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
 			       SIPE_STATUS_ID_DND, NULL,
@@ -1920,6 +1933,11 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Away */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			NULL, NULL);
+			
+	/* Out of office (not user settable) */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AWAY,
+			       SIPE_STATUS_ID_OUT_OF_OFFICE, _("Out of Office"),
+			       FALSE);
 
 	/* On The Phone */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
@@ -4547,30 +4565,43 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
  * Must be g_free'd after use.
  */
 static char*
-sipe_get_status_by_availability(int avail)
+sipe_get_status_by_availability(int avail,
+				const char* activity)
 {
-	const char *activity;
+	const char *status;
 
-	if (avail < 3000)
-		activity = SIPE_STATUS_ID_OFFLINE;
-	else if (avail < 4500)
-		activity = SIPE_STATUS_ID_AVAILABLE;
-	else if (avail < 6000)
-		activity = SIPE_STATUS_ID_AWAY;
-	else if (avail < 7500)
-		activity = SIPE_STATUS_ID_BUSY;
-	else if (avail < 9000)
-		activity = SIPE_STATUS_ID_AWAY;
-	else if (avail < 12000)
-		activity = SIPE_STATUS_ID_DND;
-	else if (avail < 15000)
-		activity = SIPE_STATUS_ID_BRB;
-	else if (avail < 18000)
-		activity = SIPE_STATUS_ID_AWAY;
-	else
-		activity = SIPE_STATUS_ID_OFFLINE;
+	if (activity) {
+		if (!strcmp(activity, "on-the-phone")) {
+			status = SIPE_STATUS_ID_ONPHONE;
+		} else if (!strcmp(activity, "in-a-conference")) {
+			status = SIPE_STATUS_ID_IN_CONFERENCE;
+		} else if (!strcmp(activity, "in-a-meeting")) {
+			status = SIPE_STATUS_ID_IN_MEETING;
+		} else if (!strcmp(activity, "out-of-office")) {
+			status = SIPE_STATUS_ID_OUT_OF_OFFICE;
+		}
+	} else {	
+		if (avail < 3000)
+			status = SIPE_STATUS_ID_OFFLINE;
+		else if (avail < 4500)
+			status = SIPE_STATUS_ID_AVAILABLE;
+		else if (avail < 6000)
+			status = SIPE_STATUS_ID_AWAY;
+		else if (avail < 7500)
+			status = SIPE_STATUS_ID_BUSY;
+		else if (avail < 9000)
+			status = SIPE_STATUS_ID_AWAY;
+		else if (avail < 12000)
+			status = SIPE_STATUS_ID_DND;
+		else if (avail < 15000)
+			status = SIPE_STATUS_ID_BRB;
+		else if (avail < 18000)
+			status = SIPE_STATUS_ID_AWAY;
+		else
+			status = SIPE_STATUS_ID_OFFLINE;
+	}
 
-	return g_strdup(activity);
+	return g_strdup(status);
 }
 
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
@@ -4579,7 +4610,6 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode *xn_categories;
 	xmlnode *xn_category;
 	xmlnode *xn_node;
-	char *activity = NULL;
 
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri"); /* with 'sip:' prefix */
@@ -4712,32 +4742,44 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		else if(!strcmp(attrVar, "state"))
 		{
 			char *data;
-			int avail;
+			int availability;
+			const char *activity = NULL;
+			char *status = NULL;
+			xmlnode *xn_availability;
+			xmlnode *xn_activity;
+			
 			xn_node = xmlnode_get_child(xn_category, "state");
 			if (!xn_node) continue;
-			xn_node = xmlnode_get_child(xn_node, "availability");
-			if (!xn_node) continue;
+			xn_availability = xmlnode_get_child(xn_node, "availability");
+			if (!xn_availability) continue;
+			xn_activity = xmlnode_get_child(xn_node, "activity");
 
-			data = xmlnode_get_data(xn_node);
-			avail = atoi(data);
+			data = xmlnode_get_data(xn_availability);
+			availability = atoi(data);
 			g_free(data);
+			
+			if (xn_activity) {
+				activity = xmlnode_get_attrib(xn_activity, "token");
+			}
 
-			activity = sipe_get_status_by_availability(avail);
+			status = sipe_get_status_by_availability(availability, activity);
+			
+			if (status) {
+				purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", status);
+				purple_prpl_got_user_status(sip->account, uri, status, NULL);
+			}
+
+			g_free(status);
 		}
 	}
-	if(activity) {
-		purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", activity);
-		purple_prpl_got_user_status(sip->account, uri, activity, NULL);
-	}
 
-	g_free(activity);
 	xmlnode_free(xn_categories);
 }
 
 static void sipe_subscribe_poolfqdn_resource_uri(const char *host, GSList *server, struct sipe_account_data *sip)
 {
 	struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
-	purple_debug_info("sipe", "process_incoming_notify_rlmi_resub: pool(%s)\n", host);
+	purple_debug_info("sipe", "sipe_subscribe_poolfqdn_resource_uri: pool(%s)\n", host);
 	payload->host    = g_strdup(host);
 	payload->buddies = server;
 	sipe_subscribe_presence_batched_routed(sip, payload);
