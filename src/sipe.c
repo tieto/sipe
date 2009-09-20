@@ -4570,32 +4570,36 @@ sipe_get_status_by_availability(int avail,
 {
 	const char *status;
 
-	if (activity && !strcmp(activity, "on-the-phone"))
-		status = SIPE_STATUS_ID_ONPHONE;
-	else if (activity && !strcmp(activity, "in-a-conference"))
-		status = SIPE_STATUS_ID_IN_CONFERENCE;
-	else if (activity && !strcmp(activity, "in-a-meeting"))
-		status = SIPE_STATUS_ID_IN_MEETING;
-	else if (activity && !strcmp(activity, "out-of-office"))
-		status = SIPE_STATUS_ID_OUT_OF_OFFICE;
-	else if (avail < 3000)
-		status = SIPE_STATUS_ID_OFFLINE;
-	else if (avail < 4500)
-		status = SIPE_STATUS_ID_AVAILABLE;
-	else if (avail < 6000)
-		status = SIPE_STATUS_ID_AWAY;
-	else if (avail < 7500)
-		status = SIPE_STATUS_ID_BUSY;
-	else if (avail < 9000)
-		status = SIPE_STATUS_ID_AWAY;
-	else if (avail < 12000)
-		status = SIPE_STATUS_ID_DND;
-	else if (avail < 15000)
-		status = SIPE_STATUS_ID_BRB;
-	else if (avail < 18000)
-		status = SIPE_STATUS_ID_AWAY;
-	else
-		status = SIPE_STATUS_ID_OFFLINE;
+	if (activity) {
+		if (!strcmp(activity, "on-the-phone")) {
+			status = SIPE_STATUS_ID_ONPHONE;
+		} else if (!strcmp(activity, "in-a-conference")) {
+			status = SIPE_STATUS_ID_IN_CONFERENCE;
+		} else if (!strcmp(activity, "in-a-meeting")) {
+			status = SIPE_STATUS_ID_IN_MEETING;
+		} else if (!strcmp(activity, "out-of-office")) {
+			status = SIPE_STATUS_ID_OUT_OF_OFFICE;
+		}
+	} else {	
+		if (avail < 3000)
+			status = SIPE_STATUS_ID_OFFLINE;
+		else if (avail < 4500)
+			status = SIPE_STATUS_ID_AVAILABLE;
+		else if (avail < 6000)
+			status = SIPE_STATUS_ID_AWAY;
+		else if (avail < 7500)
+			status = SIPE_STATUS_ID_BUSY;
+		else if (avail < 9000)
+			status = SIPE_STATUS_ID_AWAY;
+		else if (avail < 12000)
+			status = SIPE_STATUS_ID_DND;
+		else if (avail < 15000)
+			status = SIPE_STATUS_ID_BRB;
+		else if (avail < 18000)
+			status = SIPE_STATUS_ID_AWAY;
+		else
+			status = SIPE_STATUS_ID_OFFLINE;
+	}
 
 	return g_strdup(status);
 }
