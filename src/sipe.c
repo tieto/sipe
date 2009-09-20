@@ -6824,9 +6824,19 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 	if (sip)  //happens on pidgin exit
 	{
 		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
-		if (sbuddy && sbuddy->annotation)
-		{
-			text = g_strdup(sbuddy->annotation);
+		if (sbuddy) {
+			if (!is_empty(sbuddy->activity) && !is_empty(sbuddy->annotation))
+			{
+				text = g_strdup_printf("%s. %s", sbuddy->activity, sbuddy->annotation);
+			}
+			else if (!is_empty(sbuddy->activity))
+			{
+				text = g_strdup(sbuddy->activity);
+			}
+			else
+			{
+				text = g_strdup(sbuddy->annotation);
+			}
 		}
 	}
 
