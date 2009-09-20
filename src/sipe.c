@@ -4920,7 +4920,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 {
 	const char *availability;
 	const char *activity;
-	const char *status = NULL;
+	const char *activity_name = NULL;
 	const char *name;
 	char *uri;
 	int avl;
@@ -4937,7 +4937,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
 
 	xmlnode *xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
-	xmlnode *xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
 	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 	xmlnode *xn_devices = xmlnode_get_child(xn_presentity, "devices");
@@ -4989,30 +4988,27 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	/* [MS-SIP] 2.2.1, [MS-PRES] */
 	if (act < 150)
-		status = SIPE_STATUS_ID_AWAY;
+		activity_name = SIPE_STATUS_ID_AWAY;
 	else if (act < 200)
-		status = SIPE_STATUS_ID_LUNCH;
+		activity_name = SIPE_STATUS_ID_LUNCH;
 	else if (act < 300)
-		status = SIPE_STATUS_ID_AWAY;
+		activity_name = SIPE_STATUS_ID_AWAY;
 	else if (act < 400)
-		status = SIPE_STATUS_ID_BRB;
+		activity_name = SIPE_STATUS_ID_BRB;
 	else if (act < 500)
-		status = SIPE_STATUS_ID_AVAILABLE;
+		activity_name = SIPE_STATUS_ID_AVAILABLE;
 	else if (act < 600)
-		status = SIPE_STATUS_ID_ONPHONE;
+		activity_name = SIPE_STATUS_ID_ONPHONE;
 	else if (act < 700)
-		status = SIPE_STATUS_ID_BUSY;
+		activity_name = SIPE_STATUS_ID_BUSY;
 	else if (act < 800)
-		status = SIPE_STATUS_ID_AWAY;
+		activity_name = SIPE_STATUS_ID_AWAY;
 	else
-		status = SIPE_STATUS_ID_AVAILABLE;
+		activity_name = SIPE_STATUS_ID_AVAILABLE;
 
 	if (avl < 100)
-		status = SIPE_STATUS_ID_OFFLINE;
-		
-	if (xn_oof)
-		status = SIPE_STATUS_ID_OUT_OF_OFFICE;
-		
+		activity_name = SIPE_STATUS_ID_OFFLINE;
+
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
 	{
@@ -5025,8 +5021,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		if (device_name) { sbuddy->device_name = g_strdup(device_name); }
 	}
 
-	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status);
-	purple_prpl_got_user_status(sip->account, uri, status, NULL);
+	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", activity_name);
+	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
 	g_free(note);
 	xmlnode_free(xn_presentity);
 	g_free(uri);
