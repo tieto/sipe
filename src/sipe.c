@@ -6840,6 +6840,9 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	struct sipe_account_data *sip;
 	struct sipe_buddy *sbuddy;
 	char *annotation = NULL;
+	char *activity = NULL;
+	char *meeting_subject = NULL;
+	char *meeting_location = NULL;
 
 	sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
 	if (sip)  //happens on pidgin exit
@@ -6848,13 +6851,30 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		if (sbuddy)
 		{
 			annotation = sbuddy->annotation ? g_strdup(sbuddy->annotation) : NULL;
+			activity = sbuddy->activity;
+			meeting_subject = sbuddy->meeting_subject;
+			meeting_location = sbuddy->meeting_location;
 		}
 	}
 
 	//Layout
 	if (purple_presence_is_online(presence))
 	{
-		purple_notify_user_info_add_pair(user_info, _("Status"), purple_status_get_name(status));
+		char *tmp;
+		const char *status_str = activity && status && strcmp(purple_status_get_id(status), SIPE_STATUS_ID_ONPHONE) ? 
+			(tmp = g_strdup_printf("%s (%s)", purple_status_get_name(status), activity)) : 
+			purple_status_get_name(status);
+		
+		purple_notify_user_info_add_pair(user_info, _("Status"), status_str);
+		g_free(tmp);
+	}
+	if (!is_empty(meeting_subject))
+	{
+		purple_notify_user_info_add_pair(user_info, _("Meeting About"), meeting_subject);
+	}
+	if (!is_empty(meeting_location))
+	{
+		purple_notify_user_info_add_pair(user_info, _("Meeting In"), meeting_location);
 	}
 
 	if (annotation)
