@@ -54,6 +54,9 @@
 
 struct sipe_buddy {
 	gchar *name;
+	gchar *activity;
+	gchar *meeting_subject;
+	gchar *meeting_location;
 	gchar *annotation;
 	gchar *device_name;
 	GSList *groups;

@@ -1797,6 +1797,9 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	  */
 	g_free(buddy->name);
 #endif
+	g_free(buddy->activity);
+	g_free(buddy->meeting_subject);
+	g_free(buddy->meeting_location);
 	g_free(buddy->annotation);
 	g_free(buddy->device_name);
 	g_slist_free(buddy->groups);
@@ -4549,28 +4552,28 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 static char*
 sipe_get_status_by_availability(int avail)
 {
-	const char *activity;
+	const char *status;
 
 	if (avail < 3000)
-		activity = SIPE_STATUS_ID_OFFLINE;
+		status = SIPE_STATUS_ID_OFFLINE;
 	else if (avail < 4500)
-		activity = SIPE_STATUS_ID_AVAILABLE;
+		status = SIPE_STATUS_ID_AVAILABLE;
 	else if (avail < 6000)
-		activity = SIPE_STATUS_ID_AWAY;
+		status = SIPE_STATUS_ID_AWAY;
 	else if (avail < 7500)
-		activity = SIPE_STATUS_ID_BUSY;
+		status = SIPE_STATUS_ID_BUSY;
 	else if (avail < 9000)
-		activity = SIPE_STATUS_ID_AWAY;
+		status = SIPE_STATUS_ID_AWAY;
 	else if (avail < 12000)
-		activity = SIPE_STATUS_ID_DND;
+		status = SIPE_STATUS_ID_DND;
 	else if (avail < 15000)
-		activity = SIPE_STATUS_ID_BRB;
+		status = SIPE_STATUS_ID_BRB;
 	else if (avail < 18000)
-		activity = SIPE_STATUS_ID_AWAY;
+		status = SIPE_STATUS_ID_AWAY;
 	else
-		activity = SIPE_STATUS_ID_OFFLINE;
+		status = SIPE_STATUS_ID_OFFLINE;
 
-	return g_strdup(activity);
+	return g_strdup(status);
 }
 
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
@@ -4579,7 +4582,6 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode *xn_categories;
 	xmlnode *xn_category;
 	xmlnode *xn_node;
-	char *activity = NULL;
 
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri"); /* with 'sip:' prefix */
@@ -4712,25 +4714,94 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		else if(!strcmp(attrVar, "state"))
 		{
 			char *data;
-			int avail;
+			int availability;
+			char *status = NULL;
+			xmlnode *xn_availability;
+			xmlnode *xn_activity;
+			xmlnode *xn_meeting_subject;
+			xmlnode *xn_meeting_location;
+			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sip->buddies, uri) : NULL;
+
 			xn_node = xmlnode_get_child(xn_category, "state");
 			if (!xn_node) continue;
-			xn_node = xmlnode_get_child(xn_node, "availability");
-			if (!xn_node) continue;
+			xn_availability = xmlnode_get_child(xn_node, "availability");
+			if (!xn_availability) continue;
+			xn_activity = xmlnode_get_child(xn_node, "activity");
+			xn_meeting_subject = xmlnode_get_child(xn_node, "meetingSubject");
+			xn_meeting_location = xmlnode_get_child(xn_node, "meetingLocation");
 
-			data = xmlnode_get_data(xn_node);
-			avail = atoi(data);
+			data = xmlnode_get_data(xn_availability);
+			availability = atoi(data);
 			g_free(data);
 
-			activity = sipe_get_status_by_availability(avail);
+			/* activity, meeting_subject, meeting_location */
+			if (sbuddy) {
+				/* activity */
+				g_free(sbuddy->activity);
+				if (xn_activity) {
+					const char *token = xmlnode_get_attrib(xn_activity, "token");
+					xmlnode *xn_custom = xmlnode_get_child(xn_activity, "custom");
+					
+					/* from token */
+					if (!is_empty(token)) {
+						if (!strcmp(token, "on-the-phone")) {
+							sbuddy->activity = g_strdup(_("On The Phone"));
+						} else if (!strcmp(token, "in-a-conference")) {
+							sbuddy->activity = g_strdup(_("In a Conference"));
+						} else if (!strcmp(token, "in-a-meeting")) {
+							sbuddy->activity = g_strdup(_("In a Meeting"));
+						} else if (!strcmp(token, "out-of-office")) {
+							sbuddy->activity = g_strdup(_("Out of Office"));
+						} else if (!strcmp(token, "urgent-interruptions-only")) {
+							sbuddy->activity = g_strdup(_("Urgent Interruptions Only"));
+						}
+					}
+					/* form custom element */
+					if (xn_custom) {
+						char *custom = xmlnode_get_data(xn_custom);
+						
+						if (!is_empty(custom)) {
+							sbuddy->activity = custom;
+							custom = NULL;
+						}
+						g_free(custom);
+					}
+				}
+				/* meeting_subject */
+				g_free(sbuddy->meeting_subject);				
+				if (xn_meeting_subject) {
+					char *meeting_subject = xmlnode_get_data(xn_meeting_subject);
+					
+					if (!is_empty(meeting_subject)) {
+						sbuddy->meeting_subject = meeting_subject;
+						meeting_subject = NULL;
+					}
+					g_free(meeting_subject);
+				}
+				/* meeting_location */
+				g_free(sbuddy->meeting_location);
+				if (xn_meeting_location) {
+					char *meeting_location = xmlnode_get_data(xn_meeting_location);
+					
+					if (!is_empty(meeting_location)) {
+						sbuddy->meeting_location = meeting_location;
+						meeting_location = NULL;
+					}
+					g_free(meeting_location);
+				}
+			}
+
+			status = sipe_get_status_by_availability(availability);
+
+			if (status) {
+				purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", status);
+				purple_prpl_got_user_status(sip->account, uri, status, NULL);
+			}
+
+			g_free(status);
 		}
 	}
-	if(activity) {
-		purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", activity);
-		purple_prpl_got_user_status(sip->account, uri, activity, NULL);
-	}
 
-	g_free(activity);
 	xmlnode_free(xn_categories);
 }
 
