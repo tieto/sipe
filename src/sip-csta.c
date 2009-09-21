@@ -140,6 +140,7 @@ sip_to_tel_uri(const gchar *phone)
 			if (*phone == '(') continue;
 			if (*phone == ')') continue;
 			if (*phone == '-') continue;
+			if (*phone == '.') continue;
 			*dest_p++ = *phone;
 		}
 		*dest_p = '\0';
