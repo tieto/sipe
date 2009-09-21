@@ -4954,7 +4954,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 
 static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
-	const char *activity;
+	const char *activity = NULL;
 	const char *epid;
 	const char *status_id = NULL;
 	const char *name;
@@ -4973,6 +4973,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
 	xmlnode *xn_phone_number = xmlnode_get_child(xn_presentity, "phoneNumber");
 	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
+	xmlnode *xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
 
 	xmlnode *xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
 	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
@@ -5016,6 +5017,11 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			g_free(phone);
 		}
 	}
+
+	/* oof */
+	if (xn_oof) {
+               activity = _("Out of Office");
+	}
 		
 	/* devicePresence */
 	for (node = xmlnode_get_descendant(xn_presentity, "devices", "devicePresence", NULL); node; node = xmlnode_get_next_twin(node)) {
@@ -5038,7 +5044,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 				activity = _("In a Conference");
 			} else {
 				activity = state;
-			}	
+			}
 		}
 	}
 	
@@ -6899,7 +6905,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	//Layout
 	if (purple_presence_is_online(presence))
 	{
-		char *tmp;
+		char *tmp = NULL;
 		const char *status_str = activity && status && strcmp(purple_status_get_id(status), SIPE_STATUS_ID_ONPHONE) ? 
 			(tmp = g_strdup_printf("%s (%s)", purple_status_get_name(status), activity)) : 
 			purple_status_get_name(status);
