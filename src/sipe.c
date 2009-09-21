@@ -4738,6 +4738,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			if (sbuddy) {
 				/* activity */
 				g_free(sbuddy->activity);
+				sbuddy->activity = NULL;
 				if (xn_activity) {
 					const char *token = xmlnode_get_attrib(xn_activity, "token");
 					xmlnode *xn_custom = xmlnode_get_child(xn_activity, "custom");
@@ -4768,7 +4769,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					}
 				}
 				/* meeting_subject */
-				g_free(sbuddy->meeting_subject);				
+				g_free(sbuddy->meeting_subject);
+				sbuddy->meeting_subject = NULL;			
 				if (xn_meeting_subject) {
 					char *meeting_subject = xmlnode_get_data(xn_meeting_subject);
 					
@@ -4780,6 +4782,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				}
 				/* meeting_location */
 				g_free(sbuddy->meeting_location);
+				sbuddy->meeting_location = NULL;
 				if (xn_meeting_location) {
 					char *meeting_location = xmlnode_get_data(xn_meeting_location);
 					
@@ -4951,14 +4954,16 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 
 static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
-	const char *availability;
 	const char *activity;
-	const char *activity_name = NULL;
+	const char *epid;
+	const char *status_id = NULL;
 	const char *name;
 	char *uri;
 	int avl;
 	int act;
+	const char *device_name = NULL;
 	struct sipe_buddy *sbuddy;
+	xmlnode *node;
 
 	xmlnode *xn_presentity = xmlnode_from_str(data, len);
 
@@ -4972,15 +4977,12 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
 	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
-	xmlnode *xn_devices = xmlnode_get_child(xn_presentity, "devices");
-	xmlnode *xn_device_presence = xn_devices ? xmlnode_get_child(xn_devices, "devicePresence") : NULL;
-	xmlnode *xn_device_name = xn_device_presence ? xmlnode_get_child(xn_device_presence, "deviceName") : NULL;
-	const char *device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
 
 	name = xmlnode_get_attrib(xn_presentity, "uri"); /* without 'sip:' prefix */
 	uri = sip_uri_from_name(name);
-	availability = xmlnode_get_attrib(xn_availability, "aggregate");
-	activity = xmlnode_get_attrib(xn_activity, "aggregate");
+	avl = atoi(xmlnode_get_attrib(xn_availability, "aggregate"));
+	epid = xmlnode_get_attrib(xn_availability, "epid");
+	act = atoi(xmlnode_get_attrib(xn_activity, "aggregate"));
 
 	if (xn_display_name) {
 		char *display_name = g_strdup(xmlnode_get_attrib(xn_display_name, "displayName"));
@@ -5003,7 +5005,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	if (xn_contact) {
 		/* tel */
-		xmlnode *node;
 		for (node = xmlnode_get_child(xn_contact, "tel"); node; node = xmlnode_get_next_twin(node))
 		{
 			/* Ex.: <tel type="work">tel:+3222220000</tel> */
@@ -5015,47 +5016,75 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			g_free(phone);
 		}
 	}
-
-	avl = atoi(availability);
-	act = atoi(activity);
+		
+	/* devicePresence */
+	for (node = xmlnode_get_descendant(xn_presentity, "devices", "devicePresence", NULL); node; node = xmlnode_get_next_twin(node)) {
+		xmlnode *xn_device_name;
+		xmlnode *xn_state;
+		char *state;
+		
+		if (strcmp(xmlnode_get_attrib(node, "epid"), epid)) continue;
+		
+		xn_device_name = xmlnode_get_child(node, "deviceName");		
+		device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
+		
+		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
+		state = xn_state ? xmlnode_get_data(xn_state) : NULL;
+		
+		if (!is_empty(state)) {
+			if (!strcmp(state, "on-the-phone")) {
+				activity = _("On The Phone");
+			} else if (!strcmp(state, "presenting")) {
+				activity = _("In a Conference");
+			} else {
+				activity = state;
+			}	
+		}
+	}
+	
 
 	/* [MS-SIP] 2.2.1, [MS-PRES] */
 	if (act < 150)
-		activity_name = SIPE_STATUS_ID_AWAY;
+		status_id = SIPE_STATUS_ID_AWAY;
 	else if (act < 200)
-		activity_name = SIPE_STATUS_ID_LUNCH;
+		status_id = SIPE_STATUS_ID_LUNCH;
 	else if (act < 300)
-		activity_name = SIPE_STATUS_ID_AWAY;
+		status_id = SIPE_STATUS_ID_AWAY;
 	else if (act < 400)
-		activity_name = SIPE_STATUS_ID_BRB;
+		status_id = SIPE_STATUS_ID_BRB;
 	else if (act < 500)
-		activity_name = SIPE_STATUS_ID_AVAILABLE;
+		status_id = SIPE_STATUS_ID_AVAILABLE;
 	else if (act < 600)
-		activity_name = SIPE_STATUS_ID_ONPHONE;
+		status_id = SIPE_STATUS_ID_ONPHONE;
 	else if (act < 700)
-		activity_name = SIPE_STATUS_ID_BUSY;
+		status_id = SIPE_STATUS_ID_BUSY;
 	else if (act < 800)
-		activity_name = SIPE_STATUS_ID_AWAY;
+		status_id = SIPE_STATUS_ID_AWAY;
 	else
-		activity_name = SIPE_STATUS_ID_AVAILABLE;
+		status_id = SIPE_STATUS_ID_AVAILABLE;
 
 	if (avl < 100)
-		activity_name = SIPE_STATUS_ID_OFFLINE;
+		status_id = SIPE_STATUS_ID_OFFLINE;
 
+		
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
 	{
-		if (sbuddy->annotation) { g_free(sbuddy->annotation); }
+		g_free(sbuddy->activity);
+		sbuddy->activity = NULL;
+		if (!is_empty(activity)) { sbuddy->activity = g_strdup(activity); }
+		
+		g_free(sbuddy->annotation);
 		sbuddy->annotation = NULL;
-		if (note) { sbuddy->annotation = g_strdup(note); }
+		if (!is_empty(note)) { sbuddy->annotation = g_strdup(note); }
 
-		if (sbuddy->device_name) { g_free(sbuddy->device_name); }
+		g_free(sbuddy->device_name);
 		sbuddy->device_name = NULL;
-		if (device_name) { sbuddy->device_name = g_strdup(device_name); }
+		if (!is_empty(device_name)) { sbuddy->device_name = g_strdup(device_name); }
 	}
 
-	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", activity_name);
-	purple_prpl_got_user_status(sip->account, uri, activity_name, NULL);
+	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
+	purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
 	g_free(note);
 	xmlnode_free(xn_presentity);
 	g_free(uri);
