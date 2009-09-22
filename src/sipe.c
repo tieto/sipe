@@ -5180,9 +5180,12 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 		while (parts) {
 			xmlnode *xml = xmlnode_from_str(purple_mime_part_get_data(parts->data),
 							purple_mime_part_get_length(parts->data));
-			gchar *uri = sip_uri(xmlnode_get_attrib(xml, "uri"));
+							
+			if (strcmp(xml->name, "list")) {					
+				gchar *uri = sip_uri(xmlnode_get_attrib(xml, "uri"));
 
-			buddies = g_slist_append(buddies, uri);
+				buddies = g_slist_append(buddies, uri);
+			}
 			xmlnode_free(xml);
 
 			parts = parts->next;
