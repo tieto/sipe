@@ -101,6 +101,7 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_STATUS_ID_ONPHONE     "on-the-phone"                                             /* On The Phone */
 #define SIPE_STATUS_ID_INVISIBLE   purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) /* Appear Offline */
 /*      PURPLE_STATUS_AWAY: */
+#define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
 #define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
 #define SIPE_STATUS_ID_AWAY        purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY)      /* Away (primitive) */
 #define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
@@ -1931,6 +1932,11 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Out To Lunch */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			SIPE_STATUS_ID_LUNCH, _("Out To Lunch"));
+			
+	/* Idle/Inactive (not user settable) */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AWAY,
+			SIPE_STATUS_ID_IDLE, _("Inactive"),
+			FALSE);
 
 	/* Appear Offline */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_INVISIBLE,
@@ -4559,7 +4565,7 @@ sipe_get_status_by_availability(int avail)
 	else if (avail < 4500)
 		status = SIPE_STATUS_ID_AVAILABLE;
 	else if (avail < 6000)
-		status = SIPE_STATUS_ID_AWAY;
+		status = SIPE_STATUS_ID_IDLE;
 	else if (avail < 7500)
 		status = SIPE_STATUS_ID_BUSY;
 	else if (avail < 9000)
