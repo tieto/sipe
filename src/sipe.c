@@ -2977,12 +2977,7 @@ sipe_unsubscribe_cb(SIPE_UNUSED_PARAMETER gpointer key,
 	g_free(tmp);
 
 	/* Rate limit to max. 25 requests per seconds */
-#ifdef _WIN32
-	/* win32 platform doesn't have POSIX usleep()? */
-	Sleep(1000 / 25);
-#else
-	usleep(1000000 / 25);
-#endif
+	g_usleep(1000000 / 25);
 
 	send_sip_request(sip->gc, "SUBSCRIBE", dialog->with, dialog->with, hdr, NULL, dialog, NULL);
 	g_free(hdr);
