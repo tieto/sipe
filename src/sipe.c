@@ -1405,36 +1405,53 @@ sipe_schedule_action_msec(const gchar *name,
 
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
 
+/** Should be g_free()'d
+ */
+static gchar *
+sipe_get_subscription_key(gchar *event,
+			  gchar *with)
+{
+	gchar *key = NULL;
+	
+	if (is_empty(event)) return NULL;
+	
+	if (event && !g_ascii_strcasecmp(event, "presence")) {
+		/* Subscription is identified by ACTION_NAME_PRESENCE key */
+		key = g_strdup_printf(ACTION_NAME_PRESENCE, with);
+
+		/* @TODO drop participated buddies' just_added flag */
+	} else if (event) {
+		/* Subscription is identified by <event> key */
+		key = g_strdup_printf("<%s>", event);
+	}
+
+	return key;
+}
+
 gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg,
 				    SIPE_UNUSED_PARAMETER struct transaction *tc)
 {
+	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+	gchar *event = sipmsg_find_header(msg, "Event");
+	gchar *key;
+	
+	key = sipe_get_subscription_key(event, with);
+
+	/* 200 OK; 481 Call Leg Does Not Exist */
+	if (key && (msg->response == 200 || msg->response == 481)) {
+		if (g_hash_table_lookup(sip->subscriptions, key)) {
+			g_hash_table_remove(sip->subscriptions, key);
+			purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
+		}
+	}
+	
 	/* create/store subscription dialog if not yet */
 	if (msg->response == 200) {
-		struct sip_subscription *subscription;
-		gchar *with = parse_from(sipmsg_find_header(msg, "To"));
-		gchar *callid = sipmsg_find_header(msg, "Call-ID");
-		gchar *event = sipmsg_find_header(msg, "Event");
+		gchar *callid = sipmsg_find_header(msg, "Call-ID");		
 		gchar *cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-		gchar *key = NULL;
-
-		if (event && !g_ascii_strcasecmp(event, "presence")) {
-			/* Subscription is identified by ACTION_NAME_PRESENCE key */
-			key = g_strdup_printf(ACTION_NAME_PRESENCE, with);
-
-			/* @TODO drop participated buddies' just_added flag */
-		} else if (event) {
-			/* Subscription is identified by <event> key */
-			key = g_strdup_printf("<%s>", event);
-		}
 
 		if (key) {
-			subscription = g_hash_table_lookup(sip->subscriptions, key);
-			if (subscription) {
-				g_hash_table_remove(sip->subscriptions, key);
-				purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
-			}
-
-			subscription = g_new0(struct sip_subscription, 1);
+			struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
 			g_hash_table_insert(sip->subscriptions, g_strdup(key), subscription);
 
 			subscription->dialog.callid = g_strdup(callid);
@@ -1444,13 +1461,13 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 			sipe_dialog_parse(&subscription->dialog, msg, TRUE);
 
 			purple_debug_info("sipe", "process_subscribe_response: subscription dialog added for: %s\n", key);
-
-			g_free(key);
 		}
 
 		g_free(with);
 		g_free(cseq);
 	}
+	
+	g_free(key);
 
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
 	{
@@ -5238,7 +5255,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		expires_header = sipmsg_find_header(msg, "Expires");
 		timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
 		purple_debug_info("sipe", "process_incoming_notify: subscription expires:%d\n\n", timeout);
-		timeout = (timeout - 60) > 60 ? (timeout - 60) : timeout; // 1 min ahead of expiration
+		timeout = (timeout - 120) > 120 ? (timeout - 120) : timeout; // 2 min ahead of expiration
 	}
 
 	/* for one off subscriptions (send with Expire: 0) */
@@ -5279,11 +5296,19 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		}
 	}
 
-	//The server sends a (BE)NOTIFY with the status 'terminated'
-	if (request && subscription_state && strstr(subscription_state, "terminated") ) {
-		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
-		purple_debug_info("sipe", "process_incoming_notify: (BE)NOTIFY says that subscription to buddy %s was terminated. \n",  from);
-		g_free(from);
+	/* The server sends status 'terminated' */
+	if (subscription_state && strstr(subscription_state, "terminated") ) {
+		gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
+		gchar *key = sipe_get_subscription_key(event, who);
+		purple_debug_info("sipe", "process_incoming_notify: server says that subscription to %s was terminated.\n",  who);
+
+		if (g_hash_table_lookup(sip->subscriptions, key)) {
+			g_hash_table_remove(sip->subscriptions, key);
+			purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
+		}
+	
+		g_free(who);
+		g_free(key);
 	}
 
 	if (timeout && event) {// For LSC 2005 and OCS 2007
@@ -5340,10 +5365,24 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		sipe_process_registration_notify(sip, msg);
 	}
 
-	//The client responses 'Ok' when receive a NOTIFY message (lcs2005)
+	/* The client responses on received a NOTIFY message */
 	if (request && !benotify)
 	{
-		send_sip_response(sip->gc, msg, 200, "OK", NULL);
+		if (event) {
+			gchar *who = parse_from(sipmsg_find_header(msg, "From"));
+			gchar *key = sipe_get_subscription_key(event, who);
+			
+			g_free(who);
+			if (!key || (key && g_hash_table_lookup(sip->subscriptions, key))) {
+				send_sip_response(sip->gc, msg, 200, "OK", NULL);
+			} else {
+				send_sip_response(sip->gc, msg, 481, "Call Leg Does Not Exist", NULL);
+			}	
+
+			g_free(key);
+		} else {
+			send_sip_response(sip->gc, msg, 200, "OK", NULL);
+		}
 	}
 }
 
