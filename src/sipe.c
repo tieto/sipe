@@ -5211,7 +5211,7 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 		g_free(doc);
 		if (mime) purple_mime_document_free(mime);
 
-		payload->host    = who;
+		payload->host    = g_strdup(who);
 		payload->buddies = buddies;
 		sipe_schedule_action(action_name, timeout,
 				     sipe_subscribe_presence_batched_routed,
@@ -5220,7 +5220,7 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 		purple_debug_info("sipe", "Resubscription multiple contacts with batched support & route(%s) in %d\n", who, timeout);
 
 	} else {
-		sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, NULL, sip, who);
+		sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(who));
 		purple_debug_info("sipe", "Resubscription single contact with batched support(%s) in %d\n", who, timeout);
 	}
 	g_free(action_name);
@@ -5339,24 +5339,15 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		{
 			gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
 			gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, who);
-			if(sip->batched_support) {
-				gchar *my_self = sip_uri_self(sip);
-				if(!g_ascii_strcasecmp(who, my_self)){
-					sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_batched, NULL, sip, NULL);
-					purple_debug_info("sipe", "Resubscription full batched list in %d\n",timeout);
-					g_free(who); /* unused */
-				}
-				else {
-					sipe_process_presence_timeout(sip, msg, who, timeout);
-				}
-				g_free(my_self);
+			if (sip->batched_support) {
+				sipe_process_presence_timeout(sip, msg, who, timeout);
 			}
 			else {
-				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, who);
-			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who,timeout);
+				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(who));
+			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who, timeout);
 			}
 			g_free(action_name);
-			/* "who" will be freed by the action we just scheduled */
+			g_free(who);
 		}
 	}
 
