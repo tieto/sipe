@@ -793,7 +793,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
-	gchar *route     = strdup("");
+	gchar *route     = g_strdup("");
 	gchar *epid      = get_epid(sip); // TODO generate one per account/login
        int cseq = dialog ? ++dialog->cseq :
                /* This breaks OCS2007: own presence, contact search, ?
@@ -1412,9 +1412,9 @@ sipe_get_subscription_key(gchar *event,
 			  gchar *with)
 {
 	gchar *key = NULL;
-	
+
 	if (is_empty(event)) return NULL;
-	
+
 	if (event && !g_ascii_strcasecmp(event, "presence")) {
 		/* Subscription is identified by ACTION_NAME_PRESENCE key */
 		key = g_strdup_printf(ACTION_NAME_PRESENCE, with);
@@ -1434,7 +1434,7 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *key;
-	
+
 	key = sipe_get_subscription_key(event, with);
 
 	/* 200 OK; 481 Call Leg Does Not Exist */
@@ -1444,10 +1444,10 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 			purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
 		}
 	}
-	
+
 	/* create/store subscription dialog if not yet */
 	if (msg->response == 200) {
-		gchar *callid = sipmsg_find_header(msg, "Call-ID");		
+		gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
 
 		if (key) {
@@ -1466,7 +1466,7 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 		g_free(with);
 		g_free(cseq);
 	}
-	
+
 	g_free(key);
 
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
@@ -1949,7 +1949,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Out To Lunch */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			SIPE_STATUS_ID_LUNCH, _("Out To Lunch"));
-			
+
 	/* Idle/Inactive (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AWAY,
 			SIPE_STATUS_ID_IDLE, _("Inactive"),
@@ -3726,7 +3726,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 	struct sip_session *session;
 
 	purple_debug_info("sipe", "process_incoming_info: \n%s\n", msg->body ? msg->body : "");
-	
+
 	/* Call Control protocol */
 	if (g_str_has_prefix(contenttype, "application/csta+xml"))
 	{
@@ -3780,7 +3780,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 		xmlnode_free(xn_action);
 
 	}
-	else 
+	else
 	{
 		/* looks like purple lacks typing notification for chat */
 		if (!session->is_multiparty && !session->focus_uri) {
@@ -4760,7 +4760,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				if (xn_activity) {
 					const char *token = xmlnode_get_attrib(xn_activity, "token");
 					xmlnode *xn_custom = xmlnode_get_child(xn_activity, "custom");
-					
+
 					/* from token */
 					if (!is_empty(token)) {
 						if (!strcmp(token, "on-the-phone")) {
@@ -4778,7 +4778,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					/* form custom element */
 					if (xn_custom) {
 						char *custom = xmlnode_get_data(xn_custom);
-						
+
 						if (!is_empty(custom)) {
 							sbuddy->activity = custom;
 							custom = NULL;
@@ -4788,10 +4788,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				}
 				/* meeting_subject */
 				g_free(sbuddy->meeting_subject);
-				sbuddy->meeting_subject = NULL;			
+				sbuddy->meeting_subject = NULL;
 				if (xn_meeting_subject) {
 					char *meeting_subject = xmlnode_get_data(xn_meeting_subject);
-					
+
 					if (!is_empty(meeting_subject)) {
 						sbuddy->meeting_subject = meeting_subject;
 						meeting_subject = NULL;
@@ -4803,7 +4803,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				sbuddy->meeting_location = NULL;
 				if (xn_meeting_location) {
 					char *meeting_location = xmlnode_get_data(xn_meeting_location);
-					
+
 					if (!is_empty(meeting_location)) {
 						sbuddy->meeting_location = meeting_location;
 						meeting_location = NULL;
@@ -5040,21 +5040,21 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	if (xn_oof) {
                activity = _("Out of Office");
 	}
-		
+
 	/* devicePresence */
 	for (node = xmlnode_get_descendant(xn_presentity, "devices", "devicePresence", NULL); node; node = xmlnode_get_next_twin(node)) {
 		xmlnode *xn_device_name;
 		xmlnode *xn_state;
 		char *state;
-		
+
 		if (strcmp(xmlnode_get_attrib(node, "epid"), epid)) continue;
-		
-		xn_device_name = xmlnode_get_child(node, "deviceName");		
+
+		xn_device_name = xmlnode_get_child(node, "deviceName");
 		device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
-		
+
 		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
 		state = xn_state ? xmlnode_get_data(xn_state) : NULL;
-		
+
 		if (!is_empty(state)) {
 			if (!strcmp(state, "on-the-phone")) {
 				activity = _("On The Phone");
@@ -5065,7 +5065,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			}
 		}
 	}
-	
+
 
 	/* [MS-SIP] 2.2.1, [MS-PRES] */
 	if (act < 150)
@@ -5090,14 +5090,14 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	if (avl < 100)
 		status_id = SIPE_STATUS_ID_OFFLINE;
 
-		
+
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
 	{
 		g_free(sbuddy->activity);
 		sbuddy->activity = NULL;
 		if (!is_empty(activity)) { sbuddy->activity = g_strdup(activity); }
-		
+
 		g_free(sbuddy->annotation);
 		sbuddy->annotation = NULL;
 		if (!is_empty(note)) { sbuddy->annotation = g_strdup(note); }
@@ -5198,8 +5198,8 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 		while (parts) {
 			xmlnode *xml = xmlnode_from_str(purple_mime_part_get_data(parts->data),
 							purple_mime_part_get_length(parts->data));
-							
-			if (strcmp(xml->name, "list")) {					
+
+			if (strcmp(xml->name, "list")) {
 				gchar *uri = sip_uri(xmlnode_get_attrib(xml, "uri"));
 
 				buddies = g_slist_append(buddies, uri);
@@ -5306,7 +5306,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			g_hash_table_remove(sip->subscriptions, key);
 			purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
 		}
-	
+
 		g_free(who);
 		g_free(key);
 	}
@@ -5362,13 +5362,13 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		if (event) {
 			gchar *who = parse_from(sipmsg_find_header(msg, "From"));
 			gchar *key = sipe_get_subscription_key(event, who);
-			
+
 			g_free(who);
 			if (!key || (key && g_hash_table_lookup(sip->subscriptions, key))) {
 				send_sip_response(sip->gc, msg, 200, "OK", NULL);
 			} else {
 				send_sip_response(sip->gc, msg, 481, "Call Leg Does Not Exist", NULL);
-			}	
+			}
 
 			g_free(key);
 		} else {
@@ -6940,10 +6940,10 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	if (purple_presence_is_online(presence))
 	{
 		char *tmp = NULL;
-		const char *status_str = activity && status && strcmp(purple_status_get_id(status), SIPE_STATUS_ID_ONPHONE) ? 
-			(tmp = g_strdup_printf("%s (%s)", purple_status_get_name(status), activity)) : 
+		const char *status_str = activity && status && strcmp(purple_status_get_id(status), SIPE_STATUS_ID_ONPHONE) ?
+			(tmp = g_strdup_printf("%s (%s)", purple_status_get_name(status), activity)) :
 			purple_status_get_name(status);
-		
+
 		purple_notify_user_info_add_pair(user_info, _("Status"), status_str);
 		g_free(tmp);
 	}
@@ -7392,7 +7392,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_PROP);
 		phone_disp_str = purple_blist_node_get_string(&buddy->node, PHONE_DISPLAY_PROP);
 		if (phone) {
-			gchar *label = g_strdup_printf(_("Work %s"), 
+			gchar *label = g_strdup_printf(_("Work %s"),
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
@@ -7404,7 +7404,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_MOBILE_PROP);
 		phone_disp_str = purple_blist_node_get_string(&buddy->node, PHONE_MOBILE_DISPLAY_PROP);
 		if (phone) {
-			gchar *label = g_strdup_printf(_("Mobile %s"), 
+			gchar *label = g_strdup_printf(_("Mobile %s"),
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
@@ -7416,7 +7416,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_HOME_PROP);
 		phone_disp_str = purple_blist_node_get_string(&buddy->node, PHONE_HOME_DISPLAY_PROP);
 		if (phone) {
-			gchar *label = g_strdup_printf(_("Home %s"), 
+			gchar *label = g_strdup_printf(_("Home %s"),
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
@@ -7428,7 +7428,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_OTHER_PROP);
 		phone_disp_str = purple_blist_node_get_string(&buddy->node, PHONE_OTHER_DISPLAY_PROP);
 		if (phone) {
-			gchar *label = g_strdup_printf(_("Other %s"), 
+			gchar *label = g_strdup_printf(_("Other %s"),
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
@@ -7440,7 +7440,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_CUSTOM1_PROP);
 		phone_disp_str = purple_blist_node_get_string(&buddy->node, PHONE_CUSTOM1_DISPLAY_PROP);
 		if (phone) {
-			gchar *label = g_strdup_printf(_("Custom1 %s"), 
+			gchar *label = g_strdup_printf(_("Custom1 %s"),
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);

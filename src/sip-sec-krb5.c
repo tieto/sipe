@@ -62,7 +62,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 	OM_uint32 minor;
 	OM_uint32 expiry;
 	struct gss_cred_id_struct* credentials;
-	
+
 	if (!context->sso) {
 		/* Do not use default credentials, obtain a new one and store it in cache */
 		sip_sec_krb5_obtain_tgt(g_ascii_strup(domain, -1), username, password);
@@ -104,7 +104,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	gss_buffer_desc input_name_buffer;
 	gss_name_t target_name;
 	context_krb5 ctx = (context_krb5) context;
-	
+
 	input_name_buffer.value = (void *)service_name;
 	input_name_buffer.length = strlen(input_name_buffer.value) + 1;
 
@@ -117,11 +117,11 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 		printf("ERROR: sip_sec_init_sec_context__krb5: failed to construct target name. Returned. ret=%d\n", (int)ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
-					
+
 	request_flags = GSS_C_INTEG_FLAG;
-	
+
 	input_token.length = in_buff.length;
-	input_token.value = in_buff.value;	
+	input_token.value = in_buff.value;
 
 	output_token.length = 0;
 	output_token.value = NULL;
@@ -150,10 +150,10 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
 			printf("ERROR: sip_sec_init_sec_context__krb5: failed to release credentials. ret=%d\n", (int)ret);
 		}
-	
+
 		input_token.value = NULL;
 		input_token.length = 0;
-	
+
 		out_buff->length = output_token.length;
 		out_buff->value = output_token.value;
 
@@ -166,7 +166,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
  * @param message a NULL terminated string to sign
  */
 static sip_uint32
-sip_sec_make_signature__krb5(SipSecContext context, 
+sip_sec_make_signature__krb5(SipSecContext context,
 			     const char *message,
 			     SipSecBuffer *signature)
 {
@@ -174,16 +174,16 @@ sip_sec_make_signature__krb5(SipSecContext context,
 	OM_uint32 minor;
 	gss_buffer_desc input_message;
 	gss_buffer_desc output_token;
-	
+
 	input_message.value = (void *)message;
 	input_message.length = strlen(input_message.value);
-	
+
 	ret = gss_get_mic(&minor,
 			  ((context_krb5)context)->ctx_krb5,
 			  GSS_C_QOP_DEFAULT,
 			  &input_message,
 			  &output_token);
-	   
+
 	if (GSS_ERROR(ret)) {
 		sip_sec_krb5_print_gss_error("gss_get_mic", ret, minor);
 		printf("ERROR: sip_ssp_make_signature: failed to make signature. ret=%d\n", (int)ret);
@@ -206,16 +206,16 @@ sip_sec_verify_signature__krb5(SipSecContext context,
 {
 	OM_uint32 ret;
 	OM_uint32 minor;
-	gss_qop_t qop_state;	
+	gss_qop_t qop_state;
 	gss_buffer_desc input_message;
 	gss_buffer_desc input_token;
-	
+
 	input_message.value = (void *)message;
 	input_message.length = strlen(input_message.value);
-	
+
 	input_token.value = signature.value;
 	input_token.length = signature.length;
-	
+
 	ret = gss_verify_mic(&minor,
 			     ((context_krb5)context)->ctx_krb5,
 			     &input_message,
@@ -245,7 +245,7 @@ sip_sec_destroy_sec_context__krb5(SipSecContext context)
 			printf("ERROR: sip_sec_destroy_sec_context__krb5: failed to release credentials. ret=%d\n", (int)ret);
 		}
 	}
-	
+
 	if (ctx->ctx_krb5) {
 		ret = gss_delete_sec_context(&minor, &(ctx->ctx_krb5), GSS_C_NO_BUFFER);
 		if (GSS_ERROR(ret)) {
@@ -253,7 +253,7 @@ sip_sec_destroy_sec_context__krb5(SipSecContext context)
 			printf("ERROR: sip_sec_destroy_sec_context__krb5: failed to delete security context. ret=%d\n", (int)ret);
 		}
 	}
-		
+
 	g_free(ctx);
 }
 
@@ -282,16 +282,16 @@ sip_sec_krb5_print_gss_error0(char *func,
 	OM_uint32 minor;
 	OM_uint32 message_context = 0;
 	gss_buffer_desc status_string;
-	
+
 	do {
 		ret = gss_display_status(&minor,
 					 status,
 					 type,
 					 GSS_C_NO_OID,
 					 &message_context,
-					 &status_string);		
+					 &status_string);
 
-		printf("GSS-API error in %s (%s): %s\n", func, (type == GSS_C_GSS_CODE ? "GSS" : "Mech"), (char *)status_string.value);			
+		printf("GSS-API error in %s (%s): %s\n", func, (type == GSS_C_GSS_CODE ? "GSS" : "Mech"), (char *)status_string.value);
 		gss_release_buffer(&minor, &status_string);
 	} while (message_context != 0);
 }
@@ -320,11 +320,11 @@ sip_sec_krb5_print_error(const char *func,
  *
  * kinit would require the following name:
  * alice@ATLANTA.LOCAL
- * where 'alice' is a username and 
+ * where 'alice' is a username and
  * 'ATLANTA.LOCAL' is a realm (domain) .
  */
 void
-sip_sec_krb5_obtain_tgt(const char *realm_in,
+sip_sec_krb5_obtain_tgt(SIPE_UNUSED_PARAMETER const char *realm_in,
 		        const char *username_in,
 			const char *password)
 {
@@ -333,49 +333,56 @@ sip_sec_krb5_obtain_tgt(const char *realm_in,
 	krb5_creds	credentials;
 	krb5_ccache	ccdef;
 	krb5_error_code	ret;
-	char *realm = strdup(realm_in);
-	char *username = strdup(username_in);
+	char *realm;
+	char *username;
 	gchar **domain_user;
 	gchar **user_realm;
-	
+
 	printf("sip_sec_krb5_obtain_tgt started\n");
 
 	memset(&credentials, 0, sizeof(krb5_creds));
-	
-	/* extracts realm as domain part of username 
+
+	/* extracts realm as domain part of username
 	 * either before '\' or after '@'
 	 */
-	domain_user = g_strsplit(username, "\\", 2);
-	realm =   (domain_user && domain_user[1]) ? g_ascii_strup(domain_user[0], -1) : g_strdup("");
-	username = (domain_user && domain_user[1]) ? g_strdup(domain_user[1]) : username;
-	
+	domain_user = g_strsplit(username_in, "\\", 2);
+	if (domain_user && domain_user[1]) {
+		realm = g_ascii_strup(domain_user[0], -1);
+		username = g_strdup(domain_user[1]);
+	} else {
+		realm = g_strdup("");
+		username = g_strdup(username_in);
+	}
+	g_strfreev(domain_user);
+
 	user_realm = g_strsplit(username, "@", 2);
 	if (user_realm && user_realm[1]) {
+		g_free(username);
+		g_free(realm);
 		username = g_strdup(user_realm[0]);
 		realm = g_ascii_strup(user_realm[1], -1);
 	}
 	g_strfreev(user_realm);
-	g_strfreev(domain_user);
 
 	/* Obtait TGT */
 	if ((ret = krb5_init_context(&context))) {
 		sip_sec_krb5_print_error("krb5_init_context", context, ret);
 	}
-	
+
 	if (!ret && (ret = krb5_build_principal(context, &principal, strlen(realm), realm, username, NULL))) {
 		sip_sec_krb5_print_error("krb5_build_principal", context, ret);
 	}
 	g_free(username);
 	g_free(realm);
 
-	if (!ret && (ret = krb5_get_init_creds_password(context, &credentials, principal, (char *)password, NULL, NULL, 0, NULL, NULL))) { 
+	if (!ret && (ret = krb5_get_init_creds_password(context, &credentials, principal, (char *)password, NULL, NULL, 0, NULL, NULL))) {
 		sip_sec_krb5_print_error("krb5_get_init_creds_password", context, ret);
 	}
-	
+
 	if (!ret) {
 		printf("sip_sec_krb5_obtain_tgt: new TGT obtained.\n");
 	}
-	
+
 
 	/* Store TGT in default credential cache */
 	if (!ret && (ret = krb5_cc_default(context, &ccdef))) {
@@ -389,11 +396,11 @@ sip_sec_krb5_obtain_tgt(const char *realm_in,
 	if (!ret && (ret = krb5_cc_store_cred(context, ccdef, &credentials))) {
 		sip_sec_krb5_print_error("krb5_cc_store_cred", context, ret);
 	}
-	
+
 	if (!ret) {
 		printf("sip_sec_krb5_obtain_tgt: new TGT stored in default credentials cache.\n");
 	}
-	
+
 
 	if (principal)
 		krb5_free_principal(context, principal);
@@ -409,6 +416,15 @@ sip_sec_krb5_print_error(const char *func,
 {
 	const char *error_message = krb5_get_error_message(context, ret);
 	printf("Kerberos 5 ERROR in %s: %s\n", func, error_message);
-	
+
 	krb5_free_error_message(context, error_message);
 }
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

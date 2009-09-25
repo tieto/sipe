@@ -437,7 +437,7 @@ purple_ntlm_gen_signature (const char * buf, unsigned char * signing_key, guint3
 	gint32 plaintext [] = {0, CRC32(buf), sequence};
 
 	guchar result [16];
-	gchar signature [32];
+	gchar signature [33];
 	int i, j;
 	PurpleCipherContext *rc4 = purple_cipher_context_new_by_name("rc4", NULL);
 	purple_cipher_context_set_option(rc4,"key_len", GINT_TO_POINTER(key_len));
@@ -593,9 +593,9 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 	/* NTLM requires a password */
 	if (!password) return SIP_SEC_E_INTERNAL_ERROR;
 
-	ctx->domain   = strdup(domain);
-	ctx->username = strdup(username);
-	ctx->password = strdup(password);
+	ctx->domain   = g_strdup(domain);
+	ctx->username = g_strdup(username);
+	ctx->password = g_strdup(password);
 
 	return SIP_SEC_E_OK;
 }
