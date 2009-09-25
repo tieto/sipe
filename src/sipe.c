@@ -1433,9 +1433,7 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 {
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	gchar *event = sipmsg_find_header(msg, "Event");
-	gchar *key;
-
-	key = sipe_get_subscription_key(event, with);
+	gchar *key = sipe_get_subscription_key(event, with);
 
 	/* 200 OK; 481 Call Leg Does Not Exist */
 	if (key && (msg->response == 200 || msg->response == 481)) {
@@ -1463,11 +1461,11 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 			purple_debug_info("sipe", "process_subscribe_response: subscription dialog added for: %s\n", key);
 		}
 
-		g_free(with);
 		g_free(cseq);
 	}
 
 	g_free(key);
+	g_free(with);
 
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
 	{
@@ -4997,6 +4995,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 
+	char *free_activity = NULL;
+
 	name = xmlnode_get_attrib(xn_presentity, "uri"); /* without 'sip:' prefix */
 	uri = sip_uri_from_name(name);
 	avl = atoi(xmlnode_get_attrib(xn_availability, "aggregate"));
@@ -5061,9 +5061,11 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			} else if (!strcmp(state, "presenting")) {
 				activity = _("In a Conference");
 			} else {
-				activity = state;
+				activity = free_activity = state;
+				state = NULL;
 			}
 		}
+		g_free(state);
 	}
 
 
@@ -5106,6 +5108,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		sbuddy->device_name = NULL;
 		if (!is_empty(device_name)) { sbuddy->device_name = g_strdup(device_name); }
 	}
+
+	if (free_activity) g_free(free_activity);
 
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
 	purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
@@ -5300,14 +5304,15 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	if (subscription_state && strstr(subscription_state, "terminated") ) {
 		gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
 		gchar *key = sipe_get_subscription_key(event, who);
+
 		purple_debug_info("sipe", "process_incoming_notify: server says that subscription to %s was terminated.\n",  who);
+		g_free(who);
 
 		if (g_hash_table_lookup(sip->subscriptions, key)) {
 			g_hash_table_remove(sip->subscriptions, key);
 			purple_debug_info("sipe", "process_subscribe_response: subscription dialog removed for: %s\n", key);
 		}
 
-		g_free(who);
 		g_free(key);
 	}
 
@@ -7387,7 +7392,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	menu = g_list_prepend(menu, act);
 
 	if (sip->csta && !sip->csta->line_status) {
-		gchar *tmp;
+		gchar *tmp = NULL;
 		/* work phone */
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_PROP);
 		phone_disp_str = purple_blist_node_get_string(&buddy->node, PHONE_DISPLAY_PROP);
@@ -7396,6 +7401,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
+			tmp = NULL;
 			g_free(label);
 			menu = g_list_prepend(menu, act);
 		}
@@ -7408,6 +7414,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
+			tmp = NULL;
 			g_free(label);
 			menu = g_list_prepend(menu, act);
 		}
@@ -7420,6 +7427,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
+			tmp = NULL;
 			g_free(label);
 			menu = g_list_prepend(menu, act);
 		}
@@ -7432,6 +7440,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
+			tmp = NULL;
 			g_free(label);
 			menu = g_list_prepend(menu, act);
 		}
@@ -7444,6 +7453,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
 			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
 			g_free(tmp);
+			tmp = NULL;
 			g_free(label);
 			menu = g_list_prepend(menu, act);
 		}
