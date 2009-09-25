@@ -61,6 +61,10 @@ msgstr "Am Telefon"
 msgid "Out To Lunch"
 msgstr "Zur Mittagspause"
 
+#: ../src/sipe.c:1955
+msgid "Inactive"
+msgstr "Inaktiv"
+
 #: ../src/sipe.c:2015 ../src/sipe.c:2027 ../src/sipe.c:2047 ../src/sipe.c:6314
 msgid "Other Contacts"
 msgstr "Andere Kontakte"
@@ -128,6 +132,22 @@ msgstr ""
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Service ist nicht verfügbar: %s"
+
+#: ../src/sipe.c:4769 ../src/sipe.c:5062
+msgid "In a Conference"
+msgstr "In einer Konferenz"
+
+#: ../src/sipe.c:4771
+msgid "In a Meeting"
+msgstr "In einer Besprechung"
+
+#: ../src/sipe.c:4773 ../src/sipe.c:5041
+msgid "Out of Office"
+msgstr "Nicht im Büro"
+
+#: ../src/sipe.c:4775
+msgid "Urgent Interruptions Only"
+msgstr "Bitte nur in dringenden Fällen stören"
 
 #: ../src/sipe.c:5562
 msgid "Invalid message signature received"
@@ -272,6 +292,14 @@ msgstr "Kontaktsuche..."
 #: ../src/sipe.c:6531
 msgid "Status"
 msgstr "Status"
+
+#: ../src/sipe.c:6952
+msgid "Meeting About"
+msgstr "Besprechungsthema"
+
+#: ../src/sipe.c:6956
+msgid "Meeting In"
+msgstr "Besprechungsraum"
 
 #: ../src/sipe.c:6536
 msgid "Note"
