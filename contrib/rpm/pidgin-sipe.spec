@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20090817gitc92a59a
+%define git       20090928gitcdc56b3
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -89,9 +89,13 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %{_libdir}/pidgin/libsipe.so
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
+%{_datadir}/pixmaps/pidgin/emotes/sipe
 
 
 %changelog
+* Mon Sep 28 2009 J. D. User <jduser@noreply.com> 1.6.3-*git*
+- added directory for emoticon theme icons
+
 * Wed Sep 09 2009 J. D. User <jduser@noreply.com> 1.6.3
 - update to 1.6.3
 
