@@ -284,7 +284,7 @@ static void
 RC4K (const unsigned char * k, const unsigned char * d, unsigned char * result)
 {
 	PurpleCipherContext * context = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(context, "key_len", (gpointer)16);
+	purple_cipher_context_set_option(context, "key_len", GUINT_TO_POINTER(16));
 	purple_cipher_context_set_key(context, k);
 	purple_cipher_context_encrypt(context, (const guchar *)d, 16, result, NULL);
 	purple_cipher_context_destroy(context);
@@ -431,7 +431,7 @@ CRC32 (const char * msg)
 }
 
 static gchar *
-purple_ntlm_gen_signature (const char * buf, unsigned char * signing_key, guint32 random_pad, long sequence, int key_len)
+purple_ntlm_gen_signature (const char * buf, unsigned char * signing_key, guint32 random_pad, long sequence, unsigned long key_len)
 {
 	gint32 *res_ptr;
 	gint32 plaintext [] = {0, CRC32(buf), sequence};
@@ -440,7 +440,7 @@ purple_ntlm_gen_signature (const char * buf, unsigned char * signing_key, guint3
 	gchar signature [33];
 	int i, j;
 	PurpleCipherContext *rc4 = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(rc4, "key_len", (gpointer) key_len);
+	purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(key_len));
 
 	purple_cipher_context_set_key(rc4, signing_key);
 	purple_cipher_context_encrypt(rc4, (const guchar *)plaintext, 12, result+4, NULL);
