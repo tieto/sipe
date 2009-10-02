@@ -3098,17 +3098,29 @@ sipe_present_err(struct sipe_account_data *sip,
 void
 sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 				     struct sip_session *session,
+				     int sip_error,
 				     const gchar *who,
 				     const gchar *message)
 {
-	char *msg, *msg_tmp;
+	char *msg, *msg_tmp, *msg_tmp2;
+	const char *label;
 
 	msg_tmp = message ? purple_markup_strip_html(message) : NULL;
 	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
 	g_free(msg_tmp);
-	msg_tmp = g_strdup_printf( _("This message was not delivered to %s because one or more recipients are offline:\n%s") ,
-			who ? who : "", msg ? msg : "");
+	/* Service unavailable; Server Internal Error; Server Time-out */
+	if (sip_error == 503 || sip_error == 500 || sip_error == 504) { 
+		label = _("This message was not delivered to %s because the service is not available");
+	} else if (sip_error == 486) { /* Busy Here */
+		label = _("This message was not delivered to %s because one or more recipients do not want to be disturbed");
+	} else {
+		label = _("This message was not delivered to %s because one or more recipients are offline");
+	}
+	
+	msg_tmp = g_strdup_printf( "%s:\n%s" ,
+			msg_tmp2 = g_strdup_printf(label, who ? who : ""), msg ? msg : "");
 	sipe_present_err(sip, session, msg_tmp);
+	g_free(msg_tmp2);
 	g_free(msg_tmp);
 	g_free(msg);
 }
@@ -3156,7 +3168,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 			alias = (gchar *)purple_buddy_get_alias(pbuddy);
 		}
 
-		sipe_present_message_undelivered_err(sip, session, alias, message);
+		sipe_present_message_undelivered_err(sip, session, msg->response, alias, message);
 		ret = FALSE;
 	} else {
 		gchar *message_id = sipmsg_find_header(msg, "Message-Id");
@@ -3382,7 +3394,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		}
 
 		if (message) {
-			sipe_present_message_undelivered_err(sip, session, alias, message);
+			sipe_present_message_undelivered_err(sip, session, msg->response, alias, message);
 		} else {
 			gchar *tmp_msg = g_strdup_printf(_("Failed to invite %s"), alias);
 			sipe_present_err(sip, session, tmp_msg);

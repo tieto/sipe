@@ -277,6 +277,7 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 void
 sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 				     struct sip_session *session,
+				     int sip_error,
 				     const gchar *who,
 				     const gchar *message);
 
