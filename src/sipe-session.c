@@ -90,16 +90,16 @@ sipe_session_find_chat_by_id(struct sipe_account_data *sip,
 }
 
 struct sip_session *
-sipe_session_find_chat_by_name(struct sipe_account_data *sip,
-			       const gchar *name)
+sipe_session_find_chat_by_title(struct sipe_account_data *sip,
+			        const gchar *name)
 {
 	if (sip == NULL || name == NULL) {
 		return NULL;
 	}
 
 	SIPE_SESSION_FOREACH {
-		if (session->chat_name &&
-		    !g_strcasecmp(name, session->chat_name)) {
+		if (session->chat_title &&
+		    !g_strcasecmp(name, session->chat_title)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;
@@ -182,7 +182,7 @@ sipe_session_remove(struct sipe_account_data *sip, struct sip_session *session)
 	g_hash_table_destroy(session->conf_unconfirmed_messages);
 
 	g_free(session->with);
-	g_free(session->chat_name);
+	g_free(session->chat_title);
 	g_free(session->callid);
 	g_free(session->roster_manager);
 	g_free(session->focus_uri);

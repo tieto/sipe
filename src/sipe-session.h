@@ -45,8 +45,10 @@ struct sip_session {
 	gboolean is_multiparty;
 	/** purple chat id */
 	int chat_id;
+	/** purple indexes chats by names */
+	//gchar *chat_name;
 	/** Human readable chat name */
-	gchar *chat_name;
+	gchar *chat_title;
 	/** Call-Id identifying the conversation */
 	gchar *callid; /* For multiparty conversations */
 	/** Roster Manager URI */
@@ -122,8 +124,8 @@ sipe_session_find_chat_by_id(struct sipe_account_data *sip, int id);
  * @return pointer to session or NULL
  */
 struct sip_session * 
-sipe_session_find_chat_by_name(struct sipe_account_data *sip,
-			       const gchar *name);
+sipe_session_find_chat_by_title(struct sipe_account_data *sip,
+			        const gchar *name);
 
 /**
  * Find Conference session

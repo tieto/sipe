@@ -696,12 +696,17 @@ sipe_process_conference(struct sipe_account_data *sip,
 	}
 
 	if (session->focus_uri && !session->conv) {
-		gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		gchar *chat_title = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
 		gchar *self = sip_uri_self(sip);
 		/* create prpl chat */
-		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_name);
-		session->chat_name = chat_name;
+		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, g_strdup(focus_uri));
+		session->chat_title = chat_title;
 		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
+		session->conv->title = g_strdup(chat_title);
+		/* set same topic, just to refresh UI to display the title*/
+		purple_conv_chat_set_topic(PURPLE_CONV_CHAT(session->conv), 
+					   NULL,
+					   purple_conv_chat_get_topic(PURPLE_CONV_CHAT(session->conv)));
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.
@@ -891,7 +896,7 @@ sipe_process_imdn(struct sipe_account_data *sip,
 	for (node = xmlnode_get_child(xn_imdn, "recipient"); node; node = xmlnode_get_next_twin(node)) {
 		gchar *tmp = parse_from(xmlnode_get_attrib(node, "uri"));
 		gchar *uri = parse_from(tmp);
-		sipe_present_message_undelivered_err(sip, session, uri, message);
+		sipe_present_message_undelivered_err(sip, session, -1, uri, message);
 		g_free(tmp);
 		g_free(uri);
 	}

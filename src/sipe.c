@@ -3640,6 +3640,7 @@ sipe_session_close(struct sipe_account_data *sip,
 		   struct sip_session * session)
 {
 	if (session && session->focus_uri) {
+		sipe_conf_immcu_closed(sip, session);
 		conf_session_close(sip, session);
 	}
 
@@ -4156,17 +4157,17 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(newTag);
 
 	if (is_multiparty && !session->conv) {
-		gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		gchar *chat_title = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
 		gchar *self = sip_uri_self(sip);
 		/* create prpl chat */
-		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_name);
-		session->chat_name = g_strdup(chat_name);
+		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
+		session->chat_title = g_strdup(chat_title);
 		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		/* add self */
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
 					  self, NULL,
 					  PURPLE_CBFLAGS_NONE, FALSE);
-		g_free(chat_name);
+		g_free(chat_title);
 		g_free(self);
 	}
 
@@ -7068,19 +7069,19 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	else /* 2005- multiparty chat */
 	{
 		gchar *self = sip_uri_self(sip);
-		gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		gchar *chat_title = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
 		struct sip_session *session;
 
 		session = sipe_session_add_chat(sip);
 		session->roster_manager = g_strdup(self);
 
-		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, g_strdup(chat_name));
-		session->chat_name = g_strdup(chat_name);
+		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, g_strdup(chat_title));
+		session->chat_title = g_strdup(chat_title);
 		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
 		sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
 
-		g_free(chat_name);
+		g_free(chat_title);
 		g_free(self);
 	}
 }
@@ -7225,15 +7226,15 @@ sipe_election_result(struct sipe_account_data *sip,
  * For 2007+ conference only.
  */
 static void
-sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy, const char *chat_name)
+sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy, const char *chat_title)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	struct sip_session *session;
 
 	purple_debug_info("sipe", "sipe_buddy_menu_chat_make_leader_cb: buddy->name=%s\n", buddy->name);
-	purple_debug_info("sipe", "sipe_buddy_menu_chat_make_leader_cb: chat_name=%s\n", chat_name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_make_leader_cb: chat_title=%s\n", chat_title);
 
-	session = sipe_session_find_chat_by_name(sip, chat_name);
+	session = sipe_session_find_chat_by_title(sip, chat_title);
 
 	sipe_conf_modify_user_role(sip, session, buddy->name);
 }
@@ -7242,29 +7243,29 @@ sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy, const char *chat_name)
  * For 2007+ conference only.
  */
 static void
-sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy, const char *chat_name)
+sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy, const char *chat_title)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	struct sip_session *session;
 
 	purple_debug_info("sipe", "sipe_buddy_menu_chat_remove_cb: buddy->name=%s\n", buddy->name);
-	purple_debug_info("sipe", "sipe_buddy_menu_chat_remove_cb: chat_name=%s\n", chat_name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_remove_cb: chat_title=%s\n", chat_title);
 
-	session = sipe_session_find_chat_by_name(sip, chat_name);
+	session = sipe_session_find_chat_by_title(sip, chat_title);
 
 	sipe_conf_delete_user(sip, session, buddy->name);
 }
 
 static void
-sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, char *chat_name)
+sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, char *chat_title)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	struct sip_session *session;
 
 	purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: buddy->name=%s\n", buddy->name);
-	purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: chat_name=%s\n", chat_name);
+	purple_debug_info("sipe", "sipe_buddy_menu_chat_invite_cb: chat_title=%s\n", chat_title);
 
-	session = sipe_session_find_chat_by_name(sip, chat_name);
+	session = sipe_session_find_chat_by_title(sip, chat_title);
 
 	sipe_invite_to_chat(sip, session, buddy->name);
 }
@@ -7350,7 +7351,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	gchar *self = sip_uri_self(sip);
 
 	SIPE_SESSION_FOREACH {
-		if (g_ascii_strcasecmp(self, buddy->name) && session->chat_name && session->conv)
+		if (g_ascii_strcasecmp(self, buddy->name) && session->chat_title && session->conv)
 		{
 			if (purple_conv_chat_find_user(PURPLE_CONV_CHAT(session->conv), buddy->name))
 			{
@@ -7363,10 +7364,10 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				    && PURPLE_CBFLAGS_OP != (flags & PURPLE_CBFLAGS_OP)     /* Not conf OP */
 				    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
 				{
-					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_name);
+					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_title);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_make_leader_cb),
-								     session->chat_name, NULL);
+								     session->chat_title, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -7374,10 +7375,10 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				if (session->focus_uri
 				    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
 				{
-					gchar *label = g_strdup_printf(_("Remove from '%s'"), session->chat_name);
+					gchar *label = g_strdup_printf(_("Remove from '%s'"), session->chat_title);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_remove_cb),
-								     session->chat_name, NULL);
+								     session->chat_title, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -7387,10 +7388,10 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				if (!session->focus_uri
 				    || (session->focus_uri && !session->locked))
 				{
-					gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_name);
+					gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_title);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
-								     session->chat_name, NULL);
+								     session->chat_title, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -7514,7 +7515,7 @@ sipe_conf_modify_lock(PurpleChat *chat, gboolean locked)
 	struct sipe_account_data *sip = chat->account->gc->proto_data;
 	struct sip_session *session;
 
-	session = sipe_session_find_chat_by_name(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
+	session = sipe_session_find_chat_by_title(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
 	sipe_conf_modify_conference_lock(sip, session, locked);
 }
 
@@ -7542,7 +7543,7 @@ sipe_chat_menu(PurpleChat *chat)
 	struct sip_session *session;
 	gchar *self;
 
-	session = sipe_session_find_chat_by_name(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
+	session = sipe_session_find_chat_by_title(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
 	if (!session) return NULL;
 
 	self = sip_uri_self(sip);
