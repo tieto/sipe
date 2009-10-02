@@ -5069,13 +5069,13 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	}
 
 
-	/* [MS-SIP] 2.2.1, [MS-PRES] */
+	/* [MS-SIP] 2.2.1 */
 	if (act < 150)
 		status_id = SIPE_STATUS_ID_AWAY;
 	else if (act < 200)
 		status_id = SIPE_STATUS_ID_LUNCH;
 	else if (act < 300)
-		status_id = SIPE_STATUS_ID_AWAY;
+		status_id = SIPE_STATUS_ID_IDLE;
 	else if (act < 400)
 		status_id = SIPE_STATUS_ID_BRB;
 	else if (act < 500)
