@@ -92,16 +92,32 @@ msgstr "Sie wurden vom Server zurückgewiesen mit: %s"
 msgid "no reason given"
 msgstr "es wurde kein Grund angegeben"
 
-#: ../src/sipe.c:2959
+#: ../src/sipe.c:3113
+#, c-format
+msgid ""
+"This message was not delivered to %s because the service is not available"
+msgstr ""
+"Diese Nachricht konnte nicht an %s zugestellt werden, da der Service nicht "
+"verfügbar ist"
+
+#. Busy Here
+#: ../src/sipe.c:3115
+#, c-format
+msgid ""
+"This message was not delivered to %s because one or more recipients do not "
+"want to be disturbed"
+msgstr ""
+"Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere "
+"Empfänger nicht gestört werden wollen"
+
+#: ../src/sipe.c:3117
 #, c-format
 msgid ""
 "This message was not delivered to %s because one or more recipients are "
-"offline:\n"
-"%s"
+"offline"
 msgstr ""
 "Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere "
-"Empfänger offline sind:\n"
-"%s"
+"Empfänger offline sind"
 
 #: ../src/sipe.c:3237
 #, c-format
