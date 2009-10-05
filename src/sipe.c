@@ -163,7 +163,15 @@ sipe_get_chat_name(const char *proto_chat_id)
 	
 	return g_strdup(chat_name);
 }
-
+				
+static void 
+sipe_rejoin_chat(PurpleConversation *conv)
+{
+	if (PURPLE_CONV_CHAT(conv)->left) {
+		PURPLE_CONV_CHAT(conv)->left = FALSE;
+		purple_conversation_update(conv, PURPLE_CONV_UPDATE_CHATLEFT);	
+	}
+}
 
 static char *genbranch()
 {
@@ -3721,7 +3729,7 @@ sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
-
+	
 	sipe_session_close(sip, session);
 }
 
@@ -4416,6 +4424,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                                         }
                                         hdr = g_slist_next(hdr);
                                 }
+				
+				/* rejoin open chats to be able to use them by continue to send messages */
+				purple_conversation_foreach(sipe_rejoin_chat);
 
 				/* subscriptions */
 				if (!sip->subscribed) { //do it just once, not every re-register
