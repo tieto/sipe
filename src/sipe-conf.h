@@ -41,6 +41,11 @@ void
 process_incoming_invite_conf(struct sipe_account_data *sip,
 			     struct sipmsg *msg);
 			     
+/** Invite us to the focus */
+void
+sipe_invite_conf_focus(struct sipe_account_data *sip,
+		       struct sip_session *session);
+			     
 /** 
  * Process of conference state
  * Content-Type: application/conference-info+xml

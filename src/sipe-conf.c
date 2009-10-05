@@ -272,7 +272,7 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 }
 
 /** Invite us to the focus */
-static void
+void
 sipe_invite_conf_focus(struct sipe_account_data *sip,
 		       struct sip_session *session)
 {
@@ -698,6 +698,18 @@ sipe_process_conference(struct sipe_account_data *sip,
 	if (session->focus_uri && !session->conv) {
 		gchar *chat_title = sipe_get_chat_name(focus_uri);
 		gchar *self = sip_uri_self(sip);
+		/* can't be find by chat id as it won't survive acc reinstantation */
+		PurpleConversation *conv = NULL;
+		
+		if (chat_title) {
+			conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_CHAT,
+								     chat_title,
+								     sip->account);
+		}
+		/* to be able to rejoin existing chat/window */
+		if (conv && !purple_conv_chat_has_left(PURPLE_CONV_CHAT(conv))) {
+			PURPLE_CONV_CHAT(conv)->left = TRUE;	
+		}
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
 		session->chat_title = chat_title;

@@ -132,6 +132,8 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
  * @value a purple chat-name.
  */
 static GHashTable *chat_names = NULL;
+/** same as chat_names but swapped key with values */
+static GHashTable *chat_names_inverse = NULL;
 
 /**
  * A non-volatile chat counter.
@@ -151,6 +153,7 @@ sipe_get_chat_name(const char *proto_chat_id)
 	
 	if (!chat_names) {
 		chat_names = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+		chat_names_inverse = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 	}	
 	
 	chat_name = g_hash_table_lookup(chat_names, proto_chat_id);
@@ -158,12 +161,14 @@ sipe_get_chat_name(const char *proto_chat_id)
 	if (!chat_name) {
 		chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
 		g_hash_table_insert(chat_names, g_strdup(proto_chat_id), chat_name);
+		g_hash_table_insert(chat_names_inverse,  chat_name, g_strdup(proto_chat_id));
 		purple_debug_info("sipe", "sipe_conf_get_name: added new: %s\n", chat_name);
 	}
 	
 	return g_strdup(chat_name);
 }
-				
+
+/** Allows to send typed messages from chat window again after account reinstantiation. */				
 static void 
 sipe_rejoin_chat(PurpleConversation *conv)
 {
@@ -3773,6 +3778,22 @@ static int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 		session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue,
 								 g_strdup(what));
 		sipe_im_process_queue(sip, session);
+	} else if (sip) {
+		char *chat_name = purple_find_chat(sip->gc, id)->name;
+		char *proto_chat_id = g_hash_table_lookup(chat_names_inverse, chat_name);
+		
+		purple_debug_info("sipe", "sipe_chat_send: chat_name='%s'\n", chat_name ? chat_name : "NULL");
+		purple_debug_info("sipe", "sipe_chat_send: proto_chat_id='%s'\n", proto_chat_id ? proto_chat_id : "NULL");
+		
+		if (sip->ocs2007) {
+			struct sip_session *session = sipe_session_add_chat(sip);
+			
+			session->is_multiparty = FALSE;
+			session->focus_uri = g_strdup(proto_chat_id);
+			session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue,
+									 g_strdup(what));
+			sipe_invite_conf_focus(sip, session);
+		}
 	}
 
 	return 1;
