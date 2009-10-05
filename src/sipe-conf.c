@@ -696,17 +696,12 @@ sipe_process_conference(struct sipe_account_data *sip,
 	}
 
 	if (session->focus_uri && !session->conv) {
-		gchar *chat_title = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		gchar *chat_title = sipe_get_chat_name(focus_uri);
 		gchar *self = sip_uri_self(sip);
 		/* create prpl chat */
-		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, g_strdup(focus_uri));
+		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
 		session->chat_title = chat_title;
 		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
-		session->conv->title = g_strdup(chat_title);
-		/* set same topic, just to refresh UI to display the title*/
-		purple_conv_chat_set_topic(PURPLE_CONV_CHAT(session->conv), 
-					   NULL,
-					   purple_conv_chat_get_topic(PURPLE_CONV_CHAT(session->conv)));
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.

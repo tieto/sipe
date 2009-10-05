@@ -122,6 +122,49 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_PUB_STATE_MACHINE	"100"
 #define SIPE_PUB_STATE_USER	"200"
 
+/**
+ * A non-volatile mapping of protocol's chat identification
+ * to purple's chat-name. The latter is very important to
+ * find/rejoin chat.
+ *
+ * @key for 2007 conference this is (gchar *) Focus URI
+ *      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
+ * @value a purple chat-name.
+ */
+static GHashTable *chat_names = NULL;
+
+/**
+ * A non-volatile chat counter.
+ * Should survive protocol reload.
+ */
+static int chat_seq = 0;
+
+char *
+sipe_get_chat_name(const char *proto_chat_id)
+{
+	char *chat_name = NULL;
+	
+	if (is_empty(proto_chat_id)) {
+		purple_debug_info("sipe", "sipe_conf_get_name: proto_chat_id is empty. returning NULL.\n");
+		return NULL;
+	}
+	
+	if (!chat_names) {
+		chat_names = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	}	
+	
+	chat_name = g_hash_table_lookup(chat_names, proto_chat_id);
+	purple_debug_info("sipe", "sipe_conf_get_name: lookup results: %s\n", chat_name ? chat_name : "NULL");
+	if (!chat_name) {
+		chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
+		g_hash_table_insert(chat_names, g_strdup(proto_chat_id), chat_name);
+		purple_debug_info("sipe", "sipe_conf_get_name: added new: %s\n", chat_name);
+	}
+	
+	return g_strdup(chat_name);
+}
+
+
 static char *genbranch()
 {
 	return g_strdup_printf("z9hG4bK%04X%04X%04X%04X%04X",
@@ -4157,7 +4200,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(newTag);
 
 	if (is_multiparty && !session->conv) {
-		gchar *chat_title = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		gchar *chat_title = sipe_get_chat_name(callid);
 		gchar *self = sip_uri_self(sip);
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
@@ -7069,7 +7112,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	else /* 2005- multiparty chat */
 	{
 		gchar *self = sip_uri_self(sip);
-		gchar *chat_title = g_strdup_printf(_("Chat #%d"), ++sip->chat_seq);
+		gchar *chat_title = g_strdup_printf(_("Chat #%d"), ++chat_seq);
 		struct sip_session *session;
 
 		session = sipe_session_add_chat(sip);
