@@ -27,6 +27,7 @@
 #include "debug.h"
 
 #include "sipe.h"
+#include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
@@ -696,11 +697,11 @@ sipe_process_conference(struct sipe_account_data *sip,
 	}
 
 	if (session->focus_uri && !session->conv) {
-		gchar *chat_title = sipe_get_chat_name(focus_uri);
+		gchar *chat_title = sipe_chat_get_name(session->focus_uri);
 		gchar *self = sip_uri_self(sip);
 		/* can't be find by chat id as it won't survive acc reinstantation */
 		PurpleConversation *conv = NULL;
-		
+
 		if (chat_title) {
 			conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_CHAT,
 								     chat_title,
@@ -708,7 +709,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 		}
 		/* to be able to rejoin existing chat/window */
 		if (conv && !purple_conv_chat_has_left(PURPLE_CONV_CHAT(conv))) {
-			PURPLE_CONV_CHAT(conv)->left = TRUE;	
+			PURPLE_CONV_CHAT(conv)->left = TRUE;
 		}
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
@@ -720,7 +721,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 		 */
 		 g_free(self);
 	}
-	
+
 	/* subject */
 	if ((xn_subject = xmlnode_get_descendant(xn_conference_info, "conference-description", "subject", NULL))) {
 		g_free(session->subject);
@@ -757,7 +758,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 		PurpleConvChat *chat = PURPLE_CONV_CHAT(session->conv);
 		gboolean is_in_im_mcu = FALSE;
 		gchar *self = sip_uri_self(sip);
-		
+
 		if (role && !strcmp(role, "presenter")) {
 			flags |= PURPLE_CBFLAGS_OP;
 		}
@@ -793,12 +794,12 @@ sipe_process_conference(struct sipe_account_data *sip,
 		g_free(role);
 		g_free(self);
 	}
-	
+
 	/* entity-view, locked */
 	for (node = xmlnode_get_descendant(xn_conference_info, "conference-view", "entity-view", NULL);
 	     node;
 	     node = xmlnode_get_next_twin(node)) {
-	
+
 		xmlnode *xn_type = xmlnode_get_descendant(node, "entity-state", "media", "entry", "type", NULL);
 		gchar *tmp;
 		if (xn_type && !strcmp("chat", (tmp = xmlnode_get_data(xn_type)))) {
@@ -808,21 +809,21 @@ sipe_process_conference(struct sipe_account_data *sip,
 				gboolean prev_locked = session->locked;
 				session->locked = (locked && !strcmp(locked, "true")) ? TRUE : FALSE;
 				if (prev_locked && !session->locked) {
-					sipe_present_info(sip, session, 
+					sipe_present_info(sip, session,
 						_("This conference is no longer locked. Additional participants can now join."));
 				}
 				if (!prev_locked && session->locked) {
-					sipe_present_info(sip, session, 
+					sipe_present_info(sip, session,
 						_("This conference is locked. Nobody else can join the conference while it is locked."));
 				}
-				
+
 				purple_debug_info("sipe", "sipe_process_conference: session->locked=%s\n",
 						          session->locked ? "TRUE" : "FALSE");
 				g_free(locked);
 			}
 			g_free(tmp);
 		}
-	}	
+	}
 	xmlnode_free(xn_conference_info);
 
 	if (session->im_mcu_uri) {
@@ -845,7 +846,7 @@ void
 sipe_conf_immcu_closed(struct sipe_account_data *sip,
 		       struct sip_session *session)
 {
-	sipe_present_info(sip, session, 
+	sipe_present_info(sip, session,
 			  _("You have been disconnected from this conference."));
 	purple_conv_chat_clear_users(PURPLE_CONV_CHAT(session->conv));
 }

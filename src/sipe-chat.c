@@ -20,10 +20,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-//#include "connection.h"
+#include "debug.h"
 
 #include "sipe.h"
 #include "sipe-chat.h"
+#include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 
@@ -39,6 +40,59 @@ void sipe_chat_invite(PurpleConnection *gc, int id,
 		sipe_invite_to_chat(sip, session, uri);
 		g_free(uri);
 	}
+}
+
+/** See below. Same as chat_names but swapped key with values */
+static GHashTable *chat_names_inverse = NULL;
+
+gchar *
+sipe_chat_get_name(const gchar *proto_chat_id)
+{
+	/**
+	 * A non-volatile mapping of protocol's chat identification
+	 * to purple's chat-name. The latter is very important to
+	 * find/rejoin chat.
+	 *
+	 * @key for 2007 conference this is (gchar *) Focus URI
+	 *      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
+	 * @value a purple chat name.
+	 */
+	static GHashTable *chat_names = NULL;
+
+	/**
+	 * A non-volatile chat counter.
+	 * Should survive protocol reload.
+	 */
+	static int chat_seq = 0;
+
+	char *chat_name = NULL;
+
+	if (!chat_names) {
+		chat_names = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	}
+	if (!chat_names_inverse) {
+		chat_names_inverse = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	}
+
+	if (proto_chat_id) {
+		chat_name = g_hash_table_lookup(chat_names, proto_chat_id);
+		purple_debug_info("sipe", "sipe_chat_get_name: lookup results: %s\n", chat_name ? chat_name : "NULL");
+	}
+	if (!chat_name) {
+		chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
+		g_hash_table_insert(chat_names, g_strdup(proto_chat_id), chat_name);
+		g_hash_table_insert(chat_names_inverse,  chat_name, g_strdup(proto_chat_id));
+		purple_debug_info("sipe", "sipe_chat_get_name: added new: %s\n", chat_name);
+	}
+
+	return g_strdup(chat_name);
+}
+
+const gchar *
+sipe_chat_find_name(const gchar *chat_name)
+{
+	if (!chat_names_inverse) return NULL;
+	return(g_hash_table_lookup(chat_names_inverse, chat_name));
 }
 
 /*

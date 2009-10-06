@@ -289,18 +289,6 @@ sipe_present_info(struct sipe_account_data *sip,
 void
 sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 				  struct sip_session *session);
-				  
-/**
- * Returns purple's chat-name for provided chat identification in protocol.
- * Stores newly created chat-name if not yet exist.
- * 
- * Must be g_free()'d after use
- *
- * @param proto_chat_id for 2007 conference this is (gchar *) Focus URI,
- *                      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
- */
-char *
-sipe_get_chat_name(const char *proto_chat_id);
 
 /*** THE BIG SPLIT END ***/
 

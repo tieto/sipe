@@ -25,3 +25,25 @@
  */
 void sipe_chat_invite(PurpleConnection *gc, int id, const char *message,
 		      const char *name);
+
+/**
+ * Returns purple's chat name for provided chat identification in protocol.
+ * Stores newly created chat title if not yet exist.
+ *
+ * @param proto_chat_id for 2007 conference this is (gchar *) Focus URI,
+ *                      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
+ *
+ * @return chat name. Must be g_free()'d after use
+ */
+gchar *
+sipe_chat_get_name(const gchar *proto_chat_id);
+
+/**
+ * Returns protocol id for provided purple's chat name
+ *
+ * @param chat_name chat name
+ *
+ * @return protocol id
+ */
+const gchar *
+sipe_chat_find_name(const gchar *chat_name);

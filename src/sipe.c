@@ -122,59 +122,13 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_PUB_STATE_MACHINE	"100"
 #define SIPE_PUB_STATE_USER	"200"
 
-/**
- * A non-volatile mapping of protocol's chat identification
- * to purple's chat-name. The latter is very important to
- * find/rejoin chat.
- *
- * @key for 2007 conference this is (gchar *) Focus URI
- *      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
- * @value a purple chat-name.
- */
-static GHashTable *chat_names = NULL;
-/** same as chat_names but swapped key with values */
-static GHashTable *chat_names_inverse = NULL;
-
-/**
- * A non-volatile chat counter.
- * Should survive protocol reload.
- */
-static int chat_seq = 0;
-
-char *
-sipe_get_chat_name(const char *proto_chat_id)
-{
-	char *chat_name = NULL;
-	
-	if (is_empty(proto_chat_id)) {
-		purple_debug_info("sipe", "sipe_conf_get_name: proto_chat_id is empty. returning NULL.\n");
-		return NULL;
-	}
-	
-	if (!chat_names) {
-		chat_names = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-		chat_names_inverse = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-	}	
-	
-	chat_name = g_hash_table_lookup(chat_names, proto_chat_id);
-	purple_debug_info("sipe", "sipe_conf_get_name: lookup results: %s\n", chat_name ? chat_name : "NULL");
-	if (!chat_name) {
-		chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
-		g_hash_table_insert(chat_names, g_strdup(proto_chat_id), chat_name);
-		g_hash_table_insert(chat_names_inverse,  chat_name, g_strdup(proto_chat_id));
-		purple_debug_info("sipe", "sipe_conf_get_name: added new: %s\n", chat_name);
-	}
-	
-	return g_strdup(chat_name);
-}
-
-/** Allows to send typed messages from chat window again after account reinstantiation. */				
-static void 
+/** Allows to send typed messages from chat window again after account reinstantiation. */
+static void
 sipe_rejoin_chat(PurpleConversation *conv)
 {
 	if (PURPLE_CONV_CHAT(conv)->left) {
 		PURPLE_CONV_CHAT(conv)->left = FALSE;
-		purple_conversation_update(conv, PURPLE_CONV_UPDATE_CHATLEFT);	
+		purple_conversation_update(conv, PURPLE_CONV_UPDATE_CHATLEFT);
 	}
 }
 
@@ -3165,14 +3119,14 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
 	g_free(msg_tmp);
 	/* Service unavailable; Server Internal Error; Server Time-out */
-	if (sip_error == 503 || sip_error == 500 || sip_error == 504) { 
+	if (sip_error == 503 || sip_error == 500 || sip_error == 504) {
 		label = _("This message was not delivered to %s because the service is not available");
 	} else if (sip_error == 486) { /* Busy Here */
 		label = _("This message was not delivered to %s because one or more recipients do not want to be disturbed");
 	} else {
 		label = _("This message was not delivered to %s because one or more recipients are offline");
 	}
-	
+
 	msg_tmp = g_strdup_printf( "%s:\n%s" ,
 			msg_tmp2 = g_strdup_printf(label, who ? who : ""), msg ? msg : "");
 	sipe_present_err(sip, session, msg_tmp);
@@ -3734,7 +3688,7 @@ sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
-	
+
 	sipe_session_close(sip, session);
 }
 
@@ -3779,15 +3733,15 @@ static int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 								 g_strdup(what));
 		sipe_im_process_queue(sip, session);
 	} else if (sip) {
-		char *chat_name = purple_find_chat(sip->gc, id)->name;
-		char *proto_chat_id = g_hash_table_lookup(chat_names_inverse, chat_name);
-		
+		gchar *chat_name = purple_find_chat(sip->gc, id)->name;
+		const gchar *proto_chat_id = sipe_chat_find_name(chat_name);
+
 		purple_debug_info("sipe", "sipe_chat_send: chat_name='%s'\n", chat_name ? chat_name : "NULL");
 		purple_debug_info("sipe", "sipe_chat_send: proto_chat_id='%s'\n", proto_chat_id ? proto_chat_id : "NULL");
-		
+
 		if (sip->ocs2007) {
 			struct sip_session *session = sipe_session_add_chat(sip);
-			
+
 			session->is_multiparty = FALSE;
 			session->focus_uri = g_strdup(proto_chat_id);
 			session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue,
@@ -4229,7 +4183,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(newTag);
 
 	if (is_multiparty && !session->conv) {
-		gchar *chat_title = sipe_get_chat_name(callid);
+		gchar *chat_title = sipe_chat_get_name(callid);
 		gchar *self = sip_uri_self(sip);
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
@@ -4445,7 +4399,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                                         }
                                         hdr = g_slist_next(hdr);
                                 }
-				
+
 				/* rejoin open chats to be able to use them by continue to send messages */
 				purple_conversation_foreach(sipe_rejoin_chat);
 
@@ -7144,7 +7098,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	else /* 2005- multiparty chat */
 	{
 		gchar *self = sip_uri_self(sip);
-		gchar *chat_title = g_strdup_printf(_("Chat #%d"), ++chat_seq);
+		gchar *chat_title = sipe_chat_get_name(NULL);
 		struct sip_session *session;
 
 		session = sipe_session_add_chat(sip);
