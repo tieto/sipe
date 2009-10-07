@@ -96,6 +96,33 @@ PKG_CHECK_MODULES(PURPLE, [purple >= 2.3.1],
 AC_SUBST(PURPLE_CFLAGS)
 AC_SUBST(PURPLE_LIBS)
 
+dnl Let user now if he has a 32- and 64-bit header conflict...
+AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
+ac_save_CFLAGS=$CFLAGS
+CFLAGS="$PURPLE_CFLAGS -Werror -Wall -Wextra"
+AC_COMPILE_IFELSE(
+	AC_LANG_PROGRAM(
+		[
+#include <glib.h>
+#include <cipher.h>
+
+/* Compile some code that has caused trouble in the past */
+void testfunc(unsigned long len)
+{
+  PurpleCipherContext *rc4 = NULL;
+  purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(len));
+}
+		],
+		[testfunc(16);]),
+	[AC_MSG_RESULT(none)],
+	[AC_MSG_RESULT(failed)
+	 AC_ERROR(conflicts found.
+
+Check that you have the correct glib/libpurple headers installed for
+your architecture or set PURPLE_CFLAGS to override the system defaults. 
+)])
+CFLAGS=$ac_save_CFLAGS
+
 dnl check for inet_aton
 AC_CHECK_FUNC(inet_aton,,
 	[AC_CHECK_LIB(resolv, inet_aton,, [AC_ERROR(inet_aton not found)])])
