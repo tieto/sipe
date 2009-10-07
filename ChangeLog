@@ -1,3 +1,13 @@
+version 1.7.0 (2009-10-XX)
+       - Added integration with PBX (external phones) using CSTA protocol (ECMA TR-87). Users can initiate a call by clicking on contact phones in right-click context menu. This feature should be enabled for user on the server side.
+       - Added reconnection to chat after disconnection by continue typing in the same open chat window (OCS 2007 only). Feature request #2866630.
+       - More precise errors shown on message undelivery event.
+       - Better re-subscription logic for contact status updates.
+       - 'Out of Office', 'In a Meeting', 'In a Conference', etc. contact activities are shown now in contast's status and tooltip. Also meeting subject and location are shown in 2007 environment if contact is in Team access category.
+       - New Idle status.
+       - Added 'Site' to User Info panel. Can be a link to user's corporate directory page or similar.
+       - Removed message acceptance in incoming INVITE.
+       
 version 1.6.3 (2009-09-09)
        - Added missing krb5-devel BuildRequires to the RPM spec file.
        - Cleanup of source code compatibility for libpurple 2.4.x
