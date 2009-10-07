@@ -126,7 +126,9 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 static void
 sipe_rejoin_chat(PurpleConversation *conv)
 {
-	if (PURPLE_CONV_CHAT(conv)->left) {
+	if (purple_conversation_get_type(conv) == PURPLE_CONV_TYPE_CHAT &&
+	    PURPLE_CONV_CHAT(conv)->left)
+	{
 		PURPLE_CONV_CHAT(conv)->left = FALSE;
 		purple_conversation_update(conv, PURPLE_CONV_UPDATE_CHATLEFT);
 	}
