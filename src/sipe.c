@@ -747,6 +747,7 @@ void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 static void transactions_remove(struct sipe_account_data *sip, struct transaction *trans)
 {
 	sip->transactions = g_slist_remove(sip->transactions, trans);
+	purple_debug_info("sipe", "sip->transactions count:%d after removal\n", g_slist_length(sip->transactions));
 	if (trans->msg) sipmsg_free(trans->msg);
 	if (trans->payload) {
 		(*trans->payload->destroy)(trans->payload->data);
@@ -770,6 +771,7 @@ transactions_add_buf(struct sipe_account_data *sip, const struct sipmsg *msg, vo
 	trans->key = g_strdup_printf("<%s><%s>", call_id, cseq);
 	trans->callback = callback;
 	sip->transactions = g_slist_append(sip->transactions, trans);
+	purple_debug_info("sipe", "sip->transactions count:%d after addition\n", g_slist_length(sip->transactions));	
 	return trans;
 }
 
@@ -4481,7 +4483,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
-				transactions_remove(sip, trans);
+				//transactions_remove(sip, trans);
 			}
 			break;
 		case 301:
@@ -5871,9 +5873,9 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 				sendout_pkt(sip->gc, resend);
 				g_free(resend);
 			} else {
-				if (msg->response == 100 || msg->response == 180) {
+				if (msg->response < 200) {
 					/* ignore provisional response */
-					purple_debug_info("sipe", "got trying (%d) response\n", msg->response);
+					purple_debug_info("sipe", "got provisional (%d) response, ignoring\n", msg->response);
 				} else {
 					sip->proxy.retries = 0;
 					if (!strcmp(trans->msg->method, "REGISTER")) {
@@ -5925,12 +5927,9 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 						/* call the callback to process response*/
 						(trans->callback)(sip, msg, trans);
 					}
-					/* Not sure if this is needed or what needs to be done
-  					   but transactions seem to be removed prematurely so
-  					   this only removes them if the response is 200 OK */
+
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - removing CSeq %d\r\n", sip->cseq);
-					/*Has a bug and it's unneccesary*/
-                    /*transactions_remove(sip, trans);*/
+					transactions_remove(sip, trans);
 
 				}
 			}
