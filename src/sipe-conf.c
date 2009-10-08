@@ -594,7 +594,7 @@ sipe_conf_add(struct sipe_account_data *sip,
 	gchar *contact;
 	gchar *body;
 	gchar *self;
-	struct transaction * tr;
+	struct transaction *trans;
 	struct sip_dialog *dialog = NULL;
 	time_t expiry = time(NULL) + 7*60*60; /* 7 hours */
 	const char *expiry_time;
@@ -620,15 +620,15 @@ sipe_conf_add(struct sipe_account_data *sip,
 	g_free(conference_id);
 	g_free(self);
 
-	tr = send_sip_request( sip->gc,
-			  "SERVICE",
-			  sip->focus_factory_uri,
-			  sip->focus_factory_uri,
-			  hdr,
-			  body,
-			  NULL,
-			  process_conf_add_response);
-	tr->payload = g_strdup(who);
+	trans = send_sip_request( sip->gc,
+				  "SERVICE",
+				  sip->focus_factory_uri,
+				  sip->focus_factory_uri,
+				  hdr,
+				  body,
+				  NULL,
+				  process_conf_add_response);
+	trans->payload = g_strdup(who);
 
 	sipe_dialog_free(dialog);
 	g_free(body);

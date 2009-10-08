@@ -149,7 +149,7 @@ static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 
 static void sipe_plugin_destroy(PurplePlugin *plugin);
 
-static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc);
+static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans);
 
 static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond);
 static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error,
@@ -748,6 +748,7 @@ static void transactions_remove(struct sipe_account_data *sip, struct transactio
 {
 	sip->transactions = g_slist_remove(sip->transactions, trans);
 	if (trans->msg) sipmsg_free(trans->msg);
+	g_free(trans->payload);
 	g_free(trans->key);
 	g_free(trans);
 }
@@ -916,8 +917,8 @@ send_soap_request_with_cb(struct sipe_account_data *sip,
 	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
 	                             "Content-Type: application/SOAP+xml\r\n",contact);
 
-	struct transaction * tr = send_sip_request(sip->gc, "SERVICE", from, from, hdr, body, NULL, callback);
-	tr->payload = payload;
+	struct transaction *trans = send_sip_request(sip->gc, "SERVICE", from, from, hdr, body, NULL, callback);
+	trans->payload = payload;
 
 	g_free(from);
 	g_free(contact);
@@ -1217,11 +1218,11 @@ sipe_group_set_user (struct sipe_account_data *sip, const gchar * who)
 	}
 }
 
-static gboolean process_add_group_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
+static gboolean process_add_group_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
 	if (msg->response == 200) {
 		struct sipe_group *group;
-		struct group_user_context *ctx = (struct group_user_context*)tc->payload;
+		struct group_user_context *ctx = (struct group_user_context*)trans->payload;
 		xmlnode *xml;
 		xmlnode *node;
 		char *group_id;
@@ -1229,20 +1230,17 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 
 		xml = xmlnode_from_str(msg->body, msg->bodylen);
 		if (!xml) {
-			g_free(ctx);
 			return FALSE;
 		}
 
 		node = xmlnode_get_descendant(xml, "Body", "addGroup", "groupID", NULL);
 		if (!node) {
-			g_free(ctx);
 			xmlnode_free(xml);
 			return FALSE;
 		}
 
 		group_id = xmlnode_get_data(node);
 		if (!group_id) {
-			g_free(ctx);
 			xmlnode_free(xml);
 			return FALSE;
 		}
@@ -1261,7 +1259,6 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 
 		sipe_group_set_user(sip, ctx->user_name);
 
-		g_free(ctx);
 		xmlnode_free(xml);
 		return TRUE;
 	}
@@ -1441,7 +1438,7 @@ sipe_get_subscription_key(gchar *event,
 }
 
 gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg,
-				    SIPE_UNUSED_PARAMETER struct transaction *tc)
+				    SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	gchar *event = sipmsg_find_header(msg, "Event");
@@ -4281,7 +4278,7 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 static void sipe_connection_cleanup(struct sipe_account_data *);
 static void create_connection(struct sipe_account_data *, gchar *, int);
 
-gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *tc)
+gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
 	gchar *tmp;
 	const gchar *expires_header;
@@ -4470,7 +4467,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
-				transactions_remove(sip, tc);
+				transactions_remove(sip, trans);
 			}
 			break;
 		case 301:
@@ -5463,7 +5460,7 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 static gboolean
 process_send_presence_category_publish_response(struct sipe_account_data *sip,
 						struct sipmsg *msg,
-						struct transaction *tc)
+						struct transaction *trans)
 {
 	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 
@@ -5504,7 +5501,7 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 		/* here we are parsing own request to figure out what publication
 		 * referensed here only by index went wrong
 		 */
-		xml = xmlnode_from_str(tc->msg->body, tc->msg->bodylen);
+		xml = xmlnode_from_str(trans->msg->body, trans->msg->bodylen);
 
 		/* publication */
 		for (node = xmlnode_get_descendant(xml, "publications", "publication", NULL),
@@ -6759,7 +6756,7 @@ static void sipe_searchresults_add_buddy(PurpleConnection *gc, GList *row,
 }
 
 static gboolean process_search_contact_response(struct sipe_account_data *sip, struct sipmsg *msg,
-						SIPE_UNUSED_PARAMETER struct transaction *tc)
+						SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	PurpleNotifySearchResults *results;
 	PurpleNotifySearchColumn *column;
