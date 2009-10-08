@@ -6730,6 +6730,9 @@ static void sipe_close(PurpleConnection *gc)
 			}
 		}
 		g_slist_free(sip->our_publication_keys);
+
+		while (sip->transactions)
+			transactions_remove(sip, sip->transactions->data);
 	}
 	g_free(gc->proto_data);
 	gc->proto_data = NULL;
