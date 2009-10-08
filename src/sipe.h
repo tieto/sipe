@@ -197,6 +197,11 @@ struct transaction;
 
 typedef gboolean (*TransCallback) (struct sipe_account_data *, struct sipmsg *, struct transaction *);
 
+struct transaction_payload {
+	GDestroyNotify destroy;
+	void *data;
+};
+
 struct transaction {
 	time_t time;
 	int retries;
@@ -209,7 +214,7 @@ struct transaction {
 	gchar *key;
 	struct sipmsg *msg;
 	TransCallback callback;
-	void * payload;
+	struct transaction_payload *payload;
 };
 
 struct sipe_group {

@@ -560,7 +560,7 @@ process_conf_add_response(struct sipe_account_data *sip,
 		xmlnode *xn_response = xmlnode_from_str(msg->body, msg->bodylen);
 		if (!strcmp("success", xmlnode_get_attrib(xn_response, "code")))
 		{
-			gchar *who = (gchar *)trans->payload;
+			gchar *who = trans->payload->data;
 			struct sip_session *session;
 			xmlnode *xn_conference_info = xmlnode_get_descendant(xn_response, "addConference", "conference-info", NULL);
 
@@ -598,6 +598,7 @@ sipe_conf_add(struct sipe_account_data *sip,
 	struct sip_dialog *dialog = NULL;
 	time_t expiry = time(NULL) + 7*60*60; /* 7 hours */
 	const char *expiry_time;
+	struct transaction_payload *payload;
 
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
@@ -628,7 +629,11 @@ sipe_conf_add(struct sipe_account_data *sip,
 				  body,
 				  NULL,
 				  process_conf_add_response);
-	trans->payload = g_strdup(who);
+
+	payload = g_new0(struct transaction_payload, 1);
+	payload->destroy = g_free;
+	payload->data = g_strdup(who);
+	trans->payload = payload;
 
 	sipe_dialog_free(dialog);
 	g_free(body);

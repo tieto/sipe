@@ -748,7 +748,10 @@ static void transactions_remove(struct sipe_account_data *sip, struct transactio
 {
 	sip->transactions = g_slist_remove(sip->transactions, trans);
 	if (trans->msg) sipmsg_free(trans->msg);
-	g_free(trans->payload);
+	if (trans->payload) {
+		(*trans->payload->destroy)(trans->payload->data);
+		g_free(trans->payload);
+	}
 	g_free(trans->key);
 	g_free(trans);
 }
@@ -910,7 +913,7 @@ send_soap_request_with_cb(struct sipe_account_data *sip,
 			  gchar *from0,
 			  gchar *body,
 			  TransCallback callback,
-			  void *payload)
+			  struct transaction_payload *payload)
 {
 	gchar *from = from0 ? g_strdup(from0) : sip_uri_self(sip);
 	gchar *contact = get_contact(sip);
@@ -1222,7 +1225,7 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 {
 	if (msg->response == 200) {
 		struct sipe_group *group;
-		struct group_user_context *ctx = (struct group_user_context*)trans->payload;
+		struct group_user_context *ctx = trans->payload->data;
 		xmlnode *xml;
 		xmlnode *node;
 		char *group_id;
@@ -1248,7 +1251,7 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 		group = g_new0(struct sipe_group, 1);
 		group->id = (int)g_ascii_strtod(group_id, NULL);
 		g_free(group_id);
-		group->name = ctx->group_name;
+		group->name = g_strdup(ctx->group_name);
 
 		sipe_group_add(sip, group);
 
@@ -1265,15 +1268,26 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 	return FALSE;
 }
 
+static void sipe_group_context_destroy(gpointer data)
+{
+	struct group_user_context *ctx = data;
+	g_free(ctx->group_name);
+	g_free(ctx->user_name);
+	g_free(ctx);
+}
+
 static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar * who)
 {
-	struct group_user_context * ctx = g_new0(struct group_user_context, 1);
+	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+	struct group_user_context *ctx = g_new0(struct group_user_context, 1);
 	gchar *body;
 	ctx->group_name = g_strdup(name);
 	ctx->user_name = g_strdup(who);
+	payload->destroy = sipe_group_context_destroy;
+	payload->data = ctx;
 
 	body = g_markup_printf_escaped(SIPE_SOAP_ADD_GROUP, name, sip->contacts_delta++);
-	send_soap_request_with_cb(sip, NULL, body, process_add_group_response, ctx);
+	send_soap_request_with_cb(sip, NULL, body, process_add_group_response, payload);
 	g_free(body);
 }
 
@@ -7618,7 +7632,7 @@ static gboolean
 process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
 	gboolean ret = TRUE;
-	char *uri = (char *)trans->payload;
+	char *uri = trans->payload->data;
 
 	PurpleNotifyUserInfo *info = purple_notify_user_info_new();
 	PurpleBuddy *pbuddy;
@@ -7765,10 +7779,14 @@ static void sipe_get_info(PurpleConnection *gc, const char *username)
 	gchar *domain_uri = sip_uri_from_name(sip->sipdomain);
 	char *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
 	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 1, row);
+	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+
+	payload->destroy = g_free;
+	payload->data = g_strdup(username);
 
 	purple_debug_info("sipe", "sipe_get_contact_data: body:\n%s\n", body ? body : "");
 	send_soap_request_with_cb(sip, domain_uri, body,
-				  (TransCallback) process_get_info_response, (gpointer)g_strdup(username));
+				  (TransCallback) process_get_info_response, payload);
 	g_free(domain_uri);
 	g_free(body);
 	g_free(row);
