@@ -5689,7 +5689,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 	/* key is <category><instance><container> */
 	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", 0, 200);
 	gchar *key_note_300 = g_strdup_printf("<%s><%u><%u>", "note", 0, 300);
-	gchar *key_note_400 = g_strdup_printf("<%s><%u><%u>", "note", 0, 300);
+	gchar *key_note_400 = g_strdup_printf("<%s><%u><%u>", "note", 0, 400);
 	struct sipe_publication *publication_note_200 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_200);
 	struct sipe_publication *publication_note_300 =
