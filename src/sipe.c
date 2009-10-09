@@ -817,7 +817,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
                /* This breaks OCS2007: own presence, contact search, ?
                1 .* as Call-Id is new in this case */
                ++sip->cseq;
-	struct transaction *trans;
+	struct transaction *trans = NULL;
 
 	if (dialog && dialog->routes)
 	{
