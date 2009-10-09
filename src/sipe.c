@@ -900,7 +900,10 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	buf = sipmsg_to_string (msg);
 
 	/* add to ongoing transactions */
-	trans = transactions_add_buf(sip, msg, tc);
+	/* ACK isn't supposed to be answered ever. So we do not keep transaction for it. */
+	if (strcmp(method, "ACK")) {
+		trans = transactions_add_buf(sip, msg, tc);
+	}
 	sendout_pkt(gc, buf);
 	g_free(buf);
 
@@ -3284,7 +3287,7 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *
 	gchar *msgr;
 
 	sipe_parse_html(msg, &msgformat, &msgtext);
-	purple_debug_info("sipe", "sipe_send_message: msgformat=%s", msgformat);
+	purple_debug_info("sipe", "sipe_send_message: msgformat=%s\n", msgformat);
 
 	msgr_value = sipmsg_get_msgr_string(msgformat);
 	g_free(msgformat);
