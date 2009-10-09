@@ -4294,7 +4294,8 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 static void sipe_connection_cleanup(struct sipe_account_data *);
 static void create_connection(struct sipe_account_data *, gchar *, int);
 
-gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
+gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg,
+				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	gchar *tmp;
 	const gchar *expires_header;
@@ -4481,9 +4482,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					g_free(timeout);
 				}
 
-				// Should we remove the transaction here?
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
-				//transactions_remove(sip, trans);
 			}
 			break;
 		case 301:
