@@ -1,5 +1,5 @@
 
-pkgdir = $(libdir)/pidgin
+pkgdir = $(libdir)/purple-2
 
 pkg_LTLIBRARIES = libsipe.la
 
@@ -72,5 +72,5 @@ tests: tests.c $(libsipe_la_SOURCES)
 
 AM_CPPFLAGS = \
 	-DDATADIR=\"$(datadir)/pidgin\" \
-	-DLIBDIR=\"$(libdir)/pidgin\" \
+	-DLIBDIR=\"$(pkgdir)\" \
 	-DPIDGIN_PLUGINS

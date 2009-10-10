@@ -87,12 +87,15 @@ rm -rf $RPM_BUILD_ROOT
 %files -f %{name}.lang
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
-%{_libdir}/pidgin/libsipe.so
+%{_libdir}/purple-2/libsipe.so
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{_datadir}/pixmaps/pidgin/emotes/sipe
 
 
 %changelog
+* Sun Oct 11 2009 J. D. User <jduser@noreply.com> 1.6.3-*git*
+- libpurple protocol plugins are located under %{_libdir}/purple-2
+
 * Mon Sep 28 2009 J. D. User <jduser@noreply.com> 1.6.3-*git*
 - added directory for emoticon theme icons
 
