@@ -4626,10 +4626,8 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 /**
  * [MS-PRES] Table 3: Conversion of legacyInterop elements and attributes to MSRTC elements and attributes.
- *
- * Must be g_free'd after use.
  */
-static char*
+static const char*
 sipe_get_status_by_availability(int avail)
 {
 	const char *status;
@@ -4653,7 +4651,7 @@ sipe_get_status_by_availability(int avail)
 	else
 		status = SIPE_STATUS_ID_OFFLINE;
 
-	return g_strdup(status);
+	return status;
 }
 
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
@@ -4795,7 +4793,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		{
 			char *data;
 			int availability;
-			char *status = NULL;
+			const char *status;
 			xmlnode *xn_availability;
 			xmlnode *xn_activity;
 			xmlnode *xn_meeting_subject;
@@ -4875,13 +4873,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			}
 
 			status = sipe_get_status_by_availability(availability);
-
 			if (status) {
 				purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", status);
 				purple_prpl_got_user_status(sip->account, uri, status, NULL);
 			}
-
-			g_free(status);
 		}
 	}
 
