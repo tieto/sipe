@@ -1902,8 +1902,8 @@ sipe_rename_group(PurpleConnection *gc,
 		  SIPE_UNUSED_PARAMETER GList *moved_buddies)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	struct sipe_group * s_group = sipe_group_find_by_name(sip, g_strdup(old_name));
-	if (group) {
+	struct sipe_group * s_group = sipe_group_find_by_name(sip, old_name);
+	if (s_group) {
 		sipe_group_rename(sip, s_group, group->name);
 	} else {
 		purple_debug_info("sipe", "Cannot find group %s to rename\n", old_name);
