@@ -2044,6 +2044,7 @@ static void sipe_cleanup_local_blist(struct sipe_account_data *sip) {
 		}
 		entry = entry->next;
 	}
+	g_slist_free(buddies);
 }
 
 static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, struct sipmsg *msg)
@@ -2585,13 +2586,14 @@ sipe_update_user_info(struct sipe_account_data *sip,
 		      const char *property_name,
 		      char *property_value)
 {
-	GSList *entry = purple_find_buddies(sip->account, uri); /* all buddies in different groups */
+	GSList *buddies, *entry;
 
 	if (!property_name || strlen(property_name) == 0) return;
 
 	if (property_value)
 		property_value = trim(property_value);
 
+	entry = buddies = purple_find_buddies(sip->account, uri); /* all buddies in different groups */
 	while (entry) {
 		const char *prop_str;
 		const char *server_alias;
@@ -2624,6 +2626,7 @@ sipe_update_user_info(struct sipe_account_data *sip,
 
 		entry = entry->next;
 	}
+	g_slist_free(buddies);
 }
 
 /**
@@ -6736,6 +6739,17 @@ static void sipe_close(PurpleConnection *gc)
 		g_hash_table_destroy(sip->buddies);
 		g_hash_table_destroy(sip->our_publications);
 		g_hash_table_destroy(sip->subscriptions);
+
+		if (sip->groups) {
+			GSList *entry = sip->groups;
+			while (entry) {
+				struct sipe_group *group = entry->data;
+				g_free(group->name);
+				g_free(group);
+				entry = entry->next;
+			}
+		}
+		g_slist_free(sip->groups);
 
 		if (sip->our_publication_keys) {
 			GSList *entry = sip->our_publication_keys;
