@@ -771,7 +771,7 @@ transactions_add_buf(struct sipe_account_data *sip, const struct sipmsg *msg, vo
 	trans->key = g_strdup_printf("<%s><%s>", call_id, cseq);
 	trans->callback = callback;
 	sip->transactions = g_slist_append(sip->transactions, trans);
-	purple_debug_info("sipe", "sip->transactions count:%d after addition\n", g_slist_length(sip->transactions));	
+	purple_debug_info("sipe", "sip->transactions count:%d after addition\n", g_slist_length(sip->transactions));
 	return trans;
 }
 
@@ -903,6 +903,8 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	/* ACK isn't supposed to be answered ever. So we do not keep transaction for it. */
 	if (strcmp(method, "ACK")) {
 		trans = transactions_add_buf(sip, msg, tc);
+	} else {
+		sipmsg_free(msg);
 	}
 	sendout_pkt(gc, buf);
 	g_free(buf);
@@ -1281,7 +1283,7 @@ static void sipe_group_context_destroy(gpointer data)
 	g_free(ctx);
 }
 
-static void sipe_group_create (struct sipe_account_data *sip, gchar *name, gchar * who)
+static void sipe_group_create (struct sipe_account_data *sip, const gchar *name, const gchar * who)
 {
 	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
 	struct group_user_context *ctx = g_new0(struct group_user_context, 1);
@@ -1771,9 +1773,9 @@ sipe_group_buddy(PurpleConnection *gc,
 	}
 
 	if (old_group_name) {
-		old_group = sipe_group_find_by_name(sip, g_strdup(old_group_name));
+		old_group = sipe_group_find_by_name(sip, old_group_name);
 	}
-	new_group = sipe_group_find_by_name(sip, g_strdup(new_group_name));
+	new_group = sipe_group_find_by_name(sip, new_group_name);
 
 	if (old_group) {
 		buddy->groups = g_slist_remove(buddy->groups, old_group);
@@ -1781,7 +1783,7 @@ sipe_group_buddy(PurpleConnection *gc,
 	}
 
 	if (!new_group) {
- 		sipe_group_create(sip, g_strdup(new_group_name), g_strdup(who));
+ 		sipe_group_create(sip, new_group_name, who);
  	} else {
 		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
 		sipe_group_set_user(sip, who);
@@ -7076,7 +7078,7 @@ purple_blist_add_buddy_clone(PurpleGroup * group, PurpleBuddy * buddy)
 
 	purple_blist_add_buddy(clone, NULL, group, NULL);
 
-	server_alias = g_strdup(purple_buddy_get_server_alias(buddy));
+	server_alias = purple_buddy_get_server_alias(buddy);
 	if (server_alias) {
 		purple_blist_server_alias_buddy(clone, server_alias);
 	}
@@ -7135,7 +7137,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session = sipe_session_add_chat(sip);
 		session->roster_manager = g_strdup(self);
 
-		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, g_strdup(chat_title));
+		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, chat_title);
 		session->chat_title = g_strdup(chat_title);
 		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
