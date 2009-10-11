@@ -10,14 +10,16 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20090928gitcdc56b3
+%define git       20091011git80e8002
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
 %endif
 
+%define protocol purple-sipe
+
 Name:           pidgin-sipe
-Summary:        Pidgin plugin for connecting to Microsoft LCS/OCS
+Summary:        Pidgin third-party plugin for Microsoft LCS/OCS
 Version:        1.6.3
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
@@ -40,10 +42,30 @@ BuildRequires:  libpurple-devel >= 2.3.1, libtool, intltool, gettext-devel
 BuildRequires:  krb5-devel
 %endif
 
+Requires:       %{protocol} = %{version}-%{release}
+
 
 %description
-Provides an Open Implementation of SIP/Simple protocol for connecting Pidgin to
-Live Communications Server 2003/2005 and Office Communications Server 2007.
+A third-party plugin for the Pidgin multi-protocol instant messenger. It
+implements the extended version of SIP/SIMPLE used by various products:
+
+    * Microsoft Office Communications Server (OCS 2007 and newer)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package provides the icon set for Pidgin.
+
+
+%package -n %{protocol}
+Summary:        Libpurple third-party plugin for Microsoft LCS/OCS
+
+%description -n %{protocol}
+A third-party plugin for the libpurple multi-protocol instant messaging core.
+It implements the extended version of SIP/SIMPLE used by various products:
+
+    * Microsoft Office Communications Server (OCS 2007 and newer)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
 
 
 %prep
@@ -84,14 +106,22 @@ find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
 rm -rf $RPM_BUILD_ROOT
 
 
-%files -f %{name}.lang
+%files -n %{protocol} -f %{name}.lang
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %{_libdir}/purple-2/libsipe.so
+
+
+%files
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 
 
 %changelog
+* Sun Oct 11 2009 J. D. User <jduser@noreply.com> 1.6.3-*git*
+- move non-Pidgin files to new sub-package purple-sipe
+
 * Sun Oct 11 2009 J. D. User <jduser@noreply.com> 1.6.3-*git*
 - remove directory for emoticon theme icons
 
