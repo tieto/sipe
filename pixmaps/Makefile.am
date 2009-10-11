@@ -1,4 +1,4 @@
-SUBDIRS = 16 22 48 emotes/sipe
+SUBDIRS = 16 22 48
 
 MAINTAINERCLEANFILES = \
 	Makefile.in

@@ -163,7 +163,6 @@ AC_CONFIG_FILES(
 	pixmaps/16/Makefile 
 	pixmaps/22/Makefile 
 	pixmaps/48/Makefile 
-	pixmaps/emotes/sipe/Makefile
 	src/Makefile]
 )
 
