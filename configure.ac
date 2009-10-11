@@ -93,8 +93,6 @@ AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
 dnl check for libpurple
 PKG_CHECK_MODULES(PURPLE, [purple >= 2.3.1],
 	[AC_DEFINE(HAVE_PIDGIN, 1, [Define if we've found libpurple])])
-AC_SUBST(PURPLE_CFLAGS)
-AC_SUBST(PURPLE_LIBS)
 
 dnl Let user now if he has a 32- and 64-bit header conflict...
 AC_MSG_CHECKING([for 32- and 64-bit header conflicts])

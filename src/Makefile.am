@@ -74,3 +74,7 @@ AM_CPPFLAGS = \
 	-DDATADIR=\"$(datadir)/pidgin\" \
 	-DLIBDIR=\"$(pkgdir)\" \
 	-DPIDGIN_PLUGINS
+
+# Remove any libsipe.so from the old incorrect installation location
+install-exec-local:
+	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
