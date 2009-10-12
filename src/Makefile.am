@@ -1,5 +1,5 @@
 
-pkgdir = $(libdir)/purple-2
+pkgdir = $(libdir)/purple-$(PURPLE_MAJOR_VERSION)
 
 pkg_LTLIBRARIES = libsipe.la
 

@@ -93,8 +93,11 @@ AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
 dnl check for libpurple
 PKG_CHECK_MODULES(PURPLE, [purple >= 2.3.1],
 	[AC_DEFINE(HAVE_PIDGIN, 1, [Define if we've found libpurple])])
+dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
+PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion purple | cut -d. -f 1`
+AC_SUBST(PURPLE_MAJOR_VERSION)
 
-dnl Let user now if he has a 32- and 64-bit header conflict...
+dnl let user now if he has a 32- and 64-bit header conflict...
 AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
 ac_save_CFLAGS=$CFLAGS
 CFLAGS="$PURPLE_CFLAGS -Werror -Wall -Wextra"
