@@ -1,4 +1,4 @@
-version 1.7.0 (2009-10-XX)
+version 1.7.0 (2009-10-19)
        - Added integration with PBX (external phones) using CSTA protocol (ECMA TR-87). Users can initiate a call by clicking on contact phones in right-click context menu. This feature should be enabled for user on the server side.
        - Added reconnection to chat after disconnection by continue typing in the same open chat window (OCS 2007 only). Feature request #2866630.
        - More precise errors shown on message undelivery event.
@@ -7,6 +7,14 @@ version 1.7.0 (2009-10-XX)
        - New Idle status.
        - Added 'Site' to User Info panel. Can be a link to user's corporate directory page or similar.
        - Removed message acceptance in incoming INVITE.
+       - Fixed type errors in sip-sec-ntlm.c for Linux/Unix platforms.
+       - Added 32- and 64-bit header conflict check to configure.
+       - Removed libsipe.so from old incorrect installation location. This makes sure that DIY users don't have two copies of libsipe.so.
+       - Moved libsipe.so to the correct installation directory. The libpurple protocol plugins directory is $(libdir)/purple-2. While the name of the plugin is pidgin-sipe, it works perfectly fine with 'finch' too.
+       - Rewritten transaction payload handling. This should fix memory leaks in transaction handling.
+       - Fixed crash on reauthentication when IM window is open not Chat window
+       - Fixed warnings on compilation.
+       - Fixed memory leaks.
        
 version 1.6.3 (2009-09-09)
        - Added missing krb5-devel BuildRequires to the RPM spec file.

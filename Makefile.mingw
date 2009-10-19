@@ -12,7 +12,7 @@ export CFLAGS=-Werror
 
 WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
-VERSION := 1.6.3
+VERSION := 1.7.0
 
 .PHONY: all clean install msi
 

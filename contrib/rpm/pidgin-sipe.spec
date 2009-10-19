@@ -20,7 +20,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin third-party plugin for Microsoft LCS/OCS
-Version:        1.6.3
+Version:        1.7.0
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
