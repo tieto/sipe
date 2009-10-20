@@ -456,13 +456,18 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"<m:rights>%s</m:rights>"\
 	"<m:deltaNum>%d</m:deltaNum>")
 
-#define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
+#define SIPE_SOAP_SET_PRESENCE_NOTE_XML          "<note>%s</note>"
+#define SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY    "%s"
+#define SIPE_SOAP_SET_PRESENCE(note_xml) sipe_soap("setPresence", \
 	"<m:presentity m:uri=\"%s\">"\
 	"<m:availability m:aggregate=\"%d\"/>"\
 	"<m:activity m:aggregate=\"%d\" m:note=\"%s\"/>"\
-	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" name=\"USER-DESKTOP\"/>"\
-	"<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/2002/09/sip/client/presence\" namespace=\"rtcService\">"\
+	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" name=\"USER-DESKTOP\"/>"\
+	"<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" namespace=\"rtcService\">"\
 	"&lt;![CDATA[<caps><renders_gif/><renders_isf/></caps>]]&gt;</rtc:devicedata>"\
+	"<userInfo xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\">"\
+	note_xml \
+        "</userInfo>"\
 	"</m:presentity>")
 
 #define SIPE_SOAP_SEARCH_CONTACT \
