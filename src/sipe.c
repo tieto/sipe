@@ -5445,7 +5445,6 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 {
 	int availability = 300; // online
 	int activity = 400;  // Available
-	gchar *name;
 	gchar *body;
 	
 	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY)) {
@@ -5468,17 +5467,15 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 		activity = 400; // available
 	}
 
-	name = g_strdup_printf("sip:%s", sip->username);
 	//@TODO: send user data - state; add hostname in upper case
 	body = g_markup_printf_escaped(note ? SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML) : 
 					      SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY),
-				       name,
+				       sip->username,
 				       availability,
 				       activity,
 				       note ? note : "",
 				       note ? note : "");
 	send_soap_request(sip, body);
-	g_free(name);
 	g_free(body);
 }
 

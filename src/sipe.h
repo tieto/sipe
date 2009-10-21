@@ -459,7 +459,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 #define SIPE_SOAP_SET_PRESENCE_NOTE_XML          "<note>%s</note>"
 #define SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY    "%s"
 #define SIPE_SOAP_SET_PRESENCE(note_xml) sipe_soap("setPresence", \
-	"<m:presentity m:uri=\"%s\">"\
+	"<m:presentity m:uri=\"sip:%s\">"\
 	"<m:availability m:aggregate=\"%d\"/>"\
 	"<m:activity m:aggregate=\"%d\" m:note=\"%s\"/>"\
 	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" name=\"USER-DESKTOP\"/>"\
