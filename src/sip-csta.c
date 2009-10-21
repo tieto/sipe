@@ -601,8 +601,12 @@ void
 process_incoming_info_csta(struct sipe_account_data *sip,
 			   struct sipmsg *msg)
 {
+	gchar *monitor_cross_ref_id;
 	xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
-	gchar *monitor_cross_ref_id = xmlnode_get_data(xmlnode_get_child(xml, "monitorCrossRefID"));
+	
+	if (!xml) return;
+	
+	monitor_cross_ref_id = xmlnode_get_data(xmlnode_get_child(xml, "monitorCrossRefID"));
 
 	if(!sip->csta || (monitor_cross_ref_id
 			  && sip->csta->monitor_cross_ref_id
