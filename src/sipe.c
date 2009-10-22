@@ -7130,19 +7130,17 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	else /* 2005- multiparty chat */
 	{
 		gchar *self = sip_uri_self(sip);
-		gchar *chat_title = sipe_chat_get_name(NULL);
 		struct sip_session *session;
 
 		session = sipe_session_add_chat(sip);
+		session->chat_title = sipe_chat_get_name(session->callid);
 		session->roster_manager = g_strdup(self);
 
-		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, chat_title);
-		session->chat_title = g_strdup(chat_title);
+		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, session->chat_title);
 		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
 		sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
 
-		g_free(chat_title);
 		g_free(self);
 	}
 }
