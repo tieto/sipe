@@ -4237,26 +4237,30 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	/* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
 
 	/* This used only in 2005 official client, not 2007 or Reuters.
-	   Commented out as interfering with audit of messages which only is applied to regular MESSAGEs.
+	   Disabled for most cases as interfering with audit of messages which only is applied to regular MESSAGEs.
+	   Only enabled for 2005 multiparty chats as otherwise the first message got lost completely.
+	*/
+	if (is_multiparty) {
+		/* please do not optimize logic inside as this code may be re-enabled for other cases */
+		gchar *ms_text_format = sipmsg_find_header(msg, "ms-text-format");
+		if (ms_text_format) {
+			if (g_str_has_prefix(ms_text_format, "text/plain") || g_str_has_prefix(ms_text_format, "text/html")) {
 
-	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
-	if (ms_text_format) {
-		if (!strncmp(ms_text_format, "text/plain", 10) || !strncmp(ms_text_format, "text/html", 9)) {
-
-			gchar *html = get_html_message(ms_text_format, NULL);
-			if (html) {
-				if (is_multiparty) {
-					serv_got_chat_in(sip->gc, session->chat_id, from,
-						PURPLE_MESSAGE_RECV, html, time(NULL));
-				} else {
-					serv_got_im(sip->gc, from, html, 0, time(NULL));
+				gchar *html = get_html_message(ms_text_format, NULL);
+				if (html) {
+					if (is_multiparty) {
+						serv_got_chat_in(sip->gc, session->chat_id, from,
+							PURPLE_MESSAGE_RECV, html, time(NULL));
+					} else {
+						serv_got_im(sip->gc, from, html, 0, time(NULL));
+					}
+					g_free(html);
+					sipmsg_add_header(msg, "Supported", "ms-text-format"); /* accepts received message */
 				}
-				g_free(html);
-				sipmsg_add_header(msg, "Supported", "ms-text-format"); // accepts message received
 			}
 		}
 	}
-	*/
+	
 
 	g_free(from);
 
