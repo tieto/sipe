@@ -3730,7 +3730,7 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	// Queue the message
 	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, g_strdup(what));
 
-	if (dialog && dialog->callid) {
+	if (dialog && !dialog->outgoing_invite) {
 		sipe_im_process_queue(sip, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
