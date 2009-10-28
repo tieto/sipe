@@ -58,6 +58,7 @@ This package provides the icon set for Pidgin.
 
 %package -n %{protocol}
 Summary:        Libpurple third-party plugin for Microsoft LCS/OCS
+Group:          Applications/Internet
 
 %description -n %{protocol}
 A third-party plugin for the libpurple multi-protocol instant messaging core.
