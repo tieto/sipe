@@ -111,7 +111,7 @@ static void sipe_get_route_header(const struct sipmsg *msg,
 				  gboolean outgoing)
 {
         GSList *hdr = msg->headers;
-        gchar *contact;
+        gchar *contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);
 
         while (hdr) {
                 struct siphdrelement *elem = hdr->data;
@@ -130,19 +130,22 @@ static void sipe_get_route_header(const struct sipmsg *msg,
                 }
                 hdr = g_slist_next(hdr);
         }
-
         if (outgoing) {
 		dialog->routes = g_slist_reverse(dialog->routes);
         }
 
-        if (dialog->routes) {
+        if (contact) {
+		dialog->request = contact;
+	}
+	
+	/* logic for strict router only - RFC3261 - 12.2.1.1 */
+	/* @TODO: proper check for presence of 'lr' PARAMETER in URI */
+	if (dialog->routes && !strstr(dialog->routes->data, ";lr")) {
 		dialog->request = dialog->routes->data;
 		dialog->routes = g_slist_remove(dialog->routes, dialog->routes->data);
-        }
-
-        contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);
-        if (contact) {
-		dialog->routes = g_slist_append(dialog->routes, contact);
+		if (contact) {
+			dialog->routes = g_slist_append(dialog->routes, contact);
+		}		
 	}
 }
 
