@@ -143,15 +143,6 @@ xmlnode * xmlnode_get_descendant(const xmlnode *parent, ...);
 char *sipe_get_host_name(void);
 
 /**
- * Strip white space from the beginning and end of a string
- *
- * @param b string to be trimmed (may be modified)
- *
- * @return trimmed string
- */
-char *trim(char *b);
-
-/**
  * Checks if provided string is empty - NULL, zero size or just series of white spaces.
  * Doesn't modify input string.
  */

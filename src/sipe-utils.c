@@ -196,19 +196,6 @@ sipe_is_bad_alias(const char *uri,
 	return result;
 }
 
-char *trim(char *b)
-{
-	char *e = b + strlen(b);
-
-	while (b < e && isspace((unsigned char) *b))
-		++b;
-	while (e > b && isspace((unsigned char) *(e - 1)))
-		--e;
-	*e='\0';
-
-	return b;
-}
-
 gboolean
 is_empty(const char *st)
 {
@@ -222,7 +209,7 @@ is_empty(const char *st)
 	{
 		/* to not modify original string */
 		char *dup = g_strdup(st);
-		if (strlen(trim(dup)) == 0) {
+		if (strlen(g_strstrip(dup)) == 0) {
 			g_free(dup);
 			return TRUE;
 		}

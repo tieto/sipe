@@ -2583,7 +2583,7 @@ sipe_update_user_info(struct sipe_account_data *sip,
 	if (!property_name || strlen(property_name) == 0) return;
 
 	if (property_value)
-		property_value = trim(property_value);
+		property_value = g_strstrip(property_value);
 
 	entry = buddies = purple_find_buddies(sip->account, uri); /* all buddies in different groups */
 	while (entry) {
