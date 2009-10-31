@@ -1301,7 +1301,6 @@ static void sipe_group_create (struct sipe_account_data *sip, const gchar *name,
 /**
   * Data structure for scheduled actions
   */
-typedef void (*Action) (struct sipe_account_data *, void *);
 
 struct scheduled_action {
 	/**
@@ -1398,16 +1397,7 @@ sipe_schedule_action0(const gchar *name,
 	purple_debug_info("sipe", "sip->timeouts count:%d after addition\n",g_slist_length(sip->timeouts));
 }
 
-/**
-  * Do schedule action for execution in the future.
-  * Non repetitive execution.
-  *
-  * @param   name of action (will be copied)
-  * @param   timeout in seconds
-  * @action  callback function
-  * @payload callback data (can be NULL, otherwise caller must allocate memory)
-  */
-static void
+void
 sipe_schedule_action(const gchar *name,
 		     int timeout,
 		     Action action,

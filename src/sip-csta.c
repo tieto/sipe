@@ -334,6 +334,9 @@ sip_csta_monitor_stop(struct sipe_account_data *sip)
 	g_free(hdr);
 }
 
+static void
+sipe_invite_csta_gateway(struct sipe_account_data *sip);
+
 /** a callback */
 static gboolean
 process_invite_csta_gateway_response(struct sipe_account_data *sip,
@@ -369,19 +372,32 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 	}
 	else if (msg->response == 200) {
 		xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
+		
 		g_free(sip->csta->gateway_status);
 		sip->csta->gateway_status = xmlnode_get_data(xmlnode_get_child(xml, "systemStatus"));
 		purple_debug_info("sipe", "process_invite_csta_gateway_response: gateway_status=%s\n",
 				  sip->csta->gateway_status ? sip->csta->gateway_status : "");
 		if (!g_ascii_strcasecmp(sip->csta->gateway_status, "normal")) {
-			sip_csta_get_features(sip);
-			sip_csta_monitor_start(sip);
+			if (!sip->csta->monitor_cross_ref_id) {
+				sip_csta_get_features(sip);
+				sip_csta_monitor_start(sip);
+			}
 		} else {
-			purple_debug_info("sipe", "process_invite_csta_gateway_response: ERRIR: CSTA status is %s, won't continue.\n",
+			purple_debug_info("sipe", "process_invite_csta_gateway_response: ERROR: CSTA status is %s, won't continue.\n",
 					  sip->csta->gateway_status);
 			/* @TODO notify user of failure to join CSTA */
 		}
-		xmlnode_free(xml);
+		xmlnode_free(xml);		
+			
+		/* schedule re-invite. RFC4028 */
+		if (sip->csta->dialog->expires) {
+			sipe_schedule_action("<+csta>",
+					     sip->csta->dialog->expires - 60, /* 1 minute earlier */
+					     (Action)sipe_invite_csta_gateway,
+					     NULL,
+					     sip,
+					     NULL);
+		}
 	}
 
 	return TRUE;
@@ -413,6 +429,7 @@ sipe_invite_csta_gateway(struct sipe_account_data *sip)
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
 		"Contact: %s\r\n"
+		"Supported: timer\r\n"
 		"Content-Disposition: signal;handling=required\r\n"
 		"Content-Type: application/csta+xml\r\n",
 		contact);

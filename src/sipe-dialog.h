@@ -46,6 +46,8 @@ struct sip_dialog {
 	gchar *request;
 	GSList *supported; /* counterparty capabilities */
 	int cseq;
+	/** corresponds to Session-Expires SIP header value */
+	int expires;
 	gboolean is_established;
 	struct transaction *outgoing_invite;
 };

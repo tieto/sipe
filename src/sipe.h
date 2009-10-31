@@ -217,6 +217,27 @@ struct transaction {
 	struct transaction_payload *payload;
 };
 
+typedef void (*Action) (struct sipe_account_data *, void *);
+
+/**
+  * Do schedule action for execution in the future.
+  * Non repetitive execution.
+  *
+  * @param   name of action (will be copied)
+  * @param   timeout in seconds
+  * @param   action  callback function
+  * @param   destroy payload destroy function
+  * @param   sip
+  * @param   payload callback data (can be NULL, otherwise caller must allocate memory)
+  */
+void
+sipe_schedule_action(const gchar *name,
+		     int timeout,
+		     Action action,
+		     GDestroyNotify destroy,
+		     struct sipe_account_data *sip,
+		     void *payload);
+
 struct sipe_group {
 	gchar *name;
 	int id;

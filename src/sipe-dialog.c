@@ -185,6 +185,7 @@ void sipe_dialog_parse(struct sip_dialog *dialog,
 {
 	gchar *us = outgoing ? "From" : "To";
 	gchar *them = outgoing ? "To" : "From";
+	const gchar *session_expires_header;
 
 	g_free(dialog->ourtag);
 	g_free(dialog->theirtag);
@@ -201,6 +202,10 @@ void sipe_dialog_parse(struct sip_dialog *dialog,
 	// Catch a tag on the end of the To Header and get rid of it.
 	if (dialog->theirepid && strstr(dialog->theirepid, "tag=")) {
 		dialog->theirepid = strtok(dialog->theirepid, ";");
+	}
+	
+	if ((session_expires_header = sipmsg_find_header(msg, "Session-Expires"))) {
+		dialog->expires = atoi(session_expires_header);
 	}
 
 	sipe_get_route_header(msg, dialog, outgoing);
