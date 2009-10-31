@@ -125,8 +125,8 @@
 "</ClearConnection>"
 
 
-gchar *
-sip_to_tel_uri(const gchar *phone)
+static gchar *
+sip_to_tel_uri0(const gchar *phone)
 {
 	if (!phone || strlen(phone) == 0) return NULL;
 
@@ -146,6 +146,22 @@ sip_to_tel_uri(const gchar *phone)
 		*dest_p = '\0';
 		return tel_uri;
 	}
+}
+
+gchar *
+sip_to_tel_uri(const gchar *phone)
+{
+	gchar *res = sip_to_tel_uri0(phone);
+	gchar *v;
+	/* strips everything starting with 'v:' if any */
+	if (res && (v = strstr(res, "v:"))) {
+		gchar *tmp = res;
+		
+		res = g_strndup(res, v - res);
+		g_free(tmp);
+		return res;
+	}	
+	return res;
 }
 
 gchar *
