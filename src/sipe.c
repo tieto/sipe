@@ -839,7 +839,8 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			callid = g_strdup(sip->regcallid);
 		} else {
 			sip->regcallid = g_strdup(callid);
-		}
+		}		
+		cseq = ++sip->cseq;
 	}
 
 	if (addheaders) addh = addheaders;
