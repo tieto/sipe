@@ -7971,7 +7971,7 @@ static void init_plugin(PurplePlugin *plugin)
 	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
 
-	option = purple_account_option_string_new(_("User Agent"), "useragent", "Purple/" VERSION);
+	option = purple_account_option_string_new(_("User Agent"), "useragent", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 #ifdef USE_KERBEROS
