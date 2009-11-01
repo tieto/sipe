@@ -1644,40 +1644,44 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 	gchar *to = sip_uri((char *)buddy_name);
 	gchar *tmp = get_contact(sip);
 	gchar *request;
-	gchar *content;
+	gchar *content = NULL;
         gchar *autoextend = "";
+	gchar *content_type = "";
 	struct sip_dialog *dialog;
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, to);
 	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
 
 	if (sbuddy) sbuddy->just_added = FALSE;
 
-    if (!sip->ocs2007)
-                autoextend = "Supported: com.microsoft.autoextend\r\n";
+	if (sip->ocs2007) {
+		content_type = "Content-Type: application/msrtc-adrl-categorylist+xml\r\n";
+	} else {
+		autoextend = "Supported: com.microsoft.autoextend\r\n";
+	}
 
-    request = g_strdup_printf(
-    "Accept: application/msrtc-event-categories+xml,  text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
-    "Supported: ms-piggyback-first-notify\r\n"
-    "%sSupported: ms-benotify\r\n"
-    "Proxy-Require: ms-benotify\r\n"
-    "Event: presence\r\n"
-    "Content-Type: application/msrtc-adrl-categorylist+xml\r\n"
-    "Contact: %s\r\n", autoextend,tmp);
+	request = g_strdup_printf(
+		"Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+		"Supported: ms-piggyback-first-notify\r\n"
+		"%s%sSupported: ms-benotify\r\n"
+		"Proxy-Require: ms-benotify\r\n"
+		"Event: presence\r\n"
+		"Contact: %s\r\n", autoextend, content_type, tmp);
 
-	content = g_strdup_printf(
-     "<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
-     "<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
-     "<resource uri=\"%s\"%s\n"
-     "</adhocList>\n"
-     "<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
-     "<category name=\"calendarData\"/>\n"
-     "<category name=\"contactCard\"/>\n"
-     "<category name=\"note\"/>\n"
-     "<category name=\"state\"/>\n"
-     "</categoryList>\n"
-     "</action>\n"
-     "</batchSub>", sip->username, to, context
-		);
+	if (sip->ocs2007) {
+		content = g_strdup_printf(
+			"<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
+			"<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
+			"<resource uri=\"%s\"%s\n"
+			"</adhocList>\n"
+			"<categoryList xmlns=\"http://schemas.microsoft.com/2006/09/sip/categorylist\">\n"
+			"<category name=\"calendarData\"/>\n"
+			"<category name=\"contactCard\"/>\n"
+			"<category name=\"note\"/>\n"
+			"<category name=\"state\"/>\n"
+			"</categoryList>\n"
+			"</action>\n"
+			"</batchSub>", sip->username, to, context);
+	}
 
 	g_free(tmp);
 
