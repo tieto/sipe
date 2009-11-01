@@ -812,11 +812,8 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 	gchar *route     = g_strdup("");
-	gchar *epid      = get_epid(sip); // TODO generate one per account/login
-       int cseq = dialog ? ++dialog->cseq :
-               /* This breaks OCS2007: own presence, contact search, ?
-               1 .* as Call-Id is new in this case */
-               ++sip->cseq;
+	gchar *epid      = get_epid(sip);
+	int cseq         = dialog ? ++dialog->cseq : 1 /* as Call-Id is new in this case */;
 	struct transaction *trans = NULL;
 
 	if (dialog && dialog->routes)
