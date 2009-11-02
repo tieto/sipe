@@ -4065,7 +4065,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *trig_invite = 	sipmsg_find_header(msg, "TriggeredInvite");
 	gchar *content_type = 	sipmsg_find_header(msg, "Content-Type");
 	GSList *end_points = NULL;
-	char *tmp;
+	char *tmp = NULL;
 	struct sip_session *session;
 
 	purple_debug_info("sipe", "process_incoming_invite: body:\n%s!\n", msg->body ? tmp = fix_newlines(msg->body) : "");
