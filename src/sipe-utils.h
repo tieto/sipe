@@ -148,3 +148,10 @@ char *sipe_get_host_name(void);
  */
 gboolean
 is_empty(const char *st);
+
+/** 
+ * Replaces \r\n to \n
+ * Returns newly allocated string. Must be g_free()'d
+ */
+char *
+fix_newlines(const char *st);

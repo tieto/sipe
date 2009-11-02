@@ -569,8 +569,10 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 	struct sipe_account_data *sip = gc->proto_data;
 	time_t currtime = time(NULL);
 	int writelen = strlen(buf);
+	char *tmp;
 
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "\n\nsending - %s\n######\n%s\n######\n\n", ctime(&currtime), buf);
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "\n\nsending - %s\n######\n%s\n######\n\n", ctime(&currtime), tmp = fix_newlines(buf));
+	g_free(tmp);
 	if (sip->transport == SIPE_TRANSPORT_UDP) {
 		if (sendto(sip->fd, buf, writelen, 0, sip->serveraddr, sizeof(struct sockaddr_in)) < writelen) {
 			purple_debug_info("sipe", "could not send packet\n");
@@ -5949,6 +5951,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 {
 	char *cur;
 	char *dummy;
+	char *tmp;
 	struct sipmsg *msg;
 	int restlen;
 	cur = conn->inbuf;
@@ -5969,7 +5972,8 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		time_t currtime = time(NULL);
 		cur += 2;
 		cur[0] = '\0';
-		purple_debug_info("sipe", "\n\nreceived - %s\n######\n%s\n#######\n\n", ctime(&currtime), conn->inbuf);
+		purple_debug_info("sipe", "\n\nreceived - %s\n######\n%s\n#######\n\n", ctime(&currtime), tmp = fix_newlines(conn->inbuf));
+		g_free(tmp);
 		msg = sipmsg_parse_header(conn->inbuf);
 		cur[0] = '\r';
 		cur += 2;

@@ -218,6 +218,27 @@ is_empty(const char *st)
 	return FALSE;
 }
 
+/** Returns newly allocated string. Must be g_free()'d */
+static char *
+replace(const char *st,
+	const char *search,
+	const char *replace)
+{
+	char **tmp;
+	char *res;
+
+	if (!st) return NULL;
+	
+	res = g_strjoinv(replace, tmp = g_strsplit(st, search, -1));
+	g_strfreev(tmp);
+	return res;
+}
+
+char *
+fix_newlines(const char *st)
+{
+	return replace(st, "\r\n", "\n");
+}
 
 /*
   Local Variables:
