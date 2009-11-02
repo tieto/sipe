@@ -571,7 +571,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 	int writelen = strlen(buf);
 	char *tmp;
 
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "\n\nsending - %s\n######\n%s\n######\n\n", ctime(&currtime), tmp = fix_newlines(buf));
+	purple_debug(PURPLE_DEBUG_MISC, "sipe", "sending - %s######\n%s######\n", ctime(&currtime), tmp = fix_newlines(buf));
 	g_free(tmp);
 	if (sip->transport == SIPE_TRANSPORT_UDP) {
 		if (sendto(sip->fd, buf, writelen, 0, sip->serveraddr, sizeof(struct sockaddr_in)) < writelen) {
@@ -4065,9 +4065,11 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	gchar *trig_invite = 	sipmsg_find_header(msg, "TriggeredInvite");
 	gchar *content_type = 	sipmsg_find_header(msg, "Content-Type");
 	GSList *end_points = NULL;
+	char *tmp;
 	struct sip_session *session;
 
-	purple_debug_info("sipe", "process_incoming_invite: body:\n%s!\n", msg->body ? msg->body : "");
+	purple_debug_info("sipe", "process_incoming_invite: body:\n%s!\n", msg->body ? tmp = fix_newlines(msg->body) : "");
+	g_free(tmp);
 
 	/* Invitation to join conference */
 	if (!strncmp(content_type, "application/ms-conf-invite+xml", 30)) {
@@ -4343,7 +4345,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				}
 #endif
 				if (tmp) {
-					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\r\n", tmp);
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp);
 					fill_auth(tmp, &sip->registrar);
 				}
 
@@ -4488,7 +4490,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					g_free(timeout);
 				}
 
-				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\r\n", sip->cseq);
+				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - got 200, removing CSeq: %d\n", sip->cseq);
 			}
 			break;
 		case 301:
@@ -4553,7 +4555,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					tmp = sipmsg_find_auth_header(msg, "Kerberos");
 				}
 #endif
-				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\r\n", tmp);
+				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp);
 				fill_auth(tmp, &sip->registrar);
 				sip->registerstatus = 2;
 				if (sip->account->disconnecting) {
@@ -5300,10 +5302,14 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	gchar *content_type = sipmsg_find_header(msg, "Content-Type");
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
+	char *tmp;
 	int timeout = 0;
 
-	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n", event ? event : "", msg->body);
-	purple_debug_info("sipe", "process_incoming_notify: subscription_state: %s\n\n", subscription_state ? subscription_state : "");
+	purple_debug_info("sipe", "process_incoming_notify: Event: %s\n\n%s\n",
+				  event ? event : "",
+				  tmp = fix_newlines(msg->body));
+	g_free(tmp);
+	purple_debug_info("sipe", "process_incoming_notify: subscription_state: %s\n", subscription_state ? subscription_state : "");
 
 	/* implicit subscriptions */
 	if (content_type && purple_str_has_prefix(content_type, "application/ms-imdn+xml")) {
@@ -5315,7 +5321,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		const gchar *expires_header;
 		expires_header = sipmsg_find_header(msg, "Expires");
 		timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
-		purple_debug_info("sipe", "process_incoming_notify: subscription expires:%d\n\n", timeout);
+		purple_debug_info("sipe", "process_incoming_notify: subscription expires:%d\n", timeout);
 		timeout = (timeout - 120) > 120 ? (timeout - 120) : timeout; // 2 min ahead of expiration
 	}
 
@@ -5891,7 +5897,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 						{
 							sip->registrar.retries = 0;
 						}
-                                                purple_debug_info("sipe", "RE-REGISTER CSeq: %d\r\n", sip->cseq);
+                                                purple_debug_info("sipe", "RE-REGISTER CSeq: %d\n", sip->cseq);
 					} else {
 						if (msg->response == 401) {
 							gchar *resend, *auth, *ptmp;
@@ -5909,7 +5915,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							}
 #endif
 
-							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\r\n", ptmp);
+							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\n", ptmp);
 
 							fill_auth(ptmp, &sip->registrar);
 							auth = auth_header(sip, &sip->registrar, trans->msg);
@@ -5927,12 +5933,12 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 					}
 
 					if (trans->callback) {
-						purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - we have a transaction callback\r\n");
+						purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - we have a transaction callback\n");
 						/* call the callback to process response*/
 						(trans->callback)(sip, msg, trans);
 					}
 
-					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - removing CSeq %d\r\n", sip->cseq);
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - removing CSeq %d\n", sip->cseq);
 					transactions_remove(sip, trans);
 
 				}
@@ -5972,7 +5978,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 		time_t currtime = time(NULL);
 		cur += 2;
 		cur[0] = '\0';
-		purple_debug_info("sipe", "\n\nreceived - %s\n######\n%s\n#######\n\n", ctime(&currtime), tmp = fix_newlines(conn->inbuf));
+		purple_debug_info("sipe", "received - %s######\n%s\n#######\n", ctime(&currtime), tmp = fix_newlines(conn->inbuf));
 		g_free(tmp);
 		msg = sipmsg_parse_header(conn->inbuf);
 		cur[0] = '\r';
@@ -6046,7 +6052,7 @@ static void sipe_udp_process(gpointer data, gint source,
 	static char buffer[65536];
 	if ((len = recv(source, buffer, sizeof(buffer) - 1, 0)) > 0) {
 		buffer[len] = '\0';
-		purple_debug_info("sipe", "\n\nreceived - %s\n######\n%s\n#######\n\n", ctime(&currtime), buffer);
+		purple_debug_info("sipe", "received - %s######\n%s\n#######\n", ctime(&currtime), buffer);
 		msg = sipmsg_parse_msg(buffer);
 		if (msg) process_input_message(sip, msg);
 	}
