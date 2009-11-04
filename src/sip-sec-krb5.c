@@ -24,7 +24,7 @@
 #include <glib.h>
 #include <stdio.h>
 #include <string.h>
-#include <gssapi.h>
+#include <gssapi/gssapi.h>
 #include <gssapi/gssapi_krb5.h>
 
 #include "sip-sec.h"
