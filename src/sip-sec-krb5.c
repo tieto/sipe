@@ -61,7 +61,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 	OM_uint32 ret;
 	OM_uint32 minor;
 	OM_uint32 expiry;
-	struct gss_cred_id_struct* credentials;
+	gss_cred_id_t credentials;
 
 	if (!context->sso) {
 		/* Do not use default credentials, obtain a new one and store it in cache */
@@ -414,7 +414,7 @@ sip_sec_krb5_print_error(const char *func,
 			 krb5_context context,
 			 krb5_error_code ret)
 {
-	const char *error_message = krb5_get_error_message(context, ret);
+	char *error_message = (char *)krb5_get_error_message(context, ret);
 	printf("Kerberos 5 ERROR in %s: %s\n", func, error_message);
 
 	krb5_free_error_message(context, error_message);
