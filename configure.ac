@@ -1,7 +1,15 @@
-dnl version of this package
-m4_define(pidgin_sipe_version,	1.7.0)
+dnl Use `VERSION' files to get version.
+m4_define([SIPE_VERSION_DATA], m4_include([VERSION]))
 
-AC_INIT([pidgin-sipe], [1.7.0])
+dnl Strip off newline characters.
+m4_define([SIPE_VERSION],
+          m4_substr(SIPE_VERSION_DATA,
+                    [0], m4_decr(m4_len(SIPE_VERSION_DATA))))
+
+dnl version of this package
+m4_define(pidgin_sipe_version, SIPE_VERSION)
+
+AC_INIT([pidgin-sipe], SIPE_VERSION)
 
 AC_PREREQ([2.50])
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 tar-ustar])
