@@ -86,6 +86,10 @@ if test "$kerberos" != "no" ; then
                                 [AC_ERROR(GSSAPI libraries not found)],
                                 )],
                         -lgssapi_krb5)
+	savedLIBS="$LIBS"
+	LIBS="$KRB5_LIBS $LIBS"
+	AC_CHECK_FUNCS([krb5_get_error_message])
+	LIBS="$savedLIBS"
 	AC_DEFINE(USE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
 fi
 AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
