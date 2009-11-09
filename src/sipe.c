@@ -177,15 +177,15 @@ sipe_get_useragent(struct sipe_account_data *sip)
   #define SIPE_TARGET_ARCH "other"
 #endif
 
-			default_ua = g_strdup_printf("Purple/%d.%d.%d Sipe/%s (%s; %s-%s)",
+			default_ua = g_strdup_printf("Purple/%d.%d.%d Sipe/%s (%s-%s; %s)",
 					PURPLE_MAJOR_VERSION,
 					PURPLE_MINOR_VERSION,
 					PURPLE_MICRO_VERSION,
 					SIPE_VERSION,
-					sip->ocs2007 ? "2007" : "2005",
 					SIPE_TARGET_PLATFORM,
-					SIPE_TARGET_ARCH);
-		}	
+					SIPE_TARGET_ARCH,
+					sip->server_version ? sip->server_version : "");
+		}
 		useragent = default_ua;
 	}
 	return useragent;
@@ -4373,6 +4373,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				gchar *epid;
 				gchar *uuid;
 				gchar *timeout;
+				gchar *server_hdr = sipmsg_find_header(msg, "Server");
 
 				if (!sip->reregister_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "registration");
@@ -4382,6 +4383,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				}
 
 				sip->registerstatus = 3;
+				
+				if (server_hdr && !sip->server_version) {
+					sip->server_version = g_strdup(server_hdr);
+					g_free(default_ua);
+					default_ua = NULL;
+				}
 
 #ifdef USE_KERBEROS
 				if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
@@ -6686,6 +6693,9 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 
 	g_free(sip->realhostname);
 	sip->realhostname = NULL;
+	
+	g_free(sip->server_version);
+	sip->server_version = NULL;
 
 	if (sip->listenpa)
 		purple_input_remove(sip->listenpa);

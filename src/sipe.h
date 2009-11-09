@@ -155,6 +155,7 @@ struct sipe_account_data {
 	gboolean is_idle;
 	gboolean was_idle;
 	gchar *contact;
+	gchar *server_version;
 	gboolean ocs2007; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
 	GSList *containers; /* MS-PRES containers */
