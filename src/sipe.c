@@ -141,6 +141,56 @@ static char *genbranch()
 		rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
+
+static char *default_ua = NULL;
+static const char*
+sipe_get_useragent(struct sipe_account_data *sip)
+{
+	const char *useragent = purple_account_get_string(sip->account, "useragent", "");
+	if (is_empty(useragent)) {
+		if (!default_ua) {
+/*@TODO: better approach to define _user_ OS, it's version and host architecture */
+/* ref: lzodefs.h */
+#if defined(__linux__) || defined(__linux) || defined(__LINUX__)
+  #define SIPE_TARGET_PLATFORM "linux"
+#elif defined(__NetBSD__) ||defined( __OpenBSD__) || defined(__FreeBSD__)
+  #define SIPE_TARGET_PLATFORM "bsd"
+#  elif defined(__APPLE__) || defined(__MACOS__)
+  #define SIPE_TARGET_PLATFORM "macosx"
+#elif defined(__solaris__) || defined(__sun)
+  #define SIPE_TARGET_PLATFORM "sun"
+#elif defined(_WIN32)
+  #define SIPE_TARGET_PLATFORM "win"
+#else
+  #define SIPE_TARGET_PLATFORM "generic"
+#endif
+
+#if defined(__amd64__) || defined(__x86_64__) || defined(_M_AMD64)
+  #define SIPE_TARGET_ARCH "x86_64"
+#elif defined(__386__) || defined(__i386__) || defined(__i386) || defined(_M_IX86) || defined(_M_I386)
+  #define SIPE_TARGET_ARCH "i386"
+#elif defined(__ppc64__)
+  #define SIPE_TARGET_ARCH "ppc64"
+#elif defined(__powerpc__) || defined(__powerpc) || defined(__ppc__) || defined(__PPC__) || defined(_M_PPC) || defined(_ARCH_PPC) || defined(_ARCH_PWR)
+  #define SIPE_TARGET_ARCH "ppc"
+#else
+  #define SIPE_TARGET_ARCH "other"
+#endif
+
+			default_ua = g_strdup_printf("Purple/%d.%d.%d Sipe/%s (%s; %s-%s)",
+					PURPLE_MAJOR_VERSION,
+					PURPLE_MINOR_VERSION,
+					PURPLE_MICRO_VERSION,
+					SIPE_VERSION,
+					sip->ocs2007 ? "2007" : "2005",
+					SIPE_TARGET_PLATFORM,
+					SIPE_TARGET_ARCH);
+		}	
+		useragent = default_ua;
+	}
+	return useragent;
+}
+
 static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 				  SIPE_UNUSED_PARAMETER PurpleBuddy *b)
 {
@@ -812,7 +862,6 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	gchar *theirepid = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
-	gchar *useragent = (gchar *)purple_account_get_string(sip->account, "useragent", "Purple/" VERSION);
 	gchar *route     = g_strdup("");
 	gchar *epid      = get_epid(sip);
 	int cseq         = dialog ? ++dialog->cseq : 1 /* as Call-Id is new in this case */;
@@ -875,7 +924,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			theirepid ? theirepid : "",
 			cseq,
 			method,
-			useragent,
+			sipe_get_useragent(sip),
 			callid,
 			route,
 			addh,
@@ -4049,7 +4098,6 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	/* gchar *ms_text_format; */
 	gchar *body;
 	gchar *newTag;
 	gchar *oldHeader;
@@ -4261,7 +4309,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(from);
 
 	sipmsg_add_header(msg, "Supported", "com.microsoft.rtc-multiparty");
-	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
+	sipmsg_add_header(msg, "User-Agent", sipe_get_useragent(sip));
 	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
 	body = g_strdup_printf(
@@ -4283,7 +4331,7 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 	gchar *body;
 
 	sipmsg_add_header(msg, "Allow", "INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY");
-	sipmsg_add_header(msg, "User-Agent", purple_account_get_string(sip->account, "useragent", "Purple/" VERSION));
+	sipmsg_add_header(msg, "User-Agent", sipe_get_useragent(sip));
 	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
 	body = g_strdup_printf(
@@ -7907,7 +7955,7 @@ static PurplePluginInfo info = {
 	PURPLE_PRIORITY_DEFAULT,                          /**< priority       */
 	"prpl-sipe",                                   	  /**< id             */
 	"Office Communicator",                            /**< name           */
-	VERSION,                                          /**< version        */
+	SIPE_VERSION,                                     /**< version        */
 	"Microsoft Office Communicator Protocol Plugin",  /**< summary        */
 	"A plugin for the extended SIP/SIMPLE protocol used by "          /**< description */
 	"Microsoft Live/Office Communications Server (LCS2005/OCS2007+)", /**< description */

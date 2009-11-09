@@ -2,14 +2,15 @@ dnl Use `VERSION' files to get version.
 m4_define([SIPE_VERSION_DATA], m4_include([VERSION]))
 
 dnl Strip off newline characters.
-m4_define([SIPE_VERSION],
+m4_define([_SIPE_VERSION],
           m4_substr(SIPE_VERSION_DATA,
                     [0], m4_decr(m4_len(SIPE_VERSION_DATA))))
 
 dnl version of this package
-m4_define(pidgin_sipe_version, SIPE_VERSION)
+m4_define(pidgin_sipe_version, _SIPE_VERSION)
 
-AC_INIT([pidgin-sipe], SIPE_VERSION)
+AC_INIT([pidgin-sipe], _SIPE_VERSION)
+AC_DEFINE(SIPE_VERSION, "_SIPE_VERSION", [Define sipe version.])
 
 AC_PREREQ([2.50])
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 tar-ustar])
