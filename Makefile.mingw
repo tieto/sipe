@@ -1,7 +1,8 @@
 # Makefile.mingw
 #
+# Author: pier11@operamail.com
 # Author: zup@sbox.tugraz.at
-# Date 8/28/07
+# Date 11 Nov 2009
 # Description: Top Makefile for win32 (mingw) port of LCS protocol plugin
 #
 
@@ -12,7 +13,7 @@ export CFLAGS=-Werror
 
 WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
-VERSION := 1.7.0
+export VERSION := $(shell cat VERSION)
 
 .PHONY: all clean install msi
 

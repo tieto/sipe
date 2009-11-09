@@ -24,6 +24,7 @@ ifeq ($(TYPE),PLUGIN)
 endif
 endif
 
+DEFINES += -DSIPE_VERSION=$(VERSION)
 DEFINES += -DGETTEXT_PACKAGE=\"pidgin-sipe\"
 DEFINES += -DUSE_KERBEROS=1
 ##
