@@ -5094,8 +5094,17 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	const char *device_name = NULL;
 	struct sipe_buddy *sbuddy;
 	xmlnode *node;
-
-	xmlnode *xn_presentity = xmlnode_from_str(data, len);
+	xmlnode *xn_presentity;
+		
+	/* fix for Reuters environment on Linux */
+	if (data && strstr(data, "encoding=\"utf-16\"")) {
+		char *tmp_data;
+		tmp_data = replace(data, "encoding=\"utf-16\"", "encoding=\"utf-8\"");
+		xn_presentity = xmlnode_from_str(tmp_data, strlen(tmp_data));
+		g_free(tmp_data);
+	} else {
+		xn_presentity = xmlnode_from_str(data, len);
+	}
 
 	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
 	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");

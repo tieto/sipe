@@ -219,7 +219,7 @@ is_empty(const char *st)
 }
 
 /** Returns newly allocated string. Must be g_free()'d */
-static char *
+char *
 replace(const char *st,
 	const char *search,
 	const char *replace)
