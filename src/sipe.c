@@ -7005,12 +7005,50 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 		purple_connection_get_account(gc), NULL, NULL, gc);
 }
 
+static void sipe_show_about_plugin(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	const char *txt = 
+"<b><font size=\"+1\">Sipe " SIPE_VERSION "</font></b><br/>"
+"<br/>"
+"A third-party plugin implementing extended version of SIP/SIMPLE used by various products:<br/>"
+    "<li> - MS Office Communications Server 2007 (R2)</li><br/>"
+    "<li> - MS Live Communications Server 2005/2003</li><br/>"
+    "<li> - Reuters Messaging</li><br/>"
+"<br/>"
+"Home: <a href=\"http://sipe.sourceforge.net\">http://sipe.sourceforge.net</a><br/>"
+"Support: <a href=\"http://sourceforge.net/projects/sipe/forums/forum/688534\">Help Forum</a><br/>"
+"License: GPLv2<br/>"
+"<br/>"
+"We support users in the following organizations to mention a few:<br/>"
+" - CERN<br/>"
+" - Reuters Messaging network<br/>"
+" - Deutsche Bank<br/>"
+" - Merrill Lynch<br/>"
+" - Wachovia<br/>"
+" - Siemens<br/>"
+" - Alcatel-Lucent<br/>"
+" - Nokia<br/>"
+" - HP<br/>"
+"<br/>"
+"<b>Authors:</b><br/>"
+" - Anibal Avelar<br/>"
+" - Gabriel Burt<br/>"
+" - Stefan Becker<br/>"
+" - pier11<br/>";
+	
+	purple_notify_formatted(gc, NULL, " ", NULL, txt, NULL, NULL);
+}
+
 GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 		    SIPE_UNUSED_PARAMETER gpointer context)
 {
 	GList *menu = NULL;
 	PurplePluginAction *act;
 
+	act = purple_plugin_action_new(_("About SIPE plugin"), sipe_show_about_plugin);
+	menu = g_list_prepend(menu, act);
+	
 	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
