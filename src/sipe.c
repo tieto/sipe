@@ -5095,7 +5095,18 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	struct sipe_buddy *sbuddy;
 	xmlnode *node;
 	xmlnode *xn_presentity;
-		
+	xmlnode *xn_availability;
+	xmlnode *xn_activity;
+	xmlnode *xn_display_name;
+	xmlnode *xn_email;
+	xmlnode *xn_phone_number;
+	xmlnode *xn_userinfo;
+	xmlnode *xn_oof;
+	xmlnode *xn_contact;
+	xmlnode *xn_note;
+	char *note;
+	char *free_activity;
+	
 	/* fix for Reuters environment on Linux */
 	if (data && strstr(data, "encoding=\"utf-16\"")) {
 		char *tmp_data;
@@ -5106,19 +5117,19 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		xn_presentity = xmlnode_from_str(data, len);
 	}
 
-	xmlnode *xn_availability = xmlnode_get_child(xn_presentity, "availability");
-	xmlnode *xn_activity = xmlnode_get_child(xn_presentity, "activity");
-	xmlnode *xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
-	xmlnode *xn_email = xmlnode_get_child(xn_presentity, "email");
-	xmlnode *xn_phone_number = xmlnode_get_child(xn_presentity, "phoneNumber");
-	xmlnode *xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
-	xmlnode *xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
+	xn_availability = xmlnode_get_child(xn_presentity, "availability");
+	xn_activity = xmlnode_get_child(xn_presentity, "activity");
+	xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
+	xn_email = xmlnode_get_child(xn_presentity, "email");
+	xn_phone_number = xmlnode_get_child(xn_presentity, "phoneNumber");
+	xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
+	xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
 
-	xmlnode *xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
-	xmlnode *xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
-	char *note = xn_note ? xmlnode_get_data(xn_note) : NULL;
+	xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
+	xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
+	note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 
-	char *free_activity = NULL;
+	free_activity = NULL;
 
 	name = xmlnode_get_attrib(xn_presentity, "uri"); /* without 'sip:' prefix */
 	uri = sip_uri_from_name(name);
