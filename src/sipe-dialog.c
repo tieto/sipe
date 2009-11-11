@@ -73,6 +73,33 @@ struct sip_dialog *sipe_dialog_add(struct sip_session *session)
 	return(dialog);
 }
 
+static struct sip_dialog *
+sipe_dialog_find_3(struct sip_session *session,
+		   struct sip_dialog *dialog_in)
+{
+	if (session && dialog_in) {
+		SIPE_DIALOG_FOREACH {
+			if (	dialog_in->callid &&
+				dialog_in->ourtag &&
+				dialog_in->theirtag &&
+				
+				dialog->callid &&
+				dialog->ourtag &&
+				dialog->theirtag && 
+				
+				!g_ascii_strcasecmp(dialog_in->callid, dialog->callid) &&
+				!g_ascii_strcasecmp(dialog_in->ourtag, dialog->ourtag) &&
+				!g_ascii_strcasecmp(dialog_in->theirtag, dialog->theirtag)) 
+			{
+				purple_debug_info("sipe", "sipe_dialog_find_3 who='%s'\n", 
+							  dialog->with ? dialog->with : "");
+				return dialog;
+			}
+		} SIPE_DIALOG_FOREACH_END;
+	}
+	return NULL;
+}
+
 struct sip_dialog *sipe_dialog_find(struct sip_session *session,
 				    const gchar *who)
 {
@@ -92,6 +119,19 @@ void sipe_dialog_remove(struct sip_session *session, const gchar *who)
 	struct sip_dialog *dialog = sipe_dialog_find(session, who);
 	if (dialog) {
 		purple_debug_info("sipe", "sipe_dialog_remove who='%s' with='%s'\n", who, dialog->with ? dialog->with : "");
+		session->dialogs = g_slist_remove(session->dialogs, dialog);
+		sipe_dialog_free(dialog);
+	}
+}
+
+void
+sipe_dialog_remove_3(struct sip_session *session,
+		     struct sip_dialog *dialog_in)
+{
+	struct sip_dialog *dialog = sipe_dialog_find_3(session, dialog_in);
+	if (dialog) {
+		purple_debug_info("sipe", "sipe_dialog_remove_3 with='%s'\n",
+					  dialog->with ? dialog->with : "");
 		session->dialogs = g_slist_remove(session->dialogs, dialog);
 		sipe_dialog_free(dialog);
 	}

@@ -3908,6 +3908,17 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	struct sip_session *session;
+	struct sip_dialog *dialog;
+	
+	/* collect dialog identification 
+	 * we need callid, ourtag and theirtag to unambiguously identify dialog
+	 */
+	/* take data before 'msg' will be modified by send_sip_response */
+	dialog = g_new0(struct sip_dialog, 1);
+	dialog->callid = g_strdup(callid);
+	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
+	dialog->with = g_strdup(from);
+	sipe_dialog_parse(dialog, msg, FALSE);
 
 	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 
@@ -3926,7 +3937,8 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 	}
 
 	/* This what BYE is essentially for - terminating dialog */
-	sipe_dialog_remove(session, from);
+	sipe_dialog_remove_3(session, dialog);
+	sipe_dialog_free(dialog);
 	if (session->focus_uri && !g_strcasecmp(from, session->im_mcu_uri)) {
 		sipe_conf_immcu_closed(sip, session);
 	} else if (session->is_multiparty) {

@@ -104,6 +104,17 @@ struct sip_dialog *sipe_dialog_find(struct sip_session *session,
 void sipe_dialog_remove(struct sip_session *session, const gchar *who);
 
 /**
+ * Remove a dialog from a session
+ *
+ * @param session (in) may be NULL
+ * @param dialog (in) dialog identifier. Should contain Call-ID, to-tag and from-tag 
+ *                    to unambiguously identify dialog. May be NULL
+ */
+void
+sipe_dialog_remove_3(struct sip_session *session,
+		     struct sip_dialog *dialog_in);
+
+/**
  * Remove all dialogs frome a session
  *
  * @param session (in)
