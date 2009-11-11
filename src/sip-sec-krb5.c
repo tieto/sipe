@@ -418,8 +418,9 @@ sip_sec_krb5_print_error(const char *func,
 	const char *error_message = krb5_get_error_message(context, ret);
 	printf("Kerberos 5 ERROR in %s: %s\n", func, error_message);
 	krb5_free_error_message(context, error_message);
-#endif
+#else
 	printf("Kerberos 5 ERROR in %s: %s\n", func, "unknown error");
+#endif
 }
 
 /*
