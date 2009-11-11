@@ -649,23 +649,33 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 	xmlnode *xn_conferencing = xmlnode_from_str(msg->body, msg->bodylen);
 	xmlnode *xn_focus_uri = xmlnode_get_child(xn_conferencing, "focus-uri");
 	char *focus_uri = xmlnode_get_data(xn_focus_uri);
+	gchar *newTag = gentag();
+	gchar *oldHeader = sipmsg_find_header(msg, "To");
+	gchar *newHeader;
 
 	xmlnode_free(xn_conferencing);
 
 	/* send OK */
 	purple_debug_info("sipe", "We have received invitation to Conference. Focus URI=%s\n", focus_uri);
-	send_sip_response(sip->gc, msg, 200, "OK", NULL);
-
-	session = sipe_session_add_chat(sip);
-	session->focus_uri = focus_uri;
-	session->is_multiparty = FALSE;
-
+	
+	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
+	sipmsg_remove_header_now(msg, "To");
+	sipmsg_add_header_now(msg, "To", newHeader);
+	g_free(newHeader);
+	
 	/* temporary dialog with invitor */
+	/* take data before 'msg' will be modified by send_sip_response */
 	dialog = g_new0(struct sip_dialog, 1);
 	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
 	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
 	dialog->with = parse_from(sipmsg_find_header(msg, "From"));
 	sipe_dialog_parse(dialog, msg, FALSE);
+
+	send_sip_response(sip->gc, msg, 200, "OK", NULL);
+
+	session = sipe_session_add_chat(sip);
+	session->focus_uri = focus_uri;
+	session->is_multiparty = FALSE;
 
 	/* send BYE to invitor */
 	send_sip_request(sip->gc, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
