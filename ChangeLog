@@ -1,3 +1,21 @@
+version 1.7.1 (2009-11-XX)
+	- "About SIPE plugin" screen implemented. Accessible as "Accounts->{Your Account}->About SIPE plugin".
+	- New correct 'User Agent:' header in SIP messages with Purple and Sipe versions, host operating system type and processor architecture as well as OCS version. To take advantage of it - empty your old 'User Agent' setting in the account configuration.
+	- Version now stored in single place - VERSION file and used for all builds.
+	- Core - not using bodies for single subscriptions in 2005 environment. Optimized CSeq numbers usage. Beautified debug log output.
+	- Call Control - session timer for dialog with CSTA. Otherwise session with CSTA got expired after ~30 min due to no refresh. RFC4028.
+	- Call Control - removing internal alternative phone number from phone string.
+	- RPM spec file update for CentOS/RHEL 5 - purple-sipe needed a "Group" (John B.)
+	- Fixed crash in 2005 'New Chat' menu.
+	- Fixed #2886534 - routing - Request-URI/Route headers. Problem was a re-subscription failure resulting in stopping contacts' status update after approximately 8 hours.
+	- Fixed #2892842 - interference of conference invite to normal IM dialog on 2007 environment. Incoming BYE from conf invite process used to kill ongoing regular IM dialog with the same user.
+	- Fixed crash in presense processing on Reuters environment (LSC 2005) on Linux.
+	- Fixed #2882304 - 'Note' not working with LCS2005
+	- Fix for the First message in 2005 multiparty chat.
+	- Fix for initial outgoing messages - some were lost if typed too fast if dialog was not established yet.
+	- Fixed #2882658 - SIGSEGV in process_incoming_info_csta() - happened on some Cisco-Systems 7 CSTA Gateways.
+	- Fixes for SLED 10 SP2 and SP3 compilations.
+	
 version 1.7.0 (2009-10-19)
        - Added integration with PBX (external phones) using CSTA protocol (ECMA TR-87). Users can initiate a call by clicking on contact phones in right-click context menu. This feature should be enabled for user on the server side.
        - Added reconnection to chat after disconnection by continue typing in the same open chat window (OCS 2007 only). Feature request #2866630.
