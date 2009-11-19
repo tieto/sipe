@@ -1,4 +1,4 @@
-version 1.7.1 (2009-11-XX)
+version 1.7.1 (2009-11-19)
 	- "About SIPE plugin" screen implemented. Accessible as "Accounts->{Your Account}->About SIPE plugin".
 	- New correct 'User Agent:' header in SIP messages with Purple and Sipe versions, host operating system type and processor architecture as well as OCS version. To take advantage of it - empty your old 'User Agent' setting in the account configuration.
 	- Version now stored in single place - VERSION file and used for all builds.
