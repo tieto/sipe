@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-09-01 11:18+0800\n"
-"PO-Revision-Date: 2009-09-01 12:13+0800\n"
+"POT-Creation-Date: 2009-11-19 18:31+0800\n"
+"PO-Revision-Date: 2009-11-19 18:47+0800\n"
 "Last-Translator: 神州散人 <kappa8086@gmail.com>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -16,160 +16,188 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: sipe.c:267
+#: sipe.c:331
 msgid "Failed to authenticate to server"
 msgstr "到服务器的认证失败"
 
-#: sipe.c:415 sipe.c:447
+#: sipe.c:479 sipe.c:511
 msgid "Could not write"
 msgstr "无法写入"
 
-#: sipe.c:471 sipe.c:5736
+#: sipe.c:535 sipe.c:6288
 msgid "Could not connect"
 msgstr "无法连接"
 
-#: sipe.c:541 sipe.c:5881
+#: sipe.c:605 sipe.c:6433
 msgid "Could not create socket"
 msgstr "无法创建套接字"
 
-#: sipe.c:1060 sipe.c:2688
+#: sipe.c:1134 sipe.c:2913
 msgid "you"
 msgstr "您"
 
-#: sipe.c:1888
+#: sipe.c:1988
 msgid "Message"
 msgstr "消息"
 
-#: sipe.c:1901
+#: sipe.c:2001
 msgid "Busy"
 msgstr "忙碌"
 
-#: sipe.c:1910
+#: sipe.c:2010
 msgid "Be Right Back"
 msgstr "马上回来"
 
-#: sipe.c:1918
+#: sipe.c:2018 sipe.c:4894 sipe.c:5206
 msgid "On The Phone"
 msgstr "接电话中"
 
-#: sipe.c:1922
+#: sipe.c:2022
 msgid "Out To Lunch"
 msgstr "外出就餐"
 
-#: sipe.c:2021 sipe.c:2033 sipe.c:2053 sipe.c:6311
+#: sipe.c:2026
+msgid "Inactive"
+msgstr "不活动"
+
+#: sipe.c:2127 sipe.c:2139 sipe.c:2164 sipe.c:6884
 msgid "Other Contacts"
 msgstr "其他联系人"
 
-#: sipe.c:2212
+#: sipe.c:2325
 msgid "you are already signed in at another location"
 msgstr "您已经在另一地点登入"
 
-#: sipe.c:2215
+#: sipe.c:2328
 msgid "user disabled"
 msgstr "用户已禁止"
 
-#: sipe.c:2218
+#: sipe.c:2331
 msgid "user moved"
 msgstr "用户已移动"
 
-#: sipe.c:2222 sipe.c:4353
+#: sipe.c:2335 sipe.c:4645
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "您被以下服务器拒绝了：%s"
 
-#: sipe.c:2222 sipe.c:4354 sipe.c:4371 sipe.c:4389
+#: sipe.c:2335 sipe.c:4646 sipe.c:4663 sipe.c:4681
 msgid "no reason given"
 msgstr "没有给出原因"
 
-#: sipe.c:2965
+#: sipe.c:3189
+#, c-format
+msgid ""
+"This message was not delivered to %s because the service is not available"
+msgstr ""
+"此消息没有被发送到 %s，因为服务不可用"
+
+#: sipe.c:3191
+#, c-format
+msgid ""
+"This message was not delivered to %s because one or more recipients do not "
+"want to be disturbed"
+msgstr ""
+"此消息没有被发送到 %s，因为有的收信人不想被打扰"
+
+#: sipe.c:3193
 #, c-format
 msgid ""
 "This message was not delivered to %s because one or more recipients are "
-"offline:\n"
-"%s"
+"offline"
 msgstr ""
-"此消息没有被发送到 %s，因为有的收信人不在线：\n"
-"%s"
+"此消息没有被发送到 %s，因为有的收信人不在线"
 
-#: sipe.c:3243
+#: sipe.c:3475
 #, c-format
 msgid "Failed to invite %s"
 msgstr "邀请 %s 失败"
 
-#: sipe.c:3992 sipe.c:6626 sipe-conf.c:692
-#, c-format
-msgid "Chat #%d"
-msgstr "聊天 #%d"
-
-#: sipe.c:4321 sipe.c:5563
+#: sipe.c:4613 sipe.c:6115
 msgid "Wrong password"
 msgstr "密码错误"
 
-#: sipe.c:4370
+#: sipe.c:4662
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "没找到：%s。请和您的管理员联系"
 
-#: sipe.c:4372
+#: sipe.c:4664
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "目标 URI 没有启用 SIP 或不存在"
 
-#: sipe.c:4389
+#: sipe.c:4681
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "服务不可用：%s"
 
-#: sipe.c:5559
+#: sipe.c:4896 sipe.c:5208
+msgid "In a Conference"
+msgstr "在会议中"
+
+#: sipe.c:4898
+msgid "In a Meeting"
+msgstr "在会谈中"
+
+#: sipe.c:4900 sipe.c:5187
+msgid "Out of Office"
+msgstr "不在办公室"
+
+#: sipe.c:4902
+msgid "Urgent Interruptions Only"
+msgstr "非紧急事件勿扰"
+
+#: sipe.c:6111
 msgid "Invalid message signature received"
 msgstr "收到了无效的消息签名"
 
-#: sipe.c:5633
+#: sipe.c:6185
 msgid "Connection not found. Please try to connect again"
 msgstr "连接没找到；请重试连接"
 
-#: sipe.c:5654
+#: sipe.c:6206
 msgid "SSL read error"
 msgstr "SSL 读取错误"
 
-#: sipe.c:5657
+#: sipe.c:6209
 msgid "Server has disconnected"
 msgstr "服务器已断开"
 
-#: sipe.c:5781 sipe.c:5822 sipe.c:5865 sipe.c:5935
+#: sipe.c:6333 sipe.c:6374 sipe.c:6417 sipe.c:6487
 msgid "Could not create listen socket"
 msgstr "无法创建监听套接字"
 
-#: sipe.c:5804 sipe.c:5926
+#: sipe.c:6356 sipe.c:6478
 msgid "Could not resolve hostname"
 msgstr "无法解析主机名"
 
-#: sipe.c:5844
+#: sipe.c:6396
 msgid "Connection failed"
 msgstr "连接失败"
 
-#: sipe.c:5847
+#: sipe.c:6399
 msgid "SSL handshake failed"
 msgstr "SSL 握手失败"
 
-#: sipe.c:5850
+#: sipe.c:6402
 msgid "SSL certificate invalid"
 msgstr "SSL 证书无效"
 
-#: sipe.c:5908
+#: sipe.c:6460
 msgid ""
 "SSL support is not installed. Either install SSL support or configure a "
 "different connection type in the account editor"
 msgstr "没有安装 SSL 支持。请安装 SSL 支持或在帐户编辑器里配置另外的连接类型"
 
-#: sipe.c:5917
+#: sipe.c:6469
 msgid "Could not create SSL context"
 msgstr "无法创建 SSL 环境"
 
-#: sipe.c:6039
+#: sipe.c:6591
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP Exchange 用户名包含无效字符"
 
-#: sipe.c:6062
+#: sipe.c:6614
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
@@ -177,166 +205,207 @@ msgstr ""
 "用户名必须是有效的 SIP URI\n"
 "例如：user@company.com"
 
-#: sipe.c:6088
+#: sipe.c:6640
 msgid "SIP Exchange user name contains whitespace"
 msgstr "SIP Exchange 用户名包含空格"
 
-#: sipe.c:6100
+#: sipe.c:6652
 msgid "Connecting"
 msgstr "正在连接"
 
-#: sipe.c:6337
+#: sipe.c:6910
 msgid "Unable to display the search results"
 msgstr "无法显示搜索结果"
 
-#: sipe.c:6343
+#: sipe.c:6916
 msgid "User name"
 msgstr "用户名"
 
-#: sipe.c:6346
+#: sipe.c:6919
 msgid "Name"
 msgstr "名称"
 
-#: sipe.c:6349 sipe.c:6443 sipe.c:7101
+#: sipe.c:6922 sipe.c:7016 sipe.c:7854
 msgid "Company"
 msgstr "公司"
 
-#: sipe.c:6352 sipe.c:6445 sipe.c:7104
+#: sipe.c:6925 sipe.c:7018 sipe.c:7863
 msgid "Country"
 msgstr "国家"
 
-#: sipe.c:6355
+#: sipe.c:6928
 msgid "Email"
 msgstr "电子邮件"
 
-#: sipe.c:6382
+#: sipe.c:6955
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "已找到 %d 个联系人 %s："
 
-#: sipe.c:6384
+#: sipe.c:6957
 msgid " (more matched your query)"
 msgstr " (有更多与您的查询匹配)"
 
-#: sipe.c:6439
+#: sipe.c:7012
 msgid "First name"
 msgstr "姓"
 
-#: sipe.c:6441
+#: sipe.c:7014
 msgid "Last name"
 msgstr "名"
 
-#: sipe.c:6449
+#: sipe.c:7022
 msgid "Search"
 msgstr "搜索"
 
-#: sipe.c:6450
+#: sipe.c:7023
 msgid "Search for a contact"
 msgstr "搜索联系人"
 
-#: sipe.c:6451
+#: sipe.c:7024
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "输入您要查找的人的信息。空字段将被忽略。"
 
-#: sipe.c:6453
+#: sipe.c:7026
 msgid "_Search"
 msgstr "搜索(_S)"
 
-#: sipe.c:6454
+#: sipe.c:7027
 msgid "_Cancel"
 msgstr "取消(_C)"
 
-#: sipe.c:6464
+#: sipe.c:7072
+msgid "About SIPE plugin"
+msgstr "关于 SIPE 插件"
+
+#: sipe.c:7075
 msgid "Contact search..."
 msgstr "联系人搜索..."
 
-#: sipe.c:6528
+#: sipe.c:7160
 msgid "Status"
 msgstr "状态"
 
-#: sipe.c:6545
+#: sipe.c:7165
+msgid "Meeting About"
+msgstr "会议内容"
+
+#: sipe.c:7169
+msgid "Meeting In"
+msgstr "会议场所"
+
+#: sipe.c:7186
 msgid "Note"
 msgstr "备注"
 
-#: sipe.c:6557
+#: sipe.c:7198
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: sipe.c:6903
+#: sipe.c:7560
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "设置为“%s”的领导者"
 
-#: sipe.c:6914
+#: sipe.c:7571
 #, c-format
 msgid "Remove from '%s'"
 msgstr "从“%s”中删除"
 
-#: sipe.c:6927
+#: sipe.c:7584
 #, c-format
 msgid "Invite to '%s'"
 msgstr "邀请到“%s”"
 
-#: sipe.c:6938
+#: sipe.c:7595
 msgid "New chat"
 msgstr "新建聊天"
 
-#: sipe.c:6946
+#: sipe.c:7606
+#, c-format
+msgid "Work %s"
+msgstr "工作 %s"
+
+#: sipe.c:7619
+#, c-format
+msgid "Mobile %s"
+msgstr "移动 %s"
+
+#: sipe.c:7632
+#, c-format
+msgid "Home %s"
+msgstr "家庭 %s"
+
+#: sipe.c:7645
+#, c-format
+msgid "Other %s"
+msgstr "其他 %s"
+
+#: sipe.c:7658
+#, c-format
+msgid "Custom1 %s"
+msgstr "自定义 1 %s"
+
+#: sipe.c:7670
 msgid "Send email..."
 msgstr "发送邮件..."
 
-#: sipe.c:6971
+#: sipe.c:7695
 msgid "Copy to"
 msgstr "复制到"
 
-#: sipe.c:7024
+#: sipe.c:7749
 msgid "Unlock"
 msgstr "解锁"
 
-#: sipe.c:7029
+#: sipe.c:7754
 msgid "Lock"
 msgstr "锁定"
 
-#: sipe.c:7097 sipe.c:7122
+#: sipe.c:7842 sipe.c:7879
 msgid "Display name"
 msgstr "显示名称"
 
-#: sipe.c:7098
+#: sipe.c:7845
 msgid "Job title"
 msgstr "职称"
 
-#: sipe.c:7099
+#: sipe.c:7848
 msgid "Office"
 msgstr "职务"
 
-#: sipe.c:7100
+#: sipe.c:7851
 msgid "Business phone"
 msgstr "工作电话"
 
-#: sipe.c:7102
+#: sipe.c:7857
 msgid "City"
 msgstr "城市"
 
-#: sipe.c:7103
+#: sipe.c:7860
 msgid "State"
 msgstr "省份"
 
-#: sipe.c:7106 sipe.c:7137
+#: sipe.c:7866 sipe.c:7893
 msgid "E-Mail address"
 msgstr "电子邮件地址"
 
-#: sipe.c:7130
+#: sipe.c:7886
 msgid "Alias"
 msgstr "别名"
 
-#: sipe.c:7143
+#: sipe.c:7899
+msgid "Site"
+msgstr "站点"
+
+#: sipe.c:7903
 msgid "Device"
 msgstr "设备"
 
-#: sipe.c:7326
+#: sipe.c:8095
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -346,7 +415,7 @@ msgstr ""
 "   用户  或  域\\用户  或\n"
 "   user@company.com"
 
-#: sipe.c:7330
+#: sipe.c:8099
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -354,50 +423,55 @@ msgstr ""
 "服务器[:端口]\n"
 "(留空使用自动发现)"
 
-#: sipe.c:7333
+#: sipe.c:8102
 msgid "Connection type"
 msgstr "连接类型"
 
-#: sipe.c:7334
+#: sipe.c:8103
 msgid "Auto"
 msgstr "自动"
 
-#: sipe.c:7335
+#: sipe.c:8104
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: sipe.c:7336
+#: sipe.c:8105
 msgid "TCP"
 msgstr "TCP"
 
-#: sipe.c:7337
+#: sipe.c:8106
 msgid "UDP"
 msgstr "UDP"
 
-#: sipe.c:7343
+#: sipe.c:8112
 msgid "User Agent"
 msgstr "用户代理"
 
-#: sipe.c:7347
+#: sipe.c:8116
 msgid "Use Kerberos"
 msgstr "使用 Kerberos"
 
-#: sipe.c:7354
+#: sipe.c:8123
 msgid "Use Single Sign-On"
 msgstr "使用单点登录"
 
-#: sipe-conf.c:793
+#: sipe-chat.c:82
+#, c-format
+msgid "Chat #%d"
+msgstr "聊天 #%d"
+
+#: sipe-conf.c:828
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr "此会议不再锁定。其他参与者可以加入。"
 
-#: sipe-conf.c:797
+#: sipe-conf.c:832
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
 msgstr "此会议被锁定。被锁定时其他人不能加入会议。"
 
-#: sipe-conf.c:830
+#: sipe-conf.c:865
 msgid "You have been disconnected from this conference."
 msgstr "您已被从会议中断开。"
 
