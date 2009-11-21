@@ -301,6 +301,10 @@ msgstr "_Suchen"
 msgid "_Cancel"
 msgstr "_Abbrechen"
 
+#: ../src/sipe.c:7072
+msgid "About SIPE plugin"
+msgstr "Informationen zum SIPE plugin"
+
 #: ../src/sipe.c:6467
 msgid "Contact search..."
 msgstr "Kontaktsuche..."
