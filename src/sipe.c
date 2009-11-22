@@ -68,6 +68,7 @@
 #include "network.h"
 #include "xmlnode.h"
 #include "mime.h"
+#include "core.h"
 
 #include "sipe.h"
 #include "sipe-chat.h"
@@ -177,10 +178,8 @@ sipe_get_useragent(struct sipe_account_data *sip)
   #define SIPE_TARGET_ARCH "other"
 #endif
 
-			default_ua = g_strdup_printf("Purple/%d.%d.%d Sipe/%s (%s-%s; %s)",
-					PURPLE_MAJOR_VERSION,
-					PURPLE_MINOR_VERSION,
-					PURPLE_MICRO_VERSION,
+			default_ua = g_strdup_printf("Purple/%s Sipe/%s (%s-%s; %s)",
+					purple_core_get_version(),
 					SIPE_VERSION,
 					SIPE_TARGET_PLATFORM,
 					SIPE_TARGET_ARCH,
