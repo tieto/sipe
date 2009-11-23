@@ -409,19 +409,25 @@ sip_sec_krb5_obtain_tgt(SIPE_UNUSED_PARAMETER const char *realm_in,
 		krb5_free_context(context);
 }
 
+#if defined(HAVE_KRB5_GET_ERROR_MESSAGE)
 void
 sip_sec_krb5_print_error(const char *func,
 			 krb5_context context,
 			 krb5_error_code ret)
 {
-#if defined(HAVE_KRB5_GET_ERROR_MESSAGE)
 	const char *error_message = krb5_get_error_message(context, ret);
 	printf("Kerberos 5 ERROR in %s: %s\n", func, error_message);
 	krb5_free_error_message(context, error_message);
-#else
-	printf("Kerberos 5 ERROR in %s: %s\n", func, "unknown error");
-#endif
 }
+#else
+void
+sip_sec_krb5_print_error(const char *func,
+			 SIPE_UNUSED_PARAMETER krb5_context context,
+			 SIPE_UNUSED_PARAMETER krb5_error_code ret)
+{
+	printf("Kerberos 5 ERROR in %s: %s\n", func, "unknown error");
+}
+#endif
 
 /*
   Local Variables:
