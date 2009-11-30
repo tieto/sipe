@@ -3626,10 +3626,13 @@ sipe_invite(struct sipe_account_data *sip,
 		"s=session\r\n"
 		"c=IN IP4 %s\r\n"
 		"t=0 0\r\n"
-		"m=x-ms-message %d sip null\r\n"
+		"m=%s %d sip null\r\n"
 		"a=accept-types:text/plain text/html image/gif "
 		"multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
-		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1), sip->realport);
+		purple_network_get_my_ip(-1),
+		purple_network_get_my_ip(-1),
+		sip->ocs2007 ? "message" : "x-ms-message",
+		sip->realport);
 
 	dialog->outgoing_invite = send_sip_request(sip->gc, "INVITE",
 		to, to, hdr, body, dialog, process_invite_response);
@@ -4329,10 +4332,13 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		"s=session\r\n"
 		"c=IN IP4 %s\r\n"
 		"t=0 0\r\n"
-		"m=x-ms-message %d sip sip:%s\r\n"
+		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
-		purple_network_get_my_ip(-1), purple_network_get_my_ip(-1),
-		sip->realport, sip->username);
+		purple_network_get_my_ip(-1),
+		purple_network_get_my_ip(-1),
+		sip->ocs2007 ? "message" : "x-ms-message",
+		sip->realport,
+		sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
 	g_free(body);
 }
@@ -4351,9 +4357,11 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 		"s=session\r\n"
 		"c=IN IP4 0.0.0.0\r\n"
 		"t=0 0\r\n"
-		"m=x-ms-message %d sip sip:%s\r\n"
+		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
-		sip->realport, sip->username);
+		sip->ocs2007 ? "message" : "x-ms-message",
+		sip->realport,
+		sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
 	g_free(body);
 }
