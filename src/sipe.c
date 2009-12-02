@@ -7500,14 +7500,14 @@ sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 #ifndef _WIN32
 		{
 			pid_t pid;
-			char *const parmList[] = {mailto, NULL};
+			char *const parmList[] = {"xdg-email", mailto, NULL};
 			if ((pid = fork()) == -1)
 			{
 				purple_debug_info("sipe", "fork() error\n");
 			}
 			else if (pid == 0)
 			{
-				execvp("xdg-email", parmList);
+				execvp(parmList[0], parmList);
 				purple_debug_info("sipe", "Return not expected. Must be an execvp() error.\n");
 			}
 		}
