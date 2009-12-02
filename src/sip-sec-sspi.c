@@ -22,6 +22,7 @@
  */
 
 #include <windows.h>
+#include <rpc.h>
 #include <security.h>
 
 #include <glib.h>
@@ -132,7 +133,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	ULONG req_flags;
 	ULONG ret_flags;
 	context_sspi ctx = (context_sspi)context;
-	CtxtHandle* out_context = malloc(sizeof(CtxtHandle));
+	CtxtHandle* out_context = g_malloc0(sizeof(CtxtHandle));
 	
 	purple_debug_info("sipe", "sip_sec_init_sec_context__sspi: in use\n");
 
@@ -236,7 +237,7 @@ sip_sec_make_signature__sspi(SipSecContext context,
 	}
 
 	signature_buff_length = context_sizes.cbMaxSignature;
-	signature_buff = malloc(signature_buff_length);
+	signature_buff = g_malloc0(signature_buff_length);
 
 	buffs_desc.cBuffers = 2;
 	buffs_desc.pBuffers = buffs;
@@ -258,7 +259,7 @@ sip_sec_make_signature__sspi(SipSecContext context,
 			    100);
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_make_signature__sspi: MakeSignature", ret);
-		free(signature_buff);
+		g_free(signature_buff);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
