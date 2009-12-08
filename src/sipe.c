@@ -5529,21 +5529,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	/* The client responses on received a NOTIFY message */
 	if (request && !benotify)
 	{
-		if (event) {
-			gchar *who = parse_from(sipmsg_find_header(msg, "From"));
-			gchar *key = sipe_get_subscription_key(event, who);
-
-			g_free(who);
-			if (!key || (key && g_hash_table_lookup(sip->subscriptions, key))) {
-				send_sip_response(sip->gc, msg, 200, "OK", NULL);
-			} else {
-				send_sip_response(sip->gc, msg, 481, "Call Leg Does Not Exist", NULL);
-			}
-
-			g_free(key);
-		} else {
-			send_sip_response(sip->gc, msg, 200, "OK", NULL);
-		}
+		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 	}
 }
 
