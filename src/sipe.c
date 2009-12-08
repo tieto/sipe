@@ -1501,7 +1501,15 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 {
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	gchar *event = sipmsg_find_header(msg, "Event");
-	gchar *key = sipe_get_subscription_key(event, with);
+	gchar *key;
+	
+	/* The case with 2005 Public IM Connectivity (PIC) - no Event header */
+	if (!event) {
+		struct sipmsg *request_msg = trans->msg;
+		event = sipmsg_find_header(request_msg, "Event");
+	}
+	
+	key = sipe_get_subscription_key(event, with);
 
 	/* 200 OK; 481 Call Leg Does Not Exist */
 	if (key && (msg->response == 200 || msg->response == 481)) {
