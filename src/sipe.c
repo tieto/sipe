@@ -5024,7 +5024,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 
 static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
-	const gchar *uri;
+	gchar *uri;
 	gchar *getbasic;
 	gchar *activity = NULL;
 	xmlnode *pidf;
@@ -5038,7 +5038,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 		return;
 	}
 
-	uri = xmlnode_get_attrib(pidf, "entity"); /* with 'sip:' prefix */
+	uri = sip_uri(xmlnode_get_attrib(pidf, "entity")); /* with 'sip:' prefix */ /* AOL comes without the prefix */
 
 	if ((tuple = xmlnode_get_child(pidf, "tuple")))
 	{
@@ -5106,6 +5106,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 	}
 
 	g_free(activity);
+	g_free(uri);
 	xmlnode_free(pidf);
 }
 
