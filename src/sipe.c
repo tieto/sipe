@@ -5148,7 +5148,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	char *uri;
 	int avl;
 	int act;
-	const char *device_name = NULL;
+	const char *device_name = NULL;	
+	const char *cal_start_time = NULL;
+	const char *cal_granularity = NULL;
+	char *cal_free_busy_base64 = NULL;	
 	struct sipe_buddy *sbuddy;
 	xmlnode *node;
 	xmlnode *xn_presentity;
@@ -5235,6 +5238,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	/* devicePresence */
 	for (node = xmlnode_get_descendant(xn_presentity, "devices", "devicePresence", NULL); node; node = xmlnode_get_next_twin(node)) {
 		xmlnode *xn_device_name;
+		xmlnode *xn_calendar_info;
 		xmlnode *xn_state;
 		char *state;
 
@@ -5242,6 +5246,16 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 		xn_device_name = xmlnode_get_child(node, "deviceName");
 		device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
+		
+		xn_calendar_info = xmlnode_get_child(node, "calendarInfo");
+		if (xn_calendar_info) {
+			cal_start_time = xmlnode_get_attrib(xn_calendar_info, "startTime");		
+			cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");		
+			cal_free_busy_base64 = xmlnode_get_data(xn_calendar_info);
+		
+			purple_debug_info("sipe", "process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", cal_start_time, cal_granularity, cal_free_busy_base64);
+		}
+		
 
 		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
 		state = xn_state ? xmlnode_get_data(xn_state) : NULL;
@@ -5298,6 +5312,20 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->device_name);
 		sbuddy->device_name = NULL;
 		if (!is_empty(device_name)) { sbuddy->device_name = g_strdup(device_name); }
+		
+		if (!is_empty(cal_free_busy_base64)) {
+			g_free(sbuddy->cal_start_time);
+			sbuddy->cal_start_time = g_strdup(cal_start_time);
+			
+			g_free(sbuddy->cal_granularity);
+			sbuddy->cal_granularity = g_strdup(cal_granularity);
+			
+			g_free(sbuddy->cal_free_busy_base64);
+			sbuddy->cal_free_busy_base64 = cal_free_busy_base64;
+			
+			g_free(sbuddy->cal_free_busy);
+			sbuddy->cal_free_busy = NULL;
+		}
 	}
 
 	if (free_activity) g_free(free_activity);
