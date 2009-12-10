@@ -22,6 +22,7 @@
  */
 
 #include <string.h>
+#include <time.h>
 #include <glib.h>
 
 #include "debug.h"
@@ -29,9 +30,79 @@
 #include <sipe.h>
 #include <sipe-cal.h>
 
+
+static int
+sipe_cal_get_current_status(guchar *free_busy,
+			    time_t calStart,
+			    int granularuty,
+			    int *index)
+{
+	const char *nowStr;
+	int res;
+	int shift;
+	time_t calEnd = calStart + strlen(free_busy)*granularuty*60 - 1;
+	time_t now = time(NULL);
+	
+	if (!(now >= calStart && now <= calEnd)) return 4;
+	
+	nowStr = purple_utf8_strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
+	printf("now=%s\n", nowStr);
+	
+	shift = (now - calStart) / (granularuty*60);
+	*index = shift;
+	printf("shift=%d\n", shift);
+
+	res = free_busy[shift] - 0x30;
+	
+	return res;
+}
+
+static time_t
+sipe_cal_get_switch_time(guchar *free_busy,
+			 time_t calStart,
+			 int granularuty,
+			 int index,
+			 int current_state)
+{
+	int i;
+	
+	if (index < 0 || index + 1 > strlen(free_busy)) return 0;
+	
+	for (i = index + 1; i < strlen(free_busy); i++) {
+		int temp_status = free_busy[i] - 0x30;
+		
+		if ((current_state <  2 && temp_status >= 2) ||
+		    (current_state >= 2 && temp_status  < 2)) 
+		{
+			break;
+		}
+	}
+	printf("i_switch=%d\n", i);
+	
+	return calStart + i*granularuty*60;
+}				   
+
 char *
 sipe_cal_get_description(struct sipe_buddy *buddy)
 {
+	time_t cal_start;
+	int current_cal_state;
+	time_t switch_time;
+	const int granularity = 15; // Minutes
+	int index;
+	struct tm *switch_tm;
+	char *res;
+	const char *cal_states[] = {_("Free"),
+				    _("Tentative"),
+				    _("Busy"),
+				    _("Out of Office"),
+				    _("No data")};
+	
+	if (g_ascii_strcasecmp("PT15M", buddy->cal_granularity)) {
+		purple_debug_info("sipe", "sipe_cal_get_description: granularity %s is unsupported, exiting.\n", buddy->cal_granularity);
+		return NULL;
+	}
+	
 	/* do lazy decode if necessary */
 	if (!buddy->cal_free_busy && buddy->cal_free_busy_base64) {
 		gsize cal_dec64_len;
@@ -68,6 +139,23 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", buddy->cal_free_busy);
 	}
 	
+	if (!buddy->cal_free_busy || !buddy->cal_granularity || !buddy->cal_start_time) return NULL;
+
+	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
 	
-	return "";
+	current_cal_state = sipe_cal_get_current_status(buddy->cal_free_busy, cal_start, granularity, &index);
+	
+	switch_time = sipe_cal_get_switch_time(buddy->cal_free_busy, cal_start, granularity, index, current_cal_state);	
+	
+	switch_tm = localtime(&switch_time);
+	
+	if (current_cal_state < 2 ) { //Free or Tentative
+		res = g_strdup_printf(_("Free until %.2d:%.2d"),
+				       switch_tm->tm_hour, switch_tm->tm_min);
+	} else { //Busy or OOF
+		res = g_strdup_printf(_("Currently %s. Free at %.2d:%.2d"),
+				       cal_states[current_cal_state], switch_tm->tm_hour, switch_tm->tm_min);
+	}
+	
+	return res;
 }
