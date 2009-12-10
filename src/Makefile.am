@@ -23,6 +23,8 @@ libsipe_la_SOURCES = \
 	sipe-session.c \
 	sipe-utils.h \
 	sipe-utils.c \
+	sipe-cal.h \
+	sipe-cal.c \
 	sip-csta.c \
 	sip-csta.h \
 	sip-sec.h \

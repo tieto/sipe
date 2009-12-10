@@ -71,6 +71,7 @@
 #include "core.h"
 
 #include "sipe.h"
+#include "sipe-cal.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sip-csta.h"
@@ -7163,6 +7164,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	struct sipe_buddy *sbuddy;
 	char *annotation = NULL;
 	char *activity = NULL;
+	char *calendar = NULL;
 	char *meeting_subject = NULL;
 	char *meeting_location = NULL;
 
@@ -7174,6 +7176,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		{
 			annotation = sbuddy->annotation ? g_strdup(sbuddy->annotation) : NULL;
 			activity = sbuddy->activity;
+			calendar = sipe_cal_get_description(sbuddy);
 			meeting_subject = sbuddy->meeting_subject;
 			meeting_location = sbuddy->meeting_location;
 		}
@@ -7189,6 +7192,10 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 
 		purple_notify_user_info_add_pair(user_info, _("Status"), status_str);
 		g_free(tmp);
+	}
+	if (!is_empty(calendar))
+	{
+		purple_notify_user_info_add_pair(user_info, _("Calendar"), calendar);
 	}
 	if (!is_empty(meeting_subject))
 	{
