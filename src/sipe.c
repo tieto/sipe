@@ -1897,6 +1897,12 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy->meeting_subject);
 	g_free(buddy->meeting_location);
 	g_free(buddy->annotation);
+	
+	g_free(buddy->cal_start_time);
+	g_free(buddy->cal_granularity);
+	g_free(buddy->cal_free_busy_base64);
+	g_free(buddy->cal_free_busy);
+	
 	g_free(buddy->device_name);
 	g_slist_free(buddy->groups);
 	g_free(buddy);
@@ -4958,6 +4964,28 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			if (status) {
 				purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", status);
 				purple_prpl_got_user_status(sip->account, uri, status, NULL);
+			}
+		}
+		/* calendarData */
+		else if(!strcmp(attrVar, "calendarData"))
+		{
+			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sip->buddies, uri) : NULL;
+			xmlnode *xn_free_busy = xmlnode_get_descendant(xn_category, "calendarData", "freeBusy", NULL);
+			
+			if (sbuddy && xn_free_busy) {				
+				g_free(sbuddy->cal_start_time);
+				sbuddy->cal_start_time = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
+				
+				g_free(sbuddy->cal_granularity);
+				sbuddy->cal_granularity = g_strdup(xmlnode_get_attrib(xn_free_busy, "granularity"));
+				
+				g_free(sbuddy->cal_free_busy_base64);
+				sbuddy->cal_free_busy_base64 = xmlnode_get_data(xn_free_busy);
+				
+				g_free(sbuddy->cal_free_busy);
+				sbuddy->cal_free_busy = NULL;
+				
+				purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
 			}
 		}
 	}
