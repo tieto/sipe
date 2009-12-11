@@ -313,6 +313,11 @@ sip_csta_monitor_stop(struct sipe_account_data *sip)
 		purple_debug_info("sipe", "sip_csta_monitor_stop: no dialog with CSTA, exiting.\n");
 		return;
 	}
+	
+	if (!sip->csta->monitor_cross_ref_id) {
+		purple_debug_info("sipe", "sip_csta_monitor_stop: no monitor_cross_ref_id, exiting.\n");
+		return;
+	}
 
 	hdr = g_strdup(
 		"Content-Disposition: signal;handling=required\r\n"
