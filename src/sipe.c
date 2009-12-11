@@ -1904,6 +1904,8 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy->cal_free_busy_base64);
 	g_free(buddy->cal_free_busy);
 	
+	sipe_cal_free_working_hours(buddy->cal_working_hours);
+	
 	g_free(buddy->device_name);
 	g_slist_free(buddy->groups);
 	g_free(buddy);
@@ -4972,6 +4974,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		{
 			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sip->buddies, uri) : NULL;
 			xmlnode *xn_free_busy = xmlnode_get_descendant(xn_category, "calendarData", "freeBusy", NULL);
+			xmlnode *xn_working_hours = xmlnode_get_descendant(xn_category, "calendarData", "WorkingHours", NULL);
 			
 			if (sbuddy && xn_free_busy) {				
 				g_free(sbuddy->cal_start_time);
@@ -4987,6 +4990,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				sbuddy->cal_free_busy = NULL;
 				
 				purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
+			}
+			
+			if (sbuddy && xn_working_hours) {
+				sipe_cal_parse_working_hours(xn_working_hours, sbuddy);
 			}
 		}
 	}

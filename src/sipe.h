@@ -65,6 +65,8 @@ struct sipe_buddy {
 	gchar *cal_free_busy_base64;
 	gchar *cal_free_busy;
 	
+	struct sipe_cal_working_hours *cal_working_hours;
+	
 	gchar *device_name;
 	GSList *groups;
 	 /** flag to control sending 'context' element in 2007 subscriptions */

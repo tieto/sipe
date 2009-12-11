@@ -29,7 +29,186 @@
 
 #include <sipe.h>
 #include <sipe-cal.h>
+#include <sipe-utils.h>
 
+/*
+http://msdn.microsoft.com/en-us/library/aa565001.aspx
+
+<?xml version="1.0"?>
+<WorkingHours xmlns="http://schemas.microsoft.com/exchange/services/2006/types">
+  <TimeZone>
+    <Bias>480</Bias>
+    <StandardTime>
+      <Bias>0</Bias>
+      <Time>02:00:00</Time>
+      <DayOrder>1</DayOrder>
+      <Month>11</Month>
+      <DayOfWeek>Sunday</DayOfWeek>
+    </StandardTime>
+    <DaylightTime>
+      <Bias>-60</Bias>
+      <Time>02:00:00</Time>
+      <DayOrder>2</DayOrder>
+      <Month>3</Month>
+      <DayOfWeek>Sunday</DayOfWeek>
+    </DaylightTime>
+  </TimeZone>
+  <WorkingPeriodArray>
+    <WorkingPeriod>
+      <DayOfWeek>Monday Tuesday Wednesday Thursday Friday</DayOfWeek>
+      <StartTimeInMinutes>600</StartTimeInMinutes>
+      <EndTimeInMinutes>1140</EndTimeInMinutes>
+    </WorkingPeriod>
+  </WorkingPeriodArray>
+</WorkingHours>
+
+Desc:
+<StandardTime>
+   <Bias>int</Bias>
+   <Time>string</Time>
+   <DayOrder>short</DayOrder>
+   <Month>short</Month>
+   <DayOfWeek>Sunday or Monday or Tuesday or Wednesday or Thursday or Friday or Saturday</DayOfWeek>
+   <Year>string</Year>
+</StandardTime>
+*/
+
+struct sipe_cal_std_dst {
+	int bias;           /* Ex.: -60 */
+	gchar *time;        /* hh:mm:ss, 02:00:00 */
+	int day_order;      /* 1..5 */
+	int month;          /* 1..12 */
+	gchar *day_of_week; /* Sunday or Monday or Tuesday or Wednesday or Thursday or Friday */
+	gchar *year;        /* YYYY */
+};
+ 
+struct sipe_cal_working_hours {
+	int bias;                     /* Ex.: 480 */
+	struct sipe_cal_std_dst std;  /* StandardTime */
+	struct sipe_cal_std_dst dst;  /* DaylightTime */
+	gchar **day_of_week;          /* Sunday, Monday, Tuesday, Wednesday, Thursday, Friday */
+	int start_time;               /* 0...1440 */
+	int end_time;                 /* 0...1440 */
+};
+
+void
+sipe_cal_free_working_hours(struct sipe_cal_working_hours *wh)
+{
+	if (!wh) return;
+	
+	g_free(wh->std.time);
+	g_free(wh->std.day_of_week);
+	g_free(wh->std.year);
+	
+	g_free(wh->dst.time);
+	g_free(wh->dst.day_of_week);
+	g_free(wh->dst.year);
+	
+	g_strfreev(wh->day_of_week);
+}
+
+static void
+sipe_cal_parse_std_dst(xmlnode *xn_std_dst_time,
+		       struct sipe_cal_std_dst* std_dst)
+{
+	xmlnode *node;
+	gchar *tmp;
+
+	if (!xn_std_dst_time) return;
+	if (!std_dst) return;
+/*	
+    <StandardTime>
+      <Bias>0</Bias>
+      <Time>02:00:00</Time>
+      <DayOrder>1</DayOrder>
+      <Month>11</Month>
+      <DayOfWeek>Sunday</DayOfWeek>
+    </StandardTime>
+*/
+			
+	if ((node = xmlnode_get_child(xn_std_dst_time, "Bias"))) {
+		std_dst->bias = atoi(tmp = xmlnode_get_data(node));
+		g_free(tmp);
+	}
+	
+	if ((node = xmlnode_get_child(xn_std_dst_time, "Time"))) {
+		std_dst->time = xmlnode_get_data(node);
+	}
+	
+	if ((node = xmlnode_get_child(xn_std_dst_time, "DayOrder"))) {
+		std_dst->day_order = atoi(tmp = xmlnode_get_data(node));
+		g_free(tmp);
+	}
+	
+	if ((node = xmlnode_get_child(xn_std_dst_time, "Month"))) {
+		std_dst->month = atoi(tmp = xmlnode_get_data(node));
+		g_free(tmp);
+	}
+	
+	if ((node = xmlnode_get_child(xn_std_dst_time, "DayOfWeek"))) {
+		std_dst->day_of_week = xmlnode_get_data(node);
+	}
+	
+	if ((node = xmlnode_get_child(xn_std_dst_time, "Year"))) {
+		std_dst->year = xmlnode_get_data(node);
+	}
+}
+
+void
+sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
+			     struct sipe_buddy *buddy)
+{
+	xmlnode *xn_bias;
+	xmlnode *xn_working_period;
+	xmlnode *xn_standard_time;
+	xmlnode *xn_daylight_time;
+	gchar *tmp;
+
+	if (!xn_working_hours) return;
+/*	
+<WorkingHours xmlns="http://schemas.microsoft.com/exchange/services/2006/types">
+  <TimeZone>
+    <Bias>480</Bias>
+    ...
+  </TimeZone>
+  <WorkingPeriodArray>
+    <WorkingPeriod>
+      <DayOfWeek>Monday Tuesday Wednesday Thursday Friday</DayOfWeek>
+      <StartTimeInMinutes>600</StartTimeInMinutes>
+      <EndTimeInMinutes>1140</EndTimeInMinutes>
+    </WorkingPeriod>
+  </WorkingPeriodArray>
+</WorkingHours>
+*/
+	sipe_cal_free_working_hours(buddy->cal_working_hours);
+	buddy->cal_working_hours = g_new0(struct sipe_cal_working_hours, 1);
+	
+	xn_bias = xmlnode_get_descendant(xn_working_hours, "TimeZone", "Bias", NULL);
+	if (xn_bias) {
+		buddy->cal_working_hours->bias = atoi(tmp = xmlnode_get_data(xn_bias));
+		g_free(tmp);
+	}
+	
+	xn_standard_time = xmlnode_get_descendant(xn_working_hours, "TimeZone", "StandardTime", NULL);
+	xn_daylight_time = xmlnode_get_descendant(xn_working_hours, "TimeZone", "DaylightTime", NULL);
+	
+	sipe_cal_parse_std_dst(xn_standard_time, &((*buddy->cal_working_hours).std));
+	sipe_cal_parse_std_dst(xn_daylight_time, &((*buddy->cal_working_hours).dst));
+				
+	xn_working_period = xmlnode_get_descendant(xn_working_hours, "WorkingPeriodArray", "WorkingPeriod", NULL);	
+	if (xn_working_period) {
+		buddy->cal_working_hours->day_of_week =
+			g_strsplit(xmlnode_get_data(xmlnode_get_child(xn_working_period, "DayOfWeek")), " ", 0);
+		
+		buddy->cal_working_hours->start_time =
+			atoi(tmp = xmlnode_get_data(xmlnode_get_child(xn_working_period, "StartTimeInMinutes")));
+		g_free(tmp);
+		
+		buddy->cal_working_hours->end_time =
+			atoi(tmp = xmlnode_get_data(xmlnode_get_child(xn_working_period, "EndTimeInMinutes")));
+		g_free(tmp);
+	}
+}
 
 static int
 sipe_cal_get_current_status(guchar *free_busy,
