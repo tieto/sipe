@@ -37,7 +37,6 @@ sipe_cal_get_current_status(guchar *free_busy,
 			    int granularuty,
 			    int *index)
 {
-	const char *nowStr;
 	int res;
 	int shift;
 	time_t calEnd = calStart + strlen(free_busy)*granularuty*60 - 1;
@@ -45,12 +44,8 @@ sipe_cal_get_current_status(guchar *free_busy,
 	
 	if (!(now >= calStart && now <= calEnd)) return 4;
 	
-	nowStr = purple_utf8_strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
-	printf("now=%s\n", nowStr);
-	
 	shift = (now - calStart) / (granularuty*60);
 	*index = shift;
-	printf("shift=%d\n", shift);
 
 	res = free_busy[shift] - 0x30;
 	
@@ -71,13 +66,12 @@ sipe_cal_get_switch_time(guchar *free_busy,
 	for (i = index + 1; i < strlen(free_busy); i++) {
 		int temp_status = free_busy[i] - 0x30;
 		
-		if ((current_state <  2 && temp_status >= 2) ||
-		    (current_state >= 2 && temp_status  < 2)) 
+		if ((current_state <  1 && temp_status >= 1) ||
+		    (current_state >= 1 && temp_status  < 1)) 
 		{
 			break;
 		}
 	}
-	printf("i_switch=%d\n", i);
 	
 	return calStart + i*granularuty*60;
 }				   
@@ -149,10 +143,10 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	
 	switch_tm = localtime(&switch_time);
 	
-	if (current_cal_state < 2 ) { //Free or Tentative
+	if (current_cal_state < 1 ) { //Free 
 		res = g_strdup_printf(_("Free until %.2d:%.2d"),
 				       switch_tm->tm_hour, switch_tm->tm_min);
-	} else { //Busy or OOF
+	} else { //Tentative or Busy or OOF
 		res = g_strdup_printf(_("Currently %s. Free at %.2d:%.2d"),
 				       cal_states[current_cal_state], switch_tm->tm_hour, switch_tm->tm_min);
 	}
