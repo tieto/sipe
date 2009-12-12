@@ -124,11 +124,6 @@ msgstr ""
 msgid "Failed to invite %s"
 msgstr "Kann den Benutzer %s nicht einladen"
 
-#: ../src/sipe.c:3986 ../src/sipe.c:6615 ../src/sipe-conf.c:692
-#, c-format
-msgid "Chat #%d"
-msgstr "Chat #%d"
-
 #: ../src/sipe.c:4315 ../src/sipe.c:5566
 msgid "Wrong password"
 msgstr "Falsches Passwort"
@@ -313,6 +308,10 @@ msgstr "Kontaktsuche..."
 msgid "Status"
 msgstr "Status"
 
+#: ../src/sipe.c:7233
+msgid "Calendar"
+msgstr "Kalendar"
+
 #: ../src/sipe.c:6952
 msgid "Meeting About"
 msgstr "Besprechungsthema"
@@ -484,6 +483,35 @@ msgstr "Benutze Kerberos"
 #: ../src/sipe.c:7347
 msgid "Use Single Sign-On"
 msgstr "Benutze Single Sign-On"
+
+#: ../src/sipe-cal.c:270
+msgid "Free"
+msgstr "Verfügbar"
+
+#: ../src/sipe-cal.c:271
+msgid "Tentative"
+msgstr "Vorläufig"
+
+#: ../src/sipe-cal.c:274
+msgid "No data"
+msgstr "Keine Angaben"
+
+#. Free
+#: ../src/sipe-cal.c:328
+#, c-format
+msgid "Free until %.2d:%.2d"
+msgstr "Verfügbar bis %.2d:%.2d"
+
+#. Tentative or Busy or OOF
+#: ../src/sipe-cal.c:331
+#, c-format
+msgid "Currently %s. Free at %.2d:%.2d"
+msgstr "Zurzeit %s. Verfügbar ab %.2d:%.2d"
+
+#: ../src/sipe-chat.c:82
+#, c-format
+msgid "Chat #%d"
+msgstr "Chat #%d"
 
 #: ../src/sipe-conf.c:793
 msgid ""
