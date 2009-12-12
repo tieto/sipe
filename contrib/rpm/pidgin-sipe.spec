@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20091011git80e8002
+%define git       20091212gitf3ed211
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -24,6 +24,8 @@ Version:        1.7.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
+# git package overrides official released package
+Epoch:          1
 %else
 Release:        1%{?dist}
 Source:         http://downloads.sourceforge.net/sipe/%{name}-%{version}.tar.bz2
@@ -42,7 +44,7 @@ BuildRequires:  libpurple-devel >= 2.3.1, libtool, intltool, gettext-devel
 BuildRequires:  krb5-devel
 %endif
 
-Requires:       %{protocol} = %{version}-%{release}
+Requires:       %{protocol} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 
 %description
@@ -120,6 +122,18 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sat Dec 12 2009 Stefan Becker <stefan.becker@nokia.com> 1.7.1-*git*
+- add Epoch: for git packages to avoid update clash with official packages
+
+* Mon Nov 19 2009 J. D. User <jduser@noreply.com> 1.7.1
+- update to 1.7.1
+
+* Mon Oct 28 2009 J. D. User <jduser@noreply.com> 1.7.0-*git*
+- add missing Group: to purple-sipe
+
+* Mon Oct 19 2009 J. D. User <jduser@noreply.com> 1.7.0
+- update to 1.7.0
+
 * Sun Oct 11 2009 J. D. User <jduser@noreply.com> 1.6.3-*git*
 - move non-Pidgin files to new sub-package purple-sipe
 
