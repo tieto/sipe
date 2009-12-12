@@ -19,13 +19,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 #include "xmlnode.h"
- 
+
 /** Contains buddy's working hours information */
 struct sipe_cal_working_hours;
- 
-/** 
+
+/**
  * Parses Working Hours from passed XML piece
  * and creates/fills struct sipe_cal_working_hours in struct sipe_buddy
  */
@@ -35,11 +35,11 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 
 /**
  * Frees struct sipe_cal_working_hours
- */			     
+ */
 void
 sipe_cal_free_working_hours(struct sipe_cal_working_hours *wh);
- 
-/** 
+
+/**
  * Returns user calendar information in text form.
  * Example: "Currently Busy. Free at 13:00"
  */
