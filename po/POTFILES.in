@@ -2,5 +2,6 @@
 [encoding: UTF-8]
 
 src/sipe.c
+src/sipe-cal.c
 src/sipe-chat.c
 src/sipe-conf.c
