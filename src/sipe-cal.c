@@ -264,7 +264,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	int current_cal_state;
 	time_t switch_time;
 	const int granularity = 15; // Minutes
-	int index;
+	int index = 0;
 	struct tm *switch_tm;
 	char *res;
 	const char *cal_states[] = {_("Free"),
