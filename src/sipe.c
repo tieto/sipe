@@ -2038,7 +2038,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			SIPE_STATUS_ID_LUNCH, _("Out To Lunch"));
 
 	/* Idle/Inactive (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AWAY,
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AVAILABLE,
 			SIPE_STATUS_ID_IDLE, _("Inactive"),
 			FALSE);
 

@@ -499,7 +499,8 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		printf("Remote end time  : %s", asctime(sipe_localtime_tz(&end,   buddy->cal_working_hours->tz)));		
 	}
 
-	if (end && start && now < start) { /* Outside of working hours before work day */	
+	/* Outside of working hours before work day */
+	if (end && start && now < start) {	
 		if (now + 8*60*60 < start) { /* Outside of working hours for the next 8 hours */
 			return g_strdup(_("Outside of working hours for the next 8 hours"));
 		} else {
@@ -508,7 +509,8 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		}
 	}
 
-	if (end && start && now > end) { /* Outside of working hours after work day */
+	/* Outside of working hours after work day and currently Free */
+	if (end && start && now > end && current_cal_state < 1) {
 		time_t start_next = start + 24*60*60;
 		
 		if (now + 8*60*60 < start_next) { /* Outside of working hours for the next 8 hours */
