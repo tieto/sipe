@@ -237,24 +237,25 @@ sipe_cal_get_switch_time(const gchar *free_busy,
 			 time_t calStart,
 			 int granularity,
 			 int index,
-			 int current_state)
+			 int current_state,
+			 int *to_state)
 {
 	size_t i;
+	time_t ret = (time_t)-1;
 
 	if ((index < 0) || ((size_t) (index + 1) > strlen(free_busy)))
-		return 0;
+		return ret;
 
 	for (i = index + 1; i < strlen(free_busy); i++) {
 		int temp_status = free_busy[i] - 0x30;
-
-		if ((current_state <  1 && temp_status >= 1) ||
-		    (current_state >= 1 && temp_status  < 1))
-		{
-			break;
+		
+		if (current_state != temp_status) {
+			*to_state = temp_status;
+			return calStart + i*granularity*60;
 		}
 	}
 
-	return calStart + i*granularity*60;
+	return ret;
 }
 
 char *
@@ -263,6 +264,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	time_t cal_start;
 	int current_cal_state;
 	time_t switch_time;
+	int to_state;
 	const int granularity = 15; // Minutes
 	int index = 0;
 	struct tm *switch_tm;
@@ -320,7 +322,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 
 	current_cal_state = sipe_cal_get_current_status(buddy->cal_free_busy, cal_start, granularity, &index);
 
-	switch_time = sipe_cal_get_switch_time(buddy->cal_free_busy, cal_start, granularity, index, current_cal_state);
+	switch_time = sipe_cal_get_switch_time(buddy->cal_free_busy, cal_start, granularity, index, current_cal_state, &to_state);
 
 	switch_tm = localtime(&switch_time);
 
@@ -328,8 +330,8 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		res = g_strdup_printf(_("Free until %.2d:%.2d"),
 				       switch_tm->tm_hour, switch_tm->tm_min);
 	} else { //Tentative or Busy or OOF
-		res = g_strdup_printf(_("Currently %s. Free at %.2d:%.2d"),
-				       cal_states[current_cal_state], switch_tm->tm_hour, switch_tm->tm_min);
+		res = g_strdup_printf(_("Currently %s. %s at %.2d:%.2d"),
+				       cal_states[current_cal_state], cal_states[to_state], switch_tm->tm_hour, switch_tm->tm_min);
 	}
 
 	return res;

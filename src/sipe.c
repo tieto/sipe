@@ -7228,7 +7228,8 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		purple_notify_user_info_add_pair(user_info, _("Status"), status_str);
 		g_free(tmp);
 	}
-	if (!is_empty(calendar))
+	if (!is_empty(calendar) &&
+	    !(activity && !g_ascii_strcasecmp(_("Out of Office"), activity)) )
 	{
 		purple_notify_user_info_add_pair(user_info, _("Calendar"), calendar);
 	}
