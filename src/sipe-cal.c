@@ -34,6 +34,10 @@
 
 #include <stdlib.h>
 
+
+#define TIME_NULL   (time_t)-1
+#define IS(time)    (time != TIME_NULL)
+
 /*
 http://msdn.microsoft.com/en-us/library/aa565001.aspx
 
@@ -375,7 +379,7 @@ sipe_cal_get_switch_time(const gchar *free_busy,
 			 int *to_state)
 {
 	size_t i;
-	time_t ret = (time_t)-1;
+	time_t ret = TIME_NULL;
 
 	if ((index < 0) || ((size_t) (index + 1) > strlen(free_busy)))
 		return ret;
@@ -406,8 +410,8 @@ sipe_cal_get_today_work_hours(struct sipe_cal_working_hours *wh,
 	struct tm *remote_now_tm = sipe_localtime_tz(&now, wh->tz);
 	
 	if (!strstr(wh->days_of_week, wday_names[remote_now_tm->tm_wday])) { /* not a work day */
-		*start = (time_t)-1;
-		*end = (time_t)-1;
+		*start = TIME_NULL;
+		*end = TIME_NULL;
 		return;
 	}
 
@@ -500,9 +504,9 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	}
 
 	/* Outside of working hours before work day */
-	if (end && start && now < start) {	
+	if (IS(end) && IS(start) && now < start) {	
 		if (now + 8*60*60 < start) { /* Outside of working hours for the next 8 hours */
-			return g_strdup(_("Outside of working hours for the next 8 hours"));
+			return g_strdup(_("Outside of working hours for next 8 hours"));
 		} else {
 			struct tm *start_tm = localtime(&start);
 			return g_strdup_printf(_("Not working until %.2d:%.2d"), start_tm->tm_hour, start_tm->tm_min);
@@ -510,35 +514,51 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	}
 
 	/* Outside of working hours after work day and currently Free */
-	if (end && start && now > end && current_cal_state < 1) {
+	if (IS(end) && IS(start) && now > end && current_cal_state < 1) {
 		time_t start_next = start + 24*60*60;
 		
 		if (now + 8*60*60 < start_next) { /* Outside of working hours for the next 8 hours */
-			return g_strdup(_("Outside of working hours for the next 8 hours"));
+			return g_strdup(_("Outside of working hours for next 8 hours"));
 		} else {
 			struct tm *start_next_tm = localtime(&start_next);
 			return g_strdup_printf(_("Not working until %.2d:%.2d"), start_next_tm->tm_hour, start_next_tm->tm_min);
 		}
 	}
 
-	/* now is within working hours or working hours are indefined */	
+	/* now is within working hours or working hours are undefined */	
 	if (current_cal_state < 1 ) { /* Free */
 		struct tm *until_tm;
-		time_t until = switch_time;
+		time_t until = TIME_NULL;
 		
-		if (end && until > end) until = end;
+		if (IS(switch_time)) until = switch_time;
 		
-		until_tm = localtime(&until);
-		res = g_strdup_printf(_("Free until %.2d:%.2d"),
-				      until_tm->tm_hour, until_tm->tm_min);
-	} else { /* Tentative or Busy or OOF */
-		switch_tm = localtime(&switch_time);
-		if (end && switch_time > end) {
-			res = g_strdup_printf(_("Currently %s. Outside of working hours at %.2d:%.2d"),
-				      cal_states[current_cal_state], switch_tm->tm_hour, switch_tm->tm_min);
+		if (IS(end) && 
+		   ((IS(until) && until > end) || !IS(until)) )
+		{
+			until = end;
+		}
+		
+		if (IS(until) && until <= now + 8*60*60) {
+			until_tm = localtime(&until);
+			res = g_strdup_printf(_("Free until %.2d:%.2d"),
+					      until_tm->tm_hour, until_tm->tm_min);
 		} else {
-			res = g_strdup_printf(_("Currently %s. %s at %.2d:%.2d"),
-				      cal_states[current_cal_state], cal_states[to_state], switch_tm->tm_hour, switch_tm->tm_min);
+			res = g_strdup_printf(_("Free for next 8 hours"));
+		}
+	} else { /* Tentative or Busy or OOF */
+		if (IS(switch_time) && switch_time <= now + 8*60*60) {
+			switch_tm = localtime(&switch_time);
+			if (IS(end) && switch_time > end) {
+				res = g_strdup_printf(_("Currently %s. Outside of working hours at %.2d:%.2d"),
+					      cal_states[current_cal_state], switch_tm->tm_hour, switch_tm->tm_min);
+			} else {
+				res = g_strdup_printf(_("Currently %s. %s at %.2d:%.2d"),
+					      cal_states[current_cal_state], cal_states[to_state], switch_tm->tm_hour, switch_tm->tm_min);
+			}
+		} else if (IS(switch_time)) {
+			res = g_strdup_printf(_("%s for the 8 hours"), cal_states[current_cal_state]);
+		} else {
+			res = g_strdup_printf(_("Currently %s"), cal_states[current_cal_state]);
 		}
 	}
 
