@@ -335,8 +335,8 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 	/* TST+8TDT-1,M3.2.0/02:00:00,M11.1.0/02:00:00 */
 	buddy->cal_working_hours->tz =
 		g_strdup_printf("TST%dTDT%d,M%d.%d.%d/%s,M%d.%d.%d/%s",
-				(buddy->cal_working_hours->bias + buddy->cal_working_hours->std.bias ) / 60,
-				buddy->cal_working_hours->dst.bias / 60,
+				(buddy->cal_working_hours->bias + buddy->cal_working_hours->std.bias) / 60,
+				(buddy->cal_working_hours->bias + buddy->cal_working_hours->dst.bias) / 60,
 
 				buddy->cal_working_hours->std.month,
 				buddy->cal_working_hours->std.day_order,
@@ -569,6 +569,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	if (buddy->cal_working_hours) {
 		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end, &next_start);
 
+		purple_debug_info("sipe", "Remote now timezone : %s", buddy->cal_working_hours->tz);
 		purple_debug_info("sipe", "Remote now time     : %s",
 			asctime(sipe_localtime_tz(&now, buddy->cal_working_hours->tz)));
 		purple_debug_info("sipe", "Remote start time   : %s",
