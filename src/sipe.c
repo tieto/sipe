@@ -99,6 +99,7 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_STATUS_ID_AVAILABLE   purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) /* Online */
 /*      PURPLE_STATUS_UNAVAILABLE: */
 #define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
+#define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
 #define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
 #define SIPE_STATUS_ID_ONPHONE     "on-the-phone"                                             /* On The Phone */
 #define SIPE_STATUS_ID_INVISIBLE   purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) /* Appear Offline */
@@ -2015,6 +2016,11 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Busy */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			SIPE_STATUS_ID_BUSY, _("Busy"));
+			
+	/* BusyIdle (not user settable) */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_STATUS_ID_BUSYIDLE, _("BusyIdle"),
+			FALSE);
 
 	/* Do Not Disturb (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
@@ -4732,7 +4738,7 @@ sipe_get_status_by_availability(int avail)
 	else if (avail < 7500)
 		status = SIPE_STATUS_ID_BUSY;
 	else if (avail < 9000)
-		status = SIPE_STATUS_ID_AWAY;
+		status = SIPE_STATUS_ID_BUSYIDLE;
 	else if (avail < 12000)
 		status = SIPE_STATUS_ID_DND;
 	else if (avail < 15000)
@@ -4915,15 +4921,15 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					/* from token */
 					if (!is_empty(token)) {
 						if (!strcmp(token, "on-the-phone")) {
-							sbuddy->activity = g_strdup(_("On The Phone"));
+							sbuddy->activity = g_strdup(_("On the phone"));
 						} else if (!strcmp(token, "in-a-conference")) {
-							sbuddy->activity = g_strdup(_("In a Conference"));
+							sbuddy->activity = g_strdup(_("In a conference"));
 						} else if (!strcmp(token, "in-a-meeting")) {
-							sbuddy->activity = g_strdup(_("In a Meeting"));
+							sbuddy->activity = g_strdup(_("In a meeting"));
 						} else if (!strcmp(token, "out-of-office")) {
-							sbuddy->activity = g_strdup(_("Out of Office"));
+							sbuddy->activity = g_strdup(_("Out of office"));
 						} else if (!strcmp(token, "urgent-interruptions-only")) {
-							sbuddy->activity = g_strdup(_("Urgent Interruptions Only"));
+							sbuddy->activity = g_strdup(_("Urgent interruptions only"));
 						}
 					}
 					/* form custom element */
@@ -5239,7 +5245,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	/* oof */
 	if (xn_oof) {
-               activity = _("Out of Office");
+               activity = _("Out of office");
 	}
 
 	/* devicePresence */
@@ -5269,9 +5275,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 		if (!is_empty(state)) {
 			if (!strcmp(state, "on-the-phone")) {
-				activity = _("On The Phone");
+				activity = _("On the phone");
 			} else if (!strcmp(state, "presenting")) {
-				activity = _("In a Conference");
+				activity = _("In a conference");
 			} else {
 				activity = free_activity = state;
 				state = NULL;
@@ -7229,18 +7235,18 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		g_free(tmp);
 	}
 	if (!is_empty(calendar) &&
-	    !(activity && !g_ascii_strcasecmp(_("Out of Office"), activity)) )
+	    !(activity && !g_ascii_strcasecmp(_("Out of office"), activity)) )
 	{
 		purple_notify_user_info_add_pair(user_info, _("Calendar"), calendar);
 	}
 	g_free(calendar);
-	if (!is_empty(meeting_subject))
-	{
-		purple_notify_user_info_add_pair(user_info, _("Meeting About"), meeting_subject);
-	}
 	if (!is_empty(meeting_location))
 	{
-		purple_notify_user_info_add_pair(user_info, _("Meeting In"), meeting_location);
+		purple_notify_user_info_add_pair(user_info, _("Meeting in"), meeting_location);
+	}
+	if (!is_empty(meeting_subject))
+	{
+		purple_notify_user_info_add_pair(user_info, _("Meeting about"), meeting_subject);
 	}
 
 	if (annotation)
