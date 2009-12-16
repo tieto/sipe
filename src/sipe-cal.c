@@ -356,12 +356,12 @@ sipe_cal_get_current_status(const gchar *free_busy,
 			    int granularity,
 			    int *index)
 {
-	int res;
+	int res = 4;
 	int shift;
 	time_t calEnd = calStart + strlen(free_busy)*granularity*60 - 1;
 	time_t now = time(NULL);
 
-	if (!(now >= calStart && now <= calEnd)) return 4;
+	if (!(now >= calStart && now <= calEnd)) return res;
 
 	shift = (now - calStart) / (granularity*60);
 	*index = shift;
@@ -397,6 +397,18 @@ sipe_cal_get_switch_time(const gchar *free_busy,
 	return ret;
 }
 
+static time_t
+sipe_cal_mktime_of_day(struct tm *sample_today_tm,
+		       int shift_minutes,
+		       char *tz)
+{
+	sample_today_tm->tm_sec  = 0;
+	sample_today_tm->tm_min  = shift_minutes % 60;
+	sample_today_tm->tm_hour = shift_minutes / 60;
+	
+	return sipe_mktime_tz(sample_today_tm, tz);	
+}
+
 /**
  * Returns work day start and end in Epoch time
  * considering the initial values are provided
@@ -405,26 +417,76 @@ sipe_cal_get_switch_time(const gchar *free_busy,
 static void
 sipe_cal_get_today_work_hours(struct sipe_cal_working_hours *wh,
 			      time_t *start,
-			      time_t *end)
+			      time_t *end,
+			      time_t *next_start)
 {
 	time_t now = time(NULL);
 	struct tm *remote_now_tm = sipe_localtime_tz(&now, wh->tz);
-	
+
 	if (!strstr(wh->days_of_week, wday_names[remote_now_tm->tm_wday])) { /* not a work day */
 		*start = TIME_NULL;
 		*end = TIME_NULL;
+		*next_start = TIME_NULL;
 		return;
 	}
 
-	remote_now_tm->tm_sec = 0;
-	remote_now_tm->tm_min = wh->start_time % 60;
-	remote_now_tm->tm_hour = wh->start_time / 60;
-	*start = sipe_mktime_tz(remote_now_tm, wh->tz);
+	*end = sipe_cal_mktime_of_day(remote_now_tm, wh->end_time, wh->tz);
+
+	if (now < *end) {
+		*start = sipe_cal_mktime_of_day(remote_now_tm, wh->start_time, wh->tz);		
+		*next_start = TIME_NULL;
+	} else { /* calculate start of tomorrow's work day if any */
+		time_t tom = now + 24*60*60;
+		struct tm *remote_tom_tm = sipe_localtime_tz(&tom, wh->tz);
+
+		if (!strstr(wh->days_of_week, wday_names[remote_tom_tm->tm_wday])) { /* not a work day */
+			*next_start = TIME_NULL;
+		}
+
+		*next_start = sipe_cal_mktime_of_day(remote_tom_tm, wh->start_time, wh->tz);
+		*start = TIME_NULL;
+	}
+}
+
+static int
+sipe_cal_is_in_work_hours(const time_t time_in_question,
+			  const time_t start,
+			  const time_t end)
+{
+	return !((time_in_question >= end) || (IS(start) && time_in_question < start));
+}
+
+/**
+ * Returns time closest to now. Choses only from times ahead of now.
+ * Returns TIME_NULL otherwise.
+ */
+static time_t
+sipe_cal_get_until(const time_t now,
+		   const time_t switch_time,
+		   const time_t start,
+		   const time_t end,
+		   const time_t next_start)
+{
+	time_t ret = TIME_NULL;
+	int min_diff = now - ret;
 	
-	remote_now_tm->tm_sec = 0;
-	remote_now_tm->tm_min = wh->end_time % 60;
-	remote_now_tm->tm_hour = wh->end_time / 60;
-	*end = sipe_mktime_tz(remote_now_tm, wh->tz);
+	if (IS(switch_time) && switch_time > now && (switch_time - now) < min_diff) {
+		min_diff = switch_time - now;
+		ret = switch_time;
+	}
+	if (IS(start) && start > now && (start - now) < min_diff) {
+		min_diff = start - now;
+		ret = start;
+	}
+	if (IS(end) && end > now && (end - now) < min_diff) {
+		min_diff = end - now;
+		ret = end;
+	}
+	if (IS(next_start) && next_start > now && (next_start - now) < min_diff) {
+		min_diff = next_start - now;
+		ret = next_start;
+	}
+	return ret;
 }
 
 char *
@@ -435,12 +497,12 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	time_t now = time(NULL);
 	time_t start = TIME_NULL;
 	time_t end = TIME_NULL;
+	time_t next_start = TIME_NULL;
 	time_t switch_time;
 	int to_state = 0;
+	time_t until = TIME_NULL;
 	const int granularity = 15; /* Minutes */
 	int index = 0;
-	struct tm *switch_tm;
-	char *res;
 	const char *cal_states[] = {_("Free"),
 				    _("Tentative"),
 				    _("Busy"),
@@ -494,77 +556,102 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
 
 	current_cal_state = sipe_cal_get_current_status(buddy->cal_free_busy, cal_start, granularity, &index);
+	if (current_cal_state == 4) {
+		purple_debug_info("sipe", "sipe_cal_get_description: calendar is undefined for present moment, exiting.\n");
+		return NULL;
+	}
 
 	switch_time = sipe_cal_get_switch_time(buddy->cal_free_busy, cal_start, granularity, index, current_cal_state, &to_state);
 
 	if (buddy->cal_working_hours) {
-		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end);
+		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end, &next_start);
 
-		printf("Remote now time  : %s", asctime(sipe_localtime_tz(&now,   buddy->cal_working_hours->tz)));
-		printf("Remote start time: %s", asctime(sipe_localtime_tz(&start, buddy->cal_working_hours->tz)));
-		printf("Remote end time  : %s", asctime(sipe_localtime_tz(&end,   buddy->cal_working_hours->tz)));		
+		printf("Remote now time     : %s",                  asctime(sipe_localtime_tz(&now,        buddy->cal_working_hours->tz)));
+		printf("Remote start time   : %s", IS(start)      ? asctime(sipe_localtime_tz(&start,      buddy->cal_working_hours->tz)) : "");
+		printf("Remote end time     : %s", IS(end)        ? asctime(sipe_localtime_tz(&end,        buddy->cal_working_hours->tz)) : "");
+		printf("Rem. next_start time: %s", IS(next_start) ? asctime(sipe_localtime_tz(&next_start, buddy->cal_working_hours->tz)) : "");	
 	}
 
-	/* Outside of working hours before work day */
-	if (IS(end) && IS(start) && now < start) {	
-		if (now + 8*60*60 < start) { /* Outside of working hours for the next 8 hours */
-			return g_strdup(_("Outside of working hours for next 8 hours"));
-		} else {
-			struct tm *start_tm = localtime(&start);
-			return g_strdup_printf(_("Not working until %.2d:%.2d"), start_tm->tm_hour, start_tm->tm_min);
-		}
+	/* Calendar: string calculations */
+	
+	/*	
+	ALGORITHM (don't delete)
+	(c)2009 pier11 <pier11@operamail.com>
+	
+	SOD =  Start of Work Day
+	EOD =  End of Work Day
+	NSOD = Start of tomorrow's Work Day
+	SW =   Calendar status switch time
+
+	if current_cal_state == Free
+		until = min_t of SOD, EOD, NSOD, SW (min_t(x) = min(x-now) where x>now only)
+	else
+		until = SW
+
+	if (!until)
+		return "Currently %", current_cal_state
+		
+	if (until - now > 8H)
+		return "%s for next 8 hours", current_cal_state
+
+	if (current_cal_state == Free)
+		if (in work hours)
+			"%s", current_cal_state
+		else
+			"Not working"
+		" until %.2d:%.2d", until	    
+	else
+		"Currently %", current_cal_state
+		if (until is in work hours)
+			". %s at %.2d:%.2d", to_state, until
+		else
+			". Outside of working hours at at %.2d:%.2d", until
+
+	*/
+	
+	if (current_cal_state < 1) { /* Free */
+		until = sipe_cal_get_until(now, switch_time, start, end, next_start);
+	} else {
+		until = switch_time;
 	}
 
-	/* Outside of working hours after work day and currently Free */
-	if (IS(end) && IS(start) && now > end && current_cal_state < 1) {
-		time_t start_next = start + 24*60*60;
-		
-		if (now + 8*60*60 < start_next) { /* Outside of working hours for the next 8 hours */
-			return g_strdup(_("Outside of working hours for next 8 hours"));
-		} else {
-			struct tm *start_next_tm = localtime(&start_next);
-			return g_strdup_printf(_("Not working until %.2d:%.2d"), start_next_tm->tm_hour, start_next_tm->tm_min);
-		}
+	if (!IS(until)) {
+		return g_strdup_printf(_("Currently %s"), cal_states[current_cal_state]);
 	}
 
-	/* now is within working hours or working hours are undefined */	
-	if (current_cal_state < 1 ) { /* Free */
-		struct tm *until_tm;
-		time_t until = TIME_NULL;
-		
-		if (IS(switch_time)) until = switch_time;
-		
-		if (IS(end) && 
-		   ((IS(until) && until > end) || !IS(until)) )
-		{
-			until = end;
-		}
-		
-		if (IS(until) && until <= now + 8*60*60) {
-			until_tm = localtime(&until);
-			res = g_strdup_printf(_("Free until %.2d:%.2d"),
-					      until_tm->tm_hour, until_tm->tm_min);
+	if (until - now > 8*60*60) {
+		return g_strdup_printf(_("%s for next 8 hours"), cal_states[current_cal_state]);
+	}
+	
+	if (current_cal_state < 1) { /* Free */
+		const char *tmp;
+		struct tm *until_tm = localtime(&until);
+
+		if (sipe_cal_is_in_work_hours(now, start, end)) {
+			tmp = cal_states[current_cal_state];
 		} else {
-			res = g_strdup_printf(_("Free for next 8 hours"));
+			tmp = _("Not working");
 		}
+		return g_strdup_printf(_("%s until %.2d:%.2d"), tmp, until_tm->tm_hour, until_tm->tm_min);
 	} else { /* Tentative or Busy or OOF */
-		if (IS(switch_time) && switch_time <= now + 8*60*60) {
-			switch_tm = localtime(&switch_time);
-			if (IS(end) && switch_time > end) {
-				res = g_strdup_printf(_("Currently %s. Outside of working hours at %.2d:%.2d"),
-					      cal_states[current_cal_state], switch_tm->tm_hour, switch_tm->tm_min);
-			} else {
-				res = g_strdup_printf(_("Currently %s. %s at %.2d:%.2d"),
-					      cal_states[current_cal_state], cal_states[to_state], switch_tm->tm_hour, switch_tm->tm_min);
-			}
-		} else if (IS(switch_time)) {
-			res = g_strdup_printf(_("%s for the next 8 hours"), cal_states[current_cal_state]);
+		char *tmp;
+		char *res;
+		struct tm *until_tm = localtime(&until);
+
+		tmp = g_strdup_printf(_("Currently %s"), cal_states[current_cal_state]);
+		if (sipe_cal_is_in_work_hours(until, start, end)) {
+			res = g_strdup_printf(_("%s. %s at %.2d:%.2d"), tmp, cal_states[to_state], until_tm->tm_hour, until_tm->tm_min);
+			g_free(tmp);
+			return res;
 		} else {
-			res = g_strdup_printf(_("Currently %s"), cal_states[current_cal_state]);
+			res = g_strdup_printf(_("%s. Outside of working hours at %.2d:%.2d"),
+					      tmp, until_tm->tm_hour, until_tm->tm_min);
+			g_free(tmp);
+			return res;
 		}
 	}
-
-	return res;
+	
+	/* End of - Calendar: string calculations */
 }
 
 /*
