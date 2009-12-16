@@ -382,8 +382,10 @@ sipe_cal_get_switch_time(const gchar *free_busy,
 	size_t i;
 	time_t ret = TIME_NULL;
 
-	if ((index < 0) || ((size_t) (index + 1) > strlen(free_busy)))
+	if ((index < 0) || ((size_t) (index + 1) > strlen(free_busy))) {
+		*to_state = 4;
 		return ret;
+	}
 
 	for (i = index + 1; i < strlen(free_busy); i++) {
 		int temp_status = free_busy[i] - 0x30;
@@ -499,7 +501,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	time_t end = TIME_NULL;
 	time_t next_start = TIME_NULL;
 	time_t switch_time;
-	int to_state = 0;
+	int to_state = 4;
 	time_t until = TIME_NULL;
 	const int granularity = 15; /* Minutes */
 	int index = 0;
@@ -563,14 +565,28 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 
 	switch_time = sipe_cal_get_switch_time(buddy->cal_free_busy, cal_start, granularity, index, current_cal_state, &to_state);
 
+	purple_debug_info("sipe", "\n* Calendar *\n");
 	if (buddy->cal_working_hours) {
 		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end, &next_start);
 
-		printf("Remote now time     : %s",                  asctime(sipe_localtime_tz(&now,        buddy->cal_working_hours->tz)));
-		printf("Remote start time   : %s", IS(start)      ? asctime(sipe_localtime_tz(&start,      buddy->cal_working_hours->tz)) : "\n");
-		printf("Remote end time     : %s", IS(end)        ? asctime(sipe_localtime_tz(&end,        buddy->cal_working_hours->tz)) : "\n");
-		printf("Rem. next_start time: %s", IS(next_start) ? asctime(sipe_localtime_tz(&next_start, buddy->cal_working_hours->tz)) : "\n");	
+		purple_debug_info("sipe", "Remote now time     : %s",
+			asctime(sipe_localtime_tz(&now, buddy->cal_working_hours->tz)));
+		purple_debug_info("sipe", "Remote start time   : %s",
+			IS(start) ? asctime(sipe_localtime_tz(&start,      buddy->cal_working_hours->tz)) : "\n");
+		purple_debug_info("sipe", "Remote end time     : %s",
+			IS(end) ? asctime(sipe_localtime_tz(&end,        buddy->cal_working_hours->tz)) : "\n");
+		purple_debug_info("sipe", "Rem. next_start time: %s",
+			IS(next_start) ? asctime(sipe_localtime_tz(&next_start, buddy->cal_working_hours->tz)) : "\n");	
+		purple_debug_info("sipe", "Remote switch time  : %s",
+			IS(switch_time) ? asctime(sipe_localtime_tz(&switch_time, buddy->cal_working_hours->tz)) : "\n");
+	} else {
+		purple_debug_info("sipe", "Local now time      : %s",
+			asctime(localtime(&now)));
+		purple_debug_info("sipe", "Local switch time   : %s",
+			IS(switch_time) ? asctime(localtime(&switch_time)) : "\n");
 	}
+	purple_debug_info("sipe", "current cal state   : %s\n", cal_states[current_cal_state]);
+	purple_debug_info("sipe", "switch  cal state   : %s\n", cal_states[to_state]         );
 
 	/* Calendar: string calculations */
 	
