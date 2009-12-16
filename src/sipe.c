@@ -890,7 +890,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			callid = g_strdup(sip->regcallid);
 		} else {
 			sip->regcallid = g_strdup(callid);
-		}		
+		}
 		cseq = ++sip->cseq;
 	}
 
@@ -1503,13 +1503,13 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *key;
-	
+
 	/* The case with 2005 Public IM Connectivity (PIC) - no Event header */
 	if (!event) {
 		struct sipmsg *request_msg = trans->msg;
 		event = sipmsg_find_header(request_msg, "Event");
 	}
-	
+
 	key = sipe_get_subscription_key(event, with);
 
 	/* 200 OK; 481 Call Leg Does Not Exist */
@@ -1898,14 +1898,14 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy->meeting_subject);
 	g_free(buddy->meeting_location);
 	g_free(buddy->annotation);
-	
+
 	g_free(buddy->cal_start_time);
 	g_free(buddy->cal_granularity);
 	g_free(buddy->cal_free_busy_base64);
 	g_free(buddy->cal_free_busy);
-	
+
 	sipe_cal_free_working_hours(buddy->cal_working_hours);
-	
+
 	g_free(buddy->device_name);
 	g_slist_free(buddy->groups);
 	g_free(buddy);
@@ -3928,8 +3928,8 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	struct sip_session *session;
 	struct sip_dialog *dialog;
-	
-	/* collect dialog identification 
+
+	/* collect dialog identification
 	 * we need callid, ourtag and theirtag to unambiguously identify dialog
 	 */
 	/* take data before 'msg' will be modified by send_sip_response */
@@ -4335,7 +4335,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 			}
 		}
 	}
-	
+
 
 	g_free(from);
 
@@ -4419,7 +4419,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				}
 
 				sip->registerstatus = 3;
-				
+
 				if (server_hdr && !sip->server_version) {
 					sip->server_version = g_strdup(server_hdr);
 					g_free(default_ua);
@@ -4975,23 +4975,23 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sip->buddies, uri) : NULL;
 			xmlnode *xn_free_busy = xmlnode_get_descendant(xn_category, "calendarData", "freeBusy", NULL);
 			xmlnode *xn_working_hours = xmlnode_get_descendant(xn_category, "calendarData", "WorkingHours", NULL);
-			
-			if (sbuddy && xn_free_busy) {				
+
+			if (sbuddy && xn_free_busy) {
 				g_free(sbuddy->cal_start_time);
 				sbuddy->cal_start_time = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
-				
+
 				g_free(sbuddy->cal_granularity);
 				sbuddy->cal_granularity = g_strdup(xmlnode_get_attrib(xn_free_busy, "granularity"));
-				
+
 				g_free(sbuddy->cal_free_busy_base64);
 				sbuddy->cal_free_busy_base64 = xmlnode_get_data(xn_free_busy);
-				
+
 				g_free(sbuddy->cal_free_busy);
 				sbuddy->cal_free_busy = NULL;
-				
+
 				purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
 			}
-			
+
 			if (sbuddy && xn_working_hours) {
 				sipe_cal_parse_working_hours(xn_working_hours, sbuddy);
 			}
@@ -5155,10 +5155,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	char *uri;
 	int avl;
 	int act;
-	const char *device_name = NULL;	
+	const char *device_name = NULL;
 	const char *cal_start_time = NULL;
 	const char *cal_granularity = NULL;
-	char *cal_free_busy_base64 = NULL;	
+	char *cal_free_busy_base64 = NULL;
 	struct sipe_buddy *sbuddy;
 	xmlnode *node;
 	xmlnode *xn_presentity;
@@ -5173,7 +5173,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_note;
 	char *note;
 	char *free_activity;
-	
+
 	/* fix for Reuters environment on Linux */
 	if (data && strstr(data, "encoding=\"utf-16\"")) {
 		char *tmp_data;
@@ -5253,16 +5253,16 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 		xn_device_name = xmlnode_get_child(node, "deviceName");
 		device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
-		
+
 		xn_calendar_info = xmlnode_get_child(node, "calendarInfo");
 		if (xn_calendar_info) {
-			cal_start_time = xmlnode_get_attrib(xn_calendar_info, "startTime");		
-			cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");		
+			cal_start_time = xmlnode_get_attrib(xn_calendar_info, "startTime");
+			cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");
 			cal_free_busy_base64 = xmlnode_get_data(xn_calendar_info);
-		
+
 			purple_debug_info("sipe", "process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", cal_start_time, cal_granularity, cal_free_busy_base64);
 		}
-		
+
 
 		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
 		state = xn_state ? xmlnode_get_data(xn_state) : NULL;
@@ -5319,17 +5319,17 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->device_name);
 		sbuddy->device_name = NULL;
 		if (!is_empty(device_name)) { sbuddy->device_name = g_strdup(device_name); }
-		
+
 		if (!is_empty(cal_free_busy_base64)) {
 			g_free(sbuddy->cal_start_time);
 			sbuddy->cal_start_time = g_strdup(cal_start_time);
-			
+
 			g_free(sbuddy->cal_granularity);
 			sbuddy->cal_granularity = g_strdup(cal_granularity);
-			
+
 			g_free(sbuddy->cal_free_busy_base64);
 			sbuddy->cal_free_busy_base64 = cal_free_busy_base64;
-			
+
 			g_free(sbuddy->cal_free_busy);
 			sbuddy->cal_free_busy = NULL;
 		}
@@ -5603,7 +5603,7 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 	int availability = 300; // online
 	int activity = 400;  // Available
 	gchar *body;
-	
+
 	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY)) {
 		activity = 100;
 	} else if (!strcmp(sip->status, SIPE_STATUS_ID_LUNCH)) {
@@ -5625,7 +5625,7 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 	}
 
 	//@TODO: send user data - state; add hostname in upper case
-	body = g_markup_printf_escaped(note ? SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML) : 
+	body = g_markup_printf_escaped(note ? SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML) :
 					      SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY),
 				       sip->username,
 				       availability,
@@ -6791,7 +6791,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 
 	g_free(sip->realhostname);
 	sip->realhostname = NULL;
-	
+
 	g_free(sip->server_version);
 	sip->server_version = NULL;
 
@@ -7097,7 +7097,7 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 static void sipe_show_about_plugin(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	const char *txt = 
+	const char *txt =
 "<b><font size=\"+1\">Sipe " SIPE_VERSION "</font></b><br/>"
 "<br/>"
 "A third-party plugin implementing extended version of SIP/SIMPLE used by various products:<br/>"
@@ -7125,7 +7125,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 " - Gabriel Burt<br/>"
 " - Stefan Becker<br/>"
 " - pier11<br/>";
-	
+
 	purple_notify_formatted(gc, NULL, " ", NULL, txt, NULL, NULL);
 }
 
@@ -7137,7 +7137,7 @@ GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 
 	act = purple_plugin_action_new(_("About SIPE plugin"), sipe_show_about_plugin);
 	menu = g_list_prepend(menu, act);
-	
+
 	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
@@ -7233,6 +7233,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	{
 		purple_notify_user_info_add_pair(user_info, _("Calendar"), calendar);
 	}
+	g_free(calendar);
 	if (!is_empty(meeting_subject))
 	{
 		purple_notify_user_info_add_pair(user_info, _("Meeting About"), meeting_subject);

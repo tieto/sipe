@@ -227,6 +227,7 @@ sipe_cal_free_working_hours(struct sipe_cal_working_hours *wh)
 
 	g_free(wh->days_of_week);
 	g_free(wh->tz);
+	g_free(wh);
 }
 
 static void
@@ -432,8 +433,8 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	time_t cal_start;
 	int current_cal_state;
 	time_t now = time(NULL);
-	time_t start;
-	time_t end;
+	time_t start = TIME_NULL;
+	time_t end = TIME_NULL;
 	time_t switch_time;
 	int to_state = 0;
 	const int granularity = 15; /* Minutes */
@@ -483,6 +484,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 			buddy->cal_free_busy[j++] = ((tmp >> 6) & 0x03) + 0x30;
 		}
 		buddy->cal_free_busy[j++] = '\0';
+		g_free(cal_dec64);
 
 		purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", buddy->cal_free_busy);
 	}
@@ -556,7 +558,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 					      cal_states[current_cal_state], cal_states[to_state], switch_tm->tm_hour, switch_tm->tm_min);
 			}
 		} else if (IS(switch_time)) {
-			res = g_strdup_printf(_("%s for the 8 hours"), cal_states[current_cal_state]);
+			res = g_strdup_printf(_("%s for the next 8 hours"), cal_states[current_cal_state]);
 		} else {
 			res = g_strdup_printf(_("Currently %s"), cal_states[current_cal_state]);
 		}
