@@ -43,7 +43,7 @@ libsipe_la_SOURCES +=  \
 	sip-sec-krb5.c
 endif
 
-AM_CFLAGS = $(st) 
+AM_CFLAGS = $(st)
 
 libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
@@ -51,7 +51,8 @@ libsipe_la_CFLAGS = \
         $(GLIB_CFLAGS) \
         $(PURPLE_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
-	$(KRB5_CFLAGS)
+	$(KRB5_CFLAGS) \
+	-DPURPLE_PLUGINS
 
 libsipe_la_LDFLAGS = \
 	-module -avoid-version -no-undefined \
@@ -71,11 +72,6 @@ tests: tests.c $(libsipe_la_SOURCES)
 	$(CC) $(libsipe_la_CFLAGS) $(libsipe_la_LIBADD) .libs/libsipe.so tests.c -o tests; \
 	LD_LIBRARY_PATH=.libs ./tests; \
 	rm tests;
-
-AM_CPPFLAGS = \
-	-DDATADIR=\"$(datadir)/pidgin\" \
-	-DLIBDIR=\"$(pkgdir)\" \
-	-DPIDGIN_PLUGINS
 
 # Remove any libsipe.so from the old incorrect installation location
 install-exec-local:

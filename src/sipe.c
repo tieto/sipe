@@ -8200,13 +8200,7 @@ static void init_plugin(PurplePlugin *plugin)
 	my_protocol = plugin;
 }
 
-/* I had to redefined the function for it load, but works */
-gboolean purple_init_plugin(PurplePlugin *plugin){
-	plugin->info = &(info);
-	init_plugin((plugin));
-	sipe_plugin_load((plugin));
-	return purple_plugin_register(plugin);
-}
+PURPLE_INIT_PLUGIN(sipe, init_plugin, info);
 
 /*
   Local Variables:
