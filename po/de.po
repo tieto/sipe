@@ -496,17 +496,45 @@ msgstr "Vorläufig"
 msgid "No data"
 msgstr "Keine Angaben"
 
-#. Free
-#: ../src/sipe-cal.c:328
+#. Outside of working hours for the next 8 hours
+#: ../src/sipe-cal.c:511 ../src/sipe-cal.c:523
+msgid "Outside of working hours for next 8 hours"
+msgstr "Nicht am Arbeitsplatz in den nächsten 8 Stunden"
+
+#: ../src/sipe-cal.c:514 ../src/sipe-cal.c:526
+#, c-format
+msgid "Not working until %.2d:%.2d"
+msgstr "Nicht am Arbeitsplatz bis %.2d:%.2d"
+
+#: ../src/sipe-cal.c:545
 #, c-format
 msgid "Free until %.2d:%.2d"
 msgstr "Verfügbar bis %.2d:%.2d"
 
-#. Tentative or Busy or OOF
-#: ../src/sipe-cal.c:331
+#: ../src/sipe-cal.c:548
 #, c-format
-msgid "Currently %s. Free at %.2d:%.2d"
-msgstr "Zurzeit %s. Verfügbar ab %.2d:%.2d"
+msgid "Free for next 8 hours"
+msgstr "Verfügbar für die nächsten 8 Stunden"
+
+#: ../src/sipe-cal.c:554
+#, c-format
+msgid "Currently %s. Outside of working hours at %.2d:%.2d"
+msgstr "Zurzeit %s. Verlässt den Arbeitsplatz ab %.2d:%.2d"
+
+#: ../src/sipe-cal.c:557
+#, c-format
+msgid "Currently %s. %s at %.2d:%.2d"
+msgstr "Zurzeit %s. %s ab %.2d:%.2d"
+
+#: ../src/sipe-cal.c:561
+#, c-format
+msgid "%s for the next 8 hours"
+msgstr "%s für die nächsten 8 Stunden"
+
+#: ../src/sipe-cal.c:563
+#, c-format
+msgid "Currently %s"
+msgstr "Zurzeit %s"
 
 #: ../src/sipe-chat.c:82
 #, c-format
