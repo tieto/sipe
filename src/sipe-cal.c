@@ -435,7 +435,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	time_t start;
 	time_t end;
 	time_t switch_time;
-	int to_state;
+	int to_state = 0;
 	const int granularity = 15; /* Minutes */
 	int index = 0;
 	struct tm *switch_tm;
