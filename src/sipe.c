@@ -101,7 +101,7 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
 #define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
 #define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
-#define SIPE_STATUS_ID_ONPHONE     "on-the-phone"                                             /* On The Phone */
+#define SIPE_STATUS_ID_ONPHONE     "on-the-phone"                                             /* On the phone */
 #define SIPE_STATUS_ID_INVISIBLE   purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) /* Appear Offline */
 /*      PURPLE_STATUS_AWAY: */
 #define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
@@ -2016,7 +2016,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Busy */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			SIPE_STATUS_ID_BUSY, _("Busy"));
-			
+
 	/* BusyIdle (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
 			SIPE_STATUS_ID_BUSYIDLE, _("BusyIdle"),
@@ -2029,7 +2029,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			SIPE_STATUS_ID_BRB, _("Be Right Back"));
+			SIPE_STATUS_ID_BRB, _("Be right back"));
 
 	/* Away */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
@@ -2037,11 +2037,11 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* On The Phone */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			SIPE_STATUS_ID_ONPHONE, _("On The Phone"));
+			SIPE_STATUS_ID_ONPHONE, _("On the phone"));
 
 	/* Out To Lunch */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			SIPE_STATUS_ID_LUNCH, _("Out To Lunch"));
+			SIPE_STATUS_ID_LUNCH, _("Out to lunch"));
 
 	/* Idle/Inactive (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AVAILABLE,

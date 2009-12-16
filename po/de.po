@@ -49,16 +49,20 @@ msgstr "Nachricht"
 msgid "Busy"
 msgstr "Beschäftigt"
 
+#: ../src/sipe.c:2022
+msgid "BusyIdle"
+msgstr "Nicht verfügbar"
+
 #: ../src/sipe.c:1904
-msgid "Be Right Back"
+msgid "Be right back"
 msgstr "Bin gleich zurück"
 
 #: ../src/sipe.c:1912
-msgid "On The Phone"
+msgid "On the phone"
 msgstr "Am Telefon"
 
 #: ../src/sipe.c:1916
-msgid "Out To Lunch"
+msgid "Out to lunch"
 msgstr "Zur Mittagspause"
 
 #: ../src/sipe.c:1955
@@ -145,19 +149,19 @@ msgid "Service unavailable: %s"
 msgstr "Service ist nicht verfügbar: %s"
 
 #: ../src/sipe.c:4769 ../src/sipe.c:5062
-msgid "In a Conference"
+msgid "In a conference"
 msgstr "In einer Konferenz"
 
 #: ../src/sipe.c:4771
-msgid "In a Meeting"
+msgid "In a meeting"
 msgstr "In einer Besprechung"
 
 #: ../src/sipe.c:4773 ../src/sipe.c:5041
-msgid "Out of Office"
+msgid "Out of office"
 msgstr "Nicht im Büro"
 
 #: ../src/sipe.c:4775
-msgid "Urgent Interruptions Only"
+msgid "Urgent interruptions only"
 msgstr "Bitte nur in dringenden Fällen stören"
 
 #: ../src/sipe.c:5562
@@ -313,11 +317,11 @@ msgid "Calendar"
 msgstr "Kalendar"
 
 #: ../src/sipe.c:6952
-msgid "Meeting About"
+msgid "Meeting about"
 msgstr "Besprechungsthema"
 
 #: ../src/sipe.c:6956
-msgid "Meeting In"
+msgid "Meeting in"
 msgstr "Besprechungsraum"
 
 #: ../src/sipe.c:6536
@@ -492,49 +496,43 @@ msgstr "Verfügbar"
 msgid "Tentative"
 msgstr "Vorläufig"
 
-#: ../src/sipe-cal.c:274
+#: ../src/sipe-cal.c:512
 msgid "No data"
 msgstr "Keine Angaben"
 
-#. Outside of working hours for the next 8 hours
-#: ../src/sipe-cal.c:511 ../src/sipe-cal.c:523
-msgid "Outside of working hours for next 8 hours"
-msgstr "Nicht am Arbeitsplatz in den nächsten 8 Stunden"
-
-#: ../src/sipe-cal.c:514 ../src/sipe-cal.c:526
-#, c-format
-msgid "Not working until %.2d:%.2d"
-msgstr "Nicht am Arbeitsplatz bis %.2d:%.2d"
-
-#: ../src/sipe-cal.c:545
-#, c-format
-msgid "Free until %.2d:%.2d"
-msgstr "Verfügbar bis %.2d:%.2d"
-
-#: ../src/sipe-cal.c:548
-#, c-format
-msgid "Free for next 8 hours"
-msgstr "Verfügbar für die nächsten 8 Stunden"
-
-#: ../src/sipe-cal.c:554
-#, c-format
-msgid "Currently %s. Outside of working hours at %.2d:%.2d"
-msgstr "Zurzeit %s. Verlässt den Arbeitsplatz ab %.2d:%.2d"
-
-#: ../src/sipe-cal.c:557
-#, c-format
-msgid "Currently %s. %s at %.2d:%.2d"
-msgstr "Zurzeit %s. %s ab %.2d:%.2d"
-
-#: ../src/sipe-cal.c:561
-#, c-format
-msgid "%s for the next 8 hours"
-msgstr "%s für die nächsten 8 Stunden"
-
-#: ../src/sipe-cal.c:563
+#: ../src/sipe-cal.c:638 ../src/sipe-cal.c:664
 #, c-format
 msgid "Currently %s"
 msgstr "Zurzeit %s"
+
+#. * Free & outside work hours
+#: ../src/sipe-cal.c:643
+msgid "Outside of working hours for next 8 hours"
+msgstr "Nicht im Büro in den nächsten 8 Stunden"
+
+#: ../src/sipe-cal.c:645
+#, c-format
+msgid "%s for next 8 hours"
+msgstr "%s für die nächsten 8 Stunden"
+
+#: ../src/sipe-cal.c:656
+msgid "Not working"
+msgstr "Freizeit"
+
+#: ../src/sipe-cal.c:658
+#, c-format
+msgid "%s until %.2d:%.2d"
+msgstr "%s bis %.2d:%.2d"
+
+#: ../src/sipe-cal.c:666
+#, c-format
+msgid "%s. %s at %.2d:%.2d"
+msgstr "%s. %s ab %.2d:%.2d"
+
+#: ../src/sipe-cal.c:670
+#, c-format
+msgid "%s. Outside of working hours at %.2d:%.2d"
+msgstr "%s. Verlässt das Büro um %.2d:%.2d"
 
 #: ../src/sipe-chat.c:82
 #, c-format
