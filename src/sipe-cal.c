@@ -567,9 +567,9 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end, &next_start);
 
 		printf("Remote now time     : %s",                  asctime(sipe_localtime_tz(&now,        buddy->cal_working_hours->tz)));
-		printf("Remote start time   : %s", IS(start)      ? asctime(sipe_localtime_tz(&start,      buddy->cal_working_hours->tz)) : "");
-		printf("Remote end time     : %s", IS(end)        ? asctime(sipe_localtime_tz(&end,        buddy->cal_working_hours->tz)) : "");
-		printf("Rem. next_start time: %s", IS(next_start) ? asctime(sipe_localtime_tz(&next_start, buddy->cal_working_hours->tz)) : "");	
+		printf("Remote start time   : %s", IS(start)      ? asctime(sipe_localtime_tz(&start,      buddy->cal_working_hours->tz)) : "\n");
+		printf("Remote end time     : %s", IS(end)        ? asctime(sipe_localtime_tz(&end,        buddy->cal_working_hours->tz)) : "\n");
+		printf("Rem. next_start time: %s", IS(next_start) ? asctime(sipe_localtime_tz(&next_start, buddy->cal_working_hours->tz)) : "\n");	
 	}
 
 	/* Calendar: string calculations */
@@ -592,7 +592,10 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		return "Currently %", current_cal_state
 		
 	if (until - now > 8H)
-		return "%s for next 8 hours", current_cal_state
+		if (current_cal_state == Free && !in work hours)
+			return "Outside of working hours for next 8 hours"
+		else 
+			return "%s for next 8 hours", current_cal_state
 
 	if (current_cal_state == Free)
 		if (in work hours)
@@ -620,7 +623,11 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	}
 
 	if (until - now > 8*60*60) {
-		return g_strdup_printf(_("%s for next 8 hours"), cal_states[current_cal_state]);
+		if (current_cal_state < 1 && !sipe_cal_is_in_work_hours(now, start, end)) { /** Free & outside work hours */
+			return g_strdup(_("Outside of working hours for next 8 hours"));
+		} else {
+			return g_strdup_printf(_("%s for next 8 hours"), cal_states[current_cal_state]);
+		}
 	}
 	
 	if (current_cal_state < 1) { /* Free */
