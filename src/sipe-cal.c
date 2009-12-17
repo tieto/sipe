@@ -98,7 +98,7 @@ struct sipe_cal_working_hours {
 	int end_time;                 /* 0...1440 */
 
 	gchar *tz;                    /* aggregated timezone string as in TZ environment variable.
-	                                 Ex.: TST+8TDT+1,M3.2.0/02:00:00,M11.1.0/02:00:00 */
+	                                 Ex.: TST+8TDT+7,M3.2.0/02:00:00,M11.1.0/02:00:00 */
 };
 
 /* not for translation, a part of XML Schema definitions */
@@ -332,21 +332,21 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 		g_free(tmp);
 	}
 
-	/* TST+8TDT-1,M3.2.0/02:00:00,M11.1.0/02:00:00 */
+	/* TST8TDT7,M3.2.0/02:00:00,M11.1.0/02:00:00 */
 	buddy->cal_working_hours->tz =
 		g_strdup_printf("TST%dTDT%d,M%d.%d.%d/%s,M%d.%d.%d/%s",
 				(buddy->cal_working_hours->bias + buddy->cal_working_hours->std.bias) / 60,
 				(buddy->cal_working_hours->bias + buddy->cal_working_hours->dst.bias) / 60,
 
-				buddy->cal_working_hours->std.month,
-				buddy->cal_working_hours->std.day_order,
-				sipe_cal_get_wday(buddy->cal_working_hours->std.day_of_week),
-				buddy->cal_working_hours->std.time,
-
 				buddy->cal_working_hours->dst.month,
 				buddy->cal_working_hours->dst.day_order,
 				sipe_cal_get_wday(buddy->cal_working_hours->dst.day_of_week),
-				buddy->cal_working_hours->dst.time
+				buddy->cal_working_hours->dst.time,
+
+				buddy->cal_working_hours->std.month,
+				buddy->cal_working_hours->std.day_order,
+				sipe_cal_get_wday(buddy->cal_working_hours->std.day_of_week),
+				buddy->cal_working_hours->std.time
 				);
 }
 
@@ -569,7 +569,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	if (buddy->cal_working_hours) {
 		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end, &next_start);
 
-		purple_debug_info("sipe", "Remote now timezone : %s", buddy->cal_working_hours->tz);
+		purple_debug_info("sipe", "Remote now timezone : %s\n", buddy->cal_working_hours->tz);
 		purple_debug_info("sipe", "Remote now time     : %s",
 			asctime(sipe_localtime_tz(&now, buddy->cal_working_hours->tz)));
 		purple_debug_info("sipe", "Remote start time   : %s",
