@@ -87,6 +87,8 @@ struct sipe_cal_std_dst {
 	int month;          /* 1..12 */
 	gchar *day_of_week; /* Sunday or Monday or Tuesday or Wednesday or Thursday or Friday or Saturday */
 	gchar *year;        /* YYYY */
+	
+	time_t switch_time;
 };
 
 struct sipe_cal_working_hours {
@@ -230,6 +232,61 @@ sipe_cal_free_working_hours(struct sipe_cal_working_hours *wh)
 	g_free(wh);
 }
 
+/**
+ * Returns time_t of daylight savings time start/end
+ * in the provided timezone or otherwise
+ * (time_t)-1 if no daylight savings time.
+ */
+static time_t
+sipe_cal_get_std_dst_time(time_t now,
+			  int bias,
+			  struct sipe_cal_std_dst* std_dst,
+			  struct sipe_cal_std_dst* dst_std)
+{
+	struct tm switch_tm;
+	time_t res = TIME_NULL;
+	struct tm *gm_now_tm;
+	gchar **time_arr;
+	
+	if (std_dst->month == 0) return TIME_NULL;
+	
+	gm_now_tm = gmtime(&now);
+	time_arr = g_strsplit(std_dst->time, ":", 0);
+	
+	switch_tm.tm_sec  = atoi(time_arr[2]);
+	switch_tm.tm_min  = atoi(time_arr[1]);
+	switch_tm.tm_hour = atoi(time_arr[0]);
+	g_strfreev(time_arr);	
+	switch_tm.tm_mday  = std_dst->year ? std_dst->day_order : 1 /* to adjust later */ ;
+	switch_tm.tm_mon   = std_dst->month - 1;
+	switch_tm.tm_year  = std_dst->year ? atoi(std_dst->year) - 1900 : gm_now_tm->tm_year;
+	switch_tm.tm_isdst = 0;	
+	/* to set tm_wday */
+	res = sipe_mktime_tz(&switch_tm, "UTC");
+	
+	/* if not dynamic, calculate right tm_mday */
+	if (!std_dst->year) {
+		int switch_wday = sipe_cal_get_wday(std_dst->day_of_week);
+		int needed_month;
+		/* get first desired wday in the month */
+		int delta = switch_wday >= switch_tm.tm_wday ? (switch_wday - switch_tm.tm_wday) : (switch_wday + 7 - switch_tm.tm_wday);
+		switch_tm.tm_mday = 1 + delta;
+		/* try nth order */
+		switch_tm.tm_mday += (std_dst->day_order - 1) * 7;
+		needed_month = switch_tm.tm_mon;
+		/* to set settle date if ahead of allowed month dates */
+		res = sipe_mktime_tz(&switch_tm, "UTC");
+		if (needed_month != switch_tm.tm_mon) {
+			/* moving 1 week back to stay within required month */
+			switch_tm.tm_mday -= 7;
+			/* to fix date again */
+			res = sipe_mktime_tz(&switch_tm, "UTC");
+		}
+	}
+	/* note: bias is taken from "switch to" structure */
+	return res + (bias + dst_std->bias)*60;
+}
+
 static void
 sipe_cal_parse_std_dst(xmlnode *xn_std_dst_time,
 		       struct sipe_cal_std_dst* std_dst)
@@ -286,6 +343,9 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 	xmlnode *xn_standard_time;
 	xmlnode *xn_daylight_time;
 	gchar *tmp;
+	time_t now = time(NULL);
+	struct sipe_cal_std_dst* std;
+	struct sipe_cal_std_dst* dst;
 
 	if (!xn_working_hours) return;
 /*
@@ -315,8 +375,10 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 	xn_standard_time = xmlnode_get_descendant(xn_working_hours, "TimeZone", "StandardTime", NULL);
 	xn_daylight_time = xmlnode_get_descendant(xn_working_hours, "TimeZone", "DaylightTime", NULL);
 
-	sipe_cal_parse_std_dst(xn_standard_time, &((*buddy->cal_working_hours).std));
-	sipe_cal_parse_std_dst(xn_daylight_time, &((*buddy->cal_working_hours).dst));
+	std = &((*buddy->cal_working_hours).std);
+	dst = &((*buddy->cal_working_hours).dst);
+	sipe_cal_parse_std_dst(xn_standard_time, std);
+	sipe_cal_parse_std_dst(xn_daylight_time, dst);
 
 	xn_working_period = xmlnode_get_descendant(xn_working_hours, "WorkingPeriodArray", "WorkingPeriod", NULL);
 	if (xn_working_period) {
@@ -331,6 +393,9 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 			atoi(tmp = xmlnode_get_data(xmlnode_get_child(xn_working_period, "EndTimeInMinutes")));
 		g_free(tmp);
 	}
+	
+	std->switch_time = sipe_cal_get_std_dst_time(now, buddy->cal_working_hours->bias, std, dst);
+	dst->switch_time = sipe_cal_get_std_dst_time(now, buddy->cal_working_hours->bias, dst, std);
 
 	/* TST8TDT7,M3.2.0/02:00:00,M11.1.0/02:00:00 */
 	buddy->cal_working_hours->tz =
@@ -570,6 +635,10 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end, &next_start);
 
 		purple_debug_info("sipe", "Remote now timezone : %s\n", buddy->cal_working_hours->tz);
+		purple_debug_info("sipe", "std.switch_time(GMT): %s",
+				IS((*buddy->cal_working_hours).std.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).std.switch_time))) : "\n");
+		purple_debug_info("sipe", "dst.switch_time(GMT): %s",
+				IS((*buddy->cal_working_hours).dst.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).dst.switch_time))) : "\n");
 		purple_debug_info("sipe", "Remote now time     : %s",
 			asctime(sipe_localtime_tz(&now, buddy->cal_working_hours->tz)));
 		purple_debug_info("sipe", "Remote start time   : %s",
