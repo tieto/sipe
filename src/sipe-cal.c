@@ -101,6 +101,11 @@ struct sipe_cal_working_hours {
 
 	gchar *tz;                    /* aggregated timezone string as in TZ environment variable.
 	                                 Ex.: TST+8TDT+7,M3.2.0/02:00:00,M11.1.0/02:00:00 */
+	/** separate simple strings for Windows platform as the proper TZ does not work there.
+	 *  anyway, dynamic timezones would't work with just TZ
+	 */
+	gchar *tz_std;                /* Ex.: TST8 */
+	gchar *tz_dst;                /* Ex.: TDT7 */
 };
 
 /* not for translation, a part of XML Schema definitions */
@@ -413,6 +418,12 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 				sipe_cal_get_wday(buddy->cal_working_hours->std.day_of_week),
 				buddy->cal_working_hours->std.time
 				);
+	buddy->cal_working_hours->tz_std =
+		g_strdup_printf("TST%d",
+				(buddy->cal_working_hours->bias + buddy->cal_working_hours->std.bias) / 60);
+	buddy->cal_working_hours->tz_dst =
+		g_strdup_printf("TDT%d",
+				(buddy->cal_working_hours->bias + buddy->cal_working_hours->dst.bias) / 60);
 }
 
 static int
@@ -464,10 +475,40 @@ sipe_cal_get_switch_time(const gchar *free_busy,
 	return ret;
 }
 
+static const char*
+sipe_cal_get_tz(struct sipe_cal_working_hours *wh,
+                time_t time_in_question)
+{
+	time_t dst_switch_time = (*wh).dst.switch_time;
+	time_t std_switch_time = (*wh).std.switch_time;
+	gboolean is_dst = FALSE;
+	
+	/* No daylight savings */
+	if (dst_switch_time == TIME_NULL) {
+		return wh->tz_std;
+	}
+	
+	if (dst_switch_time < std_switch_time) { /* North hemosphere - Europe, US */
+		if (time_in_question >= dst_switch_time && time_in_question < std_switch_time) {
+			is_dst = TRUE;
+		}
+	} else { /* South hemisphere - Australia */
+		if (time_in_question >= dst_switch_time || time_in_question < std_switch_time) {
+			is_dst = TRUE;
+		}
+	}
+	
+	if (is_dst) {
+		return wh->tz_dst;
+	} else {
+		return wh->tz_std;
+	}
+}
+
 static time_t
 sipe_cal_mktime_of_day(struct tm *sample_today_tm,
-		       int shift_minutes,
-		       char *tz)
+		       const int shift_minutes,
+		       const char *tz)
 {
 	sample_today_tm->tm_sec  = 0;
 	sample_today_tm->tm_min  = shift_minutes % 60;
@@ -488,7 +529,8 @@ sipe_cal_get_today_work_hours(struct sipe_cal_working_hours *wh,
 			      time_t *next_start)
 {
 	time_t now = time(NULL);
-	struct tm *remote_now_tm = sipe_localtime_tz(&now, wh->tz);
+	const char *tz = sipe_cal_get_tz(wh, now);
+	struct tm *remote_now_tm = sipe_localtime_tz(&now, tz);
 
 	if (!strstr(wh->days_of_week, wday_names[remote_now_tm->tm_wday])) { /* not a work day */
 		*start = TIME_NULL;
@@ -497,20 +539,20 @@ sipe_cal_get_today_work_hours(struct sipe_cal_working_hours *wh,
 		return;
 	}
 
-	*end = sipe_cal_mktime_of_day(remote_now_tm, wh->end_time, wh->tz);
+	*end = sipe_cal_mktime_of_day(remote_now_tm, wh->end_time, tz);
 
 	if (now < *end) {
-		*start = sipe_cal_mktime_of_day(remote_now_tm, wh->start_time, wh->tz);
+		*start = sipe_cal_mktime_of_day(remote_now_tm, wh->start_time, tz);
 		*next_start = TIME_NULL;
 	} else { /* calculate start of tomorrow's work day if any */
 		time_t tom = now + 24*60*60;
-		struct tm *remote_tom_tm = sipe_localtime_tz(&tom, wh->tz);
+		struct tm *remote_tom_tm = sipe_localtime_tz(&tom, sipe_cal_get_tz(wh, tom));
 
 		if (!strstr(wh->days_of_week, wday_names[remote_tom_tm->tm_wday])) { /* not a work day */
 			*next_start = TIME_NULL;
 		}
 
-		*next_start = sipe_cal_mktime_of_day(remote_tom_tm, wh->start_time, wh->tz);
+		*next_start = sipe_cal_mktime_of_day(remote_tom_tm, wh->start_time, sipe_cal_get_tz(wh, tom));
 		*start = TIME_NULL;
 	}
 }
@@ -634,21 +676,21 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	if (buddy->cal_working_hours) {
 		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end, &next_start);
 
-		purple_debug_info("sipe", "Remote now timezone : %s\n", buddy->cal_working_hours->tz);
+		purple_debug_info("sipe", "Remote now timezone : %s\n", sipe_cal_get_tz(buddy->cal_working_hours, now));
 		purple_debug_info("sipe", "std.switch_time(GMT): %s",
 				IS((*buddy->cal_working_hours).std.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).std.switch_time))) : "\n");
 		purple_debug_info("sipe", "dst.switch_time(GMT): %s",
 				IS((*buddy->cal_working_hours).dst.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).dst.switch_time))) : "\n");
 		purple_debug_info("sipe", "Remote now time     : %s",
-			asctime(sipe_localtime_tz(&now, buddy->cal_working_hours->tz)));
+			asctime(sipe_localtime_tz(&now, sipe_cal_get_tz(buddy->cal_working_hours, now))));
 		purple_debug_info("sipe", "Remote start time   : %s",
-			IS(start) ? asctime(sipe_localtime_tz(&start,      buddy->cal_working_hours->tz)) : "\n");
+			IS(start) ? asctime(sipe_localtime_tz(&start,      sipe_cal_get_tz(buddy->cal_working_hours, start))) : "\n");
 		purple_debug_info("sipe", "Remote end time     : %s",
-			IS(end) ? asctime(sipe_localtime_tz(&end,        buddy->cal_working_hours->tz)) : "\n");
+			IS(end) ? asctime(sipe_localtime_tz(&end,        sipe_cal_get_tz(buddy->cal_working_hours, end))) : "\n");
 		purple_debug_info("sipe", "Rem. next_start time: %s",
-			IS(next_start) ? asctime(sipe_localtime_tz(&next_start, buddy->cal_working_hours->tz)) : "\n");
+			IS(next_start) ? asctime(sipe_localtime_tz(&next_start, sipe_cal_get_tz(buddy->cal_working_hours, next_start))) : "\n");
 		purple_debug_info("sipe", "Remote switch time  : %s",
-			IS(switch_time) ? asctime(sipe_localtime_tz(&switch_time, buddy->cal_working_hours->tz)) : "\n");
+			IS(switch_time) ? asctime(sipe_localtime_tz(&switch_time, sipe_cal_get_tz(buddy->cal_working_hours, switch_time))) : "\n");
 	} else {
 		purple_debug_info("sipe", "Local now time      : %s",
 			asctime(localtime(&now)));
