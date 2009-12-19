@@ -234,6 +234,8 @@ sipe_cal_free_working_hours(struct sipe_cal_working_hours *wh)
 
 	g_free(wh->days_of_week);
 	g_free(wh->tz);
+	g_free(wh->tz_std);
+	g_free(wh->tz_dst);
 	g_free(wh);
 }
 
@@ -418,9 +420,11 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 				sipe_cal_get_wday(buddy->cal_working_hours->std.day_of_week),
 				buddy->cal_working_hours->std.time
 				);
+	/* TST8 */
 	buddy->cal_working_hours->tz_std =
 		g_strdup_printf("TST%d",
 				(buddy->cal_working_hours->bias + buddy->cal_working_hours->std.bias) / 60);
+	/* TDT7 */
 	buddy->cal_working_hours->tz_dst =
 		g_strdup_printf("TDT%d",
 				(buddy->cal_working_hours->bias + buddy->cal_working_hours->dst.bias) / 60);
@@ -684,9 +688,9 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		purple_debug_info("sipe", "Remote now time     : %s",
 			asctime(sipe_localtime_tz(&now, sipe_cal_get_tz(buddy->cal_working_hours, now))));
 		purple_debug_info("sipe", "Remote start time   : %s",
-			IS(start) ? asctime(sipe_localtime_tz(&start,      sipe_cal_get_tz(buddy->cal_working_hours, start))) : "\n");
+			IS(start) ? asctime(sipe_localtime_tz(&start, sipe_cal_get_tz(buddy->cal_working_hours, start))) : "\n");
 		purple_debug_info("sipe", "Remote end time     : %s",
-			IS(end) ? asctime(sipe_localtime_tz(&end,        sipe_cal_get_tz(buddy->cal_working_hours, end))) : "\n");
+			IS(end) ? asctime(sipe_localtime_tz(&end, sipe_cal_get_tz(buddy->cal_working_hours, end))) : "\n");
 		purple_debug_info("sipe", "Rem. next_start time: %s",
 			IS(next_start) ? asctime(sipe_localtime_tz(&next_start, sipe_cal_get_tz(buddy->cal_working_hours, next_start))) : "\n");
 		purple_debug_info("sipe", "Remote switch time  : %s",
