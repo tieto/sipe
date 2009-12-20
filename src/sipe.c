@@ -1472,6 +1472,56 @@ sipe_schedule_action_msec(const gchar *name,
 	sipe_schedule_action0(name, timeout, FALSE, action, destroy, sip, payload);
 }
 
+static void
+sipe_sched_calendar_status_update(struct sipe_account_data *sip,
+				  time_t calculate_from);
+
+/** 
+ * Updates contact's status
+ * based on their calendar information.
+ *
+ * Applicability: 2005 systems
+ */
+static void
+update_calendar_status(struct sipe_account_data *sip)
+{
+	purple_debug_info("sipe", "update_calendar_status() started.\n");
+	
+	// get calendar status for each contact and update their statuses
+	
+	/* repeat scheduling */
+	sipe_sched_calendar_status_update(sip, time(NULL) + 3*60 /* 3 min */);
+}
+
+/** 
+ * Schedules process of contacts' status update
+ * based on their calendar information.
+ * Should be scheduled to the beginning of every
+ * 15 min interval, like:
+ * 13:00, 13:15, 13:30, 13:45, etc.
+ *
+ * Applicability: 2005 systems
+ */
+static void
+sipe_sched_calendar_status_update(struct sipe_account_data *sip,
+				  time_t calculate_from)
+{
+	int interval = 15*60;
+	/** start of the beginning of closest 15 min interval. */
+	time_t next_start = ((time_t)((int)((int)calculate_from)/interval + 1)*interval);
+
+	purple_debug_info("sipe", "sipe_sched_calendar_status_update: calculate_from time: %s",
+			  asctime(localtime(&calculate_from)));
+	purple_debug_info("sipe", "sipe_sched_calendar_status_update: next start time    : %s",
+			  asctime(localtime(&next_start)));
+	
+	sipe_schedule_action("<+2005-cal-status>",
+			     (int)(next_start - time(NULL)),
+			     (Action)update_calendar_status,
+			     NULL,
+			     sip,
+			     NULL);
+}
 
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
 
@@ -2070,7 +2120,9 @@ static void sipe_buddy_subscribe_cb(SIPE_UNUSED_PARAMETER char *name, struct sip
 	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
 	guint time_range = (g_hash_table_size(sip->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
+	
 	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(buddy->name));
+	g_free(action_name);
 }
 
 /**
@@ -2249,6 +2301,12 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 			g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
 		}
 		sip->subscribed_buddies = TRUE;
+	}
+	/* for 2005 systems schedule contacts' status update
+	 * based on their calendar information
+	 */
+	if (!sip->ocs2007) {
+		sipe_sched_calendar_status_update(sip, time(NULL));
 	}
 
 	return 0;
