@@ -108,6 +108,8 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
 #define SIPE_STATUS_ID_AWAY        purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY)      /* Away (primitive) */
 #define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
+/* Calendar-driven status for 2005 systems */
+#define SIPE_STATUS_ID_MEETING     "in-a-meeting"                                             /* In a meeting */
 /* ???  PURPLE_STATUS_EXTENDED_AWAY */
 /* ???  PURPLE_STATUS_MOBILE */
 /* ???  PURPLE_STATUS_TUNE */
@@ -1476,6 +1478,35 @@ static void
 sipe_sched_calendar_status_update(struct sipe_account_data *sip,
 				  time_t calculate_from);
 
+static void
+update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
+			  struct sipe_buddy *sbuddy,
+			  struct sipe_account_data *sip)
+{
+	PurpleBuddy *pbuddy = purple_find_buddy(sip->account, sbuddy->name);
+	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
+	const PurpleStatus *status = purple_presence_get_active_status(presence);
+	int cal_status = sipe_cal_get_status(sbuddy, time(NULL) + 2*60 /* 2 min */);
+
+	if (cal_status == SIPE_CAL_BUSY) {
+		/* not yet set */
+		if (strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING)) {
+			purple_debug_info("sipe", "update_calendar_status_cb: to %s for %s\n", SIPE_STATUS_ID_MEETING, sbuddy->name);
+			sbuddy->last_non_cal_status_id = g_strdup(purple_status_get_id(status));
+			purple_prpl_got_user_status(sip->account, sbuddy->name, SIPE_STATUS_ID_MEETING, NULL);
+		}
+	} else {
+		if (!strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING)) {
+			/* resetting status to last known */
+			purple_debug_info("sipe", "update_calendar_status_cb: resetting to %s for %s\n",
+					  sbuddy->last_non_cal_status_id, sbuddy->name);
+			g_free(sbuddy->last_non_cal_status_id);
+			sbuddy->last_non_cal_status_id = NULL;
+			purple_prpl_got_user_status(sip->account, sbuddy->name, sbuddy->last_non_cal_status_id, NULL);
+		}
+	}
+}
+				  
 /** 
  * Updates contact's status
  * based on their calendar information.
@@ -1485,9 +1516,8 @@ sipe_sched_calendar_status_update(struct sipe_account_data *sip,
 static void
 update_calendar_status(struct sipe_account_data *sip)
 {
-	purple_debug_info("sipe", "update_calendar_status() started.\n");
-	
-	// get calendar status for each contact and update their statuses
+	purple_debug_info("sipe", "update_calendar_status() started.\n");	
+	g_hash_table_foreach(sip->buddies, (GHFunc)update_calendar_status_cb, (gpointer)sip);	
 	
 	/* repeat scheduling */
 	sipe_sched_calendar_status_update(sip, time(NULL) + 3*60 /* 3 min */);
@@ -1953,6 +1983,7 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy->cal_start_time);
 	g_free(buddy->cal_free_busy_base64);
 	g_free(buddy->cal_free_busy);
+	g_free(buddy->last_non_cal_status_id);
 
 	sipe_cal_free_working_hours(buddy->cal_working_hours);
 
@@ -2074,6 +2105,13 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Do Not Disturb (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
 			       SIPE_STATUS_ID_DND, NULL,
+			       FALSE);			       
+				
+	/* In a meeting (not user settable)
+	 * Calendar-driven status for 2005 systems.
+	 */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
+			       SIPE_STATUS_ID_MEETING, _("In a meeting"),
 			       FALSE);
 
 	/* Be Right Back */

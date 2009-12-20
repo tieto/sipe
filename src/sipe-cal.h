@@ -55,8 +55,10 @@ char *
 sipe_cal_get_description(struct sipe_buddy *buddy);
 
 /**
- * Returns current calendar status SIPE_CAL_*
+ * Returns calendar status SIPE_CAL_* at time specified.
  * Returns SIPE_CAL_NO_DATA if no calendar data availible.
  */
 int
-sipe_cal_get_current_status(struct sipe_buddy *buddy);
+sipe_cal_get_status(struct sipe_buddy *buddy,
+		    time_t time_in_question);
+
