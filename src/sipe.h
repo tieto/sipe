@@ -61,7 +61,7 @@ struct sipe_buddy {
 
 	/* Calendar related fields */
 	gchar *cal_start_time;
-	gchar *cal_granularity;
+	int cal_granularity;
 	gchar *cal_free_busy_base64;
 	gchar *cal_free_busy;
 

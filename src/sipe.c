@@ -1951,7 +1951,6 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy->annotation);
 
 	g_free(buddy->cal_start_time);
-	g_free(buddy->cal_granularity);
 	g_free(buddy->cal_free_busy_base64);
 	g_free(buddy->cal_free_busy);
 
@@ -5044,8 +5043,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				g_free(sbuddy->cal_start_time);
 				sbuddy->cal_start_time = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
 
-				g_free(sbuddy->cal_granularity);
-				sbuddy->cal_granularity = g_strdup(xmlnode_get_attrib(xn_free_busy, "granularity"));
+				sbuddy->cal_granularity = !g_ascii_strcasecmp(xmlnode_get_attrib(xn_free_busy, "granularity"), "PT15M") ?
+					15 : 0;
 
 				g_free(sbuddy->cal_free_busy_base64);
 				sbuddy->cal_free_busy_base64 = xmlnode_get_data(xn_free_busy);
@@ -5053,7 +5052,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				g_free(sbuddy->cal_free_busy);
 				sbuddy->cal_free_busy = NULL;
 
-				purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
+				purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%d cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
 			}
 
 			if (sbuddy && xn_working_hours) {
@@ -5387,9 +5386,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		if (!is_empty(cal_free_busy_base64)) {
 			g_free(sbuddy->cal_start_time);
 			sbuddy->cal_start_time = g_strdup(cal_start_time);
-
-			g_free(sbuddy->cal_granularity);
-			sbuddy->cal_granularity = g_strdup(cal_granularity);
+			
+			sbuddy->cal_granularity = !g_ascii_strcasecmp(cal_granularity, "PT15M") ? 15 : 0;
 
 			g_free(sbuddy->cal_free_busy_base64);
 			sbuddy->cal_free_busy_base64 = cal_free_busy_base64;

@@ -431,24 +431,52 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 }
 
 static int
-sipe_cal_get_current_status(const gchar *free_busy,
-			    time_t calStart,
+sipe_cal_get_current_status0(const gchar *free_busy,
+			    time_t cal_start,
 			    int granularity,
 			    int *index)
 {
-	int res = 4;
+	int res = SIPE_CAL_NO_DATA;
 	int shift;
-	time_t calEnd = calStart + strlen(free_busy)*granularity*60 - 1;
+	time_t cal_end = cal_start + strlen(free_busy)*granularity*60 - 1;
 	time_t now = time(NULL);
 
-	if (!(now >= calStart && now <= calEnd)) return res;
+	if (!(now >= cal_start && now <= cal_end)) return res;
 
-	shift = (now - calStart) / (granularity*60);
-	*index = shift;
+	shift = (now - cal_start) / (granularity*60);
+	if (index) {
+		*index = shift;
+	}
 
 	res = free_busy[shift] - 0x30;
 
 	return res;
+}
+
+static char*
+sipe_cal_get_free_busy(struct sipe_buddy *buddy);
+
+int
+sipe_cal_get_current_status(struct sipe_buddy *buddy)
+{
+	time_t cal_start;
+	
+	if (!buddy->cal_start_time || !buddy->cal_granularity) {
+		purple_debug_info("sipe", "sipe_cal_get_description: no calendar data, exiting");
+		return SIPE_CAL_NO_DATA;
+	}
+	
+	if (sipe_cal_get_free_busy(buddy)) {
+		purple_debug_info("sipe", "sipe_cal_get_description: no calendar data, exiting");
+		return SIPE_CAL_NO_DATA;
+	}
+	
+	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
+	
+	return sipe_cal_get_current_status0(sipe_cal_get_free_busy(buddy),
+					    cal_start,
+					    buddy->cal_granularity,
+					    NULL);
 }
 
 static time_t
@@ -463,7 +491,7 @@ sipe_cal_get_switch_time(const gchar *free_busy,
 	time_t ret = TIME_NULL;
 
 	if ((index < 0) || ((size_t) (index + 1) > strlen(free_busy))) {
-		*to_state = 4;
+		*to_state = SIPE_CAL_NO_DATA;
 		return ret;
 	}
 
@@ -602,32 +630,10 @@ sipe_cal_get_until(const time_t now,
 	return ret;
 }
 
-char *
-sipe_cal_get_description(struct sipe_buddy *buddy)
+static char*
+sipe_cal_get_free_busy(struct sipe_buddy *buddy)
 {
-	time_t cal_start;
-	int current_cal_state;
-	time_t now = time(NULL);
-	time_t start = TIME_NULL;
-	time_t end = TIME_NULL;
-	time_t next_start = TIME_NULL;
-	time_t switch_time;
-	int to_state = 4;
-	time_t until = TIME_NULL;
-	const int granularity = 15; /* Minutes */
-	int index = 0;
-	const char *cal_states[] = {_("Free"),
-				    _("Tentative"),
-				    _("Busy"),
-				    _("Out of office"),
-				    _("No data")};
-
-	if (g_ascii_strcasecmp("PT15M", buddy->cal_granularity)) {
-		purple_debug_info("sipe", "sipe_cal_get_description: granularity %s is unsupported, exiting.\n", buddy->cal_granularity);
-		return NULL;
-	}
-
-	/* do lazy decode if necessary */
+/* do lazy decode if necessary */
 	if (!buddy->cal_free_busy && buddy->cal_free_busy_base64) {
 		gsize cal_dec64_len;
 		guchar *cal_dec64;
@@ -663,18 +669,50 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 
 		purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", buddy->cal_free_busy);
 	}
+	return buddy->cal_free_busy;
+}
 
-	if (!buddy->cal_free_busy || !buddy->cal_granularity || !buddy->cal_start_time) return NULL;
+char *
+sipe_cal_get_description(struct sipe_buddy *buddy)
+{
+	time_t cal_start;
+	int current_cal_state;
+	time_t now = time(NULL);
+	time_t start = TIME_NULL;
+	time_t end = TIME_NULL;
+	time_t next_start = TIME_NULL;
+	time_t switch_time;
+	int to_state = SIPE_CAL_NO_DATA;
+	time_t until = TIME_NULL;
+	int index = 0;
+	const char *cal_states[] = {_("Free"),
+				    _("Tentative"),
+				    _("Busy"),
+				    _("Out of office"),
+				    _("No data")};
+
+	if (buddy->cal_granularity != 15) {
+		purple_debug_info("sipe", "sipe_cal_get_description: granularity %d is unsupported, exiting.\n", buddy->cal_granularity);
+		return NULL;
+	}
+
+	/* to lazy load if needed */
+	sipe_cal_get_free_busy(buddy);	
+
+	if (!buddy->cal_free_busy || !buddy->cal_granularity || !buddy->cal_start_time) {
+		purple_debug_info("sipe", "sipe_cal_get_description: no calendar data, exiting");
+		return NULL;
+	}
 
 	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
 
-	current_cal_state = sipe_cal_get_current_status(buddy->cal_free_busy, cal_start, granularity, &index);
-	if (current_cal_state == 4) {
+	current_cal_state = sipe_cal_get_current_status0(sipe_cal_get_free_busy(buddy), cal_start, buddy->cal_granularity, &index);
+	if (current_cal_state == SIPE_CAL_NO_DATA) {
 		purple_debug_info("sipe", "sipe_cal_get_description: calendar is undefined for present moment, exiting.\n");
 		return NULL;
 	}
 
-	switch_time = sipe_cal_get_switch_time(buddy->cal_free_busy, cal_start, granularity, index, current_cal_state, &to_state);
+	switch_time = sipe_cal_get_switch_time(sipe_cal_get_free_busy(buddy), cal_start, buddy->cal_granularity, index, current_cal_state, &to_state);
 
 	purple_debug_info("sipe", "\n* Calendar *\n");
 	if (buddy->cal_working_hours) {

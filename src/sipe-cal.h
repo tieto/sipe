@@ -22,6 +22,14 @@
 
 #include "xmlnode.h"
 
+/* Calendar statuses */
+#define SIPE_CAL_FREE       0
+#define SIPE_CAL_TENTATIVE  1
+#define SIPE_CAL_BUSY       2
+#define SIPE_CAL_OOF        3
+#define SIPE_CAL_NO_DATA    4
+
+
 /** Contains buddy's working hours information */
 struct sipe_cal_working_hours;
 
@@ -45,3 +53,10 @@ sipe_cal_free_working_hours(struct sipe_cal_working_hours *wh);
  */
 char *
 sipe_cal_get_description(struct sipe_buddy *buddy);
+
+/**
+ * Returns current calendar status SIPE_CAL_*
+ * Returns SIPE_CAL_NO_DATA if no calendar data availible.
+ */
+int
+sipe_cal_get_current_status(struct sipe_buddy *buddy);
