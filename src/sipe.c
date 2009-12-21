@@ -1488,11 +1488,16 @@ update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
 	const PurpleStatus *status = purple_presence_get_active_status(presence);
 	int cal_status = sipe_cal_get_status(sbuddy, time(NULL) + 2*60 /* 2 min */);
 
+	if (cal_status < SIPE_CAL_NO_DATA) {
+		purple_debug_info("sipe", "update_calendar_status_cb: cal_status:%d for %s\n", cal_status, sbuddy->name);
+	}
 	if (cal_status == SIPE_CAL_BUSY) {
 		/* not yet set */
 		if (strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING)) {
 			purple_debug_info("sipe", "update_calendar_status_cb: to %s for %s\n", SIPE_STATUS_ID_MEETING, sbuddy->name);
 			sbuddy->last_non_cal_status_id = g_strdup(purple_status_get_id(status));
+			sbuddy->last_non_cal_activity = sbuddy->activity;
+			sbuddy->activity = NULL;
 			purple_prpl_got_user_status(sip->account, sbuddy->name, SIPE_STATUS_ID_MEETING, NULL);
 		}
 	} else {
@@ -1503,6 +1508,8 @@ update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
 			g_free(sbuddy->last_non_cal_status_id);
 			sbuddy->last_non_cal_status_id = NULL;
 			purple_prpl_got_user_status(sip->account, sbuddy->name, sbuddy->last_non_cal_status_id, NULL);
+			sbuddy->activity = sbuddy->last_non_cal_activity;
+			sbuddy->last_non_cal_activity = NULL;
 		}
 	}
 }
@@ -1984,6 +1991,7 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy->cal_free_busy_base64);
 	g_free(buddy->cal_free_busy);
 	g_free(buddy->last_non_cal_status_id);
+	g_free(buddy->last_non_cal_activity);
 
 	sipe_cal_free_working_hours(buddy->cal_working_hours);
 
@@ -7329,8 +7337,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		g_free(tmp);
 	}
 	if (purple_presence_is_online(presence) &&
-	    !is_empty(calendar) &&
-	    !(activity && !g_ascii_strcasecmp(_("Out of office"), activity)) )
+	    !is_empty(calendar))
 	{
 		purple_notify_user_info_add_pair(user_info, _("Calendar"), calendar);
 	}
