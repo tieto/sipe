@@ -64,6 +64,7 @@ struct sipe_buddy {
 	int cal_granularity;
 	gchar *cal_free_busy_base64;
 	gchar *cal_free_busy;
+	/* for 2005 systems */
 	gchar *last_non_cal_status_id;
 	gchar *last_non_cal_activity;
 
