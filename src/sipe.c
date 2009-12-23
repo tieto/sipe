@@ -108,6 +108,8 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
 #define SIPE_STATUS_ID_AWAY        purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY)      /* Away (primitive) */
 #define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
+/* Calendar-driven status for 2005 systems */
+#define SIPE_STATUS_ID_MEETING     "in-a-meeting"                                             /* In a meeting */
 /* ???  PURPLE_STATUS_EXTENDED_AWAY */
 /* ???  PURPLE_STATUS_MOBILE */
 /* ???  PURPLE_STATUS_TUNE */
@@ -1472,6 +1474,121 @@ sipe_schedule_action_msec(const gchar *name,
 	sipe_schedule_action0(name, timeout, FALSE, action, destroy, sip, payload);
 }
 
+static void
+sipe_sched_calendar_status_update(struct sipe_account_data *sip,
+				  time_t calculate_from);
+	
+static void	
+sipe_got_user_status(struct sipe_account_data *sip,
+		     const char* uri,
+		     const char *status_id)
+{
+	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
+	
+	/* Check if on 2005 system contact's calendar is in Busy status,
+	 * then set/preserve it.
+	 */
+	if (!sip->ocs2007 && sipe_cal_get_status(sbuddy, time(NULL))== SIPE_CAL_BUSY) {
+		PurpleBuddy *pbuddy = purple_find_buddy(sip->account, sbuddy->name);
+		const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
+		const PurpleStatus *status = purple_presence_get_active_status(presence);
+		
+		sbuddy->last_non_cal_status_id = g_strdup(status_id);
+		sbuddy->last_non_cal_activity = sbuddy->activity;
+		sbuddy->activity = g_strdup(_("In a meeting"));
+
+		/* not yet set */
+		if (strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING)) {
+			purple_debug_info("sipe", "sipe_got_user_status: to %s for %s\n", SIPE_STATUS_ID_MEETING, sbuddy->name);
+			purple_prpl_got_user_status(sip->account, sbuddy->name, SIPE_STATUS_ID_MEETING, NULL);
+		}
+	} else {
+		purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
+	}
+}
+
+static void
+update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
+			  struct sipe_buddy *sbuddy,
+			  struct sipe_account_data *sip)
+{
+	PurpleBuddy *pbuddy = purple_find_buddy(sip->account, sbuddy->name);
+	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
+	const PurpleStatus *status = purple_presence_get_active_status(presence);
+	int cal_status = sipe_cal_get_status(sbuddy, time(NULL) + 2*60 /* 2 min */);
+
+	if (cal_status < SIPE_CAL_NO_DATA) {
+		purple_debug_info("sipe", "update_calendar_status_cb: cal_status:%d for %s\n", cal_status, sbuddy->name);
+	}
+	if (cal_status == SIPE_CAL_BUSY) {
+		/* not yet set */
+		if (strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING)) {
+			purple_debug_info("sipe", "update_calendar_status_cb: to %s for %s\n", SIPE_STATUS_ID_MEETING, sbuddy->name);
+			sbuddy->last_non_cal_status_id = g_strdup(purple_status_get_id(status));
+			sbuddy->last_non_cal_activity = sbuddy->activity;
+			sbuddy->activity = g_strdup(_("In a meeting"));
+			purple_prpl_got_user_status(sip->account, sbuddy->name, SIPE_STATUS_ID_MEETING, NULL);
+		}
+	} else {
+		if (!strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING)) {
+			/* resetting status to last known */
+			purple_debug_info("sipe", "update_calendar_status_cb: resetting to %s for %s\n",
+					  sbuddy->last_non_cal_status_id, sbuddy->name);
+			g_free(sbuddy->last_non_cal_status_id);
+			sbuddy->last_non_cal_status_id = NULL;
+			purple_prpl_got_user_status(sip->account, sbuddy->name, sbuddy->last_non_cal_status_id, NULL);
+			g_free(sbuddy->activity);
+			sbuddy->activity = sbuddy->last_non_cal_activity;
+			sbuddy->last_non_cal_activity = NULL;
+		}
+	}
+}
+				  
+/** 
+ * Updates contact's status
+ * based on their calendar information.
+ *
+ * Applicability: 2005 systems
+ */
+static void
+update_calendar_status(struct sipe_account_data *sip)
+{
+	purple_debug_info("sipe", "update_calendar_status() started.\n");	
+	g_hash_table_foreach(sip->buddies, (GHFunc)update_calendar_status_cb, (gpointer)sip);	
+	
+	/* repeat scheduling */
+	sipe_sched_calendar_status_update(sip, time(NULL) + 3*60 /* 3 min */);
+}
+
+/** 
+ * Schedules process of contacts' status update
+ * based on their calendar information.
+ * Should be scheduled to the beginning of every
+ * 15 min interval, like:
+ * 13:00, 13:15, 13:30, 13:45, etc.
+ *
+ * Applicability: 2005 systems
+ */
+static void
+sipe_sched_calendar_status_update(struct sipe_account_data *sip,
+				  time_t calculate_from)
+{
+	int interval = 15*60;
+	/** start of the beginning of closest 15 min interval. */
+	time_t next_start = ((time_t)((int)((int)calculate_from)/interval + 1)*interval);
+
+	purple_debug_info("sipe", "sipe_sched_calendar_status_update: calculate_from time: %s",
+			  asctime(localtime(&calculate_from)));
+	purple_debug_info("sipe", "sipe_sched_calendar_status_update: next start time    : %s",
+			  asctime(localtime(&next_start)));
+	
+	sipe_schedule_action("<+2005-cal-status>",
+			     (int)(next_start - time(NULL)),
+			     (Action)update_calendar_status,
+			     NULL,
+			     sip,
+			     NULL);
+}
 
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
 
@@ -1901,9 +2018,10 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy->annotation);
 
 	g_free(buddy->cal_start_time);
-	g_free(buddy->cal_granularity);
 	g_free(buddy->cal_free_busy_base64);
 	g_free(buddy->cal_free_busy);
+	g_free(buddy->last_non_cal_status_id);
+	g_free(buddy->last_non_cal_activity);
 
 	sipe_cal_free_working_hours(buddy->cal_working_hours);
 
@@ -2025,6 +2143,13 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Do Not Disturb (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
 			       SIPE_STATUS_ID_DND, NULL,
+			       FALSE);			       
+				
+	/* In a meeting (not user settable)
+	 * Calendar-driven status for 2005 systems.
+	 */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
+			       SIPE_STATUS_ID_MEETING, _("Busy"),
 			       FALSE);
 
 	/* Be Right Back */
@@ -2070,7 +2195,9 @@ static void sipe_buddy_subscribe_cb(SIPE_UNUSED_PARAMETER char *name, struct sip
 	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
 	guint time_range = (g_hash_table_size(sip->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
+	
 	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(buddy->name));
+	g_free(action_name);
 }
 
 /**
@@ -2249,6 +2376,12 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 			g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
 		}
 		sip->subscribed_buddies = TRUE;
+	}
+	/* for 2005 systems schedule contacts' status update
+	 * based on their calendar information
+	 */
+	if (!sip->ocs2007) {
+		sipe_sched_calendar_status_update(sip, time(NULL));
 	}
 
 	return 0;
@@ -4972,7 +5105,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			status = sipe_get_status_by_availability(availability);
 			if (status) {
 				purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", status);
-				purple_prpl_got_user_status(sip->account, uri, status, NULL);
+				sipe_got_user_status(sip, uri, status);
 			}
 		}
 		/* calendarData */
@@ -4986,8 +5119,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				g_free(sbuddy->cal_start_time);
 				sbuddy->cal_start_time = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
 
-				g_free(sbuddy->cal_granularity);
-				sbuddy->cal_granularity = g_strdup(xmlnode_get_attrib(xn_free_busy, "granularity"));
+				sbuddy->cal_granularity = !g_ascii_strcasecmp(xmlnode_get_attrib(xn_free_busy, "granularity"), "PT15M") ?
+					15 : 0;
 
 				g_free(sbuddy->cal_free_busy_base64);
 				sbuddy->cal_free_busy_base64 = xmlnode_get_data(xn_free_busy);
@@ -4995,7 +5128,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				g_free(sbuddy->cal_free_busy);
 				sbuddy->cal_free_busy = NULL;
 
-				purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
+				purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%d cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
 			}
 
 			if (sbuddy && xn_working_hours) {
@@ -5142,9 +5275,9 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 		}
 
 		purple_debug_info("sipe", "process_incoming_notify: status_id(%s)\n", status_id);
-		purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
+		sipe_got_user_status(sip, uri, status_id);
 	} else {
-		purple_prpl_got_user_status(sip->account, uri, SIPE_STATUS_ID_OFFLINE, NULL);
+		sipe_got_user_status(sip, uri, SIPE_STATUS_ID_OFFLINE);
 	}
 
 	g_free(activity);
@@ -5329,9 +5462,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		if (!is_empty(cal_free_busy_base64)) {
 			g_free(sbuddy->cal_start_time);
 			sbuddy->cal_start_time = g_strdup(cal_start_time);
-
-			g_free(sbuddy->cal_granularity);
-			sbuddy->cal_granularity = g_strdup(cal_granularity);
+			
+			sbuddy->cal_granularity = !g_ascii_strcasecmp(cal_granularity, "PT15M") ? 15 : 0;
 
 			g_free(sbuddy->cal_free_busy_base64);
 			sbuddy->cal_free_busy_base64 = cal_free_busy_base64;
@@ -5344,7 +5476,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	if (free_activity) g_free(free_activity);
 
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
-	purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
+	sipe_got_user_status(sip, uri, status_id);
 	g_free(note);
 	xmlnode_free(xn_presentity);
 	g_free(uri);
@@ -7235,8 +7367,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		g_free(tmp);
 	}
 	if (purple_presence_is_online(presence) &&
-	    !is_empty(calendar) &&
-	    !(activity && !g_ascii_strcasecmp(_("Out of office"), activity)) )
+	    !is_empty(calendar))
 	{
 		purple_notify_user_info_add_pair(user_info, _("Calendar"), calendar);
 	}

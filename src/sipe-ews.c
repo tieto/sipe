@@ -26,17 +26,21 @@ For communication with Exchange 2007/2010 Web Server/Web Services:
 
 1) Autodiscover (HTTPS POST request). With redirect support. XML content.
 1.1) DNS SRV record _autodiscover._tcp.<domain> may also be resolved.
-2) Availability Web service (SOAP = HTTPS POST + XML).
-3) Web server authentication required - NTLM and/or Negotiate (Kerberos).
+2) Availability Web service (SOAP = HTTPS POST + XML) call.
+3) Out of Office (OOF) Web Service (SOAP = HTTPS POST + XML) call.
+4) Web server authentication required - NTLM and/or Negotiate (Kerberos).
 
 Note: ews - EWS stands for Exchange Web Services.
 
 It will be able to retrieve our Calendar information (FreeBusy, WorkingHours,
-Meetings Subject and Location, Is_Meeting) from Exchange Web Services for 
-subsequent publishing.
-Our OOF note retrieval should also be addressed here.
+Meetings Subject and Location, Is_Meeting) as well as our Out of Office (OOF) note
+from Exchange Web Services for subsequent publishing.
 
-Similar functionality for Lotus Notes/Domino, iCalendar/CalDAV/Google would be great to implement too.
+Ref. for more implementation details:
+http://sourceforge.net/projects/sipe/forums/forum/688535/topic/3403462
+
+Similar functionality for Lotus Notes/Domino, iCalendar/CalDAV/Google would
+be great to implement too.
 */
 
 
