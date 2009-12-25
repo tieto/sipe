@@ -64,21 +64,15 @@ sip_sec_create_context__NONE(SIPE_UNUSED_PARAMETER SipSecAuthType type)
 	return(NULL);
 }
 
-/* sip_sec API method */
-char *
-sip_sec_init_context(SipSecContext *context,
-		     int *expires,
-		     SipSecAuthType type,
-		     const int  sso,
-		     const char *domain,
-		     const char *username,
-		     const char *password,
-		     const char *target,
-		     const char *input_toked_base64)
+/* sip_sec API methods */
+void
+sip_sec_create_context(SipSecContext *context,
+		       SipSecAuthType type,
+		       const int  sso,
+		       const char *domain,
+		       const char *username,
+		       const char *password)
 {
-	SipSecBuffer in_buff  = {0, NULL};
-	SipSecBuffer out_buff = {0, NULL};
-	gchar *out_buff_base64 = NULL;
 	sip_uint32 ret;
 
 	/* Map authentication type to module initialization hook & name */
@@ -93,38 +87,88 @@ sip_sec_init_context(SipSecContext *context,
 	sip_sec_destroy_context(*context);
 
 	*context = (*(auth_to_hook[type]))(type);
-	if (!*context) return(NULL);
-	
+	if (!*context) return;
+
 	(*context)->sso = sso;
 
 	ret = (*(*context)->acquire_cred_func)(*context, domain, username, password);
 	if (ret != SIP_SEC_E_OK) {
 		purple_debug_info("sipe", "ERROR: sip_sec_init_context failed to acquire credentials.\n");
-		return NULL;
+		return;
 	}
+}
 
-	/* Type1 (empty) to send */
-	ret = (*(*context)->init_context_func)(*context, in_buff, &out_buff, target);
-	if (ret == SIP_SEC_E_OK) {
-		out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
-	}
-	free_bytes_buffer(&out_buff);
-
-	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
-		/* Type 2 answer */
+unsigned long
+sip_sec_init_context_step(SipSecContext *context,
+			  const char *target,
+			  const char *input_toked_base64,
+			  char **output_toked_base64,
+			  int *expires)
+{
+	SipSecBuffer in_buff  = {0, NULL};
+	SipSecBuffer out_buff = {0, NULL};
+	sip_uint32 ret;
+	
+	/* Not NULL for NTLM Type 2 */
+	if (input_toked_base64)
 		in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));
-		ret = (*(*context)->init_context_func)(*context, in_buff, &out_buff, target);
+	
+	ret = (*(*context)->init_context_func)(*context, in_buff, &out_buff, target);
+	
+	if (input_toked_base64)
 		free_bytes_buffer(&in_buff);
-
-		/* Type 3 to send */
-		g_free(out_buff_base64);
-		out_buff_base64 = purple_base64_encode(out_buff.value, out_buff.length);
+	
+	if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
+		*output_toked_base64 = purple_base64_encode(out_buff.value, out_buff.length);
 		free_bytes_buffer(&out_buff);
 	}
 	
 	*expires = (*context)->expires;
+	
+	return ret;
+}
 
-	return out_buff_base64;
+char *
+sip_sec_init_context(SipSecContext *context,
+		     int *expires,
+		     SipSecAuthType type,
+		     const int  sso,
+		     const char *domain,
+		     const char *username,
+		     const char *password,
+		     const char *target,
+		     const char *input_toked_base64)
+{
+	sip_uint32 ret;
+	char *output_toked_base64 = NULL;
+	int exp;
+
+	sip_sec_create_context(context,
+			       type,
+			       sso,
+			       domain,
+			       username,
+			       password);
+			       
+	ret = sip_sec_init_context_step(context,
+					target,
+					NULL,
+					&output_toked_base64,
+					&exp);			
+					
+	/* for NTLM type 3 */
+	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
+		g_free(output_toked_base64);
+		ret = sip_sec_init_context_step(context,
+						target,
+						input_toked_base64,
+						&output_toked_base64,
+						&exp);
+	}
+	
+	*expires = exp;
+
+	return output_toked_base64;
 }
 
 void

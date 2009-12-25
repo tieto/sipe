@@ -37,7 +37,48 @@ typedef enum
 //// Sipe convenience methods ////
 
 /**
- * A convenience method for sipe.
+ * Initializes Sipe security context.
+ * Obtains cashed initial credentials (TGT for Kerberos) or requests new ones if required.
+ * In former case domain/username/password information is unnecessary.
+ *
+ * @param context (in,out) security context to store and pass between security method invocations
+ * @param mech (in) security mechanism - NTLM or Kerberos
+ * @param domain (in) NTLM Domain/Kerberos Realm.
+ *
+ * @return base64 encoded output token to send to server.
+ */
+void
+sip_sec_create_context(SipSecContext *context,
+		       SipSecAuthType type,
+		       const int  sso,
+		       const char *domain,
+		       const char *username,
+		       const char *password);
+
+/**
+ * Obtains Service ticket (for Kerberos), base64 encodes it and provide as output.
+ *
+ * @param context (in) security context to pass between security method invocations
+ * @param target (in) security target. Service principal name on case of Kerberos.
+ * @param input_toked_base64 (in) base64 encoded input security token. This is Type2 NTLM message or NULL.
+ * @param output_toked_base64 (out) base64 encoded output token to send to server.
+ * @param expires (out) security context expiration time in seconds.
+ *
+ * @return SIP_SEC_* value signifying success of the operation.
+ *
+ */		       
+unsigned long
+sip_sec_init_context_step(SipSecContext *context,
+			  const char *target,
+			  const char *input_toked_base64,
+			  char **output_toked_base64,
+			  int *expires);
+
+/**
+ * A convenience method for sipe. Combines execution on sip_sec_create_context()
+ * and sip_sec_init_context_step(). Suitable for connectionless NTLM (as in SIP).
+ * Unsuitable for connection-based (TCP, TLS) Web authentication.
+ *
  * Initializes security context.
  * Obtains cashed initial credentials (TGT for Kerberos) or requests new ones if required. In former case domain/username/password information is unnecessary.
  * Then obtains Service ticket (for Kerberos) , base64 encodes it and provide as output.
