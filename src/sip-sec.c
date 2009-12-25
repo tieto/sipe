@@ -69,6 +69,7 @@ void
 sip_sec_create_context(SipSecContext *context,
 		       SipSecAuthType type,
 		       const int  sso,
+		       int is_connection_based,
 		       const char *domain,
 		       const char *username,
 		       const char *password)
@@ -90,6 +91,7 @@ sip_sec_create_context(SipSecContext *context,
 	if (!*context) return;
 
 	(*context)->sso = sso;
+	(*context)->is_connection_based = is_connection_based;
 
 	ret = (*(*context)->acquire_cred_func)(*context, domain, username, password);
 	if (ret != SIP_SEC_E_OK) {
@@ -99,7 +101,7 @@ sip_sec_create_context(SipSecContext *context,
 }
 
 unsigned long
-sip_sec_init_context_step(SipSecContext *context,
+sip_sec_init_context_step(SipSecContext context,
 			  const char *target,
 			  const char *input_toked_base64,
 			  char **output_toked_base64,
@@ -113,7 +115,7 @@ sip_sec_init_context_step(SipSecContext *context,
 	if (input_toked_base64)
 		in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));
 	
-	ret = (*(*context)->init_context_func)(*context, in_buff, &out_buff, target);
+	ret = (*context->init_context_func)(context, in_buff, &out_buff, target);
 	
 	if (input_toked_base64)
 		free_bytes_buffer(&in_buff);
@@ -123,7 +125,7 @@ sip_sec_init_context_step(SipSecContext *context,
 		free_bytes_buffer(&out_buff);
 	}
 	
-	*expires = (*context)->expires;
+	*expires = context->expires;
 	
 	return ret;
 }
@@ -146,11 +148,12 @@ sip_sec_init_context(SipSecContext *context,
 	sip_sec_create_context(context,
 			       type,
 			       sso,
+			       0, /* Connectionless for SIP */
 			       domain,
 			       username,
 			       password);
 			       
-	ret = sip_sec_init_context_step(context,
+	ret = sip_sec_init_context_step(*context,
 					target,
 					NULL,
 					&output_toked_base64,
@@ -159,7 +162,7 @@ sip_sec_init_context(SipSecContext *context,
 	/* for NTLM type 3 */
 	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
 		g_free(output_toked_base64);
-		ret = sip_sec_init_context_step(context,
+		ret = sip_sec_init_context_step(*context,
 						target,
 						input_toked_base64,
 						&output_toked_base64,

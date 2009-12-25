@@ -51,6 +51,7 @@ void
 sip_sec_create_context(SipSecContext *context,
 		       SipSecAuthType type,
 		       const int  sso,
+		       int is_connection_based,
 		       const char *domain,
 		       const char *username,
 		       const char *password);
@@ -68,7 +69,7 @@ sip_sec_create_context(SipSecContext *context,
  *
  */		       
 unsigned long
-sip_sec_init_context_step(SipSecContext *context,
+sip_sec_init_context_step(SipSecContext context,
 			  const char *target,
 			  const char *input_toked_base64,
 			  char **output_toked_base64,

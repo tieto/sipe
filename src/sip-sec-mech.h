@@ -81,6 +81,8 @@ struct sip_sec_context {
 	int sso;
 	/** Security Context expiration interval in seconds */
 	int expires;
+	/** 0 - FALSE; otherwise TRUE */
+	int is_connection_based;
 };
 
 /// Utility methods (implemented in sip-sec.c)
