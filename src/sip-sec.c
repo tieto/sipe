@@ -125,7 +125,9 @@ sip_sec_init_context_step(SipSecContext context,
 		free_bytes_buffer(&out_buff);
 	}
 	
-	*expires = context->expires;
+	if (expires) {
+		*expires = context->expires;
+	}
 	
 	return ret;
 }
@@ -169,7 +171,9 @@ sip_sec_init_context(SipSecContext *context,
 						&exp);
 	}
 	
-	*expires = exp;
+	if (expires) {
+		*expires = exp;
+	}
 
 	return output_toked_base64;
 }

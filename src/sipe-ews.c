@@ -48,7 +48,6 @@ be great to implement too.
 #include "sipe.h"
 #include "sipe-ews.h"
 #include "sipe-utils.h"
-//#include "sipmsg.h"
 
 /**
  * HTTP POST headers
@@ -86,6 +85,9 @@ struct sipe_ews {
 	int listenport;
 	time_t last_keepalive;
 	struct sip_connection *conn;
+	SipSecContext sec_ctx;
+	char *body;
+	int retries;
 };
 
 
@@ -242,16 +244,19 @@ sipe_ews_initialize(struct sipe_account_data *sip)
 
 
 /* Data part */
+static void
+sip_ews_process_input_message(struct sipe_account_data *sip,
+			      struct sipmsg *msg);
 
 static void
 sip_ews_process_input(struct sipe_account_data *sip,
 		      struct sip_connection *conn)
 {
 	char *cur;
-	//char *dummy;
+	char *dummy;
 	char *tmp;
-	//struct sipmsg *msg;
-	//int restlen;
+	struct sipmsg *msg;
+	int restlen;
 	cur = conn->inbuf;
 
 	/* according to the RFC remove CRLF at the beginning */
@@ -272,7 +277,7 @@ sip_ews_process_input(struct sipe_account_data *sip,
 		cur[0] = '\0';
 		purple_debug_info("sipe", "received - %s******\n%s\n******\n", ctime(&currtime), tmp = fix_newlines(conn->inbuf));
 		g_free(tmp);
-/*
+
 		msg = sipmsg_parse_header(conn->inbuf);
 		cur[0] = '\r';
 		cur += 2;
@@ -297,10 +302,9 @@ sip_ews_process_input(struct sipe_account_data *sip,
 			purple_debug_info("sipe", "body:\n%s", msg->body);
 		}
 
-		//process_input_message(sip, msg);
+		sip_ews_process_input_message(sip, msg);
 
 		sipmsg_free(msg);
-*/
 	}
 }
 
@@ -339,26 +343,78 @@ sipe_ews_sendout_pkt(struct sipe_account_data *sip,
 
 static void 
 sip_ews_http_post(struct sipe_account_data *sip,
-		  const char *body)
+		  const char *body,
+		  const char *authorization)
 {
 	GString *outstr = g_string_new("");
 	
-	g_string_append_printf(outstr, SIP_EWS_HTTP_POST_HEADER, body ? strlen(body) : 0);	
+	g_string_append_printf(outstr, SIP_EWS_HTTP_POST_HEADER, body ? strlen(body) : 0);
+	if (authorization) {
+		g_string_append_printf(outstr, "Authorization: %s\r\n", authorization);
+	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
 	
 	sipe_ews_sendout_pkt(sip, outstr->str);
 	g_string_free(outstr, TRUE);
 }
 
+static void
+sip_ews_process_input_message(struct sipe_account_data *sip,
+			      struct sipmsg *msg)
+{
+	if (msg->response == 401) {
+		char *ptmp;
+		char **parts;
+		char *authorization;
+		char *output_toked_base64;
+		
+		if (sip->ews->retries > 2) return;
+		
+		sip->ews->retries++;
+		ptmp = sipmsg_find_auth_header(msg, "NTLM");
+		if (!ptmp) {
+			purple_debug_info("sipe", "sip_ews_process_input_message: Only NTLM authentication is supported in the moment, exiting\n");
+		}
+		
+		if (!sip->ews->sec_ctx) {
+			sip_sec_create_context(&sip->ews->sec_ctx,
+					       AUTH_TYPE_NTLM,
+					       purple_account_get_bool(sip->account, "sso", TRUE),
+					       1,
+					       sip->authdomain ? sip->authdomain : "",
+					       sip->authuser,
+					       sip->password);
+		}
+
+		parts = g_strsplit(ptmp, " ", 0);
+		sip_sec_init_context_step(sip->ews->sec_ctx,
+					  "HOST/cosmo-ocs-r2.cosmo.local",
+					  parts[1],
+					  &output_toked_base64,
+					  NULL);
+		g_strfreev(parts);
+
+		authorization = g_strdup_printf("NTLM %s", output_toked_base64);
+		g_free(output_toked_base64);
+		
+		sip_ews_http_post(sip, sip->ews->body, authorization);
+		g_free(authorization);
+	} else {
+		sip->ews->retries = 0;
+		g_free(sip->ews->body);
+		
+		//process response
+	}
+}
 
 /* Business Logic part */
 static void
 sipe_ews_send_oof_request(struct sipe_account_data *sip)
 {
-	char *body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, "alice@cosmo.local");
+	g_free(sip->ews->body);
+	sip->ews->body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, "alice@cosmo.local");
 
-	sip_ews_http_post(sip, body);
-	g_free(body);
+	sip_ews_http_post(sip, sip->ews->body, NULL);
 }
 
 /*
