@@ -56,6 +56,7 @@ struct http_conn_struct {
 	char *content_type;
 	HttpConnAuth *auth;
 	HttpConnCallback callback;
+	void *data;
 		 
 	/* SSL connection */
 	PurpleSslConnection *gsc;
@@ -217,7 +218,8 @@ http_conn_create(PurpleAccount *account,
 		 const char *body,
 		 const char *content_type,
 		 HttpConnAuth *auth,
-		 HttpConnCallback callback)
+		 HttpConnCallback callback,
+		 void *data)
 {
 
 	HttpConn *http_conn = g_new0(HttpConn, 1);
@@ -237,6 +239,7 @@ http_conn_create(PurpleAccount *account,
 	http_conn->content_type = g_strdup(content_type);
 	http_conn->auth = auth;
 	http_conn->callback = callback;
+	http_conn->data = data;
 
 	http_conn->gsc = purple_ssl_connect(account, /* can we pass just NULL ? */
 					    host,
@@ -417,7 +420,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		g_free(http_conn->content_type);
 		
 		if (http_conn->callback) {
-			(*http_conn->callback)(msg->response, msg->body);
+			(*http_conn->callback)(msg->response, msg->body, http_conn->data);
 		}
 	}
 }

@@ -44,8 +44,12 @@ be great to implement too.
 */
 
 #include "debug.h"
+#include "xmlnode.h"
 
 #include "sipe.h"
+/* for xmlnode_get_descendant */
+#include "sipe-utils.h"
+
 #include "http-conn.h"
 #include "sipe-ews.h"
 
@@ -138,14 +142,68 @@ be great to implement too.
 
 
 struct sipe_ews {
-	int state;
+	char *as_url;
+	char *oof_url;
+	char *oab_url;
 };
 
 static void
-sipe_ews_process_oof_response(int return_code,
-			      const char *body)
+sipe_ews_free(struct sipe_ews* ews)
 {
-	
+	g_free(ews->as_url);
+	g_free(ews->oof_url);
+	g_free(ews->oab_url);
+	g_free(ews);
+}
+
+static void
+sipe_ews_process_oof_response(int return_code,
+			      const char *body,
+			      void *data)
+{
+	//struct sipe_ews *ews = data;	
+}
+
+static void
+sipe_ews_process_autodiscover(int return_code,
+			      const char *body,
+			      void *data)
+{
+	struct sipe_ews *ews = data;
+
+	if (return_code == 200 && body) {
+		xmlnode *node;
+		/** ref: [MS-OXDSCLI] */
+		xmlnode *xml = xmlnode_from_str(body, strlen(body));
+
+		/* Protocols */
+		for (node = xmlnode_get_descendant(xml, "Response", "Account", "Protocol", NULL);
+		     node;
+		     node = xmlnode_get_next_twin(node))
+		{
+			char *type = xmlnode_get_data(xmlnode_get_child(node, "Type"));
+			if (!strcmp("EXCH", type)) {
+				ews->as_url  = xmlnode_get_data(xmlnode_get_child(node, "ASUrl"));
+				ews->oof_url = xmlnode_get_data(xmlnode_get_child(node, "OOFUrl"));
+				ews->oab_url = xmlnode_get_data(xmlnode_get_child(node, "OABUrl"));
+
+				purple_debug_info("sipe", "sipe_ews_process_autodiscover:as_url %s\n",
+					ews->as_url ? ews->as_url : "");
+				purple_debug_info("sipe", "sipe_ews_process_autodiscover:oof_url %s\n",
+					ews->oof_url ? ews->oof_url : "");
+				purple_debug_info("sipe", "sipe_ews_process_autodiscover:oab_url %s\n",
+					ews->oab_url ? ews->oab_url : "");
+
+				g_free(type);
+				break;
+			} else {
+				g_free(type);
+				continue;
+			}
+		}
+
+		xmlnode_free(xml);
+	}
 }
 
 void
@@ -154,29 +212,56 @@ sipe_ews_initialize(struct sipe_account_data *sip)
 	char *body;
 	HttpConn *http_conn;
 	HttpConnAuth *auth;
-	
-	//if (!sip->ews) {
-		//sip->ews = g_new0(struct sipe_ews, 1);
-	//}
-
-	body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, "alice@cosmo.local");
+	/* or take the values from acc config (later) */
+	char *email = sip->username;
+	char *maildomain = sip->sipdomain;
+	char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
+	char *autodisc_url = "/Autodiscover/Autodiscover.xml";
+	char *autodisc_1_host = g_strdup_printf("Autodiscover.%s", maildomain);
+	char *autodisc_2_host = g_strdup(maildomain);
+	struct sipe_ews *ews = g_new0(struct sipe_ews, 1);
 					   
 	auth = g_new0(HttpConnAuth, 1);	
 	auth->domain = sip->authdomain;
 	auth->user = sip->authuser;
 	auth->password = sip->password;
 	
+	if (!ews->as_url) {
+		body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, email);	
+		http_conn = http_conn_create(
+					 sip->account,
+					 HTTP_CONN_SSL,
+					 autodisc_1_host,
+					 443, /* https */
+					 autodisc_url,
+					 body,
+					 "text/xml",
+					 auth,
+					 (HttpConnCallback)sipe_ews_process_autodiscover,
+					 ews);	
+		g_free(body);
+		//close/free conn
+	}
+	
+	body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, email);	
 	http_conn = http_conn_create(
 				 sip->account,
 				 HTTP_CONN_SSL,
 				 "cosmo-ocs-r2.cosmo.local",
-				 443,
+				 443, /* https */
 				 "/EWS/Exchange.asmx", /* or https://cosmo-ocs-r2.cosmo.local/EWS/Exchange.asmx */
 				 body,
 				 "text/xml; charset=UTF-8",
 				 auth,
-				 (HttpConnCallback)sipe_ews_process_oof_response);	
+				 (HttpConnCallback)sipe_ews_process_oof_response,
+				 ews);	
 	g_free(body);
+	
+	g_free(autodisc_srv);
+	g_free(autodisc_1_host);
+	g_free(autodisc_2_host);
+	
+	sipe_ews_free(ews);
 }
 
 

@@ -37,7 +37,7 @@ struct http_conn_struct;
 typedef struct http_conn_struct HttpConn;
 
 /** callback */
-typedef void (*HttpConnCallback) (int return_code, const char *body);
+typedef void (*HttpConnCallback) (int return_code, const char *body, void *data);
 
 HttpConn *
 http_conn_create(PurpleAccount *account,
@@ -48,7 +48,8 @@ http_conn_create(PurpleAccount *account,
 		 const char *body,
 		 const char *content_type,
 		 HttpConnAuth *auth,
-		 HttpConnCallback callback);
+		 HttpConnCallback callback,
+		 void *data);
 
 void
 http_conn_auth_free(struct http_conn_auth* auth);
