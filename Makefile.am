@@ -32,4 +32,4 @@ MAINTAINERCLEANFILES = \
 	mkinstalldirs
 
 tests:
-	pushd src; make tests; popd;
+	$(MAKE) -C src/core tests

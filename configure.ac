@@ -165,7 +165,8 @@ AC_CONFIG_FILES(
 	pixmaps/16/Makefile 
 	pixmaps/22/Makefile 
 	pixmaps/48/Makefile 
-	src/Makefile]
+	src/Makefile
+	src/core/Makefile]
 )
 
 dnl generate files

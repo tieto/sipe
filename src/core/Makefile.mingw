@@ -1,0 +1,102 @@
+#
+# Makefile.mingw
+#
+# Author: zup@sbox.tugraz.at
+# Date 8/28/07
+# Description: Makefile for win32 (mingw) version of libsipe
+#
+
+OLD_PIDGIN_TREE_TOP := $(PIDGIN_TREE_TOP)
+PIDGIN_TREE_TOP := ../$(OLD_PIDGIN_TREE_TOP)
+
+include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
+
+TARGET = libsipe
+TYPE = PLUGIN
+
+# Static or Plugin...
+ifeq ($(TYPE),STATIC)
+  DEFINES += -DSTATIC
+  DLL_INSTALL_DIR =	$(PURPLE_INSTALL_DIR)
+else
+ifeq ($(TYPE),PLUGIN)
+  DLL_INSTALL_DIR =	$(PURPLE_INSTALL_PLUGINS_DIR)
+endif
+endif
+
+DEFINES += -DSIPE_VERSION=\"$(VERSION)\"
+DEFINES += -DGETTEXT_PACKAGE=\"pidgin-sipe\"
+DEFINES += -DUSE_KERBEROS=1
+##
+## INCLUDE PATHS
+##
+INCLUDE_PATHS +=	-I. \
+			-I$(GTK_TOP)/include \
+			-I$(GTK_TOP)/include/glib-2.0 \
+			-I$(GTK_TOP)/lib/glib-2.0/include \
+			-I$(PURPLE_TOP) \
+			-I$(PURPLE_TOP)/win32 \
+			-I$(PIDGIN_TREE_TOP)
+
+LIB_PATHS +=		-L$(GTK_TOP)/lib \
+			-L$(PURPLE_TOP)
+
+##
+##  SOURCES, OBJECTS
+##
+C_SRC =			sipe.c \
+			sipe-chat.c \
+			sipe-conf.c \
+			sipe-dialog.c \
+			sipe-session.c \
+			sipe-utils.c \
+			sipe-cal.c \
+			sipmsg.c \
+			sipe-sign.c \
+			sip-sec.c \
+			sip-sec-ntlm.c \
+			sip-sec-sspi.c \
+			sip-csta.c \
+			uuid.c
+
+OBJECTS = 		$(C_SRC:%.c=%.o)
+
+##
+## LIBRARIES
+##
+LIBS =	\
+			-lglib-2.0 \
+			-lws2_32 \
+			-lintl \
+			-lSecur32 \
+			-lpurple
+
+include $(PIDGIN_COMMON_RULES)
+
+##
+## TARGET DEFINITIONS
+##
+.PHONY: all clean install
+
+all: $(TARGET).dll
+
+$(OBJECTS): $(PURPLE_CONFIG_H)
+
+$(TARGET).dll: $(PURPLE_DLL).a $(OBJECTS)
+	$(CC) -shared $(OBJECTS) $(LIB_PATHS) $(LIBS) $(DLL_LD_FLAGS) -o $(TARGET).dll
+
+##
+## CLEAN RULES
+##
+clean:
+	rm -f $(OBJECTS)
+	rm -f $(TARGET).dll
+  
+rmbak:
+	rm -f *~
+	
+install:
+	test -z "$(DLL_INSTALL_DIR)" || mkdir -p "$(DLL_INSTALL_DIR)"
+	/usr/bin/install -c $(TARGET).dll '$(DLL_INSTALL_DIR)'
+
+include $(PIDGIN_COMMON_TARGETS)
