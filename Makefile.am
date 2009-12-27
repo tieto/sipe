@@ -17,7 +17,6 @@ CLEANFILES = \
 MAINTAINERCLEANFILES = \
 	compile \
 	INSTALL \
-	config.h.in \
 	aclocal.m4 \
 	ltmain.sh \
 	Makefile.in \

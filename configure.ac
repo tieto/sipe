@@ -157,7 +157,7 @@ AM_LANGINFO_CODESET
 
 dnl substitutions and generated files
 AC_CONFIG_FILES(
-	[src/config.h]
+	[]
 	[Makefile 
 	pixmaps/Makefile 
 	m4macros/Makefile
