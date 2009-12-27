@@ -51,9 +51,24 @@ be great to implement too.
 
 
 /**
- * GetUserOofSettingsRequest request to Exchange Web Services
+ * Autodiscover request for Exchange Web Services
+ * @param email (%s) Ex.: alice@cosmo.local
+ */
+#define SIPE_EWS_AUTODISCOVER_REQUEST \
+"<?xml version=\"1.0\"?>"\
+"<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/outlook/requestschema/2006\">"\
+  "<Request>"\
+    "<EMailAddress>%s</EMailAddress>"\
+    "<AcceptableResponseSchema>"\
+      "http://schemas.microsoft.com/exchange/autodiscover/outlook/responseschema/2006a"\
+    "</AcceptableResponseSchema>"\
+  "</Request>"\
+"</Autodiscover>"
+
+/**
+ * GetUserOofSettingsRequest SOAP request to Exchange Web Services
  * to obtain our Out-of-office (OOF) information.
- * @param email (%s) Ex.: Alice@cosmo.local
+ * @param email (%s) Ex.: alice@cosmo.local
  */
 #define SIPE_EWS_USER_OOF_SETTINGS_REQUEST \
 "<?xml version=\"1.0\" encoding=\"utf-8\"?>"\
@@ -64,6 +79,60 @@ be great to implement too.
         "<Address>%s</Address>"\
       "</Mailbox>"\
     "</GetUserOofSettingsRequest>"\
+  "</soap:Body>"\
+"</soap:Envelope>"
+
+/**
+ * GetUserAvailabilityRequest SOAP request to Exchange Web Services
+ * to obtain our Availability (FreeBusy, WorkingHours, Meetings) information.
+ * @param email      (%s) Ex.: alice@cosmo.local
+ * @param start_time (%s) Ex.: 2009-12-06T00:00:00
+ * @param end_time   (%s) Ex.: 2009-12-09T23:59:59
+ */
+#define SIPE_EWS_USER_AVAILABILITY_REQUEST \
+"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\
+"<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""\
+              " xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\""\
+              " xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\""\
+              " xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">"\
+  "<soap:Body>"\
+    "<GetUserAvailabilityRequest xmlns=\"http://schemas.microsoft.com/exchange/services/2006/messages\""\
+                " xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\">"\
+      "<t:TimeZone xmlns=\"http://schemas.microsoft.com/exchange/services/2006/types\">"\
+        "<Bias>0</Bias>"\
+        "<StandardTime>"\
+          "<Bias>0</Bias>"\
+          "<Time>00:00:00</Time>"\
+          "<DayOrder>0</DayOrder>"\
+          "<Month>0</Month>"\
+          "<DayOfWeek>Sunday</DayOfWeek>"\
+        "</StandardTime>"\
+        "<DaylightTime>"\
+          "<Bias>0</Bias>"\
+          "<Time>00:00:00</Time>"\
+          "<DayOrder>0</DayOrder>"\
+          "<Month>0</Month>"\
+          "<DayOfWeek>Sunday</DayOfWeek>"\
+        "</DaylightTime>"\
+      "</t:TimeZone>"\
+      "<MailboxDataArray>"\
+        "<t:MailboxData>"\
+          "<t:Email>"\
+            "<t:Address>%s</t:Address>"\
+          "</t:Email>"\
+          "<t:AttendeeType>Required</t:AttendeeType>"\
+          "<t:ExcludeConflicts>false</t:ExcludeConflicts>"\
+        "</t:MailboxData>"\
+      "</MailboxDataArray>"\
+      "<t:FreeBusyViewOptions>"\
+        "<t:TimeWindow>"\
+          "<t:StartTime>%s</t:StartTime>"\
+          "<t:EndTime>%s</t:EndTime>"\
+        "</t:TimeWindow>"\
+        "<t:MergedFreeBusyIntervalInMinutes>15</t:MergedFreeBusyIntervalInMinutes>"\
+        "<t:RequestedView>DetailedMerged</t:RequestedView>"\
+      "</t:FreeBusyViewOptions>"\
+    "</GetUserAvailabilityRequest>"\
   "</soap:Body>"\
 "</soap:Envelope>"
 
