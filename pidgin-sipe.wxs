@@ -17,7 +17,7 @@
 			  <Directory Id='plugins' Name='plugins'>
 				<Component Id='MainExecutable' Guid='C0F1C152-2A98-11DE-9F53-817056D89593'>
 				  <File Id='LibsipeDLL' Name='libsipe.dll' DiskId='1'
-					Source='src\libsipe.dll' Vital='yes'>
+					Source='src\core\libsipe.dll' Vital='yes'>
 				  </File>
 				</Component>
 			  </Directory>
