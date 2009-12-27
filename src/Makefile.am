@@ -59,14 +59,9 @@ libsipe_la_LDFLAGS = \
 	$(KRB5_LDFLAGS)
 
 libsipe_la_LIBADD = \
-        $(GLIB_LIBS) $(PURPLE_LIBS) $(KRB5_LIBS)
-
-
-if SIPE_STATIC
-libsipe_la_LIBADD += $(SIPE_LIBA)
-else
-libsipe_la_LIBADD += $(SIPE_LIBS)
-endif
+        $(GLIB_LIBS) \
+	$(PURPLE_LIBS) \
+	$(KRB5_LIBS)
 
 tests: tests.c $(libsipe_la_SOURCES)
 	$(CC) $(libsipe_la_CFLAGS) $(libsipe_la_LIBADD) .libs/libsipe.so tests.c -o tests; \

@@ -141,18 +141,6 @@ dnl check for inet_aton
 AC_CHECK_FUNC(inet_aton,,
 	[AC_CHECK_LIB(resolv, inet_aton,, [AC_ERROR(inet_aton not found)])])
 
-dnl static linking
-SIPE_LIBA=`$PKG_CONFIG sipe --variable=libarchive`
-AC_SUBST(SIPE_LIBA)
-
-AC_ARG_ENABLE(static-sipe,
-	[AS_HELP_STRING([--enable-static-sipe],
-			[statically linked plugin [default=no]])],
-	,
-	sipe_static="no")
-
-AM_CONDITIONAL(SIPE_STATIC, test $sipe_static = yes)
-
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
 LOCALE_CPPFLAGS='-DLOCALEDIR=\"$(prefix)/$(DATADIRNAME)/locale\"'
@@ -185,14 +173,6 @@ AC_OUTPUT()
 
 dnl additional info for the user
 echo
-echo -n "Simple SIPE linking mode : "
-if test "$sipe_static" = "yes" ; then
-	echo "static"
-	echo "Simple SIPE library...      : $SIPE_LIBA"
-else
-	echo "dynamic"
-fi
-
 if test "$kerberos" != "no" ; then
 	echo
 	echo "Compiling with kerberos 5 support"
