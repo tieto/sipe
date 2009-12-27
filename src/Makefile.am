@@ -63,10 +63,15 @@ libsipe_la_LIBADD = \
 	$(PURPLE_LIBS) \
 	$(KRB5_LIBS)
 
-tests: tests.c $(libsipe_la_SOURCES)
-	$(CC) $(libsipe_la_CFLAGS) $(libsipe_la_LIBADD) .libs/libsipe.so tests.c -o tests; \
-	LD_LIBRARY_PATH=.libs ./tests; \
-	rm tests;
+#
+# NOTE: compiling tests requires dbus headers, e.g.
+#
+#   make CC="gcc -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include" tests
+#
+tests: tests.c .libs/libsipe.so
+	$(CC) $(libsipe_la_CFLAGS) $^ -o $@
+	LD_LIBRARY_PATH=.libs ./tests
+	rm tests
 
 # Remove any libsipe.so from the old incorrect installation location
 install-exec-local:

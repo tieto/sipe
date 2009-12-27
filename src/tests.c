@@ -184,6 +184,8 @@ int main()
 	/* end tests from MS-SIPRE */
 
 	printf ("\nFinished With Tests; %d successs %d failures\n", successes, failures);
+
+	return(0);
 }
 
 /*
