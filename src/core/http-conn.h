@@ -42,14 +42,15 @@ typedef void (*HttpConnCallback) (int return_code, const char *body, void *data)
 HttpConn *
 http_conn_create(PurpleAccount *account,
 		 const char *conn_type,
-		 const char *host,
-		 int port,
-		 const char *url,
+		 const char *full_url,
 		 const char *body,
 		 const char *content_type,
 		 HttpConnAuth *auth,
 		 HttpConnCallback callback,
 		 void *data);
+
+void
+http_conn_close(HttpConn *http_conn);
 
 void
 http_conn_auth_free(struct http_conn_auth* auth);

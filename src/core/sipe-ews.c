@@ -360,38 +360,6 @@ sipe_ews_process_autodiscover(int return_code,
 	}
 }
 
-/** 
- * Extracts host, port and relative url
- * Ex. url: https://machine.domain.Contoso.com/EWS/Exchange.asmx
- *
- * Allocates memory, must be g_free'd.
- */
-static void
-sipe_ews_parse_url(const char *url,
-		   char **host,
-		   int *port,
-		   char **rel_url)
-{
-	char **parts = g_strsplit(url, "://", 2);
-	char *no_proto = parts[1] ? g_strdup(parts[1]) : g_strdup(parts[0]);
-	int port_tmp = !strcmp(parts[0], "https") ? 443 : 80;
-	char *tmp;
-	char *host_port;
-
-	g_strfreev(parts);
-	tmp = strstr(no_proto, "/");
-	if (tmp && rel_url) *rel_url = g_strdup(tmp);
-	host_port = tmp ? g_strndup(no_proto, tmp - no_proto) : g_strdup(no_proto);
-	g_free(no_proto);	
-	
-	parts = g_strsplit(host_port, ":", 2);
-	*host = g_strdup(parts[0]);
-	*port = parts[1] ? atoi(parts[1]) : port_tmp;
-	g_strfreev(parts);
-
-	g_free(host_port);	
-}
-
 void
 sipe_ews_initialize(struct sipe_account_data *sip)
 {
@@ -402,9 +370,8 @@ sipe_ews_initialize(struct sipe_account_data *sip)
 	char *email = sip->username;
 	char *maildomain = sip->sipdomain;
 	char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
-	char *autodisc_url = "/Autodiscover/Autodiscover.xml";
-	char *autodisc_1_host = g_strdup_printf("Autodiscover.%s", maildomain);
-	char *autodisc_2_host = g_strdup(maildomain);
+	char *autodisc_1_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
+	char *autodisc_2_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
 	struct sipe_ews *ews = g_new0(struct sipe_ews, 1);
 
 	auth = g_new0(HttpConnAuth, 1);	
@@ -417,9 +384,7 @@ sipe_ews_initialize(struct sipe_account_data *sip)
 		http_conn = http_conn_create(
 					 sip->account,
 					 HTTP_CONN_SSL,
-					 autodisc_1_host,
-					 443, /* https */
-					 autodisc_url,
+					 autodisc_1_url,
 					 body,
 					 "text/xml",
 					 auth,
@@ -430,9 +395,6 @@ sipe_ews_initialize(struct sipe_account_data *sip)
 	}
 
 	if (ews->as_url) {
-		char *host;
-		int port;
-		char *url;
 		time_t end;
 		time_t now = time(NULL);
 		const char *start_str;
@@ -453,52 +415,36 @@ sipe_ews_initialize(struct sipe_account_data *sip)
 		start_str = purple_utf8_strftime(pattern, gmtime(&ews->fb_start));
 		end_str = purple_utf8_strftime(pattern, gmtime(&end));
 
-		sipe_ews_parse_url(ews->as_url, &host, &port, &url);
-
 		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, email, start_str, end_str);	
 		http_conn = http_conn_create(
 					 sip->account,
 					 HTTP_CONN_SSL,
-					 host,
-					 port,
-					 url,
+					 ews->as_url,
 					 body,
 					 "text/xml; charset=UTF-8",
 					 auth,
 					 (HttpConnCallback)sipe_ews_process_avail_response,
 					 ews);
-		g_free(host);
-		g_free(url);
 		g_free(body);
 	}
 
 	if (ews->oof_url) {
-		char *host;
-		int port;
-		char *url;
-		
-		sipe_ews_parse_url(ews->oof_url, &host, &port, &url);
-
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, email);	
 		http_conn = http_conn_create(
 					 sip->account,
 					 HTTP_CONN_SSL,
-					 host,
-					 port,
-					 url,
+					 ews->oof_url,
 					 body,
 					 "text/xml; charset=UTF-8",
 					 auth,
 					 (HttpConnCallback)sipe_ews_process_oof_response,
 					 ews);
-		g_free(host);
-		g_free(url);
 		g_free(body);
 	}
 	
 	g_free(autodisc_srv);
-	g_free(autodisc_1_host);
-	g_free(autodisc_2_host);
+	g_free(autodisc_1_url);
+	g_free(autodisc_2_url);
 	
 	sipe_ews_free(ews);
 }

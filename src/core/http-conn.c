@@ -48,6 +48,7 @@
 
 
 struct http_conn_struct {
+	PurpleAccount *account;
 	char *conn_type;
 	char *host;
 	int port;
@@ -68,6 +69,20 @@ struct http_conn_struct {
 	int retries;
 };
 
+static void
+http_conn_free(HttpConn* http_conn)
+{
+	g_free(http_conn->conn_type);
+	g_free(http_conn->host);
+	g_free(http_conn->url);
+	g_free(http_conn->body);
+	g_free(http_conn->content_type);
+	// free conn?
+	// free sec_ctx?
+	
+	g_free(http_conn);
+}
+
 void
 http_conn_auth_free(struct http_conn_auth* auth)
 {
@@ -77,7 +92,37 @@ http_conn_auth_free(struct http_conn_auth* auth)
 	g_free(auth);
 }
 
-//@TODO: destroy http_conn
+/** 
+ * Extracts host, port and relative url
+ * Ex. url: https://machine.domain.Contoso.com/EWS/Exchange.asmx
+ *
+ * Allocates memory, must be g_free'd.
+ */
+static void
+http_conn_parse_url(const char *url,
+		    char **host,
+		    int *port,
+		    char **rel_url)
+{
+	char **parts = g_strsplit(url, "://", 2);
+	char *no_proto = parts[1] ? g_strdup(parts[1]) : g_strdup(parts[0]);
+	int port_tmp = !strcmp(parts[0], "https") ? 443 : 80;
+	char *tmp;
+	char *host_port;
+
+	g_strfreev(parts);
+	tmp = strstr(no_proto, "/");
+	if (tmp && rel_url) *rel_url = g_strdup(tmp);
+	host_port = tmp ? g_strndup(no_proto, tmp - no_proto) : g_strdup(no_proto);
+	g_free(no_proto);	
+	
+	parts = g_strsplit(host_port, ":", 2);
+	*host = g_strdup(parts[0]);
+	*port = parts[1] ? atoi(parts[1]) : port_tmp;
+	g_strfreev(parts);
+
+	g_free(host_port);	
+}
 
 static void
 http_conn_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
@@ -212,16 +257,13 @@ http_conn_input0_cb_ssl(gpointer data,
 HttpConn *
 http_conn_create(PurpleAccount *account,
 		 const char *conn_type,
-		 const char *host,
-		 int port,
-		 const char *url,
+		 const char *full_url,
 		 const char *body,
 		 const char *content_type,
 		 HttpConnAuth *auth,
 		 HttpConnCallback callback,
 		 void *data)
 {
-
 	HttpConn *http_conn = g_new0(HttpConn, 1);
 
 	if (!strcmp(conn_type, HTTP_CONN_SSL) && 
@@ -230,25 +272,32 @@ http_conn_create(PurpleAccount *account,
 		purple_debug_info("sipe-http", _("SSL support is not installed. Either install SSL support or configure a different connection type in the account editor\n"));
 		return NULL;
 	}
+	
+	http_conn_parse_url(full_url, &http_conn->host, &http_conn->port, &http_conn->url);
 
+	http_conn->account = account;
 	http_conn->conn_type = g_strdup(conn_type);
-	http_conn->host = g_strdup(host);
-	http_conn->port = port;
-	http_conn->url = g_strdup(url);
 	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
 	http_conn->auth = auth;
 	http_conn->callback = callback;
 	http_conn->data = data;
 
-	http_conn->gsc = purple_ssl_connect(account, /* can we pass just NULL ? */
-					    host,
-					    port,
+	http_conn->gsc = purple_ssl_connect(http_conn->account, /* can we pass just NULL ? */
+					    http_conn->host,
+					    http_conn->port,
 					    http_conn_input0_cb_ssl,
 					    http_conn_ssl_connect_failure,
 					    http_conn);
 
 	return http_conn;
+}
+
+void
+http_conn_close(HttpConn *http_conn)
+{
+	http_conn_invalidate_ssl_connection(http_conn, _("User initiated"));
+	http_conn_free(http_conn);
 }
 
 
@@ -374,7 +423,26 @@ static void
 http_conn_process_input_message(HttpConn *http_conn,
 			        struct sipmsg *msg)
 {
-	if (msg->response == 401) {
+	/* Redirect */
+	if (msg->response == 300 ||
+	    msg->response == 301 ||
+	    msg->response == 302 ||
+	    msg->response == 307)
+	{
+		char *location = sipmsg_find_header(msg, "Location");
+		http_conn_parse_url(location, &http_conn->host, &http_conn->port, &http_conn->url);
+
+		http_conn_invalidate_ssl_connection(http_conn, _("Redirect"));
+
+		http_conn->gsc = purple_ssl_connect(http_conn->account,
+						    http_conn->host,
+						    http_conn->port,
+						    http_conn_input0_cb_ssl,
+						    http_conn_ssl_connect_failure,
+						    http_conn);
+	}
+	/* Authentication required */
+	else if (msg->response == 401) {
 		char *ptmp;
 		char **parts;
 		char *authorization;
@@ -414,7 +482,9 @@ http_conn_process_input_message(HttpConn *http_conn,
 		
 		http_conn_post(http_conn, authorization);
 		g_free(authorization);
-	} else {
+	}
+	/* Other response */
+	else {
 		http_conn->retries = 0;
 		g_free(http_conn->body);
 		g_free(http_conn->content_type);
