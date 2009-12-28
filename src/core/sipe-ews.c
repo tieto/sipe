@@ -152,6 +152,7 @@ struct sipe_ews {
 	time_t fb_start;
 	/* hex form */
 	char *free_busy;
+	char *working_hours_xml_str;
 	GSList *cal_events;
 };
 
@@ -179,6 +180,7 @@ sipe_ews_free(struct sipe_ews* ews)
 	g_free(ews->oab_url);
 	g_free(ews->oof_note);
 	g_free(ews->free_busy);
+	g_free(ews->working_hours_xml_str);
 	
 	sipe_ews_cal_events_free(ews->cal_events);
 	
@@ -211,8 +213,11 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		/* MergedFreeBusy */
 		g_free(ews->free_busy);
 		ews->free_busy = xmlnode_get_data(xmlnode_get_descendant(resp, "FreeBusyView", "MergedFreeBusy", NULL));
-		
-		
+
+		/* WorkingHours */
+		node = xmlnode_get_descendant(resp, "FreeBusyView", "WorkingHours", NULL);
+		ews->working_hours_xml_str = xmlnode_to_str(node, NULL);	
+
 		sipe_ews_cal_events_free(ews->cal_events);
 		ews->cal_events = NULL;
 		/* CalendarEvents */
@@ -244,11 +249,11 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			tmp = xmlnode_get_data(xmlnode_get_child(resp, "StartTime"));
 			cal_event->start_time = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
 			g_free(tmp);
-			
+
 			tmp = xmlnode_get_data(xmlnode_get_child(resp, "EndTime"));
 			cal_event->end_time = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
 			g_free(tmp);
-			
+
 			tmp = xmlnode_get_data(xmlnode_get_child(resp, "BusyType"));
 			if (!strcmp("Free", tmp)) {
 				cal_event->cal_status = SIPE_CAL_FREE;
