@@ -145,6 +145,8 @@ struct sipe_ews {
 	char *as_url;
 	char *oof_url;
 	char *oab_url;
+	
+	char *oof_note;
 };
 
 static void
@@ -153,6 +155,7 @@ sipe_ews_free(struct sipe_ews* ews)
 	g_free(ews->as_url);
 	g_free(ews->oof_url);
 	g_free(ews->oab_url);
+	g_free(ews->oof_note);
 	g_free(ews);
 }
 
@@ -161,7 +164,37 @@ sipe_ews_process_oof_response(int return_code,
 			      const char *body,
 			      void *data)
 {
-	//struct sipe_ews *ews = data;	
+	struct sipe_ews *ews = data;
+
+	if (return_code == 200 && body) {
+		char *state;
+		xmlnode *resp;
+		/** ref: [MS-OXWOOF] */
+		xmlnode *xml = xmlnode_from_str(body, strlen(body));
+		/* Envelope/Body/GetUserOofSettingsResponse/ResponseMessage@ResponseClass="Success"
+		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/OofState=Enabled
+		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/InternalReply/Message
+		 */
+		resp = xmlnode_get_descendant(xml, "Envelope", "Body", "GetUserOofSettingsResponse", NULL);
+		if (!resp) return; /* rather soap:Fault */
+		if (strcmp(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
+			return; /* Error response */
+		}
+
+		g_free(ews->oof_note);
+		state = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "OofState", NULL));
+		if (!strcmp(state, "Enabled")) {
+			char *tmp = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
+			char *html = purple_unescape_html(tmp);
+			
+			g_free(tmp);
+			ews->oof_note = purple_markup_strip_html(html);
+			g_free(tmp);
+		}
+		g_free(state);
+
+		xmlnode_free(xml);
+	}
 }
 
 static void
