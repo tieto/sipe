@@ -152,7 +152,24 @@ struct sipe_ews {
 	time_t fb_start;
 	/* hex form */
 	char *free_busy;
+	GSList *cal_events;
 };
+
+static void
+sipe_ews_cal_events_free(GSList *cal_events)
+{
+	GSList *entry = cal_events;
+	
+	if (!cal_events) return;
+	
+	while (entry) {
+		struct sipe_cal_event *cal_event = entry->data;
+		sipe_cal_event_free(cal_event);
+		entry = entry->next;
+	}
+
+	g_slist_free(cal_events);
+}
 
 static void
 sipe_ews_free(struct sipe_ews* ews)
@@ -162,6 +179,9 @@ sipe_ews_free(struct sipe_ews* ews)
 	g_free(ews->oab_url);
 	g_free(ews->oof_note);
 	g_free(ews->free_busy);
+	
+	sipe_ews_cal_events_free(ews->cal_events);
+	
 	g_free(ews);
 }
 
@@ -173,6 +193,7 @@ sipe_ews_process_avail_response(int return_code,
 	struct sipe_ews *ews = data;
 
 	if (return_code == 200 && body) {
+		xmlnode *node;
 		xmlnode *resp;
 		/** ref: [MS-OXWAVLS] */
 		xmlnode *xml = xmlnode_from_str(body, strlen(body));
@@ -187,8 +208,68 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			return; /* Error response */
 		}
 
+		/* MergedFreeBusy */
 		g_free(ews->free_busy);
 		ews->free_busy = xmlnode_get_data(xmlnode_get_descendant(resp, "FreeBusyView", "MergedFreeBusy", NULL));
+		
+		
+		sipe_ews_cal_events_free(ews->cal_events);
+		ews->cal_events = NULL;
+		/* CalendarEvents */
+		for (node = xmlnode_get_descendant(resp, "FreeBusyView", "CalendarEventArray", "CalendarEvent", NULL);
+		     node;
+		     node = xmlnode_get_next_twin(node))
+		{
+			char *tmp;
+/*
+      <CalendarEvent>
+	<StartTime>2009-12-07T13:30:00</StartTime>
+	<EndTime>2009-12-07T14:30:00</EndTime>
+	<BusyType>Busy</BusyType>
+	<CalendarEventDetails>
+	  <ID>0000000...</ID>
+	  <Subject>Lunch</Subject>
+	  <Location>Cafe</Location>
+	  <IsMeeting>false</IsMeeting>
+	  <IsRecurring>true</IsRecurring>
+	  <IsException>false</IsException>
+	  <IsReminderSet>true</IsReminderSet>
+	  <IsPrivate>false</IsPrivate>
+	</CalendarEventDetails>
+      </CalendarEvent>
+*/
+			struct sipe_cal_event *cal_event = g_new0(struct sipe_cal_event, 1);
+			ews->cal_events = g_slist_append(ews->cal_events, cal_event);
+
+			tmp = xmlnode_get_data(xmlnode_get_child(resp, "StartTime"));
+			cal_event->start_time = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			g_free(tmp);
+			
+			tmp = xmlnode_get_data(xmlnode_get_child(resp, "EndTime"));
+			cal_event->end_time = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			g_free(tmp);
+			
+			tmp = xmlnode_get_data(xmlnode_get_child(resp, "BusyType"));
+			if (!strcmp("Free", tmp)) {
+				cal_event->cal_status = SIPE_CAL_FREE;
+			} else if (!strcmp("Tentative", tmp)) {
+				cal_event->cal_status = SIPE_CAL_TENTATIVE;
+			} else if (!strcmp("Busy", tmp)) {
+				cal_event->cal_status = SIPE_CAL_BUSY;
+			} else if (!strcmp("OOF", tmp)) {
+				cal_event->cal_status = SIPE_CAL_OOF;
+			} else {
+				cal_event->cal_status = SIPE_CAL_NO_DATA;
+			}
+			g_free(tmp);
+			
+			cal_event->subject = xmlnode_get_data(xmlnode_get_descendant(resp, "CalendarEventDetails", "Subject", NULL));
+			cal_event->location = xmlnode_get_data(xmlnode_get_descendant(resp, "CalendarEventDetails", "Location", NULL));
+			
+			tmp = xmlnode_get_data(xmlnode_get_descendant(resp, "CalendarEventDetails", "IsMeeting", NULL));
+			cal_event->is_meeting = !strcmp(tmp, "true");
+			g_free(tmp);
+		}
 
 		xmlnode_free(xml);
 	}

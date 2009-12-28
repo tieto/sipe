@@ -29,6 +29,19 @@
 #define SIPE_CAL_OOF        3
 #define SIPE_CAL_NO_DATA    4
 
+struct sipe_cal_event {
+	time_t start_time;
+	time_t end_time;
+	/* SIPE_CAL_* */
+	int cal_status;
+	char *subject;
+	char *location;
+	int is_meeting;
+};
+
+void
+sipe_cal_event_free(struct sipe_cal_event* cal_event);
+
 /**
  * Converts struct tm to Epoch time_t considering timezone.
  *

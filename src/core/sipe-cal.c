@@ -132,6 +132,14 @@ sipe_cal_get_wday(char *wday_name)
 	return -1;
 }
 
+void
+sipe_cal_event_free(struct sipe_cal_event* cal_event)
+{
+	g_free(cal_event->subject);
+	g_free(cal_event->location);
+	g_free(cal_event);
+}
+
 static void
 sipe_setenv(const char *name,
 	    const char *value)
