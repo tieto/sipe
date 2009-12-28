@@ -29,6 +29,16 @@
 #define SIPE_CAL_OOF        3
 #define SIPE_CAL_NO_DATA    4
 
+/**
+ * Converts struct tm to Epoch time_t considering timezone.
+ *
+ * @param tz as defined for TZ environment variable.
+ *
+ * Reference: see timegm(3) - Linux man page
+ */
+time_t
+sipe_mktime_tz(struct tm *tm,
+	       const char* tz);
 
 /** Contains buddy's working hours information */
 struct sipe_cal_working_hours;

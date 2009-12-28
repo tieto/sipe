@@ -52,6 +52,7 @@ be great to implement too.
 
 #include "http-conn.h"
 #include "sipe-ews.h"
+#include "sipe-cal.h"
 
 
 /**
@@ -147,6 +148,10 @@ struct sipe_ews {
 	char *oab_url;
 	
 	char *oof_note;
+	
+	time_t fb_start;
+	/* hex form */
+	char *free_busy;
 };
 
 static void
@@ -156,7 +161,37 @@ sipe_ews_free(struct sipe_ews* ews)
 	g_free(ews->oof_url);
 	g_free(ews->oab_url);
 	g_free(ews->oof_note);
+	g_free(ews->free_busy);
 	g_free(ews);
+}
+
+static void
+sipe_ews_process_avail_response(int return_code,
+				const char *body,
+				void *data)
+{
+	struct sipe_ews *ews = data;
+
+	if (return_code == 200 && body) {
+		xmlnode *resp;
+		/** ref: [MS-OXWAVLS] */
+		xmlnode *xml = xmlnode_from_str(body, strlen(body));
+		/* Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/ResponseMessage@ResponseClass="Success"
+Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/MergedFreeBusy
+Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/CalendarEventArray/CalendarEvent
+Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/WorkingHours
+		 */
+		resp = xmlnode_get_descendant(xml, "Envelope", "Body", "GetUserAvailabilityResponse", "FreeBusyResponseArray", "FreeBusyResponse", NULL);
+		if (!resp) return; /* rather soap:Fault */
+		if (strcmp(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
+			return; /* Error response */
+		}
+
+		g_free(ews->free_busy);
+		ews->free_busy = xmlnode_get_data(xmlnode_get_descendant(resp, "FreeBusyView", "MergedFreeBusy", NULL));
+
+		xmlnode_free(xml);
+	}
 }
 
 static void
@@ -308,6 +343,48 @@ sipe_ews_initialize(struct sipe_account_data *sip)
 		//close/free conn
 	}
 
+	if (ews->as_url) {
+		char *host;
+		int port;
+		char *url;
+		time_t end;
+		time_t now = time(NULL);
+		const char *start_str;
+		const char *end_str;
+		struct tm *now_tm;
+		const char *pattern = "%Y-%m-%dT%H:%M:%SZ";
+
+		now_tm = gmtime(&now);
+		/* start -1 day, 00:00:00 */
+		now_tm->tm_sec = 0;
+		now_tm->tm_min = 0;
+		now_tm->tm_hour = 0;
+		ews->fb_start = sipe_mktime_tz(now_tm, "UTC");
+		ews->fb_start -= 24*60*60;
+		/* end = start + 4 days - 1 sec */
+		end = ews->fb_start + 4*(24*60*60) - 1;
+
+		start_str = purple_utf8_strftime(pattern, gmtime(&ews->fb_start));
+		end_str = purple_utf8_strftime(pattern, gmtime(&end));
+
+		sipe_ews_parse_url(ews->as_url, &host, &port, &url);
+
+		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, email, start_str, end_str);	
+		http_conn = http_conn_create(
+					 sip->account,
+					 HTTP_CONN_SSL,
+					 host,
+					 port,
+					 url,
+					 body,
+					 "text/xml; charset=UTF-8",
+					 auth,
+					 (HttpConnCallback)sipe_ews_process_avail_response,
+					 ews);
+		g_free(host);
+		g_free(url);
+		g_free(body);
+	}
 
 	if (ews->oof_url) {
 		char *host;

@@ -166,7 +166,7 @@ sipe_unsetenv(const char *name)
  *
  * Reference: see timegm(3) - Linux man page
  */
-static time_t
+time_t
 sipe_mktime_tz(struct tm *tm,
 	       const char* tz)
 {
