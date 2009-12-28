@@ -40,6 +40,14 @@ time_t
 sipe_mktime_tz(struct tm *tm,
 	       const char* tz);
 
+/**
+ * Converts hex representation of freebusy string as
+ * returned by Exchange Web Services to
+ * condenced and base64 encoded form
+ */ 
+char *
+sipe_cal_get_freebusy_base64(const char* freebusy_hex);
+
 /** Contains buddy's working hours information */
 struct sipe_cal_working_hours;
 
