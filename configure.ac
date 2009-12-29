@@ -156,6 +156,22 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 	CFLAGS=$ac_save_CFLAGS
 fi
 
+dnl check for telepathy
+AC_ARG_WITH([telepathy],
+	[AC_HELP_STRING([--with-telepathy],
+		[compile sipe plugin for telepathy clients @<:@default=autodetect@:>@])],
+	[test "$withval" = no || telepathy="yes"],
+	[telepathy="no"])
+if test "$telepathy" != "no"; then
+	AC_MSG_ERROR([telepathy support is not implemented yet.])
+fi
+
+dnl support for libpurple plugin
+AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, test "$telepathy" != "no")
+dnl NOTHING IMPLEMENTED YET!!!
+dnl if test "$telepathy" != "no"; then
+dnl fi
+
 dnl check for inet_aton
 AC_CHECK_FUNC(inet_aton,,
 	[AC_CHECK_LIB(resolv, inet_aton,, [AC_ERROR(inet_aton not found)])])
@@ -186,7 +202,8 @@ AC_CONFIG_FILES(
 	pixmaps/48/Makefile 
 	src/Makefile
 	src/core/Makefile
-	src/purple/Makefile]
+	src/purple/Makefile
+	src/telepathy/Makefile]
 )
 
 dnl generate files
@@ -195,7 +212,7 @@ AC_OUTPUT()
 dnl additional info for the user
 echo
 if test "$purple" != "no" ; then
-	echo "Compiling with libpurple plugin"
+	echo "Compiling libpurple plugin"
 	echo "PURPLE_CFLAGS  : $PURPLE_CFLAGS"
 	echo "PURPLE_LDFLAGS : $PURPLE_LDFLAGS"
 	echo "PURPLE_LIBS    : $PURPLE_LIBS"
@@ -203,6 +220,13 @@ else
 	echo "Skipping libpurple plugin"
 fi
 
+echo
+if test "$telepathy" != "no" ; then
+	echo "Compiling telepathy plugin"
+	echo "NOTHING IMPLEMENTED YET!!!"
+else
+	echo "Skipping telepathy plugin"
+fi
 if test "$kerberos" != "no" ; then
 	echo
 	echo "Compiling with kerberos 5 support"
