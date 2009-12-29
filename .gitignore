@@ -3,9 +3,8 @@
 *Makefile.in.in
 *.la
 *.lo
-src/.deps
-src/.libs
-src/config.h
+.deps
+.libs
 libtool
 config.*
 configure
@@ -22,7 +21,7 @@ intltool-update*
 ltmain.sh
 missing
 mkinstalldirs
-INSTALL
+/INSTALL
 m4macros/Makefile.in
 po/POTFILES
 po/stamp-it
