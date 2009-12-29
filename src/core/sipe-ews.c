@@ -217,12 +217,13 @@ sipe_ews_process_avail_response(int return_code,
 		xmlnode *resp;
 		/** ref: [MS-OXWAVLS] */
 		xmlnode *xml = xmlnode_from_str(body, strlen(body));
-		/* Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/ResponseMessage@ResponseClass="Success"
+		/*
+Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/ResponseMessage@ResponseClass="Success"
 Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/MergedFreeBusy
 Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/CalendarEventArray/CalendarEvent
 Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/WorkingHours
 		 */
-		resp = xmlnode_get_descendant(xml, "Envelope", "Body", "GetUserAvailabilityResponse", "FreeBusyResponseArray", "FreeBusyResponse", NULL);
+		resp = xmlnode_get_descendant(xml, "Body", "GetUserAvailabilityResponse", "FreeBusyResponseArray", "FreeBusyResponse", NULL);
 		if (!resp) return; /* rather soap:Fault */
 		if (strcmp(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
 			return; /* Error response */
@@ -264,15 +265,15 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			struct sipe_cal_event *cal_event = g_new0(struct sipe_cal_event, 1);
 			ews->cal_events = g_slist_append(ews->cal_events, cal_event);
 
-			tmp = xmlnode_get_data(xmlnode_get_child(resp, "StartTime"));
+			tmp = xmlnode_get_data(xmlnode_get_child(node, "StartTime"));
 			cal_event->start_time = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
 			g_free(tmp);
 
-			tmp = xmlnode_get_data(xmlnode_get_child(resp, "EndTime"));
+			tmp = xmlnode_get_data(xmlnode_get_child(node, "EndTime"));
 			cal_event->end_time = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
 			g_free(tmp);
 
-			tmp = xmlnode_get_data(xmlnode_get_child(resp, "BusyType"));
+			tmp = xmlnode_get_data(xmlnode_get_child(node, "BusyType"));
 			if (!strcmp("Free", tmp)) {
 				cal_event->cal_status = SIPE_CAL_FREE;
 			} else if (!strcmp("Tentative", tmp)) {
@@ -286,11 +287,11 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			}
 			g_free(tmp);
 			
-			cal_event->subject = xmlnode_get_data(xmlnode_get_descendant(resp, "CalendarEventDetails", "Subject", NULL));
-			cal_event->location = xmlnode_get_data(xmlnode_get_descendant(resp, "CalendarEventDetails", "Location", NULL));
+			cal_event->subject = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "Subject", NULL));
+			cal_event->location = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "Location", NULL));
 			
-			tmp = xmlnode_get_data(xmlnode_get_descendant(resp, "CalendarEventDetails", "IsMeeting", NULL));
-			cal_event->is_meeting = !strcmp(tmp, "true");
+			tmp = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "IsMeeting", NULL));
+			cal_event->is_meeting = tmp ? !strcmp(tmp, "true") : TRUE;
 			g_free(tmp);
 		}
 
@@ -319,7 +320,7 @@ sipe_ews_process_oof_response(int return_code,
 		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/OofState=Enabled
 		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/InternalReply/Message
 		 */
-		resp = xmlnode_get_descendant(xml, "Envelope", "Body", "GetUserOofSettingsResponse", NULL);
+		resp = xmlnode_get_descendant(xml, "Body", "GetUserOofSettingsResponse", NULL);
 		if (!resp) return; /* rather soap:Fault */
 		if (strcmp(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
 			return; /* Error response */
@@ -512,11 +513,12 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 void
 sipe_ews_initialize(struct sipe_account_data *sip)
 {
+	const char *email;
 	struct sipe_ews *ews = g_new0(struct sipe_ews, 1);
 
 	ews->account = sip->account;
-	/* or take the values from acc config (later) */
-	ews->email = g_strdup("alice@cosmo.local");//sip->username;
+	email = purple_account_get_string(sip->account, "email", NULL);
+	ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
 	
 	purple_debug_info("sipe", "sipe_ews_initialize: started.\n");
