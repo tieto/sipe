@@ -80,7 +80,7 @@ It implements the extended version of SIP/SIMPLE used by various products:
 
 
 %build
-%define config_params %{?config_krb5:%{config_krb5}}
+%define config_params %{?config_krb5:%{config_krb5}} --with-purple --without-telepathy
 %if 0%{?_with_git:1}
 # Copied from "rpmbuild --showrc" configure definition
 export CFLAGS="${CFLAGS:-%optflags}"
@@ -122,7 +122,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Sat Dec 12 2009 Stefan Becker <stefan.becker@nokia.com> 1.7.1-*git*
+* Tue Dec 29 2009 J. D. User <jduser@noreply.com> 1.7.1-*git*
+- add configure parameters for purple and telepathy
+
+* Sat Dec 12 2009 J. D. User <jduser@noreply.com> 1.7.1-*git*
 - add Epoch: for git packages to avoid update clash with official packages
 
 * Mon Nov 19 2009 J. D. User <jduser@noreply.com> 1.7.1

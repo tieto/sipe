@@ -157,13 +157,16 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 fi
 
 dnl check for telepathy
+telepathy="yes"
 AC_ARG_WITH([telepathy],
 	[AC_HELP_STRING([--with-telepathy],
 		[compile sipe plugin for telepathy clients @<:@default=autodetect@:>@])],
-	[test "$withval" = no || telepathy="yes"],
-	[telepathy="no"])
+	[test "$withval" = yes || telepathy="no"],
+	[test "$withval" = no  && telepathy="no"])
 if test "$telepathy" != "no"; then
-	AC_MSG_ERROR([telepathy support is not implemented yet.])
+	PKG_CHECK_MODULES(TELEPATHY, [telepathy-glib],
+		[],
+		[telepathy="no"])
 fi
 
 dnl support for libpurple plugin
@@ -215,7 +218,6 @@ echo
 if test "$purple" != "no" ; then
 	echo "Compiling libpurple plugin"
 	echo "PURPLE_CFLAGS  : $PURPLE_CFLAGS"
-	echo "PURPLE_LDFLAGS : $PURPLE_LDFLAGS"
 	echo "PURPLE_LIBS    : $PURPLE_LIBS"
 else
 	echo "Skipping libpurple plugin"
@@ -224,7 +226,11 @@ fi
 echo
 if test "$telepathy" != "no" ; then
 	echo "Compiling telepathy plugin"
+	echo
 	echo "NOTHING IMPLEMENTED YET!!!"
+	echo
+	echo "TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS"
+	echo "TELEPATHY_LIBS  : $TELEPATHY_LIBS"
 else
 	echo "Skipping telepathy plugin"
 fi
