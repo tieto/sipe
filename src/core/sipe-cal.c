@@ -686,29 +686,28 @@ sipe_cal_get_free_busy(struct sipe_buddy *buddy)
 char *
 sipe_cal_get_freebusy_base64(const char* freebusy_hex)
 {
-	int i;
-	const char *fb = freebusy_hex;
-	int fblen = strlen(fb);
-	int not_mod_4 = fblen % 4;
-	char *res = g_malloc0(fblen / 4 + 1);
-	char *res_base64;
-	
-	if (!fb) return NULL;
-	
-	for (i = 0; i < fblen; i += 4) {
-		res[i / 4] = (fb[i] - 0x30);
-		if (not_mod_4) {
-			res[i / 4] += (i + 1 < fblen) ? ((fb[i + 1] - 0x30) << 2) : 0;
-			res[i / 4] += (i + 2 < fblen) ? ((fb[i + 2] - 0x30) << 4) : 0;
-			res[i / 4] += (i + 3 < fblen) ? ((fb[i + 3] - 0x30) << 6) : 0;
-		} else {
-			res[i / 4] += ((fb[i + 1] - 0x30) << 2);
-			res[i / 4] += ((fb[i + 2] - 0x30) << 4);
-			res[i / 4] += ((fb[i + 3] - 0x30) << 6);
+	guint i = 0;
+	guint j = 0;
+	guint shift_factor = 0;
+	guint len, res_len;
+	guchar *res;
+	gchar *res_base64;
+
+	if (!freebusy_hex) return NULL;
+
+	len = strlen(freebusy_hex);
+	res_len = len / 4 + 1;
+	res = g_malloc0(res_len);
+	while (i < len) {
+		res[j] |= (freebusy_hex[i++] - '0') << shift_factor;
+		shift_factor += 2;
+		if (shift_factor == 8) {
+			shift_factor = 0;
+			j++;
 		}
 	}
-	res[(i / 4) + 1] = '\0';
-	res_base64 = purple_base64_encode(res, strlen(res));
+
+	res_base64 = purple_base64_encode(res, res_len);
 	g_free(res);
 	return res_base64;
 }
