@@ -34,7 +34,7 @@
 
 /**
  * HTTP POST headers
- * @param url (%s)		Ex.: https://cosmo-ocs-r2.cosmo.local/EWS/Exchange.asmx
+ * @param url (%s)		Ex.: /EWS/Exchange.asmx
  * @param host (%s)		Ex.: cosmo-ocs-r2.cosmo.local
  * @param content_length (%d)	length of body part
  * @param content_type (%s)	Ex.: text/xml; charset=UTF-8
@@ -77,7 +77,6 @@ http_conn_free(HttpConn* http_conn)
 	g_free(http_conn->url);
 	g_free(http_conn->body);
 	g_free(http_conn->content_type);
-	// free conn?
 	// free sec_ctx?
 	
 	g_free(http_conn);
@@ -355,7 +354,7 @@ http_conn_process_input(HttpConn *http_conn)
 		}
 
 		if (msg->body) {
-			purple_debug_info("sipe-http", "body:\n%s", msg->body);
+			purple_debug_info("sipe-http", "body:\n%s\n", msg->body);
 		}
 
 		http_conn_process_input_message(http_conn, msg);
@@ -373,7 +372,7 @@ http_conn_sendout_pkt(HttpConn *http_conn,
 	char *tmp;
 	int ret;
 
-	purple_debug(PURPLE_DEBUG_MISC, "sipe-http", "sending - %s******\n%s******\n", ctime(&currtime), tmp = fix_newlines(buf));
+	purple_debug(PURPLE_DEBUG_MISC, "sipe-http", "sending - %s******\n%s\n******\n", ctime(&currtime), tmp = fix_newlines(buf));
 	g_free(tmp);
 
 	if (http_conn->fd < 0) {
@@ -430,6 +429,8 @@ http_conn_process_input_message(HttpConn *http_conn,
 	    msg->response == 307)
 	{
 		char *location = sipmsg_find_header(msg, "Location");
+		g_free(http_conn->host);
+		g_free(http_conn->url);
 		http_conn_parse_url(location, &http_conn->host, &http_conn->port, &http_conn->url);
 
 		http_conn_invalidate_ssl_connection(http_conn, _("Redirect"));

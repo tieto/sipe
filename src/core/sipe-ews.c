@@ -141,8 +141,17 @@ be great to implement too.
   "</soap:Body>"\
 "</soap:Envelope>"
 
+#define SIPE_EWS_STATE_NONE			0
+#define SIPE_EWS_STATE_AUTODISCOVER_SUCCESS	1
+#define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	2
+#define SIPE_EWS_STATE_OOF_SUCCESS		3
 
 struct sipe_ews {
+	int state;
+	char *email;
+	HttpConnAuth *auth;
+	PurpleAccount *account;
+
 	char *as_url;
 	char *oof_url;
 	char *oab_url;
@@ -172,9 +181,12 @@ sipe_ews_cal_events_free(GSList *cal_events)
 	g_slist_free(cal_events);
 }
 
+/* plug in later
 static void
 sipe_ews_free(struct sipe_ews* ews)
 {
+	g_free(ews->email);
+	g_free(ews->auth);
 	g_free(ews->as_url);
 	g_free(ews->oof_url);
 	g_free(ews->oab_url);
@@ -186,6 +198,10 @@ sipe_ews_free(struct sipe_ews* ews)
 	
 	g_free(ews);
 }
+*/
+
+static void
+sipe_ews_run_state_machine(struct sipe_ews *ews);
 
 static void
 sipe_ews_process_avail_response(int return_code,
@@ -193,6 +209,8 @@ sipe_ews_process_avail_response(int return_code,
 				void *data)
 {
 	struct sipe_ews *ews = data;
+	
+	purple_debug_info("sipe", "sipe_ews_process_avail_response: cb started.\n");
 
 	if (return_code == 200 && body) {
 		xmlnode *node;
@@ -277,6 +295,9 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		}
 
 		xmlnode_free(xml);
+		
+		ews->state = SIPE_EWS_STATE_AVAILABILITY_SUCCESS;
+		sipe_ews_run_state_machine(ews);
 	}
 }
 
@@ -286,6 +307,8 @@ sipe_ews_process_oof_response(int return_code,
 			      void *data)
 {
 	struct sipe_ews *ews = data;
+	
+	purple_debug_info("sipe", "sipe_ews_process_oof_response: cb started.\n");
 
 	if (return_code == 200 && body) {
 		char *state;
@@ -315,6 +338,9 @@ sipe_ews_process_oof_response(int return_code,
 		g_free(state);
 
 		xmlnode_free(xml);
+		
+		ews->state = SIPE_EWS_STATE_OOF_SUCCESS;
+		sipe_ews_run_state_machine(ews);
 	}
 }
 
@@ -324,6 +350,8 @@ sipe_ews_process_autodiscover(int return_code,
 			      void *data)
 {
 	struct sipe_ews *ews = data;
+	
+	purple_debug_info("sipe", "sipe_ews_process_autodiscover: cb started.\n");
 
 	if (return_code == 200 && body) {
 		xmlnode *node;
@@ -357,50 +385,48 @@ sipe_ews_process_autodiscover(int return_code,
 		}
 
 		xmlnode_free(xml);
+
+		ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+		sipe_ews_run_state_machine(ews);
 	}
 }
 
-void
-sipe_ews_initialize(struct sipe_account_data *sip)
+static void
+sipe_ews_do_autodiscover(struct sipe_ews *ews,
+			 const char* autodiscover_url)
 {
 	char *body;
 	HttpConn *http_conn;
-	HttpConnAuth *auth;
-	/* or take the values from acc config (later) */
-	char *email = sip->username;
-	char *maildomain = sip->sipdomain;
-	char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
-	char *autodisc_1_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
-	char *autodisc_2_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
-	struct sipe_ews *ews = g_new0(struct sipe_ews, 1);
 
-	auth = g_new0(HttpConnAuth, 1);	
-	auth->domain = sip->authdomain;
-	auth->user = sip->authuser;
-	auth->password = sip->password;
+	purple_debug_info("sipe", "sipe_ews_initialize: going autodiscover url=%s\n", autodiscover_url ? autodiscover_url : "");
 
-	if (!ews->as_url) {
-		body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, email);	
-		http_conn = http_conn_create(
-					 sip->account,
-					 HTTP_CONN_SSL,
-					 autodisc_1_url,
-					 body,
-					 "text/xml",
-					 auth,
-					 (HttpConnCallback)sipe_ews_process_autodiscover,
-					 ews);	
-		g_free(body);
-		//close/free conn
-	}
+	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, ews->email);	
+	http_conn = http_conn_create(
+				 ews->account,
+				 HTTP_CONN_SSL,
+				 autodiscover_url,
+				 body,
+				 "text/xml",
+				 ews->auth,
+				 (HttpConnCallback)sipe_ews_process_autodiscover,
+				 ews);	
+	g_free(body);
+}
 
+static void
+sipe_ews_do_avail_request(struct sipe_ews *ews)
+{
 	if (ews->as_url) {
+		char *body;
+		HttpConn *http_conn;
 		time_t end;
 		time_t now = time(NULL);
-		const char *start_str;
-		const char *end_str;
+		char *start_str;
+		char *end_str;
 		struct tm *now_tm;
 		const char *pattern = "%Y-%m-%dT%H:%M:%SZ";
+		
+		purple_debug_info("sipe", "sipe_ews_initialize: going Availability req.\n");
 
 		now_tm = gmtime(&now);
 		/* start -1 day, 00:00:00 */
@@ -412,41 +438,98 @@ sipe_ews_initialize(struct sipe_account_data *sip)
 		/* end = start + 4 days - 1 sec */
 		end = ews->fb_start + 4*(24*60*60) - 1;
 
-		start_str = purple_utf8_strftime(pattern, gmtime(&ews->fb_start));
-		end_str = purple_utf8_strftime(pattern, gmtime(&end));
+		start_str = g_strdup(purple_utf8_strftime(pattern, gmtime(&ews->fb_start)));
+		end_str = g_strdup(purple_utf8_strftime(pattern, gmtime(&end)));
 
-		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, email, start_str, end_str);	
+		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, ews->email, start_str, end_str);	
 		http_conn = http_conn_create(
-					 sip->account,
+					 ews->account,
 					 HTTP_CONN_SSL,
 					 ews->as_url,
 					 body,
 					 "text/xml; charset=UTF-8",
-					 auth,
+					 ews->auth,
 					 (HttpConnCallback)sipe_ews_process_avail_response,
 					 ews);
 		g_free(body);
+		g_free(start_str);
+		g_free(end_str);
 	}
+}
 
+static void
+sipe_ews_do_oof_request(struct sipe_ews *ews)
+{
 	if (ews->oof_url) {
-		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, email);	
+		char *body;
+		HttpConn *http_conn;
+
+		purple_debug_info("sipe", "sipe_ews_initialize: going OOF req.\n");
+	
+		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);	
 		http_conn = http_conn_create(
-					 sip->account,
+					 ews->account,
 					 HTTP_CONN_SSL,
 					 ews->oof_url,
 					 body,
 					 "text/xml; charset=UTF-8",
-					 auth,
+					 ews->auth,
 					 (HttpConnCallback)sipe_ews_process_oof_response,
 					 ews);
 		g_free(body);
 	}
+}
+
+static void
+sipe_ews_run_state_machine(struct sipe_ews *ews)
+{
+	switch (ews->state) {
+		case SIPE_EWS_STATE_NONE:
+			{
+				char *maildomain = strstr(ews->email, "@") + 1;
+				char *autodisc_1_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
+				char *autodisc_2_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
+			
+				sipe_ews_do_autodiscover(ews, autodisc_1_url);
+				sipe_ews_do_autodiscover(ews, autodisc_2_url);
+				
+				g_free(autodisc_1_url);
+				g_free(autodisc_2_url);
+				break;
+			}
+		case SIPE_EWS_STATE_AUTODISCOVER_SUCCESS:
+			sipe_ews_do_avail_request(ews);
+			break;
+		case SIPE_EWS_STATE_AVAILABILITY_SUCCESS:
+			sipe_ews_do_oof_request(ews);
+			break;
+		case SIPE_EWS_STATE_OOF_SUCCESS:
+			
+			break;
+	}
+}
+
+void
+sipe_ews_initialize(struct sipe_account_data *sip)
+{
+	struct sipe_ews *ews = g_new0(struct sipe_ews, 1);
+
+	ews->account = sip->account;
+	/* or take the values from acc config (later) */
+	ews->email = g_strdup("alice@cosmo.local");//sip->username;
+	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
 	
-	g_free(autodisc_srv);
-	g_free(autodisc_1_url);
-	g_free(autodisc_2_url);
+	purple_debug_info("sipe", "sipe_ews_initialize: started.\n");
+
+	ews->auth = g_new0(HttpConnAuth, 1);
+	ews->auth->domain = sip->authdomain;
+	ews->auth->user = sip->authuser;
+	ews->auth->password = sip->password;
 	
-	sipe_ews_free(ews);
+	sipe_ews_run_state_machine(ews);
+	
+	//sipe_ews_free(ews);
+	purple_debug_info("sipe", "sipe_ews_initialize: finished.\n");
 }
 
 
