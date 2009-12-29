@@ -23,7 +23,7 @@
 
 /**
  * Operates with HTTPS connection.
- * Support NTLM authentication, redirect.
+ * Support Negotiate (Windows only) and NTLM authentications, redirect.
 */
 
 #include "debug.h"
@@ -445,7 +445,9 @@ http_conn_process_input_message(HttpConn *http_conn,
 	/* Authentication required */
 	else if (msg->response == 401) {
 		char *ptmp;
+		char *tmp;
 		char **parts;
+		SipSecAuthType auth_type;
 		char *authorization;
 		char *output_toked_base64;
 		char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
@@ -455,13 +457,26 @@ http_conn_process_input_message(HttpConn *http_conn,
 		
 		http_conn->retries++;
 		ptmp = sipmsg_find_auth_header(msg, "NTLM");
+		auth_type = AUTH_TYPE_NTLM;
+#ifdef _WIN32
+		if ((tmp = sipmsg_find_auth_header(msg, "Negotiate"))) {
+			ptmp = tmp;
+			auth_type = AUTH_TYPE_NEGOTIATE;
+		}
+#endif		
 		if (!ptmp) {
-			purple_debug_info("sipe-http", "http_conn_process_input_message: Only NTLM authentication is supported in the moment, exiting\n");
+			purple_debug_info("sipe-http", "http_conn_process_input_message: Only %s supported in the moment, exiting\n",
+#ifdef _WIN32
+				"NTLM and Negotiate authentications are"
+#else 				
+				"NTLM authentication is"
+#endif
+			);
 		}
 		
 		if (!http_conn->sec_ctx) {
 			sip_sec_create_context(&http_conn->sec_ctx,
-					       AUTH_TYPE_NTLM,
+					       auth_type,
 					       use_sso,
 					       1,
 					       http_conn->auth && http_conn->auth->domain ? http_conn->auth->domain : "",
@@ -478,7 +493,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		g_free(spn);
 		g_strfreev(parts);
 
-		authorization = g_strdup_printf("NTLM %s", output_toked_base64);
+		authorization = g_strdup_printf("%s %s", auth_type == AUTH_TYPE_NTLM ? "NTLM" : "Negotiate", output_toked_base64);
 		g_free(output_toked_base64);
 		
 		http_conn_post(http_conn, authorization);

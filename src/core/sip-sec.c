@@ -33,6 +33,7 @@
 #ifndef _WIN32
 #include "sip-sec-ntlm.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
+#define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 
 #ifdef USE_KERBEROS
 #include "sip-sec-krb5.h"
@@ -45,10 +46,12 @@
 #ifdef USE_KERBEROS
 #include "sip-sec-sspi.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
+#define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
 #else /* USE_KERBEROS */
 #include "sip-sec-ntlm.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
+#define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
 #endif /* USE_KERBEROS */
 
@@ -78,10 +81,11 @@ sip_sec_create_context(SipSecContext *context,
 
 	/* Map authentication type to module initialization hook & name */
 	static const sip_sec_create_context_func const auth_to_hook[] = {
-		sip_sec_create_context__NONE,     /* AUTH_TYPE_UNSET    */
-		sip_sec_create_context__NONE,     /* AUTH_TYPE_DIGEST   */
-		sip_sec_create_context__NTLM,     /* AUTH_TYPE_NTLM     */
-		sip_sec_create_context__Kerberos, /* AUTH_TYPE_KERBEROS */
+		sip_sec_create_context__NONE,      /* AUTH_TYPE_UNSET     */
+		sip_sec_create_context__NONE,      /* AUTH_TYPE_DIGEST    */
+		sip_sec_create_context__NTLM,      /* AUTH_TYPE_NTLM      */
+		sip_sec_create_context__Kerberos,  /* AUTH_TYPE_KERBEROS  */
+		sip_sec_create_context__Negotiate, /* AUTH_TYPE_NEGOTIATE */
 	};
 
 	/* @TODO: Can *context != NULL actually happen? */

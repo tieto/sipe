@@ -35,8 +35,9 @@
 #include "sip-sec-sspi.h"
 
 /* Mechanism names */
-#define SSPI_MECH_NTLM     "NTLM"
-#define SSPI_MECH_KERBEROS "Kerberos"
+#define SSPI_MECH_NTLM      "NTLM"
+#define SSPI_MECH_KERBEROS  "Kerberos"
+#define SSPI_MECH_NEGOTIATE "Negotiate"
 
 #define ISC_REQ_IDENTIFY               0x00002000
 
@@ -322,7 +323,8 @@ sip_sec_create_context__sspi(SipSecAuthType type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM : SSPI_MECH_KERBEROS;
+	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM : 
+			((type == AUTH_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS : SSPI_MECH_NEGOTIATE);
 
 	return((SipSecContext) context);
 }

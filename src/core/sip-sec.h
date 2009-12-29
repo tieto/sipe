@@ -31,7 +31,8 @@ typedef enum
 	AUTH_TYPE_UNSET = 0,
 	AUTH_TYPE_DIGEST,
 	AUTH_TYPE_NTLM,
-	AUTH_TYPE_KERBEROS
+	AUTH_TYPE_KERBEROS,
+	AUTH_TYPE_NEGOTIATE
 } SipSecAuthType;
 
 //// Sipe convenience methods ////
