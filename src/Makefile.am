@@ -1,4 +1,4 @@
-SUBDIRS = core
+SUBDIRS = core api
 
 if SIPE_INCLUDE_PURPLE
 SUBDIRS += purple

@@ -202,6 +202,7 @@ AC_CONFIG_FILES(
 	pixmaps/48/Makefile 
 	src/Makefile
 	src/core/Makefile
+	src/api/Makefile
 	src/purple/Makefile
 	src/telepathy/Makefile]
 )
