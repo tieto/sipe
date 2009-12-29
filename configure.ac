@@ -67,13 +67,18 @@ AC_SUBST(QUALITY_CFLAGS)
 dnl Check for pkg-config before using it
 PKG_PROG_PKG_CONFIG
 
-AC_ARG_WITH(krb5, [AC_HELP_STRING([--with-krb5=PREFIX], [compile sipe plugin with Kerberos 5 support])], kerberos="$withval", kerberos="no")
+AC_ARG_WITH([krb5],
+	[AC_HELP_STRING([--with-krb5=PREFIX],
+		[compile sipe plugin with Kerberos 5 support @<:@default=no@:>@])],
+	[test "$withval" = no || kerberos="$withval"],
+	[kerberos="no"])
 
 dnl check for Kerberos
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
 AC_SUBST(KRB5_LIBS)
 
+AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
 if test "$kerberos" != "no" ; then
         if test "$kerberos" != "yes" ; then
                 KRB5_CFLAGS="-I${kerberos}/include"
@@ -101,22 +106,35 @@ if test "$kerberos" != "no" ; then
 	LIBS="$savedLIBS"
 	AC_DEFINE(USE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
 fi
-AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
 
 dnl check for libpurple
-PKG_CHECK_MODULES(PURPLE, [purple >= 2.3.1],
-	[AC_DEFINE(HAVE_PIDGIN, 1, [Define if we've found libpurple])])
-dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
-PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion purple | cut -d. -f 1`
-AC_SUBST(PURPLE_MAJOR_VERSION)
+purple="yes"
+AC_ARG_WITH([purple],
+	[AC_HELP_STRING([--with-purple],
+		[compile sipe plugin for libpurple clients @<:@default=autodetect@:>@])],
+	[test "$withval" = yes || purple="no"],
+	[test "$withval" = no  && purple="no"])
+if test "$purple" != "no"; then
+	PKG_CHECK_MODULES(PURPLE, [purple >= 2.3.1],
+		[],
+		[purple="no"])
+fi
 
-dnl let user now if he has a 32- and 64-bit header conflict...
-AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
-ac_save_CFLAGS=$CFLAGS
-CFLAGS="$PURPLE_CFLAGS -Werror -Wall -Wextra"
-AC_COMPILE_IFELSE(
-	AC_LANG_PROGRAM(
-		[
+dnl support for libpurple plugin
+AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, test "$purple" != "no")
+if test "$purple" != "no"; then
+
+	dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
+	PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion purple | cut -d. -f 1`
+	AC_SUBST(PURPLE_MAJOR_VERSION)
+
+	dnl let user now if he has a 32- and 64-bit header conflict...
+	AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
+	ac_save_CFLAGS=$CFLAGS
+	CFLAGS="$PURPLE_CFLAGS -Werror -Wall -Wextra"
+	AC_COMPILE_IFELSE(
+		AC_LANG_PROGRAM(
+			[
 #include <glib.h>
 #include <cipher.h>
 
@@ -126,16 +144,17 @@ void testfunc(unsigned long len)
   PurpleCipherContext *rc4 = NULL;
   purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(len));
 }
-		],
-		[testfunc(16);]),
-	[AC_MSG_RESULT(none)],
-	[AC_MSG_RESULT(failed)
-	 AC_ERROR(conflicts found.
+			],
+			[testfunc(16);]),
+		[AC_MSG_RESULT(none)],
+		[AC_MSG_RESULT(failed)
+		 AC_ERROR(conflicts found.
 
 Check that you have the correct glib/libpurple headers installed for
 your architecture or set PURPLE_CFLAGS to override the system defaults. 
 )])
-CFLAGS=$ac_save_CFLAGS
+	CFLAGS=$ac_save_CFLAGS
+fi
 
 dnl check for inet_aton
 AC_CHECK_FUNC(inet_aton,,
@@ -166,7 +185,8 @@ AC_CONFIG_FILES(
 	pixmaps/22/Makefile 
 	pixmaps/48/Makefile 
 	src/Makefile
-	src/core/Makefile]
+	src/core/Makefile
+	src/purple/Makefile]
 )
 
 dnl generate files
@@ -174,11 +194,20 @@ AC_OUTPUT()
 
 dnl additional info for the user
 echo
+if test "$purple" != "no" ; then
+	echo "Compiling with libpurple plugin"
+	echo "PURPLE_CFLAGS  : $PURPLE_CFLAGS"
+	echo "PURPLE_LDFLAGS : $PURPLE_LDFLAGS"
+	echo "PURPLE_LIBS    : $PURPLE_LIBS"
+else
+	echo "Skipping libpurple plugin"
+fi
+
 if test "$kerberos" != "no" ; then
 	echo
 	echo "Compiling with kerberos 5 support"
-	echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"
 	echo "KRB5_CFLAGS    : $KRB5_CFLAGS"
+	echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"
 	echo "KRB5_LIBS      : $KRB5_LIBS"
 fi
 

@@ -1,4 +1,8 @@
 SUBDIRS = core
 
+if SIPE_INCLUDE_PURPLE
+SUBDIRS += purple
+endif
+
 MAINTAINERCLEANFILES = \
 	Makefile.in
