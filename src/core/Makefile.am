@@ -25,6 +25,10 @@ libsipe_la_SOURCES = \
 	sipe-utils.c \
 	sipe-cal.h \
 	sipe-cal.c \
+	http-conn.h \
+	http-conn.c \
+	sipe-ews.h \
+	sipe-ews.c \
 	sip-csta.c \
 	sip-csta.h \
 	sip-sec.h \

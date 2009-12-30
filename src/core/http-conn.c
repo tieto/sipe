@@ -26,6 +26,9 @@
  * Support Negotiate (Windows only) and NTLM authentications, redirect.
 */
 
+#include <string.h>
+#include <errno.h>
+
 #include "debug.h"
 #include "sipe.h"
 #include "sipe-utils.h"
@@ -118,7 +121,7 @@ http_conn_close0(HttpConn **http_conn, const char *message)
 static void
 http_conn_close(HttpConn **http_conn)
 {
-	http_conn_close0(http_conn, _("User initiated"));
+	http_conn_close0(http_conn, "User initiated");
 }
 
 /** 
@@ -165,13 +168,13 @@ http_conn_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
 
         switch(error) {
 		case PURPLE_SSL_CONNECT_FAILED:
-			message = _("Connection failed\n");
+			message = "Connection failed";
 			break;
 		case PURPLE_SSL_HANDSHAKE_FAILED:
-			message = _("SSL handshake failed\n");
+			message = "SSL handshake failed";
 			break;
 		case PURPLE_SSL_CERTIFICATE_INVALID:
-			message = _("SSL certificate invalid\n");
+			message = "SSL certificate invalid";
 			break;
         }
 
@@ -247,13 +250,13 @@ http_conn_input_cb_ssl(gpointer data,
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn->data);
 			}
-			http_conn_close0(&http_conn, _("SSL read error"));
+			http_conn_close0(&http_conn, "SSL read error");
 			return;
 		} else if (firstread && (len == 0)) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn->data);
 			}
-			http_conn_close0(&http_conn, _("Server has disconnected"));
+			http_conn_close0(&http_conn, "Server has disconnected");
 			return;
 		}
 
@@ -305,7 +308,7 @@ http_conn_create(PurpleAccount *account,
 	if (!strcmp(conn_type, HTTP_CONN_SSL) && 
 	    !purple_ssl_is_supported())
 	{
-		purple_debug_info("sipe-http", _("SSL support is not installed. Either install SSL support or configure a different connection type in the account editor\n"));
+		purple_debug_info("sipe-http", "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor\n");
 		return NULL;
 	}
 	
@@ -427,8 +430,6 @@ http_conn_sendout_pkt(HttpConn *http_conn,
 	if (ret < writelen) {
 		purple_debug_info("sipe-http", "http_conn_sendout_pkt: ret < writelen, exiting\n");
 	}
-	
-	//TODO: call callback with error
 }
 
 static void 
@@ -494,8 +495,9 @@ http_conn_process_input_message(HttpConn *http_conn,
 		http_conn->retries++;
 		ptmp = sipmsg_find_auth_header(msg, "NTLM");
 		auth_type = AUTH_TYPE_NTLM;
+		tmp = sipmsg_find_auth_header(msg, "Negotiate");
 #ifdef _WIN32
-		if ((tmp = sipmsg_find_auth_header(msg, "Negotiate"))) {
+		if (tmp) {
 			ptmp = tmp;
 			auth_type = AUTH_TYPE_NEGOTIATE;
 		}

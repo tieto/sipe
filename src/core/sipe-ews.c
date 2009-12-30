@@ -42,6 +42,7 @@ http://sourceforge.net/projects/sipe/forums/forum/688535/topic/3403462
 Similar functionality for Lotus Notes/Domino, iCalendar/CalDAV/Google would
 be great to implement too.
 */
+#include <string.h>
 
 #include "debug.h"
 #include "xmlnode.h"
