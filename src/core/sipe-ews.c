@@ -143,6 +143,8 @@ be great to implement too.
 
 #define SIPE_EWS_STATE_NONE			0
 #define SIPE_EWS_STATE_AUTODISCOVER_SUCCESS	1
+#define SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE	-1
+#define SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE	-2
 #define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	2
 #define SIPE_EWS_STATE_OOF_SUCCESS		3
 
@@ -151,6 +153,8 @@ struct sipe_ews {
 	char *email;
 	HttpConnAuth *auth;
 	PurpleAccount *account;
+	int auto_disco_method;
+	int is_disabled;
 
 	char *as_url;
 	char *oof_url;
@@ -395,6 +399,15 @@ sipe_ews_process_autodiscover(int return_code,
 
 		ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		sipe_ews_run_state_machine(ews);
+	
+	} else if (return_code < 0) {
+		switch (ews->auto_disco_method) {
+			case 1:
+				ews->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
+			case 2:
+				ews->state = SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE; break;
+		}		
+		sipe_ews_run_state_machine(ews);
 	}
 }
 
@@ -491,16 +504,30 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 		case SIPE_EWS_STATE_NONE:
 			{
 				char *maildomain = strstr(ews->email, "@") + 1;
-				char *autodisc_1_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
-				char *autodisc_2_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
-			
-				sipe_ews_do_autodiscover(ews, autodisc_1_url);
-				//sipe_ews_do_autodiscover(ews, autodisc_2_url);
+				char *autodisc_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
 				
-				g_free(autodisc_1_url);
-				g_free(autodisc_2_url);
+				ews->auto_disco_method = 1;
+
+				sipe_ews_do_autodiscover(ews, autodisc_url);
+
+				g_free(autodisc_url);
 				break;
 			}
+		case SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE:
+			{
+				char *maildomain = strstr(ews->email, "@") + 1;
+				char *autodisc_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
+				
+				ews->auto_disco_method = 2;
+
+				sipe_ews_do_autodiscover(ews, autodisc_url);
+
+				g_free(autodisc_url);
+				break;
+			}
+		case SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE:
+			ews->is_disabled = TRUE;
+			break;
 		case SIPE_EWS_STATE_AUTODISCOVER_SUCCESS:
 			sipe_ews_do_avail_request(ews);
 			break;
@@ -533,6 +560,11 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 		ews->auth->domain = sip->authdomain;
 		ews->auth->user = sip->authuser;
 		ews->auth->password = sip->password;
+	}
+	
+	if(ews->is_disabled) {
+		purple_debug_info("sipe", "sipe_ews_update_calendar: disabled, exiting.\n");
+		return;
 	}
 
 	sipe_ews_run_state_machine(ews);

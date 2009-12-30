@@ -103,6 +103,24 @@ http_conn_set_close(HttpConn* http_conn,
 	http_conn->do_close = do_close;
 }
 
+static void
+http_conn_invalidate_ssl_connection(HttpConn *http_conn);
+
+static void
+http_conn_close0(HttpConn **http_conn, const char *message)
+{
+	purple_debug_info("sipe-http", "http_conn_close: closing http connection: %s\n", message ? message : "");
+	
+	http_conn_invalidate_ssl_connection(*http_conn);
+	http_conn_free(http_conn);
+}
+
+static void
+http_conn_close(HttpConn **http_conn)
+{
+	http_conn_close0(http_conn, _("User initiated"));
+}
+
 /** 
  * Extracts host, port and relative url
  * Ex. url: https://machine.domain.Contoso.com/EWS/Exchange.asmx
@@ -141,22 +159,26 @@ http_conn_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
                              gpointer data)
 {
         HttpConn *http_conn = data;
+	const char *message = NULL;
 
         http_conn->gsc = NULL;
 
         switch(error) {
 		case PURPLE_SSL_CONNECT_FAILED:
-			purple_debug_info("sipe-http", _("Connection failed\n"));
+			message = _("Connection failed\n");
 			break;
 		case PURPLE_SSL_HANDSHAKE_FAILED:
-			purple_debug_info("sipe-http", _("SSL handshake failed\n"));
+			message = _("SSL handshake failed\n");
 			break;
 		case PURPLE_SSL_CERTIFICATE_INVALID:
-			purple_debug_info("sipe-http", _("SSL certificate invalid\n"));
+			message = _("SSL certificate invalid\n");
 			break;
         }
-	
-	//@TODO call callback with error code
+
+	if (http_conn->callback) {
+		(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn->data);
+	}
+	http_conn_close0(&http_conn, message);
 }
 
 static void
@@ -170,12 +192,9 @@ http_conn_connection_remove(struct sip_connection *conn)
 }
 
 static void
-http_conn_invalidate_ssl_connection(HttpConn *http_conn,
-				    const char *msg)
+http_conn_invalidate_ssl_connection(HttpConn *http_conn)
 {
 	PurpleSslConnection *gsc = http_conn ? http_conn->gsc : NULL;
-
-	purple_debug_error("sipe-http", "%s\n", msg);
 
 	/* Invalidate this connection. Next send will open a new one */
 	if (gsc) {
@@ -225,10 +244,16 @@ http_conn_input_cb_ssl(gpointer data,
 			/* Try again later */
 			return;
 		} else if (len < 0) {
-			http_conn_invalidate_ssl_connection(http_conn, _("SSL read error"));
+			if (http_conn->callback) {
+				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn->data);
+			}
+			http_conn_close0(&http_conn, _("SSL read error"));
 			return;
 		} else if (firstread && (len == 0)) {
-			http_conn_invalidate_ssl_connection(http_conn, _("Server has disconnected"));
+			if (http_conn->callback) {
+				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn->data);
+			}
+			http_conn_close0(&http_conn, _("Server has disconnected"));
 			return;
 		}
 
@@ -303,16 +328,6 @@ http_conn_create(PurpleAccount *account,
 
 	return http_conn;
 }
-
-static void
-http_conn_close(HttpConn **http_conn)
-{
-	purple_debug_info("sipe-http", "http_conn_close: closing http connection\n");
-	
-	http_conn_invalidate_ssl_connection(*http_conn, _("User initiated"));
-	http_conn_free(http_conn);
-}
-
 
 /* Data part */
 static void
@@ -447,11 +462,14 @@ http_conn_process_input_message(HttpConn *http_conn,
 	    msg->response == 307)
 	{
 		char *location = sipmsg_find_header(msg, "Location");
+		
+		purple_debug_info("sipe-http", "http_conn_process_input_message: Redirect to: %s\n", location ? location : "");
+		
 		g_free(http_conn->host);
 		g_free(http_conn->url);
 		http_conn_parse_url(location, &http_conn->host, &http_conn->port, &http_conn->url);
 
-		http_conn_invalidate_ssl_connection(http_conn, _("Redirect"));
+		http_conn_invalidate_ssl_connection(http_conn);
 
 		http_conn->gsc = purple_ssl_connect(http_conn->account,
 						    http_conn->host,
