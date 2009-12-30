@@ -403,7 +403,7 @@ sipe_ews_process_autodiscover(int return_code,
 		ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		sipe_ews_run_state_machine(ews);
 	
-	} else if (return_code < 0) {
+	} else {
 		switch (ews->auto_disco_method) {
 			case 1:
 				ews->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
