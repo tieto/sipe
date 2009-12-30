@@ -20,8 +20,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * Opaque context
+ */
 struct sipe_ews;
- 
+
+/**
+ * Connects to Exchange 2007/2010 Server's Web Services,
+ * pulls out our Availability and Out-of-Office (OOF) information
+ * and publishes it to Communications server.
+ *
+ * Advised schedule: 30 minutes.
+ */
 void
-sipe_ews_initialize(struct sipe_account_data *sip);
+sipe_ews_update_calendar(struct sipe_account_data *sip);
+
+/**
+ * Frees context
+ */
+void
+sipe_ews_free(struct sipe_ews* ews);
 

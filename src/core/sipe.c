@@ -72,6 +72,7 @@
 
 #include "sipe.h"
 #include "sipe-cal.h"
+#include "sipe-ews.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sip-csta.h"
@@ -6993,6 +6994,10 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 
 	sip->fd = -1;
 	sip->processing_input = FALSE;
+
+	if (sip->ews) {
+		sipe_ews_free((struct sipe_ews*)sip->ews);
+	}
 }
 
 /**
@@ -7267,17 +7272,33 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 	purple_notify_formatted(gc, NULL, " ", NULL, txt, NULL, NULL);
 }
 
-GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
-		    SIPE_UNUSED_PARAMETER gpointer context)
+static void sipe_republish_calendar(PurplePluginAction *action)
 {
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	struct sipe_account_data *sip = gc->proto_data;
+
+	sipe_ews_update_calendar(sip);
+}
+
+GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
+		    gpointer context)
+{
+	PurpleConnection *gc = (PurpleConnection *)context;
+	struct sipe_account_data *sip = gc->proto_data;
 	GList *menu = NULL;
 	PurplePluginAction *act;
+	const char* calendar = purple_account_get_string(sip->account, "calendar", "EXCH");
 
 	act = purple_plugin_action_new(_("About SIPE plugin"), sipe_show_about_plugin);
 	menu = g_list_prepend(menu, act);
 
 	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
 	menu = g_list_prepend(menu, act);
+
+	if (!strcmp(calendar, "EXCH")) {
+		act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
+		menu = g_list_prepend(menu, act);
+	}
 
 	menu = g_list_reverse(menu);
 
@@ -8335,6 +8356,15 @@ static void init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 #endif
+
+	option = purple_account_option_list_new(_("Calendar source"), "calendar", NULL);
+	purple_account_option_add_list_item(option, _("Exchange 2007/2010"), "EXCH");
+	purple_account_option_add_list_item(option, _("None"), "NONE");
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	option = purple_account_option_string_new(_("Email address\n(if different from Username)"), "email", "");
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
 	my_protocol = plugin;
 }
 

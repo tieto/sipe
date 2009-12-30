@@ -63,7 +63,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		g_free(msg);
 		return NULL;
 	}
-	if(strstr(parts[0],"SIP")) { /* numeric response */
+	if(strstr(parts[0],"SIP") || strstr(parts[0],"HTTP")) { /* numeric response */
 		msg->method = g_strdup(parts[2]);
 		msg->response = strtol(parts[1],NULL,10);
 	} else { /* request */

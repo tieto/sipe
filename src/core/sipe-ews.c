@@ -181,8 +181,7 @@ sipe_ews_cal_events_free(GSList *cal_events)
 	g_slist_free(cal_events);
 }
 
-/* plug in later
-static void
+void
 sipe_ews_free(struct sipe_ews* ews)
 {
 	g_free(ews->email);
@@ -198,7 +197,6 @@ sipe_ews_free(struct sipe_ews* ews)
 	
 	g_free(ews);
 }
-*/
 
 static void
 sipe_ews_run_state_machine(struct sipe_ews *ews);
@@ -505,33 +503,37 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 			sipe_ews_do_oof_request(ews);
 			break;
 		case SIPE_EWS_STATE_OOF_SUCCESS:
-			
+			ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 			break;
 	}
 }
 
 void
-sipe_ews_initialize(struct sipe_account_data *sip)
+sipe_ews_update_calendar(struct sipe_account_data *sip)
 {
-	const char *email;
-	struct sipe_ews *ews = g_new0(struct sipe_ews, 1);
-
-	ews->account = sip->account;
-	email = purple_account_get_string(sip->account, "email", NULL);
-	ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
-	
-	purple_debug_info("sipe", "sipe_ews_initialize: started.\n");
+	struct sipe_ews *ews = sip->ews;
 
-	ews->auth = g_new0(HttpConnAuth, 1);
-	ews->auth->domain = sip->authdomain;
-	ews->auth->user = sip->authuser;
-	ews->auth->password = sip->password;
+	purple_debug_info("sipe", "sipe_ews_update_calendar: started.\n");
+	
+	if (!ews) {
+		const char *email;
+		sip->ews = ews = g_new0(struct sipe_ews, 1);
+
+		ews->account = sip->account;
+		email = purple_account_get_string(sip->account, "email", NULL);
+		ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
+		
+		ews->auth = g_new0(HttpConnAuth, 1);
+		ews->auth->domain = sip->authdomain;
+		ews->auth->user = sip->authuser;
+		ews->auth->password = sip->password;
+	}
 	
 	sipe_ews_run_state_machine(ews);
 	
 	//sipe_ews_free(ews);
-	purple_debug_info("sipe", "sipe_ews_initialize: finished.\n");
+	purple_debug_info("sipe", "sipe_ews_update_calendar: finished.\n");
 }
 
 

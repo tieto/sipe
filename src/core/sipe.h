@@ -191,6 +191,7 @@ struct sipe_account_data {
 	gchar *realhostname;
 	int realport; /* port and hostname from SRV record */
 	gboolean processing_input;
+	void *ews;
 };
 
 struct sip_connection {

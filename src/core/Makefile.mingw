@@ -51,6 +51,8 @@ C_SRC =			sipe.c \
 			sipe-session.c \
 			sipe-utils.c \
 			sipe-cal.c \
+			http-conn.c \
+			sipe-ews.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
