@@ -241,7 +241,9 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 
 		/* WorkingHours */
 		node = xmlnode_get_descendant(resp, "FreeBusyView", "WorkingHours", NULL);
-		ews->working_hours_xml_str = xmlnode_to_str(node, NULL);	
+		ews->working_hours_xml_str = xmlnode_to_str(node, NULL);
+		purple_debug_info("sipe", "sipe_ews_process_avail_response: ews->working_hours_xml_str:\n%s\n",
+				  ews->working_hours_xml_str ? ews->working_hours_xml_str : "");		
 
 		sipe_ews_cal_events_free(ews->cal_events);
 		ews->cal_events = NULL;

@@ -446,6 +446,109 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 		"</note>"\
 	"</publication>"
 
+/**
+ * Publishes 'calendarData' category's WorkingHours.
+ *
+ * @param version	        (%u)  Ex.: 1
+ * @param email	                (%s)  Ex.: alice@cosmo.local
+ * @param working_hours_xml_str	(%s)  Ex.: <WorkingHours xmlns=.....
+ *
+ * @param version	        (%u)
+ *
+ * @param version	        (%u)
+ * @param email	                (%s)
+ * @param working_hours_xml_str	(%s)
+ *
+ * @param version	        (%u)
+ * @param email	                (%s)
+ * @param working_hours_xml_str	(%s)
+ *
+ * @param version	        (%u)
+ * @param email	                (%s)
+ * @param working_hours_xml_str	(%s)
+ *
+ * @param version	        (%u)
+ */
+#define SIPE_PUB_XML_WORKING_HOURS \
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"1\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">%s"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"100\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"200\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">%s"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"300\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">%s"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"400\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">%s"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"32000\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"
+
+/**
+ * Publishes 'calendarData' category's FreeBusy.
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ * @param email	                (%s)  Ex.: alice@cosmo.local
+ * @param fb_start_time_str	(%s)  Ex.: 2009-12-03T00:00:00Z
+ * @param free_busy_base64	(%s)  Ex.: AAAAAAAAAAAAAAAAAAAAA.....
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ * @param email	                (%s)  Ex.: alice@cosmo.local
+ * @param fb_start_time_str	(%s)  Ex.: 2009-12-03T00:00:00Z
+ * @param free_busy_base64	(%s)  Ex.: AAAAAAAAAAAAAAAAAAAAA.....
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ * @param email	                (%s)  Ex.: alice@cosmo.local
+ * @param fb_start_time_str	(%s)  Ex.: 2009-12-03T00:00:00Z
+ * @param free_busy_base64	(%s)  Ex.: AAAAAAAAAAAAAAAAAAAAA.....
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ */
+#define SIPE_PUB_XML_FREE_BUSY \
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"1\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"100\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"200\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">"\
+			"<freeBusy startTime=\"%s\" granularity=\"PT15M\" encodingVersion=\"1\">%s</freeBusy>"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\ instance=\"%u\" container=\"300\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">"\
+			"<freeBusy startTime=\"%s\" granularity=\"PT15M\" encodingVersion=\"1\">%s</freeBusy>"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"400\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">"\
+			"<freeBusy startTime=\"%s\" granularity=\"PT15M\" encodingVersion=\"1\">%s</freeBusy>"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"32000\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"
+
 
 #define sipe_soap(method, body) \
 "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
