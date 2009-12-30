@@ -158,6 +158,8 @@ struct sipe_ews {
 	
 	char *oof_note;
 	
+	HttpConn *http_conn;
+	
 	time_t fb_start;
 	/* hex form */
 	char *free_busy;
@@ -209,6 +211,8 @@ sipe_ews_process_avail_response(int return_code,
 	struct sipe_ews *ews = data;
 	
 	purple_debug_info("sipe", "sipe_ews_process_avail_response: cb started.\n");
+	
+	http_conn_set_close(ews->http_conn, TRUE);
 
 	if (return_code == 200 && body) {
 		xmlnode *node;
@@ -309,6 +313,8 @@ sipe_ews_process_oof_response(int return_code,
 	
 	purple_debug_info("sipe", "sipe_ews_process_oof_response: cb started.\n");
 
+	http_conn_set_close(ews->http_conn, TRUE);
+
 	if (return_code == 200 && body) {
 		char *state;
 		xmlnode *resp;
@@ -352,6 +358,8 @@ sipe_ews_process_autodiscover(int return_code,
 	
 	purple_debug_info("sipe", "sipe_ews_process_autodiscover: cb started.\n");
 
+	http_conn_set_close(ews->http_conn, TRUE);
+	
 	if (return_code == 200 && body) {
 		xmlnode *node;
 		/** ref: [MS-OXDSCLI] */
@@ -395,12 +403,11 @@ sipe_ews_do_autodiscover(struct sipe_ews *ews,
 			 const char* autodiscover_url)
 {
 	char *body;
-	HttpConn *http_conn;
 
 	purple_debug_info("sipe", "sipe_ews_initialize: going autodiscover url=%s\n", autodiscover_url ? autodiscover_url : "");
 
 	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, ews->email);	
-	http_conn = http_conn_create(
+	ews->http_conn = http_conn_create(
 				 ews->account,
 				 HTTP_CONN_SSL,
 				 autodiscover_url,
@@ -417,7 +424,6 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 {
 	if (ews->as_url) {
 		char *body;
-		HttpConn *http_conn;
 		time_t end;
 		time_t now = time(NULL);
 		char *start_str;
@@ -441,7 +447,7 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 		end_str = g_strdup(purple_utf8_strftime(pattern, gmtime(&end)));
 
 		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, ews->email, start_str, end_str);	
-		http_conn = http_conn_create(
+		ews->http_conn = http_conn_create(
 					 ews->account,
 					 HTTP_CONN_SSL,
 					 ews->as_url,
@@ -461,12 +467,11 @@ sipe_ews_do_oof_request(struct sipe_ews *ews)
 {
 	if (ews->oof_url) {
 		char *body;
-		HttpConn *http_conn;
 
 		purple_debug_info("sipe", "sipe_ews_initialize: going OOF req.\n");
 	
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);	
-		http_conn = http_conn_create(
+		ews->http_conn = http_conn_create(
 					 ews->account,
 					 HTTP_CONN_SSL,
 					 ews->oof_url,
@@ -490,7 +495,7 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 				char *autodisc_2_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
 			
 				sipe_ews_do_autodiscover(ews, autodisc_1_url);
-				sipe_ews_do_autodiscover(ews, autodisc_2_url);
+				//sipe_ews_do_autodiscover(ews, autodisc_2_url);
 				
 				g_free(autodisc_1_url);
 				g_free(autodisc_2_url);
@@ -515,7 +520,7 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 	struct sipe_ews *ews = sip->ews;
 
 	purple_debug_info("sipe", "sipe_ews_update_calendar: started.\n");
-	
+
 	if (!ews) {
 		const char *email;
 		sip->ews = ews = g_new0(struct sipe_ews, 1);
@@ -523,16 +528,15 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 		ews->account = sip->account;
 		email = purple_account_get_string(sip->account, "email", NULL);
 		ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
-		
+
 		ews->auth = g_new0(HttpConnAuth, 1);
 		ews->auth->domain = sip->authdomain;
 		ews->auth->user = sip->authuser;
 		ews->auth->password = sip->password;
 	}
-	
+
 	sipe_ews_run_state_machine(ews);
-	
-	//sipe_ews_free(ews);
+
 	purple_debug_info("sipe", "sipe_ews_update_calendar: finished.\n");
 }
 

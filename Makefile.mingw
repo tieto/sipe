@@ -15,11 +15,14 @@ WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
 export VERSION := $(shell cat VERSION)
 
-.PHONY: all clean install msi
+.PHONY: all clean install msi dev devinst
 
 all: 
 	$(MAKE) -C src -f $(MINGW_MAKEFILE)
 	$(MAKE) -C po -f $(MINGW_MAKEFILE)
+	
+dev: 
+	$(MAKE) -C src -f $(MINGW_MAKEFILE)
 
 clean:
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) clean
@@ -35,6 +38,9 @@ install: all
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) install
 	$(MAKE) -C po -f $(MINGW_MAKEFILE) install
 	$(MAKE) -C pixmaps -f $(MINGW_MAKEFILE) install
+	
+devinst: dev
+	$(MAKE) -C src -f $(MINGW_MAKEFILE) install
 	
 msi: all
 	SIPE_VERSION=$(VERSION) $(WIX3_HOME)/bin/candle $(WXS_NAME).wxs

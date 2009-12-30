@@ -67,19 +67,24 @@ struct http_conn_struct {
 	struct sip_connection *conn;
 	SipSecContext sec_ctx;
 	int retries;
+	
+	int do_close;
 };
 
 static void
-http_conn_free(HttpConn* http_conn)
+http_conn_free(HttpConn** http_conn)
 {
-	g_free(http_conn->conn_type);
-	g_free(http_conn->host);
-	g_free(http_conn->url);
-	g_free(http_conn->body);
-	g_free(http_conn->content_type);
+	if (!*http_conn) return;
+
+	g_free((*http_conn)->conn_type);
+	g_free((*http_conn)->host);
+	g_free((*http_conn)->url);
+	g_free((*http_conn)->body);
+	g_free((*http_conn)->content_type);
 	// free sec_ctx?
 	
-	g_free(http_conn);
+	g_free(*http_conn);
+	*http_conn = NULL;
 }
 
 void
@@ -89,6 +94,13 @@ http_conn_auth_free(struct http_conn_auth* auth)
 	g_free(auth->user);
 	g_free(auth->password);
 	g_free(auth);
+}
+
+void
+http_conn_set_close(HttpConn* http_conn,
+		    int do_close)
+{
+	http_conn->do_close = do_close;
 }
 
 /** 
@@ -292,10 +304,12 @@ http_conn_create(PurpleAccount *account,
 	return http_conn;
 }
 
-void
-http_conn_close(HttpConn *http_conn)
+static void
+http_conn_close(HttpConn **http_conn)
 {
-	http_conn_invalidate_ssl_connection(http_conn, _("User initiated"));
+	purple_debug_info("sipe-http", "http_conn_close: closing http connection\n");
+	
+	http_conn_invalidate_ssl_connection(*http_conn, _("User initiated"));
 	http_conn_free(http_conn);
 }
 
@@ -360,6 +374,10 @@ http_conn_process_input(HttpConn *http_conn)
 		http_conn_process_input_message(http_conn, msg);
 
 		sipmsg_free(msg);
+	}
+	
+	if (http_conn->do_close) {
+		http_conn_close(&http_conn);
 	}
 }
 
@@ -502,8 +520,6 @@ http_conn_process_input_message(HttpConn *http_conn,
 	/* Other response */
 	else {
 		http_conn->retries = 0;
-		g_free(http_conn->body);
-		g_free(http_conn->content_type);
 		
 		if (http_conn->callback) {
 			(*http_conn->callback)(msg->response, msg->body, http_conn->data);
