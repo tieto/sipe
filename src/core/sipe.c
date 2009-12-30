@@ -127,6 +127,7 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_PUB_DEVICE		"000"
 #define SIPE_PUB_STATE_MACHINE	"100"
 #define SIPE_PUB_STATE_USER	"200"
+#define SIPE_PUB_CALENDAR	"300"
 
 /** Allows to send typed messages from chat window again after account reinstantiation. */
 static void
@@ -2712,26 +2713,59 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 		guint device_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
 		guint machine_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
 		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER);
+		guint calendar_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR);
 
+		/* device */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2));
 
+		/* state:machine */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", machine_instance, 2));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", machine_instance, 3));
 
+		/* state:user */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 2));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 3));
 
+		/* note */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 200));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 300));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 400));
+
+		/* calendarData:WorkingHours */
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 1));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 100));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 200));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 300));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 400));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 32000));
+
+		/* calendarData:FreeBusy */
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 1));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 100));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 200));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 300));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 400));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 32000));
 
 		//purple_debug_info("sipe", "sipe_is_our_publication: sip->our_publication_keys length=%d\n",
 		//	  sip->our_publication_keys ? (int) g_slist_length(sip->our_publication_keys) : -1);
