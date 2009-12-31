@@ -2698,6 +2698,11 @@ free_publication(struct sipe_publication *publication)
 {
 	g_free(publication->category);
 	g_free(publication->note);
+	
+	g_free(publication->working_hours_xml_str);
+	g_free(publication->fb_start_str);
+	g_free(publication->free_busy_base64);
+	
 	g_free(publication);
 }
 
@@ -2995,6 +3000,19 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
 				if (xn_body) {
 					publication->note = xmlnode_get_data(xn_body);
+				}
+			}
+
+			/* filling publication->fb_start_str, free_busy_base64, working_hours_xml_str */
+			if (!strcmp(name, "calendarData") && (publication->container == 300)) {
+				xmlnode *xn_free_busy = xmlnode_get_descendant(node, "calendarData", "freeBusy", NULL);
+				xmlnode *xn_working_hours = xmlnode_get_descendant(node, "calendarData", "WorkingHours", NULL);
+				if (xn_free_busy) {
+					publication->fb_start_str = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
+					publication->free_busy_base64 = xmlnode_get_data(xn_free_busy);
+				}
+				if (xn_working_hours) {
+					publication->working_hours_xml_str = xmlnode_to_str(xn_working_hours, NULL);
 				}
 			}
 
@@ -6017,6 +6035,15 @@ sipe_publish_get_category_state_user(struct sipe_account_data *sip)
 }
 
 /**
+ * Compares two strings even in case both are NULL/empty
+ */
+static gboolean
+sipe_is_equal(const char* n1, const char* n2) {
+	return ((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
+	    || (n1 && n2 && !strcmp(n1, n2)); /* or not empty and equal */
+}
+
+/**
  * Returns 'note' XML part for publication.
  * Must be g_free'd after use.
  */
@@ -6027,6 +6054,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", 0, 200);
 	gchar *key_note_300 = g_strdup_printf("<%s><%u><%u>", "note", 0, 300);
 	gchar *key_note_400 = g_strdup_printf("<%s><%u><%u>", "note", 0, 400);
+
 	struct sipe_publication *publication_note_200 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_200);
 	struct sipe_publication *publication_note_300 =
@@ -6041,8 +6069,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 	g_free(key_note_300);
 	g_free(key_note_400);
 
-	if (((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
-	    || (n1 && n2 && !strcmp(n1, n2))) /* or not empty and equal */
+	if (sipe_is_equal(n1, n2))
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
 		return NULL; /* nothing to update */
@@ -6087,6 +6114,9 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 	struct sipe_publication *publication_cal_32000 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_32000);
 
+	const char *n1 = ews->working_hours_xml_str;
+	const char *n2 = publication_cal_300 ? publication_cal_300->working_hours_xml_str : NULL;
+
 	g_free(key_cal_1);
 	g_free(key_cal_100);
 	g_free(key_cal_200);
@@ -6099,15 +6129,11 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 		return NULL;
 	}
 
-	//const char *n1 = note;
-	//const char *n2 = publication_note_200 ? publication_note_200->note : NULL;
-
-	//if (((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
-	//    || (n1 && n2 && !strcmp(n1, n2))) /* or not empty and equal */
-	///{
-	//	purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
-	//	return NULL; /* nothing to update */
-	//}
+	if (sipe_is_equal(n1, n2))
+	{
+		purple_debug_info("sipe", "sipe_publish_get_category_cal_working_hours: WorkingHours has NOT changed. Exiting.\n");
+		return NULL; /* nothing to update */
+	}
 
 	return g_strdup_printf(SIPE_PUB_XML_WORKING_HOURS,
 				/* 1 */
@@ -6144,6 +6170,8 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	guint calendar_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR);
 	char *fb_start_str;
 	char *free_busy_base64;
+	const char *st;
+	const char *fb;
 	char *res;
 	
 	/* key is <category><instance><container> */
@@ -6181,16 +6209,15 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	
 	fb_start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
 	free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
+	
+	st = publication_cal_300 ? publication_cal_300->fb_start_str : NULL;
+	fb = publication_cal_300 ? publication_cal_300->free_busy_base64 : NULL;
 
-	//const char *n1 = note;
-	//const char *n2 = publication_note_200 ? publication_note_200->note : NULL;
-
-	//if (((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
-	//    || (n1 && n2 && !strcmp(n1, n2))) /* or not empty and equal */
-	///{
-	//	purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
-	//	return NULL; /* nothing to update */
-	//}
+	if (sipe_is_equal(st, fb_start_str) && sipe_is_equal(fb, free_busy_base64))
+	{
+		purple_debug_info("sipe", "sipe_publish_get_category_note: FreeBusy has NOT changed. Exiting.\n");
+		return NULL; /* nothing to update */
+	}
 
 	res = g_strdup_printf(SIPE_PUB_XML_FREE_BUSY,
 				/* 1 */
@@ -6220,7 +6247,7 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 				/* 32000 - Blocked */
 				calendar_instance,
 				publication_cal_32000 ? publication_cal_32000->version : 0
-			      );
+			     );
 
 	g_free(fb_start_str);
 	g_free(free_busy_base64);

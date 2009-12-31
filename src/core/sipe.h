@@ -111,6 +111,10 @@ struct sipe_publication {
 	int availability;
 	/** for 'note' category */
 	gchar *note;
+	/** for 'calendarData' category; 300(Team) container */
+	char *working_hours_xml_str;
+	char *fb_start_str;
+	char *free_busy_base64;
 };
 
 /** MS-PRES container */
