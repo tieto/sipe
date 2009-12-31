@@ -84,8 +84,11 @@ http_conn_free(HttpConn** http_conn)
 	g_free((*http_conn)->url);
 	g_free((*http_conn)->body);
 	g_free((*http_conn)->content_type);
-	// free sec_ctx?
-	
+
+	if ((*http_conn)->sec_ctx) {
+		sip_sec_destroy_context((*http_conn)->sec_ctx);
+	}
+
 	g_free(*http_conn);
 	*http_conn = NULL;
 }
@@ -490,7 +493,13 @@ http_conn_process_input_message(HttpConn *http_conn,
 		char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
 		int use_sso = !http_conn->auth || (http_conn->auth && !http_conn->auth->user);
 		
-		if (http_conn->retries > 2) return;
+		if (http_conn->retries > 2) {
+			if (http_conn->callback) {
+				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn->data);
+			}
+			http_conn_close0(&http_conn, "Authentication failed");
+			return;
+		}
 		
 		http_conn->retries++;
 		ptmp = sipmsg_find_auth_header(msg, "NTLM");

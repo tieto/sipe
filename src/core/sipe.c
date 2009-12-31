@@ -6819,6 +6819,7 @@ static void sipe_login(PurpleAccount *account)
 	struct sipe_account_data *sip;
 	gchar **signinname_login, **userserver;
 	const char *transport;
+	const char *email;
 
 	const char *username = purple_account_get_username(account);
 	gc = purple_account_get_connection(account);
@@ -6854,6 +6855,16 @@ static void sipe_login(PurpleAccount *account)
 		return;
 	}
 	sip->username = g_strdup(signinname_login[0]);
+	
+	/* ensure that email format is name@domain if provided */
+	email = purple_account_get_string(sip->account, "email", NULL);
+	if (!is_empty(email) &&
+	    (!strchr(email, '@') || g_str_has_prefix(email, "@") || g_str_has_suffix(email, "@")))
+	{
+		gc->wants_to_die = TRUE;
+		purple_connection_error(gc, _("Email address should be valid if provided\nExample: user@company.com"));
+		return;
+	}
 
 	/* login name specified? */
 	if (signinname_login[1] && strlen(signinname_login[1])) {
