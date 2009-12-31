@@ -5789,10 +5789,17 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	}
 }
 
-static void send_presence_soap(struct sipe_account_data *sip, const char * note)
+void
+send_presence_soap(struct sipe_account_data *sip,
+		   const char *note,
+		   gboolean do_publish_calendar)
 {
-	int availability = 300; // online
-	int activity = 400;  // Available
+	struct sipe_ews* ews = sip->ews;
+	char *fb_start_str;
+	char *free_busy_base64;
+	char *calendarData = NULL;
+	int availability = 300; /* online */
+	int activity = 400;  /* Available */
 	gchar *body;
 
 	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY)) {
@@ -5809,10 +5816,22 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 		activity = 600;
 	} else if (!strcmp(sip->status, SIPE_STATUS_ID_INVISIBLE) ||
 		   !strcmp(sip->status, SIPE_STATUS_ID_OFFLINE)) {
-		availability = 0; // offline
+		availability = 0; /* offline */
 		activity = 100;
 	} else {
-		activity = 400; // available
+		activity = 400; /* available */
+	}
+
+	if (do_publish_calendar &&
+	    ews && !is_empty(ews->legacy_dn) && ews->fb_start && !is_empty(ews->free_busy))
+	{	
+		fb_start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
+		free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
+
+		calendarData = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_CALENDAR,
+					sip->ews->legacy_dn,
+					fb_start_str,
+					free_busy_base64);
 	}
 
 	//@TODO: send user data - state; add hostname in upper case
@@ -5822,7 +5841,9 @@ static void send_presence_soap(struct sipe_account_data *sip, const char * note)
 				       availability,
 				       activity,
 				       note ? note : "",
-				       note ? note : "");
+				       note ? note : "",
+				       calendarData ? calendarData : "");
+	g_free(calendarData);
 	send_soap_request(sip, body);
 	g_free(body);
 }
@@ -6361,7 +6382,7 @@ static void send_presence_status(struct sipe_account_data *sip)
         if (sip->ocs2007) {
 		send_presence_category_publish(sip, note);
 	} else {
-		send_presence_soap(sip, note);
+		send_presence_soap(sip, note, FALSE);
 	}
 }
 

@@ -280,6 +280,13 @@ gboolean purple_init_plugin(PurplePlugin *plugin);
  */
 void
 send_presence_category_calendar_publish(struct sipe_account_data *sip);
+/** 
+ * For 2005-
+ */
+void
+send_presence_soap(struct sipe_account_data *sip,
+		   const char *note,
+		   gboolean do_publish_calendar);
 
 /**
  * THE BIG SPLIT - temporary interfaces
@@ -608,6 +615,16 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"<m:rights>%s</m:rights>"\
 	"<m:deltaNum>%d</m:deltaNum>")
 
+/**
+ * Calendar publication entry. 2005 systems.
+ *
+ * @param legacy_dn		(%s) Ex.: /o=EXCHANGE/ou=BTUK02/cn=Recipients/cn=AHHBTT
+ * @param fb_start_time_str	(%s) Ex.: 2009-12-06T17:15:00Z
+ * @param free_busy_base64	(%s) Ex.: AAAAAAAAAAAAAAAAA......
+ */
+#define SIPE_SOAP_SET_PRESENCE_CALENDAR \
+"<calendarInfo mailboxId=\"%s\" startTime=\"%s\" granularity=\"PT15M\">%s</calendarInfo>"
+	
 #define SIPE_SOAP_SET_PRESENCE_NOTE_XML          "<note>%s</note>"
 #define SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY    "%s"
 #define SIPE_SOAP_SET_PRESENCE(note_xml) sipe_soap("setPresence", \
@@ -620,6 +637,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"<userInfo xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\">"\
 	note_xml \
         "</userInfo>"\
+	"%s"\
 	"</m:presentity>")
 
 #define SIPE_SOAP_SEARCH_CONTACT \

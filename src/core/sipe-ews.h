@@ -30,6 +30,7 @@ struct sipe_ews {
 
 	int state;
 	char *email;
+	char *legacy_dn;
 	HttpConnAuth *auth;
 	PurpleAccount *account;
 	int auto_disco_method;

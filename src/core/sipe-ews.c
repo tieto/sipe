@@ -169,6 +169,7 @@ void
 sipe_ews_free(struct sipe_ews* ews)
 {
 	g_free(ews->email);
+	g_free(ews->legacy_dn);
 	g_free(ews->auth);
 	g_free(ews->as_url);
 	g_free(ews->oof_url);
@@ -348,6 +349,10 @@ sipe_ews_process_autodiscover(int return_code,
 		xmlnode *node;
 		/** ref: [MS-OXDSCLI] */
 		xmlnode *xml = xmlnode_from_str(body, strlen(body));
+		
+		/* Autodiscover/Response/User/LegacyDN (trim()) */
+		ews->legacy_dn = xmlnode_get_data(xmlnode_get_descendant(xml, "Response", "User", "LegacyDN", NULL));
+		ews->legacy_dn = ews->legacy_dn ? g_strstrip(ews->legacy_dn) : NULL;
 
 		/* Protocols */
 		for (node = xmlnode_get_descendant(xml, "Response", "Account", "Protocol", NULL);
@@ -519,6 +524,9 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 			if (ews->sip->ocs2007) {
 				/* sipe.h */
 				send_presence_category_calendar_publish(ews->sip);
+			} else {
+				/* sipe.h */
+				send_presence_soap(ews->sip, NULL, TRUE);
 			}
 			break;
 	}
