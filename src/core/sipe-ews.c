@@ -51,7 +51,6 @@ be great to implement too.
 /* for xmlnode_get_descendant */
 #include "sipe-utils.h"
 
-#include "http-conn.h"
 #include "sipe-ews.h"
 #include "sipe-cal.h"
 
@@ -149,28 +148,6 @@ be great to implement too.
 #define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	2
 #define SIPE_EWS_STATE_OOF_SUCCESS		3
 
-struct sipe_ews {
-	int state;
-	char *email;
-	HttpConnAuth *auth;
-	PurpleAccount *account;
-	int auto_disco_method;
-	int is_disabled;
-
-	char *as_url;
-	char *oof_url;
-	char *oab_url;
-	
-	char *oof_note;
-	
-	HttpConn *http_conn;
-	
-	time_t fb_start;
-	/* hex form */
-	char *free_busy;
-	char *working_hours_xml_str;
-	GSList *cal_events;
-};
 
 static void
 sipe_ews_cal_events_free(GSList *cal_events)
@@ -539,6 +516,10 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 			break;
 		case SIPE_EWS_STATE_OOF_SUCCESS:
 			ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+			if (ews->sip->ocs2007) {
+				/* sipe.h */
+				send_presence_category_calendar_publish(ews->sip);
+			}
 			break;
 	}
 }
@@ -547,30 +528,30 @@ void
 sipe_ews_update_calendar(struct sipe_account_data *sip)
 {
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
-	struct sipe_ews *ews = sip->ews;
 
 	purple_debug_info("sipe", "sipe_ews_update_calendar: started.\n");
 
-	if (!ews) {
+	if (!sip->ews) {
 		const char *email;
-		sip->ews = ews = g_new0(struct sipe_ews, 1);
+		sip->ews = g_new0(struct sipe_ews, 1);
+		sip->ews->sip = sip;
 
-		ews->account = sip->account;
+		sip->ews->account = sip->account;
 		email = purple_account_get_string(sip->account, "email", NULL);
-		ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
+		sip->ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
 
-		ews->auth = g_new0(HttpConnAuth, 1);
-		ews->auth->domain = sip->authdomain;
-		ews->auth->user = sip->authuser;
-		ews->auth->password = sip->password;
+		sip->ews->auth = g_new0(HttpConnAuth, 1);
+		sip->ews->auth->domain = sip->authdomain;
+		sip->ews->auth->user = sip->authuser;
+		sip->ews->auth->password = sip->password;
 	}
 	
-	if(ews->is_disabled) {
+	if(sip->ews->is_disabled) {
 		purple_debug_info("sipe", "sipe_ews_update_calendar: disabled, exiting.\n");
 		return;
 	}
 
-	sipe_ews_run_state_machine(ews);
+	sipe_ews_run_state_machine(sip->ews);
 
 	purple_debug_info("sipe", "sipe_ews_update_calendar: finished.\n");
 }

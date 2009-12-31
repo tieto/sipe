@@ -6057,6 +6057,176 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 				       note ? note : "");
 }
 
+/**
+ * Returns 'calendarData' XML part with WorkingHours for publication.
+ * Must be g_free'd after use.
+ */
+static gchar *
+sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
+{
+	struct sipe_ews* ews = sip->ews;
+	
+	/* key is <category><instance><container> */
+	gchar *key_cal_1     = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 1);
+	gchar *key_cal_100   = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 100);
+	gchar *key_cal_200   = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 200);
+	gchar *key_cal_300   = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 300);
+	gchar *key_cal_400   = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 400);
+	gchar *key_cal_32000 = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 32000);
+
+	struct sipe_publication *publication_cal_1 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_1);
+	struct sipe_publication *publication_cal_100 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_100);
+	struct sipe_publication *publication_cal_200 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_200);
+	struct sipe_publication *publication_cal_300 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_300);
+	struct sipe_publication *publication_cal_400 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_400);
+	struct sipe_publication *publication_cal_32000 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_32000);
+
+	g_free(key_cal_1);
+	g_free(key_cal_100);
+	g_free(key_cal_200);
+	g_free(key_cal_300);
+	g_free(key_cal_400);
+	g_free(key_cal_32000);
+	
+	if (!ews || is_empty(ews->email) || is_empty(ews->working_hours_xml_str)) {
+		purple_debug_info("sipe", "sipe_publish_get_category_cal_working_hours: no data to publish, exiting\n");
+		return NULL;
+	}
+
+	//const char *n1 = note;
+	//const char *n2 = publication_note_200 ? publication_note_200->note : NULL;
+
+	//if (((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
+	//    || (n1 && n2 && !strcmp(n1, n2))) /* or not empty and equal */
+	///{
+	//	purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
+	//	return NULL; /* nothing to update */
+	//}
+
+	return g_strdup_printf(SIPE_PUB_XML_WORKING_HOURS,
+				/* 1 */
+				publication_cal_1 ? publication_cal_1->version : 0,
+				ews->email,
+				ews->working_hours_xml_str,
+				/* 100 - Public */
+				publication_cal_100 ? publication_cal_100->version : 0,
+				/* 200 - Company */
+				publication_cal_200 ? publication_cal_200->version : 0,
+				ews->email,
+				ews->working_hours_xml_str,
+				/* 300 - Team */
+				publication_cal_300 ? publication_cal_300->version : 0,
+				ews->email,
+				ews->working_hours_xml_str,
+				/* 400 - Personal */
+				publication_cal_400 ? publication_cal_400->version : 0,
+				ews->email,
+				ews->working_hours_xml_str,
+				/* 32000 - Blocked */
+				publication_cal_32000 ? publication_cal_32000->version : 0
+			      );
+}
+
+/**
+ * Returns 'calendarData' XML part with FreeBusy for publication.
+ * Must be g_free'd after use.
+ */
+static gchar *
+sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
+{
+	struct sipe_ews* ews = sip->ews;
+	guint calendar_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR);
+	char *fb_start_str;
+	char *free_busy_base64;
+	char *res;
+	
+	/* key is <category><instance><container> */
+	gchar *key_cal_1     = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 1);
+	gchar *key_cal_100   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 100);	
+	gchar *key_cal_200   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 200);
+	gchar *key_cal_300   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 300);
+	gchar *key_cal_400   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 400);
+	gchar *key_cal_32000 = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 32000);
+
+	struct sipe_publication *publication_cal_1 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_1);
+	struct sipe_publication *publication_cal_100 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_100);
+	struct sipe_publication *publication_cal_200 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_200);
+	struct sipe_publication *publication_cal_300 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_300);
+	struct sipe_publication *publication_cal_400 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_400);
+	struct sipe_publication *publication_cal_32000 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_32000);
+
+	g_free(key_cal_1);
+	g_free(key_cal_100);
+	g_free(key_cal_200);
+	g_free(key_cal_300);
+	g_free(key_cal_400);
+	g_free(key_cal_32000);
+	
+	if (!ews || is_empty(ews->email) || !ews->fb_start || is_empty(ews->free_busy)) {
+		purple_debug_info("sipe", "sipe_publish_get_category_cal_free_busy: no data to publish, exiting\n");
+		return NULL;
+	}
+	
+	fb_start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
+	free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
+
+	//const char *n1 = note;
+	//const char *n2 = publication_note_200 ? publication_note_200->note : NULL;
+
+	//if (((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
+	//    || (n1 && n2 && !strcmp(n1, n2))) /* or not empty and equal */
+	///{
+	//	purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
+	//	return NULL; /* nothing to update */
+	//}
+
+	res = g_strdup_printf(SIPE_PUB_XML_FREE_BUSY,
+				/* 1 */
+				calendar_instance,
+				publication_cal_1 ? publication_cal_1->version : 0,
+				/* 100 - Public */
+				calendar_instance,
+				publication_cal_100 ? publication_cal_100->version : 0,
+				/* 200 - Company */
+				calendar_instance,
+				publication_cal_200 ? publication_cal_200->version : 0,
+				ews->email,
+				fb_start_str,
+				free_busy_base64,
+				/* 300 - Team */
+				calendar_instance,
+				publication_cal_300 ? publication_cal_300->version : 0,
+				ews->email,
+				fb_start_str,
+				free_busy_base64,
+				/* 400 - Personal */
+				calendar_instance,
+				publication_cal_400 ? publication_cal_400->version : 0,
+				ews->email,
+				fb_start_str,
+				free_busy_base64,
+				/* 32000 - Blocked */
+				calendar_instance,
+				publication_cal_32000 ? publication_cal_32000->version : 0
+			      );
+
+	g_free(fb_start_str);
+	g_free(free_busy_base64);
+	return res;
+}
+
 static void send_presence_publish(struct sipe_account_data *sip, const char *publications)
 {
 	gchar *uri;
@@ -6130,6 +6300,28 @@ send_presence_category_publish(struct sipe_account_data *sip,
 	g_free(publications);
 }
 
+void
+send_presence_category_calendar_publish(struct sipe_account_data *sip)
+{
+	gchar *pub_cal_working_hours = sipe_publish_get_category_cal_working_hours(sip);
+	gchar *pub_cal_free_busy = sipe_publish_get_category_cal_free_busy(sip);
+	gchar *publications;
+
+	if (!pub_cal_working_hours && !pub_cal_free_busy) {
+		purple_debug_info("sipe", "send_presence_category_calendar_publish: nothing has changed. Exiting.\n");
+		return;
+	}
+
+	publications = g_strdup_printf("%s%s",
+				       pub_cal_working_hours ? pub_cal_working_hours : "",
+				       pub_cal_free_busy ? pub_cal_free_busy : "");
+	g_free(pub_cal_working_hours);
+	g_free(pub_cal_free_busy);
+
+	send_presence_publish(sip, publications);
+	g_free(publications);
+}
+
 static void send_presence_status(struct sipe_account_data *sip)
 {
 	PurpleStatus * status = purple_account_get_active_status(sip->account);
@@ -6139,7 +6331,7 @@ static void send_presence_status(struct sipe_account_data *sip)
 	note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
 	purple_debug_info("sipe", "send_presence_status: note: '%s'\n", note ? note : "");
 
-        if(sip->ocs2007){
+        if (sip->ocs2007) {
 		send_presence_category_publish(sip, note);
 	} else {
 		send_presence_soap(sip, note);
@@ -7041,7 +7233,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	sip->processing_input = FALSE;
 
 	if (sip->ews) {
-		sipe_ews_free((struct sipe_ews*)sip->ews);
+		sipe_ews_free(sip->ews);
 	}
 }
 

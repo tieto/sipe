@@ -20,10 +20,35 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "http-conn.h"
+
 /**
- * Opaque context
+ * Context
  */
-struct sipe_ews;
+struct sipe_ews {
+	struct sipe_account_data *sip;
+
+	int state;
+	char *email;
+	HttpConnAuth *auth;
+	PurpleAccount *account;
+	int auto_disco_method;
+	int is_disabled;
+
+	char *as_url;
+	char *oof_url;
+	char *oab_url;
+	
+	char *oof_note;
+	
+	HttpConn *http_conn;
+	
+	time_t fb_start;
+	/* hex form */
+	char *free_busy;
+	char *working_hours_xml_str;
+	GSList *cal_events;
+};
 
 /**
  * Connects to Exchange 2007/2010 Server's Web Services,

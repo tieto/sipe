@@ -191,7 +191,7 @@ struct sipe_account_data {
 	gchar *realhostname;
 	int realport; /* port and hostname from SRV record */
 	gboolean processing_input;
-	void *ews;
+	struct sipe_ews *ews;
 };
 
 struct sip_connection {
@@ -270,6 +270,14 @@ GList *sipe_actions(PurplePlugin *plugin, gpointer context);
 gboolean purple_init_plugin(PurplePlugin *plugin);
 
 /**
+ * Publishes our Calendar information - FreeBusy, WorkingHours
+ *
+ * For 2007+
+ */
+void
+send_presence_category_calendar_publish(struct sipe_account_data *sip);
+
+/**
  * THE BIG SPLIT - temporary interfaces
  *
  * Previously private functions in sipe.c that are
@@ -331,6 +339,8 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 				  struct sip_session *session);
 
 /*** THE BIG SPLIT END ***/
+
+#define SIPE_XML_DATE_PATTERN	"%Y-%m-%dT%H:%M:%SZ"
 
 #define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"
 
@@ -535,7 +545,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 			"<freeBusy startTime=\"%s\" granularity=\"PT15M\" encodingVersion=\"1\">%s</freeBusy>"\
 		"</calendarData>"\
 	"</publication>"\
-	"<publication categoryName=\"calendarData\ instance=\"%u\" container=\"300\" version=\"%d\" expireType=\"endpoint\">"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"300\" version=\"%d\" expireType=\"endpoint\">"\
 		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">"\
 			"<freeBusy startTime=\"%s\" granularity=\"PT15M\" encodingVersion=\"1\">%s</freeBusy>"\
 		"</calendarData>"\
