@@ -6215,7 +6215,7 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 
 	if (sipe_is_equal(st, fb_start_str) && sipe_is_equal(fb, free_busy_base64))
 	{
-		purple_debug_info("sipe", "sipe_publish_get_category_note: FreeBusy has NOT changed. Exiting.\n");
+		purple_debug_info("sipe", "sipe_publish_get_category_cal_free_busy: FreeBusy has NOT changed. Exiting.\n");
 		return NULL; /* nothing to update */
 	}
 

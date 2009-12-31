@@ -707,7 +707,7 @@ sipe_cal_get_freebusy_base64(const char* freebusy_hex)
 		}
 	}
 
-	res_base64 = purple_base64_encode(res, res_len);
+	res_base64 = purple_base64_encode(res, shift_factor ? res_len : res_len - 1);
 	g_free(res);
 	return res_base64;
 }
