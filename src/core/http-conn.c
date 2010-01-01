@@ -493,15 +493,16 @@ http_conn_process_input_message(HttpConn *http_conn,
 		char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
 		int use_sso = !http_conn->auth || (http_conn->auth && !http_conn->auth->user);
 		
+		http_conn->retries++;
 		if (http_conn->retries > 2) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn->data);
 			}
-			http_conn_close0(&http_conn, "Authentication failed");
+			purple_debug_info("sipe-http", "http_conn_process_input_message: Authentication failed\n");
+			http_conn_set_close(http_conn, TRUE);
 			return;
 		}
 		
-		http_conn->retries++;
 		ptmp = sipmsg_find_auth_header(msg, "NTLM");
 		auth_type = AUTH_TYPE_NTLM;
 		tmp = sipmsg_find_auth_header(msg, "Negotiate");

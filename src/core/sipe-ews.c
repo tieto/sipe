@@ -402,7 +402,7 @@ sipe_ews_do_autodiscover(struct sipe_ews *ews,
 {
 	char *body;
 
-	purple_debug_info("sipe", "sipe_ews_initialize: going autodiscover url=%s\n", autodiscover_url ? autodiscover_url : "");
+	purple_debug_info("sipe", "sipe_ews_do_autodiscover: going autodiscover url=%s\n", autodiscover_url ? autodiscover_url : "");
 
 	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, ews->email);	
 	ews->http_conn = http_conn_create(
@@ -429,7 +429,7 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 		struct tm *now_tm;
 		const char *pattern = "%Y-%m-%dT%H:%M:%SZ";
 		
-		purple_debug_info("sipe", "sipe_ews_initialize: going Availability req.\n");
+		purple_debug_info("sipe", "sipe_ews_do_avail_request: going Availability req.\n");
 
 		now_tm = gmtime(&now);
 		/* start -1 day, 00:00:00 */
@@ -466,7 +466,7 @@ sipe_ews_do_oof_request(struct sipe_ews *ews)
 	if (ews->oof_url) {
 		char *body;
 
-		purple_debug_info("sipe", "sipe_ews_initialize: going OOF req.\n");
+		purple_debug_info("sipe", "sipe_ews_do_oof_request: going OOF req.\n");
 	
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);	
 		ews->http_conn = http_conn_create(

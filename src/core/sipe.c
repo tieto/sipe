@@ -90,6 +90,9 @@
 #define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
 #endif
 
+#define UPDATE_CALENDAR_DELAY		1*60	/* 1 min */
+#define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
+
 /* Keep in sync with sipe_transport_type! */
 static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define TRANSPORT_DESCRIPTOR (transport_descriptor[sip->transport])
@@ -2911,6 +2914,23 @@ sipe_update_user_phone(struct sipe_account_data *sip,
 }
 
 static void
+sipe_update_calendar(struct sipe_account_data *sip)
+{
+	const char* calendar = purple_account_get_string(sip->account, "calendar", "EXCH");
+
+	purple_debug_info("sipe", "sipe_update_calendar: started.\n");
+
+	if (!strcmp(calendar, "EXCH")) {
+		sipe_ews_update_calendar(sip);
+	}
+	
+	/* schedule repeat */
+	sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_INTERVAL, (Action)sipe_update_calendar, NULL, sip, NULL);
+
+	purple_debug_info("sipe", "sipe_update_calendar: finished.\n");
+}
+
+static void
 send_publish_category_initial(struct sipe_account_data *sip);
 
 /**
@@ -3150,6 +3170,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	if (sip->ocs2007 && !sip->initial_state_published) {
 		send_publish_category_initial(sip);
 		sip->initial_state_published = TRUE;
+		/* dalayed run */
+		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
 	}
 }
 
@@ -4753,12 +4775,19 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							sipe_subscribe_presence_wpending(sip, msg);
 						}
 
-						/* For 2007+ we publish our initial statuses only after
+						/* For 2007+ we publish our initial statuses and calendar data only after
 						 * received our existing publications in sipe_process_roaming_self()
 						 * Only in this case we know versions of current publications made
 						 * on our behalf.
 						 */
 						sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+						/* dalayed run */
+						sipe_schedule_action("<+update-calendar>",
+								     UPDATE_CALENDAR_DELAY,
+								     (Action)sipe_update_calendar,
+								     NULL,
+								     sip,
+								     NULL);
 					}
 
 					sip->subscribed = TRUE;
@@ -7545,6 +7574,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 " - Wachovia<br/>"
 " - Siemens<br/>"
 " - Alcatel-Lucent<br/>"
+" - BT<br/>"
 " - Nokia<br/>"
 " - HP<br/>"
 "<br/>"
