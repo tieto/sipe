@@ -87,16 +87,38 @@
 #define NTLMSSP_SESSION_KEY_LEN  16
 #define MD4_DIGEST_LEN 16
 
+struct negotiate_message {
+	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0' */
+	guint8  type;            /* 0x01 */
+	guint8  zero1[3];
+	guint32 flags;           /* 0xb203 */
+
+	guint16 dom_len1;        /* domain string length */
+	guint16 dom_len2;        /* domain string length */
+	guint16 dom_off;         /* domain string offset */
+	guint8  zero2[2];
+
+	guint16 host_len1;       /* host string length */
+	guint16 host_len2;       /* host string length */
+	guint16 host_off;        /* host string offset (always 0x20) */
+	guint8  zero3[2];
+
+#if 0
+	guint8  host[*];         /* host string (ASCII) */
+	guint8  dom[*];          /* domain string (ASCII) */
+#endif
+};
+
 struct challenge_message {
 	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
 	guint8  type;            /* 0x02 */
 	guint8  zero1[7];
-	short   msg_len;         /* 0x28 */
+	guint16 msg_len;         /* 0x28 */
 	guint8  zero2[2];
 	guint32 flags;           /* 0x8201 */
 
 	guint8  nonce[8];
-	guint8  zero[8];
+	guint8  zero3[8];
 };
 
 struct authenticate_message {
@@ -567,6 +589,41 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	out_buff->length = msglen;
 }
 
+/**
+ * Generates Type 1 (Negotiate) message for connection-oriented cases (only)
+ */
+static void
+purple_ntlm_gen_negotiate(const gchar *hostname,
+			  const gchar *domain,
+			  SipSecBuffer *out_buff)
+{
+	int msglen = sizeof(struct negotiate_message) + strlen(domain) + strlen(hostname);
+	struct negotiate_message *tmsg = g_malloc0(msglen);
+	char *tmp;
+
+	/* negotiate message initialization */
+	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
+	tmsg->type = 1;
+
+	/* Set Negotiate Flags */
+	tmsg->flags = NEGOTIATE_FLAGS;
+
+	/* Domain */
+	tmsg->dom_off = sizeof(struct negotiate_message);
+	tmp = ((char*) tmsg) + sizeof(struct negotiate_message);
+	tmsg->dom_len1 = tmsg->dom_len2 = strlen(domain);
+	memcpy(tmp, domain, tmsg->dom_len1);
+	tmp += tmsg->dom_len1;
+
+	/* Host */
+	tmsg->host_off = tmsg->dom_off + tmsg->dom_len1;
+	tmsg->host_len1 = tmsg->host_len2 = strlen(hostname);
+	memcpy(tmp, hostname, tmsg->host_len1);
+	
+	out_buff->value = tmsg;
+	out_buff->length = msglen;
+}
+
 /***********************************************
  *
  * End of merged code from original sip-ntlm.c
@@ -616,9 +673,14 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 
 	ctx->step++;
 	if (ctx->step == 1) {
-		out_buff->length = 0;
-		out_buff->value = NULL;
-		// same behaviour as sspi
+		if (!context->is_connection_based) {
+			out_buff->length = 0;
+			out_buff->value = NULL;
+		} else {
+			purple_ntlm_gen_negotiate(sipe_get_host_name(),
+						  ctx->domain,
+						  out_buff);
+		}		
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
 	} else 	{
