@@ -217,12 +217,20 @@ msgstr "Konnte den SSL-Kontext nicht erzeugen"
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP-Exchange-Benutzername enthält unerlaubte Zeichen"
 
-#: ../src/sipe.c:6065
+#: ../src/core/sipe.c:7123
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr ""
 "Benutzername sollte eine gültige SIP URI sein\n"
+"Beispiel: benutzer@domäne.com"
+
+#: ../src/core/sipe.c:7134
+msgid ""
+"Email address should be valid if provided\n"
+"Example: user@company.com"
+msgstr ""
+"Falls angegeben, dann sollte der Benutzername eine gültige SIP URI sein\n"
 "Beispiel: benutzer@domäne.com"
 
 #: ../src/sipe.c:6091
@@ -308,13 +316,17 @@ msgstr "Informationen zum SIPE plugin"
 msgid "Contact search..."
 msgstr "Kontaktsuche..."
 
+#: ../src/core/sipe.c:7614
+msgid "Republish Calendar"
+msgstr "Kalender erneut veröffentlichen"
+
 #: ../src/sipe.c:6531
 msgid "Status"
 msgstr "Status"
 
 #: ../src/sipe.c:7233
 msgid "Calendar"
-msgstr "Kalendar"
+msgstr "Kalender"
 
 #: ../src/sipe.c:6952
 msgid "Meeting about"
@@ -416,8 +428,8 @@ msgstr "Stadt"
 msgid "State"
 msgstr "Provinz/Bundesland"
 
-#: ../src/sipe.c:7095 ../src/sipe.c:7126
-msgid "E-Mail address"
+#: ../src/core/sipe.c:8414 ../src/core/sipe.c:8441
+msgid "Email address"
 msgstr "E-Mail Adresse"
 
 #: ../src/sipe.c:7119
@@ -487,6 +499,26 @@ msgstr "Benutze Kerberos"
 #: ../src/sipe.c:7347
 msgid "Use Single Sign-On"
 msgstr "Benutze Single Sign-On"
+
+#: ../src/core/sipe.c:8675
+msgid "Calendar source"
+msgstr "Quelle für Kalenderdaten"
+
+#: ../src/core/sipe.c:8676
+msgid "Exchange 2007/2010"
+msgstr "Exchange 2007/2010"
+
+#: ../src/core/sipe.c:8677
+msgid "None"
+msgstr "Keine"
+
+#: ../src/core/sipe.c:8680
+msgid ""
+"Email address\n"
+"(if different from Username)"
+msgstr ""
+"E-Mail Adresse\n"
+"(falls sie sich vom Benutzernamen unterscheidet)"
 
 #: ../src/sipe-cal.c:270
 msgid "Free"
