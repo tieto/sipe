@@ -492,6 +492,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		char *output_toked_base64;
 		char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
 		int use_sso = !http_conn->auth || (http_conn->auth && !http_conn->auth->user);
+		long ret;
 		
 		http_conn->retries++;
 		if (http_conn->retries > 2) {
@@ -507,18 +508,25 @@ http_conn_process_input_message(HttpConn *http_conn,
 		auth_type = AUTH_TYPE_NTLM;
 		tmp = sipmsg_find_auth_header(msg, "Negotiate");
 #ifdef _WIN32
+#ifdef USE_KERBEROS
 		if (tmp) {
 			ptmp = tmp;
 			auth_type = AUTH_TYPE_NEGOTIATE;
 		}
+#endif
 #endif		
 		if (!ptmp) {
 			purple_debug_info("sipe-http", "http_conn_process_input_message: Only %s supported in the moment, exiting\n",
 #ifdef _WIN32
+#ifdef USE_KERBEROS
 				"NTLM and Negotiate authentications are"
-#else 				
+#else //USE_KERBEROS			
 				"NTLM authentication is"
-#endif
+#endif //USE_KERBEROS
+#else //_WIN32
+				"NTLM authentication is"
+#endif //_WIN32
+
 			);
 		}
 		
@@ -533,15 +541,24 @@ http_conn_process_input_message(HttpConn *http_conn,
 		}
 
 		parts = g_strsplit(ptmp, " ", 0);
-		sip_sec_init_context_step(http_conn->sec_ctx,
+		ret = sip_sec_init_context_step(http_conn->sec_ctx,
 					  spn,
 					  parts[1],
 					  &output_toked_base64,
 					  NULL);
 		g_free(spn);
 		g_strfreev(parts);
+		
+		if (ret < 0) {
+			if (http_conn->callback) {
+				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn->data);
+			}
+			purple_debug_info("sipe-http", "http_conn_process_input_message: Failed to initialize security context\n");
+			http_conn_set_close(http_conn, TRUE);
+			return;
+		}
 
-		authorization = g_strdup_printf("%s %s", auth_type == AUTH_TYPE_NTLM ? "NTLM" : "Negotiate", output_toked_base64);
+		authorization = g_strdup_printf("%s %s", auth_type == AUTH_TYPE_NTLM ? "NTLM" : "Negotiate", output_toked_base64 ? output_toked_base64 : "");
 		g_free(output_toked_base64);
 		
 		http_conn_post(http_conn, authorization);

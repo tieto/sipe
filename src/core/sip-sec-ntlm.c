@@ -351,18 +351,16 @@ NONCE(unsigned char *buffer, int num)
 
 /* End Private Methods */
 
-static gchar *purple_ntlm_parse_challenge(const char *challenge, guint32 *flags) {
-	gsize retlen;
+static gchar *purple_ntlm_parse_challenge(SipSecBuffer in_buff, guint32 *flags) {
 	static gchar nonce[8];
-	struct challenge_message *tmsg = (struct challenge_message*)purple_base64_decode(challenge, &retlen);
-	memcpy(nonce, tmsg->nonce, 8);
+	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
+	memcpy(nonce, cmsg->nonce, 8);
 
-	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", tmsg->flags, (tmsg->flags & NEGOTIATE_FLAGS) == NEGOTIATE_FLAGS);
+	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", cmsg->flags, (cmsg->flags & NEGOTIATE_FLAGS) == NEGOTIATE_FLAGS);
 
 	if (flags) {
-		*flags = tmsg->flags;
+		*flags = cmsg->flags;
 	}
-	g_free(tmsg);
 	return nonce;
 }
 
@@ -476,8 +474,15 @@ purple_ntlm_verify_signature (char * a, char * b)
 	return ret;
 }
 
-static gchar *
-purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *password, const gchar *hostname, const gchar *domain, const guint8 *nonce, SIPE_UNUSED_PARAMETER guint32 *flags)
+static void
+purple_ntlm_gen_authenticate(guchar **ntlm_key,
+			     const gchar *user,
+			     const gchar *password,
+			     const gchar *hostname,
+			     const gchar *domain,
+			     const guint8 *nonce,
+			     SipSecBuffer *out_buff,
+			     SIPE_UNUSED_PARAMETER guint32 *flags)
 {
 	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
 				+ strlen(user)+ strlen(hostname) + NTLMSSP_NT_OR_LM_KEY_LEN)
@@ -557,10 +562,9 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, const gchar *user, const gchar *
 	tmp = purple_base64_encode(exported_session_key, 16);
 	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE message (%s)\n", tmp);
 	g_free(tmp);
-
-	tmp = purple_base64_encode((guchar*) tmsg, msglen);
-	g_free(tmsg);
-	return tmp;
+	
+	out_buff->value = tmsg;
+	out_buff->length = msglen;
 }
 
 /***********************************************
@@ -621,26 +625,22 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		guchar *ntlm_key;
 		guchar *nonce;
 		guint32 flags;
-		gchar *input_toked_base64;
-		gchar *gssapi_data;
 
-		input_toked_base64 = purple_base64_encode(in_buff.value,
-							  in_buff.length);
+		if (!in_buff.value || !in_buff.length) {
+			return SIP_SEC_E_INTERNAL_ERROR;
+		}
 
-		nonce = g_memdup(purple_ntlm_parse_challenge(input_toked_base64, &flags), 8);
-		g_free(input_toked_base64);
+		nonce = g_memdup(purple_ntlm_parse_challenge(in_buff, &flags), 8);
 
-		gssapi_data = purple_ntlm_gen_authenticate(&ntlm_key,
-							   ctx->username,
-							   ctx->password,
-							   sipe_get_host_name(),
-							   ctx->domain,
-							   nonce,
-							   &flags);
+		purple_ntlm_gen_authenticate(&ntlm_key,
+					     ctx->username,
+					     ctx->password,
+					     sipe_get_host_name(),
+					     ctx->domain,
+					     nonce,
+					     out_buff,
+					     &flags);
 		g_free(nonce);
-
-		out_buff->value = purple_base64_decode(gssapi_data, &(out_buff->length));
-		g_free(gssapi_data);
 
 		g_free(ctx->key);
 		ctx->key = ntlm_key;
