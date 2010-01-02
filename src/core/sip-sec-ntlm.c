@@ -106,6 +106,13 @@
  *
  ***********************************************/
 
+/* Negotiate flags required in connection-oriented NTLM */
+#define NEGOTIATE_FLAGS_CONN \
+	( NTLMSSP_NEGOTIATE_UNICODE | \
+	  NTLMSSP_REQUEST_TARGET | \
+	  NTLMSSP_NEGOTIATE_NTLM | \
+	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN )
+
 /* Negotiate flags required in connectionless NTLM */
 #define NEGOTIATE_FLAGS \
 	( NTLMSSP_NEGOTIATE_UNICODE | \
@@ -407,12 +414,17 @@ NONCE(unsigned char *buffer, int num)
 
 /* End Private Methods */
 
-static gchar *purple_ntlm_parse_challenge(SipSecBuffer in_buff, guint32 *flags) {
+static gchar *
+purple_ntlm_parse_challenge(SipSecBuffer in_buff,
+			    gboolean is_connection_based,
+			    guint32 *flags)
+{
+	guint32 our_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	static gchar nonce[8];
 	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
 	memcpy(nonce, cmsg->nonce, 8);
 
-	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", cmsg->flags, (cmsg->flags & NEGOTIATE_FLAGS) == NEGOTIATE_FLAGS);
+	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", cmsg->flags, (cmsg->flags & our_flags) == our_flags);
 
 	if (flags) {
 		*flags = cmsg->flags;
@@ -537,6 +549,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 			     const gchar *hostname,
 			     const gchar *domain,
 			     const guint8 *nonce,
+			     gboolean is_connection_based,
 			     SipSecBuffer *out_buff,
 			     SIPE_UNUSED_PARAMETER guint32 *flags)
 {
@@ -560,7 +573,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	tmsg->type = 3;
 
 	/* Set Negotiate Flags */
-	tmsg->flags = NEGOTIATE_FLAGS;
+	tmsg->flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 
 	/* Domain */
 	tmsg->dom_off = sizeof(struct authenticate_message);
@@ -627,32 +640,25 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
  * Generates Type 1 (Negotiate) message for connection-oriented cases (only)
  */
 static void
-purple_ntlm_gen_negotiate(const gchar *hostname,
-			  const gchar *domain,
-			  SipSecBuffer *out_buff)
+purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 {
-	int msglen = sizeof(struct negotiate_message) + strlen(domain) + strlen(hostname);
+	int msglen = sizeof(struct negotiate_message);
 	struct negotiate_message *tmsg = g_malloc0(msglen);
-	char *tmp;
 
 	/* negotiate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
 	tmsg->type = 1;
 
 	/* Set Negotiate Flags */
-	tmsg->flags = NEGOTIATE_FLAGS;
+	tmsg->flags = NEGOTIATE_FLAGS_CONN;
 
 	/* Domain */
 	tmsg->dom_off = sizeof(struct negotiate_message);
-	tmp = ((char*) tmsg) + sizeof(struct negotiate_message);
-	tmsg->dom_len1 = tmsg->dom_len2 = strlen(domain);
-	memcpy(tmp, domain, tmsg->dom_len1);
-	tmp += tmsg->dom_len1;
+	tmsg->dom_len1 = tmsg->dom_len2 = 0;
 
 	/* Host */
 	tmsg->host_off = tmsg->dom_off + tmsg->dom_len1;
-	tmsg->host_len1 = tmsg->host_len2 = strlen(hostname);
-	memcpy(tmp, hostname, tmsg->host_len1);
+	tmsg->host_len1 = tmsg->host_len2 = 0;
 	
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
@@ -755,9 +761,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			out_buff->length = 0;
 			out_buff->value = NULL;
 		} else {
-			purple_ntlm_gen_negotiate(sipe_get_host_name(),
-						  ctx->domain,
-						  out_buff);
+			purple_ntlm_gen_negotiate(out_buff);
 		}		
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
@@ -771,10 +775,11 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			return SIP_SEC_E_INTERNAL_ERROR;
 		}
 
-		nonce = g_memdup(purple_ntlm_parse_challenge(in_buff, &flags), 8);
+		nonce = g_memdup(purple_ntlm_parse_challenge(in_buff, context->is_connection_based, &flags), 8);
 		
 		flags_desc = sip_sec_ntlm_negotiate_flags_describe(flags);
 		purple_debug_info("sipe", "sip_sec_init_sec_context__ntlm: Negotiate flags are:\n%s", flags_desc ? flags_desc : "");
+		g_free(flags_desc);
 
 		purple_ntlm_gen_authenticate(&ntlm_key,
 					     ctx->username,
@@ -782,6 +787,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 					     sipe_get_host_name(),
 					     ctx->domain,
 					     nonce,
+					     context->is_connection_based,
 					     out_buff,
 					     &flags);
 		g_free(nonce);
