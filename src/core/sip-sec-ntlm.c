@@ -65,6 +65,40 @@
 #include "sip-sec-mech.h"
 #include "sip-sec-ntlm.h"
 
+/* [MS-NLMP] */
+#define NTLMSSP_NEGOTIATE_UNICODE			0x00000001	/* A  */
+#define NTLMSSP_NEGOTIATE_OEM				0x00000002	/* B  */
+#define NTLMSSP_REQUEST_TARGET				0x00000004	/* C  */
+#define r9						0x00000008	/* r9 */
+#define NTLMSSP_NEGOTIATE_SIGN				0x00000010	/* D  */
+#define NTLMSSP_NEGOTIATE_SEAL				0x00000020	/* E  */
+#define NTLMSSP_NEGOTIATE_DATAGRAM			0x00000040	/* F  */
+#define NTLMSSP_NEGOTIATE_LM_KEY			0x00000080	/* G  */
+#define r8						0x00000100	/* r8 */
+#define NTLMSSP_NEGOTIATE_NTLM				0x00000200	/* H  */
+#define NTLMSSP_NEGOTIATE_NT_ONLY			0x00000400	/* I  */
+#define anonymous					0x00000800	/* J  */
+#define NTLMSSP_NEGOTIATE_OEM_DOMAIN_SUPPLIED		0x00001000	/* K  */
+#define NTLMSSP_NEGOTIATE_OEM_WORKSTATION_SUPPLIED	0x00002000	/* L  */
+#define r7						0x00004000	/* r7 */
+#define NTLMSSP_NEGOTIATE_ALWAYS_SIGN			0x00008000	/* M  */
+#define NTLMSSP_TARGET_TYPE_DOMAIN			0x00010000	/* N  */
+#define NTLMSSP_TARGET_TYPE_SERVER			0x00020000	/* O  */
+#define r6						0x00040000	/* r6 */
+#define NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY	0x00080000	/* P  */
+#define NTLMSSP_NEGOTIATE_IDENTIFY			0x00100000	/* Q  */
+#define r5						0x00200000	/* r5 */
+#define NTLMSSP_REQUEST_NON_NT_SESSION_KEY		0x00400000	/* R  */
+#define NTLMSSP_NEGOTIATE_TARGET_INFO			0x00800000	/* S  */
+#define r4						0x01000000	/* r4 */
+#define NTLMSSP_NEGOTIATE_VERSION			0x02000000	/* T  */
+#define r3						0x04000000	/* r3 */
+#define r2						0x08000000	/* r2 */
+#define r1						0x10000000	/* r1 */
+#define NTLMSSP_NEGOTIATE_128				0x20000000	/* U  */
+#define NTLMSSP_NEGOTIATE_KEY_EXCH			0x40000000	/* V  */
+#define NTLMSSP_NEGOTIATE_56				0x80000000	/* W  */
+
 
 /***********************************************
  *
@@ -72,15 +106,15 @@
  *
  ***********************************************/
 
-/* Negotiate flag required in connectionless NTLM
- *   0x00000001 = NTLMSSP_NEGOTIATE_UNICODE	(A)
- *   0x00000010 = NTLMSSP_NEGOTIATE_SIGN	(D)
- *   0x00000040 = NTLMSSP_NEGOTIATE_DATAGRAM	(F)
- *   0x00000200 = NTLMSSP_NEGOTIATE_NTLM	(H)
- *   0x00008000 = NTLMSSP_NEGOTIATE_ALWAYS_SIGN (M)
- *   0x40000000 = NTLMSSP_NEGOTIATE_KEY_EXCH	(W)
- */
-#define NEGOTIATE_FLAGS 0x40008251
+/* Negotiate flags required in connectionless NTLM */
+#define NEGOTIATE_FLAGS \
+	( NTLMSSP_NEGOTIATE_UNICODE | \
+	  NTLMSSP_NEGOTIATE_SIGN | \
+	  NTLMSSP_NEGOTIATE_DATAGRAM | \
+	  NTLMSSP_NEGOTIATE_NTLM | \
+	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
+	  NTLMSSP_NEGOTIATE_KEY_EXCH )
+
 #define NTLM_NEGOTIATE_NTLM2_KEY 0x00080000
 
 #define NTLMSSP_NT_OR_LM_KEY_LEN 24
@@ -630,6 +664,50 @@ purple_ntlm_gen_negotiate(const gchar *hostname,
  *
  ***********************************************/
 
+#define APPEND_NEG_FLAG(str, flags, flag, desc)	\
+	if ((flags & flag) == flag) g_string_append_printf(str, "\t%s\n", desc);
+
+static gchar *
+sip_sec_ntlm_negotiate_flags_describe(guint32 flags)
+{
+	GString* str = g_string_new(NULL);
+
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_UNICODE, "NTLMSSP_NEGOTIATE_UNICODE");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_OEM, "NTLMSSP_NEGOTIATE_OEM");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_REQUEST_TARGET, "NTLMSSP_REQUEST_TARGET");
+	APPEND_NEG_FLAG(str, flags, r9, "r9");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_SIGN, "NTLMSSP_NEGOTIATE_SIGN");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_SEAL, "NTLMSSP_NEGOTIATE_SEAL");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_DATAGRAM, "NTLMSSP_NEGOTIATE_DATAGRAM");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_LM_KEY, "NTLMSSP_NEGOTIATE_LM_KEY");
+	APPEND_NEG_FLAG(str, flags, r8, "r8");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_NTLM, "NTLMSSP_NEGOTIATE_NTLM");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_NT_ONLY, "NTLMSSP_NEGOTIATE_NT_ONLY");
+	APPEND_NEG_FLAG(str, flags, anonymous, "anonymous");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_OEM_DOMAIN_SUPPLIED, "NTLMSSP_NEGOTIATE_OEM_DOMAIN_SUPPLIED");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_OEM_WORKSTATION_SUPPLIED, "NTLMSSP_NEGOTIATE_OEM_WORKSTATION_SUPPLIED");
+	APPEND_NEG_FLAG(str, flags, r7, "r7");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_ALWAYS_SIGN, "NTLMSSP_NEGOTIATE_ALWAYS_SIGN");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_TARGET_TYPE_DOMAIN, "NTLMSSP_TARGET_TYPE_DOMAIN");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_TARGET_TYPE_SERVER, "NTLMSSP_TARGET_TYPE_SERVER");
+	APPEND_NEG_FLAG(str, flags, r6, "r6");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY, "NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_IDENTIFY, "NTLMSSP_NEGOTIATE_IDENTIFY");
+	APPEND_NEG_FLAG(str, flags, r5, "r5");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_REQUEST_NON_NT_SESSION_KEY, "NTLMSSP_REQUEST_NON_NT_SESSION_KEY");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_TARGET_INFO, "NTLMSSP_NEGOTIATE_TARGET_INFO");
+	APPEND_NEG_FLAG(str, flags, r4, "r4");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_VERSION, "NTLMSSP_NEGOTIATE_VERSION");
+	APPEND_NEG_FLAG(str, flags, r3, "r3");
+	APPEND_NEG_FLAG(str, flags, r2, "r2");
+	APPEND_NEG_FLAG(str, flags, r1, "r1");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_128, "NTLMSSP_NEGOTIATE_128");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_KEY_EXCH, "NTLMSSP_NEGOTIATE_KEY_EXCH");
+	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_56, "NTLMSSP_NEGOTIATE_56");
+
+	return g_string_free(str, FALSE);
+}
+
 /* sip-sec-mech.h API implementation for NTLM */
 
 /* Security context for NTLM */
@@ -687,12 +765,16 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		guchar *ntlm_key;
 		guchar *nonce;
 		guint32 flags;
+		gchar *flags_desc;
 
 		if (!in_buff.value || !in_buff.length) {
 			return SIP_SEC_E_INTERNAL_ERROR;
 		}
 
 		nonce = g_memdup(purple_ntlm_parse_challenge(in_buff, &flags), 8);
+		
+		flags_desc = sip_sec_ntlm_negotiate_flags_describe(flags);
+		purple_debug_info("sipe", "sip_sec_init_sec_context__ntlm: Negotiate flags are:\n%s", flags_desc ? flags_desc : "");
 
 		purple_ntlm_gen_authenticate(&ntlm_key,
 					     ctx->username,
