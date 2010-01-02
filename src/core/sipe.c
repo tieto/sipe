@@ -8411,7 +8411,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 				purple_notify_user_info_add_pair(info, _("Country"), value);
 			}
 			if (email && strlen(email) > 0) {
-				purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
+				purple_notify_user_info_add_pair(info, _("Email address"), email);
 			}
 
 		}
@@ -8438,7 +8438,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 		g_free(email);
 		email = g_strdup(purple_blist_node_get_string(&pbuddy->node, EMAIL_PROP));
 		if (email) {
-			purple_notify_user_info_add_pair(info, _("E-Mail address"), email);
+			purple_notify_user_info_add_pair(info, _("Email address"), email);
 		}
 	}
 
