@@ -553,9 +553,11 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 			     SipSecBuffer *out_buff,
 			     SIPE_UNUSED_PARAMETER guint32 *flags)
 {
+	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
+	gboolean is_key_exch = ((neg_flags & NTLMSSP_NEGOTIATE_KEY_EXCH) == NTLMSSP_NEGOTIATE_KEY_EXCH);
 	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
 				+ strlen(user)+ strlen(hostname) + NTLMSSP_NT_OR_LM_KEY_LEN)
-				+ NTLMSSP_SESSION_KEY_LEN;
+				+ (is_key_exch ? NTLMSSP_SESSION_KEY_LEN : 0);
 	struct authenticate_message *tmsg = g_malloc0(msglen);
 	char *tmp;
 	int remlen;
@@ -573,7 +575,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	tmsg->type = 3;
 
 	/* Set Negotiate Flags */
-	tmsg->flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
+	tmsg->flags = neg_flags;
 
 	/* Domain */
 	tmsg->dom_off = sizeof(struct authenticate_message);
@@ -613,23 +615,32 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
 
 	/* Session Key */
-	tmsg->sess_len1 = tmsg->sess_len2 = NTLMSSP_SESSION_KEY_LEN;
-	tmsg->sess_off = tmsg->nt_resp_off + tmsg->nt_resp_len1;
-
 	MD4(response_key_nt, 16, session_base_key);
-
 	KXKEY(session_base_key, lm_challenge_response, key_exchange_key);
 
-	NONCE (exported_session_key, 16);
+	if (is_key_exch)
+	{
+		tmsg->sess_len1 = tmsg->sess_len2 = NTLMSSP_SESSION_KEY_LEN;
+		tmsg->sess_off = tmsg->nt_resp_off + tmsg->nt_resp_len1;
 
-	*ntlm_key = (guchar *) g_strndup ((gchar *) exported_session_key, 16);
+		NONCE (exported_session_key, 16);
+		RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
 
-	RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
-	memcpy(tmp, encrypted_random_session_key, 16);
-	tmp += NTLMSSP_SESSION_KEY_LEN;
+		memcpy(tmp, encrypted_random_session_key, 16);
+		tmp += NTLMSSP_SESSION_KEY_LEN;
+	}
+	else
+	{
+		tmsg->sess_len1 = tmsg->sess_len2 = 0;
+		tmsg->sess_off = tmsg->nt_resp_off + tmsg->nt_resp_len1;
+
+		memcpy(exported_session_key, key_exchange_key, 16);
+	}
+
+	*ntlm_key = (guchar *)g_strndup((gchar *)exported_session_key, 16);
 
 	tmp = purple_base64_encode(exported_session_key, 16);
-	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE message (%s)\n", tmp);
+	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE session key: %s\n", tmp);
 	g_free(tmp);
 	
 	out_buff->value = tmsg;
