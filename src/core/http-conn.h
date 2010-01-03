@@ -53,8 +53,7 @@ http_conn_create(PurpleAccount *account,
  * Marks connection for close
  */
 void
-http_conn_set_close(HttpConn* http_conn,
-		    int do_close);
+http_conn_set_close(HttpConn* http_conn);
 
 void
 http_conn_auth_free(struct http_conn_auth* auth);

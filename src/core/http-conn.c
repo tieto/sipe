@@ -71,26 +71,55 @@ struct http_conn_struct {
 	SipSecContext sec_ctx;
 	int retries;
 	
-	int do_close;
+	HttpConn* do_close;
 };
 
-static void
-http_conn_free(HttpConn** http_conn)
+static HttpConn*
+http_conn_clone(HttpConn* http_conn)
 {
-	if (!*http_conn) return;
+	HttpConn *res = g_new0(HttpConn, 1);
 
-	g_free((*http_conn)->conn_type);
-	g_free((*http_conn)->host);
-	g_free((*http_conn)->url);
-	g_free((*http_conn)->body);
-	g_free((*http_conn)->content_type);
+	res->account = http_conn->account;
+	res->conn_type = g_strdup(http_conn->conn_type);
+	res->host = g_strdup(http_conn->host);
+	res->port = http_conn->port;
+	res->url = g_strdup(http_conn->url);
+	res->body = g_strdup(http_conn->body);
+	res->content_type = g_strdup(http_conn->content_type);
+	res->auth = http_conn->auth;
+	res->callback = http_conn->callback;
+	res->data = http_conn->data;
+		 
+	/* SSL connection */
+	res->gsc = http_conn->gsc;
+	res->fd = http_conn->fd;
+	res->listenport = http_conn->listenport;
+	res->last_keepalive = http_conn->last_keepalive;
+	res->conn = http_conn->conn;
+	res->sec_ctx = http_conn->sec_ctx;
+	res->retries = http_conn->retries;
+	
+	res->do_close = NULL;
+	
+	return res;
+}
 
-	if ((*http_conn)->sec_ctx) {
-		sip_sec_destroy_context((*http_conn)->sec_ctx);
+static void
+http_conn_free(HttpConn* http_conn)
+{
+	if (!http_conn) return;
+
+	g_free(http_conn->conn_type);
+	g_free(http_conn->host);
+	g_free(http_conn->url);
+	g_free(http_conn->body);
+	g_free(http_conn->content_type);
+
+	if (http_conn->sec_ctx) {
+		sip_sec_destroy_context(http_conn->sec_ctx);
 	}
 
-	g_free(*http_conn);
-	*http_conn = NULL;
+	g_free(http_conn);
 }
 
 void
@@ -103,28 +132,21 @@ http_conn_auth_free(struct http_conn_auth* auth)
 }
 
 void
-http_conn_set_close(HttpConn* http_conn,
-		    int do_close)
+http_conn_set_close(HttpConn* http_conn)
 {
-	http_conn->do_close = do_close;
+	http_conn->do_close = http_conn;
 }
 
 static void
 http_conn_invalidate_ssl_connection(HttpConn *http_conn);
 
 static void
-http_conn_close0(HttpConn **http_conn, const char *message)
+http_conn_close(HttpConn *http_conn, const char *message)
 {
 	purple_debug_info("sipe-http", "http_conn_close: closing http connection: %s\n", message ? message : "");
 	
-	http_conn_invalidate_ssl_connection(*http_conn);
+	http_conn_invalidate_ssl_connection(http_conn);
 	http_conn_free(http_conn);
-}
-
-static void
-http_conn_close(HttpConn **http_conn)
-{
-	http_conn_close0(http_conn, "User initiated");
 }
 
 /** 
@@ -184,7 +206,7 @@ http_conn_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
 	if (http_conn->callback) {
 		(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn->data);
 	}
-	http_conn_close0(&http_conn, message);
+	http_conn_close(http_conn, message);
 }
 
 static void
@@ -253,13 +275,13 @@ http_conn_input_cb_ssl(gpointer data,
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn->data);
 			}
-			http_conn_close0(&http_conn, "SSL read error");
+			http_conn_close(http_conn, "SSL read error");
 			return;
 		} else if (firstread && (len == 0)) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn->data);
 			}
-			http_conn_close0(&http_conn, "Server has disconnected");
+			http_conn_close(http_conn, "Server has disconnected");
 			return;
 		}
 
@@ -398,7 +420,7 @@ http_conn_process_input(HttpConn *http_conn)
 	}
 	
 	if (http_conn->do_close) {
-		http_conn_close(&http_conn);
+		http_conn_close(http_conn->do_close, "User initiated");
 	}
 }
 
@@ -466,14 +488,15 @@ http_conn_process_input_message(HttpConn *http_conn,
 	    msg->response == 307)
 	{
 		char *location = sipmsg_find_header(msg, "Location");
-		
+
 		purple_debug_info("sipe-http", "http_conn_process_input_message: Redirect to: %s\n", location ? location : "");
-		
+
+		http_conn->do_close = http_conn_clone(http_conn);
+		http_conn->sec_ctx = NULL;
+
 		g_free(http_conn->host);
 		g_free(http_conn->url);
 		http_conn_parse_url(location, &http_conn->host, &http_conn->port, &http_conn->url);
-
-		http_conn_invalidate_ssl_connection(http_conn);
 
 		http_conn->gsc = purple_ssl_connect(http_conn->account,
 						    http_conn->host,
@@ -481,6 +504,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 						    http_conn_input0_cb_ssl,
 						    http_conn_ssl_connect_failure,
 						    http_conn);
+
 	}
 	/* Authentication required */
 	else if (msg->response == 401) {
@@ -500,7 +524,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn->data);
 			}
 			purple_debug_info("sipe-http", "http_conn_process_input_message: Authentication failed\n");
-			http_conn_set_close(http_conn, TRUE);
+			http_conn_set_close(http_conn);
 			return;
 		}
 		
@@ -554,7 +578,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn->data);
 			}
 			purple_debug_info("sipe-http", "http_conn_process_input_message: Failed to initialize security context\n");
-			http_conn_set_close(http_conn, TRUE);
+			http_conn_set_close(http_conn);
 			return;
 		}
 

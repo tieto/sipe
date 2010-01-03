@@ -195,7 +195,8 @@ sipe_ews_process_avail_response(int return_code,
 	
 	purple_debug_info("sipe", "sipe_ews_process_avail_response: cb started.\n");
 	
-	http_conn_set_close(ews->http_conn, TRUE);
+	http_conn_set_close(ews->http_conn);
+	ews->http_conn = NULL;
 
 	if (return_code == 200 && body) {
 		xmlnode *node;
@@ -298,7 +299,8 @@ sipe_ews_process_oof_response(int return_code,
 	
 	purple_debug_info("sipe", "sipe_ews_process_oof_response: cb started.\n");
 
-	http_conn_set_close(ews->http_conn, TRUE);
+	http_conn_set_close(ews->http_conn);
+	ews->http_conn = NULL;
 
 	if (return_code == 200 && body) {
 		char *state;
@@ -343,7 +345,8 @@ sipe_ews_process_autodiscover(int return_code,
 	
 	purple_debug_info("sipe", "sipe_ews_process_autodiscover: cb started.\n");
 
-	http_conn_set_close(ews->http_conn, TRUE);
+	http_conn_set_close(ews->http_conn);
+	ews->http_conn = NULL;
 	
 	if (return_code == 200 && body) {
 		xmlnode *node;
