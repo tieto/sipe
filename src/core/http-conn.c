@@ -466,7 +466,7 @@ http_conn_post(HttpConn *http_conn,
 	g_string_append_printf(outstr, HTTP_CONN_POST_HEADER,
 				http_conn->url,
 				http_conn->host,
-				http_conn->body ? strlen(http_conn->body) : 0,
+				http_conn->body ? (int)strlen(http_conn->body) : 0,
 				http_conn->content_type ? http_conn->content_type : "text/plain");
 	if (authorization) {
 		g_string_append_printf(outstr, "Authorization: %s\r\n", authorization);
