@@ -164,19 +164,20 @@ struct smb_header {
 
 struct negotiate_message {
 	guint8  protocol[8];		/* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0' */
-	guint32  type;			/* 0x00000001 */
+	guint32 type;			/* 0x00000001 */
 	guint32 flags;			/* 0xb203 */
 	struct smb_header domain;
 	struct smb_header host;
-#if 0
-	guint8  host[*];		/* host string (ASCII) */
-	guint8  dom[*];			/* domain string (ASCII) */
-#endif
+	struct version ver;
+	/* payload
+	 * - DomainName		(always ASCII)
+	 * - WorkstationName	(always ASCII)
+	 */
 };
 
 struct challenge_message {
 	guint8  protocol[8];		/* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
-	guint32  type;			/* 0x00000002 */
+	guint32 type;			/* 0x00000002 */
 	struct smb_header target_name;
 	guint32 flags;			/* 0x8201 */
 	guint8  nonce[8];
@@ -184,49 +185,37 @@ struct challenge_message {
 	struct smb_header target_info;
 	struct version ver;
 	/* payload
-	 * - TargetName
-	 * - TargetInfo (a sequence of AV_PAIR structures)
+	 * - TargetName						(negotiated encoding)
+	 * - TargetInfo (a sequence of AV_PAIR structures)	(always Unicode)
 	 */
 };
 
 struct authenticate_message {
 	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
 	guint32 type;            /* 0x00000003 */
-
+	/** LmChallengeResponseFields */
 	struct smb_header lm_resp;
-
-	/* NtChallengeResponseFields */
+	/** NtChallengeResponseFields */
 	struct smb_header nt_resp;
-
-	/* DomainNameFields */
+	/** DomainNameFields */
 	struct smb_header domain;
-
-	/* UserNameFields */
+	/** UserNameFields */
 	struct smb_header user;
-
-	/* WorkstationFields */
+	/** WorkstationFields */
 	struct smb_header host;
-
-	/* EncryptedRandomSessionKeyFields */
+	/** EncryptedRandomSessionKeyFields */
 	struct smb_header session_key;
-
 	guint32 flags;
-
-	// don't care values
-	// version
-	// mic
-
-	// payload
-/*	guint32  flags2;  unknown, used in windows messenger
-	guint32  flags3; */
-
-#if 0
-	guint8  dom[*];          /* domain string (unicode UTF-16LE) */
-	guint8  user[*];         /* username string (unicode UTF-16LE) */
-	guint8  host[*];         /* host string (unicode UTF-16LE) */
-	guint8  lm_resp[*];      /* LanManager response */
-	guint8  nt_resp[*];      /* NT response */
-#endif
+	struct version ver;
+	guint8  mic[16];
+	/* payload
+	 * - LmChallengeResponse
+	 * - NtChallengeResponse
+	 * - DomainName			(negotiated encoding)
+	 * - UserName			(negotiated encoding)
+	 * - Workstation		(negotiated encoding)
+	 * - EncryptedRandomSessionKey
+	 */
 };
 
 #ifndef HAVE_LANGINFO_CODESET
