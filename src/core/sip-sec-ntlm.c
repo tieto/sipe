@@ -105,11 +105,17 @@
 #define MsvAvNbDomainName	2
 #define MsvAvDnsComputerName	3
 #define MsvAvDnsDomainName	4
+/** @since Windows XP */
 #define MsvAvDnsTreeName	5
+/** @since Windows XP */
 #define MsvAvFlags		6
+/** @since Windows Vista */
 #define MsvAvTimestamp		7
+/** @since Windows Vista */
 #define MsAvRestrictions	8
+/** @since Windows 7 */
 #define MsvAvTargetName		9
+/** @since Windows 7 */
 #define MsvChannelBindings	10
 
 /***********************************************
@@ -121,9 +127,11 @@
 /* Negotiate flags required in connection-oriented NTLM */
 #define NEGOTIATE_FLAGS_CONN \
 	( NTLMSSP_NEGOTIATE_UNICODE | \
+	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
 	  NTLMSSP_REQUEST_TARGET | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
-	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN )
+	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
+	  0)
 
 /* Negotiate flags required in connectionless NTLM */
 #define NEGOTIATE_FLAGS \
@@ -339,6 +347,15 @@ MD4 (const unsigned char * d, int len, unsigned char * result)
 	purple_cipher_context_destroy(context);
 }
 
+static void
+MD5 (const unsigned char * d, int len, unsigned char * result)
+{
+	PurpleCipher * cipher = purple_ciphers_find_cipher("md5");
+	PurpleCipherContext * context = purple_cipher_context_new(cipher, NULL);
+	purple_cipher_context_append(context, (guchar*)d, len);
+	purple_cipher_context_digest(context, len, (guchar*)result, NULL);
+	purple_cipher_context_destroy(context);
+}
 
 static void
 NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char * result)
@@ -350,16 +367,6 @@ NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUS
 	MD4 (unicode_password, len, result);
 	g_free(unicode_password);
 }
-
-// static void
-// MD5 (const char * d, int len, char * result)
-// {
-	// PurpleCipher * cipher = purple_ciphers_find_cipher("md5");
-	// PurpleCipherContext * context = purple_cipher_context_new(cipher, NULL);
-	// purple_cipher_context_append(context, (guchar*)d, len);
-	// purple_cipher_context_digest(context, len, (guchar*)result, NULL);
-	// purple_cipher_context_destroy(context);
-// }
 
 static void
 RC4K (const unsigned char * k, const unsigned char * d, unsigned char * result)
@@ -427,6 +434,15 @@ NONCE(unsigned char *buffer, int num)
 	int i;
 	for (i = 0; i < num; i++) {
 		buffer[i] = (rand() & 0xff);
+	}
+}
+
+static void
+Z(unsigned char *buffer, int num)
+{
+	int i;
+	for (i = 0; i < num; i++) {
+		buffer[i] = 0;
 	}
 }
 
@@ -564,6 +580,8 @@ purple_ntlm_verify_signature (char * a, char * b)
 	return ret;
 }
 
+#define IS_FLAG(flags, flag) ((neg_flags & flag) == flag)
+
 static void
 purple_ntlm_gen_authenticate(guchar **ntlm_key,
 			     const gchar *user,
@@ -576,7 +594,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 			     SIPE_UNUSED_PARAMETER guint32 *flags)
 {
 	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
-	gboolean is_key_exch = ((neg_flags & NTLMSSP_NEGOTIATE_KEY_EXCH) == NTLMSSP_NEGOTIATE_KEY_EXCH);
+	gboolean is_key_exch = IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH);
 	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
 				+ strlen(user)+ strlen(hostname) + NTLMSSP_NT_OR_LM_KEY_LEN)
 				+ (is_key_exch ? NTLMSSP_SESSION_KEY_LEN : 0);
@@ -592,6 +610,40 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	unsigned char exported_session_key[16];
 	unsigned char encrypted_random_session_key [16];
 
+	NTOWFv1 (password, user, domain, response_key_nt);
+	LMOWFv1 (password, user, domain, response_key_lm);
+	
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_LM_KEY)) {
+		// @TODO do not even reference nt_challenge_response
+		Z (nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
+		DESL (response_key_lm, nonce, lm_challenge_response);
+	} else if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+		unsigned char client_challenge [8];
+		unsigned char z16 [16];
+		unsigned char prehash [16];
+		unsigned char hash [16];
+		
+		NONCE (client_challenge, 8);
+		
+		/* nt_challenge_response */
+		memcpy(prehash, nonce, 8);
+		memcpy(prehash + 8, client_challenge, 8);
+		MD5 (prehash, 16, hash);
+		DESL (response_key_nt, hash, nt_challenge_response);
+		
+		/* lm_challenge_response */
+		Z (z16, 16);
+		memcpy(lm_challenge_response, client_challenge, 8);
+		memcpy(lm_challenge_response + 8, z16, 16);
+	} else {
+		DESL (response_key_nt, nonce, nt_challenge_response);
+		if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_NT_ONLY)) {
+			memcpy(lm_challenge_response, nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
+		} else {
+			DESL (response_key_lm, nonce, lm_challenge_response);
+		}
+	}
+	
 	/* authenticate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
 	tmsg->type = 3;
@@ -621,18 +673,12 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	/* LM */
 	tmsg->lm_resp.len = tmsg->lm_resp.maxlen = NTLMSSP_NT_OR_LM_KEY_LEN;
 	tmsg->lm_resp.offset = tmsg->host.offset + tmsg->host.len;
-
-	LMOWFv1 (password, user, domain, response_key_lm);
-	DESL (response_key_lm, nonce, lm_challenge_response);
 	memcpy(tmp, lm_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
 	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
 
 	/* NT */
 	tmsg->nt_resp.len = tmsg->nt_resp.maxlen = NTLMSSP_NT_OR_LM_KEY_LEN;
 	tmsg->nt_resp.offset = tmsg->lm_resp.offset + tmsg->lm_resp.len;
-
-	NTOWFv1 (password, user, domain, response_key_nt);
-	DESL (response_key_nt, nonce, nt_challenge_response);
 	memcpy(tmp, nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
 	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
 
@@ -692,6 +738,12 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	/* Host */
 	tmsg->host.offset = tmsg->domain.offset + tmsg->domain.len;
 	tmsg->host.len = tmsg->host.maxlen = 0;
+	
+	/* Version */
+	//tmsg->ver.product_major_version = 5;	/* 5.1.2600 (Windows XP SP2) */
+	//tmsg->ver.product_minor_version = 1;
+	//tmsg->ver.product_build = 2600;
+	//tmsg->ver.ntlm_revision_current = 0x0F;	/* NTLMSSP_REVISION_W2K3 */
 
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
@@ -858,7 +910,7 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 	g_string_append(str, tmp);
 	g_free(tmp);
 	
-	//mic
+	/* mic */
 	buff.length = 16;
 	buff.value = cmsg->mic;	
 	g_string_append_printf(str, "\t%s: %s\n", "mic", (tmp = bytes_to_hex_str(&buff)));

@@ -30,8 +30,8 @@
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 
-#ifndef _WIN32
 #include "sip-sec-ntlm.h"
+#ifndef _WIN32
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 
@@ -45,11 +45,10 @@
 #else /* _WIN32 */
 #ifdef USE_KERBEROS
 #include "sip-sec-sspi.h"
-#define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
+#define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
 #else /* USE_KERBEROS */
-#include "sip-sec-ntlm.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
@@ -135,7 +134,9 @@ sip_sec_init_context_step(SipSecContext context,
 
 		if (out_buff.length > 0 && out_buff.value) {
 			tmp = sip_sec_ntlm_message_describe(out_buff);
-			purple_debug_info("sipe", "sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
+			if (tmp) {
+				purple_debug_info("sipe", "sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
+			}
 			g_free(tmp);
 		}
 
