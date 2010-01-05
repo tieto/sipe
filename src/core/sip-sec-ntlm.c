@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 pier11 <pier11@operamail.com>
+ * Copyright (C) 2009, 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
@@ -146,55 +146,43 @@ struct av_pair {
 	/* value */
 };
 
+/* 8 bytes */
+struct version {
+	guint8  product_major_version;
+	guint8  product_minor_version;
+	guint16 product_build;
+	guint8  zero2[3];
+	guint8  ntlm_revision_current;
+};
+
+/* 8 bytes */
+struct smb_header {
+	guint16 len;
+	guint16 maxlen;
+	guint32 offset;
+};
+
 struct negotiate_message {
-	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0' */
-	guint8  type;            /* 0x01 */
-	guint8  zero1[3];
-	guint32 flags;           /* 0xb203 */
-
-	guint16 dom_len1;        /* domain string length */
-	guint16 dom_len2;        /* domain string length */
-	guint16 dom_off;         /* domain string offset */
-	guint8  zero2[2];
-
-	guint16 host_len1;       /* host string length */
-	guint16 host_len2;       /* host string length */
-	guint16 host_off;        /* host string offset (always 0x20) */
-	guint8  zero3[2];
-
+	guint8  protocol[8];		/* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0' */
+	guint32  type;			/* 0x00000001 */
+	guint32 flags;			/* 0xb203 */
+	struct smb_header domain;
+	struct smb_header host;
 #if 0
-	guint8  host[*];         /* host string (ASCII) */
-	guint8  dom[*];          /* domain string (ASCII) */
+	guint8  host[*];		/* host string (ASCII) */
+	guint8  dom[*];			/* domain string (ASCII) */
 #endif
 };
 
 struct challenge_message {
 	guint8  protocol[8];		/* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
-	guint8  type;			/* 0x02 */
-	guint8  zero1[3];
-
-	guint16 target_name_len;
-	guint16 target_name_max_len;
-	guint16 target_name_off;	/* 0x28 */
-	guint8  zero2[2];
-
+	guint32  type;			/* 0x00000002 */
+	struct smb_header target_name;
 	guint32 flags;			/* 0x8201 */
-
 	guint8  nonce[8];
-	guint8  zero3[8];
-
-	guint16 target_info_len;
-	guint16 target_info_max_len;
-	guint16 target_info_off;	/* 0x28 */
-	guint8  zero4[2];
-
-	/* guint8  version[8]; */
-	guint8  product_major_version;
-	guint8  product_minor_version;
-	guint16 product_build;
-	guint8  zero5[3];
-	guint8  ntlm_revision_current;
-
+	guint8  zero1[8];
+	struct smb_header target_info;
+	struct version ver;
 	/* payload
 	 * - TargetName
 	 * - TargetInfo (a sequence of AV_PAIR structures)
@@ -203,50 +191,24 @@ struct challenge_message {
 
 struct authenticate_message {
 	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
-	//guint32 type;            /* 0x03 */
-	guint8  type;            /* 0x03 */
-	guint8  zero1[3];
+	guint32 type;            /* 0x00000003 */
 
-	guint16 lm_resp_len1;    /* LanManager response length (always 0x18)*/
-	guint16 lm_resp_len2;    /* LanManager response length (always 0x18)*/
-	//guint32 lm_resp_off;     /* LanManager response offset */
-	guint16 lm_resp_off;     /* LanManager response offset */
-	guint8  zero2[2];
+	struct smb_header lm_resp;
 
 	/* NtChallengeResponseFields */
-	guint16 nt_resp_len1;    /* NT response length (always 0x18) */
-	guint16 nt_resp_len2;    /* NT response length (always 0x18) */
-	//guint32 nt_resp_off;     /* NT response offset */
-	guint16 nt_resp_off;     /* NT response offset */
-	guint8  zero3[2];
+	struct smb_header nt_resp;
 
 	/* DomainNameFields */
-	guint16 dom_len1;        /* domain string length */
-	guint16 dom_len2;        /* domain string length */
-	//guint32 dom_off;         /* domain string offset (always 0x40) */
-	guint16 dom_off;         /* domain string offset (always 0x40) */
-	guint8  zero4[2];
+	struct smb_header domain;
 
 	/* UserNameFields */
-	guint16 user_len1;       /* username string length */
-	guint16 user_len2;       /* username string length */
-	//guint32 user_off;        /* username string offset */
-	guint16 user_off;        /* username string offset */
-	guint8  zero5[2];
+	struct smb_header user;
 
 	/* WorkstationFields */
-	guint16 host_len1;       /* host string length */
-	guint16 host_len2;       /* host string length */
-	//guint32 host_off;        /* host string offset */
-	guint16 host_off;        /* host string offset */
-	guint8  zero6[2];
+	struct smb_header host;
 
 	/* EncryptedRandomSessionKeyFields */
-	guint16	sess_len1;
-	guint16	sess_len2;
-	//guint32 sess_off;
-	guint16 sess_off;
-	guint8  zero7[2];
+	struct smb_header session_key;
 
 	guint32 flags;
 
@@ -648,27 +610,27 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	tmsg->flags = neg_flags;
 
 	/* Domain */
-	tmsg->dom_off = sizeof(struct authenticate_message);
+	tmsg->domain.offset = sizeof(struct authenticate_message);
 	tmp = ((char*) tmsg) + sizeof(struct authenticate_message);
 	remlen = ((char *)tmsg)+msglen-tmp;
-	tmsg->dom_len1 = tmsg->dom_len2 = unicode_strconvcopy(tmp, domain, remlen);
-	tmp += tmsg->dom_len1;
+	tmsg->domain.len = tmsg->domain.maxlen = unicode_strconvcopy(tmp, domain, remlen);
+	tmp += tmsg->domain.len;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
 	/* User */
-	tmsg->user_off = tmsg->dom_off + tmsg->dom_len1;
-	tmsg->user_len1 = tmsg->user_len2 = unicode_strconvcopy(tmp, user, remlen);
-	tmp += tmsg->user_len1;
+	tmsg->user.offset = tmsg->domain.offset + tmsg->domain.len;
+	tmsg->user.len = tmsg->user.maxlen = unicode_strconvcopy(tmp, user, remlen);
+	tmp += tmsg->user.len;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
 	/* Host */
-	tmsg->host_off = tmsg->user_off + tmsg->user_len1;
-	tmsg->host_len1 = tmsg->host_len2 = unicode_strconvcopy(tmp, hostname, remlen);
-	tmp += tmsg->host_len1;
+	tmsg->host.offset = tmsg->user.offset + tmsg->user.len;
+	tmsg->host.len = tmsg->host.maxlen = unicode_strconvcopy(tmp, hostname, remlen);
+	tmp += tmsg->host.len;
 
 	/* LM */
-	tmsg->lm_resp_len1 = tmsg->lm_resp_len2 = NTLMSSP_NT_OR_LM_KEY_LEN;
-	tmsg->lm_resp_off = tmsg->host_off + tmsg->host_len1;
+	tmsg->lm_resp.len = tmsg->lm_resp.maxlen = NTLMSSP_NT_OR_LM_KEY_LEN;
+	tmsg->lm_resp.offset = tmsg->host.offset + tmsg->host.len;
 
 	LMOWFv1 (password, user, domain, response_key_lm);
 	DESL (response_key_lm, nonce, lm_challenge_response);
@@ -676,8 +638,8 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
 
 	/* NT */
-	tmsg->nt_resp_len1 = tmsg->nt_resp_len2 = NTLMSSP_NT_OR_LM_KEY_LEN;
-	tmsg->nt_resp_off = tmsg->lm_resp_off + tmsg->lm_resp_len1;
+	tmsg->nt_resp.len = tmsg->nt_resp.maxlen = NTLMSSP_NT_OR_LM_KEY_LEN;
+	tmsg->nt_resp.offset = tmsg->lm_resp.offset + tmsg->lm_resp.len;
 
 	NTOWFv1 (password, user, domain, response_key_nt);
 	DESL (response_key_nt, nonce, nt_challenge_response);
@@ -690,8 +652,8 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 
 	if (is_key_exch)
 	{
-		tmsg->sess_len1 = tmsg->sess_len2 = NTLMSSP_SESSION_KEY_LEN;
-		tmsg->sess_off = tmsg->nt_resp_off + tmsg->nt_resp_len1;
+		tmsg->session_key.len = tmsg->session_key.maxlen = NTLMSSP_SESSION_KEY_LEN;
+		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
 
 		NONCE (exported_session_key, 16);
 		RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
@@ -701,8 +663,8 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	}
 	else
 	{
-		tmsg->sess_len1 = tmsg->sess_len2 = 0;
-		tmsg->sess_off = tmsg->nt_resp_off + tmsg->nt_resp_len1;
+		tmsg->session_key.len = tmsg->session_key.maxlen = 0;
+		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
 
 		memcpy(exported_session_key, key_exchange_key, 16);
 	}
@@ -734,12 +696,12 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	tmsg->flags = NEGOTIATE_FLAGS_CONN;
 
 	/* Domain */
-	tmsg->dom_off = sizeof(struct negotiate_message);
-	tmsg->dom_len1 = tmsg->dom_len2 = 0;
+	tmsg->domain.offset = sizeof(struct negotiate_message);
+	tmsg->domain.len = tmsg->domain.maxlen = 0;
 
 	/* Host */
-	tmsg->host_off = tmsg->dom_off + tmsg->dom_len1;
-	tmsg->host_len1 = tmsg->host_len2 = 0;
+	tmsg->host.offset = tmsg->domain.offset + tmsg->domain.len;
+	tmsg->host.len = tmsg->host.maxlen = 0;
 
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
@@ -807,40 +769,40 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 	gchar *ver_desc = "";
 	gchar *ntlm_revision_desc = "";
 
-	if (cmsg->product_major_version == 6) {
+	if (cmsg->ver.product_major_version == 6) {
 		ver_desc = "Windows Vista, Windows Server 2008, Windows 7 or Windows Server 2008 R2";
-	} else if (cmsg->product_major_version == 5 && cmsg->product_minor_version == 2) {
+	} else if (cmsg->ver.product_major_version == 5 && cmsg->ver.product_minor_version == 2) {
 		ver_desc = "Windows Server 2003";
-	} else if (cmsg->product_major_version == 5 && cmsg->product_minor_version == 1) {
+	} else if (cmsg->ver.product_major_version == 5 && cmsg->ver.product_minor_version == 1) {
 		ver_desc = "Windows XP SP2";
 	}
 
-	if (cmsg->ntlm_revision_current == 0x0F) {
+	if (cmsg->ver.ntlm_revision_current == 0x0F) {
 		ntlm_revision_desc = "NTLMSSP_REVISION_W2K3";
-	} else if (cmsg->ntlm_revision_current == 0x0A) {
+	} else if (cmsg->ver.ntlm_revision_current == 0x0A) {
 		ntlm_revision_desc = "NTLMSSP_REVISION_W2K3_RC1";
 	}
 
-	g_string_append_printf(str, "\ttarget_name_len: %d\n", cmsg->target_name_len);
-	g_string_append_printf(str, "\ttarget_name_max_len: %d\n", cmsg->target_name_max_len);
-	g_string_append_printf(str, "\ttarget_name_off: %d\n", cmsg->target_name_off);
+	g_string_append_printf(str, "\ttarget_name.len: %d\n", cmsg->target_name.len);
+	g_string_append_printf(str, "\ttarget_name.maxlen: %d\n", cmsg->target_name.maxlen);
+	g_string_append_printf(str, "\ttarget_name.offset: %d\n", cmsg->target_name.offset);
 
-	g_string_append_printf(str, "\ttarget_info_len: %d\n", cmsg->target_info_len);
-	g_string_append_printf(str, "\ttarget_info_max_len: %d\n", cmsg->target_info_max_len);
-	g_string_append_printf(str, "\ttarget_info_off: %d\n", cmsg->target_info_off);
+	g_string_append_printf(str, "\ttarget_info_len: %d\n", cmsg->target_info.len);
+	g_string_append_printf(str, "\ttarget_info.maxlen: %d\n", cmsg->target_info.maxlen);
+	g_string_append_printf(str, "\ttarget_info.offset: %d\n", cmsg->target_info.offset);
 
-	g_string_append_printf(str, "\tproduct_version: %d.%d (%s)\n", cmsg->product_major_version, cmsg->product_minor_version, ver_desc);
-	g_string_append_printf(str, "\tproduct_build: %d\n", cmsg->product_build);
-	g_string_append_printf(str, "\tntlm_revision_current: (0x%02X) %s\n", cmsg->ntlm_revision_current, ntlm_revision_desc);
+	g_string_append_printf(str, "\tproduct: %d.%d.%d (%s)\n",
+		cmsg->ver.product_major_version, cmsg->ver.product_minor_version, cmsg->ver.product_build, ver_desc);
+	g_string_append_printf(str, "\tntlm_revision_current: 0x%02X (%s)\n", cmsg->ver.ntlm_revision_current, ntlm_revision_desc);
 
-	if (cmsg->target_name_len && cmsg->target_name_off) {
-		gchar *target_name = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->target_name_off), cmsg->target_name_len);
+	if (cmsg->target_name.len && cmsg->target_name.offset) {
+		gchar *target_name = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->target_name.offset), cmsg->target_name.len);
 		g_string_append_printf(str, "\ttarget_name: %s\n", target_name);
 		g_free(target_name);
 	}
 
-	if (cmsg->target_info_len && cmsg->target_info_off) {
-		void *target_info = ((gchar *)cmsg + cmsg->target_info_off);
+	if (cmsg->target_info.len && cmsg->target_info.offset) {
+		void *target_info = ((gchar *)cmsg + cmsg->target_info.offset);
 		struct av_pair *av = (struct av_pair*)target_info;
 
 		while (av->av_id != MsvAvEOL) {
