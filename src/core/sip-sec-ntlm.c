@@ -143,7 +143,7 @@
 struct av_pair {
 	guint16 av_id;
 	guint16 av_len;
-	/* value */	
+	/* value */
 };
 
 struct negotiate_message {
@@ -174,7 +174,7 @@ struct challenge_message {
 	guint8  zero1[3];
 
 	guint16 target_name_len;
-	guint16 target_name_max_len;	
+	guint16 target_name_max_len;
 	guint16 target_name_off;	/* 0x28 */
 	guint8  zero2[2];
 
@@ -184,7 +184,7 @@ struct challenge_message {
 	guint8  zero3[8];
 
 	guint16 target_info_len;
-	guint16 target_info_max_len;	
+	guint16 target_info_max_len;
 	guint16 target_info_off;	/* 0x28 */
 	guint8  zero4[2];
 
@@ -193,7 +193,7 @@ struct challenge_message {
 	guint8  product_minor_version;
 	guint16 product_build;
 	guint8  zero5[3];
-	guint8  ntlm_revision_current;		
+	guint8  ntlm_revision_current;
 
 	/* payload
 	 * - TargetName
@@ -338,12 +338,12 @@ unicode_strconvcopy_back(const gchar *source,
 {
 	char *res = NULL;
 	int dest_len = 2 * len;
-	unsigned char *dest = g_new0(unsigned char, dest_len);
+	gchar *dest = g_new0(gchar, dest_len);
 
-	dest_len = unicode_strconvcopy_dir((gchar *) dest, source, dest_len, len, FALSE);
+	dest_len = unicode_strconvcopy_dir(dest, source, dest_len, len, FALSE);
 	res = g_strndup(dest, dest_len);
 	g_free(dest);
-	
+
 	return res;
 }
 
@@ -712,7 +712,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	tmp = purple_base64_encode(exported_session_key, 16);
 	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE session key: %s\n", tmp);
 	g_free(tmp);
-	
+
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
 }
@@ -740,7 +740,7 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	/* Host */
 	tmsg->host_off = tmsg->dom_off + tmsg->dom_len1;
 	tmsg->host_len1 = tmsg->host_len2 = 0;
-	
+
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
 }
@@ -803,7 +803,7 @@ g_free(tmp);
 static gchar *
 sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 {
-	GString* str = g_string_new(NULL);	
+	GString* str = g_string_new(NULL);
 	gchar *ver_desc = "";
 	gchar *ntlm_revision_desc = "";
 
@@ -814,7 +814,7 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 	} else if (cmsg->product_major_version == 5 && cmsg->product_minor_version == 1) {
 		ver_desc = "Windows XP SP2";
 	}
-	
+
 	if (cmsg->ntlm_revision_current == 0x0F) {
 		ntlm_revision_desc = "NTLMSSP_REVISION_W2K3";
 	} else if (cmsg->ntlm_revision_current == 0x0A) {
@@ -828,23 +828,23 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 	g_string_append_printf(str, "\ttarget_info_len: %d\n", cmsg->target_info_len);
 	g_string_append_printf(str, "\ttarget_info_max_len: %d\n", cmsg->target_info_max_len);
 	g_string_append_printf(str, "\ttarget_info_off: %d\n", cmsg->target_info_off);
-	
+
 	g_string_append_printf(str, "\tproduct_version: %d.%d (%s)\n", cmsg->product_major_version, cmsg->product_minor_version, ver_desc);
 	g_string_append_printf(str, "\tproduct_build: %d\n", cmsg->product_build);
 	g_string_append_printf(str, "\tntlm_revision_current: (0x%02X) %s\n", cmsg->ntlm_revision_current, ntlm_revision_desc);
-	
+
 	if (cmsg->target_name_len && cmsg->target_name_off) {
-		gchar *target_name = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->target_name_off), cmsg->target_name_len);		
+		gchar *target_name = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->target_name_off), cmsg->target_name_len);
 		g_string_append_printf(str, "\ttarget_name: %s\n", target_name);
 		g_free(target_name);
 	}
-	
+
 	if (cmsg->target_info_len && cmsg->target_info_off) {
 		void *target_info = ((gchar *)cmsg + cmsg->target_info_off);
 		struct av_pair *av = (struct av_pair*)target_info;
-		
+
 		while (av->av_id != MsvAvEOL) {
-			guint8* av_value = ((guint8*)av) + 4;
+			gchar *av_value = ((gchar *)av) + 4;
 
 			switch (av->av_id) {
 				case MsvAvEOL:
@@ -875,11 +875,11 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 					g_string_append_printf(str, "\t%s\n", "MsvChannelBindings");
 					break;
 			}
-			
+
 			av = (struct av_pair*)(((guint8*)av) + 4 + av->av_len);
 		}
 	}
-	
+
 	return g_string_free(str, FALSE);
 }
 
@@ -931,7 +931,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			out_buff->value = NULL;
 		} else {
 			purple_ntlm_gen_negotiate(out_buff);
-		}		
+		}
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
 	} else 	{
@@ -945,7 +945,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		}
 
 		nonce = g_memdup(purple_ntlm_parse_challenge(in_buff, context->is_connection_based, &flags), 8);
-		
+
 		flags_desc = sip_sec_ntlm_negotiate_flags_describe(flags);
 		purple_debug_info("sipe", "sip_sec_init_sec_context__ntlm: Negotiate flags are:\n%s", flags_desc ? flags_desc : "");
 		g_free(flags_desc);
