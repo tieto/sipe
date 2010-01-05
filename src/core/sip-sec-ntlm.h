@@ -23,3 +23,9 @@
 
 SipSecContext
 sip_sec_create_context__ntlm(SipSecAuthType type);
+
+/**
+ * Describes NTML messages in human readable form
+ */
+gchar *
+sip_sec_ntlm_message_describe(SipSecBuffer buff);
