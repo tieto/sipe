@@ -170,6 +170,11 @@ sipe_ews_free(struct sipe_ews* ews)
 {
 	g_free(ews->email);
 	g_free(ews->legacy_dn);
+	if (ews->auth) {
+		g_free(ews->auth->domain);
+		g_free(ews->auth->user);
+		g_free(ews->auth->password);
+	}
 	g_free(ews->auth);
 	g_free(ews->as_url);
 	g_free(ews->oof_url);
@@ -543,20 +548,43 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 	purple_debug_info("sipe", "sipe_ews_update_calendar: started.\n");
 
 	if (!sip->ews) {
+		const char *email_url;
 		const char *email;
+		const char *email_login;
+		const char *email_password;
+		char *email_auth_user = NULL;
+		char *email_auth_domain = NULL;
+		char *tmp = NULL;
 		sip->ews = g_new0(struct sipe_ews, 1);
 		sip->ews->sip = sip;
 
 		sip->ews->account = sip->account;
-		email = purple_account_get_string(sip->account, "email", NULL);
+		email_url      = purple_account_get_string(sip->account, "email_url", NULL);
+		email          = purple_account_get_string(sip->account, "email", NULL);		
+		email_login    = purple_account_get_string(sip->account, "email_login", NULL);
+		email_password = purple_account_get_string(sip->account, "email_password", NULL);
+
+		if (email_url) {
+			sip->ews->as_url  = g_strdup(email_url);
+			sip->ews->oof_url = g_strdup(email_url);
+			sip->ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+		}
+
+		if (email_login && (tmp = strstr(email_login, "\\"))) {
+			email_auth_user   = g_strdup(tmp + 1);
+			email_auth_domain = g_strndup(email_login, tmp - email_login);
+		} else {
+			email_auth_user   = g_strdup(email_login);
+		}	
+
 		sip->ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
 
 		sip->ews->auth = g_new0(HttpConnAuth, 1);
-		sip->ews->auth->domain = sip->authdomain;
-		sip->ews->auth->user = sip->authuser;
-		sip->ews->auth->password = sip->password;
+		sip->ews->auth->domain   = !is_empty(email_login) ? email_auth_domain        : g_strdup(sip->authdomain);
+		sip->ews->auth->user     = !is_empty(email_login) ? email_auth_user          : g_strdup(sip->authuser);
+		sip->ews->auth->password = !is_empty(email_login) ? g_strdup(email_password) : g_strdup(sip->password);
 	}
-	
+
 	if(sip->ews->is_disabled) {
 		purple_debug_info("sipe", "sipe_ews_update_calendar: disabled, exiting.\n");
 		return;

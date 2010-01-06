@@ -8677,7 +8677,7 @@ static void init_plugin(PurplePlugin *plugin)
 	purple_account_option_add_list_item(option, _("None"), "NONE");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	/** Example: https://company.com/EWS/Exchange.asmx */
+	/** Example: https://server.company.com/EWS/Exchange.asmx */
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	
@@ -8689,6 +8689,7 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 	
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
+	purple_account_option_set_masked(option, TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	my_protocol = plugin;
