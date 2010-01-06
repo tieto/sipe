@@ -330,7 +330,7 @@ sipe_ews_process_oof_response(int return_code,
 			
 			g_free(tmp);
 			ews->oof_note = purple_markup_strip_html(html);
-			g_free(tmp);
+			g_free(html);
 		}
 		g_free(state);
 
