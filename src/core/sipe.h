@@ -624,20 +624,22 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  */
 #define SIPE_SOAP_SET_PRESENCE_CALENDAR \
 "<calendarInfo mailboxId=\"%s\" startTime=\"%s\" granularity=\"PT15M\">%s</calendarInfo>"
+#define SIPE_SOAP_SET_PRESENCE_CALENDAR_EMPTY \
+"%s%s%s"
 	
 #define SIPE_SOAP_SET_PRESENCE_NOTE_XML          "<note>%s</note>"
 #define SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY    "%s"
-#define SIPE_SOAP_SET_PRESENCE(note_xml) sipe_soap("setPresence", \
+#define SIPE_SOAP_SET_PRESENCE(note_xml, cal_xml) sipe_soap("setPresence", \
 	"<m:presentity m:uri=\"sip:%s\">"\
 	"<m:availability m:aggregate=\"%d\"/>"\
 	"<m:activity m:aggregate=\"%d\" m:note=\"%s\"/>"\
-	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" name=\"USER-DESKTOP\"/>"\
+	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" name=\"%s\"/>"\
 	"<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" namespace=\"rtcService\">"\
 	"&lt;![CDATA[<caps><renders_gif/><renders_isf/></caps>]]&gt;</rtc:devicedata>"\
 	"<userInfo xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\">"\
 	note_xml \
         "</userInfo>"\
-	"%s"\
+	cal_xml \
 	"</m:presentity>")
 
 #define SIPE_SOAP_SEARCH_CONTACT \

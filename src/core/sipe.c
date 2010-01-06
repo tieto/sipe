@@ -5824,12 +5824,14 @@ send_presence_soap(struct sipe_account_data *sip,
 		   gboolean do_publish_calendar)
 {
 	struct sipe_ews* ews = sip->ews;
-	char *fb_start_str;
-	char *free_busy_base64;
-	char *calendarData = NULL;
+	char *fb_start_str = NULL;
+	char *free_busy_base64 = NULL;
 	int availability = 300; /* online */
 	int activity = 400;  /* Available */
 	gchar *body;
+	gchar *tmp;
+	const char *xml = NULL;
+	gboolean pub_cal;
 
 	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY)) {
 		activity = 100;
@@ -5851,28 +5853,30 @@ send_presence_soap(struct sipe_account_data *sip,
 		activity = 400; /* available */
 	}
 
-	if (do_publish_calendar &&
-	    ews && !is_empty(ews->legacy_dn) && ews->fb_start && !is_empty(ews->free_busy))
-	{	
+	pub_cal = (do_publish_calendar &&
+		   ews && (!is_empty(ews->legacy_dn) || !is_empty(ews->email)) && ews->fb_start && !is_empty(ews->free_busy));
+	if (pub_cal) {	
 		fb_start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
 		free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
-
-		calendarData = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_CALENDAR,
-					sip->ews->legacy_dn,
-					fb_start_str,
-					free_busy_base64);
 	}
 
-	//@TODO: send user data - state; add hostname in upper case
-	body = g_markup_printf_escaped(note ? SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML) :
-					      SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY),
+	//@TODO: send user data - state;
+	if (note  && pub_cal)  xml = SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML      , SIPE_SOAP_SET_PRESENCE_CALENDAR);
+	if (note  && !pub_cal) xml = SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML      , SIPE_SOAP_SET_PRESENCE_CALENDAR_EMPTY);
+	if (!note && pub_cal)  xml = SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY, SIPE_SOAP_SET_PRESENCE_CALENDAR);
+	if (!note && !pub_cal) xml = SIPE_SOAP_SET_PRESENCE(SIPE_SOAP_SET_PRESENCE_NOTE_XML_EMPTY, SIPE_SOAP_SET_PRESENCE_CALENDAR_EMPTY);
+
+	body = g_markup_printf_escaped(xml,
 				       sip->username,
 				       availability,
 				       activity,
 				       note ? note : "",
+				       (tmp = g_ascii_strup(sipe_get_host_name(), -1)),				       
 				       note ? note : "",
-				       calendarData ? calendarData : "");
-	g_free(calendarData);
+				       pub_cal ? (!is_empty(ews->legacy_dn) ? ews->legacy_dn : ews->email) : "",
+				       pub_cal ? fb_start_str : "",
+				       pub_cal ? free_busy_base64 : "");
+	g_free(tmp);
 	send_soap_request(sip, body);
 	g_free(body);
 }
