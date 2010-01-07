@@ -57,6 +57,8 @@ sipe_mktime_tz(struct tm *tm,
  * Converts hex representation of freebusy string as
  * returned by Exchange Web Services to
  * condenced and base64 encoded form
+ *
+ * Must be g_free()'d after use.
  */ 
 char *
 sipe_cal_get_freebusy_base64(const char* freebusy_hex);
