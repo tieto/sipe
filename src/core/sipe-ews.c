@@ -292,6 +292,9 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		
 		ews->state = SIPE_EWS_STATE_AVAILABILITY_SUCCESS;
 		sipe_ews_run_state_machine(ews);
+	
+	} else if (return_code < 0) {
+		ews->http_conn = NULL;
 	}
 }
 
@@ -338,6 +341,9 @@ sipe_ews_process_oof_response(int return_code,
 		
 		ews->state = SIPE_EWS_STATE_OOF_SUCCESS;
 		sipe_ews_run_state_machine(ews);
+	
+	} else if (return_code < 0) {
+		ews->http_conn = NULL;
 	}
 }
 
@@ -394,6 +400,9 @@ sipe_ews_process_autodiscover(int return_code,
 		sipe_ews_run_state_machine(ews);
 	
 	} else {
+		if (return_code < 0) {
+			ews->http_conn = NULL;
+		}
 		switch (ews->auto_disco_method) {
 			case 1:
 				ews->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
