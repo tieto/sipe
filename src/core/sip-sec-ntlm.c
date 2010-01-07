@@ -1098,6 +1098,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		guchar *ntlm_key;
 		guchar *nonce;
 		guint32 flags;
+		gchar *tmp;
 
 		if (!in_buff.value || !in_buff.length) {
 			return SIP_SEC_E_INTERNAL_ERROR;
@@ -1108,13 +1109,14 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		purple_ntlm_gen_authenticate(&ntlm_key,
 					     ctx->username,
 					     ctx->password,
-					     sipe_get_host_name(),
+					     (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
 					     ctx->domain,
 					     nonce,
 					     context->is_connection_based,
 					     out_buff,
 					     &flags);
 		g_free(nonce);
+		g_free(tmp);
 
 		g_free(ctx->key);
 		ctx->key = ntlm_key;
