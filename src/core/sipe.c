@@ -1482,14 +1482,14 @@ sipe_schedule_action_msec(const gchar *name,
 static void
 sipe_sched_calendar_status_update(struct sipe_account_data *sip,
 				  time_t calculate_from);
-	
-static void	
+
+static void
 sipe_got_user_status(struct sipe_account_data *sip,
 		     const char* uri,
 		     const char *status_id)
 {
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
-	
+
 	/* Check if on 2005 system contact's calendar is in Busy status,
 	 * then set/preserve it.
 	 */
@@ -1497,7 +1497,7 @@ sipe_got_user_status(struct sipe_account_data *sip,
 		PurpleBuddy *pbuddy = purple_find_buddy(sip->account, sbuddy->name);
 		const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
 		const PurpleStatus *status = purple_presence_get_active_status(presence);
-		
+
 		sbuddy->last_non_cal_status_id = g_strdup(status_id);
 		sbuddy->last_non_cal_activity = sbuddy->activity;
 		sbuddy->activity = g_strdup(_("In a meeting"));
@@ -1548,8 +1548,8 @@ update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
 		}
 	}
 }
-				  
-/** 
+
+/**
  * Updates contact's status
  * based on their calendar information.
  *
@@ -1558,14 +1558,14 @@ update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
 static void
 update_calendar_status(struct sipe_account_data *sip)
 {
-	purple_debug_info("sipe", "update_calendar_status() started.\n");	
-	g_hash_table_foreach(sip->buddies, (GHFunc)update_calendar_status_cb, (gpointer)sip);	
-	
+	purple_debug_info("sipe", "update_calendar_status() started.\n");
+	g_hash_table_foreach(sip->buddies, (GHFunc)update_calendar_status_cb, (gpointer)sip);
+
 	/* repeat scheduling */
 	sipe_sched_calendar_status_update(sip, time(NULL) + 3*60 /* 3 min */);
 }
 
-/** 
+/**
  * Schedules process of contacts' status update
  * based on their calendar information.
  * Should be scheduled to the beginning of every
@@ -1586,7 +1586,7 @@ sipe_sched_calendar_status_update(struct sipe_account_data *sip,
 			  asctime(localtime(&calculate_from)));
 	purple_debug_info("sipe", "sipe_sched_calendar_status_update: next start time    : %s",
 			  asctime(localtime(&next_start)));
-	
+
 	sipe_schedule_action("<+2005-cal-status>",
 			     (int)(next_start - time(NULL)),
 			     (Action)update_calendar_status,
@@ -2148,8 +2148,8 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Do Not Disturb (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
 			       SIPE_STATUS_ID_DND, NULL,
-			       FALSE);			       
-				
+			       FALSE);
+
 	/* In a meeting (not user settable)
 	 * Calendar-driven status for 2005 systems.
 	 */
@@ -2200,7 +2200,7 @@ static void sipe_buddy_subscribe_cb(SIPE_UNUSED_PARAMETER char *name, struct sip
 	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
 	guint time_range = (g_hash_table_size(sip->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
-	
+
 	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(buddy->name));
 	g_free(action_name);
 }
@@ -2701,11 +2701,11 @@ free_publication(struct sipe_publication *publication)
 {
 	g_free(publication->category);
 	g_free(publication->note);
-	
+
 	g_free(publication->working_hours_xml_str);
 	g_free(publication->fb_start_str);
 	g_free(publication->free_busy_base64);
-	
+
 	g_free(publication);
 }
 
@@ -2923,7 +2923,7 @@ sipe_update_calendar(struct sipe_account_data *sip)
 	if (!strcmp(calendar, "EXCH")) {
 		sipe_ews_update_calendar(sip);
 	}
-	
+
 	/* schedule repeat */
 	sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_INTERVAL, (Action)sipe_update_calendar, NULL, sip, NULL);
 
@@ -5544,7 +5544,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		if (!is_empty(cal_free_busy_base64)) {
 			g_free(sbuddy->cal_start_time);
 			sbuddy->cal_start_time = g_strdup(cal_start_time);
-			
+
 			sbuddy->cal_granularity = !g_ascii_strcasecmp(cal_granularity, "PT15M") ? 15 : 0;
 
 			g_free(sbuddy->cal_free_busy_base64);
@@ -5828,7 +5828,7 @@ send_presence_soap(struct sipe_account_data *sip,
 	int activity = 400;  /* Available */
 	gchar *body;
 	gchar *tmp;
-	gchar *tmp2;
+	gchar *tmp2 = NULL;
 	const gchar *note_pub = NULL;
 	gchar *calendar_data = NULL;
 
@@ -6151,7 +6151,7 @@ static gchar *
 sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 {
 	struct sipe_ews* ews = sip->ews;
-	
+
 	/* key is <category><instance><container> */
 	gchar *key_cal_1     = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 1);
 	gchar *key_cal_100   = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 100);
@@ -6182,7 +6182,7 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 	g_free(key_cal_300);
 	g_free(key_cal_400);
 	g_free(key_cal_32000);
-	
+
 	if (!ews || is_empty(ews->email) || is_empty(ews->working_hours_xml_str)) {
 		purple_debug_info("sipe", "sipe_publish_get_category_cal_working_hours: no data to publish, exiting\n");
 		return NULL;
@@ -6232,10 +6232,10 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	const char *st;
 	const char *fb;
 	char *res;
-	
+
 	/* key is <category><instance><container> */
 	gchar *key_cal_1     = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 1);
-	gchar *key_cal_100   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 100);	
+	gchar *key_cal_100   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 100);
 	gchar *key_cal_200   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 200);
 	gchar *key_cal_300   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 300);
 	gchar *key_cal_400   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 400);
@@ -6260,15 +6260,15 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	g_free(key_cal_300);
 	g_free(key_cal_400);
 	g_free(key_cal_32000);
-	
+
 	if (!ews || is_empty(ews->email) || !ews->fb_start || is_empty(ews->free_busy)) {
 		purple_debug_info("sipe", "sipe_publish_get_category_cal_free_busy: no data to publish, exiting\n");
 		return NULL;
 	}
-	
+
 	fb_start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
 	free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
-	
+
 	st = publication_cal_300 ? publication_cal_300->fb_start_str : NULL;
 	fb = publication_cal_300 ? publication_cal_300->free_busy_base64 : NULL;
 
@@ -7133,7 +7133,7 @@ static void sipe_login(PurpleAccount *account)
 		return;
 	}
 	sip->username = g_strdup(signinname_login[0]);
-	
+
 	/* ensure that email format is name@domain if provided */
 	email = purple_account_get_string(sip->account, "email", NULL);
 	if (!is_empty(email) &&
@@ -8689,14 +8689,14 @@ static void init_plugin(PurplePlugin *plugin)
 	/** Example: https://server.company.com/EWS/Exchange.asmx */
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	
+
 	option = purple_account_option_string_new(_("Email address\n(if different from Username)"), "email", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	
+
 	/** Example: DOMAIN\user  or  user@company.com */
 	option = purple_account_option_string_new(_("Email login\n(if different from Login)"), "email_login", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-	
+
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
 	purple_account_option_set_masked(option, TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
