@@ -330,11 +330,17 @@ sipe_ews_process_oof_response(int return_code,
 		g_free(ews->oof_note);
 		state = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "OofState", NULL));
 		if (!strcmp(state, "Enabled")) {
-			char *tmp = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
-			char *html = purple_unescape_html(tmp);
-			
+			unsigned char *tmp = xmlnode_get_data(
+				xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
+			char *html;
+			/* UTF-8 encoded BOM (0xEF 0xBB 0xBF) as a signature to mark the beginning of a UTF-8 file */
+			if (tmp && strlen(tmp) > 3 && tmp[0]==0xEF && tmp[1]==0xBB && tmp[2]==0xBF) {
+				html = purple_unescape_html(tmp+3);
+			} else {
+				html = purple_unescape_html(tmp);
+			}			
 			g_free(tmp);
-			ews->oof_note = purple_markup_strip_html(html);
+			ews->oof_note = g_strstrip(purple_markup_strip_html(html));
 			g_free(html);
 		}
 		g_free(state);
