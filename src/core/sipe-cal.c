@@ -716,6 +716,7 @@ char *
 sipe_cal_get_description(struct sipe_buddy *buddy)
 {
 	time_t cal_start;
+	time_t cal_end;
 	int current_cal_state;
 	time_t now = time(NULL);
 	time_t start = TIME_NULL;
@@ -748,6 +749,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	}
 
 	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
+	cal_end = cal_start + 60 * (buddy->cal_granularity) * strlen(buddy->cal_free_busy);
 
 	current_cal_state = sipe_cal_get_status0(free_busy, cal_start, buddy->cal_granularity, time(NULL), &index);
 	if (current_cal_state == SIPE_CAL_NO_DATA) {
@@ -782,6 +784,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		purple_debug_info("sipe", "Local switch time   : %s",
 			IS(switch_time) ? asctime(localtime(&switch_time)) : "\n");
 	}
+	purple_debug_info("sipe", "Calendar End (GMT)  : %s", asctime(gmtime(&cal_end)));
 	purple_debug_info("sipe", "current cal state   : %s\n", cal_states[current_cal_state]);
 	purple_debug_info("sipe", "switch  cal state   : %s\n", cal_states[to_state]         );
 
@@ -800,12 +803,15 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		until = min_t of SOD, EOD, NSOD, SW (min_t(x) = min(x-now) where x>now only)
 	else
 		until = SW
+		
+	if (!until && (cal_period_end > now + 8H))
+		until = cal_period_end
 
 	if (!until)
 		return "Currently %", current_cal_state
 
 	if (until - now > 8H)
-		if (current_cal_state == Free && (work_hours && !in work_hours))
+		if (current_cal_state == Free && (work_hours && !in work_hours(now)))
 			return "Outside of working hours for next 8 hours"
 		else
 			return "%s for next 8 hours", current_cal_state
@@ -818,7 +824,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		" until %.2d:%.2d", until
 	else
 		"Currently %", current_cal_state
-		if (work_hours && until !in work_hours)
+		if (work_hours && until !in work_hours(until))
 			". Outside of working hours at at %.2d:%.2d", until
 		else
 			". %s at %.2d:%.2d", to_state, until
@@ -829,6 +835,9 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	} else {
 		until = switch_time;
 	}
+	
+	if (!IS(until) && (cal_end - now > 8*60*60))
+		until = cal_end;
 
 	if (!IS(until)) {
 		return g_strdup_printf(_("Currently %s"), cal_states[current_cal_state]);
