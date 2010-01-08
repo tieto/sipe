@@ -153,9 +153,9 @@ static void
 sipe_ews_cal_events_free(GSList *cal_events)
 {
 	GSList *entry = cal_events;
-	
+
 	if (!cal_events) return;
-	
+
 	while (entry) {
 		struct sipe_cal_event *cal_event = entry->data;
 		sipe_cal_event_free(cal_event);
@@ -182,9 +182,9 @@ sipe_ews_free(struct sipe_ews* ews)
 	g_free(ews->oof_note);
 	g_free(ews->free_busy);
 	g_free(ews->working_hours_xml_str);
-	
+
 	sipe_ews_cal_events_free(ews->cal_events);
-	
+
 	g_free(ews);
 }
 
@@ -197,10 +197,10 @@ sipe_ews_process_avail_response(int return_code,
 				void *data)
 {
 	struct sipe_ews *ews = data;
-	
+
 	purple_debug_info("sipe", "sipe_ews_process_avail_response: cb started.\n");
-	
-	if(ews->oof_url && strcmp(ews->as_url, ews->oof_url)) { /* whether reuse conn */ 
+
+	if(ews->oof_url && strcmp(ews->as_url, ews->oof_url)) { /* whether reuse conn */
 		http_conn_set_close(ews->http_conn);
 		ews->http_conn = NULL;
 	}
@@ -230,7 +230,7 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		node = xmlnode_get_descendant(resp, "FreeBusyView", "WorkingHours", NULL);
 		ews->working_hours_xml_str = xmlnode_to_str(node, NULL);
 		purple_debug_info("sipe", "sipe_ews_process_avail_response: ews->working_hours_xml_str:\n%s\n",
-				  ews->working_hours_xml_str ? ews->working_hours_xml_str : "");		
+				  ews->working_hours_xml_str ? ews->working_hours_xml_str : "");
 
 		sipe_ews_cal_events_free(ews->cal_events);
 		ews->cal_events = NULL;
@@ -281,20 +281,20 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 				cal_event->cal_status = SIPE_CAL_NO_DATA;
 			}
 			g_free(tmp);
-			
+
 			cal_event->subject = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "Subject", NULL));
 			cal_event->location = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "Location", NULL));
-			
+
 			tmp = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "IsMeeting", NULL));
 			cal_event->is_meeting = tmp ? !strcmp(tmp, "true") : TRUE;
 			g_free(tmp);
 		}
 
 		xmlnode_free(xml);
-		
+
 		ews->state = SIPE_EWS_STATE_AVAILABILITY_SUCCESS;
 		sipe_ews_run_state_machine(ews);
-	
+
 	} else if (return_code < 0) {
 		ews->http_conn = NULL;
 	}
@@ -306,7 +306,7 @@ sipe_ews_process_oof_response(int return_code,
 			      void *data)
 {
 	struct sipe_ews *ews = data;
-	
+
 	purple_debug_info("sipe", "sipe_ews_process_oof_response: cb started.\n");
 
 	http_conn_set_close(ews->http_conn);
@@ -330,15 +330,15 @@ sipe_ews_process_oof_response(int return_code,
 		g_free(ews->oof_note);
 		state = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "OofState", NULL));
 		if (!strcmp(state, "Enabled")) {
-			unsigned char *tmp = xmlnode_get_data(
+			char *tmp = xmlnode_get_data(
 				xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
 			char *html;
 			/* UTF-8 encoded BOM (0xEF 0xBB 0xBF) as a signature to mark the beginning of a UTF-8 file */
-			if (tmp && strlen(tmp) > 3 && tmp[0]==0xEF && tmp[1]==0xBB && tmp[2]==0xBF) {
+			if (tmp && strncmp(tmp, "\xEF\xBB\xBF", 3)) {
 				html = purple_unescape_html(tmp+3);
 			} else {
 				html = purple_unescape_html(tmp);
-			}			
+			}
 			g_free(tmp);
 			ews->oof_note = g_strstrip(purple_markup_strip_html(html));
 			g_free(html);
@@ -346,10 +346,10 @@ sipe_ews_process_oof_response(int return_code,
 		g_free(state);
 
 		xmlnode_free(xml);
-		
+
 		ews->state = SIPE_EWS_STATE_OOF_SUCCESS;
 		sipe_ews_run_state_machine(ews);
-	
+
 	} else if (return_code < 0) {
 		ews->http_conn = NULL;
 	}
@@ -361,17 +361,17 @@ sipe_ews_process_autodiscover(int return_code,
 			      void *data)
 {
 	struct sipe_ews *ews = data;
-	
+
 	purple_debug_info("sipe", "sipe_ews_process_autodiscover: cb started.\n");
 
 	http_conn_set_close(ews->http_conn);
 	ews->http_conn = NULL;
-	
+
 	if (return_code == 200 && body) {
 		xmlnode *node;
 		/** ref: [MS-OXDSCLI] */
 		xmlnode *xml = xmlnode_from_str(body, strlen(body));
-		
+
 		/* Autodiscover/Response/User/LegacyDN (trim()) */
 		ews->legacy_dn = xmlnode_get_data(xmlnode_get_descendant(xml, "Response", "User", "LegacyDN", NULL));
 		ews->legacy_dn = ews->legacy_dn ? g_strstrip(ews->legacy_dn) : NULL;
@@ -406,7 +406,7 @@ sipe_ews_process_autodiscover(int return_code,
 
 		ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		sipe_ews_run_state_machine(ews);
-	
+
 	} else {
 		if (return_code < 0) {
 			ews->http_conn = NULL;
@@ -416,7 +416,7 @@ sipe_ews_process_autodiscover(int return_code,
 				ews->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
 			case 2:
 				ews->state = SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE; break;
-		}		
+		}
 		sipe_ews_run_state_machine(ews);
 	}
 }
@@ -429,7 +429,7 @@ sipe_ews_do_autodiscover(struct sipe_ews *ews,
 
 	purple_debug_info("sipe", "sipe_ews_do_autodiscover: going autodiscover url=%s\n", autodiscover_url ? autodiscover_url : "");
 
-	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, ews->email);	
+	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, ews->email);
 	ews->http_conn = http_conn_create(
 				 ews->account,
 				 HTTP_CONN_SSL,
@@ -438,7 +438,7 @@ sipe_ews_do_autodiscover(struct sipe_ews *ews,
 				 "text/xml",
 				 ews->auth,
 				 (HttpConnCallback)sipe_ews_process_autodiscover,
-				 ews);	
+				 ews);
 	g_free(body);
 }
 
@@ -453,7 +453,7 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 		char *end_str;
 		struct tm *now_tm;
 		const char *pattern = "%Y-%m-%dT%H:%M:%SZ";
-		
+
 		purple_debug_info("sipe", "sipe_ews_do_avail_request: going Availability req.\n");
 
 		now_tm = gmtime(&now);
@@ -469,7 +469,7 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 		start_str = g_strdup(purple_utf8_strftime(pattern, gmtime(&ews->fb_start)));
 		end_str = g_strdup(purple_utf8_strftime(pattern, gmtime(&end)));
 
-		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, ews->email, start_str, end_str);	
+		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, ews->email, start_str, end_str);
 		ews->http_conn = http_conn_create(
 					 ews->account,
 					 HTTP_CONN_SSL,
@@ -493,7 +493,7 @@ sipe_ews_do_oof_request(struct sipe_ews *ews)
 		const char *content_type = "text/xml; charset=UTF-8";
 
 		purple_debug_info("sipe", "sipe_ews_do_oof_request: going OOF req.\n");
-	
+
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);
 		if (!ews->http_conn) {
 			ews->http_conn = http_conn_create(ews->account,
@@ -524,7 +524,7 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 			{
 				char *maildomain = strstr(ews->email, "@") + 1;
 				char *autodisc_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
-				
+
 				ews->auto_disco_method = 1;
 
 				sipe_ews_do_autodiscover(ews, autodisc_url);
@@ -536,7 +536,7 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 			{
 				char *maildomain = strstr(ews->email, "@") + 1;
 				char *autodisc_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
-				
+
 				ews->auto_disco_method = 2;
 
 				sipe_ews_do_autodiscover(ews, autodisc_url);
@@ -586,7 +586,7 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 
 		sip->ews->account = sip->account;
 		email_url      = purple_account_get_string(sip->account, "email_url", NULL);
-		email          = purple_account_get_string(sip->account, "email", NULL);		
+		email          = purple_account_get_string(sip->account, "email", NULL);
 		email_login    = purple_account_get_string(sip->account, "email_login", NULL);
 		email_password = purple_account_get_string(sip->account, "email_password", NULL);
 
@@ -601,7 +601,7 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 			email_auth_domain = g_strndup(email_login, tmp - email_login);
 		} else {
 			email_auth_user   = g_strdup(email_login);
-		}	
+		}
 
 		sip->ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
 
