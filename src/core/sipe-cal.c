@@ -725,6 +725,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	int to_state = SIPE_CAL_NO_DATA;
 	time_t until = TIME_NULL;
 	int index = 0;
+	gboolean has_working_hours = (buddy->cal_working_hours != NULL);
 	const char *free_busy;
 	const char *cal_states[] = {_("Free"),
 				    _("Tentative"),
@@ -788,7 +789,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 
 	/*
 	ALGORITHM (don't delete)
-	(c)2009 pier11 <pier11@operamail.com>
+	(c)2009,2010 pier11 <pier11@operamail.com>
 
 	SOD =  Start of Work Day
 	EOD =  End of Work Day
@@ -804,24 +805,23 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		return "Currently %", current_cal_state
 
 	if (until - now > 8H)
-		if (current_cal_state == Free && !in work hours)
+		if (current_cal_state == Free && (work_hours && !in work_hours))
 			return "Outside of working hours for next 8 hours"
 		else
 			return "%s for next 8 hours", current_cal_state
 
 	if (current_cal_state == Free)
-		if (in work hours)
-			"%s", current_cal_state
-		else
+		if (work_hours && until !in work_hours(now))
 			"Not working"
+		else
+			"%s", current_cal_state
 		" until %.2d:%.2d", until
 	else
 		"Currently %", current_cal_state
-		if (until is in work hours)
-			". %s at %.2d:%.2d", to_state, until
-		else
+		if (work_hours && until !in work_hours)
 			". Outside of working hours at at %.2d:%.2d", until
-
+		else
+			". %s at %.2d:%.2d", to_state, until
 	*/
 
 	if (current_cal_state < 1) { /* Free */
@@ -835,7 +835,8 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	}
 
 	if (until - now > 8*60*60) {
-		if (current_cal_state < 1 && !sipe_cal_is_in_work_hours(now, start, end)) { /** Free & outside work hours */
+		/* Free & outside work hours */
+		if (current_cal_state < 1 && has_working_hours && !sipe_cal_is_in_work_hours(now, start, end)) {
 			return g_strdup(_("Outside of working hours for next 8 hours"));
 		} else {
 			return g_strdup_printf(_("%s for next 8 hours"), cal_states[current_cal_state]);
@@ -846,10 +847,10 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		const char *tmp;
 		struct tm *until_tm = localtime(&until);
 
-		if (sipe_cal_is_in_work_hours(now, start, end)) {
-			tmp = cal_states[current_cal_state];
-		} else {
+		if (has_working_hours && !sipe_cal_is_in_work_hours(now, start, end)) {
 			tmp = _("Not working");
+		} else {
+			tmp = cal_states[current_cal_state];
 		}
 		return g_strdup_printf(_("%s until %.2d:%.2d"), tmp, until_tm->tm_hour, until_tm->tm_min);
 	} else { /* Tentative or Busy or OOF */
@@ -858,18 +859,17 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		struct tm *until_tm = localtime(&until);
 
 		tmp = g_strdup_printf(_("Currently %s"), cal_states[current_cal_state]);
-		if (sipe_cal_is_in_work_hours(until, start, end)) {
-			res = g_strdup_printf(_("%s. %s at %.2d:%.2d"), tmp, cal_states[to_state], until_tm->tm_hour, until_tm->tm_min);
-			g_free(tmp);
-			return res;
-		} else {
+		if (has_working_hours && !sipe_cal_is_in_work_hours(until, start, end)) {
 			res = g_strdup_printf(_("%s. Outside of working hours at %.2d:%.2d"),
 					      tmp, until_tm->tm_hour, until_tm->tm_min);
 			g_free(tmp);
 			return res;
+		} else {
+			res = g_strdup_printf(_("%s. %s at %.2d:%.2d"), tmp, cal_states[to_state], until_tm->tm_hour, until_tm->tm_min);
+			g_free(tmp);
+			return res;
 		}
 	}
-
 	/* End of - Calendar: string calculations */
 }
 
