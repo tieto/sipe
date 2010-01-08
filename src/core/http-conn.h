@@ -39,6 +39,9 @@ typedef struct http_conn_struct HttpConn;
 /** callback */
 typedef void (*HttpConnCallback) (int return_code, const char *body, void *data);
 
+/**
+ * Creates SSL connection and POST.
+ */
 HttpConn *
 http_conn_create(PurpleAccount *account,
 		 const char *conn_type,
@@ -48,6 +51,17 @@ http_conn_create(PurpleAccount *account,
 		 HttpConnAuth *auth,
 		 HttpConnCallback callback,
 		 void *data);
+
+/**
+ * POST on existing http_conn connection.
+ */
+void 
+http_conn_post(	HttpConn *http_conn,
+		const char *full_url,
+		const char *body,
+		const char *content_type,
+		HttpConnCallback callback,
+		void *data);
 
 /**
  * Marks connection for close

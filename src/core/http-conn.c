@@ -174,8 +174,8 @@ http_conn_parse_url(const char *url,
 	g_free(no_proto);	
 	
 	parts = g_strsplit(host_port, ":", 2);
-	*host = g_strdup(parts[0]);
-	*port = parts[1] ? atoi(parts[1]) : port_tmp;
+	if (host) *host = g_strdup(parts[0]);
+	if (port) *port = parts[1] ? atoi(parts[1]) : port_tmp;
 	g_strfreev(parts);
 
 	g_free(host_port);	
@@ -295,7 +295,7 @@ http_conn_input_cb_ssl(gpointer data,
         http_conn_process_input(http_conn);
 }
 static void 
-http_conn_post(HttpConn *http_conn,
+http_conn_post0(HttpConn *http_conn,
 	       const char *authorization);
 
 static void
@@ -315,7 +315,7 @@ http_conn_input0_cb_ssl(gpointer data,
 
 	purple_ssl_input_add(gsc, http_conn_input_cb_ssl, http_conn);
 
-	http_conn_post(http_conn, NULL);
+	http_conn_post0(http_conn, NULL);
 }
 
 HttpConn *
@@ -458,8 +458,8 @@ http_conn_sendout_pkt(HttpConn *http_conn,
 }
 
 static void 
-http_conn_post(HttpConn *http_conn,
-	       const char *authorization)
+http_conn_post0(HttpConn *http_conn,
+		const char *authorization)
 {
 	GString *outstr = g_string_new("");
  
@@ -475,6 +475,31 @@ http_conn_post(HttpConn *http_conn,
 
 	http_conn_sendout_pkt(http_conn, outstr->str);
 	g_string_free(outstr, TRUE);
+}
+
+void 
+http_conn_post(	HttpConn *http_conn,
+		const char *full_url,
+		const char *body,
+		const char *content_type,
+		HttpConnCallback callback,
+		void *data)
+{
+	if (!http_conn) {
+		purple_debug_info("sipe-http", "http_conn_post: NULL http_conn, exiting.\n");
+		return;
+	}
+	
+	g_free(http_conn->url);
+	g_free(http_conn->body);
+	g_free(http_conn->content_type);
+	http_conn_parse_url(full_url, NULL, NULL, &http_conn->url);	
+	http_conn->body = g_strdup(body);	
+	http_conn->content_type = g_strdup(content_type);
+	http_conn->callback = callback;
+	http_conn->data = data;
+	
+	http_conn_post0(http_conn, NULL);
 }
 
 static void
@@ -585,7 +610,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		authorization = g_strdup_printf("%s %s", auth_type == AUTH_TYPE_NTLM ? "NTLM" : "Negotiate", output_toked_base64 ? output_toked_base64 : "");
 		g_free(output_toked_base64);
 		
-		http_conn_post(http_conn, authorization);
+		http_conn_post0(http_conn, authorization);
 		g_free(authorization);
 	}
 	/* Other response */
