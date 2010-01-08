@@ -334,7 +334,7 @@ sipe_ews_process_oof_response(int return_code,
 				xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
 			char *html;
 			/* UTF-8 encoded BOM (0xEF 0xBB 0xBF) as a signature to mark the beginning of a UTF-8 file */
-			if (tmp && strncmp(tmp, "\xEF\xBB\xBF", 3)) {
+			if (tmp && !strncmp(tmp, "\xEF\xBB\xBF", 3)) {
 				html = purple_unescape_html(tmp+3);
 			} else {
 				html = purple_unescape_html(tmp);
