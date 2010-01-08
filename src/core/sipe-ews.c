@@ -200,8 +200,10 @@ sipe_ews_process_avail_response(int return_code,
 	
 	purple_debug_info("sipe", "sipe_ews_process_avail_response: cb started.\n");
 	
-	http_conn_set_close(ews->http_conn);
-	ews->http_conn = NULL;
+	if(ews->oof_url && strcmp(ews->as_url, ews->oof_url)) { /* whether reuse conn */ 
+		http_conn_set_close(ews->http_conn);
+		ews->http_conn = NULL;
+	}
 
 	if (return_code == 200 && body) {
 		xmlnode *node;
@@ -482,19 +484,28 @@ sipe_ews_do_oof_request(struct sipe_ews *ews)
 {
 	if (ews->oof_url) {
 		char *body;
+		const char *content_type = "text/xml; charset=UTF-8";
 
 		purple_debug_info("sipe", "sipe_ews_do_oof_request: going OOF req.\n");
 	
-		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);	
-		ews->http_conn = http_conn_create(
-					 ews->account,
-					 HTTP_CONN_SSL,
-					 ews->oof_url,
-					 body,
-					 "text/xml; charset=UTF-8",
-					 ews->auth,
-					 (HttpConnCallback)sipe_ews_process_oof_response,
-					 ews);
+		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);
+		if (!ews->http_conn) {
+			ews->http_conn = http_conn_create(ews->account,
+							  HTTP_CONN_SSL,
+							  ews->oof_url,
+							  body,
+							  content_type,
+							  ews->auth,
+							  (HttpConnCallback)sipe_ews_process_oof_response,
+							  ews);
+		} else {
+			http_conn_post(ews->http_conn,
+				       ews->oof_url,
+				       body,
+				       content_type,
+				       (HttpConnCallback)sipe_ews_process_oof_response,
+				       ews);
+		}
 		g_free(body);
 	}
 }
