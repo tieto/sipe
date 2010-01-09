@@ -1660,8 +1660,13 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	}
 
 	pub_calendar = sipe_publish_get_category_state_calendar(sip, event, sip->ews->email);
-	send_presence_publish(sip, pub_calendar ? pub_calendar : "");
-	g_free(pub_calendar);
+
+	if (!pub_calendar) {
+		purple_debug_info("sipe", "publish_calendar_status_self: nothing has changed.\n");
+	} else {
+		send_presence_publish(sip, pub_calendar ? pub_calendar : "");
+		g_free(pub_calendar);
+	}
 
 	/* repeat scheduling */
 	sipe_sched_calendar_status_self_publish(sip, time(NULL));
@@ -6190,6 +6195,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 	gchar *start_time_str;
 	gchar *activity_xml_str = NULL;
 	gchar *res;
+	struct sipe_cal_event *tmp_event = NULL;
 	guint instance = sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR);
 	/* key is <category><instance><container> */
 	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
@@ -6202,7 +6208,14 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 	g_free(key_2);
 	g_free(key_3);
 	
-	if(!event) return NULL;
+	/* no event implies event Free for use in publication */
+	if(!event && publication_3) {
+		event = tmp_event = g_new0(struct sipe_cal_event, 1);	
+		event->start_time = time(NULL);
+		event->cal_status = SIPE_CAL_FREE;
+	} else if (!event) { /* was nothing, have nothing, exiting */
+		return NULL;
+	}
 
 	if (event->cal_status == SIPE_CAL_BUSY) {
 		availability = 6500;
@@ -6211,9 +6224,9 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 		availability = 3500;
 	}
 
-	if (publication_2 &&
-	   (publication_2->availability == availability) &&
-	   (publication_2->cal_event_hash == sipe_cal_event_hash(event)))
+	if (publication_3 &&
+	   (publication_3->availability == availability) &&
+	   (publication_3->cal_event_hash == sipe_cal_event_hash(event)))
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_state_calendar: cal state has NOT changed. Exiting.\n");
 		return NULL; /* nothing to update */
@@ -6244,6 +6257,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 				event->location ? event->location : ""
 				);
 	g_free(start_time_str);
+	sipe_cal_event_free(tmp_event);
 	return res;
 }
 

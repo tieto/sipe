@@ -135,6 +135,8 @@ sipe_cal_get_wday(char *wday_name)
 void
 sipe_cal_event_free(struct sipe_cal_event* cal_event)
 {
+	if (!cal_event) return;
+	
 	g_free(cal_event->subject);
 	g_free(cal_event->location);
 	g_free(cal_event);
