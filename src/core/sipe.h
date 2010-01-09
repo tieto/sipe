@@ -449,7 +449,53 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 			"<availability>%d</availability>"\
 			"<endpointLocation/>"\
 		"</state>"\
+	"</publication>"
+
+/**
+ * An activity XML entry for SIPE_PUB_XML_STATE_CALENDAR
+ * @param token			(%s) Ex.: in-a-meeting
+ * @param minAvailability	(%d) Ex.: 6500
+ * @param maxAvailability	(%d) Ex.: 8999
+ */
+#define SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY \
+"<activity token=\"%s\" minAvailability=\"%d\" maxAvailability=\"%d\"></activity>"
+/**
+ * Publishes 'machineState' category.
+ * @param instance		(%u) Ex.: 1339299275
+ * @param version		(%u) Ex.: 1
+ * @param uri			(%s) Ex.: john@contoso.com
+ * @param availability		(%d) Ex.: 6500
+ * @param activity		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY
+ * @param meeting_subject	(%s) Ex.: Customer Meeting
+ * @param meeting_location	(%s) Ex.: Conf Room 100
+ *
+ * @param instance		(%u) Ex.: 1339299275
+ * @param version		(%u) Ex.: 1
+ * @param uri			(%s) Ex.: john@contoso.com
+ * @param availability		(%d) Ex.: 6500
+ * @param activity		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY
+ * @param meeting_subject	(%s) Ex.: Customer Meeting
+ * @param meeting_location	(%s) Ex.: Conf Room 100
+ */
+#define SIPE_PUB_XML_STATE_CALENDAR \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
+			"<availability>%d</availability>"\
+			"%s"\
+			"<endpointLocation/>"\
+			"<meetingSubject>%s</meetingSubject>"\
+			"<meetingLocation>%s</meetingLocation>"\
+		"</state>"\
 	"</publication>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
+			"<availability>%d</availability>"\
+			"%s"\
+			"<endpointLocation/>"\
+			"<meetingSubject>%s</meetingSubject>"\
+			"<meetingLocation>%s</meetingLocation>"\
+		"</state>"\
+	"</publication>"
 
 /**
  * Publishes 'note' category.

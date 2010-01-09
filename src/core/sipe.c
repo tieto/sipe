@@ -130,7 +130,9 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_PUB_DEVICE		"000"
 #define SIPE_PUB_STATE_MACHINE	"100"
 #define SIPE_PUB_STATE_USER	"200"
-#define SIPE_PUB_CALENDAR	"300"
+#define SIPE_PUB_STATE_CALENDAR	"300"
+#define SIPE_PUB_STATE_PHONE	"400"
+#define SIPE_PUB_CALENDAR	"500"
 
 /** Allows to send typed messages from chat window again after account reinstantiation. */
 static void
