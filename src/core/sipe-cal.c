@@ -438,6 +438,37 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 				(buddy->cal_working_hours->bias + buddy->cal_working_hours->dst.bias) / 60);
 }
 
+struct sipe_cal_event*
+sipe_cal_get_event(GSList *cal_events,
+		   time_t time_in_question)
+{
+	GSList *entry = cal_events;
+	struct sipe_cal_event* cal_event;
+	struct sipe_cal_event* res = NULL;
+
+	if (!cal_events || !IS(time_in_question)) return NULL;
+
+	while (entry) {
+		cal_event = entry->data;
+		/* event is in the past or in the future */
+		if (cal_event->start_time > time_in_question  ||
+		    cal_event->end_time   < time_in_question
+		    ) continue;
+
+		if (!res) {
+			res = cal_event;
+		} else {
+			int res_status = (res->cal_status == SIPE_CAL_NO_DATA) ? -1 : res->cal_status;
+			int cal_status = (cal_event->cal_status == SIPE_CAL_NO_DATA) ? -1 : cal_event->cal_status;
+			if (res_status < cal_status) {
+				res = cal_event;
+			}
+		}		
+		entry = entry->next;
+	}
+	return res;
+}
+
 static int
 sipe_cal_get_status0(const gchar *free_busy,
 		     time_t cal_start,

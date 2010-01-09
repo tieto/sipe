@@ -94,4 +94,13 @@ sipe_cal_get_description(struct sipe_buddy *buddy);
 int
 sipe_cal_get_status(struct sipe_buddy *buddy,
 		    time_t time_in_question);
+		   
+/**
+ * Returns calendar event at time in question.
+ * If conflict, takes last event in the following 
+ * priority order: OOF, Busy, Tentative.
+ */ 
+struct sipe_cal_event*
+sipe_cal_get_event(GSList *cal_events,
+		   time_t time_in_question);
 
