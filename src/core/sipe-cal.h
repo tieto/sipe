@@ -43,6 +43,14 @@ void
 sipe_cal_event_free(struct sipe_cal_event* cal_event);
 
 /**
+ * Describes Calendar event in human readable form.
+ *
+ * Must be g_free()'d after use.
+ */
+char *
+sipe_cal_event_describe(struct sipe_cal_event* cal_event);
+
+/**
  * Converts struct tm to Epoch time_t considering timezone.
  *
  * @param tz as defined for TZ environment variable.

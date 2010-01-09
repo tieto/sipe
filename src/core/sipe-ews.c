@@ -562,6 +562,11 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 				/* sipe.h */
 				send_presence_soap(ews->sip, NULL, TRUE);
 			}
+			
+			//if (ews->sip->ocs2007) {
+				/* sipe.h */
+				publish_calendar_status_self(ews->sip);
+			//}
 			break;
 	}
 }

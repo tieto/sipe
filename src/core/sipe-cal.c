@@ -140,6 +140,32 @@ sipe_cal_event_free(struct sipe_cal_event* cal_event)
 	g_free(cal_event);
 }
 
+char *
+sipe_cal_event_describe(struct sipe_cal_event* cal_event)
+{
+	GString* str = g_string_new(NULL);
+	const char *status = "";
+	
+	switch(cal_event->cal_status) {
+		case SIPE_CAL_FREE:		status = "SIPE_CAL_FREE";	break;
+		case SIPE_CAL_TENTATIVE:	status = "SIPE_CAL_TENTATIVE";	break;
+		case SIPE_CAL_BUSY:		status = "SIPE_CAL_BUSY";	break;
+		case SIPE_CAL_OOF:		status = "SIPE_CAL_OOF";	break;
+		case SIPE_CAL_NO_DATA:		status = "SIPE_CAL_NO_DATA";	break;
+	}
+
+	g_string_append_printf(str, "\t%s: %s",   "start_time", 
+		IS(cal_event->start_time) ? asctime(localtime(&cal_event->start_time)) : "\n");
+	g_string_append_printf(str, "\t%s: %s",   "end_time  ", 
+		IS(cal_event->end_time) ? asctime(localtime(&cal_event->end_time)) : "\n");
+	g_string_append_printf(str, "\t%s: %s\n", "cal_status",  status);
+	g_string_append_printf(str, "\t%s: %s\n", "subject   ",  cal_event->subject ? cal_event->subject : "");
+	g_string_append_printf(str, "\t%s: %s\n", "location  ",  cal_event->location ? cal_event->location : "");
+	g_string_append_printf(str, "\t%s: %s\n", "is_meeting",  cal_event->is_meeting ? "TRUE" : "FALSE");	
+
+	return g_string_free(str, FALSE);
+}
+
 static void
 sipe_setenv(const char *name,
 	    const char *value)
@@ -451,9 +477,12 @@ sipe_cal_get_event(GSList *cal_events,
 	while (entry) {
 		cal_event = entry->data;
 		/* event is in the past or in the future */
-		if (cal_event->start_time > time_in_question  ||
-		    cal_event->end_time   < time_in_question
-		    ) continue;
+		if (cal_event->start_time >  time_in_question  ||
+		    cal_event->end_time   <= time_in_question)
+		{
+			entry = entry->next;
+			continue;
+		}
 
 		if (!res) {
 			res = cal_event;

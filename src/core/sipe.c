@@ -1595,6 +1595,66 @@ sipe_sched_calendar_status_update(struct sipe_account_data *sip,
 			     NULL);
 }
 
+/**
+ * Schedules process of self status publish
+ * based on own calendar information.
+ * Should be scheduled to the beginning of every
+ * 15 min interval, like:
+ * 13:00, 13:15, 13:30, 13:45, etc.
+ *
+ * Applicability: 2007+ systems
+ */
+static void
+sipe_sched_calendar_status_self_publish(struct sipe_account_data *sip,
+					time_t calculate_from)
+{
+	int interval = 5*60;
+	/** start of the beginning of closest 15 min interval. */
+	time_t next_start = ((time_t)((int)((int)calculate_from)/interval + 1)*interval);
+
+	purple_debug_info("sipe", "sipe_sched_calendar_status_self_publish: calculate_from time: %s",
+			  asctime(localtime(&calculate_from)));
+	purple_debug_info("sipe", "sipe_sched_calendar_status_self_publish: next start time    : %s",
+			  asctime(localtime(&next_start)));
+
+	sipe_schedule_action("<+2007-cal-status>",
+			     (int)(next_start - time(NULL)),
+			     (Action)publish_calendar_status_self,
+			     NULL,
+			     sip,
+			     NULL);
+}
+
+/**
+ * Publishes self status
+ * based on own calendar information.
+ *
+ * For 2007+
+ */
+void
+publish_calendar_status_self(struct sipe_account_data *sip)
+{
+	struct sipe_cal_event* event = NULL;
+	purple_debug_info("sipe", "publish_calendar_status_self() started.\n");
+
+	if (sip->ews && sip->ews->cal_events) {
+		event = sipe_cal_get_event(sip->ews->cal_events, time(NULL));
+	}
+
+	if (!event) {
+		purple_debug_info("sipe", "publish_calendar_status_self: current event is NULL\n");
+	} else {
+		char *desc = sipe_cal_event_describe(event);		
+		purple_debug_info("sipe", "publish_calendar_status_self: current event is:\n%s", desc ? desc : "");
+		g_free(desc);
+	}
+
+	//publish cal event
+
+	/* repeat scheduling */
+	sipe_sched_calendar_status_self_publish(sip, time(NULL));
+}
+
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
 
 /** Should be g_free()'d
@@ -2386,7 +2446,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	 * based on their calendar information
 	 */
 	if (!sip->ocs2007) {
-		sipe_sched_calendar_status_update(sip, time(NULL));
+		//sipe_sched_calendar_status_update(sip, time(NULL));
 	}
 
 	return 0;
@@ -7601,7 +7661,7 @@ static void sipe_republish_calendar(PurplePluginAction *action)
 	PurpleConnection *gc = (PurpleConnection *) action->context;
 	struct sipe_account_data *sip = gc->proto_data;
 
-	sipe_ews_update_calendar(sip);
+	sipe_update_calendar(sip);
 }
 
 GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,

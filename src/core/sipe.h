@@ -280,6 +280,16 @@ gboolean purple_init_plugin(PurplePlugin *plugin);
  */
 void
 send_presence_category_calendar_publish(struct sipe_account_data *sip);
+
+/**
+ * Publishes self status
+ * based on own calendar information.
+ *
+ * For 2007+
+ */
+void
+publish_calendar_status_self(struct sipe_account_data *sip);
+
 /** 
  * For 2005-
  */
