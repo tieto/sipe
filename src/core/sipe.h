@@ -109,6 +109,8 @@ struct sipe_publication {
 	guint version;
 	/** for 'state' category */
 	int availability;
+	/** for 'state:calendarState' category */
+	char *cal_event_hash;
 	/** for 'note' category */
 	gchar *note;
 	/** for 'calendarData' category; 300(Team) container */
@@ -464,6 +466,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * @param instance		(%u) Ex.: 1339299275
  * @param version		(%u) Ex.: 1
  * @param uri			(%s) Ex.: john@contoso.com
+ * @param start_time_str	(%s) Ex.: 2008-01-11T19:00:00Z
  * @param availability		(%d) Ex.: 6500
  * @param activity		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY
  * @param meeting_subject	(%s) Ex.: Customer Meeting
@@ -472,6 +475,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * @param instance		(%u) Ex.: 1339299275
  * @param version		(%u) Ex.: 1
  * @param uri			(%s) Ex.: john@contoso.com
+ * @param start_time_str	(%s) Ex.: 2008-01-11T19:00:00Z
  * @param availability		(%d) Ex.: 6500
  * @param activity		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY
  * @param meeting_subject	(%s) Ex.: Customer Meeting
@@ -479,7 +483,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  */
 #define SIPE_PUB_XML_STATE_CALENDAR \
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
-		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" startTime=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
 			"<availability>%d</availability>"\
 			"%s"\
 			"<endpointLocation/>"\
@@ -488,7 +492,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 		"</state>"\
 	"</publication>"\
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\">"\
-		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" startTime=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
 			"<availability>%d</availability>"\
 			"%s"\
 			"<endpointLocation/>"\

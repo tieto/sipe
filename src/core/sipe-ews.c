@@ -452,7 +452,6 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 		char *start_str;
 		char *end_str;
 		struct tm *now_tm;
-		const char *pattern = "%Y-%m-%dT%H:%M:%SZ";
 
 		purple_debug_info("sipe", "sipe_ews_do_avail_request: going Availability req.\n");
 
@@ -466,8 +465,8 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 		/* end = start + 4 days - 1 sec */
 		end = ews->fb_start + 4*(24*60*60) - 1;
 
-		start_str = g_strdup(purple_utf8_strftime(pattern, gmtime(&ews->fb_start)));
-		end_str = g_strdup(purple_utf8_strftime(pattern, gmtime(&end)));
+		start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
+		end_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&end)));
 
 		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, ews->email, start_str, end_str);
 		ews->http_conn = http_conn_create(

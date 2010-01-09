@@ -166,6 +166,18 @@ sipe_cal_event_describe(struct sipe_cal_event* cal_event)
 	return g_string_free(str, FALSE);
 }
 
+char *
+sipe_cal_event_hash(struct sipe_cal_event* event)
+{
+	/* no end_time as it dos not get published */
+	/* no cal_status as it can change on publication */
+	return g_strdup_printf("<%d><%s><%s><%d>",
+				(int)event->start_time,
+				event->subject ? event->subject : "",
+				event->location ? event->location : "",
+				event->is_meeting);
+}
+
 static void
 sipe_setenv(const char *name,
 	    const char *value)

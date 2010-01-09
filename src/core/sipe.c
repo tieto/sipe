@@ -132,7 +132,7 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_PUB_STATE_USER	"200"
 #define SIPE_PUB_STATE_CALENDAR	"300"
 #define SIPE_PUB_STATE_PHONE	"400"
-#define SIPE_PUB_CALENDAR	"500"
+#define SIPE_PUB_CALENDAR_DATA	"500"
 
 /** Allows to send typed messages from chat window again after account reinstantiation. */
 static void
@@ -1627,6 +1627,13 @@ sipe_sched_calendar_status_self_publish(struct sipe_account_data *sip,
 			     NULL);
 }
 
+static void send_presence_publish(struct sipe_account_data *sip, const char *publications);
+
+static gchar *
+sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
+					 struct sipe_cal_event *event,
+					 const char *uri);
+
 /**
  * Publishes self status
  * based on own calendar information.
@@ -1637,6 +1644,7 @@ void
 publish_calendar_status_self(struct sipe_account_data *sip)
 {
 	struct sipe_cal_event* event = NULL;
+	gchar *pub_calendar;
 	purple_debug_info("sipe", "publish_calendar_status_self() started.\n");
 
 	if (sip->ews && sip->ews->cal_events) {
@@ -1651,7 +1659,9 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 		g_free(desc);
 	}
 
-	//publish cal event
+	pub_calendar = sipe_publish_get_category_state_calendar(sip, event, sip->ews->email);
+	send_presence_publish(sip, pub_calendar ? pub_calendar : "");
+	g_free(pub_calendar);
 
 	/* repeat scheduling */
 	sipe_sched_calendar_status_self_publish(sip, time(NULL));
@@ -2762,6 +2772,7 @@ static void
 free_publication(struct sipe_publication *publication)
 {
 	g_free(publication->category);
+	g_free(publication->cal_event_hash);
 	g_free(publication->note);
 
 	g_free(publication->working_hours_xml_str);
@@ -2783,23 +2794,30 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 		guint device_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
 		guint machine_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
 		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER);
-		guint calendar_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR);
+		guint calendar_instance	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR);
+		guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
 
 		/* device */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2));
 
-		/* state:machine */
+		/* state:machineState */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", machine_instance, 2));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", machine_instance, 3));
 
-		/* state:user */
+		/* state:userState */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 2));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 3));
+			
+		/* state:calendarState */
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "state", calendar_instance, 2));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "state", calendar_instance, 3));
 
 		/* note */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
@@ -2825,17 +2843,17 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 
 		/* calendarData:FreeBusy */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 1));
+			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 1));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 100));
+			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 100));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 200));
+			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 200));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 300));
+			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 300));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 400));
+			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 400));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
-			g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 32000));
+			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 32000));
 
 		//purple_debug_info("sipe", "sipe_is_our_publication: sip->our_publication_keys length=%d\n",
 		//	  sip->our_publication_keys ? (int) g_slist_length(sip->our_publication_keys) : -1);
@@ -3068,13 +3086,35 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			publication->version = version_int;
 			/* filling publication->availability */
 			if (!strcmp(name, "state")) {
-				xmlnode *xn_avail = xmlnode_get_descendant(node, "state", "availability", NULL);
+				xmlnode *xn_state = xmlnode_get_child(node, "state");
+				xmlnode *xn_avail = xmlnode_get_child(xn_state, "availability");
+
 				if (xn_avail) {
 					gchar *avail_str = xmlnode_get_data(xn_avail);
 					if (avail_str) {
 						publication->availability = atoi(avail_str);
 					}
 					g_free(avail_str);
+				}
+				/* for calendarState */
+				if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "calendarState")) {
+					xmlnode *xn_activity = xmlnode_get_child(xn_state, "activity");
+					struct sipe_cal_event *event = g_new0(struct sipe_cal_event, 1);
+
+					event->start_time = purple_str_to_time(xmlnode_get_attrib(xn_state, "startTime"),
+								FALSE, NULL, NULL, NULL);
+					if (xn_activity) {
+						if (!strcmp(xmlnode_get_attrib(xn_activity, "token"), "in-a-meeting")) {
+							event->is_meeting = TRUE;
+						}
+					}
+					event->subject = xmlnode_get_data(xmlnode_get_child(xn_state, "meetingSubject"));
+					event->location = xmlnode_get_data(xmlnode_get_child(xn_state, "meetingLocation"));
+
+					publication->cal_event_hash = sipe_cal_event_hash(event);
+					purple_debug_info("sipe", "sipe_process_roaming_self: hash=%s\n",
+						publication->cal_event_hash);
+					sipe_cal_event_free(event);
 				}
 			}
 			/* filling publication->note */
@@ -6136,6 +6176,78 @@ sipe_publish_get_category_state(struct sipe_account_data *sip,
 }
 
 /**
+ * A service method - use
+ * - send_publish_get_category_state_machine and
+ * - send_publish_get_category_state_user instead.
+ * Must be g_free'd after use.
+ */
+static gchar *
+sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
+					 struct sipe_cal_event *event,
+					 const char *uri)
+{
+	int availability;
+	gchar *start_time_str;
+	gchar *activity_xml_str = NULL;
+	gchar *res;
+	guint instance = sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR);
+	/* key is <category><instance><container> */
+	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
+	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
+	struct sipe_publication *publication_2 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "state"), key_2);
+	struct sipe_publication *publication_3 =
+		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "state"), key_3);
+
+	g_free(key_2);
+	g_free(key_3);
+	
+	if(!event) return NULL;
+
+	if (event->cal_status == SIPE_CAL_BUSY) {
+		availability = 6500;
+	} else {
+		/* available */
+		availability = 3500;
+	}
+
+	if (publication_2 &&
+	   (publication_2->availability == availability) &&
+	   (publication_2->cal_event_hash == sipe_cal_event_hash(event)))
+	{
+		purple_debug_info("sipe", "sipe_publish_get_category_state_calendar: cal state has NOT changed. Exiting.\n");
+		return NULL; /* nothing to update */
+	}
+
+	if (event->cal_status == SIPE_CAL_BUSY) {
+		activity_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY, "in-a-meeting", 6500, 8999);
+	}
+	start_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&event->start_time)));
+
+	res = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR,
+				instance,
+				publication_2 ? publication_2->version : 0,
+				uri,
+				start_time_str,
+				availability,
+				activity_xml_str ? activity_xml_str : "",
+				event->subject ? event->subject : "",
+				event->location ? event->location : "",
+
+				instance,
+				publication_3 ? publication_3->version : 0,
+				uri,
+				start_time_str,
+				availability,
+				activity_xml_str ? activity_xml_str : "",
+				event->subject ? event->subject : "",
+				event->location ? event->location : ""
+				);
+	g_free(start_time_str);
+	return res;
+}
+
+/**
  * Returns 'machineState' XML part for publication.
  * Must be g_free'd after use.
  */
@@ -6288,7 +6400,7 @@ static gchar *
 sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 {
 	struct sipe_ews* ews = sip->ews;
-	guint calendar_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR);
+	guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
 	char *fb_start_str;
 	char *free_busy_base64;
 	const char *st;
@@ -6296,12 +6408,12 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	char *res;
 
 	/* key is <category><instance><container> */
-	gchar *key_cal_1     = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 1);
-	gchar *key_cal_100   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 100);
-	gchar *key_cal_200   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 200);
-	gchar *key_cal_300   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 300);
-	gchar *key_cal_400   = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 400);
-	gchar *key_cal_32000 = g_strdup_printf("<%s><%u><%u>", "calendarData", calendar_instance, 32000);
+	gchar *key_cal_1     = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 1);
+	gchar *key_cal_100   = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 100);
+	gchar *key_cal_200   = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 200);
+	gchar *key_cal_300   = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 300);
+	gchar *key_cal_400   = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 400);
+	gchar *key_cal_32000 = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 32000);
 
 	struct sipe_publication *publication_cal_1 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_1);
@@ -6342,31 +6454,31 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 
 	res = g_strdup_printf(SIPE_PUB_XML_FREE_BUSY,
 				/* 1 */
-				calendar_instance,
+				cal_data_instance,
 				publication_cal_1 ? publication_cal_1->version : 0,
 				/* 100 - Public */
-				calendar_instance,
+				cal_data_instance,
 				publication_cal_100 ? publication_cal_100->version : 0,
 				/* 200 - Company */
-				calendar_instance,
+				cal_data_instance,
 				publication_cal_200 ? publication_cal_200->version : 0,
 				ews->email,
 				fb_start_str,
 				free_busy_base64,
 				/* 300 - Team */
-				calendar_instance,
+				cal_data_instance,
 				publication_cal_300 ? publication_cal_300->version : 0,
 				ews->email,
 				fb_start_str,
 				free_busy_base64,
 				/* 400 - Personal */
-				calendar_instance,
+				cal_data_instance,
 				publication_cal_400 ? publication_cal_400->version : 0,
 				ews->email,
 				fb_start_str,
 				free_busy_base64,
 				/* 32000 - Blocked */
-				calendar_instance,
+				cal_data_instance,
 				publication_cal_32000 ? publication_cal_32000->version : 0
 			     );
 

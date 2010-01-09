@@ -608,7 +608,7 @@ sipe_conf_add(struct sipe_account_data *sip,
 		contact);
 	g_free(contact);
 
-	expiry_time = purple_utf8_strftime("%Y-%m-%dT%H:%M:%SZ", gmtime(&expiry));
+	expiry_time = purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&expiry));
 	self = sip_uri_self(sip);
 	conference_id = genconfid();
 	body = g_strdup_printf(

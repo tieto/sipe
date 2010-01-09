@@ -43,6 +43,14 @@ void
 sipe_cal_event_free(struct sipe_cal_event* cal_event);
 
 /**
+ * Returns hash of Calendar Event for comparison.
+ *
+ * Must be g_free()'d after use.
+ */
+char *
+sipe_cal_event_hash(struct sipe_cal_event* event);
+
+/**
  * Describes Calendar event in human readable form.
  *
  * Must be g_free()'d after use.
