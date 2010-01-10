@@ -45,7 +45,7 @@
 #else /* _WIN32 */
 #ifdef USE_KERBEROS
 #include "sip-sec-sspi.h"
-#define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
+#define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
 #else /* USE_KERBEROS */

@@ -1611,7 +1611,7 @@ static void
 sipe_sched_calendar_status_self_publish(struct sipe_account_data *sip,
 					time_t calculate_from)
 {
-	int interval = 5*60;
+	int interval = 15*60;
 	/** start of the beginning of closest 15 min interval. */
 	time_t next_start = ((time_t)((int)((int)calculate_from)/interval + 1)*interval);
 
