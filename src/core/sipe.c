@@ -1633,6 +1633,10 @@ static gchar *
 sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 					 struct sipe_cal_event *event,
 					 const char *uri);
+static gchar *
+sipe_publish_get_category_note(struct sipe_account_data *sip,
+			       const char *note,
+			       const char *note_type);
 
 /**
  * Publishes self status
@@ -1645,6 +1649,7 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 {
 	struct sipe_cal_event* event = NULL;
 	gchar *pub_calendar;
+	gchar *pub_oof_note = NULL;
 	purple_debug_info("sipe", "publish_calendar_status_self() started.\n");
 
 	if (sip->ews && sip->ews->cal_events) {
@@ -1660,13 +1665,23 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	}
 
 	pub_calendar = sipe_publish_get_category_state_calendar(sip, event, sip->ews->email);
+	if (sip->ews && sip->ews->oof_note) {
+		pub_oof_note = sipe_publish_get_category_note(sip, sip->ews->oof_note, "OOF");
+	}
 
-	if (!pub_calendar) {
+	if (!pub_calendar && !pub_oof_note) {
 		purple_debug_info("sipe", "publish_calendar_status_self: nothing has changed.\n");
 	} else {
-		send_presence_publish(sip, pub_calendar ? pub_calendar : "");
-		g_free(pub_calendar);
+		gchar *publications = g_strdup_printf("%s%s",
+				       pub_calendar ? pub_calendar : "",
+				       pub_oof_note ? pub_oof_note : "");
+
+		send_presence_publish(sip, publications);
+		g_free(publications);
 	}
+
+	g_free(pub_calendar);
+	g_free(pub_oof_note);
 
 	/* repeat scheduling */
 	sipe_sched_calendar_status_self_publish(sip, time(NULL));
@@ -6301,9 +6316,13 @@ sipe_is_equal(const char* n1, const char* n2) {
 /**
  * Returns 'note' XML part for publication.
  * Must be g_free'd after use.
+ *
+ * @param note_type either personal or OOF
  */
 static gchar *
-sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
+sipe_publish_get_category_note(struct sipe_account_data *sip,
+			       const char *note,
+			       const char *note_type)
 {
 	/* key is <category><instance><container> */
 	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", 0, 200);
@@ -6332,10 +6351,15 @@ sipe_publish_get_category_note(struct sipe_account_data *sip, const char *note)
 
 	return g_markup_printf_escaped(SIPE_PUB_XML_NOTE,
 				       publication_note_200 ? publication_note_200->version : 0,
+				       note_type,
 				       note ? note : "",
+
 				       publication_note_300 ? publication_note_300->version : 0,
+				       note_type,
 				       note ? note : "",
+
 				       publication_note_400 ? publication_note_400->version : 0,
+				       note_type,
 				       note ? note : "");
 }
 
@@ -6560,7 +6584,7 @@ send_presence_category_publish(struct sipe_account_data *sip,
 	gboolean is_machine = (sip->was_idle && !sip->is_idle) || (!sip->was_idle && sip->is_idle);
 	gchar *pub_state = is_machine ? sipe_publish_get_category_state_machine(sip) :
 					sipe_publish_get_category_state_user(sip);
-	gchar *pub_note = sipe_publish_get_category_note(sip, note);
+	gchar *pub_note = sipe_publish_get_category_note(sip, note, "personal");
 	gchar *publications;
 
 	if (!pub_state && !pub_note) {

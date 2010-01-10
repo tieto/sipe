@@ -504,26 +504,31 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 /**
  * Publishes 'note' category.
  * @param version	(%u) Ex.: 2
+ * @param type		(%s) Ex.: personal or OOF
  * @param body		(%s) Ex.: In the office
+ *
  * @param version	(%u) Ex.: 2
+ * @param type		(%s) Ex.: personal or OOF
  * @param body		(%s) Ex.: In the office
+ *
  * @param version	(%u) Ex.: 2
+ * @param type		(%s) Ex.: personal or OOF
  * @param body		(%s) Ex.: In the office
  */
 #define SIPE_PUB_XML_NOTE \
 	"<publication categoryName=\"note\" instance=\"0\" container=\"200\" version=\"%d\" expireType=\"static\">"\
 		"<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
-			"<body type=\"personal\" uri=\"\">%s</body>"\
+			"<body type=\"%s\" uri=\"\">%s</body>"\
 		"</note>"\
 	"</publication>"\
 	"<publication categoryName=\"note\" instance=\"0\" container=\"300\" version=\"%d\" expireType=\"static\">"\
 		"<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
-			"<body type=\"personal\" uri=\"\">%s</body>"\
+			"<body type=\"%s\" uri=\"\">%s</body>"\
 		"</note>"\
 	"</publication>"\
 	"<publication categoryName=\"note\" instance=\"0\" container=\"400\" version=\"%d\" expireType=\"static\">"\
 		"<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
-			"<body type=\"personal\" uri=\"\">%s</body>"\
+			"<body type=\"%s\" uri=\"\">%s</body>"\
 		"</note>"\
 	"</publication>"
 
