@@ -6233,7 +6233,15 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 	}
 
 	if (event->cal_status == SIPE_CAL_BUSY) {
-		activity_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY, "in-a-meeting", 6500, 8999);
+		activity_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY,
+						   "in-a-meeting",
+						   "minAvailability=\"6500\"",
+						   "maxAvailability=\"8999\"");
+	} else if (event->cal_status == SIPE_CAL_OOF) {
+		activity_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY,
+						   "out-of-office",
+						   "minAvailability=\"12000\"",
+						   "");
 	}
 	start_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&event->start_time)));
 

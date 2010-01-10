@@ -456,11 +456,11 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 /**
  * An activity XML entry for SIPE_PUB_XML_STATE_CALENDAR
  * @param token			(%s) Ex.: in-a-meeting
- * @param minAvailability	(%d) Ex.: 6500
- * @param maxAvailability	(%d) Ex.: 8999
+ * @param minAvailability_attr	(%s) Ex.: minAvailability="6500"
+ * @param maxAvailability_attr	(%s) Ex.: maxAvailability="8999" or none
  */
 #define SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY \
-"<activity token=\"%s\" minAvailability=\"%d\" maxAvailability=\"%d\"></activity>"
+"<activity token=\"%s\" %s %s></activity>"
 /**
  * Publishes 'machineState' category.
  * @param instance		(%u) Ex.: 1339299275
