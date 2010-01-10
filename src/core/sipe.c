@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2009 Anibal Avelar <debianmx@gmail.com>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc., Anibal Avelar <debianmx@gmail.com>
