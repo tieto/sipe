@@ -328,8 +328,12 @@ http_conn_create(PurpleAccount *account,
 		 HttpConnCallback callback,
 		 void *data)
 {
-	HttpConn *http_conn = g_new0(HttpConn, 1);
+	HttpConn *http_conn;
 
+	if (!full_url || (strlen(full_url) == 0)) {
+		purple_debug_info("sipe-http", "no URL supplied!\n");
+		return NULL;
+	}
 	if (!strcmp(conn_type, HTTP_CONN_SSL) && 
 	    !purple_ssl_is_supported())
 	{
@@ -337,6 +341,7 @@ http_conn_create(PurpleAccount *account,
 		return NULL;
 	}
 	
+	http_conn = g_new0(HttpConn, 1);
 	http_conn_parse_url(full_url, &http_conn->host, &http_conn->port, &http_conn->url);
 
 	http_conn->account = account;
