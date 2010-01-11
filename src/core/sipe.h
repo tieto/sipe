@@ -277,16 +277,10 @@ GList *sipe_actions(PurplePlugin *plugin, gpointer context);
 gboolean purple_init_plugin(PurplePlugin *plugin);
 
 /**
- * Publishes our Calendar information - FreeBusy, WorkingHours
- *
- * For 2007+
- */
-void
-send_presence_category_calendar_publish(struct sipe_account_data *sip);
-
-/**
  * Publishes self status
- * based on own calendar information.
+ * based on own calendar information,
+ * our Calendar information - FreeBusy, WorkingHours,
+ * OOF note.
  *
  * For 2007+
  */

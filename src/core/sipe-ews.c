@@ -556,15 +556,10 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 			ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 			if (ews->sip->ocs2007) {
 				/* sipe.h */
-				send_presence_category_calendar_publish(ews->sip);
+				publish_calendar_status_self(ews->sip);
 			} else {
 				/* sipe.h */
 				send_presence_soap(ews->sip, NULL, TRUE);
-			}
-			
-			if (ews->sip->ocs2007) {
-				/* sipe.h */
-				publish_calendar_status_self(ews->sip);
 			}
 			break;
 	}
