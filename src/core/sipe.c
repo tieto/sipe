@@ -6280,6 +6280,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 				event->location ? event->location : ""
 				);
 	g_free(start_time_str);
+	g_free(activity_xml_str);
 	sipe_cal_event_free(tmp_event);
 	return res;
 }
