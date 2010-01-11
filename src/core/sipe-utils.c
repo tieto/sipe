@@ -163,6 +163,39 @@ get_epid(struct sipe_account_data *sip)
 
 guint
 sipe_get_pub_instance(struct sipe_account_data *sip,
+		      int publication_key)
+{
+	unsigned res = 0;
+	gchar *epid = get_epid(sip);
+
+	sscanf(epid, "%08x", &res);
+	g_free(epid);
+	
+	if (publication_key == SIPE_PUB_DEVICE) {
+		/* as is */
+	} else if (publication_key == SIPE_PUB_STATE_MACHINE) { /* First hexadecimal digit is 0x3 */
+		res = (res >> 4) | 0x30000000;
+	} else if (publication_key == SIPE_PUB_STATE_USER) {
+		res = 0x20000000; /* fixed */
+	} else if (publication_key == SIPE_PUB_STATE_CALENDAR) { /* First hexadecimal digit is 0x4 */
+		res = (res >> 4) | 0x40000000;
+	} else if (publication_key == SIPE_PUB_CALENDAR_DATA ||
+		   publication_key == SIPE_PUB_NOTE_OOF)
+	{ /* First hexadecimal digit is 0x4 */
+		unsigned calendar_id = 0;
+		const char *email = sip->email ? sip->email : "dummy@mail";
+		char *mail_hash = sipe_get_epid(email, "", "");
+		
+		sscanf(mail_hash, "%08x", &calendar_id);
+		g_free(mail_hash);
+		res = (calendar_id >> 4) | 0x40000000;
+	}
+	
+	return res;
+}
+/* an old version
+guint
+sipe_get_pub_instance_(struct sipe_account_data *sip,
 		      const char *publication_key)
 {
 	unsigned part_1;
@@ -173,7 +206,7 @@ sipe_get_pub_instance(struct sipe_account_data *sip,
 	sscanf(publication_key, "%uh", &part_2);
 	return part_1 + part_2;
 }
-
+*/
 gboolean
 sipe_is_bad_alias(const char *uri,
 		  const char *alias)

@@ -608,6 +608,7 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 		}
 
 		sip->ews->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
+		sip->email = g_strdup(sip->ews->email);
 
 		sip->ews->auth = g_new0(HttpConnAuth, 1);
 		sip->ews->auth->domain   = !is_empty(email_login) ? email_auth_domain        : g_strdup(sip->authdomain);

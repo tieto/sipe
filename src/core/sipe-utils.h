@@ -20,6 +20,66 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Our publication type keys. OCS 2007+
+ * Format: SIPE_PUB_{Category}[_{SubSategory}]
+ */
+/**
+ * device
+ * -
+ *
+ * -
+ * Unique to the device.
+ */
+#define SIPE_PUB_DEVICE		0
+/**
+ * state
+ * Machine state
+ *
+ * Availability, activity, end-point location, time zone, and device type.
+ * First hexadecimal digit is 0x3; remaining seven hexadecimal digits are unique per device.
+ */
+#define SIPE_PUB_STATE_MACHINE	3
+/**
+ * state
+ * User state
+ *
+ * Availability and activity.
+ * 0x20000000
+ */
+#define SIPE_PUB_STATE_USER	2
+/**
+ * state
+ * Calendar state
+ *
+ * Availability, activity, meeting subject, and meeting location.
+ * First hexadecimal digit is 0x4; remaining seven hexadecimal digits are unique per device.
+ */
+#define SIPE_PUB_STATE_CALENDAR	4
+/**
+ * state
+ * RCC Phone State
+ *
+ * Availability and activity for RCC call connect/disconnect or participant count changes from 0 to 2, 2 to N, N to 2, 2 to 0.
+ * First hexadecimal digit is 0x7; remaining seven hexadecimal digits are unique per device.
+ */
+#define SIPE_PUB_STATE_PHONE	4
+/**
+ * calendarData
+ * Free/busy data
+ *
+ * Start time, granularity, and free/busy data.
+ * First hexadecimal digit is 0x4; last seven hexadecimal digits uniquely define the calendar.
+ */
+#define SIPE_PUB_CALENDAR_DATA	400
+/**
+ * note
+ * Out of Office note
+ *
+ * Out of Office note that a user sets in Outlook using the Out of Office assistant.
+ * First hexadecimal digit is 0x4; last seven hexadecimal digits uniquely define the calendar.
+ */
+#define SIPE_PUB_NOTE_OOF	400
+
 /**
  * Returns epid value.
  * Uses cache.
@@ -60,7 +120,7 @@ gchar *genconfid(void);
  */ 
 guint
 sipe_get_pub_instance(struct sipe_account_data *sip,
-		      const char *publication_key);
+		      int publication_key);
 
 /**
  * Get contact information from SIPE account

@@ -113,6 +113,8 @@ char *generateUUIDfromEPID(const gchar *epid)
  * not needed to be persistent.
  *
  * Using MAC address proved to be poorly portable solution.
+ *
+ * Must be g_free()'d
  */
 char *sipe_get_epid(const char *self_sip_uri,
 			   const char *hostname,

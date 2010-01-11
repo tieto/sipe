@@ -125,16 +125,6 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 /* Action name templates */
 #define ACTION_NAME_PRESENCE "<presence><%s>"
 
-/* Our publication type keys. OCS 2007+
- * Format: SIPE_PUB_{Category}[_{SubSategory}]
- */
-#define SIPE_PUB_DEVICE		"000"
-#define SIPE_PUB_STATE_MACHINE	"100"
-#define SIPE_PUB_STATE_USER	"200"
-#define SIPE_PUB_STATE_CALENDAR	"300"
-#define SIPE_PUB_STATE_PHONE	"400"
-#define SIPE_PUB_CALENDAR_DATA	"500"
-
 /** Allows to send typed messages from chat window again after account reinstantiation. */
 static void
 sipe_rejoin_chat(PurpleConversation *conv)
@@ -1611,8 +1601,8 @@ static void
 sipe_sched_calendar_status_self_publish(struct sipe_account_data *sip,
 					time_t calculate_from)
 {
-	int interval = 15*60;
-	/** start of the beginning of closest 15 min interval. */
+	int interval = 5*60;
+	/** start of the beginning of closest 5 min interval. */
 	time_t next_start = ((time_t)((int)((int)calculate_from)/interval + 1)*interval);
 
 	purple_debug_info("sipe", "sipe_sched_calendar_status_self_publish: calculate_from time: %s",
@@ -2817,6 +2807,7 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER);
 		guint calendar_instance	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR);
 		guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
+		guint note_oof_instance = sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF);
 
 		/* device */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
@@ -2847,6 +2838,14 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 300));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 400));
+			
+		/* note OOF */
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "note", note_oof_instance, 200));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "note", note_oof_instance, 300));
+		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "note", note_oof_instance, 400));
 
 		/* calendarData:WorkingHours */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
@@ -6325,10 +6324,11 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 			       const char *note,
 			       const char *note_type)
 {
+	guint instance = !strcmp("OOF", note_type) ? sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF) : 0;
 	/* key is <category><instance><container> */
-	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", 0, 200);
-	gchar *key_note_300 = g_strdup_printf("<%s><%u><%u>", "note", 0, 300);
-	gchar *key_note_400 = g_strdup_printf("<%s><%u><%u>", "note", 0, 400);
+	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", instance, 200);
+	gchar *key_note_300 = g_strdup_printf("<%s><%u><%u>", "note", instance, 300);
+	gchar *key_note_400 = g_strdup_printf("<%s><%u><%u>", "note", instance, 400);
 
 	struct sipe_publication *publication_note_200 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_200);
@@ -6351,14 +6351,17 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	}
 
 	return g_markup_printf_escaped(SIPE_PUB_XML_NOTE,
+				       instance,
 				       publication_note_200 ? publication_note_200->version : 0,
 				       note_type,
 				       note ? note : "",
 
+				       instance,
 				       publication_note_300 ? publication_note_300->version : 0,
 				       note_type,
 				       note ? note : "",
 
+				       instance,
 				       publication_note_400 ? publication_note_400->version : 0,
 				       note_type,
 				       note ? note : "");
@@ -7542,6 +7545,11 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	if (sip->ews) {
 		sipe_ews_free(sip->ews);
 	}
+	sip->ews = NULL;
+	
+	if (sip->email)
+		g_free(sip->email);
+	sip->email = NULL;
 }
 
 /**
