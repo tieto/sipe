@@ -6326,6 +6326,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 					publication_3 ? publication_3->version : 0
 					);
 	}	
+
 	return res;
 }
 
