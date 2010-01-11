@@ -120,7 +120,8 @@ char *sipe_get_epid(const char *self_sip_uri,
 			   const char *hostname,
 			   const char *ip_address)
 {
-#define SIPE_EPID_HASH_START 15
+/* 6 last digits of hash */
+#define SIPE_EPID_HASH_START 14
 #define SIPE_EPID_HASH_END   20
 #define SIPE_EPID_LENGTH     (2 * (SIPE_EPID_HASH_END - SIPE_EPID_HASH_START + 1))
 
@@ -136,7 +137,7 @@ char *sipe_get_epid(const char *self_sip_uri,
 	purple_cipher_context_destroy(ctx);
 
 	for (i = SIPE_EPID_HASH_START, j = 0;
-	     i <= SIPE_EPID_HASH_END;
+	     i < SIPE_EPID_HASH_END;
 	     i++, j += 2) {
 		g_sprintf(&out[j], "%02x", hash[i]);
 	}
