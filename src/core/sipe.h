@@ -455,6 +455,12 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"</publication>"
 
 /**
+ * An availability XML entry for SIPE_PUB_XML_STATE_CALENDAR
+ * @param availability		(%d) Ex.: 6500
+ */
+#define SIPE_PUB_XML_STATE_CALENDAR_AVAIL \
+"<availability>%d</availability>"
+/**
  * An activity XML entry for SIPE_PUB_XML_STATE_CALENDAR
  * @param token			(%s) Ex.: in-a-meeting
  * @param minAvailability_attr	(%s) Ex.: minAvailability="6500"
@@ -468,7 +474,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * @param version		(%u) Ex.: 1
  * @param uri			(%s) Ex.: john@contoso.com
  * @param start_time_str	(%s) Ex.: 2008-01-11T19:00:00Z
- * @param availability		(%d) Ex.: 6500
+ * @param availability		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_AVAIL
  * @param activity		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY
  * @param meeting_subject	(%s) Ex.: Customer Meeting
  * @param meeting_location	(%s) Ex.: Conf Room 100
@@ -477,7 +483,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * @param version		(%u) Ex.: 1
  * @param uri			(%s) Ex.: john@contoso.com
  * @param start_time_str	(%s) Ex.: 2008-01-11T19:00:00Z
- * @param availability		(%d) Ex.: 6500
+ * @param availability		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_AVAIL
  * @param activity		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY
  * @param meeting_subject	(%s) Ex.: Customer Meeting
  * @param meeting_location	(%s) Ex.: Conf Room 100
@@ -485,7 +491,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 #define SIPE_PUB_XML_STATE_CALENDAR \
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
 		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" startTime=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
-			"<availability>%d</availability>"\
+			"%s"\
 			"%s"\
 			"<endpointLocation/>"\
 			"<meetingSubject>%s</meetingSubject>"\
@@ -494,13 +500,23 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"</publication>"\
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\">"\
 		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" startTime=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
-			"<availability>%d</availability>"\
+			"%s"\
 			"%s"\
 			"<endpointLocation/>"\
 			"<meetingSubject>%s</meetingSubject>"\
 			"<meetingLocation>%s</meetingLocation>"\
 		"</state>"\
 	"</publication>"
+
+/**
+ * Publishes to clear 'calendarState' category
+ * @param instance		(%u) Ex.: 1251210982
+ * @param version		(%u) Ex.: 1
+ */ 
+#define SIPE_PUB_XML_STATE_CALENDAR_CLEAR \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"
+
 
 /**
  * Publishes 'note' category.

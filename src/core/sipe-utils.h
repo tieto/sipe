@@ -57,12 +57,21 @@
 #define SIPE_PUB_STATE_CALENDAR	4
 /**
  * state
+ * Calendar state for an Out of Office meeting
+ *
+ * (??)Activity for when a user sets or removes an Out of Office message in Exchange.
+ * (+)user sets in Outlook for an Out of Office meeting
+ * First hexadecimal digit is 0x5; remaining seven hexadecimal digits are unique per device.
+ */
+#define SIPE_PUB_STATE_CALENDAR_OOF	5
+/**
+ * state
  * RCC Phone State
  *
  * Availability and activity for RCC call connect/disconnect or participant count changes from 0 to 2, 2 to N, N to 2, 2 to 0.
  * First hexadecimal digit is 0x7; remaining seven hexadecimal digits are unique per device.
  */
-#define SIPE_PUB_STATE_PHONE	4
+#define SIPE_PUB_STATE_PHONE	7
 /**
  * calendarData
  * Free/busy data

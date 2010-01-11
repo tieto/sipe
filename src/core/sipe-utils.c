@@ -173,12 +173,14 @@ sipe_get_pub_instance(struct sipe_account_data *sip,
 	
 	if (publication_key == SIPE_PUB_DEVICE) {
 		/* as is */
-	} else if (publication_key == SIPE_PUB_STATE_MACHINE) { /* First hexadecimal digit is 0x3 */
+	} else if (publication_key == SIPE_PUB_STATE_MACHINE) {		/* First hexadecimal digit is 0x3 */
 		res = (res >> 4) | 0x30000000;
 	} else if (publication_key == SIPE_PUB_STATE_USER) {
 		res = 0x20000000; /* fixed */
-	} else if (publication_key == SIPE_PUB_STATE_CALENDAR) { /* First hexadecimal digit is 0x4 */
+	} else if (publication_key == SIPE_PUB_STATE_CALENDAR) {	/* First hexadecimal digit is 0x4 */
 		res = (res >> 4) | 0x40000000;
+	} else if (publication_key == SIPE_PUB_STATE_CALENDAR_OOF) {	/* First hexadecimal digit is 0x5 */
+		res = (res >> 4) | 0x50000000;
 	} else if (publication_key == SIPE_PUB_CALENDAR_DATA ||
 		   publication_key == SIPE_PUB_NOTE_OOF)
 	{ /* First hexadecimal digit is 0x4 */
