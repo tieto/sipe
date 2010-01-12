@@ -2765,13 +2765,13 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 2));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 3));
-			
+
 		/* state:calendarState */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", calendar_instance, 2));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", calendar_instance, 3));
-			
+
 		/* state:calendarState OOF */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", cal_oof_instance, 2));
@@ -2785,7 +2785,7 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 300));
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 400));
-			
+
 		/* note OOF */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", note_oof_instance, 200));
@@ -6168,7 +6168,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 					 struct sipe_cal_event *event,
 					 const char *uri,
 					 int cal_satus)
-{	
+{
 	gchar *start_time_str;
 	int availability = 0;
 	gchar *res;
@@ -6186,7 +6186,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 
 	g_free(key_2);
 	g_free(key_3);
-	
+
 	if (!publication_3 && !event) { /* was nothing, have nothing, exiting */
 		purple_debug_info("sipe", "sipe_publish_get_category_state_calendar: "
 			"Exiting as no publication and no event for cal_satus:%d\n", cal_satus);
@@ -6204,13 +6204,13 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 	}
 
 	if (event &&
-	    (event->cal_status == SIPE_CAL_BUSY || 
+	    (event->cal_status == SIPE_CAL_BUSY ||
 	     event->cal_status == SIPE_CAL_OOF))
 	{
 		gchar *availability_xml_str = NULL;
 		gchar *activity_xml_str = NULL;
 
-		if (event->cal_status == SIPE_CAL_BUSY) {		
+		if (event->cal_status == SIPE_CAL_BUSY) {
 			availability_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_AVAIL, 6500);
 		}
 
@@ -6260,7 +6260,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 					instance,
 					publication_3 ? publication_3->version : 0
 					);
-	}	
+	}
 
 	return res;
 }
@@ -6615,7 +6615,7 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	if (!event) {
 		purple_debug_info("sipe", "publish_calendar_status_self: current event is NULL\n");
 	} else {
-		char *desc = sipe_cal_event_describe(event);		
+		char *desc = sipe_cal_event_describe(event);
 		purple_debug_info("sipe", "publish_calendar_status_self: current event is:\n%s", desc ? desc : "");
 		g_free(desc);
 	}
@@ -6625,7 +6625,7 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 		OOF publish, Busy clean
 	ilse if Busy
 		OOF clean, Busy publish
-	else 
+	else
 		OOF clean, Busy clean
 	*/
 	if (event && event->cal_status == SIPE_CAL_OOF) {
@@ -6637,12 +6637,12 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	} else {
 		pub_calendar  = sipe_publish_get_category_state_calendar(sip, NULL,  sip->ews->email, SIPE_CAL_OOF);
 		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, NULL,  sip->ews->email, SIPE_CAL_BUSY);
-	}	
-	
+	}
+
 	if (sip->ews && sip->ews->oof_note) {
 		pub_oof_note = NULL;//sipe_publish_get_category_note(sip, sip->ews->oof_note, "OOF");
 	}
-	
+
 	pub_cal_working_hours = sipe_publish_get_category_cal_working_hours(sip);
 	pub_cal_free_busy = sipe_publish_get_category_cal_free_busy(sip);
 
@@ -7585,10 +7585,6 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		sipe_ews_free(sip->ews);
 	}
 	sip->ews = NULL;
-	
-	if (sip->email)
-		g_free(sip->email);
-	sip->email = NULL;
 }
 
 /**
@@ -7627,6 +7623,7 @@ static void sipe_close(PurpleConnection *gc)
 		sipe_connection_cleanup(sip);
 		g_free(sip->sipdomain);
 		g_free(sip->username);
+		g_free(sip->email);
 		g_free(sip->password);
 		g_free(sip->authdomain);
 		g_free(sip->authuser);
