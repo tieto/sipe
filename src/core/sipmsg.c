@@ -482,7 +482,8 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 	gchar *ms_text_format = NULL;
 	gchar *body = NULL;
 
-	if (!strncmp(ms_text_format_in, "multipart/related", 21)) {
+	if (!strncmp(ms_text_format_in, "multipart/related", 17) ||
+	    !strncmp(ms_text_format_in, "multipart/alternative", 21)) {
 		char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ms_text_format_in, body_in);
 		PurpleMimeDocument *mime;
 		GList* parts;

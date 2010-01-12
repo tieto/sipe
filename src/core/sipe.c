@@ -4349,7 +4349,8 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 	contenttype = sipmsg_find_header(msg, "Content-Type");
 	if (!strncmp(contenttype, "text/plain", 10)
 	    || !strncmp(contenttype, "text/html", 9)
-	    || !strncmp(contenttype, "multipart/related", 21))
+	    || !strncmp(contenttype, "multipart/related", 17)
+	    || !strncmp(contenttype, "multipart/alternative", 21))
 	{
 		gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *html = get_html_message(contenttype, msg->body);
@@ -4406,7 +4407,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		found = TRUE;
 	}
 	if (!found) {
-		purple_debug_info("sipe", "got unknown mime-type");
+		purple_debug_info("sipe", "got unknown mime-type '%s'\n", contenttype);
 		send_sip_response(sip->gc, msg, 415, "Unsupported media type", NULL);
 	}
 	g_free(from);
