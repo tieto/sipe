@@ -4066,11 +4066,12 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
+	gchar *uri = sip_uri(who);
 
 	purple_debug_info("sipe", "sipe_im_send what='%s'\n", what);
 
-	session = sipe_session_find_or_add_im(sip, who);
-	dialog = sipe_dialog_find(session, who);
+	session = sipe_session_find_or_add_im(sip, uri);
+	dialog = sipe_dialog_find(session, uri);
 
 	// Queue the message
 	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, g_strdup(what));
@@ -4079,9 +4080,10 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		sipe_im_process_queue(sip, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sip, session, who, what, NULL, FALSE);
+		sipe_invite(sip, session, uri, what, NULL, FALSE);
 	}
 
+	g_free(uri);
 	return 1;
 }
 
