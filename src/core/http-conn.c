@@ -564,8 +564,8 @@ http_conn_process_input_message(HttpConn *http_conn,
 #ifdef _WIN32
 #ifdef USE_KERBEROS
 		if (tmp) {
-			ptmp = tmp;
-			auth_type = AUTH_TYPE_NEGOTIATE;
+			//ptmp = tmp;
+			//auth_type = AUTH_TYPE_NEGOTIATE;
 		}
 #endif
 #endif		

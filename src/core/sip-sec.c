@@ -120,7 +120,9 @@ sip_sec_init_context_step(SipSecContext context,
 		in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));
 
 		tmp = sip_sec_ntlm_message_describe(in_buff);
-		purple_debug_info("sipe", "sip_sec_init_context_step: Chalenge message is:\n%s", tmp);
+		if (tmp) {
+			purple_debug_info("sipe", "sip_sec_init_context_step: Chalenge message is:\n%s", tmp);
+		}
 		g_free(tmp);
 	}
 
