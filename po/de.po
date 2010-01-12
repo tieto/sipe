@@ -134,6 +134,11 @@ msgstr ""
 msgid "Failed to invite %s"
 msgstr "Kann den Benutzer %s nicht einladen"
 
+#: ../src/core/sipe.c:4416
+#, c-format
+msgid "Received a message with unrecognized contents from %s"
+msgstr "Es wurde eine Nachricht von %s mit unbekanntem Inhalt empfangen"
+
 #: ../src/core/sipe.c:4858 ../src/core/sipe.c:6627
 msgid "Wrong password"
 msgstr "Falsches Passwort"

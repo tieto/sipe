@@ -4407,6 +4407,18 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		found = TRUE;
 	}
 	if (!found) {
+		gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
+		if (!session) {
+			session = sipe_session_find_im(sip, from);
+		}
+		if (session) {
+			gchar *msg = g_strdup_printf(_("Received a message with unrecognized contents from %s"),
+						     from);
+			sipe_present_err(sip, session, msg);
+			g_free(msg);
+		}
+
 		purple_debug_info("sipe", "got unknown mime-type '%s'\n", contenttype);
 		send_sip_response(sip->gc, msg, 415, "Unsupported media type", NULL);
 	}
