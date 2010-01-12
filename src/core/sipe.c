@@ -2168,10 +2168,9 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			SIPE_STATUS_ID_BUSYIDLE, _("BusyIdle"),
 			FALSE);
 
-	/* Do Not Disturb (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
-			       SIPE_STATUS_ID_DND, NULL,
-			       FALSE);
+	/* Do Not Disturb */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_STATUS_ID_DND, _("Do not disturb"));
 
 	/* In a meeting (not user settable)
 	 * Calendar-driven status for 2005 systems.
@@ -2188,13 +2187,15 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			NULL, NULL);
 
-	/* On The Phone */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			SIPE_STATUS_ID_ONPHONE, _("On the phone"));
+	/* On The Phone (not user settable) */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
+			       SIPE_STATUS_ID_ONPHONE, _("On the phone"),
+			       FALSE);
 
-	/* Out To Lunch */
-	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			SIPE_STATUS_ID_LUNCH, _("Out to lunch"));
+	/* Out To Lunch (not user settable) */
+	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AWAY,
+			       SIPE_STATUS_ID_LUNCH, _("Out to lunch"),
+			       FALSE);
 
 	/* Idle/Inactive (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AVAILABLE,
@@ -2206,10 +2207,10 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			       NULL, NULL,
 			       TRUE);
 
-	/* Offline */
+	/* Offline (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_OFFLINE,
 			       NULL, NULL,
-			       TRUE);
+			       FALSE);
 
 	return types;
 }
@@ -5926,7 +5927,8 @@ send_presence_soap(struct sipe_account_data *sip,
 		activity = 400;
 	} else if (!strcmp(sip->status, SIPE_STATUS_ID_ONPHONE)) {
 		activity = 500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BUSY)) {
+	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BUSY) ||
+		   !strcmp(sip->status, SIPE_STATUS_ID_DND)) {
 		activity = 600;
 	} else if (!strcmp(sip->status, SIPE_STATUS_ID_INVISIBLE) ||
 		   !strcmp(sip->status, SIPE_STATUS_ID_OFFLINE)) {
