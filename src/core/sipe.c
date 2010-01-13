@@ -2170,7 +2170,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* Do Not Disturb */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			SIPE_STATUS_ID_DND, _("Do not disturb"));
+			SIPE_STATUS_ID_DND, NULL);
 
 	/* In a meeting (not user settable)
 	 * Calendar-driven status for 2005 systems.
