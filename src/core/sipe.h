@@ -703,12 +703,42 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  */
 #define SIPE_SOAP_SET_PRESENCE_CALENDAR \
 "<calendarInfo mailboxId=\"%s\" startTime=\"%s\" granularity=\"PT15M\">%s</calendarInfo>"
-	
+/**
+ * Note publication entry. 2005 systems.
+ *
+ * @param note	(%s) Ex.: Working from home
+ */
 #define SIPE_SOAP_SET_PRESENCE_NOTE_XML  "<note>%s</note>"
+/**
+ * Note's OOF publication entry. 2005 systems.
+ */
 #define SIPE_SOAP_SET_PRESENCE_OOF_XML  "<oof></oof>"
-
+/**
+ * States publication entry for User State. 2005 systems.
+ *
+ * @param avail			(%d) Availability 2007-style. Ex.: 9500
+ * @param since_time_str	(%s) Ex.: 2010-01-13T10:30:05Z
+ * @param device_id		(%s) epid. Ex.: 4c77e6ec72
+ * @param activity_token	(%s) Ex.: do-not-disturb
+ */
+#define SIPE_SOAP_SET_PRESENCE_STATES \
+          "<states>"\
+            "<state avail=\"%d\" since=\"%s\" validWith=\"any-device\" deviceId=\"%s\" set=\"manual\" xsi:type=\"userState\">%s</state>"\
+          "</states>"
+/**
+ * Presentity publication entry. 2005 systems.
+ *
+ * @param uri			(%s) SIP URI without 'sip:' prefix. Ex.: fox@atlanta.local
+ * @param aggr_availability	(%d) Ex.: 300
+ * @param aggr_activity		(%d) Ex.: 600
+ * @param host_name		(%s) Uppercased. Ex.: ATLANTA
+ * @param note_xml_str		(%s) XML string as SIPE_SOAP_SET_PRESENCE_NOTE_XML
+ * @param oof_xml_str		(%s) XML string as SIPE_SOAP_SET_PRESENCE_OOF_XML
+ * @param states_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_STATES
+ * @param calendar_info_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_CALENDAR
+ */
 #define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
-	"<m:presentity m:uri=\"sip:%s\">"\
+	"<m:presentity xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" m:uri=\"sip:%s\">"\
 	"<m:availability m:aggregate=\"%d\"/>"\
 	"<m:activity m:aggregate=\"%d\"/>"\
 	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" name=\"%s\"/>"\
@@ -716,6 +746,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"&lt;![CDATA[<caps><renders_gif/><renders_isf/></caps>]]&gt;</rtc:devicedata>"\
 	"<userInfo xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\">"\
 	"%s%s" \
+	"%s" \
         "</userInfo>"\
 	"%s" \
 	"</m:presentity>")

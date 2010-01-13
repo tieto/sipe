@@ -3954,6 +3954,7 @@ sipe_refer(struct sipe_account_data *sip,
 {
 	gchar *hdr;
 	gchar *contact;
+	gchar *epid = get_epid(sip);
 	struct sip_dialog *dialog = sipe_dialog_find(session,
 						     session->roster_manager);
 
@@ -3968,7 +3969,8 @@ sipe_refer(struct sipe_account_data *sip,
 		sip->username,
 		dialog->ourtag ? ";tag=" : "",
 		dialog->ourtag ? dialog->ourtag : "",
-		get_epid(sip));
+		epid);
+	g_free(epid);
 
 	send_sip_request(sip->gc, "REFER",
 		session->roster_manager, session->roster_manager, hdr, NULL, dialog, NULL);
@@ -5051,6 +5053,49 @@ sipe_get_status_by_availability(int avail)
 	return status;
 }
 
+/** 
+ * Returns 2007-style availability value
+ *
+ * @param sipe_status_id (in)
+ * @param activity_token (out)	Must be g_free()'d after use if consumed.
+ */
+static int
+sipe_get_availability_by_status(const char* sipe_status_id, char** activity_token)
+{
+	int availability;
+	char *activity = NULL;
+	
+	if (!strcmp(sipe_status_id, SIPE_STATUS_ID_AWAY) ||
+	    !strcmp(sipe_status_id, SIPE_STATUS_ID_LUNCH)) {
+		availability = 15500;
+		activity = "away";
+	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_BRB)) {
+		availability = 12500;
+		activity = "be-right-back";
+	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_DND)) {
+		availability =  9500;
+		activity = "do-not-disturb";
+	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_BUSY) ||
+		   !strcmp(sipe_status_id, SIPE_STATUS_ID_ONPHONE)) {
+		availability =  6500;
+		activity = "busy";
+	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_AVAILABLE)) {
+		availability =  3500;
+		activity = "online";
+	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_UNKNOWN)) {
+		availability =     0;
+	} else {
+		// Offline or invisible
+		availability = 18500;
+		activity = "offline";
+	}
+
+	if (activity_token) {
+		*activity_token = activity ? g_strdup(activity) : NULL;
+	}
+	return availability;
+}
+
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const char *uri;
@@ -5903,6 +5948,18 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 	}
 }
 
+/**
+ * Whether user manually changed status or
+ * it was changed automatically due to user
+ * became inactive/active again
+ */
+static gboolean
+sipe_is_machine_state(struct sipe_account_data *sip)
+{
+	gboolean res = (sip->was_idle && !sip->is_idle) || (!sip->was_idle && sip->is_idle);
+	return res;
+}
+
 void
 send_presence_soap(struct sipe_account_data *sip,
 		   const char *note,
@@ -5915,6 +5972,7 @@ send_presence_soap(struct sipe_account_data *sip,
 	gchar *tmp;
 	gchar *tmp2 = NULL;
 	const gchar *note_pub = NULL;
+	gchar *states = NULL;
 	gchar *calendar_data = NULL;
 
 	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY)) {
@@ -5938,6 +5996,24 @@ send_presence_soap(struct sipe_account_data *sip,
 		activity = 400; /* available */
 	}
 
+	/* User State */
+	if (!sipe_is_machine_state(sip)) {
+		gchar *epid = get_epid(sip);
+		time_t now = time(NULL);
+		gchar *since_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&now)));
+		gchar *activity_token = NULL;
+		int avail_2007 = sipe_get_availability_by_status(sip->status, &activity_token);
+
+		states = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_STATES,
+					avail_2007,
+					since_time_str,
+					epid,
+					activity_token);
+		g_free(since_time_str);
+		g_free(epid);
+		g_free(activity_token);
+	}
+
 	if (do_publish_calendar &&
 	   ews && (!is_empty(ews->legacy_dn) || !is_empty(ews->email)) && ews->fb_start && !is_empty(ews->free_busy))
 	{
@@ -5957,17 +6033,19 @@ send_presence_soap(struct sipe_account_data *sip,
 		note_pub = note;
 	}
 
-	//@TODO: send user data - state;
 	body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE,
 			       sip->username,
 			       availability,
 			       activity,
 			       (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
 			       note_pub ? (tmp2 = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, note_pub)) : "",
-			       ews && ews->oof_note ? SIPE_SOAP_SET_PRESENCE_OOF_XML : "",
+			       ews && ews->oof_note ? SIPE_SOAP_SET_PRESENCE_OOF_XML : "", /* oof */
+			       states ? states : "",
 			       calendar_data ? calendar_data : "");
 	g_free(tmp);
 	g_free(tmp2);
+	g_free(states);
+	g_free(calendar_data);
 	send_soap_request(sip, body);
 	g_free(body);
 }
@@ -6111,7 +6189,7 @@ static gchar *
 sipe_publish_get_category_state(struct sipe_account_data *sip,
 				gboolean is_user_state)
 {
-	int availability;
+	int availability = sipe_get_availability_by_status(sip->status, NULL);
 	guint instance = is_user_state ? sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER) :
 					 sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
 	/* key is <category><instance><container> */
@@ -6124,25 +6202,6 @@ sipe_publish_get_category_state(struct sipe_account_data *sip,
 
 	g_free(key_2);
 	g_free(key_3);
-
-	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY) ||
-	    !strcmp(sip->status, SIPE_STATUS_ID_LUNCH)) {
-		availability = 15500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BRB)) {
-		availability = 12500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_DND)) {
-		availability =  9500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_BUSY) ||
-		   !strcmp(sip->status, SIPE_STATUS_ID_ONPHONE)) {
-		availability =  6500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_AVAILABLE)) {
-		availability =  3500;
-	} else if (!strcmp(sip->status, SIPE_STATUS_ID_UNKNOWN)) {
-		availability =     0;
-	} else {
-		// Offline or invisible
-		availability = 18500;
-	}
 
 	if (publication_2 && (publication_2->availability == availability))
 	{
@@ -6563,14 +6622,9 @@ static void
 send_presence_category_publish(struct sipe_account_data *sip,
 			       const char *note)
 {
-	/**
-	 * Whether user manually changed status or
-	 * it was changed automatically due to user
-	 * became inactive/active again
-	 */
-	gboolean is_machine = (sip->was_idle && !sip->is_idle) || (!sip->was_idle && sip->is_idle);
-	gchar *pub_state = is_machine ? sipe_publish_get_category_state_machine(sip) :
-					sipe_publish_get_category_state_user(sip);
+	gchar *pub_state = sipe_is_machine_state(sip) ?
+				sipe_publish_get_category_state_machine(sip) :
+				sipe_publish_get_category_state_user(sip);
 	gchar *pub_note = sipe_publish_get_category_note(sip, note, "personal");
 	gchar *publications;
 
