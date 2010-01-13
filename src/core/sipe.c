@@ -5519,11 +5519,14 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xmlnode *xn_email;
 	xmlnode *xn_phone_number;
 	xmlnode *xn_userinfo;
-	xmlnode *xn_oof;
-	xmlnode *xn_contact;
 	xmlnode *xn_note;
+	xmlnode *xn_oof;
+	xmlnode *xn_state;
+	xmlnode *xn_contact;
 	char *note;
 	char *free_activity;
+	int user_avail;
+	int aggreg_avail;
 
 	/* fix for Reuters environment on Linux */
 	if (data && strstr(data, "encoding=\"utf-16\"")) {
@@ -5542,7 +5545,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xn_phone_number = xmlnode_get_child(xn_presentity, "phoneNumber");
 	xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
 	xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
-
+	xn_state = xn_userinfo ? xmlnode_get_descendant(xn_userinfo, "states", "state",  NULL): NULL;
+	user_avail = xn_state ? atoi(xmlnode_get_attrib(xn_state, "avail")) : 0;
 	xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
 	xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	note = xn_note ? xmlnode_get_data(xn_note) : NULL;
@@ -5614,7 +5618,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			purple_debug_info("sipe", "process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", cal_start_time, cal_granularity, cal_free_busy_base64);
 		}
 
-
 		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
 		state = xn_state ? xmlnode_get_data(xn_state) : NULL;
 
@@ -5630,7 +5633,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		}
 		g_free(state);
 	}
-
 
 	/* [MS-SIP] 2.2.1 */
 	if (act < 150)
@@ -5655,6 +5657,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	if (avl < 100)
 		status_id = SIPE_STATUS_ID_OFFLINE;
 
+	aggreg_avail = sipe_get_availability_by_status(status_id, NULL);
+	if (user_avail > aggreg_avail) {
+		status_id = sipe_get_status_by_availability(user_avail);
+	}
 
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
 	if (sbuddy)
