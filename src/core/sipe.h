@@ -702,7 +702,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * @param free_busy_base64	(%s) Ex.: AAAAAAAAAAAAAAAAA......
  */
 #define SIPE_SOAP_SET_PRESENCE_CALENDAR \
-"<calendarInfo mailboxId=\"%s\" startTime=\"%s\" granularity=\"PT15M\">%s</calendarInfo>"
+"<calendarInfo xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" mailboxId=\"%s\" startTime=\"%s\" granularity=\"PT15M\">%s</calendarInfo>"
 /**
  * Note publication entry. 2005 systems.
  *
@@ -736,6 +736,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * @param oof_xml_str		(%s) XML string as SIPE_SOAP_SET_PRESENCE_OOF_XML
  * @param states_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_STATES
  * @param calendar_info_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_CALENDAR
+ * @param device_id		(%s) epid. Ex.: 4c77e6ec72
  */
 #define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
 	"<m:presentity xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" m:uri=\"sip:%s\">"\
@@ -743,12 +744,13 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"<m:activity m:aggregate=\"%d\"/>"\
 	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" name=\"%s\"/>"\
 	"<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" namespace=\"rtcService\">"\
-	"&lt;![CDATA[<caps><renders_gif/><renders_isf/></caps>]]&gt;</rtc:devicedata>"\
+	"<![CDATA[<caps><renders_gif/><renders_isf/></caps>]]></rtc:devicedata>"\
 	"<userInfo xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\">"\
 	"%s%s" \
 	"%s" \
         "</userInfo>"\
 	"%s" \
+	"<device xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" deviceId=\"%s\" />"\
 	"</m:presentity>")
 
 #define SIPE_SOAP_SEARCH_CONTACT \

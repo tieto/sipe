@@ -5974,6 +5974,9 @@ send_presence_soap(struct sipe_account_data *sip,
 	const gchar *note_pub = NULL;
 	gchar *states = NULL;
 	gchar *calendar_data = NULL;
+	gchar *epid = get_epid(sip);
+	time_t now = time(NULL);
+	gchar *since_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&now)));
 
 	if (!strcmp(sip->status, SIPE_STATUS_ID_AWAY)) {
 		activity = 100;
@@ -5998,9 +6001,6 @@ send_presence_soap(struct sipe_account_data *sip,
 
 	/* User State */
 	if (!sipe_is_machine_state(sip)) {
-		gchar *epid = get_epid(sip);
-		time_t now = time(NULL);
-		gchar *since_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&now)));
 		gchar *activity_token = NULL;
 		int avail_2007 = sipe_get_availability_by_status(sip->status, &activity_token);
 
@@ -6009,8 +6009,6 @@ send_presence_soap(struct sipe_account_data *sip,
 					since_time_str,
 					epid,
 					activity_token);
-		g_free(since_time_str);
-		g_free(epid);
 		g_free(activity_token);
 	}
 
@@ -6041,13 +6039,18 @@ send_presence_soap(struct sipe_account_data *sip,
 			       note_pub ? (tmp2 = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, note_pub)) : "",
 			       ews && ews->oof_note ? SIPE_SOAP_SET_PRESENCE_OOF_XML : "", /* oof */
 			       states ? states : "",
-			       calendar_data ? calendar_data : "");
+			       calendar_data ? calendar_data : "",
+			       epid);
 	g_free(tmp);
 	g_free(tmp2);
 	g_free(states);
 	g_free(calendar_data);
+
 	send_soap_request(sip, body);
+
 	g_free(body);
+	g_free(since_time_str);
+	g_free(epid);
 }
 
 static gboolean
