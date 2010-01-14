@@ -80,20 +80,13 @@ It implements the extended version of SIP/SIMPLE used by various products:
 
 
 %build
-%define config_params %{?config_krb5:%{config_krb5}} --with-purple --without-telepathy
 %if 0%{?_with_git:1}
-# Copied from "rpmbuild --showrc" configure definition
-export CFLAGS="${CFLAGS:-%optflags}"
-./autogen.sh --build=%{_build} --host=%{_host} \
-	--target=%{_target_platform} \
-	--prefix=%{_prefix} \
-	--datadir=%{_datadir} \
-	--libdir=%{_libdir} \
-	%{config_params}
-%else
-%configure %{config_params}
+./autogen.sh
 %endif
-
+%configure \
+	%{?config_krb5:%{config_krb5}} \
+	--with-purple \
+	--without-telepathy
 make %{_smp_mflags}
 
 
@@ -122,6 +115,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Jan 14 2010 J. D. User <jduser@noreply.com> 1.7.1-*git*
+- autogen.sh no longer runs configure
+
 * Tue Dec 29 2009 J. D. User <jduser@noreply.com> 1.7.1-*git*
 - add configure parameters for purple and telepathy
 

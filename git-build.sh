@@ -13,7 +13,7 @@
 # Sanity check
 if [ ! -x autogen.sh ]; then
     echo 1>&2 "Your pidgin-sipe repository seems to be broken..."
-    exit 1;
+    exit 1
 fi
 
 # Check for previous build artifacts
@@ -27,6 +27,9 @@ fi
 # Rebuild
 (
     set -e
+    echo "Generating configure script..."
+    echo >>build.log "------ Generate Configure Script ------"
+    ./autogen.sh >>build.log 2>&1
     echo -n "Configuring build with"
     if [ $# -eq 0  ]; then
 	echo "out any options..."
@@ -34,7 +37,7 @@ fi
 	echo " '$@'..."
     fi
     echo >>build.log "------ Configure ------"
-    ./autogen.sh >>build.log 2>&1 "$@"
+    ./configure >>build.log 2>&1 "$@"
     echo "Running build..."
     echo >>build.log "------ Build ------"
     make >>build.log 2>&1

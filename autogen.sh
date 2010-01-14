@@ -37,7 +37,7 @@
 #   INTLTOOLIZE_FLAGS - command line arguments to pass to intltoolize
 #   LIBTOOLIZE_FLAGS - command line arguments to pass to libtoolize
 #
-# Other helpfull notes:
+# Other helpful notes:
 #   If you're using a different c compiler, you can override the environment
 #   variable in 'autogen.args'.  For example, say you're using distcc, just add
 #   the following to 'autogen.args':
@@ -48,6 +48,8 @@
 ###############################################################################
 PACKAGE="pidgin-sipe"
 ARGS_FILE="autogen.args"
+export CFLAGS
+export LDFLAGS
 
 libtoolize="libtoolize"
 case $(uname -s) in
@@ -64,7 +66,7 @@ check () {
 	CMD=$1
 
 	printf "%s" "checking for ${CMD}... "
-	BIN=`which ${CMD} 2> /dev/null`
+	BIN=`which ${CMD} 2>/dev/null`
 
 	if [ x"${BIN}" = x"" ] ; then
 		echo "not found."
@@ -81,7 +83,7 @@ run_or_die () { # beotch
 
 	OUTPUT=`mktemp autogen-XXXXXX`
 
-	printf "%s" "running ${CMD} ${@}... "
+	printf "running %s %s... " ${CMD} "$*"
 	${CMD} ${@} >${OUTPUT} 2>&1
 
 	if [ $? != 0 ] ; then
@@ -97,9 +99,17 @@ run_or_die () { # beotch
 	fi
 }
 
+cleanup () {
+	rm -f autogen-??????
+	echo
+	exit 2
+}
+
 ###############################################################################
 # We really start here, yes, very sneaky!
 ###############################################################################
+trap cleanup 2
+
 FIGLET=`which figlet 2> /dev/null`
 if [ x"${FIGLET}" != x"" ] ; then
 	${FIGLET} -f small ${PACKAGE}
@@ -115,7 +125,7 @@ printf "%s" "checking for ${ARGS_FILE}: "
 if [ -f ${ARGS_FILE} ] ; then
 	echo "found."
 	printf "%s" "sourcing ${ARGS_FILE}: "
-	. ${ARGS_FILE}
+	. "`dirname "$0"`"/${ARGS_FILE}
 	echo "done."
 else
 	echo "not found."
@@ -125,8 +135,8 @@ fi
 # Check for our required helpers
 ###############################################################################
 check "$libtoolize";		LIBTOOLIZE=${BIN};
-check "glib-gettextize"; GLIB_GETTEXTIZE=${BIN};
-check "intltoolize";	INTLTOOLIZE=${BIN};
+check "glib-gettextize";	GLIB_GETTEXTIZE=${BIN};
+check "intltoolize";		INTLTOOLIZE=${BIN};
 check "aclocal";		ACLOCAL=${BIN};
 check "autoheader";		AUTOHEADER=${BIN};
 check "automake";		AUTOMAKE=${BIN};
@@ -137,14 +147,14 @@ check "autoconf";		AUTOCONF=${BIN};
 ###############################################################################
 run_or_die ${LIBTOOLIZE} ${LIBTOOLIZE_FLAGS:-"-c -f --automake"}
 run_or_die ${GLIB_GETTEXTIZE} ${GLIB_GETTEXTIZE_FLAGS:-"--force --copy"}
+run_or_die ${INTLTOOLIZE} ${INTLTOOLIZE_FLAGS:-"-c -f --automake"}
 run_or_die ${ACLOCAL} ${ACLOCAL_FLAGS:-"-I m4macros"}
 #run_or_die ${AUTOHEADER} ${AUTOHEADER_FLAGS}
 run_or_die ${AUTOMAKE} ${AUTOMAKE_FLAGS:-"-a -c --gnu"}
 run_or_die ${AUTOCONF} ${AUTOCONF_FLAGS}
-run_or_die ${INTLTOOLIZE} ${INTLTOOLIZE_FLAGS:-"-c -f --automake"}
 
 ###############################################################################
 # Run configure
 ###############################################################################
-echo "running ./configure ${CONFIGURE_FLAGS} $@"
-./configure --enable-maintainer-mode ${CONFIGURE_FLAGS} $@
+#echo "running ./configure ${CONFIGURE_FLAGS} $@"
+#./configure ${CONFIGURE_FLAGS} $@
