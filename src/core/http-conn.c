@@ -436,7 +436,7 @@ http_conn_sendout_pkt(HttpConn *http_conn,
 	time_t currtime = time(NULL);
 	int writelen = strlen(buf);
 	char *tmp;
-	int ret;
+	int ret = 0;
 
 	purple_debug(PURPLE_DEBUG_MISC, "sipe-http", "sending - %s******\n%s\n******\n", ctime(&currtime), tmp = fix_newlines(buf));
 	g_free(tmp);
