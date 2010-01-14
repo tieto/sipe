@@ -606,6 +606,7 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 		sip->ews->auth->domain   = !is_empty(email_login) ? email_auth_domain        : g_strdup(sip->authdomain);
 		sip->ews->auth->user     = !is_empty(email_login) ? email_auth_user          : g_strdup(sip->authuser);
 		sip->ews->auth->password = !is_empty(email_login) ? g_strdup(email_password) : g_strdup(sip->password);
+		sip->ews->auth->use_negotiate = purple_account_get_bool(sip->account, "krb5", FALSE);
 	}
 
 	if(sip->ews->is_disabled) {

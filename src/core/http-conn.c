@@ -563,9 +563,9 @@ http_conn_process_input_message(HttpConn *http_conn,
 		tmp = sipmsg_find_auth_header(msg, "Negotiate");
 #ifdef _WIN32
 #ifdef USE_KERBEROS
-		if (tmp) {
-			//ptmp = tmp;
-			//auth_type = AUTH_TYPE_NEGOTIATE;
+		if (tmp && http_conn->auth && http_conn->auth->use_negotiate) {
+			ptmp = tmp;
+			auth_type = AUTH_TYPE_NEGOTIATE;
 		}
 #endif
 #endif		

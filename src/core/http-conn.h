@@ -30,6 +30,7 @@ struct http_conn_auth {
 	char *domain;
 	char *user;
 	char *password;
+	int use_negotiate;
 };
 typedef struct http_conn_auth HttpConnAuth;
 
