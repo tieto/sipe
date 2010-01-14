@@ -5960,9 +5960,9 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
  * became inactive/active again
  */
 static gboolean
-sipe_is_machine_state(struct sipe_account_data *sip)
+sipe_is_user_state(struct sipe_account_data *sip)
 {
-	gboolean res = (sip->was_idle && !sip->is_idle) || (!sip->was_idle && sip->is_idle);
+	gboolean res = (sip->was_idle == sip->is_idle);
 	return res;
 }
 
@@ -6006,7 +6006,7 @@ send_presence_soap(struct sipe_account_data *sip,
 	}
 
 	/* User State */
-	if (!sipe_is_machine_state(sip)) {
+	if (sipe_is_user_state(sip) && !do_publish_calendar) {
 		gchar *activity_token = NULL;
 		int avail_2007 = sipe_get_availability_by_status(sip->status, &activity_token);
 
@@ -6631,9 +6631,9 @@ static void
 send_presence_category_publish(struct sipe_account_data *sip,
 			       const char *note)
 {
-	gchar *pub_state = sipe_is_machine_state(sip) ?
-				sipe_publish_get_category_state_machine(sip) :
-				sipe_publish_get_category_state_user(sip);
+	gchar *pub_state = sipe_is_user_state(sip) ?
+				sipe_publish_get_category_state_user(sip) :
+				sipe_publish_get_category_state_machine(sip);
 	gchar *pub_note = sipe_publish_get_category_note(sip, note, "personal");
 	gchar *publications;
 
