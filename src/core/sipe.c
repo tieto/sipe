@@ -1799,6 +1799,7 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip,
 		g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
 	} else {
                 g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
+		
 	}
 	sipe_subscribe_presence_batched_to(sip, resources_uri, to);
 }
@@ -2218,14 +2219,17 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 /**
   * A callback for g_hash_table_foreach
   */
-static void sipe_buddy_subscribe_cb(SIPE_UNUSED_PARAMETER char *name, struct sipe_buddy *buddy, struct sipe_account_data *sip)
+static void
+sipe_buddy_subscribe_cb(char *buddy_name,
+			SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
+			struct sipe_account_data *sip)
 {
-	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy->name);
+	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy_name);
 	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
 	guint time_range = (g_hash_table_size(sip->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
 
-	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(buddy->name));
+	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(buddy_name));
 	g_free(action_name);
 }
 
@@ -2393,15 +2397,28 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		} // for, contacts
 
 		sipe_cleanup_local_blist(sip);
+
+		/* Add self-contact if not there yet. 2005 systems. */
+		/* This will resembles subscription to roaming_self in 2007 systems */
+		if (!sip->ocs2007) {
+			gchar *self_uri = sip_uri_self(sip);
+			struct sipe_buddy *buddy = g_hash_table_lookup(sip->buddies, self_uri);
+			
+			if (!buddy) {
+				buddy = g_new0(struct sipe_buddy, 1);
+				buddy->name = g_strdup(self_uri);
+				g_hash_table_insert(sip->buddies, buddy->name, buddy);
+			}
+			g_free(self_uri);
+		}
 	}
 	xmlnode_free(isc);
 
-	//subscribe to buddies
+	/* subscribe to buddies */
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
-		if(sip->batched_support){
+		if (sip->batched_support) {
 			sipe_subscribe_presence_batched(sip, NULL);
-		}
-		else{
+		} else {
 			g_hash_table_foreach(sip->buddies, (GHFunc)sipe_buddy_subscribe_cb, (gpointer)sip);
 		}
 		sip->subscribed_buddies = TRUE;
@@ -2410,7 +2427,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	 * based on their calendar information
 	 */
 	if (!sip->ocs2007) {
-		//sipe_sched_calendar_status_update(sip, time(NULL));
+		sipe_sched_calendar_status_update(sip, time(NULL));
 	}
 
 	return 0;
