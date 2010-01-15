@@ -1514,6 +1514,11 @@ update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
 	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
 	const PurpleStatus *status = purple_presence_get_active_status(presence);
 	int cal_status = sipe_cal_get_status(sbuddy, time(NULL) + 2*60 /* 2 min */);
+	
+	if (!pbuddy) {
+		purple_debug_info("sipe", "update_calendar_status_cb: no pbuddy for: %s\n", sbuddy->name);
+		return;
+	}
 
 	if (cal_status < SIPE_CAL_NO_DATA) {
 		purple_debug_info("sipe", "update_calendar_status_cb: cal_status:%d for %s\n", cal_status, sbuddy->name);
@@ -2399,7 +2404,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		sipe_cleanup_local_blist(sip);
 
 		/* Add self-contact if not there yet. 2005 systems. */
-		/* This will resembles subscription to roaming_self in 2007 systems */
+		/* This will resemble subscription to roaming_self in 2007 systems */
 		if (!sip->ocs2007) {
 			gchar *self_uri = sip_uri_self(sip);
 			struct sipe_buddy *buddy = g_hash_table_lookup(sip->buddies, self_uri);
@@ -4884,14 +4889,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 						 * Only in this case we know versions of current publications made
 						 * on our behalf.
 						 */
-						sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
-						/* dalayed run */
-						sipe_schedule_action("<+update-calendar>",
-								     UPDATE_CALENDAR_DELAY,
-								     (Action)sipe_update_calendar,
-								     NULL,
-								     sip,
-								     NULL);
+						/* For 2005- we publish our initial statuses only after
+						 * received our existing UserInfo data in response to
+						 * self subscription.
+						 * Only in this case we won't override existing UserInfo data
+						 * set earlier or by other client on our behalf.
+						 */
 					}
 
 					sip->subscribed = TRUE;
@@ -5551,6 +5554,31 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 	xmlnode_free(pidf);
 }
 
+/** 2005 */
+static void
+sipe_user_info_has_updated(struct sipe_account_data *sip,
+			   xmlnode *xn_userinfo)
+{
+	/* clone */
+	char *userinfo_xml_str = xmlnode_to_str(xn_userinfo, NULL);
+
+	if (sip->user_info) {
+		xmlnode_free(sip->user_info);
+	}
+	sip->user_info = xmlnode_from_str(userinfo_xml_str, strlen(userinfo_xml_str));
+
+	/* Publish initial state if not yet.
+	 * Assuming this happens on initial responce to self subscription
+	 * so we've already updated our UserInfo.
+	 */
+	if (!sip->initial_state_published) {
+		sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+		sip->initial_state_published = TRUE;
+		/* dalayed run */
+		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
+	}	
+}
+
 static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const char *activity = NULL;
@@ -5558,6 +5586,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	const char *status_id = NULL;
 	const char *name;
 	char *uri;
+	char *self_uri = sip_uri_self(sip);
 	int avl;
 	int act;
 	const char *device_name = NULL;
@@ -5739,9 +5768,15 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
 	sipe_got_user_status(sip, uri, status_id);
+	
+	if (!strcmp(self_uri, uri)) {
+		sipe_user_info_has_updated(sip, xn_userinfo);
+	}
+	
 	g_free(note);
 	xmlnode_free(xn_presentity);
 	g_free(uri);
+	g_free(self_uri);
 }
 
 static void sipe_process_presence(struct sipe_account_data *sip, struct sipmsg *msg)
