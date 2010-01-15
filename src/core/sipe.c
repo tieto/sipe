@@ -5024,6 +5024,43 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 }
 
 /**
+ * [MS-SIP] 2.2.1
+ *
+ * @param activity	2005 aggregated activity.    Ex.: 600
+ * @param availablity	2005 aggregated availablity. Ex.: 300
+ */
+static const char *
+sipe_get_status_by_activity_avail_2005(const int activity,
+				       const int availablity)
+{
+	const char *status_id = NULL;
+
+	if (activity < 150)
+		status_id = SIPE_STATUS_ID_AWAY;
+	else if (activity < 200)
+		status_id = SIPE_STATUS_ID_LUNCH;
+	else if (activity < 300)
+		status_id = SIPE_STATUS_ID_IDLE;
+	else if (activity < 400)
+		status_id = SIPE_STATUS_ID_BRB;
+	else if (activity < 500)
+		status_id = SIPE_STATUS_ID_AVAILABLE;
+	else if (activity < 600)
+		status_id = SIPE_STATUS_ID_ONPHONE;
+	else if (activity < 700)
+		status_id = SIPE_STATUS_ID_BUSY;
+	else if (activity < 800)
+		status_id = SIPE_STATUS_ID_AWAY;
+	else
+		status_id = SIPE_STATUS_ID_AVAILABLE;
+
+	if (availablity < 100)
+		status_id = SIPE_STATUS_ID_OFFLINE;
+
+	return status_id;
+}
+
+/**
  * [MS-PRES] Table 3: Conversion of legacyInterop elements and attributes to MSRTC elements and attributes.
  */
 static const char*
@@ -5421,7 +5458,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 
 	pidf = xmlnode_from_str(data, len);
 	if (!pidf) {
-		purple_debug_info("sipe", "process_incoming_notify: no parseable pidf:%s\n",data);
+		purple_debug_info("sipe", "process_incoming_notify_pidf: no parseable pidf:%s\n",data);
 		return;
 	}
 
@@ -5435,19 +5472,19 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 	}
 
 	if (!basicstatus) {
-		purple_debug_info("sipe", "process_incoming_notify: no basic found\n");
+		purple_debug_info("sipe", "process_incoming_notify_pidf: no basic found\n");
 		xmlnode_free(pidf);
 		return;
 	}
 
 	getbasic = xmlnode_get_data(basicstatus);
 	if (!getbasic) {
-		purple_debug_info("sipe", "process_incoming_notify: no basic data found\n");
+		purple_debug_info("sipe", "process_incoming_notify_pidf: no basic data found\n");
 		xmlnode_free(pidf);
 		return;
 	}
 
-	purple_debug_info("sipe", "process_incoming_notify: basic-status(%s)\n", getbasic);
+	purple_debug_info("sipe", "process_incoming_notify_pidf: basic-status(%s)\n", getbasic);
 	if (strstr(getbasic, "open")) {
 		isonline = TRUE;
 	}
@@ -5466,7 +5503,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 			if ((basicstatus = xmlnode_get_child(status, "activities"))) {
 				if ((basicstatus = xmlnode_get_child(basicstatus, "activity"))) {
 					activity = xmlnode_get_data(basicstatus);
-					purple_debug_info("sipe", "process_incoming_notify: activity(%s)\n", activity);
+					purple_debug_info("sipe", "process_incoming_notify_pidf: activity(%s)\n", activity);
 				}
 			}
 		}
@@ -5486,7 +5523,7 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 			status_id = SIPE_STATUS_ID_AVAILABLE;
 		}
 
-		purple_debug_info("sipe", "process_incoming_notify: status_id(%s)\n", status_id);
+		purple_debug_info("sipe", "process_incoming_notify_pidf: status_id(%s)\n", status_id);
 		sipe_got_user_status(sip, uri, status_id);
 	} else {
 		sipe_got_user_status(sip, uri, SIPE_STATUS_ID_OFFLINE);
@@ -5526,7 +5563,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	char *note;
 	char *free_activity;
 	int user_avail;
-	int aggreg_avail;
+	time_t user_avail_since;
+	int res_avail;
 
 	/* fix for Reuters environment on Linux */
 	if (data && strstr(data, "encoding=\"utf-16\"")) {
@@ -5547,6 +5585,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
 	xn_state = xn_userinfo ? xmlnode_get_descendant(xn_userinfo, "states", "state",  NULL): NULL;
 	user_avail = xn_state ? atoi(xmlnode_get_attrib(xn_state, "avail")) : 0;
+	user_avail_since = xn_state ? purple_str_to_time(xmlnode_get_attrib(xn_state, "since"), FALSE, NULL, NULL, NULL) : (time_t)-1;
 	xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
 	xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	note = xn_note ? xmlnode_get_data(xn_note) : NULL;
@@ -5558,6 +5597,13 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	avl = atoi(xmlnode_get_attrib(xn_availability, "aggregate"));
 	epid = xmlnode_get_attrib(xn_availability, "epid");
 	act = atoi(xmlnode_get_attrib(xn_activity, "aggregate"));
+	
+	status_id = sipe_get_status_by_activity_avail_2005(act, avl);
+	res_avail = sipe_get_availability_by_status(status_id, NULL);
+	if (user_avail > res_avail) {
+		res_avail = user_avail;
+		status_id = sipe_get_status_by_availability(user_avail);
+	}
 
 	if (xn_display_name) {
 		char *display_name = g_strdup(xmlnode_get_attrib(xn_display_name, "displayName"));
@@ -5619,47 +5665,28 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		}
 
 		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
-		state = xn_state ? xmlnode_get_data(xn_state) : NULL;
-
-		if (!is_empty(state)) {
-			if (!strcmp(state, "on-the-phone")) {
-				activity = _("On the phone");
-			} else if (!strcmp(state, "presenting")) {
-				activity = _("In a conference");
-			} else {
-				activity = free_activity = state;
-				state = NULL;
+		if (xn_state) {
+			int dev_avail = atoi(xmlnode_get_attrib(xn_state, "avail"));
+			time_t dev_avail_since = purple_str_to_time(xmlnode_get_attrib(xn_state, "since"), FALSE, NULL, NULL, NULL);
+	
+			state = xn_state ? xmlnode_get_data(xn_state) : NULL;		
+			if (dev_avail_since > user_avail_since &&
+			    dev_avail >= res_avail &&
+			    !is_empty(state))
+			{
+				res_avail = dev_avail;
+				status_id = sipe_get_status_by_availability(dev_avail);
+				if (!strcmp(state, "on-the-phone")) {
+					activity = _("On the phone");
+				} else if (!strcmp(state, "presenting")) {
+					activity = _("In a conference");
+				} else {
+					activity = free_activity = state;
+					state = NULL;
+				}
 			}
+			g_free(state);
 		}
-		g_free(state);
-	}
-
-	/* [MS-SIP] 2.2.1 */
-	if (act < 150)
-		status_id = SIPE_STATUS_ID_AWAY;
-	else if (act < 200)
-		status_id = SIPE_STATUS_ID_LUNCH;
-	else if (act < 300)
-		status_id = SIPE_STATUS_ID_IDLE;
-	else if (act < 400)
-		status_id = SIPE_STATUS_ID_BRB;
-	else if (act < 500)
-		status_id = SIPE_STATUS_ID_AVAILABLE;
-	else if (act < 600)
-		status_id = SIPE_STATUS_ID_ONPHONE;
-	else if (act < 700)
-		status_id = SIPE_STATUS_ID_BUSY;
-	else if (act < 800)
-		status_id = SIPE_STATUS_ID_AWAY;
-	else
-		status_id = SIPE_STATUS_ID_AVAILABLE;
-
-	if (avl < 100)
-		status_id = SIPE_STATUS_ID_OFFLINE;
-
-	aggreg_avail = sipe_get_availability_by_status(status_id, NULL);
-	if (user_avail > aggreg_avail) {
-		status_id = sipe_get_status_by_availability(user_avail);
 	}
 
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
