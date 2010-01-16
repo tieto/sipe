@@ -106,10 +106,13 @@ sipe_cal_get_description(struct sipe_buddy *buddy);
 /**
  * Returns calendar status SIPE_CAL_* at time specified.
  * Returns SIPE_CAL_NO_DATA if no calendar data availible.
+ * 
+ * @param since (out)	Returns beginning time of the status.
  */
 int
 sipe_cal_get_status(struct sipe_buddy *buddy,
-		    time_t time_in_question);
+		    time_t time_in_question,
+		    time_t *since);
 		   
 /**
  * Returns calendar event at time in question.

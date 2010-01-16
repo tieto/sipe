@@ -530,20 +530,50 @@ sipe_cal_get_status0(const gchar *free_busy,
 		*index = shift;
 	}
 
-	res = free_busy[shift] - 0x30;
+	res = free_busy[shift] - '0';
 
 	return res;
 }
 
+/**
+ * Returns time when current calendar state started
+ */
+static time_t
+sipe_cal_get_since_time(const gchar *free_busy,
+			time_t calStart,
+			int granularity,
+			int index,
+			int current_state)
+{
+	int i;
+
+	if ((index < 0) || ((size_t)(index + 1) > strlen(free_busy))) return 0;
+
+	for (i = index; i >= 0; i--) {
+		int temp_status = free_busy[i] - '0';
+
+		if (current_state != temp_status) {
+			return calStart + (i + 1)*granularity*60;
+		}
+
+		if (i == 0) return calStart;
+	}
+
+	return 0;
+}
 static char*
 sipe_cal_get_free_busy(struct sipe_buddy *buddy);
 
 int
 sipe_cal_get_status(struct sipe_buddy *buddy,
-		    time_t time_in_question)
+		    time_t time_in_question,
+		    time_t *since)
 {
 	time_t cal_start;
 	const char* free_busy;
+	int ret = SIPE_CAL_NO_DATA;
+	time_t state_since;
+	int index;
 	
 	if (!buddy || !buddy->cal_start_time || !buddy->cal_granularity) {
 		purple_debug_info("sipe", "sipe_cal_get_status: no calendar data1 for %s, exiting\n", buddy->name ? buddy->name : "");
@@ -558,11 +588,19 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 	
 	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
 	
-	return sipe_cal_get_status0(free_busy,
-				    cal_start,
-				    buddy->cal_granularity,
-				    time_in_question,
-				    NULL);
+	ret = sipe_cal_get_status0(free_busy,
+				   cal_start,
+				   buddy->cal_granularity,
+				   time_in_question,
+				   &index);
+	state_since = sipe_cal_get_since_time(free_busy,
+					      cal_start,
+					      buddy->cal_granularity,
+					      index,
+					      ret);
+
+	if (since) *since = state_since;
+	return ret;
 }
 
 static time_t
@@ -582,7 +620,7 @@ sipe_cal_get_switch_time(const gchar *free_busy,
 	}
 
 	for (i = index + 1; i < strlen(free_busy); i++) {
-		int temp_status = free_busy[i] - 0x30;
+		int temp_status = free_busy[i] - '0';
 
 		if (current_state != temp_status) {
 			*to_state = temp_status;
@@ -744,11 +782,12 @@ sipe_cal_get_free_busy(struct sipe_buddy *buddy)
 		4  No data
 */
 		for (i = 0; i < cal_dec64_len; i++) {
+#define TWO_BIT_MASK	0x03
 			char tmp = cal_dec64[i];
-			buddy->cal_free_busy[j++] = (tmp & 0x03) + 0x30;
-			buddy->cal_free_busy[j++] = ((tmp >> 2) & 0x03) + 0x30;
-			buddy->cal_free_busy[j++] = ((tmp >> 4) & 0x03) + 0x30;
-			buddy->cal_free_busy[j++] = ((tmp >> 6) & 0x03) + 0x30;
+			buddy->cal_free_busy[j++] = (tmp & TWO_BIT_MASK) + '0';
+			buddy->cal_free_busy[j++] = ((tmp >> 2) & TWO_BIT_MASK) + '0';
+			buddy->cal_free_busy[j++] = ((tmp >> 4) & TWO_BIT_MASK) + '0';
+			buddy->cal_free_busy[j++] = ((tmp >> 6) & TWO_BIT_MASK) + '0';
 		}
 		buddy->cal_free_busy[j++] = '\0';
 		g_free(cal_dec64);		

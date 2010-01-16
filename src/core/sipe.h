@@ -65,7 +65,8 @@ struct sipe_buddy {
 	gchar *cal_free_busy_base64;
 	gchar *cal_free_busy;
 	/* for 2005 systems */
-	gchar *last_non_cal_status_id;
+	time_t user_avail_since;
+	const char *last_non_cal_status_id;
 	gchar *last_non_cal_activity;
 
 	struct sipe_cal_working_hours *cal_working_hours;
