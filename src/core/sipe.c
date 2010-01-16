@@ -1480,38 +1480,72 @@ static int
 sipe_get_availability_by_status(const char* sipe_status_id, char** activity_token);
 
 static void
+sipe_apply_calendar_status(struct sipe_account_data *sip,
+			   struct sipe_buddy *sbuddy,
+			   const char *status_id)
+{
+	time_t cal_avail_since;	
+	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
+	int avail;
+	
+	if (!sbuddy) return;
+	
+	if (cal_status < SIPE_CAL_NO_DATA) {
+		purple_debug_info("sipe", "update_calendar_status_cb: cal_status:%d for %s\n", cal_status, sbuddy->name);
+	}
+	
+	/* after msrtc processing */
+	if (status_id) {
+		sbuddy->last_non_cal_status_id = status_id;
+		g_free(sbuddy->last_non_cal_activity);
+		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
+	}
+
+	//get current status_id, user_avail_since, activity, activity_since.
+	
+	/* adjust to calendar status */
+	if (cal_status == SIPE_CAL_BUSY
+	    && cal_avail_since > sbuddy->user_avail_since
+	    && 6500 >= sipe_get_availability_by_status(status_id, NULL))
+	{
+		status_id = SIPE_STATUS_ID_BUSY;
+	}	
+	avail = sipe_get_availability_by_status(status_id, NULL);
+
+	if (cal_avail_since > sbuddy->activity_since) {
+		if (cal_status == SIPE_CAL_BUSY 
+		    && avail >= 6500 && avail <= 8900)
+		{
+			g_free(sbuddy->activity);
+			sbuddy->activity = g_strdup(_("In a meeting"));
+		}
+		if (cal_status == SIPE_CAL_OOF
+		    && avail >= 12000)
+		{
+			g_free(sbuddy->activity);
+			sbuddy->activity = g_strdup(_("Out of office"));
+		}
+	}
+
+	/* then set status_id actually */
+	purple_debug_info("sipe", "sipe_got_user_status: to %s for %s\n", status_id, sbuddy->name);
+	purple_prpl_got_user_status(sip->account, sbuddy->name, status_id, NULL);
+}
+
+static void
 sipe_got_user_status(struct sipe_account_data *sip,
 		     const char* uri,
 		     const char *status_id)
 {
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
-	time_t cal_avail_since;
-	
+
 	if (!sbuddy) return;
 
-	/* Check if on 2005 system contact's calendar is in Busy status,
+	/* Check if on 2005 system contact's calendar,
 	 * then set/preserve it.
 	 */
-	if (!sip->ocs2007 &&
-	    sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since) == SIPE_CAL_BUSY &&
-	    cal_avail_since > sbuddy->user_avail_since &&
-	    6500 >= sipe_get_availability_by_status(status_id, NULL))
-	{
-		PurpleBuddy *pbuddy = purple_find_buddy(sip->account, sbuddy->name);
-		const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
-		const PurpleStatus *status = purple_presence_get_active_status(presence);
-		
-		if (!pbuddy) return;
-
-		sbuddy->last_non_cal_status_id = status_id;
-		sbuddy->last_non_cal_activity = sbuddy->activity;
-		sbuddy->activity = g_strdup(_("In a meeting"));
-
-		/* not yet set */
-		if (strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING)) {
-			purple_debug_info("sipe", "sipe_got_user_status: to %s for %s\n", SIPE_STATUS_ID_MEETING, sbuddy->name);
-			purple_prpl_got_user_status(sip->account, sbuddy->name, SIPE_STATUS_ID_MEETING, NULL);
-		}
+	if (!sip->ocs2007) {
+		sipe_apply_calendar_status(sip, sbuddy, status_id);
 	} else {
 		purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
 	}
@@ -1522,49 +1556,7 @@ update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
 			  struct sipe_buddy *sbuddy,
 			  struct sipe_account_data *sip)
 {
-	PurpleBuddy *pbuddy = purple_find_buddy(sip->account, sbuddy->name);
-	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
-	const PurpleStatus *status = purple_presence_get_active_status(presence);
-	time_t cal_avail_since;
-	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
-	
-	if (!pbuddy) {
-		purple_debug_info("sipe", "update_calendar_status_cb: no pbuddy for: %s\n", sbuddy->name);
-		return;
-	}
-
-	if (cal_status < SIPE_CAL_NO_DATA) {
-		purple_debug_info("sipe", "update_calendar_status_cb: cal_status:%d for %s\n", cal_status, sbuddy->name);
-	}
-
-	if (cal_status == SIPE_CAL_BUSY
-	    && cal_avail_since > sbuddy->user_avail_since
-	    && 6500 >= sipe_get_availability_by_status(purple_status_get_id(status), NULL))
-	{
-		/* not yet set */
-		if (strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING))		
-		{
-			purple_debug_info("sipe", "update_calendar_status_cb: to %s for %s\n", SIPE_STATUS_ID_MEETING, sbuddy->name);
-			sbuddy->last_non_cal_status_id = purple_status_get_id(status);
-			sbuddy->last_non_cal_activity = sbuddy->activity;
-			sbuddy->activity = g_strdup(_("In a meeting"));
-			purple_prpl_got_user_status(sip->account, sbuddy->name, SIPE_STATUS_ID_MEETING, NULL);
-		}
-	}
-	else
-	{
-		if (!strcmp(purple_status_get_id(status), SIPE_STATUS_ID_MEETING))
-		{
-			/* resetting status to last known */
-			purple_debug_info("sipe", "update_calendar_status_cb: resetting to %s for %s\n",
-					  sbuddy->last_non_cal_status_id, sbuddy->name);
-			purple_prpl_got_user_status(sip->account, sbuddy->name, sbuddy->last_non_cal_status_id, NULL);
-			sbuddy->last_non_cal_status_id = NULL;			
-			g_free(sbuddy->activity);
-			sbuddy->activity = sbuddy->last_non_cal_activity;
-			sbuddy->last_non_cal_activity = NULL;
-		}
-	}
+	sipe_apply_calendar_status(sip, sbuddy, NULL);
 }
 
 /**
@@ -5663,6 +5655,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	int user_avail;
 	int res_avail;
 	time_t user_avail_since = 0;
+	time_t activity_since = 0;
 
 	/* fix for Reuters environment on Linux */
 	if (data && strstr(data, "encoding=\"utf-16\"")) {
@@ -5736,11 +5729,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		}
 	}
 
-	/* oof */
-	if (xn_oof) {
-               activity = _("Out of office");
-	}
-
 	/* devicePresence */
 	for (node = xmlnode_get_descendant(xn_presentity, "devices", "devicePresence", NULL); node; node = xmlnode_get_next_twin(node)) {
 		xmlnode *xn_device_name;
@@ -5772,8 +5760,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			    dev_avail >= res_avail)
 			{
 				res_avail = dev_avail;
-				status_id = sipe_get_status_by_availability(dev_avail);
-				if (!is_empty(state)) {
+				status_id = sipe_get_status_by_availability(res_avail);
+				if (!is_empty(state)
+				    && res_avail >= 6500 && res_avail <= 8900)
+				{			
 					if (!strcmp(state, "on-the-phone")) {
 						activity = _("On the phone");
 					} else if (!strcmp(state, "presenting")) {
@@ -5782,10 +5772,17 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 						activity = free_activity = state;
 						state = NULL;
 					}
+					activity_since = dev_avail_since;
 				}
 			}
 			g_free(state);
 		}
+	}
+
+	/* oof */
+	if (xn_oof && res_avail >= 12000) {
+               activity = _("Out of office");
+	       activity_since = 0;
 	}
 
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
@@ -5794,7 +5791,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->activity);
 		sbuddy->activity = NULL;
 		if (!is_empty(activity)) { sbuddy->activity = g_strdup(activity); }
-		
+
+		sbuddy->activity_since = activity_since;
+
 		sbuddy->user_avail_since = user_avail_since;
 
 		g_free(sbuddy->annotation);
