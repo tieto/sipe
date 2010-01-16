@@ -749,6 +749,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * @param states_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_STATES
  * @param calendar_info_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_CALENDAR
  * @param device_id		(%s) epid. Ex.: 4c77e6ec72
+ * @param since_time_str	(%s) Ex.: 2010-01-13T10:30:05Z
  */
 #define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
 	"<m:presentity xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" m:uri=\"sip:%s\">"\
@@ -762,7 +763,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"%s" \
         "</userInfo>"\
 	"%s" \
-	"<device xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" deviceId=\"%s\" />"\
+	"<device xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" deviceId=\"%s\" since=\"%s\" />"\
 	"</m:presentity>")
 
 #define SIPE_SOAP_SEARCH_CONTACT \

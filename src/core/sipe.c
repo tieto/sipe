@@ -106,15 +106,15 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 #define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
 #define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
 #define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
+/** Reuters status (user settable) */
 #define SIPE_STATUS_ID_ONPHONE     "on-the-phone"                                             /* On the phone */
 #define SIPE_STATUS_ID_INVISIBLE   purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) /* Appear Offline */
 /*      PURPLE_STATUS_AWAY: */
 #define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
 #define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
 #define SIPE_STATUS_ID_AWAY        purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY)      /* Away (primitive) */
+/** Reuters status (user settable) */
 #define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
-/* Calendar-driven status for 2005 systems */
-#define SIPE_STATUS_ID_MEETING     "in-a-meeting"                                             /* In a meeting */
 /* ???  PURPLE_STATUS_EXTENDED_AWAY */
 /* ???  PURPLE_STATUS_MOBILE */
 /* ???  PURPLE_STATUS_TUNE */
@@ -1499,31 +1499,35 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		sbuddy->last_non_cal_status_id = status_id;
 		g_free(sbuddy->last_non_cal_activity);
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
+	} else {
+		status_id = sbuddy->last_non_cal_status_id;
 	}
 
 	//get current status_id, user_avail_since, activity, activity_since.
 	
 	/* adjust to calendar status */
-	if (cal_status == SIPE_CAL_BUSY
-	    && cal_avail_since > sbuddy->user_avail_since
-	    && 6500 >= sipe_get_availability_by_status(status_id, NULL))
-	{
-		status_id = SIPE_STATUS_ID_BUSY;
-	}	
-	avail = sipe_get_availability_by_status(status_id, NULL);
+	if (cal_status != SIPE_CAL_NO_DATA) {
+		if (cal_status == SIPE_CAL_BUSY
+		    && cal_avail_since > sbuddy->user_avail_since
+		    && 6500 >= sipe_get_availability_by_status(status_id, NULL))
+		{
+			status_id = SIPE_STATUS_ID_BUSY;
+		}	
+		avail = sipe_get_availability_by_status(status_id, NULL);
 
-	if (cal_avail_since > sbuddy->activity_since) {
-		if (cal_status == SIPE_CAL_BUSY 
-		    && avail >= 6500 && avail <= 8900)
-		{
-			g_free(sbuddy->activity);
-			sbuddy->activity = g_strdup(_("In a meeting"));
-		}
-		if (cal_status == SIPE_CAL_OOF
-		    && avail >= 12000)
-		{
-			g_free(sbuddy->activity);
-			sbuddy->activity = g_strdup(_("Out of office"));
+		if (cal_avail_since > sbuddy->activity_since) {
+			if (cal_status == SIPE_CAL_BUSY 
+			    && avail >= 6500 && avail <= 8900)
+			{
+				g_free(sbuddy->activity);
+				sbuddy->activity = g_strdup(_("In a meeting"));
+			}
+			if (cal_status == SIPE_CAL_OOF
+			    && avail >= 12000)
+			{
+				g_free(sbuddy->activity);
+				sbuddy->activity = g_strdup(_("Out of office"));
+			}
 		}
 	}
 
@@ -2188,13 +2192,6 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Do Not Disturb */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			SIPE_STATUS_ID_DND, NULL);
-
-	/* In a meeting (not user settable)
-	 * Calendar-driven status for 2005 systems.
-	 */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
-			       SIPE_STATUS_ID_MEETING, _("Busy"),
-			       FALSE);
 
 	/* Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
@@ -6173,8 +6170,7 @@ send_presence_soap(struct sipe_account_data *sip,
 	}
 
 	/* CalendarInfo */
-	if (do_publish_calendar &&
-	   ews && (!is_empty(ews->legacy_dn) || !is_empty(ews->email)) && ews->fb_start && !is_empty(ews->free_busy))
+	if (ews && (!is_empty(ews->legacy_dn) || !is_empty(ews->email)) && ews->fb_start && !is_empty(ews->free_busy))
 	{
 		char *fb_start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
 		char *free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
@@ -6196,7 +6192,8 @@ send_presence_soap(struct sipe_account_data *sip,
 			       res_oof ? res_oof : "",
 			       states ? states : "",
 			       calendar_data ? calendar_data : "",
-			       epid);
+			       epid,
+			       since_time_str);
 	g_free(tmp);
 	g_free(res_note);
 	g_free(states);
