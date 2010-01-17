@@ -304,7 +304,6 @@ publish_calendar_status_self(struct sipe_account_data *sip);
  */
 void
 send_presence_soap(struct sipe_account_data *sip,
-		   const char *note,
 		   gboolean do_publish_calendar);
 
 /**

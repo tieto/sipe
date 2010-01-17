@@ -1487,13 +1487,14 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	time_t cal_avail_since;	
 	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
 	int avail;
-	
+
 	if (!sbuddy) return;
 	
 	if (cal_status < SIPE_CAL_NO_DATA) {
-		purple_debug_info("sipe", "update_calendar_status_cb: cal_status:%d for %s\n", cal_status, sbuddy->name);
+		purple_debug_info("sipe", "update_calendar_status_cb: cal_status      : %d for %s\n", cal_status, sbuddy->name);
+		purple_debug_info("sipe", "update_calendar_status_cb: cal_avail_since : %s", asctime(localtime(&cal_avail_since)));
 	}
-	
+
 	/* after msrtc processing */
 	if (status_id) {
 		sbuddy->last_non_cal_status_id = status_id;
@@ -1503,10 +1504,10 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		status_id = sbuddy->last_non_cal_status_id;
 	}
 
-	//get current status_id, user_avail_since, activity, activity_since.
-	
 	/* adjust to calendar status */
 	if (cal_status != SIPE_CAL_NO_DATA) {
+		purple_debug_info("sipe", "update_calendar_status_cb: user_avail_since: %s", asctime(localtime(&sbuddy->user_avail_since)));
+
 		if (cal_status == SIPE_CAL_BUSY
 		    && cal_avail_since > sbuddy->user_avail_since
 		    && 6500 >= sipe_get_availability_by_status(status_id, NULL))
@@ -1515,6 +1516,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		}	
 		avail = sipe_get_availability_by_status(status_id, NULL);
 
+		purple_debug_info("sipe", "update_calendar_status_cb: activity_since  : %s", asctime(localtime(&sbuddy->activity_since)));
 		if (cal_avail_since > sbuddy->activity_since) {
 			if (cal_status == SIPE_CAL_BUSY 
 			    && avail >= 6500 && avail <= 8900)
@@ -6098,7 +6100,6 @@ sipe_is_user_state(struct sipe_account_data *sip)
 
 void
 send_presence_soap(struct sipe_account_data *sip,
-		   const char *note,
 		   gboolean do_publish_calendar)
 {
 	struct sipe_ews* ews = sip->ews;
@@ -6114,12 +6115,15 @@ send_presence_soap(struct sipe_account_data *sip,
 	gchar *epid = get_epid(sip);
 	time_t now = time(NULL);
 	gchar *since_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&now)));
+	PurpleStatus *status = purple_account_get_active_status(sip->account);
+	const gchar *note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
+	const gchar *oof_note = sipe_ews_get_oof_note(ews);
 
 	sipe_get_act_avail_by_status_2005(sip->status, &activity, &availability);
 
 	/* Note */
-	if (ews && ews->oof_note) {
-		note_pub = ews->oof_note;
+	if (oof_note) {
+		note_pub = oof_note;
 	} else if (note) {
 		note_pub = note;
 	}
@@ -6128,7 +6132,7 @@ send_presence_soap(struct sipe_account_data *sip,
 	{
 		res_note = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, note_pub);
 	}
-	else /* preserve existing publication */
+	else if (!(ews && ews->is_updated)) /* preserve existing publication */
 	{
 		xmlnode *xn_note;
 		if (sip->user_info && (xn_note = xmlnode_get_child(sip->user_info, "note"))) {
@@ -6137,11 +6141,11 @@ send_presence_soap(struct sipe_account_data *sip,
 	}
 	
 	/* OOF */
-	if (ews && ews->oof_note)
+	if (oof_note)
 	{
 		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
 	}
-	else /* preserve existing publication */
+	else if (!(ews && ews->is_updated)) /* preserve existing publication */
 	{
 		if (sip->user_info && xmlnode_get_child(sip->user_info, "oof")) {
 			res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
@@ -6818,6 +6822,7 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	gchar *pub_calendar = NULL;
 	gchar *pub_calendar2 = NULL;
 	gchar *pub_oof_note = NULL;
+	const gchar *oof_note;
 	purple_debug_info("sipe", "publish_calendar_status_self() started.\n");
 
 	if (sip->ews && sip->ews->cal_events) {
@@ -6851,8 +6856,8 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, NULL,  sip->ews->email, SIPE_CAL_BUSY);
 	}
 
-	if (sip->ews && sip->ews->oof_note) {
-		pub_oof_note = NULL;//sipe_publish_get_category_note(sip, sip->ews->oof_note, "OOF");
+	if ((oof_note = sipe_ews_get_oof_note(sip->ews))) {
+		pub_oof_note = sipe_publish_get_category_note(sip, oof_note, "OOF");
 	}
 
 	pub_cal_working_hours = sipe_publish_get_category_cal_working_hours(sip);
@@ -6894,7 +6899,7 @@ static void send_presence_status(struct sipe_account_data *sip)
         if (sip->ocs2007) {
 		send_presence_category_publish(sip, note);
 	} else {
-		send_presence_soap(sip, note, FALSE);
+		send_presence_soap(sip, FALSE);
 	}
 }
 

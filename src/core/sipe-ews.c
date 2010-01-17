@@ -179,6 +179,7 @@ sipe_ews_free(struct sipe_ews* ews)
 	g_free(ews->as_url);
 	g_free(ews->oof_url);
 	g_free(ews->oab_url);
+	g_free(ews->oof_state);
 	g_free(ews->oof_note);
 	g_free(ews->free_busy);
 	g_free(ews->working_hours_xml_str);
@@ -186,6 +187,24 @@ sipe_ews_free(struct sipe_ews* ews)
 	sipe_ews_cal_events_free(ews->cal_events);
 
 	g_free(ews);
+}
+
+char *
+sipe_ews_get_oof_note(struct sipe_ews *ews)
+{
+	time_t now = time(NULL);
+
+	if (!ews) return NULL;
+	
+	if (!strcmp(ews->oof_state, "Enabled") ||
+	    (!strcmp(ews->oof_state, "Scheduled") && now >= ews->oof_start && now <= ews->oof_end))
+	{
+		return ews->oof_note;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 static void
@@ -313,12 +332,14 @@ sipe_ews_process_oof_response(int return_code,
 	ews->http_conn = NULL;
 
 	if (return_code == 200 && body) {
-		char *state;
 		xmlnode *resp;
+		xmlnode *xn_duration;
 		/** ref: [MS-OXWOOF] */
 		xmlnode *xml = xmlnode_from_str(body, strlen(body));
 		/* Envelope/Body/GetUserOofSettingsResponse/ResponseMessage@ResponseClass="Success"
 		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/OofState=Enabled
+		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/Duration/StartTime
+		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/Duration/EndTime
 		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/InternalReply/Message
 		 */
 		resp = xmlnode_get_descendant(xml, "Body", "GetUserOofSettingsResponse", NULL);
@@ -326,10 +347,23 @@ sipe_ews_process_oof_response(int return_code,
 		if (strcmp(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
 			return; /* Error response */
 		}
+				
+		g_free(ews->oof_state);
+		ews->oof_state = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "OofState", NULL));
+
+		if ((xn_duration = xmlnode_get_descendant(resp, "OofSettings", "Duration", NULL))) {
+			char *tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "StartTime"));
+			ews->oof_start = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			g_free(tmp);
+
+			tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "EndTime"));
+			ews->oof_end = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			g_free(tmp);
+		}
 
 		g_free(ews->oof_note);
-		state = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "OofState", NULL));
-		if (!strcmp(state, "Enabled")) {
+		ews->oof_note = NULL;
+		if (strcmp(ews->oof_state, "Disabled")) {
 			char *tmp = xmlnode_get_data(
 				xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
 			char *html;
@@ -343,7 +377,6 @@ sipe_ews_process_oof_response(int return_code,
 			ews->oof_note = g_strstrip(purple_markup_strip_html(html));
 			g_free(html);
 		}
-		g_free(state);
 
 		xmlnode_free(xml);
 
@@ -554,12 +587,13 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 			break;
 		case SIPE_EWS_STATE_OOF_SUCCESS:
 			ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+			ews->is_updated = TRUE;
 			if (ews->sip->ocs2007) {
 				/* sipe.h */
 				publish_calendar_status_self(ews->sip);
 			} else {
 				/* sipe.h */
-				send_presence_soap(ews->sip, NULL, TRUE);
+				send_presence_soap(ews->sip, TRUE);
 			}
 			break;
 	}

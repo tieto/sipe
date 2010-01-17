@@ -35,12 +35,16 @@ struct sipe_ews {
 	PurpleAccount *account;
 	int auto_disco_method;
 	int is_disabled;
+	int is_updated;
 
 	char *as_url;
 	char *oof_url;
 	char *oab_url;
 	
+	char *oof_state; /* Enabled, Disabled, Scheduled */
 	char *oof_note;
+	time_t oof_start;
+	time_t oof_end;
 	
 	HttpConn *http_conn;
 	
@@ -60,6 +64,13 @@ struct sipe_ews {
  */
 void
 sipe_ews_update_calendar(struct sipe_account_data *sip);
+
+/**
+ * Returns OOF note if enabled in the moment
+ * otherwise NULL.
+ */
+char *
+sipe_ews_get_oof_note(struct sipe_ews *ews);
 
 /**
  * Frees context
