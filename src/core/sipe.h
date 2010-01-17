@@ -58,6 +58,7 @@ struct sipe_buddy {
 	gchar *meeting_subject;
 	gchar *meeting_location;
 	gchar *annotation;
+	gboolean is_oof_note;
 
 	/* Calendar related fields */
 	gchar *cal_start_time;

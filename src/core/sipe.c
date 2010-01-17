@@ -5329,6 +5329,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					sbuddy->annotation = NULL;
 					if (note) sbuddy->annotation = g_strdup(note);
 					g_free(note);
+					sbuddy->is_oof_note = !strcmp(xmlnode_get_attrib(xn_node, "type"), "OOF");
 				}
 			}
 
@@ -5798,6 +5799,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->annotation);
 		sbuddy->annotation = NULL;
 		if (!is_empty(note)) { sbuddy->annotation = g_strdup(note); }
+		
+		sbuddy->is_oof_note = (xn_oof != NULL);
 
 		g_free(sbuddy->device_name);
 		sbuddy->device_name = NULL;
@@ -6124,6 +6127,7 @@ send_presence_soap(struct sipe_account_data *sip,
 	/* Note */
 	if (oof_note) {
 		note_pub = oof_note;
+		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
 	} else if (note) {
 		note_pub = note;
 	}
@@ -6138,15 +6142,7 @@ send_presence_soap(struct sipe_account_data *sip,
 		if (sip->user_info && (xn_note = xmlnode_get_child(sip->user_info, "note"))) {
 			res_note = xmlnode_to_str(xn_note, NULL);
 		}
-	}
-	
-	/* OOF */
-	if (oof_note)
-	{
-		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
-	}
-	else if (!(ews && ews->is_updated)) /* preserve existing publication */
-	{
+
 		if (sip->user_info && xmlnode_get_child(sip->user_info, "oof")) {
 			res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
 		}
@@ -8163,6 +8159,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	struct sipe_account_data *sip;
 	struct sipe_buddy *sbuddy;
 	char *annotation = NULL;
+	gboolean is_oof_note = FALSE;
 	char *activity = NULL;
 	char *calendar = NULL;
 	char *meeting_subject = NULL;
@@ -8175,6 +8172,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		if (sbuddy)
 		{
 			annotation = sbuddy->annotation ? g_strdup(sbuddy->annotation) : NULL;
+			is_oof_note = sbuddy->is_oof_note;
 			activity = sbuddy->activity;
 			calendar = sipe_cal_get_description(sbuddy);
 			meeting_subject = sbuddy->meeting_subject;
@@ -8222,7 +8220,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		}
 		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s'\n", buddy->name, annotation);
 
-		purple_notify_user_info_add_pair(user_info, _("Note"), annotation);
+		purple_notify_user_info_add_pair(user_info, is_oof_note ? _("Out of office note") : _("Note"), annotation);
 		g_free(annotation);
 	}
 
