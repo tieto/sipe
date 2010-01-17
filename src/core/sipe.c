@@ -2205,7 +2205,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* On The Phone (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
-			       SIPE_STATUS_ID_ONPHONE, _("On the phone"),
+			       SIPE_STATUS_ID_ONPHONE, _("On the phone"), /* Don't rename it. Used as STATUS name (not activity name). In Reuters only. */
 			       FALSE);
 
 	/* Out To Lunch (not user settable) */
@@ -5370,7 +5370,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					/* from token */
 					if (!is_empty(token)) {
 						if (!strcmp(token, "on-the-phone")) {
-							sbuddy->activity = g_strdup(_("On the phone"));
+							sbuddy->activity = g_strdup(_("In a call"));
 						} else if (!strcmp(token, "in-a-conference")) {
 							sbuddy->activity = g_strdup(_("In a conference"));
 						} else if (!strcmp(token, "in-a-meeting")) {
@@ -5765,7 +5765,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 				    && res_avail >= 6500 && res_avail <= 8900)
 				{			
 					if (!strcmp(state, "on-the-phone")) {
-						activity = _("On the phone");
+						activity = _("In a call");
 					} else if (!strcmp(state, "presenting")) {
 						activity = _("In a conference");
 					} else {
@@ -8183,13 +8183,11 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	//Layout
 	if (purple_presence_is_online(presence))
 	{
-		char *tmp = NULL;
 		const char *status_str = activity && status && strcmp(purple_status_get_id(status), SIPE_STATUS_ID_ONPHONE) ?
-			(tmp = g_strdup_printf("%s (%s)", purple_status_get_name(status), activity)) :
+			activity :
 			purple_status_get_name(status);
 
 		purple_notify_user_info_add_pair(user_info, _("Status"), status_str);
-		g_free(tmp);
 	}
 	if (purple_presence_is_online(presence) &&
 	    !is_empty(calendar))
