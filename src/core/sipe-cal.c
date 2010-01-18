@@ -87,7 +87,7 @@ struct sipe_cal_std_dst {
 	int month;          /* 1..12 */
 	gchar *day_of_week; /* Sunday or Monday or Tuesday or Wednesday or Thursday or Friday or Saturday */
 	gchar *year;        /* YYYY */
-	
+
 	time_t switch_time;
 };
 
@@ -136,7 +136,7 @@ void
 sipe_cal_event_free(struct sipe_cal_event* cal_event)
 {
 	if (!cal_event) return;
-	
+
 	g_free(cal_event->subject);
 	g_free(cal_event->location);
 	g_free(cal_event);
@@ -147,7 +147,7 @@ sipe_cal_event_describe(struct sipe_cal_event* cal_event)
 {
 	GString* str = g_string_new(NULL);
 	const char *status = "";
-	
+
 	switch(cal_event->cal_status) {
 		case SIPE_CAL_FREE:		status = "SIPE_CAL_FREE";	break;
 		case SIPE_CAL_TENTATIVE:	status = "SIPE_CAL_TENTATIVE";	break;
@@ -156,14 +156,14 @@ sipe_cal_event_describe(struct sipe_cal_event* cal_event)
 		case SIPE_CAL_NO_DATA:		status = "SIPE_CAL_NO_DATA";	break;
 	}
 
-	g_string_append_printf(str, "\t%s: %s",   "start_time", 
+	g_string_append_printf(str, "\t%s: %s",   "start_time",
 		IS(cal_event->start_time) ? asctime(localtime(&cal_event->start_time)) : "\n");
-	g_string_append_printf(str, "\t%s: %s",   "end_time  ", 
+	g_string_append_printf(str, "\t%s: %s",   "end_time  ",
 		IS(cal_event->end_time) ? asctime(localtime(&cal_event->end_time)) : "\n");
 	g_string_append_printf(str, "\t%s: %s\n", "cal_status",  status);
 	g_string_append_printf(str, "\t%s: %s\n", "subject   ",  cal_event->subject ? cal_event->subject : "");
 	g_string_append_printf(str, "\t%s: %s\n", "location  ",  cal_event->location ? cal_event->location : "");
-	g_string_append_printf(str, "\t%s: %s\n", "is_meeting",  cal_event->is_meeting ? "TRUE" : "FALSE");	
+	g_string_append_printf(str, "\t%s: %s\n", "is_meeting",  cal_event->is_meeting ? "TRUE" : "FALSE");
 
 	return g_string_free(str, FALSE);
 }
@@ -302,23 +302,23 @@ sipe_cal_get_std_dst_time(time_t now,
 	time_t res = TIME_NULL;
 	struct tm *gm_now_tm;
 	gchar **time_arr;
-	
+
 	if (std_dst->month == 0) return TIME_NULL;
-	
+
 	gm_now_tm = gmtime(&now);
 	time_arr = g_strsplit(std_dst->time, ":", 0);
-	
+
 	switch_tm.tm_sec  = atoi(time_arr[2]);
 	switch_tm.tm_min  = atoi(time_arr[1]);
 	switch_tm.tm_hour = atoi(time_arr[0]);
-	g_strfreev(time_arr);	
+	g_strfreev(time_arr);
 	switch_tm.tm_mday  = std_dst->year ? std_dst->day_order : 1 /* to adjust later */ ;
 	switch_tm.tm_mon   = std_dst->month - 1;
 	switch_tm.tm_year  = std_dst->year ? atoi(std_dst->year) - 1900 : gm_now_tm->tm_year;
-	switch_tm.tm_isdst = 0;	
+	switch_tm.tm_isdst = 0;
 	/* to set tm_wday */
 	res = sipe_mktime_tz(&switch_tm, "UTC");
-	
+
 	/* if not dynamic, calculate right tm_mday */
 	if (!std_dst->year) {
 		int switch_wday = sipe_cal_get_wday(std_dst->day_of_week);
@@ -448,7 +448,7 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 			atoi(tmp = xmlnode_get_data(xmlnode_get_child(xn_working_period, "EndTimeInMinutes")));
 		g_free(tmp);
 	}
-	
+
 	std->switch_time = sipe_cal_get_std_dst_time(now, buddy->cal_working_hours->bias, std, dst);
 	dst->switch_time = sipe_cal_get_std_dst_time(now, buddy->cal_working_hours->bias, dst, std);
 
@@ -506,7 +506,7 @@ sipe_cal_get_event(GSList *cal_events,
 			if (res_status < cal_status) {
 				res = cal_event;
 			}
-		}		
+		}
 		entry = entry->next;
 	}
 	return res;
@@ -574,20 +574,20 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 	int ret = SIPE_CAL_NO_DATA;
 	time_t state_since;
 	int index;
-	
+
 	if (!buddy || !buddy->cal_start_time || !buddy->cal_granularity) {
 		purple_debug_info("sipe", "sipe_cal_get_status: no calendar data1 for %s, exiting\n", buddy->name ? buddy->name : "");
 		return SIPE_CAL_NO_DATA;
 	}
-	
+
 	if (!(free_busy = sipe_cal_get_free_busy(buddy))) {
 		purple_debug_info("sipe", "sipe_cal_get_status: no calendar data2 for %s, exiting\n", buddy->name);
 		return SIPE_CAL_NO_DATA;
 	}
 	purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", free_busy ? free_busy : "");
-	
+
 	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
-	
+
 	ret = sipe_cal_get_status0(free_busy,
 				   cal_start,
 				   buddy->cal_granularity,
@@ -638,12 +638,12 @@ sipe_cal_get_tz(struct sipe_cal_working_hours *wh,
 	time_t dst_switch_time = (*wh).dst.switch_time;
 	time_t std_switch_time = (*wh).std.switch_time;
 	gboolean is_dst = FALSE;
-	
+
 	/* No daylight savings */
 	if (dst_switch_time == TIME_NULL) {
 		return wh->tz_std;
 	}
-	
+
 	if (dst_switch_time < std_switch_time) { /* North hemosphere - Europe, US */
 		if (time_in_question >= dst_switch_time && time_in_question < std_switch_time) {
 			is_dst = TRUE;
@@ -653,7 +653,7 @@ sipe_cal_get_tz(struct sipe_cal_working_hours *wh,
 			is_dst = TRUE;
 		}
 	}
-	
+
 	if (is_dst) {
 		return wh->tz_dst;
 	} else {
@@ -790,7 +790,7 @@ sipe_cal_get_free_busy(struct sipe_buddy *buddy)
 			buddy->cal_free_busy[j++] = ((tmp >> 6) & TWO_BIT_MASK) + '0';
 		}
 		buddy->cal_free_busy[j++] = '\0';
-		g_free(cal_dec64);		
+		g_free(cal_dec64);
 	}
 
 	return buddy->cal_free_busy;
@@ -916,7 +916,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		until = min_t of SOD, EOD, NSOD, SW (min_t(x) = min(x-now) where x>now only)
 	else
 		until = SW
-		
+
 	if (!until && (cal_period_end > now + 8H))
 		until = cal_period_end
 
@@ -948,7 +948,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	} else {
 		until = switch_time;
 	}
-	
+
 	if (!IS(until) && (cal_end - now > 8*60*60))
 		until = cal_end;
 

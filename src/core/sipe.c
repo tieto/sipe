@@ -1487,13 +1487,13 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 			   struct sipe_buddy *sbuddy,
 			   const char *status_id)
 {
-	time_t cal_avail_since;	
+	time_t cal_avail_since;
 	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
 	int avail;
 	gchar *self_uri = sip_uri_self(sip);
 
 	if (!sbuddy) return;
-	
+
 	if (cal_status < SIPE_CAL_NO_DATA) {
 		purple_debug_info("sipe", "update_calendar_status_cb: cal_status      : %d for %s\n", cal_status, sbuddy->name);
 		purple_debug_info("sipe", "update_calendar_status_cb: cal_avail_since : %s", asctime(localtime(&cal_avail_since)));
@@ -1519,7 +1519,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 			status_id = SIPE_STATUS_ID_BUSY;
 			g_free(sbuddy->activity);
 			sbuddy->activity = g_strdup(_("In a meeting"));
-		}	
+		}
 		avail = sipe_get_availability_by_status(status_id, NULL);
 
 		purple_debug_info("sipe", "update_calendar_status_cb: activity_since  : %s", asctime(localtime(&sbuddy->activity_since)));
@@ -1536,7 +1536,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	/* then set status_id actually */
 	purple_debug_info("sipe", "sipe_got_user_status: to %s for %s\n", status_id, sbuddy->name);
 	purple_prpl_got_user_status(sip->account, sbuddy->name, status_id, NULL);
-	
+
 	/* set our account state to the one in roaming (including calendar info) */
 	if (!strcmp(sbuddy->name, self_uri)) {
 		PurpleStatus *status = purple_account_get_active_status(sip->account);
@@ -1838,7 +1838,7 @@ static void sipe_subscribe_presence_batched(struct sipe_account_data *sip,
 		g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
 	} else {
                 g_hash_table_foreach(sip->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
-		
+
 	}
 	sipe_subscribe_presence_batched_to(sip, resources_uri, to);
 }
@@ -1959,7 +1959,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 			gchar *action_name;
 			const char* status_id = purple_status_get_id(status);
 			const char* note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
-			
+
 			if (status_id && sip->status && !strcmp(status_id, sip->status) &&			/* same status */
 			    ((!note && !sip->note) || (note && sip->note && !strcmp(note, sip->note))) &&	/* same note */
 			    sip->initial_state_published
@@ -1968,7 +1968,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 				purple_debug_info("sipe", "sipe_set_status: status&note has NOT changed, exiting.\n");
 				return;
 			}
-			
+
 			g_free(sip->status);
 			sip->status = g_strdup(status_id);
 			g_free(sip->note);
@@ -2448,7 +2448,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		if (!sip->ocs2007) {
 			gchar *self_uri = sip_uri_self(sip);
 			struct sipe_buddy *buddy = g_hash_table_lookup(sip->buddies, self_uri);
-			
+
 			if (!buddy) {
 				buddy = g_new0(struct sipe_buddy, 1);
 				buddy->name = g_strdup(self_uri);
@@ -3188,7 +3188,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		if (!strcmp(name, "state") && atoi(container) == 2) {
 			xmlnode *xn_state = xmlnode_get_child(node, "state");
 			xmlnode *xn_avail = xmlnode_get_child(xn_state, "availability");
-			
+
 			if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "aggregateState") && xn_avail) {
 				gchar *avail_str = xmlnode_get_data(xn_avail);
 				if (avail_str) {
@@ -3323,7 +3323,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		/* dalayed run */
 		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
 	}
-	
+
 	if (aggreg_avail) {
 		PurpleStatus *status = purple_account_get_active_status(sip->account);
 		const gchar *curr_note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
@@ -5123,7 +5123,7 @@ sipe_get_act_avail_by_status_2005(const char *status, int *activity, int *availa
 {
 	int avail = 300; /* online */
 	int act = 400;  /* Available */
-	
+
 	if (!strcmp(status, SIPE_STATUS_ID_AWAY)) {
 		act = 100;
 	} else if (!strcmp(status, SIPE_STATUS_ID_LUNCH)) {
@@ -5144,7 +5144,7 @@ sipe_get_act_avail_by_status_2005(const char *status, int *activity, int *availa
 	} else {
 		act = 400; /* Available */
 	}
-	
+
 	if (activity) *activity = act;
 	if (availability) *availability = avail;
 }
@@ -5216,7 +5216,7 @@ sipe_get_status_by_availability(int avail)
 	return status;
 }
 
-/** 
+/**
  * Returns 2007-style availability value
  *
  * @param sipe_status_id (in)
@@ -5227,7 +5227,7 @@ sipe_get_availability_by_status(const char* sipe_status_id, char** activity_toke
 {
 	int availability;
 	char *activity = NULL;
-	
+
 	if (!strcmp(sipe_status_id, SIPE_STATUS_ID_AWAY) ||
 	    !strcmp(sipe_status_id, SIPE_STATUS_ID_LUNCH)) {
 		availability = 15500;
@@ -5679,7 +5679,7 @@ sipe_user_info_has_updated(struct sipe_account_data *sip,
 		sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
 		/* dalayed run */
 		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
-	}	
+	}
 }
 
 static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const gchar *data, unsigned len)
@@ -5742,7 +5742,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 
-	if (user_avail_nil && !strcmp(user_avail_nil, "true")) {	/* null-ed */	
+	if (user_avail_nil && !strcmp(user_avail_nil, "true")) {	/* null-ed */
 		user_avail = 0;
 		user_avail_since = 0;
 	}
@@ -5821,7 +5821,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 					cal_start_time = cal_start_time_tmp;
 					cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");
 					cal_free_busy_base64 = xmlnode_get_data(xn_calendar_info);
-					
+
 					purple_debug_info("sipe", "process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", cal_start_time, cal_granularity, cal_free_busy_base64);
 				}
 			} else {
@@ -5829,8 +5829,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 				cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");
 				cal_free_busy_base64 = xmlnode_get_data(xn_calendar_info);
 
-				purple_debug_info("sipe", "process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", cal_start_time, cal_granularity, cal_free_busy_base64);				
-			}	
+				purple_debug_info("sipe", "process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", cal_start_time, cal_granularity, cal_free_busy_base64);
+			}
 		}
 
 		/* state */
@@ -5838,15 +5838,15 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		if (xn_state) {
 			int dev_avail = atoi(xmlnode_get_attrib(xn_state, "avail"));
 			time_t dev_avail_since = purple_str_to_time(xmlnode_get_attrib(xn_state, "since"), FALSE, NULL, NULL, NULL);
-	
-			state = xn_state ? xmlnode_get_data(xn_state) : NULL;		
+
+			state = xn_state ? xmlnode_get_data(xn_state) : NULL;
 			if (dev_avail_since > user_avail_since &&
 			    dev_avail >= res_avail)
 			{
 				res_avail = dev_avail;
 				status_id = sipe_get_status_by_availability(res_avail);
 				if (!is_empty(state))
-				{			
+				{
 					if (!strcmp(state, "on-the-phone")) {
 						activity = _("In a call");
 					} else if (!strcmp(state, "presenting")) {
@@ -5883,7 +5883,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->annotation);
 		sbuddy->annotation = NULL;
 		if (!is_empty(note)) { sbuddy->annotation = g_strdup(note); }
-		
+
 		sbuddy->is_oof_note = (xn_oof != NULL);
 
 		g_free(sbuddy->device_name);
@@ -6265,7 +6265,7 @@ send_presence_soap(struct sipe_account_data *sip,
 		g_free(fb_start_str);
 		g_free(free_busy_base64);
 	}
-	
+
 	user_input = !sipe_is_user_state(sip) && sip->status != SIPE_STATUS_ID_AVAILABLE ? "idle" : "active";
 
 	/* forming resulting XML */
@@ -6785,6 +6785,8 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	if (sipe_is_equal(st, fb_start_str) && sipe_is_equal(fb, free_busy_base64))
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_cal_free_busy: FreeBusy has NOT changed. Exiting.\n");
+		g_free(fb_start_str);
+		g_free(free_busy_base64);
 		return NULL; /* nothing to update */
 	}
 
