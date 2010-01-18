@@ -6185,9 +6185,10 @@ sipe_is_user_state(struct sipe_account_data *sip)
 	return res;
 }
 
-void
-send_presence_soap(struct sipe_account_data *sip,
-		   gboolean do_publish_calendar)
+static void
+send_presence_soap0(struct sipe_account_data *sip,
+		   gboolean do_publish_calendar,
+		   gboolean do_reset_status)
 {
 	struct sipe_ews* ews = sip->ews;
 	int availability = 0;
@@ -6232,24 +6233,28 @@ send_presence_soap(struct sipe_account_data *sip,
 	}
 
 	/* User State */
-	if (sipe_is_user_state(sip) && !do_publish_calendar && sip->initial_state_published)
-	{
-		gchar *activity_token = NULL;
-		int avail_2007 = sipe_get_availability_by_status(sip->status, &activity_token);
+	if (!do_reset_status) {
+		if (sipe_is_user_state(sip) && !do_publish_calendar && sip->initial_state_published)
+		{
+			gchar *activity_token = NULL;
+			int avail_2007 = sipe_get_availability_by_status(sip->status, &activity_token);
 
-		states = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_STATES,
-					avail_2007,
-					since_time_str,
-					epid,
-					activity_token);
-		g_free(activity_token);
-	}
-	else /* preserve existing publication */
-	{
-		xmlnode *xn_states;
-		if (sip->user_info && (xn_states = xmlnode_get_child(sip->user_info, "states"))) {
-			states = xmlnode_to_str(xn_states, NULL);
+			states = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_STATES,
+						avail_2007,
+						since_time_str,
+						epid,
+						activity_token);
+			g_free(activity_token);
 		}
+		else /* preserve existing publication */
+		{
+			xmlnode *xn_states;
+			if (sip->user_info && (xn_states = xmlnode_get_child(sip->user_info, "states"))) {
+				states = xmlnode_to_str(xn_states, NULL);
+			}
+		}
+	} else {
+		/* do nothing - then User state will be erased */
 	}
 	sip->initial_state_published = TRUE;
 
@@ -6293,6 +6298,14 @@ send_presence_soap(struct sipe_account_data *sip,
 	g_free(since_time_str);
 	g_free(epid);
 }
+
+void
+send_presence_soap(struct sipe_account_data *sip,
+		   gboolean do_publish_calendar)
+{
+	return send_presence_soap0(sip, do_publish_calendar, FALSE);
+}
+		   
 
 static gboolean
 process_send_presence_category_publish_response(struct sipe_account_data *sip,
@@ -8175,6 +8188,18 @@ static void sipe_republish_calendar(PurplePluginAction *action)
 	sipe_update_calendar(sip);
 }
 
+static void sipe_reset_status(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	struct sipe_account_data *sip = gc->proto_data;
+
+	if (sip->ocs2007) {
+		//@TODO
+	} else {
+		send_presence_soap0(sip, FALSE, TRUE);
+	}
+}
+
 GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 		    gpointer context)
 {
@@ -8194,6 +8219,9 @@ GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 		act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
 		menu = g_list_prepend(menu, act);
 	}
+	
+	act = purple_plugin_action_new(_("Reset status"), sipe_reset_status);
+	menu = g_list_prepend(menu, act);
 
 	menu = g_list_reverse(menu);
 
