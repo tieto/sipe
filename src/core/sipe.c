@@ -3058,6 +3058,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
         char *display_name = NULL;
         char *uri;
 	GSList *category_names = NULL;
+	int aggreg_avail = 0;
 
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 
@@ -3106,6 +3107,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		/* key is <category><instance><container> */
 		key = g_strdup_printf("<%s><%s><%s>", name, instance, container);
 		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version_int);
+
 		if (sipe_is_our_publication(sip, key)) {
 			GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
 
@@ -3152,6 +3154,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
 				if (xn_body) {
 					publication->note = xmlnode_get_data(xn_body);
+					g_free(sip->note);
+					sip->note = g_strdup(publication->note);
 				}
 			}
 
@@ -3179,6 +3183,20 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version_int);
 		}
 		g_free(key);
+
+		/* aggregateState (not an our publication) from 2-nd container */
+		if (!strcmp(name, "state") && atoi(container) == 2) {
+			xmlnode *xn_state = xmlnode_get_child(node, "state");
+			xmlnode *xn_avail = xmlnode_get_child(xn_state, "availability");
+			
+			if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "aggregateState") && xn_avail) {
+				gchar *avail_str = xmlnode_get_data(xn_avail);
+				if (avail_str) {
+					aggreg_avail = atoi(avail_str);
+				}
+				g_free(avail_str);
+			}
+		}
 
 		/* userProperties published by server from AD */
 		if (!sip->csta && !strcmp(name, "userProperties")) {
@@ -3304,6 +3322,16 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		sip->initial_state_published = TRUE;
 		/* dalayed run */
 		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
+	}
+	
+	if (aggreg_avail) {
+		PurpleStatus *status = purple_account_get_active_status(sip->account);
+		const gchar *curr_note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
+
+		g_free(sip->status);
+		sip->status = g_strdup(sipe_get_status_by_availability(aggreg_avail));
+		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
+		purple_prpl_got_account_status(sip->account, sip->status, SIPE_STATUS_ATTR_ID_MESSAGE, curr_note, NULL);
 	}
 }
 
