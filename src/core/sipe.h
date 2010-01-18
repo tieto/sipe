@@ -66,6 +66,7 @@ struct sipe_buddy {
 	gchar *cal_free_busy_base64;
 	gchar *cal_free_busy;
 	/* for 2005 systems */
+	int user_avail;
 	time_t user_avail_since;
 	time_t activity_since;
 	const char *last_non_cal_status_id;
@@ -173,6 +174,7 @@ struct sipe_account_data {
 	int acl_delta;
 	int presence_method_version;
 	gchar *status;
+	gchar *note;
 	gboolean is_idle;
 	gboolean was_idle;
 	gchar *contact;
@@ -750,6 +752,8 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * @param calendar_info_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_CALENDAR
  * @param device_id		(%s) epid. Ex.: 4c77e6ec72
  * @param since_time_str	(%s) Ex.: 2010-01-13T10:30:05Z
+ * @param since_time_str	(%s) Ex.: 2010-01-13T10:30:05Z
+ * @param user_input		(%s) active, idle
  */
 #define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
 	"<m:presentity xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" m:uri=\"sip:%s\">"\
@@ -763,7 +767,9 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"%s" \
         "</userInfo>"\
 	"%s" \
-	"<device xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" deviceId=\"%s\" since=\"%s\" />"\
+	"<device xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" deviceId=\"%s\" since=\"%s\" >"\
+		"<userInput since=\"%s\" >%s</userInput>"\
+	"</device>"\
 	"</m:presentity>")
 
 #define SIPE_SOAP_SEARCH_CONTACT \
