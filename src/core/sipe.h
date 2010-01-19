@@ -105,6 +105,8 @@ struct sipe_service_data {
 	sipe_transport_type type;
 };
 
+const struct sipe_service_data *current_service;
+
 /** MS-PRES publication */
 struct sipe_publication {
 	gchar *category;
