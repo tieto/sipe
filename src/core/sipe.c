@@ -3111,19 +3111,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		key = g_strdup_printf("<%s><%s><%s>", name, instance, container);
 		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version_int);
 
-/*
-<category name="state" instance="536870912" publishTime="2010-01-19T09:56:36.790" container="2" version="1" expireType="static">
-	<state xmlns="http://schemas.microsoft.com/2006/09/sip/state" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" manual="true" xsi:type="userState">
-		<availability>9500</availability>
-		<endpointLocation/>
-	</state>
-</category>
-
-<publication categoryName="state" instance="536870912" container="3" version="2" expireType="static" expires="0"/>
-<publication categoryName="state" instance="603979776" container="2" version="0" expireType="time" expires="0"/>
-*/		
 		/* capture all userState publication for later clean up if required */
-		//user_state_publications
 		if (!strcmp(name, "state") && (atoi(container) == 2 || atoi(container) == 3)) {
 			xmlnode *xn_state = xmlnode_get_child(node, "state");
 
