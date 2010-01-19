@@ -3111,6 +3111,40 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		key = g_strdup_printf("<%s><%s><%s>", name, instance, container);
 		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version_int);
 
+/*
+<category name="state" instance="536870912" publishTime="2010-01-19T09:56:36.790" container="2" version="1" expireType="static">
+	<state xmlns="http://schemas.microsoft.com/2006/09/sip/state" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" manual="true" xsi:type="userState">
+		<availability>9500</availability>
+		<endpointLocation/>
+	</state>
+</category>
+
+<publication categoryName="state" instance="536870912" container="3" version="2" expireType="static" expires="0"/>
+<publication categoryName="state" instance="603979776" container="2" version="0" expireType="time" expires="0"/>
+*/		
+		/* capture all userState publication for later clean up if required */
+		//user_state_publications
+		if (!strcmp(name, "state") && (atoi(container) == 2 || atoi(container) == 3)) {
+			xmlnode *xn_state = xmlnode_get_child(node, "state");
+
+			if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "userState")) {
+				struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
+				publication->category = g_strdup(name);
+				publication->instance = atoi(instance);
+				publication->container = atoi(container);
+				publication->version = version_int;
+				
+				if (!sip->user_state_publications) {
+					sip->user_state_publications = g_hash_table_new_full(
+									g_str_hash, g_str_equal,
+									g_free,	(GDestroyNotify)free_publication);
+				}
+				g_hash_table_insert(sip->user_state_publications, g_strdup(key), publication);
+				purple_debug_info("sipe", "sipe_process_roaming_self: added to user_state_publications key=%s version=%d\n",
+					key, version_int);
+			}
+		}
+		
 		if (sipe_is_our_publication(sip, key)) {
 			GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
 
@@ -3320,19 +3354,22 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	 * so we've already updated our roaming data in full.
 	 * Only for 2007+
 	 */
-	if (sip->ocs2007 && !sip->initial_state_published) {
+	if (!sip->initial_state_published) {
 		send_publish_category_initial(sip);
 		sip->initial_state_published = TRUE;
 		/* dalayed run */
 		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
-	}
-
-	if (aggreg_avail) {
+	} else if (aggreg_avail) {
 		PurpleStatus *status = purple_account_get_active_status(sip->account);
 		const gchar *curr_note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
 
 		g_free(sip->status);
-		sip->status = g_strdup(sipe_get_status_by_availability(aggreg_avail));
+		if (aggreg_avail && aggreg_avail < 18000) { /* not offline */
+			sip->status = g_strdup(sipe_get_status_by_availability(aggreg_avail));
+		} else {
+			sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
+		}
+		
 		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
 		purple_prpl_got_account_status(sip->account, sip->status, SIPE_STATUS_ATTR_ID_MESSAGE, curr_note, NULL);
 	}
@@ -6869,8 +6906,13 @@ static void
 send_publish_category_initial(struct sipe_account_data *sip)
 {
 	gchar *pub_device   = sipe_publish_get_category_device(sip);
-	gchar *pub_machine  = sipe_publish_get_category_state_machine(sip);
-	gchar *publications = g_strdup_printf("%s%s",
+	gchar *pub_machine;
+	gchar *publications;
+	
+	sip->status = g_strdup(SIPE_STATUS_ID_AVAILABLE); /* out initial state */
+	
+	pub_machine  = sipe_publish_get_category_state_machine(sip);
+	publications = g_strdup_printf("%s%s",
 					      pub_device,
 					      pub_machine ? pub_machine : "");
 	g_free(pub_device);
@@ -7964,6 +8006,7 @@ static void sipe_close(PurpleConnection *gc)
 		g_hash_table_foreach_steal(sip->buddies, sipe_buddy_remove, NULL);
 		g_hash_table_destroy(sip->buddies);
 		g_hash_table_destroy(sip->our_publications);
+		g_hash_table_destroy(sip->user_state_publications);
 		g_hash_table_destroy(sip->subscriptions);
 
 		if (sip->groups) {
@@ -8201,14 +8244,44 @@ static void sipe_republish_calendar(PurplePluginAction *action)
 	sipe_update_calendar(sip);
 }
 
+static void sipe_publish_get_cat_state_user_to_clear(SIPE_UNUSED_PARAMETER const char *name,
+						     gpointer value,
+						     GString* str)
+{
+	struct sipe_publication *publication = value;
+
+	g_string_append_printf( str,
+				SIPE_PUB_XML_PUBLICATION_CLEAR,
+				publication->category,
+				publication->instance,
+				publication->container,
+				publication->version,
+				"static");
+}
+
 static void sipe_reset_status(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
 	struct sipe_account_data *sip = gc->proto_data;
 
-	if (sip->ocs2007) {
-		//@TODO
-	} else {
+	if (sip->ocs2007) /* 2007+ */
+	{
+		GString* str = g_string_new(NULL);
+		gchar *publications;
+
+		if (!sip->user_state_publications || g_hash_table_size(sip->user_state_publications) == 0) {
+			purple_debug_info("sipe", "sipe_reset_status: no userState publications, exiting.\n");
+			return;
+		}
+		
+		g_hash_table_foreach(sip->user_state_publications, (GHFunc)sipe_publish_get_cat_state_user_to_clear, str);
+		publications = g_string_free(str, FALSE);
+
+		send_presence_publish(sip, publications);
+		g_free(publications);
+	}
+	else /* 2005 */
+	{
 		send_presence_soap0(sip, FALSE, TRUE);
 	}
 }

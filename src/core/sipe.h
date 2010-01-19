@@ -164,8 +164,9 @@ struct sipe_account_data {
 	gboolean subscribed_buddies; /* whether subscribed to buddies presence */
 	gboolean access_level_set; /* whether basic access level set */
 	gboolean initial_state_published; /* whether we published our initial state */
-	GSList *our_publication_keys; /* [MS-PRES] */
-	GHashTable *our_publications; /* [MS-PRES] */
+	GSList *our_publication_keys;		/* [MS-PRES] */
+	GHashTable *our_publications;		/* [MS-PRES] */
+	GHashTable *user_state_publications;	/* [MS-PRES] */
 	GHashTable *subscriptions;
 	int listenfd;
 	int listenport;
@@ -525,6 +526,16 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"\
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"
 
+/**
+ * Publishes to clear any category
+ * @param category_name		(%s) Ex.: state
+ * @param instance		(%u) Ex.: 536870912
+ * @param container		(%u) Ex.: 3
+ * @param version		(%u) Ex.: 1
+ * @param expireType		(%s) Ex.: static
+ */
+#define SIPE_PUB_XML_PUBLICATION_CLEAR \
+	"<publication categoryName=\"%s\" instance=\"%u\" container=\"%u\" version=\"%u\" expireType=\"%s\" expires=\"0\"/>"
 
 /**
  * Publishes 'note' category.
