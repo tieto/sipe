@@ -801,7 +801,7 @@ static void transactions_remove(struct sipe_account_data *sip, struct transactio
 {
 	sip->transactions = g_slist_remove(sip->transactions, trans);
 	purple_debug_info("sipe", "sip->transactions count:%d after removal\n", g_slist_length(sip->transactions));
-	if (trans->msg) sipmsg_free(trans->msg);
+	if (sip->transactions && trans->msg) sipmsg_free(trans->msg);
 	if (trans->payload) {
 		(*trans->payload->destroy)(trans->payload->data);
 		g_free(trans->payload);
