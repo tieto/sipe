@@ -195,7 +195,7 @@ sipe_ews_get_oof_note(struct sipe_ews *ews)
 	time_t now = time(NULL);
 
 	if (!ews) return NULL;
-	
+
 	if (!strcmp(ews->oof_state, "Enabled") ||
 	    (!strcmp(ews->oof_state, "Scheduled") && now >= ews->oof_start && now <= ews->oof_end))
 	{
@@ -247,6 +247,7 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 
 		/* WorkingHours */
 		node = xmlnode_get_descendant(resp, "FreeBusyView", "WorkingHours", NULL);
+		g_free(ews->working_hours_xml_str);
 		ews->working_hours_xml_str = xmlnode_to_str(node, NULL);
 		purple_debug_info("sipe", "sipe_ews_process_avail_response: ews->working_hours_xml_str:\n%s\n",
 				  ews->working_hours_xml_str ? ews->working_hours_xml_str : "");
@@ -347,7 +348,7 @@ sipe_ews_process_oof_response(int return_code,
 		if (strcmp(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
 			return; /* Error response */
 		}
-				
+
 		g_free(ews->oof_state);
 		ews->oof_state = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "OofState", NULL));
 

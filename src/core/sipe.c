@@ -1546,6 +1546,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		const gchar *curr_note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
 
 		/* set to user status if exist */
+		g_free(sip->status);
 		if (sbuddy->user_avail && sbuddy->user_avail < 18000) { /* not offline */
 			sip->status = g_strdup(sipe_get_status_by_availability(sbuddy->user_avail));
 		} else {
@@ -3121,7 +3122,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				publication->instance = atoi(instance);
 				publication->container = atoi(container);
 				publication->version = version_int;
-				
+
 				if (!sip->user_state_publications) {
 					sip->user_state_publications = g_hash_table_new_full(
 									g_str_hash, g_str_equal,
@@ -3132,7 +3133,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 					key, version_int);
 			}
 		}
-		
+
 		if (sipe_is_our_publication(sip, key)) {
 			GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
 
@@ -3357,7 +3358,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		} else {
 			sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
-		
+
 		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
 		purple_prpl_got_account_status(sip->account, sip->status, SIPE_STATUS_ATTR_ID_MESSAGE, curr_note, NULL);
 	}
@@ -4876,8 +4877,6 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				}
 
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
-				//sip->status = g_strdup(SIPE_STATUS_ID_UNKNOWN);
-				//purple_prpl_got_account_status(sip->account, sip->status, NULL);
 
 				epid = get_epid(sip);
 				uuid = generateUUIDfromEPID(epid);
@@ -6896,9 +6895,10 @@ send_publish_category_initial(struct sipe_account_data *sip)
 	gchar *pub_device   = sipe_publish_get_category_device(sip);
 	gchar *pub_machine;
 	gchar *publications;
-	
-	sip->status = g_strdup(SIPE_STATUS_ID_AVAILABLE); /* out initial state */
-	
+
+	g_free(sip->status);
+	sip->status = g_strdup(SIPE_STATUS_ID_AVAILABLE); /* our initial state */
+
 	pub_machine  = sipe_publish_get_category_state_machine(sip);
 	publications = g_strdup_printf("%s%s",
 					      pub_device,
@@ -7796,7 +7796,6 @@ static void sipe_login(PurpleAccount *account)
 
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
-	//sip->status = g_strdup(purple_status_get_id(purple_account_get_active_status(account)));
 	g_free(sip->status);
 	sip->status = g_strdup(SIPE_STATUS_ID_UNKNOWN);
 
@@ -8261,7 +8260,7 @@ static void sipe_reset_status(PurplePluginAction *action)
 			purple_debug_info("sipe", "sipe_reset_status: no userState publications, exiting.\n");
 			return;
 		}
-		
+
 		g_hash_table_foreach(sip->user_state_publications, (GHFunc)sipe_publish_get_cat_state_user_to_clear, str);
 		publications = g_string_free(str, FALSE);
 
