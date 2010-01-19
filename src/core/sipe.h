@@ -105,8 +105,6 @@ struct sipe_service_data {
 	sipe_transport_type type;
 };
 
-const struct sipe_service_data *current_service;
-
 /** MS-PRES publication */
 struct sipe_publication {
 	gchar *category;
@@ -304,7 +302,7 @@ gboolean purple_init_plugin(PurplePlugin *plugin);
 void
 publish_calendar_status_self(struct sipe_account_data *sip);
 
-/** 
+/**
  * For 2005-
  */
 void
@@ -522,7 +520,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
  * Publishes to clear 'calendarState' category
  * @param instance		(%u) Ex.: 1251210982
  * @param version		(%u) Ex.: 1
- */ 
+ */
 #define SIPE_PUB_XML_STATE_CALENDAR_CLEAR \
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"\
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"

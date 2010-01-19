@@ -799,17 +799,18 @@ void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 
 static void transactions_remove(struct sipe_account_data *sip, struct transaction *trans)
 {
-    if (sip->transactions) sip->transactions = g_slist_remove(sip->transactions, trans);
-	purple_debug_info("sipe", "sip->transactions count:%d after removal\n", g_slist_length(sip->transactions));
-	if (sip->transactions){
-        if(trans->msg) sipmsg_free(trans->msg);
-        if (trans->payload) {
-            (*trans->payload->destroy)(trans->payload->data);
-            g_free(trans->payload);
-        }
-        g_free(trans->key);
-        g_free(trans);
-    }
+	if (sip->transactions) {
+		sip->transactions = g_slist_remove(sip->transactions, trans);
+		purple_debug_info("sipe", "sip->transactions count:%d after removal\n", g_slist_length(sip->transactions));
+
+		if (trans->msg) sipmsg_free(trans->msg);
+		if (trans->payload) {
+			(*trans->payload->destroy)(trans->payload->data);
+			g_free(trans->payload);
+		}
+		g_free(trans->key);
+		g_free(trans);
+	}
 }
 
 static struct transaction *
@@ -6307,7 +6308,7 @@ send_presence_soap(struct sipe_account_data *sip,
 {
 	return send_presence_soap0(sip, do_publish_calendar, FALSE);
 }
-		   
+
 
 static gboolean
 process_send_presence_category_publish_response(struct sipe_account_data *sip,
@@ -7473,13 +7474,15 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data,
 	}
 }
 
+static const struct sipe_service_data *current_service = NULL;
+
 static void sipe_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
 				     PurpleSslErrorType error,
                                      gpointer data)
 {
         PurpleConnection *gc = data;
         struct sipe_account_data *sip;
-    
+
         /* If the connection is already disconnected, we don't need to do anything else */
         if (!PURPLE_CONNECTION_IS_VALID(gc))
                 return;
@@ -7487,8 +7490,8 @@ static void sipe_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *
         sip = gc->proto_data;
         current_service = sip->service_data;
         purple_debug_info("sipe", "current_service->transport (%s), current_service->service: (%s)\n", current_service->transport, current_service->service);
-      
-	    sip->fd = -1;
+
+	sip->fd = -1;
         sip->gsc = NULL;
 
         switch(error) {
@@ -7692,7 +7695,7 @@ static void sipe_login(PurpleAccount *account)
 		purple_connection_error(gc, _("SIP Exchange user name contains invalid characters"));
 		return;
 	}
-    
+
 	gc->proto_data = sip = g_new0(struct sipe_account_data, 1);
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
 		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
@@ -7795,13 +7798,12 @@ static void sipe_login(PurpleAccount *account)
 		/* Server auto-discovery */
 		if (strcmp(transport, "auto") == 0) {
 			sip->auto_transport = TRUE;
-            if(current_service && current_service->transport != NULL && current_service->service != NULL ){
-                current_service++;
-                resolve_next_service(sip, current_service);
-            }
-            else{
-                resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
-            }
+			if (current_service && current_service->transport != NULL && current_service->service != NULL ){
+				current_service++;
+				resolve_next_service(sip, current_service);
+			} else {
+				resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
+			}
 		} else if (strcmp(transport, "tls") == 0) {
 			resolve_next_service(sip, service_tls);
 		} else if (strcmp(transport, "tcp") == 0) {
@@ -8230,7 +8232,7 @@ GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 		act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
 		menu = g_list_prepend(menu, act);
 	}
-	
+
 	act = purple_plugin_action_new(_("Reset status"), sipe_reset_status);
 	menu = g_list_prepend(menu, act);
 
