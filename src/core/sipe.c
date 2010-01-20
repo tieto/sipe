@@ -165,7 +165,7 @@ static struct sipe_activity_map_struct
 	{ SIPE_ACTIVITY_BRB,		SIPE_STATUS_ID_BRB,		N_("Be right back")		, SIPE_STATUS_ID_BRB		},
 	{ SIPE_ACTIVITY_AWAY,		"away",				NULL				, NULL				},
 	{ SIPE_ACTIVITY_LUNCH,		SIPE_STATUS_ID_LUNCH,		N_("Out to lunch")		, SIPE_STATUS_ID_LUNCH		},
-	{ SIPE_ACTIVITY_OFFLINE,	"offline",			NULL				, NULL				},	
+	{ SIPE_ACTIVITY_OFFLINE,	"offline",			NULL				, NULL				},
 	{ SIPE_ACTIVITY_ON_PHONE,	SIPE_STATUS_ID_ON_PHONE,	N_("In a call")			, SIPE_STATUS_ID_ON_PHONE	},
 	{ SIPE_ACTIVITY_IN_CONF,	SIPE_STATUS_ID_IN_CONF,		N_("In a conference")		, SIPE_STATUS_ID_IN_CONF	},
 	{ SIPE_ACTIVITY_IN_MEETING,	SIPE_STATUS_ID_IN_MEETING,	N_("In a meeting")		, SIPE_STATUS_ID_IN_MEETING	},
@@ -1596,14 +1596,14 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	if (!strcmp(sbuddy->name, self_uri)) {
 		PurpleStatus *status = purple_account_get_active_status(sip->account);
 		const gchar *curr_note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
-		
+
 		g_free(sip->status);
 		if (strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) { /* not offline */
 			sip->status = g_strdup(status_id);
 		} else {
 			sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
-		
+
 		purple_debug_info("sipe", "sipe_got_user_status: to %s for the account\n", sip->status);
 		purple_prpl_got_account_status(sip->account, sip->status, SIPE_STATUS_ATTR_ID_MESSAGE, curr_note, NULL);
 	}
@@ -2289,7 +2289,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			       sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].status_id,
 			       sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].desc,
 			       FALSE);
-			
+
 	/* In a conference (not user settable) */
 	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
 			       sipe_activity_map[SIPE_ACTIVITY_IN_CONF].status_id,
@@ -3299,14 +3299,14 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 					}
 					g_free(avail_str);
 				}
-				
+
 				if (xn_activity) {
 					//const char *activity_token = xmlnode_get_attrib(xn_activity, "token");
-					
+
 					//aggreg_activity
 				}
-				
-				
+
+
 			}
 		}
 
@@ -5539,14 +5539,14 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
                         if (uri) {
 				struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
 
-				if (sbuddy) {					
+				if (sbuddy) {
 					/* clean up in case to 'note' element is supplied
 					 * which indicate note removal in client
 					 */
 					g_free(sbuddy->annotation);
 					sbuddy->annotation = NULL;
 					sbuddy->is_oof_note = FALSE;
-					
+
 					xn_node = xmlnode_get_descendant(xn_category, "note", "body", NULL);
 					if (xn_node) {
 						sbuddy->annotation = xmlnode_get_data(xn_node);
@@ -5555,7 +5555,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 						purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s),note(%s)\n",
 							uri, sbuddy->annotation ? sbuddy->annotation : "");
 					}
-					
+
 					/* to trigger UI refresh in case no status info is supplied in this update */
 					do_update_status = TRUE;
 				}
@@ -5594,7 +5594,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					xmlnode *xn_custom = xmlnode_get_child(xn_activity, "custom");
 
 					/* from token */
-					if (!is_empty(token)) {						
+					if (!is_empty(token)) {
 						sbuddy->activity = g_strdup(sipe_get_activity_desc_by_token(token));
 					}
 					/* form custom element */
@@ -5666,7 +5666,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		}
 	}
 
-	if (do_update_status) {	
+	if (do_update_status) {
 		if (!status) { /* no status category in this update, using contact's current status */
 			PurpleBuddy *pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri);
 			const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
@@ -5677,7 +5677,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", status);
 		sipe_got_user_status(sip, uri, status);
 	}
-	
+
 	xmlnode_free(xn_categories);
 }
 
@@ -6375,7 +6375,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 		g_free(sip->status);
 		sip->status = g_strdup(SIPE_STATUS_ID_AVAILABLE);
 	}
-	
+
 	sipe_get_act_avail_by_status_2005(sip->status, &activity, &availability);
 
 	/* Note */
@@ -7662,7 +7662,11 @@ static void sipe_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *
 
         sip = gc->proto_data;
         current_service = sip->service_data;
-        purple_debug_info("sipe", "current_service->transport (%s), current_service->service: (%s)\n", current_service->transport, current_service->service);
+	if (current_service) {
+		purple_debug_info("sipe", "current_service: transport '%s' service '%s'\n",
+				  current_service->transport ? current_service->transport : "NULL",
+				  current_service->service   ? current_service->service   : "NULL");
+	}
 
 	sip->fd = -1;
         sip->gsc = NULL;
