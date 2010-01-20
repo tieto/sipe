@@ -176,6 +176,28 @@ static struct sipe_activity_map_struct
 /* Action name templates */
 #define ACTION_NAME_PRESENCE "<presence><%s>"
 
+static sipe_activity
+sipe_get_activity_by_token(const char *token)
+{
+	int i;
+
+	for (i = 0; i < SIPE_ACTIVITY_NUM_TYPES; i++)
+	{
+		if (!strcmp(token, sipe_activity_map[i].token))
+			return sipe_activity_map[i].type;
+	}
+
+	return sipe_activity_map[0].type;
+}
+
+static const char *
+sipe_get_activity_desc_by_token(const char *token)
+{
+	if (!token) return NULL;
+
+	return sipe_activity_map[sipe_get_activity_by_token(token)].desc;
+}
+
 /** Allows to send typed messages from chat window again after account reinstantiation. */
 static void
 sipe_rejoin_chat(PurpleConversation *conv)
@@ -3134,7 +3156,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
         char *uri;
 	GSList *category_names = NULL;
 	int aggreg_avail = 0;
-	//const char* aggreg_activity = NULL;
+	static sipe_activity aggreg_activity = SIPE_ACTIVITY_UNSET;
 
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 
@@ -3301,12 +3323,10 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				}
 
 				if (xn_activity) {
-					//const char *activity_token = xmlnode_get_attrib(xn_activity, "token");
+					const char *activity_token = xmlnode_get_attrib(xn_activity, "token");
 
-					//aggreg_activity
+					aggreg_activity = sipe_get_activity_by_token(activity_token);
 				}
-
-
 			}
 		}
 
@@ -3439,14 +3459,14 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 		g_free(sip->status);
 		if (aggreg_avail && aggreg_avail < 18000) { /* not offline */
-			struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, to);
-			if (sbuddy && sbuddy->activity && !strcmp(sbuddy->activity, sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].desc)) {
-				sip->status = g_strdup(SIPE_STATUS_ID_IN_MEETING);
-			} else if (sbuddy && sbuddy->activity && !strcmp(sbuddy->activity, sipe_activity_map[SIPE_ACTIVITY_IN_CONF].desc)) {
-				sip->status = g_strdup(SIPE_STATUS_ID_IN_CONF);
-			} else if (sbuddy && sbuddy->activity && !strcmp(sbuddy->activity, sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].desc)) {
-				sip->status = g_strdup(SIPE_STATUS_ID_ON_PHONE);
-			} else {
+			if (aggreg_activity == SIPE_ACTIVITY_IN_MEETING ||
+			    aggreg_activity == SIPE_ACTIVITY_IN_CONF ||
+			    aggreg_activity == SIPE_ACTIVITY_ON_PHONE)
+			{
+				sip->status = g_strdup(sipe_activity_map[aggreg_activity].status_id);
+			}
+			else
+			{
 				sip->status = g_strdup(sipe_get_status_by_availability(aggreg_avail, NULL));
 			}
 		} else {
@@ -5351,28 +5371,6 @@ sipe_get_status_by_availability(int avail,
 		status = SIPE_STATUS_ID_OFFLINE;
 
 	return status;
-}
-
-static sipe_activity
-sipe_get_activity_by_token(const char *token)
-{
-	int i;
-
-	for (i = 0; i < SIPE_ACTIVITY_NUM_TYPES; i++)
-	{
-		if (!strcmp(token, sipe_activity_map[i].token))
-			return sipe_activity_map[i].type;
-	}
-
-	return sipe_activity_map[0].type;
-}
-
-static const char *
-sipe_get_activity_desc_by_token(const char *token)
-{
-	if (!token) return NULL;
-
-	return sipe_activity_map[sipe_get_activity_by_token(token)].desc;
 }
 
 /**
