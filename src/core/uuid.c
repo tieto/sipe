@@ -22,22 +22,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-
-#ifndef _WIN32
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#else
-#ifdef _DLL
-#define _WS2TCPIP_H_
-#define _WINSOCK2API_
-#define _LIBC_INTERNAL_
-#endif /* _DLL */
-#include "internal.h"
-#endif /* _WIN32 */
-
 #include <cipher.h>
 #include <glib.h>
 #include <glib/gprintf.h>
