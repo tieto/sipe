@@ -22,9 +22,9 @@
 
 #ifndef _WIN32
 #ifdef ENABLE_NLS
-#include <libintl.h>
-#define _(String) ((const char *) gettext (String))
+#include <glib/gi18n.h>
 #else
-#define _(String) ((const char *) (String))
+#define  _(String) ((const char *) (String))
+#define N_(String) ((const char *) (String))
 #endif /* ENABLE_NLS */
 #endif
