@@ -3334,7 +3334,6 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		g_free(uri);
 	}
 
-	g_free(to);
 	g_free(contact);
 	xmlnode_free(xml);
 
@@ -3361,7 +3360,12 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
 		purple_prpl_got_account_status(sip->account, sip->status, SIPE_STATUS_ATTR_ID_MESSAGE, curr_note, NULL);
+		
+		//purple_debug_info("sipe", "sipe_process_roaming_self: to %s for %s\n", sipe_get_status_by_availability(aggreg_avail), to);
+		//purple_prpl_got_user_status(sip->account, to, sipe_get_status_by_availability(aggreg_avail), NULL);
 	}
+	
+	g_free(to);
 }
 
 static void sipe_subscribe_roaming_acl(struct sipe_account_data *sip)
@@ -5292,6 +5296,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode *xn_categories;
 	xmlnode *xn_category;
 	xmlnode *xn_node;
+	const char *status = NULL;
+	gboolean do_update_status = FALSE;
 
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri"); /* with 'sip:' prefix */
@@ -5403,30 +5409,33 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
                         if (uri) {
 				struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
 
-				if (sbuddy) {
-					char *note;
-
-					xn_node = xmlnode_get_child(xn_category, "note");
-					if (!xn_node) continue;
-					xn_node = xmlnode_get_child(xn_node, "body");
-					if (!xn_node) continue;
-					note = xmlnode_get_data(xn_node);
-					purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s),note(%s)\n",uri,note ? note : "");
+				if (sbuddy) {					
+					/* clean up in case to 'note' element is supplied
+					 * which indicate note removal in client
+					 */
 					g_free(sbuddy->annotation);
 					sbuddy->annotation = NULL;
-					if (note) sbuddy->annotation = g_strdup(note);
-					g_free(note);
-					sbuddy->is_oof_note = !strcmp(xmlnode_get_attrib(xn_node, "type"), "OOF");
+					sbuddy->is_oof_note = FALSE;
+					
+					xn_node = xmlnode_get_descendant(xn_category, "note", "body", NULL);
+					if (xn_node) {
+						sbuddy->annotation = xmlnode_get_data(xn_node);
+						sbuddy->is_oof_note = !strcmp(xmlnode_get_attrib(xn_node, "type"), "OOF");
+
+						purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s),note(%s)\n",
+							uri, sbuddy->annotation ? sbuddy->annotation : "");
+					}
+					
+					/* to trigger UI refresh in case no status info is supplied in this update */
+					do_update_status = TRUE;
 				}
 			}
-
 		}
 		/* state */
 		else if(!strcmp(attrVar, "state"))
 		{
 			char *data;
 			int availability;
-			const char *status;
 			xmlnode *xn_availability;
 			xmlnode *xn_activity;
 			xmlnode *xn_meeting_subject;
@@ -5506,10 +5515,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			}
 
 			status = sipe_get_status_by_availability(availability);
-			if (status) {
-				purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", status);
-				sipe_got_user_status(sip, uri, status);
-			}
+			do_update_status = TRUE;
 		}
 		/* calendarData */
 		else if(!strcmp(attrVar, "calendarData"))
@@ -5540,6 +5546,18 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		}
 	}
 
+	if (do_update_status) {
+		if (!status) { /* no status category in this update, using contact's current status */
+			PurpleBuddy *pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri);
+			const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
+			const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
+			status = purple_status_get_id(pstatus);
+		}
+
+		purple_debug_info("sipe", "process_incoming_notify_rlmi: %s\n", status);
+		sipe_got_user_status(sip, uri, status);
+	}
+	
 	xmlnode_free(xn_categories);
 }
 
