@@ -1544,15 +1544,15 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	if (!strcmp(sbuddy->name, self_uri)) {
 		PurpleStatus *status = purple_account_get_active_status(sip->account);
 		const gchar *curr_note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
-
-		/* set to user status if exist */
+		
 		g_free(sip->status);
-		if (sbuddy->user_avail && sbuddy->user_avail < 18000) { /* not offline */
-			sip->status = g_strdup(sipe_get_status_by_availability(sbuddy->user_avail));
+		if (strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) { /* not offline */
+			sip->status = g_strdup(status_id);
 		} else {
 			sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
-		purple_debug_info("sipe", "sipe_got_user_status: to %s for the account\n", status_id);
+		
+		purple_debug_info("sipe", "sipe_got_user_status: to %s for the account\n", sip->status);
 		purple_prpl_got_account_status(sip->account, sip->status, SIPE_STATUS_ATTR_ID_MESSAGE, curr_note, NULL);
 	}
 	g_free(self_uri);
@@ -6233,6 +6233,11 @@ send_presence_soap0(struct sipe_account_data *sip,
 	const gchar *oof_note = sipe_ews_get_oof_note(ews);
 	const char *user_input;
 
+	if (!sip->initial_state_published) {
+		g_free(sip->status);
+		sip->status = g_strdup(SIPE_STATUS_ID_AVAILABLE);
+	}
+	
 	sipe_get_act_avail_by_status_2005(sip->status, &activity, &availability);
 
 	/* Note */
