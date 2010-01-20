@@ -107,6 +107,43 @@ if test "$kerberos" != "no" ; then
 	AC_DEFINE(USE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
 fi
 
+dnl check for glib
+PKG_CHECK_MODULES(GLIB, [glib-2.0])
+
+dnl assumption check: sizof(uuid_t) must be 16 (see uuid.c)
+AC_MSG_CHECKING([that sizeof(uuid_t) is 16])
+ac_save_CFLAGS=$CFLAGS
+CFLAGS="$GLIB_CFLAGS -Werror -Wall -Wextra"
+dnl note the [[[ quoting: our code contains []!
+AC_RUN_IFELSE(
+	AC_LANG_PROGRAM(
+		[[[
+#include <glib.h>
+#include <stdio.h>
+
+/* Copied from uuid.c */
+typedef struct {
+   guint32 time_low;
+   guint16 time_mid;
+   guint16 time_hi_and_version;
+   guint8  clock_seq_hi_and_reserved;
+   guint8  clock_seq_low;
+   guint8  node[6];
+} uuid_t;
+		]]],
+		[return(sizeof(uuid_t) == 16 ? 0 : 1);]),
+	[AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(failed)
+	 AC_ERROR(sizeof(uuid_t) is not 16
+
+Please notify the SIPE developers and provide the following information:
+
+ host:     $host
+ build:    $build
+ compiler: $CC
+)])
+CFLAGS=$ac_save_CFLAGS
+
 dnl check for libpurple
 purple="yes"
 AC_ARG_WITH([purple],
@@ -151,7 +188,7 @@ void testfunc(unsigned long len)
 		 AC_ERROR(conflicts found.
 
 Check that you have the correct glib/libpurple headers installed for
-your architecture or set PURPLE_CFLAGS to override the system defaults. 
+your architecture or set PURPLE_CFLAGS to override the system defaults.
 )])
 	CFLAGS=$ac_save_CFLAGS
 fi
@@ -169,7 +206,7 @@ if test "$telepathy" != "no"; then
 		[telepathy="no"])
 fi
 
-dnl support for libpurple plugin
+dnl support for telepathy plugin
 AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, test "$telepathy" != "no")
 dnl NOTHING IMPLEMENTED YET!!!
 dnl if test "$telepathy" != "no"; then
@@ -196,13 +233,13 @@ AM_LANGINFO_CODESET
 dnl substitutions and generated files
 AC_CONFIG_FILES(
 	[]
-	[Makefile 
-	pixmaps/Makefile 
+	[Makefile
+	pixmaps/Makefile
 	m4macros/Makefile
 	po/Makefile.in
-	pixmaps/16/Makefile 
-	pixmaps/22/Makefile 
-	pixmaps/48/Makefile 
+	pixmaps/16/Makefile
+	pixmaps/22/Makefile
+	pixmaps/48/Makefile
 	src/Makefile
 	src/core/Makefile
 	src/api/Makefile

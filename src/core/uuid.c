@@ -45,9 +45,32 @@
 
 static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
 
+/*
+ * This assumes that the structure is correctly packed on all target
+ * platforms, i.e. sizeof(uuid_t) == 16
+ *
+ * See also the test added to "configure". On Windows platform we know
+ * that #pragma pack() exists and therefore can use it in the code.
+ *
+ */
+#ifdef _WIN32
+#pragma pack(push, 1)
+#endif
+typedef struct {
+   guint32 time_low;
+   guint16 time_mid;
+   guint16 time_hi_and_version;
+   guint8  clock_seq_hi_and_reserved;
+   guint8  clock_seq_low;
+   guint8  node[6];
+} uuid_t;
+#ifdef _WIN32
+#pragma pack(pop)
+#endif
+
 #define UUID_OFFSET_TO_LAST_SEGMENT 24
 
-void readUUID(const char *string, sipe_uuid_t *uuid)
+static void readUUID(const char *string, uuid_t *uuid)
 {
 	int i;
 	sscanf(string, "%08x-%04hx-%04hx-%02hhx%02hhx-", &uuid->time_low
@@ -61,7 +84,7 @@ void readUUID(const char *string, sipe_uuid_t *uuid)
 	}
 }
 
-void printUUID(sipe_uuid_t *uuid, char *string)
+static void printUUID(uuid_t *uuid, char *string)
 {
 	int i;
 	size_t pos;
@@ -77,9 +100,9 @@ void printUUID(sipe_uuid_t *uuid, char *string)
 	}
 }
 
-void createUUIDfromHash(sipe_uuid_t *uuid, const unsigned char *hash)
+static void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
 {
-	memcpy(uuid, hash, sizeof(sipe_uuid_t));
+	memcpy(uuid, hash, sizeof(uuid_t));
 	uuid->time_hi_and_version &= 0x0FFF;
 	uuid->time_hi_and_version |= 0x5000;
 	uuid->clock_seq_hi_and_reserved &= 0x3F;
@@ -88,14 +111,14 @@ void createUUIDfromHash(sipe_uuid_t *uuid, const unsigned char *hash)
 
 char *generateUUIDfromEPID(const gchar *epid)
 {
-	sipe_uuid_t result;
+	uuid_t result;
 	PurpleCipherContext *ctx;
 	unsigned char hash[20];
 	char buf[512];
 
 	readUUID(epid_ns_uuid, &result);
-	memcpy(buf, &result, sizeof(sipe_uuid_t));
-	strcpy(&buf[sizeof(sipe_uuid_t)], epid);
+	memcpy(buf, &result, sizeof(uuid_t));
+	strcpy(&buf[sizeof(uuid_t)], epid);
 
 	ctx = purple_cipher_context_new_by_name("sha1", NULL);
 	purple_cipher_context_append(ctx, (guchar *) buf, strlen(buf));
