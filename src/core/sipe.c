@@ -161,7 +161,7 @@ static struct sipe_activity_map_struct
 	{ SIPE_ACTIVITY_INACTIVE,	SIPE_STATUS_ID_IDLE,		N_("Inactive")			, SIPE_STATUS_ID_IDLE		},
 	{ SIPE_ACTIVITY_BUSY,		SIPE_STATUS_ID_BUSY,		N_("Busy")			, SIPE_STATUS_ID_BUSY		},
 	{ SIPE_ACTIVITY_BUSYIDLE,	SIPE_STATUS_ID_BUSYIDLE,	N_("BusyIdle")			, SIPE_STATUS_ID_BUSYIDLE	},
-	{ SIPE_ACTIVITY_DND,		SIPE_STATUS_ID_DND,		NULL				, NULL				},
+	{ SIPE_ACTIVITY_DND,		SIPE_STATUS_ID_DND,		NULL				, SIPE_STATUS_ID_DND		},
 	{ SIPE_ACTIVITY_BRB,		SIPE_STATUS_ID_BRB,		N_("Be right back")		, SIPE_STATUS_ID_BRB		},
 	{ SIPE_ACTIVITY_AWAY,		"away",				NULL				, NULL				},
 	{ SIPE_ACTIVITY_LUNCH,		SIPE_STATUS_ID_LUNCH,		N_("Out to lunch")		, SIPE_STATUS_ID_LUNCH		},
@@ -6376,7 +6376,9 @@ send_presence_soap0(struct sipe_account_data *sip,
 	const gchar *oof_note = sipe_ews_get_oof_note(ews);
 	const char *user_input;
 
-	if (!sip->initial_state_published) {
+	if (!sip->initial_state_published ||
+	    do_reset_status)
+	{
 		g_free(sip->status);
 		sip->status = g_strdup(SIPE_STATUS_ID_AVAILABLE);
 	}
