@@ -56,6 +56,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	gchar *contentlength;
 	int i=1;
 	if(!lines[0]) {
+		g_strfreev(lines);
 		g_free(msg);
 		return NULL;
 	}
