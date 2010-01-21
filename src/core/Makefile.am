@@ -68,14 +68,16 @@ libsipe_la_LIBADD = \
 	$(KRB5_LIBS)
 
 #
-# NOTE: compiling tests requires dbus headers, e.g.
+# NOTE: compiling tests requires dbus headers
 #
-#   make CC="gcc -I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include" tests
+# As we already require pkg-config in configure it is OK to use it here...
 #
 tests: tests.c .libs/libsipe.so
-	$(CC) $(libsipe_la_CFLAGS) $^ -o $@
-	LD_LIBRARY_PATH=.libs ./tests
-	rm tests
+	set -e; \
+	dbus_cflags=$$(pkg-config --cflags dbus-1); \
+	$(CC) $(libsipe_la_CFLAGS) $$dbus_cflags $^ -o $@; \
+	LD_LIBRARY_PATH=.libs ./tests; \
+	rm -f tests
 
 # Remove any libsipe.so from the old incorrect installation location
 install-exec-local:
