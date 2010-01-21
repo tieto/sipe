@@ -15,16 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <fcntl.h>
-#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <cipher.h>
 #include <glib.h>
 #include <glib/gprintf.h>
+
 #include "uuid.h"
 
 static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
