@@ -82,6 +82,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 
 	if (username) {
 		if (!password) {
+			g_free(cred_handle);
 			return SIP_SEC_E_INTERNAL_ERROR;
 		}
 
