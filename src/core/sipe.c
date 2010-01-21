@@ -121,7 +121,8 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 /* ???  PURPLE_STATUS_TUNE */
 
 /* Status attributes (see also sipe_status_types() */
-#define SIPE_STATUS_ATTR_ID_MESSAGE "message"
+#define SIPE_STATUS_ATTR_ID_MESSAGE  "message"
+#define SIPE_STATUS_ATTR_ID_DONT_PUB "do-not-publish"
 
 /** Activity (token and description) 2007 */
 typedef enum
@@ -1576,13 +1577,11 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		purple_debug_info("sipe", "update_calendar_status_cb: cal_avail_since : %s", asctime(localtime(&cal_avail_since)));
 	}
 
-	/* after msrtc processing */
-	if (status_id) {
-		sbuddy->last_non_cal_status_id = status_id;
-		g_free(sbuddy->last_non_cal_activity);
-		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
-	} else {
+	/* scheduled Cal update call */
+	if (!status_id) {
 		status_id = sbuddy->last_non_cal_status_id;
+		g_free(sbuddy->activity);
+		sbuddy->activity = g_strdup(sbuddy->last_non_cal_activity);
 	}
 
 	/* adjust to calendar status */
@@ -1627,7 +1626,10 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		}
 
 		purple_debug_info("sipe", "sipe_got_user_status: to %s for the account\n", sip->status);
-		purple_prpl_got_account_status(sip->account, sip->status, SIPE_STATUS_ATTR_ID_MESSAGE, curr_note, NULL);
+		purple_prpl_got_account_status(sip->account, sip->status,
+					       SIPE_STATUS_ATTR_ID_MESSAGE, curr_note,
+					       SIPE_STATUS_ATTR_ID_DONT_PUB, TRUE,
+					       NULL);
 	}
 	g_free(self_uri);
 }
@@ -2036,13 +2038,11 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 		if (sip) {
 			gchar *action_name;
 			const char* status_id = purple_status_get_id(status);
-			const char* note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
+			gboolean dont_pub = purple_status_get_attr_boolean(status, SIPE_STATUS_ATTR_ID_DONT_PUB);
 
-			if (status_id && sip->status && !strcmp(status_id, sip->status) &&			/* same status */
-			    ((!note && !sip->note) || (note && sip->note && !strcmp(note, sip->note))) &&	/* same note */
-			    sip->initial_state_published
-			   )
+			if (dont_pub)
 			{
+				purple_status_set_attr_boolean(status, SIPE_STATUS_ATTR_ID_DONT_PUB, FALSE);
 				purple_debug_info("sipe", "sipe_set_status: status&note has NOT changed, exiting.\n");
 				return;
 			}
@@ -2050,7 +2050,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 			g_free(sip->status);
 			sip->status = g_strdup(status_id);
 			g_free(sip->note);
-			sip->note = g_strdup(note);
+			sip->note = g_strdup(purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE));
 
 			/* schedule 2 sec to capture idle flag */
 			action_name = g_strdup_printf("<%s>", "+set-status");
@@ -2281,6 +2281,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 		prim, id, name,             \
 		TRUE, user, FALSE,          \
 		SIPE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
+		SIPE_STATUS_ATTR_ID_DONT_PUB, _("Don't publish"), purple_value_new(PURPLE_TYPE_BOOLEAN), \
 		NULL);                      \
 	types = g_list_append(types, type);
 
@@ -3481,7 +3482,10 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		}
 
 		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
-		purple_prpl_got_account_status(sip->account, sip->status, SIPE_STATUS_ATTR_ID_MESSAGE, curr_note, NULL);
+		purple_prpl_got_account_status(sip->account, sip->status,
+					       SIPE_STATUS_ATTR_ID_MESSAGE, curr_note,
+					       SIPE_STATUS_ATTR_ID_DONT_PUB, TRUE,
+					       NULL);
 
 		//purple_debug_info("sipe", "sipe_process_roaming_self: to %s for %s\n", sipe_get_status_by_availability(aggreg_avail), to);
 		//purple_prpl_got_user_status(sip->account, to, sipe_get_status_by_availability(aggreg_avail), NULL);
@@ -6072,6 +6076,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			g_free(sbuddy->cal_free_busy);
 			sbuddy->cal_free_busy = NULL;
 		}
+		
+		sbuddy->last_non_cal_status_id = status_id;
+		g_free(sbuddy->last_non_cal_activity);
+		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
 	}
 
 	if (free_activity) g_free(free_activity);
