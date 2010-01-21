@@ -3265,7 +3265,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 								FALSE, NULL, NULL, NULL);
 					if (xn_activity) {
 						if (!strcmp(xmlnode_get_attrib(xn_activity, "token"),
-							    sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].desc))
+							    sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].token))
 						{
 							event->is_meeting = TRUE;
 						}
@@ -5606,7 +5606,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					if (!is_empty(token)) {
 						sbuddy->activity = g_strdup(sipe_get_activity_desc_by_token(token));
 					}
-					/* form custom element */
+					/* from custom element */
 					if (xn_custom) {
 						char *custom = xmlnode_get_data(xn_custom);
 
