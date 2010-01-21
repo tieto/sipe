@@ -2269,6 +2269,7 @@ sipe_remove_group(PurpleConnection *gc, PurpleGroup *group)
 	}
 }
 
+/** All statuses need message attribute to pass Note */
 static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 {
 	PurpleStatusType *type;
@@ -2276,84 +2277,90 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* Macros to reduce code repetition.
 	   Translators: noun */
-#define SIPE_ADD_STATUS(prim,id,name) type = purple_status_type_new_with_attrs( \
+#define SIPE_ADD_STATUS(prim,id,name,user) type = purple_status_type_new_with_attrs( \
 		prim, id, name,             \
-		TRUE, TRUE, FALSE,          \
+		TRUE, user, FALSE,          \
 		SIPE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
 		NULL);                      \
-	types = g_list_append(types, type);
-#define SIPE_ADD_STATUS_NO_MSG(prim,id,name,user) type = purple_status_type_new( \
-		prim, id, name, user);      \
 	types = g_list_append(types, type);
 
 	/* Online */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
-			NULL, NULL);
+			NULL,
+			NULL,
+			TRUE);
 
 	/* Busy */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_BUSY].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_BUSY].desc);
+			sipe_activity_map[SIPE_ACTIVITY_BUSY].desc,
+			TRUE);
 
 	/* BusyIdle (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
-			       sipe_activity_map[SIPE_ACTIVITY_BUSYIDLE].status_id,
-			       sipe_activity_map[SIPE_ACTIVITY_BUSYIDLE].desc,
-			       FALSE);
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_activity_map[SIPE_ACTIVITY_BUSYIDLE].status_id,
+			sipe_activity_map[SIPE_ACTIVITY_BUSYIDLE].desc,
+			FALSE);
 
 	/* Do Not Disturb */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_DND].status_id,
-			NULL);
+			NULL,
+			TRUE);
 
 	/* In a meeting (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
-			       sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].status_id,
-			       sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].desc,
-			       FALSE);
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].status_id,
+			sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].desc,
+			FALSE);
 
 	/* In a conference (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
-			       sipe_activity_map[SIPE_ACTIVITY_IN_CONF].status_id,
-			       sipe_activity_map[SIPE_ACTIVITY_IN_CONF].desc,
-			       FALSE);
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_activity_map[SIPE_ACTIVITY_IN_CONF].status_id,
+			sipe_activity_map[SIPE_ACTIVITY_IN_CONF].desc,
+			FALSE);
 
 	/* Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			sipe_activity_map[SIPE_ACTIVITY_BRB].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_BRB].desc);
+			sipe_activity_map[SIPE_ACTIVITY_BRB].desc,
+			TRUE);
 
 	/* Away */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			NULL, NULL);
+			NULL,
+			NULL,
+			TRUE);
 
 	/* On The Phone (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_UNAVAILABLE,
-			       sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].status_id,
-			       sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].desc,
-			       FALSE);
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].status_id,
+			sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].desc,
+			FALSE);
 
 	/* Out To Lunch (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AWAY,
-			       sipe_activity_map[SIPE_ACTIVITY_LUNCH].status_id,
-			       sipe_activity_map[SIPE_ACTIVITY_LUNCH].desc,
-			       FALSE);
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			sipe_activity_map[SIPE_ACTIVITY_LUNCH].status_id,
+			sipe_activity_map[SIPE_ACTIVITY_LUNCH].desc,
+			FALSE);
 
 	/* Idle/Inactive (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_AVAILABLE,
-			       sipe_activity_map[SIPE_ACTIVITY_INACTIVE].status_id,
-			       sipe_activity_map[SIPE_ACTIVITY_INACTIVE].desc,
-			       FALSE);
+	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
+			sipe_activity_map[SIPE_ACTIVITY_INACTIVE].status_id,
+			sipe_activity_map[SIPE_ACTIVITY_INACTIVE].desc,
+			FALSE);
 
 	/* Appear Offline */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_INVISIBLE,
-			       NULL, NULL,
-			       TRUE);
+	SIPE_ADD_STATUS(PURPLE_STATUS_INVISIBLE,
+			NULL,
+			NULL,
+			TRUE);
 
 	/* Offline (not user settable) */
-	SIPE_ADD_STATUS_NO_MSG(PURPLE_STATUS_OFFLINE,
-			       NULL, NULL,
-			       FALSE);
+	SIPE_ADD_STATUS(PURPLE_STATUS_OFFLINE,
+			NULL,
+			NULL,
+			FALSE);
 
 	return types;
 }
