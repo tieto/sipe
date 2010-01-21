@@ -173,6 +173,9 @@ static struct sipe_activity_map_struct
 	{ SIPE_ACTIVITY_OOF,		"out-of-office",		N_("Out of office")		, NULL				},
 	{ SIPE_ACTIVITY_URGENT_ONLY,	"urgent-interruptions-only",	N_("Urgent interruptions only")	, NULL				}
 };
+/** @param x is sipe_activity */
+#define SIPE_ACTIVITY_I18N(x) gettext(sipe_activity_map[x].desc)
+
 
 /* Action name templates */
 #define ACTION_NAME_PRESENCE "<presence><%s>"
@@ -196,7 +199,7 @@ sipe_get_activity_desc_by_token(const char *token)
 {
 	if (!token) return NULL;
 
-	return sipe_activity_map[sipe_get_activity_by_token(token)].desc;
+	return SIPE_ACTIVITY_I18N(sipe_get_activity_by_token(token));
 }
 
 /** Allows to send typed messages from chat window again after account reinstantiation. */
@@ -1594,7 +1597,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		{
 			status_id = SIPE_STATUS_ID_IN_MEETING;
 			g_free(sbuddy->activity);
-			sbuddy->activity = g_strdup(sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].desc);
+			sbuddy->activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_MEETING));
 		}
 		avail = sipe_get_availability_by_status(status_id, NULL);
 
@@ -1604,7 +1607,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 			    && avail >= 15000) /* 12000 in 2007 */
 			{
 				g_free(sbuddy->activity);
-				sbuddy->activity = g_strdup(sipe_activity_map[SIPE_ACTIVITY_OOF].desc);
+				sbuddy->activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_OOF));
 			}
 		}
 	}
@@ -2294,13 +2297,13 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Busy */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_BUSY].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_BUSY].desc,
+			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_BUSY),
 			TRUE);
 
 	/* BusyIdle (not user settable) */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_BUSYIDLE].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_BUSYIDLE].desc,
+			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_BUSYIDLE),
 			FALSE);
 
 	/* Do Not Disturb */
@@ -2312,19 +2315,19 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* In a meeting (not user settable) */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].desc,
+			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_MEETING),
 			FALSE);
 
 	/* In a conference (not user settable) */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_IN_CONF].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_IN_CONF].desc,
+			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF),
 			FALSE);
 
 	/* Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			sipe_activity_map[SIPE_ACTIVITY_BRB].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_BRB].desc,
+			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_BRB),
 			TRUE);
 
 	/* Away */
@@ -2336,19 +2339,19 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* On The Phone (not user settable) */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].desc,
+			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE),
 			FALSE);
 
 	/* Out To Lunch (not user settable) */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			sipe_activity_map[SIPE_ACTIVITY_LUNCH].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_LUNCH].desc,
+			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_LUNCH),
 			FALSE);
 
 	/* Idle/Inactive (not user settable) */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_INACTIVE].status_id,
-			sipe_activity_map[SIPE_ACTIVITY_INACTIVE].desc,
+			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_INACTIVE),
 			FALSE);
 
 	/* Appear Offline */
@@ -5361,11 +5364,11 @@ sipe_get_status_by_availability(int avail,
 	else if (avail < 6000)
 		status = SIPE_STATUS_ID_IDLE;
 	else if (avail < 7500)
-		if (activity && !strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].desc)) {
+		if (activity && !strcmp(activity, SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_MEETING))) {
 			status = SIPE_STATUS_ID_IN_MEETING;
-		} else if (activity && !strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_IN_CONF].desc)) {
+		} else if (activity && !strcmp(activity, SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF))) {
 			status = SIPE_STATUS_ID_IN_CONF;
-		} else if (activity && !strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].desc)) {
+		} else if (activity && !strcmp(activity, SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE))) {
 			status = SIPE_STATUS_ID_ON_PHONE;
 		} else {
 			status = SIPE_STATUS_ID_BUSY;
@@ -5813,9 +5816,9 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 	if (isonline) {
 		const gchar * status_id = NULL;
 		if (activity) {
-			if (!strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_BUSY].desc)) {
+			if (!strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_BUSY].token)) {
 				status_id = SIPE_STATUS_ID_BUSY;
-			} else if (!strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_AWAY].desc)) {
+			} else if (!strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_AWAY].token)) {
 				status_id = SIPE_STATUS_ID_AWAY;
 			}
 		}
@@ -6020,10 +6023,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 				res_avail = dev_avail;
 				if (!is_empty(state))
 				{
-					if (!strcmp(state, sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].desc)) {
-						activity = sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].desc;
+					if (!strcmp(state, sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].token)) {
+						activity = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE);
 					} else if (!strcmp(state, "presenting")) {
-						activity = sipe_activity_map[SIPE_ACTIVITY_IN_CONF].desc;
+						activity = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF);
 					} else {
 						activity = free_activity = state;
 						state = NULL;
@@ -6038,7 +6041,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	/* oof */
 	if (xn_oof && res_avail >= 15000) { /* 12000 in 2007 */
-               activity = sipe_activity_map[SIPE_ACTIVITY_OOF].desc;
+               activity = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_OOF);
 	       activity_since = 0;
 	}
 
