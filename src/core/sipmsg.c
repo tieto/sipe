@@ -55,7 +55,10 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	gchar *tmp;
 	gchar *contentlength;
 	int i=1;
-	if(!lines[0]) return NULL;
+	if(!lines[0]) {
+		g_free(msg);
+		return NULL;
+	}
 	parts = g_strsplit(lines[0], " ", 3);
 	if(!parts[0] || !parts[1] || !parts[2]) {
 		g_strfreev(parts);
