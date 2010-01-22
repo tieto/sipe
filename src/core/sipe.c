@@ -61,6 +61,7 @@
 #include "dnsquery.h"
 #include "debug.h"
 #include "notify.h"
+#include "savedstatuses.h"
 #include "privacy.h"
 #include "prpl.h"
 #include "plugin.h"
@@ -3148,6 +3149,46 @@ sipe_update_calendar(struct sipe_account_data *sip)
 	purple_debug_info("sipe", "sipe_update_calendar: finished.\n");
 }
 
+/**
+ * This method motivates Purple's Host (e.g. Pidgin) to update its UI
+ * by using standard Purple's means of signals and saved statuses.
+ *
+ * Thus all UI elements get updated: Status Button with Note, docklet.
+ * This is ablolutely important as both our status and note can come
+ * inbound (roaming) or be updated programmatically (e.g. based on our 
+ * calendar data).
+ */
+static void
+sipe_set_purple_account_status_and_note(struct sipe_account_data *sip)
+{
+	PurpleSavedStatus *saved_status;
+	const PurpleStatusType *acct_status_type = 
+		purple_status_type_find_with_id(sip->account->status_types, sip->status);
+	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
+
+	saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, sip->note);
+
+	/* If this type+message is unique then create a new transient saved status
+	 * Ref: gtkstatusbox.c
+	 */
+	if (!saved_status) {
+		GList *tmp;
+		GList *active_accts = purple_accounts_get_all_active();
+
+		saved_status = purple_savedstatus_new(NULL, primitive);
+		purple_savedstatus_set_message(saved_status, sip->note);
+
+		for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
+			purple_savedstatus_set_substatus(saved_status,
+				(PurpleAccount *)tmp->data, acct_status_type, sip->note);
+		}
+		g_list_free(active_accts);
+	}				 
+
+	/* Set the status for each account */
+	purple_savedstatus_activate(saved_status);
+}
+
 static void
 send_publish_category_initial(struct sipe_account_data *sip);
 
@@ -3168,6 +3209,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	GSList *category_names = NULL;
 	int aggreg_avail = 0;
 	static sipe_activity aggreg_activity = SIPE_ACTIVITY_UNSET;
+	gboolean do_update_status = FALSE;
 
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 
@@ -3285,11 +3327,13 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			/* filling publication->note */
 			if (!strcmp(name, "note")) {
 				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
+				
+				g_free(sip->note);
 				if (xn_body) {
 					publication->note = xmlnode_get_data(xn_body);
-					g_free(sip->note);
 					sip->note = g_strdup(publication->note);
 				}
+				do_update_status = TRUE;
 			}
 
 			/* filling publication->fb_start_str, free_busy_base64, working_hours_xml_str */
@@ -3338,6 +3382,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 					aggreg_activity = sipe_get_activity_by_token(activity_token);
 				}
+
+				do_update_status = TRUE;
 			}
 		}
 
@@ -3464,9 +3510,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		sip->initial_state_published = TRUE;
 		/* dalayed run */
 		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
+		do_update_status = FALSE;
 	} else if (aggreg_avail) {
-		PurpleStatus *status = purple_account_get_active_status(sip->account);
-		const gchar *curr_note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
 
 		g_free(sip->status);
 		if (aggreg_avail && aggreg_avail < 18000) { /* not offline */
@@ -3483,15 +3528,11 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		} else {
 			sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
-
+	}
+	
+	if (do_update_status) {
 		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
-		purple_prpl_got_account_status(sip->account, sip->status,
-					       SIPE_STATUS_ATTR_ID_MESSAGE, curr_note,
-					       SIPE_STATUS_ATTR_ID_DONT_PUB, TRUE,
-					       NULL);
-
-		//purple_debug_info("sipe", "sipe_process_roaming_self: to %s for %s\n", sipe_get_status_by_availability(aggreg_avail), to);
-		//purple_prpl_got_user_status(sip->account, to, sipe_get_status_by_availability(aggreg_avail), NULL);
+		sipe_set_purple_account_status_and_note(sip);		
 	}
 
 	g_free(to);
@@ -7187,6 +7228,7 @@ static void send_presence_status(struct sipe_account_data *sip)
 	if (!status) return;
 
 	note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
+	purple_debug_info("sipe", "send_presence_status: status: '%s'\n", purple_status_get_id(status) ? purple_status_get_id(status) : "");
 	purple_debug_info("sipe", "send_presence_status: note: '%s'\n", note ? note : "");
 
         if (sip->ocs2007) {
