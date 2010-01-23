@@ -4250,6 +4250,7 @@ sipe_refer(struct sipe_account_data *sip,
 	gchar *epid = get_epid(sip);
 	struct sip_dialog *dialog = sipe_dialog_find(session,
 						     session->roster_manager);
+	const char *ourtag = dialog && dialog->ourtag ? dialog->ourtag : NULL;
 
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
@@ -4260,8 +4261,8 @@ sipe_refer(struct sipe_account_data *sip,
 		contact,
 		who,
 		sip->username,
-		dialog->ourtag ? ";tag=" : "",
-		dialog->ourtag ? dialog->ourtag : "",
+		ourtag ? ";tag=" : "",
+		ourtag ? ourtag : "",
 		epid);
 	g_free(epid);
 
