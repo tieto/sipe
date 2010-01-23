@@ -585,7 +585,7 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 		purple_debug_info("sipe", "sipe_cal_get_status: no calendar data2 for %s, exiting\n", buddy->name);
 		return SIPE_CAL_NO_DATA;
 	}
-	purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", free_busy ? free_busy : "");
+	purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", free_busy);
 
 	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
 

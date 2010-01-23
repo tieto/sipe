@@ -6062,7 +6062,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			int dev_avail = atoi(xmlnode_get_attrib(xn_state, "avail"));
 			time_t dev_avail_since = purple_str_to_time(xmlnode_get_attrib(xn_state, "since"), FALSE, NULL, NULL, NULL);
 
-			state = xn_state ? xmlnode_get_data(xn_state) : NULL;
+			state = xmlnode_get_data(xn_state);
 			if (dev_avail_since > user_avail_since &&
 			    dev_avail >= res_avail)
 			{

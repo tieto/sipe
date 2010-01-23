@@ -227,12 +227,10 @@ http_conn_invalidate_ssl_connection(HttpConn *http_conn)
 
 		/* Invalidate this connection. Next send will open a new one */
 		if (gsc) {
-			struct sip_connection *conn = http_conn ? http_conn->conn : NULL;
+			struct sip_connection *conn = http_conn->conn;
 
 			http_conn_connection_remove(conn);
-			if (http_conn) {
-				http_conn->conn = NULL;
-			}
+			http_conn->conn = NULL;
 			purple_ssl_close(gsc);
 		}
 		http_conn->gsc = NULL;
@@ -549,6 +547,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 #endif
 		char **parts;
 		SipSecAuthType auth_type;
+		const char *auth_name;
 		char *authorization;
 		char *output_toked_base64;
 		char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
@@ -567,12 +566,14 @@ http_conn_process_input_message(HttpConn *http_conn,
 
 		ptmp = sipmsg_find_auth_header(msg, "NTLM");
 		auth_type = AUTH_TYPE_NTLM;
+		auth_name = "NTLM";
 #ifdef _WIN32
 #ifdef USE_KERBEROS
 		tmp = sipmsg_find_auth_header(msg, "Negotiate");
 		if (tmp && http_conn->auth && http_conn->auth->use_negotiate) {
 			ptmp = tmp;
 			auth_type = AUTH_TYPE_NEGOTIATE;
+			auth_name = "Negotiate";
 		}
 #endif
 #endif
@@ -619,7 +620,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			return;
 		}
 
-		authorization = g_strdup_printf("%s %s", auth_type == AUTH_TYPE_NTLM ? "NTLM" : "Negotiate", output_toked_base64 ? output_toked_base64 : "");
+		authorization = g_strdup_printf("%s %s", auth_name, output_toked_base64 ? output_toked_base64 : "");
 		g_free(output_toked_base64);
 
 		http_conn_post0(http_conn, authorization);

@@ -156,11 +156,11 @@ sip_to_tel_uri(const gchar *phone)
 	/* strips everything starting with 'v:' if any */
 	if (res && (v = strstr(res, "v:"))) {
 		gchar *tmp = res;
-		
+
 		res = g_strndup(res, v - res);
 		g_free(tmp);
 		return res;
-	}	
+	}
 	return res;
 }
 
@@ -168,7 +168,7 @@ gchar *
 sip_tel_uri_denormalize(const gchar *tel_uri)
 {
 	if (!tel_uri) return NULL;
-	
+
 	if (g_str_has_prefix(tel_uri, "tel:")) {
 		return g_strdup(tel_uri + 4);
 	} else {
@@ -313,7 +313,7 @@ sip_csta_monitor_stop(struct sipe_account_data *sip)
 		purple_debug_info("sipe", "sip_csta_monitor_stop: no dialog with CSTA, exiting.\n");
 		return;
 	}
-	
+
 	if (!sip->csta->monitor_cross_ref_id) {
 		purple_debug_info("sipe", "sip_csta_monitor_stop: no monitor_cross_ref_id, exiting.\n");
 		return;
@@ -377,7 +377,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 	}
 	else if (msg->response == 200) {
 		xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
-		
+
 		g_free(sip->csta->gateway_status);
 		sip->csta->gateway_status = xmlnode_get_data(xmlnode_get_child(xml, "systemStatus"));
 		purple_debug_info("sipe", "process_invite_csta_gateway_response: gateway_status=%s\n",
@@ -392,8 +392,8 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 					  sip->csta->gateway_status);
 			/* @TODO notify user of failure to join CSTA */
 		}
-		xmlnode_free(xml);		
-			
+		xmlnode_free(xml);
+
 		/* schedule re-invite. RFC4028 */
 		if (sip->csta->dialog->expires) {
 			sipe_schedule_action("<+csta>",
@@ -599,7 +599,7 @@ sip_csta_update_id_and_status(struct sip_csta *csta,
 	gchar *call_id = xmlnode_get_data(xmlnode_get_child(node, "callID"));
 
 	if (call_id && csta->call_id && strcmp(call_id, csta->call_id)) {
-		purple_debug_info("sipe", "sipe_csta_update_id_and_status: callID (%s) does not match\n", call_id ? call_id : "");
+		purple_debug_info("sipe", "sipe_csta_update_id_and_status: callID (%s) does not match\n", call_id);
 	}
 	else
 	{
@@ -641,9 +641,9 @@ process_incoming_info_csta(struct sipe_account_data *sip,
 {
 	gchar *monitor_cross_ref_id;
 	xmlnode *xml = xmlnode_from_str(msg->body, msg->bodylen);
-	
+
 	if (!xml) return;
-	
+
 	monitor_cross_ref_id = xmlnode_get_data(xmlnode_get_child(xml, "monitorCrossRefID"));
 
 	if(!sip->csta || (monitor_cross_ref_id
