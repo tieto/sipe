@@ -2201,11 +2201,13 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	struct sipe_buddy *b = g_hash_table_lookup(sip->buddies, buddy->name);
+	struct sipe_buddy *b;
 	struct sipe_group *g = NULL;
 
 	purple_debug_info("sipe", "sipe_remove_buddy[CB]: buddy:%s group:%s\n", buddy ? buddy->name : "", group ? group->name : "");
+	if (!buddy) return;
 
+	b = g_hash_table_lookup(sip->buddies, buddy->name);
 	if (!b) return;
 
 	if (group) {
@@ -4797,12 +4799,14 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		session = sipe_session_find_or_add_im(sip, from);
 	}
 
-	g_free(session->callid);
-	session->callid = g_strdup(callid);
+	if (session) {
+		g_free(session->callid);
+		session->callid = g_strdup(callid);
 
-	session->is_multiparty = is_multiparty;
-	if (roster_manager) {
-		session->roster_manager = g_strdup(roster_manager);
+		session->is_multiparty = is_multiparty;
+		if (roster_manager) {
+			session->roster_manager = g_strdup(roster_manager);
+		}
 	}
 
 	if (is_multiparty && end_points) {
@@ -6927,7 +6931,7 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 	struct sipe_publication *publication_cal_32000 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_32000);
 
-	const char *n1 = ews->working_hours_xml_str;
+	const char *n1 = ews ? ews->working_hours_xml_str : NULL;
 	const char *n2 = publication_cal_300 ? publication_cal_300->working_hours_xml_str : NULL;
 
 	g_free(key_cal_1);
@@ -9222,35 +9226,34 @@ sipe_blist_node_menu(PurpleBlistNode *node)
 static gboolean
 process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
 {
-	gboolean ret = TRUE;
 	char *uri = trans->payload->data;
 
-	PurpleNotifyUserInfo *info = purple_notify_user_info_new();
-	PurpleBuddy *pbuddy;
+	PurpleNotifyUserInfo *info;
+	PurpleBuddy *pbuddy = NULL;
 	struct sipe_buddy *sbuddy;
-	const char *alias;
+	const char *alias = NULL;
 	char *device_name = NULL;
 	char *server_alias = NULL;
 	char *phone_number = NULL;
 	char *email = NULL;
 	const char *site;
 
+	if (!sip) return FALSE;
+
 	purple_debug_info("sipe", "Fetching %s's user info for %s\n", uri, sip->username);
 
 	pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri);
 	alias = purple_buddy_get_local_alias(pbuddy);
 
-	if (sip)
-	{
-		//will query buddy UA's capabilities and send answer to log
-		sipe_options_request(sip, uri);
+	//will query buddy UA's capabilities and send answer to log
+	sipe_options_request(sip, uri);
 
-		sbuddy = g_hash_table_lookup(sip->buddies, uri);
-		if (sbuddy)
-		{
-			device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
-		}
+	sbuddy = g_hash_table_lookup(sip->buddies, uri);
+	if (sbuddy) {
+		device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
 	}
+
+	info = purple_notify_user_info_new();
 
 	if (msg->response != 200) {
 		purple_debug_info("sipe", "process_options_response: SERVICE response is %d\n", msg->response);
@@ -9358,7 +9361,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	g_free(email);
 	g_free(device_name);
 
-	return ret;
+	return TRUE;
 }
 
 /**

@@ -175,6 +175,8 @@ sip_sec_init_context(SipSecContext *context,
 			       username,
 			       password);
 
+	if (!*context) return NULL;
+
 	ret = sip_sec_init_context_step(*context,
 					target,
 					NULL,
