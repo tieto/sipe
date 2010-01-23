@@ -542,7 +542,11 @@ http_conn_process_input_message(HttpConn *http_conn,
 	/* Authentication required */
 	else if (msg->response == 401) {
 		char *ptmp;
+#ifdef _WIN32
+#ifdef USE_KERBEROS
 		char *tmp;
+#endif
+#endif
 		char **parts;
 		SipSecAuthType auth_type;
 		char *authorization;
@@ -563,9 +567,9 @@ http_conn_process_input_message(HttpConn *http_conn,
 
 		ptmp = sipmsg_find_auth_header(msg, "NTLM");
 		auth_type = AUTH_TYPE_NTLM;
-		tmp = sipmsg_find_auth_header(msg, "Negotiate");
 #ifdef _WIN32
 #ifdef USE_KERBEROS
+		tmp = sipmsg_find_auth_header(msg, "Negotiate");
 		if (tmp && http_conn->auth && http_conn->auth->use_negotiate) {
 			ptmp = tmp;
 			auth_type = AUTH_TYPE_NEGOTIATE;

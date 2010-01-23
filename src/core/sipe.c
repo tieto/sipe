@@ -633,7 +633,6 @@ static void send_later_cb(gpointer data, gint source,
 static struct sipe_account_data *sipe_setup_ssl(PurpleConnection *gc, PurpleSslConnection *gsc)
 {
 	struct sipe_account_data *sip;
-	struct sip_connection *conn;
 
 	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
@@ -648,7 +647,7 @@ static struct sipe_account_data *sipe_setup_ssl(PurpleConnection *gc, PurpleSslC
 	sip->connecting = FALSE;
 	sip->last_keepalive = time(NULL);
 
-	conn = connection_create(sip, gsc->fd);
+	connection_create(sip, gsc->fd);
 
 	purple_ssl_input_add(gsc, sipe_input_cb_ssl, gc);
 
@@ -8690,7 +8689,7 @@ sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
 
 	b = purple_find_buddy_in_group(buddy->account, buddy->name, group);
 	if (!b){
-		b = purple_blist_add_buddy_clone(group, buddy);
+		purple_blist_add_buddy_clone(group, buddy);
 	}
 
 	sipe_group_buddy(gc, buddy->name, NULL, group_name);
