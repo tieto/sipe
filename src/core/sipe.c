@@ -7474,12 +7474,12 @@ static void sipe_udp_process(gpointer data, gint source,
 {
 	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = gc->proto_data;
-	struct sipmsg *msg;
 	int len;
-	time_t currtime;
 
 	static char buffer[65536];
 	if ((len = recv(source, buffer, sizeof(buffer) - 1, 0)) > 0) {
+		time_t currtime = time(NULL);
+		struct sipmsg *msg;
 		buffer[len] = '\0';
 		purple_debug_info("sipe", "received - %s######\n%s\n#######\n", ctime(&currtime), buffer);
 		msg = sipmsg_parse_msg(buffer);

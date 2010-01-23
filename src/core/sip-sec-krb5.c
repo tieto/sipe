@@ -329,7 +329,7 @@ sip_sec_krb5_obtain_tgt(SIPE_UNUSED_PARAMETER const char *realm_in,
 			const char *password)
 {
 	krb5_context	context;
-	krb5_principal	principal;
+	krb5_principal	principal = NULL;
 	krb5_creds	credentials;
 	krb5_ccache	ccdef;
 	krb5_error_code	ret;
