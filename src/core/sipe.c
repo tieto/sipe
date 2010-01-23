@@ -123,28 +123,6 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 
 /* Status attributes (see also sipe_status_types() */
 #define SIPE_STATUS_ATTR_ID_MESSAGE  "message"
-#define SIPE_STATUS_ATTR_ID_DONT_PUB "do-not-publish"
-
-/** Activity (token and description) 2007 */
-typedef enum
-{
-	SIPE_ACTIVITY_UNSET = 0,
-	SIPE_ACTIVITY_ONLINE,
-	SIPE_ACTIVITY_INACTIVE,
-	SIPE_ACTIVITY_BUSY,
-	SIPE_ACTIVITY_BUSYIDLE,
-	SIPE_ACTIVITY_DND,
-	SIPE_ACTIVITY_BRB,
-	SIPE_ACTIVITY_AWAY,
-	SIPE_ACTIVITY_LUNCH,
-	SIPE_ACTIVITY_OFFLINE,
-	SIPE_ACTIVITY_ON_PHONE,
-	SIPE_ACTIVITY_IN_CONF,
-	SIPE_ACTIVITY_IN_MEETING,
-	SIPE_ACTIVITY_OOF,
-	SIPE_ACTIVITY_URGENT_ONLY,
-	SIPE_ACTIVITY_NUM_TYPES
-} sipe_activity;
 
 static struct sipe_activity_map_struct
 {
@@ -1562,6 +1540,9 @@ sipe_get_availability_by_status(const char* sipe_status_id, char** activity_toke
 static const char*
 sipe_get_status_by_availability(int avail,
 				const char* activity);
+				
+static void
+sipe_set_purple_account_status_and_note(struct sipe_account_data *sip);
 
 static void
 sipe_apply_calendar_status(struct sipe_account_data *sip,
@@ -1618,9 +1599,6 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 
 	/* set our account state to the one in roaming (including calendar info) */
 	if (!strcmp(sbuddy->name, self_uri)) {
-		PurpleStatus *status = purple_account_get_active_status(sip->account);
-		const gchar *curr_note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
-
 		g_free(sip->status);
 		if (strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) { /* not offline */
 			sip->status = g_strdup(status_id);
@@ -1629,10 +1607,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		}
 
 		purple_debug_info("sipe", "sipe_got_user_status: to %s for the account\n", sip->status);
-		purple_prpl_got_account_status(sip->account, sip->status,
-					       SIPE_STATUS_ATTR_ID_MESSAGE, curr_note,
-					       SIPE_STATUS_ATTR_ID_DONT_PUB, TRUE,
-					       NULL);
+		sipe_set_purple_account_status_and_note(sip);		
 	}
 	g_free(self_uri);
 }
@@ -2041,12 +2016,16 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 		if (sip) {
 			gchar *action_name;
 			const char* status_id = purple_status_get_id(status);
-			gboolean dont_pub = purple_status_get_attr_boolean(status, SIPE_STATUS_ATTR_ID_DONT_PUB);
+			sipe_activity activity = sipe_get_activity_by_token(status_id);
 
-			if (dont_pub)
+			purple_debug_info("sipe", "sipe_set_status: sip->do_not_publush[%s]=%d [?]\n",
+				status_id, sip->do_not_publush[activity]);
+			if (sip->do_not_publush[activity])
 			{
-				purple_status_set_attr_boolean(status, SIPE_STATUS_ATTR_ID_DONT_PUB, FALSE);
-				purple_debug_info("sipe", "sipe_set_status: status&note has NOT changed, exiting.\n");
+				sip->do_not_publush[activity] = FALSE;
+				purple_debug_info("sipe", "sipe_set_status: sip->do_not_publush[%s]=%d [FALSE]\n",
+					status_id, sip->do_not_publush[activity]);
+				purple_debug_info("sipe", "sipe_set_status: publication was switched off, exiting.\n");
 				return;
 			}
 
@@ -2286,7 +2265,6 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 		prim, id, name,             \
 		TRUE, user, FALSE,          \
 		SIPE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
-		SIPE_STATUS_ATTR_ID_DONT_PUB, _("Don't publish"), purple_value_new(PURPLE_TYPE_BOOLEAN), \
 		NULL);                      \
 	types = g_list_append(types, type);
 
@@ -3162,32 +3140,51 @@ sipe_update_calendar(struct sipe_account_data *sip)
 static void
 sipe_set_purple_account_status_and_note(struct sipe_account_data *sip)
 {
-	PurpleSavedStatus *saved_status;
-	const PurpleStatusType *acct_status_type =
-		purple_status_type_find_with_id(sip->account->status_types, sip->status);
-	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
+	PurpleStatus *status = purple_account_get_active_status(sip->account);
+	gboolean changed = TRUE;
 
-	saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, sip->note);
-
-	/* If this type+message is unique then create a new transient saved status
-	 * Ref: gtkstatusbox.c
-	 */
-	if (!saved_status) {
-		GList *tmp;
-		GList *active_accts = purple_accounts_get_all_active();
-
-		saved_status = purple_savedstatus_new(NULL, primitive);
-		purple_savedstatus_set_message(saved_status, sip->note);
-
-		for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
-			purple_savedstatus_set_substatus(saved_status,
-				(PurpleAccount *)tmp->data, acct_status_type, sip->note);
-		}
-		g_list_free(active_accts);
+	if (g_str_equal(sip->status, purple_status_get_id(status)) &&
+		purple_strequal(sip->note, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
+	{
+		changed = FALSE;
 	}
 
-	/* Set the status for each account */
-	purple_savedstatus_activate(saved_status);
+	if (changed) {	
+		PurpleSavedStatus *saved_status;
+		const PurpleStatusType *acct_status_type = 
+			purple_status_type_find_with_id(sip->account->status_types, sip->status);
+		PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
+		sipe_activity activity = sipe_get_activity_by_token(sip->status);
+		
+		saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, sip->note);
+		if (saved_status) {
+			purple_savedstatus_set_substatus(saved_status, sip->account, acct_status_type, sip->note);
+		}
+
+		/* If this type+message is unique then create a new transient saved status
+		 * Ref: gtkstatusbox.c
+		 */
+		if (!saved_status) {
+			GList *tmp;
+			GList *active_accts = purple_accounts_get_all_active();
+
+			saved_status = purple_savedstatus_new(NULL, primitive);
+			purple_savedstatus_set_message(saved_status, sip->note);
+
+			for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
+				purple_savedstatus_set_substatus(saved_status,
+					(PurpleAccount *)tmp->data, acct_status_type, sip->note);
+			}
+			g_list_free(active_accts);
+		}
+
+		sip->do_not_publush[activity] = TRUE;
+		purple_debug_info("sipe", "sipe_set_purple_account_status_and_note: sip->do_not_publush[%s]=%d [TRUE]\n",
+			sip->status, sip->do_not_publush[activity]);		
+
+		/* Set the status for each account */
+		purple_savedstatus_activate(saved_status);
+	}
 }
 
 static void
@@ -5305,7 +5302,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				if (warning != NULL) {
 					reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
 				}
-				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
+				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : "<a href=\"http://www.reuters.com\">http://www.reuters.com</a>"/*_("no reason given")*/);
 				g_free(reason);
 
 				sip->gc->wants_to_die = TRUE;
@@ -6485,6 +6482,13 @@ send_presence_soap0(struct sipe_account_data *sip,
 			xmlnode *xn_states;
 			if (sip->user_info && (xn_states = xmlnode_get_child(sip->user_info, "states"))) {
 				states = xmlnode_to_str(xn_states, NULL);
+				/* this is a hack-around to remove added newline after inner element,
+				 * state in this case, where it shouldn't be.
+				 * After several use of xmlnode_to_str, amount of added newlines
+				 * grows significantly.
+				 */
+				purple_str_strip_char(states, '\n');
+				//purple_str_strip_char(states, '\r');
 			}
 		}
 	} else {

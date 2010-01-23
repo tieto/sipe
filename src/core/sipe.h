@@ -52,6 +52,28 @@
 #define SIPE_TYPING_RECV_TIMEOUT 6
 #define SIPE_TYPING_SEND_TIMEOUT 4
 
+
+/** Activity (token and description) 2007 */
+typedef enum
+{
+	SIPE_ACTIVITY_UNSET = 0,
+	SIPE_ACTIVITY_ONLINE,
+	SIPE_ACTIVITY_INACTIVE,
+	SIPE_ACTIVITY_BUSY,
+	SIPE_ACTIVITY_BUSYIDLE,
+	SIPE_ACTIVITY_DND,
+	SIPE_ACTIVITY_BRB,
+	SIPE_ACTIVITY_AWAY,
+	SIPE_ACTIVITY_LUNCH,
+	SIPE_ACTIVITY_OFFLINE,
+	SIPE_ACTIVITY_ON_PHONE,
+	SIPE_ACTIVITY_IN_CONF,
+	SIPE_ACTIVITY_IN_MEETING,
+	SIPE_ACTIVITY_OOF,
+	SIPE_ACTIVITY_URGENT_ONLY,
+	SIPE_ACTIVITY_NUM_TYPES
+} sipe_activity;
+
 struct sipe_buddy {
 	gchar *name;
 	gchar *activity;
@@ -174,6 +196,7 @@ struct sipe_account_data {
 	int contacts_delta;
 	int acl_delta;
 	int presence_method_version;
+	gboolean do_not_publush[SIPE_ACTIVITY_NUM_TYPES];
 	gchar *status;
 	gchar *note;
 	gboolean is_idle;
