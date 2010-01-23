@@ -121,7 +121,7 @@ xmlnode *xmlnode_get_descendant(const xmlnode *parent, ...)
 	va_start(args, parent);
 	while ((name = va_arg(args, const char *)) != NULL) {
 		node = xmlnode_get_child(parent, name);
-		if (node == NULL) return NULL;
+		if (node == NULL) break;
 		parent = node;
 	}
 	va_end(args);
