@@ -144,11 +144,11 @@ sip_sec_init_context_step(SipSecContext context,
 
 		free_bytes_buffer(&out_buff);
 	}
-	
+
 	if (expires) {
 		*expires = context->expires;
 	}
-	
+
 	return ret;
 }
 
@@ -174,13 +174,13 @@ sip_sec_init_context(SipSecContext *context,
 			       domain,
 			       username,
 			       password);
-			       
+
 	ret = sip_sec_init_context_step(*context,
 					target,
 					NULL,
 					&output_toked_base64,
-					&exp);			
-					
+					&exp);
+
 	/* for NTLM type 3 */
 	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
 		g_free(output_toked_base64);
@@ -190,7 +190,7 @@ sip_sec_init_context(SipSecContext *context,
 						&output_toked_base64,
 						&exp);
 	}
-	
+
 	if (expires) {
 		*expires = exp;
 	}
@@ -222,9 +222,11 @@ int sip_sec_verify_signature(SipSecContext context, const char *message, const c
 {
 	SipSecBuffer signature;
 	sip_uint32 res;
-	
+
 	purple_debug_info("sipe", "sip_sec_verify_signature: message is:%s signature to verify is:%s\n",
 			  message ? message : "", signature_hex ? signature_hex : "");
+
+	if (!message || !signature_hex) return SIP_SEC_E_INTERNAL_ERROR;
 
 	hex_str_to_bytes(signature_hex, &signature);
 	res = (*context->verify_signature_func)(context, message, signature);

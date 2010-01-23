@@ -1269,7 +1269,7 @@ static struct sipe_group * sipe_group_find_by_name (struct sipe_account_data *si
 {
 	struct sipe_group *group;
 	GSList *entry;
-	if (sip == NULL) {
+	if (!sip || !name) {
 		return NULL;
 	}
 
@@ -3155,14 +3155,14 @@ sipe_update_calendar(struct sipe_account_data *sip)
  *
  * Thus all UI elements get updated: Status Button with Note, docklet.
  * This is ablolutely important as both our status and note can come
- * inbound (roaming) or be updated programmatically (e.g. based on our 
+ * inbound (roaming) or be updated programmatically (e.g. based on our
  * calendar data).
  */
 static void
 sipe_set_purple_account_status_and_note(struct sipe_account_data *sip)
 {
 	PurpleSavedStatus *saved_status;
-	const PurpleStatusType *acct_status_type = 
+	const PurpleStatusType *acct_status_type =
 		purple_status_type_find_with_id(sip->account->status_types, sip->status);
 	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
 
@@ -3183,7 +3183,7 @@ sipe_set_purple_account_status_and_note(struct sipe_account_data *sip)
 				(PurpleAccount *)tmp->data, acct_status_type, sip->note);
 		}
 		g_list_free(active_accts);
-	}				 
+	}
 
 	/* Set the status for each account */
 	purple_savedstatus_activate(saved_status);
@@ -3327,7 +3327,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			/* filling publication->note */
 			if (!strcmp(name, "note")) {
 				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
-				
+
 				g_free(sip->note);
 				if (xn_body) {
 					publication->note = xmlnode_get_data(xn_body);
@@ -3529,10 +3529,10 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
 	}
-	
+
 	if (do_update_status) {
 		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
-		sipe_set_purple_account_status_and_note(sip);		
+		sipe_set_purple_account_status_and_note(sip);
 	}
 
 	g_free(to);
@@ -5685,9 +5685,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					}
 					g_free(meeting_location);
 				}
+
+				status = sipe_get_status_by_availability(availability, sbuddy->activity);
 			}
 
-			status = sipe_get_status_by_availability(availability, sbuddy->activity);
 			do_update_status = TRUE;
 		}
 		/* calendarData */
@@ -6120,7 +6121,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			g_free(sbuddy->cal_free_busy);
 			sbuddy->cal_free_busy = NULL;
 		}
-		
+
 		sbuddy->last_non_cal_status_id = status_id;
 		g_free(sbuddy->last_non_cal_activity);
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
@@ -7157,9 +7158,14 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	gchar *pub_calendar2 = NULL;
 	gchar *pub_oof_note = NULL;
 	const gchar *oof_note;
-	purple_debug_info("sipe", "publish_calendar_status_self() started.\n");
 
-	if (sip->ews && sip->ews->cal_events) {
+	if (!sip->ews) {
+		purple_debug_info("sipe", "publish_calendar_status_self() no calendar data.\n");
+		return;
+	}
+
+	purple_debug_info("sipe", "publish_calendar_status_self() started.\n");
+	if (sip->ews->cal_events) {
 		event = sipe_cal_get_event(sip->ews->cal_events, time(NULL));
 	}
 

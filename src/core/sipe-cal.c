@@ -576,7 +576,8 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 	int index;
 
 	if (!buddy || !buddy->cal_start_time || !buddy->cal_granularity) {
-		purple_debug_info("sipe", "sipe_cal_get_status: no calendar data1 for %s, exiting\n", buddy->name ? buddy->name : "");
+		purple_debug_info("sipe", "sipe_cal_get_status: no calendar data1 for %s, exiting\n",
+				  buddy ? (buddy->name ? buddy->name : "") : "");
 		return SIPE_CAL_NO_DATA;
 	}
 

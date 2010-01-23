@@ -495,21 +495,23 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 		mime = purple_mime_document_parse(doc);
 		parts = purple_mime_document_get_parts(mime);
 		while (parts) {
-			const gchar *content = purple_mime_part_get_data(parts->data);
-			guint length = purple_mime_part_get_length(parts->data);
 			const gchar *content_type = purple_mime_part_get_field(parts->data, "Content-Type");
-			if (content_type && !strncmp(content_type, "text/plain", 10) && !ms_text_format) /* if no other format has stored */
-			{
-				ms_text_format = g_strdup(content_type);
-				body = g_strndup(content, length);
-			}
-			else if (content_type && !strncmp(ms_text_format, "text/html", 9)) /* preferred format */
-			{
-				g_free(ms_text_format);
-				g_free(body);
-				ms_text_format = g_strdup(content_type);
-				body = g_strndup(content, length);
-				break;
+			if (content_type) {
+				const gchar *content = purple_mime_part_get_data(parts->data);
+				guint length = purple_mime_part_get_length(parts->data);
+
+				/* if no other format has stored */
+				if (!ms_text_format && !strncmp(content_type, "text/plain", 10)) {
+					ms_text_format = g_strdup(content_type);
+					body = g_strndup(content, length);
+				/* preferred format */
+				} else if (ms_text_format && !strncmp(ms_text_format, "text/html", 9)) {
+					g_free(ms_text_format);
+					g_free(body);
+					ms_text_format = g_strdup(content_type);
+					body = g_strndup(content, length);
+					break;
+				}
 			}
 			parts = parts->next;
 		}
@@ -535,7 +537,7 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 		return NULL;
 	}
 
-	if (strncmp(ms_text_format, "text/html", 9)) { // NOT html
+	if (ms_text_format && strncmp(ms_text_format, "text/html", 9)) { // NOT html
 		tmp_html = res;
 		res = g_markup_escape_text(res, -1); // as this is not html
 		g_free(tmp_html);

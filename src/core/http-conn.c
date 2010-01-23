@@ -61,7 +61,7 @@ struct http_conn_struct {
 	HttpConnAuth *auth;
 	HttpConnCallback callback;
 	void *data;
-		 
+
 	/* SSL connection */
 	PurpleSslConnection *gsc;
 	int fd;
@@ -70,7 +70,7 @@ struct http_conn_struct {
 	struct sip_connection *conn;
 	SipSecContext sec_ctx;
 	int retries;
-	
+
 	HttpConn* do_close;
 };
 
@@ -89,7 +89,7 @@ http_conn_clone(HttpConn* http_conn)
 	res->auth = http_conn->auth;
 	res->callback = http_conn->callback;
 	res->data = http_conn->data;
-		 
+
 	/* SSL connection */
 	res->gsc = http_conn->gsc;
 	res->fd = http_conn->fd;
@@ -98,9 +98,9 @@ http_conn_clone(HttpConn* http_conn)
 	res->conn = http_conn->conn;
 	res->sec_ctx = http_conn->sec_ctx;
 	res->retries = http_conn->retries;
-	
+
 	res->do_close = NULL;
-	
+
 	return res;
 }
 
@@ -144,12 +144,12 @@ static void
 http_conn_close(HttpConn *http_conn, const char *message)
 {
 	purple_debug_info("sipe-http", "http_conn_close: closing http connection: %s\n", message ? message : "");
-	
+
 	http_conn_invalidate_ssl_connection(http_conn);
 	http_conn_free(http_conn);
 }
 
-/** 
+/**
  * Extracts host, port and relative url
  * Ex. url: https://machine.domain.Contoso.com/EWS/Exchange.asmx
  *
@@ -171,14 +171,14 @@ http_conn_parse_url(const char *url,
 	tmp = strstr(no_proto, "/");
 	if (tmp && rel_url) *rel_url = g_strdup(tmp);
 	host_port = tmp ? g_strndup(no_proto, tmp - no_proto) : g_strdup(no_proto);
-	g_free(no_proto);	
-	
+	g_free(no_proto);
+
 	parts = g_strsplit(host_port, ":", 2);
 	if (host) *host = g_strdup(parts[0]);
 	if (port) *port = parts[1] ? atoi(parts[1]) : port_tmp;
 	g_strfreev(parts);
 
-	g_free(host_port);	
+	g_free(host_port);
 }
 
 static void
@@ -222,20 +222,22 @@ http_conn_connection_remove(struct sip_connection *conn)
 static void
 http_conn_invalidate_ssl_connection(HttpConn *http_conn)
 {
-	PurpleSslConnection *gsc = http_conn ? http_conn->gsc : NULL;
+	if (http_conn) {
+		PurpleSslConnection *gsc = http_conn->gsc;
 
-	/* Invalidate this connection. Next send will open a new one */
-	if (gsc) {
-		struct sip_connection *conn = http_conn ? http_conn->conn : NULL;
+		/* Invalidate this connection. Next send will open a new one */
+		if (gsc) {
+			struct sip_connection *conn = http_conn ? http_conn->conn : NULL;
 
-		http_conn_connection_remove(conn);
-		if (http_conn) {
-			http_conn->conn = NULL;
+			http_conn_connection_remove(conn);
+			if (http_conn) {
+				http_conn->conn = NULL;
+			}
+			purple_ssl_close(gsc);
 		}
-		purple_ssl_close(gsc);
+		http_conn->gsc = NULL;
+		http_conn->fd = -1;
 	}
-	http_conn->gsc = NULL;
-	http_conn->fd = -1;
 }
 
 static void
@@ -253,6 +255,7 @@ http_conn_input_cb_ssl(gpointer data,
 
 	if (conn == NULL) {
 		purple_debug_error("sipe-http", "Connection not found; Please try to connect again.\n");
+		return;
 	}
 
 	/* Read all available data from the SSL connection */
@@ -294,7 +297,7 @@ http_conn_input_cb_ssl(gpointer data,
 	conn->inbuf[conn->inbufused] = '\0';
         http_conn_process_input(http_conn);
 }
-static void 
+static void
 http_conn_post0(HttpConn *http_conn,
 	       const char *authorization);
 
@@ -302,7 +305,7 @@ static void
 http_conn_input0_cb_ssl(gpointer data,
 			PurpleSslConnection *gsc,
 			SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{	
+{
 	HttpConn *http_conn = data;
 
 	http_conn->fd = gsc->fd;
@@ -334,13 +337,13 @@ http_conn_create(PurpleAccount *account,
 		purple_debug_info("sipe-http", "no URL supplied!\n");
 		return NULL;
 	}
-	if (!strcmp(conn_type, HTTP_CONN_SSL) && 
+	if (!strcmp(conn_type, HTTP_CONN_SSL) &&
 	    !purple_ssl_is_supported())
 	{
 		purple_debug_info("sipe-http", "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor\n");
 		return NULL;
 	}
-	
+
 	http_conn = g_new0(HttpConn, 1);
 	http_conn_parse_url(full_url, &http_conn->host, &http_conn->port, &http_conn->url);
 
@@ -376,7 +379,7 @@ http_conn_process_input(HttpConn *http_conn)
 	struct sipmsg *msg;
 	int restlen;
 	struct sip_connection *conn = http_conn->conn;
-	
+
 	cur = conn->inbuf;
 
 	/* according to the RFC remove CRLF at the beginning */
@@ -423,7 +426,7 @@ http_conn_process_input(HttpConn *http_conn)
 
 		sipmsg_free(msg);
 	}
-	
+
 	if (http_conn->do_close) {
 		http_conn_close(http_conn->do_close, "User initiated");
 	}
@@ -462,12 +465,12 @@ http_conn_sendout_pkt(HttpConn *http_conn,
 	}
 }
 
-static void 
+static void
 http_conn_post0(HttpConn *http_conn,
 		const char *authorization)
 {
 	GString *outstr = g_string_new("");
- 
+
 	g_string_append_printf(outstr, HTTP_CONN_POST_HEADER,
 				http_conn->url,
 				http_conn->host,
@@ -482,7 +485,7 @@ http_conn_post0(HttpConn *http_conn,
 	g_string_free(outstr, TRUE);
 }
 
-void 
+void
 http_conn_post(	HttpConn *http_conn,
 		const char *full_url,
 		const char *body,
@@ -494,16 +497,16 @@ http_conn_post(	HttpConn *http_conn,
 		purple_debug_info("sipe-http", "http_conn_post: NULL http_conn, exiting.\n");
 		return;
 	}
-	
+
 	g_free(http_conn->url);
 	g_free(http_conn->body);
 	g_free(http_conn->content_type);
-	http_conn_parse_url(full_url, NULL, NULL, &http_conn->url);	
-	http_conn->body = g_strdup(body);	
+	http_conn_parse_url(full_url, NULL, NULL, &http_conn->url);
+	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
 	http_conn->callback = callback;
 	http_conn->data = data;
-	
+
 	http_conn_post0(http_conn, NULL);
 }
 
@@ -547,7 +550,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
 		int use_sso = !http_conn->auth || (http_conn->auth && !http_conn->auth->user);
 		long ret;
-		
+
 		http_conn->retries++;
 		if (http_conn->retries > 2) {
 			if (http_conn->callback) {
@@ -557,7 +560,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			http_conn_set_close(http_conn);
 			return;
 		}
-		
+
 		ptmp = sipmsg_find_auth_header(msg, "NTLM");
 		auth_type = AUTH_TYPE_NTLM;
 		tmp = sipmsg_find_auth_header(msg, "Negotiate");
@@ -568,13 +571,13 @@ http_conn_process_input_message(HttpConn *http_conn,
 			auth_type = AUTH_TYPE_NEGOTIATE;
 		}
 #endif
-#endif		
+#endif
 		if (!ptmp) {
 			purple_debug_info("sipe-http", "http_conn_process_input_message: Only %s supported in the moment, exiting\n",
 #ifdef _WIN32
 #ifdef USE_KERBEROS
 				"NTLM and Negotiate authentications are"
-#else //USE_KERBEROS			
+#else //USE_KERBEROS
 				"NTLM authentication is"
 #endif //USE_KERBEROS
 #else //_WIN32
@@ -583,7 +586,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 
 			);
 		}
-		
+
 		if (!http_conn->sec_ctx) {
 			sip_sec_create_context(&http_conn->sec_ctx,
 					       auth_type,
@@ -602,7 +605,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 					  NULL);
 		g_free(spn);
 		g_strfreev(parts);
-		
+
 		if (ret < 0) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn->data);
@@ -614,14 +617,14 @@ http_conn_process_input_message(HttpConn *http_conn,
 
 		authorization = g_strdup_printf("%s %s", auth_type == AUTH_TYPE_NTLM ? "NTLM" : "Negotiate", output_toked_base64 ? output_toked_base64 : "");
 		g_free(output_toked_base64);
-		
+
 		http_conn_post0(http_conn, authorization);
 		g_free(authorization);
 	}
 	/* Other response */
 	else {
 		http_conn->retries = 0;
-		
+
 		if (http_conn->callback) {
 			(*http_conn->callback)(msg->response, msg->body, http_conn->data);
 		}
