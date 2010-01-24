@@ -1601,7 +1601,10 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	purple_prpl_got_user_status(sip->account, sbuddy->name, status_id, NULL);
 
 	/* set our account state to the one in roaming (including calendar info) */
-	if (!strcmp(sbuddy->name, self_uri)) {
+	if (sip->initial_state_published && !strcmp(sbuddy->name, self_uri)) {
+		g_free(sip->note);
+		sip->note = g_strdup(sbuddy->annotation);
+
 		g_free(sip->status);
 		if (strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) { /* not offline */
 			sip->status = g_strdup(status_id);
@@ -2027,8 +2030,8 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 				status_id, (int)sip->do_not_publish[activity], (int)now);
 				
 			sip->do_not_publish[activity] = 0;
-				purple_debug_info("sipe", "sipe_set_status: set: sip->do_not_publish[%s]=%d [0]\n",
-					status_id, (int)sip->do_not_publish[activity]);
+			purple_debug_info("sipe", "sipe_set_status: set: sip->do_not_publish[%s]=%d [0]\n",
+				status_id, (int)sip->do_not_publish[activity]);
 
 			if (do_not_publish)
 			{
