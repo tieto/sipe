@@ -196,7 +196,7 @@ struct sipe_account_data {
 	int contacts_delta;
 	int acl_delta;
 	int presence_method_version;
-	gboolean do_not_publush[SIPE_ACTIVITY_NUM_TYPES];
+	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
 	gchar *status;
 	gchar *note;
 	gboolean is_idle;

@@ -1542,7 +1542,10 @@ sipe_get_status_by_availability(int avail,
 				const char* activity);
 				
 static void
-sipe_set_purple_account_status_and_note(struct sipe_account_data *sip);
+sipe_set_purple_account_status_and_note(const PurpleAccount *account,
+					const char *status_id,
+					const char *message,
+					time_t do_not_publish[]);
 
 static void
 sipe_apply_calendar_status(struct sipe_account_data *sip,
@@ -1607,7 +1610,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		}
 
 		purple_debug_info("sipe", "sipe_got_user_status: to %s for the account\n", sip->status);
-		sipe_set_purple_account_status_and_note(sip);		
+		sipe_set_purple_account_status_and_note(sip->account, sip->status, sip->note, sip->do_not_publish);		
 	}
 	g_free(self_uri);
 }
@@ -2015,16 +2018,20 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 		if (sip) {
 			gchar *action_name;
+			time_t now = time(NULL);
 			const char* status_id = purple_status_get_id(status);
 			sipe_activity activity = sipe_get_activity_by_token(status_id);
+			gboolean do_not_publish = ((now - sip->do_not_publish[activity]) <= 2);
 
-			purple_debug_info("sipe", "sipe_set_status: sip->do_not_publush[%s]=%d [?]\n",
-				status_id, sip->do_not_publush[activity]);
-			if (sip->do_not_publush[activity])
+			purple_debug_info("sipe", "sipe_set_status: was: sip->do_not_publish[%s]=%d [?] now(time)=%d\n",
+				status_id, (int)sip->do_not_publish[activity], (int)now);
+				
+			sip->do_not_publish[activity] = 0;
+				purple_debug_info("sipe", "sipe_set_status: set: sip->do_not_publish[%s]=%d [0]\n",
+					status_id, (int)sip->do_not_publish[activity]);
+
+			if (do_not_publish)
 			{
-				sip->do_not_publush[activity] = FALSE;
-				purple_debug_info("sipe", "sipe_set_status: sip->do_not_publush[%s]=%d [FALSE]\n",
-					status_id, sip->do_not_publush[activity]);
 				purple_debug_info("sipe", "sipe_set_status: publication was switched off, exiting.\n");
 				return;
 			}
@@ -3138,13 +3145,16 @@ sipe_update_calendar(struct sipe_account_data *sip)
  * calendar data).
  */
 static void
-sipe_set_purple_account_status_and_note(struct sipe_account_data *sip)
+sipe_set_purple_account_status_and_note(const PurpleAccount *account,
+					const char *status_id,
+					const char *message,
+					time_t do_not_publish[])
 {
-	PurpleStatus *status = purple_account_get_active_status(sip->account);
+	PurpleStatus *status = purple_account_get_active_status(account);
 	gboolean changed = TRUE;
 
-	if (g_str_equal(sip->status, purple_status_get_id(status)) &&
-		purple_strequal(sip->note, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
+	if (g_str_equal(status_id, purple_status_get_id(status)) &&
+		purple_strequal(message, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
 	{
 		changed = FALSE;
 	}
@@ -3152,13 +3162,13 @@ sipe_set_purple_account_status_and_note(struct sipe_account_data *sip)
 	if (changed) {	
 		PurpleSavedStatus *saved_status;
 		const PurpleStatusType *acct_status_type = 
-			purple_status_type_find_with_id(sip->account->status_types, sip->status);
+			purple_status_type_find_with_id(account->status_types, status_id);
 		PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
-		sipe_activity activity = sipe_get_activity_by_token(sip->status);
+		sipe_activity activity = sipe_get_activity_by_token(status_id);
 		
-		saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, sip->note);
+		saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
 		if (saved_status) {
-			purple_savedstatus_set_substatus(saved_status, sip->account, acct_status_type, sip->note);
+			purple_savedstatus_set_substatus(saved_status, account, acct_status_type, message);
 		}
 
 		/* If this type+message is unique then create a new transient saved status
@@ -3169,18 +3179,18 @@ sipe_set_purple_account_status_and_note(struct sipe_account_data *sip)
 			GList *active_accts = purple_accounts_get_all_active();
 
 			saved_status = purple_savedstatus_new(NULL, primitive);
-			purple_savedstatus_set_message(saved_status, sip->note);
+			purple_savedstatus_set_message(saved_status, message);
 
 			for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
 				purple_savedstatus_set_substatus(saved_status,
-					(PurpleAccount *)tmp->data, acct_status_type, sip->note);
+					(PurpleAccount *)tmp->data, acct_status_type, message);
 			}
 			g_list_free(active_accts);
 		}
 
-		sip->do_not_publush[activity] = TRUE;
-		purple_debug_info("sipe", "sipe_set_purple_account_status_and_note: sip->do_not_publush[%s]=%d [TRUE]\n",
-			sip->status, sip->do_not_publush[activity]);		
+		do_not_publish[activity] = time(NULL);
+		purple_debug_info("sipe", "sipe_set_purple_account_status_and_note: do_not_publish[%s]=%d [now]\n",
+			status_id, (int)do_not_publish[activity]);		
 
 		/* Set the status for each account */
 		purple_savedstatus_activate(saved_status);
@@ -3530,7 +3540,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 	if (do_update_status) {
 		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
-		sipe_set_purple_account_status_and_note(sip);
+		sipe_set_purple_account_status_and_note(sip->account, sip->status, sip->note, sip->do_not_publish);		
 	}
 
 	g_free(to);
