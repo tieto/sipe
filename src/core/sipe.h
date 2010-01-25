@@ -201,9 +201,7 @@ struct sipe_account_data {
 	gboolean is_oof_note;
 	gchar *note;
 	time_t note_since;
-	gboolean is_idle;
-	time_t is_idle_since;
-	gboolean was_idle;
+	time_t idle_switch;
 	gchar *contact;
 	gchar *server_version;
 	gboolean ocs2007; /*if there is support for batched category subscription [SIP-PRES]*/

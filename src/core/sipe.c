@@ -92,6 +92,8 @@
 #define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
 #endif
 
+#define SIPE_IDLE_SET_DELAY		1	/* 1 sec */
+
 #define UPDATE_CALENDAR_DELAY		1*60	/* 1 min */
 #define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
 
@@ -2048,7 +2050,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 			/* schedule 2 sec to capture idle flag */
 			action_name = g_strdup_printf("<%s>", "+set-status");
-			sipe_schedule_action(action_name, 2, (Action)send_presence_status, NULL, sip, NULL);
+			sipe_schedule_action(action_name, SIPE_IDLE_SET_DELAY, (Action)send_presence_status, NULL, sip, NULL);
 			g_free(action_name);
 		}
 	}
@@ -2063,12 +2065,8 @@ sipe_set_idle(PurpleConnection * gc,
 		struct sipe_account_data *sip = gc->proto_data;
 
 		if (sip) {
-			sip->was_idle = sip->is_idle;
-			sip->is_idle = (interval > 0);
-			sip->is_idle_since = time(NULL);
-			purple_debug_info("sipe", "sipe_set_idle: sip->was_idle = %s\n", sip->was_idle ? "IDLE" : "NO");
-			purple_debug_info("sipe", "sipe_set_idle: sip->is_idle  = %s\n", sip->is_idle ? "IDLE" : "NO");
-			purple_debug_info("sipe", "sipe_set_idle: sip->is_idle_since  : %s", asctime(localtime(&(sip->is_idle_since))));
+			sip->idle_switch = time(NULL);
+			purple_debug_info("sipe", "sipe_set_idle: sip->idle_switch : %s", asctime(localtime(&(sip->idle_switch))));
 		}
 	}
 }
@@ -6440,15 +6438,12 @@ static gboolean
 sipe_is_user_state(struct sipe_account_data *sip)
 {
 	gboolean res;
-	int frame = 4; /*sec */
 	time_t now = time(NULL);
+
+	purple_debug_info("sipe", "sipe_is_user_state: sip->idle_switch : %s", asctime(localtime(&(sip->idle_switch))));
+	purple_debug_info("sipe", "sipe_is_user_state: now              : %s", asctime(localtime(&now)));
 	
-	purple_debug_info("sipe", "sipe_is_user_state: sip->was_idle = %s\n", sip->was_idle ? "IDLE" : "NO");
-	purple_debug_info("sipe", "sipe_is_user_state: sip->is_idle  = %s\n", sip->is_idle ? "IDLE" : "NO");
-	purple_debug_info("sipe", "sipe_is_user_state: sip->is_idle_since : %s", asctime(localtime(&(sip->is_idle_since))));
-	purple_debug_info("sipe", "sipe_is_user_state: now                : %s", asctime(localtime(&now)));
-	
-	res = ((now - frame) > sip->is_idle_since) ? TRUE : (sip->was_idle == sip->is_idle);
+	res = ((now - SIPE_IDLE_SET_DELAY * 2) >= sip->idle_switch);
 	
 	purple_debug_info("sipe", "sipe_is_user_state: res  = %s\n", res ? "USER" : "MACHINE");
 	return res;
@@ -7186,9 +7181,6 @@ send_presence_category_publish(struct sipe_account_data *sip,
 	publications = g_strdup_printf("%s%s",
 				       pub_state ? pub_state : "",
 				       pub_note ? pub_note : "");
-
-	purple_debug_info("sipe", "send_presence_category_publish: sip->status: %s sip->is_idle:%s sip->was_idle:%s\n",
-			  sip->status, sip->is_idle ? "Y" : "N", sip->was_idle ? "Y" : "N");
 
 	g_free(pub_state);
 	g_free(pub_note);
