@@ -1602,12 +1602,6 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 
 	/* set our account state to the one in roaming (including calendar info) */
 	if (sip->initial_state_published && !strcmp(sbuddy->name, self_uri)) {
-		g_free(sip->note);
-		sip->note = g_strdup(sbuddy->annotation);
-
-		g_free(sip->status);
-		sip->status = g_strdup(sbuddy->last_non_cal_status_id);
-
 		if (!strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
@@ -2022,9 +2016,11 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 		if (sip) {
 			gchar *action_name;
 			time_t now = time(NULL);
-			const char* status_id = purple_status_get_id(status);
+			const char *status_id = purple_status_get_id(status);
+			const char *note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
 			sipe_activity activity = sipe_get_activity_by_token(status_id);
 			gboolean do_not_publish = ((now - sip->do_not_publish[activity]) <= 2);
+			
 
 			purple_debug_info("sipe", "sipe_set_status: was: sip->do_not_publish[%s]=%d [?] now(time)=%d\n",
 				status_id, (int)sip->do_not_publish[activity], (int)now);
@@ -2041,8 +2037,13 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 			g_free(sip->status);
 			sip->status = g_strdup(status_id);
-			g_free(sip->note);
-			sip->note = g_strdup(purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE));
+			
+			/* this will preserve OOF flag as well */
+			if (!(note && sip->note && !strcmp(note, sip->note))) {
+				sip->is_oof_note = FALSE;
+				g_free(sip->note);
+				sip->note = g_strdup(note);
+			}
 
 			/* schedule 2 sec to capture idle flag */
 			action_name = g_strdup_printf("<%s>", "+set-status");
@@ -5909,7 +5910,7 @@ sipe_user_info_has_updated(struct sipe_account_data *sip,
 	 * so we've already updated our UserInfo.
 	 */
 	if (!sip->initial_state_published) {
-		sipe_set_status(sip->account, purple_account_get_active_status(sip->account));
+		send_presence_soap(sip, FALSE);
 		/* dalayed run */
 		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
 	}
@@ -6139,6 +6140,16 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		sbuddy->last_non_cal_status_id = status_id;
 		g_free(sbuddy->last_non_cal_activity);
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
+		
+		if (!strcmp(sbuddy->name, self_uri)) {
+			sip->is_oof_note = sbuddy->is_oof_note;
+			
+			g_free(sip->note);
+			sip->note = g_strdup(sbuddy->annotation);
+
+			g_free(sip->status);
+			sip->status = g_strdup(sbuddy->last_non_cal_status_id);
+		}
 	}
 
 	if (free_activity) g_free(free_activity);
@@ -6457,7 +6468,13 @@ send_presence_soap0(struct sipe_account_data *sip,
 		note_pub = oof_note;
 		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
 	} else if (sip->note) {
-		note_pub = sip->note;
+		if (sip->is_oof_note) { /* stale OOF note, as it's not present in ews already (oof_note == NULL) */
+			g_free(sip->note);
+			sip->note = NULL;
+			sip->is_oof_note = FALSE;
+		} else {
+			note_pub = sip->note;
+		}
 	}
 
 	if (note_pub)
@@ -7244,7 +7261,9 @@ static void send_presence_status(struct sipe_account_data *sip)
 	if (!status) return;
 
 	note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
-	purple_debug_info("sipe", "send_presence_status: status: '%s'\n", purple_status_get_id(status) ? purple_status_get_id(status) : "");
+	purple_debug_info("sipe", "send_presence_status: status: %s (%s)\n",
+		purple_status_get_id(status) ? purple_status_get_id(status) : "",
+		sipe_is_user_state(sip) ? "USER" : "MACHINE");
 	purple_debug_info("sipe", "send_presence_status: note: '%s'\n", note ? note : "");
 
         if (sip->ocs2007) {

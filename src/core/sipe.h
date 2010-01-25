@@ -198,6 +198,7 @@ struct sipe_account_data {
 	int presence_method_version;
 	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
 	gchar *status;
+	gboolean is_oof_note;
 	gchar *note;
 	gboolean is_idle;
 	gboolean was_idle;
