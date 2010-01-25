@@ -202,6 +202,7 @@ struct sipe_account_data {
 	gchar *note;
 	time_t note_since;
 	gboolean is_idle;
+	time_t is_idle_since;
 	gboolean was_idle;
 	gchar *contact;
 	gchar *server_version;

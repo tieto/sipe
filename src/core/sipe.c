@@ -2055,16 +2055,20 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 }
 static void
 sipe_set_idle(PurpleConnection * gc,
-	      int time)
+	      int interval)
 {
-	purple_debug_info("sipe", "sipe_set_idle: time=%d\n", time);
+	purple_debug_info("sipe", "sipe_set_idle: interval=%d\n", interval);
 
 	if (gc) {
 		struct sipe_account_data *sip = gc->proto_data;
 
 		if (sip) {
 			sip->was_idle = sip->is_idle;
-			sip->is_idle = (time > 0);
+			sip->is_idle = (interval > 0);
+			sip->is_idle_since = time(NULL);
+			purple_debug_info("sipe", "sipe_set_idle: sip->was_idle = %s\n", sip->was_idle ? "IDLE" : "NO");
+			purple_debug_info("sipe", "sipe_set_idle: sip->is_idle  = %s\n", sip->is_idle ? "IDLE" : "NO");
+			purple_debug_info("sipe", "sipe_set_idle: sip->is_idle_since  : %s", asctime(localtime(&(sip->is_idle_since))));
 		}
 	}
 }
@@ -6149,6 +6153,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 				g_free(sip->note);
 				sip->note = g_strdup(sbuddy->annotation);
+
 				sip->note_since = time(NULL);
 			}
 
@@ -6434,7 +6439,18 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 static gboolean
 sipe_is_user_state(struct sipe_account_data *sip)
 {
-	gboolean res = (sip->was_idle == sip->is_idle);
+	gboolean res;
+	int frame = 4; /*sec */
+	time_t now = time(NULL);
+	
+	purple_debug_info("sipe", "sipe_is_user_state: sip->was_idle = %s\n", sip->was_idle ? "IDLE" : "NO");
+	purple_debug_info("sipe", "sipe_is_user_state: sip->is_idle  = %s\n", sip->is_idle ? "IDLE" : "NO");
+	purple_debug_info("sipe", "sipe_is_user_state: sip->is_idle_since : %s", asctime(localtime(&(sip->is_idle_since))));
+	purple_debug_info("sipe", "sipe_is_user_state: now                : %s", asctime(localtime(&now)));
+	
+	res = ((now - frame) > sip->is_idle_since) ? TRUE : (sip->was_idle == sip->is_idle);
+	
+	purple_debug_info("sipe", "sipe_is_user_state: res  = %s\n", res ? "USER" : "MACHINE");
 	return res;
 }
 
@@ -6483,6 +6499,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 			g_free(sip->note);
 			sip->note = NULL;
 			sip->is_oof_note = FALSE;
+			sip->note_since = 0;
 		} else {
 			note_pub = sip->note;
 		}
