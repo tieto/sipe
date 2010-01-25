@@ -1606,14 +1606,14 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		sip->note = g_strdup(sbuddy->annotation);
 
 		g_free(sip->status);
-		if (strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) { /* not offline */
-			sip->status = g_strdup(status_id);
-		} else {
-			sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
+		sip->status = g_strdup(sbuddy->last_non_cal_status_id);
+
+		if (!strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) {
+			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
 
 		purple_debug_info("sipe", "sipe_got_user_status: to %s for the account\n", sip->status);
-		sipe_set_purple_account_status_and_note(sip->account, sip->status, sip->note, sip->do_not_publish);		
+		sipe_set_purple_account_status_and_note(sip->account, status_id, sip->note, sip->do_not_publish);		
 	}
 	g_free(self_uri);
 }
@@ -3157,7 +3157,7 @@ sipe_set_purple_account_status_and_note(const PurpleAccount *account,
 	gboolean changed = TRUE;
 
 	if (g_str_equal(status_id, purple_status_get_id(status)) &&
-		purple_strequal(message, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
+	purple_strequal(message, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
 	{
 		changed = FALSE;
 	}
@@ -6463,17 +6463,6 @@ send_presence_soap0(struct sipe_account_data *sip,
 	if (note_pub)
 	{
 		res_note = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, note_pub);
-	}
-	else if (!(ews && ews->is_updated)) /* preserve existing publication */
-	{
-		xmlnode *xn_note;
-		if (sip->user_info && (xn_note = xmlnode_get_child(sip->user_info, "note"))) {
-			res_note = xmlnode_to_str(xn_note, NULL);
-		}
-
-		if (sip->user_info && xmlnode_get_child(sip->user_info, "oof")) {
-			res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
-		}
 	}
 
 	/* User State */
