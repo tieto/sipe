@@ -2043,6 +2043,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 				sip->is_oof_note = FALSE;
 				g_free(sip->note);
 				sip->note = g_strdup(note);
+				sip->note_since = time(NULL);
 			}
 
 			/* schedule 2 sec to capture idle flag */
@@ -6141,11 +6142,15 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->last_non_cal_activity);
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
 		
-		if (!strcmp(sbuddy->name, self_uri)) {
-			sip->is_oof_note = sbuddy->is_oof_note;
-			
-			g_free(sip->note);
-			sip->note = g_strdup(sbuddy->annotation);
+		if (!strcmp(sbuddy->name, self_uri)) {		
+			if (!(sbuddy->annotation && sip->note && !strcmp(sbuddy->annotation, sip->note))) /* not same */
+			{
+				sip->is_oof_note = sbuddy->is_oof_note;
+
+				g_free(sip->note);
+				sip->note = g_strdup(sbuddy->annotation);
+				sip->note_since = time(NULL);
+			}
 
 			g_free(sip->status);
 			sip->status = g_strdup(sbuddy->last_non_cal_status_id);
@@ -6453,6 +6458,12 @@ send_presence_soap0(struct sipe_account_data *sip,
 	gchar *since_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&now)));
 	const gchar *oof_note = sipe_ews_get_oof_note(ews);
 	const char *user_input;
+	gboolean pub_oof = oof_note && (!sip->note || sip->note_since < ews->oof_start);
+	
+	if (oof_note && sip->note) {
+		purple_debug_info("sipe", "ews->oof_start  : %s", asctime(localtime(&(ews->oof_start))));
+		purple_debug_info("sipe", "sip->note_since : %s", asctime(localtime(&(sip->note_since))));
+	}
 
 	if (!sip->initial_state_published ||
 	    do_reset_status)
@@ -6464,7 +6475,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 	sipe_get_act_avail_by_status_2005(sip->status, &activity, &availability);
 
 	/* Note */
-	if (oof_note) {
+	if (pub_oof) {
 		note_pub = oof_note;
 		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
 	} else if (sip->note) {

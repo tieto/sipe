@@ -333,6 +333,7 @@ sipe_ews_process_oof_response(int return_code,
 	ews->http_conn = NULL;
 
 	if (return_code == 200 && body) {
+		char *old_note;
 		xmlnode *resp;
 		xmlnode *xn_duration;
 		/** ref: [MS-OXWOOF] */
@@ -352,17 +353,7 @@ sipe_ews_process_oof_response(int return_code,
 		g_free(ews->oof_state);
 		ews->oof_state = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "OofState", NULL));
 
-		if ((xn_duration = xmlnode_get_descendant(resp, "OofSettings", "Duration", NULL))) {
-			char *tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "StartTime"));
-			ews->oof_start = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
-			g_free(tmp);
-
-			tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "EndTime"));
-			ews->oof_end = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
-			g_free(tmp);
-		}
-
-		g_free(ews->oof_note);
+		old_note = ews->oof_note;
 		ews->oof_note = NULL;
 		if (strcmp(ews->oof_state, "Disabled")) {
 			char *tmp = xmlnode_get_data(
@@ -378,6 +369,24 @@ sipe_ews_process_oof_response(int return_code,
 			ews->oof_note = g_strstrip(purple_markup_strip_html(html));
 			g_free(html);
 		}
+
+		if (!strcmp(ews->oof_state, "Scheduled")
+		    && (xn_duration = xmlnode_get_descendant(resp, "OofSettings", "Duration", NULL)))
+		{
+			char *tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "StartTime"));
+			ews->oof_start = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			g_free(tmp);
+
+			tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "EndTime"));
+			ews->oof_end = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			g_free(tmp);
+		} else {
+			if (!(old_note && ews->oof_note && !strcmp(old_note, ews->oof_note))) { /* oof note changed */
+				ews->oof_start = time(NULL);
+				ews->oof_end = (time_t)-1;
+			}
+		}
+		g_free(old_note);
 
 		xmlnode_free(xml);
 
