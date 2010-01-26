@@ -2171,7 +2171,7 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy->activity);
 	g_free(buddy->meeting_subject);
 	g_free(buddy->meeting_location);
-	g_free(buddy->annotation);
+	g_free(buddy->note);
 
 	g_free(buddy->cal_start_time);
 	g_free(buddy->cal_free_busy_base64);
@@ -2318,16 +2318,20 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF),
 			FALSE);
 
+	/* Away */
+	/* Goes first in the list as
+	 * purple picks the first status with the AWAY type
+	 * for idle.
+	 */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			NULL,
+			NULL,
+			TRUE);
+			
 	/* Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			sipe_activity_map[SIPE_ACTIVITY_BRB].status_id,
 			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_BRB),
-			TRUE);
-
-	/* Away */
-	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			NULL,
-			NULL,
 			TRUE);
 
 	/* On The Phone (not user settable) */
@@ -3345,7 +3349,10 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 				g_free(sip->note);
 				if (xn_body) {
-					publication->note = xmlnode_get_data(xn_body);
+					char *tmp;
+
+					publication->note = g_markup_escape_text((tmp = xmlnode_get_data(xn_body)), -1);
+					g_free(tmp);
 					sip->note = g_strdup(publication->note);
 				}
 				do_update_status = TRUE;
@@ -5611,20 +5618,22 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
 
 				if (sbuddy) {
-					/* clean up in case to 'note' element is supplied
+					/* clean up in case no 'note' element is supplied
 					 * which indicate note removal in client
 					 */
-					g_free(sbuddy->annotation);
-					sbuddy->annotation = NULL;
+					g_free(sbuddy->note);
+					sbuddy->note = NULL;
 					sbuddy->is_oof_note = FALSE;
 
 					xn_node = xmlnode_get_descendant(xn_category, "note", "body", NULL);
 					if (xn_node) {
-						sbuddy->annotation = xmlnode_get_data(xn_node);
+						char *tmp;
+						sbuddy->note = g_markup_escape_text((tmp = xmlnode_get_data(xn_node)), -1);
+						g_free(tmp);
 						sbuddy->is_oof_note = !strcmp(xmlnode_get_attrib(xn_node, "type"), "OOF");
 
 						purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s),note(%s)\n",
-							uri, sbuddy->annotation ? sbuddy->annotation : "");
+							uri, sbuddy->note ? sbuddy->note : "");
 					}
 
 					/* to trigger UI refresh in case no status info is supplied in this update */
@@ -6117,9 +6126,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		sbuddy->user_avail = user_avail;
 		sbuddy->user_avail_since = user_avail_since;
 
-		g_free(sbuddy->annotation);
-		sbuddy->annotation = NULL;
-		if (!is_empty(note)) { sbuddy->annotation = g_strdup(note); }
+		g_free(sbuddy->note);
+		sbuddy->note = NULL;
+		if (!is_empty(note)) { sbuddy->note = g_markup_escape_text(note, -1); }
 
 		sbuddy->is_oof_note = (xn_oof != NULL);
 
@@ -6145,12 +6154,12 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
 		
 		if (!strcmp(sbuddy->name, self_uri)) {		
-			if (!(sbuddy->annotation && sip->note && !strcmp(sbuddy->annotation, sip->note))) /* not same */
+			if (!(sbuddy->note && sip->note && !strcmp(sbuddy->note, sip->note))) /* not same */
 			{
 				sip->is_oof_note = sbuddy->is_oof_note;
 
 				g_free(sip->note);
-				sip->note = g_strdup(sbuddy->annotation);
+				sip->note = g_strdup(sbuddy->note);
 
 				sip->note_since = time(NULL);
 			}
@@ -6459,6 +6468,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 	int activity = 0;
 	gchar *body;
 	gchar *tmp;
+	gchar *tmp2 = NULL;
 	gchar *res_note = NULL;
 	gchar *res_oof = NULL;
 	const gchar *note_pub = NULL;
@@ -6475,6 +6485,8 @@ send_presence_soap0(struct sipe_account_data *sip,
 		purple_debug_info("sipe", "ews->oof_start  : %s", asctime(localtime(&(ews->oof_start))));
 		purple_debug_info("sipe", "sip->note_since : %s", asctime(localtime(&(sip->note_since))));
 	}
+	
+	purple_debug_info("sipe", "sip->note  : %s", sip->note ? sip->note : "");
 
 	if (!sip->initial_state_published ||
 	    do_reset_status)
@@ -6502,7 +6514,10 @@ send_presence_soap0(struct sipe_account_data *sip,
 
 	if (note_pub)
 	{
-		res_note = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, note_pub);
+		/* to protocol internal plain text format */
+		tmp = purple_markup_strip_html(note_pub);
+		res_note = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, tmp);
+		g_free(tmp);
 	}
 
 	/* User State */
@@ -6567,7 +6582,11 @@ send_presence_soap0(struct sipe_account_data *sip,
 			       since_time_str,
 			       since_time_str,
 			       user_input);
+			       
+	purple_debug_info("sipe", "tmp2  : %s", tmp2 ? tmp2 : "");
+			       
 	g_free(tmp);
+	g_free(tmp2);
 	g_free(res_note);
 	g_free(states);
 	g_free(calendar_data);
@@ -6895,12 +6914,15 @@ sipe_is_equal(const char* n1, const char* n2) {
 /**
  * Returns 'note' XML part for publication.
  * Must be g_free'd after use.
+ * 
+ * Protocol format for Note is plain text.
  *
+ * @param note a note in Sipe internal HTML format
  * @param note_type either personal or OOF
  */
 static gchar *
 sipe_publish_get_category_note(struct sipe_account_data *sip,
-			       const char *note,
+			       const char *note, /* html */
 			       const char *note_type)
 {
 	guint instance = !strcmp("OOF", note_type) ? sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF) : 0;
@@ -6916,7 +6938,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	struct sipe_publication *publication_note_400 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_400);
 
-	const char *n1 = note;
+	char *n1 = note ? purple_markup_strip_html(note) : NULL;
 	const char *n2 = publication_note_200 ? publication_note_200->note : NULL;
 
 	g_free(key_note_200);
@@ -6933,17 +6955,18 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 				       instance,
 				       publication_note_200 ? publication_note_200->version : 0,
 				       note_type,
-				       note ? note : "",
+				       n1 ? n1 : "",
 
 				       instance,
 				       publication_note_300 ? publication_note_300->version : 0,
 				       note_type,
-				       note ? note : "",
+				       n1 ? n1 : "",
 
 				       instance,
 				       publication_note_400 ? publication_note_400->version : 0,
 				       note_type,
-				       note ? note : "");
+				       n1 ? n1 : "");
+	g_free(n1);
 }
 
 /**
@@ -8590,9 +8613,9 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 	{
 		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
 		if (sbuddy) {
-			if (!is_empty(sbuddy->activity) && !is_empty(sbuddy->annotation))
+			if (!is_empty(sbuddy->activity) && !is_empty(sbuddy->note))
 			{
-				text = g_strdup_printf("%s - %s", sbuddy->activity, sbuddy->annotation);
+				text = g_strdup_printf("%s - %s", sbuddy->activity, sbuddy->note);
 			}
 			else if (!is_empty(sbuddy->activity))
 			{
@@ -8600,7 +8623,7 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 			}
 			else
 			{
-				text = g_strdup(sbuddy->annotation);
+				text = g_strdup(sbuddy->note);
 			}
 		}
 	}
@@ -8614,7 +8637,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	const PurpleStatus *status = purple_presence_get_active_status(presence);
 	struct sipe_account_data *sip;
 	struct sipe_buddy *sbuddy;
-	char *annotation = NULL;
+	char *note = NULL;
 	gboolean is_oof_note = FALSE;
 	char *activity = NULL;
 	char *calendar = NULL;
@@ -8627,7 +8650,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
 		if (sbuddy)
 		{
-			annotation = sbuddy->annotation ? g_strdup(sbuddy->annotation) : NULL;
+			note = sbuddy->note;
 			is_oof_note = sbuddy->is_oof_note;
 			activity = sbuddy->activity;
 			calendar = sipe_cal_get_description(sbuddy);
@@ -8660,22 +8683,11 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		purple_notify_user_info_add_pair(user_info, _("Meeting about"), meeting_subject);
 	}
 
-	if (annotation)
+	if (note)
 	{
-		/* Tooltip does not know how to handle markup like <br> */
-		gchar *s = annotation;
-		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s'\n", buddy->name, annotation);
-		while ((s = strchr(s, '<')) != NULL) {
-			if (!g_ascii_strncasecmp(s, "<br>", 4)) {
-				*s = '\n';
-				strcpy(s + 1, s + 4);
-			}
-			s++;
-		}
-		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s'\n", buddy->name, annotation);
+		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s'\n", buddy->name, note);
 
-		purple_notify_user_info_add_pair(user_info, is_oof_note ? _("Out of office note") : _("Note"), annotation);
-		g_free(annotation);
+		purple_notify_user_info_add_pair(user_info, is_oof_note ? _("Out of office note") : _("Note"), note);
 	}
 
 }

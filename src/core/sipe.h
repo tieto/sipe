@@ -79,7 +79,11 @@ struct sipe_buddy {
 	gchar *activity;
 	gchar *meeting_subject;
 	gchar *meeting_location;
-	gchar *annotation;
+	/* Sipe internal format for Note is HTML.
+	 * All incoming plain text should be html-escaped
+	 * for example by g_markup_escape_text()
+	 */
+	gchar *note;
 	gboolean is_oof_note;
 
 	/* Calendar related fields */

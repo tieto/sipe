@@ -359,15 +359,17 @@ sipe_ews_process_oof_response(int return_code,
 			char *tmp = xmlnode_get_data(
 				xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
 			char *html;
+
 			/* UTF-8 encoded BOM (0xEF 0xBB 0xBF) as a signature to mark the beginning of a UTF-8 file */
 			if (tmp && !strncmp(tmp, "\xEF\xBB\xBF", 3)) {
-				html = purple_unescape_html(tmp+3);
+				html = g_strdup(tmp+3);
 			} else {
-				html = purple_unescape_html(tmp);
+				html = g_strdup(tmp);
 			}
 			g_free(tmp);
-			ews->oof_note = g_strstrip(purple_markup_strip_html(html));
+			tmp = g_strstrip(purple_markup_strip_html(html));
 			g_free(html);
+			ews->oof_note = g_markup_escape_text(tmp, -1);
 		}
 
 		if (!strcmp(ews->oof_state, "Scheduled")
