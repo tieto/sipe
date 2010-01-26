@@ -140,17 +140,17 @@ static struct sipe_activity_map_struct
  */
 	{ SIPE_ACTIVITY_UNSET,		"unset",			NULL				, NULL				},
 	{ SIPE_ACTIVITY_ONLINE,		"online",			NULL				, NULL				},
-	{ SIPE_ACTIVITY_INACTIVE,	SIPE_STATUS_ID_IDLE,		N_("Inactive")			, SIPE_STATUS_ID_IDLE		},
+	{ SIPE_ACTIVITY_INACTIVE,	SIPE_STATUS_ID_IDLE,		N_("Inactive")			, NULL				},
 	{ SIPE_ACTIVITY_BUSY,		SIPE_STATUS_ID_BUSY,		N_("Busy")			, SIPE_STATUS_ID_BUSY		},
-	{ SIPE_ACTIVITY_BUSYIDLE,	SIPE_STATUS_ID_BUSYIDLE,	N_("BusyIdle")			, SIPE_STATUS_ID_BUSYIDLE	},
+	{ SIPE_ACTIVITY_BUSYIDLE,	SIPE_STATUS_ID_BUSYIDLE,	N_("BusyIdle")			, NULL				},
 	{ SIPE_ACTIVITY_DND,		SIPE_STATUS_ID_DND,		NULL				, SIPE_STATUS_ID_DND		},
 	{ SIPE_ACTIVITY_BRB,		SIPE_STATUS_ID_BRB,		N_("Be right back")		, SIPE_STATUS_ID_BRB		},
 	{ SIPE_ACTIVITY_AWAY,		"away",				NULL				, NULL				},
-	{ SIPE_ACTIVITY_LUNCH,		SIPE_STATUS_ID_LUNCH,		N_("Out to lunch")		, SIPE_STATUS_ID_LUNCH		},
+	{ SIPE_ACTIVITY_LUNCH,		SIPE_STATUS_ID_LUNCH,		N_("Out to lunch")		, NULL				},
 	{ SIPE_ACTIVITY_OFFLINE,	"offline",			NULL				, NULL				},
-	{ SIPE_ACTIVITY_ON_PHONE,	SIPE_STATUS_ID_ON_PHONE,	N_("In a call")			, SIPE_STATUS_ID_ON_PHONE	},
-	{ SIPE_ACTIVITY_IN_CONF,	SIPE_STATUS_ID_IN_CONF,		N_("In a conference")		, SIPE_STATUS_ID_IN_CONF	},
-	{ SIPE_ACTIVITY_IN_MEETING,	SIPE_STATUS_ID_IN_MEETING,	N_("In a meeting")		, SIPE_STATUS_ID_IN_MEETING	},
+	{ SIPE_ACTIVITY_ON_PHONE,	SIPE_STATUS_ID_ON_PHONE,	N_("In a call")			, NULL				},
+	{ SIPE_ACTIVITY_IN_CONF,	SIPE_STATUS_ID_IN_CONF,		N_("In a conference")		, NULL				},
+	{ SIPE_ACTIVITY_IN_MEETING,	SIPE_STATUS_ID_IN_MEETING,	N_("In a meeting")		, NULL				},
 	{ SIPE_ACTIVITY_OOF,		"out-of-office",		N_("Out of office")		, NULL				},
 	{ SIPE_ACTIVITY_URGENT_ONLY,	"urgent-interruptions-only",	N_("Urgent interruptions only")	, NULL				}
 };
@@ -1541,7 +1541,7 @@ sipe_get_availability_by_status(const char* sipe_status_id, char** activity_toke
 
 static const char*
 sipe_get_status_by_availability(int avail,
-				const char* activity);
+				char** activity);
 				
 static void
 sipe_set_purple_account_status_and_note(const PurpleAccount *account,
@@ -1581,7 +1581,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		    && cal_avail_since > sbuddy->user_avail_since
 		    && 6500 >= sipe_get_availability_by_status(status_id, NULL))
 		{
-			status_id = SIPE_STATUS_ID_IN_MEETING;
+			status_id = SIPE_STATUS_ID_BUSY;
 			g_free(sbuddy->activity);
 			sbuddy->activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_MEETING));
 		}
@@ -2294,29 +2294,11 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_BUSY),
 			TRUE);
 
-	/* BusyIdle (not user settable) */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_activity_map[SIPE_ACTIVITY_BUSYIDLE].status_id,
-			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_BUSYIDLE),
-			FALSE);
-
 	/* Do Not Disturb */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			sipe_activity_map[SIPE_ACTIVITY_DND].status_id,
 			NULL,
 			TRUE);
-
-	/* In a meeting (not user settable) */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].status_id,
-			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_MEETING),
-			FALSE);
-
-	/* In a conference (not user settable) */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_activity_map[SIPE_ACTIVITY_IN_CONF].status_id,
-			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF),
-			FALSE);
 
 	/* Away */
 	/* Goes first in the list as
@@ -2333,24 +2315,6 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			sipe_activity_map[SIPE_ACTIVITY_BRB].status_id,
 			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_BRB),
 			TRUE);
-
-	/* On The Phone (not user settable) */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].status_id,
-			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE),
-			FALSE);
-
-	/* Out To Lunch (not user settable) */
-	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			sipe_activity_map[SIPE_ACTIVITY_LUNCH].status_id,
-			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_LUNCH),
-			FALSE);
-
-	/* Idle/Inactive (not user settable) */
-	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
-			sipe_activity_map[SIPE_ACTIVITY_INACTIVE].status_id,
-			SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_INACTIVE),
-			FALSE);
 
 	/* Appear Offline */
 	SIPE_ADD_STATUS(PURPLE_STATUS_INVISIBLE,
@@ -3537,16 +3501,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 		g_free(sip->status);
 		if (aggreg_avail && aggreg_avail < 18000) { /* not offline */
-			if (aggreg_activity == SIPE_ACTIVITY_IN_MEETING ||
-			    aggreg_activity == SIPE_ACTIVITY_IN_CONF ||
-			    aggreg_activity == SIPE_ACTIVITY_ON_PHONE)
-			{
-				sip->status = g_strdup(sipe_activity_map[aggreg_activity].status_id);
-			}
-			else
-			{
-				sip->status = g_strdup(sipe_get_status_by_availability(aggreg_avail, NULL));
-			}
+			sip->status = g_strdup(sipe_get_status_by_availability(aggreg_avail, NULL));
 		} else {
 			sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
@@ -5345,24 +5300,24 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
  * @param status Sipe statis id.
  */
 static void
-sipe_get_act_avail_by_status_2005(const char *status, int *activity, int *availability)
+sipe_get_act_avail_by_status_2005(const char *status,
+				  int *activity,
+				  int *availability)
 {
 	int avail = 300; /* online */
 	int act = 400;  /* Available */
 
 	if (!strcmp(status, SIPE_STATUS_ID_AWAY)) {
 		act = 100;
-	} else if (!strcmp(status, SIPE_STATUS_ID_LUNCH)) {
-		act = 150;
+	//} else if (!strcmp(status, SIPE_STATUS_ID_LUNCH)) {
+	//	act = 150;
 	} else if (!strcmp(status, SIPE_STATUS_ID_BRB)) {
 		act = 300;
 	} else if (!strcmp(status, SIPE_STATUS_ID_AVAILABLE)) {
 		act = 400;
-	} else if (!strcmp(status, SIPE_STATUS_ID_ON_PHONE)) {
-		act = 500;
+	//} else if (!strcmp(status, SIPE_STATUS_ID_ON_PHONE)) {
+	//	act = 500;
 	} else if (!strcmp(status, SIPE_STATUS_ID_BUSY) ||
-		   !strcmp(status, SIPE_STATUS_ID_IN_MEETING) ||
-		   !strcmp(status, SIPE_STATUS_ID_IN_CONF) ||
 		   !strcmp(status, SIPE_STATUS_ID_DND)) {
 		act = 600;
 	} else if (!strcmp(status, SIPE_STATUS_ID_INVISIBLE) ||
@@ -5385,31 +5340,43 @@ sipe_get_act_avail_by_status_2005(const char *status, int *activity, int *availa
  */
 static const char *
 sipe_get_status_by_act_avail_2005(const int activity,
-				  const int availablity)
+				  const int availablity,
+				  char **activity_desc)
 {
 	const char *status_id = NULL;
+	const char *act = NULL;
 
-	if (activity < 150)
+	if (activity < 150) {
 		status_id = SIPE_STATUS_ID_AWAY;
-	else if (activity < 200)
-		status_id = SIPE_STATUS_ID_LUNCH;
-	else if (activity < 300)
-		status_id = SIPE_STATUS_ID_IDLE;
-	else if (activity < 400)
+	} else if (activity < 200) {
+		//status_id = SIPE_STATUS_ID_LUNCH;
+		status_id = SIPE_STATUS_ID_AWAY;
+		act = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_LUNCH);
+	} else if (activity < 300) {
+		//status_id = SIPE_STATUS_ID_IDLE;
+		status_id = SIPE_STATUS_ID_AWAY;
+		act = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_INACTIVE);
+	} else if (activity < 400) {
 		status_id = SIPE_STATUS_ID_BRB;
-	else if (activity < 500)
+	} else if (activity < 500) {
 		status_id = SIPE_STATUS_ID_AVAILABLE;
-	else if (activity < 600)
+	} else if (activity < 600) {
 		status_id = SIPE_STATUS_ID_ON_PHONE;
-	else if (activity < 700)
+	} else if (activity < 700) {
 		status_id = SIPE_STATUS_ID_BUSY;
-	else if (activity < 800)
+	} else if (activity < 800) {
 		status_id = SIPE_STATUS_ID_AWAY;
-	else
+	} else {
 		status_id = SIPE_STATUS_ID_AVAILABLE;
+	}
 
 	if (availablity < 100)
 		status_id = SIPE_STATUS_ID_OFFLINE;
+		
+	if (activity_desc && act) {
+		g_free(*activity_desc);
+		*activity_desc = g_strdup(act);
+	}
 
 	return status_id;
 }
@@ -5419,37 +5386,40 @@ sipe_get_status_by_act_avail_2005(const int activity,
  */
 static const char*
 sipe_get_status_by_availability(int avail,
-				const char* activity)
+				char** activity_desc)
 {
 	const char *status;
+	const char *act = NULL;
 
-	if (avail < 3000)
+	if (avail < 3000) {
 		status = SIPE_STATUS_ID_OFFLINE;
-	else if (avail < 4500)
+	} else if (avail < 4500) {
 		status = SIPE_STATUS_ID_AVAILABLE;
-	else if (avail < 6000)
-		status = SIPE_STATUS_ID_IDLE;
-	else if (avail < 7500)
-		if (activity && !strcmp(activity, SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_MEETING))) {
-			status = SIPE_STATUS_ID_IN_MEETING;
-		} else if (activity && !strcmp(activity, SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF))) {
-			status = SIPE_STATUS_ID_IN_CONF;
-		} else if (activity && !strcmp(activity, SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE))) {
-			status = SIPE_STATUS_ID_ON_PHONE;
-		} else {
-			status = SIPE_STATUS_ID_BUSY;
-		}
-	else if (avail < 9000)
-		status = SIPE_STATUS_ID_BUSYIDLE;
-	else if (avail < 12000)
+	} else if (avail < 6000) {
+		//status = SIPE_STATUS_ID_IDLE;
+		status = SIPE_STATUS_ID_AVAILABLE;
+		act = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_INACTIVE);
+	} else if (avail < 7500) {
+		status = SIPE_STATUS_ID_BUSY;
+	} else if (avail < 9000) {
+		//status = SIPE_STATUS_ID_BUSYIDLE;
+		status = SIPE_STATUS_ID_BUSY;
+		act = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_BUSYIDLE);
+	} else if (avail < 12000) {
 		status = SIPE_STATUS_ID_DND;
-	else if (avail < 15000)
+	} else if (avail < 15000) {
 		status = SIPE_STATUS_ID_BRB;
-	else if (avail < 18000)
+	} else if (avail < 18000) {
 		status = SIPE_STATUS_ID_AWAY;
-	else
+	} else {
 		status = SIPE_STATUS_ID_OFFLINE;
+	}
 
+	if (activity_desc && act) {
+		g_free(*activity_desc);
+		*activity_desc = g_strdup(act);
+	}
+	
 	return status;
 }
 
@@ -5465,22 +5435,22 @@ sipe_get_availability_by_status(const char* sipe_status_id, char** activity_toke
 	int availability;
 	sipe_activity activity = SIPE_ACTIVITY_UNSET;
 
-	if (!strcmp(sipe_status_id, SIPE_STATUS_ID_AWAY) ||
-	    !strcmp(sipe_status_id, SIPE_STATUS_ID_LUNCH)) {
+	if (!strcmp(sipe_status_id, SIPE_STATUS_ID_AWAY)) {
 		availability = 15500;
-		activity = SIPE_ACTIVITY_AWAY;
+		if (!activity_token || !(*activity_token))	{
+			activity = SIPE_ACTIVITY_AWAY;
+		}
 	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_BRB)) {
 		availability = 12500;
 		activity = SIPE_ACTIVITY_BRB;
 	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_DND)) {
 		availability =  9500;
 		activity = SIPE_ACTIVITY_DND;
-	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_BUSY) ||
-		   !strcmp(sipe_status_id, SIPE_STATUS_ID_IN_MEETING) ||
-		   !strcmp(sipe_status_id, SIPE_STATUS_ID_IN_CONF) ||
-		   !strcmp(sipe_status_id, SIPE_STATUS_ID_ON_PHONE)) {
+	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_BUSY)) {
 		availability =  6500;
-		activity = SIPE_ACTIVITY_BUSY;
+		if (!activity_token || !(*activity_token))	{
+			activity = SIPE_ACTIVITY_BUSY;
+		}
 	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_AVAILABLE)) {
 		availability =  3500;
 		activity = SIPE_ACTIVITY_ONLINE;
@@ -5713,7 +5683,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					g_free(meeting_location);
 				}
 
-				status = sipe_get_status_by_availability(availability, sbuddy->activity);
+				status = sipe_get_status_by_availability(availability, &(sbuddy->activity));
 			}
 
 			do_update_status = TRUE;
@@ -5930,7 +5900,7 @@ sipe_user_info_has_updated(struct sipe_account_data *sip,
 
 static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
-	const char *activity = NULL;
+	char *activity = NULL;
 	const char *epid;
 	const char *status_id = NULL;
 	const char *name;
@@ -6001,7 +5971,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	epid = xmlnode_get_attrib(xn_availability, "epid");
 	act = atoi(xmlnode_get_attrib(xn_activity, "aggregate"));
 
-	status_id = sipe_get_status_by_act_avail_2005(act, avl);
+	status_id = sipe_get_status_by_act_avail_2005(act, avl, &activity);
 	res_avail = sipe_get_availability_by_status(status_id, NULL);
 	if (user_avail > res_avail) {
 		res_avail = user_avail;
@@ -6088,21 +6058,20 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			state = xmlnode_get_data(xn_state);
 			if (dev_avail_since > user_avail_since &&
 			    dev_avail >= res_avail)
-			{
+			{				
 				res_avail = dev_avail;
 				if (!is_empty(state))
 				{
 					if (!strcmp(state, sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].token)) {
-						activity = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE);
+						activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE));
 					} else if (!strcmp(state, "presenting")) {
-						activity = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF);
+						activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF));
 					} else {
-						activity = free_activity = state;
-						state = NULL;
+						activity = state;
 					}
 					activity_since = dev_avail_since;
 				}
-				status_id = sipe_get_status_by_availability(res_avail, activity);
+				status_id = sipe_get_status_by_availability(res_avail, &activity);
 			}
 			g_free(state);
 		}
@@ -6110,7 +6079,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	/* oof */
 	if (xn_oof && res_avail >= 15000) { /* 12000 in 2007 */
-               activity = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_OOF);
+               activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_OOF));
 	       activity_since = 0;
 	}
 
@@ -6118,8 +6087,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	if (sbuddy)
 	{
 		g_free(sbuddy->activity);
-		sbuddy->activity = NULL;
-		if (!is_empty(activity)) { sbuddy->activity = g_strdup(activity); }
+		sbuddy->activity = activity;
 
 		sbuddy->activity_since = activity_since;
 
@@ -6168,8 +6136,6 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			sip->status = g_strdup(sbuddy->last_non_cal_status_id);
 		}
 	}
-
-	if (free_activity) g_free(free_activity);
 
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
 	sipe_got_user_status(sip, uri, status_id);
