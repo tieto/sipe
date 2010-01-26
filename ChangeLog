@@ -1,4 +1,4 @@
-version 1.8.0 (2010-01-XX)
+version 1.8.0 "Exchange/Calendar" (2010-01-XX)
 	- Added integration with Exchange 2007/2010. Now Sipe retrieve our Calendar data (Free/Busy, Working Hours, Meeting Subject/Location, Out-of-Office Note) from Exchange Web Services and publishes it to OCS2007/LCS2005. Thus our contacts can see our availability information based on Calendar data. For example: "Calendar: Currently Busy. Free at 11:30" or "Calendar: Currently Free. Outside of working hours at 18:00". Contacts will also see our Out-of-Office message if it's enabled in Exchange/Outlook. Team members (contacts with access level Team) will be able to see information about our current meeting - subject and location (OCS2007).
 	First call to Exchange is scheduled with 1 minute delay after Sipe start. Subsequent update intervals are 30 minutes. There is a way to manually trigger Calendar data update: Accounts->{SIPE_ACCOUNT}->"Republish Calendar" menu option.
 	Though Exchange integration can work without any additional settings in account configuration, there are options to manually provide email address if it's different from SIP URI, Exchange Services URI, email account authentication if it is different from configuration on Basic tab. (pier11)
@@ -9,6 +9,7 @@ version 1.8.0 (2010-01-XX)
 	- Added Windows Messenger 5.0 (RTC/1.2) compatibility. Though very old, some our clients use it on LCS2005. (pier11)
 	- New BusyIdle status. (pier11)
 	- Updated translations: 'zh_CN' (Kang Kai) and 'de' (Stefan Becker)
+	- Fix for #2907567 Note parsing issue. Incoming html markup (like < symbol) could wierdly rerender Pidgin's contacts list UI - for example to "rename" contact, or even replace contact name by group name.
 	- Fix for #2908830 Federated contacts appear to be broken. 2005 Public IM Connectivity (PIC) environment. (pier11)
 	- Fix for #2912926 crash on exist. Caused by improper CSTA communications. (pier11)
 	- Fix for xdg-email invocation. (David Woodhouse)
@@ -38,7 +39,7 @@ version 1.7.1 (2009-11-19)
 	- Fixed #2882658 - SIGSEGV in process_incoming_info_csta() - happened on some Cisco-Systems 7 CSTA Gateways.
 	- Fixes for SLED 10 SP2 and SP3 compilations.
 	
-version 1.7.0 (2009-10-19)
+version 1.7.0 "Remote Call Control" (2009-10-19)
        - Added integration with PBX (external phones) using CSTA protocol (ECMA TR-87). Users can initiate a call by clicking on contact phones in right-click context menu. This feature should be enabled for user on the server side.
        - Added reconnection to chat after disconnection by continue typing in the same open chat window (OCS 2007 only). Feature request #2866630.
        - More precise errors shown on message undelivery event.
@@ -117,7 +118,7 @@ version 1.6.1 (2009-08-12)
        - Added convenience script to (re)build from git repository
        - Added convenience script for creating git snapshots
 
-version 1.6.0 (2009-07-27)
+version 1.6.0 "Multiparty Chat" (2009-07-27)
        - Multi-party conversation (Chat) functionality for:
          + OCS 2007+ as a conference [MS-CONFBAS], [MS-CONFIM], [MS-CONFPRO];
 	 + LCS 2005- as a multi-party chat.
@@ -137,7 +138,7 @@ Also defined default group in Add User dialog which appear after user search in 
        - Improvements for compilation under ppc/ppc64 platfolrm.
        - Fixed crash if work in non-authenticating environment.
        
-version 1.5.0 (2009-06-24)
+version 1.5.0 "Kerberos" (2009-06-24)
        - Fixed bug #2800325 for crash if wrong IP manually typed into Pidgin.
        - New Security Framework: dedicated to use plug-able security mechanisms.
          + Added Kerberos/NTLM SSPI for Windows

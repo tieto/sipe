@@ -6581,10 +6581,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 			       epid,
 			       since_time_str,
 			       since_time_str,
-			       user_input);
-			       
-	purple_debug_info("sipe", "tmp2  : %s", tmp2 ? tmp2 : "");
-			       
+			       user_input);			       
 	g_free(tmp);
 	g_free(tmp2);
 	g_free(res_note);
@@ -8493,11 +8490,12 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 " - Deutsche Bank<br/>"
 " - Merrill Lynch<br/>"
 " - Wachovia<br/>"
+" - Intel<br/>"
+" - Nokia<br/>"
+" - HP<br/>"
 " - Siemens<br/>"
 " - Alcatel-Lucent<br/>"
 " - BT<br/>"
-" - Nokia<br/>"
-" - HP<br/>"
 "<br/>"
 "<b>Authors:</b><br/>"
 " - Anibal Avelar<br/>"
