@@ -8570,22 +8570,29 @@ static gboolean sipe_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 
 static char *sipe_status_text(PurpleBuddy *buddy)
 {
-	struct sipe_account_data *sip;
+	const PurplePresence *presence = purple_buddy_get_presence(buddy);
+	const PurpleStatus *status = purple_presence_get_active_status(presence);
+	const char *status_id = purple_status_get_id(status);
+	struct sipe_account_data *sip = (struct sipe_account_data *)buddy->account->gc->proto_data;
 	struct sipe_buddy *sbuddy;
 	char *text = NULL;
 
-	sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
 	if (sip)  //happens on pidgin exit
 	{
 		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
 		if (sbuddy) {
-			if (!is_empty(sbuddy->activity) && !is_empty(sbuddy->note))
+			const char *activity_str = sbuddy->activity ?
+				sbuddy->activity : 
+				!strcmp(status_id, SIPE_STATUS_ID_DND) || !strcmp(status_id, SIPE_STATUS_ID_BRB) ? 
+					purple_status_get_name(status) : NULL;
+
+			if (activity_str && sbuddy->note)
 			{
-				text = g_strdup_printf("%s - %s", sbuddy->activity, sbuddy->note);
+				text = g_strdup_printf("%s - %s", activity_str, sbuddy->note);
 			}
-			else if (!is_empty(sbuddy->activity))
+			else if (activity_str)
 			{
-				text = g_strdup(sbuddy->activity);
+				text = g_strdup(activity_str);
 			}
 			else
 			{
@@ -8628,9 +8635,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	//Layout
 	if (purple_presence_is_online(presence))
 	{
-		const char *status_str = activity && status && strcmp(purple_status_get_id(status), SIPE_STATUS_ID_ON_PHONE) ?
-			activity :
-			purple_status_get_name(status);
+		const char *status_str = activity ? activity : purple_status_get_name(status);
 
 		purple_notify_user_info_add_pair(user_info, _("Status"), status_str);
 	}

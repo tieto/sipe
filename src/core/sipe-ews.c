@@ -194,7 +194,7 @@ sipe_ews_get_oof_note(struct sipe_ews *ews)
 {
 	time_t now = time(NULL);
 
-	if (!ews) return NULL;
+	if (!ews || !ews->oof_state) return NULL;
 
 	if (!strcmp(ews->oof_state, "Enabled") ||
 	    (!strcmp(ews->oof_state, "Scheduled") && now >= ews->oof_start && now <= ews->oof_end))
