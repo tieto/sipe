@@ -6570,6 +6570,16 @@ send_presence_soap0(struct sipe_account_data *sip,
 		res_note = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, tmp);
 		g_free(tmp);
 	}
+	else if (do_publish_calendar || do_reset_status) /* preserve existing publication */
+	{
+		xmlnode *xn_note;
+		if (sip->user_info && (xn_note = xmlnode_get_child(sip->user_info, "note"))) {
+			res_note = xmlnode_to_str(xn_note, NULL);
+		}
+		if (sip->user_info && xmlnode_get_child(sip->user_info, "oof")) {
+			res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
+		}
+	}
 
 	/* User State */
 	if (!do_reset_status) {
