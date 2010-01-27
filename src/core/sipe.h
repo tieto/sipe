@@ -85,6 +85,7 @@ struct sipe_buddy {
 	 */
 	gchar *note;
 	gboolean is_oof_note;
+	time_t note_since;
 
 	/* Calendar related fields */
 	gchar *cal_start_time;

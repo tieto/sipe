@@ -3221,6 +3221,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	int aggreg_avail = 0;
 	static sipe_activity aggreg_activity = SIPE_ACTIVITY_UNSET;
 	gboolean do_update_status = FALSE;
+	gboolean has_note_cleaned = FALSE;
 
 	purple_debug_info("sipe", "sipe_process_roaming_self\n");
 
@@ -3262,6 +3263,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		guint container = (tmp = xmlnode_get_attrib(node, "container")) ? atoi(tmp) : -1;
 		guint instance  = (tmp = xmlnode_get_attrib(node, "instance"))  ? atoi(tmp) : -1;
 		guint version   = atoi(xmlnode_get_attrib(node, "version"));
+		time_t publish_time = (tmp = xmlnode_get_attrib(node, "publishTime")) ?
+			purple_str_to_time(tmp, FALSE, NULL, NULL, NULL) : 0;
 		gchar *key;
 		GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
 
@@ -3359,18 +3362,31 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			if (!strcmp(name, "note")) {
 				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
 
+				if (!has_note_cleaned) {
+					has_note_cleaned = TRUE;
+					
+					g_free(sip->note);
+					sip->note = NULL;
+					sip->note_since = publish_time;
+
+					do_update_status = TRUE;
+				}
+				
 				g_free(publication->note);
 				publication->note = NULL;
-				g_free(sip->note);
-				sip->note = NULL;
 				if (xn_body) {
 					char *tmp;
 
 					publication->note = g_markup_escape_text((tmp = xmlnode_get_data(xn_body)), -1);
 					g_free(tmp);
-					sip->note = g_strdup(publication->note);
+					if (publish_time >= sip->note_since) {
+						g_free(sip->note);
+						sip->note = g_strdup(publication->note);
+						sip->note_since = publish_time;
+
+						do_update_status = TRUE;
+					}
 				}
-				do_update_status = TRUE;
 			}
 
 			/* filling publication->fb_start_str, free_busy_base64, working_hours_xml_str */
@@ -5527,6 +5543,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	xmlnode *xn_node;
 	const char *status = NULL;
 	gboolean do_update_status = FALSE;
+	gboolean has_note_cleaned = FALSE;
 
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri"); /* with 'sip:' prefix */
@@ -5535,7 +5552,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		 xn_category ;
 		 xn_category = xmlnode_get_next_twin(xn_category) )
 	{
+		const char *tmp;
 		const char *attrVar = xmlnode_get_attrib(xn_category, "name");
+		time_t publish_time = (tmp = xmlnode_get_attrib(xn_category, "publishTime")) ?
+			purple_str_to_time(tmp, FALSE, NULL, NULL, NULL) : 0;
 
 		/* contactCard */
 		if (!strcmp(attrVar, "contactCard"))
@@ -5635,16 +5655,27 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		/* note */
 		else if (!strcmp(attrVar, "note"))
 		{
-                        if (uri) {
+			if (uri) {
 				struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
+				
+				if (!has_note_cleaned) {
+					has_note_cleaned = TRUE;
+					
+					g_free(sbuddy->note);
+					sbuddy->note = NULL;
+					sbuddy->is_oof_note = FALSE;
+					sbuddy->note_since = publish_time;
 
-				if (sbuddy) {
+					do_update_status = TRUE;
+				}
+				if (sbuddy && (publish_time >= sbuddy->note_since)) {
 					/* clean up in case no 'note' element is supplied
 					 * which indicate note removal in client
 					 */
 					g_free(sbuddy->note);
 					sbuddy->note = NULL;
 					sbuddy->is_oof_note = FALSE;
+					sbuddy->note_since = publish_time;
 
 					xn_node = xmlnode_get_descendant(xn_category, "note", "body", NULL);
 					if (xn_node) {
@@ -5652,15 +5683,15 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 						sbuddy->note = g_markup_escape_text((tmp = xmlnode_get_data(xn_node)), -1);
 						g_free(tmp);
 						sbuddy->is_oof_note = !strcmp(xmlnode_get_attrib(xn_node, "type"), "OOF");
+						sbuddy->note_since = publish_time;
 
-						purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s),note(%s)\n",
+						purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s), note(%s)\n",
 							uri, sbuddy->note ? sbuddy->note : "");
 					}
-
 					/* to trigger UI refresh in case no status info is supplied in this update */
 					do_update_status = TRUE;
 				}
-			}
+			}	
 		}
 		/* state */
 		else if(!strcmp(attrVar, "state"))
@@ -6960,10 +6991,6 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	char *res, *tmp1, *tmp2, *tmp3;
 	char *start_time_attr;
 	char *end_time_attr;
-	
-	purple_debug_info("sipe", "sipe_publish_get_category_note: note=%s\n", note ? note : "");
-	purple_debug_info("sipe", "sipe_publish_get_category_note: n1  =%s\n", n1 ? n1 : "");
-	purple_debug_info("sipe", "sipe_publish_get_category_note: n2  =%s\n", n2 ? n2 : "");
 
 	g_free(tmp);
 	g_free(key_note_200);
