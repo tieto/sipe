@@ -633,13 +633,13 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 		email_login    = purple_account_get_string(sip->account, "email_login", NULL);
 		email_password = purple_account_get_string(sip->account, "email_password", NULL);
 
-		if (email_url) {
+		if (!is_empty(email_url)) {
 			sip->ews->as_url  = g_strdup(email_url);
 			sip->ews->oof_url = g_strdup(email_url);
 			sip->ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		}
 
-		if (email_login && (tmp = strstr(email_login, "\\"))) {
+		if (!is_empty(email_login) && (tmp = strstr(email_login, "\\"))) {
 			email_auth_user   = g_strdup(tmp + 1);
 			email_auth_domain = g_strndup(email_login, tmp - email_login);
 		} else {
