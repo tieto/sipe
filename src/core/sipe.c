@@ -5428,7 +5428,9 @@ sipe_get_status_by_act_avail_2005(const int activity,
 	} else if (activity < 500) {
 		status_id = SIPE_STATUS_ID_AVAILABLE;
 	} else if (activity < 600) {
-		status_id = SIPE_STATUS_ID_ON_PHONE;
+		//status_id = SIPE_STATUS_ID_ON_PHONE;
+		status_id = SIPE_STATUS_ID_BUSY;
+		act = SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE);
 	} else if (activity < 700) {
 		status_id = SIPE_STATUS_ID_BUSY;
 	} else if (activity < 800) {
