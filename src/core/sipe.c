@@ -6937,7 +6937,9 @@ sipe_is_equal(const char* n1, const char* n2) {
 static gchar *
 sipe_publish_get_category_note(struct sipe_account_data *sip,
 			       const char *note, /* html */
-			       const char *note_type)
+			       const char *note_type,
+			       time_t note_start,
+			       time_t note_end)
 {
 	guint instance = !strcmp("OOF", note_type) ? sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF) : 0;
 	/* key is <category><instance><container> */
@@ -6952,9 +6954,18 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	struct sipe_publication *publication_note_400 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_400);
 
-	char *n1 = note ? purple_markup_strip_html(note) : NULL;
+	char *tmp = note ? purple_markup_strip_html(note) : NULL;
+	char *n1 = tmp ? g_markup_escape_text(tmp, -1) : NULL;
 	const char *n2 = publication_note_200 ? publication_note_200->note : NULL;
+	char *res, *tmp1, *tmp2, *tmp3;
+	char *start_time_attr;
+	char *end_time_attr;
+	
+	purple_debug_info("sipe", "sipe_publish_get_category_note: note=%s\n", note ? note : "");
+	purple_debug_info("sipe", "sipe_publish_get_category_note: n1  =%s\n", n1 ? n1 : "");
+	purple_debug_info("sipe", "sipe_publish_get_category_note: n2  =%s\n", n2 ? n2 : "");
 
+	g_free(tmp);
 	g_free(key_note_200);
 	g_free(key_note_300);
 	g_free(key_note_400);
@@ -6965,22 +6976,48 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 		return NULL; /* nothing to update */
 	}
 
-	return g_markup_printf_escaped(SIPE_PUB_XML_NOTE,
-				       instance,
-				       publication_note_200 ? publication_note_200->version : 0,
-				       note_type,
-				       n1 ? n1 : "",
+	start_time_attr = note_start ? g_strdup_printf(" startTime=\"%s\"",
+		purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&note_start))) : NULL;
+	end_time_attr = note_end ? g_strdup_printf(" endTime=\"%s\"",
+		purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&note_end))) : NULL;
 
-				       instance,
-				       publication_note_300 ? publication_note_300->version : 0,
-				       note_type,
-				       n1 ? n1 : "",
+	tmp1 = g_strdup_printf(SIPE_PUB_XML_NOTE,
+			       instance,
+			       200,
+			       publication_note_200 ? publication_note_200->version : 0,
+			       note_type,
+			       start_time_attr ? start_time_attr : "",
+			       end_time_attr ? end_time_attr : "",
+			       n1 ? n1 : "");
 
-				       instance,
-				       publication_note_400 ? publication_note_400->version : 0,
-				       note_type,
-				       n1 ? n1 : "");
+	tmp2 = g_strdup_printf(SIPE_PUB_XML_NOTE,
+			       instance,
+			       300,
+			       publication_note_300 ? publication_note_300->version : 0,
+			       note_type,
+			       start_time_attr ? start_time_attr : "",
+			       end_time_attr ? end_time_attr : "",
+			       n1 ? n1 : "");
+
+	tmp3 = g_strdup_printf(SIPE_PUB_XML_NOTE,
+			       instance,
+			       400,
+			       publication_note_400 ? publication_note_400->version : 0,
+			       note_type,
+			       start_time_attr ? start_time_attr : "",
+			       end_time_attr ? end_time_attr : "",
+			       n1 ? n1 : "");
+
+	res =  g_strconcat(tmp1, tmp2, tmp3, NULL);
+
+	g_free(start_time_attr);
+	g_free(end_time_attr);
+	g_free(tmp1);
+	g_free(tmp2);
+	g_free(tmp3);
 	g_free(n1);
+
+	return res;
 }
 
 /**
@@ -7207,7 +7244,7 @@ send_presence_category_publish(struct sipe_account_data *sip,
 	gchar *pub_state = sipe_is_user_state(sip) ?
 				sipe_publish_get_category_state_user(sip) :
 				sipe_publish_get_category_state_machine(sip);
-	gchar *pub_note = sipe_publish_get_category_note(sip, note, "personal");
+	gchar *pub_note = sipe_publish_get_category_note(sip, note, "personal", 0, 0);
 	gchar *publications;
 
 	if (!pub_state && !pub_note) {
@@ -7281,7 +7318,14 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	}
 
 	if ((oof_note = sipe_ews_get_oof_note(sip->ews))) {
-		pub_oof_note = sipe_publish_get_category_note(sip, oof_note, "OOF");
+		time_t oof_start = 0;
+		time_t oof_end = 0;
+
+		if (!strcmp("Scheduled", sip->ews->oof_state)) {
+			oof_start = sip->ews->oof_start;
+			oof_end = sip->ews->oof_end;
+		}
+		pub_oof_note = sipe_publish_get_category_note(sip, oof_note, "OOF", oof_start, oof_end);
 	}
 
 	pub_cal_working_hours = sipe_publish_get_category_cal_working_hours(sip);
