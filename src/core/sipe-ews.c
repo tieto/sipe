@@ -382,11 +382,11 @@ sipe_ews_process_oof_response(int return_code,
 			tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "EndTime"));
 			ews->oof_end = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
 			g_free(tmp);
-		} else {
-			if (!(old_note && ews->oof_note && !strcmp(old_note, ews->oof_note))) { /* oof note changed */
-				ews->oof_start = time(NULL);
-				ews->oof_end = (time_t)-1;
-			}
+		}
+
+		if (!(old_note && ews->oof_note && !strcmp(old_note, ews->oof_note))) { /* oof note changed */
+			ews->updated = time(NULL);
+			ews->published = FALSE;
 		}
 		g_free(old_note);
 

@@ -6525,9 +6525,9 @@ send_presence_soap0(struct sipe_account_data *sip,
 	gchar *epid = get_epid(sip);
 	time_t now = time(NULL);
 	gchar *since_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&now)));
-	const gchar *oof_note = sipe_ews_get_oof_note(ews);
+	const gchar *oof_note = ews ? sipe_ews_get_oof_note(ews) : NULL;
 	const char *user_input;
-	gboolean pub_oof = oof_note && (!sip->note || sip->note_since < ews->oof_start);
+	gboolean pub_oof = ews && !ews->published && oof_note && (!sip->note || ews->updated > sip->note_since);
 	
 	if (oof_note && sip->note) {
 		purple_debug_info("sipe", "ews->oof_start  : %s", asctime(localtime(&(ews->oof_start))));
@@ -6549,6 +6549,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 	if (pub_oof) {
 		note_pub = oof_note;
 		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
+		ews->published = TRUE;
 	} else if (sip->note) {
 		if (sip->is_oof_note) { /* stale OOF note, as it's not present in ews already (oof_note == NULL) */
 			g_free(sip->note);

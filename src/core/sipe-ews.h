@@ -45,6 +45,8 @@ struct sipe_ews {
 	char *oof_note;
 	time_t oof_start;
 	time_t oof_end;
+	time_t updated;
+	gboolean published;
 	
 	HttpConn *http_conn;
 	
