@@ -3172,6 +3172,34 @@ sipe_set_purple_account_status_and_note(const PurpleAccount *account,
 	}
 }
 
+struct hash_table_delete_payload {
+	GHashTable *hash_table;
+	guint container;
+};
+
+static void
+sipe_remove_category_container_publications_cb(const char *name,
+					       struct sipe_publication *publication,
+					       struct hash_table_delete_payload *payload)
+{	
+	if (publication->container == payload->container) {
+		g_hash_table_remove(payload->hash_table, name);
+	}
+}
+static void
+sipe_remove_category_container_publications(GHashTable *our_publications,
+					    const char *category,
+					    guint container)
+{
+	struct hash_table_delete_payload payload;
+	payload.hash_table = g_hash_table_lookup(our_publications, category);
+	
+	if (!payload.hash_table) return;
+	
+	payload.container = container;
+	g_hash_table_foreach(payload.hash_table, (GHFunc)sipe_remove_category_container_publications_cb, &payload);
+}
+
 static void
 send_publish_category_initial(struct sipe_account_data *sip);
 
@@ -3229,29 +3257,49 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	g_slist_free(category_names);
 	/* filling our categories reflected in roaming data */
 	for (node = xmlnode_get_descendant(xml, "categories", "category", NULL); node; node = xmlnode_get_next_twin(node)) {
+		const char *tmp;
 		const gchar *name = xmlnode_get_attrib(node, "name");
-		const gchar *container = xmlnode_get_attrib(node, "container");
-		const gchar *instance = xmlnode_get_attrib(node, "instance");
-		const gchar *version = xmlnode_get_attrib(node, "version");
-		guint version_int = version ? atoi(version) : 0;
+		guint container = (tmp = xmlnode_get_attrib(node, "container")) ? atoi(tmp) : -1;
+		guint instance  = (tmp = xmlnode_get_attrib(node, "instance"))  ? atoi(tmp) : -1;
+		guint version   = atoi(xmlnode_get_attrib(node, "version"));
 		gchar *key;
+		GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
 
-		if (!container || !instance) continue;
+		/* Ex. clear note: <category name="note"/> */
+		if (container == (guint)-1) {
+			g_free(sip->note);
+			sip->note = NULL;
+			do_update_status = TRUE;
+			continue;
+		}
+		
+		/* Ex. clear note: <category name="note" container="200"/> */
+		if (instance == (guint)-1) {
+			if (container == 200) {
+				g_free(sip->note);
+				sip->note = NULL;
+				do_update_status = TRUE;
+			}
+			purple_debug_info("sipe", "sipe_process_roaming_self: removing publications for: %s/%u\n", name, container);
+			sipe_remove_category_container_publications(
+				sip->our_publications, name, container);
+			continue;
+		}
 
 		/* key is <category><instance><container> */
-		key = g_strdup_printf("<%s><%s><%s>", name, instance, container);
-		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version_int);
+		key = g_strdup_printf("<%s><%u><%u>", name, instance, container);
+		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version);
 
 		/* capture all userState publication for later clean up if required */
-		if (!strcmp(name, "state") && (atoi(container) == 2 || atoi(container) == 3)) {
+		if (!strcmp(name, "state") && (container == 2 || container == 3)) {
 			xmlnode *xn_state = xmlnode_get_child(node, "state");
 
 			if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "userState")) {
 				struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
-				publication->category = g_strdup(name);
-				publication->instance = atoi(instance);
-				publication->container = atoi(container);
-				publication->version = version_int;
+				publication->category  = g_strdup(name);
+				publication->instance  = instance;
+				publication->container = container;
+				publication->version   = version;
 
 				if (!sip->user_state_publications) {
 					sip->user_state_publications = g_hash_table_new_full(
@@ -3260,18 +3308,18 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				}
 				g_hash_table_insert(sip->user_state_publications, g_strdup(key), publication);
 				purple_debug_info("sipe", "sipe_process_roaming_self: added to user_state_publications key=%s version=%d\n",
-					key, version_int);
+					key, version);
 			}
 		}
 
 		if (sipe_is_our_publication(sip, key)) {
-			GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
-
 			struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
+
 			publication->category = g_strdup(name);
-			publication->instance = atoi(instance);
-			publication->container = atoi(container);
-			publication->version = version_int;
+			publication->instance  = instance;
+			publication->container = container;
+			publication->version   = version;
+
 			/* filling publication->availability */
 			if (!strcmp(name, "state")) {
 				xmlnode *xn_state = xmlnode_get_child(node, "state");
@@ -3311,7 +3359,10 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			if (!strcmp(name, "note")) {
 				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
 
+				g_free(publication->note);
+				publication->note = NULL;
 				g_free(sip->note);
+				sip->note = NULL;
 				if (xn_body) {
 					char *tmp;
 
@@ -3343,12 +3394,12 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				purple_debug_info("sipe", "sipe_process_roaming_self: added GHashTable cat=%s\n", name);
 			}
 			g_hash_table_insert(cat_publications, g_strdup(key), publication);
-			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version_int);
+			purple_debug_info("sipe", "sipe_process_roaming_self: added key=%s version=%d\n", key, version);
 		}
 		g_free(key);
 
 		/* aggregateState (not an our publication) from 2-nd container */
-		if (!strcmp(name, "state") && atoi(container) == 2) {
+		if (!strcmp(name, "state") && container == 2) {
 			xmlnode *xn_state = xmlnode_get_child(node, "state");
 
 			if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "aggregateState")) {
@@ -8577,27 +8628,26 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 	struct sipe_buddy *sbuddy;
 	char *text = NULL;
 
-	if (sip)  //happens on pidgin exit
-	{
-		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
-		if (sbuddy) {
-			const char *activity_str = sbuddy->activity ?
-				sbuddy->activity : 
-				!strcmp(status_id, SIPE_STATUS_ID_DND) || !strcmp(status_id, SIPE_STATUS_ID_BRB) ? 
-					purple_status_get_name(status) : NULL;
+	if (!sip) return NULL; /* happens on pidgin exit */
 
-			if (activity_str && sbuddy->note)
-			{
-				text = g_strdup_printf("%s - %s", activity_str, sbuddy->note);
-			}
-			else if (activity_str)
-			{
-				text = g_strdup(activity_str);
-			}
-			else
-			{
-				text = g_strdup(sbuddy->note);
-			}
+	sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
+	if (sbuddy) {
+		const char *activity_str = sbuddy->activity ?
+			sbuddy->activity : 
+			!strcmp(status_id, SIPE_STATUS_ID_BUSY) || !strcmp(status_id, SIPE_STATUS_ID_BRB) ? 
+				purple_status_get_name(status) : NULL;
+
+		if (activity_str && sbuddy->note)
+		{
+			text = g_strdup_printf("%s - <i>%s</i>", activity_str, sbuddy->note);
+		}
+		else if (activity_str)
+		{
+			text = g_strdup(activity_str);
+		}
+		else if (sbuddy->note)
+		{
+			text = g_strdup_printf("<i>%s</i>", sbuddy->note);
 		}
 	}
 
@@ -8656,9 +8706,11 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 
 	if (note)
 	{
+		char *tmp = g_strdup_printf("<i>%s</i>", note);
 		purple_debug_info("sipe", "sipe_tooltip_text: %s note: '%s'\n", buddy->name, note);
 
-		purple_notify_user_info_add_pair(user_info, is_oof_note ? _("Out of office note") : _("Note"), note);
+		purple_notify_user_info_add_pair(user_info, is_oof_note ? _("Out of office note") : _("Note"), tmp);
+		g_free(tmp);
 	}
 
 }
