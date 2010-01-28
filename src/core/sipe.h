@@ -92,6 +92,7 @@ struct sipe_buddy {
 	int cal_granularity;
 	gchar *cal_free_busy_base64;
 	gchar *cal_free_busy;
+	time_t cal_free_busy_published;
 	/* for 2005 systems */
 	int user_avail;
 	time_t user_avail_since;

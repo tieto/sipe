@@ -5547,6 +5547,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 	const char *status = NULL;
 	gboolean do_update_status = FALSE;
 	gboolean has_note_cleaned = FALSE;
+	gboolean has_free_busy_cleaned = FALSE;
 
 	xn_categories = xmlnode_from_str(data, len);
 	uri = xmlnode_get_attrib(xn_categories, "uri"); /* with 'sip:' prefix */
@@ -5781,19 +5782,38 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			xmlnode *xn_working_hours = xmlnode_get_descendant(xn_category, "calendarData", "WorkingHours", NULL);
 
 			if (sbuddy && xn_free_busy) {
-				g_free(sbuddy->cal_start_time);
-				sbuddy->cal_start_time = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
+				if (!has_free_busy_cleaned) {
+					has_free_busy_cleaned = TRUE;
 
-				sbuddy->cal_granularity = !g_ascii_strcasecmp(xmlnode_get_attrib(xn_free_busy, "granularity"), "PT15M") ?
-					15 : 0;
+					g_free(sbuddy->cal_start_time);
+					sbuddy->cal_start_time = NULL;
 
-				g_free(sbuddy->cal_free_busy_base64);
-				sbuddy->cal_free_busy_base64 = xmlnode_get_data(xn_free_busy);
+					g_free(sbuddy->cal_free_busy_base64);
+					sbuddy->cal_free_busy_base64 = NULL;
 
-				g_free(sbuddy->cal_free_busy);
-				sbuddy->cal_free_busy = NULL;
+					g_free(sbuddy->cal_free_busy);
+					sbuddy->cal_free_busy = NULL;
 
-				purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%d cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
+					sbuddy->cal_free_busy_published = publish_time;
+				}
+
+				if (publish_time >= sbuddy->cal_free_busy_published) {
+					g_free(sbuddy->cal_start_time);
+					sbuddy->cal_start_time = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
+
+					sbuddy->cal_granularity = !g_ascii_strcasecmp(xmlnode_get_attrib(xn_free_busy, "granularity"), "PT15M") ?
+						15 : 0;
+
+					g_free(sbuddy->cal_free_busy_base64);
+					sbuddy->cal_free_busy_base64 = xmlnode_get_data(xn_free_busy);
+
+					g_free(sbuddy->cal_free_busy);
+					sbuddy->cal_free_busy = NULL;
+
+					sbuddy->cal_free_busy_published = publish_time;
+
+					purple_debug_info("sipe", "process_incoming_notify_rlmi: startTime=%s granularity=%d cal_free_busy_base64=\n%s\n", sbuddy->cal_start_time, sbuddy->cal_granularity, sbuddy->cal_free_busy_base64);
+				}
 			}
 
 			if (sbuddy && xn_working_hours) {
