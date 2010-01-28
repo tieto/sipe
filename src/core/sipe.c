@@ -2017,6 +2017,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 		if (sip) {
 			gchar *action_name;
+			gchar *tmp;
 			time_t now = time(NULL);
 			const char *status_id = purple_status_get_id(status);
 			const char *note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
@@ -2039,14 +2040,18 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 			g_free(sip->status);
 			sip->status = g_strdup(status_id);
-			
+
+			/* hack to escape apostrof before comparison */
+			tmp = note ? purple_strreplace(note, "'", "&apos;") : NULL;
+
 			/* this will preserve OOF flag as well */
-			if (!(note && sip->note && !strcmp(note, sip->note))) {
+			if (!(tmp && sip->note && !strcmp(tmp, sip->note))) {
 				sip->is_oof_note = FALSE;
 				g_free(sip->note);
 				sip->note = g_strdup(note);
 				sip->note_since = time(NULL);
 			}
+			g_free(tmp);
 
 			/* schedule 2 sec to capture idle flag */
 			action_name = g_strdup_printf("<%s>", "+set-status");
