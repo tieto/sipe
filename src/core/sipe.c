@@ -3383,6 +3383,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 						g_free(sip->note);
 						sip->note = g_strdup(publication->note);
 						sip->note_since = publish_time;
+						sip->is_oof_note = !strcmp(xmlnode_get_attrib(xn_body, "type"), "OOF");
 
 						do_update_status = TRUE;
 					}
@@ -7278,13 +7279,16 @@ send_publish_category_initial(struct sipe_account_data *sip)
 }
 
 static void
-send_presence_category_publish(struct sipe_account_data *sip,
-			       const char *note)
+send_presence_category_publish(struct sipe_account_data *sip)
 {
 	gchar *pub_state = sipe_is_user_state(sip) ?
 				sipe_publish_get_category_state_user(sip) :
 				sipe_publish_get_category_state_machine(sip);
-	gchar *pub_note = sipe_publish_get_category_note(sip, note, "personal", 0, 0);
+	gchar *pub_note = sipe_publish_get_category_note(sip,
+							 sip->note,
+							 sip->is_oof_note ? "OOF" : "personal",
+							 0,
+							 0);
 	gchar *publications;
 
 	if (!pub_state && !pub_note) {
@@ -7398,17 +7402,15 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 static void send_presence_status(struct sipe_account_data *sip)
 {
 	PurpleStatus * status = purple_account_get_active_status(sip->account);
-	const gchar *note;
+
 	if (!status) return;
 
-	note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
 	purple_debug_info("sipe", "send_presence_status: status: %s (%s)\n",
 		purple_status_get_id(status) ? purple_status_get_id(status) : "",
 		sipe_is_user_state(sip) ? "USER" : "MACHINE");
-	purple_debug_info("sipe", "send_presence_status: note: '%s'\n", note ? note : "");
 
         if (sip->ocs2007) {
-		send_presence_category_publish(sip, note);
+		send_presence_category_publish(sip);
 	} else {
 		send_presence_soap(sip, FALSE);
 	}
