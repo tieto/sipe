@@ -7210,13 +7210,16 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	st = publication_cal_300 ? publication_cal_300->fb_start_str : NULL;
 	fb = publication_cal_300 ? publication_cal_300->free_busy_base64 : NULL;
 
-	if (sipe_is_equal(st, fb_start_str) && sipe_is_equal(fb, free_busy_base64))
-	{
-		purple_debug_info("sipe", "sipe_publish_get_category_cal_free_busy: FreeBusy has NOT changed. Exiting.\n");
-		g_free(fb_start_str);
-		g_free(free_busy_base64);
-		return NULL; /* nothing to update */
-	}
+	/* we will rebuplish the same data to refresh publication time,
+	 * so if data from multiple sources, most recent will be choosen
+	 */
+	//if (sipe_is_equal(st, fb_start_str) && sipe_is_equal(fb, free_busy_base64))
+	//{
+	//	purple_debug_info("sipe", "sipe_publish_get_category_cal_free_busy: FreeBusy has NOT changed. Exiting.\n");
+	//	g_free(fb_start_str);
+	//	g_free(free_busy_base64);
+	//	return NULL; /* nothing to update */
+	//}
 
 	res = g_strdup_printf(SIPE_PUB_XML_FREE_BUSY,
 				/* 1 */
