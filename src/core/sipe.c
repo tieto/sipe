@@ -7042,33 +7042,53 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	end_time_attr = note_end ? g_strdup_printf(" endTime=\"%s\"",
 		purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&note_end))) : NULL;
 
-	tmp1 = g_strdup_printf(SIPE_PUB_XML_NOTE,
-			       instance,
-			       200,
-			       publication_note_200 ? publication_note_200->version : 0,
-			       note_type,
-			       start_time_attr ? start_time_attr : "",
-			       end_time_attr ? end_time_attr : "",
-			       n1 ? n1 : "");
+	if (n1) {
+		tmp1 = g_strdup_printf(SIPE_PUB_XML_NOTE,
+				       instance,
+				       200,
+				       publication_note_200 ? publication_note_200->version : 0,
+				       note_type,
+				       start_time_attr ? start_time_attr : "",
+				       end_time_attr ? end_time_attr : "",
+				       n1);
 
-	tmp2 = g_strdup_printf(SIPE_PUB_XML_NOTE,
-			       instance,
-			       300,
-			       publication_note_300 ? publication_note_300->version : 0,
-			       note_type,
-			       start_time_attr ? start_time_attr : "",
-			       end_time_attr ? end_time_attr : "",
-			       n1 ? n1 : "");
+		tmp2 = g_strdup_printf(SIPE_PUB_XML_NOTE,
+				       instance,
+				       300,
+				       publication_note_300 ? publication_note_300->version : 0,
+				       note_type,
+				       start_time_attr ? start_time_attr : "",
+				       end_time_attr ? end_time_attr : "",
+				       n1);
 
-	tmp3 = g_strdup_printf(SIPE_PUB_XML_NOTE,
-			       instance,
-			       400,
-			       publication_note_400 ? publication_note_400->version : 0,
-			       note_type,
-			       start_time_attr ? start_time_attr : "",
-			       end_time_attr ? end_time_attr : "",
-			       n1 ? n1 : "");
-
+		tmp3 = g_strdup_printf(SIPE_PUB_XML_NOTE,
+				       instance,
+				       400,
+				       publication_note_400 ? publication_note_400->version : 0,
+				       note_type,
+				       start_time_attr ? start_time_attr : "",
+				       end_time_attr ? end_time_attr : "",
+				       n1);
+	} else {		       
+		tmp1 = g_strdup_printf( SIPE_PUB_XML_PUBLICATION_CLEAR,
+					"note",
+					instance,
+					200,
+					publication_note_200 ? publication_note_200->version : 0,
+					"static");
+		tmp2 = g_strdup_printf( SIPE_PUB_XML_PUBLICATION_CLEAR,
+					"note",
+					instance,
+					300,
+					publication_note_200 ? publication_note_200->version : 0,
+					"static");			       
+		tmp3 = g_strdup_printf( SIPE_PUB_XML_PUBLICATION_CLEAR,
+					"note",
+					instance,
+					400,
+					publication_note_200 ? publication_note_200->version : 0,
+					"static");
+	}
 	res =  g_strconcat(tmp1, tmp2, tmp3, NULL);
 
 	g_free(start_time_attr);
