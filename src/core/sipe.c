@@ -142,7 +142,7 @@ static struct sipe_activity_map_struct
 	{ SIPE_ACTIVITY_ONLINE,		"online",			NULL				, NULL				},
 	{ SIPE_ACTIVITY_INACTIVE,	SIPE_STATUS_ID_IDLE,		N_("Inactive")			, NULL				},
 	{ SIPE_ACTIVITY_BUSY,		SIPE_STATUS_ID_BUSY,		N_("Busy")			, SIPE_STATUS_ID_BUSY		},
-	{ SIPE_ACTIVITY_BUSYIDLE,	SIPE_STATUS_ID_BUSYIDLE,	N_("BusyIdle")			, NULL				},
+	{ SIPE_ACTIVITY_BUSYIDLE,	SIPE_STATUS_ID_BUSYIDLE,	N_("Busy-Idle")			, NULL				},
 	{ SIPE_ACTIVITY_DND,		SIPE_STATUS_ID_DND,		NULL				, SIPE_STATUS_ID_DND		},
 	{ SIPE_ACTIVITY_BRB,		SIPE_STATUS_ID_BRB,		N_("Be right back")		, SIPE_STATUS_ID_BRB		},
 	{ SIPE_ACTIVITY_AWAY,		"away",				NULL				, NULL				},
@@ -5738,6 +5738,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 
 			/* activity, meeting_subject, meeting_location */
 			if (sbuddy) {
+				char *tmp = NULL;
+
 				/* activity */
 				g_free(sbuddy->activity);
 				sbuddy->activity = NULL;
@@ -5785,7 +5787,16 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					g_free(meeting_location);
 				}
 
-				status = sipe_get_status_by_availability(availability, &(sbuddy->activity));
+				status = sipe_get_status_by_availability(availability, &tmp);
+				if (sbuddy->activity && tmp) {
+					char *tmp2 = sbuddy->activity;
+
+					sbuddy->activity = g_strdup_printf("%s, %s", sbuddy->activity, tmp);
+					g_free(tmp);
+					g_free(tmp2);
+				} else if (tmp) {
+					sbuddy->activity = tmp;
+				}
 			}
 
 			do_update_status = TRUE;
