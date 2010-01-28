@@ -7346,6 +7346,8 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	gchar *pub_calendar2 = NULL;
 	gchar *pub_oof_note = NULL;
 	const gchar *oof_note;
+	time_t oof_start = 0;
+	time_t oof_end = 0;
 
 	if (!sip->ews) {
 		purple_debug_info("sipe", "publish_calendar_status_self() no calendar data.\n");
@@ -7384,16 +7386,12 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, NULL,  sip->ews->email, SIPE_CAL_BUSY);
 	}
 
-	if ((oof_note = sipe_ews_get_oof_note(sip->ews))) {
-		time_t oof_start = 0;
-		time_t oof_end = 0;
-
-		if (!strcmp("Scheduled", sip->ews->oof_state)) {
-			oof_start = sip->ews->oof_start;
-			oof_end = sip->ews->oof_end;
-		}
-		pub_oof_note = sipe_publish_get_category_note(sip, oof_note, "OOF", oof_start, oof_end);
+	oof_note = sipe_ews_get_oof_note(sip->ews);
+	if (!strcmp("Scheduled", sip->ews->oof_state)) {
+		oof_start = sip->ews->oof_start;
+		oof_end = sip->ews->oof_end;
 	}
+	pub_oof_note = sipe_publish_get_category_note(sip, oof_note, "OOF", oof_start, oof_end);
 
 	pub_cal_working_hours = sipe_publish_get_category_cal_working_hours(sip);
 	pub_cal_free_busy = sipe_publish_get_category_cal_free_busy(sip);
