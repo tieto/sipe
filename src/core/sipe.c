@@ -7031,7 +7031,8 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	g_free(key_note_300);
 	g_free(key_note_400);
 
-	if (sipe_is_equal(n1, n2))
+	/* we even need to republish empty note */
+	if (n1 && n2 && !strcmp(n1, n2))
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
 		return NULL; /* nothing to update */
