@@ -2887,6 +2887,17 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 		guint cal_oof_instance	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR_OOF);
 		guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
 		guint note_oof_instance = sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF);
+		
+		purple_debug_info("sipe", "* Out Publication Instances *\n");
+		purple_debug_info("sipe", "\tDevice               : %u\t0x%08X\n", device_instance, device_instance);
+		purple_debug_info("sipe", "\tMachine State        : %u\t0x%08X\n", machine_instance, machine_instance);
+		purple_debug_info("sipe", "\tUser Stare           : %u\t0x%08X\n", user_instance, user_instance);
+		purple_debug_info("sipe", "\tCalendar State       : %u\t0x%08X\n", calendar_instance, calendar_instance);
+		purple_debug_info("sipe", "\tCalendar OOF State   : %u\t0x%08X\n", cal_oof_instance, cal_oof_instance);
+		purple_debug_info("sipe", "\tCalendar FreeBusy    : %u\t0x%08X\n", cal_data_instance, cal_data_instance);
+		purple_debug_info("sipe", "\tOOF Note             : %u\t0x%08X\n", note_oof_instance, note_oof_instance);
+		purple_debug_info("sipe", "\tNote                 : %u\n", 0);
+		purple_debug_info("sipe", "\tCalendar WorkingHours: %u\n", 0);
 
 		/* device */
 		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
