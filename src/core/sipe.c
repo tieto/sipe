@@ -6577,7 +6577,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 	gchar *since_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&now)));
 	const gchar *oof_note = ews ? sipe_ews_get_oof_note(ews) : NULL;
 	const char *user_input;
-	gboolean pub_oof = ews && !ews->published && oof_note && (!sip->note || ews->updated > sip->note_since);
+	gboolean pub_oof = ews && oof_note && (!sip->note || ews->updated > sip->note_since);
 	
 	if (oof_note && sip->note) {
 		purple_debug_info("sipe", "ews->oof_start  : %s", asctime(localtime(&(ews->oof_start))));
@@ -6617,16 +6617,6 @@ send_presence_soap0(struct sipe_account_data *sip,
 		tmp = purple_markup_strip_html(note_pub);
 		res_note = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, tmp);
 		g_free(tmp);
-	}
-	else if (do_publish_calendar || do_reset_status) /* preserve existing publication */
-	{
-		xmlnode *xn_note;
-		if (sip->user_info && (xn_note = xmlnode_get_child(sip->user_info, "note"))) {
-			res_note = xmlnode_to_str(xn_note, NULL);
-		}
-		if (sip->user_info && xmlnode_get_child(sip->user_info, "oof")) {
-			res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
-		}
 	}
 
 	/* User State */
