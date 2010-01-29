@@ -6601,13 +6601,14 @@ send_presence_soap0(struct sipe_account_data *sip,
 		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
 		ews->published = TRUE;
 	} else if (sip->note) {
-		if (sip->is_oof_note) { /* stale OOF note, as it's not present in ews already (oof_note == NULL) */
+		if (sip->is_oof_note && !oof_note) { /* stale OOF note, as it's not present in ews already */
 			g_free(sip->note);
 			sip->note = NULL;
 			sip->is_oof_note = FALSE;
 			sip->note_since = 0;
 		} else {
 			note_pub = sip->note;
+			res_oof = sip->is_oof_note ? SIPE_SOAP_SET_PRESENCE_OOF_XML : "";
 		}
 	}
 
