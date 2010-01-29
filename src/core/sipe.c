@@ -2023,7 +2023,14 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 			const char *note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
 			sipe_activity activity = sipe_get_activity_by_token(status_id);
 			gboolean do_not_publish = ((now - sip->do_not_publish[activity]) <= 2);
-			
+
+			/* when other point of presence clears note, but we are keeping
+			 * state if OOF note.
+			 */
+			if (do_not_publish && !note && sip->ews && sip->ews->oof_note) {
+				purple_debug_info("sipe", "sipe_set_status: enabling publication as OOF note keepers.\n");
+				do_not_publish = FALSE;
+			}
 
 			purple_debug_info("sipe", "sipe_set_status: was: sip->do_not_publish[%s]=%d [?] now(time)=%d\n",
 				status_id, (int)sip->do_not_publish[activity], (int)now);
