@@ -4290,7 +4290,7 @@ sipe_invite(struct sipe_account_data *sip,
 		"t=0 0\r\n"
 		"m=%s %d sip null\r\n"
 		"a=accept-types:text/plain text/html image/gif "
-		"multipart/related multipart/alternative application/im-iscomposing+xml application/ms-imdn+xml\r\n",
+		"multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
 		purple_network_get_my_ip(-1),
 		purple_network_get_my_ip(-1),
 		sip->ocs2007 ? "message" : "x-ms-message",
@@ -5015,7 +5015,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		"c=IN IP4 %s\r\n"
 		"t=0 0\r\n"
 		"m=%s %d sip sip:%s\r\n"
-		"a=accept-types:text/plain text/html image/gif multipart/related multipart/alternative application/im-iscomposing+xml application/ms-imdn+xml\r\n",
+		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
 		purple_network_get_my_ip(-1),
 		purple_network_get_my_ip(-1),
 		sip->ocs2007 ? "message" : "x-ms-message",
@@ -5040,7 +5040,7 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 		"c=IN IP4 0.0.0.0\r\n"
 		"t=0 0\r\n"
 		"m=%s %d sip sip:%s\r\n"
-		"a=accept-types:text/plain text/html image/gif multipart/related multipart/alternative application/im-iscomposing+xml application/ms-imdn+xml\r\n",
+		"a=accept-types:text/plain text/html image/gif multipart/related application/im-iscomposing+xml application/ms-imdn+xml\r\n",
 		sip->ocs2007 ? "message" : "x-ms-message",
 		sip->realport,
 		sip->username);
