@@ -28,7 +28,6 @@ msgid "Busy"
 msgstr "Занят"
 
 #: ../src/core/sipe.c:145
-#, fuzzy
 msgid "Busy-Idle"
 msgstr "Занят-Неактивен"
 
@@ -74,7 +73,6 @@ msgid "Could not connect"
 msgstr "Не смог соединиться"
 
 #: ../src/core/sipe.c:663 ../src/core/sipe.c:8019
-#, fuzzy
 msgid "Could not create socket"
 msgstr "Не смог создать сокет"
 
@@ -104,7 +102,6 @@ msgid "user disabled"
 msgstr "ползователь отключен"
 
 #: ../src/core/sipe.c:2659
-#, fuzzy
 msgid "user moved"
 msgstr "пользователь перемещен"
 
@@ -154,7 +151,6 @@ msgid "Received a message with unrecognized contents from %s"
 msgstr "Принято сообщение неподдерживаемого типа от %s"
 
 #: ../src/core/sipe.c:5307 ../src/core/sipe.c:7692
-#, fuzzy
 msgid "Wrong password"
 msgstr "Неверный пароль"
 
@@ -177,9 +173,8 @@ msgid "Invalid message signature received"
 msgstr "Неверная подпись сообщения"
 
 #: ../src/core/sipe.c:7762
-#, fuzzy
 msgid "Connection not found. Please try to connect again"
-msgstr "Соединение не найдено; Пожалуйста попробуйте подключиться заново\n"
+msgstr "Соединение не найдено. Пожалуйста попробуйте подключиться заново"
 
 #: ../src/core/sipe.c:7783
 msgid "SSL read error"
@@ -199,12 +194,10 @@ msgid "Could not resolve hostname"
 msgstr "Невозможно определить имя хоста"
 
 #: ../src/core/sipe.c:7982
-#, fuzzy
 msgid "Connection failed"
 msgstr "Соединение не удалось"
 
 #: ../src/core/sipe.c:7985
-#, fuzzy
 msgid "SSL handshake failed"
 msgstr "SSL соединение не удалось"
 
@@ -213,22 +206,20 @@ msgid "SSL certificate invalid"
 msgstr "Неверный SSL сертификат"
 
 #: ../src/core/sipe.c:8046
-#, fuzzy
 msgid ""
 "SSL support is not installed. Either install SSL support or configure a "
 "different connection type in the account editor"
 msgstr ""
-"Поддержка SSL не установлена. Либо установить поддержку SSL или настроить "
-"соединения различного типа в редакторе аккаунта."
+"Поддержка SSL не установлена. Либо установите поддержку SSL, либо настройте "
+"соединение другог типа в редакторе аккаунта."
 
 #: ../src/core/sipe.c:8055
 msgid "Could not create SSL context"
 msgstr "Не удалалось создать SSL соединение"
 
 #: ../src/core/sipe.c:8178
-#, fuzzy
 msgid "SIP Exchange user name contains invalid characters"
-msgstr "Имя пользователя не может содержать пробелов"
+msgstr "Имя пользователя содержит недопустимые символы"
 
 #: ../src/core/sipe.c:8201
 msgid ""
@@ -243,21 +234,18 @@ msgid ""
 msgstr ""
 
 #: ../src/core/sipe.c:8238
-#, fuzzy
 msgid "SIP Exchange user name contains whitespace"
-msgstr "SIP Exchange пользователя не может содержать пробелов"
+msgstr "Имя пользователя не может содержать пробелы"
 
 #: ../src/core/sipe.c:8250
 msgid "Connecting"
 msgstr "Соединение"
 
 #: ../src/core/sipe.c:8522
-#, fuzzy
 msgid "Unable to display the search results"
-msgstr "Не могу отобразить результаты поиска"
+msgstr "Невозможно отобразить результаты поиска"
 
 #: ../src/core/sipe.c:8528
-#, fuzzy
 msgid "User name"
 msgstr "Имя пользователя"
 
@@ -290,12 +278,10 @@ msgid " (more matched your query)"
 msgstr " (больше соответствует вашему запросу)"
 
 #: ../src/core/sipe.c:8624
-#, fuzzy
 msgid "First name"
 msgstr "Имя"
 
 #: ../src/core/sipe.c:8626
-#, fuzzy
 msgid "Last name"
 msgstr "Фамилия"
 
@@ -304,18 +290,16 @@ msgid "Search"
 msgstr "Поиск"
 
 #: ../src/core/sipe.c:8635
-#, fuzzy
 msgid "Search for a contact"
-msgstr "Поиск контакта"
+msgstr "Поиск контактов"
 
 #: ../src/core/sipe.c:8636
-#, fuzzy
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr ""
 "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут "
-"проигнорированы."
+"игнорированы."
 
 #: ../src/core/sipe.c:8638
 msgid "_Search"
@@ -330,9 +314,8 @@ msgid "About SIPE plugin"
 msgstr "О плагине Sipe"
 
 #: ../src/core/sipe.c:8744
-#, fuzzy
 msgid "Contact search..."
-msgstr "Поиск контакта"
+msgstr "Поиск контактов..."
 
 #: ../src/core/sipe.c:8748
 msgid "Republish Calendar"
@@ -484,7 +467,6 @@ msgid ""
 msgstr ""
 
 #: ../src/core/sipe.c:9781
-#, fuzzy
 msgid "Connection type"
 msgstr "Тип соединения"
 
@@ -622,9 +604,8 @@ msgid ""
 msgstr "Конференция закрыта. Никто не может присоединиться к конференции."
 
 #: ../src/core/sipe-conf.c:865
-#, fuzzy
 msgid "You have been disconnected from this conference."
-msgstr "Вы были отвергнуты сервером"
+msgstr "Вы были отключены от конференции."
 
 #~ msgid "Service unavailable: no reason given"
 #~ msgstr "Служба недоступна: без объяснения причин"
