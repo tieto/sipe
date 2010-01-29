@@ -2,7 +2,7 @@
 # Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
@@ -14,9 +14,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
-"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Launchpad-Export-Date: 2009-06-19 15:32+0000\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
 #: ../src/core/sipe.c:143
@@ -41,7 +40,7 @@ msgstr "На обеде"
 
 #: ../src/core/sipe.c:151
 msgid "In a call"
-msgstr ""
+msgstr "This is a test \"in a call\" please delete..."
 
 #: ../src/core/sipe.c:152
 msgid "In a conference"
@@ -116,29 +115,19 @@ msgstr "нет причины"
 
 #: ../src/core/sipe.c:3850
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
-msgstr ""
-"Сообщение не доставлено %s из-за того что сервис недоступен"
+msgid "This message was not delivered to %s because the service is not available"
+msgstr "Сообщение не доставлено %s из-за того что сервис недоступен"
 
 #. Busy Here
 #: ../src/core/sipe.c:3852
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
-"Сообщение не доставлено %s из-за того что один или нескольно получателей были "
-"недоступны"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Сообщение не доставлено %s из-за того что один или нескольно получателей были недоступны"
 
 #: ../src/core/sipe.c:3854
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
-"Сообщение не доставлено %s из-за того что один или нескольно получателей были "
-"вне сети"
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Сообщение не доставлено %s из-за того что один или нескольно получателей были вне сети"
 
 #: ../src/core/sipe.c:4136
 #, c-format
@@ -206,12 +195,8 @@ msgid "SSL certificate invalid"
 msgstr "Неверный SSL сертификат"
 
 #: ../src/core/sipe.c:8046
-msgid ""
-"SSL support is not installed. Either install SSL support or configure a "
-"different connection type in the account editor"
-msgstr ""
-"Поддержка SSL не установлена. Либо установите поддержку SSL, либо настройте "
-"соединение другог типа в редакторе аккаунта."
+msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
+msgstr "Поддержка SSL не установлена. Либо установите поддержку SSL, либо настройте соединение другог типа в редакторе аккаунта."
 
 #: ../src/core/sipe.c:8055
 msgid "Could not create SSL context"
@@ -294,12 +279,8 @@ msgid "Search for a contact"
 msgstr "Поиск контактов"
 
 #: ../src/core/sipe.c:8636
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Введите информацию о человеке, которого вы хотите найти. Пустые поля будут "
-"игнорированы."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут игнорированы."
 
 #: ../src/core/sipe.c:8638
 msgid "_Search"
@@ -486,8 +467,10 @@ msgstr "TCP"
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/core/sipe.c:9791
 msgid "User Agent"
 msgstr "User Agent"
@@ -499,7 +482,7 @@ msgstr "Использовать Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/core/sipe.c:9802
 msgid "Use Single Sign-On"
 msgstr "Использовать Single Sign-On"
@@ -593,14 +576,11 @@ msgid "Chat #%d"
 msgstr ""
 
 #: ../src/core/sipe-conf.c:828
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
+msgid "This conference is no longer locked. Additional participants can now join."
 msgstr "Конференция открыта. Дополнительные участники могут присоединиться."
 
 #: ../src/core/sipe-conf.c:832
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
 msgstr "Конференция закрыта. Никто не может присоединиться к конференции."
 
 #: ../src/core/sipe-conf.c:865
