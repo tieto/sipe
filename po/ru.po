@@ -216,9 +216,11 @@ msgstr ""
 
 #: ../src/core/sipe.c:8212
 msgid ""
+"Email address should be valid if provided\n"
+"Example: user@company.com"
+msgstr ""
 "Email адрес должно быть верным если введен\n"
 "Пример: user@company.com"
-msgstr ""
 
 #: ../src/core/sipe.c:8238
 msgid "SIP Exchange user name contains whitespace"
