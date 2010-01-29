@@ -40,7 +40,7 @@ msgstr "На обеде"
 
 #: ../src/core/sipe.c:151
 msgid "In a call"
-msgstr "This is a test \"in a call\" please delete..."
+msgstr "На телефоне"
 
 #: ../src/core/sipe.c:152
 msgid "In a conference"
@@ -150,7 +150,7 @@ msgstr "Не найден: %s. Пожалуйста свяжитесь с адм
 
 #: ../src/core/sipe.c:5358
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr ""
+msgstr "SIP-адрес либо не включен для URI назначения либо не существует"
 
 #: ../src/core/sipe.c:5375
 #, c-format
@@ -211,11 +211,13 @@ msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr ""
+"Имя пользователя должно быть верным SIP URI\n"
+"Пример: user@company.com"
 
 #: ../src/core/sipe.c:8212
 msgid ""
-"Email address should be valid if provided\n"
-"Example: user@company.com"
+"Email адрес должно быть верным если введен\n"
+"Пример: user@company.com"
 msgstr ""
 
 #: ../src/core/sipe.c:8238
@@ -324,15 +326,15 @@ msgstr "Встреча о"
 
 #: ../src/core/sipe.c:8866
 msgid "Out of office note"
-msgstr ""
+msgstr "Сообщение вне офиса"
 
 #: ../src/core/sipe.c:8866
 msgid "Note"
-msgstr ""
+msgstr "Сообщение"
 
 #: ../src/core/sipe.c:8878
 msgid "user@company.com"
-msgstr ""
+msgstr "user@company.com"
 
 #: ../src/core/sipe.c:9240
 #, c-format
@@ -351,7 +353,7 @@ msgstr "Пригласить в '%s'"
 
 #: ../src/core/sipe.c:9275
 msgid "New chat"
-msgstr ""
+msgstr "Новый чат"
 
 #: ../src/core/sipe.c:9286
 #, c-format
@@ -396,7 +398,7 @@ msgstr "Закрыть"
 
 #: ../src/core/sipe.c:9521 ../src/core/sipe.c:9558
 msgid "Display name"
-msgstr ""
+msgstr "Отображаемое имя"
 
 #: ../src/core/sipe.c:9524
 msgid "Job title"
@@ -424,15 +426,15 @@ msgstr "Email адрес"
 
 #: ../src/core/sipe.c:9565
 msgid "Alias"
-msgstr ""
+msgstr "Псевдоним"
 
 #: ../src/core/sipe.c:9578
 msgid "Site"
-msgstr ""
+msgstr "Сайт"
 
 #: ../src/core/sipe.c:9582
 msgid "Device"
-msgstr ""
+msgstr "Устройство"
 
 #: ../src/core/sipe.c:9774
 msgid ""
@@ -440,12 +442,17 @@ msgid ""
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr ""
+"Логин\n"
+"   user  или  DOMAIN\\user  или\n"
+"   user@company.com"
 
 #: ../src/core/sipe.c:9778
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr ""
+"Сервер[:Порт]\n"
+"(оставьте пустым для авто-определения)"
 
 #: ../src/core/sipe.c:9781
 msgid "Connection type"
@@ -493,7 +500,7 @@ msgstr "Календарь"
 
 #: ../src/core/sipe.c:9807
 msgid "Exchange 2007/2010"
-msgstr ""
+msgstr "Exchange 2007/2010"
 
 #: ../src/core/sipe.c:9808
 msgid "None"
@@ -505,12 +512,16 @@ msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr ""
+"URL email службы\n"
+"(оставьте пустым для авто-определения)"
 
 #: ../src/core/sipe.c:9815
 msgid ""
 "Email address\n"
 "(if different from Username)"
 msgstr ""
+"Email адрес\n"
+"(если отличен от Имени пользователя)"
 
 #. * Example: DOMAIN\user  or  user@company.com
 #: ../src/core/sipe.c:9819
@@ -518,12 +529,16 @@ msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr ""
+"Email логин\n"
+"(если отличен от Логина)"
 
 #: ../src/core/sipe.c:9822
 msgid ""
 "Email password\n"
 "(if different from Password)"
 msgstr ""
+"Email пароль\n"
+"(если отличен от Пароля)"
 
 #: ../src/core/sipe-cal.c:845
 msgid "Free"
@@ -573,7 +588,7 @@ msgstr "%s. %s в %.2d:%.2d"
 #: ../src/core/sipe-chat.c:82
 #, c-format
 msgid "Chat #%d"
-msgstr ""
+msgstr "Чат #%d"
 
 #: ../src/core/sipe-conf.c:828
 msgid "This conference is no longer locked. Additional participants can now join."
