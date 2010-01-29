@@ -207,6 +207,18 @@ sipe_is_bad_alias(const char *uri,
 xmlnode * xmlnode_get_descendant(const xmlnode *parent, ...);
 
 /**
+ * Convert a XML attribute to an integer
+ * @param node     (in) XML node
+ * @param attr     (in) name of the attribute
+ * @param fallback (in) default value if the attribute doesn't exist
+ *
+ * @return attribute value converted to integer or the fallback value
+ */
+gint xmlnode_get_int_attrib(xmlnode *node,
+			    const char *attr,
+			    gint fallback);
+
+/**
  * For glib < 2.8 compatibility
  */
 char *sipe_get_host_name(void);

@@ -129,6 +129,15 @@ xmlnode *xmlnode_get_descendant(const xmlnode *parent, ...)
 	return node;
 }
 
+gint xmlnode_get_int_attrib(xmlnode *node,
+			    const char *attr,
+			    gint fallback)
+{
+	const char *value = xmlnode_get_attrib(node, attr);
+	return(value ? atoi(value) : fallback);
+}
+
+
 //* @TODO Do we need compat with glib < 2.8 ? */
 char *sipe_get_host_name(void)
 {

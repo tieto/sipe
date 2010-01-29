@@ -1608,7 +1608,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
 
-		purple_debug_info("sipe", "sipe_got_user_status: to %s for the account\n", sip->status);
+		purple_debug_info("sipe", "sipe_got_user_status: switch to '%s' for the account\n", sip->status);
 		sipe_set_purple_account_status_and_note(sip->account, status_id, sip->note, sip->do_not_publish);		
 	}
 	g_free(self_uri);
@@ -3283,9 +3283,9 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	for (node = xmlnode_get_descendant(xml, "categories", "category", NULL); node; node = xmlnode_get_next_twin(node)) {
 		const char *tmp;
 		const gchar *name = xmlnode_get_attrib(node, "name");
-		guint container = (tmp = xmlnode_get_attrib(node, "container")) ? atoi(tmp) : -1;
-		guint instance  = (tmp = xmlnode_get_attrib(node, "instance"))  ? atoi(tmp) : -1;
-		guint version   = atoi(xmlnode_get_attrib(node, "version"));
+		guint container = xmlnode_get_int_attrib(node, "container", -1);
+		guint instance  = xmlnode_get_int_attrib(node, "instance", -1);
+		guint version   = xmlnode_get_int_attrib(node, "version", 0);
 		time_t publish_time = (tmp = xmlnode_get_attrib(node, "publishTime")) ?
 			purple_str_to_time(tmp, FALSE, NULL, NULL, NULL) : 0;
 		gchar *key;
@@ -3491,7 +3491,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 	/* containers */
 	for (node = xmlnode_get_descendant(xml, "containers", "container", NULL); node; node = xmlnode_get_next_twin(node)) {
-		guint id = atoi(xmlnode_get_attrib(node, "id"));
+		guint id = xmlnode_get_int_attrib(node, "id", 0);
 		struct sipe_container *container = sipe_find_container(sip, id);
 
 		if (container) {
@@ -3501,7 +3501,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		}
 		container = g_new0(struct sipe_container, 1);
 		container->id = id;
-		container->version = atoi(xmlnode_get_attrib(node, "version"));
+		container->version = xmlnode_get_int_attrib(node, "version", 0);
 		sip->containers = g_slist_append(sip->containers, container);
 		purple_debug_info("sipe", "sipe_process_roaming_self: added container id=%d v%d\n", container->id, container->version);
 
@@ -3599,7 +3599,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	}
 
 	if (do_update_status) {
-		purple_debug_info("sipe", "sipe_process_roaming_self: to %s for the account\n", sip->status);
+		purple_debug_info("sipe", "sipe_process_roaming_self: switch to '%s' for the account\n", sip->status);
 		sipe_set_purple_account_status_and_note(sip->account, sip->status, sip->note, sip->do_not_publish);		
 	}
 
@@ -4526,7 +4526,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 
 		if (xn_request_rm) {
 			//const char *rm = xmlnode_get_attrib(xn_request_rm, "uri");
-			int bid = atoi(xmlnode_get_attrib(xn_request_rm, "bid"));
+			int bid = xmlnode_get_int_attrib(xn_request_rm, "bid", 0);
 			gchar *body = g_strdup_printf(
 				"<?xml version=\"1.0\"?>\r\n"
 				"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
@@ -6090,7 +6090,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
 	xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
 	xn_state = xn_userinfo ? xmlnode_get_descendant(xn_userinfo, "states", "state",  NULL): NULL;
-	user_avail = xn_state ? atoi(xmlnode_get_attrib(xn_state, "avail")) : 0;
+	user_avail = xn_state ? xmlnode_get_int_attrib(xn_state, "avail", 0) : 0;
 	user_avail_since = xn_state ? purple_str_to_time(xmlnode_get_attrib(xn_state, "since"), FALSE, NULL, NULL, NULL) : 0;
 	user_avail_nil = xn_state ? xmlnode_get_attrib(xn_state, "nil") : NULL;
 	xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
@@ -6106,9 +6106,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	name = xmlnode_get_attrib(xn_presentity, "uri"); /* without 'sip:' prefix */
 	uri = sip_uri_from_name(name);
-	avl = atoi(xmlnode_get_attrib(xn_availability, "aggregate"));
+	avl = xmlnode_get_int_attrib(xn_availability, "aggregate", 0);
 	epid = xmlnode_get_attrib(xn_availability, "epid");
-	act = atoi(xmlnode_get_attrib(xn_activity, "aggregate"));
+	act = xmlnode_get_int_attrib(xn_activity, "aggregate", 0);
 
 	status_id = sipe_get_status_by_act_avail_2005(act, avl, &activity);
 	res_avail = sipe_get_availability_by_status(status_id, NULL);
@@ -6191,7 +6191,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		/* state */
 		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
 		if (xn_state) {
-			int dev_avail = atoi(xmlnode_get_attrib(xn_state, "avail"));
+			int dev_avail = xmlnode_get_int_attrib(xn_state, "avail", 0);
 			time_t dev_avail_since = purple_str_to_time(xmlnode_get_attrib(xn_state, "since"), FALSE, NULL, NULL, NULL);
 
 			state = xmlnode_get_data(xn_state);
