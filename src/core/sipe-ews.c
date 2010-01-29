@@ -619,40 +619,45 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 	purple_debug_info("sipe", "sipe_ews_update_calendar: started.\n");
 
 	if (!sip->ews) {
-		const char *email_url;
-		const char *email_login;
-		const char *email_password;
-		char *email_auth_user = NULL;
-		char *email_auth_domain = NULL;
-		char *tmp = NULL;
+		const char *value;
+
 		sip->ews = g_new0(struct sipe_ews, 1);
 		sip->ews->sip = sip;
 
 		sip->ews->account = sip->account;
-		email_url      = purple_account_get_string(sip->account, "email_url", NULL);
-		email_login    = purple_account_get_string(sip->account, "email_login", NULL);
-		email_password = purple_account_get_string(sip->account, "email_password", NULL);
+		sip->ews->email   = g_strdup(sip->email);
 
-		if (!is_empty(email_url)) {
-			sip->ews->as_url  = g_strdup(email_url);
-			sip->ews->oof_url = g_strdup(email_url);
+		/* user specified a service URL? */
+		value = purple_account_get_string(sip->account, "email_url", NULL);
+		if (!is_empty(value)) {
+			sip->ews->as_url  = g_strdup(value);
+			sip->ews->oof_url = g_strdup(value);
 			sip->ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		}
 
-		if (!is_empty(email_login) && (tmp = strstr(email_login, "\\"))) {
-			email_auth_user   = g_strdup(tmp + 1);
-			email_auth_domain = g_strndup(email_login, tmp - email_login);
-		} else {
-			email_auth_user   = g_strdup(email_login);
-		}
-
-		sip->ews->email = g_strdup(sip->email);
-
 		sip->ews->auth = g_new0(HttpConnAuth, 1);
-		sip->ews->auth->domain   = !is_empty(email_login) ? email_auth_domain        : g_strdup(sip->authdomain);
-		sip->ews->auth->user     = !is_empty(email_login) ? email_auth_user          : g_strdup(sip->authuser);
-		sip->ews->auth->password = !is_empty(email_login) ? g_strdup(email_password) : g_strdup(sip->password);
 		sip->ews->auth->use_negotiate = purple_account_get_bool(sip->account, "krb5", FALSE);
+
+		/* user specified email login? */
+		value = purple_account_get_string(sip->account, "email_login", NULL);
+		if (!is_empty(value)) {
+
+			/* user specified email login domain? */
+			const char *tmp = strstr(value, "\\");
+			if (tmp) {
+				sip->ews->auth->domain = g_strndup(value, tmp - value);
+				sip->ews->auth->user   = g_strdup(tmp + 1);
+			} else {
+				sip->ews->auth->user   = g_strdup(value);
+			}
+			sip->ews->auth->password = g_strdup(purple_account_get_string(sip->account, "email_password", NULL));
+
+		} else {
+			/* re-use SIPE credentials */
+			sip->ews->auth->domain   = g_strdup(sip->authdomain);
+			sip->ews->auth->user     = g_strdup(sip->authuser);
+			sip->ews->auth->password = g_strdup(sip->password);
+		}
 	}
 
 	if(sip->ews->is_disabled) {

@@ -7060,6 +7060,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	if (n1 && n2 && !strcmp(n1, n2))
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
+		g_free(n1);
 		return NULL; /* nothing to update */
 	}
 
