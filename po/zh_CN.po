@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-01-30 10:04+0200\n"
+"POT-Creation-Date: 2010-01-30 20:29+0000\n"
 "PO-Revision-Date: 2010-01-30 10:58+0800\n"
 "Last-Translator: 神州散人 <kappa8086@gmail.com>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
@@ -249,11 +249,11 @@ msgstr "用户名"
 msgid "Name"
 msgstr "名称"
 
-#: ../src/core/sipe.c:8534 ../src/core/sipe.c:8628 ../src/core/sipe.c:9536
+#: ../src/core/sipe.c:8534 ../src/core/sipe.c:8628 ../src/core/sipe.c:9542
 msgid "Company"
 msgstr "公司"
 
-#: ../src/core/sipe.c:8537 ../src/core/sipe.c:8630 ../src/core/sipe.c:9545
+#: ../src/core/sipe.c:8537 ../src/core/sipe.c:8630 ../src/core/sipe.c:9551
 msgid "Country"
 msgstr "国家"
 
@@ -301,151 +301,174 @@ msgstr "搜索(_S)"
 msgid "_Cancel"
 msgstr "取消(_C)"
 
-#: ../src/core/sipe.c:8744
+#: ../src/core/sipe.c:8648
+#, c-format
+msgid ""
+"<b><font size=\"+1\">Sipe %s</font></b><br/><br/>A third-party plugin "
+"implementing extended version of SIP/SIMPLE used by various products:<br/"
+"><li> - MS Office Communications Server 2007 R2</li><br/><li> - MS Office "
+"Communications Server 2007</li><br/><li> - MS Live Communications Server "
+"2005</li><br/><li> - MS Live Communications Server 2003</li><br/><li> - "
+"Reuters Messaging</li><br/><br/>Home: <a href=\"http://sipe.sourceforge.net"
+"\">http://sipe.sourceforge.net</a><br/>Support: <a href=\"http://sourceforge."
+"net/projects/sipe/forums/forum/688534\">Help Forum</a><br/>Translations: <a "
+"href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/"
+"\">Transifex.net</a><br/>License: GPLv2+<br/><br/>We support users in such "
+"organizations as:<br/> - CERN<br/> - Reuters Messaging network<br/> - "
+"Deutsche Bank<br/> - Merrill Lynch<br/> - Wachovia<br/> - Intel<br/> - "
+"Nokia<br/> - HP<br/> - Siemens<br/> - Alcatel-Lucent<br/> - BT<br/><br/"
+">Please help us translate Sipe to your native language here at <a href="
+"\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex."
+"net</a> using convenient web interface.<br/><br/><b>Authors:</b><br/> - "
+"Anibal Avelar<br/> - Gabriel Burt<br/> - Stefan Becker<br/> - pier11<br/><br/"
+"><b>Translation:</b><br/>  English (en) - Sipe Team<br/>"
+msgstr ""
+
+#: ../src/core/sipe.c:8750
 msgid "About SIPE plugin"
 msgstr "关于 SIPE 插件"
 
-#: ../src/core/sipe.c:8747
+#: ../src/core/sipe.c:8753
 msgid "Contact search..."
 msgstr "联系人搜索..."
 
-#: ../src/core/sipe.c:8751
+#: ../src/core/sipe.c:8757
 msgid "Republish Calendar"
 msgstr "重新发布日历"
 
-#: ../src/core/sipe.c:8755
+#: ../src/core/sipe.c:8761
 msgid "Reset status"
 msgstr "复位状态"
 
-#: ../src/core/sipe.c:8847
+#: ../src/core/sipe.c:8853
 msgid "Status"
 msgstr "状态"
 
-#: ../src/core/sipe.c:8852
+#: ../src/core/sipe.c:8858
 msgid "Calendar"
 msgstr "日历"
 
-#: ../src/core/sipe.c:8857
+#: ../src/core/sipe.c:8863
 msgid "Meeting in"
 msgstr "会议场所"
 
-#: ../src/core/sipe.c:8861
+#: ../src/core/sipe.c:8867
 msgid "Meeting about"
 msgstr "会议内容"
 
-#: ../src/core/sipe.c:8869
+#: ../src/core/sipe.c:8875
 msgid "Out of office note"
 msgstr "不在办公室备注"
 
-#: ../src/core/sipe.c:8869
+#: ../src/core/sipe.c:8875
 msgid "Note"
 msgstr "备注"
 
-#: ../src/core/sipe.c:8881
+#: ../src/core/sipe.c:8887
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/core/sipe.c:9243
+#: ../src/core/sipe.c:9249
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "设置为“%s”的领导者"
 
-#: ../src/core/sipe.c:9254
+#: ../src/core/sipe.c:9260
 #, c-format
 msgid "Remove from '%s'"
 msgstr "从“%s”中删除"
 
-#: ../src/core/sipe.c:9267
+#: ../src/core/sipe.c:9273
 #, c-format
 msgid "Invite to '%s'"
 msgstr "邀请到“%s”"
 
-#: ../src/core/sipe.c:9278
+#: ../src/core/sipe.c:9284
 msgid "New chat"
 msgstr "新建聊天"
 
-#: ../src/core/sipe.c:9289
+#: ../src/core/sipe.c:9295
 #, c-format
 msgid "Work %s"
 msgstr "工作 %s"
 
-#: ../src/core/sipe.c:9302
+#: ../src/core/sipe.c:9308
 #, c-format
 msgid "Mobile %s"
 msgstr "移动 %s"
 
-#: ../src/core/sipe.c:9315
+#: ../src/core/sipe.c:9321
 #, c-format
 msgid "Home %s"
 msgstr "家庭 %s"
 
-#: ../src/core/sipe.c:9328
+#: ../src/core/sipe.c:9334
 #, c-format
 msgid "Other %s"
 msgstr "其他 %s"
 
-#: ../src/core/sipe.c:9341
+#: ../src/core/sipe.c:9347
 #, c-format
 msgid "Custom1 %s"
 msgstr "自定义 1 %s"
 
-#: ../src/core/sipe.c:9353
+#: ../src/core/sipe.c:9359
 msgid "Send email..."
 msgstr "发送邮件..."
 
-#: ../src/core/sipe.c:9378
+#: ../src/core/sipe.c:9384
 msgid "Copy to"
 msgstr "复制到"
 
-#: ../src/core/sipe.c:9432
+#: ../src/core/sipe.c:9438
 msgid "Unlock"
 msgstr "解锁"
 
-#: ../src/core/sipe.c:9437
+#: ../src/core/sipe.c:9443
 msgid "Lock"
 msgstr "锁定"
 
-#: ../src/core/sipe.c:9524 ../src/core/sipe.c:9561
+#: ../src/core/sipe.c:9530 ../src/core/sipe.c:9567
 msgid "Display name"
 msgstr "显示名称"
 
-#: ../src/core/sipe.c:9527
+#: ../src/core/sipe.c:9533
 msgid "Job title"
 msgstr "职称"
 
-#: ../src/core/sipe.c:9530
+#: ../src/core/sipe.c:9536
 msgid "Office"
 msgstr "职务"
 
-#: ../src/core/sipe.c:9533
+#: ../src/core/sipe.c:9539
 msgid "Business phone"
 msgstr "工作电话"
 
-#: ../src/core/sipe.c:9539
+#: ../src/core/sipe.c:9545
 msgid "City"
 msgstr "城市"
 
-#: ../src/core/sipe.c:9542
+#: ../src/core/sipe.c:9548
 msgid "State"
 msgstr "省份"
 
-#: ../src/core/sipe.c:9548 ../src/core/sipe.c:9575
+#: ../src/core/sipe.c:9554 ../src/core/sipe.c:9581
 msgid "Email address"
 msgstr "电子邮件地址"
 
-#: ../src/core/sipe.c:9568
+#: ../src/core/sipe.c:9574
 msgid "Alias"
 msgstr "别名"
 
-#: ../src/core/sipe.c:9581
+#: ../src/core/sipe.c:9587
 msgid "Site"
 msgstr "站点"
 
-#: ../src/core/sipe.c:9585
+#: ../src/core/sipe.c:9591
 msgid "Device"
 msgstr "设备"
 
-#: ../src/core/sipe.c:9777
+#: ../src/core/sipe.c:9783
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -455,7 +478,7 @@ msgstr ""
 "   用户  或  域\\用户  或\n"
 "   user@company.com"
 
-#: ../src/core/sipe.c:9781
+#: ../src/core/sipe.c:9787
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -463,33 +486,33 @@ msgstr ""
 "服务器[:端口]\n"
 "(留空使用自动发现)"
 
-#: ../src/core/sipe.c:9784
+#: ../src/core/sipe.c:9790
 msgid "Connection type"
 msgstr "连接类型"
 
-#: ../src/core/sipe.c:9785
+#: ../src/core/sipe.c:9791
 msgid "Auto"
 msgstr "自动"
 
-#: ../src/core/sipe.c:9786
+#: ../src/core/sipe.c:9792
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/core/sipe.c:9787
+#: ../src/core/sipe.c:9793
 msgid "TCP"
 msgstr "TCP"
 
-#: ../src/core/sipe.c:9788
+#: ../src/core/sipe.c:9794
 msgid "UDP"
 msgstr "UDP"
 
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/core/sipe.c:9794
+#: ../src/core/sipe.c:9800
 msgid "User Agent"
 msgstr "用户代理"
 
-#: ../src/core/sipe.c:9798
+#: ../src/core/sipe.c:9804
 msgid "Use Kerberos"
 msgstr "使用 Kerberos"
 
@@ -497,24 +520,24 @@ msgstr "使用 Kerberos"
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #.
-#: ../src/core/sipe.c:9805
+#: ../src/core/sipe.c:9811
 msgid "Use Single Sign-On"
 msgstr "使用单点登录"
 
-#: ../src/core/sipe.c:9809
+#: ../src/core/sipe.c:9815
 msgid "Calendar source"
 msgstr "日历源"
 
-#: ../src/core/sipe.c:9810
+#: ../src/core/sipe.c:9816
 msgid "Exchange 2007/2010"
 msgstr "Exchange 2007/2010"
 
-#: ../src/core/sipe.c:9811
+#: ../src/core/sipe.c:9817
 msgid "None"
 msgstr "无"
 
 #. * Example: https://server.company.com/EWS/Exchange.asmx
-#: ../src/core/sipe.c:9815
+#: ../src/core/sipe.c:9821
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -522,7 +545,7 @@ msgstr ""
 "电子邮件服务 URL\n"
 "(留空使用自动发现)"
 
-#: ../src/core/sipe.c:9818
+#: ../src/core/sipe.c:9824
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -531,7 +554,7 @@ msgstr ""
 "(如果与用户名不同)"
 
 #. * Example: DOMAIN\user  or  user@company.com
-#: ../src/core/sipe.c:9822
+#: ../src/core/sipe.c:9828
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -539,7 +562,7 @@ msgstr ""
 "电子邮件登录名\n"
 "(如果与登录名不同)"
 
-#: ../src/core/sipe.c:9825
+#: ../src/core/sipe.c:9831
 msgid ""
 "Email password\n"
 "(if different from Password)"

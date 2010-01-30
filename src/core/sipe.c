@@ -8643,8 +8643,9 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 static void sipe_show_about_plugin(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	const char *txt =
-"<b><font size=\"+1\">Sipe " SIPE_VERSION "</font></b><br/>"
+	char *tmp;
+	const char *about_sipe_html =
+_("<b><font size=\"+1\">Sipe %s</font></b><br/>"
 "<br/>"
 "A third-party plugin implementing extended version of SIP/SIMPLE used by various products:<br/>"
     "<li> - MS Office Communications Server 2007 R2</li><br/>"
@@ -8658,7 +8659,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 "Translations: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a><br/>"
 "License: GPLv2+<br/>"
 "<br/>"
-"We support users in the following organizations to mention a few:<br/>"
+"We support users in such organizations as:<br/>"
 " - CERN<br/>"
 " - Reuters Messaging network<br/>"
 " - Deutsche Bank<br/>"
@@ -8677,9 +8678,14 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 " - Anibal Avelar<br/>"
 " - Gabriel Burt<br/>"
 " - Stefan Becker<br/>"
-" - pier11<br/>";
+" - pier11<br/>"
+"<br/>"
+"<b>Translation:</b><br/>"
+"  English (en) - Sipe Team<br/>");
 
-	purple_notify_formatted(gc, NULL, " ", NULL, txt, NULL, NULL);
+	tmp = g_strdup_printf(about_sipe_html, SIPE_VERSION);	
+	purple_notify_formatted(gc, NULL, " ", NULL, tmp, NULL, NULL);
+	g_free(tmp);
 }
 
 static void sipe_republish_calendar(PurplePluginAction *action)
