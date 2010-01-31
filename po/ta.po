@@ -668,15 +668,3 @@ msgstr ""
 #: ../src/core/sipe-conf.c:865
 msgid "You have been disconnected from this conference."
 msgstr ""
-
-#~ msgid "Couldn't resolve host"
-#~ msgstr "புரவலரை நிர்ணயிக்க முடியவில்லை"
-
-#~ msgid "Use proxy"
-#~ msgstr "பதில்மாற்றை பயன்படுத்து"
-
-#~ msgid "Proxy Server"
-#~ msgstr "பதிலாள் சேவையகம்"
-
-#~ msgid "Auth Domain"
-#~ msgstr "ஆத் களப்பெயர்"

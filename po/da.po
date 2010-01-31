@@ -681,27 +681,3 @@ msgstr ""
 #, fuzzy
 msgid "You have been disconnected from this conference."
 msgstr "Du er blevet afvist af serveren"
-
-#~ msgid "Service unavailable: no reason given"
-#~ msgstr "Service ikke tilgængelig: ingen årsag angivet"
-
-#~ msgid "Couldn't resolve host"
-#~ msgstr "Kunne ikke slå vært op"
-
-#~ msgid "Use proxy"
-#~ msgstr "Brug proxy"
-
-#~ msgid "Proxy Server"
-#~ msgstr "Proxy server"
-
-#~ msgid "Use non-standard port"
-#~ msgstr "Brug en ikke standard port"
-
-#~ msgid "Port"
-#~ msgstr "Port"
-
-#~ msgid "Auth User"
-#~ msgstr "Autentificering bruger"
-
-#~ msgid "Auth Domain"
-#~ msgstr "Autentificering domæne"

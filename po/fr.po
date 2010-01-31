@@ -682,27 +682,3 @@ msgstr ""
 #, fuzzy
 msgid "You have been disconnected from this conference."
 msgstr "Le serveur a rejeté votre demande"
-
-#~ msgid "Service unavailable: no reason given"
-#~ msgstr "Service indisponible: raison inconnue"
-
-#~ msgid "Couldn't resolve host"
-#~ msgstr "Impossible de résoudre l'hôte"
-
-#~ msgid "Use proxy"
-#~ msgstr "Utiliser un serveur mandataire (proxy)"
-
-#~ msgid "Proxy Server"
-#~ msgstr "Serveur mandataire (proxy)"
-
-#~ msgid "Use non-standard port"
-#~ msgstr "Utiliser un port non standard"
-
-#~ msgid "Port"
-#~ msgstr "Port"
-
-#~ msgid "Auth User"
-#~ msgstr "Authentification de l'utilisateur"
-
-#~ msgid "Auth Domain"
-#~ msgstr "Domaine d'authentification"

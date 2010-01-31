@@ -678,21 +678,3 @@ msgstr ""
 #, fuzzy
 msgid "You have been disconnected from this conference."
 msgstr "Byl jste odmítnut serverem."
-
-#~ msgid "Use proxy"
-#~ msgstr "Používat proxy"
-
-#~ msgid "Proxy Server"
-#~ msgstr "Proxy server"
-
-#~ msgid "Use non-standard port"
-#~ msgstr "Použít nestandardní port"
-
-#~ msgid "Port"
-#~ msgstr "Port"
-
-#~ msgid "Auth User"
-#~ msgstr "Uživatel pro autentizaci"
-
-#~ msgid "Auth Domain"
-#~ msgstr "Doména autentizace"

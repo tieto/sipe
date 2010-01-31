@@ -667,9 +667,3 @@ msgstr ""
 #: ../src/core/sipe-conf.c:865
 msgid "You have been disconnected from this conference."
 msgstr ""
-
-#~ msgid "Use proxy"
-#~ msgstr "Bruk proxy"
-
-#~ msgid "Port"
-#~ msgstr "Port"

@@ -704,6 +704,3 @@ msgstr ""
 #: ../src/core/sipe-conf.c:865
 msgid "You have been disconnected from this conference."
 msgstr "Usted ha sido desconectado de esta conferencia."
-
-#~ msgid "On The Phone"
-#~ msgstr "Al telefono"

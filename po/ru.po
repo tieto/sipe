@@ -687,9 +687,3 @@ msgstr "Конференция закрыта. Никто не может при
 #: ../src/core/sipe-conf.c:865
 msgid "You have been disconnected from this conference."
 msgstr "Вы были отключены от конференции."
-
-#~ msgid "Translation"
-#~ msgstr "Перевод"
-
-#~ msgid "Translators"
-#~ msgstr "Перевод"
