@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-01-30 20:45+0000\n"
+"POT-Creation-Date: 2010-01-31 02:16+0200\n"
 "PO-Revision-Date: 2010-01-30 21:59+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
@@ -252,11 +252,11 @@ msgstr "Nazwa użytkownika"
 msgid "Name"
 msgstr "Nazwa"
 
-#: ../src/core/sipe.c:8534 ../src/core/sipe.c:8628 ../src/core/sipe.c:9542
+#: ../src/core/sipe.c:8534 ../src/core/sipe.c:8628 ../src/core/sipe.c:9574
 msgid "Company"
 msgstr "Firma"
 
-#: ../src/core/sipe.c:8537 ../src/core/sipe.c:8630 ../src/core/sipe.c:9551
+#: ../src/core/sipe.c:8537 ../src/core/sipe.c:8630 ../src/core/sipe.c:9583
 msgid "Country"
 msgstr "Kraj"
 
@@ -308,192 +308,214 @@ msgstr "Wy_szukaj"
 msgid "_Cancel"
 msgstr "_Anuluj"
 
-#: ../src/core/sipe.c:8648
-#, c-format
+#. The next 11 texts make up the SIPE about note text
+#. About note, part 1/11: introduction
+#: ../src/core/sipe.c:8696
 msgid ""
-"<b><font size=\"+1\">Sipe %s</font></b><br/><br/>A third-party plugin "
-"implementing extended version of SIP/SIMPLE used by various products:<br/"
-"><li> - MS Office Communications Server 2007 R2</li><br/><li> - MS Office "
-"Communications Server 2007</li><br/><li> - MS Live Communications Server "
-"2005</li><br/><li> - MS Live Communications Server 2003</li><br/><li> - "
-"Reuters Messaging</li><br/><br/>Home: <a href=\"http://sipe.sourceforge.net"
-"\">http://sipe.sourceforge.net</a><br/>Support: <a href=\"http://sourceforge."
-"net/projects/sipe/forums/forum/688534\">Help Forum</a><br/>Translations: <a "
-"href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/"
-"\">Transifex.net</a><br/>License: GPLv2+<br/><br/>We support users in such "
-"organizations as:<br/> - CERN<br/> - Reuters Messaging network<br/> - "
-"Deutsche Bank<br/> - Merrill Lynch<br/> - Wachovia<br/> - Intel<br/> - "
-"Nokia<br/> - HP<br/> - Siemens<br/> - Alcatel-Lucent<br/> - BT<br/><br/"
-">Please help us translate Sipe to your native language here at <a href="
-"\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex."
-"net</a> using convenient web interface.<br/><br/><b>Authors:</b><br/> - "
-"Anibal Avelar<br/> - Gabriel Burt<br/> - Stefan Becker<br/> - pier11<br/><br/"
-"><b>Translation:</b><br/>  English (en) - Sipe Team<br/>"
+"A third-party plugin implementing extended version of SIP/SIMPLE used by "
+"various products"
 msgstr ""
-"<b><font size=\"+1\">Sipe %s</font></b><br/><br/>Wtyczka od firmy trzeciej "
-"implementująca rozszerzoną wersję protokołu SIP/SIMPLE używaną przez różne "
-"produkty:<br/><li> - MS Office Communications Server 2007 R2</li><br/><li> - "
-"MS Office Communications Server 2007</li><br/><li> - MS Live Communications "
-"Server 2005</li><br/><li> - MS Live Communications Server 2003</li><br/><li> "
-"- Reuters Messaging</li><br/><br/>Strona domowa: <a href=\"http://sipe."
-"sourceforge.net\">http://sipe.sourceforge.net</a><br/>Wsparcie: <a href="
-"\"http://sourceforge.net/projects/sipe/forums/forum/688534\">forum pomocy</"
-"a><br/>Tłumaczenia: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/"
-"mob-branch/\">Transifex.net</a><br/>Licencja: GPLv2+<br/><br/>Obsługujemy "
-"użytkowników takich organizacji, jak:<br/> - CERN<br/> - Sieć Reuters "
-"Messaging<br/> - Deutsche Bank<br/> - Merrill Lynch<br/> - Wachovia<br/> - "
-"Intel<br/> - Nokia<br/> - HP<br/> - Siemens<br/> - Alcatel-Lucent<br/> - "
-"BT<br/><br/>Prosimy o pomoc w tłumaczeniu Sipe na inne języki przez usługę "
-"<a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/"
-"\">Transifex.net</a> używając wygodnego interfejsu WWW.<br/><br/><b>Autorzy:"
-"</b><br/> - Anibal Avelar<br/> - Gabriel Burt<br/> - Stefan Becker<br/> - "
-"pier11<br/><br/><b>Tłumaczenie:</b><br/> polski (pl) - Piotr Drąg<br/>"
 
-#: ../src/core/sipe.c:8750
-msgid "About SIPE plugin"
+#. About note, part 2/11: home page URL (label)
+#: ../src/core/sipe.c:8698
+#, fuzzy
+msgid "Home"
+msgstr "Dom %s"
+
+#. About note, part 3/11: support forum URL (label)
+#: ../src/core/sipe.c:8700
+msgid "Support"
+msgstr ""
+
+#. About note, part 4/11: support forum name (hyperlink text)
+#: ../src/core/sipe.c:8702
+msgid "Help Forum"
+msgstr ""
+
+#. About note, part 5/11: translation service URL (label)
+#: ../src/core/sipe.c:8704
+msgid "Translations"
+msgstr ""
+
+#. About note, part 6/11: license type (label)
+#: ../src/core/sipe.c:8706
+msgid "License"
+msgstr ""
+
+#. About note, part 7/11: known users
+#: ../src/core/sipe.c:8708
+msgid "We support users in such organizations as"
+msgstr ""
+
+#. About note, part 8/11: translation request, text before Transifex.net URL
+#. append a space if text is not empty
+#: ../src/core/sipe.c:8711
+msgid "Please help us to translate SIPE to your native language here at "
+msgstr ""
+
+#. About note, part 9/11: translation request, text after Transifex.net URL
+#. start with a space if text is not empty
+#: ../src/core/sipe.c:8714
+msgid " using convenient web interface"
+msgstr ""
+
+#. About note, part 10/11: author list (header)
+#: ../src/core/sipe.c:8716
+#, fuzzy
+msgid "Authors"
+msgstr "Automatyczny"
+
+#. About note, part 11/11: translation list (header)
+#: ../src/core/sipe.c:8718
+msgid "Translators"
+msgstr ""
+
+#: ../src/core/sipe.c:8782
+#, fuzzy
+msgid "About SIPE plugin..."
 msgstr "O wtyczce SIPE"
 
-#: ../src/core/sipe.c:8753
+#: ../src/core/sipe.c:8785
 msgid "Contact search..."
 msgstr "Wyszukaj kontakt..."
 
-#: ../src/core/sipe.c:8757
+#: ../src/core/sipe.c:8789
 msgid "Republish Calendar"
 msgstr "Ponownie opublikuj kalendarz"
 
-#: ../src/core/sipe.c:8761
+#: ../src/core/sipe.c:8793
 msgid "Reset status"
 msgstr "Przywróć stan"
 
-#: ../src/core/sipe.c:8853
+#: ../src/core/sipe.c:8885
 msgid "Status"
 msgstr "Stan"
 
-#: ../src/core/sipe.c:8858
+#: ../src/core/sipe.c:8890
 msgid "Calendar"
 msgstr "Kalendarz"
 
-#: ../src/core/sipe.c:8863
+#: ../src/core/sipe.c:8895
 msgid "Meeting in"
 msgstr "Spotkanie za"
 
-#: ../src/core/sipe.c:8867
+#: ../src/core/sipe.c:8899
 msgid "Meeting about"
 msgstr "Spotkanie w"
 
-#: ../src/core/sipe.c:8875
+#: ../src/core/sipe.c:8907
 msgid "Out of office note"
 msgstr "Notatka poza biurem"
 
-#: ../src/core/sipe.c:8875
+#: ../src/core/sipe.c:8907
 msgid "Note"
 msgstr "Notatka"
 
-#: ../src/core/sipe.c:8887
+#: ../src/core/sipe.c:8919
 msgid "user@company.com"
 msgstr "użytkownik@firma.pl"
 
-#: ../src/core/sipe.c:9249
+#: ../src/core/sipe.c:9281
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Uczyń przywódcą \"%s\""
 
-#: ../src/core/sipe.c:9260
+#: ../src/core/sipe.c:9292
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Usuń z \"%s\""
 
-#: ../src/core/sipe.c:9273
+#: ../src/core/sipe.c:9305
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Zaproś do \"%s\""
 
-#: ../src/core/sipe.c:9284
+#: ../src/core/sipe.c:9316
 msgid "New chat"
 msgstr "Nowa rozmowa"
 
-#: ../src/core/sipe.c:9295
+#: ../src/core/sipe.c:9327
 #, c-format
 msgid "Work %s"
 msgstr "Praca %s"
 
-#: ../src/core/sipe.c:9308
+#: ../src/core/sipe.c:9340
 #, c-format
 msgid "Mobile %s"
 msgstr "Telefon komórkowy %s"
 
-#: ../src/core/sipe.c:9321
+#: ../src/core/sipe.c:9353
 #, c-format
 msgid "Home %s"
 msgstr "Dom %s"
 
-#: ../src/core/sipe.c:9334
+#: ../src/core/sipe.c:9366
 #, c-format
 msgid "Other %s"
 msgstr "Inny %s"
 
-#: ../src/core/sipe.c:9347
+#: ../src/core/sipe.c:9379
 #, c-format
 msgid "Custom1 %s"
 msgstr "Własne1 %s"
 
-#: ../src/core/sipe.c:9359
+#: ../src/core/sipe.c:9391
 msgid "Send email..."
 msgstr "Wyślij wiadomość e-mail..."
 
-#: ../src/core/sipe.c:9384
+#: ../src/core/sipe.c:9416
 msgid "Copy to"
 msgstr "Skopiuj do"
 
-#: ../src/core/sipe.c:9438
+#: ../src/core/sipe.c:9470
 msgid "Unlock"
 msgstr "Odblokuj"
 
-#: ../src/core/sipe.c:9443
+#: ../src/core/sipe.c:9475
 msgid "Lock"
 msgstr "Zablokuj"
 
-#: ../src/core/sipe.c:9530 ../src/core/sipe.c:9567
+#: ../src/core/sipe.c:9562 ../src/core/sipe.c:9599
 msgid "Display name"
 msgstr "Wyświetlana nazwa"
 
-#: ../src/core/sipe.c:9533
+#: ../src/core/sipe.c:9565
 msgid "Job title"
 msgstr "Stanowisko"
 
-#: ../src/core/sipe.c:9536
+#: ../src/core/sipe.c:9568
 msgid "Office"
 msgstr "Biuro"
 
-#: ../src/core/sipe.c:9539
+#: ../src/core/sipe.c:9571
 msgid "Business phone"
 msgstr "Telefon służbowy"
 
-#: ../src/core/sipe.c:9545
+#: ../src/core/sipe.c:9577
 msgid "City"
 msgstr "Miasto"
 
-#: ../src/core/sipe.c:9548
+#: ../src/core/sipe.c:9580
 msgid "State"
 msgstr "Stan/województwo"
 
-#: ../src/core/sipe.c:9554 ../src/core/sipe.c:9581
+#: ../src/core/sipe.c:9586 ../src/core/sipe.c:9613
 msgid "Email address"
 msgstr "Adres e-mail"
 
-#: ../src/core/sipe.c:9574
+#: ../src/core/sipe.c:9606
 msgid "Alias"
 msgstr "Alias"
 
-#: ../src/core/sipe.c:9587
+#: ../src/core/sipe.c:9619
 msgid "Site"
 msgstr "Witryna"
 
-#: ../src/core/sipe.c:9591
+#: ../src/core/sipe.c:9623
 msgid "Device"
 msgstr "Urządzenie"
 
-#: ../src/core/sipe.c:9783
+#: ../src/core/sipe.c:9815
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -503,7 +525,7 @@ msgstr ""
 "   użytkownik  lub  DOMENA\\użytkownik  lub\n"
 "   użytkownik@firma.pl"
 
-#: ../src/core/sipe.c:9787
+#: ../src/core/sipe.c:9819
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -511,33 +533,33 @@ msgstr ""
 "Serwer[:port]\n"
 "(należy pozostawić puste, aby wykryć automatycznie)"
 
-#: ../src/core/sipe.c:9790
+#: ../src/core/sipe.c:9822
 msgid "Connection type"
 msgstr "Typ połączenia"
 
-#: ../src/core/sipe.c:9791
+#: ../src/core/sipe.c:9823
 msgid "Auto"
 msgstr "Automatyczny"
 
-#: ../src/core/sipe.c:9792
+#: ../src/core/sipe.c:9824
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/core/sipe.c:9793
+#: ../src/core/sipe.c:9825
 msgid "TCP"
 msgstr "TCP"
 
-#: ../src/core/sipe.c:9794
+#: ../src/core/sipe.c:9826
 msgid "UDP"
 msgstr "UDP"
 
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/core/sipe.c:9800
+#: ../src/core/sipe.c:9832
 msgid "User Agent"
 msgstr "Agent użytkownika"
 
-#: ../src/core/sipe.c:9804
+#: ../src/core/sipe.c:9836
 msgid "Use Kerberos"
 msgstr "Użycie Kerberosa"
 
@@ -545,24 +567,24 @@ msgstr "Użycie Kerberosa"
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #.
-#: ../src/core/sipe.c:9811
+#: ../src/core/sipe.c:9843
 msgid "Use Single Sign-On"
 msgstr "Użycie jednorazowego logowania"
 
-#: ../src/core/sipe.c:9815
+#: ../src/core/sipe.c:9847
 msgid "Calendar source"
 msgstr "Źródło kalendarza"
 
-#: ../src/core/sipe.c:9816
+#: ../src/core/sipe.c:9848
 msgid "Exchange 2007/2010"
 msgstr "Exchange 2007/2010"
 
-#: ../src/core/sipe.c:9817
+#: ../src/core/sipe.c:9849
 msgid "None"
 msgstr "Brak"
 
 #. * Example: https://server.company.com/EWS/Exchange.asmx
-#: ../src/core/sipe.c:9821
+#: ../src/core/sipe.c:9853
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -570,7 +592,7 @@ msgstr ""
 "Adres URL usług e-mail\n"
 "(należy pozostawić puste, aby wykryć automatycznie)"
 
-#: ../src/core/sipe.c:9824
+#: ../src/core/sipe.c:9856
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -579,7 +601,7 @@ msgstr ""
 "(jeśli różni się od nazwy użytkownika)"
 
 #. * Example: DOMAIN\user  or  user@company.com
-#: ../src/core/sipe.c:9828
+#: ../src/core/sipe.c:9860
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -587,7 +609,7 @@ msgstr ""
 "Login adresu e-mail\n"
 "(jeśli różni się od loginu)"
 
-#: ../src/core/sipe.c:9831
+#: ../src/core/sipe.c:9863
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -661,3 +683,43 @@ msgstr "Ta konferencja jest zablokowana. Nikt więcej nie może teraz dołączy�
 #: ../src/core/sipe-conf.c:865
 msgid "You have been disconnected from this conference."
 msgstr "Rozłączono z tej konferencji."
+
+#~ msgid ""
+#~ "<b><font size=\"+1\">Sipe %s</font></b><br/><br/>A third-party plugin "
+#~ "implementing extended version of SIP/SIMPLE used by various products:<br/"
+#~ "><li> - MS Office Communications Server 2007 R2</li><br/><li> - MS Office "
+#~ "Communications Server 2007</li><br/><li> - MS Live Communications Server "
+#~ "2005</li><br/><li> - MS Live Communications Server 2003</li><br/><li> - "
+#~ "Reuters Messaging</li><br/><br/>Home: <a href=\"http://sipe.sourceforge."
+#~ "net\">http://sipe.sourceforge.net</a><br/>Support: <a href=\"http://"
+#~ "sourceforge.net/projects/sipe/forums/forum/688534\">Help Forum</a><br/"
+#~ ">Translations: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/"
+#~ "mob-branch/\">Transifex.net</a><br/>License: GPLv2+<br/><br/>We support "
+#~ "users in such organizations as:<br/> - CERN<br/> - Reuters Messaging "
+#~ "network<br/> - Deutsche Bank<br/> - Merrill Lynch<br/> - Wachovia<br/> - "
+#~ "Intel<br/> - Nokia<br/> - HP<br/> - Siemens<br/> - Alcatel-Lucent<br/> - "
+#~ "BT<br/><br/>Please help us translate Sipe to your native language here at "
+#~ "<a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/"
+#~ "\">Transifex.net</a> using convenient web interface.<br/><br/><b>Authors:"
+#~ "</b><br/> - Anibal Avelar<br/> - Gabriel Burt<br/> - Stefan Becker<br/> - "
+#~ "pier11<br/><br/><b>Translation:</b><br/>  English (en) - Sipe Team<br/>"
+#~ msgstr ""
+#~ "<b><font size=\"+1\">Sipe %s</font></b><br/><br/>Wtyczka od firmy "
+#~ "trzeciej implementująca rozszerzoną wersję protokołu SIP/SIMPLE używaną "
+#~ "przez różne produkty:<br/><li> - MS Office Communications Server 2007 R2</"
+#~ "li><br/><li> - MS Office Communications Server 2007</li><br/><li> - MS "
+#~ "Live Communications Server 2005</li><br/><li> - MS Live Communications "
+#~ "Server 2003</li><br/><li> - Reuters Messaging</li><br/><br/>Strona "
+#~ "domowa: <a href=\"http://sipe.sourceforge.net\">http://sipe.sourceforge."
+#~ "net</a><br/>Wsparcie: <a href=\"http://sourceforge.net/projects/sipe/"
+#~ "forums/forum/688534\">forum pomocy</a><br/>Tłumaczenia: <a href=\"https://"
+#~ "transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a><br/"
+#~ ">Licencja: GPLv2+<br/><br/>Obsługujemy użytkowników takich organizacji, "
+#~ "jak:<br/> - CERN<br/> - Sieć Reuters Messaging<br/> - Deutsche Bank<br/> "
+#~ "- Merrill Lynch<br/> - Wachovia<br/> - Intel<br/> - Nokia<br/> - HP<br/> "
+#~ "- Siemens<br/> - Alcatel-Lucent<br/> - BT<br/><br/>Prosimy o pomoc w "
+#~ "tłumaczeniu Sipe na inne języki przez usługę <a href=\"https://transifex."
+#~ "net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a> używając "
+#~ "wygodnego interfejsu WWW.<br/><br/><b>Autorzy:</b><br/> - Anibal "
+#~ "Avelar<br/> - Gabriel Burt<br/> - Stefan Becker<br/> - pier11<br/><br/"
+#~ "><b>Tłumaczenie:</b><br/> polski (pl) - Piotr Drąg<br/>"

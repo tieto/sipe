@@ -8643,47 +8643,79 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 static void sipe_show_about_plugin(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	char *tmp;
-	const char *about_sipe_html =
-_("<b><font size=\"+1\">Sipe %s</font></b><br/>"
-"<br/>"
-"A third-party plugin implementing extended version of SIP/SIMPLE used by various products:<br/>"
-    "<li> - MS Office Communications Server 2007 R2</li><br/>"
-    "<li> - MS Office Communications Server 2007</li><br/>"
-    "<li> - MS Live Communications Server 2005</li><br/>"
-    "<li> - MS Live Communications Server 2003</li><br/>"
-    "<li> - Reuters Messaging</li><br/>"
-"<br/>"
-"Home: <a href=\"http://sipe.sourceforge.net\">http://sipe.sourceforge.net</a><br/>"
-"Support: <a href=\"http://sourceforge.net/projects/sipe/forums/forum/688534\">Help Forum</a><br/>"
-"Translations: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a><br/>"
-"License: GPLv2+<br/>"
-"<br/>"
-"We support users in such organizations as:<br/>"
-" - CERN<br/>"
-" - Reuters Messaging network<br/>"
-" - Deutsche Bank<br/>"
-" - Merrill Lynch<br/>"
-" - Wachovia<br/>"
-" - Intel<br/>"
-" - Nokia<br/>"
-" - HP<br/>"
-" - Siemens<br/>"
-" - Alcatel-Lucent<br/>"
-" - BT<br/>"
-"<br/>"
-"Please help us translate Sipe to your native language here at <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a> using convenient web interface.<br/>"
-"<br/>"
-"<b>Authors:</b><br/>"
-" - Anibal Avelar<br/>"
-" - Gabriel Burt<br/>"
-" - Stefan Becker<br/>"
-" - pier11<br/>"
-"<br/>"
-"<b>Translation:</b><br/>"
-"  English (en) - Sipe Team<br/>");
-
-	tmp = g_strdup_printf(about_sipe_html, SIPE_VERSION);	
+	char *tmp = g_strdup_printf(
+		/* 
+		 * Non-translatable parts, like markup, are hard-coded
+		 * into the format string. This requires more translatable
+		 * texts but it makes the translations less error prone.
+		 */
+		"<b><font size=\"+1\">SIPE " SIPE_VERSION " </font></b><br/>"
+		"<br/>"
+		/* 1 */   "%s:<br/>"
+		"<li> - MS Office Communications Server 2007 R2</li><br/>"
+		"<li> - MS Office Communications Server 2007</li><br/>"
+		"<li> - MS Live Communications Server 2005</li><br/>"
+		"<li> - MS Live Communications Server 2003</li><br/>"
+		"<li> - Reuters Messaging</li><br/>"
+		"<br/>"
+		/* 2 */   "%s: <a href=\"http://sipe.sourceforge.net\">http://sipe.sourceforge.net</a><br/>"
+		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/projects/sipe/forums/forum/688534\">%s</a><br/>"
+		/* 5 */   "%s: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a><br/>"
+		/* 6 */   "%s: GPLv2+<br/>"
+		"<br/>"
+		/* 7 */  "%s:<br/>"
+		" - CERN<br/>"
+		" - Reuters Messaging network<br/>"
+		" - Deutsche Bank<br/>"
+		" - Merrill Lynch<br/>"
+		" - Wachovia<br/>"
+		" - Intel<br/>"
+		" - Nokia<br/>"
+		" - HP<br/>"
+		" - Siemens<br/>"
+		" - Alcatel-Lucent<br/>"
+		" - BT<br/>"
+		"<br/>"
+		/* 8,9 */ "%s<a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a>%s.<br/>"
+		"<br/>"
+		/* 10 */  "<b>%s:</b><br/>"
+		" - Anibal Avelar<br/>"
+		" - Gabriel Burt<br/>"
+		" - Stefan Becker<br/>"
+		" - pier11<br/>"
+		"<br/>"
+		/* 11 */  "<b>%s:</b><br/>"
+		"  - Stefan Becker: Deutsch (de)<br/>"
+		"  - SIPE Team: English (en)<br/>"
+		"  - Piotr Drąg: Polski (pl)<br/>"
+		"  - pier11: Русский (ru)<br/>"
+		"  - Kang Kai (kappa8086): 简化字 (zh_CN)<br/>"
+		,
+		/* The next 11 texts make up the SIPE about note text */
+		/* About note, part 1/11: introduction */
+		_("A third-party plugin implementing extended version of SIP/SIMPLE used by various products"),
+		/* About note, part 2/11: home page URL (label) */
+		_("Home"),
+		/* About note, part 3/11: support forum URL (label) */
+		_("Support"),
+		/* About note, part 4/11: support forum name (hyperlink text) */
+		_("Help Forum"),
+		/* About note, part 5/11: translation service URL (label) */
+		_("Translations"),
+		/* About note, part 6/11: license type (label) */
+		_("License"),
+		/* About note, part 7/11: known users */
+		_("We support users in such organizations as"),
+		/* About note, part 8/11: translation request, text before Transifex.net URL */
+		/* append a space if text is not empty */
+		_("Please help us to translate SIPE to your native language here at "),
+		/* About note, part 9/11: translation request, text after Transifex.net URL */
+		/* start with a space if text is not empty */
+		_(" using convenient web interface"),
+		/* About note, part 10/11: author list (header) */
+		_("Authors"),
+		/* About note, part 11/11: translation list (header) */
+		_("Translators"));	
 	purple_notify_formatted(gc, NULL, " ", NULL, tmp, NULL, NULL);
 	g_free(tmp);
 }
@@ -8747,7 +8779,7 @@ GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 	PurplePluginAction *act;
 	const char* calendar = purple_account_get_string(sip->account, "calendar", "EXCH");
 
-	act = purple_plugin_action_new(_("About SIPE plugin"), sipe_show_about_plugin);
+	act = purple_plugin_action_new(_("About SIPE plugin..."), sipe_show_about_plugin);
 	menu = g_list_prepend(menu, act);
 
 	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
