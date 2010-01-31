@@ -1542,7 +1542,7 @@ sipe_get_availability_by_status(const char* sipe_status_id, char** activity_toke
 static const char*
 sipe_get_status_by_availability(int avail,
 				char** activity);
-				
+
 static void
 sipe_set_purple_account_status_and_note(const PurpleAccount *account,
 					const char *status_id,
@@ -1609,7 +1609,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		}
 
 		purple_debug_info("sipe", "sipe_got_user_status: switch to '%s' for the account\n", sip->status);
-		sipe_set_purple_account_status_and_note(sip->account, status_id, sip->note, sip->do_not_publish);		
+		sipe_set_purple_account_status_and_note(sip->account, status_id, sip->note, sip->do_not_publish);
 	}
 	g_free(self_uri);
 }
@@ -2034,7 +2034,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 			purple_debug_info("sipe", "sipe_set_status: was: sip->do_not_publish[%s]=%d [?] now(time)=%d\n",
 				status_id, (int)sip->do_not_publish[activity], (int)now);
-				
+
 			sip->do_not_publish[activity] = 0;
 			purple_debug_info("sipe", "sipe_set_status: set: sip->do_not_publish[%s]=%d [0]\n",
 				status_id, (int)sip->do_not_publish[activity]);
@@ -2321,7 +2321,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			NULL,
 			NULL,
 			TRUE);
-			
+
 	/* Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			sipe_activity_map[SIPE_ACTIVITY_BRB].status_id,
@@ -2894,7 +2894,7 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 		guint cal_oof_instance	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR_OOF);
 		guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
 		guint note_oof_instance = sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF);
-		
+
 		purple_debug_info("sipe", "* Out Publication Instances *\n");
 		purple_debug_info("sipe", "\tDevice               : %u\t0x%08X\n", device_instance, device_instance);
 		purple_debug_info("sipe", "\tMachine State        : %u\t0x%08X\n", machine_instance, machine_instance);
@@ -3157,13 +3157,13 @@ sipe_set_purple_account_status_and_note(const PurpleAccount *account,
 		changed = FALSE;
 	}
 
-	if (changed) {	
+	if (changed) {
 		PurpleSavedStatus *saved_status;
-		const PurpleStatusType *acct_status_type = 
+		const PurpleStatusType *acct_status_type =
 			purple_status_type_find_with_id(account->status_types, status_id);
 		PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
 		sipe_activity activity = sipe_get_activity_by_token(status_id);
-		
+
 		saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
 		if (saved_status) {
 			purple_savedstatus_set_substatus(saved_status, account, acct_status_type, message);
@@ -3188,7 +3188,7 @@ sipe_set_purple_account_status_and_note(const PurpleAccount *account,
 
 		do_not_publish[activity] = time(NULL);
 		purple_debug_info("sipe", "sipe_set_purple_account_status_and_note: do_not_publish[%s]=%d [now]\n",
-			status_id, (int)do_not_publish[activity]);		
+			status_id, (int)do_not_publish[activity]);
 
 		/* Set the status for each account */
 		purple_savedstatus_activate(saved_status);
@@ -3204,7 +3204,7 @@ static void
 sipe_remove_category_container_publications_cb(const char *name,
 					       struct sipe_publication *publication,
 					       struct hash_table_delete_payload *payload)
-{	
+{
 	if (publication->container == payload->container) {
 		g_hash_table_remove(payload->hash_table, name);
 	}
@@ -3216,9 +3216,9 @@ sipe_remove_category_container_publications(GHashTable *our_publications,
 {
 	struct hash_table_delete_payload payload;
 	payload.hash_table = g_hash_table_lookup(our_publications, category);
-	
+
 	if (!payload.hash_table) return;
-	
+
 	payload.container = container;
 	g_hash_table_foreach(payload.hash_table, (GHFunc)sipe_remove_category_container_publications_cb, &payload);
 }
@@ -3298,7 +3298,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			do_update_status = TRUE;
 			continue;
 		}
-		
+
 		/* Ex. clear note: <category name="note" container="200"/> */
 		if (instance == (guint)-1) {
 			if (container == 200) {
@@ -3387,14 +3387,14 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 				if (!has_note_cleaned) {
 					has_note_cleaned = TRUE;
-					
+
 					g_free(sip->note);
 					sip->note = NULL;
 					sip->note_since = publish_time;
 
 					do_update_status = TRUE;
 				}
-				
+
 				g_free(publication->note);
 				publication->note = NULL;
 				if (xn_body) {
@@ -3600,7 +3600,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 	if (do_update_status) {
 		purple_debug_info("sipe", "sipe_process_roaming_self: switch to '%s' for the account\n", sip->status);
-		sipe_set_purple_account_status_and_note(sip->account, sip->status, sip->note, sip->do_not_publish);		
+		sipe_set_purple_account_status_and_note(sip->account, sip->status, sip->note, sip->do_not_publish);
 	}
 
 	g_free(to);
@@ -5465,7 +5465,7 @@ sipe_get_status_by_act_avail_2005(const int activity,
 
 	if (availablity < 100)
 		status_id = SIPE_STATUS_ID_OFFLINE;
-		
+
 	if (activity_desc && act) {
 		g_free(*activity_desc);
 		*activity_desc = g_strdup(act);
@@ -5512,7 +5512,7 @@ sipe_get_status_by_availability(int avail,
 		g_free(*activity_desc);
 		*activity_desc = g_strdup(act);
 	}
-	
+
 	return status;
 }
 
@@ -5684,10 +5684,10 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		{
 			if (uri) {
 				struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
-				
+
 				if (!has_note_cleaned) {
 					has_note_cleaned = TRUE;
-					
+
 					g_free(sbuddy->note);
 					sbuddy->note = NULL;
 					sbuddy->is_oof_note = FALSE;
@@ -5718,7 +5718,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					/* to trigger UI refresh in case no status info is supplied in this update */
 					do_update_status = TRUE;
 				}
-			}	
+			}
 		}
 		/* state */
 		else if(!strcmp(attrVar, "state"))
@@ -6197,7 +6197,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			state = xmlnode_get_data(xn_state);
 			if (dev_avail_since > user_avail_since &&
 			    dev_avail >= res_avail)
-			{				
+			{
 				res_avail = dev_avail;
 				if (!is_empty(state))
 				{
@@ -6259,8 +6259,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		sbuddy->last_non_cal_status_id = status_id;
 		g_free(sbuddy->last_non_cal_activity);
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
-		
-		if (!strcmp(sbuddy->name, self_uri)) {		
+
+		if (!strcmp(sbuddy->name, self_uri)) {
 			if (!(sbuddy->note && sip->note && !strcmp(sbuddy->note, sip->note))) /* not same */
 			{
 				sip->is_oof_note = sbuddy->is_oof_note;
@@ -6556,9 +6556,9 @@ sipe_is_user_state(struct sipe_account_data *sip)
 
 	purple_debug_info("sipe", "sipe_is_user_state: sip->idle_switch : %s", asctime(localtime(&(sip->idle_switch))));
 	purple_debug_info("sipe", "sipe_is_user_state: now              : %s", asctime(localtime(&now)));
-	
+
 	res = ((now - SIPE_IDLE_SET_DELAY * 2) >= sip->idle_switch);
-	
+
 	purple_debug_info("sipe", "sipe_is_user_state: res  = %s\n", res ? "USER" : "MACHINE");
 	return res;
 }
@@ -6585,12 +6585,12 @@ send_presence_soap0(struct sipe_account_data *sip,
 	const gchar *oof_note = ews ? sipe_ews_get_oof_note(ews) : NULL;
 	const char *user_input;
 	gboolean pub_oof = ews && oof_note && (!sip->note || ews->updated > sip->note_since);
-	
+
 	if (oof_note && sip->note) {
 		purple_debug_info("sipe", "ews->oof_start  : %s", asctime(localtime(&(ews->oof_start))));
 		purple_debug_info("sipe", "sip->note_since : %s", asctime(localtime(&(sip->note_since))));
 	}
-	
+
 	purple_debug_info("sipe", "sip->note  : %s", sip->note ? sip->note : "");
 
 	if (!sip->initial_state_published ||
@@ -6688,7 +6688,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 			       epid,
 			       since_time_str,
 			       since_time_str,
-			       user_input);			       
+			       user_input);
 	g_free(tmp);
 	g_free(tmp2);
 	g_free(res_note);
@@ -7018,7 +7018,7 @@ sipe_is_equal(const char* n1, const char* n2) {
 /**
  * Returns 'note' XML part for publication.
  * Must be g_free'd after use.
- * 
+ *
  * Protocol format for Note is plain text.
  *
  * @param note a note in Sipe internal HTML format
@@ -7096,7 +7096,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 				       start_time_attr ? start_time_attr : "",
 				       end_time_attr ? end_time_attr : "",
 				       n1);
-	} else {		       
+	} else {
 		tmp1 = g_strdup_printf( SIPE_PUB_XML_PUBLICATION_CLEAR,
 					"note",
 					instance,
@@ -7108,7 +7108,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 					instance,
 					300,
 					publication_note_200 ? publication_note_200->version : 0,
-					"static");			       
+					"static");
 		tmp3 = g_strdup_printf( SIPE_PUB_XML_PUBLICATION_CLEAR,
 					"note",
 					instance,
@@ -8644,7 +8644,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
 	char *tmp = g_strdup_printf(
-		/* 
+		/*
 		 * Non-translatable parts, like markup, are hard-coded
 		 * into the format string. This requires more translatable
 		 * texts but it makes the translations less error prone.
@@ -8684,36 +8684,37 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		" - Stefan Becker<br/>"
 		" - pier11<br/>"
 		"<br/>"
-		/* 11 */  "<b>%s:</b><br/>"
-		/* 12 */  "  %s<br/>"
+		/* 11 */  "%s<br/>"
 		,
-		/* The next 12 texts make up the SIPE about note text */
-		/* About note, part 1/12: introduction */
+		/* The next 11 texts make up the SIPE about note text */
+		/* About note, part 1/11: introduction */
 		_("A third-party plugin implementing extended version of SIP/SIMPLE used by various products"),
-		/* About note, part 2/12: home page URL (label) */
+		/* About note, part 2/11: home page URL (label) */
 		_("Home"),
-		/* About note, part 3/12: support forum URL (label) */
+		/* About note, part 3/11: support forum URL (label) */
 		_("Support"),
-		/* About note, part 4/12: support forum name (hyperlink text) */
+		/* About note, part 4/11: support forum name (hyperlink text) */
 		_("Help Forum"),
-		/* About note, part 5/12: translation service URL (label) */
+		/* About note, part 5/11: translation service URL (label) */
 		_("Translations"),
-		/* About note, part 6/12: license type (label) */
+		/* About note, part 6/11: license type (label) */
 		_("License"),
-		/* About note, part 7/12: known users */
+		/* About note, part 7/11: known users */
 		_("We support users in such organizations as"),
-		/* About note, part 8/12: translation request, text before Transifex.net URL */
+		/* About note, part 8/11: translation request, text before Transifex.net URL */
 		/* append a space if text is not empty */
 		_("Please help us to translate SIPE to your native language here at "),
-		/* About note, part 9/12: translation request, text after Transifex.net URL */
+		/* About note, part 9/11: translation request, text after Transifex.net URL */
 		/* start with a space if text is not empty */
 		_(" using convenient web interface"),
-		/* About note, part 10/12: author list (header) */
+		/* About note, part 10/11: author list (header) */
 		_("Authors"),
-		/* About note, part 11/12: translation (header) */
-		_("Translation"),
-		/* About note, part 12/12: translator */
-		_("English (en) - SIPE Team"));	
+		/* About note, part 11/11: Localization credit */
+		/* PLEASE NOTE: do *NOT* simply translate the english original */
+		/* but write something similar to the following sentence: */
+		/* "Localization for <language name> (<language code>) by <name>" */
+		_("Original texts in English (en) by SIPE team")
+		);
 	purple_notify_formatted(gc, NULL, " ", NULL, tmp, NULL, NULL);
 	g_free(tmp);
 }
@@ -8826,8 +8827,8 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 	sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
 	if (sbuddy) {
 		const char *activity_str = sbuddy->activity ?
-			sbuddy->activity : 
-			!strcmp(status_id, SIPE_STATUS_ID_BUSY) || !strcmp(status_id, SIPE_STATUS_ID_BRB) ? 
+			sbuddy->activity :
+			!strcmp(status_id, SIPE_STATUS_ID_BUSY) || !strcmp(status_id, SIPE_STATUS_ID_BRB) ?
 				purple_status_get_name(status) : NULL;
 
 		if (activity_str && sbuddy->note)
