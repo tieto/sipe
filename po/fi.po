@@ -310,9 +310,8 @@ msgstr ""
 
 #. About note, part 5/11: translation service URL (label)
 #: ../src/core/sipe.c:8699
-#, fuzzy
 msgid "Translations"
-msgstr "Käännöksiin"
+msgstr ""
 
 #. About note, part 6/11: license type (label)
 #: ../src/core/sipe.c:8701
@@ -446,22 +445,18 @@ msgid "Copy to"
 msgstr ""
 
 #: ../src/core/sipe.c:9469
-#, fuzzy
 msgid "Unlock"
 msgstr "Aukaista"
 
 #: ../src/core/sipe.c:9474
-#, fuzzy
 msgid "Lock"
 msgstr "Lukitse"
 
 #: ../src/core/sipe.c:9561 ../src/core/sipe.c:9598
-#, fuzzy
 msgid "Display name"
 msgstr "Näyttönimen"
 
 #: ../src/core/sipe.c:9564
-#, fuzzy
 msgid "Job title"
 msgstr "Työnimike"
 
@@ -474,17 +469,14 @@ msgid "Business phone"
 msgstr ""
 
 #: ../src/core/sipe.c:9576
-#, fuzzy
 msgid "City"
 msgstr "Kaupunki"
 
 #: ../src/core/sipe.c:9579
-#, fuzzy
 msgid "State"
 msgstr "Osavaltio"
 
 #: ../src/core/sipe.c:9585 ../src/core/sipe.c:9612
-#, fuzzy
 msgid "Email address"
 msgstr "Sähköpostiosoite"
 
@@ -542,7 +534,6 @@ msgid "User Agent"
 msgstr ""
 
 #: ../src/core/sipe.c:9835
-#, fuzzy
 msgid "Use Kerberos"
 msgstr "Käytä Kerberos"
 
@@ -551,7 +542,6 @@ msgstr "Käytä Kerberos"
 #. * instead used default credentials stored in OS.
 #. 
 #: ../src/core/sipe.c:9842
-#, fuzzy
 msgid "Use Single Sign-On"
 msgstr "Käytä Single Sign-On"
 
@@ -564,7 +554,6 @@ msgid "Exchange 2007/2010"
 msgstr ""
 
 #: ../src/core/sipe.c:9848
-#, fuzzy
 msgid "None"
 msgstr "Ei mitään"
 
