@@ -82,6 +82,14 @@
 						</Component>				
 				  </Directory>
 				</Directory>
+				<Directory Id='fi' Name='fi'>
+				  <Directory Id='fi_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleFiLcMessages' Guid=''>
+						  <File Id='fi.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/fi.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
 				<Directory Id='fr' Name='fr'>
 				  <Directory Id='fr_LC_MESSAGES' Name='LC_MESSAGES'>
 						<Component Id='LocaleFrLcMessages' Guid='675623F6-2AA0-11DE-892D-0FC156D89593'>
@@ -160,6 +168,7 @@
 			<ComponentRef Id='LocaleDaLcMessages' />
 			<ComponentRef Id='LocaleDeLcMessages' />
 			<ComponentRef Id='LocaleEsLcMessages' />
+			<ComponentRef Id='LocaleFiLcMessages' />
 			<ComponentRef Id='LocaleFrLcMessages' />
 			<ComponentRef Id='LocaleHiLcMessages' />
 			<ComponentRef Id='LocaleItLcMessages' />
