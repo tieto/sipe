@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-01-31 13:40+0200\n"
-"PO-Revision-Date: 2010-01-30 21:59+0100\n"
+"POT-Creation-Date: 2010-01-31 13:45+0000\n"
+"PO-Revision-Date: 2010-01-31 14:50+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -314,56 +314,57 @@ msgstr "_Anuluj"
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
-msgstr ""
+msgstr "Wtyczka firmy trzeciej implementująca rozszerzoną wersję protokołu "
+"SIP/SIMPLE używaną przez różne produkty"
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8693
-#, fuzzy
 msgid "Home"
-msgstr "Dom %s"
+msgstr "Strona domowa"
 
 #. About note, part 3/11: support forum URL (label)
 #: ../src/core/sipe.c:8695
 msgid "Support"
-msgstr ""
+msgstr "Wsparcie"
 
 #. About note, part 4/11: support forum name (hyperlink text)
 #: ../src/core/sipe.c:8697
 msgid "Help Forum"
-msgstr ""
+msgstr "forum pomocy"
 
 #. About note, part 5/11: translation service URL (label)
 #: ../src/core/sipe.c:8699
 msgid "Translations"
-msgstr ""
+msgstr "Tłumaczenia"
 
 #. About note, part 6/11: license type (label)
 #: ../src/core/sipe.c:8701
 msgid "License"
-msgstr ""
+msgstr "Licencja"
 
 #. About note, part 7/11: known users
 #: ../src/core/sipe.c:8703
 msgid "We support users in such organizations as"
-msgstr ""
+msgstr "Obsługujemy użytkowników w takich organizacjach, jak"
 
 #. About note, part 8/11: translation request, text before Transifex.net URL
 #. append a space if text is not empty
 #: ../src/core/sipe.c:8706
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr ""
+"Prosimy o pomoc w przetłumaczeniu wtyczki SIPE na inne języki za pomocą "
+"usługi "
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
 #: ../src/core/sipe.c:8709
 msgid " using convenient web interface"
-msgstr ""
+msgstr " używając wygodnego interfejsu WWW"
 
 #. About note, part 10/11: author list (header)
 #: ../src/core/sipe.c:8711
-#, fuzzy
 msgid "Authors"
-msgstr "Automatyczny"
+msgstr "Autorzy"
 
 #. About note, part 11/11: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
@@ -371,12 +372,11 @@ msgstr "Automatyczny"
 #. "Localization for <language name> (<language code>) by <name>"
 #: ../src/core/sipe.c:8716
 msgid "Original texts in English (en) by SIPE team"
-msgstr ""
+msgstr "Tłumaczenie na język polski (pl): Piotr Drąg"
 
 #: ../src/core/sipe.c:8781
-#, fuzzy
 msgid "About SIPE plugin..."
-msgstr "O wtyczce SIPE"
+msgstr "O wtyczce SIPE..."
 
 #: ../src/core/sipe.c:8784
 msgid "Contact search..."
