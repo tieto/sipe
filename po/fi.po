@@ -1,11 +1,11 @@
 # Finnish translations for pidgin-sipe package.
 # Stefan Becker <stefan.becker@nokia.com>, 2010.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: fi\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-01-31 13:45+0000\n"
+"POT-Creation-Date: 2010-01-31 20:27+0000\n"
 "PO-Revision-Date: 2010-01-31 13:45+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -16,11 +16,11 @@ msgstr ""
 
 #: ../src/core/sipe.c:143
 msgid "Inactive"
-msgstr ""
+msgstr "Inaktiivinen"
 
 #: ../src/core/sipe.c:144 ../src/core/sipe-cal.c:847
 msgid "Busy"
-msgstr ""
+msgstr "Varattu"
 
 #: ../src/core/sipe.c:145
 msgid "Busy-Idle"
@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:147
 msgid "Be right back"
-msgstr ""
+msgstr "Kohta takaisin"
 
 #: ../src/core/sipe.c:149
 msgid "Out to lunch"
@@ -56,41 +56,41 @@ msgstr ""
 
 #: ../src/core/sipe.c:390
 msgid "Failed to authenticate to server"
-msgstr ""
+msgstr "Varmentaminen epäonnistui palvelimelle"
 
 #. TODO: do we really want to disconnect on a failure to write?
 #: ../src/core/sipe.c:538 ../src/core/sipe.c:570
 msgid "Could not write"
-msgstr ""
+msgstr "Ei voitu kirjoittaa"
 
 #: ../src/core/sipe.c:594 ../src/core/sipe.c:7865
 msgid "Could not connect"
-msgstr ""
+msgstr "Ei voitu yhdistää"
 
 #: ../src/core/sipe.c:663 ../src/core/sipe.c:8019
 msgid "Could not create socket"
-msgstr ""
+msgstr "Ei voitu luoda socket"
 
 #: ../src/core/sipe.c:1195 ../src/core/sipe.c:3557
 msgid "you"
-msgstr ""
+msgstr "sinä"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
 #: ../src/core/sipe.c:2293
 msgid "Message"
-msgstr ""
+msgstr "Viesti"
 
 #: ../src/core/sipe.c:2436 ../src/core/sipe.c:2448 ../src/core/sipe.c:2473
 #: ../src/core/sipe.c:8496
 msgid "Other Contacts"
-msgstr ""
+msgstr "Muut yhteystiedot"
 
 #. [MS-SIPREGE]
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe.c:2653
 msgid "you are already signed in at another location"
-msgstr ""
+msgstr "Olet jo kirjautunut toisesta paikasta"
 
 #: ../src/core/sipe.c:2656
 msgid "user disabled"
@@ -98,7 +98,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:2659
 msgid "user moved"
-msgstr ""
+msgstr "käyttäjä siirretty"
 
 #: ../src/core/sipe.c:2663 ../src/core/sipe.c:5339
 #, c-format
@@ -111,38 +111,33 @@ msgstr ""
 
 #: ../src/core/sipe.c:3850
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
-msgstr ""
+msgid "This message was not delivered to %s because the service is not available"
+msgstr "Tämä viesti ei ole toimitettu %s:lle, koska palvelu ei ole käytettävissä"
 
 #. Busy Here
 #: ../src/core/sipe.c:3852
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Tämä viesti ei ole toimitettu %s:lle, koska yhdelle tai useammalle vastaanottajalle ei halua tulla häirityksi"
 
 #: ../src/core/sipe.c:3854
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Tämä viesti ei ole toimitettu %s:lle, koska yhdelle tai useammalle vastaanottajalle on offline-tilassa"
 
 #: ../src/core/sipe.c:4136
 #, c-format
 msgid "Failed to invite %s"
-msgstr ""
+msgstr "Epäonnistui kutsua %s"
 
 #: ../src/core/sipe.c:4781
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
-msgstr ""
+msgstr "Vastaanotettu viesti tuntemattomat sisältö %s:lta"
 
 #: ../src/core/sipe.c:5307 ../src/core/sipe.c:7692
 msgid "Wrong password"
-msgstr ""
+msgstr "Väärä salasana"
 
 #: ../src/core/sipe.c:5356
 #, c-format
@@ -156,15 +151,15 @@ msgstr ""
 #: ../src/core/sipe.c:5375
 #, c-format
 msgid "Service unavailable: %s"
-msgstr ""
+msgstr "Palvelu ei käytettävissä: %s"
 
 #: ../src/core/sipe.c:7688
 msgid "Invalid message signature received"
-msgstr ""
+msgstr "Virheellinen viesti allekirjoitus vastaanotettu"
 
 #: ../src/core/sipe.c:7762
 msgid "Connection not found. Please try to connect again"
-msgstr ""
+msgstr "Yhteyttä ei löytynyt. Yritä muodostaa yhteys uudelleen"
 
 #: ../src/core/sipe.c:7783
 msgid "SSL read error"
@@ -185,20 +180,18 @@ msgstr ""
 
 #: ../src/core/sipe.c:7982
 msgid "Connection failed"
-msgstr ""
+msgstr "Yhteys epäonnistui"
 
 #: ../src/core/sipe.c:7985
 msgid "SSL handshake failed"
-msgstr ""
+msgstr "SSL-kättelyn epäonnistui"
 
 #: ../src/core/sipe.c:7988
 msgid "SSL certificate invalid"
-msgstr ""
+msgstr "SSL-varmenne ei kelpaa"
 
 #: ../src/core/sipe.c:8046
-msgid ""
-"SSL support is not installed. Either install SSL support or configure a "
-"different connection type in the account editor"
+msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
 msgstr ""
 
 #: ../src/core/sipe.c:8055
@@ -207,13 +200,15 @@ msgstr ""
 
 #: ../src/core/sipe.c:8178
 msgid "SIP Exchange user name contains invalid characters"
-msgstr ""
+msgstr "SIP Exchange:n käyttäjätunnus sisältää virheellisiä merkkejä"
 
 #: ../src/core/sipe.c:8201
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr ""
+"Käyttäjätunnus on voimassa SIP-URI\n"
+"Esimerkki: user@company.com"
 
 #: ../src/core/sipe.c:8212
 msgid ""
@@ -235,23 +230,23 @@ msgstr ""
 
 #: ../src/core/sipe.c:8528
 msgid "User name"
-msgstr ""
+msgstr "Käyttäjätunnus"
 
 #: ../src/core/sipe.c:8531
 msgid "Name"
-msgstr ""
+msgstr "Nimi"
 
 #: ../src/core/sipe.c:8534 ../src/core/sipe.c:8628 ../src/core/sipe.c:9573
 msgid "Company"
-msgstr ""
+msgstr "Yritys"
 
 #: ../src/core/sipe.c:8537 ../src/core/sipe.c:8630 ../src/core/sipe.c:9582
 msgid "Country"
-msgstr ""
+msgstr "Maa"
 
 #: ../src/core/sipe.c:8540
 msgid "Email"
-msgstr ""
+msgstr "Sähköposti"
 
 #: ../src/core/sipe.c:8567
 #, c-format
@@ -266,51 +261,47 @@ msgstr ""
 
 #: ../src/core/sipe.c:8624
 msgid "First name"
-msgstr ""
+msgstr "Etunimi"
 
 #: ../src/core/sipe.c:8626
 msgid "Last name"
-msgstr ""
+msgstr "Sukunimi"
 
 #: ../src/core/sipe.c:8634
 msgid "Search"
-msgstr ""
+msgstr "Etsi"
 
 #: ../src/core/sipe.c:8635
 msgid "Search for a contact"
 msgstr ""
 
 #: ../src/core/sipe.c:8636
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
 msgstr ""
 
 #: ../src/core/sipe.c:8638
 msgid "_Search"
-msgstr ""
+msgstr "_Etsi"
 
 #: ../src/core/sipe.c:8639
 msgid "_Cancel"
-msgstr ""
+msgstr "_Peru"
 
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
 #: ../src/core/sipe.c:8691
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
 msgstr ""
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8693
 msgid "Home"
-msgstr ""
+msgstr "Kotisivu"
 
 #. About note, part 3/11: support forum URL (label)
 #: ../src/core/sipe.c:8695
 msgid "Support"
-msgstr ""
+msgstr "Tuki"
 
 #. About note, part 4/11: support forum name (hyperlink text)
 #: ../src/core/sipe.c:8697
@@ -319,8 +310,9 @@ msgstr ""
 
 #. About note, part 5/11: translation service URL (label)
 #: ../src/core/sipe.c:8699
+#, fuzzy
 msgid "Translations"
-msgstr ""
+msgstr "Käännöksiin"
 
 #. About note, part 6/11: license type (label)
 #: ../src/core/sipe.c:8701
@@ -375,11 +367,11 @@ msgstr ""
 
 #: ../src/core/sipe.c:8884
 msgid "Status"
-msgstr ""
+msgstr "Tila"
 
 #: ../src/core/sipe.c:8889
 msgid "Calendar"
-msgstr ""
+msgstr "Kalenteri"
 
 #: ../src/core/sipe.c:8894
 msgid "Meeting in"
@@ -418,7 +410,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:9315
 msgid "New chat"
-msgstr ""
+msgstr "Uusi ryhmäkeskustelu"
 
 #: ../src/core/sipe.c:9326
 #, c-format
@@ -447,27 +439,31 @@ msgstr ""
 
 #: ../src/core/sipe.c:9390
 msgid "Send email..."
-msgstr ""
+msgstr "Lähetä sähköpostia..."
 
 #: ../src/core/sipe.c:9415
 msgid "Copy to"
 msgstr ""
 
 #: ../src/core/sipe.c:9469
+#, fuzzy
 msgid "Unlock"
-msgstr ""
+msgstr "Aukaista"
 
 #: ../src/core/sipe.c:9474
+#, fuzzy
 msgid "Lock"
-msgstr ""
+msgstr "Lukitse"
 
 #: ../src/core/sipe.c:9561 ../src/core/sipe.c:9598
+#, fuzzy
 msgid "Display name"
-msgstr ""
+msgstr "Näyttönimen"
 
 #: ../src/core/sipe.c:9564
+#, fuzzy
 msgid "Job title"
-msgstr ""
+msgstr "Työnimike"
 
 #: ../src/core/sipe.c:9567
 msgid "Office"
@@ -478,20 +474,23 @@ msgid "Business phone"
 msgstr ""
 
 #: ../src/core/sipe.c:9576
+#, fuzzy
 msgid "City"
-msgstr ""
+msgstr "Kaupunki"
 
 #: ../src/core/sipe.c:9579
+#, fuzzy
 msgid "State"
-msgstr ""
+msgstr "Osavaltio"
 
 #: ../src/core/sipe.c:9585 ../src/core/sipe.c:9612
+#, fuzzy
 msgid "Email address"
-msgstr ""
+msgstr "Sähköpostiosoite"
 
 #: ../src/core/sipe.c:9605
 msgid "Alias"
-msgstr ""
+msgstr "Lempinimi"
 
 #: ../src/core/sipe.c:9618
 msgid "Site"
@@ -520,7 +519,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:9822
 msgid "Auto"
-msgstr ""
+msgstr "Automaattinen"
 
 #: ../src/core/sipe.c:9823
 msgid "SSL/TLS"
@@ -534,23 +533,27 @@ msgstr ""
 msgid "UDP"
 msgstr ""
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/core/sipe.c:9831
 msgid "User Agent"
 msgstr ""
 
 #: ../src/core/sipe.c:9835
+#, fuzzy
 msgid "Use Kerberos"
-msgstr ""
+msgstr "Käytä Kerberos"
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/core/sipe.c:9842
+#, fuzzy
 msgid "Use Single Sign-On"
-msgstr ""
+msgstr "Käytä Single Sign-On"
 
 #: ../src/core/sipe.c:9846
 msgid "Calendar source"
@@ -561,8 +564,9 @@ msgid "Exchange 2007/2010"
 msgstr ""
 
 #: ../src/core/sipe.c:9848
+#, fuzzy
 msgid "None"
-msgstr ""
+msgstr "Ei mitään"
 
 #. * Example: https://server.company.com/EWS/Exchange.asmx
 #: ../src/core/sipe.c:9852
@@ -592,20 +596,20 @@ msgstr ""
 
 #: ../src/core/sipe-cal.c:845
 msgid "Free"
-msgstr ""
+msgstr "Vapaa"
 
 #: ../src/core/sipe-cal.c:846
 msgid "Tentative"
-msgstr ""
+msgstr "Alustavia"
 
 #: ../src/core/sipe-cal.c:849
 msgid "No data"
-msgstr ""
+msgstr "Ei tietoja"
 
 #: ../src/core/sipe-cal.c:957 ../src/core/sipe-cal.c:984
 #, c-format
 msgid "Currently %s"
-msgstr ""
+msgstr "Nykyään %s"
 
 #: ../src/core/sipe-cal.c:963
 msgid "Outside of working hours for next 8 hours"
@@ -614,11 +618,11 @@ msgstr ""
 #: ../src/core/sipe-cal.c:965
 #, c-format
 msgid "%s for next 8 hours"
-msgstr ""
+msgstr "%s seuraavan 8 tuntia"
 
 #: ../src/core/sipe-cal.c:974
 msgid "Not working"
-msgstr ""
+msgstr "Ei töissä"
 
 #: ../src/core/sipe-cal.c:978
 #, c-format
@@ -638,17 +642,14 @@ msgstr ""
 #: ../src/core/sipe-chat.c:82
 #, c-format
 msgid "Chat #%d"
-msgstr ""
+msgstr "Ryhmäkeskustelu #%d"
 
 #: ../src/core/sipe-conf.c:828
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
+msgid "This conference is no longer locked. Additional participants can now join."
 msgstr ""
 
 #: ../src/core/sipe-conf.c:832
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
 msgstr ""
 
 #: ../src/core/sipe-conf.c:865
