@@ -4596,6 +4596,7 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 		session = sipe_session_find_im(sip, from);
 	}
 	if (!session) {
+		sipe_dialog_free(dialog);
 		g_free(from);
 		return;
 	}
