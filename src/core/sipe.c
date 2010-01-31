@@ -8685,37 +8685,35 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		" - pier11<br/>"
 		"<br/>"
 		/* 11 */  "<b>%s:</b><br/>"
-		"  - Stefan Becker: Deutsch (de)<br/>"
-		"  - SIPE Team: English (en)<br/>"
-		"  - Piotr Drąg: Polski (pl)<br/>"
-		"  - pier11: Русский (ru)<br/>"
-		"  - Kang Kai (kappa8086): 简化字 (zh_CN)<br/>"
+		/* 12 */  "  %s<br/>"
 		,
-		/* The next 11 texts make up the SIPE about note text */
-		/* About note, part 1/11: introduction */
+		/* The next 12 texts make up the SIPE about note text */
+		/* About note, part 1/12: introduction */
 		_("A third-party plugin implementing extended version of SIP/SIMPLE used by various products"),
-		/* About note, part 2/11: home page URL (label) */
+		/* About note, part 2/12: home page URL (label) */
 		_("Home"),
-		/* About note, part 3/11: support forum URL (label) */
+		/* About note, part 3/12: support forum URL (label) */
 		_("Support"),
-		/* About note, part 4/11: support forum name (hyperlink text) */
+		/* About note, part 4/12: support forum name (hyperlink text) */
 		_("Help Forum"),
-		/* About note, part 5/11: translation service URL (label) */
+		/* About note, part 5/12: translation service URL (label) */
 		_("Translations"),
-		/* About note, part 6/11: license type (label) */
+		/* About note, part 6/12: license type (label) */
 		_("License"),
-		/* About note, part 7/11: known users */
+		/* About note, part 7/12: known users */
 		_("We support users in such organizations as"),
-		/* About note, part 8/11: translation request, text before Transifex.net URL */
+		/* About note, part 8/12: translation request, text before Transifex.net URL */
 		/* append a space if text is not empty */
 		_("Please help us to translate SIPE to your native language here at "),
-		/* About note, part 9/11: translation request, text after Transifex.net URL */
+		/* About note, part 9/12: translation request, text after Transifex.net URL */
 		/* start with a space if text is not empty */
 		_(" using convenient web interface"),
-		/* About note, part 10/11: author list (header) */
+		/* About note, part 10/12: author list (header) */
 		_("Authors"),
-		/* About note, part 11/11: translation list (header) */
-		_("Translators"));	
+		/* About note, part 11/12: translation (header) */
+		_("Translation"),
+		/* About note, part 12/12: translator */
+		_("English (en) - SIPE Team"));	
 	purple_notify_formatted(gc, NULL, " ", NULL, tmp, NULL, NULL);
 	g_free(tmp);
 }
