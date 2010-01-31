@@ -319,7 +319,7 @@ msgid ""
 "various products"
 msgstr ""
 "Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую "
-"различными продуктами"
+"в таких продуктах как"
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8693
@@ -373,9 +373,8 @@ msgstr "Авторы"
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>) by <name>"
 #: ../src/core/sipe.c:8716
-#, fuzzy
 msgid "Original texts in English (en) by SIPE team"
-msgstr "Русский (ru) - pier11"
+msgstr "Русский перевод (ru) - pier11"
 
 #: ../src/core/sipe.c:8781
 msgid "About SIPE plugin..."

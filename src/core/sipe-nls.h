@@ -20,16 +20,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _WIN32
+#ifdef _WIN32
+#undef _
+#undef N_
+#endif
+
 #ifdef ENABLE_NLS
 #include <glib/gi18n.h>
 #else
-#define  _(String) ((const char *) (String))
+#define _(String) ((const char *) (String))
 #define N_(String) ((const char *) (String))
 #endif /* ENABLE_NLS */
-#else  /* _WIN32 */
-#ifdef ENABLE_NLS
-#  undef _
-#  define _(String) ((const char *)dgettext(GETTEXT_PACKAGE, String))
-#endif /* ENABLE_NLS */
-#endif  /* _WIN32 */
