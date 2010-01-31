@@ -16,6 +16,7 @@ version 1.8.0 "Exchange/Calendar" (2010-02-XX)
 	- Updated translations: 'zh_CN' (Kang Kai), 'ru' (pier11) and 'de' (Stefan Becker)
 	- Static/dynamic code analysis with Coverity Prevent, memory leaks fixes (Stefan Becker)
 	- Fixed memory leaks found with cppcheck (http://sourceforge.net/projects/cppcheck) (Edmondas Girkantas)
+	- Fixed localization on Windows platform(!) Now translations are shown. (pier11)
 	- Fix for #2907567 Note parsing issue. Incoming html markup (like < symbol) could wierdly rerender Pidgin's contacts list UI - for example to "rename" contact, or even replace contact name by group name.
 	- Fix for #2908830 Federated contacts appear to be broken. 2005 Public IM Connectivity (PIC) environment. (pier11)
 	- Fix crash when SSL connect fails (Stefan Becker)

@@ -27,4 +27,9 @@
 #define  _(String) ((const char *) (String))
 #define N_(String) ((const char *) (String))
 #endif /* ENABLE_NLS */
-#endif
+#else  /* _WIN32 */
+#ifdef ENABLE_NLS
+#  undef _
+#  define _(String) ((const char *)dgettext(GETTEXT_PACKAGE, String))
+#endif /* ENABLE_NLS */
+#endif  /* _WIN32 */
