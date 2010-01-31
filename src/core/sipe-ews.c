@@ -370,6 +370,7 @@ sipe_ews_process_oof_response(int return_code,
 			tmp = g_strstrip(purple_markup_strip_html(html));
 			g_free(html);
 			ews->oof_note = g_markup_escape_text(tmp, -1);
+			g_free(tmp);
 		}
 
 		if (!strcmp(ews->oof_state, "Scheduled")

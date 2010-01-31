@@ -84,7 +84,7 @@
 				</Directory>
 				<Directory Id='fi' Name='fi'>
 				  <Directory Id='fi_LC_MESSAGES' Name='LC_MESSAGES'>
-						<Component Id='LocaleFiLcMessages' Guid=''>
+						<Component Id='LocaleFiLcMessages' Guid='1BC74F20-0EAA-11DF-9BE6-406D55D89593'>
 						  <File Id='fi.gmo' Name='pidgin-sipe.mo' DiskId='1'
 							Source='po/fi.gmo' Vital='yes' />
 						</Component>				
