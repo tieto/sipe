@@ -8713,8 +8713,8 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		/* About note, part 11/11: Localization credit */
 		/* PLEASE NOTE: do *NOT* simply translate the english original */
 		/* but write something similar to the following sentence: */
-		/* "Localization for <language name> (<language code>) by <name>" */
-		_("Original texts in English (en) by SIPE team")
+		/* "Localization for <language name> (<language code>): <name>" */
+		_("Original texts in English (en): SIPE developers")
 		);
 	purple_notify_formatted(gc, NULL, " ", NULL, tmp, NULL, NULL);
 	g_free(tmp);
