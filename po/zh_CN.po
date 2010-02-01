@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-01 06:01+0200\n"
-"PO-Revision-Date: 2010-01-30 10:58+0800\n"
+"POT-Creation-Date: 2010-02-01 04:46+0000\n"
+"PO-Revision-Date: 2010-02-01 14:30+0800\n"
 "Last-Translator: 神州散人 <kappa8086@gmail.com>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -17,38 +17,36 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 #: ../src/core/sipe.c:143
-#, fuzzy
 msgid "Inactive"
-msgstr "待定"
+msgstr "不活动"
 
 #: ../src/core/sipe.c:144 ../src/core/sipe-cal.c:847
 msgid "Busy"
 msgstr "忙碌"
 
 #: ../src/core/sipe.c:145
-#, fuzzy
 msgid "Busy-Idle"
-msgstr "忙碌"
+msgstr "忙碌-发呆"
 
 #: ../src/core/sipe.c:147
 msgid "Be right back"
-msgstr ""
+msgstr "马上回来"
 
 #: ../src/core/sipe.c:149
 msgid "Out to lunch"
-msgstr ""
+msgstr "外出就餐"
 
 #: ../src/core/sipe.c:151
 msgid "In a call"
-msgstr ""
+msgstr "接电话中"
 
 #: ../src/core/sipe.c:152
 msgid "In a conference"
-msgstr ""
+msgstr "在会议中"
 
 #: ../src/core/sipe.c:153
 msgid "In a meeting"
-msgstr ""
+msgstr "在会谈中"
 
 #: ../src/core/sipe.c:154 ../src/core/sipe-cal.c:848
 msgid "Out of office"
@@ -56,7 +54,7 @@ msgstr "不在办公室"
 
 #: ../src/core/sipe.c:155
 msgid "Urgent interruptions only"
-msgstr ""
+msgstr "非紧急事件勿扰"
 
 #: ../src/core/sipe.c:390
 msgid "Failed to authenticate to server"
@@ -307,56 +305,54 @@ msgstr "取消(_C)"
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
-msgstr ""
+msgstr "实现用于多个产品的 SIP/SIMPLE 扩展版本的第三方插件"
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8694
-#, fuzzy
 msgid "Home"
-msgstr "家庭 %s"
+msgstr "主页"
 
 #. About note, part 3/11: support forum URL (label)
 #: ../src/core/sipe.c:8696
 msgid "Support"
-msgstr ""
+msgstr "支持"
 
 #. About note, part 4/11: support forum name (hyperlink text)
 #: ../src/core/sipe.c:8698
 msgid "Help Forum"
-msgstr ""
+msgstr "帮助论坛"
 
 #. About note, part 5/11: translation service URL (label)
 #: ../src/core/sipe.c:8700
 msgid "Translations"
-msgstr ""
+msgstr "翻译"
 
 #. About note, part 6/11: license type (label)
 #: ../src/core/sipe.c:8702
 msgid "License"
-msgstr ""
+msgstr "许可证"
 
 #. About note, part 7/11: known users
 #: ../src/core/sipe.c:8704
 msgid "We support users in such organizations as"
-msgstr ""
+msgstr "我们对一些组织中的用户提供支持，如"
 
 #. About note, part 8/11: translation request, text before Transifex.net URL
 #. append a space if text is not empty
 #: ../src/core/sipe.c:8707
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr ""
+msgstr "请到这里帮助我们将 SIPE 翻译为您的母语 "
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
 #: ../src/core/sipe.c:8710
 msgid " using convenient web interface"
-msgstr ""
+msgstr " 使用方便的 web 界面"
 
 #. About note, part 10/11: author list (header)
 #: ../src/core/sipe.c:8712
-#, fuzzy
 msgid "Authors"
-msgstr "自动"
+msgstr "作者"
 
 #. About note, part 11/11: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
@@ -364,10 +360,9 @@ msgstr "自动"
 #. "Localization for <language name> (<language code>): <name>"
 #: ../src/core/sipe.c:8717
 msgid "Original texts in English (en): SIPE developers"
-msgstr ""
+msgstr "英文原文(en)：SIPE 开发者"
 
 #: ../src/core/sipe.c:8782
-#, fuzzy
 msgid "About SIPE plugin..."
 msgstr "关于 SIPE 插件"
 
@@ -677,3 +672,5 @@ msgstr "此会议被锁定。被锁定时其他人不能加入会议。"
 #: ../src/core/sipe-conf.c:865
 msgid "You have been disconnected from this conference."
 msgstr "您已被从会议中断开。"
+
+ 	  	 
