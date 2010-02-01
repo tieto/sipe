@@ -116,42 +116,41 @@ msgstr "nessuna ragione fornita"
 #: ../src/core/sipe.c:3850
 #, c-format
 msgid "This message was not delivered to %s because the service is not available"
-msgstr ""
+msgstr "Questo messaggio non é stato inoltrato a %s perché il servizio non é disponibile"
 
 #. Busy Here
 #: ../src/core/sipe.c:3852
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr ""
+msgstr "Questo messaggio non é stato inoltrato a %s perché uno e piú destinatari non vogliono essere disturbati"
 
 #: ../src/core/sipe.c:3854
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr ""
+msgstr "Questo messaggio non é stato inoltrato a %s perché uno e piú destinatari non sono collegati"
 
 #: ../src/core/sipe.c:4136
 #, c-format
 msgid "Failed to invite %s"
-msgstr ""
+msgstr "Errore nell'invitare %s"
 
 #: ../src/core/sipe.c:4782
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
-msgstr ""
+msgstr "È stato ricevuto un messaggio con contenuti non riconosciuti da %s"
 
 #: ../src/core/sipe.c:5308 ../src/core/sipe.c:7693
-#, fuzzy
 msgid "Wrong password"
-msgstr "Password Sbagliata"
+msgstr "Password sbagliata"
 
 #: ../src/core/sipe.c:5357
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr ""
+msgstr "Non trovato: %s. Contattare l'amministratore"
 
 #: ../src/core/sipe.c:5359
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr ""
+msgstr "SIP non abilitato per la URI di destinazione oppure non esistente"
 
 #: ../src/core/sipe.c:5376
 #, c-format
@@ -163,13 +162,12 @@ msgid "Invalid message signature received"
 msgstr "Ricevuta firma del messaggio non valida"
 
 #: ../src/core/sipe.c:7763
-#, fuzzy
 msgid "Connection not found. Please try to connect again"
-msgstr "Connessione non trovata; Per piacere prova a connetterti ancora.\n"
+msgstr "Connessione non trovata. Prova a connetterti ancora"
 
 #: ../src/core/sipe.c:7784
 msgid "SSL read error"
-msgstr "errore di lettura SSL"
+msgstr "Errore di lettura SSL"
 
 #: ../src/core/sipe.c:7787
 msgid "Server has disconnected"
@@ -185,49 +183,48 @@ msgid "Could not resolve hostname"
 msgstr "Non è stato possibile risolvere il nome dell'host"
 
 #: ../src/core/sipe.c:7983
-#, fuzzy
 msgid "Connection failed"
-msgstr "Connessione Fallita"
+msgstr "Connessione fallita"
 
 #: ../src/core/sipe.c:7986
-#, fuzzy
 msgid "SSL handshake failed"
-msgstr "Stretta Di Mano SSL Fallita"
+msgstr "Riconoscimento SSL fallito"
 
 #: ../src/core/sipe.c:7989
 msgid "SSL certificate invalid"
-msgstr ""
+msgstr "Certificato SSL non valido"
 
 #: ../src/core/sipe.c:8047
-#, fuzzy
 msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
-msgstr "Il supporto SSL non è installato. Installa il supporto SSL o configura una connessione differente nell'editor dell'account."
+msgstr "Il supporto SSL non è installato. Installa il supporto SSL o configura un tipo di connessione differente nell'editor dell'account."
 
 #: ../src/core/sipe.c:8056
 msgid "Could not create SSL context"
-msgstr "Non è stato possibile creare un contesto SSL"
+msgstr "Non è stato possibile creare una transazione SSL"
 
 #: ../src/core/sipe.c:8179
-#, fuzzy
 msgid "SIP Exchange user name contains invalid characters"
-msgstr "I nomi utente di SIP Exchange non può contenere spazi bianchi"
+msgstr "Il nome utente di SIP Exchange contiene caratteri non validi"
 
 #: ../src/core/sipe.c:8202
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr ""
+"Il nome utente deve essere un SIP URI valido\n"
+"Esempio: utente@azienda.com"
 
 #: ../src/core/sipe.c:8213
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr ""
+"L'indirizzo email deve essere valido se fornito\n"
+"Esempio: utente@azienda.com"
 
 #: ../src/core/sipe.c:8239
-#, fuzzy
 msgid "SIP Exchange user name contains whitespace"
-msgstr "I nomi utente di SIP Exchange non può contenere spazi bianchi"
+msgstr "Il nome utente di SIP Exchange contiene spazi bianchi"
 
 #: ../src/core/sipe.c:8251
 msgid "Connecting"
@@ -239,9 +236,8 @@ msgid "Unable to display the search results"
 msgstr "Non è stato possibile mostrare i risultati della ricerca."
 
 #: ../src/core/sipe.c:8529
-#, fuzzy
 msgid "User name"
-msgstr "Nome Utente"
+msgstr "Nome utente"
 
 #: ../src/core/sipe.c:8532
 msgid "Name"
@@ -268,7 +264,7 @@ msgstr[1] "Trovati %d contatti%s:"
 
 #: ../src/core/sipe.c:8570
 msgid " (more matched your query)"
-msgstr " (elementi in più corrispondono alla tua ricerca)"
+msgstr "(ulteriori elementi corrispondono alla tua ricerca)"
 
 #: ../src/core/sipe.c:8625
 #, fuzzy
@@ -285,14 +281,12 @@ msgid "Search"
 msgstr "Cerca"
 
 #: ../src/core/sipe.c:8636
-#, fuzzy
 msgid "Search for a contact"
-msgstr "Cerca un Contatto"
+msgstr "Cerca un contatto"
 
 #: ../src/core/sipe.c:8637
-#, fuzzy
 msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Inserisci le informazioni della persona che vuoi trovare. Campi vuoti saranno ignorati."
+msgstr "Inserisci le informazioni della persona che vuoi trovare. I campi lasciati vuoti saranno ignorati."
 
 #: ../src/core/sipe.c:8639
 msgid "_Search"
@@ -306,55 +300,54 @@ msgstr "_Annulla"
 #. About note, part 1/11: introduction
 #: ../src/core/sipe.c:8692
 msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr ""
+msgstr "Un plugin che implementa una versione estesa di SIP/SIMPLE usato in molti prodotti"
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8694
 msgid "Home"
-msgstr ""
+msgstr "Home"
 
 #. About note, part 3/11: support forum URL (label)
 #: ../src/core/sipe.c:8696
 msgid "Support"
-msgstr ""
+msgstr "Supporto"
 
 #. About note, part 4/11: support forum name (hyperlink text)
 #: ../src/core/sipe.c:8698
 msgid "Help Forum"
-msgstr ""
+msgstr "Forum di Aiuto"
 
 #. About note, part 5/11: translation service URL (label)
 #: ../src/core/sipe.c:8700
 msgid "Translations"
-msgstr ""
+msgstr "Traduzioni"
 
 #. About note, part 6/11: license type (label)
 #: ../src/core/sipe.c:8702
 msgid "License"
-msgstr ""
+msgstr "Licenza"
 
 #. About note, part 7/11: known users
 #: ../src/core/sipe.c:8704
 msgid "We support users in such organizations as"
-msgstr ""
+msgstr "Supportiamo utenti in aziende come"
 
 #. About note, part 8/11: translation request, text before Transifex.net URL
 #. append a space if text is not empty
 #: ../src/core/sipe.c:8707
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr ""
+msgstr "Per favore aiutaci a tradurre SIPI nella tua lingua madra qui in"
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
 #: ../src/core/sipe.c:8710
 msgid " using convenient web interface"
-msgstr ""
+msgstr "usando una comoda interfaccia web"
 
 #. About note, part 10/11: author list (header)
 #: ../src/core/sipe.c:8712
-#, fuzzy
 msgid "Authors"
-msgstr "Automatico"
+msgstr "Autori"
 
 #. About note, part 11/11: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
@@ -362,11 +355,11 @@ msgstr "Automatico"
 #. "Localization for <language name> (<language code>): <name>"
 #: ../src/core/sipe.c:8717
 msgid "Original texts in English (en): SIPE developers"
-msgstr ""
+msgstr "Tesnti in inglese (en) originali: sviluppatori di SIPE"
 
 #: ../src/core/sipe.c:8782
 msgid "About SIPE plugin..."
-msgstr ""
+msgstr "Informazioni sul plugin SIPE..."
 
 #: ../src/core/sipe.c:8785
 #, fuzzy
@@ -375,91 +368,91 @@ msgstr "Cerca Contatto..."
 
 #: ../src/core/sipe.c:8789
 msgid "Republish Calendar"
-msgstr ""
+msgstr "Ripubblica il Calendario"
 
 #: ../src/core/sipe.c:8793
 msgid "Reset status"
-msgstr ""
+msgstr "Resetta lo stato"
 
 #: ../src/core/sipe.c:8885
 msgid "Status"
-msgstr ""
+msgstr "Stato"
 
 #: ../src/core/sipe.c:8890
 msgid "Calendar"
-msgstr ""
+msgstr "Calendario"
 
 #: ../src/core/sipe.c:8895
 msgid "Meeting in"
-msgstr ""
+msgstr "Riunione in"
 
 #: ../src/core/sipe.c:8899
 msgid "Meeting about"
-msgstr ""
+msgstr "Riunione su"
 
 #: ../src/core/sipe.c:8907
 msgid "Out of office note"
-msgstr ""
+msgstr "Nota per il Fuori Ufficio"
 
 #: ../src/core/sipe.c:8907
 msgid "Note"
-msgstr ""
+msgstr "Nota"
 
 #: ../src/core/sipe.c:8919
 msgid "user@company.com"
-msgstr ""
+msgstr "utente@azienda.com"
 
 #: ../src/core/sipe.c:9281
 #, c-format
 msgid "Make leader of '%s'"
-msgstr ""
+msgstr "Rendi leader di '%s'"
 
 #: ../src/core/sipe.c:9292
 #, c-format
 msgid "Remove from '%s'"
-msgstr ""
+msgstr "Rimuovi da '%s'"
 
 #: ../src/core/sipe.c:9305
 #, c-format
 msgid "Invite to '%s'"
-msgstr ""
+msgstr "Invita a '%s'"
 
 #: ../src/core/sipe.c:9316
 msgid "New chat"
-msgstr ""
+msgstr "Nuova chat"
 
 #: ../src/core/sipe.c:9327
 #, c-format
 msgid "Work %s"
-msgstr ""
+msgstr "Lavoro %s"
 
 #: ../src/core/sipe.c:9340
 #, c-format
 msgid "Mobile %s"
-msgstr ""
+msgstr "Cellulare %s"
 
 #: ../src/core/sipe.c:9353
 #, c-format
 msgid "Home %s"
-msgstr ""
+msgstr "Casa %s"
 
 #: ../src/core/sipe.c:9366
 #, c-format
 msgid "Other %s"
-msgstr ""
+msgstr "Altro %s"
 
 #: ../src/core/sipe.c:9379
 #, c-format
 msgid "Custom1 %s"
-msgstr ""
+msgstr "Personalizzato1 %s"
 
 #: ../src/core/sipe.c:9391
 msgid "Send email..."
-msgstr ""
+msgstr "Spedisci email..."
 
 #: ../src/core/sipe.c:9416
 msgid "Copy to"
-msgstr ""
+msgstr "Copia in"
 
 #: ../src/core/sipe.c:9470
 msgid "Unlock"
