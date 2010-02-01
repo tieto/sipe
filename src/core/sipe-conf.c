@@ -597,7 +597,7 @@ sipe_conf_add(struct sipe_account_data *sip,
 	struct transaction *trans;
 	struct sip_dialog *dialog = NULL;
 	time_t expiry = time(NULL) + 7*60*60; /* 7 hours */
-	const char *expiry_time;
+	char *expiry_time;
 	struct transaction_payload *payload;
 
 	contact = get_contact(sip);
@@ -608,7 +608,7 @@ sipe_conf_add(struct sipe_account_data *sip,
 		contact);
 	g_free(contact);
 
-	expiry_time = purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&expiry));
+	expiry_time = sipe_utils_time_to_str(expiry);
 	self = sip_uri_self(sip);
 	conference_id = genconfid();
 	body = g_strdup_printf(
@@ -618,8 +618,9 @@ sipe_conf_add(struct sipe_account_data *sip,
 		rand(),
 		conference_id,
 		expiry_time);
-	g_free(conference_id);
 	g_free(self);
+	g_free(conference_id);
+	g_free(expiry_time);
 
 	trans = send_sip_request( sip->gc,
 				  "SERVICE",

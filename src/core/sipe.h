@@ -403,8 +403,6 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 
 /*** THE BIG SPLIT END ***/
 
-#define SIPE_XML_DATE_PATTERN	"%Y-%m-%dT%H:%M:%SZ"
-
 #define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"
 
 #define SIPE_SEND_TYPING \

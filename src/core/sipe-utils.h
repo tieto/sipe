@@ -251,3 +251,14 @@ fix_newlines(const char *st);
  */
 time_t
 sipe_utils_str_to_time(const char *timestamp);
+
+/**
+ * Converts time_t to ISO8601 string.
+ * Timezone is UTC.
+ *
+ * Must be g_free()'d after use.
+ *
+ * Example: 2010-02-03T23:59:59Z
+ */
+char *
+sipe_utils_time_to_str(time_t timestamp);

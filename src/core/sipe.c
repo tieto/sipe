@@ -6581,7 +6581,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 	gchar *calendar_data = NULL;
 	gchar *epid = get_epid(sip);
 	time_t now = time(NULL);
-	gchar *since_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&now)));
+	gchar *since_time_str = sipe_utils_time_to_str(now);
 	const gchar *oof_note = ews ? sipe_ews_get_oof_note(ews) : NULL;
 	const char *user_input;
 	gboolean pub_oof = ews && oof_note && (!sip->note || ews->updated > sip->note_since);
@@ -6663,7 +6663,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 	/* CalendarInfo */
 	if (ews && (!is_empty(ews->legacy_dn) || !is_empty(ews->email)) && ews->fb_start && !is_empty(ews->free_busy))
 	{
-		char *fb_start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
+		char *fb_start_str = sipe_utils_time_to_str(ews->fb_start);
 		char *free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
 		calendar_data = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_CALENDAR,
 						!is_empty(ews->legacy_dn) ? ews->legacy_dn : ews->email,
@@ -6946,7 +6946,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 							   "minAvailability=\"12000\"",
 							   "");
 		}
-		start_time_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&event->start_time)));
+		start_time_str = sipe_utils_time_to_str(event->start_time);
 
 		res = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR,
 					instance,
@@ -7064,10 +7064,10 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 		return NULL; /* nothing to update */
 	}
 
-	start_time_attr = note_start ? g_strdup_printf(" startTime=\"%s\"",
-		purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&note_start))) : NULL;
-	end_time_attr = note_end ? g_strdup_printf(" endTime=\"%s\"",
-		purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&note_end))) : NULL;
+	start_time_attr = note_start ? g_strdup_printf(" startTime=\"%s\"", (tmp = sipe_utils_time_to_str(note_start))) : NULL;
+	g_free(tmp);
+	end_time_attr = note_end ? g_strdup_printf(" endTime=\"%s\"", (tmp = sipe_utils_time_to_str(note_end))) : NULL;
+	g_free(tmp);
 
 	if (n1) {
 		tmp1 = g_strdup_printf(SIPE_PUB_XML_NOTE,
@@ -7251,7 +7251,7 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 		return NULL;
 	}
 
-	fb_start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
+	fb_start_str = sipe_utils_time_to_str(ews->fb_start);
 	free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
 
 	st = publication_cal_300 ? publication_cal_300->fb_start_str : NULL;

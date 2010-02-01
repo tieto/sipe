@@ -289,6 +289,14 @@ sipe_utils_str_to_time(const char *timestamp)
 	return purple_str_to_time(timestamp, TRUE, NULL, NULL, NULL);
 }
 
+char *
+sipe_utils_time_to_str(time_t timestamp)
+{
+#define SIPE_XML_DATE_PATTERN	"%Y-%m-%dT%H:%M:%SZ"
+	return g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&timestamp)));
+}
+	
+
 /*
   Local Variables:
   mode: c

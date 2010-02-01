@@ -511,8 +511,8 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 		/* end = start + 4 days - 1 sec */
 		end = ews->fb_start + 4*(24*60*60) - 1;
 
-		start_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&ews->fb_start)));
-		end_str = g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&end)));
+		start_str = sipe_utils_time_to_str(ews->fb_start);
+		end_str = sipe_utils_time_to_str(end);
 
 		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, ews->email, start_str, end_str);
 		ews->http_conn = http_conn_create(
