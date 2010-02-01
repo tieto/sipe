@@ -587,7 +587,7 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 	}
 	purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", free_busy);
 
-	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
+	cal_start = sipe_utils_str_to_time(buddy->cal_start_time);
 
 	ret = sipe_cal_get_status0(free_busy,
 				   cal_start,
@@ -862,7 +862,7 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		return NULL;
 	}
 
-	cal_start = purple_str_to_time(buddy->cal_start_time, FALSE, NULL, NULL, NULL);
+	cal_start = sipe_utils_str_to_time(buddy->cal_start_time);
 	cal_end = cal_start + 60 * (buddy->cal_granularity) * strlen(buddy->cal_free_busy);
 
 	current_cal_state = sipe_cal_get_status0(free_busy, cal_start, buddy->cal_granularity, time(NULL), &index);

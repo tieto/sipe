@@ -243,3 +243,11 @@ replace(const char *st,
 char *
 fix_newlines(const char *st);
 
+/**
+ * Parses a timestamp in ISO8601 format and returns a time_t.
+ * Assumes UTC if no timezone specified
+ *
+ * @param timestamp The timestamp
+ */
+time_t
+sipe_utils_str_to_time(const char *timestamp);

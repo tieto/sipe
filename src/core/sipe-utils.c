@@ -283,6 +283,12 @@ fix_newlines(const char *st)
 	return replace(st, "\r\n", "\n");
 }
 
+time_t
+sipe_utils_str_to_time(const char *timestamp)
+{
+	return purple_str_to_time(timestamp, TRUE, NULL, NULL, NULL);
+}
+
 /*
   Local Variables:
   mode: c

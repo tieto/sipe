@@ -3287,7 +3287,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		guint instance  = xmlnode_get_int_attrib(node, "instance", -1);
 		guint version   = xmlnode_get_int_attrib(node, "version", 0);
 		time_t publish_time = (tmp = xmlnode_get_attrib(node, "publishTime")) ?
-			purple_str_to_time(tmp, FALSE, NULL, NULL, NULL) : 0;
+			sipe_utils_str_to_time(tmp) : 0;
 		gchar *key;
 		GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
 
@@ -3363,8 +3363,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 					xmlnode *xn_activity = xmlnode_get_child(xn_state, "activity");
 					struct sipe_cal_event *event = g_new0(struct sipe_cal_event, 1);
 
-					event->start_time = purple_str_to_time(xmlnode_get_attrib(xn_state, "startTime"),
-								FALSE, NULL, NULL, NULL);
+					event->start_time = sipe_utils_str_to_time(xmlnode_get_attrib(xn_state, "startTime"));
 					if (xn_activity) {
 						if (!strcmp(xmlnode_get_attrib(xn_activity, "token"),
 							    sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].token))
@@ -5583,7 +5582,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		const char *tmp;
 		const char *attrVar = xmlnode_get_attrib(xn_category, "name");
 		time_t publish_time = (tmp = xmlnode_get_attrib(xn_category, "publishTime")) ?
-			purple_str_to_time(tmp, FALSE, NULL, NULL, NULL) : 0;
+			sipe_utils_str_to_time(tmp) : 0;
 
 		/* contactCard */
 		if (!strcmp(attrVar, "contactCard"))
@@ -6092,7 +6091,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
 	xn_state = xn_userinfo ? xmlnode_get_descendant(xn_userinfo, "states", "state",  NULL): NULL;
 	user_avail = xn_state ? xmlnode_get_int_attrib(xn_state, "avail", 0) : 0;
-	user_avail_since = xn_state ? purple_str_to_time(xmlnode_get_attrib(xn_state, "since"), FALSE, NULL, NULL, NULL) : 0;
+	user_avail_since = xn_state ? sipe_utils_str_to_time(xmlnode_get_attrib(xn_state, "since")) : 0;
 	user_avail_nil = xn_state ? xmlnode_get_attrib(xn_state, "nil") : NULL;
 	xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
 	xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
@@ -6170,8 +6169,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			const char *cal_start_time_tmp = xmlnode_get_attrib(xn_calendar_info, "startTime");
 
 			if (cal_start_time) {
-				time_t cal_start_time_t     = purple_str_to_time(cal_start_time,     FALSE, NULL, NULL, NULL);
-				time_t cal_start_time_t_tmp = purple_str_to_time(cal_start_time_tmp, FALSE, NULL, NULL, NULL);
+				time_t cal_start_time_t     = sipe_utils_str_to_time(cal_start_time);
+				time_t cal_start_time_t_tmp = sipe_utils_str_to_time(cal_start_time_tmp);
 
 				if (cal_start_time_t_tmp > cal_start_time_t) {
 					cal_start_time = cal_start_time_tmp;
@@ -6193,7 +6192,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
 		if (xn_state) {
 			int dev_avail = xmlnode_get_int_attrib(xn_state, "avail", 0);
-			time_t dev_avail_since = purple_str_to_time(xmlnode_get_attrib(xn_state, "since"), FALSE, NULL, NULL, NULL);
+			time_t dev_avail_since = sipe_utils_str_to_time(xmlnode_get_attrib(xn_state, "since"));
 
 			state = xmlnode_get_data(xn_state);
 			if (dev_avail_since > user_avail_since &&

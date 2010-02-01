@@ -281,11 +281,11 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			ews->cal_events = g_slist_append(ews->cal_events, cal_event);
 
 			tmp = xmlnode_get_data(xmlnode_get_child(node, "StartTime"));
-			cal_event->start_time = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			cal_event->start_time = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 
 			tmp = xmlnode_get_data(xmlnode_get_child(node, "EndTime"));
-			cal_event->end_time = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			cal_event->end_time = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 
 			tmp = xmlnode_get_data(xmlnode_get_child(node, "BusyType"));
@@ -377,11 +377,11 @@ sipe_ews_process_oof_response(int return_code,
 		    && (xn_duration = xmlnode_get_descendant(resp, "OofSettings", "Duration", NULL)))
 		{
 			char *tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "StartTime"));
-			ews->oof_start = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			ews->oof_start = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 
 			tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "EndTime"));
-			ews->oof_end = purple_str_to_time(tmp, FALSE, NULL, NULL, NULL);
+			ews->oof_end = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 		}
 
