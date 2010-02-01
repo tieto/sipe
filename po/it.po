@@ -7,79 +7,77 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-01 06:01+0200\n"
+"POT-Creation-Date: 2010-02-01 04:46+0000\n"
 "PO-Revision-Date: 2009-03-06 17:16+0000\n"
 "Last-Translator: Guybrush88 <Unknown>\n"
 "Language-Team: Italian <it@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Launchpad-Export-Date: 2009-06-19 16:20+0000\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
 #: ../src/core/sipe.c:143
 msgid "Inactive"
-msgstr ""
+msgstr "Inattivo"
 
 #: ../src/core/sipe.c:144 ../src/core/sipe-cal.c:847
 msgid "Busy"
 msgstr "Occupato"
 
 #: ../src/core/sipe.c:145
-#, fuzzy
 msgid "Busy-Idle"
-msgstr "Occupato"
+msgstr "Occupato-Inattivo"
 
 #: ../src/core/sipe.c:147
 msgid "Be right back"
-msgstr ""
+msgstr "Torno subito"
 
 #: ../src/core/sipe.c:149
 msgid "Out to lunch"
-msgstr ""
+msgstr "A pranzo"
 
 #: ../src/core/sipe.c:151
 msgid "In a call"
-msgstr ""
+msgstr "Al telefono"
 
 #: ../src/core/sipe.c:152
 msgid "In a conference"
-msgstr ""
+msgstr "In una conferenza"
 
 #: ../src/core/sipe.c:153
 msgid "In a meeting"
-msgstr ""
+msgstr "In riunione"
 
 #: ../src/core/sipe.c:154 ../src/core/sipe-cal.c:848
 msgid "Out of office"
-msgstr ""
+msgstr "Fuori ufficio"
 
 #: ../src/core/sipe.c:155
 msgid "Urgent interruptions only"
-msgstr ""
+msgstr "Solo interruzioni urgenti"
 
 #: ../src/core/sipe.c:390
 msgid "Failed to authenticate to server"
-msgstr ""
+msgstr "Errore di autenticazione con il server"
 
 #. TODO: do we really want to disconnect on a failure to write?
 #: ../src/core/sipe.c:538 ../src/core/sipe.c:570
 msgid "Could not write"
-msgstr "Non è stato possibile scrivere"
+msgstr "Errore di scrittura"
 
 #: ../src/core/sipe.c:594 ../src/core/sipe.c:7866
 msgid "Could not connect"
-msgstr "Non è stato possibile connettersi"
+msgstr "Errore di connessione"
 
 #: ../src/core/sipe.c:663 ../src/core/sipe.c:8020
-#, fuzzy
 msgid "Could not create socket"
-msgstr "Non è stato possibile creare socket"
+msgstr "Errore nella creazione del socket"
 
 #: ../src/core/sipe.c:1195 ../src/core/sipe.c:3557
 msgid "you"
-msgstr ""
+msgstr "tu"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -90,22 +88,21 @@ msgstr "Messaggio"
 #: ../src/core/sipe.c:2436 ../src/core/sipe.c:2448 ../src/core/sipe.c:2473
 #: ../src/core/sipe.c:8497
 msgid "Other Contacts"
-msgstr ""
+msgstr "Altri Contatti"
 
 #. [MS-SIPREGE]
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe.c:2653
 msgid "you are already signed in at another location"
-msgstr ""
+msgstr "sei giá collegato da un'altra locazione"
 
 #: ../src/core/sipe.c:2656
 msgid "user disabled"
-msgstr ""
+msgstr "utente disabilitato"
 
 #: ../src/core/sipe.c:2659
-#, fuzzy
 msgid "user moved"
-msgstr "Nome Utente"
+msgstr "utente spostato"
 
 #: ../src/core/sipe.c:2663 ../src/core/sipe.c:5340
 #, c-format
@@ -118,23 +115,18 @@ msgstr "nessuna ragione fornita"
 
 #: ../src/core/sipe.c:3850
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
+msgid "This message was not delivered to %s because the service is not available"
 msgstr ""
 
 #. Busy Here
 #: ../src/core/sipe.c:3852
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
 msgstr ""
 
 #: ../src/core/sipe.c:3854
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
+msgid "This message was not delivered to %s because one or more recipients are offline"
 msgstr ""
 
 #: ../src/core/sipe.c:4136
@@ -208,12 +200,8 @@ msgstr ""
 
 #: ../src/core/sipe.c:8047
 #, fuzzy
-msgid ""
-"SSL support is not installed. Either install SSL support or configure a "
-"different connection type in the account editor"
-msgstr ""
-"Il supporto SSL non è installato. Installa il supporto SSL o configura una "
-"connessione differente nell'editor dell'account."
+msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
+msgstr "Il supporto SSL non è installato. Installa il supporto SSL o configura una connessione differente nell'editor dell'account."
 
 #: ../src/core/sipe.c:8056
 msgid "Could not create SSL context"
@@ -303,12 +291,8 @@ msgstr "Cerca un Contatto"
 
 #: ../src/core/sipe.c:8637
 #, fuzzy
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Inserisci le informazioni della persona che vuoi trovare. Campi vuoti "
-"saranno ignorati."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Inserisci le informazioni della persona che vuoi trovare. Campi vuoti saranno ignorati."
 
 #: ../src/core/sipe.c:8639
 msgid "_Search"
@@ -321,9 +305,7 @@ msgstr "_Annulla"
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
 #: ../src/core/sipe.c:8692
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
 msgstr ""
 
 #. About note, part 2/11: home page URL (label)
@@ -561,8 +543,10 @@ msgstr "TCP"
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/core/sipe.c:9832
 msgid "User Agent"
 msgstr "Agente Utente"
@@ -574,7 +558,7 @@ msgstr ""
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/core/sipe.c:9843
 msgid "Use Single Sign-On"
 msgstr ""
@@ -668,14 +652,11 @@ msgid "Chat #%d"
 msgstr ""
 
 #: ../src/core/sipe-conf.c:828
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
+msgid "This conference is no longer locked. Additional participants can now join."
 msgstr ""
 
 #: ../src/core/sipe-conf.c:832
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
 msgstr ""
 
 #: ../src/core/sipe-conf.c:865
