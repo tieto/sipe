@@ -368,11 +368,11 @@ msgstr "Опубликовать календарь"
 
 #: ../src/core/sipe.c:8793
 msgid "Reset status"
-msgstr "Сбросить статус"
+msgstr "Сбросить состояние"
 
 #: ../src/core/sipe.c:8885
 msgid "Status"
-msgstr "Статус"
+msgstr "Состояние"
 
 #: ../src/core/sipe.c:8890
 msgid "Calendar"
@@ -380,11 +380,11 @@ msgstr "Календарь"
 
 #: ../src/core/sipe.c:8895
 msgid "Meeting in"
-msgstr "Место"
+msgstr "Место собрания"
 
 #: ../src/core/sipe.c:8899
 msgid "Meeting about"
-msgstr "Тема"
+msgstr "Тема собрания"
 
 #: ../src/core/sipe.c:8907
 msgid "Out of office note"
@@ -444,7 +444,7 @@ msgstr "Пользовательский %s"
 
 #: ../src/core/sipe.c:9391
 msgid "Send email..."
-msgstr "Послать сообщение электронной почты..."
+msgstr "Отправить сообщение электронной почты..."
 
 #: ../src/core/sipe.c:9416
 msgid "Copy to"
@@ -617,11 +617,11 @@ msgstr "Нет данных"
 #: ../src/core/sipe-cal.c:957 ../src/core/sipe-cal.c:984
 #, c-format
 msgid "Currently %s"
-msgstr "В данный момент %s"
+msgstr "в настоящий момент %s"
 
 #: ../src/core/sipe-cal.c:963
 msgid "Outside of working hours for next 8 hours"
-msgstr "Вне рабочих часов следующие 8 часов"
+msgstr "нерабочее время следующие 8 часов"
 
 #: ../src/core/sipe-cal.c:965
 #, c-format
@@ -630,7 +630,7 @@ msgstr "%s в течение следующих 8 часов"
 
 #: ../src/core/sipe-cal.c:974
 msgid "Not working"
-msgstr "Вне рабочих часов"
+msgstr "не работаю"
 
 #: ../src/core/sipe-cal.c:978
 #, c-format
@@ -640,7 +640,7 @@ msgstr "%s до %.2d:%.2d"
 #: ../src/core/sipe-cal.c:986
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
-msgstr "%s. Вне рабочих часов в %.2d:%.2d"
+msgstr "%s. Нерабочее время в %.2d:%.2d"
 
 #: ../src/core/sipe-cal.c:991
 #, c-format
