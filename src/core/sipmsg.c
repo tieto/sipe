@@ -171,6 +171,14 @@ char *sipmsg_to_string(const struct sipmsg *msg) {
  */
 void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos) {
 	struct siphdrelement *element = g_new0(struct siphdrelement,1);
+
+	/* SANITY CHECK: the calling code must be fixed if this happens! */
+	if (!value) {
+		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "sipmsg_add_header_now_pos: NULL value for %s (%d)\n",
+			     name, pos);
+		value = "";
+	}
+
 	element->name = g_strdup(name);
 	element->value = g_strdup(value);
 	msg->headers = g_slist_insert(msg->headers, element,pos);
@@ -181,6 +189,14 @@ void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gcha
  */
 void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *value) {
 	struct siphdrelement *element = g_new0(struct siphdrelement,1);
+
+	/* SANITY CHECK: the calling code must be fixed if this happens! */
+	if (!value) {
+		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "sipmsg_add_header_now: NULL value for %s\n",
+			     name);
+		value = "";
+	}
+
 	element->name = g_strdup(name);
 	element->value = g_strdup(value);
 	msg->headers = g_slist_append(msg->headers, element);
@@ -191,6 +207,14 @@ void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *v
  */
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value) {
 	struct siphdrelement *element = g_new0(struct siphdrelement,1);
+
+	/* SANITY CHECK: the calling code must be fixed if this happens! */
+	if (!value) {
+		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "sipmsg_add_header: NULL value for %s\n",
+			     name);
+		value = "";
+	}
+
 	element->name = g_strdup(name);
 	element->value = g_strdup(value);
 	msg->new_headers = g_slist_append(msg->new_headers, element);

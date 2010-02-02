@@ -822,9 +822,12 @@ void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 	GSList *tmp;
 	const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
 
+	/* Can return NULL! */
 	contact = get_contact(sip);
-	sipmsg_add_header(msg, "Contact", contact);
-	g_free(contact);
+	if (contact) {
+		sipmsg_add_header(msg, "Contact", contact);
+		g_free(contact);
+	}
 
 	if (body) {
 		gchar len[12];
