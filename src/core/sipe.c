@@ -7055,6 +7055,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	char *end_time_attr;
 
 	g_free(tmp);
+	tmp = NULL;
 	g_free(key_note_200);
 	g_free(key_note_300);
 	g_free(key_note_400);
@@ -7069,6 +7070,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 
 	start_time_attr = note_start ? g_strdup_printf(" startTime=\"%s\"", (tmp = sipe_utils_time_to_str(note_start))) : NULL;
 	g_free(tmp);
+	tmp = NULL;
 	end_time_attr = note_end ? g_strdup_printf(" endTime=\"%s\"", (tmp = sipe_utils_time_to_str(note_end))) : NULL;
 	g_free(tmp);
 
