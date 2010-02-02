@@ -7492,39 +7492,40 @@ static void send_presence_status(struct sipe_account_data *sip)
 static void process_input_message(struct sipe_account_data *sip,struct sipmsg *msg)
 {
 	gboolean found = FALSE;
-	purple_debug_info("sipe", "msg->response(%d),msg->method(%s)\n",msg->response,msg->method);
+	const char *method = msg->method ? msg->method : "NOT FOUND";
+	purple_debug_info("sipe", "msg->response(%d),msg->method(%s)\n",msg->response,method);
 	if (msg->response == 0) { /* request */
-		if (!strcmp(msg->method, "MESSAGE")) {
+		if (!strcmp(method, "MESSAGE")) {
 			process_incoming_message(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(msg->method, "NOTIFY")) {
+		} else if (!strcmp(method, "NOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_notify\n");
 			process_incoming_notify(sip, msg, TRUE, FALSE);
 			found = TRUE;
-		} else if (!strcmp(msg->method, "BENOTIFY")) {
+		} else if (!strcmp(method, "BENOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_benotify\n");
 			process_incoming_notify(sip, msg, TRUE, TRUE);
 			found = TRUE;
-		} else if (!strcmp(msg->method, "INVITE")) {
+		} else if (!strcmp(method, "INVITE")) {
 			process_incoming_invite(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(msg->method, "REFER")) {
+		} else if (!strcmp(method, "REFER")) {
 			process_incoming_refer(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(msg->method, "OPTIONS")) {
+		} else if (!strcmp(method, "OPTIONS")) {
 			process_incoming_options(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(msg->method, "INFO")) {
+		} else if (!strcmp(method, "INFO")) {
 			process_incoming_info(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(msg->method, "ACK")) {
+		} else if (!strcmp(method, "ACK")) {
 			// ACK's don't need any response
 			found = TRUE;
-		} else if (!strcmp(msg->method, "SUBSCRIBE")) {
+		} else if (!strcmp(method, "SUBSCRIBE")) {
 			// LCS 2005 sends us these - just respond 200 OK
 			found = TRUE;
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
-		} else if (!strcmp(msg->method, "BYE")) {
+		} else if (!strcmp(method, "BYE")) {
 			process_incoming_bye(sip, msg);
 			found = TRUE;
 		} else {
@@ -7618,7 +7619,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 		}
 	}
 	if (!found) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "received a unknown sip message with method %s and response %d\n", msg->method, msg->response);
+		purple_debug(PURPLE_DEBUG_MISC, "sipe", "received a unknown sip message with method %s and response %d\n", method, msg->response);
 	}
 }
 
