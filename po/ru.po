@@ -297,7 +297,7 @@ msgstr "_Отмена"
 #. About note, part 1/11: introduction
 #: ../src/core/sipe.c:8692
 msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr "Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в таких продуктах как"
+msgstr "Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в таких продуктах, как"
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8694
@@ -621,7 +621,7 @@ msgstr "в настоящий момент %s"
 
 #: ../src/core/sipe-cal.c:963
 msgid "Outside of working hours for next 8 hours"
-msgstr "нерабочее время следующие 8 часов"
+msgstr "Нерабочее время в течение следующих 8 часов"
 
 #: ../src/core/sipe-cal.c:965
 #, c-format
