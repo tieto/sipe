@@ -5051,6 +5051,22 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 	g_free(body);
 }
 
+static const char*
+sipe_get_auth_scheme_name(struct sipe_account_data *sip)
+{
+	const char *res = NULL;
+#ifdef USE_KERBEROS
+	if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
+#endif
+		res = "NTLM";
+#ifdef USE_KERBEROS
+	} else {
+		res = "Kerberos";
+	}
+#endif
+	return res;
+}
+
 static void sipe_connection_cleanup(struct sipe_account_data *);
 static void create_connection(struct sipe_account_data *, gchar *, int);
 
@@ -5078,6 +5094,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				gchar *uuid;
 				gchar *timeout;
 				gchar *server_hdr = sipmsg_find_header(msg, "Server");
+				const char *auth_scheme;
 
 				if (!sip->reregister_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "registration");
@@ -5094,15 +5111,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					default_ua = NULL;
 				}
 
-#ifdef USE_KERBEROS
-				if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
-#endif
-					tmp = sipmsg_find_auth_header(msg, "NTLM");
-#ifdef USE_KERBEROS
-				} else {
-					tmp = sipmsg_find_auth_header(msg, "Kerberos");
-				}
-#endif
+				auth_scheme = sipe_get_auth_scheme_name(sip);
+				tmp = sipmsg_find_auth_header(msg, auth_scheme);
+
 				if (tmp) {
 					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp ? tmp : "");
 					fill_auth(tmp, &sip->registrar);
@@ -5304,22 +5315,25 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			break;
 		case 401:
 			if (sip->registerstatus != 2) {
+				const char *auth_scheme;
 				purple_debug_info("sipe", "REGISTER retries %d\n", sip->registrar.retries);
 				if (sip->registrar.retries > 3) {
 					sip->gc->wants_to_die = TRUE;
 					purple_connection_error(sip->gc, _("Wrong password"));
 					return TRUE;
 				}
-#ifdef USE_KERBEROS
-				if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
-#endif
-					tmp = sipmsg_find_auth_header(msg, "NTLM");
-#ifdef USE_KERBEROS
-				} else {
-					tmp = sipmsg_find_auth_header(msg, "Kerberos");
-				}
-#endif
+				
+				auth_scheme = sipe_get_auth_scheme_name(sip);
+				tmp = sipmsg_find_auth_header(msg, auth_scheme);
+				
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp ? tmp : "");
+				if (!tmp) {
+					char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
+					sip->gc->wants_to_die = TRUE;
+					purple_connection_error(sip->gc, tmp2);
+					g_free(tmp2);
+					return TRUE;
+				}
 				fill_auth(tmp, &sip->registrar);
 				sip->registerstatus = 2;
 				if (sip->account->disconnecting) {
@@ -7571,21 +7585,22 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 					} else {
 						if (msg->response == 401) {
 							gchar *resend, *auth, *ptmp;
+							const char* auth_scheme;
 
 							if (sip->registrar.retries > 4) return;
 							sip->registrar.retries++;
 
-#ifdef USE_KERBEROS
-							if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
-#endif
-								ptmp = sipmsg_find_auth_header(msg, "NTLM");
-#ifdef USE_KERBEROS
-							} else {
-								ptmp = sipmsg_find_auth_header(msg, "Kerberos");
-							}
-#endif
-
+							auth_scheme = sipe_get_auth_scheme_name(sip);
+							ptmp = sipmsg_find_auth_header(msg, auth_scheme);
+				
 							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\n", ptmp ? ptmp : "");
+							if (!ptmp) {
+								char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
+								sip->gc->wants_to_die = TRUE;
+								purple_connection_error(sip->gc, tmp2);
+								g_free(tmp2);
+								return;
+							}
 
 							fill_auth(ptmp, &sip->registrar);
 							auth = auth_header(sip, &sip->registrar, trans->msg);
