@@ -897,8 +897,14 @@ static struct transaction *transactions_find(struct sipe_account_data *sip, stru
 	GSList *transactions = sip->transactions;
 	gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	gchar *cseq = sipmsg_find_header(msg, "CSeq");
-	gchar *key = g_strdup_printf("<%s><%s>", call_id, cseq);
+	gchar *key;
 
+	if (!call_id || !cseq) {
+		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "transaction_find: no Call-ID or CSeq!\n");
+		return NULL;
+	}
+
+	key = g_strdup_printf("<%s><%s>", call_id, cseq);
 	while (transactions) {
 		trans = transactions->data;
 		if (!g_strcasecmp(trans->key, key)) {
