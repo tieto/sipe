@@ -5104,7 +5104,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				}
 #endif
 				if (tmp) {
-					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp);
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp ? tmp : "");
 					fill_auth(tmp, &sip->registrar);
 				}
 
@@ -5319,7 +5319,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					tmp = sipmsg_find_auth_header(msg, "Kerberos");
 				}
 #endif
-				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp);
+				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp ? tmp : "");
 				fill_auth(tmp, &sip->registrar);
 				sip->registerstatus = 2;
 				if (sip->account->disconnecting) {
@@ -7585,7 +7585,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							}
 #endif
 
-							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\n", ptmp);
+							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\n", ptmp ? ptmp : "");
 
 							fill_auth(ptmp, &sip->registrar);
 							auth = auth_header(sip, &sip->registrar, trans->msg);
