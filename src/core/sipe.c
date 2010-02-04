@@ -792,12 +792,9 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		g_free(buf);
 	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO") || !strcmp(method, "OPTIONS") || !strcmp(method, "REFER")) {
 		sip->registrar.nc = 3;
+		sip->registrar.type = AUTH_TYPE_NTLM;
 #ifdef USE_KERBEROS
-		if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
-#endif
-			sip->registrar.type = AUTH_TYPE_NTLM;
-#ifdef USE_KERBEROS
-		} else {
+		if (purple_account_get_bool(sip->account, "krb5", FALSE)) {
 			sip->registrar.type = AUTH_TYPE_KERBEROS;
 		}
 #endif
@@ -5060,15 +5057,13 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 static const char*
 sipe_get_auth_scheme_name(struct sipe_account_data *sip)
 {
-	const char *res = NULL;
+	const char *res = "NTLM";
 #ifdef USE_KERBEROS
-	if (!purple_account_get_bool(sip->account, "krb5", FALSE)) {
-#endif
-		res = "NTLM";
-#ifdef USE_KERBEROS
-	} else {
+	if (purple_account_get_bool(sip->account, "krb5", FALSE)) {
 		res = "Kerberos";
 	}
+#else
+	(void) sip; /* make compiler happy */
 #endif
 	return res;
 }
@@ -5328,10 +5323,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					purple_connection_error(sip->gc, _("Wrong password"));
 					return TRUE;
 				}
-				
+
 				auth_scheme = sipe_get_auth_scheme_name(sip);
 				tmp = sipmsg_find_auth_header(msg, auth_scheme);
-				
+
 				purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp ? tmp : "");
 				if (!tmp) {
 					char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
@@ -7598,7 +7593,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 
 							auth_scheme = sipe_get_auth_scheme_name(sip);
 							ptmp = sipmsg_find_auth_header(msg, auth_scheme);
-				
+
 							purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_input_message - Auth header: %s\n", ptmp ? ptmp : "");
 							if (!ptmp) {
 								char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
