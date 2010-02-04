@@ -1,0 +1,54 @@
+pidgin-sipe (1.7.1-0ubuntu1) lucid; urgency=low
+
+  * New upstream release
+  * debian/control
+    - Update standards version to 3.8.3.
+  * debian/rules
+    - Change the path of libsipe.la as per upstream change.
+  * debian/watch
+    - Improve the regular expression.
+
+ -- Onkar Shinde <onkarshinde@ubuntu.com>  Thu, 04 Feb 2010 22:42:32 +0530
+
+pidgin-sipe (1.5.0-0ubuntu2) karmic; urgency=low
+
+  * src/sipe.c: make prpl_info depend on Pidgin version, fixes FTBFS 
+    (LP: #450556). This comes from upstream 1.6.3.
+
+ -- Ilya Barygin <barygin@gmail.com>  Tue, 13 Oct 2009 21:49:07 +0400
+
+pidgin-sipe (1.5.0-0ubuntu1) karmic; urgency=low
+
+  * New upstream release (LP: #393552)
+  * Add debian/watch file
+
+ -- Timothy Redaelli <timothy@redaelli.eu>  Mon, 29 Jun 2009 19:10:50 +0200
+
+pidgin-sipe (1.3.3-1) unstable; urgency=low
+
+  * New upstream version (Closes: #508221)
+    * Added support for OCS 2007, LCS 2003
+    * Full support for send/receive messages
+    * Full presence support (both sides)
+    * Full support for add/remove/move contacts
+    * TLS/SSL support
+    * Search contacts full support
+    * xBSD support
+  * Added the dependency with the libpurple-dev package
+  * Added the dependency with the intltool package
+  * Added the dependency with the comerr-dev package
+  * Removed the unnecessary debian/pidgin-sipe.dirs file
+  * Changed the package description inside debian/control 
+    (Closes: #433920,#490923)
+  * Added the field Homepage inside Source stanza in debian/control file.
+  * Updated the copyright file with the new authors list.
+  * Updated with Standards-Version 3.8.0
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 1 Mar 2009 12:15:35 -0500
+
+pidgin-sipe (1.2-1) unstable; urgency=low
+
+  * Initial release (Closes: #418226)
+
+ -- Anibal Avelar (Fixxxer) <aavelar@cofradia.org>  Wed, 13 Jun 2007 19:12:35 -0500
+

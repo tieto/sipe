@@ -1,0 +1,3 @@
+version=3
+
+http://sf.net/sipe/pidgin-sipe-([\d\.]+)\.tar\.gz
