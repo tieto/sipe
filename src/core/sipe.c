@@ -1330,7 +1330,7 @@ sipe_group_set_user (struct sipe_account_data *sip, const gchar * who)
 	PurpleBuddy *purple_buddy = purple_find_buddy (sip->account, who);
 
 	if (buddy && purple_buddy) {
-		gchar *alias = (gchar *)purple_buddy_get_alias(purple_buddy);
+		const char *alias = purple_buddy_get_alias(purple_buddy);
 		gchar *body;
 		gchar *groups = sipe_get_buddy_groups_string(buddy);
 		purple_debug_info("sipe", "Saving buddy %s with alias %s and groups %s\n", who, alias, groups);
@@ -1605,7 +1605,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	}
 
 	/* then set status_id actually */
-	purple_debug_info("sipe", "sipe_got_user_status: to %s for %s\n", status_id, sbuddy->name);
+	purple_debug_info("sipe", "sipe_got_user_status: to %s for %s\n", status_id ? status_id : "", sbuddy->name ? sbuddy->name : "" );
 	purple_prpl_got_user_status(sip->account, sbuddy->name, status_id, NULL);
 
 	/* set our account state to the one in roaming (including calendar info) */
@@ -2901,7 +2901,7 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 		guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
 		guint note_oof_instance = sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF);
 
-		purple_debug_info("sipe", "* Out Publication Instances *\n");
+		purple_debug_info("sipe", "* Our Publication Instances *\n");
 		purple_debug_info("sipe", "\tDevice               : %u\t0x%08X\n", device_instance, device_instance);
 		purple_debug_info("sipe", "\tMachine State        : %u\t0x%08X\n", machine_instance, machine_instance);
 		purple_debug_info("sipe", "\tUser Stare           : %u\t0x%08X\n", user_instance, user_instance);
@@ -3025,6 +3025,96 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 #define ADDRESS_STATE_PROP		"address-state"
 #define ADDRESS_ZIPCODE_PROP		"address-zipcode"
 #define ADDRESS_COUNTRYCODE_PROP	"address-country-code"
+
+/**
+ * Tries to figure out user first and last name
+ * based on Display Name and email properties.
+ *
+ * Allocates memory - must be g_free()'d
+ *
+ * Examples to parse:
+ *  First Last
+ *  First Last - Company Name
+ *  Last, First
+ *  Last, First M.
+ *  Last, First (C)(STP) (Company)
+ *  first.last@company.com		(preprocessed as "first last")
+ *  first.last.company.com@reuters.net	(preprocessed as "first last company com")
+ *
+ * Unusable examples:
+ *  user@company.com			(preprocessed as "user")
+ *  first.m.last@company.com		(preprocessed as "first m last")
+ *  user.company.com@reuters.net	(preprocessed as "user company com")
+ */
+static void
+sipe_get_first_last_names(struct sipe_account_data *sip,
+			  const char *uri,
+			  char **first_name,
+			  char **last_name)
+{
+	PurpleBuddy *p_buddy;
+	char *display_name;
+	const char *email;
+	const char *first, *last;
+	char *tmp;
+	char **parts;
+	gboolean has_comma = FALSE;
+
+	if (!sip || !uri) return;
+
+	p_buddy = purple_find_buddy(sip->account, uri);
+
+	if (!p_buddy) return;
+
+	display_name = g_strdup(purple_buddy_get_alias(p_buddy));
+	email = purple_blist_node_get_string(&p_buddy->node, EMAIL_PROP);
+
+	if (!display_name && !email) return;
+
+	/* if no display name, make "first last anything_else" out of email */
+	if (email && !display_name) {
+		display_name = g_strndup(email, strstr(email, "@") - email);
+		display_name = purple_strreplace((tmp = display_name), ".", " ");
+		g_free(tmp);
+	}
+
+	has_comma = (strstr(display_name, ",") != NULL);
+
+	if (display_name) {
+		display_name = purple_strreplace((tmp = display_name), ", ", " ");
+		g_free(tmp);
+		display_name = purple_strreplace((tmp = display_name), ",", " ");
+		g_free(tmp);
+	}
+
+	parts = g_strsplit(display_name, " ", 0);
+
+	if (!parts[0] || !parts[1]) {
+		g_free(display_name);
+		g_strfreev(parts);
+		return;
+	}
+
+	if (has_comma) {
+		last  = parts[0];
+		first = parts[1];
+	} else {
+		first = parts[0];
+		last  = parts[1];
+	}
+
+	if (first_name) {
+		*first_name = g_strstrip(g_strdup(first));
+	}
+
+	if (last_name) {
+		*last_name = g_strstrip(g_strdup(last));
+	}
+
+	g_free(display_name);
+	g_strfreev(parts);
+}
+
 /**
  * Update user information
  *
@@ -3902,12 +3992,12 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 
 	if (msg->response >= 400) {
 		PurpleBuddy *pbuddy;
-		gchar *alias = with;
+		const char *alias = with;
 
 		purple_debug_info("sipe", "process_message_response: MESSAGE response >= 400\n");
 
 		if ((pbuddy = purple_find_buddy(sip->account, with))) {
-			alias = (gchar *)purple_buddy_get_alias(pbuddy);
+			alias = purple_buddy_get_alias(pbuddy);
 		}
 
 		sipe_present_message_undelivered_err(sip, session, msg->response, alias, message);
@@ -4127,12 +4217,12 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 
 	if (msg->response != 200) {
 		PurpleBuddy *pbuddy;
-		gchar *alias = with;
+		const char *alias = with;
 
 		purple_debug_info("sipe", "process_invite_response: INVITE response not 200\n");
 
 		if ((pbuddy = purple_find_buddy(sip->account, with))) {
-			alias = (gchar *)purple_buddy_get_alias(pbuddy);
+			alias = purple_buddy_get_alias(pbuddy);
 		}
 
 		if (message) {
@@ -9532,6 +9622,8 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	char *phone_number = NULL;
 	char *email = NULL;
 	const char *site;
+	char *first_name = NULL;
+	char *last_name = NULL;
 
 	if (!sip) return FALSE;
 
@@ -9639,6 +9731,16 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	if (site) {
 		purple_notify_user_info_add_pair(info, _("Site"), site);
 	}
+
+	sipe_get_first_last_names(sip, uri, &first_name, &last_name);
+	if (first_name && last_name) {
+		char *link = g_strconcat("http://www.linkedin.com/pub/dir/", first_name, "/", last_name, NULL);
+
+		purple_notify_user_info_add_pair(info, _("Find on LinkedIn"), link);
+		g_free(link);
+	}
+	g_free(first_name);
+	g_free(last_name);
 
 	if (device_name) {
 		purple_notify_user_info_add_pair(info, _("Device"), device_name);
