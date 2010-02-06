@@ -1564,8 +1564,6 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
 	int avail;
 	gchar *self_uri;
-	/* status change driven by calendar, i.e. not purple */
-	gboolean is_calendar_state = !status_id;
 
 	if (!sbuddy) return;
 
@@ -1575,7 +1573,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	}
 
 	/* scheduled Cal update call */
-	if (is_calendar_state) {
+	if (!status_id) {
 		status_id = sbuddy->last_non_cal_status_id;
 		g_free(sbuddy->activity);
 		sbuddy->activity = g_strdup(sbuddy->last_non_cal_activity);
@@ -1618,7 +1616,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sip);
-	if (is_calendar_state && sip->initial_state_published && !strcmp(sbuddy->name, self_uri)) {
+	if (sip->initial_state_published && !strcmp(sbuddy->name, self_uri)) {
 		if (!strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
@@ -3257,8 +3255,12 @@ sipe_set_purple_account_status_and_note(const PurpleAccount *account,
 	gboolean changed = TRUE;
 
 	if (g_str_equal(status_id, purple_status_get_id(status)) &&
-	purple_strequal(message, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
+	    purple_strequal(message, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
 	{
+		changed = FALSE;
+	}
+	
+	if (purple_savedstatus_is_idleaway()) {
 		changed = FALSE;
 	}
 
