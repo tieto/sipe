@@ -1563,13 +1563,13 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	time_t cal_avail_since;
 	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
 	int avail;
-	gchar *self_uri = sip_uri_self(sip);
+	gchar *self_uri;
 
 	if (!sbuddy) return;
 
 	if (cal_status < SIPE_CAL_NO_DATA) {
-		purple_debug_info("sipe", "update_calendar_status_cb: cal_status      : %d for %s\n", cal_status, sbuddy->name);
-		purple_debug_info("sipe", "update_calendar_status_cb: cal_avail_since : %s", asctime(localtime(&cal_avail_since)));
+		purple_debug_info("sipe", "sipe_apply_calendar_status: cal_status      : %d for %s\n", cal_status, sbuddy->name);
+		purple_debug_info("sipe", "sipe_apply_calendar_status: cal_avail_since : %s", asctime(localtime(&cal_avail_since)));
 	}
 
 	/* scheduled Cal update call */
@@ -1578,10 +1578,16 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		g_free(sbuddy->activity);
 		sbuddy->activity = g_strdup(sbuddy->last_non_cal_activity);
 	}
+	
+	if (!status_id) {
+		purple_debug_info("sipe", "sipe_apply_calendar_status: status_id is NULL for %s, exiting.\n",
+			sbuddy->name ? sbuddy->name : "" );
+		return;
+	}
 
 	/* adjust to calendar status */
 	if (cal_status != SIPE_CAL_NO_DATA) {
-		purple_debug_info("sipe", "update_calendar_status_cb: user_avail_since: %s", asctime(localtime(&sbuddy->user_avail_since)));
+		purple_debug_info("sipe", "sipe_apply_calendar_status: user_avail_since: %s", asctime(localtime(&sbuddy->user_avail_since)));
 
 		if (cal_status == SIPE_CAL_BUSY
 		    && cal_avail_since > sbuddy->user_avail_since
@@ -1593,7 +1599,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		}
 		avail = sipe_get_availability_by_status(status_id, NULL);
 
-		purple_debug_info("sipe", "update_calendar_status_cb: activity_since  : %s", asctime(localtime(&sbuddy->activity_since)));
+		purple_debug_info("sipe", "sipe_apply_calendar_status: activity_since  : %s", asctime(localtime(&sbuddy->activity_since)));
 		if (cal_avail_since > sbuddy->activity_since) {
 			if (cal_status == SIPE_CAL_OOF
 			    && avail >= 15000) /* 12000 in 2007 */
@@ -1605,16 +1611,17 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	}
 
 	/* then set status_id actually */
-	purple_debug_info("sipe", "sipe_got_user_status: to %s for %s\n", status_id ? status_id : "", sbuddy->name ? sbuddy->name : "" );
+	purple_debug_info("sipe", "sipe_apply_calendar_status: to %s for %s\n", status_id ? status_id : "", sbuddy->name ? sbuddy->name : "" );
 	purple_prpl_got_user_status(sip->account, sbuddy->name, status_id, NULL);
 
 	/* set our account state to the one in roaming (including calendar info) */
+	self_uri = sip_uri_self(sip);
 	if (sip->initial_state_published && !strcmp(sbuddy->name, self_uri)) {
 		if (!strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
 
-		purple_debug_info("sipe", "sipe_got_user_status: switch to '%s' for the account\n", sip->status);
+		purple_debug_info("sipe", "sipe_apply_calendar_status: switch to '%s' for the account\n", sip->status);
 		sipe_set_purple_account_status_and_note(sip->account, status_id, sip->note, sip->do_not_publish);
 	}
 	g_free(self_uri);
