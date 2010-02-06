@@ -1564,6 +1564,8 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
 	int avail;
 	gchar *self_uri;
+	/* status change driven by calendar, i.e. not purple */
+	gboolean is_calendar_state = !status_id;
 
 	if (!sbuddy) return;
 
@@ -1573,7 +1575,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	}
 
 	/* scheduled Cal update call */
-	if (!status_id) {
+	if (is_calendar_state) {
 		status_id = sbuddy->last_non_cal_status_id;
 		g_free(sbuddy->activity);
 		sbuddy->activity = g_strdup(sbuddy->last_non_cal_activity);
@@ -1616,7 +1618,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sip);
-	if (sip->initial_state_published && !strcmp(sbuddy->name, self_uri)) {
+	if (is_calendar_state && sip->initial_state_published && !strcmp(sbuddy->name, self_uri)) {
 		if (!strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
