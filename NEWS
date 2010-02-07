@@ -1,2 +1,36 @@
-
-- Finish the Pidgin 2,.0 porting
+version 1.8.0
+	- Added integration with Exchange 2007/2010. Now Sipe retrieve our Calendar data (Free/Busy, Working Hours, Meeting Subject/Location, Out-of-Office Note) from Exchange Web Services and publishes it to OCS2007/LCS2005. Thus our contacts can see our availability information based on Calendar data. For example: "Calendar: Currently Busy. Free at 11:30" or "Calendar: Currently Free. Outside of working hours at 18:00". Contacts will also see our Out-of-Office message if it's enabled in Exchange/Outlook. Team members (contacts with access level Team) will be able to see information about our current meeting - subject and location (OCS2007).
+	First call to Exchange is scheduled with 1 minute delay after Sipe start. Subsequent update intervals are 30 minutes. There is a way to manually trigger Calendar data update: Accounts->{SIPE_ACCOUNT}->"Republish Calendar" menu option.
+	Though Exchange integration can work without any additional settings in account configuration, there are options to manually provide email address if it's different from SIP URI, Exchange Services URI, email account authentication if it is different from configuration on Basic tab. (pier11)
+	- Added Calendar information to contact's tooltip. You can see it like "Calendar: Currently Tentative. Busy at 11:30" or "Calendar: Outside of working hours for next 8 hours". (pier11)
+	- 2005 presence engine has been completely rewritten. Now it supports "Do not disturb" status(taken from UserState), "In a meetinfg" status (taken from Calendar stream data, and most importantly changing autonomously in line with the stream). "In a meeting" activity reflects scheduled times of activities in Outlook/Exchange with Busy state. Updated 2007 presence engine too. Pidgin Statusbox now reflects last status and note set by our other points of presence; also updates according to our Calendar state (i.e without manual action); displays our Out-of-Office message if any. (pier11)
+	- Added "Accounts->{SIPE_ACCOUNT}->Status Reset" menu option to clean User Status set manually. The latter can override Calendar status for example. (pier11)
+	- Added "Find on LinkedIn" link on contact's User Info screen for more in-depth information about your contact if available. Both SIPE and LinkedIn.com professional network belong to enterprise domain, so match is quite good. (pier11)
+	- Enhanced custom NTLM security provider to pass connection-oriented authentication. Used in Web authentication, for example with Exchange Web Services. In contrast to connectionless (datagram) NTLM authentication type used in SIP. (pier11)
+	- Added Negotiate authentication scheme (Windows only). Used in HTTP authentication. (pier11)
+	- Contributed code for Adium port. (Matt Meissner)
+	- Added Windows Messenger 5.0 (RTC/1.2) compatibility. Though very old, some our clients use it on LCS2005. (pier11)
+	- New BusyIdle status. (pier11)
+	- Placed Sipe to Transifex.net translation portal allowing easily add/modify translations through web interface. (Stefan Becker)
+	- Updated Sipe About screen ("Accounts->{SIPE_ACCOUNT}->About SIPE plugin") with our translation page. (pier11)	
+	- New translation: Polish 'pl' (Piotr Drąg)
+	- Updated translations: 'zh_CN' (Kang Kai), 'ru' (pier11) and 'de' (Stefan Becker)
+	- Static/dynamic code analysis with Coverity Prevent, memory leaks fixes (Stefan Becker)
+	- Fixed memory leaks found with cppcheck (http://sourceforge.net/projects/cppcheck) (Edmondas Girkantas)
+	- Fixed localization on Windows platform(!) Now translations are shown. (pier11)
+	- Fix for #2907567 Note parsing issue. Incoming html markup (like < symbol) could wierdly rerender Pidgin's contacts list UI - for example to "rename" contact, or even replace contact name by group name.
+	- Fix for #2908830 Federated contacts appear to be broken. 2005 Public IM Connectivity (PIC) environment. (pier11)
+	- Fix crash when SSL connect fails (Stefan Becker)
+	- Fix for server auto-discovery (Anibal Avelar)
+	- Fix for #2912926 crash on exist. Caused by improper CSTA communications. (pier11)
+	- Fix for xdg-email invocation. (David Woodhouse)
+	- Fix for SLED 10 compilation. (pier11)
+	- Fix for OpenSolaris port - #pragma pack() issue. (Stefan Becker)
+        - Fix compilation without Kerberos (Stefan Becker)
+	- Fix for User Agent string. (pier11)
+	- Fix for compilation with Pidgin 2.6.4 and 2.6.5 on mingw. (pier11)
+        - Fixed #2944156: SIPE Authentication Causes Pidgin Crash(Stefan Becker)
+	- RPM SPEC: add Epoch: for git packages. (Stefan Becker)
+	- Remove static link build option, remove unused config.h, other build improvements. (Stefan Becker)
+	- Make tests compile again; Simplify "make tests" (Stefan Becker)
+	- Code: Take PURPLE_INIT_PLUGIN into use.(Stefan Becker)

@@ -1,4 +1,4 @@
-version 1.8.0 "Exchange/Calendar" (2010-02-XX)
+version 1.8.0 "Exchange/Calendar" (2010-02-07)
 	- Added integration with Exchange 2007/2010. Now Sipe retrieve our Calendar data (Free/Busy, Working Hours, Meeting Subject/Location, Out-of-Office Note) from Exchange Web Services and publishes it to OCS2007/LCS2005. Thus our contacts can see our availability information based on Calendar data. For example: "Calendar: Currently Busy. Free at 11:30" or "Calendar: Currently Free. Outside of working hours at 18:00". Contacts will also see our Out-of-Office message if it's enabled in Exchange/Outlook. Team members (contacts with access level Team) will be able to see information about our current meeting - subject and location (OCS2007).
 	First call to Exchange is scheduled with 1 minute delay after Sipe start. Subsequent update intervals are 30 minutes. There is a way to manually trigger Calendar data update: Accounts->{SIPE_ACCOUNT}->"Republish Calendar" menu option.
 	Though Exchange integration can work without any additional settings in account configuration, there are options to manually provide email address if it's different from SIP URI, Exchange Services URI, email account authentication if it is different from configuration on Basic tab. (pier11)
@@ -26,8 +26,10 @@ version 1.8.0 "Exchange/Calendar" (2010-02-XX)
 	- Fix for xdg-email invocation. (David Woodhouse)
 	- Fix for SLED 10 compilation. (pier11)
 	- Fix for OpenSolaris port - #pragma pack() issue. (Stefan Becker)
+        - Fix compilation without Kerberos (Stefan Becker)
 	- Fix for User Agent string. (pier11)
 	- Fix for compilation with Pidgin 2.6.4 and 2.6.5 on mingw. (pier11)
+        - Fixed #2944156: SIPE Authentication Causes Pidgin Crash(Stefan Becker)
 	- RPM SPEC: add Epoch: for git packages. (Stefan Becker)
 	- Remove static link build option, remove unused config.h, other build improvements. (Stefan Becker)
 	- Make tests compile again; Simplify "make tests" (Stefan Becker)
