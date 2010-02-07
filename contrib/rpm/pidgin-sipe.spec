@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20091212gitf3ed211
+%define git       20100207git96eee8a
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -115,6 +115,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sun Feb 07 2010 J. D. User <jduser@noreply.com> 1.8.0
+- update to 1.8.0
+
 * Thu Jan 14 2010 J. D. User <jduser@noreply.com> 1.7.1-*git*
 - autogen.sh no longer runs configure
 
