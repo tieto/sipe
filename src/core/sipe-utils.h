@@ -244,6 +244,23 @@ char *
 fix_newlines(const char *st);
 
 /**
+ * Tests two strings for equality.
+ *
+ * Unlike strcmp(), this function will not crash if one or both of the
+ * strings are @c NULL.
+ *
+ * Same as purple_strequal (defined only for 2.6) to maintain
+ * our backward compatibility.
+ *
+ * @param left	A string
+ * @param right A string to compare with left
+ *
+ * @return @c TRUE if the strings are the same, else @c FALSE.
+ *
+ */
+gboolean sipe_strequal(const gchar *left, const gchar *right);
+
+/**
  * Parses a timestamp in ISO8601 format and returns a time_t.
  * Assumes UTC if no timezone specified
  *

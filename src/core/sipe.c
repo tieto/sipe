@@ -3255,7 +3255,7 @@ sipe_set_purple_account_status_and_note(const PurpleAccount *account,
 	gboolean changed = TRUE;
 
 	if (g_str_equal(status_id, purple_status_get_id(status)) &&
-	    purple_strequal(message, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
+	    sipe_strequal(message, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
 	{
 		changed = FALSE;
 	}
@@ -8795,6 +8795,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		" - Intel<br/>"
 		" - Nokia<br/>"
 		" - HP<br/>"
+		" - Accenture<br/>"
 		" - Siemens<br/>"
 		" - Alcatel-Lucent<br/>"
 		" - BT<br/>"
