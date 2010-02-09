@@ -612,7 +612,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 
 	NTOWFv1 (password, user, domain, response_key_nt);
 	LMOWFv1 (password, user, domain, response_key_lm);
-	
+
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_LM_KEY)) {
 		// @TODO do not even reference nt_challenge_response
 		Z (nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
@@ -622,15 +622,15 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 		unsigned char z16 [16];
 		unsigned char prehash [16];
 		unsigned char hash [16];
-		
+
 		NONCE (client_challenge, 8);
-		
+
 		/* nt_challenge_response */
 		memcpy(prehash, nonce, 8);
 		memcpy(prehash + 8, client_challenge, 8);
 		MD5 (prehash, 16, hash);
 		DESL (response_key_nt, hash, nt_challenge_response);
-		
+
 		/* lm_challenge_response */
 		Z (z16, 16);
 		memcpy(lm_challenge_response, client_challenge, 8);
@@ -643,7 +643,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 			DESL (response_key_lm, nonce, lm_challenge_response);
 		}
 	}
-	
+
 	/* authenticate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
 	tmsg->type = 3;
@@ -738,7 +738,7 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	/* Host */
 	tmsg->host.offset = tmsg->domain.offset + tmsg->domain.len;
 	tmsg->host.len = tmsg->host.maxlen = 0;
-	
+
 	/* Version */
 	//tmsg->ver.product_major_version = 5;	/* 5.1.2600 (Windows XP SP2) */
 	//tmsg->ver.product_minor_version = 1;
@@ -849,13 +849,13 @@ sip_sec_ntlm_negotiate_message_describe(struct negotiate_message *cmsg)
 {
 	GString* str = g_string_new(NULL);
 	char *tmp;
-	
+
 	g_string_append(str, (tmp = sip_sec_ntlm_negotiate_flags_describe(cmsg->flags)));
 	g_free(tmp);
 
 	g_string_append(str, (tmp = sip_sec_ntlm_describe_smb_header(&(cmsg->domain), "domain")));
 	g_free(tmp);
-	
+
 	g_string_append(str, (tmp = sip_sec_ntlm_describe_smb_header(&(cmsg->host), "host")));
 	g_free(tmp);
 
@@ -902,33 +902,33 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 
 	g_string_append(str, (tmp = sip_sec_ntlm_describe_smb_header(&(cmsg->host), "host")));
 	g_free(tmp);
-	
+
 	g_string_append(str, (tmp = sip_sec_ntlm_describe_smb_header(&(cmsg->session_key), "session_key")));
 	g_free(tmp);
 
 	tmp = sip_sec_ntlm_describe_version(&(cmsg->ver));
 	g_string_append(str, tmp);
 	g_free(tmp);
-	
+
 	/* mic */
 	buff.length = 16;
-	buff.value = cmsg->mic;	
+	buff.value = cmsg->mic;
 	g_string_append_printf(str, "\t%s: %s\n", "mic", (tmp = bytes_to_hex_str(&buff)));
 	g_free(tmp);
 
 	if (cmsg->lm_resp.len && cmsg->lm_resp.offset) {
 		buff.length = cmsg->lm_resp.len;
-		buff.value = (gchar *)cmsg + cmsg->lm_resp.offset;		
+		buff.value = (gchar *)cmsg + cmsg->lm_resp.offset;
 		g_string_append_printf(str, "\t%s: %s\n", "lm_resp", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
 	}
 
 	if (cmsg->nt_resp.len && cmsg->nt_resp.offset) {
 		buff.length = cmsg->nt_resp.len;
-		buff.value = (gchar *)cmsg + cmsg->nt_resp.offset;		
+		buff.value = (gchar *)cmsg + cmsg->nt_resp.offset;
 		g_string_append_printf(str, "\t%s: %s\n", "nt_resp", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
-	}	
+	}
 
 	if (cmsg->domain.len && cmsg->domain.offset) {
 		gchar *domain = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->domain.offset), cmsg->domain.len);
@@ -963,13 +963,13 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 {
 	GString* str = g_string_new(NULL);
 	char *tmp;
-	
+
 	g_string_append(str, (tmp = sip_sec_ntlm_negotiate_flags_describe(cmsg->flags)));
 	g_free(tmp);
 
 	g_string_append(str, (tmp = sip_sec_ntlm_describe_smb_header(&(cmsg->target_name), "target_name")));
 	g_free(tmp);
-	
+
 	g_string_append(str, (tmp = sip_sec_ntlm_describe_smb_header(&(cmsg->target_info), "target_info")));
 	g_free(tmp);
 
@@ -1030,16 +1030,16 @@ gchar *
 sip_sec_ntlm_message_describe(SipSecBuffer buff)
 {
 	struct ntlm_message *msg;
-	
+
 	if (buff.length == 0 || buff.value == NULL || buff.length < 12) return NULL;
-	
+
 	msg = buff.value;
 	if(strcmp("NTLMSSP", (char*)msg)) return NULL;
-	
+
 	if (msg->type == 1) return sip_sec_ntlm_negotiate_message_describe((struct negotiate_message *)msg);
 	if (msg->type == 2) return sip_sec_ntlm_challenge_message_describe((struct challenge_message *)msg);
 	if (msg->type == 3) return sip_sec_ntlm_authenticate_message_describe((struct authenticate_message *)msg);
-	
+
 	return NULL;
 }
 
@@ -1064,8 +1064,9 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 {
 	context_ntlm ctx = (context_ntlm)context;
 
-	/* NTLM requires a password */
-	if (!password) return SIP_SEC_E_INTERNAL_ERROR;
+	/* NTLM requires a domain, username & password */
+	if (!domain || !username || !password)
+		return SIP_SEC_E_INTERNAL_ERROR;
 
 	ctx->domain   = g_strdup(domain);
 	ctx->username = g_strdup(username);
