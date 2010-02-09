@@ -846,20 +846,20 @@ msn_import_html(const char *html, char **attributes, char **message)
 					else if (!g_ascii_strncasecmp(c, "style=\"", 7))
 					{
 						/* Parse inline CSS attributes */
-						char *attributes;
 						int attr_len = 0;
 						c += 7;
 						while (*(c + attr_len) != '\0' && *(c + attr_len) != '"')
 							attr_len++;
 						if (*(c + attr_len) == '"')
 						{
+							char *css_attributes;
 							char *attr_dir;
-							attributes = g_strndup(c, attr_len);
-							attr_dir = purple_markup_get_css_property(attributes, "direction");
+							css_attributes = g_strndup(c, attr_len);
+							attr_dir = purple_markup_get_css_property(css_attributes, "direction");
+							g_free(css_attributes);
 							if (attr_dir && (!g_ascii_strncasecmp(attr_dir, "RTL", 3)))
 								direction = '1';
 							g_free(attr_dir);
-							g_free(attributes);
 						}
 
 					}

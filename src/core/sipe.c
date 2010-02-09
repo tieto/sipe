@@ -827,9 +827,9 @@ void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 	}
 
 	if (body) {
-		gchar len[12];
-		sprintf(len, "%" G_GSIZE_FORMAT , (gsize) strlen(body));
+		gchar *len = g_strdup_printf("%" G_GSIZE_FORMAT , (gsize) strlen(body));
 		sipmsg_add_header(msg, "Content-Length", len);
+		g_free(len);
 	} else {
 		sipmsg_add_header(msg, "Content-Length", "0");
 	}
@@ -1578,7 +1578,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 		g_free(sbuddy->activity);
 		sbuddy->activity = g_strdup(sbuddy->last_non_cal_activity);
 	}
-	
+
 	if (!status_id) {
 		purple_debug_info("sipe", "sipe_apply_calendar_status: status_id is NULL for %s, exiting.\n",
 			sbuddy->name ? sbuddy->name : "" );
@@ -1611,12 +1611,12 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 	}
 
 	/* then set status_id actually */
-	purple_debug_info("sipe", "sipe_apply_calendar_status: to %s for %s\n", status_id ? status_id : "", sbuddy->name ? sbuddy->name : "" );
+	purple_debug_info("sipe", "sipe_apply_calendar_status: to %s for %s\n", status_id, sbuddy->name ? sbuddy->name : "" );
 	purple_prpl_got_user_status(sip->account, sbuddy->name, status_id, NULL);
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sip);
-	if (sip->initial_state_published && !strcmp(sbuddy->name, self_uri)) {
+	if (sip->initial_state_published && sbuddy->name && !strcmp(sbuddy->name, self_uri)) {
 		if (!strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
@@ -2752,8 +2752,9 @@ free_container(struct sipe_container *container)
 
 	entry = container->members;
 	while (entry) {
-		g_free(entry->data);
-		entry = g_slist_remove(entry, entry->data);
+		void *data = entry->data;
+		entry = g_slist_remove(entry, data);
+		g_free(data);
 	}
 	g_free(container);
 }
@@ -3085,9 +3086,8 @@ sipe_get_first_last_names(struct sipe_account_data *sip,
 		g_free(tmp);
 	}
 
-	has_comma = (strstr(display_name, ",") != NULL);
-
 	if (display_name) {
+		has_comma = (strstr(display_name, ",") != NULL);
 		display_name = purple_strreplace((tmp = display_name), ", ", " ");
 		g_free(tmp);
 		display_name = purple_strreplace((tmp = display_name), ",", " ");
@@ -3259,7 +3259,7 @@ sipe_set_purple_account_status_and_note(const PurpleAccount *account,
 	{
 		changed = FALSE;
 	}
-	
+
 	if (purple_savedstatus_is_idleaway()) {
 		changed = FALSE;
 	}
@@ -4339,10 +4339,11 @@ sipe_invite(struct sipe_account_data *sip,
 
 		msgr_value = sipmsg_get_msgr_string(msgformat);
 		g_free(msgformat);
-		msgr = "";
 		if (msgr_value) {
 			msgr = g_strdup_printf(";msgr=%s", msgr_value);
 			g_free(msgr_value);
+		} else {
+			msgr = g_strdup("");
 		}
 
 		base64_msg = purple_base64_encode((guchar*) msgtext, strlen(msgtext));
@@ -4885,10 +4886,10 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 			session = sipe_session_find_im(sip, from);
 		}
 		if (session) {
-			gchar *msg = g_strdup_printf(_("Received a message with unrecognized contents from %s"),
-						     from);
-			sipe_present_err(sip, session, msg);
-			g_free(msg);
+			gchar *errmsg = g_strdup_printf(_("Received a message with unrecognized contents from %s"),
+							from);
+			sipe_present_err(sip, session, errmsg);
+			g_free(errmsg);
 		}
 
 		purple_debug_info("sipe", "got unknown mime-type '%s'\n", contenttype);
@@ -5217,7 +5218,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				tmp = sipmsg_find_auth_header(msg, auth_scheme);
 
 				if (tmp) {
-					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp ? tmp : "");
+					purple_debug(PURPLE_DEBUG_MISC, "sipe", "process_register_response - Auth header: %s\n", tmp);
 					fill_auth(tmp, &sip->registrar);
 				}
 
@@ -5842,7 +5843,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		/* state */
 		else if(!strcmp(attrVar, "state"))
 		{
-			char *data;
+			char *tmp;
 			int availability;
 			xmlnode *xn_availability;
 			xmlnode *xn_activity;
@@ -5858,9 +5859,9 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			xn_meeting_subject = xmlnode_get_child(xn_node, "meetingSubject");
 			xn_meeting_location = xmlnode_get_child(xn_node, "meetingLocation");
 
-			data = xmlnode_get_data(xn_availability);
-			availability = atoi(data);
-			g_free(data);
+			tmp = xmlnode_get_data(xn_availability);
+			availability = atoi(tmp);
+			g_free(tmp);
 
 			/* activity, meeting_subject, meeting_location */
 			if (sbuddy) {
@@ -8062,9 +8063,10 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data,
 	sip->serveraddr = hosts->data;
 	hosts = g_slist_remove(hosts, hosts->data);
 	while (hosts) {
-		hosts = g_slist_remove(hosts, hosts->data);
-		g_free(hosts->data);
-		hosts = g_slist_remove(hosts, hosts->data);
+		void *tmp = hosts->data;
+		hosts = g_slist_remove(hosts, tmp);
+		hosts = g_slist_remove(hosts, tmp);
+		g_free(tmp);
 	}
 
 	/* create socket for incoming connections */

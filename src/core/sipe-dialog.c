@@ -33,6 +33,7 @@
 void sipe_dialog_free(struct sip_dialog *dialog)
 {
 	GSList *entry;
+	void *data;
 
 	if (!dialog) return;
 
@@ -40,13 +41,15 @@ void sipe_dialog_free(struct sip_dialog *dialog)
 	g_free(dialog->endpoint_GUID);
 	entry = dialog->routes;
 	while (entry) {
-		g_free(entry->data);
-		entry = g_slist_remove(entry, entry->data);
+		data = entry->data;
+		entry = g_slist_remove(entry, data);
+		g_free(data);
 	}
 	entry = dialog->supported;
 	while (entry) {
-		g_free(entry->data);
-		entry = g_slist_remove(entry, entry->data);
+		data = entry->data;
+		entry = g_slist_remove(entry, data);
+		g_free(data);
 	}
 
 	g_free(dialog->callid);
@@ -63,7 +66,8 @@ void sipe_subscription_free(struct sip_subscription *subscription)
 	if (!subscription) return;
 
 	g_free(subscription->event);
-	sipe_dialog_free(&subscription->dialog);
+	/* NOTE: use cast to prevent BAD_FREE warning from Coverity */
+	sipe_dialog_free((struct sip_dialog *) subscription);
 }
 
 struct sip_dialog *sipe_dialog_add(struct sip_session *session)
@@ -82,16 +86,16 @@ sipe_dialog_find_3(struct sip_session *session,
 			if (	dialog_in->callid &&
 				dialog_in->ourtag &&
 				dialog_in->theirtag &&
-				
+
 				dialog->callid &&
 				dialog->ourtag &&
-				dialog->theirtag && 
-				
+				dialog->theirtag &&
+
 				!g_ascii_strcasecmp(dialog_in->callid, dialog->callid) &&
 				!g_ascii_strcasecmp(dialog_in->ourtag, dialog->ourtag) &&
-				!g_ascii_strcasecmp(dialog_in->theirtag, dialog->theirtag)) 
+				!g_ascii_strcasecmp(dialog_in->theirtag, dialog->theirtag))
 			{
-				purple_debug_info("sipe", "sipe_dialog_find_3 who='%s'\n", 
+				purple_debug_info("sipe", "sipe_dialog_find_3 who='%s'\n",
 							  dialog->with ? dialog->with : "");
 				return dialog;
 			}
@@ -141,8 +145,9 @@ void sipe_dialog_remove_all(struct sip_session *session)
 {
 	GSList *entry = session->dialogs;
 	while (entry) {
-		sipe_dialog_free(entry->data);
-		entry = g_slist_remove(entry, entry->data);
+		struct sip_dialog *dialog = entry->data;
+		entry = g_slist_remove(entry, dialog);
+		sipe_dialog_free(dialog);
 	}
 }
 
@@ -177,7 +182,7 @@ static void sipe_get_route_header(const struct sipmsg *msg,
         if (contact) {
 		dialog->request = contact;
 	}
-	
+
 	/* logic for strict router only - RFC3261 - 12.2.1.1 */
 	/* @TODO: proper check for presence of 'lr' PARAMETER in URI */
 	if (dialog->routes && !strstr(dialog->routes->data, ";lr")) {
@@ -185,7 +190,7 @@ static void sipe_get_route_header(const struct sipmsg *msg,
 		dialog->routes = g_slist_remove(dialog->routes, dialog->routes->data);
 		if (contact) {
 			dialog->routes = g_slist_append(dialog->routes, contact);
-		}		
+		}
 	}
 }
 
@@ -243,7 +248,7 @@ void sipe_dialog_parse(struct sip_dialog *dialog,
 	if (dialog->theirepid && strstr(dialog->theirepid, "tag=")) {
 		dialog->theirepid = strtok(dialog->theirepid, ";");
 	}
-	
+
 	if ((session_expires_header = sipmsg_find_header(msg, "Session-Expires"))) {
 		dialog->expires = atoi(session_expires_header);
 	}
