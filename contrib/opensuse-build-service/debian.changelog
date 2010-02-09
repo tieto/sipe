@@ -1,0 +1,8 @@
+pidgin-sipe (1.8.0-2) unstable; urgency=low
+
+  * For OBS (openSUSE Build Service)
+  * removed unnecessary dependencies
+  * added libzephyr-dev dependency to satisfy Debian 5 "choice"
+
+ -- pier11 <pier11@operamail.com>  Mon, 08 Feb 2010 16:20:00 -0000
+
