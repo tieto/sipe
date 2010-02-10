@@ -3199,16 +3199,16 @@ sipe_update_user_phone(struct sipe_account_data *sip,
 
 	if(!phone || strlen(phone) == 0) return;
 
-	if (phone_type && (sipe_strequal(phone_type, "mobile") ||  sipe_strequal(phone_type, "cell"))) {
+	if ((sipe_strequal(phone_type, "mobile") ||  sipe_strequal(phone_type, "cell"))) {
 		phone_node = PHONE_MOBILE_PROP;
 		phone_display_node = PHONE_MOBILE_DISPLAY_PROP;
-	} else if (phone_type && sipe_strequal(phone_type, "home")) {
+	} else if (sipe_strequal(phone_type, "home")) {
 		phone_node = PHONE_HOME_PROP;
 		phone_display_node = PHONE_HOME_DISPLAY_PROP;
-	} else if (phone_type && sipe_strequal(phone_type, "other")) {
+	} else if (sipe_strequal(phone_type, "other")) {
 		phone_node = PHONE_OTHER_PROP;
 		phone_display_node = PHONE_OTHER_DISPLAY_PROP;
-	} else if (phone_type && sipe_strequal(phone_type, "custom1")) {
+	} else if (sipe_strequal(phone_type, "custom1")) {
 		phone_node = PHONE_CUSTOM1_PROP;
 		phone_display_node = PHONE_CUSTOM1_DISPLAY_PROP;
 	}
@@ -6220,7 +6220,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 
-	if (user_avail_nil && sipe_strequal(user_avail_nil, "true")) {	/* null-ed */
+	if (sipe_strequal(user_avail_nil, "true")) {	/* null-ed */
 		user_avail = 0;
 		user_avail_since = 0;
 	}
