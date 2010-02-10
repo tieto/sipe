@@ -152,7 +152,7 @@ char *sipmsg_to_string(const struct sipmsg *msg) {
 	while(cur) {
 		elem = cur->data;
                 /*Todo: remove the LFCR in a good way*/
-                /*if(!strcmp(elem->name,"Proxy-Authorization"))
+                /*if(sipe_strequal(elem->name,"Proxy-Authorization"))
                   g_string_append_printf(outstr, "%s: %s", elem->name,
 			elem->value);
                 else     */

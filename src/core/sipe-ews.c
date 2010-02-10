@@ -220,7 +220,7 @@ sipe_ews_process_avail_response(int return_code,
 
 	purple_debug_info("sipe", "sipe_ews_process_avail_response: cb started.\n");
 
-	if(ews->oof_url && strcmp(ews->as_url, ews->oof_url)) { /* whether reuse conn */
+	if(!sipe_strequal(ews->as_url, ews->oof_url)) { /* whether reuse conn */
 		http_conn_set_close(conn);
 		ews->http_conn = NULL;
 	}
@@ -238,7 +238,7 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		 */
 		resp = xmlnode_get_descendant(xml, "Body", "GetUserAvailabilityResponse", "FreeBusyResponseArray", "FreeBusyResponse", NULL);
 		if (!resp) return; /* rather soap:Fault */
-		if (strcmp(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
+		if (!sipe_strequal(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
 			return; /* Error response */
 		}
 
@@ -348,7 +348,7 @@ sipe_ews_process_oof_response(int return_code,
 		 */
 		resp = xmlnode_get_descendant(xml, "Body", "GetUserOofSettingsResponse", NULL);
 		if (!resp) return; /* rather soap:Fault */
-		if (strcmp(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
+		if (!sipe_strequal(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
 			return; /* Error response */
 		}
 
@@ -357,7 +357,7 @@ sipe_ews_process_oof_response(int return_code,
 
 		old_note = ews->oof_note;
 		ews->oof_note = NULL;
-		if (strcmp(ews->oof_state, "Disabled")) {
+		if (!sipe_strequal(ews->oof_state, "Disabled")) {
 			char *tmp = xmlnode_get_data(
 				xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
 			char *html;

@@ -598,7 +598,7 @@ sip_csta_update_id_and_status(struct sip_csta *csta,
 {
 	gchar *call_id = xmlnode_get_data(xmlnode_get_child(node, "callID"));
 
-	if (call_id && csta->call_id && strcmp(call_id, csta->call_id)) {
+	if (!sipe_strequal(call_id, csta->call_id)) {
 		purple_debug_info("sipe", "sipe_csta_update_id_and_status: callID (%s) does not match\n", call_id);
 	}
 	else
@@ -646,9 +646,7 @@ process_incoming_info_csta(struct sipe_account_data *sip,
 
 	monitor_cross_ref_id = xmlnode_get_data(xmlnode_get_child(xml, "monitorCrossRefID"));
 
-	if(!sip->csta || (monitor_cross_ref_id
-			  && sip->csta->monitor_cross_ref_id
-			  && strcmp(monitor_cross_ref_id, sip->csta->monitor_cross_ref_id)))
+	if(!sip->csta || !sipe_strequal(monitor_cross_ref_id, sip->csta->monitor_cross_ref_id))
 	{
 		purple_debug_info("sipe", "process_incoming_info_csta: monitorCrossRefID (%s) does not match, exiting\n",
 				   monitor_cross_ref_id ? monitor_cross_ref_id : "");

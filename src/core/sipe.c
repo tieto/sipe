@@ -1017,7 +1017,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 
 	/* add to ongoing transactions */
 	/* ACK isn't supposed to be answered ever. So we do not keep transaction for it. */
-	if (strcmp(method, "ACK")) {
+	if (!sipe_strequal(method, "ACK")) {
 		trans = transactions_add_buf(sip, msg, tc);
 	} else {
 		sipmsg_free(msg);
@@ -3156,16 +3156,15 @@ sipe_update_user_info(struct sipe_account_data *sip,
 			}
 
 			server_alias = purple_buddy_get_server_alias(p_buddy);
-			if (property_value && strlen(property_value) > 0 &&
-				( (server_alias && strcmp(property_value, server_alias))
-					|| !server_alias || strlen(server_alias) == 0 )
-				) {
+			if (!is_empty(property_value) &&
+			   (!sipe_strequal(property_value, server_alias) || is_empty(server_alias)) )
+			{
 				purple_blist_server_alias_buddy(p_buddy, property_value);
 			}
 		}
 		/* for other properties */
 		else {
-			if (property_value && strlen(property_value) > 0) {
+			if (!is_empty(property_value)) {
 				prop_str = purple_blist_node_get_string(&p_buddy->node, property_name);
 				if (!prop_str || g_ascii_strcasecmp(prop_str, property_value)) {
 					purple_blist_node_set_string(&p_buddy->node, property_name, property_value);
@@ -3579,7 +3578,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				const gchar *line_type = xmlnode_get_attrib(line, "lineType");
 				gchar *line_uri;
 
-				if (!line_server || (strcmp(line_type, "Rcc") && strcmp(line_type, "Dual"))) continue;
+				if (!line_server || !(sipe_strequal(line_type, "Rcc") || sipe_strequal(line_type, "Dual"))) continue;
 
 				line_uri = xmlnode_get_data(line);
 				if (line_uri) {
@@ -4739,7 +4738,7 @@ static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg 
 	session = sipe_session_find_chat_by_callid(sip, callid);
 	dialog = sipe_dialog_find(session, from);
 
-	if (!session || !dialog || !session->roster_manager || strcmp(session->roster_manager, self)) {
+	if (!session || !dialog || !session->roster_manager || !sipe_strequal(session->roster_manager, self)) {
 		send_sip_response(sip->gc, msg, 500, "Server Internal Error", NULL);
 	} else {
 		send_sip_response(sip->gc, msg, 202, "Accepted", NULL);
@@ -6507,7 +6506,7 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 			xmlnode *xml = xmlnode_from_str(purple_mime_part_get_data(parts->data),
 							purple_mime_part_get_length(parts->data));
 
-			if (strcmp(xml->name, "list")) {
+			if (!sipe_strequal(xml->name, "list")) {
 				gchar *uri = sip_uri(xmlnode_get_attrib(xml, "uri"));
 
 				buddies = g_slist_append(buddies, uri);
@@ -6862,7 +6861,7 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 
 		/* test if version mismatch fault */
 		fault_code = xmlnode_get_data(xmlnode_get_child(xml, "Faultcode"));
-		if (strcmp(fault_code, "Client.BadCall.WrongDelta")) {
+		if (!sipe_strequal(fault_code, "Client.BadCall.WrongDelta")) {
 			purple_debug_info("sipe", "process_send_presence_category_publish_response: unsupported fault code:%s returning.\n", fault_code);
 			g_free(fault_code);
 			xmlnode_free(xml);
@@ -8397,11 +8396,11 @@ static void sipe_login(PurpleAccount *account)
 		purple_debug(PURPLE_DEBUG_MISC, "sipe", "sipe_login: user specified SIP server %s:%d\n",
 			     userserver[0], port);
 
-		if (strcmp(transport, "auto") == 0) {
+		if (sipe_strequal(transport, "auto")) {
 			sip->transport = purple_ssl_is_supported() ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
-		} else if (strcmp(transport, "tls") == 0) {
+		} else if (sipe_strequal(transport, "tls")) {
 			sip->transport = SIPE_TRANSPORT_TLS;
-		} else if (strcmp(transport, "tcp") == 0) {
+		} else if (sipe_strequal(transport, "tcp")) {
 			sip->transport = SIPE_TRANSPORT_TCP;
 		} else {
 			sip->transport = SIPE_TRANSPORT_UDP;
@@ -8410,7 +8409,7 @@ static void sipe_login(PurpleAccount *account)
 		create_connection(sip, g_strdup(userserver[0]), port);
 	} else {
 		/* Server auto-discovery */
-		if (strcmp(transport, "auto") == 0) {
+		if (sipe_strequal(transport, "auto")) {
 			sip->auto_transport = TRUE;
 			if (current_service && current_service->transport != NULL && current_service->service != NULL ){
 				current_service++;
@@ -8418,9 +8417,9 @@ static void sipe_login(PurpleAccount *account)
 			} else {
 				resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
 			}
-		} else if (strcmp(transport, "tls") == 0) {
+		} else if (sipe_strequal(transport, "tls")) {
 			resolve_next_service(sip, service_tls);
-		} else if (strcmp(transport, "tcp") == 0) {
+		} else if (sipe_strequal(transport, "tcp")) {
 			resolve_next_service(sip, service_tcp);
 		} else {
 			resolve_next_service(sip, service_udp);
@@ -9735,7 +9734,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	}
 
 	/* present alias if it differs from server alias */
-	if (alias && (!server_alias || strcmp(alias, server_alias)))
+	if (alias && !sipe_strequal(alias, server_alias))
 	{
 		purple_notify_user_info_add_pair(info, _("Alias"), alias);
 	}

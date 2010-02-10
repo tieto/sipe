@@ -699,7 +699,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 
 	if (msg->response != 0 && msg->response != 200) return;
 
-	if (msg->bodylen == 0 || msg->body == NULL || strcmp(sipmsg_find_header(msg, "Event"), "conference")) return;
+	if (msg->bodylen == 0 || msg->body == NULL || !sipe_strequal(sipmsg_find_header(msg, "Event"), "conference")) return;
 
 	xn_conference_info = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!xn_conference_info) return;

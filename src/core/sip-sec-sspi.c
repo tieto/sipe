@@ -162,7 +162,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		     ISC_REQ_INTEGRITY |
 		     ISC_REQ_IDENTIFY);
 
-	if (!strcmp(ctx->mech, SSPI_MECH_NTLM) &&
+	if (ctx->mech && !strcmp(ctx->mech, SSPI_MECH_NTLM) &&
 	    !context->is_connection_based)
 	{
 		req_flags |= (ISC_REQ_DATAGRAM);
@@ -197,7 +197,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	}
 	
 	ctx->ctx_sspi = out_context;
-	if (!strcmp(ctx->mech, SSPI_MECH_KERBEROS)) {
+	if (ctx->mech && !strcmp(ctx->mech, SSPI_MECH_KERBEROS)) {
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
 	

@@ -1034,7 +1034,7 @@ sip_sec_ntlm_message_describe(SipSecBuffer buff)
 	if (buff.length == 0 || buff.value == NULL || buff.length < 12) return NULL;
 
 	msg = buff.value;
-	if(strcmp("NTLMSSP", (char*)msg)) return NULL;
+	if(!sipe_strequal("NTLMSSP", (char*)msg)) return NULL;
 
 	if (msg->type == 1) return sip_sec_ntlm_negotiate_message_describe((struct negotiate_message *)msg);
 	if (msg->type == 2) return sip_sec_ntlm_challenge_message_describe((struct challenge_message *)msg);
