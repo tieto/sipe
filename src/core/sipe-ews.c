@@ -363,7 +363,7 @@ sipe_ews_process_oof_response(int return_code,
 			char *html;
 
 			/* UTF-8 encoded BOM (0xEF 0xBB 0xBF) as a signature to mark the beginning of a UTF-8 file */
-			if (sipe_strnequal(tmp, "\xEF\xBB\xBF", 3)) {
+			if (g_str_has_prefix(tmp, "\xEF\xBB\xBF")) {
 				html = g_strdup(tmp+3);
 			} else {
 				html = g_strdup(tmp);

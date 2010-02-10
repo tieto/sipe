@@ -294,13 +294,6 @@ sipe_strequal(const gchar *left, const gchar *right)
 #endif
 }
 
-gboolean
-sipe_strnequal(const gchar *left, const gchar *right, gsize n)
-{
-	return ((left == NULL && right == NULL) ||
-	        (left != NULL && right != NULL && strncmp(left, right, n) == 0));
-}
-
 time_t
 sipe_utils_str_to_time(const char *timestamp)
 {

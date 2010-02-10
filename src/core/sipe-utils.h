@@ -261,22 +261,6 @@ fix_newlines(const char *st);
 gboolean sipe_strequal(const gchar *left, const gchar *right);
 
 /**
- * Tests two strings for equality up to (at most) n characters.
- *
- * Unlike strncmp(), this function will not crash if one or both of the
- * strings are @c NULL.
- *
- * @param left	A string
- * @param right A string to compare with left
- * @param n     How many characters to compare
- *
- * @return @c TRUE if the strings are the same, else @c FALSE.
- *
- */
-gboolean sipe_strnequal(const gchar *left, const gchar *right,
-			gsize n);
-
-/**
  * Parses a timestamp in ISO8601 format and returns a time_t.
  * Assumes UTC if no timezone specified
  *
