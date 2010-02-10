@@ -1,3 +1,9 @@
+version 1.8.1 "Exchange/Calendar crash fixes" (2010-XX-XX)
+	- many crash fixes for error or corner cases in calendar integration (pier11, Stefan Becker)
+	- more detailed code analysis with Coverity Prevent (Stefan Becker)
+	- build fixes for older libpurple/glib2 versions (pier11)
+	- OpenSUSE Build Service configuration files (pier11)
+
 version 1.8.0 "Exchange/Calendar" (2010-02-07)
 	- Added integration with Exchange 2007/2010. Now Sipe retrieve our Calendar data (Free/Busy, Working Hours, Meeting Subject/Location, Out-of-Office Note) from Exchange Web Services and publishes it to OCS2007/LCS2005. Thus our contacts can see our availability information based on Calendar data. For example: "Calendar: Currently Busy. Free at 11:30" or "Calendar: Currently Free. Outside of working hours at 18:00". Contacts will also see our Out-of-Office message if it's enabled in Exchange/Outlook. Team members (contacts with access level Team) will be able to see information about our current meeting - subject and location (OCS2007).
 	First call to Exchange is scheduled with 1 minute delay after Sipe start. Subsequent update intervals are 30 minutes. There is a way to manually trigger Calendar data update: Accounts->{SIPE_ACCOUNT}->"Republish Calendar" menu option.
