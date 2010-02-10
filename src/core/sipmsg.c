@@ -28,6 +28,7 @@
 #include "mime.h"
 
 #include "sipe.h"
+#include "sipe-utils.h"
 #include "sipmsg.h"
 
 struct sipmsg *sipmsg_parse_msg(const gchar *msg) {
@@ -509,8 +510,8 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 	gchar *ms_text_format = NULL;
 	gchar *body = NULL;
 
-	if (!strncmp(ms_text_format_in, "multipart/related", 17) ||
-	    !strncmp(ms_text_format_in, "multipart/alternative", 21)) {
+	if (sipe_strnequal(ms_text_format_in, "multipart/related", 17) ||
+	    sipe_strnequal(ms_text_format_in, "multipart/alternative", 21)) {
 		char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ms_text_format_in, body_in);
 		PurpleMimeDocument *mime;
 		GList* parts;
@@ -524,11 +525,11 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 				guint length = purple_mime_part_get_length(parts->data);
 
 				/* if no other format has stored */
-				if (!ms_text_format && !strncmp(content_type, "text/plain", 10)) {
+				if (!ms_text_format && sipe_strnequal(content_type, "text/plain", 10)) {
 					ms_text_format = g_strdup(content_type);
 					body = g_strndup(content, length);
 				/* preferred format */
-				} else if (ms_text_format && !strncmp(ms_text_format, "text/html", 9)) {
+				} else if (sipe_strnequal(ms_text_format, "text/html", 9)) {
 					g_free(ms_text_format);
 					g_free(body);
 					ms_text_format = g_strdup(content_type);
@@ -562,7 +563,7 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 		}
 	}
 
-	if (ms_text_format && strncmp(ms_text_format, "text/html", 9)) { // NOT html
+	if (!sipe_strnequal(ms_text_format, "text/html", 9)) { // NOT html
 		char *tmp = res;
 		res = g_markup_escape_text(res, -1); // as this is not html
 		g_free(tmp);

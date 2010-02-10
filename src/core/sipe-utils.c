@@ -294,6 +294,13 @@ sipe_strequal(const gchar *left, const gchar *right)
 #endif
 }
 
+gboolean
+sipe_strnequal(const gchar *left, const gchar *right, gsize n)
+{
+	return ((left == NULL && right == NULL) ||
+	        (left != NULL && right != NULL && strncmp(left, right, n) == 0));
+}
+
 time_t
 sipe_utils_str_to_time(const char *timestamp)
 {
@@ -306,7 +313,7 @@ sipe_utils_time_to_str(time_t timestamp)
 #define SIPE_XML_DATE_PATTERN	"%Y-%m-%dT%H:%M:%SZ"
 	return g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&timestamp)));
 }
-	
+
 
 /*
   Local Variables:

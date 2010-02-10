@@ -429,7 +429,7 @@ static char *parse_attribute(const char *attrname, const char *source)
 	char *retval = NULL;
 	int len = strlen(attrname);
 
-	if (!strncmp(source, attrname, len)) {
+	if (sipe_strnequal(source, attrname, len)) {
 		tmp = source + len;
 		tmp2 = g_strstr_len(tmp, strlen(tmp), "\"");
 		if (tmp2)
@@ -2154,7 +2154,7 @@ static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup
 		g_free(buddy_name);
 
 		/* Prepend sip: if needed */
-		if (strncmp("sip:", buddy->name, 4)) {
+		if (!sipe_strnequal("sip:", buddy->name, 4)) {
 			gchar *buf = sip_uri_from_name(buddy->name);
 			purple_blist_rename_buddy(buddy, buf);
 			g_free(buf);
@@ -2423,7 +2423,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	xmlnode *isc;
 	const gchar *contacts_delta;
 	xmlnode *group_node;
-	if (!tmp || strncmp(tmp, "vnd-microsoft-roaming-contacts", 30)) {
+	if (!sipe_strnequal(tmp, "vnd-microsoft-roaming-contacts", 30)) {
 		return FALSE;
 	}
 
@@ -2445,7 +2445,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 			struct sipe_group * group = g_new0(struct sipe_group, 1);
 			const char *name = xmlnode_get_attrib(group_node, "name");
 
-			if (!strncmp(name, "~", 1)) {
+			if (sipe_strnequal(name, "~", 1)) {
 				name = _("Other Contacts");
 			}
 			group->name = g_strdup(name);
@@ -4054,7 +4054,7 @@ process_info_response(struct sipe_account_data *sip, struct sipmsg *msg,
 		return FALSE;
 	}
 
-	if (msg->response == 200 && !strncmp(contenttype, "application/x-ms-mim", 20)) {
+	if (msg->response == 200 && sipe_strnequal(contenttype, "application/x-ms-mim", 20)) {
 		xmlnode *xn_action 		= xmlnode_from_str(msg->body, msg->bodylen);
 		xmlnode *xn_request_rm_response = xmlnode_get_child(xn_action, "RequestRMResponse");
 		xmlnode *xn_set_rm_response 	= xmlnode_get_child(xn_action, "SetRMResponse");
@@ -4820,10 +4820,10 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 	purple_debug_info("sipe", "got message from %s: %s\n", from, msg->body);
 
 	contenttype = sipmsg_find_header(msg, "Content-Type");
-	if (!strncmp(contenttype, "text/plain", 10)
-	    || !strncmp(contenttype, "text/html", 9)
-	    || !strncmp(contenttype, "multipart/related", 17)
-	    || !strncmp(contenttype, "multipart/alternative", 21))
+	if (sipe_strnequal(contenttype, "text/plain", 10)
+	    || sipe_strnequal(contenttype, "text/html", 9)
+	    || sipe_strnequal(contenttype, "multipart/related", 17)
+	    || sipe_strnequal(contenttype, "multipart/alternative", 21))
 	{
 		gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *html = get_html_message(contenttype, msg->body);
@@ -4850,7 +4850,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
 
-	} else if (!strncmp(contenttype, "application/im-iscomposing+xml", 30)) {
+	} else if (sipe_strnequal(contenttype, "application/im-iscomposing+xml", 30)) {
 		xmlnode *isc = xmlnode_from_str(msg->body, msg->bodylen);
 		xmlnode *state;
 		gchar *statedata;
@@ -4924,7 +4924,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(tmp);
 
 	/* Invitation to join conference */
-	if (!strncmp(content_type, "application/ms-conf-invite+xml", 30)) {
+	if (sipe_strnequal(content_type, "application/ms-conf-invite+xml", 30)) {
 		process_incoming_invite_conf(sip, msg);
 		return;
 	}

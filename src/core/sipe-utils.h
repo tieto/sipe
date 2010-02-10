@@ -92,10 +92,10 @@
 /**
  * Returns epid value.
  * Uses cache.
- */ 
+ */
 gchar *
 get_epid(struct sipe_account_data *sip);
- 
+
 /**
  * Generate Call ID
  *
@@ -126,7 +126,7 @@ gchar *genconfid(void);
  * but different between distinct endpoints.
  *
  * See defined constants for keys patterned SIPE_PUB_*
- */ 
+ */
 guint
 sipe_get_pub_instance(struct sipe_account_data *sip,
 		      int publication_key);
@@ -191,7 +191,7 @@ gchar *sip_uri(const gchar *string);
  *
  * @param uri SIP URI with 'sip:' prefix.
  * @param alias as returned by purple.
- */ 
+ */
 gboolean
 sipe_is_bad_alias(const char *uri,
 		  const char *alias);
@@ -236,7 +236,7 @@ replace(const char *st,
 	const char *search,
 	const char *replace);
 
-/** 
+/**
  * Replaces \r\n to \n
  * Returns newly allocated string. Must be g_free()'d
  */
@@ -259,6 +259,22 @@ fix_newlines(const char *st);
  *
  */
 gboolean sipe_strequal(const gchar *left, const gchar *right);
+
+/**
+ * Tests two strings for equality up to (at most) n characters.
+ *
+ * Unlike strncmp(), this function will not crash if one or both of the
+ * strings are @c NULL.
+ *
+ * @param left	A string
+ * @param right A string to compare with left
+ * @param n     How many characters to compare
+ *
+ * @return @c TRUE if the strings are the same, else @c FALSE.
+ *
+ */
+gboolean sipe_strnequal(const gchar *left, const gchar *right,
+			gsize n);
 
 /**
  * Parses a timestamp in ISO8601 format and returns a time_t.
