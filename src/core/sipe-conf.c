@@ -658,12 +658,12 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 
 	/* send OK */
 	purple_debug_info("sipe", "We have received invitation to Conference. Focus URI=%s\n", focus_uri);
-	
+
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
 	sipmsg_remove_header_now(msg, "To");
 	sipmsg_add_header_now(msg, "To", newHeader);
 	g_free(newHeader);
-	
+
 	/* temporary dialog with invitor */
 	/* take data before 'msg' will be modified by send_sip_response */
 	dialog = g_new0(struct sip_dialog, 1);
@@ -817,7 +817,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 	     node = xmlnode_get_next_twin(node)) {
 
 		xmlnode *xn_type = xmlnode_get_descendant(node, "entity-state", "media", "entry", "type", NULL);
-		gchar *tmp;
+		gchar *tmp = NULL;
 		if (xn_type && !strcmp("chat", (tmp = xmlnode_get_data(xn_type)))) {
 			xmlnode *xn_locked = xmlnode_get_descendant(node, "entity-state", "locked", NULL);
 			if (xn_locked) {
@@ -837,8 +837,8 @@ sipe_process_conference(struct sipe_account_data *sip,
 						          session->locked ? "TRUE" : "FALSE");
 				g_free(locked);
 			}
-			g_free(tmp);
 		}
+		g_free(tmp);
 	}
 	xmlnode_free(xn_conference_info);
 

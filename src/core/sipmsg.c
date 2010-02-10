@@ -504,7 +504,6 @@ gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
 /* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
 gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 {
-	gchar *tmp_html;
 	gchar *msgr;
 	gchar *res;
 	gchar *ms_text_format = NULL;
@@ -548,37 +547,38 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 	}
 
 	if (body) {
-		res = g_strdup(body);
+		res = body;
 	} else {
-		res = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
-		if (!res) return NULL;
-		tmp_html = res;
-		res = (gchar *) purple_base64_decode(res, NULL);
-		g_free(tmp_html);
-	}
-
-	if (!res) {
-		return NULL;
+		gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+		if (!tmp) {
+			g_free(ms_text_format);
+			return NULL;
+		}
+		res = (gchar *) purple_base64_decode(tmp, NULL);
+		g_free(tmp);
+		if (!res) {
+			g_free(ms_text_format);
+			return NULL;
+		}
 	}
 
 	if (ms_text_format && strncmp(ms_text_format, "text/html", 9)) { // NOT html
-		tmp_html = res;
+		char *tmp = res;
 		res = g_markup_escape_text(res, -1); // as this is not html
-		g_free(tmp_html);
+		g_free(tmp);
 	}
 
 	msgr = sipmsg_find_part_of_header(ms_text_format, "msgr=", ";", NULL);
 	if (msgr) {
 		gchar *x_mms_im_format = sipmsg_get_x_mms_im_format(msgr);
+		gchar *tmp = res;
 		g_free(msgr);
-		tmp_html = res;
 		res = sipmsg_apply_x_mms_im_format(x_mms_im_format, res);
-		g_free(tmp_html);
+		g_free(tmp);
 		g_free(x_mms_im_format);
 	}
 
 	g_free(ms_text_format);
-	g_free(body);
 
 	return res;
 }
@@ -906,6 +906,7 @@ msn_import_html(const char *html, char **attributes, char **message)
 					else
 						namelen = (unsigned int)(comma - c);
 
+					g_free(fontface);
 					fontface = g_strndup(c, namelen);
 					c = end + 2;
 				}

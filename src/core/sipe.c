@@ -4067,6 +4067,7 @@ process_info_response(struct sipe_account_data *sip, struct sipmsg *msg,
 			dialog = sipe_dialog_find(session, with);
 			if (!dialog) {
 				purple_debug_info("sipe", "process_info_response: failed find dialog for %s, exiting.\n", with);
+				xmlnode_free(xn_action);
 				return FALSE;
 			}
 
@@ -4857,6 +4858,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 
 		if (!isc) {
 			purple_debug_info("sipe", "process_incoming_message: can not parse iscomposing\n");
+			g_free(from);
 			return;
 		}
 
@@ -4865,6 +4867,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		if (!state) {
 			purple_debug_info("sipe", "process_incoming_message: no state found\n");
 			xmlnode_free(isc);
+			g_free(from);
 			return;
 		}
 
@@ -6064,8 +6067,6 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 		return;
 	}
 
-	uri = sip_uri(xmlnode_get_attrib(pidf, "entity")); /* with 'sip:' prefix */ /* AOL comes without the prefix */
-
 	if ((tuple = xmlnode_get_child(pidf, "tuple")))
 	{
 		if ((status = xmlnode_get_child(tuple, "status"))) {
@@ -6091,6 +6092,8 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 		isonline = TRUE;
 	}
 	g_free(getbasic);
+
+	uri = sip_uri(xmlnode_get_attrib(pidf, "entity")); /* with 'sip:' prefix */ /* AOL comes without the prefix */
 
 	display_name_node = xmlnode_get_child(pidf, "display-name");
 	if (display_name_node) {
@@ -6295,6 +6298,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 				if (cal_start_time_t_tmp > cal_start_time_t) {
 					cal_start_time = cal_start_time_tmp;
 					cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");
+					g_free(cal_free_busy_base64);
 					cal_free_busy_base64 = xmlnode_get_data(xn_calendar_info);
 
 					purple_debug_info("sipe", "process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", cal_start_time, cal_granularity, cal_free_busy_base64);
@@ -6302,6 +6306,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			} else {
 				cal_start_time = cal_start_time_tmp;
 				cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");
+				g_free(cal_free_busy_base64);
 				cal_free_busy_base64 = xmlnode_get_data(xn_calendar_info);
 
 				purple_debug_info("sipe", "process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s\n", cal_start_time, cal_granularity, cal_free_busy_base64);
@@ -6322,11 +6327,14 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 				if (!is_empty(state))
 				{
 					if (!strcmp(state, sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].token)) {
+						g_free(activity);
 						activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE));
 					} else if (!strcmp(state, "presenting")) {
+						g_free(activity);
 						activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF));
 					} else {
 						activity = state;
+						state = NULL;
 					}
 					activity_since = dev_avail_since;
 				}
@@ -6338,8 +6346,9 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	/* oof */
 	if (xn_oof && res_avail >= 15000) { /* 12000 in 2007 */
-               activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_OOF));
-	       activity_since = 0;
+		g_free(activity);
+		activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_OOF));
+		activity_since = 0;
 	}
 
 	sbuddy = g_hash_table_lookup(sip->buddies, uri);
@@ -6347,6 +6356,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	{
 		g_free(sbuddy->activity);
 		sbuddy->activity = activity;
+		activity = NULL;
 
 		sbuddy->activity_since = activity_since;
 
@@ -6371,6 +6381,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 			g_free(sbuddy->cal_free_busy_base64);
 			sbuddy->cal_free_busy_base64 = cal_free_busy_base64;
+			cal_free_busy_base64 = NULL;
 
 			g_free(sbuddy->cal_free_busy);
 			sbuddy->cal_free_busy = NULL;
@@ -6395,6 +6406,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			sip->status = g_strdup(sbuddy->last_non_cal_status_id);
 		}
 	}
+	g_free(cal_free_busy_base64);
+	g_free(activity);
 
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
 	sipe_got_user_status(sip, uri, status_id);
@@ -7013,6 +7026,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 	gchar *start_time_str;
 	int availability = 0;
 	gchar *res;
+	gchar *tmp = NULL;
 	guint instance = (cal_satus == SIPE_CAL_OOF) ?
 		sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR_OOF) :
 		sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR);
@@ -7037,12 +7051,14 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 	if (event &&
 	    publication_3 &&
 	    (publication_3->availability == availability) &&
-	    !strcmp(publication_3->cal_event_hash, sipe_cal_event_hash(event)))
+	    !strcmp(publication_3->cal_event_hash, (tmp = sipe_cal_event_hash(event))))
 	{
+		g_free(tmp);
 		purple_debug_info("sipe", "sipe_publish_get_category_state_calendar: "
 			"cal state has NOT changed for cal_satus:%d. Exiting.\n", cal_satus);
 		return NULL; /* nothing to update */
 	}
+	g_free(tmp);
 
 	if (event &&
 	    (event->cal_status == SIPE_CAL_BUSY ||

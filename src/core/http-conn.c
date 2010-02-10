@@ -550,7 +550,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		const char *auth_name;
 		char *authorization;
 		char *output_toked_base64;
-		char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
+		char *spn;
 		int use_sso = !http_conn->auth || (http_conn->auth && !http_conn->auth->user);
 		long ret;
 
@@ -603,6 +603,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		}
 
 		parts = g_strsplit(ptmp, " ", 0);
+		spn = g_strdup_printf("HTTP/%s", http_conn->host);
 		ret = sip_sec_init_context_step(http_conn->sec_ctx,
 					  spn,
 					  parts[1],
