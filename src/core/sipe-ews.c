@@ -213,6 +213,7 @@ sipe_ews_run_state_machine(struct sipe_ews *ews);
 static void
 sipe_ews_process_avail_response(int return_code,
 				const char *body,
+				HttpConn *conn,
 				void *data)
 {
 	struct sipe_ews *ews = data;
@@ -220,7 +221,7 @@ sipe_ews_process_avail_response(int return_code,
 	purple_debug_info("sipe", "sipe_ews_process_avail_response: cb started.\n");
 
 	if(ews->oof_url && strcmp(ews->as_url, ews->oof_url)) { /* whether reuse conn */
-		http_conn_set_close(ews->http_conn);
+		http_conn_set_close(conn);
 		ews->http_conn = NULL;
 	}
 
@@ -323,13 +324,14 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 static void
 sipe_ews_process_oof_response(int return_code,
 			      const char *body,
+			      HttpConn *conn,
 			      void *data)
 {
 	struct sipe_ews *ews = data;
 
 	purple_debug_info("sipe", "sipe_ews_process_oof_response: cb started.\n");
 
-	http_conn_set_close(ews->http_conn);
+	http_conn_set_close(conn);
 	ews->http_conn = NULL;
 
 	if (return_code == 200 && body) {
@@ -404,13 +406,14 @@ sipe_ews_process_oof_response(int return_code,
 static void
 sipe_ews_process_autodiscover(int return_code,
 			      const char *body,
+			      HttpConn *conn,
 			      void *data)
 {
 	struct sipe_ews *ews = data;
 
 	purple_debug_info("sipe", "sipe_ews_process_autodiscover: cb started.\n");
 
-	http_conn_set_close(ews->http_conn);
+	http_conn_set_close(conn);
 	ews->http_conn = NULL;
 
 	if (return_code == 200 && body) {
@@ -483,7 +486,7 @@ sipe_ews_do_autodiscover(struct sipe_ews *ews,
 				 body,
 				 "text/xml",
 				 ews->auth,
-				 (HttpConnCallback)sipe_ews_process_autodiscover,
+				 sipe_ews_process_autodiscover,
 				 ews);
 	g_free(body);
 }
@@ -522,7 +525,7 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 					 body,
 					 "text/xml; charset=UTF-8",
 					 ews->auth,
-					 (HttpConnCallback)sipe_ews_process_avail_response,
+					 sipe_ews_process_avail_response,
 					 ews);
 		g_free(body);
 		g_free(start_str);
@@ -547,14 +550,14 @@ sipe_ews_do_oof_request(struct sipe_ews *ews)
 							  body,
 							  content_type,
 							  ews->auth,
-							  (HttpConnCallback)sipe_ews_process_oof_response,
+							  sipe_ews_process_oof_response,
 							  ews);
 		} else {
 			http_conn_post(ews->http_conn,
 				       ews->oof_url,
 				       body,
 				       content_type,
-				       (HttpConnCallback)sipe_ews_process_oof_response,
+				       sipe_ews_process_oof_response,
 				       ews);
 		}
 		g_free(body);
