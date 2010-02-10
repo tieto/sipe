@@ -168,7 +168,7 @@ sipe_get_activity_by_token(const char *token)
 
 	for (i = 0; i < SIPE_ACTIVITY_NUM_TYPES; i++)
 	{
-		if (!strcmp(token, sipe_activity_map[i].token))
+		if (sipe_strequal(token, sipe_activity_map[i].token))
 			return sipe_activity_map[i].type;
 	}
 
@@ -784,13 +784,13 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		sipmsg_breakdown_free(&msgbd);
 	}
 
-	if (sip->registrar.type && !strcmp(method, "REGISTER")) {
+	if (sip->registrar.type && sipe_strequal(method, "REGISTER")) {
 		buf = auth_header(sip, &sip->registrar, msg);
 		if (buf) {
 			sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 		}
 		g_free(buf);
-	} else if (!strcmp(method,"SUBSCRIBE") || !strcmp(method,"SERVICE") || !strcmp(method,"MESSAGE") || !strcmp(method,"INVITE") || !strcmp(method, "ACK") || !strcmp(method, "NOTIFY") || !strcmp(method, "BYE") || !strcmp(method, "INFO") || !strcmp(method, "OPTIONS") || !strcmp(method, "REFER")) {
+	} else if (sipe_strequal(method,"SUBSCRIBE") || sipe_strequal(method,"SERVICE") || sipe_strequal(method,"MESSAGE") || sipe_strequal(method,"INVITE") || sipe_strequal(method, "ACK") || sipe_strequal(method, "NOTIFY") || sipe_strequal(method, "BYE") || sipe_strequal(method, "INFO") || sipe_strequal(method, "OPTIONS") || sipe_strequal(method, "REFER")) {
 		sip->registrar.nc = 3;
 		sip->registrar.type = AUTH_TYPE_NTLM;
 #ifdef USE_KERBEROS
@@ -951,7 +951,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 		ourtag = gentag();
 	}
 
-	if (!strcmp(method, "REGISTER")) {
+	if (sipe_strequal(method, "REGISTER")) {
 		if (sip->regcallid) {
 			g_free(callid);
 			callid = g_strdup(sip->regcallid);
@@ -1180,7 +1180,7 @@ sipe_process_presence_wpending (struct sipe_account_data *sip, struct sipmsg * m
 	// Ensure it's either not a response (eg it's a BENOTIFY) or that it's a 200 OK response
 	if (msg->response != 0 && msg->response != 200) return;
 
-	if (msg->bodylen == 0 || msg->body == NULL || !strcmp(sipmsg_find_header(msg, "Event"), "msrtc.wpending")) return;
+	if (msg->bodylen == 0 || msg->body == NULL || sipe_strequal(sipmsg_find_header(msg, "Event"), "msrtc.wpending")) return;
 
 	watchers = xmlnode_from_str(msg->body, msg->bodylen);
 	if (!watchers) return;
@@ -1261,7 +1261,7 @@ static struct sipe_group * sipe_group_find_by_name (struct sipe_account_data *si
 	entry = sip->groups;
 	while (entry) {
 		group = entry->data;
-		if (!strcmp(group->name, name)) {
+		if (sipe_strequal(group->name, name)) {
 			return group;
 		}
 		entry = entry->next;
@@ -1468,7 +1468,7 @@ static void sipe_cancel_scheduled_action(struct sipe_account_data *sip, const gc
 	entry = sip->timeouts;
 	while (entry) {
 		struct scheduled_action *sched_action = entry->data;
-		if(!strcmp(sched_action->name, name)) {
+		if(sipe_strequal(sched_action->name, name)) {
 			GSList *to_delete = entry;
 			entry = entry->next;
 			sip->timeouts = g_slist_delete_link(sip->timeouts, to_delete);
@@ -1616,8 +1616,8 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sip);
-	if (sip->initial_state_published && sbuddy->name && !strcmp(sbuddy->name, self_uri)) {
-		if (!strcmp(status_id, SIPE_STATUS_ID_OFFLINE)) {
+	if (sip->initial_state_published && sipe_strequal(sbuddy->name, self_uri)) {
+		if (sipe_strequal(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
 
@@ -2065,7 +2065,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 			tmp = note ? purple_strreplace(note, "'", "&apos;") : NULL;
 
 			/* this will preserve OOF flag as well */
-			if (!(tmp && sip->note && !strcmp(tmp, sip->note))) {
+			if (!sipe_strequal(tmp, sip->note)) {
 				sip->is_oof_note = FALSE;
 				g_free(sip->note);
 				sip->note = g_strdup(note);
@@ -2395,7 +2395,7 @@ static void sipe_cleanup_local_blist(struct sipe_account_data *sip) {
 			GSList *entry2 = buddy->groups;
 			while (entry2) {
 				struct sipe_group *group = entry2->data;
-				if (!strcmp(group->name, g->name)) {
+				if (sipe_strequal(group->name, g->name)) {
 					in_sipe_groups = TRUE;
 					break;
 				}
@@ -2438,7 +2438,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		sip->contacts_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 	}
 
-	if (!strcmp(isc->name, "contactList")) {
+	if (sipe_strequal(isc->name, "contactList")) {
 
 		/* Parse groups */
 		for (group_node = xmlnode_get_child(isc, "group"); group_node; group_node = xmlnode_get_next_twin(group_node)) {
@@ -2482,7 +2482,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 
 			/* assign to group Other Contacts if nothing else received */
 			tmp = g_strdup(xmlnode_get_attrib(item, "groups"));
-			if(!tmp || !strcmp("", tmp) ) {
+			if(is_empty(tmp)) {
 				struct sipe_group *group = sipe_group_find_by_name(sip, _("Other Contacts"));
 				g_free(tmp);
 				tmp = group ? g_strdup_printf("%d", group->id) : g_strdup("1");
@@ -2691,7 +2691,7 @@ static void sipe_process_provisioning_v2(struct sipe_account_data *sip, struct s
 
 	/* provisionGroup */
 	for (node = xmlnode_get_child(xn_provision_group_list, "provisionGroup"); node; node = xmlnode_get_next_twin(node)) {
-		if (!strcmp("ServerConfiguration", xmlnode_get_attrib(node, "name"))) {
+		if (sipe_strequal("ServerConfiguration", xmlnode_get_attrib(node, "name"))) {
 			g_free(sip->focus_factory_uri);
 			sip->focus_factory_uri = xmlnode_get_data(xmlnode_get_child(node, "focusFactoryUri"));
 			purple_debug_info("sipe", "sipe_process_provisioning_v2: sip->focus_factory_uri=%s\n",
@@ -3001,7 +3001,7 @@ sipe_is_our_publication(struct sipe_account_data *sip,
 	entry = sip->our_publication_keys;
 	while (entry) {
 		//purple_debug_info("sipe", "   sipe_is_our_publication: entry->data=%s\n", entry->data);
-		if (!strcmp(entry->data, key)) {
+		if (sipe_strequal(entry->data, key)) {
 			return TRUE;
 		}
 		entry = entry->next;
@@ -3149,7 +3149,7 @@ sipe_update_user_info(struct sipe_account_data *sip,
 		PurpleBuddy *p_buddy = entry->data;
 
 		/* for Display Name */
-		if (!strcmp(property_name, ALIAS_PROP)) {
+		if (sipe_strequal(property_name, ALIAS_PROP)) {
 			if (property_value && sipe_is_bad_alias(uri, purple_buddy_get_alias(p_buddy))) {
 				purple_debug_info("sipe", "Replacing alias for %s with %s\n", uri, property_value);
 				purple_blist_alias_buddy(p_buddy, property_value);
@@ -3199,16 +3199,16 @@ sipe_update_user_phone(struct sipe_account_data *sip,
 
 	if(!phone || strlen(phone) == 0) return;
 
-	if (phone_type && (!strcmp(phone_type, "mobile") ||  !strcmp(phone_type, "cell"))) {
+	if (phone_type && (sipe_strequal(phone_type, "mobile") ||  sipe_strequal(phone_type, "cell"))) {
 		phone_node = PHONE_MOBILE_PROP;
 		phone_display_node = PHONE_MOBILE_DISPLAY_PROP;
-	} else if (phone_type && !strcmp(phone_type, "home")) {
+	} else if (phone_type && sipe_strequal(phone_type, "home")) {
 		phone_node = PHONE_HOME_PROP;
 		phone_display_node = PHONE_HOME_DISPLAY_PROP;
-	} else if (phone_type && !strcmp(phone_type, "other")) {
+	} else if (phone_type && sipe_strequal(phone_type, "other")) {
 		phone_node = PHONE_OTHER_PROP;
 		phone_display_node = PHONE_OTHER_DISPLAY_PROP;
-	} else if (phone_type && !strcmp(phone_type, "custom1")) {
+	} else if (phone_type && sipe_strequal(phone_type, "custom1")) {
 		phone_node = PHONE_CUSTOM1_PROP;
 		phone_display_node = PHONE_CUSTOM1_DISPLAY_PROP;
 	}
@@ -3226,7 +3226,7 @@ sipe_update_calendar(struct sipe_account_data *sip)
 
 	purple_debug_info("sipe", "sipe_update_calendar: started.\n");
 
-	if (!strcmp(calendar, "EXCH")) {
+	if (sipe_strequal(calendar, "EXCH")) {
 		sipe_ews_update_calendar(sip);
 	}
 
@@ -3424,10 +3424,10 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		purple_debug_info("sipe", "sipe_process_roaming_self: key=%s version=%d\n", key, version);
 
 		/* capture all userState publication for later clean up if required */
-		if (!strcmp(name, "state") && (container == 2 || container == 3)) {
+		if (sipe_strequal(name, "state") && (container == 2 || container == 3)) {
 			xmlnode *xn_state = xmlnode_get_child(node, "state");
 
-			if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "userState")) {
+			if (xn_state && sipe_strequal(xmlnode_get_attrib(xn_state, "type"), "userState")) {
 				struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
 				publication->category  = g_strdup(name);
 				publication->instance  = instance;
@@ -3454,7 +3454,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			publication->version   = version;
 
 			/* filling publication->availability */
-			if (!strcmp(name, "state")) {
+			if (sipe_strequal(name, "state")) {
 				xmlnode *xn_state = xmlnode_get_child(node, "state");
 				xmlnode *xn_avail = xmlnode_get_child(xn_state, "availability");
 
@@ -3466,13 +3466,13 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 					g_free(avail_str);
 				}
 				/* for calendarState */
-				if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "calendarState")) {
+				if (xn_state && sipe_strequal(xmlnode_get_attrib(xn_state, "type"), "calendarState")) {
 					xmlnode *xn_activity = xmlnode_get_child(xn_state, "activity");
 					struct sipe_cal_event *event = g_new0(struct sipe_cal_event, 1);
 
 					event->start_time = sipe_utils_str_to_time(xmlnode_get_attrib(xn_state, "startTime"));
 					if (xn_activity) {
-						if (!strcmp(xmlnode_get_attrib(xn_activity, "token"),
+						if (sipe_strequal(xmlnode_get_attrib(xn_activity, "token"),
 							    sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].token))
 						{
 							event->is_meeting = TRUE;
@@ -3488,7 +3488,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				}
 			}
 			/* filling publication->note */
-			if (!strcmp(name, "note")) {
+			if (sipe_strequal(name, "note")) {
 				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
 
 				if (!has_note_cleaned) {
@@ -3512,7 +3512,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 						g_free(sip->note);
 						sip->note = g_strdup(publication->note);
 						sip->note_since = publish_time;
-						sip->is_oof_note = !strcmp(xmlnode_get_attrib(xn_body, "type"), "OOF");
+						sip->is_oof_note = sipe_strequal(xmlnode_get_attrib(xn_body, "type"), "OOF");
 
 						do_update_status = TRUE;
 					}
@@ -3520,7 +3520,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			}
 
 			/* filling publication->fb_start_str, free_busy_base64, working_hours_xml_str */
-			if (!strcmp(name, "calendarData") && (publication->container == 300)) {
+			if (sipe_strequal(name, "calendarData") && (publication->container == 300)) {
 				xmlnode *xn_free_busy = xmlnode_get_descendant(node, "calendarData", "freeBusy", NULL);
 				xmlnode *xn_working_hours = xmlnode_get_descendant(node, "calendarData", "WorkingHours", NULL);
 				if (xn_free_busy) {
@@ -3545,10 +3545,10 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		g_free(key);
 
 		/* aggregateState (not an our publication) from 2-nd container */
-		if (!strcmp(name, "state") && container == 2) {
+		if (sipe_strequal(name, "state") && container == 2) {
 			xmlnode *xn_state = xmlnode_get_child(node, "state");
 
-			if (xn_state && !strcmp(xmlnode_get_attrib(xn_state, "type"), "aggregateState")) {
+			if (xn_state && sipe_strequal(xmlnode_get_attrib(xn_state, "type"), "aggregateState")) {
 				xmlnode *xn_avail = xmlnode_get_child(xn_state, "availability");
 				xmlnode *xn_activity = xmlnode_get_child(xn_state, "activity");
 
@@ -3571,7 +3571,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		}
 
 		/* userProperties published by server from AD */
-		if (!sip->csta && !strcmp(name, "userProperties")) {
+		if (!sip->csta && sipe_strequal(name, "userProperties")) {
 			xmlnode *line;
 			/* line, for Remote Call Control (RCC) */
 			for (line = xmlnode_get_descendant(node, "userProperties", "lines", "line", NULL); line; line = xmlnode_get_next_twin(line)) {
@@ -4381,7 +4381,7 @@ sipe_invite(struct sipe_account_data *sip,
 		"%s"
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
-		(session->roster_manager && !strcmp(session->roster_manager, self)) ? roster_manager : "",
+		sipe_strequal(session->roster_manager, self) ? roster_manager : "",
 		referred_by_str,
 		is_triggered ? "TriggeredInvite: TRUE\r\n" : "",
 		is_triggered || session->is_multiparty ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
@@ -4667,9 +4667,9 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 			xmlnode *xn_keyboard_activity  = xmlnode_from_str(msg->body, msg->bodylen);
 			const char *status = xmlnode_get_attrib(xmlnode_get_child(xn_keyboard_activity, "status"),
 								"status");
-			if (status && !strcmp(status, "type")) {
+			if (sipe_strequal(status, "type")) {
 				serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
-			} else if (status && !strcmp(status, "idle")) {
+			} else if (sipe_strequal(status, "idle")) {
 				serv_got_typing_stopped(sip->gc, from);
 			}
 			xmlnode_free(xn_keyboard_activity);
@@ -5521,21 +5521,21 @@ sipe_get_act_avail_by_status_2005(const char *status,
 	int avail = 300; /* online */
 	int act = 400;  /* Available */
 
-	if (!strcmp(status, SIPE_STATUS_ID_AWAY)) {
+	if (sipe_strequal(status, SIPE_STATUS_ID_AWAY)) {
 		act = 100;
-	//} else if (!strcmp(status, SIPE_STATUS_ID_LUNCH)) {
+	//} else if (sipe_strequal(status, SIPE_STATUS_ID_LUNCH)) {
 	//	act = 150;
-	} else if (!strcmp(status, SIPE_STATUS_ID_BRB)) {
+	} else if (sipe_strequal(status, SIPE_STATUS_ID_BRB)) {
 		act = 300;
-	} else if (!strcmp(status, SIPE_STATUS_ID_AVAILABLE)) {
+	} else if (sipe_strequal(status, SIPE_STATUS_ID_AVAILABLE)) {
 		act = 400;
-	//} else if (!strcmp(status, SIPE_STATUS_ID_ON_PHONE)) {
+	//} else if (sipe_strequal(status, SIPE_STATUS_ID_ON_PHONE)) {
 	//	act = 500;
-	} else if (!strcmp(status, SIPE_STATUS_ID_BUSY) ||
-		   !strcmp(status, SIPE_STATUS_ID_DND)) {
+	} else if (sipe_strequal(status, SIPE_STATUS_ID_BUSY) ||
+		   sipe_strequal(status, SIPE_STATUS_ID_DND)) {
 		act = 600;
-	} else if (!strcmp(status, SIPE_STATUS_ID_INVISIBLE) ||
-		   !strcmp(status, SIPE_STATUS_ID_OFFLINE)) {
+	} else if (sipe_strequal(status, SIPE_STATUS_ID_INVISIBLE) ||
+		   sipe_strequal(status, SIPE_STATUS_ID_OFFLINE)) {
 		avail = 0; /* offline */
 		act = 100;
 	} else {
@@ -5651,26 +5651,26 @@ sipe_get_availability_by_status(const char* sipe_status_id, char** activity_toke
 	int availability;
 	sipe_activity activity = SIPE_ACTIVITY_UNSET;
 
-	if (!strcmp(sipe_status_id, SIPE_STATUS_ID_AWAY)) {
+	if (sipe_strequal(sipe_status_id, SIPE_STATUS_ID_AWAY)) {
 		availability = 15500;
 		if (!activity_token || !(*activity_token))	{
 			activity = SIPE_ACTIVITY_AWAY;
 		}
-	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_BRB)) {
+	} else if (sipe_strequal(sipe_status_id, SIPE_STATUS_ID_BRB)) {
 		availability = 12500;
 		activity = SIPE_ACTIVITY_BRB;
-	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_DND)) {
+	} else if (sipe_strequal(sipe_status_id, SIPE_STATUS_ID_DND)) {
 		availability =  9500;
 		activity = SIPE_ACTIVITY_DND;
-	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_BUSY)) {
+	} else if (sipe_strequal(sipe_status_id, SIPE_STATUS_ID_BUSY)) {
 		availability =  6500;
 		if (!activity_token || !(*activity_token))	{
 			activity = SIPE_ACTIVITY_BUSY;
 		}
-	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_AVAILABLE)) {
+	} else if (sipe_strequal(sipe_status_id, SIPE_STATUS_ID_AVAILABLE)) {
 		availability =  3500;
 		activity = SIPE_ACTIVITY_ONLINE;
-	} else if (!strcmp(sipe_status_id, SIPE_STATUS_ID_UNKNOWN)) {
+	} else if (sipe_strequal(sipe_status_id, SIPE_STATUS_ID_UNKNOWN)) {
 		availability =     0;
 	} else {
 		// Offline or invisible
@@ -5708,7 +5708,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			sipe_utils_str_to_time(tmp) : 0;
 
 		/* contactCard */
-		if (!strcmp(attrVar, "contactCard"))
+		if (sipe_strequal(attrVar, "contactCard"))
 		{
 			xmlnode *node;
 			/* identity - Display Name and email */
@@ -5779,7 +5779,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			     node;
 			     node = xmlnode_get_next_twin(node))
 			{
-				if (!strcmp(xmlnode_get_attrib(node, "type"), "work")) {
+				if (sipe_strequal(xmlnode_get_attrib(node, "type"), "work")) {
 					char* street = xmlnode_get_data(xmlnode_get_child(node, "street"));
 					char* city = xmlnode_get_data(xmlnode_get_child(node, "city"));
 					char* state = xmlnode_get_data(xmlnode_get_child(node, "state"));
@@ -5803,7 +5803,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			}
 		}
 		/* note */
-		else if (!strcmp(attrVar, "note"))
+		else if (sipe_strequal(attrVar, "note"))
 		{
 			if (uri) {
 				struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, uri);
@@ -5832,7 +5832,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 						char *tmp;
 						sbuddy->note = g_markup_escape_text((tmp = xmlnode_get_data(xn_node)), -1);
 						g_free(tmp);
-						sbuddy->is_oof_note = !strcmp(xmlnode_get_attrib(xn_node, "type"), "OOF");
+						sbuddy->is_oof_note = sipe_strequal(xmlnode_get_attrib(xn_node, "type"), "OOF");
 						sbuddy->note_since = publish_time;
 
 						purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s), note(%s)\n",
@@ -5844,7 +5844,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			}
 		}
 		/* state */
-		else if(!strcmp(attrVar, "state"))
+		else if(sipe_strequal(attrVar, "state"))
 		{
 			char *tmp;
 			int availability;
@@ -5932,7 +5932,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 			do_update_status = TRUE;
 		}
 		/* calendarData */
-		else if(!strcmp(attrVar, "calendarData"))
+		else if(sipe_strequal(attrVar, "calendarData"))
 		{
 			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sip->buddies, uri) : NULL;
 			xmlnode *xn_free_busy = xmlnode_get_descendant(xn_category, "calendarData", "freeBusy", NULL);
@@ -6117,9 +6117,9 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 	if (isonline) {
 		const gchar * status_id = NULL;
 		if (activity) {
-			if (!strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_BUSY].token)) {
+			if (sipe_strequal(activity, sipe_activity_map[SIPE_ACTIVITY_BUSY].token)) {
 				status_id = SIPE_STATUS_ID_BUSY;
-			} else if (!strcmp(activity, sipe_activity_map[SIPE_ACTIVITY_AWAY].token)) {
+			} else if (sipe_strequal(activity, sipe_activity_map[SIPE_ACTIVITY_AWAY].token)) {
 				status_id = SIPE_STATUS_ID_AWAY;
 			}
 		}
@@ -6220,7 +6220,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
 	note = xn_note ? xmlnode_get_data(xn_note) : NULL;
 
-	if (user_avail_nil && !strcmp(user_avail_nil, "true")) {	/* null-ed */
+	if (user_avail_nil && sipe_strequal(user_avail_nil, "true")) {	/* null-ed */
 		user_avail = 0;
 		user_avail_since = 0;
 	}
@@ -6281,7 +6281,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		char *state;
 
 		/* deviceName */
-		if (!strcmp(xmlnode_get_attrib(node, "epid"), epid)) {
+		if (sipe_strequal(xmlnode_get_attrib(node, "epid"), epid)) {
 			xn_device_name = xmlnode_get_child(node, "deviceName");
 			device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
 		}
@@ -6326,10 +6326,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 				res_avail = dev_avail;
 				if (!is_empty(state))
 				{
-					if (!strcmp(state, sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].token)) {
+					if (sipe_strequal(state, sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].token)) {
 						g_free(activity);
 						activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_ON_PHONE));
-					} else if (!strcmp(state, "presenting")) {
+					} else if (sipe_strequal(state, "presenting")) {
 						g_free(activity);
 						activity = g_strdup(SIPE_ACTIVITY_I18N(SIPE_ACTIVITY_IN_CONF));
 					} else {
@@ -6391,8 +6391,8 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->last_non_cal_activity);
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
 
-		if (!strcmp(sbuddy->name, self_uri)) {
-			if (!(sbuddy->note && sip->note && !strcmp(sbuddy->note, sip->note))) /* not same */
+		if (sipe_strequal(sbuddy->name, self_uri)) {
+			if (!sipe_strequal(sbuddy->note, sip->note)) /* not same */
 			{
 				sip->is_oof_note = sbuddy->is_oof_note;
 
@@ -6412,7 +6412,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
 	sipe_got_user_status(sip, uri, status_id);
 
-	if (!sip->ocs2007 && !strcmp(self_uri, uri)) {
+	if (!sip->ocs2007 && sipe_strequal(self_uri, uri)) {
 		sipe_user_info_has_updated(sip, xn_userinfo);
 	}
 
@@ -6900,7 +6900,7 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 			const gchar *categoryName = xmlnode_get_attrib(node, "categoryName");
 			g_free(idx);
 
-			if (!strcmp("device", categoryName)) {
+			if (sipe_strequal("device", categoryName)) {
 				has_device_publication = TRUE;
 			}
 
@@ -7051,7 +7051,7 @@ sipe_publish_get_category_state_calendar(struct sipe_account_data *sip,
 	if (event &&
 	    publication_3 &&
 	    (publication_3->availability == availability) &&
-	    !strcmp(publication_3->cal_event_hash, (tmp = sipe_cal_event_hash(event))))
+	    sipe_strequal(publication_3->cal_event_hash, (tmp = sipe_cal_event_hash(event))))
 	{
 		g_free(tmp);
 		purple_debug_info("sipe", "sipe_publish_get_category_state_calendar: "
@@ -7143,15 +7143,6 @@ sipe_publish_get_category_state_user(struct sipe_account_data *sip)
 }
 
 /**
- * Compares two strings even in case both are NULL/empty
- */
-static gboolean
-sipe_is_equal(const char* n1, const char* n2) {
-	return ((!n1 || !strlen(n1)) && (!n2 || !strlen(n2))) /* both empty */
-	    || (n1 && n2 && !strcmp(n1, n2)); /* or not empty and equal */
-}
-
-/**
  * Returns 'note' XML part for publication.
  * Must be g_free'd after use.
  *
@@ -7167,7 +7158,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 			       time_t note_start,
 			       time_t note_end)
 {
-	guint instance = !strcmp("OOF", note_type) ? sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF) : 0;
+	guint instance = sipe_strequal("OOF", note_type) ? sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF) : 0;
 	/* key is <category><instance><container> */
 	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", instance, 200);
 	gchar *key_note_300 = g_strdup_printf("<%s><%u><%u>", "note", instance, 300);
@@ -7194,7 +7185,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	g_free(key_note_400);
 
 	/* we even need to republish empty note */
-	if (n1 && n2 && !strcmp(n1, n2))
+	if (sipe_strequal(n1, n2))
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_note: note has NOT changed. Exiting.\n");
 		g_free(n1);
@@ -7311,7 +7302,7 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 		return NULL;
 	}
 
-	if (sipe_is_equal(n1, n2))
+	if (sipe_strequal(n1, n2))
 	{
 		purple_debug_info("sipe", "sipe_publish_get_category_cal_working_hours: WorkingHours has NOT changed. Exiting.\n");
 		return NULL; /* nothing to update */
@@ -7398,7 +7389,7 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	/* we will rebuplish the same data to refresh publication time,
 	 * so if data from multiple sources, most recent will be choosen
 	 */
-	//if (sipe_is_equal(st, fb_start_str) && sipe_is_equal(fb, free_busy_base64))
+	//if (sipe_strequal(st, fb_start_str) && sipe_strequal(fb, free_busy_base64))
 	//{
 	//	purple_debug_info("sipe", "sipe_publish_get_category_cal_free_busy: FreeBusy has NOT changed. Exiting.\n");
 	//	g_free(fb_start_str);
@@ -7572,7 +7563,7 @@ publish_calendar_status_self(struct sipe_account_data *sip)
 	}
 
 	oof_note = sipe_ews_get_oof_note(sip->ews);
-	if (!strcmp("Scheduled", sip->ews->oof_state)) {
+	if (sipe_strequal("Scheduled", sip->ews->oof_state)) {
 		oof_start = sip->ews->oof_start;
 		oof_end = sip->ews->oof_end;
 	}
@@ -7628,37 +7619,37 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 	const char *method = msg->method ? msg->method : "NOT FOUND";
 	purple_debug_info("sipe", "msg->response(%d),msg->method(%s)\n",msg->response,method);
 	if (msg->response == 0) { /* request */
-		if (!strcmp(method, "MESSAGE")) {
+		if (sipe_strequal(method, "MESSAGE")) {
 			process_incoming_message(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(method, "NOTIFY")) {
+		} else if (sipe_strequal(method, "NOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_notify\n");
 			process_incoming_notify(sip, msg, TRUE, FALSE);
 			found = TRUE;
-		} else if (!strcmp(method, "BENOTIFY")) {
+		} else if (sipe_strequal(method, "BENOTIFY")) {
 			purple_debug_info("sipe","send->process_incoming_benotify\n");
 			process_incoming_notify(sip, msg, TRUE, TRUE);
 			found = TRUE;
-		} else if (!strcmp(method, "INVITE")) {
+		} else if (sipe_strequal(method, "INVITE")) {
 			process_incoming_invite(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(method, "REFER")) {
+		} else if (sipe_strequal(method, "REFER")) {
 			process_incoming_refer(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(method, "OPTIONS")) {
+		} else if (sipe_strequal(method, "OPTIONS")) {
 			process_incoming_options(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(method, "INFO")) {
+		} else if (sipe_strequal(method, "INFO")) {
 			process_incoming_info(sip, msg);
 			found = TRUE;
-		} else if (!strcmp(method, "ACK")) {
+		} else if (sipe_strequal(method, "ACK")) {
 			// ACK's don't need any response
 			found = TRUE;
-		} else if (!strcmp(method, "SUBSCRIBE")) {
+		} else if (sipe_strequal(method, "SUBSCRIBE")) {
 			// LCS 2005 sends us these - just respond 200 OK
 			found = TRUE;
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
-		} else if (!strcmp(method, "BYE")) {
+		} else if (sipe_strequal(method, "BYE")) {
 			process_incoming_bye(sip, msg);
 			found = TRUE;
 		} else {
@@ -7691,7 +7682,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 					purple_debug_info("sipe", "got provisional (%d) response, ignoring\n", msg->response);
 				} else {
 					sip->proxy.retries = 0;
-					if (!strcmp(trans->msg->method, "REGISTER")) {
+					if (sipe_strequal(trans->msg->method, "REGISTER")) {
 						if (msg->response == 401)
 						{
 							sip->registrar.retries++;
@@ -8926,7 +8917,7 @@ GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
-	if (!strcmp(calendar, "EXCH")) {
+	if (sipe_strequal(calendar, "EXCH")) {
 		act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
 		menu = g_list_prepend(menu, act);
 	}
@@ -8970,7 +8961,7 @@ static char *sipe_status_text(PurpleBuddy *buddy)
 	if (sbuddy) {
 		const char *activity_str = sbuddy->activity ?
 			sbuddy->activity :
-			!strcmp(status_id, SIPE_STATUS_ID_BUSY) || !strcmp(status_id, SIPE_STATUS_ID_BRB) ?
+			sipe_strequal(status_id, SIPE_STATUS_ID_BUSY) || sipe_strequal(status_id, SIPE_STATUS_ID_BRB) ?
 				purple_status_get_name(status) : NULL;
 
 		if (activity_str && sbuddy->note)
@@ -9204,7 +9195,7 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 	{
 		gchar *self = sip_uri_self(sip);
 		if (session->roster_manager) {
-			if (!strcmp(session->roster_manager, self)) {
+			if (sipe_strequal(session->roster_manager, self)) {
 				sipe_invite(sip, session, who, NULL, NULL, FALSE);
 			} else {
 				sipe_refer(sip, session, who);
@@ -9735,7 +9726,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 
 	purple_notify_user_info_add_section_break(info);
 
-	if (!server_alias || !strcmp("", server_alias)) {
+	if (is_empty(server_alias)) {
 		g_free(server_alias);
 		server_alias = g_strdup(purple_buddy_get_server_alias(pbuddy));
 		if (server_alias) {
@@ -9749,7 +9740,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 		purple_notify_user_info_add_pair(info, _("Alias"), alias);
 	}
 
-	if (!email || !strcmp("", email)) {
+	if (is_empty(email)) {
 		g_free(email);
 		email = g_strdup(purple_blist_node_get_string(&pbuddy->node, EMAIL_PROP));
 		if (email) {

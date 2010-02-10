@@ -124,7 +124,7 @@ sipe_cal_get_wday(char *wday_name)
 	if (!wday_name) return -1;
 
 	for (i = 0; i < 7; i++) {
-		if (!strcmp(wday_names[i], wday_name)) {
+		if (sipe_strequal(wday_names[i], wday_name)) {
 			return i;
 		}
 	}

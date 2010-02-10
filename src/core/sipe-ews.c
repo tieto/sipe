@@ -196,8 +196,8 @@ sipe_ews_get_oof_note(struct sipe_ews *ews)
 
 	if (!ews || !ews->oof_state) return NULL;
 
-	if (!strcmp(ews->oof_state, "Enabled") ||
-	    (!strcmp(ews->oof_state, "Scheduled") && now >= ews->oof_start && now <= ews->oof_end))
+	if (sipe_strequal(ews->oof_state, "Enabled") ||
+	    (sipe_strequal(ews->oof_state, "Scheduled") && now >= ews->oof_start && now <= ews->oof_end))
 	{
 		return ews->oof_note;
 	}
@@ -289,13 +289,13 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			g_free(tmp);
 
 			tmp = xmlnode_get_data(xmlnode_get_child(node, "BusyType"));
-			if (!strcmp("Free", tmp)) {
+			if (sipe_strequal("Free", tmp)) {
 				cal_event->cal_status = SIPE_CAL_FREE;
-			} else if (!strcmp("Tentative", tmp)) {
+			} else if (sipe_strequal("Tentative", tmp)) {
 				cal_event->cal_status = SIPE_CAL_TENTATIVE;
-			} else if (!strcmp("Busy", tmp)) {
+			} else if (sipe_strequal("Busy", tmp)) {
 				cal_event->cal_status = SIPE_CAL_BUSY;
-			} else if (!strcmp("OOF", tmp)) {
+			} else if (sipe_strequal("OOF", tmp)) {
 				cal_event->cal_status = SIPE_CAL_OOF;
 			} else {
 				cal_event->cal_status = SIPE_CAL_NO_DATA;
@@ -306,7 +306,7 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			cal_event->location = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "Location", NULL));
 
 			tmp = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "IsMeeting", NULL));
-			cal_event->is_meeting = tmp ? !strcmp(tmp, "true") : TRUE;
+			cal_event->is_meeting = tmp ? sipe_strequal(tmp, "true") : TRUE;
 			g_free(tmp);
 		}
 
@@ -373,7 +373,7 @@ sipe_ews_process_oof_response(int return_code,
 			g_free(tmp);
 		}
 
-		if (!strcmp(ews->oof_state, "Scheduled")
+		if (sipe_strequal(ews->oof_state, "Scheduled")
 		    && (xn_duration = xmlnode_get_descendant(resp, "OofSettings", "Duration", NULL)))
 		{
 			char *tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "StartTime"));
@@ -385,7 +385,7 @@ sipe_ews_process_oof_response(int return_code,
 			g_free(tmp);
 		}
 
-		if (!(old_note && ews->oof_note && !strcmp(old_note, ews->oof_note))) { /* oof note changed */
+		if (!sipe_strequal(old_note, ews->oof_note)) { /* oof note changed */
 			ews->updated = time(NULL);
 			ews->published = FALSE;
 		}
@@ -428,7 +428,7 @@ sipe_ews_process_autodiscover(int return_code,
 		     node = xmlnode_get_next_twin(node))
 		{
 			char *type = xmlnode_get_data(xmlnode_get_child(node, "Type"));
-			if (!strcmp("EXCH", type)) {
+			if (sipe_strequal("EXCH", type)) {
 				ews->as_url  = xmlnode_get_data(xmlnode_get_child(node, "ASUrl"));
 				ews->oof_url = xmlnode_get_data(xmlnode_get_child(node, "OOFUrl"));
 				ews->oab_url = xmlnode_get_data(xmlnode_get_child(node, "OABUrl"));

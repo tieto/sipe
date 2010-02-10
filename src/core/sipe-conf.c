@@ -261,7 +261,7 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 	} else if (msg->response == 200) {
 		xmlnode *xn_response = xmlnode_from_str(msg->body, msg->bodylen);
 		const gchar *code = xmlnode_get_attrib(xn_response, "code");
-		if (!strcmp(code, "success")) {
+		if (sipe_strequal(code, "success")) {
 			/* subscribe to focus */
 			sipe_subscribe_conference(sip, session, -1);
 		}
@@ -558,7 +558,7 @@ process_conf_add_response(struct sipe_account_data *sip,
 	}
 	if (msg->response == 200) {
 		xmlnode *xn_response = xmlnode_from_str(msg->body, msg->bodylen);
-		if (!strcmp("success", xmlnode_get_attrib(xn_response, "code")))
+		if (sipe_strequal("success", xmlnode_get_attrib(xn_response, "code")))
 		{
 			gchar *who = trans->payload->data;
 			struct sip_session *session;
@@ -754,7 +754,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 		{
 			gchar *purpose = xmlnode_get_data(xmlnode_get_child(node, "purpose"));
 
-			if (purpose && !strcmp("chat", purpose)) {
+			if (sipe_strequal("chat", purpose)) {
 				g_free(purpose);
 				session->im_mcu_uri = xmlnode_get_data(xmlnode_get_child(node, "uri"));
 				purple_debug_info("sipe", "sipe_process_conference: im_mcu_uri=%s\n", session->im_mcu_uri);
@@ -775,20 +775,20 @@ sipe_process_conference(struct sipe_account_data *sip,
 		gboolean is_in_im_mcu = FALSE;
 		gchar *self = sip_uri_self(sip);
 
-		if (role && !strcmp(role, "presenter")) {
+		if (sipe_strequal(role, "presenter")) {
 			flags |= PURPLE_CBFLAGS_OP;
 		}
 
-		if (!strcmp("deleted", state)) {
+		if (sipe_strequal("deleted", state)) {
 			if (purple_conv_chat_find_user(chat, user_uri)) {
 				purple_conv_chat_remove_user(chat, user_uri, NULL /* reason */);
 			}
 		} else {
 			/* endpoints */
 			for (endpoint = xmlnode_get_child(node, "endpoint"); endpoint; endpoint = xmlnode_get_next_twin(endpoint)) {
-				if (!strcmp("chat", xmlnode_get_attrib(endpoint, "session-type"))) {
+				if (sipe_strequal("chat", xmlnode_get_attrib(endpoint, "session-type"))) {
 					gchar *status = xmlnode_get_data(xmlnode_get_child(endpoint, "status"));
-					if (!strcmp("connected", status)) {
+					if (sipe_strequal("connected", status)) {
 						is_in_im_mcu = TRUE;
 						if (!purple_conv_chat_find_user(chat, user_uri)) {
 							purple_conv_chat_add_user(chat, user_uri, NULL, flags,
@@ -818,12 +818,12 @@ sipe_process_conference(struct sipe_account_data *sip,
 
 		xmlnode *xn_type = xmlnode_get_descendant(node, "entity-state", "media", "entry", "type", NULL);
 		gchar *tmp = NULL;
-		if (xn_type && !strcmp("chat", (tmp = xmlnode_get_data(xn_type)))) {
+		if (xn_type && sipe_strequal("chat", (tmp = xmlnode_get_data(xn_type)))) {
 			xmlnode *xn_locked = xmlnode_get_descendant(node, "entity-state", "locked", NULL);
 			if (xn_locked) {
 				gchar *locked = xmlnode_get_data(xn_locked);
 				gboolean prev_locked = session->locked;
-				session->locked = (locked && !strcmp(locked, "true")) ? TRUE : FALSE;
+				session->locked = sipe_strequal(locked, "true");
 				if (prev_locked && !session->locked) {
 					sipe_present_info(sip, session,
 						_("This conference is no longer locked. Additional participants can now join."));

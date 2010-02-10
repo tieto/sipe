@@ -163,7 +163,7 @@ http_conn_parse_url(const char *url,
 {
 	char **parts = g_strsplit(url, "://", 2);
 	char *no_proto = parts[1] ? g_strdup(parts[1]) : g_strdup(parts[0]);
-	int port_tmp = !strcmp(parts[0], "https") ? 443 : 80;
+	int port_tmp = sipe_strequal(parts[0], "https") ? 443 : 80;
 	char *tmp;
 	char *host_port;
 
@@ -335,7 +335,7 @@ http_conn_create(PurpleAccount *account,
 		purple_debug_info("sipe-http", "no URL supplied!\n");
 		return NULL;
 	}
-	if (!strcmp(conn_type, HTTP_CONN_SSL) &&
+	if (sipe_strequal(conn_type, HTTP_CONN_SSL) &&
 	    !purple_ssl_is_supported())
 	{
 		purple_debug_info("sipe-http", "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor\n");

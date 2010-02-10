@@ -537,7 +537,7 @@ process_csta_make_call_response(struct sipe_account_data *sip,
 		xml = xmlnode_from_str(msg->body, msg->bodylen);
 		xn_calling_device = xmlnode_get_child(xml, "callingDevice");
 		device_id = xmlnode_get_data(xmlnode_get_child(xn_calling_device, "deviceID"));
-		if (!strcmp(sip->csta->line_uri, device_id)) {
+		if (sipe_strequal(sip->csta->line_uri, device_id)) {
 			g_free(sip->csta->call_id);
 			sip->csta->call_id = xmlnode_get_data(xmlnode_get_child(xn_calling_device, "callID"));
 			purple_debug_info("sipe", "process_csta_make_call_response: call_id=%s\n", sip->csta->call_id ? sip->csta->call_id : "");
@@ -655,25 +655,25 @@ process_incoming_info_csta(struct sipe_account_data *sip,
 	}
 	else
 	{
-		if (!strcmp(xml->name, "OriginatedEvent"))
+		if (sipe_strequal(xml->name, "OriginatedEvent"))
 		{
 			sip_csta_update_id_and_status(sip->csta,
 						      xmlnode_get_child(xml, "originatedConnection"),
 						      ORIGINATED_CSTA_STATUS);
 		}
-		else if (!strcmp(xml->name, "DeliveredEvent"))
+		else if (sipe_strequal(xml->name, "DeliveredEvent"))
 		{
 			sip_csta_update_id_and_status(sip->csta,
 						      xmlnode_get_child(xml, "connection"),
 						      DELIVERED_CSTA_STATUS);
 		}
-		else if (!strcmp(xml->name, "EstablishedEvent"))
+		else if (sipe_strequal(xml->name, "EstablishedEvent"))
 		{
 			sip_csta_update_id_and_status(sip->csta,
 						      xmlnode_get_child(xml, "establishedConnection"),
 						      ESTABLISHED_CSTA_STATUS);
 		}
-		else if (!strcmp(xml->name, "ConnectionClearedEvent"))
+		else if (sipe_strequal(xml->name, "ConnectionClearedEvent"))
 		{
 			sip_csta_update_id_and_status(sip->csta,
 						      xmlnode_get_child(xml, "droppedConnection"),
