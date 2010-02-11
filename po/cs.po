@@ -27,7 +27,6 @@ msgid "Busy"
 msgstr "Zaneprázdněn"
 
 #: ../src/core/sipe.c:145
-#, fuzzy
 msgid "Busy-Idle"
 msgstr "Zaneprázdněn"
 
@@ -56,7 +55,6 @@ msgid "Out of office"
 msgstr "Mimo kancelář"
 
 #: ../src/core/sipe.c:155
-#, fuzzy
 msgid "Urgent interruptions only"
 msgstr "Pouze urgentní záležitosti"
 
@@ -99,7 +97,6 @@ msgid "you are already signed in at another location"
 msgstr "už jsi přihlášen(a) z jiného místa"
 
 #: ../src/core/sipe.c:2669
-#, fuzzy
 msgid "user disabled"
 msgstr "uživatel je zakázán"
 
@@ -182,7 +179,6 @@ msgstr "Server se odpojil"
 
 #: ../src/core/sipe.c:8040 ../src/core/sipe.c:8082 ../src/core/sipe.c:8134
 #: ../src/core/sipe.c:8204
-#, fuzzy
 msgid "Could not create listen socket"
 msgstr "Nemohu vytvořit socket pro naslouchání"
 
@@ -212,7 +208,7 @@ msgstr "Nemohu vytvořit SSL kontext"
 
 #: ../src/core/sipe.c:8309
 msgid "SIP Exchange user name contains invalid characters"
-msgstr ""
+msgstr "Uživatelské jméno pro SIP Exchange obsahuje neplatné znaky"
 
 #: ../src/core/sipe.c:8332
 msgid ""
@@ -235,12 +231,10 @@ msgid "Connecting"
 msgstr "Navazuji spojení"
 
 #: ../src/core/sipe.c:8653
-#, fuzzy
 msgid "Unable to display the search results"
 msgstr "Nemohu zobrazit výsledky hledání."
 
 #: ../src/core/sipe.c:8659
-#, fuzzy
 msgid "User name"
 msgstr "Jméno uživatele"
 
@@ -272,12 +266,10 @@ msgid " (more matched your query)"
 msgstr ""
 
 #: ../src/core/sipe.c:8755
-#, fuzzy
 msgid "First name"
 msgstr "Jméno"
 
 #: ../src/core/sipe.c:8757
-#, fuzzy
 msgid "Last name"
 msgstr "Příjmení"
 
@@ -286,7 +278,6 @@ msgid "Search"
 msgstr "Vyhledávání"
 
 #: ../src/core/sipe.c:8766
-#, fuzzy
 msgid "Search for a contact"
 msgstr "Hledat kontakt"
 
