@@ -282,71 +282,69 @@ msgid "Search for a contact"
 msgstr "Hledat kontakt"
 
 #: ../src/core/sipe.c:8767
-#, fuzzy
 msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
 msgstr "Zadejte informaci o osobě, kterou si přejete najít. Prázdná pole budou ignorována."
 
 #: ../src/core/sipe.c:8769
 msgid "_Search"
-msgstr ""
+msgstr "_Hledat"
 
 #: ../src/core/sipe.c:8770
 msgid "_Cancel"
-msgstr ""
+msgstr "_Zrušit"
 
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
 #: ../src/core/sipe.c:8823
 msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr ""
+msgstr "Plugin třetí strany poskytující rozšířenou verzi SIP/SIMPLE, používanou v různých produktech."
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8825
 msgid "Home"
-msgstr ""
+msgstr "Domů"
 
 #. About note, part 3/11: support forum URL (label)
 #: ../src/core/sipe.c:8827
 msgid "Support"
-msgstr ""
+msgstr "Podpora"
 
 #. About note, part 4/11: support forum name (hyperlink text)
 #: ../src/core/sipe.c:8829
 msgid "Help Forum"
-msgstr ""
+msgstr "Diskuzní forum s pomocí"
 
 #. About note, part 5/11: translation service URL (label)
 #: ../src/core/sipe.c:8831
 msgid "Translations"
-msgstr ""
+msgstr "Překlady"
 
 #. About note, part 6/11: license type (label)
 #: ../src/core/sipe.c:8833
 msgid "License"
-msgstr ""
+msgstr "Licence"
 
 #. About note, part 7/11: known users
 #: ../src/core/sipe.c:8835
 msgid "We support users in such organizations as"
-msgstr ""
+msgstr "Podporujeme uživatele v organizacích jako jsou"
 
 #. About note, part 8/11: translation request, text before Transifex.net URL
 #. append a space if text is not empty
 #: ../src/core/sipe.c:8838
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr ""
+msgstr "Prosím pomozte přeložit SIPE do vašeho mateřského jazyka zde na"
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
 #: ../src/core/sipe.c:8841
 msgid " using convenient web interface"
-msgstr ""
+msgstr "použitím pohodlného webového rozhraní"
 
 #. About note, part 10/11: author list (header)
 #: ../src/core/sipe.c:8843
-#, fuzzy
 msgid "Authors"
-msgstr "Automaticky"
+msgstr "Autoři"
 
 #. About note, part 11/11: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
@@ -354,20 +352,19 @@ msgstr "Automaticky"
 #. "Localization for <language name> (<language code>): <name>"
 #: ../src/core/sipe.c:8848
 msgid "Original texts in English (en): SIPE developers"
-msgstr ""
+msgstr "Originální texty v angličtině (en): SIPE vývojáři"
 
 #: ../src/core/sipe.c:8913
 msgid "About SIPE plugin..."
-msgstr ""
+msgstr "O SIPE pluginu..."
 
 #: ../src/core/sipe.c:8916
-#, fuzzy
 msgid "Contact search..."
 msgstr "Hledání kontaktů..."
 
 #: ../src/core/sipe.c:8920
 msgid "Republish Calendar"
-msgstr ""
+msgstr "Znovu zveřejnit kalendář"
 
 #: ../src/core/sipe.c:8924
 msgid "Reset status"
