@@ -110,7 +110,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 
 	ret = gss_import_name(&minor,
 			      &input_name_buffer,
-			      (const gss_OID)GSS_KRB5_NT_PRINCIPAL_NAME,
+			      (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME,
 			      &target_name);
 	if (GSS_ERROR(ret)) {
 		sip_sec_krb5_print_gss_error("gss_import_name", ret, minor);

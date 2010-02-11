@@ -79,7 +79,7 @@ sip_sec_create_context(SipSecContext *context,
 	sip_uint32 ret;
 
 	/* Map authentication type to module initialization hook & name */
-	static const sip_sec_create_context_func const auth_to_hook[] = {
+	static sip_sec_create_context_func const auth_to_hook[] = {
 		sip_sec_create_context__NONE,      /* AUTH_TYPE_UNSET     */
 		sip_sec_create_context__NONE,      /* AUTH_TYPE_DIGEST    */
 		sip_sec_create_context__NTLM,      /* AUTH_TYPE_NTLM      */
