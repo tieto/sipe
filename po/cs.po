@@ -371,15 +371,15 @@ msgstr ""
 
 #: ../src/core/sipe.c:8924
 msgid "Reset status"
-msgstr ""
+msgstr "Obnovit stav"
 
 #: ../src/core/sipe.c:9016
 msgid "Status"
-msgstr ""
+msgstr "Stav"
 
 #: ../src/core/sipe.c:9021
 msgid "Calendar"
-msgstr ""
+msgstr "Kalendář"
 
 #: ../src/core/sipe.c:9026
 msgid "Meeting in"
