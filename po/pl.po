@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-16 16:00+0200\n"
-"PO-Revision-Date: 2010-02-06 01:52+0100\n"
+"POT-Creation-Date: 2010-02-16 19:10+0000\n"
+"PO-Revision-Date: 2010-02-16 20:18+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -107,6 +107,7 @@ msgid "You have been rejected by the server: %s"
 msgstr "Użytkownik został odrzucony przez serwer: %s"
 
 #: ../src/core/sipe.c:2682 ../src/core/sipe.c:5481 ../src/core/sipe.c:5498
+#: ../src/core/sipe.c:5516
 msgid "no reason given"
 msgstr "nie podano powodu"
 
@@ -256,11 +257,11 @@ msgstr "Nazwa użytkownika"
 msgid "Name"
 msgstr "Nazwa"
 
-#: ../src/core/sipe.c:8687 ../src/core/sipe.c:8783 ../src/core/sipe.c:9733
+#: ../src/core/sipe.c:8687 ../src/core/sipe.c:8783 ../src/core/sipe.c:9734
 msgid "Company"
 msgstr "Firma"
 
-#: ../src/core/sipe.c:8690 ../src/core/sipe.c:8785 ../src/core/sipe.c:9742
+#: ../src/core/sipe.c:8690 ../src/core/sipe.c:8785 ../src/core/sipe.c:9743
 msgid "Country"
 msgstr "Kraj"
 
@@ -314,7 +315,7 @@ msgstr "_Anuluj"
 
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
-#: ../src/core/sipe.c:8849
+#: ../src/core/sipe.c:8850
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
@@ -323,38 +324,38 @@ msgstr ""
 "SIMPLE używaną przez różne produkty"
 
 #. About note, part 2/11: home page URL (label)
-#: ../src/core/sipe.c:8851
+#: ../src/core/sipe.c:8852
 msgid "Home"
 msgstr "Strona domowa"
 
 #. About note, part 3/11: support forum URL (label)
-#: ../src/core/sipe.c:8853
+#: ../src/core/sipe.c:8854
 msgid "Support"
 msgstr "Wsparcie"
 
 #. About note, part 4/11: support forum name (hyperlink text)
-#: ../src/core/sipe.c:8855
+#: ../src/core/sipe.c:8856
 msgid "Help Forum"
 msgstr "forum pomocy"
 
 #. About note, part 5/11: translation service URL (label)
-#: ../src/core/sipe.c:8857
+#: ../src/core/sipe.c:8858
 msgid "Translations"
 msgstr "Tłumaczenia"
 
 #. About note, part 6/11: license type (label)
-#: ../src/core/sipe.c:8859
+#: ../src/core/sipe.c:8860
 msgid "License"
 msgstr "Licencja"
 
 #. About note, part 7/11: known users
-#: ../src/core/sipe.c:8861
+#: ../src/core/sipe.c:8862
 msgid "We support users in such organizations as"
 msgstr "Obsługujemy użytkowników w takich organizacjach, jak"
 
 #. About note, part 8/11: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe.c:8864
+#: ../src/core/sipe.c:8865
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr ""
 "Prosimy o pomoc w przetłumaczeniu wtyczki SIPE na inne języki za pomocą "
@@ -362,12 +363,12 @@ msgstr ""
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe.c:8867
+#: ../src/core/sipe.c:8868
 msgid " using convenient web interface"
 msgstr " używając wygodnego interfejsu WWW"
 
 #. About note, part 10/11: author list (header)
-#: ../src/core/sipe.c:8869
+#: ../src/core/sipe.c:8870
 msgid "Authors"
 msgstr "Autorzy"
 
@@ -375,159 +376,159 @@ msgstr "Autorzy"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe.c:8874
+#: ../src/core/sipe.c:8875
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Tłumaczenie na język polski (pl): Piotr Drąg"
 
-#: ../src/core/sipe.c:8939
+#: ../src/core/sipe.c:8940
 msgid "About SIPE plugin..."
 msgstr "O wtyczce SIPE..."
 
-#: ../src/core/sipe.c:8942
+#: ../src/core/sipe.c:8943
 msgid "Contact search..."
 msgstr "Wyszukaj kontakt..."
 
-#: ../src/core/sipe.c:8946
+#: ../src/core/sipe.c:8947
 msgid "Republish Calendar"
 msgstr "Ponownie opublikuj kalendarz"
 
-#: ../src/core/sipe.c:8950
+#: ../src/core/sipe.c:8951
 msgid "Reset status"
 msgstr "Przywróć stan"
 
-#: ../src/core/sipe.c:9042
+#: ../src/core/sipe.c:9043
 msgid "Status"
 msgstr "Stan"
 
-#: ../src/core/sipe.c:9047
+#: ../src/core/sipe.c:9048
 msgid "Calendar"
 msgstr "Kalendarz"
 
-#: ../src/core/sipe.c:9052
+#: ../src/core/sipe.c:9053
 msgid "Meeting in"
 msgstr "Spotkanie za"
 
-#: ../src/core/sipe.c:9056
+#: ../src/core/sipe.c:9057
 msgid "Meeting about"
 msgstr "Spotkanie w"
 
-#: ../src/core/sipe.c:9064
+#: ../src/core/sipe.c:9065
 msgid "Out of office note"
 msgstr "Notatka poza biurem"
 
-#: ../src/core/sipe.c:9064
+#: ../src/core/sipe.c:9065
 msgid "Note"
 msgstr "Notatka"
 
-#: ../src/core/sipe.c:9076
+#: ../src/core/sipe.c:9077
 msgid "user@company.com"
 msgstr "użytkownik@firma.pl"
 
-#: ../src/core/sipe.c:9438
+#: ../src/core/sipe.c:9439
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Uczyń przywódcą \"%s\""
 
-#: ../src/core/sipe.c:9449
+#: ../src/core/sipe.c:9450
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Usuń z \"%s\""
 
-#: ../src/core/sipe.c:9462
+#: ../src/core/sipe.c:9463
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Zaproś do \"%s\""
 
-#: ../src/core/sipe.c:9473
+#: ../src/core/sipe.c:9474
 msgid "New chat"
 msgstr "Nowa rozmowa"
 
-#: ../src/core/sipe.c:9484
+#: ../src/core/sipe.c:9485
 #, c-format
 msgid "Work %s"
 msgstr "Praca %s"
 
-#: ../src/core/sipe.c:9497
+#: ../src/core/sipe.c:9498
 #, c-format
 msgid "Mobile %s"
 msgstr "Telefon komórkowy %s"
 
-#: ../src/core/sipe.c:9510
+#: ../src/core/sipe.c:9511
 #, c-format
 msgid "Home %s"
 msgstr "Dom %s"
 
-#: ../src/core/sipe.c:9523
+#: ../src/core/sipe.c:9524
 #, c-format
 msgid "Other %s"
 msgstr "Inny %s"
 
-#: ../src/core/sipe.c:9536
+#: ../src/core/sipe.c:9537
 #, c-format
 msgid "Custom1 %s"
 msgstr "Własne1 %s"
 
-#: ../src/core/sipe.c:9548
+#: ../src/core/sipe.c:9549
 msgid "Send email..."
 msgstr "Wyślij wiadomość e-mail..."
 
-#: ../src/core/sipe.c:9573
+#: ../src/core/sipe.c:9574
 msgid "Copy to"
 msgstr "Skopiuj do"
 
-#: ../src/core/sipe.c:9627
+#: ../src/core/sipe.c:9628
 msgid "Unlock"
 msgstr "Odblokuj"
 
-#: ../src/core/sipe.c:9632
+#: ../src/core/sipe.c:9633
 msgid "Lock"
 msgstr "Zablokuj"
 
-#: ../src/core/sipe.c:9721 ../src/core/sipe.c:9758
+#: ../src/core/sipe.c:9722 ../src/core/sipe.c:9759
 msgid "Display name"
 msgstr "Wyświetlana nazwa"
 
-#: ../src/core/sipe.c:9724
+#: ../src/core/sipe.c:9725
 msgid "Job title"
 msgstr "Stanowisko"
 
-#: ../src/core/sipe.c:9727
+#: ../src/core/sipe.c:9728
 msgid "Office"
 msgstr "Biuro"
 
-#: ../src/core/sipe.c:9730
+#: ../src/core/sipe.c:9731
 msgid "Business phone"
 msgstr "Telefon służbowy"
 
-#: ../src/core/sipe.c:9736
+#: ../src/core/sipe.c:9737
 msgid "City"
 msgstr "Miasto"
 
-#: ../src/core/sipe.c:9739
+#: ../src/core/sipe.c:9740
 msgid "State"
 msgstr "Stan/województwo"
 
-#: ../src/core/sipe.c:9745 ../src/core/sipe.c:9772
+#: ../src/core/sipe.c:9746 ../src/core/sipe.c:9773
 msgid "Email address"
 msgstr "Adres e-mail"
 
-#: ../src/core/sipe.c:9765
+#: ../src/core/sipe.c:9766
 msgid "Alias"
 msgstr "Alias"
 
-#: ../src/core/sipe.c:9778
+#: ../src/core/sipe.c:9779
 msgid "Site"
 msgstr "Witryna"
 
-#: ../src/core/sipe.c:9785
+#: ../src/core/sipe.c:9786
 msgid "Find on LinkedIn"
 msgstr "Znajdź w serwisie LinkedIn"
 
-#: ../src/core/sipe.c:9792
+#: ../src/core/sipe.c:9793
 msgid "Device"
 msgstr "Urządzenie"
 
-#: ../src/core/sipe.c:9984
+#: ../src/core/sipe.c:9985
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -537,7 +538,7 @@ msgstr ""
 "   użytkownik lub DOMENA\\użytkownik lub\n"
 "   użytkownik@firma.pl"
 
-#: ../src/core/sipe.c:9988
+#: ../src/core/sipe.c:9989
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -545,33 +546,33 @@ msgstr ""
 "Serwer[:port]\n"
 "(należy pozostawić puste, aby wykryć automatycznie)"
 
-#: ../src/core/sipe.c:9991
+#: ../src/core/sipe.c:9992
 msgid "Connection type"
 msgstr "Typ połączenia"
 
-#: ../src/core/sipe.c:9992
+#: ../src/core/sipe.c:9993
 msgid "Auto"
 msgstr "Automatyczny"
 
-#: ../src/core/sipe.c:9993
+#: ../src/core/sipe.c:9994
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/core/sipe.c:9994
+#: ../src/core/sipe.c:9995
 msgid "TCP"
 msgstr "TCP"
 
-#: ../src/core/sipe.c:9995
+#: ../src/core/sipe.c:9996
 msgid "UDP"
 msgstr "UDP"
 
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/core/sipe.c:10001
+#: ../src/core/sipe.c:10002
 msgid "User Agent"
 msgstr "Agent użytkownika"
 
-#: ../src/core/sipe.c:10005
+#: ../src/core/sipe.c:10006
 msgid "Use Kerberos"
 msgstr "Użycie Kerberosa"
 
@@ -579,24 +580,24 @@ msgstr "Użycie Kerberosa"
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #.
-#: ../src/core/sipe.c:10012
+#: ../src/core/sipe.c:10013
 msgid "Use Single Sign-On"
 msgstr "Użycie jednorazowego logowania"
 
-#: ../src/core/sipe.c:10016
+#: ../src/core/sipe.c:10017
 msgid "Calendar source"
 msgstr "Źródło kalendarza"
 
-#: ../src/core/sipe.c:10017
+#: ../src/core/sipe.c:10018
 msgid "Exchange 2007/2010"
 msgstr "Exchange 2007/2010"
 
-#: ../src/core/sipe.c:10018
+#: ../src/core/sipe.c:10019
 msgid "None"
 msgstr "Brak"
 
 #. * Example: https://server.company.com/EWS/Exchange.asmx
-#: ../src/core/sipe.c:10022
+#: ../src/core/sipe.c:10023
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -604,7 +605,7 @@ msgstr ""
 "Adres URL usług e-mail\n"
 "(należy pozostawić puste, aby wykryć automatycznie)"
 
-#: ../src/core/sipe.c:10025
+#: ../src/core/sipe.c:10026
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -613,7 +614,7 @@ msgstr ""
 "(jeśli różni się od nazwy użytkownika)"
 
 #. * Example: DOMAIN\user  or  user@company.com
-#: ../src/core/sipe.c:10029
+#: ../src/core/sipe.c:10030
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -621,7 +622,7 @@ msgstr ""
 "Login adresu e-mail\n"
 "(jeśli różni się od loginu)"
 
-#: ../src/core/sipe.c:10032
+#: ../src/core/sipe.c:10033
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -699,59 +700,51 @@ msgstr "Rozłączono z tej konferencji."
 #: ../src/core/sipe-ft.c:121 ../src/core/sipe-ft.c:284
 #: ../src/core/sipe-ft.c:303
 msgid "Socket read failed"
-msgstr ""
+msgstr "Odczyt z gniazda nie powiódł się"
 
 #: ../src/core/sipe-ft.c:127 ../src/core/sipe-ft.c:352
 #: ../src/core/sipe-ft.c:363
-#, fuzzy
 msgid "Socket write failed"
-msgstr "Połączenie nie powiodło się"
+msgstr "Zapis do gniazda nie powiódł się"
 
 #: ../src/core/sipe-ft.c:181
 msgid "File size is different from the advertised value."
-msgstr ""
+msgstr "Rozmiar pliku jest różny od ogłoszonej wartości."
 
 #: ../src/core/sipe-ft.c:223
 msgid "Received MAC is corrupted"
-msgstr ""
+msgstr "Otrzymany adres MAC jest uszkodzony"
 
 #: ../src/core/sipe-ft.c:234
 msgid "Unable to open received file."
-msgstr ""
+msgstr "Nie można otworzyć pobranego pliku."
 
 #: ../src/core/sipe-ft.c:242
 msgid "Can't allocate enough memory for read buffer."
 msgstr ""
+"Nie można przydzielić wystarczającej ilości pamięci dla bufora odczytu."
 
 #: ../src/core/sipe-ft.c:250
 msgid "Unable to read received file."
-msgstr ""
+msgstr "Nie można odczytać pobranego pliku."
 
 #: ../src/core/sipe-ft.c:262
 msgid "Received file is corrupted"
-msgstr ""
+msgstr "Pobrany plik jest uszkodzony"
 
 #: ../src/core/sipe-ft.c:449
-#, fuzzy
 msgid "File transfer authentication failed."
-msgstr "Uwierzytelnienie do serwera nie powiodło się"
+msgstr "Uwierzytelnienie przesyłania pliku nie powiodło się."
 
 #: ../src/core/sipe-ft.c:490
 msgid "Can't allocate enough memory for transfer buffer."
 msgstr ""
+"Nie można przydzielić wystarczającej ilości pamięci dla bufora przesyłania."
 
-#: ../src/core/sipe-ft.c:589
+#: ../src/core/sipe-ft.c:591
 msgid "Received encryption key has wrong size."
-msgstr ""
+msgstr "Pobrany klucz szyfrowania posiada błędny rozmiar."
 
-#: ../src/core/sipe-ft.c:602
+#: ../src/core/sipe-ft.c:606
 msgid "Received hash key has wrong size."
-msgstr ""
-
-#, fuzzy
-#~ msgid "Failed to read from socket"
-#~ msgstr "Zaproszenie %s nie powiodło się"
-
-#, fuzzy
-#~ msgid "Failed to write to socket"
-#~ msgstr "Zaproszenie %s nie powiodło się"
+msgstr "Pobrany klucz mieszania posiada błędny rozmiar."
