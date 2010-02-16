@@ -281,7 +281,7 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 		set_socket_nonblock(xfer->fd, FALSE);
 
 		if (read(xfer->fd,chunk_buf,3) == -1) {
-			raise_ft_strerror(xfer, _("Failed to read from socket"));
+			raise_ft_strerror(xfer, _("Socket read failed"));
 			return -1;
 		}
 
@@ -300,7 +300,7 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 		if (errno == EAGAIN)
 			bytes_read = 0;
 		else {
-			raise_ft_strerror(xfer, _("Failed to read from socket"));
+			raise_ft_strerror(xfer, _("Socket read failed"));
 		}
 	}
 
@@ -349,7 +349,7 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 
 		set_socket_nonblock(xfer->fd, FALSE);
 		if (write(xfer->fd,chunk_buf,3) == -1) {
-			raise_ft_strerror(xfer, _("Failed to write to socket"));
+			raise_ft_strerror(xfer, _("Socket write failed"));
 			return -1;
 		}
 		set_socket_nonblock(xfer->fd, TRUE);
@@ -360,7 +360,7 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 		if (errno == EAGAIN)
 			bytes_written = 0;
 		else {
-			raise_ft_strerror(xfer, _("Failed to write to socket"));
+			raise_ft_strerror(xfer, _("Socket write failed"));
 		}
 	}
 
