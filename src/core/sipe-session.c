@@ -218,10 +218,12 @@ sipe_session_enqueue_message(struct sip_session *session,
 GSList *
 sipe_session_dequeue_message(struct sip_session *session)
 {
+	struct queued_message *msg;
+
 	if (session->outgoing_message_queue == NULL)
 		return NULL;
 
-	struct queued_message *msg = session->outgoing_message_queue->data;
+	msg = session->outgoing_message_queue->data;
 	session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, msg);
 	g_free(msg->body);
 	g_free(msg->content_type);
