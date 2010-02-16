@@ -2,12 +2,12 @@
 # Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-11 05:08+0000\n"
+"POT-Creation-Date: 2010-02-16 09:31+0200\n"
 "PO-Revision-Date: 2009-02-10 23:50+0000\n"
 "Last-Translator: Rinu <rinu@seznam.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
@@ -18,331 +18,352 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
-#: ../src/core/sipe.c:143
+#: ../src/core/sipe.c:144
 msgid "Inactive"
 msgstr "Neaktivní"
 
-#: ../src/core/sipe.c:144 ../src/core/sipe-cal.c:847
+#: ../src/core/sipe.c:145 ../src/core/sipe-cal.c:847
 msgid "Busy"
 msgstr "Zaneprázdněn"
 
-#: ../src/core/sipe.c:145
+#: ../src/core/sipe.c:146
 msgid "Busy-Idle"
 msgstr "Zaneprázdněn"
 
-#: ../src/core/sipe.c:147
+#: ../src/core/sipe.c:148
 msgid "Be right back"
 msgstr "Za chvíli budu zpět"
 
-#: ../src/core/sipe.c:149
+#: ../src/core/sipe.c:150
 msgid "Out to lunch"
 msgstr "Na obědě"
 
-#: ../src/core/sipe.c:151
+#: ../src/core/sipe.c:152
 msgid "In a call"
 msgstr "Telefonuji"
 
-#: ../src/core/sipe.c:152
+#: ../src/core/sipe.c:153
 msgid "In a conference"
 msgstr "Na konferenci"
 
-#: ../src/core/sipe.c:153
+#: ../src/core/sipe.c:154
 msgid "In a meeting"
 msgstr "Na schůzce"
 
-#: ../src/core/sipe.c:154 ../src/core/sipe-cal.c:848
+#: ../src/core/sipe.c:155 ../src/core/sipe-cal.c:848
 msgid "Out of office"
 msgstr "Mimo kancelář"
 
-#: ../src/core/sipe.c:155
+#: ../src/core/sipe.c:156
 msgid "Urgent interruptions only"
 msgstr "Pouze urgentní záležitosti"
 
-#: ../src/core/sipe.c:390
+#: ../src/core/sipe.c:391
 msgid "Failed to authenticate to server"
 msgstr "Nepodařilo se autentikovat na serveru"
 
 #. TODO: do we really want to disconnect on a failure to write?
-#: ../src/core/sipe.c:538 ../src/core/sipe.c:570
+#: ../src/core/sipe.c:539 ../src/core/sipe.c:571
 msgid "Could not write"
 msgstr "Nemohu zapisovat"
 
-#: ../src/core/sipe.c:594 ../src/core/sipe.c:7995
+#: ../src/core/sipe.c:595 ../src/core/sipe.c:8009
 msgid "Could not connect"
 msgstr "Nemohu se připojit"
 
-#: ../src/core/sipe.c:663 ../src/core/sipe.c:8150
+#: ../src/core/sipe.c:664 ../src/core/sipe.c:8164
 msgid "Could not create socket"
 msgstr "Nemohu vytvořit socket"
 
-#: ../src/core/sipe.c:1201 ../src/core/sipe.c:3662
+#: ../src/core/sipe.c:1202 ../src/core/sipe.c:3663
 msgid "you"
 msgstr "ty"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/core/sipe.c:2306
+#: ../src/core/sipe.c:2307
 msgid "Message"
 msgstr "Zpráva"
 
-#: ../src/core/sipe.c:2449 ../src/core/sipe.c:2461 ../src/core/sipe.c:2486
-#: ../src/core/sipe.c:8627
+#: ../src/core/sipe.c:2450 ../src/core/sipe.c:2462 ../src/core/sipe.c:2487
+#: ../src/core/sipe.c:8644
 msgid "Other Contacts"
 msgstr "Ostatní kontakty"
 
 #. [MS-SIPREGE]
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe.c:2666
+#: ../src/core/sipe.c:2667
 msgid "you are already signed in at another location"
 msgstr "už jsi přihlášen(a) z jiného místa"
 
-#: ../src/core/sipe.c:2669
+#: ../src/core/sipe.c:2670
 msgid "user disabled"
 msgstr "uživatel je zakázán"
 
-#: ../src/core/sipe.c:2672
+#: ../src/core/sipe.c:2673
 msgid "user moved"
 msgstr "uživatel přesunut"
 
-#: ../src/core/sipe.c:2676 ../src/core/sipe.c:5461
+#: ../src/core/sipe.c:2677 ../src/core/sipe.c:5475
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Byl(a) jsi odmítnut(a) serverem: %s"
 
-#: ../src/core/sipe.c:2676 ../src/core/sipe.c:5462 ../src/core/sipe.c:5479
+#: ../src/core/sipe.c:2677 ../src/core/sipe.c:5476 ../src/core/sipe.c:5493
 msgid "no reason given"
 msgstr "důvod nebyl sdělen"
 
-#: ../src/core/sipe.c:3955
+#: ../src/core/sipe.c:3956
 #, c-format
-msgid "This message was not delivered to %s because the service is not available"
+msgid ""
+"This message was not delivered to %s because the service is not available"
 msgstr "Tato zpráva nebyla uživateli %s doručena, protože služba není dostupná"
 
 #. Busy Here
-#: ../src/core/sipe.c:3957
+#: ../src/core/sipe.c:3958
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr "Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů nechce být vyrušováno"
+msgid ""
+"This message was not delivered to %s because one or more recipients do not "
+"want to be disturbed"
+msgstr ""
+"Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů "
+"nechce být vyrušováno"
 
-#: ../src/core/sipe.c:3959
+#: ../src/core/sipe.c:3960
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů není dostupno"
+msgid ""
+"This message was not delivered to %s because one or more recipients are "
+"offline"
+msgstr ""
+"Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů "
+"není dostupno"
 
-#: ../src/core/sipe.c:4242
+#: ../src/core/sipe.c:4243
 #, c-format
 msgid "Failed to invite %s"
 msgstr "Pozvat uživatele %s se nezdařilo"
 
-#: ../src/core/sipe.c:4891
+#: ../src/core/sipe.c:4905
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Obdržena zpráva s nerozpoznaným obsahem od uživatele %s"
 
-#: ../src/core/sipe.c:5427 ../src/core/sipe.c:7822
+#: ../src/core/sipe.c:5441 ../src/core/sipe.c:7836
 msgid "Wrong password"
 msgstr "Špatné heslo"
 
-#: ../src/core/sipe.c:5436 ../src/core/sipe.c:7707
+#: ../src/core/sipe.c:5450 ../src/core/sipe.c:7721
 msgid "Incompatible authentication scheme chosen"
 msgstr "Zvoleno nekompatibilní autentizační schéma"
 
-#: ../src/core/sipe.c:5478
+#: ../src/core/sipe.c:5492
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Uživatel %s nenalezen. Prosím kontaktujte svého administrátora"
 
-#: ../src/core/sipe.c:5480
+#: ../src/core/sipe.c:5494
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP není povolen pro cílové URI nebo neexistuje"
 
-#: ../src/core/sipe.c:5497
+#: ../src/core/sipe.c:5511
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Nedostupná služba: %s"
 
-#: ../src/core/sipe.c:7818
+#: ../src/core/sipe.c:7832
 msgid "Invalid message signature received"
 msgstr "Obdržen neplatný podpis zprávy"
 
-#: ../src/core/sipe.c:7892
+#: ../src/core/sipe.c:7906
 msgid "Connection not found. Please try to connect again"
 msgstr "Spojení nebylo nalezeno. Zkus se připojit znova"
 
-#: ../src/core/sipe.c:7913
+#: ../src/core/sipe.c:7927
 msgid "SSL read error"
 msgstr "Chyba čtení SSL"
 
-#: ../src/core/sipe.c:7916
+#: ../src/core/sipe.c:7930
 msgid "Server has disconnected"
 msgstr "Server se odpojil"
 
-#: ../src/core/sipe.c:8040 ../src/core/sipe.c:8082 ../src/core/sipe.c:8134
-#: ../src/core/sipe.c:8204
+#: ../src/core/sipe.c:8054 ../src/core/sipe.c:8096 ../src/core/sipe.c:8148
+#: ../src/core/sipe.c:8218
 msgid "Could not create listen socket"
 msgstr "Nemohu vytvořit socket pro naslouchání"
 
-#: ../src/core/sipe.c:8063 ../src/core/sipe.c:8195
+#: ../src/core/sipe.c:8077 ../src/core/sipe.c:8209
 msgid "Could not resolve hostname"
 msgstr "Nemohu přeložit název počítače"
 
-#: ../src/core/sipe.c:8113
+#: ../src/core/sipe.c:8127
 msgid "Connection failed"
 msgstr "Připojení se nezdařilo"
 
-#: ../src/core/sipe.c:8116
+#: ../src/core/sipe.c:8130
 msgid "SSL handshake failed"
 msgstr "Iniciace (handshake) SSL přenosu se nezdařila"
 
-#: ../src/core/sipe.c:8119
+#: ../src/core/sipe.c:8133
 msgid "SSL certificate invalid"
 msgstr "SLL certivifát je neplatný."
 
-#: ../src/core/sipe.c:8177
-msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
-msgstr "SSL podpora není nainstalována. Buď nainstalujte SSL podporu nebo nastavte odlišný typ připojení v editoru účtu."
+#: ../src/core/sipe.c:8191
+msgid ""
+"SSL support is not installed. Either install SSL support or configure a "
+"different connection type in the account editor"
+msgstr ""
+"SSL podpora není nainstalována. Buď nainstalujte SSL podporu nebo nastavte "
+"odlišný typ připojení v editoru účtu."
 
-#: ../src/core/sipe.c:8186
+#: ../src/core/sipe.c:8200
 msgid "Could not create SSL context"
 msgstr "Nemohu vytvořit SSL kontext"
 
-#: ../src/core/sipe.c:8309
+#: ../src/core/sipe.c:8323
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Uživatelské jméno pro SIP Exchange obsahuje neplatné znaky"
 
-#: ../src/core/sipe.c:8332
+#: ../src/core/sipe.c:8346
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr ""
 
-#: ../src/core/sipe.c:8343
+#: ../src/core/sipe.c:8357
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr ""
 
-#: ../src/core/sipe.c:8369
+#: ../src/core/sipe.c:8383
 msgid "SIP Exchange user name contains whitespace"
 msgstr ""
 
-#: ../src/core/sipe.c:8381
+#: ../src/core/sipe.c:8397
 msgid "Connecting"
 msgstr "Navazuji spojení"
 
-#: ../src/core/sipe.c:8653
+#: ../src/core/sipe.c:8670
 msgid "Unable to display the search results"
 msgstr "Nemohu zobrazit výsledky hledání."
 
-#: ../src/core/sipe.c:8659
+#: ../src/core/sipe.c:8676
 msgid "User name"
 msgstr "Jméno uživatele"
 
-#: ../src/core/sipe.c:8662
+#: ../src/core/sipe.c:8679
 msgid "Name"
 msgstr "Jméno"
 
-#: ../src/core/sipe.c:8665 ../src/core/sipe.c:8759 ../src/core/sipe.c:9707
+#: ../src/core/sipe.c:8682 ../src/core/sipe.c:8776 ../src/core/sipe.c:9726
 msgid "Company"
 msgstr "Společnost"
 
-#: ../src/core/sipe.c:8668 ../src/core/sipe.c:8761 ../src/core/sipe.c:9716
+#: ../src/core/sipe.c:8685 ../src/core/sipe.c:8778 ../src/core/sipe.c:9735
 msgid "Country"
 msgstr "Země"
 
-#: ../src/core/sipe.c:8671
+#: ../src/core/sipe.c:8688
 msgid "Email"
 msgstr "E-mail"
 
-#: ../src/core/sipe.c:8698
+#: ../src/core/sipe.c:8715
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] ""
 msgstr[1] ""
 
-#: ../src/core/sipe.c:8700
+#: ../src/core/sipe.c:8717
 msgid " (more matched your query)"
 msgstr ""
 
-#: ../src/core/sipe.c:8755
+#: ../src/core/sipe.c:8772
 msgid "First name"
 msgstr "Jméno"
 
-#: ../src/core/sipe.c:8757
+#: ../src/core/sipe.c:8774
 msgid "Last name"
 msgstr "Příjmení"
 
-#: ../src/core/sipe.c:8765
+#: ../src/core/sipe.c:8782
 msgid "Search"
 msgstr "Vyhledávání"
 
-#: ../src/core/sipe.c:8766
+#: ../src/core/sipe.c:8783
 msgid "Search for a contact"
 msgstr "Hledat kontakt"
 
-#: ../src/core/sipe.c:8767
-msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Zadejte informaci o osobě, kterou si přejete najít. Prázdná pole budou ignorována."
+#: ../src/core/sipe.c:8784
+msgid ""
+"Enter the information for the person you wish to find. Empty fields will be "
+"ignored."
+msgstr ""
+"Zadejte informaci o osobě, kterou si přejete najít. Prázdná pole budou "
+"ignorována."
 
-#: ../src/core/sipe.c:8769
+#: ../src/core/sipe.c:8786
 msgid "_Search"
 msgstr "_Hledat"
 
-#: ../src/core/sipe.c:8770
+#: ../src/core/sipe.c:8787
 msgid "_Cancel"
 msgstr "_Zrušit"
 
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
-#: ../src/core/sipe.c:8823
-msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr "Plugin třetí strany poskytující rozšířenou verzi SIP/SIMPLE, používanou v různých produktech."
+#: ../src/core/sipe.c:8842
+msgid ""
+"A third-party plugin implementing extended version of SIP/SIMPLE used by "
+"various products"
+msgstr ""
+"Plugin třetí strany poskytující rozšířenou verzi SIP/SIMPLE, používanou v "
+"různých produktech."
 
 #. About note, part 2/11: home page URL (label)
-#: ../src/core/sipe.c:8825
+#: ../src/core/sipe.c:8844
 msgid "Home"
 msgstr "Domů"
 
 #. About note, part 3/11: support forum URL (label)
-#: ../src/core/sipe.c:8827
+#: ../src/core/sipe.c:8846
 msgid "Support"
 msgstr "Podpora"
 
 #. About note, part 4/11: support forum name (hyperlink text)
-#: ../src/core/sipe.c:8829
+#: ../src/core/sipe.c:8848
 msgid "Help Forum"
 msgstr "Diskuzní forum s pomocí"
 
 #. About note, part 5/11: translation service URL (label)
-#: ../src/core/sipe.c:8831
+#: ../src/core/sipe.c:8850
 msgid "Translations"
 msgstr "Překlady"
 
 #. About note, part 6/11: license type (label)
-#: ../src/core/sipe.c:8833
+#: ../src/core/sipe.c:8852
 msgid "License"
 msgstr "Licence"
 
 #. About note, part 7/11: known users
-#: ../src/core/sipe.c:8835
+#: ../src/core/sipe.c:8854
 msgid "We support users in such organizations as"
 msgstr "Podporujeme uživatele v organizacích jako jsou"
 
 #. About note, part 8/11: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe.c:8838
+#: ../src/core/sipe.c:8857
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr "Prosím pomozte přeložit SIPE do vašeho mateřského jazyka zde na"
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe.c:8841
+#: ../src/core/sipe.c:8860
 msgid " using convenient web interface"
 msgstr "použitím pohodlného webového rozhraní"
 
 #. About note, part 10/11: author list (header)
-#: ../src/core/sipe.c:8843
+#: ../src/core/sipe.c:8862
 msgid "Authors"
 msgstr "Autoři"
 
@@ -350,245 +371,243 @@ msgstr "Autoři"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe.c:8848
+#: ../src/core/sipe.c:8867
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Originální texty v angličtině (en): SIPE vývojáři"
 
-#: ../src/core/sipe.c:8913
+#: ../src/core/sipe.c:8932
 msgid "About SIPE plugin..."
 msgstr "O SIPE pluginu..."
 
-#: ../src/core/sipe.c:8916
+#: ../src/core/sipe.c:8935
 msgid "Contact search..."
 msgstr "Hledání kontaktů..."
 
-#: ../src/core/sipe.c:8920
+#: ../src/core/sipe.c:8939
 msgid "Republish Calendar"
 msgstr "Znovu zveřejnit kalendář"
 
-#: ../src/core/sipe.c:8924
+#: ../src/core/sipe.c:8943
 msgid "Reset status"
 msgstr "Obnovit stav"
 
-#: ../src/core/sipe.c:9016
+#: ../src/core/sipe.c:9035
 msgid "Status"
 msgstr "Stav"
 
-#: ../src/core/sipe.c:9021
+#: ../src/core/sipe.c:9040
 msgid "Calendar"
 msgstr "Kalendář"
 
-#: ../src/core/sipe.c:9026
+#: ../src/core/sipe.c:9045
 msgid "Meeting in"
 msgstr ""
 
-#: ../src/core/sipe.c:9030
+#: ../src/core/sipe.c:9049
 msgid "Meeting about"
 msgstr ""
 
-#: ../src/core/sipe.c:9038
+#: ../src/core/sipe.c:9057
 msgid "Out of office note"
 msgstr ""
 
-#: ../src/core/sipe.c:9038
+#: ../src/core/sipe.c:9057
 msgid "Note"
 msgstr ""
 
-#: ../src/core/sipe.c:9050
+#: ../src/core/sipe.c:9069
 msgid "user@company.com"
 msgstr ""
 
-#: ../src/core/sipe.c:9412
+#: ../src/core/sipe.c:9431
 #, c-format
 msgid "Make leader of '%s'"
 msgstr ""
 
-#: ../src/core/sipe.c:9423
+#: ../src/core/sipe.c:9442
 #, c-format
 msgid "Remove from '%s'"
 msgstr ""
 
-#: ../src/core/sipe.c:9436
+#: ../src/core/sipe.c:9455
 #, c-format
 msgid "Invite to '%s'"
 msgstr ""
 
-#: ../src/core/sipe.c:9447
+#: ../src/core/sipe.c:9466
 msgid "New chat"
 msgstr ""
 
-#: ../src/core/sipe.c:9458
+#: ../src/core/sipe.c:9477
 #, c-format
 msgid "Work %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9471
+#: ../src/core/sipe.c:9490
 #, c-format
 msgid "Mobile %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9484
+#: ../src/core/sipe.c:9503
 #, c-format
 msgid "Home %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9497
+#: ../src/core/sipe.c:9516
 #, c-format
 msgid "Other %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9510
+#: ../src/core/sipe.c:9529
 #, c-format
 msgid "Custom1 %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9522
+#: ../src/core/sipe.c:9541
 msgid "Send email..."
 msgstr ""
 
-#: ../src/core/sipe.c:9547
+#: ../src/core/sipe.c:9566
 msgid "Copy to"
 msgstr ""
 
-#: ../src/core/sipe.c:9601
+#: ../src/core/sipe.c:9620
 msgid "Unlock"
 msgstr ""
 
-#: ../src/core/sipe.c:9606
+#: ../src/core/sipe.c:9625
 msgid "Lock"
 msgstr ""
 
-#: ../src/core/sipe.c:9695 ../src/core/sipe.c:9732
+#: ../src/core/sipe.c:9714 ../src/core/sipe.c:9751
 msgid "Display name"
 msgstr ""
 
-#: ../src/core/sipe.c:9698
+#: ../src/core/sipe.c:9717
 msgid "Job title"
 msgstr ""
 
-#: ../src/core/sipe.c:9701
+#: ../src/core/sipe.c:9720
 msgid "Office"
 msgstr ""
 
-#: ../src/core/sipe.c:9704
+#: ../src/core/sipe.c:9723
 msgid "Business phone"
 msgstr ""
 
-#: ../src/core/sipe.c:9710
+#: ../src/core/sipe.c:9729
 msgid "City"
 msgstr ""
 
-#: ../src/core/sipe.c:9713
+#: ../src/core/sipe.c:9732
 msgid "State"
 msgstr ""
 
-#: ../src/core/sipe.c:9719 ../src/core/sipe.c:9746
+#: ../src/core/sipe.c:9738 ../src/core/sipe.c:9765
 msgid "Email address"
 msgstr ""
 
-#: ../src/core/sipe.c:9739
+#: ../src/core/sipe.c:9758
 msgid "Alias"
 msgstr ""
 
-#: ../src/core/sipe.c:9752
+#: ../src/core/sipe.c:9771
 msgid "Site"
 msgstr ""
 
-#: ../src/core/sipe.c:9759
+#: ../src/core/sipe.c:9778
 msgid "Find on LinkedIn"
 msgstr ""
 
-#: ../src/core/sipe.c:9766
+#: ../src/core/sipe.c:9785
 msgid "Device"
 msgstr ""
 
-#: ../src/core/sipe.c:9958
+#: ../src/core/sipe.c:9977
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr ""
 
-#: ../src/core/sipe.c:9962
+#: ../src/core/sipe.c:9981
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr ""
 
-#: ../src/core/sipe.c:9965
+#: ../src/core/sipe.c:9984
 #, fuzzy
 msgid "Connection type"
 msgstr "Typ spojení"
 
-#: ../src/core/sipe.c:9966
+#: ../src/core/sipe.c:9985
 msgid "Auto"
 msgstr "Automaticky"
 
-#: ../src/core/sipe.c:9967
+#: ../src/core/sipe.c:9986
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/core/sipe.c:9968
+#: ../src/core/sipe.c:9987
 msgid "TCP"
 msgstr "TCP"
 
-#: ../src/core/sipe.c:9969
+#: ../src/core/sipe.c:9988
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone
-#. may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
-#. option);
-#: ../src/core/sipe.c:9975
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/core/sipe.c:9994
 msgid "User Agent"
 msgstr ""
 
-#: ../src/core/sipe.c:9979
+#: ../src/core/sipe.c:9998
 msgid "Use Kerberos"
 msgstr ""
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#. 
-#: ../src/core/sipe.c:9986
+#.
+#: ../src/core/sipe.c:10005
 msgid "Use Single Sign-On"
 msgstr ""
 
-#: ../src/core/sipe.c:9990
+#: ../src/core/sipe.c:10009
 msgid "Calendar source"
 msgstr ""
 
-#: ../src/core/sipe.c:9991
+#: ../src/core/sipe.c:10010
 msgid "Exchange 2007/2010"
 msgstr ""
 
-#: ../src/core/sipe.c:9992
+#: ../src/core/sipe.c:10011
 msgid "None"
 msgstr ""
 
 #. * Example: https://server.company.com/EWS/Exchange.asmx
-#: ../src/core/sipe.c:9996
+#: ../src/core/sipe.c:10015
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr ""
 
-#: ../src/core/sipe.c:9999
+#: ../src/core/sipe.c:10018
 msgid ""
 "Email address\n"
 "(if different from Username)"
 msgstr ""
 
 #. * Example: DOMAIN\user  or  user@company.com
-#: ../src/core/sipe.c:10003
+#: ../src/core/sipe.c:10022
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr ""
 
-#: ../src/core/sipe.c:10006
+#: ../src/core/sipe.c:10025
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -645,14 +664,65 @@ msgid "Chat #%d"
 msgstr ""
 
 #: ../src/core/sipe-conf.c:829
-msgid "This conference is no longer locked. Additional participants can now join."
+msgid ""
+"This conference is no longer locked. Additional participants can now join."
 msgstr ""
 
 #: ../src/core/sipe-conf.c:833
-msgid "This conference is locked. Nobody else can join the conference while it is locked."
+msgid ""
+"This conference is locked. Nobody else can join the conference while it is "
+"locked."
 msgstr ""
 
 #: ../src/core/sipe-conf.c:866
 #, fuzzy
 msgid "You have been disconnected from this conference."
 msgstr "Byl jste odmítnut serverem."
+
+#: ../src/core/sipe-ft.c:116
+msgid "Socket read failed"
+msgstr ""
+
+#: ../src/core/sipe-ft.c:122
+#, fuzzy
+msgid "Socket write failed"
+msgstr "Připojení se nezdařilo"
+
+#: ../src/core/sipe-ft.c:173
+msgid "File size is different from the advertised value."
+msgstr ""
+
+#: ../src/core/sipe-ft.c:212
+msgid "Received MAC is corrupted"
+msgstr ""
+
+#: ../src/core/sipe-ft.c:225
+msgid "Unable to open received file."
+msgstr ""
+
+#: ../src/core/sipe-ft.c:240
+msgid "Received file is corrupted"
+msgstr ""
+
+#: ../src/core/sipe-ft.c:257 ../src/core/sipe-ft.c:276
+#, c-format
+msgid "Failed to read from socket: %s"
+msgstr ""
+
+#: ../src/core/sipe-ft.c:322 ../src/core/sipe-ft.c:334
+#, fuzzy, c-format
+msgid "Failed to write to socket: %s"
+msgstr "Pozvat uživatele %s se nezdařilo"
+
+#: ../src/core/sipe-ft.c:415
+#, fuzzy
+msgid "File transfer authentication failed."
+msgstr "Nepodařilo se autentikovat na serveru"
+
+#: ../src/core/sipe-ft.c:537
+msgid "Received encryption key has wrong size."
+msgstr ""
+
+#: ../src/core/sipe-ft.c:550
+msgid "Received hash key has wrong size."
+msgstr ""
