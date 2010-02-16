@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-16 09:31+0200\n"
+"POT-Creation-Date: 2010-02-16 09:41+0200\n"
 "PO-Revision-Date: 2008-12-17 07:10+0000\n"
 "Last-Translator: emacsian <Unknown>\n"
 "Language-Team: Hindi <hi@li.org>\n"
@@ -671,49 +671,49 @@ msgstr ""
 msgid "You have been disconnected from this conference."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:116
+#: ../src/core/sipe-ft.c:117
 msgid "Socket read failed"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:122
+#: ../src/core/sipe-ft.c:123
 #, fuzzy
 msgid "Socket write failed"
 msgstr "कनेक्शन असफल"
 
-#: ../src/core/sipe-ft.c:173
+#: ../src/core/sipe-ft.c:174
 msgid "File size is different from the advertised value."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:212
+#: ../src/core/sipe-ft.c:213
 msgid "Received MAC is corrupted"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:225
+#: ../src/core/sipe-ft.c:226
 msgid "Unable to open received file."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:240
+#: ../src/core/sipe-ft.c:241
 msgid "Received file is corrupted"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:257 ../src/core/sipe-ft.c:276
-#, c-format
-msgid "Failed to read from socket: %s"
-msgstr ""
+#: ../src/core/sipe-ft.c:258 ../src/core/sipe-ft.c:277
+#, fuzzy
+msgid "Failed to read from socket"
+msgstr "सॉकट नहीं बना सका"
 
-#: ../src/core/sipe-ft.c:322 ../src/core/sipe-ft.c:334
-#, c-format
-msgid "Failed to write to socket: %s"
-msgstr ""
+#: ../src/core/sipe-ft.c:323 ../src/core/sipe-ft.c:334
+#, fuzzy
+msgid "Failed to write to socket"
+msgstr "सॉकट नहीं बना सका"
 
-#: ../src/core/sipe-ft.c:415
+#: ../src/core/sipe-ft.c:414
 msgid "File transfer authentication failed."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:537
+#: ../src/core/sipe-ft.c:536
 msgid "Received encryption key has wrong size."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:550
+#: ../src/core/sipe-ft.c:549
 msgid "Received hash key has wrong size."
 msgstr ""
