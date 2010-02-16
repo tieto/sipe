@@ -71,6 +71,23 @@ struct sip_session {
 };
 
 /**
+ * An item in outgoing message queue.
+ *
+ * Messages are put in the queue until a response to initial INVITE is received
+ * from remote dialog participant.
+ */
+struct queued_message {
+	/** Body of the message. */
+	gchar *body;
+	/**
+	 * Content type of message body, e.g. text/plain for chat messages,
+	 * text/x-msmsgsinvite for filetransfer initialization. Setting this to NULL
+	 * means default value text/plain.
+	 */
+	gchar *content_type;
+};
+
+/**
  * Add a new chat session
  *
  * @param sip (in) SIP account data. May be NULL
@@ -179,3 +196,24 @@ sipe_session_remove(struct sipe_account_data *sip,
  */
 void
 sipe_session_remove_all(struct sipe_account_data *sip);
+
+/**
+ * Add a message to outgoing queue.
+ *
+ * @param session (in) SIP session
+ * @param body (in) message to send
+ * @param content_type (in) content type of the message body
+ */
+void
+sipe_session_enqueue_message(struct sip_session *session,
+								const gchar *body, const gchar *content_type);
+
+/**
+ * Removes and deallocates the first item in outgoing message queue.
+ *
+ * @param session (in) SIP session
+ *
+ * @return pointer to new message queue head
+ */
+GSList *
+sipe_session_dequeue_message(struct sip_session *session);

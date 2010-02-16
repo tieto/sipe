@@ -226,6 +226,7 @@ struct sipe_account_data {
 	GSList *sessions;
 	GSList *openconns;
 	GSList *groups;
+	GHashTable *filetransfers;
 	sipe_transport_type transport;
 	gboolean auto_transport;
 	PurpleSslConnection *gsc;
@@ -400,6 +401,10 @@ sipe_present_info(struct sipe_account_data *sip,
 void
 sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 				  struct sip_session *session);
+
+void
+sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * session);
+
 
 /*** THE BIG SPLIT END ***/
 

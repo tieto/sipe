@@ -38,6 +38,8 @@ libsipe_la_SOURCES = \
 	sip-sec-ntlm.c \
 	sipe-sign.h \
 	sipe-sign.c \
+	sipe-ft.h \
+	sipe-ft.c \
 	uuid.h \
 	uuid.c
 

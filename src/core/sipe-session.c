@@ -166,7 +166,10 @@ sipe_session_remove(struct sipe_account_data *sip, struct sip_session *session)
 
 	entry = session->outgoing_message_queue;
 	while (entry) {
-		g_free(entry->data);
+		struct queued_message *msg = entry->data;
+		g_free(msg->body);
+		g_free(msg->content_type);
+		g_free(msg);
 		entry = entry->next;
 	}
 	g_slist_free(session->outgoing_message_queue);
@@ -198,6 +201,33 @@ sipe_session_remove_all(struct sipe_account_data *sip)
 	while ((entry = sip->sessions) != NULL) {
 		sipe_session_remove(sip, entry->data);
 	}
+}
+
+void
+sipe_session_enqueue_message(struct sip_session *session,
+								const gchar *body, const gchar *content_type)
+{
+	struct queued_message *msg = g_new0(struct queued_message,1);
+	msg->body = g_strdup(body);
+	if (content_type != NULL)
+		msg->content_type = g_strdup(content_type);
+
+	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, msg);
+}
+
+GSList *
+sipe_session_dequeue_message(struct sip_session *session)
+{
+	if (session->outgoing_message_queue == NULL)
+		return NULL;
+
+	struct queued_message *msg = session->outgoing_message_queue->data;
+	session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, msg);
+	g_free(msg->body);
+	g_free(msg->content_type);
+	g_free(msg);
+
+	return session->outgoing_message_queue;
 }
 
 /*

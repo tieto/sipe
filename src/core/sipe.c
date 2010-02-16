@@ -82,6 +82,7 @@
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
+#include "sipe-ft.h"
 #include "sipmsg.h"
 #include "sipe-sign.h"
 #include "dnssrv.h"
@@ -3968,8 +3969,6 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 }
 
 
-static void sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * session);
-
 static gboolean
 process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 			 SIPE_UNUSED_PARAMETER struct transaction *trans)
@@ -4092,7 +4091,7 @@ process_info_response(struct sipe_account_data *sip, struct sipmsg *msg,
 	return TRUE;
 }
 
-static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *dialog, const char *msg)
+static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *dialog, const char *msg, const char *content_type)
 {
 	gchar *hdr;
 	gchar *tmp;
@@ -4117,7 +4116,10 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
 	//hdr = g_strdup("Content-Type: text/rtf\r\n");
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC....AoADQA\r\nSupported: timer\r\n");
-	hdr = g_strdup_printf("Contact: %s\r\nContent-Type: text/plain; charset=UTF-8%s\r\n", tmp, msgr);
+	if (content_type == NULL)
+		content_type = "text/plain";
+
+	hdr = g_strdup_printf("Contact: %s\r\nContent-Type: %s; charset=UTF-8%s\r\n", tmp, content_type, msgr);
 	g_free(tmp);
 	g_free(msgr);
 
@@ -4127,18 +4129,18 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *
 }
 
 
-static void
+void
 sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * session)
 {
 	GSList *entry2 = session->outgoing_message_queue;
 	while (entry2) {
-		char *queued_msg = entry2->data;
+		struct queued_message *msg = entry2->data;
 
 		/* for multiparty chat or conference */
 		if (session->is_multiparty || session->focus_uri) {
 			gchar *who = sip_uri_self(sip);
 			serv_got_chat_in(sip->gc, session->chat_id, who,
-				PURPLE_MESSAGE_SEND, queued_msg, time(NULL));
+				PURPLE_MESSAGE_SEND, msg->body, time(NULL));
 			g_free(who);
 		}
 
@@ -4148,16 +4150,15 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * sess
 			if (dialog->outgoing_invite) continue; /* do not send messages as INVITE is not responded. */
 
 			key = g_strdup_printf("<%s><%d><MESSAGE><%s>", dialog->callid, (dialog->cseq) + 1, dialog->with);
-			g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(queued_msg));
+			g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(msg->body));
 			purple_debug_info("sipe", "sipe_im_process_queue: added message %s to unconfirmed_messages(count=%d)\n",
 					  key, g_hash_table_size(session->unconfirmed_messages));
 			g_free(key);
 
-			sipe_send_message(sip, dialog, queued_msg);
+			sipe_send_message(sip, dialog, msg->body, msg->content_type);
 		} SIPE_DIALOG_FOREACH_END;
 
-		entry2 = session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
-		g_free(queued_msg);
+		entry2 = sipe_session_dequeue_message(session);
 	}
 }
 
@@ -4271,11 +4272,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 
 	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)g_ascii_strcasecmp)) {
 		purple_debug_info("sipe", "process_invite_response: remote system accepted message in INVITE\n");
-		if (session->outgoing_message_queue) {
-			char *queued_msg = session->outgoing_message_queue->data;
-			session->outgoing_message_queue = g_slist_remove(session->outgoing_message_queue, queued_msg);
-			g_free(queued_msg);
-		}
+		sipe_session_dequeue_message(session);
 	}
 
 	sipe_im_process_queue(sip, session);
@@ -4546,7 +4543,7 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	dialog = sipe_dialog_find(session, uri);
 
 	// Queue the message
-	session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue, g_strdup(what));
+	sipe_session_enqueue_message(session, what, NULL);
 
 	if (dialog && !dialog->outgoing_invite) {
 		sipe_im_process_queue(sip, session);
@@ -4571,8 +4568,7 @@ static int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 
 	// Queue the message
 	if (session && session->dialogs) {
-		session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue,
-								 g_strdup(what));
+		sipe_session_enqueue_message(session,what,NULL);
 		sipe_im_process_queue(sip, session);
 	} else if (sip) {
 		gchar *chat_name = purple_find_chat(sip->gc, id)->name;
@@ -4586,8 +4582,7 @@ static int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 
 			session->is_multiparty = FALSE;
 			session->focus_uri = g_strdup(proto_chat_id);
-			session->outgoing_message_queue = g_slist_append(session->outgoing_message_queue,
-									 g_strdup(what));
+			sipe_session_enqueue_message(session, what, NULL);
 			sipe_invite_conf_focus(sip, session);
 		}
 	}
@@ -4880,6 +4875,25 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		xmlnode_free(isc);
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
+	} else if (g_str_has_prefix(contenttype, "text/x-msmsgsinvite")) {
+		gchar **lines = g_strsplit(msg->body,"\r\n",0);
+		int result = sipmsg_parse_and_append_header(msg,lines);
+		g_strfreev(lines);
+
+		if (result == TRUE) {
+			gchar *invitation_command = sipmsg_find_header(msg, "Invitation-Command");
+
+			if (!strcmp(invitation_command,"INVITE")) {
+				sipe_ft_incoming_transfer(sip->gc->account,msg);
+				found = TRUE;
+			} else if (!strcmp(invitation_command,"CANCEL")) {
+				sipe_ft_incoming_cancel(sip->gc->account, msg);
+				found = TRUE;
+			} else if (!strcmp(invitation_command,"ACCEPT")) {
+				sipe_ft_incoming_accept(sip->gc->account, msg);
+				found = TRUE;
+			}
+		}
 	}
 	if (!found) {
 		gchar *callid = sipmsg_find_header(msg, "Call-ID");
@@ -8378,6 +8392,8 @@ static void sipe_login(PurpleAccount *account)
 	sip->subscriptions = g_hash_table_new_full(g_str_hash, g_str_equal,
 						   g_free, (GDestroyNotify)sipe_subscription_free);
 
+	sip->filetransfers = g_hash_table_new_full(g_str_hash, g_str_equal,g_free,NULL);
+
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
 	g_free(sip->status);
@@ -8579,6 +8595,7 @@ static void sipe_close(PurpleConnection *gc)
 		g_hash_table_destroy(sip->our_publications);
 		g_hash_table_destroy(sip->user_state_publications);
 		g_hash_table_destroy(sip->subscriptions);
+		g_hash_table_destroy(sip->filetransfers);
 
 		if (sip->groups) {
 			GSList *entry = sip->groups;
@@ -8815,6 +8832,8 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		" - Gabriel Burt<br/>"
 		" - Stefan Becker<br/>"
 		" - pier11<br/>"
+		" - Jakub Adam<br/>"
+		" - Tomáš Hrabčík<br/>"
 		"<br/>"
 		/* 11 */  "%s<br/>"
 		,
@@ -9863,8 +9882,8 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* roomlist_cancel */
 	NULL,					/* roomlist_expand_category */
 	NULL,					/* can_receive_file */
-	NULL,					/* send_file */
-	NULL,					/* new_xfer */
+	sipe_ft_send_file,			/* send_file */
+	sipe_ft_new_xfer,			/* new_xfer */
 	NULL,					/* offline_message */
 	NULL,					/* whiteboard_prpl_ops */
 	sipe_send_raw,				/* send_raw */
