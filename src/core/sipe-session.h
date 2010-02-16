@@ -206,7 +206,7 @@ sipe_session_remove_all(struct sipe_account_data *sip);
  */
 void
 sipe_session_enqueue_message(struct sip_session *session,
-								const gchar *body, const gchar *content_type);
+			     const gchar *body, const gchar *content_type);
 
 /**
  * Removes and deallocates the first item in outgoing message queue.

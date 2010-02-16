@@ -1309,6 +1309,9 @@ sipe_get_buddy_groups_string (struct sipe_buddy *buddy) {
 	//creating array from GList, converting int to gchar*
 	gchar **ids_arr = g_new(gchar *, g_slist_length(buddy->groups) + 1);
 	GSList *entry = buddy->groups;
+
+	if (!ids_arr) return NULL;
+
 	while (entry) {
 		struct sipe_group * group = entry->data;
 		ids_arr[i] = g_strdup_printf("%d", group->id);
@@ -1332,16 +1335,18 @@ sipe_group_set_user (struct sipe_account_data *sip, const gchar * who)
 
 	if (buddy && purple_buddy) {
 		const char *alias = purple_buddy_get_alias(purple_buddy);
-		gchar *body;
 		gchar *groups = sipe_get_buddy_groups_string(buddy);
-		purple_debug_info("sipe", "Saving buddy %s with alias %s and groups %s\n", who, alias, groups);
+		if (groups) {
+			gchar *body;
+			purple_debug_info("sipe", "Saving buddy %s with alias %s and groups %s\n", who, alias, groups);
 
-		body = g_markup_printf_escaped(SIPE_SOAP_SET_CONTACT,
-			alias, groups, "true", buddy->name, sip->contacts_delta++
-		);
-		send_soap_request(sip, body);
-		g_free(groups);
-		g_free(body);
+			body = g_markup_printf_escaped(SIPE_SOAP_SET_CONTACT,
+						       alias, groups, "true", buddy->name, sip->contacts_delta++
+				);
+			send_soap_request(sip, body);
+			g_free(groups);
+			g_free(body);
+		}
 	}
 }
 
@@ -8730,6 +8735,8 @@ static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestField
 	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
 	gchar **attrs = g_new(gchar *, g_list_length(entries) + 1);
 	unsigned i = 0;
+
+	if (!attrs) return;
 
 	do {
 		PurpleRequestField *field = entries->data;

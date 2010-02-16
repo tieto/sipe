@@ -113,13 +113,13 @@ void raise_ft_error_and_cancel(PurpleXfer *xfer, const char *errmsg)
 
 static
 void raise_ft_socket_read_error_and_cancel(PurpleXfer *xfer)
-{ 
+{
 	raise_ft_error_and_cancel(xfer, _("Socket read failed"));
 }
 
 static
 void raise_ft_socket_write_error_and_cancel(PurpleXfer *xfer)
-{ 
+{
 	raise_ft_error_and_cancel(xfer, _("Socket write failed"));
 }
 
@@ -139,7 +139,7 @@ void sipe_ft_incoming_start(PurpleXfer *xfer)
 
 	sipe_file_transfer *ft = xfer->data;
 
-	gchar VER[] = "VER MSN_SECURE_FTP\r\n";
+	static const gchar VER[] = "VER MSN_SECURE_FTP\r\n";
 
 	const gsize BUFFER_SIZE = 50;
 	gchar buf[BUFFER_SIZE];
@@ -155,11 +155,10 @@ void sipe_ft_incoming_start(PurpleXfer *xfer)
 
 	struct sipe_account_data *sip = xfer->account->gc->proto_data;
 
-	gchar USR[] = "USR %s %u\r\n";
-
-	gchar* request = g_strdup_printf(USR,sip->username,ft->auth_cookie);
+	gchar* request = g_strdup_printf("USR %s %u\r\n", sip->username, ft->auth_cookie);
 	if (write(xfer->fd,request,strlen(request)) == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
+		g_free(request);
 		return;
 	}
 	g_free(request);
@@ -174,7 +173,7 @@ void sipe_ft_incoming_start(PurpleXfer *xfer)
 		return;
 	}
 
-	gchar TFR[] = "TFR\r\n";
+	static const gchar TFR[] = "TFR\r\n";
 
 	if (write(xfer->fd,TFR,strlen(TFR)) == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
@@ -192,7 +191,7 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 {
 	set_socket_nonblock(xfer->fd,FALSE);
 
-	gchar BYE[] = "BYE 16777989\r\n";
+	static const gchar BYE[] = "BYE 16777989\r\n";
 
 	if (write(xfer->fd,BYE,strlen(BYE)) == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
@@ -213,8 +212,6 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 		return;
 	}
 
-	gchar* mac = g_strndup(buffer + MAC_OFFSET, macLen - MAC_OFFSET - CRLF_LEN);
-
 	fflush(xfer->dest_fp);
 
 	// Check MAC
@@ -227,23 +224,32 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 	}
 
 	guchar *filebuf = g_malloc(xfer->size);
+	if (!filebuf) {
+		fclose(fdread);
+		raise_ft_error_and_cancel(xfer,
+					  _("Can't allocate enough memory for read buffer."));
+		return;		
+	}
 
 	if (fread(filebuf, 1, xfer->size, fdread) < 1) {
 		g_free(filebuf);
+		fclose(fdread);
 		raise_ft_error_and_cancel(xfer,
 					  _("Unable to read received file."));
-	}		
+		return;
+	}
 	fclose(fdread);
 
 	sipe_file_transfer *ft = xfer->data;
 
-	gchar* mac1 = sipe_get_mac(filebuf, xfer->size, ft->hash_key);
+	gchar *mac  = g_strndup(buffer + MAC_OFFSET, macLen - MAC_OFFSET - CRLF_LEN);
+	gchar *mac1 = sipe_get_mac(filebuf, xfer->size, ft->hash_key);
 	if (!sipe_strequal(mac, mac1)) {
 		unlink(xfer->local_filename);
 		raise_ft_error_and_cancel(xfer,
 					  _("Received file is corrupted"));
 	}
-
+	g_free(mac);
 	g_free(filebuf);
 
 	sipe_ft_free_xfer_struct(xfer);
@@ -283,7 +289,7 @@ gssize sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 
 	ft->bytes_remaining_chunk -= bytes_read;
 
-	if (bytes_read) {
+	if (bytes_read > 0) {
 		guchar* decrypted = g_malloc0(bytes_read);
 		purple_cipher_context_encrypt(ft->cipher_context, *buffer, bytes_read, decrypted, NULL);
 		g_free(*buffer);
@@ -351,19 +357,17 @@ void sipe_ft_outgoing_init(PurpleXfer *xfer)
 {
 	sipe_file_transfer *ft = xfer->data;
 
-	const char FT_INVITE_BODY[] =
-		"Application-Name: File Transfer\r\n"
-		"Application-GUID: {5D3E02AB-6190-11d3-BBBB-00C04F795683}\r\n"
-		"Invitation-Command: INVITE\r\n"
-		"Invitation-Cookie: %s\r\n"
-		"Application-File: %s\r\n"
-		"Application-FileSize: %lu\r\n"
-		//"Connectivity: N\r\n" TODO
-		"Encryption: R\r\n"; // TODO: non encrypted file transfer support
-
-	gchar *body = g_strdup_printf(FT_INVITE_BODY,ft->invitation_cookie,
-									purple_xfer_get_filename(xfer),
-									(long unsigned) purple_xfer_get_size(xfer));
+	gchar *body = g_strdup_printf("Application-Name: File Transfer\r\n"
+				      "Application-GUID: {5D3E02AB-6190-11d3-BBBB-00C04F795683}\r\n"
+				      "Invitation-Command: INVITE\r\n"
+				      "Invitation-Cookie: %s\r\n"
+				      "Application-File: %s\r\n"
+				      "Application-FileSize: %lu\r\n"
+				      //"Connectivity: N\r\n" TODO
+				      "Encryption: R\r\n", // TODO: non encrypted file transfer support
+				      ft->invitation_cookie,
+				      purple_xfer_get_filename(xfer),
+				      (long unsigned) purple_xfer_get_size(xfer));
 
 	struct sipe_account_data *sip = xfer->account->gc->proto_data;
 	struct sip_session *session = sipe_session_find_or_add_im(sip, xfer->who);
@@ -371,7 +375,8 @@ void sipe_ft_outgoing_init(PurpleXfer *xfer)
 	g_hash_table_insert(sip->filetransfers,g_strdup(ft->invitation_cookie),xfer);
 
 	// Queue the message
-	sipe_session_enqueue_message(session,body,"text/x-msmsgsinvite");
+	sipe_session_enqueue_message(session, body, "text/x-msmsgsinvite");
+	g_free(body);
 
 	struct sip_dialog *dialog = sipe_dialog_find(session, xfer->who);
 	if (dialog && !dialog->outgoing_invite) {
@@ -389,7 +394,7 @@ void sipe_ft_outgoing_start(PurpleXfer *xfer)
 
 	sipe_file_transfer *ft = xfer->data;
 
-	gchar VER[] = "VER MSN_SECURE_FTP\r\n";
+	static const gchar VER[] = "VER MSN_SECURE_FTP\r\n";
 
 	const gsize BUFFER_SIZE = 50;
 	gchar buf[BUFFER_SIZE];
@@ -419,12 +424,13 @@ void sipe_ft_outgoing_start(PurpleXfer *xfer)
 
 	g_strfreev(parts);
 
-	g_sprintf(buf,"FIL %lu\r\n",(long unsigned) xfer->size);
-
-	if (write(xfer->fd,buf,strlen(buf)) == -1) {
+	gchar *tmp = g_strdup_printf("FIL %lu\r\n",(long unsigned) xfer->size);
+	if (write(xfer->fd, tmp, strlen(tmp)) == -1) {
+		g_free(tmp);
 		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
+	g_free(tmp);
 
 	// TFR
 	read_line(xfer->fd,buf,BUFFER_SIZE);
@@ -447,6 +453,11 @@ void sipe_ft_outgoing_stop(PurpleXfer *xfer)
 	read_line(xfer->fd, buffer, BUFFER_SIZE);
 
 	guchar *macbuf = g_malloc(xfer->size);
+	if (!macbuf) {
+		raise_ft_error_and_cancel(xfer,
+					  _("Can't allocate enough memory for transfer buffer."));
+		return;
+	}
 	fseek(xfer->dest_fp,0,SEEK_SET);
 	if (fread(macbuf,xfer->size,1,xfer->dest_fp) < 1) {
 		g_free(macbuf);
@@ -524,8 +535,8 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
 	if (xfer) {
-		gchar *ip			= g_strdup(sipmsg_find_header(msg, "IP-Address"));
-		gchar *port_str		= g_strdup(sipmsg_find_header(msg, "Port"));
+		const gchar *ip		= sipmsg_find_header(msg, "IP-Address");
+		const gchar *port_str	= sipmsg_find_header(msg, "Port");
 		gchar *auth_cookie	= sipmsg_find_header(msg, "AuthCookie");
 		gchar *enc_key_b64	= sipmsg_find_header(msg, "Encryption-Key");
 		gchar *hash_key_b64	= sipmsg_find_header(msg, "Hash-Key");
@@ -566,12 +577,9 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 		if (ip && port_str) {
 			purple_xfer_start(xfer, -1, ip, g_ascii_strtoull(port_str,NULL,10));
 		} else {
-			purple_network_listen_range(SIPE_FT_TCP_PORT_MIN,SIPE_FT_TCP_PORT_MAX,
-										SOCK_STREAM,sipe_ft_listen_socket_created,xfer);
+			purple_network_listen_range(SIPE_FT_TCP_PORT_MIN, SIPE_FT_TCP_PORT_MAX,
+						    SOCK_STREAM, sipe_ft_listen_socket_created,xfer);
 		}
-
-		g_free(ip);
-		g_free(port_str);
 	}
 }
 
@@ -592,29 +600,28 @@ static void send_filetransfer_accept(PurpleXfer* xfer)
 	sipe_file_transfer* ft = xfer->data;
 	struct sip_dialog *dialog = ft->dialog;
 
-	const char FT_ACCEPT_HDR[] =
-		"Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n";
-
-	const char FT_ACCEPT_BODY[] =
-		"Invitation-Command: ACCEPT\r\n"
-		"Request-Data: IP-Address:\r\n"
-		"Invitation-Cookie: %s\r\n"
-		"Encryption-Key: %s\r\n"
-		"Hash-Key: %s\r\n"
-		/*"IP-Address: %s\r\n"
-		"Port: 6900\r\n"
-		"PortX: 11178\r\n"
-		"Auth-Cookie: 11111111\r\n"
-		"Sender-Connect: TRUE\r\n"*/;
-
 	gchar *b64_encryption_key = purple_base64_encode(ft->encryption_key,24);
 	gchar *b64_hash_key = purple_base64_encode(ft->hash_key,24);
 
-	gchar *body = g_strdup_printf(FT_ACCEPT_BODY,ft->invitation_cookie,
-							b64_encryption_key,b64_hash_key/*,
-							purple_network_get_my_ip(-1)*/);
+	gchar *body = g_strdup_printf("Invitation-Command: ACCEPT\r\n"
+				      "Request-Data: IP-Address:\r\n"
+				      "Invitation-Cookie: %s\r\n"
+				      "Encryption-Key: %s\r\n"
+				      "Hash-Key: %s\r\n"
+				      /*"IP-Address: %s\r\n"
+					"Port: 6900\r\n"
+					"PortX: 11178\r\n"
+					"Auth-Cookie: 11111111\r\n"
+					"Sender-Connect: TRUE\r\n"*/,
+				      ft->invitation_cookie,
+				      b64_encryption_key,
+				      b64_hash_key
+                                      /*,purple_network_get_my_ip(-1)*/
+		);
 
-	send_sip_request(ft->sip->gc, "MESSAGE", dialog->with, dialog->with, FT_ACCEPT_HDR, body, dialog, NULL);
+	send_sip_request(ft->sip->gc, "MESSAGE", dialog->with, dialog->with,
+			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
+			 body, dialog, NULL);
 
 	g_free(body);
 	g_free(b64_encryption_key);
@@ -626,16 +633,13 @@ static void send_filetransfer_cancel(PurpleXfer* xfer) {
 	sipe_file_transfer* ft = xfer->data;
 	struct sip_dialog* dialog = ft->dialog;
 
-	const char FT_CANCEL_HDR[] =
-		"Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n";
+	gchar *body = g_strdup_printf("Invitation-Command: CANCEL\r\n"
+				      "Invitation-Cookie: %s\r\n",
+				      ft->invitation_cookie);
 
-	const char FT_CANCEL_BODY[] =
-		"Invitation-Command: CANCEL\r\n"
-		"Invitation-Cookie: %s\r\n";
-
-	gchar *body = g_strdup_printf(FT_CANCEL_BODY,ft->invitation_cookie);
-
-	send_sip_request(ft->sip->gc, "MESSAGE", dialog->with, dialog->with, FT_CANCEL_HDR, body, dialog, NULL);
+	send_sip_request(ft->sip->gc, "MESSAGE", dialog->with, dialog->with,
+			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
+			 body, dialog, NULL);
 
 	g_free(body);
 }
@@ -796,26 +800,22 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 
 	getsockname(listenfd, (struct sockaddr*)&addr, &socklen);
 
-	const char FT_ACCEPT_HDR[] =
-		"Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n";
-
-	const char ACCEPT_BODY[] =
-		"Invitation-Command: ACCEPT\r\n"
-		"Invitation-Cookie: %s\r\n"
-		"IP-Address: %s\r\n"
-		"Port: %u\r\n"
-		"PortX: 11178\r\n"
-		"AuthCookie: %u\r\n"
-		"Request-Data: IP-Address:\r\n";
-
-	xfer->watcher = purple_input_add(listenfd,PURPLE_INPUT_READ,
-									sipe_ft_client_connected,xfer);
+	xfer->watcher = purple_input_add(listenfd, PURPLE_INPUT_READ,
+					 sipe_ft_client_connected, xfer);
 
 	ft->auth_cookie = rand() % 1000000000;
 
-	gchar *body = g_strdup_printf(ACCEPT_BODY, ft->invitation_cookie,
-					sipe_ft_get_suitable_local_ip(listenfd), ntohs(addr.sin_port),
-					ft->auth_cookie);
+	gchar *body = g_strdup_printf("Invitation-Command: ACCEPT\r\n"
+				      "Invitation-Cookie: %s\r\n"
+				      "IP-Address: %s\r\n"
+				      "Port: %u\r\n"
+				      "PortX: 11178\r\n"
+				      "AuthCookie: %u\r\n"
+				      "Request-Data: IP-Address:\r\n",
+				      ft->invitation_cookie,
+				      sipe_ft_get_suitable_local_ip(listenfd),
+				      ntohs(addr.sin_port),
+				      ft->auth_cookie);
 
 	if (!ft->dialog) {
 		struct sipe_account_data *sip = xfer->account->gc->proto_data;
@@ -823,8 +823,11 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 		ft->dialog = sipe_dialog_find(session, xfer->who);
 	}
 
-	send_sip_request(ft->sip->gc, "MESSAGE", ft->dialog->with, ft->dialog->with,
-					FT_ACCEPT_HDR, body, ft->dialog, NULL);
+	if (ft->dialog) {
+		send_sip_request(ft->sip->gc, "MESSAGE", ft->dialog->with, ft->dialog->with,
+				 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
+				 body, ft->dialog, NULL);
+	}
 	g_free(body);
 }
 
@@ -859,47 +862,44 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 static
 const char * sipe_ft_get_suitable_local_ip(int fd)
 {
-	char buffer[1024];
-	static char ip[16];
-	char *tmp;
-	struct ifconf ifc;
-	struct ifreq *ifr;
-	struct sockaddr_in *sinptr;
-	guint32 lhost = htonl(127 * 256 * 256 * 256 + 1);
-	guint32 llocal = htonl((169 << 24) + (254 << 16));
-	long unsigned int add;
-	int source = fd;
+	int source = (fd >= 0) ? fd : socket(PF_INET,SOCK_STREAM, 0);
 
-	if (fd < 0)
-		source = socket(PF_INET,SOCK_STREAM, 0);
+	if (source >= 0) {
+		char buffer[1024];
+		static char ip[16];
+		char *tmp;
+		struct ifconf ifc;
+		guint32 lhost = htonl(127 * 256 * 256 * 256 + 1);
+		guint32 llocal = htonl((169 << 24) + (254 << 16));
 
-	ifc.ifc_len = sizeof(buffer);
-	ifc.ifc_req = (struct ifreq *)buffer;
-	ioctl(source, SIOCGIFCONF, &ifc);
+		ifc.ifc_len = sizeof(buffer);
+		ifc.ifc_req = (struct ifreq *)buffer;
+		ioctl(source, SIOCGIFCONF, &ifc);
 
-	if (fd < 0)
-		close(source);
+		if (fd < 0)
+			close(source);
 
-	tmp = buffer;
-	while (tmp < buffer + ifc.ifc_len)
-	{
-		ifr = (struct ifreq *)tmp;
-		tmp += HX_SIZE_OF_IFREQ(*ifr);
-
-		if (ifr->ifr_addr.sa_family == AF_INET)
+		tmp = buffer;
+		while (tmp < buffer + ifc.ifc_len)
 		{
-			sinptr = (struct sockaddr_in *)&ifr->ifr_addr;
-			if (sinptr->sin_addr.s_addr != lhost
-				&& (sinptr->sin_addr.s_addr & htonl(0xFFFF0000)) != llocal)
-			{
-				add = ntohl(sinptr->sin_addr.s_addr);
-				g_snprintf(ip, 16, "%lu.%lu.%lu.%lu",
-					((add >> 24) & 255),
-					((add >> 16) & 255),
-					((add >> 8) & 255),
-					add & 255);
+			struct ifreq *ifr = (struct ifreq *)tmp;
+			tmp += HX_SIZE_OF_IFREQ(*ifr);
 
-				return ip;
+			if (ifr->ifr_addr.sa_family == AF_INET)
+			{
+				struct sockaddr_in *sinptr = (struct sockaddr_in *)&ifr->ifr_addr;
+				if (sinptr->sin_addr.s_addr != lhost
+				    && (sinptr->sin_addr.s_addr & htonl(0xFFFF0000)) != llocal)
+				{
+					long unsigned int add = ntohl(sinptr->sin_addr.s_addr);
+					g_snprintf(ip, 16, "%lu.%lu.%lu.%lu",
+						   ((add >> 24) & 255),
+						   ((add >> 16) & 255),
+						   ((add >> 8) & 255),
+						   add & 255);
+
+					return ip;
+				}
 			}
 		}
 	}
