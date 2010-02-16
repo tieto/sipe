@@ -4883,13 +4883,13 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		if (result == TRUE) {
 			gchar *invitation_command = sipmsg_find_header(msg, "Invitation-Command");
 
-			if (!strcmp(invitation_command,"INVITE")) {
+			if (sipe_strequal(invitation_command, "INVITE")) {
 				sipe_ft_incoming_transfer(sip->gc->account,msg);
 				found = TRUE;
-			} else if (!strcmp(invitation_command,"CANCEL")) {
+			} else if (sipe_strequal(invitation_command, "CANCEL")) {
 				sipe_ft_incoming_cancel(sip->gc->account, msg);
 				found = TRUE;
-			} else if (!strcmp(invitation_command,"ACCEPT")) {
+			} else if (sipe_strequal(invitation_command, "ACCEPT")) {
 				sipe_ft_incoming_accept(sip->gc->account, msg);
 				found = TRUE;
 			}
@@ -8832,6 +8832,8 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		" - Gabriel Burt<br/>"
 		" - Stefan Becker<br/>"
 		" - pier11<br/>"
+		" - Jakub Adam<br/>"
+		" - Tomáš Hrabčík<br/>"
 		"<br/>"
 		/* 11 */  "%s<br/>"
 		,
@@ -9880,8 +9882,8 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* roomlist_cancel */
 	NULL,					/* roomlist_expand_category */
 	NULL,					/* can_receive_file */
-	sipe_ft_send_file,		/* send_file */
-	sipe_ft_new_xfer,		/* new_xfer */
+	sipe_ft_send_file,			/* send_file */
+	sipe_ft_new_xfer,			/* new_xfer */
 	NULL,					/* offline_message */
 	NULL,					/* whiteboard_prpl_ops */
 	sipe_send_raw,				/* send_raw */

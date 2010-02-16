@@ -21,16 +21,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "sipe.h"
-#include "sipe-ft.h"
-#include "sipe-dialog.h"
-#include "sipe-session.h"
-#include "sipe-utils.h"
-
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <glib/gprintf.h>
+
+#include "sipe.h"
+#include "sipe-ft.h"
+#include "sipe-dialog.h"
+#include "sipe-nls.h"
+#include "sipe-session.h"
+#include "sipe-utils.h"
 
 // TODO: will not work on win32
 #include <sys/socket.h>
@@ -102,13 +103,35 @@ void sipe_ft_request_denied(PurpleXfer *xfer)
 }
 
 static
-void raise_ft_error(PurpleXfer *xfer, const char *errmsg) {
-	purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,errmsg);
+void raise_ft_error_and_cancel(PurpleXfer *xfer, const char *errmsg)
+{
+	purple_xfer_error(purple_xfer_get_type(xfer),
+			  xfer->account, xfer->who,
+			  errmsg);
 	purple_xfer_cancel_local(xfer);
 }
 
-const char ERR_SOCKET_WRITE[] = "Socket write failed";
-const char ERR_SOCKET_READ[] = "Socket read failed";
+static
+void raise_ft_socket_read_error_and_cancel(PurpleXfer *xfer)
+{ 
+	raise_ft_error_and_cancel(xfer, _("Socket read failed"));
+}
+
+static
+void raise_ft_socket_write_error_and_cancel(PurpleXfer *xfer)
+{ 
+	raise_ft_error_and_cancel(xfer, _("Socket write failed"));
+}
+
+static
+void raise_ft_strerror(PurpleXfer *xfer, const char *errmsg)
+{
+	gchar *tmp = g_strdup_printf("%s: %s", errmsg, strerror(errno));
+ 	purple_xfer_error(purple_xfer_get_type(xfer),
+			  xfer->account,xfer->who,
+			  tmp);
+	g_free(tmp);
+}
 
 void sipe_ft_incoming_start(PurpleXfer *xfer)
 {
@@ -122,11 +145,11 @@ void sipe_ft_incoming_start(PurpleXfer *xfer)
 	gchar buf[BUFFER_SIZE];
 
 	if (write(xfer->fd,VER,strlen(VER)) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_WRITE);
+		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 	if (read(xfer->fd,buf,strlen(VER)) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_READ);
+		raise_ft_socket_read_error_and_cancel(xfer);
 		return;
 	}
 
@@ -136,7 +159,7 @@ void sipe_ft_incoming_start(PurpleXfer *xfer)
 
 	gchar* request = g_strdup_printf(USR,sip->username,ft->auth_cookie);
 	if (write(xfer->fd,request,strlen(request)) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_WRITE);
+		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 	g_free(request);
@@ -146,16 +169,15 @@ void sipe_ft_incoming_start(PurpleXfer *xfer)
 	const gsize FILE_SIZE_OFFSET = 4;
 	gsize file_size = g_ascii_strtoull(buf + FILE_SIZE_OFFSET,NULL,10);
 	if (file_size != xfer->size) {
-		purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-							"File size is different from the advertised value.");
-		purple_xfer_cancel_local(xfer);
+		raise_ft_error_and_cancel(xfer,
+					  _("File size is different from the advertised value."));
 		return;
 	}
 
 	gchar TFR[] = "TFR\r\n";
 
 	if (write(xfer->fd,TFR,strlen(TFR)) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_WRITE);
+		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 
@@ -173,7 +195,7 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 	gchar BYE[] = "BYE 16777989\r\n";
 
 	if (write(xfer->fd,BYE,strlen(BYE)) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_WRITE);
+		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 
@@ -186,9 +208,8 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 	const gssize CRLF_LEN = 2;
 
 	if (macLen < (MAC_OFFSET + CRLF_LEN)) {
-		purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-							"Received MAC is corrupted");
-		purple_xfer_cancel_local(xfer);
+		raise_ft_error_and_cancel(xfer,
+					  _("Received MAC is corrupted"));
 		return;
 	}
 
@@ -200,29 +221,27 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 
 	FILE *fdread = fopen(xfer->local_filename,"rb");
 	if (!fdread) {
-		purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-							"Unable to open received file.");
-		purple_xfer_cancel_local(xfer);
+		raise_ft_error_and_cancel(xfer,
+					  _("Unable to open received file."));
 		return;
 	}
 
 	guchar *filebuf = g_malloc(xfer->size);
 
-	if ((fread(filebuf, 1, xfer->size, fdread) == 0) && ferror(fdread)) {
-		raise_ft_error(xfer,"Error reading file to send.");
-		purple_xfer_cancel_local(xfer);
-		return;
-	}
+	if (fread(filebuf, 1, xfer->size, fdread) < 1) {
+		g_free(filebuf);
+		raise_ft_error_and_cancel(xfer,
+					  _("Unable to read received file."));
+	}		
 	fclose(fdread);
 
 	sipe_file_transfer *ft = xfer->data;
 
 	gchar* mac1 = sipe_get_mac(filebuf, xfer->size, ft->hash_key);
-	if (strcmp(mac,mac1)) {
-		purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-						"Received file is corrupted");
+	if (!sipe_strequal(mac, mac1)) {
 		unlink(xfer->local_filename);
-		purple_xfer_cancel_local(xfer);
+		raise_ft_error_and_cancel(xfer,
+					  _("Received file is corrupted"));
 	}
 
 	g_free(filebuf);
@@ -239,11 +258,7 @@ gssize sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 		guchar chunk_buf[3];
 
 		if (read(xfer->fd,chunk_buf,3) == -1) {
-			gchar *errmsg = g_strdup_printf("Failed to read from socket: %s",
-											strerror(errno));
-			purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-								errmsg);
-			g_free(errmsg);
+			raise_ft_strerror(xfer, _("Failed to read from socket"));
 			return -1;
 		}
 
@@ -262,11 +277,7 @@ gssize sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 		if (errno == EAGAIN)
 			bytes_read = 0;
 		else {
-			gchar *errmsg = g_strdup_printf("Failed to read from socket: %s",
-											strerror(errno));
-			purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-								errmsg);
-			g_free(errmsg);
+			raise_ft_strerror(xfer, _("Failed to read from socket"));
 		}
 	}
 
@@ -312,11 +323,7 @@ gssize sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 
 		set_socket_nonblock(xfer->fd, FALSE);
 		if (write(xfer->fd,chunk_buf,3) == -1) {
-			gchar *errmsg = g_strdup_printf("Failed to write to socket: %s",
-											strerror(errno));
-			purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-								errmsg);
-			g_free(errmsg);
+			raise_ft_strerror(xfer, _("Failed to write to socket"));
 			return -1;
 		}
 		set_socket_nonblock(xfer->fd, TRUE);
@@ -327,11 +334,7 @@ gssize sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 		if (errno == EAGAIN)
 			bytes_written = 0;
 		else {
-			gchar *errmsg = g_strdup_printf("Failed to write to socket: %s",
-											strerror(errno));
-			purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-								errmsg);
-			g_free(errmsg);
+			raise_ft_strerror(xfer, _("Failed to write to socket"));
 		}
 	}
 
@@ -392,11 +395,11 @@ void sipe_ft_outgoing_start(PurpleXfer *xfer)
 	gchar buf[BUFFER_SIZE];
 
 	if (read(xfer->fd,buf,strlen(VER)) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_READ);
+		raise_ft_socket_read_error_and_cancel(xfer);
 		return;
 	}
 	if (write(xfer->fd,VER,strlen(VER)) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_WRITE);
+		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 
@@ -407,12 +410,11 @@ void sipe_ft_outgoing_start(PurpleXfer *xfer)
 	unsigned auth_cookie_received = g_ascii_strtoull(parts[2],NULL,10);
 
 	// xfer->who has 'sip:' prefix, skip these four characters
-	gboolean users_match = !strcmp(parts[1], (xfer->who + 4));
+	gboolean users_match = sipe_strequal(parts[1], (xfer->who + 4));
 
 	if (!users_match || (ft->auth_cookie != auth_cookie_received)) {
-		purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-							"File transfer authentication failed.");
-		purple_xfer_cancel_local(xfer);
+		raise_ft_error_and_cancel(xfer,
+					  _("File transfer authentication failed."));
 	}
 
 	g_strfreev(parts);
@@ -420,7 +422,7 @@ void sipe_ft_outgoing_start(PurpleXfer *xfer)
 	g_sprintf(buf,"FIL %lu\r\n",(long unsigned) xfer->size);
 
 	if (write(xfer->fd,buf,strlen(buf)) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_WRITE);
+		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 
@@ -446,14 +448,15 @@ void sipe_ft_outgoing_stop(PurpleXfer *xfer)
 
 	guchar *macbuf = g_malloc(xfer->size);
 	fseek(xfer->dest_fp,0,SEEK_SET);
-	if ((fread(macbuf,xfer->size,1,xfer->dest_fp) == 0) && ferror(xfer->dest_fp)) {
-		raise_ft_error(xfer,"Error reading file to send.");
-		purple_xfer_cancel_local(xfer);
+	if (fread(macbuf,xfer->size,1,xfer->dest_fp) < 1) {
+		g_free(macbuf);
+		raise_ft_socket_read_error_and_cancel(xfer);
 		return;
 	}
 
 	sipe_file_transfer *ft = xfer->data;
 	gchar *mac = sipe_get_mac(macbuf,xfer->size,ft->hash_key);
+	g_free(macbuf);
 	g_sprintf(buffer, "MAC %s \r\n", mac);
 	g_free(mac);
 
@@ -462,7 +465,7 @@ void sipe_ft_outgoing_stop(PurpleXfer *xfer)
 	buffer[mac_strlen - 3] = 0;
 
 	if (write(xfer->fd,buffer,mac_strlen) == -1) {
-		raise_ft_error(xfer,ERR_SOCKET_READ);
+		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 
@@ -537,9 +540,8 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 			if (ret_len == SIPE_FT_KEY_LENGTH) {
 				memcpy(ft->encryption_key,enc_key,SIPE_FT_KEY_LENGTH);
 			} else {
-				purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-							"Received encryption key has wrong size.");
-				purple_xfer_cancel_local(xfer);
+				raise_ft_error_and_cancel(xfer,
+							  _("Received encryption key has wrong size."));
 				g_free(enc_key);
 				return;
 			}
@@ -551,9 +553,8 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 			if (ret_len == SIPE_FT_KEY_LENGTH) {
 				memcpy(ft->hash_key,hash_key,SIPE_FT_KEY_LENGTH);
 			} else {
-				purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
-							"Received hash key has wrong size.");
-				purple_xfer_cancel_local(xfer);
+				raise_ft_error_and_cancel(xfer,
+							  _("Received hash key has wrong size."));
 				g_free(hash_key);
 				return;
 			}
@@ -717,14 +718,14 @@ static void generate_key(guchar *buffer, gsize size)
 
 static void set_socket_nonblock(int fd, gboolean state)
 {
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags == -1)
-        flags = 0;
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1)
+		flags = 0;
 
-    if (state == TRUE)
-    	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    else
-    	fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+	if (state == TRUE)
+		fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+	else
+		fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
 }
 
 void sipe_ft_send_file(PurpleConnection *gc, const char *who, const char *file)
@@ -905,3 +906,12 @@ const char * sipe_ft_get_suitable_local_ip(int fd)
 
 	return "0.0.0.0";
 }
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/
