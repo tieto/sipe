@@ -20,7 +20,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin third-party plugin for Microsoft LCS/OCS
-Version:        1.8.0
+Version:        1.8.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -115,6 +115,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Feb 16 2010 J. D. User <jduser@noreply.com> 1.8.1
+- update to 1.8.1
+
 * Sun Feb 07 2010 J. D. User <jduser@noreply.com> 1.8.0
 - update to 1.8.0
 
