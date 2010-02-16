@@ -33,9 +33,10 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 
-// TODO: will not work on win32
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
+#endif
 
 #define SIPE_FT_KEY_LENGTH 24
 
