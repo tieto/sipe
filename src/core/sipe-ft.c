@@ -672,12 +672,12 @@ static void send_filetransfer_accept(PurpleXfer* xfer)
 }
 
 static void send_filetransfer_cancel(PurpleXfer* xfer) {
-	// TODO
 	sipe_file_transfer* ft = xfer->data;
 	struct sip_dialog* dialog = ft->dialog;
 
 	gchar *body = g_strdup_printf("Invitation-Command: CANCEL\r\n"
-				      "Invitation-Cookie: %s\r\n",
+				      "Invitation-Cookie: %s\r\n"
+					  "Cancel-Code: REJECT\r\n",
 				      ft->invitation_cookie);
 
 	send_sip_request(ft->sip->gc, "MESSAGE", dialog->with, dialog->with,
