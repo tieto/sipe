@@ -1,3 +1,9 @@
+version 1.9.0 "File transfer" (2010-02-XX)
+	- Contributed File transfer functionality. File encryption is supported. (Jakub Adam, Tomáš Hrabčík)
+	- Windows build preparation. (pier11)
+	- Code analysis with Coverity Prevent. (Stefan Becker)
+	- Updated translations: 'ru' (100%, pier11), 'de' (100%, Stefan Becker).
+
 version 1.8.1 "Exchange/Calendar crash fixes" (2010-02-16)
 	- many crash fixes for error or corner cases in calendar integration (pier11, Stefan Becker)
 	- more detailed code analysis with Coverity Prevent (Stefan Becker)

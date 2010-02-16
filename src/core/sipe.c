@@ -5513,7 +5513,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				if (warning != NULL) {
 					reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
 				}
-				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : "<a href=\"http://www.reuters.com\">http://www.reuters.com</a>"/*_("no reason given")*/);
+				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
 				g_free(reason);
 
 				sip->gc->wants_to_die = TRUE;
@@ -8827,6 +8827,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		" - Intel<br/>"
 		" - Nokia<br/>"
 		" - HP<br/>"
+		" - Symantec<br/>"
 		" - Accenture<br/>"
 		" - Siemens<br/>"
 		" - Alcatel-Lucent<br/>"
