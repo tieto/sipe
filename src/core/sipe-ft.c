@@ -72,12 +72,14 @@ static const char * sipe_ft_get_suitable_local_ip(int fd);
 // I/O operations for PurpleXfer structure
 //******************************************************************************
 
-void sipe_ft_incoming_init(PurpleXfer *xfer)
+static void
+sipe_ft_incoming_init(PurpleXfer *xfer)
 {
 	send_filetransfer_accept(xfer);
 }
 
-void sipe_ft_free_xfer_struct(PurpleXfer *xfer)
+static void
+sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 {
 	sipe_file_transfer *ft = xfer->data;
 	if (ft) {
@@ -95,7 +97,8 @@ void sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 	}
 }
 
-void sipe_ft_request_denied(PurpleXfer *xfer)
+static void
+sipe_ft_request_denied(PurpleXfer *xfer)
 {
 	if (xfer->type == PURPLE_XFER_RECEIVE)
 		send_filetransfer_cancel(xfer);
@@ -133,7 +136,8 @@ void raise_ft_strerror(PurpleXfer *xfer, const char *errmsg)
 	g_free(tmp);
 }
 
-void sipe_ft_incoming_start(PurpleXfer *xfer)
+static void
+sipe_ft_incoming_start(PurpleXfer *xfer)
 {
 	sipe_file_transfer *ft;
 	static const gchar VER[] = "VER MSN_SECURE_FTP\r\n";
@@ -189,7 +193,8 @@ void sipe_ft_incoming_start(PurpleXfer *xfer)
 	sipe_cipher_context_init(&ft->cipher_context, ft->encryption_key);
 }
 
-void sipe_ft_incoming_stop(PurpleXfer *xfer)
+static void
+sipe_ft_incoming_stop(PurpleXfer *xfer)
 {
 	static const gchar BYE[] = "BYE 16777989\r\n";
 	gsize BUFFER_SIZE = 50;
@@ -261,7 +266,8 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 	sipe_ft_free_xfer_struct(xfer);
 }
 
-gssize sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
+static gssize
+sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 {
 	gsize bytes_to_read;
 	ssize_t bytes_read;
@@ -309,7 +315,8 @@ gssize sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 	return bytes_read;
 }
 
-gssize sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
+static gssize
+sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 {
 	ssize_t bytes_written;
 	sipe_file_transfer *ft = xfer->data;
@@ -365,7 +372,8 @@ gssize sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 	return bytes_written;
 }
 
-void sipe_ft_outgoing_init(PurpleXfer *xfer)
+static void
+sipe_ft_outgoing_init(PurpleXfer *xfer)
 {
 	struct sip_dialog *dialog;
 	sipe_file_transfer *ft = xfer->data;
@@ -401,7 +409,8 @@ void sipe_ft_outgoing_init(PurpleXfer *xfer)
 	}
 }
 
-void sipe_ft_outgoing_start(PurpleXfer *xfer)
+static void
+sipe_ft_outgoing_start(PurpleXfer *xfer)
 {
 	sipe_file_transfer *ft;
 	static const gchar VER[] = "VER MSN_SECURE_FTP\r\n";
@@ -459,7 +468,8 @@ void sipe_ft_outgoing_start(PurpleXfer *xfer)
 	sipe_cipher_context_init(&ft->cipher_context, ft->encryption_key);
 }
 
-void sipe_ft_outgoing_stop(PurpleXfer *xfer)
+static void
+sipe_ft_outgoing_stop(PurpleXfer *xfer)
 {
 	gsize BUFFER_SIZE = 50;
 	char buffer[BUFFER_SIZE];
