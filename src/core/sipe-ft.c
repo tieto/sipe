@@ -229,7 +229,11 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 
 	guchar *filebuf = g_malloc(xfer->size);
 
-	fread(filebuf, 1, xfer->size, fdread);
+	if (fread(filebuf, 1, xfer->size, fdread) < 1) {
+		g_free(filebuf);
+		raise_ft_error_and_cancel(xfer,
+					  _("Unable to read received file."));
+	}		
 	fclose(fdread);
 
 	sipe_file_transfer *ft = xfer->data;
@@ -445,10 +449,15 @@ void sipe_ft_outgoing_stop(PurpleXfer *xfer)
 
 	guchar *macbuf = g_malloc(xfer->size);
 	fseek(xfer->dest_fp,0,SEEK_SET);
-	fread(macbuf,xfer->size,1,xfer->dest_fp);
+	if (fread(macbuf,xfer->size,1,xfer->dest_fp) < 1) {
+		g_free(macbuf);
+		raise_ft_socket_read_error_and_cancel(xfer);
+		return;
+	}
 
 	sipe_file_transfer *ft = xfer->data;
 	gchar *mac = sipe_get_mac(macbuf,xfer->size,ft->hash_key);
+	g_free(macbuf);
 	g_sprintf(buffer, "MAC %s \r\n", mac);
 	g_free(mac);
 
@@ -457,7 +466,7 @@ void sipe_ft_outgoing_stop(PurpleXfer *xfer)
 	buffer[mac_strlen - 3] = 0;
 
 	if (write(xfer->fd,buffer,mac_strlen) == -1) {
-		raise_ft_socket_read_error_and_cancel(xfer);
+		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 
