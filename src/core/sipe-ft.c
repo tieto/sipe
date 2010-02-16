@@ -214,7 +214,7 @@ void sipe_ft_incoming_stop(PurpleXfer *xfer)
 	sipe_file_transfer *ft = xfer->data;
 
 	gchar* mac1 = sipe_get_mac(filebuf, xfer->size, ft->hash_key);
-	if (strcmp(mac,mac1)) {
+	if (!sipe_strequal(mac, mac1)) {
 		purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,
 						"Received file is corrupted");
 		unlink(xfer->local_filename);
@@ -403,7 +403,7 @@ void sipe_ft_outgoing_start(PurpleXfer *xfer)
 	unsigned auth_cookie_received = g_ascii_strtoull(parts[2],NULL,10);
 
 	// xfer->who has 'sip:' prefix, skip these four characters
-	gboolean users_match = !strcmp(parts[1], (xfer->who + 4));
+	gboolean users_match = sipe_strequal(parts[1], (xfer->who + 4));
 
 	if (!users_match || (ft->auth_cookie != auth_cookie_received)) {
 		purple_xfer_error(purple_xfer_get_type(xfer),xfer->account,xfer->who,

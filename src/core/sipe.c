@@ -4883,13 +4883,13 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		if (result == TRUE) {
 			gchar *invitation_command = sipmsg_find_header(msg, "Invitation-Command");
 
-			if (!strcmp(invitation_command,"INVITE")) {
+			if (sipe_strequal(invitation_command, "INVITE")) {
 				sipe_ft_incoming_transfer(sip->gc->account,msg);
 				found = TRUE;
-			} else if (!strcmp(invitation_command,"CANCEL")) {
+			} else if (sipe_strequal(invitation_command, "CANCEL")) {
 				sipe_ft_incoming_cancel(sip->gc->account, msg);
 				found = TRUE;
-			} else if (!strcmp(invitation_command,"ACCEPT")) {
+			} else if (sipe_strequal(invitation_command, "ACCEPT")) {
 				sipe_ft_incoming_accept(sip->gc->account, msg);
 				found = TRUE;
 			}
