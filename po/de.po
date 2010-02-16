@@ -2,12 +2,12 @@
 # Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-16 11:37+0000\n"
+"POT-Creation-Date: 2010-02-16 16:00+0200\n"
 "PO-Revision-Date: 2010-02-01 06:02+0200\n"
 "Last-Translator: Stefan Becker <stefan.becker@nokia.com>\n"
 "MIME-Version: 1.0\n"
@@ -112,19 +112,30 @@ msgstr "es wurde kein Grund angegeben"
 
 #: ../src/core/sipe.c:3961
 #, c-format
-msgid "This message was not delivered to %s because the service is not available"
-msgstr "Diese Nachricht konnte nicht an %s zugestellt werden, da der Service nicht verfügbar ist"
+msgid ""
+"This message was not delivered to %s because the service is not available"
+msgstr ""
+"Diese Nachricht konnte nicht an %s zugestellt werden, da der Service nicht "
+"verfügbar ist"
 
 #. Busy Here
 #: ../src/core/sipe.c:3963
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr "Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere Empfänger nicht gestört werden wollen"
+msgid ""
+"This message was not delivered to %s because one or more recipients do not "
+"want to be disturbed"
+msgstr ""
+"Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere "
+"Empfänger nicht gestört werden wollen"
 
 #: ../src/core/sipe.c:3965
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere Empfänger offline sind"
+msgid ""
+"This message was not delivered to %s because one or more recipients are "
+"offline"
+msgstr ""
+"Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere "
+"Empfänger offline sind"
 
 #: ../src/core/sipe.c:4248
 #, c-format
@@ -151,7 +162,9 @@ msgstr "Nicht gefunden: %s. Bitte wenden Sie sich an Ihren Systemadministrator"
 
 #: ../src/core/sipe.c:5499
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr "entweder wurde der SIP-Service nicht für die Ziel-URI aktiviert oder sie existiert nicht"
+msgstr ""
+"entweder wurde der SIP-Service nicht für die Ziel-URI aktiviert oder sie "
+"existiert nicht"
 
 #: ../src/core/sipe.c:5516
 #, c-format
@@ -164,7 +177,8 @@ msgstr "Nachricht mit einer ungültigen Signatur erhalten"
 
 #: ../src/core/sipe.c:7911
 msgid "Connection not found. Please try to connect again"
-msgstr "Verbindung nicht gefunden. Bitte versuchen Sie sich erneut zu verbinden"
+msgstr ""
+"Verbindung nicht gefunden. Bitte versuchen Sie sich erneut zu verbinden"
 
 #: ../src/core/sipe.c:7932
 msgid "SSL read error"
@@ -196,8 +210,12 @@ msgid "SSL certificate invalid"
 msgstr "SSL-Zertifikat ungültig"
 
 #: ../src/core/sipe.c:8196
-msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
-msgstr "SSL-Unterstützung ist nicht installiert. Bitte installieren Sie SSL oder konfigurieren Sie einen anderen Verbindungstyp im Benutzerkonto-Editor"
+msgid ""
+"SSL support is not installed. Either install SSL support or configure a "
+"different connection type in the account editor"
+msgstr ""
+"SSL-Unterstützung ist nicht installiert. Bitte installieren Sie SSL oder "
+"konfigurieren Sie einen anderen Verbindungstyp im Benutzerkonto-Editor"
 
 #: ../src/core/sipe.c:8205
 msgid "Could not create SSL context"
@@ -283,8 +301,12 @@ msgid "Search for a contact"
 msgstr "Kontaktsuche"
 
 #: ../src/core/sipe.c:8791
-msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Geben Sie die Informationen für die Person ein, die Sie suchen. Leere Felder werden ignoriert."
+msgid ""
+"Enter the information for the person you wish to find. Empty fields will be "
+"ignored."
+msgstr ""
+"Geben Sie die Informationen für die Person ein, die Sie suchen. Leere Felder "
+"werden ignoriert."
 
 #: ../src/core/sipe.c:8793
 msgid "_Search"
@@ -297,8 +319,12 @@ msgstr "_Abbrechen"
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
 #: ../src/core/sipe.c:8849
-msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr "Ein Third-Party Plugin, das die von den folgenden Produkten eingesetzte erweiterte Version des SIP/SIMPLE-Protokolls implementiert"
+msgid ""
+"A third-party plugin implementing extended version of SIP/SIMPLE used by "
+"various products"
+msgstr ""
+"Ein Third-Party Plugin, das die von den folgenden Produkten eingesetzte "
+"erweiterte Version des SIP/SIMPLE-Protokolls implementiert"
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8851
@@ -334,7 +360,8 @@ msgstr "Wir unterstützen Benutzer z.B. in den folgenden Organisationen"
 #. append a space if text is not empty
 #: ../src/core/sipe.c:8864
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr "Wir bitten um Hilfe bei der Anpassung von SIPE an weitere Sprachen. Auf "
+msgstr ""
+"Wir bitten um Hilfe bei der Anpassung von SIPE an weitere Sprachen. Auf "
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
@@ -541,10 +568,8 @@ msgstr "TCP"
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone
-#. may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
-#. option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 #: ../src/core/sipe.c:10001
 msgid "User Agent"
 msgstr "User Agent"
@@ -556,7 +581,7 @@ msgstr "Benutze Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#. 
+#.
 #: ../src/core/sipe.c:10012
 msgid "Use Single Sign-On"
 msgstr "Benutze Single Sign-On"
@@ -658,69 +683,70 @@ msgid "Chat #%d"
 msgstr "Chat #%d"
 
 #: ../src/core/sipe-conf.c:829
-msgid "This conference is no longer locked. Additional participants can now join."
-msgstr "Diese Konferenz ist nicht mehr gesperrt. Andere Teilnehmer können ihr jetzt beitreten."
+msgid ""
+"This conference is no longer locked. Additional participants can now join."
+msgstr ""
+"Diese Konferenz ist nicht mehr gesperrt. Andere Teilnehmer können ihr jetzt "
+"beitreten."
 
 #: ../src/core/sipe-conf.c:833
-msgid "This conference is locked. Nobody else can join the conference while it is locked."
-msgstr "Diese Konferenz ist gesperrt. Niemand kann ihr beitreten solange sie gesperrt ist."
+msgid ""
+"This conference is locked. Nobody else can join the conference while it is "
+"locked."
+msgstr ""
+"Diese Konferenz ist gesperrt. Niemand kann ihr beitreten solange sie "
+"gesperrt ist."
 
 #: ../src/core/sipe-conf.c:866
 msgid "You have been disconnected from this conference."
 msgstr "Sie wurden von dieser Konferenz abgetrennt."
 
-#: ../src/core/sipe-ft.c:117
+#: ../src/core/sipe-ft.c:121 ../src/core/sipe-ft.c:284
+#: ../src/core/sipe-ft.c:303
 msgid "Socket read failed"
 msgstr "Netzwerklesefehler"
 
-#: ../src/core/sipe-ft.c:123
+#: ../src/core/sipe-ft.c:127 ../src/core/sipe-ft.c:352
+#: ../src/core/sipe-ft.c:363
 msgid "Socket write failed"
 msgstr "Netzwerksendefehler"
 
-#: ../src/core/sipe-ft.c:172
+#: ../src/core/sipe-ft.c:181
 msgid "File size is different from the advertised value."
 msgstr "Dateigröße entspricht nicht dem vorgegebenen Wert."
 
-#: ../src/core/sipe-ft.c:211
+#: ../src/core/sipe-ft.c:223
 msgid "Received MAC is corrupted"
 msgstr "Empfagene MAC-Adresse ist fehlerhaft"
 
-#: ../src/core/sipe-ft.c:222
+#: ../src/core/sipe-ft.c:234
 msgid "Unable to open received file."
 msgstr "Kann die empfangene Datei nicht öffnen."
 
-#: ../src/core/sipe-ft.c:230
+#: ../src/core/sipe-ft.c:242
 msgid "Can't allocate enough memory for read buffer."
 msgstr "Kann nicht genügend Speicher für den Lesepuffer reservieren."
 
-#: ../src/core/sipe-ft.c:238
+#: ../src/core/sipe-ft.c:250
 msgid "Unable to read received file."
 msgstr "Kann die empfangene Datei nicht lesen."
 
-#: ../src/core/sipe-ft.c:250
+#: ../src/core/sipe-ft.c:262
 msgid "Received file is corrupted"
 msgstr "Die empfangene Datei ist fehlerhaft."
 
-#: ../src/core/sipe-ft.c:267 ../src/core/sipe-ft.c:286
-msgid "Failed to read from socket"
-msgstr "Netzwerklesefehler"
-
-#: ../src/core/sipe-ft.c:332 ../src/core/sipe-ft.c:343
-msgid "Failed to write to socket"
-msgstr "Netzwerksendefehler"
-
-#: ../src/core/sipe-ft.c:422
+#: ../src/core/sipe-ft.c:449
 msgid "File transfer authentication failed."
 msgstr "Authentifizierung für die Dateiübertragung fehlgeschlagen."
 
-#: ../src/core/sipe-ft.c:458
+#: ../src/core/sipe-ft.c:490
 msgid "Can't allocate enough memory for transfer buffer."
 msgstr "Kann nicht genügend Speicher für den Transferpuffer reservieren."
 
-#: ../src/core/sipe-ft.c:555
+#: ../src/core/sipe-ft.c:589
 msgid "Received encryption key has wrong size."
 msgstr "Empfangener Chiffrierschlüssel hat die falsche Grösse."
 
-#: ../src/core/sipe-ft.c:568
+#: ../src/core/sipe-ft.c:602
 msgid "Received hash key has wrong size."
 msgstr "Empfangener Hash-Schlüssel hat die falsche Grösse."

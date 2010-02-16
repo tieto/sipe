@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: fi\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-16 13:35+0200\n"
+"POT-Creation-Date: 2010-02-16 16:00+0200\n"
 "PO-Revision-Date: 2010-01-31 13:45+0000\n"
 "Last-Translator: Stefan Becker <stefan.becker@nokia.com>\n"
 "Language-Team: none\n"
@@ -670,62 +670,62 @@ msgstr ""
 msgid "You have been disconnected from this conference."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:117
+#: ../src/core/sipe-ft.c:121 ../src/core/sipe-ft.c:284
+#: ../src/core/sipe-ft.c:303
 msgid "Socket read failed"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:123
+#: ../src/core/sipe-ft.c:127 ../src/core/sipe-ft.c:352
+#: ../src/core/sipe-ft.c:363
 #, fuzzy
 msgid "Socket write failed"
 msgstr "Yhteys epäonnistui"
 
-#: ../src/core/sipe-ft.c:172
+#: ../src/core/sipe-ft.c:181
 msgid "File size is different from the advertised value."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:211
+#: ../src/core/sipe-ft.c:223
 msgid "Received MAC is corrupted"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:222
+#: ../src/core/sipe-ft.c:234
 msgid "Unable to open received file."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:230
+#: ../src/core/sipe-ft.c:242
 msgid "Can't allocate enough memory for read buffer."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:238
+#: ../src/core/sipe-ft.c:250
 msgid "Unable to read received file."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:250
+#: ../src/core/sipe-ft.c:262
 msgid "Received file is corrupted"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:267 ../src/core/sipe-ft.c:286
-#, fuzzy
-msgid "Failed to read from socket"
-msgstr "Epäonnistui kutsua %s"
-
-#: ../src/core/sipe-ft.c:332 ../src/core/sipe-ft.c:343
-#, fuzzy
-msgid "Failed to write to socket"
-msgstr "Epäonnistui kutsua %s"
-
-#: ../src/core/sipe-ft.c:422
+#: ../src/core/sipe-ft.c:449
 #, fuzzy
 msgid "File transfer authentication failed."
 msgstr "Varmentaminen epäonnistui palvelimelle"
 
-#: ../src/core/sipe-ft.c:458
+#: ../src/core/sipe-ft.c:490
 msgid "Can't allocate enough memory for transfer buffer."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:555
+#: ../src/core/sipe-ft.c:589
 msgid "Received encryption key has wrong size."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:568
+#: ../src/core/sipe-ft.c:602
 msgid "Received hash key has wrong size."
 msgstr ""
+
+#, fuzzy
+#~ msgid "Failed to read from socket"
+#~ msgstr "Epäonnistui kutsua %s"
+
+#, fuzzy
+#~ msgid "Failed to write to socket"
+#~ msgstr "Epäonnistui kutsua %s"

@@ -1,12 +1,12 @@
 # Russian translation for pidgin-sipe
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-16 11:37+0000\n"
+"POT-Creation-Date: 2010-02-16 16:00+0200\n"
 "PO-Revision-Date: 2009-06-19 15:15+0000\n"
 "Last-Translator: pier11 <pier11@operamail.com>\n"
 "Language-Team: Russian <ru@li.org>\n"
@@ -14,7 +14,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2009-06-19 15:32+0000\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
 #: ../src/core/sipe.c:144
@@ -114,19 +115,28 @@ msgstr "причина не указана"
 
 #: ../src/core/sipe.c:3961
 #, c-format
-msgid "This message was not delivered to %s because the service is not available"
+msgid ""
+"This message was not delivered to %s because the service is not available"
 msgstr "Сообщение не доставлено %s потому что сервис недоступен"
 
 #. Busy Here
 #: ../src/core/sipe.c:3963
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr "Сообщение не доставлено %s поскольку один или нескольно получателей были недоступны"
+msgid ""
+"This message was not delivered to %s because one or more recipients do not "
+"want to be disturbed"
+msgstr ""
+"Сообщение не доставлено %s поскольку один или нескольно получателей были "
+"недоступны"
 
 #: ../src/core/sipe.c:3965
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Сообщение не доставлено %s поскольку один или нескольно получателей были не в сети"
+msgid ""
+"This message was not delivered to %s because one or more recipients are "
+"offline"
+msgstr ""
+"Сообщение не доставлено %s поскольку один или нескольно получателей были не "
+"в сети"
 
 #: ../src/core/sipe.c:4248
 #, c-format
@@ -198,8 +208,12 @@ msgid "SSL certificate invalid"
 msgstr "Недействительный SSL сертификат"
 
 #: ../src/core/sipe.c:8196
-msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
-msgstr "Поддержка SSL не установлена. Установите поддержку SSL, либо настройте соединение другог типа в редакторе аккаунта."
+msgid ""
+"SSL support is not installed. Either install SSL support or configure a "
+"different connection type in the account editor"
+msgstr ""
+"Поддержка SSL не установлена. Установите поддержку SSL, либо настройте "
+"соединение другог типа в редакторе аккаунта."
 
 #: ../src/core/sipe.c:8205
 msgid "Could not create SSL context"
@@ -286,8 +300,12 @@ msgid "Search for a contact"
 msgstr "Поиск контактов"
 
 #: ../src/core/sipe.c:8791
-msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут игнорироваться."
+msgid ""
+"Enter the information for the person you wish to find. Empty fields will be "
+"ignored."
+msgstr ""
+"Введите информацию о человеке, которого вы хотите найти. Пустые поля будут "
+"игнорироваться."
 
 #: ../src/core/sipe.c:8793
 msgid "_Search"
@@ -300,8 +318,12 @@ msgstr "_Отмена"
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
 #: ../src/core/sipe.c:8849
-msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr "Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в таких продуктах, как"
+msgid ""
+"A third-party plugin implementing extended version of SIP/SIMPLE used by "
+"various products"
+msgstr ""
+"Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в "
+"таких продуктах, как"
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:8851
@@ -544,10 +566,8 @@ msgstr "TCP"
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone
-#. may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
-#. option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 #: ../src/core/sipe.c:10001
 msgid "User Agent"
 msgstr "User Agent"
@@ -559,7 +579,7 @@ msgstr "Использовать Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#. 
+#.
 #: ../src/core/sipe.c:10012
 msgid "Use Single Sign-On"
 msgstr "Использовать Single Sign-On"
@@ -661,69 +681,68 @@ msgid "Chat #%d"
 msgstr "Чат #%d"
 
 #: ../src/core/sipe-conf.c:829
-msgid "This conference is no longer locked. Additional participants can now join."
+msgid ""
+"This conference is no longer locked. Additional participants can now join."
 msgstr "Конференция разблокирована. Новые участники могут присоединиться."
 
 #: ../src/core/sipe-conf.c:833
-msgid "This conference is locked. Nobody else can join the conference while it is locked."
-msgstr "Конференция заблокирована. Пока доступ к конференции заблокирован, к ней не могут присоединяться новые участники."
+msgid ""
+"This conference is locked. Nobody else can join the conference while it is "
+"locked."
+msgstr ""
+"Конференция заблокирована. Пока доступ к конференции заблокирован, к ней не "
+"могут присоединяться новые участники."
 
 #: ../src/core/sipe-conf.c:866
 msgid "You have been disconnected from this conference."
 msgstr "Ведущий конференции удалил вас из конференции."
 
-#: ../src/core/sipe-ft.c:117
+#: ../src/core/sipe-ft.c:121 ../src/core/sipe-ft.c:284
+#: ../src/core/sipe-ft.c:303
 msgid "Socket read failed"
 msgstr "Не удалось прочитать из сокета"
 
-#: ../src/core/sipe-ft.c:123
+#: ../src/core/sipe-ft.c:127 ../src/core/sipe-ft.c:352
+#: ../src/core/sipe-ft.c:363
 msgid "Socket write failed"
 msgstr "Не удалось записать в сокет"
 
-#: ../src/core/sipe-ft.c:172
+#: ../src/core/sipe-ft.c:181
 msgid "File size is different from the advertised value."
 msgstr "Размер файла отличается от заявленного."
 
-#: ../src/core/sipe-ft.c:211
+#: ../src/core/sipe-ft.c:223
 msgid "Received MAC is corrupted"
 msgstr "Принятая подпись повреждена"
 
-#: ../src/core/sipe-ft.c:222
+#: ../src/core/sipe-ft.c:234
 msgid "Unable to open received file."
 msgstr "Не удается открыть полученный файл."
 
-#: ../src/core/sipe-ft.c:230
+#: ../src/core/sipe-ft.c:242
 msgid "Can't allocate enough memory for read buffer."
 msgstr "Невозможно выделить достаточно памями для буфера чтения."
 
-#: ../src/core/sipe-ft.c:238
+#: ../src/core/sipe-ft.c:250
 msgid "Unable to read received file."
 msgstr "Невозможно прочитать полученный файл."
 
-#: ../src/core/sipe-ft.c:250
+#: ../src/core/sipe-ft.c:262
 msgid "Received file is corrupted"
 msgstr "Принятый файл поврежден"
 
-#: ../src/core/sipe-ft.c:267 ../src/core/sipe-ft.c:286
-msgid "Failed to read from socket"
-msgstr "Не удалось прочитать из сокета"
-
-#: ../src/core/sipe-ft.c:332 ../src/core/sipe-ft.c:343
-msgid "Failed to write to socket"
-msgstr "Не удалось записать в сокет"
-
-#: ../src/core/sipe-ft.c:422
+#: ../src/core/sipe-ft.c:449
 msgid "File transfer authentication failed."
 msgstr "Не удалось проверить подлинность при передаче файла."
 
-#: ../src/core/sipe-ft.c:458
+#: ../src/core/sipe-ft.c:490
 msgid "Can't allocate enough memory for transfer buffer."
 msgstr "Невозможно выделить достаточно памями для буфера передачи."
 
-#: ../src/core/sipe-ft.c:555
+#: ../src/core/sipe-ft.c:589
 msgid "Received encryption key has wrong size."
 msgstr "Принятый ключ шифрования имеет неверный размер."
 
-#: ../src/core/sipe-ft.c:568
+#: ../src/core/sipe-ft.c:602
 msgid "Received hash key has wrong size."
 msgstr "Принятый ключ хеширования имеет неверный размер."
