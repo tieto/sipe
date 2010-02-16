@@ -571,7 +571,7 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 	if (xfer) {
 		/* ip and port_str must be copied, because send_sip_response changes
 		 * the headers and we need to use this values afterwards. */
-		gchar *ip			= g_strdup(sipmsg_find_header(msg, "IP-Address"));
+		gchar *ip		= g_strdup(sipmsg_find_header(msg, "IP-Address"));
 		gchar *port_str		= g_strdup(sipmsg_find_header(msg, "Port"));
 		gchar *auth_cookie	= sipmsg_find_header(msg, "AuthCookie");
 		gchar *enc_key_b64	= sipmsg_find_header(msg, "Encryption-Key");
@@ -590,6 +590,8 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 				raise_ft_error_and_cancel(xfer,
 							  _("Received encryption key has wrong size."));
 				g_free(enc_key);
+				g_free(port_str);
+				g_free(ip);
 				return;
 			}
 			g_free(enc_key);
@@ -603,6 +605,8 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 				raise_ft_error_and_cancel(xfer,
 							  _("Received hash key has wrong size."));
 				g_free(hash_key);
+				g_free(port_str);
+				g_free(ip);
 				return;
 			}
 			g_free(hash_key);
@@ -617,8 +621,8 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 						    SOCK_STREAM, sipe_ft_listen_socket_created,xfer);
 		}
 
-		g_free(ip);
 		g_free(port_str);
+		g_free(ip);
 	}
 }
 
