@@ -569,8 +569,10 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
 	if (xfer) {
-		const gchar *ip		= sipmsg_find_header(msg, "IP-Address");
-		const gchar *port_str	= sipmsg_find_header(msg, "Port");
+		/* ip and port_str must be copied, because send_sip_response changes
+		 * the headers and we need to use this values afterwards. */
+		gchar *ip			= g_strdup(sipmsg_find_header(msg, "IP-Address"));
+		gchar *port_str		= g_strdup(sipmsg_find_header(msg, "Port"));
 		gchar *auth_cookie	= sipmsg_find_header(msg, "AuthCookie");
 		gchar *enc_key_b64	= sipmsg_find_header(msg, "Encryption-Key");
 		gchar *hash_key_b64	= sipmsg_find_header(msg, "Hash-Key");
@@ -614,6 +616,9 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 			purple_network_listen_range(SIPE_FT_TCP_PORT_MIN, SIPE_FT_TCP_PORT_MAX,
 						    SOCK_STREAM, sipe_ft_listen_socket_created,xfer);
 		}
+
+		g_free(ip);
+		g_free(port_str);
 	}
 }
 
