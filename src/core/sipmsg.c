@@ -47,15 +47,45 @@ struct sipmsg *sipmsg_parse_msg(const gchar *msg) {
 	return smsg;
 }
 
-struct sipmsg *sipmsg_parse_header(const gchar *header) {
-	struct sipmsg *msg = g_new0(struct sipmsg,1);
-	gchar **lines = g_strsplit(header,"\r\n",0);
+int sipmsg_parse_and_append_header(struct sipmsg *msg, gchar **lines) {
+	int i;
 	gchar **parts;
 	gchar *dummy;
 	gchar *dummy2;
 	gchar *tmp;
+
+	for(i = 0; lines[i] && strlen(lines[i]) > 2; i++) {
+		parts = g_strsplit(lines[i], ":", 2);
+		if(!parts[0] || !parts[1]) {
+			g_strfreev(parts);
+			return FALSE;
+		}
+		dummy = parts[1];
+		dummy2 = 0;
+		while(*dummy==' ' || *dummy=='\t') dummy++;
+		dummy2 = g_strdup(dummy);
+		while(lines[i+1] && (lines[i+1][0]==' ' || lines[i+1][0]=='\t')) {
+			i++;
+			dummy = lines[i];
+			while(*dummy==' ' || *dummy=='\t') dummy++;
+			tmp = g_strdup_printf("%s %s",dummy2, dummy);
+			g_free(dummy2);
+			dummy2 = tmp;
+		}
+		sipmsg_add_header_now(msg, parts[0], dummy2);
+		g_free(dummy2);
+		g_strfreev(parts);
+	}
+
+	return TRUE;
+}
+
+struct sipmsg *sipmsg_parse_header(const gchar *header) {
+	struct sipmsg *msg = g_new0(struct sipmsg,1);
+	gchar **lines = g_strsplit(header,"\r\n",0);
+	gchar **parts;
+	gchar *tmp;
 	gchar *contentlength;
-	int i=1;
 	if(!lines[0]) {
 		g_strfreev(lines);
 		g_free(msg);
@@ -77,29 +107,10 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		msg->response = 0;
 	}
 	g_strfreev(parts);
-	for(i=1; lines[i] && strlen(lines[i])>2; i++) {
-		parts = g_strsplit(lines[i], ":", 2);
-		if(!parts[0] || !parts[1]) {
-			g_strfreev(parts);
-			g_strfreev(lines);
-			sipmsg_free(msg);
-			return NULL;
-		}
-		dummy = parts[1];
-		dummy2 = 0;
-		while(*dummy==' ' || *dummy=='\t') dummy++;
-		dummy2 = g_strdup(dummy);
-		while(lines[i+1] && (lines[i+1][0]==' ' || lines[i+1][0]=='\t')) {
-			i++;
-			dummy = lines[i];
-			while(*dummy==' ' || *dummy=='\t') dummy++;
-			tmp = g_strdup_printf("%s %s",dummy2, dummy);
-			g_free(dummy2);
-			dummy2 = tmp;
-		}
-		sipmsg_add_header_now(msg, parts[0], dummy2);
-		g_free(dummy2);
-		g_strfreev(parts);
+	if (sipmsg_parse_and_append_header(msg,lines + 1) == FALSE) {
+		g_strfreev(lines);
+		sipmsg_free(msg);
+		return NULL;
 	}
 	g_strfreev(lines);
 	contentlength = sipmsg_find_header(msg, "Content-Length");
