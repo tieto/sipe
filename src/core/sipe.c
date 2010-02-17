@@ -1741,8 +1741,8 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 /** Should be g_free()'d
  */
 static gchar *
-sipe_get_subscription_key(gchar *event,
-			  gchar *with)
+sipe_get_subscription_key(const gchar *event,
+			  const gchar *with)
 {
 	gchar *key = NULL;
 
@@ -6565,9 +6565,9 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
  */
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify)
 {
-	gchar *content_type = sipmsg_find_header(msg, "Content-Type");
-	gchar *event = sipmsg_find_header(msg, "Event");
-	gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
+	const gchar *content_type = sipmsg_find_header(msg, "Content-Type");
+	const gchar *event = sipmsg_find_header(msg, "Event");
+	const gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
 	char *tmp;
 	int timeout = 0;
 
@@ -6591,41 +6591,47 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		timeout = (timeout - 120) > 120 ? (timeout - 120) : timeout; // 2 min ahead of expiration
 	}
 
-	/* for one off subscriptions (send with Expire: 0) */
-	if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-provisioning-v2"))
-	{
-		sipe_process_provisioning_v2(sip, msg);
-	}
-	else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-provisioning"))
-	{
-		sipe_process_provisioning(sip, msg);
-	}
+	if (event) {
+		/* for one off subscriptions (send with Expire: 0) */
+		if (!g_ascii_strcasecmp(event, "vnd-microsoft-provisioning-v2"))
+		{
+			sipe_process_provisioning_v2(sip, msg);
+		}
+		else if (!g_ascii_strcasecmp(event, "vnd-microsoft-provisioning"))
+		{
+			sipe_process_provisioning(sip, msg);
+		}
+		else if (!g_ascii_strcasecmp(event, "registration-notify"))
+		{
+			sipe_process_registration_notify(sip, msg);
+		}
 
-	if (!subscription_state || strstr(subscription_state, "active"))
-	{
-		if (event && !g_ascii_strcasecmp(event, "presence"))
+		if (!subscription_state || strstr(subscription_state, "active"))
 		{
-			sipe_process_presence(sip, msg);
-		}
-		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts"))
-		{
-			sipe_process_roaming_contacts(sip, msg);
-		}
-		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self"))
-		{
-			sipe_process_roaming_self(sip, msg);
-		}
-		else if (event && !g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL"))
-		{
-			sipe_process_roaming_acl(sip, msg);
-		}
-		else if (event && !g_ascii_strcasecmp(event, "presence.wpending"))
-		{
-			sipe_process_presence_wpending(sip, msg);
-		}
-		else if (event && !g_ascii_strcasecmp(event, "conference"))
-		{
-			sipe_process_conference(sip, msg);
+			if (!g_ascii_strcasecmp(event, "presence"))
+			{
+				sipe_process_presence(sip, msg);
+			}
+			else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts"))
+			{
+				sipe_process_roaming_contacts(sip, msg);
+			}
+			else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self"))
+			{
+				sipe_process_roaming_self(sip, msg);
+			}
+			else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL"))
+			{
+				sipe_process_roaming_acl(sip, msg);
+			}
+			else if (!g_ascii_strcasecmp(event, "presence.wpending"))
+			{
+				sipe_process_presence_wpending(sip, msg);
+			}
+			else if (!g_ascii_strcasecmp(event, "conference"))
+			{
+				sipe_process_conference(sip, msg);
+			}
 		}
 	}
 
@@ -6683,11 +6689,6 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			g_free(action_name);
 			g_free(who);
 		}
-	}
-
-	if (event && !g_ascii_strcasecmp(event, "registration-notify"))
-	{
-		sipe_process_registration_notify(sip, msg);
 	}
 
 	/* The client responses on received a NOTIFY message */
