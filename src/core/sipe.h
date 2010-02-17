@@ -373,7 +373,7 @@ send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		  const char *text, const char *body);
 void
 sipe_invite(struct sipe_account_data *sip, struct sip_session *session,
-	    const gchar *who, const gchar *msg_body,
+	    const gchar *who, const gchar *msg_body, const gchar *msg_content_type,
 	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
 gboolean process_subscribe_response(struct sipe_account_data *sip,
@@ -408,7 +408,7 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * sess
 
 /*** THE BIG SPLIT END ***/
 
-#define SIPE_INVITE_TEXT "ms-text-format: text/plain; charset=UTF-8%s;ms-body=%s\r\n"
+#define SIPE_INVITE_TEXT "ms-text-format: %s; charset=UTF-8%s;ms-body=%s\r\n"
 
 #define SIPE_SEND_TYPING \
 "<?xml version=\"1.0\"?>"\

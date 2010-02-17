@@ -851,7 +851,7 @@ sipe_process_conference(struct sipe_account_data *sip,
 			dialog->with = g_strdup(session->im_mcu_uri);
 
 			/* send INVITE to IM MCU */
-			sipe_invite(sip, session, dialog->with, NULL, NULL, FALSE);
+			sipe_invite(sip, session, dialog->with, NULL, NULL, NULL, FALSE);
 		}
 	}
 

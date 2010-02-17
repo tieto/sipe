@@ -4297,6 +4297,7 @@ sipe_invite(struct sipe_account_data *sip,
 	    struct sip_session *session,
 	    const gchar *who,
 	    const gchar *msg_body,
+	    const gchar *msg_content_type,
 	    const gchar *referred_by,
 	    const gboolean is_triggered)
 {
@@ -4349,7 +4350,9 @@ sipe_invite(struct sipe_account_data *sip,
 		}
 
 		base64_msg = purple_base64_encode((guchar*) msgtext, strlen(msgtext));
-		ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT, msgr, base64_msg);
+		ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT,
+							msg_content_type ? msg_content_type : "text/plain",
+							msgr, base64_msg);
 		g_free(msgtext);
 		g_free(msgr);
 		g_free(base64_msg);
@@ -4554,7 +4557,7 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		sipe_im_process_queue(sip, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sip, session, uri, what, NULL, FALSE);
+		sipe_invite(sip, session, uri, what, NULL, NULL, FALSE);
 	}
 
 	g_free(uri);
@@ -4743,7 +4746,7 @@ static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg 
 	} else {
 		send_sip_response(sip->gc, msg, 202, "Accepted", NULL);
 
-		sipe_invite(sip, session, refer_to, NULL, referred_by, FALSE);
+		sipe_invite(sip, session, refer_to, NULL, NULL, referred_by, FALSE);
 	}
 
 	g_free(self);
@@ -5033,7 +5036,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 				just_joined = TRUE;
 
 				/* send triggered INVITE */
-				sipe_invite(sip, session, dialog->with, NULL, NULL, TRUE);
+				sipe_invite(sip, session, dialog->with, NULL, NULL, NULL, TRUE);
 			}
 		}
 		g_free(to);
@@ -9152,7 +9155,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, session->chat_title);
 		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
-		sipe_invite(sip, session, buddy->name, NULL, NULL, FALSE);
+		sipe_invite(sip, session, buddy->name, NULL, NULL, NULL, FALSE);
 
 		g_free(self);
 	}
@@ -9222,7 +9225,7 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 		gchar *self = sip_uri_self(sip);
 		if (session->roster_manager) {
 			if (sipe_strequal(session->roster_manager, self)) {
-				sipe_invite(sip, session, who, NULL, NULL, FALSE);
+				sipe_invite(sip, session, who, NULL, NULL, NULL, FALSE);
 			} else {
 				sipe_refer(sip, session, who);
 			}

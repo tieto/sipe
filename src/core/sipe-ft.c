@@ -398,7 +398,6 @@ sipe_ft_outgoing_init(PurpleXfer *xfer)
 
 	// Queue the message
 	sipe_session_enqueue_message(session, body, "text/x-msmsgsinvite");
-	g_free(body);
 
 	dialog = sipe_dialog_find(session, xfer->who);
 	if (dialog && !dialog->outgoing_invite) {
@@ -406,8 +405,10 @@ sipe_ft_outgoing_init(PurpleXfer *xfer)
 		sipe_im_process_queue(sip, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sip, session, xfer->who, NULL, NULL, FALSE);
+		sipe_invite(sip, session, xfer->who, body, "text/x-msmsgsinvite", NULL, FALSE);
 	}
+
+	g_free(body);
 }
 
 static void
