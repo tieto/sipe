@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <glib/gprintf.h>
+#include <libpurple/debug.h>
 
 #include "sipe.h"
 #include "sipe-ft.h"
@@ -422,15 +423,25 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 	unsigned auth_cookie_received;
 	gboolean users_match;
 	gchar *tmp;
+	ssize_t bytes_written;
 
 	set_socket_nonblock(xfer->fd,FALSE);
 
 	ft = xfer->data;
 
+	memset(buf,0,BUFFER_SIZE);
 	if (read(xfer->fd,buf,strlen(VER)) == -1) {
 		raise_ft_socket_read_error_and_cancel(xfer);
 		return;
 	}
+
+	if (!sipe_strequal(buf,VER)) {
+		raise_ft_error_and_cancel(xfer,_("File transfer initialization failed."));
+		purple_debug_info("sipe","File transfer VER string incorrect, received: %s expected: %s",
+							buf,VER);
+		return;
+	}
+
 	if (write(xfer->fd,VER,strlen(VER)) == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
@@ -445,20 +456,25 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 	// xfer->who has 'sip:' prefix, skip these four characters
 	users_match = sipe_strequal(parts[1], (xfer->who + 4));
 
+	purple_debug_info("sipe","File transfer authentication: %sExpected: USR %s %u\n",
+						buf, xfer->who + 4, ft->auth_cookie);
+
 	if (!users_match || (ft->auth_cookie != auth_cookie_received)) {
 		raise_ft_error_and_cancel(xfer,
 					  _("File transfer authentication failed."));
+		return;
 	}
 
 	g_strfreev(parts);
 
 	tmp = g_strdup_printf("FIL %lu\r\n",(long unsigned) xfer->size);
-	if (write(xfer->fd, tmp, strlen(tmp)) == -1) {
-		g_free(tmp);
+	bytes_written = write(xfer->fd, tmp, strlen(tmp));
+	g_free(tmp);
+
+	if (bytes_written == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
-	g_free(tmp);
 
 	// TFR
 	read_line(xfer->fd,buf,BUFFER_SIZE);
