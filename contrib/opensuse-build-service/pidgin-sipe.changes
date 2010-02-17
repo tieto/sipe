@@ -1,0 +1,169 @@
+-------------------------------------------------------------------
+Thu Feb 11 01:15:00 CET 2010 - pier11@operamail.com
+
+- Update to version 1.8.1:
+  + many crash fixes for error or corner cases in calendar
+    integration
+  + more detailed code analysis with Coverity Prevent
+  + OpenSUSE Build Service configuration files
+  + Fix NTLM crash if login setting is undefined
+  + Use of g_str_has_prefix() available since glib 2.2 and
+    null-safe
+  + build fixes for older OS releases, e.g. Ubuntu older than 9.10
+- Changed source from .bz2 to .gz. Seems OBS for Debian doesn't
+  understand .bz2 source file.
+
+-------------------------------------------------------------------
+Thu Feb 11 01:15:00 CET 2010 - vuntz@opensuse.org
+
+- Update to version 1.8.0:
+  + Added integration with Exchange 2007/2010.
+  + Added Calendar information to contact's tooltip.
+  + 2005 presence engine has been completely rewritten, with new
+    supported status.
+  + Added "Accounts->{SIPE_ACCOUNT}->Status Reset" menu option to
+    clean User Status set manually.
+  + Added "Find on LinkedIn" link on contact's User Info screen.
+  + Enhanced custom NTLM security provider to pass
+    connection-oriented authentication.
+  + Added Negotiate authentication scheme (Windows only).
+  + Contributed code for Adium port.
+  + Added Windows Messenger 5.0 (RTC/1.2) compatibility.
+  + New BusyIdle status.
+  + Fix memory leaks.
+  + Fixed localization on Windows platform.
+  + Fix bad rendering with html markup.
+  + Fix broken federated contacts.
+  + Fix for server auto-discovery
+  + Fix for xdg-email invocation.
+  + Fix for User Agent string.
+  + Code: Take PURPLE_INIT_PLUGIN into use.
+  + Various other fixes, including crashes and build fixes.
+  + Updated translations.
+
+-------------------------------------------------------------------
+Sun Dec 27 00:30:08 CET 2009 - vuntz@opensuse.org
+
+- Clean up packaging.
+- Remove gconf_schemas_prereq macro, since there's nothing
+  involving gconf.
+- Rename purple-sipe subpackage to libpurple-plugin-sipe.
+- Add pidgin BuildRequires for directory ownership.
+- Add pidgin Requires for pidgin-sipe.
+- Add libpurple Enhances for libpurple-plugin-sipe.
+
+-------------------------------------------------------------------
+Thu Nov 26 09:54:24 UTC 2009 - john@redux.org.uk
+
+- Update to version 1.7.1:
+  + See ChangeLog for the full list of changes since version 1.3.3.
+  + Support for Reuters Messaging environment.
+  + Support for message formatting.
+  + Invisible mode.
+  + Full support for presence.
+  + Better support of protocol.
+  + New security framework.
+  + Multi-party conversation.
+  + Add telepathy-haze support.
+  + Add integration with PBX (external phones).
+  + New Idle status.
+  + Many improvements and bug fixes.
+  + Fix crashes.
+  + Build fixes.
+  + Updated translations.
+- Split the package into pidgin-sipe and purple-sipe packages.
+- Add gettext-devel, libtool BuildRequires.
+- Remove pidgin, pidgin-devel, zlib-devel BuildRequires.
+- Pass --with-krb5 to configure.
+- Enable parallel build.
+
+-------------------------------------------------------------------
+Thu Sep 17 00:13:39 CEST 2009 - crrodriguez@suse.de
+
+- use find_lang macro 
+
+-------------------------------------------------------------------
+Mon Feb  2 17:04:37 CST 2009 - gburt@suse.de
+
+- Fix total loss of functionality if user was logged on in more than
+  one location (bnc#459117)
+
+-------------------------------------------------------------------
+Thu Jan 22 16:38:11 CST 2009 - gburt@suse.de
+
+- Patch fixing support for LCS 2005 buddy auth/blocking
+- Fix logging in with TCP when no SRV records found
+- Fix several crasher bugs
+
+-------------------------------------------------------------------
+Mon Jan  5 11:37:47 CST 2009 - gburt@suse.de
+
+- Update to 1.3.3 which includes fixes for translation support,
+  typos, crashes, and error handling.
+
+-------------------------------------------------------------------
+Tue Dec  9 17:42:50 CST 2008 - gburt@suse.de
+
+- Remove -lang package, too late for package splits
+
+-------------------------------------------------------------------
+Sun Dec  7 17:42:13 CST 2008 - gburt@suse.de
+
+- Create -lang package
+
+-------------------------------------------------------------------
+Sun Dec  7 15:38:42 CST 2008 - gburt@suse.de
+
+- Fix a segfault, fix compatibility bug with OCS 2005 (not handling
+  180 Ringing responses properly).
+
+-------------------------------------------------------------------
+Fri Dec  5 12:13:58 CST 2008 - gburt@suse.de
+
+- Fix automatic support (redirecting) for LCS/OCS proxy servers, 
+  and show the user the error when 403 forbidden is received.
+
+-------------------------------------------------------------------
+Thu Dec  4 17:47:08 CST 2008 - gburt@suse.de
+
+- Fix bugs with ability to set status, add support for setting a
+  note (at least against some servers), fix OCS 2005 support, and
+  improve account editing dialog to be more friendly, and improve
+  error messages.
+
+-------------------------------------------------------------------
+Wed Dec  3 18:40:14 CST 2008 - gburt@suse.de
+
+- Fix bugs with ability to add, modify, and remove contacts and
+  groups.  Fix support for detecting contacts' away status, and
+  to send them ours.  Fix support for saving and reading buddy
+  aliases to/from the server.  Fix many crashes.
+
+-------------------------------------------------------------------
+Thu Nov 20 19:16:41 CST 2008 - gburt@suse.de
+
+- Fix compatibility with Microsoft OCS 2007; 2-way IMing working
+
+-------------------------------------------------------------------
+Fri Nov  7 12:33:37 CST 2008 - gburt@suse.de
+
+- Replace gz with bz2 
+
+-------------------------------------------------------------------
+Fri Nov  7 12:22:30 CST 2008 - gburt@suse.de
+
+- Update tarball with latest code from git plus a patch to get
+    NTLM signing of messages working (eco#5322)
+
+-------------------------------------------------------------------
+Tue Sep  2 10:21:53 CDT 2008 - gburt@suse.de
+
+- Clarify and simplify the package description
+
+-------------------------------------------------------------------
+Mon Aug 11 11:21:48 CDT 2008 - gburt@suse.de
+
+- Initial package for pidgin-sipe
+- SIPE 1.2
+- http://sipe.sourceforge.net/
+
