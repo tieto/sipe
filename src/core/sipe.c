@@ -4914,6 +4914,9 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		
 		g_strfreev(lines);
 		found = sipe_process_incoming_x_msmsgsinvite(sip, msg, result);
+		if (found) {
+			send_sip_response(sip->gc, msg, 200, "OK", NULL);
+		}
 	}
 	if (!found) {
 		gchar *callid = sipmsg_find_header(msg, "Call-ID");

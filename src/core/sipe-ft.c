@@ -606,8 +606,6 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg)
 
 		g_hash_table_insert(sip->filetransfers,g_strdup(ft->invitation_cookie),xfer);
 
-		send_sip_response(sip->gc, msg, 200, "OK", NULL);
-
 		purple_xfer_request(xfer);
 	}
 }
@@ -662,8 +660,6 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 			g_free(hash_key);
 		}
 
-		send_sip_response(sip->gc, msg, 200, "OK", NULL);
-
 		if (ip && port_str) {
 			purple_xfer_start(xfer, -1, ip, g_ascii_strtoull(port_str,NULL,10));
 		} else {
@@ -682,8 +678,6 @@ void sipe_ft_incoming_cancel(PurpleAccount *account, struct sipmsg *msg)
 
 	struct sipe_account_data *sip = account->gc->proto_data;
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
-
-	send_sip_response(sip->gc, msg, 200, "OK", NULL);
 
 	purple_xfer_cancel_remote(xfer);
 }
