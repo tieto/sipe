@@ -4810,6 +4810,30 @@ static void do_reauthenticate_cb(struct sipe_account_data *sip,
 	sip->reauthenticate_set = FALSE;
 }
 
+static gboolean
+sipe_process_incoming_x_msmsgsinvite(struct sipe_account_data *sip,
+				     struct sipmsg *msg,
+				     int result)
+{
+	gboolean found = FALSE;
+
+	if (result == TRUE) {
+		gchar *invitation_command = sipmsg_find_header(msg, "Invitation-Command");
+
+		if (sipe_strequal(invitation_command, "INVITE")) {
+			sipe_ft_incoming_transfer(sip->gc->account,msg);
+			found = TRUE;
+		} else if (sipe_strequal(invitation_command, "CANCEL")) {
+			sipe_ft_incoming_cancel(sip->gc->account, msg);
+			found = TRUE;
+		} else if (sipe_strequal(invitation_command, "ACCEPT")) {
+			sipe_ft_incoming_accept(sip->gc->account, msg);
+			found = TRUE;
+		}
+	}
+	return found;
+}
+
 static void process_incoming_message(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	gchar *from;
@@ -4885,23 +4909,11 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		found = TRUE;
 	} else if (g_str_has_prefix(contenttype, "text/x-msmsgsinvite")) {
 		gchar **lines = g_strsplit(msg->body,"\r\n",0);
-		int result = sipmsg_parse_and_append_header(msg,lines);
+		/* pier11: "I don't like it - to add body to headers." */
+		int result = sipmsg_parse_and_append_header(msg, lines);
+		
 		g_strfreev(lines);
-
-		if (result == TRUE) {
-			gchar *invitation_command = sipmsg_find_header(msg, "Invitation-Command");
-
-			if (sipe_strequal(invitation_command, "INVITE")) {
-				sipe_ft_incoming_transfer(sip->gc->account,msg);
-				found = TRUE;
-			} else if (sipe_strequal(invitation_command, "CANCEL")) {
-				sipe_ft_incoming_cancel(sip->gc->account, msg);
-				found = TRUE;
-			} else if (sipe_strequal(invitation_command, "ACCEPT")) {
-				sipe_ft_incoming_accept(sip->gc->account, msg);
-				found = TRUE;
-			}
-		}
+		found = sipe_process_incoming_x_msmsgsinvite(sip, msg, result);
 	}
 	if (!found) {
 		gchar *callid = sipmsg_find_header(msg, "Call-ID");
@@ -4941,6 +4953,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	GSList *end_points = NULL;
 	char *tmp = NULL;
 	struct sip_session *session;
+	const gchar *ms_text_format;
 
 	purple_debug_info("sipe", "process_incoming_invite: body:\n%s!\n", msg->body ? tmp = fix_newlines(msg->body) : "");
 	g_free(tmp);
@@ -5112,12 +5125,33 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	   Disabled for most cases as interfering with audit of messages which only is applied to regular MESSAGEs.
 	   Only enabled for 2005 multiparty chats as otherwise the first message got lost completely.
 	*/
-	if (is_multiparty) {
-		/* please do not optimize logic inside as this code may be re-enabled for other cases */
-		gchar *ms_text_format = sipmsg_find_header(msg, "ms-text-format");
+	/* also enabled for 2005 file transfer. Didn't work otherwise. */
+	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
+	if (is_multiparty ||
+	    (ms_text_format && g_str_has_prefix(ms_text_format, "text/x-msmsgsinvite")) )
+	{
 		if (ms_text_format) {
-			if (g_str_has_prefix(ms_text_format, "text/plain") || g_str_has_prefix(ms_text_format, "text/html")) {
+			if (g_str_has_prefix(ms_text_format, "text/x-msmsgsinvite"))
+			{
+				gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+				if (tmp) {
+					gchar *body = purple_base64_decode(tmp, NULL);
+					gchar **lines = g_strsplit(body,"\r\n",0);
+					int result;
+					
+					g_free(body);
+					/* pier11: "I don't like it - to add body to headers." */
+					result = sipmsg_parse_and_append_header(msg, lines);
+					g_strfreev(lines);
 
+					sipe_process_incoming_x_msmsgsinvite(sip, msg, result);
+					sipmsg_add_header(msg, "Supported", "ms-text-format"); /* accepts received message */
+				}
+				g_free(tmp);
+			}
+			else if (g_str_has_prefix(ms_text_format, "text/plain") || g_str_has_prefix(ms_text_format, "text/html"))
+			{
+				/* please do not optimize logic inside as this code may be re-enabled for other cases */
 				gchar *html = get_html_message(ms_text_format, NULL);
 				if (html) {
 					if (is_multiparty) {
@@ -5132,7 +5166,6 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 			}
 		}
 	}
-
 
 	g_free(from);
 
