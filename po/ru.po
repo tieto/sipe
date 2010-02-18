@@ -711,7 +711,7 @@ msgstr "Принятый файл поврежден"
 
 #: ../src/core/sipe-ft.c:469
 msgid "File transfer initialization failed."
-msgstr "Инициализация передачи файлов не удалось."
+msgstr "Инициализация передачи файлов не удалась."
 
 #: ../src/core/sipe-ft.c:495
 msgid "File transfer authentication failed."
