@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-18 05:34+0200\n"
-"PO-Revision-Date: 2010-02-16 20:18+0100\n"
+"POT-Creation-Date: 2010-02-18 03:51+0000\n"
+"PO-Revision-Date: 2010-02-18 05:15+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -733,23 +733,22 @@ msgid "Received file is corrupted"
 msgstr "Pobrany plik jest uszkodzony"
 
 #: ../src/core/sipe-ft.c:439
-#, fuzzy
 msgid "File transfer initialization failed."
-msgstr "Uwierzytelnienie przesyłania pliku nie powiodło się."
+msgstr "Zainicjowanie przesyłania pliku nie powiodło się."
 
-#: ../src/core/sipe-ft.c:464
+#: ../src/core/sipe-ft.c:465
 msgid "File transfer authentication failed."
 msgstr "Uwierzytelnienie przesyłania pliku nie powiodło się."
 
-#: ../src/core/sipe-ft.c:507
+#: ../src/core/sipe-ft.c:506
 msgid "Can't allocate enough memory for transfer buffer."
 msgstr ""
 "Nie można przydzielić wystarczającej ilości pamięci dla bufora przesyłania."
 
-#: ../src/core/sipe-ft.c:608
+#: ../src/core/sipe-ft.c:607
 msgid "Received encryption key has wrong size."
 msgstr "Pobrany klucz szyfrowania posiada błędny rozmiar."
 
-#: ../src/core/sipe-ft.c:623
+#: ../src/core/sipe-ft.c:622
 msgid "Received hash key has wrong size."
 msgstr "Pobrany klucz mieszania posiada błędny rozmiar."
