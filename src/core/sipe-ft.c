@@ -484,7 +484,7 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 	auth_cookie_received = g_ascii_strtoull(parts[2],NULL,10);
 
 	// xfer->who has 'sip:' prefix, skip these four characters
-	users_match = sipe_strequal(parts[1], (xfer->who + 4));
+	users_match = !g_ascii_strcasecmp(parts[1], (xfer->who + 4));
 	g_strfreev(parts);
 
 	purple_debug_info("sipe","File transfer authentication: %s Expected: USR %s %u\n",
