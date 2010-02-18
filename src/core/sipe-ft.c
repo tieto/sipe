@@ -241,7 +241,7 @@ sipe_ft_incoming_stop(PurpleXfer *xfer)
 		fclose(fdread);
 		raise_ft_error_and_cancel(xfer,
 					  _("Can't allocate enough memory for read buffer."));
-		return;		
+		return;
 	}
 
 	if (fread(filebuf, 1, xfer->size, fdread) < 1) {
@@ -438,7 +438,7 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 	if (!sipe_strequal(buf,VER)) {
 		raise_ft_error_and_cancel(xfer,_("File transfer initialization failed."));
 		purple_debug_info("sipe","File transfer VER string incorrect, received: %s expected: %s",
-							buf,VER);
+				  buf, VER);
 		return;
 	}
 
@@ -455,17 +455,16 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 
 	// xfer->who has 'sip:' prefix, skip these four characters
 	users_match = sipe_strequal(parts[1], (xfer->who + 4));
+	g_strfreev(parts);
 
-	purple_debug_info("sipe","File transfer authentication: %sExpected: USR %s %u\n",
-						buf, xfer->who + 4, ft->auth_cookie);
+	purple_debug_info("sipe","File transfer authentication: %s Expected: USR %s %u\n",
+			  buf, xfer->who + 4, ft->auth_cookie);
 
 	if (!users_match || (ft->auth_cookie != auth_cookie_received)) {
 		raise_ft_error_and_cancel(xfer,
 					  _("File transfer authentication failed."));
 		return;
 	}
-
-	g_strfreev(parts);
 
 	tmp = g_strdup_printf("FIL %lu\r\n",(long unsigned) xfer->size);
 	bytes_written = write(xfer->fd, tmp, strlen(tmp));
