@@ -753,9 +753,3 @@ msgstr "Empfangener Chiffrierschlüssel hat die falsche Grösse."
 #: ../src/core/sipe-ft.c:656
 msgid "Received hash key has wrong size."
 msgstr "Empfangener Hash-Schlüssel hat die falsche Grösse."
-
-#~ msgid "Can't allocate enough memory for read buffer."
-#~ msgstr "Kann nicht genügend Speicher für den Lesepuffer reservieren."
-
-#~ msgid "Can't allocate enough memory for transfer buffer."
-#~ msgstr "Kann nicht genügend Speicher für den Transferpuffer reservieren."
