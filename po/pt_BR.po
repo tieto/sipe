@@ -1,16 +1,16 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
+# Spanish translation for pidgin-sipe
+# Copyright (c) 2009 Druid
+# This file is distributed under the same license as the pidgin-sipe package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
+# Márcio Ferreira <marcio.ferreira@gmail.com>, 2010.
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2010-02-18 22:29+0200\n"
-"PO-Revision-Date: 2010-02-17 01:56-0300\n"
-"Last-Translator: Name <e@mail.com>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
+"PO-Revision-Date: 2010-02-18 17:15-0600\n"
+"Last-Translator: Márcio Ferreira <marcio.ferreira@gmail.com>\n"
+"Language-Team: pt_BR <marcio.ferreira@gmail.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -727,7 +727,6 @@ msgstr "Não foi possível abrir o arquivo recebido."
 #: ../src/core/sipe-ft.c:247 ../src/core/sipe-ft.c:307
 #: ../src/core/sipe-ft.c:326 ../src/core/sipe-ft.c:363
 #: ../src/core/sipe-ft.c:536
-#, fuzzy
 msgid "Out of memory"
 msgstr "Fora do escritório"
 
@@ -740,9 +739,8 @@ msgid "Received file is corrupted"
 msgstr "O arquivo recebido está corrompido"
 
 #: ../src/core/sipe-ft.c:469
-#, fuzzy
 msgid "File transfer initialization failed."
-msgstr "A autenticação para transferência de arquivos falhou."
+msgstr "Transferência de arquivo de inicialização falhou."
 
 #: ../src/core/sipe-ft.c:495
 msgid "File transfer authentication failed."
