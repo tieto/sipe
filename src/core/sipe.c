@@ -6646,35 +6646,33 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		int timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
 		purple_debug_info("sipe", "process_incoming_notify: subscription expires:%d\n", timeout);
 
-		/* 2 min ahead of expiration */
-		timeout = (timeout - 120) > 120 ? (timeout - 120) : timeout;
+		if (timeout) {
+			/* 2 min ahead of expiration */
+			timeout = (timeout - 120) > 120 ? (timeout - 120) : timeout;
 
-		if (timeout &&
-		    !g_ascii_strcasecmp(event, "presence.wpending") &&
-		    g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
-		{
-			gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
-			sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_wpending, NULL, sip, NULL);
-			g_free(action_name);
-		}
-		else if (!g_ascii_strcasecmp(event, "presence") &&
-			 g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
-		{
-			gchar *who = parse_from(sipmsg_find_header(msg, "To"));
-			gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, who);
-
-			/* Accept resubscription events with timeout 0 */
-			if (timeout == 0) timeout = 2;
-
-			if (sip->batched_support) {
-				sipe_process_presence_timeout(sip, msg, who, timeout);
+			if (!g_ascii_strcasecmp(event, "presence.wpending") &&
+			    g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
+			{
+				gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
+				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_wpending, NULL, sip, NULL);
+				g_free(action_name);
 			}
-			else {
-				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(who));
-			 	purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who, timeout);
+			else if (!g_ascii_strcasecmp(event, "presence") &&
+				 g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
+			{
+				gchar *who = parse_from(sipmsg_find_header(msg, "To"));
+				gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, who);
+
+				if (sip->batched_support) {
+					sipe_process_presence_timeout(sip, msg, who, timeout);
+				}
+				else {
+					sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(who));
+					purple_debug_info("sipe", "Resubscription single contact (%s) in %d\n", who, timeout);
+				}
+				g_free(action_name);
+				g_free(who);
 			}
-			g_free(action_name);
-			g_free(who);
 		}
 	}
 
