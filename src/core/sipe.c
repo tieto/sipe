@@ -6591,6 +6591,10 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 		{
 			sipe_process_provisioning(sip, msg);
 		}
+		else if (!g_ascii_strcasecmp(event, "presence"))
+		{
+			sipe_process_presence(sip, msg);
+		}
 		else if (!g_ascii_strcasecmp(event, "registration-notify"))
 		{
 			sipe_process_registration_notify(sip, msg);
@@ -6598,11 +6602,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 
 		if (!subscription_state || strstr(subscription_state, "active"))
 		{
-			if (!g_ascii_strcasecmp(event, "presence"))
-			{
-				sipe_process_presence(sip, msg);
-			}
-			else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts"))
+			if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts"))
 			{
 				sipe_process_roaming_contacts(sip, msg);
 			}
