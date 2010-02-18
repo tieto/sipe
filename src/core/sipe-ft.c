@@ -108,11 +108,25 @@ sipe_ft_request_denied(PurpleXfer *xfer)
 }
 
 static
-void raise_ft_error_and_cancel(PurpleXfer *xfer, const char *errmsg)
+void raise_ft_error(PurpleXfer *xfer, const char *errmsg)
 {
-	purple_xfer_error(purple_xfer_get_type(xfer),
+ 	purple_xfer_error(purple_xfer_get_type(xfer),
 			  xfer->account, xfer->who,
 			  errmsg);
+}
+
+static
+void raise_ft_strerror(PurpleXfer *xfer, const char *errmsg)
+{
+	gchar *tmp = g_strdup_printf("%s: %s", errmsg, strerror(errno));
+	raise_ft_error(xfer, tmp);
+	g_free(tmp);
+}
+
+static
+void raise_ft_error_and_cancel(PurpleXfer *xfer, const char *errmsg)
+{
+	raise_ft_error(xfer, errmsg);
 	purple_xfer_cancel_local(xfer);
 }
 
@@ -126,16 +140,6 @@ static
 void raise_ft_socket_write_error_and_cancel(PurpleXfer *xfer)
 {
 	raise_ft_error_and_cancel(xfer, _("Socket write failed"));
-}
-
-static
-void raise_ft_strerror(PurpleXfer *xfer, const char *errmsg)
-{
-	gchar *tmp = g_strdup_printf("%s: %s", errmsg, strerror(errno));
- 	purple_xfer_error(purple_xfer_get_type(xfer),
-			  xfer->account,xfer->who,
-			  tmp);
-	g_free(tmp);
 }
 
 static void
@@ -240,11 +244,15 @@ sipe_ft_incoming_stop(PurpleXfer *xfer)
 	if (!filebuf) {
 		fclose(fdread);
 		raise_ft_error_and_cancel(xfer,
-					  _("Can't allocate enough memory for read buffer."));
+					  _("Out of memory"));
+		purple_debug_error("sipe", "sipe_ft_incoming_stop: can't allocate %" G_GSIZE_FORMAT " bytes for file buffer\n",
+				   xfer->size);
 		return;
 	}
 
 	if (fread(filebuf, 1, xfer->size, fdread) < 1) {
+		purple_debug_error("sipe", "sipe_ft_incoming_stop: can't read received file: %s\n",
+				   strerror(errno));
 		g_free(filebuf);
 		fclose(fdread);
 		raise_ft_error_and_cancel(xfer,
@@ -291,10 +299,16 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 	}
 
 	bytes_to_read = MIN(purple_xfer_get_bytes_remaining(xfer),
-							  xfer->current_buffer_size);
+			    xfer->current_buffer_size);
 	bytes_to_read = MIN(bytes_to_read, ft->bytes_remaining_chunk);
 
-	*buffer = g_malloc0(bytes_to_read);
+	*buffer = g_malloc(bytes_to_read);
+	if (!*buffer) {
+		raise_ft_error(xfer, _("Out of memory"));
+		purple_debug_error("sipe", "sipe_ft_read: can't allocate %" G_GSIZE_FORMAT " bytes for receive buffer\n",
+				   bytes_to_read);
+		return -1;
+	}
 
 	bytes_read = read(xfer->fd, *buffer, bytes_to_read);
 	if (bytes_read == -1) {
@@ -305,13 +319,21 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 		}
 	}
 
-	ft->bytes_remaining_chunk -= bytes_read;
-
 	if (bytes_read > 0) {
-		guchar* decrypted = g_malloc0(bytes_read);
+		guchar *decrypted = g_malloc(bytes_read);
+
+		if (!decrypted) {
+			raise_ft_error(xfer, _("Out of memory"));
+			purple_debug_error("sipe", "sipe_ft_read: can't allocate %" G_GSIZE_FORMAT " bytes for decryption buffer\n",
+					   bytes_read);
+			g_free(*buffer);
+			return -1;
+		}
 		purple_cipher_context_encrypt(ft->cipher_context, *buffer, bytes_read, decrypted, NULL);
 		g_free(*buffer);
 		*buffer = decrypted;
+
+		ft->bytes_remaining_chunk -= bytes_read;
 	}
 
 	return bytes_read;
@@ -337,6 +359,12 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 			g_free(ft->encrypted_outbuf);
 			ft->outbuf_size = size;
 			ft->encrypted_outbuf = g_malloc(ft->outbuf_size);
+			if (!ft->encrypted_outbuf) {
+				raise_ft_error(xfer, _("Out of memory"));
+				purple_debug_error("sipe", "sipe_ft_write: can't allocate %" G_GSIZE_FORMAT " bytes for send buffer\n",
+						   ft->outbuf_size);
+				return -1;
+			}
 		}
 
 		ft->bytes_remaining_chunk = size;
@@ -365,8 +393,10 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 		}
 	}
 
-	ft->bytes_remaining_chunk -= bytes_written;
-	ft->outbuf_ptr += bytes_written;
+	if (bytes_written > 0) {
+		ft->bytes_remaining_chunk -= bytes_written;
+		ft->outbuf_ptr += bytes_written;
+	}
 
 	if ((xfer->bytes_remaining - bytes_written) == 0)
 		purple_xfer_set_completed(xfer, TRUE);
@@ -490,7 +520,7 @@ sipe_ft_outgoing_stop(PurpleXfer *xfer)
 {
 	gsize BUFFER_SIZE = 50;
 	char buffer[BUFFER_SIZE];
-	guchar *macbuf;
+	guchar *filebuf;
 	sipe_file_transfer *ft;
 	gchar *mac;
 	gsize mac_strlen;
@@ -500,22 +530,26 @@ sipe_ft_outgoing_stop(PurpleXfer *xfer)
 	// BYE
 	read_line(xfer->fd, buffer, BUFFER_SIZE);
 
-	macbuf = g_malloc(xfer->size);
-	if (!macbuf) {
+	filebuf = g_malloc(xfer->size);
+	if (!filebuf) {
 		raise_ft_error_and_cancel(xfer,
-					  _("Can't allocate enough memory for transfer buffer."));
+					  _("Out of memory"));
+		purple_debug_error("sipe", "sipe_ft_outgoing_stop: can't allocate %" G_GSIZE_FORMAT " bytes for file buffer\n",
+				   xfer->size);
 		return;
 	}
 	fseek(xfer->dest_fp,0,SEEK_SET);
-	if (fread(macbuf,xfer->size,1,xfer->dest_fp) < 1) {
-		g_free(macbuf);
+	if (fread(filebuf,xfer->size,1,xfer->dest_fp) < 1) {
+		purple_debug_error("sipe", "sipe_ft_outgoing_stop: can't read sent file: %s\n",
+				   strerror(errno));
+		g_free(filebuf);
 		raise_ft_socket_read_error_and_cancel(xfer);
 		return;
 	}
 
 	ft = xfer->data;
-	mac = sipe_get_mac(macbuf,xfer->size,ft->hash_key);
-	g_free(macbuf);
+	mac = sipe_get_mac(filebuf,xfer->size,ft->hash_key);
+	g_free(filebuf);
 	g_sprintf(buffer, "MAC %s \r\n", mac);
 	g_free(mac);
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-18 05:34+0200\n"
+"POT-Creation-Date: 2010-02-18 13:06+0200\n"
 "PO-Revision-Date: 2010-02-01 14:30+0800\n"
 "Last-Translator: 神州散人 <kappa8086@gmail.com>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
@@ -65,11 +65,11 @@ msgstr "到服务器的认证失败"
 msgid "Could not write"
 msgstr "无法写入"
 
-#: ../src/core/sipe.c:595 ../src/core/sipe.c:8018
+#: ../src/core/sipe.c:595 ../src/core/sipe.c:8005
 msgid "Could not connect"
 msgstr "无法连接"
 
-#: ../src/core/sipe.c:664 ../src/core/sipe.c:8173
+#: ../src/core/sipe.c:664 ../src/core/sipe.c:8160
 msgid "Could not create socket"
 msgstr "无法创建套接字"
 
@@ -84,7 +84,7 @@ msgid "Message"
 msgstr "消息"
 
 #: ../src/core/sipe.c:2455 ../src/core/sipe.c:2467 ../src/core/sipe.c:2492
-#: ../src/core/sipe.c:8653
+#: ../src/core/sipe.c:8640
 msgid "Other Contacts"
 msgstr "其他联系人"
 
@@ -143,11 +143,11 @@ msgstr "邀请 %s 失败"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "从 %s 收到含有无法识别的内容的消息"
 
-#: ../src/core/sipe.c:5449 ../src/core/sipe.c:7845
+#: ../src/core/sipe.c:5449 ../src/core/sipe.c:7832
 msgid "Wrong password"
 msgstr "密码错误"
 
-#: ../src/core/sipe.c:5458 ../src/core/sipe.c:7730
+#: ../src/core/sipe.c:5458 ../src/core/sipe.c:7717
 msgid "Incompatible authentication scheme chosen"
 msgstr ""
 
@@ -165,58 +165,58 @@ msgstr "目标 URI 没有启用 SIP 或不存在"
 msgid "Service unavailable: %s"
 msgstr "服务不可用：%s"
 
-#: ../src/core/sipe.c:7841
+#: ../src/core/sipe.c:7828
 msgid "Invalid message signature received"
 msgstr "收到了无效的消息签名"
 
-#: ../src/core/sipe.c:7915
+#: ../src/core/sipe.c:7902
 msgid "Connection not found. Please try to connect again"
 msgstr "连接没找到；请重试连接"
 
-#: ../src/core/sipe.c:7936
+#: ../src/core/sipe.c:7923
 msgid "SSL read error"
 msgstr "SSL 读取错误"
 
-#: ../src/core/sipe.c:7939
+#: ../src/core/sipe.c:7926
 msgid "Server has disconnected"
 msgstr "服务器已断开"
 
-#: ../src/core/sipe.c:8063 ../src/core/sipe.c:8105 ../src/core/sipe.c:8157
-#: ../src/core/sipe.c:8227
+#: ../src/core/sipe.c:8050 ../src/core/sipe.c:8092 ../src/core/sipe.c:8144
+#: ../src/core/sipe.c:8214
 msgid "Could not create listen socket"
 msgstr "无法创建监听套接字"
 
-#: ../src/core/sipe.c:8086 ../src/core/sipe.c:8218
+#: ../src/core/sipe.c:8073 ../src/core/sipe.c:8205
 msgid "Could not resolve hostname"
 msgstr "无法解析主机名"
 
-#: ../src/core/sipe.c:8136
+#: ../src/core/sipe.c:8123
 msgid "Connection failed"
 msgstr "连接失败"
 
-#: ../src/core/sipe.c:8139
+#: ../src/core/sipe.c:8126
 msgid "SSL handshake failed"
 msgstr "SSL 握手失败"
 
-#: ../src/core/sipe.c:8142
+#: ../src/core/sipe.c:8129
 msgid "SSL certificate invalid"
 msgstr "SSL 证书无效"
 
-#: ../src/core/sipe.c:8200
+#: ../src/core/sipe.c:8187
 msgid ""
 "SSL support is not installed. Either install SSL support or configure a "
 "different connection type in the account editor"
 msgstr "没有安装 SSL 支持。请安装 SSL 支持或在帐户编辑器里配置另外的连接类型"
 
-#: ../src/core/sipe.c:8209
+#: ../src/core/sipe.c:8196
 msgid "Could not create SSL context"
 msgstr "无法创建 SSL 环境"
 
-#: ../src/core/sipe.c:8332
+#: ../src/core/sipe.c:8319
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP Exchange 用户名包含无效字符"
 
-#: ../src/core/sipe.c:8355
+#: ../src/core/sipe.c:8342
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
@@ -224,7 +224,7 @@ msgstr ""
 "用户名必须是有效的 SIP URI\n"
 "例如：user@company.com"
 
-#: ../src/core/sipe.c:8366
+#: ../src/core/sipe.c:8353
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
@@ -232,130 +232,130 @@ msgstr ""
 "如果提供了电子邮件地址那么它应该是有效的\n"
 "例如：user@company.com"
 
-#: ../src/core/sipe.c:8392
+#: ../src/core/sipe.c:8379
 msgid "SIP Exchange user name contains whitespace"
 msgstr "SIP Exchange 用户名包含空格"
 
-#: ../src/core/sipe.c:8406
+#: ../src/core/sipe.c:8393
 msgid "Connecting"
 msgstr "正在连接"
 
-#: ../src/core/sipe.c:8679
+#: ../src/core/sipe.c:8666
 msgid "Unable to display the search results"
 msgstr "无法显示搜索结果"
 
-#: ../src/core/sipe.c:8685
+#: ../src/core/sipe.c:8672
 msgid "User name"
 msgstr "用户名"
 
-#: ../src/core/sipe.c:8688
+#: ../src/core/sipe.c:8675
 msgid "Name"
 msgstr "名称"
 
-#: ../src/core/sipe.c:8691 ../src/core/sipe.c:8787 ../src/core/sipe.c:9738
+#: ../src/core/sipe.c:8678 ../src/core/sipe.c:8774 ../src/core/sipe.c:9725
 msgid "Company"
 msgstr "公司"
 
-#: ../src/core/sipe.c:8694 ../src/core/sipe.c:8789 ../src/core/sipe.c:9747
+#: ../src/core/sipe.c:8681 ../src/core/sipe.c:8776 ../src/core/sipe.c:9734
 msgid "Country"
 msgstr "国家"
 
-#: ../src/core/sipe.c:8697
+#: ../src/core/sipe.c:8684
 msgid "Email"
 msgstr "电子邮件"
 
-#: ../src/core/sipe.c:8724
+#: ../src/core/sipe.c:8711
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "已找到 %d 个联系人 %s："
 
-#: ../src/core/sipe.c:8726
+#: ../src/core/sipe.c:8713
 msgid " (more matched your query)"
 msgstr " (有更多与您的查询匹配)"
 
-#: ../src/core/sipe.c:8783
+#: ../src/core/sipe.c:8770
 msgid "First name"
 msgstr "姓"
 
-#: ../src/core/sipe.c:8785
+#: ../src/core/sipe.c:8772
 msgid "Last name"
 msgstr "名"
 
-#: ../src/core/sipe.c:8793
+#: ../src/core/sipe.c:8780
 msgid "Search"
 msgstr "搜索"
 
-#: ../src/core/sipe.c:8794
+#: ../src/core/sipe.c:8781
 msgid "Search for a contact"
 msgstr "搜索联系人"
 
-#: ../src/core/sipe.c:8795
+#: ../src/core/sipe.c:8782
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "输入您要查找的人的信息。空字段将被忽略。"
 
-#: ../src/core/sipe.c:8797
+#: ../src/core/sipe.c:8784
 msgid "_Search"
 msgstr "搜索(_S)"
 
-#: ../src/core/sipe.c:8798
+#: ../src/core/sipe.c:8785
 msgid "_Cancel"
 msgstr "取消(_C)"
 
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
-#: ../src/core/sipe.c:8854
+#: ../src/core/sipe.c:8841
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
 msgstr "实现用于多个产品的 SIP/SIMPLE 扩展版本的第三方插件"
 
 #. About note, part 2/11: home page URL (label)
-#: ../src/core/sipe.c:8856
+#: ../src/core/sipe.c:8843
 msgid "Home"
 msgstr "主页"
 
 #. About note, part 3/11: support forum URL (label)
-#: ../src/core/sipe.c:8858
+#: ../src/core/sipe.c:8845
 msgid "Support"
 msgstr "支持"
 
 #. About note, part 4/11: support forum name (hyperlink text)
-#: ../src/core/sipe.c:8860
+#: ../src/core/sipe.c:8847
 msgid "Help Forum"
 msgstr "帮助论坛"
 
 #. About note, part 5/11: translation service URL (label)
-#: ../src/core/sipe.c:8862
+#: ../src/core/sipe.c:8849
 msgid "Translations"
 msgstr "翻译"
 
 #. About note, part 6/11: license type (label)
-#: ../src/core/sipe.c:8864
+#: ../src/core/sipe.c:8851
 msgid "License"
 msgstr "许可证"
 
 #. About note, part 7/11: known users
-#: ../src/core/sipe.c:8866
+#: ../src/core/sipe.c:8853
 msgid "We support users in such organizations as"
 msgstr "我们对一些组织中的用户提供支持，如"
 
 #. About note, part 8/11: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe.c:8869
+#: ../src/core/sipe.c:8856
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr "请到这里帮助我们将 SIPE 翻译为您的母语 "
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe.c:8872
+#: ../src/core/sipe.c:8859
 msgid " using convenient web interface"
 msgstr " 使用方便的 web 界面"
 
 #. About note, part 10/11: author list (header)
-#: ../src/core/sipe.c:8874
+#: ../src/core/sipe.c:8861
 msgid "Authors"
 msgstr "作者"
 
@@ -363,159 +363,159 @@ msgstr "作者"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe.c:8879
+#: ../src/core/sipe.c:8866
 msgid "Original texts in English (en): SIPE developers"
 msgstr "中文化 (zh_CN): 神州散人"
 
-#: ../src/core/sipe.c:8944
+#: ../src/core/sipe.c:8931
 msgid "About SIPE plugin..."
 msgstr "关于 SIPE 插件"
 
-#: ../src/core/sipe.c:8947
+#: ../src/core/sipe.c:8934
 msgid "Contact search..."
 msgstr "联系人搜索..."
 
-#: ../src/core/sipe.c:8951
+#: ../src/core/sipe.c:8938
 msgid "Republish Calendar"
 msgstr "重新发布日历"
 
-#: ../src/core/sipe.c:8955
+#: ../src/core/sipe.c:8942
 msgid "Reset status"
 msgstr "复位状态"
 
-#: ../src/core/sipe.c:9047
+#: ../src/core/sipe.c:9034
 msgid "Status"
 msgstr "状态"
 
-#: ../src/core/sipe.c:9052
+#: ../src/core/sipe.c:9039
 msgid "Calendar"
 msgstr "日历"
 
-#: ../src/core/sipe.c:9057
+#: ../src/core/sipe.c:9044
 msgid "Meeting in"
 msgstr "会议场所"
 
-#: ../src/core/sipe.c:9061
+#: ../src/core/sipe.c:9048
 msgid "Meeting about"
 msgstr "会议内容"
 
-#: ../src/core/sipe.c:9069
+#: ../src/core/sipe.c:9056
 msgid "Out of office note"
 msgstr "不在办公室备注"
 
-#: ../src/core/sipe.c:9069
+#: ../src/core/sipe.c:9056
 msgid "Note"
 msgstr "备注"
 
-#: ../src/core/sipe.c:9081
+#: ../src/core/sipe.c:9068
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/core/sipe.c:9443
+#: ../src/core/sipe.c:9430
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "设置为“%s”的领导者"
 
-#: ../src/core/sipe.c:9454
+#: ../src/core/sipe.c:9441
 #, c-format
 msgid "Remove from '%s'"
 msgstr "从“%s”中删除"
 
-#: ../src/core/sipe.c:9467
+#: ../src/core/sipe.c:9454
 #, c-format
 msgid "Invite to '%s'"
 msgstr "邀请到“%s”"
 
-#: ../src/core/sipe.c:9478
+#: ../src/core/sipe.c:9465
 msgid "New chat"
 msgstr "新建聊天"
 
-#: ../src/core/sipe.c:9489
+#: ../src/core/sipe.c:9476
 #, c-format
 msgid "Work %s"
 msgstr "工作 %s"
 
-#: ../src/core/sipe.c:9502
+#: ../src/core/sipe.c:9489
 #, c-format
 msgid "Mobile %s"
 msgstr "移动 %s"
 
-#: ../src/core/sipe.c:9515
+#: ../src/core/sipe.c:9502
 #, c-format
 msgid "Home %s"
 msgstr "家庭 %s"
 
-#: ../src/core/sipe.c:9528
+#: ../src/core/sipe.c:9515
 #, c-format
 msgid "Other %s"
 msgstr "其他 %s"
 
-#: ../src/core/sipe.c:9541
+#: ../src/core/sipe.c:9528
 #, c-format
 msgid "Custom1 %s"
 msgstr "自定义 1 %s"
 
-#: ../src/core/sipe.c:9553
+#: ../src/core/sipe.c:9540
 msgid "Send email..."
 msgstr "发送邮件..."
 
-#: ../src/core/sipe.c:9578
+#: ../src/core/sipe.c:9565
 msgid "Copy to"
 msgstr "复制到"
 
-#: ../src/core/sipe.c:9632
+#: ../src/core/sipe.c:9619
 msgid "Unlock"
 msgstr "解锁"
 
-#: ../src/core/sipe.c:9637
+#: ../src/core/sipe.c:9624
 msgid "Lock"
 msgstr "锁定"
 
-#: ../src/core/sipe.c:9726 ../src/core/sipe.c:9763
+#: ../src/core/sipe.c:9713 ../src/core/sipe.c:9750
 msgid "Display name"
 msgstr "显示名称"
 
-#: ../src/core/sipe.c:9729
+#: ../src/core/sipe.c:9716
 msgid "Job title"
 msgstr "职称"
 
-#: ../src/core/sipe.c:9732
+#: ../src/core/sipe.c:9719
 msgid "Office"
 msgstr "职务"
 
-#: ../src/core/sipe.c:9735
+#: ../src/core/sipe.c:9722
 msgid "Business phone"
 msgstr "工作电话"
 
-#: ../src/core/sipe.c:9741
+#: ../src/core/sipe.c:9728
 msgid "City"
 msgstr "城市"
 
-#: ../src/core/sipe.c:9744
+#: ../src/core/sipe.c:9731
 msgid "State"
 msgstr "省份"
 
-#: ../src/core/sipe.c:9750 ../src/core/sipe.c:9777
+#: ../src/core/sipe.c:9737 ../src/core/sipe.c:9764
 msgid "Email address"
 msgstr "电子邮件地址"
 
-#: ../src/core/sipe.c:9770
+#: ../src/core/sipe.c:9757
 msgid "Alias"
 msgstr "别名"
 
-#: ../src/core/sipe.c:9783
+#: ../src/core/sipe.c:9770
 msgid "Site"
 msgstr "站点"
 
-#: ../src/core/sipe.c:9790
+#: ../src/core/sipe.c:9777
 msgid "Find on LinkedIn"
 msgstr ""
 
-#: ../src/core/sipe.c:9797
+#: ../src/core/sipe.c:9784
 msgid "Device"
 msgstr "设备"
 
-#: ../src/core/sipe.c:9989
+#: ../src/core/sipe.c:9976
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -525,7 +525,7 @@ msgstr ""
 "   用户  或  域\\用户  或\n"
 "   user@company.com"
 
-#: ../src/core/sipe.c:9993
+#: ../src/core/sipe.c:9980
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -533,33 +533,33 @@ msgstr ""
 "服务器[:端口]\n"
 "(留空使用自动发现)"
 
-#: ../src/core/sipe.c:9996
+#: ../src/core/sipe.c:9983
 msgid "Connection type"
 msgstr "连接类型"
 
-#: ../src/core/sipe.c:9997
+#: ../src/core/sipe.c:9984
 msgid "Auto"
 msgstr "自动"
 
-#: ../src/core/sipe.c:9998
+#: ../src/core/sipe.c:9985
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/core/sipe.c:9999
+#: ../src/core/sipe.c:9986
 msgid "TCP"
 msgstr "TCP"
 
-#: ../src/core/sipe.c:10000
+#: ../src/core/sipe.c:9987
 msgid "UDP"
 msgstr "UDP"
 
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/core/sipe.c:10006
+#: ../src/core/sipe.c:9993
 msgid "User Agent"
 msgstr "用户代理"
 
-#: ../src/core/sipe.c:10010
+#: ../src/core/sipe.c:9997
 msgid "Use Kerberos"
 msgstr "使用 Kerberos"
 
@@ -567,24 +567,24 @@ msgstr "使用 Kerberos"
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #.
-#: ../src/core/sipe.c:10017
+#: ../src/core/sipe.c:10004
 msgid "Use Single Sign-On"
 msgstr "使用单点登录"
 
-#: ../src/core/sipe.c:10021
+#: ../src/core/sipe.c:10008
 msgid "Calendar source"
 msgstr "日历源"
 
-#: ../src/core/sipe.c:10022
+#: ../src/core/sipe.c:10009
 msgid "Exchange 2007/2010"
 msgstr "Exchange 2007/2010"
 
-#: ../src/core/sipe.c:10023
+#: ../src/core/sipe.c:10010
 msgid "None"
 msgstr "无"
 
 #. * Example: https://server.company.com/EWS/Exchange.asmx
-#: ../src/core/sipe.c:10027
+#: ../src/core/sipe.c:10014
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -592,7 +592,7 @@ msgstr ""
 "电子邮件服务 URL\n"
 "(留空使用自动发现)"
 
-#: ../src/core/sipe.c:10030
+#: ../src/core/sipe.c:10017
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -601,7 +601,7 @@ msgstr ""
 "(如果与用户名不同)"
 
 #. * Example: DOMAIN\user  or  user@company.com
-#: ../src/core/sipe.c:10034
+#: ../src/core/sipe.c:10021
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -609,7 +609,7 @@ msgstr ""
 "电子邮件登录名\n"
 "(如果与登录名不同)"
 
-#: ../src/core/sipe.c:10037
+#: ../src/core/sipe.c:10024
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -682,60 +682,59 @@ msgstr "此会议被锁定。被锁定时其他人不能加入会议。"
 msgid "You have been disconnected from this conference."
 msgstr "您已被从会议中断开。"
 
-#: ../src/core/sipe-ft.c:122 ../src/core/sipe-ft.c:285
-#: ../src/core/sipe-ft.c:304
+#: ../src/core/sipe-ft.c:136 ../src/core/sipe-ft.c:293
+#: ../src/core/sipe-ft.c:318
 msgid "Socket read failed"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:128 ../src/core/sipe-ft.c:353
-#: ../src/core/sipe-ft.c:364
+#: ../src/core/sipe-ft.c:142 ../src/core/sipe-ft.c:381
+#: ../src/core/sipe-ft.c:392
 #, fuzzy
 msgid "Socket write failed"
 msgstr "连接失败"
 
-#: ../src/core/sipe-ft.c:182
+#: ../src/core/sipe-ft.c:186
 msgid "File size is different from the advertised value."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:224
+#: ../src/core/sipe-ft.c:228
 msgid "Received MAC is corrupted"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:235
+#: ../src/core/sipe-ft.c:239
 msgid "Unable to open received file."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:243
-msgid "Can't allocate enough memory for read buffer."
-msgstr ""
+#: ../src/core/sipe-ft.c:247 ../src/core/sipe-ft.c:307
+#: ../src/core/sipe-ft.c:326 ../src/core/sipe-ft.c:363
+#: ../src/core/sipe-ft.c:536
+#, fuzzy
+msgid "Out of memory"
+msgstr "不在办公室"
 
-#: ../src/core/sipe-ft.c:251
+#: ../src/core/sipe-ft.c:259
 msgid "Unable to read received file."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:263
+#: ../src/core/sipe-ft.c:271
 msgid "Received file is corrupted"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:439
+#: ../src/core/sipe-ft.c:469
 #, fuzzy
 msgid "File transfer initialization failed."
 msgstr "到服务器的认证失败"
 
-#: ../src/core/sipe-ft.c:464
+#: ../src/core/sipe-ft.c:495
 #, fuzzy
 msgid "File transfer authentication failed."
 msgstr "到服务器的认证失败"
 
-#: ../src/core/sipe-ft.c:507
-msgid "Can't allocate enough memory for transfer buffer."
-msgstr ""
-
-#: ../src/core/sipe-ft.c:608
+#: ../src/core/sipe-ft.c:641
 msgid "Received encryption key has wrong size."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:623
+#: ../src/core/sipe-ft.c:656
 msgid "Received hash key has wrong size."
 msgstr ""
 
