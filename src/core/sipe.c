@@ -5135,7 +5135,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 			{
 				gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
 				if (tmp) {
-					gchar *body = purple_base64_decode(tmp, NULL);
+					gchar *body = (gchar *) purple_base64_decode(tmp, NULL);
 					gchar **lines = g_strsplit(body,"\r\n",0);
 					int result;
 					
