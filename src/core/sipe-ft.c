@@ -325,7 +325,7 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 		if (!decrypted) {
 			raise_ft_error(xfer, _("Out of memory"));
 			purple_debug_error("sipe", "sipe_ft_read: can't allocate %" G_GSIZE_FORMAT " bytes for decryption buffer\n",
-					   bytes_read);
+					   (gsize)bytes_read);
 			g_free(*buffer);
 			return -1;
 		}
