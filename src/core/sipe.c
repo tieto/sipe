@@ -5128,7 +5128,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	/* also enabled for 2005 file transfer. Didn't work otherwise. */
 	ms_text_format = sipmsg_find_header(msg, "ms-text-format");
 	if (is_multiparty ||
-	    (ms_text_format && g_str_has_prefix(ms_text_format, "text/x-msmsgsinvite")) )
+	    (!sip->ocs2007 && ms_text_format && g_str_has_prefix(ms_text_format, "text/x-msmsgsinvite")) )
 	{
 		if (ms_text_format) {
 			if (g_str_has_prefix(ms_text_format, "text/x-msmsgsinvite"))
