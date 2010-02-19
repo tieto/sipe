@@ -130,6 +130,14 @@
 						</Component>				
 				  </Directory>
 				</Directory>
+				<Directory Id='pt_BR' Name='pt_BR'>
+				  <Directory Id='pt_BR_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocalePtBrLcMessages' Guid='68E345DE-1D3C-11DF-95EC-76AC55D89593'>
+						  <File Id='pt_BR.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/pt_BR.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
 				<Directory Id='ru' Name='ru'>
 				  <Directory Id='ru_LC_MESSAGES' Name='LC_MESSAGES'>
 						<Component Id='LocaleRuLcMessages' Guid='DFF98418-5CED-11DE-93FA-18C556D89593'>
@@ -174,6 +182,7 @@
 			<ComponentRef Id='LocaleItLcMessages' />
 			<ComponentRef Id='LocaleNbLcMessages' />
 			<ComponentRef Id='LocalePlLcMessages' />
+			<ComponentRef Id='LocalePtBrLcMessages' />
 			<ComponentRef Id='LocaleRuLcMessages' />
 			<ComponentRef Id='LocaleTaLcMessages' />
 			<ComponentRef Id='LocaleZhCnLcMessages' />			
