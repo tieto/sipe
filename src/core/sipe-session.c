@@ -30,6 +30,13 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 
+void
+sipe_free_queued_message(struct queued_message *message)
+{
+	g_free(message->body);
+	g_free(message->content_type);
+}
+
 struct sip_session *
 sipe_session_add_chat(struct sipe_account_data *sip)
 {
@@ -37,7 +44,8 @@ sipe_session_add_chat(struct sipe_account_data *sip)
 	session->callid = gencallid();
 	session->is_multiparty = TRUE;
 	session->chat_id = rand();
-	session->unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	session->unconfirmed_messages = g_hash_table_new_full(
+		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
 	session->conf_unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 	sip->sessions = g_slist_append(sip->sessions, session);
 	return session;
@@ -148,7 +156,8 @@ sipe_session_find_or_add_im(struct sipe_account_data *sip,
 		session = g_new0(struct sip_session, 1);
 		session->is_multiparty = FALSE;
 		session->with = g_strdup(who);
-		session->unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+		session->unconfirmed_messages = g_hash_table_new_full(
+			g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
 		sip->sessions = g_slist_append(sip->sessions, session);
 	}
 	return session;

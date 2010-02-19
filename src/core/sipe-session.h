@@ -87,6 +87,11 @@ struct queued_message {
 	gchar *content_type;
 };
 
+/** Frees queued_message
+ */
+void
+sipe_free_queued_message(struct queued_message *message);
+
 /**
  * Add a new chat session
  *

@@ -3991,7 +3991,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 	struct sip_dialog *dialog;
 	gchar *cseq;
 	char *key;
-	gchar *message;
+	struct queued_message *message;
 
 	if (!session) {
 		purple_debug_info("sipe", "process_message_response: unable to find IM session\n");
@@ -4031,12 +4031,12 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 			alias = purple_buddy_get_alias(pbuddy);
 		}
 
-		sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, message);
+		sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, message->body);
 		ret = FALSE;
 	} else {
 		gchar *message_id = sipmsg_find_header(msg, "Message-Id");
 		if (message_id) {
-			g_hash_table_insert(session->conf_unconfirmed_messages, g_strdup(message_id), g_strdup(message));
+			g_hash_table_insert(session->conf_unconfirmed_messages, g_strdup(message_id), g_strdup(message->body));
 			purple_debug_info("sipe", "process_message_response: added message with id %s to conf_unconfirmed_messages(count=%d)\n",
 					  message_id, g_hash_table_size(session->conf_unconfirmed_messages));
 		}
@@ -4168,11 +4168,17 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * sess
 
 		SIPE_DIALOG_FOREACH {
 			char *key;
+			struct queued_message *message;
 
 			if (dialog->outgoing_invite) continue; /* do not send messages as INVITE is not responded. */
 
+			message = g_new0(struct queued_message,1);
+			message->body = g_strdup(msg->body);
+			if (msg->content_type != NULL)
+				message->content_type = g_strdup(msg->content_type);
+			
 			key = g_strdup_printf("<%s><%d><MESSAGE><%s>", dialog->callid, (dialog->cseq) + 1, dialog->with);
-			g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(msg->body));
+			g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), message);
 			purple_debug_info("sipe", "sipe_im_process_queue: added message %s to unconfirmed_messages(count=%d)\n",
 					  key, g_hash_table_size(session->unconfirmed_messages));
 			g_free(key);
@@ -4219,7 +4225,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	struct sip_dialog *dialog;
 	char *cseq;
 	char *key;
-	gchar *message;
+	struct queued_message *message;
 	struct sipmsg *request_msg = trans->msg;
 
 	gchar *callid = sipmsg_find_header(msg, "Call-ID");
@@ -4271,7 +4277,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 		}
 
 		if (message) {
-			sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, message);
+			sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, message->body);
 		} else {
 			gchar *tmp_msg = g_strdup_printf(_("Failed to invite %s"), alias);
 			sipe_present_err(sip, session, tmp_msg);
@@ -4364,6 +4370,7 @@ sipe_invite(struct sipe_account_data *sip,
 		gchar *msgr_value;
 		gchar *msgr;
 		char *key;
+		struct queued_message *message;
 
 		sipe_parse_html(msg_body, &msgformat, &msgtext);
 		purple_debug_info("sipe", "sipe_invite: msgformat=%s\n", msgformat);
@@ -4385,8 +4392,13 @@ sipe_invite(struct sipe_account_data *sip,
 		g_free(msgr);
 		g_free(base64_msg);
 
+		message = g_new0(struct queued_message,1);
+		message->body = g_strdup(msg_body);
+		if (msg_content_type != NULL)
+			message->content_type = g_strdup(msg_content_type);
+
 		key = g_strdup_printf("<%s><%d><INVITE>", dialog->callid, (dialog->cseq) + 1);
-		g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), g_strdup(msg_body));
+		g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), message);
 		purple_debug_info("sipe", "sipe_invite: added message %s to unconfirmed_messages(count=%d)\n",
 							key, g_hash_table_size(session->unconfirmed_messages));
 		g_free(key);
