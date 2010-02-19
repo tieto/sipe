@@ -4131,21 +4131,25 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *
 {
 	gchar *hdr;
 	gchar *tmp;
-	char *msgformat;
-	char *msgtext;
-	gchar *msgr_value;
-	gchar *msgr;
+	char *msgtext = NULL;
+	const gchar *msgr = "";
+	gchar *tmp2 = NULL;
 
-	sipe_parse_html(msg, &msgformat, &msgtext);
-	purple_debug_info("sipe", "sipe_send_message: msgformat=%s\n", msgformat);
+	if (!g_str_has_prefix(content_type, "text/x-msmsgsinvite")) {
+		char *msgformat;
+		gchar *msgr_value;
 
-	msgr_value = sipmsg_get_msgr_string(msgformat);
-	g_free(msgformat);
-	if (msgr_value) {
-		msgr = g_strdup_printf(";msgr=%s", msgr_value);
-		g_free(msgr_value);
+		sipe_parse_html(msg, &msgformat, &msgtext);
+		purple_debug_info("sipe", "sipe_send_message: msgformat=%s\n", msgformat);
+
+		msgr_value = sipmsg_get_msgr_string(msgformat);
+		g_free(msgformat);
+		if (msgr_value) {
+			msgr = tmp2 = g_strdup_printf(";msgr=%s", msgr_value);
+			g_free(msgr_value);
+		}
 	} else {
-		msgr = g_strdup("");
+		msgtext = g_strdup(msg);
 	}
 
 	tmp = get_contact(sip);
@@ -4157,7 +4161,7 @@ static void sipe_send_message(struct sipe_account_data *sip, struct sip_dialog *
 
 	hdr = g_strdup_printf("Contact: %s\r\nContent-Type: %s; charset=UTF-8%s\r\n", tmp, content_type, msgr);
 	g_free(tmp);
-	g_free(msgr);
+	g_free(tmp2);
 
 	send_sip_request(sip->gc, "MESSAGE", dialog->with, dialog->with, hdr, msgtext, dialog, process_message_response);
 	g_free(msgtext);
@@ -4378,32 +4382,37 @@ sipe_invite(struct sipe_account_data *sip,
 	to = sip_uri(who);
 
 	if (msg_body) {
-		char *msgformat;
-		char *msgtext;
+		char *msgtext = NULL;
 		char *base64_msg;
-		gchar *msgr_value;
-		gchar *msgr;
+		const gchar *msgr = "";
 		char *key;
 		struct queued_message *message;
+		gchar *tmp = NULL;
 
-		sipe_parse_html(msg_body, &msgformat, &msgtext);
-		purple_debug_info("sipe", "sipe_invite: msgformat=%s\n", msgformat);
+		if (!g_str_has_prefix(msg_content_type, "text/x-msmsgsinvite")) {
+			char *msgformat;
+			gchar *msgr_value;
 
-		msgr_value = sipmsg_get_msgr_string(msgformat);
-		g_free(msgformat);
-		if (msgr_value) {
-			msgr = g_strdup_printf(";msgr=%s", msgr_value);
-			g_free(msgr_value);
+			sipe_parse_html(msg_body, &msgformat, &msgtext);
+			purple_debug_info("sipe", "sipe_invite: msgformat=%s\n", msgformat);
+
+			msgr_value = sipmsg_get_msgr_string(msgformat);
+			g_free(msgformat);
+			if (msgr_value) {
+				msgr = tmp = g_strdup_printf(";msgr=%s", msgr_value);
+				g_free(msgr_value);
+			}
 		} else {
-			msgr = g_strdup("");
+			msgtext = g_strdup(msg_body);
 		}
 
 		base64_msg = purple_base64_encode((guchar*) msgtext, strlen(msgtext));
 		ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT,
-							msg_content_type ? msg_content_type : "text/plain",
-							msgr, base64_msg);
+						 msg_content_type ? msg_content_type : "text/plain",
+						 msgr,
+						 base64_msg);
 		g_free(msgtext);
-		g_free(msgr);
+		g_free(tmp);
 		g_free(base64_msg);
 
 		message = g_new0(struct queued_message,1);
