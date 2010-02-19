@@ -920,7 +920,7 @@ sipe_process_imdn(struct sipe_account_data *sip,
 	for (node = xmlnode_get_child(xn_imdn, "recipient"); node; node = xmlnode_get_next_twin(node)) {
 		gchar *tmp = parse_from(xmlnode_get_attrib(node, "uri"));
 		gchar *uri = parse_from(tmp);
-		sipe_present_message_undelivered_err(sip, session, -1, uri, message);
+		sipe_present_message_undelivered_err(sip, session, -1, -1, uri, message);
 		g_free(tmp);
 		g_free(uri);
 	}
