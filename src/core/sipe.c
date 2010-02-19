@@ -4026,12 +4026,26 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 			}
 			g_strfreev(parts);
 		}
+		
+		/* cancel file transfer as rejected by server */
+		if (msg->response == 606 &&	/* Not acceptable all. */
+		    warning == 309 &&		/* Message contents not allowed by policy */
+		    message && g_str_has_prefix(message->content_type, "text/x-msmsgsinvite"))
+		{
+			gchar **lines = g_strsplit(message->body,"\r\n",0);
+
+			/* pier11: "I don't like it - to add body to headers." */
+			sipmsg_parse_and_append_header(msg, lines);			
+			g_strfreev(lines);
+
+			sipe_ft_incoming_cancel(sip->gc->account, msg);
+		}
 
 		if ((pbuddy = purple_find_buddy(sip->account, with))) {
 			alias = purple_buddy_get_alias(pbuddy);
 		}
 
-		sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, message->body);
+		sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, (message ? message->body : NULL));
 		ret = FALSE;
 	} else {
 		gchar *message_id = sipmsg_find_header(msg, "Message-Id");
