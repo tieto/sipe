@@ -118,7 +118,7 @@ msgstr "причина не указана"
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:3962
 msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
-msgstr "Сообщение или приглашение не доставлено, возможно, потому что оно сожержит ссылку или другое содержание, которое заблокировал системный администратор."
+msgstr "Ваше сообщение или приглашение не было доставлено. Возможно, оно содержит гиперссылку или другое содержимое, заблоктрованное системным администратором."
 
 #: ../src/core/sipe.c:3966
 #, c-format
