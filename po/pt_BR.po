@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-18 22:29+0200\n"
+"POT-Creation-Date: 2010-02-19 13:47+0200\n"
 "PO-Revision-Date: 2010-02-18 17:15-0600\n"
 "Last-Translator: Márcio Ferreira <marcio.ferreira@gmail.com>\n"
 "Language-Team: pt_BR <marcio.ferreira@gmail.com>\n"
@@ -702,54 +702,45 @@ msgstr ""
 msgid "You have been disconnected from this conference."
 msgstr "Você foi desconectado desta conferência."
 
-#: ../src/core/sipe-ft.c:136 ../src/core/sipe-ft.c:293
-#: ../src/core/sipe-ft.c:318
+#: ../src/core/sipe-ft.c:142 ../src/core/sipe-ft.c:266
+#: ../src/core/sipe-ft.c:291
 msgid "Socket read failed"
 msgstr "Leitura do socket falhou"
 
-#: ../src/core/sipe-ft.c:142 ../src/core/sipe-ft.c:381
-#: ../src/core/sipe-ft.c:392
+#: ../src/core/sipe-ft.c:148 ../src/core/sipe-ft.c:358
+#: ../src/core/sipe-ft.c:369
 msgid "Socket write failed"
 msgstr "Escrita no socket falhou"
 
-#: ../src/core/sipe-ft.c:186
+#: ../src/core/sipe-ft.c:192
 msgid "File size is different from the advertised value."
 msgstr "O tamanho do arquivo é diferente do valor anunciado."
 
-#: ../src/core/sipe-ft.c:228
+#: ../src/core/sipe-ft.c:233
 msgid "Received MAC is corrupted"
 msgstr "MAC recebido está corrompido"
 
-#: ../src/core/sipe-ft.c:239
-msgid "Unable to open received file."
-msgstr "Não foi possível abrir o arquivo recebido."
-
-#: ../src/core/sipe-ft.c:247 ../src/core/sipe-ft.c:307
-#: ../src/core/sipe-ft.c:326 ../src/core/sipe-ft.c:363
-#: ../src/core/sipe-ft.c:536
-msgid "Out of memory"
-msgstr "Fora do escritório"
-
-#: ../src/core/sipe-ft.c:259
-msgid "Unable to read received file."
-msgstr "Não foi possível ler o arquivo recebido."
-
-#: ../src/core/sipe-ft.c:271
+#: ../src/core/sipe-ft.c:244
 msgid "Received file is corrupted"
 msgstr "O arquivo recebido está corrompido"
 
-#: ../src/core/sipe-ft.c:469
+#: ../src/core/sipe-ft.c:280 ../src/core/sipe-ft.c:299
+#: ../src/core/sipe-ft.c:339
+msgid "Out of memory"
+msgstr "Fora do escritório"
+
+#: ../src/core/sipe-ft.c:446
 msgid "File transfer initialization failed."
 msgstr "Transferência de arquivo de inicialização falhou."
 
-#: ../src/core/sipe-ft.c:495
+#: ../src/core/sipe-ft.c:472
 msgid "File transfer authentication failed."
 msgstr "A autenticação para transferência de arquivos falhou."
 
-#: ../src/core/sipe-ft.c:639
+#: ../src/core/sipe-ft.c:597
 msgid "Received encryption key has wrong size."
 msgstr "Chave de encriptação recebida tem tamanho incorreto."
 
-#: ../src/core/sipe-ft.c:654
+#: ../src/core/sipe-ft.c:612
 msgid "Received hash key has wrong size."
 msgstr "Chave de hash recebida tem tamanho incorreto."
