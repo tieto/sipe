@@ -30,3 +30,6 @@ sip_sec_create_context__ntlm(SipSecAuthType type);
 gchar *
 sip_sec_ntlm_message_describe(SipSecBuffer buff);
 
+/* temporarily */
+void
+NTOWFv2 (const char* password, const char *user, const char *domain, unsigned char *result);

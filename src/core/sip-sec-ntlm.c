@@ -147,6 +147,7 @@
 #define NTLMSSP_NT_OR_LM_KEY_LEN 24
 #define NTLMSSP_SESSION_KEY_LEN  16
 #define MD4_DIGEST_LEN 16
+#define MD5_DIGEST_LEN 16
 
 #define IS_FLAG(flags, flag) ((flags & flag) == flag)
 
@@ -339,6 +340,7 @@ DESL (unsigned char *k, const unsigned char *d, unsigned char * results)
 	DES(keys + 14, d, results + 16);
 }
 
+/* out 16 bytes */
 static void
 MD4 (const unsigned char * d, int len, unsigned char * result)
 {
@@ -349,18 +351,49 @@ MD4 (const unsigned char * d, int len, unsigned char * result)
 	purple_cipher_context_destroy(context);
 }
 
+/* out 16 bytes */
 static void
 MD5 (const unsigned char * d, int len, unsigned char * result)
 {
 	PurpleCipher * cipher = purple_ciphers_find_cipher("md5");
 	PurpleCipherContext * context = purple_cipher_context_new(cipher, NULL);
 	purple_cipher_context_append(context, (guchar*)d, len);
-	purple_cipher_context_digest(context, len, (guchar*)result, NULL);
+	purple_cipher_context_digest(context, MD5_DIGEST_LEN, (guchar*)result, NULL);
 	purple_cipher_context_destroy(context);
 }
 
+/* out 16 bytes */
+/*
 static void
-HMAC_MD5 (const unsigned char * d, int len, const unsigned char * key, int key_len, unsigned char * result)
+HMACT64 (const unsigned char *key, int key_len, const unsigned char *data, int data_len, unsigned char *result)
+{
+	int i;
+	unsigned char ibuff[64 + data_len];
+	unsigned char obuff[64 + 16];
+
+	if (key_len > 64)
+		key_len = 64;
+
+        for (i = 0; i < key_len; i++) {
+            ibuff[i] = key[i] ^ 0x36;
+            obuff[i] = key[i] ^ 0x5c;
+        }
+        for (i = key_len; i < 64; i++) {
+            ibuff[i] = 0x36;
+            obuff[i] = 0x5c;
+        }
+
+	memcpy(ibuff+64, data, data_len);
+
+	MD5 (ibuff, 64 + data_len, obuff+64);
+	MD5 (obuff, 64 + 16, result);
+}
+#define HMAC_MD5 HMACT64
+*/
+
+/* out 16 bytes */
+static void
+HMAC_MD5 (const unsigned char *key, int key_len, const unsigned char *data, int data_len, unsigned char *result)
 {
 	PurpleCipher *cipher = purple_ciphers_find_cipher("hmac");
 	PurpleCipherContext *context = purple_cipher_context_new(cipher, NULL);
@@ -368,13 +401,19 @@ HMAC_MD5 (const unsigned char * d, int len, const unsigned char * key, int key_l
 	purple_cipher_context_set_option(context, "hash", "md5");
 	purple_cipher_context_set_key_with_len(context, (guchar *)key, (key_len));
 
-	purple_cipher_context_append(context, (guchar *)d, len);
-	purple_cipher_context_digest(context, len, (guchar*)result, NULL);
+	purple_cipher_context_append(context, (guchar *)data, data_len);
+	purple_cipher_context_digest(context, 16, (guchar*)result, NULL);
 	purple_cipher_context_destroy(context);
 }
 
+/*
+Define NTOWFv1(Passwd, User, UserDom) as
+  MD4(UNICODE(Passwd))
+EndDefine
+*/
+/* out 16 bytes */
 static void
-NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char * result)
+NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
 {
 	int len = 2 * strlen(password); // utf16 should not be more
 	unsigned char *unicode_password = g_new0(unsigned char, len);
@@ -382,6 +421,38 @@ NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUS
 	len = unicode_strconvcopy((gchar *) unicode_password, password, len);
 	MD4 (unicode_password, len, result);
 	g_free(unicode_password);
+}
+
+/*
+Define NTOWFv2(Passwd, User, UserDom) as 
+  HMAC_MD5( MD4(UNICODE(Passwd)), ConcatenationOf( Uppercase(User), UserDom ) )
+EndDefine
+*/
+/* out 16 bytes */
+void
+NTOWFv2 (const char* password, const char *user, const char *domain, unsigned char *result)
+{
+	unsigned char response_key_nt_v1 [16];
+	int len_user = user ? strlen(user) : 0;
+	int len_domain = domain ? strlen(domain) : 0;
+	unsigned char user_upper[len_user + 1];
+	int len_user_u = 2 * len_user; // utf16 should not be more
+	int len_domain_u = 2 * len_domain; // utf16 should not be more
+	unsigned char buff[(len_user + len_domain)*2];
+	int i;
+
+	/* Uppercase user */
+	for (i = 0; i < len_user; i++) {
+		user_upper[i] = g_ascii_toupper(user[i]);
+	}
+	user_upper[len_user] = 0;
+
+	len_user_u = unicode_strconvcopy((gchar *)buff, (gchar *)user_upper, len_user_u);
+	len_domain_u = unicode_strconvcopy((gchar *)(buff+len_user_u), (gchar *)domain, len_domain_u);
+
+	NTOWFv1(password, user, domain, response_key_nt_v1);
+
+	HMAC_MD5(response_key_nt_v1, 16, buff, len_user_u + len_domain_u, result);
 }
 
 static void
@@ -408,7 +479,7 @@ KXKEY ( guint32 flags,
 		guint8 tmp[16];
 		memcpy(tmp, server_challenge, 8);
 		memcpy(tmp+8, lm_challenge_resonse, 8);
-		HMAC_MD5(tmp, 16, session_base_key, 16, key_exchange_key);
+		HMAC_MD5(session_base_key, 16, tmp, 16, key_exchange_key);
 	} else {
 		// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
 		memcpy(key_exchange_key, session_base_key, 16);
@@ -628,7 +699,7 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 		res_ptr[0] = sequence;
 		memcpy(tmp+4, buf, buf_len);
 
-		HMAC_MD5(tmp, 4 + buf_len, signing_key, 16, hmac);
+		HMAC_MD5(signing_key, 16, tmp, 4 + buf_len, hmac);
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
 			RC4K(signing_key, hmac, 8, result+4);

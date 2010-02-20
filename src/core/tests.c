@@ -95,6 +95,21 @@ int main()
 	/* 16 bytes */
 	guchar exported_session_key[] = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55};
 
+	printf ("\nTesting MD4()\n");
+	guchar md4 [16];
+	MD4 ((const unsigned char *)"message digest", 14, md4);
+	assert_equal("D9130A8164549FE818874806E1C7014B", md4, 16, TRUE);
+
+	printf ("\nTesting MD5()\n");
+	guchar md5 [16];
+	MD5 ((const unsigned char *)"message digest", 14, md5);
+	assert_equal("F96B697D7CB7938D525A2F31AAF161D0", md5, 16, TRUE);
+
+	printf ("\nTesting HMAC_MD5()\n");
+	guchar hmac_md5 [16];
+	HMAC_MD5 ((const unsigned char *)"\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b", 16, (const unsigned char *)"Hi There", 8, hmac_md5);
+	assert_equal("9294727A3638BB1C13F48EF8158BFC9D", hmac_md5, 16, TRUE);
+
 	printf ("\nTesting LMOWFv1()\n");
 	guchar response_key_lm [16];
 	LMOWFv1 (password, user, domain, response_key_lm);
@@ -109,6 +124,11 @@ int main()
 	guchar response_key_nt [16];
 	NTOWFv1 (password, user, domain, response_key_nt);
 	assert_equal("A4F49C406510BDCAB6824EE7C30FD852", response_key_nt, 16, TRUE);
+
+	printf ("\n\nTesting NTOWFv2()\n");
+	guchar response_key_nt_v2 [16];
+	NTOWFv2 (password, user, domain, response_key_nt_v2);
+	assert_equal("0C868A403BFD7A93A3001EF22EF02E3F", response_key_nt_v2, 16, TRUE);
 
 	printf ("\nTesting NT Response Generation\n");
 	guchar nt_challenge_response [24];
