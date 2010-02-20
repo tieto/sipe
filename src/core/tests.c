@@ -89,7 +89,7 @@ int main()
 	char * password = "Password";
 	char * user = "User";
 	char * domain = "Domain";
-	//guchar client_challenge [] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
+	guchar client_challenge [] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
 	/* server challenge */
 	guchar nonce [] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
 	/* 16 bytes */
@@ -147,6 +147,17 @@ int main()
 	guchar encrypted_random_session_key [16];
 	RC4K (key_exchange_key, exported_session_key, 16, encrypted_random_session_key);
 	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
+//////
+	guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;	
+
+	printf ("\n\n(Extended session seurity) Testing Key Exchange\n");
+	/* lm_challenge_response */
+	memcpy(lm_challenge_response, client_challenge, 8);
+	Z (lm_challenge_response+8, 16);
+	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
+	assert_equal("EB93429A8BD952F8B89C55B87F475EDC", key_exchange_key, 16, TRUE);	
+
+
 
 	/* End tests from the MS-SIPE document */
 

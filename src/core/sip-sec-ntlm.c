@@ -781,7 +781,6 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, /* signing key */
 		DESL (response_key_lm, nonce, lm_challenge_response);
 	} else if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
 		unsigned char client_challenge [8];
-		unsigned char z16 [16];
 		unsigned char prehash [16];
 		unsigned char hash [16];
 
@@ -794,9 +793,8 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, /* signing key */
 		DESL (response_key_nt, hash, nt_challenge_response);
 
 		/* lm_challenge_response */
-		Z (z16, 16);
 		memcpy(lm_challenge_response, client_challenge, 8);
-		memcpy(lm_challenge_response + 8, z16, 16);
+		Z (lm_challenge_response+8, 16);
 	} else {
 		DESL (response_key_nt, nonce, nt_challenge_response);
 		if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_NT_ONLY)) {
