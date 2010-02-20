@@ -150,14 +150,23 @@ int main()
 //////
 	guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;	
 
-	printf ("\n\n(Extended session seurity) Testing Key Exchange\n");
-	/* lm_challenge_response */
+	printf ("\n\n(Extended session seurity) Testing LM Response Generation\n");
 	memcpy(lm_challenge_response, client_challenge, 8);
 	Z (lm_challenge_response+8, 16);
+	assert_equal("AAAAAAAAAAAAAAAA00000000000000000000000000000000", lm_challenge_response, 24, TRUE);
+
+	printf ("\n\n(Extended session seurity) Testing Key Exchange\n");
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 	assert_equal("EB93429A8BD952F8B89C55B87F475EDC", key_exchange_key, 16, TRUE);	
 
-
+	printf ("\n\n(Extended session seurity) Testing NT Response Generation\n");	
+	unsigned char prehash [16];
+	unsigned char hash [16];
+	memcpy(prehash, nonce, 8);
+	memcpy(prehash + 8, client_challenge, 8);
+	MD5 (prehash, 16, hash);
+	DESL (response_key_nt, hash, nt_challenge_response);
+	assert_equal("7537F803AE367128CA458204BDE7CAF81E97ED2683267232", nt_challenge_response, 24, TRUE);
 
 	/* End tests from the MS-SIPE document */
 
