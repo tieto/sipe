@@ -329,7 +329,19 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 		size = DEFAULT_BLOCK_SIZE;
 
 	if (ft->bytes_remaining_chunk == 0) {
-		guchar chunk_buf[3];
+		guchar local_buf[16];
+
+		// Check if receiver did not cancel the transfer before it is finished
+		ssize_t bytes_read = read(xfer->fd,local_buf,sizeof (local_buf));
+		if (bytes_read == -1 && errno != EAGAIN) {
+			raise_ft_strerror(xfer, _("Socket read failed"));
+			return -1;
+		} else if (bytes_read != 0) {
+			if (   g_str_has_prefix((gchar*)local_buf,"CCL\r\n")
+				|| g_str_has_prefix((gchar*)local_buf,"BYE 2164261682\r\n")) {
+				return -1;
+			}
+		}
 
 		if (ft->outbuf_size < size) {
 			g_free(ft->encrypted_outbuf);
@@ -349,12 +361,12 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 					      ft->encrypted_outbuf, NULL);
 		purple_cipher_context_append(ft->hmac_context, buffer, size);
 
-		chunk_buf[0] = 0;
-		chunk_buf[1] = ft->bytes_remaining_chunk & 0x00FF;
-		chunk_buf[2] = (ft->bytes_remaining_chunk & 0xFF00) >> 8;
+		local_buf[0] = 0;
+		local_buf[1] = ft->bytes_remaining_chunk & 0x00FF;
+		local_buf[2] = (ft->bytes_remaining_chunk & 0xFF00) >> 8;
 
 		set_socket_nonblock(xfer->fd, FALSE);
-		if (write(xfer->fd,chunk_buf,3) == -1) {
+		if (write(xfer->fd,local_buf,3) == -1) {
 			raise_ft_strerror(xfer, _("Socket write failed"));
 			return -1;
 		}
