@@ -29,3 +29,4 @@ sip_sec_create_context__ntlm(SipSecAuthType type);
  */
 gchar *
 sip_sec_ntlm_message_describe(SipSecBuffer buff);
+

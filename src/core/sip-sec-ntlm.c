@@ -148,6 +148,8 @@
 #define NTLMSSP_SESSION_KEY_LEN  16
 #define MD4_DIGEST_LEN 16
 
+#define IS_FLAG(flags, flag) ((flags & flag) == flag)
+
 struct av_pair {
 	guint16 av_id;
 	guint16 av_len;
@@ -358,6 +360,20 @@ MD5 (const unsigned char * d, int len, unsigned char * result)
 }
 
 static void
+HMAC_MD5 (const unsigned char * d, int len, const unsigned char * key, int key_len, unsigned char * result)
+{
+	PurpleCipher *cipher = purple_ciphers_find_cipher("hmac");
+	PurpleCipherContext *context = purple_cipher_context_new(cipher, NULL);
+ 
+	purple_cipher_context_set_option(context, "hash", "md5");
+	purple_cipher_context_set_key_with_len(context, (guchar *)key, (key_len));
+
+	purple_cipher_context_append(context, (guchar *)d, len);
+	purple_cipher_context_digest(context, len, (guchar*)result, NULL);
+	purple_cipher_context_destroy(context);
+}
+
+static void
 NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char * result)
 {
 	int len = 2 * strlen(password); // utf16 should not be more
@@ -369,37 +385,61 @@ NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUS
 }
 
 static void
-RC4K (const unsigned char * k, const unsigned char * d, unsigned char * result)
+RC4K (const unsigned char * k, const unsigned char * d, int len, unsigned char * result)
 {
 	PurpleCipherContext * context = purple_cipher_context_new_by_name("rc4", NULL);
 	purple_cipher_context_set_option(context, "key_len", GUINT_TO_POINTER(16));
 	purple_cipher_context_set_key(context, k);
-	purple_cipher_context_encrypt(context, (const guchar *)d, 16, result, NULL);
+	purple_cipher_context_encrypt(context, (const guchar *)d, len, result, NULL);
 	purple_cipher_context_destroy(context);
 }
 
 static void
-KXKEY (const unsigned char * session_base_key, SIPE_UNUSED_PARAMETER const unsigned char * lm_challenge_resonse, unsigned char * key_exchange_key)
+KXKEY ( guint32 flags,
+	const unsigned char * session_base_key,
+	const unsigned char * lm_challenge_resonse,
+	const guint8 * server_challenge, /* 8-bytes, nonce */
+	unsigned char * key_exchange_key)
 {
-	// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
-	memcpy(key_exchange_key, session_base_key, 16);
+	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+		//   Define KXKEY(SessionBaseKey, LmChallengeResponse, ServerChallenge) as
+		//        Set KeyExchangeKey to HMAC_MD5(SessionBaseKey, ConcatenationOf(ServerChallenge, LmChallengeResponse [0..7]))
+		//   EndDefine
+		guint8 tmp[16];
+		memcpy(tmp, server_challenge, 8);
+		memcpy(tmp+8, lm_challenge_resonse, 8);
+		HMAC_MD5(tmp, 16, session_base_key, 16, key_exchange_key);
+	} else {
+		// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
+		memcpy(key_exchange_key, session_base_key, 16);
+	}
+	
 }
 
-// This method is only used for NTLM v2 session security w/ enhanced security negotiated
-/*void
-SIGNKEY (const char * random_session_key, gboolean client, char * result)
+// This method is only used for NTLMv2 and extended session security
+/*
+     If (Mode equals "Client")
+          Set SignKey to MD5(ConcatenationOf(RandomSessionKey,
+          "session key to client-to-server signing key magic constant"))
+     Else
+          Set SignKey to MD5(ConcatenationOf(RandomSessionKey,
+          "session key to server-to-client signing key magic constant"))
+     Endif
+*/
+void
+SIGNKEY (const unsigned char * random_session_key, gboolean client, unsigned char * result)
 {
 	char * magic = client
 		? "session key to client-to-server signing key magic constant"
 		: "session key to server-to-client signing key magic constant";
 
 	int len = strlen(magic);
-	char md5_input [16 + len];
+	unsigned char md5_input [16 + len];
 	memcpy(md5_input, random_session_key, 16);
 	memcpy(md5_input + 16, magic, len);
 
 	MD5 (md5_input, len + 16, result);
-}*/
+}
 
 static void
 LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
@@ -534,42 +574,94 @@ CRC32 (const char * msg)
 	return crc;
 }
 
-static gchar *
-purple_ntlm_gen_signature (const char * buf, unsigned char * signing_key, guint32 random_pad, long sequence, unsigned long key_len)
-{
-	gint32 *res_ptr;
-	gint32 plaintext [] = {0, CRC32(buf), sequence};
+/*
+Version (4 bytes): A 32-bit unsigned integer that contains the signature version. This field MUST be 0x00000001.
+RandomPad (4 bytes): A 4-byte array that contains the random pad for the message.
+Checksum (4 bytes):  A 4-byte array that contains the checksum for the message.
+SeqNum (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence number for this application message.
+---
+Version (4 bytes): A 32-bit unsigned integer that contains the signature version. This field MUST be 0x00000001.
+Checksum (8 bytes): An 8-byte array that contains the checksum for the message.
+SeqNum (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence number for this application message.
 
+0x00000001, RC4K(RandomPad), RC4K(CRC32(Message)), RC4K(0x00000000) XOR (application supplied SeqNum)		-- RC4(X) xor X xor Y = RC4(Y)
+*/
+// Version(4), RandomPad(4), Checksum(4), SeqNum(4)
+// Version(4), Checksum(8), SeqNum(4)			-- for ext.sess.sec.
+// MAC(Handle, SigningKey, SeqNum, Message)
+static gchar *
+MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 random_pad, long sequence, SIPE_UNUSED_PARAMETER unsigned long key_len)
+{
 	guchar result [16];
+	gint32 *res_ptr;
 	gchar signature [33];
 	int i, j;
-	PurpleCipherContext *rc4 = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(key_len));
 
-	purple_cipher_context_set_key(rc4, signing_key);
-	purple_cipher_context_encrypt(rc4, (const guchar *)plaintext, 12, result+4, NULL);
-	purple_cipher_context_destroy(rc4);
+	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+		/*
+		Define MAC(Handle, SigningKey, SeqNum, Message) as
+		     Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
+		     Set NTLMSSP_MESSAGE_SIGNATURE.Checksum to
+			 HMAC_MD5(SigningKey, ConcatenationOf(SeqNum, Message))[0..7]
+		     Set NTLMSSP_MESSAGE_SIGNATURE.SeqNum to SeqNum
+		     Set SeqNum to SeqNum + 1
+		EndDefine
+		*/
+		/* If a key exchange key is negotiated
+		   Define MAC(Handle, SigningKey, SeqNum, Message) as
+			Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
+			Set NTLMSSP_MESSAGE_SIGNATURE.Checksum to RC4(Handle,
+				HMAC_MD5(SigningKey, ConcatenationOf(SeqNum, Message))[0..7])
+			Set NTLMSSP_MESSAGE_SIGNATURE.SeqNum to SeqNum
+			Set SeqNum to SeqNum + 1
+		   EndDefine
+		*/
+		int buf_len = strlen(buf);
+		guchar hmac[16];
+		guchar tmp[4 + buf_len];
 
-	res_ptr = (gint32 *)result;
-	// Highest four bytes are the Version
-	res_ptr[0] = 0x00000001;
+		res_ptr = (gint32 *)result;
+		res_ptr[0] = 0x00000001; // 4 bytes
+		res_ptr[3] = sequence;
 
-	// Replace the first four bytes of the ciphertext with a counter value
-	// currently set to this hardcoded value
-	res_ptr[1] = random_pad;
+		res_ptr = (gint32 *)tmp;
+		res_ptr[0] = sequence;
+		memcpy(tmp+4, buf, buf_len);
+
+		HMAC_MD5(tmp, 4 + buf_len, signing_key, 16, hmac);
+
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
+			RC4K(signing_key, hmac, 8, result+4);
+		} else {
+			memcpy(result+4, hmac, 8);
+		}		
+	} else {
+		///gint32 plaintext [] = {0, CRC32(buf), sequence}; // 4, 4, 4 bytes
+		gint32 plaintext [] = {random_pad, CRC32(buf), sequence}; // 4, 4, 4 bytes
+
+		RC4K(signing_key, (const guchar *)plaintext, 12, result+4);
+
+		res_ptr = (gint32 *)result;
+		// Highest four bytes are the Version
+		res_ptr[0] = 0x00000001; // 4 bytes
+
+		// Replace the first four bytes of the ciphertext with a counter value
+		// currently set to this hardcoded value
+		///res_ptr[1] = random_pad; // 4 bytes
+	}
 
 	for (i = 0, j = 0; i < 16; i++, j+=2) {
 		g_sprintf(&signature[j], "%02X", result[i]);
 	}
 
-	//printf("sig: %s\n", signature);
+	printf("sig: %s\n", signature);
 	return g_strdup(signature);
 }
 
 static gchar *
-purple_ntlm_sipe_signature_make (const char * msg, unsigned char * signing_key)
+purple_ntlm_sipe_signature_make (guint32 flags, const char * msg, unsigned char * signing_key)
 {
-	return purple_ntlm_gen_signature(msg, signing_key, 0, 100, 16);
+	return MAC(flags, msg, signing_key, 0, 100, 16);
 }
 
 static gboolean
@@ -580,18 +672,16 @@ purple_ntlm_verify_signature (char * a, char * b)
 	return ret;
 }
 
-#define IS_FLAG(flags, flag) ((neg_flags & flag) == flag)
-
 static void
-purple_ntlm_gen_authenticate(guchar **ntlm_key,
+purple_ntlm_gen_authenticate(guchar **ntlm_key, /* signing key */
 			     const gchar *user,
 			     const gchar *password,
 			     const gchar *hostname,
 			     const gchar *domain,
-			     const guint8 *nonce,
+			     const guint8 *nonce, /* server challenge */
 			     gboolean is_connection_based,
 			     SipSecBuffer *out_buff,
-			     SIPE_UNUSED_PARAMETER guint32 *flags)
+			     guint32 *flags)
 {
 	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	gboolean is_key_exch = IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH);
@@ -609,6 +699,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 	unsigned char key_exchange_key [16];
 	unsigned char exported_session_key[16];
 	unsigned char encrypted_random_session_key [16];
+	unsigned char client_signing_key [16];
 
 	NTOWFv1 (password, user, domain, response_key_nt);
 	LMOWFv1 (password, user, domain, response_key_lm);
@@ -684,7 +775,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 
 	/* Session Key */
 	MD4(response_key_nt, 16, session_base_key);
-	KXKEY(session_base_key, lm_challenge_response, key_exchange_key);
+	KXKEY(neg_flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 
 	if (is_key_exch)
 	{
@@ -692,7 +783,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
 
 		NONCE (exported_session_key, 16);
-		RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
+		RC4K (key_exchange_key, exported_session_key, 16, encrypted_random_session_key);
 
 		memcpy(tmp, encrypted_random_session_key, 16);
 		tmp += NTLMSSP_SESSION_KEY_LEN;
@@ -704,8 +795,17 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key,
 
 		memcpy(exported_session_key, key_exchange_key, 16);
 	}
+// p.46
+//Set ClientSigningKey to SIGNKEY(ExportedSessionKey, "Client")
+//Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+		SIGNKEY(exported_session_key, FALSE, client_signing_key); //Server
+	} else {
+		memcpy(client_signing_key, exported_session_key, 16);
+	}
+	*ntlm_key = (guchar *)g_strndup((gchar *)client_signing_key, 16);
 
-	*ntlm_key = (guchar *)g_strndup((gchar *)exported_session_key, 16);
+	*flags = neg_flags;
 
 	tmp = purple_base64_encode(exported_session_key, 16);
 	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE session key: %s\n", tmp);
@@ -1052,7 +1152,9 @@ typedef struct _context_ntlm {
 	char *username;
 	char *password;
 	int step;
+	/* signing key */
 	guchar *key;
+	guint32 flags;
 } *context_ntlm;
 
 
@@ -1121,6 +1223,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 
 		g_free(ctx->key);
 		ctx->key = ntlm_key;
+		ctx->flags = flags;
 		return SIP_SEC_E_OK;
 	}
 }
@@ -1134,7 +1237,8 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 			const char *message,
 			SipSecBuffer *signature)
 {
-	gchar *signature_hex = purple_ntlm_sipe_signature_make(message,
+	gchar *signature_hex = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
+								message,
 							       ((context_ntlm) context)->key);
 
 	hex_str_to_bytes(signature_hex, signature);
@@ -1153,7 +1257,8 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 			  SipSecBuffer signature)
 {
 	char *signature_hex = bytes_to_hex_str(&signature);
-	gchar *signature_calc = purple_ntlm_sipe_signature_make(message,
+	gchar *signature_calc = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
+								message,
 								((context_ntlm) context)->key);
 	sip_uint32 res;
 
