@@ -89,7 +89,10 @@ int main()
 	char * password = "Password";
 	char * user = "User";
 	char * domain = "Domain";
+	//guchar client_challenge [] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
+	/* server challenge */
 	guchar nonce [] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
+	/* 16 bytes */
 	guchar exported_session_key[] = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55};
 
 	printf ("\nTesting LMOWFv1()\n");
@@ -116,13 +119,13 @@ int main()
 	guchar session_base_key [16];
 	MD4(response_key_nt, 16, session_base_key);
 	guchar key_exchange_key [16];
-	KXKEY(session_base_key, lm_challenge_response, key_exchange_key);
+	KXKEY(NEGOTIATE_FLAGS, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", session_base_key, 16, TRUE);
 	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", key_exchange_key, 16, TRUE);
 
 	printf ("\n\nTesting Encrypted Session Key Generation\n");
 	guchar encrypted_random_session_key [16];
-	RC4K (key_exchange_key, exported_session_key, encrypted_random_session_key);
+	RC4K (key_exchange_key, exported_session_key, 16, encrypted_random_session_key);
 	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
 
 	/* End tests from the MS-SIPE document */
@@ -132,7 +135,7 @@ int main()
 	guchar sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
 	assert_equal (
 		"0100000078010900397420FE0E5A0F89",
-		(guchar *) purple_ntlm_gen_signature ("jCIFS", sk, 0x00090178, 0, 8),
+		(guchar *) MAC(NEGOTIATE_FLAGS, "jCIFS", sk, 0x00090178, 0, 8),
 		32, FALSE
 	);
 
@@ -142,7 +145,7 @@ int main()
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 	assert_equal (
 		"0100000000000000BF2E52667DDF6DED",
-		(guchar *) purple_ntlm_gen_signature(msg1, exported_session_key2, 0, 100, 16),
+		(guchar *) MAC(NEGOTIATE_FLAGS, msg1, exported_session_key2, 0, 100, 16),
 		32, FALSE
 	);
 
@@ -154,7 +157,7 @@ int main()
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
 	gchar * msg_str = sipmsg_breakdown_get_string(&msgbd);
-	gchar * sig = purple_ntlm_sipe_signature_make (msg_str, exported_session_key2);
+	gchar * sig = purple_ntlm_sipe_signature_make (NEGOTIATE_FLAGS, msg_str, exported_session_key2);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", (guchar *) sig, 32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", purple_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
