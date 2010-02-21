@@ -35,6 +35,7 @@ sipe_free_queued_message(struct queued_message *message)
 {
 	g_free(message->body);
 	g_free(message->content_type);
+	g_free(message);
 }
 
 struct sip_session *
