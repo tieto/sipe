@@ -157,7 +157,7 @@ int main()
 
 	printf ("\n\nTesting MAC\n");
 	gchar *mac = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0,  0, 16);
-	assert_equal("0100000045c844e509dcd1df2e459d36", (guchar*)mac, 16, FALSE);
+	assert_equal("0100000045c844e509dcd1df2e459d36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
 
@@ -190,7 +190,7 @@ int main()
 
 	printf ("\n\n(Extended session security) Testing MAC\n");
 	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, (gchar*)text, 18, client_sign_key, 0,  0, 16);
-	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 16, FALSE);
+	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
 
@@ -214,7 +214,7 @@ int main()
 
 	printf ("\n\n(davenport) Testing MAC - no Key Exchange flag\n");
 	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, text_j, strlen(text_j), client_sign_key, 0,  0, 16);
-	assert_equal("010000000A003602317A759A00000000", (guchar*)mac, 16, FALSE);
+	assert_equal("010000000A003602317A759A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
