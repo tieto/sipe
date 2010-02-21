@@ -644,7 +644,7 @@ SeqNum (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence numb
 // Version(4), Checksum(8), SeqNum(4)			-- for ext.sess.sec.
 // MAC(Handle, SigningKey, SeqNum, Message)
 static gchar *
-MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 random_pad, long sequence, SIPE_UNUSED_PARAMETER unsigned long key_len)
+MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, guint32 random_pad, long sequence, SIPE_UNUSED_PARAMETER unsigned long key_len)
 {
 	guchar result [16];
 	gint32 *res_ptr;
@@ -652,6 +652,7 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 	int i, j;
 
 	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+printf("mac: Extented Session Security\n");
 		/*
 		Define MAC(Handle, SigningKey, SeqNum, Message) as
 		     Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
@@ -670,7 +671,6 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 			Set SeqNum to SeqNum + 1
 		   EndDefine
 		*/
-		int buf_len = strlen(buf);
 		guchar hmac[16];
 		guchar tmp[4 + buf_len];
 
@@ -685,11 +685,14 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 		HMAC_MD5(signing_key, 16, tmp, 4 + buf_len, hmac);
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
+printf("mac: Key Exchange\n");
 			RC4K(signing_key, hmac, 8, result+4);
 		} else {
+printf("mac: *NO* Key Exchange\n");
 			memcpy(result+4, hmac, 8);
 		}
 	} else {
+printf("mac: *NO* Extented Session Security\n");
 		///gint32 plaintext [] = {0, CRC32(buf), sequence}; // 4, 4, 4 bytes
 		gint32 plaintext [] = {random_pad, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
 
@@ -714,7 +717,7 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 static gchar *
 purple_ntlm_sipe_signature_make (guint32 flags, const char * msg, unsigned char * signing_key)
 {
-	return MAC(flags, msg, signing_key, 0, 100, 16);
+	return MAC(flags, msg, strlen(msg), signing_key, 0, 100, 16);
 }
 
 static gboolean
