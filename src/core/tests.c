@@ -222,7 +222,7 @@ int main()
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
 	gchar * msg_str = sipmsg_breakdown_get_string(&msgbd);
-	gchar * sig = purple_ntlm_sipe_signature_make (NEGOTIATE_FLAGS, msg_str, exported_session_key2);
+	gchar * sig = purple_ntlm_sipe_signature_make (NEGOTIATE_FLAGS, msg_str, 0, exported_session_key2);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", (guchar *) sig, 32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", purple_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));

@@ -699,9 +699,8 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 		// Highest four bytes are the Version
 		res_ptr[0] = 0x00000001; // 4 bytes
 
-		// Replace the first four bytes of the ciphertext with a counter value
-		// currently set to this hardcoded value
-		///res_ptr[1] = random_pad; // 4 bytes
+		// Replace the first four bytes of the ciphertext with the random_pad
+		res_ptr[1] = random_pad; // 4 bytes
 	}
 
 	for (i = 0, j = 0; i < 16; i++, j+=2) {
@@ -712,17 +711,20 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 }
 
 static gchar *
-purple_ntlm_sipe_signature_make (guint32 flags, const char * msg, unsigned char * signing_key)
+purple_ntlm_sipe_signature_make (guint32 flags, const char * msg, guint32 random_pad, unsigned char * signing_key)
 {
-	return MAC(flags, msg, signing_key, 0, 100, 16);
+	return MAC(flags, msg, signing_key, random_pad, 100, 16);
 }
 
 static gboolean
 purple_ntlm_verify_signature (char * a, char * b)
 {
-	// Make sure the last 16 bytes match
-	gboolean ret = g_ascii_strncasecmp(a + 16, b + 16, 16) == 0;
-	return ret;
+	/*
+	 * Make sure the last 24 bytes match
+	 *  8 bytes random pad 
+	 * 16 bytes signature
+	 */
+	return g_ascii_strncasecmp(a + 8, b + 8, 24) == 0;
 }
 
 static void
@@ -1288,8 +1290,10 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 			const char *message,
 			SipSecBuffer *signature)
 {
+	/* FIXME? We always use a random_pad of 0 */
 	gchar *signature_hex = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								message,
+							       0,
 							       ((context_ntlm) context)->key);
 
 	hex_str_to_bytes(signature_hex, signature);
@@ -1307,9 +1311,11 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 			  const char *message,
 			  SipSecBuffer signature)
 {
+	guint32 random_pad = ((guint32 *) signature.value)[1];
 	char *signature_hex = bytes_to_hex_str(&signature);
 	gchar *signature_calc = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								message,
+								random_pad,
 								((context_ntlm) context)->key);
 	sip_uint32 res;
 
