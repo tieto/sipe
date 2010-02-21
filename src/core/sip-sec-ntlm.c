@@ -714,7 +714,15 @@ SeqNum (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence numb
 // Version(4), Checksum(8), SeqNum(4)			-- for ext.sess.sec.
 // MAC(Handle, SigningKey, SeqNum, Message)
 static gchar *
-MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, guint32 random_pad, long sequence, unsigned long key_len)
+MAC (guint32 flags,
+     const char *buf,
+     int buf_len,
+     unsigned char *sign_key,
+     unsigned long sign_key_len,
+     unsigned char *seal_key,
+     unsigned long seal_key_len,
+     guint32 random_pad,
+     long sequence)
 {
 	guchar result [16];
 	gint32 *res_ptr;
@@ -753,11 +761,12 @@ MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, 
 		res_ptr[0] = sequence;
 		memcpy(tmp+4, buf, buf_len);
 
-		HMAC_MD5(signing_key, 16, tmp, 4 + buf_len, hmac);
+		HMAC_MD5(sign_key, sign_key_len, tmp, 4 + buf_len, hmac);
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
 			purple_debug_info("sipe", "NTLM MAC(): Key Exchange\n");
-			RC4K(signing_key, key_len, hmac, 8, result+4);
+			RC4K(seal_key, seal_key_len, hmac, 8, result+4);
+			//RC4K(sign_key, sign_key_len, hmac, 8, result+4);
 		} else {
 			purple_debug_info("sipe", "NTLM MAC(): *NO* Key Exchange\n");
 			memcpy(result+4, hmac, 8);
@@ -772,7 +781,7 @@ MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, 
 
 		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
 
-		RC4K(signing_key, key_len, (const guchar *)plaintext, 12, result+4);
+		RC4K(sign_key, sign_key_len, (const guchar *)plaintext, 12, result+4);
 		//RC4K(seal_key, 8, (const guchar *)plaintext, 12, result+4);
 
 		res_ptr = (gint32 *)result;
@@ -793,7 +802,7 @@ MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, 
 static gchar *
 purple_ntlm_sipe_signature_make (guint32 flags, const char * msg, guint32 random_pad, unsigned char * signing_key)
 {
-	return MAC(flags, msg, strlen(msg), signing_key, random_pad, 100, 16);
+	return MAC(flags, msg, strlen(msg), signing_key, 16,  0,16,  random_pad, 100);
 }
 
 static gboolean

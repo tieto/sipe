@@ -164,20 +164,20 @@ int main()
 	assert_equal("7D84AA93", (guchar *)&crc, 4, TRUE);
 
 	printf ("\n\nTesting Encryption\n");
-	guchar client_seal_key [8];
+	guchar client_seal_key [16];
 	SEALKEY (flags, key_exchange_key, TRUE, client_seal_key);
 	guchar text_enc [18];
 	RC4K (client_seal_key, 8, text, 18, text_enc);
 	assert_equal("56fe04d861f9319af0d7238a2e3b4d457fb8", text_enc, 18, TRUE);
 
 	printf ("\n\nTesting MAC\n");
-	gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 0x00000000,  0, 16);
+	gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, 0,16,  0x00000000,  0);
 	assert_equal("0100000045c844e509dcd1df2e459d36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
-	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 0x45C844E5,  0, 16);
+	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, 0,16,  0x45C844E5,  0);
 	assert_equal("01000000E544C84509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
-	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 0xE544C845,  0, 16);
+	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, 0,16,  0xE544C845,  0);
 	assert_equal("0100000045C844E509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
@@ -229,7 +229,7 @@ int main()
 	assert_equal("A02372F6530273F3AA1EB90190CE5200C99D", text_enc, 18, TRUE);
 
 	printf ("\n\n(Extended session security) Testing MAC\n");
-	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, (gchar*)text, 18, client_sign_key, 0,  0, 16);
+	mac = MAC (flags,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0);
 	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
@@ -261,6 +261,21 @@ int main()
 	SEALKEY (flags, exported_session_key, TRUE, client_seal_key);
 	assert_equal("59F600973CC4960A25480A7C196E4C58", client_seal_key, 16, TRUE);
 
+	printf ("\n\nTesting (NTLMv2) Encryption\n");
+	RC4K (client_seal_key, 16, text, 18, text_enc);
+	assert_equal("54E50165BF1936DC996020C1811B0F06FB5F", text_enc, 18, TRUE);
+
+//	printf ("\n\nTesting (NTLMv2) Encryption\n");
+//const guchar text2 [] = {0x50, 0x00, 0x6c, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x74, 0x00, 0x65, 0x00, 0x78, 0x00, 0x74, 0x00
+//			, 0x70, 0x35, 0x28, 0x51, 0xf2, 0x56, 0x43, 0x09}; //P·l·a·i·n·t·e·x·t·
+//guchar text_enc2 [18+8];
+//	RC4K (client_seal_key, 16, text2, 18+8, text_enc2);
+//	assert_equal("54E50165BF1936DC996020C1811B0F06FB5F", text_enc2, 18+8, TRUE);
+
+	printf ("\n\nTesting (NTLMv2) MAC (withour RC4, as we don't keep it's handle yet)\n");
+	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0);
+	assert_equal("0100000070352851F256430900000000", (guchar*)mac, 32, FALSE);
+	g_free(mac);
 
 
 	/* End tests from the MS-SIPE document */
@@ -271,7 +286,7 @@ int main()
 	guchar sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
 	assert_equal (
 		"0100000078010900397420FE0E5A0F89",
-		(guchar *) MAC(NEGOTIATE_FLAGS, text_j, strlen(text_j), sk, 0x00090178, 0, 8),
+		(guchar *) MAC(NEGOTIATE_FLAGS, text_j, strlen(text_j), sk, 8,  0,16,  0x00090178, 0),
 		32, FALSE
 	);
 
@@ -282,7 +297,7 @@ int main()
 	assert_equal("F7F97A82EC390F9C903DAC4F6ACEB132", client_sign_key, 16, TRUE);
 
 	printf ("\n\n(davenport) Testing MAC - no Key Exchange flag\n");
-	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, text_j, strlen(text_j), client_sign_key, 0,  0, 16);
+	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, text_j, strlen(text_j), client_sign_key, 16,  0,16,  0,  0);
 	assert_equal("010000000A003602317A759A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
@@ -292,7 +307,7 @@ int main()
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 	assert_equal (
 		"0100000000000000BF2E52667DDF6DED",
-		(guchar *) MAC(NEGOTIATE_FLAGS, msg1, strlen(msg1), exported_session_key2, 0, 100, 16),
+		(guchar *) MAC(NEGOTIATE_FLAGS, msg1, strlen(msg1), exported_session_key2, 16,  0,16,  0, 100),
 		32, FALSE
 	);
 
