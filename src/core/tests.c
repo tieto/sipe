@@ -168,11 +168,11 @@ int main()
 	SEALKEY (flags, key_exchange_key, TRUE, client_seal_key);
 	guchar text_enc [18];
 	RC4K (client_seal_key, 8, text, 18, text_enc);
-	assert_equal("56fe04d861f9319af0d7238a2e3b4d457fb8", text_enc, 18, TRUE);
+	assert_equal("56FE04D861F9319AF0D7238A2E3B4D457FB8", text_enc, 18, TRUE);
 
 	printf ("\n\nTesting MAC\n");
 	gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 0x00000000,  0, 16);
-	assert_equal("0100000045c844e509dcd1df2e459d36", (guchar*)mac, 32, FALSE);
+	assert_equal("010000000000000009DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 0x45C844E5,  0, 16);
 	assert_equal("01000000E544C84509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
