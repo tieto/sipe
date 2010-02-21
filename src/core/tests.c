@@ -165,9 +165,9 @@ int main()
 
 	printf ("\n\nTesting Encryption\n");
 	guchar client_seal_key [16];
-	SEALKEY (flags, key_exchange_key, TRUE, client_seal_key);
+	//SEALKEY (flags, exported_session_key, TRUE, client_seal_key);
 	guchar text_enc [18];
-	RC4K (client_seal_key, 8, text, 18, text_enc);
+	RC4K (exported_session_key, 16, text, 18, text_enc);
 	assert_equal("56FE04D861F9319AF0D7238A2E3B4D457FB8", text_enc, 18, TRUE);
 
 	printf ("\n\nTesting MAC\n");
