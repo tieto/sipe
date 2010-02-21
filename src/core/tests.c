@@ -156,8 +156,14 @@ int main()
 	assert_equal("7D84AA93", (guchar *)&crc, 4, TRUE);
 
 	printf ("\n\nTesting MAC\n");
-	gchar *mac = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0,  0, 16);
-	assert_equal("0100000045c844e509dcd1df2e459d36", (guchar*)mac, 32, FALSE);
+	gchar *mac = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0x00000000,  0, 16);
+	assert_equal("010000000000000009DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
+	g_free(mac);
+	mac        = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0x45C844E5,  0, 16);
+	assert_equal("01000000E544C84509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
+	g_free(mac);
+	mac        = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0xE544C845,  0, 16);
+	assert_equal("0100000045C844E509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
 
