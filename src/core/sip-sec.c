@@ -121,7 +121,7 @@ sip_sec_init_context_step(SipSecContext context,
 
 		tmp = sip_sec_ntlm_message_describe(in_buff);
 		if (tmp) {
-			purple_debug_info("sipe", "sip_sec_init_context_step: Chalenge message is:\n%s", tmp);
+			purple_debug_info("sipe", "sip_sec_init_context_step: Challenge message is:\n%s", tmp);
 		}
 		g_free(tmp);
 	}

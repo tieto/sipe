@@ -652,7 +652,6 @@ MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, 
 	int i, j;
 
 	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
-printf("mac: Extented Session Security\n");
 		/*
 		Define MAC(Handle, SigningKey, SeqNum, Message) as
 		     Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
@@ -674,6 +673,8 @@ printf("mac: Extented Session Security\n");
 		guchar hmac[16];
 		guchar tmp[4 + buf_len];
 
+		purple_debug_info("sipe", "NTLM MAC(): Extented Session Security\n");
+
 		res_ptr = (gint32 *)result;
 		res_ptr[0] = 0x00000001; // 4 bytes
 		res_ptr[3] = sequence;
@@ -685,15 +686,17 @@ printf("mac: Extented Session Security\n");
 		HMAC_MD5(signing_key, 16, tmp, 4 + buf_len, hmac);
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
+			purple_debug_info("sipe", "NTLM MAC(): Key Exchange\n");
 			RC4K(signing_key, key_len, hmac, 8, result+4);
 		} else {
-printf("mac: *NO* Key Exchange\n");
+			purple_debug_info("sipe", "NTLM MAC(): *NO* Key Exchange\n");
 			memcpy(result+4, hmac, 8);
 		}
 	} else {
-printf("mac: *NO* Extented Session Security\n");
 		///gint32 plaintext [] = {0, CRC32(buf), sequence}; // 4, 4, 4 bytes
 		gint32 plaintext [] = {random_pad, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
+
+		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
 
 		RC4K(signing_key, key_len, (const guchar *)plaintext, 12, result+4);
 
@@ -723,7 +726,7 @@ purple_ntlm_verify_signature (char * a, char * b)
 {
 	/*
 	 * Make sure the last 24 bytes match
-	 *  8 bytes random pad 
+	 *  8 bytes random pad
 	 * 16 bytes signature
 	 */
 	return g_ascii_strncasecmp(a + 8, b + 8, 24) == 0;
