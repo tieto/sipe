@@ -149,14 +149,15 @@ int main()
 	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
 
 	printf ("\n\nTesting CRC32\n");
-	guchar text [] = {0x50, 0x00, 0x6c, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x74, 0x00, 0x65, 0x00, 0x78, 0x00, 0x74, 0x00}; //P·l·a·i·n·t·e·x·t·
+	const guchar text [] = {0x50, 0x00, 0x6c, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x74, 0x00, 0x65, 0x00, 0x78, 0x00, 0x74, 0x00}; //P·l·a·i·n·t·e·x·t·
 	//guchar text [] = {0x56, 0xfe, 0x04, 0xd8, 0x61, 0xf9, 0x31, 0x9a, 0xf0, 0xd7, 0x23, 0x8a, 0x2e, 0x3b, 0x4d, 0x45, 0x7f, 0xb8};
 	gint32 crc = CRC32((char*)text, 18);
 	assert_equal("7D84AA93", (guchar *)&crc, 4, TRUE);
 
 	printf ("\n\nTesting MAC\n");
-	gchar *mac = MAC (NEGOTIATE_FLAGS, (gchar*)text, key_exchange_key, 0,  0, 16);
+	gchar *mac = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0,  0, 16);
 	assert_equal("0100000045c844e509dcd1df2e459d36", (guchar*)mac, 16, FALSE);
+	g_free(mac);
 
 
 
@@ -186,23 +187,34 @@ int main()
 	SIGNKEY (key_exchange_key, TRUE, client_sign_key);
 	assert_equal("60E799BE5C72FC92922AE8EBE961FB8D", client_sign_key, 16, TRUE);
 
+	printf ("\n\n(Extended session seurity) Testing MAC\n");
+	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, (gchar*)text, 18, client_sign_key, 0,  0, 16);
+	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 16, FALSE);
+	g_free(mac);
+
 
 	/* End tests from the MS-SIPE document */
 
 	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm1Signing
+	const gchar *text_j = "jCIFS";
 	printf ("\n\nTesting Signature Algorithm\n");
 	guchar sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
 	assert_equal (
 		"0100000078010900397420FE0E5A0F89",
-		(guchar *) MAC(NEGOTIATE_FLAGS, "jCIFS", sk, 0x00090178, 0, 8),
+		(guchar *) MAC(NEGOTIATE_FLAGS, text_j, strlen(text_j), sk, 0x00090178, 0, 8),
 		32, FALSE
 	);
 
-	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm2Signing
+	// Tests from http://davenport.sourceforge.net/ntlm.html#ntlm2Signing
 	printf ("\n\n(davenport) SIGNKEY\n");
 	const guchar master_key [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x00};
 	SIGNKEY (master_key, TRUE, client_sign_key);
 	assert_equal("F7F97A82EC390F9C903DAC4F6ACEB132", client_sign_key, 16, TRUE);
+
+	printf ("\n\n(davenport) Testing MAC - no Key Exchange flag\n");
+	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, text_j, strlen(text_j), client_sign_key, 0,  0, 16);
+	assert_equal("010000000A003602317A759A00000000", (guchar*)mac, 16, FALSE);
+	g_free(mac);
 
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
@@ -210,7 +222,7 @@ int main()
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 	assert_equal (
 		"0100000000000000BF2E52667DDF6DED",
-		(guchar *) MAC(NEGOTIATE_FLAGS, msg1, exported_session_key2, 0, 100, 16),
+		(guchar *) MAC(NEGOTIATE_FLAGS, msg1, strlen(msg1), exported_session_key2, 0, 100, 16),
 		32, FALSE
 	);
 
