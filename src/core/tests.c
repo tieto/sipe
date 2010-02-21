@@ -96,6 +96,19 @@ int main()
 	/* 16 bytes */
 	const guchar exported_session_key[] = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55};
 
+	guint32 flags = 0
+		| NTLMSSP_NEGOTIATE_KEY_EXCH
+		| NTLMSSP_NEGOTIATE_56
+		| NTLMSSP_NEGOTIATE_128
+		| NTLMSSP_NEGOTIATE_VERSION
+		| NTLMSSP_TARGET_TYPE_SERVER
+		| NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+		| NTLMSSP_NEGOTIATE_NTLM
+		| NTLMSSP_NEGOTIATE_SEAL
+		| NTLMSSP_NEGOTIATE_SIGN
+		| NTLMSSP_NEGOTIATE_OEM
+		| NTLMSSP_NEGOTIATE_UNICODE;
+
 	printf ("\nTesting MD4()\n");
 	guchar md4 [16];
 	MD4 ((const unsigned char *)"message digest", 14, md4);
@@ -126,11 +139,6 @@ int main()
 	NTOWFv1 (password, user, domain, response_key_nt);
 	assert_equal("A4F49C406510BDCAB6824EE7C30FD852", response_key_nt, 16, TRUE);
 
-	printf ("\n\nTesting NTOWFv2()\n");
-	guchar response_key_nt_v2 [16];
-	NTOWFv2 (password, user, domain, response_key_nt_v2);
-	assert_equal("0C868A403BFD7A93A3001EF22EF02E3F", response_key_nt_v2, 16, TRUE);
-
 	printf ("\nTesting NT Response Generation\n");
 	guchar nt_challenge_response [24];
 	DESL (response_key_nt, nonce, nt_challenge_response);
@@ -140,7 +148,7 @@ int main()
 	guchar session_base_key [16];
 	MD4(response_key_nt, 16, session_base_key);
 	guchar key_exchange_key [16];
-	KXKEY(NEGOTIATE_FLAGS, session_base_key, lm_challenge_response, nonce, key_exchange_key);
+	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", session_base_key, 16, TRUE);
 	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", key_exchange_key, 16, TRUE);
 
@@ -155,21 +163,39 @@ int main()
 	gint32 crc = CRC32((char*)text, 18);
 	assert_equal("7D84AA93", (guchar *)&crc, 4, TRUE);
 
+	printf ("\n\nTesting Encryption\n");
+	guchar client_seal_key [8];
+	SEALKEY (flags, key_exchange_key, TRUE, client_seal_key);
+	guchar text_enc [18];
+	RC4K (client_seal_key, 8, text, 18, text_enc);
+	assert_equal("56fe04d861f9319af0d7238a2e3b4d457fb8", text_enc, 18, TRUE);
+
 	printf ("\n\nTesting MAC\n");
-	gchar *mac = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0x00000000,  0, 16);
-	assert_equal("010000000000000009DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
+	gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 0x00000000,  0, 16);
+	assert_equal("0100000045c844e509dcd1df2e459d36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
-	mac        = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0x45C844E5,  0, 16);
+	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 0x45C844E5,  0, 16);
 	assert_equal("01000000E544C84509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
-	mac        = MAC (NEGOTIATE_FLAGS, (gchar*)text, 18, key_exchange_key, 0xE544C845,  0, 16);
+	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 0xE544C845,  0, 16);
 	assert_equal("0100000045C844E509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
 
 
 ////// EXTENDED_SESSIONSECURITY ///////
-	guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;
+	//guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;
+	flags = 0
+		| NTLMSSP_NEGOTIATE_56
+		| NTLMSSP_NEGOTIATE_VERSION
+		| NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY
+		| NTLMSSP_TARGET_TYPE_SERVER
+		| NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+		| NTLMSSP_NEGOTIATE_NTLM
+		| NTLMSSP_NEGOTIATE_SEAL
+		| NTLMSSP_NEGOTIATE_SIGN
+		| NTLMSSP_NEGOTIATE_OEM
+		| NTLMSSP_NEGOTIATE_UNICODE;
 
 	printf ("\n\n(Extended session security) Testing LM Response Generation\n");
 	memcpy(lm_challenge_response, client_challenge, 8);
@@ -194,17 +220,54 @@ int main()
 	SIGNKEY (key_exchange_key, TRUE, client_sign_key);
 	assert_equal("60E799BE5C72FC92922AE8EBE961FB8D", client_sign_key, 16, TRUE);
 
+	printf ("\n\n(Extended session security) SEALKEY\n");
+	SEALKEY (flags, key_exchange_key, TRUE, client_seal_key);
+	assert_equal("04DD7F014D8504D265A25CC86A3A7C06", client_seal_key, 16, TRUE);
+
+	printf ("\n\n(Extended session security) Testing Encryption\n");
+	RC4K (client_seal_key, 16, text, 18, text_enc);
+	assert_equal("A02372F6530273F3AA1EB90190CE5200C99D", text_enc, 18, TRUE);
+
 	printf ("\n\n(Extended session security) Testing MAC\n");
 	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, (gchar*)text, 18, client_sign_key, 0,  0, 16);
 	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
+
+////// NTLMv2 ///////
+	flags = 0
+		| NTLMSSP_NEGOTIATE_KEY_EXCH
+		| NTLMSSP_NEGOTIATE_56
+		| NTLMSSP_NEGOTIATE_128
+		| NTLMSSP_NEGOTIATE_VERSION
+		| NTLMSSP_NEGOTIATE_TARGET_INFO
+		| NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY
+		| NTLMSSP_TARGET_TYPE_SERVER
+		| NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+		| NTLMSSP_NEGOTIATE_NTLM
+		| NTLMSSP_NEGOTIATE_SEAL
+		| NTLMSSP_NEGOTIATE_SIGN
+		| NTLMSSP_NEGOTIATE_OEM
+		| NTLMSSP_NEGOTIATE_UNICODE;
+
+	printf ("\n\nTesting NTOWFv2()\n");
+	NTOWFv2 (password, user, domain, response_key_nt);
+	assert_equal("0C868A403BFD7A93A3001EF22EF02E3F", response_key_nt, 16, TRUE);
+
+	printf ("\n\nTesting (NTLMv2) SIGNKEY\n");
+	SIGNKEY (exported_session_key, TRUE, client_sign_key);
+	assert_equal("4788DC861B4782F35D43FD98FE1A2D39", client_sign_key, 16, TRUE);
+
+	printf ("\n\nTesting (NTLMv2) SEALKEY\n");
+	SEALKEY (flags, exported_session_key, TRUE, client_seal_key);
+	assert_equal("59F600973CC4960A25480A7C196E4C58", client_seal_key, 16, TRUE);
+
 
 
 	/* End tests from the MS-SIPE document */
 
 	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm1Signing
 	const gchar *text_j = "jCIFS";
-	printf ("\n\nTesting Signature Algorithm\n");
+	printf ("\n\n(davenport) Testing Signature Algorithm\n");
 	guchar sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
 	assert_equal (
 		"0100000078010900397420FE0E5A0F89",

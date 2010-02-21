@@ -512,6 +512,76 @@ SIGNKEY (const unsigned char * random_session_key, gboolean client, unsigned cha
 	MD5 (md5_input, len + 16, result);
 }
 
+/*
+Define SEALKEY(NegotiateFlags, RandomSessionKey, Mode) as
+If (NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY flag is set in NegFlg)
+     If ( NTLMSSP_NEGOTIATE_128 is set in NegFlg)
+          Set SealKey to RandomSessionKey
+     ElseIf ( NTLMSSP_NEGOTIATE_56 flag is set in NegFlg)
+         Set SealKey to RandomSessionKey[0..6]
+     Else
+         Set SealKey to RandomSessionKey[0..4]
+     Endif
+
+     If (Mode equals "Client")
+         Set SealKey to MD5(ConcatenationOf(SealKey, "session key to client-to-server sealing key magic constant"))
+     Else
+         Set SealKey to MD5(ConcatenationOf(SealKey, "session key to server-to-client sealing key magic constant"))
+     Endif
+
+ElseIf (NTLMSSP_NEGOTIATE_56 flag is set in NegFlg)
+     Set SealKey to ConcatenationOf(RandomSessionKey[0..6], 0xA0)
+Else
+     Set SealKey to ConcatenationOf(RandomSessionKey[0..4], 0xE5, 0x38, 0xB0)
+Endif
+EndDefine
+*/
+/* out 16 bytes or 8 bytes depending if Ext.Sess.Sec is negotiated */
+void
+SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean client, unsigned char * result)
+{
+	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY))
+	{
+		char * magic = client
+			? "session key to client-to-server sealing key magic constant"
+			: "session key to server-to-client sealing key magic constant";
+
+		int len = strlen(magic) + 1;
+		unsigned char md5_input [16 + len];
+		int key_len;
+
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_128)) {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 128-bit key (Extended session security)\n");
+			key_len = 16;
+		} else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key (Extended session security)\n");
+			key_len = 7;
+		} else {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 40-bit key (Extended session security)\n");
+			key_len = 5;
+		}
+
+		memcpy(md5_input, random_session_key, key_len);
+		memcpy(md5_input + key_len, magic, len);
+
+		MD5 (md5_input, key_len + len, result);
+	}
+	else
+	{		
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key\n");
+			memcpy(result, random_session_key, 7);
+			result[7] = 0xA0;
+		} else {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 40-bit key\n");
+			memcpy(result, random_session_key, 5);
+			result[5] = 0xE5;
+			result[6] = 0x38;
+			result[7] = 0xB0;
+		}
+	}
+}
+
 static void
 LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
 {
@@ -693,12 +763,17 @@ MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, 
 			memcpy(result+4, hmac, 8);
 		}
 	} else {
+		//SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
+		//RC4Init(Handle, SealingKey')
+		///MD5 (seal_key, 8, seal_key_);
+
 		///gint32 plaintext [] = {0, CRC32(buf), sequence}; // 4, 4, 4 bytes
 		gint32 plaintext [] = {random_pad, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
 
 		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
 
 		RC4K(signing_key, key_len, (const guchar *)plaintext, 12, result+4);
+		//RC4K(seal_key, 8, (const guchar *)plaintext, 12, result+4);
 
 		res_ptr = (gint32 *)result;
 		// Highest four bytes are the Version
@@ -832,15 +907,15 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, /* signing key */
 	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
 
 	/* Session Key */
-	MD4(response_key_nt, 16, session_base_key);
-	KXKEY(neg_flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
+	MD4(response_key_nt, 16, session_base_key); // "User Session Key" -> "master key"
+	KXKEY(neg_flags, session_base_key, lm_challenge_response, nonce, key_exchange_key); // same for NTLNv1 w/o Ext.Sess.Sec
 
 	if (is_key_exch)
 	{
 		tmsg->session_key.len = tmsg->session_key.maxlen = NTLMSSP_SESSION_KEY_LEN;
 		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
 
-		NONCE (exported_session_key, 16);
+		NONCE (exported_session_key, 16); // random master key
 		RC4K (key_exchange_key, 16, exported_session_key, 16, encrypted_random_session_key);
 
 		memcpy(tmp, encrypted_random_session_key, 16);
