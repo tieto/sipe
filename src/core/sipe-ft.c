@@ -330,6 +330,7 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 
 	if (ft->bytes_remaining_chunk == 0) {
 		guchar local_buf[16];
+		memset(local_buf, 0, sizeof local_buf);
 
 		// Check if receiver did not cancel the transfer before it is finished
 		ssize_t bytes_read = read(xfer->fd,local_buf,sizeof (local_buf));
@@ -537,7 +538,7 @@ sipe_ft_outgoing_stop(PurpleXfer *xfer)
 
 //******************************************************************************
 
-void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg)
+void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const GSList *body)
 {
 	PurpleXfer *xfer;
 	struct sipe_account_data *sip = account->gc->proto_data;
@@ -554,16 +555,16 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg)
 	if (xfer) {
 		size_t file_size;
 		sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
-		ft->invitation_cookie = g_strdup(sipmsg_find_header(msg, "Invitation-Cookie"));
+		ft->invitation_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
 		ft->sip = sip;
 		ft->dialog = sipe_dialog_find(session, session->with);
 		generate_key(ft->encryption_key, SIPE_FT_KEY_LENGTH);
 		generate_key(ft->hash_key, SIPE_FT_KEY_LENGTH);
 		xfer->data = ft;
 
-		purple_xfer_set_filename(xfer, sipmsg_find_header(msg,"Application-File"));
+		purple_xfer_set_filename(xfer, sipe_utils_nameval_find(body, "Application-File"));
 
-		file_size = g_ascii_strtoull(sipmsg_find_header(msg,"Application-FileSize"),NULL,10);
+		file_size = g_ascii_strtoull(sipe_utils_nameval_find(body, "Application-FileSize"),NULL,10);
 		purple_xfer_set_size(xfer, file_size);
 
 		purple_xfer_set_init_fnc(xfer, sipe_ft_incoming_init);
@@ -580,20 +581,18 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg)
 	}
 }
 
-void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
+void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 {
 	struct sipe_account_data *sip = account->gc->proto_data;
-	gchar *inv_cookie = sipmsg_find_header(msg,"Invitation-Cookie");
+	gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
 	if (xfer) {
-		/* ip and port_str must be copied, because send_sip_response changes
-		 * the headers and we need to use this values afterwards. */
-		gchar *ip		= g_strdup(sipmsg_find_header(msg, "IP-Address"));
-		gchar *port_str		= g_strdup(sipmsg_find_header(msg, "Port"));
-		gchar *auth_cookie	= sipmsg_find_header(msg, "AuthCookie");
-		gchar *enc_key_b64	= sipmsg_find_header(msg, "Encryption-Key");
-		gchar *hash_key_b64	= sipmsg_find_header(msg, "Hash-Key");
+		gchar *ip			= sipe_utils_nameval_find(body, "IP-Address");
+		gchar *port_str		= sipe_utils_nameval_find(body, "Port");
+		gchar *auth_cookie	= sipe_utils_nameval_find(body, "AuthCookie");
+		gchar *enc_key_b64	= sipe_utils_nameval_find(body, "Encryption-Key");
+		gchar *hash_key_b64	= sipe_utils_nameval_find(body, "Hash-Key");
 
 		sipe_file_transfer *ft = xfer->data;
 
@@ -636,15 +635,12 @@ void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg)
 			purple_network_listen_range(SIPE_FT_TCP_PORT_MIN, SIPE_FT_TCP_PORT_MAX,
 						    SOCK_STREAM, sipe_ft_listen_socket_created,xfer);
 		}
-
-		g_free(port_str);
-		g_free(ip);
 	}
 }
 
-void sipe_ft_incoming_cancel(PurpleAccount *account, struct sipmsg *msg)
+void sipe_ft_incoming_cancel(PurpleAccount *account, GSList *body)
 {
-	gchar *inv_cookie = g_strdup(sipmsg_find_header(msg, "Invitation-Cookie"));
+	gchar *inv_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
 
 	struct sipe_account_data *sip = account->gc->proto_data;
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
@@ -968,6 +964,18 @@ const char * sipe_ft_get_suitable_local_ip(int fd)
 	}
 
 	return "0.0.0.0";
+}
+
+GSList * sipe_ft_parse_msg_body(const gchar *body)
+{
+	GSList *list = NULL;
+	gchar **lines = g_strsplit(body, "\r\n", 0);
+	if (sipe_utils_parse_lines(&list, lines) == FALSE) {
+		sipe_utils_nameval_free(list);
+		list = NULL;
+	}
+	g_strfreev(lines);
+	return list;
 }
 
 /*

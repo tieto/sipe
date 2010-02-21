@@ -39,11 +39,6 @@ struct sipmsg {
 	gchar *num;
 };
 
-struct siphdrelement {
-	gchar *name;
-	gchar *value;
-};
-
 struct sipendpoint {
 	gchar *contact;
 	gchar *epid;
@@ -51,7 +46,6 @@ struct sipendpoint {
 
 
 struct sipmsg *sipmsg_parse_msg(const gchar *msg);
-int sipmsg_parse_and_append_header(struct sipmsg *msg, gchar **lines);
 struct sipmsg *sipmsg_parse_header(const gchar *header);
 void sipmsg_print(const struct sipmsg *msg);
 void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *value);

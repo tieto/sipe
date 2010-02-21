@@ -22,7 +22,6 @@
  */
 
 #include <libpurple/ft.h>
-#include "sipmsg.h"
 
 /**
  * Called when remote peer wants to send a file.
@@ -32,8 +31,9 @@
  *
  * @param account PurpleAccount corresponding to the request
  * @param msg     SIP message
+ * @param body    parsed SIP message body as name-value pairs
  */
-void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg);
+void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const GSList *body);
 /**
  * Handles incoming filetransfer message with ACCEPT invitation command.
  *
@@ -41,18 +41,18 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg);
  * transfer like IP address or TCP port are going to be set up.
  *
  * @param account PurpleAccount corresponding to the request
- * @param msg     SIP message
+ * @param body    parsed SIP message body as name-value pairs
  */
-void sipe_ft_incoming_accept(PurpleAccount *account, struct sipmsg *msg);
+void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body);
 /**
  * Called when remote peer cancels ongoing file transfer.
  *
  * Function dispatches the request to libpurple
  *
  * @param account PurpleAccount corresponding to the request
- * @param msg     SIP message
+ * @param body    parsed SIP message body as name-value pairs
  */
-void sipe_ft_incoming_cancel(PurpleAccount *account, struct sipmsg *msg);
+void sipe_ft_incoming_cancel(PurpleAccount *account, GSList *body);
 /**
  * Initiates outgoing file transfer, sending @c file to remote peer identified
  * by @c who.
@@ -69,3 +69,13 @@ void sipe_ft_send_file(PurpleConnection *gc, const char *who, const char *file);
  * @param who remote participant in the file transfer session
  */
 PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who);
+
+/**
+ * Parses file transfer message body and creates a list with name-value pairs
+ *
+ * @param body file transfer SIP message body
+ *
+ * @return GSList of name-value pairs parsed from message body, NULL if body has
+ * incorrect format
+ */
+GSList * sipe_ft_parse_msg_body(const gchar *body);

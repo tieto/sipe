@@ -47,39 +47,6 @@ struct sipmsg *sipmsg_parse_msg(const gchar *msg) {
 	return smsg;
 }
 
-int sipmsg_parse_and_append_header(struct sipmsg *msg, gchar **lines) {
-	int i;
-	gchar **parts;
-	gchar *dummy;
-	gchar *dummy2;
-	gchar *tmp;
-
-	for(i = 0; lines[i] && strlen(lines[i]) > 2; i++) {
-		parts = g_strsplit(lines[i], ":", 2);
-		if(!parts[0] || !parts[1]) {
-			g_strfreev(parts);
-			return FALSE;
-		}
-		dummy = parts[1];
-		dummy2 = 0;
-		while(*dummy==' ' || *dummy=='\t') dummy++;
-		dummy2 = g_strdup(dummy);
-		while(lines[i+1] && (lines[i+1][0]==' ' || lines[i+1][0]=='\t')) {
-			i++;
-			dummy = lines[i];
-			while(*dummy==' ' || *dummy=='\t') dummy++;
-			tmp = g_strdup_printf("%s %s",dummy2, dummy);
-			g_free(dummy2);
-			dummy2 = tmp;
-		}
-		sipmsg_add_header_now(msg, parts[0], dummy2);
-		g_free(dummy2);
-		g_strfreev(parts);
-	}
-
-	return TRUE;
-}
-
 struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	struct sipmsg *msg = g_new0(struct sipmsg,1);
 	gchar **lines = g_strsplit(header,"\r\n",0);
@@ -107,7 +74,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		msg->response = 0;
 	}
 	g_strfreev(parts);
-	if (sipmsg_parse_and_append_header(msg,lines + 1) == FALSE) {
+	if (sipe_utils_parse_lines(&msg->headers,lines + 1) == FALSE) {
 		g_strfreev(lines);
 		sipmsg_free(msg);
 		return NULL;
@@ -136,7 +103,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 
 void sipmsg_print(const struct sipmsg *msg) {
 	GSList *cur;
-	struct siphdrelement *elem;
+	struct sipnameval *elem;
 	purple_debug(PURPLE_DEBUG_MISC, "sipe", "SIP MSG\n");
 	purple_debug(PURPLE_DEBUG_MISC, "sipe", "response: %d\nmethod: %s\nbodylen: %d\n",msg->response,msg->method,msg->bodylen);
 	if(msg->target) purple_debug(PURPLE_DEBUG_MISC, "sipe", "target: %s\n",msg->target);
@@ -151,7 +118,7 @@ void sipmsg_print(const struct sipmsg *msg) {
 char *sipmsg_to_string(const struct sipmsg *msg) {
 	GSList *cur;
 	GString *outstr = g_string_new("");
-	struct siphdrelement *elem;
+	struct sipnameval *elem;
 
 	if(msg->response)
 		g_string_append_printf(outstr, "SIP/2.0 %d Unknown\r\n",
@@ -182,7 +149,7 @@ char *sipmsg_to_string(const struct sipmsg *msg) {
  * Adds header to current message headers at specified position
  */
 void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos) {
-	struct siphdrelement *element = g_new0(struct siphdrelement,1);
+	struct sipnameval *element = g_new0(struct sipnameval,1);
 
 	/* SANITY CHECK: the calling code must be fixed if this happens! */
 	if (!value) {
@@ -200,7 +167,7 @@ void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gcha
  * Adds header to current message headers
  */
 void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *value) {
-	struct siphdrelement *element = g_new0(struct siphdrelement,1);
+	struct sipnameval *element = g_new0(struct sipnameval,1);
 
 	/* SANITY CHECK: the calling code must be fixed if this happens! */
 	if (!value) {
@@ -218,7 +185,7 @@ void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *v
  * Adds header to separate storage for future merge
  */
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value) {
-	struct siphdrelement *element = g_new0(struct siphdrelement,1);
+	struct sipnameval *element = g_new0(struct sipnameval,1);
 
 	/* SANITY CHECK: the calling code must be fixed if this happens! */
 	if (!value) {
@@ -237,7 +204,7 @@ void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value
  */
 void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]) {
 	GSList *entry;
-	struct siphdrelement *elem;
+	struct sipnameval *elem;
 
 	entry = msg->headers;
 	while(entry) {
@@ -278,21 +245,8 @@ void sipmsg_merge_new_headers(struct sipmsg *msg) {
 }
 
 void sipmsg_free(struct sipmsg *msg) {
-	struct siphdrelement *elem;
-	while(msg->headers) {
-		elem = msg->headers->data;
-		msg->headers = g_slist_remove(msg->headers,elem);
-		g_free(elem->name);
-		g_free(elem->value);
-		g_free(elem);
-	}
-	while(msg->new_headers) {
-		elem = msg->new_headers->data;
-		msg->new_headers = g_slist_remove(msg->new_headers,elem);
-		g_free(elem->name);
-		g_free(elem->value);
-		g_free(elem);
-	}
+	sipe_utils_nameval_free(msg->headers);
+	sipe_utils_nameval_free(msg->new_headers);
 	g_free(msg->signature);
 	g_free(msg->rand);
 	g_free(msg->num);
@@ -303,7 +257,7 @@ void sipmsg_free(struct sipmsg *msg) {
 }
 
 void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name) {
-	struct siphdrelement *elem;
+	struct sipnameval *elem;
 	GSList *tmp = msg->headers;
 	while(tmp) {
 		elem = tmp->data;
@@ -321,26 +275,11 @@ void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name) {
 }
 
 gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name) {
-	return sipmsg_find_header_instance (msg, name, 0);
+	return sipe_utils_nameval_find_instance (msg->headers, name, 0);
 }
 
 gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which) {
-	GSList *tmp;
-	struct siphdrelement *elem;
-	int i = 0;
-	tmp = msg->headers;
-	while(tmp) {
-		elem = tmp->data;
-		// OCS2005 can send the same header in either all caps or mixed case
-		if (g_ascii_strcasecmp(elem->name,name)==0) {
-			if (i == which) {
-				return elem->value;
-			}
-			i++;
-		}
-		tmp = g_slist_next(tmp);
-	}
-	return NULL;
+	return sipe_utils_nameval_find_instance(msg->headers, name, which);
 }
 
 gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def) {
@@ -420,7 +359,7 @@ GSList *sipmsg_parse_endpoints_header(const gchar *header)
 
 gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	GSList *tmp;
-	struct siphdrelement *elem;
+	struct sipnameval *elem;
 	int name_len = strlen(name);
 	tmp = msg->headers;
 	while(tmp) {

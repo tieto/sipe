@@ -279,3 +279,66 @@ sipe_utils_str_to_time(const char *timestamp);
  */
 char *
 sipe_utils_time_to_str(time_t timestamp);
+
+struct sipnameval {
+	gchar *name;
+	gchar *value;
+};
+
+/**
+ * Creates name-value pairs from given lines and appends them to @c list
+ *
+ * Lines must be in format 'name: value'
+ *
+ * @param list  a list of @c sipnameval structures
+ * @param lines array of strings in format 'name: value'
+ *
+ * @return @c FALSE if any of @c lines has incorrect format, @c TRUE otherwise
+ */
+gboolean
+sipe_utils_parse_lines(GSList **list, gchar **lines);
+
+/**
+ * Adds a name-value pair to @c list
+ *
+ * @param list  a list of @c sipnameval structures
+ * @param name  attribute's name
+ * @param value value of attribute @c name
+ *
+ * @return the new start of the GSList
+ */
+GSList *
+sipe_utils_nameval_add(GSList *list, const gchar *name, const gchar *value);
+
+/**
+ * Finds a value of attribute @c name in @c list
+ *
+ * @param list a list of @c sipnameval structures
+ * @param name attribute to find
+ *
+ * @return value of @c name or NULL if @c name is not found
+ */
+gchar *
+sipe_utils_nameval_find(const GSList *list, const gchar *name);
+
+/**
+ * Returns @c which occurrence of attribute @c name in @c list
+ *
+ * @c which is zero based, so 0 means first occurrence of @c name in @c list.
+ *
+ * @param list  a list of @c sipnameval structures
+ * @param name  attribute to find
+ * @param which specifies occurrence of @name in @c list
+ *
+ * @return value of @c name or NULL if @c name is not found
+ */
+gchar *
+sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int which);
+
+/**
+ * Frees memory allocated by @c list
+ *
+ * @param list a list of @c sipnameval structures
+ */
+void
+sipe_utils_nameval_free(GSList *list);

@@ -26,6 +26,7 @@
 #include "debug.h"
 
 #include "sipe.h"
+#include "sipe-utils.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipmsg.h"
@@ -159,7 +160,7 @@ static void sipe_get_route_header(const struct sipmsg *msg,
         gchar *contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);
 
         while (hdr) {
-                struct siphdrelement *elem = hdr->data;
+                struct sipnameval *elem = hdr->data;
                 if(!g_ascii_strcasecmp(elem->name, "Record-Route")) {
 			gchar **parts = g_strsplit(elem->value, ",", 0);
 			gchar **part = parts;
@@ -200,7 +201,7 @@ sipe_get_supported_header(const struct sipmsg *msg,
 			  SIPE_UNUSED_PARAMETER gboolean outgoing)
 {
 	GSList *hdr = msg->headers;
-	struct siphdrelement *elem;
+	struct sipnameval *elem;
 	while(hdr)
 	{
 		elem = hdr->data;

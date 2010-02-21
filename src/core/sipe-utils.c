@@ -307,6 +307,96 @@ sipe_utils_time_to_str(time_t timestamp)
 	return g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&timestamp)));
 }
 
+gboolean
+sipe_utils_parse_lines(GSList **list, gchar **lines)
+{
+	int i;
+	gchar **parts;
+	gchar *dummy;
+	gchar *dummy2;
+	gchar *tmp;
+
+	for(i = 0; lines[i] && strlen(lines[i]) > 2; i++) {
+		parts = g_strsplit(lines[i], ":", 2);
+		if(!parts[0] || !parts[1]) {
+			g_strfreev(parts);
+			return FALSE;
+		}
+		dummy = parts[1];
+		dummy2 = 0;
+		while(*dummy==' ' || *dummy=='\t') dummy++;
+		dummy2 = g_strdup(dummy);
+		while(lines[i+1] && (lines[i+1][0]==' ' || lines[i+1][0]=='\t')) {
+			i++;
+			dummy = lines[i];
+			while(*dummy==' ' || *dummy=='\t') dummy++;
+			tmp = g_strdup_printf("%s %s",dummy2, dummy);
+			g_free(dummy2);
+			dummy2 = tmp;
+		}
+		*list = sipe_utils_nameval_add(*list, parts[0], dummy2);
+		g_free(dummy2);
+		g_strfreev(parts);
+	}
+
+	return TRUE;
+}
+
+GSList*
+sipe_utils_nameval_add(GSList* list, const gchar *name, const gchar *value)
+{
+	struct sipnameval *element = g_new0(struct sipnameval,1);
+
+	/* SANITY CHECK: the calling code must be fixed if this happens! */
+	if (!value) {
+		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "sipe_utils_nameval_add: NULL value for %s\n",
+			     name);
+		value = "";
+	}
+
+	element->name = g_strdup(name);
+	element->value = g_strdup(value);
+	return g_slist_append(list, element);
+}
+
+void
+sipe_utils_nameval_free(GSList *list) {
+	struct sipnameval *elem;
+	while(list) {
+		elem = list->data;
+		list = g_slist_remove(list,elem);
+		g_free(elem->name);
+		g_free(elem->value);
+		g_free(elem);
+	}
+}
+
+gchar *
+sipe_utils_nameval_find(const GSList *list, const gchar *name)
+{
+	return sipe_utils_nameval_find_instance (list, name, 0);
+}
+
+gchar *
+sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int which)
+{
+	const GSList *tmp;
+	struct sipnameval *elem;
+	int i = 0;
+	tmp = list;
+	while(tmp) {
+		elem = tmp->data;
+		// OCS2005 can send the same header in either all caps or mixed case
+		if (g_ascii_strcasecmp(elem->name,name)==0) {
+			if (i == which) {
+				return elem->value;
+			}
+			i++;
+		}
+		tmp = g_slist_next(tmp);
+	}
+	return NULL;
+}
 
 /*
   Local Variables:

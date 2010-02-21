@@ -748,8 +748,8 @@ static void sendout_sipmsg(struct sipe_account_data *sip, struct sipmsg *msg)
 	GString *outstr = g_string_new("");
 	g_string_append_printf(outstr, "%s %s SIP/2.0\r\n", msg->method, msg->target);
 	while (tmp) {
-		name = ((struct siphdrelement*) (tmp->data))->name;
-		value = ((struct siphdrelement*) (tmp->data))->value;
+		name = ((struct sipnameval*) (tmp->data))->name;
+		value = ((struct sipnameval*) (tmp->data))->value;
 		g_string_append_printf(outstr, "%s: %s\r\n", name, value);
 		tmp = g_slist_next(tmp);
 	}
@@ -844,8 +844,8 @@ void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
 	tmp = msg->headers;
 	while (tmp) {
-		name = ((struct siphdrelement*) (tmp->data))->name;
-		value = ((struct siphdrelement*) (tmp->data))->value;
+		name = ((struct sipnameval*) (tmp->data))->name;
+		value = ((struct sipnameval*) (tmp->data))->value;
 
 		g_string_append_printf(outstr, "%s: %s\r\n", name, value);
 		tmp = g_slist_next(tmp);
@@ -4032,13 +4032,9 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 		    warning == 309 &&		/* Message contents not allowed by policy */
 		    message && g_str_has_prefix(message->content_type, "text/x-msmsgsinvite"))
 		{
-			gchar **lines = g_strsplit(message->body,"\r\n",0);
-
-			/* pier11: "I don't like it - to add body to headers." */
-			sipmsg_parse_and_append_header(msg, lines);			
-			g_strfreev(lines);
-
-			sipe_ft_incoming_cancel(sip->gc->account, msg);
+			GSList *parsed_body = sipe_ft_parse_msg_body(msg->body);
+			sipe_ft_incoming_cancel(sip->gc->account, parsed_body);
+			sipe_utils_nameval_free(parsed_body);
 		}
 
 		if ((pbuddy = purple_find_buddy(sip->account, with))) {
@@ -4876,21 +4872,21 @@ static void do_reauthenticate_cb(struct sipe_account_data *sip,
 static gboolean
 sipe_process_incoming_x_msmsgsinvite(struct sipe_account_data *sip,
 				     struct sipmsg *msg,
-				     int result)
+				     GSList *parsed_body)
 {
 	gboolean found = FALSE;
 
-	if (result == TRUE) {
-		gchar *invitation_command = sipmsg_find_header(msg, "Invitation-Command");
+	if (parsed_body) {
+		gchar *invitation_command = sipe_utils_nameval_find(parsed_body, "Invitation-Command");
 
 		if (sipe_strequal(invitation_command, "INVITE")) {
-			sipe_ft_incoming_transfer(sip->gc->account,msg);
+			sipe_ft_incoming_transfer(sip->gc->account, msg, parsed_body);
 			found = TRUE;
 		} else if (sipe_strequal(invitation_command, "CANCEL")) {
-			sipe_ft_incoming_cancel(sip->gc->account, msg);
+			sipe_ft_incoming_cancel(sip->gc->account, parsed_body);
 			found = TRUE;
 		} else if (sipe_strequal(invitation_command, "ACCEPT")) {
-			sipe_ft_incoming_accept(sip->gc->account, msg);
+			sipe_ft_incoming_accept(sip->gc->account, parsed_body);
 			found = TRUE;
 		}
 	}
@@ -4971,12 +4967,9 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
 	} else if (g_str_has_prefix(contenttype, "text/x-msmsgsinvite")) {
-		gchar **lines = g_strsplit(msg->body,"\r\n",0);
-		/* pier11: "I don't like it - to add body to headers." */
-		int result = sipmsg_parse_and_append_header(msg, lines);
-		
-		g_strfreev(lines);
-		found = sipe_process_incoming_x_msmsgsinvite(sip, msg, result);
+		GSList *body = sipe_ft_parse_msg_body(msg->body);
+		found = sipe_process_incoming_x_msmsgsinvite(sip, msg, body);
+		sipe_utils_nameval_free(body);
 		if (found) {
 			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		}
@@ -5202,15 +5195,11 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 				gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
 				if (tmp) {
 					gchar *body = (gchar *) purple_base64_decode(tmp, NULL);
-					gchar **lines = g_strsplit(body,"\r\n",0);
-					int result;
-					
-					g_free(body);
-					/* pier11: "I don't like it - to add body to headers." */
-					result = sipmsg_parse_and_append_header(msg, lines);
-					g_strfreev(lines);
 
-					sipe_process_incoming_x_msmsgsinvite(sip, msg, result);
+					GSList *parsed_body = sipe_ft_parse_msg_body(body);
+
+					sipe_process_incoming_x_msmsgsinvite(sip, msg, parsed_body);
+					sipe_utils_nameval_free(parsed_body);
 					sipmsg_add_header(msg, "Supported", "ms-text-format"); /* accepts received message */
 				}
 				g_free(tmp);
@@ -5303,7 +5292,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 	const gchar *expires_header;
 	int expires, i;
         GSList *hdr = msg->headers;
-        struct siphdrelement *elem;
+        struct sipnameval *elem;
 
 	expires_header = sipmsg_find_header(msg, "Expires");
 	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
