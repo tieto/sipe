@@ -397,7 +397,7 @@ HMAC_MD5 (const unsigned char *key, int key_len, const unsigned char *data, int 
 {
 	PurpleCipher *cipher = purple_ciphers_find_cipher("hmac");
 	PurpleCipherContext *context = purple_cipher_context_new(cipher, NULL);
- 
+
 	purple_cipher_context_set_option(context, "hash", "md5");
 	purple_cipher_context_set_key_with_len(context, (guchar *)key, (key_len));
 
@@ -424,7 +424,7 @@ NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUS
 }
 
 /*
-Define NTOWFv2(Passwd, User, UserDom) as 
+Define NTOWFv2(Passwd, User, UserDom) as
   HMAC_MD5( MD4(UNICODE(Passwd)), ConcatenationOf( Uppercase(User), UserDom ) )
 EndDefine
 */
@@ -484,7 +484,7 @@ KXKEY ( guint32 flags,
 		// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
 		memcpy(key_exchange_key, session_base_key, 16);
 	}
-	
+
 }
 
 // This method is only used for NTLMv2 and extended session security
@@ -580,23 +580,6 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 	}
 	return nonce;
 }
-
-// static void
-// print_hex_array(char * msg, int num)
-// {
-	// int k;
-	// for (k = 0; k < num; k++) {
-		// printf("0x%02X, ", msg[k]&0xff);
-	// }
-	// printf("\n");
-// }
-
-// static void
-// print_hex_array_title(char * title, char * msg, int num)
-// {
-	// printf("%s:\n", title);
-	// print_hex_array(msg, num);
-// }
 
 /* source copy from gg's common.c */
 static guint32 crc32_table[256];
@@ -705,7 +688,7 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 			RC4K(signing_key, hmac, 8, result+4);
 		} else {
 			memcpy(result+4, hmac, 8);
-		}		
+		}
 	} else {
 		///gint32 plaintext [] = {0, CRC32(buf), sequence}; // 4, 4, 4 bytes
 		gint32 plaintext [] = {random_pad, CRC32(buf), sequence}; // 4, 4, 4 bytes
@@ -725,7 +708,6 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 		g_sprintf(&signature[j], "%02X", result[i]);
 	}
 
-	printf("sig: %s\n", signature);
 	return g_strdup(signature);
 }
 
