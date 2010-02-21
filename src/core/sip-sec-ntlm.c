@@ -504,7 +504,7 @@ SIGNKEY (const unsigned char * random_session_key, gboolean client, unsigned cha
 		? "session key to client-to-server signing key magic constant"
 		: "session key to server-to-client signing key magic constant";
 
-	int len = strlen(magic);
+	int len = strlen(magic) + 1;
 	unsigned char md5_input [16 + len];
 	memcpy(md5_input, random_session_key, 16);
 	memcpy(md5_input + 16, magic, len);
@@ -636,10 +636,10 @@ static guint32 crc32(guint32 crc, const guint8 *buf, int len)
 }
 
 static guint32
-CRC32 (const char * msg)
+CRC32 (const char *msg, int len)
 {
 	guint32 crc = 0L;//crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, (guint8 *) msg, strlen(msg));
+	crc = crc32(crc, (guint8 *) msg, len);
 	//char * ptr = (char*) &crc;
 	//return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | (ptr[3] & 0xff);
 	return crc;
@@ -708,7 +708,7 @@ MAC (guint32 flags, const char * buf, unsigned char * signing_key, guint32 rando
 		}		
 	} else {
 		///gint32 plaintext [] = {0, CRC32(buf), sequence}; // 4, 4, 4 bytes
-		gint32 plaintext [] = {random_pad, CRC32(buf), sequence}; // 4, 4, 4 bytes
+		gint32 plaintext [] = {random_pad, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
 
 		RC4K(signing_key, (const guchar *)plaintext, 12, result+4);
 

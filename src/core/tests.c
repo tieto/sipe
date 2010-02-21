@@ -86,14 +86,14 @@ int main()
 
 	/* These tests are from the MS-SIPE document */
 
-	char * password = "Password";
-	char * user = "User";
-	char * domain = "Domain";
-	guchar client_challenge [] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
+	const char * password = "Password";
+	const char * user = "User";
+	const char * domain = "Domain";
+	const guchar client_challenge [] = {0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa};
 	/* server challenge */
-	guchar nonce [] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
+	const guchar nonce [] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
 	/* 16 bytes */
-	guchar exported_session_key[] = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55};
+	const guchar exported_session_key[] = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55};
 
 	printf ("\nTesting MD4()\n");
 	guchar md4 [16];
@@ -147,7 +147,20 @@ int main()
 	guchar encrypted_random_session_key [16];
 	RC4K (key_exchange_key, exported_session_key, 16, encrypted_random_session_key);
 	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
-//////
+
+	printf ("\n\nTesting CRC32\n");
+	guchar text [] = {0x50, 0x00, 0x6c, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x74, 0x00, 0x65, 0x00, 0x78, 0x00, 0x74, 0x00}; //P·l·a·i·n·t·e·x·t·
+	//guchar text [] = {0x56, 0xfe, 0x04, 0xd8, 0x61, 0xf9, 0x31, 0x9a, 0xf0, 0xd7, 0x23, 0x8a, 0x2e, 0x3b, 0x4d, 0x45, 0x7f, 0xb8};
+	gint32 crc = CRC32((char*)text, 18);
+	assert_equal("7D84AA93", (guchar *)&crc, 4, TRUE);
+
+	printf ("\n\nTesting MAC\n");
+	gchar *mac = MAC (NEGOTIATE_FLAGS, (gchar*)text, key_exchange_key, 0,  0, 16);
+	assert_equal("0100000045c844e509dcd1df2e459d36", (guchar*)mac, 16, FALSE);
+
+
+
+////// EXTENDED_SESSIONSECURITY ///////
 	guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;	
 
 	printf ("\n\n(Extended session seurity) Testing LM Response Generation\n");
@@ -159,7 +172,7 @@ int main()
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 	assert_equal("EB93429A8BD952F8B89C55B87F475EDC", key_exchange_key, 16, TRUE);	
 
-	printf ("\n\n(Extended session seurity) Testing NT Response Generation\n");	
+	printf ("\n\n(Extended session seurity) Testing NT Response Generation\n");
 	unsigned char prehash [16];
 	unsigned char hash [16];
 	memcpy(prehash, nonce, 8);
@@ -167,6 +180,12 @@ int main()
 	MD5 (prehash, 16, hash);
 	DESL (response_key_nt, hash, nt_challenge_response);
 	assert_equal("7537F803AE367128CA458204BDE7CAF81E97ED2683267232", nt_challenge_response, 24, TRUE);
+
+	printf ("\n\n(Extended session seurity) SIGNKEY\n");
+	guchar client_sign_key [16];	
+	SIGNKEY (key_exchange_key, TRUE, client_sign_key);
+	assert_equal("60E799BE5C72FC92922AE8EBE961FB8D", client_sign_key, 16, TRUE);
+
 
 	/* End tests from the MS-SIPE document */
 
@@ -178,6 +197,12 @@ int main()
 		(guchar *) MAC(NEGOTIATE_FLAGS, "jCIFS", sk, 0x00090178, 0, 8),
 		32, FALSE
 	);
+
+	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm2Signing
+	printf ("\n\n(davenport) SIGNKEY\n");
+	const guchar master_key [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x00};
+	SIGNKEY (master_key, TRUE, client_sign_key);
+	assert_equal("F7F97A82EC390F9C903DAC4F6ACEB132", client_sign_key, 16, TRUE);
 
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
