@@ -83,6 +83,7 @@ int main()
 	purple_debug_init();
 	purple_dbus_init();
 	purple_ciphers_init();
+	purple_debug_set_enabled(TRUE);
 
 	/* These tests are from the MS-SIPE document */
 
@@ -162,18 +163,18 @@ int main()
 
 
 ////// EXTENDED_SESSIONSECURITY ///////
-	guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;	
+	guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;
 
-	printf ("\n\n(Extended session seurity) Testing LM Response Generation\n");
+	printf ("\n\n(Extended session security) Testing LM Response Generation\n");
 	memcpy(lm_challenge_response, client_challenge, 8);
 	Z (lm_challenge_response+8, 16);
 	assert_equal("AAAAAAAAAAAAAAAA00000000000000000000000000000000", lm_challenge_response, 24, TRUE);
 
 	printf ("\n\n(Extended session seurity) Testing Key Exchange\n");
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
-	assert_equal("EB93429A8BD952F8B89C55B87F475EDC", key_exchange_key, 16, TRUE);	
+	assert_equal("EB93429A8BD952F8B89C55B87F475EDC", key_exchange_key, 16, TRUE);
 
-	printf ("\n\n(Extended session seurity) Testing NT Response Generation\n");
+	printf ("\n\n(Extended session security) Testing NT Response Generation\n");
 	unsigned char prehash [16];
 	unsigned char hash [16];
 	memcpy(prehash, nonce, 8);
@@ -182,12 +183,12 @@ int main()
 	DESL (response_key_nt, hash, nt_challenge_response);
 	assert_equal("7537F803AE367128CA458204BDE7CAF81E97ED2683267232", nt_challenge_response, 24, TRUE);
 
-	printf ("\n\n(Extended session seurity) SIGNKEY\n");
-	guchar client_sign_key [16];	
+	printf ("\n\n(Extended session security) SIGNKEY\n");
+	guchar client_sign_key [16];
 	SIGNKEY (key_exchange_key, TRUE, client_sign_key);
 	assert_equal("60E799BE5C72FC92922AE8EBE961FB8D", client_sign_key, 16, TRUE);
 
-	printf ("\n\n(Extended session seurity) Testing MAC\n");
+	printf ("\n\n(Extended session security) Testing MAC\n");
 	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, (gchar*)text, 18, client_sign_key, 0,  0, 16);
 	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 16, FALSE);
 	g_free(mac);
@@ -247,13 +248,13 @@ int main()
 	gchar *calcUUID = generateUUIDfromEPID(testEpid);
 
 	printf("\n\nTesting MS-SIPRE uuid derivation\n");
-	
+
 	assert_equal(expectedUUID, (guchar *) calcUUID, strlen(expectedUUID), FALSE);
 	g_free(calcUUID);
-	
+
 	guchar addr[6];
 	gchar nmac[6];
-	
+
 	int i,j;
 	for (i = 0,j=0; i < 6; i++,j+=2) {
 		g_sprintf(&nmac[j], "%02X", addr[i]);
