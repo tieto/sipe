@@ -456,10 +456,10 @@ NTOWFv2 (const char* password, const char *user, const char *domain, unsigned ch
 }
 
 static void
-RC4K (const unsigned char * k, const unsigned char * d, int len, unsigned char * result)
+RC4K (const unsigned char * k, unsigned long key_len, const unsigned char * d, int len, unsigned char * result)
 {
 	PurpleCipherContext * context = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(context, "key_len", GUINT_TO_POINTER(16));
+	purple_cipher_context_set_option(context, "key_len", (gpointer)key_len);
 	purple_cipher_context_set_key(context, k);
 	purple_cipher_context_encrypt(context, (const guchar *)d, len, result, NULL);
 	purple_cipher_context_destroy(context);
@@ -644,7 +644,7 @@ SeqNum (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence numb
 // Version(4), Checksum(8), SeqNum(4)			-- for ext.sess.sec.
 // MAC(Handle, SigningKey, SeqNum, Message)
 static gchar *
-MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, guint32 random_pad, long sequence, SIPE_UNUSED_PARAMETER unsigned long key_len)
+MAC (guint32 flags, const char * buf, int buf_len, unsigned char * signing_key, guint32 random_pad, long sequence, unsigned long key_len)
 {
 	guchar result [16];
 	gint32 *res_ptr;
@@ -685,8 +685,7 @@ printf("mac: Extented Session Security\n");
 		HMAC_MD5(signing_key, 16, tmp, 4 + buf_len, hmac);
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
-printf("mac: Key Exchange\n");
-			RC4K(signing_key, hmac, 8, result+4);
+			RC4K(signing_key, key_len, hmac, 8, result+4);
 		} else {
 printf("mac: *NO* Key Exchange\n");
 			memcpy(result+4, hmac, 8);
@@ -696,7 +695,7 @@ printf("mac: *NO* Extented Session Security\n");
 		///gint32 plaintext [] = {0, CRC32(buf), sequence}; // 4, 4, 4 bytes
 		gint32 plaintext [] = {random_pad, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
 
-		RC4K(signing_key, (const guchar *)plaintext, 12, result+4);
+		RC4K(signing_key, key_len, (const guchar *)plaintext, 12, result+4);
 
 		res_ptr = (gint32 *)result;
 		// Highest four bytes are the Version
@@ -837,7 +836,7 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, /* signing key */
 		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
 
 		NONCE (exported_session_key, 16);
-		RC4K (key_exchange_key, exported_session_key, 16, encrypted_random_session_key);
+		RC4K (key_exchange_key, 16, exported_session_key, 16, encrypted_random_session_key);
 
 		memcpy(tmp, encrypted_random_session_key, 16);
 		tmp += NTLMSSP_SESSION_KEY_LEN;

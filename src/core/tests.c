@@ -145,7 +145,7 @@ int main()
 
 	printf ("\n\nTesting Encrypted Session Key Generation\n");
 	guchar encrypted_random_session_key [16];
-	RC4K (key_exchange_key, exported_session_key, 16, encrypted_random_session_key);
+	RC4K (key_exchange_key, 16, exported_session_key, 16, encrypted_random_session_key);
 	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
 
 	printf ("\n\nTesting CRC32\n");
