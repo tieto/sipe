@@ -448,7 +448,7 @@ NTOWFv2 (const char* password, const char *user, const char *domain, unsigned ch
 	user_upper[len_user] = 0;
 
 	len_user_u = unicode_strconvcopy((gchar *)buff, (gchar *)user_upper, len_user_u);
-	len_domain_u = unicode_strconvcopy((gchar *)(buff+len_user_u), (gchar *)domain, len_domain_u);
+	len_domain_u = unicode_strconvcopy((gchar *)(buff+len_user_u), domain ? (gchar *)domain : "", len_domain_u);
 
 	NTOWFv1(password, user, domain, response_key_nt_v1);
 
@@ -781,8 +781,8 @@ MAC (guint32 flags,
 		//RC4Init(Handle, SealingKey')
 		///MD5 (seal_key, 8, seal_key_);
 
-		///gint32 plaintext [] = {0, CRC32(buf), sequence}; // 4, 4, 4 bytes
-		gint32 plaintext [] = {random_pad, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
+		/* The content of the first 4 bytes is irrelevant */
+		gint32 plaintext [] = {0, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
 
 		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
 
