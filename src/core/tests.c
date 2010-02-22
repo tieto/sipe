@@ -290,7 +290,76 @@ int main()
 	HMAC_MD5(response_key_lm, 16, tmp, 16, lm_challenge_response);
 	memcpy(lm_challenge_response+16, client_challenge, 8);
 	assert_equal("86C35097AC9CEC102554764A57CCCC19AAAAAAAAAAAAAAAA", lm_challenge_response, 24, TRUE);
+	
+	printf ("\n\nTesting (NTLMv2) NT Response Generation and Session Base Key\n");
+/*
+Challenge:
+4e544c4d53535000020000000c000c003800000033828ae20123456789abcdef00000000000000002400240044000000060070170000000f53006500720076006500720002000c0044006f006d00610069006e0001000c0053006500720076006500720000000000
 
+        NTLMSSP_NEGOTIATE_UNICODE
+        NTLMSSP_NEGOTIATE_OEM
+        NTLMSSP_NEGOTIATE_SIGN
+        NTLMSSP_NEGOTIATE_SEAL
+        NTLMSSP_NEGOTIATE_NTLM
+        NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+        NTLMSSP_TARGET_TYPE_SERVER
+        NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY
+        NTLMSSP_NEGOTIATE_TARGET_INFO
+        NTLMSSP_NEGOTIATE_VERSION
+        NTLMSSP_NEGOTIATE_128
+        NTLMSSP_NEGOTIATE_KEY_EXCH
+        NTLMSSP_NEGOTIATE_56
+        target_name.len   : 12
+        target_name.maxlen: 12
+        target_name.offset: 56
+        target_info.len   : 36
+        target_info.maxlen: 36
+        target_info.offset: 68
+        product: 6.0.6000 (Windows Vista, Windows Server 2008, Windows 7 or Windows Server 2008 R2)
+        ntlm_revision_current: 0x0F (NTLMSSP_REVISION_W2K3)
+        target_name: Server
+        MsvAvNbDomainName: Domain
+        MsvAvNbComputerName: Server
+
+target_name:
+530065007200760065007200
+target_info:
+02000c0044006f006d00610069006e0001000c0053006500720076006500720000000000
+*/
+	const guint64 time = 0;
+	const guchar target_info [] = {
+		0x02, 0x00, 0x0C, 0x00, //NetBIOS Domain name, 4 bytes
+		0x44, 0x00, 0x6F, 0x00, 0x6D, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6E, 0x00, //D.o.m.a.i.n.  12bytes
+		0x01, 0x00, 0x0C, 0x00, //NetBIOS Server name, 4 bytes
+		0x53, 0x00, 0x65, 0x00, 0x72, 0x00, 0x76, 0x00, 0x65, 0x00, 0x72, 0x00, //S.e.r.v.e.r.  12bytes
+		0x00, 0x00, 0x00, 0x00, //Av End, 4 bytes
+		};
+	const int target_info_len = 32+4;
+	guint8 nt_proof_str [16];
+	/* temp */
+	int temp_len = 8+8+8+4+target_info_len+4;
+	guint8 temp [temp_len];
+	guint8 temp2 [8 + temp_len];
+	temp[0] = 1;
+	temp[1] = 1;
+	Z(temp+2, 6);
+	*((guint64 *)(temp+8)) = time;
+	memcpy(temp+16, client_challenge, 8);
+	Z(temp+24, 4);
+	memcpy(temp+28, target_info, target_info_len);
+	Z(temp+28+target_info_len, 4);
+	/* NTProofStr */
+	memcpy(temp2, nonce, 8);
+	memcpy(temp2+8, temp, temp_len);
+	HMAC_MD5(response_key_nt, 16, temp2, 8+temp_len, nt_proof_str);
+	/* NtChallengeResponse */
+	memcpy(nt_challenge_response, nt_proof_str, 16);
+	//memcpy(nt_challenge_response+16, temp, temp_len);
+	/* SessionBaseKey */
+	HMAC_MD5(response_key_nt, 16, nt_proof_str, 16, session_base_key);
+	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C", nt_challenge_response, 16, TRUE);
+	assert_equal("8DE40CCADBC14A82F15CB0AD0DE95CA3", session_base_key, 16, TRUE);
+	
 	printf ("\n\nTesting (NTLMv2) SIGNKEY\n");
 	SIGNKEY (exported_session_key, TRUE, client_sign_key);
 	assert_equal("4788DC861B4782F35D43FD98FE1A2D39", client_sign_key, 16, TRUE);
