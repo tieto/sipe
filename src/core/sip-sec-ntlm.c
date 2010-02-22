@@ -325,7 +325,7 @@ DES (const unsigned char *k, const unsigned char *d, unsigned char * results)
 
 // (K = 21 byte key, D = 8 bytes of data) returns 24 bytes in results:
 static void
-DESL (unsigned char *k, const unsigned char *d, unsigned char * results)
+DESL (const unsigned char *k, const unsigned char *d, unsigned char * results)
 {
 	unsigned char keys[21];
 
@@ -822,6 +822,48 @@ purple_ntlm_verify_signature (char * a, char * b)
 }
 
 static void
+compute_response(const guint32 neg_flags,
+		 const unsigned char *response_key_nt,
+		 const unsigned char *response_key_lm,
+		 const guint8 *server_challenge,
+		 const guint8 *client_challenge,
+		 const guint64 time,
+		 const char *server_name,
+		 unsigned char *lm_challenge_response,
+		 unsigned char *nt_challenge_response,
+		 unsigned char *session_base_key)
+{
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_LM_KEY)) {
+		// @TODO do not even reference nt_challenge_response
+		Z (nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
+		DESL (response_key_lm, server_challenge, lm_challenge_response);
+	} else if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+		unsigned char prehash [16];
+		unsigned char hash [16];
+
+		/* nt_challenge_response */
+		memcpy(prehash, server_challenge, 8);
+		memcpy(prehash + 8, client_challenge, 8);
+		MD5 (prehash, 16, hash);
+		DESL (response_key_nt, hash, nt_challenge_response);
+
+		/* lm_challenge_response */
+		memcpy(lm_challenge_response, client_challenge, 8);
+		Z (lm_challenge_response+8, 16);
+	} else {
+		DESL (response_key_nt, server_challenge, nt_challenge_response);
+		if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_NT_ONLY)) {
+			memcpy(lm_challenge_response, nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
+		} else {
+			DESL (response_key_lm, server_challenge, lm_challenge_response);
+		}
+	}
+	
+	/* Session Key */
+	MD4(response_key_nt, 16, session_base_key); // "User Session Key" -> "master key"
+}
+
+static void
 purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			     guchar **server_sign_key,
 			     guchar **client_seal_key,
@@ -852,38 +894,23 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char exported_session_key[16];
 	unsigned char encrypted_random_session_key [16];
 	unsigned char key [16];
+	unsigned char client_challenge [8];
+	
+	NONCE (client_challenge, 8);
 
 	NTOWFv1 (password, user, domain, response_key_nt);
 	LMOWFv1 (password, user, domain, response_key_lm);
 
-	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_LM_KEY)) {
-		// @TODO do not even reference nt_challenge_response
-		Z (nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
-		DESL (response_key_lm, nonce, lm_challenge_response);
-	} else if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
-		unsigned char client_challenge [8];
-		unsigned char prehash [16];
-		unsigned char hash [16];
-
-		NONCE (client_challenge, 8);
-
-		/* nt_challenge_response */
-		memcpy(prehash, nonce, 8);
-		memcpy(prehash + 8, client_challenge, 8);
-		MD5 (prehash, 16, hash);
-		DESL (response_key_nt, hash, nt_challenge_response);
-
-		/* lm_challenge_response */
-		memcpy(lm_challenge_response, client_challenge, 8);
-		Z (lm_challenge_response+8, 16);
-	} else {
-		DESL (response_key_nt, nonce, nt_challenge_response);
-		if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_NT_ONLY)) {
-			memcpy(lm_challenge_response, nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
-		} else {
-			DESL (response_key_lm, nonce, lm_challenge_response);
-		}
-	}
+	compute_response(neg_flags,
+			 response_key_nt,
+			 response_key_lm,
+			 nonce,
+			 client_challenge,
+			 0,
+			 NULL,
+			 lm_challenge_response,	/* out */
+			 nt_challenge_response,	/* out */
+			 session_base_key);	/* out */
 
 	/* authenticate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
@@ -923,8 +950,6 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	memcpy(tmp, nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
 	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
 
-	/* Session Key */
-	MD4(response_key_nt, 16, session_base_key); // "User Session Key" -> "master key"
 	KXKEY(neg_flags, session_base_key, lm_challenge_response, nonce, key_exchange_key); // same for NTLNv1 w/o Ext.Sess.Sec
 
 	if (is_key_exch)
