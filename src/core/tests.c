@@ -101,20 +101,10 @@ int main()
 	const guchar nonce [] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
 	/* 16 bytes */
 	const guchar exported_session_key[] = {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55};
+	const guchar text [] = {0x50, 0x00, 0x6c, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x74, 0x00, 0x65, 0x00, 0x78, 0x00, 0x74, 0x00}; //P·l·a·i·n·t·e·x·t·
 
-	guint32 flags = 0
-		| NTLMSSP_NEGOTIATE_KEY_EXCH
-		| NTLMSSP_NEGOTIATE_56
-		| NTLMSSP_NEGOTIATE_128
-		| NTLMSSP_NEGOTIATE_VERSION
-		| NTLMSSP_TARGET_TYPE_SERVER
-		| NTLMSSP_NEGOTIATE_ALWAYS_SIGN
-		| NTLMSSP_NEGOTIATE_NTLM
-		| NTLMSSP_NEGOTIATE_SEAL
-		| NTLMSSP_NEGOTIATE_SIGN
-		| NTLMSSP_NEGOTIATE_OEM
-		| NTLMSSP_NEGOTIATE_UNICODE;
 
+////// internal Cyphers tests ///////
 	printf ("\nTesting MD4()\n");
 	guchar md4 [16];
 	MD4 ((const unsigned char *)"message digest", 14, md4);
@@ -130,15 +120,28 @@ int main()
 	HMAC_MD5 ((const unsigned char *)"\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b\x0b", 16, (const unsigned char *)"Hi There", 8, hmac_md5);
 	assert_equal("9294727A3638BB1C13F48EF8158BFC9D", hmac_md5, 16, TRUE);
 
+
+////// NTLMv1 (without Extended Session Security) ///////	
+	guint32 flags = 0
+		| NTLMSSP_NEGOTIATE_KEY_EXCH
+		| NTLMSSP_NEGOTIATE_56
+		| NTLMSSP_NEGOTIATE_128
+		| NTLMSSP_NEGOTIATE_VERSION
+		| NTLMSSP_TARGET_TYPE_SERVER
+		| NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+		| NTLMSSP_NEGOTIATE_NTLM
+		| NTLMSSP_NEGOTIATE_SEAL
+		| NTLMSSP_NEGOTIATE_SIGN
+		| NTLMSSP_NEGOTIATE_OEM
+		| NTLMSSP_NEGOTIATE_UNICODE;
+		
+	printf ("\n\nTesting Negotiation Flags\n");
+	assert_equal("338202E2", (guchar*)(&flags), 4, TRUE);
+
 	printf ("\nTesting LMOWFv1()\n");
 	guchar response_key_lm [16];
 	LMOWFv1 (password, user, domain, response_key_lm);
 	assert_equal("E52CAC67419A9A224A3B108F3FA6CB6D", response_key_lm, 16, TRUE);
-
-	printf ("\nTesting LM Response Generation\n");
-	guchar lm_challenge_response [24];
-	DESL (response_key_lm, nonce, lm_challenge_response);
-	assert_equal("98DEF7B87F88AA5DAFE2DF779688A172DEF11C7D5CCDEF13", lm_challenge_response, 24, TRUE);
 
 	printf ("\n\nTesting NTOWFv1()\n");
 	guchar response_key_nt [16];
@@ -149,6 +152,11 @@ int main()
 	guchar nt_challenge_response [24];
 	DESL (response_key_nt, nonce, nt_challenge_response);
 	assert_equal("67C43011F30298A2AD35ECE64F16331C44BDBED927841F94", nt_challenge_response, 24, TRUE);
+
+	printf ("\nTesting LM Response Generation\n");
+	guchar lm_challenge_response [24];
+	DESL (response_key_lm, nonce, lm_challenge_response);
+	assert_equal("98DEF7B87F88AA5DAFE2DF779688A172DEF11C7D5CCDEF13", lm_challenge_response, 24, TRUE);
 
 	printf ("\n\nTesting Session Base Key and Key Exchange Generation\n");
 	guchar session_base_key [16];
@@ -164,8 +172,6 @@ int main()
 	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
 
 	printf ("\n\nTesting CRC32\n");
-	const guchar text [] = {0x50, 0x00, 0x6c, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6e, 0x00, 0x74, 0x00, 0x65, 0x00, 0x78, 0x00, 0x74, 0x00}; //P·l·a·i·n·t·e·x·t·
-	//guchar text [] = {0x56, 0xfe, 0x04, 0xd8, 0x61, 0xf9, 0x31, 0x9a, 0xf0, 0xd7, 0x23, 0x8a, 0x2e, 0x3b, 0x4d, 0x45, 0x7f, 0xb8};
 	gint32 crc = CRC32((char*)text, 18);
 	assert_equal("7D84AA93", (guchar *)&crc, 4, TRUE);
 
@@ -195,8 +201,8 @@ int main()
 	mac2 [3] = ptr [2] ^ ((guint32)0); // ^ seq
 	assert_equal("0100000045C844E509DCD1DF2E459D36", (guchar*)mac2, 16, TRUE);
 
+
 ////// EXTENDED_SESSIONSECURITY ///////
-	//guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;
 	flags = 0
 		| NTLMSSP_NEGOTIATE_56
 		| NTLMSSP_NEGOTIATE_VERSION
@@ -209,11 +215,18 @@ int main()
 		| NTLMSSP_NEGOTIATE_OEM
 		| NTLMSSP_NEGOTIATE_UNICODE;
 
+	printf ("\n\n(Extended session security) Testing Negotiation Flags\n");
+	assert_equal("33820A82", (guchar*)(&flags), 4, TRUE);
+	
+	/* NTOWFv1() is not different from the above test for the same */
+	
+	/* Session Base Key is not different from the above test for the same */
+
 	printf ("\n\n(Extended session security) Testing LM Response Generation\n");
 	memcpy(lm_challenge_response, client_challenge, 8);
 	Z (lm_challenge_response+8, 16);
 	assert_equal("AAAAAAAAAAAAAAAA00000000000000000000000000000000", lm_challenge_response, 24, TRUE);
-
+	
 	printf ("\n\n(Extended session seurity) Testing Key Exchange\n");
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 	assert_equal("EB93429A8BD952F8B89C55B87F475EDC", key_exchange_key, 16, TRUE);
@@ -245,6 +258,7 @@ int main()
 	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
+
 ////// NTLMv2 ///////
 	flags = 0
 		| NTLMSSP_NEGOTIATE_KEY_EXCH
@@ -260,6 +274,9 @@ int main()
 		| NTLMSSP_NEGOTIATE_SIGN
 		| NTLMSSP_NEGOTIATE_OEM
 		| NTLMSSP_NEGOTIATE_UNICODE;
+
+	printf ("\n\nTesting (NTLMv2) Negotiation Flags\n");
+	assert_equal("33828AE2", (guchar*)(&flags), 4, TRUE);
 
 	printf ("\n\nTesting NTOWFv2()\n");
 	NTOWFv2 (password, user, domain, response_key_nt);
@@ -293,6 +310,7 @@ int main()
 	/* End tests from the MS-SIPE document */
 
 
+////// davenport tests ///////
 	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm1Signing
 	const gchar *text_j = "jCIFS";
 	printf ("\n\n(davenport) Testing Signature Algorithm\n");
@@ -314,6 +332,8 @@ int main()
 	assert_equal("010000000A003602317A759A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
+
+////// SIPE internal tests ///////
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
 	char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
@@ -337,6 +357,8 @@ int main()
 	assert_equal ("0100000000000000BF2E52667DDF6DED", (guchar *) sig, 32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", purple_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
 
+
+////// UUID tests ///////
 	/* begin tests from MS-SIPRE */
 
 	const char *testEpid = "01010101";

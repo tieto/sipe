@@ -107,7 +107,7 @@ install:
 	/usr/bin/install -c $(TARGET).dll '$(DLL_INSTALL_DIR)'
 	
 tests: tests-clean
-	$(CC) $(TESTS_WARN) $(INCLUDE_PATHS) -o tests.o -c tests.c
+	$(CC) $(TESTS_WARN) -pipe -mno-cygwin -mms-bitfields -ggdb $(INCLUDE_PATHS) -o tests.o -c tests.c
 	$(CC) sipe-sign.o sip-sec.o sipmsg.o sipe-utils.o uuid.o tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o tests.exe
 	
 tests-clean:
