@@ -181,7 +181,7 @@ int main()
 	printf ("\n\nTesting MAC\n");
 	gchar *mac = NULL;
 	// won't work in the case with sealing because RC4 is re-initialized inside.
-	//gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, 0,16,  0x00000000,  0);
+	//gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, (guchar*)exported_session_key,16,  0x00000000,  0);
 	ptr = (guint32 *)(text_enc + 18);	
 	guint32 mac2 [4];
 	mac2 [0] = 1; // version
@@ -301,13 +301,14 @@ pier11: I don't understand validity of these two test,
 
 	/* End tests from the MS-SIPE document */
 
+
 	// Test from http://davenport.sourceforge.net/ntlm.html#ntlm1Signing
 	const gchar *text_j = "jCIFS";
 	printf ("\n\n(davenport) Testing Signature Algorithm\n");
 	guchar sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
 	assert_equal (
 		"0100000078010900397420FE0E5A0F89",
-		(guchar *) MAC(NEGOTIATE_FLAGS, text_j, strlen(text_j), sk, 8,  0,16,  0x00090178, 0),
+		(guchar *) MAC(NEGOTIATE_FLAGS, text_j, strlen(text_j), sk, 8,  sk,8,  0x00090178, 0),
 		32, FALSE
 	);
 
@@ -318,7 +319,7 @@ pier11: I don't understand validity of these two test,
 	assert_equal("F7F97A82EC390F9C903DAC4F6ACEB132", client_sign_key, 16, TRUE);
 
 	printf ("\n\n(davenport) Testing MAC - no Key Exchange flag\n");
-	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, text_j, strlen(text_j), client_sign_key, 16,  0,16,  0,  0);
+	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, text_j, strlen(text_j), client_sign_key, 16,  client_sign_key,16,  0,  0);
 	assert_equal("010000000A003602317A759A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
@@ -328,7 +329,7 @@ pier11: I don't understand validity of these two test,
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 	assert_equal (
 		"0100000000000000BF2E52667DDF6DED",
-		(guchar *) MAC(NEGOTIATE_FLAGS, msg1, strlen(msg1), exported_session_key2, 16,  0,16,  0, 100),
+		(guchar *) MAC(NEGOTIATE_FLAGS, msg1, strlen(msg1), exported_session_key2, 16,  exported_session_key2,16,  0, 100),
 		32, FALSE
 	);
 
@@ -340,11 +341,10 @@ pier11: I don't understand validity of these two test,
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
 	gchar * msg_str = sipmsg_breakdown_get_string(&msgbd);
-	gchar * sig = purple_ntlm_sipe_signature_make (NEGOTIATE_FLAGS, msg_str, 0, exported_session_key2);
+	gchar * sig = purple_ntlm_sipe_signature_make (NEGOTIATE_FLAGS, msg_str, 0, exported_session_key2, exported_session_key2);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", (guchar *) sig, 32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", purple_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
-
 
 	/* begin tests from MS-SIPRE */
 
