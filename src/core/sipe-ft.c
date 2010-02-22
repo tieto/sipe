@@ -329,11 +329,12 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 		size = DEFAULT_BLOCK_SIZE;
 
 	if (ft->bytes_remaining_chunk == 0) {
+		ssize_t bytes_read;
 		guchar local_buf[16];
 		memset(local_buf, 0, sizeof local_buf);
 
 		// Check if receiver did not cancel the transfer before it is finished
-		ssize_t bytes_read = read(xfer->fd,local_buf,sizeof (local_buf));
+		bytes_read = read(xfer->fd,local_buf,sizeof (local_buf));
 		if (bytes_read == -1 && errno != EAGAIN) {
 			raise_ft_strerror(xfer, _("Socket read failed"));
 			return -1;

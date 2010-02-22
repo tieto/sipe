@@ -497,7 +497,7 @@ KXKEY ( guint32 flags,
           "session key to server-to-client signing key magic constant"))
      Endif
 */
-void
+static void
 SIGNKEY (const unsigned char * random_session_key, gboolean client, unsigned char * result)
 {
 	char * magic = client
@@ -537,7 +537,7 @@ Endif
 EndDefine
 */
 /* out 16 bytes or 8 bytes depending if Ext.Sess.Sec is negotiated */
-void
+static void
 SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean client, unsigned char * result)
 {
 	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY))
@@ -851,6 +851,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char key_exchange_key [16];
 	unsigned char exported_session_key[16];
 	unsigned char encrypted_random_session_key [16];
+	unsigned char key [16];
 
 	NTOWFv1 (password, user, domain, response_key_nt);
 	LMOWFv1 (password, user, domain, response_key_lm);
@@ -947,7 +948,6 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 // p.46
 //Set ClientSigningKey to SIGNKEY(ExportedSessionKey, "Client")
 //Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
-	guchar key [16];
 	SIGNKEY(exported_session_key, TRUE, key);
 	*client_sign_key = (guchar *)g_strndup((gchar *)key, 16);
 	SIGNKEY(exported_session_key, FALSE, key);
