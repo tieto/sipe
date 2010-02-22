@@ -136,13 +136,13 @@
 /* Negotiate flags required in connectionless NTLM */
 #define NEGOTIATE_FLAGS \
 	( NTLMSSP_NEGOTIATE_UNICODE | \
+	  NTLMSSP_NEGOTIATE_56 | \
+	  NTLMSSP_NEGOTIATE_128 | \
 	  NTLMSSP_NEGOTIATE_SIGN | \
 	  NTLMSSP_NEGOTIATE_DATAGRAM | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
 	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
 	  NTLMSSP_NEGOTIATE_KEY_EXCH )
-
-#define NTLM_NEGOTIATE_NTLM2_KEY 0x00080000
 
 #define NTLMSSP_NT_OR_LM_KEY_LEN 24
 #define NTLMSSP_SESSION_KEY_LEN  16
@@ -566,7 +566,7 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 
 		MD5 (md5_input, key_len + len, result);
 	}
-	else
+	else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_LM_KEY)) /* http://davenport.sourceforge.net/ntlm.html#ntlm1KeyWeakening */
 	{		
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
 			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key\n");
@@ -579,6 +579,11 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 			result[6] = 0x38;
 			result[7] = 0xB0;
 		}
+	}
+	else
+	{
+		purple_debug_info("sipe", "NTLM SEALKEY(): 128-bit key\n");
+		memcpy(result, random_session_key, 16);
 	}
 }
 
@@ -781,7 +786,7 @@ MAC (guint32 flags,
 
 		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
 
-		RC4K(sign_key, sign_key_len, (const guchar *)plaintext, 12, result+4);
+		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, result+4);
 		//RC4K(seal_key, 8, (const guchar *)plaintext, 12, result+4);
 
 		res_ptr = (gint32 *)result;
@@ -800,9 +805,9 @@ MAC (guint32 flags,
 }
 
 static gchar *
-purple_ntlm_sipe_signature_make (guint32 flags, const char * msg, guint32 random_pad, unsigned char * signing_key)
+purple_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
 {
-	return MAC(flags, msg, strlen(msg), signing_key, 16,  0,16,  random_pad, 100);
+	return MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100);
 }
 
 static gboolean
@@ -817,7 +822,10 @@ purple_ntlm_verify_signature (char * a, char * b)
 }
 
 static void
-purple_ntlm_gen_authenticate(guchar **ntlm_key, /* signing key */
+purple_ntlm_gen_authenticate(guchar **client_sign_key,
+			     guchar **server_sign_key,
+			     guchar **client_seal_key,
+			     guchar **server_seal_key,
 			     const gchar *user,
 			     const gchar *password,
 			     const gchar *hostname,
@@ -843,7 +851,6 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, /* signing key */
 	unsigned char key_exchange_key [16];
 	unsigned char exported_session_key[16];
 	unsigned char encrypted_random_session_key [16];
-	unsigned char client_signing_key [16];
 
 	NTOWFv1 (password, user, domain, response_key_nt);
 	LMOWFv1 (password, user, domain, response_key_lm);
@@ -940,12 +947,15 @@ purple_ntlm_gen_authenticate(guchar **ntlm_key, /* signing key */
 // p.46
 //Set ClientSigningKey to SIGNKEY(ExportedSessionKey, "Client")
 //Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
-	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
-		SIGNKEY(exported_session_key, FALSE, client_signing_key); //Server
-	} else {
-		memcpy(client_signing_key, exported_session_key, 16);
-	}
-	*ntlm_key = (guchar *)g_strndup((gchar *)client_signing_key, 16);
+	guchar key [16];
+	SIGNKEY(exported_session_key, TRUE, key);
+	*client_sign_key = (guchar *)g_strndup((gchar *)key, 16);
+	SIGNKEY(exported_session_key, FALSE, key);
+	*server_sign_key = (guchar *)g_strndup((gchar *)key, 16);
+	SEALKEY(neg_flags, exported_session_key, TRUE, key);
+	*client_seal_key = (guchar *)g_strndup((gchar *)key, 16);
+	SEALKEY(neg_flags, exported_session_key, FALSE, key);
+	*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
 
 	*flags = neg_flags;
 
@@ -1294,8 +1304,10 @@ typedef struct _context_ntlm {
 	char *username;
 	char *password;
 	int step;
-	/* signing key */
-	guchar *key;
+	guchar *client_sign_key;
+	guchar *server_sign_key;
+	guchar *client_seal_key;
+	guchar *server_seal_key;
 	guint32 flags;
 } *context_ntlm;
 
@@ -1340,7 +1352,10 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
 	} else 	{
-		guchar *ntlm_key;
+		guchar *client_sign_key;
+		guchar *server_sign_key;
+		guchar *client_seal_key;
+		guchar *server_seal_key;
 		guchar *nonce;
 		guint32 flags;
 		gchar *tmp;
@@ -1351,7 +1366,10 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 
 		nonce = g_memdup(purple_ntlm_parse_challenge(in_buff, context->is_connection_based, &flags), 8);
 
-		purple_ntlm_gen_authenticate(&ntlm_key,
+		purple_ntlm_gen_authenticate(&client_sign_key,
+					     &server_sign_key,
+					     &client_seal_key,
+					     &server_seal_key,
 					     ctx->username,
 					     ctx->password,
 					     (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
@@ -1363,8 +1381,18 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		g_free(nonce);
 		g_free(tmp);
 
-		g_free(ctx->key);
-		ctx->key = ntlm_key;
+		g_free(ctx->client_sign_key);
+		ctx->client_sign_key = client_sign_key;
+
+		g_free(ctx->server_sign_key);
+		ctx->server_sign_key = server_sign_key;
+
+		g_free(ctx->client_seal_key);
+		ctx->client_seal_key = client_seal_key;
+
+		g_free(ctx->server_seal_key);
+		ctx->server_seal_key = server_seal_key;
+
 		ctx->flags = flags;
 		return SIP_SEC_E_OK;
 	}
@@ -1382,8 +1410,9 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 	/* FIXME? We always use a random_pad of 0 */
 	gchar *signature_hex = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								message,
-							       0,
-							       ((context_ntlm) context)->key);
+								0,
+							        ((context_ntlm) context)->client_sign_key,
+								((context_ntlm) context)->client_seal_key);
 
 	hex_str_to_bytes(signature_hex, signature);
 	g_free(signature_hex);
@@ -1405,7 +1434,8 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 	gchar *signature_calc = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								message,
 								random_pad,
-								((context_ntlm) context)->key);
+								((context_ntlm) context)->server_sign_key,
+								((context_ntlm) context)->server_seal_key);
 	sip_uint32 res;
 
 	if (purple_ntlm_verify_signature(signature_calc, signature_hex)) {
@@ -1426,7 +1456,10 @@ sip_sec_destroy_sec_context__ntlm(SipSecContext context)
 	g_free(ctx->domain);
 	g_free(ctx->username);
 	g_free(ctx->password);
-	g_free(ctx->key);
+	g_free(ctx->client_sign_key);
+	g_free(ctx->server_sign_key);
+	g_free(ctx->client_seal_key);
+	g_free(ctx->server_seal_key);
 	g_free(ctx);
 }
 
