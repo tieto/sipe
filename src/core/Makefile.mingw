@@ -73,6 +73,10 @@ LIBS =	\
 			-lintl \
 			-lSecur32 \
 			-lpurple
+	
+# These flags are used in mingw build	
+TESTS_WARN = -Werror -Wall -Waggregate-return -Wcast-align -Werror-implicit-function-declaration -Wextra -Wno-sign-compare -Wno-unused-parameter -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef
+#TESTS_WARN += -Wdeclaration-after-statement
 
 include $(PIDGIN_COMMON_RULES)
 
@@ -91,11 +95,9 @@ $(TARGET).dll: $(PURPLE_DLL).a $(OBJECTS)
 ##
 ## CLEAN RULES
 ##
-clean:
+clean: tests-clean
 	rm -f $(OBJECTS)
 	rm -f $(TARGET).dll
-	rm -f tests.o
-	rm -f tests.exe
   
 rmbak:
 	rm -f *~
@@ -104,13 +106,12 @@ install:
 	test -z "$(DLL_INSTALL_DIR)" || mkdir -p "$(DLL_INSTALL_DIR)"
 	/usr/bin/install -c $(TARGET).dll '$(DLL_INSTALL_DIR)'
 	
-tests:
-	$(CC) $(INCLUDE_PATHS) -o tests.o -c tests.c
+tests: tests-clean
+	$(CC) $(TESTS_WARN) $(INCLUDE_PATHS) -o tests.o -c tests.c
 	$(CC) sipe-sign.o sip-sec.o sipmsg.o sipe-utils.o uuid.o tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o tests.exe
-#gcc.exe sipe.o 
-#-L../../../pidgin-2.6.2/../win32-dev/gtk_2_0/lib -L../../../pidgin-2.6.2/libpurple 
-#-lglib-2.0 -lws2_32 -lintl -lSecur32 -lpurple -Wl,--enable-auto-image-base 
-#-o libsipe.dll
-##	$(CC) tests.c $(INCLUDE_PATHS) $(LIB_PATHS) $(LIBS) -L. -lsipe -o tests.exe
+	
+tests-clean:
+	rm -f tests.o
+	rm -f tests.exe
 
 include $(PIDGIN_COMMON_TARGETS)
