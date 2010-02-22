@@ -545,14 +545,12 @@ http_conn_process_input_message(HttpConn *http_conn,
 		char *tmp;
 #endif
 #endif
-		char **parts;
 		SipSecAuthType auth_type;
 		const char *auth_name;
 		char *authorization;
 		char *output_toked_base64;
-		char *spn;
 		int use_sso = !http_conn->auth || (http_conn->auth && !http_conn->auth->user);
-		long ret;
+		long ret = -1;
 
 		http_conn->retries++;
 		if (http_conn->retries > 2) {
@@ -602,15 +600,17 @@ http_conn_process_input_message(HttpConn *http_conn,
 					       http_conn->auth ? http_conn->auth->password : NULL);
 		}
 
-		parts = g_strsplit(ptmp, " ", 0);
-		spn = g_strdup_printf("HTTP/%s", http_conn->host);
-		ret = sip_sec_init_context_step(http_conn->sec_ctx,
-					  spn,
-					  parts[1],
-					  &output_toked_base64,
-					  NULL);
-		g_free(spn);
-		g_strfreev(parts);
+		if (http_conn->sec_ctx) {
+			char **parts = g_strsplit(ptmp, " ", 0);
+			char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
+			ret = sip_sec_init_context_step(http_conn->sec_ctx,
+							spn,
+							parts[1],
+							&output_toked_base64,
+							NULL);
+			g_free(spn);
+			g_strfreev(parts);
+		}
 
 		if (ret < 0) {
 			if (http_conn->callback) {

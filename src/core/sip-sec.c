@@ -99,6 +99,8 @@ sip_sec_create_context(SipSecContext *context,
 	ret = (*(*context)->acquire_cred_func)(*context, domain, username, password);
 	if (ret != SIP_SEC_E_OK) {
 		purple_debug_info("sipe", "ERROR: sip_sec_init_context failed to acquire credentials.\n");
+		(*(*context)->destroy_context_func)(*context);
+		*context = NULL;
 		return;
 	}
 }
@@ -110,43 +112,46 @@ sip_sec_init_context_step(SipSecContext context,
 			  char **output_toked_base64,
 			  int *expires)
 {
-	SipSecBuffer in_buff  = {0, NULL};
-	SipSecBuffer out_buff = {0, NULL};
-	sip_uint32 ret;
-	char *tmp;
+	sip_uint32 ret = SIP_SEC_E_INTERNAL_ERROR;
 
-	/* Not NULL for NTLM Type 2 */
-	if (input_toked_base64) {
-		in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));
+	if (context) {
+		SipSecBuffer in_buff  = {0, NULL};
+		SipSecBuffer out_buff = {0, NULL};
+		char *tmp;
 
-		tmp = sip_sec_ntlm_message_describe(in_buff);
-		if (tmp) {
-			purple_debug_info("sipe", "sip_sec_init_context_step: Challenge message is:\n%s", tmp);
-		}
-		g_free(tmp);
-	}
+		/* Not NULL for NTLM Type 2 */
+		if (input_toked_base64) {
+			in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));
 
-	ret = (*context->init_context_func)(context, in_buff, &out_buff, target);
-
-	if (input_toked_base64)
-		free_bytes_buffer(&in_buff);
-
-	if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
-		*output_toked_base64 = purple_base64_encode(out_buff.value, out_buff.length);
-
-		if (out_buff.length > 0 && out_buff.value) {
-			tmp = sip_sec_ntlm_message_describe(out_buff);
+			tmp = sip_sec_ntlm_message_describe(in_buff);
 			if (tmp) {
-				purple_debug_info("sipe", "sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
+				purple_debug_info("sipe", "sip_sec_init_context_step: Challenge message is:\n%s", tmp);
 			}
 			g_free(tmp);
 		}
 
-		free_bytes_buffer(&out_buff);
-	}
+		ret = (*context->init_context_func)(context, in_buff, &out_buff, target);
 
-	if (expires) {
-		*expires = context->expires;
+		if (input_toked_base64)
+			free_bytes_buffer(&in_buff);
+
+		if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
+			*output_toked_base64 = purple_base64_encode(out_buff.value, out_buff.length);
+
+			if (out_buff.length > 0 && out_buff.value) {
+				tmp = sip_sec_ntlm_message_describe(out_buff);
+				if (tmp) {
+					purple_debug_info("sipe", "sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
+				}
+				g_free(tmp);
+			}
+
+			free_bytes_buffer(&out_buff);
+		}
+
+		if (expires) {
+			*expires = context->expires;
+		}
 	}
 
 	return ret;
