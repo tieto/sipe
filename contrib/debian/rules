@@ -11,6 +11,12 @@ clean::
 	dh_testdir
 	rm -f sipe_config.h
 
+# git snapshot does not contain a configure script
+$(DEB_BUILDDIR)/config.status: $(DEB_CONFIGURE_SCRIPT)
+
+$(DEB_CONFIGURE_SCRIPT):
+	./autogen.sh
+
 install/pidgin-sipe::
 	dh_pidgin -ppidgin-sipe
 
