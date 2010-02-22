@@ -362,6 +362,13 @@ target_info:
 	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C", nt_challenge_response, 16, TRUE);
 	assert_equal("8DE40CCADBC14A82F15CB0AD0DE95CA3", session_base_key, 16, TRUE);
 	
+	printf ("\n\nTesting (NTLMv2) Encrypted Session Key\n");
+	// key_exchange_key = session_base_key for NTLMv2
+	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
+	//RC4 encryption of the RandomSessionKey with the KeyExchangeKey:
+	RC4K (key_exchange_key, 16, exported_session_key, 16, encrypted_random_session_key);
+	assert_equal("C5DAD2544FC9799094CE1CE90BC9D03E", encrypted_random_session_key, 16, TRUE);
+	
 	printf ("\n\nTesting (NTLMv2) SIGNKEY\n");
 	SIGNKEY (exported_session_key, TRUE, client_sign_key);
 	assert_equal("4788DC861B4782F35D43FD98FE1A2D39", client_sign_key, 16, TRUE);

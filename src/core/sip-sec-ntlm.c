@@ -476,17 +476,24 @@ KXKEY ( guint32 flags,
 	const guint8 * server_challenge, /* 8-bytes, nonce */
 	unsigned char * key_exchange_key)
 {
-	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
-		//   Define KXKEY(SessionBaseKey, LmChallengeResponse, ServerChallenge) as
-		//        Set KeyExchangeKey to HMAC_MD5(SessionBaseKey, ConcatenationOf(ServerChallenge, LmChallengeResponse [0..7]))
-		//   EndDefine
-		guint8 tmp[16];
-		memcpy(tmp, server_challenge, 8);
-		memcpy(tmp+8, lm_challenge_resonse, 8);
-		HMAC_MD5(session_base_key, 16, tmp, 16, key_exchange_key);
-	} else {
-		// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
+	if (use_ntlm_v2)
+	{
 		memcpy(key_exchange_key, session_base_key, 16);
+	}
+	else
+	{
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+			//   Define KXKEY(SessionBaseKey, LmChallengeResponse, ServerChallenge) as
+			//        Set KeyExchangeKey to HMAC_MD5(SessionBaseKey, ConcatenationOf(ServerChallenge, LmChallengeResponse [0..7]))
+			//   EndDefine
+			guint8 tmp[16];
+			memcpy(tmp, server_challenge, 8);
+			memcpy(tmp+8, lm_challenge_resonse, 8);
+			HMAC_MD5(session_base_key, 16, tmp, 16, key_exchange_key);
+		} else {
+			// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
+			memcpy(key_exchange_key, session_base_key, 16);
+		}
 	}
 
 }
@@ -831,8 +838,8 @@ compute_response(const guint32 neg_flags,
 		 const unsigned char *response_key_lm,
 		 const guint8 *server_challenge,
 		 const guint8 *client_challenge,
-		 SIPE_UNUSED_PARAMETER const guint64 time,
-		 SIPE_UNUSED_PARAMETER const char *target_info,
+		 const guint64 time,
+		 const char *target_info,
 		 int target_info_len,
 		 unsigned char *lm_challenge_response,
 		 unsigned char *nt_challenge_response,
