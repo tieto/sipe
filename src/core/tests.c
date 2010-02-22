@@ -179,7 +179,6 @@ int main()
 	assert_equal("56FE04D861F9319AF0D7238A2E3B4D457FB8" "45C844E5" "09DCD1DF" "2E459D36", text_enc, 18 + 12, TRUE);
 
 	printf ("\n\nTesting MAC\n");
-	gchar *mac = NULL;
 	// won't work in the case with sealing because RC4 is re-initialized inside.
 	//gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, 0,16,  0x00000000,  0);
 	ptr = (guint32 *)(text_enc + 18);	
@@ -189,20 +188,6 @@ int main()
 	mac2 [2] = ptr [1];
 	mac2 [3] = ptr [2] ^ ((guint32)0); // ^ seq
 	assert_equal("0100000045C844E509DCD1DF2E459D36", (guchar*)mac2, 16, TRUE);
-	//g_free(mac);
-/*
-pier11: I don't understand validity of these two test,
-        as the rest of tests are taken directly from the official spec.
-
-	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, 0,16,  0x45C844E5,  0);
-	assert_equal("01000000E544C84509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
-	g_free(mac);
-	mac        = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, 0,16,  0xE544C845,  0);
-	assert_equal("0100000045C844E509DCD1DF2E459D36", (guchar*)mac, 32, FALSE);
-	g_free(mac);
-*/
-
-
 
 ////// EXTENDED_SESSIONSECURITY ///////
 	//guint32 flags = NEGOTIATE_FLAGS | NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY;
@@ -250,7 +235,7 @@ pier11: I don't understand validity of these two test,
 	assert_equal("A02372F6530273F3AA1EB90190CE5200C99D", text_enc, 18, TRUE);
 
 	printf ("\n\n(Extended session security) Testing MAC\n");
-	mac = MAC (flags,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0);
+	gchar *mac = MAC (flags,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0);
 	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
@@ -293,7 +278,7 @@ pier11: I don't understand validity of these two test,
 //	RC4K (client_seal_key, 16, text2, 18+8, text_enc2);
 //	assert_equal("54E50165BF1936DC996020C1811B0F06FB5F", text_enc2, 18+8, TRUE);
 
-	printf ("\n\nTesting (NTLMv2) MAC (withour RC4, as we don't keep it's handle yet)\n");
+	printf ("\n\nTesting (NTLMv2) MAC (without RC4, as we don't keep its handle yet)\n");
 	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0);
 	assert_equal("0100000070352851F256430900000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
@@ -352,7 +337,7 @@ pier11: I don't understand validity of these two test,
 	const char *expectedUUID = "4b1682a8-f968-5701-83fc-7c6741dc6697";
 	gchar *calcUUID = generateUUIDfromEPID(testEpid);
 
-	printf("\n\nTesting MS-SIPRE uuid derivation\n");
+	printf("\n\nTesting MS-SIPRE UUID derivation\n");
 
 	assert_equal(expectedUUID, (guchar *) calcUUID, strlen(expectedUUID), FALSE);
 	g_free(calcUUID);
