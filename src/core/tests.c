@@ -337,7 +337,7 @@ target_info:
 02000c0044006f006d00610069006e0001000c0053006500720076006500720000000000
 */
 	const guint64 time_val = 0;
-	const guchar target_info [] = {
+	const gchar target_info [] = {
 		0x02, 0x00, 0x0C, 0x00, //NetBIOS Domain name, 4 bytes
 		0x44, 0x00, 0x6F, 0x00, 0x6D, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6E, 0x00, //D.o.m.a.i.n.  12bytes
 		0x01, 0x00, 0x0C, 0x00, //NetBIOS Server name, 4 bytes
