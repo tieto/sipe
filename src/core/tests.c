@@ -280,7 +280,16 @@ int main()
 
 	printf ("\n\nTesting NTOWFv2()\n");
 	NTOWFv2 (password, user, domain, response_key_nt);
+	NTOWFv2 (password, user, domain, response_key_lm);
 	assert_equal("0C868A403BFD7A93A3001EF22EF02E3F", response_key_nt, 16, TRUE);
+	
+	printf ("\n\nTesting (NTLMv2) LM Response Generation\n");
+	guint8 tmp [16];
+	memcpy(tmp, nonce, 8);
+	memcpy(tmp+8, client_challenge, 8);	
+	HMAC_MD5(response_key_lm, 16, tmp, 16, lm_challenge_response);
+	memcpy(lm_challenge_response+16, client_challenge, 8);
+	assert_equal("86C35097AC9CEC102554764A57CCCC19AAAAAAAAAAAAAAAA", lm_challenge_response, 24, TRUE);
 
 	printf ("\n\nTesting (NTLMv2) SIGNKEY\n");
 	SIGNKEY (exported_session_key, TRUE, client_sign_key);
