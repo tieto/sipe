@@ -39,7 +39,9 @@
 #include "sipe-sign.h"
 #include "sip-sec-ntlm.c"
 
+#ifndef _WIN32
 #include "dbus-server.h"
+#endif
 
 #include "uuid.h"
 
@@ -77,11 +79,15 @@ int main()
 	printf ("Starting Tests\n");
 
 	// Initialization that Pidgin would normally do
+#ifndef _WIN32
 	g_type_init();
+#endif
 	purple_signals_init();
 	purple_util_init();
 	purple_debug_init();
+#ifndef _WIN32
 	purple_dbus_init();
+#endif
 	purple_ciphers_init();
 	purple_debug_set_enabled(TRUE);
 
