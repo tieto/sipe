@@ -125,7 +125,8 @@
  ***********************************************/
 
 /* don't put it into configuration yet */
-#define USE_NTLM2	FALSE
+#define USE_NTLM_V2	FALSE
+gboolean use_ntlm_v2 = USE_NTLM_V2;
  
 /* Negotiate flags required in connection-oriented NTLM */
 #define NEGOTIATE_FLAGS_CONN \
@@ -837,7 +838,7 @@ compute_response(const guint32 neg_flags,
 		 unsigned char *nt_challenge_response,
 		 unsigned char *session_base_key)
 {
-	if (USE_NTLM2)
+	if (use_ntlm_v2)
 	{
 /*
 Responserversion - The 1-byte response version. Currently set to 1.

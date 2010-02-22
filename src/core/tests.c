@@ -122,6 +122,7 @@ int main()
 
 
 ////// NTLMv1 (without Extended Session Security) ///////	
+	use_ntlm_v2 = FALSE;
 	guint32 flags = 0
 		| NTLMSSP_NEGOTIATE_KEY_EXCH
 		| NTLMSSP_NEGOTIATE_56
@@ -147,23 +148,33 @@ int main()
 	guchar response_key_nt [16];
 	NTOWFv1 (password, user, domain, response_key_nt);
 	assert_equal("A4F49C406510BDCAB6824EE7C30FD852", response_key_nt, 16, TRUE);
-
-	printf ("\nTesting NT Response Generation\n");
-	guchar nt_challenge_response [24];
-	DESL (response_key_nt, nonce, nt_challenge_response);
-	assert_equal("67C43011F30298A2AD35ECE64F16331C44BDBED927841F94", nt_challenge_response, 24, TRUE);
-
+	
 	printf ("\nTesting LM Response Generation\n");
+	printf ("\nTesting NT Response Generation\n");
+	printf ("\n\nTesting Session Base Key\n");
+	guchar nt_challenge_response [24];
 	guchar lm_challenge_response [24];
-	DESL (response_key_lm, nonce, lm_challenge_response);
-	assert_equal("98DEF7B87F88AA5DAFE2DF779688A172DEF11C7D5CCDEF13", lm_challenge_response, 24, TRUE);
-
-	printf ("\n\nTesting Session Base Key and Key Exchange Generation\n");
 	guchar session_base_key [16];
-	MD4(response_key_nt, 16, session_base_key);
+
+	compute_response(flags,
+			 response_key_nt,
+			 response_key_lm,
+			 nonce,
+			 client_challenge,
+			 0,
+			 NULL, /* target_info */
+			 0,  /* target_info_len */
+			 lm_challenge_response,	/* out */
+			 nt_challenge_response,	/* out */
+			 session_base_key);	/* out */
+
+	assert_equal("98DEF7B87F88AA5DAFE2DF779688A172DEF11C7D5CCDEF13", lm_challenge_response, 24, TRUE);
+	assert_equal("67C43011F30298A2AD35ECE64F16331C44BDBED927841F94", nt_challenge_response, 24, TRUE);
+	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", session_base_key, 16, TRUE);
+
+	printf ("\n\nTesting Key Exchange Key\n");
 	guchar key_exchange_key [16];
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
-	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", session_base_key, 16, TRUE);
 	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", key_exchange_key, 16, TRUE);
 
 	printf ("\n\nTesting Encrypted Session Key Generation\n");
@@ -203,6 +214,7 @@ int main()
 
 
 ////// EXTENDED_SESSIONSECURITY ///////
+	use_ntlm_v2 = FALSE;
 	flags = 0
 		| NTLMSSP_NEGOTIATE_56
 		| NTLMSSP_NEGOTIATE_VERSION
@@ -220,26 +232,29 @@ int main()
 	
 	/* NTOWFv1() is not different from the above test for the same */
 	
-	/* Session Base Key is not different from the above test for the same */
-
-	printf ("\n\n(Extended session security) Testing LM Response Generation\n");
-	memcpy(lm_challenge_response, client_challenge, 8);
-	Z (lm_challenge_response+8, 16);
+	printf ("\n\n(Extended session security) Testing LM Response\n");
+	printf ("\n\n(Extended session security) Testing NT Response\n");
+	printf ("\n\n(Extended session security) Testing Session Base Key\n");
+	compute_response(flags,
+			 response_key_nt,
+			 response_key_lm,
+			 nonce,
+			 client_challenge,
+			 0,
+			 NULL, /* target_info */
+			 0,  /* target_info_len */
+			 lm_challenge_response,	/* out */
+			 nt_challenge_response,	/* out */
+			 session_base_key);	/* out */
+			 
 	assert_equal("AAAAAAAAAAAAAAAA00000000000000000000000000000000", lm_challenge_response, 24, TRUE);
+	assert_equal("7537F803AE367128CA458204BDE7CAF81E97ED2683267232", nt_challenge_response, 24, TRUE);
+	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", session_base_key, 16, TRUE);
 	
-	printf ("\n\n(Extended session seurity) Testing Key Exchange\n");
+	printf ("\n\n(Extended session seurity) Testing Key Exchange Key\n");
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 	assert_equal("EB93429A8BD952F8B89C55B87F475EDC", key_exchange_key, 16, TRUE);
-
-	printf ("\n\n(Extended session security) Testing NT Response Generation\n");
-	unsigned char prehash [16];
-	unsigned char hash [16];
-	memcpy(prehash, nonce, 8);
-	memcpy(prehash + 8, client_challenge, 8);
-	MD5 (prehash, 16, hash);
-	DESL (response_key_nt, hash, nt_challenge_response);
-	assert_equal("7537F803AE367128CA458204BDE7CAF81E97ED2683267232", nt_challenge_response, 24, TRUE);
-
+	
 	printf ("\n\n(Extended session security) SIGNKEY\n");
 	guchar client_sign_key [16];
 	SIGNKEY (key_exchange_key, TRUE, client_sign_key);
@@ -260,6 +275,7 @@ int main()
 
 
 ////// NTLMv2 ///////
+	use_ntlm_v2 = TRUE;
 	flags = 0
 		| NTLMSSP_NEGOTIATE_KEY_EXCH
 		| NTLMSSP_NEGOTIATE_56
@@ -282,15 +298,9 @@ int main()
 	NTOWFv2 (password, user, domain, response_key_nt);
 	NTOWFv2 (password, user, domain, response_key_lm);
 	assert_equal("0C868A403BFD7A93A3001EF22EF02E3F", response_key_nt, 16, TRUE);
-	
+
+
 	printf ("\n\nTesting (NTLMv2) LM Response Generation\n");
-	guint8 tmp [16];
-	memcpy(tmp, nonce, 8);
-	memcpy(tmp+8, client_challenge, 8);	
-	HMAC_MD5(response_key_lm, 16, tmp, 16, lm_challenge_response);
-	memcpy(lm_challenge_response+16, client_challenge, 8);
-	assert_equal("86C35097AC9CEC102554764A57CCCC19AAAAAAAAAAAAAAAA", lm_challenge_response, 24, TRUE);
-	
 	printf ("\n\nTesting (NTLMv2) NT Response Generation and Session Base Key\n");
 /*
 Challenge:
@@ -326,7 +336,7 @@ target_name:
 target_info:
 02000c0044006f006d00610069006e0001000c0053006500720076006500720000000000
 */
-	const guint64 time = 0;
+	const guint64 time_val = 0;
 	const guchar target_info [] = {
 		0x02, 0x00, 0x0C, 0x00, //NetBIOS Domain name, 4 bytes
 		0x44, 0x00, 0x6F, 0x00, 0x6D, 0x00, 0x61, 0x00, 0x69, 0x00, 0x6E, 0x00, //D.o.m.a.i.n.  12bytes
@@ -335,28 +345,20 @@ target_info:
 		0x00, 0x00, 0x00, 0x00, //Av End, 4 bytes
 		};
 	const int target_info_len = 32+4;
-	guint8 nt_proof_str [16];
-	/* temp */
-	int temp_len = 8+8+8+4+target_info_len+4;
-	guint8 temp [temp_len];
-	guint8 temp2 [8 + temp_len];
-	temp[0] = 1;
-	temp[1] = 1;
-	Z(temp+2, 6);
-	*((guint64 *)(temp+8)) = time;
-	memcpy(temp+16, client_challenge, 8);
-	Z(temp+24, 4);
-	memcpy(temp+28, target_info, target_info_len);
-	Z(temp+28+target_info_len, 4);
-	/* NTProofStr */
-	memcpy(temp2, nonce, 8);
-	memcpy(temp2+8, temp, temp_len);
-	HMAC_MD5(response_key_nt, 16, temp2, 8+temp_len, nt_proof_str);
-	/* NtChallengeResponse */
-	memcpy(nt_challenge_response, nt_proof_str, 16);
-	//memcpy(nt_challenge_response+16, temp, temp_len);
-	/* SessionBaseKey */
-	HMAC_MD5(response_key_nt, 16, nt_proof_str, 16, session_base_key);
+
+	compute_response(flags,
+			 response_key_nt,
+			 response_key_lm,
+			 nonce,
+			 client_challenge,
+			 time_val,
+			 target_info, /* target_info */
+			 target_info_len,  /* target_info_len */
+			 lm_challenge_response,	/* out */
+			 nt_challenge_response,	/* out */
+			 session_base_key);	/* out */
+
+	assert_equal("86C35097AC9CEC102554764A57CCCC19AAAAAAAAAAAAAAAA", lm_challenge_response, 24, TRUE);		 
 	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C", nt_challenge_response, 16, TRUE);
 	assert_equal("8DE40CCADBC14A82F15CB0AD0DE95CA3", session_base_key, 16, TRUE);
 	
