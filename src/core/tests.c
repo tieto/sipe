@@ -139,7 +139,7 @@ int main()
 	printf ("\n\nTesting Negotiation Flags\n");
 	assert_equal("338202E2", (guchar*)(&flags), 4, TRUE);
 
-	printf ("\nTesting LMOWFv1()\n");
+	printf ("\n\nTesting LMOWFv1()\n");
 	guchar response_key_lm [16];
 	LMOWFv1 (password, user, domain, response_key_lm);
 	assert_equal("E52CAC67419A9A224A3B108F3FA6CB6D", response_key_lm, 16, TRUE);
@@ -149,9 +149,9 @@ int main()
 	NTOWFv1 (password, user, domain, response_key_nt);
 	assert_equal("A4F49C406510BDCAB6824EE7C30FD852", response_key_nt, 16, TRUE);
 	
-	printf ("\nTesting LM Response Generation\n");
-	printf ("\nTesting NT Response Generation\n");
-	printf ("\n\nTesting Session Base Key\n");
+	printf ("\n\nTesting LM Response Generation\n");
+	printf ("Testing NT Response Generation\n");
+	printf ("Testing Session Base Key\n");
 	guchar nt_challenge_response [24];
 	guchar lm_challenge_response [24];
 	guchar session_base_key [16];
@@ -233,8 +233,8 @@ int main()
 	/* NTOWFv1() is not different from the above test for the same */
 	
 	printf ("\n\n(Extended session security) Testing LM Response\n");
-	printf ("\n\n(Extended session security) Testing NT Response\n");
-	printf ("\n\n(Extended session security) Testing Session Base Key\n");
+	printf ("(Extended session security) Testing NT Response\n");
+	printf ("(Extended session security) Testing Session Base Key\n");
 	compute_response(flags,
 			 response_key_nt,
 			 response_key_lm,
@@ -301,7 +301,7 @@ int main()
 
 
 	printf ("\n\nTesting (NTLMv2) LM Response Generation\n");
-	printf ("\n\nTesting (NTLMv2) NT Response Generation and Session Base Key\n");
+	printf ("Testing (NTLMv2) NT Response Generation and Session Base Key\n");
 /*
 Challenge:
 4e544c4d53535000020000000c000c003800000033828ae20123456789abcdef00000000000000002400240044000000060070170000000f53006500720076006500720002000c0044006f006d00610069006e0001000c0053006500720076006500720000000000
