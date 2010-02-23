@@ -51,8 +51,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	struct sipmsg *msg = g_new0(struct sipmsg,1);
 	gchar **lines = g_strsplit(header,"\r\n",0);
 	gchar **parts;
-	gchar *tmp;
-	gchar *contentlength;
+	const gchar *contentlength;
 	if(!lines[0]) {
 		g_strfreev(lines);
 		g_free(msg);
@@ -87,6 +86,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		purple_debug_fatal("sipe", "sipmsg_parse_header(): Content-Length header not found\n");
 	}
 	if(msg->response) {
+		const gchar *tmp;
 		g_free(msg->method);
 		tmp = sipmsg_find_header(msg, "CSeq");
 		if(!tmp) {
@@ -274,11 +274,11 @@ void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name) {
 	return;
 }
 
-gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name) {
+const gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name) {
 	return sipe_utils_nameval_find_instance (msg->headers, name, 0);
 }
 
-gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which) {
+const gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which) {
 	return sipe_utils_nameval_find_instance(msg->headers, name, which);
 }
 

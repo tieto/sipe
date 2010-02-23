@@ -651,7 +651,7 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 	xmlnode *xn_focus_uri = xmlnode_get_child(xn_conferencing, "focus-uri");
 	char *focus_uri = xmlnode_get_data(xn_focus_uri);
 	gchar *newTag = gentag();
-	gchar *oldHeader = sipmsg_find_header(msg, "To");
+	const gchar *oldHeader = sipmsg_find_header(msg, "To");
 	gchar *newHeader;
 
 	xmlnode_free(xn_conferencing);
@@ -894,7 +894,7 @@ sipe_process_imdn(struct sipe_account_data *sip,
 		  struct sipmsg *msg)
 {
 	gchar *with = parse_from(sipmsg_find_header(msg, "From"));
-	gchar *call_id = sipmsg_find_header(msg, "Call-ID");
+	const gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	static struct sip_session *session;
 	xmlnode *xn_imdn;
 	xmlnode *node;

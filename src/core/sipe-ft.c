@@ -543,7 +543,7 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 {
 	PurpleXfer *xfer;
 	struct sipe_account_data *sip = account->gc->proto_data;
-	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
 	if (!session) {
 		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
@@ -585,15 +585,15 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 {
 	struct sipe_account_data *sip = account->gc->proto_data;
-	gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
+	const gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
 	if (xfer) {
-		gchar *ip			= sipe_utils_nameval_find(body, "IP-Address");
-		gchar *port_str		= sipe_utils_nameval_find(body, "Port");
-		gchar *auth_cookie	= sipe_utils_nameval_find(body, "AuthCookie");
-		gchar *enc_key_b64	= sipe_utils_nameval_find(body, "Encryption-Key");
-		gchar *hash_key_b64	= sipe_utils_nameval_find(body, "Hash-Key");
+		const gchar *ip           = sipe_utils_nameval_find(body, "IP-Address");
+		const gchar *port_str     = sipe_utils_nameval_find(body, "Port");
+		const gchar *auth_cookie  = sipe_utils_nameval_find(body, "AuthCookie");
+		const gchar *enc_key_b64  = sipe_utils_nameval_find(body, "Encryption-Key");
+		const gchar *hash_key_b64 = sipe_utils_nameval_find(body, "Hash-Key");
 
 		sipe_file_transfer *ft = xfer->data;
 
@@ -608,8 +608,6 @@ void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 				raise_ft_error_and_cancel(xfer,
 							  _("Received encryption key has wrong size."));
 				g_free(enc_key);
-				g_free(port_str);
-				g_free(ip);
 				return;
 			}
 			g_free(enc_key);
@@ -623,8 +621,6 @@ void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 				raise_ft_error_and_cancel(xfer,
 							  _("Received hash key has wrong size."));
 				g_free(hash_key);
-				g_free(port_str);
-				g_free(ip);
 				return;
 			}
 			g_free(hash_key);

@@ -518,7 +518,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 	    msg->response == 302 ||
 	    msg->response == 307)
 	{
-		char *location = sipmsg_find_header(msg, "Location");
+		const char *location = sipmsg_find_header(msg, "Location");
 
 		purple_debug_info("sipe-http", "http_conn_process_input_message: Redirect to: %s\n", location ? location : "");
 

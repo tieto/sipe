@@ -318,7 +318,7 @@ sipe_utils_nameval_add(GSList *list, const gchar *name, const gchar *value);
  *
  * @return value of @c name or NULL if @c name is not found
  */
-gchar *
+const gchar *
 sipe_utils_nameval_find(const GSList *list, const gchar *name);
 
 /**
@@ -332,7 +332,7 @@ sipe_utils_nameval_find(const GSList *list, const gchar *name);
  *
  * @return value of @c name or NULL if @c name is not found
  */
-gchar *
+const gchar *
 sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int which);
 
 /**

@@ -32,12 +32,12 @@ struct sipmsg_breakdown {
 	gchar * num;
 	gchar * realm;
 	gchar * target_name;
-	gchar * call_id;
+	const gchar * call_id;
 	gchar * cseq;
 	gchar * from_url;
 	gchar * from_tag;
 	gchar * to_tag;
-	gchar * expires;
+	const gchar * expires;
 };
 
 void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target);

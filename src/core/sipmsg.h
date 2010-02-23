@@ -54,9 +54,9 @@ void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gcha
 void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]);
 void sipmsg_merge_new_headers(struct sipmsg *msg);
 void sipmsg_free(struct sipmsg *msg);
-GSList *sipmsg_parse_endpoints_header(const gchar *header); 
-gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name);
-gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which);
+GSList *sipmsg_parse_endpoints_header(const gchar *header);
+const gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name);
+const gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which);
 gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def);
 gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name);
