@@ -371,13 +371,13 @@ sipe_utils_nameval_free(GSList *list) {
 	}
 }
 
-gchar *
+const gchar *
 sipe_utils_nameval_find(const GSList *list, const gchar *name)
 {
 	return sipe_utils_nameval_find_instance (list, name, 0);
 }
 
-gchar *
+const gchar *
 sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int which)
 {
 	const GSList *tmp;

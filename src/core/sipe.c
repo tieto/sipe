@@ -442,7 +442,7 @@ static char *parse_attribute(const char *attrname, const char *source)
 	return retval;
 }
 
-static void fill_auth(gchar *hdr, struct sip_auth *auth)
+static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 {
 	int i;
 	gchar **parts;
@@ -874,8 +874,8 @@ static void transactions_remove(struct sipe_account_data *sip, struct transactio
 static struct transaction *
 transactions_add_buf(struct sipe_account_data *sip, const struct sipmsg *msg, void *callback)
 {
-	gchar *call_id = NULL;
-	gchar *cseq = NULL;
+	const gchar *call_id;
+	const gchar *cseq;
 	struct transaction *trans = g_new0(struct transaction, 1);
 
 	trans->time = time(NULL);
@@ -893,8 +893,8 @@ static struct transaction *transactions_find(struct sipe_account_data *sip, stru
 {
 	struct transaction *trans;
 	GSList *transactions = sip->transactions;
-	gchar *call_id = sipmsg_find_header(msg, "Call-ID");
-	gchar *cseq = sipmsg_find_header(msg, "CSeq");
+	const gchar *call_id = sipmsg_find_header(msg, "Call-ID");
+	const gchar *cseq = sipmsg_find_header(msg, "CSeq");
 	gchar *key;
 
 	if (!call_id || !cseq) {
@@ -1765,7 +1765,7 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 				    SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
-	gchar *event = sipmsg_find_header(msg, "Event");
+	const gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *key;
 
 	/* The case with 2005 Public IM Connectivity (PIC) - no Event header */
@@ -1786,7 +1786,7 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 
 	/* create/store subscription dialog if not yet */
 	if (msg->response == 200) {
-		gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
 
 		if (key) {
@@ -2424,7 +2424,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 {
 	int len = msg->bodylen;
 
-	gchar *tmp = sipmsg_find_header(msg, "Event");
+	const gchar *tmp = sipmsg_find_header(msg, "Event");
 	xmlnode *item;
 	xmlnode *isc;
 	const gchar *contacts_delta;
@@ -2645,12 +2645,13 @@ static void sipe_subscribe_presence_wpending(struct sipe_account_data *sip,
 //
 static void sipe_process_registration_notify(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 	gchar *event = NULL;
 	gchar *reason = NULL;
-	gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+	const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
+	gchar *warning;
 
-	warning = warning ? warning : sipmsg_find_header(msg, "ms-diagnostics-public");
+	diagnostics = diagnostics ? diagnostics : sipmsg_find_header(msg, "ms-diagnostics-public");
 	purple_debug_info("sipe", "sipe_process_registration_notify: deregistration received.\n");
 
 	if (!g_ascii_strncasecmp(contenttype, "text/registration-event", 23)) {
@@ -2662,7 +2663,7 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 		return;
 	}
 
-	if (warning != NULL) {
+	if (diagnostics != NULL) {
 		reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
 	} else { // for LCS2005
 		int error_id = 0;
@@ -4026,7 +4027,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 			}
 			g_strfreev(parts);
 		}
-		
+
 		/* cancel file transfer as rejected by server */
 		if (msg->response == 606 &&	/* Not acceptable all. */
 		    warning == 309 &&		/* Message contents not allowed by policy */
@@ -4044,7 +4045,7 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 		sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, (message ? message->body : NULL));
 		ret = FALSE;
 	} else {
-		gchar *message_id = sipmsg_find_header(msg, "Message-Id");
+		const gchar *message_id = sipmsg_find_header(msg, "Message-Id");
 		if (message_id) {
 			g_hash_table_insert(session->conf_unconfirmed_messages, g_strdup(message_id), g_strdup(message->body));
 			purple_debug_info("sipe", "process_message_response: added message with id %s to conf_unconfirmed_messages(count=%d)\n",
@@ -4074,8 +4075,8 @@ static gboolean
 process_info_response(struct sipe_account_data *sip, struct sipmsg *msg,
 		      SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
-	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	struct sip_dialog *dialog;
 	struct sip_session *session;
 
@@ -4190,7 +4191,7 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * sess
 			message->body = g_strdup(msg->body);
 			if (msg->content_type != NULL)
 				message->content_type = g_strdup(msg->content_type);
-			
+
 			key = g_strdup_printf("<%s><%d><MESSAGE><%s>", dialog->callid, (dialog->cseq) + 1, dialog->with);
 			g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), message);
 			purple_debug_info("sipe", "sipe_im_process_queue: added message %s to unconfirmed_messages(count=%d)\n",
@@ -4242,7 +4243,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	struct queued_message *message;
 	struct sipmsg *request_msg = trans->msg;
 
-	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *referred_by;
 
 	session = sipe_session_find_chat_by_callid(sip, callid);
@@ -4284,7 +4285,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 			}
 			g_strfreev(parts);
 		}
-		
+
 
 		if ((pbuddy = purple_find_buddy(sip->account, with))) {
 			alias = purple_buddy_get_alias(pbuddy);
@@ -4661,8 +4662,8 @@ static int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 
 static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
-	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from;
 	struct sip_session *session;
 
@@ -4743,7 +4744,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 
 static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	struct sip_session *session;
 	struct sip_dialog *dialog;
@@ -4790,7 +4791,7 @@ static void process_incoming_bye(struct sipe_account_data *sip, struct sipmsg *m
 static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	gchar *self = sip_uri_self(sip);
-	gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	gchar *refer_to = parse_from(sipmsg_find_header(msg, "Refer-to"));
 	gchar *referred_by = g_strdup(sipmsg_find_header(msg, "Referred-By"));
@@ -4877,7 +4878,7 @@ sipe_process_incoming_x_msmsgsinvite(struct sipe_account_data *sip,
 	gboolean found = FALSE;
 
 	if (parsed_body) {
-		gchar *invitation_command = sipe_utils_nameval_find(parsed_body, "Invitation-Command");
+		const gchar *invitation_command = sipe_utils_nameval_find(parsed_body, "Invitation-Command");
 
 		if (sipe_strequal(invitation_command, "INVITE")) {
 			sipe_ft_incoming_transfer(sip->gc->account, msg, parsed_body);
@@ -4896,7 +4897,7 @@ sipe_process_incoming_x_msmsgsinvite(struct sipe_account_data *sip,
 static void process_incoming_message(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	gchar *from;
-	gchar *contenttype;
+	const gchar *contenttype;
 	gboolean found = FALSE;
 
 	from = parse_from(sipmsg_find_header(msg, "From"));
@@ -4911,7 +4912,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 	    || g_str_has_prefix(contenttype, "multipart/related")
 	    || g_str_has_prefix(contenttype, "multipart/alternative"))
 	{
-		gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *html = get_html_message(contenttype, msg->body);
 
 		struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
@@ -4975,7 +4976,7 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		}
 	}
 	if (!found) {
-		gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
 		if (!session) {
 			session = sipe_session_find_im(sip, from);
@@ -4997,18 +4998,18 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 {
 	gchar *body;
 	gchar *newTag;
-	gchar *oldHeader;
+	const gchar *oldHeader;
 	gchar *newHeader;
 	gboolean is_multiparty = FALSE;
 	gboolean is_triggered = FALSE;
 	gboolean was_multiparty = TRUE;
 	gboolean just_joined = FALSE;
 	gchar *from;
-	gchar *callid = 	sipmsg_find_header(msg, "Call-ID");
-	gchar *roster_manager = sipmsg_find_header(msg, "Roster-Manager");
-	gchar *end_points_hdr = sipmsg_find_header(msg, "EndPoints");
-	gchar *trig_invite = 	sipmsg_find_header(msg, "TriggeredInvite");
-	gchar *content_type = 	sipmsg_find_header(msg, "Content-Type");
+	const gchar *callid         = sipmsg_find_header(msg, "Call-ID");
+	const gchar *roster_manager = sipmsg_find_header(msg, "Roster-Manager");
+	const gchar *end_points_hdr = sipmsg_find_header(msg, "EndPoints");
+	const gchar *trig_invite    = sipmsg_find_header(msg, "TriggeredInvite");
+	const gchar *content_type   = sipmsg_find_header(msg, "Content-Type");
 	GSList *end_points = NULL;
 	char *tmp = NULL;
 	struct sip_session *session;
@@ -5303,12 +5304,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			if (expires == 0) {
 				sip->registerstatus = 0;
 			} else {
-				gchar *contact_hdr = NULL;
+				const gchar *contact_hdr;
 				gchar *gruu = NULL;
 				gchar *epid;
 				gchar *uuid;
 				gchar *timeout;
-				gchar *server_hdr = sipmsg_find_header(msg, "Server");
+				const gchar *server_hdr = sipmsg_find_header(msg, "Server");
 				const char *auth_scheme;
 
 				if (!sip->reregister_set) {
@@ -5560,13 +5561,14 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			break;
 		case 403:
 			{
-				gchar *warning = sipmsg_find_header(msg, "Warning");
+				const gchar *diagnostics = sipmsg_find_header(msg, "Warning");
 				gchar **reason = NULL;
-				if (warning != NULL) {
+				gchar *warning;
+				if (diagnostics != NULL) {
 					/* Example header:
 					   Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
 					*/
-					reason = g_strsplit(warning, "\"", 0);
+					reason = g_strsplit(diagnostics, "\"", 0);
 				}
 				warning = g_strdup_printf(_("You have been rejected by the server: %s"),
 							  (reason && reason[1]) ? reason[1] : _("no reason given"));
@@ -5580,13 +5582,14 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 			break;
 			case 404:
 			{
-				gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+				const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
 				gchar *reason = NULL;
-				if (warning != NULL) {
-					reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
+				gchar *warning;
+				if (diagnostics != NULL) {
+					reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
 				}
 				warning = g_strdup_printf(_("Not found: %s. Please contact your Administrator"),
-							  warning ? (reason ? reason : _("no reason given")) :
+							  diagnostics ? (reason ? reason : _("no reason given")) :
 							  _("SIP is either not enabled for the destination URI or it does not exist"));
 				g_free(reason);
 
@@ -5599,10 +5602,11 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                 case 503:
 		case 504: /* Server time-out */
                         {
-				gchar *warning = sipmsg_find_header(msg, "ms-diagnostics");
+				const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
 				gchar *reason = NULL;
-				if (warning != NULL) {
-					reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
+				gchar *warning;
+				if (diagnostics != NULL) {
+					reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
 				}
 				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
 				g_free(reason);
@@ -6533,7 +6537,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 static void sipe_process_presence(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	char *ctype = sipmsg_find_header(msg, "Content-Type");
+	const char *ctype = sipmsg_find_header(msg, "Content-Type");
 
 	purple_debug_info("sipe", "sipe_process_presence: Content-Type: %s\n", ctype ? ctype : "");
 
@@ -6597,7 +6601,7 @@ static void sipe_process_presence(struct sipe_account_data *sip, struct sipmsg *
 
 static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct sipmsg *msg, gchar *who, int timeout)
 {
-	char *ctype = sipmsg_find_header(msg, "Content-Type");
+	const char *ctype = sipmsg_find_header(msg, "Content-Type");
 	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, who);
 
 	purple_debug_info("sipe", "sipe_process_presence_timeout: Content-Type: %s\n", ctype ? ctype : "");
@@ -6943,7 +6947,7 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 						struct sipmsg *msg,
 						struct transaction *trans)
 {
-	gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 
 	if (msg->response == 409 && g_str_has_prefix(contenttype, "application/msrtc-fault+xml")) {
 		xmlnode *xml;
@@ -7754,7 +7758,8 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 		struct transaction *trans = transactions_find(sip, msg);
 		if (trans) {
 			if (msg->response == 407) {
-				gchar *resend, *auth, *ptmp;
+				gchar *resend, *auth;
+				const gchar *ptmp;
 
 				if (sip->proxy.retries > 30) return;
 				sip->proxy.retries++;

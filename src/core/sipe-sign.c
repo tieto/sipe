@@ -33,15 +33,16 @@ static gchar * const empty_string = "";
 
 void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target)
 {
-	gchar * hdr;
+	const gchar * hdr;
 	if (msg == NULL || msg->msg == NULL) {
 		purple_debug(PURPLE_DEBUG_MISC, "sipmsg_breakdown_parse msg or msg->msg is NULL", "\n");
 		return;
 	}
 
 
-	msg->rand = msg->num = msg->realm = msg->target_name = msg->call_id = 
-		msg->cseq = msg->from_url = msg->from_tag = msg->to_tag = msg->expires = empty_string;
+	msg->rand = msg->num = msg->realm = msg->target_name =
+		msg->cseq = msg->from_url = msg->from_tag = msg->to_tag = empty_string;
+	msg->call_id = msg->expires = empty_string;
 
 	if ((hdr = sipmsg_find_header(msg->msg, "Proxy-Authorization")) ||
 	    (hdr = sipmsg_find_header(msg->msg, "Proxy-Authenticate")) ||
@@ -134,3 +135,12 @@ sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd)
 
 	return msg;
 }
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/
