@@ -67,7 +67,9 @@ typedef struct _sipe_file_transfer sipe_file_transfer;
 
 static void send_filetransfer_accept(PurpleXfer* xfer);
 static void send_filetransfer_cancel(PurpleXfer* xfer);
-static gssize read_line(int fd, gchar *buffer, gssize size);
+static ssize_t do_read(PurpleXfer *xfer, guchar *buf, size_t len);
+static gboolean read_fully(PurpleXfer *xfer, guchar *buf, size_t len);
+static gssize read_line(PurpleXfer *xfer, gchar *buffer, gssize size);
 static void sipe_cipher_context_init(PurpleCipherContext **rc4_context, const guchar *enc_key);
 static void sipe_hmac_context_init(PurpleCipherContext **hmac_context, const guchar *hash_key);
 static gchar *sipe_hmac_finalize(PurpleCipherContext *hmac_context);
@@ -174,15 +176,13 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 	const gsize FILE_SIZE_OFFSET = 4;
 	gsize file_size;
 
-	set_socket_nonblock(xfer->fd,FALSE);
-
 	ft = xfer->data;
 
 	if (write(xfer->fd,VER,strlen(VER)) == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
-	if (read(xfer->fd,buf,strlen(VER)) == -1) {
+	if (read_line(xfer, buf, BUFFER_SIZE) < 0) {
 		raise_ft_socket_read_error_and_cancel(xfer);
 		return;
 	}
@@ -197,7 +197,10 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 	}
 	g_free(request);
 
-	read_line(xfer->fd, buf, BUFFER_SIZE);
+	if (read_line(xfer, buf, BUFFER_SIZE) < 0) {
+		raise_ft_socket_read_error_and_cancel(xfer);
+		return;
+	}
 
 	file_size = g_ascii_strtoull(buf + FILE_SIZE_OFFSET,NULL,10);
 	if (file_size != xfer->size) {
@@ -212,8 +215,6 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 	}
 
 	ft->bytes_remaining_chunk = 0;
-
-	set_socket_nonblock(xfer->fd,TRUE);
 
 	sipe_cipher_context_init(&ft->cipher_context, ft->encryption_key);
 	sipe_hmac_context_init(&ft->hmac_context, ft->hash_key);
@@ -232,18 +233,18 @@ sipe_ft_incoming_stop(PurpleXfer *xfer)
 	gchar *mac;
 	gchar *mac1;
 
-	set_socket_nonblock(xfer->fd,FALSE);
-
 	if (write(xfer->fd,BYE,strlen(BYE)) == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
 		return;
 	}
 
-	macLen = read_line(xfer->fd,buffer,BUFFER_SIZE);
+	macLen = read_line(xfer, buffer, BUFFER_SIZE);
 
-	if (macLen < (MAC_OFFSET + CRLF_LEN)) {
-		raise_ft_error_and_cancel(xfer,
-					  _("Received MAC is corrupted"));
+	if (macLen < 0) {
+		raise_ft_socket_read_error_and_cancel(xfer);
+		return;
+	} else if (macLen < (MAC_OFFSET + CRLF_LEN)) {
+		raise_ft_error_and_cancel(xfer, _("Received MAC is corrupted"));
 		return;
 	}
 
@@ -273,15 +274,12 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 	if (ft->bytes_remaining_chunk == 0) {
 		guchar chunk_buf[3];
 
-		set_socket_nonblock(xfer->fd, FALSE);
-
-		if (read(xfer->fd,chunk_buf,3) == -1) {
+		if (!read_fully(xfer,chunk_buf,3)) {
 			raise_ft_strerror(xfer, _("Socket read failed"));
 			return -1;
 		}
 
 		ft->bytes_remaining_chunk = chunk_buf[1] + (chunk_buf[2] << 8);
-		set_socket_nonblock(xfer->fd, TRUE);
 	}
 
 	bytes_to_read = MIN(purple_xfer_get_bytes_remaining(xfer),
@@ -296,13 +294,10 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 		return -1;
 	}
 
-	bytes_read = read(xfer->fd, *buffer, bytes_to_read);
-	if (bytes_read == -1) {
-		if (errno == EAGAIN)
-			bytes_read = 0;
-		else {
-			raise_ft_strerror(xfer, _("Socket read failed"));
-		}
+	bytes_read = do_read(xfer, *buffer, bytes_to_read);
+	if (bytes_read < 0) {
+		raise_ft_strerror(xfer, _("Socket read failed"));
+		return -1;
 	}
 
 	if (bytes_read > 0) {
@@ -351,11 +346,10 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 		if (bytes_read == -1 && errno != EAGAIN) {
 			raise_ft_strerror(xfer, _("Socket read failed"));
 			return -1;
-		} else if (bytes_read != 0) {
-			if (   g_str_has_prefix((gchar*)local_buf,"CCL\r\n")
-				|| g_str_has_prefix((gchar*)local_buf,"BYE 2164261682\r\n")) {
-				return -1;
-			}
+		} else if (bytes_read > 0
+					&& (g_str_has_prefix((gchar*)local_buf,"CCL\r\n")
+					|| g_str_has_prefix((gchar*)local_buf,"BYE 2164261682\r\n"))) {
+			return -1;
 		}
 
 		if (ft->outbuf_size < size) {
@@ -380,12 +374,10 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 		local_buf[1] = ft->bytes_remaining_chunk & 0x00FF;
 		local_buf[2] = (ft->bytes_remaining_chunk & 0xFF00) >> 8;
 
-		set_socket_nonblock(xfer->fd, FALSE);
 		if (write(xfer->fd,local_buf,3) == -1) {
 			raise_ft_strerror(xfer, _("Socket write failed"));
 			return -1;
 		}
-		set_socket_nonblock(xfer->fd, TRUE);
 	}
 
 	bytes_written = write(xfer->fd, ft->outbuf_ptr, ft->bytes_remaining_chunk);
@@ -459,12 +451,11 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 	gchar *tmp;
 	ssize_t bytes_written;
 
-	set_socket_nonblock(xfer->fd,FALSE);
+	set_socket_nonblock(xfer->fd, TRUE);
 
 	ft = xfer->data;
 
-	memset(buf,0,BUFFER_SIZE);
-	if (read(xfer->fd,buf,strlen(VER)) == -1) {
+	if (read_line(xfer, buf, BUFFER_SIZE) < 0) {
 		raise_ft_socket_read_error_and_cancel(xfer);
 		return;
 	}
@@ -481,7 +472,10 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 		return;
 	}
 
-	read_line(xfer->fd, buf, BUFFER_SIZE);
+	if (read_line(xfer, buf, BUFFER_SIZE) < 0) {
+		raise_ft_socket_read_error_and_cancel(xfer);
+		return;
+	}
 
 	parts = g_strsplit(buf, " ", 3);
 
@@ -510,11 +504,12 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 	}
 
 	// TFR
-	read_line(xfer->fd,buf,BUFFER_SIZE);
+	if (read_line(xfer,buf,BUFFER_SIZE) < 0) {
+		raise_ft_socket_read_error_and_cancel(xfer);
+		return;
+	}
 
 	ft->bytes_remaining_chunk = 0;
-
-	set_socket_nonblock(xfer->fd,TRUE);
 
 	sipe_cipher_context_init(&ft->cipher_context, ft->encryption_key);
 	sipe_hmac_context_init(&ft->hmac_context, ft->hash_key);
@@ -529,10 +524,11 @@ sipe_ft_outgoing_stop(PurpleXfer *xfer)
 	gchar *mac;
 	gsize mac_strlen;
 
-	set_socket_nonblock(xfer->fd,FALSE);
-
 	// BYE
-	read_line(xfer->fd, buffer, BUFFER_SIZE);
+	if (read_line(xfer, buffer, BUFFER_SIZE) < 0) {
+		raise_ft_socket_read_error_and_cancel(xfer);
+		return;
+	}
 
 	mac = sipe_hmac_finalize(ft->hmac_context);
 	g_sprintf(buffer, "MAC %s \r\n", mac);
@@ -716,15 +712,58 @@ static void send_filetransfer_cancel(PurpleXfer* xfer) {
 	g_free(body);
 }
 
-static gssize read_line(int fd, gchar *buffer, gssize size)
+static ssize_t
+do_read(PurpleXfer *xfer, guchar *buf, size_t len)
+{
+	ssize_t bytes_read = read(xfer->fd, buf, len);
+	if (bytes_read == 0) {
+		// Sender canceled transfer before it was finished
+		return -2;
+	} else if (bytes_read == -1) {
+		if (errno == EAGAIN)
+			return 0;
+		else
+			return -1;
+	}
+	return bytes_read;
+}
+
+static gboolean
+read_fully(PurpleXfer *xfer, guchar *buf, size_t len)
+{
+	const useconds_t READ_TIMEOUT = 10000000;
+	useconds_t time_spent = 0;
+
+	while (len) {
+		ssize_t bytes_read = do_read(xfer, buf, len);
+		if (bytes_read == 0) {
+			usleep(100000);
+			time_spent += 100000;
+		} else if (bytes_read < 0 || time_spent > READ_TIMEOUT) {
+			return FALSE;
+		} else {
+			len -= bytes_read;
+			buf += bytes_read;
+			time_spent = 0;
+		}
+	}
+	return TRUE;
+}
+
+static gssize read_line(PurpleXfer *xfer, gchar *buffer, gssize size)
 {
 	gssize pos = 0;
 
 	memset(buffer,0,size);
 	do {
-		if (read(fd,buffer + pos,1) == -1)
+		if (!read_fully(xfer, (guchar*) buffer + pos, 1))
 			return -1;
-	} while (buffer[pos] != '\n' && ++pos < size);
+	} while (buffer[pos] != '\n' && ++pos != (size - 1));
+
+	if (pos == (size - 1) && buffer[pos - 1] != '\n') {
+		// Buffer too short
+		return -2;
+	}
 
 	return pos;
 }
