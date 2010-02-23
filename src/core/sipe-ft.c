@@ -55,6 +55,9 @@ struct _sipe_file_transfer {
 	PurpleCipherContext *cipher_context;
 	PurpleCipherContext *hmac_context;
 
+	PurpleNetworkListenData *listener;
+	int listenfd;
+
 	gsize bytes_remaining_chunk;
 	guchar* encrypted_outbuf;
 	guchar* outbuf_ptr;
@@ -92,6 +95,16 @@ sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 
 		g_hash_table_remove(sip->filetransfers,ft->invitation_cookie);
 
+		if (xfer->watcher) {
+			purple_input_remove(xfer->watcher);
+			xfer->watcher = 0;
+		}
+		if (ft->listenfd >= 0) {
+			purple_debug_info("sipe", "sipe_ft_free_xfer_struct: closing listening socket %d\n", ft->listenfd);
+			close(ft->listenfd);
+		}
+		if (ft->listener)
+			purple_network_listen_cancel(ft->listener);
 		if (ft->cipher_context)
 			purple_cipher_context_destroy(ft->cipher_context);
 
@@ -559,6 +572,7 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 		ft->invitation_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
 		ft->sip = sip;
 		ft->dialog = sipe_dialog_find(session, session->with);
+		ft->listenfd = -1;
 		generate_key(ft->encryption_key, SIPE_FT_KEY_LENGTH);
 		generate_key(ft->hash_key, SIPE_FT_KEY_LENGTH);
 		xfer->data = ft;
@@ -629,8 +643,16 @@ void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 		if (ip && port_str) {
 			purple_xfer_start(xfer, -1, ip, g_ascii_strtoull(port_str,NULL,10));
 		} else {
-			purple_network_listen_range(SIPE_FT_TCP_PORT_MIN, SIPE_FT_TCP_PORT_MAX,
-						    SOCK_STREAM, sipe_ft_listen_socket_created,xfer);
+			ft->listener = purple_network_listen_range(SIPE_FT_TCP_PORT_MIN,
+								   SIPE_FT_TCP_PORT_MAX,
+								   SOCK_STREAM,
+								   sipe_ft_listen_socket_created,
+								   xfer);
+			if (!ft->listener) {
+				raise_ft_error_and_cancel(xfer,
+							  _("Could not create listen socket"));
+				return;
+			}
 		}
 	}
 }
@@ -835,10 +857,12 @@ void sipe_ft_client_connected(gpointer p_xfer, gint listenfd,
 	int fd = accept(listenfd, (struct sockaddr*)&saddr, &slen);
 
 	PurpleXfer *xfer = p_xfer;
+	sipe_file_transfer *ft = xfer->data;
 
 	purple_input_remove(xfer->watcher);
 	xfer->watcher = 0;
 	close(listenfd);
+	ft->listenfd = -1;
 
 	purple_xfer_start(xfer,fd,NULL,0);
 }
@@ -853,6 +877,9 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 	struct sockaddr_in addr;
 
 	socklen_t socklen = sizeof (addr);
+
+	ft->listener = NULL;
+	ft->listenfd = listenfd;
 
 	getsockname(listenfd, (struct sockaddr*)&addr, &socklen);
 
