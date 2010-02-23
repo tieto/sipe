@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "sipe-sign.h"
+#define _SIPE_COMPILING_TESTS
 #include "sip-sec-ntlm.c"
 
 #ifndef _WIN32

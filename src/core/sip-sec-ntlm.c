@@ -124,9 +124,14 @@
  *
  ***********************************************/
 
-/* don't put it into configuration yet */
-#define USE_NTLM_V2	TRUE
-gboolean use_ntlm_v2 = USE_NTLM_V2;
+/*
+ * NTLMv1 is no longer used except in tests. R.I.P.
+ *
+ * It remains in this file only for documentary purposes
+ */
+#ifdef _SIPE_COMPILING_TESTS
+static gboolean use_ntlm_v2 = FALSE;
+#endif
 
 /* Negotiate flags required in connection-oriented NTLM */
 #define NEGOTIATE_FLAGS_CONN \
@@ -246,6 +251,7 @@ static char SIPE_DEFAULT_CODESET[] = "ANSI_X3.4-1968";
 
 /* Private Methods */
 
+#ifdef _SIPE_COMPILING_TESTS
 static void setup_des_key(const unsigned char key_56[], unsigned char *key)
 {
 	key[0] = key_56[0];
@@ -270,6 +276,7 @@ static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *resul
 	purple_cipher_context_encrypt(context, (guchar*)plaintext, 8, (guchar*)result, &outlen);
 	purple_cipher_context_destroy(context);
 }
+#endif
 
 static int
 unicode_strconvcopy_dir(gchar *dest, const gchar *source, int remlen, gsize source_len, gboolean to_16LE)
@@ -320,6 +327,7 @@ unicode_strconvcopy_back(const gchar *source,
 	return res;
 }
 
+#ifdef _SIPE_COMPILING_TESTS
 // (k = 7 byte key, d = 8 byte data) returns 8 bytes in results
 static void
 DES (const unsigned char *k, const unsigned char *d, unsigned char * results)
@@ -345,6 +353,7 @@ DESL (const unsigned char *k, const unsigned char *d, unsigned char * results)
 	DES(keys + 7,  d, results + 8);
 	DES(keys + 14, d, results + 16);
 }
+#endif
 
 /* out 16 bytes */
 static void
@@ -478,9 +487,17 @@ KXKEY ( guint32 flags,
 	const guint8 * server_challenge, /* 8-bytes, nonce */
 	unsigned char * key_exchange_key)
 {
+#ifdef _SIPE_COMPILING_TESTS
 	if (use_ntlm_v2)
 	{
+#else
+		/* Not used in NTLMv2 */
+		(void)flags;
+		(void)lm_challenge_resonse;
+		(void)server_challenge;
+#endif
 		memcpy(key_exchange_key, session_base_key, 16);
+#ifdef _SIPE_COMPILING_TESTS
 	}
 	else
 	{
@@ -497,7 +514,7 @@ KXKEY ( guint32 flags,
 			memcpy(key_exchange_key, session_base_key, 16);
 		}
 	}
-
+#endif
 }
 
 // This method is only used for NTLMv2 and extended session security
@@ -600,6 +617,7 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 	}
 }
 
+#ifdef _SIPE_COMPILING_TESTS
 static void
 LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
 {
@@ -626,6 +644,7 @@ LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUS
 	DES (uppercase_password, magic, result);
 	DES (uppercase_password + 7, magic, result + 8);
 }
+#endif
 
 static void
 NONCE(unsigned char *buffer, int num)
@@ -879,8 +898,13 @@ compute_response(const guint32 neg_flags,
 		 unsigned char *nt_challenge_response,
 		 unsigned char *session_base_key)
 {
+#ifdef _SIPE_COMPILING_TESTS
 	if (use_ntlm_v2)
 	{
+#else
+		/* Not used in NTLMv2 */
+		(void)neg_flags;
+#endif
 /*
 Responserversion - The 1-byte response version. Currently set to 1.
 HiResponserversion - The 1-byte highest response version understood by the client. Currently set to 1.
@@ -940,6 +964,7 @@ EndDefine
 		memcpy(tmp+8, client_challenge, 8);
 		HMAC_MD5(response_key_lm, 16, tmp, 16, lm_challenge_response);
 		memcpy(lm_challenge_response+16, client_challenge, 8);
+#ifdef _SIPE_COMPILING_TESTS
 	}
 	else
 	{
@@ -972,6 +997,7 @@ EndDefine
 		/* Session Key */
 		MD4(response_key_nt, 16, session_base_key); // "User Session Key" -> "master key"
 	}
+#endif
 }
 
 static void
@@ -991,7 +1017,15 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			     guint32 *flags)
 {
 	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
-	int ntlmssp_nt_resp_len = use_ntlm_v2 ? (16 + (32+target_info_len)) : NTLMSSP_LM_RESP_LEN;
+	int ntlmssp_nt_resp_len =
+#ifdef _SIPE_COMPILING_TESTS
+		use_ntlm_v2 ?
+#endif
+		(16 + (32+target_info_len))
+#ifdef _SIPE_COMPILING_TESTS
+		: NTLMSSP_LM_RESP_LEN
+#endif
+		;
 	int msglen = sizeof(struct authenticate_message)
 				+ 2*(strlen(domain) + strlen(user)+ strlen(hostname))
 				+ NTLMSSP_LM_RESP_LEN + ntlmssp_nt_resp_len
@@ -1012,13 +1046,17 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 
 	NONCE (client_challenge, 8);
 
+#ifdef _SIPE_COMPILING_TESTS
 	if (use_ntlm_v2) {
+#endif
 		NTOWFv2 (password, user, domain, response_key_nt);
 		memcpy(response_key_lm, response_key_nt, NTLMSSP_LN_OR_NT_KEY_LEN);
+#ifdef _SIPE_COMPILING_TESTS
 	} else {
 		NTOWFv1 (password, user, domain, response_key_nt);
 		LMOWFv1 (password, user, domain, response_key_lm);
 	}
+#endif
 
 	compute_response(neg_flags,
 			 response_key_nt,
