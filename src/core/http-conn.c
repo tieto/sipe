@@ -591,13 +591,13 @@ http_conn_process_input_message(HttpConn *http_conn,
 		}
 
 		if (!http_conn->sec_ctx) {
-			sip_sec_create_context(&http_conn->sec_ctx,
-					       auth_type,
-					       use_sso,
-					       1,
-					       http_conn->auth && http_conn->auth->domain ? http_conn->auth->domain : "",
-					       http_conn->auth ? http_conn->auth->user : NULL,
-					       http_conn->auth ? http_conn->auth->password : NULL);
+			http_conn->sec_ctx =
+				sip_sec_create_context(auth_type,
+						       use_sso,
+						       1,
+						       http_conn->auth && http_conn->auth->domain ? http_conn->auth->domain : "",
+						       http_conn->auth ? http_conn->auth->user : NULL,
+						       http_conn->auth ? http_conn->auth->password : NULL);
 		}
 
 		if (http_conn->sec_ctx) {

@@ -20,7 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 #define SIPE_UNUSED_PARAMETER __attribute__((unused))
 
 /* Opaque type definition for security context */
@@ -42,15 +42,17 @@ typedef enum
  * Obtains cashed initial credentials (TGT for Kerberos) or requests new ones if required.
  * In former case domain/username/password information is unnecessary.
  *
- * @param context (in,out) security context to store and pass between security method invocations
- * @param mech (in) security mechanism - NTLM or Kerberos
+ * @param type (in) authentication type
+ * @param sso (in) use Single Sign-On
+ * @param is_connection_based (in) context is used for a connection
  * @param domain (in) NTLM Domain/Kerberos Realm.
+ * @param username (in) user name (can be NULL)
+ * @param password (in) password (can be NULL)
  *
- * @return base64 encoded output token to send to server.
+ * @return context security context to store and pass between security method invocations
  */
-void
-sip_sec_create_context(SipSecContext *context,
-		       SipSecAuthType type,
+SipSecContext
+sip_sec_create_context(SipSecAuthType type,
 		       const int  sso,
 		       int is_connection_based,
 		       const char *domain,
@@ -68,7 +70,7 @@ sip_sec_create_context(SipSecContext *context,
  *
  * @return SIP_SEC_* value signifying success of the operation.
  *
- */		       
+ */
 unsigned long
 sip_sec_init_context_step(SipSecContext context,
 			  const char *target,

@@ -67,16 +67,15 @@ sip_sec_create_context__NONE(SIPE_UNUSED_PARAMETER SipSecAuthType type)
 }
 
 /* sip_sec API methods */
-void
-sip_sec_create_context(SipSecContext *context,
-		       SipSecAuthType type,
+SipSecContext
+sip_sec_create_context(SipSecAuthType type,
 		       const int  sso,
 		       int is_connection_based,
 		       const char *domain,
 		       const char *username,
 		       const char *password)
 {
-	sip_uint32 ret;
+	SipSecContext context = NULL;
 
 	/* Map authentication type to module initialization hook & name */
 	static sip_sec_create_context_func const auth_to_hook[] = {
@@ -87,22 +86,22 @@ sip_sec_create_context(SipSecContext *context,
 		sip_sec_create_context__Negotiate, /* AUTH_TYPE_NEGOTIATE */
 	};
 
-	/* @TODO: Can *context != NULL actually happen? */
-	sip_sec_destroy_context(*context);
+	context = (*(auth_to_hook[type]))(type);
+	if (context) {
+		sip_uint32 ret;
 
-	*context = (*(auth_to_hook[type]))(type);
-	if (!*context) return;
+		context->sso = sso;
+		context->is_connection_based = is_connection_based;
 
-	(*context)->sso = sso;
-	(*context)->is_connection_based = is_connection_based;
-
-	ret = (*(*context)->acquire_cred_func)(*context, domain, username, password);
-	if (ret != SIP_SEC_E_OK) {
-		purple_debug_info("sipe", "ERROR: sip_sec_init_context failed to acquire credentials.\n");
-		(*(*context)->destroy_context_func)(*context);
-		*context = NULL;
-		return;
+		ret = (*context->acquire_cred_func)(context, domain, username, password);
+		if (ret != SIP_SEC_E_OK) {
+			purple_debug_info("sipe", "ERROR: sip_sec_init_context failed to acquire credentials.\n");
+			(*context->destroy_context_func)(context);
+			context = NULL;
+		}
 	}
+
+	return(context);
 }
 
 unsigned long
@@ -172,14 +171,12 @@ sip_sec_init_context(SipSecContext *context,
 	char *output_toked_base64 = NULL;
 	int exp;
 
-	sip_sec_create_context(context,
-			       type,
-			       sso,
-			       0, /* Connectionless for SIP */
-			       domain,
-			       username,
-			       password);
-
+	*context = sip_sec_create_context(type,
+					  sso,
+					  0, /* Connectionless for SIP */
+					  domain,
+					  username,
+					  password);
 	if (!*context) return NULL;
 
 	ret = sip_sec_init_context_step(*context,
