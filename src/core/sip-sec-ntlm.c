@@ -648,23 +648,44 @@ Z(unsigned char *buffer, int num)
 static gchar *
 sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg);
 
-static gchar *
+/**
+  * @param server_challenge	must be g_free()'d after use if requested
+  * @param target_info		must be g_free()'d after use if requested
+  */
+static void
 purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 			    gboolean is_connection_based,
-			    guint32 *flags)
+			    guint32 *flags,
+			    guchar **server_challenge, /* 8 bytes */
+			    guchar **target_info,
+			    int *target_info_len)
 {
 	guint32 our_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
-	static gchar nonce[8];
 	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
 
-	memcpy(nonce, cmsg->nonce, 8);
+	/* server challenge (nonce) */
+	if (server_challenge) {
+		*server_challenge = g_new0(gchar, 8);
+		memcpy(*server_challenge, cmsg->nonce, 8);
+	}
 
+	/* flags */
 	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", cmsg->flags, (cmsg->flags & our_flags) == our_flags);
-
 	if (flags) {
 		*flags = cmsg->flags;
 	}
-	return nonce;
+
+	/* target_info */
+	if (cmsg->target_info.len && cmsg->target_info.offset) {
+		const gchar *target_info_content = (((gchar *)cmsg) + cmsg->target_info.offset);
+		if (target_info_len) {
+			*target_info_len = cmsg->target_info.len;
+		}
+		if (target_info) {
+			*target_info = g_new0(gchar, cmsg->target_info.len);
+			memcpy(*target_info, target_info_content, cmsg->target_info.len);
+		}
+	}
 }
 
 /* source copy from gg's common.c */
@@ -949,7 +970,9 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			     const gchar *password,
 			     const gchar *hostname,
 			     const gchar *domain,
-			     const guint8 *nonce, /* server challenge */
+			     const guint8 *server_challenge, /* nonce */
+			     const guint8 *target_info,
+			     int target_info_len,
 			     gboolean is_connection_based,
 			     SipSecBuffer *out_buff,
 			     guint32 *flags)
@@ -981,11 +1004,11 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	compute_response(neg_flags,
 			 response_key_nt,
 			 response_key_lm,
-			 nonce,
+			 server_challenge,
 			 client_challenge,
 			 0,
-			 NULL, /* target_info */
-			 0,  /* target_info_len */
+			 target_info,
+			 target_info_len,
 			 lm_challenge_response,	/* out */
 			 nt_challenge_response,	/* out */
 			 session_base_key);	/* out */
@@ -1028,7 +1051,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	memcpy(tmp, nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
 	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
 
-	KXKEY(neg_flags, session_base_key, lm_challenge_response, nonce, key_exchange_key); // same for NTLNv1 w/o Ext.Sess.Sec
+	KXKEY(neg_flags, session_base_key, lm_challenge_response, server_challenge, key_exchange_key); // same for NTLNv1 w/o Ext.Sess.Sec
 
 	if (is_key_exch)
 	{
@@ -1459,7 +1482,9 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		guchar *server_sign_key;
 		guchar *client_seal_key;
 		guchar *server_seal_key;
-		guchar *nonce;
+		guchar *server_challenge = NULL;
+		guchar *target_info = NULL;
+		int target_info_len = 0;
 		guint32 flags;
 		gchar *tmp;
 
@@ -1467,7 +1492,12 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			return SIP_SEC_E_INTERNAL_ERROR;
 		}
 
-		nonce = g_memdup(purple_ntlm_parse_challenge(in_buff, context->is_connection_based, &flags), 8);
+		purple_ntlm_parse_challenge(in_buff,
+					    context->is_connection_based,
+					    &flags,
+					    &server_challenge, /* 8 bytes */
+					    &target_info,
+					    &target_info_len);
 
 		purple_ntlm_gen_authenticate(&client_sign_key,
 					     &server_sign_key,
@@ -1477,11 +1507,14 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 					     ctx->password,
 					     (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
 					     ctx->domain,
-					     nonce,
+					     server_challenge,
+					     target_info,
+					     target_info_len,
 					     context->is_connection_based,
 					     out_buff,
 					     &flags);
-		g_free(nonce);
+		g_free(server_challenge);
+		g_free(target_info);
 		g_free(tmp);
 
 		g_free(ctx->client_sign_key);

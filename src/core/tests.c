@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  *
  * Implemented with reference to the follow documentation:
