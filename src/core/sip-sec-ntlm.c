@@ -148,7 +148,8 @@ gboolean use_ntlm_v2 = USE_NTLM_V2;
 	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
 	  NTLMSSP_NEGOTIATE_KEY_EXCH )
 
-#define NTLMSSP_NT_OR_LM_KEY_LEN 24
+#define NTLMSSP_LN_OR_NT_KEY_LEN  16
+#define NTLMSSP_LM_RESP_LEN 24
 #define NTLMSSP_SESSION_KEY_LEN  16
 #define MD4_DIGEST_LEN 16
 #define MD5_DIGEST_LEN 16
@@ -916,7 +917,7 @@ EndDefine
 		/* NtChallengeResponse */
 		//Set NtChallengeResponse to ConcatenationOf(NTProofStr, temp)
 		memcpy(nt_challenge_response, nt_proof_str, 16);
-		//memcpy(nt_challenge_response+16, temp, temp_len);
+		memcpy(nt_challenge_response+16, temp, temp_len);
 		
 		/* SessionBaseKey */
 		//SessionBaseKey to HMAC_MD5(ResponseKeyNT, NTProofStr)
@@ -932,7 +933,7 @@ EndDefine
 	{
 		if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_LM_KEY)) {
 			// @TODO do not even reference nt_challenge_response
-			Z (nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
+			Z (nt_challenge_response, NTLMSSP_LM_RESP_LEN);
 			DESL (response_key_lm, server_challenge, lm_challenge_response);
 		} else if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
 			unsigned char prehash [16];
@@ -950,7 +951,7 @@ EndDefine
 		} else {
 			DESL (response_key_nt, server_challenge, nt_challenge_response);
 			if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_NT_ONLY)) {
-				memcpy(lm_challenge_response, nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
+				memcpy(lm_challenge_response, nt_challenge_response, NTLMSSP_LM_RESP_LEN);
 			} else {
 				DESL (response_key_lm, server_challenge, lm_challenge_response);
 			}
@@ -980,15 +981,16 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	gboolean is_key_exch = IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH);
 	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
-				+ strlen(user)+ strlen(hostname) + NTLMSSP_NT_OR_LM_KEY_LEN)
+				+ strlen(user)+ strlen(hostname) + NTLMSSP_LM_RESP_LEN)
 				+ (is_key_exch ? NTLMSSP_SESSION_KEY_LEN : 0);
 	struct authenticate_message *tmsg = g_malloc0(msglen);
 	char *tmp;
 	int remlen;
-	unsigned char response_key_lm [16];
-	unsigned char response_key_nt [16];
-	unsigned char lm_challenge_response [NTLMSSP_NT_OR_LM_KEY_LEN];
-	unsigned char nt_challenge_response [NTLMSSP_NT_OR_LM_KEY_LEN];
+	unsigned char response_key_lm [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
+	unsigned char response_key_nt [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
+	unsigned char lm_challenge_response [NTLMSSP_LM_RESP_LEN]; /* 24 */
+	int ntlmssp_nt_resp_len = use_ntlm_v2 ? (16 + target_info_len) : NTLMSSP_LM_RESP_LEN;
+	unsigned char nt_challenge_response [ntlmssp_nt_resp_len];  /* variable or 24 */
 	unsigned char session_base_key [16];
 	unsigned char key_exchange_key [16];
 	unsigned char exported_session_key[16];
@@ -1040,16 +1042,16 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	tmp += tmsg->host.len;
 
 	/* LM */
-	tmsg->lm_resp.len = tmsg->lm_resp.maxlen = NTLMSSP_NT_OR_LM_KEY_LEN;
+	tmsg->lm_resp.len = tmsg->lm_resp.maxlen = NTLMSSP_LM_RESP_LEN;
 	tmsg->lm_resp.offset = tmsg->host.offset + tmsg->host.len;
-	memcpy(tmp, lm_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
-	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
+	memcpy(tmp, lm_challenge_response, NTLMSSP_LM_RESP_LEN);
+	tmp += NTLMSSP_LM_RESP_LEN;
 
 	/* NT */
-	tmsg->nt_resp.len = tmsg->nt_resp.maxlen = NTLMSSP_NT_OR_LM_KEY_LEN;
+	tmsg->nt_resp.len = tmsg->nt_resp.maxlen = ntlmssp_nt_resp_len;
 	tmsg->nt_resp.offset = tmsg->lm_resp.offset + tmsg->lm_resp.len;
-	memcpy(tmp, nt_challenge_response, NTLMSSP_NT_OR_LM_KEY_LEN);
-	tmp += NTLMSSP_NT_OR_LM_KEY_LEN;
+	memcpy(tmp, nt_challenge_response, ntlmssp_nt_resp_len);
+	tmp += ntlmssp_nt_resp_len;
 
 	KXKEY(neg_flags, session_base_key, lm_challenge_response, server_challenge, key_exchange_key); // same for NTLNv1 w/o Ext.Sess.Sec
 

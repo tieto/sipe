@@ -66,7 +66,7 @@ static void assert_equal(const char * expected, const guchar * got, int len, gbo
 	printf("expected: %s\n", expected);
 	printf("received: %s\n", res);
 
-	if (strncmp(expected, res, len) == 0) {
+	if (g_ascii_strncasecmp(expected, res, len) == 0) {
 		successes++;
 		printf("PASSED\n");
 	} else {
@@ -336,6 +336,11 @@ target_name:
 530065007200760065007200
 target_info:
 02000c0044006f006d00610069006e0001000c0053006500720076006500720000000000
+
+Response:
+4e544c4d5353500003000000180018006c00000054005400840000000c000c00480000000800080054000000100010005c00000010001000d8000000358288e20501280a0000000f44006f006d00610069006e00550073006500720043004f004d005000550054004500520086c35097ac9cec102554764a57cccc19aaaaaaaaaaaaaaaa68cd0ab851e51c96aabc927bebef6a1c01010000000000000000000000000000aaaaaaaaaaaaaaaa0000000002000c0044006f006d00610069006e0001000c005300650072007600650072000000000000000000c5dad2544fc9799094ce1ce90bc9d03e
+
+
 */
 	const guint64 time_val = 0;
 	const gchar target_info [] = {
@@ -346,6 +351,8 @@ target_info:
 		0x00, 0x00, 0x00, 0x00, //Av End, 4 bytes
 		};
 	const int target_info_len = 32+4;
+	int ntlmssp_nt_resp_len = (16 + target_info_len);
+	guchar nt_challenge_response_v2 [ntlmssp_nt_resp_len];
 
 	compute_response(flags,
 			 response_key_nt,
@@ -356,11 +363,13 @@ target_info:
 			 target_info, /* target_info */
 			 target_info_len,  /* target_info_len */
 			 lm_challenge_response,	/* out */
-			 nt_challenge_response,	/* out */
+			 nt_challenge_response_v2,	/* out */
 			 session_base_key);	/* out */
 
 	assert_equal("86C35097AC9CEC102554764A57CCCC19AAAAAAAAAAAAAAAA", lm_challenge_response, 24, TRUE);		 
-	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C", nt_challenge_response, 16, TRUE);
+	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C", nt_challenge_response_v2, 16, TRUE);
+	/* the ref string is taken from binary dump of AUTHENTICATE_MESSAGE */
+	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C01010000000000000000000000000000AAAAAAAAAAAAAAAA0000000002000C0044006F006D00610069006E0001000C005300650072007600650072000000000000000000", nt_challenge_response_v2, 84, TRUE);
 	assert_equal("8DE40CCADBC14A82F15CB0AD0DE95CA3", session_base_key, 16, TRUE);
 	
 	printf ("\n\nTesting (NTLMv2) Encrypted Session Key\n");
