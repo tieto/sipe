@@ -989,7 +989,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char response_key_lm [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
 	unsigned char response_key_nt [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
 	unsigned char lm_challenge_response [NTLMSSP_LM_RESP_LEN]; /* 24 */
-	int ntlmssp_nt_resp_len = use_ntlm_v2 ? (16 + target_info_len) : NTLMSSP_LM_RESP_LEN;
+	int ntlmssp_nt_resp_len = use_ntlm_v2 ? (16 + (32+target_info_len)) : NTLMSSP_LM_RESP_LEN;
 	unsigned char nt_challenge_response [ntlmssp_nt_resp_len];  /* variable or 24 */
 	unsigned char session_base_key [16];
 	unsigned char key_exchange_key [16];

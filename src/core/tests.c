@@ -351,7 +351,7 @@ Response:
 		0x00, 0x00, 0x00, 0x00, //Av End, 4 bytes
 		};
 	const int target_info_len = 32+4;
-	int ntlmssp_nt_resp_len = (16 + target_info_len);
+	int ntlmssp_nt_resp_len = (16 + (32+target_info_len));
 	guchar nt_challenge_response_v2 [ntlmssp_nt_resp_len];
 
 	compute_response(flags,
@@ -369,7 +369,7 @@ Response:
 	assert_equal("86C35097AC9CEC102554764A57CCCC19AAAAAAAAAAAAAAAA", lm_challenge_response, 24, TRUE);		 
 	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C", nt_challenge_response_v2, 16, TRUE);
 	/* the ref string is taken from binary dump of AUTHENTICATE_MESSAGE */
-	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C01010000000000000000000000000000AAAAAAAAAAAAAAAA0000000002000C0044006F006D00610069006E0001000C005300650072007600650072000000000000000000", nt_challenge_response_v2, 84, TRUE);
+	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C01010000000000000000000000000000AAAAAAAAAAAAAAAA0000000002000C0044006F006D00610069006E0001000C005300650072007600650072000000000000000000", nt_challenge_response_v2, ntlmssp_nt_resp_len, TRUE);
 	assert_equal("8DE40CCADBC14A82F15CB0AD0DE95CA3", session_base_key, 16, TRUE);
 	
 	printf ("\n\nTesting (NTLMv2) Encrypted Session Key\n");
