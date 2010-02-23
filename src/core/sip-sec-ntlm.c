@@ -979,8 +979,10 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			     guint32 *flags)
 {
 	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
-	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
-				+ strlen(user)+ strlen(hostname) + NTLMSSP_LM_RESP_LEN)
+	int ntlmssp_nt_resp_len = use_ntlm_v2 ? (16 + (32+target_info_len)) : NTLMSSP_LM_RESP_LEN;
+	int msglen = sizeof(struct authenticate_message)
+				+ 2*(strlen(domain) + strlen(user)+ strlen(hostname))
+				+ NTLMSSP_LM_RESP_LEN + ntlmssp_nt_resp_len
 				+ (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH) ? NTLMSSP_SESSION_KEY_LEN : 0);
 	struct authenticate_message *tmsg = g_malloc0(msglen);
 	char *tmp;
@@ -988,7 +990,6 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char response_key_lm [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
 	unsigned char response_key_nt [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
 	unsigned char lm_challenge_response [NTLMSSP_LM_RESP_LEN]; /* 24 */
-	int ntlmssp_nt_resp_len = use_ntlm_v2 ? (16 + (32+target_info_len)) : NTLMSSP_LM_RESP_LEN;
 	unsigned char nt_challenge_response [ntlmssp_nt_resp_len];  /* variable or 24 */
 	unsigned char session_base_key [16];
 	unsigned char key_exchange_key [16];
@@ -999,8 +1000,13 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 
 	NONCE (client_challenge, 8);
 
-	NTOWFv1 (password, user, domain, response_key_nt);
-	LMOWFv1 (password, user, domain, response_key_lm);
+	if (use_ntlm_v2) {
+		NTOWFv2 (password, user, domain, response_key_nt);
+		memcpy(response_key_lm, response_key_nt, NTLMSSP_LN_OR_NT_KEY_LEN);
+	} else {
+		NTOWFv1 (password, user, domain, response_key_nt);
+		LMOWFv1 (password, user, domain, response_key_lm);
+	}
 
 	compute_response(neg_flags,
 			 response_key_nt,
