@@ -142,6 +142,7 @@ gboolean use_ntlm_v2 = USE_NTLM_V2;
 	( NTLMSSP_NEGOTIATE_UNICODE | \
 	  NTLMSSP_NEGOTIATE_56 | \
 	  NTLMSSP_NEGOTIATE_128 | \
+	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
 	  NTLMSSP_NEGOTIATE_SIGN | \
 	  NTLMSSP_NEGOTIATE_DATAGRAM | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
@@ -760,7 +761,7 @@ MAC (guint32 flags,
      unsigned char *seal_key,
      unsigned long seal_key_len,
      guint32 random_pad,
-     long sequence)
+     guint32 sequence)
 {
 	guchar result [16];
 	gint32 *res_ptr;
@@ -786,8 +787,23 @@ MAC (guint32 flags,
 			Set SeqNum to SeqNum + 1
 		   EndDefine
 		*/
+
+		unsigned char seal_key_ [16];
 		guchar hmac[16];
 		guchar tmp[4 + buf_len];
+		
+		/* SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
+		   RC4Init(Handle, SealingKey')
+		 */
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_DATAGRAM)) {
+			unsigned char tmp2 [16+4];
+
+			memcpy(tmp2, seal_key, seal_key_len);
+			*((guint32 *)(tmp2+16)) = sequence;
+			MD5 (tmp2, 16+4, seal_key_);
+		} else {
+			memcpy(seal_key_, seal_key, seal_key_len);
+		}
 
 		purple_debug_info("sipe", "NTLM MAC(): Extented Session Security\n");
 
@@ -803,17 +819,13 @@ MAC (guint32 flags,
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
 			purple_debug_info("sipe", "NTLM MAC(): Key Exchange\n");
-			RC4K(seal_key, seal_key_len, hmac, 8, result+4);
+			RC4K(seal_key_, seal_key_len, hmac, 8, result+4);
 			//RC4K(sign_key, sign_key_len, hmac, 8, result+4);
 		} else {
 			purple_debug_info("sipe", "NTLM MAC(): *NO* Key Exchange\n");
 			memcpy(result+4, hmac, 8);
 		}
 	} else {
-		//SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
-		//RC4Init(Handle, SealingKey')
-		///MD5 (seal_key, 8, seal_key_);
-
 		/* The content of the first 4 bytes is irrelevant */
 		gint32 plaintext [] = {0, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
 
