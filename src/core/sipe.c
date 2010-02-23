@@ -2664,7 +2664,7 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 	}
 
 	if (diagnostics != NULL) {
-		reason = sipmsg_find_part_of_header(warning, "reason=\"", "\"", NULL);
+		reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
 	} else { // for LCS2005
 		int error_id = 0;
 		if (event && !g_ascii_strcasecmp(event, "unregistered")) {
