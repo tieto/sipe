@@ -125,7 +125,7 @@
  ***********************************************/
 
 /* don't put it into configuration yet */
-#define USE_NTLM_V2	FALSE
+#define USE_NTLM_V2	TRUE
 gboolean use_ntlm_v2 = USE_NTLM_V2;
 
 /* Negotiate flags required in connection-oriented NTLM */
