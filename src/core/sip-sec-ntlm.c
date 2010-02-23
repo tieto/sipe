@@ -127,7 +127,7 @@
 /* don't put it into configuration yet */
 #define USE_NTLM_V2	FALSE
 gboolean use_ntlm_v2 = USE_NTLM_V2;
- 
+
 /* Negotiate flags required in connection-oriented NTLM */
 #define NEGOTIATE_FLAGS_CONN \
 	( NTLMSSP_NEGOTIATE_UNICODE | \
@@ -579,7 +579,7 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 		MD5 (md5_input, key_len + len, result);
 	}
 	else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_LM_KEY)) /* http://davenport.sourceforge.net/ntlm.html#ntlm1KeyWeakening */
-	{		
+	{
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
 			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key\n");
 			memcpy(result, random_session_key, 7);
@@ -666,7 +666,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 
 	/* server challenge (nonce) */
 	if (server_challenge) {
-		*server_challenge = g_new0(gchar, 8);
+		*server_challenge = (guchar *)g_new0(gchar, 8);
 		memcpy(*server_challenge, cmsg->nonce, 8);
 	}
 
@@ -683,7 +683,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 			*target_info_len = cmsg->target_info.len;
 		}
 		if (target_info) {
-			*target_info = g_new0(gchar, cmsg->target_info.len);
+			*target_info = (guchar *)g_new0(gchar, cmsg->target_info.len);
 			memcpy(*target_info, target_info_content, cmsg->target_info.len);
 		}
 	}
@@ -861,7 +861,7 @@ compute_response(const guint32 neg_flags,
 		 const guint8 *server_challenge,
 		 const guint8 *client_challenge,
 		 const guint64 time,
-		 const char *target_info,
+		 const guint8 *target_info,
 		 int target_info_len,
 		 unsigned char *lm_challenge_response,
 		 unsigned char *nt_challenge_response,
@@ -891,7 +891,7 @@ Define ComputeResponse(NegFlg, ResponseKeyNT, ResponseKeyLM, CHALLENGE_MESSAGE.S
 		ClientChallenge )
 	Set SessionBaseKey to HMAC_MD5(ResponseKeyNT, NTProofStr)
 EndDefine
-*/		
+*/
 		guint8 tmp [16];
 		guint8 nt_proof_str [16];
 
@@ -907,25 +907,25 @@ EndDefine
 		Z(temp+24, 4);
 		memcpy(temp+28, target_info, target_info_len);
 		Z(temp+28+target_info_len, 4);
-	
+
 		/* NTProofStr */
 		//Set NTProofStr to HMAC_MD5(ResponseKeyNT, ConcatenationOf(CHALLENGE_MESSAGE.ServerChallenge,temp))
 		memcpy(temp2, server_challenge, 8);
 		memcpy(temp2+8, temp, temp_len);
 		HMAC_MD5(response_key_nt, 16, temp2, 8+temp_len, nt_proof_str);
-		
+
 		/* NtChallengeResponse */
 		//Set NtChallengeResponse to ConcatenationOf(NTProofStr, temp)
 		memcpy(nt_challenge_response, nt_proof_str, 16);
 		memcpy(nt_challenge_response+16, temp, temp_len);
-		
+
 		/* SessionBaseKey */
 		//SessionBaseKey to HMAC_MD5(ResponseKeyNT, NTProofStr)
 		HMAC_MD5(response_key_nt, 16, nt_proof_str, 16, session_base_key);
-		
+
 		/* lm_challenge_response */
 		memcpy(tmp, server_challenge, 8);
-		memcpy(tmp+8, client_challenge, 8);		
+		memcpy(tmp+8, client_challenge, 8);
 		HMAC_MD5(response_key_lm, 16, tmp, 16, lm_challenge_response);
 		memcpy(lm_challenge_response+16, client_challenge, 8);
 	}
@@ -956,7 +956,7 @@ EndDefine
 				DESL (response_key_lm, server_challenge, lm_challenge_response);
 			}
 		}
-		
+
 		/* Session Key */
 		MD4(response_key_nt, 16, session_base_key); // "User Session Key" -> "master key"
 	}
@@ -997,7 +997,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char encrypted_random_session_key [16];
 	unsigned char key [16];
 	unsigned char client_challenge [8];
-	
+
 	NONCE (client_challenge, 8);
 
 	NTOWFv1 (password, user, domain, response_key_nt);
