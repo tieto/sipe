@@ -979,10 +979,9 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			     guint32 *flags)
 {
 	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
-	gboolean is_key_exch = IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH);
 	int msglen = sizeof(struct authenticate_message) + 2*(strlen(domain)
 				+ strlen(user)+ strlen(hostname) + NTLMSSP_LM_RESP_LEN)
-				+ (is_key_exch ? NTLMSSP_SESSION_KEY_LEN : 0);
+				+ (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH) ? NTLMSSP_SESSION_KEY_LEN : 0);
 	struct authenticate_message *tmsg = g_malloc0(msglen);
 	char *tmp;
 	int remlen;
@@ -1014,6 +1013,33 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			 lm_challenge_response,	/* out */
 			 nt_challenge_response,	/* out */
 			 session_base_key);	/* out */
+			 
+	/* same as session_base_key for
+	 * - NTLNv1 w/o Ext.Sess.Sec and 
+	 * - NTLMv2
+	 */
+	KXKEY(neg_flags, session_base_key, lm_challenge_response, server_challenge, key_exchange_key);
+
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
+		NONCE (exported_session_key, 16); // random master key
+		RC4K (key_exchange_key, 16, exported_session_key, 16, encrypted_random_session_key);
+	} else {
+		memcpy(exported_session_key, key_exchange_key, 16);
+	}
+
+	/* p.46
+	   Set ClientSigningKey to SIGNKEY(ExportedSessionKey, "Client")
+	   Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
+	*/
+	SIGNKEY(exported_session_key, TRUE, key);
+	*client_sign_key = (guchar *)g_strndup((gchar *)key, 16);
+	SIGNKEY(exported_session_key, FALSE, key);
+	*server_sign_key = (guchar *)g_strndup((gchar *)key, 16);
+	SEALKEY(neg_flags, exported_session_key, TRUE, key);
+	*client_seal_key = (guchar *)g_strndup((gchar *)key, 16);
+	SEALKEY(neg_flags, exported_session_key, FALSE, key);
+	*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
+
 
 	/* authenticate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
@@ -1053,16 +1079,11 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	memcpy(tmp, nt_challenge_response, ntlmssp_nt_resp_len);
 	tmp += ntlmssp_nt_resp_len;
 
-	KXKEY(neg_flags, session_base_key, lm_challenge_response, server_challenge, key_exchange_key); // same for NTLNv1 w/o Ext.Sess.Sec
-
-	if (is_key_exch)
+	/* Session Key */
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH))
 	{
 		tmsg->session_key.len = tmsg->session_key.maxlen = NTLMSSP_SESSION_KEY_LEN;
 		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
-
-		NONCE (exported_session_key, 16); // random master key
-		RC4K (key_exchange_key, 16, exported_session_key, 16, encrypted_random_session_key);
-
 		memcpy(tmp, encrypted_random_session_key, 16);
 		tmp += NTLMSSP_SESSION_KEY_LEN;
 	}
@@ -1070,20 +1091,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	{
 		tmsg->session_key.len = tmsg->session_key.maxlen = 0;
 		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
-
-		memcpy(exported_session_key, key_exchange_key, 16);
 	}
-// p.46
-//Set ClientSigningKey to SIGNKEY(ExportedSessionKey, "Client")
-//Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
-	SIGNKEY(exported_session_key, TRUE, key);
-	*client_sign_key = (guchar *)g_strndup((gchar *)key, 16);
-	SIGNKEY(exported_session_key, FALSE, key);
-	*server_sign_key = (guchar *)g_strndup((gchar *)key, 16);
-	SEALKEY(neg_flags, exported_session_key, TRUE, key);
-	*client_seal_key = (guchar *)g_strndup((gchar *)key, 16);
-	SEALKEY(neg_flags, exported_session_key, FALSE, key);
-	*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
 
 	*flags = neg_flags;
 
