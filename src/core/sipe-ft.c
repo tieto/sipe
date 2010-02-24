@@ -570,6 +570,11 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 		g_free(from);
 	}
 
+	if (!session) {
+		purple_debug_error("sipe", "sipe_ft_incoming_transfer: can't find session for remote party\n");
+		return;
+	}
+
 	xfer = purple_xfer_new(account, PURPLE_XFER_RECEIVE, session->with);
 
 	if (xfer) {
@@ -913,7 +918,11 @@ void sipe_ft_client_connected(gpointer p_xfer, gint listenfd,
 	close(listenfd);
 	ft->listenfd = -1;
 
-	purple_xfer_start(xfer,fd,NULL,0);
+	if (fd < 0) {
+		raise_ft_socket_read_error_and_cancel(xfer);
+	} else {
+		purple_xfer_start(xfer, fd, NULL, 0);
+	}
 }
 
 static
