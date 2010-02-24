@@ -865,37 +865,41 @@ static void set_socket_nonblock(int fd, gboolean state)
 
 void sipe_ft_send_file(PurpleConnection *gc, const char *who, const char *file)
 {
-	PurpleXfer *xfer;
+	PurpleXfer *xfer = sipe_ft_new_xfer(gc, who);
 
-	xfer = sipe_ft_new_xfer(gc, who);
-
-	if (file != NULL)
-		purple_xfer_request_accepted(xfer, file);
-	else
-		purple_xfer_request(xfer);
+	if (xfer) {
+		if (file != NULL)
+			purple_xfer_request_accepted(xfer, file);
+		else
+			purple_xfer_request(xfer);
+	}
 }
 
 PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who)
 {
-	PurpleAccount *account = purple_connection_get_account(gc);
-	PurpleXfer *xfer = purple_xfer_new(account, PURPLE_XFER_SEND, who);
+	PurpleXfer *xfer = NULL;
+	
+	if (PURPLE_CONNECTION_IS_VALID(gc)) {
+		xfer = purple_xfer_new(purple_connection_get_account(gc),
+				       PURPLE_XFER_SEND, who);
 
-	if (xfer) {
-		struct sipe_account_data *sip = purple_connection_get_protocol_data(gc);
+		if (xfer) {
+			struct sipe_account_data *sip = purple_connection_get_protocol_data(gc);
 
-		sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
-		ft->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
-		ft->sip = sip;
+			sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
+			ft->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
+			ft->sip = sip;
 
-		xfer->data = ft;
+			xfer->data = ft;
 
-		purple_xfer_set_init_fnc(xfer, sipe_ft_outgoing_init);
-		purple_xfer_set_start_fnc(xfer,sipe_ft_outgoing_start);
-		purple_xfer_set_end_fnc(xfer,sipe_ft_outgoing_stop);
-		purple_xfer_set_request_denied_fnc(xfer, sipe_ft_request_denied);
-		purple_xfer_set_write_fnc(xfer,sipe_ft_write);
-		purple_xfer_set_cancel_send_fnc(xfer,sipe_ft_free_xfer_struct);
-		purple_xfer_set_cancel_recv_fnc(xfer,sipe_ft_free_xfer_struct);
+			purple_xfer_set_init_fnc(xfer, sipe_ft_outgoing_init);
+			purple_xfer_set_start_fnc(xfer, sipe_ft_outgoing_start);
+			purple_xfer_set_end_fnc(xfer, sipe_ft_outgoing_stop);
+			purple_xfer_set_request_denied_fnc(xfer, sipe_ft_request_denied);
+			purple_xfer_set_write_fnc(xfer, sipe_ft_write);
+			purple_xfer_set_cancel_send_fnc(xfer, sipe_ft_free_xfer_struct);
+			purple_xfer_set_cancel_recv_fnc(xfer, sipe_ft_free_xfer_struct);
+		}
 	}
 
 	return xfer;
