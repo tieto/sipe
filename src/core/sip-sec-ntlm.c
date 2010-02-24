@@ -136,10 +136,13 @@ static gboolean use_ntlm_v2 = FALSE;
 /* Negotiate flags required in connection-oriented NTLM */
 #define NEGOTIATE_FLAGS_CONN \
 	( NTLMSSP_NEGOTIATE_UNICODE | \
+	  NTLMSSP_NEGOTIATE_56 | \
+	  NTLMSSP_NEGOTIATE_128 | \
 	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
 	  NTLMSSP_REQUEST_TARGET | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
 	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
+	  NTLMSSP_NEGOTIATE_KEY_EXCH | \
 	  0)
 
 /* Negotiate flags required in connectionless NTLM */
@@ -1063,7 +1066,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			 response_key_lm,
 			 server_challenge,
 			 client_challenge,
-			 0,
+			 ((guint64)time(NULL)) + 116444736000000000LL,
 			 target_info,
 			 target_info_len,
 			 lm_challenge_response,	/* out */
@@ -1432,6 +1435,7 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 
 		while (av->av_id != MsvAvEOL) {
 			gchar *av_value = ((gchar *)av) + 4;
+			SipSecBuffer buff;
 
 			switch (av->av_id) {
 				case MsvAvEOL:
@@ -1451,8 +1455,16 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 					g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", *((guint32*)av_value));
 					break;
 				case MsvAvTimestamp:
-					g_string_append_printf(str, "\t%s\n", "MsvAvTimestamp");
+					{
+					guint64 time64 = *((guint64*)av_value);
+					time_t time_val = (time_t)((time64 - 116444736000000000LL)/10000000);
+					buff.length = 8;
+					buff.value = av_value;
+					g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
+						asctime(gmtime(&time_val)));
+					g_free(tmp);
 					break;
+					}
 				case MsAvRestrictions:
 					g_string_append_printf(str, "\t%s\n", "MsAvRestrictions");
 					break;
