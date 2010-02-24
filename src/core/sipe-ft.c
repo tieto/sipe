@@ -42,6 +42,16 @@
 
 #define SIPE_FT_KEY_LENGTH 24
 
+/*
+ * DO NOT CHANGE THE FOLLOWING CONSTANTS!!!
+ *
+ * It seems that Microsoft Office Communicator client will accept
+ * file transfer invitations *only* within this port range!
+ *
+ * If a firewall is active on your system you need to open these ports if
+ * you want to *send* files to other users. Receiving files uses an ougoing
+ * connection and should therefore automatically penetrate your firewall.
+ */
 #define SIPE_FT_TCP_PORT_MIN 6891
 #define SIPE_FT_TCP_PORT_MAX 6901
 
