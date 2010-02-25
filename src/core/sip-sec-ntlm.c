@@ -1081,7 +1081,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			 response_key_lm,
 			 server_challenge,
 			 client_challenge,
-			 time_val ? time_val : ((guint64)time(NULL)) + 116444736000000000LL,
+			 time_val ? time_val : (((guint64)time(NULL)) * 10000000 + 116444736000000000LL),
 			 target_info,
 			 target_info_len,
 			 lm_challenge_response,	/* out */
@@ -1340,6 +1340,56 @@ sip_sec_ntlm_negotiate_message_describe(struct negotiate_message *cmsg)
 	return g_string_free(str, FALSE);
 }
 
+static void
+describe_av_pairs(GString* str, const struct av_pair *av)
+{
+	while (av->av_id != MsvAvEOL) {
+		gchar *av_value = ((gchar *)av) + 4;
+		SipSecBuffer buff;
+
+		switch (av->av_id) {
+			case MsvAvEOL:
+				g_string_append_printf(str, "\t%s\n", "MsvAvEOL");
+				break;
+			case MsvAvNbComputerName:
+				{ AV_DESC(av, av_value, av->av_len, "MsvAvNbComputerName")  break; }
+			case MsvAvNbDomainName:
+				{ AV_DESC(av, av_value, av->av_len, "MsvAvNbDomainName")  break; }
+			case MsvAvDnsComputerName:
+				{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsComputerName")  break; }
+			case MsvAvDnsDomainName:
+				{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsDomainName")  break; }
+			case MsvAvDnsTreeName:
+				{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsTreeName")  break; }
+			case MsvAvFlags:
+				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", *((guint32*)av_value));
+				break;
+			case MsvAvTimestamp:
+				{
+					char *tmp;
+					guint64 time64 = *((guint64*)av_value);
+					time_t time_val = (time_t)((time64 - 116444736000000000LL)/10000000);
+					buff.length = 8;
+					buff.value = av_value;
+					g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
+						asctime(gmtime(&time_val)));
+					g_free(tmp);
+					break;
+				}
+			case MsAvRestrictions:
+				g_string_append_printf(str, "\t%s\n", "MsAvRestrictions");
+				break;
+			case MsvAvTargetName:
+				{ AV_DESC(av, av_value, av->av_len, "MsvAvTargetName")  break; }
+			case MsvChannelBindings:
+				g_string_append_printf(str, "\t%s\n", "MsvChannelBindings");
+				break;
+		}
+
+		av = (struct av_pair*)(((guint8*)av) + 4 + av->av_len);
+	}
+}
+
 static gchar *
 sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 {
@@ -1386,10 +1436,57 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 	}
 
 	if (cmsg->nt_resp.len && cmsg->nt_resp.offset) {
-		buff.length = cmsg->nt_resp.len;
+		int nt_resp_len = cmsg->nt_resp.len;
+
+		if (cmsg->nt_resp.len > 24) { /* NTLMv2 */
+			nt_resp_len = 16;
+		}
+		buff.length = nt_resp_len;
 		buff.value = (gchar *)cmsg + cmsg->nt_resp.offset;
 		g_string_append_printf(str, "\t%s: %s\n", "nt_resp", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
+		
+		if (cmsg->nt_resp.len > 24) { /* NTLMv2 */
+			char *tmp;
+			SipSecBuffer buff;
+			const gchar *temp = (gchar *)cmsg + cmsg->nt_resp.offset + 16;
+			const int response_version = *((guchar*)temp);
+			const int hi_response_version = *((guchar*)(temp+1));
+			const guint64 time_val = *((guint64*)(temp + 8));
+			const time_t time_t_val = (time_t)((time_val - 116444736000000000LL)/10000000);
+			const gchar *client_challenge = temp + 16;
+			const struct av_pair *av = (struct av_pair*)(temp + 28);
+			
+/*	Set temp to ConcatenationOf(Responserversion, HiResponserversion, Z(6),		//8bytes -    0
+				    Time,						//8bytes -    8
+				    ClientChallenge,					//8bytes -   16
+				    Z(4),						//4bytes -   24
+				    ServerName,						//variable - 28
+				    Z(4))						//4bytes -   28+target_info_len
+	Set NTProofStr to HMAC_MD5(ResponseKeyNT, ConcatenationOf(CHALLENGE_MESSAGE.ServerChallenge,temp))
+	Set NtChallengeResponse to ConcatenationOf(NTProofStr, temp)
+	Set LmChallengeResponse to ConcatenationOf(
+		HMAC_MD5(ResponseKeyLM, ConcatenationOf(CHALLENGE_MESSAGE.ServerChallenge, ClientChallenge)),
+		ClientChallenge ) */
+		
+			g_string_append_printf(str, "\t%s: %d\n", "response_version", response_version);
+			g_string_append_printf(str, "\t%s: %d\n", "hi_response_version", hi_response_version);
+			
+			buff.length = 8; 
+			buff.value = (gchar*)&time_val;
+			g_string_append_printf(str, "\t%s: %s - %s", "time_val", (tmp = bytes_to_hex_str(&buff)),
+				asctime(gmtime(&time_t_val)));
+			g_free(tmp);
+			
+			buff.length = 8;
+			buff.value = (gchar*)client_challenge;
+			g_string_append_printf(str, "\t%s: %s\n", "client_challenge", (tmp = bytes_to_hex_str(&buff)));
+			g_free(tmp);
+
+			describe_av_pairs(str, av);
+
+			g_string_append_printf(str, "\t%s\n", "----------- end of nt_resp v2 -----------");		
+		}
 	}
 
 	if (cmsg->domain.len && cmsg->domain.offset) {
@@ -1448,50 +1545,7 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 		void *target_info = ((gchar *)cmsg + cmsg->target_info.offset);
 		struct av_pair *av = (struct av_pair*)target_info;
 
-		while (av->av_id != MsvAvEOL) {
-			gchar *av_value = ((gchar *)av) + 4;
-			SipSecBuffer buff;
-
-			switch (av->av_id) {
-				case MsvAvEOL:
-					g_string_append_printf(str, "\t%s\n", "MsvAvEOL");
-					break;
-				case MsvAvNbComputerName:
-					{ AV_DESC(av, av_value, av->av_len, "MsvAvNbComputerName")  break; }
-				case MsvAvNbDomainName:
-					{ AV_DESC(av, av_value, av->av_len, "MsvAvNbDomainName")  break; }
-				case MsvAvDnsComputerName:
-					{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsComputerName")  break; }
-				case MsvAvDnsDomainName:
-					{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsDomainName")  break; }
-				case MsvAvDnsTreeName:
-					{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsTreeName")  break; }
-				case MsvAvFlags:
-					g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", *((guint32*)av_value));
-					break;
-				case MsvAvTimestamp:
-					{
-					guint64 time64 = *((guint64*)av_value);
-					time_t time_val = (time_t)((time64 - 116444736000000000LL)/10000000);
-					buff.length = 8;
-					buff.value = av_value;
-					g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
-						asctime(gmtime(&time_val)));
-					g_free(tmp);
-					break;
-					}
-				case MsAvRestrictions:
-					g_string_append_printf(str, "\t%s\n", "MsAvRestrictions");
-					break;
-				case MsvAvTargetName:
-					{ AV_DESC(av, av_value, av->av_len, "MsvAvTargetName")  break; }
-				case MsvChannelBindings:
-					g_string_append_printf(str, "\t%s\n", "MsvChannelBindings");
-					break;
-			}
-
-			av = (struct av_pair*)(((guint8*)av) + 4 + av->av_len);
-		}
+		describe_av_pairs(str, av);
 	}
 
 	return g_string_free(str, FALSE);
