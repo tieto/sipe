@@ -28,6 +28,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef _WIN32
+#include <sys/types.h>
+#endif
+
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <stdio.h>
@@ -37,9 +41,11 @@
 #include "debug.h"
 
 #ifndef _WIN32
+#ifdef __sun__
+#include <sys/sockio.h>
+#endif
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #else /* _WIN32 */
@@ -680,6 +686,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 {
 	guint32 our_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
+	guint32 host_flags = GUINT32_FROM_LE(cmsg->flags);
 
 	/* server challenge (nonce) */
 	if (server_challenge) {
@@ -688,35 +695,35 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 	}
 
 	/* flags */
-	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", cmsg->flags, (cmsg->flags & our_flags) == our_flags);
+	purple_debug_info("sipe", "receibved NTLM NegotiateFlags = %X; OK? %i\n", host_flags, (host_flags & our_flags) == our_flags);
 	if (flags) {
-		*flags = cmsg->flags;
+		*flags = host_flags;
 	}
 
 	/* target_info */
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
-		const gchar *target_info_content = (((gchar *)cmsg) + cmsg->target_info.offset);
+		const gchar *target_info_content = (((gchar *)cmsg) + GUINT32_FROM_LE(cmsg->target_info.offset));
 		struct av_pair *av = (struct av_pair*)target_info_content;
 
-		while (av->av_id != MsvAvEOL) {
+		while (GUINT16_FROM_LE(av->av_id) != MsvAvEOL) {
 			gchar *av_value = ((gchar *)av) + 4;
 
-			switch (av->av_id) {
+			switch (GUINT16_FROM_LE(av->av_id)) {
 				case MsvAvTimestamp:
 					if (time_val) {
 						*time_val = *((guint64*)av_value);
 					}
 					break;
 			}
-			av = (struct av_pair*)(((guint8*)av) + 4 + av->av_len);
+			av = (struct av_pair*)(((guint8*)av) + 4 + GUINT16_FROM_LE(av->av_len));
 		}
 
 		if (target_info_len) {
-			*target_info_len = cmsg->target_info.len;
+			*target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
 		}
 		if (target_info) {
-			*target_info = (guchar *)g_new0(gchar, cmsg->target_info.len);
-			memcpy(*target_info, target_info_content, cmsg->target_info.len);
+			*target_info = (guchar *)g_new0(gchar, GUINT16_FROM_LE(cmsg->target_info.len));
+			memcpy(*target_info, target_info_content, GUINT16_FROM_LE(cmsg->target_info.len));
 		}
 	}
 }
@@ -822,7 +829,7 @@ MAC (guint32 flags,
 		unsigned char seal_key_ [16];
 		guchar hmac[16];
 		guchar tmp[4 + buf_len];
-		
+
 		/* SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
 		   RC4Init(Handle, SealingKey')
 		 */
@@ -858,7 +865,11 @@ MAC (guint32 flags,
 		}
 	} else {
 		/* The content of the first 4 bytes is irrelevant */
-		gint32 plaintext [] = {0, CRC32(buf, strlen(buf)), sequence}; // 4, 4, 4 bytes
+		gint32 plaintext [] = {
+			GINT32_TO_LE(0),
+			GINT32_TO_LE(CRC32(buf, strlen(buf))),
+			GINT32_TO_LE(sequence)
+		}; // 4, 4, 4 bytes
 
 		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
 
@@ -867,10 +878,10 @@ MAC (guint32 flags,
 
 		res_ptr = (gint32 *)result;
 		// Highest four bytes are the Version
-		res_ptr[0] = 0x00000001; // 4 bytes
+		res_ptr[0] = GINT32_TO_LE(0x00000001); // 4 bytes
 
 		// Replace the first four bytes of the ciphertext with the random_pad
-		res_ptr[1] = random_pad; // 4 bytes
+		res_ptr[1] = GINT32_TO_LE(random_pad); // 4 bytes
 	}
 
 	for (i = 0, j = 0; i < 16; i++, j+=2) {
@@ -1083,9 +1094,9 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			 lm_challenge_response,	/* out */
 			 nt_challenge_response,	/* out */
 			 session_base_key);	/* out */
-			 
+
 	/* same as session_base_key for
-	 * - NTLNv1 w/o Ext.Sess.Sec and 
+	 * - NTLNv1 w/o Ext.Sess.Sec and
 	 * - NTLMv2
 	 */
 	KXKEY(neg_flags, session_base_key, lm_challenge_response, server_challenge, key_exchange_key);
@@ -1113,10 +1124,10 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 
 	/* authenticate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
-	tmsg->type = 3;
+	tmsg->type = GUINT32_TO_LE(3);
 
 	/* Set Negotiate Flags */
-	tmsg->flags = neg_flags;
+	tmsg->flags = GUINT32_TO_LE(neg_flags);
 
 	/* Domain */
 	tmsg->domain.offset = sizeof(struct authenticate_message);
@@ -1165,6 +1176,34 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 
 	*flags = neg_flags;
 
+#if G_BYTE_ORDER == G_BIG_ENDIAN
+	/* All calculations have been done in big endian
+	   but message format is in little endian */
+	tmsg->domain.offset = GUINT32_TO_LE(tmsg->domain.offset);
+	tmsg->domain.len = GUINT16_TO_LE(tmsg->domain.len);
+	tmsg->domain.maxlen = GUINT16_TO_LE(tmsg->domain.maxlen);
+
+	tmsg->user.offset = GUINT32_TO_LE(tmsg->user.offset);
+	tmsg->user.len = GUINT16_TO_LE(tmsg->user.len);
+	tmsg->user.maxlen = GUINT16_TO_LE(tmsg->user.maxlen);
+
+	tmsg->host.offset = GUINT32_TO_LE(tmsg->host.offset);
+	tmsg->host.len = GUINT16_TO_LE(tmsg->host.len);
+	tmsg->host.maxlen = GUINT16_TO_LE(tmsg->host.maxlen);
+
+	tmsg->lm_resp.offset = GUINT32_TO_LE(tmsg->lm_resp.offset);
+	tmsg->lm_resp.len = GUINT16_TO_LE(tmsg->lm_resp.len);
+	tmsg->lm_resp.maxlen = GUINT16_TO_LE(tmsg->lm_resp.maxlen);
+
+	tmsg->nt_resp.offset = GUINT32_TO_LE(tmsg->nt_resp.offset);
+	tmsg->nt_resp.len = GUINT16_TO_LE(tmsg->nt_resp.len);
+	tmsg->nt_resp.maxlen = GUINT16_TO_LE(tmsg->nt_resp.maxlen);
+
+	tmsg->session_key.offset = GUINT32_TO_LE(tmsg->session_key.offset);
+	tmsg->session_key.len = GUINT16_TO_LE(tmsg->session_key.len);
+	tmsg->session_key.maxlen = GUINT16_TO_LE(tmsg->session_key.maxlen);
+#endif
+
 	tmp = purple_base64_encode(exported_session_key, 16);
 	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE session key: %s\n", tmp);
 	g_free(tmp);
@@ -1184,10 +1223,10 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 
 	/* negotiate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
-	tmsg->type = 1;
+	tmsg->type = GUINT32_TO_LE(1);
 
 	/* Set Negotiate Flags */
-	tmsg->flags = NEGOTIATE_FLAGS_CONN;
+	tmsg->flags = GUINT32_TO_LE(NEGOTIATE_FLAGS_CONN);
 
 	/* Domain */
 	tmsg->domain.offset = sizeof(struct negotiate_message);
@@ -1202,6 +1241,13 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	//tmsg->ver.product_minor_version = 1;
 	//tmsg->ver.product_build = 2600;
 	//tmsg->ver.ntlm_revision_current = 0x0F;	/* NTLMSSP_REVISION_W2K3 */
+
+#if G_BYTE_ORDER == G_BIG_ENDIAN
+	/* All calculations have been done in big endian
+	   but message format is in little endian */
+	tmsg->domain.offset = GUINT32_TO_LE(tmsg->domain.offset);
+	tmsg->host.offset = GUINT32_TO_LE(tmsg->host.offset);
+#endif
 
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
@@ -1220,6 +1266,8 @@ static gchar *
 sip_sec_ntlm_negotiate_flags_describe(guint32 flags)
 {
 	GString* str = g_string_new(NULL);
+
+	flags = GUINT32_FROM_LE(flags);
 
 	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_UNICODE, "NTLMSSP_NEGOTIATE_UNICODE");
 	APPEND_NEG_FLAG(str, flags, NTLMSSP_NEGOTIATE_OEM, "NTLMSSP_NEGOTIATE_OEM");
@@ -1258,9 +1306,9 @@ sip_sec_ntlm_negotiate_flags_describe(guint32 flags)
 }
 
 #define AV_DESC(av, av_value, av_len, av_name) \
-gchar *tmp = unicode_strconvcopy_back(av_value, av_len); \
-g_string_append_printf(str, "\t%s: %s\n", av_name, tmp); \
-g_free(tmp);
+	gchar *tmp = unicode_strconvcopy_back(av_value, GUINT16_FROM_LE(av_len)); \
+	g_string_append_printf(str, "\t%s: %s\n", av_name, tmp);	\
+	g_free(tmp);
 
 static gchar *
 sip_sec_ntlm_describe_version(struct version *ver) {
@@ -1295,9 +1343,9 @@ sip_sec_ntlm_describe_smb_header(struct smb_header *header,
 {
 	GString* str = g_string_new(NULL);
 
-	g_string_append_printf(str, "\t%s.len   : %d\n", name, header->len);
-	g_string_append_printf(str, "\t%s.maxlen: %d\n", name, header->maxlen);
-	g_string_append_printf(str, "\t%s.offset: %d\n", name, header->offset);
+	g_string_append_printf(str, "\t%s.len   : %d\n", name, GUINT16_FROM_LE(header->len));
+	g_string_append_printf(str, "\t%s.maxlen: %d\n", name, GUINT16_FROM_LE(header->maxlen));
+	g_string_append_printf(str, "\t%s.offset: %d\n", name, GUINT32_FROM_LE(header->offset));
 
 	return g_string_free(str, FALSE);
 }
@@ -1322,13 +1370,13 @@ sip_sec_ntlm_negotiate_message_describe(struct negotiate_message *cmsg)
 	g_free(tmp);
 
 	if (cmsg->domain.len && cmsg->domain.offset) {
-		gchar *domain = g_strndup(((gchar *)cmsg + cmsg->domain.offset), cmsg->domain.len);
+		gchar *domain = g_strndup(((gchar *)cmsg + GUINT32_FROM_LE(cmsg->domain.offset)), GUINT16_FROM_LE(cmsg->domain.len));
 		g_string_append_printf(str, "\tdomain: %s\n", domain);
 		g_free(domain);
 	}
 
 	if (cmsg->host.len && cmsg->host.offset) {
-		gchar *host = g_strndup(((gchar *)cmsg + cmsg->host.offset), cmsg->host.len);
+		gchar *host = g_strndup(((gchar *)cmsg + GUINT32_FROM_LE(cmsg->host.offset)), GUINT16_FROM_LE(cmsg->host.len));
 		g_string_append_printf(str, "\thost: %s\n", host);
 		g_free(host);
 	}
@@ -1339,11 +1387,11 @@ sip_sec_ntlm_negotiate_message_describe(struct negotiate_message *cmsg)
 static void
 describe_av_pairs(GString* str, const struct av_pair *av)
 {
-	while (av->av_id != MsvAvEOL) {
+	while (GUINT16_FROM_LE(av->av_id) != MsvAvEOL) {
 		gchar *av_value = ((gchar *)av) + 4;
 		SipSecBuffer buff;
 
-		switch (av->av_id) {
+		switch (GUINT16_FROM_LE(av->av_id)) {
 			case MsvAvEOL:
 				g_string_append_printf(str, "\t%s\n", "MsvAvEOL");
 				break;
@@ -1382,7 +1430,7 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 				break;
 		}
 
-		av = (struct av_pair*)(((guint8*)av) + 4 + av->av_len);
+		av = (struct av_pair*)(((guint8*)av) + 4 + GUINT16_FROM_LE(av->av_len));
 	}
 }
 
@@ -1425,43 +1473,43 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 	g_free(tmp);
 
 	if (cmsg->lm_resp.len && cmsg->lm_resp.offset) {
-		buff.length = cmsg->lm_resp.len;
-		buff.value = (gchar *)cmsg + cmsg->lm_resp.offset;
+		buff.length = GUINT16_FROM_LE(cmsg->lm_resp.len);
+		buff.value = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->lm_resp.offset);
 		g_string_append_printf(str, "\t%s: %s\n", "lm_resp", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
 	}
 
 	if (cmsg->nt_resp.len && cmsg->nt_resp.offset) {
-		int nt_resp_len = cmsg->nt_resp.len;
+		int nt_resp_len = GUINT16_FROM_LE(cmsg->nt_resp.len);
 
-		if (cmsg->nt_resp.len > 24) { /* NTLMv2 */
+		if (nt_resp_len > 24) { /* NTLMv2 */
 			nt_resp_len = 16;
 		}
 		buff.length = nt_resp_len;
-		buff.value = (gchar *)cmsg + cmsg->nt_resp.offset;
+		buff.value = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
 		g_string_append_printf(str, "\t%s: %s\n", "nt_resp", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
-		
-		if (cmsg->nt_resp.len > 24) { /* NTLMv2 */
+
+		if (GUINT16_FROM_LE(cmsg->nt_resp.len) > 24) { /* NTLMv2 */
 			char *tmp;
 			SipSecBuffer buff;
-			const gchar *temp = (gchar *)cmsg + cmsg->nt_resp.offset + 16;
+			const gchar *temp = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
 			const int response_version = *((guchar*)temp);
 			const int hi_response_version = *((guchar*)(temp+1));
 			const guint64 time_val = *((guint64*)(temp + 8));
 			const time_t time_t_val = (time_t)((time_val - 116444736000000000LL)/10000000);
 			const gchar *client_challenge = temp + 16;
 			const struct av_pair *av = (struct av_pair*)(temp + 28);
-	
+
 			g_string_append_printf(str, "\t%s: %d\n", "response_version", response_version);
 			g_string_append_printf(str, "\t%s: %d\n", "hi_response_version", hi_response_version);
-			
-			buff.length = 8; 
+
+			buff.length = 8;
 			buff.value = (gchar*)&time_val;
 			g_string_append_printf(str, "\t%s: %s - %s", "time", (tmp = bytes_to_hex_str(&buff)),
-				asctime(gmtime(&time_t_val)));
+					       asctime(gmtime(&time_t_val)));
 			g_free(tmp);
-			
+
 			buff.length = 8;
 			buff.value = (gchar*)client_challenge;
 			g_string_append_printf(str, "\t%s: %s\n", "client_challenge", (tmp = bytes_to_hex_str(&buff)));
@@ -1469,31 +1517,31 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 
 			describe_av_pairs(str, av);
 
-			g_string_append_printf(str, "\t%s\n", "----------- end of nt_resp v2 -----------");		
+			g_string_append_printf(str, "\t%s\n", "----------- end of nt_resp v2 -----------");
 		}
 	}
 
 	if (cmsg->domain.len && cmsg->domain.offset) {
-		gchar *domain = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->domain.offset), cmsg->domain.len);
+		gchar *domain = unicode_strconvcopy_back(((gchar *)cmsg + GUINT32_FROM_LE(cmsg->domain.offset)), GUINT16_FROM_LE(cmsg->domain.len));
 		g_string_append_printf(str, "\t%s: %s\n", "domain", domain);
 		g_free(domain);
 	}
 
 	if (cmsg->user.len && cmsg->user.offset) {
-		gchar *user = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->user.offset), cmsg->user.len);
+		gchar *user = unicode_strconvcopy_back(((gchar *)cmsg + GUINT32_FROM_LE(cmsg->user.offset)), GUINT16_FROM_LE(cmsg->user.len));
 		g_string_append_printf(str, "\t%s: %s\n", "user", user);
 		g_free(user);
 	}
 
 	if (cmsg->host.len && cmsg->host.offset) {
-		gchar *host = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->host.offset), cmsg->host.len);
+		gchar *host = unicode_strconvcopy_back(((gchar *)cmsg + GUINT32_FROM_LE(cmsg->host.offset)), GUINT16_FROM_LE(cmsg->host.len));
 		g_string_append_printf(str, "\t%s: %s\n", "host", host);
 		g_free(host);
 	}
 
 	if (cmsg->session_key.len && cmsg->session_key.offset) {
-		buff.length = cmsg->session_key.len;
-		buff.value = (gchar *)cmsg + cmsg->session_key.offset;
+		buff.length = GUINT16_FROM_LE(cmsg->session_key.len);
+		buff.value = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->session_key.offset);
 		g_string_append_printf(str, "\t%s: %s\n", "session_key", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
 	}
@@ -1520,13 +1568,13 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 	g_free(tmp);
 
 	if (cmsg->target_name.len && cmsg->target_name.offset) {
-		gchar *target_name = unicode_strconvcopy_back(((gchar *)cmsg + cmsg->target_name.offset), cmsg->target_name.len);
+		gchar *target_name = unicode_strconvcopy_back(((gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_name.offset)), GUINT16_FROM_LE(cmsg->target_name.len));
 		g_string_append_printf(str, "\ttarget_name: %s\n", target_name);
 		g_free(target_name);
 	}
 
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
-		void *target_info = ((gchar *)cmsg + cmsg->target_info.offset);
+		void *target_info = ((gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset));
 		struct av_pair *av = (struct av_pair*)target_info;
 
 		describe_av_pairs(str, av);
@@ -1539,17 +1587,23 @@ gchar *
 sip_sec_ntlm_message_describe(SipSecBuffer buff)
 {
 	struct ntlm_message *msg;
+	gchar *res = NULL;
 
 	if (buff.length == 0 || buff.value == NULL || buff.length < 12) return NULL;
 
 	msg = buff.value;
 	if(!sipe_strequal("NTLMSSP", (char*)msg)) return NULL;
 
-	if (msg->type == 1) return sip_sec_ntlm_negotiate_message_describe((struct negotiate_message *)msg);
-	if (msg->type == 2) return sip_sec_ntlm_challenge_message_describe((struct challenge_message *)msg);
-	if (msg->type == 3) return sip_sec_ntlm_authenticate_message_describe((struct authenticate_message *)msg);
+	switch (GUINT32_FROM_LE(msg->type)) {
+	case 1: res = sip_sec_ntlm_negotiate_message_describe((struct negotiate_message *)msg);
+		break;
+	case 2: res = sip_sec_ntlm_challenge_message_describe((struct challenge_message *)msg);
+		break;
+	case 3: res = sip_sec_ntlm_authenticate_message_describe((struct authenticate_message *)msg);
+		break;
+	}
 
-	return NULL;
+	return res;
 }
 
 /* sip-sec-mech.h API implementation for NTLM */
@@ -1699,7 +1753,7 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 			  const char *message,
 			  SipSecBuffer signature)
 {
-	guint32 random_pad = ((guint32 *) signature.value)[1];
+	guint32 random_pad = GUINT32_FROM_LE(((guint32 *) signature.value)[1]);
 	char *signature_hex = bytes_to_hex_str(&signature);
 	gchar *signature_calc = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								message,
