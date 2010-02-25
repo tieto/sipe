@@ -28,6 +28,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Byte order policy:
+ *
+ *  - NTLM messages (byte streams) should have LE (Little-Endian) byte order.
+ *  - internal int16, int32, int64 should contain proper values.
+ *     For example: 01 00 00 00 LE should be translated to (int32)1
+ *  - When reading/writing from/to NTLM message appropriate conversion should
+ *    be taken to properly present integer values. glib's "Byte Order Macros" 
+ *    should be used for that, for example GINT32_FROM_LE
+ */
+
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <stdio.h>
