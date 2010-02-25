@@ -1456,19 +1456,7 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			const time_t time_t_val = (time_t)((time_val - 116444736000000000LL)/10000000);
 			const gchar *client_challenge = temp + 16;
 			const struct av_pair *av = (struct av_pair*)(temp + 28);
-			
-/*	Set temp to ConcatenationOf(Responserversion, HiResponserversion, Z(6),		//8bytes -    0
-				    Time,						//8bytes -    8
-				    ClientChallenge,					//8bytes -   16
-				    Z(4),						//4bytes -   24
-				    ServerName,						//variable - 28
-				    Z(4))						//4bytes -   28+target_info_len
-	Set NTProofStr to HMAC_MD5(ResponseKeyNT, ConcatenationOf(CHALLENGE_MESSAGE.ServerChallenge,temp))
-	Set NtChallengeResponse to ConcatenationOf(NTProofStr, temp)
-	Set LmChallengeResponse to ConcatenationOf(
-		HMAC_MD5(ResponseKeyLM, ConcatenationOf(CHALLENGE_MESSAGE.ServerChallenge, ClientChallenge)),
-		ClientChallenge ) */
-		
+	
 			g_string_append_printf(str, "\t%s: %d\n", "response_version", response_version);
 			g_string_append_printf(str, "\t%s: %d\n", "hi_response_version", hi_response_version);
 			
