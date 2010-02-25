@@ -1066,6 +1066,8 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	struct authenticate_message *tmsg = g_malloc0(msglen);
 	char *tmp;
 	int remlen;
+	guint32 offset;
+	guint16 len;
 	unsigned char response_key_lm [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
 	unsigned char response_key_nt [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
 	unsigned char lm_challenge_response [NTLMSSP_LM_RESP_LEN]; /* 24 */
@@ -1138,79 +1140,50 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	tmsg->flags = GUINT32_TO_LE(neg_flags);
 
 	/* Domain */
-	tmsg->domain.offset = sizeof(struct authenticate_message);
-	tmp = ((char*) tmsg) + sizeof(struct authenticate_message);
+	tmsg->domain.offset = GUINT32_TO_LE(offset = sizeof(struct authenticate_message));
+	tmp = ((char*) tmsg) + offset;
 	remlen = ((char *)tmsg)+msglen-tmp;
-	tmsg->domain.len = tmsg->domain.maxlen = unicode_strconvcopy(tmp, domain, remlen);
-	tmp += tmsg->domain.len;
+	tmsg->domain.len = tmsg->domain.maxlen = GUINT16_TO_LE(len = unicode_strconvcopy(tmp, domain, remlen));
+	tmp += len;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
 	/* User */
-	tmsg->user.offset = tmsg->domain.offset + tmsg->domain.len;
-	tmsg->user.len = tmsg->user.maxlen = unicode_strconvcopy(tmp, user, remlen);
-	tmp += tmsg->user.len;
+	tmsg->user.offset = GUINT32_TO_LE(offset += len);
+	tmsg->user.len = tmsg->user.maxlen = GUINT16_TO_LE(len = unicode_strconvcopy(tmp, user, remlen));
+	tmp += len;
 	remlen = ((char *)tmsg)+msglen-tmp;
 
 	/* Host */
-	tmsg->host.offset = tmsg->user.offset + tmsg->user.len;
-	tmsg->host.len = tmsg->host.maxlen = unicode_strconvcopy(tmp, hostname, remlen);
-	tmp += tmsg->host.len;
+	tmsg->host.offset = GUINT32_TO_LE(offset += len);
+	tmsg->host.len = tmsg->host.maxlen = GUINT16_TO_LE(len = unicode_strconvcopy(tmp, hostname, remlen));
+	tmp += len;
 
 	/* LM */
-	tmsg->lm_resp.len = tmsg->lm_resp.maxlen = NTLMSSP_LM_RESP_LEN;
-	tmsg->lm_resp.offset = tmsg->host.offset + tmsg->host.len;
-	memcpy(tmp, lm_challenge_response, NTLMSSP_LM_RESP_LEN);
-	tmp += NTLMSSP_LM_RESP_LEN;
+	tmsg->lm_resp.offset = GUINT32_TO_LE(offset += len);
+	tmsg->lm_resp.len = tmsg->lm_resp.maxlen = GUINT16_TO_LE(len = NTLMSSP_LM_RESP_LEN);
+	memcpy(tmp, lm_challenge_response, len);
+	tmp += len;
 
 	/* NT */
-	tmsg->nt_resp.len = tmsg->nt_resp.maxlen = ntlmssp_nt_resp_len;
-	tmsg->nt_resp.offset = tmsg->lm_resp.offset + tmsg->lm_resp.len;
-	memcpy(tmp, nt_challenge_response, ntlmssp_nt_resp_len);
-	tmp += ntlmssp_nt_resp_len;
+	tmsg->nt_resp.offset = GUINT32_TO_LE(offset += len);
+	tmsg->nt_resp.len = tmsg->nt_resp.maxlen = GUINT16_TO_LE(len = ntlmssp_nt_resp_len);
+	memcpy(tmp, nt_challenge_response, len);
+	tmp += len;
 
 	/* Session Key */
+	tmsg->session_key.offset = GUINT32_TO_LE(offset += len);
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH))
 	{
-		tmsg->session_key.len = tmsg->session_key.maxlen = NTLMSSP_SESSION_KEY_LEN;
-		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
-		memcpy(tmp, encrypted_random_session_key, 16);
-		tmp += NTLMSSP_SESSION_KEY_LEN;
+		tmsg->session_key.len = tmsg->session_key.maxlen = GUINT16_TO_LE(len = NTLMSSP_SESSION_KEY_LEN);
+		memcpy(tmp, encrypted_random_session_key, len);
+		tmp += len;
 	}
 	else
 	{
 		tmsg->session_key.len = tmsg->session_key.maxlen = 0;
-		tmsg->session_key.offset = tmsg->nt_resp.offset + tmsg->nt_resp.len;
 	}
 
 	*flags = neg_flags;
-
-#if G_BYTE_ORDER == G_BIG_ENDIAN
-	/* All calculations have been done in big endian
-	   but message format is in little endian */
-	tmsg->domain.offset = GUINT32_TO_LE(tmsg->domain.offset);
-	tmsg->domain.len = GUINT16_TO_LE(tmsg->domain.len);
-	tmsg->domain.maxlen = GUINT16_TO_LE(tmsg->domain.maxlen);
-
-	tmsg->user.offset = GUINT32_TO_LE(tmsg->user.offset);
-	tmsg->user.len = GUINT16_TO_LE(tmsg->user.len);
-	tmsg->user.maxlen = GUINT16_TO_LE(tmsg->user.maxlen);
-
-	tmsg->host.offset = GUINT32_TO_LE(tmsg->host.offset);
-	tmsg->host.len = GUINT16_TO_LE(tmsg->host.len);
-	tmsg->host.maxlen = GUINT16_TO_LE(tmsg->host.maxlen);
-
-	tmsg->lm_resp.offset = GUINT32_TO_LE(tmsg->lm_resp.offset);
-	tmsg->lm_resp.len = GUINT16_TO_LE(tmsg->lm_resp.len);
-	tmsg->lm_resp.maxlen = GUINT16_TO_LE(tmsg->lm_resp.maxlen);
-
-	tmsg->nt_resp.offset = GUINT32_TO_LE(tmsg->nt_resp.offset);
-	tmsg->nt_resp.len = GUINT16_TO_LE(tmsg->nt_resp.len);
-	tmsg->nt_resp.maxlen = GUINT16_TO_LE(tmsg->nt_resp.maxlen);
-
-	tmsg->session_key.offset = GUINT32_TO_LE(tmsg->session_key.offset);
-	tmsg->session_key.len = GUINT16_TO_LE(tmsg->session_key.len);
-	tmsg->session_key.maxlen = GUINT16_TO_LE(tmsg->session_key.maxlen);
-#endif
 
 	tmp = purple_base64_encode(exported_session_key, 16);
 	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE session key: %s\n", tmp);
@@ -1226,6 +1199,8 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 static void
 purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 {
+	guint32 offset;
+	guint16 len;
 	int msglen = sizeof(struct negotiate_message);
 	struct negotiate_message *tmsg = g_malloc0(msglen);
 
@@ -1237,25 +1212,18 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	tmsg->flags = GUINT32_TO_LE(NEGOTIATE_FLAGS_CONN);
 
 	/* Domain */
-	tmsg->domain.offset = sizeof(struct negotiate_message);
-	tmsg->domain.len = tmsg->domain.maxlen = 0;
+	tmsg->domain.offset = GUINT32_TO_LE(offset = sizeof(struct negotiate_message));
+	tmsg->domain.len = tmsg->domain.maxlen = len = 0;
 
 	/* Host */
-	tmsg->host.offset = tmsg->domain.offset + tmsg->domain.len;
-	tmsg->host.len = tmsg->host.maxlen = 0;
+	tmsg->host.offset = GUINT32_TO_LE(offset += len);
+	tmsg->host.len = tmsg->host.maxlen = len = 0;
 
 	/* Version */
 	//tmsg->ver.product_major_version = 5;	/* 5.1.2600 (Windows XP SP2) */
 	//tmsg->ver.product_minor_version = 1;
 	//tmsg->ver.product_build = 2600;
 	//tmsg->ver.ntlm_revision_current = 0x0F;	/* NTLMSSP_REVISION_W2K3 */
-
-#if G_BYTE_ORDER == G_BIG_ENDIAN
-	/* All calculations have been done in big endian
-	   but message format is in little endian */
-	tmsg->domain.offset = GUINT32_TO_LE(tmsg->domain.offset);
-	tmsg->host.offset = GUINT32_TO_LE(tmsg->host.offset);
-#endif
 
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
