@@ -917,9 +917,6 @@ compute_response(const guint32 neg_flags,
 #ifdef _SIPE_COMPILING_TESTS
 	if (use_ntlm_v2)
 	{
-#else
-		/* Not used in NTLMv2 */
-		(void)neg_flags;
 #endif
 /*
 Responserversion - The 1-byte response version. Currently set to 1.
@@ -980,7 +977,11 @@ EndDefine
 		memcpy(tmp+8, client_challenge, 8);
 		HMAC_MD5(response_key_lm, 16, tmp, 16, lm_challenge_response);
 		memcpy(lm_challenge_response+16, client_challenge, 8);
-#ifdef _SIPE_COMPILING_TESTS
+
+#ifndef _SIPE_COMPILING_TESTS
+		/* Not used in NTLMv2 */
+		(void)neg_flags;
+#else
 	}
 	else
 	{

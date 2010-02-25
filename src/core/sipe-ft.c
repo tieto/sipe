@@ -746,13 +746,13 @@ do_read(PurpleXfer *xfer, guchar *buf, size_t len)
 static gboolean
 read_fully(PurpleXfer *xfer, guchar *buf, size_t len)
 {
-	const useconds_t READ_TIMEOUT = 10000000;
-	useconds_t time_spent = 0;
+	const gulong READ_TIMEOUT = 10000000;
+	gulong time_spent = 0;
 
 	while (len) {
 		ssize_t bytes_read = do_read(xfer, buf, len);
 		if (bytes_read == 0) {
-			usleep(100000);
+			g_usleep(100000);
 			time_spent += 100000;
 		} else if (bytes_read < 0 || time_spent > READ_TIMEOUT) {
 			return FALSE;
