@@ -55,14 +55,19 @@ typedef struct {
 static void readUUID(const char *string, uuid_t *uuid)
 {
 	int i;
-	sscanf(string, "%08x-%04hx-%04hx-%02hhx%02hhx-", &uuid->time_low
+	/* Some platforms don't allow scanning to char using %02hhx */
+	short tmp1, tmp2;
+
+	sscanf(string, "%08x-%04hx-%04hx-%02hx%02hx-", &uuid->time_low
 			, &uuid->time_mid, &uuid->time_hi_and_version
-			, &uuid->clock_seq_hi_and_reserved
-			, &uuid->clock_seq_low );
+			, &tmp1, &tmp2);
+	uuid->clock_seq_hi_and_reserved = tmp1;
+	uuid->clock_seq_low = tmp2;
 
 	for(i=0;i<6;i++)
 	{
-		sscanf(&string[UUID_OFFSET_TO_LAST_SEGMENT+i*2], "%02hhx", &uuid->node[i]);
+		sscanf(&string[UUID_OFFSET_TO_LAST_SEGMENT+i*2], "%02hx", &tmp1);
+		uuid->node[i] = tmp1;
 	}
 }
 
@@ -85,8 +90,8 @@ static void printUUID(uuid_t *uuid, char *string)
 static void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
 {
 	memcpy(uuid, hash, sizeof(uuid_t));
-	uuid->time_hi_and_version &= 0x0FFF;
-	uuid->time_hi_and_version |= 0x5000;
+	uuid->time_hi_and_version &= GUINT16_TO_LE(0x0FFF);
+	uuid->time_hi_and_version |= GUINT16_TO_LE(0x5000);
 	uuid->clock_seq_hi_and_reserved &= 0x3F;
 	uuid->clock_seq_hi_and_reserved |= 0x80;
 }
@@ -99,6 +104,11 @@ char *generateUUIDfromEPID(const gchar *epid)
 	char buf[512];
 
 	readUUID(epid_ns_uuid, &result);
+
+	result.time_low = GUINT32_FROM_LE(result.time_low);
+	result.time_mid = GUINT16_FROM_LE(result.time_mid);
+	result.time_hi_and_version = GUINT16_FROM_LE(result.time_hi_and_version);
+
 	memcpy(buf, &result, sizeof(uuid_t));
 	strcpy(&buf[sizeof(uuid_t)], epid);
 
@@ -108,6 +118,11 @@ char *generateUUIDfromEPID(const gchar *epid)
 	purple_cipher_context_destroy(ctx);
 
 	createUUIDfromHash(&result, hash);
+
+	result.time_low = GUINT32_TO_LE(result.time_low);
+	result.time_mid = GUINT16_TO_LE(result.time_mid);
+	result.time_hi_and_version = GUINT16_TO_LE(result.time_hi_and_version);
+
 	printUUID(&result, buf);
 	return g_strdup(buf);
 }
