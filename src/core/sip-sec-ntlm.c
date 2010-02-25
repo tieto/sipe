@@ -719,7 +719,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 			switch (GUINT16_FROM_LE(av->av_id)) {
 				case MsvAvTimestamp:
 					if (time_val) {
-						*time_val = *((guint64*)av_value);
+						*time_val = GUINT64_FROM_LE(*((guint64*)av_value));
 					}
 					break;
 			}
@@ -1414,17 +1414,17 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 			case MsvAvDnsTreeName:
 				{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsTreeName")  break; }
 			case MsvAvFlags:
-				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", *((guint32*)av_value));
+				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(*((guint32*)av_value)));
 				break;
 			case MsvAvTimestamp:
 				{
 					char *tmp;
-					guint64 time64 = *((guint64*)av_value);
+					guint64 time64 = GUINT64_FROM_LE(*((guint64*)av_value));
 					time_t time_val = (time_t)((time64 - 116444736000000000LL)/10000000);
 					buff.length = 8;
 					buff.value = av_value;
 					g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
-						asctime(gmtime(&time_val)));
+							       asctime(gmtime(&time_val)));
 					g_free(tmp);
 					break;
 				}
@@ -1504,7 +1504,7 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			const gchar *temp = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
 			const int response_version = *((guchar*)temp);
 			const int hi_response_version = *((guchar*)(temp+1));
-			const guint64 time_val = *((guint64*)(temp + 8));
+			const guint64 time_val = GUINT64_FROM_LE(*((guint64*)(temp + 8)));
 			const time_t time_t_val = (time_t)((time_val - 116444736000000000LL)/10000000);
 			const gchar *client_challenge = temp + 16;
 			const struct av_pair *av = (struct av_pair*)(temp + 28);
