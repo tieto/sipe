@@ -28,10 +28,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _WIN32
-#include <sys/types.h>
-#endif
-
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <stdio.h>
@@ -41,6 +37,7 @@
 #include "debug.h"
 
 #ifndef _WIN32
+#include <sys/types.h>
 #ifdef __sun__
 #include <sys/sockio.h>
 #endif
@@ -695,7 +692,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 	}
 
 	/* flags */
-	purple_debug_info("sipe", "receibved NTLM NegotiateFlags = %X; OK? %i\n", host_flags, (host_flags & our_flags) == our_flags);
+	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", host_flags, (host_flags & our_flags) == our_flags);
 	if (flags) {
 		*flags = host_flags;
 	}
