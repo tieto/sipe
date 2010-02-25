@@ -681,6 +681,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 			    gboolean is_connection_based,
 			    guint32 *flags,
 			    guchar **server_challenge, /* 8 bytes */
+			    guint64 *time_val,
 			    guchar **target_info,
 			    int *target_info_len)
 {
@@ -702,6 +703,21 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 	/* target_info */
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
 		const gchar *target_info_content = (((gchar *)cmsg) + cmsg->target_info.offset);
+		struct av_pair *av = (struct av_pair*)target_info_content;
+
+		while (av->av_id != MsvAvEOL) {
+			gchar *av_value = ((gchar *)av) + 4;
+
+			switch (av->av_id) {
+				case MsvAvTimestamp:
+					if (time_val) {
+						*time_val = *((guint64*)av_value);
+					}
+					break;
+			}
+			av = (struct av_pair*)(((guint8*)av) + 4 + av->av_len);
+		}
+
 		if (target_info_len) {
 			*target_info_len = cmsg->target_info.len;
 		}
@@ -1013,6 +1029,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			     const gchar *hostname,
 			     const gchar *domain,
 			     const guint8 *server_challenge, /* nonce */
+			     const guint64 time_val,
 			     const guint8 *target_info,
 			     int target_info_len,
 			     gboolean is_connection_based,
@@ -1066,7 +1083,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			 response_key_lm,
 			 server_challenge,
 			 client_challenge,
-			 ((guint64)time(NULL)) + 116444736000000000LL,
+			 time_val ? time_val : ((guint64)time(NULL)) + 116444736000000000LL,
 			 target_info,
 			 target_info_len,
 			 lm_challenge_response,	/* out */
@@ -1561,6 +1578,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		guchar *client_seal_key;
 		guchar *server_seal_key;
 		guchar *server_challenge = NULL;
+		guint64 time_val = 0;
 		guchar *target_info = NULL;
 		int target_info_len = 0;
 		guint32 flags;
@@ -1574,6 +1592,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 					    context->is_connection_based,
 					    &flags,
 					    &server_challenge, /* 8 bytes */
+					    &time_val,
 					    &target_info,
 					    &target_info_len);
 
@@ -1586,6 +1605,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 					     (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
 					     ctx->domain,
 					     server_challenge,
+					     time_val,
 					     target_info,
 					     target_info_len,
 					     context->is_connection_based,
