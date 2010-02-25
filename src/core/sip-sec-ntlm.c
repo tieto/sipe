@@ -134,23 +134,19 @@ static gboolean use_ntlm_v2 = FALSE;
 #endif
 
 /* Common negotiate flags */
-#define NEGOTIATE_FLAGS_COMMON \
+#define NEGOTIATE_FLAGS_CONN \
 	  NTLMSSP_NEGOTIATE_UNICODE | \
 	  NTLMSSP_NEGOTIATE_56 | \
 	  NTLMSSP_NEGOTIATE_128 | \
 	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
 	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
-	  NTLMSSP_NEGOTIATE_KEY_EXCH
-
-/* Negotiate flags required in connection-oriented NTLM */
-#define NEGOTIATE_FLAGS_CONN \
-	( NEGOTIATE_FLAGS_COMMON | \
-	  NTLMSSP_REQUEST_TARGET )
+	  NTLMSSP_NEGOTIATE_KEY_EXCH | \
+	  NTLMSSP_REQUEST_TARGET
 
 /* Negotiate flags required in connectionless NTLM */
 #define NEGOTIATE_FLAGS \
-	( NEGOTIATE_FLAGS_COMMON | \
+	( NEGOTIATE_FLAGS_CONN | \
 	  NTLMSSP_NEGOTIATE_SIGN | \
 	  NTLMSSP_NEGOTIATE_DATAGRAM )
 
@@ -1462,7 +1458,7 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			
 			buff.length = 8; 
 			buff.value = (gchar*)&time_val;
-			g_string_append_printf(str, "\t%s: %s - %s", "time_val", (tmp = bytes_to_hex_str(&buff)),
+			g_string_append_printf(str, "\t%s: %s - %s", "time", (tmp = bytes_to_hex_str(&buff)),
 				asctime(gmtime(&time_t_val)));
 			g_free(tmp);
 			
