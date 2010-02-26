@@ -31,12 +31,14 @@
 /*
  * Byte order policy:
  *
- *  - NTLM messages (byte streams) should have LE (Little-Endian) byte order.
+ *  - NTLM messages (byte streams) should be in LE (Little-Endian) byte order.
  *  - internal int16, int32, int64 should contain proper values.
  *     For example: 01 00 00 00 LE should be translated to (int32)1
  *  - When reading/writing from/to NTLM message appropriate conversion should
  *    be taken to properly present integer values. glib's "Byte Order Macros"
  *    should be used for that, for example GINT32_FROM_LE
+ *  - All calculations should be made in dedicated local variables (system-endian),
+ *    not in NTLM (LE) structures.
  */
 
 #include <glib.h>
@@ -137,12 +139,6 @@
 #define TIME_VAL_OFFSET 116444736000000000LL
 #define TIME_T_TO_VAL(time_t)   (((guint64)(time_t)) * TIME_VAL_FACTOR + TIME_VAL_OFFSET)
 #define TIME_VAL_TO_T(time_val) ((time_t)((GUINT64_FROM_LE((time_val)) - TIME_VAL_OFFSET) / TIME_VAL_FACTOR))
-
-/***********************************************
- *
- * Start of merged code from original sip-ntlm.c
- *
- ***********************************************/
 
 /*
  * NTLMv1 is no longer used except in tests. R.I.P.
@@ -267,32 +263,7 @@ static char SIPE_DEFAULT_CODESET[] = "ANSI_X3.4-1968";
 
 /* Private Methods */
 
-#ifdef _SIPE_COMPILING_TESTS
-static void setup_des_key(const unsigned char key_56[], unsigned char *key)
-{
-	key[0] = key_56[0];
-	key[1] = ((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1);
-	key[2] = ((key_56[1] << 6) & 0xFF) | (key_56[2] >> 2);
-	key[3] = ((key_56[2] << 5) & 0xFF) | (key_56[3] >> 3);
-	key[4] = ((key_56[3] << 4) & 0xFF) | (key_56[4] >> 4);
-	key[5] = ((key_56[4] << 3) & 0xFF) | (key_56[5] >> 5);
-	key[6] = ((key_56[5] << 2) & 0xFF) | (key_56[6] >> 6);
-	key[7] =  (key_56[6] << 1) & 0xFF;
-}
-
-static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *result, const unsigned char *key)
-{
-	PurpleCipher *cipher;
-	PurpleCipherContext *context;
-	size_t outlen;
-
-	cipher = purple_ciphers_find_cipher("des");
-	context = purple_cipher_context_new(cipher, NULL);
-	purple_cipher_context_set_key(context, (guchar*)key);
-	purple_cipher_context_encrypt(context, (guchar*)plaintext, 8, (guchar*)result, &outlen);
-	purple_cipher_context_destroy(context);
-}
-#endif
+/* Utility Functions */
 
 static int
 unicode_strconvcopy_dir(gchar *dest, const gchar *source, int remlen, gsize source_len, gboolean to_16LE)
@@ -343,8 +314,84 @@ unicode_strconvcopy_back(const gchar *source,
 	return res;
 }
 
+/* crc32 source copy from gg's common.c */
+static guint32 crc32_table[256];
+static int crc32_initialized = 0;
+
+static void crc32_make_table()
+{
+	guint32 h = 1;
+	unsigned int i, j;
+
+	memset(crc32_table, 0, sizeof(crc32_table));
+
+	for (i = 128; i; i >>= 1) {
+		h = (h >> 1) ^ ((h & 1) ? 0xedb88320L : 0);
+
+		for (j = 0; j < 256; j += 2 * i)
+			crc32_table[i + j] = crc32_table[j] ^ h;
+	}
+
+	crc32_initialized = 1;
+}
+
+static guint32 crc32(guint32 crc, const guint8 *buf, int len)
+{
+	if (!crc32_initialized)
+		crc32_make_table();
+
+	if (!buf || len < 0)
+		return crc;
+
+	crc ^= 0xffffffffL;
+
+	while (len--)
+		crc = (crc >> 8) ^ crc32_table[(crc ^ *buf++) & 0xff];
+
+	return crc ^ 0xffffffffL;
+}
+
+static guint32
+CRC32 (const char *msg, int len)
+{
+	guint32 crc = 0L;//crc32(0L, Z_NULL, 0);
+	crc = crc32(crc, (guint8 *) msg, len);
+	//char * ptr = (char*) &crc;
+	//return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | (ptr[3] & 0xff);
+	return crc;
+}
+
+/* Cyphers */
+
 #ifdef _SIPE_COMPILING_TESTS
-// (k = 7 byte key, d = 8 byte data) returns 8 bytes in results
+static void setup_des_key(const unsigned char key_56[], unsigned char *key)
+{
+	key[0] = key_56[0];
+	key[1] = ((key_56[0] << 7) & 0xFF) | (key_56[1] >> 1);
+	key[2] = ((key_56[1] << 6) & 0xFF) | (key_56[2] >> 2);
+	key[3] = ((key_56[2] << 5) & 0xFF) | (key_56[3] >> 3);
+	key[4] = ((key_56[3] << 4) & 0xFF) | (key_56[4] >> 4);
+	key[5] = ((key_56[4] << 3) & 0xFF) | (key_56[5] >> 5);
+	key[6] = ((key_56[5] << 2) & 0xFF) | (key_56[6] >> 6);
+	key[7] =  (key_56[6] << 1) & 0xFF;
+}
+
+static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *result, const unsigned char *key)
+{
+	PurpleCipher *cipher;
+	PurpleCipherContext *context;
+	size_t outlen;
+
+	cipher = purple_ciphers_find_cipher("des");
+	context = purple_cipher_context_new(cipher, NULL);
+	purple_cipher_context_set_key(context, (guchar*)key);
+	purple_cipher_context_encrypt(context, (guchar*)plaintext, 8, (guchar*)result, &outlen);
+	purple_cipher_context_destroy(context);
+}
+#endif
+
+#ifdef _SIPE_COMPILING_TESTS
+/* (k = 7 byte key, d = 8 byte data) returns 8 bytes in results */
 static void
 DES (const unsigned char *k, const unsigned char *d, unsigned char * results)
 {
@@ -353,16 +400,16 @@ DES (const unsigned char *k, const unsigned char *d, unsigned char * results)
 	des_ecb_encrypt(d, results, key);
 }
 
-// (K = 21 byte key, D = 8 bytes of data) returns 24 bytes in results:
+/* (K = 21 byte key, D = 8 bytes of data) returns 24 bytes in results: */
 static void
 DESL (const unsigned char *k, const unsigned char *d, unsigned char * results)
 {
 	unsigned char keys[21];
 
-	// Copy the first 16 bytes
+	/* Copy the first 16 bytes */
 	memcpy(keys, k, 16);
 
-	// Zero out the last 5 bytes of the key
+	/* Zero out the last 5 bytes of the key */
 	memset(keys + 16, 0, 5);
 
 	DES(keys,      d, results);
@@ -370,6 +417,16 @@ DESL (const unsigned char *k, const unsigned char *d, unsigned char * results)
 	DES(keys + 14, d, results + 16);
 }
 #endif
+
+static void
+RC4K (const unsigned char * k, unsigned long key_len, const unsigned char * d, int len, unsigned char * result)
+{
+	PurpleCipherContext * context = purple_cipher_context_new_by_name("rc4", NULL);
+	purple_cipher_context_set_option(context, "key_len", (gpointer)key_len);
+	purple_cipher_context_set_key(context, k);
+	purple_cipher_context_encrypt(context, (const guchar *)d, len, result, NULL);
+	purple_cipher_context_destroy(context);
+}
 
 /* out 16 bytes */
 static void
@@ -437,6 +494,55 @@ HMAC_MD5 (const unsigned char *key, int key_len, const unsigned char *data, int 
 	purple_cipher_context_destroy(context);
 }
 
+/* NTLM Core Methods */
+
+static void
+NONCE(unsigned char *buffer, int num)
+{
+	int i;
+	for (i = 0; i < num; i++) {
+		buffer[i] = (rand() & 0xff);
+	}
+}
+
+static void
+Z(unsigned char *buffer, int num)
+{
+	int i;
+	for (i = 0; i < num; i++) {
+		buffer[i] = 0;
+	}
+}
+
+#ifdef _SIPE_COMPILING_TESTS
+static void
+LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
+{
+	/* "KGS!@#$%" */
+	unsigned char magic[] = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
+	unsigned char uppercase_password[14];
+	int i;
+
+	int len = strlen(password);
+	if (len > 14) {
+		len = 14;
+	}
+
+	// Uppercase password
+	for (i = 0; i < len; i++) {
+		uppercase_password[i] = g_ascii_toupper(password[i]);
+	}
+
+	// Zero the rest
+	for (; i < 14; i++) {
+		uppercase_password[i] = 0;
+	}
+
+	DES (uppercase_password, magic, result);
+	DES (uppercase_password + 7, magic, result + 8);
+}
+#endif
+
 /*
 Define NTOWFv1(Passwd, User, UserDom) as
   MD4(UNICODE(Passwd))
@@ -483,444 +589,6 @@ NTOWFv2 (const char* password, const char *user, const char *domain, unsigned ch
 	NTOWFv1(password, user, domain, response_key_nt_v1);
 
 	HMAC_MD5(response_key_nt_v1, 16, buff, len_user_u + len_domain_u, result);
-}
-
-static void
-RC4K (const unsigned char * k, unsigned long key_len, const unsigned char * d, int len, unsigned char * result)
-{
-	PurpleCipherContext * context = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(context, "key_len", (gpointer)key_len);
-	purple_cipher_context_set_key(context, k);
-	purple_cipher_context_encrypt(context, (const guchar *)d, len, result, NULL);
-	purple_cipher_context_destroy(context);
-}
-
-static void
-KXKEY ( guint32 flags,
-	const unsigned char * session_base_key,
-	const unsigned char * lm_challenge_resonse,
-	const guint8 * server_challenge, /* 8-bytes, nonce */
-	unsigned char * key_exchange_key)
-{
-#ifdef _SIPE_COMPILING_TESTS
-	if (use_ntlm_v2)
-	{
-#else
-		/* Not used in NTLMv2 */
-		(void)flags;
-		(void)lm_challenge_resonse;
-		(void)server_challenge;
-#endif
-		memcpy(key_exchange_key, session_base_key, 16);
-#ifdef _SIPE_COMPILING_TESTS
-	}
-	else
-	{
-		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
-			//   Define KXKEY(SessionBaseKey, LmChallengeResponse, ServerChallenge) as
-			//        Set KeyExchangeKey to HMAC_MD5(SessionBaseKey, ConcatenationOf(ServerChallenge, LmChallengeResponse [0..7]))
-			//   EndDefine
-			guint8 tmp[16];
-			memcpy(tmp, server_challenge, 8);
-			memcpy(tmp+8, lm_challenge_resonse, 8);
-			HMAC_MD5(session_base_key, 16, tmp, 16, key_exchange_key);
-		} else {
-			// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
-			memcpy(key_exchange_key, session_base_key, 16);
-		}
-	}
-#endif
-}
-
-// This method is only used for NTLMv2 and extended session security
-/*
-     If (Mode equals "Client")
-          Set SignKey to MD5(ConcatenationOf(RandomSessionKey,
-          "session key to client-to-server signing key magic constant"))
-     Else
-          Set SignKey to MD5(ConcatenationOf(RandomSessionKey,
-          "session key to server-to-client signing key magic constant"))
-     Endif
-*/
-static void
-SIGNKEY (const unsigned char * random_session_key, gboolean client, unsigned char * result)
-{
-	char * magic = client
-		? "session key to client-to-server signing key magic constant"
-		: "session key to server-to-client signing key magic constant";
-
-	int len = strlen(magic) + 1;
-	unsigned char md5_input [16 + len];
-	memcpy(md5_input, random_session_key, 16);
-	memcpy(md5_input + 16, magic, len);
-
-	MD5 (md5_input, len + 16, result);
-}
-
-/*
-Define SEALKEY(NegotiateFlags, RandomSessionKey, Mode) as
-If (NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY flag is set in NegFlg)
-     If ( NTLMSSP_NEGOTIATE_128 is set in NegFlg)
-          Set SealKey to RandomSessionKey
-     ElseIf ( NTLMSSP_NEGOTIATE_56 flag is set in NegFlg)
-         Set SealKey to RandomSessionKey[0..6]
-     Else
-         Set SealKey to RandomSessionKey[0..4]
-     Endif
-
-     If (Mode equals "Client")
-         Set SealKey to MD5(ConcatenationOf(SealKey, "session key to client-to-server sealing key magic constant"))
-     Else
-         Set SealKey to MD5(ConcatenationOf(SealKey, "session key to server-to-client sealing key magic constant"))
-     Endif
-
-ElseIf (NTLMSSP_NEGOTIATE_56 flag is set in NegFlg)
-     Set SealKey to ConcatenationOf(RandomSessionKey[0..6], 0xA0)
-Else
-     Set SealKey to ConcatenationOf(RandomSessionKey[0..4], 0xE5, 0x38, 0xB0)
-Endif
-EndDefine
-*/
-/* out 16 bytes or 8 bytes depending if Ext.Sess.Sec is negotiated */
-static void
-SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean client, unsigned char * result)
-{
-	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY))
-	{
-		char * magic = client
-			? "session key to client-to-server sealing key magic constant"
-			: "session key to server-to-client sealing key magic constant";
-
-		int len = strlen(magic) + 1;
-		unsigned char md5_input [16 + len];
-		int key_len;
-
-		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_128)) {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 128-bit key (Extended session security)\n");
-			key_len = 16;
-		} else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key (Extended session security)\n");
-			key_len = 7;
-		} else {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 40-bit key (Extended session security)\n");
-			key_len = 5;
-		}
-
-		memcpy(md5_input, random_session_key, key_len);
-		memcpy(md5_input + key_len, magic, len);
-
-		MD5 (md5_input, key_len + len, result);
-	}
-	else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_LM_KEY)) /* http://davenport.sourceforge.net/ntlm.html#ntlm1KeyWeakening */
-	{
-		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key\n");
-			memcpy(result, random_session_key, 7);
-			result[7] = 0xA0;
-		} else {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 40-bit key\n");
-			memcpy(result, random_session_key, 5);
-			result[5] = 0xE5;
-			result[6] = 0x38;
-			result[7] = 0xB0;
-		}
-	}
-	else
-	{
-		purple_debug_info("sipe", "NTLM SEALKEY(): 128-bit key\n");
-		memcpy(result, random_session_key, 16);
-	}
-}
-
-#ifdef _SIPE_COMPILING_TESTS
-static void
-LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
-{
-	/* "KGS!@#$%" */
-	unsigned char magic[] = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
-	unsigned char uppercase_password[14];
-	int i;
-
-	int len = strlen(password);
-	if (len > 14) {
-		len = 14;
-	}
-
-	// Uppercase password
-	for (i = 0; i < len; i++) {
-		uppercase_password[i] = g_ascii_toupper(password[i]);
-	}
-
-	// Zero the rest
-	for (; i < 14; i++) {
-		uppercase_password[i] = 0;
-	}
-
-	DES (uppercase_password, magic, result);
-	DES (uppercase_password + 7, magic, result + 8);
-}
-#endif
-
-static void
-NONCE(unsigned char *buffer, int num)
-{
-	int i;
-	for (i = 0; i < num; i++) {
-		buffer[i] = (rand() & 0xff);
-	}
-}
-
-static void
-Z(unsigned char *buffer, int num)
-{
-	int i;
-	for (i = 0; i < num; i++) {
-		buffer[i] = 0;
-	}
-}
-
-/* End Private Methods */
-
-static gchar *
-sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg);
-
-/**
-  * @param server_challenge	must be g_free()'d after use if requested
-  * @param target_info		must be g_free()'d after use if requested
-  */
-static void
-purple_ntlm_parse_challenge(SipSecBuffer in_buff,
-			    gboolean is_connection_based,
-			    guint32 *flags,
-			    guchar **server_challenge, /* 8 bytes */
-			    guint64 *time_val,
-			    guchar **target_info,
-			    int *target_info_len)
-{
-	guint32 our_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
-	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
-	guint32 host_flags = GUINT32_FROM_LE(cmsg->flags);
-
-	/* server challenge (nonce) */
-	if (server_challenge) {
-		*server_challenge = (guchar *)g_new0(gchar, 8);
-		memcpy(*server_challenge, cmsg->nonce, 8);
-	}
-
-	/* flags */
-	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", host_flags, (host_flags & our_flags) == our_flags);
-	if (flags) {
-		*flags = host_flags;
-	}
-
-	/* target_info */
-	if (cmsg->target_info.len && cmsg->target_info.offset) {
-		const gchar *target_info_content = (((gchar *)cmsg) + GUINT32_FROM_LE(cmsg->target_info.offset));
-		struct av_pair *av = (struct av_pair*)target_info_content;
-
-		while (GUINT16_FROM_LE(av->av_id) != MsvAvEOL) {
-			gchar *av_value = ((gchar *)av) + 4;
-
-			switch (GUINT16_FROM_LE(av->av_id)) {
-				case MsvAvTimestamp:
-					if (time_val) {
-						/* This is not int64 aligned on sparc */
-						guint64 tmp;
-						memcpy((gchar *)&tmp, av_value, sizeof(tmp));
-						*time_val = GUINT64_FROM_LE(tmp);
-					}
-					break;
-			}
-			av = (struct av_pair*)(((guint8*)av) + 4 + GUINT16_FROM_LE(av->av_len));
-		}
-
-		if (target_info_len) {
-			*target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
-		}
-		if (target_info) {
-			*target_info = (guchar *)g_new0(gchar, GUINT16_FROM_LE(cmsg->target_info.len));
-			memcpy(*target_info, target_info_content, GUINT16_FROM_LE(cmsg->target_info.len));
-		}
-	}
-}
-
-/* source copy from gg's common.c */
-static guint32 crc32_table[256];
-static int crc32_initialized = 0;
-
-static void crc32_make_table()
-{
-	guint32 h = 1;
-	unsigned int i, j;
-
-	memset(crc32_table, 0, sizeof(crc32_table));
-
-	for (i = 128; i; i >>= 1) {
-		h = (h >> 1) ^ ((h & 1) ? 0xedb88320L : 0);
-
-		for (j = 0; j < 256; j += 2 * i)
-			crc32_table[i + j] = crc32_table[j] ^ h;
-	}
-
-	crc32_initialized = 1;
-}
-
-static guint32 crc32(guint32 crc, const guint8 *buf, int len)
-{
-	if (!crc32_initialized)
-		crc32_make_table();
-
-	if (!buf || len < 0)
-		return crc;
-
-	crc ^= 0xffffffffL;
-
-	while (len--)
-		crc = (crc >> 8) ^ crc32_table[(crc ^ *buf++) & 0xff];
-
-	return crc ^ 0xffffffffL;
-}
-
-static guint32
-CRC32 (const char *msg, int len)
-{
-	guint32 crc = 0L;//crc32(0L, Z_NULL, 0);
-	crc = crc32(crc, (guint8 *) msg, len);
-	//char * ptr = (char*) &crc;
-	//return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | (ptr[3] & 0xff);
-	return crc;
-}
-
-/*
-Version (4 bytes): A 32-bit unsigned integer that contains the signature version. This field MUST be 0x00000001.
-RandomPad (4 bytes): A 4-byte array that contains the random pad for the message.
-Checksum (4 bytes):  A 4-byte array that contains the checksum for the message.
-SeqNum (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence number for this application message.
----
-Version (4 bytes): A 32-bit unsigned integer that contains the signature version. This field MUST be 0x00000001.
-Checksum (8 bytes): An 8-byte array that contains the checksum for the message.
-SeqNum (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence number for this application message.
-
-0x00000001, RC4K(RandomPad), RC4K(CRC32(Message)), RC4K(0x00000000) XOR (application supplied SeqNum)		-- RC4(X) xor X xor Y = RC4(Y)
-*/
-// Version(4), RandomPad(4), Checksum(4), SeqNum(4)
-// Version(4), Checksum(8), SeqNum(4)			-- for ext.sess.sec.
-// MAC(Handle, SigningKey, SeqNum, Message)
-static gchar *
-MAC (guint32 flags,
-     const char *buf,
-     int buf_len,
-     unsigned char *sign_key,
-     unsigned long sign_key_len,
-     unsigned char *seal_key,
-     unsigned long seal_key_len,
-     guint32 random_pad,
-     guint32 sequence)
-{
-	guchar result [16];
-	gint32 *res_ptr;
-	gchar signature [33];
-	int i, j;
-
-	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
-		/*
-		Define MAC(Handle, SigningKey, SeqNum, Message) as
-		     Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
-		     Set NTLMSSP_MESSAGE_SIGNATURE.Checksum to
-			 HMAC_MD5(SigningKey, ConcatenationOf(SeqNum, Message))[0..7]
-		     Set NTLMSSP_MESSAGE_SIGNATURE.SeqNum to SeqNum
-		     Set SeqNum to SeqNum + 1
-		EndDefine
-		*/
-		/* If a key exchange key is negotiated
-		   Define MAC(Handle, SigningKey, SeqNum, Message) as
-			Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
-			Set NTLMSSP_MESSAGE_SIGNATURE.Checksum to RC4(Handle,
-				HMAC_MD5(SigningKey, ConcatenationOf(SeqNum, Message))[0..7])
-			Set NTLMSSP_MESSAGE_SIGNATURE.SeqNum to SeqNum
-			Set SeqNum to SeqNum + 1
-		   EndDefine
-		*/
-
-		unsigned char seal_key_ [16];
-		guchar hmac[16];
-		guchar tmp[4 + buf_len];
-
-		/* SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
-		   RC4Init(Handle, SealingKey')
-		 */
-		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_DATAGRAM)) {
-			unsigned char tmp2 [16+4];
-
-			memcpy(tmp2, seal_key, seal_key_len);
-			*((guint32 *)(tmp2+16)) = GINT32_TO_LE(sequence);
-			MD5 (tmp2, 16+4, seal_key_);
-		} else {
-			memcpy(seal_key_, seal_key, seal_key_len);
-		}
-
-		purple_debug_info("sipe", "NTLM MAC(): Extented Session Security\n");
-
-		res_ptr = (gint32 *)result;
-		res_ptr[0] = GINT32_TO_LE(1); // 4 bytes
-		res_ptr[3] = GINT32_TO_LE(sequence);
-
-		res_ptr = (gint32 *)tmp;
-		res_ptr[0] = GINT32_TO_LE(sequence);
-		memcpy(tmp+4, buf, buf_len);
-
-		HMAC_MD5(sign_key, sign_key_len, tmp, 4 + buf_len, hmac);
-
-		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
-			purple_debug_info("sipe", "NTLM MAC(): Key Exchange\n");
-			RC4K(seal_key_, seal_key_len, hmac, 8, result+4);
-		} else {
-			purple_debug_info("sipe", "NTLM MAC(): *NO* Key Exchange\n");
-			memcpy(result+4, hmac, 8);
-		}
-	} else {
-		/* The content of the first 4 bytes is irrelevant */
-		gint32 plaintext [] = {
-			GINT32_TO_LE(0),
-			GINT32_TO_LE(CRC32(buf, strlen(buf))),
-			GINT32_TO_LE(sequence)
-		}; // 4, 4, 4 bytes
-
-		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
-
-		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, result+4);
-		//RC4K(seal_key, 8, (const guchar *)plaintext, 12, result+4);
-
-		res_ptr = (gint32 *)result;
-		// Highest four bytes are the Version
-		res_ptr[0] = GINT32_TO_LE(0x00000001); // 4 bytes
-
-		// Replace the first four bytes of the ciphertext with the random_pad
-		res_ptr[1] = GINT32_TO_LE(random_pad); // 4 bytes
-	}
-
-	for (i = 0, j = 0; i < 16; i++, j+=2) {
-		g_sprintf(&signature[j], "%02X", result[i]);
-	}
-
-	return g_strdup(signature);
-}
-
-static gchar *
-purple_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
-{
-	return MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100);
-}
-
-static gboolean
-purple_ntlm_verify_signature (char * a, char * b)
-{
-	/*
-	 * Make sure the last 24 bytes match
-	 *  8 bytes random pad
-	 * 16 bytes signature
-	 */
-	return g_ascii_strncasecmp(a + 8, b + 8, 24) == 0;
 }
 
 static void
@@ -1037,6 +705,322 @@ EndDefine
 		MD4(response_key_nt, 16, session_base_key); // "User Session Key" -> "master key"
 	}
 #endif
+}
+
+static void
+KXKEY ( guint32 flags,
+	const unsigned char * session_base_key,
+	const unsigned char * lm_challenge_resonse,
+	const guint8 * server_challenge, /* 8-bytes, nonce */
+	unsigned char * key_exchange_key)
+{
+#ifdef _SIPE_COMPILING_TESTS
+	if (use_ntlm_v2)
+	{
+#else
+		/* Not used in NTLMv2 */
+		(void)flags;
+		(void)lm_challenge_resonse;
+		(void)server_challenge;
+#endif
+		memcpy(key_exchange_key, session_base_key, 16);
+#ifdef _SIPE_COMPILING_TESTS
+	}
+	else
+	{
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+			//   Define KXKEY(SessionBaseKey, LmChallengeResponse, ServerChallenge) as
+			//        Set KeyExchangeKey to HMAC_MD5(SessionBaseKey, ConcatenationOf(ServerChallenge, LmChallengeResponse [0..7]))
+			//   EndDefine
+			guint8 tmp[16];
+			memcpy(tmp, server_challenge, 8);
+			memcpy(tmp+8, lm_challenge_resonse, 8);
+			HMAC_MD5(session_base_key, 16, tmp, 16, key_exchange_key);
+		} else {
+			// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
+			memcpy(key_exchange_key, session_base_key, 16);
+		}
+	}
+#endif
+}
+
+/*
+     If (Mode equals "Client")
+          Set SignKey to MD5(ConcatenationOf(RandomSessionKey,
+          "session key to client-to-server signing key magic constant"))
+     Else
+          Set SignKey to MD5(ConcatenationOf(RandomSessionKey,
+          "session key to server-to-client signing key magic constant"))
+     Endif
+*/
+static void
+SIGNKEY (const unsigned char * random_session_key, gboolean client, unsigned char * result)
+{
+	char * magic = client
+		? "session key to client-to-server signing key magic constant"
+		: "session key to server-to-client signing key magic constant";
+
+	int len = strlen(magic) + 1;
+	unsigned char md5_input [16 + len];
+	memcpy(md5_input, random_session_key, 16);
+	memcpy(md5_input + 16, magic, len);
+
+	MD5 (md5_input, len + 16, result);
+}
+
+/*
+Define SEALKEY(NegotiateFlags, RandomSessionKey, Mode) as
+If (NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY flag is set in NegFlg)
+     If ( NTLMSSP_NEGOTIATE_128 is set in NegFlg)
+          Set SealKey to RandomSessionKey
+     ElseIf ( NTLMSSP_NEGOTIATE_56 flag is set in NegFlg)
+         Set SealKey to RandomSessionKey[0..6]
+     Else
+         Set SealKey to RandomSessionKey[0..4]
+     Endif
+
+     If (Mode equals "Client")
+         Set SealKey to MD5(ConcatenationOf(SealKey, "session key to client-to-server sealing key magic constant"))
+     Else
+         Set SealKey to MD5(ConcatenationOf(SealKey, "session key to server-to-client sealing key magic constant"))
+     Endif
+
+ElseIf (NTLMSSP_NEGOTIATE_56 flag is set in NegFlg)
+     Set SealKey to ConcatenationOf(RandomSessionKey[0..6], 0xA0)
+Else
+     Set SealKey to ConcatenationOf(RandomSessionKey[0..4], 0xE5, 0x38, 0xB0)
+Endif
+EndDefine
+*/
+/* out 16 bytes or 8 bytes depending if Ext.Sess.Sec is negotiated */
+static void
+SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean client, unsigned char * result)
+{
+	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY))
+	{
+		char * magic = client
+			? "session key to client-to-server sealing key magic constant"
+			: "session key to server-to-client sealing key magic constant";
+
+		int len = strlen(magic) + 1;
+		unsigned char md5_input [16 + len];
+		int key_len;
+
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_128)) {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 128-bit key (Extended session security)\n");
+			key_len = 16;
+		} else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key (Extended session security)\n");
+			key_len = 7;
+		} else {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 40-bit key (Extended session security)\n");
+			key_len = 5;
+		}
+
+		memcpy(md5_input, random_session_key, key_len);
+		memcpy(md5_input + key_len, magic, len);
+
+		MD5 (md5_input, key_len + len, result);
+	}
+	else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_LM_KEY)) /* http://davenport.sourceforge.net/ntlm.html#ntlm1KeyWeakening */
+	{
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key\n");
+			memcpy(result, random_session_key, 7);
+			result[7] = 0xA0;
+		} else {
+			purple_debug_info("sipe", "NTLM SEALKEY(): 40-bit key\n");
+			memcpy(result, random_session_key, 5);
+			result[5] = 0xE5;
+			result[6] = 0x38;
+			result[7] = 0xB0;
+		}
+	}
+	else
+	{
+		purple_debug_info("sipe", "NTLM SEALKEY(): 128-bit key\n");
+		memcpy(result, random_session_key, 16);
+	}
+}
+
+/*
+= for Extended Session Security =
+Version  (4 bytes): A 32-bit unsigned integer that contains the signature version. This field MUST be 0x00000001.
+Checksum (8 bytes): An 8-byte array that contains the checksum for the message.
+SeqNum   (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence number for this application message.
+
+= if Extended Session Security is NOT negotiated =
+Version   (4 bytes): A 32-bit unsigned integer that contains the signature version. This field MUST be 0x00000001.
+RandomPad (4 bytes): A 4-byte array that contains the random pad for the message.
+Checksum  (4 bytes):  A 4-byte array that contains the checksum for the message.
+SeqNum    (4 bytes): A 32-bit unsigned integer that contains the NTLM sequence number for this application message.
+---
+0x00000001, RC4K(RandomPad), RC4K(CRC32(Message)), RC4K(0x00000000) XOR (application supplied SeqNum)		-- RC4(X) xor X xor Y = RC4(Y)
+
+Version(4), Checksum(8),  SeqNum(4)			-- for ext.sess.sec.
+Version(4), RandomPad(4), Checksum(4), SeqNum(4)
+*/
+/** MAC(Handle, SigningKey, SeqNum, Message) */
+static gchar *
+MAC (guint32 flags,
+     const char *buf,
+     int buf_len,
+     unsigned char *sign_key,
+     unsigned long sign_key_len,
+     unsigned char *seal_key,
+     unsigned long seal_key_len,
+     guint32 random_pad,
+     guint32 sequence)
+{
+	guchar result [16];
+	gint32 *res_ptr;
+	gchar signature [33];
+	int i, j;
+
+	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
+		/*
+		Define MAC(Handle, SigningKey, SeqNum, Message) as
+		     Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
+		     Set NTLMSSP_MESSAGE_SIGNATURE.Checksum to
+			 HMAC_MD5(SigningKey, ConcatenationOf(SeqNum, Message))[0..7]
+		     Set NTLMSSP_MESSAGE_SIGNATURE.SeqNum to SeqNum
+		     Set SeqNum to SeqNum + 1
+		EndDefine
+		*/
+		/* If a key exchange key is negotiated
+		   Define MAC(Handle, SigningKey, SeqNum, Message) as
+			Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
+			Set NTLMSSP_MESSAGE_SIGNATURE.Checksum to RC4(Handle,
+				HMAC_MD5(SigningKey, ConcatenationOf(SeqNum, Message))[0..7])
+			Set NTLMSSP_MESSAGE_SIGNATURE.SeqNum to SeqNum
+			Set SeqNum to SeqNum + 1
+		   EndDefine
+		*/
+
+		unsigned char seal_key_ [16];
+		guchar hmac[16];
+		guchar tmp[4 + buf_len];
+
+		/* SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
+		   RC4Init(Handle, SealingKey')
+		 */
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_DATAGRAM)) {
+			unsigned char tmp2 [16+4];
+
+			memcpy(tmp2, seal_key, seal_key_len);
+			*((guint32 *)(tmp2+16)) = GINT32_TO_LE(sequence);
+			MD5 (tmp2, 16+4, seal_key_);
+		} else {
+			memcpy(seal_key_, seal_key, seal_key_len);
+		}
+
+		purple_debug_info("sipe", "NTLM MAC(): Extented Session Security\n");
+
+		res_ptr = (gint32 *)result;
+		res_ptr[0] = GINT32_TO_LE(1); // 4 bytes
+		res_ptr[3] = GINT32_TO_LE(sequence);
+
+		res_ptr = (gint32 *)tmp;
+		res_ptr[0] = GINT32_TO_LE(sequence);
+		memcpy(tmp+4, buf, buf_len);
+
+		HMAC_MD5(sign_key, sign_key_len, tmp, 4 + buf_len, hmac);
+
+		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
+			purple_debug_info("sipe", "NTLM MAC(): Key Exchange\n");
+			RC4K(seal_key_, seal_key_len, hmac, 8, result+4);
+		} else {
+			purple_debug_info("sipe", "NTLM MAC(): *NO* Key Exchange\n");
+			memcpy(result+4, hmac, 8);
+		}
+	} else {
+		/* The content of the first 4 bytes is irrelevant */
+		gint32 plaintext [] = {
+			GINT32_TO_LE(0),
+			GINT32_TO_LE(CRC32(buf, strlen(buf))),
+			GINT32_TO_LE(sequence)
+		}; // 4, 4, 4 bytes
+
+		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
+
+		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, result+4);
+		//RC4K(seal_key, 8, (const guchar *)plaintext, 12, result+4);
+
+		res_ptr = (gint32 *)result;
+		// Highest four bytes are the Version
+		res_ptr[0] = GINT32_TO_LE(0x00000001); // 4 bytes
+
+		// Replace the first four bytes of the ciphertext with the random_pad
+		res_ptr[1] = GINT32_TO_LE(random_pad); // 4 bytes
+	}
+
+	for (i = 0, j = 0; i < 16; i++, j+=2) {
+		g_sprintf(&signature[j], "%02X", result[i]);
+	}
+
+	return g_strdup(signature);
+}
+
+/* End Core NTLM Methods */
+
+/**
+  * @param server_challenge	must be g_free()'d after use if requested
+  * @param target_info		must be g_free()'d after use if requested
+  */
+static void
+purple_ntlm_parse_challenge(SipSecBuffer in_buff,
+			    gboolean is_connection_based,
+			    guint32 *flags,
+			    guchar **server_challenge, /* 8 bytes */
+			    guint64 *time_val,
+			    guchar **target_info,
+			    int *target_info_len)
+{
+	guint32 our_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
+	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
+	guint32 host_flags = GUINT32_FROM_LE(cmsg->flags);
+
+	/* server challenge (nonce) */
+	if (server_challenge) {
+		*server_challenge = (guchar *)g_new0(gchar, 8);
+		memcpy(*server_challenge, cmsg->nonce, 8);
+	}
+
+	/* flags */
+	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", host_flags, (host_flags & our_flags) == our_flags);
+	if (flags) {
+		*flags = host_flags;
+	}
+
+	/* target_info */
+	if (cmsg->target_info.len && cmsg->target_info.offset) {
+		const gchar *target_info_content = (((gchar *)cmsg) + GUINT32_FROM_LE(cmsg->target_info.offset));
+		struct av_pair *av = (struct av_pair*)target_info_content;
+
+		while (GUINT16_FROM_LE(av->av_id) != MsvAvEOL) {
+			gchar *av_value = ((gchar *)av) + 4;
+
+			switch (GUINT16_FROM_LE(av->av_id)) {
+				case MsvAvTimestamp:
+					if (time_val) {
+						/* This is not int64 aligned on sparc */
+						guint64 tmp;
+						memcpy((gchar *)&tmp, av_value, sizeof(tmp));
+						*time_val = GUINT64_FROM_LE(tmp);
+					}
+					break;
+			}
+			av = (struct av_pair*)(((guint8*)av) + 4 + GUINT16_FROM_LE(av->av_len));
+		}
+
+		if (target_info_len) {
+			*target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
+		}
+		if (target_info) {
+			*target_info = (guchar *)g_new0(gchar, GUINT16_FROM_LE(cmsg->target_info.len));
+			memcpy(*target_info, target_info_content, GUINT16_FROM_LE(cmsg->target_info.len));
+		}
+	}
 }
 
 static void
@@ -1236,11 +1220,25 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	out_buff->length = msglen;
 }
 
-/***********************************************
- *
- * End of merged code from original sip-ntlm.c
- *
- ***********************************************/
+static gchar *
+purple_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
+{
+	return MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100);
+}
+
+static gboolean
+purple_ntlm_verify_signature (char * a, char * b)
+{
+	/*
+	 * Make sure the last 24 bytes match
+	 *  8 bytes random pad
+	 * 16 bytes signature
+	 */
+	return g_ascii_strncasecmp(a + 8, b + 8, 24) == 0;
+}
+
+
+/* Describe NTLM messages functions */
 
 #define APPEND_NEG_FLAG(str, flags, flag, desc)	\
 	if ((flags & flag) == flag) g_string_append_printf(str, "\t%s\n", desc);
