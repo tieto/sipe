@@ -35,7 +35,7 @@
  *  - internal int16, int32, int64 should contain proper values.
  *     For example: 01 00 00 00 LE should be translated to (int32)1
  *  - When reading/writing from/to NTLM message appropriate conversion should
- *    be taken to properly present integer values. glib's "Byte Order Macros" 
+ *    be taken to properly present integer values. glib's "Byte Order Macros"
  *    should be used for that, for example GINT32_FROM_LE
  */
 
@@ -131,6 +131,12 @@
 #define MsvAvTargetName		9
 /** @since Windows 7 */
 #define MsvChannelBindings	10
+
+/* time_t <-> (guint64) time_val conversion */
+#define TIME_VAL_FACTOR 10000000
+#define TIME_VAL_OFFSET 116444736000000000LL
+#define TIME_T_TO_VAL(time_t)   (((guint64)(time_t)) * TIME_VAL_FACTOR + TIME_VAL_OFFSET)
+#define TIME_VAL_TO_T(time_val) ((time_t)((GUINT64_FROM_LE((time_val)) - TIME_VAL_OFFSET) / TIME_VAL_FACTOR))
 
 /***********************************************
  *
@@ -719,7 +725,10 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 			switch (GUINT16_FROM_LE(av->av_id)) {
 				case MsvAvTimestamp:
 					if (time_val) {
-						*time_val = GUINT64_FROM_LE(*((guint64*)av_value));
+						/* This is not int64 aligned on sparc */
+						guint64 tmp;
+						memcpy((gchar *)&tmp, av_value, sizeof(tmp));
+						*time_val = GUINT64_FROM_LE(tmp);
 					}
 					break;
 			}
@@ -922,7 +931,7 @@ compute_response(const guint32 neg_flags,
 		 const unsigned char *response_key_lm,
 		 const guint8 *server_challenge,
 		 const guint8 *client_challenge,
-		 const guint64 time,
+		 const guint64 time_val,
 		 const guint8 *target_info,
 		 int target_info_len,
 		 unsigned char *lm_challenge_response,
@@ -966,7 +975,7 @@ EndDefine
 		temp[0] = 1;
 		temp[1] = 1;
 		Z(temp+2, 6);
-		*((guint64 *)(temp+8)) = time;
+		*((guint64 *)(temp+8)) = GUINT64_TO_LE(time_val); /* should be int64 aligned: OK for sparc */
 		memcpy(temp+16, client_challenge, 8);
 		Z(temp+24, 4);
 		memcpy(temp+28, target_info, target_info_len);
@@ -1098,7 +1107,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 			 response_key_lm,
 			 server_challenge,
 			 client_challenge,
-			 time_val ? time_val : (((guint64)time(NULL)) * 10000000 + 116444736000000000LL),
+			 time_val ? time_val : TIME_T_TO_VAL(time(NULL)),
 			 target_info,
 			 target_info_len,
 			 lm_challenge_response,	/* out */
@@ -1281,11 +1290,6 @@ sip_sec_ntlm_negotiate_flags_describe(guint32 flags)
 	return g_string_free(str, FALSE);
 }
 
-#define AV_DESC(av, av_value, av_len, av_name) \
-	gchar *tmp = unicode_strconvcopy_back(av_value, GUINT16_FROM_LE(av_len)); \
-	g_string_append_printf(str, "\t%s: %s\n", av_name, tmp);	\
-	g_free(tmp);
-
 static gchar *
 sip_sec_ntlm_describe_version(struct version *ver) {
 	GString* str = g_string_new(NULL);
@@ -1363,36 +1367,55 @@ sip_sec_ntlm_negotiate_message_describe(struct negotiate_message *cmsg)
 static void
 describe_av_pairs(GString* str, const struct av_pair *av)
 {
-	while (GUINT16_FROM_LE(av->av_id) != MsvAvEOL) {
-		gchar *av_value = ((gchar *)av) + 4;
-		SipSecBuffer buff;
+	guint16 av_id = GUINT16_FROM_LE(av->av_id);
 
-		switch (GUINT16_FROM_LE(av->av_id)) {
+	while (av_id != MsvAvEOL) {
+		gchar *av_value = ((gchar *)av) + 4;
+
+#define AV_DESC(av_name) \
+	{ \
+		gchar *tmp = unicode_strconvcopy_back(av_value, GUINT16_FROM_LE(av->av_len)); \
+		g_string_append_printf(str, "\t%s: %s\n", av_name, tmp); \
+		g_free(tmp); \
+	}
+
+		switch (av_id) {
 			case MsvAvEOL:
 				g_string_append_printf(str, "\t%s\n", "MsvAvEOL");
 				break;
 			case MsvAvNbComputerName:
-				{ AV_DESC(av, av_value, av->av_len, "MsvAvNbComputerName")  break; }
+				AV_DESC("MsvAvNbComputerName");
+				break;
 			case MsvAvNbDomainName:
-				{ AV_DESC(av, av_value, av->av_len, "MsvAvNbDomainName")  break; }
+				AV_DESC("MsvAvNbDomainName");
+				break;
 			case MsvAvDnsComputerName:
-				{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsComputerName")  break; }
+				AV_DESC("MsvAvDnsComputerName");
+				break;
 			case MsvAvDnsDomainName:
-				{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsDomainName")  break; }
+				AV_DESC("MsvAvDnsDomainName");
+				break;
 			case MsvAvDnsTreeName:
-				{ AV_DESC(av, av_value, av->av_len, "MsvAvDnsTreeName")  break; }
+				AV_DESC("MsvAvDnsTreeName");
+				break;
 			case MsvAvFlags:
 				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(*((guint32*)av_value)));
 				break;
 			case MsvAvTimestamp:
 				{
+					SipSecBuffer buff;
 					char *tmp;
-					guint64 time64 = GUINT64_FROM_LE(*((guint64*)av_value));
-					time_t time_val = (time_t)((time64 - 116444736000000000LL)/10000000);
+					guint64 time_val;
+					time_t time_t_val;
+
+					/* This is not int64 aligned on sparc */
+					memcpy((gchar *)&time_val, av_value, sizeof(time_val));
+					time_t_val = TIME_VAL_TO_T(time_val);
+
 					buff.length = 8;
 					buff.value = av_value;
 					g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
-							       asctime(gmtime(&time_val)));
+							       asctime(gmtime(&time_t_val)));
 					g_free(tmp);
 					break;
 				}
@@ -1400,13 +1423,15 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 				g_string_append_printf(str, "\t%s\n", "MsAvRestrictions");
 				break;
 			case MsvAvTargetName:
-				{ AV_DESC(av, av_value, av->av_len, "MsvAvTargetName")  break; }
+				AV_DESC("MsvAvTargetName");
+				break;
 			case MsvChannelBindings:
 				g_string_append_printf(str, "\t%s\n", "MsvChannelBindings");
 				break;
 		}
 
-		av = (struct av_pair*)(((guint8*)av) + 4 + GUINT16_FROM_LE(av->av_len));
+		av = (struct av_pair *)(((guint8 *)av) + 4 + GUINT16_FROM_LE(av->av_len));
+		av_id = GUINT16_FROM_LE(av->av_id);
 	}
 }
 
@@ -1472,10 +1497,14 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			const gchar *temp = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
 			const int response_version = *((guchar*)temp);
 			const int hi_response_version = *((guchar*)(temp+1));
-			const guint64 time_val = GUINT64_FROM_LE(*((guint64*)(temp + 8)));
-			const time_t time_t_val = (time_t)((time_val - 116444736000000000LL)/10000000);
+			guint64 time_val;
+			time_t time_t_val;
 			const gchar *client_challenge = temp + 16;
 			const struct av_pair *av = (struct av_pair*)(temp + 28);
+
+			/* This is not int64 aligned on sparc */
+			memcpy((gchar *)&time_val, temp+8, sizeof(time_val));
+			time_t_val = TIME_VAL_TO_T(time_val);
 
 			g_string_append_printf(str, "\t%s: %d\n", "response_version", response_version);
 			g_string_append_printf(str, "\t%s: %d\n", "hi_response_version", hi_response_version);
