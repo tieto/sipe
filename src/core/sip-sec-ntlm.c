@@ -446,12 +446,11 @@ EndDefine
 static void
 NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
 {
-	int len = 2 * strlen(password); // utf16 should not be more
-	unsigned char *unicode_password = g_new0(unsigned char, len);
+	int len_u = 2 * strlen(password); // utf16 should not be more
+	unsigned char unicode_password[len_u];
 
-	len = unicode_strconvcopy((gchar *) unicode_password, password, len);
-	MD4 (unicode_password, len, result);
-	g_free(unicode_password);
+	len_u = unicode_strconvcopy((gchar *)unicode_password, password, len_u);
+	MD4 (unicode_password, len_u, result);
 }
 
 /*
@@ -854,7 +853,7 @@ MAC (guint32 flags,
 			unsigned char tmp2 [16+4];
 
 			memcpy(tmp2, seal_key, seal_key_len);
-			*((guint32 *)(tmp2+16)) = sequence;
+			*((guint32 *)(tmp2+16)) = GINT32_TO_LE(sequence);
 			MD5 (tmp2, 16+4, seal_key_);
 		} else {
 			memcpy(seal_key_, seal_key, seal_key_len);
@@ -863,11 +862,11 @@ MAC (guint32 flags,
 		purple_debug_info("sipe", "NTLM MAC(): Extented Session Security\n");
 
 		res_ptr = (gint32 *)result;
-		res_ptr[0] = 0x00000001; // 4 bytes
-		res_ptr[3] = sequence;
+		res_ptr[0] = GINT32_TO_LE(1); // 4 bytes
+		res_ptr[3] = GINT32_TO_LE(sequence);
 
 		res_ptr = (gint32 *)tmp;
-		res_ptr[0] = sequence;
+		res_ptr[0] = GINT32_TO_LE(sequence);
 		memcpy(tmp+4, buf, buf_len);
 
 		HMAC_MD5(sign_key, sign_key_len, tmp, 4 + buf_len, hmac);
@@ -875,7 +874,6 @@ MAC (guint32 flags,
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
 			purple_debug_info("sipe", "NTLM MAC(): Key Exchange\n");
 			RC4K(seal_key_, seal_key_len, hmac, 8, result+4);
-			//RC4K(sign_key, sign_key_len, hmac, 8, result+4);
 		} else {
 			purple_debug_info("sipe", "NTLM MAC(): *NO* Key Exchange\n");
 			memcpy(result+4, hmac, 8);
