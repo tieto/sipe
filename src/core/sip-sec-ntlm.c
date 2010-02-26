@@ -1380,9 +1380,6 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 	}
 
 		switch (av_id) {
-			case MsvAvEOL:
-				g_string_append_printf(str, "\t%s\n", "MsvAvEOL");
-				break;
 			case MsvAvNbComputerName:
 				AV_DESC("MsvAvNbComputerName");
 				break;
