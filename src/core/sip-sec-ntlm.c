@@ -54,10 +54,6 @@
 #ifdef __sun__
 #include <sys/sockio.h>
 #endif
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <net/if.h>
 #else /* _WIN32 */
 #include "libc_interface.h"
 #ifdef _DLL
