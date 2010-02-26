@@ -1497,14 +1497,10 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			const gchar *temp = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
 			const int response_version = *((guchar*)temp);
 			const int hi_response_version = *((guchar*)(temp+1));
-			guint64 time_val;
-			time_t time_t_val;
+			const guint64 time_val = *((guint64*)(temp + 8)); /* should be int64 aligned: OK for sparc */
+			const time_t time_t_val = TIME_VAL_TO_T(time_val);
 			const gchar *client_challenge = temp + 16;
 			const struct av_pair *av = (struct av_pair*)(temp + 28);
-
-			/* This is not int64 aligned on sparc */
-			memcpy((gchar *)&time_val, temp+8, sizeof(time_val));
-			time_t_val = TIME_VAL_TO_T(time_val);
 
 			g_string_append_printf(str, "\t%s: %d\n", "response_version", response_version);
 			g_string_append_printf(str, "\t%s: %d\n", "hi_response_version", hi_response_version);
