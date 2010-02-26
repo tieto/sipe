@@ -40,7 +40,8 @@
 #include <netinet/in.h>
 #endif
 
-#define SIPE_FT_KEY_LENGTH 24
+#define SIPE_FT_KEY_LENGTH          24
+#define SIPE_FT_CHUNK_HEADER_LENGTH  3
 
 /*
  * DO NOT CHANGE THE FOLLOWING CONSTANTS!!!
@@ -282,14 +283,23 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 	sipe_file_transfer *ft = xfer->data;
 
 	if (ft->bytes_remaining_chunk == 0) {
-		guchar chunk_buf[3];
+		guchar hdr_buf[SIPE_FT_CHUNK_HEADER_LENGTH];
 
-		if (!read_fully(xfer,chunk_buf,3)) {
+		/* read chunk header */
+		if (!read_fully(xfer, hdr_buf, sizeof(hdr_buf))) {
 			raise_ft_strerror(xfer, _("Socket read failed"));
 			return -1;
 		}
 
-		ft->bytes_remaining_chunk = chunk_buf[1] + (chunk_buf[2] << 8);
+		/* chunk header format:
+		 *
+		 *  0:  00   unknown             (always zero?)
+		 *  1:  LL   chunk size in bytes (low byte)
+		 *  2:  HH   chunk size in bytes (high byte)
+		 *
+		 * Convert size from little endian to host order
+		 */
+		ft->bytes_remaining_chunk = hdr_buf[1] + (hdr_buf[2] << 8);
 	}
 
 	bytes_to_read = MIN(purple_xfer_get_bytes_remaining(xfer),
@@ -349,6 +359,8 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 	if (ft->bytes_remaining_chunk == 0) {
 		ssize_t bytes_read;
 		guchar local_buf[16];
+		guchar hdr_buf[SIPE_FT_CHUNK_HEADER_LENGTH];
+
 		memset(local_buf, 0, sizeof local_buf);
 
 		// Check if receiver did not cancel the transfer before it is finished
@@ -380,11 +392,20 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 					      ft->encrypted_outbuf, NULL);
 		purple_cipher_context_append(ft->hmac_context, buffer, size);
 
-		local_buf[0] = 0;
-		local_buf[1] = ft->bytes_remaining_chunk & 0x00FF;
-		local_buf[2] = (ft->bytes_remaining_chunk & 0xFF00) >> 8;
+		/* chunk header format:
+		 *
+		 *  0:  00   unknown             (always zero?)
+		 *  1:  LL   chunk size in bytes (low byte)
+		 *  2:  HH   chunk size in bytes (high byte)
+		 *
+		 * Convert size from host order to little endian
+		 */
+		hdr_buf[0] = 0;
+		hdr_buf[1] = (ft->bytes_remaining_chunk & 0x00FF);
+		hdr_buf[2] = (ft->bytes_remaining_chunk & 0xFF00) >> 8;
 
-		if (write(xfer->fd,local_buf,3) == -1) {
+		/* write chunk header */
+		if (write(xfer->fd, hdr_buf, sizeof(hdr_buf)) == -1) {
 			raise_ft_strerror(xfer, _("Socket write failed"));
 			return -1;
 		}
