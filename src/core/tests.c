@@ -194,10 +194,11 @@ int main()
 	guchar buff [18 + 12];
 	memcpy(buff, text, 18);
 	guchar text_enc [18 + 12];
-	guint32 *ptr = (guint32 *)(buff + 18);
-	ptr[0] = 0; // random pad
-	ptr[1] = crc;
-	ptr[2] = 0; // zero
+	guint32 to_enc [3];
+	to_enc[0] = GUINT32_TO_LE(0); // random pad
+	to_enc[1] = GUINT32_TO_LE(crc);
+	to_enc[2] = GUINT32_TO_LE(0); // zero
+	memcpy(buff+18, (gchar *)to_enc, 12);
 	RC4K (exported_session_key, 16, buff, 18 + 12, text_enc);
 	//The point is to not reinitialize rc4 cypher
 	//                                                   0          crc        0 (zero)
@@ -206,12 +207,13 @@ int main()
 	printf ("\n\nTesting MAC\n");
 	// won't work in the case with sealing because RC4 is re-initialized inside.
 	//gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, (guchar*)exported_session_key,16,  0x00000000,  0);
-	ptr = (guint32 *)(text_enc + 18);	
+	guint32 enc [3];
+	memcpy((gchar *)enc, text_enc+18, 12);	
 	guint32 mac2 [4];
-	mac2 [0] = 1; // version
-	mac2 [1] = ptr [0];
-	mac2 [2] = ptr [1];
-	mac2 [3] = ptr [2] ^ ((guint32)0); // ^ seq
+	mac2 [0] = GUINT32_TO_LE(1); // version
+	mac2 [1] = enc [0];
+	mac2 [2] = enc [1];
+	mac2 [3] = enc [2] ^ (GUINT32_TO_LE(0)); // ^ seq
 	assert_equal("0100000045C844E509DCD1DF2E459D36", (guchar*)mac2, 16, TRUE);
 
 
