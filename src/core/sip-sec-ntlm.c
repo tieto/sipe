@@ -501,14 +501,13 @@ NONCE(unsigned char *buffer, int num)
 	}
 }
 
+#ifdef _SIPE_COMPILING_TESTS
 static void
 Z(unsigned char *buffer, int num)
 {
-	int i;
-	for (i = 0; i < num; i++) {
-		buffer[i] = 0;
-	}
+	memset(buffer, 0, num);
 }
+#endif
 
 #ifdef _SIPE_COMPILING_TESTS
 static void
@@ -630,29 +629,25 @@ EndDefine
 		guint8 tmp [16];
 		guint8 nt_proof_str [16];
 
-		/* temp */
+		/* client_challenge (8) & temp (temp_len) buff */
 		int temp_len = 8+8+8+4+target_info_len+4;
-		guint8 temp [temp_len];
 		guint8 temp2 [8 + temp_len];
-		temp[0] = 1;
-		temp[1] = 1;
-		Z(temp+2, 6);
-		*((guint64 *)(temp+8)) = GUINT64_TO_LE(time_val); /* should be int64 aligned: OK for sparc */
-		memcpy(temp+16, client_challenge, 8);
-		Z(temp+24, 4);
-		memcpy(temp+28, target_info, target_info_len);
-		Z(temp+28+target_info_len, 4);
+		memset(temp2, 0, 8 + temp_len); /* init to 0 */
+		temp2[8+0] = 1;
+		temp2[8+1] = 1;
+		*((guint64 *)(temp2+8+8)) = GUINT64_TO_LE(time_val); /* should be int64 aligned: OK for sparc */
+		memcpy(temp2+8+16, client_challenge, 8);
+		memcpy(temp2+8+28, target_info, target_info_len);
 
 		/* NTProofStr */
 		//Set NTProofStr to HMAC_MD5(ResponseKeyNT, ConcatenationOf(CHALLENGE_MESSAGE.ServerChallenge,temp))
 		memcpy(temp2, server_challenge, 8);
-		memcpy(temp2+8, temp, temp_len);
 		HMAC_MD5(response_key_nt, 16, temp2, 8+temp_len, nt_proof_str);
 
 		/* NtChallengeResponse */
 		//Set NtChallengeResponse to ConcatenationOf(NTProofStr, temp)
 		memcpy(nt_challenge_response, nt_proof_str, 16);
-		memcpy(nt_challenge_response+16, temp, temp_len);
+		memcpy(nt_challenge_response+16, temp2+8, temp_len);
 
 		/* SessionBaseKey */
 		//SessionBaseKey to HMAC_MD5(ResponseKeyNT, NTProofStr)
