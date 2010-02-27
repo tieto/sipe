@@ -393,12 +393,15 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			}
 
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
+			//, version=3
+			//, crand="1d7d4ecf", cnum="1", response="4321ABCDEF"   -- for version 4	
 			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"", auth_protocol, opaque, auth->realm, auth->target, gssapi_data);
 			g_free(opaque);
 			g_free(gssapi_data);
 			return ret;
 		}
 
+		//, version=3
 		return g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"", auth_protocol, auth->realm, auth->target);
 
 	} else { /* Digest */
