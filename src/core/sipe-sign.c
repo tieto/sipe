@@ -137,7 +137,8 @@ sipmsg_breakdown_free(struct sipmsg_breakdown * msg)
 }
 
 gchar *
-sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd)
+sipmsg_breakdown_get_string(int version,
+			    struct sipmsg_breakdown * msgbd)
 {
 	gchar *response_str;
 	gchar *msg;
@@ -147,13 +148,24 @@ sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd)
 	}
 
 	response_str = msgbd->msg->response != 0 ? g_strdup_printf("<%d>", msgbd->msg->response) : empty_string;
-	msg = g_strdup_printf(
-		"<%s><%s><%s><%s><%s><%s><%s><%s><%s><%s><%s>" // 1 - 11
-		"<%s>%s", // 12 - 13
-		msgbd->protocol, msgbd->rand, msgbd->num, msgbd->realm, msgbd->target_name, msgbd->call_id, msgbd->cseq,
-		msgbd->msg->method, msgbd->from_url, msgbd->from_tag, msgbd->to_tag,
-		msgbd->expires ? msgbd->expires : empty_string, response_str
-	);
+	if (version < 3) {
+		msg = g_strdup_printf(
+			"<%s><%s><%s><%s><%s><%s><%s><%s><%s><%s><%s>" // 1 - 11
+			"<%s>%s", // 12 - 13
+			msgbd->protocol, msgbd->rand, msgbd->num, msgbd->realm, msgbd->target_name, msgbd->call_id, msgbd->cseq,
+			msgbd->msg->method, msgbd->from_url, msgbd->from_tag, msgbd->to_tag,
+			msgbd->expires ? msgbd->expires : empty_string, response_str
+		);
+	} else {
+		msg = g_strdup_printf(
+			"<%s><%s><%s><%s><%s><%s><%s><%s><%s><%s><%s><%s><%s><%s>" // 1 - 14
+			"<%s>%s", // 15 - 16
+			msgbd->protocol, msgbd->rand, msgbd->num, msgbd->realm, msgbd->target_name, msgbd->call_id, msgbd->cseq,
+			msgbd->msg->method, msgbd->from_url, msgbd->from_tag, msgbd->to_url, msgbd->to_tag,
+			msgbd->p_assertet_identity_sip_uri, msgbd->p_assertet_identity_tel_uri,
+			msgbd->expires ? msgbd->expires : empty_string, response_str
+		);
+	}
 
 	if (response_str != empty_string) {
 		g_free(response_str);
