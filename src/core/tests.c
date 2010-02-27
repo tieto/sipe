@@ -185,7 +185,7 @@ int main()
 	assert_equal("518822B1B3F350C8958682ECBB3E3CB7", encrypted_random_session_key, 16, TRUE);
 
 	printf ("\n\nTesting CRC32\n");
-	gint32 crc = CRC32((char*)text, 18);
+	guint32 crc = CRC32((char*)text, 18);
 	assert_equal("7D84AA93", (guchar *)&crc, 4, TRUE);
 
 	printf ("\n\nTesting Encryption\n");

@@ -36,7 +36,7 @@
  *     For example: 01 00 00 00 LE should be translated to (int32)1
  *  - When reading/writing from/to NTLM message appropriate conversion should
  *    be taken to properly present integer values. glib's "Byte Order Macros"
- *    should be used for that, for example GINT32_FROM_LE
+ *    should be used for that, for example GUINT32_FROM_LE
  *  - All calculations should be made in dedicated local variables (system-endian),
  *    not in NTLM (LE) structures.
  */
@@ -864,7 +864,7 @@ MAC (guint32 flags,
      guint32 sequence)
 {
 	guchar result [16];
-	gint32 *res_ptr;
+	guint32 *res_ptr;
 	gchar signature [33];
 	int i, j;
 
@@ -899,7 +899,7 @@ MAC (guint32 flags,
 			unsigned char tmp2 [16+4];
 
 			memcpy(tmp2, seal_key, seal_key_len);
-			*((guint32 *)(tmp2+16)) = GINT32_TO_LE(sequence);
+			*((guint32 *)(tmp2+16)) = GUINT32_TO_LE(sequence);
 			MD5 (tmp2, 16+4, seal_key_);
 		} else {
 			memcpy(seal_key_, seal_key, seal_key_len);
@@ -907,12 +907,12 @@ MAC (guint32 flags,
 
 		purple_debug_info("sipe", "NTLM MAC(): Extented Session Security\n");
 
-		res_ptr = (gint32 *)result;
-		res_ptr[0] = GINT32_TO_LE(1); // 4 bytes
-		res_ptr[3] = GINT32_TO_LE(sequence);
+		res_ptr = (guint32 *)result;
+		res_ptr[0] = GUINT32_TO_LE(1); // 4 bytes
+		res_ptr[3] = GUINT32_TO_LE(sequence);
 
-		res_ptr = (gint32 *)tmp;
-		res_ptr[0] = GINT32_TO_LE(sequence);
+		res_ptr = (guint32 *)tmp;
+		res_ptr[0] = GUINT32_TO_LE(sequence);
 		memcpy(tmp+4, buf, buf_len);
 
 		HMAC_MD5(sign_key, sign_key_len, tmp, 4 + buf_len, hmac);
@@ -926,10 +926,10 @@ MAC (guint32 flags,
 		}
 	} else {
 		/* The content of the first 4 bytes is irrelevant */
-		gint32 plaintext [] = {
-			GINT32_TO_LE(0),
-			GINT32_TO_LE(CRC32(buf, strlen(buf))),
-			GINT32_TO_LE(sequence)
+		guint32 plaintext [] = {
+			GUINT32_TO_LE(0),
+			GUINT32_TO_LE(CRC32(buf, strlen(buf))),
+			GUINT32_TO_LE(sequence)
 		}; // 4, 4, 4 bytes
 
 		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
@@ -937,12 +937,12 @@ MAC (guint32 flags,
 		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, result+4);
 		//RC4K(seal_key, 8, (const guchar *)plaintext, 12, result+4);
 
-		res_ptr = (gint32 *)result;
+		res_ptr = (guint32 *)result;
 		// Highest four bytes are the Version
-		res_ptr[0] = GINT32_TO_LE(0x00000001); // 4 bytes
+		res_ptr[0] = GUINT32_TO_LE(0x00000001); // 4 bytes
 
 		// Replace the first four bytes of the ciphertext with the random_pad
-		res_ptr[1] = GINT32_TO_LE(random_pad); // 4 bytes
+		res_ptr[1] = GUINT32_TO_LE(random_pad); // 4 bytes
 	}
 
 	for (i = 0, j = 0; i < 16; i++, j+=2) {
