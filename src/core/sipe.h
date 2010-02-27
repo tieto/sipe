@@ -115,6 +115,7 @@ struct sip_auth {
 	gchar *opaque;
 	gchar *realm;
 	gchar *target;
+	int version;
 	int nc;
 	int retries;
 	int ntlm_num;

@@ -500,10 +500,12 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 				auth->opaque = NULL;
 				auth->nc = 1;
 			}
-
 		} else if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
 			g_free(auth->target);
 			auth->target = tmp;
+		} else if ((tmp = parse_attribute("version=", parts[i]))) {
+			auth->version = atoi(tmp);
+			g_free(tmp);
 		}
 	}
 	g_strfreev(parts);
