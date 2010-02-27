@@ -1089,7 +1089,7 @@ GSList * sipe_ft_parse_msg_body(const gchar *body)
 {
 	GSList *list = NULL;
 	gchar **lines = g_strsplit(body, "\r\n", 0);
-	if (sipe_utils_parse_lines(&list, lines) == FALSE) {
+	if (sipe_utils_parse_lines(&list, lines, ":") == FALSE) {
 		sipe_utils_nameval_free(list);
 		list = NULL;
 	}

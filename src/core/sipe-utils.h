@@ -310,15 +310,16 @@ buff_to_hex_str(const guint8 *buff, const size_t buff_len);
 /**
  * Creates name-value pairs from given lines and appends them to @c list
  *
- * Lines must be in format 'name: value'
+ * Lines must be in format 'name [delimiter] value'
  *
- * @param list  a list of @c sipnameval structures
- * @param lines array of strings in format 'name: value'
+ * @param list      a list of @c sipnameval structures
+ * @param lines     array of strings in format 'name: value'
+ * @param delimiter sequence of characters between name and value
  *
  * @return @c FALSE if any of @c lines has incorrect format, @c TRUE otherwise
  */
 gboolean
-sipe_utils_parse_lines(GSList **list, gchar **lines);
+sipe_utils_parse_lines(GSList **list, gchar **lines, gchar *delimiter);
 
 /**
  * Adds a name-value pair to @c list

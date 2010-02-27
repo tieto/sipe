@@ -76,7 +76,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		msg->response = 0;
 	}
 	g_strfreev(parts);
-	if (sipe_utils_parse_lines(&msg->headers,lines + 1) == FALSE) {
+	if (sipe_utils_parse_lines(&msg->headers, lines + 1, ":") == FALSE) {
 		g_strfreev(lines);
 		sipmsg_free(msg);
 		return NULL;

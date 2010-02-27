@@ -314,7 +314,7 @@ buff_to_hex_str(const guint8 *buff, const size_t buff_len)
 }
 
 gboolean
-sipe_utils_parse_lines(GSList **list, gchar **lines)
+sipe_utils_parse_lines(GSList **list, gchar **lines, gchar *delimiter)
 {
 	int i;
 	gchar **parts;
@@ -323,7 +323,7 @@ sipe_utils_parse_lines(GSList **list, gchar **lines)
 	gchar *tmp;
 
 	for(i = 0; lines[i] && strlen(lines[i]) > 2; i++) {
-		parts = g_strsplit(lines[i], ":", 2);
+		parts = g_strsplit(lines[i], delimiter, 2);
 		if(!parts[0] || !parts[1]) {
 			g_strfreev(parts);
 			return FALSE;

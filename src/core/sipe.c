@@ -82,6 +82,7 @@
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
+#include "sipe-media.h"
 #include "sipe-sign.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -4618,6 +4619,12 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	/* Invitation to join conference */
 	if (g_str_has_prefix(content_type, "application/ms-conf-invite+xml")) {
 		process_incoming_invite_conf(sip, msg);
+		return;
+	}
+
+	/* Invitation to audio call */
+	if (msg->body && strstr(msg->body, "m=audio")) {
+		sipe_media_incoming_invite(sip->account, msg);
 		return;
 	}
 
