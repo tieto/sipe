@@ -1,6 +1,7 @@
 version 1.9.0 "File transfer & NTLMv2" (2010-02-XX)
+***** Important Security Update *****
 	- Contributed File transfer functionality. File encryption is supported. (Jakub Adam, Tomáš Hrabčík)
-	- NTLMv2 support (pier11)
+	- NTLMv2 and NTLMv2 Session Security support (pier11)
 	- Windows build preparation (pier11)
 	- Big endian fixes (Peter Fales)
 	- Official Debian package files in contrib (Anibal Avelar)
