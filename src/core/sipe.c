@@ -353,6 +353,10 @@ static void connection_free_all(struct sipe_account_data *sip)
 	}
 }
 
+static void
+sipe_make_signature(struct sipe_account_data *sip,
+		    struct sipmsg *msg);
+
 static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg)
 {
 	gchar noncecount[9];
@@ -377,6 +381,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			|| (auth->type == AUTH_TYPE_KERBEROS && auth->nc == 3)) {
 			gchar *gssapi_data;
 			gchar *opaque;
+			gchar *sign_str = NULL;
 
 			gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
 							   &(auth->expires),
@@ -393,19 +398,25 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 				return NULL;
 			}
 
+			if (auth->version > 3) {
+				sipe_make_signature(sip, msg);
+				sign_str = g_strdup_printf(", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
+					msg->rand, msg->num, msg->signature);
+			} else {
+				sign_str = g_strdup("");
+			}
+
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
-			/* version 3 as for version 4 we don't sign the first request yet */
-			version_str = auth->version > 2 ? g_strdup_printf(", version=\"%d\"", 3 /*auth->version*/) : g_strdup("");
-			//, crand="1d7d4ecf", cnum="1", response="4321ABCDEF"   -- for version 4	
-			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s", auth_protocol, opaque, auth->realm, auth->target, gssapi_data, version_str);
+			version_str = auth->version > 2 ? g_strdup_printf(", version=\"%d\"", auth->version) : g_strdup("");
+			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s", auth_protocol, opaque, auth->realm, auth->target, gssapi_data, version_str, sign_str);
 			g_free(opaque);
 			g_free(gssapi_data);
 			g_free(version_str);
+			g_free(sign_str);
 			return ret;
 		}
 
-		/* version 3 as for version 4 we don't sign the first request yet */
-		version_str = auth->version > 2 ? g_strdup_printf(", version=\"%d\"", 3 /*auth->version*/) : g_strdup("");
+		version_str = auth->version > 2 ? g_strdup_printf(", version=\"%d\"", auth->version) : g_strdup("");
 		ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s", auth_protocol, auth->realm, auth->target, version_str);
 		g_free(version_str);
 		return ret;
@@ -771,14 +782,10 @@ static void sendout_sipmsg(struct sipe_account_data *sip, struct sipmsg *msg)
 	g_string_free(outstr, TRUE);
 }
 
-static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data *sip, const gchar *method)
+static void
+sipe_make_signature(struct sipe_account_data *sip,
+		    struct sipmsg *msg)
 {
-	gchar * buf;
-
-	if (sip->registrar.type == AUTH_TYPE_UNSET) {
-		return;
-	}
-
 	if (sip->registrar.gssapi_context) {
 		struct sipmsg_breakdown msgbd;
 		gchar *signature_input_str;
@@ -797,6 +804,17 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		}
 		sipmsg_breakdown_free(&msgbd);
 	}
+}
+
+static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data *sip, const gchar *method)
+{
+	gchar * buf;
+
+	if (sip->registrar.type == AUTH_TYPE_UNSET) {
+		return;
+	}
+
+	sipe_make_signature(sip, msg);
 
 	if (sip->registrar.type && sipe_strequal(method, "REGISTER")) {
 		buf = auth_header(sip, &sip->registrar, msg);
