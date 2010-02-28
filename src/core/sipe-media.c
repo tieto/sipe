@@ -25,41 +25,47 @@
 #include "sipe.h"
 #include "sipe-utils.h"
 
-void sipe_media_incoming_invite(PurpleAccount *account, struct sipmsg *msg)
+struct _sipe_media_session {
+	gchar			*with;
+	GSList			*sdp_attrs;
+	struct sipmsg	*invitation;
+};
+typedef struct _sipe_media_session sipe_media_session;
+
+void
+sipe_media_session_free(sipe_media_session* session)
 {
-	struct sipe_account_data *sip = account->gc->proto_data;
-	PurpleMediaManager *manager = purple_media_manager_get();
-	const gchar *from = sipmsg_find_header(msg,"From");
+	if (session) {
+		g_free(session->with);
+		sipe_utils_nameval_free(session->sdp_attrs);
+		if (session->invitation)
+			sipmsg_free(session->invitation);
+		g_free(session);
+	}
+}
 
-	PurpleMedia *media = purple_media_manager_create_media(manager, sip->account,
-							"fsrtpconference", from, FALSE);
-	PurpleMediaCodec		*codec;
-	PurpleMediaCandidate	*candidate;
+static GList *
+sipe_media_parse_remote_codecs(const sipe_media_session *session)
+{
+	int			i = 0;
+	const gchar	*attr;
+	GList		*codecs	= NULL;
 
-	gchar **lines;
-	GList  *codecs		= NULL;
-	GList  *candidates	= NULL;
-	GSList *sdp_attrs	= NULL;
-	const gchar *attr;
-	gchar *body;
-	int i = 0;
+	while ((attr = sipe_utils_nameval_find_instance(session->sdp_attrs, "a", i++))) {
+		gchar **tokens;
+		int id;
+		int clock_rate;
+		gchar *codec_name;
+		PurpleMediaCodec *codec;
 
-	purple_media_add_stream(media, "sipe-voice", from, PURPLE_MEDIA_AUDIO, FALSE,
-							"nice", 0, NULL);
-
-	lines = g_strsplit(msg->body, "\r\n", 0);
-	sipe_utils_parse_lines(&sdp_attrs, lines, "=");
-	g_strfreev(lines);
-
-	while ((attr = sipe_utils_nameval_find_instance(sdp_attrs, "a", i++))) {
 		if (!g_str_has_prefix(attr, "rtpmap:"))
 			continue;
 
-		gchar **tokens = g_strsplit_set(attr + 7, " /", 3);
+		tokens = g_strsplit_set(attr + 7, " /", 3);
 
-		int id = atoi(tokens[0]);
-		gchar* codec_name = tokens[1];
-		int clock_rate = atoi(tokens[2]);
+		id = atoi(tokens[0]);
+		codec_name = tokens[1];
+		clock_rate = atoi(tokens[2]);
 
 		codec = purple_media_codec_new(id, codec_name, PURPLE_MEDIA_AUDIO, clock_rate);
 		codecs = g_list_append(codecs, codec);
@@ -67,23 +73,24 @@ void sipe_media_incoming_invite(PurpleAccount *account, struct sipmsg *msg)
 		g_strfreev(tokens);
 	}
 
-	if (codecs) {
-		purple_media_set_remote_codecs(media, "sipe-voice", from, codecs);
-		purple_media_set_send_codec(media, "sipe-voice", codecs->data);
+	return codecs;
+}
 
-		for (; codecs; codecs = g_list_delete_link(codecs, codecs))
-			g_object_unref(codecs->data);
-	}
+static GList *
+sipe_media_parse_remote_candidates(const sipe_media_session *session)
+{
+	PurpleMediaCandidate *candidate;
+	GList *candidates = NULL;
 
-	gchar **tokens = g_strsplit(sipe_utils_nameval_find(sdp_attrs, "o"), " ", 5);
+	gchar **tokens = g_strsplit(sipe_utils_nameval_find(session->sdp_attrs, "o"), " ", 5);
 	gchar *ip = g_strdup(tokens[4]);
+	guint port;
+
 	g_strfreev(tokens);
 
-	tokens = g_strsplit(sipe_utils_nameval_find(sdp_attrs, "m"), " ", 3);
-	guint port = atoi(tokens[1]);
+	tokens = g_strsplit(sipe_utils_nameval_find(session->sdp_attrs, "m"), " ", 3);
+	port = atoi(tokens[1]);
 	g_strfreev(tokens);
-
-	sipe_utils_nameval_free(sdp_attrs);
 
 	candidate = purple_media_candidate_new("foundation?",
 									PURPLE_MEDIA_COMPONENT_RTP,
@@ -91,30 +98,112 @@ void sipe_media_incoming_invite(PurpleAccount *account, struct sipmsg *msg)
 									PURPLE_MEDIA_NETWORK_PROTOCOL_UDP, ip, port);
 	candidates = g_list_append(candidates, candidate);
 
-	purple_media_add_remote_candidates(media, "sipe-voice", from, candidates);
+	candidate = purple_media_candidate_new("foundation?",
+									PURPLE_MEDIA_COMPONENT_RTCP,
+									PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
+									PURPLE_MEDIA_NETWORK_PROTOCOL_UDP, ip, port + 1);
+	candidates = g_list_append(candidates, candidate);
 
-	for (; candidates; candidates = g_list_delete_link(candidates, candidates))
-			g_object_unref(candidates->data);
+	return candidates;
+}
 
-	body = g_strdup_printf(
-		"v=0\r\n"
-		"o=- 0 0 IN IP4 %s\r\n"
-		"s=session\r\n"
-		"c=IN IP4 %s\r\n"
-		"b=CT:1000\r\n"
-		"t=0 0\r\n"
-		"m=audio 6804 RTP/AVP 97 111 101\r\n"
-		"k=base64:oPI/otNCy6dGWwyVOIPzcIX2iSij5RISzLhSd1WZxG0\r\n"
-		"a=rtpmap:97 red/8000\r\n"
-		"a=rtpmap:111 SIREN/16000\r\n"
-		"a=fmtp:111 bitrate=16000\r\n"
-		"a=rtpmap:101 telephone-event/8000\r\n"
-		"a=fmtp:101 0-16\r\n"
-		"a=encryption:optional\r\n", "192.168.1.2", "192.168.1.2");
+static void
+sipe_media_stream_info_cb(PurpleMedia *media, PurpleMediaInfoType type,
+							SIPE_UNUSED_PARAMETER gchar *sid, SIPE_UNUSED_PARAMETER gchar *name, SIPE_UNUSED_PARAMETER gboolean local, sipe_media_session *session)
+{
+	PurpleAccount *account = purple_media_get_account(media);
 
-	send_sip_response(account->gc, msg, 200, "OK", body);
+	if (type == PURPLE_MEDIA_INFO_ACCEPT) {
+		GList *codecs = sipe_media_parse_remote_codecs(session);
+		GList *candidates;
+		gchar *body;
 
-	g_free(body);
+		if (codecs) {
+			purple_media_set_remote_codecs(media, "sipe-voice", session->with, codecs);
+
+			// TODO
+			purple_media_set_send_codec(media, "sipe-voice", codecs->data);
+
+			for (; codecs; codecs = g_list_delete_link(codecs, codecs))
+				g_object_unref(codecs->data);
+		}
+
+		candidates = sipe_media_parse_remote_candidates(session);
+		if (candidates) {
+			purple_media_add_remote_candidates(media, "sipe-voice", session->with, candidates);
+
+			for (; candidates; candidates = g_list_delete_link(candidates, candidates))
+				g_object_unref(candidates->data);
+		}
+
+		body = g_strdup_printf(
+			"v=0\r\n"
+			"o=- 0 0 IN IP4 %s\r\n"
+			"s=session\r\n"
+			"c=IN IP4 %s\r\n"
+			"b=CT:1000\r\n"
+			"t=0 0\r\n"
+			"m=audio 6804 RTP/AVP 97 111 101\r\n"
+			"k=base64:oPI/otNCy6dGWwyVOIPzcIX2iSij5RISzLhSd1WZxG0\r\n"
+			"a=rtpmap:97 red/8000\r\n"
+			"a=rtpmap:111 SIREN/16000\r\n"
+			"a=fmtp:111 bitrate=16000\r\n"
+			"a=rtpmap:101 telephone-event/8000\r\n"
+			"a=fmtp:101 0-16\r\n"
+			"a=encryption:optional\r\n",
+			"192.168.1.2", "192.168.1.2");
+
+		send_sip_response(account->gc, session->invitation, 200, "OK", body);
+		sipmsg_free(session->invitation);
+		session->invitation = NULL;
+		g_free(body);
+
+	} else if (type == PURPLE_MEDIA_INFO_REJECT) {
+		send_sip_response(account->gc, session->invitation, 603, "Decline", NULL);
+		sipe_media_session_free(session);
+	}
+}
+
+static GSList *
+sipe_media_parse_sdp_frame(gchar *frame) {
+	gchar	**lines = g_strsplit(frame, "\r\n", 0);
+	GSList	*sdp_attrs = NULL;
+
+	gboolean result = sipe_utils_parse_lines(&sdp_attrs, lines, "=");
+	g_strfreev(lines);
+
+	if (result == FALSE) {
+		sipe_utils_nameval_free(sdp_attrs);
+		return NULL;
+	}
+
+	return sdp_attrs;
+}
+
+void sipe_media_incoming_invite(PurpleAccount *account, struct sipmsg *msg)
+{
+	struct sipe_account_data	*sip = account->gc->proto_data;
+
+	PurpleMediaManager			*manager = purple_media_manager_get();
+	PurpleMedia					*media;
+
+	sipe_media_session			*session;
+
+	session = g_new0(sipe_media_session, 1);
+	session->with = parse_from(sipmsg_find_header(msg,"From"));
+	session->sdp_attrs = sipe_media_parse_sdp_frame(msg->body);
+	session->invitation = msg;
+
+	msg->dont_free = TRUE;
+
+	media = purple_media_manager_create_media(manager, sip->account,
+							"fsrtpconference", session->with, FALSE);
+
+	g_signal_connect(G_OBJECT(media), "stream-info",
+						G_CALLBACK(sipe_media_stream_info_cb), session);
+
+	purple_media_add_stream(media, "sipe-voice", session->with, PURPLE_MEDIA_AUDIO,
+							FALSE, "nice", 0, NULL);
 }
 
 /*
