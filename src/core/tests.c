@@ -123,7 +123,7 @@ int main()
 	assert_equal("9294727A3638BB1C13F48EF8158BFC9D", hmac_md5, 16, TRUE);
 
 
-////// NTLMv1 (without Extended Session Security) ///////	
+////// NTLMv1 (without Extended Session Security) ///////
 	use_ntlm_v2 = FALSE;
 	guint32 flags = 0
 		| NTLMSSP_NEGOTIATE_KEY_EXCH
@@ -137,7 +137,7 @@ int main()
 		| NTLMSSP_NEGOTIATE_SIGN
 		| NTLMSSP_NEGOTIATE_OEM
 		| NTLMSSP_NEGOTIATE_UNICODE;
-		
+
 	printf ("\n\nTesting Negotiation Flags\n");
 	assert_equal("338202E2", (guchar*)(&flags), 4, TRUE);
 
@@ -150,7 +150,7 @@ int main()
 	guchar response_key_nt [16];
 	NTOWFv1 (password, user, domain, response_key_nt);
 	assert_equal("A4F49C406510BDCAB6824EE7C30FD852", response_key_nt, 16, TRUE);
-	
+
 	printf ("\n\nTesting LM Response Generation\n");
 	printf ("Testing NT Response Generation\n");
 	printf ("Testing Session Base Key\n");
@@ -208,7 +208,7 @@ int main()
 	// won't work in the case with sealing because RC4 is re-initialized inside.
 	//gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, (guchar*)exported_session_key,16,  0x00000000,  0);
 	guint32 enc [3];
-	memcpy((gchar *)enc, text_enc+18, 12);	
+	memcpy((gchar *)enc, text_enc+18, 12);
 	guint32 mac2 [4];
 	mac2 [0] = GUINT32_TO_LE(1); // version
 	mac2 [1] = enc [0];
@@ -233,9 +233,9 @@ int main()
 
 	printf ("\n\n(Extended session security) Testing Negotiation Flags\n");
 	assert_equal("33820A82", (guchar*)(&flags), 4, TRUE);
-	
+
 	/* NTOWFv1() is not different from the above test for the same */
-	
+
 	printf ("\n\n(Extended session security) Testing LM Response\n");
 	printf ("(Extended session security) Testing NT Response\n");
 	printf ("(Extended session security) Testing Session Base Key\n");
@@ -250,15 +250,15 @@ int main()
 			 lm_challenge_response,	/* out */
 			 nt_challenge_response,	/* out */
 			 session_base_key);	/* out */
-			 
+
 	assert_equal("AAAAAAAAAAAAAAAA00000000000000000000000000000000", lm_challenge_response, 24, TRUE);
 	assert_equal("7537F803AE367128CA458204BDE7CAF81E97ED2683267232", nt_challenge_response, 24, TRUE);
 	assert_equal("D87262B0CDE4B1CB7499BECCCDF10784", session_base_key, 16, TRUE);
-	
-	printf ("\n\n(Extended session seurity) Testing Key Exchange Key\n");
+
+	printf ("\n\n(Extended session security) Testing Key Exchange Key\n");
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 	assert_equal("EB93429A8BD952F8B89C55B87F475EDC", key_exchange_key, 16, TRUE);
-	
+
 	printf ("\n\n(Extended session security) SIGNKEY\n");
 	guchar client_sign_key [16];
 	SIGNKEY (key_exchange_key, TRUE, client_sign_key);
@@ -369,19 +369,19 @@ Response:
 			 nt_challenge_response_v2,	/* out */
 			 session_base_key);	/* out */
 
-	assert_equal("86C35097AC9CEC102554764A57CCCC19AAAAAAAAAAAAAAAA", lm_challenge_response, 24, TRUE);		 
+	assert_equal("86C35097AC9CEC102554764A57CCCC19AAAAAAAAAAAAAAAA", lm_challenge_response, 24, TRUE);
 	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C", nt_challenge_response_v2, 16, TRUE);
 	/* the ref string is taken from binary dump of AUTHENTICATE_MESSAGE */
 	assert_equal("68CD0AB851E51C96AABC927BEBEF6A1C01010000000000000000000000000000AAAAAAAAAAAAAAAA0000000002000C0044006F006D00610069006E0001000C005300650072007600650072000000000000000000", nt_challenge_response_v2, ntlmssp_nt_resp_len, TRUE);
 	assert_equal("8DE40CCADBC14A82F15CB0AD0DE95CA3", session_base_key, 16, TRUE);
-	
+
 	printf ("\n\nTesting (NTLMv2) Encrypted Session Key\n");
 	// key_exchange_key = session_base_key for NTLMv2
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce, key_exchange_key);
 	//RC4 encryption of the RandomSessionKey with the KeyExchangeKey:
 	RC4K (key_exchange_key, 16, exported_session_key, 16, encrypted_random_session_key);
 	assert_equal("C5DAD2544FC9799094CE1CE90BC9D03E", encrypted_random_session_key, 16, TRUE);
-	
+
 	printf ("\n\nTesting (NTLMv2) SIGNKEY\n");
 	SIGNKEY (exported_session_key, TRUE, client_sign_key);
 	assert_equal("4788DC861B4782F35D43FD98FE1A2D39", client_sign_key, 16, TRUE);
@@ -445,13 +445,13 @@ Response:
 	);
 
 	// Verify parsing of message and signature verification
-	printf ("\n\nTesting MS-SIPE Example Message Parsing, Signing, and Verification\n");
+	printf ("\n\nTesting MS-SIPE Example Message Parsing, Signing, and Verification\n(Authentication Protocol Version 2)\n");
 	char * msg2 = "SIP/2.0 200 OK\r\nms-keep-alive: UAS; tcp=no; hop-hop=yes; end-end=no; timeout=300\r\nAuthentication-Info: NTLM rspauth=\"0100000000000000BF2E52667DDF6DED\", srand=\"0878F41B\", snum=\"1\", opaque=\"4452DFB0\", qop=\"auth\", targetname=\"ocs1.ocs.provo.novell.com\", realm=\"SIP Communications Service\"\r\nFrom: \"Gabriel Burt\"<sip:gabriel@ocs.provo.novell.com>;tag=2947328781;epid=1234567890\r\nTo: <sip:gabriel@ocs.provo.novell.com>;tag=B816D65C2300A32CFA6D371F2AF537FD\r\nCall-ID: 8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx\r\nCSeq: 3 REGISTER\r\nVia: SIP/2.0/TLS 164.99.194.49:10409;branch=z9hG4bKE0E37DBAF252C3255BAD;received=164.99.195.20;ms-received-port=10409;ms-received-cid=1E00\r\nContact: <sip:164.99.195.20:10409;transport=tls;ms-received-cid=1E00>;expires=900\r\nExpires: 900\r\nAllow-Events: vnd-microsoft-provisioning,vnd-microsoft-roaming-contacts,vnd-microsoft-roaming-ACL,presence,presence.wpending,vnd-microsoft-roaming-self,vnd-microsoft-provisioning-v2\r\nSupported: adhoclist\r\nServer: RTC/3.0\r\nSupported: com.microsoft.msrtc.presence\r\nContent-Length: 0\r\n\r\n";
 	struct sipmsg * msg = sipmsg_parse_msg(msg2);
 	struct sipmsg_breakdown msgbd;
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
-	gchar * msg_str = sipmsg_breakdown_get_string(&msgbd);
+	gchar * msg_str = sipmsg_breakdown_get_string(2, &msgbd);
 	gchar * sig = purple_ntlm_sipe_signature_make (NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY, msg_str, 0, exported_session_key2, exported_session_key2);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", (guchar *) sig, 32, FALSE);
