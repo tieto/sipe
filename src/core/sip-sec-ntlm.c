@@ -1117,11 +1117,11 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	/* @since Vista
 	If the CHALLENGE_MESSAGE TargetInfo field (section 2.2.1.2) has an MsvAvTimestamp present,
 	the client SHOULD provide a MIC:
-	If there is an AV_PAIR structure (section 2.2.2.1) with the AvId field set to MsvAvFlags, 
-		then in the Value field, set bit 0x2 to 1.
-		else add an AV_PAIR structure (section 2.2.2.1) and set the AvId field to MsvAvFlags
+	- If there is an AV_PAIR structure (section 2.2.2.1) with the AvId field set to MsvAvFlags, 
+		- then in the Value field, set bit 0x2 to 1.
+		- else add an AV_PAIR structure (section 2.2.2.1) and set the AvId field to MsvAvFlags
 		and the Value field bit 0x2 to 1.
-	Populate the MIC field with the MIC.
+	- Populate the MIC field with the MIC.
 	*/
 	
 	/* Connection-oriented:
@@ -1148,8 +1148,8 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	and if the two MIC values are not equal, then an authentication failure MUST be returned.
 	An AUTHENTICATE_MESSAGE indicates the presence of a MIC field if the TargetInfo field has
 	an AV_PAIR structure whose two fields: 
-		AvId == MsvAvFlags 
-		Value bit 0x2 == 1
+		- AvId == MsvAvFlags 
+		- Value bit 0x2 == 1
 	@supported NT, 2000, XP
 	If NTLM v2 authentication is used and the AUTHENTICATE_MESSAGE.NtChallengeResponse.
 	TimeStamp (section 2.2.2.7) is more than MaxLifetime (section 3.1.1.1) difference from 
