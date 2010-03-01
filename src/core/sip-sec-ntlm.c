@@ -978,13 +978,13 @@ MAC (guint32 flags,
   * @param target_info		must be g_free()'d after use if requested
   */
 static void
-purple_ntlm_parse_challenge(SipSecBuffer in_buff,
-			    gboolean is_connection_based,
-			    guint32 *flags,
-			    guchar **server_challenge, /* 8 bytes */
-			    guint64 *time_val,
-			    guchar **target_info,
-			    int *target_info_len)
+sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
+			     gboolean is_connection_based,
+			     guint32 *flags,
+			     guchar **server_challenge, /* 8 bytes */
+			     guint64 *time_val,
+			     guchar **target_info,
+			     int *target_info_len)
 {
 	guint32 our_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
@@ -1032,21 +1032,21 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 }
 
 static void
-purple_ntlm_gen_authenticate(guchar **client_sign_key,
-			     guchar **server_sign_key,
-			     guchar **client_seal_key,
-			     guchar **server_seal_key,
-			     const gchar *user,
-			     const gchar *password,
-			     const gchar *hostname,
-			     const gchar *domain,
-			     const guint8 *server_challenge, /* nonce */
-			     const guint64 time_val,
-			     const guint8 *target_info,
-			     int target_info_len,
-			     gboolean is_connection_based,
-			     SipSecBuffer *out_buff,
-			     guint32 *flags)
+sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
+			      guchar **server_sign_key,
+			      guchar **client_seal_key,
+			      guchar **server_seal_key,
+			      const gchar *user,
+			      const gchar *password,
+			      const gchar *hostname,
+			      const gchar *domain,
+			      const guint8 *server_challenge, /* nonce */
+			      const guint64 time_val,
+			      const guint8 *target_info,
+			      int target_info_len,
+			      gboolean is_connection_based,
+			      SipSecBuffer *out_buff,
+			      guint32 *flags)
 {
 	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	int ntlmssp_nt_resp_len =
@@ -1246,7 +1246,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
  * Generates Type 1 (Negotiate) message for connection-oriented cases (only)
  */
 static void
-purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
+sip_sec_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 {
 	guint32 offset;
 	guint16 len;
@@ -1279,7 +1279,7 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 }
 
 static gchar *
-purple_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
+sip_sec_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
 {
 	gchar *res = MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100);
 	//purple_debug_info("sipe", "NTLM calculated MAC: %s\n", res);
@@ -1287,7 +1287,7 @@ purple_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_
 }
 
 static gboolean
-purple_ntlm_verify_signature (char * a, char * b)
+sip_sec_ntlm_verify_signature (char * a, char * b)
 {
 	return g_ascii_strncasecmp(a, b, 16*2) == 0;
 }
@@ -1736,7 +1736,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			out_buff->length = 0;
 			out_buff->value = NULL;
 		} else {
-			purple_ntlm_gen_negotiate(out_buff);
+			sip_sec_ntlm_gen_negotiate(out_buff);
 		}
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
@@ -1756,29 +1756,29 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			return SIP_SEC_E_INTERNAL_ERROR;
 		}
 
-		purple_ntlm_parse_challenge(in_buff,
-					    context->is_connection_based,
-					    &flags,
-					    &server_challenge, /* 8 bytes */
-					    &time_val,
-					    &target_info,
-					    &target_info_len);
-
-		purple_ntlm_gen_authenticate(&client_sign_key,
-					     &server_sign_key,
-					     &client_seal_key,
-					     &server_seal_key,
-					     ctx->username,
-					     ctx->password,
-					     (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
-					     ctx->domain,
-					     server_challenge,
-					     time_val,
-					     target_info,
-					     target_info_len,
+		sip_sec_ntlm_parse_challenge(in_buff,
 					     context->is_connection_based,
-					     out_buff,
-					     &flags);
+					     &flags,
+					     &server_challenge, /* 8 bytes */
+					     &time_val,
+					     &target_info,
+					     &target_info_len);
+
+		sip_sec_ntlm_gen_authenticate(&client_sign_key,
+					      &server_sign_key,
+					      &client_seal_key,
+					      &server_seal_key,
+					      ctx->username,
+					      ctx->password,
+					      (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
+					      ctx->domain,
+					      server_challenge,
+					      time_val,
+					      target_info,
+					      target_info_len,
+					      context->is_connection_based,
+					      out_buff,
+					      &flags);
 		g_free(server_challenge);
 		g_free(target_info);
 		g_free(tmp);
@@ -1810,7 +1810,7 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 			SipSecBuffer *signature)
 {
 	/* FIXME? We always use a random_pad of 0 */
-	gchar *signature_hex = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
+	gchar *signature_hex = sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								message,
 								0,
 							        ((context_ntlm) context)->client_sign_key,
@@ -1833,14 +1833,14 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 {
 	guint32 random_pad = GUINT32_FROM_LE(((guint32 *) signature.value)[1]);
 	char *signature_hex = bytes_to_hex_str(&signature);
-	gchar *signature_calc = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
-								message,
-								random_pad,
-								((context_ntlm) context)->server_sign_key,
-								((context_ntlm) context)->server_seal_key);
+	gchar *signature_calc = sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
+								 message,
+								 random_pad,
+								 ((context_ntlm) context)->server_sign_key,
+								 ((context_ntlm) context)->server_seal_key);
 	sip_uint32 res;
 
-	if (purple_ntlm_verify_signature(signature_calc, signature_hex)) {
+	if (sip_sec_ntlm_verify_signature(signature_calc, signature_hex)) {
 		res = SIP_SEC_E_OK;
 	} else {
 		res = SIP_SEC_E_INTERNAL_ERROR;
