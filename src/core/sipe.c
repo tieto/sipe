@@ -371,7 +371,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 	if (auth->type == AUTH_TYPE_NTLM || auth->type == AUTH_TYPE_KERBEROS) { /* NTLM or Kerberos */
 		gchar *auth_protocol = (auth->type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
 		gchar *version_str;
-		
+
 		// If we have a signature for the message, include that
 		if (msg->signature) {
 			return g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth_protocol, auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
@@ -5162,10 +5162,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		struct sip_dialog *dialog = sipe_dialog_find(session, from);
 		if (dialog) {
 			purple_debug_info("sipe", "process_incoming_invite, session already has dialog!\n");
-			purple_debug_info("sipe", "process_incoming_invite, remove all routes for the dialog\n");
-			sipe_dialog_remove_all_routes(dialog);
-			purple_debug_info("sipe", "process_incoming_invite,  dialog_parse the routes again\n");
-			sipe_dialog_parse(dialog, msg, FALSE);
+			sipe_dialog_parse_routes(dialog, msg, FALSE);
 		} else {
 			dialog = sipe_dialog_add(session);
 

@@ -32,11 +32,11 @@
 struct sip_dialog {
 	gchar *with; /* URI */
 	gchar *endpoint_GUID;
-	/** 
+	/**
 	 *  >0 - pro
 	 *  <0 - contra
 	 *   0 - didn't participate
-	 */ 
+	 */
 	int election_vote;
 	gchar *ourtag;
 	gchar *theirtag;
@@ -107,7 +107,7 @@ void sipe_dialog_remove(struct sip_session *session, const gchar *who);
  * Remove a dialog from a session
  *
  * @param session (in) may be NULL
- * @param dialog (in) dialog identifier. Should contain Call-ID, to-tag and from-tag 
+ * @param dialog (in) dialog identifier. Should contain Call-ID, to-tag and from-tag
  *                    to unambiguously identify dialog. May be NULL
  */
 void
@@ -120,13 +120,6 @@ sipe_dialog_remove_3(struct sip_session *session,
  * @param session (in)
  */
 void sipe_dialog_remove_all(struct sip_session *session);
-
-/**
- * Remove all routes from a dialog
- *
- * @param dialog (in)
- */
-void sipe_dialog_remove_all_routes(struct sip_dialog *dialog);
 
 /**
  * Does a session have any dialogs?
@@ -143,12 +136,23 @@ void sipe_dialog_remove_all_routes(struct sip_dialog *dialog);
 #define sipe_dialog_first(session) ((struct sip_dialog *)session->dialogs->data)
 
 /**
+ * Update routes in a dialog from a message
+ *
+ * @param dialog   (in,out) dialog to fill
+ * @param msg      (in)     mesage
+ * @param outgoing (in)     outgoing or incoming message
+ */
+void sipe_dialog_parse_routes(struct sip_dialog *dialog,
+			      const struct sipmsg *msg,
+			      gboolean outgoing);
+
+/**
  * Fill dialog structure from SIP message
  *
- * @param msg      (in)     mesage
  * @param dialog   (in,out) dialog to fill
+ * @param msg      (in)     mesage
  * @param outgoing (in)     outgoing or incoming message
  */
 void sipe_dialog_parse(struct sip_dialog *dialog,
-		       const struct sipmsg *msg,		       
+		       const struct sipmsg *msg,
 		       gboolean outgoing);

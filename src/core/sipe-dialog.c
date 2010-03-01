@@ -152,25 +152,21 @@ void sipe_dialog_remove_all(struct sip_session *session)
 	}
 }
 
-void sipe_dialog_remove_all_routes(struct sip_dialog *dialog)
-{
-	GSList *entry;
-	void *data;
-
-	entry = dialog->routes;
-	while (entry) {
-		data = entry->data;
-		entry = g_slist_remove(entry, data);
-		g_free(data);
-	}
-}
-
-static void sipe_get_route_header(const struct sipmsg *msg,
-				  struct sip_dialog *dialog,
-				  gboolean outgoing)
+void sipe_dialog_parse_routes(struct sip_dialog *dialog,
+			      const struct sipmsg *msg,
+			      gboolean outgoing)
 {
         GSList *hdr = msg->headers;
-        gchar *contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);
+	gchar *contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);
+
+	/* Remove old routes */
+	while (dialog->routes) {
+		void *data = dialog->routes->data;
+		dialog->routes = g_slist_remove(dialog->routes, data);
+		g_free(data);
+	}
+	g_free(dialog->request);
+        dialog->request = NULL;
 
         while (hdr) {
                 struct sipnameval *elem = hdr->data;
@@ -180,7 +176,7 @@ static void sipe_get_route_header(const struct sipmsg *msg,
 
 			while (*part) {
 				gchar *route = sipmsg_find_part_of_header(*part, "<", ">", NULL);
-				purple_debug_info("sipe", "sipe_get_route_header: route %s \n", route);
+				purple_debug_info("sipe", "sipe_dialog_parse_routes: route %s \n", route);
 				dialog->routes = g_slist_append(dialog->routes, route);
 				part++;
 			}
@@ -267,7 +263,7 @@ void sipe_dialog_parse(struct sip_dialog *dialog,
 		dialog->expires = atoi(session_expires_header);
 	}
 
-	sipe_get_route_header(msg, dialog, outgoing);
+	sipe_dialog_parse_routes(dialog, msg, outgoing);
 	sipe_get_supported_header(msg, dialog, outgoing);
 }
 
