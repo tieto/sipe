@@ -582,48 +582,48 @@ Message (length 352):
         session_key: 31CB739E1CA80A498591E8AE797115E4
 */
 
+	const char *request =
+	"REGISTER sip:cosmo.local SIP/2.0\r\n"
+	"Via: SIP/2.0/TLS 192.168.172.6:12723\r\n"
+	"Max-Forwards: 70\r\n"
+	"From: <sip:user@cosmo.local>;tag=3e49177a52;epid=c8ca638a15\r\n"
+	"To: <sip:user@cosmo.local>\r\n"
+	"Call-ID: 4037df9284354df39065195bd57a4b14\r\n"
+	"CSeq: 3 REGISTER\r\n"
+	"Contact: <sip:192.168.172.6:12723;transport=tls;ms-opaque=fad3dfab32>;methods=\"INVITE, MESSAGE, INFO, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:34D859DB-6585-5F91-A3B4-DE853C15347D>\"\r\n"
+	"User-Agent: UCCAPI/3.5.6907.0 OC/3.5.6907.0 (Microsoft Office Communicator 2007 R2)\r\n"
+	"Supported: gruu-10, adhoclist, msrtc-event-categories\r\n"
+	"Supported: ms-forking\r\n"
+	"ms-keep-alive: UAC;hop-hop=yes\r\n"
+	"Event: registration\r\n"
+	"Proxy-Authorization: NTLM qop=\"auth\", realm=\"SIP Communications Service\", opaque=\"2BDBAC9D\", targetname=\"cosmo-ocs-r2.cosmo.local\", version=4, gssapi-data=\"TlRMTVNTUAADAAAAGAAYAHIAAADGAMYAigAAAAoACgBIAAAACAAIAFIAAAAYABgAWgAAABAAEABQAQAAVYKYYgUCzg4AAAAPQwBPAFMATQBPAFUAcwBlAHIAQwBPAFMATQBPAC0ATwBDAFMALQBSADIAoeku/k4Hi/fFwASazGFmwtauh1yw/apBjcDIAK527KYG0rn769BHMQEBAAAAAAAAWVGaFye5ygHWrodcsP2qQQAAAAACAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAAAAAAAMctznhyoCkmFkeiueXEV5A==\", crand=\"13317733\", cnum=\"1\", response=\"0100000029618e9651b65a7764000000\"\r\n"
+	"Content-Length: 0\r\n"
+	"\r\n";
+
+	const guchar *request_sig = "<NTLM><13317733><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><><><><>";
 //Signature:
 //0100000029618e9651b65a7764000000
-//buffer:
-//<NTLM><13317733><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><><><><>
-/*
-REGISTER sip:cosmo.local SIP/2.0
-Via: SIP/2.0/TLS 192.168.172.6:12723
-Max-Forwards: 70
-From: <sip:user@cosmo.local>;tag=3e49177a52;epid=c8ca638a15
-To: <sip:user@cosmo.local>
-Call-ID: 4037df9284354df39065195bd57a4b14
-CSeq: 3 REGISTER
-Contact: <sip:192.168.172.6:12723;transport=tls;ms-opaque=fad3dfab32>;methods="INVITE, MESSAGE, INFO, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY";proxy=replace;+sip.instance="<urn:uuid:34D859DB-6585-5F91-A3B4-DE853C15347D>"
-User-Agent: UCCAPI/3.5.6907.0 OC/3.5.6907.0 (Microsoft Office Communicator 2007 R2)
-Supported: gruu-10, adhoclist, msrtc-event-categories
-Supported: ms-forking
-ms-keep-alive: UAC;hop-hop=yes
-Event: registratio
-Proxy-Authorization: NTLM qop="auth", realm="SIP Communications Service", opaque="2BDBAC9D", targetname="cosmo-ocs-r2.cosmo.local", version=4, gssapi-data="TlRMTVNTUAADAAAAGAAYAHIAAADGAMYAigAAAAoACgBIAAAACAAIAFIAAAAYABgAWgAAABAAEABQAQAAVYKYYgUCzg4AAAAPQwBPAFMATQBPAFUAcwBlAHIAQwBPAFMATQBPAC0ATwBDAFMALQBSADIAoeku/k4Hi/fFwASazGFmwtauh1yw/apBjcDIAK527KYG0rn769BHMQEBAAAAAAAAWVGaFye5ygHWrodcsP2qQQAAAAACAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAAAAAAAMctznhyoCkmFkeiueXEV5A==", crand="13317733", cnum="1", response="0100000029618e9651b65a7764000000"
-Content-Length: 0
-*/
 
-/*
-SIP/2.0 200 OK
-ms-keep-alive: UAS; tcp=no; hop-hop=yes; end-end=no; timeout=300
-Authentication-Info: NTLM rspauth="01000000E615438A917661BE64000000", srand="9616454F", snum="1", opaque="2BDBAC9D", qop="auth", targetname="cosmo-ocs-r2.cosmo.local", realm="SIP Communications Service"
-From: "User"<sip:user@cosmo.local>;tag=3e49177a52;epid=c8ca638a15
-To: <sip:user@cosmo.local>;tag=5E61CCD925D17E043D9A74835A88F664
-Call-ID: 4037df9284354df39065195bd57a4b14
-CSeq: 3 REGISTER
-Via: SIP/2.0/TLS 192.168.172.6:12723;ms-received-port=12723;ms-received-cid=2600
-Contact: <sip:192.168.172.6:12723;transport=tls;ms-opaque=fad3dfab32;ms-received-cid=2600>;expires=7200;+sip.instance="<urn:uuid:34d859db-6585-5f91-a3b4-de853c15347d>";gruu="sip:user@cosmo.local;opaque=user:epid:21nYNIVlkV-jtN6FPBU0fQAA;gruu"
-Expires: 7200
-presence-state: register-action="added"
-Allow-Events: vnd-microsoft-provisioning,vnd-microsoft-roaming-contacts,vnd-microsoft-roaming-ACL,presence,presence.wpending,vnd-microsoft-roaming-self,vnd-microsoft-provisioning-v2
-Supported: adhoclist
-Server: RTC/3.5
-Supported: msrtc-event-categories
-Content-Length: 0
-*/
-//buffer:
-//<NTLM><9616454F><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><5E61CCD925D17E043D9A74835A88F664><><><7200><200>
+	const char *response =
+	"SIP/2.0 200 OK\r\n"
+	"ms-keep-alive: UAS; tcp=no; hop-hop=yes; end-end=no; timeout=300\r\n"
+	"Authentication-Info: NTLM rspauth=\"01000000E615438A917661BE64000000\", srand=\"9616454F\", snum=\"1\", opaque=\"2BDBAC9D\", qop=\"auth\", targetname=\"cosmo-ocs-r2.cosmo.local\", realm=\"SIP Communications Service\"\r\n"
+	"From: \"User\"<sip:user@cosmo.local>;tag=3e49177a52;epid=c8ca638a15\r\n"
+	"To: <sip:user@cosmo.local>;tag=5E61CCD925D17E043D9A74835A88F664\r\n"
+	"Call-ID: 4037df9284354df39065195bd57a4b14\r\n"
+	"CSeq: 3 REGISTER\r\n"
+	"Via: SIP/2.0/TLS 192.168.172.6:12723;ms-received-port=12723;ms-received-cid=2600\r\n"
+	"Contact: <sip:192.168.172.6:12723;transport=tls;ms-opaque=fad3dfab32;ms-received-cid=2600>;expires=7200;+sip.instance=\"<urn:uuid:34d859db-6585-5f91-a3b4-de853c15347d>\";gruu=\"sip:user@cosmo.local;opaque=user:epid:21nYNIVlkV-jtN6FPBU0fQAA;gruu\"\r\n"
+	"Expires: 7200\r\n"
+	"presence-state: register-action=\"added\"\r\n"
+	"Allow-Events: vnd-microsoft-provisioning,vnd-microsoft-roaming-contacts,vnd-microsoft-roaming-ACL,presence,presence.wpending,vnd-microsoft-roaming-self,vnd-microsoft-provisioning-v2\r\n"
+	"Supported: adhoclist\r\n"
+	"Server: RTC/3.5\r\n"
+	"Supported: msrtc-event-categories\r\n"
+	"Content-Length: 0\r\n"
+	"\r\n";
+
+	const guchar *response_sig = "<NTLM><9616454F><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><5E61CCD925D17E043D9A74835A88F664><><><7200><200>";
 //Signature:
 //01000000E615438A917661BE64000000
 
@@ -700,15 +700,34 @@ Content-Length: 0
 	SIGNKEY (exported_session_key3, FALSE, server_sign_key);
 	SEALKEY (flags, exported_session_key3, FALSE, server_seal_key);
 
+	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nClient request\n(Authentication Protocol version 4)\n");
+	msg = sipmsg_parse_msg(request);
+	msgbd.msg = msg;
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
+	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
+	sig = sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key);
+	sipmsg_breakdown_free(&msgbd);
+	assert_equal ("0100000029618e9651b65a7764000000", (guchar *) sig,32, FALSE);
+	printf("purple_ntlm_verify_signature result = %i\n", sip_sec_ntlm_verify_signature (sig, "0100000029618e9651b65a7764000000"));
+	
+	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nServer response\n(Authentication Protocol version 4)\n");
+	msg = sipmsg_parse_msg(response);
+	msgbd.msg = msg;
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
+	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
+	// server keys here
+	sig = sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, server_sign_key, server_seal_key);
+	sipmsg_breakdown_free(&msgbd);
+	assert_equal ("01000000E615438A917661BE64000000", (guchar *) sig,32, FALSE);
+	printf("purple_ntlm_verify_signature result = %i\n", sip_sec_ntlm_verify_signature (sig, "01000000E615438A917661BE64000000"));
+
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - client signing\n");
-	const guchar *text3 = "<NTLM><13317733><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><><><><>";
-	mac = MAC (flags,   (gchar*)text3,strlen(text3),   client_sign_key,16,   client_seal_key,16,   0,  100);
+	mac = MAC (flags,   (gchar*)request_sig,strlen(request_sig),   client_sign_key,16,   client_seal_key,16,   0,  100);
 	assert_equal("0100000029618e9651b65a7764000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 	
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - server's verifying\n");
-	const guchar *text4 = "<NTLM><9616454F><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><5E61CCD925D17E043D9A74835A88F664><><><7200><200>";
-	mac = MAC (flags,   (gchar*)text4,strlen(text4),   server_sign_key,16,   server_seal_key,16,   0,  100);
+	mac = MAC (flags,   (gchar*)response_sig,strlen(response_sig),   server_sign_key,16,   server_seal_key,16,   0,  100);
 	assert_equal("01000000E615438A917661BE64000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
