@@ -1,7 +1,9 @@
 version 1.9.0 "File transfer & NTLMv2" (2010-02-XX)
+***** Important Security Update for *nix users *****
 	- Contributed File transfer functionality. File encryption is supported. (Jakub Adam, Tomáš Hrabčík)
-	- NTLMv2 support (pier11)
-	- Windows build preparation (pier11)
+	- NTLMv2 and NTLMv2 Session Security support (pier11)
+	- Implemented SIP Authentication Extensions protocol version 4 and 3 (pier11)
+	- Adoption of file transfer for Windows build (pier11)
 	- Big endian fixes (Peter Fales)
 	- Official Debian package files in contrib (Anibal Avelar)
 	- another shot at presence update problems (Stefan Becker)

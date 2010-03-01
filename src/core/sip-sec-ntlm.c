@@ -36,7 +36,7 @@
  *     For example: 01 00 00 00 LE should be translated to (int32)1
  *  - When reading/writing from/to NTLM message appropriate conversion should
  *    be taken to properly present integer values. glib's "Byte Order Macros"
- *    should be used for that, for example GINT32_FROM_LE
+ *    should be used for that, for example GUINT32_FROM_LE
  *  - All calculations should be made in dedicated local variables (system-endian),
  *    not in NTLM (LE) structures.
  */
@@ -54,10 +54,6 @@
 #ifdef __sun__
 #include <sys/sockio.h>
 #endif
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <net/if.h>
 #else /* _WIN32 */
 #include "libc_interface.h"
 #ifdef _DLL
@@ -180,6 +176,25 @@ struct av_pair {
 	/* value */
 };
 
+/* to meet sparc's alignment requirement */
+#define ALIGN_AV                                     \
+	memcpy(&av_aligned, av, sizeof(av_aligned)); \
+	av_id  = GUINT16_FROM_LE(av_aligned.av_id);  \
+	av_len = GUINT16_FROM_LE(av_aligned.av_len)
+#define ALIGN_AV_LOOP_START                          \
+	struct av_pair av_aligned;                   \
+	guint16 av_id;                               \
+	guint16 av_len;                              \
+	ALIGN_AV;				     \
+	while (av_id != MsvAvEOL) {                  \
+		gchar *av_value = ((gchar *)av) +    \
+			sizeof(struct av_pair);      \
+		switch (av_id)
+#define ALIGN_AV_LOOP_END               \
+		av = av_value + av_len; \
+		ALIGN_AV;               \
+	}
+
 /* 8 bytes */
 struct version {
 	guint8  product_major_version;
@@ -246,7 +261,7 @@ struct authenticate_message {
 	struct smb_header session_key;
 	guint32 flags;
 	struct version ver;
-	guint8  mic[16];
+	//guint8  mic[16];
 	/* payload
 	 * - LmChallengeResponse
 	 * - NtChallengeResponse
@@ -505,14 +520,13 @@ NONCE(unsigned char *buffer, int num)
 	}
 }
 
+#ifdef _SIPE_COMPILING_TESTS
 static void
 Z(unsigned char *buffer, int num)
 {
-	int i;
-	for (i = 0; i < num; i++) {
-		buffer[i] = 0;
-	}
+	memset(buffer, 0, num);
 }
+#endif
 
 #ifdef _SIPE_COMPILING_TESTS
 static void
@@ -634,29 +648,25 @@ EndDefine
 		guint8 tmp [16];
 		guint8 nt_proof_str [16];
 
-		/* temp */
+		/* client_challenge (8) & temp (temp_len) buff */
 		int temp_len = 8+8+8+4+target_info_len+4;
-		guint8 temp [temp_len];
 		guint8 temp2 [8 + temp_len];
-		temp[0] = 1;
-		temp[1] = 1;
-		Z(temp+2, 6);
-		*((guint64 *)(temp+8)) = GUINT64_TO_LE(time_val); /* should be int64 aligned: OK for sparc */
-		memcpy(temp+16, client_challenge, 8);
-		Z(temp+24, 4);
-		memcpy(temp+28, target_info, target_info_len);
-		Z(temp+28+target_info_len, 4);
+		memset(temp2, 0, 8 + temp_len); /* init to 0 */
+		temp2[8+0] = 1;
+		temp2[8+1] = 1;
+		*((guint64 *)(temp2+8+8)) = GUINT64_TO_LE(time_val); /* should be int64 aligned: OK for sparc */
+		memcpy(temp2+8+16, client_challenge, 8);
+		memcpy(temp2+8+28, target_info, target_info_len);
 
 		/* NTProofStr */
 		//Set NTProofStr to HMAC_MD5(ResponseKeyNT, ConcatenationOf(CHALLENGE_MESSAGE.ServerChallenge,temp))
 		memcpy(temp2, server_challenge, 8);
-		memcpy(temp2+8, temp, temp_len);
 		HMAC_MD5(response_key_nt, 16, temp2, 8+temp_len, nt_proof_str);
 
 		/* NtChallengeResponse */
 		//Set NtChallengeResponse to ConcatenationOf(NTProofStr, temp)
 		memcpy(nt_challenge_response, nt_proof_str, 16);
-		memcpy(nt_challenge_response+16, temp, temp_len);
+		memcpy(nt_challenge_response+16, temp2+8, temp_len);
 
 		/* SessionBaseKey */
 		//SessionBaseKey to HMAC_MD5(ResponseKeyNT, NTProofStr)
@@ -873,7 +883,7 @@ MAC (guint32 flags,
      guint32 sequence)
 {
 	guchar result [16];
-	gint32 *res_ptr;
+	guint32 *res_ptr;
 	gchar signature [33];
 	int i, j;
 
@@ -908,7 +918,7 @@ MAC (guint32 flags,
 			unsigned char tmp2 [16+4];
 
 			memcpy(tmp2, seal_key, seal_key_len);
-			*((guint32 *)(tmp2+16)) = GINT32_TO_LE(sequence);
+			*((guint32 *)(tmp2+16)) = GUINT32_TO_LE(sequence);
 			MD5 (tmp2, 16+4, seal_key_);
 		} else {
 			memcpy(seal_key_, seal_key, seal_key_len);
@@ -916,12 +926,12 @@ MAC (guint32 flags,
 
 		purple_debug_info("sipe", "NTLM MAC(): Extented Session Security\n");
 
-		res_ptr = (gint32 *)result;
-		res_ptr[0] = GINT32_TO_LE(1); // 4 bytes
-		res_ptr[3] = GINT32_TO_LE(sequence);
+		res_ptr = (guint32 *)result;
+		res_ptr[0] = GUINT32_TO_LE(1); // 4 bytes
+		res_ptr[3] = GUINT32_TO_LE(sequence);
 
-		res_ptr = (gint32 *)tmp;
-		res_ptr[0] = GINT32_TO_LE(sequence);
+		res_ptr = (guint32 *)tmp;
+		res_ptr[0] = GUINT32_TO_LE(sequence);
 		memcpy(tmp+4, buf, buf_len);
 
 		HMAC_MD5(sign_key, sign_key_len, tmp, 4 + buf_len, hmac);
@@ -935,10 +945,10 @@ MAC (guint32 flags,
 		}
 	} else {
 		/* The content of the first 4 bytes is irrelevant */
-		gint32 plaintext [] = {
-			GINT32_TO_LE(0),
-			GINT32_TO_LE(CRC32(buf, strlen(buf))),
-			GINT32_TO_LE(sequence)
+		guint32 plaintext [] = {
+			GUINT32_TO_LE(0),
+			GUINT32_TO_LE(CRC32(buf, strlen(buf))),
+			GUINT32_TO_LE(sequence)
 		}; // 4, 4, 4 bytes
 
 		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
@@ -946,12 +956,12 @@ MAC (guint32 flags,
 		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, result+4);
 		//RC4K(seal_key, 8, (const guchar *)plaintext, 12, result+4);
 
-		res_ptr = (gint32 *)result;
+		res_ptr = (guint32 *)result;
 		// Highest four bytes are the Version
-		res_ptr[0] = GINT32_TO_LE(0x00000001); // 4 bytes
+		res_ptr[0] = GUINT32_TO_LE(0x00000001); // 4 bytes
 
 		// Replace the first four bytes of the ciphertext with the random_pad
-		res_ptr[1] = GINT32_TO_LE(random_pad); // 4 bytes
+		res_ptr[1] = GUINT32_TO_LE(random_pad); // 4 bytes
 	}
 
 	for (i = 0, j = 0; i < 16; i++, j+=2) {
@@ -968,13 +978,13 @@ MAC (guint32 flags,
   * @param target_info		must be g_free()'d after use if requested
   */
 static void
-purple_ntlm_parse_challenge(SipSecBuffer in_buff,
-			    gboolean is_connection_based,
-			    guint32 *flags,
-			    guchar **server_challenge, /* 8 bytes */
-			    guint64 *time_val,
-			    guchar **target_info,
-			    int *target_info_len)
+sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
+			     gboolean is_connection_based,
+			     guint32 *flags,
+			     guchar **server_challenge, /* 8 bytes */
+			     guint64 *time_val,
+			     guchar **target_info,
+			     int *target_info_len)
 {
 	guint32 our_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
@@ -982,8 +992,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 
 	/* server challenge (nonce) */
 	if (server_challenge) {
-		*server_challenge = (guchar *)g_new0(gchar, 8);
-		memcpy(*server_challenge, cmsg->nonce, 8);
+		*server_challenge = g_memdup(cmsg->nonce, 8);
 	}
 
 	/* flags */
@@ -994,51 +1003,50 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 
 	/* target_info */
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
-		const gchar *target_info_content = (((gchar *)cmsg) + GUINT32_FROM_LE(cmsg->target_info.offset));
-		struct av_pair *av = (struct av_pair*)target_info_content;
+		void *content = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset);
+		void *av      = content;
+		guint16 len   = GUINT16_FROM_LE(cmsg->target_info.len);
 
-		while (GUINT16_FROM_LE(av->av_id) != MsvAvEOL) {
-			gchar *av_value = ((gchar *)av) + 4;
+		ALIGN_AV_LOOP_START
+		{
+			/* @since Vista */
+		case MsvAvTimestamp:
+			if (time_val) {
+				guint64 tmp;
 
-			switch (GUINT16_FROM_LE(av->av_id)) {
-				case MsvAvTimestamp:
-					if (time_val) {
-						/* This is not int64 aligned on sparc */
-						guint64 tmp;
-						memcpy((gchar *)&tmp, av_value, sizeof(tmp));
-						*time_val = GUINT64_FROM_LE(tmp);
-					}
-					break;
+				/* to meet sparc's alignment requirement */
+				memcpy(&tmp, av_value, sizeof(tmp));
+				*time_val = GUINT64_FROM_LE(tmp);
 			}
-			av = (struct av_pair*)(((guint8*)av) + 4 + GUINT16_FROM_LE(av->av_len));
+			break;
 		}
+		ALIGN_AV_LOOP_END;
 
 		if (target_info_len) {
-			*target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
+			*target_info_len = len;
 		}
 		if (target_info) {
-			*target_info = (guchar *)g_new0(gchar, GUINT16_FROM_LE(cmsg->target_info.len));
-			memcpy(*target_info, target_info_content, GUINT16_FROM_LE(cmsg->target_info.len));
+			*target_info = g_memdup(content, len);
 		}
 	}
 }
 
 static void
-purple_ntlm_gen_authenticate(guchar **client_sign_key,
-			     guchar **server_sign_key,
-			     guchar **client_seal_key,
-			     guchar **server_seal_key,
-			     const gchar *user,
-			     const gchar *password,
-			     const gchar *hostname,
-			     const gchar *domain,
-			     const guint8 *server_challenge, /* nonce */
-			     const guint64 time_val,
-			     const guint8 *target_info,
-			     int target_info_len,
-			     gboolean is_connection_based,
-			     SipSecBuffer *out_buff,
-			     guint32 *flags)
+sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
+			      guchar **server_sign_key,
+			      guchar **client_seal_key,
+			      guchar **server_seal_key,
+			      const gchar *user,
+			      const gchar *password,
+			      const gchar *hostname,
+			      const gchar *domain,
+			      const guint8 *server_challenge, /* nonce */
+			      const guint64 time_val,
+			      const guint8 *target_info,
+			      int target_info_len,
+			      gboolean is_connection_based,
+			      SipSecBuffer *out_buff,
+			      guint32 *flags)
 {
 	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	int ntlmssp_nt_resp_len =
@@ -1122,6 +1130,51 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	SEALKEY(neg_flags, exported_session_key, FALSE, key);
 	*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
 
+	/* @since Vista
+	If the CHALLENGE_MESSAGE TargetInfo field (section 2.2.1.2) has an MsvAvTimestamp present,
+	the client SHOULD provide a MIC:
+	- If there is an AV_PAIR structure (section 2.2.2.1) with the AvId field set to MsvAvFlags,
+		- then in the Value field, set bit 0x2 to 1.
+		- else add an AV_PAIR structure (section 2.2.2.1) and set the AvId field to MsvAvFlags
+		and the Value field bit 0x2 to 1.
+	- Populate the MIC field with the MIC.
+	*/
+
+	/* Connection-oriented:
+	Set MIC to HMAC_MD5(ExportedSessionKey,
+		ConcatenationOf( NEGOTIATE_MESSAGE, CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0));
+	   Connectionless:
+	Set MIC to HMAC_MD5(ExportedSessionKey,
+		ConcatenationOf( CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE))
+	*/
+
+	/* on the server-side:
+	If (NTLMSSP_NEGOTIATE_KEY_EXCH flag is set in NegFlg )
+		Set ExportedSessionKey to RC4K(KeyExchangeKey, AUTHENTICATE_MESSAGE.EncryptedRandomSessionKey)
+		Set MIC to HMAC_MD5(ExportedSessionKey,
+			ConcatenationOf( NEGOTIATE_MESSAGE, CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0))
+	Else
+		Set ExportedSessionKey to KeyExchangeKey
+		Set MIC to HMAC_MD5(KeyExchangeKey,
+			ConcatenationOf( NEGOTIATE_MESSAGE, CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0)) EndIf
+	=====
+	@since Vista
+	If the AUTHENTICATE_MESSAGE indicates the presence of a MIC field,
+	then the MIC value computed earlier MUST be compared to the MIC field in the message,
+	and if the two MIC values are not equal, then an authentication failure MUST be returned.
+	An AUTHENTICATE_MESSAGE indicates the presence of a MIC field if the TargetInfo field has
+	an AV_PAIR structure whose two fields:
+		- AvId == MsvAvFlags
+		- Value bit 0x2 == 1
+	@supported NT, 2000, XP
+	If NTLM v2 authentication is used and the AUTHENTICATE_MESSAGE.NtChallengeResponse.
+	TimeStamp (section 2.2.2.7) is more than MaxLifetime (section 3.1.1.1) difference from
+	the server time, then the server SHOULD return a failure.
+	===
+	Connectionless:
+	Set MIC to HMAC_MD5(ResponseKeyNT,
+		ConcatenationOf( CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0))
+	*/
 
 	/* authenticate message initialization */
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
@@ -1150,6 +1203,11 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	tmp += len;
 
 	/* LM */
+	/* @since Windows 7
+	   If NTLM v2 authentication is used and the CHALLENGE_MESSAGE contains a TargetInfo field,
+	   the client SHOULD NOT send the LmChallengeResponse and SHOULD set the LmChallengeResponseLen
+	   and LmChallengeResponseMaxLen fields in the AUTHENTICATE_MESSAGE to zero.
+	*/
 	tmsg->lm_resp.offset = GUINT32_TO_LE(offset += len);
 	tmsg->lm_resp.len = tmsg->lm_resp.maxlen = GUINT16_TO_LE(len = NTLMSSP_LM_RESP_LEN);
 	memcpy(tmp, lm_challenge_response, len);
@@ -1188,7 +1246,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
  * Generates Type 1 (Negotiate) message for connection-oriented cases (only)
  */
 static void
-purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
+sip_sec_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 {
 	guint32 offset;
 	guint16 len;
@@ -1221,7 +1279,7 @@ purple_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 }
 
 static gchar *
-purple_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
+sip_sec_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
 {
 	gchar *res = MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100);
 	//purple_debug_info("sipe", "NTLM calculated MAC: %s\n", res);
@@ -1229,7 +1287,7 @@ purple_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_
 }
 
 static gboolean
-purple_ntlm_verify_signature (char * a, char * b)
+sip_sec_ntlm_verify_signature (char * a, char * b)
 {
 	return g_ascii_strncasecmp(a, b, 16*2) == 0;
 }
@@ -1358,71 +1416,70 @@ sip_sec_ntlm_negotiate_message_describe(struct negotiate_message *cmsg)
 }
 
 static void
-describe_av_pairs(GString* str, const struct av_pair *av)
+describe_av_pairs(GString* str, const void *av)
 {
-	guint16 av_id = GUINT16_FROM_LE(av->av_id);
-
-	while (av_id != MsvAvEOL) {
-		gchar *av_value = ((gchar *)av) + 4;
-
 #define AV_DESC(av_name) \
 	{ \
-		gchar *tmp = unicode_strconvcopy_back(av_value, GUINT16_FROM_LE(av->av_len)); \
+		gchar *tmp = unicode_strconvcopy_back(av_value, av_len); \
 		g_string_append_printf(str, "\t%s: %s\n", av_name, tmp); \
 		g_free(tmp); \
 	}
 
-		switch (av_id) {
-			case MsvAvNbComputerName:
-				AV_DESC("MsvAvNbComputerName");
-				break;
-			case MsvAvNbDomainName:
-				AV_DESC("MsvAvNbDomainName");
-				break;
-			case MsvAvDnsComputerName:
-				AV_DESC("MsvAvDnsComputerName");
-				break;
-			case MsvAvDnsDomainName:
-				AV_DESC("MsvAvDnsDomainName");
-				break;
-			case MsvAvDnsTreeName:
-				AV_DESC("MsvAvDnsTreeName");
-				break;
-			case MsvAvFlags:
-				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(*((guint32*)av_value)));
-				break;
-			case MsvAvTimestamp:
-				{
-					SipSecBuffer buff;
-					char *tmp;
-					guint64 time_val;
-					time_t time_t_val;
+	ALIGN_AV_LOOP_START
+	{
+	case MsvAvNbComputerName:
+		AV_DESC("MsvAvNbComputerName");
+		break;
+	case MsvAvNbDomainName:
+		AV_DESC("MsvAvNbDomainName");
+		break;
+	case MsvAvDnsComputerName:
+		AV_DESC("MsvAvDnsComputerName");
+		break;
+	case MsvAvDnsDomainName:
+		AV_DESC("MsvAvDnsDomainName");
+		break;
+	case MsvAvDnsTreeName:
+		AV_DESC("MsvAvDnsTreeName");
+		break;
+	case MsvAvFlags:
+		{
+			guint32 flags;
 
-					/* This is not int64 aligned on sparc */
-					memcpy((gchar *)&time_val, av_value, sizeof(time_val));
-					time_t_val = TIME_VAL_TO_T(time_val);
-
-					buff.length = 8;
-					buff.value = av_value;
-					g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
-							       asctime(gmtime(&time_t_val)));
-					g_free(tmp);
-					break;
-				}
-			case MsAvRestrictions:
-				g_string_append_printf(str, "\t%s\n", "MsAvRestrictions");
-				break;
-			case MsvAvTargetName:
-				AV_DESC("MsvAvTargetName");
-				break;
-			case MsvChannelBindings:
-				g_string_append_printf(str, "\t%s\n", "MsvChannelBindings");
-				break;
+			/* to meet sparc's alignment requirement */
+			memcpy(&flags, av_value, sizeof(guint32));
+			g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(flags));
 		}
+		break;
+	case MsvAvTimestamp:
+		{
+			SipSecBuffer buff;
+			char *tmp;
+			guint64 time_val;
+			time_t time_t_val;
 
-		av = (struct av_pair *)(((guint8 *)av) + 4 + GUINT16_FROM_LE(av->av_len));
-		av_id = GUINT16_FROM_LE(av->av_id);
+			/* to meet sparc's alignment requirement */
+			memcpy(&time_val, av_value, sizeof(time_val));
+			time_t_val = TIME_VAL_TO_T(time_val);
+
+			buff.length = 8;
+			buff.value = av_value;
+			g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
+					       asctime(gmtime(&time_t_val)));
+			g_free(tmp);
+		}
+		break;
+	case MsAvRestrictions:
+		g_string_append_printf(str, "\t%s\n", "MsAvRestrictions");
+		break;
+	case MsvAvTargetName:
+		AV_DESC("MsvAvTargetName");
+		break;
+	case MsvChannelBindings:
+		g_string_append_printf(str, "\t%s\n", "MsvChannelBindings");
+		break;
 	}
+	ALIGN_AV_LOOP_END;
 }
 
 static gchar *
@@ -1458,10 +1515,10 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 	g_free(tmp);
 
 	/* mic */
-	buff.length = 16;
-	buff.value = cmsg->mic;
-	g_string_append_printf(str, "\t%s: %s\n", "mic", (tmp = bytes_to_hex_str(&buff)));
-	g_free(tmp);
+	//buff.length = 16;
+	//buff.value = cmsg->mic;
+	//g_string_append_printf(str, "\t%s: %s\n", "mic", (tmp = bytes_to_hex_str(&buff)));
+	//g_free(tmp);
 
 	if (cmsg->lm_resp.len && cmsg->lm_resp.offset) {
 		buff.length = GUINT16_FROM_LE(cmsg->lm_resp.len);
@@ -1471,17 +1528,24 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 	}
 
 	if (cmsg->nt_resp.len && cmsg->nt_resp.offset) {
-		int nt_resp_len = GUINT16_FROM_LE(cmsg->nt_resp.len);
+		guint16 nt_resp_len_full = GUINT16_FROM_LE(cmsg->nt_resp.len);
+		int nt_resp_len = nt_resp_len_full;
+
+		buff.length = nt_resp_len_full;
+		buff.value = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
+		g_string_append_printf(str, "\t%s: %s\n", "nt_resp raw", (tmp = bytes_to_hex_str(&buff)));
+		g_free(tmp);
 
 		if (nt_resp_len > 24) { /* NTLMv2 */
 			nt_resp_len = 16;
 		}
+
 		buff.length = nt_resp_len;
 		buff.value = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
 		g_string_append_printf(str, "\t%s: %s\n", "nt_resp", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
 
-		if (GUINT16_FROM_LE(cmsg->nt_resp.len) > 24) { /* NTLMv2 */
+		if (nt_resp_len_full > 24) { /* NTLMv2 */
 			char *tmp;
 			SipSecBuffer buff;
 			const gchar *temp = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
@@ -1490,7 +1554,13 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			guint64 time_val;
 			time_t time_t_val;
 			const gchar *client_challenge = temp + 16;
-			const struct av_pair *av = (struct av_pair*)(temp + 28);
+			const gchar *target_info = temp + 28;
+			guint16 target_info_len = nt_resp_len_full - 16 - 32;
+
+			buff.length = target_info_len;
+			buff.value = (gchar *)target_info;
+			g_string_append_printf(str, "\t%s: %s\n", "target_info raw", (tmp = bytes_to_hex_str(&buff)));
+			g_free(tmp);
 
 			/* This is not int64 aligned on sparc */
 			memcpy((gchar *)&time_val, temp+8, sizeof(time_val));
@@ -1510,7 +1580,7 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			g_string_append_printf(str, "\t%s: %s\n", "client_challenge", (tmp = bytes_to_hex_str(&buff)));
 			g_free(tmp);
 
-			describe_av_pairs(str, av);
+			describe_av_pairs(str, target_info);
 
 			g_string_append_printf(str, "\t%s\n", "----------- end of nt_resp v2 -----------");
 		}
@@ -1549,8 +1619,15 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 {
 	GString* str = g_string_new(NULL);
 	char *tmp;
+	SipSecBuffer buff;
 
 	g_string_append(str, (tmp = sip_sec_ntlm_negotiate_flags_describe(cmsg->flags)));
+	g_free(tmp);
+
+	/* nonce (server_challenge) */
+	buff.length = 8;
+	buff.value = cmsg->nonce;
+	g_string_append_printf(str, "\t%s: %s\n", "server_challenge", (tmp = bytes_to_hex_str(&buff)));
 	g_free(tmp);
 
 	g_string_append(str, (tmp = sip_sec_ntlm_describe_smb_header(&(cmsg->target_name), "target_name")));
@@ -1569,10 +1646,16 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 	}
 
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
-		void *target_info = ((gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset));
-		struct av_pair *av = (struct av_pair*)target_info;
+		void *target_info = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset);
+		guint16 target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
+		SipSecBuffer buff;
 
-		describe_av_pairs(str, av);
+		buff.length = target_info_len;
+		buff.value = (gchar *)target_info;
+		g_string_append_printf(str, "\t%s: %s\n", "target_info raw", (tmp = bytes_to_hex_str(&buff)));
+		g_free(tmp);
+
+		describe_av_pairs(str, target_info);
 	}
 
 	return g_string_free(str, FALSE);
@@ -1653,7 +1736,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			out_buff->length = 0;
 			out_buff->value = NULL;
 		} else {
-			purple_ntlm_gen_negotiate(out_buff);
+			sip_sec_ntlm_gen_negotiate(out_buff);
 		}
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
@@ -1673,29 +1756,29 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			return SIP_SEC_E_INTERNAL_ERROR;
 		}
 
-		purple_ntlm_parse_challenge(in_buff,
-					    context->is_connection_based,
-					    &flags,
-					    &server_challenge, /* 8 bytes */
-					    &time_val,
-					    &target_info,
-					    &target_info_len);
-
-		purple_ntlm_gen_authenticate(&client_sign_key,
-					     &server_sign_key,
-					     &client_seal_key,
-					     &server_seal_key,
-					     ctx->username,
-					     ctx->password,
-					     (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
-					     ctx->domain,
-					     server_challenge,
-					     time_val,
-					     target_info,
-					     target_info_len,
+		sip_sec_ntlm_parse_challenge(in_buff,
 					     context->is_connection_based,
-					     out_buff,
-					     &flags);
+					     &flags,
+					     &server_challenge, /* 8 bytes */
+					     &time_val,
+					     &target_info,
+					     &target_info_len);
+
+		sip_sec_ntlm_gen_authenticate(&client_sign_key,
+					      &server_sign_key,
+					      &client_seal_key,
+					      &server_seal_key,
+					      ctx->username,
+					      ctx->password,
+					      (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
+					      ctx->domain,
+					      server_challenge,
+					      time_val,
+					      target_info,
+					      target_info_len,
+					      context->is_connection_based,
+					      out_buff,
+					      &flags);
 		g_free(server_challenge);
 		g_free(target_info);
 		g_free(tmp);
@@ -1727,7 +1810,7 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 			SipSecBuffer *signature)
 {
 	/* FIXME? We always use a random_pad of 0 */
-	gchar *signature_hex = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
+	gchar *signature_hex = sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								message,
 								0,
 							        ((context_ntlm) context)->client_sign_key,
@@ -1750,14 +1833,14 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 {
 	guint32 random_pad = GUINT32_FROM_LE(((guint32 *) signature.value)[1]);
 	char *signature_hex = bytes_to_hex_str(&signature);
-	gchar *signature_calc = purple_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
-								message,
-								random_pad,
-								((context_ntlm) context)->server_sign_key,
-								((context_ntlm) context)->server_seal_key);
+	gchar *signature_calc = sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
+								 message,
+								 random_pad,
+								 ((context_ntlm) context)->server_sign_key,
+								 ((context_ntlm) context)->server_seal_key);
 	sip_uint32 res;
 
-	if (purple_ntlm_verify_signature(signature_calc, signature_hex)) {
+	if (sip_sec_ntlm_verify_signature(signature_calc, signature_hex)) {
 		res = SIP_SEC_E_OK;
 	} else {
 		res = SIP_SEC_E_INTERNAL_ERROR;

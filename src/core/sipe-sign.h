@@ -34,14 +34,24 @@ struct sipmsg_breakdown {
 	gchar * target_name;
 	const gchar * call_id;
 	gchar * cseq;
+	//method
 	gchar * from_url;
 	gchar * from_tag;
+	/** @since 3 */
+	gchar * to_url;
 	gchar * to_tag;
+	/** @since 3 */
+	gchar * p_assertet_identity_sip_uri;
+	/** @since 3 */
+	gchar * p_assertet_identity_tel_uri;
 	const gchar * expires;
+	//response code
 };
 
 void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target);
-gchar* sipmsg_breakdown_get_string(struct sipmsg_breakdown * msgbd);
+gchar*
+sipmsg_breakdown_get_string(int version,
+			    struct sipmsg_breakdown * msgbd);
 void sipmsg_breakdown_free(struct sipmsg_breakdown * msg);
 
 #endif /* _PIDGIN_SIPE_SIGN_H */
