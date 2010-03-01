@@ -147,6 +147,8 @@ int main()
 
 ////// NTLMv1 (without Extended Session Security) ///////
 	use_ntlm_v2 = FALSE;
+	
+	guint32 tmp_el;
 	guint32 flags = 0
 		| NTLMSSP_NEGOTIATE_KEY_EXCH
 		| NTLMSSP_NEGOTIATE_56
@@ -161,7 +163,8 @@ int main()
 		| NTLMSSP_NEGOTIATE_UNICODE;
 
 	printf ("\n\nTesting Negotiation Flags\n");
-	assert_equal("338202E2", (guchar*)(&flags), 4, TRUE);
+	tmp_el = GINT32_TO_LE(flags);
+	assert_equal("338202E2", (guchar*)(&tmp_el), 4, TRUE);
 
 	printf ("\n\nTesting LMOWFv1()\n");
 	guchar response_key_lm [16];
@@ -208,7 +211,8 @@ int main()
 
 	printf ("\n\nTesting CRC32\n");
 	guint32 crc = CRC32((char*)text, 18);
-	assert_equal("7D84AA93", (guchar *)&crc, 4, TRUE);
+	tmp_el = GINT32_TO_LE(crc);
+	assert_equal("7D84AA93", (guchar *)&tmp_el, 4, TRUE);
 
 	printf ("\n\nTesting Encryption\n");
 	guchar client_seal_key [16];
@@ -254,7 +258,8 @@ int main()
 		| NTLMSSP_NEGOTIATE_UNICODE;
 
 	printf ("\n\n(Extended session security) Testing Negotiation Flags\n");
-	assert_equal("33820A82", (guchar*)(&flags), 4, TRUE);
+	tmp_el = GINT32_TO_LE(flags);
+	assert_equal("33820A82", (guchar*)(&tmp_el), 4, TRUE);
 
 	/* NTOWFv1() is not different from the above test for the same */
 
@@ -318,7 +323,8 @@ int main()
 		| NTLMSSP_NEGOTIATE_UNICODE;
 
 	printf ("\n\nTesting (NTLMv2) Negotiation Flags\n");
-	assert_equal("33828AE2", (guchar*)(&flags), 4, TRUE);
+	tmp_el = GINT32_TO_LE(flags);
+	assert_equal("33828AE2", (guchar*)(&tmp_el), 4, TRUE);
 
 	printf ("\n\nTesting NTOWFv2()\n");
 	NTOWFv2 (password, user, domain, response_key_nt);
