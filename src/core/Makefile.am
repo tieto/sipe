@@ -69,15 +69,9 @@ libsipe_la_LIBADD = \
 	$(PURPLE_LIBS) \
 	$(KRB5_LIBS)
 
-#
-# NOTE: compiling tests requires dbus headers
-#
-# As we already require pkg-config in configure it is OK to use it here...
-#
 tests: tests.c .libs/libsipe.so
 	set -e; \
-	dbus_cflags=$$(pkg-config --cflags dbus-1); \
-	$(CC) $(libsipe_la_CFLAGS) $$dbus_cflags $^ -o $@; \
+	$(CC) $(libsipe_la_CFLAGS) $^ -o $@; \
 	LD_LIBRARY_PATH=.libs ./tests; \
 	rm -f tests
 
