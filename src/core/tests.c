@@ -50,6 +50,28 @@
 static int successes = 0;
 static int failures = 0;
 
+static size_t
+hex_str_to_buff(const char *hex_str, guint8 **bytes)
+{
+	guint8 *buff;
+	char two_digits[3];
+	size_t i;
+	
+	if (!bytes) return 0;
+
+	gsize length = strlen(hex_str)/2;
+	buff = (guint8 *)g_malloc(length);
+	for (i = 0; i < length; i++) {
+		two_digits[0] = hex_str[i * 2];
+		two_digits[1] = hex_str[i * 2 + 1];
+		two_digits[2] = '\0';
+		buff[i] = (guint8)strtoul(two_digits, NULL, 16);
+	}
+
+	*bytes = buff;
+	return length;
+}
+
 static void assert_equal(const char * expected, const guchar * got, int len, gboolean stringify)
 {
 	const gchar * res = (gchar *) got;
@@ -456,6 +478,239 @@ Response:
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", (guchar *) sig, 32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", sip_sec_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
+
+
+////// real Communicator 2007 R2 tests //////
+////// Recreated/verifyed real authentication communication between 
+////// Communicator 2007 R2 and Office Communications Server 2007 R2
+////// with SIPE NTLMv2 implementation.
+
+	const char *password2 = "Pa$$word";
+	const char *user2 = "User";
+	const char *domain2 = "COSMO";
+
+//Challenge:
+//TlRMTVNTUAACAAAAAAAAADgAAADzgpji3Ruq9OfiGNEAAAAAAAAAAJYAlgA4AAAABQLODgAAAA8CAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAA=
+/*
+Message (length 206):
+        NTLMSSP_NEGOTIATE_UNICODE
+        NTLMSSP_NEGOTIATE_OEM
+        NTLMSSP_NEGOTIATE_SIGN
+        NTLMSSP_NEGOTIATE_SEAL
+        NTLMSSP_NEGOTIATE_DATAGRAM
+        NTLMSSP_NEGOTIATE_LM_KEY
+        NTLMSSP_NEGOTIATE_NTLM
+        NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+        NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY
+        NTLMSSP_NEGOTIATE_IDENTIFY
+        NTLMSSP_NEGOTIATE_TARGET_INFO
+        NTLMSSP_NEGOTIATE_VERSION
+        NTLMSSP_NEGOTIATE_128
+        NTLMSSP_NEGOTIATE_KEY_EXCH
+        NTLMSSP_NEGOTIATE_56
+        server_challenge: DD1BAAF4E7E218D1
+        target_name.len   : 0
+        target_name.maxlen: 0
+        target_name.offset: 56
+        target_info.len   : 150
+        target_info.maxlen: 150
+        target_info.offset: 56
+        product: 5.2.3790 (Windows Server 2003)
+        ntlm_revision_current: 0x0F (NTLMSSP_REVISION_W2K3)
+        target_info raw: 02000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C0000000000
+        MsvAvNbDomainName: COSMO
+        MsvAvNbComputerName: COSMO-OCS-R2
+        MsvAvDnsDomainName: cosmo.local
+        MsvAvDnsComputerName: cosmo-ocs-r2.cosmo.local
+        MsvAvDnsTreeName: cosmo.local
+*/
+
+
+//Response:
+//TlRMTVNTUAADAAAAGAAYAHIAAADGAMYAigAAAAoACgBIAAAACAAIAFIAAAAYABgAWgAAABAAEABQAQAAVYKYYgUCzg4AAAAPQwBPAFMATQBPAFUAcwBlAHIAQwBPAFMATQBPAC0ATwBDAFMALQBSADIAoeku/k4Hi/fFwASazGFmwtauh1yw/apBjcDIAK527KYG0rn769BHMQEBAAAAAAAAWVGaFye5ygHWrodcsP2qQQAAAAACAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAAAAAAAMctznhyoCkmFkeiueXEV5A==
+/*
+Message (length 352):
+        NTLMSSP_NEGOTIATE_UNICODE
+        NTLMSSP_REQUEST_TARGET
+        NTLMSSP_NEGOTIATE_SIGN
+        NTLMSSP_NEGOTIATE_DATAGRAM
+        NTLMSSP_NEGOTIATE_NTLM
+        NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+        NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY
+        NTLMSSP_NEGOTIATE_IDENTIFY
+        NTLMSSP_NEGOTIATE_TARGET_INFO
+        NTLMSSP_NEGOTIATE_VERSION
+        NTLMSSP_NEGOTIATE_128
+        NTLMSSP_NEGOTIATE_KEY_EXCH
+        lm_resp.len   : 24
+        lm_resp.maxlen: 24
+        lm_resp.offset: 114
+        nt_resp.len   : 198
+        nt_resp.maxlen: 198
+        nt_resp.offset: 138
+        domain.len   : 10
+        domain.maxlen: 10
+        domain.offset: 72
+        user.len   : 8
+        user.maxlen: 8
+        user.offset: 82
+        host.len   : 24
+        host.maxlen: 24
+        host.offset: 90
+        session_key.len   : 16
+        session_key.maxlen: 16
+        session_key.offset: 336
+        product: 5.2.3790 (Windows Server 2003)
+        ntlm_revision_current: 0x0F (NTLMSSP_REVISION_W2K3)
+        lm_resp: A1E92EFE4E078BF7C5C0049ACC6166C2D6AE875CB0FDAA41
+        nt_resp raw: 8DC0C800AE76ECA606D2B9FBEBD04731010100000000000059519A1727B9CA01D6AE875CB0FDAA410000000002000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C000000000000000000
+        nt_resp: 8DC0C800AE76ECA606D2B9FBEBD04731
+        target_info raw: 02000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C0000000000
+        response_version: 1
+        hi_response_version: 1
+        time: 59519A1727B9CA01 - Mon Mar 01 10:08:08 2010
+        client_challenge: D6AE875CB0FDAA41
+        MsvAvNbDomainName: COSMO
+        MsvAvNbComputerName: COSMO-OCS-R2
+        MsvAvDnsDomainName: cosmo.local
+        MsvAvDnsComputerName: cosmo-ocs-r2.cosmo.local
+        MsvAvDnsTreeName: cosmo.local
+        ----------- end of nt_resp v2 -----------
+        domain: COSMO
+        user: User
+        host: COSMO-OCS-R2
+        session_key: 31CB739E1CA80A498591E8AE797115E4
+*/
+
+//Signature:
+//0100000029618e9651b65a7764000000
+//buffer:
+//<NTLM><13317733><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><><><><>
+/*
+REGISTER sip:cosmo.local SIP/2.0
+Via: SIP/2.0/TLS 192.168.172.6:12723
+Max-Forwards: 70
+From: <sip:user@cosmo.local>;tag=3e49177a52;epid=c8ca638a15
+To: <sip:user@cosmo.local>
+Call-ID: 4037df9284354df39065195bd57a4b14
+CSeq: 3 REGISTER
+Contact: <sip:192.168.172.6:12723;transport=tls;ms-opaque=fad3dfab32>;methods="INVITE, MESSAGE, INFO, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY";proxy=replace;+sip.instance="<urn:uuid:34D859DB-6585-5F91-A3B4-DE853C15347D>"
+User-Agent: UCCAPI/3.5.6907.0 OC/3.5.6907.0 (Microsoft Office Communicator 2007 R2)
+Supported: gruu-10, adhoclist, msrtc-event-categories
+Supported: ms-forking
+ms-keep-alive: UAC;hop-hop=yes
+Event: registratio
+Proxy-Authorization: NTLM qop="auth", realm="SIP Communications Service", opaque="2BDBAC9D", targetname="cosmo-ocs-r2.cosmo.local", version=4, gssapi-data="TlRMTVNTUAADAAAAGAAYAHIAAADGAMYAigAAAAoACgBIAAAACAAIAFIAAAAYABgAWgAAABAAEABQAQAAVYKYYgUCzg4AAAAPQwBPAFMATQBPAFUAcwBlAHIAQwBPAFMATQBPAC0ATwBDAFMALQBSADIAoeku/k4Hi/fFwASazGFmwtauh1yw/apBjcDIAK527KYG0rn769BHMQEBAAAAAAAAWVGaFye5ygHWrodcsP2qQQAAAAACAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAAAAAAAMctznhyoCkmFkeiueXEV5A==", crand="13317733", cnum="1", response="0100000029618e9651b65a7764000000"
+Content-Length: 0
+*/
+
+/*
+SIP/2.0 200 OK
+ms-keep-alive: UAS; tcp=no; hop-hop=yes; end-end=no; timeout=300
+Authentication-Info: NTLM rspauth="01000000E615438A917661BE64000000", srand="9616454F", snum="1", opaque="2BDBAC9D", qop="auth", targetname="cosmo-ocs-r2.cosmo.local", realm="SIP Communications Service"
+From: "User"<sip:user@cosmo.local>;tag=3e49177a52;epid=c8ca638a15
+To: <sip:user@cosmo.local>;tag=5E61CCD925D17E043D9A74835A88F664
+Call-ID: 4037df9284354df39065195bd57a4b14
+CSeq: 3 REGISTER
+Via: SIP/2.0/TLS 192.168.172.6:12723;ms-received-port=12723;ms-received-cid=2600
+Contact: <sip:192.168.172.6:12723;transport=tls;ms-opaque=fad3dfab32;ms-received-cid=2600>;expires=7200;+sip.instance="<urn:uuid:34d859db-6585-5f91-a3b4-de853c15347d>";gruu="sip:user@cosmo.local;opaque=user:epid:21nYNIVlkV-jtN6FPBU0fQAA;gruu"
+Expires: 7200
+presence-state: register-action="added"
+Allow-Events: vnd-microsoft-provisioning,vnd-microsoft-roaming-contacts,vnd-microsoft-roaming-ACL,presence,presence.wpending,vnd-microsoft-roaming-self,vnd-microsoft-provisioning-v2
+Supported: adhoclist
+Server: RTC/3.5
+Supported: msrtc-event-categories
+Content-Length: 0
+*/
+//buffer:
+//<NTLM><9616454F><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><5E61CCD925D17E043D9A74835A88F664><><><7200><200>
+//Signature:
+//01000000E615438A917661BE64000000
+
+	use_ntlm_v2 = TRUE;
+	flags = 0
+		| NTLMSSP_NEGOTIATE_UNICODE
+		| NTLMSSP_REQUEST_TARGET
+		| NTLMSSP_NEGOTIATE_SIGN
+		| NTLMSSP_NEGOTIATE_DATAGRAM
+		| NTLMSSP_NEGOTIATE_NTLM
+		| NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+		| NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY
+		| NTLMSSP_NEGOTIATE_IDENTIFY
+		| NTLMSSP_NEGOTIATE_TARGET_INFO
+		| NTLMSSP_NEGOTIATE_VERSION
+		| NTLMSSP_NEGOTIATE_128
+		| NTLMSSP_NEGOTIATE_KEY_EXCH;
+
+	NTOWFv2 (password2, user2, domain2, response_key_nt);
+	NTOWFv2 (password2, user2, domain2, response_key_lm);
+	
+	guint8 *buff2;
+	hex_str_to_buff("59519A1727B9CA01", &buff2);
+	const guint64 time_val2 = GUINT64_FROM_LE(*((guint64 *)buff2));
+	g_free(buff2);
+	
+	guint8 *target_info2;
+	const int target_info2_len = hex_str_to_buff("02000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C0000000000", &target_info2);
+	
+	guint8 *nonce2;
+	hex_str_to_buff("DD1BAAF4E7E218D1", &nonce2);
+	
+	guint8 *client_challenge2;
+	hex_str_to_buff("D6AE875CB0FDAA41", &client_challenge2);
+	
+	ntlmssp_nt_resp_len = (16 + (32+target_info2_len));
+	guchar nt_challenge_response_v2_2 [ntlmssp_nt_resp_len];
+
+	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) LM Response Generation\n");
+	printf (    "Testing (NTLMv2 / OC 2007 R2) NT Response Generation\n");
+	compute_response(flags,
+			 response_key_nt,
+			 response_key_lm,
+			 nonce2,
+			 client_challenge2,
+			 time_val2,
+			 target_info2, /* target_info */
+			 target_info2_len,  /* target_info_len */
+			 lm_challenge_response,	/* out */
+			 nt_challenge_response_v2_2,	/* out */
+			 session_base_key);	/* out */
+	g_free(client_challenge2);
+	g_free(nonce2);
+	g_free(target_info2);
+
+	assert_equal("A1E92EFE4E078BF7C5C0049ACC6166C2D6AE875CB0FDAA41", lm_challenge_response, 24, TRUE);
+	assert_equal("8DC0C800AE76ECA606D2B9FBEBD04731", nt_challenge_response_v2_2, 16, TRUE);
+	/* the ref string is taken from binary dump of AUTHENTICATE_MESSAGE */
+	assert_equal("8DC0C800AE76ECA606D2B9FBEBD04731010100000000000059519A1727B9CA01D6AE875CB0FDAA410000000002000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C000000000000000000", nt_challenge_response_v2_2, ntlmssp_nt_resp_len, TRUE);
+	
+	KXKEY(flags, session_base_key, lm_challenge_response, nonce2, key_exchange_key);
+	//as in the Type3 message	
+	guint8 *encrypted_random_session_key2;
+	hex_str_to_buff("31CB739E1CA80A498591E8AE797115E4", &encrypted_random_session_key2);
+	guchar exported_session_key3[16];
+	//decoding exported_session_key
+	RC4K (key_exchange_key, 16, encrypted_random_session_key2, 16, exported_session_key3);
+	g_free(encrypted_random_session_key2);
+
+	guchar server_sign_key [16];
+	guchar server_seal_key [16];
+	SIGNKEY (exported_session_key3, TRUE, client_sign_key);
+	SEALKEY (flags, exported_session_key3, TRUE, client_seal_key);
+	SIGNKEY (exported_session_key3, FALSE, server_sign_key);
+	SEALKEY (flags, exported_session_key3, FALSE, server_seal_key);
+
+	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - client signing\n");
+	const guchar *text3 = "<NTLM><13317733><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><><><><>";
+	mac = MAC (flags,   (gchar*)text3,strlen(text3),   client_sign_key,16,   client_seal_key,16,   0,  100);
+	assert_equal("0100000029618e9651b65a7764000000", (guchar*)mac, 32, FALSE);
+	g_free(mac);
+	
+	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - server's verifying\n");
+	const guchar *text4 = "<NTLM><9616454F><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><5E61CCD925D17E043D9A74835A88F664><><><7200><200>";
+	mac = MAC (flags,   (gchar*)text4,strlen(text4),   server_sign_key,16,   server_seal_key,16,   0,  100);
+	assert_equal("01000000E615438A917661BE64000000", (guchar*)mac, 32, FALSE);
+	g_free(mac);
 
 
 ////// UUID tests ///////
