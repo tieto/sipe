@@ -1027,8 +1027,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 			*target_info_len = len;
 		}
 		if (target_info) {
-			*target_info = (guchar *)g_new0(gchar, len);
-			memcpy(*target_info, content, len);
+			*target_info = g_memdup(content, len);
 		}
 	}
 }
