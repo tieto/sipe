@@ -1402,19 +1402,26 @@ sip_sec_ntlm_negotiate_message_describe(struct negotiate_message *cmsg)
 static void
 describe_av_pairs(GString* str, const struct av_pair *av)
 {
-	guint16 av_id = GUINT16_FROM_LE(av->av_id);
+	struct av_pair av_pair_struct;	
+	gchar buff[4];
+	gchar *buff_t = buff;
+	
+	/* to meet sparc's alignment */	
+	memcpy(buff, (guint8 *)av, 4);
+	av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
+	av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
 
-	while (av_id != MsvAvEOL) {
+	while (av_pair_struct.av_id != MsvAvEOL) {
 		gchar *av_value = ((gchar *)av) + 4;
 
 #define AV_DESC(av_name) \
 	{ \
-		gchar *tmp = unicode_strconvcopy_back(av_value, GUINT16_FROM_LE(av->av_len)); \
+		gchar *tmp = unicode_strconvcopy_back(av_value, av_pair_struct.av_len); \
 		g_string_append_printf(str, "\t%s: %s\n", av_name, tmp); \
 		g_free(tmp); \
 	}
 
-		switch (av_id) {
+		switch (av_pair_struct.av_id) {
 			case MsvAvNbComputerName:
 				AV_DESC("MsvAvNbComputerName");
 				break;
@@ -1431,7 +1438,9 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 				AV_DESC("MsvAvDnsTreeName");
 				break;
 			case MsvAvFlags:
-				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(*((guint32*)av_value)));
+				/* to meet sparc's alignment */	
+				memcpy(buff, (guint8 *)av_value, 4);				
+				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(*((guint32*)buff_t)));
 				break;
 			case MsvAvTimestamp:
 				{
@@ -1462,8 +1471,12 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 				break;
 		}
 
-		av = (struct av_pair *)(((guint8 *)av) + 4 + GUINT16_FROM_LE(av->av_len));
-		av_id = GUINT16_FROM_LE(av->av_id);
+		av = (struct av_pair *)(((guint8 *)av) + 4 + av_pair_struct.av_len);
+
+		/* to meet sparc's alignment */
+		memcpy(buff, (guint8 *)av, 4);
+		av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
+		av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
 	}
 }
 
