@@ -176,6 +176,25 @@ struct av_pair {
 	/* value */
 };
 
+/* to meet sparc's alignment requirement */
+#define ALIGN_AV                                     \
+	memcpy(&av_aligned, av, sizeof(av_aligned)); \
+	av_id  = GUINT16_FROM_LE(av_aligned.av_id);  \
+	av_len = GUINT16_FROM_LE(av_aligned.av_len)
+#define ALIGN_AV_LOOP_START                          \
+	struct av_pair av_aligned;                   \
+	guint16 av_id;                               \
+	guint16 av_len;                              \
+	ALIGN_AV;				     \
+	while (av_id != MsvAvEOL) {                  \
+		gchar *av_value = ((gchar *)av) +    \
+			sizeof(struct av_pair);      \
+		switch (av_id)
+#define ALIGN_AV_LOOP_END               \
+		av = av_value + av_len; \
+		ALIGN_AV;               \
+	}
+
 /* 8 bytes */
 struct version {
 	guint8  product_major_version;
@@ -985,45 +1004,29 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 
 	/* target_info */
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
-		const gchar *target_info_content = (((gchar *)cmsg) + GUINT32_FROM_LE(cmsg->target_info.offset));
-		struct av_pair *av = (struct av_pair*)target_info_content;
-		struct av_pair av_pair_struct;
-		gchar buff[4];
-		gchar *buff_t = buff;
-	
-		/* to meet sparc's alignment */	
-		memcpy(buff_t, (guint8 *)av, 4);
-		av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
-		av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
+		void *av = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset);
 
-		while (av_pair_struct.av_id != MsvAvEOL) {
-			gchar *av_value = ((gchar *)av) + 4;
+		ALIGN_AV_LOOP_START
+		{
+			/* @since Vista */
+		case MsvAvTimestamp:
+			if (time_val) {
+				guint64 tmp;
 
-			switch (av_pair_struct.av_id) {
-				/* @since Vista */
-				case MsvAvTimestamp:
-					if (time_val) {
-						/* This is not int64 aligned on sparc */
-						guint64 tmp;
-						memcpy((gchar *)&tmp, av_value, sizeof(tmp));
-						*time_val = GUINT64_FROM_LE(tmp);
-					}
-					break;
+				/* to meet sparc's alignment requirement */
+				memcpy(&tmp, av_value, sizeof(tmp));
+				*time_val = GUINT64_FROM_LE(tmp);
 			}
-			av = (struct av_pair*)(((guint8*)av) + 4 + av_pair_struct.av_len);
-
-			/* to meet sparc's alignment */	
-			memcpy(buff_t, (guint8 *)av, 4);
-			av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
-			av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
+			break;
 		}
+		ALIGN_AV_LOOP_END;
 
 		if (target_info_len) {
 			*target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
 		}
 		if (target_info) {
 			*target_info = (guchar *)g_new0(gchar, GUINT16_FROM_LE(cmsg->target_info.len));
-			memcpy(*target_info, target_info_content, GUINT16_FROM_LE(cmsg->target_info.len));
+			memcpy(*target_info, av, GUINT16_FROM_LE(cmsg->target_info.len));
 		}
 	}
 }
@@ -1126,33 +1129,33 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	*client_seal_key = (guchar *)g_strndup((gchar *)key, 16);
 	SEALKEY(neg_flags, exported_session_key, FALSE, key);
 	*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
-	
+
 	/* @since Vista
 	If the CHALLENGE_MESSAGE TargetInfo field (section 2.2.1.2) has an MsvAvTimestamp present,
 	the client SHOULD provide a MIC:
-	- If there is an AV_PAIR structure (section 2.2.2.1) with the AvId field set to MsvAvFlags, 
+	- If there is an AV_PAIR structure (section 2.2.2.1) with the AvId field set to MsvAvFlags,
 		- then in the Value field, set bit 0x2 to 1.
 		- else add an AV_PAIR structure (section 2.2.2.1) and set the AvId field to MsvAvFlags
 		and the Value field bit 0x2 to 1.
 	- Populate the MIC field with the MIC.
 	*/
-	
+
 	/* Connection-oriented:
-	Set MIC to HMAC_MD5(ExportedSessionKey, 
+	Set MIC to HMAC_MD5(ExportedSessionKey,
 		ConcatenationOf( NEGOTIATE_MESSAGE, CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0));
 	   Connectionless:
 	Set MIC to HMAC_MD5(ExportedSessionKey,
 		ConcatenationOf( CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE))
 	*/
-	
+
 	/* on the server-side:
-	If (NTLMSSP_NEGOTIATE_KEY_EXCH flag is set in NegFlg ) 
-		Set ExportedSessionKey to RC4K(KeyExchangeKey, AUTHENTICATE_MESSAGE.EncryptedRandomSessionKey) 
-		Set MIC to HMAC_MD5(ExportedSessionKey, 
-			ConcatenationOf( NEGOTIATE_MESSAGE, CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0)) 
+	If (NTLMSSP_NEGOTIATE_KEY_EXCH flag is set in NegFlg )
+		Set ExportedSessionKey to RC4K(KeyExchangeKey, AUTHENTICATE_MESSAGE.EncryptedRandomSessionKey)
+		Set MIC to HMAC_MD5(ExportedSessionKey,
+			ConcatenationOf( NEGOTIATE_MESSAGE, CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0))
 	Else
-		Set ExportedSessionKey to KeyExchangeKey 
-		Set MIC to HMAC_MD5(KeyExchangeKey, 
+		Set ExportedSessionKey to KeyExchangeKey
+		Set MIC to HMAC_MD5(KeyExchangeKey,
 			ConcatenationOf( NEGOTIATE_MESSAGE, CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0)) EndIf
 	=====
 	@since Vista
@@ -1160,16 +1163,16 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	then the MIC value computed earlier MUST be compared to the MIC field in the message,
 	and if the two MIC values are not equal, then an authentication failure MUST be returned.
 	An AUTHENTICATE_MESSAGE indicates the presence of a MIC field if the TargetInfo field has
-	an AV_PAIR structure whose two fields: 
-		- AvId == MsvAvFlags 
+	an AV_PAIR structure whose two fields:
+		- AvId == MsvAvFlags
 		- Value bit 0x2 == 1
 	@supported NT, 2000, XP
 	If NTLM v2 authentication is used and the AUTHENTICATE_MESSAGE.NtChallengeResponse.
-	TimeStamp (section 2.2.2.7) is more than MaxLifetime (section 3.1.1.1) difference from 
+	TimeStamp (section 2.2.2.7) is more than MaxLifetime (section 3.1.1.1) difference from
 	the server time, then the server SHOULD return a failure.
 	===
 	Connectionless:
-	Set MIC to HMAC_MD5(ResponseKeyNT, 
+	Set MIC to HMAC_MD5(ResponseKeyNT,
 		ConcatenationOf( CHALLENGE_MESSAGE, AUTHENTICATE_MESSAGE_MIC0))
 	*/
 
@@ -1202,7 +1205,7 @@ purple_ntlm_gen_authenticate(guchar **client_sign_key,
 	/* LM */
 	/* @since Windows 7
 	   If NTLM v2 authentication is used and the CHALLENGE_MESSAGE contains a TargetInfo field,
-	   the client SHOULD NOT send the LmChallengeResponse and SHOULD set the LmChallengeResponseLen 
+	   the client SHOULD NOT send the LmChallengeResponse and SHOULD set the LmChallengeResponseLen
 	   and LmChallengeResponseMaxLen fields in the AUTHENTICATE_MESSAGE to zero.
 	*/
 	tmsg->lm_resp.offset = GUINT32_TO_LE(offset += len);
@@ -1413,84 +1416,70 @@ sip_sec_ntlm_negotiate_message_describe(struct negotiate_message *cmsg)
 }
 
 static void
-describe_av_pairs(GString* str, const struct av_pair *av)
+describe_av_pairs(GString* str, const void *av)
 {
-	struct av_pair av_pair_struct;	
-	gchar buff[4];
-	gchar *buff_t = buff;
-	
-	/* to meet sparc's alignment */	
-	memcpy(buff_t, (guint8 *)av, 4);
-	av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
-	av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
-
-	while (av_pair_struct.av_id != MsvAvEOL) {
-		gchar *av_value = ((gchar *)av) + 4;
-
 #define AV_DESC(av_name) \
 	{ \
-		gchar *tmp = unicode_strconvcopy_back(av_value, av_pair_struct.av_len); \
+		gchar *tmp = unicode_strconvcopy_back(av_value, av_len); \
 		g_string_append_printf(str, "\t%s: %s\n", av_name, tmp); \
 		g_free(tmp); \
 	}
 
-		switch (av_pair_struct.av_id) {
-			case MsvAvNbComputerName:
-				AV_DESC("MsvAvNbComputerName");
-				break;
-			case MsvAvNbDomainName:
-				AV_DESC("MsvAvNbDomainName");
-				break;
-			case MsvAvDnsComputerName:
-				AV_DESC("MsvAvDnsComputerName");
-				break;
-			case MsvAvDnsDomainName:
-				AV_DESC("MsvAvDnsDomainName");
-				break;
-			case MsvAvDnsTreeName:
-				AV_DESC("MsvAvDnsTreeName");
-				break;
-			case MsvAvFlags:
-				/* to meet sparc's alignment */	
-				memcpy(buff_t, (guint8 *)av_value, 4);				
-				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(*((guint32*)buff_t)));
-				break;
-			case MsvAvTimestamp:
-				{
-					SipSecBuffer buff;
-					char *tmp;
-					guint64 time_val;
-					time_t time_t_val;
+	ALIGN_AV_LOOP_START
+	{
+	case MsvAvNbComputerName:
+		AV_DESC("MsvAvNbComputerName");
+		break;
+	case MsvAvNbDomainName:
+		AV_DESC("MsvAvNbDomainName");
+		break;
+	case MsvAvDnsComputerName:
+		AV_DESC("MsvAvDnsComputerName");
+		break;
+	case MsvAvDnsDomainName:
+		AV_DESC("MsvAvDnsDomainName");
+		break;
+	case MsvAvDnsTreeName:
+		AV_DESC("MsvAvDnsTreeName");
+		break;
+	case MsvAvFlags:
+		{
+			guint32 flags;
 
-					/* This is not int64 aligned on sparc */
-					memcpy((gchar *)&time_val, av_value, sizeof(time_val));
-					time_t_val = TIME_VAL_TO_T(time_val);
-
-					buff.length = 8;
-					buff.value = av_value;
-					g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
-							       asctime(gmtime(&time_t_val)));
-					g_free(tmp);
-					break;
-				}
-			case MsAvRestrictions:
-				g_string_append_printf(str, "\t%s\n", "MsAvRestrictions");
-				break;
-			case MsvAvTargetName:
-				AV_DESC("MsvAvTargetName");
-				break;
-			case MsvChannelBindings:
-				g_string_append_printf(str, "\t%s\n", "MsvChannelBindings");
-				break;
+			/* to meet sparc's alignment requirement */
+			memcpy(&flags, av_value, sizeof(guint32));
+			g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(flags));
 		}
+		break;
+	case MsvAvTimestamp:
+		{
+			SipSecBuffer buff;
+			char *tmp;
+			guint64 time_val;
+			time_t time_t_val;
 
-		av = (struct av_pair *)(((guint8 *)av) + 4 + av_pair_struct.av_len);
+			/* to meet sparc's alignment requirement */
+			memcpy(&time_val, av_value, sizeof(time_val));
+			time_t_val = TIME_VAL_TO_T(time_val);
 
-		/* to meet sparc's alignment */
-		memcpy(buff_t, (guint8 *)av, 4);
-		av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
-		av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
+			buff.length = 8;
+			buff.value = av_value;
+			g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
+					       asctime(gmtime(&time_t_val)));
+			g_free(tmp);
+		}
+		break;
+	case MsAvRestrictions:
+		g_string_append_printf(str, "\t%s\n", "MsAvRestrictions");
+		break;
+	case MsvAvTargetName:
+		AV_DESC("MsvAvTargetName");
+		break;
+	case MsvChannelBindings:
+		g_string_append_printf(str, "\t%s\n", "MsvChannelBindings");
+		break;
 	}
+	ALIGN_AV_LOOP_END;
 }
 
 static gchar *
@@ -1541,16 +1530,16 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 	if (cmsg->nt_resp.len && cmsg->nt_resp.offset) {
 		guint16 nt_resp_len_full = GUINT16_FROM_LE(cmsg->nt_resp.len);
 		int nt_resp_len = nt_resp_len_full;
-		
+
 		buff.length = nt_resp_len_full;
 		buff.value = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
 		g_string_append_printf(str, "\t%s: %s\n", "nt_resp raw", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
-		
+
 		if (nt_resp_len > 24) { /* NTLMv2 */
 			nt_resp_len = 16;
 		}
-		
+
 		buff.length = nt_resp_len;
 		buff.value = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
 		g_string_append_printf(str, "\t%s: %s\n", "nt_resp", (tmp = bytes_to_hex_str(&buff)));
@@ -1567,8 +1556,7 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			const gchar *client_challenge = temp + 16;
 			const gchar *target_info = temp + 28;
 			guint16 target_info_len = nt_resp_len_full - 16 - 32;
-			const struct av_pair *av = (struct av_pair*)target_info;
-			
+
 			buff.length = target_info_len;
 			buff.value = (gchar *)target_info;
 			g_string_append_printf(str, "\t%s: %s\n", "target_info raw", (tmp = bytes_to_hex_str(&buff)));
@@ -1592,7 +1580,7 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			g_string_append_printf(str, "\t%s: %s\n", "client_challenge", (tmp = bytes_to_hex_str(&buff)));
 			g_free(tmp);
 
-			describe_av_pairs(str, av);
+			describe_av_pairs(str, target_info);
 
 			g_string_append_printf(str, "\t%s\n", "----------- end of nt_resp v2 -----------");
 		}
@@ -1635,7 +1623,7 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 
 	g_string_append(str, (tmp = sip_sec_ntlm_negotiate_flags_describe(cmsg->flags)));
 	g_free(tmp);
-	
+
 	/* nonce (server_challenge) */
 	buff.length = 8;
 	buff.value = cmsg->nonce;
@@ -1658,17 +1646,16 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 	}
 
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
-		void *target_info = ((gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset));
+		void *target_info = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset);
 		guint16 target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
-		struct av_pair *av = (struct av_pair*)target_info;
 		SipSecBuffer buff;
-		
+
 		buff.length = target_info_len;
 		buff.value = (gchar *)target_info;
 		g_string_append_printf(str, "\t%s: %s\n", "target_info raw", (tmp = bytes_to_hex_str(&buff)));
 		g_free(tmp);
-		
-		describe_av_pairs(str, av);
+
+		describe_av_pairs(str, target_info);
 	}
 
 	return g_string_free(str, FALSE);
