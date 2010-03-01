@@ -407,7 +407,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			}
 
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
-			version_str = auth->version > 2 ? g_strdup_printf(", version=\"%d\"", auth->version) : g_strdup("");
+			version_str = auth->version > 2 ? g_strdup_printf(", version=%d", auth->version) : g_strdup("");
 			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s", auth_protocol, opaque, auth->realm, auth->target, gssapi_data, version_str, sign_str);
 			g_free(opaque);
 			g_free(gssapi_data);
@@ -416,7 +416,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			return ret;
 		}
 
-		version_str = auth->version > 2 ? g_strdup_printf(", version=\"%d\"", auth->version) : g_strdup("");
+		version_str = auth->version > 2 ? g_strdup_printf(", version=%d", auth->version) : g_strdup("");
 		ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s", auth_protocol, auth->realm, auth->target, version_str);
 		g_free(version_str);
 		return ret;
