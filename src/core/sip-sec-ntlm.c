@@ -37,6 +37,10 @@
  *  - When reading/writing from/to NTLM message appropriate conversion should
  *    be taken to properly present integer values. glib's "Byte Order Macros"
  *    should be used for that, for example GUINT32_FROM_LE
+ *
+ *    NOTE: The Byte Order Macros can have side effects!
+ *          Do *NOT* make any calculations inside the macros!
+ *
  *  - All calculations should be made in dedicated local variables (system-endian),
  *    not in NTLM (LE) structures.
  */
@@ -945,9 +949,10 @@ MAC (guint32 flags,
 		}
 	} else {
 		/* The content of the first 4 bytes is irrelevant */
+		guint32 crc = CRC32(buf, strlen(buf));
 		guint32 plaintext [] = {
 			GUINT32_TO_LE(0),
-			GUINT32_TO_LE(CRC32(buf, strlen(buf))),
+			GUINT32_TO_LE(crc),
 			GUINT32_TO_LE(sequence)
 		}; // 4, 4, 4 bytes
 
@@ -1064,7 +1069,6 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 				+ (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH) ? NTLMSSP_SESSION_KEY_LEN : 0);
 	struct authenticate_message *tmsg = g_malloc0(msglen);
 	char *tmp;
-	int remlen;
 	guint32 offset;
 	guint16 len;
 	unsigned char response_key_lm [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
@@ -1183,24 +1187,31 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	/* Set Negotiate Flags */
 	tmsg->flags = GUINT32_TO_LE(neg_flags);
 
-	/* Domain */
-	tmsg->domain.offset = GUINT32_TO_LE(offset = sizeof(struct authenticate_message));
+	/* Initial offset */
+	offset = sizeof(struct authenticate_message);
 	tmp = ((char*) tmsg) + offset;
-	remlen = ((char *)tmsg)+msglen-tmp;
-	tmsg->domain.len = tmsg->domain.maxlen = GUINT16_TO_LE(len = unicode_strconvcopy(tmp, domain, remlen));
-	tmp += len;
-	remlen = ((char *)tmsg)+msglen-tmp;
+
+#define _FILL_SMB_HEADER(header) \
+	tmsg->header.offset = GUINT32_TO_LE(offset); \
+	tmsg->header.len = tmsg->header.maxlen = GUINT16_TO_LE(len); \
+	tmp += len; \
+	offset += len
+#define _APPEND_STRING(header, src) \
+	len = unicode_strconvcopy(tmp, (src), ((char *)tmsg - tmp) + msglen); \
+	_FILL_SMB_HEADER(header)
+#define _APPEND_DATA(header, src, srclen) \
+	len = srclen; \
+	memcpy(tmp, src, len); \
+	_FILL_SMB_HEADER(header)
+
+	/* Domain */
+	_APPEND_STRING(domain, domain);
 
 	/* User */
-	tmsg->user.offset = GUINT32_TO_LE(offset += len);
-	tmsg->user.len = tmsg->user.maxlen = GUINT16_TO_LE(len = unicode_strconvcopy(tmp, user, remlen));
-	tmp += len;
-	remlen = ((char *)tmsg)+msglen-tmp;
+	_APPEND_STRING(user, user);
 
 	/* Host */
-	tmsg->host.offset = GUINT32_TO_LE(offset += len);
-	tmsg->host.len = tmsg->host.maxlen = GUINT16_TO_LE(len = unicode_strconvcopy(tmp, hostname, remlen));
-	tmp += len;
+	_APPEND_STRING(host, hostname);
 
 	/* LM */
 	/* @since Windows 7
@@ -1208,27 +1219,19 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	   the client SHOULD NOT send the LmChallengeResponse and SHOULD set the LmChallengeResponseLen
 	   and LmChallengeResponseMaxLen fields in the AUTHENTICATE_MESSAGE to zero.
 	*/
-	tmsg->lm_resp.offset = GUINT32_TO_LE(offset += len);
-	tmsg->lm_resp.len = tmsg->lm_resp.maxlen = GUINT16_TO_LE(len = NTLMSSP_LM_RESP_LEN);
-	memcpy(tmp, lm_challenge_response, len);
-	tmp += len;
+	_APPEND_DATA(lm_resp, lm_challenge_response, NTLMSSP_LM_RESP_LEN);
 
 	/* NT */
-	tmsg->nt_resp.offset = GUINT32_TO_LE(offset += len);
-	tmsg->nt_resp.len = tmsg->nt_resp.maxlen = GUINT16_TO_LE(len = ntlmssp_nt_resp_len);
-	memcpy(tmp, nt_challenge_response, len);
-	tmp += len;
+	_APPEND_DATA(nt_resp, nt_challenge_response, ntlmssp_nt_resp_len);
 
 	/* Session Key */
-	tmsg->session_key.offset = GUINT32_TO_LE(offset += len);
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH))
 	{
-		tmsg->session_key.len = tmsg->session_key.maxlen = GUINT16_TO_LE(len = NTLMSSP_SESSION_KEY_LEN);
-		memcpy(tmp, encrypted_random_session_key, len);
-		tmp += len;
+		_APPEND_DATA(session_key, encrypted_random_session_key, NTLMSSP_SESSION_KEY_LEN);
 	}
 	else
 	{
+		tmsg->session_key.offset = GUINT32_TO_LE(offset);
 		tmsg->session_key.len = tmsg->session_key.maxlen = 0;
 	}
 
@@ -1261,11 +1264,13 @@ sip_sec_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	tmsg->flags = GUINT32_TO_LE(NEGOTIATE_FLAGS_CONN);
 
 	/* Domain */
-	tmsg->domain.offset = GUINT32_TO_LE(offset = sizeof(struct negotiate_message));
+	offset = sizeof(struct negotiate_message);
+	tmsg->domain.offset = GUINT32_TO_LE(offset);
 	tmsg->domain.len = tmsg->domain.maxlen = len = 0;
 
 	/* Host */
-	tmsg->host.offset = GUINT32_TO_LE(offset += len);
+	offset += len;
+	tmsg->host.offset = GUINT32_TO_LE(offset);
 	tmsg->host.len = tmsg->host.maxlen = len = 0;
 
 	/* Version */
@@ -1549,8 +1554,8 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			char *tmp;
 			SipSecBuffer buff;
 			const gchar *temp = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
-			const int response_version = *((guchar*)temp);
-			const int hi_response_version = *((guchar*)(temp+1));
+			const guint response_version = *((guchar*)temp);
+			const guint hi_response_version = *((guchar*)(temp+1));
 			guint64 time_val;
 			time_t time_t_val;
 			const gchar *client_challenge = temp + 16;
