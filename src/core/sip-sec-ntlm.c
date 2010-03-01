@@ -992,8 +992,7 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 
 	/* server challenge (nonce) */
 	if (server_challenge) {
-		*server_challenge = (guchar *)g_new0(gchar, 8);
-		memcpy(*server_challenge, cmsg->nonce, 8);
+		*server_challenge = g_memdup(cmsg->nonce, 8);
 	}
 
 	/* flags */
