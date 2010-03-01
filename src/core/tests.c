@@ -56,7 +56,7 @@ hex_str_to_buff(const char *hex_str, guint8 **bytes)
 	guint8 *buff;
 	char two_digits[3];
 	size_t i;
-	
+
 	if (!bytes) return 0;
 
 	gsize length = strlen(hex_str)/2;
@@ -90,6 +90,21 @@ static void assert_equal(const char * expected, const guchar * got, int len, gbo
 	printf("received: %s\n", res);
 
 	if (g_ascii_strncasecmp(expected, res, len) == 0) {
+		successes++;
+		printf("PASSED\n");
+	} else {
+		failures++;
+		printf("FAILED\n");
+	}
+}
+
+/* NOTE: both values are expected to be in host byte order! */
+static void assert_equal_guint32(guint32 expected, guint32 got)
+{
+	printf("expected: %08X\n", expected);
+	printf("received: %08X\n", got);
+
+	if (expected == got) {
 		successes++;
 		printf("PASSED\n");
 	} else {
@@ -147,8 +162,7 @@ int main()
 
 ////// NTLMv1 (without Extended Session Security) ///////
 	use_ntlm_v2 = FALSE;
-	
-	guint32 tmp_el;
+
 	guint32 flags = 0
 		| NTLMSSP_NEGOTIATE_KEY_EXCH
 		| NTLMSSP_NEGOTIATE_56
@@ -163,8 +177,7 @@ int main()
 		| NTLMSSP_NEGOTIATE_UNICODE;
 
 	printf ("\n\nTesting Negotiation Flags\n");
-	tmp_el = GINT32_TO_LE(flags);
-	assert_equal("338202E2", (guchar*)(&tmp_el), 4, TRUE);
+	assert_equal_guint32(0xE2028233, flags);
 
 	printf ("\n\nTesting LMOWFv1()\n");
 	guchar response_key_lm [16];
@@ -211,8 +224,7 @@ int main()
 
 	printf ("\n\nTesting CRC32\n");
 	guint32 crc = CRC32((char*)text, 18);
-	tmp_el = GINT32_TO_LE(crc);
-	assert_equal("7D84AA93", (guchar *)&tmp_el, 4, TRUE);
+	assert_equal_guint32(0x93AA847D, crc);
 
 	printf ("\n\nTesting Encryption\n");
 	guchar client_seal_key [16];
@@ -258,8 +270,7 @@ int main()
 		| NTLMSSP_NEGOTIATE_UNICODE;
 
 	printf ("\n\n(Extended session security) Testing Negotiation Flags\n");
-	tmp_el = GINT32_TO_LE(flags);
-	assert_equal("33820A82", (guchar*)(&tmp_el), 4, TRUE);
+	assert_equal_guint32(0x820A8233, flags);
 
 	/* NTOWFv1() is not different from the above test for the same */
 
@@ -323,8 +334,7 @@ int main()
 		| NTLMSSP_NEGOTIATE_UNICODE;
 
 	printf ("\n\nTesting (NTLMv2) Negotiation Flags\n");
-	tmp_el = GINT32_TO_LE(flags);
-	assert_equal("33828AE2", (guchar*)(&tmp_el), 4, TRUE);
+	assert_equal_guint32(0xE28A8233, flags);
 
 	printf ("\n\nTesting NTOWFv2()\n");
 	NTOWFv2 (password, user, domain, response_key_nt);
@@ -487,7 +497,7 @@ Response:
 
 
 ////// real Communicator 2007 R2 tests //////
-////// Recreated/verifyed real authentication communication between 
+////// Recreated/verifyed real authentication communication between
 ////// Communicator 2007 R2 and Office Communications Server 2007 R2
 ////// with SIPE NTLMv2 implementation.
 
@@ -606,7 +616,7 @@ Message (length 352):
 	"Content-Length: 0\r\n"
 	"\r\n";
 
-	const guchar *request_sig = "<NTLM><13317733><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><><><><>";
+	const gchar *request_sig = "<NTLM><13317733><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><><><><>";
 //Signature:
 //0100000029618e9651b65a7764000000
 
@@ -629,7 +639,7 @@ Message (length 352):
 	"Content-Length: 0\r\n"
 	"\r\n";
 
-	const guchar *response_sig = "<NTLM><9616454F><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><5E61CCD925D17E043D9A74835A88F664><><><7200><200>";
+	const gchar *response_sig = "<NTLM><9616454F><1><SIP Communications Service><cosmo-ocs-r2.cosmo.local><4037df9284354df39065195bd57a4b14><3><REGISTER><sip:user@cosmo.local><3e49177a52><sip:user@cosmo.local><5E61CCD925D17E043D9A74835A88F664><><><7200><200>";
 //Signature:
 //01000000E615438A917661BE64000000
 
@@ -650,21 +660,21 @@ Message (length 352):
 
 	NTOWFv2 (password2, user2, domain2, response_key_nt);
 	NTOWFv2 (password2, user2, domain2, response_key_lm);
-	
+
 	guint8 *buff2;
 	hex_str_to_buff("59519A1727B9CA01", &buff2);
 	const guint64 time_val2 = GUINT64_FROM_LE(*((guint64 *)buff2));
 	g_free(buff2);
-	
+
 	guint8 *target_info2;
 	const int target_info2_len = hex_str_to_buff("02000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C0000000000", &target_info2);
-	
+
 	guint8 *nonce2;
 	hex_str_to_buff("DD1BAAF4E7E218D1", &nonce2);
-	
+
 	guint8 *client_challenge2;
 	hex_str_to_buff("D6AE875CB0FDAA41", &client_challenge2);
-	
+
 	ntlmssp_nt_resp_len = (16 + (32+target_info2_len));
 	guchar nt_challenge_response_v2_2 [ntlmssp_nt_resp_len];
 
@@ -689,9 +699,9 @@ Message (length 352):
 	assert_equal("8DC0C800AE76ECA606D2B9FBEBD04731", nt_challenge_response_v2_2, 16, TRUE);
 	/* the ref string is taken from binary dump of AUTHENTICATE_MESSAGE */
 	assert_equal("8DC0C800AE76ECA606D2B9FBEBD04731010100000000000059519A1727B9CA01D6AE875CB0FDAA410000000002000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C000000000000000000", nt_challenge_response_v2_2, ntlmssp_nt_resp_len, TRUE);
-	
+
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce2, key_exchange_key);
-	//as in the Type3 message	
+	//as in the Type3 message
 	guint8 *encrypted_random_session_key2;
 	hex_str_to_buff("31CB739E1CA80A498591E8AE797115E4", &encrypted_random_session_key2);
 	guchar exported_session_key3[16];
@@ -711,18 +721,18 @@ Message (length 352):
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
-	assert_equal (request_sig, msg_str, strlen(request_sig), FALSE);
+	assert_equal (request_sig, (guchar *)msg_str, strlen(request_sig), FALSE);
 	sig = sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000029618e9651b65a7764000000", (guchar *) sig,32, FALSE);
 	printf("purple_ntlm_verify_signature result = %i\n", sip_sec_ntlm_verify_signature (sig, "0100000029618e9651b65a7764000000"));
-	
+
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nServer response\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(response);
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
-	assert_equal (response_sig, msg_str, strlen(response_sig), FALSE);
+	assert_equal (response_sig, (guchar *)msg_str, strlen(response_sig), FALSE);
 	// server keys here
 	sig = sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, server_sign_key, server_seal_key);
 	sipmsg_breakdown_free(&msgbd);
@@ -733,7 +743,7 @@ Message (length 352):
 	mac = MAC (flags,   (gchar*)request_sig,strlen(request_sig),   client_sign_key,16,   client_seal_key,16,   0,  100);
 	assert_equal("0100000029618e9651b65a7764000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
-	
+
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - server's verifying\n");
 	mac = MAC (flags,   (gchar*)response_sig,strlen(response_sig),   server_sign_key,16,   server_seal_key,16,   0,  100);
 	assert_equal("01000000E615438A917661BE64000000", (guchar*)mac, 32, FALSE);
