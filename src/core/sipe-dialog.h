@@ -115,11 +115,18 @@ sipe_dialog_remove_3(struct sip_session *session,
 		     struct sip_dialog *dialog_in);
 
 /**
- * Remove all dialogs frome a session
+ * Remove all dialogs from a session
  *
  * @param session (in)
  */
 void sipe_dialog_remove_all(struct sip_session *session);
+
+/**
+ * Remove all routes from a dialog
+ *
+ * @param dialog (in)
+ */
+void sipe_dialog_remove_all_routes(struct sip_dialog *dialog);
 
 /**
  * Does a session have any dialogs?

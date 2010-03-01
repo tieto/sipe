@@ -152,6 +152,19 @@ void sipe_dialog_remove_all(struct sip_session *session)
 	}
 }
 
+void sipe_dialog_remove_all_routes(struct sip_dialog *dialog)
+{
+	GSList *entry;
+	void *data;
+
+	entry = dialog->routes;
+	while (entry) {
+		data = entry->data;
+		entry = g_slist_remove(entry, data);
+		g_free(data);
+	}
+}
+
 static void sipe_get_route_header(const struct sipmsg *msg,
 				  struct sip_dialog *dialog,
 				  gboolean outgoing)

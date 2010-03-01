@@ -5131,6 +5131,10 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		struct sip_dialog *dialog = sipe_dialog_find(session, from);
 		if (dialog) {
 			purple_debug_info("sipe", "process_incoming_invite, session already has dialog!\n");
+			purple_debug_info("sipe", "process_incoming_invite, remove all routes for the dialog\n");
+			sipe_dialog_remove_all_routes(dialog);
+			purple_debug_info("sipe", "process_incoming_invite,  dialog_parse the routes again\n");
+			sipe_dialog_parse(dialog, msg, FALSE);
 		} else {
 			dialog = sipe_dialog_add(session);
 
