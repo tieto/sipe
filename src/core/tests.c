@@ -705,6 +705,7 @@ Message (length 352):
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
+	assert_equal (request_sig, msg_str, strlen(request_sig), FALSE);
 	sig = sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000029618e9651b65a7764000000", (guchar *) sig,32, FALSE);
@@ -715,6 +716,7 @@ Message (length 352):
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
+	assert_equal (response_sig, msg_str, strlen(response_sig), FALSE);
 	// server keys here
 	sig = sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, server_sign_key, server_seal_key);
 	sipmsg_breakdown_free(&msgbd);
