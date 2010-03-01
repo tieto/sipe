@@ -987,11 +987,19 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
 		const gchar *target_info_content = (((gchar *)cmsg) + GUINT32_FROM_LE(cmsg->target_info.offset));
 		struct av_pair *av = (struct av_pair*)target_info_content;
+		struct av_pair av_pair_struct;
+		gchar buff[4];
+		gchar *buff_t = buff;
+	
+		/* to meet sparc's alignment */	
+		memcpy(buff_t, (guint8 *)av, 4);
+		av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
+		av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
 
-		while (GUINT16_FROM_LE(av->av_id) != MsvAvEOL) {
+		while (av_pair_struct.av_id != MsvAvEOL) {
 			gchar *av_value = ((gchar *)av) + 4;
 
-			switch (GUINT16_FROM_LE(av->av_id)) {
+			switch (av_pair_struct.av_id) {
 				/* @since Vista */
 				case MsvAvTimestamp:
 					if (time_val) {
@@ -1002,7 +1010,12 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 					}
 					break;
 			}
-			av = (struct av_pair*)(((guint8*)av) + 4 + GUINT16_FROM_LE(av->av_len));
+			av = (struct av_pair*)(((guint8*)av) + 4 + av_pair_struct.av_len);
+
+			/* to meet sparc's alignment */	
+			memcpy(buff_t, (guint8 *)av, 4);
+			av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
+			av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
 		}
 
 		if (target_info_len) {
@@ -1407,7 +1420,7 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 	gchar *buff_t = buff;
 	
 	/* to meet sparc's alignment */	
-	memcpy(buff, (guint8 *)av, 4);
+	memcpy(buff_t, (guint8 *)av, 4);
 	av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
 	av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
 
@@ -1439,7 +1452,7 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 				break;
 			case MsvAvFlags:
 				/* to meet sparc's alignment */	
-				memcpy(buff, (guint8 *)av_value, 4);				
+				memcpy(buff_t, (guint8 *)av_value, 4);				
 				g_string_append_printf(str, "\t%s: %d\n", "MsvAvFlags", GUINT32_FROM_LE(*((guint32*)buff_t)));
 				break;
 			case MsvAvTimestamp:
@@ -1474,7 +1487,7 @@ describe_av_pairs(GString* str, const struct av_pair *av)
 		av = (struct av_pair *)(((guint8 *)av) + 4 + av_pair_struct.av_len);
 
 		/* to meet sparc's alignment */
-		memcpy(buff, (guint8 *)av, 4);
+		memcpy(buff_t, (guint8 *)av, 4);
 		av_pair_struct.av_id  = GUINT16_FROM_LE(*((guint16*)buff_t));
 		av_pair_struct.av_len = GUINT16_FROM_LE(*((guint16*)(buff_t+2)));
 	}
