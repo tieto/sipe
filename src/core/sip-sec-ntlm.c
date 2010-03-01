@@ -1004,7 +1004,9 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 
 	/* target_info */
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
-		void *av = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset);
+		void *content = (gchar *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset);
+		void *av      = content;
+		guint16 len   = GUINT16_FROM_LE(cmsg->target_info.len);
 
 		ALIGN_AV_LOOP_START
 		{
@@ -1022,11 +1024,11 @@ purple_ntlm_parse_challenge(SipSecBuffer in_buff,
 		ALIGN_AV_LOOP_END;
 
 		if (target_info_len) {
-			*target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
+			*target_info_len = len;
 		}
 		if (target_info) {
-			*target_info = (guchar *)g_new0(gchar, GUINT16_FROM_LE(cmsg->target_info.len));
-			memcpy(*target_info, av, GUINT16_FROM_LE(cmsg->target_info.len));
+			*target_info = (guchar *)g_new0(gchar, len);
+			memcpy(*target_info, content, len);
 		}
 	}
 }
