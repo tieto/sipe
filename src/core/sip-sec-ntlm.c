@@ -166,19 +166,22 @@ struct version test_version;		/* optional, not set in  in implementation */
 /* Common negotiate flags */
 #define NEGOTIATE_FLAGS_CONN \
 	  NTLMSSP_NEGOTIATE_UNICODE | \
-	  NTLMSSP_NEGOTIATE_56 | \
-	  NTLMSSP_NEGOTIATE_128 | \
-	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
 	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
+	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
+	  NTLMSSP_NEGOTIATE_TARGET_INFO | \
+	  NTLMSSP_NEGOTIATE_VERSION | \
+	  NTLMSSP_NEGOTIATE_128 | \
 	  NTLMSSP_NEGOTIATE_KEY_EXCH | \
+	  NTLMSSP_NEGOTIATE_56 | \
 	  NTLMSSP_REQUEST_TARGET
-
+		
 /* Negotiate flags required in connectionless NTLM */
 #define NEGOTIATE_FLAGS \
 	( NEGOTIATE_FLAGS_CONN | \
 	  NTLMSSP_NEGOTIATE_SIGN | \
-	  NTLMSSP_NEGOTIATE_DATAGRAM )
+	  NTLMSSP_NEGOTIATE_DATAGRAM | \
+	  NTLMSSP_NEGOTIATE_IDENTIFY)
 
 #define NTLMSSP_LN_OR_NT_KEY_LEN  16
 #define NTLMSSP_LM_RESP_LEN 24
@@ -984,6 +987,7 @@ MAC (guint32 flags,
 /* End Core NTLM Methods */
 
 /**
+  * @param flags (out)		flags received from server
   * @param server_challenge	must be g_free()'d after use if requested
   * @param target_info		must be g_free()'d after use if requested
   */
@@ -1041,6 +1045,13 @@ sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
 	}
 }
 
+/**
+ * @param client_sign_key (out)		must be g_free()'d after use
+ * @param server_sign_key (out) 	must be g_free()'d after use
+ * @param client_seal_key (out) 	must be g_free()'d after use
+ * @param server_seal_key (out) 	must be g_free()'d after use
+ * @param flags (in, out)		negotiated flags
+ */
 static void
 sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 			      guchar **server_sign_key,
@@ -1058,7 +1069,8 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 			      SipSecBuffer *out_buff,
 			      guint32 *flags)
 {
-	guint32 neg_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
+	guint32 orig_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
+	guint32 neg_flags = (*flags & orig_flags) | NTLMSSP_REQUEST_TARGET;
 	int ntlmssp_nt_resp_len =
 #ifdef _SIPE_COMPILING_TESTS
 		use_ntlm_v2 ?
@@ -1087,6 +1099,10 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char key [16];
 	unsigned char client_challenge [8];
 	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
+	
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_128)) {
+		neg_flags = neg_flags & ~NTLMSSP_NEGOTIATE_56;
+	}
 	
 	NONCE (client_challenge, 8);
 
@@ -1197,9 +1213,6 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	memcpy(tmsg->protocol, "NTLMSSP\0", 8);
 	tmsg->type = GUINT32_TO_LE(3);
 
-	/* Set Negotiate Flags */
-	tmsg->flags = GUINT32_TO_LE(neg_flags);
-
 	/* Initial offset */
 	offset = sizeof(struct authenticate_message);
 	tmp = ((char*) tmsg) + offset;
@@ -1256,6 +1269,8 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	tmsg->ver.ntlm_revision_current = test_version.ntlm_revision_current;
 #endif
 
+	/* Set Negotiate Flags */
+	tmsg->flags = GUINT32_TO_LE(neg_flags);
 	*flags = neg_flags;
 
 	tmp = purple_base64_encode(exported_session_key, 16);

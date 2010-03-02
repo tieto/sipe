@@ -649,7 +649,7 @@ Message (length 352):
 	/* global struct */
 	test_version.product_major_version = 5;
 	test_version.product_minor_version = 2;
-	test_version.product_build = 3790;
+	test_version.product_build = GUINT16_FROM_LE(3790);
 	test_version.ntlm_revision_current = 0x0F;
 
 	NTOWFv2 (password2, user2, domain2, response_key_nt);
@@ -700,7 +700,7 @@ Message (length 352):
 	//as in the Type3 message
 	guint8 *encrypted_random_session_key2;
 	hex_str_to_buff("31CB739E1CA80A498591E8AE797115E4", &encrypted_random_session_key2);
-	/* Global buff - test_random_session_key */
+	/* global buff - test_random_session_key */
 	//decoding exported_session_key
 	RC4K (key_exchange_key, 16, encrypted_random_session_key2, 16, test_random_session_key);
 	g_free(encrypted_random_session_key2);
@@ -763,7 +763,7 @@ Message (length 352):
 
 	sip_sec_ntlm_parse_challenge(in_buff,
 				     0,
-				     &flags2,
+				     &flags2, /* out */
 				     &server_challenge,
 				     &time_val2,
 				     &target_info3,
