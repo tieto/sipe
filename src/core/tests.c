@@ -487,9 +487,12 @@ Response:
 	const char *password2 = "Pa$$word";
 	const char *user2 = "User";
 	const char *domain2 = "COSMO";
+	const char *host2 = "COSMO-OCS-R2";
 
 //Challenge:
-//TlRMTVNTUAACAAAAAAAAADgAAADzgpji3Ruq9OfiGNEAAAAAAAAAAJYAlgA4AAAABQLODgAAAA8CAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAA=
+//const char *type2 = "TlRMTVNTUAACAAAAAAAAADgAAADzgpji3Ruq9OfiGNEAAAAAAAAAAJYAlgA4AAAABQLODgAAAA8CAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAA=";
+//in hex (base64 decoded):
+const char *type2_hex = "4E544C4D53535000020000000000000038000000F38298E2DD1BAAF4E7E218D1000000000000000096009600380000000502CE0E0000000F02000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C0000000000";
 /*
 Message (length 206):
         NTLMSSP_NEGOTIATE_UNICODE
@@ -526,7 +529,9 @@ Message (length 206):
 
 
 //Response:
-//TlRMTVNTUAADAAAAGAAYAHIAAADGAMYAigAAAAoACgBIAAAACAAIAFIAAAAYABgAWgAAABAAEABQAQAAVYKYYgUCzg4AAAAPQwBPAFMATQBPAFUAcwBlAHIAQwBPAFMATQBPAC0ATwBDAFMALQBSADIAoeku/k4Hi/fFwASazGFmwtauh1yw/apBjcDIAK527KYG0rn769BHMQEBAAAAAAAAWVGaFye5ygHWrodcsP2qQQAAAAACAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAAAAAAAMctznhyoCkmFkeiueXEV5A==
+//const char *type3 = "TlRMTVNTUAADAAAAGAAYAHIAAADGAMYAigAAAAoACgBIAAAACAAIAFIAAAAYABgAWgAAABAAEABQAQAAVYKYYgUCzg4AAAAPQwBPAFMATQBPAFUAcwBlAHIAQwBPAFMATQBPAC0ATwBDAFMALQBSADIAoeku/k4Hi/fFwASazGFmwtauh1yw/apBjcDIAK527KYG0rn769BHMQEBAAAAAAAAWVGaFye5ygHWrodcsP2qQQAAAAACAAoAQwBPAFMATQBPAAEAGABDAE8AUwBNAE8ALQBPAEMAUwAtAFIAMgAEABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAMAMABjAG8AcwBtAG8ALQBvAGMAcwAtAHIAMgAuAGMAbwBzAG0AbwAuAGwAbwBjAGEAbAAFABYAYwBvAHMAbQBvAC4AbABvAGMAYQBsAAAAAAAAAAAAMctznhyoCkmFkeiueXEV5A==";
+//in hex (base64 decoded):
+const char *type3_hex = "4E544C4D53535000030000001800180072000000C600C6008A0000000A000A00480000000800080052000000180018005A0000001000100050010000558298620502CE0E0000000F43004F0053004D004F00550073006500720043004F0053004D004F002D004F00430053002D0052003200A1E92EFE4E078BF7C5C0049ACC6166C2D6AE875CB0FDAA418DC0C800AE76ECA606D2B9FBEBD04731010100000000000059519A1727B9CA01D6AE875CB0FDAA410000000002000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C00000000000000000031CB739E1CA80A498591E8AE797115E4";
 /*
 Message (length 352):
         NTLMSSP_NEGOTIATE_UNICODE
@@ -640,13 +645,20 @@ Message (length 352):
 		| NTLMSSP_NEGOTIATE_VERSION
 		| NTLMSSP_NEGOTIATE_128
 		| NTLMSSP_NEGOTIATE_KEY_EXCH;
+		
+	/* global struct */
+	test_version.product_major_version = 5;
+	test_version.product_minor_version = 2;
+	test_version.product_build = 3790;
+	test_version.ntlm_revision_current = 0x0F;
 
 	NTOWFv2 (password2, user2, domain2, response_key_nt);
 	NTOWFv2 (password2, user2, domain2, response_key_lm);
 
 	guint8 *buff2;
 	hex_str_to_buff("59519A1727B9CA01", &buff2);
-	const guint64 time_val2 = GUINT64_FROM_LE(*((guint64 *)buff2));
+	/* global var */
+	test_time_val = GUINT64_FROM_LE(*((guint64 *)buff2));
 	g_free(buff2);
 
 	guint8 *target_info2;
@@ -655,8 +667,10 @@ Message (length 352):
 	guint8 *nonce2;
 	hex_str_to_buff("DD1BAAF4E7E218D1", &nonce2);
 
-	guint8 *client_challenge2;
-	hex_str_to_buff("D6AE875CB0FDAA41", &client_challenge2);
+	hex_str_to_buff("D6AE875CB0FDAA41", &buff2);
+	/* global buff */
+	memcpy(test_client_challenge, buff2, 8);
+	g_free(buff2);
 
 	ntlmssp_nt_resp_len = (16 + (32+target_info2_len));
 	guchar nt_challenge_response_v2_2 [ntlmssp_nt_resp_len];
@@ -667,14 +681,13 @@ Message (length 352):
 			 response_key_nt,
 			 response_key_lm,
 			 nonce2,
-			 client_challenge2,
-			 time_val2,
+			 test_client_challenge,
+			 test_time_val,
 			 target_info2, /* target_info */
 			 target_info2_len,  /* target_info_len */
 			 lm_challenge_response,	/* out */
 			 nt_challenge_response_v2_2,	/* out */
 			 session_base_key);	/* out */
-	g_free(client_challenge2);
 	g_free(nonce2);
 	g_free(target_info2);
 
@@ -687,17 +700,17 @@ Message (length 352):
 	//as in the Type3 message
 	guint8 *encrypted_random_session_key2;
 	hex_str_to_buff("31CB739E1CA80A498591E8AE797115E4", &encrypted_random_session_key2);
-	guchar exported_session_key3[16];
+	/* Global buff - test_random_session_key */
 	//decoding exported_session_key
-	RC4K (key_exchange_key, 16, encrypted_random_session_key2, 16, exported_session_key3);
+	RC4K (key_exchange_key, 16, encrypted_random_session_key2, 16, test_random_session_key);
 	g_free(encrypted_random_session_key2);
 
 	guchar server_sign_key [16];
 	guchar server_seal_key [16];
-	SIGNKEY (exported_session_key3, TRUE, client_sign_key);
-	SEALKEY (flags, exported_session_key3, TRUE, client_seal_key);
-	SIGNKEY (exported_session_key3, FALSE, server_sign_key);
-	SEALKEY (flags, exported_session_key3, FALSE, server_seal_key);
+	SIGNKEY (test_random_session_key, TRUE, client_sign_key);
+	SEALKEY (flags, test_random_session_key, TRUE, client_seal_key);
+	SIGNKEY (test_random_session_key, FALSE, server_sign_key);
+	SEALKEY (flags, test_random_session_key, FALSE, server_seal_key);
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nClient request\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(request);
@@ -732,6 +745,50 @@ Message (length 352):
 	assert_equal("01000000E615438A917661BE64000000", (guchar*)mac, 32, FALSE);
 	g_free(mac);
 
+	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Type3 generation test\n");
+	guchar *client_sign_key2;
+	guchar *server_sign_key2;
+	guchar *client_seal_key2;
+	guchar *server_seal_key2;
+
+	guchar *server_challenge = NULL;
+	guint64 time_val2 = 0;
+	guchar *target_info3 = NULL;
+	int target_info3_len = 0;
+	guint32 flags2;
+	SipSecBuffer in_buff;
+	SipSecBuffer out_buff;
+	
+	in_buff.length = hex_str_to_buff(type2_hex, (guint8 **)&(in_buff.value));
+
+	sip_sec_ntlm_parse_challenge(in_buff,
+				     0,
+				     &flags2,
+				     &server_challenge,
+				     &time_val2,
+				     &target_info3,
+				     &target_info3_len);
+
+	sip_sec_ntlm_gen_authenticate(&client_sign_key2,
+				      &server_sign_key2,
+				      &client_seal_key2,
+				      &server_seal_key2,
+				      user2,
+				      password2,
+				      host2,
+				      domain2,
+				      server_challenge,
+				      test_time_val,
+				      target_info3,
+				      target_info3_len,
+				      0,
+				      &out_buff,
+				      &flags2);
+
+	g_free(server_challenge);
+	g_free(target_info3);
+
+	assert_equal(type3_hex, out_buff.value, out_buff.length, TRUE);
 
 ////// UUID tests ///////
 	/* begin tests from MS-SIPRE */

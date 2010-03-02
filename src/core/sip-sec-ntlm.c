@@ -140,6 +140,15 @@
 #define TIME_T_TO_VAL(time_t)   (((guint64)(time_t)) * TIME_VAL_FACTOR + TIME_VAL_OFFSET)
 #define TIME_VAL_TO_T(time_val) ((time_t)((GUINT64_FROM_LE((time_val)) - TIME_VAL_OFFSET) / TIME_VAL_FACTOR))
 
+/* 8 bytes */
+struct version {
+	guint8  product_major_version;
+	guint8  product_minor_version;
+	guint16 product_build;
+	guint8  zero2[3];
+	guint8  ntlm_revision_current;
+};
+
 /*
  * NTLMv1 is no longer used except in tests. R.I.P.
  *
@@ -147,6 +156,11 @@
  */
 #ifdef _SIPE_COMPILING_TESTS
 static gboolean use_ntlm_v2 = FALSE;
+
+guint64 test_time_val = 0;		/* actual time in implementation */
+guchar test_client_challenge [8];	/* random in implementation */
+guchar test_random_session_key[16];	/* random in implementation */
+struct version test_version;		/* optional, not set in  in implementation */
 #endif
 
 /* Common negotiate flags */
@@ -198,15 +212,6 @@ struct av_pair {
 		av = av_value + av_len; \
 		ALIGN_AV;               \
 	}
-
-/* 8 bytes */
-struct version {
-	guint8  product_major_version;
-	guint8  product_minor_version;
-	guint16 product_build;
-	guint8  zero2[3];
-	guint8  ntlm_revision_current;
-};
 
 /* 8 bytes */
 struct smb_header {
@@ -1081,11 +1086,16 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char encrypted_random_session_key [16];
 	unsigned char key [16];
 	unsigned char client_challenge [8];
-
+	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
+	
 	NONCE (client_challenge, 8);
 
 #ifdef _SIPE_COMPILING_TESTS
+	memcpy(client_challenge, test_client_challenge, 8);
+	time_vl = test_time_val ? test_time_val : time_vl;
+
 	if (use_ntlm_v2) {
+		
 #endif
 		NTOWFv2 (password, user, domain, response_key_nt);
 		memcpy(response_key_lm, response_key_nt, NTLMSSP_LN_OR_NT_KEY_LEN);
@@ -1101,7 +1111,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 			 response_key_lm,
 			 server_challenge,
 			 client_challenge,
-			 time_val ? time_val : TIME_T_TO_VAL(time(NULL)),
+			 time_vl,
 			 target_info,
 			 target_info_len,
 			 lm_challenge_response,	/* out */
@@ -1116,6 +1126,9 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
 		NONCE (exported_session_key, 16); // random master key
+#ifdef _SIPE_COMPILING_TESTS
+		memcpy(exported_session_key, test_random_session_key, 16);
+#endif
 		RC4K (key_exchange_key, 16, exported_session_key, 16, encrypted_random_session_key);
 	} else {
 		memcpy(exported_session_key, key_exchange_key, 16);
@@ -1203,7 +1216,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	len = (srclen);			  \
 	memcpy(tmp, (src), len);	  \
 	_FILL_SMB_HEADER(header)
-
+	
 	/* Domain */
 	_APPEND_STRING(domain, domain);
 
@@ -1234,6 +1247,14 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 		tmsg->session_key.offset = GUINT32_TO_LE(offset);
 		tmsg->session_key.len = tmsg->session_key.maxlen = 0;
 	}
+
+#ifdef _SIPE_COMPILING_TESTS
+	tmsg->ver.product_major_version = test_version.product_major_version;
+	tmsg->ver.product_minor_version = test_version.product_minor_version;
+	tmsg->ver.product_build = test_version.product_build;
+	memset(tmsg->ver.zero2, 0, 3);
+	tmsg->ver.ntlm_revision_current = test_version.ntlm_revision_current;
+#endif
 
 	*flags = neg_flags;
 
