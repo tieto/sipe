@@ -108,6 +108,7 @@ int main()
 	printf ("Starting Tests\n");
 
 	/* Initialization that libpurple/core.c would normally do */
+	purple_signals_init();
 	purple_debug_init();
 	purple_debug_set_enabled(TRUE);
 	purple_ciphers_init();
