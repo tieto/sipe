@@ -141,6 +141,7 @@
 #define TIME_VAL_TO_T(time_val) ((time_t)((GUINT64_FROM_LE((time_val)) - TIME_VAL_OFFSET) / TIME_VAL_FACTOR))
 
 /* 8 bytes */
+/* LE (Little Endian) byte order */
 struct version {
 	guint8  product_major_version;
 	guint8  product_minor_version;
@@ -165,23 +166,25 @@ struct version test_version;		/* optional, not set in  in implementation */
 
 /* Common negotiate flags */
 #define NEGOTIATE_FLAGS_CONN \
-	  NTLMSSP_NEGOTIATE_UNICODE | \
+	( NTLMSSP_NEGOTIATE_UNICODE | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
 	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
 	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
 	  NTLMSSP_NEGOTIATE_TARGET_INFO | \
 	  NTLMSSP_NEGOTIATE_VERSION | \
 	  NTLMSSP_NEGOTIATE_128 | \
-	  NTLMSSP_NEGOTIATE_KEY_EXCH | \
 	  NTLMSSP_NEGOTIATE_56 | \
-	  NTLMSSP_REQUEST_TARGET
+	  NTLMSSP_REQUEST_TARGET \
+	)
 
 /* Negotiate flags required in connectionless NTLM */
 #define NEGOTIATE_FLAGS \
 	( NEGOTIATE_FLAGS_CONN | \
 	  NTLMSSP_NEGOTIATE_SIGN | \
 	  NTLMSSP_NEGOTIATE_DATAGRAM | \
-	  NTLMSSP_NEGOTIATE_IDENTIFY)
+	  NTLMSSP_NEGOTIATE_IDENTIFY | \
+	  NTLMSSP_NEGOTIATE_KEY_EXCH \
+	)
 
 #define NTLMSSP_LN_OR_NT_KEY_LEN  16
 #define NTLMSSP_LM_RESP_LEN 24
@@ -191,6 +194,8 @@ struct version test_version;		/* optional, not set in  in implementation */
 
 #define IS_FLAG(flags, flag) ((flags & flag) == flag)
 
+/* 4 bytes */
+/* LE (Little Endian) byte order */
 struct av_pair {
 	guint16 av_id;
 	guint16 av_len;
@@ -217,17 +222,20 @@ struct av_pair {
 	}
 
 /* 8 bytes */
+/* LE (Little Endian) byte order */
 struct smb_header {
 	guint16 len;
 	guint16 maxlen;
 	guint32 offset;
 };
 
+/* LE (Little Endian) byte order */
 struct ntlm_message {
 	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
 	guint32 type;            /* 0x00000003 */
 };
 
+/* LE (Little Endian) byte order */
 struct negotiate_message {
 	guint8  protocol[8];		/* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0' */
 	guint32 type;			/* 0x00000001 */
@@ -241,6 +249,7 @@ struct negotiate_message {
 	 */
 };
 
+/* LE (Little Endian) byte order */
 struct challenge_message {
 	guint8  protocol[8];		/* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
 	guint32 type;			/* 0x00000002 */
@@ -256,6 +265,7 @@ struct challenge_message {
 	 */
 };
 
+/* LE (Little Endian) byte order */
 struct authenticate_message {
 	guint8  protocol[8];     /* 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'*/
 	guint32 type;            /* 0x00000003 */
