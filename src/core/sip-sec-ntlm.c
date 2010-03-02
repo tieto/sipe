@@ -1063,7 +1063,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 		: NTLMSSP_LM_RESP_LEN
 #endif
 		;
-	int msglen = sizeof(struct authenticate_message)
+	gsize msglen = sizeof(struct authenticate_message)
 		+ 2*(strlen(domain) + strlen(user)+ strlen(hostname))
 		+ NTLMSSP_LM_RESP_LEN + ntlmssp_nt_resp_len
 		+ (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH) ? NTLMSSP_SESSION_KEY_LEN : 0);
@@ -1191,18 +1191,17 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	offset = sizeof(struct authenticate_message);
 	tmp = ((char*) tmsg) + offset;
 
-#define _FILL_SMB_HEADER(header) \
-	tmsg->header.offset = GUINT32_TO_LE(offset); \
+#define _FILL_SMB_HEADER(header)				     \
+	tmsg->header.offset = GUINT32_TO_LE(offset);		     \
 	tmsg->header.len = tmsg->header.maxlen = GUINT16_TO_LE(len); \
-	tmp += len; \
+	tmp += len;						     \
 	offset += len
-#define _APPEND_STRING(header, src) \
-	len = 2 * strlen((src));		    \
-	len = unicode_strconvcopy(tmp, (src), len); \
+#define _APPEND_STRING(header, src)				\
+	len = unicode_strconvcopy(tmp, (src), msglen - offset); \
 	_FILL_SMB_HEADER(header)
 #define _APPEND_DATA(header, src, srclen) \
-	len = (srclen);				\
-	memcpy(tmp, (src), len);		\
+	len = (srclen);			  \
+	memcpy(tmp, (src), len);	  \
 	_FILL_SMB_HEADER(header)
 
 	/* Domain */
