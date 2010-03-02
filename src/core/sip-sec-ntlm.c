@@ -1261,12 +1261,20 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 		tmsg->session_key.len = tmsg->session_key.maxlen = 0;
 	}
 
+
+	/* Version */
 #ifdef _SIPE_COMPILING_TESTS
 	tmsg->ver.product_major_version = test_version.product_major_version;
 	tmsg->ver.product_minor_version = test_version.product_minor_version;
 	tmsg->ver.product_build = test_version.product_build;
-	memset(tmsg->ver.zero2, 0, 3);
 	tmsg->ver.ntlm_revision_current = test_version.ntlm_revision_current;
+#else
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_VERSION)) {
+		tmsg->ver.product_major_version = 5;		/* 5.1.2600 (Windows XP SP2) */
+		tmsg->ver.product_minor_version = 1;
+		tmsg->ver.product_build = GUINT16_FROM_LE(2600);
+		tmsg->ver.ntlm_revision_current = 0x0F;		/* NTLMSSP_REVISION_W2K3 */
+	}
 #endif
 
 	/* Set Negotiate Flags */
@@ -1310,10 +1318,10 @@ sip_sec_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	tmsg->host.len = tmsg->host.maxlen = len = 0;
 
 	/* Version */
-	//tmsg->ver.product_major_version = 5;	/* 5.1.2600 (Windows XP SP2) */
-	//tmsg->ver.product_minor_version = 1;
-	//tmsg->ver.product_build = 2600;
-	//tmsg->ver.ntlm_revision_current = 0x0F;	/* NTLMSSP_REVISION_W2K3 */
+	tmsg->ver.product_major_version = 5;		/* 5.1.2600 (Windows XP SP2) */
+	tmsg->ver.product_minor_version = 1;
+	tmsg->ver.product_build = GUINT16_FROM_LE(2600);
+	tmsg->ver.ntlm_revision_current = 0x0F;		/* NTLMSSP_REVISION_W2K3 */
 
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
