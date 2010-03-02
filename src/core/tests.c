@@ -11,13 +11,7 @@
  *   - MS-NLMP: http://msdn.microsoft.com/en-us/library/cc207842.aspx
  *   - MS-SIP : http://msdn.microsoft.com/en-us/library/cc246115.aspx
  *
- * Build and run with (adjust as needed to your build platform!)
- *
- * $ gcc -I /usr/include/libpurple \
- *       -I /usr/include/dbus-1.0 -I /usr/lib/dbus-1.0/include \
- *       -I /usr/include/glib-2.0 -I /usr/lib/glib-2.0/include \
- *       -o tests tests.c sipe-sign.c sipmsg.c sip-sec.c uuid.c -lpurple
- * ./tests
+ * Please use "make tests" to build & run them!
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
