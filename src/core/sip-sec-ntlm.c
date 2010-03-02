@@ -1287,7 +1287,7 @@ static gchar *
 sip_sec_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
 {
 	gchar *res = MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100);
-	//purple_debug_info("sipe", "NTLM calculated MAC: %s\n", res);
+	purple_debug_info("sipe", "NTLM calculated MAC: %s\n", res);
 	return res;
 }
 

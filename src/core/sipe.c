@@ -833,7 +833,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 
 
 		buf = auth_header(sip, &sip->registrar, msg);
-		sipmsg_add_header_now_pos(msg, "Proxy-Authorization", buf, 5);
+		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 	        g_free(buf);
 	} else {
 		purple_debug_info("sipe", "not adding auth header to msg w/ method %s\n", method);
@@ -7846,11 +7846,8 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 
 							fill_auth(ptmp, &sip->registrar);
 							auth = auth_header(sip, &sip->registrar, trans->msg);
-							sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
-							sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
-
-							//sipmsg_remove_header_now(trans->msg, "Authorization");
-							//sipmsg_add_header(trans->msg, "Authorization", auth);
+							sipmsg_remove_header_now(trans->msg, "Authorization");
+							sipmsg_add_header_now_pos(trans->msg, "Authorization", auth, 5);
 							g_free(auth);
 							resend = sipmsg_to_string(trans->msg);
 							/* resend request */
