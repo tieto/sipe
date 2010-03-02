@@ -10062,6 +10062,8 @@ static void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 	GList *entry;
 
+	sip_sec_destroy();
+
 	entry = prpl_info.protocol_options;
 	while (entry) {
 		purple_account_option_destroy(entry->data);
@@ -10083,6 +10085,7 @@ static void init_plugin(PurplePlugin *plugin)
 	PurpleAccountOption *option;
 
 	srand(time(NULL));
+	sip_sec_init();
 
 #ifdef ENABLE_NLS
 	purple_debug_info(PACKAGE, "bindtextdomain = %s\n", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));

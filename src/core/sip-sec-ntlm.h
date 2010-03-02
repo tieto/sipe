@@ -1,5 +1,5 @@
 /**
- * @file sip-sec-ntlm.c
+ * @file sip-sec-ntlm.h
  *
  * pidgin-sipe
  *
@@ -23,6 +23,9 @@
 
 SipSecContext
 sip_sec_create_context__ntlm(SipSecAuthType type);
+
+void sip_sec_init__ntlm(void);
+void sip_sec_destroy__ntlm(void);
 
 /**
  * Describes NTML messages in human readable form

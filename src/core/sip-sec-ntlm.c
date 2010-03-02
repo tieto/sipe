@@ -175,7 +175,7 @@ struct version test_version;		/* optional, not set in  in implementation */
 	  NTLMSSP_NEGOTIATE_KEY_EXCH | \
 	  NTLMSSP_NEGOTIATE_56 | \
 	  NTLMSSP_REQUEST_TARGET
-		
+
 /* Negotiate flags required in connectionless NTLM */
 #define NEGOTIATE_FLAGS \
 	( NEGOTIATE_FLAGS_CONN | \
@@ -291,54 +291,28 @@ static char SIPE_DEFAULT_CODESET[] = "ANSI_X3.4-1968";
 /* Private Methods */
 
 /* Utility Functions */
+static GIConv convert_from_utf16le = (GIConv)-1;
+static GIConv convert_to_utf16le   = (GIConv)-1;
 
-static int
-unicode_strconvcopy_dir(gchar *dest, const gchar *source, int remlen, gsize source_len, gboolean to_16LE)
+static gsize
+unicode_strconvcopy(gchar *dest, const gchar *source, gsize remlen)
 {
-	GIConv fd;
-	gchar *inbuf = (gchar *) source;
-	gchar *outbuf = dest;
-	gsize inbytes = source_len;
+	gsize inbytes  = strlen(source);
 	gsize outbytes = remlen;
-#ifdef HAVE_LANGINFO_CODESET
-	char *sys_cp = nl_langinfo(CODESET);
-#else
-        char *sys_cp = SIPE_DEFAULT_CODESET;
-#endif /* HAVE_LANGINFO_CODESET */
-
-	/* fall back to utf-8 */
-	if (!sys_cp) sys_cp = "UTF-8";
-
-	fd = to_16LE ? g_iconv_open("UTF-16LE", sys_cp) : g_iconv_open(sys_cp, "UTF-16LE");
-	if( fd == (GIConv)-1 ) {
-		purple_debug_error( "sipe", "iconv_open returned -1, cannot continue\n" );
-	}
-	g_iconv(fd, &inbuf, &inbytes, &outbuf, &outbytes);
-	g_iconv_close(fd);
-	return (remlen - outbytes);
-}
-
-static int
-unicode_strconvcopy(gchar *dest, const gchar *source, int remlen)
-{
-	return unicode_strconvcopy_dir(dest, source, remlen, strlen(source), TRUE);
+	g_iconv(convert_to_utf16le, (gchar **)&source, &inbytes, &dest, &outbytes);
+	return(remlen - outbytes);
 }
 
 /* UTF-16LE to native encoding
  * Must be g_free'd after use */
 static gchar *
-unicode_strconvcopy_back(const gchar *source,
-			 int len)
+unicode_strconvcopy_back(const gchar *source, gsize len)
 {
-	char *res = NULL;
-	int dest_len = 2 * len;
-	gchar *dest = g_new0(gchar, dest_len);
-
-	dest_len = unicode_strconvcopy_dir(dest, source, dest_len, len, FALSE);
-	res = g_strndup(dest, dest_len);
-	g_free(dest);
-
-	return res;
+	gsize outbytes = 2 * len;
+	gchar *dest    = g_new0(gchar, outbytes + 1);
+	gchar *outbuf  = dest;
+	g_iconv(convert_from_utf16le, (gchar **)&source, &len, &outbuf, &outbytes);
+	return dest;
 }
 
 /* crc32 source copy from gg's common.c */
@@ -1099,11 +1073,11 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char key [16];
 	unsigned char client_challenge [8];
 	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
-	
+
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_128)) {
 		neg_flags = neg_flags & ~NTLMSSP_NEGOTIATE_56;
 	}
-	
+
 	NONCE (client_challenge, 8);
 
 #ifdef _SIPE_COMPILING_TESTS
@@ -1111,7 +1085,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	time_vl = test_time_val ? test_time_val : time_vl;
 
 	if (use_ntlm_v2) {
-		
+
 #endif
 		NTOWFv2 (password, user, domain, response_key_nt);
 		memcpy(response_key_lm, response_key_nt, NTLMSSP_LN_OR_NT_KEY_LEN);
@@ -1229,7 +1203,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	len = (srclen);			  \
 	memcpy(tmp, (src), len);	  \
 	_FILL_SMB_HEADER(header)
-	
+
 	/* Domain */
 	_APPEND_STRING(domain, domain);
 
@@ -1929,6 +1903,35 @@ sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER SipSecAuthType type)
 	return((SipSecContext) context);
 }
 
+void sip_sec_init__ntlm(void)
+{
+#ifdef HAVE_LANGINFO_CODESET
+	const char *sys_cp = nl_langinfo(CODESET);
+#else
+        const char *sys_cp = SIPE_DEFAULT_CODESET;
+#endif /* HAVE_LANGINFO_CODESET */
+
+	/* fall back to utf-8 */
+	if (!sys_cp) sys_cp = "UTF-8";
+
+	convert_from_utf16le = g_iconv_open(sys_cp, "UTF-16LE");
+	if (convert_from_utf16le == (GIConv)-1) {
+		purple_debug_error("sipe", "g_iconv_open from UTF-16LE to %s failed\n",
+				   sys_cp);
+	}
+
+	convert_to_utf16le = g_iconv_open("UTF-16LE", sys_cp);
+	if (convert_from_utf16le == (GIConv)-1) {
+		purple_debug_error("sipe", "g_iconv_open from %s to UTF-16LE failed\n",
+				   sys_cp);
+	}
+}
+
+void sip_sec_destroy__ntlm(void)
+{
+	g_iconv_close(convert_to_utf16le);
+	g_iconv_close(convert_from_utf16le);
+}
 
 /*
   Local Variables:

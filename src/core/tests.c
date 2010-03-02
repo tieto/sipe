@@ -112,6 +112,7 @@ int main()
 	purple_debug_init();
 	purple_debug_set_enabled(TRUE);
 	purple_ciphers_init();
+	sip_sec_init__ntlm();
 
 	/* These tests are from the MS-SIPE document */
 
@@ -645,7 +646,7 @@ Message (length 352):
 		| NTLMSSP_NEGOTIATE_VERSION
 		| NTLMSSP_NEGOTIATE_128
 		| NTLMSSP_NEGOTIATE_KEY_EXCH;
-		
+
 	/* global struct */
 	test_version.product_major_version = 5;
 	test_version.product_minor_version = 2;
@@ -758,7 +759,7 @@ Message (length 352):
 	guint32 flags2;
 	SipSecBuffer in_buff;
 	SipSecBuffer out_buff;
-	
+
 	in_buff.length = hex_str_to_buff(type2_hex, (guint8 **)&(in_buff.value));
 
 	sip_sec_ntlm_parse_challenge(in_buff,
@@ -815,6 +816,8 @@ Message (length 352):
 	/* end tests from MS-SIPRE */
 
 	printf ("\nFinished With Tests; %d successs %d failures\n", successes, failures);
+
+	sip_sec_destroy__ntlm();
 
 	return(0);
 }

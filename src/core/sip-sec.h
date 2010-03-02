@@ -137,3 +137,10 @@ char *sip_sec_make_signature(SipSecContext context,
 int sip_sec_verify_signature(SipSecContext context,
 			     const char *message,
 			     const char *signature_hex);
+
+/**
+ * Initialize & destroy functions for sip-sec.
+ * Should be called on loading and unloading of the plugin.
+ */
+void sip_sec_init(void);
+void sip_sec_destroy(void);

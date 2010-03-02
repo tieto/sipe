@@ -238,6 +238,16 @@ int sip_sec_verify_signature(SipSecContext context, const char *message, const c
 	return res;
 }
 
+/* Initialize & Destroy */
+void sip_sec_init(void)
+{
+	sip_sec_init__ntlm();
+}
+
+void sip_sec_destroy(void)
+{
+	sip_sec_destroy__ntlm();
+}
 
 /* Utility Methods */
 
