@@ -171,13 +171,18 @@ struct version test_version;		/* hard-coded in implementation */
 	  NTLMSSP_REQUEST_TARGET \
 	)
 
-/* Negotiate flags required in connectionless NTLM */
-#define NEGOTIATE_FLAGS \
-	( NEGOTIATE_FLAGS_CONN | \
-	  NTLMSSP_NEGOTIATE_SIGN | \
+/* Extra negotiate flags required in connectionless NTLM */
+#define NEGOTIATE_FLAGS_CONNLESS_EXTRA \
+	( NTLMSSP_NEGOTIATE_SIGN | \
 	  NTLMSSP_NEGOTIATE_DATAGRAM | \
 	  NTLMSSP_NEGOTIATE_IDENTIFY | \
 	  NTLMSSP_NEGOTIATE_KEY_EXCH \
+	)
+	
+/* Negotiate flags required in connectionless NTLM */
+#define NEGOTIATE_FLAGS \
+	( NEGOTIATE_FLAGS_CONN | \
+	  NEGOTIATE_FLAGS_CONNLESS_EXTRA \
 	)
 
 #define NTLMSSP_LN_OR_NT_KEY_LEN  16
@@ -1069,7 +1074,10 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char client_challenge [8];
 	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
 
-	if (!IS_FLAG(*flags, NEGOTIATE_FLAGS_COMMON_MIN)) {
+	if (!IS_FLAG(*flags, is_connection_based ? 
+		NEGOTIATE_FLAGS_COMMON_MIN : 
+		NEGOTIATE_FLAGS_COMMON_MIN | NEGOTIATE_FLAGS_CONNLESS_EXTRA))
+	{
 		purple_debug_info("sipe", "sip_sec_ntlm_gen_authenticate: received incompatible NTLM NegotiateFlags, exiting.");
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
