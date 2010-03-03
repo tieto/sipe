@@ -59,6 +59,11 @@
 gchar *purple_base64_encode(const guchar *data, gsize len);
 guchar *purple_base64_decode(const char *str, gsize *ret_len);
 
+size_t
+hex_str_to_buff(const char *hex_str, unsigned char **buff);
+char *
+buff_to_hex_str(const unsigned char *buff, const size_t buff_len);
+
 /* Dummy initialization hook */
 static SipSecContext
 sip_sec_create_context__NONE(SIPE_UNUSED_PARAMETER SipSecAuthType type)
@@ -253,20 +258,7 @@ void sip_sec_destroy(void)
 
 void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes)
 {
-	guint8 *buff;
-	char two_digits[3];
-	size_t i;
-
-	bytes->length = strlen(hex_str)/2;
-	bytes->value = g_malloc(bytes->length);
-
-	buff = (guint8 *)bytes->value;
-	for (i = 0; i < bytes->length; i++) {
-		two_digits[0] = hex_str[i * 2];
-		two_digits[1] = hex_str[i * 2 + 1];
-		two_digits[2] = '\0';
-		buff[i] = (guint8)strtoul(two_digits, NULL, 16);
-	}
+	bytes->length = hex_str_to_buff(hex_str, (unsigned char **)&(bytes->value));
 }
 
 void free_bytes_buffer(SipSecBuffer *bytes)
@@ -278,14 +270,7 @@ void free_bytes_buffer(SipSecBuffer *bytes)
 
 char *bytes_to_hex_str(SipSecBuffer *bytes)
 {
-	guint8 *buff = (guint8 *)bytes->value;
-	char *res    = g_malloc(bytes->length * 2 + 1);
-	size_t i, j;
-	for (i = 0, j = 0; i < bytes->length; i++, j+=2) {
-		sprintf(&res[j], "%02X", buff[i]);
-	}
-	res[j] = '\0';
-	return res;
+	return buff_to_hex_str(bytes->value, bytes->length);
 }
 
 /*

@@ -286,6 +286,30 @@ struct sipnameval {
 };
 
 /**
+ * Parses string of hex digits to buffer.
+ * Allocates memory.
+ *
+ * @param hex_str (in)	string of hex digits to convert.
+ * @param buff (out)	newly allocated buffer. Must be g_free()'d after use.
+ *
+ * @return		size of newly allocated buffer
+ */
+size_t
+hex_str_to_buff(const char *hex_str, unsigned char **buff);
+
+/**
+ * Composes hex string out of provided buffer.
+ * Allocates memory.
+ *
+ * @param buff		input buffer
+ * @param buff_len	length of buffer
+ *
+ * @result		newly allocated hex string representing buffer. Must be g_free()'d after use.
+ */
+char *
+buff_to_hex_str(const unsigned char *buff, const size_t buff_len);
+
+/**
  * Creates name-value pairs from given lines and appends them to @c list
  *
  * Lines must be in format 'name: value'
@@ -342,3 +366,4 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
  */
 void
 sipe_utils_nameval_free(GSList *list);
+

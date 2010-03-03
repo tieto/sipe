@@ -307,6 +307,41 @@ sipe_utils_time_to_str(time_t timestamp)
 	return g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&timestamp)));
 }
 
+size_t
+hex_str_to_buff(const char *hex_str, unsigned char **buff)
+{
+	char two_digits[3];
+	size_t i;
+
+	if (!buff) return 0;
+	if (!hex_str) return 0;
+
+	size_t length = strlen(hex_str)/2;
+	*buff = (unsigned char *)g_malloc(length);
+	for (i = 0; i < length; i++) {
+		two_digits[0] = hex_str[i * 2];
+		two_digits[1] = hex_str[i * 2 + 1];
+		two_digits[2] = '\0';
+		(*buff)[i] = (unsigned char)strtoul(two_digits, NULL, 16);
+	}
+
+	return length;
+}
+
+char *
+buff_to_hex_str(const unsigned char *buff, const size_t buff_len)
+{
+	if (!buff) return NULL;
+
+	char *res = g_malloc(buff_len * 2 + 1);
+	size_t i, j;
+	for (i = 0, j = 0; i < buff_len; i++, j+=2) {
+		sprintf(&res[j], "%02X", buff[i]);
+	}
+	res[j] = '\0';
+	return res;
+}
+
 gboolean
 sipe_utils_parse_lines(GSList **list, gchar **lines)
 {

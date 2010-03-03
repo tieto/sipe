@@ -40,28 +40,6 @@
 static int successes = 0;
 static int failures = 0;
 
-static size_t
-hex_str_to_buff(const char *hex_str, guint8 **bytes)
-{
-	guint8 *buff;
-	char two_digits[3];
-	size_t i;
-
-	if (!bytes) return 0;
-
-	gsize length = strlen(hex_str)/2;
-	buff = (guint8 *)g_malloc(length);
-	for (i = 0; i < length; i++) {
-		two_digits[0] = hex_str[i * 2];
-		two_digits[1] = hex_str[i * 2 + 1];
-		two_digits[2] = '\0';
-		buff[i] = (guint8)strtoul(two_digits, NULL, 16);
-	}
-
-	*bytes = buff;
-	return length;
-}
-
 static void assert_equal(const char * expected, const guchar * got, int len, gboolean stringify)
 {
 	const gchar * res = (gchar *) got;
