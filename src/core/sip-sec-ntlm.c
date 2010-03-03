@@ -154,7 +154,7 @@ static gboolean use_ntlm_v2 = FALSE;
 guint64 test_time_val = 0;		/* actual time in implementation */
 guchar test_client_challenge [8];	/* random in implementation */
 guchar test_random_session_key[16];	/* random in implementation */
-struct version test_version;		/* optional, not set in  in implementation */
+struct version test_version;		/* hard-coded in implementation */
 #endif
 
 /* Minimum set of common features we need to work. */
@@ -163,13 +163,13 @@ struct version test_version;		/* optional, not set in  in implementation */
 	( NTLMSSP_NEGOTIATE_UNICODE | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
 	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
+	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
 	  NTLMSSP_NEGOTIATE_TARGET_INFO \
 	)
 
 /* Negotiate flags for connection-based mode. Nice to have but optional. */
 #define NEGOTIATE_FLAGS_CONN \
 	( NEGOTIATE_FLAGS_COMMON_MIN | \
-	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
 	  NTLMSSP_NEGOTIATE_VERSION | \
 	  NTLMSSP_NEGOTIATE_128 | \
 	  NTLMSSP_NEGOTIATE_56 | \
