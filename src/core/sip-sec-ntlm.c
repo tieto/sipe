@@ -861,7 +861,8 @@ Version(4), Checksum(8),  SeqNum(4)			-- for ext.sess.sec.
 Version(4), RandomPad(4), Checksum(4), SeqNum(4)
 */
 /** MAC(Handle, SigningKey, SeqNum, Message) */
-static gchar *
+/* out 16 bytes */
+static void
 MAC (guint32 flags,
      const char *buf,
      int buf_len,
@@ -870,12 +871,10 @@ MAC (guint32 flags,
      unsigned char *seal_key,
      unsigned long seal_key_len,
      guint32 random_pad,
-     guint32 sequence)
+     guint32 sequence,
+     unsigned char *result)
 {
-	guchar result [16];
 	guint32 *res_ptr;
-	gchar signature [33];
-	int i, j;
 
 	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
 		/*
@@ -953,12 +952,6 @@ MAC (guint32 flags,
 		// Replace the first four bytes of the ciphertext with the random_pad
 		res_ptr[1] = GUINT32_TO_LE(random_pad); // 4 bytes
 	}
-
-	for (i = 0, j = 0; i < 16; i++, j+=2) {
-		g_sprintf(&signature[j], "%02X", result[i]);
-	}
-
-	return g_strdup(signature);
 }
 
 /* End Core NTLM Methods */
@@ -1314,12 +1307,21 @@ sip_sec_ntlm_gen_negotiate(SipSecBuffer *out_buff)
 	out_buff->length = msglen;
 }
 
-static gchar *
-sip_sec_ntlm_sipe_signature_make (guint32 flags, const char *msg, guint32 random_pad, unsigned char *sign_key, unsigned char *seal_key)
+static void
+sip_sec_ntlm_sipe_signature_make(guint32 flags,
+				 const char *msg,
+				 guint32 random_pad,
+				 unsigned char *sign_key,
+				 unsigned char *seal_key,
+				 unsigned char *result)
 {
-	gchar *res = MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100);
+	char *res;
+
+	MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100, result);
+
+	res = buff_to_hex_str(result, 16);
 	purple_debug_info("sipe", "NTLM calculated MAC: %s\n", res);
-	return res;
+	g_free(res);
 }
 
 static gboolean
@@ -1838,16 +1840,16 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 			const char *message,
 			SipSecBuffer *signature)
 {
+	signature->length = 16;
+	signature->value = g_malloc0(16);
+	
 	/* FIXME? We always use a random_pad of 0 */
-	gchar *signature_hex = sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
-								message,
-								0,
-							        ((context_ntlm) context)->client_sign_key,
-								((context_ntlm) context)->client_seal_key);
-
-	signature->length = hex_str_to_buff(signature_hex, &signature->value);
-	g_free(signature_hex);
-
+	sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
+					 message,
+					 0,
+					 ((context_ntlm) context)->client_sign_key,
+					 ((context_ntlm) context)->client_seal_key,
+					 signature->value);
 	return SIP_SEC_E_OK;
 }
 
@@ -1860,14 +1862,19 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 			  const char *message,
 			  SipSecBuffer signature)
 {
+	sip_uint32 res;
+	guint8 mac[16];
 	guint32 random_pad = GUINT32_FROM_LE(((guint32 *) signature.value)[1]);
 	char *signature_hex = buff_to_hex_str(signature.value, signature.length);
-	gchar *signature_calc = sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
+	gchar *signature_calc;
+
+	sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								 message,
 								 random_pad,
 								 ((context_ntlm) context)->server_sign_key,
-								 ((context_ntlm) context)->server_seal_key);
-	sip_uint32 res;
+								 ((context_ntlm) context)->server_seal_key,
+								 mac);
+	signature_calc = buff_to_hex_str(mac, 16);
 
 	if (sip_sec_ntlm_verify_signature(signature_calc, signature_hex)) {
 		res = SIP_SEC_E_OK;

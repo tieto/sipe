@@ -205,8 +205,9 @@ int main()
 	assert_equal("56FE04D861F9319AF0D7238A2E3B4D457FB8" "45C844E5" "09DCD1DF" "2E459D36", text_enc, 18 + 12, TRUE);
 
 	printf ("\n\nTesting MAC\n");
+	guchar mac [16];
 	// won't work in the case with sealing because RC4 is re-initialized inside.
-	//gchar *mac = MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, (guchar*)exported_session_key,16,  0x00000000,  0);
+	// MAC (flags, (gchar*)text, 18, (guchar*)exported_session_key, 16, (guchar*)exported_session_key,16,  0x00000000,  0, mac);
 	guint32 enc [3];
 	memcpy((gchar *)enc, text_enc+18, 12);
 	guint32 mac2 [4];
@@ -273,9 +274,8 @@ int main()
 	assert_equal("A02372F6530273F3AA1EB90190CE5200C99D", text_enc, 18, TRUE);
 
 	printf ("\n\n(Extended session security) Testing MAC\n");
-	gchar *mac = MAC (flags,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0);
-	assert_equal("01000000FF2AEB52F681793A00000000", (guchar*)mac, 32, FALSE);
-	g_free(mac);
+	MAC (flags,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0, mac);
+	assert_equal("01000000FF2AEB52F681793A00000000", mac, 16, TRUE);
 
 
 ////// NTLMv2 ///////
@@ -402,8 +402,8 @@ Response:
 //	assert_equal("54E50165BF1936DC996020C1811B0F06FB5F", text_enc2, 18+8, TRUE);
 
 	printf ("\n\nTesting (NTLMv2) MAC (without RC4, as we don't keep its handle yet)\n");
-	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0);
-	assert_equal("0100000070352851F256430900000000", (guchar*)mac, 32, FALSE);
+	MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0, mac);
+	assert_equal("0100000070352851F256430900000000", mac, 16, TRUE);
 	g_free(mac);
 
 
@@ -415,11 +415,8 @@ Response:
 	const gchar *text_j = "jCIFS";
 	printf ("\n\n(davenport) Testing Signature Algorithm\n");
 	guchar sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
-	assert_equal (
-		"0100000078010900397420FE0E5A0F89",
-		(guchar *) MAC(NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY, text_j, strlen(text_j), sk, 8,  sk,8,  0x00090178, 0),
-		32, FALSE
-	);
+	MAC (NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY, text_j, strlen(text_j), sk, 8,  sk,8,  0x00090178, 0, mac);
+	assert_equal("0100000078010900397420FE0E5A0F89", mac, 16, TRUE);
 
 	// Tests from http://davenport.sourceforge.net/ntlm.html#ntlm2Signing
 	printf ("\n\n(davenport) SIGNKEY\n");
@@ -428,9 +425,8 @@ Response:
 	assert_equal("F7F97A82EC390F9C903DAC4F6ACEB132", client_sign_key, 16, TRUE);
 
 	printf ("\n\n(davenport) Testing MAC - no Key Exchange flag\n");
-	mac = MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, text_j, strlen(text_j), client_sign_key, 16,  client_sign_key,16,  0,  0);
-	assert_equal("010000000A003602317A759A00000000", (guchar*)mac, 32, FALSE);
-	g_free(mac);
+	MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH, text_j, strlen(text_j), client_sign_key, 16,  client_sign_key,16,  0,  0, mac);
+	assert_equal("010000000A003602317A759A00000000", mac, 16, TRUE);
 
 
 ////// SIPE internal tests ///////
@@ -438,11 +434,9 @@ Response:
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
 	char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
-	assert_equal (
-		"0100000000000000BF2E52667DDF6DED",
-		(guchar *) MAC(NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY, msg1, strlen(msg1), exported_session_key2, 16,  exported_session_key2,16,  0, 100),
-		32, FALSE
-	);
+	MAC (NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,
+		msg1, strlen(msg1), exported_session_key2, 16,  exported_session_key2,16,  0, 100, mac);
+	assert_equal("0100000000000000BF2E52667DDF6DED", mac, 16, TRUE);
 
 	// Verify parsing of message and signature verification
 	printf ("\n\nTesting MS-SIPE Example Message Parsing, Signing, and Verification\n(Authentication Protocol Version 2)\n");
@@ -452,9 +446,11 @@ Response:
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
 	gchar * msg_str = sipmsg_breakdown_get_string(2, &msgbd);
-	gchar * sig = sip_sec_ntlm_sipe_signature_make (NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY, msg_str, 0, exported_session_key2, exported_session_key2);
+	sip_sec_ntlm_sipe_signature_make (NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,
+		msg_str, 0, exported_session_key2, exported_session_key2, mac);
 	sipmsg_breakdown_free(&msgbd);
-	assert_equal ("0100000000000000BF2E52667DDF6DED", (guchar *) sig, 32, FALSE);
+	assert_equal ("0100000000000000BF2E52667DDF6DED", mac, 16, TRUE);
+	gchar *sig = buff_to_hex_str(mac, 16);
 	printf("purple_ntlm_verify_signature result = %i\n", sip_sec_ntlm_verify_signature (sig, "0100000000000000BF2E52667DDF6DED"));
 
 
@@ -697,9 +693,10 @@ Message (length 352):
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 	assert_equal (request_sig, (guchar *)msg_str, strlen(request_sig), FALSE);
-	sig = sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key);
+	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key, mac);
 	sipmsg_breakdown_free(&msgbd);
-	assert_equal ("0100000029618e9651b65a7764000000", (guchar *) sig,32, FALSE);
+	assert_equal ("0100000029618e9651b65a7764000000", mac, 16, TRUE);
+	sig = buff_to_hex_str(mac, 16);
 	printf("purple_ntlm_verify_signature result = %i\n", sip_sec_ntlm_verify_signature (sig, "0100000029618e9651b65a7764000000"));
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nServer response\n(Authentication Protocol version 4)\n");
@@ -709,20 +706,19 @@ Message (length 352):
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 	assert_equal (response_sig, (guchar *)msg_str, strlen(response_sig), FALSE);
 	// server keys here
-	sig = sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, server_sign_key, server_seal_key);
+	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, server_sign_key, server_seal_key, mac);
 	sipmsg_breakdown_free(&msgbd);
-	assert_equal ("01000000E615438A917661BE64000000", (guchar *) sig,32, FALSE);
+	assert_equal ("01000000E615438A917661BE64000000", mac, 16, TRUE);
+	sig = buff_to_hex_str(mac, 16);
 	printf("purple_ntlm_verify_signature result = %i\n", sip_sec_ntlm_verify_signature (sig, "01000000E615438A917661BE64000000"));
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - client signing\n");
-	mac = MAC (flags,   (gchar*)request_sig,strlen(request_sig),   client_sign_key,16,   client_seal_key,16,   0,  100);
-	assert_equal("0100000029618e9651b65a7764000000", (guchar*)mac, 32, FALSE);
-	g_free(mac);
+	MAC (flags,   (gchar*)request_sig,strlen(request_sig),   client_sign_key,16,   client_seal_key,16,   0,  100, mac);
+	assert_equal("0100000029618e9651b65a7764000000", mac, 16, TRUE);
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - server's verifying\n");
-	mac = MAC (flags,   (gchar*)response_sig,strlen(response_sig),   server_sign_key,16,   server_seal_key,16,   0,  100);
-	assert_equal("01000000E615438A917661BE64000000", (guchar*)mac, 32, FALSE);
-	g_free(mac);
+	MAC (flags,   (gchar*)response_sig,strlen(response_sig),   server_sign_key,16,   server_seal_key,16,   0,  100, mac);
+	assert_equal("01000000E615438A917661BE64000000", mac, 16, TRUE);
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Type3 generation test\n");
 	guchar *client_sign_key2;
