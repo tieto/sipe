@@ -404,7 +404,6 @@ Response:
 	printf ("\n\nTesting (NTLMv2) MAC (without RC4, as we don't keep its handle yet)\n");
 	MAC (flags & ~NTLMSSP_NEGOTIATE_KEY_EXCH,   (gchar*)text,18,   client_sign_key,16,   client_seal_key,16,   0,  0, mac);
 	assert_equal("0100000070352851F256430900000000", mac, 16, TRUE);
-	g_free(mac);
 
 
 	/* End tests from the MS-SIPE document */
