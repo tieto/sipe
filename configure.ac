@@ -24,6 +24,9 @@ AC_PROG_INSTALL
 
 AC_HEADER_STDC
 
+dnl checks for library functions
+AC_CHECK_FUNCS([setenv unsetenv])
+
 dnl tell pkgconfig to look in the same prefix we're installing this to,
 dnl as that's likely where libpurple will be found if it's not in the default
 dnl pkgconfig path

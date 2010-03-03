@@ -187,26 +187,26 @@ static void
 sipe_setenv(const char *name,
 	    const char *value)
 {
-#if defined(_WIN32) || defined(__sun__) || defined(__sgi__) || defined(__hppa__)
+#ifdef HAVE_SETENV
+	setenv(name, value, 1);
+#else
 	int len = strlen(name) + 1 + strlen(value) + 1;
 	char *str = g_malloc0(len);
 	sprintf(str, "%s=%s", name, value);
 	putenv(str);
-#else
-	setenv(name, value, 1);
 #endif
 }
 
 static void
 sipe_unsetenv(const char *name)
 {
-#if defined(_WIN32) || defined(__sun__) || defined(__sgi__) || defined(__hppa__)
+#ifdef HAVE_UNSETENV
+	unsetenv(name);
+#else
 	int len = strlen(name) + 1 + 1;
 	char *str = g_malloc0(len);
 	sprintf(str, "%s=", name);
 	putenv(str);
-#else
-	unsetenv(name);
 #endif
 }
 
