@@ -311,12 +311,13 @@ size_t
 hex_str_to_buff(const char *hex_str, unsigned char **buff)
 {
 	char two_digits[3];
+	size_t length;
 	size_t i;
 
 	if (!buff) return 0;
 	if (!hex_str) return 0;
 
-	size_t length = strlen(hex_str)/2;
+	length = strlen(hex_str)/2;
 	*buff = (unsigned char *)g_malloc(length);
 	for (i = 0; i < length; i++) {
 		two_digits[0] = hex_str[i * 2];
@@ -331,10 +332,12 @@ hex_str_to_buff(const char *hex_str, unsigned char **buff)
 char *
 buff_to_hex_str(const unsigned char *buff, const size_t buff_len)
 {
+	char *res;
+	size_t i, j;
+
 	if (!buff) return NULL;
 
-	char *res = g_malloc(buff_len * 2 + 1);
-	size_t i, j;
+	res = g_malloc(buff_len * 2 + 1);
 	for (i = 0, j = 0; i < buff_len; i++, j+=2) {
 		sprintf(&res[j], "%02X", buff[i]);
 	}

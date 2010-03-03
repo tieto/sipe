@@ -59,13 +59,6 @@
 #include <sys/sockio.h>
 #endif
 #else /* _WIN32 */
-#include "libc_interface.h"
-#ifdef _DLL
-#define _WS2TCPIP_H_
-#define _WINSOCK2API_
-#define _LIBC_INTERNAL_
-#endif /* _DLL */
-#include "network.h"
 #include "internal.h"
 #endif /* _WIN32 */
 
@@ -164,13 +157,19 @@ guchar test_random_session_key[16];	/* random in implementation */
 struct version test_version;		/* optional, not set in  in implementation */
 #endif
 
-/* Common negotiate flags */
-#define NEGOTIATE_FLAGS_CONN \
+/* Minimum set of common features we need to work. */
+/* we operate in NTLMv2 mode */
+#define NEGOTIATE_FLAGS_COMMON_MIN \
 	( NTLMSSP_NEGOTIATE_UNICODE | \
 	  NTLMSSP_NEGOTIATE_NTLM | \
 	  NTLMSSP_NEGOTIATE_ALWAYS_SIGN | \
+	  NTLMSSP_NEGOTIATE_TARGET_INFO \
+	)
+
+/* Negotiate flags for connection-based mode. Nice to have but optional. */
+#define NEGOTIATE_FLAGS_CONN \
+	( NEGOTIATE_FLAGS_COMMON_MIN | \
 	  NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY | \
-	  NTLMSSP_NEGOTIATE_TARGET_INFO | \
 	  NTLMSSP_NEGOTIATE_VERSION | \
 	  NTLMSSP_NEGOTIATE_128 | \
 	  NTLMSSP_NEGOTIATE_56 | \
@@ -365,10 +364,8 @@ static guint32 crc32(guint32 crc, const guint8 *buf, int len)
 static guint32
 CRC32 (const char *msg, int len)
 {
-	guint32 crc = 0L;//crc32(0L, Z_NULL, 0);
+	guint32 crc = 0L;
 	crc = crc32(crc, (guint8 *) msg, len);
-	//char * ptr = (char*) &crc;
-	//return ptr[0] << 24 | ptr[1] << 16 | ptr[2] << 8 | (ptr[3] & 0xff);
 	return crc;
 }
 
@@ -399,9 +396,7 @@ static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *resul
 	purple_cipher_context_encrypt(context, (guchar*)plaintext, 8, (guchar*)result, &outlen);
 	purple_cipher_context_destroy(context);
 }
-#endif
 
-#ifdef _SIPE_COMPILING_TESTS
 /* (k = 7 byte key, d = 8 byte data) returns 8 bytes in results */
 static void
 DES (const unsigned char *k, const unsigned char *d, unsigned char * results)
@@ -522,9 +517,7 @@ Z(unsigned char *buffer, int num)
 {
 	memset(buffer, 0, num);
 }
-#endif
 
-#ifdef _SIPE_COMPILING_TESTS
 static void
 LMOWFv1 (const char *password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
 {
@@ -735,15 +728,16 @@ KXKEY ( guint32 flags,
 	else
 	{
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
-			//   Define KXKEY(SessionBaseKey, LmChallengeResponse, ServerChallenge) as
-			//        Set KeyExchangeKey to HMAC_MD5(SessionBaseKey, ConcatenationOf(ServerChallenge, LmChallengeResponse [0..7]))
-			//   EndDefine
+			/*  Define KXKEY(SessionBaseKey, LmChallengeResponse, ServerChallenge) as
+			        Set KeyExchangeKey to HMAC_MD5(SessionBaseKey, ConcatenationOf(ServerChallenge, LmChallengeResponse [0..7]))
+			    EndDefine
+			*/
 			guint8 tmp[16];
 			memcpy(tmp, server_challenge, 8);
 			memcpy(tmp+8, lm_challenge_resonse, 8);
 			HMAC_MD5(session_base_key, 16, tmp, 16, key_exchange_key);
 		} else {
-			// Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set
+			/* Assume v1 and NTLMSSP_REQUEST_NON_NT_SESSION_KEY not set */
 			memcpy(key_exchange_key, session_base_key, 16);
 		}
 	}
@@ -886,11 +880,11 @@ MAC (guint32 flags,
 	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY)) {
 		/*
 		Define MAC(Handle, SigningKey, SeqNum, Message) as
-		     Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
-		     Set NTLMSSP_MESSAGE_SIGNATURE.Checksum to
-			 HMAC_MD5(SigningKey, ConcatenationOf(SeqNum, Message))[0..7]
-		     Set NTLMSSP_MESSAGE_SIGNATURE.SeqNum to SeqNum
-		     Set SeqNum to SeqNum + 1
+			Set NTLMSSP_MESSAGE_SIGNATURE.Version to 0x00000001
+			Set NTLMSSP_MESSAGE_SIGNATURE.Checksum to
+				HMAC_MD5(SigningKey, ConcatenationOf(SeqNum, Message))[0..7]
+			Set NTLMSSP_MESSAGE_SIGNATURE.SeqNum to SeqNum
+			Set SeqNum to SeqNum + 1
 		EndDefine
 		*/
 		/* If a key exchange key is negotiated
@@ -951,7 +945,6 @@ MAC (guint32 flags,
 		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
 
 		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, result+4);
-		//RC4K(seal_key, 8, (const guchar *)plaintext, 12, result+4);
 
 		res_ptr = (guint32 *)result;
 		// Highest four bytes are the Version
@@ -984,7 +977,6 @@ sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
 			     guchar **target_info,
 			     int *target_info_len)
 {
-	guint32 our_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
 	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
 	guint32 host_flags = GUINT32_FROM_LE(cmsg->flags);
 
@@ -994,7 +986,6 @@ sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
 	}
 
 	/* flags */
-	purple_debug_info("sipe", "received NTLM NegotiateFlags = %X; OK? %i\n", host_flags, (host_flags & our_flags) == our_flags);
 	if (flags) {
 		*flags = host_flags;
 	}
@@ -1036,7 +1027,7 @@ sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
  * @param server_seal_key (out) 	must be g_free()'d after use
  * @param flags (in, out)		negotiated flags
  */
-static void
+static sip_uint32
 sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 			      guchar **server_sign_key,
 			      guchar **client_seal_key,
@@ -1068,7 +1059,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 		+ 2*(strlen(domain) + strlen(user)+ strlen(hostname))
 		+ NTLMSSP_LM_RESP_LEN + ntlmssp_nt_resp_len
 		+ (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_KEY_EXCH) ? NTLMSSP_SESSION_KEY_LEN : 0);
-	struct authenticate_message *tmsg = g_malloc0(msglen);
+	struct authenticate_message *tmsg;
 	char *tmp;
 	guint32 offset;
 	guint16 len;
@@ -1084,9 +1075,16 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char client_challenge [8];
 	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
 
+	if (!IS_FLAG(*flags, NEGOTIATE_FLAGS_COMMON_MIN)) {
+		purple_debug_info("sipe", "sip_sec_ntlm_gen_authenticate: received incompatible NTLM NegotiateFlags, exiting.");
+		return SIP_SEC_E_INTERNAL_ERROR;
+	}
+
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_128)) {
 		neg_flags = neg_flags & ~NTLMSSP_NEGOTIATE_56;
 	}
+	
+	tmsg = g_malloc0(msglen);
 
 	NONCE (client_challenge, 8);
 
@@ -1134,6 +1132,10 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 		memcpy(exported_session_key, key_exchange_key, 16);
 	}
 
+	tmp = buff_to_hex_str(exported_session_key, 16);
+	purple_debug_info("sipe", "NTLM AUTHENTICATE: exported session key (not encrypted): %s\n", tmp);
+	g_free(tmp);
+
 	/* p.46
 	   Set ClientSigningKey to SIGNKEY(ExportedSessionKey, "Client")
 	   Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
@@ -1147,6 +1149,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	SEALKEY(neg_flags, exported_session_key, FALSE, key);
 	*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
 
+	/* @TODO: */
 	/* @since Vista
 	If the CHALLENGE_MESSAGE TargetInfo field (section 2.2.1.2) has an MsvAvTimestamp present,
 	the client SHOULD provide a MIC:
@@ -1245,13 +1248,9 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 		tmsg->session_key.len = tmsg->session_key.maxlen = 0;
 	}
 
-
 	/* Version */
 #ifdef _SIPE_COMPILING_TESTS
-	tmsg->ver.product_major_version = test_version.product_major_version;
-	tmsg->ver.product_minor_version = test_version.product_minor_version;
-	tmsg->ver.product_build = test_version.product_build;
-	tmsg->ver.ntlm_revision_current = test_version.ntlm_revision_current;
+	memcpy(&(tmsg->ver), &test_version, sizeof(struct version));
 #else
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_VERSION)) {
 		tmsg->ver.product_major_version = 5;		/* 5.1.2600 (Windows XP SP2) */
@@ -1265,12 +1264,10 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	tmsg->flags = GUINT32_TO_LE(neg_flags);
 	*flags = neg_flags;
 
-	tmp = purple_base64_encode(exported_session_key, 16);
-	purple_debug_info("sipe", "Generated NTLM AUTHENTICATE session key: %s\n", tmp);
-	g_free(tmp);
-
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
+	
+	return SIP_SEC_E_OK;
 }
 
 /**
@@ -1774,10 +1771,11 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
 	} else 	{
-		guchar *client_sign_key;
-		guchar *server_sign_key;
-		guchar *client_seal_key;
-		guchar *server_seal_key;
+		sip_uint32 res;
+		guchar *client_sign_key = NULL;
+		guchar *server_sign_key = NULL;
+		guchar *client_seal_key = NULL;
+		guchar *server_seal_key = NULL;
 		guchar *server_challenge = NULL;
 		guint64 time_val = 0;
 		guchar *target_info = NULL;
@@ -1797,7 +1795,8 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 					     &target_info,
 					     &target_info_len);
 
-		sip_sec_ntlm_gen_authenticate(&client_sign_key,
+		res = sip_sec_ntlm_gen_authenticate(
+					      &client_sign_key,
 					      &server_sign_key,
 					      &client_seal_key,
 					      &server_seal_key,
@@ -1815,6 +1814,14 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		g_free(server_challenge);
 		g_free(target_info);
 		g_free(tmp);
+		
+		if (res != SIP_SEC_E_OK) {
+			g_free(client_sign_key);
+			g_free(server_sign_key);
+			g_free(client_seal_key);
+			g_free(server_seal_key);
+			return res;
+		}
 
 		g_free(ctx->client_sign_key);
 		ctx->client_sign_key = client_sign_key;
