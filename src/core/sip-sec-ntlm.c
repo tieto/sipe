@@ -1497,7 +1497,7 @@ describe_av_pairs(GString* str, const void *av)
 			memcpy(&time_val, av_value, sizeof(time_val));
 			time_t_val = TIME_VAL_TO_T(time_val);
 
-			g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = buff_to_hex_str(av_value, 8)),
+			g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = buff_to_hex_str((guint8 *) av_value, 8)),
 					       asctime(gmtime(&time_t_val)));
 			g_free(tmp);
 		}
