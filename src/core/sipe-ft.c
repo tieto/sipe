@@ -39,9 +39,15 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include <nspapi.h>
+#else
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <netinet/in.h>
+#include <net/if.h>
+#include <arpa/inet.h>
 #endif
 
 #define SIPE_FT_KEY_LENGTH          24
@@ -1000,13 +1006,6 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 	}
 	g_free(body);
 }
-
-#ifndef _WIN32
-#include <net/if.h>
-#include <sys/ioctl.h>
-#else
-#include <nspapi.h>
-#endif
 
 /*
  * Calling sizeof(struct ifreq) isn't always correct on

@@ -212,10 +212,6 @@ dnl NOTHING IMPLEMENTED YET!!!
 dnl if test "$telepathy" != "no"; then
 dnl fi
 
-dnl check for inet_aton
-AC_CHECK_FUNC(inet_aton,,
-	[AC_CHECK_LIB(resolv, inet_aton,, [AC_ERROR(inet_aton not found)])])
-
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
 LOCALE_CPPFLAGS='-DLOCALEDIR=\"$(prefix)/$(DATADIRNAME)/locale\"'

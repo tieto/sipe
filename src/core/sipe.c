@@ -36,19 +36,17 @@
 #include "config.h"
 #endif
 
-#ifndef _WIN32
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#else
+#ifdef _WIN32
 #ifdef _DLL
 #define _WS2TCPIP_H_
 #define _WINSOCK2API_
 #define _LIBC_INTERNAL_
 #endif /* _DLL */
 #include "internal.h"
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #endif /* _WIN32 */
 
 #include <time.h>
