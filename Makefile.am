@@ -26,6 +26,7 @@ MAINTAINERCLEANFILES = \
 	configure \
 	config.sub \
 	config.guess \
+	config.h.in \
 	intltool-extract.in \
 	intltool-merge.in   \
 	intltool-update.in  \

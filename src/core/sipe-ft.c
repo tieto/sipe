@@ -21,6 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -899,7 +903,7 @@ void sipe_ft_send_file(PurpleConnection *gc, const char *who, const char *file)
 PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who)
 {
 	PurpleXfer *xfer = NULL;
-	
+
 	if (PURPLE_CONNECTION_IS_VALID(gc)) {
 		xfer = purple_xfer_new(purple_connection_get_account(gc),
 				       PURPLE_XFER_SEND, who);

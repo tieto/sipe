@@ -231,9 +231,9 @@ dnl codeset
 AM_LANGINFO_CODESET
 
 dnl substitutions and generated files
-AC_CONFIG_FILES(
-	[]
-	[Makefile
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([
+	Makefile
 	pixmaps/Makefile
 	m4macros/Makefile
 	po/Makefile.in
@@ -244,8 +244,8 @@ AC_CONFIG_FILES(
 	src/core/Makefile
 	src/api/Makefile
 	src/purple/Makefile
-	src/telepathy/Makefile]
-)
+	src/telepathy/Makefile
+	])
 
 dnl generate files
 AC_OUTPUT()

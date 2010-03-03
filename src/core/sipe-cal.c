@@ -21,18 +21,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <glib.h>
 
 #include "debug.h"
 
-#include <sipe.h>
-#include <sipe-cal.h>
-#include <sipe-utils.h>
-#include <sipe-nls.h>
-
-#include <stdlib.h>
+#include "sipe.h"
+#include "sipe-cal.h"
+#include "sipe-utils.h"
+#include "sipe-nls.h"
 
 
 #define TIME_NULL   (time_t)-1
