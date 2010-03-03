@@ -178,7 +178,7 @@ struct version test_version;		/* hard-coded in implementation */
 	  NTLMSSP_NEGOTIATE_IDENTIFY | \
 	  NTLMSSP_NEGOTIATE_KEY_EXCH \
 	)
-	
+
 /* Negotiate flags required in connectionless NTLM */
 #define NEGOTIATE_FLAGS \
 	( NEGOTIATE_FLAGS_CONN | \
@@ -1067,8 +1067,8 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char client_challenge [8];
 	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
 
-	if (!IS_FLAG(*flags, is_connection_based ? 
-		NEGOTIATE_FLAGS_COMMON_MIN : 
+	if (!IS_FLAG(*flags, is_connection_based ?
+		NEGOTIATE_FLAGS_COMMON_MIN :
 		NEGOTIATE_FLAGS_COMMON_MIN | NEGOTIATE_FLAGS_CONNLESS_EXTRA))
 	{
 		purple_debug_info("sipe", "sip_sec_ntlm_gen_authenticate: received incompatible NTLM NegotiateFlags, exiting.");
@@ -1131,7 +1131,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	purple_debug_info("sipe", "NTLM AUTHENTICATE: exported session key (not encrypted): %s\n", tmp);
 	g_free(tmp);
 
-	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_SIGN) || 
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_SIGN) ||
 	    IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_SEAL))
 	{
 		/* p.46
@@ -1836,7 +1836,7 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 {
 	signature->length = 16;
 	signature->value = g_malloc0(16);
-	
+
 	/* FIXME? We always use a random_pad of 0 */
 	sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 					 message,
@@ -1856,7 +1856,6 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 			  const char *message,
 			  SipSecBuffer signature)
 {
-	sip_uint32 res;
 	guint8 mac[16];
 	guint32 random_pad = GUINT32_FROM_LE(((guint32 *) signature.value)[1]);
 
@@ -1866,12 +1865,9 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 								 ((context_ntlm) context)->server_sign_key,
 								 ((context_ntlm) context)->server_seal_key,
 								 mac);
-	if (!strncmp(signature.value, mac, 16)) {
-		res = SIP_SEC_E_OK;
-	} else {
-		res = SIP_SEC_E_INTERNAL_ERROR;
-	}
-	return(res);
+	return(memcmp(signature.value, mac, 16) ?
+	       SIP_SEC_E_INTERNAL_ERROR :
+	       SIP_SEC_E_OK);
 }
 
 static void
