@@ -1489,7 +1489,6 @@ describe_av_pairs(GString* str, const void *av)
 		break;
 	case MsvAvTimestamp:
 		{
-			SipSecBuffer buff;
 			char *tmp;
 			guint64 time_val;
 			time_t time_t_val;
@@ -1498,9 +1497,7 @@ describe_av_pairs(GString* str, const void *av)
 			memcpy(&time_val, av_value, sizeof(time_val));
 			time_t_val = TIME_VAL_TO_T(time_val);
 
-			buff.length = 8;
-			buff.value = (guint8 *)av_value;
-			g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = bytes_to_hex_str(&buff)),
+			g_string_append_printf(str, "\t%s: %s - %s", "MsvAvTimestamp", (tmp = buff_to_hex_str(av_value, 8)),
 					       asctime(gmtime(&time_t_val)));
 			g_free(tmp);
 		}
@@ -1523,7 +1520,8 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 {
 	GString* str = g_string_new(NULL);
 	char *tmp;
-	SipSecBuffer buff;
+	gsize value_len;
+	guint8 *value;
 
 	g_string_append(str, (tmp = sip_sec_ntlm_negotiate_flags_describe(cmsg->flags)));
 	g_free(tmp);
@@ -1551,15 +1549,13 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 	g_free(tmp);
 
 	/* mic */
-	//buff.length = 16;
-	//buff.value = cmsg->mic;
-	//g_string_append_printf(str, "\t%s: %s\n", "mic", (tmp = bytes_to_hex_str(&buff)));
+	//g_string_append_printf(str, "\t%s: %s\n", "mic", (tmp = buff_to_hex_str(cmsg->mic, 16)));
 	//g_free(tmp);
 
 	if (cmsg->lm_resp.len && cmsg->lm_resp.offset) {
-		buff.length = GUINT16_FROM_LE(cmsg->lm_resp.len);
-		buff.value = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->lm_resp.offset);
-		g_string_append_printf(str, "\t%s: %s\n", "lm_resp", (tmp = bytes_to_hex_str(&buff)));
+		value_len = GUINT16_FROM_LE(cmsg->lm_resp.len);
+		value = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->lm_resp.offset);
+		g_string_append_printf(str, "\t%s: %s\n", "lm_resp", (tmp = buff_to_hex_str(value, value_len)));
 		g_free(tmp);
 	}
 
@@ -1567,23 +1563,22 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 		guint16 nt_resp_len_full = GUINT16_FROM_LE(cmsg->nt_resp.len);
 		int nt_resp_len = nt_resp_len_full;
 
-		buff.length = nt_resp_len_full;
-		buff.value = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
-		g_string_append_printf(str, "\t%s: %s\n", "nt_resp raw", (tmp = bytes_to_hex_str(&buff)));
+		value_len = nt_resp_len_full;
+		value = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
+		g_string_append_printf(str, "\t%s: %s\n", "nt_resp raw", (tmp = buff_to_hex_str(value, value_len)));
 		g_free(tmp);
 
 		if (nt_resp_len > 24) { /* NTLMv2 */
 			nt_resp_len = 16;
 		}
 
-		buff.length = nt_resp_len;
-		buff.value = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
-		g_string_append_printf(str, "\t%s: %s\n", "nt_resp", (tmp = bytes_to_hex_str(&buff)));
+		value_len = nt_resp_len;
+		value = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset);
+		g_string_append_printf(str, "\t%s: %s\n", "nt_resp", (tmp = buff_to_hex_str(value, value_len)));
 		g_free(tmp);
 
 		if (nt_resp_len_full > 24) { /* NTLMv2 */
 			char *tmp;
-			SipSecBuffer buff;
 			const guint8 *temp = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
 			const guint response_version = *((guchar*)temp);
 			const guint hi_response_version = *((guchar*)(temp+1));
@@ -1593,9 +1588,8 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			const guint8 *target_info = temp + 28;
 			guint16 target_info_len = nt_resp_len_full - 16 - 32;
 
-			buff.length = target_info_len;
-			buff.value = (guint8 *)target_info;
-			g_string_append_printf(str, "\t%s: %s\n", "target_info raw", (tmp = bytes_to_hex_str(&buff)));
+			g_string_append_printf(str, "\t%s: %s\n", "target_info raw",
+				(tmp = buff_to_hex_str((guint8 *)target_info, target_info_len)));
 			g_free(tmp);
 
 			/* This is not int64 aligned on sparc */
@@ -1605,15 +1599,11 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 			g_string_append_printf(str, "\t%s: %d\n", "response_version", response_version);
 			g_string_append_printf(str, "\t%s: %d\n", "hi_response_version", hi_response_version);
 
-			buff.length = 8;
-			buff.value = (guint8 *)&time_val;
-			g_string_append_printf(str, "\t%s: %s - %s", "time", (tmp = bytes_to_hex_str(&buff)),
+			g_string_append_printf(str, "\t%s: %s - %s", "time", (tmp = buff_to_hex_str((guint8 *)&time_val, 8)),
 					       asctime(gmtime(&time_t_val)));
 			g_free(tmp);
 
-			buff.length = 8;
-			buff.value = (guint8 *)client_challenge;
-			g_string_append_printf(str, "\t%s: %s\n", "client_challenge", (tmp = bytes_to_hex_str(&buff)));
+			g_string_append_printf(str, "\t%s: %s\n", "client_challenge", (tmp = buff_to_hex_str((guint8 *)client_challenge, 8)));
 			g_free(tmp);
 
 			describe_av_pairs(str, target_info);
@@ -1641,9 +1631,9 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 	}
 
 	if (cmsg->session_key.len && cmsg->session_key.offset) {
-		buff.length = GUINT16_FROM_LE(cmsg->session_key.len);
-		buff.value = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->session_key.offset);
-		g_string_append_printf(str, "\t%s: %s\n", "session_key", (tmp = bytes_to_hex_str(&buff)));
+		value_len = GUINT16_FROM_LE(cmsg->session_key.len);
+		value = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->session_key.offset);
+		g_string_append_printf(str, "\t%s: %s\n", "session_key", (tmp = buff_to_hex_str(value, value_len)));
 		g_free(tmp);
 	}
 
@@ -1655,15 +1645,12 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 {
 	GString* str = g_string_new(NULL);
 	char *tmp;
-	SipSecBuffer buff;
 
 	g_string_append(str, (tmp = sip_sec_ntlm_negotiate_flags_describe(cmsg->flags)));
 	g_free(tmp);
 
 	/* nonce (server_challenge) */
-	buff.length = 8;
-	buff.value = cmsg->nonce;
-	g_string_append_printf(str, "\t%s: %s\n", "server_challenge", (tmp = bytes_to_hex_str(&buff)));
+	g_string_append_printf(str, "\t%s: %s\n", "server_challenge", (tmp = buff_to_hex_str(cmsg->nonce, 8)));
 	g_free(tmp);
 
 	g_string_append(str, (tmp = sip_sec_ntlm_describe_smb_header(&(cmsg->target_name), "target_name")));
@@ -1684,11 +1671,8 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 	if (cmsg->target_info.len && cmsg->target_info.offset) {
 		guint8 *target_info = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->target_info.offset);
 		guint16 target_info_len = GUINT16_FROM_LE(cmsg->target_info.len);
-		SipSecBuffer buff;
 
-		buff.length = target_info_len;
-		buff.value = target_info;
-		g_string_append_printf(str, "\t%s: %s\n", "target_info raw", (tmp = bytes_to_hex_str(&buff)));
+		g_string_append_printf(str, "\t%s: %s\n", "target_info raw", (tmp = buff_to_hex_str(target_info, target_info_len)));
 		g_free(tmp);
 
 		describe_av_pairs(str, target_info);
@@ -1877,7 +1861,7 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 			  SipSecBuffer signature)
 {
 	guint32 random_pad = GUINT32_FROM_LE(((guint32 *) signature.value)[1]);
-	char *signature_hex = bytes_to_hex_str(&signature);
+	char *signature_hex = buff_to_hex_str(signature.value, signature.length);
 	gchar *signature_calc = sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								 message,
 								 random_pad,
