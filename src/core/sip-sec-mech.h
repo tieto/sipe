@@ -84,18 +84,4 @@ struct sip_sec_context {
 	/** 0 - FALSE; otherwise TRUE */
 	int is_connection_based;
 };
-
-/// Utility methods (implemented in sip-sec.c)
-
-/**
- * Converts a string of hex digits into bytes.
- *
- * Allocates memory for 'bytes', must be freed after use
- */
-void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes);
-void free_bytes_buffer(SipSecBuffer *bytes);
-
-/** Allocates memory for output, must be freed after use */
-char *bytes_to_hex_str(SipSecBuffer *bytes);
-
 #endif /* _SIP_SEC_MECH_H */

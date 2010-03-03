@@ -138,7 +138,7 @@ sip_sec_init_context_step(SipSecContext context,
 		ret = (*context->init_context_func)(context, in_buff, &out_buff, target);
 
 		if (input_toked_base64)
-			free_bytes_buffer(&in_buff);
+			g_free(in_buff.value);
 
 		if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
 			*output_toked_base64 = purple_base64_encode(out_buff.value, out_buff.length);
@@ -151,7 +151,7 @@ sip_sec_init_context_step(SipSecContext context,
 				g_free(tmp);
 			}
 
-			free_bytes_buffer(&out_buff);
+			g_free(out_buff.value);
 		}
 
 		if (expires) {
@@ -223,8 +223,8 @@ char * sip_sec_make_signature(SipSecContext context, const char *message)
 		purple_debug_info("sipe", "ERROR: sip_sec_make_signature failed. Unable to sign message!\n");
 		return NULL;
 	}
-	signature_hex = bytes_to_hex_str(&signature);
-	free_bytes_buffer(&signature);
+	signature_hex = buff_to_hex_str(signature.value, signature.length);
+	g_free(signature.value);
 	return signature_hex;
 }
 
@@ -238,9 +238,9 @@ int sip_sec_verify_signature(SipSecContext context, const char *message, const c
 
 	if (!message || !signature_hex) return SIP_SEC_E_INTERNAL_ERROR;
 
-	hex_str_to_bytes(signature_hex, &signature);
+	signature.length = hex_str_to_buff(signature_hex, &signature.value);
 	res = (*context->verify_signature_func)(context, message, signature);
-	free_bytes_buffer(&signature);
+	g_free(signature.value);
 	return res;
 }
 
@@ -253,25 +253,6 @@ void sip_sec_init(void)
 void sip_sec_destroy(void)
 {
 	sip_sec_destroy__ntlm();
-}
-
-/* Utility Methods */
-
-void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes)
-{
-	bytes->length = hex_str_to_buff(hex_str, &bytes->value);
-}
-
-void free_bytes_buffer(SipSecBuffer *bytes)
-{
-	g_free(bytes->value);
-	bytes->length = 0;
-	bytes->value = NULL;
-}
-
-char *bytes_to_hex_str(SipSecBuffer *bytes)
-{
-	return buff_to_hex_str(bytes->value, bytes->length);
 }
 
 /*

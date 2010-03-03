@@ -1845,7 +1845,7 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 							        ((context_ntlm) context)->client_sign_key,
 								((context_ntlm) context)->client_seal_key);
 
-	hex_str_to_bytes(signature_hex, signature);
+	signature->length = hex_str_to_buff(signature_hex, &signature->value);
 	g_free(signature_hex);
 
 	return SIP_SEC_E_OK;
