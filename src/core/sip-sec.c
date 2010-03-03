@@ -59,10 +59,11 @@
 gchar *purple_base64_encode(const guchar *data, gsize len);
 guchar *purple_base64_decode(const char *str, gsize *ret_len);
 
+/* @TODO: copy&paste stinks. Find a better solution! */
 size_t
-hex_str_to_buff(const char *hex_str, unsigned char **buff);
+hex_str_to_buff(const char *hex_str, guint8 **buff);
 char *
-buff_to_hex_str(const unsigned char *buff, const size_t buff_len);
+buff_to_hex_str(const guint8 *buff, const size_t buff_len);
 
 /* Dummy initialization hook */
 static SipSecContext
@@ -258,7 +259,7 @@ void sip_sec_destroy(void)
 
 void hex_str_to_bytes(const char *hex_str, SipSecBuffer *bytes)
 {
-	bytes->length = hex_str_to_buff(hex_str, (unsigned char **)&(bytes->value));
+	bytes->length = hex_str_to_buff(hex_str, &bytes->value);
 }
 
 void free_bytes_buffer(SipSecBuffer *bytes)

@@ -308,7 +308,7 @@ sipe_utils_time_to_str(time_t timestamp)
 }
 
 size_t
-hex_str_to_buff(const char *hex_str, unsigned char **buff)
+hex_str_to_buff(const char *hex_str, guint8 **buff)
 {
 	char two_digits[3];
 	size_t length;
@@ -330,7 +330,7 @@ hex_str_to_buff(const char *hex_str, unsigned char **buff)
 }
 
 char *
-buff_to_hex_str(const unsigned char *buff, const size_t buff_len)
+buff_to_hex_str(const guint8 *buff, const size_t buff_len)
 {
 	char *res;
 	size_t i, j;

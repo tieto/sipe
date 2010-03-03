@@ -38,8 +38,8 @@
 typedef unsigned long sip_uint32;
 
 typedef struct {
-	gsize length;
-	void *value;
+	gsize   length;
+	guint8 *value;
 } SipSecBuffer;
 
 

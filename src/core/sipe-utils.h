@@ -295,7 +295,7 @@ struct sipnameval {
  * @return		size of newly allocated buffer
  */
 size_t
-hex_str_to_buff(const char *hex_str, unsigned char **buff);
+hex_str_to_buff(const char *hex_str, guint8 **buff);
 
 /**
  * Composes hex string out of provided buffer.
@@ -307,7 +307,7 @@ hex_str_to_buff(const char *hex_str, unsigned char **buff);
  * @result		newly allocated hex string representing buffer. Must be g_free()'d after use.
  */
 char *
-buff_to_hex_str(const unsigned char *buff, const size_t buff_len);
+buff_to_hex_str(const guint8 *buff, const size_t buff_len);
 
 /**
  * Creates name-value pairs from given lines and appends them to @c list
