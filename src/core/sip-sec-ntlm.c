@@ -1324,12 +1324,6 @@ sip_sec_ntlm_sipe_signature_make(guint32 flags,
 	g_free(res);
 }
 
-static gboolean
-sip_sec_ntlm_verify_signature (char * a, char * b)
-{
-	return g_ascii_strncasecmp(a, b, 16*2) == 0;
-}
-
 
 /* Describe NTLM messages functions */
 
@@ -1865,8 +1859,6 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 	sip_uint32 res;
 	guint8 mac[16];
 	guint32 random_pad = GUINT32_FROM_LE(((guint32 *) signature.value)[1]);
-	char *signature_hex = buff_to_hex_str(signature.value, signature.length);
-	gchar *signature_calc;
 
 	sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								 message,
@@ -1874,15 +1866,11 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 								 ((context_ntlm) context)->server_sign_key,
 								 ((context_ntlm) context)->server_seal_key,
 								 mac);
-	signature_calc = buff_to_hex_str(mac, 16);
-
-	if (sip_sec_ntlm_verify_signature(signature_calc, signature_hex)) {
+	if (!strncmp(signature.value, mac, 16)) {
 		res = SIP_SEC_E_OK;
 	} else {
 		res = SIP_SEC_E_INTERNAL_ERROR;
 	}
-	g_free(signature_calc);
-	g_free(signature_hex);
 	return(res);
 }
 
