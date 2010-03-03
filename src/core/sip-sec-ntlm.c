@@ -1130,18 +1130,22 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	purple_debug_info("sipe", "NTLM AUTHENTICATE: exported session key (not encrypted): %s\n", tmp);
 	g_free(tmp);
 
-	/* p.46
-	   Set ClientSigningKey to SIGNKEY(ExportedSessionKey, "Client")
-	   Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
-	*/
-	SIGNKEY(exported_session_key, TRUE, key);
-	*client_sign_key = (guchar *)g_strndup((gchar *)key, 16);
-	SIGNKEY(exported_session_key, FALSE, key);
-	*server_sign_key = (guchar *)g_strndup((gchar *)key, 16);
-	SEALKEY(neg_flags, exported_session_key, TRUE, key);
-	*client_seal_key = (guchar *)g_strndup((gchar *)key, 16);
-	SEALKEY(neg_flags, exported_session_key, FALSE, key);
-	*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
+	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_SIGN) || 
+	    IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_SEAL))
+	{
+		/* p.46
+		   Set ClientSigningKey to SIGNKEY(ExportedSessionKey, "Client")
+		   Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
+		*/
+		SIGNKEY(exported_session_key, TRUE, key);
+		*client_sign_key = (guchar *)g_strndup((gchar *)key, 16);
+		SIGNKEY(exported_session_key, FALSE, key);
+		*server_sign_key = (guchar *)g_strndup((gchar *)key, 16);
+		SEALKEY(neg_flags, exported_session_key, TRUE, key);
+		*client_seal_key = (guchar *)g_strndup((gchar *)key, 16);
+		SEALKEY(neg_flags, exported_session_key, FALSE, key);
+		*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
+	}
 
 	/* @TODO: */
 	/* @since Vista
