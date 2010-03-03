@@ -133,6 +133,7 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 		PurpleAccount *account = purple_media_get_account(media);
 		GList *codecs = sipe_media_parse_remote_codecs(session);
 		GList *candidates;
+		const char *ip;
 		gchar *body;
 
 		if (codecs) {
@@ -164,6 +165,8 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 				g_object_unref(candidates->data);
 		}
 
+		ip = sipe_utils_get_suitable_local_ip(-1);
+
 		body = g_strdup_printf(
 			"v=0\r\n"
 			"o=- 0 0 IN IP4 %s\r\n"
@@ -177,7 +180,7 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 			"a=rtpmap:101 telephone-event/8000\r\n"
 			"a=fmtp:101 0-16\r\n"
 			//"a=encryption:optional\r\n",
-			,"192.168.1.2", "192.168.1.2", session->local_port);
+			,ip, ip, session->local_port);
 
 		send_sip_response(account->gc, session->invitation, 200, "OK", body);
 		sipmsg_free(session->invitation);

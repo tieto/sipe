@@ -28,6 +28,18 @@
 
 #include <glib.h>
 
+#include "network.h"
+#ifdef _WIN32
+#include <nspapi.h>
+#else
+#include <unistd.h>
+#include <net/if.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif
+
 #include "sipe-backend.h"
 #include "sipe-core.h"    /* to ensure same API for backends */
 #include "sipe-utils.h"
@@ -428,6 +440,63 @@ void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 	memmove(conn->buffer, unread, conn->buffer_used + 1);
 }
 
+
+/*
+ * Calling sizeof(struct ifreq) isn't always correct on
+ * Mac OS X (and maybe others).
+ */
+#ifdef _SIZEOF_ADDR_IFREQ
+#  define HX_SIZE_OF_IFREQ(a) _SIZEOF_ADDR_IFREQ(a)
+#else
+#  define HX_SIZE_OF_IFREQ(a) sizeof(a)
+#endif
+
+const char * sipe_utils_get_suitable_local_ip(int fd)
+{
+	int source = (fd >= 0) ? fd : socket(PF_INET,SOCK_STREAM, 0);
+
+	if (source >= 0) {
+		char buffer[1024];
+		static char ip[16];
+		char *tmp;
+		struct ifconf ifc;
+		guint32 lhost = htonl(127 * 256 * 256 * 256 + 1);
+		guint32 llocal = htonl((169 << 24) + (254 << 16));
+
+		ifc.ifc_len = sizeof(buffer);
+		ifc.ifc_req = (struct ifreq *)buffer;
+		ioctl(source, SIOCGIFCONF, &ifc);
+
+		if (fd < 0)
+			close(source);
+
+		tmp = buffer;
+		while (tmp < buffer + ifc.ifc_len)
+		{
+			struct ifreq *ifr = (struct ifreq *)tmp;
+			tmp += HX_SIZE_OF_IFREQ(*ifr);
+
+			if (ifr->ifr_addr.sa_family == AF_INET)
+			{
+				struct sockaddr_in *sinptr = (struct sockaddr_in *)&ifr->ifr_addr;
+				if (sinptr->sin_addr.s_addr != lhost
+				    && (sinptr->sin_addr.s_addr & htonl(0xFFFF0000)) != llocal)
+				{
+					long unsigned int add = ntohl(sinptr->sin_addr.s_addr);
+					g_snprintf(ip, 16, "%lu.%lu.%lu.%lu",
+						   ((add >> 24) & 255),
+						   ((add >> 16) & 255),
+						   ((add >> 8) & 255),
+						   add & 255);
+
+					return ip;
+				}
+			}
+		}
+	}
+
+	return "0.0.0.0";
+}
 
 /*
   Local Variables:
