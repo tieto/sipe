@@ -741,7 +741,6 @@ Message (length 352):
 	in_buff.length = hex_str_to_buff(type2_hex, (guint8 **)&(in_buff.value));
 
 	sip_sec_ntlm_parse_challenge(in_buff,
-				     0,
 				     &flags2, /* out */
 				     &server_challenge,
 				     &time_val2,

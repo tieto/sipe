@@ -970,7 +970,6 @@ MAC (guint32 flags,
   */
 static void
 sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
-			     gboolean is_connection_based,
 			     guint32 *flags,
 			     guchar **server_challenge, /* 8 bytes */
 			     guint64 *time_val,
@@ -1083,7 +1082,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_128)) {
 		neg_flags = neg_flags & ~NTLMSSP_NEGOTIATE_56;
 	}
-	
+
 	tmsg = g_malloc0(msglen);
 
 	NONCE (client_challenge, 8);
@@ -1266,7 +1265,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 
 	out_buff->value = tmsg;
 	out_buff->length = msglen;
-	
+
 	return SIP_SEC_E_OK;
 }
 
@@ -1788,7 +1787,6 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		}
 
 		sip_sec_ntlm_parse_challenge(in_buff,
-					     context->is_connection_based,
 					     &flags,
 					     &server_challenge, /* 8 bytes */
 					     &time_val,
@@ -1814,7 +1812,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		g_free(server_challenge);
 		g_free(target_info);
 		g_free(tmp);
-		
+
 		if (res != SIP_SEC_E_OK) {
 			g_free(client_sign_key);
 			g_free(server_sign_key);
