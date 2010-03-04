@@ -250,9 +250,11 @@ sipe_get_useragent(struct sipe_account_data *sip)
 #elif defined(__mips__) || defined(__mips) || defined(_MIPS_ARCH) || defined(_M_MRX000)
   #define SIPE_TARGET_ARCH "mips"
 #elif defined(__s390__) || defined(__s390) || defined(__s390x__) || defined(__s390x)
-  #define SIPE_TARGET_PLATFORM "s390"
+  #define SIPE_TARGET_ARCH "s390"
 #elif defined(__sparc__) || defined(__sparc) || defined(__sparcv8)
   #define SIPE_TARGET_ARCH "sparc"
+#elif defined(__arm__)
+  #define SIPE_TARGET_ARCH "arm"
 #else
   #define SIPE_TARGET_ARCH "other"
 #endif
