@@ -180,7 +180,7 @@ struct version test_version;		/* hard-coded in implementation */
 	)
 
 /* Negotiate flags required in connectionless NTLM */
-#define NEGOTIATE_FLAGS \
+#define NEGOTIATE_FLAGS_CONNLESS \
 	( NEGOTIATE_FLAGS_CONN | \
 	  NEGOTIATE_FLAGS_CONNLESS_EXTRA \
 	)
@@ -191,7 +191,7 @@ struct version test_version;		/* hard-coded in implementation */
 #define MD4_DIGEST_LEN 16
 #define MD5_DIGEST_LEN 16
 
-#define IS_FLAG(flags, flag) ((flags & flag) == flag)
+#define IS_FLAG(flags, flag) (((flags) & (flag)) == (flag))
 
 /* 4 bytes */
 /* LE (Little Endian) byte order */
@@ -1036,7 +1036,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 			      SipSecBuffer *out_buff,
 			      guint32 *flags)
 {
-	guint32 orig_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS;
+	guint32 orig_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS_CONNLESS;
 	guint32 neg_flags = (*flags & orig_flags) | NTLMSSP_REQUEST_TARGET;
 	int ntlmssp_nt_resp_len =
 #ifdef _SIPE_COMPILING_TESTS
@@ -1067,9 +1067,8 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char client_challenge [8];
 	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
 
-	if (!IS_FLAG(*flags, is_connection_based ?
-		NEGOTIATE_FLAGS_COMMON_MIN :
-		NEGOTIATE_FLAGS_COMMON_MIN | NEGOTIATE_FLAGS_CONNLESS_EXTRA))
+	if (!IS_FLAG(*flags, NEGOTIATE_FLAGS_COMMON_MIN) ||
+	    !(is_connection_based || IS_FLAG(*flags, NEGOTIATE_FLAGS_CONNLESS_EXTRA)))
 	{
 		purple_debug_info("sipe", "sip_sec_ntlm_gen_authenticate: received incompatible NTLM NegotiateFlags, exiting.");
 		return SIP_SEC_E_INTERNAL_ERROR;

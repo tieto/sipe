@@ -414,7 +414,7 @@ Response:
 	const gchar *text_j = "jCIFS";
 	printf ("\n\n(davenport) Testing Signature Algorithm\n");
 	guchar sk [] = {0x01, 0x02, 0x03, 0x04, 0x05, 0xe5, 0x38, 0xb0};
-	MAC (NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY, text_j, strlen(text_j), sk, 8,  sk,8,  0x00090178, 0, mac);
+	MAC (NEGOTIATE_FLAGS_CONNLESS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY, text_j, strlen(text_j), sk, 8,  sk,8,  0x00090178, 0, mac);
 	assert_equal("0100000078010900397420FE0E5A0F89", mac, 16, TRUE);
 
 	// Tests from http://davenport.sourceforge.net/ntlm.html#ntlm2Signing
@@ -433,7 +433,7 @@ Response:
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
 	char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
-	MAC (NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,
+	MAC (NEGOTIATE_FLAGS_CONNLESS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,
 		msg1, strlen(msg1), exported_session_key2, 16,  exported_session_key2,16,  0, 100, mac);
 	assert_equal("0100000000000000BF2E52667DDF6DED", mac, 16, TRUE);
 
@@ -445,7 +445,7 @@ Response:
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
 	gchar * msg_str = sipmsg_breakdown_get_string(2, &msgbd);
-	sip_sec_ntlm_sipe_signature_make (NEGOTIATE_FLAGS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,
+	sip_sec_ntlm_sipe_signature_make (NEGOTIATE_FLAGS_CONNLESS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,
 		msg_str, 0, exported_session_key2, exported_session_key2, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", mac, 16, TRUE);
