@@ -4334,6 +4334,15 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 			g_strfreev(parts);
 		}
 
+		/* cancel file transfer as rejected by server */
+		if (msg->response == 606 &&	/* Not acceptable all. */
+		    warning == 309 &&		/* Message contents not allowed by policy */
+		    message && g_str_has_prefix(message->content_type, "text/x-msmsgsinvite"))
+		{
+			GSList *parsed_body = sipe_ft_parse_msg_body(message->body);
+			sipe_ft_incoming_cancel(sip->gc->account, parsed_body);
+			sipe_utils_nameval_free(parsed_body);
+		}
 
 		if ((pbuddy = purple_find_buddy(sip->account, with))) {
 			alias = purple_buddy_get_alias(pbuddy);
