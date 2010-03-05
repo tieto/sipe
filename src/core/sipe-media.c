@@ -72,8 +72,7 @@ sipe_media_parse_remote_codecs(const sipe_media_session *session)
 		clock_rate = atoi(tokens[2]);
 
 		codec = purple_media_codec_new(id, codec_name, PURPLE_MEDIA_AUDIO, clock_rate);
-		if (strstr(purple_media_codec_to_string(codec),"SIREN"))
-			codecs = g_list_append(codecs, codec);
+		codecs = g_list_append(codecs, codec);
 
 		g_strfreev(tokens);
 
@@ -81,6 +80,40 @@ sipe_media_parse_remote_codecs(const sipe_media_session *session)
 	}
 
 	return codecs;
+}
+
+gint
+codec_name_compare(PurpleMediaCodec* codec1, PurpleMediaCodec* codec2)
+{
+	gchar *name1 = purple_media_codec_get_encoding_name(codec1);
+	gchar *name2 = purple_media_codec_get_encoding_name(codec2);
+
+	return g_strcmp0(name1, name2);
+}
+
+static GList *
+sipe_media_prune_remote_codecs(PurpleMedia *media, GList *codecs)
+{
+	GList *remote_codecs = codecs;
+	GList *local_codecs = purple_media_get_codecs(media, "sipe-voice");
+	GList *pruned_codecs = NULL;
+
+	while (remote_codecs) {
+		PurpleMediaCodec *c = remote_codecs->data;
+
+		if (g_list_find_custom(local_codecs, c, (GCompareFunc)codec_name_compare)) {
+			pruned_codecs = g_list_append(pruned_codecs, c);
+			remote_codecs->data = NULL;
+		} else {
+			printf("Pruned codec %s\n", purple_media_codec_get_encoding_name(c));
+		}
+
+		remote_codecs = remote_codecs->next;
+	}
+
+	purple_media_codec_list_free(codecs);
+
+	return pruned_codecs;
 }
 
 static GList *
@@ -114,6 +147,28 @@ sipe_media_parse_remote_candidates(const sipe_media_session *session)
 	return candidates;
 }
 
+static gchar *
+sipe_media_sdp_codecs_format(GList *codecs)
+{
+	GString *result = g_string_new(NULL);
+
+	while (codecs) {
+		PurpleMediaCodec *c = codecs->data;
+
+		gchar *tmp = g_strdup_printf("a=rtpmap:%d %s/%d\r\n",
+			purple_media_codec_get_id(c),
+			purple_media_codec_get_encoding_name(c),
+			purple_media_codec_get_clock_rate(c));
+
+		g_string_append(result, tmp);
+		g_free(tmp);
+
+		codecs = codecs->next;
+	}
+
+	return g_string_free(result, FALSE);
+}
+
 static void
 sipe_media_session_ready_cb(sipe_media_session *session)
 {
@@ -135,22 +190,20 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 		GList *candidates;
 		const char *ip;
 		gchar *body;
+		gchar *sdp_codecs;
 
-		if (codecs) {
-			if (purple_media_set_remote_codecs(media, "sipe-voice", session->with, codecs) == FALSE)
-				printf("ERROR SET REMOTE CODECS");
-
-			for (; codecs; codecs = g_list_delete_link(codecs, codecs))
-				g_object_unref(codecs->data);
+		if (!codecs) {
+			// TODO: error no remote codecs
 		}
+
+		codecs = sipe_media_prune_remote_codecs(media, codecs);
+
+		if (purple_media_set_remote_codecs(media, "sipe-voice", session->with, codecs) == FALSE)
+			printf("ERROR SET REMOTE CODECS");
 
 		GList *cdcs = purple_media_get_codecs(media, "sipe-voice");
 		while (cdcs) {
 			PurpleMediaCodec *c = cdcs->data;
-
-			if (strstr(purple_media_codec_to_string(cdcs->data),"SIREN"))
-				if (purple_media_set_send_codec(media, "sipe-voice", cdcs->data) == FALSE)
-					printf("ERROR SET SEND CODEC");
 
 			printf("CODEC: %s\n",purple_media_codec_to_string(c));
 
@@ -166,6 +219,7 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 		}
 
 		ip = sipe_utils_get_suitable_local_ip(-1);
+		sdp_codecs = sipe_media_sdp_codecs_format(codecs);
 
 		body = g_strdup_printf(
 			"v=0\r\n"
@@ -174,17 +228,17 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 			"c=IN IP4 %s\r\n"
 			"b=CT:1000\r\n"
 			"t=0 0\r\n"
-			"m=audio %d RTP/AVP 111 101\r\n"
-			"a=rtpmap:111 SIREN/16000\r\n"
-			"a=fmtp:111 bitrate=16000\r\n"
-			"a=rtpmap:101 telephone-event/8000\r\n"
-			"a=fmtp:101 0-16\r\n"
+			"m=audio %d RTP/AVP 111 101\r\n"// TODO: these codes should reflect carried rtpmaps
+			"%s"
 			//"a=encryption:optional\r\n",
-			,ip, ip, session->local_port);
+			,ip, ip, session->local_port, sdp_codecs);
 
 		send_sip_response(account->gc, session->invitation, 200, "OK", body);
+
+		purple_media_codec_list_free(codecs);
 		sipmsg_free(session->invitation);
 		session->invitation = NULL;
+		g_free(sdp_codecs);
 		g_free(body);
 	}
 }
