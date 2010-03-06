@@ -25,8 +25,6 @@
 #include "sipe.h"
 #include "sipe-utils.h"
 
-#include <string.h>
-
 struct _sipe_media_session {
 	PurpleMedia		*media;
 	gchar			*with;
@@ -148,6 +146,24 @@ sipe_media_parse_remote_candidates(const sipe_media_session *session)
 }
 
 static gchar *
+sipe_media_sdp_codec_ids_format(GList *codecs)
+{
+	GString *result = g_string_new(NULL);
+
+	while (codecs) {
+		PurpleMediaCodec *c = codecs->data;
+
+		gchar *tmp = g_strdup_printf(" %d", purple_media_codec_get_id(c));
+		g_string_append(result,tmp);
+		g_free(tmp);
+
+		codecs = codecs->next;
+	}
+
+	return g_string_free(result, FALSE);
+}
+
+static gchar *
 sipe_media_sdp_codecs_format(GList *codecs)
 {
 	GString *result = g_string_new(NULL);
@@ -190,6 +206,7 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 		GList *candidates;
 		const char *ip;
 		gchar *body;
+		gchar *codec_ids;
 		gchar *sdp_codecs;
 
 		if (!codecs) {
@@ -220,6 +237,7 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 
 		ip = sipe_utils_get_suitable_local_ip(-1);
 		sdp_codecs = sipe_media_sdp_codecs_format(codecs);
+		codec_ids = sipe_media_sdp_codec_ids_format(codecs);
 
 		body = g_strdup_printf(
 			"v=0\r\n"
@@ -228,10 +246,10 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 			"c=IN IP4 %s\r\n"
 			"b=CT:1000\r\n"
 			"t=0 0\r\n"
-			"m=audio %d RTP/AVP 111 101\r\n"// TODO: these codes should reflect carried rtpmaps
+			"m=audio %d RTP/AVP%s\r\n"
 			"%s"
 			//"a=encryption:optional\r\n",
-			,ip, ip, session->local_port, sdp_codecs);
+			,ip, ip, session->local_port, codec_ids, sdp_codecs);
 
 		send_sip_response(account->gc, session->invitation, 200, "OK", body);
 
@@ -239,6 +257,7 @@ sipe_media_session_ready_cb(sipe_media_session *session)
 		sipmsg_free(session->invitation);
 		session->invitation = NULL;
 		g_free(sdp_codecs);
+		g_free(codec_ids);
 		g_free(body);
 	}
 }
