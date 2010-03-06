@@ -19,7 +19,7 @@
 %define protocol purple-sipe
 
 Name:           pidgin-sipe
-Summary:        Pidgin third-party plugin for Microsoft LCS/OCS
+Summary:        Pidgin protocol plugin to connect to MS Office Communicator
 Version:        1.8.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
@@ -48,12 +48,15 @@ Requires:       %{protocol} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 
 %description
-A third-party plugin for the Pidgin multi-protocol instant messenger. It
-implements the extended version of SIP/SIMPLE used by various products:
+A third-party plugin for the Pidgin multi-protocol instant messenger.
+It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007 and newer)
+    * Microsoft Office Communications Server (OCS 2007/2007R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
+
+With this plugin you should be able to replace your Microsoft Office
+Communicator client with Pidgin.
 
 This package provides the icon set for Pidgin.
 
@@ -63,12 +66,15 @@ Summary:        Libpurple third-party plugin for Microsoft LCS/OCS
 Group:          Applications/Internet
 
 %description -n %{protocol}
-A third-party plugin for the libpurple multi-protocol instant messaging core.
+A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007 and newer)
+    * Microsoft Office Communications Server (OCS 2007/2007R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
+
+With this plugin you should be able to replace your Microsoft Office
+Communicator client with Pidgin.
 
 
 %prep
@@ -115,6 +121,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sat Mar 06 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
+- update package summaary & description
+
 * Tue Feb 16 2010 J. D. User <jduser@noreply.com> 1.8.1
 - update to 1.8.1
 

@@ -1,14 +1,18 @@
 Maintainers:
 
-Anibal Avelar <debianmx at gmail dot com>, upstream developer
-Gabriel Burt  <gburt at novell dot com>, developer
-Stefan Becker <stefan dot becker at nokia dot com>, developer
-Daniel Beichl <daniel_beichl at gmx dot net>, developer
-pier11 <pier11 at operamail dot com>, developer
-Jakub Adam <jakub dot adam at tieto dot com>, developer
-Tomáš Hrabčík <tomas dot hrabcik at tieto dot com>, developer
+Anibal Avelar <debianmx at gmail dot com>
+Stefan Becker <stefan dot becker at nokia dot com>
+pier11 <pier11 at operamail dot com>
+Jakub Adam <jakub dot adam at tieto dot com>
+Tomáš Hrabčík <tomas dot hrabcik at tieto dot com>
+
+Retired Maintainers:
+
+Gabriel Burt  <gburt at novell dot com>
+Daniel Beichl <daniel_beichl at gmx dot net>
 
 Crazy Patch Writers:
+
 Jochen De Smet <jochen dot siplcs at leahnim dot org> (Miranda port)
 Matt Meissner <meissnem at gmail dot com> (Adium port)
 Michael Steffens <michael_steffens at gmx dot net>
@@ -26,4 +30,6 @@ David Woodhouse <David dot Woodhouse at intel dot com>
 Edmondas Girkantas <eg at fbsd dot lt>
 Peter Fales
 
-Based on the initial Sip/Simple protocol gaim plugin from Thomas Butter <butter at uni-mannheim dot de>
+Based on the initial SIP/SIMPLE gaim protocol plugin by:
+
+Thomas Butter <butter at uni-mannheim dot de>
