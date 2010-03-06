@@ -28,7 +28,7 @@
 		entry = entry->next;
 #define SIPE_SESSION_FOREACH_END }}
 
-/** Correspond to multy-party conversation */
+/** Correspond to multi-party conversation */
 struct sip_session {
 	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
 	/** key is user (URI) */
@@ -40,7 +40,7 @@ struct sip_session {
 	GHashTable *unconfirmed_messages;
 	
 	/*
-	 * Miltiparty conversation related fields
+	 * Multiparty conversation related fields
 	 */
 	gboolean is_multiparty;
 	/** purple chat id */
