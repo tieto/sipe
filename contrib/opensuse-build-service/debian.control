@@ -9,22 +9,13 @@ Standards-Version: 3.8.4
 Package: pidgin-sipe
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Pidgin plugin for connect to LCS/OCS
- SIP is a popular VoIP protocol that contains a IM (Instant Messenger)
- subprotocol called SIP/SIMPLE. SIP/SIMPLE is an open protocol with a
- documented specification.
- . 
- MSN's Live Communication Server (LCS) is very similar to the
- SIP/SIMPLE protocol but diverges from the standard specification.
- This pidgin plug-in provides support for the LCS protocol which
- it calls SIPE (SIP Exchange).
+Description: Pidgin protocol plugin to connect to MS Office Communicator
+ A third-party plugin for the Pidgin multi-protocol instant messenger.
+ It implements the extended version of SIP/SIMPLE used by various products:
  .
- This plugin has full support for LCS 2005 and OCS 2007. Partial LCS 2003.
- . 
- The stable version has full support for:  
-  o Send/receive messages  
-  o Full presence (both sides)  
-  o To add/remove/move contacts  
-  o TLS/SSL support (port 5061)  
-  o Search contacts  
+     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+     * Microsoft Live Communications Server (LCS 2003/2005)
+     * Reuters Messaging
  .
+ With this plugin you should be able to replace your Microsoft Office
+ Communicator client with Pidgin.
