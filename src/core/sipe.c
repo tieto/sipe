@@ -4358,6 +4358,13 @@ static void process_incoming_bye(struct sipe_core_private *sipe_private,
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
+	if (sip->media_call && sipe_strequal(sip->media_call->callid, callid)) {
+		// BYE ends a media call
+		sipe_media_hangup(sip, FALSE);
+		g_free(from);
+		return;
+	}
+
 	/* collect dialog identification
 	 * we need callid, ourtag and theirtag to unambiguously identify dialog
 	 */
@@ -4624,7 +4631,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 
 	/* Invitation to audio call */
 	if (msg->body && strstr(msg->body, "m=audio")) {
-		sipe_media_incoming_invite(sip->account, msg);
+		sipe_media_incoming_invite(sip, msg);
 		return;
 	}
 

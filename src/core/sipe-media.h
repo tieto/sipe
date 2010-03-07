@@ -20,4 +20,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-void sipe_media_incoming_invite(PurpleAccount *account, struct sipmsg *msg);
+struct _sipe_media_call {
+	PurpleMedia		*media;
+	gchar			*with;
+	gchar			*callid;
+	GSList			*sdp_attrs;
+	guint16			local_port;
+	struct sipmsg	*invitation;
+};
+typedef struct _sipe_media_call sipe_media_call;
+
+void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg);
+
+void sipe_media_hangup(struct sipe_account_data *sip, gboolean initiator);

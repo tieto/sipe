@@ -106,6 +106,7 @@ struct sipe_account_data {
 	struct sip_auth registrar;
 	struct sip_auth proxy;
 	struct sip_csta *csta; /* For RCC - Remote Call Control */
+	struct _sipe_media_call *media_call;
 	gboolean reregister_set; /* whether reregister timer set */
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed; /* whether subscribed to events, except buddies presence */
