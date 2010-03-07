@@ -26,55 +26,65 @@
 %endif
 
 Name:           pidgin-sipe
+Summary:        Pidgin protocol plugin to connect to MS Office Communicator
 Version:        1.8.1
 Release:        1
-License:        GPLv2+
-Summary:        Pidgin third-party plugin for Microsoft LCS/OCS
-Url:            http://sipe.sourceforge.net/
-Group:          %{pkg_group}
 Source:         %{name}-%{version}.tar.gz
-BuildRequires:  gettext-devel
+Group:          %{pkg_group}
+License:        GPLv2+
+URL:            http://sipe.sourceforge.net/
+
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+
+BuildRequires:  %{purple_develname} >= 2.3.1
+BuildRequires:  libtool
 BuildRequires:  intltool
+BuildRequires:  gettext-devel
+
 # Configurable components
 %if !0%{?_without_kerberos:1}
 %define config_krb5 --with-krb5
 BuildRequires:  krb5-devel
 %endif
-BuildRequires:  %{purple_develname} >= 2.3.1
-BuildRequires:  libtool
+
 # For directory ownership
 BuildRequires:  pidgin
-Requires:       %{purple_plugin} = %{version}-%{release}
+Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 Requires:       pidgin
 %if 0%{?sles_version} == 10
 BuildRequires:  gnome-keyring-devel
 %endif
-BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %description
-A third-party plugin for the Pidgin multi-protocol instant messenger. It
-implements the extended version of SIP/SIMPLE used by various products:
+A third-party plugin for the Pidgin multi-protocol instant messenger.
+It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007 and newer)
+    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
+
+With this plugin you should be able to replace your Microsoft Office
+Communicator client with Pidgin.
 
 This package provides the icon set for Pidgin.
 
 
 %package -n %{purple_plugin}
-License:        GPLv2+
-Summary:        Libpurple third-party plugin for Microsoft LCS/OCS
+Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
+License:        GPLv2+
 Obsoletes:      purple-sipe
 
 %description -n %{purple_plugin}
-A third-party plugin for the libpurple multi-protocol instant messaging core.
+A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007 and newer)
+    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
+
+This package provides the protocol plugin for libpurple clients.
+
 
 %prep
 %setup -q
@@ -87,25 +97,33 @@ export CFLAGS="%optflags -I%{_includedir}/gssapi"
 %configure %{config_params}
 make %{_smp_mflags}
 
+
 %install
 %makeinstall
 find %{buildroot} -type f -name "*.la" -delete -print
 %find_lang %{name}
 
+
 %clean
 rm -rf %{buildroot}
+
 
 %files -n %{purple_plugin} -f %{name}.lang
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %{_libdir}/purple-2/libsipe.so
 
+
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 
+
 %changelog
+* Sun Mar 07 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
+- sync with RPM SPEC from contrib/rpm
+
 * Sun Feb 08 2010 pier11 <pier11@operamail.com> 1.8.0
 - source is an original 1.8.0 with patch: git(upstream) 9c34cc3557daa3d61a002002492c71d0343c8cae
 - temp hack - renamed source in spec from .bz2 to .gz as the latter was prepared with the patch. 

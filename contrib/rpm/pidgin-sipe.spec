@@ -16,7 +16,8 @@
 #------------------------------- BUILD FROM GIT -------------------------------
 %endif
 
-%define protocol purple-sipe
+%define purple_plugin purple-sipe
+%define pkg_group     Applications/Internet
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
@@ -30,13 +31,16 @@ Epoch:          1
 Release:        1%{?dist}
 Source:         http://downloads.sourceforge.net/sipe/%{name}-%{version}.tar.bz2
 %endif
-Group:          Applications/Internet
+Group:          %{pkg_group}
 License:        GPLv2+
 URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libpurple-devel >= 2.3.1, libtool, intltool, gettext-devel
+BuildRequires:  libpurple-devel >= 2.3.1
+BuildRequires:  libtool
+BuildRequires:  intltool
+BuildRequires:  gettext-devel
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
@@ -44,7 +48,7 @@ BuildRequires:  libpurple-devel >= 2.3.1, libtool, intltool, gettext-devel
 BuildRequires:  krb5-devel
 %endif
 
-Requires:       %{protocol} = %{?epoch:%{epoch}:}%{version}-%{release}
+Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 
 %description
@@ -61,11 +65,12 @@ Communicator client with Pidgin.
 This package provides the icon set for Pidgin.
 
 
-%package -n %{protocol}
-Summary:        Libpurple third-party plugin for Microsoft LCS/OCS
-Group:          Applications/Internet
+%package -n %{purple_plugin}
+Summary:        Libpurple protocol plugin to connect to MS Office Communicator
+Group:          %{pkg_group}
+License:        GPLv2+
 
-%description -n %{protocol}
+%description -n %{purple_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
@@ -73,8 +78,7 @@ It implements the extended version of SIP/SIMPLE used by various products:
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
-With this plugin you should be able to replace your Microsoft Office
-Communicator client with Pidgin.
+This package provides the protocol plugin for libpurple clients.
 
 
 %prep
@@ -98,17 +102,15 @@ make %{_smp_mflags}
 
 %install
 %makeinstall
+find %{buildroot} -type f -name "*.la" -delete -print
 %find_lang %{name}
-
-# NOTE: We intentionally don't ship *.la files
-find $RPM_BUILD_ROOT -type f -name '*.la' | xargs rm -f -- || :
 
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 
-%files -n %{protocol} -f %{name}.lang
+%files -n %{purple_plugin} -f %{name}.lang
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %{_libdir}/purple-2/libsipe.so
@@ -121,6 +123,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sun Mar 07 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
+- sync with RPM SPEC from contrib/OBS
+
 * Sat Mar 06 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
 - update package summaary & description
 
