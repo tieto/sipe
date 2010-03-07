@@ -21,15 +21,14 @@
  */
 
 struct _sipe_media_call {
-	PurpleMedia		*media;
-	gchar			*with;
-	gchar			*callid;
-	GSList			*sdp_attrs;
-	guint16			local_port;
-	struct sipmsg	*invitation;
+	PurpleMedia			*media;
+	struct sip_dialog	*dialog;
+	GSList				*sdp_attrs;
+	guint16				local_port;
+	struct sipmsg		*invitation;
 };
 typedef struct _sipe_media_call sipe_media_call;
 
 void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg);
 
-void sipe_media_hangup(struct sipe_account_data *sip, gboolean initiator);
+void sipe_media_hangup(struct sipe_account_data *sip);

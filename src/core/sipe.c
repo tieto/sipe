@@ -4358,9 +4358,9 @@ static void process_incoming_bye(struct sipe_core_private *sipe_private,
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
-	if (sip->media_call && sipe_strequal(sip->media_call->callid, callid)) {
+	if (sip->media_call && sipe_strequal(sip->media_call->dialog->callid, callid)) {
 		// BYE ends a media call
-		sipe_media_hangup(sip, FALSE);
+		sipe_media_hangup(sip);
 		g_free(from);
 		return;
 	}

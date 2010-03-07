@@ -24,14 +24,14 @@
 
 #include "sipe.h"
 #include "sipe-media.h"
+#include "sipe-dialog.h"
 #include "sipe-utils.h"
 
 static void
 sipe_media_call_free(sipe_media_call *call)
 {
 	if (call) {
-		g_free(call->with);
-		g_free(call->callid);
+		sipe_dialog_free(call->dialog);
 		sipe_utils_nameval_free(call->sdp_attrs);
 		if (call->invitation)
 			sipmsg_free(call->invitation);
@@ -182,11 +182,12 @@ static void
 sipe_media_session_ready_cb(sipe_media_call *call)
 {
 	PurpleMedia *media = call->media;
+	gchar* with = call->dialog->with;
 
 	if (!purple_media_candidates_prepared(media, NULL, NULL))
 		return;
 
-	GList *list = purple_media_get_local_candidates(media, "sipe-voice", call->with);
+	GList *list = purple_media_get_local_candidates(media, "sipe-voice", with);
 	if (list == NULL) {
 		// TODO: error no local candidates
 	}
@@ -208,7 +209,7 @@ sipe_media_session_ready_cb(sipe_media_call *call)
 
 		codecs = sipe_media_prune_remote_codecs(media, codecs);
 
-		if (purple_media_set_remote_codecs(media, "sipe-voice", call->with, codecs) == FALSE)
+		if (purple_media_set_remote_codecs(media, "sipe-voice", with, codecs) == FALSE)
 			printf("ERROR SET REMOTE CODECS");
 
 		GList *cdcs = purple_media_get_codecs(media, "sipe-voice");
@@ -222,7 +223,7 @@ sipe_media_session_ready_cb(sipe_media_call *call)
 
 		candidates = sipe_media_parse_remote_candidates(call);
 		if (candidates) {
-			purple_media_add_remote_candidates(media, "sipe-voice", call->with, candidates);
+			purple_media_add_remote_candidates(media, "sipe-voice", with, candidates);
 
 			for (; candidates; candidates = g_list_delete_link(candidates, candidates))
 				g_object_unref(candidates->data);
@@ -260,25 +261,23 @@ sipe_media_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 							PurpleMediaInfoType type,
 							SIPE_UNUSED_PARAMETER gchar *sid,
 							SIPE_UNUSED_PARAMETER gchar *name,
-							SIPE_UNUSED_PARAMETER gboolean local,
-							struct sipe_account_data *sip)
+							gboolean local, struct sipe_account_data *sip)
 {
 	sipe_media_call *call = sip->media_call;
 
-	switch (type) {
-		case PURPLE_MEDIA_INFO_ACCEPT:
-			sipe_media_session_ready_cb(call);
-			break;
-		case PURPLE_MEDIA_INFO_REJECT: {
-			PurpleAccount *account = purple_media_get_account(media);
-			send_sip_response(account->gc, call->invitation, 603, "Decline", NULL);
-		} // intentionally fall through
-		case PURPLE_MEDIA_INFO_HANGUP:
-			sipe_media_call_free(call);
-			sip->media_call = NULL;
-			break;
-		default:
-			break;
+	if (type == PURPLE_MEDIA_INFO_ACCEPT)
+		sipe_media_session_ready_cb(call);
+	else if (type == PURPLE_MEDIA_INFO_REJECT) {
+		PurpleAccount *account = purple_media_get_account(media);
+		send_sip_response(account->gc, call->invitation, 603, "Decline", NULL);
+		sipe_media_call_free(call);
+		sip->media_call = NULL;
+	} else if (type == PURPLE_MEDIA_INFO_HANGUP) {
+		if (local)
+			send_sip_request(sip->gc, "BYE", call->dialog->with, call->dialog->with,
+							NULL, NULL, call->dialog, NULL);
+		sipe_media_call_free(call);
+		sip->media_call = NULL;
 	}
 }
 
@@ -305,16 +304,20 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	PurpleMedia					*media;
 
 	sipe_media_call				*call;
+	struct sip_dialog			*dialog;
 
 	if (sip->media_call) {
 		printf("MEDIA SESSION ALREADY IN PROGRESS");
 		return;
 	}
 
-	call = g_new0(sipe_media_call, 1);
+	dialog = g_new0(struct sip_dialog, 1);
+	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+	dialog->with = parse_from(sipmsg_find_header(msg, "From"));
+	sipe_dialog_parse(dialog, msg, FALSE);
 
-	call->with = parse_from(sipmsg_find_header(msg, "From"));
-	call->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+	call = g_new0(sipe_media_call, 1);
+	call->dialog = dialog;
 	call->sdp_attrs = sipe_media_parse_sdp_frame(msg->body);
 	call->invitation = msg;
 
@@ -323,7 +326,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	msg->dont_free = TRUE;
 
 	media = purple_media_manager_create_media(manager, sip->account,
-							"fsrtpconference", call->with, FALSE);
+							"fsrtpconference", dialog->with, FALSE);
 
 	call->media = media;
 
@@ -332,19 +335,15 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	g_signal_connect_swapped(G_OBJECT(media), "candidates-prepared",
 						G_CALLBACK(sipe_media_session_ready_cb), call);
 
-	purple_media_add_stream(media, "sipe-voice", call->with,
+	purple_media_add_stream(media, "sipe-voice", dialog->with,
 							PURPLE_MEDIA_AUDIO, FALSE, "rawudp", 0, NULL);
 }
 
-void sipe_media_hangup(struct sipe_account_data *sip, gboolean initiator)
+void sipe_media_hangup(struct sipe_account_data *sip)
 {
 	if (sip->media_call) {
 		purple_media_stream_info(sip->media_call->media, PURPLE_MEDIA_INFO_HANGUP,
-								NULL, NULL, TRUE);
-
-		if (initiator) {
-			// TODO: send BYE to remote UA
-		}
+								NULL, NULL, FALSE);
 	}
 }
 
