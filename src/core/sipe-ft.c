@@ -915,7 +915,7 @@ PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who)
 				       PURPLE_XFER_SEND, who);
 
 		if (xfer) {
-			struct sipe_account_data *sip = purple_connection_get_protocol_data(gc);
+			struct sipe_account_data *sip = gc->proto_data;
 
 			sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
 			ft->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
