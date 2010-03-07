@@ -1575,8 +1575,8 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 		if (nt_resp_len_full > 24) { /* NTLMv2 */
 			char *tmp;
 			const guint8 *temp = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
-			const guint response_version = *((guchar*)temp);
-			const guint hi_response_version = *((guchar*)(temp+1));
+			const guint response_version = temp[0];
+			const guint hi_response_version = temp[1];
 			guint64 time_val;
 			time_t time_t_val;
 			const guint8 *client_challenge = temp + 16;
