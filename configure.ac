@@ -73,7 +73,7 @@ PKG_PROG_PKG_CONFIG
 AC_ARG_WITH([krb5],
 	[AC_HELP_STRING([--with-krb5=PREFIX],
 		[compile sipe plugin with Kerberos 5 support @<:@default=no@:>@])],
-	[test "$withval" = no || kerberos="$withval"],
+	[test "$withval" = "no" || kerberos="$withval"],
 	[kerberos="no"])
 
 dnl check for Kerberos
@@ -152,8 +152,8 @@ purple="yes"
 AC_ARG_WITH([purple],
 	[AC_HELP_STRING([--with-purple],
 		[compile sipe plugin for libpurple clients @<:@default=autodetect@:>@])],
-	[test "$withval" = yes || purple="no"],
-	[test "$withval" = no  && purple="no"])
+	[test "$withval" = "yes" || purple="no"],
+	[])
 if test "$purple" != "no"; then
 	PKG_CHECK_MODULES(PURPLE, [purple >= 2.3.1],
 		[],
@@ -201,8 +201,8 @@ telepathy="yes"
 AC_ARG_WITH([telepathy],
 	[AC_HELP_STRING([--with-telepathy],
 		[compile sipe plugin for telepathy clients @<:@default=autodetect@:>@])],
-	[test "$withval" = yes || telepathy="no"],
-	[test "$withval" = no  && telepathy="no"])
+	[test "$withval" = "yes" || telepathy="no"],
+	[])
 if test "$telepathy" != "no"; then
 	PKG_CHECK_MODULES(TELEPATHY, [telepathy-glib],
 		[],
@@ -214,6 +214,15 @@ AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, test "$telepathy" != "no")
 dnl NOTHING IMPLEMENTED YET!!!
 dnl if test "$telepathy" != "no"; then
 dnl fi
+
+dnl sanity check
+AS_IF([test "$purple" = "no" -a "$telepathy" = "no"],
+	[AC_ERROR(at least one plugin must be selected
+
+If you didn't use a --without option then please check that you have
+the headers for the packages "purple" or "telepathy-glib" installed.
+)],
+	[])
 
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
