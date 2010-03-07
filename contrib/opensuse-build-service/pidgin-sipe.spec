@@ -27,7 +27,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.8.1
+Version:        1.9.0
 Release:        1
 Source:         %{name}-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -121,6 +121,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Mar 07 2010 pier11 <pier11@operamail.com> pre-1.9.0-*git*
+- OBS tests of pre-1.9.0 git-snapshot 61ea0856855483b9e18f23a87afe47437e526f0e
+
 * Sun Mar 07 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
 - sync with RPM SPEC from contrib/rpm
 

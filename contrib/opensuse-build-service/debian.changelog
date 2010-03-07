@@ -1,3 +1,9 @@
+pidgin-sipe (1.9.0-1) unstable; urgency=low
+
+  * OBS tests of pre-1.9.0 git-snapshot 61ea0856855483b9e18f23a87afe47437e526f0e
+
+ -- pier11 <pier11@operamail.com>  Sun, 7 Mar 2010 20:00:00 -0000
+
 pidgin-sipe (1.8.1-1) unstable; urgency=low
 
   * New upstream version
