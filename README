@@ -5,7 +5,7 @@ pidgin-sipe is a third-party plugin for the Pidgin multi-protocol instant
 messenger. It implements the extended version of SIP/SIMPLE used by various
 products:
 
-    * Microsoft Office Communications Server (OCS 2007/2007R2 and newer)
+    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
@@ -18,15 +18,31 @@ Features
 
 The plugin has support for
 
-    * Instant Messaging
-    * Chat rooms
-    * File transfer
-    * Buddy list maintenance
-    * Search contacts
-    * Presence with calendar data provisioning
-    * TLS/SSL protected connection
-    * NTLMv2 & Kerberos authentication
-    * Calendar data sources: Exchange
+    * Instant Messaging (IM)
+    * Multiparty chat
+    * Enhanced presence
+    * Calendar integration with Exchange 2007/2010
+    * Contact details information - company, phones, web site, etc.
+    * Contact search
+    * Encrypted file transfer
+    * Call initiation through PBX
+    * Kerberos and NTLMv2 authentication, TLS support
+    * Translated to many languages
+
+
+Advantages over Office Communicator products
+============================================
+
+    * Available on broader range of platforms: Linux, *BSD, Maemo, OSX,
+      commercial UNIX, Windows.
+    * Ability to simultaneously connect to several Office Communicator 
+      accounts in addition to public IM network accounts like MSN, AOL,
+      Yahoo. For example one account is in vendor company and another is 
+      in client company.
+    * Keeps history of communications in environments without Outlook. For
+      example in companies where Lotus Notes is deployed as a default
+      groupware client instead of Outlook.
+    * Open development model, open source product. License is GPLv2+
 
 
 Support
