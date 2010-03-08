@@ -155,7 +155,7 @@ AC_ARG_WITH([purple],
 	[test "$withval" = "yes" || purple="no"],
 	[])
 if test "$purple" != "no"; then
-	PKG_CHECK_MODULES(PURPLE, [purple >= 2.3.1],
+	PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.0],
 		[],
 		[purple="no"])
 fi

@@ -301,10 +301,8 @@ static void sipe_keep_alive(PurpleConnection *gc)
 	} else {
 		time_t now = time(NULL);
 		if ((sip->keepalive_timeout > 0) &&
-		    ((guint) (now - sip->last_keepalive) >= sip->keepalive_timeout)
-#if PURPLE_VERSION_CHECK(2,4,0)
-		    && ((guint) (now - gc->last_received) >= sip->keepalive_timeout)
-#endif
+		    ((guint) (now - sip->last_keepalive) >= sip->keepalive_timeout) &&
+		    ((guint) (now - gc->last_received) >= sip->keepalive_timeout)
 		    ) {
 			purple_debug_info("sipe", "sending keep alive %d\n",sip->keepalive_timeout);
 			sendout_pkt(gc, "\r\n\r\n");

@@ -36,7 +36,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
-BuildRequires:  %{purple_develname} >= 2.3.1
+BuildRequires:  %{purple_develname} >= 2.4.0
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
@@ -121,6 +121,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Mar 08 2010 J. D. User <jduser@noreply.com> 1.9.0-*git*
+- increased libpurple build requisite to >= 2.4.0
+
 * Sun Mar 07 2010 pier11 <pier11@operamail.com> pre-1.9.0-*git*
 - OBS tests of pre-1.9.0 git-snapshot 61ea0856855483b9e18f23a87afe47437e526f0e
 

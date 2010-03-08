@@ -37,7 +37,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libpurple-devel >= 2.3.1
+BuildRequires:  libpurple-devel >= 2.4.0
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
@@ -123,6 +123,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Mar 08 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
+- increased libpurple build requisite to >= 2.4.0
+
 * Sun Mar 07 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
 - sync with RPM SPEC from contrib/OBS
 
