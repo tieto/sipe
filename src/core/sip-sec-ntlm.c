@@ -1573,15 +1573,15 @@ sip_sec_ntlm_authenticate_message_describe(struct authenticate_message *cmsg)
 		g_free(tmp);
 
 		if (nt_resp_len_full > 24) { /* NTLMv2 */
-			char *tmp;
-			const guint8 *temp = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
-			const guint response_version = temp[0];
-			const guint hi_response_version = temp[1];
-			guint64 time_val;
-			time_t time_t_val;
+			guint8 *temp = (guint8 *)cmsg + GUINT32_FROM_LE(cmsg->nt_resp.offset) + 16;
+			guint response_version = temp[0];
+			guint hi_response_version = temp[1];
 			const guint8 *client_challenge = temp + 16;
 			const guint8 *target_info = temp + 28;
 			guint16 target_info_len = nt_resp_len_full - 16 - 32;
+			guint64 time_val;
+			time_t time_t_val;
+			char *tmp;
 
 			g_string_append_printf(str, "\t%s: %s\n", "target_info raw",
 				(tmp = buff_to_hex_str((guint8 *)target_info, target_info_len)));
