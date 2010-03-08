@@ -4349,6 +4349,15 @@ static void process_incoming_info(struct sipe_core_private *sipe_private,
 	g_free(from);
 }
 
+static void process_incoming_cancel(struct sipe_core_private *sipe_private,
+				struct sipmsg *msg)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	if (sip->media_call && sipe_strequal(sip->media_call->dialog->callid, callid))
+		sipe_media_hangup(sip);
+}
+
 static void process_incoming_bye(struct sipe_core_private *sipe_private,
 				 struct sipmsg *msg)
 {
@@ -4632,6 +4641,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	/* Invitation to audio call */
 	if (msg->body && strstr(msg->body, "m=audio")) {
 		sipe_media_incoming_invite(sip, msg);
+		send_sip_response(sip->gc, msg, 180, "Ringing", NULL);
 		return;
 	}
 
@@ -7477,6 +7487,9 @@ void process_input_message(struct sipe_account_data *sip,
 			// LCS 2005 sends us these - just respond 200 OK
 			found = TRUE;
 			send_sip_response(sipe_private, msg, 200, "OK", NULL);
+		} else if (sipe_strequal(method, "CANCEL")) {
+			process_incoming_cancel(sipe_private, msg);
+			found = TRUE;
 		} else if (sipe_strequal(method, "BYE")) {
 			process_incoming_bye(sipe_private, msg);
 			found = TRUE;
