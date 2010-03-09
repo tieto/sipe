@@ -71,7 +71,7 @@ libsipe_la_LIBADD = \
 
 tests: tests.c .libs/libsipe.so
 	set -e; \
-	$(CC) $(libsipe_la_CFLAGS) $^ -o $@; \
+	$(CC) $(libsipe_la_CFLAGS) $(PURPLE_LIBS) $^ -o $@; \
 	LD_LIBRARY_PATH=.libs ./tests; \
 	rm -f tests
 
