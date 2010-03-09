@@ -2401,11 +2401,12 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			NULL,
 			TRUE);
 
-	/* Offline (not user settable) */
-	SIPE_ADD_STATUS(PURPLE_STATUS_OFFLINE,
-			NULL,
-			NULL,
-			FALSE);
+	/* Offline */
+	type = purple_status_type_new(PURPLE_STATUS_OFFLINE,
+				      NULL,
+				      NULL,
+				      TRUE);
+	types = g_list_append(types, type);
 
 	return types;
 }
