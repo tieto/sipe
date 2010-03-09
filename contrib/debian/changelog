@@ -1,6 +1,11 @@
-pidgin-sipe (1.8.1-1) unstable; urgency=low
+pidgin-sipe (1.9.0-1) unstable; urgency=low
 
-  * New upstream version
+  * New upstream version (Closes: #570735)
+    * File transfer functionality. File encryption is supported
+    * NTLMv2 and NTLMv2 Session Security support
+    * Implemented SIP Authentication Extensions protocol version 4 and 3
+    * Adoption for commercial UNIX - HP/UX, Irix, Solaris - big endian fixes
+    * Increased libpurple build requisite to >= 2.4.0 
     * many crash fixes for error or corner cases in calendar integration
     * more detailed code analysis with Coverity Prevent
     * build fixes for older libpurple/glib2 versions
@@ -9,14 +14,20 @@ pidgin-sipe (1.8.1-1) unstable; urgency=low
     * Use of g_str_has_prefix() available since glib 2.2 and null-safe
     * build fixes for older OS releases, e.g. Ubuntu older than 9.10.
   * Removed the file libsipe.la from the package
+  * Removed the line dh_pidgin -ppidgin-sipe from debian/rules 
+  * Added ./autogen.sh could be run from debian/rules
+  * Changed the Section from net to misc inside Source stanza in debian/control
+  * Changed the Section from net to misc inside Package stanza in debian/control
+  * Added the Priority header inside Package stanza in debian/control
+  * Updated the Description inside Package stanza in debian/control
   * Updated the debian/copyright file with the new authors list.
   * Updated the debian/copyright file with the correct PATH to license GPL2.
   * Removed dependency with the libgtk2.0-dev package in debian/control
   * Removed dependency with the comerr-dev package in debian/control
+  * Removed debian/README.debian file from the package
   * Added dependency with the libzephyr-dev package in debian/control
-  * Updated with Standards-Version 3.8.4
 
- -- Anibal Avelar <aavelar@cofradia.org>  Fri, 19 Feb 2010 01:04:59 -0600
+ -- Anibal Avelar <aavelar@cofradia.org>  Tue, 09 Mar 2010 00:41:59 -0600
 
 pidgin-sipe (1.8.0-1) unstable; urgency=low
 
