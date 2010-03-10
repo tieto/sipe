@@ -2401,11 +2401,12 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			NULL,
 			TRUE);
 
-	/* Offline (not user settable) */
-	SIPE_ADD_STATUS(PURPLE_STATUS_OFFLINE,
-			NULL,
-			NULL,
-			FALSE);
+	/* Offline */
+	type = purple_status_type_new(PURPLE_STATUS_OFFLINE,
+				      NULL,
+				      NULL,
+				      TRUE);
+	types = g_list_append(types, type);
 
 	return types;
 }
@@ -4091,6 +4092,15 @@ process_message_response(struct sipe_account_data *sip, struct sipmsg *msg,
 		}
 
 		sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, (message ? message->body : NULL));
+
+		/* drop dangling IM sessions: assume that BYE from remote never reached us */
+		if (msg->response == 408 || /* Request timeout */
+		    msg->response == 480 || /* Temporarily Unavailable */
+		    msg->response == 481) { /* Call/Transaction Does Not Exist */
+			purple_debug_info("sipe", "process_message_response: assuming dangling IM session, dropping it.\n");
+			send_sip_request(sip->gc, "BYE", with, with, NULL, NULL, dialog, NULL);
+		}
+
 		ret = FALSE;
 	} else {
 		const gchar *message_id = sipmsg_find_header(msg, "Message-Id");
