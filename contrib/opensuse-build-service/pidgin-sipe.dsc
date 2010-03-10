@@ -1,6 +1,6 @@
 Format: 1.0
 Source: pidgin-sipe
-Version: 1.9.0-1
+Version: 1.9.0-2
 Binary: pidgin-sipe
 Maintainer: pidgin-sipe
 Architecture: any

@@ -1,6 +1,6 @@
 #
 # OBS SPEC file to generate a RPM for pidgin-sipe.
-# It should work on Fedora 10/11, openSUSE 11.x, RHEL5/CentOS 5, SLES/D 10/11 and Mandriva 2009.1.
+# It should work on Fedora 9/10/11/12, openSUSE 11.x, RHEL5/CentOS 5, SLES/D 11 and Mandriva 2009.1/2010.
 #
 
 %define purple_plugin libpurple-plugin-sipe
@@ -121,6 +121,11 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Mar 10 2010 pier11 <pier11@operamail.com> 1.9.0
+- release
+- dropped SLE 10 due to libpurple min version increase
+- updated target distros in comment line
+
 * Mon Mar 08 2010 J. D. User <jduser@noreply.com> 1.9.0-*git*
 - increased libpurple build requisite to >= 2.4.0
 

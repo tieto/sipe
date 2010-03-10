@@ -1,6 +1,12 @@
-pidgin-sipe (1.9.0-1) unstable; urgency=low
+pidgin-sipe (1.9.0-2) unstable; urgency=low
 
-  * OBS tests of pre-1.9.0 git-snapshot 61ea0856855483b9e18f23a87afe47437e526f0e
+  * New upstream version
+    * File transfer functionality. File encryption is supported
+    * NTLMv2 and NTLMv2 Session Security support
+    * Implemented SIP Authentication Extensions protocol version 4 and 3
+    * Adoption for commercial UNIX - HP/UX, Irix, Solaris - big endian fixes
+    * Increased libpurple build requisite to >= 2.4.0
+  * Synced with main Debian package files in contrib/debian
 
  -- pier11 <pier11@operamail.com>  Sun, 7 Mar 2010 20:00:00 -0000
 
