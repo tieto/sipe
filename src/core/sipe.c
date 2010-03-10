@@ -4016,6 +4016,8 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 		label = _("This message was not delivered to %s because the service is not available");
 	} else if (sip_error == 486) { /* Busy Here */
 		label = _("This message was not delivered to %s because one or more recipients do not want to be disturbed");
+	} else if (sip_error == 415) { /* Unsupported media type */
+		label = _("This message was not delivered to %s because one or more recipients don't support this type of message");
 	} else {
 		label = _("This message was not delivered to %s because one or more recipients are offline");
 	}
