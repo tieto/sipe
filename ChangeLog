@@ -1,4 +1,4 @@
-version 1.9.0 "File transfer & NTLMv2" (2010-03-XX)
+version 1.9.0 "File transfer & NTLMv2" (2010-03-10)
 ***** Important Security Update for *nix users *****
 	- Contributed File transfer functionality. File encryption is supported. (Jakub Adam, Tomáš Hrabčík)
 	- NTLMv2 and NTLMv2 Session Security support (pier11)
@@ -12,6 +12,7 @@ version 1.9.0 "File transfer & NTLMv2" (2010-03-XX)
 	- Code analysis with Coverity Prevent. (Stefan Becker)
 	- Updated translations: 'ru' (100%, pier11), 'de' (100%, Stefan Becker)
 	  'es' & 'pt_BR' (100%, Anibal Avelar)
+        - Fix for "SIP/2.0 481 Call leg unavailable" error (Anibal Avelar)
 	- Increased libpurple build requisite to >= 2.4.0
 
 version 1.8.1 "Exchange/Calendar crash fixes" (2010-02-16)

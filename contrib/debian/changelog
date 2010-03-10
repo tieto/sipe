@@ -27,7 +27,7 @@ pidgin-sipe (1.9.0-1) unstable; urgency=low
   * Removed debian/README.debian file from the package
   * Added dependency with the libzephyr-dev package in debian/control
 
- -- Anibal Avelar <aavelar@cofradia.org>  Tue, 09 Mar 2010 00:41:59 -0600
+ -- Anibal Avelar <aavelar@cofradia.org>  Wed, 10 Mar 2010 01:05:59 -0600
 
 pidgin-sipe (1.8.0-1) unstable; urgency=low
 

@@ -21,7 +21,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.8.1
+Version:        1.9.0
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -123,6 +123,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Mar 10 2010 J. D. User <jduser@noreply.com> 1.9.0
+- update to 1.9.0
+
 * Mon Mar 08 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
 - increased libpurple build requisite to >= 2.4.0
 
