@@ -1,12 +1,12 @@
 # Russian translation for pidgin-sipe
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-02-19 16:30+0000\n"
+"POT-Creation-Date: 2010-03-10 10:17+0200\n"
 "PO-Revision-Date: 2009-06-19 15:15+0000\n"
 "Last-Translator: pier11 <pier11@operamail.com>\n"
 "Language-Team: Russian <ru@li.org>\n"
@@ -14,210 +14,238 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2009-06-19 15:32+0000\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
-#: ../src/core/sipe.c:144
+#: ../src/core/sipe.c:148
 msgid "Inactive"
 msgstr "Неактивен"
 
-#: ../src/core/sipe.c:145 ../src/core/sipe-cal.c:847
+#: ../src/core/sipe.c:149 ../src/core/sipe-cal.c:850
 msgid "Busy"
 msgstr "Занят"
 
-#: ../src/core/sipe.c:146
+#: ../src/core/sipe.c:150
 msgid "Busy-Idle"
 msgstr "Занят-Неактивен"
 
-#: ../src/core/sipe.c:148
+#: ../src/core/sipe.c:152
 msgid "Be right back"
 msgstr "Скоро вернусь"
 
-#: ../src/core/sipe.c:150
+#: ../src/core/sipe.c:154
 msgid "Out to lunch"
 msgstr "На обеде"
 
-#: ../src/core/sipe.c:152
+#: ../src/core/sipe.c:156
 msgid "In a call"
 msgstr "Говорю по телефону"
 
-#: ../src/core/sipe.c:153
+#: ../src/core/sipe.c:157
 msgid "In a conference"
 msgstr "На конференции"
 
-#: ../src/core/sipe.c:154
+#: ../src/core/sipe.c:158
 msgid "In a meeting"
 msgstr "На собрании"
 
-#: ../src/core/sipe.c:155 ../src/core/sipe-cal.c:848
+#: ../src/core/sipe.c:159 ../src/core/sipe-cal.c:851
 msgid "Out of office"
 msgstr "Нет на месте"
 
-#: ../src/core/sipe.c:156
+#: ../src/core/sipe.c:160
 msgid "Urgent interruptions only"
 msgstr "Беспокоить только по срочным делам"
 
-#: ../src/core/sipe.c:391
+#: ../src/core/sipe.c:414
 msgid "Failed to authenticate to server"
 msgstr "Не удалось проверить подлинность сервера"
 
 #. TODO: do we really want to disconnect on a failure to write?
-#: ../src/core/sipe.c:539 ../src/core/sipe.c:571
+#: ../src/core/sipe.c:580 ../src/core/sipe.c:612
 msgid "Could not write"
 msgstr "Не удается произвести запись"
 
-#: ../src/core/sipe.c:595 ../src/core/sipe.c:8093
+#: ../src/core/sipe.c:636 ../src/core/sipe.c:8162
 msgid "Could not connect"
 msgstr "Не удается подключиться"
 
-#: ../src/core/sipe.c:664 ../src/core/sipe.c:8248
+#: ../src/core/sipe.c:705 ../src/core/sipe.c:8317
 msgid "Could not create socket"
 msgstr "Не удалось создать сокет"
 
-#: ../src/core/sipe.c:1202 ../src/core/sipe.c:3668
+#: ../src/core/sipe.c:1250 ../src/core/sipe.c:3718
 msgid "you"
 msgstr "Вас"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/core/sipe.c:2312
+#: ../src/core/sipe.c:2360
 msgid "Message"
 msgstr "Сообщение"
 
-#: ../src/core/sipe.c:2455 ../src/core/sipe.c:2467 ../src/core/sipe.c:2492
-#: ../src/core/sipe.c:8728
+#: ../src/core/sipe.c:2504 ../src/core/sipe.c:2516 ../src/core/sipe.c:2541
+#: ../src/core/sipe.c:8797
 msgid "Other Contacts"
 msgstr "Другие контакты"
 
 #. [MS-SIPREGE]
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe.c:2672
+#: ../src/core/sipe.c:2722
 msgid "you are already signed in at another location"
 msgstr "Вы уже вошли в систему в другом месте"
 
-#: ../src/core/sipe.c:2675
+#: ../src/core/sipe.c:2725
 msgid "user disabled"
 msgstr "пользователь отключен"
 
-#: ../src/core/sipe.c:2678
+#: ../src/core/sipe.c:2728
 msgid "user moved"
 msgstr "пользователь перемещен"
 
-#: ../src/core/sipe.c:2682 ../src/core/sipe.c:5573
+#: ../src/core/sipe.c:2732 ../src/core/sipe.c:5642
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Вы были отвергнуты сервером: %s"
 
-#: ../src/core/sipe.c:2682 ../src/core/sipe.c:5574 ../src/core/sipe.c:5591
-#: ../src/core/sipe.c:5609
+#: ../src/core/sipe.c:2732 ../src/core/sipe.c:5643 ../src/core/sipe.c:5661
+#: ../src/core/sipe.c:5680
 msgid "no reason given"
 msgstr "причина не указана"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
 #. Message contents not allowed by policy
-#: ../src/core/sipe.c:3962
-msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
-msgstr "Ваше сообщение или приглашение не было доставлено. Возможно, оно содержит гиперссылку или другое содержимое, заблоктрованное системным администратором."
+#: ../src/core/sipe.c:4012
+msgid ""
+"Your message or invitation was not delivered, possibly because it contains a "
+"hyperlink or other content that the system administrator has blocked."
+msgstr ""
+"Ваше сообщение или приглашение не было доставлено. Возможно, оно содержит "
+"гиперссылку или другое содержимое, заблоктрованное системным администратором."
 
-#: ../src/core/sipe.c:3966
+#: ../src/core/sipe.c:4016
 #, c-format
-msgid "This message was not delivered to %s because the service is not available"
+msgid ""
+"This message was not delivered to %s because the service is not available"
 msgstr "Сообщение не доставлено %s потому что сервис недоступен"
 
 #. Busy Here
-#: ../src/core/sipe.c:3968
+#: ../src/core/sipe.c:4018
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr "Сообщение не доставлено %s поскольку один или нескольно получателей были недоступны"
+msgid ""
+"This message was not delivered to %s because one or more recipients do not "
+"want to be disturbed"
+msgstr ""
+"Сообщение не доставлено %s поскольку один или нескольно получателей были "
+"недоступны"
 
-#: ../src/core/sipe.c:3970
+#. Unsupported media type
+#: ../src/core/sipe.c:4020
+#, fuzzy, c-format
+msgid ""
+"This message was not delivered to %s because one or more recipients don't "
+"support this type of message"
+msgstr ""
+"Сообщение не доставлено %s поскольку один или нескольно получателей были "
+"недоступны"
+
+#: ../src/core/sipe.c:4022
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Сообщение не доставлено %s поскольку один или нескольно получателей были не в сети"
+msgid ""
+"This message was not delivered to %s because one or more recipients are "
+"offline"
+msgstr ""
+"Сообщение не доставлено %s поскольку один или нескольно получателей были не "
+"в сети"
 
-#: ../src/core/sipe.c:4296
+#: ../src/core/sipe.c:4366
 #, c-format
 msgid "Failed to invite %s"
 msgstr "Не удалось пригласить %s"
 
-#: ../src/core/sipe.c:4982
+#: ../src/core/sipe.c:5053
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Поступило сообщение неподдерживаемого типа от %s"
 
-#: ../src/core/sipe.c:5539 ../src/core/sipe.c:7920
+#: ../src/core/sipe.c:5607 ../src/core/sipe.c:7989
 msgid "Wrong password"
 msgstr "Неверный пароль"
 
-#: ../src/core/sipe.c:5548 ../src/core/sipe.c:7805
+#: ../src/core/sipe.c:5616 ../src/core/sipe.c:7877
 msgid "Incompatible authentication scheme chosen"
 msgstr "Выбрана несовместимая схема проверки подлинности пользователя"
 
-#: ../src/core/sipe.c:5590
+#: ../src/core/sipe.c:5660
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Не найден: %s. Пожалуйста, обратитесь к администратору"
 
-#: ../src/core/sipe.c:5592
+#: ../src/core/sipe.c:5662
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP-адрес либо не включен для URI назначения либо не существует"
 
-#: ../src/core/sipe.c:5609
+#: ../src/core/sipe.c:5680
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Служба недоступна: %s"
 
-#: ../src/core/sipe.c:7916
+#: ../src/core/sipe.c:7985
 msgid "Invalid message signature received"
 msgstr "Неверная подпись сообщения"
 
-#: ../src/core/sipe.c:7990
+#: ../src/core/sipe.c:8059
 msgid "Connection not found. Please try to connect again"
 msgstr "Соединение не найдено. Пожалуйста попробуйте подключиться снова"
 
-#: ../src/core/sipe.c:8011
+#: ../src/core/sipe.c:8080
 msgid "SSL read error"
 msgstr "Ошибка чтения SSL"
 
-#: ../src/core/sipe.c:8014
+#: ../src/core/sipe.c:8083
 msgid "Server has disconnected"
 msgstr "Сервер был отключен"
 
-#: ../src/core/sipe.c:8138 ../src/core/sipe.c:8180 ../src/core/sipe.c:8232
-#: ../src/core/sipe.c:8302
+#: ../src/core/sipe.c:8207 ../src/core/sipe.c:8249 ../src/core/sipe.c:8301
+#: ../src/core/sipe.c:8371 ../src/core/sipe-ft.c:695
 msgid "Could not create listen socket"
 msgstr "Не удалось создать listen socket"
 
-#: ../src/core/sipe.c:8161 ../src/core/sipe.c:8293
+#: ../src/core/sipe.c:8230 ../src/core/sipe.c:8362
 msgid "Could not resolve hostname"
 msgstr "Не удается определить имя хоста"
 
-#: ../src/core/sipe.c:8211
+#: ../src/core/sipe.c:8280
 msgid "Connection failed"
 msgstr "Не удалось установить соединение"
 
-#: ../src/core/sipe.c:8214
+#: ../src/core/sipe.c:8283
 msgid "SSL handshake failed"
 msgstr "SSL соединение не удалось"
 
-#: ../src/core/sipe.c:8217
+#: ../src/core/sipe.c:8286
 msgid "SSL certificate invalid"
 msgstr "Недействительный SSL сертификат"
 
-#: ../src/core/sipe.c:8275
-msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
-msgstr "Поддержка SSL не установлена. Установите поддержку SSL, либо настройте соединение другог типа в редакторе аккаунта."
+#: ../src/core/sipe.c:8344
+msgid ""
+"SSL support is not installed. Either install SSL support or configure a "
+"different connection type in the account editor"
+msgstr ""
+"Поддержка SSL не установлена. Установите поддержку SSL, либо настройте "
+"соединение другог типа в редакторе аккаунта."
 
-#: ../src/core/sipe.c:8284
+#: ../src/core/sipe.c:8353
 msgid "Could not create SSL context"
 msgstr "Не удается создать контекст SSL"
 
-#: ../src/core/sipe.c:8407
+#: ../src/core/sipe.c:8476
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Имя пользователя содержит недопустимые символы"
 
-#: ../src/core/sipe.c:8430
+#: ../src/core/sipe.c:8499
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
@@ -225,7 +253,7 @@ msgstr ""
 "Имя пользователя должно быть верным SIP URI\n"
 "Пример: user@company.com"
 
-#: ../src/core/sipe.c:8441
+#: ../src/core/sipe.c:8510
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
@@ -233,39 +261,39 @@ msgstr ""
 "Адрес электронной почты должен быть верным если введен\n"
 "Пример: user@company.com"
 
-#: ../src/core/sipe.c:8467
+#: ../src/core/sipe.c:8536
 msgid "SIP Exchange user name contains whitespace"
 msgstr "Имя пользователя не может содержать пробелы"
 
-#: ../src/core/sipe.c:8481
+#: ../src/core/sipe.c:8550
 msgid "Connecting"
 msgstr "Подключение"
 
-#: ../src/core/sipe.c:8754
+#: ../src/core/sipe.c:8823
 msgid "Unable to display the search results"
 msgstr "Не удается отобразить результаты поиска"
 
-#: ../src/core/sipe.c:8760
+#: ../src/core/sipe.c:8829
 msgid "User name"
 msgstr "Имя пользователя"
 
-#: ../src/core/sipe.c:8763
+#: ../src/core/sipe.c:8832
 msgid "Name"
 msgstr "Имя"
 
-#: ../src/core/sipe.c:8766 ../src/core/sipe.c:8862 ../src/core/sipe.c:9813
+#: ../src/core/sipe.c:8835 ../src/core/sipe.c:8931 ../src/core/sipe.c:9882
 msgid "Company"
 msgstr "Организация"
 
-#: ../src/core/sipe.c:8769 ../src/core/sipe.c:8864 ../src/core/sipe.c:9822
+#: ../src/core/sipe.c:8838 ../src/core/sipe.c:8933 ../src/core/sipe.c:9891
 msgid "Country"
 msgstr "Страна"
 
-#: ../src/core/sipe.c:8772
+#: ../src/core/sipe.c:8841
 msgid "Email"
 msgstr "Электронная почта"
 
-#: ../src/core/sipe.c:8799
+#: ../src/core/sipe.c:8868
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
@@ -273,88 +301,96 @@ msgstr[0] "Найден %d контакт%s:"
 msgstr[1] "Найдены %d контакта(ов)%s:"
 msgstr[2] "Найдены %d контакта(ов)%s:"
 
-#: ../src/core/sipe.c:8801
+#: ../src/core/sipe.c:8870
 msgid " (more matched your query)"
 msgstr " (больше соответствует вашему запросу)"
 
-#: ../src/core/sipe.c:8858
+#: ../src/core/sipe.c:8927
 msgid "First name"
 msgstr "Имя"
 
-#: ../src/core/sipe.c:8860
+#: ../src/core/sipe.c:8929
 msgid "Last name"
 msgstr "Фамилия"
 
-#: ../src/core/sipe.c:8868
+#: ../src/core/sipe.c:8937
 msgid "Search"
 msgstr "Поиск"
 
-#: ../src/core/sipe.c:8869
+#: ../src/core/sipe.c:8938
 msgid "Search for a contact"
 msgstr "Поиск контактов"
 
-#: ../src/core/sipe.c:8870
-msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут игнорироваться."
+#: ../src/core/sipe.c:8939
+msgid ""
+"Enter the information for the person you wish to find. Empty fields will be "
+"ignored."
+msgstr ""
+"Введите информацию о человеке, которого вы хотите найти. Пустые поля будут "
+"игнорироваться."
 
-#: ../src/core/sipe.c:8872
+#: ../src/core/sipe.c:8941
 msgid "_Search"
 msgstr "_Поиск"
 
-#: ../src/core/sipe.c:8873
+#: ../src/core/sipe.c:8942
 msgid "_Cancel"
 msgstr "_Отмена"
 
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
-#: ../src/core/sipe.c:8929
-msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr "Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в таких продуктах, как"
+#: ../src/core/sipe.c:8998
+msgid ""
+"A third-party plugin implementing extended version of SIP/SIMPLE used by "
+"various products"
+msgstr ""
+"Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в "
+"таких продуктах, как"
 
 #. About note, part 2/11: home page URL (label)
-#: ../src/core/sipe.c:8931
+#: ../src/core/sipe.c:9000
 msgid "Home"
 msgstr "Домашняя страница"
 
 #. About note, part 3/11: support forum URL (label)
-#: ../src/core/sipe.c:8933
+#: ../src/core/sipe.c:9002
 msgid "Support"
 msgstr "Помощь"
 
 #. About note, part 4/11: support forum name (hyperlink text)
-#: ../src/core/sipe.c:8935
+#: ../src/core/sipe.c:9004
 msgid "Help Forum"
 msgstr "Форум"
 
 #. About note, part 5/11: translation service URL (label)
-#: ../src/core/sipe.c:8937
+#: ../src/core/sipe.c:9006
 msgid "Translations"
 msgstr "Страница локализации"
 
 #. About note, part 6/11: license type (label)
-#: ../src/core/sipe.c:8939
+#: ../src/core/sipe.c:9008
 msgid "License"
 msgstr "Лицензия"
 
 #. About note, part 7/11: known users
-#: ../src/core/sipe.c:8941
+#: ../src/core/sipe.c:9010
 msgid "We support users in such organizations as"
 msgstr "Мы поддерживаем пользователей в таких организациях, как"
 
 #. About note, part 8/11: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe.c:8944
+#: ../src/core/sipe.c:9013
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr "Пожалуйста, помогите нам перевести SIPE на Ваш родной язык здесь "
 
 #. About note, part 9/11: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe.c:8947
+#: ../src/core/sipe.c:9016
 msgid " using convenient web interface"
 msgstr " с помощью удобного веб-интерфейса"
 
 #. About note, part 10/11: author list (header)
-#: ../src/core/sipe.c:8949
+#: ../src/core/sipe.c:9018
 msgid "Authors"
 msgstr "Авторы"
 
@@ -362,159 +398,159 @@ msgstr "Авторы"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe.c:8954
+#: ../src/core/sipe.c:9023
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Русский перевод (ru): pier11"
 
-#: ../src/core/sipe.c:9019
+#: ../src/core/sipe.c:9088
 msgid "About SIPE plugin..."
 msgstr "О плагине SIPE..."
 
-#: ../src/core/sipe.c:9022
+#: ../src/core/sipe.c:9091
 msgid "Contact search..."
 msgstr "Поиск контактов..."
 
-#: ../src/core/sipe.c:9026
+#: ../src/core/sipe.c:9095
 msgid "Republish Calendar"
 msgstr "Опубликовать календарь"
 
-#: ../src/core/sipe.c:9030
+#: ../src/core/sipe.c:9099
 msgid "Reset status"
 msgstr "Сбросить состояние"
 
-#: ../src/core/sipe.c:9122
+#: ../src/core/sipe.c:9191
 msgid "Status"
 msgstr "Состояние"
 
-#: ../src/core/sipe.c:9127
+#: ../src/core/sipe.c:9196
 msgid "Calendar"
 msgstr "Календарь"
 
-#: ../src/core/sipe.c:9132
+#: ../src/core/sipe.c:9201
 msgid "Meeting in"
 msgstr "Место собрания"
 
-#: ../src/core/sipe.c:9136
+#: ../src/core/sipe.c:9205
 msgid "Meeting about"
 msgstr "Тема собрания"
 
-#: ../src/core/sipe.c:9144
+#: ../src/core/sipe.c:9213
 msgid "Out of office note"
 msgstr "Сообщение \"Нет на работе\""
 
-#: ../src/core/sipe.c:9144
+#: ../src/core/sipe.c:9213
 msgid "Note"
 msgstr "Личное сообщение"
 
-#: ../src/core/sipe.c:9156
+#: ../src/core/sipe.c:9225
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/core/sipe.c:9518
+#: ../src/core/sipe.c:9587
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Сделать ведущим '%s'"
 
-#: ../src/core/sipe.c:9529
+#: ../src/core/sipe.c:9598
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Удалить из '%s'"
 
-#: ../src/core/sipe.c:9542
+#: ../src/core/sipe.c:9611
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Пригласить в '%s'"
 
-#: ../src/core/sipe.c:9553
+#: ../src/core/sipe.c:9622
 msgid "New chat"
 msgstr "Новый чат"
 
-#: ../src/core/sipe.c:9564
+#: ../src/core/sipe.c:9633
 #, c-format
 msgid "Work %s"
 msgstr "Рабочий %s"
 
-#: ../src/core/sipe.c:9577
+#: ../src/core/sipe.c:9646
 #, c-format
 msgid "Mobile %s"
 msgstr "Мобильный %s"
 
-#: ../src/core/sipe.c:9590
+#: ../src/core/sipe.c:9659
 #, c-format
 msgid "Home %s"
 msgstr "Домашний %s"
 
-#: ../src/core/sipe.c:9603
+#: ../src/core/sipe.c:9672
 #, c-format
 msgid "Other %s"
 msgstr "Другой %s"
 
-#: ../src/core/sipe.c:9616
+#: ../src/core/sipe.c:9685
 #, c-format
 msgid "Custom1 %s"
 msgstr "Пользовательский %s"
 
-#: ../src/core/sipe.c:9628
+#: ../src/core/sipe.c:9697
 msgid "Send email..."
 msgstr "Отправить сообщение электронной почты..."
 
-#: ../src/core/sipe.c:9653
+#: ../src/core/sipe.c:9722
 msgid "Copy to"
 msgstr "Скопировать в"
 
-#: ../src/core/sipe.c:9707
+#: ../src/core/sipe.c:9776
 msgid "Unlock"
 msgstr "Разблокировать"
 
-#: ../src/core/sipe.c:9712
+#: ../src/core/sipe.c:9781
 msgid "Lock"
 msgstr "Заблокировать"
 
-#: ../src/core/sipe.c:9801 ../src/core/sipe.c:9838
+#: ../src/core/sipe.c:9870 ../src/core/sipe.c:9907
 msgid "Display name"
 msgstr "Отображаемое имя"
 
-#: ../src/core/sipe.c:9804
+#: ../src/core/sipe.c:9873
 msgid "Job title"
 msgstr "Должность"
 
-#: ../src/core/sipe.c:9807
+#: ../src/core/sipe.c:9876
 msgid "Office"
 msgstr "Офис"
 
-#: ../src/core/sipe.c:9810
+#: ../src/core/sipe.c:9879
 msgid "Business phone"
 msgstr "Рабочий телефон"
 
-#: ../src/core/sipe.c:9816
+#: ../src/core/sipe.c:9885
 msgid "City"
 msgstr "Город"
 
-#: ../src/core/sipe.c:9819
+#: ../src/core/sipe.c:9888
 msgid "State"
 msgstr "Штат"
 
-#: ../src/core/sipe.c:9825 ../src/core/sipe.c:9852
+#: ../src/core/sipe.c:9894 ../src/core/sipe.c:9921
 msgid "Email address"
 msgstr "Адрес электронной почты"
 
-#: ../src/core/sipe.c:9845
+#: ../src/core/sipe.c:9914
 msgid "Alias"
 msgstr "Псевдоним"
 
-#: ../src/core/sipe.c:9858
+#: ../src/core/sipe.c:9927
 msgid "Site"
 msgstr "Сайт"
 
-#: ../src/core/sipe.c:9865
+#: ../src/core/sipe.c:9934
 msgid "Find on LinkedIn"
 msgstr "Найти на LinkedIn"
 
-#: ../src/core/sipe.c:9872
+#: ../src/core/sipe.c:9941
 msgid "Device"
 msgstr "Устройство"
 
-#: ../src/core/sipe.c:10064
+#: ../src/core/sipe.c:10136
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -524,7 +560,7 @@ msgstr ""
 "   user  или  DOMAIN\\user  или\n"
 "   user@company.com"
 
-#: ../src/core/sipe.c:10068
+#: ../src/core/sipe.c:10140
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -532,60 +568,58 @@ msgstr ""
 "Сервер[:Порт]\n"
 "(оставьте пустым для авто-обнаружения)"
 
-#: ../src/core/sipe.c:10071
+#: ../src/core/sipe.c:10143
 msgid "Connection type"
 msgstr "Тип подключения"
 
-#: ../src/core/sipe.c:10072
+#: ../src/core/sipe.c:10144
 msgid "Auto"
 msgstr "Автоматический"
 
-#: ../src/core/sipe.c:10073
+#: ../src/core/sipe.c:10145
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/core/sipe.c:10074
+#: ../src/core/sipe.c:10146
 msgid "TCP"
 msgstr "TCP"
 
-#: ../src/core/sipe.c:10075
+#: ../src/core/sipe.c:10147
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone
-#. may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
-#. option);
-#: ../src/core/sipe.c:10081
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/core/sipe.c:10153
 msgid "User Agent"
 msgstr "User Agent"
 
-#: ../src/core/sipe.c:10085
+#: ../src/core/sipe.c:10157
 msgid "Use Kerberos"
 msgstr "Использовать Kerberos"
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#. 
-#: ../src/core/sipe.c:10092
+#.
+#: ../src/core/sipe.c:10164
 msgid "Use Single Sign-On"
 msgstr "Использовать Single Sign-On"
 
-#: ../src/core/sipe.c:10096
+#: ../src/core/sipe.c:10168
 msgid "Calendar source"
 msgstr "Календарь"
 
-#: ../src/core/sipe.c:10097
+#: ../src/core/sipe.c:10169
 msgid "Exchange 2007/2010"
 msgstr "Exchange 2007/2010"
 
-#: ../src/core/sipe.c:10098
+#: ../src/core/sipe.c:10170
 msgid "None"
 msgstr "Отключено"
 
 #. * Example: https://server.company.com/EWS/Exchange.asmx
-#: ../src/core/sipe.c:10102
+#: ../src/core/sipe.c:10174
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -593,7 +627,7 @@ msgstr ""
 "URL службы электронной почты\n"
 "(оставьте пустым для авто-обнаружения)"
 
-#: ../src/core/sipe.c:10105
+#: ../src/core/sipe.c:10177
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -602,7 +636,7 @@ msgstr ""
 "(если отличен от Имени пользователя)"
 
 #. * Example: DOMAIN\user  or  user@company.com
-#: ../src/core/sipe.c:10109
+#: ../src/core/sipe.c:10181
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -610,7 +644,7 @@ msgstr ""
 "Логин электронной почты\n"
 "(если отличен от Логина)"
 
-#: ../src/core/sipe.c:10112
+#: ../src/core/sipe.c:10184
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -618,107 +652,112 @@ msgstr ""
 "Пароль электронной почты\n"
 "(если отличен от Пароля)"
 
-#: ../src/core/sipe-cal.c:845
+#: ../src/core/sipe-cal.c:848
 msgid "Free"
 msgstr "Свободен"
 
-#: ../src/core/sipe-cal.c:846
+#: ../src/core/sipe-cal.c:849
 msgid "Tentative"
 msgstr "Под вопросом"
 
-#: ../src/core/sipe-cal.c:849
+#: ../src/core/sipe-cal.c:852
 msgid "No data"
 msgstr "Нет данных"
 
-#: ../src/core/sipe-cal.c:957 ../src/core/sipe-cal.c:984
+#: ../src/core/sipe-cal.c:960 ../src/core/sipe-cal.c:987
 #, c-format
 msgid "Currently %s"
 msgstr "в настоящий момент %s"
 
-#: ../src/core/sipe-cal.c:963
+#: ../src/core/sipe-cal.c:966
 msgid "Outside of working hours for next 8 hours"
 msgstr "Нерабочее время в течение следующих 8 часов"
 
-#: ../src/core/sipe-cal.c:965
+#: ../src/core/sipe-cal.c:968
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "%s в течение следующих 8 часов"
 
-#: ../src/core/sipe-cal.c:974
+#: ../src/core/sipe-cal.c:977
 msgid "Not working"
 msgstr "не работаю"
 
-#: ../src/core/sipe-cal.c:978
+#: ../src/core/sipe-cal.c:981
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s до %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:986
+#: ../src/core/sipe-cal.c:989
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s. Нерабочее время в %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:991
+#: ../src/core/sipe-cal.c:994
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s в %.2d:%.2d"
 
-#: ../src/core/sipe-chat.c:82
+#: ../src/core/sipe-chat.c:86
 #, c-format
 msgid "Chat #%d"
 msgstr "Чат #%d"
 
-#: ../src/core/sipe-conf.c:829
-msgid "This conference is no longer locked. Additional participants can now join."
+#: ../src/core/sipe-conf.c:833
+msgid ""
+"This conference is no longer locked. Additional participants can now join."
 msgstr "Конференция разблокирована. Новые участники могут присоединиться."
 
-#: ../src/core/sipe-conf.c:833
-msgid "This conference is locked. Nobody else can join the conference while it is locked."
-msgstr "Конференция заблокирована. Пока доступ к конференции заблокирован, к ней не могут присоединяться новые участники."
+#: ../src/core/sipe-conf.c:837
+msgid ""
+"This conference is locked. Nobody else can join the conference while it is "
+"locked."
+msgstr ""
+"Конференция заблокирована. Пока доступ к конференции заблокирован, к ней не "
+"могут присоединяться новые участники."
 
-#: ../src/core/sipe-conf.c:866
+#: ../src/core/sipe-conf.c:870
 msgid "You have been disconnected from this conference."
 msgstr "Ведущий конференции удалил вас из конференции."
 
-#: ../src/core/sipe-ft.c:142 ../src/core/sipe-ft.c:266
-#: ../src/core/sipe-ft.c:291
+#: ../src/core/sipe-ft.c:178 ../src/core/sipe-ft.c:300
+#: ../src/core/sipe-ft.c:329 ../src/core/sipe-ft.c:379
 msgid "Socket read failed"
 msgstr "Не удалось прочитать из сокета"
 
-#: ../src/core/sipe-ft.c:148 ../src/core/sipe-ft.c:358
-#: ../src/core/sipe-ft.c:369
+#: ../src/core/sipe-ft.c:184 ../src/core/sipe-ft.c:419
+#: ../src/core/sipe-ft.c:429
 msgid "Socket write failed"
 msgstr "Не удалось записать в сокет"
 
-#: ../src/core/sipe-ft.c:192
+#: ../src/core/sipe-ft.c:229
 msgid "File size is different from the advertised value."
 msgstr "Размер файла отличается от заявленного."
 
-#: ../src/core/sipe-ft.c:233
+#: ../src/core/sipe-ft.c:268
 msgid "Received MAC is corrupted"
 msgstr "Принятая подпись повреждена"
 
-#: ../src/core/sipe-ft.c:244
+#: ../src/core/sipe-ft.c:279
 msgid "Received file is corrupted"
 msgstr "Принятый файл поврежден"
 
-#: ../src/core/sipe-ft.c:280 ../src/core/sipe-ft.c:299
-#: ../src/core/sipe-ft.c:339
+#: ../src/core/sipe-ft.c:321 ../src/core/sipe-ft.c:337
+#: ../src/core/sipe-ft.c:392
 msgid "Out of memory"
 msgstr "Недостаточно памяти"
 
-#: ../src/core/sipe-ft.c:446
+#: ../src/core/sipe-ft.c:505
 msgid "File transfer initialization failed."
 msgstr "Инициализация передачи файлов не удалась."
 
-#: ../src/core/sipe-ft.c:472
+#: ../src/core/sipe-ft.c:534
 msgid "File transfer authentication failed."
 msgstr "Не удалось проверить подлинность при передаче файла."
 
-#: ../src/core/sipe-ft.c:597
+#: ../src/core/sipe-ft.c:665
 msgid "Received encryption key has wrong size."
 msgstr "Принятый ключ шифрования имеет неверный размер."
 
-#: ../src/core/sipe-ft.c:612
+#: ../src/core/sipe-ft.c:678
 msgid "Received hash key has wrong size."
 msgstr "Принятый ключ хеширования имеет неверный размер."
