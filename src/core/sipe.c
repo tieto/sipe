@@ -5605,7 +5605,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				purple_debug_info("sipe", "REGISTER retries %d\n", sip->registrar.retries);
 				if (sip->registrar.retries > 3) {
 					sip->gc->wants_to_die = TRUE;
-					purple_connection_error(sip->gc, _("Wrong password"));
+					purple_connection_error(sip->gc, _("Authentication failed"));
 					return TRUE;
 				}
 
@@ -7987,7 +7987,7 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 					sip->gc->wants_to_die = TRUE;
 				}
 			} else if (msg->response == 401) {
-				purple_connection_error(sip->gc, _("Wrong password"));
+				purple_connection_error(sip->gc, _("Authentication failed"));
 				sip->gc->wants_to_die = TRUE;
 			}
 			g_free(signature_input_str);
