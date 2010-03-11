@@ -14,3 +14,14 @@ version 1.9.0 "File transfer & NTLMv2" (2010-03-10)
 	  'es' & 'pt_BR' (100%, Anibal Avelar)
         - Fix for "SIP/2.0 481 Call leg unavailable" error (Anibal Avelar)
 	- Increased libpurple build requisite to >= 2.4.0
+
+
+Known issues of 1.9.0:
+
+#2968287: Authentication failure in scenario when version of authentication protocol of home Communications Server is 2 (Live Communications Server 2005) and version of authentication protocol in director server is above 2 (Office Communications Server 2007 and above).
+
+Applicability: user account resides on Communications Server 2005
+Workaround: explicitly define address of home server in Server[:Port] field on Advanced tab in account configuration.
+  Home server address can be observed in logs in SIP/2.0 301 error response in "Contact:" header.
+  Logs can be obtained by starting Pidgin in command line with -d flag.
+Resolved: in development branch - git commit 494c1e467b13de295a30bcd0981fa7311f218e9a
