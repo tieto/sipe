@@ -74,6 +74,8 @@
 #include "mime.h"
 #include "core.h"
 
+#include "core-depurple.h" /* Temporary for the core de-purple transition */
+
 #include "sipe.h"
 #include "sipe-cal.h"
 #include "sipe-ews.h"
@@ -10063,7 +10065,7 @@ static PurplePluginProtocolInfo prpl_info =
 };
 
 
-static PurplePluginInfo info = {
+PurplePluginInfo info = {
 	PURPLE_PLUGIN_MAGIC,
 	PURPLE_MAJOR_VERSION,
 	PURPLE_MINOR_VERSION,
@@ -10117,7 +10119,7 @@ static void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 	prpl_info.user_splits = NULL;
 }
 
-static void init_plugin(PurplePlugin *plugin)
+void init_plugin(PurplePlugin *plugin)
 {
 	PurpleAccountUserSplit *split;
 	PurpleAccountOption *option;

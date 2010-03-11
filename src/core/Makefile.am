@@ -1,13 +1,10 @@
-
-pkgdir = $(libdir)/purple-$(PURPLE_MAJOR_VERSION)
-
-pkg_LTLIBRARIES = libsipe.la
+noinst_LTLIBRARIES = libsipecore.la
 
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
-libsipe_la_SOURCES = \
-	sip-prefix.h	\
+libsipecore_la_SOURCES = \
+	sip-prefix.h \
 	sipmsg.c \
 	sipmsg.h \
 	sipe.h \
@@ -44,41 +41,22 @@ libsipe_la_SOURCES = \
 	uuid.c
 
 if SIP_SEC_KRB5
-libsipe_la_SOURCES +=  \
+libsipecore_la_SOURCES += \
 	sip-sec-krb5.h \
 	sip-sec-krb5.c
 endif
 
 AM_CFLAGS = $(st)
 
-libsipe_la_CFLAGS = \
+libsipecore_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
         $(LIBXML2_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
-	$(KRB5_CFLAGS)
-
-libsipe_la_LDFLAGS = \
-	-module -avoid-version -no-undefined \
-	$(KRB5_LDFLAGS)
-
-libsipe_la_LIBADD = \
-        $(LIBXML2_LIBS) \
-        $(GLIB_LIBS) \
-	$(KRB5_LIBS)
+	$(KRB5_CFLAGS) \
+	-I$(srcdir)/../api
 
 if SIPE_INCLUDE_PURPLE
-libsipe_la_CFLAGS += $(PURPLE_CFLAGS) -DPURPLE_PLUGINS
-libsipe_la_LIBADD += $(PURPLE_LIBS)
-
-tests: tests.c .libs/libsipe.so
-	set -e; \
-	$(CC) $(libsipe_la_CFLAGS) $(PURPLE_LIBS) $^ -o $@; \
-	LD_LIBRARY_PATH=.libs ./tests; \
-	rm -f tests
-
-# Remove any libsipe.so from the old incorrect installation location
-install-exec-local:
-	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
+libsipecore_la_CFLAGS += $(PURPLE_CFLAGS) -I$(srcdir)/../purple
 endif

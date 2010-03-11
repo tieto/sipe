@@ -33,4 +33,4 @@ MAINTAINERCLEANFILES = \
 	mkinstalldirs
 
 tests:
-	$(MAKE) -C src/core tests
+	$(MAKE) -C src/purple tests
