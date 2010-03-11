@@ -54,6 +54,7 @@ AM_CFLAGS = $(st)
 libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
+        $(LIBXML2_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	$(KRB5_CFLAGS)
@@ -63,6 +64,7 @@ libsipe_la_LDFLAGS = \
 	$(KRB5_LDFLAGS)
 
 libsipe_la_LIBADD = \
+        $(LIBXML2_LIBS) \
         $(GLIB_LIBS) \
 	$(KRB5_LIBS)
 

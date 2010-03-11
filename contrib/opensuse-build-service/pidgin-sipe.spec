@@ -37,6 +37,7 @@ URL:            http://sipe.sourceforge.net/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 BuildRequires:  %{purple_develname} >= 2.4.0
+BuildRequires:  libxml2-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
@@ -121,6 +122,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Mar 11 2010 J. D. User <jduser@noreply.com> 1.9.0-*git*
+- add BR libxml2-devel
+
 * Wed Mar 10 2010 pier11 <pier11@operamail.com> 1.9.0
 - release
 - dropped SLE 10 due to libpurple min version increase

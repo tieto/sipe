@@ -38,6 +38,7 @@ URL:            http://sipe.sourceforge.net/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libpurple-devel >= 2.4.0
+BuildRequires:  libxml2-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
@@ -123,6 +124,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Mar 11 2010 J. D. User <jduser@noreply.com> 1.9.0-*git*
+- add BR libxml2-devel
+
 * Wed Mar 10 2010 J. D. User <jduser@noreply.com> 1.9.0
 - update to 1.9.0
 

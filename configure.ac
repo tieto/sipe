@@ -113,6 +113,9 @@ fi
 dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0])
 
+dnl check for libxml2
+PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
+
 dnl assumption check: sizof(uuid_t) must be 16 (see uuid.c)
 AC_MSG_CHECKING([that sizeof(uuid_t) is 16])
 ac_save_CFLAGS=$CFLAGS
