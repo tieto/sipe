@@ -6,3 +6,4 @@ src/core/sipe-cal.c
 src/core/sipe-chat.c
 src/core/sipe-conf.c
 src/core/sipe-ft.c
+src/purple/purple-plugin.c

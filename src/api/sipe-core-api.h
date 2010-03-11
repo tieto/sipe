@@ -1,5 +1,5 @@
 /**
- * @file core-depurple.h
+ * @file sipe-core-api.h
  *
  * pidgin-sipe
  *
@@ -20,10 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * This is a temporary file for the core de-purple transition period
+/**
+ * Initialize & destroy functions for sip-sec.
+ * Should be called on loading and unloading of the plugin.
  */
-
-extern PurplePluginInfo info;
-extern PurplePluginProtocolInfo prpl_info;
-void sipe_plugin_destroy(PurplePlugin *plugin);
+void sip_sec_init(void);
+void sip_sec_destroy(void);

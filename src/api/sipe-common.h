@@ -1,5 +1,5 @@
 /**
- * @file core-depurple.h
+ * @file sipe-common.h
  *
  * pidgin-sipe
  *
@@ -20,10 +20,4 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * This is a temporary file for the core de-purple transition period
- */
-
-extern PurplePluginInfo info;
-extern PurplePluginProtocolInfo prpl_info;
-void sipe_plugin_destroy(PurplePlugin *plugin);
+#define SIPE_UNUSED_PARAMETER __attribute__((unused))

@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2007 Anibal Avelar <avelar@gmail.com>
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
@@ -45,7 +46,7 @@
 #include "sip-sec.h"
 #include "uuid.h"
 
-#define SIPE_UNUSED_PARAMETER __attribute__((unused))
+#include "sipe-common.h"
 
 #define SIMPLE_BUF_INC 4096
 

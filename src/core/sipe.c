@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2009 Anibal Avelar <debianmx@gmail.com>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
@@ -57,7 +58,6 @@
 #include <glib.h>
 
 
-#include "accountopt.h"
 #include "blist.h"
 #include "conversation.h"
 #include "dnsquery.h"
@@ -65,8 +65,6 @@
 #include "notify.h"
 #include "savedstatuses.h"
 #include "privacy.h"
-#include "prpl.h"
-#include "plugin.h"
 #include "util.h"
 #include "version.h"
 #include "network.h"
@@ -277,8 +275,6 @@ static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 {
 	return "sipe";
 }
-
-static void sipe_plugin_destroy(PurplePlugin *plugin);
 
 static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans);
 
@@ -9981,9 +9977,7 @@ static void sipe_get_info(PurpleConnection *gc, const char *username)
 	g_free(row);
 }
 
-static PurplePlugin *my_protocol = NULL;
-
-static PurplePluginProtocolInfo prpl_info =
+PurplePluginProtocolInfo prpl_info =
 {
 	OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
@@ -10097,99 +10091,6 @@ PurplePluginInfo info = {
 	NULL,
 	NULL
 };
-
-static void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
-{
-	GList *entry;
-
-	sip_sec_destroy();
-
-	entry = prpl_info.protocol_options;
-	while (entry) {
-		purple_account_option_destroy(entry->data);
-		entry = g_list_delete_link(entry, entry);
-	}
-	prpl_info.protocol_options = NULL;
-
-	entry = prpl_info.user_splits;
-	while (entry) {
-		purple_account_user_split_destroy(entry->data);
-		entry = g_list_delete_link(entry, entry);
-	}
-	prpl_info.user_splits = NULL;
-}
-
-void init_plugin(PurplePlugin *plugin)
-{
-	PurpleAccountUserSplit *split;
-	PurpleAccountOption *option;
-
-	srand(time(NULL));
-	sip_sec_init();
-
-#ifdef ENABLE_NLS
-	purple_debug_info(PACKAGE, "bindtextdomain = %s\n", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));
-	purple_debug_info(PACKAGE, "bind_textdomain_codeset = %s\n",
-	bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8"));
-	textdomain(GETTEXT_PACKAGE);
-#endif
-
-	purple_plugin_register(plugin);
-
-	split = purple_account_user_split_new(_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"), NULL, ',');
-	purple_account_user_split_set_reverse(split, FALSE);
-	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
-
-	option = purple_account_option_string_new(_("Server[:Port]\n(leave empty for auto-discovery)"), "server", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	option = purple_account_option_list_new(_("Connection type"), "transport", NULL);
-	purple_account_option_add_list_item(option, _("Auto"), "auto");
-	purple_account_option_add_list_item(option, _("SSL/TLS"), "tls");
-	purple_account_option_add_list_item(option, _("TCP"), "tcp");
-	purple_account_option_add_list_item(option, _("UDP"), "udp");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
-
-	option = purple_account_option_string_new(_("User Agent"), "useragent", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-#ifdef USE_KERBEROS
-	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	/* Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
-	 * No login/password is taken into account if this option present,
-	 * instead used default credentials stored in OS.
-	 */
-	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#endif
-
-	option = purple_account_option_list_new(_("Calendar source"), "calendar", NULL);
-	purple_account_option_add_list_item(option, _("Exchange 2007/2010"), "EXCH");
-	purple_account_option_add_list_item(option, _("None"), "NONE");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	/** Example: https://server.company.com/EWS/Exchange.asmx */
-	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	option = purple_account_option_string_new(_("Email address\n(if different from Username)"), "email", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	/** Example: DOMAIN\user  or  user@company.com */
-	option = purple_account_option_string_new(_("Email login\n(if different from Login)"), "email_login", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
-	purple_account_option_set_masked(option, TRUE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-
-	my_protocol = plugin;
-}
 
 /*
   Local Variables:
