@@ -331,6 +331,7 @@ static void sipe_auth_free(struct sip_auth *auth)
 	auth->realm = NULL;
 	g_free(auth->target);
 	auth->target = NULL;
+	auth->version = 0;
 	auth->type = AUTH_TYPE_UNSET;
 	auth->retries = 0;
 	auth->expires = 0;
