@@ -55,10 +55,8 @@ libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
         $(GLIB_CFLAGS) \
-        $(PURPLE_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
-	$(KRB5_CFLAGS) \
-	-DPURPLE_PLUGINS
+	$(KRB5_CFLAGS)
 
 libsipe_la_LDFLAGS = \
 	-module -avoid-version -no-undefined \
@@ -66,8 +64,11 @@ libsipe_la_LDFLAGS = \
 
 libsipe_la_LIBADD = \
         $(GLIB_LIBS) \
-	$(PURPLE_LIBS) \
 	$(KRB5_LIBS)
+
+if SIPE_INCLUDE_PURPLE
+libsipe_la_CFLAGS += $(PURPLE_CFLAGS) -DPURPLE_PLUGINS
+libsipe_la_LIBADD += $(PURPLE_LIBS)
 
 tests: tests.c .libs/libsipe.so
 	set -e; \
@@ -78,3 +79,4 @@ tests: tests.c .libs/libsipe.so
 # Remove any libsipe.so from the old incorrect installation location
 install-exec-local:
 	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
+endif
