@@ -10191,8 +10191,6 @@ void init_plugin(PurplePlugin *plugin)
 	my_protocol = plugin;
 }
 
-PURPLE_INIT_PLUGIN(sipe, init_plugin, info);
-
 /*
   Local Variables:
   mode: c
