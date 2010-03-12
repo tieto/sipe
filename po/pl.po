@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-11 18:32+0200\n"
-"PO-Revision-Date: 2010-02-18 05:15+0100\n"
+"POT-Creation-Date: 2010-03-11 16:55+0000\n"
+"PO-Revision-Date: 2010-03-12 22:30+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -119,6 +119,9 @@ msgid ""
 "Your message or invitation was not delivered, possibly because it contains a "
 "hyperlink or other content that the system administrator has blocked."
 msgstr ""
+"Wiadomość lub zaproszenie nie zostało dostarczone, prawdopodobnie dlatego, "
+"że zawiera odnośnik lub inną zawartość zablokowaną przez administratora "
+"systemu."
 
 #: ../src/core/sipe.c:4017
 #, c-format
@@ -138,13 +141,13 @@ msgstr ""
 
 #. Unsupported media type
 #: ../src/core/sipe.c:4021
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "This message was not delivered to %s because one or more recipients don't "
 "support this type of message"
 msgstr ""
 "Nie dostarczono wiadomości do %s, ponieważ jeden lub więcej odbiorców nie "
-"chce, aby im przeszkadzano"
+"obsługuje tego typu wiadomości"
 
 #: ../src/core/sipe.c:4023
 #, c-format
@@ -166,9 +169,8 @@ msgid "Received a message with unrecognized contents from %s"
 msgstr "Odebrano wiadomość z nierozpoznaną zawartością od %s"
 
 #: ../src/core/sipe.c:5608 ../src/core/sipe.c:7990
-#, fuzzy
 msgid "Authentication failed"
-msgstr "Uwierzytelnienie przesyłania pliku nie powiodło się."
+msgstr "Uwierzytelnienie nie powiodło się"
 
 #: ../src/core/sipe.c:5617 ../src/core/sipe.c:7878
 msgid "Incompatible authentication scheme chosen"
@@ -741,9 +743,8 @@ msgstr "Pobrany plik jest uszkodzony"
 
 #: ../src/core/sipe-ft.c:321 ../src/core/sipe-ft.c:337
 #: ../src/core/sipe-ft.c:392
-#, fuzzy
 msgid "Out of memory"
-msgstr "Poza biurem"
+msgstr "Brak pamięci"
 
 #: ../src/core/sipe-ft.c:505
 msgid "File transfer initialization failed."
@@ -760,6 +761,3 @@ msgstr "Pobrany klucz szyfrowania posiada błędny rozmiar."
 #: ../src/core/sipe-ft.c:678
 msgid "Received hash key has wrong size."
 msgstr "Pobrany klucz mieszania posiada błędny rozmiar."
-
-#~ msgid "Wrong password"
-#~ msgstr "Błędne hasło"
