@@ -21,6 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #include <stdlib.h>
 #include <string.h>
@@ -177,7 +181,10 @@ sip_sec_init_context(SipSecContext *context,
 					  domain,
 					  username,
 					  password);
-	if (!*context) return NULL;
+	if (!*context) {
+		purple_debug_info("sipe", "ERROR: sip_sec_init_context: failed sip_sec_create_context()\n");		
+		return NULL;
+	}
 
 	ret = sip_sec_init_context_step(*context,
 					target,
