@@ -25,3 +25,10 @@ Workaround: explicitly define address of home server in Server[:Port] field on A
   Home server address can be observed in logs in SIP/2.0 301 error response in "Contact:" header.
   Logs can be obtained by starting Pidgin in command line with -d flag.
 Resolved: in development branch - git commit 494c1e467b13de295a30bcd0981fa7311f218e9a
+----------------------
+
+#2969327: Kerberos authentication always fails in *nix platforms
+
+Sympthoms: Reported as "Failed to authenticate to server". Works with the same account configuration with other SIPE versions from 1.5.0 to 1.8.1 included.
+Applicability: *nix systems only. Windows platform as unaffected.
+Resolition: in development branch - git commit 5bc28e0d7a004f4c03d886fc21c2af5bf0aa7205
