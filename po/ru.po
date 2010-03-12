@@ -1,12 +1,12 @@
 # Russian translation for pidgin-sipe
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-11 18:32+0200\n"
+"POT-Creation-Date: 2010-03-11 16:55+0000\n"
 "PO-Revision-Date: 2009-06-19 15:15+0000\n"
 "Last-Translator: pier11 <pier11@operamail.com>\n"
 "Language-Team: Russian <ru@li.org>\n"
@@ -14,8 +14,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2009-06-19 15:32+0000\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
-"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
 #: ../src/core/sipe.c:148
@@ -118,47 +117,30 @@ msgstr "причина не указана"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:4013
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"Ваше сообщение или приглашение не было доставлено. Возможно, оно содержит "
-"гиперссылку или другое содержимое, заблоктрованное системным администратором."
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
+msgstr "Ваше сообщение или приглашение не было доставлено. Возможно, оно содержит гиперссылку или другое содержимое, заблоктрованное системным администратором."
 
 #: ../src/core/sipe.c:4017
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
-msgstr "Сообщение не доставлено %s потому что сервис недоступен"
+msgid "This message was not delivered to %s because the service is not available"
+msgstr "Сообщение не доставлено %s, потому что сервис недоступен"
 
 #. Busy Here
 #: ../src/core/sipe.c:4019
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
-"Сообщение не доставлено %s поскольку один или нескольно получателей были "
-"недоступны"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Сообщение не доставлено %s, поскольку один или нескольно получателей были недоступны"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:4021
-#, fuzzy, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
-msgstr ""
-"Сообщение не доставлено %s поскольку один или нескольно получателей были "
-"недоступны"
+#, c-format
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
+msgstr "Это сообщение не было доставлено %s, поскольку один или нескольно получателей не поддерживают данный тип сообщения"
 
 #: ../src/core/sipe.c:4023
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
-"Сообщение не доставлено %s поскольку один или нескольно получателей были не "
-"в сети"
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Сообщение не доставлено %s, поскольку один или нескольно получателей были не в сети"
 
 #: ../src/core/sipe.c:4367
 #, c-format
@@ -171,9 +153,8 @@ msgid "Received a message with unrecognized contents from %s"
 msgstr "Поступило сообщение неподдерживаемого типа от %s"
 
 #: ../src/core/sipe.c:5608 ../src/core/sipe.c:7990
-#, fuzzy
 msgid "Authentication failed"
-msgstr "Не удалось проверить подлинность при передаче файла."
+msgstr "Ошибка аутентификации"
 
 #: ../src/core/sipe.c:5617 ../src/core/sipe.c:7878
 msgid "Incompatible authentication scheme chosen"
@@ -231,12 +212,8 @@ msgid "SSL certificate invalid"
 msgstr "Недействительный SSL сертификат"
 
 #: ../src/core/sipe.c:8345
-msgid ""
-"SSL support is not installed. Either install SSL support or configure a "
-"different connection type in the account editor"
-msgstr ""
-"Поддержка SSL не установлена. Установите поддержку SSL, либо настройте "
-"соединение другог типа в редакторе аккаунта."
+msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
+msgstr "Поддержка SSL не установлена. Установите поддержку SSL, либо настройте соединение другог типа в редакторе аккаунта."
 
 #: ../src/core/sipe.c:8354
 msgid "Could not create SSL context"
@@ -323,12 +300,8 @@ msgid "Search for a contact"
 msgstr "Поиск контактов"
 
 #: ../src/core/sipe.c:8940
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Введите информацию о человеке, которого вы хотите найти. Пустые поля будут "
-"игнорироваться."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут игнорироваться."
 
 #: ../src/core/sipe.c:8942
 msgid "_Search"
@@ -341,12 +314,8 @@ msgstr "_Отмена"
 #. The next 11 texts make up the SIPE about note text
 #. About note, part 1/11: introduction
 #: ../src/core/sipe.c:8999
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
-msgstr ""
-"Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в "
-"таких продуктах, как"
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
+msgstr "Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в таких продуктах, как"
 
 #. About note, part 2/11: home page URL (label)
 #: ../src/core/sipe.c:9001
@@ -589,8 +558,10 @@ msgstr "TCP"
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/core/sipe.c:10154
 msgid "User Agent"
 msgstr "User Agent"
@@ -602,7 +573,7 @@ msgstr "Использовать Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/core/sipe.c:10165
 msgid "Use Single Sign-On"
 msgstr "Использовать Single Sign-On"
@@ -704,17 +675,12 @@ msgid "Chat #%d"
 msgstr "Чат #%d"
 
 #: ../src/core/sipe-conf.c:833
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
+msgid "This conference is no longer locked. Additional participants can now join."
 msgstr "Конференция разблокирована. Новые участники могут присоединиться."
 
 #: ../src/core/sipe-conf.c:837
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
-msgstr ""
-"Конференция заблокирована. Пока доступ к конференции заблокирован, к ней не "
-"могут присоединяться новые участники."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
+msgstr "Конференция заблокирована. Пока доступ к конференции заблокирован, к ней не могут присоединяться новые участники."
 
 #: ../src/core/sipe-conf.c:870
 msgid "You have been disconnected from this conference."
