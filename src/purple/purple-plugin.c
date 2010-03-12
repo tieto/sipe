@@ -24,10 +24,17 @@
 #include "config.h"
 #endif
 
+#ifdef _WIN32
+#include "internal.h"
+#endif /* _WIN32 */
+
 #include <stdlib.h>
 #include <time.h>
 
+#ifndef PURPLE_PLUGINS
 #define PURPLE_PLUGINS
+#endif
+
 #include "accountopt.h"
 #include "debug.h"
 #include "prpl.h"
