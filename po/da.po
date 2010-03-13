@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-13 21:51+0200\n"
+"POT-Creation-Date: 2010-03-13 21:57+0000\n"
 "PO-Revision-Date: 2009-01-01 16:52+0000\n"
 "Last-Translator: nanker <Unknown>\n"
 "Language-Team: Danish <da@li.org>\n"
@@ -284,11 +284,11 @@ msgstr "Brugernavn"
 msgid "Name"
 msgstr "Navn"
 
-#: ../src/core/sipe.c:8834 ../src/core/sipe.c:8930 ../src/core/sipe.c:9884
+#: ../src/core/sipe.c:8834 ../src/core/sipe.c:8930 ../src/core/sipe.c:9887
 msgid "Company"
 msgstr "Firma"
 
-#: ../src/core/sipe.c:8837 ../src/core/sipe.c:8932 ../src/core/sipe.c:9893
+#: ../src/core/sipe.c:8837 ../src/core/sipe.c:8932 ../src/core/sipe.c:9896
 msgid "Country"
 msgstr "Land"
 
@@ -342,221 +342,226 @@ msgstr "_Søg"
 msgid "_Cancel"
 msgstr "_Fortryd"
 
-#. The next 12 texts make up the SIPE about note text
-#. About note, part 1/12: introduction
-#: ../src/core/sipe.c:8998
+#. The next 13 texts make up the SIPE about note text
+#. About note, part 1/13: introduction
+#: ../src/core/sipe.c:8999
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
 msgstr ""
 
-#. About note, part 2/12: home page URL (label)
-#: ../src/core/sipe.c:9000
+#. About note, part 2/13: home page URL (label)
+#: ../src/core/sipe.c:9001
 msgid "Home"
 msgstr ""
 
-#. About note, part 3/12: support forum URL (label)
-#: ../src/core/sipe.c:9002
+#. About note, part 3/13: support forum URL (label)
+#: ../src/core/sipe.c:9003
 msgid "Support"
 msgstr ""
 
-#. About note, part 4/12: support forum name (hyperlink text)
-#: ../src/core/sipe.c:9004
+#. About note, part 4/13: support forum name (hyperlink text)
+#: ../src/core/sipe.c:9005
 msgid "Help Forum"
 msgstr ""
 
-#. About note, part 5/12: bug tracker URL (label)
-#: ../src/core/sipe.c:9006
+#. About note, part 5/13: bug tracker URL (label)
+#: ../src/core/sipe.c:9007
+msgid "Report Problem"
+msgstr ""
+
+#. About note, part 6/13: bug tracker URL (label)
+#: ../src/core/sipe.c:9009
 msgid "Bug Tracker"
 msgstr ""
 
-#. About note, part 6/12: translation service URL (label)
-#: ../src/core/sipe.c:9008
+#. About note, part 7/13: translation service URL (label)
+#: ../src/core/sipe.c:9011
 msgid "Translations"
 msgstr ""
 
-#. About note, part 7/12: license type (label)
-#: ../src/core/sipe.c:9010
+#. About note, part 8/13: license type (label)
+#: ../src/core/sipe.c:9013
 msgid "License"
 msgstr ""
 
-#. About note, part 8/12: known users
-#: ../src/core/sipe.c:9012
+#. About note, part 9/13: known users
+#: ../src/core/sipe.c:9015
 msgid "We support users in such organizations as"
 msgstr ""
 
-#. About note, part 9/12: translation request, text before Transifex.net URL
+#. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe.c:9015
+#: ../src/core/sipe.c:9018
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr ""
 
-#. About note, part 10/12: translation request, text after Transifex.net URL
+#. About note, part 11/13: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe.c:9018
+#: ../src/core/sipe.c:9021
 msgid " using convenient web interface"
 msgstr ""
 
-#. About note, part 11/12: author list (header)
-#: ../src/core/sipe.c:9020
+#. About note, part 12/13: author list (header)
+#: ../src/core/sipe.c:9023
 #, fuzzy
 msgid "Authors"
 msgstr "Auto"
 
-#. About note, part 12/12: Localization credit
+#. About note, part 13/13: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe.c:9025
+#: ../src/core/sipe.c:9028
 msgid "Original texts in English (en): SIPE developers"
 msgstr ""
 
-#: ../src/core/sipe.c:9090
+#: ../src/core/sipe.c:9093
 msgid "About SIPE plugin..."
 msgstr ""
 
-#: ../src/core/sipe.c:9093
+#: ../src/core/sipe.c:9096
 #, fuzzy
 msgid "Contact search..."
 msgstr "Kontakt søgning..."
 
-#: ../src/core/sipe.c:9097
+#: ../src/core/sipe.c:9100
 msgid "Republish Calendar"
 msgstr ""
 
-#: ../src/core/sipe.c:9101
+#: ../src/core/sipe.c:9104
 msgid "Reset status"
 msgstr ""
 
-#: ../src/core/sipe.c:9193
+#: ../src/core/sipe.c:9196
 msgid "Status"
 msgstr ""
 
-#: ../src/core/sipe.c:9198
+#: ../src/core/sipe.c:9201
 msgid "Calendar"
 msgstr ""
 
-#: ../src/core/sipe.c:9203
+#: ../src/core/sipe.c:9206
 msgid "Meeting in"
 msgstr ""
 
-#: ../src/core/sipe.c:9207
+#: ../src/core/sipe.c:9210
 msgid "Meeting about"
 msgstr ""
 
-#: ../src/core/sipe.c:9215
+#: ../src/core/sipe.c:9218
 msgid "Out of office note"
 msgstr ""
 
-#: ../src/core/sipe.c:9215
+#: ../src/core/sipe.c:9218
 msgid "Note"
 msgstr ""
 
-#: ../src/core/sipe.c:9227
+#: ../src/core/sipe.c:9230
 msgid "user@company.com"
 msgstr ""
 
-#: ../src/core/sipe.c:9589
+#: ../src/core/sipe.c:9592
 #, c-format
 msgid "Make leader of '%s'"
 msgstr ""
 
-#: ../src/core/sipe.c:9600
+#: ../src/core/sipe.c:9603
 #, c-format
 msgid "Remove from '%s'"
 msgstr ""
 
-#: ../src/core/sipe.c:9613
+#: ../src/core/sipe.c:9616
 #, c-format
 msgid "Invite to '%s'"
 msgstr ""
 
-#: ../src/core/sipe.c:9624
+#: ../src/core/sipe.c:9627
 msgid "New chat"
 msgstr ""
 
-#: ../src/core/sipe.c:9635
+#: ../src/core/sipe.c:9638
 #, c-format
 msgid "Work %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9648
+#: ../src/core/sipe.c:9651
 #, c-format
 msgid "Mobile %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9661
+#: ../src/core/sipe.c:9664
 #, c-format
 msgid "Home %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9674
+#: ../src/core/sipe.c:9677
 #, c-format
 msgid "Other %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9687
+#: ../src/core/sipe.c:9690
 #, c-format
 msgid "Custom1 %s"
 msgstr ""
 
-#: ../src/core/sipe.c:9699
+#: ../src/core/sipe.c:9702
 msgid "Send email..."
 msgstr ""
 
-#: ../src/core/sipe.c:9724
+#: ../src/core/sipe.c:9727
 msgid "Copy to"
 msgstr ""
 
-#: ../src/core/sipe.c:9778
+#: ../src/core/sipe.c:9781
 msgid "Unlock"
 msgstr ""
 
-#: ../src/core/sipe.c:9783
+#: ../src/core/sipe.c:9786
 msgid "Lock"
 msgstr ""
 
-#: ../src/core/sipe.c:9872 ../src/core/sipe.c:9909
+#: ../src/core/sipe.c:9875 ../src/core/sipe.c:9912
 msgid "Display name"
 msgstr ""
 
-#: ../src/core/sipe.c:9875
+#: ../src/core/sipe.c:9878
 msgid "Job title"
 msgstr ""
 
-#: ../src/core/sipe.c:9878
+#: ../src/core/sipe.c:9881
 msgid "Office"
 msgstr ""
 
-#: ../src/core/sipe.c:9881
+#: ../src/core/sipe.c:9884
 msgid "Business phone"
 msgstr ""
 
-#: ../src/core/sipe.c:9887
+#: ../src/core/sipe.c:9890
 msgid "City"
 msgstr ""
 
-#: ../src/core/sipe.c:9890
+#: ../src/core/sipe.c:9893
 msgid "State"
 msgstr ""
 
-#: ../src/core/sipe.c:9896 ../src/core/sipe.c:9923
+#: ../src/core/sipe.c:9899 ../src/core/sipe.c:9926
 msgid "Email address"
 msgstr ""
 
-#: ../src/core/sipe.c:9916
+#: ../src/core/sipe.c:9919
 msgid "Alias"
 msgstr ""
 
-#: ../src/core/sipe.c:9929
+#: ../src/core/sipe.c:9932
 msgid "Site"
 msgstr ""
 
-#: ../src/core/sipe.c:9936
+#: ../src/core/sipe.c:9939
 msgid "Find on LinkedIn"
 msgstr ""
 
-#: ../src/core/sipe.c:9943
+#: ../src/core/sipe.c:9946
 msgid "Device"
 msgstr ""
 
