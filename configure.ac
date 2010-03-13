@@ -9,8 +9,10 @@ m4_define([SIPE_VERSION],
           m4_substr(SIPE_VERSION_DATA,
                     [0], m4_decr(m4_len(SIPE_VERSION_DATA))))
 
-dnl initialize package name, version & bugtracker
-AC_INIT([pidgin-sipe], SIPE_VERSION, [http://sourceforge.net/tracker/?group_id=194563])
+dnl initialize package name, version, bugtracker & homepage
+AC_INIT([pidgin-sipe], SIPE_VERSION,
+	[http://sourceforge.net/tracker/?group_id=194563], [],
+	[http://sipe.sourceforge.net/])
 
 dnl setup automake and require recent enough version
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])

@@ -8960,7 +8960,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		"<li> - MS Live Communications Server 2003</li><br/>"
 		"<li> - Reuters Messaging</li><br/>"
 		"<br/>"
-		/* 2 */   "%s: <a href=\"http://sipe.sourceforge.net\">http://sipe.sourceforge.net</a><br/>"
+		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
 		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/projects/sipe/forums/forum/688534\">%s</a><br/>"
 		/* 5 */   "%s: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a><br/>"
 		/* 6 */   "%s: GPLv2+<br/>"
@@ -10078,7 +10078,7 @@ PurplePluginInfo info = {
 	"Gabriel Burt <gburt@novell.com>, "               /**< author         */
 	"Stefan Becker <stefan.becker@nokia.com>, "       /**< author         */
 	"pier11 <pier11@operamail.com>",                  /**< author         */
-	"http://sipe.sourceforge.net/",                   /**< homepage       */
+	PACKAGE_URL,                                      /**< homepage       */
 	sipe_plugin_load,                                 /**< load           */
 	sipe_plugin_unload,                               /**< unload         */
 	sipe_plugin_destroy,                              /**< destroy        */
