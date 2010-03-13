@@ -9007,8 +9007,8 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		/* About note, part 4/13: support forum name (hyperlink text) */
 		_("Help Forum"),
 		/* About note, part 5/13: bug tracker URL (label) */
-		_("Report Problem"),
-		/* About note, part 6/13: bug tracker URL (label) */
+		_("Report Problems"),
+		/* About note, part 6/13: bug tracker URL (hyperlink text) */
 		_("Bug Tracker"),
 		/* About note, part 7/13: translation service URL (label) */
 		_("Translations"),
