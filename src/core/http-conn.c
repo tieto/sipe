@@ -49,7 +49,7 @@
 #define HTTP_CONN_POST_HEADER \
 "POST %s HTTP/1.1\r\n"\
 "Host: %s\r\n"\
-"User-Agent: Sipe/" SIPE_VERSION "\r\n"\
+"User-Agent: Sipe/" PACKAGE_VERSION "\r\n"\
 "Content-Length: %d\r\n"\
 "Content-Type: %s\r\n"
 

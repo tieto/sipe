@@ -46,6 +46,6 @@ tests: dev
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) tests
 	
 msi: all
-	SIPE_VERSION=$(VERSION) $(WIX3_HOME)/bin/candle $(WXS_NAME).wxs
+	PACKAGE_VERSION=$(VERSION) $(WIX3_HOME)/bin/candle $(WXS_NAME).wxs
 	$(WIX3_HOME)/bin/light $(WXS_NAME).wixobj
 	mv $(WXS_NAME).msi $(WXS_NAME)-$(VERSION).msi

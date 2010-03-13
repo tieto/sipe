@@ -261,7 +261,7 @@ sipe_get_useragent(struct sipe_account_data *sip)
   #define SIPE_TARGET_ARCH "other"
 #endif
 
-			default_ua = g_strdup_printf("Purple/%s Sipe/" SIPE_VERSION " (" SIPE_TARGET_PLATFORM "-" SIPE_TARGET_ARCH "; %s)",
+			default_ua = g_strdup_printf("Purple/%s Sipe/" PACKAGE_VERSION " (" SIPE_TARGET_PLATFORM "-" SIPE_TARGET_ARCH "; %s)",
 					purple_core_get_version(),
 					sip->server_version ? sip->server_version : "");
 		}
@@ -8951,7 +8951,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		 * into the format string. This requires more translatable
 		 * texts but it makes the translations less error prone.
 		 */
-		"<b><font size=\"+1\">SIPE " SIPE_VERSION " </font></b><br/>"
+		"<b><font size=\"+1\">SIPE " PACKAGE_VERSION " </font></b><br/>"
 		"<br/>"
 		/* 1 */   "%s:<br/>"
 		"<li> - MS Office Communications Server 2007 R2</li><br/>"
@@ -10070,7 +10070,7 @@ PurplePluginInfo info = {
 	PURPLE_PRIORITY_DEFAULT,                          /**< priority       */
 	"prpl-sipe",                                   	  /**< id             */
 	"Office Communicator",                            /**< name           */
-	SIPE_VERSION,                                     /**< version        */
+	PACKAGE_VERSION,                                  /**< version        */
 	"Microsoft Office Communicator Protocol Plugin",  /**< summary        */
 	"A plugin for the extended SIP/SIMPLE protocol used by "          /**< description */
 	"Microsoft Live/Office Communications Server (LCS2005/OCS2007+)", /**< description */

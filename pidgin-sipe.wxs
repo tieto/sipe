@@ -2,12 +2,12 @@
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
 	<!-- online GUID generator http://www.somacon.com/p113.php -->
 
-	<Product Name='Pidgin SIPE plug-in $(env.SIPE_VERSION)' Id='EE2EDB04-2A94-11DE-9BE4-EE4856D89593' UpgradeCode='5B2EC7C8-2A9A-11DE-9AEE-4E8256D89593' Language='1033' Codepage='1252' Version='$(env.SIPE_VERSION)' Manufacturer='http://sipe.sourceforge.net/'>
+	<Product Name='Pidgin SIPE plug-in $(env.PACKAGE_VERSION)' Id='EE2EDB04-2A94-11DE-9BE4-EE4856D89593' UpgradeCode='5B2EC7C8-2A9A-11DE-9AEE-4E8256D89593' Language='1033' Codepage='1252' Version='$(env.PACKAGE_VERSION)' Manufacturer='http://sipe.sourceforge.net/'>
 
-		<Package Id='*' Keywords='Installer' Description="Pidgin SIPE plug-in $(env.SIPE_VERSION) Installer" Comments='An Open Implementation of SIP/Simple protocol for Live Communications Server 2003/2005/2007/2007R2' Manufacturer='http://sipe.sourceforge.net/' InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
+		<Package Id='*' Keywords='Installer' Description="Pidgin SIPE plug-in $(env.PACKAGE_VERSION) Installer" Comments='An Open Implementation of SIP/Simple protocol for Live Communications Server 2003/2005/2007/2007R2' Manufacturer='http://sipe.sourceforge.net/' InstallerVersion='100' Languages='1033' Compressed='yes' SummaryCodepage='1252' />
 
 		<Media Id='1' Cabinet='Sample.cab' EmbedCab='yes' DiskPrompt="CD-ROM #1" />
-		<Property Id='DiskPrompt' Value="Pidgin SIPE plug-in $(env.SIPE_VERSION) Installation [1]" />  
+		<Property Id='DiskPrompt' Value="Pidgin SIPE plug-in $(env.PACKAGE_VERSION) Installation [1]" />  
 	
 		<Directory Id='TARGETDIR' Name='SourceDir'>
 		  <Directory Id='ProgramFilesFolder' Name='PFiles'>
