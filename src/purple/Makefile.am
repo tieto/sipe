@@ -6,6 +6,7 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 libsipe_la_SOURCES = \
+	purple-debug.c \
 	purple-plugin.c
 
 AM_CFLAGS = $(st)

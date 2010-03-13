@@ -48,7 +48,8 @@ LIB_PATHS +=		-L$(GTK_TOP)/lib \
 ##
 ##  SOURCES, OBJECTS
 ##
-C_SRC =			../purple/purple-plugin.c \
+C_SRC =			../purple/purple-debug.c \
+			../purple/purple-plugin.c \
 			sipe.c \
 			sipe-chat.c \
 			sipe-conf.c \

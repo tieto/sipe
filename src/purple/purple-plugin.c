@@ -36,7 +36,6 @@
 #endif
 
 #include "accountopt.h"
-#include "debug.h"
 #include "prpl.h"
 #include "plugin.h"
 
@@ -44,6 +43,7 @@
 #include "sipe-nls.h"
 
 #include "sipe-core-api.h"
+#include "sipe-backend-debug.h"
 
 #include "core-depurple.h"
 
@@ -77,9 +77,10 @@ static void init_plugin(PurplePlugin *plugin)
 	sip_sec_init();
 
 #ifdef ENABLE_NLS
-	purple_debug_info(PACKAGE_NAME, "bindtextdomain = %s\n", bindtextdomain(PACKAGE_NAME, LOCALEDIR));
-	purple_debug_info(PACKAGE_NAME, "bind_textdomain_codeset = %s\n",
-	bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
+	SIPE_DEBUG_INFO("bindtextdomain = %s",
+			bindtextdomain(PACKAGE_NAME, LOCALEDIR));
+	SIPE_DEBUG_INFO("bind_textdomain_codeset = %s",
+			bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
 	textdomain(PACKAGE_NAME);
 #endif
 
