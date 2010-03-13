@@ -24,6 +24,7 @@ ifeq ($(TYPE),PLUGIN)
 endif
 endif
 
+DEFINES += -DPACKAGE_BUGREPORT=\"http://sourceforge.net/tracker/?group_id=194563\"
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
