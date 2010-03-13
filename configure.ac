@@ -6,9 +6,6 @@ m4_define([_SIPE_VERSION],
           m4_substr(SIPE_VERSION_DATA,
                     [0], m4_decr(m4_len(SIPE_VERSION_DATA))))
 
-dnl version of this package
-m4_define(pidgin_sipe_version, _SIPE_VERSION)
-
 AC_INIT([pidgin-sipe], _SIPE_VERSION)
 AC_DEFINE(SIPE_VERSION, "_SIPE_VERSION", [Define sipe version.])
 
@@ -108,7 +105,7 @@ if test "$kerberos" != "no" ; then
 	LIBS="$KRB5_LIBS $LIBS"
 	AC_CHECK_FUNCS([krb5_get_error_message])
 	LIBS="$savedLIBS"
-	AC_DEFINE(USE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
+	AC_DEFINE(HAVE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
 fi
 
 dnl check for glib

@@ -105,7 +105,7 @@ static void init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_string_new(_("User Agent"), "useragent", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-#ifdef USE_KERBEROS
+#ifdef HAVE_KERBEROS
 	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
