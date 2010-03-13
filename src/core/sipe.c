@@ -8962,11 +8962,11 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		"<br/>"
 		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
 		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/projects/sipe/forums/forum/688534\">%s</a><br/>"
-		/* 5 */   "%s: <a href=\"" PACKAGE_BUGREPORT "\">" PACKAGE_BUGREPORT "</a><br/>"
-		/* 6 */   "%s: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a><br/>"
-		/* 7 */   "%s: GPLv2+<br/>"
+		/* 5,6 */   "%s: <a href=\"" PACKAGE_BUGREPORT "\">%s</a><br/>"
+		/* 7 */   "%s: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a><br/>"
+		/* 8 */   "%s: GPLv2+<br/>"
 		"<br/>"
-		/* 8 */  "%s:<br/>"
+		/* 9 */  "%s:<br/>"
 		" - CERN<br/>"
 		" - Reuters Messaging network<br/>"
 		" - Deutsche Bank<br/>"
@@ -8977,13 +8977,14 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		" - HP<br/>"
 		" - Symantec<br/>"
 		" - Accenture<br/>"
+		" - Capgemini<br/>"
 		" - Siemens<br/>"
 		" - Alcatel-Lucent<br/>"
 		" - BT<br/>"
 		"<br/>"
-		/* 9,10 */ "%s<a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a>%s.<br/>"
+		/* 10,11 */ "%s<a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a>%s.<br/>"
 		"<br/>"
-		/* 11 */  "<b>%s:</b><br/>"
+		/* 12 */  "<b>%s:</b><br/>"
 		" - Anibal Avelar<br/>"
 		" - Gabriel Burt<br/>"
 		" - Stefan Becker<br/>"
@@ -8991,34 +8992,36 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		" - Jakub Adam<br/>"
 		" - Tomáš Hrabčík<br/>"
 		"<br/>"
-		/* 12 */  "%s<br/>"
+		/* 13 */  "%s<br/>"
 		,
-		/* The next 12 texts make up the SIPE about note text */
-		/* About note, part 1/12: introduction */
+		/* The next 13 texts make up the SIPE about note text */
+		/* About note, part 1/13: introduction */
 		_("A third-party plugin implementing extended version of SIP/SIMPLE used by various products"),
-		/* About note, part 2/12: home page URL (label) */
+		/* About note, part 2/13: home page URL (label) */
 		_("Home"),
-		/* About note, part 3/12: support forum URL (label) */
+		/* About note, part 3/13: support forum URL (label) */
 		_("Support"),
-		/* About note, part 4/12: support forum name (hyperlink text) */
+		/* About note, part 4/13: support forum name (hyperlink text) */
 		_("Help Forum"),
-		/* About note, part 5/12: bug tracker URL (label) */
+		/* About note, part 5/13: bug tracker URL (label) */
+		_("Report Problem"),
+		/* About note, part 6/13: bug tracker URL (label) */
 		_("Bug Tracker"),
-		/* About note, part 6/12: translation service URL (label) */
+		/* About note, part 7/13: translation service URL (label) */
 		_("Translations"),
-		/* About note, part 7/12: license type (label) */
+		/* About note, part 8/13: license type (label) */
 		_("License"),
-		/* About note, part 8/12: known users */
+		/* About note, part 9/13: known users */
 		_("We support users in such organizations as"),
-		/* About note, part 9/12: translation request, text before Transifex.net URL */
+		/* About note, part 10/13: translation request, text before Transifex.net URL */
 		/* append a space if text is not empty */
 		_("Please help us to translate SIPE to your native language here at "),
-		/* About note, part 10/12: translation request, text after Transifex.net URL */
+		/* About note, part 11/13: translation request, text after Transifex.net URL */
 		/* start with a space if text is not empty */
 		_(" using convenient web interface"),
-		/* About note, part 11/12: author list (header) */
+		/* About note, part 12/13: author list (header) */
 		_("Authors"),
-		/* About note, part 12/12: Localization credit */
+		/* About note, part 13/13: Localization credit */
 		/* PLEASE NOTE: do *NOT* simply translate the english original */
 		/* but write something similar to the following sentence: */
 		/* "Localization for <language name> (<language code>): <name>" */
