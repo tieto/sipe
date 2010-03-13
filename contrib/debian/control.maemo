@@ -23,7 +23,7 @@ Description: Adds support to connect to Microsoft Office Communicator
  .
  With this plugin you should be able to replace your Microsoft Office
  Communicator client with Pidgin.
-XSBC-Bugtracker: http://sourceforge.net/tracker/?group_id=194563&atid=949931
+XSBC-Bugtracker: https://sourceforge.net/tracker/?atid=949931&group_id=194563
 XB-Maemo-Display-Name: Pidgin protocol plugin for Office Communicator
 XB-Maemo-Icon-26:
  iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgI
