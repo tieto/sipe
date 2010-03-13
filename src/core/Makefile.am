@@ -37,6 +37,8 @@ libsipecore_la_SOURCES = \
 	sipe-sign.c \
 	sipe-ft.h \
 	sipe-ft.c \
+	sipe-xml.h \
+	sipe-xml.c \
 	uuid.h \
 	uuid.c
 

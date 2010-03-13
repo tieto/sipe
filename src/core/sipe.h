@@ -247,7 +247,7 @@ struct sipe_account_data {
 	 * - OOF flag
 	 * - User status
 	 */
-	xmlnode *user_info;
+	gchar *user_states;
 };
 
 struct sip_connection {

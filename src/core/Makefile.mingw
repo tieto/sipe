@@ -65,6 +65,7 @@ C_SRC =			../purple/purple-plugin.c \
 			sip-sec-sspi.c \
 			sip-csta.c \
 			sipe-ft.c \
+			sipe-xml.c \
 			uuid.c
 
 OBJECTS = 		$(C_SRC:%.c=%.o)

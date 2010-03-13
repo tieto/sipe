@@ -6325,10 +6325,20 @@ static void
 sipe_user_info_has_updated(struct sipe_account_data *sip,
 			   xmlnode *xn_userinfo)
 {
-	if (sip->user_info) {
-		xmlnode_free(sip->user_info);
+	xmlnode *xn_states;
+
+	g_free(sip->user_states);
+	sip->user_states = NULL;
+	if ((xn_states = xmlnode_get_child(xn_userinfo, "states")) != NULL) {
+		sip->user_states = xmlnode_to_str(xn_states, NULL);
+		/* this is a hack-around to remove added newline after inner element,
+		 * state in this case, where it shouldn't be.
+		 * After several use of xmlnode_to_str, amount of added newlines
+		 * grows significantly.
+		 */
+		purple_str_strip_char(sip->user_states, '\n');
+		//purple_str_strip_char(sip->user_states, '\r');
 	}
-	sip->user_info = xmlnode_copy(xn_userinfo);
 
 	/* Publish initial state if not yet.
 	 * Assuming this happens on initial responce to self subscription
@@ -6943,16 +6953,8 @@ send_presence_soap0(struct sipe_account_data *sip,
 		}
 		else /* preserve existing publication */
 		{
-			xmlnode *xn_states;
-			if (sip->user_info && (xn_states = xmlnode_get_child(sip->user_info, "states"))) {
-				states = xmlnode_to_str(xn_states, NULL);
-				/* this is a hack-around to remove added newline after inner element,
-				 * state in this case, where it shouldn't be.
-				 * After several use of xmlnode_to_str, amount of added newlines
-				 * grows significantly.
-				 */
-				purple_str_strip_char(states, '\n');
-				//purple_str_strip_char(states, '\r');
+			if (sip->user_states) {
+				states = g_strdup(sip->user_states);
 			}
 		}
 	} else {
@@ -8741,6 +8743,7 @@ static void sipe_close(PurpleConnection *gc)
 		g_free(sip->authuser);
 		g_free(sip->status);
 		g_free(sip->note);
+		g_free(sip->user_states);
 
 		g_hash_table_foreach_steal(sip->buddies, sipe_buddy_remove, NULL);
 		g_hash_table_destroy(sip->buddies);
@@ -8857,7 +8860,7 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	}
 
 	if ((mrow = xmlnode_get_descendant(searchResults, "Body", "directorySearch", "moreAvailable", NULL)) != NULL) {
-		char *data = xmlnode_get_data_unescaped(mrow);
+		char *data = xmlnode_get_data(mrow);
 		more = (g_strcasecmp(data, "true") == 0);
 		g_free(data);
 	}
