@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-13 21:57+0000\n"
-"PO-Revision-Date: 2010-03-12 22:30+0100\n"
+"POT-Creation-Date: 2010-03-13 22:02+0000\n"
+"PO-Revision-Date: 2010-03-13 23:04+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -363,12 +363,12 @@ msgstr "forum pomocy"
 #. About note, part 5/13: bug tracker URL (label)
 #: ../src/core/sipe.c:9007
 msgid "Report Problem"
-msgstr ""
+msgstr "Zgłaszanie problemów"
 
 #. About note, part 6/13: bug tracker URL (label)
 #: ../src/core/sipe.c:9009
 msgid "Bug Tracker"
-msgstr ""
+msgstr "System śledzenia błędów"
 
 #. About note, part 7/13: translation service URL (label)
 #: ../src/core/sipe.c:9011
