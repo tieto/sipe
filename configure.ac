@@ -1,3 +1,6 @@
+dnl ensure recent enough version of Autoconf
+AC_PREREQ([2.50])
+
 dnl Use `VERSION' files to get version.
 m4_define([SIPE_VERSION_DATA], m4_include([VERSION]))
 
@@ -6,26 +9,29 @@ m4_define([SIPE_VERSION],
           m4_substr(SIPE_VERSION_DATA,
                     [0], m4_decr(m4_len(SIPE_VERSION_DATA))))
 
-AC_INIT([pidgin-sipe], SIPE_VERSION)
+dnl initialize package name, version & bugtracker
+AC_INIT([pidgin-sipe], SIPE_VERSION, [http://sourceforge.net/tracker/?group_id=194563])
 
-AC_PREREQ([2.50])
-AM_INIT_AUTOMAKE([1.9 dist-bzip2 tar-ustar])
+dnl setup automake and require recent enough version
+AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])
 
-AC_DISABLE_STATIC
+dnl set programming language
+AC_LANG(C)
+AC_HEADER_STDC
 
-AC_PROG_CC
+dnl setup shared library generation
+LT_INIT([disable-static])
+
+dnl checks for tools
 IT_PROG_INTLTOOL([0.35.0])
-AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 AC_PROG_RANLIB
-
-AC_HEADER_STDC
 
 dnl checks for library functions
 AC_CHECK_FUNCS([setenv unsetenv])
 
-dnl tell pkgconfig to look in the same prefix we're installing this to,
-dnl as that's likely where libpurple will be found if it's not in the default
+dnl tell pkgconfig to look in the same prefix where we're installing this to,
+dnl as that is likely where libpurple will be found if it is not in the default
 dnl pkgconfig path
 PREFIX=$ac_default_prefix
 if test "$prefix" != "NONE"; then
