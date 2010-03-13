@@ -8863,7 +8863,7 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	}
 
 	secondary = g_strdup_printf(
-		dngettext(GETTEXT_PACKAGE,
+		dngettext(PACKAGE_NAME,
 			  "Found %d contact%s:",
 			  "Found %d contacts%s:", match_count),
 		match_count, more ? _(" (more matched your query)") : "");

@@ -77,10 +77,10 @@ static void init_plugin(PurplePlugin *plugin)
 	sip_sec_init();
 
 #ifdef ENABLE_NLS
-	purple_debug_info(PACKAGE_NAME, "bindtextdomain = %s\n", bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR));
+	purple_debug_info(PACKAGE_NAME, "bindtextdomain = %s\n", bindtextdomain(PACKAGE_NAME, LOCALEDIR));
 	purple_debug_info(PACKAGE_NAME, "bind_textdomain_codeset = %s\n",
-	bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8"));
-	textdomain(GETTEXT_PACKAGE);
+	bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
+	textdomain(PACKAGE_NAME);
 #endif
 
 	purple_plugin_register(plugin);
