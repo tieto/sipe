@@ -11,7 +11,7 @@ m4_define([SIPE_VERSION],
 
 dnl initialize package name, version, bugtracker & homepage
 AC_INIT([pidgin-sipe], SIPE_VERSION,
-	[http://sourceforge.net/tracker/?group_id=194563], [],
+	[https://sourceforge.net/tracker/?atid=949931&group_id=194563], [],
 	[http://sipe.sourceforge.net/])
 
 dnl setup automake and require recent enough version
