@@ -9,13 +9,23 @@ m4_define([SIPE_VERSION],
           m4_substr(SIPE_VERSION_DATA,
                     [0], m4_decr(m4_len(SIPE_VERSION_DATA))))
 
+dnl homepage
+m4_define([SIPE_HOMEPAGE], [http://sipe.sourceforge.net/])
+
 dnl initialize package name, version, bugtracker & homepage
 AC_INIT([pidgin-sipe], SIPE_VERSION,
 	[https://sourceforge.net/tracker/?atid=949931&group_id=194563], [],
-	[http://sipe.sourceforge.net/])
+	SIPE_HOMEPAGE)
 
 dnl setup automake and require recent enough version
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])
+
+dnl set PACKAGE_URL for autoconf < 2.64
+if test "x${PACKAGE_URL}" = "x"; then
+	AC_MSG_NOTICE([set PACKAGE_URL for autoconf < 2.64])
+	AC_DEFINE(PACKAGE_URL, "SIPE_HOMEPAGE",
+		  [Define to the home page for this package.])
+fi
 
 dnl set programming language
 AC_LANG(C)
