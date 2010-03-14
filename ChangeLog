@@ -1,3 +1,7 @@
+version 1.9.1 "Hot fixes" (2010-03-XX)
+	- Fixed #2969327: Kerberos authentication always fails on *nix platforms (pier11)
+	- Fixed #2968287: Authentication failure in scenario when director server is Office Communications Server 2007 or above and home server is Live Communications Server 2005 (pier11)
+
 version 1.9.0 "File transfer & NTLMv2" (2010-03-10)
 ***** Important Security Update for *nix users *****
 	- Contributed File transfer functionality. File encryption is supported. (Jakub Adam, Tomáš Hrabčík)
