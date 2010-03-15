@@ -29,9 +29,7 @@
 #include <glib.h>
 #include <time.h>
 
-#ifdef _WIN32
-#include "internal.h"
-#endif
+#include "sipe-common.h"
 
 #include "cipher.h"
 #include "circbuffer.h"

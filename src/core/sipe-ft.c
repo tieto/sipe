@@ -40,6 +40,8 @@
 #include "sipe-utils.h"
 
 #ifdef _WIN32
+/* for network */
+#include "libc_interface.h"
 #include <nspapi.h>
 #else
 #include <sys/types.h>

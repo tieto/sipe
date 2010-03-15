@@ -24,10 +24,6 @@
 #include "config.h"
 #endif
 
-#ifdef _WIN32
-#include "internal.h"
-#endif /* _WIN32 */
-
 #include <stdlib.h>
 #include <time.h>
 
@@ -35,11 +31,17 @@
 #define PURPLE_PLUGINS
 #endif
 
+/* for LOCALEDIR */
+#ifdef _WIN32
+#include "win32dep.h"
+#endif
+
+#include "sipe-common.h"
+
 #include "accountopt.h"
 #include "prpl.h"
 #include "plugin.h"
 
-#include "sipe-common.h"
 #include "sipe-nls.h"
 
 #include "sipe-core-api.h"

@@ -43,7 +43,8 @@
 #define _WINSOCK2API_
 #define _LIBC_INTERNAL_
 #endif /* _DLL */
-#include "internal.h"
+/* for network */
+#include "libc_interface.h"
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -57,6 +58,7 @@
 #include <unistd.h>
 #include <glib.h>
 
+#include "sipe-common.h"
 
 #include "blist.h"
 #include "conversation.h"

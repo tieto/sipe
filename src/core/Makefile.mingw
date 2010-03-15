@@ -14,6 +14,9 @@ include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 TARGET = libsipe
 TYPE = PLUGIN
 
+# dump higher level defines
+DEFINES =
+
 # Static or Plugin...
 ifeq ($(TYPE),STATIC)
   DEFINES += -DSTATIC
@@ -24,7 +27,8 @@ ifeq ($(TYPE),PLUGIN)
 endif
 endif
 
-DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/tracker/?atid=949931&group_id=194563\"
+DEFINES += -DENABLE_NLS=1
+DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/tracker/?atid=949931\&group_id=194563\"
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"

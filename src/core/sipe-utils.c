@@ -30,6 +30,11 @@
 #include "sipe.h"
 #include "sipe-utils.h"
 
+#if _WIN32 && !GLIB_CHECK_VERSION(2,8,0)
+/* for gethostname() */
+#include "libc_interface.h"
+#endif
+
 /* Generate 32 random bits */
 #define RANDOM32BITS (rand() & 0xFFFF)
 

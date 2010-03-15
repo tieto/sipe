@@ -53,13 +53,11 @@
 #include <stdlib.h>
 #include "debug.h"
 
-#ifdef _WIN32
-#include "internal.h"
-#endif /* _WIN32 */
-
 #ifdef HAVE_LANGINFO_CODESET
 #include <langinfo.h>
 #endif /* HAVE_LANGINFO_CODESET */
+
+#include "sipe-common.h"
 
 #include "util.h"
 #include "cipher.h"

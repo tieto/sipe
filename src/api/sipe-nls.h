@@ -20,11 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef _WIN32
-#undef _
-#undef N_
-#endif
-
 #ifdef ENABLE_NLS
 #include <glib/gi18n.h>
 #else

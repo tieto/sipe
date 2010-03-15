@@ -542,11 +542,10 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 //TEMP solution to include it here (copy from purple's msn protocol
 //How to reuse msn's util methods from sipe?
 
-// from internal.h for linux compilation
-#ifndef _WIN32
+/* from internal.h */
 #define MSG_LEN 2048
 #define BUF_LEN MSG_LEN
-#endif
+
 void
 msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 {

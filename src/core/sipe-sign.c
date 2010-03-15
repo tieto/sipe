@@ -22,9 +22,7 @@
 
 #include <glib.h>
 #include <string.h>
-#ifdef _WIN32
-#include "internal.h"
-#endif
+
 #include "debug.h"
 
 #include "sipe-sign.h"
