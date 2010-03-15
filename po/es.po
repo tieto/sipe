@@ -133,9 +133,9 @@ msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes están fue
 
 #. Unsupported media type
 #: ../src/core/sipe.c:4019
-#, fuzzy, c-format
+#, c-format
 msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
-msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes están fuera de linea:"
+msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes no soportan este tipo de mensajes"
 
 #: ../src/core/sipe.c:4021
 #, c-format
@@ -153,9 +153,8 @@ msgid "Received a message with unrecognized contents from %s"
 msgstr "Se recibió un mensaje con contenido no reconocido de %s"
 
 #: ../src/core/sipe.c:5606 ../src/core/sipe.c:7990
-#, fuzzy
 msgid "Authentication failed"
-msgstr "La autenticación de transferencia de archivo fallo"
+msgstr "Autenticación fallo"
 
 #: ../src/core/sipe.c:5615 ../src/core/sipe.c:7878
 msgid "Incompatible authentication scheme chosen"
