@@ -38,10 +38,11 @@
 struct _sipe_xml {
 	gchar *name;
 	sipe_xml *parent;
-	sipe_xml *next;
-	sipe_xml *child;
-	gchar **attributes;
+	sipe_xml *sibling;
+	sipe_xml *first;
+	sipe_xml *last;
 	GString *data;
+	gchar **attributes;
 };
 
 struct _parser_data {
@@ -173,16 +174,36 @@ sipe_xml *sipe_xml_parse(const gchar *string, gsize length)
 	return result;
 }
 
-void sipe_xml_free(sipe_xml *xml)
+void sipe_xml_free(sipe_xml *node)
 {
-	/* @TODO: implement me :-) */
-	(void) xml;
+	sipe_xml *child;
+
+	if (!node) return;
+
+	/* we don't support partial tree deletion */
+	if (node->parent != NULL) {
+		SIPE_DEBUG_ERROR("sipe_xml_free: partial delete attempt! Expect crash or memory leaks...%s", "");
+	}
+
+	/* free children */
+	child = node->first;
+	while (child) {
+		sipe_xml *tmp = child->sibling;
+		child->parent = NULL; /* detach from tree, see above */
+		sipe_xml_free(child);
+		child = tmp;
+	}
+
+	/* free node */
+	g_free(node->name);
+	g_string_free(node->data, TRUE);
+	g_free(node);
 }
 
-gchar *sipe_xml_to_string(const sipe_xml *xml)
+gchar *sipe_xml_to_string(const sipe_xml *node)
 {
 	/* @TODO: implement me :-) */
-	(void) xml;
+	(void) node;
 	return NULL;
 }
 
@@ -197,7 +218,7 @@ sipe_xml *sipe_xml_get_child(const sipe_xml *parent, const gchar *name)
 	/* 1: trailing path (optional) */
 	names = g_strsplit(name, "/", 2);
 
-	for (child = parent->child; child; child = child->next) {
+	for (child = parent->first; child; child = child->sibling) {
 		if (sipe_strequal(names[0], child->name))
 			break;
 	}
@@ -233,7 +254,7 @@ sipe_xml *sipe_xml_get_next_twin(const sipe_xml *node)
 
 	if (!node) return NULL;
 
-	for (sibling = node->next; sibling; sibling = sibling->next) {
+	for (sibling = node->sibling; sibling; sibling = sibling->sibling) {
 		if (sipe_strequal(node->name, sibling->name))
 			return sibling;
 	}		
