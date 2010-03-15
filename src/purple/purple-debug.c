@@ -45,6 +45,9 @@ void sipe_backend_debug(sipe_debug_level level,
 		case SIPE_DEBUG_LEVEL_INFO:
 			purple_debug_info("sipe", "%s\n", msg);
 			break;
+		case SIPE_DEBUG_LEVEL_WARNING:
+			purple_debug_warning("sipe", "%s\n", msg);
+			break;
 		case SIPE_DEBUG_LEVEL_ERROR:
 			purple_debug_error("sipe", "%s\n", msg);
 			break;
