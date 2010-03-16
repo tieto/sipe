@@ -1,6 +1,8 @@
-version 1.9.1 "Hot fixes" (2010-03-XX)
+version 1.9.1 "Hot fixes" (2010-03-16)
 	- Fixed #2969327: Kerberos authentication always fails on *nix platforms (pier11)
 	- Fixed #2968287: Authentication failure in scenario when director server is Office Communications Server 2007 or above and home server is Live Communications Server 2005 (pier11)
+        - Send BYE when response to IM message is 408/480/481 (Stefan Becker)
+        - Re-enable offline status to be user settable (Stefan Becker)
 
 version 1.9.0 "File transfer & NTLMv2" (2010-03-10)
 ***** Important Security Update for *nix users *****

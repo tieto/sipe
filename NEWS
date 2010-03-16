@@ -1,35 +1,5 @@
-version 1.9.0 "File transfer & NTLMv2" (2010-03-10)
-***** Important Security Update for *nix users *****
-	- Contributed File transfer functionality. File encryption is supported. (Jakub Adam, Tomáš Hrabčík)
-	- NTLMv2 and NTLMv2 Session Security support (pier11)
-	- Implemented SIP Authentication Extensions protocol version 4 and 3 (pier11)
-	- Adoption for commercial UNIX - HP/UX, Irix, Solaris - big endian fixes and build improvements (Peter Fales, Stefan Becker)
-	- Packaged for Maemo platform (Nokia N900, etc.) at Maemo.org. Works with Pidgin from the same site. (Stefan Becker)
-	- Adoption of file transfer for Windows build (pier11)
-	- Official Debian package files in contrib (Anibal Avelar)
-	- another shot at presence update problems (Stefan Becker)
-	- fix crash caused by uninitialized security contexts (Stefan Becker)
-	- Code analysis with Coverity Prevent. (Stefan Becker)
-	- Updated translations: 'ru' (100%, pier11), 'de' (100%, Stefan Becker)
-	  'es' & 'pt_BR' (100%, Anibal Avelar)
-        - Fix for "SIP/2.0 481 Call leg unavailable" error (Anibal Avelar)
-	- Increased libpurple build requisite to >= 2.4.0
-
-
-Known issues of 1.9.0:
-
-#2968287: Authentication failure in scenario when version of authentication protocol of home Communications Server is 2 (Live Communications Server 2005) and version of authentication protocol in director server is above 2 (Office Communications Server 2007 and above).
-
-Applicability: user account resides on Communications Server 2005
-Workaround: explicitly define address of home server in Server[:Port] field on Advanced tab in account configuration.
-  Home server address can be observed in logs in SIP/2.0 301 error response in "Contact:" header.
-  Logs can be obtained by starting Pidgin in command line with -d flag.
-Resolved: in development branch - git commit 494c1e467b13de295a30bcd0981fa7311f218e9a
-----------------------
-
-#2969327: Kerberos authentication always fails in *nix platforms
-
-Sympthoms: Reported as "Failed to authenticate to server". Works with the same account configuration with other SIPE versions from 1.5.0 to 1.8.1 included.
-Applicability: *nix systems only. Windows platform as unaffected.
-Workaround: use newly introduced NTLMv2 if applicable, uncheck Kerberos in the account settings.
-Resolition: in development branch - git commit 5bc28e0d7a004f4c03d886fc21c2af5bf0aa7205
+version 1.9.1 "Hot fixes" (2010-03-16)
+	- Fixed #2969327: Kerberos authentication always fails on *nix platforms (pier11)
+	- Fixed #2968287: Authentication failure in scenario when director server is Office Communications Server 2007 or above and home server is Live Communications Server 2005 (pier11)
+        - Send BYE when response to IM message is 408/480/481 (Stefan Becker)
+        - Re-enable offline status to be user settable (Stefan Becker)
