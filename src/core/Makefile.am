@@ -65,6 +65,7 @@ endif
 check_PROGRAMS = sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipecore_la_CFLAGS)
-sipe_xml_tests_LDFLAGS = -L.libs -lsipecore $(LIBXML2_LIBS) $(GLIB_LIBS)
+sipe_xml_tests_LDADD = libsipecore.la
+sipe_xml_tests_LDFLAGS = $(LIBXML2_LIBS) $(GLIB_LIBS)
 
 TESTS = $(check_PROGRAMS)
