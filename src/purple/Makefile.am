@@ -5,6 +5,10 @@ pkg_LTLIBRARIES = libsipe.la
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
+EXTRA_DIST = \
+	core-depurple.h \
+	tests.c
+
 libsipe_la_SOURCES = \
 	purple-debug.c \
 	purple-plugin.c
