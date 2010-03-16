@@ -1,3 +1,14 @@
+pidgin-sipe (1.9.1-1) unstable; urgency=low
+  * New upstream version (emergency release)
+      - Fixed #2969327: Kerberos authentication always fails on *nix platforms
+      - Fixed #2968287: Authentication failure in scenario when director server
+        is Office Communications Server 2007 or above and home server is 
+        Live Communications Server 2005
+      - Send BYE when response to IM message is 408/480/481
+      - Re-enable offline status to be user settable
+
+ -- pier11 <pier11@operamail.com>  Tue, 16 Mar 2010 17:41:00 -0000
+
 pidgin-sipe (1.9.0-2) unstable; urgency=low
 
   * New upstream version
