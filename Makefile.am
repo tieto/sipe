@@ -31,6 +31,3 @@ MAINTAINERCLEANFILES = \
 	intltool-merge.in   \
 	intltool-update.in  \
 	mkinstalldirs
-
-tests:
-	$(MAKE) -C src/purple tests

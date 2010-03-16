@@ -29,6 +29,7 @@ fi
 
 dnl set programming language
 AC_LANG(C)
+AM_PROG_CC_C_O
 AC_HEADER_STDC
 
 dnl setup shared library generation

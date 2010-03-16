@@ -772,23 +772,13 @@ Message (length 352):
 	assert_equal(expectedUUID, (guchar *) calcUUID, strlen(expectedUUID), FALSE);
 	g_free(calcUUID);
 
-	guchar addr[6];
-	gchar nmac[6];
-
-	int i,j;
-	for (i = 0,j=0; i < 6; i++,j+=2) {
-		g_sprintf(&nmac[j], "%02X", addr[i]);
-	}
-
-	printf("Mac: %s\n", g_strdup(nmac));
-
 	/* end tests from MS-SIPRE */
 
 	printf ("\nFinished With Tests; %d successs %d failures\n", successes, failures);
 
 	sip_sec_destroy__ntlm();
 
-	return(0);
+	return(failures);
 }
 
 /*

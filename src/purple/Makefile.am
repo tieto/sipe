@@ -6,8 +6,7 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 EXTRA_DIST = \
-	core-depurple.h \
-	tests.c
+	core-depurple.h
 
 libsipe_la_SOURCES = \
 	purple-debug.c \
@@ -36,11 +35,13 @@ libsipe_la_LIBADD = \
 	$(KRB5_LIBS) \
 	$(PURPLE_LIBS)
 
-tests: tests.c ../core/.libs/libsipecore.a
-	set -e; \
-	$(CC) $(libsipe_la_CFLAGS) $^ $(PURPLE_LIBS) -o $@; \
-	./tests; \
-	rm -f tests
+check_PROGRAMS = tests
+tests_SOURCES = tests.c
+tests_CFLAGS = $(libsipe_la_CFLAGS)
+tests_LDADD = ../core/libsipecore.la
+tests_LDFLAGS = $(PURPLE_LIBS)
+
+TESTS = $(check_PROGRAMS)
 
 # Remove any libsipe.so from the old incorrect installation location
 install-exec-local:
