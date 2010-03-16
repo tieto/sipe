@@ -23,7 +23,6 @@
 #include <stdarg.h>
 
 #include "glib.h"
-#include "glib/gprintf.h"
 #include "debug.h"
 
 #include "sipe-backend-debug.h"

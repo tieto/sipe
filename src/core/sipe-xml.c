@@ -28,7 +28,6 @@
 
 #include "libxml/parser.h"
 #include "glib.h"
-#include "glib/gprintf.h"
 
 #include "sipe-xml.h"
 #include "sipe.h"       /* TEMPORARY: to include sipe-utils.h without errors */
