@@ -50,19 +50,44 @@ struct _parser_data {
 	gboolean error;
 };
 
-static void callback_start_element(void *user_data, const xmlChar *text, const xmlChar **attrs)
+static void callback_start_element(void *user_data, const xmlChar *name, const xmlChar **attrs)
 {
-	/* @TODO: implement me :-) */
-	(void) user_data;
-	(void) text;
+	struct _parser_data *pd = user_data;
+	sipe_xml *node;
+
+	if (!name || pd->error) return;
+
+	node = g_new0(sipe_xml, 1);
+	node->name = g_strdup((gchar *)name);
+
+	if (!pd->root) {
+		pd->root = node;
+	} else {
+		sipe_xml *current = pd->current;
+
+		node->parent = current;
+		if (current->last) {
+			current->last->sibling = node;
+		} else {
+			current->first = node;
+		}
+		current->last = node;
+	}
+
+	/* @TODO: attributes handling */
 	(void) attrs;
+
+	pd->current = node;
 }
 
 static void callback_end_element(void *user_data, const xmlChar *name)
 {
-	/* @TODO: implement me :-) */
-	(void) user_data;
-	(void) name;
+	struct _parser_data *pd = user_data;
+
+	if (!name || !pd->current || pd->error) return;
+
+	if (pd->current->parent)
+		pd->current = pd->current->parent;
 }
 
 static void callback_characters(void *user_data, const xmlChar *text, int text_len)
@@ -164,7 +189,7 @@ sipe_xml *sipe_xml_parse(const gchar *string, gsize length)
 		if (pd->error) {
 			sipe_xml_free(pd->root);
 		} else {
-			result = pd->current;
+			result = pd->root;
 		}
 
 		g_free(pd);
@@ -195,7 +220,7 @@ void sipe_xml_free(sipe_xml *node)
 
 	/* free node */
 	g_free(node->name);
-	g_string_free(node->data, TRUE);
+	if (node->data) g_string_free(node->data, TRUE);
 	g_free(node);
 }
 
