@@ -99,6 +99,7 @@ This package provides the protocol plugin for libpurple clients.
 	--with-purple \
 	--without-telepathy
 make %{_smp_mflags}
+make %{_smp_mflags} check
 
 
 %install
@@ -124,6 +125,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Mar 17 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
+- add tests to build
+
 * Tue Mar 16 2010 J. D. User <jduser@noreply.com> 1.9.1
 - update to 1.9.1
 

@@ -10,7 +10,10 @@ ifneq ($(shell krb5-config --version 2>/dev/null),)
 DEB_CONFIGURE_EXTRA_FLAGS += --with-krb5=yes
 endif
 
-# Don't run unnecessary ldconfig on postinst and postrm.
+# run tests
+DEB_MAKE_CHECK_TARGET := check
+
+# don't run unnecessary ldconfig on postinst and postrm.
 DEB_DH_MAKESHLIBS_ARGS_pidgin-sipe=-n
 
 clean::
