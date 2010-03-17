@@ -67,5 +67,10 @@ sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipecore_la_CFLAGS)
 sipe_xml_tests_LDADD = libsipecore.la
 sipe_xml_tests_LDFLAGS = $(LIBXML2_LIBS) $(GLIB_LIBS)
+if SIPE_INCLUDE_PURPLE
+sipe_xml_tests_LDFLAGS += $(PURPLE_LIBS)
+endif
 
+# disables "caching" of memory blocks in tests
+TESTS_ENVIRONMENT = G_SLICE="always-malloc"
 TESTS = $(check_PROGRAMS)

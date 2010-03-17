@@ -255,23 +255,6 @@ sipe_xml *sipe_xml_get_child(const sipe_xml *parent, const gchar *name)
 	return child;
 }
 
-sipe_xml *sipe_xml_get_descendant(const sipe_xml *parent, ...)
-{
-	va_list args;
-	sipe_xml *node = NULL;
-	const gchar *name;
-
-	va_start(args, parent);
-	while ((name = va_arg(args, const char *)) != NULL) {
-		node = sipe_xml_get_child(parent, name);
-		if (node == NULL) break;
-		parent = node;
-	}
-	va_end(args);
-
-	return node;
-}
-
 sipe_xml *sipe_xml_get_next_twin(const sipe_xml *node)
 {
 	sipe_xml *sibling;

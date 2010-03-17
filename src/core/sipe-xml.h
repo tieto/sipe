@@ -52,21 +52,11 @@ gchar *sipe_xml_to_string(const sipe_xml *xml);
  * Gets a child node named name.
  *
  * @param parent The parent node.
- * @param name   The childs name.
+ * @param name   relative XPATH of the child (a, a/b, a/b/c, etc.).
  *
  * @return The child or NULL.
  */
 sipe_xml *sipe_xml_get_child(const sipe_xml *parent, const gchar *name);
-
-/**
- * Find a XML node from the parent with the specified path
- *
- * @param parent The parent node.
- * @param ...    Names of the descendant nodes
- *
- * @return descendant XML node or NULL.
- */
-sipe_xml *sipe_xml_get_descendant(const sipe_xml *parent, ...);
 
 /**
  * Gets the next node with the same name as node.
