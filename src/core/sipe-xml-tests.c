@@ -252,7 +252,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	sipe_xml_free(xml);
 
 	if (allocated) {
-		printf("MEMORY LEAK: %d still allocated\n", allocated);
+		printf("MEMORY LEAK: %" G_GSIZE_FORMAT " still allocated\n", allocated);
 		failed++;
 	} else {
 		printf("MEMORY LEAK CHECK OK\n");
