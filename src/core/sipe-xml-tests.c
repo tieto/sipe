@@ -161,8 +161,8 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 
 #if 0
 	/*
-	 * No idea why the leak checks work on some platforms but fail on
-	 * others :-( Disable for now...
+	 * No idea why the memory leak checks work on some platforms
+	 * but fail on others :-( Disable for now...
 	 */
 	g_mem_set_vtable(&memory_leak_check);
 #else
