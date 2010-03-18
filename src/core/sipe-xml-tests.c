@@ -69,9 +69,9 @@ static sipe_xml *assert_parse(const gchar *s, gboolean ok)
 	return(xml);
 }
 
-static sipe_xml *assert_child(const sipe_xml *xml, const gchar *s, gboolean ok)
+static const sipe_xml *assert_child(const sipe_xml *xml, const gchar *s, gboolean ok)
 {
-	sipe_xml *child = sipe_xml_get_child(xml, s);
+	const sipe_xml *child = sipe_xml_child(xml, s);
 
 	if ((ok && child) || (!ok && !child)) {
 		succeeded++;
@@ -85,7 +85,7 @@ static sipe_xml *assert_child(const sipe_xml *xml, const gchar *s, gboolean ok)
 
 static void assert_data(const sipe_xml *xml, const gchar *s)
 {
-	gchar *data = sipe_xml_get_data(xml);
+	gchar *data = sipe_xml_data(xml);
 
 	if (sipe_strequal(s, data)) {
 		succeeded++;
@@ -100,7 +100,7 @@ static void assert_data(const sipe_xml *xml, const gchar *s)
 static void assert_attribute(const sipe_xml *xml,
 			     const gchar *key, const gchar *value)
 {
-	const gchar *attr = sipe_xml_get_attribute(xml, key);
+	const gchar *attr = sipe_xml_attribute(xml, key);
 
 	if (sipe_strequal(value, attr)) {
 		succeeded++;
@@ -115,7 +115,7 @@ static void assert_attribute(const sipe_xml *xml,
 static void assert_int_attribute(const sipe_xml *xml,
 				 const gchar *key, gint value, gint fallback)
 {
-	gint attr = sipe_xml_get_int_attribute(xml, key, fallback);
+	gint attr = sipe_xml_int_attribute(xml, key, fallback);
 
 	if ((attr == value) || (attr == fallback)) {
 		succeeded++;
@@ -172,7 +172,8 @@ static GMemVTable memory_leak_check = {
 
 int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 {
-	sipe_xml *xml, *child1, *child2;
+	sipe_xml *xml;
+	const sipe_xml *child1, *child2;
 
 #if 0
 	/*

@@ -28,25 +28,25 @@ typedef struct _sipe_xml sipe_xml;
  * @param string String with the XML to be parsed.
  * @param length Length of the string.
  *
- * @return Parsed XML information. Must be sipe_xml_free()'d.
+ * @return Parsed XML information. Must be @c sipe_xml_free()'d.
  */
 sipe_xml *sipe_xml_parse(const gchar *string, gsize length);
 
 /**
- * Free XML information
+ * Free XML information.
  *
  * @param string XML information to be freed.
  */
 void sipe_xml_free(sipe_xml *xml);
 
 /**
- * Convert XML information to string
+ * Convert XML information to string.
  *
- * @param xml XML information
+ * @param xml XML information.
  *
- * @return XML converted to a string. Must be g_free()'d
+ * @return XML converted to a string. Must be @c g_free()'d.
  */
-gchar *sipe_xml_to_string(const sipe_xml *xml);
+gchar *sipe_xml_stringify(const sipe_xml *xml);
 
 /**
  * Gets a child node named name.
@@ -54,18 +54,18 @@ gchar *sipe_xml_to_string(const sipe_xml *xml);
  * @param parent The parent node.
  * @param name   relative XPATH of the child (a, a/b, a/b/c, etc.).
  *
- * @return The child or NULL.
+ * @return The child or @c NULL. Never try to @c sipe_xml_free() it!
  */
-sipe_xml *sipe_xml_get_child(const sipe_xml *parent, const gchar *name);
+const sipe_xml *sipe_xml_child(const sipe_xml *parent, const gchar *name);
 
 /**
  * Gets the next node with the same name as node.
  *
  * @param node The node of a twin to find.
  *
- * @return The twin of node or NULL.
+ * @return The twin of node or @c NULL.
  */
-sipe_xml *sipe_xml_get_next_twin(const sipe_xml *node);
+const sipe_xml *sipe_xml_twin(const sipe_xml *node);
 
 /**
  * Gets an attribute from the current XML node.
@@ -73,27 +73,27 @@ sipe_xml *sipe_xml_get_next_twin(const sipe_xml *node);
  * @param node The node to get an attribute from.
  * @param attr The attribute to get.
  *
- * @return The value of the attribute or NULL.
+ * @return The value of the attribute or @c NULL.
  */
-const gchar *sipe_xml_get_attribute(const sipe_xml *node, const gchar *attr);
+const gchar *sipe_xml_attribute(const sipe_xml *node, const gchar *attr);
 
 /**
  * Gets an attribute from the current XML node and convert it to an integer.
  *
  * @param node     The node to get an attribute from.
  * @param attr     The attribute to get.
- * @param fallback Default value if the attribute doesn't exist
+ * @param fallback Default value if the attribute doesn't exist.
  *
- * @return Attribute value converted to an integer or the fallback value
+ * @return Attribute value converted to an integer or the fallback value.
  */
-gint sipe_xml_get_int_attribute(const sipe_xml *node, const gchar *attr,
-				gint fallback);
+gint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
+			    gint fallback);
 
 /**
  * Gets escaped data from the curretn XML node.
  *
  * @param node The node to get data from.
  *
- * @return The data from the node or NULL. Must be g_free()'d.
+ * @return The data from the node or @c NULL. Must be @c g_free()'d.
  */
-gchar *sipe_xml_get_data(const sipe_xml *node);
+gchar *sipe_xml_data(const sipe_xml *node);

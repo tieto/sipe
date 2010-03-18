@@ -235,17 +235,17 @@ void sipe_xml_free(sipe_xml *node)
 	g_free(node);
 }
 
-gchar *sipe_xml_to_string(const sipe_xml *node)
+gchar *sipe_xml_stringify(const sipe_xml *node)
 {
 	/* @TODO: implement me :-) */
 	(void) node;
 	return NULL;
 }
 
-sipe_xml *sipe_xml_get_child(const sipe_xml *parent, const gchar *name)
+const sipe_xml *sipe_xml_child(const sipe_xml *parent, const gchar *name)
 {
 	gchar **names;
-	sipe_xml *child = NULL;
+	const sipe_xml *child = NULL;
 
 	if (!parent || !name) return NULL;
 
@@ -260,13 +260,13 @@ sipe_xml *sipe_xml_get_child(const sipe_xml *parent, const gchar *name)
 
 	/* recurse into path */
 	if (child && names[1])
-		child = sipe_xml_get_child(child, names[1]);
+		child = sipe_xml_child(child, names[1]);
 
 	g_strfreev(names);
 	return child;
 }
 
-sipe_xml *sipe_xml_get_next_twin(const sipe_xml *node)
+const sipe_xml *sipe_xml_twin(const sipe_xml *node)
 {
 	sipe_xml *sibling;
 
@@ -279,20 +279,20 @@ sipe_xml *sipe_xml_get_next_twin(const sipe_xml *node)
 	return NULL;
 }
 
-const gchar *sipe_xml_get_attribute(const sipe_xml *node, const gchar *attr)
+const gchar *sipe_xml_attribute(const sipe_xml *node, const gchar *attr)
 {
 	if (!node || !attr || !node->attributes) return NULL;
 	return(g_hash_table_lookup(node->attributes, attr));
 }
 
-gint sipe_xml_get_int_attribute(const sipe_xml *node, const gchar *attr,
+gint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
 				gint fallback)
 {
-	const gchar *value = sipe_xml_get_attribute(node, attr);
+	const gchar *value = sipe_xml_attribute(node, attr);
 	return(value ? atoi(value) : fallback);
 }
 
-gchar *sipe_xml_get_data(const sipe_xml *node)
+gchar *sipe_xml_data(const sipe_xml *node)
 {
 	if (!node || !node->data || !node->data->str) return NULL;
 	return g_strdup(node->data->str);
