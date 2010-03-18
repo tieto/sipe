@@ -1671,7 +1671,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sip);
-	if (sip->initial_state_published && sipe_strequal(sbuddy->name, self_uri)) {
+	if (sip->initial_state_published && !g_ascii_strcasecmp(sbuddy->name, self_uri)) {
 		if (sipe_strequal(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
@@ -4515,7 +4515,7 @@ sipe_invite(struct sipe_account_data *sip,
 		"%s"
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
-		sipe_strequal(session->roster_manager, self) ? roster_manager : "",
+		!g_ascii_strcasecmp(session->roster_manager, self) ? roster_manager : "",
 		referred_by_str,
 		is_triggered ? "TriggeredInvite: TRUE\r\n" : "",
 		is_triggered || session->is_multiparty ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
@@ -4870,7 +4870,7 @@ static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg 
 	session = sipe_session_find_chat_by_callid(sip, callid);
 	dialog = sipe_dialog_find(session, from);
 
-	if (!session || !dialog || !session->roster_manager || !sipe_strequal(session->roster_manager, self)) {
+	if (!session || !dialog || !session->roster_manager || g_ascii_strcasecmp(session->roster_manager, self)) {
 		send_sip_response(sip->gc, msg, 500, "Server Internal Error", NULL);
 	} else {
 		send_sip_response(sip->gc, msg, 202, "Accepted", NULL);
@@ -6584,7 +6584,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->last_non_cal_activity);
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
 
-		if (sipe_strequal(sbuddy->name, self_uri)) {
+		if (!g_ascii_strcasecmp(sbuddy->name, self_uri)) {
 			if (!sipe_strequal(sbuddy->note, sip->note)) /* not same */
 			{
 				sip->is_oof_note = sbuddy->is_oof_note;
@@ -6605,7 +6605,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
 	sipe_got_user_status(sip, uri, status_id);
 
-	if (!sip->ocs2007 && sipe_strequal(self_uri, uri)) {
+	if (!sip->ocs2007 && !g_ascii_strcasecmp(self_uri, uri)) {
 		sipe_user_info_has_updated(sip, xn_userinfo);
 	}
 
@@ -9379,7 +9379,7 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 	{
 		gchar *self = sip_uri_self(sip);
 		if (session->roster_manager) {
-			if (sipe_strequal(session->roster_manager, self)) {
+			if (!g_ascii_strcasecmp(session->roster_manager, self)) {
 				sipe_invite(sip, session, who, NULL, NULL, NULL, FALSE);
 			} else {
 				sipe_refer(sip, session, who);
