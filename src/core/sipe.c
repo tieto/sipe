@@ -5870,118 +5870,122 @@ sipe_get_availability_by_status(const char* sipe_status_id, char** activity_toke
 static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
 	const char *uri;
-	xmlnode *xn_categories;
-	xmlnode *xn_category;
-	xmlnode *xn_node;
+	sipe_xml *xn_categories;
+	const sipe_xml *xn_category;
 	const char *status = NULL;
 	gboolean do_update_status = FALSE;
 	gboolean has_note_cleaned = FALSE;
 	gboolean has_free_busy_cleaned = FALSE;
 
-	xn_categories = xmlnode_from_str(data, len);
-	uri = xmlnode_get_attrib(xn_categories, "uri"); /* with 'sip:' prefix */
+	xn_categories = sipe_xml_parse(data, len);
+	uri = sipe_xml_attribute(xn_categories, "uri"); /* with 'sip:' prefix */
 
-	for (xn_category = xmlnode_get_child(xn_categories, "category");
+	for (xn_category = sipe_xml_child(xn_categories, "category");
 		 xn_category ;
-		 xn_category = xmlnode_get_next_twin(xn_category) )
+		 xn_category = sipe_xml_twin(xn_category) )
 	{
+		const sipe_xml *xn_node;
 		const char *tmp;
-		const char *attrVar = xmlnode_get_attrib(xn_category, "name");
-		time_t publish_time = (tmp = xmlnode_get_attrib(xn_category, "publishTime")) ?
+		const char *attrVar = sipe_xml_attribute(xn_category, "name");
+		time_t publish_time = (tmp = sipe_xml_attribute(xn_category, "publishTime")) ?
 			sipe_utils_str_to_time(tmp) : 0;
 
 		/* contactCard */
 		if (sipe_strequal(attrVar, "contactCard"))
 		{
-			xmlnode *node;
-			/* identity - Display Name and email */
-			node = xmlnode_get_descendant(xn_category, "contactCard", "identity", NULL);
-			if (node) {
-				char* display_name = xmlnode_get_data(
-					xmlnode_get_descendant(node, "name", "displayName",  NULL));
-				char* email = xmlnode_get_data(
-					xmlnode_get_child(node, "email"));
+			const sipe_xml *card = sipe_xml_child(xn_category, "contactCard");
 
-				sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
-				sipe_update_user_info(sip, uri, EMAIL_PROP, email);
+			if (card) {
+				const sipe_xml *node;
+				/* identity - Display Name and email */
+				node = sipe_xml_child(card, "identity");
+				if (node) {
+					char* display_name = sipe_xml_data(
+						sipe_xml_child(node, "name/displayName"));
+					char* email = sipe_xml_data(
+						sipe_xml_child(node, "email"));
 
-				g_free(display_name);
-				g_free(email);
-			}
-			/* company */
-			node = xmlnode_get_descendant(xn_category, "contactCard", "company", NULL);
-			if (node) {
-				char* company = xmlnode_get_data(node);
-				sipe_update_user_info(sip, uri, COMPANY_PROP, company);
-				g_free(company);
-			}
-			/* department */
-			node = xmlnode_get_descendant(xn_category, "contactCard", "department", NULL);
-			if (node) {
-				char* department = xmlnode_get_data(node);
-				sipe_update_user_info(sip, uri, DEPARTMENT_PROP, department);
-				g_free(department);
-			}
-			/* title */
-			node = xmlnode_get_descendant(xn_category, "contactCard", "title", NULL);
-			if (node) {
-				char* title = xmlnode_get_data(node);
-				sipe_update_user_info(sip, uri, TITLE_PROP, title);
-				g_free(title);
-			}
-			/* office */
-			node = xmlnode_get_descendant(xn_category, "contactCard", "office", NULL);
-			if (node) {
-				char* office = xmlnode_get_data(node);
-				sipe_update_user_info(sip, uri, OFFICE_PROP, office);
-				g_free(office);
-			}
-			/* site (url) */
-			node = xmlnode_get_descendant(xn_category, "contactCard", "url", NULL);
-			if (node) {
-				char* site = xmlnode_get_data(node);
-				sipe_update_user_info(sip, uri, SITE_PROP, site);
-				g_free(site);
-			}
-			/* phone */
-			for (node = xmlnode_get_descendant(xn_category, "contactCard", "phone", NULL);
-			     node;
-			     node = xmlnode_get_next_twin(node))
-			{
-				const char *phone_type = xmlnode_get_attrib(node, "type");
-				char* phone = xmlnode_get_data(xmlnode_get_child(node, "uri"));
-				char* phone_display_string = xmlnode_get_data(xmlnode_get_child(node, "displayString"));
+					sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
+					sipe_update_user_info(sip, uri, EMAIL_PROP, email);
 
-				sipe_update_user_phone(sip, uri, phone_type, phone, phone_display_string);
+					g_free(display_name);
+					g_free(email);
+				}
+				/* company */
+				node = sipe_xml_child(card, "company");
+				if (node) {
+					char* company = sipe_xml_data(node);
+					sipe_update_user_info(sip, uri, COMPANY_PROP, company);
+					g_free(company);
+				}
+				/* department */
+				node = sipe_xml_child(card, "department");
+				if (node) {
+					char* department = sipe_xml_data(node);
+					sipe_update_user_info(sip, uri, DEPARTMENT_PROP, department);
+					g_free(department);
+				}
+				/* title */
+				node = sipe_xml_child(card, "title");
+				if (node) {
+					char* title = sipe_xml_data(node);
+					sipe_update_user_info(sip, uri, TITLE_PROP, title);
+					g_free(title);
+				}
+				/* office */
+				node = sipe_xml_child(card, "office");
+				if (node) {
+					char* office = sipe_xml_data(node);
+					sipe_update_user_info(sip, uri, OFFICE_PROP, office);
+					g_free(office);
+				}
+				/* site (url) */
+				node = sipe_xml_child(card, "url");
+				if (node) {
+					char* site = sipe_xml_data(node);
+					sipe_update_user_info(sip, uri, SITE_PROP, site);
+					g_free(site);
+				}
+				/* phone */
+				for (node = sipe_xml_child(card, "phone");
+				     node;
+				     node = sipe_xml_twin(node))
+				{
+					const char *phone_type = sipe_xml_attribute(node, "type");
+					char* phone = sipe_xml_data(sipe_xml_child(node, "uri"));
+					char* phone_display_string = sipe_xml_data(sipe_xml_child(node, "displayString"));
 
-				g_free(phone);
-				g_free(phone_display_string);
-			}
-			/* address */
-			for (node = xmlnode_get_descendant(xn_category, "contactCard", "address", NULL);
-			     node;
-			     node = xmlnode_get_next_twin(node))
-			{
-				if (sipe_strequal(xmlnode_get_attrib(node, "type"), "work")) {
-					char* street = xmlnode_get_data(xmlnode_get_child(node, "street"));
-					char* city = xmlnode_get_data(xmlnode_get_child(node, "city"));
-					char* state = xmlnode_get_data(xmlnode_get_child(node, "state"));
-					char* zipcode = xmlnode_get_data(xmlnode_get_child(node, "zipcode"));
-					char* country_code = xmlnode_get_data(xmlnode_get_child(node, "countryCode"));
+					sipe_update_user_phone(sip, uri, phone_type, phone, phone_display_string);
 
-					sipe_update_user_info(sip, uri, ADDRESS_STREET_PROP, street);
-					sipe_update_user_info(sip, uri, ADDRESS_CITY_PROP, city);
-					sipe_update_user_info(sip, uri, ADDRESS_STATE_PROP, state);
-					sipe_update_user_info(sip, uri, ADDRESS_ZIPCODE_PROP, zipcode);
-					sipe_update_user_info(sip, uri, ADDRESS_COUNTRYCODE_PROP, country_code);
+					g_free(phone);
+					g_free(phone_display_string);
+				}
+				/* address */
+				for (node = sipe_xml_child(card, "address");
+				     node;
+				     node = sipe_xml_twin(node))
+				{
+					if (sipe_strequal(sipe_xml_attribute(node, "type"), "work")) {
+						char* street = sipe_xml_data(sipe_xml_child(node, "street"));
+						char* city = sipe_xml_data(sipe_xml_child(node, "city"));
+						char* state = sipe_xml_data(sipe_xml_child(node, "state"));
+						char* zipcode = sipe_xml_data(sipe_xml_child(node, "zipcode"));
+						char* country_code = sipe_xml_data(sipe_xml_child(node, "countryCode"));
 
-					g_free(street);
-					g_free(city);
-					g_free(state);
-					g_free(zipcode);
-					g_free(country_code);
+						sipe_update_user_info(sip, uri, ADDRESS_STREET_PROP, street);
+						sipe_update_user_info(sip, uri, ADDRESS_CITY_PROP, city);
+						sipe_update_user_info(sip, uri, ADDRESS_STATE_PROP, state);
+						sipe_update_user_info(sip, uri, ADDRESS_ZIPCODE_PROP, zipcode);
+						sipe_update_user_info(sip, uri, ADDRESS_COUNTRYCODE_PROP, country_code);
 
-					break;
+						g_free(street);
+						g_free(city);
+						g_free(state);
+						g_free(zipcode);
+						g_free(country_code);
+
+						break;
+					}
 				}
 			}
 		}
@@ -6010,12 +6014,12 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					sbuddy->is_oof_note = FALSE;
 					sbuddy->note_since = publish_time;
 
-					xn_node = xmlnode_get_descendant(xn_category, "note", "body", NULL);
+					xn_node = sipe_xml_child(xn_category, "note/body");
 					if (xn_node) {
 						char *tmp;
-						sbuddy->note = g_markup_escape_text((tmp = xmlnode_get_data(xn_node)), -1);
+						sbuddy->note = g_markup_escape_text((tmp = sipe_xml_data(xn_node)), -1);
 						g_free(tmp);
-						sbuddy->is_oof_note = sipe_strequal(xmlnode_get_attrib(xn_node, "type"), "OOF");
+						sbuddy->is_oof_note = sipe_strequal(sipe_xml_attribute(xn_node, "type"), "OOF");
 						sbuddy->note_since = publish_time;
 
 						purple_debug_info("sipe", "process_incoming_notify_rlmi: uri(%s), note(%s)\n",
@@ -6031,21 +6035,21 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		{
 			char *tmp;
 			int availability;
-			xmlnode *xn_availability;
-			xmlnode *xn_activity;
-			xmlnode *xn_meeting_subject;
-			xmlnode *xn_meeting_location;
+			const sipe_xml *xn_availability;
+			const sipe_xml *xn_activity;
+			const sipe_xml *xn_meeting_subject;
+			const sipe_xml *xn_meeting_location;
 			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sip->buddies, uri) : NULL;
 
-			xn_node = xmlnode_get_child(xn_category, "state");
+			xn_node = sipe_xml_child(xn_category, "state");
 			if (!xn_node) continue;
-			xn_availability = xmlnode_get_child(xn_node, "availability");
+			xn_availability = sipe_xml_child(xn_node, "availability");
 			if (!xn_availability) continue;
-			xn_activity = xmlnode_get_child(xn_node, "activity");
-			xn_meeting_subject = xmlnode_get_child(xn_node, "meetingSubject");
-			xn_meeting_location = xmlnode_get_child(xn_node, "meetingLocation");
+			xn_activity = sipe_xml_child(xn_node, "activity");
+			xn_meeting_subject = sipe_xml_child(xn_node, "meetingSubject");
+			xn_meeting_location = sipe_xml_child(xn_node, "meetingLocation");
 
-			tmp = xmlnode_get_data(xn_availability);
+			tmp = sipe_xml_data(xn_availability);
 			availability = atoi(tmp);
 			g_free(tmp);
 
@@ -6057,8 +6061,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				g_free(sbuddy->activity);
 				sbuddy->activity = NULL;
 				if (xn_activity) {
-					const char *token = xmlnode_get_attrib(xn_activity, "token");
-					xmlnode *xn_custom = xmlnode_get_child(xn_activity, "custom");
+					const char *token = sipe_xml_attribute(xn_activity, "token");
+					const sipe_xml *xn_custom = sipe_xml_child(xn_activity, "custom");
 
 					/* from token */
 					if (!is_empty(token)) {
@@ -6066,7 +6070,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					}
 					/* from custom element */
 					if (xn_custom) {
-						char *custom = xmlnode_get_data(xn_custom);
+						char *custom = sipe_xml_data(xn_custom);
 
 						if (!is_empty(custom)) {
 							sbuddy->activity = custom;
@@ -6079,7 +6083,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				g_free(sbuddy->meeting_subject);
 				sbuddy->meeting_subject = NULL;
 				if (xn_meeting_subject) {
-					char *meeting_subject = xmlnode_get_data(xn_meeting_subject);
+					char *meeting_subject = sipe_xml_data(xn_meeting_subject);
 
 					if (!is_empty(meeting_subject)) {
 						sbuddy->meeting_subject = meeting_subject;
@@ -6091,7 +6095,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 				g_free(sbuddy->meeting_location);
 				sbuddy->meeting_location = NULL;
 				if (xn_meeting_location) {
-					char *meeting_location = xmlnode_get_data(xn_meeting_location);
+					char *meeting_location = sipe_xml_data(xn_meeting_location);
 
 					if (!is_empty(meeting_location)) {
 						sbuddy->meeting_location = meeting_location;
@@ -6118,8 +6122,8 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		else if(sipe_strequal(attrVar, "calendarData"))
 		{
 			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sip->buddies, uri) : NULL;
-			xmlnode *xn_free_busy = xmlnode_get_descendant(xn_category, "calendarData", "freeBusy", NULL);
-			xmlnode *xn_working_hours = xmlnode_get_descendant(xn_category, "calendarData", "WorkingHours", NULL);
+			const sipe_xml *xn_free_busy = sipe_xml_child(xn_category, "calendarData/freeBusy");
+			const sipe_xml *xn_working_hours = sipe_xml_child(xn_category, "calendarData/WorkingHours");
 
 			if (sbuddy && xn_free_busy) {
 				if (!has_free_busy_cleaned) {
@@ -6139,13 +6143,13 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 
 				if (publish_time >= sbuddy->cal_free_busy_published) {
 					g_free(sbuddy->cal_start_time);
-					sbuddy->cal_start_time = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
+					sbuddy->cal_start_time = g_strdup(sipe_xml_attribute(xn_free_busy, "startTime"));
 
-					sbuddy->cal_granularity = sipe_strcase_equal(xmlnode_get_attrib(xn_free_busy, "granularity"), "PT15M") ?
+					sbuddy->cal_granularity = sipe_strcase_equal(sipe_xml_attribute(xn_free_busy, "granularity"), "PT15M") ?
 						15 : 0;
 
 					g_free(sbuddy->cal_free_busy_base64);
-					sbuddy->cal_free_busy_base64 = xmlnode_get_data(xn_free_busy);
+					sbuddy->cal_free_busy_base64 = sipe_xml_data(xn_free_busy);
 
 					g_free(sbuddy->cal_free_busy);
 					sbuddy->cal_free_busy = NULL;
@@ -6174,7 +6178,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 		sipe_got_user_status(sip, uri, status);
 	}
 
-	xmlnode_free(xn_categories);
+	sipe_xml_free(xn_categories);
 }
 
 static void sipe_subscribe_poolfqdn_resource_uri(const char *host, GSList *server, struct sipe_account_data *sip)

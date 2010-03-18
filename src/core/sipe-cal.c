@@ -346,10 +346,10 @@ sipe_cal_get_std_dst_time(time_t now,
 }
 
 static void
-sipe_cal_parse_std_dst(xmlnode *xn_std_dst_time,
-		       struct sipe_cal_std_dst* std_dst)
+sipe_cal_parse_std_dst(const sipe_xml *xn_std_dst_time,
+		       struct sipe_cal_std_dst *std_dst)
 {
-	xmlnode *node;
+	const sipe_xml *node;
 	gchar *tmp;
 
 	if (!xn_std_dst_time) return;
@@ -364,42 +364,43 @@ sipe_cal_parse_std_dst(xmlnode *xn_std_dst_time,
     </StandardTime>
 */
 
-	if ((node = xmlnode_get_child(xn_std_dst_time, "Bias"))) {
-		std_dst->bias = atoi(tmp = xmlnode_get_data(node));
+	if ((node = sipe_xml_child(xn_std_dst_time, "Bias"))) {
+		std_dst->bias = atoi(tmp = sipe_xml_data(node));
 		g_free(tmp);
 	}
 
-	if ((node = xmlnode_get_child(xn_std_dst_time, "Time"))) {
-		std_dst->time = xmlnode_get_data(node);
+	if ((node = sipe_xml_child(xn_std_dst_time, "Time"))) {
+		std_dst->time = sipe_xml_data(node);
 	}
 
-	if ((node = xmlnode_get_child(xn_std_dst_time, "DayOrder"))) {
-		std_dst->day_order = atoi(tmp = xmlnode_get_data(node));
+	if ((node = sipe_xml_child(xn_std_dst_time, "DayOrder"))) {
+		std_dst->day_order = atoi(tmp = sipe_xml_data(node));
 		g_free(tmp);
 	}
 
-	if ((node = xmlnode_get_child(xn_std_dst_time, "Month"))) {
-		std_dst->month = atoi(tmp = xmlnode_get_data(node));
+	if ((node = sipe_xml_child(xn_std_dst_time, "Month"))) {
+		std_dst->month = atoi(tmp = sipe_xml_data(node));
 		g_free(tmp);
 	}
 
-	if ((node = xmlnode_get_child(xn_std_dst_time, "DayOfWeek"))) {
-		std_dst->day_of_week = xmlnode_get_data(node);
+	if ((node = sipe_xml_child(xn_std_dst_time, "DayOfWeek"))) {
+		std_dst->day_of_week = sipe_xml_data(node);
 	}
 
-	if ((node = xmlnode_get_child(xn_std_dst_time, "Year"))) {
-		std_dst->year = xmlnode_get_data(node);
+	if ((node = sipe_xml_child(xn_std_dst_time, "Year"))) {
+		std_dst->year = sipe_xml_data(node);
 	}
 }
 
 void
-sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
+sipe_cal_parse_working_hours(const sipe_xml *xn_working_hours,
 			     struct sipe_buddy *buddy)
 {
-	xmlnode *xn_bias;
-	xmlnode *xn_working_period;
-	xmlnode *xn_standard_time;
-	xmlnode *xn_daylight_time;
+	const sipe_xml *xn_bias;
+	const sipe_xml *xn_timezone;
+	const sipe_xml *xn_working_period;
+	const sipe_xml *xn_standard_time;
+	const sipe_xml *xn_daylight_time;
 	gchar *tmp;
 	time_t now = time(NULL);
 	struct sipe_cal_std_dst* std;
@@ -424,31 +425,32 @@ sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
 	sipe_cal_free_working_hours(buddy->cal_working_hours);
 	buddy->cal_working_hours = g_new0(struct sipe_cal_working_hours, 1);
 
-	xn_bias = xmlnode_get_descendant(xn_working_hours, "TimeZone", "Bias", NULL);
+	xn_timezone = sipe_xml_child(xn_working_hours, "TimeZone");
+	xn_bias = sipe_xml_child(xn_timezone, "Bias");
 	if (xn_bias) {
-		buddy->cal_working_hours->bias = atoi(tmp = xmlnode_get_data(xn_bias));
+		buddy->cal_working_hours->bias = atoi(tmp = sipe_xml_data(xn_bias));
 		g_free(tmp);
 	}
 
-	xn_standard_time = xmlnode_get_descendant(xn_working_hours, "TimeZone", "StandardTime", NULL);
-	xn_daylight_time = xmlnode_get_descendant(xn_working_hours, "TimeZone", "DaylightTime", NULL);
+	xn_standard_time = sipe_xml_child(xn_timezone, "StandardTime");
+	xn_daylight_time = sipe_xml_child(xn_timezone, "DaylightTime");
 
 	std = &((*buddy->cal_working_hours).std);
 	dst = &((*buddy->cal_working_hours).dst);
 	sipe_cal_parse_std_dst(xn_standard_time, std);
 	sipe_cal_parse_std_dst(xn_daylight_time, dst);
 
-	xn_working_period = xmlnode_get_descendant(xn_working_hours, "WorkingPeriodArray", "WorkingPeriod", NULL);
+	xn_working_period = sipe_xml_child(xn_working_hours, "WorkingPeriodArray/WorkingPeriod");
 	if (xn_working_period) {
 		buddy->cal_working_hours->days_of_week =
-			xmlnode_get_data(xmlnode_get_child(xn_working_period, "DayOfWeek"));
+			sipe_xml_data(sipe_xml_child(xn_working_period, "DayOfWeek"));
 
 		buddy->cal_working_hours->start_time =
-			atoi(tmp = xmlnode_get_data(xmlnode_get_child(xn_working_period, "StartTimeInMinutes")));
+			atoi(tmp = sipe_xml_data(sipe_xml_child(xn_working_period, "StartTimeInMinutes")));
 		g_free(tmp);
 
 		buddy->cal_working_hours->end_time =
-			atoi(tmp = xmlnode_get_data(xmlnode_get_child(xn_working_period, "EndTimeInMinutes")));
+			atoi(tmp = sipe_xml_data(sipe_xml_child(xn_working_period, "EndTimeInMinutes")));
 		g_free(tmp);
 	}
 

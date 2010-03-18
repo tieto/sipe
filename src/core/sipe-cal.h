@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "xmlnode.h"
+#include "sipe-xml.h"
 
 /* Calendar statuses */
 #define SIPE_CAL_FREE       0
@@ -87,7 +87,7 @@ struct sipe_cal_working_hours;
  * and creates/fills struct sipe_cal_working_hours in struct sipe_buddy
  */
 void
-sipe_cal_parse_working_hours(xmlnode *xn_working_hours,
+sipe_cal_parse_working_hours(const sipe_xml *xn_working_hours,
 			     struct sipe_buddy *buddy);
 
 /**
