@@ -261,6 +261,20 @@ fix_newlines(const char *st);
 gboolean sipe_strequal(const gchar *left, const gchar *right);
 
 /**
+ * Tests two strings for equality, ignoring the case
+ *
+ * Same as glib @c g_ascii_strcasecmp() but works correctly for @c NULL
+ * pointers too. Plus it doesn't complain loudly about them...
+ *
+ * @param left	A string
+ * @param right A string to compare with left
+ *
+ * @return @c TRUE if the strings are the same, else @c FALSE.
+ *
+ */
+gboolean sipe_strcase_equal(const gchar *left, const gchar *right);
+
+/**
  * Parses a timestamp in ISO8601 format and returns a time_t.
  * Assumes UTC if no timezone specified
  *

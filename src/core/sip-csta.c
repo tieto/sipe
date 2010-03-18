@@ -382,7 +382,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 		sip->csta->gateway_status = xmlnode_get_data(xmlnode_get_child(xml, "systemStatus"));
 		purple_debug_info("sipe", "process_invite_csta_gateway_response: gateway_status=%s\n",
 				  sip->csta->gateway_status ? sip->csta->gateway_status : "");
-		if (!g_ascii_strcasecmp(sip->csta->gateway_status, "normal")) {
+		if (sipe_strcase_equal(sip->csta->gateway_status, "normal")) {
 			if (!sip->csta->monitor_cross_ref_id) {
 				sip_csta_get_features(sip);
 				sip_csta_monitor_start(sip);

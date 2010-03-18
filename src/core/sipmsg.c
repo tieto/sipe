@@ -262,7 +262,7 @@ void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name) {
 	while(tmp) {
 		elem = tmp->data;
 		// OCS2005 can send the same header in either all caps or mixed case
-		if (g_ascii_strcasecmp(elem->name, name)==0) {
+		if (sipe_strcase_equal(elem->name, name)) {
 			msg->headers = g_slist_remove(msg->headers, elem);
 			g_free(elem->name);
 			g_free(elem->value);
@@ -366,8 +366,8 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 		elem = tmp->data;
 		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
 		if (elem && elem->name &&
-				(!g_ascii_strcasecmp(elem->name,"WWW-Authenticate")
-					|| !g_ascii_strcasecmp(elem->name,"Authentication-Info")) ) {
+		    (sipe_strcase_equal(elem->name,"WWW-Authenticate") ||
+		     sipe_strcase_equal(elem->name,"Authentication-Info")) ) {
 			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
 				//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "elem->value: %s\r\n", elem->value);
 				return elem->value;

@@ -92,9 +92,9 @@ sipe_dialog_find_3(struct sip_session *session,
 				dialog->ourtag &&
 				dialog->theirtag &&
 
-				!g_ascii_strcasecmp(dialog_in->callid, dialog->callid) &&
-				!g_ascii_strcasecmp(dialog_in->ourtag, dialog->ourtag) &&
-				!g_ascii_strcasecmp(dialog_in->theirtag, dialog->theirtag))
+				sipe_strcase_equal(dialog_in->callid, dialog->callid) &&
+				sipe_strcase_equal(dialog_in->ourtag, dialog->ourtag) &&
+				sipe_strcase_equal(dialog_in->theirtag, dialog->theirtag))
 			{
 				purple_debug_info("sipe", "sipe_dialog_find_3 who='%s'\n",
 							  dialog->with ? dialog->with : "");
@@ -110,7 +110,7 @@ struct sip_dialog *sipe_dialog_find(struct sip_session *session,
 {
 	if (session && who) {
 		SIPE_DIALOG_FOREACH {
-			if (dialog->with && !g_ascii_strcasecmp(who, dialog->with)) {
+			if (dialog->with && sipe_strcase_equal(who, dialog->with)) {
 				purple_debug_info("sipe", "sipe_dialog_find who='%s'\n", who);
 				return dialog;
 			}
@@ -170,7 +170,7 @@ void sipe_dialog_parse_routes(struct sip_dialog *dialog,
 
         while (hdr) {
                 struct sipnameval *elem = hdr->data;
-                if(!g_ascii_strcasecmp(elem->name, "Record-Route")) {
+                if (sipe_strcase_equal(elem->name, "Record-Route")) {
 			gchar **parts = g_strsplit(elem->value, ",", 0);
 			gchar **part = parts;
 
@@ -214,7 +214,7 @@ sipe_get_supported_header(const struct sipmsg *msg,
 	while(hdr)
 	{
 		elem = hdr->data;
-		if(!g_ascii_strcasecmp(elem->name, "Supported")
+		if (sipe_strcase_equal(elem->name, "Supported")
 			&& !g_slist_find_custom(dialog->supported, elem->value, (GCompareFunc)g_ascii_strcasecmp))
 		{
 			dialog->supported = g_slist_append(dialog->supported, g_strdup(elem->value));

@@ -236,7 +236,7 @@ sipe_is_bad_alias(const char *uri,
 
 	/* check if alias is just SIP URI but without 'sip:' prefix */
 	uri_alias = sip_uri_from_name(alias);
-	if (!g_ascii_strcasecmp(uri, uri_alias)) {
+	if (sipe_strcase_equal(uri, uri_alias)) {
 		result = TRUE;
 	}
 	g_free(uri_alias);
@@ -297,6 +297,13 @@ sipe_strequal(const gchar *left, const gchar *right)
 	return ((left == NULL && right == NULL) ||
 	        (left != NULL && right != NULL && strcmp(left, right) == 0));
 #endif
+}
+
+gboolean
+sipe_strcase_equal(const gchar *left, const gchar *right)
+{
+	return ((left == NULL && right == NULL) ||
+	        (left != NULL && right != NULL && g_ascii_strcasecmp(left, right) == 0));
 }
 
 time_t
@@ -430,7 +437,7 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
 	while(tmp) {
 		elem = tmp->data;
 		// OCS2005 can send the same header in either all caps or mixed case
-		if (g_ascii_strcasecmp(elem->name,name)==0) {
+		if (sipe_strcase_equal(elem->name, name)) {
 			if (i == which) {
 				return elem->value;
 			}

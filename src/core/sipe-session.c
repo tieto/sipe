@@ -75,7 +75,7 @@ sipe_session_find_chat_by_callid(struct sipe_account_data *sip,
 
 	SIPE_SESSION_FOREACH {
 		if (session->callid &&
-		    !g_ascii_strcasecmp(callid, session->callid)) {
+		    sipe_strcase_equal(callid, session->callid)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;
@@ -125,7 +125,7 @@ sipe_session_find_conference(struct sipe_account_data *sip,
 
 	SIPE_SESSION_FOREACH {
 		if (session->focus_uri &&
-		    !g_ascii_strcasecmp(focus_uri, session->focus_uri)) {
+		    sipe_strcase_equal(focus_uri, session->focus_uri)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;
@@ -140,7 +140,7 @@ sipe_session_find_im(struct sipe_account_data *sip, const gchar *who)
 	}
 
 	SIPE_SESSION_FOREACH {
-		if (session->with && !g_ascii_strcasecmp(who, session->with)) {
+		if (session->with && sipe_strcase_equal(who, session->with)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;

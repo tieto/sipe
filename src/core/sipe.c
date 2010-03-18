@@ -1671,7 +1671,7 @@ sipe_apply_calendar_status(struct sipe_account_data *sip,
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sip);
-	if (sip->initial_state_published && !g_ascii_strcasecmp(sbuddy->name, self_uri)) {
+	if (sip->initial_state_published && sipe_strcase_equal(sbuddy->name, self_uri)) {
 		if (sipe_strequal(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
 		}
@@ -1797,7 +1797,7 @@ sipe_get_subscription_key(const gchar *event,
 
 	if (is_empty(event)) return NULL;
 
-	if (event && !g_ascii_strcasecmp(event, "presence")) {
+	if (event && sipe_strcase_equal(event, "presence")) {
 		/* Subscription is identified by ACTION_NAME_PRESENCE key */
 		key = g_strdup_printf(ACTION_NAME_PRESENCE, with);
 
@@ -2563,7 +2563,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 						purple_debug_info("sipe", "Created new buddy %s with alias %s\n", buddy_name, uri);
 					}
 
-					if (!g_ascii_strcasecmp(uri, purple_buddy_get_alias(b))) {
+					if (sipe_strcase_equal(uri, purple_buddy_get_alias(b))) {
 						if (name != NULL && strlen(name) != 0) {
 							purple_blist_alias_buddy(b, name);
 
@@ -2717,14 +2717,14 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 		reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
 	} else { // for LCS2005
 		int error_id = 0;
-		if (event && !g_ascii_strcasecmp(event, "unregistered")) {
+		if (event && sipe_strcase_equal(event, "unregistered")) {
 			error_id = 4140; // [MS-SIPREGE]
 			//reason = g_strdup(_("User logged out")); // [MS-OCER]
 			reason = g_strdup(_("you are already signed in at another location"));
-		} else if (event && !g_ascii_strcasecmp(event, "rejected")) {
+		} else if (event && sipe_strcase_equal(event, "rejected")) {
 			error_id = 4141;
 			reason = g_strdup(_("user disabled")); // [MS-OCER]
-		} else if (event && !g_ascii_strcasecmp(event, "deactivated")) {
+		} else if (event && sipe_strcase_equal(event, "deactivated")) {
 			error_id = 4142;
 			reason = g_strdup(_("user moved")); // [MS-OCER]
 		}
@@ -3223,7 +3223,7 @@ sipe_update_user_info(struct sipe_account_data *sip,
 		else {
 			if (!is_empty(property_value)) {
 				prop_str = purple_blist_node_get_string(&p_buddy->node, property_name);
-				if (!prop_str || g_ascii_strcasecmp(prop_str, property_value)) {
+				if (!prop_str || !sipe_strcase_equal(prop_str, property_value)) {
 					purple_blist_node_set_string(&p_buddy->node, property_name, property_value);
 				}
 			}
@@ -3713,7 +3713,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
 
 	        acknowledged= xmlnode_get_attrib(node, "acknowledged");
-		if(!g_ascii_strcasecmp(acknowledged,"false")){
+		if(sipe_strcase_equal(acknowledged,"false")){
                         purple_debug_info("sipe", "sipe_process_roaming_self: user added you %s\n", user);
 			if (!purple_find_buddy(sip->account, uri)) {
 				purple_account_request_add(sip->account, uri, _("you"), display_name, NULL);
@@ -4515,7 +4515,7 @@ sipe_invite(struct sipe_account_data *sip,
 		"%s"
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
-		!g_ascii_strcasecmp(session->roster_manager, self) ? roster_manager : "",
+		sipe_strcase_equal(session->roster_manager, self) ? roster_manager : "",
 		referred_by_str,
 		is_triggered ? "TriggeredInvite: TRUE\r\n" : "",
 		is_triggered || session->is_multiparty ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
@@ -4870,7 +4870,7 @@ static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg 
 	session = sipe_session_find_chat_by_callid(sip, callid);
 	dialog = sipe_dialog_find(session, from);
 
-	if (!session || !dialog || !session->roster_manager || g_ascii_strcasecmp(session->roster_manager, self)) {
+	if (!session || !dialog || !session->roster_manager || !sipe_strcase_equal(session->roster_manager, self)) {
 		send_sip_response(sip->gc, msg, 500, "Server Internal Error", NULL);
 	} else {
 		send_sip_response(sip->gc, msg, 202, "Accepted", NULL);
@@ -5456,18 +5456,18 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
                                 while(hdr)
                                 {
 					elem = hdr->data;
-					if (!g_ascii_strcasecmp(elem->name, "Supported")) {
-						if (!g_ascii_strcasecmp(elem->value, "msrtc-event-categories")) {
+					if (sipe_strcase_equal(elem->name, "Supported")) {
+						if (sipe_strcase_equal(elem->value, "msrtc-event-categories")) {
 							/* We interpret this as OCS2007+ indicator */
 							sip->ocs2007 = TRUE;
 							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s (indicates OCS2007+)\n", elem->value);
 						}
-						if (!g_ascii_strcasecmp(elem->value, "adhoclist")) {
+						if (sipe_strcase_equal(elem->value, "adhoclist")) {
 							sip->batched_support = TRUE;
 							purple_debug(PURPLE_DEBUG_MISC, "sipe", "Supported: %s\n", elem->value);
 						}
 					}
-                                        if (!g_ascii_strcasecmp(elem->name, "Allow-Events")){
+                                        if (sipe_strcase_equal(elem->name, "Allow-Events")){
 						gchar **caps = g_strsplit(elem->value,",",0);
 						i = 0;
 						while (caps[i]) {
@@ -6141,7 +6141,7 @@ static void process_incoming_notify_rlmi(struct sipe_account_data *sip, const gc
 					g_free(sbuddy->cal_start_time);
 					sbuddy->cal_start_time = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
 
-					sbuddy->cal_granularity = !g_ascii_strcasecmp(xmlnode_get_attrib(xn_free_busy, "granularity"), "PT15M") ?
+					sbuddy->cal_granularity = sipe_strcase_equal(xmlnode_get_attrib(xn_free_busy, "granularity"), "PT15M") ?
 						15 : 0;
 
 					g_free(sbuddy->cal_free_busy_base64);
@@ -6570,7 +6570,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 			g_free(sbuddy->cal_start_time);
 			sbuddy->cal_start_time = g_strdup(cal_start_time);
 
-			sbuddy->cal_granularity = !g_ascii_strcasecmp(cal_granularity, "PT15M") ? 15 : 0;
+			sbuddy->cal_granularity = sipe_strcase_equal(cal_granularity, "PT15M") ? 15 : 0;
 
 			g_free(sbuddy->cal_free_busy_base64);
 			sbuddy->cal_free_busy_base64 = cal_free_busy_base64;
@@ -6584,7 +6584,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 		g_free(sbuddy->last_non_cal_activity);
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
 
-		if (!g_ascii_strcasecmp(sbuddy->name, self_uri)) {
+		if (sipe_strcase_equal(sbuddy->name, self_uri)) {
 			if (!sipe_strequal(sbuddy->note, sip->note)) /* not same */
 			{
 				sip->is_oof_note = sbuddy->is_oof_note;
@@ -6605,7 +6605,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	purple_debug_info("sipe", "process_incoming_notify_msrtc: status(%s)\n", status_id);
 	sipe_got_user_status(sip, uri, status_id);
 
-	if (!sip->ocs2007 && !g_ascii_strcasecmp(self_uri, uri)) {
+	if (!sip->ocs2007 && sipe_strcase_equal(self_uri, uri)) {
 		sipe_user_info_has_updated(sip, xn_userinfo);
 	}
 
@@ -6755,42 +6755,42 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 
 	if (event) {
 		/* for one off subscriptions (send with Expire: 0) */
-		if (!g_ascii_strcasecmp(event, "vnd-microsoft-provisioning-v2"))
+		if (sipe_strcase_equal(event, "vnd-microsoft-provisioning-v2"))
 		{
 			sipe_process_provisioning_v2(sip, msg);
 		}
-		else if (!g_ascii_strcasecmp(event, "vnd-microsoft-provisioning"))
+		else if (sipe_strcase_equal(event, "vnd-microsoft-provisioning"))
 		{
 			sipe_process_provisioning(sip, msg);
 		}
-		else if (!g_ascii_strcasecmp(event, "presence"))
+		else if (sipe_strcase_equal(event, "presence"))
 		{
 			sipe_process_presence(sip, msg);
 		}
-		else if (!g_ascii_strcasecmp(event, "registration-notify"))
+		else if (sipe_strcase_equal(event, "registration-notify"))
 		{
 			sipe_process_registration_notify(sip, msg);
 		}
 
 		if (!subscription_state || strstr(subscription_state, "active"))
 		{
-			if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-contacts"))
+			if (sipe_strcase_equal(event, "vnd-microsoft-roaming-contacts"))
 			{
 				sipe_process_roaming_contacts(sip, msg);
 			}
-			else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-self"))
+			else if (sipe_strcase_equal(event, "vnd-microsoft-roaming-self"))
 			{
 				sipe_process_roaming_self(sip, msg);
 			}
-			else if (!g_ascii_strcasecmp(event, "vnd-microsoft-roaming-ACL"))
+			else if (sipe_strcase_equal(event, "vnd-microsoft-roaming-ACL"))
 			{
 				sipe_process_roaming_acl(sip, msg);
 			}
-			else if (!g_ascii_strcasecmp(event, "presence.wpending"))
+			else if (sipe_strcase_equal(event, "presence.wpending"))
 			{
 				sipe_process_presence_wpending(sip, msg);
 			}
-			else if (!g_ascii_strcasecmp(event, "conference"))
+			else if (sipe_strcase_equal(event, "conference"))
 			{
 				sipe_process_conference(sip, msg);
 			}
@@ -6822,14 +6822,14 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			/* 2 min ahead of expiration */
 			timeout = (timeout - 120) > 120 ? (timeout - 120) : timeout;
 
-			if (!g_ascii_strcasecmp(event, "presence.wpending") &&
+			if (sipe_strcase_equal(event, "presence.wpending") &&
 			    g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
 			{
 				gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
 				sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_wpending, NULL, sip, NULL);
 				g_free(action_name);
 			}
-			else if (!g_ascii_strcasecmp(event, "presence") &&
+			else if (sipe_strcase_equal(event, "presence") &&
 				 g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
 			{
 				gchar *who = parse_from(sipmsg_find_header(msg, "To"));
@@ -9379,7 +9379,7 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 	{
 		gchar *self = sip_uri_self(sip);
 		if (session->roster_manager) {
-			if (!g_ascii_strcasecmp(session->roster_manager, self)) {
+			if (sipe_strcase_equal(session->roster_manager, self)) {
 				sipe_invite(sip, session, who, NULL, NULL, NULL, FALSE);
 			} else {
 				sipe_refer(sip, session, who);
@@ -9581,7 +9581,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	gchar *self = sip_uri_self(sip);
 
 	SIPE_SESSION_FOREACH {
-		if (g_ascii_strcasecmp(self, buddy->name) && session->chat_title && session->conv)
+		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->conv)
 		{
 			if (purple_conv_chat_find_user(PURPLE_CONV_CHAT(session->conv), buddy->name))
 			{
