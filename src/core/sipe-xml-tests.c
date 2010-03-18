@@ -112,6 +112,21 @@ static void assert_attribute(const sipe_xml *xml,
 	}
 }
 
+static void assert_int_attribute(const sipe_xml *xml,
+				 const gchar *key, gint value, gint fallback)
+{
+	gint attr = sipe_xml_get_int_attribute(xml, key, fallback);
+
+	if ((attr == value) || (attr == fallback)) {
+		succeeded++;
+	} else {
+		printf("[%s]\nXML int attr FAILED: '%s': %d expected: %d/%d\n",
+		       teststring, key ? key : "(nil)",
+		       attr, value, fallback);
+		failed++;
+	}
+}
+
 /* memory leak check */
 static gsize allocated = 0;
 
@@ -243,8 +258,10 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	xml = assert_parse("<test a=\"1\" b=\"abc\">a</test>", TRUE);
 	assert_data(xml, "a");
 	assert_attribute(xml, "a", "1");
+	assert_int_attribute(xml, "a", 1, 0);
 	assert_attribute(xml, "b", "abc");
 	assert_attribute(xml, "c", NULL);
+	assert_int_attribute(xml, "d", 100, 200);
 	sipe_xml_free(xml);
 
 	/* broken XML */
@@ -255,6 +272,8 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	xml = assert_parse("<></>", FALSE);
 	sipe_xml_free(xml);
 	xml = assert_parse("<test>", FALSE);
+	sipe_xml_free(xml);
+	xml = assert_parse("<a a=\"1\" a=\"2\"></a>", FALSE);
 	sipe_xml_free(xml);
 
 	if (allocated) {

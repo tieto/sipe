@@ -41,7 +41,7 @@ struct _sipe_xml {
 	sipe_xml *first;
 	sipe_xml *last;
 	GString *data;
-	gchar **attributes;
+	GHashTable *attributes;
 };
 
 struct _parser_data {
@@ -74,8 +74,18 @@ static void callback_start_element(void *user_data, const xmlChar *name, const x
 		current->last = node;
 	}
 
-	/* @TODO: attributes handling */
-	(void) attrs;
+	if (attrs) {
+		const xmlChar *key;
+
+		node->attributes = g_hash_table_new_full(g_str_hash,
+							 (GEqualFunc) sipe_strcase_equal,
+							 g_free, g_free);
+		while ((key = *attrs++) != NULL) {
+			g_hash_table_insert(node->attributes,
+					    g_strdup((gchar *) key),
+					    g_strdup((gchar *) *attrs++));
+		}
+	}
 
 	pd->current = node;
 }
@@ -220,7 +230,8 @@ void sipe_xml_free(sipe_xml *node)
 
 	/* free node */
 	g_free(node->name);
-	if (node->data) g_string_free(node->data, TRUE);
+	if (node->data)       g_string_free(node->data, TRUE);
+	if (node->attributes) g_hash_table_destroy(node->attributes);
 	g_free(node);
 }
 
@@ -270,19 +281,15 @@ sipe_xml *sipe_xml_get_next_twin(const sipe_xml *node)
 
 const gchar *sipe_xml_get_attribute(const sipe_xml *node, const gchar *attr)
 {
-	/* @TODO: implement me :-) */
-	(void) node;
-	(void) attr;
-	return NULL;
+	if (!node || !attr || !node->attributes) return NULL;
+	return(g_hash_table_lookup(node->attributes, attr));
 }
 
 gint sipe_xml_get_int_attribute(const sipe_xml *node, const gchar *attr,
 				gint fallback)
 {
-	/* @TODO: implement me :-) */
-	(void) node;
-	(void) attr;
-	return fallback;
+	const gchar *value = sipe_xml_get_attribute(node, attr);
+	return(value ? atoi(value) : fallback);
 }
 
 gchar *sipe_xml_get_data(const sipe_xml *node)
