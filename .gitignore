@@ -1,8 +1,10 @@
+*~
 *Makefile
 *Makefile.in
 *Makefile.in.in
 *.la
 *.lo
+*.log
 .deps
 .libs
 libtool
@@ -11,6 +13,7 @@ configure
 autom4te*
 *.swp
 aclocal.m4
+compile
 depcomp
 install-sh
 intltool-extract*
@@ -26,3 +29,7 @@ m4macros/Makefile.in
 po/POTFILES
 po/stamp-it
 *.gmo
+src/*/*.o
+src/core/*_tests
+src/purple/tests
+stamp-h1
