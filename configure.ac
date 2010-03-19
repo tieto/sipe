@@ -76,11 +76,33 @@ AC_ARG_ENABLE(quality-check,
 	,
 	enable_quality_check="yes")
 
-dnl declaration-after-statement (ISO C90 behaviour, as on Windows & GCC < 3)
+
 if test "$enable_quality_check" = yes; then
-	QUALITY_CFLAGS="${QUALITY_CFLAGS} -Werror -Wall -Wextra -Werror=declaration-after-statement"
+	QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
+	ac_save_CFLAGS=$CFLAGS
+
+	dnl GCC >= 3.4
+	AC_MSG_CHECKING([if $CC supports -Wextra])
+	CFLAGS="$QUALITY_CFLAGS -Wextra"
+	AC_COMPILE_IFELSE(
+		AC_LANG_PROGRAM(),
+		[AC_MSG_RESULT(yes)
+		 QUALITY_CFLAGS="$QUALITY_CFLAGS -Wextra"],
+		[AC_MSG_RESULT(no)]
+	)
+
+	dnl declaration-after-statement (ISO C90 behaviour, as on Windows & GCC < 3)
+	AC_MSG_CHECKING([if $CC supports -Werror=declaration-after-statement])
+	CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"
+	AC_COMPILE_IFELSE(
+		AC_LANG_PROGRAM(),
+		[AC_MSG_RESULT(yes)
+		 QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"],
+		[AC_MSG_RESULT(no)]
+	)
+	CFLAGS=$ac_save_CFLAGS
 else
-	QUALITY_CFLAGS="${QUALITY_CFLAGS}"
+	QUALITY_CFLAGS="$QUALITY_CFLAGS"
 fi
 AC_SUBST(QUALITY_CFLAGS)
 
@@ -136,7 +158,7 @@ PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 dnl assumption check: sizof(uuid_t) must be 16 (see uuid.c)
 AC_MSG_CHECKING([that sizeof(uuid_t) is 16])
 ac_save_CFLAGS=$CFLAGS
-CFLAGS="$GLIB_CFLAGS -Werror -Wall -Wextra"
+CFLAGS="$GLIB_CFLAGS $QUALITY_CFLAGS"
 dnl note the [[[ quoting: our code contains []!
 AC_RUN_IFELSE(
 	AC_LANG_PROGRAM(
@@ -191,7 +213,7 @@ if test "$purple" != "no"; then
 	dnl let user now if he has a 32- and 64-bit header conflict...
 	AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
 	ac_save_CFLAGS=$CFLAGS
-	CFLAGS="$PURPLE_CFLAGS -Werror -Wall -Wextra"
+	CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
 	AC_COMPILE_IFELSE(
 		AC_LANG_PROGRAM(
 			[
@@ -310,7 +332,7 @@ if test "$enable_debug" != "no"; then
 	echo "DEBUG_CFLAGS   : $DEBUG_CFLAGS"
 fi
 
-if test -n "${QUALITY_CFLAGS}"; then
+if test -n "$QUALITY_CFLAGS"; then
 	echo
 	echo "Compiling with compiler checks enabled"
 	echo "QUALITY_CFLAGS : $QUALITY_CFLAGS"
