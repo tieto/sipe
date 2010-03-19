@@ -45,15 +45,11 @@ be great to implement too.
 #include <string.h>
 
 #include "debug.h"
-#include "xmlnode.h"
 
 #include "sipe.h"
-/* for xmlnode_get_descendant */
-#include "sipe-utils.h"
-
-#include "sipe-ews.h"
 #include "sipe-cal.h"
-
+#include "sipe-ews.h"
+#include "sipe-utils.h"
 
 /**
  * Autodiscover request for Exchange Web Services
@@ -226,39 +222,39 @@ sipe_ews_process_avail_response(int return_code,
 	}
 
 	if (return_code == 200 && body) {
-		xmlnode *node;
-		xmlnode *resp;
+		const sipe_xml *node;
+		const sipe_xml *resp;
 		/** ref: [MS-OXWAVLS] */
-		xmlnode *xml = xmlnode_from_str(body, strlen(body));
+		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 		/*
 Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/ResponseMessage@ResponseClass="Success"
 Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/MergedFreeBusy
 Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/CalendarEventArray/CalendarEvent
 Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse/FreeBusyView/WorkingHours
 		 */
-		resp = xmlnode_get_descendant(xml, "Body", "GetUserAvailabilityResponse", "FreeBusyResponseArray", "FreeBusyResponse", NULL);
+		resp = sipe_xml_child(xml, "Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse");
 		if (!resp) return; /* rather soap:Fault */
-		if (!sipe_strequal(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
+		if (!sipe_strequal(sipe_xml_attribute(sipe_xml_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
 			return; /* Error response */
 		}
 
 		/* MergedFreeBusy */
 		g_free(ews->free_busy);
-		ews->free_busy = xmlnode_get_data(xmlnode_get_descendant(resp, "FreeBusyView", "MergedFreeBusy", NULL));
+		ews->free_busy = sipe_xml_data(sipe_xml_child(resp, "FreeBusyView/MergedFreeBusy"));
 
 		/* WorkingHours */
-		node = xmlnode_get_descendant(resp, "FreeBusyView", "WorkingHours", NULL);
+		node = sipe_xml_child(resp, "FreeBusyView/WorkingHours");
 		g_free(ews->working_hours_xml_str);
-		ews->working_hours_xml_str = xmlnode_to_str(node, NULL);
+		ews->working_hours_xml_str = sipe_xml_stringify(node);
 		purple_debug_info("sipe", "sipe_ews_process_avail_response: ews->working_hours_xml_str:\n%s\n",
 				  ews->working_hours_xml_str ? ews->working_hours_xml_str : "");
 
 		sipe_ews_cal_events_free(ews->cal_events);
 		ews->cal_events = NULL;
 		/* CalendarEvents */
-		for (node = xmlnode_get_descendant(resp, "FreeBusyView", "CalendarEventArray", "CalendarEvent", NULL);
+		for (node = sipe_xml_child(resp, "FreeBusyView/CalendarEventArray/CalendarEvent");
 		     node;
-		     node = xmlnode_get_next_twin(node))
+		     node = sipe_xml_twin(node))
 		{
 			char *tmp;
 /*
@@ -281,15 +277,15 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			struct sipe_cal_event *cal_event = g_new0(struct sipe_cal_event, 1);
 			ews->cal_events = g_slist_append(ews->cal_events, cal_event);
 
-			tmp = xmlnode_get_data(xmlnode_get_child(node, "StartTime"));
+			tmp = sipe_xml_data(sipe_xml_child(node, "StartTime"));
 			cal_event->start_time = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 
-			tmp = xmlnode_get_data(xmlnode_get_child(node, "EndTime"));
+			tmp = sipe_xml_data(sipe_xml_child(node, "EndTime"));
 			cal_event->end_time = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 
-			tmp = xmlnode_get_data(xmlnode_get_child(node, "BusyType"));
+			tmp = sipe_xml_data(sipe_xml_child(node, "BusyType"));
 			if (sipe_strequal("Free", tmp)) {
 				cal_event->cal_status = SIPE_CAL_FREE;
 			} else if (sipe_strequal("Tentative", tmp)) {
@@ -303,15 +299,15 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 			}
 			g_free(tmp);
 
-			cal_event->subject = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "Subject", NULL));
-			cal_event->location = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "Location", NULL));
+			cal_event->subject = sipe_xml_data(sipe_xml_child(node, "CalendarEventDetails/Subject"));
+			cal_event->location = sipe_xml_data(sipe_xml_child(node, "CalendarEventDetails/Location"));
 
-			tmp = xmlnode_get_data(xmlnode_get_descendant(node, "CalendarEventDetails", "IsMeeting", NULL));
+			tmp = sipe_xml_data(sipe_xml_child(node, "CalendarEventDetails/IsMeeting"));
 			cal_event->is_meeting = tmp ? sipe_strequal(tmp, "true") : TRUE;
 			g_free(tmp);
 		}
 
-		xmlnode_free(xml);
+		sipe_xml_free(xml);
 
 		ews->state = SIPE_EWS_STATE_AVAILABILITY_SUCCESS;
 		sipe_ews_run_state_machine(ews);
@@ -336,30 +332,30 @@ sipe_ews_process_oof_response(int return_code,
 
 	if (return_code == 200 && body) {
 		char *old_note;
-		xmlnode *resp;
-		xmlnode *xn_duration;
+		const sipe_xml *resp;
+		const sipe_xml *xn_duration;
 		/** ref: [MS-OXWOOF] */
-		xmlnode *xml = xmlnode_from_str(body, strlen(body));
+		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 		/* Envelope/Body/GetUserOofSettingsResponse/ResponseMessage@ResponseClass="Success"
 		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/OofState=Enabled
 		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/Duration/StartTime
 		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/Duration/EndTime
 		 * Envelope/Body/GetUserOofSettingsResponse/OofSettings/InternalReply/Message
 		 */
-		resp = xmlnode_get_descendant(xml, "Body", "GetUserOofSettingsResponse", NULL);
+		resp = sipe_xml_child(xml, "Body/GetUserOofSettingsResponse");
 		if (!resp) return; /* rather soap:Fault */
-		if (!sipe_strequal(xmlnode_get_attrib(xmlnode_get_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
+		if (!sipe_strequal(sipe_xml_attribute(sipe_xml_child(resp, "ResponseMessage"), "ResponseClass"), "Success")) {
 			return; /* Error response */
 		}
 
 		g_free(ews->oof_state);
-		ews->oof_state = xmlnode_get_data(xmlnode_get_descendant(resp, "OofSettings", "OofState", NULL));
+		ews->oof_state = sipe_xml_data(sipe_xml_child(resp, "OofSettings/OofState"));
 
 		old_note = ews->oof_note;
 		ews->oof_note = NULL;
 		if (!sipe_strequal(ews->oof_state, "Disabled")) {
-			char *tmp = xmlnode_get_data(
-				xmlnode_get_descendant(resp, "OofSettings", "InternalReply", "Message", NULL));
+			char *tmp = sipe_xml_data(
+				sipe_xml_child(resp, "OofSettings/InternalReply/Message"));
 			char *html;
 
 			/* UTF-8 encoded BOM (0xEF 0xBB 0xBF) as a signature to mark the beginning of a UTF-8 file */
@@ -376,13 +372,13 @@ sipe_ews_process_oof_response(int return_code,
 		}
 
 		if (sipe_strequal(ews->oof_state, "Scheduled")
-		    && (xn_duration = xmlnode_get_descendant(resp, "OofSettings", "Duration", NULL)))
+		    && (xn_duration = sipe_xml_child(resp, "OofSettings/Duration")))
 		{
-			char *tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "StartTime"));
+			char *tmp = sipe_xml_data(sipe_xml_child(xn_duration, "StartTime"));
 			ews->oof_start = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 
-			tmp = xmlnode_get_data(xmlnode_get_child(xn_duration, "EndTime"));
+			tmp = sipe_xml_data(sipe_xml_child(xn_duration, "EndTime"));
 			ews->oof_end = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 		}
@@ -393,7 +389,7 @@ sipe_ews_process_oof_response(int return_code,
 		}
 		g_free(old_note);
 
-		xmlnode_free(xml);
+		sipe_xml_free(xml);
 
 		ews->state = SIPE_EWS_STATE_OOF_SUCCESS;
 		sipe_ews_run_state_machine(ews);
@@ -417,24 +413,24 @@ sipe_ews_process_autodiscover(int return_code,
 	ews->http_conn = NULL;
 
 	if (return_code == 200 && body) {
-		xmlnode *node;
+		const sipe_xml *node;
 		/** ref: [MS-OXDSCLI] */
-		xmlnode *xml = xmlnode_from_str(body, strlen(body));
+		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 
 		/* Autodiscover/Response/User/LegacyDN (trim()) */
-		ews->legacy_dn = xmlnode_get_data(xmlnode_get_descendant(xml, "Response", "User", "LegacyDN", NULL));
+		ews->legacy_dn = sipe_xml_data(sipe_xml_child(xml, "Response/User/LegacyDN"));
 		ews->legacy_dn = ews->legacy_dn ? g_strstrip(ews->legacy_dn) : NULL;
 
 		/* Protocols */
-		for (node = xmlnode_get_descendant(xml, "Response", "Account", "Protocol", NULL);
+		for (node = sipe_xml_child(xml, "Response/Account/Protocol");
 		     node;
-		     node = xmlnode_get_next_twin(node))
+		     node = sipe_xml_twin(node))
 		{
-			char *type = xmlnode_get_data(xmlnode_get_child(node, "Type"));
+			char *type = sipe_xml_data(sipe_xml_child(node, "Type"));
 			if (sipe_strequal("EXCH", type)) {
-				ews->as_url  = xmlnode_get_data(xmlnode_get_child(node, "ASUrl"));
-				ews->oof_url = xmlnode_get_data(xmlnode_get_child(node, "OOFUrl"));
-				ews->oab_url = xmlnode_get_data(xmlnode_get_child(node, "OABUrl"));
+				ews->as_url  = sipe_xml_data(sipe_xml_child(node, "ASUrl"));
+				ews->oof_url = sipe_xml_data(sipe_xml_child(node, "OOFUrl"));
+				ews->oab_url = sipe_xml_data(sipe_xml_child(node, "OABUrl"));
 
 				purple_debug_info("sipe", "sipe_ews_process_autodiscover:as_url %s\n",
 					ews->as_url ? ews->as_url : "");
@@ -451,7 +447,7 @@ sipe_ews_process_autodiscover(int return_code,
 			}
 		}
 
-		xmlnode_free(xml);
+		sipe_xml_free(xml);
 
 		ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		sipe_ews_run_state_machine(ews);

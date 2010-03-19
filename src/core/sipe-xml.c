@@ -235,11 +235,43 @@ void sipe_xml_free(sipe_xml *node)
 	g_free(node);
 }
 
+static void sipe_xml_stringify_attribute(gpointer key, gpointer value,
+					 gpointer user_data)
+{
+	g_string_append_printf(user_data, " %s=\"%s\"",
+			       (const gchar *) key, (const gchar *) value);
+}
+
+static void sipe_xml_stringify_node(GString *s, const sipe_xml *node)
+{
+	g_string_append_printf(s, "<%s", node->name);
+
+	if (node->attributes) {
+		g_hash_table_foreach(node->attributes,
+				     (GHFunc) sipe_xml_stringify_attribute,
+				     s);
+	}
+
+	if (node->data || node->first) {
+		const sipe_xml *child;
+
+		g_string_append_printf(s, ">%s",
+				       node->data ? node->data->str : "");
+
+		for (child = node->first; child; child = child->sibling)
+			sipe_xml_stringify_node(s, child);
+
+		g_string_append_printf(s, "</%s>", node->name);
+	} else {
+		g_string_append(s, "/>");
+	}
+}
+
 gchar *sipe_xml_stringify(const sipe_xml *node)
 {
-	/* @TODO: implement me :-) */
-	(void) node;
-	return NULL;
+	GString *s = g_string_new("");
+	sipe_xml_stringify_node(s, node);
+	return g_string_free(s, FALSE);
 }
 
 const sipe_xml *sipe_xml_child(const sipe_xml *parent, const gchar *name)
