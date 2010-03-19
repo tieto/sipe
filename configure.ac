@@ -76,8 +76,9 @@ AC_ARG_ENABLE(quality-check,
 	,
 	enable_quality_check="yes")
 
+dnl declaration-after-statement (ISO C90 behaviour, as on Windows & GCC < 3)
 if test "$enable_quality_check" = yes; then
-	QUALITY_CFLAGS="${QUALITY_CFLAGS} -Werror -Wall -Wextra"
+	QUALITY_CFLAGS="${QUALITY_CFLAGS} -Werror -Wall -Wextra -Werror=declaration-after-statement"
 else
 	QUALITY_CFLAGS="${QUALITY_CFLAGS}"
 fi
