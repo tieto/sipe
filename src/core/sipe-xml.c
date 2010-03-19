@@ -269,7 +269,11 @@ static void sipe_xml_stringify_node(GString *s, const sipe_xml *node)
 
 gchar *sipe_xml_stringify(const sipe_xml *node)
 {
-	GString *s = g_string_new("");
+	GString *s;
+
+	if (!node) return NULL;
+
+	s = g_string_new("");
 	sipe_xml_stringify_node(s, node);
 	return g_string_free(s, FALSE);
 }

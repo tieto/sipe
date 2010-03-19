@@ -30,8 +30,6 @@
 
 #include <glib.h>
 
-#include "xmlnode.h"
-
 #include "sipe-common.h"
 #include "sipe-backend-debug.h"
 #include "sipe-xml.h"
@@ -207,6 +205,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 
 	/* empty XML */
 	xml = assert_parse(NULL, FALSE);
+	assert_stringify(xml, NULL);
 	sipe_xml_free(xml);
 	xml = assert_parse("",   FALSE);
 	sipe_xml_free(xml);
