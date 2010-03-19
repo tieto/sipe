@@ -33,7 +33,7 @@
 #include <glib.h>
 
 #include "debug.h"
-#include "xmlnode.h"
+#include "util.h"
 
 #include "sip-sec.h"
 #include "sipe-core-api.h"
@@ -65,9 +65,6 @@
 #endif /* HAVE_KERBEROS */
 
 #endif /* _WIN32 */
-
-gchar *purple_base64_encode(const guchar *data, gsize len);
-guchar *purple_base64_decode(const char *str, gsize *ret_len);
 
 /* Dummy initialization hook */
 static SipSecContext

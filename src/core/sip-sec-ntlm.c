@@ -57,8 +57,6 @@
 
 #include "cipher.h"
 #include "debug.h"
-#include "util.h"
-#include "xmlnode.h"
 
 #include "sipe-common.h"
 #include "sip-sec.h"

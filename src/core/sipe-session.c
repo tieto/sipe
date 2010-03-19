@@ -20,23 +20,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include <glib.h>
 
-#include "account.h"
-#include "blist.h"
-#include "circbuffer.h"
-#include "connection.h"
-#include "conversation.h"
 #include "debug.h"
-#include "dnsquery.h"
-#include "dnssrv.h"
-#include "network.h"
-#include "plugin.h"
-#include "sslconn.h"
-#include "xmlnode.h"
 
 #include "sip-sec.h"
 #include "sipe-dialog.h"

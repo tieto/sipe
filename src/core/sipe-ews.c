@@ -49,23 +49,15 @@ be great to implement too.
 #include <glib.h>
 
 #include "account.h"
-#include "blist.h"
-#include "circbuffer.h"
-#include "connection.h"
 #include "debug.h"
-#include "dnsquery.h"
-#include "dnssrv.h"
-#include "network.h"
-#include "plugin.h"
-#include "sslconn.h"
-#include "xmlnode.h"
+#include "util.h"
 
-#include "sip-sec.h"
-#include "sipe-xml.h"
-#include "sipe-utils.h"
-#include "http-conn.h"
 #include "sipe-cal.h"
 #include "sipe-ews.h"
+#include "sip-sec.h"
+#include "sipe-utils.h"
+#include "sipe-xml.h"
+#include "http-conn.h"
 #include "sipe.h"
 
 /**

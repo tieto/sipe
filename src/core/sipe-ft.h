@@ -21,6 +21,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Interface dependencies:
+ *
+ * <glib.h>
+ */
+
+/* Forward declarations */
+struct sipmsg;
+struct _PurpleAccount;
+struct _PurpleConnection;
+struct _PurpleXfer;
+
 /**
  * Called when remote peer wants to send a file.
  *
@@ -31,7 +43,7 @@
  * @param msg     SIP message
  * @param body    parsed SIP message body as name-value pairs
  */
-void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const GSList *body);
+void sipe_ft_incoming_transfer(struct _PurpleAccount *account, struct sipmsg *msg, const GSList *body);
 /**
  * Handles incoming filetransfer message with ACCEPT invitation command.
  *
@@ -41,7 +53,7 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
  * @param account PurpleAccount corresponding to the request
  * @param body    parsed SIP message body as name-value pairs
  */
-void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body);
+void sipe_ft_incoming_accept(struct _PurpleAccount *account, const GSList *body);
 /**
  * Called when remote peer cancels ongoing file transfer.
  *
@@ -50,7 +62,7 @@ void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body);
  * @param account PurpleAccount corresponding to the request
  * @param body    parsed SIP message body as name-value pairs
  */
-void sipe_ft_incoming_cancel(PurpleAccount *account, GSList *body);
+void sipe_ft_incoming_cancel(struct _PurpleAccount *account, GSList *body);
 /**
  * Initiates outgoing file transfer, sending @c file to remote peer identified
  * by @c who.
@@ -59,14 +71,14 @@ void sipe_ft_incoming_cancel(PurpleAccount *account, GSList *body);
  * @param who  string identifying receiver of the file
  * @param file local file system path of the file to send
  */
-void sipe_ft_send_file(PurpleConnection *gc, const char *who, const char *file);
+void sipe_ft_send_file(struct _PurpleConnection *gc, const char *who, const char *file);
 /**
  * Creates new PurpleXfer structure representing a file transfer.
  *
  * @param gc  a PurpleConnection
  * @param who remote participant in the file transfer session
  */
-PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who);
+struct _PurpleXfer * sipe_ft_new_xfer(struct _PurpleConnection *gc, const char *who);
 
 /**
  * Parses file transfer message body and creates a list with name-value pairs

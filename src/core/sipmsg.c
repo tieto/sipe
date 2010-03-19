@@ -30,7 +30,6 @@
 #include "debug.h"
 #include "mime.h"
 #include "util.h"
-#include "xmlnode.h"
 
 #include "sipmsg.h"
 #include "sipe-utils.h"

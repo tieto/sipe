@@ -28,20 +28,22 @@
  *
  * <time.h>
  * <glib.h>
- * "account.h"
- * "blist.h"
- * "circbuffer.h"
- * "connection.h"
- * "dnsquery.h"
- * "dnssrv.h"
- * "network.h"
- * "plugin.h"
- * "sslconn.h"
  * "sip-sec.h"
  */
 
 /* Forward declarations */
 struct sipmsg;
+struct _PurpleAccount;
+struct _PurpleCircBuffer;
+struct _PurpleConnection;
+struct _PurpleDnsQueryData;
+struct _PurpleGroup;
+struct _PurpleNetworkListenData;
+struct _PurplePlugin;
+struct _PurpleSrvQueryData;
+struct _PurpleSslConnection;
+struct sip_sec_context;
+enum sip_sec_auth_type;
 
 #define SIMPLE_BUF_INC 4096
 
@@ -105,8 +107,8 @@ struct sipe_buddy {
 };
 
 struct sip_auth {
-	SipSecAuthType type;
-	SipSecContext gssapi_context;
+	enum sip_sec_auth_type type;
+	struct sip_sec_context *gssapi_context;
 	gchar *gssapi_data;
 	gchar *opaque;
 	gchar *realm;
@@ -162,7 +164,7 @@ struct sipe_container_member {
 };
 
 struct sipe_account_data {
-	PurpleConnection *gc;
+	struct _PurpleConnection *gc;
 	gchar *sipdomain;
 	gchar *username;
 	gchar *authdomain;
@@ -172,10 +174,10 @@ struct sipe_account_data {
 	gchar *focus_factory_uri;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
-	PurpleDnsQueryData *query_data;
-	PurpleSrvQueryData *srv_query_data;
+	struct _PurpleDnsQueryData *query_data;
+	struct _PurpleSrvQueryData *srv_query_data;
 	const struct sipe_service_data *service_data;
-	PurpleNetworkListenData *listen_data;
+	struct _PurpleNetworkListenData *listen_data;
 	int fd;
 	int cseq;
 	time_t last_keepalive;
@@ -215,8 +217,8 @@ struct sipe_account_data {
 	guint keepalive_timeout;
 	GSList *timeouts;
 	gboolean connecting;
-	PurpleAccount *account;
-	PurpleCircBuffer *txbuf;
+	struct _PurpleAccount *account;
+	struct _PurpleCircBuffer *txbuf;
 	guint tx_handler;
 	gchar *regcallid;
 	GSList *transactions;
@@ -226,7 +228,7 @@ struct sipe_account_data {
 	GHashTable *filetransfers;
 	sipe_transport_type transport;
 	gboolean auto_transport;
-	PurpleSslConnection *gsc;
+	struct _PurpleSslConnection *gsc;
 	struct sockaddr *serveraddr;
 	gchar *realhostname;
 	int realport; /* port and hostname from SRV record */
@@ -306,7 +308,7 @@ sipe_schedule_action(const gchar *name,
 struct sipe_group {
 	gchar *name;
 	int id;
-    PurpleGroup *purple_group;
+	struct _PurpleGroup *purple_group;
 };
 
 struct group_user_context {
@@ -316,9 +318,9 @@ struct group_user_context {
 
 GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func);
 
-GList *sipe_actions(PurplePlugin *plugin, gpointer context);
+GList *sipe_actions(struct _PurplePlugin *plugin, gpointer context);
 
-gboolean purple_init_plugin(PurplePlugin *plugin);
+gboolean purple_init_plugin(struct _PurplePlugin *plugin);
 
 /**
  * Publishes self status
@@ -362,11 +364,11 @@ struct sip_dialog;
 
 /* SIP send module? */
 struct transaction *
-send_sip_request(PurpleConnection *gc, const gchar *method,
+send_sip_request(struct _PurpleConnection *gc, const gchar *method,
 		 const gchar *url, const gchar *to, const gchar *addheaders,
 		 const gchar *body, struct sip_dialog *dialog, TransCallback tc);
 void
-send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
+send_sip_response(struct _PurpleConnection *gc, struct sipmsg *msg, int code,
 		  const char *text, const char *body);
 void
 sipe_invite(struct sipe_account_data *sip, struct sip_session *session,

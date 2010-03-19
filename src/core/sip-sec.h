@@ -27,7 +27,7 @@
 /* Opaque type definition for security context */
 typedef struct sip_sec_context *SipSecContext;
 
-typedef enum
+typedef enum sip_sec_auth_type
 {
 	AUTH_TYPE_UNSET = 0,
 	AUTH_TYPE_DIGEST,

@@ -24,14 +24,16 @@
  * Interface dependencies:
  *
  * <glib.h>
- * "connection.h"
  */
+
+/* Forward declarations */
+struct _PurpleConnection;
 
 /**
  * libpurple plugin callback to create a new chat from conversation menu
  */
-void sipe_chat_invite(PurpleConnection *gc, int id, const char *message,
-		      const char *name);
+void sipe_chat_invite(struct _PurpleConnection *gc, int id,
+		      const char *message, const char *name);
 
 /**
  * Returns purple's chat name for provided chat identification in protocol.

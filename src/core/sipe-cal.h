@@ -25,11 +25,11 @@
  *
  * <time.h>
  * <glib.h>
- * "sipe-xml.h"
  */
 
 /* Forward declarations */
 struct sipe_buddy;
+struct _sipe_xml;
 
 /* Calendar statuses */
 #define SIPE_CAL_FREE       0
@@ -96,7 +96,7 @@ struct sipe_cal_working_hours;
  * and creates/fills struct sipe_cal_working_hours in struct sipe_buddy
  */
 void
-sipe_cal_parse_working_hours(const sipe_xml *xn_working_hours,
+sipe_cal_parse_working_hours(const struct _sipe_xml *xn_working_hours,
 			     struct sipe_buddy *buddy);
 
 /**

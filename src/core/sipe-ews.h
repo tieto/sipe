@@ -25,12 +25,13 @@
  *
  * <time.h>
  * <glib.h>
- * "account.h"
- * "http-conn.h"
  */
 
 /* Forward declarations */
+struct http_conn_auth;
+struct http_conn_struct;
 struct sipe_account_data;
+struct _PurpleAccount;
 
 /**
  * Context
@@ -41,8 +42,8 @@ struct sipe_ews {
 	int state;
 	char *email;
 	char *legacy_dn;
-	HttpConnAuth *auth;
-	PurpleAccount *account;
+	struct http_conn_auth *auth;
+	struct _PurpleAccount *account;
 	int auto_disco_method;
 	int is_disabled;
 	int is_updated;
@@ -58,7 +59,7 @@ struct sipe_ews {
 	time_t updated;
 	gboolean published;
 	
-	HttpConn *http_conn;
+	struct http_conn_struct *http_conn;
 	
 	time_t fb_start;
 	/* hex form */

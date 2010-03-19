@@ -33,6 +33,8 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
+#include "signals.h"
+
 #include "sipmsg.h"
 #include "sipe-sign.h"
 #define _SIPE_COMPILING_TESTS

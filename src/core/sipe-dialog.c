@@ -26,9 +26,7 @@
 
 #include <glib.h>
 
-#include "conversation.h"
 #include "debug.h"
-#include "xmlnode.h"
 
 #include "sipe-common.h"
 #include "sipmsg.h"

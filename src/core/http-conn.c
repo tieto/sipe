@@ -37,17 +37,10 @@
 #include <glib.h>
 
 #include "account.h"
-#include "blist.h"
-#include "circbuffer.h"
-#include "connection.h"
 #include "debug.h"
-#include "dnsquery.h"
-#include "dnssrv.h"
 #include "eventloop.h"
 #include "network.h"
-#include "plugin.h"
 #include "sslconn.h"
-#include "xmlnode.h"
 
 #include "sipmsg.h"
 #include "sip-sec.h"

@@ -20,11 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * Interface dependencies:
- *
- * "account.h"
- */
+/* Forward declarations */
+struct _PurpleAccount;
 
 #define HTTP_CONN_SSL  "SSL"
 #define HTTP_CONN_TCP  "TCP"
@@ -51,7 +48,7 @@ typedef void (*HttpConnCallback) (int return_code, const char *body,
  * Creates SSL connection and POST.
  */
 HttpConn *
-http_conn_create(PurpleAccount *account,
+http_conn_create(struct _PurpleAccount *account,
 		 const char *conn_type,
 		 const char *full_url,
 		 const char *body,
@@ -79,4 +76,3 @@ http_conn_set_close(HttpConn* http_conn);
 
 void
 http_conn_auth_free(struct http_conn_auth* auth);
-

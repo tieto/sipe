@@ -25,11 +25,11 @@
  *
  * <time.h>
  * <glib.h>
- * "xmlnode.h"
  */
 
 /* Forward declarations */
 struct sipe_account_data;
+struct _xmlnode;
 
 /* Our publication type keys. OCS 2007+
  * Format: SIPE_PUB_{Category}[_{SubSategory}]
@@ -215,7 +215,7 @@ sipe_is_bad_alias(const char *uri,
  *
  * @return descendant XML node
  */
-xmlnode * xmlnode_get_descendant(const xmlnode *parent, ...);
+struct _xmlnode * xmlnode_get_descendant(const struct _xmlnode *parent, ...);
 
 /**
  * Convert a XML attribute to an integer
@@ -225,7 +225,7 @@ xmlnode * xmlnode_get_descendant(const xmlnode *parent, ...);
  *
  * @return attribute value converted to integer or the fallback value
  */
-gint xmlnode_get_int_attrib(xmlnode *node,
+gint xmlnode_get_int_attrib(struct _xmlnode *node,
 			    const char *attr,
 			    gint fallback);
 

@@ -88,10 +88,11 @@
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-sec.h"
-#include "sipe.h"
+#include "sipe-cal.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-dialog.h"
+#include "sipe-ews.h"
 #include "sipe-ft.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
@@ -100,8 +101,7 @@
 #include "sipe-xml.h"
 #include "http-conn.h"
 #include "uuid.h"
-#include "sipe-cal.h"
-#include "sipe-ews.h"
+#include "sipe.h"
 
 /* Backward compatibility when compiling against 2.4.x API */
 #if !PURPLE_VERSION_CHECK(2,5,0)

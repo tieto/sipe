@@ -24,11 +24,11 @@
  * Interface dependencies:
  *
  * <glib.h>
- * "conversation.h"
  */
 
 /* Forward declarations */
 struct sipe_account_data;
+struct _PurpleConversation;
 
 /* Helper macros to iterate over session list in a SIP account */
 #define SIPE_SESSION_FOREACH {                             \
@@ -44,7 +44,7 @@ struct sip_session {
 	/** key is user (URI) */
 	GSList *dialogs;
 	/** Link to purple chat or IM */
-	PurpleConversation *conv;
+	struct _PurpleConversation *conv;
 	GSList *outgoing_message_queue;
 	/** Key is <Call-ID><CSeq><METHOD><To> */
 	GHashTable *unconfirmed_messages;

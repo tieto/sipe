@@ -28,16 +28,8 @@
 
 #include <glib.h>
 
-#include "account.h"
-#include "blist.h"
-#include "circbuffer.h"
 #include "connection.h"
 #include "debug.h"
-#include "dnsquery.h"
-#include "dnssrv.h"
-#include "network.h"
-#include "plugin.h"
-#include "sslconn.h"
 
 #include "sipe-common.h"
 #include "sip-sec.h"
