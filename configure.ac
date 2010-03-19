@@ -40,6 +40,9 @@ IT_PROG_INTLTOOL([0.35.0])
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 
+dnl checks for header files
+AC_CHECK_HEADERS([sys/sockio.h])
+
 dnl checks for library functions
 AC_CHECK_FUNCS([setenv unsetenv])
 
