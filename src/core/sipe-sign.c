@@ -20,11 +20,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  */
 
-#include <glib.h>
 #include <string.h>
+
+#include <glib.h>
 
 #include "debug.h"
 
+#include "sipmsg.h"
 #include "sipe-sign.h"
 
 static gchar * const empty_string = "";
@@ -38,7 +40,7 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 	}
 
 	msg->rand = msg->num = msg->realm = msg->target_name =
-		msg->cseq = msg->from_url = msg->from_tag = msg->to_url = msg->to_tag = 
+		msg->cseq = msg->from_url = msg->from_tag = msg->to_url = msg->to_tag =
 		msg->p_assertet_identity_sip_uri = msg->p_assertet_identity_tel_uri = empty_string;
 	msg->call_id = msg->expires = empty_string;
 

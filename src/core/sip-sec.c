@@ -25,16 +25,21 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
+
+#include <glib.h>
+
 #include "debug.h"
-#include "sipe.h"
+#include "xmlnode.h"
+
+#include "sip-sec.h"
 #include "sipe-core-api.h"
 #include "sipe-utils.h"
-#include "sip-sec-mech.h"
 
+#include "sip-sec-mech.h"
 #include "sip-sec-ntlm.h"
 #ifndef _WIN32
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm

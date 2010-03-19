@@ -45,27 +45,26 @@
  *    not in NTLM (LE) structures.
  */
 
-#include <glib.h>
-#include <glib/gprintf.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
 #include <stdlib.h>
-#include "debug.h"
+#include <string.h>
+#include <time.h>
+
+#include <glib.h>
 
 #ifdef HAVE_LANGINFO_CODESET
 #include <langinfo.h>
 #endif /* HAVE_LANGINFO_CODESET */
 
-#include "sipe-common.h"
-
-#include "util.h"
 #include "cipher.h"
+#include "debug.h"
+#include "util.h"
+#include "xmlnode.h"
 
-#include "sipe.h"
-#include "sipe-utils.h"
+#include "sipe-common.h"
+#include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-ntlm.h"
+#include "sipe-utils.h"
 
 /* [MS-NLMP] */
 #define NTLMSSP_NEGOTIATE_UNICODE			0x00000001	/* A  */

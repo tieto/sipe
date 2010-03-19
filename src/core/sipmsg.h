@@ -21,10 +21,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _PURPLE_SIPMSG_H
-#define _PURPLE_SIPMSG_H
-
-#include <glib.h>
+/*
+ * Interface dependencies:
+ *
+ * <glib.h>
+ */
 
 struct sipmsg {
 	int response; /* 0 means request, otherwise response code */
@@ -107,4 +108,3 @@ void sipe_parse_html(const char *html, char **attributes, char **message);
 
 void msn_parse_format(const char *mime, char **pre_ret, char **post_ret);
 void msn_import_html(const char *html, char **attributes, char **message);
-#endif /* _PURPLE_SIPMSG_H */

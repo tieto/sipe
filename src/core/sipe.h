@@ -23,28 +23,25 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef _PIDGIN_SIPE_H
-#define _PIDGIN_SIPE_H
+/*
+ * Interface dependencies:
+ *
+ * <time.h>
+ * <glib.h>
+ * "account.h"
+ * "blist.h"
+ * "circbuffer.h"
+ * "connection.h"
+ * "dnsquery.h"
+ * "dnssrv.h"
+ * "network.h"
+ * "plugin.h"
+ * "sslconn.h"
+ * "sip-sec.h"
+ */
 
-#include <glib.h>
-#include <time.h>
-
-#include "sipe-common.h"
-
-#include "cipher.h"
-#include "circbuffer.h"
-#include "dnsquery.h"
-#include "dnssrv.h"
-#include "network.h"
-#include "proxy.h"
-#include "prpl.h"
-#include "sslconn.h"
-
-#include "sipmsg.h"
-#include "sip-sec.h"
-#include "uuid.h"
-
-#include "sipe-common.h"
+/* Forward declarations */
+struct sipmsg;
 
 #define SIMPLE_BUF_INC 4096
 
@@ -814,5 +811,3 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * sess
 	"</SOAP-ENV:Envelope>"
 
 #define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
-
-#endif /* _PIDGIN_SIPE_H */

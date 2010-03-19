@@ -21,15 +21,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Interface dependencies:
+ *
+ * <glib.h>
+ * "sip-sec.h"
+ */
 
 /* Mechanism wrappers API  (Inspired by GSS-API)
  * All mechanisms should implement this API
  *
  * Current mechanisms are: Kerberos/GSS-API, sipe's NTLM and SSPI.
  */
-
-#ifndef _SIP_SEC_MECH_H
-#define _SIP_SEC_MECH_H
 
 #define SIP_SEC_E_OK 0
 #define SIP_SEC_E_INTERNAL_ERROR (-2146893052)
@@ -84,4 +87,3 @@ struct sip_sec_context {
 	/** 0 - FALSE; otherwise TRUE */
 	int is_connection_based;
 };
-#endif /* _SIP_SEC_MECH_H */

@@ -20,7 +20,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "sipe-xml.h"
+/*
+ * Interface dependencies:
+ *
+ * <time.h>
+ * <glib.h>
+ * "sipe-xml.h"
+ */
+
+/* Forward declarations */
+struct sipe_buddy;
 
 /* Calendar statuses */
 #define SIPE_CAL_FREE       0
@@ -122,4 +131,3 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 struct sipe_cal_event*
 sipe_cal_get_event(GSList *cal_events,
 		   time_t time_in_question);
-

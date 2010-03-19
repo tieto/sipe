@@ -24,13 +24,28 @@
 #include "config.h"
 #endif
 
-#include "debug.h"
+#include <time.h>
 
-#include "sipe.h"
+#include <glib.h>
+
+#include "account.h"
+#include "blist.h"
+#include "circbuffer.h"
+#include "connection.h"
+#include "debug.h"
+#include "dnsquery.h"
+#include "dnssrv.h"
+#include "network.h"
+#include "plugin.h"
+#include "sslconn.h"
+
+#include "sipe-common.h"
+#include "sip-sec.h"
 #include "sipe-chat.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
+#include "sipe.h"
 
 void sipe_chat_invite(PurpleConnection *gc, int id,
 		      SIPE_UNUSED_PARAMETER const char *message,

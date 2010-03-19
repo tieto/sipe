@@ -20,16 +20,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
 #include <glib.h>
 
+#include "conversation.h"
 #include "debug.h"
+#include "xmlnode.h"
 
-#include "sipe.h"
-#include "sipe-utils.h"
+#include "sipe-common.h"
+#include "sipmsg.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
-#include "sipmsg.h"
+#include "sipe-utils.h"
 
 void sipe_dialog_free(struct sip_dialog *dialog)
 {

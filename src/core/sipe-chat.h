@@ -20,6 +20,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Interface dependencies:
+ *
+ * <glib.h>
+ * "connection.h"
+ */
+
 /**
  * libpurple plugin callback to create a new chat from conversation menu
  */

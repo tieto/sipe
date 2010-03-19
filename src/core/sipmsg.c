@@ -21,15 +21,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
 #include <glib.h>
 
 #include "debug.h"
 #include "mime.h"
+#include "util.h"
+#include "xmlnode.h"
 
-#include "sipe.h"
-#include "sipe-utils.h"
 #include "sipmsg.h"
+#include "sipe-utils.h"
 
 struct sipmsg *sipmsg_parse_msg(const gchar *msg) {
 	const char *tmp = strstr(msg, "\r\n\r\n");

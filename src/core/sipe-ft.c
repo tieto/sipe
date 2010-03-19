@@ -28,16 +28,33 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <time.h>
+
+#include <glib.h>
 #include <glib/gprintf.h>
 
+#include "account.h"
+#include "blist.h"
+#include "cipher.h"
+#include "circbuffer.h"
+#include "connection.h"
 #include "debug.h"
+#include "dnsquery.h"
+#include "dnssrv.h"
+#include "ft.h"
+#include "network.h"
+#include "plugin.h"
+#include "sslconn.h"
+#include "xmlnode.h"
 
-#include "sipe.h"
-#include "sipe-ft.h"
+#include "sipmsg.h"
+#include "sip-sec.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
+#include "sipe-ft.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
+#include "sipe.h"
 
 #ifdef _WIN32
 /* for network */

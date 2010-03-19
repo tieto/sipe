@@ -21,14 +21,28 @@
  */
 
 #include <string.h>
+#include <time.h>
+
 #include <glib.h>
 
+#include "account.h"
+#include "blist.h"
+#include "circbuffer.h"
+#include "connection.h"
+#include "conversation.h"
 #include "debug.h"
+#include "dnsquery.h"
+#include "dnssrv.h"
+#include "network.h"
+#include "plugin.h"
+#include "sslconn.h"
+#include "xmlnode.h"
 
-#include "sipe.h"
+#include "sip-sec.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
+#include "sipe.h"
 
 void
 sipe_free_queued_message(struct queued_message *message)

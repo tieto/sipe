@@ -20,6 +20,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Interface dependencies:
+ *
+ * <glib.h>
+ */
+
+/* Forward declarations */
+struct sipmsg;
+
 /* Helper macros to iterate over dialog list in a SIP session */
 #define SIPE_DIALOG_FOREACH {                            \
 	GSList *entry = session->dialogs;                \

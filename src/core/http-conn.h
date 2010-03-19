@@ -20,6 +20,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Interface dependencies:
+ *
+ * "account.h"
+ */
+
 #define HTTP_CONN_SSL  "SSL"
 #define HTTP_CONN_TCP  "TCP"
 

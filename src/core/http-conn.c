@@ -32,12 +32,28 @@
 
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
+#include <glib.h>
+
+#include "account.h"
+#include "blist.h"
+#include "circbuffer.h"
+#include "connection.h"
 #include "debug.h"
-#include "sipe.h"
-#include "sipe-utils.h"
+#include "dnsquery.h"
+#include "dnssrv.h"
+#include "eventloop.h"
+#include "network.h"
+#include "plugin.h"
+#include "sslconn.h"
+#include "xmlnode.h"
 
+#include "sipmsg.h"
+#include "sip-sec.h"
+#include "sipe-utils.h"
 #include "http-conn.h"
+#include "sipe.h"
 
 /**
  * HTTP POST headers

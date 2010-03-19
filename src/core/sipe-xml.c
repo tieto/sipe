@@ -25,14 +25,16 @@
  */
 
 #include <stdarg.h>
+#include <time.h>
 
 #include "libxml/parser.h"
 #include "glib.h"
 
-#include "sipe-xml.h"
-#include "sipe.h"       /* TEMPORARY: to include sipe-utils.h without errors */
-#include "sipe-utils.h"
+#include "xmlnode.h"
+
 #include "sipe-backend-debug.h"
+#include "sipe-utils.h"
+#include "sipe-xml.h"
 
 struct _sipe_xml {
 	gchar *name;

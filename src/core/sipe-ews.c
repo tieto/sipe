@@ -42,14 +42,31 @@ http://sourceforge.net/projects/sipe/forums/forum/688535/topic/3403462
 Similar functionality for Lotus Notes/Domino, iCalendar/CalDAV/Google would
 be great to implement too.
 */
+
 #include <string.h>
+#include <time.h>
 
+#include <glib.h>
+
+#include "account.h"
+#include "blist.h"
+#include "circbuffer.h"
+#include "connection.h"
 #include "debug.h"
+#include "dnsquery.h"
+#include "dnssrv.h"
+#include "network.h"
+#include "plugin.h"
+#include "sslconn.h"
+#include "xmlnode.h"
 
-#include "sipe.h"
+#include "sip-sec.h"
+#include "sipe-xml.h"
+#include "sipe-utils.h"
+#include "http-conn.h"
 #include "sipe-cal.h"
 #include "sipe-ews.h"
-#include "sipe-utils.h"
+#include "sipe.h"
 
 /**
  * Autodiscover request for Exchange Web Services

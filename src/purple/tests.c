@@ -28,9 +28,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <glib.h>
 #include <stdlib.h>
 
+#include <glib.h>
+#include <glib/gprintf.h>
+
+#include "sipmsg.h"
 #include "sipe-sign.h"
 #define _SIPE_COMPILING_TESTS
 #include "sip-sec-ntlm.c"

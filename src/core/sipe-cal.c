@@ -28,15 +28,28 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #include <glib.h>
 
+#include "account.h"
+#include "blist.h"
+#include "circbuffer.h"
+#include "connection.h"
 #include "debug.h"
+#include "dnsquery.h"
+#include "dnssrv.h"
+#include "network.h"
+#include "plugin.h"
+#include "sslconn.h"
+#include "util.h"
+#include "xmlnode.h"
 
-#include "sipe.h"
-#include "sipe-cal.h"
-#include "sipe-utils.h"
+#include "sip-sec.h"
 #include "sipe-nls.h"
-
+#include "sipe-utils.h"
+#include "sipe-xml.h"
+#include "sipe-cal.h"
+#include "sipe.h"
 
 #define TIME_NULL   (time_t)-1
 #define IS(time)    (time != TIME_NULL)

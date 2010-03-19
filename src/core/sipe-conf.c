@@ -25,18 +25,32 @@
 #include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
 #include <glib.h>
 
+#include "account.h"
+#include "blist.h"
+#include "circbuffer.h"
+#include "connection.h"
 #include "debug.h"
+#include "dnsquery.h"
+#include "dnssrv.h"
+#include "network.h"
+#include "plugin.h"
+#include "sslconn.h"
 
-#include "sipe.h"
+#include "sipmsg.h"
+#include "sip-sec.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
+#include "sipe.h"
 
 /**
  * Add Conference request to FocusFactory.

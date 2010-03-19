@@ -20,7 +20,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "http-conn.h"
+/*
+ * Interface dependencies:
+ *
+ * <time.h>
+ * <glib.h>
+ * "account.h"
+ * "http-conn.h"
+ */
+
+/* Forward declarations */
+struct sipe_account_data;
 
 /**
  * Context
@@ -79,4 +89,3 @@ sipe_ews_get_oof_note(struct sipe_ews *ews);
  */
 void
 sipe_ews_free(struct sipe_ews* ews);
-

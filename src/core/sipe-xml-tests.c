@@ -26,12 +26,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include "glib.h"
-#include "sipe.h"
+#include <time.h>
+
+#include <glib.h>
+
+#include "xmlnode.h"
+
+#include "sipe-common.h"
+#include "sipe-backend-debug.h"
 #include "sipe-xml.h"
 #include "sipe-utils.h"
-#include "sipe-backend-debug.h"
-#include "sipe-common.h"
 
 /* stub functions for backend API */
 void sipe_backend_debug(sipe_debug_level level,

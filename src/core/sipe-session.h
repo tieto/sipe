@@ -20,6 +20,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Interface dependencies:
+ *
+ * <glib.h>
+ * "conversation.h"
+ */
+
+/* Forward declarations */
+struct sipe_account_data;
+
 /* Helper macros to iterate over session list in a SIP account */
 #define SIPE_SESSION_FOREACH {                             \
 	GSList *entry = sip->sessions;                    \

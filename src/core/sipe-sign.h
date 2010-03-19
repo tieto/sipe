@@ -20,11 +20,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111-1301  USA
  */
 
-#ifndef _PIDGIN_SIPE_SIGN_H
-#define _PIDGIN_SIPE_SIGN_H
-
-#include "sipmsg.h"
-
 struct sipmsg_breakdown {
 	struct sipmsg * msg;
 	gchar * protocol;
@@ -53,6 +48,3 @@ gchar*
 sipmsg_breakdown_get_string(int version,
 			    struct sipmsg_breakdown * msgbd);
 void sipmsg_breakdown_free(struct sipmsg_breakdown * msg);
-
-#endif /* _PIDGIN_SIPE_SIGN_H */
-

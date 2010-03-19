@@ -56,41 +56,52 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+
 #include <glib.h>
 
-#include "sipe-common.h"
-
+#include "account.h"
 #include "blist.h"
+#include "connection.h"
 #include "conversation.h"
-#include "dnsquery.h"
+#include "core.h"
+#include "cipher.h"
+#include "circbuffer.h"
 #include "debug.h"
+#include "dnsquery.h"
+#include "dnssrv.h"
+#include "ft.h"
+#include "mime.h"
+#include "network.h"
 #include "notify.h"
-#include "savedstatuses.h"
+#include "plugin.h"
 #include "privacy.h"
+#include "request.h"
+#include "savedstatuses.h"
+#include "sslconn.h"
 #include "util.h"
 #include "version.h"
-#include "network.h"
 #include "xmlnode.h"
-#include "mime.h"
-#include "core.h"
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
 
+#include "sipe-common.h"
+#include "sipmsg.h"
+#include "sip-csta.h"
+#include "sip-sec.h"
 #include "sipe.h"
-#include "sipe-cal.h"
-#include "sipe-ews.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
-#include "sip-csta.h"
 #include "sipe-dialog.h"
+#include "sipe-ft.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
-#include "sipe-utils.h"
-#include "sipe-ft.h"
-#include "sipmsg.h"
 #include "sipe-sign.h"
-#include "dnssrv.h"
-#include "request.h"
+#include "sipe-utils.h"
+#include "sipe-xml.h"
+#include "http-conn.h"
+#include "uuid.h"
+#include "sipe-cal.h"
+#include "sipe-ews.h"
 
 /* Backward compatibility when compiling against 2.4.x API */
 #if !PURPLE_VERSION_CHECK(2,5,0)

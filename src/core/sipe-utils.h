@@ -20,6 +20,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Interface dependencies:
+ *
+ * <time.h>
+ * <glib.h>
+ * "xmlnode.h"
+ */
+
+/* Forward declarations */
+struct sipe_account_data;
+
 /* Our publication type keys. OCS 2007+
  * Format: SIPE_PUB_{Category}[_{SubSategory}]
  */

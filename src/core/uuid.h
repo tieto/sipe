@@ -16,8 +16,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef SIPE_UUID_H_
-#define SIPE_UUID_H_
+/*
+ * Interface dependencies:
+ *
+ * <glib.h>
+ */
 
 /* Must be g_free'd */
 char *generateUUIDfromEPID(const gchar *epid);
@@ -26,6 +29,3 @@ char *generateUUIDfromEPID(const gchar *epid);
 char *sipe_get_epid(const char *self_sip_uri,
 		    const char *hostname,
 		    const char *ip_address);
-
-
-#endif /* SIPE_UUID_H_ */

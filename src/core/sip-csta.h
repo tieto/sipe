@@ -20,6 +20,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Interface dependencies:
+ *
+ * <glib.h>
+ */
+
+/* Forward declarations */
+struct sipmsg;
+struct sip_dialog;
+struct sipe_account_data;
+
 /** Data model for interaction with SIP/CSTA Gateway */
 struct sip_csta {
 	gchar *line_uri;
