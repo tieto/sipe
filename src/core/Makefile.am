@@ -1,9 +1,13 @@
-noinst_LTLIBRARIES = libsipecore.la
+noinst_LTLIBRARIES = libsipe_core.la libsipe_core_purple.la
 
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
-libsipecore_la_SOURCES = \
+libsipe_core_la_SOURCES = \
+	sipe-xml.h \
+	sipe-xml.c
+
+libsipe_core_purple_la_SOURCES = \
 	sip-prefix.h \
 	sipmsg.c \
 	sipmsg.h \
@@ -36,38 +40,38 @@ libsipecore_la_SOURCES = \
 	sipe-sign.c \
 	sipe-ft.h \
 	sipe-ft.c \
-	sipe-xml.h \
-	sipe-xml.c \
 	uuid.h \
 	uuid.c
 
-if SIP_SEC_KRB5
-libsipecore_la_SOURCES += \
-	sip-sec-krb5.h \
-	sip-sec-krb5.c
-endif
-
 AM_CFLAGS = $(st)
 
-libsipecore_la_CFLAGS = \
+libsipe_core_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
         $(LIBXML2_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
-	$(KRB5_CFLAGS) \
 	-I$(srcdir)/../api
 
 if SIPE_INCLUDE_PURPLE
-libsipecore_la_CFLAGS += $(PURPLE_CFLAGS) -I$(srcdir)/../purple
+libsipe_core_purple_la_CFLAGS = \
+	$(libsipe_core_la_CFLAGS) \
+	$(PURPLE_CFLAGS) \
+	-I$(srcdir)/../purple
+
+if SIP_SEC_KRB5
+libsipe_core_purple_la_SOURCES += sip-sec-krb5.h sip-sec-krb5.c
+libsipe_core_purple_la_CFLAGS  += $(KRB5_CFLAGS)
+endif
 endif
 
 check_PROGRAMS = sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
-sipe_xml_tests_CFLAGS = $(libsipecore_la_CFLAGS)
-sipe_xml_tests_LDADD = libsipecore.la
+sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
+sipe_xml_tests_LDADD = libsipe_core.la
 sipe_xml_tests_LDFLAGS = $(LIBXML2_LIBS) $(GLIB_LIBS)
 if SIPE_INCLUDE_PURPLE
+sipe_xml_tests_LDADD   += libsipe_core_purple.la
 sipe_xml_tests_LDFLAGS += $(PURPLE_LIBS)
 endif
 

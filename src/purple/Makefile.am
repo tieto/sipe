@@ -17,7 +17,6 @@ AM_CFLAGS = $(st)
 libsipe_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
-        $(LIBXML2_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	$(PURPLE_CFLAGS) \
@@ -25,20 +24,24 @@ libsipe_la_CFLAGS = \
 	-I$(srcdir)/../core
 
 libsipe_la_LDFLAGS = \
-	-module -avoid-version -no-undefined \
-	$(KRB5_LDFLAGS)
+	-module -avoid-version -no-undefined
 
 libsipe_la_LIBADD = \
-	../core/libsipecore.la \
+	../core/libsipe_core.la \
+	../core/libsipe_core_purple.la \
         $(LIBXML2_LIBS) \
         $(GLIB_LIBS) \
-	$(KRB5_LIBS) \
 	$(PURPLE_LIBS)
+
+if SIP_SEC_KRB5
+libsipe_la_LDFLAGS += $(KRB5_LDFLAGS)
+libsipe_la_LIBADD  += $(KRB5_LIBS)
+endif
 
 check_PROGRAMS = tests
 tests_SOURCES = tests.c
 tests_CFLAGS = $(libsipe_la_CFLAGS)
-tests_LDADD = ../core/libsipecore.la
+tests_LDADD = ../core/libsipe_core_purple.la
 tests_LDFLAGS = $(PURPLE_LIBS)
 
 TESTS = $(check_PROGRAMS)
