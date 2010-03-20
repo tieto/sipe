@@ -82,7 +82,7 @@ gchar *parse_from(const gchar *hdr)
 		if (tmp) {
 			from = g_strndup(tmp2, tmp - tmp2);
 		} else {
-			SIPE_DEBUG_INFO("found < without > in From%s", "");
+			SIPE_DEBUG_INFO_NOFORMAT("found < without > in From");
 			return NULL;
 		}
 	} else {

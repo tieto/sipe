@@ -146,7 +146,7 @@ static void callback_serror(void *user_data, xmlErrorPtr error)
 				   error->message ? error->message : "(null)");
 	} else {
 		/* *sigh* macro expects at least two parameters */
-		SIPE_DEBUG_WARNING("XML parser error%s", "");
+		SIPE_DEBUG_WARNING_NOFORMAT("XML parser error");
 	}
 }
 
@@ -216,7 +216,7 @@ void sipe_xml_free(sipe_xml *node)
 
 	/* we don't support partial tree deletion */
 	if (node->parent != NULL) {
-		SIPE_DEBUG_ERROR("sipe_xml_free: partial delete attempt! Expect crash or memory leaks...%s", "");
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_xml_free: partial delete attempt! Expect crash or memory leaks...");
 	}
 
 	/* free children */

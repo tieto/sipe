@@ -100,7 +100,7 @@ sip_sec_create_context(SipSecAuthType type,
 
 		ret = (*context->acquire_cred_func)(context, domain, username, password);
 		if (ret != SIP_SEC_E_OK) {
-			SIPE_DEBUG_INFO("ERROR: sip_sec_init_context failed to acquire credentials.%s", "");
+			SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_init_context failed to acquire credentials.");
 			(*context->destroy_context_func)(context);
 			context = NULL;
 		}
@@ -183,7 +183,7 @@ sip_sec_init_context(SipSecContext *context,
 					  username,
 					  password);
 	if (!*context) {
-		SIPE_DEBUG_INFO("ERROR: sip_sec_init_context: failed sip_sec_create_context()%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_init_context: failed sip_sec_create_context()");
 		return NULL;
 	}
 
@@ -222,7 +222,7 @@ char * sip_sec_make_signature(SipSecContext context, const char *message)
 	char *signature_hex;
 
 	if(((*context->make_signature_func)(context, message, &signature)) != SIP_SEC_E_OK) {
-		SIPE_DEBUG_INFO("ERROR: sip_sec_make_signature failed. Unable to sign message!%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_make_signature failed. Unable to sign message!");
 		return NULL;
 	}
 	signature_hex = buff_to_hex_str(signature.value, signature.length);

@@ -34,7 +34,7 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 {
 	const gchar * hdr;
 	if (msg == NULL || msg->msg == NULL) {
-		SIPE_DEBUG_INFO("sipmsg_breakdown_parse msg or msg->msg is NULL%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sipmsg_breakdown_parse msg or msg->msg is NULL");
 		return;
 	}
 
@@ -142,7 +142,7 @@ sipmsg_breakdown_get_string(int version,
 	gchar *response_str;
 	gchar *msg;
 	if (msgbd->realm == empty_string || msgbd->realm == NULL) {
-		SIPE_DEBUG_INFO("realm NULL, so returning NULL signature string%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("realm NULL, so returning NULL signature string");
 		return NULL;
 	}
 

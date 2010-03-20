@@ -191,7 +191,7 @@ sip_csta_initialize(struct sipe_account_data *sip,
 		sip->csta->line_uri = g_strdup(line_uri);
 		sip->csta->gateway_uri = g_strdup(server);
 	} else {
-		SIPE_DEBUG_INFO("sip_csta_initialize: sip->csta is already instantiated, exiting.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_initialize: sip->csta is already instantiated, exiting.");
 	}
 }
 
@@ -202,7 +202,7 @@ process_csta_get_features_response(SIPE_UNUSED_PARAMETER struct sipe_account_dat
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	if (msg->response >= 400) {
-		SIPE_DEBUG_INFO("process_csta_get_features_response: Get CSTA features response is not 200. Failed to get features.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_csta_get_features_response: Get CSTA features response is not 200. Failed to get features.");
 		/* @TODO notify user of failure to get CSTA features */
 		return FALSE;
 	}
@@ -221,7 +221,7 @@ sip_csta_get_features(struct sipe_account_data *sip)
 	gchar *body;
 
 	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
-		SIPE_DEBUG_INFO("sip_csta_get_features: no dialog with CSTA, exiting.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_get_features: no dialog with CSTA, exiting.");
 		return;
 	}
 
@@ -254,12 +254,12 @@ process_csta_monitor_start_response(struct sipe_account_data *sip,
 	SIPE_DEBUG_INFO("process_csta_monitor_start_response:\n%s", msg->body ? msg->body : "");
 
 	if (!sip->csta) {
-		SIPE_DEBUG_INFO("process_csta_monitor_start_response: sip->csta is not initializzed, exiting%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_csta_monitor_start_response: sip->csta is not initializzed, exiting");
 		return FALSE;
 	}
 
 	if (msg->response >= 400) {
-		SIPE_DEBUG_INFO("process_csta_monitor_start_response: Monitor Start response is not 200. Failed to start monitor.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_csta_monitor_start_response: Monitor Start response is not 200. Failed to start monitor.");
 		/* @TODO notify user of failure to start monitor */
 		return FALSE;
 	}
@@ -283,7 +283,7 @@ sip_csta_monitor_start(struct sipe_account_data *sip)
 	gchar *body;
 
 	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
-		SIPE_DEBUG_INFO("sip_csta_monitor_start: no dialog with CSTA, exiting.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_monitor_start: no dialog with CSTA, exiting.");
 		return;
 	}
 
@@ -315,12 +315,12 @@ sip_csta_monitor_stop(struct sipe_account_data *sip)
 	gchar *body;
 
 	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
-		SIPE_DEBUG_INFO("sip_csta_monitor_stop: no dialog with CSTA, exiting.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_monitor_stop: no dialog with CSTA, exiting.");
 		return;
 	}
 
 	if (!sip->csta->monitor_cross_ref_id) {
-		SIPE_DEBUG_INFO("sip_csta_monitor_stop: no monitor_cross_ref_id, exiting.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_monitor_stop: no monitor_cross_ref_id, exiting.");
 		return;
 	}
 
@@ -356,12 +356,12 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 	SIPE_DEBUG_INFO("process_invite_csta_gateway_response:\n%s", msg->body ? msg->body : "");
 
 	if (!sip->csta) {
-		SIPE_DEBUG_INFO("process_invite_csta_gateway_response: sip->csta is not initializzed, exiting%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_invite_csta_gateway_response: sip->csta is not initializzed, exiting");
 		return FALSE;
 	}
 
 	if (!sip->csta->dialog) {
-		SIPE_DEBUG_INFO("process_invite_csta_gateway_response: GSTA dialog is NULL, exiting%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_invite_csta_gateway_response: GSTA dialog is NULL, exiting");
 		return FALSE;
 	}
 
@@ -376,7 +376,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 	}
 
 	if (msg->response >= 400) {
-		SIPE_DEBUG_INFO("process_invite_csta_gateway_response: INVITE response is not 200. Failed to join CSTA.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_invite_csta_gateway_response: INVITE response is not 200. Failed to join CSTA.");
 		/* @TODO notify user of failure to join CSTA */
 		return FALSE;
 	}
@@ -423,7 +423,7 @@ sipe_invite_csta_gateway(struct sipe_account_data *sip)
 	gchar *body;
 
 	if (!sip->csta) {
-		SIPE_DEBUG_INFO("sipe_invite_csta_gateway: sip->csta is uninitialized, exiting%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_invite_csta_gateway: sip->csta is uninitialized, exiting");
 		return;
 	}
 
@@ -523,12 +523,12 @@ process_csta_make_call_response(struct sipe_account_data *sip,
 	SIPE_DEBUG_INFO("process_csta_make_call_response:\n%s", msg->body ? msg->body : "");
 
 	if (!sip->csta) {
-		SIPE_DEBUG_INFO("process_csta_make_call_response: sip->csta is not initializzed, exiting%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_csta_make_call_response: sip->csta is not initializzed, exiting");
 		return FALSE;
 	}
 
 	if (msg->response >= 400) {
-		SIPE_DEBUG_INFO("process_csta_make_call_response: Make Call response is not 200. Failed to make call.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_csta_make_call_response: Make Call response is not 200. Failed to make call.");
 		/* @TODO notify user of failure to make call */
 		return FALSE;
 	}
@@ -537,7 +537,7 @@ process_csta_make_call_response(struct sipe_account_data *sip,
 		const sipe_xml *xn_calling_device;
 		gchar *device_id;
 
-		SIPE_DEBUG_INFO("process_csta_make_call_response: SUCCESS%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("process_csta_make_call_response: SUCCESS");
 
 		xml = sipe_xml_parse(msg->body, msg->bodylen);
 		xn_calling_device = sipe_xml_child(xml, "callingDevice");
@@ -563,12 +563,12 @@ sip_csta_make_call(struct sipe_account_data *sip,
 	gchar *body;
 
 	if (!to_tel_uri) {
-		SIPE_DEBUG_INFO("sip_csta_make_call: no tel URI parameter provided, exiting.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_make_call: no tel URI parameter provided, exiting.");
 		return;
 	}
 
 	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
-		SIPE_DEBUG_INFO("sip_csta_make_call: no dialog with CSTA, exiting.%s", "");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_make_call: no dialog with CSTA, exiting.");
 		return;
 	}
 
