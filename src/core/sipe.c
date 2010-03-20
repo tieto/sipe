@@ -4484,7 +4484,7 @@ sipe_invite(struct sipe_account_data *sip,
 			msgtext = g_strdup(msg_body);
 		}
 
-		base64_msg = purple_base64_encode((guchar*) msgtext, strlen(msgtext));
+		base64_msg = g_base64_encode((guchar*) msgtext, strlen(msgtext));
 		ms_text_format = g_strdup_printf(SIPE_INVITE_TEXT,
 						 msg_content_type ? msg_content_type : "text/plain",
 						 msgr,
@@ -5276,7 +5276,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 			{
 				gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
 				if (tmp) {
-					gchar *body = (gchar *) purple_base64_decode(tmp, NULL);
+					gsize len;
+					gchar *body = (gchar *) g_base64_decode(tmp, &len);
 
 					GSList *parsed_body = sipe_ft_parse_msg_body(body);
 

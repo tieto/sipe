@@ -33,7 +33,6 @@
 #include <glib.h>
 
 #include "debug.h"
-#include "util.h"
 
 #include "sip-sec.h"
 #include "sipe-core-api.h"
@@ -127,7 +126,7 @@ sip_sec_init_context_step(SipSecContext context,
 
 		/* Not NULL for NTLM Type 2 */
 		if (input_toked_base64) {
-			in_buff.value = purple_base64_decode(input_toked_base64, &(in_buff.length));
+			in_buff.value = g_base64_decode(input_toked_base64, &in_buff.length);
 
 			tmp = sip_sec_ntlm_message_describe(in_buff);
 			if (tmp) {
@@ -142,7 +141,7 @@ sip_sec_init_context_step(SipSecContext context,
 			g_free(in_buff.value);
 
 		if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
-			*output_toked_base64 = purple_base64_encode(out_buff.value, out_buff.length);
+			*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
 
 			if (out_buff.length > 0 && out_buff.value) {
 				tmp = sip_sec_ntlm_message_describe(out_buff);

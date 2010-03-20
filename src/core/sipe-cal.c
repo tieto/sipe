@@ -32,7 +32,6 @@
 #include <glib.h>
 
 #include "debug.h"
-#include "util.h"
 
 #include "sip-sec.h"
 #include "sipe-cal.h"
@@ -773,7 +772,7 @@ sipe_cal_get_free_busy(struct sipe_buddy *buddy)
 		gsize i;
 		int j = 0;
 
-		cal_dec64 = purple_base64_decode(buddy->cal_free_busy_base64, &cal_dec64_len);
+		cal_dec64 = g_base64_decode(buddy->cal_free_busy_base64, &cal_dec64_len);
 
 		buddy->cal_free_busy = g_malloc0(cal_dec64_len * 4 + 1);
 /*
@@ -829,7 +828,7 @@ sipe_cal_get_freebusy_base64(const char* freebusy_hex)
 		}
 	}
 
-	res_base64 = purple_base64_encode(res, shift_factor ? res_len : res_len - 1);
+	res_base64 = g_base64_encode(res, shift_factor ? res_len : res_len - 1);
 	g_free(res);
 	return res_base64;
 }

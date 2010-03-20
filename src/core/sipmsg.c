@@ -400,7 +400,7 @@ gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
 		msgr2 = g_strdup_printf("%s=", msgr2);
 		g_free(tmp_msgr2);
 	}
-	msgr_dec64 = purple_base64_decode(msgr2, &msgr_dec64_len);
+	msgr_dec64 = g_base64_decode(msgr2, &msgr_dec64_len);
 	msgr_utf8 = g_convert((gchar *) msgr_dec64, msgr_dec64_len, "UTF-8", "UTF-16LE", NULL, NULL, NULL);
 	g_free(msgr_dec64);
 	g_free(msgr2);
@@ -432,7 +432,7 @@ gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format) {
 	msgr_orig = g_strdup_printf("X-MMS-IM-Format: %s\r\n\r\n", x_mms_im_format);
 	msgr_utf16 = g_convert(msgr_orig, -1, "UTF-16LE", "UTF-8", NULL, &msgr_utf16_len, NULL);
 	g_free(msgr_orig);
-	msgr_enc = purple_base64_encode((guchar *) msgr_utf16, msgr_utf16_len);
+	msgr_enc = g_base64_encode((guchar *) msgr_utf16, msgr_utf16_len);
 	g_free(msgr_utf16);
 	len = strlen(msgr_enc);
 	while (msgr_enc[len - 1] == '=') len--;
@@ -504,11 +504,12 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 		res = body;
 	} else {
 		gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
+		gsize len;
 		if (!tmp) {
 			g_free(ms_text_format);
 			return NULL;
 		}
-		res = (gchar *) purple_base64_decode(tmp, NULL);
+		res = (gchar *) g_base64_decode(tmp, &len);
 		g_free(tmp);
 		if (!res) {
 			g_free(ms_text_format);

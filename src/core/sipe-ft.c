@@ -39,7 +39,6 @@
 #include "eventloop.h"
 #include "ft.h"
 #include "network.h"
-#include "util.h"
 
 #include "sipmsg.h"
 #include "sip-sec.h"
@@ -673,7 +672,7 @@ void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 			ft->auth_cookie = g_ascii_strtoull(auth_cookie,NULL,10);
 		if (enc_key_b64) {
 			gsize ret_len;
-			guchar *enc_key = purple_base64_decode(enc_key_b64, &ret_len);
+			guchar *enc_key = g_base64_decode(enc_key_b64, &ret_len);
 			if (ret_len == SIPE_FT_KEY_LENGTH) {
 				memcpy(ft->encryption_key,enc_key,SIPE_FT_KEY_LENGTH);
 			} else {
@@ -686,7 +685,7 @@ void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 		}
 		if (hash_key_b64) {
 			gsize ret_len;
-			guchar *hash_key = purple_base64_decode(hash_key_b64, &ret_len);
+			guchar *hash_key = g_base64_decode(hash_key_b64, &ret_len);
 			if (ret_len == SIPE_FT_KEY_LENGTH) {
 				memcpy(ft->hash_key,hash_key,SIPE_FT_KEY_LENGTH);
 			} else {
@@ -730,8 +729,8 @@ static void send_filetransfer_accept(PurpleXfer* xfer)
 	sipe_file_transfer* ft = xfer->data;
 	struct sip_dialog *dialog = ft->dialog;
 
-	gchar *b64_encryption_key = purple_base64_encode(ft->encryption_key,24);
-	gchar *b64_hash_key = purple_base64_encode(ft->hash_key,24);
+	gchar *b64_encryption_key = g_base64_encode(ft->encryption_key, 24);
+	gchar *b64_hash_key = g_base64_encode(ft->hash_key, 24);
 
 	gchar *body = g_strdup_printf("Invitation-Command: ACCEPT\r\n"
 				      "Request-Data: IP-Address:\r\n"
@@ -888,7 +887,7 @@ static gchar* sipe_hmac_finalize(PurpleCipherContext *hmac_context)
 	/*  MAC = Digest of decrypted file and SHA1-Key (used again only 16 bytes) */
 	purple_cipher_context_digest(hmac_context, sizeof(hmac_digest), hmac_digest, NULL);
 
-	return purple_base64_encode(hmac_digest, sizeof (hmac_digest));
+	return g_base64_encode(hmac_digest, sizeof (hmac_digest));
 }
 
 static void generate_key(guchar *buffer, gsize size)
