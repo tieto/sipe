@@ -4,6 +4,8 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 libsipe_core_la_SOURCES = \
+	sip-csta.h \
+	sip-csta.c \
 	sip-sec.h \
 	sip-sec.c \
 	sip-sec-mech.h \
@@ -34,8 +36,6 @@ libsipe_core_purple_la_SOURCES = \
 	http-conn.c \
 	sipe-ews.h \
 	sipe-ews.c \
-	sip-csta.c \
-	sip-csta.h \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
 	sipe-ft.h \

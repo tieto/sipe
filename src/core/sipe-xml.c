@@ -315,6 +315,11 @@ const sipe_xml *sipe_xml_twin(const sipe_xml *node)
 	return NULL;
 }
 
+const gchar *sipe_xml_name(const sipe_xml *node)
+{
+	return(node ? node->name : NULL);
+}
+
 const gchar *sipe_xml_attribute(const sipe_xml *node, const gchar *attr)
 {
 	if (!node || !attr || !node->attributes) return NULL;

@@ -68,6 +68,15 @@ const sipe_xml *sipe_xml_child(const sipe_xml *parent, const gchar *name);
 const sipe_xml *sipe_xml_twin(const sipe_xml *node);
 
 /**
+ * Gets the name from the current XML node.
+ *
+ * @param node The node to get the name from.
+ *
+ * @return The name of the node
+ */
+const gchar *sipe_xml_name(const sipe_xml *node);
+
+/**
  * Gets an attribute from the current XML node.
  *
  * @param node The node to get an attribute from.
