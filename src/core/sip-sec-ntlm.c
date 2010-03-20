@@ -381,12 +381,10 @@ static void setup_des_key(const unsigned char key_56[], unsigned char *key)
 
 static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *result, const unsigned char *key)
 {
-	PurpleCipher *cipher;
 	PurpleCipherContext *context;
 	size_t outlen;
 
-	cipher = purple_ciphers_find_cipher("des");
-	context = purple_cipher_context_new(cipher, NULL);
+	context = purple_cipher_context_new_by_name("des", NULL);
 	purple_cipher_context_set_key(context, (guchar*)key);
 	purple_cipher_context_encrypt(context, (guchar*)plaintext, 8, (guchar*)result, &outlen);
 	purple_cipher_context_destroy(context);
@@ -433,8 +431,7 @@ RC4K (const unsigned char * k, unsigned long key_len, const unsigned char * d, i
 static void
 MD4 (const unsigned char * d, int len, unsigned char * result)
 {
-	PurpleCipher * cipher = purple_ciphers_find_cipher("md4");
-	PurpleCipherContext * context = purple_cipher_context_new(cipher, NULL);
+	PurpleCipherContext * context = purple_cipher_context_new_by_name("md4", NULL);
 	purple_cipher_context_append(context, (guchar*)d, len);
 	purple_cipher_context_digest(context, MD4_DIGEST_LEN, (guchar*)result, NULL);
 	purple_cipher_context_destroy(context);
@@ -444,8 +441,7 @@ MD4 (const unsigned char * d, int len, unsigned char * result)
 static void
 MD5 (const unsigned char * d, int len, unsigned char * result)
 {
-	PurpleCipher * cipher = purple_ciphers_find_cipher("md5");
-	PurpleCipherContext * context = purple_cipher_context_new(cipher, NULL);
+	PurpleCipherContext * context = purple_cipher_context_new_by_name("md5", NULL);
 	purple_cipher_context_append(context, (guchar*)d, len);
 	purple_cipher_context_digest(context, MD5_DIGEST_LEN, (guchar*)result, NULL);
 	purple_cipher_context_destroy(context);
@@ -484,8 +480,7 @@ HMACT64 (const unsigned char *key, int key_len, const unsigned char *data, int d
 static void
 HMAC_MD5 (const unsigned char *key, int key_len, const unsigned char *data, int data_len, unsigned char *result)
 {
-	PurpleCipher *cipher = purple_ciphers_find_cipher("hmac");
-	PurpleCipherContext *context = purple_cipher_context_new(cipher, NULL);
+	PurpleCipherContext *context = purple_cipher_context_new_by_name("hmac", NULL);
 
 	purple_cipher_context_set_option(context, "hash", "md5");
 	purple_cipher_context_set_key_with_len(context, (guchar *)key, (key_len));
