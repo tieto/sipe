@@ -32,9 +32,8 @@
 
 #include <glib.h>
 
-#include "debug.h"
-
 #include "sip-sec.h"
+#include "sipe-backend-debug.h"
 #include "sipe-core-api.h"
 #include "sipe-utils.h"
 
@@ -101,7 +100,7 @@ sip_sec_create_context(SipSecAuthType type,
 
 		ret = (*context->acquire_cred_func)(context, domain, username, password);
 		if (ret != SIP_SEC_E_OK) {
-			purple_debug_info("sipe", "ERROR: sip_sec_init_context failed to acquire credentials.\n");
+			SIPE_DEBUG_INFO("ERROR: sip_sec_init_context failed to acquire credentials.%s", "");
 			(*context->destroy_context_func)(context);
 			context = NULL;
 		}
@@ -130,7 +129,7 @@ sip_sec_init_context_step(SipSecContext context,
 
 			tmp = sip_sec_ntlm_message_describe(in_buff);
 			if (tmp) {
-				purple_debug_info("sipe", "sip_sec_init_context_step: Challenge message is:\n%s", tmp);
+				SIPE_DEBUG_INFO("sip_sec_init_context_step: Challenge message is:\n%s", tmp);
 			}
 			g_free(tmp);
 		}
@@ -146,7 +145,7 @@ sip_sec_init_context_step(SipSecContext context,
 			if (out_buff.length > 0 && out_buff.value) {
 				tmp = sip_sec_ntlm_message_describe(out_buff);
 				if (tmp) {
-					purple_debug_info("sipe", "sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
+					SIPE_DEBUG_INFO("sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
 				}
 				g_free(tmp);
 			}
@@ -184,7 +183,7 @@ sip_sec_init_context(SipSecContext *context,
 					  username,
 					  password);
 	if (!*context) {
-		purple_debug_info("sipe", "ERROR: sip_sec_init_context: failed sip_sec_create_context()\n");		
+		SIPE_DEBUG_INFO("ERROR: sip_sec_init_context: failed sip_sec_create_context()%s", "");
 		return NULL;
 	}
 
@@ -223,7 +222,7 @@ char * sip_sec_make_signature(SipSecContext context, const char *message)
 	char *signature_hex;
 
 	if(((*context->make_signature_func)(context, message, &signature)) != SIP_SEC_E_OK) {
-		purple_debug_info("sipe", "ERROR: sip_sec_make_signature failed. Unable to sign message!\n");
+		SIPE_DEBUG_INFO("ERROR: sip_sec_make_signature failed. Unable to sign message!%s", "");
 		return NULL;
 	}
 	signature_hex = buff_to_hex_str(signature.value, signature.length);
@@ -236,8 +235,8 @@ int sip_sec_verify_signature(SipSecContext context, const char *message, const c
 	SipSecBuffer signature;
 	sip_uint32 res;
 
-	purple_debug_info("sipe", "sip_sec_verify_signature: message is:%s signature to verify is:%s\n",
-			  message ? message : "", signature_hex ? signature_hex : "");
+	SIPE_DEBUG_INFO("sip_sec_verify_signature: message is:%s signature to verify is:%s",
+			message ? message : "", signature_hex ? signature_hex : "");
 
 	if (!message || !signature_hex) return SIP_SEC_E_INTERNAL_ERROR;
 

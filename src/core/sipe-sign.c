@@ -24,9 +24,8 @@
 
 #include <glib.h>
 
-#include "debug.h"
-
 #include "sipmsg.h"
+#include "sipe-backend-debug.h"
 #include "sipe-sign.h"
 
 static gchar * const empty_string = "";
@@ -35,7 +34,7 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 {
 	const gchar * hdr;
 	if (msg == NULL || msg->msg == NULL) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipmsg_breakdown_parse msg or msg->msg is NULL", "\n");
+		SIPE_DEBUG_INFO("sipmsg_breakdown_parse msg or msg->msg is NULL%s", "");
 		return;
 	}
 
@@ -143,7 +142,7 @@ sipmsg_breakdown_get_string(int version,
 	gchar *response_str;
 	gchar *msg;
 	if (msgbd->realm == empty_string || msgbd->realm == NULL) {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "realm NULL, so returning NULL signature string\n");
+		SIPE_DEBUG_INFO("realm NULL, so returning NULL signature string%s", "");
 		return NULL;
 	}
 

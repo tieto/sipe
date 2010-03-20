@@ -31,9 +31,8 @@
 
 #include <glib.h>
 
-#include "debug.h"
-
 #include "sip-sec.h"
+#include "sipe-backend-debug.h"
 #include "sipe-cal.h"
 #include "sipe-nls.h"
 #include "sipe-utils.h"
@@ -583,16 +582,16 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 	int index;
 
 	if (!buddy || !buddy->cal_start_time || !buddy->cal_granularity) {
-		purple_debug_info("sipe", "sipe_cal_get_status: no calendar data1 for %s, exiting\n",
+		SIPE_DEBUG_INFO("sipe_cal_get_status: no calendar data1 for %s, exiting",
 				  buddy ? (buddy->name ? buddy->name : "") : "");
 		return SIPE_CAL_NO_DATA;
 	}
 
 	if (!(free_busy = sipe_cal_get_free_busy(buddy))) {
-		purple_debug_info("sipe", "sipe_cal_get_status: no calendar data2 for %s, exiting\n", buddy->name);
+		SIPE_DEBUG_INFO("sipe_cal_get_status: no calendar data2 for %s, exiting", buddy->name);
 		return SIPE_CAL_NO_DATA;
 	}
-	purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", free_busy);
+	SIPE_DEBUG_INFO("sipe_cal_get_description: buddy->cal_free_busy=\n%s", free_busy);
 
 	cal_start = sipe_utils_str_to_time(buddy->cal_start_time);
 
@@ -856,16 +855,16 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 				    _("No data")};
 
 	if (buddy->cal_granularity != 15) {
-		purple_debug_info("sipe", "sipe_cal_get_description: granularity %d is unsupported, exiting.\n", buddy->cal_granularity);
+		SIPE_DEBUG_INFO("sipe_cal_get_description: granularity %d is unsupported, exiting.", buddy->cal_granularity);
 		return NULL;
 	}
 
 	/* to lazy load if needed */
 	free_busy = sipe_cal_get_free_busy(buddy);
-	purple_debug_info("sipe", "sipe_cal_get_description: buddy->cal_free_busy=\n%s\n", free_busy ? free_busy : "");
+	SIPE_DEBUG_INFO("sipe_cal_get_description: buddy->cal_free_busy=\n%s", free_busy ? free_busy : "");
 
 	if (!buddy->cal_free_busy || !buddy->cal_granularity || !buddy->cal_start_time) {
-		purple_debug_info("sipe", "sipe_cal_get_description: no calendar data, exiting");
+		SIPE_DEBUG_INFO("sipe_cal_get_description: no calendar data, exiting%s", "");
 		return NULL;
 	}
 
@@ -874,40 +873,40 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 
 	current_cal_state = sipe_cal_get_status0(free_busy, cal_start, buddy->cal_granularity, time(NULL), &index);
 	if (current_cal_state == SIPE_CAL_NO_DATA) {
-		purple_debug_info("sipe", "sipe_cal_get_description: calendar is undefined for present moment, exiting.\n");
+		SIPE_DEBUG_INFO("sipe_cal_get_description: calendar is undefined for present moment, exiting.%s", "");
 		return NULL;
 	}
 
 	switch_time = sipe_cal_get_switch_time(free_busy, cal_start, buddy->cal_granularity, index, current_cal_state, &to_state);
 
-	purple_debug_info("sipe", "\n* Calendar *\n");
+	SIPE_DEBUG_INFO("\n* Calendar *%s", "");
 	if (buddy->cal_working_hours) {
 		sipe_cal_get_today_work_hours(buddy->cal_working_hours, &start, &end, &next_start);
 
-		purple_debug_info("sipe", "Remote now timezone : %s\n", sipe_cal_get_tz(buddy->cal_working_hours, now));
-		purple_debug_info("sipe", "std.switch_time(GMT): %s",
-				IS((*buddy->cal_working_hours).std.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).std.switch_time))) : "\n");
-		purple_debug_info("sipe", "dst.switch_time(GMT): %s",
-				IS((*buddy->cal_working_hours).dst.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).dst.switch_time))) : "\n");
-		purple_debug_info("sipe", "Remote now time     : %s",
+		SIPE_DEBUG_INFO("Remote now timezone : %s", sipe_cal_get_tz(buddy->cal_working_hours, now));
+		SIPE_DEBUG_INFO("std.switch_time(GMT): %s",
+				IS((*buddy->cal_working_hours).std.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).std.switch_time))) : "");
+		SIPE_DEBUG_INFO("dst.switch_time(GMT): %s",
+				IS((*buddy->cal_working_hours).dst.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).dst.switch_time))) : "");
+		SIPE_DEBUG_INFO("Remote now time     : %s",
 			asctime(sipe_localtime_tz(&now, sipe_cal_get_tz(buddy->cal_working_hours, now))));
-		purple_debug_info("sipe", "Remote start time   : %s",
-			IS(start) ? asctime(sipe_localtime_tz(&start, sipe_cal_get_tz(buddy->cal_working_hours, start))) : "\n");
-		purple_debug_info("sipe", "Remote end time     : %s",
-			IS(end) ? asctime(sipe_localtime_tz(&end, sipe_cal_get_tz(buddy->cal_working_hours, end))) : "\n");
-		purple_debug_info("sipe", "Rem. next_start time: %s",
-			IS(next_start) ? asctime(sipe_localtime_tz(&next_start, sipe_cal_get_tz(buddy->cal_working_hours, next_start))) : "\n");
-		purple_debug_info("sipe", "Remote switch time  : %s",
-			IS(switch_time) ? asctime(sipe_localtime_tz(&switch_time, sipe_cal_get_tz(buddy->cal_working_hours, switch_time))) : "\n");
+		SIPE_DEBUG_INFO("Remote start time   : %s",
+			IS(start) ? asctime(sipe_localtime_tz(&start, sipe_cal_get_tz(buddy->cal_working_hours, start))) : "");
+		SIPE_DEBUG_INFO("Remote end time     : %s",
+			IS(end) ? asctime(sipe_localtime_tz(&end, sipe_cal_get_tz(buddy->cal_working_hours, end))) : "");
+		SIPE_DEBUG_INFO("Rem. next_start time: %s",
+			IS(next_start) ? asctime(sipe_localtime_tz(&next_start, sipe_cal_get_tz(buddy->cal_working_hours, next_start))) : "");
+		SIPE_DEBUG_INFO("Remote switch time  : %s",
+			IS(switch_time) ? asctime(sipe_localtime_tz(&switch_time, sipe_cal_get_tz(buddy->cal_working_hours, switch_time))) : "");
 	} else {
-		purple_debug_info("sipe", "Local now time      : %s",
+		SIPE_DEBUG_INFO("Local now time      : %s",
 			asctime(localtime(&now)));
-		purple_debug_info("sipe", "Local switch time   : %s",
-			IS(switch_time) ? asctime(localtime(&switch_time)) : "\n");
+		SIPE_DEBUG_INFO("Local switch time   : %s",
+			IS(switch_time) ? asctime(localtime(&switch_time)) : "");
 	}
-	purple_debug_info("sipe", "Calendar End (GMT)  : %s", asctime(gmtime(&cal_end)));
-	purple_debug_info("sipe", "current cal state   : %s\n", cal_states[current_cal_state]);
-	purple_debug_info("sipe", "switch  cal state   : %s\n", cal_states[to_state]         );
+	SIPE_DEBUG_INFO("Calendar End (GMT)  : %s", asctime(gmtime(&cal_end)));
+	SIPE_DEBUG_INFO("current cal state   : %s", cal_states[current_cal_state]);
+	SIPE_DEBUG_INFO("switch  cal state   : %s", cal_states[to_state]         );
 
 	/* Calendar: string calculations */
 

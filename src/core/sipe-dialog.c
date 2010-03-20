@@ -26,10 +26,9 @@
 
 #include <glib.h>
 
-#include "debug.h"
-
 #include "sipe-common.h"
 #include "sipmsg.h"
+#include "sipe-backend-debug.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
@@ -99,8 +98,8 @@ sipe_dialog_find_3(struct sip_session *session,
 				sipe_strcase_equal(dialog_in->ourtag, dialog->ourtag) &&
 				sipe_strcase_equal(dialog_in->theirtag, dialog->theirtag))
 			{
-				purple_debug_info("sipe", "sipe_dialog_find_3 who='%s'\n",
-							  dialog->with ? dialog->with : "");
+				SIPE_DEBUG_INFO("sipe_dialog_find_3 who='%s'",
+						dialog->with ? dialog->with : "");
 				return dialog;
 			}
 		} SIPE_DIALOG_FOREACH_END;
@@ -114,7 +113,7 @@ struct sip_dialog *sipe_dialog_find(struct sip_session *session,
 	if (session && who) {
 		SIPE_DIALOG_FOREACH {
 			if (dialog->with && sipe_strcase_equal(who, dialog->with)) {
-				purple_debug_info("sipe", "sipe_dialog_find who='%s'\n", who);
+				SIPE_DEBUG_INFO("sipe_dialog_find who='%s'", who);
 				return dialog;
 			}
 		} SIPE_DIALOG_FOREACH_END;
@@ -126,7 +125,7 @@ void sipe_dialog_remove(struct sip_session *session, const gchar *who)
 {
 	struct sip_dialog *dialog = sipe_dialog_find(session, who);
 	if (dialog) {
-		purple_debug_info("sipe", "sipe_dialog_remove who='%s' with='%s'\n", who, dialog->with ? dialog->with : "");
+		SIPE_DEBUG_INFO("sipe_dialog_remove who='%s' with='%s'", who, dialog->with ? dialog->with : "");
 		session->dialogs = g_slist_remove(session->dialogs, dialog);
 		sipe_dialog_free(dialog);
 	}
@@ -138,8 +137,8 @@ sipe_dialog_remove_3(struct sip_session *session,
 {
 	struct sip_dialog *dialog = sipe_dialog_find_3(session, dialog_in);
 	if (dialog) {
-		purple_debug_info("sipe", "sipe_dialog_remove_3 with='%s'\n",
-					  dialog->with ? dialog->with : "");
+		SIPE_DEBUG_INFO("sipe_dialog_remove_3 with='%s'",
+				dialog->with ? dialog->with : "");
 		session->dialogs = g_slist_remove(session->dialogs, dialog);
 		sipe_dialog_free(dialog);
 	}
@@ -179,7 +178,7 @@ void sipe_dialog_parse_routes(struct sip_dialog *dialog,
 
 			while (*part) {
 				gchar *route = sipmsg_find_part_of_header(*part, "<", ">", NULL);
-				purple_debug_info("sipe", "sipe_dialog_parse_routes: route %s \n", route);
+				SIPE_DEBUG_INFO("sipe_dialog_parse_routes: route %s", route);
 				dialog->routes = g_slist_append(dialog->routes, route);
 				part++;
 			}

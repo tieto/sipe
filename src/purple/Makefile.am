@@ -41,8 +41,8 @@ endif
 check_PROGRAMS = tests
 tests_SOURCES = tests.c
 tests_CFLAGS = $(libsipe_la_CFLAGS)
-tests_LDADD = ../core/libsipe_core_purple.la
-tests_LDFLAGS = $(PURPLE_LIBS)
+tests_LDADD = ../core/libsipe_core.la ../core/libsipe_core_purple.la
+tests_LDFLAGS = libsipe.la $(PURPLE_LIBS)
 
 TESTS = $(check_PROGRAMS)
 

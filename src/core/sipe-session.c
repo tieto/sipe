@@ -26,9 +26,8 @@
 
 #include <glib.h>
 
-#include "debug.h"
-
 #include "sip-sec.h"
+#include "sipe-backend-debug.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
@@ -62,7 +61,7 @@ sipe_session_find_or_add_chat_by_callid(struct sipe_account_data *sip,
 {
 	struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
 	if (!session) {
-		purple_debug_info("sipe", "sipe_session_find_or_add_chat_by_callid: new session for %s\n", callid);
+		SIPE_DEBUG_INFO("sipe_session_find_or_add_chat_by_callid: new session for %s", callid);
 		session = sipe_session_add_chat(sip);
 		session->callid = g_strdup(callid);
 	}
@@ -157,7 +156,7 @@ sipe_session_find_or_add_im(struct sipe_account_data *sip,
 {
 	struct sip_session *session = sipe_session_find_im(sip, who);
 	if (!session) {
-		purple_debug_info("sipe", "sipe_session_find_or_add_im: new session for %s\n", who);
+		SIPE_DEBUG_INFO("sipe_session_find_or_add_im: new session for %s", who);
 		session = g_new0(struct sip_session, 1);
 		session->is_multiparty = FALSE;
 		session->with = g_strdup(who);

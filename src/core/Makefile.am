@@ -4,6 +4,17 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 libsipe_core_la_SOURCES = \
+	sip-sec.h \
+	sip-sec.c \
+	sip-sec-mech.h \
+	sipe-cal.h \
+	sipe-cal.c \
+	sipe-dialog.h \
+	sipe-dialog.c \
+	sipe-session.h \
+	sipe-session.c \
+	sipe-sign.h \
+	sipe-sign.c \
 	sipe-xml.h \
 	sipe-xml.c
 
@@ -17,27 +28,16 @@ libsipe_core_purple_la_SOURCES = \
 	sipe-chat.c \
 	sipe-conf.h \
 	sipe-conf.c \
-	sipe-dialog.h \
-	sipe-dialog.c \
-	sipe-session.h \
-	sipe-session.c \
 	sipe-utils.h \
 	sipe-utils.c \
-	sipe-cal.h \
-	sipe-cal.c \
 	http-conn.h \
 	http-conn.c \
 	sipe-ews.h \
 	sipe-ews.c \
 	sip-csta.c \
 	sip-csta.h \
-	sip-sec.h \
-	sip-sec.c \
-	sip-sec-mech.h \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
-	sipe-sign.h \
-	sipe-sign.c \
 	sipe-ft.h \
 	sipe-ft.c \
 	uuid.h \
@@ -53,16 +53,16 @@ libsipe_core_la_CFLAGS = \
         $(LOCALE_CPPFLAGS) \
 	-I$(srcdir)/../api
 
+if SIP_SEC_KRB5
+libsipe_core_la_SOURCES += sip-sec-krb5.h sip-sec-krb5.c
+libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
+endif
+
 if SIPE_INCLUDE_PURPLE
 libsipe_core_purple_la_CFLAGS = \
 	$(libsipe_core_la_CFLAGS) \
 	$(PURPLE_CFLAGS) \
 	-I$(srcdir)/../purple
-
-if SIP_SEC_KRB5
-libsipe_core_purple_la_SOURCES += sip-sec-krb5.h sip-sec-krb5.c
-libsipe_core_purple_la_CFLAGS  += $(KRB5_CFLAGS)
-endif
 endif
 
 check_PROGRAMS = sipe_xml_tests
