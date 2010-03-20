@@ -38,6 +38,7 @@ URL:            http://sipe.sourceforge.net/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libpurple-devel >= 2.4.0
+BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  libxml2-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
@@ -125,6 +126,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Mar 20 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
+- add BR glib2-devel >= 2.12.0
+
 * Wed Mar 17 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
 - add tests to build
 

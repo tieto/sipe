@@ -230,11 +230,6 @@ gint xmlnode_get_int_attrib(struct _xmlnode *node,
 			    gint fallback);
 
 /**
- * For glib < 2.8 compatibility
- */
-char *sipe_get_host_name(void);
-
-/**
  * Checks if provided string is empty - NULL, zero size or just series of white spaces.
  * Doesn't modify input string.
  */

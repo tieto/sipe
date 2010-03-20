@@ -6999,7 +6999,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 			       sip->username,
 			       availability,
 			       activity,
-			       (tmp = g_ascii_strup(sipe_get_host_name(), -1)),
+			       (tmp = g_ascii_strup(g_get_host_name(), -1)),
 			       res_note ? res_note : "",
 			       res_oof ? res_oof : "",
 			       states ? states : "",
@@ -7149,7 +7149,7 @@ sipe_publish_get_category_device(struct sipe_account_data *sip)
 		uuid,
 		uri,
 		"00:00:00+01:00", /* @TODO make timezone real*/
-		sipe_get_host_name()
+		g_get_host_name()
 	);
 
 	g_free(uri);

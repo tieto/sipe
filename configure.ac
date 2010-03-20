@@ -153,7 +153,7 @@ if test "$kerberos" != "no" ; then
 fi
 
 dnl check for glib
-PKG_CHECK_MODULES(GLIB, [glib-2.0])
+PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
 
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])

@@ -37,11 +37,6 @@
 #include "uuid.h"
 #include "sipe.h"
 
-#if _WIN32 && !GLIB_CHECK_VERSION(2,8,0)
-/* for gethostname() */
-#include "libc_interface.h"
-#endif
-
 /* Generate 32 random bits */
 #define RANDOM32BITS (rand() & 0xFFFF)
 
@@ -150,32 +145,13 @@ gint xmlnode_get_int_attrib(xmlnode *node,
 }
 
 
-//* @TODO Do we need compat with glib < 2.8 ? */
-char *sipe_get_host_name(void)
-{
-#if GLIB_CHECK_VERSION(2,8,0)
-	const gchar * hostname = g_get_host_name();
-#else
-	static char hostname[256];
-	int ret = gethostname(hostname, sizeof(hostname));
-	hostname[sizeof(hostname) - 1] = '\0';
-	if (ret == -1 || hostname[0] == '\0') {
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "Error when getting host name.  Using \"localhost.\"\n");
-		g_strerror(errno);
-		strcpy(hostname, "localhost");
-	}
-#endif
-	/*const gchar * hostname = purple_get_host_name();*/
-	return (char *)hostname;
-}
-
 gchar *
 get_epid(struct sipe_account_data *sip)
 {
 	if (!sip->epid) {
 		gchar *self_sip_uri = sip_uri_self(sip);
 		sip->epid = sipe_get_epid(self_sip_uri,
-					  sipe_get_host_name(),
+					  g_get_host_name(),
 					  purple_network_get_my_ip(-1));
 		g_free(self_sip_uri);
 	}
