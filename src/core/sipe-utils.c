@@ -21,18 +21,18 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
 
 #include <glib.h>
 
-#include "debug.h"
 #include "network.h"
-#include "util.h"
 #include "xmlnode.h"
 
 #include "sip-sec.h"
+#include "sipe-backend-debug.h"
 #include "sipe-utils.h"
 #include "uuid.h"
 #include "sipe.h"
@@ -72,7 +72,7 @@ gchar *parse_from(const gchar *hdr)
 	const gchar *tmp, *tmp2 = hdr;
 
 	if (!hdr) return NULL;
-	purple_debug_info("sipe", "parsing address out of %s\n", hdr);
+	SIPE_DEBUG_INFO("parsing address out of %s", hdr);
 	tmp = strchr(hdr, '<');
 
 	/* i hate the different SIP UA behaviours... */
@@ -82,7 +82,7 @@ gchar *parse_from(const gchar *hdr)
 		if (tmp) {
 			from = g_strndup(tmp2, tmp - tmp2);
 		} else {
-			purple_debug_info("sipe", "found < without > in From\n");
+			SIPE_DEBUG_INFO("found < without > in From%s", "");
 			return NULL;
 		}
 	} else {
@@ -93,7 +93,7 @@ gchar *parse_from(const gchar *hdr)
 			from = g_strdup(tmp2);
 		}
 	}
-	purple_debug_info("sipe", "got %s\n", from);
+	SIPE_DEBUG_INFO("got %s", from);
 	return from;
 }
 
@@ -290,16 +290,18 @@ sipe_strcase_equal(const gchar *left, const gchar *right)
 }
 
 time_t
-sipe_utils_str_to_time(const char *timestamp)
+sipe_utils_str_to_time(const gchar *timestamp)
 {
-	return purple_str_to_time(timestamp, TRUE, NULL, NULL, NULL);
+	GTimeVal time;
+	g_time_val_from_iso8601(timestamp, &time);
+	return time.tv_sec;
 }
 
-char *
+gchar *
 sipe_utils_time_to_str(time_t timestamp)
 {
-#define SIPE_XML_DATE_PATTERN	"%Y-%m-%dT%H:%M:%SZ"
-	return g_strdup(purple_utf8_strftime(SIPE_XML_DATE_PATTERN, gmtime(&timestamp)));
+	GTimeVal time = { timestamp, 0 };
+	return g_time_val_to_iso8601(&time);
 }
 
 size_t
@@ -382,8 +384,8 @@ sipe_utils_nameval_add(GSList* list, const gchar *name, const gchar *value)
 
 	/* SANITY CHECK: the calling code must be fixed if this happens! */
 	if (!value) {
-		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "sipe_utils_nameval_add: NULL value for %s\n",
-			     name);
+		SIPE_DEBUG_ERROR("sipe_utils_nameval_add: NULL value for %s",
+				 name);
 		value = "";
 	}
 

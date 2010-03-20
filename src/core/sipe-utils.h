@@ -287,7 +287,7 @@ gboolean sipe_strcase_equal(const gchar *left, const gchar *right);
  * @param timestamp The timestamp
  */
 time_t
-sipe_utils_str_to_time(const char *timestamp);
+sipe_utils_str_to_time(const gchar *timestamp);
 
 /**
  * Converts time_t to ISO8601 string.
@@ -297,7 +297,7 @@ sipe_utils_str_to_time(const char *timestamp);
  *
  * Example: 2010-02-03T23:59:59Z
  */
-char *
+gchar *
 sipe_utils_time_to_str(time_t timestamp);
 
 struct sipnameval {
