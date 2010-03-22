@@ -9,7 +9,7 @@
 export PIDGIN_TREE_TOP := ../pidgin-2.6.6
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
-#export CFLAGS=-Werror
+export CFLAGS=-Werror
 
 WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
