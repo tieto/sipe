@@ -184,31 +184,29 @@ sipe_cal_event_hash(struct sipe_cal_event* event)
 				event->is_meeting);
 }
 
-static void
-sipe_setenv(const char *name,
-	    const char *value)
+#define ENVIRONMENT_TIMEZONE "TZ"
+
+static gchar *
+sipe_switch_tz(const char *tz)
 {
-#ifdef HAVE_SETENV
-	setenv(name, value, 1);
-#else
-	int len = strlen(name) + 1 + strlen(value) + 1;
-	char *str = g_malloc0(len);
-	sprintf(str, "%s=%s", name, value);
-	putenv(str);
-#endif
+	gchar *tz_orig;
+
+	tz_orig = g_strdup(g_getenv(ENVIRONMENT_TIMEZONE));
+	g_setenv(ENVIRONMENT_TIMEZONE, tz, TRUE);
+	tzset();
+	return(tz_orig);
 }
 
 static void
-sipe_unsetenv(const char *name)
+sipe_reset_tz(gchar *tz_orig)
 {
-#ifdef HAVE_UNSETENV
-	unsetenv(name);
-#else
-	int len = strlen(name) + 1 + 1;
-	char *str = g_malloc0(len);
-	sprintf(str, "%s=", name);
-	putenv(str);
-#endif
+	if (tz_orig) {
+		g_setenv(ENVIRONMENT_TIMEZONE, tz_orig, TRUE);
+		g_free(tz_orig);
+	} else {
+		g_unsetenv(ENVIRONMENT_TIMEZONE);
+	}
+	tzset();
 }
 
 /**
@@ -223,20 +221,11 @@ sipe_mktime_tz(struct tm *tm,
 	       const char* tz)
 {
 	time_t ret;
-	char *tz_old;
+	gchar *tz_orig;
 
-	tz_old = getenv("TZ");
-	sipe_setenv("TZ", tz);
-	tzset();
-
+	tz_orig = sipe_switch_tz(tz);
 	ret = mktime(tm);
-
-	if (tz_old) {
-		sipe_setenv("TZ", tz_old);
-	} else {
-		sipe_unsetenv("TZ");
-	}
-	tzset();
+	sipe_reset_tz(tz_orig);
 
 	return ret;
 }
@@ -253,20 +242,11 @@ sipe_localtime_tz(const time_t *time,
 		  const char* tz)
 {
 	struct tm *ret;
-	char *tz_old;
+	gchar *tz_orig;
 
-	tz_old = getenv("TZ");
-	sipe_setenv("TZ", tz);
-	tzset();
-
+	tz_orig = sipe_switch_tz(tz);
 	ret = localtime(time);
-
-	if (tz_old) {
-		sipe_setenv("TZ", tz_old);
-	} else {
-		sipe_unsetenv("TZ");
-	}
-	tzset();
+	sipe_reset_tz(tz_orig);
 
 	return ret;
 }

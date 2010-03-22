@@ -44,7 +44,7 @@ dnl checks for header files
 AC_CHECK_HEADERS([sys/sockio.h])
 
 dnl checks for library functions
-AC_CHECK_FUNCS([setenv unsetenv])
+AC_CHECK_FUNCS([])
 
 dnl tell pkgconfig to look in the same prefix where we're installing this to,
 dnl as that is likely where libpurple will be found if it is not in the default
