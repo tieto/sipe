@@ -59,6 +59,8 @@
 
 #include <glib.h>
 
+#include "sipe-common.h"
+
 #include "account.h"
 #include "blist.h"
 #include "connection.h"
@@ -84,7 +86,6 @@
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
 
-#include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-sec.h"
