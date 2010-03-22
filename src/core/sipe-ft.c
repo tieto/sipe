@@ -40,15 +40,6 @@
 #include "ft.h"
 #include "network.h"
 
-#include "sipmsg.h"
-#include "sip-sec.h"
-#include "sipe-dialog.h"
-#include "sipe-nls.h"
-#include "sipe-ft.h"
-#include "sipe-session.h"
-#include "sipe-utils.h"
-#include "sipe.h"
-
 #ifdef _WIN32
 /* for network */
 #include "libc_interface.h"
@@ -64,6 +55,15 @@
 #include <sys/sockio.h> /* SIOCGIFCONF for Solaris */
 #endif
 #endif
+
+#include "sipmsg.h"
+#include "sip-sec.h"
+#include "sipe-dialog.h"
+#include "sipe-nls.h"
+#include "sipe-ft.h"
+#include "sipe-session.h"
+#include "sipe-utils.h"
+#include "sipe.h"
 
 #define SIPE_FT_KEY_LENGTH          24
 #define SIPE_FT_CHUNK_HEADER_LENGTH  3
