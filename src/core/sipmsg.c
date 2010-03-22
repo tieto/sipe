@@ -568,12 +568,13 @@ gchar *sipmsg_uri_unescape(const gchar *string)
 		unescaped = g_malloc(len + 1);
 		while (len-- > 0) {
 			gchar c = *string++;
-			if (c == '%') {
+			if ((len >= 2) && (c == '%')) {
 				char hex[3];
 				strncpy(hex, string, 2);
 				hex[2] = '\0';
 				c = strtol(hex, NULL, 16);
 				string += 2;
+				len -= 2;
 			}
 			unescaped[i++] = c;
 		}
