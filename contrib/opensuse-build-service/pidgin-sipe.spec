@@ -121,9 +121,13 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
+%{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 
 
 %changelog
+* Tue Mar 23 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
+- add SVG icon
+
 * Sat Mar 20 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
 - add BR glib2-devel >= 2.12.0
 
