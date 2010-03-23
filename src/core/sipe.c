@@ -74,7 +74,6 @@
 #include "dnsquery.h"
 #include "dnssrv.h"
 #include "ft.h"
-#include "mime.h"
 #include "network.h"
 #include "notify.h"
 #include "plugin.h"
@@ -99,6 +98,7 @@
 #include "sipe-dialog.h"
 #include "sipe-ews.h"
 #include "sipe-ft.h"
+#include "sipe-mime.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-sign.h"
@@ -6644,50 +6644,33 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	g_free(self_uri);
 }
 
+static void sipe_presence_mime_cb(gpointer user_data,
+				  const gchar *type,
+				  const gchar *body,
+				  gsize length)
+{
+	if (strstr(type,"application/rlmi+xml")) {
+		process_incoming_notify_rlmi_resub(user_data, body, length);
+	} else if (strstr(type, "text/xml+msrtc.pidf")) {
+		process_incoming_notify_msrtc(user_data, body, length);
+	} else {
+		process_incoming_notify_rlmi(user_data, body, length);
+	}
+}
+
 static void sipe_process_presence(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	const char *ctype = sipmsg_find_header(msg, "Content-Type");
 
 	purple_debug_info("sipe", "sipe_process_presence: Content-Type: %s\n", ctype ? ctype : "");
 
-	if ( ctype && (  strstr(ctype, "application/rlmi+xml")
-				  || strstr(ctype, "application/msrtc-event-categories+xml") ) )
+	if (ctype &&
+	    (strstr(ctype, "application/rlmi+xml") ||
+	     strstr(ctype, "application/msrtc-event-categories+xml")))
 	{
-		const char *content = msg->body;
-		unsigned length = msg->bodylen;
-		PurpleMimeDocument *mime = NULL;
-
 		if (strstr(ctype, "multipart"))
 		{
-			char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ctype, msg->body);
-                        const char *content_type;
-			GList* parts;
-			mime = purple_mime_document_parse(doc);
-			parts = purple_mime_document_get_parts(mime);
-			while(parts) {
-				content = purple_mime_part_get_data(parts->data);
-				length = purple_mime_part_get_length(parts->data);
-				content_type =purple_mime_part_get_field(parts->data,"Content-Type");
-				if(content_type && strstr(content_type,"application/rlmi+xml"))
-				{
-					process_incoming_notify_rlmi_resub(sip, content, length);
-				}
-				else if(content_type && strstr(content_type, "text/xml+msrtc.pidf"))
-				{
-					process_incoming_notify_msrtc(sip, content, length);
-				}
-				else
-				{
-					process_incoming_notify_rlmi(sip, content, length);
-				}
-				parts = parts->next;
-			}
-			g_free(doc);
-
-			if (mime)
-			{
-				purple_mime_document_free(mime);
-			}
+			sipe_mime_parts_foreach(ctype, msg->body, sipe_presence_mime_cb, sip);
 		}
 		else if(strstr(ctype, "application/msrtc-event-categories+xml") )
 		{
@@ -6708,6 +6691,22 @@ static void sipe_process_presence(struct sipe_account_data *sip, struct sipmsg *
 	}
 }
 
+static void sipe_presence_timeout_mime_cb(gpointer user_data,
+					  SIPE_UNUSED_PARAMETER const gchar *type,
+					  const gchar *body,
+					  gsize length)
+{
+	GSList **buddies = user_data;
+	xmlnode *xml = xmlnode_from_str(body, length);
+
+	if (xml && !sipe_strequal(xml->name, "list")) {
+		gchar *uri = sip_uri(xmlnode_get_attrib(xml, "uri"));
+		*buddies = g_slist_append(*buddies, uri);
+	}
+
+	xmlnode_free(xml);
+}
+
 static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct sipmsg *msg, gchar *who, int timeout)
 {
 	const char *ctype = sipmsg_find_header(msg, "Content-Type");
@@ -6719,28 +6718,11 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 	    strstr(ctype, "multipart") &&
 	    (strstr(ctype, "application/rlmi+xml") ||
 	     strstr(ctype, "application/msrtc-event-categories+xml"))) {
-		char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ctype, msg->body);
-		PurpleMimeDocument *mime = purple_mime_document_parse(doc);
-		GList *parts = purple_mime_document_get_parts(mime);
 		GSList *buddies = NULL;
 		struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
 
-		while (parts) {
-			xmlnode *xml = xmlnode_from_str(purple_mime_part_get_data(parts->data),
-							purple_mime_part_get_length(parts->data));
-
-			if (xml && !sipe_strequal(xml->name, "list")) {
-				gchar *uri = sip_uri(xmlnode_get_attrib(xml, "uri"));
-
-				buddies = g_slist_append(buddies, uri);
-			}
-			xmlnode_free(xml);
-
-			parts = parts->next;
-		}
-		g_free(doc);
-		if (mime) purple_mime_document_free(mime);
-
+		sipe_mime_parts_foreach(ctype, msg->body, sipe_presence_timeout_mime_cb, &buddies);
+		
 		payload->host    = g_strdup(who);
 		payload->buddies = buddies;
 		sipe_schedule_action(action_name, timeout,

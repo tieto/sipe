@@ -28,10 +28,10 @@
 #include <glib.h>
 
 #include "debug.h"
-#include "mime.h"
 #include "util.h"
 
 #include "sipmsg.h"
+#include "sipe-mime.h"
 #include "sipe-utils.h"
 
 struct sipmsg *sipmsg_parse_msg(const gchar *msg) {
@@ -455,6 +455,41 @@ gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
 	return res;
 }
 
+struct html_message_data {
+	gchar *ms_text_format;
+	gchar *body;
+	gboolean preferred;
+};
+
+static void get_html_message_mime_cb(gpointer user_data,
+				     const gchar *type,
+				     const gchar *body,
+				     gsize length)
+{
+	struct html_message_data *data = user_data;
+
+	if (!data->preferred) {
+		gboolean copy = FALSE;
+
+		/* preferred format */
+		if (g_str_has_prefix(type, "text/html")) {
+			copy = TRUE;
+			data->preferred = TRUE;
+
+		/* fallback format */
+		} else if (g_str_has_prefix(type, "text/plain")) {
+			copy = TRUE;
+		}
+
+		if (copy) {
+			g_free(data->ms_text_format);
+			g_free(data->body);
+			data->ms_text_format = g_strdup(type);
+			data->body = g_strndup(body, length);
+		}
+	}
+}
+
 /* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
 gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 {
@@ -465,36 +500,14 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 
 	if (g_str_has_prefix(ms_text_format_in, "multipart/related") ||
 	    g_str_has_prefix(ms_text_format_in, "multipart/alternative")) {
-		char *doc = g_strdup_printf("Content-Type: %s\r\n\r\n%s", ms_text_format_in, body_in);
-		PurpleMimeDocument *mime;
-		GList* parts;
+		struct html_message_data data = { NULL, NULL, FALSE };
 
-		mime = purple_mime_document_parse(doc);
-		parts = purple_mime_document_get_parts(mime);
-		while (parts) {
-			const gchar *content_type = purple_mime_part_get_field(parts->data, "Content-Type");
-			if (content_type) {
-				const gchar *content = purple_mime_part_get_data(parts->data);
-				guint length = purple_mime_part_get_length(parts->data);
+		sipe_mime_parts_foreach(ms_text_format_in, body_in,
+					get_html_message_mime_cb, &data);
 
-				/* if no other format has stored */
-				if (!ms_text_format && g_str_has_prefix(content_type, "text/plain")) {
-					ms_text_format = g_strdup(content_type);
-					body = g_strndup(content, length);
-				/* preferred format */
-				} else if (g_str_has_prefix(ms_text_format, "text/html")) {
-					g_free(ms_text_format);
-					g_free(body);
-					ms_text_format = g_strdup(content_type);
-					body = g_strndup(content, length);
-					break;
-				}
-			}
-			parts = parts->next;
-		}
-		g_free(doc);
-		if (mime)
-			purple_mime_document_free(mime);
+		ms_text_format = data.ms_text_format;
+		body = data.body;
+
 	} else {
 		ms_text_format = g_strdup(ms_text_format_in);
 		body = g_strdup(body_in);
