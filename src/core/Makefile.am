@@ -11,6 +11,8 @@ libsipe_core_la_SOURCES = \
 	sip-sec-mech.h \
 	sipe-cal.h \
 	sipe-cal.c \
+	sipe-chat.h \
+	sipe-chat.c \
 	sipe-dialog.h \
 	sipe-dialog.c \
 	sipe-session.h \
@@ -26,8 +28,6 @@ libsipe_core_purple_la_SOURCES = \
 	sipmsg.h \
 	sipe.h \
 	sipe.c \
-	sipe-chat.h \
-	sipe-chat.c \
 	sipe-conf.h \
 	sipe-conf.c \
 	sipe-utils.h \

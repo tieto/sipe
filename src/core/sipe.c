@@ -4670,6 +4670,14 @@ sipe_convo_closed(PurpleConnection * gc, const char *who)
 }
 
 static void
+sipe_chat_invite(PurpleConnection *gc, int id,
+		 SIPE_UNUSED_PARAMETER const char *message,
+		 const char *name)
+{
+	sipe_chat_create(gc->proto_data, id, name);
+}
+
+static void
 sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_account_data *sip = gc->proto_data;

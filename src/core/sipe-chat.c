@@ -28,22 +28,17 @@
 
 #include <glib.h>
 
-#include "connection.h"
-#include "debug.h"
-
 #include "sipe-common.h"
 #include "sip-sec.h"
+#include "sipe-backend-debug.h"
 #include "sipe-chat.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe.h"
 
-void sipe_chat_invite(PurpleConnection *gc, int id,
-		      SIPE_UNUSED_PARAMETER const char *message,
-		      const char *name)
+void sipe_chat_create(struct sipe_account_data *sip, int id, const char *name)
 {
-	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
 
 	if (session) {
@@ -87,13 +82,13 @@ sipe_chat_get_name(const gchar *proto_chat_id)
 
 	if (proto_chat_id) {
 		chat_name = g_hash_table_lookup(chat_names, proto_chat_id);
-		purple_debug_info("sipe", "sipe_chat_get_name: lookup results: %s\n", chat_name ? chat_name : "NULL");
+		SIPE_DEBUG_INFO("sipe_chat_get_name: lookup results: %s", chat_name ? chat_name : "NULL");
 	}
 	if (!chat_name) {
 		chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
 		g_hash_table_insert(chat_names, g_strdup(proto_chat_id), chat_name);
 		g_hash_table_insert(chat_names_inverse,  chat_name, g_strdup(proto_chat_id));
-		purple_debug_info("sipe", "sipe_chat_get_name: added new: %s\n", chat_name);
+		SIPE_DEBUG_INFO("sipe_chat_get_name: added new: %s", chat_name);
 	}
 
 	return g_strdup(chat_name);

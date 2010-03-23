@@ -27,13 +27,12 @@
  */
 
 /* Forward declarations */
-struct _PurpleConnection;
+struct sipe_account_data;
 
 /**
- * libpurple plugin callback to create a new chat from conversation menu
+ * Create a new chat
  */
-void sipe_chat_invite(struct _PurpleConnection *gc, int id,
-		      const char *message, const char *name);
+void sipe_chat_create(struct sipe_account_data *sip, int id, const char *name);
 
 /**
  * Returns purple's chat name for provided chat identification in protocol.
