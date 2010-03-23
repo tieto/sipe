@@ -21,8 +21,8 @@
  */
 
 /**
- * Initialize & destroy functions for sip-sec.
+ * Initialize & destroy functions for the SIPE core
  * Should be called on loading and unloading of the plugin.
  */
-void sip_sec_init(void);
-void sip_sec_destroy(void);
+void sipe_core_init(void);
+void sipe_core_destroy(void);

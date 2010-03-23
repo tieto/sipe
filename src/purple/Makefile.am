@@ -20,8 +20,7 @@ libsipe_la_CFLAGS = \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	$(PURPLE_CFLAGS) \
-	-I$(srcdir)/../api \
-	-I$(srcdir)/../core
+	-I$(srcdir)/../api
 
 libsipe_la_LDFLAGS = \
 	-module -avoid-version -no-undefined
@@ -40,7 +39,7 @@ endif
 
 check_PROGRAMS = tests
 tests_SOURCES = tests.c purple-debug.c
-tests_CFLAGS = $(libsipe_la_CFLAGS)
+tests_CFLAGS = $(libsipe_la_CFLAGS) -I$(srcdir)/../core
 tests_LDADD = ../core/libsipe_core.la ../core/libsipe_core_purple.la
 tests_LDFLAGS = $(PURPLE_LIBS)
 

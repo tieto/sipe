@@ -24,28 +24,19 @@
 #include "config.h"
 #endif
 
-#include <stdlib.h>
-#include <time.h>
+#include "sipe-common.h"
 
+/* Flag needed for correct version of PURPLE_INIT_PLUGIN() */
 #ifndef PURPLE_PLUGINS
 #define PURPLE_PLUGINS
 #endif
-
-/* for LOCALEDIR */
-#ifdef _WIN32
-#include "win32dep.h"
-#endif
-
-#include "sipe-common.h"
 
 #include "accountopt.h"
 #include "prpl.h"
 #include "plugin.h"
 
-#include "sipe-nls.h"
-
 #include "sipe-core-api.h"
-#include "sipe-backend-debug.h"
+#include "sipe-nls.h"
 
 #include "core-depurple.h"
 
@@ -53,7 +44,7 @@ void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 	GList *entry;
 
-	sip_sec_destroy();
+	sipe_core_destroy();
 
 	entry = prpl_info.protocol_options;
 	while (entry) {
@@ -75,16 +66,8 @@ static void init_plugin(PurplePlugin *plugin)
 	PurpleAccountUserSplit *split;
 	PurpleAccountOption *option;
 
-	srand(time(NULL));
-	sip_sec_init();
-
-#ifdef ENABLE_NLS
-	SIPE_DEBUG_INFO("bindtextdomain = %s",
-			bindtextdomain(PACKAGE_NAME, LOCALEDIR));
-	SIPE_DEBUG_INFO("bind_textdomain_codeset = %s",
-			bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
-	textdomain(PACKAGE_NAME);
-#endif
+	/* This needs to be called first */
+	sipe_core_init();
 
 	purple_plugin_register(plugin);
 

@@ -34,7 +34,6 @@
 
 #include "sip-sec.h"
 #include "sipe-backend-debug.h"
-#include "sipe-core-api.h"
 #include "sipe-utils.h"
 
 #include "sip-sec-mech.h"

@@ -38,6 +38,7 @@
 #endif
 
 #ifdef _WIN32
+#include "win32dep.h" /* for LOCALEDIR */
 #ifdef _DLL
 #define _WS2TCPIP_H_
 #define _WINSOCK2API_
@@ -52,6 +53,7 @@
 #endif /* _WIN32 */
 
 #include <time.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -89,9 +91,11 @@
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-sec.h"
+#include "sipe-backend-debug.h"
 #include "sipe-cal.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
+#include "sipe-core-api.h"
 #include "sipe-dialog.h"
 #include "sipe-ews.h"
 #include "sipe-ft.h"
@@ -10127,6 +10131,25 @@ PurplePluginInfo info = {
 	NULL,
 	NULL
 };
+
+void sipe_core_init(void)
+{
+	srand(time(NULL));
+	sip_sec_init();
+
+#ifdef ENABLE_NLS
+	SIPE_DEBUG_INFO("bindtextdomain = %s",
+			bindtextdomain(PACKAGE_NAME, LOCALEDIR));
+	SIPE_DEBUG_INFO("bind_textdomain_codeset = %s",
+			bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
+	textdomain(PACKAGE_NAME);
+#endif
+}
+
+void sipe_core_destroy(void)
+{
+	sip_sec_destroy();
+}
 
 /*
   Local Variables:
