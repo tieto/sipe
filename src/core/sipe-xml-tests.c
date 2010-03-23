@@ -130,17 +130,30 @@ static void assert_int_attribute(const sipe_xml *xml,
 }
 
 static void assert_stringify(const sipe_xml *xml,
-			     const gchar *expected)
+			     int expected, ...)
 {
+	va_list args;
 	gchar *string = sipe_xml_stringify(xml);
 
-	if (sipe_strequal(string, expected)) {
-		succeeded++;
-	} else {
-		printf("[%s]\nXML stringify FAILED: '%s' expected: '%s'\n",
-		       teststring, string ? string : "(nil)", expected);
+	va_start(args, expected);
+	while (expected-- > 0) {
+		const gchar *alternative = va_arg(args, const gchar *);
+		if (sipe_strequal(string, alternative)) {
+			succeeded++;
+			break;
+		} else {
+			printf("XML stringify alternative FAILED: '%s' (trying next...)\n",
+			       alternative ? alternative : "(nil)");
+		}
+	}
+	va_end(args);
+
+	if (expected < 0) {
+		printf("[%s]\nXML stringify all alternatives FAILED: '%s'\n",
+		       teststring, string ? string : "(nil)");
 		failed++;
 	}
+
 	g_free(string);
 }
 
@@ -205,7 +218,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 
 	/* empty XML */
 	xml = assert_parse(NULL, FALSE);
-	assert_stringify(xml, NULL);
+	assert_stringify(xml, 1, NULL);
 	sipe_xml_free(xml);
 	xml = assert_parse("",   FALSE);
 	sipe_xml_free(xml);
@@ -215,19 +228,19 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	/* one node */
 	xml = assert_parse("<test></test>", TRUE);
 	assert_data(xml, NULL);
-	assert_stringify(xml, "<test/>");
+	assert_stringify(xml, 1, "<test/>");
 	sipe_xml_free(xml);
 	xml = assert_parse("<test/>", TRUE);
 	assert_data(xml, NULL);
-	assert_stringify(xml, teststring);
+	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 	xml = assert_parse("<test>a</test>", TRUE);
 	assert_data(xml, "a");
-	assert_stringify(xml, teststring);
+	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 	xml = assert_parse("<test>a\nb</test>", TRUE);
 	assert_data(xml, "a\nb");
-	assert_stringify(xml, teststring);
+	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	/* child node */
@@ -238,7 +251,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	assert_data(child1, "b");
 	child1 = assert_child(xml, "shouldnotmatch", FALSE);
 	assert_data(child1, NULL);
-	assert_stringify(xml, teststring);
+	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	xml = assert_parse("<test>a<child/></test>", TRUE);
@@ -247,7 +260,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	assert_data(child1, NULL);
 	child1 = assert_child(xml, "shouldnotmatch", FALSE);
 	assert_data(child1, NULL);
-	assert_stringify(xml, teststring);
+	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	xml = assert_parse("<test>a<child>b<inner>c</inner></child></test>", TRUE);
@@ -258,7 +271,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	assert_data(child1, "c");
 	child1 = assert_child(xml, "child/inner", TRUE);
 	assert_data(child1, "c");
-	assert_stringify(xml, teststring);
+	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	xml = assert_parse("<test>a<child>b<inner>c<innerinner>d</innerinner></inner></child></test>", TRUE);
@@ -275,7 +288,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	assert_data(child1, "c");
 	child1 = assert_child(xml, "child/inner/innerinner", TRUE);
 	assert_data(child1, "d");
-	assert_stringify(xml, teststring);
+	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	/* attributes */
@@ -284,7 +297,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	assert_attribute(xml, NULL, NULL);
 	assert_attribute(xml, "a", "");
 	assert_attribute(xml, "b", NULL);
-	assert_stringify(xml, teststring);
+	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	xml = assert_parse("<test a=\"1\" b=\"abc\">a</test>", TRUE);
@@ -295,7 +308,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	assert_attribute(xml, "c", NULL);
 	assert_int_attribute(xml, "d", 100, 200);
 	/* the attribute order depends on glib hashing :-( */
-	assert_stringify(xml, "<test b=\"abc\" a=\"1\">a</test>");
+	assert_stringify(xml, 2, teststring, "<test b=\"abc\" a=\"1\">a</test>");
 	sipe_xml_free(xml);
 
 	/* broken XML */
