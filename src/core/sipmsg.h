@@ -1,8 +1,9 @@
 /**
  * @file sipmsg.h
  *
- * gaim
+ * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
  *
@@ -48,7 +49,6 @@ struct sipendpoint {
 
 struct sipmsg *sipmsg_parse_msg(const gchar *msg);
 struct sipmsg *sipmsg_parse_header(const gchar *header);
-void sipmsg_print(const struct sipmsg *msg);
 void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *value);
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value);
 void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos);

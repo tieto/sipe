@@ -1,8 +1,9 @@
 /**
  * @file sipmsg.c
  *
- * gaim
+ * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
@@ -27,8 +28,6 @@
 #include <time.h>
 
 #include <glib.h>
-
-#include "debug.h"
 
 #include "sipmsg.h"
 #include "sipe-backend.h"
@@ -87,7 +86,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	if (contentlength) {
 		msg->bodylen = strtol(contentlength,NULL,10);
 	} else {
-		purple_debug_fatal("sipe", "sipmsg_parse_header(): Content-Length header not found\n");
+		SIPE_DEBUG_FATAL_NOFORMAT("sipmsg_parse_header(): Content-Length header not found");
 	}
 	if(msg->response) {
 		const gchar *tmp;
@@ -103,20 +102,6 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		}
 	}
 	return msg;
-}
-
-void sipmsg_print(const struct sipmsg *msg) {
-	GSList *cur;
-	struct sipnameval *elem;
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "SIP MSG\n");
-	purple_debug(PURPLE_DEBUG_MISC, "sipe", "response: %d\nmethod: %s\nbodylen: %d\n",msg->response,msg->method,msg->bodylen);
-	if(msg->target) purple_debug(PURPLE_DEBUG_MISC, "sipe", "target: %s\n",msg->target);
-	cur = msg->headers;
-	while(cur) {
-		elem = cur->data;
-		purple_debug(PURPLE_DEBUG_MISC, "sipe", "name: %s value: %s\n",elem->name, elem->value);
-		cur = g_slist_next(cur);
-	}
 }
 
 char *sipmsg_to_string(const struct sipmsg *msg) {
@@ -157,8 +142,8 @@ void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gcha
 
 	/* SANITY CHECK: the calling code must be fixed if this happens! */
 	if (!value) {
-		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "sipmsg_add_header_now_pos: NULL value for %s (%d)\n",
-			     name, pos);
+		SIPE_DEBUG_ERROR("sipmsg_add_header_now_pos: NULL value for %s (%d)",
+				 name, pos);
 		value = "";
 	}
 
@@ -175,8 +160,8 @@ void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *v
 
 	/* SANITY CHECK: the calling code must be fixed if this happens! */
 	if (!value) {
-		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "sipmsg_add_header_now: NULL value for %s\n",
-			     name);
+		SIPE_DEBUG_ERROR("sipmsg_add_header_now: NULL value for %s",
+				 name);
 		value = "";
 	}
 
@@ -193,8 +178,7 @@ void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value
 
 	/* SANITY CHECK: the calling code must be fixed if this happens! */
 	if (!value) {
-		purple_debug(PURPLE_DEBUG_ERROR, "sipe", "sipmsg_add_header: NULL value for %s\n",
-			     name);
+		SIPE_DEBUG_ERROR("sipmsg_add_header: NULL value for %s", name);
 		value = "";
 	}
 
@@ -224,9 +208,9 @@ void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]) {
 			i++;
 		}
 
-		if (!keeper) {
+		if (!keeper) {      
 			GSList *to_delete = entry;
-			purple_debug_info("sipe", "sipmsg_strip_headers: removing %s\n", elem->name);
+			SIPE_DEBUG_INFO("sipmsg_strip_headers: removing %s", elem->name);
 			entry = g_slist_next(entry);
 			msg->headers = g_slist_delete_link(msg->headers, to_delete);
 			g_free(elem->name);
@@ -368,19 +352,19 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	tmp = msg->headers;
 	while(tmp) {
 		elem = tmp->data;
-		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Current header: %s\r\n", elem->value);
+		/* SIPE_DEBUG_INFO("Current header: %s", elem->value); */
 		if (elem && elem->name &&
 		    (sipe_strcase_equal(elem->name,"WWW-Authenticate") ||
 		     sipe_strcase_equal(elem->name,"Authentication-Info")) ) {
 			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
-				//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "elem->value: %s\r\n", elem->value);
+				/* SIPE_DEBUG_INFO("elem->value: %s", elem->value); */
 				return elem->value;
 			}
 		}
-		//purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "moving to next header\r\n");
+		/* SIPE_DEBUG_INFO_NOFORMAT("moving to next header"); */
 		tmp = g_slist_next(tmp);
 	}
-	purple_debug(PURPLE_DEBUG_MISC, "sipmsg", "Did not found auth header %s\r\n", name);
+	SIPE_DEBUG_INFO("auth header '%s' not found.", name);
 	return NULL;
 }
 

@@ -4,6 +4,8 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 libsipe_core_la_SOURCES = \
+	sipmsg.h \
+	sipmsg.c \
 	sip-csta.h \
 	sip-csta.c \
 	sip-sec.h \
@@ -24,8 +26,6 @@ libsipe_core_la_SOURCES = \
 
 libsipe_core_purple_la_SOURCES = \
 	sip-prefix.h \
-	sipmsg.c \
-	sipmsg.h \
 	sipe.h \
 	sipe.c \
 	sipe-conf.h \
