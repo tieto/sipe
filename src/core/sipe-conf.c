@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -32,17 +33,18 @@
 #include <glib.h>
 
 #include "conversation.h"
-#include "debug.h"
 
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
+#include "sipe-backend.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
+#include "sipe-xml.h"
 #include "sipe.h"
 
 /**
@@ -242,13 +244,13 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 	session = sipe_session_find_conference(sip, focus_uri);
 
 	if (!session) {
-		purple_debug_info("sipe", "process_invite_conf_focus_response: unable to find conf session with focus=%s\n", focus_uri);
+		SIPE_DEBUG_INFO("process_invite_conf_focus_response: unable to find conf session with focus=%s", focus_uri);
 		g_free(focus_uri);
 		return FALSE;
 	}
 
 	if (!session->focus_dialog) {
-		purple_debug_info("sipe", "process_invite_conf_focus_response: session's focus_dialog is NULL\n");
+		SIPE_DEBUG_INFO_NOFORMAT("process_invite_conf_focus_response: session's focus_dialog is NULL");
 		g_free(focus_uri);
 		return FALSE;
 	}
@@ -264,19 +266,19 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 	}
 
 	if (msg->response >= 400) {
-		purple_debug_info("sipe", "process_invite_conf_focus_response: INVITE response is not 200. Failed to join focus.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("process_invite_conf_focus_response: INVITE response is not 200. Failed to join focus.");
 		/* @TODO notify user of failure to join focus */
 		sipe_session_remove(sip, session);
 		g_free(focus_uri);
 		return FALSE;
 	} else if (msg->response == 200) {
-		xmlnode *xn_response = xmlnode_from_str(msg->body, msg->bodylen);
-		const gchar *code = xmlnode_get_attrib(xn_response, "code");
+		sipe_xml *xn_response = sipe_xml_parse(msg->body, msg->bodylen);
+		const gchar *code = sipe_xml_attribute(xn_response, "code");
 		if (sipe_strequal(code, "success")) {
 			/* subscribe to focus */
 			sipe_subscribe_conference(sip, session, -1);
 		}
-		xmlnode_free(xn_response);
+		sipe_xml_free(xn_response);
 	}
 
 	g_free(focus_uri);
@@ -294,7 +296,7 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
 	gchar *self;
 
 	if (session->focus_dialog && session->focus_dialog->is_established) {
-		purple_debug_info("sipe", "session with %s already has a dialog open\n", session->focus_uri);
+		SIPE_DEBUG_INFO("session with %s already has a dialog open", session->focus_uri);
 		return;
 	}
 
@@ -352,7 +354,7 @@ sipe_conf_modify_user_role(struct sipe_account_data *sip,
 	gchar *self;
 
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
-		purple_debug_info("sipe", "sipe_conf_modify_user_role: no dialog with focus, exiting.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_modify_user_role: no dialog with focus, exiting.");
 		return;
 	}
 
@@ -393,7 +395,7 @@ sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
 	gchar *self;
 
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
-		purple_debug_info("sipe", "sipe_conf_modify_conference_lock: no dialog with focus, exiting.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_modify_conference_lock: no dialog with focus, exiting.");
 		return;
 	}
 
@@ -434,7 +436,7 @@ sipe_conf_delete_user(struct sipe_account_data *sip,
 	gchar *self;
 
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
-		purple_debug_info("sipe", "sipe_conf_delete_user: no dialog with focus, exiting.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_delete_user: no dialog with focus, exiting.");
 		return;
 	}
 
@@ -486,7 +488,7 @@ process_invite_conf_response(struct sipe_account_data *sip,
 	}
 
 	if (msg->response >= 400) {
-		purple_debug_info("sipe", "process_invite_conf_response: INVITE response is not 200. Failed to invite %s.\n", dialog->with);
+		SIPE_DEBUG_INFO("process_invite_conf_response: INVITE response is not 200. Failed to invite %s.", dialog->with);
 		/* @TODO notify user of failure to invite counterparty */
 		sipe_dialog_free(dialog);
 		return FALSE;
@@ -563,23 +565,23 @@ process_conf_add_response(struct sipe_account_data *sip,
 			  struct transaction *trans)
 {
 	if (msg->response >= 400) {
-		purple_debug_info("sipe", "process_conf_add_response: SERVICE response is not 200. Failed to create conference.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("process_conf_add_response: SERVICE response is not 200. Failed to create conference.");
 		/* @TODO notify user of failure to create conference */
 		return FALSE;
 	}
 	if (msg->response == 200) {
-		xmlnode *xn_response = xmlnode_from_str(msg->body, msg->bodylen);
-		if (sipe_strequal("success", xmlnode_get_attrib(xn_response, "code")))
+		sipe_xml *xn_response = sipe_xml_parse(msg->body, msg->bodylen);
+		if (sipe_strequal("success", sipe_xml_attribute(xn_response, "code")))
 		{
 			gchar *who = trans->payload->data;
 			struct sip_session *session;
-			xmlnode *xn_conference_info = xmlnode_get_descendant(xn_response, "addConference", "conference-info", NULL);
+			const sipe_xml *xn_conference_info = sipe_xml_child(xn_response, "addConference/conference-info");
 
 			session = sipe_session_add_chat(sip);
 			session->is_multiparty = FALSE;
-			session->focus_uri = g_strdup(xmlnode_get_attrib(xn_conference_info, "entity"));
-			purple_debug_info("sipe", "process_conf_add_response: session->focus_uri=%s\n",
-						   session->focus_uri ? session->focus_uri : "");
+			session->focus_uri = g_strdup(sipe_xml_attribute(xn_conference_info, "entity"));
+			SIPE_DEBUG_INFO("process_conf_add_response: session->focus_uri=%s",
+					session->focus_uri ? session->focus_uri : "");
 
 			session->pending_invite_queue = slist_insert_unique_sorted(
 				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
@@ -587,7 +589,7 @@ process_conf_add_response(struct sipe_account_data *sip,
 			/* add self to conf */
 			sipe_invite_conf_focus(sip, session);
 		}
-		xmlnode_free(xn_response);
+		sipe_xml_free(xn_response);
 	}
 
 	return TRUE;
@@ -658,17 +660,17 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 {
 	struct sip_session *session = NULL;
 	struct sip_dialog *dialog = NULL;
-	xmlnode *xn_conferencing = xmlnode_from_str(msg->body, msg->bodylen);
-	xmlnode *xn_focus_uri = xmlnode_get_child(xn_conferencing, "focus-uri");
-	char *focus_uri = xmlnode_get_data(xn_focus_uri);
+	sipe_xml *xn_conferencing = sipe_xml_parse(msg->body, msg->bodylen);
+	const sipe_xml *xn_focus_uri = sipe_xml_child(xn_conferencing, "focus-uri");
+	char *focus_uri = sipe_xml_data(xn_focus_uri);
 	gchar *newTag = gentag();
 	const gchar *oldHeader = sipmsg_find_header(msg, "To");
 	gchar *newHeader;
 
-	xmlnode_free(xn_conferencing);
+	sipe_xml_free(xn_conferencing);
 
 	/* send OK */
-	purple_debug_info("sipe", "We have received invitation to Conference. Focus URI=%s\n", focus_uri);
+	SIPE_DEBUG_INFO("We have received invitation to Conference. Focus URI=%s", focus_uri);
 
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
 	sipmsg_remove_header_now(msg, "To");
@@ -701,9 +703,9 @@ void
 sipe_process_conference(struct sipe_account_data *sip,
 			struct sipmsg *msg)
 {
-	xmlnode *xn_conference_info;
-	xmlnode *node;
-	xmlnode *xn_subject;
+	sipe_xml *xn_conference_info;
+	const sipe_xml *node;
+	const sipe_xml *xn_subject;
 	const gchar *focus_uri;
 	struct sip_session *session;
 	gboolean just_joined = FALSE;
@@ -712,14 +714,14 @@ sipe_process_conference(struct sipe_account_data *sip,
 
 	if (msg->bodylen == 0 || msg->body == NULL || !sipe_strequal(sipmsg_find_header(msg, "Event"), "conference")) return;
 
-	xn_conference_info = xmlnode_from_str(msg->body, msg->bodylen);
+	xn_conference_info = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!xn_conference_info) return;
 
-	focus_uri = xmlnode_get_attrib(xn_conference_info, "entity");
+	focus_uri = sipe_xml_attribute(xn_conference_info, "entity");
 	session = sipe_session_find_conference(sip, focus_uri);
 
 	if (!session) {
-		purple_debug_info("sipe", "sipe_process_conference: unable to find conf session with focus=%s\n", focus_uri);
+		SIPE_DEBUG_INFO("sipe_process_conference: unable to find conf session with focus=%s", focus_uri);
 		return;
 	}
 
@@ -750,25 +752,25 @@ sipe_process_conference(struct sipe_account_data *sip,
 	}
 
 	/* subject */
-	if ((xn_subject = xmlnode_get_descendant(xn_conference_info, "conference-description", "subject", NULL))) {
+	if ((xn_subject = sipe_xml_child(xn_conference_info, "conference-description/subject"))) {
 		g_free(session->subject);
-		session->subject = xmlnode_get_data(xn_subject);
+		session->subject = sipe_xml_data(xn_subject);
 		purple_conv_chat_set_topic(PURPLE_CONV_CHAT(session->conv), NULL, session->subject);
-		purple_debug_info("sipe", "sipe_process_conference: subject=%s\n", session->subject ? session->subject : "");
+		SIPE_DEBUG_INFO("sipe_process_conference: subject=%s", session->subject ? session->subject : "");
 	}
 
 	/* IM MCU URI */
 	if (!session->im_mcu_uri) {
-		for (node = xmlnode_get_descendant(xn_conference_info, "conference-description", "conf-uris", "entry", NULL);
+		for (node = sipe_xml_child(xn_conference_info, "conference-description/conf-uris/entry");
 		     node;
-		     node = xmlnode_get_next_twin(node))
+		     node = sipe_xml_twin(node))
 		{
-			gchar *purpose = xmlnode_get_data(xmlnode_get_child(node, "purpose"));
+			gchar *purpose = sipe_xml_data(sipe_xml_child(node, "purpose"));
 
 			if (sipe_strequal("chat", purpose)) {
 				g_free(purpose);
-				session->im_mcu_uri = xmlnode_get_data(xmlnode_get_child(node, "uri"));
-				purple_debug_info("sipe", "sipe_process_conference: im_mcu_uri=%s\n", session->im_mcu_uri);
+				session->im_mcu_uri = sipe_xml_data(sipe_xml_child(node, "uri"));
+				SIPE_DEBUG_INFO("sipe_process_conference: im_mcu_uri=%s", session->im_mcu_uri);
 				break;
 			}
 			g_free(purpose);
@@ -776,11 +778,10 @@ sipe_process_conference(struct sipe_account_data *sip,
 	}
 
 	/* users */
-	for (node = xmlnode_get_descendant(xn_conference_info, "users", "user", NULL); node; node = xmlnode_get_next_twin(node)) {
-		xmlnode *endpoint = NULL;
-		const gchar *user_uri = xmlnode_get_attrib(node, "entity");
-		const gchar *state = xmlnode_get_attrib(node, "state");
-		gchar *role  = xmlnode_get_data(xmlnode_get_descendant(node, "roles", "entry", NULL));
+	for (node = sipe_xml_child(xn_conference_info, "users/user"); node; node = sipe_xml_twin(node)) {
+		const gchar *user_uri = sipe_xml_attribute(node, "entity");
+		const gchar *state = sipe_xml_attribute(node, "state");
+		gchar *role  = sipe_xml_data(sipe_xml_child(node, "roles/entry"));
 		PurpleConvChatBuddyFlags flags = PURPLE_CBFLAGS_NONE;
 		PurpleConvChat *chat = PURPLE_CONV_CHAT(session->conv);
 		gboolean is_in_im_mcu = FALSE;
@@ -796,9 +797,10 @@ sipe_process_conference(struct sipe_account_data *sip,
 			}
 		} else {
 			/* endpoints */
-			for (endpoint = xmlnode_get_child(node, "endpoint"); endpoint; endpoint = xmlnode_get_next_twin(endpoint)) {
-				if (sipe_strequal("chat", xmlnode_get_attrib(endpoint, "session-type"))) {
-					gchar *status = xmlnode_get_data(xmlnode_get_child(endpoint, "status"));
+			const sipe_xml *endpoint;
+			for (endpoint = sipe_xml_child(node, "endpoint"); endpoint; endpoint = sipe_xml_twin(endpoint)) {
+				if (sipe_strequal("chat", sipe_xml_attribute(endpoint, "session-type"))) {
+					gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "status"));
 					if (sipe_strequal("connected", status)) {
 						is_in_im_mcu = TRUE;
 						if (!purple_conv_chat_find_user(chat, user_uri)) {
@@ -823,16 +825,16 @@ sipe_process_conference(struct sipe_account_data *sip,
 	}
 
 	/* entity-view, locked */
-	for (node = xmlnode_get_descendant(xn_conference_info, "conference-view", "entity-view", NULL);
+	for (node = sipe_xml_child(xn_conference_info, "conference-view/entity-view");
 	     node;
-	     node = xmlnode_get_next_twin(node)) {
+	     node = sipe_xml_twin(node)) {
 
-		xmlnode *xn_type = xmlnode_get_descendant(node, "entity-state", "media", "entry", "type", NULL);
+		const sipe_xml *xn_type = sipe_xml_child(node, "entity-state/media/entry/type");
 		gchar *tmp = NULL;
-		if (xn_type && sipe_strequal("chat", (tmp = xmlnode_get_data(xn_type)))) {
-			xmlnode *xn_locked = xmlnode_get_descendant(node, "entity-state", "locked", NULL);
+		if (xn_type && sipe_strequal("chat", (tmp = sipe_xml_data(xn_type)))) {
+			const sipe_xml *xn_locked = sipe_xml_child(node, "entity-state/locked");
 			if (xn_locked) {
-				gchar *locked = xmlnode_get_data(xn_locked);
+				gchar *locked = sipe_xml_data(xn_locked);
 				gboolean prev_locked = session->locked;
 				session->locked = sipe_strequal(locked, "true");
 				if (prev_locked && !session->locked) {
@@ -844,14 +846,14 @@ sipe_process_conference(struct sipe_account_data *sip,
 						_("This conference is locked. Nobody else can join the conference while it is locked."));
 				}
 
-				purple_debug_info("sipe", "sipe_process_conference: session->locked=%s\n",
-						          session->locked ? "TRUE" : "FALSE");
+				SIPE_DEBUG_INFO("sipe_process_conference: session->locked=%s",
+						session->locked ? "TRUE" : "FALSE");
 				g_free(locked);
 			}
 		}
 		g_free(tmp);
 	}
-	xmlnode_free(xn_conference_info);
+	sipe_xml_free(xn_conference_info);
 
 	if (session->im_mcu_uri) {
 		struct sip_dialog *dialog = sipe_dialog_find(session, session->im_mcu_uri);
@@ -907,8 +909,8 @@ sipe_process_imdn(struct sipe_account_data *sip,
 	gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 	const gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	static struct sip_session *session;
-	xmlnode *xn_imdn;
-	xmlnode *node;
+	sipe_xml *xn_imdn;
+	const sipe_xml *node;
 	gchar *message_id;
 	gchar *message;
 
@@ -917,30 +919,30 @@ sipe_process_imdn(struct sipe_account_data *sip,
 		session = sipe_session_find_im(sip, with);
 	}
 	if (!session) {
-		purple_debug_info("sipe", "sipe_process_imdn: unable to find conf session with call_id=%s\n", call_id);
+		SIPE_DEBUG_INFO("sipe_process_imdn: unable to find conf session with call_id=%s", call_id);
 		g_free(with);
 		return;
 	}
 
-	xn_imdn = xmlnode_from_str(msg->body, msg->bodylen);
-	message_id = xmlnode_get_data(xmlnode_get_child(xn_imdn, "message-id"));
+	xn_imdn = sipe_xml_parse(msg->body, msg->bodylen);
+	message_id = sipe_xml_data(sipe_xml_child(xn_imdn, "message-id"));
 
 	message = g_hash_table_lookup(session->conf_unconfirmed_messages, message_id);
 
 	/* recipient */
-	for (node = xmlnode_get_child(xn_imdn, "recipient"); node; node = xmlnode_get_next_twin(node)) {
-		gchar *tmp = parse_from(xmlnode_get_attrib(node, "uri"));
+	for (node = sipe_xml_child(xn_imdn, "recipient"); node; node = sipe_xml_twin(node)) {
+		gchar *tmp = parse_from(sipe_xml_attribute(node, "uri"));
 		gchar *uri = parse_from(tmp);
 		sipe_present_message_undelivered_err(sip, session, -1, -1, uri, message);
 		g_free(tmp);
 		g_free(uri);
 	}
 
-	xmlnode_free(xn_imdn);
+	sipe_xml_free(xn_imdn);
 
 	g_hash_table_remove(session->conf_unconfirmed_messages, message_id);
-	purple_debug_info("sipe", "sipe_process_imdn: removed message %s from conf_unconfirmed_messages(count=%d)\n",
-			  message_id, g_hash_table_size(session->conf_unconfirmed_messages));
+	SIPE_DEBUG_INFO("sipe_process_imdn: removed message %s from conf_unconfirmed_messages(count=%d)",
+			message_id, g_hash_table_size(session->conf_unconfirmed_messages));
 	g_free(message_id);
 	g_free(with);
 }
