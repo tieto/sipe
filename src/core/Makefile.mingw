@@ -65,6 +65,7 @@ C_SRC =			../purple/purple-debug.c \
 			sipe-cal.c \
 			http-conn.c \
 			sipe-ews.c \
+			sipe-mime.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
