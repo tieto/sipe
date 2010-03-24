@@ -1,9 +1,10 @@
 
-EXTRA_DIST = sipe.svg
+EXTRA_DIST = sipe.svg sipe-original.svg
 
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
 pidginprotocolpixdir = $(datadir)/pixmaps/pidgin/protocols/scalable
 
-pidginprotocolpix_DATA = $(EXTRA_DIST)
+# Do not install original SVG artwork
+pidginprotocolpix_DATA = sipe.svg
