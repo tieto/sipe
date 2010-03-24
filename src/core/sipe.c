@@ -81,7 +81,6 @@
 #include "request.h"
 #include "savedstatuses.h"
 #include "sslconn.h"
-#include "util.h"
 #include "version.h"
 #include "xmlnode.h"
 
@@ -2133,7 +2132,7 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 			sip->status = g_strdup(status_id);
 
 			/* hack to escape apostrof before comparison */
-			tmp = note ? purple_strreplace(note, "'", "&apos;") : NULL;
+			tmp = note ? sipe_utils_str_replace(note, "'", "&apos;") : NULL;
 
 			/* this will preserve OOF flag as well */
 			if (!sipe_strequal(tmp, sip->note)) {
@@ -3155,15 +3154,15 @@ sipe_get_first_last_names(struct sipe_account_data *sip,
 	/* if no display name, make "first last anything_else" out of email */
 	if (email && !display_name) {
 		display_name = g_strndup(email, strstr(email, "@") - email);
-		display_name = purple_strreplace((tmp = display_name), ".", " ");
+		display_name = sipe_utils_str_replace((tmp = display_name), ".", " ");
 		g_free(tmp);
 	}
 
 	if (display_name) {
 		has_comma = (strstr(display_name, ",") != NULL);
-		display_name = purple_strreplace((tmp = display_name), ", ", " ");
+		display_name = sipe_utils_str_replace((tmp = display_name), ", ", " ");
 		g_free(tmp);
-		display_name = purple_strreplace((tmp = display_name), ",", " ");
+		display_name = sipe_utils_str_replace((tmp = display_name), ",", " ");
 		g_free(tmp);
 	}
 
@@ -4021,7 +4020,7 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 	char *msg, *msg_tmp, *msg_tmp2;
 	const char *label;
 
-	msg_tmp = message ? purple_markup_strip_html(message) : NULL;
+	msg_tmp = message ? sipe_backend_markup_strip_html(message) : NULL;
 	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
 	g_free(msg_tmp);
 	/* Service unavailable; Server Internal Error; Server Time-out */
@@ -6361,14 +6360,22 @@ sipe_user_info_has_updated(struct sipe_account_data *sip,
 	g_free(sip->user_states);
 	sip->user_states = NULL;
 	if ((xn_states = xmlnode_get_child(xn_userinfo, "states")) != NULL) {
-		sip->user_states = xmlnode_to_str(xn_states, NULL);
+		gchar *orig = sip->user_states = xmlnode_to_str(xn_states, NULL);
+
 		/* this is a hack-around to remove added newline after inner element,
 		 * state in this case, where it shouldn't be.
 		 * After several use of xmlnode_to_str, amount of added newlines
 		 * grows significantly.
 		 */
-		purple_str_strip_char(sip->user_states, '\n');
-		//purple_str_strip_char(sip->user_states, '\r');
+		if (orig) {
+			gchar c, *stripped = orig;
+			while ((c = *orig++)) {
+				if ((c != '\n') /* && (c != '\r') */) {
+					*stripped++ = c;
+				}
+			}
+			*stripped = '\0';
+		}
 	}
 
 	/* Publish initial state if not yet.
@@ -6945,7 +6952,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 	if (note_pub)
 	{
 		/* to protocol internal plain text format */
-		tmp = purple_markup_strip_html(note_pub);
+		tmp = sipe_backend_markup_strip_html(note_pub);
 		res_note = g_markup_printf_escaped(SIPE_SOAP_SET_PRESENCE_NOTE_XML, tmp);
 		g_free(tmp);
 	}
@@ -7353,7 +7360,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 	struct sipe_publication *publication_note_400 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_400);
 
-	char *tmp = note ? purple_markup_strip_html(note) : NULL;
+	char *tmp = note ? sipe_backend_markup_strip_html(note) : NULL;
 	char *n1 = tmp ? g_markup_escape_text(tmp, -1) : NULL;
 	const char *n2 = publication_note_200 ? publication_note_200->note : NULL;
 	char *res, *tmp1, *tmp2, *tmp3;
@@ -8208,7 +8215,22 @@ static guint sipe_ht_hash_nick(const char *nick)
 
 static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
 {
-	return (purple_utf8_strcasecmp(nick1, nick2) == 0);
+	char *nick1_norm = NULL;
+	char *nick2_norm = NULL;
+	gboolean equal;
+
+	if (nick1 == NULL && nick2 == NULL) return TRUE;
+	if (nick1 == NULL || nick2 == NULL    ||
+	    !g_utf8_validate(nick1, -1, NULL) ||
+	    !g_utf8_validate(nick2, -1, NULL)) return FALSE;
+
+	nick1_norm = g_utf8_casefold(nick1, -1);
+	nick2_norm = g_utf8_casefold(nick2, -1);
+	equal = g_utf8_collate(nick2_norm, nick2_norm) == 0;
+	g_free(nick2_norm);
+	g_free(nick1_norm);
+
+	return equal;
 }
 
 static void sipe_udp_host_resolved_listen_cb(int listenfd, gpointer data)

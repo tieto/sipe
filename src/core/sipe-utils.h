@@ -387,3 +387,16 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
 void
 sipe_utils_nameval_free(GSList *list);
 
+/**
+ * Given a string, this replaces one substring with another
+ * and returns a newly allocated string.
+ *
+ * @param string      the string from which to replace stuff.
+ * @param delimiter   the substring you want replaced.
+ * @param replacement the substring you want as replacement.
+ *
+ * @return string with the substitution or NULL. Must be g_free()'d after use.
+ */
+gchar *sipe_utils_str_replace(const gchar *string,
+			      const gchar *delimiter,
+			      const gchar *replacement);

@@ -50,3 +50,9 @@ void sipe_backend_debug(sipe_debug_level level,
 #define SIPE_DEBUG_ERROR_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_ERROR,   msg)
 #define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
 #define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   msg)
+
+/** MARKUP *******************************************************************/
+
+gchar *sipe_backend_markup_css_property(const gchar *style,
+					const gchar *option); 
+gchar *sipe_backend_markup_strip_html(const gchar *html);

@@ -22,15 +22,16 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
 #include <glib.h>
 
 #include "debug.h"
-#include "util.h"
 
 #include "sipmsg.h"
+#include "sipe-backend.h"
 #include "sipe-mime.h"
 #include "sipe-utils.h"
 
@@ -860,7 +861,7 @@ msn_import_html(const char *html, char **attributes, char **message)
 							char *css_attributes;
 							char *attr_dir;
 							css_attributes = g_strndup(c, attr_len);
-							attr_dir = purple_markup_get_css_property(css_attributes, "direction");
+							attr_dir = sipe_backend_markup_css_property(css_attributes, "direction");
 							g_free(css_attributes);
 							if (attr_dir && (!g_ascii_strncasecmp(attr_dir, "RTL", 3)))
 								direction = '1';

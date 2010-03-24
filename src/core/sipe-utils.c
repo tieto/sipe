@@ -433,6 +433,22 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
 	return NULL;
 }
 
+gchar *sipe_utils_str_replace(const gchar *string,
+			      const gchar *delimiter,
+			      const gchar *replacement)
+{
+	gchar **split;
+	gchar *result;
+
+	if (!string || !delimiter || !replacement) return NULL;
+
+	split = g_strsplit(string, delimiter, 0);
+	result = g_strjoinv(replacement, split);
+	g_strfreev(split);
+
+	return result;
+}
+
 /*
   Local Variables:
   mode: c

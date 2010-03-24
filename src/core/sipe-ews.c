@@ -50,10 +50,10 @@ be great to implement too.
 
 #include "account.h"
 #include "debug.h"
-#include "util.h"
 
 #include "sipe-common.h"
 #include "sip-sec.h"
+#include "sipe-backend.h"
 #include "sipe-cal.h"
 #include "sipe-ews.h"
 #include "sipe-utils.h"
@@ -375,7 +375,7 @@ sipe_ews_process_oof_response(int return_code,
 				html = g_strdup(tmp);
 			}
 			g_free(tmp);
-			tmp = g_strstrip(purple_markup_strip_html(html));
+			tmp = g_strstrip(sipe_backend_markup_strip_html(html));
 			g_free(html);
 			ews->oof_note = g_markup_escape_text(tmp, -1);
 			g_free(tmp);
