@@ -35,7 +35,6 @@
 
 #include "cipher.h"
 #include "connection.h"
-#include "debug.h"
 #include "eventloop.h"
 #include "ft.h"
 #include "network.h"
@@ -59,6 +58,7 @@
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
+#include "sipe-backend.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
 #include "sipe-ft.h"
@@ -139,7 +139,7 @@ sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 			xfer->watcher = 0;
 		}
 		if (ft->listenfd >= 0) {
-			purple_debug_info("sipe", "sipe_ft_free_xfer_struct: closing listening socket %d\n", ft->listenfd);
+			SIPE_DEBUG_INFO("sipe_ft_free_xfer_struct: closing listening socket %d", ft->listenfd);
 			close(ft->listenfd);
 		}
 		if (ft->listener)
@@ -335,8 +335,8 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 	*buffer = g_malloc(bytes_to_read);
 	if (!*buffer) {
 		raise_ft_error(xfer, _("Out of memory"));
-		purple_debug_error("sipe", "sipe_ft_read: can't allocate %" G_GSIZE_FORMAT " bytes for receive buffer\n",
-				   bytes_to_read);
+		SIPE_DEBUG_ERROR("sipe_ft_read: can't allocate %" G_GSIZE_FORMAT " bytes for receive buffer",
+				 bytes_to_read);
 		return -1;
 	}
 
@@ -351,8 +351,8 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 
 		if (!decrypted) {
 			raise_ft_error(xfer, _("Out of memory"));
-			purple_debug_error("sipe", "sipe_ft_read: can't allocate %" G_GSIZE_FORMAT " bytes for decryption buffer\n",
-					   (gsize)bytes_read);
+			SIPE_DEBUG_ERROR("sipe_ft_read: can't allocate %" G_GSIZE_FORMAT " bytes for decryption buffer",
+					 (gsize)bytes_read);
 			g_free(*buffer);
 			*buffer = NULL;
 			return -1;
@@ -406,8 +406,8 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 			ft->encrypted_outbuf = g_malloc(ft->outbuf_size);
 			if (!ft->encrypted_outbuf) {
 				raise_ft_error(xfer, _("Out of memory"));
-				purple_debug_error("sipe", "sipe_ft_write: can't allocate %" G_GSIZE_FORMAT " bytes for send buffer\n",
-						   ft->outbuf_size);
+				SIPE_DEBUG_ERROR("sipe_ft_write: can't allocate %" G_GSIZE_FORMAT " bytes for send buffer",
+						 ft->outbuf_size);
 				return -1;
 			}
 		}
@@ -519,8 +519,8 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 
 	if (!sipe_strequal(buf,VER)) {
 		raise_ft_error_and_cancel(xfer,_("File transfer initialization failed."));
-		purple_debug_info("sipe","File transfer VER string incorrect, received: %s expected: %s",
-				  buf, VER);
+		SIPE_DEBUG_INFO("File transfer VER string incorrect, received: %s expected: %s",
+				buf, VER);
 		return;
 	}
 
@@ -542,8 +542,8 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 	users_match = sipe_strcase_equal(parts[1], (xfer->who + 4));
 	g_strfreev(parts);
 
-	purple_debug_info("sipe","File transfer authentication: %s Expected: USR %s %u\n",
-			  buf, xfer->who + 4, ft->auth_cookie);
+	SIPE_DEBUG_INFO("File transfer authentication: %s Expected: USR %s %u",
+			buf, xfer->who + 4, ft->auth_cookie);
 
 	if (!users_match || (ft->auth_cookie != auth_cookie_received)) {
 		raise_ft_error_and_cancel(xfer,
@@ -618,7 +618,7 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 	}
 
 	if (!session) {
-		purple_debug_error("sipe", "sipe_ft_incoming_transfer: can't find session for remote party\n");
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_ft_incoming_transfer: can't find session for remote party");
 		return;
 	}
 

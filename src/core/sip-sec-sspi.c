@@ -21,18 +21,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdio.h>
 #include <windows.h>
 #include <rpc.h>
 #include <security.h>
 
 #include <glib.h>
-#include <stdio.h>
-
-#include "debug.h"
 
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-sspi.h"
+#include "sipe-backend.h"
 
 /* Mechanism names */
 #define SSPI_MECH_NTLM      "NTLM"
@@ -138,7 +137,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	context_sspi ctx = (context_sspi)context;
 	CtxtHandle* out_context = g_malloc0(sizeof(CtxtHandle));
 	
-	purple_debug_info("sipe", "sip_sec_init_sec_context__sspi: in use\n");
+	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
 
 	input_desc.cBuffers = 1;
 	input_desc.pBuffers = &in_token;

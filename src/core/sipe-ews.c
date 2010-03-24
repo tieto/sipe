@@ -49,7 +49,6 @@ be great to implement too.
 #include <glib.h>
 
 #include "account.h"
-#include "debug.h"
 
 #include "sipe-common.h"
 #include "sip-sec.h"
@@ -224,7 +223,7 @@ sipe_ews_process_avail_response(int return_code,
 {
 	struct sipe_ews *ews = data;
 
-	purple_debug_info("sipe", "sipe_ews_process_avail_response: cb started.\n");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_avail_response: cb started.");
 
 	if(!sipe_strequal(ews->as_url, ews->oof_url)) { /* whether reuse conn */
 		http_conn_set_close(conn);
@@ -256,8 +255,8 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		node = sipe_xml_child(resp, "FreeBusyView/WorkingHours");
 		g_free(ews->working_hours_xml_str);
 		ews->working_hours_xml_str = sipe_xml_stringify(node);
-		purple_debug_info("sipe", "sipe_ews_process_avail_response: ews->working_hours_xml_str:\n%s\n",
-				  ews->working_hours_xml_str ? ews->working_hours_xml_str : "");
+		SIPE_DEBUG_INFO("sipe_ews_process_avail_response: ews->working_hours_xml_str:\n%s",
+				ews->working_hours_xml_str ? ews->working_hours_xml_str : "");
 
 		sipe_ews_cal_events_free(ews->cal_events);
 		ews->cal_events = NULL;
@@ -335,7 +334,7 @@ sipe_ews_process_oof_response(int return_code,
 {
 	struct sipe_ews *ews = data;
 
-	purple_debug_info("sipe", "sipe_ews_process_oof_response: cb started.\n");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_oof_response: cb started.");
 
 	http_conn_set_close(conn);
 	ews->http_conn = NULL;
@@ -417,7 +416,7 @@ sipe_ews_process_autodiscover(int return_code,
 {
 	struct sipe_ews *ews = data;
 
-	purple_debug_info("sipe", "sipe_ews_process_autodiscover: cb started.\n");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_autodiscover: cb started.");
 
 	http_conn_set_close(conn);
 	ews->http_conn = NULL;
@@ -442,12 +441,12 @@ sipe_ews_process_autodiscover(int return_code,
 				ews->oof_url = sipe_xml_data(sipe_xml_child(node, "OOFUrl"));
 				ews->oab_url = sipe_xml_data(sipe_xml_child(node, "OABUrl"));
 
-				purple_debug_info("sipe", "sipe_ews_process_autodiscover:as_url %s\n",
-					ews->as_url ? ews->as_url : "");
-				purple_debug_info("sipe", "sipe_ews_process_autodiscover:oof_url %s\n",
-					ews->oof_url ? ews->oof_url : "");
-				purple_debug_info("sipe", "sipe_ews_process_autodiscover:oab_url %s\n",
-					ews->oab_url ? ews->oab_url : "");
+				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:as_url %s",
+						ews->as_url ? ews->as_url : "");
+				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:oof_url %s",
+						ews->oof_url ? ews->oof_url : "");
+				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:oab_url %s",
+						ews->oab_url ? ews->oab_url : "");
 
 				g_free(type);
 				break;
@@ -482,7 +481,7 @@ sipe_ews_do_autodiscover(struct sipe_ews *ews,
 {
 	char *body;
 
-	purple_debug_info("sipe", "sipe_ews_do_autodiscover: going autodiscover url=%s\n", autodiscover_url ? autodiscover_url : "");
+	SIPE_DEBUG_INFO("sipe_ews_do_autodiscover: going autodiscover url=%s", autodiscover_url ? autodiscover_url : "");
 
 	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, ews->email);
 	ews->http_conn = http_conn_create(
@@ -508,7 +507,7 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 		char *end_str;
 		struct tm *now_tm;
 
-		purple_debug_info("sipe", "sipe_ews_do_avail_request: going Availability req.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_do_avail_request: going Availability req.");
 
 		now_tm = gmtime(&now);
 		/* start -1 day, 00:00:00 */
@@ -546,7 +545,7 @@ sipe_ews_do_oof_request(struct sipe_ews *ews)
 		char *body;
 		const char *content_type = "text/xml; charset=UTF-8";
 
-		purple_debug_info("sipe", "sipe_ews_do_oof_request: going OOF req.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_do_oof_request: going OOF req.");
 
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);
 		if (!ews->http_conn) {
@@ -626,7 +625,7 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 {
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
 
-	purple_debug_info("sipe", "sipe_ews_update_calendar: started.\n");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: started.");
 
 	if (!sip->ews) {
 		const char *value;
@@ -671,13 +670,13 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 	}
 
 	if(sip->ews->is_disabled) {
-		purple_debug_info("sipe", "sipe_ews_update_calendar: disabled, exiting.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
 		return;
 	}
 
 	sipe_ews_run_state_machine(sip->ews);
 
-	purple_debug_info("sipe", "sipe_ews_update_calendar: finished.\n");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: finished.");
 }
 
 

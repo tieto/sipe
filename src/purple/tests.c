@@ -33,14 +33,15 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
-#include "signals.h"
-
 #include "sipmsg.h"
 #include "sipe-sign.h"
 #define _SIPE_COMPILING_TESTS
 #include "sip-sec-ntlm.c"
 
 #include "uuid.h"
+
+#include "debug.h"
+#include "signals.h"
 
 static int successes = 0;
 static int failures = 0;

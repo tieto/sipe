@@ -56,12 +56,12 @@
 #endif /* HAVE_LANGINFO_CODESET */
 
 #include "cipher.h"
-#include "debug.h"
 
 #include "sipe-common.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-ntlm.h"
+#include "sipe-backend.h"
 #include "sipe-utils.h"
 
 /* [MS-NLMP] */
@@ -797,13 +797,13 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 		int key_len;
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_128)) {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 128-bit key (Extended session security)\n");
+			SIPE_DEBUG_INFO_NOFORMAT("NTLM SEALKEY(): 128-bit key (Extended session security)");
 			key_len = 16;
 		} else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key (Extended session security)\n");
+			SIPE_DEBUG_INFO_NOFORMAT("NTLM SEALKEY(): 56-bit key (Extended session security)");
 			key_len = 7;
 		} else {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 40-bit key (Extended session security)\n");
+			SIPE_DEBUG_INFO_NOFORMAT("NTLM SEALKEY(): 40-bit key (Extended session security)");
 			key_len = 5;
 		}
 
@@ -815,11 +815,11 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 	else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_LM_KEY)) /* http://davenport.sourceforge.net/ntlm.html#ntlm1KeyWeakening */
 	{
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_56)) {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 56-bit key\n");
+			SIPE_DEBUG_INFO_NOFORMAT("NTLM SEALKEY(): 56-bit key");
 			memcpy(result, random_session_key, 7);
 			result[7] = 0xA0;
 		} else {
-			purple_debug_info("sipe", "NTLM SEALKEY(): 40-bit key\n");
+			SIPE_DEBUG_INFO_NOFORMAT("NTLM SEALKEY(): 40-bit key");
 			memcpy(result, random_session_key, 5);
 			result[5] = 0xE5;
 			result[6] = 0x38;
@@ -828,7 +828,7 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 	}
 	else
 	{
-		purple_debug_info("sipe", "NTLM SEALKEY(): 128-bit key\n");
+		SIPE_DEBUG_INFO_NOFORMAT("NTLM SEALKEY(): 128-bit key");
 		memcpy(result, random_session_key, 16);
 	}
 }
@@ -903,7 +903,7 @@ MAC (guint32 flags,
 			memcpy(seal_key_, seal_key, seal_key_len);
 		}
 
-		purple_debug_info("sipe", "NTLM MAC(): Extented Session Security\n");
+		SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): Extented Session Security");
 
 		res_ptr = (guint32 *)result;
 		res_ptr[0] = GUINT32_TO_LE(1); // 4 bytes
@@ -916,10 +916,10 @@ MAC (guint32 flags,
 		HMAC_MD5(sign_key, sign_key_len, tmp, 4 + buf_len, hmac);
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
-			purple_debug_info("sipe", "NTLM MAC(): Key Exchange\n");
+			SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): Key Exchange");
 			RC4K(seal_key_, seal_key_len, hmac, 8, result+4);
 		} else {
-			purple_debug_info("sipe", "NTLM MAC(): *NO* Key Exchange\n");
+			SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): *NO* Key Exchange");
 			memcpy(result+4, hmac, 8);
 		}
 	} else {
@@ -931,7 +931,7 @@ MAC (guint32 flags,
 			GUINT32_TO_LE(sequence)
 		}; // 4, 4, 4 bytes
 
-		purple_debug_info("sipe", "NTLM MAC(): *NO* Extented Session Security\n");
+		SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): *NO* Extented Session Security");
 
 		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, result+4);
 
@@ -1060,7 +1060,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	if (!IS_FLAG(*flags, NEGOTIATE_FLAGS_COMMON_MIN) ||
 	    !(is_connection_based || IS_FLAG(*flags, NEGOTIATE_FLAGS_CONNLESS_EXTRA)))
 	{
-		purple_debug_info("sipe", "sip_sec_ntlm_gen_authenticate: received incompatible NTLM NegotiateFlags, exiting.");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_ntlm_gen_authenticate: received incompatible NTLM NegotiateFlags, exiting.");
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
@@ -1117,7 +1117,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	}
 
 	tmp = buff_to_hex_str(exported_session_key, 16);
-	purple_debug_info("sipe", "NTLM AUTHENTICATE: exported session key (not encrypted): %s\n", tmp);
+	SIPE_DEBUG_INFO("NTLM AUTHENTICATE: exported session key (not encrypted): %s", tmp);
 	g_free(tmp);
 
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_SIGN) ||
@@ -1309,7 +1309,7 @@ sip_sec_ntlm_sipe_signature_make(guint32 flags,
 	MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100, result);
 
 	res = buff_to_hex_str(result, 16);
-	purple_debug_info("sipe", "NTLM calculated MAC: %s\n", res);
+	SIPE_DEBUG_INFO("NTLM calculated MAC: %s", res);
 	g_free(res);
 }
 
@@ -1736,7 +1736,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 {
 	context_ntlm ctx = (context_ntlm) context;
 
-	purple_debug_info("sipe", "sip_sec_init_sec_context__ntlm: in use\n");
+	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__ntlm: in use");
 
 	ctx->step++;
 	if (ctx->step == 1) {
@@ -1905,14 +1905,14 @@ void sip_sec_init__ntlm(void)
 
 	convert_from_utf16le = g_iconv_open(sys_cp, "UTF-16LE");
 	if (convert_from_utf16le == (GIConv)-1) {
-		purple_debug_error("sipe", "g_iconv_open from UTF-16LE to %s failed\n",
-				   sys_cp);
+		SIPE_DEBUG_ERROR("g_iconv_open from UTF-16LE to %s failed",
+				 sys_cp);
 	}
 
 	convert_to_utf16le = g_iconv_open("UTF-16LE", sys_cp);
 	if (convert_from_utf16le == (GIConv)-1) {
-		purple_debug_error("sipe", "g_iconv_open from %s to UTF-16LE failed\n",
-				   sys_cp);
+		SIPE_DEBUG_ERROR("g_iconv_open from %s to UTF-16LE failed",
+				 sys_cp);
 	}
 }
 

@@ -37,7 +37,6 @@
 #include <glib.h>
 
 #include "account.h"
-#include "debug.h"
 #include "eventloop.h"
 #include "network.h"
 #include "sslconn.h"
@@ -45,6 +44,7 @@
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
+#include "sipe-backend.h"
 #include "sipe-utils.h"
 #include "http-conn.h"
 #include "sipe.h"
@@ -157,7 +157,7 @@ http_conn_invalidate_ssl_connection(HttpConn *http_conn);
 static void
 http_conn_close(HttpConn *http_conn, const char *message)
 {
-	purple_debug_info("sipe-http", "http_conn_close: closing http connection: %s\n", message ? message : "");
+	SIPE_DEBUG_INFO("http_conn_close: closing http connection: %s", message ? message : "");
 
 	http_conn_invalidate_ssl_connection(http_conn);
 	http_conn_free(http_conn);
@@ -266,7 +266,7 @@ http_conn_input_cb_ssl(gpointer data,
 	gboolean firstread = TRUE;
 
 	if (conn == NULL) {
-		purple_debug_error("sipe-http", "Connection not found; Please try to connect again.\n");
+		SIPE_DEBUG_ERROR_NOFORMAT("Connection not found; Please try to connect again.");
 		return;
 	}
 
@@ -276,7 +276,7 @@ http_conn_input_cb_ssl(gpointer data,
 		if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
 			conn->inbuflen += SIMPLE_BUF_INC;
 			conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
-			purple_debug_info("sipe-http", "http_conn_input_cb_ssl: new input buffer length %d\n", conn->inbuflen);
+			SIPE_DEBUG_INFO("http_conn_input_cb_ssl: new input buffer length %d", conn->inbuflen);
 		}
 
 		/* Try to read as much as there is space left in the buffer */
@@ -346,13 +346,13 @@ http_conn_create(PurpleAccount *account,
 	HttpConn *http_conn;
 
 	if (!full_url || (strlen(full_url) == 0)) {
-		purple_debug_info("sipe-http", "no URL supplied!\n");
+		SIPE_DEBUG_INFO_NOFORMAT("no URL supplied!");
 		return NULL;
 	}
 	if (sipe_strequal(conn_type, HTTP_CONN_SSL) &&
 	    !purple_ssl_is_supported())
 	{
-		purple_debug_info("sipe-http", "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor\n");
+		SIPE_DEBUG_INFO_NOFORMAT("SSL support is not installed. Either install SSL support or configure a different connection type in the account editor.");
 		return NULL;
 	}
 
@@ -407,7 +407,7 @@ http_conn_process_input(HttpConn *http_conn)
 		time_t currtime = time(NULL);
 		cur += 2;
 		cur[0] = '\0';
-		purple_debug_info("sipe-http", "received - %s******\n%s\n******\n", ctime(&currtime), tmp = fix_newlines(conn->inbuf));
+		SIPE_DEBUG_INFO("received - %s******\n%s\n******", ctime(&currtime), tmp = fix_newlines(conn->inbuf));
 		g_free(tmp);
 
 		msg = sipmsg_parse_header(conn->inbuf);
@@ -424,14 +424,14 @@ http_conn_process_input(HttpConn *http_conn)
 			conn->inbufused = strlen(conn->inbuf);
 		} else {
 			if (msg){
-                           purple_debug_info("sipe-http", "process_input: body too short (%d < %d, strlen %d) - ignoring message\n", restlen, msg->bodylen, (int)strlen(conn->inbuf));
+                           SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", restlen, msg->bodylen, (int)strlen(conn->inbuf));
 			sipmsg_free(msg);
                         }
 			return;
 		}
 
 		if (msg->body) {
-			purple_debug_info("sipe-http", "body:\n%s\n", msg->body);
+			SIPE_DEBUG_INFO("body:\n%s", msg->body);
 		}
 
 		http_conn_process_input_message(http_conn, msg);
@@ -453,11 +453,11 @@ http_conn_sendout_pkt(HttpConn *http_conn,
 	char *tmp;
 	int ret = 0;
 
-	purple_debug(PURPLE_DEBUG_MISC, "sipe-http", "sending - %s******\n%s\n******\n", ctime(&currtime), tmp = fix_newlines(buf));
+	SIPE_DEBUG_INFO("sending - %s******\n%s\n******", ctime(&currtime), tmp = fix_newlines(buf));
 	g_free(tmp);
 
 	if (http_conn->fd < 0) {
-		purple_debug_info("sipe-http", "http_conn_sendout_pkt: http_conn->fd < 0, exiting\n");
+		SIPE_DEBUG_INFO_NOFORMAT("http_conn_sendout_pkt: http_conn->fd < 0, exiting");
 		return;
 	}
 
@@ -468,12 +468,12 @@ http_conn_sendout_pkt(HttpConn *http_conn,
 	if (ret < 0 && errno == EAGAIN)
 		ret = 0;
 	else if (ret <= 0) { /* XXX: When does this happen legitimately? */
-		purple_debug_info("sipe-http", "http_conn_sendout_pkt: ret <= 0, exiting\n");
+		SIPE_DEBUG_INFO_NOFORMAT("http_conn_sendout_pkt: ret <= 0, exiting");
 		return;
 	}
 
 	if (ret < writelen) {
-		purple_debug_info("sipe-http", "http_conn_sendout_pkt: ret < writelen, exiting\n");
+		SIPE_DEBUG_INFO_NOFORMAT("http_conn_sendout_pkt: ret < writelen, exiting");
 	}
 }
 
@@ -506,7 +506,7 @@ http_conn_post(	HttpConn *http_conn,
 		void *data)
 {
 	if (!http_conn) {
-		purple_debug_info("sipe-http", "http_conn_post: NULL http_conn, exiting.\n");
+		SIPE_DEBUG_INFO_NOFORMAT("http_conn_post: NULL http_conn, exiting.");
 		return;
 	}
 
@@ -534,7 +534,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 	{
 		const char *location = sipmsg_find_header(msg, "Location");
 
-		purple_debug_info("sipe-http", "http_conn_process_input_message: Redirect to: %s\n", location ? location : "");
+		SIPE_DEBUG_INFO("http_conn_process_input_message: Redirect to: %s", location ? location : "");
 
 		http_conn->do_close = http_conn_clone(http_conn);
 		http_conn->sec_ctx = NULL;
@@ -571,7 +571,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn, http_conn->data);
 			}
-			purple_debug_info("sipe-http", "http_conn_process_input_message: Authentication failed\n");
+			SIPE_DEBUG_INFO_NOFORMAT("http_conn_process_input_message: Authentication failed");
 			http_conn_set_close(http_conn);
 			return;
 		}
@@ -590,7 +590,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 #endif
 #endif
 		if (!ptmp) {
-			purple_debug_info("sipe-http", "http_conn_process_input_message: Only %s supported in the moment, exiting\n",
+			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
 #ifdef _WIN32
 #ifdef HAVE_KERBEROS
 				"NTLM and Negotiate authentications are"
@@ -630,7 +630,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn, http_conn->data);
 			}
-			purple_debug_info("sipe-http", "http_conn_process_input_message: Failed to initialize security context\n");
+			SIPE_DEBUG_INFO_NOFORMAT("http_conn_process_input_message: Failed to initialize security context");
 			http_conn_set_close(http_conn);
 			return;
 		}
