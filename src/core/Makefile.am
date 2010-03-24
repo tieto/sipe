@@ -25,7 +25,6 @@ libsipe_core_la_SOURCES = \
 	sipe-xml.c
 
 libsipe_core_purple_la_SOURCES = \
-	sip-prefix.h \
 	sipe.h \
 	sipe.c \
 	sipe-conf.h \

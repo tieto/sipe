@@ -11,7 +11,6 @@
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
 		C92A799210B24C46009B64B9 /* sip-csta.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797310B24C46009B64B9 /* sip-csta.c */; };
 		C92A799310B24C46009B64B9 /* sip-csta.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797410B24C46009B64B9 /* sip-csta.h */; };
-		C92A799410B24C46009B64B9 /* sip-prefix.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797510B24C46009B64B9 /* sip-prefix.h */; };
 		C92A799510B24C46009B64B9 /* sip-sec-krb5.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797610B24C46009B64B9 /* sip-sec-krb5.c */; };
 		C92A799610B24C46009B64B9 /* sip-sec-krb5.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797710B24C46009B64B9 /* sip-sec-krb5.h */; };
 		C92A799710B24C46009B64B9 /* sip-sec-mech.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797810B24C46009B64B9 /* sip-sec-mech.h */; };
@@ -75,7 +74,6 @@
 		C92A796910B24BAD009B64B9 /* libpidgin-sipe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libpidgin-sipe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C92A797310B24C46009B64B9 /* sip-csta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sip-csta.c"; path = "../core/sip-csta.c"; sourceTree = SOURCE_ROOT; };
 		C92A797410B24C46009B64B9 /* sip-csta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-csta.h"; path = "../core/sip-csta.h"; sourceTree = SOURCE_ROOT; };
-		C92A797510B24C46009B64B9 /* sip-prefix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-prefix.h"; path = "../core/sip-prefix.h"; sourceTree = SOURCE_ROOT; };
 		C92A797610B24C46009B64B9 /* sip-sec-krb5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sip-sec-krb5.c"; path = "../core/sip-sec-krb5.c"; sourceTree = SOURCE_ROOT; };
 		C92A797710B24C46009B64B9 /* sip-sec-krb5.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-sec-krb5.h"; path = "../core/sip-sec-krb5.h"; sourceTree = SOURCE_ROOT; };
 		C92A797810B24C46009B64B9 /* sip-sec-mech.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-sec-mech.h"; path = "../core/sip-sec-mech.h"; sourceTree = SOURCE_ROOT; };
@@ -253,7 +251,6 @@
 			children = (
 				C92A797310B24C46009B64B9 /* sip-csta.c */,
 				C92A797410B24C46009B64B9 /* sip-csta.h */,
-				C92A797510B24C46009B64B9 /* sip-prefix.h */,
 				C92A797610B24C46009B64B9 /* sip-sec-krb5.c */,
 				C92A797710B24C46009B64B9 /* sip-sec-krb5.h */,
 				C92A797810B24C46009B64B9 /* sip-sec-mech.h */,
@@ -292,7 +289,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				C92A799310B24C46009B64B9 /* sip-csta.h in Headers */,
-				C92A799410B24C46009B64B9 /* sip-prefix.h in Headers */,
 				C92A799610B24C46009B64B9 /* sip-sec-krb5.h in Headers */,
 				C92A799710B24C46009B64B9 /* sip-sec-mech.h in Headers */,
 				C92A799910B24C46009B64B9 /* sip-sec-ntlm.h in Headers */,
