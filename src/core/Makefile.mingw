@@ -75,8 +75,13 @@ C_SRC =			../purple/purple-debug.c \
 			sipe-ft.c \
 			sipe-xml.c \
 			uuid.c
+			
+C_TEST_SRC = 		sipe-xml-tests.c \
+			../purple/tests.c \
 
 OBJECTS = 		$(C_SRC:%.c=%.o)
+
+TEST_OBJECTS = 		$(C_TEST_SRC:%.c=%.o)
 
 ##
 ## LIBRARIES
@@ -121,12 +126,16 @@ install:
 	test -z "$(DLL_INSTALL_DIR)" || mkdir -p "$(DLL_INSTALL_DIR)"
 	/usr/bin/install -c $(TARGET).dll '$(DLL_INSTALL_DIR)'
 	
-tests: tests-clean
-	$(CC) $(TESTS_WARN) -pipe -mno-cygwin -mms-bitfields -ggdb $(INCLUDE_PATHS) -o tests.o -c tests.c
-	$(CC) sipe-sign.o sip-sec.o sipmsg.o sipe-utils.o uuid.o tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o tests.exe
+$(TEST_OBJECTS):
+
+tests: tests-clean $(TEST_OBJECTS)
+	$(CC) sipe-utils.o uuid.o sipe-xml.o sipe-xml-tests.o -L. $(LIB_PATHS) $(LIBS) -lsipe -o sipe-xml-tests.exe
+	$(CC) ../purple/purple-debug.o sipe-sign.o sipe-mime.o sipmsg.o sipe-utils.o uuid.o ../purple/tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o ../purple/tests.exe
+	sipe-xml-tests.exe
+	../purple/tests.exe
 	
 tests-clean:
-	rm -f tests.o
-	rm -f tests.exe
+	rm -f $(TEST_OBJECTS)
+	rm -f sipe-xml-tests.exe ../purple/tests.exe
 
 include $(PIDGIN_COMMON_TARGETS)
