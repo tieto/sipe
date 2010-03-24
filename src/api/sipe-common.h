@@ -20,6 +20,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Everything in here must be independent of any other header file!
+ *
+ * I.e. it must be possible to include this header
+ * in any module without requiring any other #include.
+ */
+
 #define SIPE_UNUSED_PARAMETER __attribute__((unused))
 
 /* in order to remove internal.h dependency in mingw builds */

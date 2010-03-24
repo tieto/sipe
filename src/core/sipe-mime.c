@@ -24,7 +24,7 @@
 
 #include "mime.h"
 
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-mime.h"
 
 void sipe_mime_parts_foreach(const gchar *type,

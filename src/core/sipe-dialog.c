@@ -28,7 +28,7 @@
 
 #include "sipe-common.h"
 #include "sipmsg.h"
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"

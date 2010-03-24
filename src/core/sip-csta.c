@@ -36,7 +36,7 @@
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-sec.h"
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-dialog.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"

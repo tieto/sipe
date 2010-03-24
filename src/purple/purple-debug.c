@@ -25,7 +25,7 @@
 #include "glib.h"
 #include "debug.h"
 
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 
 void sipe_backend_debug(sipe_debug_level level,
 			const gchar *format,

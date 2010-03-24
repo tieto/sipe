@@ -52,9 +52,10 @@ be great to implement too.
 #include "debug.h"
 #include "util.h"
 
+#include "sipe-common.h"
+#include "sip-sec.h"
 #include "sipe-cal.h"
 #include "sipe-ews.h"
-#include "sip-sec.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "http-conn.h"

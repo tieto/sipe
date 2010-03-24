@@ -35,7 +35,7 @@
 #include "prpl.h"
 #include "plugin.h"
 
-#include "sipe-core-api.h"
+#include "sipe-core.h"
 #include "sipe-nls.h"
 
 #include "core-depurple.h"

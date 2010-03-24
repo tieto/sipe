@@ -27,7 +27,7 @@
 #include <glib.h>
 
 #include "sip-sec.h"
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"

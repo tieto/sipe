@@ -25,7 +25,7 @@
 #include <glib.h>
 
 #include "sipmsg.h"
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-sign.h"
 
 static gchar * const empty_string = "";

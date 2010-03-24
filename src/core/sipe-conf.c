@@ -34,6 +34,7 @@
 #include "conversation.h"
 #include "debug.h"
 
+#include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
 #include "sipe-chat.h"

@@ -32,7 +32,7 @@
 #include "xmlnode.h"
 
 #include "sip-sec.h"
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-utils.h"
 #include "uuid.h"
 #include "sipe.h"

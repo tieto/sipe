@@ -32,7 +32,7 @@
 #include <glib.h>
 
 #include "sip-sec.h"
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-cal.h"
 #include "sipe-nls.h"
 #include "sipe-utils.h"

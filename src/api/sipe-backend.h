@@ -1,5 +1,5 @@
 /**
- * @file sipe-backend-debug.h
+ * @file sipe-backend.h
  *
  * pidgin-sipe
  *
@@ -19,6 +19,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+/** DEBUGGING ****************************************************************/
 
 typedef enum {
 	SIPE_DEBUG_LEVEL_INFO,

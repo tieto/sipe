@@ -22,8 +22,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define SIPE_UNUSED_PARAMETER __attribute__((unused))
-
 /* Opaque type definition for security context */
 typedef struct sip_sec_context *SipSecContext;
 
@@ -36,7 +34,7 @@ typedef enum sip_sec_auth_type
 	AUTH_TYPE_NEGOTIATE
 } SipSecAuthType;
 
-//// Sipe convenience methods ////
+/*** Sipe convenience methods ***/
 
 /**
  * Initializes Sipe security context.

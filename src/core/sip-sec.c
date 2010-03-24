@@ -32,8 +32,9 @@
 
 #include <glib.h>
 
+#include "sipe-common.h"
 #include "sip-sec.h"
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-utils.h"
 
 #include "sip-sec-mech.h"

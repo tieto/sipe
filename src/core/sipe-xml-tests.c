@@ -31,7 +31,7 @@
 #include <glib.h>
 
 #include "sipe-common.h"
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-xml.h"
 #include "sipe-utils.h"
 

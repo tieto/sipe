@@ -1,5 +1,5 @@
 /**
- * @file sipe-core-api.h
+ * @file sipe-core.h
  *
  * pidgin-sipe
  *

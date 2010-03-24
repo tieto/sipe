@@ -30,7 +30,7 @@
 #include "libxml/parser.h"
 #include "glib.h"
 
-#include "sipe-backend-debug.h"
+#include "sipe-backend.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 

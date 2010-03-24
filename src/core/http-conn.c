@@ -42,6 +42,7 @@
 #include "network.h"
 #include "sslconn.h"
 
+#include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
 #include "sipe-utils.h"

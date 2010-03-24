@@ -2,7 +2,7 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 EXTRA_DIST = \
-	sipe-backend-debug.h \
+	sipe-backend.h \
 	sipe-common.h \
-	sipe-core-api.h \
+	sipe-core.h \
 	sipe-nls.h

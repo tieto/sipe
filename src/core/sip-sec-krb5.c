@@ -27,6 +27,7 @@
 #include <gssapi/gssapi.h>
 #include <gssapi/gssapi_krb5.h>
 
+#include "sipe-common.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-krb5.h"
