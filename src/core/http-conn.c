@@ -175,24 +175,48 @@ http_conn_parse_url(const char *url,
 		    int *port,
 		    char **rel_url)
 {
-	char **parts = g_strsplit(url, "://", 2);
-	char *no_proto = parts[1] ? g_strdup(parts[1]) : g_strdup(parts[0]);
-	int port_tmp = sipe_strequal(parts[0], "https") ? 443 : 80;
-	char *tmp;
-	char *host_port;
+        char **parts = g_strsplit(url, "://", 2);
+        char *no_proto;
+        int port_tmp;
+        char *tmp;
+        char *host_port;
 
-	g_strfreev(parts);
-	tmp = strstr(no_proto, "/");
-	if (tmp && rel_url) *rel_url = g_strdup(tmp);
-	host_port = tmp ? g_strndup(no_proto, tmp - no_proto) : g_strdup(no_proto);
-	g_free(no_proto);
+        if(!parts) {
+                return;
+        } else if(!parts[0]) {
+                g_strfreev(parts);
+                return;
+        }
 
-	parts = g_strsplit(host_port, ":", 2);
-	if (host) *host = g_strdup(parts[0]);
-	if (port) *port = parts[1] ? atoi(parts[1]) : port_tmp;
-	g_strfreev(parts);
+        no_proto = parts[1] ? g_strdup(parts[1]) : g_strdup(parts[0]);
+        port_tmp = sipe_strequal(parts[0], "https") ? 443 : 80;
 
-	g_free(host_port);
+        if(!no_proto) {
+		return;
+        }
+
+        g_strfreev(parts);
+        tmp = strstr(no_proto, "/");
+        if (tmp && rel_url) *rel_url = g_strdup(tmp);
+        host_port = tmp ? g_strndup(no_proto, tmp - no_proto) : g_strdup(no_proto);
+        g_free(no_proto);
+
+        if(!host_port) {
+                return;
+        }
+
+        parts = g_strsplit(host_port, ":", 2);
+
+        if(parts) {
+                if (host) *host = g_strdup(parts[0]);
+                if(parts[0]) {
+			port_tmp = parts[1] ? atoi(parts[1]) : port_tmp;
+                }
+                if (port) *port = port_tmp;
+                g_strfreev(parts);
+        }
+
+        g_free(host_port);
 }
 
 static void
