@@ -7097,16 +7097,32 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 				const gchar *instance = xmlnode_get_attrib(node, "instance");
 				/* key is <category><instance><container> */
 				gchar *key = g_strdup_printf("<%s><%s><%s>", categoryName, instance, container);
-				struct sipe_publication *publication =
-					g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, categoryName), key);
+				GHashTable *category = g_hash_table_lookup(sip->our_publications, categoryName);
 
-				SIPE_DEBUG_INFO("key is %s", key);
+				if (category) {
+					struct sipe_publication *publication =
+						g_hash_table_lookup(category, key);
 
-				if (publication) {
-					SIPE_DEBUG_INFO("Updating %s with version %s. Was %d before.",
-							key, curVersion, publication->version);
-					/* updating publication's version to the correct one */
-					publication->version = atoi(curVersion);
+					SIPE_DEBUG_INFO("key is %s", key);
+
+					if (publication) {
+						SIPE_DEBUG_INFO("Updating %s with version %s. Was %d before.",
+								key, curVersion, publication->version);
+						/* updating publication's version to the correct one */
+						publication->version = atoi(curVersion);
+					}
+				} else {
+					/* We somehow lost this category from our publications... */
+					struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
+					publication->category  = g_strdup(categoryName);
+					publication->instance  = atoi(instance);
+					publication->container = atoi(container);
+					publication->version   = atoi(curVersion);
+					category = g_hash_table_new_full(g_str_hash, g_str_equal,
+									 g_free, (GDestroyNotify)free_publication);
+					g_hash_table_insert(category, g_strdup(key), publication);
+					g_hash_table_insert(sip->our_publications, g_strdup(categoryName), category);
+					SIPE_DEBUG_INFO("added lost category '%s' key '%s'", categoryName, key);
 				}
 				g_free(key);
 			}
