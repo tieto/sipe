@@ -190,12 +190,12 @@ http_conn_parse_url(const char *url,
 
         no_proto = parts[1] ? g_strdup(parts[1]) : g_strdup(parts[0]);
         port_tmp = sipe_strequal(parts[0], "https") ? 443 : 80;
+        g_strfreev(parts);
 
         if(!no_proto) {
 		return;
         }
 
-        g_strfreev(parts);
         tmp = strstr(no_proto, "/");
         if (tmp && rel_url) *rel_url = g_strdup(tmp);
         host_port = tmp ? g_strndup(no_proto, tmp - no_proto) : g_strdup(no_proto);
