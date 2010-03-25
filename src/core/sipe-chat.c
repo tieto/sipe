@@ -28,7 +28,6 @@
 
 #include <glib.h>
 
-#include "sipe-common.h"
 #include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-chat.h"
