@@ -663,9 +663,12 @@ msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 				colors[0] = temp;
 			}
 
+			/* hh is undefined in mingw's gcc 4.4
+			 *  https://sourceforge.net/tracker/index.php?func=detail&aid=2818436&group_id=2435&atid=102435
+			 */
 			g_snprintf(tag, sizeof(tag),
-					   "<FONT COLOR=\"#%02hhx%02hhx%02hhx\">",
-					   colors[0], colors[1], colors[2]);
+					   "<FONT COLOR=\"#%02x%02x%02x\">",
+					   (unsigned char)colors[0], (unsigned char)colors[1], (unsigned char)colors[2]);
 
 			pre = g_string_append(pre, tag);
 			post = g_string_prepend(post, "</FONT>");

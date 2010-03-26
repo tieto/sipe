@@ -89,14 +89,14 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 
 		if ( domain && (strlen(domain) > 0) ) {
 			auth_identity.Domain = (unsigned char*)domain;
-			auth_identity.DomainLength = strlen(auth_identity.Domain);
+			auth_identity.DomainLength = strlen(domain);
 		}
 
 		auth_identity.User = (unsigned char*)username;
-		auth_identity.UserLength = strlen(auth_identity.User);
+		auth_identity.UserLength = strlen(username);
 
 		auth_identity.Password = (unsigned char*)password;
-		auth_identity.PasswordLength = strlen(auth_identity.Password);
+		auth_identity.PasswordLength = strlen(password);
 	}
 	
 	cred_handle = g_malloc0(sizeof(CredHandle));
