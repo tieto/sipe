@@ -1,5 +1,5 @@
 /**
- * @file sipe-mime.c
+ * @file purple-mime.c
  *
  * pidgin-sipe
  *

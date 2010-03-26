@@ -35,8 +35,6 @@ libsipe_core_purple_la_SOURCES = \
 	http-conn.c \
 	sipe-ews.h \
 	sipe-ews.c \
-	sipe-mime.h \
-	sipe-mime.c \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
 	sipe-ft.h \
