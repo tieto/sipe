@@ -155,6 +155,18 @@ fi
 dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
 
+dnl check for gmime
+dnl See also: https://bugzilla.gnome.org/show_bug.cgi?id=613653#c8
+PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.5.2],
+	[ac_have_gmime=yes],
+	[PKG_CHECK_MODULES(GMIME, [gmime-2.4 >= 2.4.16],
+		[ac_have_gmime=yes],
+		[ac_have_gmime=no])
+])
+AM_CONDITIONAL(SIPE_MIME_GMIME, [test x$ac_have_gmime = xyes])
+AM_COND_IF(SIPE_MIME_GMIME,
+	[AC_DEFINE(HAVE_GMIME, 1, [Define if gmime should be used in sipe.])])
+
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 
@@ -256,9 +268,11 @@ fi
 
 dnl support for telepathy plugin
 AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, test "$telepathy" != "no")
-dnl NOTHING IMPLEMENTED YET!!!
-dnl if test "$telepathy" != "no"; then
-dnl fi
+if test "$telepathy" != "no"; then
+	AM_COND_IF(SIPE_MIME_GMIME, [],
+		[AC_ERROR(GMIME package is required for telepathy plugin)])
+	dnl NOTHING IMPLEMENTED YET!!!
+fi
 
 dnl sanity check
 AS_IF([test "$purple" = "no" -a "$telepathy" = "no"],

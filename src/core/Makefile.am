@@ -57,6 +57,11 @@ libsipe_core_la_SOURCES += sip-sec-krb5.h sip-sec-krb5.c
 libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
 endif
 
+if SIPE_MIME_GMIME
+libsipe_core_la_SOURCES += sipe-mime.c
+libsipe_core_la_CFLAGS  += $(GMIME_CFLAGS)
+endif
+
 if SIPE_INCLUDE_PURPLE
 libsipe_core_purple_la_CFLAGS = \
 	$(libsipe_core_la_CFLAGS) \

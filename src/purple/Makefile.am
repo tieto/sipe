@@ -11,7 +11,6 @@ EXTRA_DIST = \
 libsipe_la_SOURCES = \
 	purple-debug.c \
 	purple-markup.c \
-	purple-mime.c \
 	purple-plugin.c
 
 AM_CFLAGS = $(st)
@@ -40,10 +39,18 @@ libsipe_la_LIBADD  += $(KRB5_LIBS)
 endif
 
 check_PROGRAMS = tests
-tests_SOURCES = tests.c purple-debug.c purple-markup.c purple-mime.c
+tests_SOURCES = tests.c purple-debug.c purple-markup.c
 tests_CFLAGS = $(libsipe_la_CFLAGS) -I$(srcdir)/../core
 tests_LDADD = ../core/libsipe_core.la ../core/libsipe_core_purple.la
 tests_LDFLAGS = $(PURPLE_LIBS)
+
+if SIPE_MIME_GMIME
+libsipe_la_LIBADD  += $(GMIME_LIBS)
+tests_LDFLAGS      += $(GMIME_LIBS)
+else
+libsipe_la_SOURCES += purple-mime.c
+tests_SOURCES      += purple-mime.c
+endif
 
 TESTS = $(check_PROGRAMS)
 
