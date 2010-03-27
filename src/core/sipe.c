@@ -3057,7 +3057,7 @@ sipe_find_access_level(struct sipe_account_data *sip,
 	return -1;
 }
 
-void
+static void
 sipe_change_access_level(struct sipe_account_data *sip,
 		       const int container_id, /* new access level*/
 		       const gchar *type,
@@ -9762,6 +9762,18 @@ sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 	}
 }
 
+static void
+sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy, const int *container_id)
+{
+	struct sipe_account_data *sip = buddy->account->gc->proto_data;
+
+	SIPE_DEBUG_INFO("sipe_buddy_menu_access_level_cb: buddy->name=%s, container_id=%d",
+		buddy->name, container_id ? *container_id : -1);
+	if (container_id) {
+		sipe_change_access_level(sip, *container_id, "user", buddy->name);
+	}
+}
+
 /*
  * A menu which appear when right-clicking on buddy in contact list.
  */
@@ -9773,11 +9785,13 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	PurpleMenuAction *act;
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
+	GList *menu_access_levels = NULL;
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	const char *email;
 	const char *phone;
 	const char *phone_disp_str;
 	gchar *self = sip_uri_self(sip);
+	int i;
 
 	SIPE_SESSION_FOREACH {
 		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->conv)
@@ -9909,6 +9923,22 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		menu = g_list_prepend(menu, act);
 	}
 
+	/* Access Level */
+	/* get current access level */
+	for (i = 0; i < CONTAINERS_LEN; i++) {
+		act = purple_menu_action_new(sipe_get_access_level_name(containers[i]),
+					     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
+					     (gpointer)&(containers[i]), NULL);
+		menu_access_levels = g_list_prepend(menu_access_levels, act);
+	}
+	menu_access_levels = g_list_reverse(menu_access_levels);
+
+	act = purple_menu_action_new(_("Access level"),
+				     NULL,
+				     NULL, menu_access_levels);
+	menu = g_list_prepend(menu, act);
+
+	/* Copy to */
 	gr_parent = purple_buddy_get_group(buddy);
 	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
 		if (g_node->type != PURPLE_BLIST_GROUP_NODE)
@@ -9932,6 +9962,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				     NULL,
 				     NULL, menu_groups);
 	menu = g_list_prepend(menu, act);
+
 	menu = g_list_reverse(menu);
 
 	g_free(self);
