@@ -366,6 +366,9 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
 void
 sipe_utils_nameval_free(GSList *list);
 
+GSList *
+sipe_utils_mime_multipart_find_parts(struct sipmsg *msg);
+
 /**
  * Given a string, this replaces one substring with another
  * and returns a newly allocated string.

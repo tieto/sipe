@@ -24,8 +24,10 @@ struct _sipe_media_call {
 	PurpleMedia			*media;
 	struct sip_dialog	*dialog;
 	GSList				*sdp_attrs;
-	guint16				local_port;
 	struct sipmsg		*invitation;
+	GList				*remote_candidates;
+	GList				*remote_codecs;
+	gchar				*sdp_response;
 };
 typedef struct _sipe_media_call sipe_media_call;
 

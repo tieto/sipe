@@ -4632,6 +4632,54 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("process_incoming_invite: body:\n%s!", msg->body ? tmp = fix_newlines(msg->body) : "");
 	g_free(tmp);
 
+	// TODO: OCS2007 native media call negotiation
+	/* Invitation to media call from OC2007 R2. Sending this response should
+	 * force legacy mode */
+	if (g_str_has_prefix(content_type, "multipart/alternative")) {
+//		send_sip_response(sip->gc, msg, 415, "Unsupported Media Type", NULL);
+//		return;
+
+		GSList *parts = sipe_utils_mime_multipart_find_parts(msg);
+		GSList *part = parts;
+		gboolean found = FALSE;
+
+		while (!found && part) {
+			const char *tmp = strstr(part->data, "\r\n\r\n");
+			gchar *header = g_strndup(part->data, tmp - (gchar *)part->data);
+			gchar **lines = g_strsplit(header, "\r\n", 0);
+			GSList *headers = NULL;
+
+			sipe_utils_parse_lines(&headers, lines, ":");
+
+			g_free(header);
+			g_strfreev(lines);
+
+			const gchar * disposition = sipe_utils_nameval_find(headers, "Content-Disposition");
+			if (!strstr(disposition, "ms-proxy-2007fallback")) {
+				GSList *it = headers;
+				const char *body_end = strstr(tmp + 4, "\r\n\r\n") + 2;
+				sipmsg_remove_header_now(msg, "Content-Type");
+
+				while (it) {
+					struct sipnameval *nv = it->data;
+					sipmsg_add_header_now(msg, nv->name, nv->value);
+					it = it->next;
+				}
+
+				g_free(msg->body);
+				msg->body = g_strndup(tmp + 4, body_end - tmp + 4);
+
+				found = TRUE;
+			}
+
+			g_slist_free(headers);
+
+			part = part->next;
+		}
+
+		g_slist_free(parts);
+	}
+
 	/* Invitation to join conference */
 	if (g_str_has_prefix(content_type, "application/ms-conf-invite+xml")) {
 		process_incoming_invite_conf(sip, msg);
@@ -4641,7 +4689,9 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	/* Invitation to audio call */
 	if (msg->body && strstr(msg->body, "m=audio")) {
 		sipe_media_incoming_invite(sip, msg);
-		send_sip_response(sip->gc, msg, 180, "Ringing", NULL);
+		/*sipmsg_add_header(msg, "User-Agent", "UCCAPI/3.5.6907.0 OC/3.5.6907.0 (Microsoft Office Communicator 2007 R2)");
+		sipmsg_remove_header_now(msg, "Content-Type");
+		sipmsg_remove_header_now(msg, "Contact");*/
 		return;
 	}
 
@@ -7483,6 +7533,9 @@ void process_input_message(struct sipe_account_data *sip,
 		} else if (sipe_strequal(method, "ACK")) {
 			// ACK's don't need any response
 			found = TRUE;
+		} else if (sipe_strequal(method, "PRACK")) {
+			found = TRUE;
+			send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		} else if (sipe_strequal(method, "SUBSCRIBE")) {
 			// LCS 2005 sends us these - just respond 200 OK
 			found = TRUE;
