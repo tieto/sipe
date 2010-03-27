@@ -9813,6 +9813,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	const char *phone_disp_str;
 	gchar *self = sip_uri_self(sip);
 	unsigned int i;
+	int container_id;
 
 	SIPE_SESSION_FOREACH {
 		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->conv)
@@ -9945,16 +9946,26 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	}
 
 	/* Access Level */
-	/* get current access level */
+	container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(buddy->name));
 	for (i = 1; i <= CONTAINERS_LEN; i++) {
 		/* to put Blocked level last in menu list.
 		 * Blocked should remaim in the first place in the containers[] array.
 		 */
-		unsigned int j = (i == CONTAINERS_LEN) ? 0 : i;	
+		unsigned int j = (i == CONTAINERS_LEN) ? 0 : i;
+		const char *acc_level_name = sipe_get_access_level_name(containers[j]);
+		char *menu_name;
 
-		act = purple_menu_action_new(sipe_get_access_level_name(containers[j]),
+		/* current container/access level */		
+		if (((int)containers[j]) == container_id) {
+			menu_name = g_strdup_printf("* %s", acc_level_name);
+		} else {
+			menu_name = g_strdup(acc_level_name);
+		}
+
+		act = purple_menu_action_new(menu_name,
 					     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
 					     (gpointer)&(containers[j]), NULL);
+		g_free(menu_name);
 		menu_access_levels = g_list_prepend(menu_access_levels, act);
 	}
 	menu_access_levels = g_list_reverse(menu_access_levels);
