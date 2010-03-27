@@ -2833,6 +2833,41 @@ free_container(struct sipe_container *container)
 	g_free(container);
 }
 
+static void
+sipe_send_set_container_members(struct sipe_account_data *sip,
+				guint container_id,
+				guint container_version,
+				const gchar* action,
+				const gchar* type,
+				const gchar* value)
+{
+	gchar *self = sip_uri_self(sip);
+	gchar *value_str = value ? g_strdup_printf(" value=\"%s\"", value) : g_strdup("");
+	gchar *contact;
+	gchar *hdr;
+	gchar *body = g_strdup_printf(
+		"<setContainerMembers xmlns=\"http://schemas.microsoft.com/2006/09/sip/container-management\">"
+		"<container id=\"%d\" version=\"%d\"><member action=\"%s\" type=\"%s\"%s/></container>"
+		"</setContainerMembers>",
+		container_id,
+		container_version,
+		action,
+		type,
+		value_str);
+	g_free(value_str);
+
+	contact = get_contact(sip);
+	hdr = g_strdup_printf("Contact: %s\r\n"
+			      "Content-Type: application/msrtc-setcontainermembers+xml\r\n", contact);
+	g_free(contact);
+
+	send_sip_request(sip->gc, "SERVICE", self, self, hdr, body, NULL, NULL);
+
+	g_free(hdr);
+	g_free(body);
+	g_free(self);
+}
+
 /**
  * Finds locally stored MS-PRES container member
  */
@@ -2947,16 +2982,18 @@ sipe_get_access_level_name(int container_id)
 	return _("Unknown");
 }
 
+static const guint containers[] = {32000, 400, 300, 200, 100};
+static const int CONTAINERS_LEN = 5;
+
 /** Member type: user, domain, sameEnterprise, federated, publicCloud; everyone */
 static int
 sipe_find_access_level(struct sipe_account_data *sip,
 		       const gchar *type,
 		       const gchar *value)
 {
-	guint containers[] = {32000, 400, 300, 200, 100};
 	int i = 0;
 
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < CONTAINERS_LEN; i++) {
 		struct sipe_container_member *member;
 		struct sipe_container *container = sipe_find_container(sip, containers[i]);
 		if (!container) continue;
@@ -3003,39 +3040,40 @@ sipe_find_access_level(struct sipe_account_data *sip,
 	return -1;
 }
 
-static void
-sipe_send_set_container_members(struct sipe_account_data *sip,
-				guint container_id,
-				guint container_version,
-				const gchar* action,
-				const gchar* type,
-				const gchar* value)
+void
+sipe_change_access_level(struct sipe_account_data *sip,
+		       const int container_id, /* new access level*/
+		       const gchar *type,
+		       const gchar *value)
 {
-	gchar *self = sip_uri_self(sip);
-	gchar *value_str = value ? g_strdup_printf(" value=\"%s\"", value) : g_strdup("");
-	gchar *contact;
-	gchar *hdr;
-	gchar *body = g_strdup_printf(
-		"<setContainerMembers xmlns=\"http://schemas.microsoft.com/2006/09/sip/container-management\">"
-		"<container id=\"%d\" version=\"%d\"><member action=\"%s\" type=\"%s\"%s/></container>"
-		"</setContainerMembers>",
-		container_id,
-		container_version,
-		action,
-		type,
-		value_str);
-	g_free(value_str);
+	int i;
+	int current_container_id = -1;
 
-	contact = get_contact(sip);
-	hdr = g_strdup_printf("Contact: %s\r\n"
-			      "Content-Type: application/msrtc-setcontainermembers+xml\r\n", contact);
-	g_free(contact);
+	/* for each container: find/delete */
+	for (i = 0; i < CONTAINERS_LEN; i++) {
+		struct sipe_container_member *member;
+		struct sipe_container *container = sipe_find_container(sip, containers[i]);
 
-	send_sip_request(sip->gc, "SERVICE", self, self, hdr, body, NULL, NULL);
+		if (!container) continue;
 
-	g_free(hdr);
-	g_free(body);
-	g_free(self);
+		member = sipe_find_container_member(container, type, value);
+		if (member) {
+			current_container_id = containers[i];
+			/* delete/publish current access level */
+			if (container_id != current_container_id) {
+				sipe_send_set_container_members(
+					sip, current_container_id, container->version, "delete", type, value);
+			}
+		}
+	}
+
+	/* assign/publish new access level */
+	if (container_id != current_container_id) {
+		struct sipe_container *container = sipe_find_container(sip, container_id);
+		guint version = container ? container->version : 0;
+
+		sipe_send_set_container_members(sip, container_id, version, "add", type, value);
+	}
 }
 
 static void
