@@ -2886,6 +2886,46 @@ sipe_find_container(struct sipe_account_data *sip,
 	return NULL;
 }
 
+/** 
+ * Returns pointer to domain part in provided Email URL
+ *
+ * @param email an email URL. Example: first.last@hq.company.com
+ * @return pointer to domain part of email URL. Coresponding example: hq.company.com
+ *
+ * Doesn't allocates memory
+  */
+static const char *
+sipe_get_domain(const char *email)
+{
+	char *tmp;
+	
+	if (!email) return NULL;
+
+	tmp = strstr(email, "@");
+
+	if (tmp && ((tmp+1) < (email + strlen(email)))) {
+		return tmp+1;
+	} else {
+		return NULL;
+	}
+}
+
+/** source: http://support.microsoft.com/kb/897567 */
+const char *public_domains [] = {"aol.com", "icq.com", "love.com", "mac.com", "br.live.com", "hotmail.co.il", "hotmail.co.jp", "hotmail.co.th", "hotmail.co.uk", "hotmail.com", "hotmail.com.ar", "hotmail.com.tr", "hotmail.es", "hotmail.de", "hotmail.fr", "hotmail.it", "live.at", "live.be", "live.ca", "live.cl", "live.cn", "live.co.in", "live.co.kr", "live.co.uk", "live.co.za", "live.com", "live.com.ar", "live.com.au", "live.com.co", "live.com.mx", "live.com.my", "live.com.pe", "live.com.ph", "live.com.pk", "live.com.pt", "live.com.sg", "live.com.ve", "live.de", "live.dk", "live.fr", "live.hk", "live.ie", "live.in", "live.it", "live.jp", "live.nl", "live.no", "live.ph", "live.ru", "live.se", "livemail.com.br", "livemail.tw", "messengeruser.com", "msn.com", "passport.com", "sympatico.ca", "tw.live.com", "webtv.net", "windowslive.com", "windowslive.es", "yahoo.com", NULL};
+
+gboolean
+sipe_is_public_domain(const char *domain)
+{
+	int i = 0;
+	while (public_domains[i]) {
+		if (sipe_strcase_equal(public_domains[i], domain)) {
+			return TRUE;
+		}
+		i++;
+	}
+	return FALSE;
+}
+
 /**
  * Access Levels
  * 32000 - Blocked
@@ -2894,6 +2934,7 @@ sipe_find_container(struct sipe_account_data *sip,
  * 200   - Company
  * 100   - Public
  */
+/** Member type: user, domain, sameEnterprise, federated, publicCloud; everyone */
 static int
 sipe_find_access_level(struct sipe_account_data *sip,
 		       const gchar *type,
@@ -2907,9 +2948,42 @@ sipe_find_access_level(struct sipe_account_data *sip,
 		struct sipe_container *container = sipe_find_container(sip, containers[i]);
 		if (!container) continue;
 
-		member = sipe_find_container_member(container, type, value);
-		if (member) {
-			return containers[i];
+		if (sipe_strequal("user", type)) {
+			const char *domain;
+			const char *sip_uri = value;
+
+			member = sipe_find_container_member(container, "user", sip_uri);
+			if (member) return containers[i];
+
+			domain = sipe_get_domain(sip_uri);
+			member = sipe_find_container_member(container, "domain", domain);
+			if (member) {
+				return containers[i];
+			}
+
+			member = sipe_find_container_member(container, "sameEnterprise", NULL);
+			if (member &&
+			    sipe_strcase_equal(sip->sipdomain, domain))
+			{
+				return containers[i];
+			}
+
+			member = sipe_find_container_member(container, "publicCloud", NULL);
+			if (member && sipe_is_public_domain(domain))
+			{
+				return containers[i];
+			}
+
+			member = sipe_find_container_member(container, "everyone", NULL);
+			if (member)
+			{
+				return containers[i];
+			}	
+		} else {
+			member = sipe_find_container_member(container, type, value);
+			if (member) {
+				return containers[i];
+			}
 		}
 	}
 
