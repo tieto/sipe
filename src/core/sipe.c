@@ -2851,10 +2851,9 @@ sipe_find_container_member(struct sipe_container *container,
 	entry = container->members;
 	while (entry) {
 		member = entry->data;
-		if (!g_strcasecmp(member->type, type)
-		    && ((!member->value && !value)
-			|| (value && member->value && !g_strcasecmp(member->value, value)))
-		    ) {
+		if (sipe_strcase_equal(member->type, type) &&
+		    sipe_strcase_equal(member->value, value))
+		{
 			return member;
 		}
 		entry = entry->next;
