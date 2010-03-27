@@ -3000,7 +3000,7 @@ sipe_get_access_level_name(int container_id)
 }
 
 static const guint containers[] = {32000, 400, 300, 200, 100};
-static const int CONTAINERS_LEN = 5;
+#define CONTAINERS_LEN (sizeof(containers) / sizeof(guint))
 
 /** Member type: user, domain, sameEnterprise, federated, publicCloud; everyone */
 static int
@@ -3008,7 +3008,7 @@ sipe_find_access_level(struct sipe_account_data *sip,
 		       const gchar *type,
 		       const gchar *value)
 {
-	int i = 0;
+	unsigned int i = 0;
 
 	for (i = 0; i < CONTAINERS_LEN; i++) {
 		struct sipe_container_member *member;
@@ -3059,11 +3059,11 @@ sipe_find_access_level(struct sipe_account_data *sip,
 
 void
 sipe_change_access_level(struct sipe_account_data *sip,
-		       const int container_id, /* new access level*/
-		       const gchar *type,
-		       const gchar *value)
+			 const int container_id, /* new access level*/
+			 const gchar *type,
+			 const gchar *value)
 {
-	int i;
+	unsigned int i;
 	int current_container_id = -1;
 
 	/* for each container: find/delete */
