@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-27 13:28+0000\n"
-"PO-Revision-Date: 2010-03-14 01:06+0100\n"
+"POT-Creation-Date: 2010-03-27 13:31+0000\n"
+"PO-Revision-Date: 2010-03-27 14:32+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -112,17 +112,16 @@ msgid "no reason given"
 msgstr "nie podano powodu"
 
 #: ../src/core/sipe.c:3014
-#, fuzzy
 msgid "Blocked"
-msgstr "Odblokuj"
+msgstr "Zablokowane"
 
 #: ../src/core/sipe.c:3015
 msgid "Personal"
-msgstr ""
+msgstr "Osobiste"
 
 #: ../src/core/sipe.c:3016
 msgid "Team"
-msgstr ""
+msgstr "Zespół"
 
 #: ../src/core/sipe.c:3017 ../src/core/sipe.c:9052 ../src/core/sipe.c:9148
 #: ../src/core/sipe.c:10159
@@ -131,11 +130,11 @@ msgstr "Firma"
 
 #: ../src/core/sipe.c:3018
 msgid "Public"
-msgstr ""
+msgstr "Publiczne"
 
 #: ../src/core/sipe.c:3020
 msgid "Unknown"
-msgstr ""
+msgstr "Nieznane"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -476,7 +475,7 @@ msgstr "Notatka"
 
 #: ../src/core/sipe.c:9444 ../src/core/sipe.c:9973
 msgid "Access level"
-msgstr ""
+msgstr "Poziom dostępu"
 
 #: ../src/core/sipe.c:9454
 msgid "user@company.com"
