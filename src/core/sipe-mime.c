@@ -55,7 +55,7 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 					gchar *type_name = g_mime_content_type_to_string(
 						g_mime_object_get_content_type(part));
 
-					SIPE_DEBUG_INFO("sipe_mime_parts_foreach: type '%s' length %d", type_name, length);
+					SIPE_DEBUG_INFO("sipe_mime_parts_foreach: type '%s' length %" G_GSSIZE_FORMAT, type_name, length);
 
 					(*(cd->callback))(cd->user_data, type_name, content, length);
 
