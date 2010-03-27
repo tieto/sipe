@@ -2934,6 +2934,19 @@ sipe_is_public_domain(const char *domain)
  * 200   - Company
  * 100   - Public
  */
+static const char *
+sipe_get_access_level_name(int container_id)
+{
+	switch(container_id) {
+		case 32000: return _("Blocked");
+		case 400:   return _("Personal");
+		case 300:   return _("Team");
+		case 200:   return _("Company");
+		case 100:   return _("Public");
+	}
+	return _("Unknown");
+}
+
 /** Member type: user, domain, sameEnterprise, federated, publicCloud; everyone */
 static int
 sipe_find_access_level(struct sipe_account_data *sip,
@@ -9348,6 +9361,12 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		g_free(tmp);
 	}
 
+	if (sip && sip->ocs2007) {
+		const int container_id = sipe_find_access_level(sip, "user", buddy->name);
+		const char *access_level = sipe_get_access_level_name(container_id);
+
+		purple_notify_user_info_add_pair(user_info, _("Access level"), access_level);
+	}
 }
 
 #if PURPLE_VERSION_CHECK(2,5,0)
