@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-14 18:03+0000\n"
+"POT-Creation-Date: 2010-03-27 13:28+0000\n"
 "PO-Revision-Date: 2010-02-18 17:15-0600\n"
 "Last-Translator: Márcio Ferreira <marcio.ferreira@gmail.com>\n"
 "Language-Team: pt_BR <marcio.ferreira@gmail.com>\n"
@@ -18,213 +18,263 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
-#: ../src/core/sipe.c:148
+#: ../src/core/sipe.c:167
 msgid "Inactive"
 msgstr "Inativo"
 
-#: ../src/core/sipe.c:149 ../src/core/sipe-cal.c:850
+#: ../src/core/sipe.c:168 ../src/core/sipe-cal.c:833
 msgid "Busy"
 msgstr "Não disponível"
 
-#: ../src/core/sipe.c:150
+#: ../src/core/sipe.c:169
 msgid "Busy-Idle"
 msgstr "Não disponible-inativo"
 
-#: ../src/core/sipe.c:152
+#: ../src/core/sipe.c:171
 msgid "Be right back"
 msgstr "Regresso em un momento"
 
-#: ../src/core/sipe.c:154
+#: ../src/core/sipe.c:173
 msgid "Out to lunch"
 msgstr "Saí para almoçar"
 
-#: ../src/core/sipe.c:156
+#: ../src/core/sipe.c:175
 msgid "In a call"
 msgstr "Em uma chamada"
 
-#: ../src/core/sipe.c:157
+#: ../src/core/sipe.c:176
 msgid "In a conference"
 msgstr "Em uma conferência"
 
-#: ../src/core/sipe.c:158
+#: ../src/core/sipe.c:177
 msgid "In a meeting"
 msgstr "Em uma reunião"
 
-#: ../src/core/sipe.c:159 ../src/core/sipe-cal.c:851
+#: ../src/core/sipe.c:178 ../src/core/sipe-cal.c:834
 msgid "Out of office"
 msgstr "Fora do escritório"
 
-#: ../src/core/sipe.c:160
+#: ../src/core/sipe.c:179
 msgid "Urgent interruptions only"
 msgstr "Apenas interrupções urgentes"
 
-#: ../src/core/sipe.c:413
+#: ../src/core/sipe.c:432
 msgid "Failed to authenticate to server"
 msgstr "A autenticação com o servidor falhou"
 
 #. TODO: do we really want to disconnect on a failure to write?
-#: ../src/core/sipe.c:579 ../src/core/sipe.c:611
+#: ../src/core/sipe.c:598 ../src/core/sipe.c:630
 msgid "Could not write"
 msgstr "Não foi possível escrever"
 
-#: ../src/core/sipe.c:635 ../src/core/sipe.c:8163
+#: ../src/core/sipe.c:654 ../src/core/sipe.c:8363
 msgid "Could not connect"
 msgstr "Não foi possível se conectar"
 
-#: ../src/core/sipe.c:704 ../src/core/sipe.c:8318
+#: ../src/core/sipe.c:723 ../src/core/sipe.c:8533
 msgid "Could not create socket"
 msgstr "Não foi possível criar socket"
 
-#: ../src/core/sipe.c:1249 ../src/core/sipe.c:3717
+#: ../src/core/sipe.c:1268 ../src/core/sipe.c:3898
 msgid "you"
 msgstr "você"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/core/sipe.c:2359
+#: ../src/core/sipe.c:2378
 msgid "Message"
 msgstr "Mensagem"
 
-#: ../src/core/sipe.c:2503 ../src/core/sipe.c:2515 ../src/core/sipe.c:2540
-#: ../src/core/sipe.c:8799
+#: ../src/core/sipe.c:2522 ../src/core/sipe.c:2534 ../src/core/sipe.c:2559
+#: ../src/core/sipe.c:9014
 msgid "Other Contacts"
 msgstr "Outros contatos"
 
 #. [MS-SIPREGE]
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe.c:2721
+#: ../src/core/sipe.c:2740
 msgid "you are already signed in at another location"
 msgstr "você já se encontra conectado de outro lugar"
 
-#: ../src/core/sipe.c:2724
+#: ../src/core/sipe.c:2743
 msgid "user disabled"
 msgstr "usuário desabilitado"
 
-#: ../src/core/sipe.c:2727
+#: ../src/core/sipe.c:2746
 msgid "user moved"
 msgstr "usuário movido"
 
-#: ../src/core/sipe.c:2731 ../src/core/sipe.c:5641
+#: ../src/core/sipe.c:2750 ../src/core/sipe.c:5831
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Você foi recusado pelo servidor: %s"
 
-#: ../src/core/sipe.c:2731 ../src/core/sipe.c:5642 ../src/core/sipe.c:5660
-#: ../src/core/sipe.c:5679
+#: ../src/core/sipe.c:2750 ../src/core/sipe.c:5832 ../src/core/sipe.c:5850
+#: ../src/core/sipe.c:5869
 msgid "no reason given"
 msgstr "nenhum motivo foi dado"
+
+#: ../src/core/sipe.c:3014
+#, fuzzy
+msgid "Blocked"
+msgstr "Desbloquear"
+
+#: ../src/core/sipe.c:3015
+msgid "Personal"
+msgstr ""
+
+#: ../src/core/sipe.c:3016
+msgid "Team"
+msgstr ""
+
+#: ../src/core/sipe.c:3017 ../src/core/sipe.c:9052 ../src/core/sipe.c:9148
+#: ../src/core/sipe.c:10159
+msgid "Company"
+msgstr "Empresa"
+
+#: ../src/core/sipe.c:3018
+msgid "Public"
+msgstr ""
+
+#: ../src/core/sipe.c:3020
+msgid "Unknown"
+msgstr ""
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
 #. Message contents not allowed by policy
-#: ../src/core/sipe.c:4011
-msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
-msgstr "Sua mensagem ou o convite não foi entregue, possivelmente porque ele contém um hiperlink, ou outro índice que o administrador do sistema tenha bloqueado."
+#: ../src/core/sipe.c:4192
+msgid ""
+"Your message or invitation was not delivered, possibly because it contains a "
+"hyperlink or other content that the system administrator has blocked."
+msgstr ""
+"Sua mensagem ou o convite não foi entregue, possivelmente porque ele contém "
+"um hiperlink, ou outro índice que o administrador do sistema tenha bloqueado."
 
-#: ../src/core/sipe.c:4015
+#: ../src/core/sipe.c:4196
 #, c-format
-msgid "This message was not delivered to %s because the service is not available"
-msgstr "Esta mensagem não foi enviada a %s porque o serviço se encontra indisponível"
+msgid ""
+"This message was not delivered to %s because the service is not available"
+msgstr ""
+"Esta mensagem não foi enviada a %s porque o serviço se encontra indisponível"
 
 #. Busy Here
-#: ../src/core/sipe.c:4017
+#: ../src/core/sipe.c:4198
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr "Esta mensagem não foi enviada a %s porque um ou mais destinatários desejam não serem incomodados"
+msgid ""
+"This message was not delivered to %s because one or more recipients do not "
+"want to be disturbed"
+msgstr ""
+"Esta mensagem não foi enviada a %s porque um ou mais destinatários desejam "
+"não serem incomodados"
 
 #. Unsupported media type
-#: ../src/core/sipe.c:4019
+#: ../src/core/sipe.c:4200
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
-msgstr "Esta mensagem não foi entregue ao% s porque um ou mais destinatários não suportam esse tipo de mensagem"
+msgid ""
+"This message was not delivered to %s because one or more recipients don't "
+"support this type of message"
+msgstr ""
+"Esta mensagem não foi entregue ao% s porque um ou mais destinatários não "
+"suportam esse tipo de mensagem"
 
-#: ../src/core/sipe.c:4021
+#: ../src/core/sipe.c:4202
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Esta mensagem não foi enviada a %s porque um ou mais destinatários estão desconectados"
+msgid ""
+"This message was not delivered to %s because one or more recipients are "
+"offline"
+msgstr ""
+"Esta mensagem não foi enviada a %s porque um ou mais destinatários estão "
+"desconectados"
 
-#: ../src/core/sipe.c:4365
+#: ../src/core/sipe.c:4546
 #, c-format
 msgid "Failed to invite %s"
 msgstr "O convite a %s falhou"
 
-#: ../src/core/sipe.c:5052
+#: ../src/core/sipe.c:5241
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Uma mensagem com conteúdo desconhecido for recebida de %s"
 
-#: ../src/core/sipe.c:5606 ../src/core/sipe.c:7990
+#: ../src/core/sipe.c:5796 ../src/core/sipe.c:8190
 msgid "Authentication failed"
 msgstr "Falha de autenticação"
 
-#: ../src/core/sipe.c:5615 ../src/core/sipe.c:7878
+#: ../src/core/sipe.c:5805 ../src/core/sipe.c:8078
 msgid "Incompatible authentication scheme chosen"
 msgstr "Um esquema de autenticação incompatível foi escolhido"
 
-#: ../src/core/sipe.c:5659
+#: ../src/core/sipe.c:5849
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr "Não encontrado: %s. Por favor, entre em contato com seu Administrador de Rede."
+msgstr ""
+"Não encontrado: %s. Por favor, entre em contato com seu Administrador de "
+"Rede."
 
-#: ../src/core/sipe.c:5661
+#: ../src/core/sipe.c:5851
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP não está habilitado para a URI de destino ou a mesma não existe"
 
-#: ../src/core/sipe.c:5679
+#: ../src/core/sipe.c:5869
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Servicio não disponível: %s"
 
-#: ../src/core/sipe.c:7986
+#: ../src/core/sipe.c:8186
 msgid "Invalid message signature received"
 msgstr "Uma assinatura de mensagem inválida foi recebida"
 
-#: ../src/core/sipe.c:8060
+#: ../src/core/sipe.c:8260
 msgid "Connection not found. Please try to connect again"
 msgstr "Conexão não encontrada; por favor tente se conectar novamente"
 
-#: ../src/core/sipe.c:8081
+#: ../src/core/sipe.c:8281
 msgid "SSL read error"
 msgstr "Erro de leitura SSL"
 
-#: ../src/core/sipe.c:8084
+#: ../src/core/sipe.c:8284
 msgid "Server has disconnected"
 msgstr "O servidor desconectou"
 
-#: ../src/core/sipe.c:8208 ../src/core/sipe.c:8250 ../src/core/sipe.c:8302
-#: ../src/core/sipe.c:8372 ../src/core/sipe-ft.c:695
+#: ../src/core/sipe.c:8423 ../src/core/sipe.c:8465 ../src/core/sipe.c:8517
+#: ../src/core/sipe.c:8587 ../src/core/sipe-ft.c:711
 msgid "Could not create listen socket"
 msgstr "Não foi possível criar socket de escuta"
 
-#: ../src/core/sipe.c:8231 ../src/core/sipe.c:8363
+#: ../src/core/sipe.c:8446 ../src/core/sipe.c:8578
 msgid "Could not resolve hostname"
 msgstr "Não foi possível resolver o nome do host"
 
-#: ../src/core/sipe.c:8281
+#: ../src/core/sipe.c:8496
 msgid "Connection failed"
 msgstr "Conexão falhou"
 
-#: ../src/core/sipe.c:8284
+#: ../src/core/sipe.c:8499
 msgid "SSL handshake failed"
 msgstr "O handshake SSL falhou"
 
-#: ../src/core/sipe.c:8287
+#: ../src/core/sipe.c:8502
 msgid "SSL certificate invalid"
 msgstr "Certificado SSL inválido"
 
-#: ../src/core/sipe.c:8345
-msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
-msgstr "O suporte a SSL não está disponível. Instale o suporte a SSL ou configure um outro tipo de conexão no editor de contas de usuário"
+#: ../src/core/sipe.c:8560
+msgid ""
+"SSL support is not installed. Either install SSL support or configure a "
+"different connection type in the account editor"
+msgstr ""
+"O suporte a SSL não está disponível. Instale o suporte a SSL ou configure um "
+"outro tipo de conexão no editor de contas de usuário"
 
-#: ../src/core/sipe.c:8354
+#: ../src/core/sipe.c:8569
 msgid "Could not create SSL context"
 msgstr "Não foi possível criar o contexto SSL"
 
-#: ../src/core/sipe.c:8477
+#: ../src/core/sipe.c:8692
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "O nome de usuário SIP Exchange contém caracteres inválidos"
 
-#: ../src/core/sipe.c:8500
+#: ../src/core/sipe.c:8715
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
@@ -232,7 +282,7 @@ msgstr ""
 "O nome de usuário deve ser um SIP URI válido\n"
 "Exemplo: usuario@dominio.com"
 
-#: ../src/core/sipe.c:8511
+#: ../src/core/sipe.c:8726
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
@@ -240,137 +290,141 @@ msgstr ""
 "O endereço de email deve ser válido, se fornecido\n"
 "Exemplo: usuario@dominio.com"
 
-#: ../src/core/sipe.c:8537
+#: ../src/core/sipe.c:8752
 msgid "SIP Exchange user name contains whitespace"
 msgstr "O nome de usuario SIP Exchange contém espaços em branco"
 
-#: ../src/core/sipe.c:8551
+#: ../src/core/sipe.c:8766
 msgid "Connecting"
 msgstr "Conectando"
 
-#: ../src/core/sipe.c:8825
+#: ../src/core/sipe.c:9040
 msgid "Unable to display the search results"
 msgstr "Não foi possível exibir os resultados da busca"
 
-#: ../src/core/sipe.c:8831
+#: ../src/core/sipe.c:9046
 msgid "User name"
 msgstr "Usuário"
 
-#: ../src/core/sipe.c:8834
+#: ../src/core/sipe.c:9049
 msgid "Name"
 msgstr "Nome"
 
-#: ../src/core/sipe.c:8837 ../src/core/sipe.c:8933 ../src/core/sipe.c:9890
-msgid "Company"
-msgstr "Empresa"
-
-#: ../src/core/sipe.c:8840 ../src/core/sipe.c:8935 ../src/core/sipe.c:9899
+#: ../src/core/sipe.c:9055 ../src/core/sipe.c:9150 ../src/core/sipe.c:10168
 msgid "Country"
 msgstr "País"
 
-#: ../src/core/sipe.c:8843
+#: ../src/core/sipe.c:9058
 msgid "Email"
 msgstr "Email"
 
-#: ../src/core/sipe.c:8870
+#: ../src/core/sipe.c:9085
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "Encontrado %d contato%s:"
 msgstr[1] "Encontrados %d contatos%s:"
 
-#: ../src/core/sipe.c:8872
+#: ../src/core/sipe.c:9087
 msgid " (more matched your query)"
 msgstr " (mais ocorrências coincidiram com sua consulta)"
 
-#: ../src/core/sipe.c:8929
+#: ../src/core/sipe.c:9144
 msgid "First name"
 msgstr "Nome"
 
-#: ../src/core/sipe.c:8931
+#: ../src/core/sipe.c:9146
 msgid "Last name"
 msgstr "Sobrenome"
 
-#: ../src/core/sipe.c:8939
+#: ../src/core/sipe.c:9154
 msgid "Search"
 msgstr "Buscar"
 
-#: ../src/core/sipe.c:8940
+#: ../src/core/sipe.c:9155
 msgid "Search for a contact"
 msgstr "Buscar por um contato"
 
-#: ../src/core/sipe.c:8941
-msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Insira os dados da pessoa que você deseja encontrar. Campos vazios serão ignorados"
+#: ../src/core/sipe.c:9156
+msgid ""
+"Enter the information for the person you wish to find. Empty fields will be "
+"ignored."
+msgstr ""
+"Insira os dados da pessoa que você deseja encontrar. Campos vazios serão "
+"ignorados"
 
-#: ../src/core/sipe.c:8943
+#: ../src/core/sipe.c:9158
 msgid "_Search"
 msgstr "_Buscar"
 
-#: ../src/core/sipe.c:8944
+#: ../src/core/sipe.c:9159
 msgid "_Cancel"
 msgstr "_Cancelar"
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
-#: ../src/core/sipe.c:9002
-msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr "Um plugin desenvolvido por terceiros que implementa uma versão do protocolo SIP/SIMPLE usado por vários produtos"
+#: ../src/core/sipe.c:9217
+msgid ""
+"A third-party plugin implementing extended version of SIP/SIMPLE used by "
+"various products"
+msgstr ""
+"Um plugin desenvolvido por terceiros que implementa uma versão do protocolo "
+"SIP/SIMPLE usado por vários produtos"
 
 #. About note, part 2/13: home page URL (label)
-#: ../src/core/sipe.c:9004
+#: ../src/core/sipe.c:9219
 msgid "Home"
 msgstr "Início"
 
 #. About note, part 3/13: support forum URL (label)
-#: ../src/core/sipe.c:9006
+#: ../src/core/sipe.c:9221
 msgid "Support"
 msgstr "Suporte"
 
 #. About note, part 4/13: support forum name (hyperlink text)
-#: ../src/core/sipe.c:9008
+#: ../src/core/sipe.c:9223
 msgid "Help Forum"
 msgstr "Fórum de ajuda"
 
 #. About note, part 5/13: bug tracker URL (label)
-#: ../src/core/sipe.c:9010
+#: ../src/core/sipe.c:9225
 msgid "Report Problems"
 msgstr "Problemas de relatório"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
-#: ../src/core/sipe.c:9012
+#: ../src/core/sipe.c:9227
 msgid "Bug Tracker"
 msgstr "completa bug"
 
 #. About note, part 7/13: translation service URL (label)
-#: ../src/core/sipe.c:9014
+#: ../src/core/sipe.c:9229
 msgid "Translations"
 msgstr "Traduções"
 
 #. About note, part 8/13: license type (label)
-#: ../src/core/sipe.c:9016
+#: ../src/core/sipe.c:9231
 msgid "License"
 msgstr "Licença"
 
 #. About note, part 9/13: known users
-#: ../src/core/sipe.c:9018
+#: ../src/core/sipe.c:9233
 msgid "We support users in such organizations as"
 msgstr "Nós suportamos usuários em organizações como"
 
 #. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe.c:9021
+#: ../src/core/sipe.c:9236
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr "Por favor nos ajude a traduzir o SIPE para seu idioma nativo em "
 
 #. About note, part 11/13: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe.c:9024
+#: ../src/core/sipe.c:9239
 msgid " using convenient web interface"
 msgstr "usando uma conveniente interface web"
 
 #. About note, part 12/13: author list (header)
-#: ../src/core/sipe.c:9026
+#: ../src/core/sipe.c:9241
 msgid "Authors"
 msgstr "Autores"
 
@@ -378,264 +432,275 @@ msgstr "Autores"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe.c:9031
+#: ../src/core/sipe.c:9246
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Textos originais em Português (pt_BR): ?"
 
-#: ../src/core/sipe.c:9096
+#: ../src/core/sipe.c:9311
 msgid "About SIPE plugin..."
 msgstr "Sobre o plugin SIPE"
 
-#: ../src/core/sipe.c:9099
+#: ../src/core/sipe.c:9314
 msgid "Contact search..."
 msgstr "Busca de contatos..."
 
-#: ../src/core/sipe.c:9103
+#: ../src/core/sipe.c:9318
 msgid "Republish Calendar"
 msgstr "Republicar Calendário"
 
-#: ../src/core/sipe.c:9107
+#: ../src/core/sipe.c:9322
 msgid "Reset status"
 msgstr "Reinicializar status"
 
-#: ../src/core/sipe.c:9199
+#: ../src/core/sipe.c:9414
 msgid "Status"
 msgstr "Status"
 
-#: ../src/core/sipe.c:9204
+#: ../src/core/sipe.c:9419
 msgid "Calendar"
 msgstr "Calendário"
 
-#: ../src/core/sipe.c:9209
+#: ../src/core/sipe.c:9424
 msgid "Meeting in"
 msgstr "Reunião em"
 
-#: ../src/core/sipe.c:9213
+#: ../src/core/sipe.c:9428
 msgid "Meeting about"
 msgstr "Reunião sobre"
 
-#: ../src/core/sipe.c:9221
+#: ../src/core/sipe.c:9436
 msgid "Out of office note"
 msgstr "Mensagem de ausência temporária"
 
-#: ../src/core/sipe.c:9221
+#: ../src/core/sipe.c:9436
 msgid "Note"
 msgstr "Nota"
 
-#: ../src/core/sipe.c:9233
+#: ../src/core/sipe.c:9444 ../src/core/sipe.c:9973
+msgid "Access level"
+msgstr ""
+
+#: ../src/core/sipe.c:9454
 msgid "user@company.com"
 msgstr "usuario@dominio.com"
 
-#: ../src/core/sipe.c:9595
+#: ../src/core/sipe.c:9832
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Tornar líder de '%s'"
 
-#: ../src/core/sipe.c:9606
+#: ../src/core/sipe.c:9843
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Remover de '%s'"
 
-#: ../src/core/sipe.c:9619
+#: ../src/core/sipe.c:9856
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Convidar a '%s'"
 
-#: ../src/core/sipe.c:9630
+#: ../src/core/sipe.c:9867
 msgid "New chat"
 msgstr "Nova conversa"
 
-#: ../src/core/sipe.c:9641
+#: ../src/core/sipe.c:9878
 #, c-format
 msgid "Work %s"
 msgstr "Trabalho %s"
 
-#: ../src/core/sipe.c:9654
+#: ../src/core/sipe.c:9891
 #, c-format
 msgid "Mobile %s"
 msgstr "Celular %s"
 
-#: ../src/core/sipe.c:9667
+#: ../src/core/sipe.c:9904
 #, c-format
 msgid "Home %s"
 msgstr "Início %s"
 
-#: ../src/core/sipe.c:9680
+#: ../src/core/sipe.c:9917
 #, c-format
 msgid "Other %s"
 msgstr "Outro %s"
 
-#: ../src/core/sipe.c:9693
+#: ../src/core/sipe.c:9930
 #, c-format
 msgid "Custom1 %s"
 msgstr "Custom1 %s"
 
-#: ../src/core/sipe.c:9705
+#: ../src/core/sipe.c:9942
 msgid "Send email..."
 msgstr "Enviar Email..."
 
-#: ../src/core/sipe.c:9730
+#: ../src/core/sipe.c:9998
 msgid "Copy to"
 msgstr "Copiar a"
 
-#: ../src/core/sipe.c:9784
+#: ../src/core/sipe.c:10053
 msgid "Unlock"
 msgstr "Desbloquear"
 
-#: ../src/core/sipe.c:9789
+#: ../src/core/sipe.c:10058
 msgid "Lock"
 msgstr "Bloquear"
 
-#: ../src/core/sipe.c:9878 ../src/core/sipe.c:9915
+#: ../src/core/sipe.c:10147 ../src/core/sipe.c:10184
 msgid "Display name"
 msgstr "Nome"
 
-#: ../src/core/sipe.c:9881
+#: ../src/core/sipe.c:10150
 msgid "Job title"
 msgstr "Cargo"
 
-#: ../src/core/sipe.c:9884
+#: ../src/core/sipe.c:10153
 msgid "Office"
 msgstr "Escritório"
 
-#: ../src/core/sipe.c:9887
+#: ../src/core/sipe.c:10156
 msgid "Business phone"
 msgstr "Telefone comercial"
 
-#: ../src/core/sipe.c:9893
+#: ../src/core/sipe.c:10162
 msgid "City"
 msgstr "Cidade"
 
-#: ../src/core/sipe.c:9896
+#: ../src/core/sipe.c:10165
 msgid "State"
 msgstr "Estado"
 
-#: ../src/core/sipe.c:9902 ../src/core/sipe.c:9929
+#: ../src/core/sipe.c:10171 ../src/core/sipe.c:10198
 msgid "Email address"
 msgstr "Email"
 
-#: ../src/core/sipe.c:9922
+#: ../src/core/sipe.c:10191
 msgid "Alias"
 msgstr "Alias"
 
-#: ../src/core/sipe.c:9935
+#: ../src/core/sipe.c:10204
 msgid "Site"
 msgstr "Site"
 
-#: ../src/core/sipe.c:9942
+#: ../src/core/sipe.c:10211
 msgid "Find on LinkedIn"
 msgstr "Buscar no LinkedIn"
 
-#: ../src/core/sipe.c:9949
+#: ../src/core/sipe.c:10218
 msgid "Device"
 msgstr "Dispositivo"
 
-#: ../src/core/sipe-cal.c:848
+#: ../src/core/sipe-cal.c:831
 msgid "Free"
 msgstr "Gratuito"
 
-#: ../src/core/sipe-cal.c:849
+#: ../src/core/sipe-cal.c:832
 msgid "Tentative"
 msgstr "Tentativa"
 
-#: ../src/core/sipe-cal.c:852
+#: ../src/core/sipe-cal.c:835
 msgid "No data"
 msgstr "Sem data"
 
-#: ../src/core/sipe-cal.c:960 ../src/core/sipe-cal.c:987
+#: ../src/core/sipe-cal.c:943 ../src/core/sipe-cal.c:970
 #, c-format
 msgid "Currently %s"
 msgstr "Atualmente %s"
 
-#: ../src/core/sipe-cal.c:966
+#: ../src/core/sipe-cal.c:949
 msgid "Outside of working hours for next 8 hours"
 msgstr "Fora do horário de trabalho pelas próximas 8 horas"
 
-#: ../src/core/sipe-cal.c:968
+#: ../src/core/sipe-cal.c:951
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "%s pelas próximas 8 horas"
 
-#: ../src/core/sipe-cal.c:977
+#: ../src/core/sipe-cal.c:960
 msgid "Not working"
 msgstr "Não funcionando"
 
-#: ../src/core/sipe-cal.c:981
+#: ../src/core/sipe-cal.c:964
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s até %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:989
+#: ../src/core/sipe-cal.c:972
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s. Fora do horário de trabalho às %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:994
+#: ../src/core/sipe-cal.c:977
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s às %.2d:%.2d"
 
-#: ../src/core/sipe-chat.c:86
+#: ../src/core/sipe-chat.c:87
 #, c-format
 msgid "Chat #%d"
 msgstr "Conversa #%d"
 
-#: ../src/core/sipe-conf.c:833
-msgid "This conference is no longer locked. Additional participants can now join."
-msgstr "Esta conferência não está mais bloqueada. Participantes adicionais podem se conectar agora."
+#: ../src/core/sipe-conf.c:842
+msgid ""
+"This conference is no longer locked. Additional participants can now join."
+msgstr ""
+"Esta conferência não está mais bloqueada. Participantes adicionais podem se "
+"conectar agora."
 
-#: ../src/core/sipe-conf.c:837
-msgid "This conference is locked. Nobody else can join the conference while it is locked."
-msgstr "Esta conferência está bloqueada. Nenhum novo participante pode se conectar enquanto a mesma se encontrar bloqueada."
+#: ../src/core/sipe-conf.c:846
+msgid ""
+"This conference is locked. Nobody else can join the conference while it is "
+"locked."
+msgstr ""
+"Esta conferência está bloqueada. Nenhum novo participante pode se conectar "
+"enquanto a mesma se encontrar bloqueada."
 
-#: ../src/core/sipe-conf.c:870
+#: ../src/core/sipe-conf.c:879
 msgid "You have been disconnected from this conference."
 msgstr "Você foi desconectado desta conferência."
 
-#: ../src/core/sipe-ft.c:178 ../src/core/sipe-ft.c:300
-#: ../src/core/sipe-ft.c:329 ../src/core/sipe-ft.c:379
+#: ../src/core/sipe-ft.c:194 ../src/core/sipe-ft.c:316
+#: ../src/core/sipe-ft.c:345 ../src/core/sipe-ft.c:395
 msgid "Socket read failed"
 msgstr "Leitura do socket falhou"
 
-#: ../src/core/sipe-ft.c:184 ../src/core/sipe-ft.c:419
-#: ../src/core/sipe-ft.c:429
+#: ../src/core/sipe-ft.c:200 ../src/core/sipe-ft.c:435
+#: ../src/core/sipe-ft.c:445
 msgid "Socket write failed"
 msgstr "Escrita no socket falhou"
 
-#: ../src/core/sipe-ft.c:229
+#: ../src/core/sipe-ft.c:245
 msgid "File size is different from the advertised value."
 msgstr "O tamanho do arquivo é diferente do valor anunciado."
 
-#: ../src/core/sipe-ft.c:268
+#: ../src/core/sipe-ft.c:284
 msgid "Received MAC is corrupted"
 msgstr "MAC recebido está corrompido"
 
-#: ../src/core/sipe-ft.c:279
+#: ../src/core/sipe-ft.c:295
 msgid "Received file is corrupted"
 msgstr "O arquivo recebido está corrompido"
 
-#: ../src/core/sipe-ft.c:321 ../src/core/sipe-ft.c:337
-#: ../src/core/sipe-ft.c:392
+#: ../src/core/sipe-ft.c:337 ../src/core/sipe-ft.c:353
+#: ../src/core/sipe-ft.c:408
 msgid "Out of memory"
 msgstr "Fora do escritório"
 
-#: ../src/core/sipe-ft.c:505
+#: ../src/core/sipe-ft.c:521
 msgid "File transfer initialization failed."
 msgstr "Transferência de arquivo de inicialização falhou."
 
-#: ../src/core/sipe-ft.c:534
+#: ../src/core/sipe-ft.c:550
 msgid "File transfer authentication failed."
 msgstr "A autenticação para transferência de arquivos falhou."
 
-#: ../src/core/sipe-ft.c:665
+#: ../src/core/sipe-ft.c:681
 msgid "Received encryption key has wrong size."
 msgstr "Chave de encriptação recebida tem tamanho incorreto."
 
-#: ../src/core/sipe-ft.c:678
+#: ../src/core/sipe-ft.c:694
 msgid "Received hash key has wrong size."
 msgstr "Chave de hash recebida tem tamanho incorreto."
 
-#: ../src/purple/purple-plugin.c:89
+#: ../src/purple/purple-plugin.c:74
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -645,7 +710,7 @@ msgstr ""
 "   usuario o DOMINIO\\usuario o\n"
 "   usuario@dominio.com"
 
-#: ../src/purple/purple-plugin.c:93
+#: ../src/purple/purple-plugin.c:78
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -653,60 +718,58 @@ msgstr ""
 "Servidor[:Porta]\n"
 "(deixar vazio para autoconfiguração)"
 
-#: ../src/purple/purple-plugin.c:96
+#: ../src/purple/purple-plugin.c:81
 msgid "Connection type"
 msgstr "Tipo de conexão"
 
-#: ../src/purple/purple-plugin.c:97
+#: ../src/purple/purple-plugin.c:82
 msgid "Auto"
 msgstr "Automático"
 
-#: ../src/purple/purple-plugin.c:98
+#: ../src/purple/purple-plugin.c:83
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:99
+#: ../src/purple/purple-plugin.c:84
 msgid "TCP"
 msgstr "TCP"
 
-#: ../src/purple/purple-plugin.c:100
+#: ../src/purple/purple-plugin.c:85
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone
-#. may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
-#. option);
-#: ../src/purple/purple-plugin.c:106
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/purple/purple-plugin.c:91
 msgid "User Agent"
 msgstr "User Agent"
 
-#: ../src/purple/purple-plugin.c:110
+#: ../src/purple/purple-plugin.c:95
 msgid "Use Kerberos"
 msgstr "Usar Kerberos"
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#. 
-#: ../src/purple/purple-plugin.c:117
+#.
+#: ../src/purple/purple-plugin.c:102
 msgid "Use Single Sign-On"
 msgstr "Usar Single Sign-On"
 
-#: ../src/purple/purple-plugin.c:121
+#: ../src/purple/purple-plugin.c:106
 msgid "Calendar source"
 msgstr "Origem de calendário"
 
-#: ../src/purple/purple-plugin.c:122
+#: ../src/purple/purple-plugin.c:107
 msgid "Exchange 2007/2010"
 msgstr "Exchange 2007/2010"
 
-#: ../src/purple/purple-plugin.c:123
+#: ../src/purple/purple-plugin.c:108
 msgid "None"
 msgstr "Nenhum"
 
 #. * Example: https://server.company.com/EWS/Exchange.asmx
-#: ../src/purple/purple-plugin.c:127
+#: ../src/purple/purple-plugin.c:112
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -714,7 +777,7 @@ msgstr ""
 "URL dos serviços de Email\n"
 "(deixar vazio para autoconfiguração)"
 
-#: ../src/purple/purple-plugin.c:130
+#: ../src/purple/purple-plugin.c:115
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -723,7 +786,7 @@ msgstr ""
 "(se diferente do Nome do Usuário)"
 
 #. * Example: DOMAIN\user  or  user@company.com
-#: ../src/purple/purple-plugin.c:134
+#: ../src/purple/purple-plugin.c:119
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -731,7 +794,7 @@ msgstr ""
 "Login do email\n"
 "(se diferente do Login)"
 
-#: ../src/purple/purple-plugin.c:137
+#: ../src/purple/purple-plugin.c:122
 msgid ""
 "Email password\n"
 "(if different from Password)"
