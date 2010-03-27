@@ -2910,10 +2910,27 @@ sipe_get_domain(const char *email)
 	}
 }
 
-/** source: http://support.microsoft.com/kb/897567 */
-const char *public_domains [] = {"aol.com", "icq.com", "love.com", "mac.com", "br.live.com", "hotmail.co.il", "hotmail.co.jp", "hotmail.co.th", "hotmail.co.uk", "hotmail.com", "hotmail.com.ar", "hotmail.com.tr", "hotmail.es", "hotmail.de", "hotmail.fr", "hotmail.it", "live.at", "live.be", "live.ca", "live.cl", "live.cn", "live.co.in", "live.co.kr", "live.co.uk", "live.co.za", "live.com", "live.com.ar", "live.com.au", "live.com.co", "live.com.mx", "live.com.my", "live.com.pe", "live.com.ph", "live.com.pk", "live.com.pt", "live.com.sg", "live.com.ve", "live.de", "live.dk", "live.fr", "live.hk", "live.ie", "live.in", "live.it", "live.jp", "live.nl", "live.no", "live.ph", "live.ru", "live.se", "livemail.com.br", "livemail.tw", "messengeruser.com", "msn.com", "passport.com", "sympatico.ca", "tw.live.com", "webtv.net", "windowslive.com", "windowslive.es", "yahoo.com", NULL};
 
-gboolean
+/* @TODO: replace with binary search for faster access? */
+/** source: http://support.microsoft.com/kb/897567 */
+static const char * const public_domains [] = {
+	"aol.com", "icq.com", "love.com", "mac.com", "br.live.com",
+	"hotmail.co.il", "hotmail.co.jp", "hotmail.co.th", "hotmail.co.uk",
+	"hotmail.com", "hotmail.com.ar", "hotmail.com.tr", "hotmail.es",
+	"hotmail.de", "hotmail.fr", "hotmail.it", "live.at", "live.be",
+	"live.ca", "live.cl", "live.cn", "live.co.in", "live.co.kr",
+	"live.co.uk", "live.co.za", "live.com", "live.com.ar", "live.com.au",
+	"live.com.co", "live.com.mx", "live.com.my", "live.com.pe",
+	"live.com.ph", "live.com.pk", "live.com.pt", "live.com.sg",
+	"live.com.ve", "live.de", "live.dk", "live.fr", "live.hk", "live.ie",
+	"live.in", "live.it", "live.jp", "live.nl", "live.no", "live.ph",
+	"live.ru", "live.se", "livemail.com.br", "livemail.tw",
+	"messengeruser.com", "msn.com", "passport.com", "sympatico.ca",
+	"tw.live.com", "webtv.net", "windowslive.com", "windowslive.es",
+	"yahoo.com",
+	NULL};
+
+static gboolean
 sipe_is_public_domain(const char *domain)
 {
 	int i = 0;
