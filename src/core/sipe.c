@@ -9946,10 +9946,15 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 
 	/* Access Level */
 	/* get current access level */
-	for (i = 0; i < CONTAINERS_LEN; i++) {
-		act = purple_menu_action_new(sipe_get_access_level_name(containers[i]),
+	for (i = 1; i <= CONTAINERS_LEN; i++) {
+		/* to put Blocked level last in menu list.
+		 * Blocked should remaim in the first place in the containers[] array.
+		 */
+		unsigned int j = (i == CONTAINERS_LEN) ? 0 : i;	
+
+		act = purple_menu_action_new(sipe_get_access_level_name(containers[j]),
 					     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
-					     (gpointer)&(containers[i]), NULL);
+					     (gpointer)&(containers[j]), NULL);
 		menu_access_levels = g_list_prepend(menu_access_levels, act);
 	}
 	menu_access_levels = g_list_reverse(menu_access_levels);
