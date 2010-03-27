@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2010 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@
 
 /* Forward declarations */
 struct sipe_account_data;
-struct _xmlnode;
 
 /* Our publication type keys. OCS 2007+
  * Format: SIPE_PUB_{Category}[_{SubSategory}]
@@ -206,29 +205,6 @@ gchar *sip_uri(const gchar *string);
 gboolean
 sipe_is_bad_alias(const char *uri,
 		  const char *alias);
-
-/**
- * Find a XML node from the parent with the specified path
- *
- * @param parent (in) XML node to start search from
- * @param ...    (in) Names of the descendant nodes
- *
- * @return descendant XML node
- */
-struct _xmlnode * xmlnode_get_descendant(const struct _xmlnode *parent, ...);
-
-/**
- * Convert a XML attribute to an unsigned integer
- *
- * @param node     (in) XML node
- * @param attr     (in) name of the attribute
- * @param fallback (in) default value if the attribute doesn't exist
- *
- * @return attribute value converted to integer or the fallback value
- */
-guint xmlnode_get_int_attrib(struct _xmlnode *node,
-			     const char *attr,
-			     guint fallback);
 
 /**
  * Checks if provided string is empty - NULL, zero size or just series of white spaces.

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2010 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@
 #include <glib.h>
 
 #include "network.h"
-#include "xmlnode.h"
 
 #include "sip-sec.h"
 #include "sipe-backend.h"
@@ -118,32 +117,6 @@ gchar *sip_uri(const gchar *string)
 {
 	return(strstr(string, "sip:") ? g_strdup(string) : sip_uri_from_name(string));
 }
-
-xmlnode *xmlnode_get_descendant(const xmlnode *parent, ...)
-{
-	va_list args;
-	xmlnode *node = NULL;
-	const gchar *name;
-
-	va_start(args, parent);
-	while ((name = va_arg(args, const char *)) != NULL) {
-		node = xmlnode_get_child(parent, name);
-		if (node == NULL) break;
-		parent = node;
-	}
-	va_end(args);
-
-	return node;
-}
-
-guint xmlnode_get_int_attrib(xmlnode *node,
-			     const char *attr,
-			     guint fallback)
-{
-	const char *value = xmlnode_get_attrib(node, attr);
-	return(value ? g_ascii_strtoll(value, NULL, 10) : fallback);
-}
-
 
 gchar *
 get_epid(struct sipe_account_data *sip)

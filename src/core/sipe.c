@@ -84,7 +84,6 @@
 #include "savedstatuses.h"
 #include "sslconn.h"
 #include "version.h"
-#include "xmlnode.h"
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
 
@@ -1242,19 +1241,19 @@ sipe_remove_permit_deny(PurpleConnection *gc, const char *name)
 static void
 sipe_process_presence_wpending (struct sipe_account_data *sip, struct sipmsg * msg)
 {
-	xmlnode *watchers;
-	xmlnode *watcher;
+	sipe_xml *watchers;
+	const sipe_xml *watcher;
 	// Ensure it's either not a response (eg it's a BENOTIFY) or that it's a 200 OK response
 	if (msg->response != 0 && msg->response != 200) return;
 
 	if (msg->bodylen == 0 || msg->body == NULL || sipe_strequal(sipmsg_find_header(msg, "Event"), "msrtc.wpending")) return;
 
-	watchers = xmlnode_from_str(msg->body, msg->bodylen);
+	watchers = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!watchers) return;
 
-	for (watcher = xmlnode_get_child(watchers, "watcher"); watcher; watcher = xmlnode_get_next_twin(watcher)) {
-		gchar * remote_user = g_strdup(xmlnode_get_attrib(watcher, "uri"));
-		gchar * alias = g_strdup(xmlnode_get_attrib(watcher, "displayName"));
+	for (watcher = sipe_xml_child(watchers, "watcher"); watcher; watcher = sipe_xml_twin(watcher)) {
+		gchar * remote_user = g_strdup(sipe_xml_attribute(watcher, "uri"));
+		gchar * alias = g_strdup(sipe_xml_attribute(watcher, "displayName"));
 		gboolean on_list = g_hash_table_lookup(sip->buddies, remote_user) != NULL;
 
 		// TODO pull out optional displayName to pass as alias
@@ -1276,7 +1275,7 @@ sipe_process_presence_wpending (struct sipe_account_data *sip, struct sipmsg * m
 	}
 
 
-	xmlnode_free(watchers);
+	sipe_xml_free(watchers);
 	return;
 }
 
@@ -1421,25 +1420,25 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 	if (msg->response == 200) {
 		struct sipe_group *group;
 		struct group_user_context *ctx = trans->payload->data;
-		xmlnode *xml;
-		xmlnode *node;
+		sipe_xml *xml;
+		const sipe_xml *node;
 		char *group_id;
 		struct sipe_buddy *buddy;
 
-		xml = xmlnode_from_str(msg->body, msg->bodylen);
+		xml = sipe_xml_parse(msg->body, msg->bodylen);
 		if (!xml) {
 			return FALSE;
 		}
 
-		node = xmlnode_get_descendant(xml, "Body", "addGroup", "groupID", NULL);
+		node = sipe_xml_child(xml, "Body/addGroup/groupID");
 		if (!node) {
-			xmlnode_free(xml);
+			sipe_xml_free(xml);
 			return FALSE;
 		}
 
-		group_id = xmlnode_get_data(node);
+		group_id = sipe_xml_data(node);
 		if (!group_id) {
-			xmlnode_free(xml);
+			sipe_xml_free(xml);
 			return FALSE;
 		}
 
@@ -1457,7 +1456,7 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 
 		sipe_group_set_user(sip, ctx->user_name);
 
-		xmlnode_free(xml);
+		sipe_xml_free(xml);
 		return TRUE;
 	}
 	return FALSE;
@@ -2492,37 +2491,37 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 	int len = msg->bodylen;
 
 	const gchar *tmp = sipmsg_find_header(msg, "Event");
-	xmlnode *item;
-	xmlnode *isc;
+	const sipe_xml *item;
+	sipe_xml *isc;
 	const gchar *contacts_delta;
-	xmlnode *group_node;
+	const sipe_xml *group_node;
 	if (!g_str_has_prefix(tmp, "vnd-microsoft-roaming-contacts")) {
 		return FALSE;
 	}
 
 	/* Convert the contact from XML to Purple Buddies */
-	isc = xmlnode_from_str(msg->body, len);
+	isc = sipe_xml_parse(msg->body, len);
 	if (!isc) {
 		return FALSE;
 	}
 
-	contacts_delta = xmlnode_get_attrib(isc, "deltaNum");
+	contacts_delta = sipe_xml_attribute(isc, "deltaNum");
 	if (contacts_delta) {
 		sip->contacts_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 	}
 
-	if (sipe_strequal(isc->name, "contactList")) {
+	if (sipe_strequal(sipe_xml_name(isc), "contactList")) {
 
 		/* Parse groups */
-		for (group_node = xmlnode_get_child(isc, "group"); group_node; group_node = xmlnode_get_next_twin(group_node)) {
+		for (group_node = sipe_xml_child(isc, "group"); group_node; group_node = sipe_xml_twin(group_node)) {
 			struct sipe_group * group = g_new0(struct sipe_group, 1);
-			const char *name = xmlnode_get_attrib(group_node, "name");
+			const char *name = sipe_xml_attribute(group_node, "name");
 
 			if (g_str_has_prefix(name, "~")) {
 				name = _("Other Contacts");
 			}
 			group->name = g_strdup(name);
-			group->id = (int)g_ascii_strtod(xmlnode_get_attrib(group_node, "id"), NULL);
+			group->id = (int)g_ascii_strtod(sipe_xml_attribute(group_node, "id"), NULL);
 
 			sipe_group_add(sip, group);
 		}
@@ -2539,9 +2538,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 		}
 
 		/* Parse contacts */
-		for (item = xmlnode_get_child(isc, "contact"); item; item = xmlnode_get_next_twin(item)) {
-			const gchar *uri = xmlnode_get_attrib(item, "uri");
-			const gchar *name = xmlnode_get_attrib(item, "name");
+		for (item = sipe_xml_child(isc, "contact"); item; item = sipe_xml_twin(item)) {
+			const gchar *uri = sipe_xml_attribute(item, "uri");
+			const gchar *name = sipe_xml_attribute(item, "name");
 			gchar *buddy_name;
 			struct sipe_buddy *buddy = NULL;
 			gchar *tmp;
@@ -2554,7 +2553,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 			g_free(tmp);
 
 			/* assign to group Other Contacts if nothing else received */
-			tmp = g_strdup(xmlnode_get_attrib(item, "groups"));
+			tmp = g_strdup(sipe_xml_attribute(item, "groups"));
 			if(is_empty(tmp)) {
 				struct sipe_group *group = sipe_group_find_by_name(sip, _("Other Contacts"));
 				g_free(tmp);
@@ -2625,7 +2624,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, str
 			g_free(self_uri);
 		}
 	}
-	xmlnode_free(isc);
+	sipe_xml_free(isc);
 
 	/* subscribe to buddies */
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
@@ -2758,22 +2757,22 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 
 static void sipe_process_provisioning_v2(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	xmlnode *xn_provision_group_list;
-	xmlnode *node;
+	sipe_xml *xn_provision_group_list;
+	const sipe_xml *node;
 
-	xn_provision_group_list = xmlnode_from_str(msg->body, msg->bodylen);
+	xn_provision_group_list = sipe_xml_parse(msg->body, msg->bodylen);
 
 	/* provisionGroup */
-	for (node = xmlnode_get_child(xn_provision_group_list, "provisionGroup"); node; node = xmlnode_get_next_twin(node)) {
-		if (sipe_strequal("ServerConfiguration", xmlnode_get_attrib(node, "name"))) {
+	for (node = sipe_xml_child(xn_provision_group_list, "provisionGroup"); node; node = sipe_xml_twin(node)) {
+		if (sipe_strequal("ServerConfiguration", sipe_xml_attribute(node, "name"))) {
 			g_free(sip->focus_factory_uri);
-			sip->focus_factory_uri = xmlnode_get_data(xmlnode_get_child(node, "focusFactoryUri"));
+			sip->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sip->focus_factory_uri=%s",
 					sip->focus_factory_uri ? sip->focus_factory_uri : "");
 			break;
 		}
 	}
-	xmlnode_free(xn_provision_group_list);
+	sipe_xml_free(xn_provision_group_list);
 }
 
 /** for 2005 system */
@@ -2781,40 +2780,40 @@ static void
 sipe_process_provisioning(struct sipe_account_data *sip,
 			  struct sipmsg *msg)
 {
-	xmlnode *xn_provision;
-	xmlnode *node;
+	sipe_xml *xn_provision;
+	const sipe_xml *node;
 
-	xn_provision = xmlnode_from_str(msg->body, msg->bodylen);
-	if ((node = xmlnode_get_child(xn_provision, "user"))) {
-		SIPE_DEBUG_INFO("sipe_process_provisioning: uri=%s", xmlnode_get_attrib(node, "uri"));
-		if ((node = xmlnode_get_child(node, "line"))) {
-			const gchar *line_uri = xmlnode_get_attrib(node, "uri");
-			const gchar *server = xmlnode_get_attrib(node, "server");
+	xn_provision = sipe_xml_parse(msg->body, msg->bodylen);
+	if ((node = sipe_xml_child(xn_provision, "user"))) {
+		SIPE_DEBUG_INFO("sipe_process_provisioning: uri=%s", sipe_xml_attribute(node, "uri"));
+		if ((node = sipe_xml_child(node, "line"))) {
+			const gchar *line_uri = sipe_xml_attribute(node, "uri");
+			const gchar *server = sipe_xml_attribute(node, "server");
 			SIPE_DEBUG_INFO("sipe_process_provisioning: line_uri=%s server=%s", line_uri, server);
 			sip_csta_open(sip, line_uri, server);
 		}
 	}
-	xmlnode_free(xn_provision);
+	sipe_xml_free(xn_provision);
 }
 
 static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	const gchar *contacts_delta;
-	xmlnode *xml;
+	sipe_xml *xml;
 
-	xml = xmlnode_from_str(msg->body, msg->bodylen);
+	xml = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!xml)
 	{
 		return;
 	}
 
-	contacts_delta = xmlnode_get_attrib(xml, "deltaNum");
+	contacts_delta = sipe_xml_attribute(xml, "deltaNum");
 	if (contacts_delta)
 	{
 		sip->acl_delta = (int)g_ascii_strtod(contacts_delta, NULL);
 	}
 
-	xmlnode_free(xml);
+	sipe_xml_free(xml);
 }
 
 static void
@@ -3577,9 +3576,9 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 {
 	gchar *contact;
 	gchar *to;
-	xmlnode *xml;
-	xmlnode *node;
-	xmlnode *node2;
+	sipe_xml *xml;
+	const sipe_xml *node;
+	const sipe_xml *node2;
         char *display_name = NULL;
         char *uri;
 	GSList *category_names = NULL;
@@ -3590,7 +3589,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_process_roaming_self");
 
-	xml = xmlnode_from_str(msg->body, msg->bodylen);
+	xml = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!xml) return;
 
 	contact = get_contact(sip);
@@ -3599,8 +3598,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 	/* categories */
 	/* set list of categories participating in this XML */
-	for (node = xmlnode_get_descendant(xml, "categories", "category", NULL); node; node = xmlnode_get_next_twin(node)) {
-		const gchar *name = xmlnode_get_attrib(node, "name");
+	for (node = sipe_xml_child(xml, "categories/category"); node; node = sipe_xml_twin(node)) {
+		const gchar *name = sipe_xml_attribute(node, "name");
 		category_names = slist_insert_unique_sorted(category_names, (gchar *)name, (GCompareFunc)strcmp);
 	}
 	SIPE_DEBUG_INFO("sipe_process_roaming_self: category_names length=%d",
@@ -3622,13 +3621,13 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	}
 	g_slist_free(category_names);
 	/* filling our categories reflected in roaming data */
-	for (node = xmlnode_get_descendant(xml, "categories", "category", NULL); node; node = xmlnode_get_next_twin(node)) {
+	for (node = sipe_xml_child(xml, "categories/category"); node; node = sipe_xml_twin(node)) {
 		const char *tmp;
-		const gchar *name = xmlnode_get_attrib(node, "name");
-		guint container = xmlnode_get_int_attrib(node, "container", -1);
-		guint instance  = xmlnode_get_int_attrib(node, "instance", -1);
-		guint version   = xmlnode_get_int_attrib(node, "version", 0);
-		time_t publish_time = (tmp = xmlnode_get_attrib(node, "publishTime")) ?
+		const gchar *name = sipe_xml_attribute(node, "name");
+		guint container = sipe_xml_int_attribute(node, "container", -1);
+		guint instance  = sipe_xml_int_attribute(node, "instance", -1);
+		guint version   = sipe_xml_int_attribute(node, "version", 0);
+		time_t publish_time = (tmp = sipe_xml_attribute(node, "publishTime")) ?
 			sipe_utils_str_to_time(tmp) : 0;
 		gchar *key;
 		GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
@@ -3660,9 +3659,9 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 		/* capture all userState publication for later clean up if required */
 		if (sipe_strequal(name, "state") && (container == 2 || container == 3)) {
-			xmlnode *xn_state = xmlnode_get_child(node, "state");
+			const sipe_xml *xn_state = sipe_xml_child(node, "state");
 
-			if (xn_state && sipe_strequal(xmlnode_get_attrib(xn_state, "type"), "userState")) {
+			if (xn_state && sipe_strequal(sipe_xml_attribute(xn_state, "type"), "userState")) {
 				struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
 				publication->category  = g_strdup(name);
 				publication->instance  = instance;
@@ -3690,31 +3689,31 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 			/* filling publication->availability */
 			if (sipe_strequal(name, "state")) {
-				xmlnode *xn_state = xmlnode_get_child(node, "state");
-				xmlnode *xn_avail = xmlnode_get_child(xn_state, "availability");
+				const sipe_xml *xn_state = sipe_xml_child(node, "state");
+				const sipe_xml *xn_avail = sipe_xml_child(xn_state, "availability");
 
 				if (xn_avail) {
-					gchar *avail_str = xmlnode_get_data(xn_avail);
+					gchar *avail_str = sipe_xml_data(xn_avail);
 					if (avail_str) {
 						publication->availability = atoi(avail_str);
 					}
 					g_free(avail_str);
 				}
 				/* for calendarState */
-				if (xn_state && sipe_strequal(xmlnode_get_attrib(xn_state, "type"), "calendarState")) {
-					xmlnode *xn_activity = xmlnode_get_child(xn_state, "activity");
+				if (xn_state && sipe_strequal(sipe_xml_attribute(xn_state, "type"), "calendarState")) {
+					const sipe_xml *xn_activity = sipe_xml_child(xn_state, "activity");
 					struct sipe_cal_event *event = g_new0(struct sipe_cal_event, 1);
 
-					event->start_time = sipe_utils_str_to_time(xmlnode_get_attrib(xn_state, "startTime"));
+					event->start_time = sipe_utils_str_to_time(sipe_xml_attribute(xn_state, "startTime"));
 					if (xn_activity) {
-						if (sipe_strequal(xmlnode_get_attrib(xn_activity, "token"),
+						if (sipe_strequal(sipe_xml_attribute(xn_activity, "token"),
 							    sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].token))
 						{
 							event->is_meeting = TRUE;
 						}
 					}
-					event->subject = xmlnode_get_data(xmlnode_get_child(xn_state, "meetingSubject"));
-					event->location = xmlnode_get_data(xmlnode_get_child(xn_state, "meetingLocation"));
+					event->subject = sipe_xml_data(sipe_xml_child(xn_state, "meetingSubject"));
+					event->location = sipe_xml_data(sipe_xml_child(xn_state, "meetingLocation"));
 
 					publication->cal_event_hash = sipe_cal_event_hash(event);
 					SIPE_DEBUG_INFO("sipe_process_roaming_self: hash=%s",
@@ -3724,7 +3723,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			}
 			/* filling publication->note */
 			if (sipe_strequal(name, "note")) {
-				xmlnode *xn_body = xmlnode_get_descendant(node, "note", "body", NULL);
+				const sipe_xml *xn_body = sipe_xml_child(node, "note/body");
 
 				if (!has_note_cleaned) {
 					has_note_cleaned = TRUE;
@@ -3741,13 +3740,13 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				if (xn_body) {
 					char *tmp;
 
-					publication->note = g_markup_escape_text((tmp = xmlnode_get_data(xn_body)), -1);
+					publication->note = g_markup_escape_text((tmp = sipe_xml_data(xn_body)), -1);
 					g_free(tmp);
 					if (publish_time >= sip->note_since) {
 						g_free(sip->note);
 						sip->note = g_strdup(publication->note);
 						sip->note_since = publish_time;
-						sip->is_oof_note = sipe_strequal(xmlnode_get_attrib(xn_body, "type"), "OOF");
+						sip->is_oof_note = sipe_strequal(sipe_xml_attribute(xn_body, "type"), "OOF");
 
 						do_update_status = TRUE;
 					}
@@ -3756,14 +3755,14 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 			/* filling publication->fb_start_str, free_busy_base64, working_hours_xml_str */
 			if (sipe_strequal(name, "calendarData") && (publication->container == 300)) {
-				xmlnode *xn_free_busy = xmlnode_get_descendant(node, "calendarData", "freeBusy", NULL);
-				xmlnode *xn_working_hours = xmlnode_get_descendant(node, "calendarData", "WorkingHours", NULL);
+				const sipe_xml *xn_free_busy = sipe_xml_child(node, "calendarData/freeBusy");
+				const sipe_xml *xn_working_hours = sipe_xml_child(node, "calendarData/WorkingHours");
 				if (xn_free_busy) {
-					publication->fb_start_str = g_strdup(xmlnode_get_attrib(xn_free_busy, "startTime"));
-					publication->free_busy_base64 = xmlnode_get_data(xn_free_busy);
+					publication->fb_start_str = g_strdup(sipe_xml_attribute(xn_free_busy, "startTime"));
+					publication->free_busy_base64 = sipe_xml_data(xn_free_busy);
 				}
 				if (xn_working_hours) {
-					publication->working_hours_xml_str = xmlnode_to_str(xn_working_hours, NULL);
+					publication->working_hours_xml_str = sipe_xml_stringify(xn_working_hours);
 				}
 			}
 
@@ -3781,14 +3780,14 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 		/* aggregateState (not an our publication) from 2-nd container */
 		if (sipe_strequal(name, "state") && container == 2) {
-			xmlnode *xn_state = xmlnode_get_child(node, "state");
+			const sipe_xml *xn_state = sipe_xml_child(node, "state");
 
-			if (xn_state && sipe_strequal(xmlnode_get_attrib(xn_state, "type"), "aggregateState")) {
-				xmlnode *xn_avail = xmlnode_get_child(xn_state, "availability");
-				xmlnode *xn_activity = xmlnode_get_child(xn_state, "activity");
+			if (xn_state && sipe_strequal(sipe_xml_attribute(xn_state, "type"), "aggregateState")) {
+				const sipe_xml *xn_avail = sipe_xml_child(xn_state, "availability");
+				const sipe_xml *xn_activity = sipe_xml_child(xn_state, "activity");
 
 				if (xn_avail) {
-					gchar *avail_str = xmlnode_get_data(xn_avail);
+					gchar *avail_str = sipe_xml_data(xn_avail);
 					if (avail_str) {
 						aggreg_avail = atoi(avail_str);
 					}
@@ -3796,7 +3795,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				}
 
 				if (xn_activity) {
-					const char *activity_token = xmlnode_get_attrib(xn_activity, "token");
+					const char *activity_token = sipe_xml_attribute(xn_activity, "token");
 
 					aggreg_activity = sipe_get_activity_by_token(activity_token);
 				}
@@ -3807,16 +3806,16 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 		/* userProperties published by server from AD */
 		if (!sip->csta && sipe_strequal(name, "userProperties")) {
-			xmlnode *line;
+			const sipe_xml *line;
 			/* line, for Remote Call Control (RCC) */
-			for (line = xmlnode_get_descendant(node, "userProperties", "lines", "line", NULL); line; line = xmlnode_get_next_twin(line)) {
-				const gchar *line_server = xmlnode_get_attrib(line, "lineServer");
-				const gchar *line_type = xmlnode_get_attrib(line, "lineType");
+			for (line = sipe_xml_child(node, "userProperties/lines/line"); line; line = sipe_xml_twin(line)) {
+				const gchar *line_server = sipe_xml_attribute(line, "lineServer");
+				const gchar *line_type = sipe_xml_attribute(line, "lineType");
 				gchar *line_uri;
 
 				if (!line_server || !(sipe_strequal(line_type, "Rcc") || sipe_strequal(line_type, "Dual"))) continue;
 
-				line_uri = xmlnode_get_data(line);
+				line_uri = sipe_xml_data(line);
 				if (line_uri) {
 					SIPE_DEBUG_INFO("sipe_process_roaming_self: line_uri=%s server=%s", line_uri, line_server);
 					sip_csta_open(sip, line_uri, line_server);
@@ -3831,8 +3830,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 			sip->our_publications ? (int) g_hash_table_size(sip->our_publications) : -1);
 
 	/* containers */
-	for (node = xmlnode_get_descendant(xml, "containers", "container", NULL); node; node = xmlnode_get_next_twin(node)) {
-		guint id = xmlnode_get_int_attrib(node, "id", 0);
+	for (node = sipe_xml_child(xml, "containers/container"); node; node = sipe_xml_twin(node)) {
+		guint id = sipe_xml_int_attribute(node, "id", 0);
 		struct sipe_container *container = sipe_find_container(sip, id);
 
 		if (container) {
@@ -3842,14 +3841,14 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		}
 		container = g_new0(struct sipe_container, 1);
 		container->id = id;
-		container->version = xmlnode_get_int_attrib(node, "version", 0);
+		container->version = sipe_xml_int_attribute(node, "version", 0);
 		sip->containers = g_slist_append(sip->containers, container);
 		SIPE_DEBUG_INFO("sipe_process_roaming_self: added container id=%d v%d", container->id, container->version);
 
-		for (node2 = xmlnode_get_child(node, "member"); node2; node2 = xmlnode_get_next_twin(node2)) {
+		for (node2 = sipe_xml_child(node, "member"); node2; node2 = sipe_xml_twin(node2)) {
 			struct sipe_container_member *member = g_new0(struct sipe_container_member, 1);
-			member->type = xmlnode_get_attrib(node2, "type");
-			member->value = xmlnode_get_attrib(node2, "value");
+			member->type = sipe_xml_attribute(node2, "type");
+			member->value = sipe_xml_attribute(node2, "value");
 			container->members = g_slist_append(container->members, member);
 			SIPE_DEBUG_INFO("sipe_process_roaming_self: added container member type=%s value=%s",
 					member->type, member->value ? member->value : "");
@@ -3857,7 +3856,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	}
 
 	SIPE_DEBUG_INFO("sipe_process_roaming_self: sip->access_level_set=%s", sip->access_level_set ? "TRUE" : "FALSE");
-	if (!sip->access_level_set && xmlnode_get_child(xml, "containers")) {
+	if (!sip->access_level_set && sipe_xml_child(xml, "containers")) {
 		int sameEnterpriseAL = sipe_find_access_level(sip, "sameEnterprise", NULL);
 		int federatedAL      = sipe_find_access_level(sip, "federated", NULL);
 		SIPE_DEBUG_INFO("sipe_process_roaming_self: sameEnterpriseAL=%d", sameEnterpriseAL);
@@ -3877,21 +3876,21 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	}
 
 	/* subscribers */
-	for (node = xmlnode_get_descendant(xml, "subscribers", "subscriber", NULL); node; node = xmlnode_get_next_twin(node)) {
+	for (node = sipe_xml_child(xml, "subscribers/subscriber"); node; node = sipe_xml_twin(node)) {
 		const char *user;
 		const char *acknowledged;
 		gchar *hdr;
 		gchar *body;
 
-		user = xmlnode_get_attrib(node, "user"); /* without 'sip:' prefix */
+		user = sipe_xml_attribute(node, "user"); /* without 'sip:' prefix */
 		if (!user) continue;
 		SIPE_DEBUG_INFO("sipe_process_roaming_self: user %s", user);
-		display_name = g_strdup(xmlnode_get_attrib(node, "displayName"));
+		display_name = g_strdup(sipe_xml_attribute(node, "displayName"));
 		uri = sip_uri_from_name(user);
 
 		sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
 
-	        acknowledged= xmlnode_get_attrib(node, "acknowledged");
+	        acknowledged= sipe_xml_attribute(node, "acknowledged");
 		if(sipe_strcase_equal(acknowledged,"false")){
                         SIPE_DEBUG_INFO("sipe_process_roaming_self: user added you %s", user);
 			if (!purple_find_buddy(sip->account, uri)) {
@@ -3916,7 +3915,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	}
 
 	g_free(contact);
-	xmlnode_free(xml);
+	sipe_xml_free(xml);
 
 	/* Publish initial state if not yet.
 	 * Assuming this happens on initial responce to subscription to roaming-self
@@ -4327,18 +4326,18 @@ process_info_response(struct sipe_account_data *sip, struct sipmsg *msg,
 	}
 
 	if (msg->response == 200 && g_str_has_prefix(contenttype, "application/x-ms-mim")) {
-		xmlnode *xn_action 		= xmlnode_from_str(msg->body, msg->bodylen);
-		xmlnode *xn_request_rm_response = xmlnode_get_child(xn_action, "RequestRMResponse");
-		xmlnode *xn_set_rm_response 	= xmlnode_get_child(xn_action, "SetRMResponse");
+		sipe_xml *xn_action                    = sipe_xml_parse(msg->body, msg->bodylen);
+		const sipe_xml *xn_request_rm_response = sipe_xml_child(xn_action, "RequestRMResponse");
+		const sipe_xml *xn_set_rm_response     = sipe_xml_child(xn_action, "SetRMResponse");
 
 		if (xn_request_rm_response) {
-			const char *with = xmlnode_get_attrib(xn_request_rm_response, "uri");
-			const char *allow = xmlnode_get_attrib(xn_request_rm_response, "allow");
+			const char *with = sipe_xml_attribute(xn_request_rm_response, "uri");
+			const char *allow = sipe_xml_attribute(xn_request_rm_response, "allow");
 
 			dialog = sipe_dialog_find(session, with);
 			if (!dialog) {
 				SIPE_DEBUG_INFO("process_info_response: failed find dialog for %s, exiting.", with);
-				xmlnode_free(xn_action);
+				sipe_xml_free(xn_action);
 				return FALSE;
 			}
 
@@ -4357,7 +4356,7 @@ process_info_response(struct sipe_account_data *sip, struct sipmsg *msg,
 		} else if (xn_set_rm_response) {
 
 		}
-		xmlnode_free(xn_action);
+		sipe_xml_free(xn_action);
 
 	}
 
@@ -4944,15 +4943,15 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 
 	if (g_str_has_prefix(contenttype, "application/x-ms-mim"))
 	{
-		xmlnode *xn_action 		= xmlnode_from_str(msg->body, msg->bodylen);
-		xmlnode *xn_request_rm 		= xmlnode_get_child(xn_action, "RequestRM");
-		xmlnode *xn_set_rm 		= xmlnode_get_child(xn_action, "SetRM");
+		sipe_xml *xn_action           = sipe_xml_parse(msg->body, msg->bodylen);
+		const sipe_xml *xn_request_rm = sipe_xml_child(xn_action, "RequestRM");
+		const sipe_xml *xn_set_rm     = sipe_xml_child(xn_action, "SetRM");
 
 		sipmsg_add_header(msg, "Content-Type", "application/x-ms-mim");
 
 		if (xn_request_rm) {
-			//const char *rm = xmlnode_get_attrib(xn_request_rm, "uri");
-			int bid = xmlnode_get_int_attrib(xn_request_rm, "bid", 0);
+			//const char *rm = sipe_xml_attribute(xn_request_rm, "uri");
+			int bid = sipe_xml_int_attribute(xn_request_rm, "bid", 0);
 			gchar *body = g_strdup_printf(
 				"<?xml version=\"1.0\"?>\r\n"
 				"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
@@ -4963,7 +4962,7 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 			g_free(body);
 		} else if (xn_set_rm) {
 			gchar *body;
-			const char *rm = xmlnode_get_attrib(xn_set_rm, "uri");
+			const char *rm = sipe_xml_attribute(xn_set_rm, "uri");
 			g_free(session->roster_manager);
 			session->roster_manager = g_strdup(rm);
 
@@ -4975,22 +4974,22 @@ static void process_incoming_info(struct sipe_account_data *sip, struct sipmsg *
 			send_sip_response(sip->gc, msg, 200, "OK", body);
 			g_free(body);
 		}
-		xmlnode_free(xn_action);
+		sipe_xml_free(xn_action);
 
 	}
 	else
 	{
 		/* looks like purple lacks typing notification for chat */
 		if (!session->is_multiparty && !session->focus_uri) {
-			xmlnode *xn_keyboard_activity  = xmlnode_from_str(msg->body, msg->bodylen);
-			const char *status = xmlnode_get_attrib(xmlnode_get_child(xn_keyboard_activity, "status"),
+			sipe_xml *xn_keyboard_activity  = sipe_xml_parse(msg->body, msg->bodylen);
+			const char *status = sipe_xml_attribute(sipe_xml_child(xn_keyboard_activity, "status"),
 								"status");
 			if (sipe_strequal(status, "type")) {
 				serv_got_typing(sip->gc, from, SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
 			} else if (sipe_strequal(status, "idle")) {
 				serv_got_typing_stopped(sip->gc, from);
 			}
-			xmlnode_free(xn_keyboard_activity);
+			sipe_xml_free(xn_keyboard_activity);
 		}
 
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
@@ -5194,8 +5193,8 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 		found = TRUE;
 
 	} else if (g_str_has_prefix(contenttype, "application/im-iscomposing+xml")) {
-		xmlnode *isc = xmlnode_from_str(msg->body, msg->bodylen);
-		xmlnode *state;
+		sipe_xml *isc = sipe_xml_parse(msg->body, msg->bodylen);
+		const sipe_xml *state;
 		gchar *statedata;
 
 		if (!isc) {
@@ -5204,23 +5203,23 @@ static void process_incoming_message(struct sipe_account_data *sip, struct sipms
 			return;
 		}
 
-		state = xmlnode_get_child(isc, "state");
+		state = sipe_xml_child(isc, "state");
 
 		if (!state) {
 			SIPE_DEBUG_INFO_NOFORMAT("process_incoming_message: no state found");
-			xmlnode_free(isc);
+			sipe_xml_free(isc);
 			g_free(from);
 			return;
 		}
 
-		statedata = xmlnode_get_data(state);
+		statedata = sipe_xml_data(state);
 		if (statedata) {
 			if (strstr(statedata, "active")) serv_got_typing(sip->gc, from, 0, PURPLE_TYPING);
 			else serv_got_typing_stopped(sip->gc, from);
 
 			g_free(statedata);
 		}
-		xmlnode_free(isc);
+		sipe_xml_free(isc);
 		send_sip_response(sip->gc, msg, 200, "OK", NULL);
 		found = TRUE;
 	} else if (g_str_has_prefix(contenttype, "text/x-msmsgsinvite")) {
@@ -6381,31 +6380,31 @@ static void sipe_subscribe_poolfqdn_resource_uri(const char *host, GSList *serve
 
 static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, const gchar *data, unsigned len)
 {
-	xmlnode *xn_list;
-	xmlnode *xn_resource;
+	sipe_xml *xn_list;
+	const sipe_xml *xn_resource;
 	GHashTable *servers = g_hash_table_new_full(g_str_hash, g_str_equal,
 						    g_free, NULL);
 	GSList *server;
 	gchar *host;
 
-	xn_list = xmlnode_from_str(data, len);
+	xn_list = sipe_xml_parse(data, len);
 
-        for (xn_resource = xmlnode_get_child(xn_list, "resource");
+        for (xn_resource = sipe_xml_child(xn_list, "resource");
 	     xn_resource;
-	     xn_resource = xmlnode_get_next_twin(xn_resource) )
+	     xn_resource = sipe_xml_twin(xn_resource) )
 	{
 		const char *uri, *state;
-		xmlnode *xn_instance;
+		const sipe_xml *xn_instance;
 
-		xn_instance = xmlnode_get_child(xn_resource, "instance");
+		xn_instance = sipe_xml_child(xn_resource, "instance");
                 if (!xn_instance) continue;
 
-                uri = xmlnode_get_attrib(xn_resource, "uri");
-                state = xmlnode_get_attrib(xn_instance, "state");
+                uri = sipe_xml_attribute(xn_resource, "uri");
+                state = sipe_xml_attribute(xn_instance, "state");
                 SIPE_DEBUG_INFO("process_incoming_notify_rlmi_resub: uri(%s),state(%s)", uri, state);
 
                 if (strstr(state, "resubscribe")) {
-			const char *poolFqdn = xmlnode_get_attrib(xn_instance, "poolFqdn");
+			const char *poolFqdn = sipe_xml_attribute(xn_instance, "poolFqdn");
 
 			if (poolFqdn) { //[MS-PRES] Section 3.4.5.1.3 Processing Details
 				gchar *user = g_strdup(uri);
@@ -6423,7 +6422,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 	g_hash_table_foreach(servers, (GHFunc) sipe_subscribe_poolfqdn_resource_uri, sip);
 	g_hash_table_destroy(servers);
 
-	xmlnode_free(xn_list);
+	sipe_xml_free(xn_list);
 }
 
 static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gchar *data, unsigned len)
@@ -6431,34 +6430,34 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 	gchar *uri;
 	gchar *getbasic;
 	gchar *activity = NULL;
-	xmlnode *pidf;
-	xmlnode *basicstatus = NULL, *tuple, *status;
+	sipe_xml *pidf;
+	const sipe_xml *basicstatus = NULL, *tuple, *status;
 	gboolean isonline = FALSE;
-	xmlnode *display_name_node;
+	const sipe_xml *display_name_node;
 
-	pidf = xmlnode_from_str(data, len);
+	pidf = sipe_xml_parse(data, len);
 	if (!pidf) {
 		SIPE_DEBUG_INFO("process_incoming_notify_pidf: no parseable pidf:%s", data);
 		return;
 	}
 
-	if ((tuple = xmlnode_get_child(pidf, "tuple")))
+	if ((tuple = sipe_xml_child(pidf, "tuple")))
 	{
-		if ((status = xmlnode_get_child(tuple, "status"))) {
-			basicstatus = xmlnode_get_child(status, "basic");
+		if ((status = sipe_xml_child(tuple, "status"))) {
+			basicstatus = sipe_xml_child(status, "basic");
 		}
 	}
 
 	if (!basicstatus) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_notify_pidf: no basic found");
-		xmlnode_free(pidf);
+		sipe_xml_free(pidf);
 		return;
 	}
 
-	getbasic = xmlnode_get_data(basicstatus);
+	getbasic = sipe_xml_data(basicstatus);
 	if (!getbasic) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_notify_pidf: no basic data found");
-		xmlnode_free(pidf);
+		sipe_xml_free(pidf);
 		return;
 	}
 
@@ -6468,21 +6467,21 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 	}
 	g_free(getbasic);
 
-	uri = sip_uri(xmlnode_get_attrib(pidf, "entity")); /* with 'sip:' prefix */ /* AOL comes without the prefix */
+	uri = sip_uri(sipe_xml_attribute(pidf, "entity")); /* with 'sip:' prefix */ /* AOL comes without the prefix */
 
-	display_name_node = xmlnode_get_child(pidf, "display-name");
+	display_name_node = sipe_xml_child(pidf, "display-name");
 	if (display_name_node) {
-		char * display_name = xmlnode_get_data(display_name_node);
+		char * display_name = sipe_xml_data(display_name_node);
 
 		sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
 		g_free(display_name);
 	}
 
-	if ((tuple = xmlnode_get_child(pidf, "tuple"))) {
-		if ((status = xmlnode_get_child(tuple, "status"))) {
-			if ((basicstatus = xmlnode_get_child(status, "activities"))) {
-				if ((basicstatus = xmlnode_get_child(basicstatus, "activity"))) {
-					activity = xmlnode_get_data(basicstatus);
+	if ((tuple = sipe_xml_child(pidf, "tuple"))) {
+		if ((status = sipe_xml_child(tuple, "status"))) {
+			if ((basicstatus = sipe_xml_child(status, "activities"))) {
+				if ((basicstatus = sipe_xml_child(basicstatus, "activity"))) {
+					activity = sipe_xml_data(basicstatus);
 					SIPE_DEBUG_INFO("process_incoming_notify_pidf: activity(%s)", activity);
 				}
 			}
@@ -6511,24 +6510,24 @@ static void process_incoming_notify_pidf(struct sipe_account_data *sip, const gc
 
 	g_free(activity);
 	g_free(uri);
-	xmlnode_free(pidf);
+	sipe_xml_free(pidf);
 }
 
 /** 2005 */
 static void
 sipe_user_info_has_updated(struct sipe_account_data *sip,
-			   xmlnode *xn_userinfo)
+			   const sipe_xml *xn_userinfo)
 {
-	xmlnode *xn_states;
+	const sipe_xml *xn_states;
 
 	g_free(sip->user_states);
 	sip->user_states = NULL;
-	if ((xn_states = xmlnode_get_child(xn_userinfo, "states")) != NULL) {
-		gchar *orig = sip->user_states = xmlnode_to_str(xn_states, NULL);
+	if ((xn_states = sipe_xml_child(xn_userinfo, "states")) != NULL) {
+		gchar *orig = sip->user_states = sipe_xml_stringify(xn_states);
 
 		/* this is a hack-around to remove added newline after inner element,
 		 * state in this case, where it shouldn't be.
-		 * After several use of xmlnode_to_str, amount of added newlines
+		 * After several use of sipe_xml_stringify, amount of added newlines
 		 * grows significantly.
 		 */
 		if (orig) {
@@ -6568,18 +6567,18 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	const char *cal_granularity = NULL;
 	char *cal_free_busy_base64 = NULL;
 	struct sipe_buddy *sbuddy;
-	xmlnode *node;
-	xmlnode *xn_presentity;
-	xmlnode *xn_availability;
-	xmlnode *xn_activity;
-	xmlnode *xn_display_name;
-	xmlnode *xn_email;
-	xmlnode *xn_phone_number;
-	xmlnode *xn_userinfo;
-	xmlnode *xn_note;
-	xmlnode *xn_oof;
-	xmlnode *xn_state;
-	xmlnode *xn_contact;
+	const sipe_xml *node;
+	sipe_xml *xn_presentity;
+	const sipe_xml *xn_availability;
+	const sipe_xml *xn_activity;
+	const sipe_xml *xn_display_name;
+	const sipe_xml *xn_email;
+	const sipe_xml *xn_phone_number;
+	const sipe_xml *xn_userinfo;
+	const sipe_xml *xn_note;
+	const sipe_xml *xn_oof;
+	const sipe_xml *xn_state;
+	const sipe_xml *xn_contact;
 	char *note;
 	char *free_activity;
 	int user_avail;
@@ -6592,26 +6591,26 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	if (data && strstr(data, "encoding=\"utf-16\"")) {
 		char *tmp_data;
 		tmp_data = replace(data, "encoding=\"utf-16\"", "encoding=\"utf-8\"");
-		xn_presentity = xmlnode_from_str(tmp_data, strlen(tmp_data));
+		xn_presentity = sipe_xml_parse(tmp_data, strlen(tmp_data));
 		g_free(tmp_data);
 	} else {
-		xn_presentity = xmlnode_from_str(data, len);
+		xn_presentity = sipe_xml_parse(data, len);
 	}
 
-	xn_availability = xmlnode_get_child(xn_presentity, "availability");
-	xn_activity = xmlnode_get_child(xn_presentity, "activity");
-	xn_display_name = xmlnode_get_child(xn_presentity, "displayName");
-	xn_email = xmlnode_get_child(xn_presentity, "email");
-	xn_phone_number = xmlnode_get_child(xn_presentity, "phoneNumber");
-	xn_userinfo = xmlnode_get_child(xn_presentity, "userInfo");
-	xn_oof = xn_userinfo ? xmlnode_get_child(xn_userinfo, "oof") : NULL;
-	xn_state = xn_userinfo ? xmlnode_get_descendant(xn_userinfo, "states", "state",  NULL): NULL;
-	user_avail = xn_state ? xmlnode_get_int_attrib(xn_state, "avail", 0) : 0;
-	user_avail_since = xn_state ? sipe_utils_str_to_time(xmlnode_get_attrib(xn_state, "since")) : 0;
-	user_avail_nil = xn_state ? xmlnode_get_attrib(xn_state, "nil") : NULL;
-	xn_contact = xn_userinfo ? xmlnode_get_child(xn_userinfo, "contact") : NULL;
-	xn_note = xn_userinfo ? xmlnode_get_child(xn_userinfo, "note") : NULL;
-	note = xn_note ? xmlnode_get_data(xn_note) : NULL;
+	xn_availability = sipe_xml_child(xn_presentity, "availability");
+	xn_activity = sipe_xml_child(xn_presentity, "activity");
+	xn_display_name = sipe_xml_child(xn_presentity, "displayName");
+	xn_email = sipe_xml_child(xn_presentity, "email");
+	xn_phone_number = sipe_xml_child(xn_presentity, "phoneNumber");
+	xn_userinfo = sipe_xml_child(xn_presentity, "userInfo");
+	xn_oof = xn_userinfo ? sipe_xml_child(xn_userinfo, "oof") : NULL;
+	xn_state = xn_userinfo ? sipe_xml_child(xn_userinfo, "states/state"): NULL;
+	user_avail = xn_state ? sipe_xml_int_attribute(xn_state, "avail", 0) : 0;
+	user_avail_since = xn_state ? sipe_utils_str_to_time(sipe_xml_attribute(xn_state, "since")) : 0;
+	user_avail_nil = xn_state ? sipe_xml_attribute(xn_state, "nil") : NULL;
+	xn_contact = xn_userinfo ? sipe_xml_child(xn_userinfo, "contact") : NULL;
+	xn_note = xn_userinfo ? sipe_xml_child(xn_userinfo, "note") : NULL;
+	note = xn_note ? sipe_xml_data(xn_note) : NULL;
 
 	if (sipe_strequal(user_avail_nil, "true")) {	/* null-ed */
 		user_avail = 0;
@@ -6620,11 +6619,11 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	free_activity = NULL;
 
-	name = xmlnode_get_attrib(xn_presentity, "uri"); /* without 'sip:' prefix */
+	name = sipe_xml_attribute(xn_presentity, "uri"); /* without 'sip:' prefix */
 	uri = sip_uri_from_name(name);
-	avl = xmlnode_get_int_attrib(xn_availability, "aggregate", 0);
-	epid = xmlnode_get_attrib(xn_availability, "epid");
-	act = xmlnode_get_int_attrib(xn_activity, "aggregate", 0);
+	avl = sipe_xml_int_attribute(xn_availability, "aggregate", 0);
+	epid = sipe_xml_attribute(xn_availability, "epid");
+	act = sipe_xml_int_attribute(xn_activity, "aggregate", 0);
 
 	status_id = sipe_get_status_by_act_avail_2005(act, avl, &activity);
 	res_avail = sipe_get_availability_by_status(status_id, NULL);
@@ -6634,10 +6633,10 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	}
 
 	if (xn_display_name) {
-		char *display_name = g_strdup(xmlnode_get_attrib(xn_display_name, "displayName"));
-		char *email        = xn_email ? g_strdup(xmlnode_get_attrib(xn_email, "email")) : NULL;
-		char *phone_label  = xn_phone_number ? g_strdup(xmlnode_get_attrib(xn_phone_number, "label")) : NULL;
-		char *phone_number = xn_phone_number ? g_strdup(xmlnode_get_attrib(xn_phone_number, "number")) : NULL;
+		char *display_name = g_strdup(sipe_xml_attribute(xn_display_name, "displayName"));
+		char *email        = xn_email ? g_strdup(sipe_xml_attribute(xn_email, "email")) : NULL;
+		char *phone_label  = xn_phone_number ? g_strdup(sipe_xml_attribute(xn_phone_number, "label")) : NULL;
+		char *phone_number = xn_phone_number ? g_strdup(sipe_xml_attribute(xn_phone_number, "number")) : NULL;
 		char *tel_uri      = sip_to_tel_uri(phone_number);
 
 		sipe_update_user_info(sip, uri, ALIAS_PROP, display_name);
@@ -6654,11 +6653,11 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 	if (xn_contact) {
 		/* tel */
-		for (node = xmlnode_get_child(xn_contact, "tel"); node; node = xmlnode_get_next_twin(node))
+		for (node = sipe_xml_child(xn_contact, "tel"); node; node = sipe_xml_twin(node))
 		{
 			/* Ex.: <tel type="work">tel:+3222220000</tel> */
-			const char *phone_type = xmlnode_get_attrib(node, "type");
-			char* phone = xmlnode_get_data(node);
+			const char *phone_type = sipe_xml_attribute(node, "type");
+			char* phone = sipe_xml_data(node);
 
 			sipe_update_user_phone(sip, uri, phone_type, phone, NULL);
 
@@ -6667,22 +6666,22 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	}
 
 	/* devicePresence */
-	for (node = xmlnode_get_descendant(xn_presentity, "devices", "devicePresence", NULL); node; node = xmlnode_get_next_twin(node)) {
-		xmlnode *xn_device_name;
-		xmlnode *xn_calendar_info;
-		xmlnode *xn_state;
+	for (node = sipe_xml_child(xn_presentity, "devices/devicePresence"); node; node = sipe_xml_twin(node)) {
+		const sipe_xml *xn_device_name;
+		const sipe_xml *xn_calendar_info;
+		const sipe_xml *xn_state;
 		char *state;
 
 		/* deviceName */
-		if (sipe_strequal(xmlnode_get_attrib(node, "epid"), epid)) {
-			xn_device_name = xmlnode_get_child(node, "deviceName");
-			device_name = xn_device_name ? xmlnode_get_attrib(xn_device_name, "name") : NULL;
+		if (sipe_strequal(sipe_xml_attribute(node, "epid"), epid)) {
+			xn_device_name = sipe_xml_child(node, "deviceName");
+			device_name = xn_device_name ? sipe_xml_attribute(xn_device_name, "name") : NULL;
 		}
 
 		/* calendarInfo */
-		xn_calendar_info = xmlnode_get_child(node, "calendarInfo");
+		xn_calendar_info = sipe_xml_child(node, "calendarInfo");
 		if (xn_calendar_info) {
-			const char *cal_start_time_tmp = xmlnode_get_attrib(xn_calendar_info, "startTime");
+			const char *cal_start_time_tmp = sipe_xml_attribute(xn_calendar_info, "startTime");
 
 			if (cal_start_time) {
 				time_t cal_start_time_t     = sipe_utils_str_to_time(cal_start_time);
@@ -6690,29 +6689,29 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 
 				if (cal_start_time_t_tmp > cal_start_time_t) {
 					cal_start_time = cal_start_time_tmp;
-					cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");
+					cal_granularity = sipe_xml_attribute(xn_calendar_info, "granularity");
 					g_free(cal_free_busy_base64);
-					cal_free_busy_base64 = xmlnode_get_data(xn_calendar_info);
+					cal_free_busy_base64 = sipe_xml_data(xn_calendar_info);
 
 					SIPE_DEBUG_INFO("process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s", cal_start_time, cal_granularity, cal_free_busy_base64);
 				}
 			} else {
 				cal_start_time = cal_start_time_tmp;
-				cal_granularity = xmlnode_get_attrib(xn_calendar_info, "granularity");
+				cal_granularity = sipe_xml_attribute(xn_calendar_info, "granularity");
 				g_free(cal_free_busy_base64);
-				cal_free_busy_base64 = xmlnode_get_data(xn_calendar_info);
+				cal_free_busy_base64 = sipe_xml_data(xn_calendar_info);
 
 				SIPE_DEBUG_INFO("process_incoming_notify_msrtc: startTime=%s granularity=%s cal_free_busy_base64=\n%s", cal_start_time, cal_granularity, cal_free_busy_base64);
 			}
 		}
 
 		/* state */
-		xn_state = xmlnode_get_descendant(node, "states", "state", NULL);
+		xn_state = sipe_xml_child(node, "states/state");
 		if (xn_state) {
-			int dev_avail = xmlnode_get_int_attrib(xn_state, "avail", 0);
-			time_t dev_avail_since = sipe_utils_str_to_time(xmlnode_get_attrib(xn_state, "since"));
+			int dev_avail = sipe_xml_int_attribute(xn_state, "avail", 0);
+			time_t dev_avail_since = sipe_utils_str_to_time(sipe_xml_attribute(xn_state, "since"));
 
-			state = xmlnode_get_data(xn_state);
+			state = sipe_xml_data(xn_state);
 			if (dev_avail_since > user_avail_since &&
 			    dev_avail >= res_avail)
 			{
@@ -6810,7 +6809,7 @@ static void process_incoming_notify_msrtc(struct sipe_account_data *sip, const g
 	}
 
 	g_free(note);
-	xmlnode_free(xn_presentity);
+	sipe_xml_free(xn_presentity);
 	g_free(uri);
 	g_free(self_uri);
 }
@@ -6868,14 +6867,14 @@ static void sipe_presence_timeout_mime_cb(gpointer user_data,
 					  gsize length)
 {
 	GSList **buddies = user_data;
-	xmlnode *xml = xmlnode_from_str(body, length);
+	sipe_xml *xml = sipe_xml_parse(body, length);
 
-	if (xml && !sipe_strequal(xml->name, "list")) {
-		gchar *uri = sip_uri(xmlnode_get_attrib(xml, "uri"));
+	if (xml && !sipe_strequal(sipe_xml_name(xml), "list")) {
+		gchar *uri = sip_uri(sipe_xml_attribute(xml, "uri"));
 		*buddies = g_slist_append(*buddies, uri);
 	}
 
-	xmlnode_free(xml);
+	sipe_xml_free(xml);
 }
 
 static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct sipmsg *msg, gchar *who, int timeout)
@@ -7204,53 +7203,53 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 
 	if (msg->response == 409 && g_str_has_prefix(contenttype, "application/msrtc-fault+xml")) {
-		xmlnode *xml;
-		xmlnode *node;
+		sipe_xml *xml;
+		const sipe_xml *node;
 		gchar *fault_code;
 		GHashTable *faults;
 		int index_our;
 		gboolean has_device_publication = FALSE;
 
-		xml = xmlnode_from_str(msg->body, msg->bodylen);
+		xml = sipe_xml_parse(msg->body, msg->bodylen);
 
 		/* test if version mismatch fault */
-		fault_code = xmlnode_get_data(xmlnode_get_child(xml, "Faultcode"));
+		fault_code = sipe_xml_data(sipe_xml_child(xml, "Faultcode"));
 		if (!sipe_strequal(fault_code, "Client.BadCall.WrongDelta")) {
 			SIPE_DEBUG_INFO("process_send_presence_category_publish_response: unsupported fault code:%s returning.", fault_code);
 			g_free(fault_code);
-			xmlnode_free(xml);
+			sipe_xml_free(xml);
 			return TRUE;
 		}
 		g_free(fault_code);
 
 		/* accumulating information about faulty versions */
 		faults = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-		for (node = xmlnode_get_descendant(xml, "details", "operation", NULL);
+		for (node = sipe_xml_child(xml, "details/operation");
 		     node;
-		     node = xmlnode_get_next_twin(node))
+		     node = sipe_xml_twin(node))
 		{
-			const gchar *index = xmlnode_get_attrib(node, "index");
-			const gchar *curVersion = xmlnode_get_attrib(node, "curVersion");
+			const gchar *index = sipe_xml_attribute(node, "index");
+			const gchar *curVersion = sipe_xml_attribute(node, "curVersion");
 
 			g_hash_table_insert(faults, g_strdup(index), g_strdup(curVersion));
 			SIPE_DEBUG_INFO("fault added: index:%s curVersion:%s", index, curVersion);
 		}
-		xmlnode_free(xml);
+		sipe_xml_free(xml);
 
 		/* here we are parsing own request to figure out what publication
 		 * referensed here only by index went wrong
 		 */
-		xml = xmlnode_from_str(trans->msg->body, trans->msg->bodylen);
+		xml = sipe_xml_parse(trans->msg->body, trans->msg->bodylen);
 
 		/* publication */
-		for (node = xmlnode_get_descendant(xml, "publications", "publication", NULL),
+		for (node = sipe_xml_child(xml, "publications/publication"),
 		     index_our = 1; /* starts with 1 - our first publication */
 		     node;
-		     node = xmlnode_get_next_twin(node), index_our++)
+		     node = sipe_xml_twin(node), index_our++)
 		{
 			gchar *idx = g_strdup_printf("%d", index_our);
 			const gchar *curVersion = g_hash_table_lookup(faults, idx);
-			const gchar *categoryName = xmlnode_get_attrib(node, "categoryName");
+			const gchar *categoryName = sipe_xml_attribute(node, "categoryName");
 			g_free(idx);
 
 			if (sipe_strequal("device", categoryName)) {
@@ -7258,8 +7257,8 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 			}
 
 			if (curVersion) { /* fault exist on this index */
-				const gchar *container = xmlnode_get_attrib(node, "container");
-				const gchar *instance = xmlnode_get_attrib(node, "instance");
+				const gchar *container = sipe_xml_attribute(node, "container");
+				const gchar *instance = sipe_xml_attribute(node, "instance");
 				/* key is <category><instance><container> */
 				gchar *key = g_strdup_printf("<%s><%s><%s>", categoryName, instance, container);
 				GHashTable *category = g_hash_table_lookup(sip->our_publications, categoryName);
@@ -7292,7 +7291,7 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 				g_free(key);
 			}
 		}
-		xmlnode_free(xml);
+		sipe_xml_free(xml);
 		g_hash_table_destroy(faults);
 
 		/* rebublishing with right versions */
@@ -9019,15 +9018,15 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 {
 	PurpleNotifySearchResults *results;
 	PurpleNotifySearchColumn *column;
-	xmlnode *searchResults;
-	xmlnode *mrow;
+	sipe_xml *searchResults;
+	const sipe_xml *mrow;
 	int match_count = 0;
 	gboolean more = FALSE;
 	gchar *secondary;
 
 	SIPE_DEBUG_INFO("process_search_contact_response: body:\n%s", msg->body ? msg->body : "");
 
-	searchResults = xmlnode_from_str(msg->body, msg->bodylen);
+	searchResults = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!searchResults) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_search_contact_response: no parseable searchResults");
 		return FALSE;
@@ -9039,7 +9038,7 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 		SIPE_DEBUG_ERROR_NOFORMAT("purple_parse_searchreply: Unable to display the search results.");
 		purple_notify_error(sip->gc, NULL, _("Unable to display the search results"), NULL);
 
-		xmlnode_free(searchResults);
+		sipe_xml_free(searchResults);
 		return FALSE;
 	}
 
@@ -9058,24 +9057,24 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	column = purple_notify_searchresults_column_new(_("Email"));
 	purple_notify_searchresults_column_add(results, column);
 
-	for (mrow =  xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL); mrow; mrow = xmlnode_get_next_twin(mrow)) {
+	for (mrow =  sipe_xml_child(searchResults, "Body/Array/row"); mrow; mrow = sipe_xml_twin(mrow)) {
 		GList *row = NULL;
 
-		gchar **uri_parts = g_strsplit(xmlnode_get_attrib(mrow, "uri"), ":", 2);
+		gchar **uri_parts = g_strsplit(sipe_xml_attribute(mrow, "uri"), ":", 2);
 		row = g_list_append(row, g_strdup(uri_parts[1]));
 		g_strfreev(uri_parts);
 
-		row = g_list_append(row, g_strdup(xmlnode_get_attrib(mrow, "displayName")));
-		row = g_list_append(row, g_strdup(xmlnode_get_attrib(mrow, "company")));
-		row = g_list_append(row, g_strdup(xmlnode_get_attrib(mrow, "country")));
-		row = g_list_append(row, g_strdup(xmlnode_get_attrib(mrow, "email")));
+		row = g_list_append(row, g_strdup(sipe_xml_attribute(mrow, "displayName")));
+		row = g_list_append(row, g_strdup(sipe_xml_attribute(mrow, "company")));
+		row = g_list_append(row, g_strdup(sipe_xml_attribute(mrow, "country")));
+		row = g_list_append(row, g_strdup(sipe_xml_attribute(mrow, "email")));
 
 		purple_notify_searchresults_row_add(results, row);
 		match_count++;
 	}
 
-	if ((mrow = xmlnode_get_descendant(searchResults, "Body", "directorySearch", "moreAvailable", NULL)) != NULL) {
-		char *data = xmlnode_get_data(mrow);
+	if ((mrow = sipe_xml_child(searchResults, "Body/directorySearch/moreAvailable")) != NULL) {
+		char *data = sipe_xml_data(mrow);
 		more = (g_strcasecmp(data, "true") == 0);
 		g_free(data);
 	}
@@ -9091,7 +9090,7 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	purple_notify_searchresults(sip->gc, NULL, NULL, secondary, results, NULL, NULL);
 
 	g_free(secondary);
-	xmlnode_free(searchResults);
+	sipe_xml_free(searchResults);
 	return TRUE;
 }
 
@@ -10119,18 +10118,18 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 	if (msg->response != 200) {
 		SIPE_DEBUG_INFO("process_options_response: SERVICE response is %d", msg->response);
 	} else {
-		xmlnode *searchResults;
-		xmlnode *mrow;
+		sipe_xml *searchResults;
+		const sipe_xml *mrow;
 
 		SIPE_DEBUG_INFO("process_options_response: body:\n%s", msg->body ? msg->body : "");
-		searchResults = xmlnode_from_str(msg->body, msg->bodylen);
+		searchResults = sipe_xml_parse(msg->body, msg->bodylen);
 		if (!searchResults) {
 			SIPE_DEBUG_INFO_NOFORMAT("process_get_info_response: no parseable searchResults");
-		} else if ((mrow = xmlnode_get_descendant(searchResults, "Body", "Array", "row", NULL))) {
+		} else if ((mrow = sipe_xml_child(searchResults, "Body/Array/row"))) {
 			const char *value;
-			server_alias = g_strdup(xmlnode_get_attrib(mrow, "displayName"));
-			email = g_strdup(xmlnode_get_attrib(mrow, "email"));
-			phone_number = g_strdup(xmlnode_get_attrib(mrow, "phone"));
+			server_alias = g_strdup(sipe_xml_attribute(mrow, "displayName"));
+			email = g_strdup(sipe_xml_attribute(mrow, "email"));
+			phone_number = g_strdup(sipe_xml_attribute(mrow, "phone"));
 
 			/* For 2007 system we will take this from ContactCard -
 			 * it has cleaner tel: URIs at least
@@ -10148,25 +10147,25 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			if (server_alias && strlen(server_alias) > 0) {
 				purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
 			}
-			if ((value = xmlnode_get_attrib(mrow, "title")) && strlen(value) > 0) {
+			if ((value = sipe_xml_attribute(mrow, "title")) && strlen(value) > 0) {
 				purple_notify_user_info_add_pair(info, _("Job title"), value);
 			}
-			if ((value = xmlnode_get_attrib(mrow, "office")) && strlen(value) > 0) {
+			if ((value = sipe_xml_attribute(mrow, "office")) && strlen(value) > 0) {
 				purple_notify_user_info_add_pair(info, _("Office"), value);
 			}
 			if (phone_number && strlen(phone_number) > 0) {
 				purple_notify_user_info_add_pair(info, _("Business phone"), phone_number);
 			}
-			if ((value = xmlnode_get_attrib(mrow, "company")) && strlen(value) > 0) {
+			if ((value = sipe_xml_attribute(mrow, "company")) && strlen(value) > 0) {
 				purple_notify_user_info_add_pair(info, _("Company"), value);
 			}
-			if ((value = xmlnode_get_attrib(mrow, "city")) && strlen(value) > 0) {
+			if ((value = sipe_xml_attribute(mrow, "city")) && strlen(value) > 0) {
 				purple_notify_user_info_add_pair(info, _("City"), value);
 			}
-			if ((value = xmlnode_get_attrib(mrow, "state")) && strlen(value) > 0) {
+			if ((value = sipe_xml_attribute(mrow, "state")) && strlen(value) > 0) {
 				purple_notify_user_info_add_pair(info, _("State"), value);
 			}
-			if ((value = xmlnode_get_attrib(mrow, "country")) && strlen(value) > 0) {
+			if ((value = sipe_xml_attribute(mrow, "country")) && strlen(value) > 0) {
 				purple_notify_user_info_add_pair(info, _("Country"), value);
 			}
 			if (email && strlen(email) > 0) {
@@ -10174,7 +10173,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 			}
 
 		}
-		xmlnode_free(searchResults);
+		sipe_xml_free(searchResults);
 	}
 
 	purple_notify_user_info_add_section_break(info);
