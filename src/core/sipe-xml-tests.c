@@ -71,6 +71,20 @@ static sipe_xml *assert_parse(const gchar *s, gboolean ok)
 	return(xml);
 }
 
+static void assert_name(const sipe_xml *xml, const gchar *s)
+{
+	const gchar *name = sipe_xml_name(xml);
+
+	if (sipe_strequal(name, s)) {
+		succeeded++;
+	} else {
+		printf("[%s]\nXML name FAILED: '%s' expected: '%s'\n",
+		       teststring, name ? name : "(nil)", s ? s : "(nil)");
+		failed++;
+	}
+
+}
+
 static const sipe_xml *assert_child(const sipe_xml *xml, const gchar *s, gboolean ok)
 {
 	const sipe_xml *child = sipe_xml_child(xml, s);
@@ -227,27 +241,33 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 
 	/* one node */
 	xml = assert_parse("<test></test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, NULL);
 	assert_stringify(xml, 1, "<test/>");
 	sipe_xml_free(xml);
 	xml = assert_parse("<test/>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, NULL);
 	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 	xml = assert_parse("<test>a</test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, "a");
 	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 	xml = assert_parse("<test>a\nb</test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, "a\nb");
 	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	/* child node */
 	xml = assert_parse("<test>a<child>b</child></test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, "a");
 	child1 = assert_child(xml, NULL, FALSE);
 	child1 = assert_child(xml, "child", TRUE);
+	assert_name(child1, "child");
 	assert_data(child1, "b");
 	child1 = assert_child(xml, "shouldnotmatch", FALSE);
 	assert_data(child1, NULL);
@@ -255,8 +275,10 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	sipe_xml_free(xml);
 
 	xml = assert_parse("<test>a<child/></test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, "a");
 	child1 = assert_child(xml, "child", TRUE);
+	assert_name(child1, "child");
 	assert_data(child1, NULL);
 	child1 = assert_child(xml, "shouldnotmatch", FALSE);
 	assert_data(child1, NULL);
@@ -264,35 +286,47 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	sipe_xml_free(xml);
 
 	xml = assert_parse("<test>a<child>b<inner>c</inner></child></test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, "a");
 	child1 = assert_child(xml, "child", TRUE);
+	assert_name(child1, "child");
 	assert_data(child1, "b");
 	child1 = assert_child(child1, "inner", TRUE);
+	assert_name(child1, "inner");
 	assert_data(child1, "c");
 	child1 = assert_child(xml, "child/inner", TRUE);
+	assert_name(child1, "inner");
 	assert_data(child1, "c");
 	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	xml = assert_parse("<test>a<child>b<inner>c<innerinner>d</innerinner></inner></child></test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, "a");
 	child1 = assert_child(xml, "child", TRUE);
+	assert_name(child1, "child");
 	assert_data(child1, "b");
 	child2 = assert_child(child1, "inner/innerinner", TRUE);
+	assert_name(child2, "innerinner");
 	assert_data(child2, "d");
 	child1 = assert_child(child1, "inner", TRUE);
+	assert_name(child1, "inner");
 	assert_data(child1, "c");
 	child1 = assert_child(child1, "innerinner", TRUE);
+	assert_name(child1, "innerinner");
 	assert_data(child1, "d");
 	child1 = assert_child(xml, "child/inner", TRUE);
+	assert_name(child1, "inner");
 	assert_data(child1, "c");
 	child1 = assert_child(xml, "child/inner/innerinner", TRUE);
+	assert_name(child1, "innerinner");
 	assert_data(child1, "d");
 	assert_stringify(xml, 1, teststring);
 	sipe_xml_free(xml);
 
 	/* attributes */
 	xml = assert_parse("<test a=\"\">a</test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, "a");
 	assert_attribute(xml, NULL, NULL);
 	assert_attribute(xml, "a", "");
@@ -301,6 +335,7 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	sipe_xml_free(xml);
 
 	xml = assert_parse("<test a=\"1\" b=\"abc\">a</test>", TRUE);
+	assert_name(xml, "test");
 	assert_data(xml, "a");
 	assert_attribute(xml, "a", "1");
 	assert_int_attribute(xml, "a", 1, 0);
@@ -309,6 +344,34 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	assert_int_attribute(xml, "d", 100, 200);
 	/* the attribute order depends on glib hashing :-( */
 	assert_stringify(xml, 2, teststring, "<test b=\"abc\" a=\"1\">a</test>");
+	sipe_xml_free(xml);
+
+	/* attributes with namespace */
+	xml = assert_parse("<m:row m:uri=\"sip:\" m:displayName=\"X\" m:title=\"Y\" m:office=\"Z\" m:phone=\"0\" m:company=\"A\" m:city=\"B\" m:state=\"C\" m:country=\"D\" m:email=\"E\" />", TRUE);
+	assert_name(xml, "row");
+	assert_data(xml, NULL);
+	assert_attribute(xml, "uri", "sip:");
+	assert_attribute(xml, "displayName", "X");
+	assert_attribute(xml, "title", "Y");
+	assert_attribute(xml, "office", "Z");
+	assert_attribute(xml, "phone", "0");
+	assert_attribute(xml, "company", "A");
+	assert_attribute(xml, "city", "B");
+	assert_attribute(xml, "state", "C");
+	assert_attribute(xml, "country", "D");
+	assert_attribute(xml, "email", "E");
+	sipe_xml_free(xml);
+
+	xml = assert_parse("<state xsi:type=\"aggregateState\" lastActive=\"date\" xmlns:xsi=\"http://one\" xmlns=\"http://two\"><availability>15500</availability></state>", TRUE);
+	assert_name(xml, "state");
+	assert_data(xml, NULL);
+	assert_attribute(xml, "type", "aggregateState");
+	assert_attribute(xml, "lastActive", "date");
+	assert_attribute(xml, "xsi", "http://one");
+	assert_attribute(xml, "xmlns", "http://two");
+	child1 = assert_child(xml, "availability", TRUE);
+	assert_name(child1, "availability");
+	assert_data(child1, "15500");
 	sipe_xml_free(xml);
 
 	/* broken XML */
