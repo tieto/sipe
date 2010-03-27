@@ -136,12 +136,12 @@ xmlnode *xmlnode_get_descendant(const xmlnode *parent, ...)
 	return node;
 }
 
-gint xmlnode_get_int_attrib(xmlnode *node,
-			    const char *attr,
-			    gint fallback)
+guint xmlnode_get_int_attrib(xmlnode *node,
+			     const char *attr,
+			     guint fallback)
 {
 	const char *value = xmlnode_get_attrib(node, attr);
-	return(value ? atoi(value) : fallback);
+	return(value ? g_ascii_strtoll(value, NULL, 10) : fallback);
 }
 
 

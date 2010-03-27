@@ -218,16 +218,17 @@ sipe_is_bad_alias(const char *uri,
 struct _xmlnode * xmlnode_get_descendant(const struct _xmlnode *parent, ...);
 
 /**
- * Convert a XML attribute to an integer
+ * Convert a XML attribute to an unsigned integer
+ *
  * @param node     (in) XML node
  * @param attr     (in) name of the attribute
  * @param fallback (in) default value if the attribute doesn't exist
  *
  * @return attribute value converted to integer or the fallback value
  */
-gint xmlnode_get_int_attrib(struct _xmlnode *node,
-			    const char *attr,
-			    gint fallback);
+guint xmlnode_get_int_attrib(struct _xmlnode *node,
+			     const char *attr,
+			     guint fallback);
 
 /**
  * Checks if provided string is empty - NULL, zero size or just series of white spaces.
