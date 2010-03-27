@@ -10334,6 +10334,9 @@ PurplePluginProtocolInfo prpl_info =
 #if PURPLE_VERSION_CHECK(2,6,0)
 	NULL,					/* initiate_media */
 	NULL,					/* get_media_caps */
+#if PURPLE_VERSION_CHECK(2,7,0)
+	NULL,					/* get_moods */
+#endif
 #endif
 #endif
 };
