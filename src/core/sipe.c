@@ -2927,8 +2927,8 @@ sipe_find_container(struct sipe_account_data *sip,
  * @param email an email URL. Example: first.last@hq.company.com
  * @return pointer to domain part of email URL. Coresponding example: hq.company.com
  *
- * Doesn't allocates memory
-  */
+ * Doesn't allocate memory
+ */
 static const char *
 sipe_get_domain(const char *email)
 {
@@ -2942,6 +2942,27 @@ sipe_get_domain(const char *email)
 		return tmp+1;
 	} else {
 		return NULL;
+	}
+}
+
+/** 
+ * Returns pointer to URI without sip: prefix if any
+ *
+ * @param sip_uri SIP URI possibly with sip: prefix. Example: sip:first.last@hq.company.com
+ * @return pointer to URL without sip: prefix. Coresponding example: first.last@hq.company.com
+ *
+ * Doesn't allocate memory
+ */
+static const char *
+sipe_get_no_sip_uri(const char *sip_uri)
+{
+	const char *prefix = "sip:";
+	if (!sip_uri) return NULL;
+
+	if (g_str_has_prefix(sip_uri, prefix)) {
+		return (sip_uri+strlen(prefix));
+	} else {
+		return sip_uri;
 	}
 }
 
@@ -3017,12 +3038,12 @@ sipe_find_access_level(struct sipe_account_data *sip,
 
 		if (sipe_strequal("user", type)) {
 			const char *domain;
-			const char *sip_uri = value;
+			const char *no_sip_uri = sipe_get_no_sip_uri(value);
 
-			member = sipe_find_container_member(container, "user", sip_uri);
+			member = sipe_find_container_member(container, "user", no_sip_uri);
 			if (member) return containers[i];
 
-			domain = sipe_get_domain(sip_uri);
+			domain = sipe_get_domain(no_sip_uri);
 			member = sipe_find_container_member(container, "domain", domain);
 			if (member) {
 				return containers[i];
@@ -9417,7 +9438,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	}
 
 	if (sip && sip->ocs2007) {
-		const int container_id = sipe_find_access_level(sip, "user", buddy->name);
+		const int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(buddy->name));
 		const char *access_level = sipe_get_access_level_name(container_id);
 
 		purple_notify_user_info_add_pair(user_info, _("Access level"), access_level);
@@ -9770,7 +9791,7 @@ sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy, const int *container_id)
 	SIPE_DEBUG_INFO("sipe_buddy_menu_access_level_cb: buddy->name=%s, container_id=%d",
 		buddy->name, container_id ? *container_id : -1);
 	if (container_id) {
-		sipe_change_access_level(sip, *container_id, "user", buddy->name);
+		sipe_change_access_level(sip, *container_id, "user", sipe_get_no_sip_uri(buddy->name));
 	}
 }
 
@@ -9791,7 +9812,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	const char *phone;
 	const char *phone_disp_str;
 	gchar *self = sip_uri_self(sip);
-	int i;
+	unsigned int i;
 
 	SIPE_SESSION_FOREACH {
 		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->conv)
