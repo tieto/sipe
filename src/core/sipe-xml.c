@@ -25,6 +25,7 @@
  */
 
 #include <stdarg.h>
+#include <string.h>
 #include <time.h>
 
 #include "libxml/parser.h"
@@ -53,11 +54,16 @@ struct _parser_data {
 static void callback_start_element(void *user_data, const xmlChar *name, const xmlChar **attrs)
 {
 	struct _parser_data *pd = user_data;
+	const char *tmp;
 	sipe_xml *node;
 
 	if (!name || pd->error) return;
 
 	node = g_new0(sipe_xml, 1);
+
+	if ((tmp = strchr((char *)name, ':')) != NULL) {
+		name = (xmlChar *)tmp + 1;
+	}
 	node->name = g_strdup((gchar *)name);
 
 	if (!pd->root) {
@@ -81,6 +87,9 @@ static void callback_start_element(void *user_data, const xmlChar *name, const x
 							 (GEqualFunc) sipe_strcase_equal,
 							 g_free, g_free);
 		while ((key = *attrs++) != NULL) {
+			if ((tmp = strchr((char *)key, ':')) != NULL) {
+				key = (xmlChar *)tmp + 1;
+			}
 			g_hash_table_insert(node->attributes,
 					    g_strdup((gchar *) key),
 					    g_strdup((gchar *) *attrs++));
