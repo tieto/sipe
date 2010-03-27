@@ -87,7 +87,8 @@ const gchar *sipe_xml_name(const sipe_xml *node);
 const gchar *sipe_xml_attribute(const sipe_xml *node, const gchar *attr);
 
 /**
- * Gets an attribute from the current XML node and convert it to an integer.
+ * Gets an attribute from the current XML node and convert it to an 
+ * unsigned integer.
  *
  * @param node     The node to get an attribute from.
  * @param attr     The attribute to get.
@@ -95,8 +96,8 @@ const gchar *sipe_xml_attribute(const sipe_xml *node, const gchar *attr);
  *
  * @return Attribute value converted to an integer or the fallback value.
  */
-gint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
-			    gint fallback);
+guint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
+			     guint fallback);
 
 /**
  * Gets escaped data from the curretn XML node.

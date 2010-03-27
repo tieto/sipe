@@ -326,11 +326,11 @@ const gchar *sipe_xml_attribute(const sipe_xml *node, const gchar *attr)
 	return(g_hash_table_lookup(node->attributes, attr));
 }
 
-gint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
-				gint fallback)
+guint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
+			     guint fallback)
 {
 	const gchar *value = sipe_xml_attribute(node, attr);
-	return(value ? atoi(value) : fallback);
+	return(value ? g_ascii_strtoll(value, NULL, 10) : fallback);
 }
 
 gchar *sipe_xml_data(const sipe_xml *node)
