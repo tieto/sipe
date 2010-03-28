@@ -56,3 +56,7 @@ void sipe_backend_debug(sipe_debug_level level,
 gchar *sipe_backend_markup_css_property(const gchar *style,
 					const gchar *option); 
 gchar *sipe_backend_markup_strip_html(const gchar *html);
+
+/** NETWORK ******************************************************************/
+
+const gchar *sipe_backend_network_ip_address(void);

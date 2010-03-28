@@ -19,9 +19,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <cipher.h>
 #include <glib.h>
 #include <glib/gprintf.h>
+
+#include "cipher.h"
 
 #include "uuid.h"
 

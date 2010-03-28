@@ -1042,7 +1042,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
-			purple_network_get_my_ip(-1),
+			sipe_backend_network_ip_address(),
 			sip->listenport,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
@@ -1126,7 +1126,7 @@ static char *get_contact_register(struct sipe_account_data  *sip)
 {
 	char *epid = get_epid(sip);
 	char *uuid = generateUUIDfromEPID(epid);
-	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", purple_network_get_my_ip(-1), sip->listenport,  TRANSPORT_DESCRIPTOR, uuid);
+	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", sipe_backend_network_ip_address(), sip->listenport,  TRANSPORT_DESCRIPTOR, uuid);
 	g_free(uuid);
 	g_free(epid);
 	return(buf);
@@ -4729,8 +4729,8 @@ sipe_invite(struct sipe_account_data *sip,
 		"t=0 0\r\n"
 		"m=%s %d sip null\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
-		purple_network_get_my_ip(-1),
-		purple_network_get_my_ip(-1),
+		sipe_backend_network_ip_address(),
+		sipe_backend_network_ip_address(),
 		sip->ocs2007 ? "message" : "x-ms-message",
 		sip->realport);
 
@@ -5513,8 +5513,8 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		"t=0 0\r\n"
 		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
-		purple_network_get_my_ip(-1),
-		purple_network_get_my_ip(-1),
+		sipe_backend_network_ip_address(),
+		sipe_backend_network_ip_address(),
 		sip->ocs2007 ? "message" : "x-ms-message",
 		sip->realport,
 		sip->username);
@@ -5654,7 +5654,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					g_free(gruu);
 				} else {
 					//SIPE_DEBUG_INFO_NOFORMAT("didn't find gruu in a Contact hdr");
-					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, purple_network_get_my_ip(-1), TRANSPORT_DESCRIPTOR);
+					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, sipe_backend_network_ip_address(), TRANSPORT_DESCRIPTOR);
 				}
                                 sip->ocs2007 = FALSE;
 				sip->batched_support = FALSE;

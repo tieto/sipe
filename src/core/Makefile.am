@@ -21,6 +21,8 @@ libsipe_core_la_SOURCES = \
 	sipe-session.c \
 	sipe-sign.h \
 	sipe-sign.c \
+	sipe-utils.h \
+	sipe-utils.c \
 	sipe-xml.h \
 	sipe-xml.c
 
@@ -29,8 +31,6 @@ libsipe_core_purple_la_SOURCES = \
 	sipe.c \
 	sipe-conf.h \
 	sipe-conf.c \
-	sipe-utils.h \
-	sipe-utils.c \
 	http-conn.h \
 	http-conn.c \
 	sipe-ews.h \

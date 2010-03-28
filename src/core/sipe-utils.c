@@ -28,8 +28,6 @@
 
 #include <glib.h>
 
-#include "network.h"
-
 #include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-utils.h"
@@ -125,7 +123,7 @@ get_epid(struct sipe_account_data *sip)
 		gchar *self_sip_uri = sip_uri_self(sip);
 		sip->epid = sipe_get_epid(self_sip_uri,
 					  g_get_host_name(),
-					  purple_network_get_my_ip(-1));
+					  sipe_backend_network_ip_address());
 		g_free(self_sip_uri);
 	}
 	return g_strdup(sip->epid);

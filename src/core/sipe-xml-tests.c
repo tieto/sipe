@@ -50,6 +50,8 @@ void sipe_backend_debug(sipe_debug_level level,
 	g_free(msg);
 }
 
+const gchar *sipe_backend_network_ip_address(void) { return(NULL); }
+
 /* test helpers */
 static guint succeeded = 0;
 static guint failed    = 0;

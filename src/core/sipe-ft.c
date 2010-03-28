@@ -746,7 +746,7 @@ static void send_filetransfer_accept(PurpleXfer* xfer)
 				      ft->invitation_cookie,
 				      b64_encryption_key,
 				      b64_hash_key
-                                      /*,purple_network_get_my_ip(-1)*/
+                                      /*,sipe_backend_network_ip_address()*/
 		);
 
 	send_sip_request(ft->sip->gc, "MESSAGE", dialog->with, dialog->with,
