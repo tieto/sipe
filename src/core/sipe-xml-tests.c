@@ -34,6 +34,7 @@
 #include "sipe-backend.h"
 #include "sipe-xml.h"
 #include "sipe-utils.h"
+#include "uuid.h"
 
 /* stub functions for backend API */
 void sipe_backend_debug(sipe_debug_level level,
@@ -51,6 +52,13 @@ void sipe_backend_debug(sipe_debug_level level,
 }
 
 const gchar *sipe_backend_network_ip_address(void) { return(NULL); }
+
+char *sipe_get_epid(SIPE_UNUSED_PARAMETER const char *self_sip_uri,
+		    SIPE_UNUSED_PARAMETER const char *hostname,
+		    SIPE_UNUSED_PARAMETER const char *ip_address)
+{
+	return(NULL);
+}
 
 /* test helpers */
 static guint succeeded = 0;
