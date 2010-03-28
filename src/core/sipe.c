@@ -1177,6 +1177,27 @@ static void do_register(struct sipe_account_data *sip)
 	do_register_exp(sip, -1);
 }
 
+/** 
+ * Returns pointer to URI without sip: prefix if any
+ *
+ * @param sip_uri SIP URI possibly with sip: prefix. Example: sip:first.last@hq.company.com
+ * @return pointer to URL without sip: prefix. Coresponding example: first.last@hq.company.com
+ *
+ * Doesn't allocate memory
+ */
+static const char *
+sipe_get_no_sip_uri(const char *sip_uri)
+{
+	const char *prefix = "sip:";
+	if (!sip_uri) return NULL;
+
+	if (g_str_has_prefix(sip_uri, prefix)) {
+		return (sip_uri+strlen(prefix));
+	} else {
+		return sip_uri;
+	}
+}
+
 static void
 sipe_contact_set_acl (struct sipe_account_data *sip, const gchar * who, gchar * rights)
 {
@@ -1184,6 +1205,12 @@ sipe_contact_set_acl (struct sipe_account_data *sip, const gchar * who, gchar * 
 	send_soap_request(sip, body);
 	g_free(body);
 }
+
+static void
+sipe_change_access_level(struct sipe_account_data *sip,
+			 const int container_id,
+			 const gchar *type,
+			 const gchar *value);
 
 static void
 sipe_contact_allow_deny (struct sipe_account_data *sip, const gchar * who, gboolean allow)
@@ -1194,7 +1221,11 @@ sipe_contact_allow_deny (struct sipe_account_data *sip, const gchar * who, gbool
 		SIPE_DEBUG_INFO("Blocking contact %s", who);
 	}
 
-	sipe_contact_set_acl (sip, who, allow ? "AA" : "BD");
+	if (sip->ocs2007) {
+		sipe_change_access_level(sip, (allow ? -1 : 32000), "user", sipe_get_no_sip_uri(who));
+	} else {
+		sipe_contact_set_acl (sip, who, allow ? "AA" : "BD");
+	}
 }
 
 static
@@ -1221,6 +1252,7 @@ static void
 sipe_add_permit(PurpleConnection *gc, const char *name)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
+	
 	sipe_contact_allow_deny(sip, name, TRUE);
 }
 
@@ -1238,6 +1270,8 @@ sipe_remove_permit_deny(PurpleConnection *gc, const char *name)
 	sipe_contact_set_acl(sip, name, "");
 }*/
 
+/** @applicable: 2005-
+ */
 static void
 sipe_process_presence_wpending (struct sipe_account_data *sip, struct sipmsg * msg)
 {
@@ -2944,27 +2978,6 @@ sipe_get_domain(const char *email)
 	}
 }
 
-/** 
- * Returns pointer to URI without sip: prefix if any
- *
- * @param sip_uri SIP URI possibly with sip: prefix. Example: sip:first.last@hq.company.com
- * @return pointer to URL without sip: prefix. Coresponding example: first.last@hq.company.com
- *
- * Doesn't allocate memory
- */
-static const char *
-sipe_get_no_sip_uri(const char *sip_uri)
-{
-	const char *prefix = "sip:";
-	if (!sip_uri) return NULL;
-
-	if (g_str_has_prefix(sip_uri, prefix)) {
-		return (sip_uri+strlen(prefix));
-	} else {
-		return sip_uri;
-	}
-}
-
 
 /* @TODO: replace with binary search for faster access? */
 /** source: http://support.microsoft.com/kb/897567 */
@@ -3077,9 +3090,15 @@ sipe_find_access_level(struct sipe_account_data *sip,
 	return -1;
 }
 
+/**
+  * @param container_id	a new access level. If -1 then current access level
+  * 			is just removed (I.e. the member is removed from all containers).
+  * @param type		a type of member. E.g. "user", "sameEnterprise", etc.
+  * @param value	a value for member. E.g. SIP URI for "user" member type.
+  */
 static void
 sipe_change_access_level(struct sipe_account_data *sip,
-			 const int container_id, /* new access level*/
+			 const int container_id,
 			 const gchar *type,
 			 const gchar *value)
 {
@@ -3097,7 +3116,7 @@ sipe_change_access_level(struct sipe_account_data *sip,
 		if (member) {
 			current_container_id = containers[i];
 			/* delete/publish current access level */
-			if (container_id != current_container_id) {
+			if (container_id < 0 || container_id != current_container_id) {
 				sipe_send_set_container_members(
 					sip, current_container_id, container->version, "delete", type, value);
 			}
@@ -3105,7 +3124,7 @@ sipe_change_access_level(struct sipe_account_data *sip,
 	}
 
 	/* assign/publish new access level */
-	if (container_id != current_container_id) {
+	if (container_id != current_container_id && container_id >= 0) {
 		struct sipe_container *container = sipe_find_container(sip, container_id);
 		guint version = container ? container->version : 0;
 
