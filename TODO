@@ -1,17 +1,17 @@
-- Feature Requests:
-  #2823160: Ability to change the "Access Level" setting of a buddy (Team, Company, etc.)
-  #2945346: Lotus Notes/Domino Calendar integration.
-- Bugs:
-  #2834758: (sip-sec-ntlm.c) First NTLM signature check after startup fails
+Feature Requests:
+	- #2945346: Lotus Notes/Domino Calendar integration.
+
+Bugs:
+	- #2834758: (sip-sec-ntlm.c) First NTLM signature check after startup fails
 
 Big Targets:
-- libsipe (purple-independent library encapsilating the protocol). Forseeable backends
-are Purple, Telepathy, Miranda.
-- Telepathy native plugin.
-- Voice and Video support.
-- Desktop sharing/Live Meeting integration on Windows platform.
-- (?) Email notification.
-- Refactoring to decouple transport/SIP layer (like has been done in http-conn.c)
+	- Native backends other than Purple.
+	  * Separate Sipe core and Purple plugin functionality.
+	  * New backends: Telepathy, Kopete, Miranda, ???
+	- Voice and Video support.
+	- Desktop sharing/Live Meeting integration on Windows platform.
+	- (?) Email notification.
+	- Refactoring to decouple transport/SIP layer (like has been done in http-conn.c)
 from SIP-protocol's extensions in form of XML exchange (most notably presense).
 So Sofia-SIP could serve as a backend for SIPE. Or otherwise improve SIPE transport 
 layer - timeouts.
@@ -20,11 +20,14 @@ All lower level things like socket read/write operations, HTTP message forming,
 NTLM/etc. authertication are all hidded behind http-conn.h API.
 So sip-ews.c client only operate with XML request/responce, it doesn't care what
 is underneath transport at all.)
-- Update project's site with SIPE features, make better/more complete screenshots,
-make page about standards used in SIPE with references, make some form of FAQ page.
+	- Update projects site with
+	  * SIPE features
+          * better/more complete screenshots
+	  * page about standards used in SIPE with references
+	  * FAQ page.
 
 Call Control:
-- change user state to On Call when line is active and then back
-- answer incoming call (logs required)
-- (?) work with multiple phone lines (not the first one)
-- (?) Call transfer set up, other RCC features from Communicator.
+	- change user state to On Call when line is active and then back
+	- answer incoming call (logs required)
+	- (?) work with multiple phone lines (not the first one)
+	- (?) Call transfer set up, other RCC features from Communicator.

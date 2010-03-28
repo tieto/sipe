@@ -30,7 +30,21 @@ John Beranek <john at redux dot org dot uk>
 David Woodhouse <David dot Woodhouse at intel dot com>
 Edmondas Girkantas <eg at fbsd dot lt>
 Peter Fales
+naumand <naumand at dblonws18316 dot dbg dot ads dot db dot com>
+Kyle Hubert <khubert at lottle dot net>
 
 Based on the initial SIP/SIMPLE gaim protocol plugin by:
 
 Thomas Butter <butter at uni-mannheim dot de>
+
+Translators:
+
+psilo <psilo at seznam dot cz> (cs)
+Stefan Becker <stefan dot becker at nokia dot com> (de, fi)
+Anibal Avelar <debianmx at gmail dot com> (es, pt_BR)
+aidoru <lia dot levi at tiscali dot it> (it)
+emanuelez <emanuelez at gmail dot com> (it)
+tplwx <angerman at gmail dot com> (nb)
+Piotr Drąg <piotrdrag at gmail dot com> (pl)
+pier11 <pier11 at operamail dot com> (ru)
+kappa8086 <kappa8086 at gmail dot com> (zh_CN)

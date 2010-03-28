@@ -1,3 +1,16 @@
+veraion 1.10.0 "Access Level" (2010-XX-XX)
+	- Feature #2823160: support of privacy settings (pier11)
+	- Feature #2957811: add support for "automaton" class (Stefan Becker)
+	- Feature #2972823: fail on in-line variable declarations (Stefan Becker)
+	- Fixed #2971422: handle OCS 2005 idiosyncrasy of varying SIP URI case (pier11)
+	- fixed publication/"409 Conflict" endless looping (Stefan Becker, pier11)
+	- prepare for Pidgin 2.7.0 (Stefan Becker, naumand, pier11)
+	- added SVG icon artwork (Jakub 'jimmac' Steiner)
+	- many changes to configure script. Be sure to look at "configure --help"! (Stefan Becker)
+	- many internal changes to prepare for non-purple backends (Stefan Becker)
+	- new build requirements: libxml2, glib-2.0 >= 2.12.0
+	- new build option: gmime-2.4 >= 2.4.16 or gmime-2.6 >= 2.5.2 for non-purple backends
+
 version 1.9.1 "Hot fixes" (2010-03-16)
 	- Fixed #2969327: Kerberos authentication always fails on *nix platforms (pier11)
 	- Fixed #2968287: Authentication failure in scenario when director server is Office Communications Server 2007 or above and home server is Live Communications Server 2005 (pier11)
