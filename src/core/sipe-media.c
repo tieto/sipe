@@ -117,106 +117,6 @@ sipe_media_prune_remote_codecs(PurpleMedia *media, GList *codecs)
 	return pruned_codecs;
 }
 
-/*static gchar *
-sipe_media_generate_stun_username(gchar *remote_pwd)
-{
-	guchar *remote_pwd_bin = purple_base64_decode(remote_pwd, NULL);
-	gchar *local_pwd_bin = g_new0(gchar, 32);
-
-	gchar *buf = g_new0(gchar, 32 + 3 + 32 + 5);
-	memcpy(buf, remote_pwd_bin, 32);
-	buf[32] = 0x3a;
-	buf[33] = 0x32;
-	buf[34] = 0x3a;
-	memcpy(buf + 35, local_pwd_bin, 32);
-	buf[67] = 0x3a;
-	buf[68] = 0x32;
-	buf[69] = 0x00;
-	buf[70] = 0x00;
-	buf[71] = 0x00;
-
-	g_free(remote_pwd_bin);
-	g_free(local_pwd_bin);
-
-	return buf;
-}*/
-
-/*static GList *
-sipe_media_parse_remote_candidates(const sipe_media_call *call)
-{
-	PurpleMediaCandidate *candidate;
-	GList *candidates = NULL;
-	const gchar *attr;
-	int i = 0;
-
-	while ((attr = sipe_utils_nameval_find_instance(call->sdp_attrs, "a", i++))) {
-		gchar **tokens;
-		gchar *username;
-		gchar *password;
-		PurpleMediaComponentType component;
-		gchar *ip;
-		int port;
-
-		if (!g_str_has_prefix(attr, "candidate:"))
-			continue;
-
-		tokens = g_strsplit_set(attr + 10, " ", 7);
-
-		username = sipe_media_generate_stun_username(tokens[0]);
-
-		switch (atoi(tokens[1])) {
-			case 1:
-				component = PURPLE_MEDIA_COMPONENT_RTP;
-				break;
-			case 2:
-				component = PURPLE_MEDIA_COMPONENT_RTCP;
-				break;
-			default:
-				component = PURPLE_MEDIA_COMPONENT_NONE;
-		}
-
-		password = g_strdup(tokens[2]);
-		ip = g_strdup(tokens[5]);
-		port = atoi(tokens[6]);
-
-		g_strfreev(tokens);
-
-		candidate = purple_media_candidate_new("foundation?",
-									component,
-									PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
-									PURPLE_MEDIA_NETWORK_PROTOCOL_UDP, ip, port);
-		g_object_set(candidate, "username", username, "password", password, NULL);
-		candidates = g_list_append(candidates, candidate);
-	}
-
-	if (candidates != NULL)
-		return candidates;
-
-	gchar **tokens = g_strsplit(sipe_utils_nameval_find(call->sdp_attrs, "o"), " ", 6);
-	gchar *ip = g_strdup(tokens[5]);
-	guint port;
-
-	g_strfreev(tokens);
-
-	tokens = g_strsplit(sipe_utils_nameval_find(call->sdp_attrs, "m"), " ", 3);
-	port = atoi(tokens[1]);
-	g_strfreev(tokens);
-
-	candidate = purple_media_candidate_new("foundation?",
-									PURPLE_MEDIA_COMPONENT_RTP,
-									PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
-									PURPLE_MEDIA_NETWORK_PROTOCOL_UDP, ip, port);
-	candidates = g_list_append(candidates, candidate);
-
-	candidate = purple_media_candidate_new("foundation?",
-									PURPLE_MEDIA_COMPONENT_RTCP,
-									PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
-									PURPLE_MEDIA_NETWORK_PROTOCOL_UDP, ip, port + 1);
-	candidates = g_list_append(candidates, candidate);
-
-	return candidates;
-}*/
-
 static GList *
 sipe_media_parse_remote_candidates(GSList *sdp_attrs)
 {
@@ -358,6 +258,7 @@ sipe_media_sdp_codecs_format(GList *codecs)
 
 	while (codecs) {
 		PurpleMediaCodec *c = codecs->data;
+		GList *params = NULL;
 
 		gchar *tmp = g_strdup_printf("a=rtpmap:%d %s/%d\r\n",
 			purple_media_codec_get_id(c),
@@ -366,6 +267,21 @@ sipe_media_sdp_codecs_format(GList *codecs)
 
 		g_string_append(result, tmp);
 		g_free(tmp);
+
+		if ((params = purple_media_codec_get_optional_parameters(c))) {
+			tmp = g_strdup_printf("a=fmtp:%d",purple_media_codec_get_id(c));
+			g_string_append(result, tmp);
+			g_free(tmp);
+
+			while (params) {
+				PurpleKeyValuePair* par = params->data;
+				tmp = g_strdup_printf(" %s=%s", par->key, (gchar*) par->value);
+				g_string_append(result, tmp);
+				g_free(tmp);
+				params = params->next;
+			}
+			g_string_append(result, "\r\n");
+		}
 
 		codecs = codecs->next;
 	}
