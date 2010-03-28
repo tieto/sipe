@@ -28,7 +28,6 @@
 
 #include <glib.h>
 
-#include "network.h"
 #ifdef _WIN32
 #include <nspapi.h>
 #else
