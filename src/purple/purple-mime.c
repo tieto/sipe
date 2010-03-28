@@ -25,6 +25,25 @@
 #include "mime.h"
 
 #include "sipe-mime.h"
+#include "../core/sipe-utils.h"
+
+static
+GSList * mime_fields_to_nameval(PurpleMimePart* part)
+{
+	GList *keys = purple_mime_part_get_fields(part);
+	GSList *fields = NULL;
+
+	while (keys) {
+		const char *key = keys->data;
+		const char *value = purple_mime_part_get_field(part, key);
+
+		fields = sipe_utils_nameval_add(fields, key, value);
+
+		keys = keys->next;
+	}
+
+	return fields;
+}
 
 void sipe_mime_parts_foreach(const gchar *type,
 			     const gchar *body,
@@ -43,8 +62,11 @@ void sipe_mime_parts_foreach(const gchar *type,
 			if (content_type) {
 				const gchar *content = purple_mime_part_get_data(parts->data);
 				gsize length = purple_mime_part_get_length(parts->data);
+				GSList *fields = mime_fields_to_nameval(parts->data);
 
-				(*callback)(user_data, content_type, content, length);
+				(*callback)(user_data, fields, content, length);
+
+				sipe_utils_nameval_free(fields);
 			}
 			parts = parts->next;
 		}

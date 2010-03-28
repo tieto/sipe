@@ -22,10 +22,13 @@
 
 #include "mediamanager.h"
 
+#include "sip-sec.h"
 #include "sipe.h"
+#include "sipmsg.h"
 #include "sipe-media.h"
 #include "sipe-dialog.h"
 #include "sipe-utils.h"
+#include "sipe-common.h"
 
 //#include <nice/agent.h>
 #include "../../../libnice/agent/agent.h"
@@ -510,9 +513,6 @@ sipe_media_session_ready_cb(sipe_media_call *call)
 
 	if (!purple_media_accepted(media, NULL, NULL)) {
 		call->sdp_response = sipe_media_create_sdp(call, FALSE);
-		// TODO: put away?
-		sipmsg_add_header(call->invitation, "Require", "100rel");
-		sipmsg_add_header(call->invitation, "RSeq", "1");
 		send_sip_response(account->gc, call->invitation, 183, "Session Progress", call->sdp_response);
 	} else {
 		send_sip_response(account->gc, call->invitation, 200, "OK", call->sdp_response);
@@ -520,7 +520,7 @@ sipe_media_session_ready_cb(sipe_media_call *call)
 }
 
 static void
-sipe_media_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
+sipe_media_stream_info_cb(PurpleMedia *media,
 							PurpleMediaInfoType type,
 							SIPE_UNUSED_PARAMETER gchar *sid,
 							SIPE_UNUSED_PARAMETER gchar *name,
@@ -569,9 +569,16 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	sipe_media_call				*call;
 	struct sip_dialog			*dialog;
 
+	gchar *newTag;
+	const gchar *oldHeader;
+	gchar *newHeader;
+
+	GParameter *params;
+
 	if (sip->media_call) {
 		const gchar *incoming_callid = sipmsg_find_header(msg, "Call-ID");
 		if (sipe_strequal(sip->media_call->dialog->callid, incoming_callid)) {
+			gchar *rsp;
 			sipe_media_call *call = sip->media_call;
 			sipe_utils_nameval_free(call->sdp_attrs);
 			call->sdp_attrs = NULL;
@@ -586,7 +593,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 					call->remote_codecs) == FALSE)
 				printf("ERROR SET REMOTE CODECS"); // TODO
 
-			gchar *rsp = sipe_media_create_sdp(sip->media_call, TRUE);
+			rsp = sipe_media_create_sdp(sip->media_call, TRUE);
 			send_sip_response(sip->gc, msg, 200, "OK", rsp);
 			g_free(rsp);
 		} else {
@@ -596,9 +603,9 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 		return;
 	}
 
-	gchar *newTag = gentag();
-	const gchar *oldHeader = sipmsg_find_header(msg, "To");
-	gchar *newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
+	newTag = gentag();
+	oldHeader = sipmsg_find_header(msg, "To");
+	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
 	sipmsg_remove_header_now(msg, "To");
 	sipmsg_add_header_now(msg, "To", newHeader);
 	g_free(newHeader);
@@ -624,7 +631,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	g_signal_connect_swapped(G_OBJECT(media), "candidates-prepared",
 						G_CALLBACK(sipe_media_session_ready_cb), call);
 
-	GParameter *params = g_new0(GParameter, 2);
+	params = g_new0(GParameter, 2);
 	params[0].name = "controlling-mode";
 	g_value_init(&params[0].value, G_TYPE_BOOLEAN);
 	g_value_set_boolean(&params[0].value, FALSE);
@@ -636,19 +643,6 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 							PURPLE_MEDIA_AUDIO, FALSE, "rawudp", 0, NULL);*/
 	purple_media_add_stream(media, "sipe-voice", dialog->with,
 							PURPLE_MEDIA_AUDIO, FALSE, "nice", 2, params);
-
-/*	FsConference* fs_conference;
-	g_object_get(media, "conference", &fs_conference, NULL);
-
-	// TODO: substring function
-	size_t contact_len = strlen(sip->contact);
-	gchar* contact = g_malloc(contact_len - 1);
-	memcpy(contact, sip->contact + 1, contact_len - 2);
-	contact[contact_len - 2] = 0;
-
-	g_object_set(fs_conference, "sdes-cname", contact, NULL);
-
-	g_free(contact);*/
 
 	call->remote_candidates = sipe_media_parse_remote_candidates(call->sdp_attrs);
 	if (!call->remote_candidates) {

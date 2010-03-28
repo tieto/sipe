@@ -440,45 +440,6 @@ void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 	memmove(conn->buffer, unread, conn->buffer_used + 1);
 }
 
-GSList * sipe_utils_mime_multipart_find_parts(struct sipmsg *msg)
-{
-	const gchar	*contenttype  = sipmsg_find_header(msg, "Content-Type");
-	gchar       *boundary;
-	GSList      *parts        = NULL;
-	gchar       *part_ptr;
-
-	if (contenttype && g_str_has_prefix(contenttype, "multipart/alternative")) {
-		const gchar BOUNDARY[] = "boundary=\"";
-		gchar *boundary_begin = g_strstr_len(contenttype, strlen(contenttype), BOUNDARY);
-		gchar *boundary_end;
-		gchar *tmp;
-
-		if (!boundary_begin)
-			return NULL;
-		boundary_begin += sizeof(BOUNDARY) - 1;
-
-		boundary_end = boundary_begin;
-		while (*boundary_end != 0 && *boundary_end != '"')
-			++boundary_end;
-
-		boundary = g_malloc0(boundary_end - boundary_begin + 1);
-		memcpy(boundary, boundary_begin, boundary_end - boundary_begin);
-
-		tmp = g_strdup_printf("--%s\r\n", boundary);
-		g_free(boundary);
-		boundary = tmp;
-	} else
-		return NULL;
-
-	part_ptr = msg->body;
-	while ((part_ptr = strstr(part_ptr, boundary))) {
-		part_ptr += strlen(boundary);
-		parts = g_slist_append(parts, part_ptr);
-	}
-
-	return parts;
-}
-
 /*
  * Calling sizeof(struct ifreq) isn't always correct on
  * Mac OS X (and maybe others).

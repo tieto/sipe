@@ -447,10 +447,11 @@ struct html_message_data {
 };
 
 static void get_html_message_mime_cb(gpointer user_data,
-				     const gchar *type,
+				     const GSList *fields,
 				     const gchar *body,
 				     gsize length)
 {
+	const gchar *type = sipe_utils_nameval_find(fields, "Content-Type");
 	struct html_message_data *data = user_data;
 
 	if (!data->preferred) {

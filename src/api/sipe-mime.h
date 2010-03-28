@@ -29,7 +29,7 @@
  * @param length    length of the body text.
  */
 typedef void (*sipe_mime_parts_cb)(gpointer user_data,
-				   const gchar *type,
+				   const GSList *fields,
 				   const gchar *body,
 				   gsize length);
 

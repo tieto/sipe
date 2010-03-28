@@ -4606,6 +4606,35 @@ static void process_incoming_message(struct sipe_core_private *sipe_private,
 	g_free(from);
 }
 
+static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
+								const gchar *body, SIPE_UNUSED_PARAMETER gsize length)
+{
+	const gchar *type = sipe_utils_nameval_find(fields, "Content-Type");
+	const gchar *cd = sipe_utils_nameval_find(fields, "Content-Disposition");
+
+	if (!g_str_has_prefix(type, "application/sdp"))
+		return;
+
+	if (cd && !strstr(cd, "ms-proxy-2007fallback")) {
+		struct sipmsg *msg = user_data;
+		const gchar* msg_ct = sipmsg_find_header(msg, "Content-Type");
+
+		if (g_str_has_prefix(msg_ct, "application/sdp")) {
+			/* We have already found suitable alternative and set message's body
+			 * and Content-Type accordingly */
+			return;
+		}
+
+		sipmsg_remove_header_now(msg, "Content-Type");
+		sipmsg_add_header_now(msg, "Content-Type", type);
+
+		/* Replace message body with chosen alternative, so we can continue to
+		 * process it as a normal single part message. */
+		g_free(msg->body);
+		msg->body = g_strndup(body, length);
+	}
+}
+
 static void process_incoming_invite(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg)
 {
@@ -4632,52 +4661,8 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("process_incoming_invite: body:\n%s!", msg->body ? tmp = fix_newlines(msg->body) : "");
 	g_free(tmp);
 
-	// TODO: OCS2007 native media call negotiation
-	/* Invitation to media call from OC2007 R2. Sending this response should
-	 * force legacy mode */
 	if (g_str_has_prefix(content_type, "multipart/alternative")) {
-//		send_sip_response(sip->gc, msg, 415, "Unsupported Media Type", NULL);
-//		return;
-
-		GSList *parts = sipe_utils_mime_multipart_find_parts(msg);
-		GSList *part = parts;
-		gboolean found = FALSE;
-
-		while (!found && part) {
-			const char *tmp = strstr(part->data, "\r\n\r\n");
-			gchar *header = g_strndup(part->data, tmp - (gchar *)part->data);
-			gchar **lines = g_strsplit(header, "\r\n", 0);
-			GSList *headers = NULL;
-
-			sipe_utils_parse_lines(&headers, lines, ":");
-
-			g_free(header);
-			g_strfreev(lines);
-
-			const gchar * disposition = sipe_utils_nameval_find(headers, "Content-Disposition");
-			if (!strstr(disposition, "ms-proxy-2007fallback")) {
-				GSList *it = headers;
-				const char *body_end = strstr(tmp + 4, "\r\n\r\n") + 2;
-				sipmsg_remove_header_now(msg, "Content-Type");
-
-				while (it) {
-					struct sipnameval *nv = it->data;
-					sipmsg_add_header_now(msg, nv->name, nv->value);
-					it = it->next;
-				}
-
-				g_free(msg->body);
-				msg->body = g_strndup(tmp + 4, body_end - tmp + 4);
-
-				found = TRUE;
-			}
-
-			g_slist_free(headers);
-
-			part = part->next;
-		}
-
-		g_slist_free(parts);
+		sipe_mime_parts_foreach(content_type, msg->body, sipe_invite_mime_cb, msg);
 	}
 
 	/* Invitation to join conference */
@@ -4689,9 +4674,6 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	/* Invitation to audio call */
 	if (msg->body && strstr(msg->body, "m=audio")) {
 		sipe_media_incoming_invite(sip, msg);
-		/*sipmsg_add_header(msg, "User-Agent", "UCCAPI/3.5.6907.0 OC/3.5.6907.0 (Microsoft Office Communicator 2007 R2)");
-		sipmsg_remove_header_now(msg, "Content-Type");
-		sipmsg_remove_header_now(msg, "Contact");*/
 		return;
 	}
 
@@ -6263,10 +6245,12 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 }
 
 static void sipe_presence_mime_cb(gpointer user_data, /* sipe_core_private */
-				  const gchar *type,
+				  const GSList *fields,
 				  const gchar *body,
 				  gsize length)
 {
+	const gchar *type = sipe_utils_nameval_find(fields, "Content-Type");
+
 	if (strstr(type,"application/rlmi+xml")) {
 		process_incoming_notify_rlmi_resub(user_data, body, length);
 	} else if (strstr(type, "text/xml+msrtc.pidf")) {
@@ -6311,7 +6295,7 @@ static void sipe_process_presence(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_presence_timeout_mime_cb(gpointer user_data,
-					  SIPE_UNUSED_PARAMETER const gchar *type,
+					  SIPE_UNUSED_PARAMETER const GSList *fields,
 					  const gchar *body,
 					  gsize length)
 {
