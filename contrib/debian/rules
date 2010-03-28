@@ -3,7 +3,7 @@
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
 
-DEB_CONFIGURE_EXTRA_FLAGS := --with-purple --without-telepathy
+DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple --disable-telepathy
 
 # run tests
 DEB_MAKE_CHECK_TARGET := check

@@ -130,7 +130,7 @@ AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
 	AC_CHECK_LIB(gssapi_krb5, gss_krb5_export_lucid_sec_context, [],
 			[AC_ERROR(GSSAPI Kerberos 5libraries not found)])
 	LDFLAGS="$ac_save_LDFLAGS"])
-AM_CONDITIONAL(SIP_SEC_KRB5, test "x$with_krb5" != xno)
+AM_CONDITIONAL(SIP_SEC_KRB5, [test "x$with_krb5" != xno])
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
 
@@ -145,7 +145,7 @@ PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.5.2],
 		[ac_have_gmime=yes],
 		[ac_have_gmime=no])
 ])
-AM_CONDITIONAL(SIPE_MIME_GMIME, [test x$ac_have_gmime = xyes])
+AM_CONDITIONAL(SIPE_MIME_GMIME, [test "x$ac_have_gmime" = xyes])
 AM_COND_IF(SIPE_MIME_GMIME,
 	[AC_DEFINE(HAVE_GMIME, 1, [Define if gmime should be used in sipe.])])
 
@@ -186,34 +186,23 @@ Please notify the SIPE developers and provide the following information:
 )])
 CFLAGS=$ac_save_CFLAGS
 
-dnl check for libpurple
-purple="yes"
-AC_ARG_WITH([purple],
-	[AC_HELP_STRING([--with-purple],
-		[compile sipe plugin for libpurple clients @<:@default=autodetect@:>@])],
-	[test "$withval" = "yes" || purple="no"],
-	[])
-if test "$purple" != "no"; then
-	PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.0],
-		[],
-		[purple="no"])
-fi
+dnl build option: purple backend
+AC_ARG_ENABLE([purple],
+	[AC_HELP_STRING([--enable-purple], [build purple plugin @<:@default=yes@:>@])],
+	[],
+	[enable_purple=yes])
+AS_IF([test "x$enable_purple" != xno],
+	[PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.0],
+		[dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
+		 PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion purple | cut -d. -f 1`
+		 AC_SUBST(PURPLE_MAJOR_VERSION)
 
-dnl support for libpurple plugin
-AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, test "$purple" != "no")
-if test "$purple" != "no"; then
-
-	dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
-	PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion purple | cut -d. -f 1`
-	AC_SUBST(PURPLE_MAJOR_VERSION)
-
-	dnl let user now if he has a 32- and 64-bit header conflict...
-	AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
-	ac_save_CFLAGS=$CFLAGS
-	CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
-	AC_COMPILE_IFELSE(
-		AC_LANG_PROGRAM(
-			[
+		 dnl let user now if he has a 32- and 64-bit header conflict...
+		 AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
+		 ac_save_CFLAGS=$CFLAGS
+		 CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
+		 AC_COMPILE_IFELSE(
+			AC_LANG_PROGRAM([
 #include <glib.h>
 #include <cipher.h>
 
@@ -223,44 +212,42 @@ void testfunc(unsigned long len)
   PurpleCipherContext *rc4 = NULL;
   purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(len));
 }
-			],
-			[testfunc(16);]),
-		[AC_MSG_RESULT(none)],
-		[AC_MSG_RESULT(failed)
-		 AC_ERROR(conflicts found.
+					],
+					[testfunc(16);]),
+			[AC_MSG_RESULT(none)],
+			[AC_MSG_RESULT(failed)
+			 AC_ERROR([conflicts found.
 
 Check that you have the correct glib/libpurple headers installed for
 your architecture or set PURPLE_CFLAGS to override the system defaults.
-)])
-	CFLAGS=$ac_save_CFLAGS
-fi
+])
+			])
+		 CFLAGS=$ac_save_CFLAGS],
+		[enable_purple=no])])
+AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
 
-dnl check for telepathy
-telepathy="yes"
-AC_ARG_WITH([telepathy],
-	[AC_HELP_STRING([--with-telepathy],
-		[compile sipe plugin for telepathy clients @<:@default=autodetect@:>@])],
-	[test "$withval" = "yes" || telepathy="no"],
-	[])
-if test "$telepathy" != "no"; then
-	PKG_CHECK_MODULES(TELEPATHY, [telepathy-glib],
-		[],
-		[telepathy="no"])
-fi
+dnl build option: telepathy backend
+AC_ARG_ENABLE([telepathy],
+	[AC_HELP_STRING([--enable-telepathy], [build telepathy plugin @<:@default=yes@:>@])],
+	[],
+	[enable_telepathy=yes])
+AS_IF([test "x$enable_telepathy" != xno],
+	[PKG_CHECK_MODULES(TELEPATHY, [telepathy-glib],
+		[dnl GMIME is a build requirement
+		 AM_COND_IF(SIPE_MIME_GMIME,
+			[],
+			[AC_ERROR(GMIME package is required for telepathy plugin)])
 
-dnl support for telepathy plugin
-AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, test "$telepathy" != "no")
-if test "$telepathy" != "no"; then
-	AM_COND_IF(SIPE_MIME_GMIME, [],
-		[AC_ERROR(GMIME package is required for telepathy plugin)])
-	dnl NOTHING IMPLEMENTED YET!!!
-fi
+		 dnl NOTHING IMPLEMENTED YET!!!
+		],
+		[enable_telepathy=no])])
+AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, [test "x$enable_telepathy" != xno])
 
 dnl sanity check
-AS_IF([test "x$purple" = xno -a "x$telepathy" = xno],
+AS_IF([test "x$enable_purple" = xno -a "x$enable_telepathy" = xno],
 	[AC_ERROR(at least one plugin must be selected
 
-If you didn't use a --without option then please check that you have
+If you didn't use a --enable option then please check that you have
 the headers for the packages "purple" or "telepathy-glib" installed.
 )],
 	[])
@@ -299,13 +286,13 @@ AC_OUTPUT()
 
 dnl additional info for the user
 AS_ECHO()
-AS_IF([test "x$purple" = xno], 
-	[AS_ECHO("Not building libpurple plugin")],
-	[AS_ECHO("Build libpurple plugin")
+AS_IF([test "x$enable_purple" = xno], 
+	[AS_ECHO("Not building purple plugin")],
+	[AS_ECHO("Build purple plugin")
 	 AS_ECHO("PURPLE_CFLAGS  : $PURPLE_CFLAGS")
 	 AS_ECHO("PURPLE_LIBS    : $PURPLE_LIBS")])
 AS_ECHO()
-AS_IF([test "x$telepathy" = xno],
+AS_IF([test "x$enable_telepathy" = xno],
 	[AS_ECHO("Not building telepathy plugin")],
 	[AS_ECHO("Build telepathy plugin")
 	 AS_ECHO()

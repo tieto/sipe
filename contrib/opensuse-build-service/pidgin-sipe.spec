@@ -94,7 +94,9 @@ This package provides the protocol plugin for libpurple clients.
 %if 0%{?sles_version} == 10
 export CFLAGS="%optflags -I%{_includedir}/gssapi"
 %endif
-%configure
+%configure \
+	--enable-purple \
+	--disable-telepathy
 make %{_smp_mflags}
 make %{_smp_mflags} check
 
@@ -123,6 +125,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Mar 28 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
+- added --enable/--disable build options
+
 * Sun Mar 28 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
 - removed --with-krb5 configure option as it is autodetected now
 
