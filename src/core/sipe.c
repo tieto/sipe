@@ -6889,8 +6889,36 @@ static void sipe_presence_timeout_mime_cb(gpointer user_data,
 	sipe_xml *xml = sipe_xml_parse(body, length);
 
 	if (xml && !sipe_strequal(sipe_xml_name(xml), "list")) {
-		gchar *uri = sip_uri(sipe_xml_attribute(xml, "uri"));
-		*buddies = g_slist_append(*buddies, uri);
+		const gchar *uri = sipe_xml_attribute(xml, "uri");
+		const sipe_xml *xn_category;
+
+		/**
+		 * automaton: presence is never expected to change
+		 *
+		 * see: http://msdn.microsoft.com/en-us/library/ee354295(office.13).aspx
+		 */
+		for (xn_category = sipe_xml_child(xml, "category");
+		     xn_category;
+		     xn_category = sipe_xml_twin(xn_category)) {
+			if (sipe_strequal(sipe_xml_attribute(xn_category, "name"),
+					  "contactCard")) {
+				const sipe_xml *node = sipe_xml_child(xn_category, "contactCard/automaton");
+				if (node) {
+					char *boolean = sipe_xml_data(node);
+					if (sipe_strequal(boolean, "true")) {
+						SIPE_DEBUG_INFO("sipe_process_presence_timeout: %s is an automaton: - not subscribing to presence updates",
+								uri);
+						uri = NULL;
+					}
+					g_free(boolean);
+				}
+				break;
+			}
+		}
+
+		if (uri) {
+			*buddies = g_slist_append(*buddies, sip_uri(uri));
+		}
 	}
 
 	sipe_xml_free(xml);
@@ -6908,17 +6936,19 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 	    (strstr(ctype, "application/rlmi+xml") ||
 	     strstr(ctype, "application/msrtc-event-categories+xml"))) {
 		GSList *buddies = NULL;
-		struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
 
 		sipe_mime_parts_foreach(ctype, msg->body, sipe_presence_timeout_mime_cb, &buddies);
-		
-		payload->host    = g_strdup(who);
-		payload->buddies = buddies;
-		sipe_schedule_action(action_name, timeout,
-				     sipe_subscribe_presence_batched_routed,
-				     sipe_subscribe_presence_batched_routed_free,
-				     sip, payload);
-		SIPE_DEBUG_INFO("Resubscription multiple contacts with batched support & route(%s) in %d", who, timeout);
+
+		if (buddies) {
+			struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
+			payload->host    = g_strdup(who);
+			payload->buddies = buddies;
+			sipe_schedule_action(action_name, timeout,
+					     sipe_subscribe_presence_batched_routed,
+					     sipe_subscribe_presence_batched_routed_free,
+					     sip, payload);
+			SIPE_DEBUG_INFO("Resubscription multiple contacts with batched support & route(%s) in %d", who, timeout);
+		}
 
 	} else {
 		sipe_schedule_action(action_name, timeout, sipe_subscribe_presence_single, g_free, sip, g_strdup(who));
