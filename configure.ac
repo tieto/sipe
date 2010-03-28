@@ -21,11 +21,10 @@ dnl setup automake and require recent enough version
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])
 
 dnl set PACKAGE_URL for autoconf < 2.64
-if test "x${PACKAGE_URL}" = "x"; then
-	AC_MSG_NOTICE([set PACKAGE_URL for autoconf < 2.64])
-	AC_DEFINE(PACKAGE_URL, "SIPE_HOMEPAGE",
-		  [Define to the home page for this package.])
-fi
+AS_IF([test "x${PACKAGE_URL}" = x],
+	[AC_MSG_NOTICE([set PACKAGE_URL for autoconf < 2.64])
+	 AC_DEFINE(PACKAGE_URL, "SIPE_HOMEPAGE", [Define to the home page for this package.])
+])
 
 dnl set programming language
 AC_LANG(C)
@@ -50,9 +49,8 @@ dnl tell pkgconfig to look in the same prefix where we're installing this to,
 dnl as that is likely where libpurple will be found if it is not in the default
 dnl pkgconfig path
 PREFIX=$ac_default_prefix
-if test "$prefix" != "NONE"; then
-	PREFIX=$prefix
-fi
+AS_IF([test "x$prefix" != xNONE],
+	[PREFIX=$prefix])
 
 PKG_CONFIG_PATH="$PKG_CONFIG_PATH":"$PREFIX/lib/pkgconfig"
 export PKG_CONFIG_PATH
@@ -61,14 +59,11 @@ dnl debug mode
 AC_ARG_ENABLE(debug,
 	[AS_HELP_STRING([--enable-debug],
 			[compile with debugging support [default=no]])],
-	,
-	enable_debug="no")
+	[],
+	[enable_debug=no])
 
-if test "$enable_debug" = yes; then
-   AC_DEFINE(DEBUG, 1, [Define if debugging is enabled.])
-fi
-
-DEBUG_CFLAGS="${DEBUG_CFLAGS}"
+AS_IF([test "x$enable_debug" = xyes],
+	[AC_DEFINE(DEBUG, 1, [Define if debugging is enabled.])])
 AC_SUBST(DEBUG_CFLAGS)
 
 dnl quality check mode
@@ -76,37 +71,33 @@ dnl For people who are interested in finding bugs and not hiding them
 AC_ARG_ENABLE(quality-check,
 	[AS_HELP_STRING([--enable-quality-check],
 			[compile with compiler checks enabled [default=yes]])],
-	,
-	enable_quality_check="yes")
+	[],
+	[enable_quality_check=yes])
 
+AS_IF([test "x$enable_quality_check" = xyes],
+	[QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
+	 ac_save_CFLAGS=$CFLAGS
 
-if test "$enable_quality_check" = yes; then
-	QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
-	ac_save_CFLAGS=$CFLAGS
-
-	dnl GCC >= 3.4
-	AC_MSG_CHECKING([if $CC supports -Wextra])
-	CFLAGS="$QUALITY_CFLAGS -Wextra"
-	AC_COMPILE_IFELSE(
+	 dnl GCC >= 3.4
+	 AC_MSG_CHECKING([if $CC supports -Wextra])
+	 CFLAGS="$QUALITY_CFLAGS -Wextra"
+	 AC_COMPILE_IFELSE(
 		AC_LANG_PROGRAM(),
 		[AC_MSG_RESULT(yes)
 		 QUALITY_CFLAGS="$QUALITY_CFLAGS -Wextra"],
 		[AC_MSG_RESULT(no)]
-	)
+	 )
 
-	dnl declaration-after-statement (ISO C90 behaviour, as on Windows & GCC < 3)
-	AC_MSG_CHECKING([if $CC supports -Werror=declaration-after-statement])
-	CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"
-	AC_COMPILE_IFELSE(
+	 dnl declaration-after-statement (ISO C90 behaviour, as on Windows & GCC < 3)
+	 AC_MSG_CHECKING([if $CC supports -Werror=declaration-after-statement])
+	 CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"
+	 AC_COMPILE_IFELSE(
 		AC_LANG_PROGRAM(),
 		[AC_MSG_RESULT(yes)
 		 QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"],
 		[AC_MSG_RESULT(no)]
-	)
-	CFLAGS=$ac_save_CFLAGS
-else
-	QUALITY_CFLAGS="$QUALITY_CFLAGS"
-fi
+	 )
+	 CFLAGS=$ac_save_CFLAGS])
 AC_SUBST(QUALITY_CFLAGS)
 
 dnl Check for pkg-config before using it
@@ -266,7 +257,7 @@ if test "$telepathy" != "no"; then
 fi
 
 dnl sanity check
-AS_IF([test "$purple" = "no" -a "$telepathy" = "no"],
+AS_IF([test "x$purple" = xno -a "x$telepathy" = xno],
 	[AC_ERROR(at least one plugin must be selected
 
 If you didn't use a --without option then please check that you have
@@ -308,44 +299,36 @@ AC_OUTPUT()
 
 dnl additional info for the user
 echo
-if test "$purple" != "no" ; then
-	echo "Compiling libpurple plugin"
-	echo "PURPLE_CFLAGS  : $PURPLE_CFLAGS"
-	echo "PURPLE_LIBS    : $PURPLE_LIBS"
-else
-	echo "Skipping libpurple plugin"
-fi
-
+AS_IF([test "x$purple" = xno], 
+	[echo "Not building libpurple plugin"],
+	[echo "Build libpurple plugin"
+	 echo "PURPLE_CFLAGS  : $PURPLE_CFLAGS"
+	 echo "PURPLE_LIBS    : $PURPLE_LIBS"])
 echo
-if test "$telepathy" != "no" ; then
-	echo "Compiling telepathy plugin"
-	echo
-	echo "NOTHING IMPLEMENTED YET!!!"
-	echo
-	echo "TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS"
-	echo "TELEPATHY_LIBS  : $TELEPATHY_LIBS"
-else
-	echo "Skipping telepathy plugin"
-fi
-if test "$with_krb5" != "no" ; then
-	echo
-	echo "Compiling with Kerberos 5 support"
-	echo "KRB5_CFLAGS    : $KRB5_CFLAGS"
-	echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"
-fi
-
-if test "$enable_debug" != "no"; then
-	echo
-	echo "Compiling with debugging enabled"
-	echo "DEBUG_CFLAGS   : $DEBUG_CFLAGS"
-fi
-
-if test -n "$QUALITY_CFLAGS"; then
-	echo
-	echo "Compiling with compiler checks enabled"
-	echo "QUALITY_CFLAGS : $QUALITY_CFLAGS"
-fi
-
+AS_IF([test "x$telepathy" = xno],
+	[echo "Not building telepathy plugin"],
+	[echo "Build telepathy plugin"
+	 echo
+	 echo "NOTHING IMPLEMENTED YET!!!"
+	 echo
+	 echo "TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS"
+	 echo "TELEPATHY_LIBS  : $TELEPATHY_LIBS"])
+echo
+AS_IF([test "x$with_krb5" = xno],
+	[echo "Not building with Kerberos 5 support"],
+	[echo "Build with Kerberos 5 support"
+	 echo "KRB5_CFLAGS    : $KRB5_CFLAGS"
+	 echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"])
+echo
+AS_IF([test "x$enable_debug" = xno],
+	[echo "Debugging not enabled"],
+	[echo "Build with debugging enabled"
+	 echo "DEBUG_CFLAGS   : $DEBUG_CFLAGS"])
+echo
+AS_IF([test "x$QUALITY_CFLAGS" = x],
+	[echo "Compiler checks disabled"],
+	[echo "Build with compiler checks enabled"
+	 echo "QUALITY_CFLAGS : $QUALITY_CFLAGS"])
 echo
 echo "configure complete, now run 'make'"
 echo
