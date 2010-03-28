@@ -56,6 +56,7 @@ LIB_PATHS +=		-L$(GTK_TOP)/lib \
 ##
 C_SRC =			../purple/purple-debug.c \
 			../purple/purple-markup.c \
+			../purple/purple-mime.c \
 			../purple/purple-network.c \
 			../purple/purple-plugin.c \
 			sipe.c \
@@ -67,7 +68,6 @@ C_SRC =			../purple/purple-debug.c \
 			sipe-cal.c \
 			http-conn.c \
 			sipe-ews.c \
-			sipe-mime.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
