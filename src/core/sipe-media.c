@@ -118,8 +118,9 @@ sipe_media_prune_remote_codecs(PurpleMedia *media, GList *codecs)
 }
 
 static GList *
-sipe_media_parse_remote_candidates(GSList *sdp_attrs)
+sipe_media_parse_remote_candidates(sipe_media_call *call)
 {
+	GSList *sdp_attrs = call->sdp_attrs;
 	PurpleMediaCandidate *candidate;
 	GList *candidates = NULL;
 	const gchar *attr;
@@ -217,6 +218,9 @@ sipe_media_parse_remote_candidates(GSList *sdp_attrs)
 										PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
 										PURPLE_MEDIA_NETWORK_PROTOCOL_UDP, ip, port + 1);
 		candidates = g_list_append(candidates, candidate);
+
+		// This seems to be pre-OC2007 R2 UAC
+		call->legacy_mode = TRUE;
 	}
 
 	if (username) {
@@ -292,16 +296,18 @@ sipe_media_sdp_codecs_format(GList *codecs)
 static gchar *
 sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call, gboolean remote_candidate)
 {
-	GString *result = g_string_new(NULL);
+	GString *result = g_string_new("");
 	gchar *tmp;
 	gchar *username = purple_media_candidate_get_username(candidates->data);
 	gchar *password = purple_media_candidate_get_password(candidates->data);
 	guint16 rtcp_port = 0;
 
+	if (call->legacy_mode)
+		return g_string_free(result, FALSE);
+
 	tmp = g_strdup_printf("a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",username, password);
 	g_string_append(result, tmp);
 	g_free(tmp);
-
 
 	while (candidates) {
 		PurpleMediaCandidate *c = candidates->data;
@@ -427,9 +433,12 @@ sipe_media_session_ready_cb(sipe_media_call *call)
 	if (!purple_media_candidates_prepared(media, NULL, NULL))
 		return;
 
-	if (!purple_media_accepted(media, NULL, NULL)) {
+	if (!call->sdp_response)
 		call->sdp_response = sipe_media_create_sdp(call, FALSE);
-		send_sip_response(account->gc, call->invitation, 183, "Session Progress", call->sdp_response);
+
+	if (!purple_media_accepted(media, NULL, NULL)) {
+		if (!call->legacy_mode)
+			send_sip_response(account->gc, call->invitation, 183, "Session Progress", call->sdp_response);
 	} else {
 		send_sip_response(account->gc, call->invitation, 200, "OK", call->sdp_response);
 	}
@@ -535,7 +544,11 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	call->dialog = dialog;
 	call->sdp_attrs = sipe_media_parse_sdp_frame(msg->body);
 	call->invitation = msg;
-
+	call->legacy_mode = FALSE;
+	call->remote_candidates = sipe_media_parse_remote_candidates(call);
+	if (!call->remote_candidates) {
+		// TODO: error no remote candidates
+	}
 
 	media = purple_media_manager_create_media(manager, sip->account,
 							"fsrtpconference", dialog->with, FALSE);
@@ -547,23 +560,23 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	g_signal_connect_swapped(G_OBJECT(media), "candidates-prepared",
 						G_CALLBACK(sipe_media_session_ready_cb), call);
 
-	params = g_new0(GParameter, 2);
-	params[0].name = "controlling-mode";
-	g_value_init(&params[0].value, G_TYPE_BOOLEAN);
-	g_value_set_boolean(&params[0].value, FALSE);
-	params[1].name = "compatibility-mode";
-	g_value_init(&params[1].value, G_TYPE_UINT);
-	g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
+	if (call->legacy_mode) {
+		purple_media_add_stream(media, "sipe-voice", dialog->with,
+							PURPLE_MEDIA_AUDIO, FALSE, "rawudp", 0, NULL);
+	} else {
+		params = g_new0(GParameter, 2);
+		params[0].name = "controlling-mode";
+		g_value_init(&params[0].value, G_TYPE_BOOLEAN);
+		g_value_set_boolean(&params[0].value, FALSE);
+		params[1].name = "compatibility-mode";
+		g_value_init(&params[1].value, G_TYPE_UINT);
+		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
 
-	/*purple_media_add_stream(media, "sipe-voice", dialog->with,
-							PURPLE_MEDIA_AUDIO, FALSE, "rawudp", 0, NULL);*/
-	purple_media_add_stream(media, "sipe-voice", dialog->with,
-							PURPLE_MEDIA_AUDIO, FALSE, "nice", 2, params);
 
-	call->remote_candidates = sipe_media_parse_remote_candidates(call->sdp_attrs);
-	if (!call->remote_candidates) {
-		// TODO: error no remote candidates
+		purple_media_add_stream(media, "sipe-voice", dialog->with,
+								PURPLE_MEDIA_AUDIO, FALSE, "nice", 2, params);
 	}
+
 	purple_media_add_remote_candidates(media, "sipe-voice", dialog->with,
 			                           call->remote_candidates);
 

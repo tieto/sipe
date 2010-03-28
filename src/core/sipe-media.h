@@ -28,6 +28,7 @@ struct _sipe_media_call {
 	GList				*remote_candidates;
 	GList				*remote_codecs;
 	gchar				*sdp_response;
+	gboolean			legacy_mode;
 };
 typedef struct _sipe_media_call sipe_media_call;
 
