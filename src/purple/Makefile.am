@@ -36,7 +36,6 @@ libsipe_la_LIBADD = \
 
 if SIP_SEC_KRB5
 libsipe_la_LDFLAGS += $(KRB5_LDFLAGS)
-libsipe_la_LIBADD  += $(KRB5_LIBS)
 endif
 
 check_PROGRAMS = tests

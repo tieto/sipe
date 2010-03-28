@@ -112,45 +112,36 @@ AC_SUBST(QUALITY_CFLAGS)
 dnl Check for pkg-config before using it
 PKG_PROG_PKG_CONFIG
 
+dnl check for Kerberos 5 support
 AC_ARG_WITH([krb5],
-	[AC_HELP_STRING([--with-krb5=PREFIX],
-		[compile sipe plugin with Kerberos 5 support @<:@default=no@:>@])],
-	[test "$withval" = "no" || kerberos="$withval"],
-	[kerberos="no"])
+	[AC_HELP_STRING([--with-krb5],
+		[compile with Kerberos 5 support @<:@default=check@:>@])],
+	[],
+	[with_krb5=check])
 
-dnl check for Kerberos
+AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
+      [test "x$with_krb5" = xcheck],  dnl autodetect with krb5-config
+	[AC_MSG_CHECKING(if Kerberos 5 is available)
+	 AS_IF([AC_RUN_LOG([krb5-config --version])],
+		[KRB5_CFLAGS=`krb5-config --cflags 2>/dev/null`
+		 KRB5_LDFLAGS=""
+		 LIBS="$LIBS `krb5-config --libs gssapi 2>/dev/null`"],
+		[AC_MSG_RESULT(no)
+		 with_krb5=no])],
+      [                               dnl path specified by user
+	KRB5_CFLAGS="-I${with_krb5}/include"
+	KRB5_LDFLAGS="-L${with_krb5}/lib"
+	ac_save_LDFLAGS="$LDLAGS"
+	LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
+	AC_CHECK_LIB(krb5, krb5_rd_req,          [],
+		[AC_CHECK_LIB(krb5, krb5_rd_req, [],
+			[AC_ERROR(Kerberos 5 libraries not found)])])
+	AC_CHECK_LIB(gssapi_krb5, gss_krb5_export_lucid_sec_context, [],
+			[AC_ERROR(GSSAPI Kerberos 5libraries not found)])
+	LDFLAGS="$ac_save_LDFLAGS"])
+AM_CONDITIONAL(SIP_SEC_KRB5, test "x$with_krb5" != xno)
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
-AC_SUBST(KRB5_LIBS)
-
-AM_CONDITIONAL(SIP_SEC_KRB5, test "$kerberos" != "no")
-if test "$kerberos" != "no" ; then
-        if test "$kerberos" != "yes" ; then
-                KRB5_CFLAGS="-I${kerberos}/include"
-                KRB5_LDFLAGS="-L${kerberos}/lib"
-        fi
-        orig_LDFLAGS="$LDFLAGS"
-        LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
-        AC_CHECK_LIB(krb5, krb5_rd_req,
-                        [KRB5_LIBS="-lkrb5"],
-                        [AC_CHECK_LIB(krb5, krb5_rd_req,
-                                [KRB5_LIBS="-lkrb5"],
-                                [AC_ERROR(Kerberos 5 libraries not found)],
-                                )],
-                        -lkrb5)
-        AC_CHECK_LIB(gssapi_krb5, gss_krb5_export_lucid_sec_context,
-                        [KRB5_LIBS="$KRB5_LIBS -lgssapi_krb5"],
-                        [AC_CHECK_LIB(gssapi, gss_krb5_export_lucid_sec_context,
-                                [KRB5_LIBS="$KRB5_LIBS -lgssapi_krb5"],
-                                [AC_ERROR(GSSAPI libraries not found)],
-                                )],
-                        -lgssapi_krb5)
-	savedLIBS="$LIBS"
-	LIBS="$KRB5_LIBS $LIBS"
-	AC_CHECK_FUNCS([krb5_get_error_message])
-	LIBS="$savedLIBS"
-	AC_DEFINE(HAVE_KERBEROS, 1, [Define if kerberos should be used in sipe.])
-fi
 
 dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
@@ -336,12 +327,11 @@ if test "$telepathy" != "no" ; then
 else
 	echo "Skipping telepathy plugin"
 fi
-if test "$kerberos" != "no" ; then
+if test "$with_krb5" != "no" ; then
 	echo
-	echo "Compiling with kerberos 5 support"
+	echo "Compiling with Kerberos 5 support"
 	echo "KRB5_CFLAGS    : $KRB5_CFLAGS"
 	echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"
-	echo "KRB5_LIBS      : $KRB5_LIBS"
 fi
 
 if test "$enable_debug" != "no"; then

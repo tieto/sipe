@@ -46,7 +46,6 @@ BuildRequires:  gettext-devel
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
-%define config_krb5 --with-krb5
 BuildRequires:  krb5-devel
 %endif
 
@@ -96,7 +95,6 @@ This package provides the protocol plugin for libpurple clients.
 ./autogen.sh
 %endif
 %configure \
-	%{?config_krb5:%{config_krb5}} \
 	--with-purple \
 	--without-telepathy
 make %{_smp_mflags}
@@ -127,6 +125,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Mar 28 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
+- removed --with-krb5 configure option as it is autodetected now
+
 * Tue Mar 23 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
 - add SVG icon
 

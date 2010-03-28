@@ -45,7 +45,6 @@ BuildRequires:  gettext-devel
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
-%define config_krb5 --with-krb5
 BuildRequires:  krb5-devel
 %endif
 
@@ -92,11 +91,10 @@ This package provides the protocol plugin for libpurple clients.
 %setup -q
 
 %build
-%define config_params %{?config_krb5:%{config_krb5}}
 %if 0%{?sles_version} == 10
 export CFLAGS="%optflags -I%{_includedir}/gssapi"
 %endif
-%configure %{config_params}
+%configure
 make %{_smp_mflags}
 make %{_smp_mflags} check
 
@@ -125,6 +123,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Mar 28 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
+- removed --with-krb5 configure option as it is autodetected now
+
 * Tue Mar 23 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
 - add SVG icon
 

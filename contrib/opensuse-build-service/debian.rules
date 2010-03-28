@@ -5,11 +5,6 @@ include /usr/share/cdbs/1/rules/debhelper.mk
 
 DEB_CONFIGURE_EXTRA_FLAGS := --with-purple --without-telepathy
 
-# autodetect Kerberos support
-ifneq ($(shell krb5-config --version 2>/dev/null),)
-DEB_CONFIGURE_EXTRA_FLAGS += --with-krb5=yes
-endif
-
 # run tests
 DEB_MAKE_CHECK_TARGET := check
 

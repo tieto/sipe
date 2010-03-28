@@ -43,7 +43,7 @@
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 
-#ifdef HAVE_KERBEROS
+#ifdef HAVE_LIBKRB5
 #include "sip-sec-krb5.h"
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__krb5
 #else
@@ -51,16 +51,16 @@
 #endif
 
 #else /* _WIN32 */
-#ifdef HAVE_KERBEROS
+#ifdef HAVE_LIBKRB5
 #include "sip-sec-sspi.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
-#else /* HAVE_KERBEROS */
+#else /* HAVE_LIBKRB5 */
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
-#endif /* HAVE_KERBEROS */
+#endif /* HAVE_LIBKRB5 */
 
 #endif /* _WIN32 */
 
