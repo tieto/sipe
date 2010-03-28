@@ -116,7 +116,7 @@ dnl check for Kerberos 5 support
 AC_ARG_WITH([krb5],
 	[AC_HELP_STRING([--with-krb5],
 		[compile with Kerberos 5 support @<:@default=check@:>@])],
-	[],
+	[AS_IF([test "x$withval" = xyes], [with_krb5=check])],
 	[with_krb5=check])
 
 AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
