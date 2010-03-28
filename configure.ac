@@ -298,39 +298,39 @@ dnl generate files
 AC_OUTPUT()
 
 dnl additional info for the user
-echo
+AS_ECHO()
 AS_IF([test "x$purple" = xno], 
-	[echo "Not building libpurple plugin"],
-	[echo "Build libpurple plugin"
-	 echo "PURPLE_CFLAGS  : $PURPLE_CFLAGS"
-	 echo "PURPLE_LIBS    : $PURPLE_LIBS"])
-echo
+	[AS_ECHO("Not building libpurple plugin")],
+	[AS_ECHO("Build libpurple plugin")
+	 AS_ECHO("PURPLE_CFLAGS  : $PURPLE_CFLAGS")
+	 AS_ECHO("PURPLE_LIBS    : $PURPLE_LIBS")])
+AS_ECHO()
 AS_IF([test "x$telepathy" = xno],
-	[echo "Not building telepathy plugin"],
-	[echo "Build telepathy plugin"
-	 echo
-	 echo "NOTHING IMPLEMENTED YET!!!"
-	 echo
-	 echo "TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS"
-	 echo "TELEPATHY_LIBS  : $TELEPATHY_LIBS"])
-echo
+	[AS_ECHO("Not building telepathy plugin")],
+	[AS_ECHO("Build telepathy plugin")
+	 AS_ECHO()
+	 AS_ECHO("NOTHING IMPLEMENTED YET!!!")
+	 AS_ECHO()
+	 AS_ECHO("TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS")
+	 AS_ECHO("TELEPATHY_LIBS  : $TELEPATHY_LIBS")])
+AS_ECHO()
 AS_IF([test "x$with_krb5" = xno],
-	[echo "Not building with Kerberos 5 support"],
-	[echo "Build with Kerberos 5 support"
-	 echo "KRB5_CFLAGS    : $KRB5_CFLAGS"
-	 echo "KRB5_LDFLAGS   : $KRB5_LDFLAGS"])
-echo
+	[AS_ECHO("Not building with Kerberos 5 support")],
+	[AS_ECHO("Build with Kerberos 5 support")
+	 AS_ECHO("KRB5_CFLAGS    : $KRB5_CFLAGS")
+	 AS_ECHO("KRB5_LDFLAGS   : $KRB5_LDFLAGS")])
+AS_ECHO()
 AS_IF([test "x$enable_debug" = xno],
-	[echo "Debugging not enabled"],
-	[echo "Build with debugging enabled"
-	 echo "DEBUG_CFLAGS   : $DEBUG_CFLAGS"])
-echo
+	[AS_ECHO("Debugging not enabled")],
+	[AS_ECHO("Build with debugging enabled")
+	 AS_ECHO("DEBUG_CFLAGS   : $DEBUG_CFLAGS")])
+AS_ECHO()
 AS_IF([test "x$QUALITY_CFLAGS" = x],
-	[echo "Compiler checks disabled"],
-	[echo "Build with compiler checks enabled"
-	 echo "QUALITY_CFLAGS : $QUALITY_CFLAGS"])
-echo
-echo "configure complete, now run 'make'"
-echo
+	[AS_ECHO("Compiler checks disabled")],
+	[AS_ECHO("Build with compiler checks enabled")
+	 AS_ECHO("QUALITY_CFLAGS : $QUALITY_CFLAGS")])
+AS_ECHO()
+AS_ECHO("configure complete. Now run 'make'")
+AS_ECHO()
 
 dnl The End.
