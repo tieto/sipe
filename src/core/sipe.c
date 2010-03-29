@@ -3159,9 +3159,15 @@ sipe_change_access_level(struct sipe_account_data *sip,
 			if (container_id < 0 || container_id != current_container_id) {
 				sipe_send_container_members_prepare(
 					sip, current_container_id, container->version, "remove", type, value, &container_xmls);
+				/* remove member from our cache, to be able to recalculate AL below */
+				container->members = g_slist_remove(container->members, member);
+				current_container_id = -1;
 			}
 		}
 	}
+
+	/* recalculate AL below */
+	current_container_id = sipe_find_access_level(sip, type, value);
 
 	/* assign/publish new access level */
 	if (container_id != current_container_id && container_id >= 0) {
