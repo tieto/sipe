@@ -509,7 +509,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:10197 ../src/core/sipe.c:10234
 msgid "Display name"
-msgstr ""
+msgstr "Zobrazit jméno"
 
 #: ../src/core/sipe.c:10200
 msgid "Job title"
