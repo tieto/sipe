@@ -116,7 +116,10 @@ AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
 	 AS_IF([AC_RUN_LOG([krb5-config --version])],
 		[KRB5_CFLAGS=`krb5-config --cflags 2>/dev/null`
 		 KRB5_LDFLAGS=""
-		 LIBS="$LIBS `krb5-config --libs gssapi 2>/dev/null`"],
+
+		 dnl same as AC_CHECK_LIB()
+		 LIBS="$LIBS `krb5-config --libs gssapi 2>/dev/null`"
+		 AC_DEFINE(HAVE_LIBKRB5, 1, [Define to 1 if you have the `krb5' library (-lkrb5)])],
 		[AC_MSG_RESULT(no)
 		 with_krb5=no])],
       [                               dnl path specified by user
@@ -128,7 +131,7 @@ AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
 		[AC_CHECK_LIB(krb5, krb5_rd_req, [],
 			[AC_ERROR(Kerberos 5 libraries not found)])])
 	AC_CHECK_LIB(gssapi_krb5, gss_krb5_export_lucid_sec_context, [],
-			[AC_ERROR(GSSAPI Kerberos 5libraries not found)])
+			[AC_ERROR(GSSAPI Kerberos 5 libraries not found)])
 	LDFLAGS="$ac_save_LDFLAGS"])
 AM_CONDITIONAL(SIP_SEC_KRB5, [test "x$with_krb5" != xno])
 AC_SUBST(KRB5_CFLAGS)
