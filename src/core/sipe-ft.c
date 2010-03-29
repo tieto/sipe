@@ -840,10 +840,10 @@ static void sipe_cipher_context_init(PurpleCipherContext **rc4_context, const gu
 	 *  2.) Decrypt-Data = RC4 (Encrypt-Data, substr(SHA1-Key, 0, 15)); Decryption of encrypted data, used 16 bytes SHA1-Key;
 	 */
 
-	const guchar *k2;
+	guchar k2[SIPE_DIGEST_SHA1_LENGTH];
 
 	/* 1.) SHA1 sum	*/
-	k2 = sipe_backend_digest_sha1(enc_key, SIPE_FT_KEY_LENGTH);
+        sipe_backend_digest_sha1(enc_key, SIPE_FT_KEY_LENGTH, k2);
 
 	/* 2.) RC4 decryption */
 	*rc4_context = purple_cipher_context_new_by_name("rc4", NULL);
@@ -862,10 +862,10 @@ static void sipe_hmac_context_init(PurpleCipherContext **hmac_context, const guc
 	 *  2.) MAC = HMAC_SHA1 (Decrypt-Data, substr(HMAC-Key,0,15)); Digest of decrypted file and SHA1-Key (used again only 16 bytes)
 	 */
 
-	const guchar *k2;
+	guchar k2[SIPE_DIGEST_SHA1_LENGTH];
 
 	/* 1.) SHA1 sum	*/
-	k2 = sipe_backend_digest_sha1(hash_key, SIPE_FT_KEY_LENGTH);
+	sipe_backend_digest_sha1(hash_key, SIPE_FT_KEY_LENGTH, k2);
 
 	/* 2.) HMAC (initialization only) */
 	*hmac_context = purple_cipher_context_new_by_name("hmac", NULL);

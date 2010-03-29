@@ -100,6 +100,7 @@ char *generateUUIDfromEPID(const gchar *epid)
 {
 	uuid_t result;
 	char buf[512];
+	guchar digest[SIPE_DIGEST_SHA1_LENGTH];
 
 	readUUID(epid_ns_uuid, &result);
 
@@ -110,8 +111,8 @@ char *generateUUIDfromEPID(const gchar *epid)
 	memcpy(buf, &result, sizeof(uuid_t));
 	strcpy(&buf[sizeof(uuid_t)], epid);
 
-	createUUIDfromHash(&result,
-			   sipe_backend_digest_sha1((guchar *)buf, strlen(buf)));
+	sipe_backend_digest_sha1((guchar *)buf, strlen(buf), digest);
+	createUUIDfromHash(&result, digest);
 
 	result.time_low = GUINT32_TO_LE(result.time_low);
 	result.time_mid = GUINT16_TO_LE(result.time_mid);
@@ -136,14 +137,15 @@ char *sipe_get_epid(const char *self_sip_uri,
 {
 /* 6 last digits of hash */
 #define SIPE_EPID_HASH_START 14
-#define SIPE_EPID_HASH_END   20
+#define SIPE_EPID_HASH_END   SIPE_DIGEST_SHA1_LENGTH
 #define SIPE_EPID_LENGTH     (2 * (SIPE_EPID_HASH_END - SIPE_EPID_HASH_START + 1))
 
 	int i,j;
 	char out[SIPE_EPID_LENGTH + 1];
 	char *buf = g_strdup_printf("%s:%s:%s", self_sip_uri, hostname, ip_address);
-	const guchar *hash = sipe_backend_digest_sha1((guchar *) buf, strlen(buf));
+	guchar hash[SIPE_DIGEST_SHA1_LENGTH];
 
+	sipe_backend_digest_sha1((guchar *) buf, strlen(buf), hash);
 	for (i = SIPE_EPID_HASH_START, j = 0;
 	     i < SIPE_EPID_HASH_END;
 	     i++, j += 2) {

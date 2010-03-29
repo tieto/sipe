@@ -183,8 +183,6 @@ struct version test_version;		/* hard-coded in implementation */
 #define NTLMSSP_LN_OR_NT_KEY_LEN  16
 #define NTLMSSP_LM_RESP_LEN 24
 #define NTLMSSP_SESSION_KEY_LEN  16
-#define MD4_DIGEST_LEN 16
-#define MD5_DIGEST_LEN 16
 
 #define IS_FLAG(flags, flag) (((flags) & (flag)) == (flag))
 
@@ -428,24 +426,10 @@ RC4K (const unsigned char * k, unsigned long key_len, const unsigned char * d, i
 }
 
 /* out 16 bytes */
-static void
-MD4 (const unsigned char * d, int len, unsigned char * result)
-{
-	PurpleCipherContext * context = purple_cipher_context_new_by_name("md4", NULL);
-	purple_cipher_context_append(context, (guchar*)d, len);
-	purple_cipher_context_digest(context, MD4_DIGEST_LEN, (guchar*)result, NULL);
-	purple_cipher_context_destroy(context);
-}
+#define MD4(d, len, result) sipe_backend_digest_md4((d), (len), (result))
 
 /* out 16 bytes */
-static void
-MD5 (const unsigned char * d, int len, unsigned char * result)
-{
-	PurpleCipherContext * context = purple_cipher_context_new_by_name("md5", NULL);
-	purple_cipher_context_append(context, (guchar*)d, len);
-	purple_cipher_context_digest(context, MD5_DIGEST_LEN, (guchar*)result, NULL);
-	purple_cipher_context_destroy(context);
-}
+#define MD5(d, len, result) sipe_backend_digest_md5((d), (len), (result))
 
 /* out 16 bytes */
 /*

@@ -53,7 +53,14 @@ void sipe_backend_debug(sipe_debug_level level,
 
 /** DIGEST *******************************************************************/
 
-const guchar *sipe_backend_digest_sha1(const guchar *data, gsize length);
+#define SIPE_DIGEST_MD4_LENGTH 16
+void sipe_backend_digest_md4(const guchar *data, gsize length, guchar *digest);
+
+#define SIPE_DIGEST_MD5_LENGTH 16
+void sipe_backend_digest_md5(const guchar *data, gsize length, guchar *digest);
+
+#define SIPE_DIGEST_SHA1_LENGTH 20
+void sipe_backend_digest_sha1(const guchar *data, gsize length, guchar *digest);
 
 /** MARKUP *******************************************************************/
 

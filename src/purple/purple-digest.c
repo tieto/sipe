@@ -25,14 +25,29 @@
 
 #include "sipe-backend.h"
 
-const guchar *sipe_backend_digest_sha1(const guchar *data, gsize length)
+static void purple_digest(const gchar *algorithm,
+			  const guchar *data, gsize data_length,
+			  guchar *digest, gsize digest_length)
 {
-	static guchar digest[20];
-	PurpleCipherContext *ctx = purple_cipher_context_new_by_name("sha1", NULL);
-	purple_cipher_context_append(ctx, data, length);
-	purple_cipher_context_digest(ctx, sizeof(digest), digest, NULL);
+	PurpleCipherContext *ctx = purple_cipher_context_new_by_name(algorithm, NULL);
+	purple_cipher_context_append(ctx, data, data_length);
+	purple_cipher_context_digest(ctx, digest_length, digest, NULL);
 	purple_cipher_context_destroy(ctx);
-	return(digest);
+}
+
+void sipe_backend_digest_md4(const guchar *data, gsize length, guchar *digest)
+{
+	purple_digest("md4", data, length, digest, SIPE_DIGEST_MD4_LENGTH);
+}
+
+void sipe_backend_digest_md5(const guchar *data, gsize length, guchar *digest)
+{
+	purple_digest("md5", data, length, digest, SIPE_DIGEST_MD5_LENGTH);
+}
+
+void sipe_backend_digest_sha1(const guchar *data, gsize length, guchar *digest)
+{
+	purple_digest("sha1", data, length, digest, SIPE_DIGEST_SHA1_LENGTH);
 }
 
 /*
