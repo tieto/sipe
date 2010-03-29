@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-29 20:52+0300\n"
-"PO-Revision-Date: 2010-03-27 14:32+0100\n"
+"POT-Creation-Date: 2010-03-29 18:48+0000\n"
+"PO-Revision-Date: 2010-03-29 20:49+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -487,6 +487,7 @@ msgstr "użytkownik@firma.pl"
 msgid ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 msgstr ""
+"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:9946
 #, c-format
@@ -538,7 +539,7 @@ msgstr "Wyślij wiadomość e-mail..."
 
 #: ../src/core/sipe.c:10093
 msgid "Online help..."
-msgstr ""
+msgstr "Pomoc online..."
 
 #: ../src/core/sipe.c:10128
 msgid "Copy to"
