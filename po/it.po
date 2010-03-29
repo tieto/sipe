@@ -159,9 +159,9 @@ msgstr "Questo messaggio non é stato inoltrato a %s perché uno e piú destinat
 
 #. Unsupported media type
 #: ../src/core/sipe.c:4218
-#, fuzzy, c-format
+#, c-format
 msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
-msgstr "Questo messaggio non é stato inoltrato a %s perché uno e piú destinatari non vogliono essere disturbati"
+msgstr "Questo messaggio non é stato inoltrato a %s perché uno o piú destinatari non supportano questo tipo di messaggio"
 
 #: ../src/core/sipe.c:4220
 #, c-format
@@ -179,9 +179,8 @@ msgid "Received a message with unrecognized contents from %s"
 msgstr "È stato ricevuto un messaggio con contenuti non riconosciuti da %s"
 
 #: ../src/core/sipe.c:5814 ../src/core/sipe.c:8238
-#, fuzzy
 msgid "Authentication failed"
-msgstr "Errore di autenticazione con il server"
+msgstr "Errore di autenticazione"
 
 #: ../src/core/sipe.c:5823 ../src/core/sipe.c:8126
 msgid "Incompatible authentication scheme chosen"
@@ -275,7 +274,6 @@ msgid "Connecting"
 msgstr "Connessione in corso"
 
 #: ../src/core/sipe.c:9088
-#, fuzzy
 msgid "Unable to display the search results"
 msgstr "Non è stato possibile mostrare i risultati della ricerca."
 
@@ -307,12 +305,10 @@ msgid " (more matched your query)"
 msgstr "(ulteriori elementi corrispondono alla tua ricerca)"
 
 #: ../src/core/sipe.c:9192
-#, fuzzy
 msgid "First name"
 msgstr "Nome"
 
 #: ../src/core/sipe.c:9194
-#, fuzzy
 msgid "Last name"
 msgstr "Cognome"
 
@@ -628,9 +624,8 @@ msgstr "Errore di lettura del socket."
 
 #: ../src/core/sipe-ft.c:200 ../src/core/sipe-ft.c:435
 #: ../src/core/sipe-ft.c:445
-#, fuzzy
 msgid "Socket write failed"
-msgstr "Connessione fallita"
+msgstr "Errore di scrittura nel socket"
 
 #: ../src/core/sipe-ft.c:245
 msgid "File size is different from the advertised value."
@@ -646,19 +641,16 @@ msgstr "Il file ricevuto è corrotto"
 
 #: ../src/core/sipe-ft.c:337 ../src/core/sipe-ft.c:353
 #: ../src/core/sipe-ft.c:408
-#, fuzzy
 msgid "Out of memory"
-msgstr "Fuori ufficio"
+msgstr "Memoria esaurita"
 
 #: ../src/core/sipe-ft.c:521
-#, fuzzy
 msgid "File transfer initialization failed."
-msgstr "Errore di autenticazione con il server"
+msgstr "Errore di inizializzazione nel trasgerimento del file"
 
 #: ../src/core/sipe-ft.c:550
-#, fuzzy
 msgid "File transfer authentication failed."
-msgstr "Errore di autenticazione con il server"
+msgstr "Errore di autenticazione nel trasferimento del file"
 
 #: ../src/core/sipe-ft.c:681
 msgid "Received encryption key has wrong size."
@@ -687,9 +679,8 @@ msgstr ""
 "(lascia vuoto per auto-discovery)"
 
 #: ../src/purple/purple-plugin.c:81
-#, fuzzy
 msgid "Connection type"
-msgstr "Tipo Connessione"
+msgstr "Tipo di connessione"
 
 #: ../src/purple/purple-plugin.c:82
 msgid "Auto"
