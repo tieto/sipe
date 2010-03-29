@@ -445,7 +445,7 @@ msgstr "Личное сообщение"
 
 #: ../src/core/sipe.c:9492 ../src/core/sipe.c:10022
 msgid "Access level"
-msgstr "Уровни доступа"
+msgstr "Уровень доступа"
 
 #: ../src/core/sipe.c:9502
 msgid "user@company.com"
