@@ -2877,27 +2877,56 @@ free_container(struct sipe_container *container)
 }
 
 static void
-sipe_send_set_container_members(struct sipe_account_data *sip,
-				guint container_id,
-				guint container_version,
-				const gchar* action,
-				const gchar* type,
-				const gchar* value)
+sipe_send_container_members_prepare(struct sipe_account_data *sip,
+				    const guint container_id,
+				    const guint container_version,
+				    const gchar *action,
+				    const gchar *type,
+				    const gchar *value,
+				    char **container_xmls)
 {
-	gchar *self = sip_uri_self(sip);
 	gchar *value_str = value ? g_strdup_printf(" value=\"%s\"", value) : g_strdup("");
-	gchar *contact;
-	gchar *hdr;
-	gchar *body = g_strdup_printf(
-		"<setContainerMembers xmlns=\"http://schemas.microsoft.com/2006/09/sip/container-management\">"
-		"<container id=\"%d\" version=\"%d\"><member action=\"%s\" type=\"%s\"%s/></container>"
-		"</setContainerMembers>",
+	gchar *body;
+
+	if (!container_xmls) return;
+
+	body = g_strdup_printf(
+		"<container id=\"%d\" version=\"%d\"><member action=\"%s\" type=\"%s\"%s/></container>",
 		container_id,
 		container_version,
 		action,
 		type,
 		value_str);
 	g_free(value_str);
+	
+	if ((*container_xmls) == NULL) {
+		*container_xmls = body;
+	} else {
+		char *tmp = *container_xmls;
+
+		*container_xmls = g_strconcat(*container_xmls, body, NULL);
+		g_free(tmp);
+		g_free(body);
+	}
+}
+
+static void
+sipe_send_set_container_members(struct sipe_account_data *sip,
+				char *container_xmls)
+{
+	gchar *self;
+	gchar *contact;
+	gchar *hdr;
+	gchar *body;
+
+	if (!container_xmls) return;
+	
+	self = sip_uri_self(sip);
+	body = g_strdup_printf(
+		"<setContainerMembers xmlns=\"http://schemas.microsoft.com/2006/09/sip/container-management\">"
+		"%s"
+		"</setContainerMembers>",
+		container_xmls);
 
 	contact = get_contact(sip);
 	hdr = g_strdup_printf("Contact: %s\r\n"
@@ -3114,6 +3143,7 @@ sipe_change_access_level(struct sipe_account_data *sip,
 {
 	unsigned int i;
 	int current_container_id = -1;
+	char *container_xmls = NULL;
 
 	/* for each container: find/delete */
 	for (i = 0; i < CONTAINERS_LEN; i++) {
@@ -3127,8 +3157,8 @@ sipe_change_access_level(struct sipe_account_data *sip,
 			current_container_id = containers[i];
 			/* delete/publish current access level */
 			if (container_id < 0 || container_id != current_container_id) {
-				sipe_send_set_container_members(
-					sip, current_container_id, container->version, "remove", type, value);
+				sipe_send_container_members_prepare(
+					sip, current_container_id, container->version, "remove", type, value, &container_xmls);
 			}
 		}
 	}
@@ -3138,8 +3168,13 @@ sipe_change_access_level(struct sipe_account_data *sip,
 		struct sipe_container *container = sipe_find_container(sip, container_id);
 		guint version = container ? container->version : 0;
 
-		sipe_send_set_container_members(sip, container_id, version, "add", type, value);
+		sipe_send_container_members_prepare(sip, container_id, version, "add", type, value, &container_xmls);
 	}
+
+	if (container_xmls) {
+		sipe_send_set_container_members(sip, container_xmls);
+	}
+	g_free(container_xmls);
 }
 
 static void
@@ -3886,22 +3921,29 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 	SIPE_DEBUG_INFO("sipe_process_roaming_self: sip->access_level_set=%s", sip->access_level_set ? "TRUE" : "FALSE");
 	if (!sip->access_level_set && sipe_xml_child(xml, "containers")) {
+		char *container_xmls = NULL;
 		int sameEnterpriseAL = sipe_find_access_level(sip, "sameEnterprise", NULL);
 		int federatedAL      = sipe_find_access_level(sip, "federated", NULL);
+
 		SIPE_DEBUG_INFO("sipe_process_roaming_self: sameEnterpriseAL=%d", sameEnterpriseAL);
 		SIPE_DEBUG_INFO("sipe_process_roaming_self: federatedAL=%d", federatedAL);
 		/* initial set-up to let counterparties see your status */
 		if (sameEnterpriseAL < 0) {
 			struct sipe_container *container = sipe_find_container(sip, 200);
 			guint version = container ? container->version : 0;
-			sipe_send_set_container_members(sip, 200, version, "add", "sameEnterprise", NULL);
+			sipe_send_container_members_prepare(sip, 200, version, "add", "sameEnterprise", NULL, &container_xmls);
 		}
 		if (federatedAL < 0) {
 			struct sipe_container *container = sipe_find_container(sip, 100);
 			guint version = container ? container->version : 0;
-			sipe_send_set_container_members(sip, 100, version, "add", "federated", NULL);
+			sipe_send_container_members_prepare(sip, 100, version, "add", "federated", NULL, &container_xmls);
 		}
 		sip->access_level_set = TRUE;
+		
+		if (container_xmls) {
+			sipe_send_set_container_members(sip, container_xmls);
+		}
+		g_free(container_xmls);
 	}
 
 	/* subscribers */
