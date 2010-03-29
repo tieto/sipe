@@ -74,6 +74,19 @@ void sipe_backend_digest_ft_update(gpointer context, const guchar *data, gsize l
 void sipe_backend_digest_ft_end(gpointer context, guchar *digest);
 void sipe_backend_digest_ft_destroy(gpointer context);
 
+/* HTTP MD5 digest authentication */
+/* session_key must be g_free()'d */
+gchar *sipe_backend_digest_http_session_key(const gchar *username,
+					    const gchar *realm,
+					    const gchar *password,
+					    const gchar *nonce);
+/* response must be g_free()'d */
+gchar *sipe_backend_digest_http_response(const gchar *session_key,
+					 const gchar *method,
+					 const gchar *digest_uri,
+					 const gchar *nonce,
+					 const gchar *nonce_count);
+
 /** MARKUP *******************************************************************/
 
 gchar *sipe_backend_markup_css_property(const gchar *style,

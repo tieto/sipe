@@ -71,7 +71,6 @@
 #include "connection.h"
 #include "conversation.h"
 #include "core.h"
-#include "cipher.h"
 #include "circbuffer.h"
 #include "dnsquery.h"
 #include "dnssrv.h"
@@ -460,16 +459,14 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 		/* Calculate new session key */
 		if (!auth->opaque) {
 			SIPE_DEBUG_INFO("Digest nonce: %s realm: %s", auth->gssapi_data, auth->realm);
-			auth->opaque = purple_cipher_http_digest_calculate_session_key("md5",
-										       authuser, auth->realm, sip->password,
-										       auth->gssapi_data, NULL);
+			auth->opaque = sipe_backend_digest_http_session_key(authuser, auth->realm, sip->password,
+									    auth->gssapi_data);
 		}
 
 		sprintf(noncecount, "%08d", auth->nc++);
-		response = purple_cipher_http_digest_calculate_response("md5",
-									msg->method, msg->target, NULL, NULL,
-									auth->gssapi_data, noncecount, NULL,
-									auth->opaque);
+		response = sipe_backend_digest_http_response(auth->opaque,
+							     msg->method, msg->target,
+							     auth->gssapi_data, noncecount);
 		SIPE_DEBUG_INFO("Digest response %s", response);
 
 		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->gssapi_data, msg->target, noncecount, response);

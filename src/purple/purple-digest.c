@@ -87,6 +87,34 @@ void sipe_backend_digest_ft_destroy(gpointer context)
 	purple_cipher_context_destroy(context);
 }
 
+/* HTTP MD5 digest authentication */
+gchar *sipe_backend_digest_http_session_key(const gchar *username,
+					    const gchar *realm,
+					    const gchar *password,
+					    const gchar *nonce)
+{
+	return purple_cipher_http_digest_calculate_session_key("md5",
+							       username,
+							       realm,
+							       password,
+							       nonce,
+							       NULL);
+}
+
+gchar *sipe_backend_digest_http_response(const gchar *session_key,
+					 const gchar *method,
+					 const gchar *digest_uri,
+					 const gchar *nonce,
+					 const gchar *nonce_count)
+{
+	return purple_cipher_http_digest_calculate_response("md5",
+							    method, digest_uri,
+							    NULL, NULL,
+							    nonce, nonce_count,
+							    NULL,
+							    session_key);
+}
+
 /*
   Local Variables:
   mode: c
