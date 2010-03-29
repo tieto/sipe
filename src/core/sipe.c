@@ -3128,7 +3128,7 @@ sipe_change_access_level(struct sipe_account_data *sip,
 			/* delete/publish current access level */
 			if (container_id < 0 || container_id != current_container_id) {
 				sipe_send_set_container_members(
-					sip, current_container_id, container->version, "delete", type, value);
+					sip, current_container_id, container->version, "remove", type, value);
 			}
 		}
 	}
