@@ -62,6 +62,31 @@ void sipe_backend_digest_sha1(const guchar *data, gsize length, guchar *digest)
 	purple_digest("sha1", data, length, digest, SIPE_DIGEST_SHA1_LENGTH);
 }
 
+/* Stream HMAC(SHA1) digest for file transfer */
+gpointer sipe_backend_digest_ft_start(const guchar *sha1_digest)
+{
+	PurpleCipherContext *context = purple_cipher_context_new_by_name("hmac", NULL);
+	purple_cipher_context_set_option(context, "hash", "sha1");
+	/* used only the first 16 bytes of the 20 byte SHA1 digest */
+	purple_cipher_context_set_key_with_len(context, sha1_digest, 16);
+	return(context);
+}
+
+void sipe_backend_digest_ft_update(gpointer context, const guchar *data, gsize length)
+{
+	purple_cipher_context_append(context, data, length);
+}
+
+void sipe_backend_digest_ft_end(gpointer context, guchar *digest)
+{
+	purple_cipher_context_digest(context, SIPE_DIGEST_FILETRANSFER_LENGTH, digest, NULL);
+}
+
+void sipe_backend_digest_ft_destroy(gpointer context)
+{
+	purple_cipher_context_destroy(context);
+}
+
 /*
   Local Variables:
   mode: c

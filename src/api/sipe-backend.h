@@ -67,6 +67,13 @@ void sipe_backend_digest_md5(const guchar *data, gsize length, guchar *digest);
 #define SIPE_DIGEST_SHA1_LENGTH 20
 void sipe_backend_digest_sha1(const guchar *data, gsize length, guchar *digest);
 
+/* Stream HMAC(SHA1) digest for file transfer */
+#define SIPE_DIGEST_FILETRANSFER_LENGTH 20
+gpointer sipe_backend_digest_ft_start(const guchar *sha1_digest);
+void sipe_backend_digest_ft_update(gpointer context, const guchar *data, gsize length);
+void sipe_backend_digest_ft_end(gpointer context, guchar *digest);
+void sipe_backend_digest_ft_destroy(gpointer context);
+
 /** MARKUP *******************************************************************/
 
 gchar *sipe_backend_markup_css_property(const gchar *style,
