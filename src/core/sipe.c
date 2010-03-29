@@ -9855,6 +9855,31 @@ sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy, const char *phone)
 }
 
 static void
+sipe_open_url(const char *url)
+{
+	const char *util;
+	char *command_line;
+
+	if (!url) return;
+
+#ifdef _WIN32
+	util = "cmd /c start";
+#else
+	util = g_has_prefix(url, "mailto:") ? "xdg-email" : "xdg-open";
+#endif
+
+	command_line = g_strdup_printf("%s %s", util, url);
+	g_spawn_command_line_async(command_line, NULL);
+	g_free(command_line);
+}
+
+static void
+sipe_buddy_menu_access_level_help_cb(PurpleBuddy *buddy)
+{
+	sipe_open_url("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels");
+}
+
+static void
 sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 {
 	const gchar *email;
@@ -9865,34 +9890,7 @@ sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 	{
 		char *mailto = g_strdup_printf("mailto:%s", email);
 		SIPE_DEBUG_INFO("sipe_buddy_menu_send_email_cb: going to call default mail client with email: %s", email);
-#ifndef _WIN32
-		{
-			pid_t pid;
-			char *const parmList[] = {"xdg-email", mailto, NULL};
-			if ((pid = fork()) == -1)
-			{
-				SIPE_DEBUG_INFO_NOFORMAT("fork() error");
-			}
-			else if (pid == 0)
-			{
-				execvp(parmList[0], parmList);
-				SIPE_DEBUG_INFO_NOFORMAT("Return not expected. Must be an execvp() error.");
-			}
-		}
-#else
-		{
-			BOOL ret;
-			_flushall();
-			errno = 0;
-			//@TODO resolve env variable %WINDIR% first
-			ret = spawnl(_P_NOWAIT, "c:/WINDOWS/system32/cmd", "/c", "start", mailto, NULL);
-			if (errno)
-			{
-				SIPE_DEBUG_INFO("spawnl returned (%s)!", strerror(errno));
-			}
-		}
-#endif
-
+		sipe_open_url(mailto);
 		g_free(mailto);
 	}
 	else
@@ -10063,6 +10061,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 
 	/* Access Level */
 	if (sip->ocs2007) {
+		char *menu_name;
 		unsigned int i;
 		int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(buddy->name));
 
@@ -10072,7 +10071,6 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 			 */
 			unsigned int j = (i == CONTAINERS_LEN) ? 0 : i;
 			const char *acc_level_name = sipe_get_access_level_name(containers[j]);
-			char *menu_name;
 
 			/* current container/access level */		
 			if (((int)containers[j]) == container_id) {
@@ -10087,6 +10085,18 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 			g_free(menu_name);
 			menu_access_levels = g_list_prepend(menu_access_levels, act);
 		}
+		/* a separator :) */
+		/*			        Online help...		*/
+		act = purple_menu_action_new("  --------------", NULL, NULL, NULL);
+		menu_access_levels = g_list_prepend(menu_access_levels, act);
+
+		menu_name = g_strdup_printf("  %s", _("Online help..."));
+		act = purple_menu_action_new(menu_name,
+					     PURPLE_CALLBACK(sipe_buddy_menu_access_level_help_cb),
+					     NULL, NULL);
+		g_free(menu_name);
+		menu_access_levels = g_list_prepend(menu_access_levels, act);
+
 		menu_access_levels = g_list_reverse(menu_access_levels);
 
 		act = purple_menu_action_new(_("Access level"),
