@@ -2851,6 +2851,16 @@ static void sipe_process_roaming_acl(struct sipe_account_data *sip, struct sipms
 }
 
 static void
+free_container_member(struct sipe_container_member *member)
+{
+	if (!member) return;
+
+	g_free(member->type);
+	g_free(member->value);
+	g_free(member);
+}
+
+static void
 free_container(struct sipe_container *container)
 {
 	GSList *entry;
@@ -2861,7 +2871,7 @@ free_container(struct sipe_container *container)
 	while (entry) {
 		void *data = entry->data;
 		entry = g_slist_remove(entry, data);
-		g_free(data);
+		free_container_member((struct sipe_container_member *)data);
 	}
 	g_free(container);
 }
@@ -3866,8 +3876,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 		for (node2 = sipe_xml_child(node, "member"); node2; node2 = sipe_xml_twin(node2)) {
 			struct sipe_container_member *member = g_new0(struct sipe_container_member, 1);
-			member->type = sipe_xml_attribute(node2, "type");
-			member->value = sipe_xml_attribute(node2, "value");
+			member->type = g_strdup(sipe_xml_attribute(node2, "type"));
+			member->value = g_strdup(sipe_xml_attribute(node2, "value"));
 			container->members = g_slist_append(container->members, member);
 			SIPE_DEBUG_INFO("sipe_process_roaming_self: added container member type=%s value=%s",
 					member->type, member->value ? member->value : "");
@@ -10008,7 +10018,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 			if (((int)containers[j]) == container_id) {
 				menu_name = g_strdup_printf("* %s", acc_level_name);
 			} else {
-				menu_name = g_strdup(acc_level_name);
+				menu_name = g_strdup_printf("  %s", acc_level_name);
 			}
 
 			act = purple_menu_action_new(menu_name,

@@ -159,8 +159,8 @@ struct sipe_container {
 /** MS-PRES container member */
 struct sipe_container_member {
 	/** user, domain, sameEnterprise, federated, publicCloud; everyone */
-	const gchar *type;
-	const gchar *value;
+	gchar *type;
+	gchar *value;
 };
 
 struct sipe_account_data {
