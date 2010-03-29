@@ -53,6 +53,11 @@ void sipe_backend_debug(sipe_debug_level level,
 
 /** DIGEST *******************************************************************/
 
+#define SIPE_DIGEST_HMAC_MD5_LENGTH 16
+void sipe_backend_digest_hmac_md5(const guchar *key, gsize key_length,
+				  const guchar *data, gsize data_length,
+				  guchar *digest);
+
 #define SIPE_DIGEST_MD4_LENGTH 16
 void sipe_backend_digest_md4(const guchar *data, gsize length, guchar *digest);
 

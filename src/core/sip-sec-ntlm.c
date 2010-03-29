@@ -461,18 +461,8 @@ HMACT64 (const unsigned char *key, int key_len, const unsigned char *data, int d
 */
 
 /* out 16 bytes */
-static void
-HMAC_MD5 (const unsigned char *key, int key_len, const unsigned char *data, int data_len, unsigned char *result)
-{
-	PurpleCipherContext *context = purple_cipher_context_new_by_name("hmac", NULL);
-
-	purple_cipher_context_set_option(context, "hash", "md5");
-	purple_cipher_context_set_key_with_len(context, (guchar *)key, (key_len));
-
-	purple_cipher_context_append(context, (guchar *)data, data_len);
-	purple_cipher_context_digest(context, 16, (guchar*)result, NULL);
-	purple_cipher_context_destroy(context);
-}
+#define HMAC_MD5(key, key_len, data, data_len, result) \
+	sipe_backend_digest_hmac_md5((key), (key_len), (data), (data_len), (result))
 
 /* NTLM Core Methods */
 

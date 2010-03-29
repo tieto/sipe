@@ -25,6 +25,18 @@
 
 #include "sipe-backend.h"
 
+void sipe_backend_digest_hmac_md5(const guchar *key, gsize key_length,
+				  const guchar *data, gsize data_length,
+				  guchar *digest)
+{
+	PurpleCipherContext *context = purple_cipher_context_new_by_name("hmac", NULL);
+	purple_cipher_context_set_option(context, "hash", "md5");
+	purple_cipher_context_set_key_with_len(context, key, key_length);
+	purple_cipher_context_append(context, data, data_length);
+	purple_cipher_context_digest(context, SIPE_DIGEST_HMAC_MD5_LENGTH, digest, NULL);
+	purple_cipher_context_destroy(context);
+}
+
 static void purple_digest(const gchar *algorithm,
 			  const guchar *data, gsize data_length,
 			  guchar *digest, gsize digest_length)
