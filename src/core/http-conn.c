@@ -579,7 +579,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 	else if (msg->response == 401) {
 		char *ptmp;
 #ifdef _WIN32
-#ifdef HAVE_KERBEROS
+#ifdef HAVE_LIBKRB5
 		char *tmp;
 #endif
 #endif
@@ -604,7 +604,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		auth_type = AUTH_TYPE_NTLM;
 		auth_name = "NTLM";
 #ifdef _WIN32
-#ifdef HAVE_KERBEROS
+#ifdef HAVE_LIBKRB5
 		tmp = sipmsg_find_auth_header(msg, "Negotiate");
 		if (tmp && http_conn->auth && http_conn->auth->use_negotiate) {
 			ptmp = tmp;
@@ -616,11 +616,11 @@ http_conn_process_input_message(HttpConn *http_conn,
 		if (!ptmp) {
 			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
 #ifdef _WIN32
-#ifdef HAVE_KERBEROS
+#ifdef HAVE_LIBKRB5
 				"NTLM and Negotiate authentications are"
-#else /* !HAVE_KERBEROS */
+#else /* !HAVE_LIBKRB5 */
 				"NTLM authentication is"
-#endif /* HAVE_KERBEROS */
+#endif /* HAVE_LIBKRB5 */
 #else /* !_WIN32 */
 				"NTLM authentication is"
 #endif /* _WIN32 */
