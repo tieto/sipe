@@ -22,8 +22,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
-#include "cipher.h"
-
+#include "sipe-backend.h"
 #include "uuid.h"
 
 static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
@@ -100,8 +99,6 @@ static void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
 char *generateUUIDfromEPID(const gchar *epid)
 {
 	uuid_t result;
-	PurpleCipherContext *ctx;
-	unsigned char hash[20];
 	char buf[512];
 
 	readUUID(epid_ns_uuid, &result);
@@ -113,12 +110,8 @@ char *generateUUIDfromEPID(const gchar *epid)
 	memcpy(buf, &result, sizeof(uuid_t));
 	strcpy(&buf[sizeof(uuid_t)], epid);
 
-	ctx = purple_cipher_context_new_by_name("sha1", NULL);
-	purple_cipher_context_append(ctx, (guchar *) buf, strlen(buf));
-	purple_cipher_context_digest(ctx, sizeof(hash), hash, NULL);
-	purple_cipher_context_destroy(ctx);
-
-	createUUIDfromHash(&result, hash);
+	createUUIDfromHash(&result,
+			   sipe_backend_digest_sha1((guchar *)buf, strlen(buf)));
 
 	result.time_low = GUINT32_TO_LE(result.time_low);
 	result.time_mid = GUINT16_TO_LE(result.time_mid);
@@ -147,15 +140,9 @@ char *sipe_get_epid(const char *self_sip_uri,
 #define SIPE_EPID_LENGTH     (2 * (SIPE_EPID_HASH_END - SIPE_EPID_HASH_START + 1))
 
 	int i,j;
-	PurpleCipherContext *ctx;
-	unsigned char hash[SIPE_EPID_HASH_END];
 	char out[SIPE_EPID_LENGTH + 1];
 	char *buf = g_strdup_printf("%s:%s:%s", self_sip_uri, hostname, ip_address);
-
-	ctx = purple_cipher_context_new_by_name("sha1", NULL);
-	purple_cipher_context_append(ctx, (guchar *)buf, strlen(buf));
-	purple_cipher_context_digest(ctx, sizeof(hash), hash, NULL);
-	purple_cipher_context_destroy(ctx);
+	const guchar *hash = sipe_backend_digest_sha1((guchar *) buf, strlen(buf));
 
 	for (i = SIPE_EPID_HASH_START, j = 0;
 	     i < SIPE_EPID_HASH_END;

@@ -24,7 +24,9 @@ libsipe_core_la_SOURCES = \
 	sipe-utils.h \
 	sipe-utils.c \
 	sipe-xml.h \
-	sipe-xml.c
+	sipe-xml.c \
+	uuid.h \
+	uuid.c
 
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
@@ -38,9 +40,7 @@ libsipe_core_purple_la_SOURCES = \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
 	sipe-ft.h \
-	sipe-ft.c \
-	uuid.h \
-	uuid.c
+	sipe-ft.c
 
 AM_CFLAGS = $(st)
 
