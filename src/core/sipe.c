@@ -3074,59 +3074,71 @@ sipe_get_access_level_name(int container_id)
 static const guint containers[] = {32000, 400, 300, 200, 100};
 #define CONTAINERS_LEN (sizeof(containers) / sizeof(guint))
 
-/** Member type: user, domain, sameEnterprise, federated, publicCloud; everyone */
+
 static int
-sipe_find_access_level(struct sipe_account_data *sip,
-		       const gchar *type,
-		       const gchar *value)
+sipe_find_member_access_level(struct sipe_account_data *sip,
+			      const gchar *type,
+			      const gchar *value)
 {
 	unsigned int i = 0;
+	const gchar *value_mod = value;
+	
+	if (!type) return -1;
+	
+	if (sipe_strequal("user", type)) {
+		value_mod = sipe_get_no_sip_uri(value);
+	}
 
 	for (i = 0; i < CONTAINERS_LEN; i++) {
 		struct sipe_container_member *member;
 		struct sipe_container *container = sipe_find_container(sip, containers[i]);
 		if (!container) continue;
 
-		if (sipe_strequal("user", type)) {
-			const char *domain;
-			const char *no_sip_uri = sipe_get_no_sip_uri(value);
-
-			member = sipe_find_container_member(container, "user", no_sip_uri);
-			if (member) return containers[i];
-
-			domain = sipe_get_domain(no_sip_uri);
-			member = sipe_find_container_member(container, "domain", domain);
-			if (member) {
-				return containers[i];
-			}
-
-			member = sipe_find_container_member(container, "sameEnterprise", NULL);
-			if (member &&
-			    sipe_strcase_equal(sip->sipdomain, domain))
-			{
-				return containers[i];
-			}
-
-			member = sipe_find_container_member(container, "publicCloud", NULL);
-			if (member && sipe_is_public_domain(domain))
-			{
-				return containers[i];
-			}
-
-			member = sipe_find_container_member(container, "everyone", NULL);
-			if (member)
-			{
-				return containers[i];
-			}	
-		} else {
-			member = sipe_find_container_member(container, type, value);
-			if (member) {
-				return containers[i];
-			}
-		}
+		member = sipe_find_container_member(container, type, value_mod);
+		if (member) return containers[i];
 	}
 
 	return -1;
+}
+
+/** Member type: user, domain, sameEnterprise, federated, publicCloud; everyone */
+static int
+sipe_find_access_level(struct sipe_account_data *sip,
+		       const gchar *type,
+		       const gchar *value)
+{
+	int container_id = -1;
+
+	if (sipe_strequal("user", type)) {
+		const char *domain;
+		const char *no_sip_uri = sipe_get_no_sip_uri(value);
+
+		container_id = sipe_find_member_access_level(sip, "user", no_sip_uri);
+		if (container_id >= 0) return container_id;
+
+		domain = sipe_get_domain(no_sip_uri);
+		container_id = sipe_find_member_access_level(sip, "domain", domain);
+		if (container_id >= 0) return container_id;
+
+		container_id = sipe_find_member_access_level(sip, "sameEnterprise", NULL);
+		if ((container_id >= 0) && sipe_strcase_equal(sip->sipdomain, domain)) {
+			return container_id;
+		}
+
+		container_id = sipe_find_member_access_level(sip, "publicCloud", NULL);
+		if ((container_id >= 0) && sipe_is_public_domain(domain)) {
+			return container_id;
+		}
+
+		container_id = sipe_find_member_access_level(sip, "everyone", NULL);
+		if ((container_id >= 0)) {
+			return container_id;
+		}	
+	} else {
+		container_id = sipe_find_member_access_level(sip, type, value);
+	}
+
+	return container_id;
 }
 
 /**
