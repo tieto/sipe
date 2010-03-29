@@ -9876,7 +9876,8 @@ sipe_open_url(const char *url)
 static void
 sipe_buddy_menu_access_level_help_cb(PurpleBuddy *buddy)
 {
-	sipe_open_url("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels");
+	/** Translators: replace with URL to localized page */
+	sipe_open_url(_("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
 }
 
 static void
