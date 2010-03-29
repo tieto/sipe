@@ -392,9 +392,7 @@ sipe_make_signature(struct sipe_account_data *sip,
 
 static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg)
 {
-	gchar noncecount[9];
 	const char *authuser = sip->authuser;
-	gchar *response;
 	gchar *ret;
 
 	if (!authuser || strlen(authuser) < 1) {
@@ -455,22 +453,48 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 		return ret;
 
 	} else { /* Digest */
+		gchar *string;
+		gchar *hex_digest;
+		guchar digest[SIPE_DIGEST_MD5_LENGTH];
 
 		/* Calculate new session key */
 		if (!auth->opaque) {
 			SIPE_DEBUG_INFO("Digest nonce: %s realm: %s", auth->gssapi_data, auth->realm);
-			auth->opaque = sipe_backend_digest_http_session_key(authuser, auth->realm, sip->password,
-									    auth->gssapi_data);
+			if (sip->password) {
+				/*
+				 * Calculate a session key for HTTP MD5 Digest authentation
+				 *
+				 * See RFC 2617 for more information.
+				 */
+				string = g_strdup_printf("%s:%s:%s",
+							 authuser,
+							 auth->realm,
+							 sip->password);
+				sipe_backend_digest_md5((guchar *)string, strlen(string), digest);
+				g_free(string);
+				auth->opaque = buff_to_hex_str(digest, sizeof(digest));
+			}
 		}
 
-		sprintf(noncecount, "%08d", auth->nc++);
-		response = sipe_backend_digest_http_response(auth->opaque,
-							     msg->method, msg->target,
-							     auth->gssapi_data, noncecount);
-		SIPE_DEBUG_INFO("Digest response %s", response);
+		/*
+		 * Calculate a response for HTTP MD5 Digest authentication
+		 *
+		 * See RFC 2617 for more information.
+		 */
+		string = g_strdup_printf("%s:%s", msg->method, msg->target);
+		sipe_backend_digest_md5((guchar *)string, strlen(string), digest);
+		g_free(string);
 
-		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%s\", response=\"%s\"", authuser, auth->realm, auth->gssapi_data, msg->target, noncecount, response);
-		g_free(response);
+		hex_digest = buff_to_hex_str(digest, sizeof(digest));
+		string = g_strdup_printf("%s:%s:%s", auth->opaque, auth->gssapi_data, hex_digest);
+		g_free(hex_digest);
+		sipe_backend_digest_md5((guchar *)string, strlen(string), digest);
+		g_free(string);
+
+		hex_digest = buff_to_hex_str(digest, sizeof(digest));
+		SIPE_DEBUG_INFO("Digest response %s", hex_digest);
+		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%08d\", response=\"%s\"", authuser, auth->realm, auth->gssapi_data, msg->target, auth->nc++, hex_digest);
+		g_free(hex_digest);
 		return ret;
 	}
 }
