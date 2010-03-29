@@ -455,7 +455,7 @@ msgstr "user@company.com"
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:9879
 msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=%D0%A3%D1%80%D0%BE%D0%B2%D0%BD%D0%B8_%D0%B4%D0%BE%D1%81%D1%82%D1%83%D0%BF%D0%B0"
 
 #: ../src/core/sipe.c:9946
 #, c-format
