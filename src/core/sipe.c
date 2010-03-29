@@ -1177,7 +1177,7 @@ static void do_register(struct sipe_account_data *sip)
 	do_register_exp(sip, -1);
 }
 
-/** 
+/**
  * Returns pointer to URI without sip: prefix if any
  *
  * @param sip_uri SIP URI possibly with sip: prefix. Example: sip:first.last@hq.company.com
@@ -1252,7 +1252,7 @@ static void
 sipe_add_permit(PurpleConnection *gc, const char *name)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	
+
 	sipe_contact_allow_deny(sip, name, TRUE);
 }
 
@@ -2877,8 +2877,7 @@ free_container(struct sipe_container *container)
 }
 
 static void
-sipe_send_container_members_prepare(struct sipe_account_data *sip,
-				    const guint container_id,
+sipe_send_container_members_prepare(const guint container_id,
 				    const guint container_version,
 				    const gchar *action,
 				    const gchar *type,
@@ -2898,7 +2897,7 @@ sipe_send_container_members_prepare(struct sipe_account_data *sip,
 		type,
 		value_str);
 	g_free(value_str);
-	
+
 	if ((*container_xmls) == NULL) {
 		*container_xmls = body;
 	} else {
@@ -2920,7 +2919,7 @@ sipe_send_set_container_members(struct sipe_account_data *sip,
 	gchar *body;
 
 	if (!container_xmls) return;
-	
+
 	self = sip_uri_self(sip);
 	body = g_strdup_printf(
 		"<setContainerMembers xmlns=\"http://schemas.microsoft.com/2006/09/sip/container-management\">"
@@ -2993,7 +2992,7 @@ sipe_find_container(struct sipe_account_data *sip,
 	return NULL;
 }
 
-/** 
+/**
  * Returns pointer to domain part in provided Email URL
  *
  * @param email an email URL. Example: first.last@hq.company.com
@@ -3005,7 +3004,7 @@ static const char *
 sipe_get_domain(const char *email)
 {
 	char *tmp;
-	
+
 	if (!email) return NULL;
 
 	tmp = strstr(email, "@");
@@ -3082,9 +3081,9 @@ sipe_find_member_access_level(struct sipe_account_data *sip,
 {
 	unsigned int i = 0;
 	const gchar *value_mod = value;
-	
+
 	if (!type) return -1;
-	
+
 	if (sipe_strequal("user", type)) {
 		value_mod = sipe_get_no_sip_uri(value);
 	}
@@ -3133,7 +3132,7 @@ sipe_find_access_level(struct sipe_account_data *sip,
 		container_id = sipe_find_member_access_level(sip, "everyone", NULL);
 		if ((container_id >= 0)) {
 			return container_id;
-		}	
+		}
 	} else {
 		container_id = sipe_find_member_access_level(sip, type, value);
 	}
@@ -3169,8 +3168,7 @@ sipe_change_access_level(struct sipe_account_data *sip,
 			current_container_id = containers[i];
 			/* delete/publish current access level */
 			if (container_id < 0 || container_id != current_container_id) {
-				sipe_send_container_members_prepare(
-					sip, current_container_id, container->version, "remove", type, value, &container_xmls);
+				sipe_send_container_members_prepare(current_container_id, container->version, "remove", type, value, &container_xmls);
 				/* remove member from our cache, to be able to recalculate AL below */
 				container->members = g_slist_remove(container->members, member);
 				current_container_id = -1;
@@ -3186,7 +3184,7 @@ sipe_change_access_level(struct sipe_account_data *sip,
 		struct sipe_container *container = sipe_find_container(sip, container_id);
 		guint version = container ? container->version : 0;
 
-		sipe_send_container_members_prepare(sip, container_id, version, "add", type, value, &container_xmls);
+		sipe_send_container_members_prepare(container_id, version, "add", type, value, &container_xmls);
 	}
 
 	if (container_xmls) {
@@ -3949,15 +3947,15 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		if (sameEnterpriseAL < 0) {
 			struct sipe_container *container = sipe_find_container(sip, 200);
 			guint version = container ? container->version : 0;
-			sipe_send_container_members_prepare(sip, 200, version, "add", "sameEnterprise", NULL, &container_xmls);
+			sipe_send_container_members_prepare(200, version, "add", "sameEnterprise", NULL, &container_xmls);
 		}
 		if (federatedAL < 0) {
 			struct sipe_container *container = sipe_find_container(sip, 100);
 			guint version = container ? container->version : 0;
-			sipe_send_container_members_prepare(sip, 100, version, "add", "federated", NULL, &container_xmls);
+			sipe_send_container_members_prepare(100, version, "add", "federated", NULL, &container_xmls);
 		}
 		sip->access_level_set = TRUE;
-		
+
 		if (container_xmls) {
 			sipe_send_set_container_members(sip, container_xmls);
 		}
@@ -9865,7 +9863,7 @@ sipe_open_url(const char *url)
 #ifdef _WIN32
 	util = "cmd /c start";
 #else
-	util = g_has_prefix(url, "mailto:") ? "xdg-email" : "xdg-open";
+	util = g_str_has_prefix(url, "mailto:") ? "xdg-email" : "xdg-open";
 #endif
 
 	command_line = g_strdup_printf("%s %s", util, url);
@@ -9874,9 +9872,10 @@ sipe_open_url(const char *url)
 }
 
 static void
-sipe_buddy_menu_access_level_help_cb(PurpleBuddy *buddy)
+sipe_buddy_menu_access_level_help_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy)
 {
-	/** Translators: replace with URL to localized page */
+	/** Translators: replace with URL to localized page
+	 * If it doesn't exist copy the original URL */
 	sipe_open_url(_("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
 }
 
@@ -10073,7 +10072,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 			unsigned int j = (i == CONTAINERS_LEN) ? 0 : i;
 			const char *acc_level_name = sipe_get_access_level_name(containers[j]);
 
-			/* current container/access level */		
+			/* current container/access level */
 			if (((int)containers[j]) == container_id) {
 				menu_name = g_strdup_printf("* %s", acc_level_name);
 			} else {
