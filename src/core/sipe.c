@@ -10060,7 +10060,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	}
 
 	/* Access Level */
-	if (!sip->ocs2007) {
+	if (sip->ocs2007) {
 		char *menu_name;
 		unsigned int i;
 		int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(buddy->name));
