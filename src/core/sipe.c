@@ -10214,13 +10214,13 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	/* Access Groups submenu */
 	act = purple_menu_action_new(_("People in my company"),
 				     NULL,
-				     NULL, sipe_get_access_levels_menu(sip, "sameEnterprise", NULL, TRUE));
+				     NULL, sipe_get_access_levels_menu(sip, "sameEnterprise", NULL, FALSE));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 	
 	/* this is original name, don't edit */
 	act = purple_menu_action_new(_("People in domains connected with my company"),
 				     NULL,
-				     NULL, sipe_get_access_levels_menu(sip, "federated", NULL, TRUE));
+				     NULL, sipe_get_access_levels_menu(sip, "federated", NULL, FALSE));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 	
 	act = purple_menu_action_new(_("People in public domains"),
