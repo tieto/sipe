@@ -3012,6 +3012,35 @@ sipe_find_container(struct sipe_account_data *sip,
 	}
 	return NULL;
 }
+	
+static GSList *
+sipe_get_access_domains(struct sipe_account_data *sip)
+{
+	struct sipe_container *container;
+	struct sipe_container_member *member;
+	GSList *entry;
+	GSList *entry2;
+	GSList *res = NULL;
+
+	if (!sip) return NULL;
+
+	entry = sip->containers;
+	while (entry) {
+		container = entry->data;
+
+		entry2 = container->members;
+		while (entry2) {
+			member = entry2->data;
+			if (sipe_strcase_equal(member->type, "domain"))
+			{
+				res = slist_insert_unique_sorted(res, g_strdup(member->value), (GCompareFunc)g_ascii_strcasecmp);
+			}
+			entry2 = entry2->next;
+		}		
+		entry = entry->next;
+	}
+	return res;
+}
 
 /**
  * Returns pointer to domain part in provided Email URL
@@ -10134,7 +10163,16 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 static void
 sipe_ask_access_domain_cb(PurpleConnection *gc, PurpleRequestFields *fields)
 {
+	struct sipe_account_data *sip = gc->proto_data;
+	const char *domain = purple_request_fields_get_string(fields, "access_domain");
+	int index = purple_request_fields_get_choice(fields, "container_id");
+	/* move Blocked first */
+	int i = (index == 4) ? 0 : index + 1;
+	int container_id = containers[i];
 
+	SIPE_DEBUG_INFO("sipe_ask_access_domain_cb: domain=%s, container_id=(%d)%d", domain ? domain : "", index, container_id);
+
+	sipe_change_access_level(sip, container_id, "domain", domain);
 }
 
 static void
@@ -10154,11 +10192,11 @@ sipe_ask_access_domain(struct sipe_account_data *sip)
 	purple_request_field_group_add_field(g, f);
 	
 	f = purple_request_field_choice_new("container_id", _("Access level"), 0);
-	purple_request_field_choice_add(f, _("Personal"));
+	purple_request_field_choice_add(f, _("Personal")); /* index 0 */
 	purple_request_field_choice_add(f, _("Team"));
 	purple_request_field_choice_add(f, _("Company"));
 	purple_request_field_choice_add(f, _("Public"));
-	purple_request_field_choice_add(f, _("Blocked"));
+	purple_request_field_choice_add(f, _("Blocked")); /* index 4 */
 	purple_request_field_choice_set_default_value(f, 3); /* index */
 	purple_request_field_set_required(f, TRUE);
 	purple_request_field_group_add_field(g, f);
@@ -10168,7 +10206,7 @@ sipe_ask_access_domain(struct sipe_account_data *sip)
 	purple_request_fields(gc, _("Add new domain"),
 			      _("Add new domain"), NULL, fields,
 			      _("Add"), G_CALLBACK(sipe_ask_access_domain_cb),
-			      _("Cancel"), NULL/*G_CALLBACK(sipe_ask_access_domain_cb)*/,
+			      _("Cancel"), NULL,
 			      account, NULL, NULL, gc);
 }
 
@@ -10253,8 +10291,11 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 {
 	GList *menu_access_levels = NULL;
 	GList *menu_access_groups = NULL;
+	GSList *access_domains = NULL;
+	GSList *entry;
 	char *menu_name;
 	PurpleMenuAction *act;
+	char *domain;
 	
 	menu_access_levels = sipe_get_access_levels_menu(sip, "user", sipe_get_no_sip_uri(uri), FALSE);
 	
@@ -10274,6 +10315,22 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 				     NULL,
 				     NULL, sipe_get_access_levels_menu(sip, "publicCloud", NULL, TRUE));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
+	
+	/* @TODO add domains here */
+	access_domains = sipe_get_access_domains(sip);
+	entry = access_domains;
+	while (entry) {
+		domain = entry->data;
+
+		menu_name = g_strdup_printf(_("People in %s"), domain);
+		act = purple_menu_action_new(menu_name,
+					     NULL,
+					     NULL, sipe_get_access_levels_menu(sip, "domain", g_strdup(domain), TRUE));
+		menu_access_groups = g_list_prepend(menu_access_groups, act);
+		g_free(menu_name);
+		
+		entry = entry->next;
+	}
 	
 	/* separator */
 	/*			      People in domains connected with my company		 */
