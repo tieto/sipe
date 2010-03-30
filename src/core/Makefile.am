@@ -1,4 +1,7 @@
-noinst_LTLIBRARIES = libsipe_core.la libsipe_core_purple.la
+noinst_LTLIBRARIES = \
+	libsipe_core.la \
+	libsipe_core_tests.la \
+	libsipe_core_purple.la
 
 MAINTAINERCLEANFILES = \
 	Makefile.in
@@ -30,6 +33,9 @@ libsipe_core_la_SOURCES = \
 	uuid.h \
 	uuid.c
 
+libsipe_core_tests_la_SOURCES = \
+	sip-sec-ntlm-tests.c
+
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
 	sipe.c \
@@ -51,6 +57,8 @@ libsipe_core_la_CFLAGS = \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	-I$(srcdir)/../api
+
+libsipe_core_tests_la_CFLAGS = $(libsipe_core_la_CFLAGS)
 
 if SIP_SEC_KRB5
 libsipe_core_la_SOURCES += sip-sec-krb5.h sip-sec-krb5.c

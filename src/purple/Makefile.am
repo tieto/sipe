@@ -46,8 +46,11 @@ endif
 
 check_PROGRAMS = tests
 tests_SOURCES  = tests.c
-tests_CFLAGS   = $(libsipe_la_CFLAGS) -I$(srcdir)/../core
-tests_LDADD    = ../core/libsipe_core.la libsipe_backend.la
+tests_CFLAGS   = $(libsipe_la_CFLAGS)
+tests_LDADD    = \
+	../core/libsipe_core_tests.la \
+	../core/libsipe_core.la \
+	libsipe_backend.la
 tests_LDFLAGS  = $(PURPLE_LIBS)
 
 if SIPE_MIME_GMIME
