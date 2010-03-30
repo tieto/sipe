@@ -9932,6 +9932,10 @@ sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy, const int *container_id)
 	}
 }
 
+static GList *
+sipe_get_access_control_menu(struct sipe_account_data *sip,
+			     const char* uri);
+
 /*
  * A menu which appear when right-clicking on buddy in contact list.
  */
@@ -9943,7 +9947,6 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	PurpleMenuAction *act;
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
-	GList *menu_access_levels = NULL;
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
 	const char *email;
 	const char *phone;
@@ -10082,43 +10085,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 
 	/* Access Level */
 	if (sip->ocs2007) {
-		char *menu_name;
-		unsigned int i;
-		int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(buddy->name));
-
-		for (i = 1; i <= CONTAINERS_LEN; i++) {
-			/* to put Blocked level last in menu list.
-			 * Blocked should remaim in the first place in the containers[] array.
-			 */
-			unsigned int j = (i == CONTAINERS_LEN) ? 0 : i;
-			const char *acc_level_name = sipe_get_access_level_name(containers[j]);
-
-			/* current container/access level */
-			if (((int)containers[j]) == container_id) {
-				menu_name = g_strdup_printf("* %s", acc_level_name);
-			} else {
-				menu_name = g_strdup_printf("  %s", acc_level_name);
-			}
-
-			act = purple_menu_action_new(menu_name,
-						     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
-						     (gpointer)&(containers[j]), NULL);
-			g_free(menu_name);
-			menu_access_levels = g_list_prepend(menu_access_levels, act);
-		}
-		/* a separator :) */
-		/*			        Online help...		*/
-		act = purple_menu_action_new("  --------------", NULL, NULL, NULL);
-		menu_access_levels = g_list_prepend(menu_access_levels, act);
-
-		menu_name = g_strdup_printf("  %s", _("Online help..."));
-		act = purple_menu_action_new(menu_name,
-					     PURPLE_CALLBACK(sipe_buddy_menu_access_level_help_cb),
-					     NULL, NULL);
-		g_free(menu_name);
-		menu_access_levels = g_list_prepend(menu_access_levels, act);
-
-		menu_access_levels = g_list_reverse(menu_access_levels);
+		GList *menu_access_levels = sipe_get_access_control_menu(sip, buddy->name);
 
 		act = purple_menu_action_new(_("Access level"),
 					     NULL,
@@ -10155,6 +10122,95 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 
 	g_free(self);
 	return menu;
+}
+
+static GList *
+sipe_get_access_levels_menu(struct sipe_account_data *sip,
+			    const char* uri)
+{
+	GList *menu_access_levels = NULL;
+	unsigned int i;
+	char *menu_name;
+	PurpleMenuAction *act;
+	int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(uri));
+
+	for (i = 1; i <= CONTAINERS_LEN; i++) {
+		/* to put Blocked level last in menu list.
+		 * Blocked should remaim in the first place in the containers[] array.
+		 */
+		unsigned int j = (i == CONTAINERS_LEN) ? 0 : i;
+		const char *acc_level_name = sipe_get_access_level_name(containers[j]);
+
+		/* current container/access level */
+		if (((int)containers[j]) == container_id) {
+			menu_name = g_strdup_printf("* %s", acc_level_name);
+		} else {
+			menu_name = g_strdup_printf("  %s", acc_level_name);
+		}
+
+		act = purple_menu_action_new(menu_name,
+					     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
+					     (gpointer)&(containers[j]), NULL);
+		g_free(menu_name);
+		menu_access_levels = g_list_prepend(menu_access_levels, act);
+	}
+	return menu_access_levels;
+}
+
+static GList *
+sipe_get_access_control_menu(struct sipe_account_data *sip,
+			     const char* uri)
+{
+	GList *menu_access_levels = NULL;
+	GList *menu_access_groups = NULL;
+	char *menu_name;
+	PurpleMenuAction *act;
+	
+	menu_access_levels = sipe_get_access_levels_menu(sip, uri);
+
+	/* a separator */
+	/*			        Online help...		*/
+	act = purple_menu_action_new("  --------------", NULL, NULL, NULL);
+	menu_access_levels = g_list_prepend(menu_access_levels, act);
+	
+	/* Access Groups submenu */
+	act = purple_menu_action_new(_("People in my company"),
+				     NULL,
+				     NULL, sipe_get_access_levels_menu(sip, uri));
+	menu_access_groups = g_list_prepend(menu_access_groups, act);
+	
+	/* this is original name, don't edit */
+	act = purple_menu_action_new(_("People in domains connected with my company"),
+				     NULL,
+				     NULL, sipe_get_access_levels_menu(sip, uri));
+	menu_access_groups = g_list_prepend(menu_access_groups, act);
+	
+	act = purple_menu_action_new(_("People in public domains"),
+				     NULL,
+				     NULL, sipe_get_access_levels_menu(sip, uri));
+	menu_access_groups = g_list_prepend(menu_access_groups, act);
+	
+	/* @TODO Add Domain */
+
+	menu_access_groups = g_list_reverse(menu_access_groups);
+	/* End of Access Groups submenu */
+
+	menu_name = g_strdup_printf("  %s", _("Access Groups"));
+	act = purple_menu_action_new(menu_name,
+				     NULL,
+				     NULL, menu_access_groups);
+	g_free(menu_name);
+	menu_access_levels = g_list_prepend(menu_access_levels, act);
+
+	menu_name = g_strdup_printf("  %s", _("Online help..."));
+	act = purple_menu_action_new(menu_name,
+				     PURPLE_CALLBACK(sipe_buddy_menu_access_level_help_cb),
+				     NULL, NULL);
+	g_free(menu_name);
+	menu_access_levels = g_list_prepend(menu_access_levels, act);
+
+	menu_access_levels = g_list_reverse(menu_access_levels);
+	return menu_access_levels;
 }
 
 static void
