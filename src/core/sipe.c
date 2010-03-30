@@ -10210,7 +10210,7 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	menu_access_groups = g_list_reverse(menu_access_groups);
 	/* End of Access Groups submenu */
 
-	menu_name = g_strdup_printf("  %s", _("Access Groups"));
+	menu_name = g_strdup_printf("  %s", _("Access groups"));
 	act = purple_menu_action_new(menu_name,
 				     NULL,
 				     NULL, menu_access_groups);
