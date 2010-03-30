@@ -114,7 +114,7 @@ msgstr "没有给出原因"
 
 #: ../src/core/sipe.c:3085
 msgid "Blocked"
-msgstr "已锁定"
+msgstr "被屏蔽"
 
 #: ../src/core/sipe.c:3086
 msgid "Personal"
