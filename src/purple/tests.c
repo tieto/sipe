@@ -40,6 +40,7 @@
 
 #include "uuid.h"
 
+#include "cipher.h"
 #include "debug.h"
 #include "signals.h"
 

@@ -20,6 +20,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/** CRYPT ********************************************************************/
+
+void sipe_backend_encrypt_des(const guchar *key,
+			      const guchar *plaintext, gsize plaintext_length,
+			      guchar *encrypted_text);
+
+void sipe_backend_encrypt_rc4(const guchar *key, gsize key_length,
+			      const guchar *plaintext, gsize plaintext_length,
+			      guchar *encrypted_text);
+
 /** DEBUGGING ****************************************************************/
 
 typedef enum {

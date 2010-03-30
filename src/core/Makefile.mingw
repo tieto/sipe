@@ -54,7 +54,8 @@ LIB_PATHS +=		-L$(GTK_TOP)/lib \
 ##
 ##  SOURCES, OBJECTS
 ##
-C_SRC =			../purple/purple-debug.c \
+C_SRC =			../purple/purple-crypt,c \
+			../purple/purple-debug.c \
 			../purple/purple-digest.c \
 			../purple/purple-markup.c \
 			../purple/purple-mime.c \

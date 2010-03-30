@@ -9,6 +9,7 @@ EXTRA_DIST = \
 	core-depurple.h
 
 libsipe_la_SOURCES = \
+	purple-crypt.c \
 	purple-debug.c \
 	purple-digest.c \
 	purple-markup.c \
@@ -42,6 +43,7 @@ endif
 check_PROGRAMS = tests
 tests_SOURCES = \
 	tests.c \
+	purple-crypt.c \
 	purple-debug.c \
 	purple-digest.c \
 	purple-markup.c \

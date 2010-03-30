@@ -11,6 +11,8 @@ libsipe_core_la_SOURCES = \
 	sip-sec.h \
 	sip-sec.c \
 	sip-sec-mech.h \
+	sip-sec-ntlm.h \
+	sip-sec-ntlm.c \
 	sipe-cal.h \
 	sipe-cal.c \
 	sipe-chat.h \
@@ -37,8 +39,6 @@ libsipe_core_purple_la_SOURCES = \
 	http-conn.c \
 	sipe-ews.h \
 	sipe-ews.c \
-	sip-sec-ntlm.h \
-	sip-sec-ntlm.c \
 	sipe-ft.h \
 	sipe-ft.c
 

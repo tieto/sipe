@@ -55,8 +55,6 @@
 #include <langinfo.h>
 #endif /* HAVE_LANGINFO_CODESET */
 
-#include "cipher.h"
-
 #include "sipe-common.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
@@ -377,24 +375,13 @@ static void setup_des_key(const unsigned char key_56[], unsigned char *key)
 	key[7] =  (key_56[6] << 1) & 0xFF;
 }
 
-static void des_ecb_encrypt(const unsigned char *plaintext, unsigned char *result, const unsigned char *key)
-{
-	PurpleCipherContext *context;
-	size_t outlen;
-
-	context = purple_cipher_context_new_by_name("des", NULL);
-	purple_cipher_context_set_key(context, (guchar*)key);
-	purple_cipher_context_encrypt(context, (guchar*)plaintext, 8, (guchar*)result, &outlen);
-	purple_cipher_context_destroy(context);
-}
-
 /* (k = 7 byte key, d = 8 byte data) returns 8 bytes in results */
 static void
 DES (const unsigned char *k, const unsigned char *d, unsigned char * results)
 {
 	unsigned char key[8];
 	setup_des_key(k, key);
-	des_ecb_encrypt(d, results, key);
+	sipe_backend_encrypt_des(key, d, 8, results);
 }
 
 /* (K = 21 byte key, D = 8 bytes of data) returns 24 bytes in results: */
@@ -415,15 +402,8 @@ DESL (const unsigned char *k, const unsigned char *d, unsigned char * results)
 }
 #endif
 
-static void
-RC4K (const unsigned char * k, unsigned long key_len, const unsigned char * d, int len, unsigned char * result)
-{
-	PurpleCipherContext * context = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(context, "key_len", (gpointer)key_len);
-	purple_cipher_context_set_key(context, k);
-	purple_cipher_context_encrypt(context, (const guchar *)d, len, result, NULL);
-	purple_cipher_context_destroy(context);
-}
+#define RC4K(key, key_len, plain, plain_len, encrypted) \
+	sipe_backend_encrypt_rc4((key), (key_len), (plain), (plain_len), (encrypted))
 
 /* out 16 bytes */
 #define MD4(d, len, result) sipe_backend_digest_md4((d), (len), (result))
