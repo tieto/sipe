@@ -2,12 +2,12 @@
 # Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-30 20:59+0300\n"
+"POT-Creation-Date: 2010-03-30 18:04+0000\n"
 "PO-Revision-Date: 2010-03-14 00:39+0200\n"
 "Last-Translator: Stefan Becker <stefan.becker@nokia.com>\n"
 "MIME-Version: 1.0\n"
@@ -141,50 +141,30 @@ msgstr "Unbekannt"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:4376
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"Ihre Mitteilung oder Einladung konnte nicht zugestellt werden. Vermutlich "
-"enthält sie einen Hyperlink oder irgendeinen anderen Inhalt, der von dem "
-"Systemadministrator gesperrt wurde."
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
+msgstr "Ihre Mitteilung oder Einladung konnte nicht zugestellt werden. Vermutlich enthält sie einen Hyperlink oder irgendeinen anderen Inhalt, der von dem Systemadministrator gesperrt wurde."
 
 #: ../src/core/sipe.c:4380
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
-msgstr ""
-"Diese Nachricht konnte nicht an %s zugestellt werden, da der Service nicht "
-"verfügbar ist"
+msgid "This message was not delivered to %s because the service is not available"
+msgstr "Diese Nachricht konnte nicht an %s zugestellt werden, da der Service nicht verfügbar ist"
 
 #. Busy Here
 #: ../src/core/sipe.c:4382
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
-"Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere "
-"Empfänger nicht gestört werden wollen"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere Empfänger nicht gestört werden wollen"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:4384
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
-msgstr ""
-"Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere "
-"Empfänger diesen Nachrichtentyp nicht unterstützen"
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
+msgstr "Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere Empfänger diesen Nachrichtentyp nicht unterstützen"
 
 #: ../src/core/sipe.c:4386
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
-"Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere "
-"Empfänger offline sind"
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere Empfänger offline sind"
 
 #: ../src/core/sipe.c:4730
 #, c-format
@@ -211,9 +191,7 @@ msgstr "Nicht gefunden: %s. Bitte wenden Sie sich an Ihren Systemadministrator"
 
 #: ../src/core/sipe.c:6035
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr ""
-"entweder wurde der SIP-Service nicht für die Ziel-URI aktiviert oder sie "
-"existiert nicht"
+msgstr "entweder wurde der SIP-Service nicht für die Ziel-URI aktiviert oder sie existiert nicht"
 
 #: ../src/core/sipe.c:6053
 #, c-format
@@ -226,8 +204,7 @@ msgstr "Nachricht mit einer ungültigen Signatur erhalten"
 
 #: ../src/core/sipe.c:8474
 msgid "Connection not found. Please try to connect again"
-msgstr ""
-"Verbindung nicht gefunden. Bitte versuchen Sie sich erneut zu verbinden"
+msgstr "Verbindung nicht gefunden. Bitte versuchen Sie sich erneut zu verbinden"
 
 #: ../src/core/sipe.c:8495
 msgid "SSL read error"
@@ -259,12 +236,8 @@ msgid "SSL certificate invalid"
 msgstr "SSL-Zertifikat ungültig"
 
 #: ../src/core/sipe.c:8774
-msgid ""
-"SSL support is not installed. Either install SSL support or configure a "
-"different connection type in the account editor"
-msgstr ""
-"SSL-Unterstützung ist nicht installiert. Bitte installieren Sie SSL oder "
-"konfigurieren Sie einen anderen Verbindungstyp im Benutzerkonto-Editor"
+msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
+msgstr "SSL-Unterstützung ist nicht installiert. Bitte installieren Sie SSL oder konfigurieren Sie einen anderen Verbindungstyp im Benutzerkonto-Editor"
 
 #: ../src/core/sipe.c:8783
 msgid "Could not create SSL context"
@@ -346,12 +319,8 @@ msgid "Search for a contact"
 msgstr "Kontaktsuche"
 
 #: ../src/core/sipe.c:9370
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Geben Sie die Informationen für die Person ein, die Sie suchen. Leere Felder "
-"werden ignoriert."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Geben Sie die Informationen für die Person ein, die Sie suchen. Leere Felder werden ignoriert."
 
 #: ../src/core/sipe.c:9372
 msgid "_Search"
@@ -364,12 +333,8 @@ msgstr "_Abbrechen"
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe.c:9431
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
-msgstr ""
-"Ein Third-Party Plugin, das die von den folgenden Produkten eingesetzte "
-"erweiterte Version des SIP/SIMPLE-Protokolls implementiert"
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
+msgstr "Ein Third-Party Plugin, das die von den folgenden Produkten eingesetzte erweiterte Version des SIP/SIMPLE-Protokolls implementiert"
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe.c:9433
@@ -415,8 +380,7 @@ msgstr "Wir unterstützen Benutzer z.B. in den folgenden Organisationen"
 #. append a space if text is not empty
 #: ../src/core/sipe.c:9450
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr ""
-"Wir bitten um Hilfe bei der Anpassung von SIPE an weitere Sprachen. Auf "
+msgstr "Wir bitten um Hilfe bei der Anpassung von SIPE an weitere Sprachen. Auf "
 
 #. About note, part 11/13: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
@@ -488,10 +452,8 @@ msgstr "benutzer@domäne.com"
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:9977
-msgid ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:10054
 #, c-format
@@ -546,50 +508,49 @@ msgid "Copy to"
 msgstr "Kopiere nach"
 
 #: ../src/core/sipe.c:10238
-#, fuzzy
 msgid "Domain"
-msgstr "Firma"
+msgstr "Domäne"
 
 #: ../src/core/sipe.c:10254 ../src/core/sipe.c:10255 ../src/core/sipe.c:10388
 msgid "Add new domain"
-msgstr ""
+msgstr "Neue Domäne hinzufügen"
 
 #: ../src/core/sipe.c:10256
+#, fuzzy
 msgid "Add"
-msgstr ""
+msgstr "Hinzufügen"
 
 #: ../src/core/sipe.c:10257
-#, fuzzy
 msgid "Cancel"
-msgstr "_Abbrechen"
+msgstr "Abbrechen"
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe.c:10324
 msgid "Unspecify"
-msgstr ""
+msgstr "Zurücksetzen"
 
 #. Access Groups submenu
 #: ../src/core/sipe.c:10351
 msgid "People in my company"
-msgstr ""
+msgstr "Personen in meiner Firma"
 
 #. this is original name, don't edit
 #: ../src/core/sipe.c:10357
 msgid "People in domains connected with my company"
-msgstr ""
+msgstr "Personen in Domänen, die mit meiner Firma verbunden sind"
 
 #: ../src/core/sipe.c:10362
 msgid "People in public domains"
-msgstr ""
+msgstr "Personen in öffentlichen Domänen"
 
 #: ../src/core/sipe.c:10373
 #, c-format
 msgid "People at %s"
-msgstr ""
+msgstr "Personen in %s"
 
 #: ../src/core/sipe.c:10400
 msgid "Access groups"
-msgstr ""
+msgstr "Zugriffsgruppen"
 
 #: ../src/core/sipe.c:10407
 msgid "Online help..."
@@ -698,19 +659,12 @@ msgid "Chat #%d"
 msgstr "Chat #%d"
 
 #: ../src/core/sipe-conf.c:842
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
-msgstr ""
-"Diese Konferenz ist nicht mehr gesperrt. Andere Teilnehmer können ihr jetzt "
-"beitreten."
+msgid "This conference is no longer locked. Additional participants can now join."
+msgstr "Diese Konferenz ist nicht mehr gesperrt. Andere Teilnehmer können ihr jetzt beitreten."
 
 #: ../src/core/sipe-conf.c:846
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
-msgstr ""
-"Diese Konferenz ist gesperrt. Niemand kann ihr beitreten solange sie "
-"gesperrt ist."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
+msgstr "Diese Konferenz ist gesperrt. Niemand kann ihr beitreten solange sie gesperrt ist."
 
 #: ../src/core/sipe-conf.c:879
 msgid "You have been disconnected from this conference."
@@ -797,8 +751,10 @@ msgstr "TCP"
 msgid "UDP"
 msgstr "UDP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/purple/purple-plugin.c:91
 msgid "User Agent"
 msgstr "User Agent"
@@ -810,7 +766,7 @@ msgstr "Benutze Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:102
 msgid "Use Single Sign-On"
 msgstr "Benutze Single Sign-On"
