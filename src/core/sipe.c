@@ -2566,6 +2566,17 @@ sipe_refresh_blocked_status_cb(char *buddy_name,
 			purple_privacy_deny_remove(sip->account, buddy_name, TRUE);
 			purple_privacy_permit_add(sip->account, buddy_name, TRUE);		
 		}
+		
+		/* stupid workaround to make pidgin re-render screen to reflect our changes */
+		{
+			PurpleBuddy *pbuddy = purple_find_buddy(sip->account, buddy_name);
+			const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
+			const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
+
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_refresh_blocked_status_cb: forcefully refreshing screen.");
+			sipe_got_user_status(sip, buddy_name, purple_status_get_id(pstatus));
+		}
+		
 	}
 }
 
