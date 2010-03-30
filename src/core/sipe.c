@@ -10322,7 +10322,7 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	while (entry) {
 		domain = entry->data;
 
-		menu_name = g_strdup_printf(_("People in %s"), domain);
+		menu_name = g_strdup_printf(_("People at %s"), domain);
 		act = purple_menu_action_new(menu_name,
 					     NULL,
 					     NULL, sipe_get_access_levels_menu(sip, "domain", g_strdup(domain), TRUE));
