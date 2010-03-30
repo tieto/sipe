@@ -81,6 +81,7 @@ C_SRC =			../purple/purple-crypt,c \
 			uuid.c
 			
 C_TEST_SRC = 		sipe-xml-tests.c \
+			sip-sec-ntlm-tests.c \
 			../purple/tests.c \
 
 OBJECTS = 		$(C_SRC:%.c=%.o)
@@ -134,7 +135,7 @@ $(TEST_OBJECTS):
 
 tests: tests-clean $(TEST_OBJECTS)
 	$(CC) sipe-utils.o uuid.o sipe-xml.o sipe-xml-tests.o -L. $(LIB_PATHS) $(LIBS) -lsipe -o sipe-xml-tests.exe
-	$(CC) ../purple/purple-debug.o sipe-sign.o sipe-mime.o sipmsg.o sipe-utils.o uuid.o ../purple/tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o ../purple/tests.exe
+	$(CC) ../purple/purple-debug.o sipe-sign.o sipe-mime.o sipmsg.o sipe-utils.o uuid.o sip-sec-ntlm-tests.o ../purple/tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o ../purple/tests.exe
 	sipe-xml-tests.exe
 	../purple/tests.exe
 	
