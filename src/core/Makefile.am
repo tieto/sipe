@@ -63,10 +63,7 @@ libsipe_core_la_CFLAGS  += $(GMIME_CFLAGS)
 endif
 
 if SIPE_INCLUDE_PURPLE
-libsipe_core_purple_la_CFLAGS = \
-	$(libsipe_core_la_CFLAGS) \
-	$(PURPLE_CFLAGS) \
-	-I$(srcdir)/../purple
+libsipe_core_purple_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(PURPLE_CFLAGS)
 endif
 
 check_PROGRAMS = sipe_xml_tests
