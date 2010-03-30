@@ -516,7 +516,6 @@ msgid "Add new domain"
 msgstr "Neue Domäne hinzufügen"
 
 #: ../src/core/sipe.c:10256
-#, fuzzy
 msgid "Add"
 msgstr "Hinzufügen"
 
