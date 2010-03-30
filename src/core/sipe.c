@@ -2541,6 +2541,40 @@ static void sipe_cleanup_local_blist(struct sipe_account_data *sip) {
 	g_slist_free(buddies);
 }
 
+static int
+sipe_find_access_level(struct sipe_account_data *sip,
+		       const gchar *type,
+		       const gchar *value);
+
+static void
+sipe_refresh_blocked_status_cb(char *buddy_name,
+					 SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
+					 struct sipe_account_data *sip)
+{
+	int container_id = sipe_find_access_level(sip, "user", buddy_name);
+	gboolean blocked = (container_id == 32000);
+	gboolean blocked_in_blist = !purple_privacy_check(sip->account, buddy_name);
+	
+	SIPE_DEBUG_INFO("sipe_refresh_blocked_status_cb: buddy_name=%s, blocked=%s, blocked_in_blist=%s",
+		buddy_name, blocked ? "T" : "F", blocked_in_blist ? "T" : "F");
+	
+	if (blocked != blocked_in_blist) {
+		if (blocked) {
+			purple_privacy_permit_remove(sip->account, buddy_name, TRUE);
+			purple_privacy_deny_add(sip->account, buddy_name, TRUE);
+		} else {
+			purple_privacy_deny_remove(sip->account, buddy_name, TRUE);
+			purple_privacy_permit_add(sip->account, buddy_name, TRUE);		
+		}
+	}
+}
+
+static void
+sipe_refresh_blocked_status(struct sipe_account_data *sip)
+{
+	g_hash_table_foreach(sip->buddies, (GHFunc) sipe_refresh_blocked_status_cb , (gpointer)sip);
+}
+
 static gboolean sipe_process_roaming_contacts(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	int len = msg->bodylen;
@@ -4011,6 +4045,9 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		}
 		g_free(container_xmls);
 	}
+	
+	/* Refresh contacts' blocked status */
+	sipe_refresh_blocked_status(sip);
 
 	/* subscribers */
 	for (node = sipe_xml_child(xml, "subscribers/subscriber"); node; node = sipe_xml_twin(node)) {
