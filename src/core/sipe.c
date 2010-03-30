@@ -10131,6 +10131,53 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	return menu;
 }
 
+static void
+sipe_ask_access_domain_cb(PurpleConnection *gc, PurpleRequestFields *fields)
+{
+
+}
+
+static void
+sipe_ask_access_domain(struct sipe_account_data *sip)
+{
+	PurpleAccount *account = sip->account;
+	PurpleConnection *gc = sip->gc;
+	PurpleRequestFields *fields;
+	PurpleRequestFieldGroup *g;
+	PurpleRequestField *f;
+
+	fields = purple_request_fields_new();
+
+	g = purple_request_field_group_new(NULL);
+	f = purple_request_field_string_new("access_domain", _("Domain"), "partner-company.com", FALSE);
+	purple_request_field_set_required(f, TRUE);
+	purple_request_field_group_add_field(g, f);
+	
+	f = purple_request_field_choice_new("container_id", _("Access level"), 0);
+	purple_request_field_choice_add(f, _("Personal"));
+	purple_request_field_choice_add(f, _("Team"));
+	purple_request_field_choice_add(f, _("Company"));
+	purple_request_field_choice_add(f, _("Public"));
+	purple_request_field_choice_add(f, _("Blocked"));
+	purple_request_field_choice_set_default_value(f, 3); /* index */
+	purple_request_field_set_required(f, TRUE);
+	purple_request_field_group_add_field(g, f);
+
+	purple_request_fields_add_group(fields, g);
+	
+	purple_request_fields(gc, _("Add new domain"),
+			      _("Add new domain"), NULL, fields,
+			      _("Add"), G_CALLBACK(sipe_ask_access_domain_cb),
+			      _("Cancel"), NULL/*G_CALLBACK(sipe_ask_access_domain_cb)*/,
+			      account, NULL, NULL, gc);
+}
+
+static void
+sipe_buddy_menu_access_level_add_domain_cb(PurpleBuddy *buddy)
+{
+	sipe_ask_access_domain((struct sipe_account_data *)buddy->account->gc->proto_data);
+}
+
 #define INDENT_FMT		"  %s"
 #define INDENT_MARKED_FMT	"* %s"
 static GList *
@@ -10228,7 +10275,15 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 				     NULL, sipe_get_access_levels_menu(sip, "publicCloud", NULL, TRUE));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 	
-	/* @TODO Add Domain */
+	/* separator */
+	/*			      People in domains connected with my company		 */
+	act = purple_menu_action_new("-------------------------------------------", NULL, NULL, NULL);
+	menu_access_groups = g_list_prepend(menu_access_groups, act);
+	
+	act = purple_menu_action_new(_("Add new domain"),
+				     PURPLE_CALLBACK(sipe_buddy_menu_access_level_add_domain_cb),
+				     NULL, NULL);
+	menu_access_groups = g_list_prepend(menu_access_groups, act);
 
 	menu_access_groups = g_list_reverse(menu_access_groups);
 	/* End of Access Groups submenu */
