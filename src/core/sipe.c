@@ -9921,15 +9921,22 @@ sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 }
 
 static void
-sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy, const int *container_id)
+sipe_buddy_menu_access_level_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
+				struct sipe_container *container)
 {
 	struct sipe_account_data *sip = buddy->account->gc->proto_data;
+	struct sipe_container_member *member;
+	
+	if (!container || !container->members) return;
+	
+	member = ((struct sipe_container_member *)container->members->data);
+	
+	if (!member->type) return;
 
-	SIPE_DEBUG_INFO("sipe_buddy_menu_access_level_cb: buddy->name=%s, container_id=%d",
-		buddy->name, container_id ? *container_id : -1);
-	if (container_id) {
-		sipe_change_access_level(sip, *container_id, "user", sipe_get_no_sip_uri(buddy->name));
-	}
+	SIPE_DEBUG_INFO("sipe_buddy_menu_access_level_cb: container->id=%d, member->type=%s, member->value=%s",
+		container->id, member->type, member->value ? member->value : "");
+
+	sipe_change_access_level(sip, container->id, member->type, member->value);
 }
 
 static GList *
@@ -10126,13 +10133,14 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 
 static GList *
 sipe_get_access_levels_menu(struct sipe_account_data *sip,
-			    const char* uri)
+			    const char* member_type,
+			    const char* member_value)
 {
 	GList *menu_access_levels = NULL;
 	unsigned int i;
 	char *menu_name;
 	PurpleMenuAction *act;
-	int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(uri));
+	int container_id = sipe_find_access_level(sip, member_type, member_value);
 
 	for (i = 1; i <= CONTAINERS_LEN; i++) {
 		/* to put Blocked level last in menu list.
@@ -10140,6 +10148,13 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 		 */
 		unsigned int j = (i == CONTAINERS_LEN) ? 0 : i;
 		const char *acc_level_name = sipe_get_access_level_name(containers[j]);
+		struct sipe_container *container = g_new0(struct sipe_container, 1);
+		struct sipe_container_member *member = g_new0(struct sipe_container_member, 1);
+
+		container->id = containers[j];
+		container->members = g_slist_append(container->members, member);
+		member->type = g_strdup(member_type);
+		member->value = g_strdup(member_value);
 
 		/* current container/access level */
 		if (((int)containers[j]) == container_id) {
@@ -10150,7 +10165,7 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 
 		act = purple_menu_action_new(menu_name,
 					     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
-					     (gpointer)&(containers[j]), NULL);
+					     container, NULL);
 		g_free(menu_name);
 		menu_access_levels = g_list_prepend(menu_access_levels, act);
 	}
@@ -10166,7 +10181,7 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	char *menu_name;
 	PurpleMenuAction *act;
 	
-	menu_access_levels = sipe_get_access_levels_menu(sip, uri);
+	menu_access_levels = sipe_get_access_levels_menu(sip, "user", sipe_get_no_sip_uri(uri));
 
 	/* a separator */
 	/*			        Online help...		*/
@@ -10176,18 +10191,18 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	/* Access Groups submenu */
 	act = purple_menu_action_new(_("People in my company"),
 				     NULL,
-				     NULL, sipe_get_access_levels_menu(sip, uri));
+				     NULL, sipe_get_access_levels_menu(sip, "sameEnterprise", NULL));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 	
 	/* this is original name, don't edit */
 	act = purple_menu_action_new(_("People in domains connected with my company"),
 				     NULL,
-				     NULL, sipe_get_access_levels_menu(sip, uri));
+				     NULL, sipe_get_access_levels_menu(sip, "federated", NULL));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 	
 	act = purple_menu_action_new(_("People in public domains"),
 				     NULL,
-				     NULL, sipe_get_access_levels_menu(sip, uri));
+				     NULL, sipe_get_access_levels_menu(sip, "publicCloud", NULL));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 	
 	/* @TODO Add Domain */
