@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-03-30 20:59+0300\n"
-"PO-Revision-Date: 2010-03-29 20:49+0100\n"
+"POT-Creation-Date: 2010-03-30 20:26+0000\n"
+"PO-Revision-Date: 2010-03-30 22:29+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -543,50 +543,48 @@ msgid "Copy to"
 msgstr "Skopiuj do"
 
 #: ../src/core/sipe.c:10238
-#, fuzzy
 msgid "Domain"
-msgstr "Firma"
+msgstr "Domena"
 
 #: ../src/core/sipe.c:10254 ../src/core/sipe.c:10255 ../src/core/sipe.c:10388
 msgid "Add new domain"
-msgstr ""
+msgstr "Dodaj nową domenę"
 
 #: ../src/core/sipe.c:10256
 msgid "Add"
-msgstr ""
+msgstr "Dodaj"
 
 #: ../src/core/sipe.c:10257
-#, fuzzy
 msgid "Cancel"
-msgstr "_Anuluj"
+msgstr "Anuluj"
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe.c:10324
 msgid "Unspecify"
-msgstr ""
+msgstr "Nieokreślony"
 
 #. Access Groups submenu
 #: ../src/core/sipe.c:10351
 msgid "People in my company"
-msgstr ""
+msgstr "Osoby z firmy"
 
 #. this is original name, don't edit
 #: ../src/core/sipe.c:10357
 msgid "People in domains connected with my company"
-msgstr ""
+msgstr "Osoby w domenach połączonych z firmą"
 
 #: ../src/core/sipe.c:10362
 msgid "People in public domains"
-msgstr ""
+msgstr "Osoby w domenach publicznych"
 
 #: ../src/core/sipe.c:10373
 #, c-format
 msgid "People at %s"
-msgstr ""
+msgstr "Osoby w %s"
 
 #: ../src/core/sipe.c:10400
 msgid "Access groups"
-msgstr ""
+msgstr "Grupy dostępu"
 
 #: ../src/core/sipe.c:10407
 msgid "Online help..."
