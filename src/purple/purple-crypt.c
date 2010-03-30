@@ -48,6 +48,28 @@ void sipe_backend_encrypt_rc4(const guchar *key, gsize key_length,
 	purple_cipher_context_destroy(context);
 }
 
+/* Stream RC4 cipher for file transfer */
+gpointer sipe_backend_crypt_ft_start(const guchar *key)
+{
+	PurpleCipherContext *context = purple_cipher_context_new_by_name("rc4", NULL);
+	/* only use first 16 characters of the key */
+	purple_cipher_context_set_option(context, "key_len", (gpointer)16);
+	purple_cipher_context_set_key(context, key);
+	return(context);
+}
+
+void sipe_backend_crypt_ft_stream(gpointer context,
+				  const guchar *in, gsize length,
+				  guchar *out)
+{
+	purple_cipher_context_encrypt(context, in, length, out, NULL);
+}
+
+void sipe_backend_crypt_ft_destroy(gpointer context)
+{
+	purple_cipher_context_destroy(context);
+}
+
 /*
   Local Variables:
   mode: c

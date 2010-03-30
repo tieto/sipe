@@ -33,7 +33,6 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
-#include "cipher.h"
 #include "connection.h"
 #include "eventloop.h"
 #include "ft.h"
@@ -89,7 +88,7 @@ struct _sipe_file_transfer {
 	unsigned auth_cookie;
 	struct sipe_account_data *sip;
 	struct sip_dialog *dialog;
-	PurpleCipherContext *cipher_context;
+	gpointer cipher_context;
 	gpointer hmac_context;
 
 	PurpleNetworkListenData *listener;
@@ -107,7 +106,7 @@ static void send_filetransfer_cancel(PurpleXfer* xfer);
 static ssize_t do_read(PurpleXfer *xfer, guchar *buf, size_t len);
 static gboolean read_fully(PurpleXfer *xfer, guchar *buf, size_t len);
 static gssize read_line(PurpleXfer *xfer, gchar *buffer, gssize size);
-static void sipe_cipher_context_init(PurpleCipherContext **rc4_context, const guchar *enc_key);
+static gpointer sipe_cipher_context_init(const guchar *enc_key);
 static gpointer sipe_hmac_context_init(const guchar *hash_key);
 static gchar *sipe_hmac_finalize(gpointer hmac_context);
 static void generate_key(guchar *buffer, gsize size);
@@ -145,7 +144,7 @@ sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 		if (ft->listener)
 			purple_network_listen_cancel(ft->listener);
 		if (ft->cipher_context)
-			purple_cipher_context_destroy(ft->cipher_context);
+			sipe_backend_crypt_ft_destroy(ft->cipher_context);
 
 		if (ft->hmac_context)
 			sipe_backend_digest_ft_destroy(ft->hmac_context);
@@ -253,8 +252,8 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 
 	ft->bytes_remaining_chunk = 0;
 
-	sipe_cipher_context_init(&ft->cipher_context, ft->encryption_key);
-	ft->hmac_context = sipe_hmac_context_init(ft->hash_key);
+	ft->cipher_context = sipe_cipher_context_init(ft->encryption_key);
+	ft->hmac_context   = sipe_hmac_context_init(ft->hash_key);
 }
 
 static void
@@ -357,7 +356,7 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 			*buffer = NULL;
 			return -1;
 		}
-		purple_cipher_context_encrypt(ft->cipher_context, *buffer, bytes_read, decrypted, NULL);
+		sipe_backend_crypt_ft_stream(ft->cipher_context, *buffer, bytes_read, decrypted);
 		g_free(*buffer);
 		*buffer = decrypted;
 
@@ -414,8 +413,8 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 
 		ft->bytes_remaining_chunk = size;
 		ft->outbuf_ptr = ft->encrypted_outbuf;
-		purple_cipher_context_encrypt(ft->cipher_context, buffer, size,
-					      ft->encrypted_outbuf, NULL);
+		sipe_backend_crypt_ft_stream(ft->cipher_context, buffer, size,
+					     ft->encrypted_outbuf);
 		sipe_backend_digest_ft_update(ft->hmac_context, buffer, size);
 
 		/* chunk header format:
@@ -568,8 +567,8 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 
 	ft->bytes_remaining_chunk = 0;
 
-	sipe_cipher_context_init(&ft->cipher_context, ft->encryption_key);
-	ft->hmac_context = sipe_hmac_context_init(ft->hash_key);
+	ft->cipher_context = sipe_cipher_context_init(ft->encryption_key);
+	ft->hmac_context   = sipe_hmac_context_init(ft->hash_key);
 }
 
 static void
@@ -830,7 +829,7 @@ static gssize read_line(PurpleXfer *xfer, gchar *buffer, gssize size)
 	return pos;
 }
 
-static void sipe_cipher_context_init(PurpleCipherContext **rc4_context, const guchar *enc_key)
+static gpointer sipe_cipher_context_init(const guchar *enc_key)
 {
 	/*
 	 *      Decryption of file from SIPE file transfer
@@ -846,10 +845,7 @@ static void sipe_cipher_context_init(PurpleCipherContext **rc4_context, const gu
         sipe_backend_digest_sha1(enc_key, SIPE_FT_KEY_LENGTH, k2);
 
 	/* 2.) RC4 decryption */
-	*rc4_context = purple_cipher_context_new_by_name("rc4", NULL);
-	purple_cipher_context_set_option(*rc4_context, "key_len", (gpointer)0x10); // only 16 chars key used
-	purple_cipher_context_set_key(*rc4_context, k2);
-
+	return sipe_backend_crypt_ft_start(k2);
 }
 
 static gpointer sipe_hmac_context_init(const guchar *hash_key)

@@ -30,6 +30,13 @@ void sipe_backend_encrypt_rc4(const guchar *key, gsize key_length,
 			      const guchar *plaintext, gsize plaintext_length,
 			      guchar *encrypted_text);
 
+/* Stream RC4 cipher for file transfer */
+gpointer sipe_backend_crypt_ft_start(const guchar *key);
+void sipe_backend_crypt_ft_stream(gpointer context,
+				  const guchar *in, gsize length,
+				  guchar *out);
+void sipe_backend_crypt_ft_destroy(gpointer context);
+
 /** DEBUGGING ****************************************************************/
 
 typedef enum {
