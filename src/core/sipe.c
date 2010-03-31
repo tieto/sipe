@@ -10277,15 +10277,18 @@ sipe_buddy_menu_access_level_add_domain_cb(PurpleBuddy *buddy)
 }
 
 #define INDENT_FMT			"  %s"
+
 /** Member is directly placed to access level container.
  *  For example SIP URI of user is in the container.
  */
 #define INDENT_MARKED_FMT		"* %s"
+
 /** Member is indirectly belong to access level container.
  *  For example 'sameEnterprise' is in the container and user
  *  belongs to that same enterprise.
  */
 #define INDENT_MARKED_INHERITED_FMT	"= %s"
+
 static GList *
 sipe_get_access_levels_menu(struct sipe_account_data *sip,
 			    const char* member_type,
@@ -10330,28 +10333,30 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 		g_free(menu_name);
 		menu_access_levels = g_list_prepend(menu_access_levels, act);
 	}
-
+	
 	if (extra_menu && (container_id >= 0)) {
 		/* separator */
 		act = purple_menu_action_new("  --------------", NULL, NULL, NULL);
 		menu_access_levels = g_list_prepend(menu_access_levels, act);
-	
-		container = g_new0(struct sipe_container, 1);
-		member = g_new0(struct sipe_container_member, 1);
-		container->id = -1;
-		container->members = g_slist_append(container->members, member);
-		member->type = g_strdup(member_type);
-		member->value = g_strdup(member_value);
 
-		/* Translators: remove (clear) previously assigned access level */
-		menu_name = g_strdup_printf(INDENT_FMT, _("Unspecify"));
-		act = purple_menu_action_new(menu_name,
-					     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
-					     container, NULL);
-		g_free(menu_name);
-		menu_access_levels = g_list_prepend(menu_access_levels, act);		
+		if (!is_inherited) {
+			container = g_new0(struct sipe_container, 1);
+			member = g_new0(struct sipe_container_member, 1);
+			container->id = -1;
+			container->members = g_slist_append(container->members, member);
+			member->type = g_strdup(member_type);
+			member->value = g_strdup(member_value);
+
+			/* Translators: remove (clear) previously assigned access level */
+			menu_name = g_strdup_printf(INDENT_FMT, _("Unspecify"));
+			act = purple_menu_action_new(menu_name,
+						     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
+						     container, NULL);
+			g_free(menu_name);
+			menu_access_levels = g_list_prepend(menu_access_levels, act);		
+		}
 	}
-	
+
 	menu_access_levels = g_list_reverse(menu_access_levels);
 	return menu_access_levels;
 }
@@ -10368,7 +10373,7 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	PurpleMenuAction *act;
 	char *domain;
 	
-	menu_access_levels = sipe_get_access_levels_menu(sip, "user", sipe_get_no_sip_uri(uri), FALSE);
+	menu_access_levels = sipe_get_access_levels_menu(sip, "user", sipe_get_no_sip_uri(uri), TRUE);
 	
 	/* Access Groups submenu */
 	act = purple_menu_action_new(_("People in my company"),
@@ -10416,10 +10421,6 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	menu_access_groups = g_list_reverse(menu_access_groups);
 	/* End of Access Groups submenu */
 	
-	/* separator */
-	act = purple_menu_action_new("  --------------", NULL, NULL, NULL);
-	menu_access_levels = g_list_append(menu_access_levels, act);
-
 	menu_name = g_strdup_printf(INDENT_FMT, _("Access groups"));
 	act = purple_menu_action_new(menu_name,
 				     NULL,
