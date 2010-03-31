@@ -2544,19 +2544,20 @@ static void sipe_cleanup_local_blist(struct sipe_account_data *sip) {
 static int
 sipe_find_access_level(struct sipe_account_data *sip,
 		       const gchar *type,
-		       const gchar *value);
+		       const gchar *value,
+		       gboolean *is_inherited);
 
 static void
 sipe_refresh_blocked_status_cb(char *buddy_name,
 					 SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
 					 struct sipe_account_data *sip)
 {
-	int container_id = sipe_find_access_level(sip, "user", buddy_name);
+	int container_id = sipe_find_access_level(sip, "user", buddy_name, NULL);
 	gboolean blocked = (container_id == 32000);
 	gboolean blocked_in_blist = !purple_privacy_check(sip->account, buddy_name);
 	
-	SIPE_DEBUG_INFO("sipe_refresh_blocked_status_cb: buddy_name=%s, blocked=%s, blocked_in_blist=%s",
-		buddy_name, blocked ? "T" : "F", blocked_in_blist ? "T" : "F");
+	/* SIPE_DEBUG_INFO("sipe_refresh_blocked_status_cb: buddy_name=%s, blocked=%s, blocked_in_blist=%s",
+		buddy_name, blocked ? "T" : "F", blocked_in_blist ? "T" : "F"); */
 	
 	if (blocked != blocked_in_blist) {
 		if (blocked) {
@@ -3199,7 +3200,8 @@ sipe_find_member_access_level(struct sipe_account_data *sip,
 static int
 sipe_find_access_level(struct sipe_account_data *sip,
 		       const gchar *type,
-		       const gchar *value)
+		       const gchar *value,
+		       gboolean *is_inherited)
 {
 	int container_id = -1;
 
@@ -3208,28 +3210,38 @@ sipe_find_access_level(struct sipe_account_data *sip,
 		const char *no_sip_uri = sipe_get_no_sip_uri(value);
 
 		container_id = sipe_find_member_access_level(sip, "user", no_sip_uri);
-		if (container_id >= 0) return container_id;
+		if (container_id >= 0) {
+			if (is_inherited) *is_inherited = FALSE;
+			return container_id;
+		}
 
 		domain = sipe_get_domain(no_sip_uri);
 		container_id = sipe_find_member_access_level(sip, "domain", domain);
-		if (container_id >= 0) return container_id;
+		if (container_id >= 0)  {
+			if (is_inherited) *is_inherited = TRUE;
+			return container_id;
+		}
 
 		container_id = sipe_find_member_access_level(sip, "sameEnterprise", NULL);
 		if ((container_id >= 0) && sipe_strcase_equal(sip->sipdomain, domain)) {
+			if (is_inherited) *is_inherited = TRUE;
 			return container_id;
 		}
 
 		container_id = sipe_find_member_access_level(sip, "publicCloud", NULL);
 		if ((container_id >= 0) && sipe_is_public_domain(domain)) {
+			if (is_inherited) *is_inherited = TRUE;
 			return container_id;
 		}
 
 		container_id = sipe_find_member_access_level(sip, "everyone", NULL);
 		if ((container_id >= 0)) {
+			if (is_inherited) *is_inherited = TRUE;
 			return container_id;
 		}
 	} else {
 		container_id = sipe_find_member_access_level(sip, type, value);
+		if (is_inherited) *is_inherited = FALSE;
 	}
 
 	return container_id;
@@ -3272,7 +3284,7 @@ sipe_change_access_level(struct sipe_account_data *sip,
 	}
 
 	/* recalculate AL below */
-	current_container_id = sipe_find_access_level(sip, type, value);
+	current_container_id = sipe_find_access_level(sip, type, value, NULL);
 
 	/* assign/publish new access level */
 	if (container_id != current_container_id && container_id >= 0) {
@@ -4033,8 +4045,8 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 	SIPE_DEBUG_INFO("sipe_process_roaming_self: sip->access_level_set=%s", sip->access_level_set ? "TRUE" : "FALSE");
 	if (!sip->access_level_set && sipe_xml_child(xml, "containers")) {
 		char *container_xmls = NULL;
-		int sameEnterpriseAL = sipe_find_access_level(sip, "sameEnterprise", NULL);
-		int federatedAL      = sipe_find_access_level(sip, "federated", NULL);
+		int sameEnterpriseAL = sipe_find_access_level(sip, "sameEnterprise", NULL, NULL);
+		int federatedAL      = sipe_find_access_level(sip, "federated", NULL, NULL);
 
 		SIPE_DEBUG_INFO("sipe_process_roaming_self: sameEnterpriseAL=%d", sameEnterpriseAL);
 		SIPE_DEBUG_INFO("sipe_process_roaming_self: federatedAL=%d", federatedAL);
@@ -9652,7 +9664,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 	}
 
 	if (sip && sip->ocs2007) {
-		const int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(buddy->name));
+		const int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(buddy->name), NULL);
 		const char *access_level = sipe_get_access_level_name(container_id);
 
 		purple_notify_user_info_add_pair(user_info, _("Access level"), access_level);
@@ -10264,8 +10276,16 @@ sipe_buddy_menu_access_level_add_domain_cb(PurpleBuddy *buddy)
 	sipe_ask_access_domain((struct sipe_account_data *)buddy->account->gc->proto_data);
 }
 
-#define INDENT_FMT		"  %s"
-#define INDENT_MARKED_FMT	"* %s"
+#define INDENT_FMT			"  %s"
+/** Member is directly placed to access level container.
+ *  For example SIP URI of user is in the container.
+ */
+#define INDENT_MARKED_FMT		"* %s"
+/** Member is indirectly belong to access level container.
+ *  For example 'sameEnterprise' is in the container and user
+ *  belongs to that same enterprise.
+ */
+#define INDENT_MARKED_INHERITED_FMT	"= %s"
 static GList *
 sipe_get_access_levels_menu(struct sipe_account_data *sip,
 			    const char* member_type,
@@ -10278,7 +10298,8 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 	PurpleMenuAction *act;
 	struct sipe_container *container;
 	struct sipe_container_member *member;
-	int container_id = sipe_find_access_level(sip, member_type, member_value);
+	gboolean is_inherited = FALSE;
+	int container_id = sipe_find_access_level(sip, member_type, member_value, &is_inherited);
 
 	for (i = 1; i <= CONTAINERS_LEN; i++) {
 		/* to put Blocked level last in menu list.
@@ -10296,7 +10317,9 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 
 		/* current container/access level */
 		if (((int)containers[j]) == container_id) {
-			menu_name = g_strdup_printf(INDENT_MARKED_FMT, acc_level_name);
+			menu_name = is_inherited ? 
+				g_strdup_printf(INDENT_MARKED_INHERITED_FMT, acc_level_name) :
+				g_strdup_printf(INDENT_MARKED_FMT, acc_level_name);
 		} else {
 			menu_name = g_strdup_printf(INDENT_FMT, acc_level_name);
 		}
