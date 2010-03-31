@@ -60,9 +60,7 @@ libsipe_core_purple_la_SOURCES = \
 	sipe-conf.h \
 	sipe-conf.c \
 	sipe-ft.h \
-	sipe-ft.c \
-	sipe-media.h \
-	sipe-media.c
+	sipe-ft.c
 
 AM_CFLAGS = $(st)
 
