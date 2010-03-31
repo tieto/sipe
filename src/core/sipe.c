@@ -2561,11 +2561,9 @@ sipe_refresh_blocked_status_cb(char *buddy_name,
 	
 	if (blocked != blocked_in_blist) {
 		if (blocked) {
-			purple_privacy_permit_remove(sip->account, buddy_name, TRUE);
 			purple_privacy_deny_add(sip->account, buddy_name, TRUE);
 		} else {
-			purple_privacy_deny_remove(sip->account, buddy_name, TRUE);
-			purple_privacy_permit_add(sip->account, buddy_name, TRUE);		
+			purple_privacy_deny_remove(sip->account, buddy_name, TRUE);		
 		}
 		
 		/* stupid workaround to make pidgin re-render screen to reflect our changes */
