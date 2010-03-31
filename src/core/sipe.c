@@ -9896,30 +9896,8 @@ sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy, const char *phone)
 }
 
 static void
-sipe_open_url(const char *url)
+sipe_buddy_menu_access_level_help_cb(PurpleBuddy *buddy)
 {
-	const char *util;
-	char *command_line;
-
-	if (!url) return;
-
-#ifdef _WIN32
-	util = "cmd /c start";
-#else
-	util = g_str_has_prefix(url, "mailto:") ? "xdg-email" : "xdg-open";
-#endif
-
-	command_line = g_strdup_printf("%s %s", util, url);
-	g_spawn_command_line_async(command_line, NULL);
-	g_free(command_line);
-}
-
-static void
-sipe_buddy_menu_access_level_help_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy)
-{
-	/* sipe_open_url() on Windows opens black command line window for some seconds
-	   so not usable */
-
 	/** Translators: replace with URL to localized page
 	 * If it doesn't exist copy the original URL */
 	purple_notify_uri(buddy->account->gc, _("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
@@ -9934,10 +9912,17 @@ sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
 	email = purple_blist_node_get_string(&buddy->node, EMAIL_PROP);
 	if (email)
 	{
-		char *mailto = g_strdup_printf("mailto:%s", email);
-		SIPE_DEBUG_INFO("sipe_buddy_menu_send_email_cb: going to call default mail client with email: %s", email);
-		sipe_open_url(mailto);
-		g_free(mailto);
+		char *command_line = g_strdup_printf(
+#ifdef _WIN32
+			"cmd /c start"
+#else
+			"xdg-email"
+#endif
+			" mailto:%s", email);
+		SIPE_DEBUG_INFO("sipe_buddy_menu_send_email_cb: going to call email client: %s", command_line);
+
+		g_spawn_command_line_async(command_line, NULL);
+		g_free(command_line);
 	}
 	else
 	{
