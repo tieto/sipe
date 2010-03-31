@@ -26,3 +26,21 @@
  */
 void sipe_core_init(void);
 void sipe_core_destroy(void);
+
+/** Utility functions exported by the core to backends ***********************/
+
+gboolean sipe_strequal(const gchar *left, const gchar *right);
+
+/*****************************************************************************/
+
+/**
+ * Other functions (need to be sorted once structure becomes clear.
+ */
+struct sipe_account_data;
+
+/* Get translated about string. Must be g_free'd(). */
+gchar *sipe_core_about(void);
+
+/* menu actions */
+void sipe_core_update_calendar(struct sipe_account_data *sip);
+void sipe_core_reset_status(struct sipe_account_data *sip);

@@ -24,6 +24,5 @@
  * This is a temporary file for the core de-purple transition period
  */
 
-extern PurplePluginInfo info;
+void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fields);
 extern PurplePluginProtocolInfo prpl_info;
-void sipe_plugin_destroy(PurplePlugin *plugin);

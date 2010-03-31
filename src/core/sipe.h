@@ -318,10 +318,6 @@ struct group_user_context {
 
 GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func);
 
-GList *sipe_actions(struct _PurplePlugin *plugin, gpointer context);
-
-gboolean purple_init_plugin(struct _PurplePlugin *plugin);
-
 /**
  * Publishes self status
  * based on own calendar information,

@@ -32,15 +32,29 @@
 #endif
 
 #include "accountopt.h"
+#include "connection.h"
 #include "prpl.h"
 #include "plugin.h"
+#include "request.h"
+#include "version.h"
 
 #include "sipe-core.h"
 #include "sipe-nls.h"
 
 #include "core-depurple.h"
 
-void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
+/* PurplePluginInfo function calls & data structure */
+static gboolean sipe_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
+{
+	return TRUE;
+}
+
+static gboolean sipe_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
+{
+	return TRUE;
+}
+
+static void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 	GList *entry;
 
@@ -60,6 +74,119 @@ void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 	}
 	prpl_info.user_splits = NULL;
 }
+
+static void sipe_show_about_plugin(PurplePluginAction *action)
+{
+	gchar *tmp = sipe_core_about();
+	purple_notify_formatted((PurpleConnection *) action->context,
+				NULL, " ", NULL, tmp, NULL, NULL);
+	g_free(tmp);
+}
+
+static void sipe_show_find_contact(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	PurpleRequestFields *fields;
+	PurpleRequestFieldGroup *group;
+	PurpleRequestField *field;
+
+	fields = purple_request_fields_new();
+	group = purple_request_field_group_new(NULL);
+	purple_request_fields_add_group(fields, group);
+
+	field = purple_request_field_string_new("givenName", _("First name"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("sn", _("Last name"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("c", _("Country"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+
+	purple_request_fields(gc,
+		_("Search"),
+		_("Search for a contact"),
+		_("Enter the information for the person you wish to find. Empty fields will be ignored."),
+		fields,
+		_("_Search"), G_CALLBACK(sipe_search_contact_with_cb),
+		_("_Cancel"), NULL,
+		purple_connection_get_account(gc), NULL, NULL, gc);
+}
+
+static void sipe_republish_calendar(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	struct sipe_account_data *sip = gc->proto_data;
+
+	sipe_core_update_calendar(sip);
+}
+
+static void sipe_reset_status(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	struct sipe_account_data *sip = gc->proto_data;
+
+	sipe_core_reset_status(sip);
+}
+
+static GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
+			   gpointer context)
+{
+	PurpleConnection *gc = (PurpleConnection *)context;
+	GList *menu = NULL;
+	PurplePluginAction *act;
+	const char* calendar = purple_account_get_string(purple_connection_get_account(gc),
+							 "calendar", "EXCH");
+
+	act = purple_plugin_action_new(_("About SIPE plugin..."), sipe_show_about_plugin);
+	menu = g_list_prepend(menu, act);
+
+	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
+	menu = g_list_prepend(menu, act);
+
+	if (sipe_strequal(calendar, "EXCH")) {
+		act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
+		menu = g_list_prepend(menu, act);
+	}
+
+	act = purple_plugin_action_new(_("Reset status"), sipe_reset_status);
+	menu = g_list_prepend(menu, act);
+
+	return g_list_reverse(menu);
+}
+
+static PurplePluginInfo info = {
+	PURPLE_PLUGIN_MAGIC,
+	PURPLE_MAJOR_VERSION,
+	PURPLE_MINOR_VERSION,
+	PURPLE_PLUGIN_PROTOCOL,                           /**< type           */
+	NULL,                                             /**< ui_requirement */
+	0,                                                /**< flags          */
+	NULL,                                             /**< dependencies   */
+	PURPLE_PRIORITY_DEFAULT,                          /**< priority       */
+	"prpl-sipe",                                   	  /**< id             */
+	"Office Communicator",                            /**< name           */
+	PACKAGE_VERSION,                                  /**< version        */
+	"Microsoft Office Communicator Protocol Plugin",  /**< summary        */
+	"A plugin for the extended SIP/SIMPLE protocol used by "          /**< description */
+	"Microsoft Live/Office Communications Server (LCS2005/OCS2007+)", /**< description */
+	"Anibal Avelar <avelar@gmail.com>, "              /**< author         */
+	"Gabriel Burt <gburt@novell.com>, "               /**< author         */
+	"Stefan Becker <stefan.becker@nokia.com>, "       /**< author         */
+	"pier11 <pier11@operamail.com>",                  /**< author         */
+	PACKAGE_URL,                                      /**< homepage       */
+	sipe_plugin_load,                                 /**< load           */
+	sipe_plugin_unload,                               /**< unload         */
+	sipe_plugin_destroy,                              /**< destroy        */
+	NULL,                                             /**< ui_info        */
+	&prpl_info,                                       /**< extra_info     */
+	NULL,
+	sipe_actions,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
 
 static void init_plugin(PurplePlugin *plugin)
 {
@@ -124,6 +251,7 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 }
 
+/* This macro makes the code a purple plugin */
 PURPLE_INIT_PLUGIN(sipe, init_plugin, info);
 
 /*

@@ -3640,8 +3640,8 @@ sipe_update_user_phone(struct sipe_account_data *sip,
 	}
 }
 
-static void
-sipe_update_calendar(struct sipe_account_data *sip)
+void
+sipe_core_update_calendar(struct sipe_account_data *sip)
 {
 	const char* calendar = purple_account_get_string(sip->account, "calendar", "EXCH");
 
@@ -3652,7 +3652,7 @@ sipe_update_calendar(struct sipe_account_data *sip)
 	}
 
 	/* schedule repeat */
-	sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_INTERVAL, (Action)sipe_update_calendar, NULL, sip, NULL);
+	sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_INTERVAL, (Action)sipe_core_update_calendar, NULL, sip, NULL);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_update_calendar: finished.");
 }
@@ -4123,7 +4123,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		send_publish_category_initial(sip);
 		sip->initial_state_published = TRUE;
 		/* dalayed run */
-		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
+		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_core_update_calendar, NULL, sip, NULL);
 		do_update_status = FALSE;
 	} else if (aggreg_avail) {
 
@@ -6745,7 +6745,7 @@ sipe_user_info_has_updated(struct sipe_account_data *sip,
 	if (!sip->initial_state_published) {
 		send_presence_soap(sip, FALSE);
 		/* dalayed run */
-		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_update_calendar, NULL, sip, NULL);
+		sipe_schedule_action("<+update-calendar>", UPDATE_CALENDAR_DELAY, (Action)sipe_core_update_calendar, NULL, sip, NULL);
 	}
 }
 
@@ -9321,7 +9321,7 @@ static gboolean process_search_contact_response(struct sipe_account_data *sip, s
 	return TRUE;
 }
 
-static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fields)
+void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fields)
 {
 	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
 	gchar **attrs = g_new(gchar *, g_list_length(entries) + 1);
@@ -9356,40 +9356,9 @@ static void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestField
 	g_strfreev(attrs);
 }
 
-static void sipe_show_find_contact(PurplePluginAction *action)
+gchar *sipe_core_about(void)
 {
-	PurpleConnection *gc = (PurpleConnection *) action->context;
-	PurpleRequestFields *fields;
-	PurpleRequestFieldGroup *group;
-	PurpleRequestField *field;
-
-	fields = purple_request_fields_new();
-	group = purple_request_field_group_new(NULL);
-	purple_request_fields_add_group(fields, group);
-
-	field = purple_request_field_string_new("givenName", _("First name"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("sn", _("Last name"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("c", _("Country"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-
-	purple_request_fields(gc,
-		_("Search"),
-		_("Search for a contact"),
-		_("Enter the information for the person you wish to find. Empty fields will be ignored."),
-		fields,
-		_("_Search"), G_CALLBACK(sipe_search_contact_with_cb),
-		_("_Cancel"), NULL,
-		purple_connection_get_account(gc), NULL, NULL, gc);
-}
-
-static void sipe_show_about_plugin(PurplePluginAction *action)
-{
-	PurpleConnection *gc = (PurpleConnection *) action->context;
-	char *tmp = g_strdup_printf(
+	return g_strdup_printf(
 		/*
 		 * Non-translatable parts, like markup, are hard-coded
 		 * into the format string. This requires more translatable
@@ -9471,16 +9440,6 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 		/* "Localization for <language name> (<language code>): <name>" */
 		_("Original texts in English (en): SIPE developers")
 		);
-	purple_notify_formatted(gc, NULL, " ", NULL, tmp, NULL, NULL);
-	g_free(tmp);
-}
-
-static void sipe_republish_calendar(PurplePluginAction *action)
-{
-	PurpleConnection *gc = (PurpleConnection *) action->context;
-	struct sipe_account_data *sip = gc->proto_data;
-
-	sipe_update_calendar(sip);
 }
 
 static void sipe_publish_get_cat_state_user_to_clear(SIPE_UNUSED_PARAMETER const char *name,
@@ -9498,11 +9457,8 @@ static void sipe_publish_get_cat_state_user_to_clear(SIPE_UNUSED_PARAMETER const
 				"static");
 }
 
-static void sipe_reset_status(PurplePluginAction *action)
+void sipe_core_reset_status(struct sipe_account_data *sip)
 {
-	PurpleConnection *gc = (PurpleConnection *) action->context;
-	struct sipe_account_data *sip = gc->proto_data;
-
 	if (sip->ocs2007) /* 2007+ */
 	{
 		GString* str = g_string_new(NULL);
@@ -9525,49 +9481,9 @@ static void sipe_reset_status(PurplePluginAction *action)
 	}
 }
 
-GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
-		    gpointer context)
-{
-	PurpleConnection *gc = (PurpleConnection *)context;
-	struct sipe_account_data *sip = gc->proto_data;
-	GList *menu = NULL;
-	PurplePluginAction *act;
-	const char* calendar = purple_account_get_string(sip->account, "calendar", "EXCH");
-
-	act = purple_plugin_action_new(_("About SIPE plugin..."), sipe_show_about_plugin);
-	menu = g_list_prepend(menu, act);
-
-	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
-	menu = g_list_prepend(menu, act);
-
-	if (sipe_strequal(calendar, "EXCH")) {
-		act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
-		menu = g_list_prepend(menu, act);
-	}
-
-	act = purple_plugin_action_new(_("Reset status"), sipe_reset_status);
-	menu = g_list_prepend(menu, act);
-
-	menu = g_list_reverse(menu);
-
-	return menu;
-}
-
 static void dummy_permit_deny(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
 {
 }
-
-static gboolean sipe_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
-{
-  return TRUE;
-}
-
-
-static gboolean sipe_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
-{
-    return TRUE;
-}
-
 
 static char *sipe_status_text(PurpleBuddy *buddy)
 {
@@ -10784,40 +10700,6 @@ PurplePluginProtocolInfo prpl_info =
 #endif
 #endif
 #endif
-};
-
-
-PurplePluginInfo info = {
-	PURPLE_PLUGIN_MAGIC,
-	PURPLE_MAJOR_VERSION,
-	PURPLE_MINOR_VERSION,
-	PURPLE_PLUGIN_PROTOCOL,                           /**< type           */
-	NULL,                                             /**< ui_requirement */
-	0,                                                /**< flags          */
-	NULL,                                             /**< dependencies   */
-	PURPLE_PRIORITY_DEFAULT,                          /**< priority       */
-	"prpl-sipe",                                   	  /**< id             */
-	"Office Communicator",                            /**< name           */
-	PACKAGE_VERSION,                                  /**< version        */
-	"Microsoft Office Communicator Protocol Plugin",  /**< summary        */
-	"A plugin for the extended SIP/SIMPLE protocol used by "          /**< description */
-	"Microsoft Live/Office Communications Server (LCS2005/OCS2007+)", /**< description */
-	"Anibal Avelar <avelar@gmail.com>, "              /**< author         */
-	"Gabriel Burt <gburt@novell.com>, "               /**< author         */
-	"Stefan Becker <stefan.becker@nokia.com>, "       /**< author         */
-	"pier11 <pier11@operamail.com>",                  /**< author         */
-	PACKAGE_URL,                                      /**< homepage       */
-	sipe_plugin_load,                                 /**< load           */
-	sipe_plugin_unload,                               /**< unload         */
-	sipe_plugin_destroy,                              /**< destroy        */
-	NULL,                                             /**< ui_info        */
-	&prpl_info,                                       /**< extra_info     */
-	NULL,
-	sipe_actions,
-	NULL,
-	NULL,
-	NULL,
-	NULL
 };
 
 void sipe_core_init(void)
