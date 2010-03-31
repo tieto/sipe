@@ -10362,25 +10362,20 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 }
 
 static GList *
-sipe_get_access_control_menu(struct sipe_account_data *sip,
-			     const char* uri)
+sipe_get_access_groups_menu(struct sipe_account_data *sip)
 {
-	GList *menu_access_levels = NULL;
 	GList *menu_access_groups = NULL;
+	PurpleMenuAction *act;
 	GSList *access_domains = NULL;
 	GSList *entry;
 	char *menu_name;
-	PurpleMenuAction *act;
 	char *domain;
-	
-	menu_access_levels = sipe_get_access_levels_menu(sip, "user", sipe_get_no_sip_uri(uri), TRUE);
-	
-	/* Access Groups submenu */
+
 	act = purple_menu_action_new(_("People in my company"),
 				     NULL,
 				     NULL, sipe_get_access_levels_menu(sip, "sameEnterprise", NULL, FALSE));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
-	
+
 	/* this is original name, don't edit */
 	act = purple_menu_action_new(_("People in domains connected with my company"),
 				     NULL,
@@ -10391,8 +10386,7 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 				     NULL,
 				     NULL, sipe_get_access_levels_menu(sip, "publicCloud", NULL, TRUE));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
-	
-	/* @TODO add domains here */
+
 	access_domains = sipe_get_access_domains(sip);
 	entry = access_domains;
 	while (entry) {
@@ -10407,7 +10401,7 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 		
 		entry = entry->next;
 	}
-	
+
 	/* separator */
 	/*			      People in domains connected with my company		 */
 	act = purple_menu_action_new("-------------------------------------------", NULL, NULL, NULL);
@@ -10419,7 +10413,22 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 
 	menu_access_groups = g_list_reverse(menu_access_groups);
-	/* End of Access Groups submenu */
+	
+	return menu_access_groups;
+}
+
+static GList *
+sipe_get_access_control_menu(struct sipe_account_data *sip,
+			     const char* uri)
+{
+	GList *menu_access_levels = NULL;
+	GList *menu_access_groups = NULL;
+	char *menu_name;
+	PurpleMenuAction *act;
+	
+	menu_access_levels = sipe_get_access_levels_menu(sip, "user", sipe_get_no_sip_uri(uri), TRUE);
+
+	menu_access_groups = sipe_get_access_groups_menu(sip);
 	
 	menu_name = g_strdup_printf(INDENT_FMT, _("Access groups"));
 	act = purple_menu_action_new(menu_name,
