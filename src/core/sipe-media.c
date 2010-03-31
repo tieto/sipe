@@ -20,7 +20,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "mediamanager.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <glib.h>
+#include <libpurple/mediamanager.h>
+#include <nice/agent.h>
 
 #include "sip-sec.h"
 #include "sipe.h"
@@ -30,10 +36,22 @@
 #include "sipe-utils.h"
 #include "sipe-common.h"
 
-//#include <nice/agent.h>
-#include "../../../libnice/agent/agent.h"
+struct _sipe_media_call {
+	PurpleMedia			*media;
+	struct sip_dialog	*dialog;
+	GSList				*sdp_attrs;
+	struct sipmsg		*invitation;
+	GList				*remote_candidates;
+	GList				*remote_codecs;
+	gchar				*sdp_response;
+	gboolean			legacy_mode;
+};
 
-#include <string.h>
+gchar *
+sipe_media_get_callid(sipe_media_call *call)
+{
+	return call->dialog->callid;
+}
 
 static void
 sipe_media_call_free(sipe_media_call *call)

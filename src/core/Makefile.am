@@ -99,6 +99,10 @@ if SIPE_INCLUDE_PURPLE
 libsipe_core_purple_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(PURPLE_CFLAGS)
 endif
 
+if SIPE_WITH_VV
+libsipe_core_la_SOURCES += sipe-media.h sipe-media.c
+endif
+
 check_PROGRAMS = sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)

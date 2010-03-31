@@ -264,6 +264,41 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 		[enable_purple=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
 
+dnl check whether enable voice and video support
+AS_IF([test "x$enable_purple" = xno], [with_vv=no],
+	[AC_ARG_WITH(vv,
+		[AC_HELP_STRING([--with-vv],
+			[compile with voice and video support @<:@default=check@:>@])],
+		[AS_IF([test "x$withval" = xyes], [with_vv=check])],
+		[with_vv=check])
+	])
+
+AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
+      [test "x$with_vv" = xcheck],  dnl autodetect
+	[AC_MSG_CHECKING(if libpurple supports voice and video)
+	  ac_save_CFLAGS=$CFLAGS
+	  ac_save_LDFLAGS=$LDFLAGS
+	  CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
+	  LDFLAGS="$PURPLE_LDFLAGS $PURPLE_LIBS"
+	  AC_RUN_IFELSE(
+	    AC_LANG_PROGRAM(
+		  [[[
+#include <libpurple/media.h>
+		  ]]],
+		  [return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]
+		),
+	    [AC_MSG_RESULT(yes)
+	     AC_DEFINE(HAVE_VV, 1, [Define if voice & video is enabled.])],
+	    [AC_MSG_RESULT(failed)
+	     AC_ERROR(libpurple is not compiled with voice and video support)
+	     with_vv=no]
+	  )
+	  CFLAGS=$ac_save_CFLAGS
+	  LDFLAGS=$ac_save_LDFLAGS
+	]
+)
+AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_vv" != xno])
+
 dnl build option: telepathy backend
 AC_ARG_ENABLE([telepathy],
 	[AC_HELP_STRING([--enable-telepathy], [build telepathy plugin @<:@default=yes@:>@])],
@@ -355,7 +390,11 @@ AS_IF([test "x$enable_purple" = xno],
 	[AS_ECHO("Not building purple plugin")],
 	[AS_ECHO("Build purple plugin")
 	 AS_ECHO("PURPLE_CFLAGS  : $PURPLE_CFLAGS")
-	 AS_ECHO("PURPLE_LIBS    : $PURPLE_LIBS")])
+	 AS_ECHO("PURPLE_LIBS    : $PURPLE_LIBS")
+	 AS_IF([test "x$with_vv" = xno],
+	  [AS_ECHO("Voice and video: disabled")],
+	  [AS_ECHO("Voice and video: enabled")])
+	])
 AS_ECHO()
 AS_IF([test "x$enable_telepathy" = xno],
 	[AS_ECHO("Not building telepathy plugin")],

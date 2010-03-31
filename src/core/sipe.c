@@ -4349,13 +4349,15 @@ static void process_incoming_info(struct sipe_core_private *sipe_private,
 	g_free(from);
 }
 
-static void process_incoming_cancel(struct sipe_core_private *sipe_private,
-				struct sipmsg *msg)
+static void process_incoming_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+									SIPE_UNUSED_PARAMETER struct sipmsg *msg)
 {
+#if HAVE_VV
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-	if (sip->media_call && sipe_strequal(sip->media_call->dialog->callid, callid))
+	if (sip->media_call && sipe_strequal(sipe_media_get_callid(sip->media_call), callid))
 		sipe_media_hangup(sip);
+#endif
 }
 
 static void process_incoming_bye(struct sipe_core_private *sipe_private,
@@ -4367,12 +4369,14 @@ static void process_incoming_bye(struct sipe_core_private *sipe_private,
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
-	if (sip->media_call && sipe_strequal(sip->media_call->dialog->callid, callid)) {
+#if HAVE_VV
+	if (sip->media_call && sipe_strequal(sipe_media_get_callid(sip->media_call), callid)) {
 		// BYE ends a media call
 		sipe_media_hangup(sip);
 		g_free(from);
 		return;
 	}
+#endif
 
 	/* collect dialog identification
 	 * we need callid, ourtag and theirtag to unambiguously identify dialog
@@ -4606,6 +4610,7 @@ static void process_incoming_message(struct sipe_core_private *sipe_private,
 	g_free(from);
 }
 
+#ifdef HAVE_VV
 static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 								const gchar *body, SIPE_UNUSED_PARAMETER gsize length)
 {
@@ -4634,6 +4639,7 @@ static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 		msg->body = g_strndup(body, length);
 	}
 }
+#endif
 
 static void process_incoming_invite(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg)
@@ -4661,9 +4667,11 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("process_incoming_invite: body:\n%s!", msg->body ? tmp = fix_newlines(msg->body) : "");
 	g_free(tmp);
 
+#ifdef HAVE_VV
 	if (g_str_has_prefix(content_type, "multipart/alternative")) {
 		sipe_mime_parts_foreach(content_type, msg->body, sipe_invite_mime_cb, msg);
 	}
+#endif
 
 	/* Invitation to join conference */
 	if (g_str_has_prefix(content_type, "application/ms-conf-invite+xml")) {
@@ -4671,11 +4679,13 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 		return;
 	}
 
+#ifdef HAVE_VV
 	/* Invitation to audio call */
 	if (msg->body && strstr(msg->body, "m=audio")) {
 		sipe_media_incoming_invite(sip, msg);
 		return;
 	}
+#endif
 
 	/* Only accept text invitations */
 	if (msg->body && !(strstr(msg->body, "m=message") || strstr(msg->body, "m=x-ms-message"))) {
