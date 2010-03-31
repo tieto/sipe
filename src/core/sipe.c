@@ -10413,7 +10413,7 @@ sipe_get_access_groups_menu(struct sipe_account_data *sip)
 	act = purple_menu_action_new("-------------------------------------------", NULL, NULL, NULL);
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 	
-	act = purple_menu_action_new(_("Add new domain"),
+	act = purple_menu_action_new(_("Add new domain..."),
 				     PURPLE_CALLBACK(sipe_buddy_menu_access_level_add_domain_cb),
 				     NULL, NULL);
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
