@@ -9917,9 +9917,12 @@ sipe_open_url(const char *url)
 static void
 sipe_buddy_menu_access_level_help_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy)
 {
+	/* sipe_open_url() on Windows opens black command line window for some seconds
+	   so not usable */
+
 	/** Translators: replace with URL to localized page
 	 * If it doesn't exist copy the original URL */
-	sipe_open_url(_("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
+	purple_notify_uri(buddy->account->gc, _("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
 }
 
 static void
