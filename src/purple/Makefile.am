@@ -41,7 +41,7 @@ libsipe_la_LIBADD = \
 	$(PURPLE_LIBS)
 
 if SIP_SEC_KRB5
-libsipe_la_LDFLAGS += $(KRB5_LDFLAGS)
+libsipe_la_LIBADD += $(KRB5_LDFLAGS)
 endif
 
 check_PROGRAMS = tests
@@ -50,12 +50,12 @@ tests_CFLAGS   = $(libsipe_la_CFLAGS)
 tests_LDADD    = \
 	../core/libsipe_core_tests.la \
 	../core/libsipe_core.la \
-	libsipe_backend.la
-tests_LDFLAGS  = $(PURPLE_LIBS)
+	libsipe_backend.la \
+	$(PURPLE_LIBS)
 
 if SIPE_MIME_GMIME
-libsipe_la_LIBADD  += $(GMIME_LIBS)
-tests_LDFLAGS      += $(GMIME_LIBS)
+libsipe_la_LIBADD += $(GMIME_LIBS)
+tests_LDADD       += $(GMIME_LIBS)
 else
 libsipe_backend_la_SOURCES += purple-mime.c
 endif

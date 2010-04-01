@@ -77,8 +77,7 @@ endif
 check_PROGRAMS = sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
-sipe_xml_tests_LDADD = libsipe_core.la
-sipe_xml_tests_LDFLAGS = $(LIBXML2_LIBS) $(GLIB_LIBS)
+sipe_xml_tests_LDADD = libsipe_core.la $(LIBXML2_LIBS) $(GLIB_LIBS)
 
 # disables "caching" of memory blocks in tests
 TESTS_ENVIRONMENT = G_SLICE="always-malloc"
