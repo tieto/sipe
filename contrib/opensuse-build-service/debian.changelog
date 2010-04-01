@@ -1,4 +1,11 @@
+pidgin-sipe (1.10.0-1) unstable; urgency=low
+
+  * tests of pre-1.10.0 git 4fa20cd65e5be0e469d4aa55d861f11c5b08b816
+
+ -- pier11 <pier11@operamail.com>  Tue, 01 Apr 2010 07:34:00 -0000
+
 pidgin-sipe (1.9.1-1) unstable; urgency=low
+
   * New upstream version (emergency release)
       - Fixed #2969327: Kerberos authentication always fails on *nix platforms
       - Fixed #2968287: Authentication failure in scenario when director server
