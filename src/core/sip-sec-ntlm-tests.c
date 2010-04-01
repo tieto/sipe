@@ -43,6 +43,8 @@
 static int successes = 0;
 static int failures = 0;
 
+gboolean sip_sec_ntlm_tests(void);
+
 static void assert_equal(const char * expected, const guchar * got, int len, gboolean stringify)
 {
 	const gchar * res = (gchar *) got;
