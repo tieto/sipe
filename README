@@ -108,6 +108,19 @@ successful compilation you can install pidgin-sipe with:
 
 	su -c "make install"
 
+If you get errors from configure or libtool about version conflicts then
+you need to regenerate the autoconf files. You'll need these additional
+packages
+
+	autoconf
+	automake
+
+Now you should be able to regenerate the files with
+
+	autoreconf --verbose --install --force
+
+After that go back to the configure step above.
+
 
 Do It Yourself II: compiling against self-compiled pidgin
 =========================================================

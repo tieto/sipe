@@ -94,6 +94,9 @@ This package provides the protocol plugin for libpurple clients.
 %if 0%{?sles_version} == 10
 export CFLAGS="%optflags -I%{_includedir}/gssapi"
 %endif
+%if 0%{?mandriva_version}
+autoreconf --verbose --install --force
+%endif
 %configure \
 	--enable-purple \
 	--disable-telepathy
@@ -132,6 +135,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Apr 02 2010 J. D. User <jduser@noreply.com> pre-1.10.0-*git*
+- Mandriva has too old libtool version
+
 * Fri Apr 02 2010 J. D. User <jduser@noreply.com> pre-1.10.0-*git*
 - SLE11, openSUSE 10.0/1 don't have pidgin/protocols/scalable directory
 
