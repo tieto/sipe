@@ -56,6 +56,12 @@ Requires:       pidgin
 BuildRequires:  gnome-keyring-devel
 %endif
 
+# For OBS's "have choice for" for Fedora 11 (only)
+%if 0%{?fedora_version} == 11
+BuildRequires:  libproxy-mozjs
+BuildRequires:  PolicyKit-gnome
+%endif
+
 %description
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
@@ -139,7 +145,7 @@ rm -rf %{buildroot}
 - Mandriva has too old libtool version
 
 * Fri Apr 02 2010 J. D. User <jduser@noreply.com> pre-1.10.0-*git*
-- SLE11, openSUSE 10.0/1 don't have pidgin/protocols/scalable directory
+- SLE11, openSUSE 11.0/1 don't have pidgin/protocols/scalable directory
 
 * Sun Mar 07 2010 pier11 <pier11@operamail.com> pre-1.10.0-*git*
 - OBS tests of pre-1.10.0 git-snapshot 4fa20cd65e5be0e469d4aa55d861f11c5b08b816
