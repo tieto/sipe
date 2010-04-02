@@ -104,6 +104,10 @@ make %{_smp_mflags} check
 %install
 %makeinstall
 find %{buildroot} -type f -name "*.la" -delete -print
+# SLES11 defines suse_version = 1110
+%if 0%{?suse_version} && 0%{?suse_version} < 1120
+rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
+%endif
 %find_lang %{name}
 
 
@@ -120,12 +124,17 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
-%dir %{_datadir}/pixmaps/pidgin/protocols/scalable
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
+# SLES11 defines suse_version = 1110
+%if !0%{?suse_version} || 0%{?suse_version} >= 1120
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
+%endif
 
 
 %changelog
+* Fri Apr 02 2010 J. D. User <jduser@noreply.com> pre-1.10.0-*git*
+- SLE11, openSUSE 10.0/1 don't have pidgin/protocols/scalable directory
+
 * Sun Mar 07 2010 pier11 <pier11@operamail.com> pre-1.10.0-*git*
 - OBS tests of pre-1.10.0 git-snapshot 4fa20cd65e5be0e469d4aa55d861f11c5b08b816
 
