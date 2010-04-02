@@ -149,7 +149,7 @@ PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.5.2],
 		[ac_have_gmime=no])
 ])
 AM_CONDITIONAL(SIPE_MIME_GMIME, [test "x$ac_have_gmime" = xyes])
-AM_COND_IF(SIPE_MIME_GMIME,
+AS_IF([test "x$ac_have_gmime" = xyes],
 	[AC_DEFINE(HAVE_GMIME, 1, [Define if gmime should be used in sipe.])])
 
 dnl check for libxml2
@@ -237,7 +237,7 @@ AC_ARG_ENABLE([telepathy],
 AS_IF([test "x$enable_telepathy" != xno],
 	[PKG_CHECK_MODULES(TELEPATHY, [telepathy-glib],
 		[dnl GMIME is a build requirement
-		 AM_COND_IF(SIPE_MIME_GMIME,
+		 AS_IF([test "x$ac_have_gmime" = xyes],
 			[],
 			[AC_ERROR(GMIME package is required for telepathy plugin)])
 
