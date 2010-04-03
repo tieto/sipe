@@ -23,6 +23,57 @@
 /*
  * This is a temporary file for the core de-purple transition period
  */
+void sipe_search_contact_with_cb(PurpleConnection *gc,
+				 PurpleRequestFields *fields);
+char *sipe_status_text(PurpleBuddy *buddy);
+void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_info,
+		       gboolean full);
+GList *sipe_status_types(PurpleAccount *acc);
+GList *sipe_buddy_menu(PurpleBuddy *buddy);
+GList *sipe_chat_menu(PurpleChat *chat);
+void sipe_login(PurpleAccount *account);
+void sipe_close(PurpleConnection *gc);
+int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
+		 PurpleMessageFlags flags);
+unsigned int sipe_send_typing(PurpleConnection *gc, const char *who,
+			      PurpleTypingState state);
+void sipe_get_info(PurpleConnection *gc, const char *username);
+void sipe_set_status(PurpleAccount *account, PurpleStatus *status);
+void sipe_set_idle(PurpleConnection *gc, int interval);
+void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
+		    PurpleGroup *group);
+void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
+		       PurpleGroup *group);
+void sipe_chat_leave(PurpleConnection *gc, int id);
+int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
+		   PurpleMessageFlags flags);
+void sipe_keep_alive(PurpleConnection *gc);
+void sipe_group_buddy(PurpleConnection *gc, const char *who,
+		      const char *old_group_name,
+		      const char *new_group_name);
+void sipe_rename_group(PurpleConnection *gc, const char *old_name,
+		       PurpleGroup *group, GList *moved_buddies);
+void sipe_convo_closed(PurpleConnection *gc, const char *who);
+void sipe_remove_group(PurpleConnection *gc, PurpleGroup *group);
 
-void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fields);
-extern PurplePluginProtocolInfo prpl_info;
+/**
+ * Initiates outgoing file transfer, sending @c file to remote peer identified
+ * by @c who.
+ *
+ * @param gc   a PurpleConnection
+ * @param who  string identifying receiver of the file
+ * @param file local file system path of the file to send
+ */
+void sipe_ft_send_file(PurpleConnection *gc, const char *who,
+		       const char *file);
+
+/**
+ * Creates new PurpleXfer structure representing a file transfer.
+ *
+ * @param gc  a PurpleConnection
+ * @param who remote participant in the file transfer session
+ */
+PurpleXfer *sipe_ft_new_xfer(PurpleConnection *gc,
+			     const char *who);
+
+int sipe_send_raw(PurpleConnection *gc, const char *buf, int len);

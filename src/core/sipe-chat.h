@@ -30,11 +30,6 @@
 struct sipe_account_data;
 
 /**
- * Create a new chat
- */
-void sipe_chat_create(struct sipe_account_data *sip, int id, const char *name);
-
-/**
  * Returns purple's chat name for provided chat identification in protocol.
  * Stores newly created chat title if not yet exist.
  *

@@ -38,10 +38,147 @@
 #include "request.h"
 #include "version.h"
 
+#include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-nls.h"
 
 #include "core-depurple.h"
+
+/* PurplePluginProtocolInfo function calls & data structure */
+static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
+				  SIPE_UNUSED_PARAMETER PurpleBuddy *b)
+{
+	return "sipe";
+}
+
+static GList *sipe_blist_node_menu(PurpleBlistNode *node)
+{
+	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
+		return sipe_buddy_menu((PurpleBuddy *) node);
+	} else if(PURPLE_BLIST_NODE_IS_CHAT(node)) {
+		return sipe_chat_menu((PurpleChat *)node);
+	} else {
+		return NULL;
+	}
+}
+
+static void sipe_add_permit(PurpleConnection *gc, const char *name)
+{
+	sipe_core_contact_allow_deny(gc->proto_data, name, TRUE);
+}
+
+static void sipe_add_deny(PurpleConnection *gc, const char *name)
+{
+	sipe_core_contact_allow_deny(gc->proto_data, name, FALSE);
+}
+
+static void sipe_chat_invite(PurpleConnection *gc, int id,
+			     SIPE_UNUSED_PARAMETER const char *message,
+			     const char *name)
+{
+	sipe_core_chat_create(gc->proto_data, id, name);
+}
+
+static void sipe_alias_buddy(PurpleConnection *gc, const char *name,
+			     SIPE_UNUSED_PARAMETER const char *alias)
+{
+	sipe_core_group_set_user(gc->proto_data, name);
+}
+
+#if PURPLE_VERSION_CHECK(2,5,0)
+static GHashTable *
+sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
+{
+	GHashTable *table;
+	table = g_hash_table_new(g_str_hash, g_str_equal);
+	g_hash_table_insert(table, "login_label", (gpointer)_("user@company.com"));
+	return table;
+}
+#endif
+
+static PurplePluginProtocolInfo prpl_info =
+{
+	OPT_PROTO_CHAT_TOPIC,
+	NULL,					/* user_splits */
+	NULL,					/* protocol_options */
+	NO_BUDDY_ICONS,				/* icon_spec */
+	sipe_list_icon,				/* list_icon */
+	NULL,					/* list_emblems */
+	sipe_status_text,			/* status_text */
+	sipe_tooltip_text,			/* tooltip_text */	// add custom info to contact tooltip
+	sipe_status_types,			/* away_states */
+	sipe_blist_node_menu,			/* blist_node_menu */
+	NULL,					/* chat_info */
+	NULL,					/* chat_info_defaults */
+	sipe_login,				/* login */
+	sipe_close,				/* close */
+	sipe_im_send,				/* send_im */
+	NULL,					/* set_info */		// TODO maybe
+	sipe_send_typing,			/* send_typing */
+	sipe_get_info,				/* get_info */
+	sipe_set_status,			/* set_status */
+	sipe_set_idle,				/* set_idle */
+	NULL,					/* change_passwd */
+	sipe_add_buddy,				/* add_buddy */
+	NULL,					/* add_buddies */
+	sipe_remove_buddy,			/* remove_buddy */
+	NULL,					/* remove_buddies */
+	sipe_add_permit,			/* add_permit */
+	sipe_add_deny,				/* add_deny */
+	sipe_add_deny,				/* rem_permit */
+	sipe_add_permit,			/* rem_deny */
+	NULL,					/* set_permit_deny */
+	NULL,					/* join_chat */
+	NULL,					/* reject_chat */
+	NULL,					/* get_chat_name */
+	sipe_chat_invite,			/* chat_invite */
+	sipe_chat_leave,			/* chat_leave */
+	NULL,					/* chat_whisper */
+	sipe_chat_send,				/* chat_send */
+	sipe_keep_alive,			/* keepalive */
+	NULL,					/* register_user */
+	NULL,					/* get_cb_info */	// deprecated
+	NULL,					/* get_cb_away */	// deprecated
+	sipe_alias_buddy,			/* alias_buddy */
+	sipe_group_buddy,			/* group_buddy */
+	sipe_rename_group,			/* rename_group */
+	NULL,					/* buddy_free */
+	sipe_convo_closed,			/* convo_closed */
+	purple_normalize_nocase,		/* normalize */
+	NULL,					/* set_buddy_icon */
+	sipe_remove_group,			/* remove_group */
+	NULL,					/* get_cb_real_name */	// TODO?
+	NULL,					/* set_chat_topic */
+	NULL,					/* find_blist_chat */
+	NULL,					/* roomlist_get_list */
+	NULL,					/* roomlist_cancel */
+	NULL,					/* roomlist_expand_category */
+	NULL,					/* can_receive_file */
+	sipe_ft_send_file,			/* send_file */
+	sipe_ft_new_xfer,			/* new_xfer */
+	NULL,					/* offline_message */
+	NULL,					/* whiteboard_prpl_ops */
+	sipe_send_raw,				/* send_raw */
+	NULL,					/* roomlist_room_serialize */
+	NULL,					/* unregister_user */
+	NULL,					/* send_attention */
+	NULL,					/* get_attention_types */
+#if !PURPLE_VERSION_CHECK(2,5,0)
+	/* Backward compatibility when compiling against 2.4.x API */
+	(void (*)(void))			/* _purple_reserved4 */
+#endif
+	sizeof(PurplePluginProtocolInfo),       /* struct_size */
+#if PURPLE_VERSION_CHECK(2,5,0)
+	sipe_get_account_text_table,		/* get_account_text_table */
+#if PURPLE_VERSION_CHECK(2,6,0)
+	NULL,					/* initiate_media */
+	NULL,					/* get_media_caps */
+#if PURPLE_VERSION_CHECK(2,7,0)
+	NULL,					/* get_moods */
+#endif
+#endif
+#endif
+};
 
 /* PurplePluginInfo function calls & data structure */
 static gboolean sipe_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
