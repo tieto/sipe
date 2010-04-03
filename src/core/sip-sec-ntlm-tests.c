@@ -815,6 +815,37 @@ Message (length 352):
 	assert_equal(type3_hex, out_buff.value, out_buff.length, TRUE);
 	}
 
+	printf ("\n\nTesting Authentication Algorithm's v4 Signature String\n");
+	{
+	char *response_symbian = 
+	"SIP/2.0 180 Ringing\r\n"
+	"Authentication-Info: NTLM rspauth=\"010000003EA8D688BA51D5CD64000000\", srand=\"1B6D47A1\", snum=\"11\", opaque=\"357E6F72\", qop=\"auth\", targetname=\"LOC-COMPANYT-FE03.COMPANY.COM\", realm=\"SIP Communications Service\"\r\n"
+	"Via: SIP/2.0/tls 192.168.44.10:50230;received=10.117.245.254;ms-received-port=50230;ms-received-cid=37ABE00\r\n"
+	"FROM: \"Sender\"<sip:sender@company.com>;tag=2420628112;epid=54392f1bbf01\r\n"
+	"TO: \"recipient\"<sip:recipient@company.com>;tag=7aee15546a;epid=3102EB8BD1\r\n"
+	"CSEQ: 1 INVITE\r\n"
+	"CALL-ID: 41CEg82ECa0AC8i3DD7mE673t9CF4b19DAxF780x\r\n"
+	"RECORD-ROUTE: <sip:LOC-COMPANYT-OCSR2P01.COMPANY.COM:5061;transport=tls;ms-fe=LOC-COMPANYT-FE03.COMPANY.COM;opaque=state:F:T:Eu:Ci.R37abe00;lr;ms-route-sig=gdOGgL7NiL3hv_oBc0NdrJOxZk_r-8naq-k_DtpgAA>\r\n"
+	"CONTACT: <sip:recipient@company.com;opaque=user:epid:-gLwenLTVVqy-Ak8TJn1ZAAA;gruu>;text;audio;video\r\n"
+	"CONTENT-LENGTH: 0\r\n"
+	"SUPPORTED: gruu-10\r\n"
+	"ALLOW: UPDATE\r\n"
+	"P-ASSERTED-IDENTITY: \"recipient\"<SIP:recipient@company.com>\r\n"
+	"SERVER: RTCC/3.5.0.0 MCXService/3.5.0.0 communicator.NOKIAS60R2.JVP.EN_US/1.0.6875.0\r\n"
+	"\r\n";
+
+	response_sig = "<NTLM><1B6D47A1><11><SIP Communications Service><LOC-COMPANYT-FE03.COMPANY.COM><41CEg82ECa0AC8i3DD7mE673t9CF4b19DAxF780x><1><INVITE><sip:sender@company.com><2420628112><sip:recipient@company.com><7aee15546a><SIP:recipient@company.com><><><180>";
+
+	msg = sipmsg_parse_msg(response_symbian);
+	msgbd.msg = msg;
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "LOC-COMPANYT-FE03.COMPANY.COM");
+	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
+
+	assert_equal (response_sig, (guchar *)msg_str, strlen(response_sig), FALSE);
+	
+	sipmsg_breakdown_free(&msgbd);
+	}
+	
 ////// UUID tests ///////
 	/* begin tests from MS-SIPRE */
 	{

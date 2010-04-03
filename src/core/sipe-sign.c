@@ -86,9 +86,9 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 	}
 	if (NULL != hdr) {
 		gchar *tmp = sipmsg_find_part_of_header(hdr, "<", ">", empty_string);
-		if (g_str_has_prefix(tmp, "sip:")) {
+		if (g_ascii_strncasecmp(tmp, "sip:", 4) == 0) {
 			msg->p_assertet_identity_sip_uri = tmp;
-		} else if (g_str_has_prefix(tmp, "tel:")){
+		} else if (g_ascii_strncasecmp(tmp, "tel:", 4) == 0){
 			msg->p_assertet_identity_tel_uri = tmp;
 		} else {
 			g_free(tmp);
