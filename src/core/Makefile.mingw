@@ -135,7 +135,7 @@ $(TEST_OBJECTS):
 
 tests: tests-clean $(TEST_OBJECTS)
 	$(CC) sipe-utils.o uuid.o sipe-xml.o sipe-xml-tests.o -L. $(LIB_PATHS) $(LIBS) -lsipe -o sipe-xml-tests.exe
-	$(CC) ../purple/purple-debug.o ../purple/purple-markup.o ../purple/purple-network.o ../purple/purple-digest.o ../purple/purple-crypt.o sipe-sign.o sipe-mime.o sipmsg.o sipe-utils.o uuid.o sip-sec-ntlm-tests.o ../purple/tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o ../purple/tests.exe
+	$(CC) ../purple/purple-debug.o ../purple/purple-markup.o ../purple/purple-network.o ../purple/purple-digest.o ../purple/purple-crypt.o ../purple/purple-mime.o sipe-sign.o sipmsg.o sipe-utils.o uuid.o sip-sec-ntlm-tests.o ../purple/tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o ../purple/tests.exe
 	./sipe-xml-tests.exe
 	../purple/tests.exe
 	
