@@ -1,3 +1,24 @@
+pidgin-sipe (1.10.0-1) unstable; urgency=low
+
+  * New upstream version
+      - Feature #2823160: Access Levels (2007+ environment)
+      - Feature #2957811: add support for "automaton" class
+      - Feature #2972823: fail on in-line variable declarations
+      - Fixed #2971422: handle OCS 2005 idiosyncrasy of varying SIP URI case
+      - Fixed #2981563: Authentication protocol v4 - invalid signature of some 
+        incoming messages containing P-Asserted-Identity or P-Preferred-Identity
+        with uppercased SIP or TEL in URI.
+      - Fixed publication/"409 Conflict" endless looping
+      - Prepare for Pidgin 2.7.0
+      - Added SVG icon artwork
+      - Many changes to configure script. Be sure to look at "configure --help"
+      - Many internal changes to prepare for non-purple backends
+      - New build requirements: libxml2, glib-2.0 >= 2.12.0
+      - New build option: gmime-2.4 >= 2.4.16 or gmime-2.6 >= 2.5.2 for 
+        non-purple backends
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 04 Apr 2010 00:52:59 -0600
+
 pidgin-sipe (1.9.1-1) unstable; urgency=low
   * New upstream version (emergency release)
       - Fixed #2969327: Kerberos authentication always fails on *nix platforms
