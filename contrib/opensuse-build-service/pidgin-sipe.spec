@@ -141,6 +141,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Apr 04 2010 pier11 <pier11@operamail.com> 1.10.0
+- release
+
 * Fri Apr 02 2010 J. D. User <jduser@noreply.com> pre-1.10.0-*git*
 - Mandriva has too old libtool version
 
