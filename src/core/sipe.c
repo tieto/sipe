@@ -287,25 +287,17 @@ sipe_get_useragent(struct sipe_account_data *sip)
 	return useragent;
 }
 
-static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
-				  SIPE_UNUSED_PARAMETER PurpleBuddy *b)
-{
-	return "sipe";
-}
-
 static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans);
 
 static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond);
 static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error,
                                      gpointer data);
 
-static void sipe_close(PurpleConnection *gc);
-
 static void send_presence_status(struct sipe_account_data *sip);
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf);
 
-static void sipe_keep_alive(PurpleConnection *gc)
+void sipe_keep_alive(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	if (sip->transport == SIPE_TRANSPORT_UDP) {
@@ -813,7 +805,7 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 	}
 }
 
-static int sipe_send_raw(PurpleConnection *gc, const char *buf, int len)
+int sipe_send_raw(PurpleConnection *gc, const char *buf, int len)
 {
 	sendout_pkt(gc, buf);
 	return len;
@@ -1233,8 +1225,8 @@ sipe_change_access_level(struct sipe_account_data *sip,
 			 const gchar *type,
 			 const gchar *value);
 
-static void
-sipe_contact_allow_deny (struct sipe_account_data *sip, const gchar * who, gboolean allow)
+void
+sipe_core_contact_allow_deny (struct sipe_account_data *sip, const gchar * who, gboolean allow)
 {
 	if (allow) {
 		SIPE_DEBUG_INFO("Authorizing contact %s", who);
@@ -1255,7 +1247,7 @@ void sipe_auth_user_cb(void * data)
 	struct sipe_auth_job * job = (struct sipe_auth_job *) data;
 	if (!job) return;
 
-	sipe_contact_allow_deny (job->sip, job->who, TRUE);
+	sipe_core_contact_allow_deny (job->sip, job->who, TRUE);
 	g_free(job);
 }
 
@@ -1265,31 +1257,9 @@ void sipe_deny_user_cb(void * data)
 	struct sipe_auth_job * job = (struct sipe_auth_job *) data;
 	if (!job) return;
 
-	sipe_contact_allow_deny (job->sip, job->who, FALSE);
+	sipe_core_contact_allow_deny (job->sip, job->who, FALSE);
 	g_free(job);
 }
-
-static void
-sipe_add_permit(PurpleConnection *gc, const char *name)
-{
-	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-
-	sipe_contact_allow_deny(sip, name, TRUE);
-}
-
-static void
-sipe_add_deny(PurpleConnection *gc, const char *name)
-{
-	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	sipe_contact_allow_deny(sip, name, FALSE);
-}
-
-/*static void
-sipe_remove_permit_deny(PurpleConnection *gc, const char *name)
-{
-	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	sipe_contact_set_acl(sip, name, "");
-}*/
 
 /** @applicable: 2005-
  */
@@ -1447,8 +1417,8 @@ sipe_get_buddy_groups_string (struct sipe_buddy *buddy) {
 /**
   * Sends buddy update to server
   */
-static void
-sipe_group_set_user (struct sipe_account_data *sip, const gchar * who)
+void
+sipe_core_group_set_user(struct sipe_account_data *sip, const gchar * who)
 {
 	struct sipe_buddy *buddy = g_hash_table_lookup(sip->buddies, who);
 	PurpleBuddy *purple_buddy = purple_find_buddy (sip->account, who);
@@ -1509,7 +1479,7 @@ static gboolean process_add_group_response(struct sipe_account_data *sip, struct
 			buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
 		}
 
-		sipe_group_set_user(sip, ctx->user_name);
+		sipe_core_group_set_user(sip, ctx->user_name);
 
 		sipe_xml_free(xml);
 		return TRUE;
@@ -2144,7 +2114,7 @@ static void sipe_subscribe_presence_single(struct sipe_account_data *sip, void *
 	g_free(key);
 }
 
-static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
+void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 {
 	SIPE_DEBUG_INFO("sipe_set_status: status=%s", purple_status_get_id(status));
 
@@ -2206,7 +2176,8 @@ static void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 		}
 	}
 }
-static void
+
+void
 sipe_set_idle(PurpleConnection * gc,
 	      int interval)
 {
@@ -2222,15 +2193,7 @@ sipe_set_idle(PurpleConnection * gc,
 	}
 }
 
-static void
-sipe_alias_buddy(PurpleConnection *gc, const char *name,
-		 SIPE_UNUSED_PARAMETER const char *alias)
-{
-	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
-	sipe_group_set_user(sip, name);
-}
-
-static void
+void
 sipe_group_buddy(PurpleConnection *gc,
 		 const char *who,
 		 const char *old_group_name,
@@ -2262,11 +2225,11 @@ sipe_group_buddy(PurpleConnection *gc,
  		sipe_group_create(sip, new_group_name, who);
  	} else {
 		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
-		sipe_group_set_user(sip, who);
+		sipe_core_group_set_user(sip, who);
  	}
 }
 
-static void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
+void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
 	SIPE_DEBUG_INFO("sipe_add_buddy[CB]: buddy:%s group:%s", buddy ? buddy->name : "", group ? group->name : "");
 
@@ -2341,7 +2304,7 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
   * Then see if no groups left, removes buddy completely.
   * Otherwise updates buddy groups on server.
   */
-static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
+void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
 	struct sipe_buddy *b;
@@ -2378,12 +2341,12 @@ static void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGr
 		sipe_free_buddy(b);
 	} else {
 		//updates groups on server
-		sipe_group_set_user(sip, b->name);
+		sipe_core_group_set_user(sip, b->name);
 	}
 
 }
 
-static void
+void
 sipe_rename_group(PurpleConnection *gc,
 		  const char *old_name,
 		  PurpleGroup *group,
@@ -2398,7 +2361,7 @@ sipe_rename_group(PurpleConnection *gc,
 	}
 }
 
-static void
+void
 sipe_remove_group(PurpleConnection *gc, PurpleGroup *group)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
@@ -2419,7 +2382,7 @@ sipe_remove_group(PurpleConnection *gc, PurpleGroup *group)
 }
 
 /** All statuses need message attribute to pass Note */
-static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
+GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 {
 	PurpleStatusType *type;
 	GList *types = NULL;
@@ -5021,7 +4984,7 @@ sipe_session_close_all(struct sipe_account_data *sip)
 	}
 }
 
-static void
+void
 sipe_convo_closed(PurpleConnection * gc, const char *who)
 {
 	struct sipe_account_data *sip = gc->proto_data;
@@ -5030,15 +4993,7 @@ sipe_convo_closed(PurpleConnection * gc, const char *who)
 	sipe_session_close(sip, sipe_session_find_im(sip, who));
 }
 
-static void
-sipe_chat_invite(PurpleConnection *gc, int id,
-		 SIPE_UNUSED_PARAMETER const char *message,
-		 const char *name)
-{
-	sipe_chat_create(gc->proto_data, id, name);
-}
-
-static void
+void
 sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_account_data *sip = gc->proto_data;
@@ -5047,8 +5002,8 @@ sipe_chat_leave (PurpleConnection *gc, int id)
 	sipe_session_close(sip, session);
 }
 
-static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
-			SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
+int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
+		 SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_session *session;
@@ -5074,8 +5029,8 @@ static int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	return 1;
 }
 
-static int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
-			  SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
+int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
+		   SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	struct sip_session *session;
@@ -5265,7 +5220,7 @@ static void process_incoming_refer(struct sipe_account_data *sip, struct sipmsg 
 	g_free(referred_by);
 }
 
-static unsigned int
+unsigned int
 sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 {
 	struct sipe_account_data *sip = (struct sipe_account_data *)gc->proto_data;
@@ -8898,7 +8853,7 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 	}
 }
 
-static void sipe_login(PurpleAccount *account)
+void sipe_login(PurpleAccount *account)
 {
 	PurpleConnection *gc;
 	struct sipe_account_data *sip;
@@ -9152,7 +9107,7 @@ static gboolean sipe_buddy_remove(SIPE_UNUSED_PARAMETER gpointer key, gpointer b
 	return(TRUE);
 }
 
-static void sipe_close(PurpleConnection *gc)
+void sipe_close(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 
@@ -9479,11 +9434,7 @@ void sipe_core_reset_status(struct sipe_account_data *sip)
 	}
 }
 
-static void dummy_permit_deny(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
-{
-}
-
-static char *sipe_status_text(PurpleBuddy *buddy)
+char *sipe_status_text(PurpleBuddy *buddy)
 {
 	const PurplePresence *presence = purple_buddy_get_presence(buddy);
 	const PurpleStatus *status = purple_presence_get_active_status(presence);
@@ -9532,7 +9483,7 @@ static char *sipe_status_text(PurpleBuddy *buddy)
  */
 #define INDENT_MARKED_INHERITED_FMT	"= %s"
 
-static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_info, SIPE_UNUSED_PARAMETER gboolean full)
+void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_info, SIPE_UNUSED_PARAMETER gboolean full)
 {
 	const PurplePresence *presence = purple_buddy_get_presence(buddy);
 	const PurpleStatus *status = purple_presence_get_active_status(presence);
@@ -9603,17 +9554,6 @@ static void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_inf
 		g_free(text);
 	}
 }
-
-#if PURPLE_VERSION_CHECK(2,5,0)
-static GHashTable *
-sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
-{
-	GHashTable *table;
-	table = g_hash_table_new(g_str_hash, g_str_equal);
-	g_hash_table_insert(table, "login_label", (gpointer)_("user@company.com"));
-	return table;
-}
-#endif
 
 static PurpleBuddy *
 purple_blist_add_buddy_clone(PurpleGroup * group, PurpleBuddy * buddy)
@@ -9956,7 +9896,7 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 /*
  * A menu which appear when right-clicking on buddy in contact list.
  */
-static GList *
+GList *
 sipe_buddy_menu(PurpleBuddy *buddy)
 {
 	PurpleBlistNode *g_node;
@@ -10379,7 +10319,7 @@ sipe_chat_menu_lock_cb(PurpleChat *chat)
 	sipe_conf_modify_lock(chat, TRUE);
 }
 
-static GList *
+GList *
 sipe_chat_menu(PurpleChat *chat)
 {
 	PurpleMenuAction *act;
@@ -10415,18 +10355,6 @@ sipe_chat_menu(PurpleChat *chat)
 
 	g_free(self);
 	return menu;
-}
-
-static GList *
-sipe_blist_node_menu(PurpleBlistNode *node)
-{
-	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
-		return sipe_buddy_menu((PurpleBuddy *) node);
-	} else if(PURPLE_BLIST_NODE_IS_CHAT(node)) {
-		return sipe_chat_menu((PurpleChat *)node);
-	} else {
-		return NULL;
-	}
 }
 
 static gboolean
@@ -10585,7 +10513,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 /**
  * AD search first, LDAP based
  */
-static void sipe_get_info(PurpleConnection *gc, const char *username)
+void sipe_get_info(PurpleConnection *gc, const char *username)
 {
 	struct sipe_account_data *sip = gc->proto_data;
 	gchar *domain_uri = sip_uri_from_name(sip->sipdomain);
@@ -10603,90 +10531,6 @@ static void sipe_get_info(PurpleConnection *gc, const char *username)
 	g_free(body);
 	g_free(row);
 }
-
-PurplePluginProtocolInfo prpl_info =
-{
-	OPT_PROTO_CHAT_TOPIC,
-	NULL,					/* user_splits */
-	NULL,					/* protocol_options */
-	NO_BUDDY_ICONS,				/* icon_spec */
-	sipe_list_icon,				/* list_icon */
-	NULL,					/* list_emblems */
-	sipe_status_text,			/* status_text */
-	sipe_tooltip_text,			/* tooltip_text */	// add custom info to contact tooltip
-	sipe_status_types,			/* away_states */
-	sipe_blist_node_menu,			/* blist_node_menu */
-	NULL,					/* chat_info */
-	NULL,					/* chat_info_defaults */
-	sipe_login,				/* login */
-	sipe_close,				/* close */
-	sipe_im_send,				/* send_im */
-	NULL,					/* set_info */		// TODO maybe
-	sipe_send_typing,			/* send_typing */
-	sipe_get_info,				/* get_info */
-	sipe_set_status,			/* set_status */
-	sipe_set_idle,				/* set_idle */
-	NULL,					/* change_passwd */
-	sipe_add_buddy,				/* add_buddy */
-	NULL,					/* add_buddies */
-	sipe_remove_buddy,			/* remove_buddy */
-	NULL,					/* remove_buddies */
-	sipe_add_permit,			/* add_permit */
-	sipe_add_deny,				/* add_deny */
-	sipe_add_deny,				/* rem_permit */
-	sipe_add_permit,			/* rem_deny */
-	dummy_permit_deny,			/* set_permit_deny */
-	NULL,					/* join_chat */
-	NULL,					/* reject_chat */
-	NULL,					/* get_chat_name */
-	sipe_chat_invite,			/* chat_invite */
-	sipe_chat_leave,			/* chat_leave */
-	NULL,					/* chat_whisper */
-	sipe_chat_send,				/* chat_send */
-	sipe_keep_alive,			/* keepalive */
-	NULL,					/* register_user */
-	NULL,					/* get_cb_info */	// deprecated
-	NULL,					/* get_cb_away */	// deprecated
-	sipe_alias_buddy,			/* alias_buddy */
-	sipe_group_buddy,			/* group_buddy */
-	sipe_rename_group,			/* rename_group */
-	NULL,					/* buddy_free */
-	sipe_convo_closed,			/* convo_closed */
-	purple_normalize_nocase,		/* normalize */
-	NULL,					/* set_buddy_icon */
-	sipe_remove_group,			/* remove_group */
-	NULL,					/* get_cb_real_name */	// TODO?
-	NULL,					/* set_chat_topic */
-	NULL,					/* find_blist_chat */
-	NULL,					/* roomlist_get_list */
-	NULL,					/* roomlist_cancel */
-	NULL,					/* roomlist_expand_category */
-	NULL,					/* can_receive_file */
-	sipe_ft_send_file,			/* send_file */
-	sipe_ft_new_xfer,			/* new_xfer */
-	NULL,					/* offline_message */
-	NULL,					/* whiteboard_prpl_ops */
-	sipe_send_raw,				/* send_raw */
-	NULL,					/* roomlist_room_serialize */
-	NULL,					/* unregister_user */
-	NULL,					/* send_attention */
-	NULL,					/* get_attention_types */
-#if !PURPLE_VERSION_CHECK(2,5,0)
-	/* Backward compatibility when compiling against 2.4.x API */
-	(void (*)(void))			/* _purple_reserved4 */
-#endif
-	sizeof(PurplePluginProtocolInfo),       /* struct_size */
-#if PURPLE_VERSION_CHECK(2,5,0)
-	sipe_get_account_text_table,		/* get_account_text_table */
-#if PURPLE_VERSION_CHECK(2,6,0)
-	NULL,					/* initiate_media */
-	NULL,					/* get_media_caps */
-#if PURPLE_VERSION_CHECK(2,7,0)
-	NULL,					/* get_moods */
-#endif
-#endif
-#endif
-};
 
 void sipe_core_init(void)
 {

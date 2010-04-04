@@ -37,6 +37,7 @@
 #include "eventloop.h"
 #include "ft.h"
 #include "network.h"
+#include "request.h"
 
 #ifdef _WIN32
 /* for network */
@@ -53,6 +54,8 @@
 #include <sys/sockio.h> /* SIOCGIFCONF for Solaris */
 #endif
 #endif
+
+#include "core-depurple.h" /* Temporary for the core de-purple transition */
 
 #include "sipe-common.h"
 #include "sipmsg.h"

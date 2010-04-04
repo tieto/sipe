@@ -30,8 +30,6 @@
 /* Forward declarations */
 struct sipmsg;
 struct _PurpleAccount;
-struct _PurpleConnection;
-struct _PurpleXfer;
 
 /**
  * Called when remote peer wants to send a file.
@@ -63,22 +61,6 @@ void sipe_ft_incoming_accept(struct _PurpleAccount *account, const GSList *body)
  * @param body    parsed SIP message body as name-value pairs
  */
 void sipe_ft_incoming_cancel(struct _PurpleAccount *account, GSList *body);
-/**
- * Initiates outgoing file transfer, sending @c file to remote peer identified
- * by @c who.
- *
- * @param gc   a PurpleConnection
- * @param who  string identifying receiver of the file
- * @param file local file system path of the file to send
- */
-void sipe_ft_send_file(struct _PurpleConnection *gc, const char *who, const char *file);
-/**
- * Creates new PurpleXfer structure representing a file transfer.
- *
- * @param gc  a PurpleConnection
- * @param who remote participant in the file transfer session
- */
-struct _PurpleXfer * sipe_ft_new_xfer(struct _PurpleConnection *gc, const char *who);
 
 /**
  * Parses file transfer message body and creates a list with name-value pairs

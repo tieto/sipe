@@ -31,12 +31,14 @@
 #include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-chat.h"
+#include "sipe-core.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe.h"
 
-void sipe_chat_create(struct sipe_account_data *sip, int id, const char *name)
+void sipe_core_chat_create(struct sipe_account_data *sip, int id,
+			   const char *name)
 {
 	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
 
