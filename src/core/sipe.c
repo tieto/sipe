@@ -8880,6 +8880,7 @@ void sipe_login(PurpleAccount *account)
 
 	gc->proto_data = sipe_private = g_new0(struct sipe_core_private, 1);
 	sipe_private->temporary = sip = g_new0(struct sipe_account_data, 1);
+	sip->public = (struct sipe_core_public *)sipe_private;
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
 		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
 	sip->gc = gc;
