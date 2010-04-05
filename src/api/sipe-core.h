@@ -21,6 +21,25 @@
  */
 
 /**
+ * Opaque data type for backend private data.
+ * The backend is responsible to allocate and free it.
+ */
+struct sipe_backend_private;
+
+/**
+ * Public part of the Sipe data structure
+ *
+ * This part contains the information needed by the core and the backend.
+ */
+struct sipe_core_public {
+	/**
+	 * This points to the private data for the backend.
+	 * The backend is responsible to allocate and free it.
+	 */ 
+	struct sipe_backend_private *backend_private;
+};
+
+/**
  * Initialize & destroy functions for the SIPE core
  * Should be called on loading and unloading of the plugin.
  */
@@ -35,23 +54,31 @@ gboolean sipe_strequal(const gchar *left, const gchar *right);
 /**
  * Other functions (need to be sorted once structure becomes clear.
  */
-struct sipe_account_data;
 
 /* Get translated about string. Must be g_free'd(). */
 gchar *sipe_core_about(void);
 
 /* menu actions */
-void sipe_core_update_calendar(struct sipe_account_data *sip);
-void sipe_core_reset_status(struct sipe_account_data *sip);
+void sipe_core_update_calendar(struct sipe_core_public *sipe_public);
+void sipe_core_reset_status(struct sipe_core_public *sipe_public);
 
 /* buddy actions */
-void sipe_core_contact_allow_deny(struct sipe_account_data *sip,
+void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
 				  const gchar *who, gboolean allow);
-void sipe_core_group_set_user(struct sipe_account_data *sip,
+void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
 			      const gchar * who);
 
 /**
  * Create a new chat
  */
-void sipe_core_chat_create(struct sipe_account_data *sip, int id,
+void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
 			   const char *name);
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

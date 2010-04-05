@@ -61,6 +61,8 @@
 #include "sipmsg.h"
 #include "sip-sec.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
 #include "sipe-ft.h"
@@ -132,7 +134,7 @@ sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 {
 	sipe_file_transfer *ft = xfer->data;
 	if (ft) {
-		struct sipe_account_data *sip = xfer->account->gc->proto_data;
+		struct sipe_account_data *sip = ((struct sipe_core_private *)xfer->account->gc->proto_data)->temporary;
 
 		g_hash_table_remove(sip->filetransfers,ft->invitation_cookie);
 
@@ -226,7 +228,7 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 		return;
 	}
 
-	sip = xfer->account->gc->proto_data;
+	sip = ((struct sipe_core_private *)xfer->account->gc->proto_data)->temporary;
 
 	request = g_strdup_printf("USR %s %u\r\n", sip->username, ft->auth_cookie);
 	if (write(xfer->fd,request,strlen(request)) == -1) {
@@ -477,7 +479,7 @@ sipe_ft_outgoing_init(PurpleXfer *xfer)
 				      purple_xfer_get_filename(xfer),
 				      (long unsigned) purple_xfer_get_size(xfer));
 
-	struct sipe_account_data *sip = xfer->account->gc->proto_data;
+	struct sipe_account_data *sip = ((struct sipe_core_private *)xfer->account->gc->proto_data)->temporary;
 	struct sip_session *session = sipe_session_find_or_add_im(sip, xfer->who);
 
 	g_hash_table_insert(sip->filetransfers,g_strdup(ft->invitation_cookie),xfer);
@@ -610,7 +612,7 @@ sipe_ft_outgoing_stop(PurpleXfer *xfer)
 void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const GSList *body)
 {
 	PurpleXfer *xfer;
-	struct sipe_account_data *sip = account->gc->proto_data;
+	struct sipe_account_data *sip = ((struct sipe_core_private *)account->gc->proto_data)->temporary;
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
 	if (!session) {
@@ -658,7 +660,7 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 
 void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 {
-	struct sipe_account_data *sip = account->gc->proto_data;
+	struct sipe_account_data *sip = ((struct sipe_core_private *)account->gc->proto_data)->temporary;
 	const gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
@@ -721,7 +723,7 @@ void sipe_ft_incoming_cancel(PurpleAccount *account, GSList *body)
 {
 	gchar *inv_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
 
-	struct sipe_account_data *sip = account->gc->proto_data;
+	struct sipe_account_data *sip = ((struct sipe_core_private *)account->gc->proto_data)->temporary;
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
 	purple_xfer_cancel_remote(xfer);
@@ -920,7 +922,7 @@ PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who)
 				       PURPLE_XFER_SEND, who);
 
 		if (xfer) {
-			struct sipe_account_data *sip = gc->proto_data;
+			struct sipe_account_data *sip = ((struct sipe_core_private *)gc->proto_data)->temporary;
 
 			sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
 			ft->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
@@ -999,7 +1001,7 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 			       ft->auth_cookie);
 
 	if (!ft->dialog) {
-		struct sipe_account_data *sip = xfer->account->gc->proto_data;
+		struct sipe_account_data *sip = ((struct sipe_core_private *)xfer->account->gc->proto_data)->temporary;
 		struct sip_session *session = sipe_session_find_or_add_im(sip, xfer->who);
 		ft->dialog = sipe_dialog_find(session, xfer->who);
 	}

@@ -32,14 +32,16 @@
 #include "sipe-backend.h"
 #include "sipe-chat.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe.h"
 
-void sipe_core_chat_create(struct sipe_account_data *sip, int id,
+void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
 			   const char *name)
 {
+	struct sipe_account_data *sip = ((struct sipe_core_private *)sipe_public)->temporary;
 	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
 
 	if (session) {

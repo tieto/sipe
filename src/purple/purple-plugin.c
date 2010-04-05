@@ -253,17 +253,13 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 static void sipe_republish_calendar(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	struct sipe_account_data *sip = gc->proto_data;
-
-	sipe_core_update_calendar(sip);
+	sipe_core_update_calendar(gc->proto_data);
 }
 
 static void sipe_reset_status(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	struct sipe_account_data *sip = gc->proto_data;
-
-	sipe_core_reset_status(sip);
+	sipe_core_reset_status(gc->proto_data);
 }
 
 static GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,

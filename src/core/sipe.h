@@ -43,6 +43,7 @@ struct _PurplePlugin;
 struct _PurpleSrvQueryData;
 struct _PurpleSslConnection;
 struct sip_sec_context;
+struct sipe_core_private;
 enum sip_sec_auth_type;
 
 #define SIMPLE_BUF_INC 4096
@@ -164,6 +165,9 @@ struct sipe_container_member {
 };
 
 struct sipe_account_data {
+	/* back pointer to new data structure */
+	struct sipe_core_public *public;
+
 	struct _PurpleConnection *gc;
 	gchar *sipdomain;
 	gchar *username;
