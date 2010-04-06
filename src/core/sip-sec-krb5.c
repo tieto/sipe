@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -26,6 +27,7 @@
 #include <string.h>
 #include <gssapi/gssapi.h>
 #include <gssapi/gssapi_krb5.h>
+#include <krb5.h>
 
 #include "sipe-common.h"
 #include "sip-sec.h"
