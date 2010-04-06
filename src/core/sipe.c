@@ -9446,39 +9446,32 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 	}
 }
 
-char *sipe_status_text(PurpleBuddy *buddy)
+gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
+			      const gchar *name,
+			      const gchar *status_id,
+			      const gchar *status_text)
 {
-	const PurplePresence *presence = purple_buddy_get_presence(buddy);
-	const PurpleStatus *status = purple_presence_get_active_status(presence);
-	const char *status_id = purple_status_get_id(status);
-	struct sipe_account_data *sip = ((struct sipe_core_private *)buddy->account->gc->proto_data)->temporary;
 	struct sipe_buddy *sbuddy;
-	char *text = NULL;
+	const char *activity_str;
 
-	if (!sip) return NULL; /* happens on pidgin exit */
+	if (!sipe_public) return NULL; /* happens on pidgin exit */
 
-	sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
-	if (sbuddy) {
-		const char *activity_str = sbuddy->activity ?
-			sbuddy->activity :
-			sipe_strequal(status_id, SIPE_STATUS_ID_BUSY) || sipe_strequal(status_id, SIPE_STATUS_ID_BRB) ?
-				purple_status_get_name(status) : NULL;
+	sbuddy = g_hash_table_lookup(((struct sipe_core_private *)sipe_public)->temporary->buddies, name);
+	if (!sbuddy) return NULL;
 
-		if (activity_str && sbuddy->note)
-		{
-			text = g_strdup_printf("%s - <i>%s</i>", activity_str, sbuddy->note);
-		}
-		else if (activity_str)
-		{
-			text = g_strdup(activity_str);
-		}
-		else if (sbuddy->note)
-		{
-			text = g_strdup_printf("<i>%s</i>", sbuddy->note);
-		}
+	activity_str = sbuddy->activity ? sbuddy->activity :
+		sipe_strequal(status_id, SIPE_STATUS_ID_BUSY) || sipe_strequal(status_id, SIPE_STATUS_ID_BRB) ?
+		status_text : NULL;
+
+	if (activity_str && sbuddy->note) {
+		return g_strdup_printf("%s - <i>%s</i>", activity_str, sbuddy->note);
+	} else if (activity_str) {
+		return g_strdup(activity_str);
+	} else if (sbuddy->note) {
+		return g_strdup_printf("<i>%s</i>", sbuddy->note);
+	} else {
+		return NULL;
 	}
-
-	return text;
 }
 
 /** for Access levels menu */

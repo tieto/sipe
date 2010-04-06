@@ -63,6 +63,21 @@ void sipe_core_update_calendar(struct sipe_core_public *sipe_public);
 void sipe_core_reset_status(struct sipe_core_public *sipe_public);
 
 /* buddy actions */
+/**
+ * Get status text for buddy.
+ *
+ * @param sipe_public Sipe core public data structure.
+ * @param name        backend-specific buddy name.
+ * @param status_id   backend-specific buddy status ID.
+ * @param status_text backend-specific buddy status text for ID.
+ *
+ * @return HTML status text for the buddy or NULL. Must be g_free()'d.
+ */
+gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
+			      const gchar *name,
+			      const gchar *status_id,
+			      const gchar *status_name);
+
 void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
 				  const gchar *who, gboolean allow);
 void sipe_core_group_set_user(struct sipe_core_public *sipe_public,

@@ -32,10 +32,12 @@
 #endif
 
 #include "accountopt.h"
+#include "blist.h"
 #include "connection.h"
 #include "prpl.h"
 #include "plugin.h"
 #include "request.h"
+#include "status.h"
 #include "version.h"
 
 #include "sipe-backend.h"
@@ -49,6 +51,15 @@ static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 				  SIPE_UNUSED_PARAMETER PurpleBuddy *b)
 {
 	return "sipe";
+}
+
+static gchar *sipe_status_text(PurpleBuddy *buddy)
+{
+	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
+	return sipe_core_buddy_status(buddy->account->gc->proto_data,
+				      buddy->name,
+				      purple_status_get_id(status),
+				      purple_status_get_name(status));
 }
 
 static GList *sipe_blist_node_menu(PurpleBlistNode *node)
