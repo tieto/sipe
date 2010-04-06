@@ -78,6 +78,25 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *status_id,
 			      const gchar *status_name);
 
+/**
+ * Return a list with buddy information label/text pairs
+ *
+ * @param sipe_public Sipe core public data structure.
+ * @param name        backend-specific buddy name.
+ * @param status_text backend-specific buddy status text for ID.
+ * @param is_online   backend considers buddy to be online.
+ *
+ * @return GSList of struct sipe_buddy_info or NULL. Must be freed by caller.
+ */
+struct sipe_buddy_info {    /* must be g_free()'d */
+	const gchar *label;
+	gchar *text;        /* must be g_free()'d */
+};
+GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
+			     const gchar *name,
+			     const gchar *status_name,
+			     gboolean is_online);
+
 void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
 				  const gchar *who, gboolean allow);
 void sipe_core_group_set_user(struct sipe_core_public *sipe_public,

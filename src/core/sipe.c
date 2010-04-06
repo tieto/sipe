@@ -9488,25 +9488,32 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
  */
 #define INDENT_MARKED_INHERITED_FMT	"= %s"
 
-void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_info, SIPE_UNUSED_PARAMETER gboolean full)
+GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
+			     const gchar *name,
+			     const gchar *status_name,
+			     gboolean is_online)
 {
-	const PurplePresence *presence = purple_buddy_get_presence(buddy);
-	const PurpleStatus *status = purple_presence_get_active_status(presence);
-	struct sipe_account_data *sip;
-	struct sipe_buddy *sbuddy;
-	char *note = NULL;
+	gchar *note = NULL;
 	gboolean is_oof_note = FALSE;
-	char *activity = NULL;
-	char *calendar = NULL;
-	char *meeting_subject = NULL;
-	char *meeting_location = NULL;
+	gchar *activity = NULL;
+	gchar *calendar = NULL;
+	gchar *meeting_subject = NULL;
+	gchar *meeting_location = NULL;
+	gchar *access_text = NULL;
+	GSList *info = NULL;
 
-	sip = ((struct sipe_core_private *)buddy->account->gc->proto_data)->temporary;
-	if (sip)  //happens on pidgin exit
-	{
-		sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
-		if (sbuddy)
-		{
+#define SIPE_ADD_BUDDY_INFO(l, t) \
+	{ \
+		struct sipe_buddy_info *sbi = g_malloc(sizeof(struct sipe_buddy_info)); \
+		sbi->label = (l); \
+		sbi->text = (t); \
+		info = g_slist_append(info, sbi); \
+	}
+
+	if (sipe_public) { //happens on pidgin exit
+		struct sipe_account_data *sip = ((struct sipe_core_private *)sipe_public)->temporary;
+		struct sipe_buddy *sbuddy = g_hash_table_lookup(sip->buddies, name);
+		if (sbuddy) {
 			note = sbuddy->note;
 			is_oof_note = sbuddy->is_oof_note;
 			activity = sbuddy->activity;
@@ -9514,50 +9521,48 @@ void sipe_tooltip_text(PurpleBuddy *buddy, PurpleNotifyUserInfo *user_info, SIPE
 			meeting_subject = sbuddy->meeting_subject;
 			meeting_location = sbuddy->meeting_location;
 		}
+		if (sip && sip->ocs2007) {
+			gboolean is_group_access = FALSE;
+			const int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(name), &is_group_access);
+			const char *access_level = sipe_get_access_level_name(container_id);
+			access_text = is_group_access ?
+				g_strdup(access_level) :
+				g_strdup_printf(INDENT_MARKED_FMT, access_level);
+		}
 	}
 
 	//Layout
-	if (purple_presence_is_online(presence))
+	if (is_online)
 	{
-		const char *status_str = activity ? activity : purple_status_get_name(status);
+		gchar *status_str = g_strdup(activity ? activity : status_name);
 
-		purple_notify_user_info_add_pair(user_info, _("Status"), status_str);
+		SIPE_ADD_BUDDY_INFO(_("Status"), status_str);
 	}
-	if (purple_presence_is_online(presence) &&
-	    !is_empty(calendar))
+	if (is_online && !is_empty(calendar))
 	{
-		purple_notify_user_info_add_pair(user_info, _("Calendar"), calendar);
+		SIPE_ADD_BUDDY_INFO(_("Calendar"), calendar);
+		calendar = NULL;
 	}
 	g_free(calendar);
 	if (!is_empty(meeting_location))
 	{
-		purple_notify_user_info_add_pair(user_info, _("Meeting in"), meeting_location);
+		SIPE_ADD_BUDDY_INFO(_("Meeting in"), g_strdup(meeting_location));
 	}
 	if (!is_empty(meeting_subject))
 	{
-		purple_notify_user_info_add_pair(user_info, _("Meeting about"), meeting_subject);
+		SIPE_ADD_BUDDY_INFO(_("Meeting about"), g_strdup(meeting_subject));
 	}
-
 	if (note)
 	{
-		char *tmp = g_strdup_printf("<i>%s</i>", note);
-		SIPE_DEBUG_INFO("sipe_tooltip_text: %s note: '%s'", buddy->name, note);
-
-		purple_notify_user_info_add_pair(user_info, is_oof_note ? _("Out of office note") : _("Note"), tmp);
-		g_free(tmp);
+		SIPE_DEBUG_INFO("sipe_tooltip_text: %s note: '%s'", name, note);
+		SIPE_ADD_BUDDY_INFO(is_oof_note ? _("Out of office note") : _("Note"),
+				    g_strdup_printf("<i>%s</i>", note));
+	}
+	if (access_text) {
+		SIPE_ADD_BUDDY_INFO(_("Access level"), access_text);
 	}
 
-	if (sip && sip->ocs2007) {
-		gboolean is_group_access = FALSE;
-		const int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(buddy->name), &is_group_access);
-		const char *access_level = sipe_get_access_level_name(container_id);
-		char *text = is_group_access ?
-			g_strdup(access_level) :
-			g_strdup_printf(INDENT_MARKED_FMT, access_level);
-
-		purple_notify_user_info_add_pair(user_info, _("Access level"), text);
-		g_free(text);
-	}
+	return(info);
 }
 
 static PurpleBuddy *

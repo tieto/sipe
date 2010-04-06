@@ -62,6 +62,26 @@ static gchar *sipe_status_text(PurpleBuddy *buddy)
 				      purple_status_get_name(status));
 }
 
+static void sipe_tooltip_text(PurpleBuddy *buddy,
+			      PurpleNotifyUserInfo *user_info,
+			      SIPE_UNUSED_PARAMETER gboolean full)
+{
+	const PurplePresence *presence = purple_buddy_get_presence(buddy);
+	GSList *info = sipe_core_buddy_info(buddy->account->gc->proto_data,
+					    buddy->name,
+					    purple_status_get_name(purple_presence_get_active_status(presence)),
+					    purple_presence_is_online(presence));
+
+	while (info) {
+		struct sipe_buddy_info *sbi = info->data;
+		purple_notify_user_info_add_pair(user_info,
+						 sbi->label, sbi->text);
+		g_free(sbi->text);
+		g_free(sbi);
+		info = g_slist_delete_link(info, info);
+	}
+}
+
 static GList *sipe_blist_node_menu(PurpleBlistNode *node)
 {
 	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
