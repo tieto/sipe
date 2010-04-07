@@ -40,6 +40,7 @@
 #include "sipe-backend.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
+#include "sipe-core.h"
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"

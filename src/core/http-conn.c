@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -45,6 +46,7 @@
 #include "sipmsg.h"
 #include "sip-sec.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 #include "sipe-utils.h"
 #include "http-conn.h"
 #include "sipe.h"

@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010, 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -53,6 +54,7 @@ be great to implement too.
 #include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-cal.h"
+#include "sipe-core.h"
 #include "sipe-ews.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"

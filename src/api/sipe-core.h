@@ -21,6 +21,31 @@
  */
 
 /**
+ * Activity
+ *   - core:    maps this to OCS protocol values
+ *   - backend: maps this to backend status values
+ */
+typedef enum
+{
+	SIPE_ACTIVITY_UNSET = 0,
+	SIPE_ACTIVITY_ONLINE,
+	SIPE_ACTIVITY_INACTIVE,
+	SIPE_ACTIVITY_BUSY,
+	SIPE_ACTIVITY_BUSYIDLE,
+	SIPE_ACTIVITY_DND,
+	SIPE_ACTIVITY_BRB,
+	SIPE_ACTIVITY_AWAY,
+	SIPE_ACTIVITY_LUNCH,
+	SIPE_ACTIVITY_OFFLINE,
+	SIPE_ACTIVITY_ON_PHONE,
+	SIPE_ACTIVITY_IN_CONF,
+	SIPE_ACTIVITY_IN_MEETING,
+	SIPE_ACTIVITY_OOF,
+	SIPE_ACTIVITY_URGENT_ONLY,
+	SIPE_ACTIVITY_NUM_TYPES
+} sipe_activity;
+
+/**
  * Opaque data type for backend private data.
  * The backend is responsible to allocate and free it.
  */
