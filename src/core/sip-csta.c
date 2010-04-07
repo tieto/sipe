@@ -39,6 +39,7 @@
 #include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -347,7 +348,7 @@ sip_csta_monitor_stop(struct sipe_account_data *sip)
 }
 
 static void
-sipe_invite_csta_gateway(struct sipe_account_data *sip);
+sipe_invite_csta_gateway(struct sipe_core_private *sipe_private, void *unused);
 
 /** a callback */
 static gboolean
@@ -405,9 +406,9 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 		if (sip->csta->dialog->expires) {
 			sipe_schedule_action("<+csta>",
 					     sip->csta->dialog->expires - 60, /* 1 minute earlier */
-					     (Action)sipe_invite_csta_gateway,
+					     sipe_invite_csta_gateway,
 					     NULL,
-					     sip,
+					     (struct sipe_core_private *)sip->public,
 					     NULL);
 		}
 	}
@@ -418,8 +419,10 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 /** Creates long living dialog with SIP/CSTA Gateway */
 /*  should be re-entrant as require to sent re-invites every 10 min to refresh */
 static void
-sipe_invite_csta_gateway(struct sipe_account_data *sip)
+sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
+			 SIPE_UNUSED_PARAMETER void *unused)
 {
+	struct sipe_account_data *sip = sipe_private->temporary;
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
@@ -469,7 +472,7 @@ sip_csta_open(struct sipe_account_data *sip,
 	      const gchar *server)
 {
 	sip_csta_initialize(sip, line_uri, server);
-	sipe_invite_csta_gateway(sip);
+	sipe_invite_csta_gateway((struct sipe_core_private *)sip->public, NULL);
 }
 
 static void

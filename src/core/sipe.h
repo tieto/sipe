@@ -197,7 +197,6 @@ struct sipe_account_data {
 	GHashTable *buddies;
 	guint resendtimeout;
 	guint keepalive_timeout;
-	GSList *timeouts;
 	gboolean connecting;
 	struct _PurpleAccount *account;
 	struct _PurpleCircBuffer *txbuf;
@@ -266,7 +265,7 @@ struct transaction {
 	struct transaction_payload *payload;
 };
 
-typedef void (*Action) (struct sipe_account_data *, void *);
+typedef void (*Action) (struct sipe_core_private *, void *);
 
 /**
   * Do schedule action for execution in the future.
@@ -276,7 +275,7 @@ typedef void (*Action) (struct sipe_account_data *, void *);
   * @param   timeout in seconds
   * @param   action  callback function
   * @param   destroy payload destroy function
-  * @param   sip
+  * @param   sipe_core_private
   * @param   payload callback data (can be NULL, otherwise caller must allocate memory)
   */
 void
@@ -284,7 +283,7 @@ sipe_schedule_action(const gchar *name,
 		     int timeout,
 		     Action action,
 		     GDestroyNotify destroy,
-		     struct sipe_account_data *sip,
+		     struct sipe_core_private *sipe_private,
 		     void *payload);
 
 struct sipe_group {
@@ -309,7 +308,8 @@ GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc fu
  * For 2007+
  */
 void
-publish_calendar_status_self(struct sipe_account_data *sip);
+publish_calendar_status_self(struct sipe_core_private *sipe_private,
+			     void *unused);
 
 /**
  * For 2005-

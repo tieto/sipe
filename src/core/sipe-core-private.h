@@ -33,6 +33,9 @@ struct sipe_core_private {
 	 */
 	struct sipe_core_public public;
 
+	/* Scheduling system */
+	GSList *timeouts;
+
 	/* the original data structure*/
 	struct sipe_account_data *temporary;
 };
