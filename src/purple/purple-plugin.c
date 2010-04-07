@@ -46,6 +46,44 @@
 
 #include "core-depurple.h"
 
+/* Sipe core activity <-> Purple status mapping */
+static const gchar * const activity_to_purple[SIPE_ACTIVITY_NUM_TYPES] = {
+	/* SIPE_ACTIVITY_UNSET       */ "unset",
+	/* SIPE_ACTIVITY_ONLINE      */ "online",
+	/* SIPE_ACTIVITY_INACTIVE    */ "idle",
+	/* SIPE_ACTIVITY_BUSY        */ "busy",
+	/* SIPE_ACTIVITY_BUSYIDLE    */ "busyidle",
+	/* SIPE_ACTIVITY_DND         */ "do-not-disturb",
+	/* SIPE_ACTIVITY_BRB         */ "be-right-back",
+	/* SIPE_ACTIVITY_AWAY        */ "away",
+	/* SIPE_ACTIVITY_LUNCH       */ "out-to-lunch",
+	/* SIPE_ACTIVITY_OFFLINE     */ "offline", 
+	/* SIPE_ACTIVITY_ON_PHONE    */ "on-the-phone",
+	/* SIPE_ACTIVITY_IN_CONF     */ "in-a-conference",
+	/* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
+	/* SIPE_ACTIVITY_OOF         */ "out-of-office",
+	/* SIPE_ACTIVITY_URGENT_ONLY */ "urgent-interruptions-only",
+};
+GHashTable *purple_to_activity = NULL;
+
+static void purple_activity_init(void)
+{
+	sipe_activity index = SIPE_ACTIVITY_UNSET;
+	purple_to_activity = g_hash_table_new(g_str_hash, g_str_equal);
+	while (index < SIPE_ACTIVITY_NUM_TYPES) {
+		g_hash_table_insert(purple_to_activity,
+				    (gpointer) activity_to_purple[index],
+				    GUINT_TO_POINTER(index));
+		index++;
+	}
+}
+
+static void purple_activity_destroy(void)
+{
+	g_hash_table_destroy(purple_to_activity);
+	purple_to_activity = NULL;
+}
+
 /* PurplePluginProtocolInfo function calls & data structure */
 static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 				  SIPE_UNUSED_PARAMETER PurpleBuddy *b)
@@ -226,6 +264,7 @@ static void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 	GList *entry;
 
+	purple_activity_destroy();
 	sipe_core_destroy();
 
 	entry = prpl_info.protocol_options;
@@ -359,6 +398,7 @@ static void init_plugin(PurplePlugin *plugin)
 
 	/* This needs to be called first */
 	sipe_core_init();
+	purple_activity_init();
 
 	purple_plugin_register(plugin);
 
