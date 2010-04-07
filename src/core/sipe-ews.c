@@ -612,7 +612,7 @@ sipe_ews_run_state_machine(struct sipe_ews *ews)
 			ews->is_updated = TRUE;
 			if (ews->sip->ocs2007) {
 				/* sipe.h */
-				publish_calendar_status_self((struct sipe_core_private *)ews->sip->public,
+				publish_calendar_status_self(ews->sip->private,
 							     NULL);
 			} else {
 				/* sipe.h */

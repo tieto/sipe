@@ -1802,7 +1802,7 @@ sipe_sched_calendar_status_update(struct sipe_account_data *sip,
 			     (int)(next_start - time(NULL)),
 			     update_calendar_status,
 			     NULL,
-			     (struct sipe_core_private *)sip->public,
+			     sip->private,
 			     NULL);
 }
 
@@ -1832,7 +1832,7 @@ sipe_sched_calendar_status_self_publish(struct sipe_account_data *sip,
 			     (int)(next_start - time(NULL)),
 			     publish_calendar_status_self,
 			     NULL,
-			     (struct sipe_core_private *)sip->public,
+			     sip->private,
 			     NULL);
 }
 
@@ -2188,7 +2188,7 @@ void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 					     SIPE_IDLE_SET_DELAY,
 					     send_presence_status,
 					     NULL,
-					     (struct sipe_core_private *)sip->public,
+					     sip->private,
 					     NULL);
 			g_free(action_name);
 		}
@@ -2275,7 +2275,7 @@ void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group
 			g_hash_table_insert(sip->buddies, b->name, b);
 			sipe_group_buddy(gc, b->name, NULL, group->name);
 			/* @TODO should go to callback */
-			sipe_subscribe_presence_single((struct sipe_core_private *)sip->public,
+			sipe_subscribe_presence_single(sip->private,
 						       b->name);
 		} else {
 			SIPE_DEBUG_INFO("sipe_add_buddy: buddy %s already in internal list", buddy->name);
@@ -2346,7 +2346,7 @@ void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *gr
 
 	if (g_slist_length(b->groups) < 1) {
 		gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy->name);
-		sipe_cancel_scheduled_action((struct sipe_core_private *)sip->public, action_name);
+		sipe_cancel_scheduled_action(sip->private, action_name);
 		g_free(action_name);
 
 		g_hash_table_remove(sip->buddies, buddy->name);
@@ -2478,7 +2478,7 @@ sipe_buddy_subscribe_cb(char *buddy_name,
 	guint time_range = (g_hash_table_size(sip->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
 
-	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, (struct sipe_core_private *)sip->public, g_strdup(buddy_name));
+	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, sip->private, g_strdup(buddy_name));
 	g_free(action_name);
 }
 
@@ -3638,7 +3638,7 @@ sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 			     UPDATE_CALENDAR_INTERVAL,
 			     (Action)sipe_core_update_calendar,
 			     NULL,
-			     (struct sipe_core_private *)sip->public,
+			     sip->private,
 			     NULL);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_update_calendar: finished.");
@@ -4114,7 +4114,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 				     UPDATE_CALENDAR_DELAY,
 				     (Action)sipe_core_update_calendar,
 				     NULL,
-				     (struct sipe_core_private *)sip->public,
+				     sip->private,
 				     NULL);
 		do_update_status = FALSE;
 	} else if (aggreg_avail) {
@@ -4539,7 +4539,7 @@ process_info_response(struct sipe_account_data *sip, struct sipmsg *msg,
 			}
 
 			if (sipe_is_election_finished(session)) {
-				sipe_election_result((struct sipe_core_private *)sip->public,
+				sipe_election_result(sip->private,
 						     session);
 			}
 
@@ -5758,7 +5758,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							     expires,
 							     do_register_cb,
 							     NULL,
-							     (struct sipe_core_private *)sip->public,
+							     sip->private,
 							     NULL);
 					g_free(action_name);
 					sip->reregister_set = TRUE;
@@ -5795,7 +5795,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							     reauth_timeout,
 							     do_reauthenticate_cb,
 							     NULL,
-							     (struct sipe_core_private *)sip->public,
+							     sip->private,
 							     NULL);
 					g_free(action_name);
 					sip->reauthenticate_set = TRUE;
@@ -5903,7 +5903,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 						}
 						if (g_slist_find_custom(sip->allow_events, "presence.wpending",
 									(GCompareFunc)g_ascii_strcasecmp)) {
-							sipe_subscribe_presence_wpending((struct sipe_core_private *)sip->public,
+							sipe_subscribe_presence_wpending(sip->private,
 											 msg);
 						}
 
@@ -6568,7 +6568,7 @@ static void sipe_subscribe_poolfqdn_resource_uri(const char *host, GSList *serve
 	SIPE_DEBUG_INFO("process_incoming_notify_rlmi_resub: pool(%s)", host);
 	payload->host    = g_strdup(host);
 	payload->buddies = server;
-	sipe_subscribe_presence_batched_routed((struct sipe_core_private *)sip->public,
+	sipe_subscribe_presence_batched_routed(sip->private,
 					       payload);
 	sipe_subscribe_presence_batched_routed_free(payload);
 }
@@ -6608,7 +6608,7 @@ static void process_incoming_notify_rlmi_resub(struct sipe_account_data *sip, co
 				server = g_slist_append(server, user);
 				g_hash_table_insert(servers, host, server);
 			} else {
-				sipe_subscribe_presence_single((struct sipe_core_private *)sip->public,
+				sipe_subscribe_presence_single(sip->private,
 							       (void *) uri);
 			}
                 }
@@ -6748,7 +6748,7 @@ sipe_user_info_has_updated(struct sipe_account_data *sip,
 				     UPDATE_CALENDAR_DELAY,
 				     (Action)sipe_core_update_calendar,
 				     NULL,
-				     (struct sipe_core_private *)sip->public,
+				     sip->private,
 				     NULL);
 	}
 }
@@ -7129,7 +7129,7 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 					     timeout,
 					     sipe_subscribe_presence_batched_routed,
 					     sipe_subscribe_presence_batched_routed_free,
-					     (struct sipe_core_private *)sip->public,
+					     sip->private,
 					     payload);
 			SIPE_DEBUG_INFO("Resubscription multiple contacts with batched support & route(%s) in %d", who, timeout);
 		}
@@ -7139,7 +7139,7 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 				     timeout,
 				     sipe_subscribe_presence_single,
 				     g_free,
-				     (struct sipe_core_private *)sip->public,
+				     sip->private,
 				     g_strdup(who));
 		SIPE_DEBUG_INFO("Resubscription single contact with batched support(%s) in %d", who, timeout);
 	}
@@ -7249,7 +7249,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 						     timeout,
 						     sipe_subscribe_presence_wpending,
 						     NULL,
-						     (struct sipe_core_private *)sip->public,
+						     sip->private,
 						     NULL);
 				g_free(action_name);
 			}
@@ -7267,7 +7267,7 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 							     timeout,
 							     sipe_subscribe_presence_single,
 							     g_free,
-							     (struct sipe_core_private *)sip->public,
+							     sip->private,
 							     g_strdup(who));
 					SIPE_DEBUG_INFO("Resubscription single contact (%s) in %d", who, timeout);
 				}
@@ -7546,7 +7546,7 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 		if (has_device_publication) {
 			send_publish_category_initial(sip);
 		} else {
-			send_presence_status((struct sipe_core_private *)sip->public, NULL);
+			send_presence_status(sip->private, NULL);
 		}
 	}
 	return TRUE;
@@ -8947,7 +8947,8 @@ void sipe_login(PurpleAccount *account)
 
 	gc->proto_data = sipe_private = g_new0(struct sipe_core_private, 1);
 	sipe_private->temporary = sip = g_new0(struct sipe_account_data, 1);
-	sip->public = (struct sipe_core_public *)sipe_private;
+	sip->public  = (struct sipe_core_public *)sipe_private;
+	sip->private = sipe_private;
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
 		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
 	sip->gc = gc;
@@ -9069,7 +9070,7 @@ void sipe_login(PurpleAccount *account)
 
 static void sipe_connection_cleanup(struct sipe_account_data *sip)
 {
-	struct sipe_core_private *sipe_private = (struct sipe_core_private *)sip->public;
+	struct sipe_core_private *sipe_private = sip->private;
 
 	connection_free_all(sip);
 
@@ -9760,7 +9761,7 @@ sipe_election_start(struct sipe_account_data *sip,
 			     election_timeout,
 			     sipe_election_result,
 			     NULL,
-			     (struct sipe_core_private *)sip->public,
+			     sip->private,
 			     session);
 }
 
