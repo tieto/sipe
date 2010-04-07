@@ -11,6 +11,10 @@ PIDGIN_TREE_TOP := ../$(OLD_PIDGIN_TREE_TOP)
 
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
+LIBICONV_TOP	= $(WIN32_DEV_TOP)/libiconv-1.13.1-1
+GMIME_TOP	= $(WIN32_DEV_TOP)/gmime-2.4.15
+
+
 TARGET = libsipe
 TYPE = PLUGIN
 
@@ -33,6 +37,7 @@ DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
 DEFINES += -DHAVE_LIBKRB5=1
+DEFINES += -DHAVE_GMIME
 ##
 ## INCLUDE PATHS
 ##
@@ -42,14 +47,12 @@ INCLUDE_PATHS +=	-I. \
 			-I$(GTK_TOP)/include \
 			-I$(GTK_TOP)/include/glib-2.0 \
 			-I$(GTK_TOP)/lib/glib-2.0/include \
+			-I$(LIBICONV_TOP)/include \
+			-I$(GMIME_TOP)/include/gmime-2.4 \
 			-I$(LIBXML2_TOP)/include \
 			-I$(PURPLE_TOP) \
 			-I$(PURPLE_TOP)/win32 \
 			-I$(PIDGIN_TREE_TOP)
-
-LIB_PATHS +=		-L$(GTK_TOP)/lib \
-			-L$(LIBXML2_TOP)/lib \
-			-L$(PURPLE_TOP)
 
 ##
 ##  SOURCES, OBJECTS
@@ -58,7 +61,6 @@ C_SRC =			../purple/purple-crypt.c \
 			../purple/purple-debug.c \
 			../purple/purple-digest.c \
 			../purple/purple-markup.c \
-			../purple/purple-mime.c \
 			../purple/purple-network.c \
 			../purple/purple-plugin.c \
 			sipe.c \
@@ -78,6 +80,7 @@ C_SRC =			../purple/purple-crypt.c \
 			sip-csta.c \
 			sipe-ft.c \
 			sipe-xml.c \
+			sipe-mime.c \
 			uuid.c
 			
 C_TEST_SRC = 		sipe-xml-tests.c \
@@ -88,14 +91,22 @@ OBJECTS = 		$(C_SRC:%.c=%.o)
 
 TEST_OBJECTS = 		$(C_TEST_SRC:%.c=%.o)
 
+
+LIB_PATHS +=		-L$(GTK_TOP)/lib \
+			-L$(LIBXML2_TOP)/lib \
+			-L$(PURPLE_TOP)
+
 ##
 ## LIBRARIES
 ##
 LIBS =	\
+			$(GMIME_TOP)/lib/libgmime-2.4.a \
+			$(LIBICONV_TOP)/lib/libiconv.a \
 			-lglib-2.0 \
+			-lgobject-2.0 \
+			-lintl \
 			-lxml2 \
 			-lws2_32 \
-			-lintl \
 			-lSecur32 \
 			-lpurple
 	
