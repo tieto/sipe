@@ -259,6 +259,8 @@ msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr ""
+"E-mailadres moet geldig zijn indien ingevuld\n"
+"Voorbeeld: gebruiker@bedrijf.com"
 
 #: ../src/core/sipe.c:9007
 msgid "SIP Exchange user name contains whitespace"
@@ -498,7 +500,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:10344
 msgid "Add new domain..."
-msgstr ""
+msgstr "Nieuw domein toevoegen"
 
 #: ../src/core/sipe.c:10367
 msgid "Access groups"
@@ -506,7 +508,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:10374
 msgid "Online help..."
-msgstr ""
+msgstr "Online hulp..."
 
 #: ../src/core/sipe.c:10428
 msgid "Unlock"
@@ -522,11 +524,11 @@ msgstr ""
 
 #: ../src/core/sipe.c:10513
 msgid "Job title"
-msgstr ""
+msgstr "Job titel"
 
 #: ../src/core/sipe.c:10516
 msgid "Office"
-msgstr ""
+msgstr "Kantoor"
 
 #: ../src/core/sipe.c:10519
 msgid "Business phone"
@@ -542,15 +544,15 @@ msgstr ""
 
 #: ../src/core/sipe.c:10534 ../src/core/sipe.c:10561
 msgid "Email address"
-msgstr ""
+msgstr "E-mailadres"
 
 #: ../src/core/sipe.c:10554
 msgid "Alias"
-msgstr ""
+msgstr "Alias"
 
 #: ../src/core/sipe.c:10567
 msgid "Site"
-msgstr ""
+msgstr "Site"
 
 #: ../src/core/sipe.c:10574
 msgid "Find on LinkedIn"
@@ -588,7 +590,7 @@ msgstr ""
 
 #: ../src/core/sipe-cal.c:962
 msgid "Not working"
-msgstr ""
+msgstr "Niet aan het werk"
 
 #: ../src/core/sipe-cal.c:966
 #, c-format
@@ -642,7 +644,7 @@ msgstr ""
 
 #: ../src/core/sipe-ft.c:299
 msgid "Received file is corrupted"
-msgstr ""
+msgstr "Ontvangen bestand is corrupt"
 
 #: ../src/core/sipe-ft.c:341 ../src/core/sipe-ft.c:357
 #: ../src/core/sipe-ft.c:412
@@ -667,23 +669,23 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:163
 msgid "user@company.com"
-msgstr ""
+msgstr "gebruiker@bedrijf.com"
 
 #: ../src/purple/purple-plugin.c:304
 msgid "First name"
-msgstr ""
+msgstr "Voornaam"
 
 #: ../src/purple/purple-plugin.c:306
 msgid "Last name"
-msgstr ""
+msgstr "Naam"
 
 #: ../src/purple/purple-plugin.c:314
 msgid "Search"
-msgstr ""
+msgstr "Zoek"
 
 #: ../src/purple/purple-plugin.c:315
 msgid "Search for a contact"
-msgstr ""
+msgstr "Contactpersoon zoeken"
 
 #: ../src/purple/purple-plugin.c:316
 msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
@@ -719,16 +721,21 @@ msgid ""
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr ""
+"Login\n"
+" gebruiker of DOMEIN\\gebruiker of\n"
+" gebruiker@bedrijf.com"
 
 #: ../src/purple/purple-plugin.c:409
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr ""
+"Server[:Port]\n"
+"(laat leeg voor automatische herkenning)"
 
 #: ../src/purple/purple-plugin.c:412
 msgid "Connection type"
-msgstr ""
+msgstr "Verbindingstype"
 
 #: ../src/purple/purple-plugin.c:413
 msgid "Auto"
@@ -736,15 +743,15 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:414
 msgid "SSL/TLS"
-msgstr ""
+msgstr "SSL/TLS"
 
 #: ../src/purple/purple-plugin.c:415
 msgid "TCP"
-msgstr ""
+msgstr "TCP"
 
 #: ../src/purple/purple-plugin.c:416
 msgid "UDP"
-msgstr ""
+msgstr "UDP"
 
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone
 #. may watch you)"), "doservice", TRUE);
@@ -752,11 +759,11 @@ msgstr ""
 #. option);
 #: ../src/purple/purple-plugin.c:422
 msgid "User Agent"
-msgstr ""
+msgstr "User Agent"
 
 #: ../src/purple/purple-plugin.c:426
 msgid "Use Kerberos"
-msgstr ""
+msgstr "Gebruik Kerberos"
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
@@ -764,7 +771,7 @@ msgstr ""
 #. 
 #: ../src/purple/purple-plugin.c:433
 msgid "Use Single Sign-On"
-msgstr ""
+msgstr "Gebruik Single Sign-On"
 
 #: ../src/purple/purple-plugin.c:437
 msgid "Calendar source"
