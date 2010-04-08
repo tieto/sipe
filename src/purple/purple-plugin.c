@@ -48,6 +48,9 @@
 
 #include "core-depurple.h"
 
+/* Status attributes (see also sipe_status_types() */
+#define SIPE_STATUS_ATTR_ID_MESSAGE  "message"
+
 /* Sipe core activity <-> Purple status mapping */
 static const gchar * const activity_to_purple[SIPE_ACTIVITY_NUM_TYPES] = {
 	/* SIPE_ACTIVITY_UNSET       */ "unset",
@@ -122,6 +125,70 @@ static void sipe_tooltip_text(PurpleBuddy *buddy,
 		g_free(sbi);
 		info = g_slist_delete_link(info, info);
 	}
+}
+
+static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
+{
+	PurpleStatusType *type;
+	GList *types = NULL;
+
+	/* Macros to reduce code repetition.
+	   Translators: noun */
+#define SIPE_ADD_STATUS(prim,id,name,user) type = purple_status_type_new_with_attrs( \
+		prim, id, name,             \
+		TRUE, user, FALSE,          \
+		SIPE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
+		NULL);                      \
+	types = g_list_append(types, type);
+
+	/* Online */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
+			NULL,
+			NULL,
+			TRUE);
+
+	/* Busy */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			activity_to_purple[SIPE_ACTIVITY_BUSY],
+			_("Busy"),
+			TRUE);
+
+	/* Do Not Disturb */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			activity_to_purple[SIPE_ACTIVITY_DND],
+			NULL,
+			TRUE);
+
+	/* Away */
+	/* Goes first in the list as
+	 * purple picks the first status with the AWAY type
+	 * for idle.
+	 */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			NULL,
+			NULL,
+			TRUE);
+
+	/* Be Right Back */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			activity_to_purple[SIPE_ACTIVITY_BRB],
+			_("Be right back"),
+			TRUE);
+
+	/* Appear Offline */
+	SIPE_ADD_STATUS(PURPLE_STATUS_INVISIBLE,
+			NULL,
+			NULL,
+			TRUE);
+
+	/* Offline */
+	type = purple_status_type_new(PURPLE_STATUS_OFFLINE,
+				      NULL,
+				      NULL,
+				      TRUE);
+	types = g_list_append(types, type);
+
+	return types;
 }
 
 static GList *sipe_blist_node_menu(PurpleBlistNode *node)

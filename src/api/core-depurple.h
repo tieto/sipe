@@ -25,7 +25,6 @@
  */
 void sipe_search_contact_with_cb(PurpleConnection *gc,
 				 PurpleRequestFields *fields);
-GList *sipe_status_types(PurpleAccount *acc);
 GList *sipe_buddy_menu(PurpleBuddy *buddy);
 GList *sipe_chat_menu(PurpleChat *chat);
 void sipe_login(PurpleAccount *account);
