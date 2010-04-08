@@ -270,24 +270,24 @@ msgstr ""
 
 #: ../src/core/sipe.c:9300
 msgid "Unable to display the search results"
-msgstr ""
+msgstr "Zoekresultaten kunnen niet getoond worden"
 
 #: ../src/core/sipe.c:9306
 msgid "User name"
-msgstr ""
+msgstr "Gebruikersnaam"
 
 #: ../src/core/sipe.c:9309
 msgid "Name"
-msgstr ""
+msgstr "Naam"
 
 #: ../src/core/sipe.c:9315 ../src/core/sipe.c:10531
 #: ../src/purple/purple-plugin.c:310
 msgid "Country"
-msgstr ""
+msgstr "Land"
 
 #: ../src/core/sipe.c:9318
 msgid "Email"
-msgstr ""
+msgstr "E-mail"
 
 #: ../src/core/sipe.c:9345
 #, c-format
@@ -422,27 +422,27 @@ msgstr ""
 
 #: ../src/core/sipe.c:10048
 msgid "New chat"
-msgstr ""
+msgstr "Nieuw gesprek"
 
 #: ../src/core/sipe.c:10059
 #, c-format
 msgid "Work %s"
-msgstr ""
+msgstr "Werk %s"
 
 #: ../src/core/sipe.c:10072
 #, c-format
 msgid "Mobile %s"
-msgstr ""
+msgstr "Mobiel %s"
 
 #: ../src/core/sipe.c:10085
 #, c-format
 msgid "Home %s"
-msgstr ""
+msgstr "Thuis %s"
 
 #: ../src/core/sipe.c:10098
 #, c-format
 msgid "Other %s"
-msgstr ""
+msgstr "Overige %s"
 
 #: ../src/core/sipe.c:10111
 #, c-format
@@ -451,27 +451,27 @@ msgstr ""
 
 #: ../src/core/sipe.c:10123
 msgid "Send email..."
-msgstr ""
+msgstr "Stuur e-mail..."
 
 #: ../src/core/sipe.c:10159
 msgid "Copy to"
-msgstr ""
+msgstr "Kopieer naar..."
 
 #: ../src/core/sipe.c:10197
 msgid "Domain"
-msgstr ""
+msgstr "Domein"
 
 #: ../src/core/sipe.c:10213 ../src/core/sipe.c:10214
 msgid "Add new domain"
-msgstr ""
+msgstr "Nieuw domein toevoegen"
 
 #: ../src/core/sipe.c:10215
 msgid "Add"
-msgstr ""
+msgstr "Toevoegen"
 
 #: ../src/core/sipe.c:10216
 msgid "Cancel"
-msgstr ""
+msgstr "Annuleren"
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe.c:10285
@@ -634,80 +634,80 @@ msgstr ""
 
 #: ../src/core/sipe-ft.c:249
 msgid "File size is different from the advertised value."
-msgstr "Bestandsgrootte is niet gelijk aan de opgegeven waarde"
+msgstr ""
 
 #: ../src/core/sipe-ft.c:288
 msgid "Received MAC is corrupted"
-msgstr "Ontvangen MAC is corrupt"
+msgstr ""
 
 #: ../src/core/sipe-ft.c:299
 msgid "Received file is corrupted"
-msgstr "Ontvangen bestand is corrupt"
+msgstr ""
 
 #: ../src/core/sipe-ft.c:341 ../src/core/sipe-ft.c:357
 #: ../src/core/sipe-ft.c:412
 msgid "Out of memory"
-msgstr "Geen geheugen meer beschikbaar"
+msgstr ""
 
 #: ../src/core/sipe-ft.c:525
 msgid "File transfer initialization failed."
-msgstr "Bestandsoverdracht initialisatie mislukt"
+msgstr ""
 
 #: ../src/core/sipe-ft.c:554
 msgid "File transfer authentication failed."
-msgstr "Bestandsoverdracht autenticatie mislukt"
+msgstr ""
 
 #: ../src/core/sipe-ft.c:685
 msgid "Received encryption key has wrong size."
-msgstr "Ontvangen encryptie sleutel heeft de verkeerde grootte"
+msgstr ""
 
 #: ../src/core/sipe-ft.c:698
 msgid "Received hash key has wrong size."
-msgstr "Ontvangen hash sleutel heeft de verkeerde grootte"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:163
 msgid "user@company.com"
-msgstr "gebruiker@bedrijf.com"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:304
 msgid "First name"
-msgstr "Voornaam"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:306
 msgid "Last name"
-msgstr "Achternaam"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:314
 msgid "Search"
-msgstr "Zoeken"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:315
 msgid "Search for a contact"
-msgstr "Contacten zoeken"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:316
 msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Vul de gegevens in van de persoon die u zoekt. Lege velden worden genegeerd."
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:318
 msgid "_Search"
-msgstr "_Zoeken"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:319
 msgid "_Cancel"
-msgstr "_Annuleren"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:344
 msgid "About SIPE plugin..."
-msgstr "Over SIPE plugin..."
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:347
 msgid "Contact search..."
-msgstr "Contacten zoeken..."
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:351
 msgid "Republish Calendar"
-msgstr "Herpubliceer kalender"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:355
 msgid "Reset status"
