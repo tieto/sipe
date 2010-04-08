@@ -122,6 +122,14 @@
 						</Component>				
 				  </Directory>
 				</Directory>
+				<Directory Id='nl' Name='nl'>
+				  <Directory Id='nl_LC_MESSAGES' Name='LC_MESSAGES'>
+						<Component Id='LocaleNlLcMessages' Guid='C058D684-432B-11DF-A979-159555D89593'>
+						  <File Id='nl.gmo' Name='pidgin-sipe.mo' DiskId='1'
+							Source='po/nl.gmo' Vital='yes' />
+						</Component>				
+				  </Directory>
+				</Directory>
 				<Directory Id='pl' Name='pl'>
 				  <Directory Id='pl_LC_MESSAGES' Name='LC_MESSAGES'>
 						<Component Id='LocalePlLcMessages' Guid='55BFEA02-0DE2-11DF-8408-137956D89593'>
