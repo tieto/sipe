@@ -33,12 +33,23 @@ struct sipe_core_private {
 	 */
 	struct sipe_core_public public;
 
+	/* Buddies */
+	GHashTable *buddies;
+
 	/* Scheduling system */
 	GSList *timeouts;
 
 	/* the original data structure*/
 	struct sipe_account_data *temporary;
 };
+
+/* Convenience macros */
+#define SIPE_CORE_PRIVATE ((struct sipe_core_private *)sipe_public)
+
+/* Transition macros */
+#define SIPE_ACCOUNT_DATA SIPE_CORE_PRIVATE->temporary
+#define SIP_TO_CORE_PRIVATE (sip->private)
+#define SIP_TO_CORE_PUBLIC (sip->public)
 
 /*
   Local Variables:

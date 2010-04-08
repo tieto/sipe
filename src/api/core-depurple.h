@@ -74,3 +74,10 @@ PurpleXfer *sipe_ft_new_xfer(PurpleConnection *gc,
 			     const char *who);
 
 int sipe_send_raw(PurpleConnection *gc, const char *buf, int len);
+
+/* Convenience macros */
+#define PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA ((struct sipe_core_private *)account->gc->proto_data)->temporary
+#define PURPLE_BUDDY_TO_SIPE_ACCOUNT_DATA   ((struct sipe_core_private *)buddy->account->gc->proto_data)->temporary
+#define PURPLE_CHAT_TO_SIPE_ACCOUNT_DATA    ((struct sipe_core_private *)chat->account->gc->proto_data)->temporary
+#define PURPLE_GC_TO_SIPE_ACCOUNT_DATA      ((struct sipe_core_private *)gc->proto_data)->temporary
+#define PURPLE_XFER_TO_SIPE_ACCOUNT_DATA    ((struct sipe_core_private *)xfer->account->gc->proto_data)->temporary

@@ -41,7 +41,7 @@
 void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
 			   const char *name)
 {
-	struct sipe_account_data *sip = ((struct sipe_core_private *)sipe_public)->temporary;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
 
 	if (session) {

@@ -408,7 +408,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 					     sip->csta->dialog->expires - 60, /* 1 minute earlier */
 					     sipe_invite_csta_gateway,
 					     NULL,
-					     sip->private,
+					     SIP_TO_CORE_PRIVATE,
 					     NULL);
 		}
 	}
@@ -472,7 +472,7 @@ sip_csta_open(struct sipe_account_data *sip,
 	      const gchar *server)
 {
 	sip_csta_initialize(sip, line_uri, server);
-	sipe_invite_csta_gateway(sip->private, NULL);
+	sipe_invite_csta_gateway(SIP_TO_CORE_PRIVATE, NULL);
 }
 
 static void
