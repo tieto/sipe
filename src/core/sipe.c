@@ -9516,34 +9516,6 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 	}
 }
 
-gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
-			      const gchar *name,
-			      const gchar *status_id,
-			      const gchar *status_text)
-{
-	struct sipe_buddy *sbuddy;
-	const char *activity_str;
-
-	if (!sipe_public) return NULL; /* happens on pidgin exit */
-
-	sbuddy = g_hash_table_lookup(((struct sipe_core_private *)sipe_public)->temporary->buddies, name);
-	if (!sbuddy) return NULL;
-
-	activity_str = sbuddy->activity ? sbuddy->activity :
-		sipe_strequal(status_id, SIPE_STATUS_ID_BUSY) || sipe_strequal(status_id, SIPE_STATUS_ID_BRB) ?
-		status_text : NULL;
-
-	if (activity_str && sbuddy->note) {
-		return g_strdup_printf("%s - <i>%s</i>", activity_str, sbuddy->note);
-	} else if (activity_str) {
-		return g_strdup(activity_str);
-	} else if (sbuddy->note) {
-		return g_strdup_printf("<i>%s</i>", sbuddy->note);
-	} else {
-		return NULL;
-	}
-}
-
 /** for Access levels menu */
 #define INDENT_FMT			"  %s"
 

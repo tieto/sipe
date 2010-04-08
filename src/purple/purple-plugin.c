@@ -24,6 +24,8 @@
 #include "config.h"
 #endif
 
+#include <glib.h>
+
 #include "sipe-common.h"
 
 /* Flag needed for correct version of PURPLE_INIT_PLUGIN() */
@@ -65,6 +67,8 @@ static const gchar * const activity_to_purple[SIPE_ACTIVITY_NUM_TYPES] = {
 	/* SIPE_ACTIVITY_URGENT_ONLY */ "urgent-interruptions-only",
 };
 GHashTable *purple_to_activity = NULL;
+#define PURPLE_STATUS_TO_ACTIVITY(x) \
+	GPOINTER_TO_UINT(g_hash_table_lookup(purple_to_activity, (x)))
 
 static void purple_activity_init(void)
 {
@@ -96,7 +100,7 @@ static gchar *sipe_status_text(PurpleBuddy *buddy)
 	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 	return sipe_core_buddy_status(buddy->account->gc->proto_data,
 				      buddy->name,
-				      purple_status_get_id(status),
+				      PURPLE_STATUS_TO_ACTIVITY(purple_status_get_id(status)),
 				      purple_status_get_name(status));
 }
 

@@ -64,6 +64,7 @@ C_SRC =			../purple/purple-crypt.c \
 			../purple/purple-network.c \
 			../purple/purple-plugin.c \
 			sipe.c \
+			sipe-buddy.c \
 			sipe-chat.c \
 			sipe-conf.c \
 			sipe-dialog.c \

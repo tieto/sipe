@@ -16,6 +16,7 @@ libsipe_core_la_SOURCES = \
 	sip-sec-mech.h \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
+	sipe-buddy.c \
 	sipe-cal.h \
 	sipe-cal.c \
 	sipe-chat.h \

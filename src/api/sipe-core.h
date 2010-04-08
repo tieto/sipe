@@ -93,15 +93,15 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public);
  *
  * @param sipe_public Sipe core public data structure.
  * @param name        backend-specific buddy name.
- * @param status_id   backend-specific buddy status ID.
- * @param status_text backend-specific buddy status text for ID.
+ * @param activity    activity value for buddy
+ * @param status_text backend-specific buddy status text for activity.
  *
  * @return HTML status text for the buddy or NULL. Must be g_free()'d.
  */
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *name,
-			      const gchar *status_id,
-			      const gchar *status_name);
+			      const sipe_activity activity,
+			      const gchar *status_text);
 
 /**
  * Return a list with buddy information label/text pairs
