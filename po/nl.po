@@ -332,7 +332,6 @@ msgstr "Rapporteer Problemen"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
 #: ../src/core/sipe.c:9456
-#, fuzzy
 msgid "Bug Tracker"
 msgstr "Bug Tracker"
 
@@ -394,7 +393,7 @@ msgstr "Vergadering over"
 
 #: ../src/core/sipe.c:9628
 msgid "Out of office note"
-msgstr ""
+msgstr "Out of Office Opmerking"
 
 #: ../src/core/sipe.c:9628
 msgid "Note"
@@ -408,22 +407,22 @@ msgstr "Toegangsniveau"
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:9929
 msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:10013
 #, c-format
 msgid "Make leader of '%s'"
-msgstr ""
+msgstr "Maak leider van '%s'"
 
 #: ../src/core/sipe.c:10024
 #, c-format
 msgid "Remove from '%s'"
-msgstr ""
+msgstr "Verwijder van '%s'"
 
 #: ../src/core/sipe.c:10037
 #, c-format
 msgid "Invite to '%s'"
-msgstr ""
+msgstr "Uitnodigen bij '%s'"
 
 #: ../src/core/sipe.c:10048
 msgid "New chat"
