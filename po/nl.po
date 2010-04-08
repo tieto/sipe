@@ -449,9 +449,9 @@ msgid "Other %s"
 msgstr "Overige %s"
 
 #: ../src/core/sipe.c:10111
-#, c-format
+#, c-format, fuzzy
 msgid "Custom1 %s"
-msgstr ""
+msgstr "Custom1 %s"
 
 #: ../src/core/sipe.c:10123
 msgid "Send email..."
@@ -479,34 +479,36 @@ msgstr "Annuleren"
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe.c:10285
+#, fuzzy
 msgid "Unspecify"
-msgstr ""
+msgstr "Unspecify"
 
 #: ../src/core/sipe.c:10308
 msgid "People in my company"
-msgstr ""
+msgstr "Personen in mijn bedrijf"
 
 #. this is original name, don't edit
 #: ../src/core/sipe.c:10314
 msgid "People in domains connected with my company"
-msgstr ""
+msgstr "Personen in domeinen verbonden met mijn bedrijf"
 
 #: ../src/core/sipe.c:10319
 msgid "People in public domains"
-msgstr ""
+msgstr "Personen in publieke domeinen"
 
 #: ../src/core/sipe.c:10329
 #, c-format
 msgid "People at %s"
-msgstr ""
+msgstr "Personen in %s"
 
 #: ../src/core/sipe.c:10344
 msgid "Add new domain..."
 msgstr "Nieuw domein toevoegen"
 
 #: ../src/core/sipe.c:10367
+#, fuzzy
 msgid "Access groups"
-msgstr ""
+msgstr "Access groups"
 
 #: ../src/core/sipe.c:10374
 msgid "Online help..."
@@ -514,15 +516,15 @@ msgstr "Online hulp..."
 
 #: ../src/core/sipe.c:10428
 msgid "Unlock"
-msgstr ""
+msgstr "Deblokkeren"
 
 #: ../src/core/sipe.c:10433
 msgid "Lock"
-msgstr ""
+msgstr "Blokkeren"
 
 #: ../src/core/sipe.c:10510 ../src/core/sipe.c:10547
 msgid "Display name"
-msgstr ""
+msgstr "Weergavenaam"
 
 #: ../src/core/sipe.c:10513
 msgid "Job title"
@@ -534,15 +536,15 @@ msgstr "Kantoor"
 
 #: ../src/core/sipe.c:10519
 msgid "Business phone"
-msgstr ""
+msgstr "Werk telefoon"
 
 #: ../src/core/sipe.c:10525
 msgid "City"
-msgstr ""
+msgstr "Stad"
 
 #: ../src/core/sipe.c:10528
 msgid "State"
-msgstr ""
+msgstr "Staat"
 
 #: ../src/core/sipe.c:10534 ../src/core/sipe.c:10561
 msgid "Email address"
@@ -558,32 +560,32 @@ msgstr "Site"
 
 #: ../src/core/sipe.c:10574
 msgid "Find on LinkedIn"
-msgstr ""
+msgstr "Zoeken op LinkedIn"
 
 #: ../src/core/sipe.c:10581
 msgid "Device"
-msgstr ""
+msgstr "Toestel"
 
 #: ../src/core/sipe-cal.c:833
 msgid "Free"
-msgstr ""
+msgstr "Gratis"
 
 #: ../src/core/sipe-cal.c:834
 msgid "Tentative"
-msgstr ""
+msgstr "Voorlopig"
 
 #: ../src/core/sipe-cal.c:837
 msgid "No data"
-msgstr ""
+msgstr "Geen gegevens"
 
 #: ../src/core/sipe-cal.c:945 ../src/core/sipe-cal.c:972
 #, c-format
 msgid "Currently %s"
-msgstr ""
+msgstr "Momenteel %s"
 
 #: ../src/core/sipe-cal.c:951
 msgid "Outside of working hours for next 8 hours"
-msgstr ""
+msgstr "Buiten werkuren voor de komende 8 uur"
 
 #: ../src/core/sipe-cal.c:953
 #, c-format
