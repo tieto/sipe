@@ -154,41 +154,41 @@ msgstr "Dit bericht werd niet afgeleverd aan %s. De service is niet beschikbaar"
 #: ../src/core/sipe.c:4386
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr ""
+msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers niet gestoord willen worden"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:4388
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
-msgstr ""
+msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers dit type van bericht niet ondersteunt."
 
 #: ../src/core/sipe.c:4390
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr ""
+msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers offline zijn."
 
 #: ../src/core/sipe.c:4735
 #, c-format
 msgid "Failed to invite %s"
-msgstr ""
+msgstr "Uitnodiging van %s mislukt"
 
 #: ../src/core/sipe.c:5423
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
-msgstr ""
+msgstr "Bericht ontvangen met onherkenbare inhoud van %s"
 
 #: ../src/core/sipe.c:5989 ../src/core/sipe.c:8441
 msgid "Authentication failed"
-msgstr ""
+msgstr "Authenticatie mislukt"
 
 #: ../src/core/sipe.c:5998 ../src/core/sipe.c:8329
 msgid "Incompatible authentication scheme chosen"
-msgstr ""
+msgstr "Incompatibel authenticatie schema gekozen"
 
 #: ../src/core/sipe.c:6042
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr ""
+msgstr "Niet gevonden: %s. Contacteer de administrator"
 
 #: ../src/core/sipe.c:6044
 msgid "SIP is either not enabled for the destination URI or it does not exist"
@@ -197,7 +197,7 @@ msgstr ""
 #: ../src/core/sipe.c:6062
 #, c-format
 msgid "Service unavailable: %s"
-msgstr ""
+msgstr "Service onbeschikbaar: %s"
 
 #: ../src/core/sipe.c:8437
 msgid "Invalid message signature received"
@@ -205,11 +205,11 @@ msgstr ""
 
 #: ../src/core/sipe.c:8511
 msgid "Connection not found. Please try to connect again"
-msgstr ""
+msgstr "Verbinding niet gevonden. Probeer opnieuw te verbinden a.u.b."
 
 #: ../src/core/sipe.c:8532
 msgid "SSL read error"
-msgstr ""
+msgstr "SSL leesfout"
 
 #: ../src/core/sipe.c:8535
 msgid "Server has disconnected"
@@ -222,19 +222,19 @@ msgstr ""
 
 #: ../src/core/sipe.c:8697 ../src/core/sipe.c:8829
 msgid "Could not resolve hostname"
-msgstr ""
+msgstr "Kon de hostnaam niet vinden"
 
 #: ../src/core/sipe.c:8747
 msgid "Connection failed"
-msgstr ""
+msgstr "Connectie mislukt"
 
 #: ../src/core/sipe.c:8750
 msgid "SSL handshake failed"
-msgstr ""
+msgstr "SSL handshake mislukt"
 
 #: ../src/core/sipe.c:8753
 msgid "SSL certificate invalid"
-msgstr ""
+msgstr "SSL certificaat ongeldig"
 
 #: ../src/core/sipe.c:8811
 msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
@@ -314,17 +314,17 @@ msgstr ""
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe.c:9450
 msgid "Support"
-msgstr ""
+msgstr "Ondersteuning"
 
 #. About note, part 4/13: support forum name (hyperlink text)
 #: ../src/core/sipe.c:9452
 msgid "Help Forum"
-msgstr ""
+msgstr "Help Forum"
 
 #. About note, part 5/13: bug tracker URL (label)
 #: ../src/core/sipe.c:9454
 msgid "Report Problems"
-msgstr ""
+msgstr "Rapporteer Problemen"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
 #: ../src/core/sipe.c:9456
@@ -334,12 +334,12 @@ msgstr ""
 #. About note, part 7/13: translation service URL (label)
 #: ../src/core/sipe.c:9458
 msgid "Translations"
-msgstr ""
+msgstr "Vertalingen"
 
 #. About note, part 8/13: license type (label)
 #: ../src/core/sipe.c:9460
 msgid "License"
-msgstr ""
+msgstr "Licentie"
 
 #. About note, part 9/13: known users
 #: ../src/core/sipe.c:9462
@@ -350,7 +350,7 @@ msgstr ""
 #. append a space if text is not empty
 #: ../src/core/sipe.c:9465
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr ""
+msgstr "Help ons met de vertaling van SIPE in jouw moedertaal op"
 
 #. About note, part 11/13: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
@@ -361,7 +361,7 @@ msgstr ""
 #. About note, part 12/13: author list (header)
 #: ../src/core/sipe.c:9470
 msgid "Authors"
-msgstr ""
+msgstr "Auteurs"
 
 #. About note, part 13/13: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
@@ -373,11 +373,11 @@ msgstr ""
 
 #: ../src/core/sipe.c:9609
 msgid "Status"
-msgstr ""
+msgstr "Status"
 
 #: ../src/core/sipe.c:9613
 msgid "Calendar"
-msgstr ""
+msgstr "Kalender"
 
 #: ../src/core/sipe.c:9619
 msgid "Meeting in"
@@ -393,11 +393,11 @@ msgstr ""
 
 #: ../src/core/sipe.c:9628
 msgid "Note"
-msgstr ""
+msgstr "Notitie"
 
 #: ../src/core/sipe.c:9632 ../src/core/sipe.c:10133 ../src/core/sipe.c:10201
 msgid "Access level"
-msgstr ""
+msgstr "Toegangsniveau"
 
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
