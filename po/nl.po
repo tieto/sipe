@@ -192,7 +192,7 @@ msgstr "Niet gevonden: %s. Contacteer de administrator"
 
 #: ../src/core/sipe.c:6044
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr ""
+msgstr "SIP is ofwel niet aangezet voor de doel URI, ofwel bestaat hij niet"
 
 #: ../src/core/sipe.c:6062
 #, c-format
@@ -201,7 +201,7 @@ msgstr "Service onbeschikbaar: %s"
 
 #: ../src/core/sipe.c:8437
 msgid "Invalid message signature received"
-msgstr ""
+msgstr "Ongeldige handtekening van het bericht ontvangen"
 
 #: ../src/core/sipe.c:8511
 msgid "Connection not found. Please try to connect again"
@@ -213,12 +213,12 @@ msgstr "SSL leesfout"
 
 #: ../src/core/sipe.c:8535
 msgid "Server has disconnected"
-msgstr ""
+msgstr "De server heeft de verbinding verbroken"
 
 #: ../src/core/sipe.c:8674 ../src/core/sipe.c:8716 ../src/core/sipe.c:8768
 #: ../src/core/sipe.c:8838 ../src/core/sipe-ft.c:715
 msgid "Could not create listen socket"
-msgstr ""
+msgstr "Kon geen socket openen om te luisteren"
 
 #: ../src/core/sipe.c:8697 ../src/core/sipe.c:8829
 msgid "Could not resolve hostname"
@@ -238,21 +238,23 @@ msgstr "SSL certificaat ongeldig"
 
 #: ../src/core/sipe.c:8811
 msgid "SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"
-msgstr ""
+msgstr "SSL ondersteuning is niet geïnstalleerd. Gelieve SSL ondersteuning te installeren of een ander connectie type te configureren in de account editor"
 
 #: ../src/core/sipe.c:8820
 msgid "Could not create SSL context"
-msgstr ""
+msgstr "Kon geen SSL context creëeren"
 
 #: ../src/core/sipe.c:8944
 msgid "SIP Exchange user name contains invalid characters"
-msgstr ""
+msgstr "SIP Exchange gebruikersnaam bevat ongeldige characters"
 
 #: ../src/core/sipe.c:8970
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr ""
+"Gebruikersnaam moet een correcte SIP URI zijn\n"
+"Voorbeeld: gebruiker@bedrijf.com"
 
 #: ../src/core/sipe.c:8981
 msgid ""
@@ -264,11 +266,11 @@ msgstr ""
 
 #: ../src/core/sipe.c:9007
 msgid "SIP Exchange user name contains whitespace"
-msgstr ""
+msgstr "SIP Exchange gebruikersnaam bevat spaties"
 
 #: ../src/core/sipe.c:9021
 msgid "Connecting"
-msgstr ""
+msgstr "Bezig met verbinden"
 
 #: ../src/core/sipe.c:9300
 msgid "Unable to display the search results"
@@ -295,23 +297,23 @@ msgstr "E-mail"
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%d contact gevonden%s:"
+msgstr[1] "%d contacten gevonden%s:"
 
 #: ../src/core/sipe.c:9347
 msgid " (more matched your query)"
-msgstr ""
+msgstr "(meer resultaten voor uw query)"
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe.c:9446
 msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr ""
+msgstr "Een derde-partij plugin die een uitgebreide versie van het SIP/SIMPLE protocol implementeert, dat gebruikt wordt door meerdere producten."
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe.c:9448
 msgid "Home"
-msgstr ""
+msgstr "Start"
 
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe.c:9450
@@ -330,8 +332,9 @@ msgstr "Rapporteer Problemen"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
 #: ../src/core/sipe.c:9456
+#, fuzzy
 msgid "Bug Tracker"
-msgstr ""
+msgstr "Bug Tracker"
 
 #. About note, part 7/13: translation service URL (label)
 #: ../src/core/sipe.c:9458
@@ -346,7 +349,7 @@ msgstr "Licentie"
 #. About note, part 9/13: known users
 #: ../src/core/sipe.c:9462
 msgid "We support users in such organizations as"
-msgstr ""
+msgstr "Wij ondersteunen gebruikers in organisaties zoals"
 
 #. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
@@ -358,7 +361,7 @@ msgstr "Help ons met de vertaling van SIPE in jouw moedertaal op"
 #. start with a space if text is not empty
 #: ../src/core/sipe.c:9468
 msgid " using convenient web interface"
-msgstr ""
+msgstr "gebruik makend van een makkelijke web interface"
 
 #. About note, part 12/13: author list (header)
 #: ../src/core/sipe.c:9470
@@ -371,7 +374,7 @@ msgstr "Auteurs"
 #. "Localization for <language name> (<language code>): <name>"
 #: ../src/core/sipe.c:9475
 msgid "Original texts in English (en): SIPE developers"
-msgstr ""
+msgstr "Originele teksten in Engels (en): SIPE ontwikkelaars"
 
 #: ../src/core/sipe.c:9609
 msgid "Status"
@@ -383,11 +386,11 @@ msgstr "Kalender"
 
 #: ../src/core/sipe.c:9619
 msgid "Meeting in"
-msgstr ""
+msgstr "Vergadering in"
 
 #: ../src/core/sipe.c:9623
 msgid "Meeting about"
-msgstr ""
+msgstr "Vergadering over"
 
 #: ../src/core/sipe.c:9628
 msgid "Out of office note"
