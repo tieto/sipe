@@ -189,6 +189,7 @@
 			<ComponentRef Id='LocaleHiLcMessages' />
 			<ComponentRef Id='LocaleItLcMessages' />
 			<ComponentRef Id='LocaleNbLcMessages' />
+			<ComponentRef Id='LocaleNlLcMessages' />
 			<ComponentRef Id='LocalePlLcMessages' />
 			<ComponentRef Id='LocalePtBrLcMessages' />
 			<ComponentRef Id='LocaleRuLcMessages' />
