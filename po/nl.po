@@ -449,9 +449,9 @@ msgid "Other %s"
 msgstr "Overige %s"
 
 #: ../src/core/sipe.c:10111
-#, c-format, fuzzy
+#, c-format
 msgid "Custom1 %s"
-msgstr "Custom1 %s"
+msgstr "Aangepast1 %s"
 
 #: ../src/core/sipe.c:10123
 msgid "Send email..."
@@ -479,9 +479,8 @@ msgstr "Annuleren"
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe.c:10285
-#, fuzzy
 msgid "Unspecify"
-msgstr "Unspecify"
+msgstr "De-specifiëer"
 
 #: ../src/core/sipe.c:10308
 msgid "People in my company"
@@ -506,9 +505,8 @@ msgid "Add new domain..."
 msgstr "Nieuw domein toevoegen"
 
 #: ../src/core/sipe.c:10367
-#, fuzzy
 msgid "Access groups"
-msgstr "Access groups"
+msgstr "Toegangsgroepen"
 
 #: ../src/core/sipe.c:10374
 msgid "Online help..."
