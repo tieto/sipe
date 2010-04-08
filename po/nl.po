@@ -634,80 +634,80 @@ msgstr ""
 
 #: ../src/core/sipe-ft.c:249
 msgid "File size is different from the advertised value."
-msgstr ""
+msgstr "Bestandsgrootte is niet gelijk aan de opgegeven waarde"
 
 #: ../src/core/sipe-ft.c:288
 msgid "Received MAC is corrupted"
-msgstr ""
+msgstr "Ontvangen MAC is corrupt"
 
 #: ../src/core/sipe-ft.c:299
 msgid "Received file is corrupted"
-msgstr ""
+msgstr "Ontvangen bestand is corrupt"
 
 #: ../src/core/sipe-ft.c:341 ../src/core/sipe-ft.c:357
 #: ../src/core/sipe-ft.c:412
 msgid "Out of memory"
-msgstr ""
+msgstr "Geen geheugen meer beschikbaar"
 
 #: ../src/core/sipe-ft.c:525
 msgid "File transfer initialization failed."
-msgstr ""
+msgstr "Bestandsoverdracht initialisatie mislukt"
 
 #: ../src/core/sipe-ft.c:554
 msgid "File transfer authentication failed."
-msgstr ""
+msgstr "Bestandsoverdracht autenticatie mislukt"
 
 #: ../src/core/sipe-ft.c:685
 msgid "Received encryption key has wrong size."
-msgstr ""
+msgstr "Ontvangen encryptie sleutel heeft de verkeerde grootte"
 
 #: ../src/core/sipe-ft.c:698
 msgid "Received hash key has wrong size."
-msgstr ""
+msgstr "Ontvangen hash sleutel heeft de verkeerde grootte"
 
 #: ../src/purple/purple-plugin.c:163
 msgid "user@company.com"
-msgstr ""
+msgstr "gebruiker@bedrijf.com"
 
 #: ../src/purple/purple-plugin.c:304
 msgid "First name"
-msgstr ""
+msgstr "Voornaam"
 
 #: ../src/purple/purple-plugin.c:306
 msgid "Last name"
-msgstr ""
+msgstr "Achternaam"
 
 #: ../src/purple/purple-plugin.c:314
 msgid "Search"
-msgstr ""
+msgstr "Zoeken"
 
 #: ../src/purple/purple-plugin.c:315
 msgid "Search for a contact"
-msgstr ""
+msgstr "Contacten zoeken"
 
 #: ../src/purple/purple-plugin.c:316
 msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr ""
+msgstr "Vul de gegevens in van de persoon die u zoekt. Lege velden worden genegeerd."
 
 #: ../src/purple/purple-plugin.c:318
 msgid "_Search"
-msgstr ""
+msgstr "_Zoeken"
 
 #: ../src/purple/purple-plugin.c:319
 msgid "_Cancel"
-msgstr ""
+msgstr "_Annuleren"
 
 #: ../src/purple/purple-plugin.c:344
 msgid "About SIPE plugin..."
-msgstr ""
+msgstr "Over SIPE plugin..."
 
 #: ../src/purple/purple-plugin.c:347
 msgid "Contact search..."
-msgstr ""
+msgstr "Contacten zoeken..."
 
 #: ../src/purple/purple-plugin.c:351
 msgid "Republish Calendar"
-msgstr ""
+msgstr "Herpubliceer kalender"
 
 #: ../src/purple/purple-plugin.c:355
 msgid "Reset status"
