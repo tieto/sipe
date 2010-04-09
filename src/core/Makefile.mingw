@@ -93,7 +93,10 @@ OBJECTS = 		$(C_SRC:%.c=%.o)
 TEST_OBJECTS = 		$(C_TEST_SRC:%.c=%.o)
 
 
-LIB_PATHS +=		-L$(GTK_TOP)/lib \
+LIB_PATHS +=	\
+			$(GMIME_TOP)/lib/libgmime-2.4.a \
+			-L$(LIBICONV_TOP)/lib \
+			-L$(GTK_TOP)/lib \
 			-L$(LIBXML2_TOP)/lib \
 			-L$(PURPLE_TOP)
 
@@ -101,8 +104,7 @@ LIB_PATHS +=		-L$(GTK_TOP)/lib \
 ## LIBRARIES
 ##
 LIBS =	\
-			$(GMIME_TOP)/lib/libgmime-2.4.a \
-			$(LIBICONV_TOP)/lib/libiconv.a \
+			-liconv \
 			-lglib-2.0 \
 			-lgobject-2.0 \
 			-lintl \
