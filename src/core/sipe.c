@@ -148,7 +148,14 @@ static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
 /* Status attributes (see also sipe_status_types() */
 #define SIPE_STATUS_ATTR_ID_MESSAGE  "message"
 
-#define SDP_ACCEPT_TYPES  "text/plain text/html image/gif multipart/related application/im-iscomposing+xml application/ms-imdn+xml text/x-msmsgsinvite"
+#ifdef HAVE_GMIME
+/* pls. don't add multipart/related - it's not used in IM modality */
+#define SDP_ACCEPT_TYPES  "text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml application/ms-imdn+xml text/x-msmsgsinvite"
+#else
+/* this is a rediculous hack as Pidgin's MIME implementastion doesn't support (or have bug) in multipart/alternative */
+/* OCS/OC won't use multipart/related so we don't advertase it */
+#define SDP_ACCEPT_TYPES  "text/plain text/html image/gif application/im-iscomposing+xml application/ms-imdn+xml text/x-msmsgsinvite"
+#endif
 
 static struct sipe_activity_map_struct
 {
