@@ -28,6 +28,7 @@
 #include <libpurple/mediamanager.h>
 #include <nice/agent.h>
 
+#include "sipe-core.h"
 #include "sip-sec.h"
 #include "sipe.h"
 #include "sipmsg.h"
