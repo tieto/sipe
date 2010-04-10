@@ -44,6 +44,7 @@ struct _PurpleSrvQueryData;
 struct _PurpleSslConnection;
 struct sip_sec_context;
 struct sipe_core_private;
+struct sipe_service_data;
 enum sip_sec_auth_type;
 
 #define SIMPLE_BUF_INC 4096
@@ -63,18 +64,6 @@ struct sip_auth {
 	int retries;
 	int ntlm_num;
 	int expires;
-};
-
-typedef enum {
-	SIPE_TRANSPORT_TLS,
-	SIPE_TRANSPORT_TCP,
-	SIPE_TRANSPORT_UDP,
-} sipe_transport_type;
-
-struct sipe_service_data {
-	const char *service;
-	const char *transport;
-	sipe_transport_type type;
 };
 
 /** MS-PRES publication */
@@ -115,7 +104,6 @@ struct sipe_account_data {
 	struct sipe_core_private *private;
 
 	struct _PurpleConnection *gc;
-	gchar *sipdomain;
 	gchar *username;
 	gchar *authdomain;
 	gchar *authuser;
@@ -176,6 +164,7 @@ struct sipe_account_data {
 	GHashTable *filetransfers;
 	sipe_transport_type transport;
 	gboolean auto_transport;
+	gboolean has_ssl;
 	struct _PurpleSslConnection *gsc;
 	struct sockaddr *serveraddr;
 	gchar *realhostname;

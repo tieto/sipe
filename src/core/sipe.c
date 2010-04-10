@@ -120,7 +120,7 @@
 #define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
 
 /* Keep in sync with sipe_transport_type! */
-static const char *transport_descriptor[] = { "tls", "tcp", "udp" };
+static const char *transport_descriptor[] = { "", "tls", "tcp", "udp" };
 #define TRANSPORT_DESCRIPTOR (transport_descriptor[sip->transport])
 
 /* Status identifiers (see also: sipe_status_types()) */
@@ -1163,9 +1163,9 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 	char *contact;
 	char *hdr;
 
-	if (!sip->sipdomain) return;
+	if (!SIP_TO_CORE_PUBLIC->sip_domain) return;
 
-	uri = sip_uri_from_name(sip->sipdomain);
+	uri = sip_uri_from_name(SIP_TO_CORE_PUBLIC->sip_domain);
 	expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
 	to = sip_uri_self(sip);
 	contact = get_contact_register(sip);
@@ -3147,7 +3147,7 @@ sipe_find_access_level(struct sipe_account_data *sip,
 		}
 
 		container_id = sipe_find_member_access_level(sip, "sameEnterprise", NULL);
-		if ((container_id >= 0) && sipe_strcase_equal(sip->sipdomain, domain)) {
+		if ((container_id >= 0) && sipe_strcase_equal(SIP_TO_CORE_PUBLIC->sip_domain, domain)) {
 			if (is_group_access) *is_group_access = TRUE;
 			return container_id;
 		}
@@ -5834,7 +5834,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					/* For 2005- servers */
 					else
 					{
-						//sipe_options_request(sip, sip->sipdomain);
+						//sipe_options_request(sip, SIP_TO_CORE_PUBLIC->sip_domain);
 
 						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL",
 									(GCompareFunc)g_ascii_strcasecmp)) {
@@ -8661,6 +8661,12 @@ static void sipe_udp_host_resolved(GSList *hosts, gpointer data,
 	}
 }
 
+struct sipe_service_data {
+	const char *service;
+	const char *transport;
+	sipe_transport_type type;
+};
+
 static const struct sipe_service_data *current_service = NULL;
 
 static void sipe_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
@@ -8749,7 +8755,7 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 
 	if (sip->transport == SIPE_TRANSPORT_TLS) {
 		/* SSL case */
-		if (!purple_ssl_is_supported()) {
+		if (!sip->has_ssl) {
 			gc->wants_to_die = TRUE;
 			purple_connection_error(gc, _("SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"));
 			return;
@@ -8829,11 +8835,11 @@ static void resolve_next_service(struct sipe_account_data *sip,
 				// If SSL is supported, default to using it; OCS servers aren't configured
 				// by default to accept TCP
 				// TODO: LCS 2007 is the opposite, only configured by default to accept TCP
-				sip->transport = purple_ssl_is_supported() ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
+				sip->transport = sip->has_ssl ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
 				SIPE_DEBUG_INFO_NOFORMAT("set transport type..");
 			}
 
-			hostname = g_strdup(sip->sipdomain);
+			hostname = g_strdup(SIP_TO_CORE_PUBLIC->sip_domain);
 			create_connection(sip, hostname, 0);
 			return;
 		}
@@ -8842,7 +8848,7 @@ static void resolve_next_service(struct sipe_account_data *sip,
 	/* Try to resolve next service */
 	sip->srv_query_data = purple_srv_resolve(sip->service_data->service,
 						 sip->service_data->transport,
-						 sip->sipdomain,
+						 SIP_TO_CORE_PUBLIC->sip_domain,
 						 srvresolved, sip);
 }
 
@@ -8868,147 +8874,137 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 	}
 }
 
-void sipe_login(PurpleAccount *account)
+/* temporary function */
+void sipe_purple_setup(struct sipe_core_public *sipe_public,
+		       PurpleConnection *gc,
+		       PurpleAccount *account)
 {
-	PurpleConnection *gc;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
+	sip->gc = gc;
+	sip->account = account;
+}
+
+struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
+					    const gchar *login_domain,
+					    const gchar *login_account,
+					    const gchar *password,
+					    const gchar *email,
+					    const gchar **errmsg)
+{
 	struct sipe_core_private *sipe_private;
 	struct sipe_account_data *sip;
-	gchar **signinname_login, **userserver;
-	const char *transport;
-	const char *email;
+	gchar **user_domain;
 
-	const char *username = purple_account_get_username(account);
-	gc = purple_account_get_connection(account);
+	SIPE_DEBUG_INFO("sipe_core_allocate: signin_name '%s'", signin_name);
 
-	SIPE_DEBUG_INFO("sipe_login: username '%s'", username);
-
-	if (strpbrk(username, "\t\v\r\n") != NULL) {
-		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("SIP Exchange user name contains invalid characters"));
-		return;
+	/* ensure that sign-in name doesn't contain invalid characters */
+	if (strpbrk(signin_name, "\t\v\r\n") != NULL) {
+		*errmsg = _("SIP Exchange user name contains invalid characters");
+		return NULL;
 	}
 
-	gc->proto_data = sipe_private = g_new0(struct sipe_core_private, 1);
+	/* ensure that sign-in name format is name@domain */
+	if (!strchr(signin_name, '@') ||
+	    g_str_has_prefix(signin_name, "@") ||
+	    g_str_has_suffix(signin_name, "@")) {
+		*errmsg = _("User name should be a valid SIP URI\nExample: user@company.com");
+		return NULL;
+	}
+
+	/* ensure that email format is name@domain (if provided) */
+	if (!is_empty(email) &&
+	    (!strchr(email, '@') ||
+	     g_str_has_prefix(email, "@") ||
+	     g_str_has_suffix(email, "@")))
+	{
+		*errmsg = _("Email address should be valid if provided\nExample: user@company.com");
+		return NULL;
+	}
+
+	/* ensure that user name doesn't contain spaces */
+	user_domain = g_strsplit(signin_name, "@", 2);
+	SIPE_DEBUG_INFO("sipe_core_allocate: user '%s' domain '%s'", user_domain[0], user_domain[1]);
+	if (strchr(user_domain[0], ' ') != NULL) {
+		g_strfreev(user_domain);
+		*errmsg = _("SIP Exchange user name contains whitespace");
+		return NULL;
+	}
+
+	sipe_private = g_new0(struct sipe_core_private, 1);
 	sipe_private->temporary = sip = g_new0(struct sipe_account_data, 1);
 	sip->public  = (struct sipe_core_public *)sipe_private;
 	sip->private = sipe_private;
-	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
-		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
-	sip->gc = gc;
-	sip->account = account;
-	sip->reregister_set = FALSE;
+	sip->reregister_set     = FALSE;
 	sip->reauthenticate_set = FALSE;
-	sip->subscribed = FALSE;
+	sip->subscribed         = FALSE;
 	sip->subscribed_buddies = FALSE;
 	sip->initial_state_published = FALSE;
+	sip->username   = g_strdup(signin_name);
+	sip->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);
+	sip->authdomain = is_empty(login_domain)  ? NULL                  : g_strdup(login_domain);
+	sip->authuser   = is_empty(login_account) ? NULL                  : g_strdup(login_account);
+	sip->password   = g_strdup(password);
+	sipe_private->public.sip_name   = g_strdup(user_domain[0]);
+	sipe_private->public.sip_domain = g_strdup(user_domain[1]);
+	g_strfreev(user_domain);
 
-	/* username format: <username>,[<optional login>] */
-	signinname_login = g_strsplit(username, ",", 2);
-	SIPE_DEBUG_INFO("sipe_login: signinname[0] '%s'", signinname_login[0]);
-
-	/* ensure that username format is name@domain */
-	if (!strchr(signinname_login[0], '@') || g_str_has_prefix(signinname_login[0], "@") || g_str_has_suffix(signinname_login[0], "@")) {
-		g_strfreev(signinname_login);
-		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("User name should be a valid SIP URI\nExample: user@company.com"));
-		return;
-	}
-	sip->username = g_strdup(signinname_login[0]);
-
-	/* ensure that email format is name@domain if provided */
-	email = purple_account_get_string(sip->account, "email", NULL);
-	if (!is_empty(email) &&
-	    (!strchr(email, '@') || g_str_has_prefix(email, "@") || g_str_has_suffix(email, "@")))
-	{
-		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("Email address should be valid if provided\nExample: user@company.com"));
-		return;
-	}
-	sip->email = !is_empty(email) ? g_strdup(email) : g_strdup(sip->username);
-
-	/* login name specified? */
-	if (signinname_login[1] && strlen(signinname_login[1])) {
-		gchar **domain_user = g_strsplit(signinname_login[1], "\\", 2);
-		gboolean has_domain = domain_user[1] != NULL;
-		SIPE_DEBUG_INFO("sipe_login: signinname[1] '%s'", signinname_login[1]);
-		sip->authdomain = has_domain ? g_strdup(domain_user[0]) : NULL;
-		sip->authuser =   g_strdup(domain_user[has_domain ? 1 : 0]);
-		SIPE_DEBUG_INFO("sipe_login: auth domain '%s' user '%s'",
-				sip->authdomain ? sip->authdomain : "", sip->authuser);
-		g_strfreev(domain_user);
-	}
-
-	userserver = g_strsplit(signinname_login[0], "@", 2);
-	SIPE_DEBUG_INFO("sipe_login: user '%s' server '%s'", userserver[0], userserver[1]);
-	purple_connection_set_display_name(gc, userserver[0]);
-	sip->sipdomain = g_strdup(userserver[1]);
-	g_strfreev(userserver);
-	g_strfreev(signinname_login);
-
-	if (strchr(sip->username, ' ') != NULL) {
-		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("SIP Exchange user name contains whitespace"));
-		return;
-	}
-
-	sip->password = g_strdup(purple_connection_get_password(gc));
-
-	SIP_TO_CORE_PRIVATE->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
+	sipe_private->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
 	sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 						      g_free, (GDestroyNotify)g_hash_table_destroy);
 	sip->subscriptions = g_hash_table_new_full(g_str_hash, g_str_equal,
 						   g_free, (GDestroyNotify)sipe_subscription_free);
-
 	sip->filetransfers = g_hash_table_new_full(g_str_hash, g_str_equal,g_free,NULL);
-
-	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
-
-	g_free(sip->status);
 	sip->status = g_strdup(SIPE_STATUS_ID_UNKNOWN);
 
+	return((struct sipe_core_public *)sipe_private);
+}
+
+void sipe_core_connect(struct sipe_core_public *sipe_public,
+		       sipe_transport_type transport,
+		       const gchar *server,
+		       const gchar *port,
+		       gboolean has_ssl)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
+
 	sip->auto_transport = FALSE;
-	transport  = purple_account_get_string(account, "transport", "auto");
-	userserver = g_strsplit(purple_account_get_string(account, "server", ""), ":", 2);
-	if (userserver[0]) {
+	sip->has_ssl = has_ssl;
+	if (server) {
 		/* Use user specified server[:port] */
-		int port = 0;
+		int port_number = 0;
 
-		if (userserver[1])
-			port = atoi(userserver[1]);
+		if (port)
+			port_number = atoi(port);
 
-		SIPE_DEBUG_INFO("sipe_login: user specified SIP server %s:%d",
-				userserver[0], port);
+		SIPE_DEBUG_INFO("sipe_core_connect: user specified SIP server %s:%d",
+				server, port_number);
 
-		if (sipe_strequal(transport, "auto")) {
-			sip->transport = purple_ssl_is_supported() ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
-		} else if (sipe_strequal(transport, "tls")) {
-			sip->transport = SIPE_TRANSPORT_TLS;
-		} else if (sipe_strequal(transport, "tcp")) {
-			sip->transport = SIPE_TRANSPORT_TCP;
-		} else {
-			sip->transport = SIPE_TRANSPORT_UDP;
-		}
-
-		create_connection(sip, g_strdup(userserver[0]), port);
+		sip->transport = transport;
+		create_connection(sip, g_strdup(server), port_number);
 	} else {
 		/* Server auto-discovery */
-		if (sipe_strequal(transport, "auto")) {
+		switch (transport) {
+		case SIPE_TRANSPORT_AUTO:
 			sip->auto_transport = TRUE;
-			if (current_service && current_service->transport != NULL && current_service->service != NULL ){
+			if (current_service &&
+			    current_service->transport != NULL &&
+			    current_service->service   != NULL) {
 				current_service++;
 				resolve_next_service(sip, current_service);
 			} else {
-				resolve_next_service(sip, purple_ssl_is_supported() ? service_autodetect : service_tcp);
+				resolve_next_service(sip, has_ssl ? service_autodetect : service_tcp);
 			}
-		} else if (sipe_strequal(transport, "tls")) {
+		case SIPE_TRANSPORT_TLS:
 			resolve_next_service(sip, service_tls);
-		} else if (sipe_strequal(transport, "tcp")) {
+			break;
+		case SIPE_TRANSPORT_TCP:
 			resolve_next_service(sip, service_tcp);
-		} else {
+			break;
+		case SIPE_TRANSPORT_UDP:
 			resolve_next_service(sip, service_udp);
+			break;
 		}
 	}
-	g_strfreev(userserver);
 }
 
 static void sipe_connection_cleanup(struct sipe_account_data *sip)
@@ -9152,7 +9148,8 @@ void sipe_close(PurpleConnection *gc)
 		}
 
 		sipe_connection_cleanup(sip);
-		g_free(sip->sipdomain);
+		g_free(sipe_private->public.sip_name);
+		g_free(sipe_private->public.sip_domain);
 		g_free(sip->username);
 		g_free(sip->email);
 		g_free(sip->password);
@@ -9319,7 +9316,7 @@ void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fiel
 
 	if (i > 0) {
 		struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-		gchar *domain_uri = sip_uri_from_name(sip->sipdomain);
+		gchar *domain_uri = sip_uri_from_name(SIP_TO_CORE_PUBLIC->sip_domain);
 		gchar *query = g_strjoinv(NULL, attrs);
 		gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100, query);
 		SIPE_DEBUG_INFO("sipe_search_contact_with_cb: body:\n%s", body ? body : "");
@@ -10517,7 +10514,7 @@ process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, str
 void sipe_get_info(PurpleConnection *gc, const char *username)
 {
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	gchar *domain_uri = sip_uri_from_name(sip->sipdomain);
+	gchar *domain_uri = sip_uri_from_name(SIP_TO_CORE_PUBLIC->sip_domain);
 	char *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
 	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 1, row);
 	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);

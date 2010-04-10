@@ -46,6 +46,17 @@ typedef enum
 } sipe_activity;
 
 /**
+ * Transport type
+ */
+typedef enum {
+	SIPE_TRANSPORT_AUTO,
+	SIPE_TRANSPORT_TLS,
+	SIPE_TRANSPORT_TCP,
+	SIPE_TRANSPORT_UDP,
+} sipe_transport_type;
+
+
+/**
  * Opaque data type for backend private data.
  * The backend is responsible to allocate and free it.
  */
@@ -62,6 +73,10 @@ struct sipe_core_public {
 	 * The backend is responsible to allocate and free it.
 	 */ 
 	struct sipe_backend_private *backend_private;
+
+	/* user information */
+	gchar *sip_name;
+	gchar *sip_domain;
 };
 
 /**
@@ -126,6 +141,25 @@ void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
 				  const gchar *who, gboolean allow);
 void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
 			      const gchar * who);
+
+/**
+ * Setup core data
+ */
+struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
+					    const gchar *login_domain,
+					    const gchar *login_account,
+					    const gchar *password,
+					    const gchar *email,
+					    const gchar **errmsg);
+
+/**
+ * Connect to server
+ */
+void sipe_core_connect(struct sipe_core_public *sipe_public,
+		       sipe_transport_type transport,
+		       const gchar *server,
+		       const gchar *port,
+		       gboolean has_ssl);
 
 /**
  * Create a new chat

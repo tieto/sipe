@@ -40,13 +40,17 @@
 #include "account.h"
 #include "eventloop.h"
 #include "network.h"
+#include "request.h"
 #include "sslconn.h"
+
+#include "core-depurple.h" /* temporary */
 
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-utils.h"
 #include "http-conn.h"
 #include "sipe.h"
@@ -376,7 +380,7 @@ http_conn_create(PurpleAccount *account,
 		return NULL;
 	}
 	if (sipe_strequal(conn_type, HTTP_CONN_SSL) &&
-	    !purple_ssl_is_supported())
+	    !PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA->has_ssl)
 	{
 		SIPE_DEBUG_INFO_NOFORMAT("SSL support is not installed. Either install SSL support or configure a different connection type in the account editor.");
 		return NULL;

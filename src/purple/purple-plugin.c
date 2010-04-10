@@ -202,6 +202,79 @@ static GList *sipe_blist_node_menu(PurpleBlistNode *node)
 	}
 }
 
+static void sipe_login(PurpleAccount *account)
+{
+	PurpleConnection *gc   = purple_account_get_connection(account);
+	const gchar *username  = purple_account_get_username(account);
+	const gchar *email     = purple_account_get_string(account, "email", NULL);
+	const gchar *transport = purple_account_get_string(account, "transport", "auto");
+	struct sipe_core_public *sipe_public;
+	gchar **username_split;
+	gchar *login_domain = NULL;
+	gchar *login_account = NULL;
+	const gchar *errmsg;
+	sipe_transport_type type;
+	gboolean has_ssl = purple_ssl_is_supported();
+
+	/* username format: <username>,[<optional login>] */
+	SIPE_DEBUG_INFO("sipe_login: username '%s'", username);
+	username_split = g_strsplit(username, ",", 2);
+
+	/* login name specified? */
+	if (username_split[1] && strlen(username_split[1])) {
+		gchar **domain_user = g_strsplit(username_split[1], "\\", 2);
+		gboolean has_domain = domain_user[1] != NULL;
+		SIPE_DEBUG_INFO("sipe_login: login '%s'", username_split[1]);
+		login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
+		login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
+		SIPE_DEBUG_INFO("sipe_login: auth domain '%s' user '%s'",
+				login_domain ? login_domain : "",
+				login_account);
+		g_strfreev(domain_user);
+	}
+
+	sipe_public = sipe_core_allocate(username_split[0],
+					 login_domain, login_account,
+					 purple_connection_get_password(gc),
+					 email,
+					 &errmsg);
+	g_free(login_domain);
+	g_free(login_account);
+	g_strfreev(username_split);
+
+	if (!sipe_public) {
+		gc->wants_to_die = TRUE;
+		purple_connection_error(gc, errmsg);
+		return;
+	}
+
+	gc->proto_data = sipe_public;
+	sipe_purple_setup(sipe_public, gc, account);
+	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
+		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
+	purple_connection_set_display_name(gc, sipe_public->sip_name);
+	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
+
+	username_split = g_strsplit(purple_account_get_string(account, "server", ""), ":", 2);
+	if (sipe_strequal(transport, "auto")) {
+		type = (username_split[0] == NULL) ?
+			SIPE_TRANSPORT_AUTO :
+			has_ssl ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
+	} else if (sipe_strequal(transport, "tls")) {
+		type = SIPE_TRANSPORT_TLS;
+	} else if (sipe_strequal(transport, "tcp")) {
+		type = SIPE_TRANSPORT_TCP;
+	} else {
+		type = SIPE_TRANSPORT_UDP;
+	}
+	sipe_core_connect(sipe_public,
+			  type,
+			  username_split[0],
+			  username_split[1],
+			  has_ssl);
+	g_strfreev(username_split);
+}
+
 static void sipe_add_permit(PurpleConnection *gc, const char *name)
 {
 	sipe_core_contact_allow_deny(gc->proto_data, name, TRUE);
