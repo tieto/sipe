@@ -145,6 +145,18 @@ void sipe_core_destroy(void);
 gboolean sipe_strequal(const gchar *left, const gchar *right);
 char *fix_newlines(const char *st);
 
+GSList *
+sipe_utils_nameval_add(GSList *list, const gchar *name, const gchar *value);
+
+const gchar *
+sipe_utils_nameval_find(const GSList *list, const gchar *name);
+
+const gchar *
+sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int which);
+
+void
+sipe_utils_nameval_free(GSList *list);
+
 /*****************************************************************************/
 
 /**

@@ -25,7 +25,7 @@
 #include "mime.h"
 
 #include "sipe-mime.h"
-#include "../core/sipe-utils.h"
+#include "sipe-core.h"
 
 static
 GSList * mime_fields_to_nameval(PurpleMimePart* part)
