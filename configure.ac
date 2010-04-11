@@ -139,6 +139,7 @@ AC_SUBST(KRB5_LDFLAGS)
 
 dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
+PKG_CHECK_MODULES(GMODULE, [gmodule-2.0 >= 2.12.0])
 
 dnl check for gmime
 dnl See also: https://bugzilla.gnome.org/show_bug.cgi?id=613653#c8

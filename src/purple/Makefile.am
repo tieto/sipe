@@ -44,7 +44,7 @@ if SIP_SEC_KRB5
 libsipe_la_LIBADD += $(KRB5_LDFLAGS)
 endif
 
-check_PROGRAMS = tests
+check_PROGRAMS = tests tests_load
 tests_SOURCES  = tests.c
 tests_CFLAGS   = $(libsipe_la_CFLAGS)
 tests_LDADD    = \
@@ -52,6 +52,9 @@ tests_LDADD    = \
 	../core/libsipe_core.la \
 	libsipe_backend.la \
 	$(PURPLE_LIBS)
+tests_load_SOURCES = tests-load.c
+tests_load_CFLAGS  = $(GMODULE_CFLAGS)
+tests_load_LDADD   = $(GMODULE_LIBS)
 
 if SIPE_MIME_GMIME
 libsipe_la_LIBADD += $(GMIME_LIBS)
