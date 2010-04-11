@@ -24,6 +24,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include <glib.h>
 
 #include "sipe-common.h"
@@ -47,6 +49,11 @@
 #include "sipe-nls.h"
 
 #include "core-depurple.h"
+
+/* Backward compatibility when compiling against 2.4.x API */
+#if !PURPLE_VERSION_CHECK(2,5,0)
+#define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
+#endif
 
 /* Status attributes (see also sipe_status_types() */
 #define SIPE_STATUS_ATTR_ID_MESSAGE  "message"

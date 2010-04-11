@@ -109,11 +109,6 @@
 #include "uuid.h"
 #include "sipe.h"
 
-/* Backward compatibility when compiling against 2.4.x API */
-#if !PURPLE_VERSION_CHECK(2,5,0)
-#define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
-#endif
-
 #define SIPE_IDLE_SET_DELAY		1	/* 1 sec */
 
 #define UPDATE_CALENDAR_DELAY		1*60	/* 1 min */
