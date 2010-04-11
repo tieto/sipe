@@ -25,6 +25,7 @@
 #endif
 
 #include <glib.h>
+#include <string.h>
 #include <libpurple/mediamanager.h>
 #include <nice/agent.h>
 
@@ -45,10 +46,26 @@ typedef enum sipe_call_state {
 	SIPE_CALL_FINISHED
 } SipeCallState;
 
+typedef enum sipe_media_type {
+	SIPE_MEDIA_AUDIO,
+	SIPE_MEDIA_VIDEO
+} SipeMediaType;
+
+struct _sipe_codec {
+	gint8			id;
+	gchar			*name;
+	SipeMediaType	type;
+	guint16			clock_rate;
+} sipe_codec;
+
 struct _sipe_media_call {
 	PurpleMedia			*media;
 	struct sip_session	*session;
 	struct sip_dialog	*dialog;
+
+	gchar				*remote_ip;
+	guint16				remote_port;
+
 	GSList				*sdp_attrs;
 	struct sipmsg		*invitation;
 	GList				*remote_candidates;
@@ -84,17 +101,14 @@ sipe_media_parse_remote_codecs(const sipe_media_call *call)
 	const gchar	*attr;
 	GList		*codecs	= NULL;
 
-	while ((attr = sipe_utils_nameval_find_instance(call->sdp_attrs, "a", i++))) {
+	while ((attr = sipe_utils_nameval_find_instance(call->sdp_attrs, "rtpmap", i++))) {
 		gchar **tokens;
 		int id;
 		int clock_rate;
 		gchar *codec_name;
 		PurpleMediaCodec *codec;
 
-		if (!g_str_has_prefix(attr, "rtpmap:"))
-			continue;
-
-		tokens = g_strsplit_set(attr + 7, " /", 3);
+		tokens = g_strsplit_set(attr, " /", 3);
 
 		id = atoi(tokens[0]);
 		codec_name = tokens[1];
@@ -154,97 +168,79 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 	const gchar *attr;
 	int i = 0;
 
-	gchar* username = NULL;
-	gchar* password = NULL;
+	const gchar* username = sipe_utils_nameval_find(sdp_attrs, "ice-ufrag");
+	const gchar* password = sipe_utils_nameval_find(sdp_attrs, "ice-pwd");
 
-	while ((attr = sipe_utils_nameval_find_instance(sdp_attrs, "a", i++))) {
-		const char ICE_UFRAG[] = "ice-ufrag:";
-		const char ICE_PWD[] = "ice-pwd:";
-		const char CANDIDATE[] = "candidate:";
+	while ((attr = sipe_utils_nameval_find_instance(sdp_attrs, "candidate", i++))) {
+		gchar **tokens;
+		gchar *foundation;
+		PurpleMediaComponentType component;
+		PurpleMediaNetworkProtocol protocol;
+		guint32 priority;
+		gchar* ip;
+		guint16 port;
+		PurpleMediaCandidateType type;
 
-		if (g_str_has_prefix(attr, ICE_UFRAG) && !username) {
-			username = g_strdup(attr + sizeof (ICE_UFRAG) - 1);
-		} else if (g_str_has_prefix(attr, ICE_PWD) && !password) {
-			password = g_strdup(attr + sizeof (ICE_PWD) - 1);
-		} else if (g_str_has_prefix(attr, CANDIDATE)) {
-			gchar **tokens;
-			gchar *foundation;
-			PurpleMediaComponentType component;
-			PurpleMediaNetworkProtocol protocol;
-			guint32 priority;
-			gchar* ip;
-			guint16 port;
-			PurpleMediaCandidateType type;
+		tokens = g_strsplit_set(attr, " ", 0);
 
-			tokens = g_strsplit_set(attr + sizeof (CANDIDATE) - 1, " ", 0);
+		foundation = tokens[0];
 
-			foundation = tokens[0];
-
-			switch (atoi(tokens[1])) {
-				case 1:
-					component = PURPLE_MEDIA_COMPONENT_RTP;
-					break;
-				case 2:
-					component = PURPLE_MEDIA_COMPONENT_RTCP;
-					break;
-				default:
-					component = PURPLE_MEDIA_COMPONENT_NONE;
-			}
-
-			if (sipe_strequal(tokens[2], "UDP"))
-				protocol = PURPLE_MEDIA_NETWORK_PROTOCOL_UDP;
-			else {
-				// Ignore TCP candidates, at least for now...
-				g_strfreev(tokens);
-				continue;
-			}
-
-			priority = atoi(tokens[3]);
-			ip = tokens[4];
-			port = atoi(tokens[5]);
-
-			if (sipe_strequal(tokens[7], "host"))
-				type = PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
-			else if (sipe_strequal(tokens[7], "relay"))
-				type = PURPLE_MEDIA_CANDIDATE_TYPE_RELAY;
-			else if (sipe_strequal(tokens[7], "srflx"))
-				type = PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX;
-			else {
-				g_strfreev(tokens);
-				continue;
-			}
-
-			candidate = purple_media_candidate_new(foundation, component,
-									type, protocol, ip, port);
-			g_object_set(candidate, "priority", priority, NULL);
-			candidates = g_list_append(candidates, candidate);
-
-			g_strfreev(tokens);
+		switch (atoi(tokens[1])) {
+			case 1:
+				component = PURPLE_MEDIA_COMPONENT_RTP;
+				break;
+			case 2:
+				component = PURPLE_MEDIA_COMPONENT_RTCP;
+				break;
+			default:
+				component = PURPLE_MEDIA_COMPONENT_NONE;
 		}
+
+		if (sipe_strequal(tokens[2], "UDP"))
+			protocol = PURPLE_MEDIA_NETWORK_PROTOCOL_UDP;
+		else {
+			// Ignore TCP candidates, at least for now...
+			g_strfreev(tokens);
+			continue;
+		}
+
+		priority = atoi(tokens[3]);
+		ip = tokens[4];
+		port = atoi(tokens[5]);
+
+		if (sipe_strequal(tokens[7], "host"))
+			type = PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
+		else if (sipe_strequal(tokens[7], "relay"))
+			type = PURPLE_MEDIA_CANDIDATE_TYPE_RELAY;
+		else if (sipe_strequal(tokens[7], "srflx"))
+			type = PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX;
+		else {
+			g_strfreev(tokens);
+			continue;
+		}
+
+		candidate = purple_media_candidate_new(foundation, component,
+								type, protocol, ip, port);
+		g_object_set(candidate, "priority", priority, NULL);
+		candidates = g_list_append(candidates, candidate);
+
+		g_strfreev(tokens);
 	}
 
 	if (!candidates) {
 		// No a=candidate in SDP message, revert to OC2005 behaviour
-		gchar **tokens = g_strsplit(sipe_utils_nameval_find(sdp_attrs, "o"), " ", 6);
-		gchar *ip = g_strdup(tokens[5]);
-		guint port;
-
-		g_strfreev(tokens);
-
-		tokens = g_strsplit(sipe_utils_nameval_find(sdp_attrs, "m"), " ", 3);
-		port = atoi(tokens[1]);
-		g_strfreev(tokens);
-
 		candidate = purple_media_candidate_new("foundation",
 										PURPLE_MEDIA_COMPONENT_RTP,
 										PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
-										PURPLE_MEDIA_NETWORK_PROTOCOL_UDP, ip, port);
+										PURPLE_MEDIA_NETWORK_PROTOCOL_UDP,
+										call->remote_ip, call->remote_port);
 		candidates = g_list_append(candidates, candidate);
 
 		candidate = purple_media_candidate_new("foundation",
 										PURPLE_MEDIA_COMPONENT_RTCP,
 										PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
-										PURPLE_MEDIA_NETWORK_PROTOCOL_UDP, ip, port + 1);
+										PURPLE_MEDIA_NETWORK_PROTOCOL_UDP,
+										call->remote_ip, call->remote_port + 1);
 		candidates = g_list_append(candidates, candidate);
 
 		// This seems to be pre-OC2007 R2 UAC
@@ -258,9 +254,6 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 			it = it->next;
 		}
 	}
-
-	g_free(username);
-	g_free(password);
 
 	return candidates;
 }
@@ -557,21 +550,49 @@ sipe_media_stream_info_cb(PurpleMedia *media,
 	}
 }
 
-static GSList *
-sipe_media_parse_sdp_frame(gchar *frame)
-{
-	gchar	**lines = g_strsplit(frame, "\r\n", 0);
-	GSList	*sdp_attrs = NULL;
+static gboolean
+sipe_media_parse_sdp_frame(sipe_media_call* call, gchar *frame) {
+	gchar		**lines = g_strsplit(frame, "\r\n", 0);
+	GSList		*sdp_attrs = NULL;
+	gchar		*remote_ip = NULL;
+	guint16 	remote_port = 0;
+	gchar		**ptr;
+	gboolean	no_error = TRUE;
 
-	gboolean result = sipe_utils_parse_lines(&sdp_attrs, lines, "=");
-	g_strfreev(lines);
+	for (ptr = lines; *ptr != NULL; ++ptr) {
+		if (g_str_has_prefix(*ptr, "a=")) {
+			gchar **parts = g_strsplit(*ptr + 2, ":", 2);
+			if(!parts[0]) {
+				g_strfreev(parts);
+				sipe_utils_nameval_free(sdp_attrs);
+				sdp_attrs = NULL;
+				no_error = FALSE;
+				break;
+			}
+			sdp_attrs = sipe_utils_nameval_add(sdp_attrs, parts[0], parts[1]);
+			g_strfreev(parts);
 
-	if (result == FALSE) {
-		sipe_utils_nameval_free(sdp_attrs);
-		return NULL;
+		} else if (g_str_has_prefix(*ptr, "o=")) {
+			gchar **parts = g_strsplit(*ptr + 2, " ", 6);
+			remote_ip = g_strdup(parts[5]);
+			g_strfreev(parts);
+		} else if (g_str_has_prefix(*ptr, "m=")) {
+			gchar **parts = g_strsplit(*ptr + 2, " ", 3);
+			remote_port = atoi(parts[1]);
+			g_strfreev(parts);
+		}
 	}
 
-	return sdp_attrs;
+	g_strfreev(lines);
+
+	if (no_error) {
+		sipe_utils_nameval_free(call->sdp_attrs);
+		call->sdp_attrs = sdp_attrs;
+		call->remote_ip = remote_ip;
+		call->remote_port = remote_port;
+	}
+
+	return no_error;
 }
 
 static struct sip_dialog *
@@ -602,7 +623,12 @@ sipe_media_call_init(struct sipmsg *msg)
 	sipe_media_call *call;
 
 	call = g_new0(sipe_media_call, 1);
-	call->sdp_attrs = sipe_media_parse_sdp_frame(msg->body);
+
+	if (sipe_media_parse_sdp_frame(call, msg->body) == FALSE) {
+		g_free(call);
+		return NULL;
+	}
+
 	call->invitation = msg;
 	call->legacy_mode = FALSE;
 	call->state = SIPE_CALL_CONNECTING;
@@ -640,8 +666,6 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	if (sip->media_call) {
 		if (sipe_strequal(sip->media_call->dialog->callid, callid)) {
 			gchar *rsp;
-			int i = 0;
-			const gchar *attr;
 
 			call = sip->media_call;
 
@@ -653,18 +677,18 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 
 			sipe_utils_nameval_free(call->sdp_attrs);
 			call->sdp_attrs = NULL;
-			call->sdp_attrs = sipe_media_parse_sdp_frame(msg->body);
+			if (!sipe_media_parse_sdp_frame(call, msg->body)) {
+				// TODO: handle error
+			}
 
 			if (call->legacy_mode && call->state == SIPE_CALL_RUNNING) {
 				sipe_media_hold(sip);
 				return;
 			}
 
-			while ((attr = sipe_utils_nameval_find_instance(call->sdp_attrs, "a", i++))) {
-				if (g_str_has_prefix("inactive", attr)) {
-					sipe_media_hold(sip);
-					return;
-				}
+			if (sipe_utils_nameval_find(call->sdp_attrs, "inactive")) {
+				sipe_media_hold(sip);
+				return;
 			}
 
 			if (call->state == SIPE_CALL_HELD) {
