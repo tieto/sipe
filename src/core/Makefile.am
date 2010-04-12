@@ -23,6 +23,7 @@ libsipe_core_la_SOURCES = \
 	sipe-chat.h \
 	sipe-chat.c \
 	sipe-core-private.h \
+	sipe-core.c \
 	sipe-dialog.h \
 	sipe-dialog.c \
 	sipe-session.h \

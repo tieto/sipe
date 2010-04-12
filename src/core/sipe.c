@@ -60,9 +60,6 @@
 #include <unistd.h>
 
 #include <glib.h>
-#ifdef HAVE_GMIME
-#include <gmime/gmime.h>
-#endif
 
 #include "sipe-common.h"
 
@@ -10523,31 +10520,6 @@ void sipe_get_info(PurpleConnection *gc, const char *username)
 	g_free(domain_uri);
 	g_free(body);
 	g_free(row);
-}
-
-void sipe_core_init(void)
-{
-	srand(time(NULL));
-	sip_sec_init();
-
-#ifdef ENABLE_NLS
-	SIPE_DEBUG_INFO("bindtextdomain = %s",
-			bindtextdomain(PACKAGE_NAME, LOCALEDIR));
-	SIPE_DEBUG_INFO("bind_textdomain_codeset = %s",
-			bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
-	textdomain(PACKAGE_NAME);
-#endif
-#ifdef HAVE_GMIME
-	g_mime_init(0);
-#endif
-}
-
-void sipe_core_destroy(void)
-{
-#ifdef HAVE_GMIME
-	g_mime_shutdown();
-#endif
-	sip_sec_destroy();
 }
 
 /*
