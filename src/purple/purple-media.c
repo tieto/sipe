@@ -43,6 +43,28 @@ PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type)
 	}
 }*/
 
+static PurpleMediaCandidateType
+sipe_candidate_type_to_purple(SipeCandidateType type)
+{
+	switch (type) {
+		case SIPE_CANDIDATE_TYPE_HOST:	return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
+		case SIPE_CANDIDATE_TYPE_RELAY:	return PURPLE_MEDIA_CANDIDATE_TYPE_RELAY;
+		case SIPE_CANDIDATE_TYPE_SRFLX:	return PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX;
+		default:						return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
+	}
+}
+
+static PurpleMediaNetworkProtocol
+sipe_network_protocol_to_purple(SipeNetworkProtocol proto)
+{
+	switch (proto) {
+		case SIPE_NETWORK_PROTOCOL_TCP:	return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
+		case SIPE_NETWORK_PROTOCOL_UDP:	return PURPLE_MEDIA_NETWORK_PROTOCOL_UDP;
+		default:						return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
+	}
+}
+
+
 sipe_codec *
 sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
 {
@@ -56,13 +78,32 @@ sipe_backend_codec_free(sipe_codec *codec)
 	g_object_unref(codec);
 }
 
+int
+sipe_backend_codec_get_id(sipe_codec *codec)
+{
+	return purple_media_codec_get_id((PurpleMediaCodec *)codec);
+}
+
 gchar *
 sipe_backend_codec_get_name(sipe_codec *codec)
 {
 	return purple_media_codec_get_encoding_name((PurpleMediaCodec *)codec);
 }
 
-gboolean sipe_backend_set_remote_codecs(struct _sipe_media_call* call, gchar* participant)
+guint
+sipe_backend_codec_get_clock_rate(sipe_codec *codec)
+{
+	return purple_media_codec_get_clock_rate((PurpleMediaCodec *)codec);
+}
+
+GList *
+sipe_backend_codec_get_optional_parameters(sipe_codec *codec)
+{
+	return purple_media_codec_get_optional_parameters((PurpleMediaCodec *)codec);
+}
+
+gboolean
+sipe_backend_set_remote_codecs(struct _sipe_media_call* call, gchar* participant)
 {
 	PurpleMedia	*media	= call->media;
 	GList		*codecs	= call->remote_codecs;
@@ -70,9 +111,38 @@ gboolean sipe_backend_set_remote_codecs(struct _sipe_media_call* call, gchar* pa
 	return purple_media_set_remote_codecs(media, "sipe-voice", participant, codecs);
 }
 
-GList* sipe_backend_get_local_codecs(struct _sipe_media_call* call)
+GList*
+sipe_backend_get_local_codecs(struct _sipe_media_call* call)
 {
 	return purple_media_get_codecs(call->media, "sipe-voice");
+}
+
+sipe_candidate *
+sipe_backend_candidate_new(const gchar *foundation, SipeComponentType component,
+						   SipeCandidateType type, SipeNetworkProtocol proto,
+						   const gchar *ip, guint port)
+{
+	return (sipe_candidate *)purple_media_candidate_new(
+								foundation,
+								component,
+								sipe_candidate_type_to_purple(type),
+								sipe_network_protocol_to_purple(proto),
+								ip,
+								port);
+}
+
+void
+sipe_backend_candidate_free(sipe_candidate *codec)
+{
+	g_object_unref(codec);
+}
+
+void
+sipe_backend_candidate_set_username_and_pwd(sipe_candidate *candidate,
+											const gchar *username,
+											const gchar *password)
+{
+	g_object_set(candidate, "username", username, "password", password, NULL);
 }
 
 /*

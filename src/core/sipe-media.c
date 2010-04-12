@@ -26,6 +26,7 @@
 
 #include <glib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <libpurple/mediamanager.h>
 #include <nice/agent.h>
 
@@ -52,6 +53,13 @@ void sipe_media_codec_list_free(GList *codecs)
 	}
 }
 
+void sipe_media_candidate_list_free(GList *candidates)
+{
+	for (; candidates; candidates = g_list_delete_link(candidates, candidates)) {
+		sipe_backend_candidate_free(candidates->data);
+	}
+}
+
 static void
 sipe_media_call_free(sipe_media_call *call)
 {
@@ -60,7 +68,7 @@ sipe_media_call_free(sipe_media_call *call)
 		if (call->invitation)
 			sipmsg_free(call->invitation);
 		sipe_media_codec_list_free(call->remote_codecs);
-		purple_media_candidate_list_free(call->remote_candidates);
+		sipe_media_candidate_list_free(call->remote_candidates);
 		g_free(call);
 	}
 }
@@ -111,10 +119,7 @@ sipe_media_prune_remote_codecs(sipe_media_call *call, GList *codecs)
 		if (g_list_find_custom(local_codecs, c, (GCompareFunc)codec_name_compare)) {
 			pruned_codecs = g_list_append(pruned_codecs, c);
 			remote_codecs->data = NULL;
-		} else {
-			printf("Pruned codec %s\n", sipe_backend_codec_get_name(c));
 		}
-
 		remote_codecs = remote_codecs->next;
 	}
 
@@ -127,7 +132,7 @@ static GList *
 sipe_media_parse_remote_candidates(sipe_media_call *call)
 {
 	GSList *sdp_attrs = call->sdp_attrs;
-	PurpleMediaCandidate *candidate;
+	sipe_candidate *candidate;
 	GList *candidates = NULL;
 	const gchar *attr;
 	int i = 0;
@@ -138,12 +143,12 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 	while ((attr = sipe_utils_nameval_find_instance(sdp_attrs, "candidate", i++))) {
 		gchar **tokens;
 		gchar *foundation;
-		PurpleMediaComponentType component;
-		PurpleMediaNetworkProtocol protocol;
+		SipeComponentType component;
+		SipeNetworkProtocol protocol;
 		guint32 priority;
 		gchar* ip;
 		guint16 port;
-		PurpleMediaCandidateType type;
+		SipeCandidateType type;
 
 		tokens = g_strsplit_set(attr, " ", 0);
 
@@ -151,17 +156,17 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 
 		switch (atoi(tokens[1])) {
 			case 1:
-				component = PURPLE_MEDIA_COMPONENT_RTP;
+				component = SIPE_COMPONENT_RTP;
 				break;
 			case 2:
-				component = PURPLE_MEDIA_COMPONENT_RTCP;
+				component = SIPE_COMPONENT_RTCP;
 				break;
 			default:
-				component = PURPLE_MEDIA_COMPONENT_NONE;
+				component = SIPE_COMPONENT_NONE;
 		}
 
 		if (sipe_strequal(tokens[2], "UDP"))
-			protocol = PURPLE_MEDIA_NETWORK_PROTOCOL_UDP;
+			protocol = SIPE_NETWORK_PROTOCOL_UDP;
 		else {
 			// Ignore TCP candidates, at least for now...
 			g_strfreev(tokens);
@@ -173,17 +178,17 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 		port = atoi(tokens[5]);
 
 		if (sipe_strequal(tokens[7], "host"))
-			type = PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
+			type = SIPE_CANDIDATE_TYPE_HOST;
 		else if (sipe_strequal(tokens[7], "relay"))
-			type = PURPLE_MEDIA_CANDIDATE_TYPE_RELAY;
+			type = SIPE_CANDIDATE_TYPE_RELAY;
 		else if (sipe_strequal(tokens[7], "srflx"))
-			type = PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX;
+			type = SIPE_CANDIDATE_TYPE_SRFLX;
 		else {
 			g_strfreev(tokens);
 			continue;
 		}
 
-		candidate = purple_media_candidate_new(foundation, component,
+		candidate = sipe_backend_candidate_new(foundation, component,
 								type, protocol, ip, port);
 		g_object_set(candidate, "priority", priority, NULL);
 		candidates = g_list_append(candidates, candidate);
@@ -193,17 +198,17 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 
 	if (!candidates) {
 		// No a=candidate in SDP message, revert to OC2005 behaviour
-		candidate = purple_media_candidate_new("foundation",
-										PURPLE_MEDIA_COMPONENT_RTP,
-										PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
-										PURPLE_MEDIA_NETWORK_PROTOCOL_UDP,
+		candidate = sipe_backend_candidate_new("foundation",
+										SIPE_COMPONENT_RTP,
+										SIPE_CANDIDATE_TYPE_HOST,
+										SIPE_NETWORK_PROTOCOL_UDP,
 										call->remote_ip, call->remote_port);
 		candidates = g_list_append(candidates, candidate);
 
-		candidate = purple_media_candidate_new("foundation",
-										PURPLE_MEDIA_COMPONENT_RTCP,
-										PURPLE_MEDIA_CANDIDATE_TYPE_HOST,
-										PURPLE_MEDIA_NETWORK_PROTOCOL_UDP,
+		candidate = sipe_backend_candidate_new("foundation",
+										SIPE_COMPONENT_RTCP,
+										SIPE_CANDIDATE_TYPE_HOST,
+										SIPE_NETWORK_PROTOCOL_UDP,
 										call->remote_ip, call->remote_port + 1);
 		candidates = g_list_append(candidates, candidate);
 
@@ -214,7 +219,7 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 	if (username) {
 		GList *it = candidates;
 		while (it) {
-			g_object_set(it->data, "username", username, "password", password, NULL);
+			sipe_backend_candidate_set_username_and_pwd(it->data, username, password);
 			it = it->next;
 		}
 	}
@@ -228,9 +233,9 @@ sipe_media_sdp_codec_ids_format(GList *codecs)
 	GString *result = g_string_new(NULL);
 
 	while (codecs) {
-		PurpleMediaCodec *c = codecs->data;
+		sipe_codec *c = codecs->data;
 
-		gchar *tmp = g_strdup_printf(" %d", purple_media_codec_get_id(c));
+		gchar *tmp = g_strdup_printf(" %d", sipe_backend_codec_get_id(c));
 		g_string_append(result,tmp);
 		g_free(tmp);
 
@@ -246,25 +251,25 @@ sipe_media_sdp_codecs_format(GList *codecs)
 	GString *result = g_string_new(NULL);
 
 	while (codecs) {
-		PurpleMediaCodec *c = codecs->data;
+		sipe_codec *c = codecs->data;
 		GList *params = NULL;
 
 		gchar *tmp = g_strdup_printf("a=rtpmap:%d %s/%d\r\n",
-			purple_media_codec_get_id(c),
-			purple_media_codec_get_encoding_name(c),
-			purple_media_codec_get_clock_rate(c));
+			sipe_backend_codec_get_id(c),
+			sipe_backend_codec_get_name(c),
+			sipe_backend_codec_get_clock_rate(c));
 
 		g_string_append(result, tmp);
 		g_free(tmp);
 
-		if ((params = purple_media_codec_get_optional_parameters(c))) {
-			tmp = g_strdup_printf("a=fmtp:%d",purple_media_codec_get_id(c));
+		if ((params = sipe_backend_codec_get_optional_parameters(c))) {
+			tmp = g_strdup_printf("a=fmtp:%d",sipe_backend_codec_get_id(c));
 			g_string_append(result, tmp);
 			g_free(tmp);
 
 			while (params) {
-				PurpleKeyValuePair* par = params->data;
-				tmp = g_strdup_printf(" %s=%s", par->key, (gchar*) par->value);
+				struct sipnameval* par = params->data;
+				tmp = g_strdup_printf(" %s=%s", par->name, par->value);
 				g_string_append(result, tmp);
 				g_free(tmp);
 				params = params->next;
