@@ -32,6 +32,7 @@
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
+#include "sipe-digest.h"
 #include "sipe-xml.h"
 #include "sipe-utils.h"
 
@@ -50,9 +51,6 @@ void sipe_backend_debug(sipe_debug_level level,
 	g_free(msg);
 }
 
-void sipe_digest_sha1(SIPE_UNUSED_PARAMETER const guchar *data,
-		      SIPE_UNUSED_PARAMETER gsize length,
-		      SIPE_UNUSED_PARAMETER guchar *digest);
 void sipe_digest_sha1(SIPE_UNUSED_PARAMETER const guchar *data,
 		      SIPE_UNUSED_PARAMETER gsize length,
 		      SIPE_UNUSED_PARAMETER guchar *digest) {}
