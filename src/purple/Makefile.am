@@ -74,6 +74,10 @@ else
 libsipe_backend_la_SOURCES += purple-crypt.c purple-digest.c
 endif
 
+if SIPE_WITH_VV
+libsipe_backend_la_SOURCES += purple-media.c
+endif
+
 TESTS = $(check_PROGRAMS)
 
 # Remove any libsipe.so from the old incorrect installation location

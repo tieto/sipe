@@ -39,46 +39,17 @@
 #include "sipe-utils.h"
 #include "sipe-common.h"
 
-typedef enum sipe_call_state {
-	SIPE_CALL_CONNECTING,
-	SIPE_CALL_RUNNING,
-	SIPE_CALL_HELD,
-	SIPE_CALL_FINISHED
-} SipeCallState;
-
-typedef enum sipe_media_type {
-	SIPE_MEDIA_AUDIO,
-	SIPE_MEDIA_VIDEO
-} SipeMediaType;
-
-struct _sipe_codec {
-	gint8			id;
-	gchar			*name;
-	SipeMediaType	type;
-	guint16			clock_rate;
-} sipe_codec;
-
-struct _sipe_media_call {
-	PurpleMedia			*media;
-	struct sip_session	*session;
-	struct sip_dialog	*dialog;
-
-	gchar				*remote_ip;
-	guint16				remote_port;
-
-	GSList				*sdp_attrs;
-	struct sipmsg		*invitation;
-	GList				*remote_candidates;
-	GList				*remote_codecs;
-	gchar				*sdp_response;
-	gboolean			legacy_mode;
-	SipeCallState		state;
-};
-
 gchar *
 sipe_media_get_callid(sipe_media_call *call)
 {
 	return call->dialog->callid;
+}
+
+void sipe_media_codec_list_free(GList *codecs)
+{
+	for (; codecs; codecs = g_list_delete_link(codecs, codecs)) {
+		sipe_backend_codec_free(codecs->data);
+	}
 }
 
 static void
@@ -88,7 +59,7 @@ sipe_media_call_free(sipe_media_call *call)
 		sipe_utils_nameval_free(call->sdp_attrs);
 		if (call->invitation)
 			sipmsg_free(call->invitation);
-		purple_media_codec_list_free(call->remote_codecs);
+		sipe_media_codec_list_free(call->remote_codecs);
 		purple_media_candidate_list_free(call->remote_candidates);
 		g_free(call);
 	}
@@ -102,59 +73,52 @@ sipe_media_parse_remote_codecs(const sipe_media_call *call)
 	GList		*codecs	= NULL;
 
 	while ((attr = sipe_utils_nameval_find_instance(call->sdp_attrs, "rtpmap", i++))) {
-		gchar **tokens;
-		int id;
-		int clock_rate;
-		gchar *codec_name;
-		PurpleMediaCodec *codec;
+		gchar	**tokens	= g_strsplit_set(attr, " /", 3);
 
-		tokens = g_strsplit_set(attr, " /", 3);
+		int		id			= atoi(tokens[0]);
+		gchar	*name		= tokens[1];
+		int		clock_rate	= atoi(tokens[2]);
+		SipeMediaType type	= SIPE_MEDIA_AUDIO;
 
-		id = atoi(tokens[0]);
-		codec_name = tokens[1];
-		clock_rate = atoi(tokens[2]);
+		sipe_codec	*codec = sipe_backend_codec_new(id, name, clock_rate, type);
 
-		codec = purple_media_codec_new(id, codec_name, PURPLE_MEDIA_AUDIO, clock_rate);
 		codecs = g_list_append(codecs, codec);
-
 		g_strfreev(tokens);
-
-		printf("REMOTE CODEC: %s\n",purple_media_codec_to_string(codec));
 	}
 
 	return codecs;
 }
 
 static gint
-codec_name_compare(PurpleMediaCodec* codec1, PurpleMediaCodec* codec2)
+codec_name_compare(sipe_codec* codec1, sipe_codec* codec2)
 {
-	gchar *name1 = purple_media_codec_get_encoding_name(codec1);
-	gchar *name2 = purple_media_codec_get_encoding_name(codec2);
+	gchar *name1 = sipe_backend_codec_get_name(codec1);
+	gchar *name2 = sipe_backend_codec_get_name(codec2);
 
 	return g_strcmp0(name1, name2);
 }
 
 static GList *
-sipe_media_prune_remote_codecs(PurpleMedia *media, GList *codecs)
+sipe_media_prune_remote_codecs(sipe_media_call *call, GList *codecs)
 {
 	GList *remote_codecs = codecs;
-	GList *local_codecs = purple_media_get_codecs(media, "sipe-voice");
+	GList *local_codecs = sipe_backend_get_local_codecs(call);
 	GList *pruned_codecs = NULL;
 
 	while (remote_codecs) {
-		PurpleMediaCodec *c = remote_codecs->data;
+		sipe_codec *c = remote_codecs->data;
 
 		if (g_list_find_custom(local_codecs, c, (GCompareFunc)codec_name_compare)) {
 			pruned_codecs = g_list_append(pruned_codecs, c);
 			remote_codecs->data = NULL;
 		} else {
-			printf("Pruned codec %s\n", purple_media_codec_get_encoding_name(c));
+			printf("Pruned codec %s\n", sipe_backend_codec_get_name(c));
 		}
 
 		remote_codecs = remote_codecs->next;
 	}
 
-	purple_media_codec_list_free(codecs);
+	sipe_media_codec_list_free(codecs);
 
 	return pruned_codecs;
 }
@@ -701,8 +665,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 			if (!call->remote_codecs) {
 				// TODO: error no remote codecs
 			}
-			if (purple_media_set_remote_codecs(call->media, "sipe-voice", call->dialog->with,
-					call->remote_codecs) == FALSE)
+			if (sipe_backend_set_remote_codecs(call, call->dialog->with) == FALSE)
 				printf("ERROR SET REMOTE CODECS"); // TODO
 
 			rsp = sipe_media_create_sdp(sip->media_call, TRUE);
@@ -754,15 +717,14 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 			                           call->remote_candidates);
 
 	call->remote_codecs = sipe_media_parse_remote_codecs(call);
-	call->remote_codecs = sipe_media_prune_remote_codecs(media, call->remote_codecs);
+	call->remote_codecs = sipe_media_prune_remote_codecs(call, call->remote_codecs);
 	if (!call->remote_candidates || !call->remote_codecs) {
 		sipe_media_call_free(call);
 		sip->media_call = NULL;
 		printf("ERROR NO CANDIDATES OR CODECS");
 		return;
 	}
-	if (purple_media_set_remote_codecs(media, "sipe-voice", dialog->with,
-			call->remote_codecs) == FALSE)
+	if (sipe_backend_set_remote_codecs(call, dialog->with) == FALSE)
 		printf("ERROR SET REMOTE CODECS"); // TODO
 
 	sip->media_call = call;
