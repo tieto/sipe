@@ -28,7 +28,6 @@
 
 #include <glib.h>
 
-#include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"    /* to ensure same API for backends */
 #include "sipe-utils.h"

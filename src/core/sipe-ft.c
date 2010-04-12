@@ -59,7 +59,6 @@
 
 #include "sipe-common.h"
 #include "sipmsg.h"
-#include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"

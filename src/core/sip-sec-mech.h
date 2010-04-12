@@ -21,13 +21,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * Interface dependencies:
- *
- * <glib.h>
- * "sip-sec.h"
- */
-
 /* Mechanism wrappers API  (Inspired by GSS-API)
  * All mechanisms should implement this API
  *
@@ -45,9 +38,8 @@ typedef struct {
 	guint8 *value;
 } SipSecBuffer;
 
-
 typedef SipSecContext
-(*sip_sec_create_context_func)(SipSecAuthType type);
+(*sip_sec_create_context_func)(guint type);
 
 typedef sip_uint32
 (*sip_sec_acquire_cred_func)(SipSecContext context,

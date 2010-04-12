@@ -25,14 +25,11 @@
 /* Opaque type definition for security context */
 typedef struct sip_sec_context *SipSecContext;
 
-typedef enum sip_sec_auth_type
-{
-	AUTH_TYPE_UNSET = 0,
-	AUTH_TYPE_DIGEST,
-	AUTH_TYPE_NTLM,
-	AUTH_TYPE_KERBEROS,
-	AUTH_TYPE_NEGOTIATE
-} SipSecAuthType;
+#define AUTH_TYPE_UNSET     0
+#define AUTH_TYPE_DIGEST    1
+#define AUTH_TYPE_NTLM      2
+#define AUTH_TYPE_KERBEROS  3
+#define AUTH_TYPE_NEGOTIATE 4
 
 /*** Sipe convenience methods ***/
 
@@ -51,7 +48,7 @@ typedef enum sip_sec_auth_type
  * @return context security context to store and pass between security method invocations
  */
 SipSecContext
-sip_sec_create_context(SipSecAuthType type,
+sip_sec_create_context(guint type,
 		       const int  sso,
 		       int is_connection_based,
 		       const char *domain,
@@ -97,7 +94,7 @@ sip_sec_init_context_step(SipSecContext context,
  */
 char *sip_sec_init_context(SipSecContext *context,
 			   int *expires,
-			   SipSecAuthType type,
+			   guint type,
 			   const int  sso,
 			   const char *domain,
 			   const char *username,

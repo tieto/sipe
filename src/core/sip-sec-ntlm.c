@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009, 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
@@ -1834,7 +1835,7 @@ sip_sec_destroy_sec_context__ntlm(SipSecContext context)
 }
 
 SipSecContext
-sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER SipSecAuthType type)
+sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER guint type)
 {
 	context_ntlm context = g_malloc0(sizeof(struct _context_ntlm));
 	if (!context) return(NULL);

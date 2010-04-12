@@ -36,7 +36,6 @@
 
 #include "sipe-common.h"
 #include "sipmsg.h"
-#include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"

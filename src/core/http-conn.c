@@ -589,7 +589,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		char *tmp;
 #endif
 #endif
-		SipSecAuthType auth_type;
+		guint auth_type;
 		const char *auth_name;
 		char *authorization;
 		char *output_toked_base64;
