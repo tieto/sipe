@@ -38,7 +38,6 @@
 #endif
 
 #ifdef _WIN32
-#include "win32dep.h" /* for LOCALEDIR */
 #ifdef _DLL
 #define _WS2TCPIP_H_
 #define _WINSOCK2API_
