@@ -72,6 +72,7 @@ C_SRC =			sipe-crypt.c \
 			sipe-buddy.c \
 			sipe-chat.c \
 			sipe-conf.c \
+			sipe-core.c \
 			sipe-dialog.c \
 			sipe-session.c \
 			sipe-utils.c \
