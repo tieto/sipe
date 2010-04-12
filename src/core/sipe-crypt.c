@@ -1,4 +1,4 @@
-/**
+ /**
  * @file sipe-crypt.c
  *
  * pidgin-sipe
@@ -30,7 +30,7 @@
 #include "nss.h"
 #include "pk11pub.h"
 
-#include "sipe-backend.h"
+#include "sipe-crypt.h"
 
 
 /* PRIVATE methons */
@@ -84,10 +84,10 @@ static void sipe_crypt_ctx_destroy(PK11Context* EncContext)
 }
 
 static void
-sipe_backend_encrypt(CK_MECHANISM_TYPE cipherMech,
-		     const guchar *key, gsize key_length,
-		     const guchar *plaintext, gsize plaintext_length,
-		     guchar *encrypted_text)
+sipe_crypt(CK_MECHANISM_TYPE cipherMech,
+	   const guchar *key, gsize key_length,
+	   const guchar *plaintext, gsize plaintext_length,
+	   guchar *encrypted_text)
 {
 	void *EncContext;
 
@@ -99,34 +99,34 @@ sipe_backend_encrypt(CK_MECHANISM_TYPE cipherMech,
 
 /* PUBLIC methons */
 
-void sipe_backend_encrypt_des(const guchar *key,
-			      const guchar *plaintext, gsize plaintext_length,
-			      guchar *encrypted_text)
+void sipe_crypt_des(const guchar *key,
+		    const guchar *plaintext, gsize plaintext_length,
+		    guchar *encrypted_text)
 {
-	sipe_backend_encrypt(CKM_DES_ECB, key, 8, plaintext, plaintext_length, encrypted_text);
+	sipe_crypt(CKM_DES_ECB, key, 8, plaintext, plaintext_length, encrypted_text);
 }
 
-void sipe_backend_encrypt_rc4(const guchar *key, gsize key_length,
-			      const guchar *plaintext, gsize plaintext_length,
-			      guchar *encrypted_text)
+void sipe_crypt_rc4(const guchar *key, gsize key_length,
+		    const guchar *plaintext, gsize plaintext_length,
+		    guchar *encrypted_text)
 {
-	sipe_backend_encrypt(CKM_RC4, key, key_length, plaintext, plaintext_length, encrypted_text);
+	sipe_crypt(CKM_RC4, key, key_length, plaintext, plaintext_length, encrypted_text);
 }
 
 /* Stream RC4 cipher for file transfer */
-gpointer sipe_backend_crypt_ft_start(const guchar *key)
+gpointer sipe_crypt_ft_start(const guchar *key)
 {
 	return sipe_crypt_ctx_create(CKM_RC4, key, 16);
 }
 
-void sipe_backend_crypt_ft_stream(gpointer context,
-				  const guchar *in, gsize length,
-				  guchar *out)
+void sipe_crypt_ft_stream(gpointer context,
+			  const guchar *in, gsize length,
+			  guchar *out)
 {
 	sipe_crypt_ctx_encrypt(context, in, length, out);
 }
 
-void sipe_backend_crypt_ft_destroy(gpointer context)
+void sipe_crypt_ft_destroy(gpointer context)
 {
 	sipe_crypt_ctx_destroy(context);
 }

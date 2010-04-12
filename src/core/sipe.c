@@ -94,6 +94,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-digest.h"
 #include "sipe-ews.h"
 #include "sipe-ft.h"
 #include "sipe-mime.h"
@@ -464,7 +465,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 							 authuser,
 							 auth->realm,
 							 sip->password);
-				sipe_backend_digest_md5((guchar *)string, strlen(string), digest);
+				sipe_digest_md5((guchar *)string, strlen(string), digest);
 				g_free(string);
 				auth->opaque = buff_to_hex_str(digest, sizeof(digest));
 			}
@@ -476,13 +477,13 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 		 * See RFC 2617 for more information.
 		 */
 		string = g_strdup_printf("%s:%s", msg->method, msg->target);
-		sipe_backend_digest_md5((guchar *)string, strlen(string), digest);
+		sipe_digest_md5((guchar *)string, strlen(string), digest);
 		g_free(string);
 
 		hex_digest = buff_to_hex_str(digest, sizeof(digest));
 		string = g_strdup_printf("%s:%s:%s", auth->opaque, auth->gssapi_data, hex_digest);
 		g_free(hex_digest);
-		sipe_backend_digest_md5((guchar *)string, strlen(string), digest);
+		sipe_digest_md5((guchar *)string, strlen(string), digest);
 		g_free(string);
 
 		hex_digest = buff_to_hex_str(digest, sizeof(digest));

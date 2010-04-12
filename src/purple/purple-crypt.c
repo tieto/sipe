@@ -23,11 +23,11 @@
 #include "glib.h"
 #include "cipher.h"
 
-#include "sipe-backend.h"
+#include "sipe-crypt.h"
 
-void sipe_backend_encrypt_des(const guchar *key,
-			      const guchar *plaintext, gsize plaintext_length,
-			      guchar *encrypted_text)
+void sipe_crypt_des(const guchar *key,
+		    const guchar *plaintext, gsize plaintext_length,
+		    guchar *encrypted_text)
 {
 	gsize dummy;
 	PurpleCipherContext *context = purple_cipher_context_new_by_name("des", NULL);
@@ -36,9 +36,9 @@ void sipe_backend_encrypt_des(const guchar *key,
 	purple_cipher_context_destroy(context);
 }
 
-void sipe_backend_encrypt_rc4(const guchar *key, gsize key_length,
-			      const guchar *plaintext, gsize plaintext_length,
-			      guchar *encrypted_text)
+void sipe_crypt_rc4(const guchar *key, gsize key_length,
+		    const guchar *plaintext, gsize plaintext_length,
+		    guchar *encrypted_text)
 {
 	gsize dummy;
 	PurpleCipherContext *context = purple_cipher_context_new_by_name("rc4", NULL);
@@ -49,7 +49,7 @@ void sipe_backend_encrypt_rc4(const guchar *key, gsize key_length,
 }
 
 /* Stream RC4 cipher for file transfer */
-gpointer sipe_backend_crypt_ft_start(const guchar *key)
+gpointer sipe_crypt_ft_start(const guchar *key)
 {
 	PurpleCipherContext *context = purple_cipher_context_new_by_name("rc4", NULL);
 	/* only use first 16 characters of the key */
@@ -58,14 +58,14 @@ gpointer sipe_backend_crypt_ft_start(const guchar *key)
 	return(context);
 }
 
-void sipe_backend_crypt_ft_stream(gpointer context,
-				  const guchar *in, gsize length,
-				  guchar *out)
+void sipe_crypt_ft_stream(gpointer context,
+			  const guchar *in, gsize length,
+			  guchar *out)
 {
 	purple_cipher_context_encrypt(context, in, length, out, NULL);
 }
 
-void sipe_backend_crypt_ft_destroy(gpointer context)
+void sipe_crypt_ft_destroy(gpointer context)
 {
 	purple_cipher_context_destroy(context);
 }

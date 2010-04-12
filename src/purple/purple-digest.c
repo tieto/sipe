@@ -23,11 +23,11 @@
 #include "glib.h"
 #include "cipher.h"
 
-#include "sipe-backend.h"
+#include "sipe-digest.h"
 
-void sipe_backend_digest_hmac_md5(const guchar *key, gsize key_length,
-				  const guchar *data, gsize data_length,
-				  guchar *digest)
+void sipe_digest_hmac_md5(const guchar *key, gsize key_length,
+			  const guchar *data, gsize data_length,
+			  guchar *digest)
 {
 	PurpleCipherContext *context = purple_cipher_context_new_by_name("hmac", NULL);
 	purple_cipher_context_set_option(context, "hash", "md5");
@@ -47,23 +47,23 @@ static void purple_digest(const gchar *algorithm,
 	purple_cipher_context_destroy(ctx);
 }
 
-void sipe_backend_digest_md4(const guchar *data, gsize length, guchar *digest)
+void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
 {
 	purple_digest("md4", data, length, digest, SIPE_DIGEST_MD4_LENGTH);
 }
 
-void sipe_backend_digest_md5(const guchar *data, gsize length, guchar *digest)
+void sipe_digest_md5(const guchar *data, gsize length, guchar *digest)
 {
 	purple_digest("md5", data, length, digest, SIPE_DIGEST_MD5_LENGTH);
 }
 
-void sipe_backend_digest_sha1(const guchar *data, gsize length, guchar *digest)
+void sipe_digest_sha1(const guchar *data, gsize length, guchar *digest)
 {
 	purple_digest("sha1", data, length, digest, SIPE_DIGEST_SHA1_LENGTH);
 }
 
 /* Stream HMAC(SHA1) digest for file transfer */
-gpointer sipe_backend_digest_ft_start(const guchar *sha1_digest)
+gpointer sipe_digest_ft_start(const guchar *sha1_digest)
 {
 	PurpleCipherContext *context = purple_cipher_context_new_by_name("hmac", NULL);
 	purple_cipher_context_set_option(context, "hash", "sha1");
@@ -72,17 +72,17 @@ gpointer sipe_backend_digest_ft_start(const guchar *sha1_digest)
 	return(context);
 }
 
-void sipe_backend_digest_ft_update(gpointer context, const guchar *data, gsize length)
+void sipe_digest_ft_update(gpointer context, const guchar *data, gsize length)
 {
 	purple_cipher_context_append(context, data, length);
 }
 
-void sipe_backend_digest_ft_end(gpointer context, guchar *digest)
+void sipe_digest_ft_end(gpointer context, guchar *digest)
 {
 	purple_cipher_context_digest(context, SIPE_DIGEST_FILETRANSFER_LENGTH, digest, NULL);
 }
 
-void sipe_backend_digest_ft_destroy(gpointer context)
+void sipe_digest_ft_destroy(gpointer context)
 {
 	purple_cipher_context_destroy(context);
 }

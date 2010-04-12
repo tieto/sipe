@@ -22,7 +22,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
-#include "sipe-backend.h"
+#include "sipe-digest.h"
 #include "uuid.h"
 
 static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
@@ -111,7 +111,7 @@ char *generateUUIDfromEPID(const gchar *epid)
 	memcpy(buf, &result, sizeof(uuid_t));
 	strcpy(&buf[sizeof(uuid_t)], epid);
 
-	sipe_backend_digest_sha1((guchar *)buf, strlen(buf), digest);
+	sipe_digest_sha1((guchar *)buf, strlen(buf), digest);
 	createUUIDfromHash(&result, digest);
 
 	result.time_low = GUINT32_TO_LE(result.time_low);
@@ -145,7 +145,7 @@ char *sipe_get_epid(const char *self_sip_uri,
 	char *buf = g_strdup_printf("%s:%s:%s", self_sip_uri, hostname, ip_address);
 	guchar hash[SIPE_DIGEST_SHA1_LENGTH];
 
-	sipe_backend_digest_sha1((guchar *) buf, strlen(buf), hash);
+	sipe_digest_sha1((guchar *) buf, strlen(buf), hash);
 	for (i = SIPE_EPID_HASH_START, j = 0;
 	     i < SIPE_EPID_HASH_END;
 	     i++, j += 2) {

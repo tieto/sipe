@@ -30,13 +30,13 @@
 #include "nss.h"
 #include "pk11pub.h"
 
-#include "sipe-backend.h"
+#include "sipe-digest.h"
 
 /* @TODO replace with purple-independent implementation.
  * nss seems having problems with MD4 as weak deprecated algo.
  */
 #include "cipher.h"
-void sipe_backend_digest_md4(const guchar *data, gsize length, guchar *digest)
+void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
 {	
 	PurpleCipherContext *ctx = purple_cipher_context_new_by_name("md4", NULL);
 	purple_cipher_context_append(ctx, data, length);
@@ -127,24 +127,24 @@ static void sipe_digest_hmac_ctx_destroy(PK11Context* DigestContext)
  * nss seems having problems with MD4 as weak deprecated algo
  */
 /*
-void sipe_backend_digest_md4(const guchar *data, gsize length, guchar *digest)
+void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
 {
 	sipe_digest(SEC_OID_MD4, data, length, digest, SIPE_DIGEST_MD4_LENGTH);
 }
 */
-void sipe_backend_digest_md5(const guchar *data, gsize length, guchar *digest)
+void sipe_digest_md5(const guchar *data, gsize length, guchar *digest)
 {
 	sipe_digest(SEC_OID_MD5, data, length, digest, SIPE_DIGEST_MD5_LENGTH);
 }
 
-void sipe_backend_digest_sha1(const guchar *data, gsize length, guchar *digest)
+void sipe_digest_sha1(const guchar *data, gsize length, guchar *digest)
 {
 	sipe_digest(SEC_OID_SHA1, data, length, digest, SIPE_DIGEST_SHA1_LENGTH);
 }
 
-void sipe_backend_digest_hmac_md5(const guchar *key, gsize key_length,
-				  const guchar *data, gsize data_length,
-				  guchar *digest)
+void sipe_digest_hmac_md5(const guchar *key, gsize key_length,
+			  const guchar *data, gsize data_length,
+			  guchar *digest)
 {
 	void *DigestContext;
 
@@ -155,23 +155,23 @@ void sipe_backend_digest_hmac_md5(const guchar *key, gsize key_length,
 }
 
 /* Stream HMAC(SHA1) digest for file transfer */
-gpointer sipe_backend_digest_ft_start(const guchar *sha1_digest)
+gpointer sipe_digest_ft_start(const guchar *sha1_digest)
 {
 	/* used only the first 16 bytes of the 20 byte SHA1 digest */
 	return sipe_digest_hmac_ctx_create(CKM_SHA_1_HMAC, sha1_digest, 16);
 }
 
-void sipe_backend_digest_ft_update(gpointer context, const guchar *data, gsize length)
+void sipe_digest_ft_update(gpointer context, const guchar *data, gsize length)
 {
 	sipe_digest_hmac_ctx_append(context, data, length);
 }
 
-void sipe_backend_digest_ft_end(gpointer context, guchar *digest)
+void sipe_digest_ft_end(gpointer context, guchar *digest)
 {
 	sipe_digest_hmac_ctx_digest(context, digest, SIPE_DIGEST_FILETRANSFER_LENGTH);
 }
 
-void sipe_backend_digest_ft_destroy(gpointer context)
+void sipe_digest_ft_destroy(gpointer context)
 {
 	sipe_digest_hmac_ctx_destroy(context);
 }

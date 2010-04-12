@@ -20,23 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/** CRYPT ********************************************************************/
-
-void sipe_backend_encrypt_des(const guchar *key,
-			      const guchar *plaintext, gsize plaintext_length,
-			      guchar *encrypted_text);
-
-void sipe_backend_encrypt_rc4(const guchar *key, gsize key_length,
-			      const guchar *plaintext, gsize plaintext_length,
-			      guchar *encrypted_text);
-
-/* Stream RC4 cipher for file transfer */
-gpointer sipe_backend_crypt_ft_start(const guchar *key);
-void sipe_backend_crypt_ft_stream(gpointer context,
-				  const guchar *in, gsize length,
-				  guchar *out);
-void sipe_backend_crypt_ft_destroy(gpointer context);
-
 /** DEBUGGING ****************************************************************/
 
 typedef enum {
@@ -67,29 +50,6 @@ void sipe_backend_debug(sipe_debug_level level,
 #define SIPE_DEBUG_ERROR_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_ERROR,   msg)
 #define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
 #define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   msg)
-
-/** DIGEST *******************************************************************/
-
-#define SIPE_DIGEST_HMAC_MD5_LENGTH 16
-void sipe_backend_digest_hmac_md5(const guchar *key, gsize key_length,
-				  const guchar *data, gsize data_length,
-				  guchar *digest);
-
-#define SIPE_DIGEST_MD4_LENGTH 16
-void sipe_backend_digest_md4(const guchar *data, gsize length, guchar *digest);
-
-#define SIPE_DIGEST_MD5_LENGTH 16
-void sipe_backend_digest_md5(const guchar *data, gsize length, guchar *digest);
-
-#define SIPE_DIGEST_SHA1_LENGTH 20
-void sipe_backend_digest_sha1(const guchar *data, gsize length, guchar *digest);
-
-/* Stream HMAC(SHA1) digest for file transfer */
-#define SIPE_DIGEST_FILETRANSFER_LENGTH 20
-gpointer sipe_backend_digest_ft_start(const guchar *sha1_digest);
-void sipe_backend_digest_ft_update(gpointer context, const guchar *data, gsize length);
-void sipe_backend_digest_ft_end(gpointer context, guchar *digest);
-void sipe_backend_digest_ft_destroy(gpointer context);
 
 /** MARKUP *******************************************************************/
 

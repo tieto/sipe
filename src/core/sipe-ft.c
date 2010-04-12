@@ -63,7 +63,9 @@
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-crypt.h"
 #include "sipe-dialog.h"
+#include "sipe-digest.h"
 #include "sipe-nls.h"
 #include "sipe-ft.h"
 #include "sipe-session.h"
@@ -149,10 +151,10 @@ sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 		if (ft->listener)
 			purple_network_listen_cancel(ft->listener);
 		if (ft->cipher_context)
-			sipe_backend_crypt_ft_destroy(ft->cipher_context);
+			sipe_crypt_ft_destroy(ft->cipher_context);
 
 		if (ft->hmac_context)
-			sipe_backend_digest_ft_destroy(ft->hmac_context);
+			sipe_digest_ft_destroy(ft->hmac_context);
 
 		g_free(ft->encrypted_outbuf);
 		g_free(ft->invitation_cookie);
@@ -361,11 +363,11 @@ sipe_ft_read(guchar **buffer, PurpleXfer *xfer)
 			*buffer = NULL;
 			return -1;
 		}
-		sipe_backend_crypt_ft_stream(ft->cipher_context, *buffer, bytes_read, decrypted);
+		sipe_crypt_ft_stream(ft->cipher_context, *buffer, bytes_read, decrypted);
 		g_free(*buffer);
 		*buffer = decrypted;
 
-		sipe_backend_digest_ft_update(ft->hmac_context, decrypted, bytes_read);
+		sipe_digest_ft_update(ft->hmac_context, decrypted, bytes_read);
 
 		ft->bytes_remaining_chunk -= bytes_read;
 	}
@@ -418,9 +420,9 @@ sipe_ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 
 		ft->bytes_remaining_chunk = size;
 		ft->outbuf_ptr = ft->encrypted_outbuf;
-		sipe_backend_crypt_ft_stream(ft->cipher_context, buffer, size,
+		sipe_crypt_ft_stream(ft->cipher_context, buffer, size,
 					     ft->encrypted_outbuf);
-		sipe_backend_digest_ft_update(ft->hmac_context, buffer, size);
+		sipe_digest_ft_update(ft->hmac_context, buffer, size);
 
 		/* chunk header format:
 		 *
@@ -847,10 +849,10 @@ static gpointer sipe_cipher_context_init(const guchar *enc_key)
 	guchar k2[SIPE_DIGEST_SHA1_LENGTH];
 
 	/* 1.) SHA1 sum	*/
-        sipe_backend_digest_sha1(enc_key, SIPE_FT_KEY_LENGTH, k2);
+        sipe_digest_sha1(enc_key, SIPE_FT_KEY_LENGTH, k2);
 
 	/* 2.) RC4 decryption */
-	return sipe_backend_crypt_ft_start(k2);
+	return sipe_crypt_ft_start(k2);
 }
 
 static gpointer sipe_hmac_context_init(const guchar *hash_key)
@@ -866,10 +868,10 @@ static gpointer sipe_hmac_context_init(const guchar *hash_key)
 	guchar k2[SIPE_DIGEST_SHA1_LENGTH];
 
 	/* 1.) SHA1 sum	*/
-	sipe_backend_digest_sha1(hash_key, SIPE_FT_KEY_LENGTH, k2);
+	sipe_digest_sha1(hash_key, SIPE_FT_KEY_LENGTH, k2);
 
 	/* 2.) HMAC (initialization only) */
-	return sipe_backend_digest_ft_start(k2);
+	return sipe_digest_ft_start(k2);
 }
 
 static gchar* sipe_hmac_finalize(gpointer hmac_context)
@@ -877,7 +879,7 @@ static gchar* sipe_hmac_finalize(gpointer hmac_context)
 	guchar hmac_digest[SIPE_DIGEST_FILETRANSFER_LENGTH];
 
 	/*  MAC = Digest of decrypted file and SHA1-Key (used again only 16 bytes) */
-	sipe_backend_digest_ft_end(hmac_context, hmac_digest);
+	sipe_digest_ft_end(hmac_context, hmac_digest);
 
 	return g_base64_encode(hmac_digest, sizeof (hmac_digest));
 }

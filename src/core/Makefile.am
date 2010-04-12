@@ -6,6 +6,9 @@ noinst_LTLIBRARIES = \
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
+# Not included in build yet
+EXTRA_DIST = sipe-crypt.c sipe-digest.c
+
 libsipe_core_la_SOURCES = \
 	sipmsg.h \
 	sipmsg.c \

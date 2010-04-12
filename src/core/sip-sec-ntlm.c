@@ -60,6 +60,8 @@
 #include "sip-sec-mech.h"
 #include "sip-sec-ntlm.h"
 #include "sipe-backend.h"
+#include "sipe-crypt.h"
+#include "sipe-digest.h"
 #include "sipe-utils.h"
 
 /* [MS-NLMP] */
@@ -381,7 +383,7 @@ DES (const unsigned char *k, const unsigned char *d, unsigned char * results)
 {
 	unsigned char key[8];
 	setup_des_key(k, key);
-	sipe_backend_encrypt_des(key, d, 8, results);
+	sipe_crypt_des(key, d, 8, results);
 }
 
 /* (K = 21 byte key, D = 8 bytes of data) returns 24 bytes in results: */
@@ -403,13 +405,13 @@ DESL (const unsigned char *k, const unsigned char *d, unsigned char * results)
 #endif
 
 #define RC4K(key, key_len, plain, plain_len, encrypted) \
-	sipe_backend_encrypt_rc4((key), (key_len), (plain), (plain_len), (encrypted))
+	sipe_crypt_rc4((key), (key_len), (plain), (plain_len), (encrypted))
 
 /* out 16 bytes */
-#define MD4(d, len, result) sipe_backend_digest_md4((d), (len), (result))
+#define MD4(d, len, result) sipe_digest_md4((d), (len), (result))
 
 /* out 16 bytes */
-#define MD5(d, len, result) sipe_backend_digest_md5((d), (len), (result))
+#define MD5(d, len, result) sipe_digest_md5((d), (len), (result))
 
 /* out 16 bytes */
 /*
@@ -442,7 +444,7 @@ HMACT64 (const unsigned char *key, int key_len, const unsigned char *data, int d
 
 /* out 16 bytes */
 #define HMAC_MD5(key, key_len, data, data_len, result) \
-	sipe_backend_digest_hmac_md5((key), (key_len), (data), (data_len), (result))
+	sipe_digest_hmac_md5((key), (key_len), (data), (data_len), (result))
 
 /* NTLM Core Methods */
 
