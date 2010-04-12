@@ -8,7 +8,6 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 libsipe_backend_la_SOURCES = \
-	purple-crypt.c \
 	purple-debug.c \
 	purple-digest.c \
 	purple-markup.c \
@@ -61,6 +60,13 @@ libsipe_la_LIBADD += $(GMIME_LIBS)
 tests_LDADD       += $(GMIME_LIBS)
 else
 libsipe_backend_la_SOURCES += purple-mime.c
+endif
+
+if SIPE_CRYPTO_NSS
+libsipe_la_LIBADD += $(NSS_LIBS)
+tests_LDADD       += $(NSS_LIBS)
+else
+libsipe_backend_la_SOURCES += purple-crypt.c
 endif
 
 TESTS = $(check_PROGRAMS)

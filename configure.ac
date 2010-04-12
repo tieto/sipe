@@ -153,6 +153,18 @@ AM_CONDITIONAL(SIPE_MIME_GMIME, [test "x$ac_have_gmime" = xyes])
 AS_IF([test "x$ac_have_gmime" = xyes],
 	[AC_DEFINE(HAVE_GMIME, 1, [Define if gmime should be used in sipe.])])
 
+dnl check for NSS
+PKG_CHECK_MODULES(NSS, [nss],
+	[ac_have_nss=yes],
+	[PKG_CHECK_MODULES(NSS, [mozilla-nss],
+		[ac_have_nss=yes],
+		[PKG_CHECK_MODULES(NSS, [microb-engine-nss],
+			[ac_have_nss=yes],
+			[ac_have_nss=no])
+	])
+])
+AM_CONDITIONAL(SIPE_CRYPTO_NSS, [test "x$ac_have_nss" = xyes])
+
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 
@@ -241,6 +253,11 @@ AS_IF([test "x$enable_telepathy" != xno],
 		 AS_IF([test "x$ac_have_gmime" = xyes],
 			[],
 			[AC_ERROR(GMIME package is required for telepathy plugin)])
+
+		 dnl NSS is a build requirement
+		 AS_IF([test "x$ac_have_nss" = xyes],
+			[],
+			[AC_ERROR(NSS package is required for telepathy plugin)])
 
 		 dnl NOTHING IMPLEMENTED YET!!!
 		],

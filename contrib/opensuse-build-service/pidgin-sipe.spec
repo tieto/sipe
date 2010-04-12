@@ -13,6 +13,12 @@
 %endif
 %endif
 
+%if 0%{?suse_version}
+%define nss_develname mozilla-nss-devel
+%else
+%define nss_develname nss-devel
+%endif
+
 %if 0%{?suse_version} || 0%{?sles_version}
 %define pkg_group Productivity/Networking/Instant Messenger
 %endif
@@ -39,6 +45,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildRequires:  %{purple_develname} >= 2.4.0
 BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  libxml2-devel
+#BuildRequires:  %{nss_develname}
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
@@ -141,6 +148,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Apr 12 2010 J. D. User <jduser@noreply.com> 1.10.0-*git*
+- add NSS build information discovered through OBS testing
+
 * Wed Apr 04 2010 pier11 <pier11@operamail.com> 1.10.0
 - release
 
