@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -22,7 +23,7 @@
  */
 
 SipSecContext
-sip_sec_create_context__ntlm(SipSecAuthType type);
+sip_sec_create_context__ntlm(guint type);
 
 void sip_sec_init__ntlm(void);
 void sip_sec_destroy__ntlm(void);

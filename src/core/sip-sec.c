@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -66,14 +67,14 @@
 
 /* Dummy initialization hook */
 static SipSecContext
-sip_sec_create_context__NONE(SIPE_UNUSED_PARAMETER SipSecAuthType type)
+sip_sec_create_context__NONE(SIPE_UNUSED_PARAMETER guint type)
 {
 	return(NULL);
 }
 
 /* sip_sec API methods */
 SipSecContext
-sip_sec_create_context(SipSecAuthType type,
+sip_sec_create_context(guint type,
 		       const int  sso,
 		       int is_connection_based,
 		       const char *domain,
@@ -164,7 +165,7 @@ sip_sec_init_context_step(SipSecContext context,
 char *
 sip_sec_init_context(SipSecContext *context,
 		     int *expires,
-		     SipSecAuthType type,
+		     guint type,
 		     const int  sso,
 		     const char *domain,
 		     const char *username,

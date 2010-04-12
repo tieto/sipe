@@ -45,7 +45,6 @@ struct _PurpleSslConnection;
 struct sip_sec_context;
 struct sipe_core_private;
 struct sipe_service_data;
-enum sip_sec_auth_type;
 
 #define SIMPLE_BUF_INC 4096
 
@@ -53,7 +52,7 @@ enum sip_sec_auth_type;
 #define SIPE_TYPING_SEND_TIMEOUT 4
 
 struct sip_auth {
-	enum sip_sec_auth_type type;
+	guint type;
 	struct sip_sec_context *gssapi_context;
 	gchar *gssapi_data;
 	gchar *opaque;

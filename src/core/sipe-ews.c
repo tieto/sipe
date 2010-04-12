@@ -51,7 +51,6 @@ be great to implement too.
 
 #include "account.h"
 
-#include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"

@@ -32,7 +32,6 @@
 
 #include <glib.h>
 
-#include "sip-sec.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-core.h"
