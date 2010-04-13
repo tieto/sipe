@@ -106,6 +106,16 @@ sipe_candidate * sipe_backend_candidate_new(const gchar *foundation,
 
 void sipe_backend_candidate_free(sipe_candidate *candidate);
 
+gchar *sipe_backend_candidate_get_username(sipe_candidate *candidate);
+gchar *sipe_backend_candidate_get_password(sipe_candidate *candidate);
+gchar *sipe_backend_candidate_get_foundation(sipe_candidate *candidate);
+gchar *sipe_backend_candidate_get_ip(sipe_candidate *candidate);
+guint sipe_backend_candidate_get_port(sipe_candidate *candidate);
+guint32 sipe_backend_candidate_get_priority(sipe_candidate *candidate);
+SipeComponentType sipe_backend_candidate_get_component_type(sipe_candidate *candidate);
+SipeCandidateType sipe_backend_candidate_get_type(sipe_candidate *candidate);
+SipeNetworkProtocol sipe_backend_candidate_get_protocol(sipe_candidate *candidate);
+
 void sipe_backend_candidate_set_username_and_pwd(sipe_candidate *candidate,
 												 const gchar *username,
 												 const gchar *password);

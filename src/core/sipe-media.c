@@ -31,7 +31,6 @@
 #include <nice/agent.h>
 
 #include "sipe-core.h"
-#include "sip-sec.h"
 #include "sipe.h"
 #include "sipmsg.h"
 #include "sipe-session.h"
@@ -288,8 +287,8 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call, gbool
 {
 	GString *result = g_string_new("");
 	gchar *tmp;
-	gchar *username = purple_media_candidate_get_username(candidates->data);
-	gchar *password = purple_media_candidate_get_password(candidates->data);
+	gchar *username = sipe_backend_candidate_get_username(candidates->data);
+	gchar *password = sipe_backend_candidate_get_password(candidates->data);
 	guint16 rtcp_port = 0;
 
 	if (call->legacy_mode)
@@ -300,43 +299,45 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call, gbool
 	g_free(tmp);
 
 	while (candidates) {
-		PurpleMediaCandidate *c = candidates->data;
+		sipe_candidate *c = candidates->data;
 
 		guint16 port;
 		guint16 component;
 		gchar *protocol;
 		gchar *type;
 
-		port = purple_media_candidate_get_port(c);
+		port = sipe_backend_candidate_get_port(c);
 
-		switch (purple_media_candidate_get_component_id(c)) {
-			case PURPLE_MEDIA_COMPONENT_RTP:
+		switch (sipe_backend_candidate_get_component_type(c)) {
+			case SIPE_COMPONENT_RTP:
 				component = 1;
 				break;
-			case PURPLE_MEDIA_COMPONENT_RTCP:
+			case SIPE_COMPONENT_RTCP:
 				component = 2;
 				if (rtcp_port == 0)
 					rtcp_port = port;
 				break;
+			case SIPE_COMPONENT_NONE:
+				component = 0;
 		}
 
-		switch (purple_media_candidate_get_protocol(c)) {
-			case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP:
+		switch (sipe_backend_candidate_get_protocol(c)) {
+			case SIPE_NETWORK_PROTOCOL_TCP:
 				protocol = "TCP";
 				break;
-			case PURPLE_MEDIA_NETWORK_PROTOCOL_UDP:
+			case SIPE_NETWORK_PROTOCOL_UDP:
 				protocol = "UDP";
 				break;
 		}
 
-		switch (purple_media_candidate_get_candidate_type(c)) {
-			case PURPLE_MEDIA_CANDIDATE_TYPE_HOST:
+		switch (sipe_backend_candidate_get_type(c)) {
+			case SIPE_CANDIDATE_TYPE_HOST:
 				type = "host";
 				break;
-			case PURPLE_MEDIA_CANDIDATE_TYPE_RELAY:
+			case SIPE_CANDIDATE_TYPE_RELAY:
 				type = "relay";
 				break;
-			case PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX:
+			case SIPE_CANDIDATE_TYPE_SRFLX:
 				type = "srflx";
 				break;
 			default:
@@ -345,11 +346,11 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call, gbool
 		}
 
 		tmp = g_strdup_printf("a=candidate:%s %u %s %u %s %d typ %s \r\n",
-			purple_media_candidate_get_foundation(c),
+			sipe_backend_candidate_get_foundation(c),
 			component,
 			protocol,
-			purple_media_candidate_get_priority(c),
-			purple_media_candidate_get_ip(c),
+			sipe_backend_candidate_get_priority(c),
+			sipe_backend_candidate_get_ip(c),
 			port,
 			type);
 

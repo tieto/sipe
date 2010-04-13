@@ -137,6 +137,60 @@ sipe_backend_candidate_free(sipe_candidate *codec)
 	g_object_unref(codec);
 }
 
+gchar *
+sipe_backend_candidate_get_username(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_username((PurpleMediaCandidate*)candidate);
+}
+
+gchar *
+sipe_backend_candidate_get_password(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_password((PurpleMediaCandidate*)candidate);
+}
+
+gchar *
+sipe_backend_candidate_get_foundation(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_foundation((PurpleMediaCandidate*)candidate);
+}
+
+gchar *
+sipe_backend_candidate_get_ip(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_ip((PurpleMediaCandidate*)candidate);
+}
+
+guint
+sipe_backend_candidate_get_port(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_port((PurpleMediaCandidate*)candidate);
+}
+
+guint32
+sipe_backend_candidate_get_priority(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_priority((PurpleMediaCandidate*)candidate);
+}
+
+SipeComponentType
+sipe_backend_candidate_get_component_type(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_component_id((PurpleMediaCandidate*)candidate);
+}
+
+SipeCandidateType
+sipe_backend_candidate_get_type(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_candidate_type((PurpleMediaCandidate*)candidate);
+}
+
+SipeNetworkProtocol
+sipe_backend_candidate_get_protocol(sipe_candidate *candidate)
+{
+	return purple_media_candidate_get_protocol((PurpleMediaCandidate*)candidate);
+}
+
 void
 sipe_backend_candidate_set_username_and_pwd(sipe_candidate *candidate,
 											const gchar *username,
