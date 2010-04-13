@@ -6,9 +6,6 @@ noinst_LTLIBRARIES = \
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
-# Not included in build yet
-EXTRA_DIST = sipe-digest.c
-
 libsipe_core_la_SOURCES = \
 	sipmsg.h \
 	sipmsg.c \
@@ -78,7 +75,11 @@ libsipe_core_la_CFLAGS  += $(GMIME_CFLAGS)
 endif
 
 if SIPE_CRYPTO_NSS
-libsipe_core_la_SOURCES += sipe-crypt.c
+libsipe_core_la_SOURCES += \
+	md4.h \
+	md4.c \
+	sipe-crypt.c \
+	sipe-digest.c
 libsipe_core_la_CFLAGS  += $(NSS_CFLAGS)
 endif
 

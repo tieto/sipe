@@ -34,7 +34,7 @@
 #include "sipe-digest.h"
 
 
-/* PRIVATE methons */
+/* PRIVATE methods */
 
 static void sipe_digest(const SECOidTag algorithm,
 			const guchar *data, gsize data_length,
@@ -108,7 +108,7 @@ static void sipe_digest_hmac_ctx_destroy(PK11Context* DigestContext)
 
 
 
-/* PUBLIC methons */
+/* PUBLIC methods */
 
 void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
 {

@@ -9,7 +9,6 @@ MAINTAINERCLEANFILES = \
 
 libsipe_backend_la_SOURCES = \
 	purple-debug.c \
-	purple-digest.c \
 	purple-markup.c \
 	purple-network.c
 
@@ -66,7 +65,7 @@ if SIPE_CRYPTO_NSS
 libsipe_la_LIBADD += $(NSS_LIBS)
 tests_LDADD       += $(NSS_LIBS)
 else
-libsipe_backend_la_SOURCES += purple-crypt.c
+libsipe_backend_la_SOURCES += purple-crypt.c purple-digest.c
 endif
 
 TESTS = $(check_PROGRAMS)
