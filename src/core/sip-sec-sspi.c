@@ -314,7 +314,7 @@ sip_sec_verify_signature__sspi(SipSecContext context,
 }
 
 SipSecContext
-sip_sec_create_context__sspi(SipSecAuthType type)
+sip_sec_create_context__sspi(guint type)
 {
 	context_sspi context = g_malloc0(sizeof(struct _context_sspi));
 	if (!context) return(NULL);
