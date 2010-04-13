@@ -191,15 +191,14 @@ typedef struct {
 		]]],
 		[return(sizeof(uuid_t) == 16 ? 0 : 1);]),
 	[AC_MSG_RESULT(yes)],
-	[AC_MSG_RESULT(failed)
-	 AC_ERROR(sizeof(uuid_t) is not 16
+	[AC_MSG_FAILURE([sizeof(uuid_t) is not 16
 
 Please notify the SIPE developers and provide the following information:
 
  host:     $host
  build:    $build
  compiler: $CC
-)])
+])])
 CFLAGS=$ac_save_CFLAGS
 
 dnl build option: purple backend
@@ -231,14 +230,35 @@ void testfunc(unsigned long len)
 					],
 					[testfunc(16);]),
 			[AC_MSG_RESULT(none)],
-			[AC_MSG_RESULT(failed)
-			 AC_ERROR([conflicts found.
+			[AC_MSG_FAILURE([conflicts found.
 
 Check that you have the correct glib/libpurple headers installed for
 your architecture or set PURPLE_CFLAGS to override the system defaults.
 ])
 			])
-		 CFLAGS=$ac_save_CFLAGS],
+
+		 dnl purple SSL support is mandatory
+		 AC_MSG_CHECKING([for purple SSL support])
+		 ac_save_LIBS=$LIBS
+		 LIBS="$PURPLE_LIBS"
+		 AC_RUN_IFELSE(
+			AC_LANG_PROGRAM([
+#include <glib.h>
+#include <plugin.h>
+#include <sslconn.h>
+],
+					[
+	purple_plugins_init();
+	purple_plugins_probe(G_MODULE_SUFFIX);
+	purple_ssl_init();
+	return(purple_ssl_is_supported()?0:1);
+					]),
+			[AC_MSG_RESULT(ok)],
+			[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
+])
+			])
+		 CFLAGS=$ac_save_CFLAGS
+		 LIBS=$ac_save_LIBS],
 		[enable_purple=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
 

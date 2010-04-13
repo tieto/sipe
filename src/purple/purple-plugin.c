@@ -221,7 +221,6 @@ static void sipe_login(PurpleAccount *account)
 	gchar *login_account = NULL;
 	const gchar *errmsg;
 	sipe_transport_type type;
-	gboolean has_ssl = purple_ssl_is_supported();
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_login: username '%s'", username);
@@ -265,8 +264,7 @@ static void sipe_login(PurpleAccount *account)
 	username_split = g_strsplit(purple_account_get_string(account, "server", ""), ":", 2);
 	if (sipe_strequal(transport, "auto")) {
 		type = (username_split[0] == NULL) ?
-			SIPE_TRANSPORT_AUTO :
-			has_ssl ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
+			SIPE_TRANSPORT_AUTO : SIPE_TRANSPORT_TLS;
 	} else if (sipe_strequal(transport, "tls")) {
 		type = SIPE_TRANSPORT_TLS;
 	} else if (sipe_strequal(transport, "tcp")) {
@@ -277,8 +275,7 @@ static void sipe_login(PurpleAccount *account)
 	sipe_core_connect(sipe_public,
 			  type,
 			  username_split[0],
-			  username_split[1],
-			  has_ssl);
+			  username_split[1]);
 	g_strfreev(username_split);
 }
 

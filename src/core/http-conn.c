@@ -379,12 +379,6 @@ http_conn_create(PurpleAccount *account,
 		SIPE_DEBUG_INFO_NOFORMAT("no URL supplied!");
 		return NULL;
 	}
-	if (sipe_strequal(conn_type, HTTP_CONN_SSL) &&
-	    !PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA->has_ssl)
-	{
-		SIPE_DEBUG_INFO_NOFORMAT("SSL support is not installed. Either install SSL support or configure a different connection type in the account editor.");
-		return NULL;
-	}
 
 	http_conn = g_new0(HttpConn, 1);
 	http_conn_parse_url(full_url, &http_conn->host, &http_conn->port, &http_conn->url);

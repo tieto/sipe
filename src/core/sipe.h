@@ -163,7 +163,6 @@ struct sipe_account_data {
 	GHashTable *filetransfers;
 	sipe_transport_type transport;
 	gboolean auto_transport;
-	gboolean has_ssl;
 	struct _PurpleSslConnection *gsc;
 	struct sockaddr *serveraddr;
 	gchar *realhostname;

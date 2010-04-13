@@ -8747,12 +8747,6 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 
 	if (sip->transport == SIPE_TRANSPORT_TLS) {
 		/* SSL case */
-		if (!sip->has_ssl) {
-			gc->wants_to_die = TRUE;
-			purple_connection_error(gc, _("SSL support is not installed. Either install SSL support or configure a different connection type in the account editor"));
-			return;
-		}
-
 		SIPE_DEBUG_INFO_NOFORMAT("using SSL");
 
 		sip->gsc = purple_ssl_connect(account, hostname, port,
@@ -8824,11 +8818,7 @@ static void resolve_next_service(struct sipe_account_data *sip,
 			/* Try connecting to the SIP hostname directly */
 			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; using SIP domain as fallback");
 			if (sip->auto_transport) {
-				// If SSL is supported, default to using it; OCS servers aren't configured
-				// by default to accept TCP
-				// TODO: LCS 2007 is the opposite, only configured by default to accept TCP
-				sip->transport = sip->has_ssl ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP;
-				SIPE_DEBUG_INFO_NOFORMAT("set transport type..");
+				sip->transport = SIPE_TRANSPORT_TLS;
 			}
 
 			hostname = g_strdup(SIP_TO_CORE_PUBLIC->sip_domain);
@@ -8954,13 +8944,11 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 void sipe_core_connect(struct sipe_core_public *sipe_public,
 		       sipe_transport_type transport,
 		       const gchar *server,
-		       const gchar *port,
-		       gboolean has_ssl)
+		       const gchar *port)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 
 	sip->auto_transport = FALSE;
-	sip->has_ssl = has_ssl;
 	if (server) {
 		/* Use user specified server[:port] */
 		int port_number = 0;
@@ -8984,7 +8972,7 @@ void sipe_core_connect(struct sipe_core_public *sipe_public,
 				current_service++;
 				resolve_next_service(sip, current_service);
 			} else {
-				resolve_next_service(sip, has_ssl ? service_autodetect : service_tcp);
+				resolve_next_service(sip, service_autodetect);
 			}
 			break;
 		case SIPE_TRANSPORT_TLS:

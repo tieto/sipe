@@ -158,8 +158,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 void sipe_core_connect(struct sipe_core_public *sipe_public,
 		       sipe_transport_type transport,
 		       const gchar *server,
-		       const gchar *port,
-		       gboolean has_ssl);
+		       const gchar *port);
 
 /**
  * Create a new chat
