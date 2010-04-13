@@ -29,21 +29,9 @@
 
 #include "nss.h"
 #include "pk11pub.h"
+#include "md4.h"
 
 #include "sipe-digest.h"
-
-/* @TODO replace with purple-independent implementation.
- * nss seems having problems with MD4 as weak deprecated algo.
- */
-#include "cipher.h"
-void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
-{	
-	PurpleCipherContext *ctx = purple_cipher_context_new_by_name("md4", NULL);
-	purple_cipher_context_append(ctx, data, length);
-	purple_cipher_context_digest(ctx, SIPE_DIGEST_MD4_LENGTH, digest, NULL);
-	purple_cipher_context_destroy(ctx);
-}
-/* end of TODO */
 
 
 /* PRIVATE methons */
@@ -56,9 +44,8 @@ static void sipe_digest(const SECOidTag algorithm,
 	SECStatus s;
 	unsigned int len;
 	
-	/* g_setenv("NSS_ALLOW_WEAK_SIGNATURE_ALG", "1", TRUE); */
 	NSS_NoDB_Init(".");
-
+	
 	context = PK11_CreateDigestContext(algorithm);
 	s = PK11_DigestBegin(context);
 	s = PK11_DigestOp(context, data, data_length);
@@ -123,15 +110,14 @@ static void sipe_digest_hmac_ctx_destroy(PK11Context* DigestContext)
 
 /* PUBLIC methons */
 
-/* @TODO fix
- * nss seems having problems with MD4 as weak deprecated algo
- */
-/*
 void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
 {
-	sipe_digest(SEC_OID_MD4, data, length, digest, SIPE_DIGEST_MD4_LENGTH);
+	/* From Firefox's complementing implementation for NSS.
+	 * NSS doesn't include MD4 as weak algorithm
+	 */
+	md4sum(data, length, digest);
 }
-*/
+
 void sipe_digest_md5(const guchar *data, gsize length, guchar *digest)
 {
 	sipe_digest(SEC_OID_MD5, data, length, digest, SIPE_DIGEST_MD5_LENGTH);
