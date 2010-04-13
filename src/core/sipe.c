@@ -8986,6 +8986,7 @@ void sipe_core_connect(struct sipe_core_public *sipe_public,
 			} else {
 				resolve_next_service(sip, has_ssl ? service_autodetect : service_tcp);
 			}
+			break;
 		case SIPE_TRANSPORT_TLS:
 			resolve_next_service(sip, service_tls);
 			break;
