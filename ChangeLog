@@ -1,6 +1,7 @@
 version X.XX.X "" (2010-XX-XX)
 	- Fixed #2982424: krb5 build errors on FreeBSD (Stefan Becker)
-	- Dropped UDP support (Stefan Becker)
+	- Dropped UDP transport support (Stefan Becker)
+	- Rewrote TCP & TLS transport support (Stefan Becker)
 	- Alternative crypt/digest implementation based on NSS (pier11)
 	- More internal changes to prepare for non-purple backends (Stefan Becker)
 	- New translation: Dutch (Flemish) 'nl' (fieona, ridiekel)

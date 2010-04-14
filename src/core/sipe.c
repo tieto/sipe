@@ -290,10 +290,6 @@ sipe_get_useragent(struct sipe_account_data *sip)
 
 static gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans);
 
-static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc, PurpleInputCondition cond);
-static void sipe_ssl_connect_failure(PurpleSslConnection *gsc, PurpleSslErrorType error,
-                                     gpointer data);
-
 static void send_presence_status(struct sipe_core_private *sipe_private,
 				 void *unused);
 
@@ -313,18 +309,6 @@ void sipe_keep_alive(PurpleConnection *gc)
 	}
 }
 
-static struct sip_connection *connection_find(struct sipe_account_data *sip, int fd)
-{
-	struct sip_connection *ret = NULL;
-	GSList *entry = sip->openconns;
-	while (entry) {
-		ret = entry->data;
-		if (ret->fd == fd) return ret;
-		entry = entry->next;
-	}
-	return NULL;
-}
-
 static void sipe_auth_free(struct sip_auth *auth)
 {
 	g_free(auth->opaque);
@@ -341,36 +325,6 @@ static void sipe_auth_free(struct sip_auth *auth)
 	auth->gssapi_data = NULL;
 	sip_sec_destroy_context(auth->gssapi_context);
 	auth->gssapi_context = NULL;
-}
-
-static struct sip_connection *connection_create(struct sipe_account_data *sip, int fd)
-{
-	struct sip_connection *ret = g_new0(struct sip_connection, 1);
-	ret->fd = fd;
-	sip->openconns = g_slist_append(sip->openconns, ret);
-	return ret;
-}
-
-static void connection_remove(struct sipe_account_data *sip, int fd)
-{
-	struct sip_connection *conn = connection_find(sip, fd);
-	if (conn) {
-		sip->openconns = g_slist_remove(sip->openconns, conn);
-		if (conn->inputhandler) purple_input_remove(conn->inputhandler);
-		g_free(conn->inbuf);
-		g_free(conn);
-	}
-}
-
-static void connection_free_all(struct sipe_account_data *sip)
-{
-	struct sip_connection *ret = NULL;
-	GSList *entry = sip->openconns;
-	while (entry) {
-		ret = entry->data;
-		connection_remove(sip, ret->fd);
-		entry = sip->openconns;
-	}
 }
 
 static void
@@ -584,212 +538,52 @@ static void sipe_canwrite_cb(gpointer data,
 	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
 	gsize max_write;
-	gssize written;
 
 	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
+	if (max_write > 0) {
+		gssize written = sip->gsc ? 
+			(gssize) purple_ssl_write(sip->gsc,
+						  sip->txbuf->outptr,
+						  max_write) :
+			write(sip->fd,
+			      sip->txbuf->outptr,
+			      max_write);
 
-	if (max_write == 0) {
-                if (sip->tx_handler != 0){
-		        purple_input_remove(sip->tx_handler);
-		        sip->tx_handler = 0;
-                }
-		return;
+		if (written < 0 && errno == EAGAIN) {
+			return;
+		} else if (written <= 0) {
+			/*TODO: do we really want to disconnect on a failure to write?*/
+			purple_connection_error(gc, _("Could not write"));
+			return;
+		}
+
+		purple_circ_buffer_mark_read(sip->txbuf, written);
+
+	} else {
+		/* buffer is empty -> stop sending */
+		purple_input_remove(sip->tx_handler);
+		sip->tx_handler = 0;
 	}
-
-	written = write(sip->fd, sip->txbuf->outptr, max_write);
-
-	if (written < 0 && errno == EAGAIN)
-		written = 0;
-	else if (written <= 0) {
-		/*TODO: do we really want to disconnect on a failure to write?*/
-		purple_connection_error(gc, _("Could not write"));
-		return;
-	}
-
-	purple_circ_buffer_mark_read(sip->txbuf, written);
-}
-
-static void sipe_canwrite_cb_ssl(gpointer data,
-				 SIPE_UNUSED_PARAMETER gint src,
-				 SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	gsize max_write;
-	gssize written;
-
-	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
-
-	if (max_write == 0) {
-                if (sip->tx_handler != 0) {
-		        purple_input_remove(sip->tx_handler);
-		        sip->tx_handler = 0;
-		        return;
-                }
-	}
-
-	written = purple_ssl_write(sip->gsc, sip->txbuf->outptr, max_write);
-
-	if (written < 0 && errno == EAGAIN)
-		written = 0;
-	else if (written <= 0) {
-		/*TODO: do we really want to disconnect on a failure to write?*/
-		purple_connection_error(gc, _("Could not write"));
-		return;
-	}
-
-	purple_circ_buffer_mark_read(sip->txbuf, written);
-}
-
-static void sipe_input_cb(gpointer data, gint source, PurpleInputCondition cond);
-
-static void send_later_cb(gpointer data, gint source,
-			  SIPE_UNUSED_PARAMETER const gchar *error)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip;
-	struct sip_connection *conn;
-
-	if (!PURPLE_CONNECTION_IS_VALID(gc))
-	{
-		if (source >= 0)
-			close(source);
-		return;
-	}
-
-	if (source < 0) {
-		purple_connection_error(gc, _("Could not connect"));
-		return;
-	}
-
-	sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	sip->fd = source;
-	sip->connecting = FALSE;
-	sip->last_keepalive = time(NULL);
-
-	sipe_canwrite_cb(gc, sip->fd, PURPLE_INPUT_WRITE);
-
-	/* If there is more to write now, we need to register a handler */
-	if (sip->txbuf->bufused > 0)
-		sip->tx_handler = purple_input_add(sip->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb, gc);
-
-	conn = connection_create(sip, source);
-	conn->inputhandler = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_input_cb, gc);
-}
-
-static struct sipe_account_data *sipe_setup_ssl(PurpleConnection *gc, PurpleSslConnection *gsc)
-{
-	struct sipe_account_data *sip;
-
-	if (!PURPLE_CONNECTION_IS_VALID(gc))
-	{
-		if (gsc) purple_ssl_close(gsc);
-		return NULL;
-	}
-
-	sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	sip->fd = gsc->fd;
-        sip->gsc = gsc;
-        sip->listenport = purple_network_get_port_from_fd(gsc->fd);
-	sip->connecting = FALSE;
-	sip->last_keepalive = time(NULL);
-
-	connection_create(sip, gsc->fd);
-
-	purple_ssl_input_add(gsc, sipe_input_cb_ssl, gc);
-
-	return sip;
-}
-
-static void send_later_cb_ssl(gpointer data, PurpleSslConnection *gsc,
-			      SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip = sipe_setup_ssl(gc, gsc);
-	if (sip == NULL) return;
-
-	sipe_canwrite_cb_ssl(gc, gsc->fd, PURPLE_INPUT_WRITE);
-
-	/* If there is more to write now */
-	if (sip->txbuf->bufused > 0) {
-                sip->tx_handler = purple_input_add(gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
-	}
-}
-
-
-static void sendlater(PurpleConnection *gc, const char *buf)
-{
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-
-	if (!sip->connecting) {
-		SIPE_DEBUG_INFO("connecting to %s port %d", sip->realhostname ? sip->realhostname : "{NULL}", sip->realport);
-                if (sip->transport == SIPE_TRANSPORT_TLS){
-                         sip->gsc = purple_ssl_connect(sip->account,sip->realhostname, sip->realport, send_later_cb_ssl, sipe_ssl_connect_failure, sip->gc);
-                } else {
-			if (purple_proxy_connect(gc, sip->account, sip->realhostname, sip->realport, send_later_cb, gc) == NULL) {
-				purple_connection_error(gc, _("Could not create socket"));
-			}
-                 }
-		sip->connecting = TRUE;
-	}
-
-	if (purple_circ_buffer_get_max_read(sip->txbuf) > 0)
-		purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
-
-	purple_circ_buffer_append(sip->txbuf, buf, strlen(buf));
 }
 
 static void sendout_pkt(PurpleConnection *gc, const char *buf)
 {
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
 	time_t currtime = time(NULL);
-	int writelen = strlen(buf);
 	char *tmp;
-	int ret;
 
 	SIPE_DEBUG_INFO("sending - %s######\n%s######", ctime(&currtime), tmp = fix_newlines(buf));
 	g_free(tmp);
-	if (sip->fd < 0) {
-		sendlater(gc, buf);
-		return;
-	}
 
-	if (sip->tx_handler) {
-		ret = -1;
-		errno = EAGAIN;
-	} else{
-		if (sip->gsc){
-                        ret = purple_ssl_write(sip->gsc, buf, writelen);
-		} else {
-			ret = write(sip->fd, buf, writelen);
-		}
-	}
+	/* add packet to circular buffer */
+	if (purple_circ_buffer_get_max_read(sip->txbuf) > 0)
+		purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
+	purple_circ_buffer_append(sip->txbuf, buf, strlen(buf));
 
-	if (ret < 0 && errno == EAGAIN)
-		ret = 0;
-	else if (ret <= 0) { /* XXX: When does this happen legitimately? */
-		sendlater(gc, buf);
-		return;
-	}
-
-	if (ret < writelen) {
-		if (!sip->tx_handler){
-			if (sip->gsc){
-				sip->tx_handler = purple_input_add(sip->gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
-			} else {
-				sip->tx_handler = purple_input_add(sip->fd,
-								   PURPLE_INPUT_WRITE, sipe_canwrite_cb,
-								   gc);
-			}
-		}
-
-		/* XXX: is it OK to do this? You might get part of a request sent
-		   with part of another. */
-		if (sip->txbuf->bufused > 0)
-			purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
-
-		purple_circ_buffer_append(sip->txbuf, buf + ret,
-					  writelen - ret);
+	/* initiate transmission */
+	if (!sip->tx_handler) {
+		sip->tx_handler = purple_input_add(sip->fd, PURPLE_INPUT_WRITE,
+						   sipe_canwrite_cb, gc);
 	}
 }
 
@@ -1026,7 +820,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
 			sipe_backend_network_ip_address(),
-			sip->listenport,
+			sip->port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
 			sip->username,
@@ -1109,7 +903,7 @@ static char *get_contact_register(struct sipe_account_data  *sip)
 {
 	char *epid = get_epid(sip);
 	char *uuid = generateUUIDfromEPID(epid);
-	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", sipe_backend_network_ip_address(), sip->listenport,  TRANSPORT_DESCRIPTOR, uuid);
+	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", sipe_backend_network_ip_address(), sip->port,  TRANSPORT_DESCRIPTOR, uuid);
 	g_free(uuid);
 	g_free(epid);
 	return(buf);
@@ -5711,7 +5505,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					g_free(gruu);
 				} else {
 					//SIPE_DEBUG_INFO_NOFORMAT("didn't find gruu in a Contact hdr");
-					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->listenport, sipe_backend_network_ip_address(), TRANSPORT_DESCRIPTOR);
+					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->port, sipe_backend_network_ip_address(), TRANSPORT_DESCRIPTOR);
 				}
                                 sip->ocs2007 = FALSE;
 				sip->batched_support = FALSE;
@@ -8334,24 +8128,27 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 	}
 }
 
-static void sipe_invalidate_ssl_connection(PurpleConnection *gc, const char *msg, const char *debug)
+static void sipe_invalidate_connection(PurpleConnection *gc,
+				       const char *msg, const char *debug)
 {
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	PurpleSslConnection *gsc = sip->gsc;
 
 	SIPE_DEBUG_ERROR("%s", debug);
 	purple_connection_error(gc, msg);
 
 	/* Invalidate this connection. Next send will open a new one */
-	if (gsc) {
-		connection_remove(sip, gsc->fd);
-		purple_ssl_close(gsc);
+	if (sip->gsc) {
+		purple_ssl_close(sip->gsc);
+	} else {
+		purple_input_remove(sip->rx_conn.inputhandler);
+		sip->rx_conn.inputhandler = 0;
+		close(sip->fd);
 	}
 	sip->gsc = NULL;
 	sip->fd = -1;
 }
 
-static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc,
+static void sipe_input_ssl_cb(gpointer data, PurpleSslConnection *gsc,
 			      SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
 	PurpleConnection *gc = data;
@@ -8367,13 +8164,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc,
 	}
 
 	sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	conn = connection_find(sip, gsc->fd);
-	if (conn == NULL) {
-		SIPE_DEBUG_ERROR_NOFORMAT("Connection not found; Please try to connect again.");
-		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, _("Connection not found. Please try to connect again"));
-		return;
-	}
+	conn = &sip->rx_conn;
 
 	/* Read all available data from the SSL connection */
 	do {
@@ -8381,7 +8172,7 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc,
 		if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
 			conn->inbuflen += SIMPLE_BUF_INC;
 			conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
-			SIPE_DEBUG_INFO("sipe_input_cb_ssl: new input buffer length %d", conn->inbuflen);
+			SIPE_DEBUG_INFO("sipe_input_ssl_cb: new input buffer length %d", conn->inbuflen);
 		}
 
 		/* Try to read as much as there is space left in the buffer */
@@ -8392,10 +8183,10 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc,
 			/* Try again later */
 			return;
 		} else if (len < 0) {
-			sipe_invalidate_ssl_connection(gc, _("SSL read error"), "SSL read error\n");
+			sipe_invalidate_connection(gc, _("SSL read error"), "SSL read error\n");
 			return;
 		} else if (firstread && (len == 0)) {
-			sipe_invalidate_ssl_connection(gc, _("Server has disconnected"), "Server has disconnected\n");
+			sipe_invalidate_connection(gc, _("Server has disconnected"), "Server has disconnected\n");
 			return;
 		}
 
@@ -8407,34 +8198,28 @@ static void sipe_input_cb_ssl(gpointer data, PurpleSslConnection *gsc,
 
 	conn->inbuf[conn->inbufused] = '\0';
         process_input(sip, conn);
-
 }
 
-static void sipe_input_cb(gpointer data, gint source,
-			  SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
+static void sipe_input_tcp_cb(gpointer data,
+			      SIPE_UNUSED_PARAMETER gint source,
+			      SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
 	PurpleConnection *gc = data;
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
 	int len;
-	struct sip_connection *conn = connection_find(sip, source);
-	if (!conn) {
-		SIPE_DEBUG_ERROR_NOFORMAT("Connection not found!");
-		return;
-	}
+	struct sip_connection *conn = &sip->rx_conn;
 
 	if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
 		conn->inbuflen += SIMPLE_BUF_INC;
 		conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
 	}
 
-	len = read(source, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
+	len = read(sip->fd, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
 
 	if (len < 0 && errno == EAGAIN)
 		return;
 	else if (len <= 0) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_input_cb: read error");
-		connection_remove(sip, source);
-		if (sip->fd == source) sip->fd = -1;
+		sipe_invalidate_connection(gc, _("Server has disconnected"), "Server has disconnected\n");
 		return;
 	}
 
@@ -8442,60 +8227,6 @@ static void sipe_input_cb(gpointer data, gint source,
 	conn->inbuf[conn->inbufused] = '\0';
 
 	process_input(sip, conn);
-}
-
-/* Callback for new connections on incoming TCP port */
-static void sipe_newconn_cb(gpointer data, gint source,
-			    SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	struct sip_connection *conn;
-
-	int newfd = accept(source, NULL, NULL);
-
-	conn = connection_create(sip, newfd);
-
-	conn->inputhandler = purple_input_add(newfd, PURPLE_INPUT_READ, sipe_input_cb, gc);
-}
-
-static void login_cb(gpointer data, gint source,
-		     SIPE_UNUSED_PARAMETER const gchar *error_message)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip;
-	struct sip_connection *conn;
-
-	if (!PURPLE_CONNECTION_IS_VALID(gc))
-	{
-		if (source >= 0)
-			close(source);
-		return;
-	}
-
-	if (source < 0) {
-		purple_connection_error(gc, _("Could not connect"));
-		return;
-	}
-
-	sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	sip->fd = source;
-	sip->last_keepalive = time(NULL);
-
-	conn = connection_create(sip, source);
-
-	do_register(sip);
-
-	conn->inputhandler = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_input_cb, gc);
-}
-
-static void login_cb_ssl(gpointer data, PurpleSslConnection *gsc,
-			 SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	struct sipe_account_data *sip = sipe_setup_ssl(data, gsc);
-	if (sip == NULL) return;
-
-	do_register(sip);
 }
 
 static guint sipe_ht_hash_nick(const char *nick)
@@ -8570,33 +8301,56 @@ static void sipe_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *
         }
 }
 
-static void
-sipe_tcp_connect_listen_cb(int listenfd, gpointer data)
+static void login_common(PurpleConnection *gc,
+			 PurpleSslConnection *gsc,
+			 int fd)
 {
-	struct sipe_account_data *sip = (struct sipe_account_data*) data;
-	PurpleProxyConnectData *connect_data;
+	struct sipe_account_data *sip;
 
-	sip->listen_data = NULL;
-
-	sip->listenfd = listenfd;
-	if (sip->listenfd == -1) {
-		purple_connection_error(sip->gc, _("Could not create listen socket"));
+	if (!PURPLE_CONNECTION_IS_VALID(gc))
+	{
+		if (gsc) {
+			purple_ssl_close(gsc);
+		} else if (fd >= 0) {
+			close(fd);
+		}
 		return;
 	}
 
-	SIPE_DEBUG_INFO("listenfd: %d", sip->listenfd);
-	sip->listenport = purple_network_get_port_from_fd(sip->listenfd);
-	sip->listenpa = purple_input_add(sip->listenfd, PURPLE_INPUT_READ,
-			sipe_newconn_cb, sip->gc);
-	SIPE_DEBUG_INFO("connecting to %s port %d",
-			sip->realhostname, sip->realport);
-	/* open tcp connection to the server */
-        connect_data = purple_proxy_connect(sip->gc, sip->account, sip->realhostname,
-			sip->realport, login_cb, sip->gc);
-
-	if (connect_data == NULL) {
-		purple_connection_error(sip->gc, _("Could not create socket"));
+	if (fd < 0) {
+		purple_connection_error(gc, _("Could not connect"));
+		return;
 	}
+
+	sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
+	sip->fd = fd;
+	sip->port = purple_network_get_port_from_fd(fd);
+	sip->last_keepalive = time(NULL);
+
+	if (gsc) {
+		sip->gsc = gsc;
+		purple_ssl_input_add(gsc, sipe_input_ssl_cb, gc);
+	} else {
+		sip->rx_conn.inputhandler = purple_input_add(fd,
+							     PURPLE_INPUT_READ,
+							     sipe_input_tcp_cb,
+							     gc);
+	}
+
+	do_register(sip);
+}
+
+
+static void login_ssl_cb(gpointer data, PurpleSslConnection *gsc,
+			    SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
+{
+	login_common(data, gsc, gsc ? gsc->fd : -1);
+}
+
+static void login_tcp_cb(gpointer data, gint source,
+			 SIPE_UNUSED_PARAMETER const gchar *error_message)
+{
+	login_common(data, NULL, source);
 }
 
 static void create_connection(struct sipe_account_data *sip, gchar *hostname, int port)
@@ -8620,20 +8374,19 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		/* SSL case */
 		SIPE_DEBUG_INFO_NOFORMAT("using SSL");
 
-		sip->gsc = purple_ssl_connect(account, hostname, port,
-					      login_cb_ssl, sipe_ssl_connect_failure, gc);
-		if (sip->gsc == NULL) {
+		if (purple_ssl_connect(account, hostname, port,
+				       login_ssl_cb,
+				       sipe_ssl_connect_failure, gc) == NULL) {
 			purple_connection_error(gc, _("Could not create SSL context"));
 			return;
 		}
 	} else {
 		/* TCP case */
 		SIPE_DEBUG_INFO_NOFORMAT("using TCP");
-		/* create socket for incoming connections */
-		sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_STREAM,
-							       sipe_tcp_connect_listen_cb, sip);
-		if (sip->listen_data == NULL) {
-			purple_connection_error(gc, _("Could not create listen socket"));
+
+		if (purple_proxy_connect(gc, account, hostname, port,
+					 login_tcp_cb, gc) == NULL) {
+			purple_connection_error(gc, _("Could not create socket"));
 			return;
 		}
 	}
@@ -8846,8 +8599,6 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 {
 	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
 
-	connection_free_all(sip);
-
 	g_free(sip->epid);
 	sip->epid = NULL;
 
@@ -8855,13 +8606,13 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		purple_srv_cancel(sip->srv_query_data);
 	sip->srv_query_data = NULL;
 
-	if (sip->listen_data != NULL)
-		purple_network_listen_cancel(sip->listen_data);
-	sip->listen_data = NULL;
-
-	if (sip->gsc != NULL)
+	if (sip->gsc != NULL) {
 		purple_ssl_close(sip->gsc);
-	sip->gsc = NULL;
+		sip->gsc = NULL;
+	} else if (sip->fd > 0) {
+		close(sip->fd);
+	}
+	sip->fd = -1;
 
 	sipe_auth_free(&sip->registrar);
 	sipe_auth_free(&sip->proxy);
@@ -8876,12 +8627,17 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	g_free(sip->server_version);
 	sip->server_version = NULL;
 
-	if (sip->listenpa)
-		purple_input_remove(sip->listenpa);
-	sip->listenpa = 0;
 	if (sip->tx_handler)
 		purple_input_remove(sip->tx_handler);
 	sip->tx_handler = 0;
+	if (sip->rx_conn.inputhandler)
+		purple_input_remove(sip->rx_conn.inputhandler);
+	sip->rx_conn.inputhandler = 0;
+	sip->rx_conn.inbuflen     = 0;
+	sip->rx_conn.inbufused    = 0;
+	g_free(sip->rx_conn.inbuf);
+	sip->rx_conn.inbuf = NULL;
+
 	if (sipe_private->timeouts) {
 		GSList *entry = sipe_private->timeouts;
 		while (entry) {
@@ -8927,7 +8683,6 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		g_free(sip->focus_factory_uri);
 	sip->focus_factory_uri = NULL;
 
-	sip->fd = -1;
 	sip->processing_input = FALSE;
 
 	if (sip->ews) {

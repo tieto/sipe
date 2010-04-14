@@ -96,6 +96,13 @@ struct sipe_container_member {
 	gchar *value;
 };
 
+struct sip_connection {
+	gchar *inbuf;
+	int inbuflen;
+	int inbufused;
+	int inputhandler;
+};
+
 struct sipe_account_data {
 	/* back pointer to new data structure */
 	struct sipe_core_public *public;
@@ -113,8 +120,8 @@ struct sipe_account_data {
 	GSList *allow_events;
 	struct _PurpleSrvQueryData *srv_query_data;
 	const struct sipe_service_data *service_data;
-	struct _PurpleNetworkListenData *listen_data;
 	int fd;
+	int port;
 	int cseq;
 	time_t last_keepalive;
 	int registerstatus; /* 0 nothing, 1 first registration send, 2 auth received, 3 registered */
@@ -131,9 +138,6 @@ struct sipe_account_data {
 	GHashTable *our_publications;		/* [MS-PRES] */
 	GHashTable *user_state_publications;	/* [MS-PRES] */
 	GHashTable *subscriptions;
-	int listenfd;
-	int listenport;
-	int listenpa;
 	int contacts_delta;
 	int acl_delta;
 	int presence_method_version;
@@ -149,14 +153,13 @@ struct sipe_account_data {
 	gboolean batched_support; /*if there is support for batched subscription*/
 	GSList *containers; /* MS-PRES containers */
 	guint keepalive_timeout;
-	gboolean connecting;
 	struct _PurpleAccount *account;
 	struct _PurpleCircBuffer *txbuf;
 	guint tx_handler;
+	struct sip_connection rx_conn;
 	gchar *regcallid;
 	GSList *transactions;
 	GSList *sessions;
-	GSList *openconns;
 	GSList *groups;
 	GHashTable *filetransfers;
 	sipe_transport_type transport;
@@ -177,14 +180,6 @@ struct sipe_account_data {
 	 * - User status
 	 */
 	gchar *user_states;
-};
-
-struct sip_connection {
-	int fd;
-	gchar *inbuf;
-	int inbuflen;
-	int inbufused;
-	int inputhandler;
 };
 
 struct sipe_auth_job {
