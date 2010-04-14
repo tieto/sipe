@@ -112,7 +112,7 @@
 #define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
 
 /* Keep in sync with sipe_transport_type! */
-static const char *transport_descriptor[] = { "", "tls", "tcp", "udp" };
+static const char *transport_descriptor[] = { "", "tls", "tcp"};
 #define TRANSPORT_DESCRIPTOR (transport_descriptor[sip->transport])
 
 /* Status identifiers (see also: sipe_status_types()) */
@@ -302,21 +302,14 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf);
 void sipe_keep_alive(PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	if (sip->transport == SIPE_TRANSPORT_UDP) {
-		/* in case of UDP send a packet only with a 0 byte to remain in the NAT table */
-		gchar buf[2] = {0, 0};
-		SIPE_DEBUG_INFO_NOFORMAT("sending keep alive");
-		sendto(sip->fd, buf, 1, 0, sip->serveraddr, sizeof(struct sockaddr_in));
-	} else {
-		time_t now = time(NULL);
-		if ((sip->keepalive_timeout > 0) &&
-		    ((guint) (now - sip->last_keepalive) >= sip->keepalive_timeout) &&
-		    ((guint) (now - gc->last_received) >= sip->keepalive_timeout)
-		    ) {
-			SIPE_DEBUG_INFO("sending keep alive %d", sip->keepalive_timeout);
-			sendout_pkt(gc, "\r\n\r\n");
-			sip->last_keepalive = now;
-		}
+	time_t now = time(NULL);
+	if ((sip->keepalive_timeout > 0) &&
+	    ((guint) (now - sip->last_keepalive) >= sip->keepalive_timeout) &&
+	    ((guint) (now - gc->last_received) >= sip->keepalive_timeout)
+		) {
+		SIPE_DEBUG_INFO("sending keep alive %d", sip->keepalive_timeout);
+		sendout_pkt(gc, "\r\n\r\n");
+		sip->last_keepalive = now;
 	}
 }
 
@@ -752,58 +745,51 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 	time_t currtime = time(NULL);
 	int writelen = strlen(buf);
 	char *tmp;
+	int ret;
 
 	SIPE_DEBUG_INFO("sending - %s######\n%s######", ctime(&currtime), tmp = fix_newlines(buf));
 	g_free(tmp);
-	if (sip->transport == SIPE_TRANSPORT_UDP) {
-		if (sendto(sip->fd, buf, writelen, 0, sip->serveraddr, sizeof(struct sockaddr_in)) < writelen) {
-			SIPE_DEBUG_INFO_NOFORMAT("could not send packet");
-		}
-	} else {
-		int ret;
-		if (sip->fd < 0) {
-			sendlater(gc, buf);
-			return;
-		}
+	if (sip->fd < 0) {
+		sendlater(gc, buf);
+		return;
+	}
 
-		if (sip->tx_handler) {
-			ret = -1;
-			errno = EAGAIN;
-		} else{
-                  if (sip->gsc){
+	if (sip->tx_handler) {
+		ret = -1;
+		errno = EAGAIN;
+	} else{
+		if (sip->gsc){
                         ret = purple_ssl_write(sip->gsc, buf, writelen);
-                  }else{
+		} else {
 			ret = write(sip->fd, buf, writelen);
-                  }
-               }
+		}
+	}
 
-		if (ret < 0 && errno == EAGAIN)
-			ret = 0;
-		else if (ret <= 0) { /* XXX: When does this happen legitimately? */
-			sendlater(gc, buf);
-			return;
+	if (ret < 0 && errno == EAGAIN)
+		ret = 0;
+	else if (ret <= 0) { /* XXX: When does this happen legitimately? */
+		sendlater(gc, buf);
+		return;
+	}
+
+	if (ret < writelen) {
+		if (!sip->tx_handler){
+			if (sip->gsc){
+				sip->tx_handler = purple_input_add(sip->gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
+			} else {
+				sip->tx_handler = purple_input_add(sip->fd,
+								   PURPLE_INPUT_WRITE, sipe_canwrite_cb,
+								   gc);
+			}
 		}
 
-		if (ret < writelen) {
-			if (!sip->tx_handler){
-                                if (sip->gsc){
-                                        sip->tx_handler = purple_input_add(sip->gsc->fd, PURPLE_INPUT_WRITE, sipe_canwrite_cb_ssl, gc);
-                                }
-                                else{
-					sip->tx_handler = purple_input_add(sip->fd,
-					PURPLE_INPUT_WRITE, sipe_canwrite_cb,
-					gc);
-                                 }
-                        }
+		/* XXX: is it OK to do this? You might get part of a request sent
+		   with part of another. */
+		if (sip->txbuf->bufused > 0)
+			purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
 
-			/* XXX: is it OK to do this? You might get part of a request sent
-			   with part of another. */
-			if (sip->txbuf->bufused > 0)
-				purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
-
-			purple_circ_buffer_append(sip->txbuf, buf + ret,
-				writelen - ret);
-		}
+		purple_circ_buffer_append(sip->txbuf, buf + ret,
+					  writelen - ret);
 	}
 }
 
@@ -811,24 +797,6 @@ int sipe_send_raw(PurpleConnection *gc, const char *buf, int len)
 {
 	sendout_pkt(gc, buf);
 	return len;
-}
-
-static void sendout_sipmsg(struct sipe_account_data *sip, struct sipmsg *msg)
-{
-	GSList *tmp = msg->headers;
-	gchar *name;
-	gchar *value;
-	GString *outstr = g_string_new("");
-	g_string_append_printf(outstr, "%s %s SIP/2.0\r\n", msg->method, msg->target);
-	while (tmp) {
-		name = ((struct sipnameval*) (tmp->data))->name;
-		value = ((struct sipnameval*) (tmp->data))->value;
-		g_string_append_printf(outstr, "%s: %s\r\n", name, value);
-		tmp = g_slist_next(tmp);
-	}
-	g_string_append_printf(outstr, "\r\n%s", msg->body ? msg->body : "");
-	sendout_pkt(sip->gc, outstr->str);
-	g_string_free(outstr, TRUE);
 }
 
 static void
@@ -5208,26 +5176,6 @@ sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 	return SIPE_TYPING_SEND_TIMEOUT;
 }
 
-static gboolean resend_timeout(struct sipe_account_data *sip)
-{
-	GSList *tmp = sip->transactions;
-	time_t currtime = time(NULL);
-	while (tmp) {
-		struct transaction *trans = tmp->data;
-		tmp = tmp->next;
-		SIPE_DEBUG_INFO("have open transaction age: %ld", (long int)currtime-trans->time);
-		if ((currtime - trans->time > 5) && trans->retries >= 1) {
-			/* TODO 408 */
-		} else {
-			if ((currtime - trans->time > 2) && trans->retries == 0) {
-				trans->retries++;
-				sendout_sipmsg(sip, trans->msg);
-			}
-		}
-	}
-	return TRUE;
-}
-
 static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 				 SIPE_UNUSED_PARAMETER void *unused)
 {
@@ -5891,10 +5839,8 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 						tmp = g_strsplit(parts[i], "=", 0);
 						if (tmp[1]) {
 							if (g_strcasecmp("transport", tmp[0]) == 0) {
-								if        (g_strcasecmp("tcp", tmp[1]) == 0) {
+								if (g_strcasecmp("tcp", tmp[1]) == 0) {
 									transport = SIPE_TRANSPORT_TCP;
-								} else if (g_strcasecmp("udp", tmp[1]) == 0) {
-									transport = SIPE_TRANSPORT_UDP;
 								}
 							}
 						}
@@ -8388,24 +8334,6 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 	}
 }
 
-static void sipe_udp_process(gpointer data, gint source,
-			     SIPE_UNUSED_PARAMETER PurpleInputCondition con)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	int len;
-
-	static char buffer[65536];
-	if ((len = recv(source, buffer, sizeof(buffer) - 1, 0)) > 0) {
-		time_t currtime = time(NULL);
-		struct sipmsg *msg;
-		buffer[len] = '\0';
-		SIPE_DEBUG_INFO("received - %s######\n%s\n#######", ctime(&currtime), buffer);
-		msg = sipmsg_parse_msg(buffer);
-		if (msg) process_input_message(sip, msg);
-	}
-}
-
 static void sipe_invalidate_ssl_connection(PurpleConnection *gc, const char *msg, const char *debug)
 {
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
@@ -8599,60 +8527,6 @@ static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
 	return equal;
 }
 
-static void sipe_udp_host_resolved_listen_cb(int listenfd, gpointer data)
-{
-	struct sipe_account_data *sip = (struct sipe_account_data*) data;
-
-	sip->listen_data = NULL;
-
-	if (listenfd == -1) {
-		purple_connection_error(sip->gc, _("Could not create listen socket"));
-		return;
-	}
-
-	sip->fd = listenfd;
-
-	sip->listenport = purple_network_get_port_from_fd(sip->fd);
-	sip->listenfd = sip->fd;
-
-	sip->listenpa = purple_input_add(sip->fd, PURPLE_INPUT_READ, sipe_udp_process, sip->gc);
-
-	sip->resendtimeout = purple_timeout_add(2500, (GSourceFunc) resend_timeout, sip);
-	do_register(sip);
-}
-
-static void sipe_udp_host_resolved(GSList *hosts, gpointer data,
-				   SIPE_UNUSED_PARAMETER const char *error_message)
-{
-	struct sipe_account_data *sip = (struct sipe_account_data*) data;
-
-	sip->query_data = NULL;
-
-	if (!hosts || !hosts->data) {
-		purple_connection_error(sip->gc, _("Could not resolve hostname"));
-		return;
-	}
-
-	hosts = g_slist_remove(hosts, hosts->data);
-	g_free(sip->serveraddr);
-	sip->serveraddr = hosts->data;
-	hosts = g_slist_remove(hosts, hosts->data);
-	while (hosts) {
-		void *tmp = hosts->data;
-		hosts = g_slist_remove(hosts, tmp);
-		hosts = g_slist_remove(hosts, tmp);
-		g_free(tmp);
-	}
-
-	/* create socket for incoming connections */
-	sip->listen_data = purple_network_listen_range(5060, 5160, SOCK_DGRAM,
-				sipe_udp_host_resolved_listen_cb, sip);
-	if (sip->listen_data == NULL) {
-		purple_connection_error(sip->gc, _("Could not create listen socket"));
-		return;
-	}
-}
-
 struct sipe_service_data {
 	const char *service;
 	const char *transport;
@@ -8711,7 +8585,6 @@ sipe_tcp_connect_listen_cb(int listenfd, gpointer data)
 	}
 
 	SIPE_DEBUG_INFO("listenfd: %d", sip->listenfd);
-	//sip->listenport = purple_network_get_port_from_fd(sip->listenfd);
 	sip->listenport = purple_network_get_port_from_fd(sip->listenfd);
 	sip->listenpa = purple_input_add(sip->listenfd, PURPLE_INPUT_READ,
 			sipe_newconn_cb, sip->gc);
@@ -8741,9 +8614,7 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 	SIPE_DEBUG_INFO("create_connection - hostname: %s port: %d",
 			hostname, port);
 
-	/* TODO: is there a good default grow size? */
-	if (sip->transport != SIPE_TRANSPORT_UDP)
-		sip->txbuf = purple_circ_buffer_new(0);
+	sip->txbuf = purple_circ_buffer_new(0);
 
 	if (sip->transport == SIPE_TRANSPORT_TLS) {
 		/* SSL case */
@@ -8754,14 +8625,6 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		if (sip->gsc == NULL) {
 			purple_connection_error(gc, _("Could not create SSL context"));
 			return;
-		}
-	} else if (sip->transport == SIPE_TRANSPORT_UDP) {
-		/* UDP case */
-		SIPE_DEBUG_INFO_NOFORMAT("using UDP");
-
-		sip->query_data = purple_dnsquery_a(hostname, port, sipe_udp_host_resolved, sip);
-		if (sip->query_data == NULL) {
-			purple_connection_error(gc, _("Could not resolve hostname"));
 		}
 	} else {
 		/* TCP case */
@@ -8796,12 +8659,6 @@ static const struct sipe_service_data service_tls[] = {
 static const struct sipe_service_data service_tcp[] = {
 	{ "sipinternal",    "tcp", SIPE_TRANSPORT_TCP }, /* for internal TCP connections */
 	{ "sip",            "tcp", SIPE_TRANSPORT_TCP }, /*.for external TCP connections */
-	{ NULL,             NULL,  0 }
-};
-
-/* Service list for UDP */
-static const struct sipe_service_data service_udp[] = {
-	{ "sip",            "udp", SIPE_TRANSPORT_UDP },
 	{ NULL,             NULL,  0 }
 };
 
@@ -8981,9 +8838,6 @@ void sipe_core_connect(struct sipe_core_public *sipe_public,
 		case SIPE_TRANSPORT_TCP:
 			resolve_next_service(sip, service_tcp);
 			break;
-		case SIPE_TRANSPORT_UDP:
-			resolve_next_service(sip, service_udp);
-			break;
 		}
 	}
 }
@@ -8996,10 +8850,6 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 
 	g_free(sip->epid);
 	sip->epid = NULL;
-
-	if (sip->query_data != NULL)
-		purple_dnsquery_destroy(sip->query_data);
-	sip->query_data = NULL;
 
 	if (sip->srv_query_data != NULL)
 		purple_srv_cancel(sip->srv_query_data);
@@ -9032,9 +8882,6 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	if (sip->tx_handler)
 		purple_input_remove(sip->tx_handler);
 	sip->tx_handler = 0;
-	if (sip->resendtimeout)
-		purple_timeout_remove(sip->resendtimeout);
-	sip->resendtimeout = 0;
 	if (sipe_private->timeouts) {
 		GSList *entry = sipe_private->timeouts;
 		while (entry) {
@@ -9075,10 +8922,6 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	if (sip->regcallid)
 		g_free(sip->regcallid);
 	sip->regcallid = NULL;
-
-	if (sip->serveraddr)
-		g_free(sip->serveraddr);
-	sip->serveraddr = NULL;
 
 	if (sip->focus_factory_uri)
 		g_free(sip->focus_factory_uri);

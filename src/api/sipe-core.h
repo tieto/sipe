@@ -52,9 +52,7 @@ typedef enum {
 	SIPE_TRANSPORT_AUTO,
 	SIPE_TRANSPORT_TLS,
 	SIPE_TRANSPORT_TCP,
-	SIPE_TRANSPORT_UDP,
 } sipe_transport_type;
-
 
 /**
  * Opaque data type for backend private data.

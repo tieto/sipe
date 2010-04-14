@@ -267,10 +267,8 @@ static void sipe_login(PurpleAccount *account)
 			SIPE_TRANSPORT_AUTO : SIPE_TRANSPORT_TLS;
 	} else if (sipe_strequal(transport, "tls")) {
 		type = SIPE_TRANSPORT_TLS;
-	} else if (sipe_strequal(transport, "tcp")) {
-		type = SIPE_TRANSPORT_TCP;
 	} else {
-		type = SIPE_TRANSPORT_UDP;
+		type = SIPE_TRANSPORT_TCP;
 	}
 	sipe_core_connect(sipe_public,
 			  type,
@@ -561,7 +559,6 @@ static void init_plugin(PurplePlugin *plugin)
 	purple_account_option_add_list_item(option, _("Auto"), "auto");
 	purple_account_option_add_list_item(option, _("SSL/TLS"), "tls");
 	purple_account_option_add_list_item(option, _("TCP"), "tcp");
-	purple_account_option_add_list_item(option, _("UDP"), "udp");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);

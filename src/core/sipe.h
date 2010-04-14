@@ -111,7 +111,6 @@ struct sipe_account_data {
 	gchar *focus_factory_uri;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
-	struct _PurpleDnsQueryData *query_data;
 	struct _PurpleSrvQueryData *srv_query_data;
 	const struct sipe_service_data *service_data;
 	struct _PurpleNetworkListenData *listen_data;
@@ -149,7 +148,6 @@ struct sipe_account_data {
 	gboolean ocs2007; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
 	GSList *containers; /* MS-PRES containers */
-	guint resendtimeout;
 	guint keepalive_timeout;
 	gboolean connecting;
 	struct _PurpleAccount *account;
@@ -164,7 +162,6 @@ struct sipe_account_data {
 	sipe_transport_type transport;
 	gboolean auto_transport;
 	struct _PurpleSslConnection *gsc;
-	struct sockaddr *serveraddr;
 	gchar *realhostname;
 	int realport; /* port and hostname from SRV record */
 	gboolean processing_input;
