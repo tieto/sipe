@@ -164,6 +164,8 @@ PKG_CHECK_MODULES(NSS, [nss],
 	])
 ])
 AM_CONDITIONAL(SIPE_CRYPTO_NSS, [test "x$ac_have_nss" = xyes])
+AS_IF([test "x$ac_have_nss" = xyes],
+	[AC_DEFINE(HAVE_NSS, 1, [Define if nss should be used in sipe.])])
 
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])

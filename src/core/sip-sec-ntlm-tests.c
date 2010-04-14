@@ -33,6 +33,10 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 
+#ifdef HAVE_NSS
+#include "nss.h"
+#endif
+
 #include "sipmsg.h"
 #include "sipe-sign.h"
 #define _SIPE_COMPILING_TESTS
@@ -129,7 +133,14 @@ gboolean sip_sec_ntlm_tests(void)
 	const gchar *response_sig;
 
 	printf ("Starting Tests\n");
-
+	
+	/* Initialization for NSS */
+#ifdef HAVE_NSS
+	if (!NSS_IsInitialized()) {
+		NSS_NoDB_Init(".");
+		SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
+	}
+#endif
 	/* Initialization for NTLM */
 	sip_sec_init__ntlm();
 

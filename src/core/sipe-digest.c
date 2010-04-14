@@ -44,8 +44,6 @@ static void sipe_digest(const SECOidTag algorithm,
 	SECStatus s;
 	unsigned int len;
 	
-	NSS_NoDB_Init(".");
-	
 	context = PK11_CreateDigestContext(algorithm);
 	s = PK11_DigestBegin(context);
 	s = PK11_DigestOp(context, data, data_length);
@@ -63,8 +61,6 @@ sipe_digest_hmac_ctx_create(CK_MECHANISM_TYPE hmacMech, const guchar *key, gsize
 	PK11Context* DigestContext;
 	SECStatus s;
 
-	NSS_NoDB_Init(".");
-	
 	/* For key */
 	slot = PK11_GetBestSlot(hmacMech, NULL);
 

@@ -31,6 +31,9 @@
 #endif
 
 #include <glib.h>
+#ifdef HAVE_NSS
+#include "nss.h"
+#endif
 #ifdef HAVE_GMIME
 #include <gmime/gmime.h>
 #endif
@@ -52,6 +55,12 @@ void sipe_core_init(void)
 			bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
 	textdomain(PACKAGE_NAME);
 #endif
+#ifdef HAVE_NSS
+	if (!NSS_IsInitialized()) {
+		NSS_NoDB_Init(".");
+		SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
+	}
+#endif
 #ifdef HAVE_GMIME
 	g_mime_init(0);
 #endif
@@ -59,6 +68,12 @@ void sipe_core_init(void)
 
 void sipe_core_destroy(void)
 {
+#ifdef HAVE_NSS
+	/* do nothing.
+	 * We don't want accedently switch off NSS possibly used by other plugin -
+	 * ssl-nss in Pidgin for example.
+	 */
+#endif
 #ifdef HAVE_GMIME
 	g_mime_shutdown();
 #endif

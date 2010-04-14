@@ -39,7 +39,8 @@ DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
 #Whether to use Windows native SSPI security package (Kerberos, NTLM; SSO)
 #or use SIPE custom NTLMv2 implementation only (No Kerberos; No SSO).
 #DEFINES += -DHAVE_LIBKRB5=1
-DEFINES += -DHAVE_GMIME
+DEFINES += -DHAVE_NSS=1
+DEFINES += -DHAVE_GMIME=1
 
 ##
 ## INCLUDE PATHS

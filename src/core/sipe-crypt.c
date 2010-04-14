@@ -45,8 +45,6 @@ sipe_crypt_ctx_create(CK_MECHANISM_TYPE cipherMech, const guchar *key, gsize key
 	SECItem *SecParam;
 	PK11Context* EncContext;
 
-	NSS_NoDB_Init(".");
-
 	/* For key */
 	slot = PK11_GetBestSlot(cipherMech, NULL);
 
