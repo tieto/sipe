@@ -275,7 +275,7 @@ AS_IF([test "x$enable_purple" = xno], [with_vv=no],
 
 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
       [test "x$with_vv" = xcheck],  dnl autodetect
-	[AC_MSG_CHECKING(if libpurple supports voice and video)
+	[AC_MSG_CHECKING(for purple voice and video support)
 	  ac_save_CFLAGS=$CFLAGS
 	  ac_save_LDFLAGS=$LDFLAGS
 	  CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
@@ -287,10 +287,10 @@ AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
 		  ]]],
 		  [return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]
 		),
-	    [AC_MSG_RESULT(yes)
+	    [AC_MSG_RESULT(ok)
 	     AC_DEFINE(HAVE_VV, 1, [Define if voice & video is enabled.])],
-	    [AC_MSG_RESULT(failed)
-	     AC_ERROR(libpurple is not compiled with voice and video support)
+	    [AC_MSG_RESULT(no)
+	     AC_ERROR(your purple hasn't been compiled with voice and video support.)
 	     with_vv=no]
 	  )
 	  CFLAGS=$ac_save_CFLAGS
