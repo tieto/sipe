@@ -56,14 +56,15 @@
 #include "sipe.h"
 
 /**
- * HTTP POST headers
+ * HTTP header
+ * @param method (%s)		Ex.: GET or POST
  * @param url (%s)		Ex.: /EWS/Exchange.asmx
  * @param host (%s)		Ex.: cosmo-ocs-r2.cosmo.local
  * @param content_length (%d)	length of body part
  * @param content_type (%s)	Ex.: text/xml; charset=UTF-8
  */
-#define HTTP_CONN_POST_HEADER \
-"POST %s HTTP/1.1\r\n"\
+#define HTTP_CONN_HEADER \
+"%s %s HTTP/1.1\r\n"\
 "Host: %s\r\n"\
 "User-Agent: Sipe/" PACKAGE_VERSION "\r\n"\
 "Content-Length: %d\r\n"\
@@ -72,6 +73,8 @@
 
 struct http_conn_struct {
 	PurpleAccount *account;
+	/* GET, POST */
+	char *method;
 	char *conn_type;
 	gboolean allow_redirect;
 	char *host;
@@ -103,6 +106,7 @@ http_conn_clone(HttpConn* http_conn)
 	HttpConn *res = g_new0(HttpConn, 1);
 
 	res->account = http_conn->account;
+	res->method = g_strdup(http_conn->method);
 	res->conn_type = g_strdup(http_conn->conn_type);
 	res->allow_redirect = http_conn->allow_redirect;
 	res->host = g_strdup(http_conn->host);
@@ -133,6 +137,7 @@ http_conn_free(HttpConn* http_conn)
 {
 	if (!http_conn) return;
 
+	g_free(http_conn->method);
 	g_free(http_conn->conn_type);
 	g_free(http_conn->host);
 	g_free(http_conn->url);
@@ -369,6 +374,7 @@ http_conn_input0_cb_ssl(gpointer data,
 
 HttpConn *
 http_conn_create(PurpleAccount *account,
+		 const char *method,
 		 const char *conn_type,
 		 gboolean allow_redirect,
 		 const char *full_url,
@@ -389,6 +395,7 @@ http_conn_create(PurpleAccount *account,
 	http_conn_parse_url(full_url, &http_conn->host, &http_conn->port, &http_conn->url);
 
 	http_conn->account = account;
+	http_conn->method = g_strdup(method);
 	http_conn->conn_type = g_strdup(conn_type);
 	http_conn->allow_redirect = allow_redirect;
 	http_conn->body = g_strdup(body);
@@ -513,7 +520,8 @@ http_conn_post0(HttpConn *http_conn,
 {
 	GString *outstr = g_string_new("");
 
-	g_string_append_printf(outstr, HTTP_CONN_POST_HEADER,
+	g_string_append_printf(outstr, HTTP_CONN_HEADER,
+				http_conn->method ? http_conn->method : "GET",
 				http_conn->url,
 				http_conn->host,
 				http_conn->body ? (int)strlen(http_conn->body) : 0,

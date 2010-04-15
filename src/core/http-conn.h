@@ -23,14 +23,18 @@
 /* Forward declarations */
 struct _PurpleAccount;
 
+#define HTTP_CONN_GET  "GET"
+#define HTTP_CONN_POST "POST"
+
 #define HTTP_CONN_SSL  "SSL"
 #define HTTP_CONN_TCP  "TCP"
+
+#define HTTP_CONN_ALLOW_REDIRECT	TRUE
+#define HTTP_CONN_NO_REDIRECT		FALSE
 
 #define HTTP_CONN_ERROR		-100
 #define HTTP_CONN_ERROR_FATAL	-200
 
-#define HTTP_CONN_ALLOW_REDIRECT	TRUE
-#define HTTP_CONN_NO_REDIRECT		FALSE
 
 struct http_conn_auth {
 	char *domain;
@@ -52,6 +56,7 @@ typedef void (*HttpConnCallback) (int return_code, const char *body,
  */
 HttpConn *
 http_conn_create(struct _PurpleAccount *account,
+		 const char *method,
 		 const char *conn_type,
 		 gboolean allow_redirect,
 		 const char *full_url,
