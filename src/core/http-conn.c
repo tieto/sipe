@@ -82,6 +82,8 @@ struct http_conn_struct {
 	HttpConnAuth *auth;
 	HttpConnCallback callback;
 	void *data;
+	
+	char *cookie;
 
 	/* SSL connection */
 	PurpleSslConnection *gsc;
@@ -516,6 +518,9 @@ http_conn_post0(HttpConn *http_conn,
 				http_conn->host,
 				http_conn->body ? (int)strlen(http_conn->body) : 0,
 				http_conn->content_type ? http_conn->content_type : "text/plain");
+	if (http_conn->cookie) {
+		g_string_append_printf(outstr, "Cookie: %s\r\n", http_conn->cookie);
+	}
 	if (authorization) {
 		g_string_append_printf(outstr, "Authorization: %s\r\n", authorization);
 	}
@@ -672,7 +677,35 @@ http_conn_process_input_message(HttpConn *http_conn,
 	}
 	/* Other response */
 	else {
+		const char *set_cookie_hdr = sipmsg_find_header(msg, "Set-Cookie");
 		http_conn->retries = 0;
+		
+		/* Set cookies.
+		 * Set-Cookie: RMID=732423sdfs73242; expires=Fri, 31-Dec-2010 23:59:59 GMT; path=/; domain=.example.net
+		 */
+		if (set_cookie_hdr) {
+			char **parts;
+			char *tmp;
+			int i;
+
+			g_free(http_conn->cookie);
+			parts = g_strsplit(set_cookie_hdr, ";", 0);
+			for (i = 0; parts[i]; i++) {
+				if (!strstr(parts[i], "path=") &&
+				    !strstr(parts[i], "domain=") &&
+				    !strstr(parts[i], "expires=") &&
+				    !strstr(parts[i], "secure"))
+				{
+					tmp = http_conn->cookie;
+					http_conn->cookie = !http_conn->cookie ?
+						g_strdup(parts[i]) :
+						g_strconcat(http_conn->cookie, ";", parts[i], NULL);
+					g_free(tmp);
+				}
+			}
+			g_strfreev(parts);
+			SIPE_DEBUG_INFO("http_conn_process_input_message: Set cookie: %s", http_conn->cookie ? http_conn->cookie : "");
+		}
 
 		if (http_conn->callback) {
 			(*http_conn->callback)(msg->response, msg->body, http_conn, http_conn->data);

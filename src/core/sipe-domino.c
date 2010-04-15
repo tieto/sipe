@@ -63,11 +63,9 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "http-conn.h"
 
 /**
- * GetUserAvailabilityRequest SOAP request to Exchange Web Services
- * to obtain our Availability (FreeBusy, WorkingHours, Meetings) information.
- * @param email      (%s) Ex.: alice@cosmo.local
- * @param start_time (%s) Ex.: 2009-12-06T00:00:00
- * @param end_time   (%s) Ex.: 2009-12-09T23:59:59
+ * POST request for Login to Domino server
+ * @param email      (%s) Should be URL-encoded. Ex.: alice@cosmo.local
+ * @param password   (%s) Should be URL-encoded.
  */
 #define SIPE_DOMINO_LOGIN_REQUEST \
 "Username=%s&Password=%s"
