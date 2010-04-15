@@ -153,49 +153,8 @@ be great to implement too.
 #define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	2
 #define SIPE_EWS_STATE_OOF_SUCCESS		3
 
-
-static void
-sipe_ews_cal_events_free(GSList *cal_events)
-{
-	GSList *entry = cal_events;
-
-	if (!cal_events) return;
-
-	while (entry) {
-		struct sipe_cal_event *cal_event = entry->data;
-		sipe_cal_event_free(cal_event);
-		entry = entry->next;
-	}
-
-	g_slist_free(cal_events);
-}
-
-void
-sipe_ews_free(struct sipe_ews* ews)
-{
-	g_free(ews->email);
-	g_free(ews->legacy_dn);
-	if (ews->auth) {
-		g_free(ews->auth->domain);
-		g_free(ews->auth->user);
-		g_free(ews->auth->password);
-	}
-	g_free(ews->auth);
-	g_free(ews->as_url);
-	g_free(ews->oof_url);
-	g_free(ews->oab_url);
-	g_free(ews->oof_state);
-	g_free(ews->oof_note);
-	g_free(ews->free_busy);
-	g_free(ews->working_hours_xml_str);
-
-	sipe_ews_cal_events_free(ews->cal_events);
-
-	g_free(ews);
-}
-
 char *
-sipe_ews_get_oof_note(struct sipe_ews *ews)
+sipe_ews_get_oof_note(struct sipe_calendar *ews)
 {
 	time_t now = time(NULL);
 
@@ -213,7 +172,7 @@ sipe_ews_get_oof_note(struct sipe_ews *ews)
 }
 
 static void
-sipe_ews_run_state_machine(struct sipe_ews *ews);
+sipe_ews_run_state_machine(struct sipe_calendar *ews);
 
 static void
 sipe_ews_process_avail_response(int return_code,
@@ -221,7 +180,7 @@ sipe_ews_process_avail_response(int return_code,
 				HttpConn *conn,
 				void *data)
 {
-	struct sipe_ews *ews = data;
+	struct sipe_calendar *ews = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_avail_response: cb started.");
 
@@ -258,7 +217,7 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		SIPE_DEBUG_INFO("sipe_ews_process_avail_response: ews->working_hours_xml_str:\n%s",
 				ews->working_hours_xml_str ? ews->working_hours_xml_str : "");
 
-		sipe_ews_cal_events_free(ews->cal_events);
+		sipe_cal_events_free(ews->cal_events);
 		ews->cal_events = NULL;
 		/* CalendarEvents */
 		for (node = sipe_xml_child(resp, "FreeBusyView/CalendarEventArray/CalendarEvent");
@@ -332,7 +291,7 @@ sipe_ews_process_oof_response(int return_code,
 			      HttpConn *conn,
 			      void *data)
 {
-	struct sipe_ews *ews = data;
+	struct sipe_calendar *ews = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_oof_response: cb started.");
 
@@ -414,7 +373,7 @@ sipe_ews_process_autodiscover(int return_code,
 			      HttpConn *conn,
 			      void *data)
 {
-	struct sipe_ews *ews = data;
+	struct sipe_calendar *ews = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_autodiscover: cb started.");
 
@@ -476,7 +435,7 @@ sipe_ews_process_autodiscover(int return_code,
 }
 
 static void
-sipe_ews_do_autodiscover(struct sipe_ews *ews,
+sipe_ews_do_autodiscover(struct sipe_calendar *ews,
 			 const char* autodiscover_url)
 {
 	char *body;
@@ -497,7 +456,7 @@ sipe_ews_do_autodiscover(struct sipe_ews *ews,
 }
 
 static void
-sipe_ews_do_avail_request(struct sipe_ews *ews)
+sipe_ews_do_avail_request(struct sipe_calendar *ews)
 {
 	if (ews->as_url) {
 		char *body;
@@ -539,7 +498,7 @@ sipe_ews_do_avail_request(struct sipe_ews *ews)
 }
 
 static void
-sipe_ews_do_oof_request(struct sipe_ews *ews)
+sipe_ews_do_oof_request(struct sipe_calendar *ews)
 {
 	if (ews->oof_url) {
 		char *body;
@@ -570,7 +529,7 @@ sipe_ews_do_oof_request(struct sipe_ews *ews)
 }
 
 static void
-sipe_ews_run_state_machine(struct sipe_ews *ews)
+sipe_ews_run_state_machine(struct sipe_calendar *ews)
 {
 	switch (ews->state) {
 		case SIPE_EWS_STATE_NONE:
@@ -631,7 +590,7 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 	if (!sip->ews) {
 		const char *value;
 
-		sip->ews = g_new0(struct sipe_ews, 1);
+		sip->ews = g_new0(struct sipe_calendar, 1);
 		sip->ews->sip = sip;
 
 		sip->ews->account = sip->account;

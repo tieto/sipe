@@ -6987,7 +6987,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 		   gboolean do_publish_calendar,
 		   gboolean do_reset_status)
 {
-	struct sipe_ews* ews = sip->ews;
+	struct sipe_calendar* ews = sip->ews;
 	int availability = 0;
 	int activity = 0;
 	gchar *body;
@@ -7558,7 +7558,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 static gchar *
 sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 {
-	struct sipe_ews* ews = sip->ews;
+	struct sipe_calendar* ews = sip->ews;
 
 	/* key is <category><instance><container> */
 	gchar *key_cal_1     = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 1);
@@ -7633,7 +7633,7 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 static gchar *
 sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 {
-	struct sipe_ews* ews = sip->ews;
+	struct sipe_calendar* ews = sip->ews;
 	guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
 	char *fb_start_str;
 	char *free_busy_base64;
@@ -8689,7 +8689,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	sip->processing_input = FALSE;
 
 	if (sip->ews) {
-		sipe_ews_free(sip->ews);
+		sipe_cal_calendar_free(sip->ews);
 	}
 	sip->ews = NULL;
 }

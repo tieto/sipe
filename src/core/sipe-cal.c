@@ -39,10 +39,12 @@
 #include "sipe-nls.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
+#include "http-conn.h"
 #include "sipe.h"
 
 #define TIME_NULL   (time_t)-1
 #define IS(time)    (time != TIME_NULL)
+
 
 /*
 http://msdn.microsoft.com/en-us/library/aa565001.aspx
@@ -146,6 +148,46 @@ sipe_cal_event_free(struct sipe_cal_event* cal_event)
 	g_free(cal_event->subject);
 	g_free(cal_event->location);
 	g_free(cal_event);
+}
+
+void
+sipe_cal_events_free(GSList *cal_events)
+{
+	GSList *entry = cal_events;
+
+	if (!cal_events) return;
+
+	while (entry) {
+		struct sipe_cal_event *cal_event = entry->data;
+		sipe_cal_event_free(cal_event);
+		entry = entry->next;
+	}
+
+	g_slist_free(cal_events);
+}
+
+void
+sipe_cal_calendar_free(struct sipe_calendar *cal)
+{
+	g_free(cal->email);
+	g_free(cal->legacy_dn);
+	if (cal->auth) {
+		g_free(cal->auth->domain);
+		g_free(cal->auth->user);
+		g_free(cal->auth->password);
+	}
+	g_free(cal->auth);
+	g_free(cal->as_url);
+	g_free(cal->oof_url);
+	g_free(cal->oab_url);
+	g_free(cal->oof_state);
+	g_free(cal->oof_note);
+	g_free(cal->free_busy);
+	g_free(cal->working_hours_xml_str);
+
+	sipe_cal_events_free(cal->cal_events);
+
+	g_free(cal);
 }
 
 char *

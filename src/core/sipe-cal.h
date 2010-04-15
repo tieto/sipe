@@ -48,8 +48,49 @@ struct sipe_cal_event {
 	int is_meeting;
 };
 
+/** For extracting our Calendar information from
+  * external sources like Exchange, Lotus Domino.
+  */
+struct sipe_calendar {
+	struct sipe_account_data *sip;
+
+	int state;
+	char *email;
+	char *legacy_dn;
+	struct http_conn_auth *auth;
+	struct _PurpleAccount *account;
+	int auto_disco_method;
+	int is_disabled;
+	int is_updated;
+	
+	char *as_url;
+	char *oof_url;
+	char *oab_url;
+
+	char *oof_state; /* Enabled, Disabled, Scheduled */
+	char *oof_note;
+	time_t oof_start;
+	time_t oof_end;
+	time_t updated;
+	gboolean published;
+	
+	struct http_conn_struct *http_conn;
+	
+	time_t fb_start;
+	/* hex form */
+	char *free_busy;
+	char *working_hours_xml_str;
+	GSList *cal_events;
+};
+
 void
 sipe_cal_event_free(struct sipe_cal_event* cal_event);
+
+void
+sipe_cal_events_free(GSList *cal_events);
+
+void
+sipe_cal_calendar_free(struct sipe_calendar *cal);
 
 /**
  * Returns hash of Calendar Event for comparison.

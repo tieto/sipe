@@ -55,7 +55,39 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-core.h"
 #include "sipe.h"
 #include "sipe-backend.h"
+#include "sipe-cal.h"
 #include "sipe-domino.h"
+
+static void
+sipe_domino_do_login_request(struct sipe_calendar *ews)
+{
+	// if (ews->oof_url) {
+		// char *body;
+		// const char *content_type = "text/xml; charset=UTF-8";
+
+		// SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_do_oof_request: going OOF req.");
+
+		// body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);
+		// if (!ews->http_conn) {
+			// ews->http_conn = http_conn_create(ews->account,
+							  // HTTP_CONN_SSL,
+							  // ews->oof_url,
+							  // body,
+							  // content_type,
+							  // ews->auth,
+							  // sipe_ews_process_oof_response,
+							  // ews);
+		// } else {
+			// http_conn_post(ews->http_conn,
+				       // ews->oof_url,
+				       // body,
+				       // content_type,
+				       // sipe_ews_process_oof_response,
+				       // ews);
+		// }
+		// g_free(body);
+	// }
+}
 
 void
 sipe_domino_update_calendar(struct sipe_account_data *sip)
@@ -63,7 +95,7 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
 
-
+		sipe_domino_do_login_request(sip->ews);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: finished.");
 }

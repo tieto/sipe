@@ -32,41 +32,7 @@ struct http_conn_auth;
 struct http_conn_struct;
 struct sipe_account_data;
 struct _PurpleAccount;
-
-/**
- * Context
- */
-struct sipe_ews {
-	struct sipe_account_data *sip;
-
-	int state;
-	char *email;
-	char *legacy_dn;
-	struct http_conn_auth *auth;
-	struct _PurpleAccount *account;
-	int auto_disco_method;
-	int is_disabled;
-	int is_updated;
-
-	char *as_url;
-	char *oof_url;
-	char *oab_url;
-	
-	char *oof_state; /* Enabled, Disabled, Scheduled */
-	char *oof_note;
-	time_t oof_start;
-	time_t oof_end;
-	time_t updated;
-	gboolean published;
-	
-	struct http_conn_struct *http_conn;
-	
-	time_t fb_start;
-	/* hex form */
-	char *free_busy;
-	char *working_hours_xml_str;
-	GSList *cal_events;
-};
+struct sipe_calendar;
 
 /**
  * Connects to Exchange 2007/2010 Server's Web Services,
@@ -83,10 +49,4 @@ sipe_ews_update_calendar(struct sipe_account_data *sip);
  * otherwise NULL.
  */
 char *
-sipe_ews_get_oof_note(struct sipe_ews *ews);
-
-/**
- * Frees context
- */
-void
-sipe_ews_free(struct sipe_ews* ews);
+sipe_ews_get_oof_note(struct sipe_calendar *cal);
