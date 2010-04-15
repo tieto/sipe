@@ -59,9 +59,9 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-domino.h"
 
 static void
-sipe_domino_do_login_request(struct sipe_calendar *ews)
+sipe_domino_do_login_request(struct sipe_calendar *cal)
 {
-
+	
 }
 
 void
@@ -70,7 +70,9 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
 
-		sipe_domino_do_login_request(sip->cal);
+	sipe_cal_calendar_init(sip, NULL);
+	
+	sipe_domino_do_login_request(sip->cal);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: finished.");
 }

@@ -42,6 +42,8 @@
 #include "http-conn.h"
 #include "sipe.h"
 
+#include "account.h"
+
 #define TIME_NULL   (time_t)-1
 #define IS(time)    (time != TIME_NULL)
 
@@ -189,6 +191,55 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 
 	g_free(cal);
 }
+
+gboolean
+sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
+{
+	if (!sip->cal) {
+		const char *value;
+
+		sip->cal = g_new0(struct sipe_calendar, 1);
+		sip->cal->sip = sip;
+
+		sip->cal->account = sip->account;
+		sip->cal->email   = g_strdup(sip->email);
+
+		/* user specified a service URL? */
+		value = purple_account_get_string(sip->account, "email_url", NULL);
+		if (has_url) *has_url = !is_empty(value);
+		if (!is_empty(value)) {
+			sip->cal->as_url  = g_strdup(value);
+			sip->cal->oof_url = g_strdup(value);
+		}
+
+		sip->cal->auth = g_new0(HttpConnAuth, 1);
+		sip->cal->auth->use_negotiate = purple_account_get_bool(sip->account, "krb5", FALSE);
+
+		/* user specified email login? */
+		value = purple_account_get_string(sip->account, "email_login", NULL);
+		if (!is_empty(value)) {
+
+			/* user specified email login domain? */
+			const char *tmp = strstr(value, "\\");
+			if (tmp) {
+				sip->cal->auth->domain = g_strndup(value, tmp - value);
+				sip->cal->auth->user   = g_strdup(tmp + 1);
+			} else {
+				sip->cal->auth->user   = g_strdup(value);
+			}
+			sip->cal->auth->password = g_strdup(purple_account_get_string(sip->account, "email_password", NULL));
+
+		} else {
+			/* re-use SIPE credentials */
+			sip->cal->auth->domain   = g_strdup(sip->authdomain);
+			sip->cal->auth->user     = g_strdup(sip->authuser);
+			sip->cal->auth->password = g_strdup(sip->password);
+		}
+		return TRUE;
+	}
+	return FALSE;
+}
+
 
 char *
 sipe_cal_event_describe(struct sipe_cal_event* cal_event)

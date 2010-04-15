@@ -92,6 +92,9 @@ sipe_cal_events_free(GSList *cal_events);
 void
 sipe_cal_calendar_free(struct sipe_calendar *cal);
 
+gboolean
+sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url);
+
 /**
  * Returns hash of Calendar Event for comparison.
  *

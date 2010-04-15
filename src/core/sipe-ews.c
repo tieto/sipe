@@ -49,8 +49,6 @@ be great to implement too.
 
 #include <glib.h>
 
-#include "account.h"
-
 #include "sipe-backend.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"
@@ -584,52 +582,17 @@ void
 sipe_ews_update_calendar(struct sipe_account_data *sip)
 {
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
+	gboolean has_url;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: started.");
 
-	if (!sip->cal) {
-		const char *value;
-
-		sip->cal = g_new0(struct sipe_calendar, 1);
-		sip->cal->sip = sip;
-
-		sip->cal->account = sip->account;
-		sip->cal->email   = g_strdup(sip->email);
-
-		/* user specified a service URL? */
-		value = purple_account_get_string(sip->account, "email_url", NULL);
-		if (!is_empty(value)) {
-			sip->cal->as_url  = g_strdup(value);
-			sip->cal->oof_url = g_strdup(value);
+	if (sipe_cal_calendar_init(sip, &has_url)) {
+		if (has_url) {
 			sip->cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
-		}
-
-		sip->cal->auth = g_new0(HttpConnAuth, 1);
-		sip->cal->auth->use_negotiate = purple_account_get_bool(sip->account, "krb5", FALSE);
-
-		/* user specified email login? */
-		value = purple_account_get_string(sip->account, "email_login", NULL);
-		if (!is_empty(value)) {
-
-			/* user specified email login domain? */
-			const char *tmp = strstr(value, "\\");
-			if (tmp) {
-				sip->cal->auth->domain = g_strndup(value, tmp - value);
-				sip->cal->auth->user   = g_strdup(tmp + 1);
-			} else {
-				sip->cal->auth->user   = g_strdup(value);
-			}
-			sip->cal->auth->password = g_strdup(purple_account_get_string(sip->account, "email_password", NULL));
-
-		} else {
-			/* re-use SIPE credentials */
-			sip->cal->auth->domain   = g_strdup(sip->authdomain);
-			sip->cal->auth->user     = g_strdup(sip->authuser);
-			sip->cal->auth->password = g_strdup(sip->password);
 		}
 	}
 
-	if(sip->cal->is_disabled) {
+	if (sip->cal->is_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
 		return;
 	}
