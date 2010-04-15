@@ -118,6 +118,7 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		if (!cal->http_conn) {
 			cal->http_conn = http_conn_create(cal->account,
 							  HTTP_CONN_SSL,
+							  HTTP_CONN_NO_REDIRECT,
 							  login_url,
 							  body,
 							  content_type,

@@ -73,6 +73,7 @@
 struct http_conn_struct {
 	PurpleAccount *account;
 	char *conn_type;
+	gboolean allow_redirect;
 	char *host;
 	int port;
 	char *url;
@@ -101,6 +102,7 @@ http_conn_clone(HttpConn* http_conn)
 
 	res->account = http_conn->account;
 	res->conn_type = g_strdup(http_conn->conn_type);
+	res->allow_redirect = http_conn->allow_redirect;
 	res->host = g_strdup(http_conn->host);
 	res->port = http_conn->port;
 	res->url = g_strdup(http_conn->url);
@@ -366,6 +368,7 @@ http_conn_input0_cb_ssl(gpointer data,
 HttpConn *
 http_conn_create(PurpleAccount *account,
 		 const char *conn_type,
+		 gboolean allow_redirect,
 		 const char *full_url,
 		 const char *body,
 		 const char *content_type,
@@ -385,6 +388,7 @@ http_conn_create(PurpleAccount *account,
 
 	http_conn->account = account;
 	http_conn->conn_type = g_strdup(conn_type);
+	http_conn->allow_redirect = allow_redirect;
 	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
 	http_conn->auth = auth;
@@ -551,10 +555,11 @@ http_conn_process_input_message(HttpConn *http_conn,
 			        struct sipmsg *msg)
 {
 	/* Redirect */
-	if (msg->response == 300 ||
-	    msg->response == 301 ||
-	    msg->response == 302 ||
-	    msg->response == 307)
+	if ((msg->response == 300 ||
+	     msg->response == 301 ||
+	     msg->response == 302 ||
+	     msg->response == 307) &&
+	     http_conn->allow_redirect)
 	{
 		const char *location = sipmsg_find_header(msg, "Location");
 

@@ -29,6 +29,9 @@ struct _PurpleAccount;
 #define HTTP_CONN_ERROR		-100
 #define HTTP_CONN_ERROR_FATAL	-200
 
+#define HTTP_CONN_ALLOW_REDIRECT	TRUE
+#define HTTP_CONN_NO_REDIRECT		FALSE
+
 struct http_conn_auth {
 	char *domain;
 	char *user;
@@ -50,6 +53,7 @@ typedef void (*HttpConnCallback) (int return_code, const char *body,
 HttpConn *
 http_conn_create(struct _PurpleAccount *account,
 		 const char *conn_type,
+		 gboolean allow_redirect,
 		 const char *full_url,
 		 const char *body,
 		 const char *content_type,

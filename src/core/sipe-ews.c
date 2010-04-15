@@ -444,6 +444,7 @@ sipe_ews_do_autodiscover(struct sipe_calendar *cal,
 	cal->http_conn = http_conn_create(
 				 cal->account,
 				 HTTP_CONN_SSL,
+				 HTTP_CONN_ALLOW_REDIRECT,
 				 autodiscover_url,
 				 body,
 				 "text/xml",
@@ -483,6 +484,7 @@ sipe_ews_do_avail_request(struct sipe_calendar *cal)
 		cal->http_conn = http_conn_create(
 					 cal->account,
 					 HTTP_CONN_SSL,
+					 HTTP_CONN_ALLOW_REDIRECT,
 					 cal->as_url,
 					 body,
 					 "text/xml; charset=UTF-8",
@@ -508,6 +510,7 @@ sipe_ews_do_oof_request(struct sipe_calendar *cal)
 		if (!cal->http_conn) {
 			cal->http_conn = http_conn_create(cal->account,
 							  HTTP_CONN_SSL,
+							  HTTP_CONN_ALLOW_REDIRECT,
 							  cal->oof_url,
 							  body,
 							  content_type,
