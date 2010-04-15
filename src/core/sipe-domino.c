@@ -61,7 +61,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 static void
 sipe_domino_do_login_request(struct sipe_calendar *cal)
 {
-	
+	/* still unused */(void) cal;
 }
 
 void
