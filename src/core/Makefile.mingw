@@ -55,7 +55,9 @@ INCLUDE_PATHS +=	-I. \
 			-I$(GMIME_TOP)/include/gmime-2.4 \
 			-I$(LIBXML2_TOP)/include \
 			-I$(NSPR_TOP)/include \
-			-I$(NSS_TOP)/include \
+			-I$(NSS_TOP)/include
+
+PURPLE_INCLUDE_PATHS += \
 			-I$(PURPLE_TOP) \
 			-I$(PURPLE_TOP)/win32 \
 			-I$(PIDGIN_TREE_TOP)
@@ -63,40 +65,50 @@ INCLUDE_PATHS +=	-I. \
 ##
 ##  SOURCES, OBJECTS
 ##
-C_SRC =			md4.c \
+CLEAN_C_SRC = \
+			md4.c \
 			sipe-crypt.c \
-			../purple/purple-debug.c \
 			sipe-digest.c \
-			../purple/purple-markup.c \
-			../purple/purple-network.c \
-			../purple/purple-plugin.c \
-			sipe.c \
 			sipe-buddy.c \
 			sipe-chat.c \
-			sipe-conf.c \
 			sipe-core.c \
 			sipe-dialog.c \
 			sipe-session.c \
 			sipe-utils.c \
-			sipe-cal.c \
-			http-conn.c \
 			sipe-ews.c \
-			sipe-domino.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
 			sip-sec-ntlm.c \
 			sip-csta.c \
-			sipe-ft.c \
 			sipe-xml.c \
 			sipe-mime.c \
 			uuid.c
-			
+
+PURPLE_C_SRC = \
+			../purple/purple-debug.c \
+			../purple/purple-markup.c \
+			../purple/purple-network.c \
+			../purple/purple-plugin.c \
+			sipe.c \
+			sipe-conf.c \
+			sipe-cal.c \
+			http-conn.c \
+			sipe-domino.c \
+			sipe-ft.c \
+
 C_TEST_SRC = 		sipe-xml-tests.c \
 			sip-sec-ntlm-tests.c \
 			../purple/tests.c \
 
-OBJECTS = 		$(C_SRC:%.c=%.o)
+C_SRC =			$(CLEAN_C_SRC) $(PURPLE_C_SRC)
+
+CLEAN_OBJECTS =		$(CLEAN_C_SRC:%.c=%.o)				
+PURPLE_OBJECTS = 	$(PURPLE_C_SRC:%.c=%.o)
+OBJECTS = 		$(CLEAN_OBJECTS) $(PURPLE_OBJECTS)
+
+# Only these modules need the purple headers
+$(PURPLE_OBJECTS):	INCLUDE_PATHS += $(PURPLE_INCLUDE_PATHS)
 
 TEST_OBJECTS = 		$(C_TEST_SRC:%.c=%.o)
 
