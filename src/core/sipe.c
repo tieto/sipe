@@ -305,7 +305,7 @@ void sipe_keep_alive(PurpleConnection *gc)
 	    ((guint) (now - gc->last_received) >= sip->keepalive_timeout)
 		) {
 		SIPE_DEBUG_INFO("sending keep alive %d", sip->keepalive_timeout);
-		sendout_pkt(gc, "\r\n\r\n");
+		sendout_pkt(gc, "");
 		sip->last_keepalive = now;
 	}
 }
@@ -576,10 +576,9 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 	SIPE_DEBUG_INFO("sending - %s######\n%s######", ctime(&currtime), tmp = fix_newlines(buf));
 	g_free(tmp);
 
-	/* add packet to circular buffer */
-	if (purple_circ_buffer_get_max_read(sip->txbuf) > 0)
-		purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
+	/* add packet + separator line to circular buffer */
 	purple_circ_buffer_append(sip->txbuf, buf, strlen(buf));
+	purple_circ_buffer_append(sip->txbuf, "\r\n\r\n", 4);
 
 	/* initiate transmission */
 	if (!sip->tx_handler) {
