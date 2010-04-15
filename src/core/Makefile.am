@@ -18,16 +18,14 @@ libsipe_core_la_SOURCES = \
 	sip-sec-ntlm.c \
 	sipe-buddy.h \
 	sipe-buddy.c \
-	sipe-cal.h \
-	sipe-cal.c \
 	sipe-chat.h \
 	sipe-chat.c \
 	sipe-core-private.h \
 	sipe-core.c \
 	sipe-dialog.h \
 	sipe-dialog.c \
-	sipe-domino.h \
-	sipe-domino.c \
+	sipe-ews.h \
+	sipe-ews.c \
 	sipe-session.h \
 	sipe-session.c \
 	sipe-sign.h \
@@ -45,12 +43,14 @@ libsipe_core_tests_la_SOURCES = \
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
 	sipe.c \
+	sipe-cal.h \
+	sipe-cal.c \
 	sipe-conf.h \
 	sipe-conf.c \
+	sipe-domino.h \
+	sipe-domino.c \
 	http-conn.h \
 	http-conn.c \
-	sipe-ews.h \
-	sipe-ews.c \
 	sipe-ft.h \
 	sipe-ft.c
 
