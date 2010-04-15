@@ -55,6 +55,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 /* @TODO replace purple_url_encode() with non-purple equiv. */
 #include "util.h"
 
+#include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe.h"
 #include "sipe-backend.h"
@@ -162,8 +163,9 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 
 static void
 sipe_domino_process_login_response(int return_code,
-				   const char *body,
-				   HttpConn *conn,
+				   /* temporary? */
+				   SIPE_UNUSED_PARAMETER const char *body,
+				   SIPE_UNUSED_PARAMETER HttpConn *conn,
 				   void *data)
 {
 	struct sipe_calendar *cal = data;
