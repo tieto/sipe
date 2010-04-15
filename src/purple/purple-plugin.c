@@ -493,7 +493,7 @@ static GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
-	if (sipe_strequal(calendar, "EXCH")) {
+	if (!sipe_strequal(calendar, "NONE")) {
 		act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
 		menu = g_list_prepend(menu, act);
 	}
@@ -581,17 +581,22 @@ static void init_plugin(PurplePlugin *plugin)
 
 	option = purple_account_option_list_new(_("Calendar source"), "calendar", NULL);
 	purple_account_option_add_list_item(option, _("Exchange 2007/2010"), "EXCH");
+	purple_account_option_add_list_item(option, _("Lotus Domino"), "DOMINO");
 	purple_account_option_add_list_item(option, _("None"), "NONE");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	/** Example: https://server.company.com/EWS/Exchange.asmx */
+	/** Example (Exchange): https://server.company.com/EWS/Exchange.asmx
+	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
+	 */
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new(_("Email address\n(if different from Username)"), "email", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
-	/** Example: DOMAIN\user  or  user@company.com */
+	/** Example (Exchange): DOMAIN\user  or  user@company.com
+	 *  Example (Domino)  : user
+	 */
 	option = purple_account_option_string_new(_("Email login\n(if different from Login)"), "email_login", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
