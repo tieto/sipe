@@ -595,7 +595,7 @@ static void init_plugin(PurplePlugin *plugin)
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	/** Example (Exchange): DOMAIN\user  or  user@company.com
-	 *  Example (Domino)  : user
+	 *  Example (Domino)  : email_address
 	 */
 	option = purple_account_option_string_new(_("Email login\n(if different from Login)"), "email_login", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);

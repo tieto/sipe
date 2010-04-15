@@ -95,6 +95,7 @@
 #include "sipe-dialog.h"
 #include "sipe-digest.h"
 #include "sipe-ews.h"
+#include "sipe-domino.h"
 #include "sipe-ft.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
@@ -3324,10 +3325,12 @@ sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 	const char* calendar = purple_account_get_string(sip->account, "calendar", "EXCH");
 
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_update_calendar: started.");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
 
 	if (sipe_strequal(calendar, "EXCH")) {
 		sipe_ews_update_calendar(sip);
+	} else if (sipe_strequal(calendar, "DOMINO")) {
+		sipe_domino_update_calendar(sip);
 	}
 
 	/* schedule repeat */
@@ -3338,7 +3341,7 @@ sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 			     SIP_TO_CORE_PRIVATE,
 			     NULL);
 
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_update_calendar: finished.");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: finished.");
 }
 
 /**

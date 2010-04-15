@@ -81,6 +81,7 @@ C_SRC =			md4.c \
 			sipe-cal.c \
 			http-conn.c \
 			sipe-ews.c \
+			sipe-domino.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \

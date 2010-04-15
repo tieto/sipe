@@ -20,4 +20,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
- 
+/* Forward declarations */
+struct sipe_account_data;
+
+/**
+ * Connects to Lotus Domino Web Access server,
+ * pulls out our Calendar information
+ * and publishes it to Office Communications server.
+ *
+ * Advised schedule: 30 minutes.
+ */
+void
+sipe_domino_update_calendar(struct sipe_account_data *sip);

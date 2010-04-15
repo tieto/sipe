@@ -31,7 +31,7 @@ Server requirements: Domino 5.0.2 and above with Web Access.
 1) Authenticates to server (HTTPS POST, plaintext login/password over SSL)
 https://[domino_server]/[databasename].nsf/?Login
 Content-Type=application/x-www-form-urlencoded
-Username=[user]&Password=[password]
+Username=[email]&Password=[password] (email is url-encoded) 
 Saves auth cookie.
 Set-Cookie=DomAuthSessId=17D0428F7B9D57D4D0B064AE42FD21F9; path=/
 
@@ -50,6 +50,23 @@ https://sourceforge.net/tracker/?func=detail&aid=2945346&group_id=194563&atid=94
 Similar functionality for iCalendar/CalDAV/Google would be great to implement too.
 */
 
+#include <glib.h>
+
+#include "sipe-core.h"
+#include "sipe.h"
+#include "sipe-backend.h"
+#include "sipe-domino.h"
+
+void
+sipe_domino_update_calendar(struct sipe_account_data *sip)
+{
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
+
+
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: finished.");
+}
 
 /*
   Local Variables:
