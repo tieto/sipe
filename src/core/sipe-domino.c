@@ -102,6 +102,21 @@ sipe_domino_process_calendar_response(int return_code,
 	}
 }
 
+/* Domino doesn't like '-' and ':' in ISO timestamps */
+static gchar *
+sipe_domino_time_to_str(time_t timestamp)
+{
+	char *res, *tmp;
+
+	res = sipe_utils_time_to_str(timestamp);
+	res = sipe_utils_str_replace((tmp = res), "-", "");
+	g_free(tmp);
+	res = sipe_utils_str_replace((tmp = res), ":", "");
+	g_free(tmp);
+
+	return res;
+}
+
 static void
 sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 {
@@ -126,8 +141,8 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 		/* end = start + 4 days - 1 sec */
 		end = cal->fb_start + 4*(24*60*60) - 1;
 
-		start_str = sipe_utils_time_to_str(cal->fb_start);
-		end_str = sipe_utils_time_to_str(end);
+		start_str = sipe_domino_time_to_str(cal->fb_start);
+		end_str = sipe_domino_time_to_str(end);
 
 		url_req = g_strdup_printf(SIPE_DOMINO_CALENDAR_REQUEST, start_str, end_str);
 		g_free(start_str);
