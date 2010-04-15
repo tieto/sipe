@@ -1912,7 +1912,7 @@ void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 			/* when other point of presence clears note, but we are keeping
 			 * state if OOF note.
 			 */
-			if (do_not_publish && !note && sip->ews && sip->ews->oof_note) {
+			if (do_not_publish && !note && sip->cal && sip->cal->oof_note) {
 				SIPE_DEBUG_INFO_NOFORMAT("sipe_set_status: enabling publication as OOF note keepers.");
 				do_not_publish = FALSE;
 			}
@@ -6987,7 +6987,7 @@ send_presence_soap0(struct sipe_account_data *sip,
 		   gboolean do_publish_calendar,
 		   gboolean do_reset_status)
 {
-	struct sipe_calendar* ews = sip->ews;
+	struct sipe_calendar* cal = sip->cal;
 	int availability = 0;
 	int activity = 0;
 	gchar *body;
@@ -7001,12 +7001,12 @@ send_presence_soap0(struct sipe_account_data *sip,
 	gchar *epid = get_epid(sip);
 	time_t now = time(NULL);
 	gchar *since_time_str = sipe_utils_time_to_str(now);
-	const gchar *oof_note = ews ? sipe_ews_get_oof_note(ews) : NULL;
+	const gchar *oof_note = cal ? sipe_ews_get_oof_note(cal) : NULL;
 	const char *user_input;
-	gboolean pub_oof = ews && oof_note && (!sip->note || ews->updated > sip->note_since);
+	gboolean pub_oof = cal && oof_note && (!sip->note || cal->updated > sip->note_since);
 
 	if (oof_note && sip->note) {
-		SIPE_DEBUG_INFO("ews->oof_start  : %s", asctime(localtime(&(ews->oof_start))));
+		SIPE_DEBUG_INFO("cal->oof_start  : %s", asctime(localtime(&(cal->oof_start))));
 		SIPE_DEBUG_INFO("sip->note_since : %s", asctime(localtime(&(sip->note_since))));
 	}
 
@@ -7025,9 +7025,9 @@ send_presence_soap0(struct sipe_account_data *sip,
 	if (pub_oof) {
 		note_pub = oof_note;
 		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
-		ews->published = TRUE;
+		cal->published = TRUE;
 	} else if (sip->note) {
-		if (sip->is_oof_note && !oof_note) { /* stale OOF note, as it's not present in ews already */
+		if (sip->is_oof_note && !oof_note) { /* stale OOF note, as it's not present in cal already */
 			g_free(sip->note);
 			sip->note = NULL;
 			sip->is_oof_note = FALSE;
@@ -7072,12 +7072,12 @@ send_presence_soap0(struct sipe_account_data *sip,
 	sip->initial_state_published = TRUE;
 
 	/* CalendarInfo */
-	if (ews && (!is_empty(ews->legacy_dn) || !is_empty(ews->email)) && ews->fb_start && !is_empty(ews->free_busy))
+	if (cal && (!is_empty(cal->legacy_dn) || !is_empty(cal->email)) && cal->fb_start && !is_empty(cal->free_busy))
 	{
-		char *fb_start_str = sipe_utils_time_to_str(ews->fb_start);
-		char *free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
+		char *fb_start_str = sipe_utils_time_to_str(cal->fb_start);
+		char *free_busy_base64 = sipe_cal_get_freebusy_base64(cal->free_busy);
 		calendar_data = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_CALENDAR,
-						!is_empty(ews->legacy_dn) ? ews->legacy_dn : ews->email,
+						!is_empty(cal->legacy_dn) ? cal->legacy_dn : cal->email,
 						fb_start_str,
 						free_busy_base64);
 		g_free(fb_start_str);
@@ -7558,7 +7558,7 @@ sipe_publish_get_category_note(struct sipe_account_data *sip,
 static gchar *
 sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 {
-	struct sipe_calendar* ews = sip->ews;
+	struct sipe_calendar* cal = sip->cal;
 
 	/* key is <category><instance><container> */
 	gchar *key_cal_1     = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 1);
@@ -7581,7 +7581,7 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 	struct sipe_publication *publication_cal_32000 =
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_32000);
 
-	const char *n1 = ews ? ews->working_hours_xml_str : NULL;
+	const char *n1 = cal ? cal->working_hours_xml_str : NULL;
 	const char *n2 = publication_cal_300 ? publication_cal_300->working_hours_xml_str : NULL;
 
 	g_free(key_cal_1);
@@ -7591,7 +7591,7 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 	g_free(key_cal_400);
 	g_free(key_cal_32000);
 
-	if (!ews || is_empty(ews->email) || is_empty(ews->working_hours_xml_str)) {
+	if (!cal || is_empty(cal->email) || is_empty(cal->working_hours_xml_str)) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_publish_get_category_cal_working_hours: no data to publish, exiting");
 		return NULL;
 	}
@@ -7605,22 +7605,22 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 	return g_strdup_printf(SIPE_PUB_XML_WORKING_HOURS,
 				/* 1 */
 				publication_cal_1 ? publication_cal_1->version : 0,
-				ews->email,
-				ews->working_hours_xml_str,
+				cal->email,
+				cal->working_hours_xml_str,
 				/* 100 - Public */
 				publication_cal_100 ? publication_cal_100->version : 0,
 				/* 200 - Company */
 				publication_cal_200 ? publication_cal_200->version : 0,
-				ews->email,
-				ews->working_hours_xml_str,
+				cal->email,
+				cal->working_hours_xml_str,
 				/* 300 - Team */
 				publication_cal_300 ? publication_cal_300->version : 0,
-				ews->email,
-				ews->working_hours_xml_str,
+				cal->email,
+				cal->working_hours_xml_str,
 				/* 400 - Personal */
 				publication_cal_400 ? publication_cal_400->version : 0,
-				ews->email,
-				ews->working_hours_xml_str,
+				cal->email,
+				cal->working_hours_xml_str,
 				/* 32000 - Blocked */
 				publication_cal_32000 ? publication_cal_32000->version : 0
 			      );
@@ -7633,7 +7633,7 @@ sipe_publish_get_category_cal_working_hours(struct sipe_account_data *sip)
 static gchar *
 sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 {
-	struct sipe_calendar* ews = sip->ews;
+	struct sipe_calendar* cal = sip->cal;
 	guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
 	char *fb_start_str;
 	char *free_busy_base64;
@@ -7669,13 +7669,13 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 	g_free(key_cal_400);
 	g_free(key_cal_32000);
 
-	if (!ews || is_empty(ews->email) || !ews->fb_start || is_empty(ews->free_busy)) {
+	if (!cal || is_empty(cal->email) || !cal->fb_start || is_empty(cal->free_busy)) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_publish_get_category_cal_free_busy: no data to publish, exiting");
 		return NULL;
 	}
 
-	fb_start_str = sipe_utils_time_to_str(ews->fb_start);
-	free_busy_base64 = sipe_cal_get_freebusy_base64(ews->free_busy);
+	fb_start_str = sipe_utils_time_to_str(cal->fb_start);
+	free_busy_base64 = sipe_cal_get_freebusy_base64(cal->free_busy);
 
 	st = publication_cal_300 ? publication_cal_300->fb_start_str : NULL;
 	fb = publication_cal_300 ? publication_cal_300->free_busy_base64 : NULL;
@@ -7701,19 +7701,19 @@ sipe_publish_get_category_cal_free_busy(struct sipe_account_data *sip)
 				/* 200 - Company */
 				cal_data_instance,
 				publication_cal_200 ? publication_cal_200->version : 0,
-				ews->email,
+				cal->email,
 				fb_start_str,
 				free_busy_base64,
 				/* 300 - Team */
 				cal_data_instance,
 				publication_cal_300 ? publication_cal_300->version : 0,
-				ews->email,
+				cal->email,
 				fb_start_str,
 				free_busy_base64,
 				/* 400 - Personal */
 				cal_data_instance,
 				publication_cal_400 ? publication_cal_400->version : 0,
-				ews->email,
+				cal->email,
 				fb_start_str,
 				free_busy_base64,
 				/* 32000 - Blocked */
@@ -7821,14 +7821,14 @@ publish_calendar_status_self(struct sipe_core_private *sipe_private,
 	time_t oof_start = 0;
 	time_t oof_end = 0;
 
-	if (!sip->ews) {
+	if (!sip->cal) {
 		SIPE_DEBUG_INFO_NOFORMAT("publish_calendar_status_self() no calendar data.");
 		return;
 	}
 
 	SIPE_DEBUG_INFO_NOFORMAT("publish_calendar_status_self() started.");
-	if (sip->ews->cal_events) {
-		event = sipe_cal_get_event(sip->ews->cal_events, time(NULL));
+	if (sip->cal->cal_events) {
+		event = sipe_cal_get_event(sip->cal->cal_events, time(NULL));
 	}
 
 	if (!event) {
@@ -7848,20 +7848,20 @@ publish_calendar_status_self(struct sipe_core_private *sipe_private,
 		OOF clean, Busy clean
 	*/
 	if (event && event->cal_status == SIPE_CAL_OOF) {
-		pub_calendar  = sipe_publish_get_category_state_calendar(sip, event, sip->ews->email, SIPE_CAL_OOF);
-		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, NULL,  sip->ews->email, SIPE_CAL_BUSY);
+		pub_calendar  = sipe_publish_get_category_state_calendar(sip, event, sip->cal->email, SIPE_CAL_OOF);
+		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, NULL,  sip->cal->email, SIPE_CAL_BUSY);
 	} else if (event && event->cal_status == SIPE_CAL_BUSY) {
-		pub_calendar  = sipe_publish_get_category_state_calendar(sip, NULL,  sip->ews->email, SIPE_CAL_OOF);
-		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, event, sip->ews->email, SIPE_CAL_BUSY);
+		pub_calendar  = sipe_publish_get_category_state_calendar(sip, NULL,  sip->cal->email, SIPE_CAL_OOF);
+		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, event, sip->cal->email, SIPE_CAL_BUSY);
 	} else {
-		pub_calendar  = sipe_publish_get_category_state_calendar(sip, NULL,  sip->ews->email, SIPE_CAL_OOF);
-		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, NULL,  sip->ews->email, SIPE_CAL_BUSY);
+		pub_calendar  = sipe_publish_get_category_state_calendar(sip, NULL,  sip->cal->email, SIPE_CAL_OOF);
+		pub_calendar2 = sipe_publish_get_category_state_calendar(sip, NULL,  sip->cal->email, SIPE_CAL_BUSY);
 	}
 
-	oof_note = sipe_ews_get_oof_note(sip->ews);
-	if (sipe_strequal("Scheduled", sip->ews->oof_state)) {
-		oof_start = sip->ews->oof_start;
-		oof_end = sip->ews->oof_end;
+	oof_note = sipe_ews_get_oof_note(sip->cal);
+	if (sipe_strequal("Scheduled", sip->cal->oof_state)) {
+		oof_start = sip->cal->oof_start;
+		oof_end = sip->cal->oof_end;
 	}
 	pub_oof_note = sipe_publish_get_category_note(sip, oof_note, "OOF", oof_start, oof_end);
 
@@ -8688,10 +8688,10 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 
 	sip->processing_input = FALSE;
 
-	if (sip->ews) {
-		sipe_cal_calendar_free(sip->ews);
+	if (sip->cal) {
+		sipe_cal_calendar_free(sip->cal);
 	}
-	sip->ews = NULL;
+	sip->cal = NULL;
 }
 
 /**

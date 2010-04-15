@@ -168,7 +168,7 @@ struct sipe_account_data {
 	gchar *realhostname;
 	int realport; /* port and hostname from SRV record */
 	gboolean processing_input;
-	struct sipe_calendar *ews;
+	struct sipe_calendar *cal;
 	gchar *email;
 	/** 2005 Custom XML piece.
 	 * Possibly set by other point of presence or just other client at earlier time.

@@ -154,16 +154,16 @@ be great to implement too.
 #define SIPE_EWS_STATE_OOF_SUCCESS		3
 
 char *
-sipe_ews_get_oof_note(struct sipe_calendar *ews)
+sipe_ews_get_oof_note(struct sipe_calendar *cal)
 {
 	time_t now = time(NULL);
 
-	if (!ews || !ews->oof_state) return NULL;
+	if (!cal || !cal->oof_state) return NULL;
 
-	if (sipe_strequal(ews->oof_state, "Enabled") ||
-	    (sipe_strequal(ews->oof_state, "Scheduled") && now >= ews->oof_start && now <= ews->oof_end))
+	if (sipe_strequal(cal->oof_state, "Enabled") ||
+	    (sipe_strequal(cal->oof_state, "Scheduled") && now >= cal->oof_start && now <= cal->oof_end))
 	{
-		return ews->oof_note;
+		return cal->oof_note;
 	}
 	else
 	{
@@ -172,7 +172,7 @@ sipe_ews_get_oof_note(struct sipe_calendar *ews)
 }
 
 static void
-sipe_ews_run_state_machine(struct sipe_calendar *ews);
+sipe_ews_run_state_machine(struct sipe_calendar *cal);
 
 static void
 sipe_ews_process_avail_response(int return_code,
@@ -180,13 +180,13 @@ sipe_ews_process_avail_response(int return_code,
 				HttpConn *conn,
 				void *data)
 {
-	struct sipe_calendar *ews = data;
+	struct sipe_calendar *cal = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_avail_response: cb started.");
 
-	if(!sipe_strequal(ews->as_url, ews->oof_url)) { /* whether reuse conn */
+	if(!sipe_strequal(cal->as_url, cal->oof_url)) { /* whether reuse conn */
 		http_conn_set_close(conn);
-		ews->http_conn = NULL;
+		cal->http_conn = NULL;
 	}
 
 	if (return_code == 200 && body) {
@@ -207,18 +207,18 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		}
 
 		/* MergedFreeBusy */
-		g_free(ews->free_busy);
-		ews->free_busy = sipe_xml_data(sipe_xml_child(resp, "FreeBusyView/MergedFreeBusy"));
+		g_free(cal->free_busy);
+		cal->free_busy = sipe_xml_data(sipe_xml_child(resp, "FreeBusyView/MergedFreeBusy"));
 
 		/* WorkingHours */
 		node = sipe_xml_child(resp, "FreeBusyView/WorkingHours");
-		g_free(ews->working_hours_xml_str);
-		ews->working_hours_xml_str = sipe_xml_stringify(node);
-		SIPE_DEBUG_INFO("sipe_ews_process_avail_response: ews->working_hours_xml_str:\n%s",
-				ews->working_hours_xml_str ? ews->working_hours_xml_str : "");
+		g_free(cal->working_hours_xml_str);
+		cal->working_hours_xml_str = sipe_xml_stringify(node);
+		SIPE_DEBUG_INFO("sipe_ews_process_avail_response: cal->working_hours_xml_str:\n%s",
+				cal->working_hours_xml_str ? cal->working_hours_xml_str : "");
 
-		sipe_cal_events_free(ews->cal_events);
-		ews->cal_events = NULL;
+		sipe_cal_events_free(cal->cal_events);
+		cal->cal_events = NULL;
 		/* CalendarEvents */
 		for (node = sipe_xml_child(resp, "FreeBusyView/CalendarEventArray/CalendarEvent");
 		     node;
@@ -243,7 +243,7 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
       </CalendarEvent>
 */
 			struct sipe_cal_event *cal_event = g_new0(struct sipe_cal_event, 1);
-			ews->cal_events = g_slist_append(ews->cal_events, cal_event);
+			cal->cal_events = g_slist_append(cal->cal_events, cal_event);
 
 			tmp = sipe_xml_data(sipe_xml_child(node, "StartTime"));
 			cal_event->start_time = sipe_utils_str_to_time(tmp);
@@ -277,11 +277,11 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 
 		sipe_xml_free(xml);
 
-		ews->state = SIPE_EWS_STATE_AVAILABILITY_SUCCESS;
-		sipe_ews_run_state_machine(ews);
+		cal->state = SIPE_EWS_STATE_AVAILABILITY_SUCCESS;
+		sipe_ews_run_state_machine(cal);
 
 	} else if (return_code < 0) {
-		ews->http_conn = NULL;
+		cal->http_conn = NULL;
 	}
 }
 
@@ -291,12 +291,12 @@ sipe_ews_process_oof_response(int return_code,
 			      HttpConn *conn,
 			      void *data)
 {
-	struct sipe_calendar *ews = data;
+	struct sipe_calendar *cal = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_oof_response: cb started.");
 
 	http_conn_set_close(conn);
-	ews->http_conn = NULL;
+	cal->http_conn = NULL;
 
 	if (return_code == 200 && body) {
 		char *old_note;
@@ -316,12 +316,12 @@ sipe_ews_process_oof_response(int return_code,
 			return; /* Error response */
 		}
 
-		g_free(ews->oof_state);
-		ews->oof_state = sipe_xml_data(sipe_xml_child(resp, "OofSettings/OofState"));
+		g_free(cal->oof_state);
+		cal->oof_state = sipe_xml_data(sipe_xml_child(resp, "OofSettings/OofState"));
 
-		old_note = ews->oof_note;
-		ews->oof_note = NULL;
-		if (!sipe_strequal(ews->oof_state, "Disabled")) {
+		old_note = cal->oof_note;
+		cal->oof_note = NULL;
+		if (!sipe_strequal(cal->oof_state, "Disabled")) {
 			char *tmp = sipe_xml_data(
 				sipe_xml_child(resp, "OofSettings/InternalReply/Message"));
 			char *html;
@@ -335,35 +335,35 @@ sipe_ews_process_oof_response(int return_code,
 			g_free(tmp);
 			tmp = g_strstrip(sipe_backend_markup_strip_html(html));
 			g_free(html);
-			ews->oof_note = g_markup_escape_text(tmp, -1);
+			cal->oof_note = g_markup_escape_text(tmp, -1);
 			g_free(tmp);
 		}
 
-		if (sipe_strequal(ews->oof_state, "Scheduled")
+		if (sipe_strequal(cal->oof_state, "Scheduled")
 		    && (xn_duration = sipe_xml_child(resp, "OofSettings/Duration")))
 		{
 			char *tmp = sipe_xml_data(sipe_xml_child(xn_duration, "StartTime"));
-			ews->oof_start = sipe_utils_str_to_time(tmp);
+			cal->oof_start = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 
 			tmp = sipe_xml_data(sipe_xml_child(xn_duration, "EndTime"));
-			ews->oof_end = sipe_utils_str_to_time(tmp);
+			cal->oof_end = sipe_utils_str_to_time(tmp);
 			g_free(tmp);
 		}
 
-		if (!sipe_strequal(old_note, ews->oof_note)) { /* oof note changed */
-			ews->updated = time(NULL);
-			ews->published = FALSE;
+		if (!sipe_strequal(old_note, cal->oof_note)) { /* oof note changed */
+			cal->updated = time(NULL);
+			cal->published = FALSE;
 		}
 		g_free(old_note);
 
 		sipe_xml_free(xml);
 
-		ews->state = SIPE_EWS_STATE_OOF_SUCCESS;
-		sipe_ews_run_state_machine(ews);
+		cal->state = SIPE_EWS_STATE_OOF_SUCCESS;
+		sipe_ews_run_state_machine(cal);
 
 	} else if (return_code < 0) {
-		ews->http_conn = NULL;
+		cal->http_conn = NULL;
 	}
 }
 
@@ -373,12 +373,12 @@ sipe_ews_process_autodiscover(int return_code,
 			      HttpConn *conn,
 			      void *data)
 {
-	struct sipe_calendar *ews = data;
+	struct sipe_calendar *cal = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_autodiscover: cb started.");
 
 	http_conn_set_close(conn);
-	ews->http_conn = NULL;
+	cal->http_conn = NULL;
 
 	if (return_code == 200 && body) {
 		const sipe_xml *node;
@@ -386,8 +386,8 @@ sipe_ews_process_autodiscover(int return_code,
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 
 		/* Autodiscover/Response/User/LegacyDN (trim()) */
-		ews->legacy_dn = sipe_xml_data(sipe_xml_child(xml, "Response/User/LegacyDN"));
-		ews->legacy_dn = ews->legacy_dn ? g_strstrip(ews->legacy_dn) : NULL;
+		cal->legacy_dn = sipe_xml_data(sipe_xml_child(xml, "Response/User/LegacyDN"));
+		cal->legacy_dn = cal->legacy_dn ? g_strstrip(cal->legacy_dn) : NULL;
 
 		/* Protocols */
 		for (node = sipe_xml_child(xml, "Response/Account/Protocol");
@@ -396,16 +396,16 @@ sipe_ews_process_autodiscover(int return_code,
 		{
 			char *type = sipe_xml_data(sipe_xml_child(node, "Type"));
 			if (sipe_strequal("EXCH", type)) {
-				ews->as_url  = sipe_xml_data(sipe_xml_child(node, "ASUrl"));
-				ews->oof_url = sipe_xml_data(sipe_xml_child(node, "OOFUrl"));
-				ews->oab_url = sipe_xml_data(sipe_xml_child(node, "OABUrl"));
+				cal->as_url  = sipe_xml_data(sipe_xml_child(node, "ASUrl"));
+				cal->oof_url = sipe_xml_data(sipe_xml_child(node, "OOFUrl"));
+				cal->oab_url = sipe_xml_data(sipe_xml_child(node, "OABUrl"));
 
 				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:as_url %s",
-						ews->as_url ? ews->as_url : "");
+						cal->as_url ? cal->as_url : "");
 				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:oof_url %s",
-						ews->oof_url ? ews->oof_url : "");
+						cal->oof_url ? cal->oof_url : "");
 				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:oab_url %s",
-						ews->oab_url ? ews->oab_url : "");
+						cal->oab_url ? cal->oab_url : "");
 
 				g_free(type);
 				break;
@@ -417,48 +417,48 @@ sipe_ews_process_autodiscover(int return_code,
 
 		sipe_xml_free(xml);
 
-		ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
-		sipe_ews_run_state_machine(ews);
+		cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+		sipe_ews_run_state_machine(cal);
 
 	} else {
 		if (return_code < 0) {
-			ews->http_conn = NULL;
+			cal->http_conn = NULL;
 		}
-		switch (ews->auto_disco_method) {
+		switch (cal->auto_disco_method) {
 			case 1:
-				ews->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
+				cal->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
 			case 2:
-				ews->state = SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE; break;
+				cal->state = SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE; break;
 		}
-		sipe_ews_run_state_machine(ews);
+		sipe_ews_run_state_machine(cal);
 	}
 }
 
 static void
-sipe_ews_do_autodiscover(struct sipe_calendar *ews,
+sipe_ews_do_autodiscover(struct sipe_calendar *cal,
 			 const char* autodiscover_url)
 {
 	char *body;
 
 	SIPE_DEBUG_INFO("sipe_ews_do_autodiscover: going autodiscover url=%s", autodiscover_url ? autodiscover_url : "");
 
-	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, ews->email);
-	ews->http_conn = http_conn_create(
-				 ews->account,
+	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, cal->email);
+	cal->http_conn = http_conn_create(
+				 cal->account,
 				 HTTP_CONN_SSL,
 				 autodiscover_url,
 				 body,
 				 "text/xml",
-				 ews->auth,
+				 cal->auth,
 				 sipe_ews_process_autodiscover,
-				 ews);
+				 cal);
 	g_free(body);
 }
 
 static void
-sipe_ews_do_avail_request(struct sipe_calendar *ews)
+sipe_ews_do_avail_request(struct sipe_calendar *cal)
 {
-	if (ews->as_url) {
+	if (cal->as_url) {
 		char *body;
 		time_t end;
 		time_t now = time(NULL);
@@ -473,24 +473,24 @@ sipe_ews_do_avail_request(struct sipe_calendar *ews)
 		now_tm->tm_sec = 0;
 		now_tm->tm_min = 0;
 		now_tm->tm_hour = 0;
-		ews->fb_start = sipe_mktime_tz(now_tm, "UTC");
-		ews->fb_start -= 24*60*60;
+		cal->fb_start = sipe_mktime_tz(now_tm, "UTC");
+		cal->fb_start -= 24*60*60;
 		/* end = start + 4 days - 1 sec */
-		end = ews->fb_start + 4*(24*60*60) - 1;
+		end = cal->fb_start + 4*(24*60*60) - 1;
 
-		start_str = sipe_utils_time_to_str(ews->fb_start);
+		start_str = sipe_utils_time_to_str(cal->fb_start);
 		end_str = sipe_utils_time_to_str(end);
 
-		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, ews->email, start_str, end_str);
-		ews->http_conn = http_conn_create(
-					 ews->account,
+		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, cal->email, start_str, end_str);
+		cal->http_conn = http_conn_create(
+					 cal->account,
 					 HTTP_CONN_SSL,
-					 ews->as_url,
+					 cal->as_url,
 					 body,
 					 "text/xml; charset=UTF-8",
-					 ews->auth,
+					 cal->auth,
 					 sipe_ews_process_avail_response,
-					 ews);
+					 cal);
 		g_free(body);
 		g_free(start_str);
 		g_free(end_str);
@@ -498,83 +498,83 @@ sipe_ews_do_avail_request(struct sipe_calendar *ews)
 }
 
 static void
-sipe_ews_do_oof_request(struct sipe_calendar *ews)
+sipe_ews_do_oof_request(struct sipe_calendar *cal)
 {
-	if (ews->oof_url) {
+	if (cal->oof_url) {
 		char *body;
 		const char *content_type = "text/xml; charset=UTF-8";
 
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_do_oof_request: going OOF req.");
 
-		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, ews->email);
-		if (!ews->http_conn) {
-			ews->http_conn = http_conn_create(ews->account,
+		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, cal->email);
+		if (!cal->http_conn) {
+			cal->http_conn = http_conn_create(cal->account,
 							  HTTP_CONN_SSL,
-							  ews->oof_url,
+							  cal->oof_url,
 							  body,
 							  content_type,
-							  ews->auth,
+							  cal->auth,
 							  sipe_ews_process_oof_response,
-							  ews);
+							  cal);
 		} else {
-			http_conn_post(ews->http_conn,
-				       ews->oof_url,
+			http_conn_post(cal->http_conn,
+				       cal->oof_url,
 				       body,
 				       content_type,
 				       sipe_ews_process_oof_response,
-				       ews);
+				       cal);
 		}
 		g_free(body);
 	}
 }
 
 static void
-sipe_ews_run_state_machine(struct sipe_calendar *ews)
+sipe_ews_run_state_machine(struct sipe_calendar *cal)
 {
-	switch (ews->state) {
+	switch (cal->state) {
 		case SIPE_EWS_STATE_NONE:
 			{
-				char *maildomain = strstr(ews->email, "@") + 1;
+				char *maildomain = strstr(cal->email, "@") + 1;
 				char *autodisc_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
 
-				ews->auto_disco_method = 1;
+				cal->auto_disco_method = 1;
 
-				sipe_ews_do_autodiscover(ews, autodisc_url);
+				sipe_ews_do_autodiscover(cal, autodisc_url);
 
 				g_free(autodisc_url);
 				break;
 			}
 		case SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE:
 			{
-				char *maildomain = strstr(ews->email, "@") + 1;
+				char *maildomain = strstr(cal->email, "@") + 1;
 				char *autodisc_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
 
-				ews->auto_disco_method = 2;
+				cal->auto_disco_method = 2;
 
-				sipe_ews_do_autodiscover(ews, autodisc_url);
+				sipe_ews_do_autodiscover(cal, autodisc_url);
 
 				g_free(autodisc_url);
 				break;
 			}
 		case SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE:
-			ews->is_disabled = TRUE;
+			cal->is_disabled = TRUE;
 			break;
 		case SIPE_EWS_STATE_AUTODISCOVER_SUCCESS:
-			sipe_ews_do_avail_request(ews);
+			sipe_ews_do_avail_request(cal);
 			break;
 		case SIPE_EWS_STATE_AVAILABILITY_SUCCESS:
-			sipe_ews_do_oof_request(ews);
+			sipe_ews_do_oof_request(cal);
 			break;
 		case SIPE_EWS_STATE_OOF_SUCCESS:
-			ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
-			ews->is_updated = TRUE;
-			if (ews->sip->ocs2007) {
+			cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+			cal->is_updated = TRUE;
+			if (cal->sip->ocs2007) {
 				/* sipe.h */
-				publish_calendar_status_self(ews->sip->private,
+				publish_calendar_status_self(cal->sip->private,
 							     NULL);
 			} else {
 				/* sipe.h */
-				send_presence_soap(ews->sip, TRUE);
+				send_presence_soap(cal->sip, TRUE);
 			}
 			break;
 	}
@@ -587,25 +587,25 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: started.");
 
-	if (!sip->ews) {
+	if (!sip->cal) {
 		const char *value;
 
-		sip->ews = g_new0(struct sipe_calendar, 1);
-		sip->ews->sip = sip;
+		sip->cal = g_new0(struct sipe_calendar, 1);
+		sip->cal->sip = sip;
 
-		sip->ews->account = sip->account;
-		sip->ews->email   = g_strdup(sip->email);
+		sip->cal->account = sip->account;
+		sip->cal->email   = g_strdup(sip->email);
 
 		/* user specified a service URL? */
 		value = purple_account_get_string(sip->account, "email_url", NULL);
 		if (!is_empty(value)) {
-			sip->ews->as_url  = g_strdup(value);
-			sip->ews->oof_url = g_strdup(value);
-			sip->ews->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+			sip->cal->as_url  = g_strdup(value);
+			sip->cal->oof_url = g_strdup(value);
+			sip->cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		}
 
-		sip->ews->auth = g_new0(HttpConnAuth, 1);
-		sip->ews->auth->use_negotiate = purple_account_get_bool(sip->account, "krb5", FALSE);
+		sip->cal->auth = g_new0(HttpConnAuth, 1);
+		sip->cal->auth->use_negotiate = purple_account_get_bool(sip->account, "krb5", FALSE);
 
 		/* user specified email login? */
 		value = purple_account_get_string(sip->account, "email_login", NULL);
@@ -614,27 +614,27 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 			/* user specified email login domain? */
 			const char *tmp = strstr(value, "\\");
 			if (tmp) {
-				sip->ews->auth->domain = g_strndup(value, tmp - value);
-				sip->ews->auth->user   = g_strdup(tmp + 1);
+				sip->cal->auth->domain = g_strndup(value, tmp - value);
+				sip->cal->auth->user   = g_strdup(tmp + 1);
 			} else {
-				sip->ews->auth->user   = g_strdup(value);
+				sip->cal->auth->user   = g_strdup(value);
 			}
-			sip->ews->auth->password = g_strdup(purple_account_get_string(sip->account, "email_password", NULL));
+			sip->cal->auth->password = g_strdup(purple_account_get_string(sip->account, "email_password", NULL));
 
 		} else {
 			/* re-use SIPE credentials */
-			sip->ews->auth->domain   = g_strdup(sip->authdomain);
-			sip->ews->auth->user     = g_strdup(sip->authuser);
-			sip->ews->auth->password = g_strdup(sip->password);
+			sip->cal->auth->domain   = g_strdup(sip->authdomain);
+			sip->cal->auth->user     = g_strdup(sip->authuser);
+			sip->cal->auth->password = g_strdup(sip->password);
 		}
 	}
 
-	if(sip->ews->is_disabled) {
+	if(sip->cal->is_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
 		return;
 	}
 
-	sipe_ews_run_state_machine(sip->ews);
+	sipe_ews_run_state_machine(sip->cal);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: finished.");
 }
