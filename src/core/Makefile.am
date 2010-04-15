@@ -26,6 +26,8 @@ libsipe_core_la_SOURCES = \
 	sipe-core.c \
 	sipe-dialog.h \
 	sipe-dialog.c \
+	sipe-domino.h \
+	sipe-domino.c \
 	sipe-session.h \
 	sipe-session.c \
 	sipe-sign.h \
