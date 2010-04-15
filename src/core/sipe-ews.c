@@ -521,7 +521,8 @@ sipe_ews_do_oof_request(struct sipe_calendar *cal)
 							  sipe_ews_process_oof_response,
 							  cal);
 		} else {
-			http_conn_post(cal->http_conn,
+			http_conn_send(cal->http_conn,
+				       HTTP_CONN_POST,
 				       cal->oof_url,
 				       body,
 				       content_type,

@@ -58,6 +58,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-core.h"
 #include "sipe.h"
 #include "sipe-backend.h"
+#include "sipe-utils.h"
 #include "sipe-cal.h"
 #include "sipe-domino.h"
 #include "http-conn.h"
@@ -70,6 +71,95 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #define SIPE_DOMINO_LOGIN_REQUEST \
 "Username=%s&Password=%s"
 
+/**
+ * GET request to Domino server
+ * to obtain our Calendar information.
+ * @param start_time (%s) Ex.: 20090805T000000Z
+ * @param end_time   (%s) Ex.: 20090806T000000Z
+ */
+#define SIPE_DOMINO_CALENDAR_REQUEST \
+"/($Calendar)?ReadViewEntries&KeyType=time&StartKey=%s&UntilKey=%s&Count=-1&TZType=UTC"
+
+
+static void
+sipe_domino_process_calendar_response(int return_code,
+				 const char *body,
+				 HttpConn *conn,
+				 void *data)
+{
+	struct sipe_calendar *cal = data;
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_process_calendar_response: cb started.");
+
+	http_conn_set_close(conn);
+	cal->http_conn = NULL;
+
+	if (return_code == 200 && body) {
+		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: SUCCESS, ret=%d", return_code);
+
+	} else if (return_code < 0) {
+		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: rather FAILURE, ret=%d", return_code);
+	}
+}
+
+static void
+sipe_domino_do_calendar_request(struct sipe_calendar *cal)
+{
+	if (cal->as_url) {
+		char *url_req;
+		char *url;
+		time_t end;
+		time_t now = time(NULL);
+		char *start_str;
+		char *end_str;
+		struct tm *now_tm;
+
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_do_calendar_request: going Calendar req.");
+
+		now_tm = gmtime(&now);
+		/* start -1 day, 00:00:00 */
+		now_tm->tm_sec = 0;
+		now_tm->tm_min = 0;
+		now_tm->tm_hour = 0;
+		cal->fb_start = sipe_mktime_tz(now_tm, "UTC");
+		cal->fb_start -= 24*60*60;
+		/* end = start + 4 days - 1 sec */
+		end = cal->fb_start + 4*(24*60*60) - 1;
+
+		start_str = sipe_utils_time_to_str(cal->fb_start);
+		end_str = sipe_utils_time_to_str(end);
+
+		url_req = g_strdup_printf(SIPE_DOMINO_CALENDAR_REQUEST, start_str, end_str);
+		g_free(start_str);
+		g_free(end_str);
+
+		url = g_strconcat(cal->as_url, url_req, NULL);
+		g_free(url_req);
+		if (!cal->http_conn) {
+			cal->http_conn = http_conn_create(
+					 cal->account,
+					 HTTP_CONN_GET,
+					 HTTP_CONN_SSL,
+					 HTTP_CONN_NO_REDIRECT,
+					 url,
+					 NULL, /* body */
+					 NULL, /* content-type */
+					 cal->auth,
+					 sipe_domino_process_calendar_response,
+					 cal);
+		} else {
+			http_conn_send(cal->http_conn,
+				       HTTP_CONN_GET,
+				       url,
+				       NULL, /* body */
+				       NULL, /* content-type */
+				       sipe_domino_process_calendar_response,
+				       cal);
+		}
+		g_free(url);
+	}
+}
+
 static void
 sipe_domino_process_login_response(int return_code,
 				   const char *body,
@@ -80,14 +170,21 @@ sipe_domino_process_login_response(int return_code,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_process_login_response: cb started.");
 
-	http_conn_set_close(conn);
-	cal->http_conn = NULL;
+	if (return_code >= 200 && return_code < 400) {
+		SIPE_DEBUG_INFO("sipe_domino_process_login_response: rather SUCCESS, ret=%d", return_code);
+		
+		/* next query */
+		sipe_domino_do_calendar_request(cal);
+		
+	} else if (return_code < 0 || return_code >= 400) {
+		SIPE_DEBUG_INFO("sipe_domino_process_login_response: rather FAILURE, ret=%d", return_code);
+		//cal->http_conn = NULL;
+		
+		/* stop here */
+		//cal->is_disabled = TRUE;
 
-	if (return_code == 200 && body) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_process_login_response: SUCCESS");
-	} else if (return_code < 0) {
-		SIPE_DEBUG_INFO("sipe_domino_process_login_response: FAILURE, ret=%d", return_code);
-		cal->http_conn = NULL;
+		//http_conn_set_close(conn);
+		//cal->http_conn = NULL;
 	}
 }
 
@@ -113,25 +210,16 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		g_free(user);
 		g_free(password);
 		
-		if (!cal->http_conn) {
-			cal->http_conn = http_conn_create(cal->account,
-							  HTTP_CONN_POST,
-							  HTTP_CONN_SSL,
-							  HTTP_CONN_NO_REDIRECT,
-							  login_url,
-							  body,
-							  content_type,
-							  cal->auth,
-							  sipe_domino_process_login_response,
-							  cal);
-		} else {
-			http_conn_post(cal->http_conn,
-				       login_url,
-				       body,
-				       content_type,
-				       sipe_domino_process_login_response,
-				       cal);
-		}
+		cal->http_conn = http_conn_create(cal->account,
+						  HTTP_CONN_POST,
+						  HTTP_CONN_SSL,
+						  HTTP_CONN_NO_REDIRECT,
+						  login_url,
+						  body,
+						  content_type,
+						  cal->auth,
+						  sipe_domino_process_login_response,
+						  cal);
 		g_free(login_url);
 		g_free(body);
 	}
@@ -144,7 +232,12 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
 
 	sipe_cal_calendar_init(sip, NULL);
-	
+
+	if (sip->cal->is_disabled) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: disabled, exiting.");
+		return;
+	}
+
 	sipe_domino_do_login_request(sip->cal);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: finished.");

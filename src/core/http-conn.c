@@ -349,7 +349,7 @@ http_conn_input_cb_ssl(gpointer data,
         http_conn_process_input(http_conn);
 }
 static void
-http_conn_post0(HttpConn *http_conn,
+http_conn_send0(HttpConn *http_conn,
 	       const char *authorization);
 
 static void
@@ -369,7 +369,7 @@ http_conn_input0_cb_ssl(gpointer data,
 
 	purple_ssl_input_add(gsc, http_conn_input_cb_ssl, http_conn);
 
-	http_conn_post0(http_conn, NULL);
+	http_conn_send0(http_conn, NULL);
 }
 
 HttpConn *
@@ -515,7 +515,7 @@ http_conn_sendout_pkt(HttpConn *http_conn,
 }
 
 static void
-http_conn_post0(HttpConn *http_conn,
+http_conn_send0(HttpConn *http_conn,
 		const char *authorization)
 {
 	GString *outstr = g_string_new("");
@@ -539,7 +539,8 @@ http_conn_post0(HttpConn *http_conn,
 }
 
 void
-http_conn_post(	HttpConn *http_conn,
+http_conn_send(	HttpConn *http_conn,
+		const char *method,
 		const char *full_url,
 		const char *body,
 		const char *content_type,
@@ -547,20 +548,22 @@ http_conn_post(	HttpConn *http_conn,
 		void *data)
 {
 	if (!http_conn) {
-		SIPE_DEBUG_INFO_NOFORMAT("http_conn_post: NULL http_conn, exiting.");
+		SIPE_DEBUG_INFO_NOFORMAT("http_conn_send: NULL http_conn, exiting.");
 		return;
 	}
 
+	g_free(http_conn->method);
 	g_free(http_conn->url);
 	g_free(http_conn->body);
 	g_free(http_conn->content_type);
+	http_conn->method = g_strdup(method);
 	http_conn_parse_url(full_url, NULL, NULL, &http_conn->url);
 	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
 	http_conn->callback = callback;
 	http_conn->data = data;
 
-	http_conn_post0(http_conn, NULL);
+	http_conn_send0(http_conn, NULL);
 }
 
 static void
@@ -680,7 +683,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		authorization = g_strdup_printf("%s %s", auth_name, output_toked_base64 ? output_toked_base64 : "");
 		g_free(output_toked_base64);
 
-		http_conn_post0(http_conn, authorization);
+		http_conn_send0(http_conn, authorization);
 		g_free(authorization);
 	}
 	/* Other response */

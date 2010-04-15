@@ -70,7 +70,8 @@ http_conn_create(struct _PurpleAccount *account,
  * POST on existing http_conn connection.
  */
 void
-http_conn_post(	HttpConn *http_conn,
+http_conn_send(	HttpConn *http_conn,
+		const char *method,
 		const char *full_url,
 		const char *body,
 		const char *content_type,

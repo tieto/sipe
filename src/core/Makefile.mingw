@@ -71,7 +71,6 @@ CLEAN_C_SRC = \
 			sipe-digest.c \
 			sipe-buddy.c \
 			sipe-chat.c \
-			sipe-core.c \
 			sipe-dialog.c \
 			sipe-session.c \
 			sipe-utils.c \
@@ -90,6 +89,7 @@ PURPLE_C_SRC = \
 			../purple/purple-markup.c \
 			../purple/purple-network.c \
 			../purple/purple-plugin.c \
+			sipe-core.c \
 			sipe.c \
 			sipe-conf.c \
 			sipe-cal.c \
