@@ -735,11 +735,12 @@ http_conn_process_input_message(HttpConn *http_conn,
 		 */
 		if (http_conn->http_session && (set_cookie_hdr = sipmsg_find_header(msg, "Set-Cookie"))) {
 			char **parts;
-			char *cookie = http_conn->http_session->cookie;
 			char *tmp;
 			int i;
 
-			g_free(cookie);
+			g_free(http_conn->http_session->cookie);
+			http_conn->http_session->cookie = NULL;
+
 			parts = g_strsplit(set_cookie_hdr, ";", 0);
 			for (i = 0; parts[i]; i++) {
 				if (!strstr(parts[i], "path=") &&
@@ -747,15 +748,16 @@ http_conn_process_input_message(HttpConn *http_conn,
 				    !strstr(parts[i], "expires=") &&
 				    !strstr(parts[i], "secure"))
 				{
-					tmp = cookie;
-					cookie = !cookie ?
+					tmp = http_conn->http_session->cookie;
+					http_conn->http_session->cookie = !tmp ?
 						g_strdup(parts[i]) :
-						g_strconcat(cookie, ";", parts[i], NULL);
+						g_strconcat(http_conn->http_session->cookie, ";", parts[i], NULL);
 					g_free(tmp);
 				}
 			}
 			g_strfreev(parts);
-			SIPE_DEBUG_INFO("http_conn_process_input_message: Set cookie: %s", cookie ? cookie : "");
+			SIPE_DEBUG_INFO("http_conn_process_input_message: Set cookie: %s",
+				http_conn->http_session->cookie ? http_conn->http_session->cookie : "");
 		}
 
 		if (http_conn->callback) {

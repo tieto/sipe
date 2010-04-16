@@ -104,6 +104,7 @@ sipe_domino_process_calendar_response(int return_code,
 	
 	if (cal->http_session) {
 		http_conn_session_free(cal->http_session);
+		cal->http_session = NULL;
 	}
 }
 
