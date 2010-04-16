@@ -69,8 +69,6 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-domino.h"
 
 
-#define SIPE_DOMINO_FREE_BUSY_PERIOD_MULT	3
-
 /**
  * POST request for Login to Domino server
  * @param email      (%s) Should be URL-encoded. Ex.: alice@cosmo.local
@@ -138,7 +136,7 @@ sipe_domino_get_free_busy(time_t fb_start,
 {
 	GSList *entry = cal_events;
 	char *res;
-	const int slots = SIPE_FREE_BUSY_PERIOD_SEC*SIPE_DOMINO_FREE_BUSY_PERIOD_MULT / SIPE_FREE_BUSY_GRANULARITY_SEC;
+	const int slots = SIPE_FREE_BUSY_PERIOD_SEC / SIPE_FREE_BUSY_GRANULARITY_SEC;
 
 	if (!cal_events) return NULL;
 
@@ -262,6 +260,17 @@ sipe_domino_process_calendar_response(int return_code,
 		g_free(cal->free_busy);
 		cal->free_busy = sipe_domino_get_free_busy(cal->fb_start, cal->cal_events);
 		
+		/* update SIP server */
+		cal->is_updated = TRUE;
+		if (cal->sip->ocs2007) {
+			/* sipe.h */
+			publish_calendar_status_self(cal->sip->private,
+						     NULL);
+		} else {
+			/* sipe.h */
+			send_presence_soap(cal->sip, TRUE);
+		}
+
 	} else if (return_code < 0) {
 		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: rather FAILURE, ret=%d", return_code);
 	}
@@ -309,7 +318,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 		cal->fb_start = sipe_mktime_tz(now_tm, "UTC");
 		cal->fb_start -= 24*60*60;
 		/* end = start + 4 days - 1 sec */
-		end = cal->fb_start + SIPE_FREE_BUSY_PERIOD_SEC*SIPE_DOMINO_FREE_BUSY_PERIOD_MULT - 1;
+		end = cal->fb_start + SIPE_FREE_BUSY_PERIOD_SEC - 1;
 
 		start_str = sipe_domino_time_to_str(cal->fb_start);
 		end_str = sipe_domino_time_to_str(end);
