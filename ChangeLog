@@ -1,4 +1,6 @@
-version X.XX.X "" (2010-XX-XX)
+version 1.11.0 "Lotus Domino/Calendar" (2010-04-XX)
+	- Added integration with Lotus Domino. Now Sipe retrieves our Calendar data (Meeting schedule/subject/location) from web-enabled Lotus Domino server and publishes it to OCS2007/LCS2005. Thus our contacts can see our availability information based on Calendar data. For example: "Calendar: Currently Busy. Free at 11:30". Team members (contacts with access level Team) will be able to see information about our current meeting - subject and location (OCS2007).
+	First call to Lotus Domino is scheduled with 1 minute delay after Sipe start. Subsequent update intervals are 30 minutes. There is a way to manually trigger Calendar data update: Accounts->{SIPE_ACCOUNT}->"Republish Calendar" menu option. (pier11)
 	- Fixed #2982424: krb5 build errors on FreeBSD (Stefan Becker)
 	- Dropped UDP transport support (Stefan Becker)
 	- Rewrote TCP & TLS transport support (Stefan Becker)
