@@ -50,6 +50,8 @@ https://sourceforge.net/tracker/?func=detail&aid=2945346&group_id=194563&atid=94
 Similar functionality for iCalendar/CalDAV/Google would be great to implement too.
 */
 
+#include <string.h>
+
 #include <glib.h>
 
 /* @TODO replace purple_url_encode() with non-purple equiv. */
@@ -62,6 +64,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-backend.h"
 #include "sipe-utils.h"
 #include "sipe-cal.h"
+#include "sipe-xml.h"
 #include "sipe-domino.h"
 
 /**
@@ -81,6 +84,42 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #define SIPE_DOMINO_CALENDAR_REQUEST \
 "/($Calendar)?ReadViewEntries&KeyType=time&StartKey=%s&UntilKey=%s&Count=-1&TZType=UTC"
 
+/*
+<?xml version="1.0" encoding="UTF-8"?>
+<viewentries timestamp="20100416T112140,02Z" toplevelentries="77" rangeentries="
+1000">
+	<viewentry position="77" unid="C3A77CC76EAA7D08802576FD0043D7D0" noteid="27B42" siblings="77">
+		<entrydata columnnumber="0" name="$134">
+			<datetime>20100423T103000,00Z</datetime>
+		</entrydata>
+		<entrydata columnnumber="1" name="$149">
+			<number>158</number>
+		</entrydata>
+		<entrydata columnnumber="2" name="$144">
+			<datetime>20100423T103000,00Z</datetime>
+		</entrydata>
+		<entrydata columnnumber="3" name="$145">
+			<text>-</text>
+		</entrydata>
+		<entrydata columnnumber="4" name="$146">
+			<datetime>20100423T120000,00Z</datetime>
+		</entrydata>
+		<entrydata columnnumber="5" name="$147">
+			<textlist>
+				<text>G. S. ..I. L. T. Hall</text>
+				<text>Location: Auditorium - W. House</text>
+				<text>Chair: S. S.</text>
+			</textlist>
+		</entrydata>
+	</viewentry>
+	<viewentry .........
+</viewentries>
+*/
+
+#define VIEWENTITY_START0_TIME	"$134"
+#define VIEWENTITY_START_TIME	"$144"
+#define VIEWENTITY_END_TIME	"$146"
+#define VIEWENTITY_TEXT_LIST	"$147"
 
 static void
 sipe_domino_process_calendar_response(int return_code,
@@ -96,8 +135,53 @@ sipe_domino_process_calendar_response(int return_code,
 	cal->http_conn = NULL;
 
 	if (return_code == 200 && body) {
-		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: SUCCESS, ret=%d", return_code);
+		const sipe_xml *node, *node2, *node3;
+		sipe_xml *xml;
 
+		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: SUCCESS, ret=%d", return_code);
+		xml = sipe_xml_parse(body, strlen(body));
+
+		/* viewentry */
+		for (node = sipe_xml_child(xml, "viewentry");
+		     node;
+		     node = sipe_xml_twin(node))
+		{
+			SIPE_DEBUG_INFO("viewentry unid=%s", sipe_xml_attribute(node, "unid"));
+			
+			/* entrydata */
+			for (node2 = sipe_xml_child(node, "entrydata");
+			     node2;
+			     node2 = sipe_xml_twin(node2))
+			{
+				const char *name = sipe_xml_attribute(node2, "name");
+
+				SIPE_DEBUG_INFO("\tentrydata name=%s", name);
+				
+				if (sipe_strequal(name, VIEWENTITY_START0_TIME) ||
+				    sipe_strequal(name, VIEWENTITY_START_TIME) ||
+				    sipe_strequal(name, VIEWENTITY_END_TIME))
+				{
+					char *tmp = sipe_xml_data(sipe_xml_child(node2, "datetime"));
+					time_t time_val = sipe_utils_str_to_time(tmp);
+					
+					SIPE_DEBUG_INFO("\t\tdatetime=%s", asctime(gmtime(&time_val)));
+					g_free(tmp);
+				} else if (sipe_strequal(name, VIEWENTITY_TEXT_LIST)) {
+					/* test */
+					for (node3 = sipe_xml_child(node2, "textlist/text");
+					     node3;
+					     node3 = sipe_xml_twin(node3))
+					{
+						char *tmp = sipe_xml_data(node3);
+						
+						SIPE_DEBUG_INFO("\t\ttext=%s", tmp);
+						g_free(tmp);
+					}
+				}
+			}
+		}
+		
+		sipe_xml_free(xml);
 	} else if (return_code < 0) {
 		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: rather FAILURE, ret=%d", return_code);
 	}
@@ -145,7 +229,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 		cal->fb_start = sipe_mktime_tz(now_tm, "UTC");
 		cal->fb_start -= 24*60*60;
 		/* end = start + 4 days - 1 sec */
-		end = cal->fb_start + 4*(24*60*60) - 1;
+		end = cal->fb_start + 14*(24*60*60) - 1;
 
 		start_str = sipe_domino_time_to_str(cal->fb_start);
 		end_str = sipe_domino_time_to_str(end);
@@ -186,7 +270,7 @@ static void
 sipe_domino_process_login_response(int return_code,
 				   /* temporary? */
 				   SIPE_UNUSED_PARAMETER const char *body,
-				   SIPE_UNUSED_PARAMETER HttpConn *conn,
+				   HttpConn *conn,
 				   void *data)
 {
 	struct sipe_calendar *cal = data;
@@ -201,13 +285,12 @@ sipe_domino_process_login_response(int return_code,
 		
 	} else if (return_code < 0 || return_code >= 400) {
 		SIPE_DEBUG_INFO("sipe_domino_process_login_response: rather FAILURE, ret=%d", return_code);
-		//cal->http_conn = NULL;
 		
 		/* stop here */
-		//cal->is_disabled = TRUE;
+		cal->is_disabled = TRUE;
 
-		//http_conn_set_close(conn);
-		//cal->http_conn = NULL;
+		http_conn_set_close(conn);
+		cal->http_conn = NULL;
 	}
 }
 
