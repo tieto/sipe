@@ -92,6 +92,10 @@ gchar *sipe_media_get_callid(sipe_media_call *call);
 sipe_media * sipe_backend_media_new(sipe_media_call *call, gpointer account,
 									gchar* participant, gboolean initiator);
 
+gboolean sipe_backend_media_add_stream(sipe_media *media, gchar* participant,
+									   SipeMediaType type, gboolean use_nice,
+									   gboolean initiator);
+
 sipe_codec * sipe_backend_codec_new(int id, const char *name,
 									SipeMediaType type, guint clock_rate);
 
@@ -133,3 +137,8 @@ void sipe_backend_candidate_set_username_and_pwd(sipe_candidate *candidate,
 												 const gchar *password);
 
 GList* sipe_backend_get_local_candidates(sipe_media_call* call, gchar* participant);
+
+void sipe_backend_media_hold(sipe_media* call, gboolean local);
+void sipe_backend_media_unhold(sipe_media* call, gboolean local);
+void sipe_backend_media_hangup(sipe_media* media, gboolean local);
+

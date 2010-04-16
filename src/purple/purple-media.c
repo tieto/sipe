@@ -25,6 +25,11 @@
 #include "sipe-common.h"
 #include "sipe-media.h"
 #include "mediamanager.h"
+#include <nice/agent.h>
+
+static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type);
+static PurpleMediaCandidateType sipe_candidate_type_to_purple(SipeCandidateType type);
+static PurpleMediaNetworkProtocol sipe_network_protocol_to_purple(SipeNetworkProtocol proto);
 
 static void
 on_candidates_prepared_cb(sipe_media_call *call)
@@ -70,45 +75,34 @@ sipe_backend_media_new(sipe_media_call *call, gpointer account, gchar* participa
 	return (sipe_media*) media;
 }
 
-PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type)
+gboolean
+sipe_backend_media_add_stream(sipe_media *media, gchar* participant, SipeMediaType type,
+								gboolean use_nice, gboolean initiator)
 {
-	switch (type) {
-		case SIPE_MEDIA_AUDIO: return PURPLE_MEDIA_AUDIO;
-		case SIPE_MEDIA_VIDEO: return PURPLE_MEDIA_VIDEO;
-		default:			   return PURPLE_MEDIA_NONE;
+	PurpleMedia *prpl_media = (PurpleMedia *) media;
+	PurpleMediaSessionType prpl_type = sipe_media_to_purple(type);
+	GParameter *params = NULL;
+	guint params_cnt = 0;
+	gchar *transmitter;
+
+	if (use_nice) {
+		transmitter = "nice";
+		params_cnt = 2;
+
+		params = g_new0(GParameter, params_cnt);
+		params[0].name = "controlling-mode";
+		g_value_init(&params[0].value, G_TYPE_BOOLEAN);
+		g_value_set_boolean(&params[0].value, FALSE);
+		params[1].name = "compatibility-mode";
+		g_value_init(&params[1].value, G_TYPE_UINT);
+		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
+	} else {
+		transmitter = "rawudp";
 	}
+
+	return purple_media_add_stream(prpl_media, "sipe-voice", participant, prpl_type,
+								   initiator, transmitter, params_cnt, params);
 }
-
-/*SipeMediaType purple_media_to_sipe(PurpleMediaSessionType type)
-{
-	switch (type) {
-		case PURPLE_MEDIA_AUDIO: return SIPE_MEDIA_AUDIO;
-		case PURPLE_MEDIA_VIDEO: return SIPE_MEDIA_VIDEO;
-		default:				 return SIPE_MEDIA_AUDIO;
-	}
-}*/
-
-static PurpleMediaCandidateType
-sipe_candidate_type_to_purple(SipeCandidateType type)
-{
-	switch (type) {
-		case SIPE_CANDIDATE_TYPE_HOST:	return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
-		case SIPE_CANDIDATE_TYPE_RELAY:	return PURPLE_MEDIA_CANDIDATE_TYPE_RELAY;
-		case SIPE_CANDIDATE_TYPE_SRFLX:	return PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX;
-		default:						return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
-	}
-}
-
-static PurpleMediaNetworkProtocol
-sipe_network_protocol_to_purple(SipeNetworkProtocol proto)
-{
-	switch (proto) {
-		case SIPE_NETWORK_PROTOCOL_TCP:	return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
-		case SIPE_NETWORK_PROTOCOL_UDP:	return PURPLE_MEDIA_NETWORK_PROTOCOL_UDP;
-		default:						return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
-	}
-}
-
 
 sipe_codec *
 sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
@@ -248,6 +242,66 @@ GList*
 sipe_backend_get_local_candidates(sipe_media_call* call, gchar* participant)
 {
 	return purple_media_get_local_candidates(call->media, "sipe-voice", participant);
+}
+
+void
+sipe_backend_media_hold(sipe_media* media, gboolean local)
+{
+	PurpleMedia* m = (PurpleMedia*) media;
+	purple_media_stream_info(m, PURPLE_MEDIA_INFO_HOLD, NULL, NULL, local);
+}
+
+void
+sipe_backend_media_unhold(sipe_media* media, gboolean local)
+{
+	PurpleMedia* m = (PurpleMedia*) media;
+	purple_media_stream_info(m, PURPLE_MEDIA_INFO_UNHOLD, NULL, NULL, local);
+}
+
+void
+sipe_backend_media_hangup(sipe_media* media, gboolean local)
+{
+	PurpleMedia* m = (PurpleMedia*) media;
+	purple_media_stream_info(m, PURPLE_MEDIA_INFO_HANGUP, NULL, NULL, local);
+}
+
+PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type)
+{
+	switch (type) {
+		case SIPE_MEDIA_AUDIO: return PURPLE_MEDIA_AUDIO;
+		case SIPE_MEDIA_VIDEO: return PURPLE_MEDIA_VIDEO;
+		default:			   return PURPLE_MEDIA_NONE;
+	}
+}
+
+/*SipeMediaType purple_media_to_sipe(PurpleMediaSessionType type)
+{
+	switch (type) {
+		case PURPLE_MEDIA_AUDIO: return SIPE_MEDIA_AUDIO;
+		case PURPLE_MEDIA_VIDEO: return SIPE_MEDIA_VIDEO;
+		default:				 return SIPE_MEDIA_AUDIO;
+	}
+}*/
+
+static PurpleMediaCandidateType
+sipe_candidate_type_to_purple(SipeCandidateType type)
+{
+	switch (type) {
+		case SIPE_CANDIDATE_TYPE_HOST:	return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
+		case SIPE_CANDIDATE_TYPE_RELAY:	return PURPLE_MEDIA_CANDIDATE_TYPE_RELAY;
+		case SIPE_CANDIDATE_TYPE_SRFLX:	return PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX;
+		default:						return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
+	}
+}
+
+static PurpleMediaNetworkProtocol
+sipe_network_protocol_to_purple(SipeNetworkProtocol proto)
+{
+	switch (proto) {
+		case SIPE_NETWORK_PROTOCOL_TCP:	return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
+		case SIPE_NETWORK_PROTOCOL_UDP:	return PURPLE_MEDIA_NETWORK_PROTOCOL_UDP;
+		default:						return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
+	}
 }
 
 /*

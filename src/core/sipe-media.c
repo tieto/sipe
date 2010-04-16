@@ -28,7 +28,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <libpurple/mediamanager.h>
-#include <nice/agent.h>
 
 #include "sipe-core.h"
 #include "sipe.h"
@@ -525,14 +524,14 @@ sipe_media_dialog_init(struct sip_session* session, struct sipmsg *msg)
 
 static void candidates_prepared_cb(sipe_media_call *call)
 {
-	PurpleAccount* account = purple_media_get_account(call->media);
+	if (!call->legacy_mode) {
+		PurpleAccount* account = purple_media_get_account(call->media);
 
-	if (!call->sdp_response)
-		call->sdp_response = sipe_media_create_sdp(call, FALSE);
+		if (!call->sdp_response)
+			call->sdp_response = sipe_media_create_sdp(call, FALSE);
 
-	if (!purple_media_accepted(call->media, NULL, NULL))
-		if (!call->legacy_mode)
-			send_sip_response(account->gc, call->invitation, 183, "Session Progress", call->sdp_response);
+		send_sip_response(account->gc, call->invitation, 183, "Session Progress", call->sdp_response);
+	}
 }
 
 static void call_accept_cb(sipe_media_call *call, SIPE_UNUSED_PARAMETER gboolean local)
@@ -563,8 +562,7 @@ static void call_hold_cb(sipe_media_call *call, gboolean local)
 
 	call->state = SIPE_CALL_HELD;
 	notify_state_change(call->sip, local);
-	// TODO: refactor
-	purple_media_stream_info(call->media, PURPLE_MEDIA_INFO_HOLD, NULL, NULL, TRUE);
+	sipe_backend_media_hold(call->media, TRUE);
 }
 
 static void call_unhold_cb(sipe_media_call *call, gboolean local)
@@ -574,8 +572,7 @@ static void call_unhold_cb(sipe_media_call *call, gboolean local)
 
 	call->state = SIPE_CALL_RUNNING;
 	notify_state_change(call->sip, local);
-
-	purple_media_stream_info(call->media, PURPLE_MEDIA_INFO_UNHOLD, NULL, NULL, TRUE);
+	sipe_backend_media_unhold(call->media, TRUE);
 }
 
 static void call_hangup_cb(sipe_media_call *call, gboolean local)
@@ -616,17 +613,13 @@ sipe_media_call_init(struct sipmsg *msg)
 }
 
 void sipe_media_hold(struct sipe_account_data *sip) {
-	if (sip->media_call) {
-		purple_media_stream_info(sip->media_call->media, PURPLE_MEDIA_INFO_HOLD,
-								NULL, NULL, FALSE);
-	}
+	if (sip->media_call)
+		sipe_backend_media_hold(sip->media_call->media, FALSE);
 }
 
 void sipe_media_unhold(struct sipe_account_data *sip) {
-	if (sip->media_call) {
-		purple_media_stream_info(sip->media_call->media, PURPLE_MEDIA_INFO_UNHOLD,
-								NULL, NULL, FALSE);
-	}
+	if (sip->media_call)
+		sipe_backend_media_unhold(sip->media_call->media, FALSE);
 }
 
 void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
@@ -637,8 +630,6 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	sipe_media_call				*call;
 	struct sip_session			*session;
 	struct sip_dialog			*dialog;
-
-	GParameter *params;
 
 	if (sip->media_call) {
 		if (sipe_strequal(sip->media_call->dialog->callid, callid)) {
@@ -703,22 +694,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	call->dialog = dialog;
 	call->media = media;
 
-	if (call->legacy_mode) {
-		purple_media_add_stream((PurpleMedia*)media, "sipe-voice", dialog->with,
-							PURPLE_MEDIA_AUDIO, FALSE, "rawudp", 0, NULL);
-	} else {
-		params = g_new0(GParameter, 2);
-		params[0].name = "controlling-mode";
-		g_value_init(&params[0].value, G_TYPE_BOOLEAN);
-		g_value_set_boolean(&params[0].value, FALSE);
-		params[1].name = "compatibility-mode";
-		g_value_init(&params[1].value, G_TYPE_UINT);
-		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
-
-
-		purple_media_add_stream((PurpleMedia*)media, "sipe-voice", dialog->with,
-								PURPLE_MEDIA_AUDIO, FALSE, "nice", 2, params);
-	}
+	sipe_backend_media_add_stream(media, dialog->with, SIPE_MEDIA_AUDIO, !call->legacy_mode, FALSE);
 
 	purple_media_add_remote_candidates((PurpleMedia*)media, "sipe-voice", dialog->with,
 			                           call->remote_candidates);
@@ -743,10 +719,8 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 
 void sipe_media_hangup(struct sipe_account_data *sip)
 {
-	if (sip->media_call) {
-		purple_media_stream_info(sip->media_call->media, PURPLE_MEDIA_INFO_HANGUP,
-								NULL, NULL, FALSE);
-	}
+	if (sip->media_call)
+		sipe_backend_media_hangup(sip->media_call->media, FALSE);
 }
 
 /*
