@@ -576,8 +576,6 @@ static void sendout_pkt(PurpleConnection *gc, const char *buf)
 	g_free(tmp);
 
 	/* add packet to circular buffer */
-	if (purple_circ_buffer_get_max_read(sip->txbuf) > 0)
-		purple_circ_buffer_append(sip->txbuf, "\r\n", 2);
 	purple_circ_buffer_append(sip->txbuf, buf, strlen(buf));
 
 	/* initiate transmission */
