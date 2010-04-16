@@ -361,11 +361,11 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call, gbool
 	}
 
 	if (remote_candidate) {
-		PurpleMediaCandidate *first = call->remote_candidates->data;
-		PurpleMediaCandidate *second = call->remote_candidates->next->data;
+		sipe_candidate *first = call->remote_candidates->data;
+		sipe_candidate *second = call->remote_candidates->next->data;
 		tmp = g_strdup_printf("a=remote-candidates:1 %s %u 2 %s %u\r\n",
-			purple_media_candidate_get_ip(first), purple_media_candidate_get_port(first),
-			purple_media_candidate_get_ip(second), purple_media_candidate_get_port(second));
+			sipe_backend_candidate_get_ip(first), sipe_backend_candidate_get_port(first),
+			sipe_backend_candidate_get_ip(second), sipe_backend_candidate_get_port(second));
 
 		g_string_append(result, tmp);
 		g_free(tmp);
@@ -383,12 +383,11 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call, gbool
 
 static gchar*
 sipe_media_create_sdp(sipe_media_call *call, gboolean remote_candidate) {
-	PurpleMedia *media = call->media;
-	GList *local_codecs = purple_media_get_codecs(media, "sipe-voice");
-	GList *local_candidates = purple_media_get_local_candidates(media, "sipe-voice", call->dialog->with);
+	GList *local_codecs = sipe_backend_get_local_codecs(call);
+	GList *local_candidates = sipe_backend_get_local_candidates(call, call->dialog->with);
 
 	// TODO: more  sophisticated
-	guint16	local_port = purple_media_candidate_get_port(local_candidates->data);
+	guint16	local_port = sipe_backend_candidate_get_port(local_candidates->data);
 	const char *ip = sipe_utils_get_suitable_local_ip(-1);
 
 	gchar *sdp_codecs = sipe_media_sdp_codecs_format(local_codecs);
@@ -415,27 +414,6 @@ sipe_media_create_sdp(sipe_media_call *call, gboolean remote_candidate) {
 	g_free(sdp_candidates);
 
 	return body;
-}
-
-static void
-sipe_media_session_ready_cb(sipe_media_call *call)
-{
-	PurpleMedia *media = call->media;
-	PurpleAccount *account = purple_media_get_account(media);
-
-	if (!purple_media_candidates_prepared(media, NULL, NULL))
-		return;
-
-	if (!call->sdp_response)
-		call->sdp_response = sipe_media_create_sdp(call, FALSE);
-
-	if (!purple_media_accepted(media, NULL, NULL)) {
-		if (!call->legacy_mode)
-			send_sip_response(account->gc, call->invitation, 183, "Session Progress", call->sdp_response);
-	} else {
-		send_sip_response(account->gc, call->invitation, 200, "OK", call->sdp_response);
-		call->state = SIPE_CALL_RUNNING;
-	}
 }
 
 static void
@@ -475,48 +453,6 @@ notify_state_change(struct sipe_account_data *sip, gboolean local) {
 		gchar* body = sipe_media_create_sdp(sip->media_call, TRUE);
 		send_sip_response(sip->gc, sip->media_call->invitation, 200, "OK", body);
 		g_free(body);
-	}
-}
-
-static void
-sipe_media_stream_info_cb(PurpleMedia *media,
-							PurpleMediaInfoType type,
-							SIPE_UNUSED_PARAMETER gchar *sid,
-							SIPE_UNUSED_PARAMETER gchar *name,
-							gboolean local, struct sipe_account_data *sip)
-{
-	sipe_media_call *call = sip->media_call;
-
-	if (type == PURPLE_MEDIA_INFO_ACCEPT)
-		sipe_media_session_ready_cb(call);
-	else if (type == PURPLE_MEDIA_INFO_REJECT) {
-		PurpleAccount *account = purple_media_get_account(media);
-		send_sip_response(account->gc, call->invitation, 603, "Decline", NULL);
-		sipe_media_call_free(call);
-		sip->media_call = NULL;
-	} else if (type == PURPLE_MEDIA_INFO_HOLD) {
-		if (call->state == SIPE_CALL_HELD)
-			return;
-
-		call->state = SIPE_CALL_HELD;
-		notify_state_change(sip, local);
-		purple_media_stream_info(media, PURPLE_MEDIA_INFO_HOLD, NULL, NULL, TRUE);
-
-	} else if (type == PURPLE_MEDIA_INFO_UNHOLD) {
-		if (call->state == SIPE_CALL_RUNNING)
-			return;
-
-		call->state = SIPE_CALL_RUNNING;
-		notify_state_change(sip, local);
-
-		purple_media_stream_info(media, PURPLE_MEDIA_INFO_UNHOLD, NULL, NULL, TRUE);
-	} else if (type == PURPLE_MEDIA_INFO_HANGUP) {
-		call->state = SIPE_CALL_FINISHED;
-		if (local)
-			send_sip_request(sip->gc, "BYE", call->dialog->with, call->dialog->with,
-							NULL, NULL, call->dialog, NULL);
-		sipe_media_call_free(call);
-		sip->media_call = NULL;
 	}
 }
 
@@ -587,6 +523,71 @@ sipe_media_dialog_init(struct sip_session* session, struct sipmsg *msg)
 	return dialog;
 }
 
+static void candidates_prepared_cb(sipe_media_call *call)
+{
+	PurpleAccount* account = purple_media_get_account(call->media);
+
+	if (!call->sdp_response)
+		call->sdp_response = sipe_media_create_sdp(call, FALSE);
+
+	if (!purple_media_accepted(call->media, NULL, NULL))
+		if (!call->legacy_mode)
+			send_sip_response(account->gc, call->invitation, 183, "Session Progress", call->sdp_response);
+}
+
+static void call_accept_cb(sipe_media_call *call, SIPE_UNUSED_PARAMETER gboolean local)
+{
+	PurpleAccount* account = purple_media_get_account(call->media);
+
+	if (!call->sdp_response)
+		call->sdp_response = sipe_media_create_sdp(call, FALSE);
+
+	send_sip_response(account->gc, call->invitation, 200, "OK", call->sdp_response);
+	call->state = SIPE_CALL_RUNNING;
+}
+
+static void call_reject_cb(sipe_media_call *call, gboolean local)
+{
+	if (local) {
+		PurpleAccount *account = purple_media_get_account(call->media);
+		send_sip_response(account->gc, call->invitation, 603, "Decline", NULL);
+		call->sip->media_call = NULL;
+		sipe_media_call_free(call);
+	}
+}
+
+static void call_hold_cb(sipe_media_call *call, gboolean local)
+{
+	if (call->state == SIPE_CALL_HELD)
+		return;
+
+	call->state = SIPE_CALL_HELD;
+	notify_state_change(call->sip, local);
+	// TODO: refactor
+	purple_media_stream_info(call->media, PURPLE_MEDIA_INFO_HOLD, NULL, NULL, TRUE);
+}
+
+static void call_unhold_cb(sipe_media_call *call, gboolean local)
+{
+	if (call->state == SIPE_CALL_RUNNING)
+		return;
+
+	call->state = SIPE_CALL_RUNNING;
+	notify_state_change(call->sip, local);
+
+	purple_media_stream_info(call->media, PURPLE_MEDIA_INFO_UNHOLD, NULL, NULL, TRUE);
+}
+
+static void call_hangup_cb(sipe_media_call *call, gboolean local)
+{
+	call->state = SIPE_CALL_FINISHED;
+	if (local)
+		send_sip_request(call->sip->gc, "BYE", call->dialog->with, call->dialog->with,
+						NULL, NULL, call->dialog, NULL);
+	call->sip->media_call = NULL;
+	sipe_media_call_free(call);
+}
+
 static sipe_media_call *
 sipe_media_call_init(struct sipmsg *msg)
 {
@@ -603,6 +604,14 @@ sipe_media_call_init(struct sipmsg *msg)
 	call->legacy_mode = FALSE;
 	call->state = SIPE_CALL_CONNECTING;
 	call->remote_candidates = sipe_media_parse_remote_candidates(call);
+
+	call->candidates_prepared_cb	= candidates_prepared_cb;
+	call->call_accept_cb			= call_accept_cb;
+	call->call_reject_cb			= call_reject_cb;
+	call->call_hold_cb				= call_hold_cb;
+	call->call_unhold_cb			= call_unhold_cb;
+	call->call_hangup_cb			= call_hangup_cb;
+
 	return call;
 }
 
@@ -622,11 +631,9 @@ void sipe_media_unhold(struct sipe_account_data *sip) {
 
 void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
-	PurpleMediaManager			*manager = purple_media_manager_get();
-	PurpleMedia					*media;
-
 	const gchar					*callid = sipmsg_find_header(msg, "Call-ID");
 
+	sipe_media					*media;
 	sipe_media_call				*call;
 	struct sip_session			*session;
 	struct sip_dialog			*dialog;
@@ -667,7 +674,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 			}
 
 			call->remote_codecs = sipe_media_parse_remote_codecs(call);
-			call->remote_codecs = sipe_media_prune_remote_codecs(call->media, call->remote_codecs);
+			call->remote_codecs = sipe_media_prune_remote_codecs(call, call->remote_codecs);
 			if (!call->remote_codecs) {
 				// TODO: error no remote codecs
 			}
@@ -689,21 +696,15 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	session = sipe_session_find_or_add_chat_by_callid(sip, callid);
 	dialog = sipe_media_dialog_init(session, msg);
 
-	media = purple_media_manager_create_media(manager, sip->account,
-							"fsrtpconference", dialog->with, FALSE);
+	media = sipe_backend_media_new(call, sip->account, dialog->with, FALSE);
 
-	g_signal_connect(G_OBJECT(media), "stream-info",
-						G_CALLBACK(sipe_media_stream_info_cb), sip);
-	g_signal_connect_swapped(G_OBJECT(media), "candidates-prepared",
-						G_CALLBACK(sipe_media_session_ready_cb), call);
-
-
+	call->sip = sip;
 	call->session = session;
 	call->dialog = dialog;
 	call->media = media;
 
 	if (call->legacy_mode) {
-		purple_media_add_stream(media, "sipe-voice", dialog->with,
+		purple_media_add_stream((PurpleMedia*)media, "sipe-voice", dialog->with,
 							PURPLE_MEDIA_AUDIO, FALSE, "rawudp", 0, NULL);
 	} else {
 		params = g_new0(GParameter, 2);
@@ -715,11 +716,11 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
 
 
-		purple_media_add_stream(media, "sipe-voice", dialog->with,
+		purple_media_add_stream((PurpleMedia*)media, "sipe-voice", dialog->with,
 								PURPLE_MEDIA_AUDIO, FALSE, "nice", 2, params);
 	}
 
-	purple_media_add_remote_candidates(media, "sipe-voice", dialog->with,
+	purple_media_add_remote_candidates((PurpleMedia*)media, "sipe-voice", dialog->with,
 			                           call->remote_candidates);
 
 	call->remote_codecs = sipe_media_parse_remote_codecs(call);

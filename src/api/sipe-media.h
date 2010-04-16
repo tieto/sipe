@@ -51,11 +51,13 @@ typedef enum sipe_network_protocol {
 	SIPE_NETWORK_PROTOCOL_UDP
 } SipeNetworkProtocol;
 
+typedef gpointer sipe_media;
 typedef gpointer sipe_codec;
 typedef gpointer sipe_candidate;
 
 typedef struct _sipe_media_call {
 	gpointer			media;
+	struct sipe_account_data *sip;
 	struct sip_session	*session;
 	struct sip_dialog	*dialog;
 
@@ -69,6 +71,13 @@ typedef struct _sipe_media_call {
 	gchar				*sdp_response;
 	gboolean			legacy_mode;
 	SipeCallState		state;
+
+	void (*candidates_prepared_cb)(struct _sipe_media_call*);
+	void (*call_accept_cb)(struct _sipe_media_call*, gboolean local);
+	void (*call_reject_cb)(struct _sipe_media_call*, gboolean local);
+	void (*call_hold_cb)  (struct _sipe_media_call*, gboolean local);
+	void (*call_unhold_cb)(struct _sipe_media_call*, gboolean local);
+	void (*call_hangup_cb)(struct _sipe_media_call*, gboolean local);
 } sipe_media_call;
 
 void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg);
@@ -79,6 +88,9 @@ gchar *sipe_media_get_callid(sipe_media_call *call);
 
 
 /* Backend functions **********************************************************/
+
+sipe_media * sipe_backend_media_new(sipe_media_call *call, gpointer account,
+									gchar* participant, gboolean initiator);
 
 sipe_codec * sipe_backend_codec_new(int id, const char *name,
 									SipeMediaType type, guint clock_rate);
@@ -119,3 +131,5 @@ SipeNetworkProtocol sipe_backend_candidate_get_protocol(sipe_candidate *candidat
 void sipe_backend_candidate_set_username_and_pwd(sipe_candidate *candidate,
 												 const gchar *username,
 												 const gchar *password);
+
+GList* sipe_backend_get_local_candidates(sipe_media_call* call, gchar* participant);

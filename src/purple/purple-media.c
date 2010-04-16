@@ -22,8 +22,53 @@
 
 #include "glib.h"
 
+#include "sipe-common.h"
 #include "sipe-media.h"
-#include "media.h"
+#include "mediamanager.h"
+
+static void
+on_candidates_prepared_cb(sipe_media_call *call)
+{
+	if (call->candidates_prepared_cb)
+		call->candidates_prepared_cb(call);
+}
+
+static void
+on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
+				  PurpleMediaInfoType type,
+				  SIPE_UNUSED_PARAMETER gchar *sid,
+				  SIPE_UNUSED_PARAMETER gchar *name,
+				  gboolean local, sipe_media_call *call)
+{
+	if (type == PURPLE_MEDIA_INFO_ACCEPT && call->call_accept_cb)
+		call->call_accept_cb(call, local);
+	else if (type == PURPLE_MEDIA_INFO_REJECT && call->call_reject_cb)
+		call->call_reject_cb(call, local);
+	else if (type == PURPLE_MEDIA_INFO_HOLD && call->call_hold_cb)
+		call->call_hold_cb(call, local);
+	else if (type == PURPLE_MEDIA_INFO_UNHOLD && call->call_unhold_cb)
+		call->call_unhold_cb(call, local);
+	else if (type == PURPLE_MEDIA_INFO_HANGUP && call->call_hangup_cb)
+		call->call_hangup_cb(call, local);
+}
+
+sipe_media *
+sipe_backend_media_new(sipe_media_call *call, gpointer account, gchar* participant, gboolean initiator)
+{
+	PurpleAccount		*acc = account;
+	PurpleMediaManager	*manager = purple_media_manager_get();
+	PurpleMedia			*media;
+
+	media = purple_media_manager_create_media(manager, acc,
+							"fsrtpconference", participant, initiator);
+
+	g_signal_connect_swapped(G_OBJECT(media), "candidates-prepared",
+						G_CALLBACK(on_candidates_prepared_cb), call);
+	g_signal_connect(G_OBJECT(media), "stream-info",
+						G_CALLBACK(on_stream_info_cb), call);
+
+	return (sipe_media*) media;
+}
 
 PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type)
 {
@@ -103,7 +148,7 @@ sipe_backend_codec_get_optional_parameters(sipe_codec *codec)
 }
 
 gboolean
-sipe_backend_set_remote_codecs(struct _sipe_media_call* call, gchar* participant)
+sipe_backend_set_remote_codecs(sipe_media_call* call, gchar* participant)
 {
 	PurpleMedia	*media	= call->media;
 	GList		*codecs	= call->remote_codecs;
@@ -198,6 +243,48 @@ sipe_backend_candidate_set_username_and_pwd(sipe_candidate *candidate,
 {
 	g_object_set(candidate, "username", username, "password", password, NULL);
 }
+
+GList*
+sipe_backend_get_local_candidates(sipe_media_call* call, gchar* participant)
+{
+	return purple_media_get_local_candidates(call->media, "sipe-voice", participant);
+}
+
+/*
+void sipe_media_error_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* error, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
+{
+	printf("sipe_media_error_cb: %s\n", error);
+}
+
+void sipe_media_codecs_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* codec, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
+{
+	printf("sipe_media_codecs_changed_cb: %s\n", codec);
+}
+
+void sipe_media_level_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* sessionid, gchar* participant, gdouble percent, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
+{
+	printf("sipe_media_level_cb: %s %s %f\n", sessionid, participant, percent);
+}
+
+void sipe_media_new_candidate_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* sessionid, gchar* cname, PurpleMediaCandidate *candidate, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
+{
+	printf("sipe_media_new_candidate_cb: %s cname: %s %s %d\n", sessionid, cname,
+			purple_media_candidate_get_ip(candidate),
+			purple_media_candidate_get_port(candidate));
+}
+
+void sipe_media_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, PurpleMediaState state, gchar* sessionid, gchar* participant, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
+{
+	printf("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
+}
+
+g_signal_connect(G_OBJECT(media), "error", G_CALLBACK(sipe_media_error_cb), call);
+g_signal_connect(G_OBJECT(media), "codecs-changed", G_CALLBACK(sipe_media_codecs_changed_cb), call);
+g_signal_connect(G_OBJECT(media), "level", G_CALLBACK(sipe_media_level_cb), call);
+g_signal_connect(G_OBJECT(media), "new-candidate", G_CALLBACK(sipe_media_new_candidate_cb), call);
+g_signal_connect(G_OBJECT(media), "state-changed", G_CALLBACK(sipe_media_state_changed_cb), call);
+
+*/
 
 /*
   Local Variables:
