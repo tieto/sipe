@@ -78,6 +78,9 @@ http_conn_send(	HttpConn *http_conn,
 		HttpConnCallback callback,
 		void *data);
 
+gboolean
+http_conn_is_closed(HttpConn *http_conn);
+
 /**
  * Marks connection for close
  */

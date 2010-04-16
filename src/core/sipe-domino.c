@@ -151,7 +151,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 
 		url = g_strconcat(cal->as_url, url_req, NULL);
 		g_free(url_req);
-		if (!cal->http_conn) {
+		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
 			cal->http_conn = http_conn_create(
 					 cal->account,
 					 HTTP_CONN_GET,

@@ -509,7 +509,7 @@ sipe_ews_do_oof_request(struct sipe_calendar *cal)
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_do_oof_request: going OOF req.");
 
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, cal->email);
-		if (!cal->http_conn) {
+		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
 			cal->http_conn = http_conn_create(cal->account,
 							  HTTP_CONN_POST,
 							  HTTP_CONN_SSL,

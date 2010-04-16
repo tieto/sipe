@@ -24,7 +24,7 @@
 
 /**
  * Operates with HTTPS connection.
- * Support Negotiate (Windows only) and NTLM authentications, redirect.
+ * Support Negotiate (Windows only) and NTLM authentications, redirect, cookie, GET/POST.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -97,6 +97,8 @@ struct http_conn_struct {
 	SipSecContext sec_ctx;
 	int retries;
 
+	/* if server sends "Connection: close" header */
+	gboolean closed;
 	HttpConn* do_close;
 };
 
@@ -149,6 +151,12 @@ http_conn_free(HttpConn* http_conn)
 	}
 
 	g_free(http_conn);
+}
+
+gboolean
+http_conn_is_closed(HttpConn *http_conn)
+{
+	return http_conn->closed;
 }
 
 void
@@ -470,13 +478,20 @@ http_conn_process_input(HttpConn *http_conn)
 		if (msg->body) {
 			SIPE_DEBUG_INFO("body:\n%s", msg->body);
 		}
+		
+		/* important to set before callback call */
+		if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close")) {
+			http_conn->closed = TRUE;
+		}
 
 		http_conn_process_input_message(http_conn, msg);
-
+		
 		sipmsg_free(msg);
 	}
 
-	if (http_conn->do_close) {
+	if (http_conn->closed) {
+		http_conn_close(http_conn->do_close, "Server closed connection");
+	} else if (http_conn->do_close) {
 		http_conn_close(http_conn->do_close, "User initiated");
 	}
 }
