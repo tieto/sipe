@@ -142,12 +142,19 @@ sipe_domino_process_calendar_response(int return_code,
 		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: SUCCESS, ret=%d", return_code);
 		xml = sipe_xml_parse(body, strlen(body));
 
+		sipe_cal_events_free(cal->cal_events);
+		cal->cal_events = NULL;
 		/* viewentry */
 		for (node = sipe_xml_child(xml, "viewentry");
 		     node;
 		     node = sipe_xml_twin(node))
 		{
-			SIPE_DEBUG_INFO("viewentry unid=%s", sipe_xml_attribute(node, "unid"));
+			struct sipe_cal_event *cal_event = g_new0(struct sipe_cal_event, 1);
+			cal->cal_events = g_slist_append(cal->cal_events, cal_event);
+			cal_event->cal_status = SIPE_CAL_BUSY;
+			cal_event->is_meeting = TRUE;
+
+			/* SIPE_DEBUG_INFO("viewentry unid=%s", sipe_xml_attribute(node, "unid")); */
 			
 			/* entrydata */
 			for (node2 = sipe_xml_child(node, "entrydata");
@@ -165,6 +172,12 @@ sipe_domino_process_calendar_response(int return_code,
 					char *tmp = sipe_xml_data(sipe_xml_child(node2, "datetime"));
 					time_t time_val = sipe_utils_str_to_time(tmp);
 					
+					if (sipe_strequal(name, VIEWENTITY_START_TIME)) {					
+						cal_event->start_time = time_val;
+					} else if (sipe_strequal(name, VIEWENTITY_END_TIME)) {
+						cal_event->end_time = time_val;
+					}
+					
 					SIPE_DEBUG_INFO("\t\tdatetime=%s", asctime(gmtime(&time_val)));
 					g_free(tmp);
 				} else if (sipe_strequal(name, VIEWENTITY_TEXT_LIST)) {
@@ -181,18 +194,21 @@ sipe_domino_process_calendar_response(int return_code,
 
 						SIPE_DEBUG_INFO("\t\ttext=%s", tmp);
 						if (i == 0) {
+							cal_event->subject = g_strdup(tmp);
 							SIPE_DEBUG_INFO("\t\t*Subj.=%s", tmp);
 						} else {
 							/* plain English, don't localize! */
 							if (!g_ascii_strncasecmp(tmp, "Location:", 9)) {
 								if (strlen(tmp) > 9) {
-									SIPE_DEBUG_INFO("\t\t*Loc.=%s", g_strstrip(tmp+9));
+									cal_event->location = g_strdup(g_strstrip(tmp+9));
+									SIPE_DEBUG_INFO("\t\t*Loc.=%s", cal_event->location);
 								}
 							/* Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location */
 							} else if (g_str_has_prefix(tmp, _("Location:"))) {
-								int len = strlen(_("Location:"));
+								guint len = strlen(_("Location:"));
 								if (strlen(tmp) > len) {
-									SIPE_DEBUG_INFO("\t\t*Loc.=%s", g_strstrip(tmp+len));
+									cal_event->location = g_strdup(g_strstrip(tmp+len));
+									SIPE_DEBUG_INFO("\t\t*Loc.=%s", cal_event->location);
 								}
 							}
 						}
