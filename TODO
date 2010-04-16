@@ -1,6 +1,3 @@
-Feature Requests:
-	- #2945346: Lotus Notes/Domino Calendar integration.
-
 Bugs:
 	- #2834758: (sip-sec-ntlm.c) First NTLM signature check after startup fails
 
@@ -18,8 +15,9 @@ layer - timeouts.
 (In http-conn.c inputs are XML requests, outputs - XML responces or error codes.
 All lower level things like socket read/write operations, HTTP message forming, 
 NTLM/etc. authertication are all hidded behind http-conn.h API.
-So sip-ews.c client only operate with XML request/responce, it doesn't care what
-is underneath transport at all.)
+So sip-ews.c and sipe-domino.c clients only operate with XML request/responce, they don't care what
+is underneath transport at all.) http://www.networkdictionary.com/protocols/osimodel.php - 7 layer
+model - that must be taught at university.
 	- Update projects site with
 	  * SIPE features
           * better/more complete screenshots
