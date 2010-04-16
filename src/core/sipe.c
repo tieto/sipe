@@ -762,7 +762,6 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 		const gchar *body, struct sip_dialog *dialog, TransCallback tc)
 {
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	const char *addh = "";
 	char *buf;
 	struct sipmsg *msg;
 	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
@@ -802,8 +801,6 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 		cseq = ++sip->cseq;
 	}
 
-	if (addheaders) addh = addheaders;
-
 	buf = g_strdup_printf("%s %s SIP/2.0\r\n"
 			"Via: SIP/2.0/%s %s:%d%s%s\r\n"
 			"From: <sip:%s>%s%s;epid=%s\r\n"
@@ -835,7 +832,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			sipe_get_useragent(sip),
 			callid,
 			route,
-			addh,
+			addheaders ? addheaders : "",
 			body ? (gsize) strlen(body) : 0,
 			body ? body : "");
 
@@ -897,47 +894,44 @@ static void send_soap_request(struct sipe_account_data *sip, gchar *body)
 	send_soap_request_with_cb(sip, NULL, body, NULL, NULL);
 }
 
-static char *get_contact_register(struct sipe_account_data  *sip)
-{
-	char *epid = get_epid(sip);
-	char *uuid = generateUUIDfromEPID(epid);
-	char *buf = g_strdup_printf("<sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"", sipe_backend_network_ip_address(), sip->port,  TRANSPORT_DESCRIPTOR, uuid);
-	g_free(uuid);
-	g_free(epid);
-	return(buf);
-}
-
 static void do_register_exp(struct sipe_account_data *sip, int expire)
 {
 	char *uri;
 	char *expires;
 	char *to;
-	char *contact;
 	char *hdr;
+	char *epid;
+	char *uuid;
 
 	if (!SIP_TO_CORE_PUBLIC->sip_domain) return;
 
-	uri = sip_uri_from_name(SIP_TO_CORE_PUBLIC->sip_domain);
 	expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
-	to = sip_uri_self(sip);
-	contact = get_contact_register(sip);
-	hdr = g_strdup_printf("Contact: %s\r\n"
+	epid = get_epid(sip);
+	uuid = generateUUIDfromEPID(epid);
+	hdr = g_strdup_printf("Contact: <sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"\r\n"
 				    "Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
 				    "Event: registration\r\n"
 				    "Allow-Events: presence\r\n"
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
-				    "%s", contact, expires);
-	g_free(contact);
+				    "%s",
+			      sipe_backend_network_ip_address(),
+			      sip->port,
+			      TRANSPORT_DESCRIPTOR,
+			      uuid,
+			      expires);
+	g_free(uuid);
+	g_free(epid);
 	g_free(expires);
 
 	sip->registerstatus = 1;
 
+	uri = sip_uri_from_name(SIP_TO_CORE_PUBLIC->sip_domain);
+	to = sip_uri_self(sip);
 	send_sip_request(sip->gc, "REGISTER", uri, to, hdr, "", NULL,
 		process_register_response);
-
-	g_free(hdr);
-	g_free(uri);
 	g_free(to);
+	g_free(uri);
+	g_free(hdr);
 }
 
 static void do_register_cb(struct sipe_core_private *sipe_private,
