@@ -78,7 +78,6 @@
 #include "request.h"
 #include "savedstatuses.h"
 #include "sslconn.h"
-#include "version.h"
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
 
@@ -8990,7 +8989,7 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 
 	if (sipe_public) { //happens on pidgin exit
 		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-		struct sipe_buddy *sbuddy = g_hash_table_lookup(SIP_TO_CORE_PRIVATE->buddies, name);
+		struct sipe_buddy *sbuddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, name);
 		if (sbuddy) {
 			note = sbuddy->note;
 			is_oof_note = sbuddy->is_oof_note;
@@ -8999,7 +8998,7 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 			meeting_subject = sbuddy->meeting_subject;
 			meeting_location = sbuddy->meeting_location;
 		}
-		if (sip && sip->ocs2007) {
+		if (sip->ocs2007) {
 			gboolean is_group_access = FALSE;
 			const int container_id = sipe_find_access_level(sip, "user", sipe_get_no_sip_uri(name), &is_group_access);
 			const char *access_level = sipe_get_access_level_name(container_id);
