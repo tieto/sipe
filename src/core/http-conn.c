@@ -45,6 +45,7 @@
 
 #include "core-depurple.h" /* temporary */
 
+#include "http-conn.h"
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
@@ -52,7 +53,6 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-utils.h"
-#include "http-conn.h"
 #include "sipe.h"
 
 /**
@@ -85,8 +85,6 @@ struct http_conn_struct {
 	HttpConnAuth *auth;
 	HttpConnCallback callback;
 	void *data;
-	
-	char *cookie;
 
 	/* SSL connection */
 	PurpleSslConnection *gsc;
@@ -96,10 +94,16 @@ struct http_conn_struct {
 	struct sip_connection *conn;
 	SipSecContext sec_ctx;
 	int retries;
+	
+	HttpSession *http_session;
 
 	/* if server sends "Connection: close" header */
 	gboolean closed;
 	HttpConn* do_close;
+};
+
+struct http_session_struct {
+	char *cookie;
 };
 
 static HttpConn*
@@ -108,6 +112,7 @@ http_conn_clone(HttpConn* http_conn)
 	HttpConn *res = g_new0(HttpConn, 1);
 
 	res->account = http_conn->account;
+	res->http_session = http_conn->http_session;
 	res->method = g_strdup(http_conn->method);
 	res->conn_type = g_strdup(http_conn->conn_type);
 	res->allow_redirect = http_conn->allow_redirect;
@@ -134,11 +139,12 @@ http_conn_clone(HttpConn* http_conn)
 	return res;
 }
 
-static void
+void
 http_conn_free(HttpConn* http_conn)
 {
 	if (!http_conn) return;
 
+	/* don't free "http_conn->http_session" - client should do */
 	g_free(http_conn->method);
 	g_free(http_conn->conn_type);
 	g_free(http_conn->host);
@@ -157,6 +163,22 @@ gboolean
 http_conn_is_closed(HttpConn *http_conn)
 {
 	return http_conn->closed;
+}
+
+HttpSession *
+http_conn_session_create()
+{
+	HttpSession *res = g_new0(HttpSession, 1);
+	return res;
+}
+
+void
+http_conn_session_free(HttpSession *http_session)
+{
+	if (!http_session) return;
+
+	g_free(http_session->cookie);
+	g_free(http_session);
 }
 
 void
@@ -382,6 +404,7 @@ http_conn_input0_cb_ssl(gpointer data,
 
 HttpConn *
 http_conn_create(PurpleAccount *account,
+		 HttpSession *http_session,
 		 const char *method,
 		 const char *conn_type,
 		 gboolean allow_redirect,
@@ -403,6 +426,7 @@ http_conn_create(PurpleAccount *account,
 	http_conn_parse_url(full_url, &http_conn->host, &http_conn->port, &http_conn->url);
 
 	http_conn->account = account;
+	http_conn->http_session = http_session;
 	http_conn->method = g_strdup(method);
 	http_conn->conn_type = g_strdup(conn_type);
 	http_conn->allow_redirect = allow_redirect;
@@ -541,8 +565,8 @@ http_conn_send0(HttpConn *http_conn,
 				http_conn->host,
 				http_conn->body ? (int)strlen(http_conn->body) : 0,
 				http_conn->content_type ? http_conn->content_type : "text/plain");
-	if (http_conn->cookie) {
-		g_string_append_printf(outstr, "Cookie: %s\r\n", http_conn->cookie);
+	if (http_conn->http_session && http_conn->http_session->cookie) {
+		g_string_append_printf(outstr, "Cookie: %s\r\n", http_conn->http_session->cookie);
 	}
 	if (authorization) {
 		g_string_append_printf(outstr, "Authorization: %s\r\n", authorization);
@@ -703,18 +727,19 @@ http_conn_process_input_message(HttpConn *http_conn,
 	}
 	/* Other response */
 	else {
-		const char *set_cookie_hdr = sipmsg_find_header(msg, "Set-Cookie");
+		const char *set_cookie_hdr;
 		http_conn->retries = 0;
 		
 		/* Set cookies.
 		 * Set-Cookie: RMID=732423sdfs73242; expires=Fri, 31-Dec-2010 23:59:59 GMT; path=/; domain=.example.net
 		 */
-		if (set_cookie_hdr) {
+		if (http_conn->http_session && (set_cookie_hdr = sipmsg_find_header(msg, "Set-Cookie"))) {
 			char **parts;
+			char *cookie = http_conn->http_session->cookie;
 			char *tmp;
 			int i;
 
-			g_free(http_conn->cookie);
+			g_free(cookie);
 			parts = g_strsplit(set_cookie_hdr, ";", 0);
 			for (i = 0; parts[i]; i++) {
 				if (!strstr(parts[i], "path=") &&
@@ -722,15 +747,15 @@ http_conn_process_input_message(HttpConn *http_conn,
 				    !strstr(parts[i], "expires=") &&
 				    !strstr(parts[i], "secure"))
 				{
-					tmp = http_conn->cookie;
-					http_conn->cookie = !http_conn->cookie ?
+					tmp = cookie;
+					cookie = !cookie ?
 						g_strdup(parts[i]) :
-						g_strconcat(http_conn->cookie, ";", parts[i], NULL);
+						g_strconcat(cookie, ";", parts[i], NULL);
 					g_free(tmp);
 				}
 			}
 			g_strfreev(parts);
-			SIPE_DEBUG_INFO("http_conn_process_input_message: Set cookie: %s", http_conn->cookie ? http_conn->cookie : "");
+			SIPE_DEBUG_INFO("http_conn_process_input_message: Set cookie: %s", cookie ? cookie : "");
 		}
 
 		if (http_conn->callback) {

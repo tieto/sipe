@@ -32,6 +32,7 @@
 
 #include <glib.h>
 
+#include "http-conn.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-core.h"
@@ -39,7 +40,6 @@
 #include "sipe-nls.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "http-conn.h"
 #include "sipe.h"
 
 #include "account.h"
@@ -188,6 +188,14 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 	g_free(cal->working_hours_xml_str);
 
 	sipe_cal_events_free(cal->cal_events);
+
+	if (cal->http_conn) {
+		http_conn_free(cal->http_conn);
+	}
+	
+	if (cal->http_session) {
+		http_conn_session_free(cal->http_session);
+	}
 
 	g_free(cal);
 }

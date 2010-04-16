@@ -57,7 +57,7 @@ struct sipe_calendar {
 	int state;
 	char *email;
 	char *legacy_dn;
-	struct http_conn_auth *auth;
+	HttpConnAuth *auth;
 	struct _PurpleAccount *account;
 	int auto_disco_method;
 	int is_disabled;
@@ -74,7 +74,8 @@ struct sipe_calendar {
 	time_t updated;
 	gboolean published;
 	
-	struct http_conn_struct *http_conn;
+	HttpSession *http_session;
+	HttpConn *http_conn;
 	
 	time_t fb_start;
 	/* hex form */

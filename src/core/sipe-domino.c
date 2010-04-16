@@ -55,6 +55,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 /* @TODO replace purple_url_encode() with non-purple equiv. */
 #include "util.h"
 
+#include "http-conn.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe.h"
@@ -62,7 +63,6 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-utils.h"
 #include "sipe-cal.h"
 #include "sipe-domino.h"
-#include "http-conn.h"
 
 /**
  * POST request for Login to Domino server
@@ -100,6 +100,10 @@ sipe_domino_process_calendar_response(int return_code,
 
 	} else if (return_code < 0) {
 		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: rather FAILURE, ret=%d", return_code);
+	}
+	
+	if (cal->http_session) {
+		http_conn_session_free(cal->http_session);
 	}
 }
 
@@ -154,6 +158,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
 			cal->http_conn = http_conn_create(
 					 cal->account,
+					 cal->http_session,
 					 HTTP_CONN_GET,
 					 HTTP_CONN_SSL,
 					 HTTP_CONN_NO_REDIRECT,
@@ -228,6 +233,7 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		g_free(password);
 		
 		cal->http_conn = http_conn_create(cal->account,
+						  cal->http_session,
 						  HTTP_CONN_POST,
 						  HTTP_CONN_SSL,
 						  HTTP_CONN_NO_REDIRECT,
@@ -249,6 +255,10 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
 
 	sipe_cal_calendar_init(sip, NULL);
+	if (sip->cal->http_session) {
+		http_conn_session_free(sip->cal->http_session);
+	}
+	sip->cal->http_session = http_conn_session_create();
 
 	if (sip->cal->is_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: disabled, exiting.");

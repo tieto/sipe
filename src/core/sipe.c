@@ -82,6 +82,7 @@
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
 
+#include "http-conn.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-sec.h"
@@ -103,7 +104,6 @@
 #include "sipe-sign.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "http-conn.h"
 #include "uuid.h"
 #include "sipe.h"
 

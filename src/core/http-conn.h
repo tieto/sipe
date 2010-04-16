@@ -46,16 +46,18 @@ typedef struct http_conn_auth HttpConnAuth;
 
 struct http_conn_struct;
 typedef struct http_conn_struct HttpConn;
+typedef struct http_session_struct HttpSession;
 
 /** callback */
 typedef void (*HttpConnCallback) (int return_code, const char *body,
 				  HttpConn *conn, void *data);
 
 /**
- * Creates SSL connection and POST.
+ * Creates SSL connection and sends.
  */
 HttpConn *
 http_conn_create(struct _PurpleAccount *account,
+		 HttpSession *http_session,
 		 const char *method,
 		 const char *conn_type,
 		 gboolean allow_redirect,
@@ -67,7 +69,7 @@ http_conn_create(struct _PurpleAccount *account,
 		 void *data);
 
 /**
- * POST on existing http_conn connection.
+ * Sends on existing http_conn connection.
  */
 void
 http_conn_send(	HttpConn *http_conn,
@@ -88,4 +90,13 @@ void
 http_conn_set_close(HttpConn* http_conn);
 
 void
-http_conn_auth_free(struct http_conn_auth* auth);
+http_conn_free(HttpConn* http_conn);
+
+void
+http_conn_auth_free(HttpConnAuth* auth);
+
+HttpSession *
+http_conn_session_create(void);
+
+void
+http_conn_session_free(HttpSession *http_session);
