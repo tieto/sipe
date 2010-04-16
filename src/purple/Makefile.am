@@ -10,7 +10,8 @@ MAINTAINERCLEANFILES = \
 libsipe_backend_la_SOURCES = \
 	purple-debug.c \
 	purple-markup.c \
-	purple-network.c
+	purple-network.c \
+	purple-transport.c
 
 libsipe_la_SOURCES = \
 	purple-plugin.c

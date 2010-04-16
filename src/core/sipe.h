@@ -120,10 +120,7 @@ struct sipe_account_data {
 	GSList *allow_events;
 	struct _PurpleSrvQueryData *srv_query_data;
 	const struct sipe_service_data *service_data;
-	int fd;
-	int port;
 	int cseq;
-	time_t last_keepalive;
 	int registerstatus; /* 0 nothing, 1 first registration send, 2 auth received, 3 registered */
 	struct sip_auth registrar;
 	struct sip_auth proxy;
@@ -154,18 +151,13 @@ struct sipe_account_data {
 	GSList *containers; /* MS-PRES containers */
 	guint keepalive_timeout;
 	struct _PurpleAccount *account;
-	struct _PurpleCircBuffer *txbuf;
-	guint tx_handler;
-	struct sip_connection rx_conn;
 	gchar *regcallid;
 	GSList *transactions;
 	GSList *sessions;
 	GSList *groups;
 	GHashTable *filetransfers;
-	sipe_transport_type transport;
 	gboolean auto_transport;
-	struct _PurpleSslConnection *gsc;
-	gchar *realhostname;
+	/* gchar *realhostname; */
 	int realport; /* port and hostname from SRV record */
 	gboolean processing_input;
 	struct sipe_calendar *cal;
@@ -180,6 +172,17 @@ struct sipe_account_data {
 	 * - User status
 	 */
 	gchar *user_states;
+
+	/* transport-related state. This will be moved to backend... */
+	/* struct sipe_transport_connection *transport; */
+	sipe_transport_type transport;
+	struct _PurpleSslConnection *gsc;
+	int fd;
+	int port; /* client port */
+	guint tx_handler;
+	struct _PurpleCircBuffer *txbuf;
+	struct sip_connection rx_conn;
+	time_t last_keepalive;
 };
 
 struct sipe_auth_job {

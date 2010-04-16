@@ -5401,7 +5401,7 @@ sipe_get_auth_scheme_name(struct sipe_account_data *sip)
 }
 
 static void sipe_connection_cleanup(struct sipe_account_data *);
-static void create_connection(struct sipe_account_data *, gchar *, int);
+static void create_connection(struct sipe_account_data *, const gchar *, int);
 
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
@@ -5651,6 +5651,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					SIPE_DEBUG_INFO("process_register_response: redirected to host %s port %d transport %s",
 							hostname, port, TRANSPORT_DESCRIPTOR);
 					create_connection(sip, hostname, port);
+					g_free(hostname);
 				}
 				g_free(redirect);
 			}
@@ -8353,7 +8354,8 @@ static void login_tcp_cb(gpointer data, gint source,
 	login_common(data, NULL, source);
 }
 
-static void create_connection(struct sipe_account_data *sip, gchar *hostname, int port)
+static void create_connection(struct sipe_account_data *sip,
+			      const gchar *hostname, int port)
 {
 	PurpleAccount *account = sip->account;
 	PurpleConnection *gc = sip->gc;
@@ -8362,7 +8364,6 @@ static void create_connection(struct sipe_account_data *sip, gchar *hostname, in
 		port = (sip->transport == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
 	}
 
-	sip->realhostname = hostname;
 	sip->realport = port;
 
 	SIPE_DEBUG_INFO("create_connection - hostname: %s port: %d",
@@ -8424,15 +8425,15 @@ static void resolve_next_service(struct sipe_account_data *sip,
 	} else {
 		sip->service_data++;
 		if (sip->service_data->service == NULL) {
-			gchar *hostname;
 			/* Try connecting to the SIP hostname directly */
 			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; using SIP domain as fallback");
 			if (sip->auto_transport) {
 				sip->transport = SIPE_TRANSPORT_TLS;
 			}
 
-			hostname = g_strdup(SIP_TO_CORE_PUBLIC->sip_domain);
-			create_connection(sip, hostname, 0);
+			create_connection(sip,
+					  SIP_TO_CORE_PUBLIC->sip_domain,
+					  0);
 			return;
 		}
 	}
@@ -8461,6 +8462,7 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 		sip->transport = sip->service_data->type;
 
 		create_connection(sip, hostname, port);
+		g_free(hostname);
 	} else {
 		resolve_next_service(sip, NULL);
 	}
@@ -8570,7 +8572,7 @@ void sipe_core_connect(struct sipe_core_public *sipe_public,
 				server, port_number);
 
 		sip->transport = transport;
-		create_connection(sip, g_strdup(server), port_number);
+		create_connection(sip, server, port_number);
 	} else {
 		/* Server auto-discovery */
 		switch (transport) {
@@ -8620,9 +8622,6 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	if (sip->txbuf)
 		purple_circ_buffer_destroy(sip->txbuf);
 	sip->txbuf = NULL;
-
-	g_free(sip->realhostname);
-	sip->realhostname = NULL;
 
 	g_free(sip->server_version);
 	sip->server_version = NULL;

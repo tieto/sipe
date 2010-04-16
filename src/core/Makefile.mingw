@@ -89,6 +89,7 @@ PURPLE_C_SRC = \
 			../purple/purple-markup.c \
 			../purple/purple-network.c \
 			../purple/purple-plugin.c \
+			../purple/purple-transport.c \
 			sipe-core.c \
 			sipe.c \
 			sipe-conf.c \

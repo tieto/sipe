@@ -55,6 +55,24 @@ typedef enum {
 } sipe_transport_type;
 
 /**
+ * Transport connection (public part)
+ *
+ * The receiver in the backend fills "buffer". The backend has to zero
+ * terminate the buffer before calling the processing function in the core.
+ *
+ * The processing function in the core can remove content from the buffer.
+ * It has to update buffer_used accordingly.
+ *
+ */
+struct sipe_transport_connection {
+	gchar *buffer;
+	gsize buffer_used;        /* 0 < buffer_used < buffer_length */
+	gsize buffer_length;      /* read-only */
+	sipe_transport_type type; /* read-only */
+	guint client_port;        /* read-only */
+};
+
+/**
  * Opaque data type for backend private data.
  * The backend is responsible to allocate and free it.
  */
