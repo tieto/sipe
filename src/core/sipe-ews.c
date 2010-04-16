@@ -477,7 +477,7 @@ sipe_ews_do_avail_request(struct sipe_calendar *cal)
 		cal->fb_start = sipe_mktime_tz(now_tm, "UTC");
 		cal->fb_start -= 24*60*60;
 		/* end = start + 4 days - 1 sec */
-		end = cal->fb_start + 4*(24*60*60) - 1;
+		end = cal->fb_start + SIPE_FREE_BUSY_PERIOD_SEC - 1;
 
 		start_str = sipe_utils_time_to_str(cal->fb_start);
 		end_str = sipe_utils_time_to_str(end);

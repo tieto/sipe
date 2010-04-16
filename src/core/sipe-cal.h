@@ -38,6 +38,11 @@ struct _sipe_xml;
 #define SIPE_CAL_OOF        3
 #define SIPE_CAL_NO_DATA    4
 
+/* Default granularity of FreeBusy data is 15 minutes */
+#define SIPE_FREE_BUSY_GRANULARITY_SEC	(15*60)
+/* FreeBusy stream duration in seconds. Defaults to 4 days */
+#define SIPE_FREE_BUSY_PERIOD_SEC	(4*(24*60*60))
+
 struct sipe_cal_event {
 	time_t start_time;
 	time_t end_time;

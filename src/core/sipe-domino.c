@@ -68,6 +68,9 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-xml.h"
 #include "sipe-domino.h"
 
+
+#define SIPE_DOMINO_FREE_BUSY_PERIOD_MULT	3
+
 /**
  * POST request for Login to Domino server
  * @param email      (%s) Should be URL-encoded. Ex.: alice@cosmo.local
@@ -122,6 +125,41 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #define VIEWENTITY_END_TIME	"$146"
 #define VIEWENTITY_TEXT_LIST	"$147"
 
+
+static int
+sipe_domino_get_slot_no(time_t fb_start, time_t in)
+{
+	return (in - fb_start) / SIPE_FREE_BUSY_GRANULARITY_SEC;
+}
+
+static char *
+sipe_domino_get_free_busy(time_t fb_start,
+			  GSList *cal_events)
+{
+	GSList *entry = cal_events;
+	char *res;
+	const int slots = SIPE_FREE_BUSY_PERIOD_SEC*SIPE_DOMINO_FREE_BUSY_PERIOD_MULT / SIPE_FREE_BUSY_GRANULARITY_SEC;
+
+	if (!cal_events) return NULL;
+
+	res = g_malloc0(slots + 1);
+	memset(res, (SIPE_CAL_FREE + '0'), slots);
+
+	while (entry) {
+		struct sipe_cal_event *cal_event = entry->data;	
+		int start = sipe_domino_get_slot_no(fb_start, cal_event->start_time);
+		int end = sipe_domino_get_slot_no(fb_start, (cal_event->end_time - 1));
+		int i;
+
+		for (i = start; i <= end; i++) {
+			res[i] = SIPE_CAL_BUSY + '0';
+		}	
+		entry = entry->next;
+	}
+	SIPE_DEBUG_INFO("sipe_domino_get_free_busy: res=\n%s", res);
+	return res;
+}
+
 static void
 sipe_domino_process_calendar_response(int return_code,
 				 const char *body,
@@ -155,7 +193,7 @@ sipe_domino_process_calendar_response(int return_code,
 			cal_event->is_meeting = TRUE;
 
 			/* SIPE_DEBUG_INFO("viewentry unid=%s", sipe_xml_attribute(node, "unid")); */
-			
+
 			/* entrydata */
 			for (node2 = sipe_xml_child(node, "entrydata");
 			     node2;
@@ -218,12 +256,16 @@ sipe_domino_process_calendar_response(int return_code,
 				}
 			}
 		}
-		
 		sipe_xml_free(xml);
+		
+		/* creates FreeBusy from cal->cal_events */
+		g_free(cal->free_busy);
+		cal->free_busy = sipe_domino_get_free_busy(cal->fb_start, cal->cal_events);
+		
 	} else if (return_code < 0) {
 		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: rather FAILURE, ret=%d", return_code);
 	}
-	
+
 	if (cal->http_session) {
 		http_conn_session_free(cal->http_session);
 		cal->http_session = NULL;
@@ -267,7 +309,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 		cal->fb_start = sipe_mktime_tz(now_tm, "UTC");
 		cal->fb_start -= 24*60*60;
 		/* end = start + 4 days - 1 sec */
-		end = cal->fb_start + 14*(24*60*60) - 1;
+		end = cal->fb_start + SIPE_FREE_BUSY_PERIOD_SEC*SIPE_DOMINO_FREE_BUSY_PERIOD_MULT - 1;
 
 		start_str = sipe_domino_time_to_str(cal->fb_start);
 		end_str = sipe_domino_time_to_str(end);

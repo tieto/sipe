@@ -47,7 +47,6 @@
 #define TIME_NULL   (time_t)-1
 #define IS(time)    (time != TIME_NULL)
 
-
 /*
 http://msdn.microsoft.com/en-us/library/aa565001.aspx
 
