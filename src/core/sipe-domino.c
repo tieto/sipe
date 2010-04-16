@@ -190,7 +190,7 @@ sipe_domino_process_calendar_response(int return_code,
 								}
 							/* Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location */
 							} else if (g_str_has_prefix(tmp, _("Location:"))) {
-								int len = strlen(_("Location:"));
+								guint len = strlen(_("Location:"));
 								if (strlen(tmp) > len) {
 									SIPE_DEBUG_INFO("\t\t*Loc.=%s", g_strstrip(tmp+len));
 								}
