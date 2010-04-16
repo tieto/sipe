@@ -61,6 +61,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe.h"
+#include "sipe-nls.h"
 #include "sipe-backend.h"
 #include "sipe-utils.h"
 #include "sipe-cal.h"
@@ -167,6 +168,8 @@ sipe_domino_process_calendar_response(int return_code,
 					SIPE_DEBUG_INFO("\t\tdatetime=%s", asctime(gmtime(&time_val)));
 					g_free(tmp);
 				} else if (sipe_strequal(name, VIEWENTITY_TEXT_LIST)) {
+					int i = 0;
+
 					/* test */
 					for (node3 = sipe_xml_child(node2, "textlist/text");
 					     node3;
@@ -174,7 +177,26 @@ sipe_domino_process_calendar_response(int return_code,
 					{
 						char *tmp = sipe_xml_data(node3);
 						
+						if (!tmp) continue;
+
 						SIPE_DEBUG_INFO("\t\ttext=%s", tmp);
+						if (i == 0) {
+							SIPE_DEBUG_INFO("\t\t*Subj.=%s", tmp);
+						} else {
+							/* plain English, don't localize! */
+							if (!g_ascii_strncasecmp(tmp, "Location:", 9)) {
+								if (strlen(tmp) > 9) {
+									SIPE_DEBUG_INFO("\t\t*Loc.=%s", g_strstrip(tmp+9));
+								}
+							/* Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location */
+							} else if (g_str_has_prefix(tmp, _("Location:"))) {
+								int len = strlen(_("Location:"));
+								if (strlen(tmp) > len) {
+									SIPE_DEBUG_INFO("\t\t*Loc.=%s", g_strstrip(tmp+len));
+								}
+							}
+						}
+						i++;
 						g_free(tmp);
 					}
 				}
