@@ -60,15 +60,11 @@
  * @param method (%s)		Ex.: GET or POST
  * @param url (%s)		Ex.: /EWS/Exchange.asmx
  * @param host (%s)		Ex.: cosmo-ocs-r2.cosmo.local
- * @param content_length (%d)	length of body part
- * @param content_type (%s)	Ex.: text/xml; charset=UTF-8
  */
 #define HTTP_CONN_HEADER \
 "%s %s HTTP/1.1\r\n"\
 "Host: %s\r\n"\
-"User-Agent: Sipe/" PACKAGE_VERSION "\r\n"\
-"Content-Length: %d\r\n"\
-"Content-Type: %s\r\n"
+"User-Agent: Sipe/" PACKAGE_VERSION "\r\n"
 
 
 struct http_conn_struct {
@@ -562,9 +558,14 @@ http_conn_send0(HttpConn *http_conn,
 	g_string_append_printf(outstr, HTTP_CONN_HEADER,
 				http_conn->method ? http_conn->method : "GET",
 				http_conn->url,
-				http_conn->host,
-				http_conn->body ? (int)strlen(http_conn->body) : 0,
-				http_conn->content_type ? http_conn->content_type : "text/plain");
+				http_conn->host);
+	if (sipe_strequal(http_conn->method, "POST")) {
+		g_string_append_printf(outstr, "Content-Length: %d\r\n", 
+			http_conn->body ? (int)strlen(http_conn->body) : 0);
+
+		g_string_append_printf(outstr, "Content-Type: %s\r\n", 
+			http_conn->content_type ? http_conn->content_type : "text/plain");
+	}
 	if (http_conn->http_session && http_conn->http_session->cookie) {
 		g_string_append_printf(outstr, "Cookie: %s\r\n", http_conn->http_session->cookie);
 	}
