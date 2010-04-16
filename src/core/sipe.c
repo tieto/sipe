@@ -113,7 +113,7 @@
 
 /* Keep in sync with sipe_transport_type! */
 static const char *transport_descriptor[] = { "", "tls", "tcp"};
-#define TRANSPORT_DESCRIPTOR (transport_descriptor[sip->transport])
+#define TRANSPORT_DESCRIPTOR (transport_descriptor[SIP_TO_CORE_PUBLIC->transport_type])
 
 /* Status identifiers (see also: sipe_status_types()) */
 #define SIPE_STATUS_ID_UNKNOWN     purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET)     /* Unset (primitive) */
@@ -4600,7 +4600,7 @@ sipe_invite(struct sipe_account_data *sip,
 		sipe_backend_network_ip_address(),
 		sipe_backend_network_ip_address(),
 		sip->ocs2007 ? "message" : "x-ms-message",
-		sip->realport);
+		SIP_TO_CORE_PUBLIC->server_port);
 
 	dialog->outgoing_invite = send_sip_request(sip->gc, "INVITE",
 		to, to, hdr, body, dialog, process_invite_response);
@@ -5357,7 +5357,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		sipe_backend_network_ip_address(),
 		sipe_backend_network_ip_address(),
 		sip->ocs2007 ? "message" : "x-ms-message",
-		sip->realport,
+		SIP_TO_CORE_PUBLIC->server_port,
 		sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
 	g_free(body);
@@ -5380,7 +5380,7 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
 		sip->ocs2007 ? "message" : "x-ms-message",
-		sip->realport,
+		SIP_TO_CORE_PUBLIC->server_port,
 		sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
 	g_free(body);
@@ -5401,7 +5401,55 @@ sipe_get_auth_scheme_name(struct sipe_account_data *sip)
 }
 
 static void sipe_connection_cleanup(struct sipe_account_data *);
-static void create_connection(struct sipe_account_data *, const gchar *, int);
+static void create_connection(struct sipe_account_data *);
+
+/* server_name must be g_alloc()'ed */
+static void sipe_server_register(struct sipe_core_private *sipe_private,
+				 sipe_transport_type type,
+				 gchar *server_name,
+				 guint server_port)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
+	sipe_private->public.transport_type = type;
+	sipe_private->public.server_name = server_name;
+	sipe_private->public.server_port = 
+		(server_port != 0)           ? server_port :
+		(type == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
+
+	create_connection(sip);
+}
+
+static void sipe_server_disconnect(struct sipe_core_private *sipe_private)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
+	if (sip->gsc != NULL) {
+		purple_ssl_close(sip->gsc);
+		sip->gsc = NULL;
+	} else if (sip->fd > 0) {
+		close(sip->fd);
+	}
+	sip->fd = -1;
+
+	if (sip->txbuf)
+		purple_circ_buffer_destroy(sip->txbuf);
+	sip->txbuf = NULL;
+	if (sip->tx_handler)
+		purple_input_remove(sip->tx_handler);
+	sip->tx_handler = 0;
+
+	if (sip->rx_conn.inputhandler)
+		purple_input_remove(sip->rx_conn.inputhandler);
+	sip->rx_conn.inputhandler = 0;
+	sip->rx_conn.inbuflen     = 0;
+	sip->rx_conn.inbufused    = 0;
+	g_free(sip->rx_conn.inbuf);
+	sip->rx_conn.inbuf = NULL;
+
+	g_free(sipe_private->public.server_name);
+	sipe_private->public.server_name = NULL;
+}
 
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
@@ -5647,11 +5695,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sipe_connection_cleanup(sip);
 
 					/* Create new connection */
-					sip->transport = transport;
+					sipe_server_register(SIP_TO_CORE_PRIVATE, transport, hostname, port);
 					SIPE_DEBUG_INFO("process_register_response: redirected to host %s port %d transport %s",
 							hostname, port, TRANSPORT_DESCRIPTOR);
-					create_connection(sip, hostname, port);
-					g_free(hostname);
 				}
 				g_free(redirect);
 			}
@@ -8137,16 +8183,7 @@ static void sipe_invalidate_connection(PurpleConnection *gc,
 	SIPE_DEBUG_ERROR("%s", debug);
 	purple_connection_error(gc, msg);
 
-	/* Invalidate this connection. Next send will open a new one */
-	if (sip->gsc) {
-		purple_ssl_close(sip->gsc);
-	} else {
-		purple_input_remove(sip->rx_conn.inputhandler);
-		sip->rx_conn.inputhandler = 0;
-		close(sip->fd);
-	}
-	sip->gsc = NULL;
-	sip->fd = -1;
+	sipe_server_disconnect(SIP_TO_CORE_PRIVATE);
 }
 
 static void sipe_input_ssl_cb(gpointer data, PurpleSslConnection *gsc,
@@ -8354,28 +8391,25 @@ static void login_tcp_cb(gpointer data, gint source,
 	login_common(data, NULL, source);
 }
 
-static void create_connection(struct sipe_account_data *sip,
-			      const gchar *hostname, int port)
+static void create_connection(struct sipe_account_data *sip)
 {
+	struct sipe_core_public *sipe_public = SIP_TO_CORE_PUBLIC;
 	PurpleAccount *account = sip->account;
 	PurpleConnection *gc = sip->gc;
 
-	if (port == 0) {
-		port = (sip->transport == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
-	}
-
-	sip->realport = port;
-
 	SIPE_DEBUG_INFO("create_connection - hostname: %s port: %d",
-			hostname, port);
+			sipe_public->server_name,
+			sipe_public->server_port);
 
 	sip->txbuf = purple_circ_buffer_new(0);
 
-	if (sip->transport == SIPE_TRANSPORT_TLS) {
+	if (sipe_public->transport_type == SIPE_TRANSPORT_TLS) {
 		/* SSL case */
 		SIPE_DEBUG_INFO_NOFORMAT("using SSL");
 
-		if (purple_ssl_connect(account, hostname, port,
+		if (purple_ssl_connect(account,
+				       sipe_public->server_name,
+				       sipe_public->server_port,
 				       login_ssl_cb,
 				       sipe_ssl_connect_failure, gc) == NULL) {
 			purple_connection_error(gc, _("Could not create SSL context"));
@@ -8385,7 +8419,9 @@ static void create_connection(struct sipe_account_data *sip,
 		/* TCP case */
 		SIPE_DEBUG_INFO_NOFORMAT("using TCP");
 
-		if (purple_proxy_connect(gc, account, hostname, port,
+		if (purple_proxy_connect(gc, account,
+					 sipe_public->server_name,
+					 sipe_public->server_port,
 					 login_tcp_cb, gc) == NULL) {
 			purple_connection_error(gc, _("Could not create socket"));
 			return;
@@ -8425,15 +8461,17 @@ static void resolve_next_service(struct sipe_account_data *sip,
 	} else {
 		sip->service_data++;
 		if (sip->service_data->service == NULL) {
+			sipe_transport_type type = SIP_TO_CORE_PUBLIC->transport_type;
+
 			/* Try connecting to the SIP hostname directly */
 			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; using SIP domain as fallback");
 			if (sip->auto_transport) {
-				sip->transport = SIPE_TRANSPORT_TLS;
+				type = SIPE_TRANSPORT_TLS;
 			}
 
-			create_connection(sip,
-					  SIP_TO_CORE_PUBLIC->sip_domain,
-					  0);
+			sipe_server_register(SIP_TO_CORE_PRIVATE, type,
+					     g_strdup(SIP_TO_CORE_PUBLIC->sip_domain),
+					     0);
 			return;
 		}
 	}
@@ -8459,10 +8497,9 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 				hostname, port);
 		g_free(resp);
 
-		sip->transport = sip->service_data->type;
-
-		create_connection(sip, hostname, port);
-		g_free(hostname);
+		sipe_server_register(SIP_TO_CORE_PRIVATE,
+				     sip->service_data->type,
+				     hostname, port);
 	} else {
 		resolve_next_service(sip, NULL);
 	}
@@ -8571,8 +8608,8 @@ void sipe_core_connect(struct sipe_core_public *sipe_public,
 		SIPE_DEBUG_INFO("sipe_core_connect: user specified SIP server %s:%d",
 				server, port_number);
 
-		sip->transport = transport;
-		create_connection(sip, server, port_number);
+		sipe_server_register(SIPE_CORE_PRIVATE, transport,
+				     g_strdup(server), port_number);
 	} else {
 		/* Server auto-discovery */
 		switch (transport) {
@@ -8608,34 +8645,13 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		purple_srv_cancel(sip->srv_query_data);
 	sip->srv_query_data = NULL;
 
-	if (sip->gsc != NULL) {
-		purple_ssl_close(sip->gsc);
-		sip->gsc = NULL;
-	} else if (sip->fd > 0) {
-		close(sip->fd);
-	}
-	sip->fd = -1;
+	sipe_server_disconnect(sipe_private);
 
 	sipe_auth_free(&sip->registrar);
 	sipe_auth_free(&sip->proxy);
 
-	if (sip->txbuf)
-		purple_circ_buffer_destroy(sip->txbuf);
-	sip->txbuf = NULL;
-
 	g_free(sip->server_version);
 	sip->server_version = NULL;
-
-	if (sip->tx_handler)
-		purple_input_remove(sip->tx_handler);
-	sip->tx_handler = 0;
-	if (sip->rx_conn.inputhandler)
-		purple_input_remove(sip->rx_conn.inputhandler);
-	sip->rx_conn.inputhandler = 0;
-	sip->rx_conn.inbuflen     = 0;
-	sip->rx_conn.inbufused    = 0;
-	g_free(sip->rx_conn.inbuf);
-	sip->rx_conn.inbuf = NULL;
 
 	if (sipe_private->timeouts) {
 		GSList *entry = sipe_private->timeouts;

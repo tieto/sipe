@@ -157,8 +157,6 @@ struct sipe_account_data {
 	GSList *groups;
 	GHashTable *filetransfers;
 	gboolean auto_transport;
-	/* gchar *realhostname; */
-	int realport; /* port and hostname from SRV record */
 	gboolean processing_input;
 	struct sipe_calendar *cal;
 	gchar *email;
@@ -174,8 +172,6 @@ struct sipe_account_data {
 	gchar *user_states;
 
 	/* transport-related state. This will be moved to backend... */
-	/* struct sipe_transport_connection *transport; */
-	sipe_transport_type transport;
 	struct _PurpleSslConnection *gsc;
 	int fd;
 	int port; /* client port */

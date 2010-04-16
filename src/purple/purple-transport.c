@@ -40,6 +40,7 @@ struct sipe_transport_purple {
 	guint transmit_handler;
 	guint receive_handler;
 	int socket;
+	guint port; /* port number associated with "socket" */
 };
 
 /*

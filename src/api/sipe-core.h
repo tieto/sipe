@@ -69,7 +69,7 @@ struct sipe_transport_connection {
 	gsize buffer_used;        /* 0 < buffer_used < buffer_length */
 	gsize buffer_length;      /* read-only */
 	sipe_transport_type type; /* read-only */
-	guint client_port;        /* read-only */
+	guint client_port;        /* read-only (will disappear to backend) */
 };
 
 /**
@@ -93,6 +93,12 @@ struct sipe_core_public {
 	/* user information */
 	gchar *sip_name;
 	gchar *sip_domain;
+
+	/* server information */
+	struct sipe_transport_connection *transport;
+	sipe_transport_type transport_type; /* same as transport->type */
+	gchar *server_name;
+	guint  server_port;
 };
 
 /**
