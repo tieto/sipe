@@ -673,8 +673,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 			send_sip_response(sip->gc, msg, 200, "OK", rsp);
 			g_free(rsp);
 		} else {
-			// TODO: send Busy Here
-			printf("MEDIA SESSION ALREADY IN PROGRESS");
+			send_sip_response(sip->gc, msg, 486, "Busy Here", NULL);
 		}
 		return;
 	}
