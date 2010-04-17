@@ -365,8 +365,9 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 							   auth->target,
 							   auth->gssapi_data);
 			if (!gssapi_data || !auth->gssapi_context) {
-				sip->gc->wants_to_die = TRUE;
-				purple_connection_error(sip->gc, _("Failed to authenticate to server"));
+				purple_connection_error_reason(sip->gc,
+							       PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+							       _("Failed to authenticate to server"));
 				return NULL;
 			}
 
@@ -553,7 +554,9 @@ static void sipe_canwrite_cb(gpointer data,
 			return;
 		} else if (written <= 0) {
 			/*TODO: do we really want to disconnect on a failure to write?*/
-			purple_connection_error(gc, _("Could not write"));
+			purple_connection_error_reason(gc,
+						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+						       _("Could not write"));
 			return;
 		}
 
@@ -2520,8 +2523,9 @@ static void sipe_process_registration_notify(struct sipe_account_data *sip, stru
 	warning = g_strdup_printf(_("You have been rejected by the server: %s"), reason ? reason : _("no reason given"));
 	g_free(reason);
 
-	sip->gc->wants_to_die = TRUE;
-	purple_connection_error(sip->gc, warning);
+	purple_connection_error_reason(sip->gc,
+				       PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
+				       warning);
 	g_free(warning);
 
 }
@@ -5701,8 +5705,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				const char *auth_scheme;
 				SIPE_DEBUG_INFO("REGISTER retries %d", sip->registrar.retries);
 				if (sip->registrar.retries > 3) {
-					sip->gc->wants_to_die = TRUE;
-					purple_connection_error(sip->gc, _("Authentication failed"));
+					purple_connection_error_reason(sip->gc,
+								       PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+								       _("Authentication failed"));
 					return TRUE;
 				}
 
@@ -5712,8 +5717,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				SIPE_DEBUG_INFO("process_register_response - Auth header: %s", tmp ? tmp : "");
 				if (!tmp) {
 					char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
-					sip->gc->wants_to_die = TRUE;
-					purple_connection_error(sip->gc, tmp2);
+					purple_connection_error_reason(sip->gc,
+								       PURPLE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
+								       tmp2);
 					g_free(tmp2);
 					return TRUE;
 				}
@@ -5741,8 +5747,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							  (reason && reason[1]) ? reason[1] : _("no reason given"));
 				g_strfreev(reason);
 
-				sip->gc->wants_to_die = TRUE;
-				purple_connection_error(sip->gc, warning);
+				purple_connection_error_reason(sip->gc,
+							       PURPLE_CONNECTION_ERROR_INVALID_SETTINGS,
+							       warning);
 				g_free(warning);
 				return TRUE;
 			}
@@ -5760,8 +5767,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							  _("SIP is either not enabled for the destination URI or it does not exist"));
 				g_free(reason);
 
-				sip->gc->wants_to_die = TRUE;
-				purple_connection_error(sip->gc, warning);
+				purple_connection_error_reason(sip->gc,
+							       PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
+							       warning);
 				g_free(warning);
 				return TRUE;
 			}
@@ -5778,8 +5786,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
 				g_free(reason);
 
-				sip->gc->wants_to_die = TRUE;
-				purple_connection_error(sip->gc, warning);
+				purple_connection_error_reason(sip->gc,
+							       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+							       warning);
 				g_free(warning);
 				return TRUE;
 			}
@@ -8043,8 +8052,9 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							SIPE_DEBUG_INFO("process_input_message - Auth header: %s", ptmp ? ptmp : "");
 							if (!ptmp) {
 								char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
-								sip->gc->wants_to_die = TRUE;
-								purple_connection_error(sip->gc, tmp2);
+								purple_connection_error_reason(sip->gc,
+											       PURPLE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
+											       tmp2);
 								g_free(tmp2);
 								return;
 							}
@@ -8150,12 +8160,14 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 					process_input_message(sip, msg);
 				} else {
 					SIPE_DEBUG_INFO_NOFORMAT("incoming message's signature is invalid.");
-					purple_connection_error(sip->gc, _("Invalid message signature received"));
-					sip->gc->wants_to_die = TRUE;
+					purple_connection_error_reason(sip->gc,
+								       PURPLE_CONNECTION_ERROR_NETWORK_ERROR ,
+								       _("Invalid message signature received"));
 				}
 			} else if (msg->response == 401) {
-				purple_connection_error(sip->gc, _("Authentication failed"));
-				sip->gc->wants_to_die = TRUE;
+				purple_connection_error_reason(sip->gc,
+							       PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+							       _("Authentication failed"));
 			}
 			g_free(signature_input_str);
 
@@ -8175,7 +8187,9 @@ static void sipe_invalidate_connection(PurpleConnection *gc,
 	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
 
 	SIPE_DEBUG_ERROR("%s", debug);
-	purple_connection_error(gc, msg);
+	purple_connection_error_reason(gc,
+				       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+				       msg);
 
 	sipe_server_disconnect(SIP_TO_CORE_PRIVATE);
 }
@@ -8320,17 +8334,7 @@ static void sipe_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *
 	sip->fd = -1;
         sip->gsc = NULL;
 
-        switch(error) {
-			case PURPLE_SSL_CONNECT_FAILED:
-				purple_connection_error(gc, _("Connection failed"));
-				break;
-			case PURPLE_SSL_HANDSHAKE_FAILED:
-				purple_connection_error(gc, _("SSL handshake failed"));
-				break;
-			case PURPLE_SSL_CERTIFICATE_INVALID:
-				purple_connection_error(gc, _("SSL certificate invalid"));
-				break;
-        }
+	purple_connection_ssl_error(gc, error);
 }
 
 static void login_common(PurpleConnection *gc,
@@ -8350,7 +8354,9 @@ static void login_common(PurpleConnection *gc,
 	}
 
 	if (fd < 0) {
-		purple_connection_error(gc, _("Could not connect"));
+		purple_connection_error_reason(gc,
+					       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+					       _("Could not connect"));
 		return;
 	}
 
@@ -8406,7 +8412,9 @@ static void create_connection(struct sipe_account_data *sip)
 				       sipe_public->server_port,
 				       login_ssl_cb,
 				       sipe_ssl_connect_failure, gc) == NULL) {
-			purple_connection_error(gc, _("Could not create SSL context"));
+			purple_connection_error_reason(gc,
+						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+						       _("Could not create SSL context"));
 			return;
 		}
 	} else {
@@ -8417,7 +8425,9 @@ static void create_connection(struct sipe_account_data *sip)
 					 sipe_public->server_name,
 					 sipe_public->server_port,
 					 login_tcp_cb, gc) == NULL) {
-			purple_connection_error(gc, _("Could not create socket"));
+			purple_connection_error_reason(gc,
+						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+						       _("Could not create socket"));
 			return;
 		}
 	}

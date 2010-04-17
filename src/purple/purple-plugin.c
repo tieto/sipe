@@ -249,8 +249,9 @@ static void sipe_login(PurpleAccount *account)
 	g_strfreev(username_split);
 
 	if (!sipe_public) {
-		gc->wants_to_die = TRUE;
-		purple_connection_error(gc, errmsg);
+		purple_connection_error_reason(gc,
+					       PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
+					       errmsg);
 		return;
 	}
 
