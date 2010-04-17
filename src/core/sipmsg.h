@@ -39,18 +39,6 @@ struct sipmsg {
 	gchar *signature;
 	gchar *rand;
 	gchar *num;
-	/*
-	 * Set this flag when you need to keep input message for further processing.
-	 * Such message won't be freed automatically after process_input_message()
-	 * returns.
-	 *
-	 * For example incoming media session invite response can not be sent
-	 * immediately but after interaction with user, who accepts or declines
-	 * the call.
-	 *
-	 * Call sipmsg_free() when the message is not needed anymore.
-	 */
-	gboolean dont_free;
 };
 
 struct sipendpoint {
@@ -61,6 +49,7 @@ struct sipendpoint {
 
 struct sipmsg *sipmsg_parse_msg(const gchar *msg);
 struct sipmsg *sipmsg_parse_header(const gchar *header);
+struct sipmsg *sipmsg_copy(const struct sipmsg *other);
 void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *value);
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value);
 void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos);

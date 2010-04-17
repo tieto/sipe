@@ -594,7 +594,7 @@ sipe_media_call_init(struct sipmsg *msg)
 		return NULL;
 	}
 
-	call->invitation = msg;
+	call->invitation = sipmsg_copy(msg);
 	call->legacy_mode = FALSE;
 	call->state = SIPE_CALL_CONNECTING;
 	call->remote_candidates = sipe_media_parse_remote_candidates(call);
@@ -635,14 +635,13 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 			call = sip->media_call;
 
 			sipmsg_free(call->invitation);
-			msg->dont_free = TRUE;
-			call->invitation = msg;
+			call->invitation = sipmsg_copy(msg);
 
-			sipmsg_add_header(msg, "Supported", "Replaces");
+			sipmsg_add_header(call->invitation, "Supported", "Replaces");
 
 			sipe_utils_nameval_free(call->sdp_attrs);
 			call->sdp_attrs = NULL;
-			if (!sipe_media_parse_sdp_frame(call, msg->body)) {
+			if (!sipe_media_parse_sdp_frame(call, call->invitation->body)) {
 				// TODO: handle error
 			}
 
@@ -670,7 +669,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 				printf("ERROR SET REMOTE CODECS"); // TODO
 
 			rsp = sipe_media_create_sdp(sip->media_call, TRUE);
-			send_sip_response(sip->gc, msg, 200, "OK", rsp);
+			send_sip_response(sip->gc, call->invitation, 200, "OK", rsp);
 			g_free(rsp);
 		} else {
 			send_sip_response(sip->gc, msg, 486, "Busy Here", NULL);
@@ -681,7 +680,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 	call = sipe_media_call_init(msg);
 
 	session = sipe_session_find_or_add_chat_by_callid(sip, callid);
-	dialog = sipe_media_dialog_init(session, msg);
+	dialog = sipe_media_dialog_init(session, call->invitation);
 
 	media = sipe_backend_media_new(call, sip->account, dialog->with, FALSE);
 
@@ -707,9 +706,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 
 	sip->media_call = call;
 
-	// TODO: copy message instead of this don't free thing
-	msg->dont_free = TRUE;
-	send_sip_response(sip->gc, msg, 180, "Ringing", NULL);
+	send_sip_response(sip->gc, call->invitation, 180, "Ringing", NULL);
 }
 
 void sipe_media_hangup(struct sipe_account_data *sip)

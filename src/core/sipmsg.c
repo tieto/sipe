@@ -104,6 +104,37 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	return msg;
 }
 
+struct sipmsg *sipmsg_copy(const struct sipmsg *other) {
+	struct sipmsg *msg = g_new0(struct sipmsg, 1);
+	GSList *list;
+
+	msg->response	= other->response;
+	msg->method		= g_strdup(other->method);
+	msg->target		= g_strdup(other->target);
+
+	list = other->headers;
+	while(list) {
+		struct sipnameval *elem = list->data;
+		sipmsg_add_header_now(msg, elem->name, elem->value);
+		list = list->next;
+	}
+
+	list = other->new_headers;
+	while(list) {
+		struct sipnameval *elem = list->data;
+		sipmsg_add_header(msg, elem->name, elem->value);
+		list = list->next;
+	}
+
+	msg->bodylen	= other->bodylen;
+	msg->body		= g_memdup(other->body, other->bodylen);
+	msg->signature	= g_strdup(other->signature);
+	msg->rand		= g_strdup(other->rand);
+	msg->num		= g_strdup(other->num);
+
+	return msg;
+}
+
 char *sipmsg_to_string(const struct sipmsg *msg) {
 	GSList *cur;
 	GString *outstr = g_string_new("");
