@@ -24,10 +24,7 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
-#include <string.h>
-#include <stdlib.h>
-#include <libpurple/mediamanager.h>
+#include "account.h"
 
 #include "sipe-core.h"
 #include "sipe.h"
@@ -188,7 +185,7 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 
 		candidate = sipe_backend_candidate_new(foundation, component,
 								type, protocol, ip, port);
-		g_object_set(candidate, "priority", priority, NULL);
+		sipe_backend_candidate_set_priority(candidate, priority);
 		candidates = g_list_append(candidates, candidate);
 
 		g_strfreev(tokens);
@@ -536,7 +533,7 @@ static void candidates_prepared_cb(sipe_media_call *call)
 
 static void call_accept_cb(sipe_media_call *call, SIPE_UNUSED_PARAMETER gboolean local)
 {
-	PurpleAccount* account = purple_media_get_account(call->media);
+	PurpleAccount* account = call->sip->account;
 
 	if (!call->sdp_response)
 		call->sdp_response = sipe_media_create_sdp(call, FALSE);
@@ -548,7 +545,7 @@ static void call_accept_cb(sipe_media_call *call, SIPE_UNUSED_PARAMETER gboolean
 static void call_reject_cb(sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		PurpleAccount *account = purple_media_get_account(call->media);
+		PurpleAccount *account = call->sip->account;
 		send_sip_response(account->gc, call->invitation, 603, "Decline", NULL);
 		call->sip->media_call = NULL;
 		sipe_media_call_free(call);
@@ -696,8 +693,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 
 	sipe_backend_media_add_stream(media, dialog->with, SIPE_MEDIA_AUDIO, !call->legacy_mode, FALSE);
 
-	purple_media_add_remote_candidates((PurpleMedia*)media, "sipe-voice", dialog->with,
-			                           call->remote_candidates);
+	sipe_backend_media_add_remote_candidates(media, dialog->with, call->remote_candidates);
 
 	call->remote_codecs = sipe_media_parse_remote_codecs(call);
 	call->remote_codecs = sipe_media_prune_remote_codecs(call, call->remote_codecs);

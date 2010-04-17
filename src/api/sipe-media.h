@@ -96,6 +96,9 @@ gboolean sipe_backend_media_add_stream(sipe_media *media, gchar* participant,
 									   SipeMediaType type, gboolean use_nice,
 									   gboolean initiator);
 
+void sipe_backend_media_add_remote_candidates(sipe_media *media, gchar* participant,
+											  GList *candidates);
+
 sipe_codec * sipe_backend_codec_new(int id, const char *name,
 									SipeMediaType type, guint clock_rate);
 
@@ -128,6 +131,7 @@ gchar *sipe_backend_candidate_get_foundation(sipe_candidate *candidate);
 gchar *sipe_backend_candidate_get_ip(sipe_candidate *candidate);
 guint sipe_backend_candidate_get_port(sipe_candidate *candidate);
 guint32 sipe_backend_candidate_get_priority(sipe_candidate *candidate);
+void sipe_backend_candidate_set_priority(sipe_candidate *candidate, guint32 priority);
 SipeComponentType sipe_backend_candidate_get_component_type(sipe_candidate *candidate);
 SipeCandidateType sipe_backend_candidate_get_type(sipe_candidate *candidate);
 SipeNetworkProtocol sipe_backend_candidate_get_protocol(sipe_candidate *candidate);

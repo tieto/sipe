@@ -104,6 +104,13 @@ sipe_backend_media_add_stream(sipe_media *media, gchar* participant, SipeMediaTy
 								   initiator, transmitter, params_cnt, params);
 }
 
+void
+sipe_backend_media_add_remote_candidates(sipe_media *media, gchar* participant, GList *candidates)
+{
+	purple_media_add_remote_candidates((PurpleMedia*)media, "sipe-voice",
+										participant, candidates);
+}
+
 sipe_codec *
 sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
 {
@@ -210,6 +217,12 @@ guint32
 sipe_backend_candidate_get_priority(sipe_candidate *candidate)
 {
 	return purple_media_candidate_get_priority((PurpleMediaCandidate*)candidate);
+}
+
+void
+sipe_backend_candidate_set_priority(sipe_candidate *candidate, guint32 priority)
+{
+	g_object_set(candidate, "priority", priority, NULL);
 }
 
 SipeComponentType
