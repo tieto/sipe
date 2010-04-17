@@ -35,6 +35,13 @@
 #include "sipe-utils.h"
 #include "sipe-common.h"
 
+void
+sipe_media_initiate_call(struct sipe_account_data *sip, const char *participant)
+{
+	sip = sip;
+	participant = participant;
+}
+
 gchar *
 sipe_media_get_callid(sipe_media_call *call)
 {

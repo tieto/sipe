@@ -372,6 +372,15 @@ sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 }
 #endif
 
+#ifdef HAVE_VV
+extern gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
+									PurpleMediaSessionType type);
+extern PurpleMediaCaps sipe_get_media_caps(PurpleAccount *account, const char *who);
+#else
+#define sipe_initiate_media NULL
+#define sipe_get_media_caps NULL
+#endif
+
 static PurplePluginProtocolInfo prpl_info =
 {
 	OPT_PROTO_CHAT_TOPIC,
@@ -447,8 +456,8 @@ static PurplePluginProtocolInfo prpl_info =
 #if PURPLE_VERSION_CHECK(2,5,0)
 	sipe_get_account_text_table,		/* get_account_text_table */
 #if PURPLE_VERSION_CHECK(2,6,0)
-	NULL,					/* initiate_media */
-	NULL,					/* get_media_caps */
+	sipe_initiate_media,	/* initiate_media */
+	sipe_get_media_caps,	/* get_media_caps */
 #if PURPLE_VERSION_CHECK(2,7,0)
 	NULL,					/* get_moods */
 #endif

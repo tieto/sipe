@@ -22,10 +22,29 @@
 
 #include "glib.h"
 
+#include "sipe-core.h"
+#include "../core/sipe-core-private.h"
 #include "sipe-common.h"
 #include "sipe-media.h"
 #include "mediamanager.h"
 #include <nice/agent.h>
+
+#include "request.h"
+#include "core-depurple.h"
+
+gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
+		      SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
+{
+	struct sipe_account_data *sip = PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA;
+	sipe_media_initiate_call(sip, who);
+	return TRUE;
+}
+
+PurpleMediaCaps sipe_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account,
+									SIPE_UNUSED_PARAMETER const char *who)
+{
+	return PURPLE_MEDIA_CAPS_AUDIO;
+}
 
 static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type);
 static PurpleMediaCandidateType sipe_candidate_type_to_purple(SipeCandidateType type);
