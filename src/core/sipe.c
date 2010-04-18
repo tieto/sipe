@@ -8422,74 +8422,70 @@ static gboolean sipe_buddy_remove(SIPE_UNUSED_PARAMETER gpointer key, gpointer b
 	return(TRUE);
 }
 
-void sipe_close(PurpleConnection *gc)
+void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 {
-	struct sipe_core_private *sipe_private = gc->proto_data;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
-	if (sipe_private) {
-		struct sipe_account_data *sip = sipe_private->temporary;
+	/* leave all conversations */
+	sipe_session_close_all(sip);
+	sipe_session_remove_all(sip);
 
-		/* leave all conversations */
-		sipe_session_close_all(sip);
-		sipe_session_remove_all(sip);
-
-		if (sip->csta) {
-			sip_csta_close(sip);
-		}
-
-		if (PURPLE_CONNECTION_IS_CONNECTED(sip->gc)) {
-			/* unsubscribe all */
-			g_hash_table_foreach(sip->subscriptions, sipe_unsubscribe_cb, sip);
-
-			/* unregister */
-			do_register_exp(sip, 0);
-		}
-
-		sipe_connection_cleanup(sip);
-		g_free(sipe_private->public.sip_name);
-		g_free(sipe_private->public.sip_domain);
-		g_free(sip->username);
-		g_free(sip->email);
-		g_free(sip->password);
-		g_free(sip->authdomain);
-		g_free(sip->authuser);
-		g_free(sip->status);
-		g_free(sip->note);
-		g_free(sip->user_states);
-
-		g_hash_table_foreach_steal(SIP_TO_CORE_PRIVATE->buddies, sipe_buddy_remove, NULL);
-		g_hash_table_destroy(SIP_TO_CORE_PRIVATE->buddies);
-		g_hash_table_destroy(sip->our_publications);
-		g_hash_table_destroy(sip->user_state_publications);
-		g_hash_table_destroy(sip->subscriptions);
-		g_hash_table_destroy(sip->filetransfers);
-
-		if (sip->groups) {
-			GSList *entry = sip->groups;
-			while (entry) {
-				struct sipe_group *group = entry->data;
-				g_free(group->name);
-				g_free(group);
-				entry = entry->next;
-			}
-		}
-		g_slist_free(sip->groups);
-
-		if (sip->our_publication_keys) {
-			GSList *entry = sip->our_publication_keys;
-			while (entry) {
-				g_free(entry->data);
-				entry = entry->next;
-			}
-		}
-		g_slist_free(sip->our_publication_keys);
-
-		while (sip->transactions)
-			transactions_remove(sip, sip->transactions->data);
-		g_free(sip);
+	if (sip->csta) {
+		sip_csta_close(sip);
 	}
-	g_free(gc->proto_data);
-	gc->proto_data = NULL;
+
+	if (PURPLE_CONNECTION_IS_CONNECTED(sip->gc)) {
+		/* unsubscribe all */
+		g_hash_table_foreach(sip->subscriptions, sipe_unsubscribe_cb, sip);
+
+		/* unregister */
+		do_register_exp(sip, 0);
+	}
+
+	sipe_connection_cleanup(sip);
+	g_free(sipe_private->public.sip_name);
+	g_free(sipe_private->public.sip_domain);
+	g_free(sip->username);
+	g_free(sip->email);
+	g_free(sip->password);
+	g_free(sip->authdomain);
+	g_free(sip->authuser);
+	g_free(sip->status);
+	g_free(sip->note);
+	g_free(sip->user_states);
+
+	g_hash_table_foreach_steal(SIP_TO_CORE_PRIVATE->buddies, sipe_buddy_remove, NULL);
+	g_hash_table_destroy(SIP_TO_CORE_PRIVATE->buddies);
+	g_hash_table_destroy(sip->our_publications);
+	g_hash_table_destroy(sip->user_state_publications);
+	g_hash_table_destroy(sip->subscriptions);
+	g_hash_table_destroy(sip->filetransfers);
+
+	if (sip->groups) {
+		GSList *entry = sip->groups;
+		while (entry) {
+			struct sipe_group *group = entry->data;
+			g_free(group->name);
+			g_free(group);
+			entry = entry->next;
+		}
+	}
+	g_slist_free(sip->groups);
+
+	if (sip->our_publication_keys) {
+		GSList *entry = sip->our_publication_keys;
+		while (entry) {
+			g_free(entry->data);
+			entry = entry->next;
+		}
+	}
+	g_slist_free(sip->our_publication_keys);
+
+	while (sip->transactions)
+		transactions_remove(sip, sip->transactions->data);
+	g_free(sip);
+	g_free(sipe_private);
 }
 
 static void sipe_searchresults_im_buddy(PurpleConnection *gc, GList *row,

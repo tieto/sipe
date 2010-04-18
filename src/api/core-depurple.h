@@ -31,7 +31,6 @@ GList *sipe_buddy_menu(PurpleBuddy *buddy);
 GList *sipe_chat_menu(PurpleChat *chat);
 void sipe_purple_setup(struct sipe_core_public *sipe_public,
 		       PurpleConnection *gc);
-void sipe_close(PurpleConnection *gc);
 int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		 PurpleMessageFlags flags);
 unsigned int sipe_send_typing(PurpleConnection *gc, const char *who,
