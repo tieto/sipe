@@ -28,20 +28,15 @@
  *
  * <time.h>
  * <glib.h>
- * "sip-sec.h"
  */
 
 /* Forward declarations */
 struct sipmsg;
 struct _PurpleAccount;
-struct _PurpleCircBuffer;
 struct _PurpleConnection;
 struct _PurpleDnsQueryData;
 struct _PurpleGroup;
-struct _PurpleNetworkListenData;
-struct _PurplePlugin;
 struct _PurpleSrvQueryData;
-struct _PurpleSslConnection;
 struct sip_sec_context;
 struct sipe_core_private;
 struct sipe_service_data;
@@ -149,7 +144,6 @@ struct sipe_account_data {
 	gboolean ocs2007; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
 	GSList *containers; /* MS-PRES containers */
-	guint keepalive_timeout;
 	struct _PurpleAccount *account;
 	gchar *regcallid;
 	GSList *transactions;
@@ -170,15 +164,6 @@ struct sipe_account_data {
 	 * - User status
 	 */
 	gchar *user_states;
-
-	/* transport-related state. This will be moved to backend... */
-	struct _PurpleSslConnection *gsc;
-	int fd;
-	int port; /* client port */
-	guint tx_handler;
-	struct _PurpleCircBuffer *txbuf;
-	struct sip_connection rx_conn;
-	time_t last_keepalive;
 };
 
 struct sipe_auth_job {

@@ -8,6 +8,7 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 libsipe_backend_la_SOURCES = \
+	purple-private.h \
 	purple-debug.c \
 	purple-markup.c \
 	purple-network.c \

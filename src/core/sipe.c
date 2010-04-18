@@ -293,22 +293,6 @@ static gboolean process_register_response(struct sipe_account_data *sip, struct 
 static void send_presence_status(struct sipe_core_private *sipe_private,
 				 void *unused);
 
-static void sendout_pkt(PurpleConnection *gc, const char *buf);
-
-void sipe_keep_alive(PurpleConnection *gc)
-{
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	time_t now = time(NULL);
-	if ((sip->keepalive_timeout > 0) &&
-	    ((guint) (now - sip->last_keepalive) >= sip->keepalive_timeout) &&
-	    ((guint) (now - gc->last_received) >= sip->keepalive_timeout)
-		) {
-		SIPE_DEBUG_INFO("sending keep alive %d", sip->keepalive_timeout);
-		sendout_pkt(gc, "\r\n\r\n");
-		sip->last_keepalive = now;
-	}
-}
-
 static void sipe_auth_free(struct sip_auth *auth)
 {
 	g_free(auth->opaque);
@@ -532,68 +516,6 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 	return;
 }
 
-static void sipe_canwrite_cb(gpointer data,
-			     SIPE_UNUSED_PARAMETER gint source,
-			     SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	gsize max_write;
-
-	max_write = purple_circ_buffer_get_max_read(sip->txbuf);
-	if (max_write > 0) {
-		gssize written = sip->gsc ? 
-			(gssize) purple_ssl_write(sip->gsc,
-						  sip->txbuf->outptr,
-						  max_write) :
-			write(sip->fd,
-			      sip->txbuf->outptr,
-			      max_write);
-
-		if (written < 0 && errno == EAGAIN) {
-			return;
-		} else if (written <= 0) {
-			/*TODO: do we really want to disconnect on a failure to write?*/
-			purple_connection_error_reason(gc,
-						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-						       _("Could not write"));
-			return;
-		}
-
-		purple_circ_buffer_mark_read(sip->txbuf, written);
-
-	} else {
-		/* buffer is empty -> stop sending */
-		purple_input_remove(sip->tx_handler);
-		sip->tx_handler = 0;
-	}
-}
-
-static void sendout_pkt(PurpleConnection *gc, const char *buf)
-{
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	time_t currtime = time(NULL);
-	char *tmp;
-
-	SIPE_DEBUG_INFO("sending - %s######\n%s######", ctime(&currtime), tmp = fix_newlines(buf));
-	g_free(tmp);
-
-	/* add packet to circular buffer */
-	purple_circ_buffer_append(sip->txbuf, buf, strlen(buf));
-
-	/* initiate transmission */
-	if (!sip->tx_handler) {
-		sip->tx_handler = purple_input_add(sip->fd, PURPLE_INPUT_WRITE,
-						   sipe_canwrite_cb, gc);
-	}
-}
-
-int sipe_send_raw(PurpleConnection *gc, const char *buf, int len)
-{
-	sendout_pkt(gc, buf);
-	return len;
-}
-
 static void
 sipe_make_signature(struct sipe_account_data *sip,
 		    struct sipmsg *msg)
@@ -694,7 +616,7 @@ void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		tmp = g_slist_next(tmp);
 	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
-	sendout_pkt(gc, outstr->str);
+	sipe_backend_transport_sip_message(gc->proto_data, outstr->str);
 	g_string_free(outstr, TRUE);
 }
 
@@ -764,7 +686,8 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 		const gchar *url, const gchar *to, const gchar *addheaders,
 		const gchar *body, struct sip_dialog *dialog, TransCallback tc)
 {
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = gc->proto_data;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	char *buf;
 	struct sipmsg *msg;
 	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
@@ -818,7 +741,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
 			sipe_backend_network_ip_address(),
-			sip->port,
+			sipe_private->public.transport->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
 			sip->username,
@@ -863,7 +786,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	} else {
 		sipmsg_free(msg);
 	}
-	sendout_pkt(gc, buf);
+	sipe_backend_transport_sip_message(SIPE_CORE_PUBLIC, buf);
 	g_free(buf);
 
 	return trans;
@@ -918,7 +841,7 @@ static void do_register_exp(struct sipe_account_data *sip, int expire)
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
 			      sipe_backend_network_ip_address(),
-			      sip->port,
+			      SIP_TO_CORE_PUBLIC->transport->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
 			      expires);
@@ -5398,60 +5321,27 @@ sipe_get_auth_scheme_name(struct sipe_account_data *sip)
 	return res;
 }
 
-static void sipe_connection_cleanup(struct sipe_account_data *);
-static void create_connection(struct sipe_account_data *);
-
 /* server_name must be g_alloc()'ed */
 static void sipe_server_register(struct sipe_core_private *sipe_private,
 				 sipe_transport_type type,
 				 gchar *server_name,
 				 guint server_port)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
 	sipe_private->public.transport_type = type;
 	sipe_private->public.server_name = server_name;
 	sipe_private->public.server_port = 
 		(server_port != 0)           ? server_port :
 		(type == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
 
-	create_connection(sip);
+	sipe_backend_transport_sip_connect(SIPE_CORE_PUBLIC);
 }
 
-static void sipe_server_disconnect(struct sipe_core_private *sipe_private)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
-	if (sip->gsc != NULL) {
-		purple_ssl_close(sip->gsc);
-		sip->gsc = NULL;
-	} else if (sip->fd > 0) {
-		close(sip->fd);
-	}
-	sip->fd = -1;
-
-	if (sip->txbuf)
-		purple_circ_buffer_destroy(sip->txbuf);
-	sip->txbuf = NULL;
-	if (sip->tx_handler)
-		purple_input_remove(sip->tx_handler);
-	sip->tx_handler = 0;
-
-	if (sip->rx_conn.inputhandler)
-		purple_input_remove(sip->rx_conn.inputhandler);
-	sip->rx_conn.inputhandler = 0;
-	sip->rx_conn.inbuflen     = 0;
-	sip->rx_conn.inbufused    = 0;
-	g_free(sip->rx_conn.inbuf);
-	sip->rx_conn.inbuf = NULL;
-
-	g_free(sipe_private->public.server_name);
-	sipe_private->public.server_name = NULL;
-}
+static void sipe_connection_cleanup(struct sipe_account_data *);
 
 gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
 	gchar *tmp;
 	const gchar *expires_header;
 	int expires, i;
@@ -5481,7 +5371,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							     expires,
 							     do_register_cb,
 							     NULL,
-							     SIP_TO_CORE_PRIVATE,
+							     sipe_private,
 							     NULL);
 					g_free(action_name);
 					sip->reregister_set = TRUE;
@@ -5518,7 +5408,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 							     reauth_timeout,
 							     do_reauthenticate_cb,
 							     NULL,
-							     SIP_TO_CORE_PRIVATE,
+							     sipe_private,
 							     NULL);
 					g_free(action_name);
 					sip->reauthenticate_set = TRUE;
@@ -5551,7 +5441,11 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					g_free(gruu);
 				} else {
 					//SIPE_DEBUG_INFO_NOFORMAT("didn't find gruu in a Contact hdr");
-					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace", sip->username, sip->port, sipe_backend_network_ip_address(), TRANSPORT_DESCRIPTOR);
+					sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
+								       sip->username,
+								       sipe_private->public.transport->client_port,
+								       sipe_backend_network_ip_address(),
+								       TRANSPORT_DESCRIPTOR);
 				}
                                 sip->ocs2007 = FALSE;
 				sip->batched_support = FALSE;
@@ -5614,7 +5508,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					/* For 2005- servers */
 					else
 					{
-						//sipe_options_request(sip, SIP_TO_CORE_PUBLIC->sip_domain);
+						//sipe_options_request(sip, sipe_private->public.sip_domain);
 
 						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL",
 									(GCompareFunc)g_ascii_strcasecmp)) {
@@ -5626,7 +5520,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 						}
 						if (g_slist_find_custom(sip->allow_events, "presence.wpending",
 									(GCompareFunc)g_ascii_strcasecmp)) {
-							sipe_subscribe_presence_wpending(SIP_TO_CORE_PRIVATE,
+							sipe_subscribe_presence_wpending(sipe_private,
 											 msg);
 						}
 
@@ -5649,9 +5543,9 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 				timeout = sipmsg_find_part_of_header(sipmsg_find_header(msg, "ms-keep-alive"),
 								     "timeout=", ";", NULL);
 				if (timeout != NULL) {
-					sscanf(timeout, "%u", &sip->keepalive_timeout);
+					sscanf(timeout, "%u", &sipe_private->public.keepalive_timeout);
 					SIPE_DEBUG_INFO("server determined keep alive timeout is %u seconds",
-							sip->keepalive_timeout);
+							sipe_private->public.keepalive_timeout);
 					g_free(timeout);
 				}
 
@@ -5693,7 +5587,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					sipe_connection_cleanup(sip);
 
 					/* Create new connection */
-					sipe_server_register(SIP_TO_CORE_PRIVATE, transport, hostname, port);
+					sipe_server_register(sipe_private, transport, hostname, port);
 					SIPE_DEBUG_INFO("process_register_response: redirected to host %s port %d transport %s",
 							hostname, port, TRANSPORT_DESCRIPTOR);
 				}
@@ -8020,7 +7914,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 				g_free(auth);
 				resend = sipmsg_to_string(trans->msg);
 				/* resend request */
-				sendout_pkt(sip->gc, resend);
+				sipe_backend_transport_sip_message(sip->gc->proto_data, resend);
 				g_free(resend);
 			} else {
 				if (msg->response < 200) {
@@ -8066,7 +7960,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							g_free(auth);
 							resend = sipmsg_to_string(trans->msg);
 							/* resend request */
-							sendout_pkt(sip->gc, resend);
+							sipe_backend_transport_sip_message(sip->gc->proto_data, resend);
 							g_free(resend);
 						}
 					}
@@ -8092,48 +7986,53 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 	}
 }
 
-static void process_input(struct sipe_account_data *sip, struct sip_connection *conn)
+static void sipe_shrink_buffer(struct sipe_transport_connection *conn,
+			       const gchar *to_here)
 {
-	char *cur;
-	char *dummy;
-	char *tmp;
-	struct sipmsg *msg;
-	int restlen;
-	cur = conn->inbuf;
+	conn->buffer_used -= to_here - conn->buffer;
+	/* string terminator is not included in buffer_used */
+	memmove(conn->buffer, to_here, conn->buffer_used + 1);
+}
+
+void sipe_core_transport_sip_message(struct sipe_core_public *sipe_public)
+{
+	struct sipe_transport_connection *conn = sipe_public->transport;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
+	gchar *cur = conn->buffer;
 
 	/* according to the RFC remove CRLF at the beginning */
 	while (*cur == '\r' || *cur == '\n') {
 		cur++;
 	}
-	if (cur != conn->inbuf) {
-		memmove(conn->inbuf, cur, conn->inbufused - (cur - conn->inbuf));
-		conn->inbufused = strlen(conn->inbuf);
-	}
+	if (cur != conn->buffer)
+		sipe_shrink_buffer(conn, cur);
 
 	/* Received a full Header? */
 	sip->processing_input = TRUE;
 	while (sip->processing_input &&
-	       ((cur = strstr(conn->inbuf, "\r\n\r\n")) != NULL)) {
+	       ((cur = strstr(conn->buffer, "\r\n\r\n")) != NULL)) {
+		struct sipmsg *msg;
+		gchar *tmp;
+		guint remainder;
 		time_t currtime = time(NULL);
 		cur += 2;
 		cur[0] = '\0';
-		SIPE_DEBUG_INFO("received - %s######\n%s\n#######", ctime(&currtime), tmp = fix_newlines(conn->inbuf));
+		SIPE_DEBUG_INFO("received - %s######\n%s\n#######", ctime(&currtime), tmp = fix_newlines(conn->buffer));
 		g_free(tmp);
-		msg = sipmsg_parse_header(conn->inbuf);
+		msg = sipmsg_parse_header(conn->buffer);
 		cur[0] = '\r';
 		cur += 2;
-		restlen = conn->inbufused - (cur - conn->inbuf);
-		if (msg && restlen >= msg->bodylen) {
-			dummy = g_malloc(msg->bodylen + 1);
+		remainder = conn->buffer_used - (cur - conn->buffer);
+		if (msg && remainder >= (guint) msg->bodylen) {
+			char *dummy = g_malloc(msg->bodylen + 1);
 			memcpy(dummy, cur, msg->bodylen);
 			dummy[msg->bodylen] = '\0';
 			msg->body = dummy;
 			cur += msg->bodylen;
-			memmove(conn->inbuf, cur, conn->inbuflen - (cur - conn->inbuf));
-			conn->inbufused = strlen(conn->inbuf);
+			sipe_shrink_buffer(conn, cur);
 		} else {
 			if (msg){
-				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", restlen, msg->bodylen, (int)strlen(conn->inbuf));
+				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
 				sipmsg_free(msg);
                         }
 			return;
@@ -8181,100 +8080,6 @@ static void process_input(struct sipe_account_data *sip, struct sip_connection *
 	}
 }
 
-static void sipe_invalidate_connection(PurpleConnection *gc,
-				       const char *msg, const char *debug)
-{
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-
-	SIPE_DEBUG_ERROR("%s", debug);
-	purple_connection_error_reason(gc,
-				       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-				       msg);
-
-	sipe_server_disconnect(SIP_TO_CORE_PRIVATE);
-}
-
-static void sipe_input_ssl_cb(gpointer data, PurpleSslConnection *gsc,
-			      SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip;
-	struct sip_connection *conn;
-	int readlen, len;
-	gboolean firstread = TRUE;
-
-	/* NOTE: This check *IS* necessary */
-	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
-		purple_ssl_close(gsc);
-		return;
-	}
-
-	sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	conn = &sip->rx_conn;
-
-	/* Read all available data from the SSL connection */
-	do {
-		/* Increase input buffer size as needed */
-		if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
-			conn->inbuflen += SIMPLE_BUF_INC;
-			conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
-			SIPE_DEBUG_INFO("sipe_input_ssl_cb: new input buffer length %d", conn->inbuflen);
-		}
-
-		/* Try to read as much as there is space left in the buffer */
-		readlen = conn->inbuflen - conn->inbufused - 1;
-		len = purple_ssl_read(gsc, conn->inbuf + conn->inbufused, readlen);
-
-		if (len < 0 && errno == EAGAIN) {
-			/* Try again later */
-			return;
-		} else if (len < 0) {
-			sipe_invalidate_connection(gc, _("SSL read error"), "SSL read error\n");
-			return;
-		} else if (firstread && (len == 0)) {
-			sipe_invalidate_connection(gc, _("Server has disconnected"), "Server has disconnected\n");
-			return;
-		}
-
-		conn->inbufused += len;
-		firstread = FALSE;
-
-	/* Equivalence indicates that there is possibly more data to read */
-	} while (len == readlen);
-
-	conn->inbuf[conn->inbufused] = '\0';
-        process_input(sip, conn);
-}
-
-static void sipe_input_tcp_cb(gpointer data,
-			      SIPE_UNUSED_PARAMETER gint source,
-			      SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	PurpleConnection *gc = data;
-	struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	int len;
-	struct sip_connection *conn = &sip->rx_conn;
-
-	if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
-		conn->inbuflen += SIMPLE_BUF_INC;
-		conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
-	}
-
-	len = read(sip->fd, conn->inbuf + conn->inbufused, SIMPLE_BUF_INC - 1);
-
-	if (len < 0 && errno == EAGAIN)
-		return;
-	else if (len <= 0) {
-		sipe_invalidate_connection(gc, _("Server has disconnected"), "Server has disconnected\n");
-		return;
-	}
-
-	conn->inbufused += len;
-	conn->inbuf[conn->inbufused] = '\0';
-
-	process_input(sip, conn);
-}
-
 static guint sipe_ht_hash_nick(const char *nick)
 {
 	char *lc = g_utf8_strdown(nick, -1);
@@ -8312,125 +8117,19 @@ struct sipe_service_data {
 
 static const struct sipe_service_data *current_service = NULL;
 
-static void sipe_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
-				     PurpleSslErrorType error,
-                                     gpointer data)
+void sipe_core_transport_sip_ssl_connect_failure(struct sipe_core_public *sipe_public)
 {
-        PurpleConnection *gc = data;
-        struct sipe_account_data *sip;
-
-        /* If the connection is already disconnected, we don't need to do anything else */
-        if (!PURPLE_CONNECTION_IS_VALID(gc))
-                return;
-
-        sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-        current_service = sip->service_data;
+        current_service = SIPE_ACCOUNT_DATA->service_data;
 	if (current_service) {
 		SIPE_DEBUG_INFO("current_service: transport '%s' service '%s'",
 				current_service->transport ? current_service->transport : "NULL",
 				current_service->service   ? current_service->service   : "NULL");
 	}
-
-	sip->fd = -1;
-        sip->gsc = NULL;
-
-	purple_connection_ssl_error(gc, error);
 }
 
-static void login_common(PurpleConnection *gc,
-			 PurpleSslConnection *gsc,
-			 int fd)
+void sipe_core_transport_sip_connected(struct sipe_core_public *sipe_public)
 {
-	struct sipe_account_data *sip;
-
-	if (!PURPLE_CONNECTION_IS_VALID(gc))
-	{
-		if (gsc) {
-			purple_ssl_close(gsc);
-		} else if (fd >= 0) {
-			close(fd);
-		}
-		return;
-	}
-
-	if (fd < 0) {
-		purple_connection_error_reason(gc,
-					       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-					       _("Could not connect"));
-		return;
-	}
-
-	sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
-	sip->fd = fd;
-	sip->port = purple_network_get_port_from_fd(fd);
-	sip->last_keepalive = time(NULL);
-
-	if (gsc) {
-		sip->gsc = gsc;
-		purple_ssl_input_add(gsc, sipe_input_ssl_cb, gc);
-	} else {
-		sip->rx_conn.inputhandler = purple_input_add(fd,
-							     PURPLE_INPUT_READ,
-							     sipe_input_tcp_cb,
-							     gc);
-	}
-
-	do_register(sip);
-}
-
-
-static void login_ssl_cb(gpointer data, PurpleSslConnection *gsc,
-			    SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	login_common(data, gsc, gsc ? gsc->fd : -1);
-}
-
-static void login_tcp_cb(gpointer data, gint source,
-			 SIPE_UNUSED_PARAMETER const gchar *error_message)
-{
-	login_common(data, NULL, source);
-}
-
-static void create_connection(struct sipe_account_data *sip)
-{
-	struct sipe_core_public *sipe_public = SIP_TO_CORE_PUBLIC;
-	PurpleAccount *account = sip->account;
-	PurpleConnection *gc = sip->gc;
-
-	SIPE_DEBUG_INFO("create_connection - hostname: %s port: %d",
-			sipe_public->server_name,
-			sipe_public->server_port);
-
-	sip->txbuf = purple_circ_buffer_new(0);
-
-	if (sipe_public->transport_type == SIPE_TRANSPORT_TLS) {
-		/* SSL case */
-		SIPE_DEBUG_INFO_NOFORMAT("using SSL");
-
-		if (purple_ssl_connect(account,
-				       sipe_public->server_name,
-				       sipe_public->server_port,
-				       login_ssl_cb,
-				       sipe_ssl_connect_failure, gc) == NULL) {
-			purple_connection_error_reason(gc,
-						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-						       _("Could not create SSL context"));
-			return;
-		}
-	} else {
-		/* TCP case */
-		SIPE_DEBUG_INFO_NOFORMAT("using TCP");
-
-		if (purple_proxy_connect(gc, account,
-					 sipe_public->server_name,
-					 sipe_public->server_port,
-					 login_tcp_cb, gc) == NULL) {
-			purple_connection_error_reason(gc,
-						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-						       _("Could not create socket"));
-			return;
-		}
-	}
+	do_register(SIPE_ACCOUNT_DATA);
 }
 
 /* Service list for autodection */
@@ -8511,12 +8210,11 @@ static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
 
 /* temporary function */
 void sipe_purple_setup(struct sipe_core_public *sipe_public,
-		       PurpleConnection *gc,
-		       PurpleAccount *account)
+		       PurpleConnection *gc)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 	sip->gc = gc;
-	sip->account = account;
+	sip->account = purple_connection_get_account(gc);
 }
 
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
@@ -8594,10 +8292,10 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	return((struct sipe_core_public *)sipe_private);
 }
 
-void sipe_core_connect(struct sipe_core_public *sipe_public,
-		       sipe_transport_type transport,
-		       const gchar *server,
-		       const gchar *port)
+void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
+				     sipe_transport_type transport,
+				     const gchar *server,
+				     const gchar *port)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 
@@ -8649,7 +8347,9 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		purple_srv_cancel(sip->srv_query_data);
 	sip->srv_query_data = NULL;
 
-	sipe_server_disconnect(sipe_private);
+	sipe_backend_transport_sip_disconnect(SIPE_CORE_PUBLIC);
+	g_free(sipe_private->public.server_name);
+	sipe_private->public.server_name = NULL;
 
 	sipe_auth_free(&sip->registrar);
 	sipe_auth_free(&sip->proxy);

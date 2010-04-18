@@ -30,8 +30,7 @@ void sipe_search_contact_with_cb(PurpleConnection *gc,
 GList *sipe_buddy_menu(PurpleBuddy *buddy);
 GList *sipe_chat_menu(PurpleChat *chat);
 void sipe_purple_setup(struct sipe_core_public *sipe_public,
-		       PurpleConnection *gc,
-		       PurpleAccount *account);
+		       PurpleConnection *gc);
 void sipe_close(PurpleConnection *gc);
 int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		 PurpleMessageFlags flags);
@@ -47,7 +46,6 @@ void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
 void sipe_chat_leave(PurpleConnection *gc, int id);
 int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 		   PurpleMessageFlags flags);
-void sipe_keep_alive(PurpleConnection *gc);
 void sipe_group_buddy(PurpleConnection *gc, const char *who,
 		      const char *old_group_name,
 		      const char *new_group_name);
@@ -75,8 +73,6 @@ void sipe_ft_send_file(PurpleConnection *gc, const char *who,
  */
 PurpleXfer *sipe_ft_new_xfer(PurpleConnection *gc,
 			     const char *who);
-
-int sipe_send_raw(PurpleConnection *gc, const char *buf, int len);
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA ((struct sipe_core_private *)account->gc->proto_data)->temporary

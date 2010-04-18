@@ -20,6 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Forward declarations */
+struct sipe_core_public;
+
 /** DEBUGGING ****************************************************************/
 
 typedef enum {
@@ -60,3 +63,10 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 /** NETWORK ******************************************************************/
 
 const gchar *sipe_backend_network_ip_address(void);
+
+/** TRANSPORT ****************************************************************/
+
+void sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public);
+void sipe_backend_transport_sip_disconnect(struct sipe_core_public *sipe_public);
+void sipe_backend_transport_sip_message(struct sipe_core_public *sipe_public,
+					const gchar *buffer);

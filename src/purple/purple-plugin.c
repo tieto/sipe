@@ -25,6 +25,7 @@
 #endif
 
 #include <string.h>
+#include <time.h>
 
 #include <glib.h>
 
@@ -43,6 +44,8 @@
 #include "request.h"
 #include "status.h"
 #include "version.h"
+
+#include "purple-private.h"
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -221,6 +224,7 @@ static void sipe_login(PurpleAccount *account)
 	gchar *login_account = NULL;
 	const gchar *errmsg;
 	sipe_transport_type type;
+	struct sipe_backend_private *purple_private;
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_login: username '%s'", username);
@@ -255,8 +259,11 @@ static void sipe_login(PurpleAccount *account)
 		return;
 	}
 
+	sipe_public->backend_private = purple_private = g_new0(struct sipe_backend_private, 1);
+	purple_private->gc = gc;
+
 	gc->proto_data = sipe_public;
-	sipe_purple_setup(sipe_public, gc, account);
+	sipe_purple_setup(sipe_public, gc);
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
 		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
 	purple_connection_set_display_name(gc, sipe_public->sip_name);
@@ -271,10 +278,10 @@ static void sipe_login(PurpleAccount *account)
 	} else {
 		type = SIPE_TRANSPORT_TCP;
 	}
-	sipe_core_connect(sipe_public,
-			  type,
-			  username_split[0],
-			  username_split[1]);
+	sipe_core_transport_sip_connect(sipe_public,
+					type,
+					username_split[0],
+					username_split[1]);
 	g_strfreev(username_split);
 }
 
@@ -295,10 +302,32 @@ static void sipe_chat_invite(PurpleConnection *gc, int id,
 	sipe_core_chat_create(gc->proto_data, id, name);
 }
 
+static void sipe_keep_alive(PurpleConnection *gc)
+{
+	struct sipe_core_public *sipe_public = gc->proto_data;
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	time_t now = time(NULL);
+
+	if ((sipe_public->keepalive_timeout > 0) &&
+	    ((guint) (now - purple_private->last_keepalive) >= sipe_public->keepalive_timeout) &&
+	    ((guint) (now - gc->last_received) >= sipe_public->keepalive_timeout)
+		) {
+		SIPE_DEBUG_INFO("sending keep alive %d", sipe_public->keepalive_timeout);
+		sipe_backend_transport_sip_message(sipe_public, "\r\n\r\n");
+		purple_private->last_keepalive = now;
+	}
+}
+
 static void sipe_alias_buddy(PurpleConnection *gc, const char *name,
 			     SIPE_UNUSED_PARAMETER const char *alias)
 {
 	sipe_core_group_set_user(gc->proto_data, name);
+}
+
+static int sipe_send_raw(PurpleConnection *gc, const gchar *buf, int len)
+{
+	sipe_backend_transport_sip_message(gc->proto_data, buf);
+	return len;
 }
 
 #if PURPLE_VERSION_CHECK(2,5,0)

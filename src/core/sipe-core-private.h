@@ -45,6 +45,7 @@ struct sipe_core_private {
 
 /* Convenience macros */
 #define SIPE_CORE_PRIVATE ((struct sipe_core_private *)sipe_public)
+#define SIPE_CORE_PUBLIC  ((struct sipe_core_public *)sipe_private)
 
 /* Transition macros */
 #define SIPE_ACCOUNT_DATA         SIPE_CORE_PRIVATE->temporary
