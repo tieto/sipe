@@ -57,20 +57,9 @@ struct sipe_transport_purple {
 };
 #define PURPLE_TRANSPORT ((struct sipe_transport_purple *) sipe_public->transport)
 
-static void transport_invalidate_connection(PurpleConnection *gc,
-					    const char *msg, const char *debug)
-{
-	SIPE_DEBUG_ERROR("%s", debug);
-	purple_connection_error_reason(gc,
-				       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
-				       msg);
-
-	sipe_backend_transport_sip_disconnect(gc->proto_data);
-}
-
 static void transport_input_common(PurpleConnection *gc)
 {
-	struct sipe_core_public *sipe_public = gc->proto_data;
+	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 	struct sipe_transport_connection *conn = sipe_public->transport;
 	gssize readlen, len;
@@ -102,14 +91,18 @@ static void transport_input_common(PurpleConnection *gc)
 			/* Try again later */
 			return;
 		} else if (len < 0) {
-			transport_invalidate_connection(gc,
-							_("Read error"),
-							"Read error");
+			SIPE_DEBUG_ERROR_NOFORMAT("Read error");
+			sipe_backend_transport_sip_disconnect(sipe_public);
+			purple_connection_error_reason(gc,
+						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+						       _("Read error"));
 			return;
 		} else if (firstread && (len == 0)) {
-			transport_invalidate_connection(gc,
-							_("Server has disconnected"),
-							"Server has disconnected");
+			SIPE_DEBUG_ERROR_NOFORMAT("Server has disconnected");
+			sipe_backend_transport_sip_disconnect(sipe_public);
+			purple_connection_error_reason(gc,
+						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+						       _("Server has disconnected"));
 			return;
 		}
 
@@ -164,7 +157,7 @@ static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnect
         if (!PURPLE_CONNECTION_IS_VALID(gc))
                 return;
 
-	sipe_public = gc->proto_data;
+	sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	sipe_core_transport_sip_ssl_connect_failure(sipe_public);
 
 	transport = PURPLE_TRANSPORT;
@@ -198,7 +191,7 @@ static void transport_connected_common(PurpleConnection *gc,
 		return;
 	}
 
-	sipe_public = gc->proto_data;
+	sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	transport = PURPLE_TRANSPORT;
 	transport->socket = fd;
 	sipe_public->transport->client_port = purple_network_get_port_from_fd(fd);
@@ -309,7 +302,7 @@ static void transport_canwrite_cb(gpointer data,
 				  SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
 	PurpleConnection *gc = data;
-	struct sipe_core_public *sipe_public = gc->proto_data;
+	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 	gsize max_write;
 

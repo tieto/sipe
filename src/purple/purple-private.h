@@ -28,6 +28,9 @@ struct sipe_backend_private {
 	time_t last_keepalive;
 };
 
+/* Convenience macros */
+#define PURPLE_GC_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) gc->proto_data)
+
 /*
   Local Variables:
   mode: c

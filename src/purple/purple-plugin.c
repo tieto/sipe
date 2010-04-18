@@ -58,8 +58,8 @@
 #define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
 #endif
 
-#define PURPLE_BUDDY_SIPE_CORE_PUBLIC ((struct sipe_core_public *) buddy->account->gc->proto_data)
-#define PURPLE_GC_SIPE_CORE_PUBLIC    ((struct sipe_core_public *) gc->proto_data)
+/* Convenience macros */
+#define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) buddy->account->gc->proto_data)
 
 /* Status attributes (see also sipe_status_types() */
 #define SIPE_STATUS_ATTR_ID_MESSAGE  "message"
@@ -114,7 +114,7 @@ static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 static gchar *sipe_status_text(PurpleBuddy *buddy)
 {
 	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
-	return sipe_core_buddy_status(PURPLE_BUDDY_SIPE_CORE_PUBLIC,
+	return sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
 				      buddy->name,
 				      PURPLE_STATUS_TO_ACTIVITY(purple_status_get_id(status)),
 				      purple_status_get_name(status));
@@ -125,7 +125,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy,
 			      SIPE_UNUSED_PARAMETER gboolean full)
 {
 	const PurplePresence *presence = purple_buddy_get_presence(buddy);
-	GSList *info = sipe_core_buddy_info(PURPLE_BUDDY_SIPE_CORE_PUBLIC,
+	GSList *info = sipe_core_buddy_info(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
 					    buddy->name,
 					    purple_status_get_name(purple_presence_get_active_status(presence)),
 					    purple_presence_is_online(presence));
@@ -290,7 +290,7 @@ static void sipe_login(PurpleAccount *account)
 
 static void sipe_close(PurpleConnection *gc)
 {
-	struct sipe_core_public *sipe_public = PURPLE_GC_SIPE_CORE_PUBLIC;
+	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 
 	if (sipe_public) {
 		struct sipe_backend_private *purple_private = sipe_public->backend_private;
@@ -303,24 +303,24 @@ static void sipe_close(PurpleConnection *gc)
 
 static void sipe_add_permit(PurpleConnection *gc, const char *name)
 {
-	sipe_core_contact_allow_deny(PURPLE_GC_SIPE_CORE_PUBLIC, name, TRUE);
+	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, TRUE);
 }
 
 static void sipe_add_deny(PurpleConnection *gc, const char *name)
 {
-	sipe_core_contact_allow_deny(PURPLE_GC_SIPE_CORE_PUBLIC, name, FALSE);
+	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, FALSE);
 }
 
 static void sipe_chat_invite(PurpleConnection *gc, int id,
 			     SIPE_UNUSED_PARAMETER const char *message,
 			     const char *name)
 {
-	sipe_core_chat_create(PURPLE_GC_SIPE_CORE_PUBLIC, id, name);
+	sipe_core_chat_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, id, name);
 }
 
 static void sipe_keep_alive(PurpleConnection *gc)
 {
-	struct sipe_core_public *sipe_public = PURPLE_GC_SIPE_CORE_PUBLIC;
+	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	time_t now = time(NULL);
 
@@ -337,12 +337,12 @@ static void sipe_keep_alive(PurpleConnection *gc)
 static void sipe_alias_buddy(PurpleConnection *gc, const char *name,
 			     SIPE_UNUSED_PARAMETER const char *alias)
 {
-	sipe_core_group_set_user(PURPLE_GC_SIPE_CORE_PUBLIC, name);
+	sipe_core_group_set_user(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name);
 }
 
 static int sipe_send_raw(PurpleConnection *gc, const gchar *buf, int len)
 {
-	sipe_backend_transport_sip_message(PURPLE_GC_SIPE_CORE_PUBLIC, buf);
+	sipe_backend_transport_sip_message(PURPLE_GC_TO_SIPE_CORE_PUBLIC, buf);
 	return len;
 }
 
@@ -515,13 +515,13 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 static void sipe_republish_calendar(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	sipe_core_update_calendar(PURPLE_GC_SIPE_CORE_PUBLIC);
+	sipe_core_update_calendar(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 }
 
 static void sipe_reset_status(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	sipe_core_reset_status(PURPLE_GC_SIPE_CORE_PUBLIC);
+	sipe_core_reset_status(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 }
 
 static GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
