@@ -51,6 +51,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 */
 
 #include <string.h>
+#include <errno.h>
 
 #include <glib.h>
 
@@ -148,14 +149,14 @@ sipe_domino_get_free_busy(time_t fb_start,
 	memset(res, (SIPE_CAL_FREE + '0'), slots);
 
 	while (entry) {
-		struct sipe_cal_event *cal_event = entry->data;	
+		struct sipe_cal_event *cal_event = entry->data;
 		int start = sipe_domino_get_slot_no(fb_start, cal_event->start_time);
 		int end = sipe_domino_get_slot_no(fb_start, (cal_event->end_time - 1));
 		int i;
 
 		for (i = start; i <= end; i++) {
 			res[i] = SIPE_CAL_BUSY + '0';
-		}	
+		}
 		entry = entry->next;
 	}
 	SIPE_DEBUG_INFO("sipe_domino_get_free_busy: res=\n%s", res);
@@ -175,7 +176,7 @@ sipe_domino_process_calendar_response(int return_code,
 
 	http_conn_set_close(conn);
 	cal->http_conn = NULL;
-	
+
 	if (content_type && !g_str_has_prefix(content_type, "text/xml")) {
 		cal->is_disabled = TRUE;
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_process_calendar_response: not XML, exiting.");
@@ -211,20 +212,20 @@ sipe_domino_process_calendar_response(int return_code,
 				const char *name = sipe_xml_attribute(node2, "name");
 
 				SIPE_DEBUG_INFO("\tentrydata name=%s", name);
-				
+
 				if (sipe_strequal(name, VIEWENTITY_START0_TIME) ||
 				    sipe_strequal(name, VIEWENTITY_START_TIME) ||
 				    sipe_strequal(name, VIEWENTITY_END_TIME))
 				{
 					char *tmp = sipe_xml_data(sipe_xml_child(node2, "datetime"));
 					time_t time_val = sipe_utils_str_to_time(tmp);
-					
-					if (sipe_strequal(name, VIEWENTITY_START_TIME)) {					
+
+					if (sipe_strequal(name, VIEWENTITY_START_TIME)) {
 						cal_event->start_time = time_val;
 					} else if (sipe_strequal(name, VIEWENTITY_END_TIME)) {
 						cal_event->end_time = time_val;
 					}
-					
+
 					SIPE_DEBUG_INFO("\t\tdatetime=%s", asctime(gmtime(&time_val)));
 					g_free(tmp);
 				} else if (sipe_strequal(name, VIEWENTITY_TEXT_LIST)) {
@@ -236,7 +237,7 @@ sipe_domino_process_calendar_response(int return_code,
 					     node3 = sipe_xml_twin(node3))
 					{
 						char *tmp = sipe_xml_data(node3);
-						
+
 						if (!tmp) continue;
 
 						SIPE_DEBUG_INFO("\t\ttext=%s", tmp);
@@ -266,11 +267,11 @@ sipe_domino_process_calendar_response(int return_code,
 			}
 		}
 		sipe_xml_free(xml);
-		
+
 		/* creates FreeBusy from cal->cal_events */
 		g_free(cal->free_busy);
 		cal->free_busy = sipe_domino_get_free_busy(cal->fb_start, cal->cal_events);
-		
+
 		/* update SIP server */
 		cal->is_updated = TRUE;
 		if (cal->sip->ocs2007) {
@@ -380,13 +381,13 @@ sipe_domino_process_login_response(int return_code,
 
 	if (return_code >= 200 && return_code < 400) {
 		SIPE_DEBUG_INFO("sipe_domino_process_login_response: rather SUCCESS, ret=%d", return_code);
-		
+
 		/* next query */
 		sipe_domino_do_calendar_request(cal);
-		
+
 	} else if (return_code < 0 || return_code >= 400) {
 		SIPE_DEBUG_INFO("sipe_domino_process_login_response: rather FAILURE, ret=%d", return_code);
-		
+
 		/* stop here */
 		/* cal->is_disabled = TRUE; */
 
@@ -406,9 +407,9 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		char *password;
 
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_do_login_request: going Login req.");
-		
+
 		if (!cal->auth) return;
-		
+
 		/* @TODO replace purple_url_encode() with non-purple equiv. */
 		user     = g_strdup(purple_url_encode(cal->email));
 		password = g_strdup(purple_url_encode(cal->auth->password));
@@ -416,7 +417,7 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		body = g_strdup_printf(SIPE_DOMINO_LOGIN_REQUEST, user, password);
 		g_free(user);
 		g_free(password);
-		
+
 		cal->http_conn = http_conn_create(cal->account,
 						  cal->http_session,
 						  HTTP_CONN_POST,
@@ -447,19 +448,19 @@ sipe_domino_read_notes_ini(const char *filename_with_path, char **mail_server, c
 
 	if (!(fp = fopen (filename_with_path, "r+")))
 		SIPE_DEBUG_ERROR("sipe_domino_read_notes_ini(): could not open `%s': %s", filename_with_path, g_strerror (errno));
-	
+
 	while (fgets(rbuf, sizeof (rbuf), fp)) {
 		char *prop = "MailFile=";
-		int prop_len = strlen(prop);
+		guint prop_len = strlen(prop);
 
 		/* SIPE_DEBUG_INFO("\t%s (%"G_GSIZE_FORMAT")", rbuf, strlen(rbuf)); */
 		if (mail_file && !g_ascii_strncasecmp(rbuf, prop, prop_len) && (strlen(rbuf) > prop_len)) {
 			*mail_file = g_strdup(g_strstrip((rbuf+prop_len)));
 		}
-		
+
 		prop = "MailServer=";
 		prop_len = strlen(prop);
-		
+
 		if (mail_server && !g_ascii_strncasecmp(rbuf, prop, prop_len) && (strlen(rbuf) > prop_len)) {
 			*mail_server = g_strdup(g_strstrip((rbuf+prop_len)));
 		}
@@ -483,7 +484,7 @@ sipe_domino_compose_url(const char *protocol, const char *mail_server, const cha
 	g_return_val_if_fail(protocol, NULL);
 	g_return_val_if_fail(mail_server, NULL);
 	g_return_val_if_fail(mail_file, NULL);
-	
+
 	/* mail_server: exptacting just common name */
 	if ((ptr = strstr(mail_server, "/"))) {
 		tmp = g_strndup(mail_server, (ptr-mail_server));
@@ -498,14 +499,14 @@ sipe_domino_compose_url(const char *protocol, const char *mail_server, const cha
 	g_free(tmp);
 	tmp = g_ascii_strdown(tmp2, -1);
 	g_free(tmp2);
-	
+
 	/* mail_file */
 	tmp3 = sipe_utils_str_replace(mail_file, "\\", "/");
-	
+
 	tmp2 = g_strconcat(protocol, "://", tmp, "/", tmp3, NULL);
 	g_free(tmp);
 	g_free(tmp3);
-	
+
 	return tmp2;
 }
 
@@ -513,7 +514,7 @@ void
 sipe_domino_update_calendar(struct sipe_account_data *sip)
 {
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
-	
+
 	sipe_cal_calendar_init(sip, NULL);
 
 	/* Autodiscovery.
@@ -524,14 +525,17 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 		char *path = NULL;
 		char *mail_server = NULL;
 		char *mail_file = NULL;
-#ifdef _WIN32	
+#ifdef _WIN32
 		/* fine for Notes 8.5 too */
 		path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\8.0", "NotesIniPath");
 		if (is_empty(path)) {
+			g_free(path);
 			path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\7.0", "NotesIniPath");
 			if (is_empty(path)) {
+				g_free(path);
 				path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\6.0", "NotesIniPath");
 				if (is_empty(path)) {
+					g_free(path);
 					path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\5.0", "NotesIniPath");
 				}
 			}
@@ -540,21 +544,20 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 #else
 		/* How to know location of notes.ini on *NIX ? */
 #endif
-		
+
 		/* get server url */
 		if (path) {
 			sipe_domino_read_notes_ini(path, &mail_server, &mail_file);
 		}
 		SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_server=%s", mail_server ? mail_server : "");
 		SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_file=%s", mail_file ? mail_file : "");
-		
+
 		g_free(sip->cal->as_url);
 		sip->cal->as_url = sipe_domino_compose_url("https", mail_server, mail_file);
 		SIPE_DEBUG_INFO("sipe_domino_update_calendar: sip->cal->as_url=%s", sip->cal->as_url ? sip->cal->as_url : "");
 		g_free(path);
-		path = NULL;
 	}
-	
+
 	/* create session */
 	if (sip->cal->http_session) {
 		http_conn_session_free(sip->cal->http_session);

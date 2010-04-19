@@ -6,6 +6,10 @@ noinst_LTLIBRARIES = \
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
+EXTRA_DIST = \
+	sipe-win32dep.h \
+	sipe-win32dep.c
+
 libsipe_core_la_SOURCES = \
 	sipmsg.h \
 	sipmsg.c \
