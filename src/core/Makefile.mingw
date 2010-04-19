@@ -82,7 +82,8 @@ CLEAN_C_SRC = \
 			sip-csta.c \
 			sipe-xml.c \
 			sipe-mime.c \
-			uuid.c
+			uuid.c \
+			sipe-win32dep.c
 
 PURPLE_C_SRC = \
 			../purple/purple-debug.c \

@@ -56,6 +56,10 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 
 /* @TODO replace purple_url_encode() with non-purple equiv. */
 #include "util.h"
+/* for registry read */
+#ifdef _WIN32
+#include "sipe-win32dep.h"
+#endif
 
 #include "http-conn.h"
 #include "sipe-common.h"
@@ -421,13 +425,129 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 	}
 }
 
+/* in notes.ni
+MailFile=mail5\mhe111bm.nsf
+MailServer=CN=MSGM2222/OU=srv/O=xxcom
+
+Output values should be freed if requested.
+*/
+static void
+sipe_domino_read_notes_ini(const char *filename_with_path, char **mail_server, char **mail_file)
+{
+	char rbuf[256];
+	FILE *fp;
+
+	if (!(fp = fopen (filename_with_path, "r+")))
+		SIPE_DEBUG_ERROR("sipe_domino_read_notes_ini(): could not open `%s': %s", filename_with_path, g_strerror (errno));
+	
+	while (fgets(rbuf, sizeof (rbuf), fp)) {
+		char *prop = "MailFile=";
+		int prop_len = strlen(prop);
+
+		/* SIPE_DEBUG_INFO("\t%s (%"G_GSIZE_FORMAT")", rbuf, strlen(rbuf)); */
+		if (mail_file && !g_ascii_strncasecmp(rbuf, prop, prop_len) && (strlen(rbuf) > prop_len)) {
+			*mail_file = g_strdup(g_strstrip((rbuf+prop_len)));
+		}
+		
+		prop = "MailServer=";
+		prop_len = strlen(prop);
+		
+		if (mail_server && !g_ascii_strncasecmp(rbuf, prop, prop_len) && (strlen(rbuf) > prop_len)) {
+			*mail_server = g_strdup(g_strstrip((rbuf+prop_len)));
+		}
+	}
+	fclose (fp);
+}
+
+/**
+@param protocol		Ex.: https
+@param mail_server	Ex.: CN=MSGM2222/OU=srv/O=xxcom
+@param mail_file	Ex.: mail5\mhe111bm.nsf
+
+@return			Ex.: https://msgm2222/mail5/mhe111bm.nsf
+*/
+static char *
+sipe_domino_compose_url(const char *protocol, const char *mail_server, const char *mail_file)
+{
+	const char *ptr;
+	char *tmp, *tmp2, *tmp3;
+
+	g_return_val_if_fail(protocol, NULL);
+	g_return_val_if_fail(mail_server, NULL);
+	g_return_val_if_fail(mail_file, NULL);
+	
+	/* mail_server: exptacting just common name */
+	if ((ptr = strstr(mail_server, "/"))) {
+		tmp = g_strndup(mail_server, (ptr-mail_server));
+	} else {
+		tmp = g_strdup(mail_server);
+	}
+	if ((!g_ascii_strncasecmp(tmp, "CN=", 3))) {
+		tmp2 = g_strdup(tmp+3);
+	} else {
+		tmp2 = g_strdup(tmp);
+	}
+	g_free(tmp);
+	tmp = g_ascii_strdown(tmp2, -1);
+	g_free(tmp2);
+	
+	/* mail_file */
+	tmp3 = sipe_utils_str_replace(mail_file, "\\", "/");
+	
+	tmp2 = g_strconcat(protocol, "://", tmp, "/", tmp3, NULL);
+	g_free(tmp);
+	g_free(tmp3);
+	
+	return tmp2;
+}
+
 void
 sipe_domino_update_calendar(struct sipe_account_data *sip)
 {
-
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
-
+	
 	sipe_cal_calendar_init(sip, NULL);
+
+	/* Autodiscovery.
+	 * Searches location of notes.ini in Registry, reads it, extracts mail server and mail file,
+	 * composes HTTPS URL to Domino web, basing on that
+	 */
+	if (sip && sip->cal && is_empty(sip->cal->as_url)) {
+		char *path = NULL;
+		char *mail_server = NULL;
+		char *mail_file = NULL;
+#ifdef _WIN32	
+		/* fine for Notes 8.5 too */
+		path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\8.0", "NotesIniPath");
+		if (is_empty(path)) {
+			path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\7.0", "NotesIniPath");
+			if (is_empty(path)) {
+				path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\6.0", "NotesIniPath");
+				if (is_empty(path)) {
+					path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\5.0", "NotesIniPath");
+				}
+			}
+		}
+		SIPE_DEBUG_INFO("sipe_domino_update_calendar: notes.ini path:\n%s", path ? path : "");
+#else
+		/* How to know location of notes.ini on *NIX ? */
+#endif
+		
+		/* get server url */
+		if (path) {
+			sipe_domino_read_notes_ini(path, &mail_server, &mail_file);
+		}
+		SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_server=%s", mail_server ? mail_server : "");
+		SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_file=%s", mail_file ? mail_file : "");
+		
+		g_free(sip->cal->as_url);
+		sip->cal->as_url = sipe_domino_compose_url("https", mail_server, mail_file);
+		SIPE_DEBUG_INFO("sipe_domino_update_calendar: sip->cal->as_url=%s", sip->cal->as_url ? sip->cal->as_url : "");
+		g_free(path);
+		path = NULL;
+	}
+	
+	/* create session */
 	if (sip->cal->http_session) {
 		http_conn_session_free(sip->cal->http_session);
 	}
