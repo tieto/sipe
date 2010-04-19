@@ -283,7 +283,7 @@ http_conn_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
         }
 
 	if (http_conn->callback) {
-		(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn, http_conn->data);
+		(*http_conn->callback)(HTTP_CONN_ERROR, NULL, NULL, http_conn, http_conn->data);
 	}
 	http_conn_close(http_conn, message);
 }
@@ -353,13 +353,13 @@ http_conn_input_cb_ssl(gpointer data,
 			return;
 		} else if (len < 0) {
 			if (http_conn->callback) {
-				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn, http_conn->data);
+				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, NULL, http_conn, http_conn->data);
 			}
 			http_conn_close(http_conn, "SSL read error");
 			return;
 		} else if (firstread && (len == 0)) {
 			if (http_conn->callback) {
-				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, http_conn, http_conn->data);
+				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, NULL, http_conn, http_conn->data);
 			}
 			http_conn_close(http_conn, "Server has disconnected");
 			return;
@@ -654,7 +654,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		http_conn->retries++;
 		if (http_conn->retries > 2) {
 			if (http_conn->callback) {
-				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn, http_conn->data);
+				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
 			SIPE_DEBUG_INFO_NOFORMAT("http_conn_process_input_message: Authentication failed");
 			http_conn_set_close(http_conn);
@@ -713,7 +713,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 
 		if (ret < 0) {
 			if (http_conn->callback) {
-				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, http_conn, http_conn->data);
+				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
 			SIPE_DEBUG_INFO_NOFORMAT("http_conn_process_input_message: Failed to initialize security context");
 			http_conn_set_close(http_conn);
@@ -729,6 +729,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 	/* Other response */
 	else {
 		const char *set_cookie_hdr;
+		const char *content_type = sipmsg_find_header(msg, "Content-Type");
 		http_conn->retries = 0;
 		
 		/* Set cookies.
@@ -762,7 +763,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		}
 
 		if (http_conn->callback) {
-			(*http_conn->callback)(msg->response, msg->body, http_conn, http_conn->data);
+			(*http_conn->callback)(msg->response, msg->body, content_type, http_conn, http_conn->data);
 		}
 	}
 }

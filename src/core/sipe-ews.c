@@ -51,6 +51,7 @@ be great to implement too.
 
 #include "http-conn.h"
 #include "sipe-backend.h"
+#include "sipe-common.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"
 #include "sipe-ews.h"
@@ -175,6 +176,7 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal);
 static void
 sipe_ews_process_avail_response(int return_code,
 				const char *body,
+				SIPE_UNUSED_PARAMETER const char *content_type,
 				HttpConn *conn,
 				void *data)
 {
@@ -286,6 +288,7 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 static void
 sipe_ews_process_oof_response(int return_code,
 			      const char *body,
+			      SIPE_UNUSED_PARAMETER const char *content_type,
 			      HttpConn *conn,
 			      void *data)
 {
@@ -368,6 +371,7 @@ sipe_ews_process_oof_response(int return_code,
 static void
 sipe_ews_process_autodiscover(int return_code,
 			      const char *body,
+			      SIPE_UNUSED_PARAMETER const char *content_type,
 			      HttpConn *conn,
 			      void *data)
 {

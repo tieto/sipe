@@ -165,6 +165,7 @@ sipe_domino_get_free_busy(time_t fb_start,
 static void
 sipe_domino_process_calendar_response(int return_code,
 				 const char *body,
+				 const char *content_type,
 				 HttpConn *conn,
 				 void *data)
 {
@@ -174,6 +175,12 @@ sipe_domino_process_calendar_response(int return_code,
 
 	http_conn_set_close(conn);
 	cal->http_conn = NULL;
+	
+	if (content_type && !g_str_has_prefix(content_type, "text/xml")) {
+		cal->is_disabled = TRUE;
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_process_calendar_response: not XML, exiting.");
+		return;
+	}
 
 	if (return_code == 200 && body) {
 		const sipe_xml *node, *node2, *node3;
@@ -363,6 +370,7 @@ static void
 sipe_domino_process_login_response(int return_code,
 				   /* temporary? */
 				   SIPE_UNUSED_PARAMETER const char *body,
+				   SIPE_UNUSED_PARAMETER const char *content_type,
 				   HttpConn *conn,
 				   void *data)
 {
@@ -380,7 +388,7 @@ sipe_domino_process_login_response(int return_code,
 		SIPE_DEBUG_INFO("sipe_domino_process_login_response: rather FAILURE, ret=%d", return_code);
 		
 		/* stop here */
-		cal->is_disabled = TRUE;
+		/* cal->is_disabled = TRUE; */
 
 		http_conn_set_close(conn);
 		cal->http_conn = NULL;
