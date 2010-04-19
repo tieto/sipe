@@ -8261,9 +8261,11 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	/* For Domino: https://[domino_server]/[databasename].nsf */
 	if (sipe_strequal(calendar, "DOMINO") && !is_empty(email_url)) {
 		char *tmp = g_ascii_strdown(email_url, -1);
-		if (!g_str_has_prefix(email_url, "https://") ||
-		    !g_str_has_suffix(email_url, ".nsf"))
+		if (!g_str_has_prefix(tmp, "https://") ||
+		    !g_str_has_suffix(tmp, ".nsf"))
 		{
+			g_free(tmp);
+			g_strfreev(user_domain);
 			*errmsg = _("Lotus Domino URL should be valid if provided\nExample: https://domino.corp.com/maildatabase.nsf");
 			return NULL;
 		}
