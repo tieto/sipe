@@ -3,8 +3,8 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 pier11 <pier11@operamail.com>
- *
+ * Copyright (C) 2010 pier11 <pier11@operamail.com> (fix for REG_EXPAND_SZ)
+ * Copyright (C) 2002-2003, Herman Bloggs <hermanator12002@yahoo.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
