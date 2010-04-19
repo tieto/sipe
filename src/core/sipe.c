@@ -8222,6 +8222,8 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    const gchar *login_account,
 					    const gchar *password,
 					    const gchar *email,
+					    const gchar *email_url,
+					    const gchar *calendar,
 					    const gchar **errmsg)
 {
 	struct sipe_core_private *sipe_private;
@@ -8261,6 +8263,19 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		g_strfreev(user_domain);
 		*errmsg = _("SIP Exchange user name contains whitespace");
 		return NULL;
+	}
+	
+	/* ensure that email_url is in proper format if Domino enabled (if provided) */
+	/* For Domino: https://[domino_server]/[databasename].nsf */
+	if (sipe_strequal(calendar, "DOMINO") && !is_empty(email_url)) {
+		char *tmp = g_ascii_strdown(email_url, -1);
+		if (!g_str_has_prefix(email_url, "https://") ||
+		    !g_str_has_suffix(email_url, ".nsf"))
+		{
+			*errmsg = _("Lotus Domino URL should be valid if provided\nExample: https://domino.corp.com/maildatabase.nsf");
+			return NULL;
+		}
+		g_free(tmp);
 	}
 
 	sipe_private = g_new0(struct sipe_core_private, 1);

@@ -220,7 +220,9 @@ static void sipe_login(PurpleAccount *account)
 	PurpleConnection *gc   = purple_account_get_connection(account);
 	const gchar *username  = purple_account_get_username(account);
 	const gchar *email     = purple_account_get_string(account, "email", NULL);
+	const gchar *email_url = purple_account_get_string(account, "email_url", NULL);
 	const gchar *transport = purple_account_get_string(account, "transport", "auto");
+	const gchar* calendar  = purple_account_get_string(account, "calendar", "EXCH");
 	struct sipe_core_public *sipe_public;
 	gchar **username_split;
 	gchar *login_domain = NULL;
@@ -250,6 +252,8 @@ static void sipe_login(PurpleAccount *account)
 					 login_domain, login_account,
 					 purple_connection_get_password(gc),
 					 email,
+					 email_url,
+					 calendar,
 					 &errmsg);
 	g_free(login_domain);
 	g_free(login_account);
