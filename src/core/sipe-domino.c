@@ -410,7 +410,7 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		if (!cal->auth) return;
 		
 		/* @TODO replace purple_url_encode() with non-purple equiv. */
-		user     = g_strdup(purple_url_encode(cal->auth->user));
+		user     = g_strdup(purple_url_encode(cal->email));
 		password = g_strdup(purple_url_encode(cal->auth->password));
 
 		body = g_strdup_printf(SIPE_DOMINO_LOGIN_REQUEST, user, password);
