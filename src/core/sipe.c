@@ -2152,17 +2152,17 @@ sipe_refresh_blocked_status_cb(char *buddy_name,
 	int container_id = sipe_find_access_level(sip, "user", buddy_name, NULL);
 	gboolean blocked = (container_id == 32000);
 	gboolean blocked_in_blist = !purple_privacy_check(sip->account, buddy_name);
-	
+
 	/* SIPE_DEBUG_INFO("sipe_refresh_blocked_status_cb: buddy_name=%s, blocked=%s, blocked_in_blist=%s",
 		buddy_name, blocked ? "T" : "F", blocked_in_blist ? "T" : "F"); */
-	
+
 	if (blocked != blocked_in_blist) {
 		if (blocked) {
 			purple_privacy_deny_add(sip->account, buddy_name, TRUE);
 		} else {
-			purple_privacy_deny_remove(sip->account, buddy_name, TRUE);		
+			purple_privacy_deny_remove(sip->account, buddy_name, TRUE);
 		}
-		
+
 		/* stupid workaround to make pidgin re-render screen to reflect our changes */
 		{
 			PurpleBuddy *pbuddy = purple_find_buddy(sip->account, buddy_name);
@@ -2172,7 +2172,7 @@ sipe_refresh_blocked_status_cb(char *buddy_name,
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_refresh_blocked_status_cb: forcefully refreshing screen.");
 			sipe_got_user_status(sip, buddy_name, purple_status_get_id(pstatus));
 		}
-		
+
 	}
 }
 
@@ -2655,7 +2655,7 @@ sipe_find_container(struct sipe_account_data *sip,
 	}
 	return NULL;
 }
-	
+
 static GSList *
 sipe_get_access_domains(struct sipe_account_data *sip)
 {
@@ -2679,7 +2679,7 @@ sipe_get_access_domains(struct sipe_account_data *sip)
 				res = slist_insert_unique_sorted(res, g_strdup(member->value), (GCompareFunc)g_ascii_strcasecmp);
 			}
 			entry2 = entry2->next;
-		}		
+		}
 		entry = entry->next;
 	}
 	return res;
@@ -3673,7 +3673,7 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		}
 		g_free(container_xmls);
 	}
-	
+
 	/* Refresh contacts' blocked status */
 	sipe_refresh_blocked_status(sip);
 
@@ -5323,13 +5323,13 @@ sipe_get_auth_scheme_name(struct sipe_account_data *sip)
 
 /* server_name must be g_alloc()'ed */
 static void sipe_server_register(struct sipe_core_private *sipe_private,
-				 sipe_transport_type type,
+				 guint type,
 				 gchar *server_name,
 				 guint server_port)
 {
 	sipe_private->public.transport_type = type;
 	sipe_private->public.server_name = server_name;
-	sipe_private->public.server_port = 
+	sipe_private->public.server_port =
 		(server_port != 0)           ? server_port :
 		(type == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
 
@@ -5561,7 +5561,7 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 					gchar **tmp;
 					gchar *hostname;
 					int port = 0;
-					sipe_transport_type transport = SIPE_TRANSPORT_TLS;
+					guint transport = SIPE_TRANSPORT_TLS;
 					int i = 1;
 
 					tmp = g_strsplit(parts[0], ":", 0);
@@ -7986,14 +7986,6 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 	}
 }
 
-static void sipe_shrink_buffer(struct sipe_transport_connection *conn,
-			       const gchar *to_here)
-{
-	conn->buffer_used -= to_here - conn->buffer;
-	/* string terminator is not included in buffer_used */
-	memmove(conn->buffer, to_here, conn->buffer_used + 1);
-}
-
 void sipe_core_transport_sip_message(struct sipe_core_public *sipe_public)
 {
 	struct sipe_transport_connection *conn = sipe_public->transport;
@@ -8005,7 +7997,7 @@ void sipe_core_transport_sip_message(struct sipe_core_public *sipe_public)
 		cur++;
 	}
 	if (cur != conn->buffer)
-		sipe_shrink_buffer(conn, cur);
+		sipe_utils_shrink_buffer(conn, cur);
 
 	/* Received a full Header? */
 	sip->processing_input = TRUE;
@@ -8029,7 +8021,7 @@ void sipe_core_transport_sip_message(struct sipe_core_public *sipe_public)
 			dummy[msg->bodylen] = '\0';
 			msg->body = dummy;
 			cur += msg->bodylen;
-			sipe_shrink_buffer(conn, cur);
+			sipe_utils_shrink_buffer(conn, cur);
 		} else {
 			if (msg){
 				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
@@ -8112,7 +8104,7 @@ static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
 struct sipe_service_data {
 	const char *service;
 	const char *transport;
-	sipe_transport_type type;
+	guint type;
 };
 
 static const struct sipe_service_data *current_service = NULL;
@@ -8164,7 +8156,7 @@ static void resolve_next_service(struct sipe_account_data *sip,
 	} else {
 		sip->service_data++;
 		if (sip->service_data->service == NULL) {
-			sipe_transport_type type = SIP_TO_CORE_PUBLIC->transport_type;
+			guint type = SIP_TO_CORE_PUBLIC->transport_type;
 
 			/* Try connecting to the SIP hostname directly */
 			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; using SIP domain as fallback");
@@ -8293,7 +8285,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 }
 
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
-				     sipe_transport_type transport,
+				     guint transport,
 				     const gchar *server,
 				     const gchar *port)
 {
@@ -9082,11 +9074,11 @@ sipe_buddy_menu_access_level_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
 {
 	struct sipe_account_data *sip = PURPLE_BUDDY_TO_SIPE_ACCOUNT_DATA;
 	struct sipe_container_member *member;
-	
+
 	if (!container || !container->members) return;
-	
+
 	member = ((struct sipe_container_member *)container->members->data);
-	
+
 	if (!member->type) return;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_access_level_cb: container->id=%d, member->type=%s, member->value=%s",
@@ -9317,7 +9309,7 @@ sipe_ask_access_domain(struct sipe_account_data *sip)
 	f = purple_request_field_string_new("access_domain", _("Domain"), "partner-company.com", FALSE);
 	purple_request_field_set_required(f, TRUE);
 	purple_request_field_group_add_field(g, f);
-	
+
 	f = purple_request_field_choice_new("container_id", _("Access level"), 0);
 	purple_request_field_choice_add(f, _("Personal")); /* index 0 */
 	purple_request_field_choice_add(f, _("Team"));
@@ -9329,7 +9321,7 @@ sipe_ask_access_domain(struct sipe_account_data *sip)
 	purple_request_field_group_add_field(g, f);
 
 	purple_request_fields_add_group(fields, g);
-	
+
 	purple_request_fields(gc, _("Add new domain"),
 			      _("Add new domain"), NULL, fields,
 			      _("Add"), G_CALLBACK(sipe_ask_access_domain_cb),
@@ -9374,7 +9366,7 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 
 		/* current container/access level */
 		if (((int)containers[j]) == container_id) {
-			menu_name = is_group_access ? 
+			menu_name = is_group_access ?
 				g_strdup_printf(INDENT_MARKED_INHERITED_FMT, acc_level_name) :
 				g_strdup_printf(INDENT_MARKED_FMT, acc_level_name);
 		} else {
@@ -9387,7 +9379,7 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 		g_free(menu_name);
 		menu_access_levels = g_list_prepend(menu_access_levels, act);
 	}
-	
+
 	if (extra_menu && (container_id >= 0)) {
 		/* separator */
 		act = purple_menu_action_new("  --------------", NULL, NULL, NULL);
@@ -9407,7 +9399,7 @@ sipe_get_access_levels_menu(struct sipe_account_data *sip,
 						     PURPLE_CALLBACK(sipe_buddy_menu_access_level_cb),
 						     container, NULL);
 			g_free(menu_name);
-			menu_access_levels = g_list_prepend(menu_access_levels, act);		
+			menu_access_levels = g_list_prepend(menu_access_levels, act);
 		}
 	}
 
@@ -9435,7 +9427,7 @@ sipe_get_access_groups_menu(struct sipe_account_data *sip)
 				     NULL,
 				     NULL, sipe_get_access_levels_menu(sip, "federated", NULL, FALSE));
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
-	
+
 	act = purple_menu_action_new(_("People in public domains"),
 				     NULL,
 				     NULL, sipe_get_access_levels_menu(sip, "publicCloud", NULL, TRUE));
@@ -9452,7 +9444,7 @@ sipe_get_access_groups_menu(struct sipe_account_data *sip)
 					     NULL, sipe_get_access_levels_menu(sip, "domain", g_strdup(domain), TRUE));
 		menu_access_groups = g_list_prepend(menu_access_groups, act);
 		g_free(menu_name);
-		
+
 		entry = entry->next;
 	}
 
@@ -9460,14 +9452,14 @@ sipe_get_access_groups_menu(struct sipe_account_data *sip)
 	/*			      People in domains connected with my company		 */
 	act = purple_menu_action_new("-------------------------------------------", NULL, NULL, NULL);
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
-	
+
 	act = purple_menu_action_new(_("Add new domain..."),
 				     PURPLE_CALLBACK(sipe_buddy_menu_access_level_add_domain_cb),
 				     NULL, NULL);
 	menu_access_groups = g_list_prepend(menu_access_groups, act);
 
 	menu_access_groups = g_list_reverse(menu_access_groups);
-	
+
 	return menu_access_groups;
 }
 
@@ -9479,11 +9471,11 @@ sipe_get_access_control_menu(struct sipe_account_data *sip,
 	GList *menu_access_groups = NULL;
 	char *menu_name;
 	PurpleMenuAction *act;
-	
+
 	menu_access_levels = sipe_get_access_levels_menu(sip, "user", sipe_get_no_sip_uri(uri), TRUE);
 
 	menu_access_groups = sipe_get_access_groups_menu(sip);
-	
+
 	menu_name = g_strdup_printf(INDENT_FMT, _("Access groups"));
 	act = purple_menu_action_new(menu_name,
 				     NULL,

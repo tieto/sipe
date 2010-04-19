@@ -29,6 +29,7 @@
 
 /* Forward declarations */
 struct sipe_account_data;
+struct sipe_transport_connection;
 
 /* Our publication type keys. OCS 2007+
  * Format: SIPE_PUB_{Category}[_{SubSategory}]
@@ -377,3 +378,12 @@ sipe_utils_nameval_free(GSList *list);
 gchar *sipe_utils_str_replace(const gchar *string,
 			      const gchar *delimiter,
 			      const gchar *replacement);
+
+/**
+ * Remove read characters from transport buffer
+ *
+ * @param conn   the transport connection
+ * @param unread pointer to the first character in the buffer
+ */
+void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
+			      const gchar *unread);

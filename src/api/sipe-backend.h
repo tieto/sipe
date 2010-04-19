@@ -22,6 +22,7 @@
 
 /* Forward declarations */
 struct sipe_core_public;
+struct sipe_transport_connection;
 
 /** DEBUGGING ****************************************************************/
 
@@ -57,7 +58,7 @@ void sipe_backend_debug(sipe_debug_level level,
 /** MARKUP *******************************************************************/
 
 gchar *sipe_backend_markup_css_property(const gchar *style,
-					const gchar *option); 
+					const gchar *option);
 gchar *sipe_backend_markup_strip_html(const gchar *html);
 
 /** NETWORK ******************************************************************/
@@ -70,3 +71,10 @@ void sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public);
 void sipe_backend_transport_sip_disconnect(struct sipe_core_public *sipe_public);
 void sipe_backend_transport_sip_message(struct sipe_core_public *sipe_public,
 					const gchar *buffer);
+struct sipe_transport_connection *sipe_backend_transport_http_connect(struct sipe_core_public *sipe_public,
+								      guint type,
+								      const gchar *server_name,
+								      guint server_port);
+void sipe_backend_transport_http_disconnect(struct sipe_transport_connection *conn);
+void sipe_backend_transport_http_message(struct sipe_transport_connection *conn,
+					 const gchar *buffer);

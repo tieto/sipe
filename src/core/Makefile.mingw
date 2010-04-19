@@ -66,6 +66,7 @@ PURPLE_INCLUDE_PATHS += \
 ##  SOURCES, OBJECTS
 ##
 CLEAN_C_SRC = \
+			http-conn.c \
 			md4.c \
 			sipe-crypt.c \
 			sipe-digest.c \
@@ -95,7 +96,6 @@ PURPLE_C_SRC = \
 			sipe.c \
 			sipe-conf.c \
 			sipe-cal.c \
-			http-conn.c \
 			sipe-domino.c \
 			sipe-ft.c \
 

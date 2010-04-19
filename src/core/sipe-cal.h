@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,11 +64,10 @@ struct sipe_calendar {
 	char *email;
 	char *legacy_dn;
 	HttpConnAuth *auth;
-	struct _PurpleAccount *account;
 	int auto_disco_method;
 	int is_disabled;
 	int is_updated;
-	
+
 	char *as_url;
 	char *oof_url;
 	char *oab_url;
@@ -78,10 +78,10 @@ struct sipe_calendar {
 	time_t oof_end;
 	time_t updated;
 	gboolean published;
-	
+
 	HttpSession *http_session;
 	HttpConn *http_conn;
-	
+
 	time_t fb_start;
 	/* hex form */
 	char *free_busy;
@@ -134,7 +134,7 @@ sipe_mktime_tz(struct tm *tm,
  * condenced and base64 encoded form
  *
  * Must be g_free()'d after use.
- */ 
+ */
 char *
 sipe_cal_get_freebusy_base64(const char* freebusy_hex);
 
@@ -165,19 +165,19 @@ sipe_cal_get_description(struct sipe_buddy *buddy);
 /**
  * Returns calendar status SIPE_CAL_* at time specified.
  * Returns SIPE_CAL_NO_DATA if no calendar data availible.
- * 
+ *
  * @param since (out)	Returns beginning time of the status.
  */
 int
 sipe_cal_get_status(struct sipe_buddy *buddy,
 		    time_t time_in_question,
 		    time_t *since);
-		   
+
 /**
  * Returns calendar event at time in question.
- * If conflict, takes last event in the following 
+ * If conflict, takes last event in the following
  * priority order: OOF, Busy, Tentative.
- */ 
+ */
 struct sipe_cal_event*
 sipe_cal_get_event(GSList *cal_events,
 		   time_t time_in_question);

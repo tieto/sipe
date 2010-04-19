@@ -91,13 +91,6 @@ struct sipe_container_member {
 	gchar *value;
 };
 
-struct sip_connection {
-	gchar *inbuf;
-	int inbuflen;
-	int inbufused;
-	int inputhandler;
-};
-
 struct sipe_account_data {
 	/* back pointer to new data structure */
 	struct sipe_core_public *public;

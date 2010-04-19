@@ -226,7 +226,7 @@ static void sipe_login(PurpleAccount *account)
 	gchar *login_domain = NULL;
 	gchar *login_account = NULL;
 	const gchar *errmsg;
-	sipe_transport_type type;
+	guint type;
 	struct sipe_backend_private *purple_private;
 
 	/* username format: <username>,[<optional login>] */

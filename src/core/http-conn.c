@@ -31,19 +31,10 @@
 #include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <time.h>
 
 #include <glib.h>
-
-#include "account.h"
-#include "eventloop.h"
-#include "network.h"
-#include "request.h"
-#include "sslconn.h"
-
-#include "core-depurple.h" /* temporary */
 
 #include "http-conn.h"
 #include "sipe-common.h"
@@ -53,7 +44,6 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-utils.h"
-#include "sipe.h"
 
 /**
  * HTTP header
@@ -68,13 +58,14 @@
 
 
 struct http_conn_struct {
-	PurpleAccount *account;
+	struct sipe_core_public *sipe_public;
+
 	/* GET, POST */
 	char *method;
-	char *conn_type;
+	guint conn_type;
 	gboolean allow_redirect;
 	char *host;
-	int port;
+	guint port;
 	char *url;
 	char *body;
 	char *content_type;
@@ -82,21 +73,18 @@ struct http_conn_struct {
 	HttpConnCallback callback;
 	void *data;
 
-	/* SSL connection */
-	PurpleSslConnection *gsc;
-	int fd;
-	int listenport;
-	time_t last_keepalive;
-	struct sip_connection *conn;
+	struct sipe_transport_connection *conn;
+
 	SipSecContext sec_ctx;
 	int retries;
-	
+
 	HttpSession *http_session;
 
 	/* if server sends "Connection: close" header */
 	gboolean closed;
 	HttpConn* do_close;
 };
+#define HTTP_CONN ((HttpConn *) conn->user_data)
 
 struct http_session_struct {
 	char *cookie;
@@ -107,10 +95,9 @@ http_conn_clone(HttpConn* http_conn)
 {
 	HttpConn *res = g_new0(HttpConn, 1);
 
-	res->account = http_conn->account;
 	res->http_session = http_conn->http_session;
 	res->method = g_strdup(http_conn->method);
-	res->conn_type = g_strdup(http_conn->conn_type);
+	res->conn_type = http_conn->conn_type;
 	res->allow_redirect = http_conn->allow_redirect;
 	res->host = g_strdup(http_conn->host);
 	res->port = http_conn->port;
@@ -121,11 +108,6 @@ http_conn_clone(HttpConn* http_conn)
 	res->callback = http_conn->callback;
 	res->data = http_conn->data;
 
-	/* SSL connection */
-	res->gsc = http_conn->gsc;
-	res->fd = http_conn->fd;
-	res->listenport = http_conn->listenport;
-	res->last_keepalive = http_conn->last_keepalive;
 	res->conn = http_conn->conn;
 	res->sec_ctx = http_conn->sec_ctx;
 	res->retries = http_conn->retries;
@@ -142,7 +124,6 @@ http_conn_free(HttpConn* http_conn)
 
 	/* don't free "http_conn->http_session" - client should do */
 	g_free(http_conn->method);
-	g_free(http_conn->conn_type);
 	g_free(http_conn->host);
 	g_free(http_conn->url);
 	g_free(http_conn->body);
@@ -193,14 +174,11 @@ http_conn_set_close(HttpConn* http_conn)
 }
 
 static void
-http_conn_invalidate_ssl_connection(HttpConn *http_conn);
-
-static void
 http_conn_close(HttpConn *http_conn, const char *message)
 {
 	SIPE_DEBUG_INFO("http_conn_close: closing http connection: %s", message ? message : "");
 
-	http_conn_invalidate_ssl_connection(http_conn);
+	sipe_backend_transport_http_disconnect(http_conn->conn);
 	http_conn_free(http_conn);
 }
 
@@ -213,12 +191,12 @@ http_conn_close(HttpConn *http_conn, const char *message)
 static void
 http_conn_parse_url(const char *url,
 		    char **host,
-		    int *port,
+		    guint *port,
 		    char **rel_url)
 {
         char **parts = g_strsplit(url, "://", 2);
         char *no_proto;
-        int port_tmp;
+        guint port_tmp;
         char *tmp;
         char *host_port;
 
@@ -251,7 +229,7 @@ http_conn_parse_url(const char *url,
         if(parts) {
                 if (host) *host = g_strdup(parts[0]);
                 if(parts[0]) {
-			port_tmp = parts[1] ? atoi(parts[1]) : port_tmp;
+			port_tmp = parts[1] ? (guint) atoi(parts[1]) : port_tmp;
                 }
                 if (port) *port = port_tmp;
                 g_strfreev(parts);
@@ -260,149 +238,32 @@ http_conn_parse_url(const char *url,
         g_free(host_port);
 }
 
-static void
-http_conn_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
-			     PurpleSslErrorType error,
-                             gpointer data)
+static void http_conn_transport_error(HttpConn *http_conn, const gchar *msg)
 {
-        HttpConn *http_conn = data;
-	const char *message = NULL;
-
-        http_conn->gsc = NULL;
-
-        switch(error) {
-		case PURPLE_SSL_CONNECT_FAILED:
-			message = "Connection failed";
-			break;
-		case PURPLE_SSL_HANDSHAKE_FAILED:
-			message = "SSL handshake failed";
-			break;
-		case PURPLE_SSL_CERTIFICATE_INVALID:
-			message = "SSL certificate invalid";
-			break;
-        }
-
 	if (http_conn->callback) {
 		(*http_conn->callback)(HTTP_CONN_ERROR, NULL, NULL, http_conn, http_conn->data);
 	}
-	http_conn_close(http_conn, message);
+	http_conn_close(http_conn, msg);
 }
 
-static void
-http_conn_connection_remove(struct sip_connection *conn)
+void sipe_core_transport_http_ssl_connect_failure(struct sipe_transport_connection *conn,
+						  const char *msg)
 {
-	if (conn) {
-		if (conn->inputhandler) purple_input_remove(conn->inputhandler);
-		g_free(conn->inbuf);
-		g_free(conn);
-	}
+	http_conn_transport_error(HTTP_CONN, msg);
 }
 
-static void
-http_conn_invalidate_ssl_connection(HttpConn *http_conn)
+void sipe_core_transport_http_input_error(struct sipe_transport_connection *conn,
+					  const gchar *msg)
 {
-	if (http_conn) {
-		PurpleSslConnection *gsc = http_conn->gsc;
-
-		/* Invalidate this connection. Next send will open a new one */
-		if (gsc) {
-			struct sip_connection *conn = http_conn->conn;
-
-			http_conn_connection_remove(conn);
-			http_conn->conn = NULL;
-			purple_ssl_close(gsc);
-		}
-		http_conn->gsc = NULL;
-		http_conn->fd = -1;
-	}
+	http_conn_transport_error(HTTP_CONN, msg);
 }
 
-static void
-http_conn_process_input(HttpConn *http_conn);
-
-static void
-http_conn_input_cb_ssl(gpointer data,
-		       PurpleSslConnection *gsc,
-		       SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	HttpConn *http_conn = data;
-	struct sip_connection *conn = http_conn ? http_conn->conn : NULL;
-	int readlen, len;
-	gboolean firstread = TRUE;
-
-	if (conn == NULL) {
-		SIPE_DEBUG_ERROR_NOFORMAT("Connection not found; Please try to connect again.");
-		return;
-	}
-
-	/* Read all available data from the SSL connection */
-	do {
-		/* Increase input buffer size as needed */
-		if (conn->inbuflen < conn->inbufused + SIMPLE_BUF_INC) {
-			conn->inbuflen += SIMPLE_BUF_INC;
-			conn->inbuf = g_realloc(conn->inbuf, conn->inbuflen);
-			SIPE_DEBUG_INFO("http_conn_input_cb_ssl: new input buffer length %d", conn->inbuflen);
-		}
-
-		/* Try to read as much as there is space left in the buffer */
-		readlen = conn->inbuflen - conn->inbufused - 1;
-		len = purple_ssl_read(gsc, conn->inbuf + conn->inbufused, readlen);
-
-		if (len < 0 && errno == EAGAIN) {
-			/* Try again later */
-			return;
-		} else if (len < 0) {
-			if (http_conn->callback) {
-				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, NULL, http_conn, http_conn->data);
-			}
-			http_conn_close(http_conn, "SSL read error");
-			return;
-		} else if (firstread && (len == 0)) {
-			if (http_conn->callback) {
-				(*http_conn->callback)(HTTP_CONN_ERROR, NULL, NULL, http_conn, http_conn->data);
-			}
-			http_conn_close(http_conn, "Server has disconnected");
-			return;
-		}
-
-		conn->inbufused += len;
-		firstread = FALSE;
-
-	/* Equivalence indicates that there is possibly more data to read */
-	} while (len == readlen);
-
-	conn->inbuf[conn->inbufused] = '\0';
-        http_conn_process_input(http_conn);
-}
-static void
-http_conn_send0(HttpConn *http_conn,
-	       const char *authorization);
-
-static void
-http_conn_input0_cb_ssl(gpointer data,
-			PurpleSslConnection *gsc,
-			SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
-{
-	HttpConn *http_conn = data;
-
-	http_conn->fd = gsc->fd;
-	http_conn->gsc = gsc;
-	http_conn->listenport = purple_network_get_port_from_fd(gsc->fd);
-	//http_conn->connecting = FALSE;
-	http_conn->last_keepalive = time(NULL);
-
-	http_conn->conn = g_new0(struct sip_connection, 1);
-
-	purple_ssl_input_add(gsc, http_conn_input_cb_ssl, http_conn);
-
-	http_conn_send0(http_conn, NULL);
-}
 
 HttpConn *
-http_conn_create(PurpleAccount *account,
+http_conn_create(struct sipe_core_public *sipe_public,
 		 HttpSession *http_session,
 		 const char *method,
-		 const char *conn_type,
+		 guint conn_type,
 		 gboolean allow_redirect,
 		 const char *full_url,
 		 const char *body,
@@ -412,143 +273,49 @@ http_conn_create(PurpleAccount *account,
 		 void *data)
 {
 	HttpConn *http_conn;
+	struct sipe_transport_connection *conn;
+	gchar *host, *url;
+	guint port;
 
 	if (!full_url || (strlen(full_url) == 0)) {
 		SIPE_DEBUG_INFO_NOFORMAT("no URL supplied!");
 		return NULL;
 	}
 
-	http_conn = g_new0(HttpConn, 1);
-	http_conn_parse_url(full_url, &http_conn->host, &http_conn->port, &http_conn->url);
+	http_conn_parse_url(full_url, &host, &port, &url);
+	conn = sipe_backend_transport_http_connect(sipe_public,
+						   conn_type,
+						   host,
+						   port);
+	if (!conn) {
+		g_free(host);
+		g_free(url);
+		return NULL;
+	}
 
-	http_conn->account = account;
+	http_conn = g_new0(HttpConn, 1);
+
+	http_conn->sipe_public = sipe_public;
+	conn->user_data = http_conn;
+
 	http_conn->http_session = http_session;
 	http_conn->method = g_strdup(method);
-	http_conn->conn_type = g_strdup(conn_type);
+	http_conn->conn_type = conn_type;
 	http_conn->allow_redirect = allow_redirect;
+	http_conn->host = host;
+	http_conn->port = port;
+	http_conn->url = url;
 	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
 	http_conn->auth = auth;
 	http_conn->callback = callback;
 	http_conn->data = data;
-
-	http_conn->gsc = purple_ssl_connect(http_conn->account, /* can we pass just NULL ? */
-					    http_conn->host,
-					    http_conn->port,
-					    http_conn_input0_cb_ssl,
-					    http_conn_ssl_connect_failure,
-					    http_conn);
+	http_conn->conn = conn;
 
 	return http_conn;
 }
 
 /* Data part */
-static void
-http_conn_process_input_message(HttpConn *http_conn,
-			        struct sipmsg *msg);
-
-static void
-http_conn_process_input(HttpConn *http_conn)
-{
-	char *cur;
-	char *dummy;
-	char *tmp;
-	struct sipmsg *msg;
-	int restlen;
-	struct sip_connection *conn = http_conn->conn;
-
-	cur = conn->inbuf;
-
-	/* according to the RFC remove CRLF at the beginning */
-	while (*cur == '\r' || *cur == '\n') {
-		cur++;
-	}
-	if (cur != conn->inbuf) {
-		memmove(conn->inbuf, cur, conn->inbufused - (cur - conn->inbuf));
-		conn->inbufused = strlen(conn->inbuf);
-	}
-
-	while ((cur = strstr(conn->inbuf, "\r\n\r\n")) != NULL) {
-		time_t currtime = time(NULL);
-		cur += 2;
-		cur[0] = '\0';
-		SIPE_DEBUG_INFO("received - %s******\n%s\n******", ctime(&currtime), tmp = fix_newlines(conn->inbuf));
-		g_free(tmp);
-
-		msg = sipmsg_parse_header(conn->inbuf);
-		cur[0] = '\r';
-		cur += 2;
-		restlen = conn->inbufused - (cur - conn->inbuf);
-		if (msg && restlen >= msg->bodylen) {
-			dummy = g_malloc(msg->bodylen + 1);
-			memcpy(dummy, cur, msg->bodylen);
-			dummy[msg->bodylen] = '\0';
-			msg->body = dummy;
-			cur += msg->bodylen;
-			memmove(conn->inbuf, cur, conn->inbuflen - (cur - conn->inbuf));
-			conn->inbufused = strlen(conn->inbuf);
-		} else {
-			if (msg){
-                           SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", restlen, msg->bodylen, (int)strlen(conn->inbuf));
-			sipmsg_free(msg);
-                        }
-			return;
-		}
-
-		if (msg->body) {
-			SIPE_DEBUG_INFO("body:\n%s", msg->body);
-		}
-		
-		/* important to set before callback call */
-		if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close")) {
-			http_conn->closed = TRUE;
-		}
-
-		http_conn_process_input_message(http_conn, msg);
-		
-		sipmsg_free(msg);
-	}
-
-	if (http_conn->closed) {
-		http_conn_close(http_conn->do_close, "Server closed connection");
-	} else if (http_conn->do_close) {
-		http_conn_close(http_conn->do_close, "User initiated");
-	}
-}
-
-static void
-http_conn_sendout_pkt(HttpConn *http_conn,
-		      const char *buf)
-{
-	time_t currtime = time(NULL);
-	int writelen = strlen(buf);
-	char *tmp;
-	int ret = 0;
-
-	SIPE_DEBUG_INFO("sending - %s******\n%s\n******", ctime(&currtime), tmp = fix_newlines(buf));
-	g_free(tmp);
-
-	if (http_conn->fd < 0) {
-		SIPE_DEBUG_INFO_NOFORMAT("http_conn_sendout_pkt: http_conn->fd < 0, exiting");
-		return;
-	}
-
-	if (http_conn->gsc) {
-		ret = purple_ssl_write(http_conn->gsc, buf, writelen);
-	}
-
-	if (ret < 0 && errno == EAGAIN)
-		ret = 0;
-	else if (ret <= 0) { /* XXX: When does this happen legitimately? */
-		SIPE_DEBUG_INFO_NOFORMAT("http_conn_sendout_pkt: ret <= 0, exiting");
-		return;
-	}
-
-	if (ret < writelen) {
-		SIPE_DEBUG_INFO_NOFORMAT("http_conn_sendout_pkt: ret < writelen, exiting");
-	}
-}
-
 static void
 http_conn_send0(HttpConn *http_conn,
 		const char *authorization)
@@ -560,10 +327,10 @@ http_conn_send0(HttpConn *http_conn,
 				http_conn->url,
 				http_conn->host);
 	if (sipe_strequal(http_conn->method, "POST")) {
-		g_string_append_printf(outstr, "Content-Length: %d\r\n", 
+		g_string_append_printf(outstr, "Content-Length: %d\r\n",
 			http_conn->body ? (int)strlen(http_conn->body) : 0);
 
-		g_string_append_printf(outstr, "Content-Type: %s\r\n", 
+		g_string_append_printf(outstr, "Content-Type: %s\r\n",
 			http_conn->content_type ? http_conn->content_type : "text/plain");
 	}
 	if (http_conn->http_session && http_conn->http_session->cookie) {
@@ -574,8 +341,13 @@ http_conn_send0(HttpConn *http_conn,
 	}
 	g_string_append_printf(outstr, "\r\n%s", http_conn->body ? http_conn->body : "");
 
-	http_conn_sendout_pkt(http_conn, outstr->str);
+	sipe_backend_transport_http_message(http_conn->conn, outstr->str);
 	g_string_free(outstr, TRUE);
+}
+
+void sipe_core_transport_http_connected(struct sipe_transport_connection *conn)
+{
+	http_conn_send0(HTTP_CONN, NULL);
 }
 
 void
@@ -628,13 +400,10 @@ http_conn_process_input_message(HttpConn *http_conn,
 		g_free(http_conn->url);
 		http_conn_parse_url(location, &http_conn->host, &http_conn->port, &http_conn->url);
 
-		http_conn->gsc = purple_ssl_connect(http_conn->account,
-						    http_conn->host,
-						    http_conn->port,
-						    http_conn_input0_cb_ssl,
-						    http_conn_ssl_connect_failure,
-						    http_conn);
-
+		http_conn->conn = sipe_backend_transport_http_connect(http_conn->sipe_public,
+								      http_conn->conn_type,
+								      http_conn->host,
+								      http_conn->port);
 	}
 	/* Authentication required */
 	else if (msg->response == 401) {
@@ -731,7 +500,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		const char *set_cookie_hdr;
 		const char *content_type = sipmsg_find_header(msg, "Content-Type");
 		http_conn->retries = 0;
-		
+
 		/* Set cookies.
 		 * Set-Cookie: RMID=732423sdfs73242; expires=Fri, 31-Dec-2010 23:59:59 GMT; path=/; domain=.example.net
 		 */
@@ -768,7 +537,67 @@ http_conn_process_input_message(HttpConn *http_conn,
 	}
 }
 
+void sipe_core_transport_http_message(struct sipe_transport_connection *conn)
+{
+	HttpConn *http_conn = HTTP_CONN;
+	char *cur = conn->buffer;
 
+	/* according to the RFC remove CRLF at the beginning */
+	while (*cur == '\r' || *cur == '\n') {
+		cur++;
+	}
+	if (cur != conn->buffer)
+		sipe_utils_shrink_buffer(conn, cur);
+
+	while ((cur = strstr(conn->buffer, "\r\n\r\n")) != NULL) {
+		struct sipmsg *msg;
+		char *tmp;
+		guint remainder;
+		time_t currtime = time(NULL);
+		cur += 2;
+		cur[0] = '\0';
+		SIPE_DEBUG_INFO("received - %s******\n%s\n******", ctime(&currtime), tmp = fix_newlines(conn->buffer));
+		g_free(tmp);
+
+		msg = sipmsg_parse_header(conn->buffer);
+		cur[0] = '\r';
+		cur += 2;
+		remainder = conn->buffer_used - (cur - conn->buffer);
+		if (msg && remainder >= (guint) msg->bodylen) {
+			char *dummy = g_malloc(msg->bodylen + 1);
+			memcpy(dummy, cur, msg->bodylen);
+			dummy[msg->bodylen] = '\0';
+			msg->body = dummy;
+			cur += msg->bodylen;
+			sipe_utils_shrink_buffer(conn, cur);
+		} else {
+			if (msg){
+				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
+				sipmsg_free(msg);
+                        }
+			return;
+		}
+
+		if (msg->body) {
+			SIPE_DEBUG_INFO("body:\n%s", msg->body);
+		}
+
+		/* important to set before callback call */
+		if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close")) {
+			http_conn->closed = TRUE;
+		}
+
+		http_conn_process_input_message(http_conn, msg);
+
+		sipmsg_free(msg);
+	}
+
+	if (http_conn->closed) {
+		http_conn_close(http_conn->do_close, "Server closed connection");
+	} else if (http_conn->do_close) {
+		http_conn_close(http_conn->do_close, "User initiated");
+	}
+}
 
 /*
   Local Variables:

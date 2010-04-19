@@ -191,7 +191,7 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 	if (cal->http_conn) {
 		http_conn_free(cal->http_conn);
 	}
-	
+
 	if (cal->http_session) {
 		http_conn_session_free(cal->http_session);
 	}
@@ -208,8 +208,7 @@ sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 		sip->cal = g_new0(struct sipe_calendar, 1);
 		sip->cal->sip = sip;
 
-		sip->cal->account = sip->account;
-		sip->cal->email   = g_strdup(sip->email);
+		sip->cal->email = g_strdup(sip->email);
 
 		/* user specified a service URL? */
 		value = purple_account_get_string(sip->account, "email_url", NULL);

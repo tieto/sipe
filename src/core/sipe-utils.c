@@ -420,6 +420,15 @@ gchar *sipe_utils_str_replace(const gchar *string,
 	return result;
 }
 
+void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
+			      const gchar *unread)
+{
+	conn->buffer_used -= unread - conn->buffer;
+	/* string terminator is not included in buffer_used */
+	memmove(conn->buffer, unread, conn->buffer_used + 1);
+}
+
+
 /*
   Local Variables:
   mode: c

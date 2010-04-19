@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,13 +22,13 @@
  */
 
 /* Forward declarations */
-struct _PurpleAccount;
+struct sipe_core_public;
 
 #define HTTP_CONN_GET  "GET"
 #define HTTP_CONN_POST "POST"
 
-#define HTTP_CONN_SSL  "SSL"
-#define HTTP_CONN_TCP  "TCP"
+#define HTTP_CONN_SSL  SIPE_TRANSPORT_TLS
+#define HTTP_CONN_TCP  SIPE_TRANSPORT_TCP
 
 #define HTTP_CONN_ALLOW_REDIRECT	TRUE
 #define HTTP_CONN_NO_REDIRECT		FALSE
@@ -56,10 +57,10 @@ typedef void (*HttpConnCallback) (int return_code, const char *body, const char 
  * Creates SSL connection and sends.
  */
 HttpConn *
-http_conn_create(struct _PurpleAccount *account,
+http_conn_create(struct sipe_core_public *sipe_public,
 		 HttpSession *http_session,
 		 const char *method,
-		 const char *conn_type,
+		 guint conn_type,
 		 gboolean allow_redirect,
 		 const char *full_url,
 		 const char *body,

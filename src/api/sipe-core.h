@@ -48,11 +48,9 @@ typedef enum
 /**
  * Transport type
  */
-typedef enum {
-	SIPE_TRANSPORT_AUTO,
-	SIPE_TRANSPORT_TLS,
-	SIPE_TRANSPORT_TCP,
-} sipe_transport_type;
+#define SIPE_TRANSPORT_AUTO 0
+#define SIPE_TRANSPORT_TLS  1
+#define	SIPE_TRANSPORT_TCP  2
 
 /**
  * Transport connection (public part)
@@ -65,10 +63,11 @@ typedef enum {
  *
  */
 struct sipe_transport_connection {
+	gpointer user_data;
 	gchar *buffer;
 	gsize buffer_used;        /* 0 < buffer_used < buffer_length */
 	gsize buffer_length;      /* read-only */
-	sipe_transport_type type; /* read-only */
+	guint type;               /* read-only */
 	guint client_port;        /* read-only */
 };
 
@@ -87,7 +86,7 @@ struct sipe_core_public {
 	/**
 	 * This points to the private data for the backend.
 	 * The backend is responsible to allocate and free it.
-	 */ 
+	 */
 	struct sipe_backend_private *backend_private;
 
 	/* user information */
@@ -96,7 +95,7 @@ struct sipe_core_public {
 
 	/* server information */
 	struct sipe_transport_connection *transport;
-	sipe_transport_type transport_type; /* same as transport->type */
+	guint  transport_type; /* same as transport->type */
 	gchar *server_name;
 	guint  server_port;
 	guint keepalive_timeout;
@@ -181,12 +180,18 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public);
  * Connect to server
  */
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
-				     sipe_transport_type transport,
+				     guint transport,
 				     const gchar *server,
 				     const gchar *port);
 void sipe_core_transport_sip_connected(struct sipe_core_public *sipe_public);
 void sipe_core_transport_sip_message(struct sipe_core_public *sipe_public);
 void sipe_core_transport_sip_ssl_connect_failure(struct sipe_core_public *sipe_public);
+void sipe_core_transport_http_connected(struct sipe_transport_connection *conn);
+void sipe_core_transport_http_message(struct sipe_transport_connection *conn);
+void sipe_core_transport_http_ssl_connect_failure(struct sipe_transport_connection *conn,
+						  const gchar  *msg);
+void sipe_core_transport_http_input_error(struct sipe_transport_connection *conn,
+					  const gchar *msg);
 
 /**
  * Create a new chat

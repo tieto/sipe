@@ -11,6 +11,8 @@ EXTRA_DIST = \
 	sipe-win32dep.c
 
 libsipe_core_la_SOURCES = \
+	http-conn.h \
+	http-conn.c \
 	sipmsg.h \
 	sipmsg.c \
 	sip-csta.h \
@@ -53,8 +55,6 @@ libsipe_core_purple_la_SOURCES = \
 	sipe-conf.c \
 	sipe-domino.h \
 	sipe-domino.c \
-	http-conn.h \
-	http-conn.c \
 	sipe-ft.h \
 	sipe-ft.c
 

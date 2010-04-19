@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  *
  *
@@ -343,7 +344,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 		g_free(url_req);
 		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
 			cal->http_conn = http_conn_create(
-					 cal->account,
+					 cal->sip->public,
 					 cal->http_session,
 					 HTTP_CONN_GET,
 					 HTTP_CONN_SSL,
@@ -418,7 +419,7 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		g_free(user);
 		g_free(password);
 
-		cal->http_conn = http_conn_create(cal->account,
+		cal->http_conn = http_conn_create(cal->sip->public,
 						  cal->http_session,
 						  HTTP_CONN_POST,
 						  HTTP_CONN_SSL,

@@ -446,7 +446,7 @@ sipe_ews_do_autodiscover(struct sipe_calendar *cal,
 
 	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, cal->email);
 	cal->http_conn = http_conn_create(
-				 cal->account,
+				 cal->sip->public,
 				 NULL, /* HttpSession */
 				 HTTP_CONN_POST,
 				 HTTP_CONN_SSL,
@@ -488,7 +488,7 @@ sipe_ews_do_avail_request(struct sipe_calendar *cal)
 
 		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, cal->email, start_str, end_str);
 		cal->http_conn = http_conn_create(
-					 cal->account,
+					 cal->sip->public,
 					 NULL, /* HttpSession */
 					 HTTP_CONN_POST,
 					 HTTP_CONN_SSL,
@@ -516,7 +516,7 @@ sipe_ews_do_oof_request(struct sipe_calendar *cal)
 
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, cal->email);
 		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
-			cal->http_conn = http_conn_create(cal->account,
+			cal->http_conn = http_conn_create(cal->sip->public,
 							  NULL, /* HttpSession */
 							  HTTP_CONN_POST,
 							  HTTP_CONN_SSL,
