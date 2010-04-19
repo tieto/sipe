@@ -67,9 +67,12 @@ const gchar *sipe_backend_network_ip_address(void);
 
 /** TRANSPORT ****************************************************************/
 
-void sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public);
-void sipe_backend_transport_sip_disconnect(struct sipe_core_public *sipe_public);
-void sipe_backend_transport_sip_message(struct sipe_core_public *sipe_public,
+struct sipe_transport_connection *sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public,
+								     guint type,
+								     const gchar *server_name,
+								     guint server_port);
+void sipe_backend_transport_sip_disconnect(struct sipe_transport_connection *conn);
+void sipe_backend_transport_sip_message(struct sipe_transport_connection *conn,
 					const gchar *buffer);
 struct sipe_transport_connection *sipe_backend_transport_http_connect(struct sipe_core_public *sipe_public,
 								      guint type,

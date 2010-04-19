@@ -95,9 +95,6 @@ struct sipe_core_public {
 
 	/* server information */
 	struct sipe_transport_connection *transport;
-	guint  transport_type; /* same as transport->type */
-	gchar *server_name;
-	guint  server_port;
 	guint keepalive_timeout;
 };
 
@@ -185,9 +182,9 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint transport,
 				     const gchar *server,
 				     const gchar *port);
-void sipe_core_transport_sip_connected(struct sipe_core_public *sipe_public);
-void sipe_core_transport_sip_message(struct sipe_core_public *sipe_public);
-void sipe_core_transport_sip_ssl_connect_failure(struct sipe_core_public *sipe_public);
+void sipe_core_transport_sip_connected(struct sipe_transport_connection *conn);
+void sipe_core_transport_sip_message(struct sipe_transport_connection *conn);
+void sipe_core_transport_sip_ssl_connect_failure(struct sipe_transport_connection *conn);
 void sipe_core_transport_http_connected(struct sipe_transport_connection *conn);
 void sipe_core_transport_http_message(struct sipe_transport_connection *conn);
 void sipe_core_transport_http_ssl_connect_failure(struct sipe_transport_connection *conn,

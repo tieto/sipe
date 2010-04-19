@@ -49,13 +49,13 @@ struct sipe_transport_purple {
 	struct sipe_transport_connection public;
 
 	/* purple private part */
+	PurpleConnection *gc;
 	PurpleSslConnection *gsc;
 	PurpleCircBuffer *transmit_buffer;
 	guint transmit_handler;
 	guint receive_handler;
 	int socket;
 };
-#define SIPE_PUBLIC_TO_PURPLE_TRANSPORT ((struct sipe_transport_purple *) sipe_public->transport)
 #define PURPLE_TRANSPORT ((struct sipe_transport_purple *) conn)
 #define SIPE_TRANSPORT_CONNECTION ((struct sipe_transport_connection *) transport)
 
@@ -67,11 +67,9 @@ struct sipe_transport_purple {
  * SIP transport handling
  *
  *****************************************************************************/
-static void transport_sip_input_common(PurpleConnection *gc)
+static void transport_sip_input_common(struct sipe_transport_purple *transport)
 {
-	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
-	struct sipe_transport_purple *transport = SIPE_PUBLIC_TO_PURPLE_TRANSPORT;
-	struct sipe_transport_connection *conn = sipe_public->transport;
+	struct sipe_transport_connection *conn = SIPE_TRANSPORT_CONNECTION;
 	gssize readlen, len;
 	gboolean firstread = TRUE;
 
@@ -101,17 +99,17 @@ static void transport_sip_input_common(PurpleConnection *gc)
 			return;
 		} else if (len < 0) {
 			SIPE_DEBUG_ERROR_NOFORMAT("Read error");
-			sipe_backend_transport_sip_disconnect(sipe_public);
-			purple_connection_error_reason(gc,
+			purple_connection_error_reason(transport->gc,
 						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
 						       _("Read error"));
+			sipe_backend_transport_sip_disconnect(conn);
 			return;
 		} else if (firstread && (len == 0)) {
 			SIPE_DEBUG_ERROR_NOFORMAT("Server has disconnected");
-			sipe_backend_transport_sip_disconnect(sipe_public);
-			purple_connection_error_reason(gc,
+			purple_connection_error_reason(transport->gc,
 						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
 						       _("Server has disconnected"));
+			sipe_backend_transport_sip_disconnect(conn);
 			return;
 		}
 
@@ -122,66 +120,62 @@ static void transport_sip_input_common(PurpleConnection *gc)
 	} while (len == readlen);
 
 	conn->buffer[conn->buffer_used] = '\0';
-        sipe_core_transport_sip_message(sipe_public);
+        sipe_core_transport_sip_message(conn);
 }
 
 static void transport_sip_input_ssl_cb(gpointer data,
 				       PurpleSslConnection *gsc,
 				       SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
-	PurpleConnection *gc = data;
+	struct sipe_transport_purple *transport = data;
 
 	/* NOTE: This check *IS* necessary */
-	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
+	if (!PURPLE_CONNECTION_IS_VALID(transport->gc)) {
 		purple_ssl_close(gsc);
 		return;
 	}
-	transport_sip_input_common(gc);
+	transport_sip_input_common(transport);
 }
 
 static void transport_sip_input_tcp_cb(gpointer data,
 				       gint source,
 				       SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
-	PurpleConnection *gc = data;
+	struct sipe_transport_purple *transport = data;
 
 	/* NOTE: This check *IS* necessary */
-	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
+	if (!PURPLE_CONNECTION_IS_VALID(transport->gc)) {
 		close(source);
 		return;
 	}
-	transport_sip_input_common(gc);
+	transport_sip_input_common(transport);
 }
 
 static void transport_sip_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
 					      PurpleSslErrorType error,
 					      gpointer data)
 {
-        PurpleConnection *gc = data;
-	struct sipe_core_public *sipe_public;
-	struct sipe_transport_purple *transport;
+ 	struct sipe_transport_purple *transport = data;
 
         /* If the connection is already disconnected
 	   then we don't need to do anything else */
-        if (!PURPLE_CONNECTION_IS_VALID(gc))
+        if (!PURPLE_CONNECTION_IS_VALID(transport->gc))
                 return;
 
-	sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
-	sipe_core_transport_sip_ssl_connect_failure(sipe_public);
+	sipe_core_transport_sip_ssl_connect_failure(data);
 
-	transport = SIPE_PUBLIC_TO_PURPLE_TRANSPORT;
 	transport->socket = -1;
         transport->gsc = NULL;
 
-	purple_connection_ssl_error(gc, error);
+	purple_connection_ssl_error(transport->gc, error);
 }
 
-static void transport_sip_connected_common(PurpleConnection *gc,
+static void transport_sip_connected_common(struct sipe_transport_purple *transport,
 					   PurpleSslConnection *gsc,
 					   int fd)
 {
-	struct sipe_core_public *sipe_public;
-	struct sipe_transport_purple *transport;
+	PurpleConnection *gc = transport->gc;
+	struct sipe_backend_private *purple_private;
 
 	if (!PURPLE_CONNECTION_IS_VALID(gc))
 	{
@@ -200,23 +194,22 @@ static void transport_sip_connected_common(PurpleConnection *gc,
 		return;
 	}
 
-	sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
-	transport = SIPE_PUBLIC_TO_PURPLE_TRANSPORT;
 	transport->socket = fd;
-	sipe_public->transport->client_port = purple_network_get_port_from_fd(fd);
-	sipe_public->backend_private->last_keepalive = time(NULL);
+	transport->public.client_port = purple_network_get_port_from_fd(fd);
+	purple_private = PURPLE_GC_TO_SIPE_CORE_PUBLIC->backend_private;
+	purple_private->last_keepalive = time(NULL);
 
 	if (gsc) {
 		transport->gsc = gsc;
-		purple_ssl_input_add(gsc, transport_sip_input_ssl_cb, gc);
+		purple_ssl_input_add(gsc, transport_sip_input_ssl_cb, transport);
 	} else {
 		transport->receive_handler = purple_input_add(fd,
 							      PURPLE_INPUT_READ,
 							      transport_sip_input_tcp_cb,
-							      gc);
+							      transport);
 	}
 
-	sipe_core_transport_sip_connected(sipe_public);
+	sipe_core_transport_sip_connected(SIPE_TRANSPORT_CONNECTION);
 }
 
 
@@ -234,7 +227,10 @@ static void transport_sip_connected_tcp_cb(gpointer data,
 	transport_sip_connected_common(data, NULL, source);
 }
 
-void sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public)
+struct sipe_transport_connection *sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public,
+								     guint type,
+								     const gchar *server_name,
+								     guint server_port)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleConnection *gc = purple_private->gc;
@@ -242,48 +238,49 @@ void sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public)
 	struct sipe_transport_purple *transport = g_new0(struct sipe_transport_purple, 1);
 
 	SIPE_DEBUG_INFO("sipe_backend_transport_sip_connect - hostname: %s port: %d",
-			sipe_public->server_name,
-			sipe_public->server_port);
+			server_name, server_port);
 
-	transport->public.type = sipe_public->transport_type;
+	transport->public.type = type;
+	transport->gc = gc;
 	transport->transmit_buffer = purple_circ_buffer_new(0);
-	sipe_public->transport = (struct sipe_transport_connection *) transport;
 
-	if (sipe_public->transport_type == SIPE_TRANSPORT_TLS) {
+	if (type == SIPE_TRANSPORT_TLS) {
 		/* SSL case */
 		SIPE_DEBUG_INFO_NOFORMAT("using SSL");
 
 		if (purple_ssl_connect(account,
-				       sipe_public->server_name,
-				       sipe_public->server_port,
+				       server_name,
+				       server_port,
 				       transport_sip_connected_ssl_cb,
 				       transport_sip_ssl_connect_failure,
-				       gc) == NULL) {
+				       transport) == NULL) {
 			purple_connection_error_reason(gc,
 						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
 						       _("Could not create SSL context"));
-			return;
+			return(NULL);
 		}
 	} else {
 		/* TCP case */
 		SIPE_DEBUG_INFO_NOFORMAT("using TCP");
 
 		if (purple_proxy_connect(gc, account,
-					 sipe_public->server_name,
-					 sipe_public->server_port,
+					 server_name,
+					 server_port,
 					 transport_sip_connected_tcp_cb,
-					 gc) == NULL) {
+					 transport) == NULL) {
 			purple_connection_error_reason(gc,
 						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
 						       _("Could not create socket"));
-			return;
+			return(NULL);
 		}
 	}
+
+	return(SIPE_TRANSPORT_CONNECTION);
 }
 
-void sipe_backend_transport_sip_disconnect(struct sipe_core_public *sipe_public)
+void sipe_backend_transport_sip_disconnect(struct sipe_transport_connection *conn)
 {
-	struct sipe_transport_purple *transport = SIPE_PUBLIC_TO_PURPLE_TRANSPORT;
+	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 
 	if (!transport) return;
 
@@ -303,16 +300,15 @@ void sipe_backend_transport_sip_disconnect(struct sipe_core_public *sipe_public)
 	g_free(transport->public.buffer);
 
 	g_free(transport);
-	sipe_public->transport = NULL;
+
+	((struct sipe_core_public *)transport->gc->proto_data)->transport = NULL;
 }
 
 static void transport_sip_canwrite_cb(gpointer data,
 				      SIPE_UNUSED_PARAMETER gint source,
 				      SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
-	PurpleConnection *gc = data;
-	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
-	struct sipe_transport_purple *transport = SIPE_PUBLIC_TO_PURPLE_TRANSPORT;
+	struct sipe_transport_purple *transport = data;
 	gsize max_write;
 
 	max_write = purple_circ_buffer_get_max_read(transport->transmit_buffer);
@@ -328,7 +324,7 @@ static void transport_sip_canwrite_cb(gpointer data,
 		if (written < 0 && errno == EAGAIN) {
 			return;
 		} else if (written <= 0) {
-			purple_connection_error_reason(gc,
+			purple_connection_error_reason(transport->gc,
 						       PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
 						       _("Write error"));
 			return;
@@ -344,10 +340,10 @@ static void transport_sip_canwrite_cb(gpointer data,
 	}
 }
 
-void sipe_backend_transport_sip_message(struct sipe_core_public *sipe_public,
+void sipe_backend_transport_sip_message(struct sipe_transport_connection *conn,
 					const gchar *buffer)
 {
-	struct sipe_transport_purple *transport = SIPE_PUBLIC_TO_PURPLE_TRANSPORT;
+	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 	time_t currtime = time(NULL);
 	char *tmp;
 
@@ -364,7 +360,7 @@ void sipe_backend_transport_sip_message(struct sipe_core_public *sipe_public,
 		transport->transmit_handler = purple_input_add(transport->socket,
 							       PURPLE_INPUT_WRITE,
 							       transport_sip_canwrite_cb,
-							       sipe_public->backend_private->gc);
+							       transport);
 	}
 }
 
@@ -537,7 +533,7 @@ struct sipe_transport_connection *sipe_backend_transport_http_connect(struct sip
 					 server_name,
 					 server_port,
 					 transport_http_connected_tcp_cb,
-					 gc) == NULL) {
+					 transport) == NULL) {
 			g_free(transport);
 			return(NULL);
 		}

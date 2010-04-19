@@ -113,7 +113,7 @@
 
 /* Keep in sync with sipe_transport_type! */
 static const char *transport_descriptor[] = { "", "tls", "tcp"};
-#define TRANSPORT_DESCRIPTOR (transport_descriptor[SIP_TO_CORE_PUBLIC->transport_type])
+#define TRANSPORT_DESCRIPTOR (transport_descriptor[SIP_TO_CORE_PRIVATE->transport_type])
 
 /* Status identifiers (see also: sipe_status_types()) */
 #define SIPE_STATUS_ID_UNKNOWN     purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET)     /* Unset (primitive) */
@@ -616,7 +616,7 @@ void send_sip_response(PurpleConnection *gc, struct sipmsg *msg, int code,
 		tmp = g_slist_next(tmp);
 	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
-	sipe_backend_transport_sip_message(gc->proto_data, outstr->str);
+	sipe_backend_transport_sip_message(sip->public->transport, outstr->str);
 	g_string_free(outstr, TRUE);
 }
 
@@ -786,7 +786,7 @@ send_sip_request(PurpleConnection *gc, const gchar *method,
 	} else {
 		sipmsg_free(msg);
 	}
-	sipe_backend_transport_sip_message(SIPE_CORE_PUBLIC, buf);
+	sipe_backend_transport_sip_message(sipe_private->public.transport, buf);
 	g_free(buf);
 
 	return trans;
@@ -4521,7 +4521,7 @@ sipe_invite(struct sipe_account_data *sip,
 		sipe_backend_network_ip_address(),
 		sipe_backend_network_ip_address(),
 		sip->ocs2007 ? "message" : "x-ms-message",
-		SIP_TO_CORE_PUBLIC->server_port);
+		SIP_TO_CORE_PRIVATE->server_port);
 
 	dialog->outgoing_invite = send_sip_request(sip->gc, "INVITE",
 		to, to, hdr, body, dialog, process_invite_response);
@@ -5278,7 +5278,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 		sipe_backend_network_ip_address(),
 		sipe_backend_network_ip_address(),
 		sip->ocs2007 ? "message" : "x-ms-message",
-		SIP_TO_CORE_PUBLIC->server_port,
+		SIP_TO_CORE_PRIVATE->server_port,
 		sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
 	g_free(body);
@@ -5301,7 +5301,7 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
 		sip->ocs2007 ? "message" : "x-ms-message",
-		SIP_TO_CORE_PUBLIC->server_port,
+		SIP_TO_CORE_PRIVATE->server_port,
 		sip->username);
 	send_sip_response(sip->gc, msg, 200, "OK", body);
 	g_free(body);
@@ -5327,13 +5327,19 @@ static void sipe_server_register(struct sipe_core_private *sipe_private,
 				 gchar *server_name,
 				 guint server_port)
 {
-	sipe_private->public.transport_type = type;
-	sipe_private->public.server_name = server_name;
-	sipe_private->public.server_port =
+	sipe_private->transport_type = type;
+	sipe_private->server_name = server_name;
+	sipe_private->server_port =
 		(server_port != 0)           ? server_port :
 		(type == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
 
-	sipe_backend_transport_sip_connect(SIPE_CORE_PUBLIC);
+	sipe_private->public.transport = sipe_backend_transport_sip_connect(SIPE_CORE_PUBLIC,
+									    type,
+									    server_name,
+									    sipe_private->server_port);
+	if (sipe_private->public.transport) {
+		sipe_private->public.transport->user_data = sipe_private;
+	}
 }
 
 static void sipe_connection_cleanup(struct sipe_account_data *);
@@ -7914,7 +7920,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 				g_free(auth);
 				resend = sipmsg_to_string(trans->msg);
 				/* resend request */
-				sipe_backend_transport_sip_message(sip->gc->proto_data, resend);
+				sipe_backend_transport_sip_message(sip->public->transport, resend);
 				g_free(resend);
 			} else {
 				if (msg->response < 200) {
@@ -7960,7 +7966,7 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 							g_free(auth);
 							resend = sipmsg_to_string(trans->msg);
 							/* resend request */
-							sipe_backend_transport_sip_message(sip->gc->proto_data, resend);
+							sipe_backend_transport_sip_message(sip->public->transport, resend);
 							g_free(resend);
 						}
 					}
@@ -7986,10 +7992,10 @@ static void process_input_message(struct sipe_account_data *sip,struct sipmsg *m
 	}
 }
 
-void sipe_core_transport_sip_message(struct sipe_core_public *sipe_public)
+void sipe_core_transport_sip_message(struct sipe_transport_connection *conn)
 {
-	struct sipe_transport_connection *conn = sipe_public->transport;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = conn->user_data;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *cur = conn->buffer;
 
 	/* according to the RFC remove CRLF at the beginning */
@@ -8109,9 +8115,10 @@ struct sipe_service_data {
 
 static const struct sipe_service_data *current_service = NULL;
 
-void sipe_core_transport_sip_ssl_connect_failure(struct sipe_core_public *sipe_public)
+void sipe_core_transport_sip_ssl_connect_failure(struct sipe_transport_connection *conn)
 {
-        current_service = SIPE_ACCOUNT_DATA->service_data;
+	struct sipe_core_private *sipe_private = conn->user_data;
+        current_service = SIPE_ACCOUNT_DATA_PRIVATE->service_data;
 	if (current_service) {
 		SIPE_DEBUG_INFO("current_service: transport '%s' service '%s'",
 				current_service->transport ? current_service->transport : "NULL",
@@ -8119,9 +8126,10 @@ void sipe_core_transport_sip_ssl_connect_failure(struct sipe_core_public *sipe_p
 	}
 }
 
-void sipe_core_transport_sip_connected(struct sipe_core_public *sipe_public)
+void sipe_core_transport_sip_connected(struct sipe_transport_connection *conn)
 {
-	do_register(SIPE_ACCOUNT_DATA);
+	struct sipe_core_private *sipe_private = conn->user_data;
+	do_register(SIPE_ACCOUNT_DATA_PRIVATE);
 }
 
 /* Service list for autodection */
@@ -8156,7 +8164,7 @@ static void resolve_next_service(struct sipe_account_data *sip,
 	} else {
 		sip->service_data++;
 		if (sip->service_data->service == NULL) {
-			guint type = SIP_TO_CORE_PUBLIC->transport_type;
+			guint type = SIP_TO_CORE_PRIVATE->transport_type;
 
 			/* Try connecting to the SIP hostname directly */
 			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; using SIP domain as fallback");
@@ -8356,9 +8364,9 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 		purple_srv_cancel(sip->srv_query_data);
 	sip->srv_query_data = NULL;
 
-	sipe_backend_transport_sip_disconnect(SIPE_CORE_PUBLIC);
-	g_free(sipe_private->public.server_name);
-	sipe_private->public.server_name = NULL;
+	sipe_backend_transport_sip_disconnect(sipe_private->public.transport);
+	g_free(sipe_private->server_name);
+	sipe_private->server_name = NULL;
 
 	sipe_auth_free(&sip->registrar);
 	sipe_auth_free(&sip->proxy);

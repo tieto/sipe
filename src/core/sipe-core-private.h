@@ -33,6 +33,11 @@ struct sipe_core_private {
 	 */
 	struct sipe_core_public public;
 
+	/* server information */
+	guint  transport_type; /* same as public.transport->type */
+	gchar *server_name;
+	guint  server_port;
+
 	/* Buddies */
 	GHashTable *buddies;
 
