@@ -312,7 +312,7 @@ sipe_domino_time_to_str(time_t timestamp)
 static void
 sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 {
-	if (cal->as_url) {
+	if (cal->domino_url) {
 		char *url_req;
 		char *url;
 		time_t end;
@@ -340,7 +340,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 		g_free(start_str);
 		g_free(end_str);
 
-		url = g_strconcat(cal->as_url, url_req, NULL);
+		url = g_strconcat(cal->domino_url, url_req, NULL);
 		g_free(url_req);
 		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
 			cal->http_conn = http_conn_create(
@@ -400,10 +400,10 @@ sipe_domino_process_login_response(int return_code,
 static void
 sipe_domino_do_login_request(struct sipe_calendar *cal)
 {
-	if (cal->as_url) {
+	if (cal->domino_url) {
 		char *body;
 		const char *content_type = "application/x-www-form-urlencoded";
-		char *login_url = g_strconcat(cal->as_url, "/?Login", NULL);
+		char *login_url = g_strconcat(cal->domino_url, "/?Login", NULL);
 		char *user;
 		char *password;
 
@@ -522,7 +522,7 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 	 * Searches location of notes.ini in Registry, reads it, extracts mail server and mail file,
 	 * composes HTTPS URL to Domino web, basing on that
 	 */
-	if (sip && sip->cal && is_empty(sip->cal->as_url)) {
+	if (sip && sip->cal && is_empty(sip->cal->domino_url)) {
 		char *path = NULL;
 		char *mail_server = NULL;
 		char *mail_file = NULL;
@@ -553,9 +553,9 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 		SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_server=%s", mail_server ? mail_server : "");
 		SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_file=%s", mail_file ? mail_file : "");
 
-		g_free(sip->cal->as_url);
-		sip->cal->as_url = sipe_domino_compose_url("https", mail_server, mail_file);
-		SIPE_DEBUG_INFO("sipe_domino_update_calendar: sip->cal->as_url=%s", sip->cal->as_url ? sip->cal->as_url : "");
+		g_free(sip->cal->domino_url);
+		sip->cal->domino_url = sipe_domino_compose_url("https", mail_server, mail_file);
+		SIPE_DEBUG_INFO("sipe_domino_update_calendar: sip->cal->domino_url=%s", sip->cal->domino_url ? sip->cal->domino_url : "");
 		g_free(path);
 	}
 

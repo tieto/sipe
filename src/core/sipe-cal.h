@@ -72,6 +72,7 @@ struct sipe_calendar {
 	char *as_url;
 	char *oof_url;
 	char *oab_url;
+	char *domino_url;
 
 	char *oof_state; /* Enabled, Disabled, Scheduled */
 	char *oof_note;

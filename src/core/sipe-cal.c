@@ -181,6 +181,7 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 	g_free(cal->as_url);
 	g_free(cal->oof_url);
 	g_free(cal->oab_url);
+	g_free(cal->domino_url);
 	g_free(cal->oof_state);
 	g_free(cal->oof_note);
 	g_free(cal->free_busy);
@@ -216,6 +217,7 @@ sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 		if (!is_empty(value)) {
 			sip->cal->as_url  = g_strdup(value);
 			sip->cal->oof_url = g_strdup(value);
+			sip->cal->domino_url  = g_strdup(value);
 		}
 
 		sip->cal->auth = g_new0(HttpConnAuth, 1);
