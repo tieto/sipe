@@ -53,7 +53,10 @@ static PurpleMediaNetworkProtocol sipe_network_protocol_to_purple(SipeNetworkPro
 static SipeNetworkProtocol purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto);
 
 static void
-on_candidates_prepared_cb(sipe_media_call *call)
+on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
+						  SIPE_UNUSED_PARAMETER gchar *sessionid,
+						  SIPE_UNUSED_PARAMETER gchar *participant,
+						  sipe_media_call *call)
 {
 	if (call->candidates_prepared_cb)
 		call->candidates_prepared_cb(call);
@@ -62,8 +65,8 @@ on_candidates_prepared_cb(sipe_media_call *call)
 static void
 on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 					PurpleMediaState state,
-					gchar* sessionid,
-					gchar* participant,
+					gchar *sessionid,
+					gchar *participant,
 					sipe_media_call *call)
 {
 	printf("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
@@ -74,8 +77,8 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 static void
 on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 				  PurpleMediaInfoType type,
-				  SIPE_UNUSED_PARAMETER gchar *sid,
-				  SIPE_UNUSED_PARAMETER gchar *name,
+				  SIPE_UNUSED_PARAMETER gchar *sessionid,
+				  SIPE_UNUSED_PARAMETER gchar *participant,
 				  gboolean local, sipe_media_call *call)
 {
 	if (type == PURPLE_MEDIA_INFO_ACCEPT && call->call_accept_cb)
@@ -100,11 +103,10 @@ sipe_backend_media_new(sipe_media_call *call, const gchar* participant, gboolean
 	media = purple_media_manager_create_media(manager, acc,
 							"fsrtpconference", participant, initiator);
 
-	g_signal_connect_swapped(G_OBJECT(media), "candidates-prepared",
+	g_signal_connect(G_OBJECT(media), "candidates-prepared",
 						G_CALLBACK(on_candidates_prepared_cb), call);
 	g_signal_connect(G_OBJECT(media), "stream-info",
 						G_CALLBACK(on_stream_info_cb), call);
-
 	g_signal_connect(G_OBJECT(media), "state-changed",
 						G_CALLBACK(on_state_changed_cb), call);
 

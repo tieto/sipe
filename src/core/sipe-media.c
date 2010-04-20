@@ -541,10 +541,9 @@ static void candidates_prepared_cb(sipe_media_call *call)
 static void media_connected_cb(sipe_media_call *call)
 {
 	call = call;
-	//sipe_invite_call(call->sip, NULL);
 }
 
-static void call_accept_cb(sipe_media_call *call, SIPE_UNUSED_PARAMETER gboolean local)
+static void call_accept_cb(sipe_media_call *call, gboolean local)
 {
 	if (local) {
 		PurpleAccount* account = call->sip->account;
@@ -659,7 +658,8 @@ sipe_media_initiate_call(struct sipe_account_data *sip, const char *participant)
 }
 
 
-void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
+void
+sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	const gchar					*callid = sipmsg_find_header(msg, "Call-ID");
 
@@ -760,7 +760,7 @@ void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *ms
 static gboolean
 sipe_media_process_invite_response(struct sipe_account_data *sip,
 								   struct sipmsg *msg,
-								   SIPE_UNUSED_PARAMETER struct transaction *trans)
+								   struct transaction *trans)
 {
 	const gchar* callid = sipmsg_find_header(msg, "Call-ID");
 	sipe_media_call *call = sip->media_call;
@@ -773,7 +773,6 @@ sipe_media_process_invite_response(struct sipe_account_data *sip,
 		const gchar *rseq = sipmsg_find_header(msg, "RSeq");
 		const gchar *cseq = sipmsg_find_header(msg, "CSeq");
 		gchar *rack = g_strdup_printf("RAck: %s %s\r\n", rseq, cseq);
-		PurpleMedia* m;
 
 		sipe_utils_nameval_free(call->sdp_attrs);
 		call->sdp_attrs = NULL;
@@ -792,18 +791,20 @@ sipe_media_process_invite_response(struct sipe_account_data *sip,
 
 		sipe_backend_media_add_remote_candidates(call->media, call->dialog->with, call->remote_candidates);
 
-		m = (PurpleMedia*) call->media;
-		//purple_media_stream_info(m, PURPLE_MEDIA_INFO_ACCEPT, NULL, NULL, FALSE);
-
 		sipe_dialog_parse(call->dialog, msg, TRUE);
 
 		send_sip_request(sip->gc, "PRACK", call->dialog->with, call->dialog->with, rack, NULL, call->dialog, NULL);
 		g_free(rack);
 	} else {
-		int tmp = call->dialog->cseq;
-		call->dialog->cseq = 0;
+		int trans_cseq;
+		int tmp_cseq = call->dialog->cseq;
+		//PurpleMedia* m = (PurpleMedia*) call->media;
+		//purple_media_stream_info(m, PURPLE_MEDIA_INFO_ACCEPT, NULL, NULL, FALSE);
+
+		sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &trans_cseq);
+		call->dialog->cseq = trans_cseq - 1;
 		send_sip_request(sip->gc, "ACK", call->dialog->with, call->dialog->with, NULL, NULL, call->dialog, NULL);
-		call->dialog->cseq = tmp;
+		call->dialog->cseq = tmp_cseq;
 		sipe_invite_call(sip, NULL);
 	}
 
