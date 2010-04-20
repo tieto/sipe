@@ -52,12 +52,12 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 */
 
 #include <string.h>
+#include <ctype.h>
+#include <stdio.h>
 #include <errno.h>
 
 #include <glib.h>
 
-/* @TODO replace purple_url_encode() with non-purple equiv. */
-#include "util.h"
 /* for registry read */
 #ifdef _WIN32
 #include "sipe-win32dep.h"
@@ -397,6 +397,50 @@ sipe_domino_process_login_response(int return_code,
 	}
 }
 
+static gchar *sipe_domino_uri_escape(const gchar *string)
+{
+	gchar *escaped;
+
+	if (!string) return(NULL);
+	if (!g_utf8_validate(string, -1, NULL)) return(NULL);
+
+#if GLIB_CHECK_VERSION(2,16,0)
+	escaped = g_uri_escape_string(string, NULL, FALSE);
+#else
+	/* loosely based on libpurple/util.c:purple_url_encode() */
+	{
+		GString *buf = g_string_new(NULL);
+
+		while (*string) {
+			gunichar c = g_utf8_get_char(string);
+			
+			/* If the character is an ASCII character and is alphanumeric
+			 * no need to escape */
+			if (c < 128 &&
+			    (isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~')) {
+				g_string_append_c(buf, c);
+			} else {
+				gchar *p, utf_char[6];
+				guint bytes = g_unichar_to_utf8(c, utf_char);
+
+				p = utf_char;
+				while (bytes-- > 0) {
+					g_string_append_printf(buf,
+							       "%%%02X",
+							       *p++ & 0xff);
+				}
+			}
+
+			string = g_utf8_next_char(string);
+		}
+
+		escaped = g_string_free(buf, FALSE);
+	}
+#endif
+
+	return(escaped);
+}
+
 static void
 sipe_domino_do_login_request(struct sipe_calendar *cal)
 {
@@ -412,8 +456,8 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		if (!cal->auth) return;
 
 		/* @TODO replace purple_url_encode() with non-purple equiv. */
-		user     = g_strdup(purple_url_encode(cal->email));
-		password = g_strdup(purple_url_encode(cal->auth->password));
+		user     = sipe_domino_uri_escape(cal->email);
+		password = sipe_domino_uri_escape(cal->auth->password);
 
 		body = g_strdup_printf(SIPE_DOMINO_LOGIN_REQUEST, user, password);
 		g_free(user);

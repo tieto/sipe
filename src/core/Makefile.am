@@ -30,6 +30,8 @@ libsipe_core_la_SOURCES = \
 	sipe-core.c \
 	sipe-dialog.h \
 	sipe-dialog.c \
+	sipe-domino.h \
+	sipe-domino.c \
 	sipe-ews.h \
 	sipe-ews.c \
 	sipe-session.h \
@@ -53,8 +55,6 @@ libsipe_core_purple_la_SOURCES = \
 	sipe-cal.c \
 	sipe-conf.h \
 	sipe-conf.c \
-	sipe-domino.h \
-	sipe-domino.c \
 	sipe-ft.h \
 	sipe-ft.c
 

@@ -70,6 +70,7 @@ CLEAN_C_SRC = \
 			md4.c \
 			sipe-crypt.c \
 			sipe-digest.c \
+			sipe-domino.c \
 			sipe-buddy.c \
 			sipe-chat.c \
 			sipe-dialog.c \
@@ -96,7 +97,6 @@ PURPLE_C_SRC = \
 			sipe.c \
 			sipe-conf.c \
 			sipe-cal.c \
-			sipe-domino.c \
 			sipe-ft.c \
 
 C_TEST_SRC = 		sipe-xml-tests.c \
