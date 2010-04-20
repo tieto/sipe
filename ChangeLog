@@ -1,5 +1,5 @@
 version 1.11.0 "Lotus Domino/Calendar" (2010-04-XX)
-	- Added integration with Lotus Domino.
+	- Added integration with Lotus Domino (pier11):
 	  * Sipe can now retrieve calendar data (Meeting schedule/subject/
 	    location) from a web-enabled Lotus Domino server and publish it to
 	    OCS2007/LCS2005 as availability information.
@@ -10,7 +10,10 @@ version 1.11.0 "Lotus Domino/Calendar" (2010-04-XX)
 	  * Subsequent calendar updates happen in 30 minute intervals.
 	  * Manual calendar update can be triggered using the following menu:
 		   Accounts->{SIPE_ACCOUNT}->"Republish Calendar"
-	    (pier11)
+	  * Though Domino integration can work without any additional settings 
+	    in account configuration (on Windows), there are options to manually
+	    provide Domino Services URL and email address/password if it's
+	    different from SIP URI/Password settings on Basic tab.
 	- Fixed #2982424: krb5 build errors on FreeBSD (Stefan Becker)
 	- Dropped UDP transport support (Stefan Becker)
 	- Rewrote TCP & TLS transport support (Stefan Becker)
