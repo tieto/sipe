@@ -8115,7 +8115,8 @@ struct sipe_service_data {
 
 static const struct sipe_service_data *current_service = NULL;
 
-void sipe_core_transport_sip_ssl_connect_failure(struct sipe_transport_connection *conn)
+void sipe_core_transport_sip_ssl_connect_failure(struct sipe_transport_connection *conn,
+						 SIPE_UNUSED_PARAMETER const gchar *msg)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
         current_service = SIPE_ACCOUNT_DATA_PRIVATE->service_data;
