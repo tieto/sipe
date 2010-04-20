@@ -177,6 +177,8 @@ static void
 http_conn_close(HttpConn *http_conn, const char *message)
 {
 	SIPE_DEBUG_INFO("http_conn_close: closing http connection: %s", message ? message : "");
+	
+	g_return_if_fail(http_conn);
 
 	sipe_backend_transport_http_disconnect(http_conn->conn);
 	http_conn_free(http_conn);
