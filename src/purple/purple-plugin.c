@@ -222,7 +222,6 @@ static void sipe_login(PurpleAccount *account)
 	const gchar *email     = purple_account_get_string(account, "email", NULL);
 	const gchar *email_url = purple_account_get_string(account, "email_url", NULL);
 	const gchar *transport = purple_account_get_string(account, "transport", "auto");
-	const gchar* calendar  = purple_account_get_string(account, "calendar", "EXCH");
 	struct sipe_core_public *sipe_public;
 	gchar **username_split;
 	gchar *login_domain = NULL;
@@ -253,7 +252,6 @@ static void sipe_login(PurpleAccount *account)
 					 purple_connection_get_password(gc),
 					 email,
 					 email_url,
-					 calendar,
 					 &errmsg);
 	g_free(login_domain);
 	g_free(login_account);
@@ -533,11 +531,8 @@ static void sipe_reset_status(PurplePluginAction *action)
 static GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 			   gpointer context)
 {
-	PurpleConnection *gc = (PurpleConnection *)context;
 	GList *menu = NULL;
 	PurplePluginAction *act;
-	const char* calendar = purple_account_get_string(purple_connection_get_account(gc),
-							 "calendar", "EXCH");
 
 	act = purple_plugin_action_new(_("About SIPE plugin..."), sipe_show_about_plugin);
 	menu = g_list_prepend(menu, act);
@@ -545,10 +540,8 @@ static GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
-	if (!sipe_strequal(calendar, "NONE")) {
-		act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
-		menu = g_list_prepend(menu, act);
-	}
+	act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
+	menu = g_list_prepend(menu, act);
 
 	act = purple_plugin_action_new(_("Reset status"), sipe_reset_status);
 	menu = g_list_prepend(menu, act);
@@ -630,12 +623,6 @@ static void init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 #endif
-
-	option = purple_account_option_list_new(_("Calendar source"), "calendar", NULL);
-	purple_account_option_add_list_item(option, _("Exchange 2007/2010"), "EXCH");
-	purple_account_option_add_list_item(option, _("Lotus Domino"), "DOMINO");
-	purple_account_option_add_list_item(option, _("None"), "NONE");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 
 	/** Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf

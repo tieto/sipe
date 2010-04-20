@@ -65,7 +65,8 @@ struct sipe_calendar {
 	char *legacy_dn;
 	HttpConnAuth *auth;
 	int auto_disco_method;
-	int is_disabled;
+	int is_ews_disabled;
+	int is_domino_disabled;
 	int is_updated;
 
 	char *as_url;

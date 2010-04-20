@@ -145,12 +145,14 @@ be great to implement too.
   "</soap:Body>"\
 "</soap:Envelope>"
 
-#define SIPE_EWS_STATE_NONE			0
-#define SIPE_EWS_STATE_AUTODISCOVER_SUCCESS	1
+#define SIPE_EWS_STATE_NONE			 0
+#define SIPE_EWS_STATE_AUTODISCOVER_SUCCESS	 1
 #define SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE	-1
 #define SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE	-2
-#define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	2
-#define SIPE_EWS_STATE_OOF_SUCCESS		3
+#define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	 3
+#define SIPE_EWS_STATE_AVAILABILITY_FAILURE	-3
+#define SIPE_EWS_STATE_OOF_SUCCESS		 4
+#define SIPE_EWS_STATE_OOF_FAILURE		-4
 
 char *
 sipe_ews_get_oof_note(struct sipe_calendar *cal)
@@ -280,8 +282,12 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		cal->state = SIPE_EWS_STATE_AVAILABILITY_SUCCESS;
 		sipe_ews_run_state_machine(cal);
 
-	} else if (return_code < 0) {
-		cal->http_conn = NULL;
+	} else {
+		if (return_code < 0) {
+			cal->http_conn = NULL;
+		}
+		cal->state = SIPE_EWS_STATE_AVAILABILITY_FAILURE;
+		sipe_ews_run_state_machine(cal);
 	}
 }
 
@@ -363,8 +369,12 @@ sipe_ews_process_oof_response(int return_code,
 		cal->state = SIPE_EWS_STATE_OOF_SUCCESS;
 		sipe_ews_run_state_machine(cal);
 
-	} else if (return_code < 0) {
-		cal->http_conn = NULL;
+	} else {
+		if (return_code < 0) {
+			cal->http_conn = NULL;
+		}
+		cal->state = SIPE_EWS_STATE_OOF_FAILURE;
+		sipe_ews_run_state_machine(cal);
 	}
 }
 
@@ -569,7 +579,9 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 				break;
 			}
 		case SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE:
-			cal->is_disabled = TRUE;
+		case SIPE_EWS_STATE_AVAILABILITY_FAILURE:
+		case SIPE_EWS_STATE_OOF_FAILURE:
+			cal->is_ews_disabled = TRUE;
 			break;
 		case SIPE_EWS_STATE_AUTODISCOVER_SUCCESS:
 			sipe_ews_do_avail_request(cal);
@@ -606,7 +618,7 @@ sipe_ews_update_calendar(struct sipe_account_data *sip)
 		}
 	}
 
-	if (sip->cal->is_disabled) {
+	if (sip->cal->is_ews_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
 		return;
 	}

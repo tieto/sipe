@@ -3241,15 +3241,15 @@ void
 sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-	const char* calendar = purple_account_get_string(sip->account, "calendar", "EXCH");
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
 
-	if (sipe_strequal(calendar, "EXCH")) {
-		sipe_ews_update_calendar(sip);
-	} else if (sipe_strequal(calendar, "DOMINO")) {
-		sipe_domino_update_calendar(sip);
-	}
+	/* Do in parallel.
+	 * If failed, the branch will be disabled for subsequent calls.
+	 * Can't rely that user turned the functionality on in account settings.
+	 */
+	sipe_ews_update_calendar(sip);
+	sipe_domino_update_calendar(sip);
 
 	/* schedule repeat */
 	sipe_schedule_action("<+update-calendar>",
@@ -8223,7 +8223,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    const gchar *password,
 					    const gchar *email,
 					    const gchar *email_url,
-					    const gchar *calendar,
 					    const gchar **errmsg)
 {
 	struct sipe_core_private *sipe_private;
@@ -8265,16 +8264,19 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		return NULL;
 	}
 	
-	/* ensure that email_url is in proper format if Domino enabled (if provided) */
-	/* For Domino: https://[domino_server]/[databasename].nsf */
-	if (sipe_strequal(calendar, "DOMINO") && !is_empty(email_url)) {
+	/* ensure that email_url is in proper format if enabled (if provided).
+	 * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
+	 * Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
+	 */
+	if (!is_empty(email_url)) {
 		char *tmp = g_ascii_strdown(email_url, -1);
-		if (!g_str_has_prefix(tmp, "https://") ||
-		    !g_str_has_suffix(tmp, ".nsf"))
+		if (!g_str_has_prefix(tmp, "https://"))
 		{
 			g_free(tmp);
 			g_strfreev(user_domain);
-			*errmsg = _("Lotus Domino URL should be valid if provided\nExample: https://domino.corp.com/maildatabase.nsf");
+			*errmsg = _("Email services URL should be valid if provided\n"
+				    "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
+				    "Example: https://domino.corp.com/maildatabase.nsf");
 			return NULL;
 		}
 		g_free(tmp);

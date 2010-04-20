@@ -179,7 +179,7 @@ sipe_domino_process_calendar_response(int return_code,
 	cal->http_conn = NULL;
 
 	if (content_type && !g_str_has_prefix(content_type, "text/xml")) {
-		cal->is_disabled = TRUE;
+		cal->is_domino_disabled = TRUE;
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_process_calendar_response: not XML, exiting.");
 		return;
 	}
@@ -390,7 +390,7 @@ sipe_domino_process_login_response(int return_code,
 		SIPE_DEBUG_INFO("sipe_domino_process_login_response: rather FAILURE, ret=%d", return_code);
 
 		/* stop here */
-		/* cal->is_disabled = TRUE; */
+		/* cal->is_domino_disabled = TRUE; */
 
 		http_conn_set_close(conn);
 		cal->http_conn = NULL;
@@ -565,7 +565,7 @@ sipe_domino_update_calendar(struct sipe_account_data *sip)
 	}
 	sip->cal->http_session = http_conn_session_create();
 
-	if (sip->cal->is_disabled) {
+	if (sip->cal->is_domino_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: disabled, exiting.");
 		return;
 	}

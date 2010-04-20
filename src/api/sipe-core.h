@@ -171,7 +171,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    const gchar *password,
 					    const gchar *email,
 					    const gchar *email_url,
-					    const gchar *calendar,
 					    const gchar **errmsg);
 void sipe_core_deallocate(struct sipe_core_public *sipe_public);
 
