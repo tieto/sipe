@@ -529,7 +529,7 @@ static void sipe_reset_status(PurplePluginAction *action)
 }
 
 static GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
-			   gpointer context)
+			   SIPE_UNUSED_PARAMETER gpointer context)
 {
 	GList *menu = NULL;
 	PurplePluginAction *act;
