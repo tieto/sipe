@@ -299,9 +299,9 @@ void sipe_backend_transport_sip_disconnect(struct sipe_transport_connection *con
 		purple_circ_buffer_destroy(transport->transmit_buffer);
 	g_free(transport->public.buffer);
 
-	g_free(transport);
-
 	((struct sipe_core_public *)transport->gc->proto_data)->transport = NULL;
+	
+	g_free(transport);
 }
 
 static void transport_sip_canwrite_cb(gpointer data,
@@ -366,7 +366,7 @@ void sipe_backend_transport_sip_message(struct sipe_transport_connection *conn,
 
 /*****************************************************************************
  *
- * SIP transport handling
+ * HTTP transport handling
  *
  *****************************************************************************/
 static void transport_http_input_common(struct sipe_transport_purple *transport)
