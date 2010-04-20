@@ -7575,8 +7575,16 @@ void process_input_message(struct sipe_account_data *sip,
 				g_free(resend);
 			} else {
 				if (msg->response < 200) {
-					/* ignore provisional response */
-					SIPE_DEBUG_INFO("got provisional (%d) response, ignoring", msg->response);
+					if (msg->bodylen != 0) {
+						SIPE_DEBUG_INFO("got provisional (%d) response with body", msg->response);
+						if (trans->callback) {
+							SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
+							(trans->callback)(sip, msg, trans);
+						}
+					} else {
+						/* ignore provisional response */
+						SIPE_DEBUG_INFO("got provisional (%d) response, ignoring", msg->response);
+					}
 				} else {
 					sip->proxy.retries = 0;
 					if (sipe_strequal(trans->msg->method, "REGISTER")) {

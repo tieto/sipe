@@ -73,6 +73,7 @@ typedef struct _sipe_media_call {
 	SipeCallState		state;
 
 	void (*candidates_prepared_cb)(struct _sipe_media_call*);
+	void (*media_connected_cb)(struct _sipe_media_call*);
 	void (*call_accept_cb)(struct _sipe_media_call*, gboolean local);
 	void (*call_reject_cb)(struct _sipe_media_call*, gboolean local);
 	void (*call_hold_cb)  (struct _sipe_media_call*, gboolean local);
@@ -80,7 +81,7 @@ typedef struct _sipe_media_call {
 	void (*call_hangup_cb)(struct _sipe_media_call*, gboolean local);
 } sipe_media_call;
 
-void sipe_media_initiate_call(struct sipe_account_data *sip, gchar *participant);
+void sipe_media_initiate_call(struct sipe_account_data *sip, const char *participant);
 
 void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg);
 
@@ -91,15 +92,17 @@ gchar *sipe_media_get_callid(sipe_media_call *call);
 
 /* Backend functions **********************************************************/
 
-sipe_media * sipe_backend_media_new(sipe_media_call *call, gpointer account,
-									gchar* participant, gboolean initiator);
+sipe_media * sipe_backend_media_new(sipe_media_call *call, const gchar* participant,
+									gboolean initiator);
 
-gboolean sipe_backend_media_add_stream(sipe_media *media, gchar* participant,
+gboolean sipe_backend_media_add_stream(sipe_media *media, const gchar* participant,
 									   SipeMediaType type, gboolean use_nice,
 									   gboolean initiator);
 
 void sipe_backend_media_add_remote_candidates(sipe_media *media, gchar* participant,
 											  GList *candidates);
+
+gboolean sipe_backend_media_is_initiator(sipe_media *media, gchar *participant);
 
 sipe_codec * sipe_backend_codec_new(int id, const char *name,
 									SipeMediaType type, guint clock_rate);

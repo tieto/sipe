@@ -99,7 +99,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 			sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 		}
 		g_free(buf);
-	} else if (sipe_strequal(method,"SUBSCRIBE") || sipe_strequal(method,"SERVICE") || sipe_strequal(method,"MESSAGE") || sipe_strequal(method,"INVITE") || sipe_strequal(method, "ACK") || sipe_strequal(method, "NOTIFY") || sipe_strequal(method, "BYE") || sipe_strequal(method, "INFO") || sipe_strequal(method, "OPTIONS") || sipe_strequal(method, "REFER")) {	       
+	} else if (sipe_strequal(method,"SUBSCRIBE") || sipe_strequal(method,"SERVICE") || sipe_strequal(method,"MESSAGE") || sipe_strequal(method,"INVITE") || sipe_strequal(method, "ACK") || sipe_strequal(method, "NOTIFY") || sipe_strequal(method, "BYE") || sipe_strequal(method, "INFO") || sipe_strequal(method, "OPTIONS") || sipe_strequal(method, "REFER") || sipe_strequal(method, "PRACK")) {
 		sip->registrar.nc = 3;
 		sip->registrar.type = AUTH_TYPE_NTLM;
 #ifdef HAVE_LIBKRB5

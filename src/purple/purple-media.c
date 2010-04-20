@@ -23,6 +23,7 @@
 #include "glib.h"
 
 #include "sipe-core.h"
+#include "../core/sipe.h"
 #include "../core/sipe-core-private.h"
 #include "sipe-common.h"
 #include "sipe-media.h"
@@ -49,12 +50,25 @@ PurpleMediaCaps sipe_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account
 static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type);
 static PurpleMediaCandidateType sipe_candidate_type_to_purple(SipeCandidateType type);
 static PurpleMediaNetworkProtocol sipe_network_protocol_to_purple(SipeNetworkProtocol proto);
+static SipeNetworkProtocol purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto);
 
 static void
 on_candidates_prepared_cb(sipe_media_call *call)
 {
 	if (call->candidates_prepared_cb)
 		call->candidates_prepared_cb(call);
+}
+
+static void
+on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
+					PurpleMediaState state,
+					gchar* sessionid,
+					gchar* participant,
+					sipe_media_call *call)
+{
+	printf("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
+	if (state == PURPLE_MEDIA_STATE_CONNECTED && call->media_connected_cb)
+		call->media_connected_cb(call);
 }
 
 static void
@@ -77,9 +91,9 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 }
 
 sipe_media *
-sipe_backend_media_new(sipe_media_call *call, gpointer account, gchar* participant, gboolean initiator)
+sipe_backend_media_new(sipe_media_call *call, const gchar* participant, gboolean initiator)
 {
-	PurpleAccount		*acc = account;
+	PurpleAccount		*acc = call->sip->account;
 	PurpleMediaManager	*manager = purple_media_manager_get();
 	PurpleMedia			*media;
 
@@ -91,12 +105,16 @@ sipe_backend_media_new(sipe_media_call *call, gpointer account, gchar* participa
 	g_signal_connect(G_OBJECT(media), "stream-info",
 						G_CALLBACK(on_stream_info_cb), call);
 
+	g_signal_connect(G_OBJECT(media), "state-changed",
+						G_CALLBACK(on_state_changed_cb), call);
+
 	return (sipe_media*) media;
 }
 
 gboolean
-sipe_backend_media_add_stream(sipe_media *media, gchar* participant, SipeMediaType type,
-								gboolean use_nice, gboolean initiator)
+sipe_backend_media_add_stream(sipe_media *media, const gchar* participant,
+							  SipeMediaType type, gboolean use_nice,
+							  gboolean initiator)
 {
 	PurpleMedia *prpl_media = (PurpleMedia *) media;
 	PurpleMediaSessionType prpl_type = sipe_media_to_purple(type);
@@ -111,7 +129,7 @@ sipe_backend_media_add_stream(sipe_media *media, gchar* participant, SipeMediaTy
 		params = g_new0(GParameter, params_cnt);
 		params[0].name = "controlling-mode";
 		g_value_init(&params[0].value, G_TYPE_BOOLEAN);
-		g_value_set_boolean(&params[0].value, FALSE);
+		g_value_set_boolean(&params[0].value, initiator);
 		params[1].name = "compatibility-mode";
 		g_value_init(&params[1].value, G_TYPE_UINT);
 		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
@@ -126,8 +144,13 @@ sipe_backend_media_add_stream(sipe_media *media, gchar* participant, SipeMediaTy
 void
 sipe_backend_media_add_remote_candidates(sipe_media *media, gchar* participant, GList *candidates)
 {
-	purple_media_add_remote_candidates((PurpleMedia*)media, "sipe-voice",
+	purple_media_add_remote_candidates((PurpleMedia *)media, "sipe-voice",
 										participant, candidates);
+}
+
+gboolean sipe_backend_media_is_initiator(sipe_media *media, gchar *participant)
+{
+	return purple_media_is_initiator((PurpleMedia *)media, "sipe-voice", participant);
 }
 
 sipe_codec *
@@ -259,7 +282,9 @@ sipe_backend_candidate_get_type(sipe_candidate *candidate)
 SipeNetworkProtocol
 sipe_backend_candidate_get_protocol(sipe_candidate *candidate)
 {
-	return purple_media_candidate_get_protocol((PurpleMediaCandidate*)candidate);
+	PurpleMediaNetworkProtocol proto =
+		purple_media_candidate_get_protocol((PurpleMediaCandidate*)candidate);
+	return purple_network_protocol_to_sipe(proto);
 }
 
 void
@@ -333,6 +358,16 @@ sipe_network_protocol_to_purple(SipeNetworkProtocol proto)
 		case SIPE_NETWORK_PROTOCOL_TCP:	return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
 		case SIPE_NETWORK_PROTOCOL_UDP:	return PURPLE_MEDIA_NETWORK_PROTOCOL_UDP;
 		default:						return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
+	}
+}
+
+static SipeNetworkProtocol
+purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto)
+{
+	switch (proto) {
+		case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP: return SIPE_NETWORK_PROTOCOL_TCP;
+		case PURPLE_MEDIA_NETWORK_PROTOCOL_UDP: return SIPE_NETWORK_PROTOCOL_UDP;
+		default:								return SIPE_NETWORK_PROTOCOL_UDP;
 	}
 }
 
