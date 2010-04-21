@@ -593,6 +593,13 @@ static void init_plugin(PurplePlugin *plugin)
 
 	purple_plugin_register(plugin);
 
+        /**
+	 * When adding new string settings please make sure to keep these
+	 * in sync:
+	 *
+	 *     api/sipe-backend.h
+	 *     purple-settings.c:setting_name[]
+	 */
 	split = purple_account_user_split_new(_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"), NULL, ',');
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);

@@ -36,6 +36,7 @@
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-cal.h"
 #include "sipe-nls.h"
 #include "sipe-utils.h"
@@ -204,6 +205,7 @@ gboolean
 sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 {
 	if (!sip->cal) {
+		struct sipe_core_public *sipe_public = SIP_TO_CORE_PUBLIC;
 		const char *value;
 
 		sip->cal = g_new0(struct sipe_calendar, 1);
@@ -212,7 +214,7 @@ sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 		sip->cal->email = g_strdup(sip->email);
 
 		/* user specified a service URL? */
-		value = purple_account_get_string(sip->account, "email_url", NULL);
+		value = sipe_backend_setting(sipe_public, SIPE_SETTING_EMAIL_URL);
 		if (has_url) *has_url = !is_empty(value);
 		if (!is_empty(value)) {
 			sip->cal->as_url  = g_strdup(value);
@@ -224,7 +226,7 @@ sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 		sip->cal->auth->use_negotiate = purple_account_get_bool(sip->account, "krb5", FALSE);
 
 		/* user specified email login? */
-		value = purple_account_get_string(sip->account, "email_login", NULL);
+		value = sipe_backend_setting(sipe_public, SIPE_SETTING_EMAIL_LOGIN);
 		if (!is_empty(value)) {
 
 			/* user specified email login domain? */
@@ -235,7 +237,8 @@ sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 			} else {
 				sip->cal->auth->user   = g_strdup(value);
 			}
-			sip->cal->auth->password = g_strdup(purple_account_get_string(sip->account, "email_password", NULL));
+			sip->cal->auth->password = g_strdup(sipe_backend_setting(sipe_public,
+										 SIPE_SETTING_EMAIL_PASSWORD));
 
 		} else {
 			/* re-use SIPE credentials */

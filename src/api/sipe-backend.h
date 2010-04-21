@@ -65,6 +65,18 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 
 const gchar *sipe_backend_network_ip_address(void);
 
+/** SETTINGS *****************************************************************/
+
+typedef enum {
+  SIPE_SETTING_EMAIL_URL = 0,
+  SIPE_SETTING_EMAIL_LOGIN,
+  SIPE_SETTING_EMAIL_PASSWORD,
+  SIPE_SETTING_USER_AGENT,
+  SIPE_SETTING_LAST
+} sipe_setting;
+const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
+				  sipe_setting type);
+
 /** TRANSPORT ****************************************************************/
 
 struct sipe_transport_connection *sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public,

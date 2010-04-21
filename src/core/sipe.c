@@ -228,7 +228,8 @@ static char *default_ua = NULL;
 static const char*
 sipe_get_useragent(struct sipe_account_data *sip)
 {
-	const char *useragent = purple_account_get_string(sip->account, "useragent", "");
+	const char *useragent = sipe_backend_setting(SIP_TO_CORE_PUBLIC,
+						     SIPE_SETTING_USER_AGENT);
 	if (is_empty(useragent)) {
 		if (!default_ua) {
 /*@TODO: better approach to define _user_ OS, it's version and host architecture */
