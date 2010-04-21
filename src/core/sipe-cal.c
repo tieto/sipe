@@ -43,8 +43,6 @@
 #include "sipe-xml.h"
 #include "sipe.h"
 
-#include "account.h"
-
 #define TIME_NULL   (time_t)-1
 #define IS(time)    (time != TIME_NULL)
 
@@ -223,7 +221,7 @@ sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 		}
 
 		sip->cal->auth = g_new0(HttpConnAuth, 1);
-		sip->cal->auth->use_negotiate = purple_account_get_bool(sip->account, "krb5", FALSE);
+		sip->cal->auth->use_negotiate = SIPE_CORE_FLAG_IS(KRB5);
 
 		/* user specified email login? */
 		value = sipe_backend_setting(sipe_public, SIPE_SETTING_EMAIL_LOGIN);

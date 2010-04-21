@@ -24,6 +24,8 @@ libsipe_core_la_SOURCES = \
 	sip-sec-ntlm.c \
 	sipe-buddy.h \
 	sipe-buddy.c \
+	sipe-cal.h \
+	sipe-cal.c \
 	sipe-chat.h \
 	sipe-chat.c \
 	sipe-core-private.h \
@@ -51,8 +53,6 @@ libsipe_core_tests_la_SOURCES = \
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
 	sipe.c \
-	sipe-cal.h \
-	sipe-cal.c \
 	sipe-conf.h \
 	sipe-conf.c \
 	sipe-ft.h \

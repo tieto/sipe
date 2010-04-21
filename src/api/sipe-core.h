@@ -78,6 +78,19 @@ struct sipe_transport_connection {
 struct sipe_backend_private;
 
 /**
+ * Flags
+ */
+#define SIPE_CORE_FLAG_KRB5 0x00000001 /* user enabled Kerberos 5     */
+#define SIPE_CORE_FLAG_SSO  0x00000002 /* user enabled Single-Sign On */
+
+#define SIPE_CORE_FLAG_IS(flag)    \
+	((sipe_public->flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_FLAG_SET(flag)   \
+	(sipe_public->flags |= SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_FLAG_UNSET(flag) \
+	(sipe_public->flags &= ~SIPE_CORE_FLAG_ ## flag)
+
+/**
  * Public part of the Sipe data structure
  *
  * This part contains the information needed by the core and the backend.
@@ -88,6 +101,9 @@ struct sipe_core_public {
 	 * The backend is responsible to allocate and free it.
 	 */
 	struct sipe_backend_private *backend_private;
+
+	/* flags (see above) */
+	guint32 flags;
 
 	/* user information */
 	gchar *sip_name;

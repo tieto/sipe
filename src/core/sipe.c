@@ -316,6 +316,7 @@ sipe_make_signature(struct sipe_account_data *sip,
 
 static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg)
 {
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
 	const char *authuser = sip->authuser;
 	gchar *ret;
 
@@ -341,7 +342,7 @@ static gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, 
 			gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
 							   &(auth->expires),
 							   auth->type,
-							   purple_account_get_bool(sip->account, "sso", TRUE),
+							   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
 							   sip->authdomain ? sip->authdomain : "",
 							   authuser,
 							   sip->password,
@@ -541,6 +542,7 @@ sipe_make_signature(struct sipe_account_data *sip,
 
 static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data *sip, const gchar *method)
 {
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
 	gchar * buf;
 
 	if (sip->registrar.type == AUTH_TYPE_UNSET) {
@@ -555,11 +557,11 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 			sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 		}
 		g_free(buf);
-	} else if (sipe_strequal(method,"SUBSCRIBE") || sipe_strequal(method,"SERVICE") || sipe_strequal(method,"MESSAGE") || sipe_strequal(method,"INVITE") || sipe_strequal(method, "ACK") || sipe_strequal(method, "NOTIFY") || sipe_strequal(method, "BYE") || sipe_strequal(method, "INFO") || sipe_strequal(method, "OPTIONS") || sipe_strequal(method, "REFER")) {
+	} else if (sipe_strequal(method,"SUBSCRIBE") || sipe_strequal(method,"SERVICE") || sipe_strequal(method,"MESSAGE") || sipe_strequal(method,"INVITE") || sipe_strequal(method, "ACK") || sipe_strequal(method, "NOTIFY") || sipe_strequal(method, "BYE") || sipe_strequal(method, "INFO") || sipe_strequal(method, "OPTIONS") || sipe_strequal(method, "REFER")) {	       
 		sip->registrar.nc = 3;
 		sip->registrar.type = AUTH_TYPE_NTLM;
 #ifdef HAVE_LIBKRB5
-		if (purple_account_get_bool(sip->account, "krb5", FALSE)) {
+		if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
 			sip->registrar.type = AUTH_TYPE_KERBEROS;
 		}
 #endif
@@ -5311,7 +5313,8 @@ sipe_get_auth_scheme_name(struct sipe_account_data *sip)
 {
 	const char *res = "NTLM";
 #ifdef HAVE_LIBKRB5
-	if (purple_account_get_bool(sip->account, "krb5", FALSE)) {
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
 		res = "Kerberos";
 	}
 #else

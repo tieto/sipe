@@ -267,6 +267,15 @@ static void sipe_login(PurpleAccount *account)
 	sipe_public->backend_private = purple_private = g_new0(struct sipe_backend_private, 1);
 	purple_private->gc = gc;
 
+#ifdef HAVE_LIBKRB5
+	if (purple_account_get_bool(account, "krb5", FALSE))
+		SIPE_CORE_FLAG_SET(KRB5);
+#endif
+	/* @TODO: is this correct?
+	   "sso" is only available when Kerberos support is compiled in */
+	if (purple_account_get_bool(account, "sso", TRUE))
+		SIPE_CORE_FLAG_SET(SSO);
+
 	gc->proto_data = sipe_public;
 	sipe_purple_setup(sipe_public, gc);
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |

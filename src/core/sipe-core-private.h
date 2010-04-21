@@ -48,6 +48,24 @@ struct sipe_core_private {
 	struct sipe_account_data *temporary;
 };
 
+/**
+ * Flags - stored in sipe_core_public.flags but names not exported
+ */
+#define SIPE_CORE_PRIVATE_FLAG_xxx 0x80000000 /* place holder... */
+
+#define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
+	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_PUBLIC_FLAG_SET(flag)   \
+	(sipe_private->public.flags |= SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_PUBLIC_FLAG_UNSET(flag)				\
+	(sipe_private->public.flags &= ~SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_PRIVATE_FLAG_IS(flag)    \
+	((sipe_private->public.flags & SIPE_CORE_PRIVATE_FLAG_ ## flag) == SIPE_CORE_PRIVATE_FLAG_ ## flag)
+#define SIPE_CORE_PRIVATE_FLAG_SET(flag)   \
+	(sipe_private->public.flags |= SIPE_CORE_PRIVATE_FLAG_ ## flag)
+#define SIPE_CORE_PRIVATE_FLAG_UNSET(flag)				\
+	(sipe_private->public.flags &= ~SIPE_CORE_PRIVATE_FLAG_ ## flag)
+
 /* Convenience macros */
 #define SIPE_CORE_PRIVATE ((struct sipe_core_private *)sipe_public)
 #define SIPE_CORE_PUBLIC  ((struct sipe_core_public *)sipe_private)
