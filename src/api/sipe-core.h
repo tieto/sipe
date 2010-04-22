@@ -21,6 +21,23 @@
  */
 
 /**
+ *
+ * Backend -> SIPE Core API - functions called by backend code
+ *
+ ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
+ *
+ *            The SIPE core assumes atomicity and is *NOT* thread-safe.
+ *
+ * It *does not* protect any of its data structures or code paths with locks!
+ *
+ * In no circumstances it must be interrupted by another thread calling
+ * sipe_core_xxx() while the first thread has entered the SIPE core through
+ * a sipe_core_xxx() function.
+ *
+ ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
+ */
+
+/**
  * Activity
  *   - core:    maps this to OCS protocol values
  *   - backend: maps this to backend status values

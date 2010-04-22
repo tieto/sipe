@@ -20,6 +20,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ *
+ * SIPE Core -> Backend API - functions called by SIPE core code
+ *
+ ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
+ *
+ *            The SIPE core assumes atomicity and is *NOT* thread-safe.
+ *
+ * It *does not* protect any of its data structures or code paths with locks!
+ *
+ * In no circumstances it must be possible that a sipe_core_xxx() function can
+ * be entered through another thread while the first thread has entered the
+ * backend specific code through a sipe_backend_xxx() function.
+ *
+ ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
+ */
+
 /* Forward declarations */
 struct sipe_core_public;
 struct sipe_transport_connection;
