@@ -22,6 +22,8 @@ libsipe_core_la_SOURCES = \
 	sip-sec-mech.h \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
+	sip-transport.h \
+	sip-transport.c \
 	sipe-buddy.h \
 	sipe-buddy.c \
 	sipe-cal.h \

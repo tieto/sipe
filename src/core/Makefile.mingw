@@ -68,6 +68,7 @@ PURPLE_INCLUDE_PATHS += \
 CLEAN_C_SRC = \
 			http-conn.c \
 			md4.c \
+			sip-transport.c \
 			sipe-crypt.c \
 			sipe-digest.c \
 			sipe-domino.c \
@@ -89,6 +90,7 @@ CLEAN_C_SRC = \
 			sipe-win32dep.c
 
 PURPLE_C_SRC = \
+			../purple/purple-connection.c \
 			../purple/purple-debug.c \
 			../purple/purple-dnsquery.c \
 			../purple/purple-markup.c \

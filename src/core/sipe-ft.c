@@ -59,6 +59,7 @@
 
 #include "sipe-common.h"
 #include "sipmsg.h"
+#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -754,7 +755,7 @@ static void send_filetransfer_accept(PurpleXfer* xfer)
                                       /*,sipe_backend_network_ip_address()*/
 		);
 
-	send_sip_request(ft->sip->gc, "MESSAGE", dialog->with, dialog->with,
+	send_sip_request(ft->sip->private, "MESSAGE", dialog->with, dialog->with,
 			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 			 body, dialog, NULL);
 
@@ -772,7 +773,7 @@ static void send_filetransfer_cancel(PurpleXfer* xfer) {
 					  "Cancel-Code: REJECT\r\n",
 				      ft->invitation_cookie);
 
-	send_sip_request(ft->sip->gc, "MESSAGE", dialog->with, dialog->with,
+	send_sip_request(ft->sip->private, "MESSAGE", dialog->with, dialog->with,
 			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 			 body, dialog, NULL);
 
@@ -1008,7 +1009,7 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 	}
 
 	if (ft->dialog) {
-		send_sip_request(ft->sip->gc, "MESSAGE", ft->dialog->with, ft->dialog->with,
+		send_sip_request(ft->sip->private, "MESSAGE", ft->dialog->with, ft->dialog->with,
 				 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 				 body, ft->dialog, NULL);
 	}

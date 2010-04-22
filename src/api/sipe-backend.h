@@ -72,6 +72,20 @@ void sipe_backend_debug(sipe_debug_level level,
 #define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
 #define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   msg)
 
+/** CONNECTION ***************************************************************/
+
+typedef enum {
+  SIPE_CONNECTION_ERROR_NETWORK = 0,
+  SIPE_CONNECTION_ERROR_INVALID_USERNAME,
+  SIPE_CONNECTION_ERROR_INVALID_SETTINGS,
+  SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+  SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
+  SIPE_CONNECTION_ERROR_LAST
+} sipe_connection_error;
+void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
+				   sipe_connection_error error,
+				   const gchar *msg);
+
 /** DNS QUERY ****************************************************************/
 
 void sipe_backend_dns_query(struct sipe_core_public *sipe_public,

@@ -156,30 +156,6 @@ struct sipe_auth_job {
 	struct sipe_account_data * sip;
 };
 
-struct transaction;
-
-typedef gboolean (*TransCallback) (struct sipe_account_data *, struct sipmsg *, struct transaction *);
-
-struct transaction_payload {
-	GDestroyNotify destroy;
-	void *data;
-};
-
-struct transaction {
-	time_t time;
-	int retries;
-	int transport; /* 0 = tcp, 1 = udp */
-	int fd;
-	/** Not yet perfect, but surely better then plain CSeq
-	 * Format is: <Call-ID><CSeq>
-	 * (RFC3261 17.2.3 for matching server transactions: Request-URI, To tag, From tag, Call-ID, CSeq, and top Via)
-	 */
-	gchar *key;
-	struct sipmsg *msg;
-	TransCallback callback;
-	struct transaction_payload *payload;
-};
-
 typedef void (*Action) (struct sipe_core_private *, void *);
 
 /**
@@ -254,23 +230,26 @@ send_presence_soap(struct sipe_account_data *sip,
 /* Forward declarations */
 struct sip_session;
 struct sip_dialog;
+struct transaction;
 
-/* SIP send module? */
-struct transaction *
-send_sip_request(struct _PurpleConnection *gc, const gchar *method,
-		 const gchar *url, const gchar *to, const gchar *addheaders,
-		 const gchar *body, struct sip_dialog *dialog, TransCallback tc);
-void
-send_sip_response(struct _PurpleConnection *gc, struct sipmsg *msg, int code,
-		  const char *text, const char *body);
 void
 sipe_invite(struct sipe_account_data *sip, struct sip_session *session,
 	    const gchar *who, const gchar *msg_body, const gchar *msg_content_type,
 	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
+void sipe_make_signature(struct sipe_account_data *sip,
+			 struct sipmsg *msg);
+gchar *auth_header(struct sipe_account_data *sip,
+		   struct sip_auth *auth, struct sipmsg * msg);
+const char*sipe_get_useragent(struct sipe_account_data *sip);
+void process_input_message(struct sipe_account_data *sip,
+			   struct sipmsg *msg);
+gboolean process_register_response(struct sipe_account_data *sip,
+				   struct sipmsg *msg,
+				   struct transaction *trans);
 gboolean process_subscribe_response(struct sipe_account_data *sip,
 				    struct sipmsg *msg,
-				    struct transaction *tc);
+				    struct transaction *trans);
 /* Chat module */
 void
 sipe_invite_to_chat(struct sipe_account_data *sip,
