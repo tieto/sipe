@@ -20,6 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Forward declarations */
+struct sipe_service_data;
+
 /**
  * Private part of the Sipe data structure
  *
@@ -34,6 +37,7 @@ struct sipe_core_private {
 	struct sipe_core_public public;
 
 	/* server information */
+	const struct sipe_service_data *service_data;
 	guint  transport_type; /* same as public.transport->type */
 	gchar *server_name;
 	guint  server_port;

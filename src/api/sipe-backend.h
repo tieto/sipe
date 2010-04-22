@@ -55,6 +55,13 @@ void sipe_backend_debug(sipe_debug_level level,
 #define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
 #define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   msg)
 
+/** DNS QUERY ****************************************************************/
+
+void sipe_backend_dns_query(struct sipe_core_public *sipe_public,
+			    const gchar *protocol,
+			    const gchar *transport,
+			    const gchar *domain);
+
 /** MARKUP *******************************************************************/
 
 gchar *sipe_backend_markup_css_property(const gchar *style,

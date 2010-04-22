@@ -37,20 +37,6 @@
 #include "config.h"
 #endif
 
-#ifdef _WIN32
-#ifdef _DLL
-#define _WS2TCPIP_H_
-#define _WINSOCK2API_
-#define _LIBC_INTERNAL_
-#endif /* _DLL */
-/* for network */
-#include "libc_interface.h"
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#endif /* _WIN32 */
-
 #include <time.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -67,15 +53,12 @@
 #include "connection.h"
 #include "conversation.h"
 #include "core.h"
-#include "dnsquery.h"
-#include "dnssrv.h"
 #include "ft.h"
 #include "notify.h"
 #include "plugin.h"
 #include "privacy.h"
 #include "request.h"
 #include "savedstatuses.h"
-#include "sslconn.h"
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
 
@@ -8110,22 +8093,42 @@ static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
 }
 
 struct sipe_service_data {
-	const char *service;
+	const char *protocol;
 	const char *transport;
 	guint type;
 };
 
+/**
+ * NOTE: This is BROKEN. Don't ask me to explain why it is in here, I didn't
+ *       implement it...
+ *
+ * This is a global variable, i.e. it affects all SIPE accounts configured
+ * for server auto-discovery & SIPE_TRANSPORT_AUTO.
+ *
+ * - Only one active account:
+ *    * if TLS connect fails this will make sure TLS is skipped in the next
+ *      attempt (OK)
+ *    * when the account disconnects then the next attempt will *NOT* start
+ *      with the successful entry, but the next one (BROKEN)
+ *
+ * - More than one active account:
+ *    * when a new account connects then the attempt will *NOT* start with
+ *      successful one, but the next one (BROKEN)
+ *
+ * IMHO this should be removed.
+ */
 static const struct sipe_service_data *current_service = NULL;
 
 void sipe_core_transport_sip_ssl_connect_failure(struct sipe_transport_connection *conn,
 						 SIPE_UNUSED_PARAMETER const gchar *msg)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
-        current_service = SIPE_ACCOUNT_DATA_PRIVATE->service_data;
+
+	current_service = sipe_private->service_data;
 	if (current_service) {
-		SIPE_DEBUG_INFO("current_service: transport '%s' service '%s'",
+		SIPE_DEBUG_INFO("current_service: transport '%s' protocol '%s'",
 				current_service->transport ? current_service->transport : "NULL",
-				current_service->service   ? current_service->service   : "NULL");
+				current_service->protocol  ? current_service->protocol  : "NULL");
 	}
 }
 
@@ -8158,57 +8161,49 @@ static const struct sipe_service_data service_tcp[] = {
 	{ NULL,             NULL,  0 }
 };
 
-static void srvresolved(PurpleSrvResponse *, int, gpointer);
-static void resolve_next_service(struct sipe_account_data *sip,
+static void resolve_next_service(struct sipe_core_private *sipe_private,
 				 const struct sipe_service_data *start)
 {
 	if (start) {
-		sip->service_data = start;
+		sipe_private->service_data = start;
 	} else {
-		sip->service_data++;
-		if (sip->service_data->service == NULL) {
-			guint type = SIP_TO_CORE_PRIVATE->transport_type;
+		sipe_private->service_data++;
+		if (sipe_private->service_data->protocol == NULL) {
+			guint type = sipe_private->transport_type;
 
 			/* Try connecting to the SIP hostname directly */
 			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; using SIP domain as fallback");
-			if (sip->auto_transport) {
+			if (type == SIPE_TRANSPORT_AUTO)
 				type = SIPE_TRANSPORT_TLS;
-			}
 
-			sipe_server_register(SIP_TO_CORE_PRIVATE, type,
-					     g_strdup(SIP_TO_CORE_PUBLIC->sip_domain),
+			sipe_server_register(sipe_private, type,
+					     g_strdup(sipe_private->public.sip_domain),
 					     0);
 			return;
 		}
 	}
 
 	/* Try to resolve next service */
-	sip->srv_query_data = purple_srv_resolve(sip->service_data->service,
-						 sip->service_data->transport,
-						 SIP_TO_CORE_PUBLIC->sip_domain,
-						 srvresolved, sip);
+	sipe_backend_dns_query(SIPE_CORE_PUBLIC,
+			       sipe_private->service_data->protocol,
+			       sipe_private->service_data->transport,
+			       sipe_private->public.sip_domain);
 }
 
-static void srvresolved(PurpleSrvResponse *resp, int results, gpointer data)
+void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
+			    const gchar *hostname, guint port)
 {
-	struct sipe_account_data *sip = data;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	SIPE_DEBUG_INFO("sipe_core_dns_resolved - SRV hostname: %s port: %d",
+			hostname, port);
+	sipe_server_register(sipe_private,
+			     sipe_private->service_data->type,
+			     g_strdup(hostname), port);
+}
 
-	sip->srv_query_data = NULL;
-
-	/* find the host to connect to */
-	if (results) {
-		gchar *hostname = g_strdup(resp->hostname);
-		int port = resp->port;
-		SIPE_DEBUG_INFO("srvresolved - SRV hostname: %s port: %d",
-				hostname, port);
-		g_free(resp);
-
-		sipe_server_register(SIP_TO_CORE_PRIVATE,
-				     sip->service_data->type,
-				     hostname, port);
-	} else {
-		resolve_next_service(sip, NULL);
-	}
+void sipe_core_dns_resolve_failure(struct sipe_core_public *sipe_public)
+{
+	resolve_next_service(SIPE_CORE_PRIVATE, NULL);
 }
 
 /* temporary function */
@@ -8319,9 +8314,8 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     const gchar *server,
 				     const gchar *port)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	sip->auto_transport = FALSE;
 	if (server) {
 		/* Use user specified server[:port] */
 		int port_number = 0;
@@ -8332,27 +8326,32 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 		SIPE_DEBUG_INFO("sipe_core_connect: user specified SIP server %s:%d",
 				server, port_number);
 
-		sipe_server_register(SIPE_CORE_PRIVATE, transport,
+		sipe_server_register(sipe_private, transport,
 				     g_strdup(server), port_number);
 	} else {
 		/* Server auto-discovery */
+
+		/* Remember user specified transport type */
+		sipe_private->transport_type = transport;
+
 		switch (transport) {
 		case SIPE_TRANSPORT_AUTO:
-			sip->auto_transport = TRUE;
 			if (current_service &&
-			    current_service->transport != NULL &&
-			    current_service->service   != NULL) {
+			    current_service->protocol  != NULL &&
+			    current_service->transport != NULL) {
 				current_service++;
-				resolve_next_service(sip, current_service);
+				resolve_next_service(sipe_private,
+						     current_service);
 			} else {
-				resolve_next_service(sip, service_autodetect);
+				resolve_next_service(sipe_private,
+						     service_autodetect);
 			}
 			break;
 		case SIPE_TRANSPORT_TLS:
-			resolve_next_service(sip, service_tls);
+			resolve_next_service(sipe_private, service_tls);
 			break;
 		case SIPE_TRANSPORT_TCP:
-			resolve_next_service(sip, service_tcp);
+			resolve_next_service(sipe_private, service_tcp);
 			break;
 		}
 	}
@@ -8364,10 +8363,6 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 
 	g_free(sip->epid);
 	sip->epid = NULL;
-
-	if (sip->srv_query_data != NULL)
-		purple_srv_cancel(sip->srv_query_data);
-	sip->srv_query_data = NULL;
 
 	sipe_backend_transport_sip_disconnect(sipe_private->public.transport);
 	g_free(sipe_private->server_name);

@@ -90,6 +90,7 @@ CLEAN_C_SRC = \
 
 PURPLE_C_SRC = \
 			../purple/purple-debug.c \
+			../purple/purple-dnsquery.c \
 			../purple/purple-markup.c \
 			../purple/purple-network.c \
 			../purple/purple-plugin.c \

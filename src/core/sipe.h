@@ -34,14 +34,9 @@
 struct sipmsg;
 struct _PurpleAccount;
 struct _PurpleConnection;
-struct _PurpleDnsQueryData;
 struct _PurpleGroup;
-struct _PurpleSrvQueryData;
 struct sip_sec_context;
 struct sipe_core_private;
-struct sipe_service_data;
-
-#define SIMPLE_BUF_INC 4096
 
 #define SIPE_TYPING_RECV_TIMEOUT 6
 #define SIPE_TYPING_SEND_TIMEOUT 4
@@ -106,8 +101,6 @@ struct sipe_account_data {
 	gchar *focus_factory_uri;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
-	struct _PurpleSrvQueryData *srv_query_data;
-	const struct sipe_service_data *service_data;
 	int cseq;
 	int registerstatus; /* 0 nothing, 1 first registration send, 2 auth received, 3 registered */
 	struct sip_auth registrar;
@@ -143,7 +136,6 @@ struct sipe_account_data {
 	GSList *sessions;
 	GSList *groups;
 	GHashTable *filetransfers;
-	gboolean auto_transport;
 	gboolean processing_input;
 	struct sipe_calendar *cal;
 	gchar *email;

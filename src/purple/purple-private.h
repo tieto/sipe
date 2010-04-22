@@ -21,10 +21,14 @@
  */
 
 /* Forward declarations */
+struct sipe_core_public;
 struct _PurpleConnection;
+struct _PurpleSrvQueryData;
 
 struct sipe_backend_private {
+	struct sipe_core_public *public;
 	struct _PurpleConnection *gc;
+	struct _PurpleSrvQueryData *dns_query;
 	time_t last_keepalive;
 };
 

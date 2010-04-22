@@ -39,6 +39,7 @@
 #include "accountopt.h"
 #include "blist.h"
 #include "connection.h"
+#include "dnssrv.h"
 #include "prpl.h"
 #include "plugin.h"
 #include "request.h"
@@ -265,6 +266,7 @@ static void sipe_login(PurpleAccount *account)
 	}
 
 	sipe_public->backend_private = purple_private = g_new0(struct sipe_backend_private, 1);
+	purple_private->public = sipe_public;
 	purple_private->gc = gc;
 
 #ifdef HAVE_LIBKRB5
@@ -307,6 +309,9 @@ static void sipe_close(PurpleConnection *gc)
 		struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
 		sipe_core_deallocate(sipe_public);
+
+		if (purple_private->dns_query)
+			purple_srv_cancel(purple_private->dns_query);
 		g_free(purple_private);
 		gc->proto_data = NULL;
 	}
