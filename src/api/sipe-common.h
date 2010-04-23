@@ -27,7 +27,11 @@
  * in any module without requiring any other #include.
  */
 
+#ifdef __GNUC__
 #define SIPE_UNUSED_PARAMETER __attribute__((unused))
+#else
+#define SIPE_UNUSED_PARAMETER
+#endif
 
 /* in order to remove internal.h dependency in mingw builds */
 #ifndef G_GNUC_NULL_TERMINATED
