@@ -26,10 +26,6 @@
 
 #include <stdlib.h>
 
-#ifdef _WIN32
-#include "win32dep.h" /* for LOCALEDIR */
-#endif
-
 #include <glib.h>
 #ifdef HAVE_NSS
 #include "nss.h"
