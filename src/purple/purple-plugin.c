@@ -39,6 +39,7 @@
 #include "accountopt.h"
 #include "blist.h"
 #include "connection.h"
+#include "dnssrv.h"
 #include "prpl.h"
 #include "plugin.h"
 #include "request.h"
@@ -265,7 +266,17 @@ static void sipe_login(PurpleAccount *account)
 	}
 
 	sipe_public->backend_private = purple_private = g_new0(struct sipe_backend_private, 1);
+	purple_private->public = sipe_public;
 	purple_private->gc = gc;
+
+#ifdef HAVE_LIBKRB5
+	if (purple_account_get_bool(account, "krb5", FALSE))
+		SIPE_CORE_FLAG_SET(KRB5);
+#endif
+	/* @TODO: is this correct?
+	   "sso" is only available when Kerberos support is compiled in */
+	if (purple_account_get_bool(account, "sso", TRUE))
+		SIPE_CORE_FLAG_SET(SSO);
 
 	gc->proto_data = sipe_public;
 	sipe_purple_setup(sipe_public, gc);
@@ -298,6 +309,9 @@ static void sipe_close(PurpleConnection *gc)
 		struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
 		sipe_core_deallocate(sipe_public);
+
+		if (purple_private->dns_query)
+			purple_srv_cancel(purple_private->dns_query);
 		g_free(purple_private);
 		gc->proto_data = NULL;
 	}
@@ -593,6 +607,13 @@ static void init_plugin(PurplePlugin *plugin)
 
 	purple_plugin_register(plugin);
 
+        /**
+	 * When adding new string settings please make sure to keep these
+	 * in sync:
+	 *
+	 *     api/sipe-backend.h
+	 *     purple-settings.c:setting_name[]
+	 */
 	split = purple_account_user_split_new(_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"), NULL, ',');
 	purple_account_user_split_set_reverse(split, FALSE);
 	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);

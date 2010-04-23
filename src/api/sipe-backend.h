@@ -20,6 +20,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ *
+ * SIPE Core -> Backend API - functions called by SIPE core code
+ *
+ ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
+ *
+ *            The SIPE core assumes atomicity and is *NOT* thread-safe.
+ *
+ * It *does not* protect any of its data structures or code paths with locks!
+ *
+ * In no circumstances it must be possible that a sipe_core_xxx() function can
+ * be entered through another thread while the first thread has entered the
+ * backend specific code through a sipe_backend_xxx() function.
+ *
+ ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
+ */
+
 /* Forward declarations */
 struct sipe_core_public;
 struct sipe_transport_connection;
@@ -55,6 +72,27 @@ void sipe_backend_debug(sipe_debug_level level,
 #define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
 #define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   msg)
 
+/** CONNECTION ***************************************************************/
+
+typedef enum {
+  SIPE_CONNECTION_ERROR_NETWORK = 0,
+  SIPE_CONNECTION_ERROR_INVALID_USERNAME,
+  SIPE_CONNECTION_ERROR_INVALID_SETTINGS,
+  SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+  SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
+  SIPE_CONNECTION_ERROR_LAST
+} sipe_connection_error;
+void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
+				   sipe_connection_error error,
+				   const gchar *msg);
+
+/** DNS QUERY ****************************************************************/
+
+void sipe_backend_dns_query(struct sipe_core_public *sipe_public,
+			    const gchar *protocol,
+			    const gchar *transport,
+			    const gchar *domain);
+
 /** MARKUP *******************************************************************/
 
 gchar *sipe_backend_markup_css_property(const gchar *style,
@@ -64,6 +102,18 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 /** NETWORK ******************************************************************/
 
 const gchar *sipe_backend_network_ip_address(void);
+
+/** SETTINGS *****************************************************************/
+
+typedef enum {
+  SIPE_SETTING_EMAIL_URL = 0,
+  SIPE_SETTING_EMAIL_LOGIN,
+  SIPE_SETTING_EMAIL_PASSWORD,
+  SIPE_SETTING_USER_AGENT,
+  SIPE_SETTING_LAST
+} sipe_setting;
+const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
+				  sipe_setting type);
 
 /** TRANSPORT ****************************************************************/
 

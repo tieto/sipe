@@ -21,6 +21,23 @@
  */
 
 /**
+ *
+ * Backend -> SIPE Core API - functions called by backend code
+ *
+ ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
+ *
+ *            The SIPE core assumes atomicity and is *NOT* thread-safe.
+ *
+ * It *does not* protect any of its data structures or code paths with locks!
+ *
+ * In no circumstances it must be interrupted by another thread calling
+ * sipe_core_xxx() while the first thread has entered the SIPE core through
+ * a sipe_core_xxx() function.
+ *
+ ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
+ */
+
+/**
  * Activity
  *   - core:    maps this to OCS protocol values
  *   - backend: maps this to backend status values
@@ -78,6 +95,19 @@ struct sipe_transport_connection {
 struct sipe_backend_private;
 
 /**
+ * Flags
+ */
+#define SIPE_CORE_FLAG_KRB5 0x00000001 /* user enabled Kerberos 5     */
+#define SIPE_CORE_FLAG_SSO  0x00000002 /* user enabled Single-Sign On */
+
+#define SIPE_CORE_FLAG_IS(flag)    \
+	((sipe_public->flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_FLAG_SET(flag)   \
+	(sipe_public->flags |= SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_FLAG_UNSET(flag) \
+	(sipe_public->flags &= ~SIPE_CORE_FLAG_ ## flag)
+
+/**
  * Public part of the Sipe data structure
  *
  * This part contains the information needed by the core and the backend.
@@ -88,6 +118,9 @@ struct sipe_core_public {
 	 * The backend is responsible to allocate and free it.
 	 */
 	struct sipe_backend_private *backend_private;
+
+	/* flags (see above) */
+	guint32 flags;
 
 	/* user information */
 	gchar *sip_name;
@@ -191,6 +224,18 @@ void sipe_core_transport_http_ssl_connect_failure(struct sipe_transport_connecti
 						  const gchar  *msg);
 void sipe_core_transport_http_input_error(struct sipe_transport_connection *conn,
 					  const gchar *msg);
+
+/**
+ * DNS SRV resolved hook
+ *
+ * @param sipe_public
+ * @param hostname    SIP server hostname
+ * @param port        SIP server port
+ */
+void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
+			    const gchar *hostname,
+			    guint port);
+void sipe_core_dns_resolve_failure(struct sipe_core_public *sipe_public);
 
 /**
  * Create a new chat

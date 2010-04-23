@@ -1,5 +1,5 @@
 /**
- * @file purple-private.h
+ * @file purple-setting.c
  *
  * pidgin-sipe
  *
@@ -20,20 +20,37 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* Forward declarations */
-struct sipe_core_public;
-struct _PurpleConnection;
-struct _PurpleSrvQueryData;
+#include <glib.h>
 
-struct sipe_backend_private {
-	struct sipe_core_public *public;
-	struct _PurpleConnection *gc;
-	struct _PurpleSrvQueryData *dns_query;
-	time_t last_keepalive;
+#include "account.h"
+#include "connection.h"
+
+#include "sipe-backend.h"
+#include "sipe-core.h"
+
+#include "purple-private.h"
+
+/**
+ * Map sipe_setting values to purple account setting keys
+ *
+ * This needs to be kept in sync with
+ *
+ *     api/sipe-backend.h
+ *     purple-plugin.c:init_plugin()
+ */
+static const gchar * const setting_name[SIPE_SETTING_LAST] = {
+	"email_url",      /* SIPE_SETTING_EMAIL_URL      */
+	"email_login",    /* SIPE_SETTING_EMAIL_LOGIN    */
+	"email_password", /* SIPE_SETTING_EMAIL_PASSWORD */
+	"useragent"       /* SIPE_SETTING_USER_AGENT     */
 };
 
-/* Convenience macros */
-#define PURPLE_GC_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) gc->proto_data)
+const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
+				  sipe_setting type)
+{
+	return(purple_account_get_string(purple_connection_get_account(sipe_public->backend_private->gc),
+					 setting_name[type], NULL));
+}
 
 /*
   Local Variables:

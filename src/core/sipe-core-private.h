@@ -20,6 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Forward declarations */
+struct sipe_service_data;
+
 /**
  * Private part of the Sipe data structure
  *
@@ -34,6 +37,7 @@ struct sipe_core_private {
 	struct sipe_core_public public;
 
 	/* server information */
+	const struct sipe_service_data *service_data;
 	guint  transport_type; /* same as public.transport->type */
 	gchar *server_name;
 	guint  server_port;
@@ -47,6 +51,24 @@ struct sipe_core_private {
 	/* the original data structure*/
 	struct sipe_account_data *temporary;
 };
+
+/**
+ * Flags - stored in sipe_core_public.flags but names not exported
+ */
+#define SIPE_CORE_PRIVATE_FLAG_xxx 0x80000000 /* place holder... */
+
+#define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
+	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_PUBLIC_FLAG_SET(flag)   \
+	(sipe_private->public.flags |= SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_PUBLIC_FLAG_UNSET(flag)				\
+	(sipe_private->public.flags &= ~SIPE_CORE_FLAG_ ## flag)
+#define SIPE_CORE_PRIVATE_FLAG_IS(flag)    \
+	((sipe_private->public.flags & SIPE_CORE_PRIVATE_FLAG_ ## flag) == SIPE_CORE_PRIVATE_FLAG_ ## flag)
+#define SIPE_CORE_PRIVATE_FLAG_SET(flag)   \
+	(sipe_private->public.flags |= SIPE_CORE_PRIVATE_FLAG_ ## flag)
+#define SIPE_CORE_PRIVATE_FLAG_UNSET(flag)				\
+	(sipe_private->public.flags &= ~SIPE_CORE_PRIVATE_FLAG_ ## flag)
 
 /* Convenience macros */
 #define SIPE_CORE_PRIVATE ((struct sipe_core_private *)sipe_public)

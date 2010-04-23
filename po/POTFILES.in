@@ -1,6 +1,7 @@
 # List of source files containing translatable strings.
 [encoding: UTF-8]
 
+src/core/sip-transport.c
 src/core/sipe.c
 src/core/sipe-cal.c
 src/core/sipe-chat.c

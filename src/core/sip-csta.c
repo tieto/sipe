@@ -36,6 +36,7 @@
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
+#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -235,7 +236,7 @@ sip_csta_get_features(struct sipe_account_data *sip)
 		SIP_SEND_CSTA_GET_CSTA_FEATURES,
 		sip->csta->line_uri);
 
-	send_sip_request(sip->gc,
+	send_sip_request(SIP_TO_CORE_PRIVATE,
 			 "INFO",
 			 sip->csta->dialog->with,
 			 sip->csta->dialog->with,
@@ -297,7 +298,7 @@ sip_csta_monitor_start(struct sipe_account_data *sip)
 		SIP_SEND_CSTA_MONITOR_START,
 		sip->csta->line_uri);
 
-	send_sip_request(sip->gc,
+	send_sip_request(SIP_TO_CORE_PRIVATE,
 			 "INFO",
 			 sip->csta->dialog->with,
 			 sip->csta->dialog->with,
@@ -334,7 +335,7 @@ sip_csta_monitor_stop(struct sipe_account_data *sip)
 		SIP_SEND_CSTA_MONITOR_STOP,
 		sip->csta->monitor_cross_ref_id);
 
-	send_sip_request(sip->gc,
+	send_sip_request(SIP_TO_CORE_PRIVATE,
 			 "INFO",
 			 sip->csta->dialog->with,
 			 sip->csta->dialog->with,
@@ -372,7 +373,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 	if (msg->response >= 200) {
 		/* send ACK to CSTA */
 		sip->csta->dialog->cseq = 0;
-		send_sip_request(sip->gc, "ACK", sip->csta->dialog->with, sip->csta->dialog->with, NULL, NULL, sip->csta->dialog, NULL);
+		send_sip_request(SIP_TO_CORE_PRIVATE, "ACK", sip->csta->dialog->with, sip->csta->dialog->with, NULL, NULL, sip->csta->dialog, NULL);
 		sip->csta->dialog->outgoing_invite = NULL;
 		sip->csta->dialog->is_established = TRUE;
 	}
@@ -453,7 +454,7 @@ sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 		SIP_SEND_CSTA_REQUEST_SYSTEM_STATUS,
 		sip->csta->line_uri);
 
-	sip->csta->dialog->outgoing_invite = send_sip_request(sip->gc,
+	sip->csta->dialog->outgoing_invite = send_sip_request(SIP_TO_CORE_PRIVATE,
 							      "INVITE",
 							      sip->csta->dialog->with,
 							      sip->csta->dialog->with,
@@ -503,7 +504,7 @@ sip_csta_close(struct sipe_account_data *sip)
 
 	if (sip->csta && sip->csta->dialog) {
 		/* send BYE to CSTA */
-		send_sip_request(sip->gc,
+		send_sip_request(SIP_TO_CORE_PRIVATE,
 				 "BYE",
 				 sip->csta->dialog->with,
 				 sip->csta->dialog->with,
@@ -588,7 +589,7 @@ sip_csta_make_call(struct sipe_account_data *sip,
 		sip->csta->line_uri,
 		sip->csta->to_tel_uri);
 
-	send_sip_request(sip->gc,
+	send_sip_request(SIP_TO_CORE_PRIVATE,
 			 "INFO",
 			 sip->csta->dialog->with,
 			 sip->csta->dialog->with,

@@ -1,5 +1,5 @@
 /**
- * @file purple-private.h
+ * @file purple-connection.c
  *
  * pidgin-sipe
  *
@@ -20,20 +20,32 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/* Forward declarations */
-struct sipe_core_public;
-struct _PurpleConnection;
-struct _PurpleSrvQueryData;
+#include "glib.h"
 
-struct sipe_backend_private {
-	struct sipe_core_public *public;
-	struct _PurpleConnection *gc;
-	struct _PurpleSrvQueryData *dns_query;
-	time_t last_keepalive;
+#include "connection.h"
+
+#include "sipe-backend.h"
+#include "sipe-core.h"
+
+#include "purple-private.h"
+
+static const guint map[SIPE_CONNECTION_ERROR_LAST] = {
+	PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
+	PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
+	PURPLE_CONNECTION_ERROR_INVALID_SETTINGS,
+	PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+	PURPLE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
 };
 
-/* Convenience macros */
-#define PURPLE_GC_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) gc->proto_data)
+void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
+				   sipe_connection_error error,
+				   const gchar *msg)
+{
+	purple_connection_error_reason(sipe_public->backend_private->gc,
+				       map[error],
+				       msg);
+}
+
 
 /*
   Local Variables:

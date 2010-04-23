@@ -37,7 +37,6 @@
 #include <glib.h>
 
 #include "http-conn.h"
-#include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
 #include "sipe-backend.h"

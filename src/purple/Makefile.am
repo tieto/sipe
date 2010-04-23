@@ -9,9 +9,12 @@ MAINTAINERCLEANFILES = \
 
 libsipe_backend_la_SOURCES = \
 	purple-private.h \
+	purple-connection.c \
 	purple-debug.c \
+	purple-dnsquery.c \
 	purple-markup.c \
 	purple-network.c \
+	purple-setting.c \
 	purple-transport.c
 
 libsipe_la_SOURCES = \
