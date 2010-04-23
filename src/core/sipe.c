@@ -2972,7 +2972,6 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
         char *uri;
 	GSList *category_names = NULL;
 	int aggreg_avail = 0;
-	static sipe_activity aggreg_activity = SIPE_ACTIVITY_UNSET;
 	gboolean do_update_status = FALSE;
 	gboolean has_note_cleaned = FALSE;
 
@@ -3173,7 +3172,6 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 
 			if (xn_state && sipe_strequal(sipe_xml_attribute(xn_state, "type"), "aggregateState")) {
 				const sipe_xml *xn_avail = sipe_xml_child(xn_state, "availability");
-				const sipe_xml *xn_activity = sipe_xml_child(xn_state, "activity");
 
 				if (xn_avail) {
 					gchar *avail_str = sipe_xml_data(xn_avail);
@@ -3181,12 +3179,6 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 						aggreg_avail = atoi(avail_str);
 					}
 					g_free(avail_str);
-				}
-
-				if (xn_activity) {
-					const char *activity_token = sipe_xml_attribute(xn_activity, "token");
-
-					aggreg_activity = sipe_get_activity_by_token(activity_token);
 				}
 
 				do_update_status = TRUE;
