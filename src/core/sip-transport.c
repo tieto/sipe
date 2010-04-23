@@ -78,6 +78,9 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
 			sip->registrar.type = AUTH_TYPE_KERBEROS;
 		}
+#else
+		/* that's why I don't like macros. It's unobvious what's hidden there */
+		(void)sipe_private;
 #endif
 
 

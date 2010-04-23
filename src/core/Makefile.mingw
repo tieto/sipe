@@ -38,7 +38,7 @@ DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
 #Whether to use Windows native SSPI security package (Kerberos, NTLM; SSO)
 #or use SIPE custom NTLMv2 implementation only (No Kerberos; No SSO).
-#DEFINES += -DHAVE_LIBKRB5=1
+DEFINES += -DHAVE_LIBKRB5=1
 DEFINES += -DHAVE_NSS=1
 DEFINES += -DHAVE_GMIME=1
 
@@ -83,6 +83,7 @@ CLEAN_C_SRC = \
 			sipe-sign.c \
 			sip-sec.c \
 			sip-sec-ntlm.c \
+			sip-sec-sspi.c \
 			sip-csta.c \
 			sipe-xml.c \
 			sipe-mime.c \
