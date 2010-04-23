@@ -39,6 +39,7 @@
 #include "accountopt.h"
 #include "blist.h"
 #include "connection.h"
+#include "core.h"
 #include "dnssrv.h"
 #include "prpl.h"
 #include "plugin.h"
@@ -97,6 +98,11 @@ static void purple_activity_init(void)
 				    GUINT_TO_POINTER(index));
 		index++;
 	}
+}
+
+gchar *sipe_backend_version(void)
+{
+	return(g_strdup_printf("Purple/%s", purple_core_get_version()));
 }
 
 static void purple_activity_destroy(void)

@@ -52,7 +52,6 @@
 #include "blist.h"
 #include "connection.h"
 #include "conversation.h"
-#include "core.h"
 #include "ft.h"
 #include "notify.h"
 #include "plugin.h"
@@ -194,69 +193,6 @@ sipe_rejoin_chat(PurpleConversation *conv)
 		PURPLE_CONV_CHAT(conv)->left = FALSE;
 		purple_conversation_update(conv, PURPLE_CONV_UPDATE_CHATLEFT);
 	}
-}
-
-static char *default_ua = NULL;
-const char*
-sipe_get_useragent(struct sipe_account_data *sip)
-{
-	const char *useragent = sipe_backend_setting(SIP_TO_CORE_PUBLIC,
-						     SIPE_SETTING_USER_AGENT);
-	if (is_empty(useragent)) {
-		if (!default_ua) {
-/*@TODO: better approach to define _user_ OS, it's version and host architecture */
-/* ref: lzodefs.h */
-#if defined(__linux__) || defined(__linux) || defined(__LINUX__)
-  #define SIPE_TARGET_PLATFORM "linux"
-#elif defined(__NetBSD__) ||defined( __OpenBSD__) || defined(__FreeBSD__)
-  #define SIPE_TARGET_PLATFORM "bsd"
-#elif defined(__APPLE__) || defined(__MACOS__)
-  #define SIPE_TARGET_PLATFORM "macosx"
-#elif defined(_AIX) || defined(__AIX__) || defined(__aix__)
-  #define SIPE_TARGET_PLATFORM "aix"
-#elif defined(__solaris__) || defined(__sun)
-  #define SIPE_TARGET_PLATFORM "sun"
-#elif defined(_WIN32)
-  #define SIPE_TARGET_PLATFORM "win"
-#elif defined(__CYGWIN__)
-  #define SIPE_TARGET_PLATFORM "cygwin"
-#elif defined(__hpux__)
-  #define SIPE_TARGET_PLATFORM "hpux"
-#elif defined(__sgi__)
-  #define SIPE_TARGET_PLATFORM "irix"
-#else
-  #define SIPE_TARGET_PLATFORM "unknown"
-#endif
-
-#if defined(__amd64__) || defined(__x86_64__) || defined(_M_AMD64)
-  #define SIPE_TARGET_ARCH "x86_64"
-#elif defined(__386__) || defined(__i386__) || defined(__i386) || defined(_M_IX86) || defined(_M_I386)
-  #define SIPE_TARGET_ARCH "i386"
-#elif defined(__ppc64__)
-  #define SIPE_TARGET_ARCH "ppc64"
-#elif defined(__powerpc__) || defined(__powerpc) || defined(__ppc__) || defined(__PPC__) || defined(_M_PPC) || defined(_ARCH_PPC) || defined(_ARCH_PWR)
-  #define SIPE_TARGET_ARCH "ppc"
-#elif defined(__hppa__) || defined(__hppa)
-  #define SIPE_TARGET_ARCH "hppa"
-#elif defined(__mips__) || defined(__mips) || defined(_MIPS_ARCH) || defined(_M_MRX000)
-  #define SIPE_TARGET_ARCH "mips"
-#elif defined(__s390__) || defined(__s390) || defined(__s390x__) || defined(__s390x)
-  #define SIPE_TARGET_ARCH "s390"
-#elif defined(__sparc__) || defined(__sparc) || defined(__sparcv8)
-  #define SIPE_TARGET_ARCH "sparc"
-#elif defined(__arm__)
-  #define SIPE_TARGET_ARCH "arm"
-#else
-  #define SIPE_TARGET_ARCH "other"
-#endif
-
-			default_ua = g_strdup_printf("Purple/%s Sipe/" PACKAGE_VERSION " (" SIPE_TARGET_PLATFORM "-" SIPE_TARGET_ARCH "; %s)",
-					purple_core_get_version(),
-					sip->server_version ? sip->server_version : "");
-		}
-		useragent = default_ua;
-	}
-	return useragent;
 }
 
 static void send_presence_status(struct sipe_core_private *sipe_private,
@@ -4925,7 +4861,7 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(from);
 
 	sipmsg_add_header(msg, "Supported", "com.microsoft.rtc-multiparty");
-	sipmsg_add_header(msg, "User-Agent", sipe_get_useragent(sip));
+	sipmsg_add_header(msg, "User-Agent", sipe_get_useragent(SIP_TO_CORE_PRIVATE));
 	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
 	body = g_strdup_printf(
@@ -4945,12 +4881,14 @@ static void process_incoming_invite(struct sipe_account_data *sip, struct sipmsg
 	g_free(body);
 }
 
-static void process_incoming_options(struct sipe_account_data *sip, struct sipmsg *msg)
+static void process_incoming_options(struct sipe_core_private *sipe_private,
+				     struct sipmsg *msg)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *body;
 
 	sipmsg_add_header(msg, "Allow", "INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY");
-	sipmsg_add_header(msg, "User-Agent", sipe_get_useragent(sip));
+	sipmsg_add_header(msg, "User-Agent", sipe_get_useragent(sipe_private));
 	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
 	body = g_strdup_printf(
@@ -4962,9 +4900,9 @@ static void process_incoming_options(struct sipe_account_data *sip, struct sipms
 		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
 		sip->ocs2007 ? "message" : "x-ms-message",
-		SIP_TO_CORE_PRIVATE->server_port,
+		sipe_private->server_port,
 		sip->username);
-	send_sip_response(SIP_TO_CORE_PRIVATE, msg, 200, "OK", body);
+	send_sip_response(sipe_private, msg, 200, "OK", body);
 	g_free(body);
 }
 
@@ -5026,10 +4964,10 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				sip->registerstatus = 3;
 
-				if (server_hdr && !sip->server_version) {
-					sip->server_version = g_strdup(server_hdr);
-					g_free(default_ua);
-					default_ua = NULL;
+				if (server_hdr && !sipe_private->server_version) {
+					sipe_private->server_version = g_strdup(server_hdr);
+					g_free(sipe_private->useragent);
+					sipe_private->useragent = NULL;
 				}
 
 				auth_scheme = sipe_get_auth_scheme_name(sip);
@@ -7519,7 +7457,7 @@ void process_input_message(struct sipe_account_data *sip,struct sipmsg *msg)
 			process_incoming_refer(sip, msg);
 			found = TRUE;
 		} else if (sipe_strequal(method, "OPTIONS")) {
-			process_incoming_options(sip, msg);
+			process_incoming_options(SIP_TO_CORE_PRIVATE, msg);
 			found = TRUE;
 		} else if (sipe_strequal(method, "INFO")) {
 			process_incoming_info(sip, msg);
@@ -7775,8 +7713,8 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	sipe_auth_free(&sip->registrar);
 	sipe_auth_free(&sip->proxy);
 
-	g_free(sip->server_version);
-	sip->server_version = NULL;
+	g_free(sipe_private->server_version);
+	sipe_private->server_version = NULL;
 
 	if (sipe_private->timeouts) {
 		GSList *entry = sipe_private->timeouts;
@@ -7867,6 +7805,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_connection_cleanup(sip);
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
+	g_free(sipe_private->useragent);
 	g_free(sip->username);
 	g_free(sip->email);
 	g_free(sip->password);

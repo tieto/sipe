@@ -41,12 +41,16 @@ struct sipe_core_private {
 	guint  transport_type; /* same as public.transport->type */
 	gchar *server_name;
 	guint  server_port;
+	gchar *server_version;
 
 	/* Buddies */
 	GHashTable *buddies;
 
 	/* Scheduling system */
 	GSList *timeouts;
+
+	/* misc. stuff */
+	gchar *useragent;
 
 	/* the original data structure*/
 	struct sipe_account_data *temporary;

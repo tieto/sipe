@@ -41,6 +41,14 @@
 struct sipe_core_public;
 struct sipe_transport_connection;
 
+/** MISC. STUFF **************************************************************/
+/**
+ * Get the version of the backend suitable for e.g. UserAgent
+ *
+ * @return backend version string. Will be g_free()'d.by the core.
+ */
+gchar *sipe_backend_version(void);
+
 /** DEBUGGING ****************************************************************/
 
 typedef enum {

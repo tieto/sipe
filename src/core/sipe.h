@@ -126,7 +126,6 @@ struct sipe_account_data {
 	time_t note_since;
 	time_t idle_switch;
 	gchar *contact;
-	gchar *server_version;
 	gboolean ocs2007; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
 	GSList *containers; /* MS-PRES containers */
@@ -241,7 +240,7 @@ void sipe_make_signature(struct sipe_account_data *sip,
 			 struct sipmsg *msg);
 gchar *auth_header(struct sipe_account_data *sip,
 		   struct sip_auth *auth, struct sipmsg * msg);
-const char*sipe_get_useragent(struct sipe_account_data *sip);
+const gchar *sipe_get_useragent(struct sipe_core_private *sipe_private);
 void process_input_message(struct sipe_account_data *sip,
 			   struct sipmsg *msg);
 gboolean process_register_response(struct sipe_account_data *sip,
