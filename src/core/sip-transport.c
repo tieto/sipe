@@ -20,6 +20,34 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * This module incapsulates SIP (RFC3261) protocol and provides
+ * higher level API (a layer) to XML-based SIPE (SIP with Extensions).
+ * Underlying leyer for this is TCP/SSL layer.
+ *
+ * A diagram in pseudographics:
+ *
+ * === SIPE (XML-based) layer ======================
+ * === SIP RFC3261 transport layer (This module) ===
+ * === TCP/SSL layer ===============================
+ *
+ * Authentication (Kerberos and NTLM) is applicable to this layer only.
+ * The same with message integtity (signing). No sip-sec* code should
+ * be used ourside of this module.
+ *
+ * SIP errors as codes(both as a return codes and network conditions) should be 
+ * escalated to higher leyer (SIPE). Network conditions include no response 
+ * within timeout interval.
+ *
+ * This module should support redirect internally. No escalations to higher 
+ * layers needed.
+ *
+ * NO SIP-messages (headers) composing and processing should be outside of 
+ * this module (!) Like headers: Via, Route, Contact, Authorization, etc.
+ * It's all irrelated to heigher leyers responsibilities.
+ *
+ */
+ 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
