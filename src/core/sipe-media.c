@@ -601,18 +601,19 @@ static void candidates_prepared_cb(sipe_media_call *call)
 		sipe_invite_call(call->sip, sipe_media_process_invite_response);
 	} else if (!call->legacy_mode) {
 		struct sipe_account_data *sip = call->sip;
+		gchar *body;
 
 		if (!sipe_media_parse_remote_codecs(call)) {
 			g_free(call);
 			return;
 		}
 
-		// TODO: SDP response might not to be cached
-		if (!call->sdp_response)
-			call->sdp_response = sipe_media_create_sdp(call, FALSE);
+		body = sipe_media_create_sdp(call, FALSE);
 
 		sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
-		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 183, "Session Progress", call->sdp_response);
+		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 183, "Session Progress", body);
+
+		g_free(body);
 	}
 }
 
@@ -625,13 +626,13 @@ static void call_accept_cb(sipe_media_call *call, gboolean local)
 {
 	if (local) {
 		struct sipe_account_data *sip = call->sip;
-
-		if (!call->sdp_response)
-			call->sdp_response = sipe_media_create_sdp(call, FALSE);
+		gchar *body = sipe_media_create_sdp(call, FALSE);
 
 		sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
-		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", call->sdp_response);
+		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", body);
 		call->state = SIPE_CALL_RUNNING;
+
+		g_free(body);
 	}
 }
 

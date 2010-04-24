@@ -68,7 +68,6 @@ typedef struct _sipe_media_call {
 	struct sipmsg		*invitation;
 	GList				*remote_candidates;
 	GList				*remote_codecs;
-	gchar				*sdp_response;
 	gboolean			legacy_mode;
 	SipeCallState		state;
 
