@@ -554,6 +554,11 @@ sipe_media_parse_remote_codecs(sipe_media_call *call)
 
 		call->remote_codecs		= remote_codecs;
 
+		if (!sipe_backend_set_remote_codecs(call, call->dialog->with)) {
+			printf("ERROR SET REMOTE CODECS"); // TODO
+			return FALSE;
+		}
+
 		return TRUE;
 	} else {
 		sipe_media_codec_list_free(remote_codecs);
@@ -601,10 +606,6 @@ static void candidates_prepared_cb(sipe_media_call *call)
 			g_free(call);
 			return;
 		}
-
-		if (sipe_backend_set_remote_codecs(call, call->dialog->with) == FALSE)
-			printf("ERROR SET REMOTE CODECS"); // TODO
-
 
 		// TODO: SDP response might not to be cached
 		if (!call->sdp_response)
@@ -783,9 +784,6 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 				return;
 			}
 
-			if (sipe_backend_set_remote_codecs(call, call->dialog->with) == FALSE)
-				printf("ERROR SET REMOTE CODECS"); // TODO
-
 			rsp = sipe_media_create_sdp(sip->media_call, TRUE);
 			sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
 			send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", rsp);
@@ -866,9 +864,6 @@ sipe_media_process_invite_response(struct sipe_account_data *sip,
 			g_free(call);
 			return FALSE;
 		}
-
-		if (sipe_backend_set_remote_codecs(call, call->dialog->with) == FALSE)
-			printf("ERROR SET REMOTE CODECS"); // TODO
 
 		sipe_backend_media_add_remote_candidates(call->media, call->dialog->with, call->remote_candidates);
 
