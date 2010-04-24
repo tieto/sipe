@@ -165,7 +165,8 @@ sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock
 void
 sipe_backend_codec_free(sipe_codec *codec)
 {
-	g_object_unref(codec);
+	if (codec)
+		g_object_unref(codec);
 }
 
 int
@@ -184,6 +185,13 @@ guint
 sipe_backend_codec_get_clock_rate(sipe_codec *codec)
 {
 	return purple_media_codec_get_clock_rate((PurpleMediaCodec *)codec);
+}
+
+void
+sipe_backend_codec_add_optional_parameter(sipe_codec *codec,
+										  const gchar *name, const gchar *value)
+{
+	purple_media_codec_add_optional_parameter((PurpleMediaCodec *)codec, name, value);
 }
 
 GList *
@@ -222,9 +230,10 @@ sipe_backend_candidate_new(const gchar *foundation, SipeComponentType component,
 }
 
 void
-sipe_backend_candidate_free(sipe_candidate *codec)
+sipe_backend_candidate_free(sipe_candidate *candidate)
 {
-	g_object_unref(codec);
+	if (candidate)
+		g_object_unref(candidate);
 }
 
 gchar *

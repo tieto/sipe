@@ -43,16 +43,14 @@ sipe_media_get_callid(sipe_media_call *call)
 
 void sipe_media_codec_list_free(GList *codecs)
 {
-	for (; codecs; codecs = g_list_delete_link(codecs, codecs)) {
+	for (; codecs; codecs = g_list_delete_link(codecs, codecs))
 		sipe_backend_codec_free(codecs->data);
-	}
 }
 
 void sipe_media_candidate_list_free(GList *candidates)
 {
-	for (; candidates; candidates = g_list_delete_link(candidates, candidates)) {
+	for (; candidates; candidates = g_list_delete_link(candidates, candidates))
 		sipe_backend_candidate_free(candidates->data);
-	}
 }
 
 static void
@@ -69,13 +67,13 @@ sipe_media_call_free(sipe_media_call *call)
 }
 
 static GList *
-sipe_media_parse_remote_codecs(const sipe_media_call *call)
+sipe_media_parse_codecs(GSList *sdp_attrs)
 {
 	int			i = 0;
 	const gchar	*attr;
 	GList		*codecs	= NULL;
 
-	while ((attr = sipe_utils_nameval_find_instance(call->sdp_attrs, "rtpmap", i++))) {
+	while ((attr = sipe_utils_nameval_find_instance(sdp_attrs, "rtpmap", i++))) {
 		gchar	**tokens	= g_strsplit_set(attr, " /", 3);
 
 		int		id			= atoi(tokens[0]);
@@ -84,6 +82,28 @@ sipe_media_parse_remote_codecs(const sipe_media_call *call)
 		SipeMediaType type	= SIPE_MEDIA_AUDIO;
 
 		sipe_codec	*codec = sipe_backend_codec_new(id, name, clock_rate, type);
+
+		// TODO: more secure and effective implementation
+		int j = 0;
+		const gchar* params;
+		while((params = sipe_utils_nameval_find_instance(sdp_attrs, "fmtp", j++))) {
+			gchar **tokens = g_strsplit_set(params, " ", 0);
+			gchar **next = tokens + 1;
+
+			if (atoi(tokens[0]) == id) {
+				while (*next) {
+					gchar name[50];
+					gchar value[50];
+
+					if (sscanf(*next, "%[a-zA-Z0-9]=%s", name, value) == 2)
+						sipe_backend_codec_add_optional_parameter(codec, name, value);
+
+					++next;
+				}
+			}
+
+			g_strfreev(tokens);
+		}
 
 		codecs = g_list_append(codecs, codec);
 		g_strfreev(tokens);
@@ -102,10 +122,9 @@ codec_name_compare(sipe_codec* codec1, sipe_codec* codec2)
 }
 
 static GList *
-sipe_media_prune_remote_codecs(sipe_media_call *call, GList *codecs)
+sipe_media_prune_remote_codecs(GList *local_codecs, GList *remote_codecs)
 {
-	GList *remote_codecs = codecs;
-	GList *local_codecs = sipe_backend_get_local_codecs(call);
+	GList *remote_codecs_head = remote_codecs;
 	GList *pruned_codecs = NULL;
 
 	while (remote_codecs) {
@@ -118,15 +137,37 @@ sipe_media_prune_remote_codecs(sipe_media_call *call, GList *codecs)
 		remote_codecs = remote_codecs->next;
 	}
 
-	sipe_media_codec_list_free(codecs);
+	sipe_media_codec_list_free(remote_codecs_head);
 
 	return pruned_codecs;
 }
 
 static GList *
-sipe_media_parse_remote_candidates(sipe_media_call *call)
+sipe_media_parse_remote_candidates_legacy(gchar *remote_ip, guint16	remote_port)
 {
-	GSList *sdp_attrs = call->sdp_attrs;
+	sipe_candidate *candidate;
+	GList *candidates = NULL;
+
+	candidate = sipe_backend_candidate_new("foundation",
+									SIPE_COMPONENT_RTP,
+									SIPE_CANDIDATE_TYPE_HOST,
+									SIPE_NETWORK_PROTOCOL_UDP,
+									remote_ip, remote_port);
+	candidates = g_list_append(candidates, candidate);
+
+	candidate = sipe_backend_candidate_new("foundation",
+									SIPE_COMPONENT_RTCP,
+									SIPE_CANDIDATE_TYPE_HOST,
+									SIPE_NETWORK_PROTOCOL_UDP,
+									remote_ip, remote_port + 1);
+	candidates = g_list_append(candidates, candidate);
+
+	return candidates;
+}
+
+static GList *
+sipe_media_parse_remote_candidates(GSList *sdp_attrs)
+{
 	sipe_candidate *candidate;
 	GList *candidates = NULL;
 	const gchar *attr;
@@ -189,26 +230,6 @@ sipe_media_parse_remote_candidates(sipe_media_call *call)
 		candidates = g_list_append(candidates, candidate);
 
 		g_strfreev(tokens);
-	}
-
-	if (!candidates) {
-		// No a=candidate in SDP message, revert to OC2005 behaviour
-		candidate = sipe_backend_candidate_new("foundation",
-										SIPE_COMPONENT_RTP,
-										SIPE_CANDIDATE_TYPE_HOST,
-										SIPE_NETWORK_PROTOCOL_UDP,
-										call->remote_ip, call->remote_port);
-		candidates = g_list_append(candidates, candidate);
-
-		candidate = sipe_backend_candidate_new("foundation",
-										SIPE_COMPONENT_RTCP,
-										SIPE_CANDIDATE_TYPE_HOST,
-										SIPE_NETWORK_PROTOCOL_UDP,
-										call->remote_ip, call->remote_port + 1);
-		candidates = g_list_append(candidates, candidate);
-
-		// This seems to be pre-OC2007 R2 UAC
-		call->legacy_mode = TRUE;
 	}
 
 	if (username) {
@@ -379,15 +400,15 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call, gbool
 
 static gchar*
 sipe_media_create_sdp(sipe_media_call *call, gboolean remote_candidate) {
-	GList *local_codecs = sipe_backend_get_local_codecs(call);
+	GList *usable_codecs = sipe_backend_get_local_codecs(call);
 	GList *local_candidates = sipe_backend_get_local_candidates(call, call->dialog->with);
 
 	// TODO: more  sophisticated
 	guint16	local_port = sipe_backend_candidate_get_port(local_candidates->data);
 	const char *ip = sipe_utils_get_suitable_local_ip(-1);
 
-	gchar *sdp_codecs = sipe_media_sdp_codecs_format(local_codecs);
-	gchar *sdp_codec_ids = sipe_media_sdp_codec_ids_format(local_codecs);
+	gchar *sdp_codecs = sipe_media_sdp_codecs_format(usable_codecs);
+	gchar *sdp_codec_ids = sipe_media_sdp_codec_ids_format(usable_codecs);
 	gchar *sdp_candidates = sipe_media_sdp_candidates_format(local_candidates, call, remote_candidate);
 	gchar *inactive = call->state == SIPE_CALL_HELD ? "a=inactive\r\n" : "";
 
@@ -453,11 +474,15 @@ notify_state_change(struct sipe_account_data *sip, gboolean local) {
 }
 
 static gboolean
-sipe_media_parse_sdp_frame(sipe_media_call* call, gchar *frame) {
+sipe_media_parse_remote_codecs(sipe_media_call *call);
+
+static gboolean
+sipe_media_parse_sdp_attributes_and_candidates(sipe_media_call* call, gchar *frame) {
 	gchar		**lines = g_strsplit(frame, "\r\n", 0);
 	GSList		*sdp_attrs = NULL;
 	gchar		*remote_ip = NULL;
 	guint16 	remote_port = 0;
+	GList		*remote_candidates;
 	gchar		**ptr;
 	gboolean	no_error = TRUE;
 
@@ -487,14 +512,51 @@ sipe_media_parse_sdp_frame(sipe_media_call* call, gchar *frame) {
 
 	g_strfreev(lines);
 
+	remote_candidates = sipe_media_parse_remote_candidates(sdp_attrs);
+	if (!remote_candidates) {
+		// No a=candidate in SDP message, revert to OC2005 behaviour
+		sipe_media_parse_remote_candidates_legacy(remote_ip, remote_port);
+		// This seems to be pre-OC2007 R2 UAC
+		call->legacy_mode = TRUE;
+	}
+
 	if (no_error) {
 		sipe_utils_nameval_free(call->sdp_attrs);
-		call->sdp_attrs = sdp_attrs;
-		call->remote_ip = remote_ip;
-		call->remote_port = remote_port;
+		sipe_media_candidate_list_free(call->remote_candidates);
+
+		call->sdp_attrs			= sdp_attrs;
+		call->remote_ip			= remote_ip;
+		call->remote_port		= remote_port;
+		call->remote_candidates	= remote_candidates;
+	} else {
+		sipe_utils_nameval_free(sdp_attrs);
+		sipe_media_candidate_list_free(remote_candidates);
 	}
 
 	return no_error;
+}
+
+static gboolean
+sipe_media_parse_remote_codecs(sipe_media_call *call)
+{
+	GList		*local_codecs = sipe_backend_get_local_codecs(call);
+	GList		*remote_codecs;
+
+	remote_codecs = sipe_media_parse_codecs(call->sdp_attrs);
+	remote_codecs = sipe_media_prune_remote_codecs(local_codecs, remote_codecs);
+
+	if (remote_codecs) {
+		sipe_media_codec_list_free(call->remote_codecs);
+
+		call->remote_codecs		= remote_codecs;
+
+		return TRUE;
+	} else {
+		sipe_media_codec_list_free(remote_codecs);
+		printf("ERROR NO CANDIDATES OR CODECS");
+
+		return FALSE;
+	}
 }
 
 static struct sip_dialog *
@@ -531,6 +593,16 @@ static void candidates_prepared_cb(sipe_media_call *call)
 	} else if (!call->legacy_mode) {
 		PurpleAccount* account = purple_media_get_account(call->media);
 
+		if (!sipe_media_parse_remote_codecs(call)) {
+			g_free(call);
+			return;
+		}
+
+		if (sipe_backend_set_remote_codecs(call, call->dialog->with) == FALSE)
+			printf("ERROR SET REMOTE CODECS"); // TODO
+
+
+		// TODO: SDP response might not to be cached
 		if (!call->sdp_response)
 			call->sdp_response = sipe_media_create_sdp(call, FALSE);
 
@@ -597,9 +669,12 @@ static void call_hangup_cb(sipe_media_call *call, gboolean local)
 }
 
 static sipe_media_call *
-sipe_media_call_init()
+sipe_media_call_init(struct sipe_account_data *sip, const gchar* participant, gboolean initiator)
 {
 	sipe_media_call *call = g_new0(sipe_media_call, 1);
+
+	call->sip = sip;
+	call->media = sipe_backend_media_new(call, participant, initiator);
 
 	call->legacy_mode = FALSE;
 	call->state = SIPE_CALL_CONNECTING;
@@ -641,17 +716,15 @@ sipe_media_initiate_call(struct sipe_account_data *sip, const char *participant)
 	if (sip->media_call)
 		return;
 
-	call = sipe_media_call_init();
+	call = sipe_media_call_init(sip, participant, TRUE);
+
 	sip->media_call = call;
 
-	call->sip = sip;
 	call->session = sipe_session_add_chat(sip);
 	call->dialog = sipe_dialog_add(call->session);
 	call->dialog->callid = gencallid();
 	call->dialog->with = g_strdup(participant);
 	call->dialog->ourtag = gentag();
-
-	call->media = sipe_backend_media_new(call, participant, TRUE);
 
 	sipe_backend_media_add_stream(call->media, participant, SIPE_MEDIA_AUDIO,
 								  !call->legacy_mode, TRUE);
@@ -663,7 +736,6 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 {
 	const gchar					*callid = sipmsg_find_header(msg, "Call-ID");
 
-	sipe_media					*media;
 	sipe_media_call				*call;
 	struct sip_session			*session;
 	struct sip_dialog			*dialog;
@@ -677,11 +749,9 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 			sipmsg_free(call->invitation);
 			call->invitation = sipmsg_copy(msg);
 
-			sipmsg_add_header(call->invitation, "Supported", "Replaces");
-
 			sipe_utils_nameval_free(call->sdp_attrs);
 			call->sdp_attrs = NULL;
-			if (!sipe_media_parse_sdp_frame(call, call->invitation->body)) {
+			if (!sipe_media_parse_sdp_attributes_and_candidates(call, call->invitation->body)) {
 				// TODO: handle error
 			}
 
@@ -700,11 +770,11 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 				return;
 			}
 
-			call->remote_codecs = sipe_media_parse_remote_codecs(call);
-			call->remote_codecs = sipe_media_prune_remote_codecs(call, call->remote_codecs);
-			if (!call->remote_codecs) {
-				// TODO: error no remote codecs
+			if (!sipe_media_parse_remote_codecs(call)) {
+				g_free(call);
+				return;
 			}
+
 			if (sipe_backend_set_remote_codecs(call, call->dialog->with) == FALSE)
 				printf("ERROR SET REMOTE CODECS"); // TODO
 
@@ -717,44 +787,49 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 		return;
 	}
 
-	call = sipe_media_call_init();
-	call->invitation = sipmsg_copy(msg);
-
-	if (sipe_media_parse_sdp_frame(call, msg->body) == FALSE) {
-		g_free(call);
-		return;
-	}
-
-	call->remote_candidates = sipe_media_parse_remote_candidates(call);
-
 	session = sipe_session_find_or_add_chat_by_callid(sip, callid);
-	dialog = sipe_media_dialog_init(session, call->invitation);
+	dialog = sipe_media_dialog_init(session, msg);
 
-	call->sip = sip;
+	call = sipe_media_call_init(sip, dialog->with, FALSE);
+	call->invitation = sipmsg_copy(msg);
 	call->session = session;
 	call->dialog = dialog;
 
-	media = sipe_backend_media_new(call, dialog->with, FALSE);
-	call->media = media;
-
-	sipe_backend_media_add_stream(media, dialog->with, SIPE_MEDIA_AUDIO, !call->legacy_mode, FALSE);
-
-	sipe_backend_media_add_remote_candidates(media, dialog->with, call->remote_candidates);
-
-	call->remote_codecs = sipe_media_parse_remote_codecs(call);
-	call->remote_codecs = sipe_media_prune_remote_codecs(call, call->remote_codecs);
-	if (!call->remote_candidates || !call->remote_codecs) {
-		sipe_media_call_free(call);
-		sip->media_call = NULL;
-		printf("ERROR NO CANDIDATES OR CODECS");
-		return;
-	}
-	if (sipe_backend_set_remote_codecs(call, dialog->with) == FALSE)
-		printf("ERROR SET REMOTE CODECS"); // TODO
-
 	sip->media_call = call;
 
+	if (!sipe_media_parse_sdp_attributes_and_candidates(call, msg->body)) {
+		// TODO error
+	}
+
+	sipe_backend_media_add_stream(call->media, dialog->with, SIPE_MEDIA_AUDIO, !call->legacy_mode, FALSE);
+	sipe_backend_media_add_remote_candidates(call->media, dialog->with, call->remote_candidates);
+
 	send_sip_response(sip->gc, call->invitation, 180, "Ringing", NULL);
+
+	// Processing continues in candidates_prepared_cb
+}
+
+static gboolean
+sipe_media_send_ack(struct sipe_account_data *sip,
+					SIPE_UNUSED_PARAMETER struct sipmsg *msg,
+					struct transaction *trans)
+{
+	struct sip_dialog *dialog;
+	int trans_cseq;
+	int tmp_cseq;
+
+	if (!sip->media_call || !sip->media_call->dialog)
+		return FALSE;
+
+	dialog = sip->media_call->dialog;
+	tmp_cseq = dialog->cseq;
+
+	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &trans_cseq);
+	dialog->cseq = trans_cseq - 1;
+	send_sip_request(sip->gc, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+	dialog->cseq = tmp_cseq;
+
+	return TRUE;
 }
 
 static gboolean
@@ -774,18 +849,15 @@ sipe_media_process_invite_response(struct sipe_account_data *sip,
 		const gchar *cseq = sipmsg_find_header(msg, "CSeq");
 		gchar *rack = g_strdup_printf("RAck: %s %s\r\n", rseq, cseq);
 
-		sipe_utils_nameval_free(call->sdp_attrs);
-		call->sdp_attrs = NULL;
-		if (!sipe_media_parse_sdp_frame(call, msg->body)) {
+		if (!sipe_media_parse_sdp_attributes_and_candidates(call, msg->body)) {
 			// TODO: handle error
 		}
 
-		call->remote_candidates = sipe_media_parse_remote_candidates(call);
-		call->remote_codecs = sipe_media_parse_remote_codecs(call);
-		call->remote_codecs = sipe_media_prune_remote_codecs(call, call->remote_codecs);
-		if (!call->remote_codecs) {
-			// TODO: error no remote codecs
+		if (!sipe_media_parse_remote_codecs(call)) {
+			g_free(call);
+			return FALSE;
 		}
+
 		if (sipe_backend_set_remote_codecs(call, call->dialog->with) == FALSE)
 			printf("ERROR SET REMOTE CODECS"); // TODO
 
@@ -796,16 +868,10 @@ sipe_media_process_invite_response(struct sipe_account_data *sip,
 		send_sip_request(sip->gc, "PRACK", call->dialog->with, call->dialog->with, rack, NULL, call->dialog, NULL);
 		g_free(rack);
 	} else {
-		int trans_cseq;
-		int tmp_cseq = call->dialog->cseq;
 		//PurpleMedia* m = (PurpleMedia*) call->media;
 		//purple_media_stream_info(m, PURPLE_MEDIA_INFO_ACCEPT, NULL, NULL, FALSE);
-
-		sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &trans_cseq);
-		call->dialog->cseq = trans_cseq - 1;
-		send_sip_request(sip->gc, "ACK", call->dialog->with, call->dialog->with, NULL, NULL, call->dialog, NULL);
-		call->dialog->cseq = tmp_cseq;
-		sipe_invite_call(sip, NULL);
+		sipe_media_send_ack(sip, msg, trans);
+		sipe_invite_call(sip, sipe_media_send_ack);
 	}
 
 	return TRUE;

@@ -115,6 +115,8 @@ gchar * sipe_backend_codec_get_name(sipe_codec *codec);
 
 guint sipe_backend_codec_get_clock_rate(sipe_codec *codec);
 
+void sipe_backend_codec_add_optional_parameter(sipe_codec *codec,
+											   const gchar *name, const gchar *value);
 GList *sipe_backend_codec_get_optional_parameters(sipe_codec *codec);
 
 gboolean sipe_backend_set_remote_codecs(sipe_media_call* call, gchar* participant);
