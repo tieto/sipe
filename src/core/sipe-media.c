@@ -24,9 +24,12 @@
 #include "config.h"
 #endif
 
-#include "account.h"
+#include <glib.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe.h"
 #include "sipmsg.h"
 #include "sipe-session.h"
@@ -34,6 +37,7 @@
 #include "sipe-dialog.h"
 #include "sipe-utils.h"
 #include "sipe-common.h"
+#include "sip-transport.h"
 
 gchar *
 sipe_media_get_callid(sipe_media_call *call)
@@ -455,7 +459,7 @@ sipe_invite_call(struct sipe_account_data *sip, TransCallback tc)
 
 	body = sipe_media_create_sdp(call, TRUE);
 
-	send_sip_request(sip->gc, "INVITE", dialog->with, dialog->with, hdr, body,
+	send_sip_request(SIP_TO_CORE_PRIVATE, "INVITE", dialog->with, dialog->with, hdr, body,
 			  dialog, tc);
 
 	g_free(body);
@@ -468,7 +472,7 @@ notify_state_change(struct sipe_account_data *sip, gboolean local) {
 		sipe_invite_call(sip, NULL);
 	} else {
 		gchar* body = sipe_media_create_sdp(sip->media_call, TRUE);
-		send_sip_response(sip->gc, sip->media_call->invitation, 200, "OK", body);
+		send_sip_response(SIP_TO_CORE_PRIVATE, sip->media_call->invitation, 200, "OK", body);
 		g_free(body);
 	}
 }
@@ -591,7 +595,7 @@ static void candidates_prepared_cb(sipe_media_call *call)
 	if (sipe_backend_media_is_initiator(call->media, call->dialog->with)) {
 		sipe_invite_call(call->sip, sipe_media_process_invite_response);
 	} else if (!call->legacy_mode) {
-		PurpleAccount* account = purple_media_get_account(call->media);
+		struct sipe_account_data *sip = call->sip;
 
 		if (!sipe_media_parse_remote_codecs(call)) {
 			g_free(call);
@@ -606,7 +610,8 @@ static void candidates_prepared_cb(sipe_media_call *call)
 		if (!call->sdp_response)
 			call->sdp_response = sipe_media_create_sdp(call, FALSE);
 
-		send_sip_response(account->gc, call->invitation, 183, "Session Progress", call->sdp_response);
+		sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
+		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 183, "Session Progress", call->sdp_response);
 	}
 }
 
@@ -618,12 +623,13 @@ static void media_connected_cb(sipe_media_call *call)
 static void call_accept_cb(sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		PurpleAccount* account = call->sip->account;
+		struct sipe_account_data *sip = call->sip;
 
 		if (!call->sdp_response)
 			call->sdp_response = sipe_media_create_sdp(call, FALSE);
 
-		send_sip_response(account->gc, call->invitation, 200, "OK", call->sdp_response);
+		sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
+		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", call->sdp_response);
 		call->state = SIPE_CALL_RUNNING;
 	}
 }
@@ -631,8 +637,8 @@ static void call_accept_cb(sipe_media_call *call, gboolean local)
 static void call_reject_cb(sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		PurpleAccount *account = call->sip->account;
-		send_sip_response(account->gc, call->invitation, 603, "Decline", NULL);
+		struct sipe_account_data *sip = call->sip;
+		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 603, "Decline", NULL);
 		call->sip->media_call = NULL;
 		sipe_media_call_free(call);
 	}
@@ -661,9 +667,11 @@ static void call_unhold_cb(sipe_media_call *call, gboolean local)
 static void call_hangup_cb(sipe_media_call *call, gboolean local)
 {
 	call->state = SIPE_CALL_FINISHED;
-	if (local)
-		send_sip_request(call->sip->gc, "BYE", call->dialog->with, call->dialog->with,
+	if (local) {
+		struct sipe_account_data *sip = call->sip;
+		send_sip_request(SIP_TO_CORE_PRIVATE, "BYE", call->dialog->with, call->dialog->with,
 						NULL, NULL, call->dialog, NULL);
+	}
 	call->sip->media_call = NULL;
 	sipe_media_call_free(call);
 }
@@ -779,10 +787,11 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 				printf("ERROR SET REMOTE CODECS"); // TODO
 
 			rsp = sipe_media_create_sdp(sip->media_call, TRUE);
-			send_sip_response(sip->gc, call->invitation, 200, "OK", rsp);
+			sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
+			send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", rsp);
 			g_free(rsp);
 		} else {
-			send_sip_response(sip->gc, msg, 486, "Busy Here", NULL);
+			send_sip_response(SIP_TO_CORE_PRIVATE, msg, 486, "Busy Here", NULL);
 		}
 		return;
 	}
@@ -804,7 +813,7 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 	sipe_backend_media_add_stream(call->media, dialog->with, SIPE_MEDIA_AUDIO, !call->legacy_mode, FALSE);
 	sipe_backend_media_add_remote_candidates(call->media, dialog->with, call->remote_candidates);
 
-	send_sip_response(sip->gc, call->invitation, 180, "Ringing", NULL);
+	send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 180, "Ringing", NULL);
 
 	// Processing continues in candidates_prepared_cb
 }
@@ -826,7 +835,7 @@ sipe_media_send_ack(struct sipe_account_data *sip,
 
 	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &trans_cseq);
 	dialog->cseq = trans_cseq - 1;
-	send_sip_request(sip->gc, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+	send_sip_request(SIP_TO_CORE_PRIVATE, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
 	dialog->cseq = tmp_cseq;
 
 	return TRUE;
@@ -865,7 +874,7 @@ sipe_media_process_invite_response(struct sipe_account_data *sip,
 
 		sipe_dialog_parse(call->dialog, msg, TRUE);
 
-		send_sip_request(sip->gc, "PRACK", call->dialog->with, call->dialog->with, rack, NULL, call->dialog, NULL);
+		send_sip_request(SIP_TO_CORE_PRIVATE, "PRACK", call->dialog->with, call->dialog->with, rack, NULL, call->dialog, NULL);
 		g_free(rack);
 	} else {
 		//PurpleMedia* m = (PurpleMedia*) call->media;

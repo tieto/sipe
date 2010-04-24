@@ -7536,7 +7536,7 @@ void process_input_message(struct sipe_account_data *sip,
 			found = TRUE;
 		} else if (sipe_strequal(method, "PRACK")) {
 			found = TRUE;
-			send_sip_response(sip->gc, msg, 200, "OK", NULL);
+			send_sip_response(SIP_TO_CORE_PRIVATE, msg, 200, "OK", NULL);
 		} else if (sipe_strequal(method, "SUBSCRIBE")) {
 			// LCS 2005 sends us these - just respond 200 OK
 			found = TRUE;
