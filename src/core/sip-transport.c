@@ -580,40 +580,6 @@ struct sipe_service_data {
 	guint type;
 };
 
-/**
- * NOTE: This is BROKEN. Don't ask me to explain why it is in here, I didn't
- *       implement it...
- *
- * This is a global variable, i.e. it affects all SIPE accounts configured
- * for server auto-discovery & SIPE_TRANSPORT_AUTO.
- *
- * - Only one active account:
- *    * if TLS connect fails this will make sure TLS is skipped in the next
- *      attempt (OK)
- *    * when the account disconnects then the next attempt will *NOT* start
- *      with the successful entry, but the next one (BROKEN)
- *
- * - More than one active account:
- *    * when a new account connects then the attempt will *NOT* start with
- *      successful one, but the next one (BROKEN)
- *
- * IMHO this should be removed.
- */
-static const struct sipe_service_data *current_service = NULL;
-
-void sipe_core_transport_sip_ssl_connect_failure(struct sipe_transport_connection *conn,
-						 SIPE_UNUSED_PARAMETER const gchar *msg)
-{
-	struct sipe_core_private *sipe_private = conn->user_data;
-
-	current_service = sipe_private->service_data;
-	if (current_service) {
-		SIPE_DEBUG_INFO("current_service: transport '%s' protocol '%s'",
-				current_service->transport ? current_service->transport : "NULL",
-				current_service->protocol  ? current_service->protocol  : "NULL");
-	}
-}
-
 void sipe_core_transport_sip_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
@@ -641,6 +607,12 @@ static const struct sipe_service_data service_tcp[] = {
 	{ "sipinternal",    "tcp", SIPE_TRANSPORT_TCP }, /* for internal TCP connections */
 	{ "sip",            "tcp", SIPE_TRANSPORT_TCP }, /*.for external TCP connections */
 	{ NULL,             NULL,  0 }
+};
+
+static const struct sipe_service_data *services[] = {
+	service_autodetect, /* SIPE_TRANSPORT_AUTO */
+	service_tls,        /* SIPE_TRANSPORT_TLS  */
+	service_tcp         /* SIPE_TRANSPORT_TCP  */
 };
 
 static void resolve_next_service(struct sipe_core_private *sipe_private,
@@ -712,27 +684,7 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 
 		/* Remember user specified transport type */
 		sipe_private->transport_type = transport;
-
-		switch (transport) {
-		case SIPE_TRANSPORT_AUTO:
-			if (current_service &&
-			    current_service->protocol  != NULL &&
-			    current_service->transport != NULL) {
-				current_service++;
-				resolve_next_service(sipe_private,
-						     current_service);
-			} else {
-				resolve_next_service(sipe_private,
-						     service_autodetect);
-			}
-			break;
-		case SIPE_TRANSPORT_TLS:
-			resolve_next_service(sipe_private, service_tls);
-			break;
-		case SIPE_TRANSPORT_TCP:
-			resolve_next_service(sipe_private, service_tcp);
-			break;
-		}
+		resolve_next_service(sipe_private, services[transport]);
 	}
 }
 

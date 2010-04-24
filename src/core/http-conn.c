@@ -247,12 +247,6 @@ static void http_conn_transport_error(HttpConn *http_conn, const gchar *msg)
 	http_conn_close(http_conn, msg);
 }
 
-void sipe_core_transport_http_ssl_connect_failure(struct sipe_transport_connection *conn,
-						  const char *msg)
-{
-	http_conn_transport_error(HTTP_CONN, msg);
-}
-
 void sipe_core_transport_http_input_error(struct sipe_transport_connection *conn,
 					  const gchar *msg)
 {

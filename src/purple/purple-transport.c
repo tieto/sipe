@@ -69,8 +69,6 @@ struct transport_hooks
 	/* can be NULL */
 	gboolean (*ssl_check)(struct sipe_transport_purple *transport,
 			      const gchar *msg);
-	void (*ssl_connect_failure)(struct sipe_transport_connection *conn,
-				    const gchar *msg);
 	gboolean (*connected_check)(struct sipe_transport_purple *transport,
 				    PurpleSslConnection *gsc,
 				    int fd);	
@@ -154,8 +152,6 @@ static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnect
 	if (transport->hooks->ssl_check &&
 	    transport->hooks->ssl_check(transport, msg))
 		return;
-
-	transport->hooks->ssl_connect_failure(SIPE_TRANSPORT_CONNECTION, msg);
 
 	transport->socket = -1;
         transport->gsc = NULL;
@@ -428,7 +424,6 @@ static const struct transport_hooks transport_sip_hooks = {
 	transport_sip_input_error,
 	sipe_core_transport_sip_message,
 	transport_sip_ssl_check,
-	sipe_core_transport_sip_ssl_connect_failure,
 	transport_sip_connected_check,
 	transport_sip_input_ssl,
 	transport_sip_input_tcp,
@@ -513,7 +508,6 @@ static const struct transport_hooks transport_http_hooks = {
 	transport_http_input_error,
 	sipe_core_transport_http_message,
 	NULL,
-	sipe_core_transport_http_ssl_connect_failure,
 	transport_http_connected_check,
 	transport_http_input_ssl,
 	transport_http_input_tcp,
