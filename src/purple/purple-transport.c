@@ -159,7 +159,6 @@ static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnect
 					  gpointer data)
 {
 	struct sipe_transport_purple *transport = data;
-	const gchar *msg = purple_ssl_strerror(error);
 
         /* If the connection is already disconnected
 	   then we don't need to do anything else */
@@ -168,7 +167,8 @@ static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnect
 
 	transport->socket = -1;
         transport->gsc = NULL;
-	transport->error(SIPE_TRANSPORT_CONNECTION, msg);
+	transport->error(SIPE_TRANSPORT_CONNECTION,
+			 purple_ssl_strerror(error));
 }
 
 static void transport_common_connected(struct sipe_transport_purple *transport,
