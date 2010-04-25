@@ -154,4 +154,4 @@ GList* sipe_backend_get_local_candidates(sipe_media_call* call, gchar* participa
 void sipe_backend_media_hold(sipe_media* call, gboolean local);
 void sipe_backend_media_unhold(sipe_media* call, gboolean local);
 void sipe_backend_media_hangup(sipe_media* media, gboolean local);
-
+void sipe_backend_media_reject(sipe_media* media, gboolean local);

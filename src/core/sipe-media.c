@@ -638,9 +638,9 @@ static void call_reject_cb(sipe_media_call *call, gboolean local)
 	if (local) {
 		struct sipe_account_data *sip = call->sip;
 		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 603, "Decline", NULL);
-		call->sip->media_call = NULL;
-		sipe_media_call_free(call);
 	}
+	call->sip->media_call = NULL;
+	sipe_media_call_free(call);
 }
 
 static gboolean
@@ -842,6 +842,9 @@ sipe_media_process_invite_response(struct sipe_account_data *sip,
 
 		send_sip_request(SIP_TO_CORE_PRIVATE, "PRACK", call->dialog->with, call->dialog->with, rack, NULL, call->dialog, NULL);
 		g_free(rack);
+	} else if (msg->response == 603) {
+		sipe_backend_media_reject(call->media, FALSE);
+		sipe_media_send_ack(sip, msg, trans);
 	} else {
 		//PurpleMedia* m = (PurpleMedia*) call->media;
 		//purple_media_stream_info(m, PURPLE_MEDIA_INFO_ACCEPT, NULL, NULL, FALSE);

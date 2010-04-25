@@ -371,6 +371,13 @@ sipe_backend_media_hangup(sipe_media* media, gboolean local)
 	purple_media_stream_info(m->m, PURPLE_MEDIA_INFO_HANGUP, NULL, NULL, local);
 }
 
+void
+sipe_backend_media_reject(sipe_media* media, gboolean local)
+{
+	sipe_purple_media *m = (sipe_purple_media *)media;
+	purple_media_stream_info(m->m, PURPLE_MEDIA_INFO_REJECT, NULL, NULL, local);
+}
+
 PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type)
 {
 	switch (type) {
