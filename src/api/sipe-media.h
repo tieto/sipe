@@ -73,6 +73,8 @@ typedef struct _sipe_media_call {
 	gboolean			local_on_hold;
 	gboolean			remote_on_hold;
 
+	unsigned			invite_cnt;
+
 	void (*candidates_prepared_cb)(struct _sipe_media_call*);
 	void (*media_connected_cb)(struct _sipe_media_call*);
 	void (*call_accept_cb)(struct _sipe_media_call*, gboolean local);
