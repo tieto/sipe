@@ -179,7 +179,7 @@ http_conn_close(HttpConn *http_conn, const char *message)
 	
 	g_return_if_fail(http_conn);
 
-	sipe_backend_transport_http_disconnect(http_conn->conn);
+	sipe_backend_transport_disconnect(http_conn->conn);
 	http_conn_free(http_conn);
 }
 
@@ -239,20 +239,40 @@ http_conn_parse_url(const char *url,
         g_free(host_port);
 }
 
-static void http_conn_transport_error(HttpConn *http_conn, const gchar *msg)
+static void http_conn_error(struct sipe_transport_connection *conn,
+			    const gchar *msg)
 {
+	HttpConn *http_conn = HTTP_CONN;
 	if (http_conn->callback) {
 		(*http_conn->callback)(HTTP_CONN_ERROR, NULL, NULL, http_conn, http_conn->data);
 	}
 	http_conn_close(http_conn, msg);
 }
 
-void sipe_core_transport_http_input_error(struct sipe_transport_connection *conn,
-					  const gchar *msg)
+static void http_conn_send0(HttpConn *http_conn,
+			    const char *authorization);
+static void http_conn_connected(struct sipe_transport_connection *conn)
 {
-	http_conn_transport_error(HTTP_CONN, msg);
+	http_conn_send0(HTTP_CONN, NULL);
 }
 
+static void http_conn_input(struct sipe_transport_connection *conn);
+static struct sipe_transport_connection *http_conn_setup(HttpConn *http_conn,
+							 struct sipe_core_public *sipe_public,
+							 guint type,
+							 const gchar *host,
+							 guint port) {
+	sipe_connect_setup setup = {
+		type,
+		host,
+		port,
+		http_conn,
+		http_conn_connected,
+		http_conn_input,
+		http_conn_error
+	};
+	return(sipe_backend_transport_connect(sipe_public, &setup));
+}
 
 HttpConn *
 http_conn_create(struct sipe_core_public *sipe_public,
@@ -278,17 +298,14 @@ http_conn_create(struct sipe_core_public *sipe_public,
 	}
 
 	http_conn_parse_url(full_url, &host, &port, &url);
-	conn = sipe_backend_transport_http_connect(sipe_public,
-						   conn_type,
-						   host,
-						   port);
+	http_conn = g_new0(HttpConn, 1);
+	conn = http_conn_setup(http_conn, sipe_public, conn_type, host, port);
 	if (!conn) {
+		g_free(http_conn);
 		g_free(host);
 		g_free(url);
 		return NULL;
 	}
-
-	http_conn = g_new0(HttpConn, 1);
 
 	http_conn->sipe_public = sipe_public;
 	conn->user_data = http_conn;
@@ -336,13 +353,8 @@ http_conn_send0(HttpConn *http_conn,
 	}
 	g_string_append_printf(outstr, "\r\n%s", http_conn->body ? http_conn->body : "");
 
-	sipe_backend_transport_http_message(http_conn->conn, outstr->str);
+	sipe_backend_transport_message(http_conn->conn, outstr->str);
 	g_string_free(outstr, TRUE);
-}
-
-void sipe_core_transport_http_connected(struct sipe_transport_connection *conn)
-{
-	http_conn_send0(HTTP_CONN, NULL);
 }
 
 void
@@ -394,11 +406,11 @@ http_conn_process_input_message(HttpConn *http_conn,
 		g_free(http_conn->host);
 		g_free(http_conn->url);
 		http_conn_parse_url(location, &http_conn->host, &http_conn->port, &http_conn->url);
-
-		http_conn->conn = sipe_backend_transport_http_connect(http_conn->sipe_public,
-								      http_conn->conn_type,
-								      http_conn->host,
-								      http_conn->port);
+		http_conn->conn = http_conn_setup(http_conn,
+						  http_conn->sipe_public,
+						  http_conn->conn_type,
+						  http_conn->host,
+						  http_conn->port);
 	}
 	/* Authentication required */
 	else if (msg->response == 401) {
@@ -532,7 +544,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 	}
 }
 
-void sipe_core_transport_http_message(struct sipe_transport_connection *conn)
+static void http_conn_input(struct sipe_transport_connection *conn)
 {
 	HttpConn *http_conn = HTTP_CONN;
 	char *cur = conn->buffer;

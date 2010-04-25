@@ -350,9 +350,7 @@ static void sipe_keep_alive(PurpleConnection *gc)
 	    ((guint) (now - purple_private->last_keepalive) >= sipe_public->keepalive_timeout) &&
 	    ((guint) (now - gc->last_received) >= sipe_public->keepalive_timeout)
 		) {
-		SIPE_DEBUG_INFO("sending keep alive %d", sipe_public->keepalive_timeout);
-		sipe_backend_transport_sip_message(sipe_public->transport,
-						   "\r\n\r\n");
+		sipe_core_transport_sip_keepalive(sipe_public);
 		purple_private->last_keepalive = now;
 	}
 }
@@ -365,8 +363,7 @@ static void sipe_alias_buddy(PurpleConnection *gc, const char *name,
 
 static int sipe_send_raw(PurpleConnection *gc, const gchar *buf, int len)
 {
-	sipe_backend_transport_sip_message(PURPLE_GC_TO_SIPE_CORE_PUBLIC->transport,
-					   buf);
+	sipe_core_transport_sip_raw(PURPLE_GC_TO_SIPE_CORE_PUBLIC, buf);
 	return len;
 }
 

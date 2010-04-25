@@ -7487,7 +7487,7 @@ void process_input_message(struct sipe_account_data *sip,struct sipmsg *msg)
 				g_free(auth);
 				resend = sipmsg_to_string(trans->msg);
 				/* resend request */
-				sipe_backend_transport_sip_message(sip->public->transport, resend);
+				sipe_backend_transport_message(SIP_TO_CORE_PRIVATE->transport, resend);
 				g_free(resend);
 			} else {
 				if (msg->response < 200) {
@@ -7533,7 +7533,7 @@ void process_input_message(struct sipe_account_data *sip,struct sipmsg *msg)
 							g_free(auth);
 							resend = sipmsg_to_string(trans->msg);
 							/* resend request */
-							sipe_backend_transport_sip_message(sip->public->transport, resend);
+							sipe_backend_transport_message(SIP_TO_CORE_PRIVATE->transport, resend);
 							g_free(resend);
 						}
 					}
@@ -7698,7 +7698,8 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	g_free(sip->epid);
 	sip->epid = NULL;
 
-	sipe_backend_transport_sip_disconnect(sipe_private->public.transport);
+	sipe_backend_transport_disconnect(sipe_private->transport);
+	sipe_private->transport = NULL;
 	g_free(sipe_private->server_name);
 	sipe_private->server_name = NULL;
 

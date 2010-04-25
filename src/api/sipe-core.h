@@ -127,7 +127,6 @@ struct sipe_core_public {
 	gchar *sip_domain;
 
 	/* server information */
-	struct sipe_transport_connection *transport;
 	guint keepalive_timeout;
 };
 
@@ -208,18 +207,15 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 void sipe_core_deallocate(struct sipe_core_public *sipe_public);
 
 /**
- * Connect to server
+ * Connect to SIP server
  */
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint transport,
 				     const gchar *server,
 				     const gchar *port);
-void sipe_core_transport_sip_connected(struct sipe_transport_connection *conn);
-void sipe_core_transport_sip_message(struct sipe_transport_connection *conn);
-void sipe_core_transport_http_connected(struct sipe_transport_connection *conn);
-void sipe_core_transport_http_message(struct sipe_transport_connection *conn);
-void sipe_core_transport_http_input_error(struct sipe_transport_connection *conn,
-					  const gchar *msg);
+void sipe_core_transport_sip_raw(struct sipe_core_public *sipe_public,
+				 const gchar *buffer);
+void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public);
 
 /**
  * DNS SRV resolved hook
