@@ -246,7 +246,7 @@ sipe_backend_set_remote_codecs(sipe_media_call* call, gchar* participant)
 }
 
 GList*
-sipe_backend_get_local_codecs(struct _sipe_media_call* call)
+sipe_backend_get_local_codecs(sipe_media_call* call)
 {
 	sipe_purple_media	*m = (sipe_purple_media *)call->media;
 	return purple_media_get_codecs(m->m, "sipe-voice");

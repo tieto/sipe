@@ -122,7 +122,12 @@ codec_name_compare(sipe_codec* codec1, sipe_codec* codec2)
 	gchar *name1 = sipe_backend_codec_get_name(codec1);
 	gchar *name2 = sipe_backend_codec_get_name(codec2);
 
-	return g_strcmp0(name1, name2);
+	gint result = g_strcmp0(name1, name2);
+
+	g_free(name1);
+	g_free(name2);
+
+	return result;
 }
 
 static GList *
@@ -273,12 +278,14 @@ sipe_media_sdp_codecs_format(GList *codecs)
 	while (codecs) {
 		sipe_codec *c = codecs->data;
 		GList *params = NULL;
+		gchar *name = sipe_backend_codec_get_name(c);
 
 		gchar *tmp = g_strdup_printf("a=rtpmap:%d %s/%d\r\n",
 			sipe_backend_codec_get_id(c),
-			sipe_backend_codec_get_name(c),
+			name,
 			sipe_backend_codec_get_clock_rate(c));
 
+		g_free(name);
 		g_string_append(result, tmp);
 		g_free(tmp);
 
@@ -434,6 +441,7 @@ sipe_media_create_sdp(sipe_media_call *call) {
 	g_free(sdp_codecs);
 	g_free(sdp_codec_ids);
 	g_free(sdp_candidates);
+	sipe_media_codec_list_free(usable_codecs);
 
 	return body;
 }
@@ -540,6 +548,8 @@ sipe_media_parse_remote_codecs(sipe_media_call *call)
 
 	remote_codecs = sipe_media_parse_codecs(call->sdp_attrs);
 	remote_codecs = sipe_media_prune_remote_codecs(local_codecs, remote_codecs);
+
+	sipe_media_codec_list_free(local_codecs);
 
 	if (remote_codecs) {
 		sipe_media_codec_list_free(call->remote_codecs);
