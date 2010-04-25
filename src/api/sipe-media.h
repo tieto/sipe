@@ -69,14 +69,15 @@ typedef struct _sipe_media_call {
 	GList				*remote_candidates;
 	GList				*remote_codecs;
 	gboolean			legacy_mode;
-	SipeCallState		state;
+
+	gboolean			local_on_hold;
+	gboolean			remote_on_hold;
 
 	void (*candidates_prepared_cb)(struct _sipe_media_call*);
 	void (*media_connected_cb)(struct _sipe_media_call*);
 	void (*call_accept_cb)(struct _sipe_media_call*, gboolean local);
 	void (*call_reject_cb)(struct _sipe_media_call*, gboolean local);
-	void (*call_hold_cb)  (struct _sipe_media_call*, gboolean local);
-	void (*call_unhold_cb)(struct _sipe_media_call*, gboolean local);
+	void (*call_hold_cb)  (struct _sipe_media_call*, gboolean local, gboolean state);
 	void (*call_hangup_cb)(struct _sipe_media_call*, gboolean local);
 } sipe_media_call;
 

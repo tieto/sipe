@@ -414,7 +414,7 @@ sipe_media_create_sdp(sipe_media_call *call, gboolean remote_candidate) {
 	gchar *sdp_codecs = sipe_media_sdp_codecs_format(usable_codecs);
 	gchar *sdp_codec_ids = sipe_media_sdp_codec_ids_format(usable_codecs);
 	gchar *sdp_candidates = sipe_media_sdp_candidates_format(local_candidates, call, remote_candidate);
-	gchar *inactive = call->state == SIPE_CALL_HELD ? "a=inactive\r\n" : "";
+	gchar *inactive = (call->local_on_hold || call->remote_on_hold) ? "a=inactive\r\n" : "";
 
 	gchar *body = g_strdup_printf(
 		"v=0\r\n"
@@ -454,7 +454,7 @@ sipe_invite_call(struct sipe_account_data *sip, TransCallback tc)
 		"Contact: %s%s\r\n"
 		"Content-Type: application/sdp\r\n",
 		contact,
-		call->state == SIPE_CALL_HELD ? ";+sip.rendering=\"no\"" : "");
+		(call->local_on_hold || call->remote_on_hold) ? ";+sip.rendering=\"no\"" : "");
 	g_free(contact);
 
 	body = sipe_media_create_sdp(call, TRUE);
@@ -464,17 +464,6 @@ sipe_invite_call(struct sipe_account_data *sip, TransCallback tc)
 
 	g_free(body);
 	g_free(hdr);
-}
-
-static void
-notify_state_change(struct sipe_account_data *sip, gboolean local) {
-	if (local) {
-		sipe_invite_call(sip, NULL);
-	} else {
-		gchar* body = sipe_media_create_sdp(sip->media_call, TRUE);
-		send_sip_response(SIP_TO_CORE_PRIVATE, sip->media_call->invitation, 200, "OK", body);
-		g_free(body);
-	}
 }
 
 static gboolean
@@ -630,7 +619,6 @@ static void call_accept_cb(sipe_media_call *call, gboolean local)
 
 		sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
 		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", body);
-		call->state = SIPE_CALL_RUNNING;
 
 		g_free(body);
 	}
@@ -646,29 +634,30 @@ static void call_reject_cb(sipe_media_call *call, gboolean local)
 	}
 }
 
-static void call_hold_cb(sipe_media_call *call, gboolean local)
+static gboolean
+sipe_media_send_ack(struct sipe_account_data *sip, struct sipmsg *msg,
+					struct transaction *trans);
+
+static void call_hold_cb(sipe_media_call *call, gboolean local, gboolean state)
 {
-	if (call->state == SIPE_CALL_HELD)
-		return;
+	if (local && (call->local_on_hold != state)) {
+		call->local_on_hold = state;
+		sipe_invite_call(call->sip, sipe_media_send_ack);
+	} else if (call->remote_on_hold != state) {
+		struct sipe_account_data *sip = call->sip;
+		gchar* rsp;
 
-	call->state = SIPE_CALL_HELD;
-	notify_state_change(call->sip, local);
-	sipe_backend_media_hold(call->media, TRUE);
-}
+		call->remote_on_hold = state;
 
-static void call_unhold_cb(sipe_media_call *call, gboolean local)
-{
-	if (call->state == SIPE_CALL_RUNNING)
-		return;
-
-	call->state = SIPE_CALL_RUNNING;
-	notify_state_change(call->sip, local);
-	sipe_backend_media_unhold(call->media, TRUE);
+		sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
+		rsp = sipe_media_create_sdp(sip->media_call, TRUE);
+		send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", rsp);
+		g_free(rsp);
+	}
 }
 
 static void call_hangup_cb(sipe_media_call *call, gboolean local)
 {
-	call->state = SIPE_CALL_FINISHED;
 	if (local) {
 		struct sipe_account_data *sip = call->sip;
 		send_sip_request(SIP_TO_CORE_PRIVATE, "BYE", call->dialog->with, call->dialog->with,
@@ -687,29 +676,18 @@ sipe_media_call_init(struct sipe_account_data *sip, const gchar* participant, gb
 	call->media = sipe_backend_media_new(call, participant, initiator);
 
 	call->legacy_mode = FALSE;
-	call->state = SIPE_CALL_CONNECTING;
 
 	call->candidates_prepared_cb	= candidates_prepared_cb;
 	call->media_connected_cb		= media_connected_cb;
 	call->call_accept_cb			= call_accept_cb;
 	call->call_reject_cb			= call_reject_cb;
 	call->call_hold_cb				= call_hold_cb;
-	call->call_unhold_cb			= call_unhold_cb;
 	call->call_hangup_cb			= call_hangup_cb;
 
+	call->local_on_hold				= FALSE;
+	call->remote_on_hold			= FALSE;
+
 	return call;
-}
-
-void sipe_media_hold(struct sipe_account_data *sip)
-{
-	if (sip->media_call)
-		sipe_backend_media_hold(sip->media_call->media, FALSE);
-}
-
-void sipe_media_unhold(struct sipe_account_data *sip)
-{
-	if (sip->media_call)
-		sipe_backend_media_unhold(sip->media_call->media, FALSE);
 }
 
 void sipe_media_hangup(struct sipe_account_data *sip)
@@ -752,11 +730,10 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 
 	if (sip->media_call) {
 		if (sipe_strequal(sip->media_call->dialog->callid, callid)) {
-			gchar *rsp;
-
 			call = sip->media_call;
 
-			sipmsg_free(call->invitation);
+			if (call->invitation)
+				sipmsg_free(call->invitation);
 			call->invitation = sipmsg_copy(msg);
 
 			sipe_utils_nameval_free(call->sdp_attrs);
@@ -764,31 +741,23 @@ sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg)
 			if (!sipe_media_parse_sdp_attributes_and_candidates(call, call->invitation->body)) {
 				// TODO: handle error
 			}
-
-			if (call->legacy_mode && call->state == SIPE_CALL_RUNNING) {
-				sipe_media_hold(sip);
-				return;
-			}
-
-			if (sipe_utils_nameval_find(call->sdp_attrs, "inactive")) {
-				sipe_media_hold(sip);
-				return;
-			}
-
-			if (call->state == SIPE_CALL_HELD) {
-				sipe_media_unhold(sip);
-				return;
-			}
-
 			if (!sipe_media_parse_remote_codecs(call)) {
 				g_free(call);
 				return;
 			}
 
-			rsp = sipe_media_create_sdp(sip->media_call, TRUE);
-			sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
-			send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", rsp);
-			g_free(rsp);
+			if (call->legacy_mode && !call->remote_on_hold) {
+				sipe_backend_media_hold(call->media, FALSE);
+			} else if (sipe_utils_nameval_find(call->sdp_attrs, "inactive")) {
+				sipe_backend_media_hold(call->media, FALSE);
+			} else if (call->remote_on_hold) {
+				sipe_backend_media_unhold(call->media, FALSE);
+			} else {
+				gchar *rsp = sipe_media_create_sdp(call, FALSE);
+				sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
+				send_sip_response(SIP_TO_CORE_PRIVATE, call->invitation, 200, "OK", rsp);
+				g_free(rsp);
+			}
 		} else {
 			send_sip_response(SIP_TO_CORE_PRIVATE, msg, 486, "Busy Here", NULL);
 		}
