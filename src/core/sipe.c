@@ -80,6 +80,7 @@
 #include "sipe-ft.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
+#include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-sign.h"
 #include "sipe-utils.h"
@@ -793,131 +794,6 @@ static void sipe_group_create (struct sipe_account_data *sip, const gchar *name,
 	g_free(body);
 }
 
-/**
-  * Data structure for scheduled actions
-  */
-
-struct scheduled_action {
-	/**
-	 * Name of action.
-	 * Format is <Event>[<Data>...]
-	 * Example:  <presence><sip:user@domain.com> or <registration>
-	 */
-	gchar *name;
-	guint timeout_handler;
-	gboolean repetitive;
-	Action action;
-	GDestroyNotify destroy;
-	struct sipe_core_private *sipe_private;
-	void *payload;
-};
-
-/**
-  * A timer callback
-  * Should return FALSE if repetitive action is not needed
-  */
-static gboolean sipe_scheduled_exec(struct scheduled_action *sched_action)
-{
-	gboolean ret;
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_scheduled_exec: executing");
-	sched_action->sipe_private->timeouts = g_slist_remove(sched_action->sipe_private->timeouts, sched_action);
-	SIPE_DEBUG_INFO("sipe_private->timeouts count:%d after removal", g_slist_length(sched_action->sipe_private->timeouts));
-	(sched_action->action)(sched_action->sipe_private, sched_action->payload);
-	ret = sched_action->repetitive;
-	if (sched_action->destroy) {
-		(*sched_action->destroy)(sched_action->payload);
-	}
-	g_free(sched_action->name);
-	g_free(sched_action);
-	return ret;
-}
-
-/**
-  * Kills action timer effectively cancelling
-  * scheduled action
-  *
-  * @param name of action
-  */
-static void sipe_cancel_scheduled_action(struct sipe_core_private *sipe_private,
-					 const gchar *name)
-{
-	GSList *entry;
-
-	if (!sipe_private->timeouts || !name) return;
-
-	entry = sipe_private->timeouts;
-	while (entry) {
-		struct scheduled_action *sched_action = entry->data;
-		if(sipe_strequal(sched_action->name, name)) {
-			GSList *to_delete = entry;
-			entry = entry->next;
-			sipe_private->timeouts = g_slist_delete_link(sipe_private->timeouts, to_delete);
-			SIPE_DEBUG_INFO("purple_timeout_remove: action name=%s", sched_action->name);
-			purple_timeout_remove(sched_action->timeout_handler);
-			if (sched_action->destroy) {
-				(*sched_action->destroy)(sched_action->payload);
-			}
-			g_free(sched_action->name);
-			g_free(sched_action);
-		} else {
-			entry = entry->next;
-		}
-	}
-}
-
-static void
-sipe_schedule_action0(const gchar *name,
-		      int timeout,
-		      gboolean isSeconds,
-		      Action action,
-		      GDestroyNotify destroy,
-		      struct sipe_core_private *sipe_private,
-		      void *payload)
-{
-	struct scheduled_action *sched_action;
-
-	/* Make sure each action only exists once */
-	sipe_cancel_scheduled_action(sipe_private, name);
-
-	SIPE_DEBUG_INFO("scheduling action %s timeout:%d(%s)", name, timeout, isSeconds ? "sec" : "msec");
-	sched_action = g_new0(struct scheduled_action, 1);
-	sched_action->repetitive = FALSE;
-	sched_action->name = g_strdup(name);
-	sched_action->action = action;
-	sched_action->destroy = destroy;
-	sched_action->sipe_private = sipe_private;
-	sched_action->payload = payload;
-	sched_action->timeout_handler = isSeconds ? purple_timeout_add_seconds(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action) :
-						    purple_timeout_add(timeout, (GSourceFunc) sipe_scheduled_exec, sched_action);
-	sipe_private->timeouts = g_slist_append(sipe_private->timeouts, sched_action);
-	SIPE_DEBUG_INFO("sipe_private->timeouts count:%d after addition", g_slist_length(sipe_private->timeouts));
-}
-
-void
-sipe_schedule_action(const gchar *name,
-		     int timeout,
-		     Action action,
-		     GDestroyNotify destroy,
-		     struct sipe_core_private *sipe_private,
-		     void *payload)
-{
-	sipe_schedule_action0(name, timeout, TRUE, action, destroy, sipe_private, payload);
-}
-
-/**
-  * Same as sipe_schedule_action() but timeout is in milliseconds.
-  */
-static void
-sipe_schedule_action_msec(const gchar *name,
-			  int timeout,
-			  Action action,
-			  GDestroyNotify destroy,
-			  struct sipe_core_private *sipe_private,
-			  void *payload)
-{
-	sipe_schedule_action0(name, timeout, FALSE, action, destroy, sipe_private, payload);
-}
-
 static void
 sipe_sched_calendar_status_update(struct sipe_account_data *sip,
 				  time_t calculate_from);
@@ -1075,12 +951,12 @@ sipe_sched_calendar_status_update(struct sipe_account_data *sip,
 	SIPE_DEBUG_INFO("sipe_sched_calendar_status_update: next start time    : %s",
 			asctime(localtime(&next_start)));
 
-	sipe_schedule_action("<+2005-cal-status>",
-			     (int)(next_start - time(NULL)),
-			     update_calendar_status,
-			     NULL,
-			     SIP_TO_CORE_PRIVATE,
-			     NULL);
+	sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+			      "<+2005-cal-status>",
+			      NULL,
+			      next_start - time(NULL),
+			      update_calendar_status,
+			      NULL);
 }
 
 /**
@@ -1105,12 +981,12 @@ sipe_sched_calendar_status_self_publish(struct sipe_account_data *sip,
 	SIPE_DEBUG_INFO("sipe_sched_calendar_status_self_publish: next start time    : %s",
 			asctime(localtime(&next_start)));
 
-	sipe_schedule_action("<+2007-cal-status>",
-			     (int)(next_start - time(NULL)),
-			     publish_calendar_status_self,
-			     NULL,
-			     SIP_TO_CORE_PRIVATE,
-			     NULL);
+	sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+			      "<+2007-cal-status>",
+			      NULL,
+			      next_start - time(NULL),
+			      publish_calendar_status_self,
+			      NULL);
 }
 
 static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg *msg, gboolean request, gboolean benotify);
@@ -1461,12 +1337,12 @@ void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 			/* schedule 2 sec to capture idle flag */
 			action_name = g_strdup_printf("<%s>", "+set-status");
-			sipe_schedule_action(action_name,
-					     SIPE_IDLE_SET_DELAY,
-					     send_presence_status,
-					     NULL,
-					     SIP_TO_CORE_PRIVATE,
-					     NULL);
+			sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+					      action_name,
+					      NULL,
+					      SIPE_IDLE_SET_DELAY,
+					      send_presence_status,
+					      NULL);
 			g_free(action_name);
 		}
 	}
@@ -1623,7 +1499,7 @@ void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *gr
 
 	if (g_slist_length(b->groups) < 1) {
 		gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy->name);
-		sipe_cancel_scheduled_action(SIP_TO_CORE_PRIVATE, action_name);
+		sipe_schedule_cancel(SIP_TO_CORE_PRIVATE, action_name);
 		g_free(action_name);
 
 		g_hash_table_remove(SIP_TO_CORE_PRIVATE->buddies, buddy->name);
@@ -1690,7 +1566,12 @@ sipe_buddy_subscribe_cb(char *buddy_name,
 	guint time_range = (g_hash_table_size(SIP_TO_CORE_PRIVATE->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
 
-	sipe_schedule_action_msec(action_name, timeout, sipe_subscribe_presence_single, g_free, SIP_TO_CORE_PRIVATE, g_strdup(buddy_name));
+	sipe_schedule_mseconds(SIP_TO_CORE_PRIVATE,
+			       action_name,
+			       g_strdup(buddy_name),
+			       timeout,
+			       sipe_subscribe_presence_single,
+			       g_free);
 	g_free(action_name);
 }
 
@@ -2849,12 +2730,12 @@ sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 	sipe_domino_update_calendar(sip);
 
 	/* schedule repeat */
-	sipe_schedule_action("<+update-calendar>",
-			     UPDATE_CALENDAR_INTERVAL,
-			     (Action)sipe_core_update_calendar,
-			     NULL,
-			     SIP_TO_CORE_PRIVATE,
-			     NULL);
+	sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+			      "<+update-calendar>",
+			      NULL,
+			      UPDATE_CALENDAR_INTERVAL,
+			      (sipe_schedule_action)sipe_core_update_calendar,
+			      NULL);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: finished.");
 }
@@ -3317,12 +3198,12 @@ static void sipe_process_roaming_self(struct sipe_account_data *sip, struct sipm
 		send_publish_category_initial(sip);
 		sip->initial_state_published = TRUE;
 		/* dalayed run */
-		sipe_schedule_action("<+update-calendar>",
-				     UPDATE_CALENDAR_DELAY,
-				     (Action)sipe_core_update_calendar,
-				     NULL,
-				     SIP_TO_CORE_PRIVATE,
-				     NULL);
+		sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+				      "<+update-calendar>",
+				      NULL,
+				      UPDATE_CALENDAR_DELAY,
+				      (sipe_schedule_action)sipe_core_update_calendar,
+				      NULL);
 		do_update_status = FALSE;
 	} else if (aggreg_avail) {
 
@@ -4481,7 +4362,7 @@ sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 }
 
 static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
-				 SIPE_UNUSED_PARAMETER void *unused)
+				 SIPE_UNUSED_PARAMETER gpointer unused)
 {
 	struct sipe_account_data *sip = sipe_private->temporary;
 	/* register again when security token expires */
@@ -4944,12 +4825,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 
 				if (!sip->reregister_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "registration");
-					sipe_schedule_action(action_name,
-							     expires,
-							     do_register_cb,
-							     NULL,
-							     sipe_private,
-							     NULL);
+					sipe_schedule_seconds(sipe_private,
+							      action_name,
+							      NULL,
+							      expires,
+							      do_register_cb,
+							      NULL);
 					g_free(action_name);
 					sip->reregister_set = TRUE;
 				}
@@ -4981,12 +4862,12 @@ gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg 
 						after eight hours (be five minutes early) */
 						reauth_timeout = (8 * 3600) - 300;
 					}
-					sipe_schedule_action(action_name,
-							     reauth_timeout,
-							     do_reauthenticate_cb,
-							     NULL,
-							     sipe_private,
-							     NULL);
+					sipe_schedule_seconds(sipe_private,
+							      action_name,
+							      NULL,
+							      reauth_timeout,
+							      do_reauthenticate_cb,
+							      NULL);
 					g_free(action_name);
 					sip->reauthenticate_set = TRUE;
 				}
@@ -5936,12 +5817,12 @@ sipe_user_info_has_updated(struct sipe_account_data *sip,
 	if (!sip->initial_state_published) {
 		send_presence_soap(sip, FALSE);
 		/* dalayed run */
-		sipe_schedule_action("<+update-calendar>",
-				     UPDATE_CALENDAR_DELAY,
-				     (Action)sipe_core_update_calendar,
-				     NULL,
-				     SIP_TO_CORE_PRIVATE,
-				     NULL);
+		sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+				      "<+update-calendar>",
+				      NULL,
+				      UPDATE_CALENDAR_DELAY,
+				      (sipe_schedule_action) sipe_core_update_calendar,
+				      NULL);
 	}
 }
 
@@ -6317,22 +6198,22 @@ static void sipe_process_presence_timeout(struct sipe_account_data *sip, struct 
 			struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
 			payload->host    = g_strdup(who);
 			payload->buddies = buddies;
-			sipe_schedule_action(action_name,
-					     timeout,
-					     sipe_subscribe_presence_batched_routed,
-					     sipe_subscribe_presence_batched_routed_free,
-					     SIP_TO_CORE_PRIVATE,
-					     payload);
+			sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+					      action_name,
+					      payload,
+					      timeout,
+					      sipe_subscribe_presence_batched_routed,
+					     sipe_subscribe_presence_batched_routed_free);
 			SIPE_DEBUG_INFO("Resubscription multiple contacts with batched support & route(%s) in %d", who, timeout);
 		}
 
 	} else {
-		sipe_schedule_action(action_name,
-				     timeout,
-				     sipe_subscribe_presence_single,
-				     g_free,
-				     SIP_TO_CORE_PRIVATE,
-				     g_strdup(who));
+		sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+				      action_name,
+				      g_strdup(who),
+				      timeout,
+				      sipe_subscribe_presence_single,
+				      g_free);
 		SIPE_DEBUG_INFO("Resubscription single contact with batched support(%s) in %d", who, timeout);
 	}
 	g_free(action_name);
@@ -6437,12 +6318,12 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 			    g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
 			{
 				gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
-				sipe_schedule_action(action_name,
-						     timeout,
-						     sipe_subscribe_presence_wpending,
-						     NULL,
-						     SIP_TO_CORE_PRIVATE,
-						     NULL);
+				sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+						      action_name,
+						      NULL,
+						      timeout,
+						      sipe_subscribe_presence_wpending,
+						      NULL);
 				g_free(action_name);
 			}
 			else if (sipe_strcase_equal(event, "presence") &&
@@ -6455,12 +6336,12 @@ static void process_incoming_notify(struct sipe_account_data *sip, struct sipmsg
 					sipe_process_presence_timeout(sip, msg, who, timeout);
 				}
 				else {
-					sipe_schedule_action(action_name,
-							     timeout,
-							     sipe_subscribe_presence_single,
-							     g_free,
-							     SIP_TO_CORE_PRIVATE,
-							     g_strdup(who));
+					sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+							      action_name,
+							      g_strdup(who),
+							      timeout,
+							      sipe_subscribe_presence_single,
+							      g_free);
 					SIPE_DEBUG_INFO("Resubscription single contact (%s) in %d", who, timeout);
 				}
 				g_free(action_name);
@@ -7709,21 +7590,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	g_free(sipe_private->server_version);
 	sipe_private->server_version = NULL;
 
-	if (sipe_private->timeouts) {
-		GSList *entry = sipe_private->timeouts;
-		while (entry) {
-			struct scheduled_action *sched_action = entry->data;
-			SIPE_DEBUG_INFO("purple_timeout_remove: action name=%s", sched_action->name);
-			purple_timeout_remove(sched_action->timeout_handler);
-			if (sched_action->destroy) {
-				(*sched_action->destroy)(sched_action->payload);
-			}
-			g_free(sched_action->name);
-			g_free(sched_action);
-			entry = entry->next;
-		}
-	}
-	g_slist_free(sipe_private->timeouts);
+	sipe_schedule_cancel_all(sipe_private);
 
 	if (sip->allow_events) {
 		GSList *entry = sip->allow_events;
@@ -8209,8 +8076,6 @@ static void
 sipe_election_start(struct sipe_account_data *sip,
 		    struct sip_session *session)
 {
-	int election_timeout;
-
 	if (session->is_voting_in_progress) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_election_start: other election is in progress, exiting.");
 		return;
@@ -8229,13 +8094,12 @@ sipe_election_start(struct sipe_account_data *sip,
 		sipe_send_election_request_rm(sip, dialog, session->bid);
 	} SIPE_DIALOG_FOREACH_END;
 
-	election_timeout = 15; /* sec */
-	sipe_schedule_action("<+election-result>",
-			     election_timeout,
-			     sipe_election_result,
-			     NULL,
-			     SIP_TO_CORE_PRIVATE,
-			     session);
+	sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+			      "<+election-result>",
+			      session,
+			      15,
+			      sipe_election_result,
+			      NULL);
 }
 
 /**

@@ -111,6 +111,17 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 
 const gchar *sipe_backend_network_ip_address(void);
 
+/** SCHEDULE *****************************************************************/
+
+gpointer sipe_backend_schedule_seconds(struct sipe_core_public *sipe_public,
+				       guint timeout,
+				       gpointer data);
+gpointer sipe_backend_schedule_mseconds(struct sipe_core_public *sipe_public,
+					guint timeout,
+					gpointer data);
+void sipe_backend_schedule_cancel(struct sipe_core_public *sipe_public,
+				  gpointer data);
+
 /** SETTINGS *****************************************************************/
 
 typedef enum {

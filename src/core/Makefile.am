@@ -38,6 +38,8 @@ libsipe_core_la_SOURCES = \
 	sipe-domino.c \
 	sipe-ews.h \
 	sipe-ews.c \
+	sipe-schedule.h \
+	sipe-schedule.c \
 	sipe-session.h \
 	sipe-session.c \
 	sipe-sign.h \

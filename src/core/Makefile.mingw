@@ -78,6 +78,7 @@ CLEAN_C_SRC = \
 			sipe-cal.c \
 			sipe-chat.c \
 			sipe-dialog.c \
+			sipe-schedule.c \
 			sipe-session.c \
 			sipe-utils.c \
 			sipe-ews.c \
@@ -99,6 +100,7 @@ PURPLE_C_SRC = \
 			../purple/purple-markup.c \
 			../purple/purple-network.c \
 			../purple/purple-plugin.c \
+			../purple/purple-schedule.c \
 			../purple/purple-setting.c \
 			../purple/purple-transport.c \
 			sipe.c \

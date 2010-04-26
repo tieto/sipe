@@ -41,6 +41,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-schedule.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipe.h"
@@ -348,7 +349,8 @@ sip_csta_monitor_stop(struct sipe_account_data *sip)
 }
 
 static void
-sipe_invite_csta_gateway(struct sipe_core_private *sipe_private, void *unused);
+sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
+			 gpointer unused);
 
 /** a callback */
 static gboolean
@@ -404,12 +406,12 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 
 		/* schedule re-invite. RFC4028 */
 		if (sip->csta->dialog->expires) {
-			sipe_schedule_action("<+csta>",
-					     sip->csta->dialog->expires - 60, /* 1 minute earlier */
-					     sipe_invite_csta_gateway,
-					     NULL,
-					     SIP_TO_CORE_PRIVATE,
-					     NULL);
+			sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+					      "<+csta>",
+					      NULL,
+					      sip->csta->dialog->expires - 60, /* 1 minute earlier */
+					      sipe_invite_csta_gateway,
+					      NULL);
 		}
 	}
 
@@ -420,7 +422,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 /*  should be re-entrant as require to sent re-invites every 10 min to refresh */
 static void
 sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
-			 SIPE_UNUSED_PARAMETER void *unused)
+			 SIPE_UNUSED_PARAMETER gpointer unused)
 {
 	struct sipe_account_data *sip = sipe_private->temporary;
 	gchar *hdr;

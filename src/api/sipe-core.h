@@ -150,6 +150,9 @@ char *fix_newlines(const char *st);
 /* Get translated about string. Must be g_free'd(). */
 gchar *sipe_core_about(void);
 
+/* Execute a scheduled action */
+void sipe_core_schedule_execute(gpointer data);
+
 /* menu actions */
 void sipe_core_update_calendar(struct sipe_core_public *sipe_public);
 void sipe_core_reset_status(struct sipe_core_public *sipe_public);
