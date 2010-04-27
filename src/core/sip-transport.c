@@ -556,17 +556,25 @@ void sip_transport_default_contact(struct sipe_core_private *sipe_private)
 static void sip_transport_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
+	sipe_private->service_data = NULL;
 	do_register(SIPE_ACCOUNT_DATA_PRIVATE);
 }
 
+static void resolve_next_service(struct sipe_core_private *sipe_private,
+				 const struct sipe_service_data *start);
 static void sip_transport_error(struct sipe_transport_connection *conn,
 				const gchar *msg)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 
-	sipe_backend_connection_error(SIPE_CORE_PUBLIC, 
-				      SIPE_CONNECTION_ERROR_NETWORK,
-				      msg);
+	/* This failed attempt was based on a DNS SRV record */
+	if (sipe_private->service_data) {
+		resolve_next_service(sipe_private, NULL);
+	} else {
+		sipe_backend_connection_error(SIPE_CORE_PUBLIC, 
+					      SIPE_CONNECTION_ERROR_NETWORK,
+					      msg);
+	}
 	sipe_backend_transport_disconnect(conn);
 	sipe_private->transport = NULL;
 }
@@ -638,6 +646,9 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 		sipe_private->service_data++;
 		if (sipe_private->service_data->protocol == NULL) {
 			guint type = sipe_private->transport_type;
+
+			/* We tried all services */
+			sipe_private->service_data = NULL;
 
 			/* Try connecting to the SIP hostname directly */
 			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; using SIP domain as fallback");

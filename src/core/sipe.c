@@ -7583,6 +7583,7 @@ static void sipe_connection_cleanup(struct sipe_account_data *sip)
 	sipe_private->transport = NULL;
 	g_free(sipe_private->server_name);
 	sipe_private->server_name = NULL;
+	sipe_private->service_data = NULL;
 
 	sipe_auth_free(&sip->registrar);
 	sipe_auth_free(&sip->proxy);
