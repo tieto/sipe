@@ -28,8 +28,6 @@
 #include "sipe-backend.h"
 #include "sipe-core.h"
 
-#include "purple-private.h"
-
 struct purple_schedule {
 	gpointer core_data;
 	guint timeout_handler;
