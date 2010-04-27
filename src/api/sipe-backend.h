@@ -37,6 +37,10 @@
  ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Forward declarations */
 struct sipe_core_public;
 struct sipe_transport_connection;
@@ -155,6 +159,10 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn);
 void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 				    const gchar *buffer);
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
   Local Variables:

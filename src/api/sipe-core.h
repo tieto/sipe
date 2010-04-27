@@ -37,6 +37,10 @@
  ***************** !!! IMPORTANT NOTE FOR BACKEND CODERS !!! *****************
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Activity
  *   - core:    maps this to OCS protocol values
@@ -237,6 +241,10 @@ void sipe_core_dns_resolve_failure(struct sipe_core_public *sipe_public);
  */
 void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
 			   const char *name);
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
   Local Variables:
