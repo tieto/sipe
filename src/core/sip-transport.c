@@ -702,17 +702,12 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 	}
 }
 
-void sipe_core_transport_sip_raw(struct sipe_core_public *sipe_public,
-				 const gchar *buffer)
-{
-	sipe_backend_transport_message(SIPE_CORE_PRIVATE->transport, buffer);
-}
-
 void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public)
 {
 	SIPE_DEBUG_INFO("sending keep alive %d",
 			sipe_public->keepalive_timeout);
-	sipe_core_transport_sip_raw(sipe_public, "\r\n\r\n");
+	sipe_backend_transport_message(SIPE_CORE_PRIVATE->transport,
+				       "\r\n\r\n");
 }
 
 /*

@@ -361,12 +361,6 @@ static void sipe_alias_buddy(PurpleConnection *gc, const char *name,
 	sipe_core_group_set_user(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name);
 }
 
-static int sipe_send_raw(PurpleConnection *gc, const gchar *buf, int len)
-{
-	sipe_core_transport_sip_raw(PURPLE_GC_TO_SIPE_CORE_PUBLIC, buf);
-	return len;
-}
-
 #if PURPLE_VERSION_CHECK(2,5,0)
 static GHashTable *
 sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
@@ -440,7 +434,7 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_ft_new_xfer,			/* new_xfer */
 	NULL,					/* offline_message */
 	NULL,					/* whiteboard_prpl_ops */
-	sipe_send_raw,				/* send_raw */
+	NULL,					/* send_raw */
 	NULL,					/* roomlist_room_serialize */
 	NULL,					/* unregister_user */
 	NULL,					/* send_attention */

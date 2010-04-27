@@ -220,8 +220,6 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint transport,
 				     const gchar *server,
 				     const gchar *port);
-void sipe_core_transport_sip_raw(struct sipe_core_public *sipe_public,
-				 const gchar *buffer);
 void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public);
 
 /**
