@@ -503,10 +503,11 @@ static void
 NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUSED_PARAMETER const char *domain, unsigned char *result)
 {
 	int len_u = 2 * strlen(password); // utf16 should not be more
-	unsigned char unicode_password[len_u];
+	unsigned char *unicode_password = g_malloc(len_u);
 
 	len_u = unicode_strconvcopy((gchar *)unicode_password, password, len_u);
 	MD4 (unicode_password, len_u, result);
+	g_free(unicode_password);
 }
 
 /*
@@ -521,10 +522,10 @@ NTOWFv2 (const char* password, const char *user, const char *domain, unsigned ch
 	unsigned char response_key_nt_v1 [16];
 	int len_user = user ? strlen(user) : 0;
 	int len_domain = domain ? strlen(domain) : 0;
-	unsigned char user_upper[len_user + 1];
 	int len_user_u = 2 * len_user; // utf16 should not be more
 	int len_domain_u = 2 * len_domain; // utf16 should not be more
-	unsigned char buff[(len_user + len_domain)*2];
+	unsigned char *user_upper = g_malloc(len_user + 1);
+	unsigned char *buff = g_malloc((len_user + len_domain)*2);
 	int i;
 
 	/* Uppercase user */
@@ -539,6 +540,9 @@ NTOWFv2 (const char* password, const char *user, const char *domain, unsigned ch
 	NTOWFv1(password, user, domain, response_key_nt_v1);
 
 	HMAC_MD5(response_key_nt_v1, 16, buff, len_user_u + len_domain_u, result);
+
+	g_free(buff);
+	g_free(user_upper);
 }
 
 static void
@@ -586,7 +590,7 @@ EndDefine
 
 		/* client_challenge (8) & temp (temp_len) buff */
 		int temp_len = 8+8+8+4+target_info_len+4;
-		guint8 temp2 [8 + temp_len];
+		guint8 *temp2 = g_malloc(8 + temp_len);
 		memset(temp2, 0, 8 + temp_len); /* init to 0 */
 		temp2[8+0] = 1;
 		temp2[8+1] = 1;
@@ -613,6 +617,8 @@ EndDefine
 		memcpy(tmp+8, client_challenge, 8);
 		HMAC_MD5(response_key_lm, 16, tmp, 16, lm_challenge_response);
 		memcpy(lm_challenge_response+16, client_challenge, 8);
+
+		g_free(temp2);
 
 #ifndef _SIPE_COMPILING_TESTS
 		/* Not used in NTLMv2 */
@@ -708,11 +714,12 @@ SIGNKEY (const unsigned char * random_session_key, gboolean client, unsigned cha
 		: "session key to server-to-client signing key magic constant";
 
 	int len = strlen(magic) + 1;
-	unsigned char md5_input [16 + len];
+	unsigned char *md5_input = g_malloc(16 + len);
 	memcpy(md5_input, random_session_key, 16);
 	memcpy(md5_input + 16, magic, len);
 
 	MD5 (md5_input, len + 16, result);
+	g_free(md5_input);
 }
 
 /*
@@ -750,7 +757,7 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 			: "session key to server-to-client sealing key magic constant";
 
 		int len = strlen(magic) + 1;
-		unsigned char md5_input [16 + len];
+		unsigned char *md5_input = g_malloc(16 + len);
 		int key_len;
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_128)) {
@@ -768,6 +775,7 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 		memcpy(md5_input + key_len, magic, len);
 
 		MD5 (md5_input, key_len + len, result);
+		g_free(md5_input);
 	}
 	else if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_LM_KEY)) /* http://davenport.sourceforge.net/ntlm.html#ntlm1KeyWeakening */
 	{
@@ -845,7 +853,7 @@ MAC (guint32 flags,
 
 		unsigned char seal_key_ [16];
 		guchar hmac[16];
-		guchar tmp[4 + buf_len];
+		guchar *tmp = g_malloc(4 + buf_len);
 
 		/* SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
 		   RC4Init(Handle, SealingKey')
@@ -879,6 +887,7 @@ MAC (guint32 flags,
 			SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): *NO* Key Exchange");
 			memcpy(result+4, hmac, 8);
 		}
+		g_free(tmp);
 	} else {
 		/* The content of the first 4 bytes is irrelevant */
 		guint32 crc = CRC32(buf, strlen(buf));
@@ -1005,7 +1014,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	unsigned char response_key_lm [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
 	unsigned char response_key_nt [NTLMSSP_LN_OR_NT_KEY_LEN]; /* 16 */
 	unsigned char lm_challenge_response [NTLMSSP_LM_RESP_LEN]; /* 24 */
-	unsigned char nt_challenge_response [ntlmssp_nt_resp_len];  /* variable or 24 */
+	unsigned char *nt_challenge_response = g_malloc(ntlmssp_nt_resp_len);  /* variable or 24 */
 	unsigned char session_base_key [16];
 	unsigned char key_exchange_key [16];
 	unsigned char exported_session_key[16];
@@ -1211,6 +1220,8 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 
 	out_buff->value = (guint8 *)tmsg;
 	out_buff->length = msglen;
+
+	g_free(nt_challenge_response);
 
 	return SIP_SEC_E_OK;
 }
