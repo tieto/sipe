@@ -1,4 +1,7 @@
+#include <glib.h>
 #include "sipe-miranda.h"
+#include "sipe-common.h"
+#include "sipe-core.h"
 
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4101)
@@ -76,6 +79,7 @@ extern "C" int __declspec(dllexport) Load(PLUGINLINK *link)
 {
 	pluginLink = link;
 
+	sipe_core_init();
 	mir_getMMI( &mmi );
 
 	// Register the module

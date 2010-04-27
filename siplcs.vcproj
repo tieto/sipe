@@ -250,8 +250,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)/../include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;SIPE_VERSION=\&quot;1.7.1\&quot;;_CRT_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)/../include&quot;;&quot;$(InputDir)/../api&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PACKAGE_VERSION=\&quot;1.11.0\&quot;;_CRT_SECURE_NO_WARNINGS;PACKAGE_BUGREPORT=\&quot;https://sourceforge.net/tracker/?atid=949931&amp;group_id=194563\&quot;;PACKAGE_URL=\&quot;http://sipe.sourceforge.net/\&quot;"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -269,7 +269,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glib-2.0.lib libxml2.lib Ws2_32.lib"
+				AdditionalDependencies="glib-2.0.lib libxml2.lib Ws2_32.lib nss3.lib"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -305,7 +305,43 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\src\core\md4.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-backend.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-sec-ntlm.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-sec.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-core.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-crypt.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-digest.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\miranda\sipe-miranda.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-utils.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\uuid.c"
 				>
 			</File>
 		</Filter>
@@ -314,6 +350,22 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\src\api\sipe-backend.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\api\sipe-common.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\api\sipe-core.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\api\sipe-crypt.h"
+				>
+			</File>
 			<File
 				RelativePath=".\src\miranda\sipe-miranda.h"
 				>
