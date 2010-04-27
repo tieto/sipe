@@ -14,6 +14,7 @@ libsipe_backend_la_SOURCES = \
 	purple-dnsquery.c \
 	purple-markup.c \
 	purple-network.c \
+	purple-schedule.c \
 	purple-setting.c \
 	purple-transport.c
 

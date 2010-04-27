@@ -111,6 +111,17 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 
 const gchar *sipe_backend_network_ip_address(void);
 
+/** SCHEDULE *****************************************************************/
+
+gpointer sipe_backend_schedule_seconds(struct sipe_core_public *sipe_public,
+				       guint timeout,
+				       gpointer data);
+gpointer sipe_backend_schedule_mseconds(struct sipe_core_public *sipe_public,
+					guint timeout,
+					gpointer data);
+void sipe_backend_schedule_cancel(struct sipe_core_public *sipe_public,
+				  gpointer data);
+
 /** SETTINGS *****************************************************************/
 
 typedef enum {
@@ -125,17 +136,31 @@ const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
 
 /** TRANSPORT ****************************************************************/
 
-struct sipe_transport_connection *sipe_backend_transport_sip_connect(struct sipe_core_public *sipe_public,
-								     guint type,
-								     const gchar *server_name,
-								     guint server_port);
-void sipe_backend_transport_sip_disconnect(struct sipe_transport_connection *conn);
-void sipe_backend_transport_sip_message(struct sipe_transport_connection *conn,
-					const gchar *buffer);
-struct sipe_transport_connection *sipe_backend_transport_http_connect(struct sipe_core_public *sipe_public,
-								      guint type,
-								      const gchar *server_name,
-								      guint server_port);
-void sipe_backend_transport_http_disconnect(struct sipe_transport_connection *conn);
-void sipe_backend_transport_http_message(struct sipe_transport_connection *conn,
-					 const gchar *buffer);
+typedef void transport_connected_cb(struct sipe_transport_connection *conn);
+typedef void transport_input_cb(struct sipe_transport_connection *conn);
+typedef void transport_error_cb(struct sipe_transport_connection *conn,
+				const gchar *msg);
+
+typedef struct {
+	guint type;
+	const gchar *server_name;
+	guint server_port;
+	gpointer user_data;
+	transport_connected_cb *connected;
+	transport_input_cb *input;
+	transport_error_cb *error;
+} sipe_connect_setup;
+struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
+								 const sipe_connect_setup *setup);
+void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn);
+void sipe_backend_transport_message(struct sipe_transport_connection *conn,
+				    const gchar *buffer);
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

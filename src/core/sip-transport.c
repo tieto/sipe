@@ -73,7 +73,7 @@
 
 /* Keep in sync with sipe_transport_type! */
 static const char *transport_descriptor[] = { "", "tls", "tcp"};
-#define TRANSPORT_DESCRIPTOR (transport_descriptor[SIP_TO_CORE_PRIVATE->transport_type])
+#define TRANSPORT_DESCRIPTOR (transport_descriptor[SIP_TO_CORE_PRIVATE->transport->type])
 
 static char *genbranch()
 {
@@ -163,7 +163,7 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 		tmp = g_slist_next(tmp);
 	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
-	sipe_backend_transport_sip_message(sip->public->transport, outstr->str);
+	sipe_backend_transport_message(sip->private->transport, outstr->str);
 	g_string_free(outstr, TRUE);
 }
 
@@ -352,7 +352,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
 			sipe_backend_network_ip_address(),
-			sipe_private->public.transport->client_port,
+			sipe_private->transport->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
 			sip->username,
@@ -397,7 +397,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 	} else {
 		sipmsg_free(msg);
 	}
-	sipe_backend_transport_sip_message(sipe_private->public.transport, buf);
+	sipe_backend_transport_message(sipe_private->transport, buf);
 	g_free(buf);
 
 	return trans;
@@ -424,7 +424,7 @@ void do_register_exp(struct sipe_account_data *sip, int expire)
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
 			      sipe_backend_network_ip_address(),
-			      SIP_TO_CORE_PUBLIC->transport->client_port,
+			      SIP_TO_CORE_PRIVATE->transport->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
 			      expires);
@@ -456,7 +456,7 @@ void do_register(struct sipe_account_data *sip)
 	do_register_exp(sip, -1);
 }
 
-void sipe_core_transport_sip_message(struct sipe_transport_connection *conn)
+static void sip_transport_input(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
@@ -548,9 +548,27 @@ void sip_transport_default_contact(struct sipe_core_private *sipe_private)
 
 	sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
 				       sip->username,
-				       sipe_private->public.transport->client_port,
+				       sipe_private->transport->client_port,
 				       sipe_backend_network_ip_address(),
 				       TRANSPORT_DESCRIPTOR);
+}
+
+static void sip_transport_connected(struct sipe_transport_connection *conn)
+{
+	struct sipe_core_private *sipe_private = conn->user_data;
+	do_register(SIPE_ACCOUNT_DATA_PRIVATE);
+}
+
+static void sip_transport_error(struct sipe_transport_connection *conn,
+				const gchar *msg)
+{
+	struct sipe_core_private *sipe_private = conn->user_data;
+
+	sipe_backend_connection_error(SIPE_CORE_PUBLIC, 
+				      SIPE_CONNECTION_ERROR_NETWORK,
+				      msg);
+	sipe_backend_transport_disconnect(conn);
+	sipe_private->transport = NULL;
 }
 
 /* server_name must be g_alloc()'ed */
@@ -559,19 +577,21 @@ void sipe_server_register(struct sipe_core_private *sipe_private,
 				 gchar *server_name,
 				 guint server_port)
 {
-	sipe_private->transport_type = type;
-	sipe_private->server_name = server_name;
-	sipe_private->server_port =
+	sipe_connect_setup setup = {
+		type,
+		server_name,
 		(server_port != 0)           ? server_port :
-		(type == SIPE_TRANSPORT_TLS) ? 5061 : 5060;
+		(type == SIPE_TRANSPORT_TLS) ? 5061 : 5060,
+		sipe_private,
+		sip_transport_connected,
+		sip_transport_input,
+		sip_transport_error
+	};
 
-	sipe_private->public.transport = sipe_backend_transport_sip_connect(SIPE_CORE_PUBLIC,
-									    type,
-									    server_name,
-									    sipe_private->server_port);
-	if (sipe_private->public.transport) {
-		sipe_private->public.transport->user_data = sipe_private;
-	}
+	sipe_private->server_name = server_name;
+	sipe_private->server_port = setup.server_port;
+	sipe_private->transport   = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,
+								   &setup);
 }
 
 struct sipe_service_data {
@@ -579,46 +599,6 @@ struct sipe_service_data {
 	const char *transport;
 	guint type;
 };
-
-/**
- * NOTE: This is BROKEN. Don't ask me to explain why it is in here, I didn't
- *       implement it...
- *
- * This is a global variable, i.e. it affects all SIPE accounts configured
- * for server auto-discovery & SIPE_TRANSPORT_AUTO.
- *
- * - Only one active account:
- *    * if TLS connect fails this will make sure TLS is skipped in the next
- *      attempt (OK)
- *    * when the account disconnects then the next attempt will *NOT* start
- *      with the successful entry, but the next one (BROKEN)
- *
- * - More than one active account:
- *    * when a new account connects then the attempt will *NOT* start with
- *      successful one, but the next one (BROKEN)
- *
- * IMHO this should be removed.
- */
-static const struct sipe_service_data *current_service = NULL;
-
-void sipe_core_transport_sip_ssl_connect_failure(struct sipe_transport_connection *conn,
-						 SIPE_UNUSED_PARAMETER const gchar *msg)
-{
-	struct sipe_core_private *sipe_private = conn->user_data;
-
-	current_service = sipe_private->service_data;
-	if (current_service) {
-		SIPE_DEBUG_INFO("current_service: transport '%s' protocol '%s'",
-				current_service->transport ? current_service->transport : "NULL",
-				current_service->protocol  ? current_service->protocol  : "NULL");
-	}
-}
-
-void sipe_core_transport_sip_connected(struct sipe_transport_connection *conn)
-{
-	struct sipe_core_private *sipe_private = conn->user_data;
-	do_register(SIPE_ACCOUNT_DATA_PRIVATE);
-}
 
 /* Service list for autodection */
 static const struct sipe_service_data service_autodetect[] = {
@@ -641,6 +621,12 @@ static const struct sipe_service_data service_tcp[] = {
 	{ "sipinternal",    "tcp", SIPE_TRANSPORT_TCP }, /* for internal TCP connections */
 	{ "sip",            "tcp", SIPE_TRANSPORT_TCP }, /*.for external TCP connections */
 	{ NULL,             NULL,  0 }
+};
+
+static const struct sipe_service_data *services[] = {
+	service_autodetect, /* SIPE_TRANSPORT_AUTO */
+	service_tls,        /* SIPE_TRANSPORT_TLS  */
+	service_tcp         /* SIPE_TRANSPORT_TCP  */
 };
 
 static void resolve_next_service(struct sipe_core_private *sipe_private,
@@ -712,28 +698,21 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 
 		/* Remember user specified transport type */
 		sipe_private->transport_type = transport;
-
-		switch (transport) {
-		case SIPE_TRANSPORT_AUTO:
-			if (current_service &&
-			    current_service->protocol  != NULL &&
-			    current_service->transport != NULL) {
-				current_service++;
-				resolve_next_service(sipe_private,
-						     current_service);
-			} else {
-				resolve_next_service(sipe_private,
-						     service_autodetect);
-			}
-			break;
-		case SIPE_TRANSPORT_TLS:
-			resolve_next_service(sipe_private, service_tls);
-			break;
-		case SIPE_TRANSPORT_TCP:
-			resolve_next_service(sipe_private, service_tcp);
-			break;
-		}
+		resolve_next_service(sipe_private, services[transport]);
 	}
+}
+
+void sipe_core_transport_sip_raw(struct sipe_core_public *sipe_public,
+				 const gchar *buffer)
+{
+	sipe_backend_transport_message(SIPE_CORE_PRIVATE->transport, buffer);
+}
+
+void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public)
+{
+	SIPE_DEBUG_INFO("sending keep alive %d",
+			sipe_public->keepalive_timeout);
+	sipe_core_transport_sip_raw(sipe_public, "\r\n\r\n");
 }
 
 /*

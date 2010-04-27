@@ -155,27 +155,6 @@ struct sipe_auth_job {
 	struct sipe_account_data * sip;
 };
 
-typedef void (*Action) (struct sipe_core_private *, void *);
-
-/**
-  * Do schedule action for execution in the future.
-  * Non repetitive execution.
-  *
-  * @param   name of action (will be copied)
-  * @param   timeout in seconds
-  * @param   action  callback function
-  * @param   destroy payload destroy function
-  * @param   sipe_core_private
-  * @param   payload callback data (can be NULL, otherwise caller must allocate memory)
-  */
-void
-sipe_schedule_action(const gchar *name,
-		     int timeout,
-		     Action action,
-		     GDestroyNotify destroy,
-		     struct sipe_core_private *sipe_private,
-		     void *payload);
-
 struct sipe_group {
 	gchar *name;
 	int id;
