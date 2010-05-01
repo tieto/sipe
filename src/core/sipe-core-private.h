@@ -44,6 +44,7 @@ struct sipe_core_private {
 	guint  server_port;
 	gchar *server_version;
 	GSList *transactions;
+	struct _sipe_media_call *media_call;
 
 	/* Buddies */
 	GHashTable *buddies;
