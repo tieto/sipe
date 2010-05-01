@@ -236,10 +236,11 @@ sipe_subscribe_conference(struct sipe_account_data *sip,
 
 /** Invite us to the focus callback */
 static gboolean
-process_invite_conf_focus_response(struct sipe_account_data *sip,
+process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 				   struct sipmsg *msg,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session = NULL;
 	char *focus_uri = parse_from(sipmsg_find_header(msg, "To"));
 
@@ -262,7 +263,7 @@ process_invite_conf_focus_response(struct sipe_account_data *sip,
 	if (msg->response >= 200) {
 		/* send ACK to focus */
 		session->focus_dialog->cseq = 0;
-		send_sip_request(SIP_TO_CORE_PRIVATE, "ACK", session->focus_dialog->with, session->focus_dialog->with, NULL, NULL, session->focus_dialog, NULL);
+		send_sip_request(sipe_private, "ACK", session->focus_dialog->with, session->focus_dialog->with, NULL, NULL, session->focus_dialog, NULL);
 		session->focus_dialog->outgoing_invite = NULL;
 		session->focus_dialog->is_established = TRUE;
 	}
@@ -470,10 +471,11 @@ sipe_conf_delete_user(struct sipe_account_data *sip,
 
 /** Invite counterparty to join conference callback */
 static gboolean
-process_invite_conf_response(struct sipe_account_data *sip,
+process_invite_conf_response(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
 			     SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
 
 	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
@@ -484,7 +486,7 @@ process_invite_conf_response(struct sipe_account_data *sip,
 	if (msg->response >= 200) {
 		/* send ACK to counterparty */
 		dialog->cseq--;
-		send_sip_request(SIP_TO_CORE_PRIVATE, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+		send_sip_request(sipe_private, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
 		dialog->outgoing_invite = NULL;
 		dialog->is_established = TRUE;
 	}
@@ -502,7 +504,7 @@ process_invite_conf_response(struct sipe_account_data *sip,
 
 		/* close IM session to counterparty */
 		if (im_dialog) {
-			send_sip_request(SIP_TO_CORE_PRIVATE, "BYE", im_dialog->with, im_dialog->with, NULL, NULL, im_dialog, NULL);
+			send_sip_request(sipe_private, "BYE", im_dialog->with, im_dialog->with, NULL, NULL, im_dialog, NULL);
 			sipe_dialog_remove(session, dialog->with);
 		}
 	}
@@ -562,10 +564,12 @@ sipe_invite_conf(struct sipe_account_data *sip,
 
 /** Create conference callback */
 static gboolean
-process_conf_add_response(struct sipe_account_data *sip,
+process_conf_add_response(struct sipe_core_private *sipe_private,
 			  struct sipmsg *msg,
 			  struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	
 	if (msg->response >= 400) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_conf_add_response: SERVICE response is not 200. Failed to create conference.");
 		/* @TODO notify user of failure to create conference */

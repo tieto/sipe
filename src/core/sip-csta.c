@@ -201,7 +201,7 @@ sip_csta_initialize(struct sipe_account_data *sip,
 
 /** get CSTA feautures's callback */
 static gboolean
-process_csta_get_features_response(SIPE_UNUSED_PARAMETER struct sipe_account_data *sip,
+process_csta_get_features_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
 				   struct sipmsg *msg,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
@@ -251,10 +251,12 @@ sip_csta_get_features(struct sipe_account_data *sip)
 
 /** Monitor Start's callback */
 static gboolean
-process_csta_monitor_start_response(struct sipe_account_data *sip,
+process_csta_monitor_start_response(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg,
 				    SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
 	SIPE_DEBUG_INFO("process_csta_monitor_start_response:\n%s", msg->body ? msg->body : "");
 
 	if (!sip->csta) {
@@ -354,10 +356,12 @@ sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 
 /** a callback */
 static gboolean
-process_invite_csta_gateway_response(struct sipe_account_data *sip,
+process_invite_csta_gateway_response(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
 	SIPE_DEBUG_INFO("process_invite_csta_gateway_response:\n%s", msg->body ? msg->body : "");
 
 	if (!sip->csta) {
@@ -375,7 +379,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 	if (msg->response >= 200) {
 		/* send ACK to CSTA */
 		sip->csta->dialog->cseq = 0;
-		send_sip_request(SIP_TO_CORE_PRIVATE, "ACK", sip->csta->dialog->with, sip->csta->dialog->with, NULL, NULL, sip->csta->dialog, NULL);
+		send_sip_request(sipe_private, "ACK", sip->csta->dialog->with, sip->csta->dialog->with, NULL, NULL, sip->csta->dialog, NULL);
 		sip->csta->dialog->outgoing_invite = NULL;
 		sip->csta->dialog->is_established = TRUE;
 	}
@@ -406,7 +410,7 @@ process_invite_csta_gateway_response(struct sipe_account_data *sip,
 
 		/* schedule re-invite. RFC4028 */
 		if (sip->csta->dialog->expires) {
-			sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+			sipe_schedule_seconds(sipe_private,
 					      "<+csta>",
 					      NULL,
 					      sip->csta->dialog->expires - 60, /* 1 minute earlier */
@@ -523,10 +527,12 @@ sip_csta_close(struct sipe_account_data *sip)
 
 /** Make Call's callback */
 static gboolean
-process_csta_make_call_response(struct sipe_account_data *sip,
+process_csta_make_call_response(struct sipe_core_private *sipe_private,
 				struct sipmsg *msg,
 				SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
 	SIPE_DEBUG_INFO("process_csta_make_call_response:\n%s", msg->body ? msg->body : "");
 
 	if (!sip->csta) {

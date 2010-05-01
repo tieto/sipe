@@ -36,13 +36,14 @@ struct sipe_core_private {
 	 */
 	struct sipe_core_public public;
 
-	/* server information */
+	/* SIP transport information */
 	struct sipe_transport_connection *transport;
 	const struct sipe_service_data *service_data;
 	guint transport_type;
 	gchar *server_name;
 	guint  server_port;
 	gchar *server_version;
+	GSList *transactions;
 
 	/* Buddies */
 	GHashTable *buddies;

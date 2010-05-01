@@ -167,11 +167,13 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 	g_string_free(outstr, TRUE);
 }
 
-void transactions_remove(struct sipe_account_data *sip, struct transaction *trans)
+void transactions_remove(struct sipe_core_private *sipe_private,
+			 struct transaction *trans)
 {
-	if (sip->transactions) {
-		sip->transactions = g_slist_remove(sip->transactions, trans);
-		SIPE_DEBUG_INFO("sip->transactions count:%d after removal", g_slist_length(sip->transactions));
+	if (sipe_private->transactions) {
+		sipe_private->transactions = g_slist_remove(sipe_private->transactions,
+							    trans);
+		SIPE_DEBUG_INFO("SIP transactions count:%d after removal", g_slist_length(sipe_private->transactions));
 
 		if (trans->msg) sipmsg_free(trans->msg);
 		if (trans->payload) {
@@ -184,7 +186,8 @@ void transactions_remove(struct sipe_account_data *sip, struct transaction *tran
 }
 
 static struct transaction *
-transactions_add_buf(struct sipe_account_data *sip, const struct sipmsg *msg, void *callback)
+transactions_add_buf(struct sipe_core_private *sipe_private,
+		     const struct sipmsg *msg, void *callback)
 {
 	const gchar *call_id;
 	const gchar *cseq;
@@ -196,15 +199,17 @@ transactions_add_buf(struct sipe_account_data *sip, const struct sipmsg *msg, vo
 	cseq = sipmsg_find_header(trans->msg, "CSeq");
 	trans->key = g_strdup_printf("<%s><%s>", call_id, cseq);
 	trans->callback = callback;
-	sip->transactions = g_slist_append(sip->transactions, trans);
-	SIPE_DEBUG_INFO("sip->transactions count:%d after addition", g_slist_length(sip->transactions));
+	sipe_private->transactions = g_slist_append(sipe_private->transactions,
+						    trans);
+	SIPE_DEBUG_INFO("SIP transactions count:%d after addition", g_slist_length(sipe_private->transactions));
 	return trans;
 }
 
-struct transaction *transactions_find(struct sipe_account_data *sip, struct sipmsg *msg)
+struct transaction *transactions_find(struct sipe_core_private *sipe_private,
+				      struct sipmsg *msg)
 {
 	struct transaction *trans;
-	GSList *transactions = sip->transactions;
+	GSList *transactions = sipe_private->transactions;
 	const gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	const gchar *cseq = sipmsg_find_header(msg, "CSeq");
 	gchar *key;
@@ -393,7 +398,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 	/* add to ongoing transactions */
 	/* ACK isn't supposed to be answered ever. So we do not keep transaction for it. */
 	if (!sipe_strequal(method, "ACK")) {
-		trans = transactions_add_buf(sip, msg, tc);
+		trans = transactions_add_buf(sipe_private, msg, tc);
 	} else {
 		sipmsg_free(msg);
 	}
@@ -437,7 +442,7 @@ void do_register_exp(struct sipe_account_data *sip, int expire)
 	uri = sip_uri_from_name(SIP_TO_CORE_PUBLIC->sip_domain);
 	to = sip_uri_self(sip);
 	send_sip_request(SIP_TO_CORE_PRIVATE, "REGISTER", uri, to, hdr, "", NULL,
-		process_register_response);
+			 process_register_response);
 	g_free(to);
 	g_free(uri);
 	g_free(hdr);

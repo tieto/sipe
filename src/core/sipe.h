@@ -131,7 +131,6 @@ struct sipe_account_data {
 	GSList *containers; /* MS-PRES containers */
 	struct _PurpleAccount *account;
 	gchar *regcallid;
-	GSList *transactions;
 	GSList *sessions;
 	GSList *groups;
 	GHashTable *filetransfers;
@@ -222,10 +221,10 @@ gchar *auth_header(struct sipe_account_data *sip,
 const gchar *sipe_get_useragent(struct sipe_core_private *sipe_private);
 void process_input_message(struct sipe_account_data *sip,
 			   struct sipmsg *msg);
-gboolean process_register_response(struct sipe_account_data *sip,
+gboolean process_register_response(struct sipe_core_private *sipe_private,
 				   struct sipmsg *msg,
 				   struct transaction *trans);
-gboolean process_subscribe_response(struct sipe_account_data *sip,
+gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg,
 				    struct transaction *trans);
 /* Chat module */

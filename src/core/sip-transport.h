@@ -27,7 +27,9 @@ struct sipe_account_data;
 struct sipe_core_private;
 struct transaction;
 
-typedef gboolean (*TransCallback) (struct sipe_account_data *, struct sipmsg *, struct transaction *);
+typedef gboolean (*TransCallback) (struct sipe_core_private *,
+				   struct sipmsg *,
+				   struct transaction *);
 
 struct transaction_payload {
 	GDestroyNotify destroy;
@@ -49,8 +51,8 @@ struct transaction {
 	struct transaction_payload *payload;
 };
 
-struct transaction *transactions_find(struct sipe_account_data *sip, struct sipmsg *msg);
-void transactions_remove(struct sipe_account_data *sip, struct transaction *trans);
+struct transaction *transactions_find(struct sipe_core_private *sipe_private, struct sipmsg *msg);
+void transactions_remove(struct sipe_core_private *sipe_private, struct transaction *trans);
 void do_register_exp(struct sipe_account_data *sip, int expire);
 void do_register_cb(struct sipe_core_private *sipe_private,
 		    void *unused);

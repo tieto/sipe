@@ -459,7 +459,7 @@ send_soap_request_with_cb(struct sipe_core_private *sipe_private,
 	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
 	                             "Content-Type: application/SOAP+xml\r\n",contact);
 
-	struct transaction *trans = send_sip_request(SIP_TO_CORE_PRIVATE, "SERVICE", from, from, hdr, body, NULL, callback);
+	struct transaction *trans = send_sip_request(sipe_private, "SERVICE", from, from, hdr, body, NULL, callback);
 	trans->payload = payload;
 
 	g_free(from);
@@ -739,7 +739,7 @@ sipe_core_group_set_user(struct sipe_core_public *sipe_public, const gchar * who
 	}
 }
 
-static gboolean process_add_group_response(struct sipe_account_data *sip,
+static gboolean process_add_group_response(struct sipe_core_private *sipe_private,
 					   struct sipmsg *msg,
 					   struct transaction *trans)
 {
@@ -773,14 +773,14 @@ static gboolean process_add_group_response(struct sipe_account_data *sip,
 		g_free(group_id);
 		group->name = g_strdup(ctx->group_name);
 
-		sipe_group_add(SIP_TO_CORE_PRIVATE, group);
+		sipe_group_add(sipe_private, group);
 
-		buddy = g_hash_table_lookup(SIP_TO_CORE_PRIVATE->buddies, ctx->user_name);
+		buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
 		if (buddy) {
 			buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
 		}
 
-		sipe_core_group_set_user(SIP_TO_CORE_PUBLIC, ctx->user_name);
+		sipe_core_group_set_user(SIPE_CORE_PUBLIC, ctx->user_name);
 
 		sipe_xml_free(xml);
 		return TRUE;
@@ -1036,9 +1036,11 @@ sipe_get_subscription_key(const gchar *event,
 	return key;
 }
 
-gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg *msg,
+gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
+				    struct sipmsg *msg,
 				    SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	const gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *key;
@@ -1085,7 +1087,7 @@ gboolean process_subscribe_response(struct sipe_account_data *sip, struct sipmsg
 
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
 	{
-		process_incoming_notify(SIP_TO_CORE_PRIVATE, msg, FALSE, FALSE);
+		process_incoming_notify(sipe_private, msg, FALSE, FALSE);
 	}
 	return TRUE;
 }
@@ -3439,7 +3441,7 @@ get_end_points (struct sipe_core_private *sipe_private,
 }
 
 static gboolean
-process_options_response(SIPE_UNUSED_PARAMETER struct sipe_account_data *sip,
+process_options_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
 			 struct sipmsg *msg,
 			 SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
@@ -3549,10 +3551,11 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 
 
 static gboolean
-process_message_response(struct sipe_account_data *sip,
+process_message_response(struct sipe_core_private *sipe_private,
 			 struct sipmsg *msg,
 			 SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gboolean ret = TRUE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session = sipe_session_find_im(sip, with);
@@ -3616,7 +3619,7 @@ process_message_response(struct sipe_account_data *sip,
 		    msg->response == 480 || /* Temporarily Unavailable */
 		    msg->response == 481) { /* Call/Transaction Does Not Exist */
 			SIPE_DEBUG_INFO_NOFORMAT("process_message_response: assuming dangling IM session, dropping it.");
-			send_sip_request(SIP_TO_CORE_PRIVATE, "BYE", with, with, NULL, NULL, dialog, NULL);
+			send_sip_request(sipe_private, "BYE", with, with, NULL, NULL, dialog, NULL);
 		}
 
 		ret = FALSE;
@@ -3648,10 +3651,11 @@ sipe_election_result(struct sipe_core_private *sipe_private,
 		     void *sess);
 
 static gboolean
-process_info_response(struct sipe_account_data *sip,
+process_info_response(struct sipe_core_private *sipe_private,
 		      struct sipmsg *msg,
 		      SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	struct sip_dialog *dialog;
@@ -3688,7 +3692,7 @@ process_info_response(struct sipe_account_data *sip,
 			}
 
 			if (sipe_is_election_finished(session)) {
-				sipe_election_result(SIP_TO_CORE_PRIVATE,
+				sipe_election_result(sipe_private,
 						     session);
 			}
 
@@ -3814,8 +3818,10 @@ sipe_refer_notify(struct sipe_core_private *sipe_private,
 }
 
 static gboolean
-process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
+process_invite_response(struct sipe_core_private *sipe_private,
+			struct sipmsg *msg, struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session;
 	struct sip_dialog *dialog;
@@ -3885,7 +3891,7 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 			sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, message->body);
 		} else {
 			gchar *tmp_msg = g_strdup_printf(_("Failed to invite %s"), alias);
-			sipe_present_err(SIP_TO_CORE_PRIVATE, session, tmp_msg);
+			sipe_present_err(sipe_private, session, tmp_msg);
 			g_free(tmp_msg);
 		}
 
@@ -3897,13 +3903,13 @@ process_invite_response(struct sipe_account_data *sip, struct sipmsg *msg, struc
 	}
 
 	dialog->cseq = 0;
-	send_sip_request(SIP_TO_CORE_PRIVATE, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+	send_sip_request(sipe_private, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
 	dialog->outgoing_invite = NULL;
 	dialog->is_established = TRUE;
 
 	referred_by = parse_from(sipmsg_find_header(request_msg, "Referred-By"));
 	if (referred_by) {
-		sipe_refer_notify(SIP_TO_CORE_PRIVATE, session, referred_by, 200, "OK");
+		sipe_refer_notify(sipe_private, session, referred_by, 200, "OK");
 		g_free(referred_by);
 	}
 
@@ -4880,10 +4886,11 @@ sipe_get_auth_scheme_name(struct sipe_core_private *sipe_private)
 
 static void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
 
-gboolean process_register_response(struct sipe_account_data *sip, struct sipmsg *msg,
+gboolean process_register_response(struct sipe_core_private *sipe_private,
+				   struct sipmsg *msg,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *tmp;
 	const gchar *expires_header;
 	int expires, i;
@@ -6618,7 +6625,7 @@ send_presence_soap(struct sipe_account_data *sip,
 
 
 static gboolean
-process_send_presence_category_publish_response(struct sipe_account_data *sip,
+process_send_presence_category_publish_response(struct sipe_core_private *sipe_private,
 						struct sipmsg *msg,
 						struct transaction *trans)
 {
@@ -6679,6 +6686,7 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 			}
 
 			if (curVersion) { /* fault exist on this index */
+				struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 				const gchar *container = sipe_xml_attribute(node, "container");
 				const gchar *instance = sipe_xml_attribute(node, "instance");
 				/* key is <category><instance><container> */
@@ -6718,9 +6726,9 @@ process_send_presence_category_publish_response(struct sipe_account_data *sip,
 
 		/* rebublishing with right versions */
 		if (has_device_publication) {
-			send_publish_category_initial(SIP_TO_CORE_PRIVATE);
+			send_publish_category_initial(sipe_private);
 		} else {
-			send_presence_status(SIP_TO_CORE_PRIVATE, NULL);
+			send_presence_status(sipe_private, NULL);
 		}
 	}
 	return TRUE;
@@ -7462,7 +7470,8 @@ void process_input_message(struct sipe_account_data *sip,
 			send_sip_response(sipe_private, msg, 501, "Not implemented", NULL);
 		}
 	} else { /* response */
-		struct transaction *trans = transactions_find(sip, msg);
+		struct transaction *trans = transactions_find(sipe_private,
+							      msg);
 		if (trans) {
 			if (msg->response == 407) {
 				gchar *resend, *auth;
@@ -7535,11 +7544,11 @@ void process_input_message(struct sipe_account_data *sip,
 					if (trans->callback) {
 						SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
 						/* call the callback to process response*/
-						(trans->callback)(sip, msg, trans);
+						(trans->callback)(sipe_private, msg, trans);
 					}
 
 					SIPE_DEBUG_INFO("process_input_message - removing CSeq %d", sip->cseq);
-					transactions_remove(sip, trans);
+					transactions_remove(sipe_private, trans);
 
 				}
 			}
@@ -7816,8 +7825,9 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 	g_slist_free(sip->our_publication_keys);
 
-	while (sip->transactions)
-		transactions_remove(sip, sip->transactions->data);
+	while (sipe_private->transactions)
+		transactions_remove(sipe_private,
+				    sipe_private->transactions->data);
 	g_free(sip);
 	g_free(sipe_private);
 }
@@ -7842,9 +7852,11 @@ static void sipe_searchresults_add_buddy(PurpleConnection *gc, GList *row,
 								 g_list_nth_data(row, 0), _("Other Contacts"), g_list_nth_data(row, 1));
 }
 
-static gboolean process_search_contact_response(struct sipe_account_data *sip, struct sipmsg *msg,
+static gboolean process_search_contact_response(struct sipe_core_private *sipe_private,
+						struct sipmsg *msg,
 						SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	PurpleNotifySearchResults *results;
 	PurpleNotifySearchColumn *column;
 	sipe_xml *searchResults;
@@ -8904,9 +8916,10 @@ sipe_chat_menu(PurpleChat *chat)
 }
 
 static gboolean
-process_get_info_response(struct sipe_account_data *sip, struct sipmsg *msg, struct transaction *trans)
+process_get_info_response(struct sipe_core_private *sipe_private,
+			  struct sipmsg *msg, struct transaction *trans)
 {
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	char *uri = trans->payload->data;
 
 	PurpleNotifyUserInfo *info;
