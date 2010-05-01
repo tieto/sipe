@@ -74,8 +74,13 @@ PurpleXfer *sipe_ft_new_xfer(PurpleConnection *gc,
 			     const char *who);
 
 /* Convenience macros */
-#define PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA ((struct sipe_core_private *)account->gc->proto_data)->temporary
-#define PURPLE_BUDDY_TO_SIPE_ACCOUNT_DATA   ((struct sipe_core_private *)buddy->account->gc->proto_data)->temporary
-#define PURPLE_CHAT_TO_SIPE_ACCOUNT_DATA    ((struct sipe_core_private *)chat->account->gc->proto_data)->temporary
-#define PURPLE_GC_TO_SIPE_ACCOUNT_DATA      ((struct sipe_core_private *)gc->proto_data)->temporary
-#define PURPLE_XFER_TO_SIPE_ACCOUNT_DATA    ((struct sipe_core_private *)xfer->account->gc->proto_data)->temporary
+#define PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE ((struct sipe_core_private *)account->gc->proto_data)
+#define PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE   ((struct sipe_core_private *)buddy->account->gc->proto_data)
+#define PURPLE_CHAT_TO_SIPE_CORE_PRIVATE    ((struct sipe_core_private *)chat->account->gc->proto_data)
+#define PURPLE_GC_TO_SIPE_CORE_PRIVATE      ((struct sipe_core_private *)gc->proto_data)
+#define PURPLE_XFER_TO_SIPE_CORE_PRIVATE    ((struct sipe_core_private *)xfer->account->gc->proto_data)
+#define PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE->temporary
+#define PURPLE_BUDDY_TO_SIPE_ACCOUNT_DATA   PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE->temporary
+#define PURPLE_CHAT_TO_SIPE_ACCOUNT_DATA    PURPLE_CHAT_TO_SIPE_CORE_PRIVATE->temporary
+#define PURPLE_GC_TO_SIPE_ACCOUNT_DATA      PURPLE_GC_TO_SIPE_CORE_PRIVATE->temporary
+#define PURPLE_XFER_TO_SIPE_ACCOUNT_DATA    PURPLE_XFER_TO_SIPE_CORE_PRIVATE->temporary
