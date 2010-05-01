@@ -4357,13 +4357,13 @@ static void process_incoming_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_priva
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	if (sip->media_call && sipe_strequal(sipe_media_get_callid(sip->media_call), callid)) {
 		struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
-		sipe_media_hangup(sip);
+		sipe_media_hangup(sipe_private);
 		if (session) {
 			gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 			sipe_dialog_remove(session, from);
 			g_free(from);
 
-			sipe_session_close(sip, session);
+			sipe_session_close(sipe_private, session);
 		}
 	}
 #endif
@@ -4381,7 +4381,7 @@ static void process_incoming_bye(struct sipe_core_private *sipe_private,
 #if HAVE_VV
 	if (sip->media_call && sipe_strequal(sipe_media_get_callid(sip->media_call), callid)) {
 		// BYE ends a media call
-		sipe_media_hangup(sip);
+		sipe_media_hangup(sipe_private);
 	}
 #endif
 
@@ -4689,7 +4689,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 	/* Invitation to audio call */
 	if (msg->body && strstr(msg->body, "m=audio")) {
-		sipe_media_incoming_invite(sip, msg);
+		sipe_media_incoming_invite(sipe_private, msg);
 		return;
 	}
 #endif
@@ -7579,7 +7579,7 @@ void process_input_message(struct sipe_account_data *sip,
 						SIPE_DEBUG_INFO("got provisional (%d) response with body", msg->response);
 						if (trans->callback) {
 							SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
-							(trans->callback)(sip, msg, trans);
+							(trans->callback)(sipe_private, msg, trans);
 						}
 					} else {
 						/* ignore provisional response */

@@ -57,7 +57,7 @@ typedef gpointer sipe_candidate;
 
 typedef struct _sipe_media_call {
 	sipe_media			media;
-	struct sipe_account_data *sip;
+	struct sipe_core_private *sipe_private;
 	struct sip_session	*session;
 	struct sip_dialog	*dialog;
 
@@ -83,11 +83,11 @@ typedef struct _sipe_media_call {
 	void (*call_hangup_cb)(struct _sipe_media_call*, gboolean local);
 } sipe_media_call;
 
-void sipe_media_initiate_call(struct sipe_account_data *sip, const char *participant);
+void sipe_media_initiate_call(struct sipe_core_private *sipe_private, const char *participant);
 
-void sipe_media_incoming_invite(struct sipe_account_data *sip, struct sipmsg *msg);
+void sipe_media_incoming_invite(struct sipe_core_private *sipe_private, struct sipmsg *msg);
 
-void sipe_media_hangup(struct sipe_account_data *sip);
+void sipe_media_hangup(struct sipe_core_private *sipe_private);
 
 gchar *sipe_media_get_callid(sipe_media_call *call);
 

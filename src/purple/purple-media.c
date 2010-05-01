@@ -45,8 +45,8 @@ typedef struct _sipe_purple_media {
 gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
 		      SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
 {
-	struct sipe_account_data *sip = PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA;
-	sipe_media_initiate_call(sip, who);
+	struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
+	sipe_media_initiate_call(sipe_private, who);
 	return TRUE;
 }
 
@@ -124,7 +124,9 @@ sipe_media *
 sipe_backend_media_new(sipe_media_call *call, const gchar* participant, gboolean initiator)
 {
 	sipe_purple_media	*m = g_new0(sipe_purple_media, 1);
-	PurpleAccount		*acc = call->sip->account;
+	struct sipe_core_private *sipe_private = call->sipe_private;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	PurpleAccount		*acc = sip->account;
 	PurpleMediaManager	*manager = purple_media_manager_get();
 
 	m->m = purple_media_manager_create_media(manager, acc, "fsrtpconference",
