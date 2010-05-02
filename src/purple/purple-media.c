@@ -171,7 +171,16 @@ sipe_backend_media_add_stream(sipe_media *media, const gchar* participant,
 		g_value_set_boolean(&params[0].value, initiator);
 		params[1].name = "compatibility-mode";
 		g_value_init(&params[1].value, G_TYPE_UINT);
+		/**
+		 * !!!TEMPORARY HACK!!!
+		 *
+		 * This enables successful compilation with libnice < 0.0.12
+		 *
+		 * This DOES NOT mean that the resulting code will work!!!
+		 */
+#ifdef NICE_COMPATIBILITY_OC2007R2       
 		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
+#endif
 	} else {
 		transmitter = "rawudp";
 	}
