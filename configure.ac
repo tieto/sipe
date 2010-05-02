@@ -280,7 +280,9 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 					[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]
 			  	),
 				[AC_MSG_RESULT(ok)
-				 with_purple_vv=yes],
+				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.10],
+					[with_purple_vv=yes],
+                                        [AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
 				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)])
 			 ])
 		 CFLAGS=$ac_save_CFLAGS

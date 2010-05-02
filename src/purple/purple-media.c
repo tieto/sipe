@@ -31,7 +31,7 @@
 #include "sipe-common.h"
 #include "sipe-media.h"
 #include "mediamanager.h"
-#include <nice/agent.h>
+#include <agent.h>
 
 #include "request.h"
 #include "core-depurple.h"
