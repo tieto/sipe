@@ -103,6 +103,13 @@ AC_SUBST(QUALITY_CFLAGS)
 dnl Check for pkg-config before using it
 PKG_PROG_PKG_CONFIG
 
+dnl build option: with voice & video support (for all backends)
+AC_ARG_WITH(vv,
+	[AC_HELP_STRING([--with-vv],
+		[compile with voice and video support @<:@default=check@:>@])],
+	[AS_IF([test "x$withval" = xyes], [with_vv=check])],
+	[with_vv=check])
+
 dnl check for Kerberos 5 support
 AC_ARG_WITH([krb5],
 	[AC_HELP_STRING([--with-krb5],
@@ -208,6 +215,7 @@ AC_ARG_ENABLE([purple],
 	[AC_HELP_STRING([--enable-purple], [build purple plugin @<:@default=yes@:>@])],
 	[],
 	[enable_purple=yes])
+with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
 	[PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.0],
 		[dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
@@ -259,45 +267,26 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 			[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
 ])
 			])
+
+		 dnl check whether enable voice and video support
+		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
+		       [test "x$with_vv" = xcheck],  dnl autodetect
+			 [AC_MSG_CHECKING(for purple voice and video support)
+			  AC_RUN_IFELSE(
+				AC_LANG_PROGRAM(
+					[[[
+#include <libpurple/media.h>
+					]]],
+					[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]
+			  	),
+				[AC_MSG_RESULT(ok)
+				 with_purple_vv=yes],
+				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)])
+			 ])
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS],
 		[enable_purple=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
-
-dnl check whether enable voice and video support
-AS_IF([test "x$enable_purple" = xno], [with_vv=no],
-	[AC_ARG_WITH(vv,
-		[AC_HELP_STRING([--with-vv],
-			[compile with voice and video support @<:@default=check@:>@])],
-		[AS_IF([test "x$withval" = xyes], [with_vv=check])],
-		[with_vv=check])
-	])
-
-AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
-      [test "x$with_vv" = xcheck],  dnl autodetect
-	[AC_MSG_CHECKING(for purple voice and video support)
-	  ac_save_CFLAGS=$CFLAGS
-	  ac_save_LDFLAGS=$LDFLAGS
-	  CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
-	  LDFLAGS="$PURPLE_LDFLAGS $PURPLE_LIBS"
-	  AC_RUN_IFELSE(
-	    AC_LANG_PROGRAM(
-		  [[[
-#include <libpurple/media.h>
-		  ]]],
-		  [return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]
-		),
-	    [AC_MSG_RESULT(ok)
-	     AC_DEFINE(HAVE_VV, 1, [Define if voice & video is enabled.])],
-	    [AC_MSG_RESULT(no)
-	     AC_ERROR(your purple hasn't been compiled with voice and video support.)
-	     with_vv=no]
-	  )
-	  CFLAGS=$ac_save_CFLAGS
-	  LDFLAGS=$ac_save_LDFLAGS
-	]
-)
-AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_vv" != xno])
 
 dnl build option: telepathy backend
 AC_ARG_ENABLE([telepathy],
@@ -351,6 +340,11 @@ the headers for the packages "purple" or "telepathy-glib" installed.
 )],
 	[])
 
+dnl enable voice & video support if any backend supports it
+AS_IF([test "x$with_purple_vv" != xno],
+	[AC_DEFINE(HAVE_VV, 1, [Define if voice & video is enabled.])])
+AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_purple_vv" != xno])
+
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
 LOCALE_CPPFLAGS='-DLOCALEDIR=\"$(prefix)/$(DATADIRNAME)/locale\"'
@@ -391,7 +385,7 @@ AS_IF([test "x$enable_purple" = xno],
 	[AS_ECHO("Build purple plugin")
 	 AS_ECHO("PURPLE_CFLAGS  : $PURPLE_CFLAGS")
 	 AS_ECHO("PURPLE_LIBS    : $PURPLE_LIBS")
-	 AS_IF([test "x$with_vv" = xno],
+	 AS_IF([test "x$with_purple_vv" = xno],
 	  [AS_ECHO("Voice and video: disabled")],
 	  [AS_ECHO("Voice and video: enabled")])
 	])
