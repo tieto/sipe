@@ -290,6 +290,22 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 		[enable_purple=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
 
+dnl check if libnice has compatibility patch for OC2007R2
+AS_IF([test x$with_purple_vv = xyes],
+	ac_save_LIBS=$LIBS
+	ac_save_CFLAGS=$CFLAGS
+	LIBS="$NICE_LIBS"
+	CFLAGS="$NICE_CFLAGS"
+
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <agent.h>]],[[return NICE_COMPATIBILITY_OC2007R2]])],
+		AC_DEFINE(NICE_HAS_COMPATIBILITY, 1, [Define if libnice is compatible with Office Communicator]),
+		[])
+
+	CFLAGS=$ac_save_CFLAGS
+	LIBS=$ac_save_LIBS,
+	[]
+)
+
 dnl build option: telepathy backend
 AC_ARG_ENABLE([telepathy],
 	[AC_HELP_STRING([--enable-telepathy], [build telepathy plugin @<:@default=yes@:>@])],

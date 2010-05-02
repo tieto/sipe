@@ -20,6 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "glib.h"
 
 #include "sipe-common.h"
@@ -165,7 +169,7 @@ sipe_backend_media_add_stream(sipe_media *media, const gchar* participant,
 		 *
 		 * This DOES NOT mean that the resulting code will work!!!
 		 */
-#ifdef NICE_COMPATIBILITY_OC2007R2       
+#ifdef NICE_HAS_COMPATIBILITY
 		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
 #endif
 	} else {
