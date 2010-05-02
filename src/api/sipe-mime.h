@@ -24,7 +24,7 @@
  * Callback type for sipe_mime_parts_foreach().
  *
  * @param user_data callback data.
- * @param type      content type of the MIME part.
+ * @param fields    list of @c sipnameval structures with the header fields
  * @param body      text of the MIME part.
  * @param length    length of the body text.
  */
