@@ -24,20 +24,22 @@
 #include "config.h"
 #endif
 
-#include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <glib.h>
+
+#include "sipe-common.h"
+#include "sipmsg.h"
+#include "sip-transport.h"
+#include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
-#include "sipe.h"
-#include "sipmsg.h"
-#include "sipe-session.h"
-#include "sipe-media.h"
 #include "sipe-dialog.h"
+#include "sipe-media.h"
+#include "sipe-session.h"
 #include "sipe-utils.h"
-#include "sipe-common.h"
-#include "sip-transport.h"
+#include "sipe.h"
 
 gchar *
 sipe_media_get_callid(sipe_media_call *call)
@@ -674,7 +676,10 @@ sipe_media_call_init(struct sipe_core_private *sipe_private, const gchar* partic
 
 
 	call->sipe_private = sipe_private;
-	call->media = sipe_backend_media_new(call, participant, initiator);
+	call->media = sipe_backend_media_new(SIPE_CORE_PUBLIC,
+					     /* temporary */ (struct sipe_media_call *)call,
+					     participant,
+					     initiator);
 
 	call->legacy_mode = FALSE;
 
@@ -699,10 +704,12 @@ void sipe_media_hangup(struct sipe_core_private *sipe_private)
 }
 
 void
-sipe_media_initiate_call(struct sipe_core_private *sipe_private, const char *participant)
+sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
+			      const char *participant)
 {
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 	sipe_media_call *call;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 	if (sipe_private->media_call)
 		return;
@@ -717,8 +724,9 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private, const char *par
 	call->dialog->with = g_strdup(participant);
 	call->dialog->ourtag = gentag();
 
-	sipe_backend_media_add_stream(call->media, participant, SIPE_MEDIA_AUDIO,
-								  !call->legacy_mode, TRUE);
+	sipe_backend_media_add_stream(call->media, participant,
+				      SIPE_MEDIA_AUDIO,
+				      !call->legacy_mode, TRUE);
 }
 
 

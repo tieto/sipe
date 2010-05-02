@@ -83,8 +83,6 @@ typedef struct _sipe_media_call {
 	void (*call_hangup_cb)(struct _sipe_media_call*, gboolean local);
 } sipe_media_call;
 
-void sipe_media_initiate_call(struct sipe_core_private *sipe_private, const char *participant);
-
 void sipe_media_incoming_invite(struct sipe_core_private *sipe_private, struct sipmsg *msg);
 
 void sipe_media_hangup(struct sipe_core_private *sipe_private);
@@ -93,9 +91,6 @@ gchar *sipe_media_get_callid(sipe_media_call *call);
 
 
 /* Backend functions **********************************************************/
-
-sipe_media * sipe_backend_media_new(sipe_media_call *call, const gchar* participant,
-									gboolean initiator);
 
 gboolean sipe_backend_media_add_stream(sipe_media *media, const gchar* participant,
 									   SipeMediaType type, gboolean use_nice,

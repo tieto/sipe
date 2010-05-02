@@ -44,6 +44,8 @@ extern "C" {
 /* Forward declarations */
 struct sipe_core_public;
 struct sipe_transport_connection;
+struct sipe_media_call;
+struct sipe_media;
 
 /** MISC. STUFF **************************************************************/
 /**
@@ -110,6 +112,13 @@ void sipe_backend_dns_query(struct sipe_core_public *sipe_public,
 gchar *sipe_backend_markup_css_property(const gchar *style,
 					const gchar *option);
 gchar *sipe_backend_markup_strip_html(const gchar *html);
+
+/** MEDIA ********************************************************************/
+
+struct sipe_media *sipe_backend_media_new(struct sipe_core_public *sipe_public,
+					  struct sipe_media_call *call,
+					  const gchar *participant,
+					  gboolean initiator);
 
 /** NETWORK ******************************************************************/
 

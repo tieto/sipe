@@ -41,6 +41,9 @@
 #include "connection.h"
 #include "core.h"
 #include "dnssrv.h"
+#ifdef HAVE_VV
+#include "media.h"
+#endif
 #include "prpl.h"
 #include "plugin.h"
 #include "request.h"
@@ -274,6 +277,7 @@ static void sipe_login(PurpleAccount *account)
 	sipe_public->backend_private = purple_private = g_new0(struct sipe_backend_private, 1);
 	purple_private->public = sipe_public;
 	purple_private->gc = gc;
+	purple_private->account = account;
 
 #ifdef HAVE_LIBKRB5
 	if (purple_account_get_bool(account, "krb5", FALSE))
@@ -370,15 +374,23 @@ sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 	g_hash_table_insert(table, "login_label", (gpointer)_("user@company.com"));
 	return table;
 }
-#endif
 
+#if PURPLE_VERSION_CHECK(2,6,0)
 #ifdef HAVE_VV
-extern gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
-									PurpleMediaSessionType type);
-extern PurpleMediaCaps sipe_get_media_caps(PurpleAccount *account, const char *who);
-#else
-#define sipe_initiate_media NULL
-#define sipe_get_media_caps NULL
+static gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
+				    SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
+{
+	sipe_core_media_initiate_call(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC, who);
+	return TRUE;
+}
+
+static PurpleMediaCaps sipe_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account,
+					   SIPE_UNUSED_PARAMETER const char *who)
+{
+	return PURPLE_MEDIA_CAPS_AUDIO;
+}
+#endif
+#endif
 #endif
 
 static PurplePluginProtocolInfo prpl_info =
@@ -456,8 +468,13 @@ static PurplePluginProtocolInfo prpl_info =
 #if PURPLE_VERSION_CHECK(2,5,0)
 	sipe_get_account_text_table,		/* get_account_text_table */
 #if PURPLE_VERSION_CHECK(2,6,0)
-	sipe_initiate_media,	/* initiate_media */
-	sipe_get_media_caps,	/* get_media_caps */
+#ifdef HAVE_VV
+	sipe_initiate_media,			/* initiate_media */
+	sipe_get_media_caps,			/* get_media_caps */
+#else
+	NULL,					/* initiate_media */
+	NULL,					/* get_media_caps */
+#endif
 #if PURPLE_VERSION_CHECK(2,7,0)
 	NULL,					/* get_moods */
 #endif

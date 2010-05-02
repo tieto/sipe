@@ -22,39 +22,23 @@
 
 #include "glib.h"
 
-#include "sipe-core.h"
-
-//TODO: these two includes should be eliminated
-#include "../core/sipe.h"
-#include "../core/sipe-core-private.h"
-
 #include "sipe-common.h"
-#include "sipe-media.h"
-#include "mediamanager.h"
-#include <agent.h>
 
+#include "mediamanager.h"
 #include "request.h"
-#include "core-depurple.h"
+#include "agent.h"
+
+#include "sipe-backend.h"
+#include "sipe-core.h"
+#include "sipe-media.h"
+
+#include "purple-private.h"
 
 typedef struct _sipe_purple_media {
 	PurpleMedia *m;
 	// Prevent infinite recursion in on_stream_info_cb
 	gboolean	in_recursion;
 } sipe_purple_media;
-
-gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
-		      SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
-{
-	struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
-	sipe_media_initiate_call(sipe_private, who);
-	return TRUE;
-}
-
-PurpleMediaCaps sipe_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account,
-									SIPE_UNUSED_PARAMETER const char *who)
-{
-	return PURPLE_MEDIA_CAPS_AUDIO;
-}
 
 static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type);
 static PurpleMediaCandidateType sipe_candidate_type_to_purple(SipeCandidateType type);
@@ -120,17 +104,20 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		call->call_hangup_cb(call, local);
 }
 
-sipe_media *
-sipe_backend_media_new(sipe_media_call *call, const gchar* participant, gboolean initiator)
+struct sipe_media *
+sipe_backend_media_new(struct sipe_core_public *sipe_public,
+		       struct sipe_media_call *call,
+		       const gchar *participant,
+		       gboolean initiator)
 {
-	sipe_purple_media	*m = g_new0(sipe_purple_media, 1);
-	struct sipe_core_private *sipe_private = call->sipe_private;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleAccount		*acc = sip->account;
-	PurpleMediaManager	*manager = purple_media_manager_get();
+	sipe_purple_media *m = g_new0(sipe_purple_media, 1);
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleMediaManager *manager = purple_media_manager_get();
 
-	m->m = purple_media_manager_create_media(manager, acc, "fsrtpconference",
-											 participant, initiator);
+	m->m = purple_media_manager_create_media(manager,
+						 purple_private->account,
+						 "fsrtpconference",
+						 participant, initiator);
 
 	g_signal_connect(G_OBJECT(m->m), "candidates-prepared",
 						G_CALLBACK(on_candidates_prepared_cb), call);
@@ -139,7 +126,7 @@ sipe_backend_media_new(sipe_media_call *call, const gchar* participant, gboolean
 	g_signal_connect(G_OBJECT(m->m), "state-changed",
 						G_CALLBACK(on_state_changed_cb), call);
 
-	return (sipe_media *)m;
+	return (struct sipe_media *)m;
 }
 
 void
