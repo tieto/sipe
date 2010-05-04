@@ -20,10 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "glib.h"
 
 #include "sipe-common.h"
@@ -162,16 +158,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		g_value_set_boolean(&params[0].value, initiator);
 		params[1].name = "compatibility-mode";
 		g_value_init(&params[1].value, G_TYPE_UINT);
-		/**
-		 * !!!TEMPORARY HACK!!!
-		 *
-		 * This enables successful compilation with libnice < 0.0.12
-		 *
-		 * This DOES NOT mean that the resulting code will work!!!
-		 */
-#ifdef NICE_HAS_COMPATIBILITY
 		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
-#endif
 	} else {
 		transmitter = "rawudp";
 	}

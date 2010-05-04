@@ -280,7 +280,7 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 					[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]
 			  	),
 				[AC_MSG_RESULT(ok)
-				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.11],
+				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.12],
 					[with_purple_vv=yes],
                                         [AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
 				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)])
@@ -289,26 +289,6 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 		 LIBS=$ac_save_LIBS],
 		[enable_purple=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
-
-dnl check if libnice has compatibility patch for OC2007R2
-AS_IF([test x$with_purple_vv = xyes],
-	[ac_save_LIBS=$LIBS
-	 ac_save_CFLAGS=$CFLAGS
-	 LIBS="$NICE_LIBS"
-	 CFLAGS="$NICE_CFLAGS"
-
-	 AC_LINK_IFELSE([AC_LANG_PROGRAM(
-				[[
-#include <agent.h>
-				]],
-				[[
-return NICE_COMPATIBILITY_OC2007R2;
-				]])],
-			[AC_DEFINE(NICE_HAS_COMPATIBILITY, 1, [Define if libnice is compatible with Office Communicator])],
-			[])
-
-	 CFLAGS=$ac_save_CFLAGS
-	 LIBS=$ac_save_LIBS])
 
 dnl build option: telepathy backend
 AC_ARG_ENABLE([telepathy],
