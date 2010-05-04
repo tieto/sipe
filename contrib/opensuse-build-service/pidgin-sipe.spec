@@ -11,10 +11,18 @@
 %ifarch x86_64
 %define purple_develname lib64purple-devel
 %endif
+%if 0%{?mandriva_version} >= 201000
+%ifnarch x86_64
+%define has_libnice 1
+%endif
+%endif
 %endif
 
 %if 0%{?suse_version}
 %define nss_develname mozilla-nss-devel
+%if 0%{?suse_version} >= 1120
+%define has_libnice 1
+%endif
 %else
 %define nss_develname nss-devel
 %endif
@@ -22,8 +30,11 @@
 %if 0%{?suse_version} || 0%{?sles_version}
 %define pkg_group Productivity/Networking/Instant Messenger
 %endif
-%if 0%{?fedora_version}
+%if 0%{?fedora}
 %define pkg_group Applications/Internet
+%if 0%{?fedora} >= 11
+%define has_libnice 1
+%endif
 %endif
 %if 0%{?mandriva_version}
 %define pkg_group Networking/Instant messaging
@@ -33,7 +44,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.10.0
+Version:        1.11.0
 Release:        1
 Source:         %{name}-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -49,6 +60,9 @@ BuildRequires:  libxml2-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
+%if 0%{?has_libnice:1}
+BuildRequires:  libnice-devel
+%endif
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
@@ -148,6 +162,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue May 04 2010 J. D. User <jduser@noreply.com> 1.10.0-*git*
+- add libnice build information discovered through OBS testing
+
 * Mon Apr 12 2010 J. D. User <jduser@noreply.com> 1.10.0-*git*
 - add NSS build information discovered through OBS testing
 
