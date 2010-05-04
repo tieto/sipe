@@ -41,34 +41,55 @@
 #include "sipe-utils.h"
 #include "sipe.h"
 
+struct sipe_media_call_private {
+	struct sipe_media_call public;
+
+	/* private part starts here */
+	struct sipe_core_private *sipe_private;
+	struct sip_session *session;
+	struct sip_dialog *dialog;
+
+	gchar				*remote_ip;
+	guint16				remote_port;
+
+	GSList				*sdp_attrs;
+	struct sipmsg			*invitation;
+	GList				*remote_candidates;
+	gboolean			legacy_mode;
+
+	unsigned			invite_cnt;
+};
+#define SIPE_MEDIA_CALL         ((struct sipe_media_call *) call_private)
+#define SIPE_MEDIA_CALL_PRIVATE ((struct sipe_media_call_private *) call)
+
 gchar *
-sipe_media_get_callid(sipe_media_call *call)
+sipe_media_get_callid(struct sipe_media_call_private *call)
 {
 	return call->dialog->callid;
 }
 
-void sipe_media_codec_list_free(GList *codecs)
+static void sipe_media_codec_list_free(GList *codecs)
 {
 	for (; codecs; codecs = g_list_delete_link(codecs, codecs))
 		sipe_backend_codec_free(codecs->data);
 }
 
-void sipe_media_candidate_list_free(GList *candidates)
+static void sipe_media_candidate_list_free(GList *candidates)
 {
 	for (; candidates; candidates = g_list_delete_link(candidates, candidates))
 		sipe_backend_candidate_free(candidates->data);
 }
 
 static void
-sipe_media_call_free(sipe_media_call *call)
+sipe_media_call_free(struct sipe_media_call_private *call_private)
 {
-	if (call) {
-		sipe_utils_nameval_free(call->sdp_attrs);
-		if (call->invitation)
-			sipmsg_free(call->invitation);
-		sipe_media_codec_list_free(call->remote_codecs);
-		sipe_media_candidate_list_free(call->remote_candidates);
-		g_free(call);
+	if (call_private) {
+		sipe_utils_nameval_free(call_private->sdp_attrs);
+		if (call_private->invitation)
+			sipmsg_free(call_private->invitation);
+		sipe_media_codec_list_free(call_private->public.remote_codecs);
+		sipe_media_candidate_list_free(call_private->remote_candidates);
+		g_free(call_private);
 	}
 }
 
@@ -87,7 +108,7 @@ sipe_media_parse_codecs(GSList *sdp_attrs)
 		int		clock_rate	= atoi(tokens[2]);
 		SipeMediaType type	= SIPE_MEDIA_AUDIO;
 
-		sipe_codec	*codec = sipe_backend_codec_new(id, name, clock_rate, type);
+		struct sipe_backend_codec *codec = sipe_backend_codec_new(id, name, clock_rate, type);
 
 		// TODO: more secure and effective implementation
 		int j = 0;
@@ -119,7 +140,7 @@ sipe_media_parse_codecs(GSList *sdp_attrs)
 }
 
 static gint
-codec_name_compare(sipe_codec* codec1, sipe_codec* codec2)
+codec_name_compare(struct sipe_backend_codec *codec1, struct sipe_backend_codec *codec2)
 {
 	gchar *name1 = sipe_backend_codec_get_name(codec1);
 	gchar *name2 = sipe_backend_codec_get_name(codec2);
@@ -139,7 +160,7 @@ sipe_media_prune_remote_codecs(GList *local_codecs, GList *remote_codecs)
 	GList *pruned_codecs = NULL;
 
 	while (remote_codecs) {
-		sipe_codec *c = remote_codecs->data;
+		struct sipe_backend_codec *c = remote_codecs->data;
 
 		if (g_list_find_custom(local_codecs, c, (GCompareFunc)codec_name_compare)) {
 			pruned_codecs = g_list_append(pruned_codecs, c);
@@ -156,7 +177,7 @@ sipe_media_prune_remote_codecs(GList *local_codecs, GList *remote_codecs)
 static GList *
 sipe_media_parse_remote_candidates_legacy(gchar *remote_ip, guint16	remote_port)
 {
-	sipe_candidate *candidate;
+	struct sipe_backend_candidate *candidate;
 	GList *candidates = NULL;
 
 	candidate = sipe_backend_candidate_new("foundation",
@@ -179,7 +200,7 @@ sipe_media_parse_remote_candidates_legacy(gchar *remote_ip, guint16	remote_port)
 static GList *
 sipe_media_parse_remote_candidates(GSList *sdp_attrs)
 {
-	sipe_candidate *candidate;
+	struct sipe_backend_candidate *candidate;
 	GList *candidates = NULL;
 	const gchar *attr;
 	int i = 0;
@@ -260,7 +281,7 @@ sipe_media_sdp_codec_ids_format(GList *codecs)
 	GString *result = g_string_new(NULL);
 
 	while (codecs) {
-		sipe_codec *c = codecs->data;
+		struct sipe_backend_codec *c = codecs->data;
 
 		gchar *tmp = g_strdup_printf(" %d", sipe_backend_codec_get_id(c));
 		g_string_append(result,tmp);
@@ -278,7 +299,7 @@ sipe_media_sdp_codecs_format(GList *codecs)
 	GString *result = g_string_new(NULL);
 
 	while (codecs) {
-		sipe_codec *c = codecs->data;
+		struct sipe_backend_codec *c = codecs->data;
 		GList *params = NULL;
 		gchar *name = sipe_backend_codec_get_name(c);
 
@@ -313,7 +334,7 @@ sipe_media_sdp_codecs_format(GList *codecs)
 }
 
 static gchar *
-sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call)
+sipe_media_sdp_candidates_format(GList *candidates, struct sipe_media_call_private *call_private)
 {
 	GString *result = g_string_new("");
 	gchar *tmp;
@@ -321,7 +342,7 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call)
 	gchar *password = sipe_backend_candidate_get_password(candidates->data);
 	guint16 rtcp_port = 0;
 
-	if (call->legacy_mode)
+	if (call_private->legacy_mode)
 		return g_string_free(result, FALSE);
 
 	tmp = g_strdup_printf("a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",username, password);
@@ -329,7 +350,7 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call)
 	g_free(tmp);
 
 	while (candidates) {
-		sipe_candidate *c = candidates->data;
+		struct sipe_backend_candidate *c = candidates->data;
 
 		guint16 port;
 		guint16 component;
@@ -391,9 +412,9 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call)
 	}
 
 	// No exchange of remote candidates in the first round of negotiation
-	if ((call->invite_cnt > 1) && call->remote_candidates) {
-		sipe_candidate *first = call->remote_candidates->data;
-		sipe_candidate *second = call->remote_candidates->next->data;
+	if ((call_private->invite_cnt > 1) && call_private->remote_candidates) {
+		struct sipe_backend_candidate *first = call_private->remote_candidates->data;
+		struct sipe_backend_candidate *second = call_private->remote_candidates->next->data;
 		tmp = g_strdup_printf("a=remote-candidates:1 %s %u 2 %s %u\r\n",
 			sipe_backend_candidate_get_ip(first), sipe_backend_candidate_get_port(first),
 			sipe_backend_candidate_get_ip(second), sipe_backend_candidate_get_port(second));
@@ -413,9 +434,10 @@ sipe_media_sdp_candidates_format(GList *candidates, sipe_media_call* call)
 }
 
 static gchar*
-sipe_media_create_sdp(sipe_media_call *call) {
-	GList *usable_codecs = sipe_backend_get_local_codecs(call);
-	GList *local_candidates = sipe_backend_get_local_candidates(call, call->dialog->with);
+sipe_media_create_sdp(struct sipe_media_call_private *call_private) {
+	GList *usable_codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL);
+	GList *local_candidates = sipe_backend_get_local_candidates(SIPE_MEDIA_CALL,
+								    call_private->dialog->with);
 
 	// TODO: more  sophisticated
 	guint16	local_port = sipe_backend_candidate_get_port(local_candidates->data);
@@ -423,8 +445,10 @@ sipe_media_create_sdp(sipe_media_call *call) {
 
 	gchar *sdp_codecs = sipe_media_sdp_codecs_format(usable_codecs);
 	gchar *sdp_codec_ids = sipe_media_sdp_codec_ids_format(usable_codecs);
-	gchar *sdp_candidates = sipe_media_sdp_candidates_format(local_candidates, call);
-	gchar *inactive = (call->local_on_hold || call->remote_on_hold) ? "a=inactive\r\n" : "";
+	gchar *sdp_candidates = sipe_media_sdp_candidates_format(local_candidates,
+								 call_private);
+	gchar *inactive = (call_private->public.local_on_hold ||
+			   call_private->public.remote_on_hold) ? "a=inactive\r\n" : "";
 
 	gchar *body = g_strdup_printf(
 		"v=0\r\n"
@@ -455,10 +479,10 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 	gchar *contact;
 	gchar *body;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	sipe_media_call *call = sipe_private->media_call;
-	struct sip_dialog *dialog = call->dialog;
+	struct sipe_media_call_private *call_private = sipe_private->media_call;
+	struct sip_dialog *dialog = call_private->dialog;
 
-	++(call->invite_cnt);
+	++(call_private->invite_cnt);
 
 	contact = get_contact(sip);
 	hdr = g_strdup_printf(
@@ -468,10 +492,10 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 		"Contact: %s%s\r\n"
 		"Content-Type: application/sdp\r\n",
 		contact,
-		(call->local_on_hold || call->remote_on_hold) ? ";+sip.rendering=\"no\"" : "");
+		(call_private->public.local_on_hold || call_private->public.remote_on_hold) ? ";+sip.rendering=\"no\"" : "");
 	g_free(contact);
 
-	body = sipe_media_create_sdp(call);
+	body = sipe_media_create_sdp(call_private);
 
 	send_sip_request(SIP_TO_CORE_PRIVATE, "INVITE", dialog->with, dialog->with, hdr, body,
 			  dialog, tc);
@@ -481,10 +505,10 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 }
 
 static gboolean
-sipe_media_parse_remote_codecs(sipe_media_call *call);
+sipe_media_parse_remote_codecs(struct sipe_media_call_private *call_private);
 
 static gboolean
-sipe_media_parse_sdp_attributes_and_candidates(sipe_media_call* call, gchar *frame) {
+sipe_media_parse_sdp_attributes_and_candidates(struct sipe_media_call_private *call_private, gchar *frame) {
 	gchar		**lines = g_strsplit(frame, "\r\n", 0);
 	GSList		*sdp_attrs = NULL;
 	gchar		*remote_ip = NULL;
@@ -524,17 +548,17 @@ sipe_media_parse_sdp_attributes_and_candidates(sipe_media_call* call, gchar *fra
 		// No a=candidate in SDP message, revert to OC2005 behaviour
 		sipe_media_parse_remote_candidates_legacy(remote_ip, remote_port);
 		// This seems to be pre-OC2007 R2 UAC
-		call->legacy_mode = TRUE;
+		call_private->legacy_mode = TRUE;
 	}
 
 	if (no_error) {
-		sipe_utils_nameval_free(call->sdp_attrs);
-		sipe_media_candidate_list_free(call->remote_candidates);
+		sipe_utils_nameval_free(call_private->sdp_attrs);
+		sipe_media_candidate_list_free(call_private->remote_candidates);
 
-		call->sdp_attrs			= sdp_attrs;
-		call->remote_ip			= remote_ip;
-		call->remote_port		= remote_port;
-		call->remote_candidates	= remote_candidates;
+		call_private->sdp_attrs			= sdp_attrs;
+		call_private->remote_ip			= remote_ip;
+		call_private->remote_port		= remote_port;
+		call_private->remote_candidates	= remote_candidates;
 	} else {
 		sipe_utils_nameval_free(sdp_attrs);
 		sipe_media_candidate_list_free(remote_candidates);
@@ -544,30 +568,31 @@ sipe_media_parse_sdp_attributes_and_candidates(sipe_media_call* call, gchar *fra
 }
 
 static gboolean
-sipe_media_parse_remote_codecs(sipe_media_call *call)
+sipe_media_parse_remote_codecs(struct sipe_media_call_private *call_private)
 {
-	GList		*local_codecs = sipe_backend_get_local_codecs(call);
-	GList		*remote_codecs;
+	GList *local_codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL);
+	GList *remote_codecs;
 
-	remote_codecs = sipe_media_parse_codecs(call->sdp_attrs);
+	remote_codecs = sipe_media_parse_codecs(call_private->sdp_attrs);
 	remote_codecs = sipe_media_prune_remote_codecs(local_codecs, remote_codecs);
 
 	sipe_media_codec_list_free(local_codecs);
 
 	if (remote_codecs) {
-		sipe_media_codec_list_free(call->remote_codecs);
+		sipe_media_codec_list_free(call_private->public.remote_codecs);
 
-		call->remote_codecs		= remote_codecs;
+		call_private->public.remote_codecs = remote_codecs;
 
-		if (!sipe_backend_set_remote_codecs(call, call->dialog->with)) {
-			printf("ERROR SET REMOTE CODECS"); // TODO
+		if (!sipe_backend_set_remote_codecs(SIPE_MEDIA_CALL,
+						    call_private->dialog->with)) {
+			SIPE_DEBUG_ERROR_NOFORMAT("ERROR SET REMOTE CODECS"); // TODO
 			return FALSE;
 		}
 
 		return TRUE;
 	} else {
 		sipe_media_codec_list_free(remote_codecs);
-		printf("ERROR NO CANDIDATES OR CODECS");
+		SIPE_DEBUG_ERROR_NOFORMAT("ERROR NO CANDIDATES OR CODECS");
 
 		return FALSE;
 	}
@@ -596,11 +621,11 @@ sipe_media_dialog_init(struct sip_session* session, struct sipmsg *msg)
 }
 
 static void
-send_response_with_session_description(sipe_media_call *call, int code, gchar *text)
+send_response_with_session_description(struct sipe_media_call_private *call_private, int code, gchar *text)
 {
-	gchar *body = sipe_media_create_sdp(call);
-	sipmsg_add_header(call->invitation, "Content-Type", "application/sdp");
-	send_sip_response(call->sipe_private, call->invitation, code, text, body);
+	gchar *body = sipe_media_create_sdp(call_private);
+	sipmsg_add_header(call_private->invitation, "Content-Type", "application/sdp");
+	send_sip_response(call_private->sipe_private, call_private->invitation, code, text, body);
 	g_free(body);
 }
 
@@ -609,98 +634,107 @@ sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
 								   struct sipmsg *msg,
 								   struct transaction *trans);
 
-static void candidates_prepared_cb(sipe_media_call *call)
+static void candidates_prepared_cb(struct sipe_media_call *call)
 {
-	if (sipe_backend_media_is_initiator(call->media, call->dialog->with)) {
-		sipe_invite_call(call->sipe_private, sipe_media_process_invite_response);
-	} else if (!call->legacy_mode) {
-		if (!sipe_media_parse_remote_codecs(call)) {
-			g_free(call);
+	struct sipe_media_call_private *call_private = (struct sipe_media_call_private *) call;
+
+	if (sipe_backend_media_is_initiator(call_private->public.backend_private,
+					    call_private->dialog->with)) {
+		sipe_invite_call(call_private->sipe_private, sipe_media_process_invite_response);
+	} else if (!call_private->legacy_mode) {
+		if (!sipe_media_parse_remote_codecs(call_private)) {
+			g_free(call_private);
 			return;
 		}
 
-		send_response_with_session_description(call, 183, "Session Progress");
+		send_response_with_session_description(call_private, 183, "Session Progress");
 	}
 }
 
-static void media_connected_cb(sipe_media_call *call)
+static void media_connected_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call_private *call_private)
 {
-	call = call;
 }
 
-static void call_accept_cb(sipe_media_call *call, gboolean local)
-{
-	if (local) {
-		send_response_with_session_description(call, 200, "OK");
-	}
-}
-
-static void call_reject_cb(sipe_media_call *call, gboolean local)
+static void call_accept_cb(struct sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		send_sip_response(call->sipe_private, call->invitation, 603, "Decline", NULL);
+		send_response_with_session_description(SIPE_MEDIA_CALL_PRIVATE,
+						       200, "OK");
 	}
-	call->sipe_private->media_call = NULL;
-	sipe_media_call_free(call);
+}
+
+static void call_reject_cb(struct sipe_media_call *call, gboolean local)
+{
+	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+
+	if (local) {
+		send_sip_response(call_private->sipe_private, call_private->invitation, 603, "Decline", NULL);
+	}
+	call_private->sipe_private->media_call = NULL;
+	sipe_media_call_free(call_private);
 }
 
 static gboolean
 sipe_media_send_ack(struct sipe_core_private *sipe_private, struct sipmsg *msg,
 					struct transaction *trans);
 
-static void call_hold_cb(sipe_media_call *call, gboolean local, gboolean state)
+static void call_hold_cb(struct sipe_media_call *call, gboolean local, gboolean state)
 {
-	if (local && (call->local_on_hold != state)) {
-		call->local_on_hold = state;
-		sipe_invite_call(call->sipe_private, sipe_media_send_ack);
-	} else if (call->remote_on_hold != state) {
-		call->remote_on_hold = state;
-		send_response_with_session_description(call, 200, "OK");
+	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+
+	if (local && (call_private->public.local_on_hold != state)) {
+		call_private->public.local_on_hold = state;
+		sipe_invite_call(call_private->sipe_private, sipe_media_send_ack);
+	} else if (call_private->public.remote_on_hold != state) {
+		call_private->public.remote_on_hold = state;
+		send_response_with_session_description(call_private, 200, "OK");
 	}
 }
 
-static void call_hangup_cb(sipe_media_call *call, gboolean local)
+static void call_hangup_cb(struct sipe_media_call *call, gboolean local)
 {
+	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+
 	if (local) {
-		send_sip_request(call->sipe_private, "BYE", call->dialog->with, call->dialog->with,
-						NULL, NULL, call->dialog, NULL);
+		send_sip_request(call_private->sipe_private, "BYE", call_private->dialog->with, call_private->dialog->with,
+				 NULL, NULL, call_private->dialog, NULL);
 	}
-	call->sipe_private->media_call = NULL;
-	sipe_media_call_free(call);
+	call_private->sipe_private->media_call = NULL;
+	sipe_media_call_free(call_private);
 }
 
-static sipe_media_call *
+static struct sipe_media_call_private *
 sipe_media_call_init(struct sipe_core_private *sipe_private, const gchar* participant, gboolean initiator)
 {
-	sipe_media_call *call = g_new0(sipe_media_call, 1);
+	struct sipe_media_call_private *call_private = g_new0(struct sipe_media_call_private, 1);
 
+	call_private->sipe_private = sipe_private;
+	call_private->public.backend_private = sipe_backend_media_new(SIPE_CORE_PUBLIC,
+								      SIPE_MEDIA_CALL,
+								      participant,
+								      initiator);
 
-	call->sipe_private = sipe_private;
-	call->media = sipe_backend_media_new(SIPE_CORE_PUBLIC,
-					     /* temporary */ (struct sipe_media_call *)call,
-					     participant,
-					     initiator);
+	call_private->legacy_mode = FALSE;
 
-	call->legacy_mode = FALSE;
+	call_private->public.candidates_prepared_cb = candidates_prepared_cb;
+	call_private->public.media_connected_cb     = media_connected_cb;
+	call_private->public.call_accept_cb         = call_accept_cb;
+	call_private->public.call_reject_cb         = call_reject_cb;
+	call_private->public.call_hold_cb           = call_hold_cb;
+	call_private->public.call_hangup_cb         = call_hangup_cb;
 
-	call->candidates_prepared_cb	= candidates_prepared_cb;
-	call->media_connected_cb		= media_connected_cb;
-	call->call_accept_cb			= call_accept_cb;
-	call->call_reject_cb			= call_reject_cb;
-	call->call_hold_cb				= call_hold_cb;
-	call->call_hangup_cb			= call_hangup_cb;
+	call_private->public.local_on_hold  = FALSE;
+	call_private->public.remote_on_hold = FALSE;
 
-	call->local_on_hold				= FALSE;
-	call->remote_on_hold			= FALSE;
-
-	return call;
+	return call_private;
 }
 
 void sipe_media_hangup(struct sipe_core_private *sipe_private)
 {
-	sipe_media_call *call = sipe_private->media_call;
-	if (call)
-		sipe_backend_media_hangup(call->media, FALSE);
+	struct sipe_media_call_private *call_private = sipe_private->media_call;
+	if (call_private)
+		sipe_backend_media_hangup(call_private->public.backend_private,
+					  FALSE);
 }
 
 void
@@ -709,63 +743,68 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-	sipe_media_call *call;
+	struct sipe_media_call_private *call_private;
 
 	if (sipe_private->media_call)
 		return;
 
-	call = sipe_media_call_init(sipe_private, participant, TRUE);
+	call_private = sipe_media_call_init(sipe_private, participant, TRUE);
 
-	sipe_private->media_call = call;
+	sipe_private->media_call = call_private;
 
-	call->session = sipe_session_add_chat(sip);
-	call->dialog = sipe_dialog_add(call->session);
-	call->dialog->callid = gencallid();
-	call->dialog->with = g_strdup(participant);
-	call->dialog->ourtag = gentag();
+	call_private->session = sipe_session_add_chat(sip);
+	call_private->dialog = sipe_dialog_add(call_private->session);
+	call_private->dialog->callid = gencallid();
+	call_private->dialog->with = g_strdup(participant);
+	call_private->dialog->ourtag = gentag();
 
-	sipe_backend_media_add_stream(call->media, participant,
+	sipe_backend_media_add_stream(call_private->public.backend_private,
+				      participant,
 				      SIPE_MEDIA_AUDIO,
-				      !call->legacy_mode, TRUE);
+				      !call_private->legacy_mode, TRUE);
 }
 
 
 void
-sipe_media_incoming_invite(struct sipe_core_private *sipe_private, struct sipmsg *msg)
+sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
+			   struct sipmsg *msg)
 {
 	const gchar					*callid = sipmsg_find_header(msg, "Call-ID");
 
-	sipe_media_call				*call = sipe_private->media_call;
+	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_session			*session;
 	struct sip_dialog			*dialog;
 	struct sipe_account_data	*sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
-	if (call) {
-		if (sipe_strequal(call->dialog->callid, callid)) {
-			++(call->invite_cnt);
+	if (call_private) {
+		if (sipe_strequal(call_private->dialog->callid, callid)) {
+			++(call_private->invite_cnt);
 
-			if (call->invitation)
-				sipmsg_free(call->invitation);
-			call->invitation = sipmsg_copy(msg);
+			if (call_private->invitation)
+				sipmsg_free(call_private->invitation);
+			call_private->invitation = sipmsg_copy(msg);
 
-			sipe_utils_nameval_free(call->sdp_attrs);
-			call->sdp_attrs = NULL;
-			if (!sipe_media_parse_sdp_attributes_and_candidates(call, call->invitation->body)) {
+			sipe_utils_nameval_free(call_private->sdp_attrs);
+			call_private->sdp_attrs = NULL;
+			if (!sipe_media_parse_sdp_attributes_and_candidates(call_private,
+									    call_private->invitation->body)) {
 				// TODO: handle error
 			}
-			if (!sipe_media_parse_remote_codecs(call)) {
-				g_free(call);
+			if (!sipe_media_parse_remote_codecs(call_private)) {
+				g_free(call_private);
 				return;
 			}
 
-			if (call->legacy_mode && !call->remote_on_hold) {
-				sipe_backend_media_hold(call->media, FALSE);
-			} else if (sipe_utils_nameval_find(call->sdp_attrs, "inactive")) {
-				sipe_backend_media_hold(call->media, FALSE);
-			} else if (call->remote_on_hold) {
-				sipe_backend_media_unhold(call->media, FALSE);
+			if (call_private->legacy_mode && !call_private->public.remote_on_hold) {
+				sipe_backend_media_hold(call_private->public.backend_private,
+							FALSE);
+			} else if (sipe_utils_nameval_find(call_private->sdp_attrs, "inactive")) {
+				sipe_backend_media_hold(call_private->public.backend_private, FALSE);
+			} else if (call_private->public.remote_on_hold) {
+				sipe_backend_media_unhold(call_private->public.backend_private, FALSE);
 			} else {
-				send_response_with_session_description(call, 200, "OK");
+				send_response_with_session_description(call_private,
+								       200, "OK");
 			}
 		} else {
 			send_sip_response(sipe_private, msg, 486, "Busy Here", NULL);
@@ -776,22 +815,23 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private, struct sipmsg
 	session = sipe_session_find_or_add_chat_by_callid(sip, callid);
 	dialog = sipe_media_dialog_init(session, msg);
 
-	call = sipe_media_call_init(sipe_private, dialog->with, FALSE);
-	call->invitation = sipmsg_copy(msg);
-	call->session = session;
-	call->dialog = dialog;
-	call->invite_cnt = 1;
+	call_private = sipe_media_call_init(sipe_private, dialog->with, FALSE);
+	call_private->invitation = sipmsg_copy(msg);
+	call_private->session = session;
+	call_private->dialog = dialog;
+	call_private->invite_cnt = 1;
 
-	sipe_private->media_call = call;
+	sipe_private->media_call = call_private;
 
-	if (!sipe_media_parse_sdp_attributes_and_candidates(call, msg->body)) {
+	if (!sipe_media_parse_sdp_attributes_and_candidates(call_private,
+							    msg->body)) {
 		// TODO error
 	}
 
-	sipe_backend_media_add_stream(call->media, dialog->with, SIPE_MEDIA_AUDIO, !call->legacy_mode, FALSE);
-	sipe_backend_media_add_remote_candidates(call->media, dialog->with, call->remote_candidates);
+	sipe_backend_media_add_stream(call_private->public.backend_private, dialog->with, SIPE_MEDIA_AUDIO, !call_private->legacy_mode, FALSE);
+	sipe_backend_media_add_remote_candidates(call_private->public.backend_private, dialog->with, call_private->remote_candidates);
 
-	send_sip_response(sipe_private, call->invitation, 180, "Ringing", NULL);
+	send_sip_response(sipe_private, call_private->invitation, 180, "Ringing", NULL);
 
 	// Processing continues in candidates_prepared_cb
 }
@@ -801,15 +841,15 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 					SIPE_UNUSED_PARAMETER struct sipmsg *msg,
 					struct transaction *trans)
 {
-	sipe_media_call *call = sipe_private->media_call;
+	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_dialog *dialog;
 	int trans_cseq;
 	int tmp_cseq;
 
-	if (!call || !call->dialog)
+	if (!call_private || !call_private->dialog)
 		return FALSE;
 
-	dialog = call->dialog;
+	dialog = call_private->dialog;
 	tmp_cseq = dialog->cseq;
 
 	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &trans_cseq);
@@ -822,13 +862,14 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 
 static gboolean
 sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
-								   struct sipmsg *msg,
-								   struct transaction *trans)
+				   struct sipmsg *msg,
+				   struct transaction *trans)
 {
 	const gchar* callid = sipmsg_find_header(msg, "Call-ID");
-	sipe_media_call *call = sipe_private->media_call;
+	struct sipe_media_call_private *call_private = sipe_private->media_call;
 
-	if (!call || !sipe_strequal(sipe_media_get_callid(call), callid))
+	if (!call_private ||
+	    !sipe_strequal(sipe_media_get_callid(call_private), callid))
 		return FALSE;
 
 	if (msg->response == 183) {
@@ -837,26 +878,27 @@ sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
 		const gchar *cseq = sipmsg_find_header(msg, "CSeq");
 		gchar *rack = g_strdup_printf("RAck: %s %s\r\n", rseq, cseq);
 
-		if (!sipe_media_parse_sdp_attributes_and_candidates(call, msg->body)) {
+		if (!sipe_media_parse_sdp_attributes_and_candidates(call_private,
+								    msg->body)) {
 			// TODO: handle error
 		}
 
-		if (!sipe_media_parse_remote_codecs(call)) {
-			g_free(call);
+		if (!sipe_media_parse_remote_codecs(call_private)) {
+			g_free(call_private);
 			return FALSE;
 		}
 
-		sipe_backend_media_add_remote_candidates(call->media, call->dialog->with, call->remote_candidates);
+		sipe_backend_media_add_remote_candidates(call_private->public.backend_private, call_private->dialog->with, call_private->remote_candidates);
 
-		sipe_dialog_parse(call->dialog, msg, TRUE);
+		sipe_dialog_parse(call_private->dialog, msg, TRUE);
 
-		send_sip_request(sipe_private, "PRACK", call->dialog->with, call->dialog->with, rack, NULL, call->dialog, NULL);
+		send_sip_request(sipe_private, "PRACK", call_private->dialog->with, call_private->dialog->with, rack, NULL, call_private->dialog, NULL);
 		g_free(rack);
 	} else if (msg->response == 603) {
-		sipe_backend_media_reject(call->media, FALSE);
+		sipe_backend_media_reject(call_private->public.backend_private, FALSE);
 		sipe_media_send_ack(sipe_private, msg, trans);
 	} else {
-		//PurpleMedia* m = (PurpleMedia*) call->media;
+		//PurpleMedia* m = (PurpleMedia*) call_private->public.backend_private;
 		//purple_media_stream_info(m, PURPLE_MEDIA_INFO_ACCEPT, NULL, NULL, FALSE);
 		sipe_media_send_ack(sipe_private, msg, trans);
 		sipe_invite_call(sipe_private, sipe_media_send_ack);

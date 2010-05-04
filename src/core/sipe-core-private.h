@@ -22,6 +22,7 @@
 
 /* Forward declarations */
 struct sipe_service_data;
+struct sipe_media_call_private;
 
 /**
  * Private part of the Sipe data structure
@@ -44,7 +45,6 @@ struct sipe_core_private {
 	guint  server_port;
 	gchar *server_version;
 	GSList *transactions;
-	struct _sipe_media_call *media_call;
 
 	/* Buddies */
 	GHashTable *buddies;
@@ -54,6 +54,9 @@ struct sipe_core_private {
 
 	/* misc. stuff */
 	gchar *useragent;
+
+	/* Voice call */
+	struct sipe_media_call_private *media_call;
 
 	/* the original data structure*/
 	struct sipe_account_data *temporary;

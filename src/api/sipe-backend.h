@@ -115,10 +115,105 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 
 /** MEDIA ********************************************************************/
 
-struct sipe_media *sipe_backend_media_new(struct sipe_core_public *sipe_public,
-					  struct sipe_media_call *call,
-					  const gchar *participant,
-					  gboolean initiator);
+typedef enum {
+	SIPE_CANDIDATE_TYPE_HOST,
+	SIPE_CANDIDATE_TYPE_RELAY,
+	SIPE_CANDIDATE_TYPE_SRFLX
+} SipeCandidateType;
+
+typedef enum {
+	SIPE_COMPONENT_NONE = 0,
+	SIPE_COMPONENT_RTP  = 1,
+	SIPE_COMPONENT_RTCP = 2
+} SipeComponentType;
+
+typedef enum {
+	SIPE_MEDIA_AUDIO,
+	SIPE_MEDIA_VIDEO
+} SipeMediaType;
+
+typedef enum {
+	SIPE_NETWORK_PROTOCOL_TCP,
+	SIPE_NETWORK_PROTOCOL_UDP
+} SipeNetworkProtocol;
+
+struct sipe_media_call;
+struct sipe_backend_media;
+struct sipe_backend_codec;
+struct sipe_backend_candidate;
+
+struct sipe_media_call {
+	struct sipe_backend_media *backend_private;
+
+	void (*candidates_prepared_cb)(struct sipe_media_call *);
+	void (*media_connected_cb)();
+	void (*call_accept_cb)(struct sipe_media_call *, gboolean local);
+	void (*call_reject_cb)(struct sipe_media_call *, gboolean local);
+	void (*call_hold_cb)  (struct sipe_media_call *, gboolean local,
+			       gboolean state);
+	void (*call_hangup_cb)(struct sipe_media_call *, gboolean local);
+
+	GList *remote_codecs;
+	gboolean local_on_hold;
+	gboolean remote_on_hold;
+};
+
+/* Media handling */
+struct sipe_backend_media *sipe_backend_media_new(struct sipe_core_public *sipe_public,
+						  struct sipe_media_call *call,
+						  const gchar *participant,
+						  gboolean initiator);
+gboolean sipe_backend_media_add_stream(struct sipe_backend_media *media,
+				       const gchar *participant,
+				       SipeMediaType type, gboolean use_nice,
+				       gboolean initiator);
+void sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
+					      gchar *participant,
+					      GList *candidates);
+gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
+					 gchar *participant);
+
+/* Codec handling */
+struct sipe_backend_codec *sipe_backend_codec_new(int id,
+				   const char *name,
+				   SipeMediaType type, guint clock_rate);
+void sipe_backend_codec_free(struct sipe_backend_codec *codec);
+int sipe_backend_codec_get_id(struct sipe_backend_codec *codec);
+gchar *sipe_backend_codec_get_name(struct sipe_backend_codec *codec);
+guint sipe_backend_codec_get_clock_rate(struct sipe_backend_codec *codec);
+void sipe_backend_codec_add_optional_parameter(struct sipe_backend_codec *codec,
+					       const gchar *name,
+					       const gchar *value);
+GList *sipe_backend_codec_get_optional_parameters(struct sipe_backend_codec *codec);
+gboolean sipe_backend_set_remote_codecs(struct sipe_media_call *call, gchar *participant);
+GList* sipe_backend_get_local_codecs(struct sipe_media_call *call);
+
+/* Candidate handling */
+struct sipe_backend_candidate * sipe_backend_candidate_new(const gchar *foundation,
+					    SipeComponentType component,
+					    SipeCandidateType type,
+					    SipeNetworkProtocol proto,
+					    const gchar *ip, guint port);
+void sipe_backend_candidate_free(struct sipe_backend_candidate *candidate);
+gchar *sipe_backend_candidate_get_username(struct sipe_backend_candidate *candidate);
+gchar *sipe_backend_candidate_get_password(struct sipe_backend_candidate *candidate);
+gchar *sipe_backend_candidate_get_foundation(struct sipe_backend_candidate *candidate);
+gchar *sipe_backend_candidate_get_ip(struct sipe_backend_candidate *candidate);
+guint sipe_backend_candidate_get_port(struct sipe_backend_candidate *candidate);
+guint32 sipe_backend_candidate_get_priority(struct sipe_backend_candidate *candidate);
+void sipe_backend_candidate_set_priority(struct sipe_backend_candidate *candidate, guint32 priority);
+SipeComponentType sipe_backend_candidate_get_component_type(struct sipe_backend_candidate *candidate);
+SipeCandidateType sipe_backend_candidate_get_type(struct sipe_backend_candidate *candidate);
+SipeNetworkProtocol sipe_backend_candidate_get_protocol(struct sipe_backend_candidate *candidate);
+void sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *candidate,
+						 const gchar *username,
+						 const gchar *password);
+GList* sipe_backend_get_local_candidates(struct sipe_media_call *call,
+					 gchar *participant);
+void sipe_backend_media_hold(struct sipe_backend_media *call, gboolean local);
+void sipe_backend_media_unhold(struct sipe_backend_media *call, gboolean local);
+void sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local);
+void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local);
 
 /** NETWORK ******************************************************************/
 
