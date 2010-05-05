@@ -29,11 +29,31 @@
 #include "sipe-mime.h"
 
 #include "sipe-backend.h"
+#include "sipe-utils.h"
 
 struct gmime_callback_data {
 	sipe_mime_parts_cb callback;
 	gpointer user_data;
 };
+
+static GSList *gmime_fields_to_nameval(GMimeObject *part)
+{
+	GMimeHeaderList *headers = g_mime_object_get_header_list(part);
+	GMimeHeaderIter *iter = g_mime_header_iter_new();
+	GSList *fields = NULL;
+
+	if (g_mime_header_list_get_iter(headers, iter)) {
+		do {
+			fields = sipe_utils_nameval_add(fields,
+							g_mime_header_iter_get_name(iter),
+							g_mime_header_iter_get_value(iter));
+
+		} while (g_mime_header_iter_next(iter));
+	}
+	g_mime_header_iter_free(iter);
+
+	return fields;
+}
 
 static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 			   GMimeObject *part,
@@ -52,14 +72,11 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 
 				if (g_mime_stream_read(stream, content, length) == length) {
 					struct gmime_callback_data *cd = user_data;
-					gchar *type_name = g_mime_content_type_to_string(
-						g_mime_object_get_content_type(part));
+					GSList *fields = gmime_fields_to_nameval(part);
 
-					SIPE_DEBUG_INFO("sipe_mime_parts_foreach: type '%s' length %i", type_name, (int)length);
+					(*(cd->callback))(cd->user_data, fields, content, length);
 
-					(*(cd->callback))(cd->user_data, type_name, content, length);
-
-					g_free(type_name);
+					sipe_utils_nameval_free(fields);
 				}
 				g_free(content);
 			}
@@ -86,6 +103,7 @@ void sipe_mime_parts_foreach(const gchar *type,
 			SIPE_DEBUG_INFO("sipe_mime_parts_foreach: %d parts", g_mime_multipart_get_count(multipart));
 
 			g_mime_multipart_foreach(multipart, gmime_callback, &cd);
+			g_object_unref(multipart);
 		}
 
 		g_object_unref(parser);
