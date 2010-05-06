@@ -80,7 +80,6 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 				}
 				g_free(content);
 			}
-			g_object_unref(stream);
 		}
 	}
 }
