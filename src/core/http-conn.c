@@ -201,6 +201,10 @@ http_conn_parse_url(const char *url,
         char *tmp;
         char *host_port;
 
+	/* Make sure we always return valid information */
+	if (host)    *host = NULL;
+	if (rel_url) *rel_url = NULL;
+
         if(!parts) {
                 return;
         } else if(!parts[0]) {
@@ -271,6 +275,9 @@ static struct sipe_transport_connection *http_conn_setup(HttpConn *http_conn,
 		http_conn_input,
 		http_conn_error
 	};
+
+	if (!host) return NULL;
+
 	return(sipe_backend_transport_connect(sipe_public, &setup));
 }
 
@@ -332,12 +339,15 @@ static void
 http_conn_send0(HttpConn *http_conn,
 		const char *authorization)
 {
-	GString *outstr = g_string_new("");
+	GString *outstr;
 
+	if (!http_conn->host || !http_conn->url) return;
+
+	outstr = g_string_new("");
 	g_string_append_printf(outstr, HTTP_CONN_HEADER,
-				http_conn->method ? http_conn->method : "GET",
-				http_conn->url,
-				http_conn->host);
+			       http_conn->method ? http_conn->method : "GET",
+			       http_conn->url,
+			       http_conn->host);
 	if (sipe_strequal(http_conn->method, "POST")) {
 		g_string_append_printf(outstr, "Content-Length: %d\r\n",
 			http_conn->body ? (int)strlen(http_conn->body) : 0);
