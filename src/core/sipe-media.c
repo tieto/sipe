@@ -438,35 +438,38 @@ sipe_media_create_sdp(struct sipe_media_call_private *call_private) {
 	GList *usable_codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL);
 	GList *local_candidates = sipe_backend_get_local_candidates(SIPE_MEDIA_CALL,
 								    call_private->dialog->with);
+	gchar *body = NULL;
 
-	// TODO: more  sophisticated
-	guint16	local_port = sipe_backend_candidate_get_port(local_candidates->data);
-	const char *ip = sipe_utils_get_suitable_local_ip(-1);
+	if (local_candidates) {
+		// TODO: more  sophisticated
+		guint16	local_port = sipe_backend_candidate_get_port(local_candidates->data);
+		const char *ip = sipe_utils_get_suitable_local_ip(-1);
 
-	gchar *sdp_codecs = sipe_media_sdp_codecs_format(usable_codecs);
-	gchar *sdp_codec_ids = sipe_media_sdp_codec_ids_format(usable_codecs);
-	gchar *sdp_candidates = sipe_media_sdp_candidates_format(local_candidates,
+		gchar *sdp_codecs = sipe_media_sdp_codecs_format(usable_codecs);
+		gchar *sdp_codec_ids = sipe_media_sdp_codec_ids_format(usable_codecs);
+		gchar *sdp_candidates = sipe_media_sdp_candidates_format(local_candidates,
 								 call_private);
-	gchar *inactive = (call_private->public.local_on_hold ||
-			   call_private->public.remote_on_hold) ? "a=inactive\r\n" : "";
+		gchar *inactive = (call_private->public.local_on_hold ||
+				   call_private->public.remote_on_hold) ? "a=inactive\r\n" : "";
 
-	gchar *body = g_strdup_printf(
-		"v=0\r\n"
-		"o=- 0 0 IN IP4 %s\r\n"
-		"s=session\r\n"
-		"c=IN IP4 %s\r\n"
-		"b=CT:99980\r\n"
-		"t=0 0\r\n"
-		"m=audio %d RTP/AVP%s\r\n"
-		"%s"
-		"%s"
-		"%s"
-		"a=encryption:rejected\r\n"
-		,ip, ip, local_port, sdp_codec_ids, sdp_candidates, inactive, sdp_codecs);
+		body = g_strdup_printf(
+			"v=0\r\n"
+			"o=- 0 0 IN IP4 %s\r\n"
+			"s=session\r\n"
+			"c=IN IP4 %s\r\n"
+			"b=CT:99980\r\n"
+			"t=0 0\r\n"
+			"m=audio %d RTP/AVP%s\r\n"
+			"%s"
+			"%s"
+			"%s"
+			"a=encryption:rejected\r\n"
+			,ip, ip, local_port, sdp_codec_ids, sdp_candidates, inactive, sdp_codecs);
 
-	g_free(sdp_codecs);
-	g_free(sdp_codec_ids);
-	g_free(sdp_candidates);
+		g_free(sdp_codecs);
+		g_free(sdp_codec_ids);
+		g_free(sdp_candidates);
+	}
 	sipe_media_codec_list_free(usable_codecs);
 
 	return body;
