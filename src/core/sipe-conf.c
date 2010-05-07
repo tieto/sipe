@@ -709,6 +709,7 @@ void
 sipe_process_conference(struct sipe_account_data *sip,
 			struct sipmsg *msg)
 {
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
 	sipe_xml *xn_conference_info;
 	const sipe_xml *node;
 	const sipe_xml *xn_subject;
@@ -844,11 +845,11 @@ sipe_process_conference(struct sipe_account_data *sip,
 				gboolean prev_locked = session->locked;
 				session->locked = sipe_strequal(locked, "true");
 				if (prev_locked && !session->locked) {
-					sipe_present_info(sip, session,
+					sipe_present_info(sipe_private, session,
 						_("This conference is no longer locked. Additional participants can now join."));
 				}
 				if (!prev_locked && session->locked) {
-					sipe_present_info(sip, session,
+					sipe_present_info(sipe_private, session,
 						_("This conference is locked. Nobody else can join the conference while it is locked."));
 				}
 
@@ -870,18 +871,18 @@ sipe_process_conference(struct sipe_account_data *sip,
 			dialog->with = g_strdup(session->im_mcu_uri);
 
 			/* send INVITE to IM MCU */
-			sipe_invite(sip, session, dialog->with, NULL, NULL, NULL, FALSE);
+			sipe_invite(sipe_private, session, dialog->with, NULL, NULL, NULL, FALSE);
 		}
 	}
 
-	sipe_process_pending_invite_queue(sip, session);
+	sipe_process_pending_invite_queue(sipe_private, session);
 }
 
 void
 sipe_conf_immcu_closed(struct sipe_account_data *sip,
 		       struct sip_session *session)
 {
-	sipe_present_info(sip, session,
+	sipe_present_info(SIP_TO_CORE_PRIVATE, session,
 			  _("You have been disconnected from this conference."));
 	purple_conv_chat_clear_users(PURPLE_CONV_CHAT(session->conv));
 }
@@ -912,6 +913,7 @@ void
 sipe_process_imdn(struct sipe_account_data *sip,
 		  struct sipmsg *msg)
 {
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 	const gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	static struct sip_session *session;
@@ -939,7 +941,7 @@ sipe_process_imdn(struct sipe_account_data *sip,
 	for (node = sipe_xml_child(xn_imdn, "recipient"); node; node = sipe_xml_twin(node)) {
 		gchar *tmp = parse_from(sipe_xml_attribute(node, "uri"));
 		gchar *uri = parse_from(tmp);
-		sipe_present_message_undelivered_err(sip, session, -1, -1, uri, message);
+		sipe_present_message_undelivered_err(sipe_private, session, -1, -1, uri, message);
 		g_free(tmp);
 		g_free(uri);
 	}

@@ -480,6 +480,7 @@ sipe_ft_outgoing_init(PurpleXfer *xfer)
 				      (long unsigned) purple_xfer_get_size(xfer));
 
 	struct sipe_account_data *sip = PURPLE_XFER_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
 	struct sip_session *session = sipe_session_find_or_add_im(sip, xfer->who);
 
 	g_hash_table_insert(sip->filetransfers,g_strdup(ft->invitation_cookie),xfer);
@@ -490,10 +491,10 @@ sipe_ft_outgoing_init(PurpleXfer *xfer)
 	dialog = sipe_dialog_find(session, xfer->who);
 	if (dialog && !dialog->outgoing_invite) {
 		ft->dialog = dialog;
-		sipe_im_process_queue(sip, session);
+		sipe_im_process_queue(sipe_private, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sip, session, xfer->who, body, "text/x-msmsgsinvite", NULL, FALSE);
+		sipe_invite(sipe_private, session, xfer->who, body, "text/x-msmsgsinvite", NULL, FALSE);
 	}
 
 	g_free(body);

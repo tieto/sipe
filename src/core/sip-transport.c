@@ -91,10 +91,10 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 		return;
 	}
 
-	sipe_make_signature(sip, msg);
+	sipe_make_signature(sipe_private, msg);
 
 	if (sip->registrar.type && sipe_strequal(method, "REGISTER")) {
-		buf = auth_header(sip, &sip->registrar, msg);
+		buf = auth_header(sipe_private, &sip->registrar, msg);
 		if (buf) {
 			sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 		}
@@ -112,7 +112,7 @@ static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data
 #endif
 
 
-		buf = auth_header(sip, &sip->registrar, msg);
+		buf = auth_header(sipe_private, &sip->registrar, msg);
 		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 	        g_free(buf);
 	} else {
@@ -523,7 +523,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			if (rspauth != NULL) {
 				if (!sip_sec_verify_signature(sip->registrar.gssapi_context, signature_input_str, rspauth)) {
 					SIPE_DEBUG_INFO_NOFORMAT("incoming message's signature validated");
-					process_input_message(sip, msg);
+					process_input_message(sipe_private, msg);
 				} else {
 					SIPE_DEBUG_INFO_NOFORMAT("incoming message's signature is invalid.");
 					sipe_backend_connection_error(SIP_TO_CORE_PUBLIC,
@@ -540,7 +540,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			g_free(rspauth);
 			sipmsg_breakdown_free(&msgbd);
 		} else {
-			process_input_message(sip, msg);
+			process_input_message(sipe_private, msg);
 		}
 
 		sipmsg_free(msg);

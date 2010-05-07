@@ -598,7 +598,7 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 							     NULL);
 			} else {
 				/* sipe.h */
-				send_presence_soap(cal->sip, TRUE);
+				send_presence_soap(cal->sip->private, TRUE);
 			}
 			break;
 	}

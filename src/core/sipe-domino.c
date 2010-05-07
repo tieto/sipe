@@ -282,7 +282,7 @@ sipe_domino_process_calendar_response(int return_code,
 						     NULL);
 		} else {
 			/* sipe.h */
-			send_presence_soap(cal->sip, TRUE);
+			send_presence_soap(cal->sip->private, TRUE);
 		}
 
 	} else if (return_code < 0) {

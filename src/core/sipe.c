@@ -219,9 +219,10 @@ static void sipe_auth_free(struct sip_auth *auth)
 }
 
 void
-sipe_make_signature(struct sipe_account_data *sip,
+sipe_make_signature(struct sipe_core_private *sipe_private,
 		    struct sipmsg *msg)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	if (sip->registrar.gssapi_context) {
 		struct sipmsg_breakdown msgbd;
 		gchar *signature_input_str;
@@ -242,9 +243,10 @@ sipe_make_signature(struct sipe_account_data *sip,
 	}
 }
 
-gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct sipmsg * msg)
+gchar *auth_header(struct sipe_core_private *sipe_private,
+		   struct sip_auth *auth, struct sipmsg * msg)
 {
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const char *authuser = sip->authuser;
 	gchar *ret;
 
@@ -277,14 +279,14 @@ gchar *auth_header(struct sipe_account_data *sip, struct sip_auth *auth, struct 
 							   auth->target,
 							   auth->gssapi_data);
 			if (!gssapi_data || !auth->gssapi_context) {
-				sipe_backend_connection_error(SIP_TO_CORE_PUBLIC,
+				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 							       _("Failed to authenticate to server"));
 				return NULL;
 			}
 
 			if (auth->version > 3) {
-				sipe_make_signature(sip, msg);
+				sipe_make_signature(sipe_private, msg);
 				sign_str = g_strdup_printf(", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
 					msg->rand, msg->num, msg->signature);
 			} else {
@@ -535,7 +537,7 @@ void sipe_auth_user_cb(void * data)
 	struct sipe_auth_job * job = (struct sipe_auth_job *) data;
 	if (!job) return;
 
-	sipe_core_contact_allow_deny(job->sip->public, job->who, TRUE);
+	sipe_core_contact_allow_deny((struct sipe_core_public *)job->sipe_private, job->who, TRUE);
 	g_free(job);
 }
 
@@ -545,7 +547,7 @@ void sipe_deny_user_cb(void * data)
 	struct sipe_auth_job * job = (struct sipe_auth_job *) data;
 	if (!job) return;
 
-	sipe_core_contact_allow_deny(job->sip->public, job->who, FALSE);
+	sipe_core_contact_allow_deny((struct sipe_core_public *)job->sipe_private, job->who, FALSE);
 	g_free(job);
 }
 
@@ -569,13 +571,13 @@ sipe_process_presence_wpending (struct sipe_core_private *sipe_private,
 	for (watcher = sipe_xml_child(watchers, "watcher"); watcher; watcher = sipe_xml_twin(watcher)) {
 		gchar * remote_user = g_strdup(sipe_xml_attribute(watcher, "uri"));
 		gchar * alias = g_strdup(sipe_xml_attribute(watcher, "displayName"));
-		gboolean on_list = g_hash_table_lookup(SIP_TO_CORE_PRIVATE->buddies, remote_user) != NULL;
+		gboolean on_list = g_hash_table_lookup(sipe_private->buddies, remote_user) != NULL;
 
 		// TODO pull out optional displayName to pass as alias
 		if (remote_user) {
 			struct sipe_auth_job * job = g_new0(struct sipe_auth_job, 1);
 			job->who = remote_user;
-			job->sip = sip;
+			job->sipe_private = sipe_private;
 			purple_account_request_authorization(
 				sip->account,
 				remote_user,
@@ -720,7 +722,7 @@ void
 sipe_core_group_set_user(struct sipe_core_public *sipe_public, const gchar * who)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-	struct sipe_buddy *buddy = g_hash_table_lookup(SIP_TO_CORE_PRIVATE->buddies, who);
+	struct sipe_buddy *buddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, who);
 	PurpleBuddy *purple_buddy = purple_find_buddy (sip->account, who);
 
 	if (buddy && purple_buddy) {
@@ -2781,7 +2783,7 @@ sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 	sipe_domino_update_calendar(sip);
 
 	/* schedule repeat */
-	sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+	sipe_schedule_seconds(SIPE_CORE_PRIVATE,
 			      "<+update-calendar>",
 			      NULL,
 			      UPDATE_CALENDAR_INTERVAL,
@@ -3496,11 +3498,11 @@ sipe_notify_user(struct sipe_core_private *sipe_private,
 }
 
 void
-sipe_present_info(struct sipe_account_data *sip,
+sipe_present_info(struct sipe_core_private *sipe_private,
 		 struct sip_session *session,
 		 const gchar *message)
 {
-	sipe_notify_user(SIP_TO_CORE_PRIVATE, session, PURPLE_MESSAGE_SYSTEM, message);
+	sipe_notify_user(sipe_private, session, PURPLE_MESSAGE_SYSTEM, message);
 }
 
 static void
@@ -3512,7 +3514,7 @@ sipe_present_err(struct sipe_core_private *sipe_private,
 }
 
 void
-sipe_present_message_undelivered_err(struct sipe_account_data *sip,
+sipe_present_message_undelivered_err(struct sipe_core_private *sipe_private,
 				     struct sip_session *session,
 				     int sip_error,
 				     int sip_warning,
@@ -3544,7 +3546,7 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 			msg_tmp2 = g_strdup_printf(label, who ? who : ""),
 			msg ? ":" : "",
 			msg ? msg : "");
-	sipe_present_err(SIP_TO_CORE_PRIVATE, session, msg_tmp);
+	sipe_present_err(sipe_private, session, msg_tmp);
 	g_free(msg_tmp2);
 	g_free(msg_tmp);
 	g_free(msg);
@@ -3613,7 +3615,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 			alias = purple_buddy_get_alias(pbuddy);
 		}
 
-		sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, (message ? message->body : NULL));
+		sipe_present_message_undelivered_err(sipe_private, session, msg->response, warning, alias, (message ? message->body : NULL));
 
 		/* drop dangling IM sessions: assume that BYE from remote never reached us */
 		if (msg->response == 408 || /* Request timeout */
@@ -3640,7 +3642,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 	g_free(key);
 	g_free(with);
 
-	if (ret) sipe_im_process_queue(sip, session);
+	if (ret) sipe_im_process_queue(sipe_private, session);
 	return ret;
 }
 
@@ -3753,8 +3755,10 @@ static void sipe_send_message(struct sipe_core_private *sipe_private,
 
 
 void
-sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * session)
+sipe_im_process_queue (struct sipe_core_private *sipe_private,
+		       struct sip_session * session)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	GSList *entry2 = session->outgoing_message_queue;
 	while (entry2) {
 		struct queued_message *msg = entry2->data;
@@ -3784,7 +3788,7 @@ sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * sess
 					key, g_hash_table_size(session->unconfirmed_messages));
 			g_free(key);
 
-			sipe_send_message(SIP_TO_CORE_PRIVATE, dialog, msg->body, msg->content_type);
+			sipe_send_message(sipe_private, dialog, msg->body, msg->content_type);
 		} SIPE_DIALOG_FOREACH_END;
 
 		entry2 = sipe_session_dequeue_message(session);
@@ -3889,7 +3893,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 		}
 
 		if (message) {
-			sipe_present_message_undelivered_err(sip, session, msg->response, warning, alias, message->body);
+			sipe_present_message_undelivered_err(sipe_private, session, msg->response, warning, alias, message->body);
 		} else {
 			gchar *tmp_msg = g_strdup_printf(_("Failed to invite %s"), alias);
 			sipe_present_err(sipe_private, session, tmp_msg);
@@ -3926,7 +3930,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 		sipe_session_dequeue_message(session);
 	}
 
-	sipe_im_process_queue(sip, session);
+	sipe_im_process_queue(sipe_private, session);
 
 	g_hash_table_remove(session->unconfirmed_messages, key);
 	SIPE_DEBUG_INFO("process_invite_response: removed message %s from unconfirmed_messages(count=%d)",
@@ -3939,7 +3943,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 
 void
-sipe_invite(struct sipe_account_data *sip,
+sipe_invite(struct sipe_core_private *sipe_private,
 	    struct sip_session *session,
 	    const gchar *who,
 	    const gchar *msg_body,
@@ -3947,6 +3951,7 @@ sipe_invite(struct sipe_account_data *sip,
 	    const gchar *referred_by,
 	    const gboolean is_triggered)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *to;
 	gchar *contact;
@@ -4022,7 +4027,7 @@ sipe_invite(struct sipe_account_data *sip,
 	}
 
 	contact = get_contact(sip);
-	end_points = get_end_points(SIP_TO_CORE_PRIVATE, session);
+	end_points = get_end_points(sipe_private, session);
 	self = sip_uri_self(sip);
 	roster_manager = g_strdup_printf(
 		"Roster-Manager: %s\r\n"
@@ -4062,9 +4067,9 @@ sipe_invite(struct sipe_account_data *sip,
 		sipe_backend_network_ip_address(),
 		sipe_backend_network_ip_address(),
 		sip->ocs2007 ? "message" : "x-ms-message",
-		SIP_TO_CORE_PRIVATE->server_port);
+		sipe_private->server_port);
 
-	dialog->outgoing_invite = send_sip_request(SIP_TO_CORE_PRIVATE, "INVITE",
+	dialog->outgoing_invite = send_sip_request(sipe_private, "INVITE",
 		to, to, hdr, body, dialog, process_invite_response);
 
 	g_free(to);
@@ -4218,10 +4223,10 @@ int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	sipe_session_enqueue_message(session, what, NULL);
 
 	if (dialog && !dialog->outgoing_invite) {
-		sipe_im_process_queue(sip, session);
+		sipe_im_process_queue(sipe_private, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sip, session, uri, what, NULL, NULL, FALSE);
+		sipe_invite(sipe_private, session, uri, what, NULL, NULL, FALSE);
 	}
 
 	g_free(uri);
@@ -4242,7 +4247,7 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 	// Queue the message
 	if (session && session->dialogs) {
 		sipe_session_enqueue_message(session,what,NULL);
-		sipe_im_process_queue(sip, session);
+		sipe_im_process_queue(sipe_private, session);
 	} else if (sip) {
 		gchar *chat_name = purple_find_chat(sip->gc, id)->name;
 		const gchar *proto_chat_id = sipe_chat_find_name(chat_name);
@@ -4450,7 +4455,7 @@ static void process_incoming_refer(struct sipe_core_private *sipe_private,
 	} else {
 		send_sip_response(sipe_private, msg, 202, "Accepted", NULL);
 
-		sipe_invite(sip, session, refer_to, NULL, NULL, referred_by, FALSE);
+		sipe_invite(sipe_private, session, refer_to, NULL, NULL, referred_by, FALSE);
 	}
 
 	g_free(self);
@@ -4785,7 +4790,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 				just_joined = TRUE;
 
 				/* send triggered INVITE */
-				sipe_invite(sip, session, dialog->with, NULL, NULL, NULL, TRUE);
+				sipe_invite(sipe_private, session, dialog->with, NULL, NULL, NULL, TRUE);
 			}
 		}
 		g_free(to);
@@ -5992,7 +5997,7 @@ sipe_user_info_has_updated(struct sipe_core_private *sipe_private,
 	 * so we've already updated our UserInfo.
 	 */
 	if (!sip->initial_state_published) {
-		send_presence_soap(sip, FALSE);
+		send_presence_soap(sipe_private, FALSE);
 		/* dalayed run */
 		sipe_schedule_seconds(sipe_private,
 				      "<+update-calendar>",
@@ -6698,10 +6703,10 @@ send_presence_soap0(struct sipe_core_private *sipe_private,
 }
 
 void
-send_presence_soap(struct sipe_account_data *sip,
+send_presence_soap(struct sipe_core_private *sipe_private,
 		   gboolean do_publish_calendar)
 {
-	return send_presence_soap0(SIP_TO_CORE_PRIVATE, do_publish_calendar, FALSE);
+	return send_presence_soap0(sipe_private, do_publish_calendar, FALSE);
 }
 
 
@@ -7502,14 +7507,14 @@ static void send_presence_status(struct sipe_core_private *sipe_private,
         if (sip->ocs2007) {
 		send_presence_category_publish(sipe_private);
 	} else {
-		send_presence_soap(sip, FALSE);
+		send_presence_soap(sipe_private, FALSE);
 	}
 }
 
-void process_input_message(struct sipe_account_data *sip,
+void process_input_message(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg)
 {
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gboolean found = FALSE;
 	const char *method = msg->method ? msg->method : "NOT FOUND";
 	SIPE_DEBUG_INFO("msg->response(%d),msg->method(%s)", msg->response,method);
@@ -7542,7 +7547,7 @@ void process_input_message(struct sipe_account_data *sip,
 			found = TRUE;
 		} else if (sipe_strequal(method, "PRACK")) {
 			found = TRUE;
-			send_sip_response(SIP_TO_CORE_PRIVATE, msg, 200, "OK", NULL);
+			send_sip_response(sipe_private, msg, 200, "OK", NULL);
 		} else if (sipe_strequal(method, "SUBSCRIBE")) {
 			// LCS 2005 sends us these - just respond 200 OK
 			found = TRUE;
@@ -7571,7 +7576,7 @@ void process_input_message(struct sipe_account_data *sip,
 				ptmp = sipmsg_find_header(msg, "Proxy-Authenticate");
 
 				fill_auth(ptmp, &sip->proxy);
-				auth = auth_header(sip, &sip->proxy, trans->msg);
+				auth = auth_header(sipe_private, &sip->proxy, trans->msg);
 				sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
 				sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
 				g_free(auth);
@@ -7625,7 +7630,7 @@ void process_input_message(struct sipe_account_data *sip,
 							}
 
 							fill_auth(ptmp, &sip->registrar);
-							auth = auth_header(sip, &sip->registrar, trans->msg);
+							auth = auth_header(sipe_private, &sip->registrar, trans->msg);
 							sipmsg_remove_header_now(trans->msg, "Authorization");
 							sipmsg_add_header_now_pos(trans->msg, "Authorization", auth, 5);
 							g_free(auth);
@@ -8272,7 +8277,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, session->chat_title);
 		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
-		sipe_invite(sip, session, buddy->name, NULL, NULL, NULL, FALSE);
+		sipe_invite(sipe_private, session, buddy->name, NULL, NULL, NULL, FALSE);
 
 		g_free(self);
 	}
@@ -8330,10 +8335,12 @@ sipe_election_start(struct sipe_core_private *sipe_private,
  * @param who a URI to whom to invite to chat
  */
 void
-sipe_invite_to_chat(struct sipe_account_data *sip,
+sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 		    struct sip_session *session,
 		    const gchar *who)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
 	/* a conference */
 	if (session->focus_uri)
 	{
@@ -8344,9 +8351,9 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 		gchar *self = sip_uri_self(sip);
 		if (session->roster_manager) {
 			if (sipe_strcase_equal(session->roster_manager, self)) {
-				sipe_invite(sip, session, who, NULL, NULL, NULL, FALSE);
+				sipe_invite(sipe_private, session, who, NULL, NULL, NULL, FALSE);
 			} else {
-				sipe_refer(SIP_TO_CORE_PRIVATE, session, who);
+				sipe_refer(sipe_private, session, who);
 			}
 		} else {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_buddy_menu_chat_invite: no RM available");
@@ -8354,14 +8361,14 @@ sipe_invite_to_chat(struct sipe_account_data *sip,
 			session->pending_invite_queue = slist_insert_unique_sorted(
 				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
 
-			sipe_election_start(SIP_TO_CORE_PRIVATE, session);
+			sipe_election_start(sipe_private, session);
 		}
 		g_free(self);
 	}
 }
 
 void
-sipe_process_pending_invite_queue(struct sipe_account_data *sip,
+sipe_process_pending_invite_queue(struct sipe_core_private *sipe_private,
 				  struct sip_session *session)
 {
 	gchar *invitee;
@@ -8369,7 +8376,7 @@ sipe_process_pending_invite_queue(struct sipe_account_data *sip,
 
 	while (entry) {
 		invitee = entry->data;
-		sipe_invite_to_chat(sip, session, invitee);
+		sipe_invite_to_chat(sipe_private, session, invitee);
 		entry = session->pending_invite_queue = g_slist_remove(session->pending_invite_queue, invitee);
 		g_free(invitee);
 	}
@@ -8415,7 +8422,7 @@ sipe_election_result(struct sipe_core_private *sipe_private,
 	}
 	session->bid = 0;
 
-	sipe_process_pending_invite_queue(sip, session);
+	sipe_process_pending_invite_queue(sipe_private, session);
 }
 
 /**
@@ -8466,7 +8473,7 @@ sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, char *chat_title)
 
 	session = sipe_session_find_chat_by_title(sip, chat_title);
 
-	sipe_invite_to_chat(sip, session, buddy->name);
+	sipe_invite_to_chat(sipe_private, session, buddy->name);
 }
 
 static void

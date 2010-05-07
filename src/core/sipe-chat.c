@@ -46,7 +46,7 @@ void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
 
 	if (session) {
 		gchar *uri = sip_uri(name);
-		sipe_invite_to_chat(sip, session, uri);
+		sipe_invite_to_chat(SIPE_CORE_PRIVATE, session, uri);
 		g_free(uri);
 	}
 }

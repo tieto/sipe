@@ -150,8 +150,8 @@ struct sipe_account_data {
 };
 
 struct sipe_auth_job {
-	gchar * who;
-	struct sipe_account_data * sip;
+	gchar *who;
+	struct sipe_core_private *sipe_private;
 };
 
 struct sipe_group {
@@ -183,7 +183,7 @@ publish_calendar_status_self(struct sipe_core_private *sipe_private,
  * For 2005-
  */
 void
-send_presence_soap(struct sipe_account_data *sip,
+send_presence_soap(struct sipe_core_private *sipe_private,
 		   gboolean do_publish_calendar);
 
 /**
@@ -210,16 +210,16 @@ struct sip_dialog;
 struct transaction;
 
 void
-sipe_invite(struct sipe_account_data *sip, struct sip_session *session,
+sipe_invite(struct sipe_core_private *sipe_private, struct sip_session *session,
 	    const gchar *who, const gchar *msg_body, const gchar *msg_content_type,
 	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
-void sipe_make_signature(struct sipe_account_data *sip,
+void sipe_make_signature(struct sipe_core_private *sipe_private,
 			 struct sipmsg *msg);
-gchar *auth_header(struct sipe_account_data *sip,
+gchar *auth_header(struct sipe_core_private *sipe_private,
 		   struct sip_auth *auth, struct sipmsg * msg);
 const gchar *sipe_get_useragent(struct sipe_core_private *sipe_private);
-void process_input_message(struct sipe_account_data *sip,
+void process_input_message(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg);
 gboolean process_register_response(struct sipe_core_private *sipe_private,
 				   struct sipmsg *msg,
@@ -229,12 +229,12 @@ gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 				    struct transaction *trans);
 /* Chat module */
 void
-sipe_invite_to_chat(struct sipe_account_data *sip,
+sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 		    struct sip_session *session,
 		    const gchar *who);
 /* Session module? */
 void
-sipe_present_message_undelivered_err(struct sipe_account_data *sip,
+sipe_present_message_undelivered_err(struct sipe_core_private *sipe_private,
 				     struct sip_session *session,
 				     int sip_error,
 				     int sip_warning,
@@ -242,17 +242,18 @@ sipe_present_message_undelivered_err(struct sipe_account_data *sip,
 				     const gchar *message);
 
 void
-sipe_present_info(struct sipe_account_data *sip,
-		 struct sip_session *session,
-		 const gchar *message);
+sipe_present_info(struct sipe_core_private *sipe_private,
+		  struct sip_session *session,
+		  const gchar *message);
 
 
 void
-sipe_process_pending_invite_queue(struct sipe_account_data *sip,
+sipe_process_pending_invite_queue(struct sipe_core_private *sipe_private,
 				  struct sip_session *session);
 
 void
-sipe_im_process_queue (struct sipe_account_data * sip, struct sip_session * session);
+sipe_im_process_queue(struct sipe_core_private *sipe_private,
+		      struct sip_session *session);
 
 
 /*** THE BIG SPLIT END ***/
