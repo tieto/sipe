@@ -2000,7 +2000,6 @@ static void
 sipe_process_provisioning(struct sipe_core_private *sipe_private,
 			  struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
 	sipe_xml *xn_provision;
 	const sipe_xml *node;
 
@@ -2011,7 +2010,7 @@ sipe_process_provisioning(struct sipe_core_private *sipe_private,
 			const gchar *line_uri = sipe_xml_attribute(node, "uri");
 			const gchar *server = sipe_xml_attribute(node, "server");
 			SIPE_DEBUG_INFO("sipe_process_provisioning: line_uri=%s server=%s", line_uri, server);
-			sip_csta_open(sip, line_uri, server);
+			sip_csta_open(sipe_private, line_uri, server);
 		}
 	}
 	sipe_xml_free(xn_provision);
@@ -3135,7 +3134,7 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 				line_uri = sipe_xml_data(line);
 				if (line_uri) {
 					SIPE_DEBUG_INFO("sipe_process_roaming_self: line_uri=%s server=%s", line_uri, line_server);
-					sip_csta_open(sip, line_uri, line_server);
+					sip_csta_open(sipe_private, line_uri, line_server);
 				}
 				g_free(line_uri);
 
@@ -4284,7 +4283,7 @@ static void process_incoming_info(struct sipe_core_private *sipe_private,
 	/* Call Control protocol */
 	if (g_str_has_prefix(contenttype, "application/csta+xml"))
 	{
-		process_incoming_info_csta(sip, msg);
+		process_incoming_info_csta(sipe_private, msg);
 		return;
 	}
 
@@ -7874,7 +7873,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_session_remove_all(sip);
 
 	if (sip->csta) {
-		sip_csta_close(sip);
+		sip_csta_close(sipe_private);
 	}
 
 	if (PURPLE_CONNECTION_IS_CONNECTED(sip->gc)) {
@@ -8480,14 +8479,13 @@ static void
 sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy, const char *phone)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_make_call_cb: buddy->name=%s", buddy->name);
 	if (phone) {
 		char *tel_uri = sip_to_tel_uri(phone);
 
 		SIPE_DEBUG_INFO("sipe_buddy_menu_make_call_cb: going to call number: %s", tel_uri ? tel_uri : "");
-		sip_csta_make_call(sip, tel_uri);
+		sip_csta_make_call(sipe_private, tel_uri);
 
 		g_free(tel_uri);
 	}

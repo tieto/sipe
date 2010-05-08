@@ -186,10 +186,11 @@ sip_tel_uri_denormalize(const gchar *tel_uri)
 }
 
 static void
-sip_csta_initialize(struct sipe_account_data *sip,
+sip_csta_initialize(struct sipe_core_private *sipe_private,
 		    const gchar *line_uri,
 		    const gchar *server)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	if(!sip->csta) {
 		sip->csta = g_new0(struct sip_csta, 1);
 		sip->csta->line_uri = g_strdup(line_uri);
@@ -219,8 +220,9 @@ process_csta_get_features_response(SIPE_UNUSED_PARAMETER struct sipe_core_privat
 
 /** get CSTA feautures */
 static void
-sip_csta_get_features(struct sipe_account_data *sip)
+sip_csta_get_features(struct sipe_core_private *sipe_private)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 
@@ -237,7 +239,7 @@ sip_csta_get_features(struct sipe_account_data *sip)
 		SIP_SEND_CSTA_GET_CSTA_FEATURES,
 		sip->csta->line_uri);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE,
+	send_sip_request(sipe_private,
 			 "INFO",
 			 sip->csta->dialog->with,
 			 sip->csta->dialog->with,
@@ -398,7 +400,7 @@ process_invite_csta_gateway_response(struct sipe_core_private *sipe_private,
 				sip->csta->gateway_status ? sip->csta->gateway_status : "");
 		if (sipe_strcase_equal(sip->csta->gateway_status, "normal")) {
 			if (!sip->csta->monitor_cross_ref_id) {
-				sip_csta_get_features(sip);
+				sip_csta_get_features(sipe_private);
 				sip_csta_monitor_start(sip);
 			}
 		} else {
@@ -460,7 +462,7 @@ sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 		SIP_SEND_CSTA_REQUEST_SYSTEM_STATUS,
 		sip->csta->line_uri);
 
-	sip->csta->dialog->outgoing_invite = send_sip_request(SIP_TO_CORE_PRIVATE,
+	sip->csta->dialog->outgoing_invite = send_sip_request(sipe_private,
 							      "INVITE",
 							      sip->csta->dialog->with,
 							      sip->csta->dialog->with,
@@ -473,12 +475,12 @@ sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 }
 
 void
-sip_csta_open(struct sipe_account_data *sip,
+sip_csta_open(struct sipe_core_private *sipe_private,
 	      const gchar *line_uri,
 	      const gchar *server)
 {
-	sip_csta_initialize(sip, line_uri, server);
-	sipe_invite_csta_gateway(SIP_TO_CORE_PRIVATE, NULL);
+	sip_csta_initialize(sipe_private, line_uri, server);
+	sipe_invite_csta_gateway(sipe_private, NULL);
 }
 
 static void
@@ -502,15 +504,16 @@ sip_csta_free(struct sip_csta *csta)
 }
 
 void
-sip_csta_close(struct sipe_account_data *sip)
+sip_csta_close(struct sipe_core_private *sipe_private)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	if (sip->csta) {
 		sip_csta_monitor_stop(sip);
 	}
 
 	if (sip->csta && sip->csta->dialog) {
 		/* send BYE to CSTA */
-		send_sip_request(SIP_TO_CORE_PRIVATE,
+		send_sip_request(sipe_private,
 				 "BYE",
 				 sip->csta->dialog->with,
 				 sip->csta->dialog->with,
@@ -569,9 +572,10 @@ process_csta_make_call_response(struct sipe_core_private *sipe_private,
 
 /** Make Call */
 void
-sip_csta_make_call(struct sipe_account_data *sip,
+sip_csta_make_call(struct sipe_core_private *sipe_private,
 		   const gchar* to_tel_uri)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 
@@ -597,7 +601,7 @@ sip_csta_make_call(struct sipe_account_data *sip,
 		sip->csta->line_uri,
 		sip->csta->to_tel_uri);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE,
+	send_sip_request(sipe_private,
 			 "INFO",
 			 sip->csta->dialog->with,
 			 sip->csta->dialog->with,
@@ -654,9 +658,10 @@ sip_csta_update_id_and_status(struct sip_csta *csta,
 }
 
 void
-process_incoming_info_csta(struct sipe_account_data *sip,
+process_incoming_info_csta(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *monitor_cross_ref_id;
 	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
 

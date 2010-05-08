@@ -29,7 +29,7 @@
 /* Forward declarations */
 struct sipmsg;
 struct sip_dialog;
-struct sipe_account_data;
+struct sipe_core_private;
 
 /** Data model for interaction with SIP/CSTA Gateway */
 struct sip_csta {
@@ -82,23 +82,23 @@ sip_tel_uri_denormalize(const gchar *tel_uri);
  * @param server   (in) SIP URI of SIP/CSTA Gateway. Ex.: sip:73124@euuklhccups01.eu.company.local
  */
 void
-sip_csta_open(struct sipe_account_data *sip,
+sip_csta_open(struct sipe_core_private *sipe_private,
 	      const gchar *line_uri,
 	      const gchar *server);
 
 /** Closes GSTA */
 void
-sip_csta_close(struct sipe_account_data *sip);
+sip_csta_close(struct sipe_core_private *sipe_private);
 
 /** Makes Call
  * @param to_tel_uri (in) tel URI of called party. Ex.: tel:+3222220220
  */
 void
-sip_csta_make_call(struct sipe_account_data *sip,
+sip_csta_make_call(struct sipe_core_private *sipe_private,
 		   const gchar* to_tel_uri);
 
 /** Processes incoming CSTA commands
  */		   
 void
-process_incoming_info_csta(struct sipe_account_data *sip,
+process_incoming_info_csta(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg);
