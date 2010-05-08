@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,19 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * Interface dependencies:
- *
- * <time.h>
- * <glib.h>
- */
-
 /* Forward declarations */
-struct http_conn_auth;
-struct http_conn_struct;
-struct sipe_account_data;
-struct _PurpleAccount;
 struct sipe_calendar;
+struct sipe_core_private;
 
 /**
  * Connects to Exchange 2007/2010 Server's Web Services,
@@ -42,7 +33,7 @@ struct sipe_calendar;
  * Advised schedule: 30 minutes.
  */
 void
-sipe_ews_update_calendar(struct sipe_account_data *sip);
+sipe_ews_update_calendar(struct sipe_core_private *sipe_private);
 
 /**
  * Returns OOF note if enabled in the moment

@@ -21,15 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * Interface dependencies:
- *
- * <time.h>
- * <glib.h>
- */
-
 /* Forward declarations */
 struct sipe_buddy;
+struct sipe_core_private;
 struct _sipe_xml;
 
 /* Calendar statuses */
@@ -58,7 +52,7 @@ struct sipe_cal_event {
   * external sources like Exchange, Lotus Domino.
   */
 struct sipe_calendar {
-	struct sipe_account_data *sip;
+	struct sipe_core_private *sipe_private;
 
 	int state;
 	char *email;
@@ -101,7 +95,8 @@ void
 sipe_cal_calendar_free(struct sipe_calendar *cal);
 
 gboolean
-sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url);
+sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
+		       gboolean *has_url);
 
 /**
  * Returns hash of Calendar Event for comparison.

@@ -21,7 +21,7 @@
  */
 
 /* Forward declarations */
-struct sipe_account_data;
+struct sipe_core_private;
 
 /**
  * Connects to Lotus Domino Web Access server,
@@ -31,4 +31,4 @@ struct sipe_account_data;
  * Advised schedule: 30 minutes.
  */
 void
-sipe_domino_update_calendar(struct sipe_account_data *sip);
+sipe_domino_update_calendar(struct sipe_core_private *sipe_private);

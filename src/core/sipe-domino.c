@@ -68,6 +68,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "http-conn.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe.h"
 #include "sipe-nls.h"
 #include "sipe-backend.h"
@@ -276,13 +277,13 @@ sipe_domino_process_calendar_response(int return_code,
 
 		/* update SIP server */
 		cal->is_updated = TRUE;
-		if (cal->sip->ocs2007) {
+		if (cal->sipe_private->temporary->ocs2007) {
 			/* sipe.h */
-			publish_calendar_status_self(cal->sip->private,
+			publish_calendar_status_self(cal->sipe_private,
 						     NULL);
 		} else {
 			/* sipe.h */
-			send_presence_soap(cal->sip->private, TRUE);
+			send_presence_soap(cal->sipe_private, TRUE);
 		}
 
 	} else if (return_code < 0) {
@@ -345,7 +346,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 		g_free(url_req);
 		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
 			cal->http_conn = http_conn_create(
-					 cal->sip->public,
+					 (struct sipe_core_public *) cal->sipe_private,
 					 cal->http_session,
 					 HTTP_CONN_GET,
 					 HTTP_CONN_SSL,
@@ -464,7 +465,7 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		g_free(user);
 		g_free(password);
 
-		cal->http_conn = http_conn_create(cal->sip->public,
+		cal->http_conn = http_conn_create((struct sipe_core_public *) cal->sipe_private,
 						  cal->http_session,
 						  HTTP_CONN_POST,
 						  HTTP_CONN_SSL,
@@ -558,12 +559,13 @@ sipe_domino_compose_url(const char *protocol, const char *mail_server, const cha
 }
 
 void
-sipe_domino_update_calendar(struct sipe_account_data *sip)
+sipe_domino_update_calendar(struct sipe_core_private *sipe_private)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
 
 	if (sip) {
-		sipe_cal_calendar_init(sip, NULL);
+		sipe_cal_calendar_init(sipe_private, NULL);
 		
 		/* check if URL is valid if provided */
 		if (sip->cal && !is_empty(sip->cal->domino_url)) {

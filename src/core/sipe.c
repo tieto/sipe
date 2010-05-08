@@ -2770,16 +2770,14 @@ sipe_update_user_phone(struct sipe_core_private *sipe_private,
 void
 sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
 
 	/* Do in parallel.
 	 * If failed, the branch will be disabled for subsequent calls.
 	 * Can't rely that user turned the functionality on in account settings.
 	 */
-	sipe_ews_update_calendar(sip);
-	sipe_domino_update_calendar(sip);
+	sipe_ews_update_calendar(SIPE_CORE_PRIVATE);
+	sipe_domino_update_calendar(SIPE_CORE_PRIVATE);
 
 	/* schedule repeat */
 	sipe_schedule_seconds(SIPE_CORE_PRIVATE,

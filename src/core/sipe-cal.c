@@ -200,19 +200,20 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 }
 
 gboolean
-sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
+sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
+		       gboolean *has_url)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	if (!sip->cal) {
-		struct sipe_core_public *sipe_public = SIP_TO_CORE_PUBLIC;
 		const char *value;
 
 		sip->cal = g_new0(struct sipe_calendar, 1);
-		sip->cal->sip = sip;
+		sip->cal->sipe_private = sipe_private;
 
 		sip->cal->email = g_strdup(sip->email);
 
 		/* user specified a service URL? */
-		value = sipe_backend_setting(sipe_public, SIPE_SETTING_EMAIL_URL);
+		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
 		if (has_url) *has_url = !is_empty(value);
 		if (!is_empty(value)) {
 			sip->cal->as_url  = g_strdup(value);
@@ -221,10 +222,10 @@ sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 		}
 
 		sip->cal->auth = g_new0(HttpConnAuth, 1);
-		sip->cal->auth->use_negotiate = SIPE_CORE_FLAG_IS(KRB5);
+		sip->cal->auth->use_negotiate = SIPE_CORE_PUBLIC_FLAG_IS(KRB5);
 
 		/* user specified email login? */
-		value = sipe_backend_setting(sipe_public, SIPE_SETTING_EMAIL_LOGIN);
+		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
 		if (!is_empty(value)) {
 
 			/* user specified email login domain? */
@@ -235,7 +236,7 @@ sipe_cal_calendar_init(struct sipe_account_data *sip, gboolean *has_url)
 			} else {
 				sip->cal->auth->user   = g_strdup(value);
 			}
-			sip->cal->auth->password = g_strdup(sipe_backend_setting(sipe_public,
+			sip->cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
 										 SIPE_SETTING_EMAIL_PASSWORD));
 
 		} else {

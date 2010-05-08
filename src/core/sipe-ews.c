@@ -54,6 +54,7 @@ be great to implement too.
 #include "sipe-common.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-ews.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -456,7 +457,7 @@ sipe_ews_do_autodiscover(struct sipe_calendar *cal,
 
 	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, cal->email);
 	cal->http_conn = http_conn_create(
-				 cal->sip->public,
+				 (struct sipe_core_public *) cal->sipe_private,
 				 NULL, /* HttpSession */
 				 HTTP_CONN_POST,
 				 HTTP_CONN_SSL,
@@ -498,7 +499,7 @@ sipe_ews_do_avail_request(struct sipe_calendar *cal)
 
 		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, cal->email, start_str, end_str);
 		cal->http_conn = http_conn_create(
-					 cal->sip->public,
+					 (struct sipe_core_public *) cal->sipe_private,
 					 NULL, /* HttpSession */
 					 HTTP_CONN_POST,
 					 HTTP_CONN_SSL,
@@ -526,7 +527,7 @@ sipe_ews_do_oof_request(struct sipe_calendar *cal)
 
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, cal->email);
 		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
-			cal->http_conn = http_conn_create(cal->sip->public,
+			cal->http_conn = http_conn_create((struct sipe_core_public *)cal->sipe_private,
 							  NULL, /* HttpSession */
 							  HTTP_CONN_POST,
 							  HTTP_CONN_SSL,
@@ -592,27 +593,28 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 		case SIPE_EWS_STATE_OOF_SUCCESS:
 			cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 			cal->is_updated = TRUE;
-			if (cal->sip->ocs2007) {
+			if (cal->sipe_private->temporary->ocs2007) {
 				/* sipe.h */
-				publish_calendar_status_self(cal->sip->private,
+				publish_calendar_status_self(cal->sipe_private,
 							     NULL);
 			} else {
 				/* sipe.h */
-				send_presence_soap(cal->sip->private, TRUE);
+				send_presence_soap(cal->sipe_private, TRUE);
 			}
 			break;
 	}
 }
 
 void
-sipe_ews_update_calendar(struct sipe_account_data *sip)
+sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
 	gboolean has_url;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: started.");
 
-	if (sipe_cal_calendar_init(sip, &has_url)) {
+	if (sipe_cal_calendar_init(sipe_private, &has_url)) {
 		if (has_url) {
 			sip->cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		}
