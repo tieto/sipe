@@ -203,12 +203,12 @@ rand_guid()
  * @param expires not respected if set to negative value (E.g. -1)
  */
 static void
-sipe_subscribe_conference(struct sipe_account_data *sip,
+sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 			  struct sip_session *session,
 			  const int expires)
 {
 	gchar *expires_hdr = (expires >= 0) ? g_strdup_printf("Expires: %d\r\n", expires) : g_strdup("");
-	gchar *contact = get_contact(sip);
+	gchar *contact = get_contact(SIPE_ACCOUNT_DATA_PRIVATE);
 	gchar *hdr = g_strdup_printf(
 		"Event: conference\r\n"
 		"%s"
@@ -223,7 +223,7 @@ sipe_subscribe_conference(struct sipe_account_data *sip,
 	g_free(expires_hdr);
 	g_free(contact);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE,
+	send_sip_request(sipe_private,
 			 "SUBSCRIBE",
 			 session->focus_uri,
 			 session->focus_uri,
@@ -279,7 +279,7 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 		const gchar *code = sipe_xml_attribute(xn_response, "code");
 		if (sipe_strequal(code, "success")) {
 			/* subscribe to focus */
-			sipe_subscribe_conference(sip, session, -1);
+			sipe_subscribe_conference(sipe_private, session, -1);
 		}
 		sipe_xml_free(xn_response);
 	}
@@ -290,9 +290,10 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 
 /** Invite us to the focus */
 void
-sipe_invite_conf_focus(struct sipe_account_data *sip,
+sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		       struct sip_session *session)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
@@ -334,7 +335,7 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
 		session->focus_dialog->endpoint_GUID);
 	g_free(self);
 
-	session->focus_dialog->outgoing_invite = send_sip_request(SIP_TO_CORE_PRIVATE,
+	session->focus_dialog->outgoing_invite = send_sip_request(sipe_private,
 								  "INVITE",
 								  session->focus_dialog->with,
 								  session->focus_dialog->with,
@@ -348,7 +349,7 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
 
 /** Modify User Role */
 void
-sipe_conf_modify_user_role(struct sipe_account_data *sip,
+sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 			   struct sip_session *session,
 			   const gchar* who)
 {
@@ -365,7 +366,7 @@ sipe_conf_modify_user_role(struct sipe_account_data *sip,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sip);
+	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_MODIFY_USER_ROLES,
 		session->focus_dialog->with,
@@ -375,7 +376,7 @@ sipe_conf_modify_user_role(struct sipe_account_data *sip,
 		who);
 	g_free(self);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE,
+	send_sip_request(sipe_private,
 			 "INFO",
 			 session->focus_dialog->with,
 			 session->focus_dialog->with,
@@ -389,7 +390,7 @@ sipe_conf_modify_user_role(struct sipe_account_data *sip,
 
 /** Modify Conference Lock */
 void
-sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
+sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
 				 struct sip_session *session,
 				 const gboolean locked)
 {
@@ -406,7 +407,7 @@ sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sip);
+	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_MODIFY_CONF_LOCK,
 		session->focus_dialog->with,
@@ -416,7 +417,7 @@ sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
 		locked ? "true" : "false");
 	g_free(self);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE,
+	send_sip_request(sipe_private,
 			 "INFO",
 			 session->focus_dialog->with,
 			 session->focus_dialog->with,
@@ -430,7 +431,7 @@ sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
 
 /** Modify Delete User */
 void
-sipe_conf_delete_user(struct sipe_account_data *sip,
+sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		      struct sip_session *session,
 		      const gchar* who)
 {
@@ -447,7 +448,7 @@ sipe_conf_delete_user(struct sipe_account_data *sip,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sip);
+	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_DELETE_USER,
 		session->focus_dialog->with,
@@ -457,7 +458,7 @@ sipe_conf_delete_user(struct sipe_account_data *sip,
 		who);
 	g_free(self);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE,
+	send_sip_request(sipe_private,
 			 "INFO",
 			 session->focus_dialog->with,
 			 session->focus_dialog->with,
@@ -517,7 +518,7 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
  * Invites counterparty to join conference.
  */
 void
-sipe_invite_conf(struct sipe_account_data *sip,
+sipe_invite_conf(struct sipe_core_private *sipe_private,
 		 struct sip_session *session,
 		 const gchar* who)
 {
@@ -534,7 +535,7 @@ sipe_invite_conf(struct sipe_account_data *sip,
 	dialog->with = g_strdup(who);
 	dialog->ourtag = gentag();
 
-	contact = get_contact(sip);
+	contact = get_contact(SIPE_ACCOUNT_DATA_PRIVATE);
 	hdr = g_strdup_printf(
 		"Supported: ms-sender\r\n"
 		"Contact: %s\r\n"
@@ -548,14 +549,14 @@ sipe_invite_conf(struct sipe_account_data *sip,
 		session->subject ? session->subject : ""
 		);
 
-	send_sip_request( SIP_TO_CORE_PRIVATE,
-			  "INVITE",
-			  dialog->with,
-			  dialog->with,
-			  hdr,
-			  body,
-			  dialog,
-			  process_invite_conf_response);
+	send_sip_request(sipe_private,
+			 "INVITE",
+			 dialog->with,
+			 dialog->with,
+			 hdr,
+			 body,
+			 dialog,
+			 process_invite_conf_response);
 
 	sipe_dialog_free(dialog);
 	g_free(body);
@@ -593,7 +594,7 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
 				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
 
 			/* add self to conf */
-			sipe_invite_conf_focus(sip, session);
+			sipe_invite_conf_focus(sipe_private, session);
 		}
 		sipe_xml_free(xn_response);
 	}
@@ -605,9 +606,10 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
  * Creates conference.
  */
 void
-sipe_conf_add(struct sipe_account_data *sip,
+sipe_conf_add(struct sipe_core_private *sipe_private,
 	      const gchar* who)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
 	gchar *hdr;
 	gchar *conference_id;
 	gchar *contact;
@@ -641,14 +643,14 @@ sipe_conf_add(struct sipe_account_data *sip,
 	g_free(conference_id);
 	g_free(expiry_time);
 
-	trans = send_sip_request( SIP_TO_CORE_PRIVATE,
-				  "SERVICE",
-				  sip->focus_factory_uri,
-				  sip->focus_factory_uri,
-				  hdr,
-				  body,
-				  NULL,
-				  process_conf_add_response);
+	trans = send_sip_request(sipe_private,
+				 "SERVICE",
+				 sip->focus_factory_uri,
+				 sip->focus_factory_uri,
+				 hdr,
+				 body,
+				 NULL,
+				 process_conf_add_response);
 
 	payload = g_new0(struct transaction_payload, 1);
 	payload->destroy = g_free;
@@ -661,7 +663,7 @@ sipe_conf_add(struct sipe_account_data *sip,
 }
 
 void
-process_incoming_invite_conf(struct sipe_account_data *sip,
+process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
 	struct sip_session *session = NULL;
@@ -691,25 +693,25 @@ process_incoming_invite_conf(struct sipe_account_data *sip,
 	dialog->with = parse_from(sipmsg_find_header(msg, "From"));
 	sipe_dialog_parse(dialog, msg, FALSE);
 
-	send_sip_response(SIP_TO_CORE_PRIVATE, msg, 200, "OK", NULL);
+	send_sip_response(sipe_private, msg, 200, "OK", NULL);
 
-	session = sipe_session_add_chat(sip);
+	session = sipe_session_add_chat(SIPE_ACCOUNT_DATA_PRIVATE);
 	session->focus_uri = focus_uri;
 	session->is_multiparty = FALSE;
 
 	/* send BYE to invitor */
-	send_sip_request(SIP_TO_CORE_PRIVATE, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+	send_sip_request(sipe_private, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
 	sipe_dialog_free(dialog);
 
 	/* add self to conf */
-	sipe_invite_conf_focus(sip, session);
+	sipe_invite_conf_focus(sipe_private, session);
 }
 
 void
-sipe_process_conference(struct sipe_account_data *sip,
+sipe_process_conference(struct sipe_core_private *sipe_private,
 			struct sipmsg *msg)
 {
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	sipe_xml *xn_conference_info;
 	const sipe_xml *node;
 	const sipe_xml *xn_subject;
@@ -879,25 +881,25 @@ sipe_process_conference(struct sipe_account_data *sip,
 }
 
 void
-sipe_conf_immcu_closed(struct sipe_account_data *sip,
+sipe_conf_immcu_closed(struct sipe_core_private *sipe_private,
 		       struct sip_session *session)
 {
-	sipe_present_info(SIP_TO_CORE_PRIVATE, session,
+	sipe_present_info(sipe_private, session,
 			  _("You have been disconnected from this conference."));
 	purple_conv_chat_clear_users(PURPLE_CONV_CHAT(session->conv));
 }
 
 void
-conf_session_close(struct sipe_account_data *sip,
+conf_session_close(struct sipe_core_private *sipe_private,
 		   struct sip_session *session)
 {
 	if (session) {
 		/* unsubscribe from focus */
-		sipe_subscribe_conference(sip, session, 0);
+		sipe_subscribe_conference(sipe_private, session, 0);
 
 		if (session->focus_dialog) {
 			/* send BYE to focus */
-			send_sip_request(SIP_TO_CORE_PRIVATE,
+			send_sip_request(sipe_private,
 					 "BYE",
 					 session->focus_dialog->with,
 					 session->focus_dialog->with,
@@ -910,10 +912,10 @@ conf_session_close(struct sipe_account_data *sip,
 }
 
 void
-sipe_process_imdn(struct sipe_account_data *sip,
+sipe_process_imdn(struct sipe_core_private *sipe_private,
 		  struct sipmsg *msg)
 {
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 	const gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	static struct sip_session *session;

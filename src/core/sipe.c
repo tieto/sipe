@@ -4157,8 +4157,8 @@ sipe_session_close(struct sipe_core_private *sipe_private,
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	if (session && session->focus_uri) {
-		sipe_conf_immcu_closed(sip, session);
-		conf_session_close(sip, session);
+		sipe_conf_immcu_closed(sipe_private, session);
+		conf_session_close(sipe_private, session);
 	}
 
 	if (session) {
@@ -4258,7 +4258,7 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 			session->is_multiparty = FALSE;
 			session->focus_uri = g_strdup(proto_chat_id);
 			sipe_session_enqueue_message(session, what, NULL);
-			sipe_invite_conf_focus(sip, session);
+			sipe_invite_conf_focus(sipe_private, session);
 		}
 	}
 
@@ -4424,7 +4424,7 @@ static void process_incoming_bye(struct sipe_core_private *sipe_private,
 	sipe_dialog_remove_3(session, dialog);
 	sipe_dialog_free(dialog);
 	if (session->focus_uri && !g_strcasecmp(from, session->im_mcu_uri)) {
-		sipe_conf_immcu_closed(sip, session);
+		sipe_conf_immcu_closed(sipe_private, session);
 	} else if (session->is_multiparty) {
 		purple_conv_chat_remove_user(PURPLE_CONV_CHAT(session->conv), from, NULL);
 	}
@@ -4690,7 +4690,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 
 	/* Invitation to join conference */
 	if (g_str_has_prefix(content_type, "application/ms-conf-invite+xml")) {
-		process_incoming_invite_conf(sip, msg);
+		process_incoming_invite_conf(sipe_private, msg);
 		return;
 	}
 
@@ -6431,7 +6431,7 @@ static void process_incoming_notify(struct sipe_core_private *sipe_private,
 
 	/* implicit subscriptions */
 	if (content_type && g_str_has_prefix(content_type, "application/ms-imdn+xml")) {
-		sipe_process_imdn(sip, msg);
+		sipe_process_imdn(sipe_private, msg);
 	}
 
 	if (event) {
@@ -6473,7 +6473,7 @@ static void process_incoming_notify(struct sipe_core_private *sipe_private,
 			}
 			else if (sipe_strcase_equal(event, "conference"))
 			{
-				sipe_process_conference(sip, msg);
+				sipe_process_conference(sipe_private, msg);
 			}
 		}
 	}
@@ -8260,7 +8260,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	/* 2007+ conference */
 	if (sip->ocs2007)
 	{
-		sipe_conf_add(sip, buddy->name);
+		sipe_conf_add(sipe_private, buddy->name);
 	}
 	else /* 2005- multiparty chat */
 	{
@@ -8341,7 +8341,7 @@ sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 	/* a conference */
 	if (session->focus_uri)
 	{
-		sipe_invite_conf(sip, session, who);
+		sipe_invite_conf(sipe_private, session, who);
 	}
 	else /* a multi-party chat */
 	{
@@ -8437,7 +8437,7 @@ sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy, const char *chat_title)
 
 	session = sipe_session_find_chat_by_title(sip, chat_title);
 
-	sipe_conf_modify_user_role(sip, session, buddy->name);
+	sipe_conf_modify_user_role(sipe_private, session, buddy->name);
 }
 
 /**
@@ -8455,7 +8455,7 @@ sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy, const char *chat_title)
 
 	session = sipe_session_find_chat_by_title(sip, chat_title);
 
-	sipe_conf_delete_user(sip, session, buddy->name);
+	sipe_conf_delete_user(sipe_private, session, buddy->name);
 }
 
 static void
@@ -8954,11 +8954,11 @@ sipe_get_access_control_menu(struct sipe_core_private *sipe_private,
 static void
 sipe_conf_modify_lock(PurpleChat *chat, gboolean locked)
 {
-	struct sipe_account_data *sip = PURPLE_CHAT_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private =  PURPLE_CHAT_TO_SIPE_CORE_PRIVATE;
 	struct sip_session *session;
 
-	session = sipe_session_find_chat_by_title(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
-	sipe_conf_modify_conference_lock(sip, session, locked);
+	session = sipe_session_find_chat_by_title(SIPE_ACCOUNT_DATA_PRIVATE, (gchar *)g_hash_table_lookup(chat->components, "channel"));
+	sipe_conf_modify_conference_lock(sipe_private, session, locked);
 }
 
 static void

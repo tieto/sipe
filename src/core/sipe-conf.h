@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,22 +21,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * Interface dependencies:
- *
- * <glib.h>
- */
-
 /* Forward declarations */
 struct sipmsg;
 struct sip_session;
-struct sipe_account_data;
+struct sipe_core_private;
 
 /**
  * Creates conference.
  */
 void 
-sipe_conf_add(struct sipe_account_data *sip,
+sipe_conf_add(struct sipe_core_private *sipe_private,
 	      const gchar* who);
 
 /**
@@ -46,12 +41,12 @@ sipe_conf_add(struct sipe_account_data *sip,
  * Server 2007+ functionality.
  */
 void
-process_incoming_invite_conf(struct sipe_account_data *sip,
+process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg);
 			     
 /** Invite us to the focus */
 void
-sipe_invite_conf_focus(struct sipe_account_data *sip,
+sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		       struct sip_session *session);
 			     
 /** 
@@ -59,14 +54,14 @@ sipe_invite_conf_focus(struct sipe_account_data *sip,
  * Content-Type: application/conference-info+xml
  */
 void
-sipe_process_conference(struct sipe_account_data *sip,
+sipe_process_conference(struct sipe_core_private *sipe_private,
 			struct sipmsg * msg);
 			
 /**
  * Invites counterparty to join conference.
  */			
 void 
-sipe_invite_conf(struct sipe_account_data *sip,
+sipe_invite_conf(struct sipe_core_private *sipe_private,
 		 struct sip_session *session,
 		 const gchar* who);
 
@@ -76,7 +71,7 @@ sipe_invite_conf(struct sipe_account_data *sip,
  * INFO method is a carrier of application/cccp+xml
  */	
 void
-sipe_conf_modify_user_role(struct sipe_account_data *sip,
+sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 			   struct sip_session *session,
 			   const gchar* who);
 
@@ -86,7 +81,7 @@ sipe_conf_modify_user_role(struct sipe_account_data *sip,
  * INFO method is a carrier of application/cccp+xml
  */				   
 void
-sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
+sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
 				 struct sip_session *session,
 				 const gboolean locked);
 				 
@@ -96,7 +91,7 @@ sipe_conf_modify_conference_lock(struct sipe_account_data *sip,
  * INFO method is a carrier of application/cccp+xml
  */				 
 void
-sipe_conf_delete_user(struct sipe_account_data *sip,
+sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		      struct sip_session *session,
 		      const gchar* who);
 
@@ -105,7 +100,7 @@ sipe_conf_delete_user(struct sipe_account_data *sip,
  * for example or conference has been timed out.
  */
 void
-sipe_conf_immcu_closed(struct sipe_account_data *sip,
+sipe_conf_immcu_closed(struct sipe_core_private *sipe_private,
 		       struct sip_session *session);      
 	
 /** 
@@ -113,7 +108,7 @@ sipe_conf_immcu_closed(struct sipe_account_data *sip,
  * Usually by closing chat wingow.
  */
 void
-conf_session_close(struct sipe_account_data *sip,
+conf_session_close(struct sipe_core_private *sipe_private,
 		   struct sip_session *session);
 
 /** 
@@ -121,5 +116,5 @@ conf_session_close(struct sipe_account_data *sip,
  * in conference.
  */		   
 void
-sipe_process_imdn(struct sipe_account_data *sip,
+sipe_process_imdn(struct sipe_core_private *sipe_private,
 		  struct sipmsg *msg);
