@@ -23,7 +23,6 @@
 /* Forward declarations */
 struct sipmsg;
 struct sip_dialog;
-struct sipe_account_data;
 struct sipe_core_private;
 struct transaction;
 
@@ -53,10 +52,11 @@ struct transaction {
 
 struct transaction *transactions_find(struct sipe_core_private *sipe_private, struct sipmsg *msg);
 void transactions_remove(struct sipe_core_private *sipe_private, struct transaction *trans);
-void do_register_exp(struct sipe_account_data *sip, int expire);
+void do_register_exp(struct sipe_core_private *sipe_private,
+		     int expire);
 void do_register_cb(struct sipe_core_private *sipe_private,
 		    void *unused);
-void do_register(struct sipe_account_data *sip);
+void do_register(struct sipe_core_private *sipe_private);
 void sip_transport_default_contact(struct sipe_core_private *sipe_private);
 /* server_name must be g_alloc()'ed */
 void sipe_server_register(struct sipe_core_private *sipe_private,

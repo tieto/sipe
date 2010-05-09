@@ -73,7 +73,7 @@
 
 /* Keep in sync with sipe_transport_type! */
 static const char *transport_descriptor[] = { "", "tls", "tcp"};
-#define TRANSPORT_DESCRIPTOR (transport_descriptor[SIP_TO_CORE_PRIVATE->transport->type])
+#define TRANSPORT_DESCRIPTOR (transport_descriptor[sipe_private->transport->type])
 
 static char *genbranch()
 {
@@ -82,9 +82,11 @@ static char *genbranch()
 		rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
-static void sign_outgoing_message (struct sipmsg * msg, struct sipe_account_data *sip, const gchar *method)
+static void sign_outgoing_message (struct sipmsg * msg,
+				   struct sipe_core_private *sipe_private,
+				   const gchar *method)
 {
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar * buf;
 
 	if (sip->registrar.type == AUTH_TYPE_UNSET) {
@@ -151,7 +153,7 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 
 	sipmsg_strip_headers(msg, keepers);
 	sipmsg_merge_new_headers(msg);
-	sign_outgoing_message(msg, sip, msg->method);
+	sign_outgoing_message(msg, sipe_private, msg->method);
 
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
 	tmp = msg->headers;
@@ -391,7 +393,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 	g_free(route);
 	g_free(epid);
 
-	sign_outgoing_message (msg, sip, method);
+	sign_outgoing_message (msg, sipe_private, method);
 
 	buf = sipmsg_to_string (msg);
 
@@ -408,7 +410,8 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 	return trans;
 }
 
-void do_register_exp(struct sipe_account_data *sip, int expire)
+void do_register_exp(struct sipe_core_private *sipe_private,
+		     int expire)
 {
 	char *uri;
 	char *expires;
@@ -417,10 +420,10 @@ void do_register_exp(struct sipe_account_data *sip, int expire)
 	char *epid;
 	char *uuid;
 
-	if (!SIP_TO_CORE_PUBLIC->sip_domain) return;
+	if (!sipe_private->public.sip_domain) return;
 
 	expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
-	epid = get_epid(sip);
+	epid = get_epid(SIPE_ACCOUNT_DATA_PRIVATE);
 	uuid = generateUUIDfromEPID(epid);
 	hdr = g_strdup_printf("Contact: <sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"\r\n"
 				    "Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
@@ -429,7 +432,7 @@ void do_register_exp(struct sipe_account_data *sip, int expire)
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
 			      sipe_backend_network_ip_address(),
-			      SIP_TO_CORE_PRIVATE->transport->client_port,
+			      sipe_private->transport->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
 			      expires);
@@ -437,11 +440,11 @@ void do_register_exp(struct sipe_account_data *sip, int expire)
 	g_free(epid);
 	g_free(expires);
 
-	sip->registerstatus = 1;
+	SIPE_ACCOUNT_DATA_PRIVATE->registerstatus = 1;
 
-	uri = sip_uri_from_name(SIP_TO_CORE_PUBLIC->sip_domain);
-	to = sip_uri_self(sip);
-	send_sip_request(SIP_TO_CORE_PRIVATE, "REGISTER", uri, to, hdr, "", NULL,
+	uri = sip_uri_from_name(sipe_private->public.sip_domain);
+	to = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	send_sip_request(sipe_private, "REGISTER", uri, to, hdr, "", NULL,
 			 process_register_response);
 	g_free(to);
 	g_free(uri);
@@ -449,16 +452,15 @@ void do_register_exp(struct sipe_account_data *sip, int expire)
 }
 
 void do_register_cb(struct sipe_core_private *sipe_private,
-			   SIPE_UNUSED_PARAMETER void *unused)
+		    SIPE_UNUSED_PARAMETER void *unused)
 {
-	struct sipe_account_data *sip = sipe_private->temporary;
-	do_register_exp(sip, -1);
-	sip->reregister_set = FALSE;
+	do_register_exp(sipe_private, -1);
+	SIPE_ACCOUNT_DATA_PRIVATE->reregister_set = FALSE;
 }
 
-void do_register(struct sipe_account_data *sip)
+void do_register(struct sipe_core_private *sipe_private)
 {
-	do_register_exp(sip, -1);
+	do_register_exp(sipe_private, -1);
 }
 
 static void sip_transport_input(struct sipe_transport_connection *conn)
@@ -562,7 +564,7 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 	sipe_private->service_data = NULL;
-	do_register(SIPE_ACCOUNT_DATA_PRIVATE);
+	do_register(sipe_private);
 }
 
 static void resolve_next_service(struct sipe_core_private *sipe_private,

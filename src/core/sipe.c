@@ -4494,7 +4494,7 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	sipe_auth_free(&sip->registrar);
 	sipe_auth_free(&sip->proxy);
 	sip->registerstatus = 0;
-	do_register(sip);
+	do_register(sipe_private);
 	sip->reauthenticate_set = FALSE;
 }
 
@@ -5246,9 +5246,9 @@ gboolean process_register_response(struct sipe_core_private *sipe_private,
 				fill_auth(tmp, &sip->registrar);
 				sip->registerstatus = 2;
 				if (sip->account->disconnecting) {
-					do_register_exp(sip, 0);
+					do_register_exp(sipe_private, 0);
 				} else {
-					do_register(sip);
+					do_register(sipe_private);
 				}
 			}
 			break;
@@ -7879,7 +7879,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 		g_hash_table_foreach(sip->subscriptions, sipe_unsubscribe_cb, sipe_private);
 
 		/* unregister */
-		do_register_exp(sip, 0);
+		do_register_exp(sipe_private, 0);
 	}
 
 	sipe_connection_cleanup(sipe_private);
