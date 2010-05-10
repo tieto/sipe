@@ -31,6 +31,9 @@
 #ifdef _WIN32
 #include <nspapi.h>
 #else
+#ifdef __APPLE__
+#include <sys/socket.h>
+#endif
 #include <unistd.h>
 #include <net/if.h>
 #include <sys/types.h>
