@@ -46,6 +46,9 @@ struct sipe_core_private {
 	gchar *server_version;
 	GSList *transactions;
 
+	/* SIPE protocol information */
+	GSList *sessions;
+
 	/* Buddies */
 	GHashTable *buddies;
 

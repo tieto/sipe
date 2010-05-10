@@ -745,7 +745,6 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 			      const char *participant)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 	struct sipe_media_call_private *call_private;
 
 	if (sipe_private->media_call)
@@ -755,7 +754,7 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 
 	sipe_private->media_call = call_private;
 
-	call_private->session = sipe_session_add_chat(sip);
+	call_private->session = sipe_session_add_chat(sipe_private);
 	call_private->dialog = sipe_dialog_add(call_private->session);
 	call_private->dialog->callid = gencallid();
 	call_private->dialog->with = g_strdup(participant);
@@ -775,9 +774,8 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 	const gchar					*callid = sipmsg_find_header(msg, "Call-ID");
 
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
-	struct sip_session			*session;
-	struct sip_dialog			*dialog;
-	struct sipe_account_data	*sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	struct sip_session *session;
+	struct sip_dialog *dialog;
 
 	if (call_private) {
 		if (sipe_strequal(call_private->dialog->callid, callid)) {
@@ -815,7 +813,7 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	session = sipe_session_find_or_add_chat_by_callid(sip, callid);
+	session = sipe_session_find_or_add_chat_by_callid(sipe_private, callid);
 	dialog = sipe_media_dialog_init(session, msg);
 
 	call_private = sipe_media_call_init(sipe_private, dialog->with, FALSE);

@@ -479,9 +479,9 @@ sipe_ft_outgoing_init(PurpleXfer *xfer)
 				      purple_xfer_get_filename(xfer),
 				      (long unsigned) purple_xfer_get_size(xfer));
 
-	struct sipe_account_data *sip = PURPLE_XFER_TO_SIPE_ACCOUNT_DATA;
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
-	struct sip_session *session = sipe_session_find_or_add_im(sip, xfer->who);
+	struct sipe_core_private *sipe_private = PURPLE_XFER_TO_SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	struct sip_session *session = sipe_session_find_or_add_im(sipe_private, xfer->who);
 
 	g_hash_table_insert(sip->filetransfers,g_strdup(ft->invitation_cookie),xfer);
 
@@ -613,14 +613,14 @@ sipe_ft_outgoing_stop(PurpleXfer *xfer)
 void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const GSList *body)
 {
 	PurpleXfer *xfer;
-	struct sipe_account_data *sip = PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-	struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
-	if (!session) {
-		gchar *from = parse_from(sipmsg_find_header(msg, "From"));
-		session = sipe_session_find_im(sip, from);
-		g_free(from);
-	}
+	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
+								   callid,
+								   from);
+	g_free(from);
 
 	if (!session) {
 		SIPE_DEBUG_ERROR_NOFORMAT("sipe_ft_incoming_transfer: can't find session for remote party");
@@ -1002,8 +1002,9 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 			       ft->auth_cookie);
 
 	if (!ft->dialog) {
-		struct sipe_account_data *sip = PURPLE_XFER_TO_SIPE_ACCOUNT_DATA;
-		struct sip_session *session = sipe_session_find_or_add_im(sip, xfer->who);
+		struct sipe_core_private *sipe_private = PURPLE_XFER_TO_SIPE_CORE_PRIVATE;
+		struct sip_session *session = sipe_session_find_or_add_im(sipe_private,
+									  xfer->who);
 		ft->dialog = sipe_dialog_find(session, xfer->who);
 	}
 

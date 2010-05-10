@@ -240,11 +240,10 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 				   struct sipmsg *msg,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session = NULL;
 	char *focus_uri = parse_from(sipmsg_find_header(msg, "To"));
 
-	session = sipe_session_find_conference(sip, focus_uri);
+	session = sipe_session_find_conference(sipe_private, focus_uri);
 
 	if (!session) {
 		SIPE_DEBUG_INFO("process_invite_conf_focus_response: unable to find conf session with focus=%s", focus_uri);
@@ -271,7 +270,7 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 	if (msg->response >= 400) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_conf_focus_response: INVITE response is not 200. Failed to join focus.");
 		/* @TODO notify user of failure to join focus */
-		sipe_session_remove(sip, session);
+		sipe_session_remove(sipe_private, session);
 		g_free(focus_uri);
 		return FALSE;
 	} else if (msg->response == 200) {
@@ -476,7 +475,6 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
 			     SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
 
 	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
@@ -500,7 +498,7 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
 	}
 
 	if (msg->response >= 200) {
-		struct sip_session *session = sipe_session_find_im(sip, dialog->with);
+		struct sip_session *session = sipe_session_find_im(sipe_private, dialog->with);
 		struct sip_dialog *im_dialog = sipe_dialog_find(session, dialog->with);
 
 		/* close IM session to counterparty */
@@ -569,8 +567,6 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
 			  struct sipmsg *msg,
 			  struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	
 	if (msg->response >= 400) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_conf_add_response: SERVICE response is not 200. Failed to create conference.");
 		/* @TODO notify user of failure to create conference */
@@ -584,7 +580,7 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
 			struct sip_session *session;
 			const sipe_xml *xn_conference_info = sipe_xml_child(xn_response, "addConference/conference-info");
 
-			session = sipe_session_add_chat(sip);
+			session = sipe_session_add_chat(sipe_private);
 			session->is_multiparty = FALSE;
 			session->focus_uri = g_strdup(sipe_xml_attribute(xn_conference_info, "entity"));
 			SIPE_DEBUG_INFO("process_conf_add_response: session->focus_uri=%s",
@@ -695,7 +691,7 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 
 	send_sip_response(sipe_private, msg, 200, "OK", NULL);
 
-	session = sipe_session_add_chat(SIPE_ACCOUNT_DATA_PRIVATE);
+	session = sipe_session_add_chat(sipe_private);
 	session->focus_uri = focus_uri;
 	session->is_multiparty = FALSE;
 
@@ -727,7 +723,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	if (!xn_conference_info) return;
 
 	focus_uri = sipe_xml_attribute(xn_conference_info, "entity");
-	session = sipe_session_find_conference(sip, focus_uri);
+	session = sipe_session_find_conference(sipe_private, focus_uri);
 
 	if (!session) {
 		SIPE_DEBUG_INFO("sipe_process_conference: unable to find conf session with focus=%s", focus_uri);
@@ -915,21 +911,17 @@ void
 sipe_process_imdn(struct sipe_core_private *sipe_private,
 		  struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "From"));
-	const gchar *call_id = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	static struct sip_session *session;
 	sipe_xml *xn_imdn;
 	const sipe_xml *node;
 	gchar *message_id;
 	gchar *message;
 
-	session = sipe_session_find_chat_by_callid(sip, call_id);
+	session = sipe_session_find_chat_or_im(sipe_private, callid, with);
 	if (!session) {
-		session = sipe_session_find_im(sip, with);
-	}
-	if (!session) {
-		SIPE_DEBUG_INFO("sipe_process_imdn: unable to find conf session with call_id=%s", call_id);
+		SIPE_DEBUG_INFO("sipe_process_imdn: unable to find conf session with callid=%s", callid);
 		g_free(with);
 		return;
 	}

@@ -3,8 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
- * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,8 +40,8 @@
 void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
 			   const char *name)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
+	struct sip_session *session = sipe_session_find_chat_by_id(SIPE_CORE_PRIVATE,
+								   id);
 
 	if (session) {
 		gchar *uri = sip_uri(name);

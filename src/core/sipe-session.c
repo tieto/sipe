@@ -29,10 +29,10 @@
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
-#include "sipe.h"
 
 void
 sipe_free_queued_message(struct queued_message *message)
@@ -43,7 +43,7 @@ sipe_free_queued_message(struct queued_message *message)
 }
 
 struct sip_session *
-sipe_session_add_chat(struct sipe_account_data *sip)
+sipe_session_add_chat(struct sipe_core_private *sipe_private)
 {
 	struct sip_session *session = g_new0(struct sip_session, 1);
 	session->callid = gencallid();
@@ -52,28 +52,29 @@ sipe_session_add_chat(struct sipe_account_data *sip)
 	session->unconfirmed_messages = g_hash_table_new_full(
 		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
 	session->conf_unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-	sip->sessions = g_slist_append(sip->sessions, session);
+	sipe_private->sessions = g_slist_append(sipe_private->sessions, session);
 	return session;
 }
 
 struct sip_session *
-sipe_session_find_or_add_chat_by_callid(struct sipe_account_data *sip,
+sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
 					const gchar *callid)
 {
-	struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
+	struct sip_session *session = sipe_session_find_chat_by_callid(sipe_private,
+								       callid);
 	if (!session) {
 		SIPE_DEBUG_INFO("sipe_session_find_or_add_chat_by_callid: new session for %s", callid);
-		session = sipe_session_add_chat(sip);
+		session = sipe_session_add_chat(sipe_private);
 		session->callid = g_strdup(callid);
 	}
 	return session;
 }
 
 struct sip_session *
-sipe_session_find_chat_by_callid(struct sipe_account_data *sip,
+sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 				 const gchar *callid)
 {
-	if (sip == NULL || callid == NULL) {
+	if (sipe_private == NULL || callid == NULL) {
 		return NULL;
 	}
 
@@ -87,10 +88,10 @@ sipe_session_find_chat_by_callid(struct sipe_account_data *sip,
 }
 
 struct sip_session *
-sipe_session_find_chat_by_id(struct sipe_account_data *sip,
+sipe_session_find_chat_by_id(struct sipe_core_private *sipe_private,
 			     int id)
 {
-	if (sip == NULL) {
+	if (sipe_private == NULL) {
 		return NULL;
 	}
 
@@ -103,10 +104,10 @@ sipe_session_find_chat_by_id(struct sipe_account_data *sip,
 }
 
 struct sip_session *
-sipe_session_find_chat_by_title(struct sipe_account_data *sip,
+sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
 			        const gchar *name)
 {
-	if (sip == NULL || name == NULL) {
+	if (sipe_private == NULL || name == NULL) {
 		return NULL;
 	}
 
@@ -120,10 +121,10 @@ sipe_session_find_chat_by_title(struct sipe_account_data *sip,
 }
 
 struct sip_session *
-sipe_session_find_conference(struct sipe_account_data *sip,
+sipe_session_find_conference(struct sipe_core_private *sipe_private,
 			     const gchar *focus_uri)
 {
-	if (sip == NULL || focus_uri == NULL) {
+	if (sipe_private == NULL || focus_uri == NULL) {
 		return NULL;
 	}
 
@@ -137,9 +138,10 @@ sipe_session_find_conference(struct sipe_account_data *sip,
 }
 
 struct sip_session *
-sipe_session_find_im(struct sipe_account_data *sip, const gchar *who)
+sipe_session_find_im(struct sipe_core_private *sipe_private,
+		     const gchar *who)
 {
-	if (sip == NULL || who == NULL) {
+	if (sipe_private == NULL || who == NULL) {
 		return NULL;
 	}
 
@@ -152,10 +154,10 @@ sipe_session_find_im(struct sipe_account_data *sip, const gchar *who)
 }
 
 struct sip_session *
-sipe_session_find_or_add_im(struct sipe_account_data *sip,
+sipe_session_find_or_add_im(struct sipe_core_private *sipe_private,
 			    const gchar *who)
 {
-	struct sip_session *session = sipe_session_find_im(sip, who);
+	struct sip_session *session = sipe_session_find_im(sipe_private, who);
 	if (!session) {
 		SIPE_DEBUG_INFO("sipe_session_find_or_add_im: new session for %s", who);
 		session = g_new0(struct sip_session, 1);
@@ -163,17 +165,31 @@ sipe_session_find_or_add_im(struct sipe_account_data *sip,
 		session->with = g_strdup(who);
 		session->unconfirmed_messages = g_hash_table_new_full(
 			g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
-		sip->sessions = g_slist_append(sip->sessions, session);
+		sipe_private->sessions = g_slist_append(sipe_private->sessions, session);
+	}
+	return session;
+}
+
+struct sip_session *
+sipe_session_find_chat_or_im(struct sipe_core_private *sipe_private,
+			     const gchar *callid,
+			     const gchar *who)
+{
+	struct sip_session *session = sipe_session_find_chat_by_callid(sipe_private,
+								       callid);
+	if (!session) {
+		session = sipe_session_find_im(sipe_private, who);
 	}
 	return session;
 }
 
 void
-sipe_session_remove(struct sipe_account_data *sip, struct sip_session *session)
+sipe_session_remove(struct sipe_core_private *sipe_private,
+		    struct sip_session *session)
 {
 	GSList *entry;
 
-	sip->sessions = g_slist_remove(sip->sessions, session);
+	sipe_private->sessions = g_slist_remove(sipe_private->sessions, session);
 
 	sipe_dialog_remove_all(session);
 	sipe_dialog_free(session->focus_dialog);
@@ -209,17 +225,17 @@ sipe_session_remove(struct sipe_account_data *sip, struct sip_session *session)
 }
 
 void
-sipe_session_remove_all(struct sipe_account_data *sip)
+sipe_session_remove_all(struct sipe_core_private *sipe_private)
 {
 	GSList *entry;
-	while ((entry = sip->sessions) != NULL) {
-		sipe_session_remove(sip, entry->data);
+	while ((entry = sipe_private->sessions) != NULL) {
+		sipe_session_remove(sipe_private, entry->data);
 	}
 }
 
 void
 sipe_session_enqueue_message(struct sip_session *session,
-								const gchar *body, const gchar *content_type)
+			     const gchar *body, const gchar *content_type)
 {
 	struct queued_message *msg = g_new0(struct queued_message,1);
 	msg->body = g_strdup(body);
