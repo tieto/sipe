@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
+		B193836411972C26007ADE8F /* libglib-2.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B193836311972C26007ADE8F /* libglib-2.0.dylib */; };
 		C92A799210B24C46009B64B9 /* sip-csta.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797310B24C46009B64B9 /* sip-csta.c */; };
 		C92A799310B24C46009B64B9 /* sip-csta.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797410B24C46009B64B9 /* sip-csta.h */; };
 		C92A799510B24C46009B64B9 /* sip-sec-krb5.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797610B24C46009B64B9 /* sip-sec-krb5.c */; };
@@ -38,17 +39,10 @@
 		C92A79AF10B24C46009B64B9 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A799010B24C46009B64B9 /* uuid.c */; };
 		C92A79B010B24C46009B64B9 /* uuid.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A799110B24C46009B64B9 /* uuid.h */; };
 		C92A79E110B24FDC009B64B9 /* libpidgin-sipe.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C92A796910B24BAD009B64B9 /* libpidgin-sipe.a */; };
-		C92A7A2310B25132009B64B9 /* libglib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDADAA109ADA08004EEEAF /* libglib.framework */; };
-		C92A7A2410B25132009B64B9 /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE40109ADA4B004EEEAF /* libintl.framework */; };
-		C92A7A2510B25132009B64B9 /* libpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE46109ADA4B004EEEAF /* libpurple.framework */; };
 		C948843D109B2F8100ABFAF7 /* ESSIPEService.m in Sources */ = {isa = PBXBuildFile; fileRef = C948843C109B2F8100ABFAF7 /* ESSIPEService.m */; };
 		C9488446109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = C9488445109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m */; };
 		C99F358F109AE68400E79CB2 /* ESPurpleSIPEAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C99F358E109AE68400E79CB2 /* ESPurpleSIPEAccount.m */; };
 		C9D5F10810B264C4008F82FF /* sipe-small.png in Resources */ = {isa = PBXBuildFile; fileRef = C9FDAEF3109ADF97004EEEAF /* sipe-small.png */; };
-		C9FDAE33109ADA4B004EEEAF /* Adium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE32109ADA4B004EEEAF /* Adium.framework */; };
-		C9FDAE35109ADA4B004EEEAF /* AdiumLibpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE34109ADA4B004EEEAF /* AdiumLibpurple.framework */; };
-		C9FDAE37109ADA4B004EEEAF /* AIUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE36109ADA4B004EEEAF /* AIUtilities.framework */; };
-		C9FDAE39109ADA4B004EEEAF /* FriBidi.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE38109ADA4B004EEEAF /* FriBidi.framework */; };
 		C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE7E109ADC54004EEEAF /* Kerberos.framework */; };
 		C9FDAEF6109ADF97004EEEAF /* sipe.png in Resources */ = {isa = PBXBuildFile; fileRef = C9FDAEF4109ADF97004EEEAF /* sipe.png */; };
 /* End PBXBuildFile section */
@@ -71,6 +65,7 @@
 		32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIPEAdiumPlugin_Prefix.pch; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
+		B193836311972C26007ADE8F /* libglib-2.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libglib-2.0.dylib"; path = "usr/local/lib/libglib-2.0.dylib"; sourceTree = SDKROOT; };
 		C92A796910B24BAD009B64B9 /* libpidgin-sipe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libpidgin-sipe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C92A797310B24C46009B64B9 /* sip-csta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sip-csta.c"; path = "../core/sip-csta.c"; sourceTree = SOURCE_ROOT; };
 		C92A797410B24C46009B64B9 /* sip-csta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-csta.h"; path = "../core/sip-csta.h"; sourceTree = SOURCE_ROOT; };
@@ -100,24 +95,12 @@
 		C92A798F10B24C46009B64B9 /* sipmsg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sipmsg.h; path = ../core/sipmsg.h; sourceTree = SOURCE_ROOT; };
 		C92A799010B24C46009B64B9 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uuid.c; path = ../core/uuid.c; sourceTree = SOURCE_ROOT; };
 		C92A799110B24C46009B64B9 /* uuid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uuid.h; path = ../core/uuid.h; sourceTree = SOURCE_ROOT; };
-		C92A7A0610B250E9009B64B9 /* libgmodule.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libgmodule.framework; path = /Users/matt/Library/Frameworks/libgmodule.framework; sourceTree = "<absolute>"; };
-		C92A7A0810B250E9009B64B9 /* libgobject.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libgobject.framework; path = /Users/matt/Library/Frameworks/libgobject.framework; sourceTree = "<absolute>"; };
-		C92A7A0A10B250E9009B64B9 /* libgthread.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libgthread.framework; path = /Users/matt/Library/Frameworks/libgthread.framework; sourceTree = "<absolute>"; };
-		C92A7A0D10B250E9009B64B9 /* libjson-glib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = "libjson-glib.framework"; path = "/Users/matt/Library/Frameworks/libjson-glib.framework"; sourceTree = "<absolute>"; };
-		C92A7A0F10B250E9009B64B9 /* libmeanwhile.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libmeanwhile.framework; path = /Users/matt/Library/Frameworks/libmeanwhile.framework; sourceTree = "<absolute>"; };
 		C948843B109B2F8100ABFAF7 /* ESSIPEService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPEService.h; sourceTree = "<group>"; };
 		C948843C109B2F8100ABFAF7 /* ESSIPEService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESSIPEService.m; sourceTree = "<group>"; };
 		C9488444109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPELibpurpleServicePlugin.h; sourceTree = "<group>"; };
 		C9488445109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESSIPELibpurpleServicePlugin.m; sourceTree = "<group>"; };
 		C99F358D109AE68400E79CB2 /* ESPurpleSIPEAccount.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESPurpleSIPEAccount.h; sourceTree = "<group>"; };
 		C99F358E109AE68400E79CB2 /* ESPurpleSIPEAccount.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESPurpleSIPEAccount.m; sourceTree = "<group>"; };
-		C9FDADAA109ADA08004EEEAF /* libglib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libglib.framework; path = "~/Library/Frameworks/libglib.framework"; sourceTree = "<absolute>"; };
-		C9FDAE32109ADA4B004EEEAF /* Adium.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Adium.framework; path = "~/Library/Frameworks/Adium.framework"; sourceTree = "<absolute>"; };
-		C9FDAE34109ADA4B004EEEAF /* AdiumLibpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdiumLibpurple.framework; path = "~/Library/Frameworks/AdiumLibpurple.framework"; sourceTree = "<absolute>"; };
-		C9FDAE36109ADA4B004EEEAF /* AIUtilities.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AIUtilities.framework; path = "~/Library/Frameworks/AIUtilities.framework"; sourceTree = "<absolute>"; };
-		C9FDAE38109ADA4B004EEEAF /* FriBidi.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FriBidi.framework; path = "~/Library/Frameworks/FriBidi.framework"; sourceTree = "<absolute>"; };
-		C9FDAE40109ADA4B004EEEAF /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = "~/Library/Frameworks/libintl.framework"; sourceTree = "<absolute>"; };
-		C9FDAE46109ADA4B004EEEAF /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libpurple.framework; path = "~/Library/Frameworks/libpurple.framework"; sourceTree = "<absolute>"; };
 		C9FDAE7E109ADC54004EEEAF /* Kerberos.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Kerberos.framework; path = System/Library/Frameworks/Kerberos.framework; sourceTree = SDKROOT; };
 		C9FDAEF3109ADF97004EEEAF /* sipe-small.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "sipe-small.png"; sourceTree = SOURCE_ROOT; };
 		C9FDAEF4109ADF97004EEEAF /* sipe.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sipe.png; sourceTree = SOURCE_ROOT; };
@@ -130,15 +113,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */,
-				C9FDAE33109ADA4B004EEEAF /* Adium.framework in Frameworks */,
-				C9FDAE35109ADA4B004EEEAF /* AdiumLibpurple.framework in Frameworks */,
-				C9FDAE37109ADA4B004EEEAF /* AIUtilities.framework in Frameworks */,
-				C9FDAE39109ADA4B004EEEAF /* FriBidi.framework in Frameworks */,
 				C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */,
 				C92A79E110B24FDC009B64B9 /* libpidgin-sipe.a in Frameworks */,
-				C92A7A2310B25132009B64B9 /* libglib.framework in Frameworks */,
-				C92A7A2410B25132009B64B9 /* libintl.framework in Frameworks */,
-				C92A7A2510B25132009B64B9 /* libpurple.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -146,6 +122,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B193836411972C26007ADE8F /* libglib-2.0.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -161,11 +138,6 @@
 				089C167CFE841241C02AAC07 /* Resources */,
 				089C1671FE841209C02AAC07 /* Frameworks and Libraries */,
 				19C28FB8FE9D52D311CA2CBB /* Products */,
-				C92A7A0610B250E9009B64B9 /* libgmodule.framework */,
-				C92A7A0810B250E9009B64B9 /* libgobject.framework */,
-				C92A7A0A10B250E9009B64B9 /* libgthread.framework */,
-				C92A7A0D10B250E9009B64B9 /* libjson-glib.framework */,
-				C92A7A0F10B250E9009B64B9 /* libmeanwhile.framework */,
 			);
 			name = SIPEAdiumPlugin;
 			sourceTree = "<group>";
@@ -175,6 +147,7 @@
 			children = (
 				1058C7ACFEA557BF11CA2CBB /* Linked Frameworks */,
 				1058C7AEFEA557BF11CA2CBB /* Other Frameworks */,
+				B193836311972C26007ADE8F /* libglib-2.0.dylib */,
 			);
 			name = "Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -207,13 +180,6 @@
 			isa = PBXGroup;
 			children = (
 				1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */,
-				C9FDAE32109ADA4B004EEEAF /* Adium.framework */,
-				C9FDAE34109ADA4B004EEEAF /* AdiumLibpurple.framework */,
-				C9FDAE36109ADA4B004EEEAF /* AIUtilities.framework */,
-				C9FDAE38109ADA4B004EEEAF /* FriBidi.framework */,
-				C9FDADAA109ADA08004EEEAF /* libglib.framework */,
-				C9FDAE40109ADA4B004EEEAF /* libintl.framework */,
-				C9FDAE46109ADA4B004EEEAF /* libpurple.framework */,
 				C9FDAE7E109ADC54004EEEAF /* Kerberos.framework */,
 			);
 			name = "Linked Frameworks";
@@ -543,6 +509,11 @@
 					"HAVE_LOCALE_H=1",
 					"HAVE_LC_MESSAGES=1",
 					"HAVE_LANGINFO_CODESET=1",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
+					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
+					../api,
 				);
 				INSTALL_PATH = /usr/local/lib;
 				PREBINDING = NO;
