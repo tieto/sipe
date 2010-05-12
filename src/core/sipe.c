@@ -517,16 +517,18 @@ void
 sipe_core_contact_allow_deny (struct sipe_core_public *sipe_public,
 			      const gchar * who, gboolean allow)
 {
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
 	if (allow) {
 		SIPE_DEBUG_INFO("Authorizing contact %s", who);
 	} else {
 		SIPE_DEBUG_INFO("Blocking contact %s", who);
 	}
 
-	if (SIPE_ACCOUNT_DATA->ocs2007) {
-		sipe_change_access_level(SIPE_CORE_PRIVATE, (allow ? -1 : 32000), "user", sipe_get_no_sip_uri(who));
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+		sipe_change_access_level(sipe_private, (allow ? -1 : 32000), "user", sipe_get_no_sip_uri(who));
 	} else {
-		sipe_contact_set_acl (SIPE_CORE_PRIVATE, who, allow ? "AA" : "BD");
+		sipe_contact_set_acl(sipe_private, who, allow ? "AA" : "BD");
 	}
 }
 
@@ -918,7 +920,7 @@ sipe_got_user_status(struct sipe_core_private *sipe_private,
 	/* Check if on 2005 system contact's calendar,
 	 * then set/preserve it.
 	 */
-	if (!sip->ocs2007) {
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		sipe_apply_calendar_status(sipe_private, sbuddy, status_id);
 	} else {
 		purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
@@ -1138,7 +1140,7 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 	gchar *content_type;
 	struct sip_dialog *dialog;
 
-	if (sip->ocs2007) {
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		require = ", categoryList";
 		accept = ", application/msrtc-event-categories+xml, application/xpidf+xml, application/pidf+xml";
                 content_type = "application/msrtc-adrl-categorylist+xml";
@@ -1193,10 +1195,9 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 static void sipe_subscribe_presence_batched(struct sipe_core_private *sipe_private,
 					    SIPE_UNUSED_PARAMETER void *unused)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *to = sip_uri_self(sipe_private);
 	gchar *resources_uri = g_strdup("");
-	if (sip->ocs2007) {
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		g_hash_table_foreach(sipe_private->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
 	} else {
                 g_hash_table_foreach(sipe_private->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
@@ -1263,7 +1264,7 @@ static void sipe_subscribe_presence_single(struct sipe_core_private *sipe_privat
 
 	if (sbuddy) sbuddy->just_added = FALSE;
 
-	if (sip->ocs2007) {
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		content_type = "Content-Type: application/msrtc-adrl-categorylist+xml\r\n";
 	} else {
 		autoextend = "Supported: com.microsoft.autoextend\r\n";
@@ -1277,7 +1278,7 @@ static void sipe_subscribe_presence_single(struct sipe_core_private *sipe_privat
 		"Event: presence\r\n"
 		"Contact: %s\r\n", autoextend, content_type, tmp);
 
-	if (sip->ocs2007) {
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		content = g_strdup_printf(
 			"<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
 			"<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
@@ -1825,7 +1826,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 
 		/* Add self-contact if not there yet. 2005 systems. */
 		/* This will resemble subscription to roaming_self in 2007 systems */
-		if (!sip->ocs2007) {
+		if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 			gchar *self_uri = sip_uri_self(sipe_private);
 			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, self_uri);
 
@@ -1853,7 +1854,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	/* for 2005 systems schedule contacts' status update
 	 * based on their calendar information
 	 */
-	if (!sip->ocs2007) {
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		sipe_sched_calendar_status_update(sipe_private, time(NULL));
 	}
 
@@ -3935,7 +3936,6 @@ sipe_invite(struct sipe_core_private *sipe_private,
 	    const gchar *referred_by,
 	    const gboolean is_triggered)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *to;
 	gchar *contact;
@@ -4050,7 +4050,7 @@ sipe_invite(struct sipe_core_private *sipe_private,
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
 		sipe_backend_network_ip_address(),
 		sipe_backend_network_ip_address(),
-		sip->ocs2007 ? "message" : "x-ms-message",
+		SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? "message" : "x-ms-message",
 		sipe_private->server_port);
 
 	dialog->outgoing_invite = send_sip_request(sipe_private, "INVITE",
@@ -4233,7 +4233,7 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 		SIPE_DEBUG_INFO("sipe_chat_send: chat_name='%s'", chat_name ? chat_name : "NULL");
 		SIPE_DEBUG_INFO("sipe_chat_send: proto_chat_id='%s'", proto_chat_id ? proto_chat_id : "NULL");
 
-		if (sip->ocs2007) {
+		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 			struct sip_session *session = sipe_session_add_chat(sipe_private);
 
 			session->is_multiparty = FALSE;
@@ -4889,7 +4889,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
 		sipe_backend_network_ip_address(),
 		sipe_backend_network_ip_address(),
-		sip->ocs2007 ? "message" : "x-ms-message",
+		SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? "message" : "x-ms-message",
 		sipe_private->server_port,
 		sipe_private->username);
 	send_sip_response(sipe_private, msg, 200, "OK", body);
@@ -4899,7 +4899,6 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 static void process_incoming_options(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *body;
 
 	sipmsg_add_header(msg, "Allow", "INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY");
@@ -4914,7 +4913,7 @@ static void process_incoming_options(struct sipe_core_private *sipe_private,
 		"t=0 0\r\n"
 		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
-		sip->ocs2007 ? "message" : "x-ms-message",
+		SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? "message" : "x-ms-message",
 		sipe_private->server_port,
 		sipe_private->username);
 	send_sip_response(sipe_private, msg, 200, "OK", body);
@@ -5043,7 +5042,7 @@ gboolean process_register_response(struct sipe_core_private *sipe_private,
 					//SIPE_DEBUG_INFO_NOFORMAT("didn't find gruu in a Contact hdr");
 					sip_transport_default_contact(sipe_private);
 				}
-                                sip->ocs2007 = FALSE;
+                                SIPE_CORE_PRIVATE_FLAG_UNSET(OCS2007);
 				sip->batched_support = FALSE;
 
                                 while(hdr)
@@ -5052,7 +5051,7 @@ gboolean process_register_response(struct sipe_core_private *sipe_private,
 					if (sipe_strcase_equal(elem->name, "Supported")) {
 						if (sipe_strcase_equal(elem->value, "msrtc-event-categories")) {
 							/* We interpret this as OCS2007+ indicator */
-							sip->ocs2007 = TRUE;
+							SIPE_CORE_PRIVATE_FLAG_SET(OCS2007);
 							SIPE_DEBUG_INFO("Supported: %s (indicates OCS2007+)", elem->value);
 						}
 						if (sipe_strcase_equal(elem->value, "adhoclist")) {
@@ -5090,7 +5089,7 @@ gboolean process_register_response(struct sipe_core_private *sipe_private,
 					 *   presence.wpending
 					 * These are for backward compatibility.
 					 */
-					if (sip->ocs2007)
+					if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
 					{
 						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-self",
 									(GCompareFunc)g_ascii_strcasecmp)) {
@@ -6229,7 +6228,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	SIPE_DEBUG_INFO("process_incoming_notify_msrtc: status(%s)", status_id);
 	sipe_got_user_status(sipe_private, uri, status_id);
 
-	if (!sip->ocs2007 && sipe_strcase_equal(self_uri, uri)) {
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) && sipe_strcase_equal(self_uri, uri)) {
 		sipe_user_info_has_updated(sipe_private, xn_userinfo);
 	}
 
@@ -7470,7 +7469,7 @@ static void send_presence_status(struct sipe_core_private *sipe_private,
 			purple_status_get_id(status) ? purple_status_get_id(status) : "",
 			sipe_is_user_state(sipe_private) ? "USER" : "MACHINE");
 
-        if (sip->ocs2007) {
+        if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		send_presence_category_publish(sipe_private);
 	} else {
 		send_presence_soap(sipe_private, FALSE);
@@ -8055,7 +8054,7 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-	if (sip->ocs2007) /* 2007+ */
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) /* 2007+ */
 	{
 		GString* str = g_string_new(NULL);
 		gchar *publications;
@@ -8115,7 +8114,6 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 	}
 
 	if (sipe_public) { //happens on pidgin exit
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 		struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, name);
 		if (sbuddy) {
 			note = sbuddy->note;
@@ -8125,7 +8123,7 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 			meeting_subject = sbuddy->meeting_subject;
 			meeting_location = sbuddy->meeting_location;
 		}
-		if (sip->ocs2007) {
+		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 			gboolean is_group_access = FALSE;
 			const int container_id = sipe_find_access_level(sipe_private, "user", sipe_get_no_sip_uri(name), &is_group_access);
 			const char *access_level = sipe_get_access_level_name(container_id);
@@ -8222,12 +8220,11 @@ static void
 sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_new_cb: buddy->name=%s", buddy->name);
 
 	/* 2007+ conference */
-	if (sip->ocs2007)
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
 	{
 		sipe_conf_add(sipe_private, buddy->name);
 	}
@@ -8659,7 +8656,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	}
 
 	/* Access Level */
-	if (sip->ocs2007) {
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		GList *menu_access_levels = sipe_get_access_control_menu(sipe_private, buddy->name);
 
 		act = purple_menu_action_new(_("Access level"),
@@ -9033,7 +9030,7 @@ process_get_info_response(struct sipe_core_private *sipe_private,
 			/* For 2007 system we will take this from ContactCard -
 			 * it has cleaner tel: URIs at least
 			 */
-			if (!sip->ocs2007) {
+			if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 				char *tel_uri = sip_to_tel_uri(phone_number);
 				/* trims its parameters, so call first */
 				sipe_update_user_info(sipe_private, uri, ALIAS_PROP, server_alias);

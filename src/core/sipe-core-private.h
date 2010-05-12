@@ -71,7 +71,7 @@ struct sipe_core_private {
 /**
  * Flags - stored in sipe_core_public.flags but names not exported
  */
-#define SIPE_CORE_PRIVATE_FLAG_xxx 0x80000000 /* place holder... */
+#define SIPE_CORE_PRIVATE_FLAG_OCS2007 0x80000000 /* server is OCS2007+ */
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
