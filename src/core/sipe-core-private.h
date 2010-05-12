@@ -48,6 +48,7 @@ struct sipe_core_private {
 
 	/* SIPE protocol information */
 	gchar *username;
+	gchar *epid;
 	GSList *sessions;
 
 	/* Buddies */

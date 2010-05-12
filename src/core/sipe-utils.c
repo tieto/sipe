@@ -132,18 +132,16 @@ gchar *sip_uri(const gchar *string)
 }
 
 gchar *
-get_epid(struct sipe_account_data *sip)
+get_epid(struct sipe_core_private *sipe_private)
 {
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
-
-	if (!sip->epid) {
+	if (!sipe_private->epid) {
 		gchar *self_sip_uri = sip_uri_self(sipe_private);
-		sip->epid = sipe_get_epid(self_sip_uri,
-					  g_get_host_name(),
-					  sipe_backend_network_ip_address());
+		sipe_private->epid = sipe_get_epid(self_sip_uri,
+						   g_get_host_name(),
+						   sipe_backend_network_ip_address());
 		g_free(self_sip_uri);
 	}
-	return g_strdup(sip->epid);
+	return g_strdup(sipe_private->epid);
 }
 
 guint
@@ -151,7 +149,8 @@ sipe_get_pub_instance(struct sipe_account_data *sip,
 		      int publication_key)
 {
 	unsigned res = 0;
-	gchar *epid = get_epid(sip);
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+	gchar *epid = get_epid(sipe_private);
 
 	sscanf(epid, "%08x", &res);
 	g_free(epid);
@@ -186,7 +185,7 @@ sipe_get_pub_instance_(struct sipe_account_data *sip,
 {
 	unsigned part_1;
 	unsigned part_2;
-	gchar *epid = get_epid(sip);
+	gchar *epid = get_epid(sipe_private);
 	sscanf(epid, "%08x", &part_1);
 	g_free(epid);
 	sscanf(publication_key, "%uh", &part_2);

@@ -103,10 +103,11 @@ struct sipe_transport_connection;
 
 /**
  * Returns epid value.
- * Uses cache.
+ *
+ * @return epid. Must be g_free()'d.
  */
 gchar *
-get_epid(struct sipe_account_data *sip);
+get_epid(struct sipe_core_private *sipe_private);
 
 /**
  * Generate Call ID

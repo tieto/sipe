@@ -4081,7 +4081,7 @@ sipe_refer(struct sipe_core_private *sipe_private,
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *contact;
-	gchar *epid = get_epid(sip);
+	gchar *epid = get_epid(sipe_private);
 	struct sip_dialog *dialog = sipe_dialog_find(session,
 						     session->roster_manager);
 	const char *ourtag = dialog && dialog->ourtag ? dialog->ourtag : NULL;
@@ -5025,7 +5025,7 @@ gboolean process_register_response(struct sipe_core_private *sipe_private,
 
 				purple_connection_set_state(sip->gc, PURPLE_CONNECTED);
 
-				epid = get_epid(sip);
+				epid = get_epid(sipe_private);
 				uuid = generateUUIDfromEPID(epid);
 				g_free(epid);
 
@@ -6563,7 +6563,7 @@ send_presence_soap0(struct sipe_core_private *sipe_private,
 	const gchar *note_pub = NULL;
 	gchar *states = NULL;
 	gchar *calendar_data = NULL;
-	gchar *epid = get_epid(sip);
+	gchar *epid = get_epid(sipe_private);
 	time_t now = time(NULL);
 	gchar *since_time_str = sipe_utils_time_to_str(now);
 	const gchar *oof_note = cal ? sipe_ews_get_oof_note(cal) : NULL;
@@ -6806,7 +6806,7 @@ sipe_publish_get_category_device(struct sipe_core_private *sipe_private)
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *uri;
 	gchar *doc;
-	gchar *epid = get_epid(sip);
+	gchar *epid = get_epid(sipe_private);
 	gchar *uuid = generateUUIDfromEPID(epid);
 	guint device_instance = sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
 	/* key is <category><instance><container> */
@@ -7774,8 +7774,8 @@ static void sipe_connection_cleanup(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
-	g_free(sip->epid);
-	sip->epid = NULL;
+	g_free(sipe_private->epid);
+	sipe_private->epid = NULL;
 
 	sipe_backend_transport_disconnect(sipe_private->transport);
 	sipe_private->transport = NULL;

@@ -314,7 +314,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *route     = g_strdup("");
-	gchar *epid      = get_epid(sip);
+	gchar *epid      = get_epid(sipe_private);
 	int cseq         = dialog ? ++dialog->cseq : 1 /* as Call-Id is new in this case */;
 	struct transaction *trans = NULL;
 
@@ -423,7 +423,7 @@ void do_register_exp(struct sipe_core_private *sipe_private,
 	if (!sipe_private->public.sip_domain) return;
 
 	expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
-	epid = get_epid(SIPE_ACCOUNT_DATA_PRIVATE);
+	epid = get_epid(sipe_private);
 	uuid = generateUUIDfromEPID(epid);
 	hdr = g_strdup_printf("Contact: <sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"\r\n"
 				    "Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
