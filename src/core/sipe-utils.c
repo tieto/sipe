@@ -73,9 +73,9 @@ gchar *genconfid(void)
 			       RANDOM32BITS, RANDOM32BITS);
 }
 
-gchar *get_contact(const struct sipe_account_data  *sip)
+gchar *get_contact(const struct sipe_core_private *sipe_private)
 {
-	return g_strdup(sip->contact);
+	return g_strdup(sipe_private->contact);
 }
 
 gchar *parse_from(const gchar *hdr)

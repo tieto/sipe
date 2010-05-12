@@ -449,7 +449,7 @@ sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 		sip->csta->dialog->ourtag = gentag();
 	}
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Contact: %s\r\n"
 		"Supported: timer\r\n"

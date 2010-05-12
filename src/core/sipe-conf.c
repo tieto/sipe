@@ -208,7 +208,7 @@ sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 			  const int expires)
 {
 	gchar *expires_hdr = (expires >= 0) ? g_strdup_printf("Expires: %d\r\n", expires) : g_strdup("");
-	gchar *contact = get_contact(SIPE_ACCOUNT_DATA_PRIVATE);
+	gchar *contact = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: conference\r\n"
 		"%s"
@@ -292,7 +292,6 @@ void
 sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		       struct sip_session *session)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
@@ -313,7 +312,7 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		session->focus_dialog->ourtag = gentag();
 	}
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Supported: ms-sender\r\n"
 		"Contact: %s\r\n"
@@ -533,7 +532,7 @@ sipe_invite_conf(struct sipe_core_private *sipe_private,
 	dialog->with = g_strdup(who);
 	dialog->ourtag = gentag();
 
-	contact = get_contact(SIPE_ACCOUNT_DATA_PRIVATE);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Supported: ms-sender\r\n"
 		"Contact: %s\r\n"
@@ -617,7 +616,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	char *expiry_time;
 	struct transaction_payload *payload;
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Supported: ms-sender\r\n"
 		"Contact: %s\r\n"

@@ -104,6 +104,8 @@ struct sipe_transport_connection;
 /**
  * Returns epid value.
  *
+ * @param sipe_private (in) SIPE core private data
+ *
  * @return epid. Must be g_free()'d.
  */
 gchar *
@@ -147,11 +149,11 @@ sipe_get_pub_instance(struct sipe_account_data *sip,
 /**
  * Get contact information from SIPE account
  *
- * @param sip (in) SIPE account
+ * @param sipe_private (in) SIPE core private data
  *
  * @return Contact. Must be g_free()'d.
  */
-gchar *get_contact(const struct sipe_account_data *sip);
+gchar *get_contact(const struct sipe_core_private *sipe_private);
 
 /**
  * Parses URI from SIP header

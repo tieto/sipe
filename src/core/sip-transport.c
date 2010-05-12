@@ -135,7 +135,7 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 	const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
 
 	/* Can return NULL! */
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	if (contact) {
 		sipmsg_add_header(msg, "Contact", contact);
 		g_free(contact);
@@ -551,13 +551,11 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 
 void sip_transport_default_contact(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
-	sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
-				       sipe_private->username,
-				       sipe_private->transport->client_port,
-				       sipe_backend_network_ip_address(),
-				       TRANSPORT_DESCRIPTOR);
+	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
+						sipe_private->username,
+						sipe_private->transport->client_port,
+						sipe_backend_network_ip_address(),
+						TRANSPORT_DESCRIPTOR);
 }
 
 static void sip_transport_connected(struct sipe_transport_connection *conn)

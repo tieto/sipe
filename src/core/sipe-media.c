@@ -487,7 +487,7 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 
 	++(call_private->invite_cnt);
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Supported: ms-early-media\r\n"
 		"Supported: 100rel\r\n"

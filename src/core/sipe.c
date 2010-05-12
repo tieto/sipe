@@ -456,9 +456,8 @@ send_soap_request_with_cb(struct sipe_core_private *sipe_private,
 			  TransCallback callback,
 			  struct transaction_payload *payload)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *from = from0 ? g_strdup(from0) : sip_uri_self(sipe_private);
-	gchar *contact = get_contact(sip);
+	gchar *contact = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
 	                             "Content-Type: application/SOAP+xml\r\n",contact);
 
@@ -1130,7 +1129,7 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
 	gchar *key;
-	gchar *contact = get_contact(sip);
+	gchar *contact = get_contact(sipe_private);
 	gchar *request;
 	gchar *content;
 	gchar *require = "";
@@ -1253,7 +1252,7 @@ static void sipe_subscribe_presence_single(struct sipe_core_private *sipe_privat
 	struct sipe_account_data *sip = sipe_private->temporary;
 	gchar *key;
 	gchar *to = sip_uri((char *)buddy_name);
-	gchar *tmp = get_contact(sip);
+	gchar *tmp = get_contact(sipe_private);
 	gchar *request;
 	gchar *content = NULL;
         gchar *autoextend = "";
@@ -1864,9 +1863,8 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
   */
 static void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sip);
+	gchar *tmp = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-roaming-contacts\r\n"
 		"Accept: application/vnd-microsoft-roaming-contacts+xml\r\n"
@@ -1889,7 +1887,7 @@ static void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_priv
 	gchar *key;
 	struct sip_dialog *dialog;
 	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sip);
+	gchar *tmp = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: presence.wpending\r\n"
 		"Accept: text/xml+msrtc.wpending\r\n"
@@ -2101,7 +2099,6 @@ static void
 sipe_send_set_container_members(struct sipe_core_private *sipe_private,
 				char *container_xmls)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *self;
 	gchar *contact;
 	gchar *hdr;
@@ -2116,7 +2113,7 @@ sipe_send_set_container_members(struct sipe_core_private *sipe_private,
 		"</setContainerMembers>",
 		container_xmls);
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf("Contact: %s\r\n"
 			      "Content-Type: application/msrtc-setcontainermembers+xml\r\n", contact);
 	g_free(contact);
@@ -2913,7 +2910,7 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	xml = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!xml) return;
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	to = sip_uri_self(sipe_private);
 
 
@@ -3277,9 +3274,8 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 
 static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sip);
+	gchar *tmp = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-roaming-ACL\r\n"
 		"Accept: application/vnd-microsoft-roaming-acls+xml\r\n"
@@ -3303,9 +3299,8 @@ static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
 
 static void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sip);
+	gchar *tmp = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-roaming-self\r\n"
 		"Accept: application/vnd-microsoft-roaming-self+xml\r\n"
@@ -3333,9 +3328,8 @@ static void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private)
   */
 static void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sip);
+	gchar *tmp = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-provisioning\r\n"
 		"Accept: application/vnd-microsoft-roaming-provisioning+xml\r\n"
@@ -3361,9 +3355,8 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_p
 
 static void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sip);
+	gchar *tmp = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-provisioning-v2\r\n"
 		"Accept: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
@@ -3394,8 +3387,7 @@ sipe_unsubscribe_cb(SIPE_UNUSED_PARAMETER gpointer key,
 	struct sip_subscription *subscription = value;
 	struct sip_dialog *dialog = &subscription->dialog;
 	struct sipe_core_private *sipe_private = user_data;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *tmp = get_contact(sip);
+	gchar *tmp = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: %s\r\n"
 		"Expires: 0\r\n"
@@ -3462,9 +3454,8 @@ process_options_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_pr
 static void sipe_options_request(struct sipe_core_private *sipe_private,
 				 const char *who)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *to = sip_uri(who);
-	gchar *contact = get_contact(sip);
+	gchar *contact = get_contact(sipe_private);
 	gchar *request = g_strdup_printf(
 		"Accept: application/sdp\r\n"
 		"Contact: %s\r\n", contact);
@@ -3708,7 +3699,6 @@ static void sipe_send_message(struct sipe_core_private *sipe_private,
 			      struct sip_dialog *dialog,
 			      const char *msg, const char *content_type)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *tmp;
 	char *msgtext = NULL;
@@ -3732,7 +3722,7 @@ static void sipe_send_message(struct sipe_core_private *sipe_private,
 		msgtext = g_strdup(msg);
 	}
 
-	tmp = get_contact(sip);
+	tmp = get_contact(sipe_private);
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
 	//hdr = g_strdup("Content-Type: text/rtf\r\n");
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC....AoADQA\r\nSupported: timer\r\n");
@@ -4018,7 +4008,7 @@ sipe_invite(struct sipe_core_private *sipe_private,
 		g_free(key);
 	}
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	end_points = get_end_points(sipe_private, session);
 	self = sip_uri_self(sipe_private);
 	roster_manager = g_strdup_printf(
@@ -4078,7 +4068,6 @@ sipe_refer(struct sipe_core_private *sipe_private,
 	   struct sip_session *session,
 	   const gchar *who)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *contact;
 	gchar *epid = get_epid(sipe_private);
@@ -4086,7 +4075,7 @@ sipe_refer(struct sipe_core_private *sipe_private,
 						     session->roster_manager);
 	const char *ourtag = dialog && dialog->ourtag ? dialog->ourtag : NULL;
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Contact: %s\r\n"
 		"Refer-to: <%s>\r\n"
@@ -5044,9 +5033,9 @@ gboolean process_register_response(struct sipe_core_private *sipe_private,
 				}
 				g_free(uuid);
 
-				g_free(sip->contact);
+				g_free(sipe_private->contact);
 				if(gruu) {
-					sip->contact = g_strdup_printf("<%s>", gruu);
+					sipe_private->contact = g_strdup_printf("<%s>", gruu);
 					g_free(gruu);
 				} else {
 					//SIPE_DEBUG_INFO_NOFORMAT("didn't find gruu in a Contact hdr");
@@ -7301,7 +7290,6 @@ sipe_publish_get_category_cal_free_busy(struct sipe_core_private *sipe_private)
 static void send_presence_publish(struct sipe_core_private *sipe_private,
 				  const char *publications)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *uri;
 	gchar *doc;
 	gchar *tmp;
@@ -7312,7 +7300,7 @@ static void send_presence_publish(struct sipe_core_private *sipe_private,
 		uri,
 		publications);
 
-	tmp = get_contact(sip);
+	tmp = get_contact(sipe_private);
 	hdr = g_strdup_printf("Contact: %s\r\n"
 		"Content-Type: application/msrtc-category-publish+xml\r\n", tmp);
 
@@ -7809,9 +7797,9 @@ static void sipe_connection_cleanup(struct sipe_core_private *sipe_private)
 	}
 	g_slist_free(sip->containers);
 
-	if (sip->contact)
-		g_free(sip->contact);
-	sip->contact = NULL;
+	if (sipe_private->contact)
+		g_free(sipe_private->contact);
+	sipe_private->contact = NULL;
 	if (sip->regcallid)
 		g_free(sip->regcallid);
 	sip->regcallid = NULL;
