@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,12 +27,12 @@
  */
 
 /* Forward declarations */
-struct sipe_account_data;
+struct sipe_core_private;
 struct _PurpleConversation;
 
 /* Helper macros to iterate over session list in a SIP account */
 #define SIPE_SESSION_FOREACH {                             \
-	GSList *entry = sip->sessions;                    \
+	GSList *entry = sipe_private->sessions;                    \
 	while (entry) {                                    \
 		struct sip_session *session = entry->data; \
 		entry = entry->next;
@@ -105,112 +105,128 @@ sipe_free_queued_message(struct queued_message *message);
 /**
  * Add a new chat session
  *
- * @param sip (in) SIP account data. May be NULL
+ * @param sipe_private (in) SIPE core data. May be NULL
  *
  * @return pointer to new session
  */
 struct sip_session *
-sipe_session_add_chat(struct sipe_account_data *sip);
+sipe_session_add_chat(struct sipe_core_private *sipe_private);
 
 /**
  * Find chat session by Call ID
  *
- * @param sip (in) SIP account data. May be NULL
+ * @param sipe_private (in) SIPE core data. May be NULL
  * @param callid (in) Call ID. May be NULL
  *
  * @return pointer to session or NULL
  */
 struct sip_session *
-sipe_session_find_chat_by_callid(struct sipe_account_data *sip,
+sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 				 const gchar *callid);
 
 /**
  * Find or add new chat session by Call ID
  *
- * @param sip (in) SIP account data
+ * @param sipe_private (in) SIPE core data
  * @param callid (in) Call ID
  *
  * @return pointer to session
  */
 struct sip_session *
-sipe_session_find_or_add_chat_by_callid(struct sipe_account_data *sip,
+sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
 					const gchar *callid);
 
 /**
  * Find chat session by ID
  *
- * @param sip (in) SIP account data. May be NULL
+ * @param sipe_private (in) SIPE core data. May be NULL
  * @param id (in) Chat ID
  *
  * @return pointer to session or NULL
  */
 struct sip_session * 
-sipe_session_find_chat_by_id(struct sipe_account_data *sip, int id);
+sipe_session_find_chat_by_id(struct sipe_core_private *sipe_private,
+			     int id);
 
 /**
  * Find chat session by name
  *
- * @param sip (in) SIP account data. May be NULL
+ * @param sipe_private (in) SIPE core data. May be NULL
  * @param name (in) Chat name. May be NULL
  *
  * @return pointer to session or NULL
  */
 struct sip_session * 
-sipe_session_find_chat_by_title(struct sipe_account_data *sip,
+sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
 			        const gchar *name);
 
 /**
  * Find Conference session
  *
- * @param sip (in) SIP account data. May be NULL
+ * @param sipe_private (in) SIPE core data. May be NULL
  * @param focus_uri (in) URI of conference focus. May be NULL
  *
  * @return pointer to session or NULL
  */
 struct sip_session *
-sipe_session_find_conference(struct sipe_account_data *sip,
+sipe_session_find_conference(struct sipe_core_private *sipe_private,
 			     const gchar *focus_uri);
 
 /**
  * Find IM session
  *
- * @param sip (in) SIP account data. May be NULL
+ * @param sipe_private (in) SIPE core data. May be NULL
  * @param who (in) remote partner. May be NULL
  *
  * @return pointer to session or NULL
  */
 struct sip_session *
-sipe_session_find_im(struct sipe_account_data *sip, const gchar *who);
+sipe_session_find_im(struct sipe_core_private *sipe_private,
+		     const gchar *who);
 
 /**
  * Find or add new IM session
  *
- * @param sip (in) SIP account data
+ * @param sipe_private (in) SIPE core data
  * @param who (in) remote partner
  *
  * @return pointer to session
  */
 struct sip_session *
-sipe_session_find_or_add_im(struct sipe_account_data *sip,
+sipe_session_find_or_add_im(struct sipe_core_private *sipe_private,
 			    const gchar *who);
+
+/**
+ * Find Chat by Call ID or IM session
+ *
+ * @param sipe_private (in) SIPE core data. May be NULL
+ * @param callid (in) Call ID. May be NULL
+ * @param who (in) remote partner. May be NULL
+ *
+ * @return pointer to session or NULL
+ */
+struct sip_session *
+sipe_session_find_chat_or_im(struct sipe_core_private *sipe_private,
+			     const gchar *callid,
+			     const gchar *who);
 
 /**
  * Remove a session from a SIP account
  *
- * @param sip (in) SIP account data
+ * @param sipe_private (in) SIPE core data
  * @param session (in) pointer to session
  */
 void
-sipe_session_remove(struct sipe_account_data *sip,
+sipe_session_remove(struct sipe_core_private *sipe_private,
 		    struct sip_session *session);
 
 /**
  * Remove all sessions from a SIP account
  *
- * @param sip (in) SIP account data
+ * @param sipe_private (in) SIPE core data
  */
 void
-sipe_session_remove_all(struct sipe_account_data *sip);
+sipe_session_remove_all(struct sipe_core_private *sipe_private);
 
 /**
  * Add a message to outgoing queue.

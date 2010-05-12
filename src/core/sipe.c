@@ -3558,7 +3558,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gboolean ret = TRUE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
-	struct sip_session *session = sipe_session_find_im(sip, with);
+	struct sip_session *session = sipe_session_find_im(sipe_private, with);
 	struct sip_dialog *dialog;
 	gchar *cseq;
 	char *key;
@@ -3655,13 +3655,12 @@ process_info_response(struct sipe_core_private *sipe_private,
 		      struct sipmsg *msg,
 		      SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	struct sip_dialog *dialog;
 	struct sip_session *session;
 
-	session = sipe_session_find_chat_by_callid(sip, callid);
+	session = sipe_session_find_chat_by_callid(sipe_private, callid);
 	if (!session) {
 		SIPE_DEBUG_INFO("process_info_response: failed find dialog for callid %s, exiting.", callid);
 		return FALSE;
@@ -3835,10 +3834,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *referred_by;
 
-	session = sipe_session_find_chat_by_callid(sip, callid);
-	if (!session) {
-		session = sipe_session_find_im(sip, with);
-	}
+	session = sipe_session_find_chat_or_im(sipe_private, callid, with);
 	if (!session) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_response: unable to find IM session");
 		g_free(with);
@@ -4155,7 +4151,6 @@ static void
 sipe_session_close(struct sipe_core_private *sipe_private,
 		   struct sip_session * session)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	if (session && session->focus_uri) {
 		sipe_conf_immcu_closed(sipe_private, session);
 		conf_session_close(sipe_private, session);
@@ -4168,16 +4163,15 @@ sipe_session_close(struct sipe_core_private *sipe_private,
 			send_sip_request(sipe_private, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
 		} SIPE_DIALOG_FOREACH_END;
 
-		sipe_session_remove(sip, session);
+		sipe_session_remove(sipe_private, session);
 	}
 }
 
 static void
 sipe_session_close_all(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	GSList *entry;
-	while ((entry = sip->sessions) != NULL) {
+	while ((entry = sipe_private->sessions) != NULL) {
 		sipe_session_close(sipe_private, entry->data);
 	}
 }
@@ -4186,18 +4180,18 @@ void
 sipe_convo_closed(PurpleConnection * gc, const char *who)
 {
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 	SIPE_DEBUG_INFO("conversation with %s closed", who);
-	sipe_session_close(sipe_private, sipe_session_find_im(sip, who));
+	sipe_session_close(sipe_private,
+			   sipe_session_find_im(sipe_private, who));
 }
 
 void
 sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sip_session *session = sipe_session_find_chat_by_id(sip, id);
+	struct sip_session *session = sipe_session_find_chat_by_id(sipe_private,
+								   id);
 
 	sipe_session_close(sipe_private, session);
 }
@@ -4206,14 +4200,13 @@ int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		 SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
 {
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	gchar *uri = sip_uri(who);
 
 	SIPE_DEBUG_INFO("sipe_im_send what='%s'", what);
 
-	session = sipe_session_find_or_add_im(sip, uri);
+	session = sipe_session_find_or_add_im(sipe_private, uri);
 	dialog = sipe_dialog_find(session, uri);
 
 	// Queue the message
@@ -4239,7 +4232,7 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 
 	SIPE_DEBUG_INFO("sipe_chat_send what='%s'", what);
 
-	session = sipe_session_find_chat_by_id(sip, id);
+	session = sipe_session_find_chat_by_id(sipe_private, id);
 
 	// Queue the message
 	if (session && session->dialogs) {
@@ -4253,7 +4246,7 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 		SIPE_DEBUG_INFO("sipe_chat_send: proto_chat_id='%s'", proto_chat_id ? proto_chat_id : "NULL");
 
 		if (sip->ocs2007) {
-			struct sip_session *session = sipe_session_add_chat(sip);
+			struct sip_session *session = sipe_session_add_chat(sipe_private);
 
 			session->is_multiparty = FALSE;
 			session->focus_uri = g_strdup(proto_chat_id);
@@ -4286,10 +4279,7 @@ static void process_incoming_info(struct sipe_core_private *sipe_private,
 	}
 
 	from = parse_from(sipmsg_find_header(msg, "From"));
-	session = sipe_session_find_chat_by_callid(sip, callid);
-	if (!session) {
-		session = sipe_session_find_im(sip, from);
-	}
+	session = sipe_session_find_chat_or_im(sipe_private, callid, from);
 	if (!session) {
 		g_free(from);
 		return;
@@ -4356,11 +4346,11 @@ static void process_incoming_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_priva
 {
 #if HAVE_VV
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	if (call_private &&
 	    sipe_strequal(sipe_media_get_callid(call_private), callid)) {
-		struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
+		struct sip_session *session = sipe_session_find_chat_by_callid(sipe_private,
+									       callid);
 		sipe_media_hangup(sipe_private);
 		if (session) {
 			gchar *from = parse_from(sipmsg_find_header(msg, "From"));
@@ -4376,7 +4366,6 @@ static void process_incoming_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_priva
 static void process_incoming_bye(struct sipe_core_private *sipe_private,
 				 struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	struct sip_session *session;
@@ -4405,10 +4394,7 @@ static void process_incoming_bye(struct sipe_core_private *sipe_private,
 
 	send_sip_response(sipe_private, msg, 200, "OK", NULL);
 
-	session = sipe_session_find_chat_by_callid(sip, callid);
-	if (!session) {
-		session = sipe_session_find_im(sip, from);
-	}
+	session = sipe_session_find_chat_or_im(sipe_private, callid, from);
 	if (!session) {
 		sipe_dialog_free(dialog);
 		g_free(from);
@@ -4444,7 +4430,7 @@ static void process_incoming_refer(struct sipe_core_private *sipe_private,
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
-	session = sipe_session_find_chat_by_callid(sip, callid);
+	session = sipe_session_find_chat_by_callid(sipe_private, callid);
 	dialog = sipe_dialog_find(session, from);
 
 	if (!session || !dialog || !session->roster_manager || !sipe_strcase_equal(session->roster_manager, self)) {
@@ -4465,14 +4451,13 @@ unsigned int
 sipe_send_typing(PurpleConnection *gc, const char *who, PurpleTypingState state)
 {
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
 	if (state == PURPLE_NOT_TYPING)
 		return 0;
 
-	session = sipe_session_find_im(sip, who);
+	session = sipe_session_find_im(sipe_private, who);
 	dialog = sipe_dialog_find(session, who);
 
 	if (session && dialog && dialog->is_established) {
@@ -4546,11 +4531,9 @@ static void process_incoming_message(struct sipe_core_private *sipe_private,
 		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *html = get_html_message(contenttype, msg->body);
 
-		struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
-		if (!session) {
-			session = sipe_session_find_im(sip, from);
-		}
-
+		struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
+									   callid,
+									   from);
 		if (session && session->focus_uri) { /* a conference */
 			gchar *tmp = parse_from(sipmsg_find_header(msg, "Ms-Sender"));
 			gchar *sender = parse_from(tmp);
@@ -4608,10 +4591,9 @@ static void process_incoming_message(struct sipe_core_private *sipe_private,
 	}
 	if (!found) {
 		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-		struct sip_session *session = sipe_session_find_chat_by_callid(sip, callid);
-		if (!session) {
-			session = sipe_session_find_im(sip, from);
-		}
+		struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
+									   callid,
+									   from);
 		if (session) {
 			gchar *errmsg = g_strdup_printf(_("Received a message with unrecognized contents from %s"),
 							from);
@@ -4729,7 +4711,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 		is_multiparty = TRUE;
 	}
 
-	session = sipe_session_find_chat_by_callid(sip, callid);
+	session = sipe_session_find_chat_by_callid(sipe_private, callid);
 	/* Convert to multiparty */
 	if (session && is_multiparty && !session->is_multiparty) {
 		g_free(session->with);
@@ -4740,12 +4722,13 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 
 	if (!session && is_multiparty) {
-		session = sipe_session_find_or_add_chat_by_callid(sip, callid);
+		session = sipe_session_find_or_add_chat_by_callid(sipe_private,
+								  callid);
 	}
 	/* IM session */
 	from = parse_from(sipmsg_find_header(msg, "From"));
 	if (!session) {
-		session = sipe_session_find_or_add_im(sip, from);
+		session = sipe_session_find_or_add_im(sipe_private, from);
 	}
 
 	if (session) {
@@ -7868,7 +7851,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 
 	/* leave all conversations */
 	sipe_session_close_all(sipe_private);
-	sipe_session_remove_all(sip);
+	sipe_session_remove_all(sipe_private);
 
 	if (sip->csta) {
 		sip_csta_close(sipe_private);
@@ -8267,7 +8250,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		gchar *self = sip_uri_self(sip);
 		struct sip_session *session;
 
-		session = sipe_session_add_chat(sip);
+		session = sipe_session_add_chat(sipe_private);
 		session->chat_title = sipe_chat_get_name(session->callid);
 		session->roster_manager = g_strdup(self);
 
@@ -8429,13 +8412,12 @@ static void
 sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy, const char *chat_title)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: buddy->name=%s", buddy->name);
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: chat_title=%s", chat_title);
 
-	session = sipe_session_find_chat_by_title(sip, chat_title);
+	session = sipe_session_find_chat_by_title(sipe_private, chat_title);
 
 	sipe_conf_modify_user_role(sipe_private, session, buddy->name);
 }
@@ -8447,13 +8429,12 @@ static void
 sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy, const char *chat_title)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: buddy->name=%s", buddy->name);
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: chat_title=%s", chat_title);
 
-	session = sipe_session_find_chat_by_title(sip, chat_title);
+	session = sipe_session_find_chat_by_title(sipe_private, chat_title);
 
 	sipe_conf_delete_user(sipe_private, session, buddy->name);
 }
@@ -8462,13 +8443,12 @@ static void
 sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, char *chat_title)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: buddy->name=%s", buddy->name);
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: chat_title=%s", chat_title);
 
-	session = sipe_session_find_chat_by_title(sip, chat_title);
+	session = sipe_session_find_chat_by_title(sipe_private, chat_title);
 
 	sipe_invite_to_chat(sipe_private, session, buddy->name);
 }
@@ -8954,10 +8934,11 @@ sipe_get_access_control_menu(struct sipe_core_private *sipe_private,
 static void
 sipe_conf_modify_lock(PurpleChat *chat, gboolean locked)
 {
-	struct sipe_core_private *sipe_private =  PURPLE_CHAT_TO_SIPE_CORE_PRIVATE;
+	struct sipe_core_private *sipe_private = PURPLE_CHAT_TO_SIPE_CORE_PRIVATE;
 	struct sip_session *session;
 
-	session = sipe_session_find_chat_by_title(SIPE_ACCOUNT_DATA_PRIVATE, (gchar *)g_hash_table_lookup(chat->components, "channel"));
+	session = sipe_session_find_chat_by_title(sipe_private,
+						  (gchar *)g_hash_table_lookup(chat->components, "channel"));
 	sipe_conf_modify_conference_lock(sipe_private, session, locked);
 }
 
@@ -8981,11 +8962,13 @@ sipe_chat_menu(PurpleChat *chat)
 	PurpleMenuAction *act;
 	PurpleConvChatBuddyFlags flags_us;
 	GList *menu = NULL;
-	struct sipe_account_data *sip = PURPLE_CHAT_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = PURPLE_CHAT_TO_SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session;
 	gchar *self;
 
-	session = sipe_session_find_chat_by_title(sip, (gchar *)g_hash_table_lookup(chat->components, "channel"));
+	session = sipe_session_find_chat_by_title(sipe_private,
+						  (gchar *)g_hash_table_lookup(chat->components, "channel"));
 	if (!session) return NULL;
 
 	self = sip_uri_self(sip);

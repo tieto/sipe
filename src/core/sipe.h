@@ -131,7 +131,6 @@ struct sipe_account_data {
 	GSList *containers; /* MS-PRES containers */
 	struct _PurpleAccount *account;
 	gchar *regcallid;
-	GSList *sessions;
 	GSList *groups;
 	GHashTable *filetransfers;
 	gboolean processing_input;
