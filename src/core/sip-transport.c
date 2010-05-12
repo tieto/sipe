@@ -362,7 +362,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 			sipe_private->transport->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
-			sip->username,
+			sipe_private->username,
 			ourtag ? ";tag=" : "",
 			ourtag ? ourtag : "",
 			epid,
@@ -443,7 +443,7 @@ void do_register_exp(struct sipe_core_private *sipe_private,
 	SIPE_ACCOUNT_DATA_PRIVATE->registerstatus = 1;
 
 	uri = sip_uri_from_name(sipe_private->public.sip_domain);
-	to = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	to = sip_uri_self(sipe_private);
 	send_sip_request(sipe_private, "REGISTER", uri, to, hdr, "", NULL,
 			 process_register_response);
 	g_free(to);
@@ -554,7 +554,7 @@ void sip_transport_default_contact(struct sipe_core_private *sipe_private)
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 	sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
-				       sip->username,
+				       sipe_private->username,
 				       sipe_private->transport->client_port,
 				       sipe_backend_network_ip_address(),
 				       TRANSPORT_DESCRIPTOR);

@@ -93,7 +93,6 @@ struct sipe_account_data {
 	struct sipe_core_private *private;
 
 	struct _PurpleConnection *gc;
-	gchar *username;
 	gchar *authdomain;
 	gchar *authuser;
 	gchar *password;

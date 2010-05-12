@@ -323,7 +323,7 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 
 	/* @TODO put request_id to queue to further compare with incoming one */
 	/* focus_URI, from, request_id, focus_URI, from, endpoint_GUID */
-	self = sip_uri_self(sip);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_ADD_USER,
 		session->focus_dialog->with,
@@ -365,7 +365,7 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_MODIFY_USER_ROLES,
 		session->focus_dialog->with,
@@ -406,7 +406,7 @@ sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_MODIFY_CONF_LOCK,
 		session->focus_dialog->with,
@@ -447,7 +447,7 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_DELETE_USER,
 		session->focus_dialog->with,
@@ -626,7 +626,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	g_free(contact);
 
 	expiry_time = sipe_utils_time_to_str(expiry);
-	self = sip_uri_self(sip);
+	self = sip_uri_self(sipe_private);
 	conference_id = genconfid();
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_ADD,
@@ -732,7 +732,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 
 	if (session->focus_uri && !session->conv) {
 		gchar *chat_title = sipe_chat_get_name(session->focus_uri);
-		gchar *self = sip_uri_self(sip);
+		gchar *self = sip_uri_self(sipe_private);
 		/* can't be find by chat id as it won't survive acc reinstantation */
 		PurpleConversation *conv = NULL;
 
@@ -790,7 +790,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		PurpleConvChatBuddyFlags flags = PURPLE_CBFLAGS_NONE;
 		PurpleConvChat *chat = PURPLE_CONV_CHAT(session->conv);
 		gboolean is_in_im_mcu = FALSE;
-		gchar *self = sip_uri_self(sip);
+		gchar *self = sip_uri_self(sipe_private);
 
 		if (sipe_strequal(role, "presenter")) {
 			flags |= PURPLE_CBFLAGS_OP;

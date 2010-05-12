@@ -44,6 +44,7 @@
 
 #include "sipe-backend.h"
 #include "sipe-core.h"    /* to ensure same API for backends */
+#include "sipe-core-private.h"
 #include "sipe-utils.h"
 #include "uuid.h"
 #include "sipe.h"
@@ -133,8 +134,10 @@ gchar *sip_uri(const gchar *string)
 gchar *
 get_epid(struct sipe_account_data *sip)
 {
+	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
+
 	if (!sip->epid) {
-		gchar *self_sip_uri = sip_uri_self(sip);
+		gchar *self_sip_uri = sip_uri_self(sipe_private);
 		sip->epid = sipe_get_epid(self_sip_uri,
 					  g_get_host_name(),
 					  sipe_backend_network_ip_address());

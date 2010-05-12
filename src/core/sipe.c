@@ -251,7 +251,7 @@ gchar *auth_header(struct sipe_core_private *sipe_private,
 	gchar *ret;
 
 	if (!authuser || strlen(authuser) < 1) {
-		authuser = sip->username;
+		authuser = sipe_private->username;
 	}
 
 	if (auth->type == AUTH_TYPE_NTLM || auth->type == AUTH_TYPE_KERBEROS) { /* NTLM or Kerberos */
@@ -457,7 +457,7 @@ send_soap_request_with_cb(struct sipe_core_private *sipe_private,
 			  struct transaction_payload *payload)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *from = from0 ? g_strdup(from0) : sip_uri_self(sip);
+	gchar *from = from0 ? g_strdup(from0) : sip_uri_self(sipe_private);
 	gchar *contact = get_contact(sip);
 	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
 	                             "Content-Type: application/SOAP+xml\r\n",contact);
@@ -894,7 +894,7 @@ sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 	purple_prpl_got_user_status(sip->account, sbuddy->name, status_id, NULL);
 
 	/* set our account state to the one in roaming (including calendar info) */
-	self_uri = sip_uri_self(sip);
+	self_uri = sip_uri_self(sipe_private);
 	if (sip->initial_state_published && sipe_strcase_equal(sbuddy->name, self_uri)) {
 		if (sipe_strequal(status_id, SIPE_STATUS_ID_OFFLINE)) {
 			status_id = g_strdup(SIPE_STATUS_ID_INVISIBLE); /* not not let offline status switch us off */
@@ -1154,14 +1154,14 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 					  "<category name=\"state\"/>\n"
 					  "</categoryList>\n"
 					  "</action>\n"
-					  "</batchSub>", sip->username, resources_uri);
+					  "</batchSub>", sipe_private->username, resources_uri);
 	} else {
                 autoextend =  "Supported: com.microsoft.autoextend\r\n";
 		content_type = "application/adrl+xml";
         	content = g_strdup_printf(
 					  "<adhoclist xmlns=\"urn:ietf:params:xml:ns:adrl\" uri=\"sip:%s\" name=\"sip:%s\">\n"
 					  "<create xmlns=\"\">\n%s</create>\n"
-					  "</adhoclist>\n", sip->username,  sip->username, resources_uri);
+					  "</adhoclist>\n", sipe_private->username,  sipe_private->username, resources_uri);
 	}
 	g_free(resources_uri);
 
@@ -1195,7 +1195,7 @@ static void sipe_subscribe_presence_batched(struct sipe_core_private *sipe_priva
 					    SIPE_UNUSED_PARAMETER void *unused)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *to = sip_uri_self(sip);
+	gchar *to = sip_uri_self(sipe_private);
 	gchar *resources_uri = g_strdup("");
 	if (sip->ocs2007) {
 		g_hash_table_foreach(sipe_private->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
@@ -1291,7 +1291,7 @@ static void sipe_subscribe_presence_single(struct sipe_core_private *sipe_privat
 			"<category name=\"state\"/>\n"
 			"</categoryList>\n"
 			"</action>\n"
-			"</batchSub>", sip->username, to, context);
+			"</batchSub>", sipe_private->username, to, context);
 	}
 
 	g_free(tmp);
@@ -1825,7 +1825,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		/* Add self-contact if not there yet. 2005 systems. */
 		/* This will resemble subscription to roaming_self in 2007 systems */
 		if (!sip->ocs2007) {
-			gchar *self_uri = sip_uri_self(sip);
+			gchar *self_uri = sip_uri_self(sipe_private);
 			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, self_uri);
 
 			if (!buddy) {
@@ -1865,7 +1865,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 static void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *to = sip_uri_self(sip);
+	gchar *to = sip_uri_self(sipe_private);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-roaming-contacts\r\n"
@@ -1888,7 +1888,7 @@ static void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_priv
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *key;
 	struct sip_dialog *dialog;
-	gchar *to = sip_uri_self(sip);
+	gchar *to = sip_uri_self(sipe_private);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
 		"Event: presence.wpending\r\n"
@@ -2109,7 +2109,7 @@ sipe_send_set_container_members(struct sipe_core_private *sipe_private,
 
 	if (!container_xmls) return;
 
-	self = sip_uri_self(sip);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		"<setContainerMembers xmlns=\"http://schemas.microsoft.com/2006/09/sip/container-management\">"
 		"%s"
@@ -2914,7 +2914,7 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	if (!xml) return;
 
 	contact = get_contact(sip);
-	to = sip_uri_self(sip);
+	to = sip_uri_self(sipe_private);
 
 
 	/* categories */
@@ -3278,7 +3278,7 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *to = sip_uri_self(sip);
+	gchar *to = sip_uri_self(sipe_private);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-roaming-ACL\r\n"
@@ -3304,7 +3304,7 @@ static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
 static void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *to = sip_uri_self(sip);
+	gchar *to = sip_uri_self(sipe_private);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-roaming-self\r\n"
@@ -3334,7 +3334,7 @@ static void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private)
 static void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *to = sip_uri_self(sip);
+	gchar *to = sip_uri_self(sipe_private);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-provisioning\r\n"
@@ -3362,7 +3362,7 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_p
 static void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *to = sip_uri_self(sip);
+	gchar *to = sip_uri_self(sipe_private);
 	gchar *tmp = get_contact(sip);
 	gchar *hdr = g_strdup_printf(
 		"Event: vnd-microsoft-provisioning-v2\r\n"
@@ -3416,14 +3416,13 @@ static gchar *
 get_end_points (struct sipe_core_private *sipe_private,
 		struct sip_session *session)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *res;
 
 	if (session == NULL) {
 		return NULL;
 	}
 
-	res = g_strdup_printf("<sip:%s>", sip->username);
+	res = g_strdup_printf("<sip:%s>", sipe_private->username);
 
 	SIPE_DIALOG_FOREACH {
 		gchar *tmp = res;
@@ -3761,7 +3760,7 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 
 		/* for multiparty chat or conference */
 		if (session->is_multiparty || session->focus_uri) {
-			gchar *who = sip_uri_self(sip);
+			gchar *who = sip_uri_self(sipe_private);
 			serv_got_chat_in(sip->gc, session->chat_id, who,
 				PURPLE_MESSAGE_SEND, msg->body, time(NULL));
 			g_free(who);
@@ -4021,7 +4020,7 @@ sipe_invite(struct sipe_core_private *sipe_private,
 
 	contact = get_contact(sip);
 	end_points = get_end_points(sipe_private, session);
-	self = sip_uri_self(sip);
+	self = sip_uri_self(sipe_private);
 	roster_manager = g_strdup_printf(
 		"Roster-Manager: %s\r\n"
 		"EndPoints: %s\r\n",
@@ -4095,7 +4094,7 @@ sipe_refer(struct sipe_core_private *sipe_private,
 		"Require: com.microsoft.rtc-multiparty\r\n",
 		contact,
 		who,
-		sip->username,
+		sipe_private->username,
 		ourtag ? ";tag=" : "",
 		ourtag ? ourtag : "",
 		epid);
@@ -4113,14 +4112,13 @@ sipe_send_election_request_rm(struct sipe_core_private *sipe_private,
 			      struct sip_dialog *dialog,
 			      int bid)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *hdr = "Content-Type: application/x-ms-mim\r\n";
 
 	gchar *body = g_strdup_printf(
 		"<?xml version=\"1.0\"?>\r\n"
 		"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
 		"<RequestRM uri=\"sip:%s\" bid=\"%d\"/></action>\r\n",
-		sip->username, bid);
+		sipe_private->username, bid);
 
 	send_sip_request(sipe_private, "INFO",
 		dialog->with, dialog->with, hdr, body, dialog, process_info_response);
@@ -4132,14 +4130,13 @@ static void
 sipe_send_election_set_rm(struct sipe_core_private *sipe_private,
 			  struct sip_dialog *dialog)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *hdr = "Content-Type: application/x-ms-mim\r\n";
 
 	gchar *body = g_strdup_printf(
 		"<?xml version=\"1.0\"?>\r\n"
 		"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
 		"<SetRM uri=\"sip:%s\"/></action>\r\n",
-		sip->username);
+		sipe_private->username);
 
 	send_sip_request(sipe_private, "INFO",
 		dialog->with, dialog->with, hdr, body, dialog, process_info_response);
@@ -4300,7 +4297,7 @@ static void process_incoming_info(struct sipe_core_private *sipe_private,
 				"<?xml version=\"1.0\"?>\r\n"
 				"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
 				"<RequestRMResponse uri=\"sip:%s\" allow=\"%s\"/></action>\r\n",
-				sip->username,
+				sipe_private->username,
 				session->bid < bid ? "true" : "false");
 			send_sip_response(sipe_private, msg, 200, "OK", body);
 			g_free(body);
@@ -4314,7 +4311,7 @@ static void process_incoming_info(struct sipe_core_private *sipe_private,
 				"<?xml version=\"1.0\"?>\r\n"
 				"<action xmlns=\"http://schemas.microsoft.com/sip/multiparty/\">"
 				"<SetRMResponse uri=\"sip:%s\"/></action>\r\n",
-				sip->username);
+				sipe_private->username);
 			send_sip_response(sipe_private, msg, 200, "OK", body);
 			g_free(body);
 		}
@@ -4421,8 +4418,7 @@ static void process_incoming_bye(struct sipe_core_private *sipe_private,
 static void process_incoming_refer(struct sipe_core_private *sipe_private,
 				   struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *self = sip_uri_self(sip);
+	gchar *self = sip_uri_self(sipe_private);
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
 	gchar *refer_to = parse_from(sipmsg_find_header(msg, "Refer-to"));
@@ -4814,7 +4810,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 
 	if (is_multiparty && !session->conv) {
 		gchar *chat_title = sipe_chat_get_name(callid);
-		gchar *self = sip_uri_self(sip);
+		gchar *self = sip_uri_self(sipe_private);
 		/* create prpl chat */
 		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
 		session->chat_title = g_strdup(chat_title);
@@ -4904,7 +4900,7 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 		sipe_backend_network_ip_address(),
 		sip->ocs2007 ? "message" : "x-ms-message",
 		sipe_private->server_port,
-		sip->username);
+		sipe_private->username);
 	send_sip_response(sipe_private, msg, 200, "OK", body);
 	g_free(body);
 }
@@ -4929,7 +4925,7 @@ static void process_incoming_options(struct sipe_core_private *sipe_private,
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
 		sip->ocs2007 ? "message" : "x-ms-message",
 		sipe_private->server_port,
-		sip->username);
+		sipe_private->username);
 	send_sip_response(sipe_private, msg, 200, "OK", body);
 	g_free(body);
 }
@@ -5997,7 +5993,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	const char *status_id = NULL;
 	const char *name;
 	char *uri;
-	char *self_uri = sip_uri_self(sip);
+	char *self_uri = sip_uri_self(sipe_private);
 	int avl;
 	int act;
 	const char *device_name = NULL;
@@ -6657,7 +6653,7 @@ send_presence_soap0(struct sipe_core_private *sipe_private,
 
 	/* forming resulting XML */
 	body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE,
-			       sip->username,
+			       sipe_private->username,
 			       availability,
 			       activity,
 			       (tmp = g_ascii_strup(g_get_host_name(), -1)),
@@ -6821,7 +6817,7 @@ sipe_publish_get_category_device(struct sipe_core_private *sipe_private)
 	g_free(key);
 	g_free(epid);
 
-	uri = sip_uri_self(sip);
+	uri = sip_uri_self(sipe_private);
 	doc = g_strdup_printf(SIPE_PUB_XML_DEVICE,
 		device_instance,
 		publication ? publication->version : 0,
@@ -7311,7 +7307,7 @@ static void send_presence_publish(struct sipe_core_private *sipe_private,
 	gchar *tmp;
 	gchar *hdr;
 
-	uri = sip_uri_self(sip);
+	uri = sip_uri_self(sipe_private);
 	doc = g_strdup_printf(SIPE_SEND_PRESENCE,
 		uri,
 		publications);
@@ -7754,7 +7750,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sip->subscribed         = FALSE;
 	sip->subscribed_buddies = FALSE;
 	sip->initial_state_published = FALSE;
-	sip->username   = g_strdup(signin_name);
+	sipe_private->username   = g_strdup(signin_name);
 	sip->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);
 	sip->authdomain = is_empty(login_domain)  ? NULL                  : g_strdup(login_domain);
 	sip->authuser   = is_empty(login_account) ? NULL                  : g_strdup(login_account);
@@ -7869,7 +7865,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->useragent);
-	g_free(sip->username);
+	g_free(sipe_private->username);
 	g_free(sip->email);
 	g_free(sip->password);
 	g_free(sip->authdomain);
@@ -8247,7 +8243,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	}
 	else /* 2005- multiparty chat */
 	{
-		gchar *self = sip_uri_self(sip);
+		gchar *self = sip_uri_self(sipe_private);
 		struct sip_session *session;
 
 		session = sipe_session_add_chat(sipe_private);
@@ -8319,8 +8315,6 @@ sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 		    struct sip_session *session,
 		    const gchar *who)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
 	/* a conference */
 	if (session->focus_uri)
 	{
@@ -8328,7 +8322,7 @@ sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 	}
 	else /* a multi-party chat */
 	{
-		gchar *self = sip_uri_self(sip);
+		gchar *self = sip_uri_self(sipe_private);
 		if (session->roster_manager) {
 			if (sipe_strcase_equal(session->roster_manager, self)) {
 				sipe_invite(sipe_private, session, who, NULL, NULL, NULL, FALSE);
@@ -8366,7 +8360,6 @@ static void
 sipe_election_result(struct sipe_core_private *sipe_private,
 		     void *sess)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session = (struct sip_session *)sess;
 	gchar *rival;
 	gboolean has_won = TRUE;
@@ -8391,7 +8384,7 @@ sipe_election_result(struct sipe_core_private *sipe_private,
 	if (has_won) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_election_result: we have won RM election!");
 
-		session->roster_manager = sip_uri_self(sip);
+		session->roster_manager = sip_uri_self(sipe_private);
 
 		SIPE_DIALOG_FOREACH {
 			/* send SetRM to each chat participant*/
@@ -8543,7 +8536,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	const char *email;
 	const char *phone;
 	const char *phone_disp_str;
-	gchar *self = sip_uri_self(sip);
+	gchar *self = sip_uri_self(sipe_private);
 
 	SIPE_SESSION_FOREACH {
 		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->conv)
@@ -8963,7 +8956,6 @@ sipe_chat_menu(PurpleChat *chat)
 	PurpleConvChatBuddyFlags flags_us;
 	GList *menu = NULL;
 	struct sipe_core_private *sipe_private = PURPLE_CHAT_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session;
 	gchar *self;
 
@@ -8971,7 +8963,7 @@ sipe_chat_menu(PurpleChat *chat)
 						  (gchar *)g_hash_table_lookup(chat->components, "channel"));
 	if (!session) return NULL;
 
-	self = sip_uri_self(sip);
+	self = sip_uri_self(sipe_private);
 	flags_us = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), self);
 
 	if (session->focus_uri
@@ -9017,7 +9009,7 @@ process_get_info_response(struct sipe_core_private *sipe_private,
 
 	if (!sip) return FALSE;
 
-	SIPE_DEBUG_INFO("Fetching %s's user info for %s", uri, sip->username);
+	SIPE_DEBUG_INFO("Fetching %s's user info for %s", uri, sipe_private->username);
 
 	pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri);
 	alias = purple_buddy_get_local_alias(pbuddy);

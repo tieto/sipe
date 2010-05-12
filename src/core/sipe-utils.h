@@ -28,6 +28,7 @@
  */
 
 /* Forward declarations */
+struct sipe_core_private;
 struct sipe_account_data;
 struct sipe_transport_connection;
 
@@ -181,11 +182,11 @@ gchar *sip_uri_from_name(const gchar *name);
 /**
  * Create sip: URI from SIP account user name
  *
- * @param sip (in) SIP account data
+ * @param sipe_private (in) SIPE core private data
  *
  * @return URI with sip: prefix. Must be g_free()'d.
  */
-#define sip_uri_self(sip) (sip_uri_from_name(sip->username))
+#define sip_uri_self(sipe_private) (sip_uri_from_name(sipe_private->username))
 
 /**
  * Create sip: URI from name or sip: URI

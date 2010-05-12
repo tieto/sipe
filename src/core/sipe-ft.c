@@ -212,7 +212,7 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 	static const gchar TFR[] = "TFR\r\n";
 	const gsize BUFFER_SIZE = 50;
 	gchar buf[BUFFER_SIZE];
-	struct sipe_account_data *sip;
+	struct sipe_core_private *sipe_private = PURPLE_XFER_TO_SIPE_CORE_PRIVATE;
 	gchar* request;
 	const gsize FILE_SIZE_OFFSET = 4;
 	gsize file_size;
@@ -228,9 +228,7 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 		return;
 	}
 
-	sip = PURPLE_XFER_TO_SIPE_ACCOUNT_DATA;
-
-	request = g_strdup_printf("USR %s %u\r\n", sip->username, ft->auth_cookie);
+	request = g_strdup_printf("USR %s %u\r\n", sipe_private->username, ft->auth_cookie);
 	if (write(xfer->fd,request,strlen(request)) == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
 		g_free(request);
