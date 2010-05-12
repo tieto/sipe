@@ -129,7 +129,6 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 	gchar *name;
 	gchar *value;
 	GString *outstr = g_string_new("");
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *contact;
 	GSList *tmp;
 	const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
@@ -165,7 +164,7 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 		tmp = g_slist_next(tmp);
 	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
-	sipe_backend_transport_message(sip->private->transport, outstr->str);
+	sipe_backend_transport_message(sipe_private->transport, outstr->str);
 	g_string_free(outstr, TRUE);
 }
 

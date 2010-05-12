@@ -7732,8 +7732,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 
 	sipe_private = g_new0(struct sipe_core_private, 1);
 	sipe_private->temporary = sip = g_new0(struct sipe_account_data, 1);
-	sip->public  = (struct sipe_core_public *)sipe_private;
-	sip->private = sipe_private;
 	sip->reregister_set     = FALSE;
 	sip->reauthenticate_set = FALSE;
 	sip->subscribed         = FALSE;

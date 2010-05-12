@@ -87,11 +87,6 @@ struct sipe_container_member {
 };
 
 struct sipe_account_data {
-	/* back pointer to new data structure */
-	struct sipe_core_public *public;
-	/* same, but reduces need for casting and increases type safety */
-	struct sipe_core_private *private;
-
 	struct _PurpleConnection *gc;
 	gchar *authdomain;
 	gchar *authuser;

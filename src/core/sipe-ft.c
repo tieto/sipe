@@ -92,7 +92,7 @@ struct _sipe_file_transfer {
 	guchar hash_key[SIPE_FT_KEY_LENGTH];
 	gchar *invitation_cookie;
 	unsigned auth_cookie;
-	struct sipe_account_data *sip;
+	struct sipe_core_private *sipe_private;
 	struct sip_dialog *dialog;
 	gpointer cipher_context;
 	gpointer hmac_context;
@@ -632,7 +632,7 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 		size_t file_size;
 		sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
 		ft->invitation_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
-		ft->sip = sip;
+		ft->sipe_private = sipe_private;
 		ft->dialog = sipe_dialog_find(session, session->with);
 		ft->listenfd = -1;
 		generate_key(ft->encryption_key, SIPE_FT_KEY_LENGTH);
@@ -755,7 +755,7 @@ static void send_filetransfer_accept(PurpleXfer* xfer)
                                       /*,sipe_backend_network_ip_address()*/
 		);
 
-	send_sip_request(ft->sip->private, "MESSAGE", dialog->with, dialog->with,
+	send_sip_request(ft->sipe_private, "MESSAGE", dialog->with, dialog->with,
 			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 			 body, dialog, NULL);
 
@@ -773,7 +773,7 @@ static void send_filetransfer_cancel(PurpleXfer* xfer) {
 					  "Cancel-Code: REJECT\r\n",
 				      ft->invitation_cookie);
 
-	send_sip_request(ft->sip->private, "MESSAGE", dialog->with, dialog->with,
+	send_sip_request(ft->sipe_private, "MESSAGE", dialog->with, dialog->with,
 			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 			 body, dialog, NULL);
 
@@ -925,11 +925,10 @@ PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who)
 
 		if (xfer) {
 			struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-			struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 			sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
 			ft->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
-			ft->sip = sip;
+			ft->sipe_private = sipe_private;
 
 			xfer->data = ft;
 
@@ -1011,7 +1010,7 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 	}
 
 	if (ft->dialog) {
-		send_sip_request(ft->sip->private, "MESSAGE", ft->dialog->with, ft->dialog->with,
+		send_sip_request(ft->sipe_private, "MESSAGE", ft->dialog->with, ft->dialog->with,
 				 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 				 body, ft->dialog, NULL);
 	}
