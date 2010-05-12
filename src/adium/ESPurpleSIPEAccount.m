@@ -11,6 +11,7 @@
 
 #import "ESPurpleSIPEAccount.h"
 
+#include "sipe-core.h"
 #include "sipe.h"
 #include "sipe-utils.h"
 
@@ -159,11 +160,10 @@
 	struct sipe_buddy			*sbuddy;
 
 	if (!message) {
-
+		
 		sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
 		if (sip)  //happens on pidgin exit
 		{
-			GList *keys = g_hash_table_get_keys(sip->buddies);
 			sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
 			if (sbuddy) {
 				if (!is_empty(sbuddy->activity) && !is_empty(sbuddy->annotation))

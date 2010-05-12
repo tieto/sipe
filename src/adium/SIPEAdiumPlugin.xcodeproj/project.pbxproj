@@ -10,6 +10,8 @@
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
 		B193836411972C26007ADE8F /* libglib-2.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B193836311972C26007ADE8F /* libglib-2.0.dylib */; };
+		B19383C2119A1E8F007ADE8F /* Adium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B19383C1119A1E8F007ADE8F /* Adium.framework */; };
+		B1C5100A119A21E700EAFB2C /* AdiumLibpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */; };
 		C92A799210B24C46009B64B9 /* sip-csta.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797310B24C46009B64B9 /* sip-csta.c */; };
 		C92A799310B24C46009B64B9 /* sip-csta.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797410B24C46009B64B9 /* sip-csta.h */; };
 		C92A799510B24C46009B64B9 /* sip-sec-krb5.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797610B24C46009B64B9 /* sip-sec-krb5.c */; };
@@ -66,6 +68,8 @@
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		B193836311972C26007ADE8F /* libglib-2.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libglib-2.0.dylib"; path = "usr/local/lib/libglib-2.0.dylib"; sourceTree = SDKROOT; };
+		B19383C1119A1E8F007ADE8F /* Adium.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Adium.framework; path = /Users/emanuelez/Library/Frameworks/Adium.framework; sourceTree = "<absolute>"; };
+		B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdiumLibpurple.framework; path = "/Users/emanuelez/Documents/Code/adium/build/Release-Debug/AdiumLibpurple.framework"; sourceTree = "<absolute>"; };
 		C92A796910B24BAD009B64B9 /* libpidgin-sipe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libpidgin-sipe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C92A797310B24C46009B64B9 /* sip-csta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sip-csta.c"; path = "../core/sip-csta.c"; sourceTree = SOURCE_ROOT; };
 		C92A797410B24C46009B64B9 /* sip-csta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-csta.h"; path = "../core/sip-csta.h"; sourceTree = SOURCE_ROOT; };
@@ -115,6 +119,8 @@
 				8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */,
 				C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */,
 				C92A79E110B24FDC009B64B9 /* libpidgin-sipe.a in Frameworks */,
+				B19383C2119A1E8F007ADE8F /* Adium.framework in Frameworks */,
+				B1C5100A119A21E700EAFB2C /* AdiumLibpurple.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -148,6 +154,7 @@
 				1058C7ACFEA557BF11CA2CBB /* Linked Frameworks */,
 				1058C7AEFEA557BF11CA2CBB /* Other Frameworks */,
 				B193836311972C26007ADE8F /* libglib-2.0.dylib */,
+				B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */,
 			);
 			name = "Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -181,6 +188,7 @@
 			children = (
 				1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */,
 				C9FDAE7E109ADC54004EEEAF /* Kerberos.framework */,
+				B19383C1119A1E8F007ADE8F /* Adium.framework */,
 			);
 			name = "Linked Frameworks";
 			sourceTree = "<group>";
@@ -403,6 +411,8 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/../../../../Library/Frameworks\"",
+					"\"$(SRCROOT)/../../../../../Library/Frameworks\"",
+					"\"$(SRCROOT)/../../../adium/build/Release-Debug\"",
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
@@ -410,6 +420,13 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
+				HEADER_SEARCH_PATHS = (
+					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
+					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
+					"$(HOME)/Library/Frameworks/Adium.framework/Headers",
+					"$(HOME)/Library/Frameworks/AdiumLibpurple.framework/Headers",
+					../api,
+				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Library/Bundles";
 				PRODUCT_NAME = SIPEAdiumPlugin;
@@ -425,6 +442,8 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/../../../../Library/Frameworks\"",
+					"\"$(SRCROOT)/../../../../../Library/Frameworks\"",
+					"\"$(SRCROOT)/../../../adium/build/Release-Debug\"",
 				);
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -511,6 +530,7 @@
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				HEADER_SEARCH_PATHS = (
+					../core,
 					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
 					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
 					../api,
