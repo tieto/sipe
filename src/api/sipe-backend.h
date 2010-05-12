@@ -118,7 +118,8 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 typedef enum {
 	SIPE_CANDIDATE_TYPE_HOST,
 	SIPE_CANDIDATE_TYPE_RELAY,
-	SIPE_CANDIDATE_TYPE_SRFLX
+	SIPE_CANDIDATE_TYPE_SRFLX,
+	SIPE_CANDIDATE_TYPE_PRFLX
 } SipeCandidateType;
 
 typedef enum {
@@ -172,6 +173,10 @@ void sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
 					      GList *candidates);
 gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
 					 gchar *participant);
+GList *sipe_backend_media_get_active_local_candidates(struct sipe_backend_media *media,
+					gchar *participant);
+GList *sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media,
+					gchar *participant);
 
 /* Codec handling */
 struct sipe_backend_codec *sipe_backend_codec_new(int id,
@@ -208,7 +213,7 @@ SipeNetworkProtocol sipe_backend_candidate_get_protocol(struct sipe_backend_cand
 void sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *candidate,
 						 const gchar *username,
 						 const gchar *password);
-GList* sipe_backend_get_local_candidates(struct sipe_media_call *call,
+GList* sipe_backend_get_local_candidates(struct sipe_backend_media *media,
 					 gchar *participant);
 void sipe_backend_media_hold(struct sipe_backend_media *call, gboolean local);
 void sipe_backend_media_unhold(struct sipe_backend_media *call, gboolean local);

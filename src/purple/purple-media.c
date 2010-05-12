@@ -178,6 +178,18 @@ gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media, gchar
 	return purple_media_is_initiator(media->m, "sipe-voice", participant);
 }
 
+GList *
+sipe_backend_media_get_active_local_candidates(struct sipe_backend_media *media,
+											   gchar *participant) {
+	return purple_media_get_active_local_candidates(media->m, "sipe-voice", participant);
+}
+
+GList *
+sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media,
+											   gchar *participant) {
+	return purple_media_get_active_remote_candidates(media->m, "sipe-voice", participant);
+}
+
 struct sipe_backend_codec *
 sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
 {
@@ -331,10 +343,9 @@ sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *candi
 }
 
 GList*
-sipe_backend_get_local_candidates(struct sipe_media_call *call, gchar* participant)
+sipe_backend_get_local_candidates(struct sipe_backend_media *media, gchar* participant)
 {
-	return purple_media_get_local_candidates(call->backend_private->m,
-						 "sipe-voice", participant);
+	return purple_media_get_local_candidates(media->m, "sipe-voice", participant);
 }
 
 void
