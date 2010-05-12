@@ -528,12 +528,12 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 					process_input_message(sipe_private, msg);
 				} else {
 					SIPE_DEBUG_INFO_NOFORMAT("incoming message's signature is invalid.");
-					sipe_backend_connection_error(SIP_TO_CORE_PUBLIC,
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_NETWORK,
 								      _("Invalid message signature received"));
 				}
 			} else if (msg->response == 401) {
-					sipe_backend_connection_error(SIP_TO_CORE_PUBLIC,
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
 			}

@@ -134,7 +134,8 @@ sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 {
 	sipe_file_transfer *ft = xfer->data;
 	if (ft) {
-		struct sipe_account_data *sip = PURPLE_XFER_TO_SIPE_ACCOUNT_DATA;
+		struct sipe_core_private *sipe_private = PURPLE_XFER_TO_SIPE_CORE_PRIVATE;
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 		g_hash_table_remove(sip->filetransfers,ft->invitation_cookie);
 
@@ -659,7 +660,8 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 
 void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 {
-	struct sipe_account_data *sip = PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
@@ -722,7 +724,8 @@ void sipe_ft_incoming_cancel(PurpleAccount *account, GSList *body)
 {
 	gchar *inv_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
 
-	struct sipe_account_data *sip = PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
 	purple_xfer_cancel_remote(xfer);
@@ -921,7 +924,8 @@ PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who)
 				       PURPLE_XFER_SEND, who);
 
 		if (xfer) {
-			struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
+			struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
+			struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 			sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
 			ft->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);

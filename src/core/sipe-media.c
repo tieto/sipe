@@ -481,7 +481,6 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_dialog *dialog = call_private->dialog;
 
@@ -500,7 +499,7 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 
 	body = sipe_media_create_sdp(call_private);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE, "INVITE", dialog->with, dialog->with, hdr, body,
+	send_sip_request(sipe_private, "INVITE", dialog->with, dialog->with, hdr, body,
 			  dialog, tc);
 
 	g_free(body);

@@ -1317,7 +1317,8 @@ void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 		return;
 
 	if (account->gc) {
-		struct sipe_account_data *sip = PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA;
+		struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 		if (sip) {
 			gchar *action_name;
@@ -1366,7 +1367,7 @@ void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 
 			/* schedule 2 sec to capture idle flag */
 			action_name = g_strdup_printf("<%s>", "+set-status");
-			sipe_schedule_seconds(SIP_TO_CORE_PRIVATE,
+			sipe_schedule_seconds(sipe_private,
 					      action_name,
 					      NULL,
 					      SIPE_IDLE_SET_DELAY,
@@ -1384,7 +1385,8 @@ sipe_set_idle(PurpleConnection * gc,
 	SIPE_DEBUG_INFO("sipe_set_idle: interval=%d", interval);
 
 	if (gc) {
-		struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
+		struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 		if (sip) {
 			sip->idle_switch = time(NULL);
@@ -1435,7 +1437,7 @@ void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group
 
 	/* libpurple can call us with undefined buddy or group */
 	if (buddy && group) {
-		struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
+		struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
 
 		/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
 		gchar *buddy_name = g_ascii_strdown(buddy->name, -1);
@@ -1449,15 +1451,15 @@ void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group
 			g_free(buf);
 		}
 
-		if (!g_hash_table_lookup(SIP_TO_CORE_PRIVATE->buddies, buddy->name)) {
+		if (!g_hash_table_lookup(sipe_private->buddies, buddy->name)) {
 			struct sipe_buddy *b = g_new0(struct sipe_buddy, 1);
 			SIPE_DEBUG_INFO("sipe_add_buddy: adding %s", buddy->name);
 			b->name = g_strdup(buddy->name);
 			b->just_added = TRUE;
-			g_hash_table_insert(SIP_TO_CORE_PRIVATE->buddies, b->name, b);
+			g_hash_table_insert(sipe_private->buddies, b->name, b);
 			sipe_group_buddy(gc, b->name, NULL, group->name);
 			/* @TODO should go to callback */
-			sipe_subscribe_presence_single(SIP_TO_CORE_PRIVATE,
+			sipe_subscribe_presence_single(sipe_private,
 						       b->name);
 		} else {
 			SIPE_DEBUG_INFO("sipe_add_buddy: buddy %s already in internal list", buddy->name);
@@ -1619,7 +1621,7 @@ static void sipe_cleanup_local_blist(struct sipe_core_private *sipe_private) {
 	PurpleGroup *g;
 
 	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: overall %d Purple buddies (including clones)", g_slist_length(buddies));
-	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: %d sipe buddies (unique)", g_hash_table_size(SIP_TO_CORE_PRIVATE->buddies));
+	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: %d sipe buddies (unique)", g_hash_table_size(sipe_private->buddies));
 	while (entry) {
 		b = entry->data;
 		g = purple_buddy_get_group(b);
@@ -5589,7 +5591,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 		else if (sipe_strequal(attrVar, "note"))
 		{
 			if (uri) {
-				struct sipe_buddy *sbuddy = g_hash_table_lookup(SIP_TO_CORE_PRIVATE->buddies, uri);
+				struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
 
 				if (!has_note_cleaned) {
 					has_note_cleaned = TRUE;
@@ -5635,7 +5637,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 			const sipe_xml *xn_activity;
 			const sipe_xml *xn_meeting_subject;
 			const sipe_xml *xn_meeting_location;
-			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(SIP_TO_CORE_PRIVATE->buddies, uri) : NULL;
+			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sipe_private->buddies, uri) : NULL;
 
 			xn_node = sipe_xml_child(xn_category, "state");
 			if (!xn_node) continue;
@@ -5717,7 +5719,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 		/* calendarData */
 		else if(sipe_strequal(attrVar, "calendarData"))
 		{
-			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(SIP_TO_CORE_PRIVATE->buddies, uri) : NULL;
+			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sipe_private->buddies, uri) : NULL;
 			const sipe_xml *xn_free_busy = sipe_xml_child(xn_category, "calendarData/freeBusy");
 			const sipe_xml *xn_working_hours = sipe_xml_child(xn_category, "calendarData/WorkingHours");
 

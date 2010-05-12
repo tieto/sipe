@@ -93,8 +93,6 @@ struct sipe_core_private {
 /* Transition macros */
 #define SIPE_ACCOUNT_DATA         SIPE_CORE_PRIVATE->temporary
 #define SIPE_ACCOUNT_DATA_PRIVATE sipe_private->temporary
-#define SIP_TO_CORE_PRIVATE (sip->private)
-#define SIP_TO_CORE_PUBLIC (sip->public)
 
 /*
   Local Variables:

@@ -304,7 +304,7 @@ sip_csta_monitor_start(struct sipe_core_private *sipe_private)
 		SIP_SEND_CSTA_MONITOR_START,
 		sip->csta->line_uri);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE,
+	send_sip_request(sipe_private,
 			 "INFO",
 			 sip->csta->dialog->with,
 			 sip->csta->dialog->with,
@@ -342,7 +342,7 @@ sip_csta_monitor_stop(struct sipe_core_private *sipe_private)
 		SIP_SEND_CSTA_MONITOR_STOP,
 		sip->csta->monitor_cross_ref_id);
 
-	send_sip_request(SIP_TO_CORE_PRIVATE,
+	send_sip_request(sipe_private,
 			 "INFO",
 			 sip->csta->dialog->with,
 			 sip->csta->dialog->with,
