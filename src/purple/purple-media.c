@@ -415,42 +415,6 @@ purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto)
 }
 
 /*
-void sipe_media_error_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* error, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_error_cb: %s\n", error);
-}
-
-void sipe_media_codecs_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* codec, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_codecs_changed_cb: %s\n", codec);
-}
-
-void sipe_media_level_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* sessionid, gchar* participant, gdouble percent, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_level_cb: %s %s %f\n", sessionid, participant, percent);
-}
-
-void sipe_media_new_candidate_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* sessionid, gchar* cname, PurpleMediaCandidate *candidate, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_new_candidate_cb: %s cname: %s %s %d\n", sessionid, cname,
-			purple_media_candidate_get_ip(candidate),
-			purple_media_candidate_get_port(candidate));
-}
-
-void sipe_media_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, PurpleMediaState state, gchar* sessionid, gchar* participant, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
-}
-
-g_signal_connect(G_OBJECT(media), "error", G_CALLBACK(sipe_media_error_cb), call);
-g_signal_connect(G_OBJECT(media), "codecs-changed", G_CALLBACK(sipe_media_codecs_changed_cb), call);
-g_signal_connect(G_OBJECT(media), "level", G_CALLBACK(sipe_media_level_cb), call);
-g_signal_connect(G_OBJECT(media), "new-candidate", G_CALLBACK(sipe_media_new_candidate_cb), call);
-g_signal_connect(G_OBJECT(media), "state-changed", G_CALLBACK(sipe_media_state_changed_cb), call);
-
-*/
-
-/*
   Local Variables:
   mode: c
   c-file-style: "bsd"

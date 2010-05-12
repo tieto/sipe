@@ -285,8 +285,9 @@ process_csta_monitor_start_response(struct sipe_core_private *sipe_private,
 
 /** Monitor Start */
 static void
-sip_csta_monitor_start(struct sipe_account_data *sip)
+sip_csta_monitor_start(struct sipe_core_private *sipe_private)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 
@@ -317,8 +318,9 @@ sip_csta_monitor_start(struct sipe_account_data *sip)
 
 /** Monitor Stop */
 static void
-sip_csta_monitor_stop(struct sipe_account_data *sip)
+sip_csta_monitor_stop(struct sipe_core_private *sipe_private)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 
@@ -401,7 +403,7 @@ process_invite_csta_gateway_response(struct sipe_core_private *sipe_private,
 		if (sipe_strcase_equal(sip->csta->gateway_status, "normal")) {
 			if (!sip->csta->monitor_cross_ref_id) {
 				sip_csta_get_features(sipe_private);
-				sip_csta_monitor_start(sip);
+				sip_csta_monitor_start(sipe_private);
 			}
 		} else {
 			SIPE_DEBUG_INFO("process_invite_csta_gateway_response: ERROR: CSTA status is %s, won't continue.",
@@ -430,7 +432,7 @@ static void
 sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 			 SIPE_UNUSED_PARAMETER gpointer unused)
 {
-	struct sipe_account_data *sip = sipe_private->temporary;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
@@ -508,7 +510,7 @@ sip_csta_close(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	if (sip->csta) {
-		sip_csta_monitor_stop(sip);
+		sip_csta_monitor_stop(sipe_private);
 	}
 
 	if (sip->csta && sip->csta->dialog) {

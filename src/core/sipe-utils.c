@@ -177,20 +177,7 @@ sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 
 	return res;
 }
-/* an old version
-guint
-sipe_get_pub_instance_(struct sipe_account_data *sip,
-		      const char *publication_key)
-{
-	unsigned part_1;
-	unsigned part_2;
-	gchar *epid = get_epid(sipe_private);
-	sscanf(epid, "%08x", &part_1);
-	g_free(epid);
-	sscanf(publication_key, "%uh", &part_2);
-	return part_1 + part_2;
-}
-*/
+
 gboolean
 sipe_is_bad_alias(const char *uri,
 		  const char *alias)

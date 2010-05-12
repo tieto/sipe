@@ -1249,7 +1249,7 @@ static void sipe_subscribe_presence_batched_routed(struct sipe_core_private *sip
 static void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 					   void *buddy_name)
 {
-	struct sipe_account_data *sip = sipe_private->temporary;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *key;
 	gchar *to = sip_uri((char *)buddy_name);
 	gchar *tmp = get_contact(sipe_private);
