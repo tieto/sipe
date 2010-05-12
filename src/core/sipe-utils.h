@@ -29,7 +29,6 @@
 
 /* Forward declarations */
 struct sipe_core_private;
-struct sipe_account_data;
 struct sipe_transport_connection;
 
 /* Our publication type keys. OCS 2007+
@@ -143,7 +142,7 @@ gchar *genconfid(void);
  * See defined constants for keys patterned SIPE_PUB_*
  */
 guint
-sipe_get_pub_instance(struct sipe_account_data *sip,
+sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		      int publication_key);
 
 /**

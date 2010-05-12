@@ -2445,13 +2445,13 @@ sipe_is_our_publication(struct sipe_core_private *sipe_private,
 
 	/* filling keys for our publications if not yet cached */
 	if (!sip->our_publication_keys) {
-		guint device_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
-		guint machine_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
-		guint user_instance 	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER);
-		guint calendar_instance	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR);
-		guint cal_oof_instance	= sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR_OOF);
-		guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
-		guint note_oof_instance = sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF);
+		guint device_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_DEVICE);
+		guint machine_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_MACHINE);
+		guint user_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_USER);
+		guint calendar_instance	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_CALENDAR);
+		guint cal_oof_instance	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_CALENDAR_OOF);
+		guint cal_data_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_CALENDAR_DATA);
+		guint note_oof_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_NOTE_OOF);
 
 		SIPE_DEBUG_INFO_NOFORMAT("* Our Publication Instances *");
 		SIPE_DEBUG_INFO("\tDevice               : %u\t0x%08X", device_instance, device_instance);
@@ -6797,7 +6797,7 @@ sipe_publish_get_category_device(struct sipe_core_private *sipe_private)
 	gchar *doc;
 	gchar *epid = get_epid(sipe_private);
 	gchar *uuid = generateUUIDfromEPID(epid);
-	guint device_instance = sipe_get_pub_instance(sip, SIPE_PUB_DEVICE);
+	guint device_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_DEVICE);
 	/* key is <category><instance><container> */
 	gchar *key = g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2);
 	struct sipe_publication *publication =
@@ -6834,8 +6834,8 @@ sipe_publish_get_category_state(struct sipe_core_private *sipe_private,
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	int availability = sipe_get_availability_by_status(sip->status, NULL);
-	guint instance = is_user_state ? sipe_get_pub_instance(sip, SIPE_PUB_STATE_USER) :
-					 sipe_get_pub_instance(sip, SIPE_PUB_STATE_MACHINE);
+	guint instance = is_user_state ? sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_USER) :
+					 sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_MACHINE);
 	/* key is <category><instance><container> */
 	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
 	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
@@ -6880,8 +6880,8 @@ sipe_publish_get_category_state_calendar(struct sipe_core_private *sipe_private,
 	gchar *res;
 	gchar *tmp = NULL;
 	guint instance = (cal_satus == SIPE_CAL_OOF) ?
-		sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR_OOF) :
-		sipe_get_pub_instance(sip, SIPE_PUB_STATE_CALENDAR);
+		sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_CALENDAR_OOF) :
+		sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_CALENDAR);
 
 	/* key is <category><instance><container> */
 	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
@@ -7011,7 +7011,7 @@ sipe_publish_get_category_note(struct sipe_core_private *sipe_private,
 			       time_t note_end)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	guint instance = sipe_strequal("OOF", note_type) ? sipe_get_pub_instance(sip, SIPE_PUB_NOTE_OOF) : 0;
+	guint instance = sipe_strequal("OOF", note_type) ? sipe_get_pub_instance(sipe_private, SIPE_PUB_NOTE_OOF) : 0;
 	/* key is <category><instance><container> */
 	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", instance, 200);
 	gchar *key_note_300 = g_strdup_printf("<%s><%u><%u>", "note", instance, 300);
@@ -7195,7 +7195,7 @@ sipe_publish_get_category_cal_free_busy(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_calendar* cal = sip->cal;
-	guint cal_data_instance = sipe_get_pub_instance(sip, SIPE_PUB_CALENDAR_DATA);
+	guint cal_data_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_CALENDAR_DATA);
 	char *fb_start_str;
 	char *free_busy_base64;
 	const char *st;

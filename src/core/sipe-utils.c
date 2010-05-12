@@ -145,11 +145,10 @@ get_epid(struct sipe_core_private *sipe_private)
 }
 
 guint
-sipe_get_pub_instance(struct sipe_account_data *sip,
+sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		      int publication_key)
 {
 	unsigned res = 0;
-	struct sipe_core_private *sipe_private = SIP_TO_CORE_PRIVATE;
 	gchar *epid = get_epid(sipe_private);
 
 	sscanf(epid, "%08x", &res);
@@ -169,7 +168,7 @@ sipe_get_pub_instance(struct sipe_account_data *sip,
 		   publication_key == SIPE_PUB_NOTE_OOF)
 	{ /* First hexadecimal digit is 0x4 */
 		unsigned calendar_id = 0;
-		char *mail_hash = sipe_get_epid(sip->email, "", "");
+		char *mail_hash = sipe_get_epid(SIPE_ACCOUNT_DATA_PRIVATE->email, "", "");
 
 		sscanf(mail_hash, "%08x", &calendar_id);
 		g_free(mail_hash);
