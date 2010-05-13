@@ -477,6 +477,8 @@ static PurplePluginProtocolInfo prpl_info =
 #endif
 #if PURPLE_VERSION_CHECK(2,7,0)
 	NULL,					/* get_moods */
+	NULL,					/* set_public_alias */
+	NULL,					/* get_public_alias */
 #endif
 #endif
 #endif
