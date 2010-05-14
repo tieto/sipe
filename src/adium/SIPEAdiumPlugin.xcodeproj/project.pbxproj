@@ -410,9 +410,7 @@
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../../Library/Frameworks\"",
-					"\"$(SRCROOT)/../../../../../Library/Frameworks\"",
-					"\"$(SRCROOT)/../../../adium/build/Release-Debug\"",
+					"\"$(HOME)/Library/Frameworks\"",
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
@@ -421,6 +419,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
 				HEADER_SEARCH_PATHS = (
+					"$(HOME)/Library/Frameworks/AIUtilities.framework/Headers",
 					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
 					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
 					"$(HOME)/Library/Frameworks/Adium.framework/Headers",

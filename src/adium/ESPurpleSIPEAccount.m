@@ -156,31 +156,8 @@
 	const char					*message = (status ? purple_status_get_attr_string(status, "message") : NULL);
 	char						*sipemessage = NULL;
 	NSString					*statusMessage = nil;
-	struct sipe_account_data	*sip;
-	struct sipe_buddy			*sbuddy;
-
-	if (!message) {
-		
-		sip = (struct sipe_account_data *) buddy->account->gc->proto_data;
-		if (sip)  //happens on pidgin exit
-		{
-			sbuddy = g_hash_table_lookup(sip->buddies, buddy->name);
-			if (sbuddy) {
-				if (!is_empty(sbuddy->activity) && !is_empty(sbuddy->annotation))
-				{
-					sipemessage = g_strdup_printf("%s. %s", sbuddy->activity, sbuddy->annotation);
-				}
-				else if (!is_empty(sbuddy->activity))
-				{
-					sipemessage = g_strdup(sbuddy->activity);
-				}
-				else if (!is_empty(sbuddy->annotation))
-				{
-					sipemessage = g_strdup(sbuddy->annotation);
-				}
-			}
-		}
-	}
+	
+	// TODO: get sipe activity or annotation
 	
 	// Get the plugin's status message for this buddy if they don't have a status message
 	if (!message && !sipemessage) {
