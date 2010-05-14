@@ -11,37 +11,50 @@
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
 		B13FAADE119D3CAA001CE037 /* libglib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAADD119D3CAA001CE037 /* libglib.framework */; };
 		B13FAAE4119D3D2E001CE037 /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAAE3119D3D2E001CE037 /* libintl.framework */; };
-		B193836411972C26007ADE8F /* libglib-2.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B193836311972C26007ADE8F /* libglib-2.0.dylib */; };
+		B13FAB00119D41C0001CE037 /* libpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAAFF119D41C0001CE037 /* libpurple.framework */; };
+		B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB4F119D5155001CE037 /* purple-connection.c */; };
+		B13FAB60119D5155001CE037 /* purple-crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB50119D5155001CE037 /* purple-crypt.c */; };
+		B13FAB61119D5155001CE037 /* purple-debug.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB51119D5155001CE037 /* purple-debug.c */; };
+		B13FAB62119D5155001CE037 /* purple-digest.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB52119D5155001CE037 /* purple-digest.c */; };
+		B13FAB63119D5155001CE037 /* purple-dnsquery.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB53119D5155001CE037 /* purple-dnsquery.c */; };
+		B13FAB64119D5155001CE037 /* purple-markup.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB54119D5155001CE037 /* purple-markup.c */; };
+		B13FAB66119D5155001CE037 /* purple-mime.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB56119D5155001CE037 /* purple-mime.c */; };
+		B13FAB67119D5155001CE037 /* purple-network.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB57119D5155001CE037 /* purple-network.c */; };
+		B13FAB68119D5155001CE037 /* purple-plugin.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB58119D5155001CE037 /* purple-plugin.c */; };
+		B13FAB6A119D5155001CE037 /* purple-schedule.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5A119D5155001CE037 /* purple-schedule.c */; };
+		B13FAB6B119D5155001CE037 /* purple-setting.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5B119D5155001CE037 /* purple-setting.c */; };
+		B13FAB6C119D5155001CE037 /* purple-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5C119D5155001CE037 /* purple-transport.c */; };
+		B13FAB6D119D5155001CE037 /* tests-load.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5D119D5155001CE037 /* tests-load.c */; };
+		B13FAB6E119D5155001CE037 /* tests.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5E119D5155001CE037 /* tests.c */; };
+		B13FABDB119D585A001CE037 /* http-conn.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB9D119D585A001CE037 /* http-conn.c */; };
+		B13FABDF119D585A001CE037 /* sip-csta.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA3119D585A001CE037 /* sip-csta.c */; };
+		B13FABE1119D585A001CE037 /* sip-sec-krb5.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA5119D585A001CE037 /* sip-sec-krb5.c */; };
+		B13FABE4119D585A001CE037 /* sip-sec-ntlm-tests.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA8119D585A001CE037 /* sip-sec-ntlm-tests.c */; };
+		B13FABE5119D585A001CE037 /* sip-sec-ntlm.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */; };
+		B13FABE9119D585A001CE037 /* sip-sec.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABAD119D585A001CE037 /* sip-sec.c */; };
+		B13FABEB119D585A001CE037 /* sip-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABAF119D585A001CE037 /* sip-transport.c */; };
+		B13FABED119D585A001CE037 /* sipe-buddy.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABB1119D585A001CE037 /* sipe-buddy.c */; };
+		B13FABEF119D585A001CE037 /* sipe-cal.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABB3119D585A001CE037 /* sipe-cal.c */; };
+		B13FABF1119D585A001CE037 /* sipe-chat.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABB5119D585A001CE037 /* sipe-chat.c */; };
+		B13FABF3119D585A001CE037 /* sipe-conf.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABB7119D585A001CE037 /* sipe-conf.c */; };
+		B13FABF6119D585A001CE037 /* sipe-core.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBA119D585A001CE037 /* sipe-core.c */; };
+		B13FABF8119D585A001CE037 /* sipe-dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBC119D585A001CE037 /* sipe-dialog.c */; };
+		B13FABFB119D585A001CE037 /* sipe-domino.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBF119D585A001CE037 /* sipe-domino.c */; };
+		B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC1119D585A001CE037 /* sipe-ews.c */; };
+		B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC3119D585A001CE037 /* sipe-ft.c */; };
+		B13FAC04119D585A001CE037 /* sipe-schedule.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC8119D585A001CE037 /* sipe-schedule.c */; };
+		B13FAC06119D585A001CE037 /* sipe-session.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABCA119D585A001CE037 /* sipe-session.c */; };
+		B13FAC08119D585A001CE037 /* sipe-sign.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABCC119D585A001CE037 /* sipe-sign.c */; };
+		B13FAC0A119D585A001CE037 /* sipe-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABCE119D585A001CE037 /* sipe-utils.c */; };
+		B13FAC0E119D585A001CE037 /* sipe-xml-tests.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD2119D585A001CE037 /* sipe-xml-tests.c */; };
+		B13FAC0F119D585A001CE037 /* sipe-xml.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD3119D585A001CE037 /* sipe-xml.c */; };
+		B13FAC11119D585A001CE037 /* sipe.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD5119D585A001CE037 /* sipe.c */; };
+		B13FAC13119D585A001CE037 /* sipmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD7119D585A001CE037 /* sipmsg.c */; };
+		B13FAC15119D585A001CE037 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD9119D585A001CE037 /* uuid.c */; };
+		B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAC60119D721E001CE037 /* libxml2.dylib */; };
+		B13FAC66119D7280001CE037 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAC60119D721E001CE037 /* libxml2.dylib */; };
 		B19383C2119A1E8F007ADE8F /* Adium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B19383C1119A1E8F007ADE8F /* Adium.framework */; };
 		B1C5100A119A21E700EAFB2C /* AdiumLibpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */; };
-		C92A799210B24C46009B64B9 /* sip-csta.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797310B24C46009B64B9 /* sip-csta.c */; };
-		C92A799310B24C46009B64B9 /* sip-csta.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797410B24C46009B64B9 /* sip-csta.h */; };
-		C92A799510B24C46009B64B9 /* sip-sec-krb5.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797610B24C46009B64B9 /* sip-sec-krb5.c */; };
-		C92A799610B24C46009B64B9 /* sip-sec-krb5.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797710B24C46009B64B9 /* sip-sec-krb5.h */; };
-		C92A799710B24C46009B64B9 /* sip-sec-mech.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797810B24C46009B64B9 /* sip-sec-mech.h */; };
-		C92A799810B24C46009B64B9 /* sip-sec-ntlm.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797910B24C46009B64B9 /* sip-sec-ntlm.c */; };
-		C92A799910B24C46009B64B9 /* sip-sec-ntlm.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797A10B24C46009B64B9 /* sip-sec-ntlm.h */; };
-		C92A799C10B24C46009B64B9 /* sip-sec.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797D10B24C46009B64B9 /* sip-sec.c */; };
-		C92A799D10B24C46009B64B9 /* sip-sec.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A797E10B24C46009B64B9 /* sip-sec.h */; };
-		C92A799E10B24C46009B64B9 /* sipe-chat.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A797F10B24C46009B64B9 /* sipe-chat.c */; };
-		C92A799F10B24C46009B64B9 /* sipe-chat.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798010B24C46009B64B9 /* sipe-chat.h */; };
-		C92A79A010B24C46009B64B9 /* sipe-conf.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A798110B24C46009B64B9 /* sipe-conf.c */; };
-		C92A79A110B24C46009B64B9 /* sipe-conf.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798210B24C46009B64B9 /* sipe-conf.h */; };
-		C92A79A210B24C46009B64B9 /* sipe-dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A798310B24C46009B64B9 /* sipe-dialog.c */; };
-		C92A79A310B24C46009B64B9 /* sipe-dialog.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798410B24C46009B64B9 /* sipe-dialog.h */; };
-		C92A79A410B24C46009B64B9 /* sipe-nls.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798510B24C46009B64B9 /* sipe-nls.h */; };
-		C92A79A510B24C46009B64B9 /* sipe-session.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A798610B24C46009B64B9 /* sipe-session.c */; };
-		C92A79A610B24C46009B64B9 /* sipe-session.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798710B24C46009B64B9 /* sipe-session.h */; };
-		C92A79A710B24C46009B64B9 /* sipe-sign.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A798810B24C46009B64B9 /* sipe-sign.c */; };
-		C92A79A810B24C46009B64B9 /* sipe-sign.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798910B24C46009B64B9 /* sipe-sign.h */; };
-		C92A79A910B24C46009B64B9 /* sipe-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A798A10B24C46009B64B9 /* sipe-utils.c */; };
-		C92A79AA10B24C46009B64B9 /* sipe-utils.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798B10B24C46009B64B9 /* sipe-utils.h */; };
-		C92A79AB10B24C46009B64B9 /* sipe.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A798C10B24C46009B64B9 /* sipe.c */; };
-		C92A79AC10B24C46009B64B9 /* sipe.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798D10B24C46009B64B9 /* sipe.h */; };
-		C92A79AD10B24C46009B64B9 /* sipmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A798E10B24C46009B64B9 /* sipmsg.c */; };
-		C92A79AE10B24C46009B64B9 /* sipmsg.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A798F10B24C46009B64B9 /* sipmsg.h */; };
-		C92A79AF10B24C46009B64B9 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = C92A799010B24C46009B64B9 /* uuid.c */; };
-		C92A79B010B24C46009B64B9 /* uuid.h in Headers */ = {isa = PBXBuildFile; fileRef = C92A799110B24C46009B64B9 /* uuid.h */; };
 		C92A79E110B24FDC009B64B9 /* libpidgin-sipe.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C92A796910B24BAD009B64B9 /* libpidgin-sipe.a */; };
 		C948843D109B2F8100ABFAF7 /* ESSIPEService.m in Sources */ = {isa = PBXBuildFile; fileRef = C948843C109B2F8100ABFAF7 /* ESSIPEService.m */; };
 		C9488446109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = C9488445109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m */; };
@@ -71,38 +84,50 @@
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		B13FAADD119D3CAA001CE037 /* libglib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libglib.framework; path = /Users/emanuelez/Library/Frameworks/libglib.framework; sourceTree = "<absolute>"; };
 		B13FAAE3119D3D2E001CE037 /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = /Users/emanuelez/Library/Frameworks/libintl.framework; sourceTree = "<absolute>"; };
-		B193836311972C26007ADE8F /* libglib-2.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libglib-2.0.dylib"; path = "usr/local/lib/libglib-2.0.dylib"; sourceTree = SDKROOT; };
+		B13FAAFF119D41C0001CE037 /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libpurple.framework; path = /Users/emanuelez/Library/Frameworks/libpurple.framework; sourceTree = "<absolute>"; };
+		B13FAB4F119D5155001CE037 /* purple-connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-connection.c"; sourceTree = "<group>"; };
+		B13FAB50119D5155001CE037 /* purple-crypt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-crypt.c"; sourceTree = "<group>"; };
+		B13FAB51119D5155001CE037 /* purple-debug.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-debug.c"; sourceTree = "<group>"; };
+		B13FAB52119D5155001CE037 /* purple-digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-digest.c"; sourceTree = "<group>"; };
+		B13FAB53119D5155001CE037 /* purple-dnsquery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-dnsquery.c"; sourceTree = "<group>"; };
+		B13FAB54119D5155001CE037 /* purple-markup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-markup.c"; sourceTree = "<group>"; };
+		B13FAB56119D5155001CE037 /* purple-mime.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-mime.c"; sourceTree = "<group>"; };
+		B13FAB57119D5155001CE037 /* purple-network.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-network.c"; sourceTree = "<group>"; };
+		B13FAB58119D5155001CE037 /* purple-plugin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-plugin.c"; sourceTree = "<group>"; };
+		B13FAB5A119D5155001CE037 /* purple-schedule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-schedule.c"; sourceTree = "<group>"; };
+		B13FAB5B119D5155001CE037 /* purple-setting.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-setting.c"; sourceTree = "<group>"; };
+		B13FAB5C119D5155001CE037 /* purple-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-transport.c"; sourceTree = "<group>"; };
+		B13FAB5D119D5155001CE037 /* tests-load.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "tests-load.c"; sourceTree = "<group>"; };
+		B13FAB5E119D5155001CE037 /* tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tests.c; sourceTree = "<group>"; };
+		B13FAB9D119D585A001CE037 /* http-conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "http-conn.c"; sourceTree = "<group>"; };
+		B13FABA3119D585A001CE037 /* sip-csta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-csta.c"; sourceTree = "<group>"; };
+		B13FABA5119D585A001CE037 /* sip-sec-krb5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-krb5.c"; sourceTree = "<group>"; };
+		B13FABA8119D585A001CE037 /* sip-sec-ntlm-tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-ntlm-tests.c"; sourceTree = "<group>"; };
+		B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-ntlm.c"; sourceTree = "<group>"; };
+		B13FABAD119D585A001CE037 /* sip-sec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec.c"; sourceTree = "<group>"; };
+		B13FABAF119D585A001CE037 /* sip-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-transport.c"; sourceTree = "<group>"; };
+		B13FABB1119D585A001CE037 /* sipe-buddy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-buddy.c"; sourceTree = "<group>"; };
+		B13FABB3119D585A001CE037 /* sipe-cal.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-cal.c"; sourceTree = "<group>"; };
+		B13FABB5119D585A001CE037 /* sipe-chat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-chat.c"; sourceTree = "<group>"; };
+		B13FABB7119D585A001CE037 /* sipe-conf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-conf.c"; sourceTree = "<group>"; };
+		B13FABBA119D585A001CE037 /* sipe-core.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-core.c"; sourceTree = "<group>"; };
+		B13FABBC119D585A001CE037 /* sipe-dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-dialog.c"; sourceTree = "<group>"; };
+		B13FABBF119D585A001CE037 /* sipe-domino.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-domino.c"; sourceTree = "<group>"; };
+		B13FABC1119D585A001CE037 /* sipe-ews.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews.c"; sourceTree = "<group>"; };
+		B13FABC3119D585A001CE037 /* sipe-ft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft.c"; sourceTree = "<group>"; };
+		B13FABC8119D585A001CE037 /* sipe-schedule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-schedule.c"; sourceTree = "<group>"; };
+		B13FABCA119D585A001CE037 /* sipe-session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-session.c"; sourceTree = "<group>"; };
+		B13FABCC119D585A001CE037 /* sipe-sign.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-sign.c"; sourceTree = "<group>"; };
+		B13FABCE119D585A001CE037 /* sipe-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-utils.c"; sourceTree = "<group>"; };
+		B13FABD2119D585A001CE037 /* sipe-xml-tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-xml-tests.c"; sourceTree = "<group>"; };
+		B13FABD3119D585A001CE037 /* sipe-xml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-xml.c"; sourceTree = "<group>"; };
+		B13FABD5119D585A001CE037 /* sipe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sipe.c; sourceTree = "<group>"; };
+		B13FABD7119D585A001CE037 /* sipmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sipmsg.c; sourceTree = "<group>"; };
+		B13FABD9119D585A001CE037 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = uuid.c; sourceTree = "<group>"; };
+		B13FAC60119D721E001CE037 /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
 		B19383C1119A1E8F007ADE8F /* Adium.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Adium.framework; path = /Users/emanuelez/Library/Frameworks/Adium.framework; sourceTree = "<absolute>"; };
 		B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdiumLibpurple.framework; path = "/Users/emanuelez/Documents/Code/adium/build/Release-Debug/AdiumLibpurple.framework"; sourceTree = "<absolute>"; };
 		C92A796910B24BAD009B64B9 /* libpidgin-sipe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libpidgin-sipe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		C92A797310B24C46009B64B9 /* sip-csta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sip-csta.c"; path = "../core/sip-csta.c"; sourceTree = SOURCE_ROOT; };
-		C92A797410B24C46009B64B9 /* sip-csta.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-csta.h"; path = "../core/sip-csta.h"; sourceTree = SOURCE_ROOT; };
-		C92A797610B24C46009B64B9 /* sip-sec-krb5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sip-sec-krb5.c"; path = "../core/sip-sec-krb5.c"; sourceTree = SOURCE_ROOT; };
-		C92A797710B24C46009B64B9 /* sip-sec-krb5.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-sec-krb5.h"; path = "../core/sip-sec-krb5.h"; sourceTree = SOURCE_ROOT; };
-		C92A797810B24C46009B64B9 /* sip-sec-mech.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-sec-mech.h"; path = "../core/sip-sec-mech.h"; sourceTree = SOURCE_ROOT; };
-		C92A797910B24C46009B64B9 /* sip-sec-ntlm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sip-sec-ntlm.c"; path = "../core/sip-sec-ntlm.c"; sourceTree = SOURCE_ROOT; };
-		C92A797A10B24C46009B64B9 /* sip-sec-ntlm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-sec-ntlm.h"; path = "../core/sip-sec-ntlm.h"; sourceTree = SOURCE_ROOT; };
-		C92A797D10B24C46009B64B9 /* sip-sec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sip-sec.c"; path = "../core/sip-sec.c"; sourceTree = SOURCE_ROOT; };
-		C92A797E10B24C46009B64B9 /* sip-sec.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sip-sec.h"; path = "../core/sip-sec.h"; sourceTree = SOURCE_ROOT; };
-		C92A797F10B24C46009B64B9 /* sipe-chat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sipe-chat.c"; path = "../core/sipe-chat.c"; sourceTree = SOURCE_ROOT; };
-		C92A798010B24C46009B64B9 /* sipe-chat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sipe-chat.h"; path = "../core/sipe-chat.h"; sourceTree = SOURCE_ROOT; };
-		C92A798110B24C46009B64B9 /* sipe-conf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sipe-conf.c"; path = "../core/sipe-conf.c"; sourceTree = SOURCE_ROOT; };
-		C92A798210B24C46009B64B9 /* sipe-conf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sipe-conf.h"; path = "../core/sipe-conf.h"; sourceTree = SOURCE_ROOT; };
-		C92A798310B24C46009B64B9 /* sipe-dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sipe-dialog.c"; path = "../core/sipe-dialog.c"; sourceTree = SOURCE_ROOT; };
-		C92A798410B24C46009B64B9 /* sipe-dialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sipe-dialog.h"; path = "../core/sipe-dialog.h"; sourceTree = SOURCE_ROOT; };
-		C92A798510B24C46009B64B9 /* sipe-nls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sipe-nls.h"; path = "../core/sipe-nls.h"; sourceTree = SOURCE_ROOT; };
-		C92A798610B24C46009B64B9 /* sipe-session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sipe-session.c"; path = "../core/sipe-session.c"; sourceTree = SOURCE_ROOT; };
-		C92A798710B24C46009B64B9 /* sipe-session.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sipe-session.h"; path = "../core/sipe-session.h"; sourceTree = SOURCE_ROOT; };
-		C92A798810B24C46009B64B9 /* sipe-sign.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sipe-sign.c"; path = "../core/sipe-sign.c"; sourceTree = SOURCE_ROOT; };
-		C92A798910B24C46009B64B9 /* sipe-sign.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sipe-sign.h"; path = "../core/sipe-sign.h"; sourceTree = SOURCE_ROOT; };
-		C92A798A10B24C46009B64B9 /* sipe-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = "sipe-utils.c"; path = "../core/sipe-utils.c"; sourceTree = SOURCE_ROOT; };
-		C92A798B10B24C46009B64B9 /* sipe-utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "sipe-utils.h"; path = "../core/sipe-utils.h"; sourceTree = SOURCE_ROOT; };
-		C92A798C10B24C46009B64B9 /* sipe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sipe.c; path = ../core/sipe.c; sourceTree = SOURCE_ROOT; };
-		C92A798D10B24C46009B64B9 /* sipe.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sipe.h; path = ../core/sipe.h; sourceTree = SOURCE_ROOT; };
-		C92A798E10B24C46009B64B9 /* sipmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sipmsg.c; path = ../core/sipmsg.c; sourceTree = SOURCE_ROOT; };
-		C92A798F10B24C46009B64B9 /* sipmsg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sipmsg.h; path = ../core/sipmsg.h; sourceTree = SOURCE_ROOT; };
-		C92A799010B24C46009B64B9 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uuid.c; path = ../core/uuid.c; sourceTree = SOURCE_ROOT; };
-		C92A799110B24C46009B64B9 /* uuid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = uuid.h; path = ../core/uuid.h; sourceTree = SOURCE_ROOT; };
 		C948843B109B2F8100ABFAF7 /* ESSIPEService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPEService.h; sourceTree = "<group>"; };
 		C948843C109B2F8100ABFAF7 /* ESSIPEService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESSIPEService.m; sourceTree = "<group>"; };
 		C9488444109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPELibpurpleServicePlugin.h; sourceTree = "<group>"; };
@@ -127,6 +152,8 @@
 				B1C5100A119A21E700EAFB2C /* AdiumLibpurple.framework in Frameworks */,
 				B13FAADE119D3CAA001CE037 /* libglib.framework in Frameworks */,
 				B13FAAE4119D3D2E001CE037 /* libintl.framework in Frameworks */,
+				B13FAB00119D41C0001CE037 /* libpurple.framework in Frameworks */,
+				B13FAC66119D7280001CE037 /* libxml2.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -134,7 +161,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B193836411972C26007ADE8F /* libglib-2.0.dylib in Frameworks */,
+				B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -150,7 +177,7 @@
 				089C167CFE841241C02AAC07 /* Resources */,
 				089C1671FE841209C02AAC07 /* Frameworks and Libraries */,
 				19C28FB8FE9D52D311CA2CBB /* Products */,
-				B13FAAE3119D3D2E001CE037 /* libintl.framework */,
+				B13FAC60119D721E001CE037 /* libxml2.dylib */,
 			);
 			name = SIPEAdiumPlugin;
 			sourceTree = "<group>";
@@ -158,11 +185,12 @@
 		089C1671FE841209C02AAC07 /* Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
+				B13FAAE3119D3D2E001CE037 /* libintl.framework */,
 				1058C7ACFEA557BF11CA2CBB /* Linked Frameworks */,
 				1058C7AEFEA557BF11CA2CBB /* Other Frameworks */,
-				B193836311972C26007ADE8F /* libglib-2.0.dylib */,
 				B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */,
 				B13FAADD119D3CAA001CE037 /* libglib.framework */,
+				B13FAAFF119D41C0001CE037 /* libpurple.framework */,
 			);
 			name = "Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -228,37 +256,66 @@
 			name = "Other Sources";
 			sourceTree = "<group>";
 		};
+		B13FAB4D119D5155001CE037 /* purple */ = {
+			isa = PBXGroup;
+			children = (
+				B13FAB4F119D5155001CE037 /* purple-connection.c */,
+				B13FAB50119D5155001CE037 /* purple-crypt.c */,
+				B13FAB51119D5155001CE037 /* purple-debug.c */,
+				B13FAB52119D5155001CE037 /* purple-digest.c */,
+				B13FAB53119D5155001CE037 /* purple-dnsquery.c */,
+				B13FAB54119D5155001CE037 /* purple-markup.c */,
+				B13FAB56119D5155001CE037 /* purple-mime.c */,
+				B13FAB57119D5155001CE037 /* purple-network.c */,
+				B13FAB58119D5155001CE037 /* purple-plugin.c */,
+				B13FAB5A119D5155001CE037 /* purple-schedule.c */,
+				B13FAB5B119D5155001CE037 /* purple-setting.c */,
+				B13FAB5C119D5155001CE037 /* purple-transport.c */,
+				B13FAB5D119D5155001CE037 /* tests-load.c */,
+				B13FAB5E119D5155001CE037 /* tests.c */,
+			);
+			name = purple;
+			path = ../purple;
+			sourceTree = SOURCE_ROOT;
+		};
+		B13FAB9C119D585A001CE037 /* core */ = {
+			isa = PBXGroup;
+			children = (
+				B13FAB9D119D585A001CE037 /* http-conn.c */,
+				B13FABA3119D585A001CE037 /* sip-csta.c */,
+				B13FABA5119D585A001CE037 /* sip-sec-krb5.c */,
+				B13FABA8119D585A001CE037 /* sip-sec-ntlm-tests.c */,
+				B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */,
+				B13FABAD119D585A001CE037 /* sip-sec.c */,
+				B13FABAF119D585A001CE037 /* sip-transport.c */,
+				B13FABB1119D585A001CE037 /* sipe-buddy.c */,
+				B13FABB3119D585A001CE037 /* sipe-cal.c */,
+				B13FABB5119D585A001CE037 /* sipe-chat.c */,
+				B13FABB7119D585A001CE037 /* sipe-conf.c */,
+				B13FABBA119D585A001CE037 /* sipe-core.c */,
+				B13FABBC119D585A001CE037 /* sipe-dialog.c */,
+				B13FABBF119D585A001CE037 /* sipe-domino.c */,
+				B13FABC1119D585A001CE037 /* sipe-ews.c */,
+				B13FABC3119D585A001CE037 /* sipe-ft.c */,
+				B13FABC8119D585A001CE037 /* sipe-schedule.c */,
+				B13FABCA119D585A001CE037 /* sipe-session.c */,
+				B13FABCC119D585A001CE037 /* sipe-sign.c */,
+				B13FABCE119D585A001CE037 /* sipe-utils.c */,
+				B13FABD2119D585A001CE037 /* sipe-xml-tests.c */,
+				B13FABD3119D585A001CE037 /* sipe-xml.c */,
+				B13FABD5119D585A001CE037 /* sipe.c */,
+				B13FABD7119D585A001CE037 /* sipmsg.c */,
+				B13FABD9119D585A001CE037 /* uuid.c */,
+			);
+			name = core;
+			path = ../core;
+			sourceTree = SOURCE_ROOT;
+		};
 		C92A79B110B24C50009B64B9 /* pidgin-sipe */ = {
 			isa = PBXGroup;
 			children = (
-				C92A797310B24C46009B64B9 /* sip-csta.c */,
-				C92A797410B24C46009B64B9 /* sip-csta.h */,
-				C92A797610B24C46009B64B9 /* sip-sec-krb5.c */,
-				C92A797710B24C46009B64B9 /* sip-sec-krb5.h */,
-				C92A797810B24C46009B64B9 /* sip-sec-mech.h */,
-				C92A797910B24C46009B64B9 /* sip-sec-ntlm.c */,
-				C92A797A10B24C46009B64B9 /* sip-sec-ntlm.h */,
-				C92A797D10B24C46009B64B9 /* sip-sec.c */,
-				C92A797E10B24C46009B64B9 /* sip-sec.h */,
-				C92A797F10B24C46009B64B9 /* sipe-chat.c */,
-				C92A798010B24C46009B64B9 /* sipe-chat.h */,
-				C92A798110B24C46009B64B9 /* sipe-conf.c */,
-				C92A798210B24C46009B64B9 /* sipe-conf.h */,
-				C92A798310B24C46009B64B9 /* sipe-dialog.c */,
-				C92A798410B24C46009B64B9 /* sipe-dialog.h */,
-				C92A798510B24C46009B64B9 /* sipe-nls.h */,
-				C92A798610B24C46009B64B9 /* sipe-session.c */,
-				C92A798710B24C46009B64B9 /* sipe-session.h */,
-				C92A798810B24C46009B64B9 /* sipe-sign.c */,
-				C92A798910B24C46009B64B9 /* sipe-sign.h */,
-				C92A798A10B24C46009B64B9 /* sipe-utils.c */,
-				C92A798B10B24C46009B64B9 /* sipe-utils.h */,
-				C92A798C10B24C46009B64B9 /* sipe.c */,
-				C92A798D10B24C46009B64B9 /* sipe.h */,
-				C92A798E10B24C46009B64B9 /* sipmsg.c */,
-				C92A798F10B24C46009B64B9 /* sipmsg.h */,
-				C92A799010B24C46009B64B9 /* uuid.c */,
-				C92A799110B24C46009B64B9 /* uuid.h */,
+				B13FAB9C119D585A001CE037 /* core */,
+				B13FAB4D119D5155001CE037 /* purple */,
 			);
 			name = "pidgin-sipe";
 			sourceTree = "<group>";
@@ -270,21 +327,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C92A799310B24C46009B64B9 /* sip-csta.h in Headers */,
-				C92A799610B24C46009B64B9 /* sip-sec-krb5.h in Headers */,
-				C92A799710B24C46009B64B9 /* sip-sec-mech.h in Headers */,
-				C92A799910B24C46009B64B9 /* sip-sec-ntlm.h in Headers */,
-				C92A799D10B24C46009B64B9 /* sip-sec.h in Headers */,
-				C92A799F10B24C46009B64B9 /* sipe-chat.h in Headers */,
-				C92A79A110B24C46009B64B9 /* sipe-conf.h in Headers */,
-				C92A79A310B24C46009B64B9 /* sipe-dialog.h in Headers */,
-				C92A79A410B24C46009B64B9 /* sipe-nls.h in Headers */,
-				C92A79A610B24C46009B64B9 /* sipe-session.h in Headers */,
-				C92A79A810B24C46009B64B9 /* sipe-sign.h in Headers */,
-				C92A79AA10B24C46009B64B9 /* sipe-utils.h in Headers */,
-				C92A79AC10B24C46009B64B9 /* sipe.h in Headers */,
-				C92A79AE10B24C46009B64B9 /* sipmsg.h in Headers */,
-				C92A79B010B24C46009B64B9 /* uuid.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -373,19 +415,45 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C92A799210B24C46009B64B9 /* sip-csta.c in Sources */,
-				C92A799510B24C46009B64B9 /* sip-sec-krb5.c in Sources */,
-				C92A799810B24C46009B64B9 /* sip-sec-ntlm.c in Sources */,
-				C92A799C10B24C46009B64B9 /* sip-sec.c in Sources */,
-				C92A799E10B24C46009B64B9 /* sipe-chat.c in Sources */,
-				C92A79A010B24C46009B64B9 /* sipe-conf.c in Sources */,
-				C92A79A210B24C46009B64B9 /* sipe-dialog.c in Sources */,
-				C92A79A510B24C46009B64B9 /* sipe-session.c in Sources */,
-				C92A79A710B24C46009B64B9 /* sipe-sign.c in Sources */,
-				C92A79A910B24C46009B64B9 /* sipe-utils.c in Sources */,
-				C92A79AB10B24C46009B64B9 /* sipe.c in Sources */,
-				C92A79AD10B24C46009B64B9 /* sipmsg.c in Sources */,
-				C92A79AF10B24C46009B64B9 /* uuid.c in Sources */,
+				B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */,
+				B13FAB60119D5155001CE037 /* purple-crypt.c in Sources */,
+				B13FAB61119D5155001CE037 /* purple-debug.c in Sources */,
+				B13FAB62119D5155001CE037 /* purple-digest.c in Sources */,
+				B13FAB63119D5155001CE037 /* purple-dnsquery.c in Sources */,
+				B13FAB64119D5155001CE037 /* purple-markup.c in Sources */,
+				B13FAB66119D5155001CE037 /* purple-mime.c in Sources */,
+				B13FAB67119D5155001CE037 /* purple-network.c in Sources */,
+				B13FAB68119D5155001CE037 /* purple-plugin.c in Sources */,
+				B13FAB6A119D5155001CE037 /* purple-schedule.c in Sources */,
+				B13FAB6B119D5155001CE037 /* purple-setting.c in Sources */,
+				B13FAB6C119D5155001CE037 /* purple-transport.c in Sources */,
+				B13FAB6D119D5155001CE037 /* tests-load.c in Sources */,
+				B13FAB6E119D5155001CE037 /* tests.c in Sources */,
+				B13FABDB119D585A001CE037 /* http-conn.c in Sources */,
+				B13FABDF119D585A001CE037 /* sip-csta.c in Sources */,
+				B13FABE1119D585A001CE037 /* sip-sec-krb5.c in Sources */,
+				B13FABE4119D585A001CE037 /* sip-sec-ntlm-tests.c in Sources */,
+				B13FABE5119D585A001CE037 /* sip-sec-ntlm.c in Sources */,
+				B13FABE9119D585A001CE037 /* sip-sec.c in Sources */,
+				B13FABEB119D585A001CE037 /* sip-transport.c in Sources */,
+				B13FABED119D585A001CE037 /* sipe-buddy.c in Sources */,
+				B13FABEF119D585A001CE037 /* sipe-cal.c in Sources */,
+				B13FABF1119D585A001CE037 /* sipe-chat.c in Sources */,
+				B13FABF3119D585A001CE037 /* sipe-conf.c in Sources */,
+				B13FABF6119D585A001CE037 /* sipe-core.c in Sources */,
+				B13FABF8119D585A001CE037 /* sipe-dialog.c in Sources */,
+				B13FABFB119D585A001CE037 /* sipe-domino.c in Sources */,
+				B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */,
+				B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */,
+				B13FAC04119D585A001CE037 /* sipe-schedule.c in Sources */,
+				B13FAC06119D585A001CE037 /* sipe-session.c in Sources */,
+				B13FAC08119D585A001CE037 /* sipe-sign.c in Sources */,
+				B13FAC0A119D585A001CE037 /* sipe-utils.c in Sources */,
+				B13FAC0E119D585A001CE037 /* sipe-xml-tests.c in Sources */,
+				B13FAC0F119D585A001CE037 /* sipe-xml.c in Sources */,
+				B13FAC11119D585A001CE037 /* sipe.c in Sources */,
+				B13FAC13119D585A001CE037 /* sipmsg.c in Sources */,
+				B13FAC15119D585A001CE037 /* uuid.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -426,6 +494,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
+				GCC_PREPROCESSOR_DEFINITIONS = "PURPLE_STATIC_PRPL=1";
 				HEADER_SEARCH_PATHS = (
 					"$(HOME)/Library/Frameworks/AIUtilities.framework/Headers",
 					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
@@ -435,7 +504,7 @@
 					../api,
 				);
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
 				PRODUCT_NAME = SIPEAdiumPlugin;
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
@@ -512,6 +581,8 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					"LOCALEDIR=\\\"translations\\\"",
+					"PURPLE_STATIC_PRPL=1",
 					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
 					"ENABLE_NLS=1",
 					"ADIUM=1",
@@ -539,19 +610,23 @@
 					"HAVE_DLFCN_H=1",
 					"HAVE_DCGETTEXT=1",
 					"HAVE_GETTEXT=1",
-					"HAVE_VV=1",
 					"HAVE_LOCALE_H=1",
 					"HAVE_LIBKRB5=1",
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(HOME)/Library/Frameworks/libintl.framework/Headers",
-					../core,
 					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
 					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
+					../purple,
 					../api,
+					"/usr/include/libxml2/**",
 				);
 				INSTALL_PATH = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../../../Library/Libraries\"",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = "pidgin-sipe";
 			};
@@ -595,6 +670,10 @@
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				INSTALL_PATH = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/../../../../../Library/Libraries\"",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = "pidgin-sipe";
 				ZERO_LINK = NO;

@@ -11,18 +11,17 @@
 #import "ESSIPELibpurpleServicePlugin.h"
 
 #include "sipe-core.h"
-#include "sipe.h"
 
 extern void purple_init_sipe_plugin(void);
 
 @implementation ESSIPELibpurpleServicePlugin
 
-- (void)installLibpurplePlugin
+- (void)installLibpurplePlugin {}
+
+- (void)loadLibpurplePlugin 
 {
 	purple_init_sipe_plugin();
 }
-
-- (void)loadLibpurplePlugin {}
 
 - (void)installPlugin
 {

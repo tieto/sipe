@@ -12,8 +12,6 @@
 #import "ESPurpleSIPEAccount.h"
 
 #include "sipe-core.h"
-#include "sipe.h"
-#include "sipe-utils.h"
 
 // taken from sipe.c
 /* Status identifiers (see also: sipe_status_types()) */
