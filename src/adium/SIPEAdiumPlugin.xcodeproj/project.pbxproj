@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
+		B13FAADE119D3CAA001CE037 /* libglib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAADD119D3CAA001CE037 /* libglib.framework */; };
+		B13FAAE4119D3D2E001CE037 /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAAE3119D3D2E001CE037 /* libintl.framework */; };
 		B193836411972C26007ADE8F /* libglib-2.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B193836311972C26007ADE8F /* libglib-2.0.dylib */; };
 		B19383C2119A1E8F007ADE8F /* Adium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B19383C1119A1E8F007ADE8F /* Adium.framework */; };
 		B1C5100A119A21E700EAFB2C /* AdiumLibpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */; };
@@ -67,6 +69,8 @@
 		32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIPEAdiumPlugin_Prefix.pch; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
+		B13FAADD119D3CAA001CE037 /* libglib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libglib.framework; path = /Users/emanuelez/Library/Frameworks/libglib.framework; sourceTree = "<absolute>"; };
+		B13FAAE3119D3D2E001CE037 /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = /Users/emanuelez/Library/Frameworks/libintl.framework; sourceTree = "<absolute>"; };
 		B193836311972C26007ADE8F /* libglib-2.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libglib-2.0.dylib"; path = "usr/local/lib/libglib-2.0.dylib"; sourceTree = SDKROOT; };
 		B19383C1119A1E8F007ADE8F /* Adium.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Adium.framework; path = /Users/emanuelez/Library/Frameworks/Adium.framework; sourceTree = "<absolute>"; };
 		B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdiumLibpurple.framework; path = "/Users/emanuelez/Documents/Code/adium/build/Release-Debug/AdiumLibpurple.framework"; sourceTree = "<absolute>"; };
@@ -121,6 +125,8 @@
 				C92A79E110B24FDC009B64B9 /* libpidgin-sipe.a in Frameworks */,
 				B19383C2119A1E8F007ADE8F /* Adium.framework in Frameworks */,
 				B1C5100A119A21E700EAFB2C /* AdiumLibpurple.framework in Frameworks */,
+				B13FAADE119D3CAA001CE037 /* libglib.framework in Frameworks */,
+				B13FAAE4119D3D2E001CE037 /* libintl.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,6 +150,7 @@
 				089C167CFE841241C02AAC07 /* Resources */,
 				089C1671FE841209C02AAC07 /* Frameworks and Libraries */,
 				19C28FB8FE9D52D311CA2CBB /* Products */,
+				B13FAAE3119D3D2E001CE037 /* libintl.framework */,
 			);
 			name = SIPEAdiumPlugin;
 			sourceTree = "<group>";
@@ -155,6 +162,7 @@
 				1058C7AEFEA557BF11CA2CBB /* Other Frameworks */,
 				B193836311972C26007ADE8F /* libglib-2.0.dylib */,
 				B1C51009119A21E700EAFB2C /* AdiumLibpurple.framework */,
+				B13FAADD119D3CAA001CE037 /* libglib.framework */,
 			);
 			name = "Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -504,11 +512,13 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
+					"ENABLE_NLS=1",
 					"ADIUM=1",
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
-					"PACKAGE_VERSION=\\\"1.9.0\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.9.0\\\"",
+					"PACKAGE_VERSION=\\\"1.11.0\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.11.0\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/tracker/?atid=949931&group_id=194563\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",
@@ -526,9 +536,16 @@
 					"STDC_HEADERS=1",
 					"HAVE_LOCALE_H=1",
 					"HAVE_LC_MESSAGES=1",
+					"HAVE_DLFCN_H=1",
+					"HAVE_DCGETTEXT=1",
+					"HAVE_GETTEXT=1",
+					"HAVE_VV=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_LIBKRB5=1",
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				HEADER_SEARCH_PATHS = (
+					"$(HOME)/Library/Frameworks/libintl.framework/Headers",
 					../core,
 					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
 					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
