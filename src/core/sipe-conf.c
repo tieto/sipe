@@ -208,7 +208,7 @@ sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 			  const int expires)
 {
 	gchar *expires_hdr = (expires >= 0) ? g_strdup_printf("Expires: %d\r\n", expires) : g_strdup("");
-	gchar *contact = get_contact(SIPE_ACCOUNT_DATA_PRIVATE);
+	gchar *contact = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: conference\r\n"
 		"%s"
@@ -292,7 +292,6 @@ void
 sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		       struct sip_session *session)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
@@ -313,7 +312,7 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		session->focus_dialog->ourtag = gentag();
 	}
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Supported: ms-sender\r\n"
 		"Contact: %s\r\n"
@@ -323,7 +322,7 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 
 	/* @TODO put request_id to queue to further compare with incoming one */
 	/* focus_URI, from, request_id, focus_URI, from, endpoint_GUID */
-	self = sip_uri_self(sip);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_ADD_USER,
 		session->focus_dialog->with,
@@ -365,7 +364,7 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_MODIFY_USER_ROLES,
 		session->focus_dialog->with,
@@ -406,7 +405,7 @@ sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_MODIFY_CONF_LOCK,
 		session->focus_dialog->with,
@@ -447,7 +446,7 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		"Content-Type: application/cccp+xml\r\n");
 
 	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	self = sip_uri_self(sipe_private);
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_DELETE_USER,
 		session->focus_dialog->with,
@@ -533,7 +532,7 @@ sipe_invite_conf(struct sipe_core_private *sipe_private,
 	dialog->with = g_strdup(who);
 	dialog->ourtag = gentag();
 
-	contact = get_contact(SIPE_ACCOUNT_DATA_PRIVATE);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Supported: ms-sender\r\n"
 		"Contact: %s\r\n"
@@ -617,7 +616,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	char *expiry_time;
 	struct transaction_payload *payload;
 
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
 		"Supported: ms-sender\r\n"
 		"Contact: %s\r\n"
@@ -626,7 +625,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	g_free(contact);
 
 	expiry_time = sipe_utils_time_to_str(expiry);
-	self = sip_uri_self(sip);
+	self = sip_uri_self(sipe_private);
 	conference_id = genconfid();
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_ADD,
@@ -732,7 +731,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 
 	if (session->focus_uri && !session->conv) {
 		gchar *chat_title = sipe_chat_get_name(session->focus_uri);
-		gchar *self = sip_uri_self(sip);
+		gchar *self = sip_uri_self(sipe_private);
 		/* can't be find by chat id as it won't survive acc reinstantation */
 		PurpleConversation *conv = NULL;
 
@@ -790,7 +789,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		PurpleConvChatBuddyFlags flags = PURPLE_CBFLAGS_NONE;
 		PurpleConvChat *chat = PURPLE_CONV_CHAT(session->conv);
 		gboolean is_in_im_mcu = FALSE;
-		gchar *self = sip_uri_self(sip);
+		gchar *self = sip_uri_self(sipe_private);
 
 		if (sipe_strequal(role, "presenter")) {
 			flags |= PURPLE_CBFLAGS_OP;

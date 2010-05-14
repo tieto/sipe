@@ -87,17 +87,10 @@ struct sipe_container_member {
 };
 
 struct sipe_account_data {
-	/* back pointer to new data structure */
-	struct sipe_core_public *public;
-	/* same, but reduces need for casting and increases type safety */
-	struct sipe_core_private *private;
-
 	struct _PurpleConnection *gc;
-	gchar *username;
 	gchar *authdomain;
 	gchar *authuser;
 	gchar *password;
-	gchar *epid;
 	gchar *focus_factory_uri;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
@@ -125,8 +118,6 @@ struct sipe_account_data {
 	gchar *note;
 	time_t note_since;
 	time_t idle_switch;
-	gchar *contact;
-	gboolean ocs2007; /*if there is support for batched category subscription [SIP-PRES]*/
 	gboolean batched_support; /*if there is support for batched subscription*/
 	GSList *containers; /* MS-PRES containers */
 	struct _PurpleAccount *account;

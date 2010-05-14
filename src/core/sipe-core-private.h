@@ -47,6 +47,9 @@ struct sipe_core_private {
 	GSList *transactions;
 
 	/* SIPE protocol information */
+	gchar *username;
+	gchar *contact;
+	gchar *epid;
 	GSList *sessions;
 
 	/* Buddies */
@@ -68,7 +71,7 @@ struct sipe_core_private {
 /**
  * Flags - stored in sipe_core_public.flags but names not exported
  */
-#define SIPE_CORE_PRIVATE_FLAG_xxx 0x80000000 /* place holder... */
+#define SIPE_CORE_PRIVATE_FLAG_OCS2007 0x80000000 /* server is OCS2007+ */
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
@@ -90,8 +93,6 @@ struct sipe_core_private {
 /* Transition macros */
 #define SIPE_ACCOUNT_DATA         SIPE_CORE_PRIVATE->temporary
 #define SIPE_ACCOUNT_DATA_PRIVATE sipe_private->temporary
-#define SIP_TO_CORE_PRIVATE (sip->private)
-#define SIP_TO_CORE_PUBLIC (sip->public)
 
 /*
   Local Variables:

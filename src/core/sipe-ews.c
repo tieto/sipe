@@ -591,17 +591,21 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 			sipe_ews_do_oof_request(cal);
 			break;
 		case SIPE_EWS_STATE_OOF_SUCCESS:
+		{
+			struct sipe_core_private *sipe_private = cal->sipe_private;
+
 			cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 			cal->is_updated = TRUE;
-			if (cal->sipe_private->temporary->ocs2007) {
+			if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 				/* sipe.h */
-				publish_calendar_status_self(cal->sipe_private,
+				publish_calendar_status_self(sipe_private,
 							     NULL);
 			} else {
 				/* sipe.h */
-				send_presence_soap(cal->sipe_private, TRUE);
+				send_presence_soap(sipe_private, TRUE);
 			}
 			break;
+		}
 	}
 }
 

@@ -178,6 +178,18 @@ gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media, gchar
 	return purple_media_is_initiator(media->m, "sipe-voice", participant);
 }
 
+GList *
+sipe_backend_media_get_active_local_candidates(struct sipe_backend_media *media,
+											   gchar *participant) {
+	return purple_media_get_active_local_candidates(media->m, "sipe-voice", participant);
+}
+
+GList *
+sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media,
+											   gchar *participant) {
+	return purple_media_get_active_remote_candidates(media->m, "sipe-voice", participant);
+}
+
 struct sipe_backend_codec *
 sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
 {
@@ -331,10 +343,9 @@ sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *candi
 }
 
 GList*
-sipe_backend_get_local_candidates(struct sipe_media_call *call, gchar* participant)
+sipe_backend_get_local_candidates(struct sipe_backend_media *media, gchar* participant)
 {
-	return purple_media_get_local_candidates(call->backend_private->m,
-						 "sipe-voice", participant);
+	return purple_media_get_local_candidates(media->m, "sipe-voice", participant);
 }
 
 void
@@ -413,42 +424,6 @@ purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto)
 		default:								return SIPE_NETWORK_PROTOCOL_UDP;
 	}
 }
-
-/*
-void sipe_media_error_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* error, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_error_cb: %s\n", error);
-}
-
-void sipe_media_codecs_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* codec, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_codecs_changed_cb: %s\n", codec);
-}
-
-void sipe_media_level_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* sessionid, gchar* participant, gdouble percent, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_level_cb: %s %s %f\n", sessionid, participant, percent);
-}
-
-void sipe_media_new_candidate_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar* sessionid, gchar* cname, PurpleMediaCandidate *candidate, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_new_candidate_cb: %s cname: %s %s %d\n", sessionid, cname,
-			purple_media_candidate_get_ip(candidate),
-			purple_media_candidate_get_port(candidate));
-}
-
-void sipe_media_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, PurpleMediaState state, gchar* sessionid, gchar* participant, SIPE_UNUSED_PARAMETER struct sipe_account_data *sip)
-{
-	SIPE_DEBUG_INFO("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
-}
-
-g_signal_connect(G_OBJECT(media), "error", G_CALLBACK(sipe_media_error_cb), call);
-g_signal_connect(G_OBJECT(media), "codecs-changed", G_CALLBACK(sipe_media_codecs_changed_cb), call);
-g_signal_connect(G_OBJECT(media), "level", G_CALLBACK(sipe_media_level_cb), call);
-g_signal_connect(G_OBJECT(media), "new-candidate", G_CALLBACK(sipe_media_new_candidate_cb), call);
-g_signal_connect(G_OBJECT(media), "state-changed", G_CALLBACK(sipe_media_state_changed_cb), call);
-
-*/
 
 /*
   Local Variables:

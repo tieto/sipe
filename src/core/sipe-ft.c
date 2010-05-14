@@ -92,7 +92,7 @@ struct _sipe_file_transfer {
 	guchar hash_key[SIPE_FT_KEY_LENGTH];
 	gchar *invitation_cookie;
 	unsigned auth_cookie;
-	struct sipe_account_data *sip;
+	struct sipe_core_private *sipe_private;
 	struct sip_dialog *dialog;
 	gpointer cipher_context;
 	gpointer hmac_context;
@@ -134,7 +134,8 @@ sipe_ft_free_xfer_struct(PurpleXfer *xfer)
 {
 	sipe_file_transfer *ft = xfer->data;
 	if (ft) {
-		struct sipe_account_data *sip = PURPLE_XFER_TO_SIPE_ACCOUNT_DATA;
+		struct sipe_core_private *sipe_private = PURPLE_XFER_TO_SIPE_CORE_PRIVATE;
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 		g_hash_table_remove(sip->filetransfers,ft->invitation_cookie);
 
@@ -212,7 +213,7 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 	static const gchar TFR[] = "TFR\r\n";
 	const gsize BUFFER_SIZE = 50;
 	gchar buf[BUFFER_SIZE];
-	struct sipe_account_data *sip;
+	struct sipe_core_private *sipe_private = PURPLE_XFER_TO_SIPE_CORE_PRIVATE;
 	gchar* request;
 	const gsize FILE_SIZE_OFFSET = 4;
 	gsize file_size;
@@ -228,9 +229,7 @@ sipe_ft_incoming_start(PurpleXfer *xfer)
 		return;
 	}
 
-	sip = PURPLE_XFER_TO_SIPE_ACCOUNT_DATA;
-
-	request = g_strdup_printf("USR %s %u\r\n", sip->username, ft->auth_cookie);
+	request = g_strdup_printf("USR %s %u\r\n", sipe_private->username, ft->auth_cookie);
 	if (write(xfer->fd,request,strlen(request)) == -1) {
 		raise_ft_socket_write_error_and_cancel(xfer);
 		g_free(request);
@@ -633,7 +632,7 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 		size_t file_size;
 		sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
 		ft->invitation_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
-		ft->sip = sip;
+		ft->sipe_private = sipe_private;
 		ft->dialog = sipe_dialog_find(session, session->with);
 		ft->listenfd = -1;
 		generate_key(ft->encryption_key, SIPE_FT_KEY_LENGTH);
@@ -661,7 +660,8 @@ void sipe_ft_incoming_transfer(PurpleAccount *account, struct sipmsg *msg, const
 
 void sipe_ft_incoming_accept(PurpleAccount *account, const GSList *body)
 {
-	struct sipe_account_data *sip = PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
@@ -724,7 +724,8 @@ void sipe_ft_incoming_cancel(PurpleAccount *account, GSList *body)
 {
 	gchar *inv_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
 
-	struct sipe_account_data *sip = PURPLE_ACCOUNT_TO_SIPE_ACCOUNT_DATA;
+	struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	PurpleXfer *xfer = g_hash_table_lookup(sip->filetransfers,inv_cookie);
 
 	purple_xfer_cancel_remote(xfer);
@@ -754,7 +755,7 @@ static void send_filetransfer_accept(PurpleXfer* xfer)
                                       /*,sipe_backend_network_ip_address()*/
 		);
 
-	send_sip_request(ft->sip->private, "MESSAGE", dialog->with, dialog->with,
+	send_sip_request(ft->sipe_private, "MESSAGE", dialog->with, dialog->with,
 			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 			 body, dialog, NULL);
 
@@ -772,7 +773,7 @@ static void send_filetransfer_cancel(PurpleXfer* xfer) {
 					  "Cancel-Code: REJECT\r\n",
 				      ft->invitation_cookie);
 
-	send_sip_request(ft->sip->private, "MESSAGE", dialog->with, dialog->with,
+	send_sip_request(ft->sipe_private, "MESSAGE", dialog->with, dialog->with,
 			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 			 body, dialog, NULL);
 
@@ -923,11 +924,11 @@ PurpleXfer * sipe_ft_new_xfer(PurpleConnection *gc, const char *who)
 				       PURPLE_XFER_SEND, who);
 
 		if (xfer) {
-			struct sipe_account_data *sip = PURPLE_GC_TO_SIPE_ACCOUNT_DATA;
+			struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
 
 			sipe_file_transfer *ft = g_new0(sipe_file_transfer, 1);
 			ft->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
-			ft->sip = sip;
+			ft->sipe_private = sipe_private;
 
 			xfer->data = ft;
 
@@ -1009,7 +1010,7 @@ void sipe_ft_listen_socket_created(int listenfd, gpointer data)
 	}
 
 	if (ft->dialog) {
-		send_sip_request(ft->sip->private, "MESSAGE", ft->dialog->with, ft->dialog->with,
+		send_sip_request(ft->sipe_private, "MESSAGE", ft->dialog->with, ft->dialog->with,
 				 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
 				 body, ft->dialog, NULL);
 	}

@@ -277,7 +277,9 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 					[[[
 #include <libpurple/media.h>
 					]]],
-					[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]
+					[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);
+					 purple_media_get_active_local_candidates(NULL, NULL, NULL);
+					 purple_media_get_active_remote_candidates(NULL, NULL, NULL);]
 			  	),
 				[AC_MSG_RESULT(ok)
 				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.12],

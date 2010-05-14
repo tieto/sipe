@@ -28,7 +28,7 @@
  */
 
 /* Forward declarations */
-struct sipe_account_data;
+struct sipe_core_private;
 struct sipe_transport_connection;
 
 /* Our publication type keys. OCS 2007+
@@ -102,10 +102,13 @@ struct sipe_transport_connection;
 
 /**
  * Returns epid value.
- * Uses cache.
+ *
+ * @param sipe_private (in) SIPE core private data
+ *
+ * @return epid. Must be g_free()'d.
  */
 gchar *
-get_epid(struct sipe_account_data *sip);
+get_epid(struct sipe_core_private *sipe_private);
 
 /**
  * Generate Call ID
@@ -139,17 +142,17 @@ gchar *genconfid(void);
  * See defined constants for keys patterned SIPE_PUB_*
  */
 guint
-sipe_get_pub_instance(struct sipe_account_data *sip,
+sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		      int publication_key);
 
 /**
  * Get contact information from SIPE account
  *
- * @param sip (in) SIPE account
+ * @param sipe_private (in) SIPE core private data
  *
  * @return Contact. Must be g_free()'d.
  */
-gchar *get_contact(const struct sipe_account_data *sip);
+gchar *get_contact(const struct sipe_core_private *sipe_private);
 
 /**
  * Parses URI from SIP header
@@ -181,11 +184,11 @@ gchar *sip_uri_from_name(const gchar *name);
 /**
  * Create sip: URI from SIP account user name
  *
- * @param sip (in) SIP account data
+ * @param sipe_private (in) SIPE core private data
  *
  * @return URI with sip: prefix. Must be g_free()'d.
  */
-#define sip_uri_self(sip) (sip_uri_from_name(sip->username))
+#define sip_uri_self(sipe_private) (sip_uri_from_name(sipe_private->username))
 
 /**
  * Create sip: URI from name or sip: URI

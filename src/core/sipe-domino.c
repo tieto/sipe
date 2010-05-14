@@ -187,6 +187,7 @@ sipe_domino_process_calendar_response(int return_code,
 	}
 
 	if (return_code == 200 && body) {
+		struct sipe_core_private *sipe_private = cal->sipe_private;
 		const sipe_xml *node, *node2, *node3;
 		sipe_xml *xml;
 
@@ -277,13 +278,13 @@ sipe_domino_process_calendar_response(int return_code,
 
 		/* update SIP server */
 		cal->is_updated = TRUE;
-		if (cal->sipe_private->temporary->ocs2007) {
+		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 			/* sipe.h */
-			publish_calendar_status_self(cal->sipe_private,
+			publish_calendar_status_self(sipe_private,
 						     NULL);
 		} else {
 			/* sipe.h */
-			send_presence_soap(cal->sipe_private, TRUE);
+			send_presence_soap(sipe_private, TRUE);
 		}
 
 	} else if (return_code < 0) {

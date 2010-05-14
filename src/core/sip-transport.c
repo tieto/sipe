@@ -129,13 +129,12 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 	gchar *name;
 	gchar *value;
 	GString *outstr = g_string_new("");
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *contact;
 	GSList *tmp;
 	const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
 
 	/* Can return NULL! */
-	contact = get_contact(sip);
+	contact = get_contact(sipe_private);
 	if (contact) {
 		sipmsg_add_header(msg, "Contact", contact);
 		g_free(contact);
@@ -165,7 +164,7 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 		tmp = g_slist_next(tmp);
 	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
-	sipe_backend_transport_message(sip->private->transport, outstr->str);
+	sipe_backend_transport_message(sipe_private->transport, outstr->str);
 	g_string_free(outstr, TRUE);
 }
 
@@ -314,7 +313,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
 	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
 	gchar *route     = g_strdup("");
-	gchar *epid      = get_epid(sip);
+	gchar *epid      = get_epid(sipe_private);
 	int cseq         = dialog ? ++dialog->cseq : 1 /* as Call-Id is new in this case */;
 	struct transaction *trans = NULL;
 
@@ -362,7 +361,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 			sipe_private->transport->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
-			sip->username,
+			sipe_private->username,
 			ourtag ? ";tag=" : "",
 			ourtag ? ourtag : "",
 			epid,
@@ -423,7 +422,7 @@ void do_register_exp(struct sipe_core_private *sipe_private,
 	if (!sipe_private->public.sip_domain) return;
 
 	expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
-	epid = get_epid(SIPE_ACCOUNT_DATA_PRIVATE);
+	epid = get_epid(sipe_private);
 	uuid = generateUUIDfromEPID(epid);
 	hdr = g_strdup_printf("Contact: <sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"\r\n"
 				    "Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
@@ -443,7 +442,7 @@ void do_register_exp(struct sipe_core_private *sipe_private,
 	SIPE_ACCOUNT_DATA_PRIVATE->registerstatus = 1;
 
 	uri = sip_uri_from_name(sipe_private->public.sip_domain);
-	to = sip_uri_self(SIPE_ACCOUNT_DATA_PRIVATE);
+	to = sip_uri_self(sipe_private);
 	send_sip_request(sipe_private, "REGISTER", uri, to, hdr, "", NULL,
 			 process_register_response);
 	g_free(to);
@@ -528,12 +527,12 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 					process_input_message(sipe_private, msg);
 				} else {
 					SIPE_DEBUG_INFO_NOFORMAT("incoming message's signature is invalid.");
-					sipe_backend_connection_error(SIP_TO_CORE_PUBLIC,
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_NETWORK,
 								      _("Invalid message signature received"));
 				}
 			} else if (msg->response == 401) {
-					sipe_backend_connection_error(SIP_TO_CORE_PUBLIC,
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
 			}
@@ -551,13 +550,11 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 
 void sip_transport_default_contact(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
-	sip->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
-				       sip->username,
-				       sipe_private->transport->client_port,
-				       sipe_backend_network_ip_address(),
-				       TRANSPORT_DESCRIPTOR);
+	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
+						sipe_private->username,
+						sipe_private->transport->client_port,
+						sipe_backend_network_ip_address(),
+						TRANSPORT_DESCRIPTOR);
 }
 
 static void sip_transport_connected(struct sipe_transport_connection *conn)

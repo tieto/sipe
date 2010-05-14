@@ -44,6 +44,7 @@
 
 #include "sipe-backend.h"
 #include "sipe-core.h"    /* to ensure same API for backends */
+#include "sipe-core-private.h"
 #include "sipe-utils.h"
 #include "uuid.h"
 #include "sipe.h"
@@ -72,9 +73,9 @@ gchar *genconfid(void)
 			       RANDOM32BITS, RANDOM32BITS);
 }
 
-gchar *get_contact(const struct sipe_account_data  *sip)
+gchar *get_contact(const struct sipe_core_private *sipe_private)
 {
-	return g_strdup(sip->contact);
+	return g_strdup(sipe_private->contact);
 }
 
 gchar *parse_from(const gchar *hdr)
@@ -131,24 +132,24 @@ gchar *sip_uri(const gchar *string)
 }
 
 gchar *
-get_epid(struct sipe_account_data *sip)
+get_epid(struct sipe_core_private *sipe_private)
 {
-	if (!sip->epid) {
-		gchar *self_sip_uri = sip_uri_self(sip);
-		sip->epid = sipe_get_epid(self_sip_uri,
-					  g_get_host_name(),
-					  sipe_backend_network_ip_address());
+	if (!sipe_private->epid) {
+		gchar *self_sip_uri = sip_uri_self(sipe_private);
+		sipe_private->epid = sipe_get_epid(self_sip_uri,
+						   g_get_host_name(),
+						   sipe_backend_network_ip_address());
 		g_free(self_sip_uri);
 	}
-	return g_strdup(sip->epid);
+	return g_strdup(sipe_private->epid);
 }
 
 guint
-sipe_get_pub_instance(struct sipe_account_data *sip,
+sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		      int publication_key)
 {
 	unsigned res = 0;
-	gchar *epid = get_epid(sip);
+	gchar *epid = get_epid(sipe_private);
 
 	sscanf(epid, "%08x", &res);
 	g_free(epid);
@@ -167,7 +168,7 @@ sipe_get_pub_instance(struct sipe_account_data *sip,
 		   publication_key == SIPE_PUB_NOTE_OOF)
 	{ /* First hexadecimal digit is 0x4 */
 		unsigned calendar_id = 0;
-		char *mail_hash = sipe_get_epid(sip->email, "", "");
+		char *mail_hash = sipe_get_epid(SIPE_ACCOUNT_DATA_PRIVATE->email, "", "");
 
 		sscanf(mail_hash, "%08x", &calendar_id);
 		g_free(mail_hash);
@@ -176,20 +177,7 @@ sipe_get_pub_instance(struct sipe_account_data *sip,
 
 	return res;
 }
-/* an old version
-guint
-sipe_get_pub_instance_(struct sipe_account_data *sip,
-		      const char *publication_key)
-{
-	unsigned part_1;
-	unsigned part_2;
-	gchar *epid = get_epid(sip);
-	sscanf(epid, "%08x", &part_1);
-	g_free(epid);
-	sscanf(publication_key, "%uh", &part_2);
-	return part_1 + part_2;
-}
-*/
+
 gboolean
 sipe_is_bad_alias(const char *uri,
 		  const char *alias)
