@@ -78,6 +78,7 @@ CLEAN_C_SRC = \
 			sipe-cal.c \
 			sipe-chat.c \
 			sipe-dialog.c \
+			sipe-ft.c \
 			sipe-schedule.c \
 			sipe-session.c \
 			sipe-utils.c \
@@ -97,6 +98,7 @@ PURPLE_C_SRC = \
 			../purple/purple-connection.c \
 			../purple/purple-debug.c \
 			../purple/purple-dnsquery.c \
+			../purple/purple-ft.c \
 			../purple/purple-markup.c \
 			../purple/purple-network.c \
 			../purple/purple-plugin.c \
@@ -104,8 +106,7 @@ PURPLE_C_SRC = \
 			../purple/purple-setting.c \
 			../purple/purple-transport.c \
 			sipe.c \
-			sipe-conf.c \
-			sipe-ft.c \
+			sipe-conf.c
 
 C_TEST_SRC = 		sipe-xml-tests.c \
 			sip-sec-ntlm-tests.c \
