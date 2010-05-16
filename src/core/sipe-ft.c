@@ -262,7 +262,6 @@ void sipe_core_ft_deallocate(struct sipe_file_transfer *ft)
 
 	g_hash_table_remove(ft_private->sipe_private->filetransfers,
 			    ft_private->invitation_cookie);
-	sipe_ft_deallocate(ft);
 }
 
 void sipe_core_ft_cancel(struct sipe_file_transfer *ft)
@@ -411,7 +410,6 @@ gboolean sipe_core_ft_incoming_stop(struct sipe_file_transfer *ft)
 	static const guchar BYE[] = "BYE 16777989\r\n";
 	const gsize BUFFER_SIZE   = 50;
 	const gsize MAC_OFFSET    = 4;
-	const gsize CRLF_LEN      = 2;
 
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	gchar buffer[BUFFER_SIZE];
@@ -430,14 +428,14 @@ gboolean sipe_core_ft_incoming_stop(struct sipe_file_transfer *ft)
 	}
 
 	mac_len = strlen(buffer);
-	if (mac_len < (MAC_OFFSET + CRLF_LEN)) {
+	if (mac_len < (MAC_OFFSET)) {
 		raise_ft_error_and_cancel(ft_private,
 					  _("Received MAC is corrupted"));
 		return FALSE;
 	}
 
 	/* Check MAC */
-	mac  = g_strndup(buffer + MAC_OFFSET, mac_len - MAC_OFFSET - CRLF_LEN);
+	mac  = g_strndup(buffer + MAC_OFFSET, mac_len - MAC_OFFSET);
 	mac1 = sipe_hmac_finalize(ft_private->hmac_context);
 	if (!sipe_strequal(mac, mac1)) {
 		g_free(mac1);

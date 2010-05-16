@@ -220,7 +220,7 @@ sipe_ft_outgoing_start(PurpleXfer *xfer)
 static void
 sipe_ft_outgoing_stop(PurpleXfer *xfer)
 {
-	if (sipe_core_ft_incoming_stop(PURPLE_XFER_TO_SIPE_FILE_TRANSFER)) {
+	if (sipe_core_ft_outgoing_stop(PURPLE_XFER_TO_SIPE_FILE_TRANSFER)) {
 		/* We're done with this transfer */
 		sipe_ft_free_xfer_struct(xfer);
 	}
