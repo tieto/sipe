@@ -123,7 +123,6 @@ struct sipe_account_data {
 	struct _PurpleAccount *account;
 	gchar *regcallid;
 	GSList *groups;
-	GHashTable *filetransfers;
 	gboolean processing_input;
 	struct sipe_calendar *cal;
 	gchar *email;

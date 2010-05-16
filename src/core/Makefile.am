@@ -38,6 +38,8 @@ libsipe_core_la_SOURCES = \
 	sipe-domino.c \
 	sipe-ews.h \
 	sipe-ews.c \
+	sipe-ft.h \
+	sipe-ft.c \
 	sipe-schedule.h \
 	sipe-schedule.c \
 	sipe-session.h \
@@ -58,9 +60,7 @@ libsipe_core_purple_la_SOURCES = \
 	sipe.h \
 	sipe.c \
 	sipe-conf.h \
-	sipe-conf.c \
-	sipe-ft.h \
-	sipe-ft.c
+	sipe-conf.c
 
 AM_CFLAGS = $(st)
 

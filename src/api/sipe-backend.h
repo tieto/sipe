@@ -44,6 +44,7 @@ extern "C" {
 /* Forward declarations */
 struct sipe_core_public;
 struct sipe_transport_connection;
+struct sipe_file_transfer;
 struct sipe_media_call;
 struct sipe_media;
 
@@ -106,6 +107,54 @@ void sipe_backend_dns_query(struct sipe_core_public *sipe_public,
 			    const gchar *protocol,
 			    const gchar *transport,
 			    const gchar *domain);
+
+/** FILE TRANSFER ************************************************************/
+void sipe_backend_ft_error(struct sipe_file_transfer *ft,
+			   const gchar *errmsg);
+const gchar *sipe_backend_ft_get_error(struct sipe_file_transfer *ft);
+void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft);
+
+/**
+ * Try to read up to @c size bytes from file transfer connection
+ *
+ * @param backend_ft backend private file transfer data.
+ * @param data       buffer to read data into.
+ * @param size       buffer size in bytes.
+ *
+ * @return number of bytes read or negative on failure.
+ *         EAGAIN should return 0 bytes read.
+ */
+gssize sipe_backend_ft_read(struct sipe_file_transfer *ft,
+			    guchar *data,
+			    gsize size);
+
+/**
+ * Try to write up to @c size bytes to file transfer connection
+ *
+ * @param backend_ft backend private file transfer data.
+ * @param data       data to write
+ * @param size       buffer size in bytes.
+ *
+ * @return number of bytes read or negative on failure.
+ *         EAGAIN should return 0 bytes written.
+ */
+gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
+			     const guchar *data,
+			     gsize size);
+
+
+void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft);
+void sipe_backend_ft_cancel_remote(struct sipe_file_transfer *ft);
+
+void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
+			      struct sipe_file_transfer *ft,
+			      const gchar *who,
+			      const gchar *file_name,
+			      gsize file_size);
+gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
+					 const gchar *ip,
+					 unsigned short port_min,
+					 unsigned short port_max);
 
 /** MARKUP *******************************************************************/
 

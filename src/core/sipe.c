@@ -3597,7 +3597,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 		    message && g_str_has_prefix(message->content_type, "text/x-msmsgsinvite"))
 		{
 			GSList *parsed_body = sipe_ft_parse_msg_body(msg->body);
-			sipe_ft_incoming_cancel(sip->gc->account, parsed_body);
+			sipe_ft_incoming_cancel(sipe_private, parsed_body);
 			sipe_utils_nameval_free(parsed_body);
 		}
 
@@ -3869,7 +3869,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 		    message && g_str_has_prefix(message->content_type, "text/x-msmsgsinvite"))
 		{
 			GSList *parsed_body = sipe_ft_parse_msg_body(message->body);
-			sipe_ft_incoming_cancel(sip->gc->account, parsed_body);
+			sipe_ft_incoming_cancel(sipe_private, parsed_body);
 			sipe_utils_nameval_free(parsed_body);
 		}
 
@@ -4475,20 +4475,19 @@ sipe_process_incoming_x_msmsgsinvite(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     GSList *parsed_body)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gboolean found = FALSE;
 
 	if (parsed_body) {
 		const gchar *invitation_command = sipe_utils_nameval_find(parsed_body, "Invitation-Command");
 
 		if (sipe_strequal(invitation_command, "INVITE")) {
-			sipe_ft_incoming_transfer(sip->gc->account, msg, parsed_body);
+			sipe_ft_incoming_transfer(sipe_private, msg, parsed_body);
 			found = TRUE;
 		} else if (sipe_strequal(invitation_command, "CANCEL")) {
-			sipe_ft_incoming_cancel(sip->gc->account, parsed_body);
+			sipe_ft_incoming_cancel(sipe_private, parsed_body);
 			found = TRUE;
 		} else if (sipe_strequal(invitation_command, "ACCEPT")) {
-			sipe_ft_incoming_accept(sip->gc->account, parsed_body);
+			sipe_ft_incoming_accept(sipe_private, parsed_body);
 			found = TRUE;
 		}
 	}
@@ -7751,7 +7750,8 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 						      g_free, (GDestroyNotify)g_hash_table_destroy);
 	sip->subscriptions = g_hash_table_new_full(g_str_hash, g_str_equal,
 						   g_free, (GDestroyNotify)sipe_subscription_free);
-	sip->filetransfers = g_hash_table_new_full(g_str_hash, g_str_equal,g_free,NULL);
+	sipe_private->filetransfers = g_hash_table_new_full(g_str_hash, g_str_equal,
+							    g_free, (GDestroyNotify)sipe_ft_deallocate);
 	sip->status = g_strdup(SIPE_STATUS_ID_UNKNOWN);
 
 	return((struct sipe_core_public *)sipe_private);
@@ -7866,7 +7866,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_hash_table_destroy(sip->our_publications);
 	g_hash_table_destroy(sip->user_state_publications);
 	g_hash_table_destroy(sip->subscriptions);
-	g_hash_table_destroy(sip->filetransfers);
+	g_hash_table_destroy(sipe_private->filetransfers);
 
 	if (sip->groups) {
 		GSList *entry = sip->groups;

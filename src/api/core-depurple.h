@@ -53,29 +53,8 @@ void sipe_rename_group(PurpleConnection *gc, const char *old_name,
 void sipe_convo_closed(PurpleConnection *gc, const char *who);
 void sipe_remove_group(PurpleConnection *gc, PurpleGroup *group);
 
-/**
- * Initiates outgoing file transfer, sending @c file to remote peer identified
- * by @c who.
- *
- * @param gc   a PurpleConnection
- * @param who  string identifying receiver of the file
- * @param file local file system path of the file to send
- */
-void sipe_ft_send_file(PurpleConnection *gc, const char *who,
-		       const char *file);
-
-/**
- * Creates new PurpleXfer structure representing a file transfer.
- *
- * @param gc  a PurpleConnection
- * @param who remote participant in the file transfer session
- */
-PurpleXfer *sipe_ft_new_xfer(PurpleConnection *gc,
-			     const char *who);
-
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE ((struct sipe_core_private *)account->gc->proto_data)
 #define PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE   ((struct sipe_core_private *)buddy->account->gc->proto_data)
 #define PURPLE_CHAT_TO_SIPE_CORE_PRIVATE    ((struct sipe_core_private *)chat->account->gc->proto_data)
 #define PURPLE_GC_TO_SIPE_CORE_PRIVATE      ((struct sipe_core_private *)gc->proto_data)
-#define PURPLE_XFER_TO_SIPE_CORE_PRIVATE    ((struct sipe_core_private *)xfer->account->gc->proto_data)

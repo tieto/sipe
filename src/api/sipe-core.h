@@ -93,6 +93,13 @@ struct sipe_transport_connection {
 };
 
 /**
+ * File transport (public part)
+ */
+struct sipe_file_transfer {
+	struct sipe_backend_file_transfer *backend_private;
+};
+
+/**
  * Opaque data type for backend private data.
  * The backend is responsible to allocate and free it.
  */
@@ -255,6 +262,29 @@ void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
 /* media */
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				   const char *participant);
+
+/* file transfer */
+struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);
+void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
+void sipe_core_ft_cancel(struct sipe_file_transfer *ft);
+void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft);
+void sipe_core_ft_incoming_accept(struct sipe_file_transfer *ft,
+				  const gchar *who,
+				  int fd,
+				  unsigned short port);
+void sipe_core_ft_incoming_start(struct sipe_file_transfer *ft,
+				 gsize total_size);
+gboolean sipe_core_ft_incoming_stop(struct sipe_file_transfer *ft);
+void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
+				const gchar *filename, gsize size,
+				const gchar *who);
+void sipe_core_ft_outgoing_start(struct sipe_file_transfer *ft,
+				 gsize total_size);
+gboolean sipe_core_ft_outgoing_stop(struct sipe_file_transfer *ft);
+gssize sipe_core_ft_read(struct sipe_file_transfer *ft, guchar **buffer,
+			 gsize bytes_remaining, gsize bytes_available);
+gssize sipe_core_ft_write(struct sipe_file_transfer *ft,
+			  const guchar *buffer, gsize size);
 
 #ifdef __cplusplus
 }
