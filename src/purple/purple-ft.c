@@ -86,6 +86,8 @@ const gchar *sipe_backend_ft_get_error(SIPE_UNUSED_PARAMETER struct sipe_file_tr
 void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 {
 	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
+	PurpleXfer *xfer = backend_ft->xfer;
+	PurpleXferStatusType status = purple_xfer_get_status(xfer);
 
 	if (backend_ft->listenfd >= 0) {
 		SIPE_DEBUG_INFO("sipe_ft_free_xfer_struct: closing listening socket %d",
@@ -94,6 +96,16 @@ void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 	}
 	if (backend_ft->listener)
 		purple_network_listen_cancel(backend_ft->listener);
+
+	// If file transfer is not finished, cancel it
+	if (   status != PURPLE_XFER_STATUS_DONE
+		&& status != PURPLE_XFER_STATUS_CANCEL_LOCAL
+		&& status != PURPLE_XFER_STATUS_CANCEL_REMOTE) {
+		purple_xfer_set_cancel_recv_fnc(xfer, NULL);
+		purple_xfer_set_cancel_send_fnc(xfer, NULL);
+		purple_xfer_cancel_remote(xfer);
+	}
+
 	g_free(backend_ft);
 }
 

@@ -259,9 +259,10 @@ void sipe_ft_deallocate(struct sipe_file_transfer *ft)
 void sipe_core_ft_deallocate(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
+	struct sip_dialog *dialog = ft_private->dialog;
 
-	g_hash_table_remove(ft_private->sipe_private->filetransfers,
-			    ft_private->invitation_cookie);
+	dialog->filetransfers = g_slist_remove(dialog->filetransfers, ft_private);
+	sipe_ft_deallocate(ft);
 }
 
 void sipe_core_ft_cancel(struct sipe_file_transfer *ft)
@@ -470,27 +471,24 @@ void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
 				      filename,
 				      size);
 
-	struct sip_session *session = sipe_session_find_or_add_im(sipe_private,
-								  who);
-
-	g_hash_table_insert(sipe_private->filetransfers,
-			    g_strdup(ft_private->invitation_cookie),
-			    ft_private);
+	struct sip_session *session = sipe_session_find_or_add_im(sipe_private, who);
 
 	// Queue the message
 	sipe_session_enqueue_message(session, body, "text/x-msmsgsinvite");
 
 	dialog = sipe_dialog_find(session, who);
 	if (dialog && !dialog->outgoing_invite) {
-		ft_private->dialog = dialog;
 		sipe_im_process_queue(sipe_private, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
 		sipe_invite(sipe_private, session, who, body, "text/x-msmsgsinvite", NULL, FALSE);
+		dialog = sipe_dialog_find(session, who);
 	}
 
-	g_free(body);
+	dialog->filetransfers = g_slist_append(dialog->filetransfers, ft_private);
+	ft_private->dialog = dialog;
 
+	g_free(body);
 }
 
 void sipe_core_ft_outgoing_start(struct sipe_file_transfer *ft,
@@ -757,22 +755,11 @@ gssize sipe_core_ft_write(struct sipe_file_transfer *ft,
 }
 
 void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
-			       struct sipmsg *msg,
+			       struct sip_dialog *dialog,
 			       const GSList *body)
 {
 	struct sipe_file_transfer_private *ft_private;
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
-	struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
-								   callid,
-								   from);
 	gsize file_size;
-
-	g_free(from);
-	if (!session) {
-		SIPE_DEBUG_ERROR_NOFORMAT("sipe_ft_incoming_transfer: can't find session for remote party");
-		return;
-	}
 
 	ft_private = g_new0(struct sipe_file_transfer_private, 1);
 	ft_private->sipe_private = sipe_private;
@@ -782,39 +769,40 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 
 	ft_private->invitation_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
 
-	ft_private->dialog = sipe_dialog_find(session, session->with);
+	ft_private->dialog = dialog;
 
 	file_size = g_ascii_strtoull(sipe_utils_nameval_find(body,
 							     "Application-FileSize"),
 				     NULL, 10);
 	sipe_backend_ft_incoming(SIPE_CORE_PUBLIC,
 				 SIPE_FILE_TRANSFER_PUBLIC,
-				 session->with,
+				 dialog->with,
 				 sipe_utils_nameval_find(body, "Application-File"),
 				 file_size);
 
 	if (ft_private->public.backend_private != NULL) {
-		g_hash_table_insert(sipe_private->filetransfers,
-				    g_strdup(ft_private->invitation_cookie),
-				    ft_private);
+		ft_private->dialog->filetransfers = g_slist_append(ft_private->dialog->filetransfers, ft_private);
 	} else {
 		sipe_ft_deallocate(SIPE_FILE_TRANSFER_PUBLIC);
 	}
 }
 
-static struct sipe_file_transfer_private *sipe_find_ft(struct sipe_core_private *sipe_private,
-						       const GSList *body)
+static struct sipe_file_transfer_private *
+sipe_find_ft(const struct sip_dialog *dialog, const gchar *inv_cookie)
 {
-	return g_hash_table_lookup(sipe_private->filetransfers,
-				   sipe_utils_nameval_find(body,
-							   "Invitation-Cookie"));
+	GSList *ftlist = dialog->filetransfers;
+	for (; ftlist != NULL; ftlist = ftlist->next) {
+		struct sipe_file_transfer_private *ft_private = ftlist->data;
+		if (sipe_strequal(ft_private->invitation_cookie, inv_cookie))
+			return ft_private;
+	}
+	return NULL;
 }
 
-void sipe_ft_incoming_accept(struct sipe_core_private *sipe_private,
-			     const GSList *body)
+void sipe_ft_incoming_accept(struct sip_dialog *dialog, const GSList *body)
 {
-	struct sipe_file_transfer_private *ft_private = sipe_find_ft(sipe_private,
-								     body);
+	const gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
+	struct sipe_file_transfer_private *ft_private = sipe_find_ft(dialog, inv_cookie);
 
 	if (ft_private) {
 		const gchar *ip           = sipe_utils_nameval_find(body, "IP-Address");
@@ -879,11 +867,10 @@ void sipe_ft_incoming_accept(struct sipe_core_private *sipe_private,
 	}
 }
 
-void sipe_ft_incoming_cancel(struct sipe_core_private *sipe_private,
-			     const GSList *body)
+void sipe_ft_incoming_cancel(struct sip_dialog *dialog, const GSList *body)
 {
-	struct sipe_file_transfer_private *ft_private = sipe_find_ft(sipe_private,
-								     body);
+	const gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
+	struct sipe_file_transfer_private *ft_private = sipe_find_ft(dialog, inv_cookie);
 
 	if (ft_private)
 		sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER_PUBLIC);

@@ -23,7 +23,6 @@
  */
 
 /* Forward declarations */
-struct sipmsg;
 struct sipe_core_private;
 struct sipe_file_transfer;
 
@@ -31,7 +30,7 @@ struct sipe_file_transfer;
 /**
  * Deallocate file transfer data structure
  */
-void sipe_ft_deallocate(struct sipe_file_transfer *ft);
+void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
 
 /**
  * Called when remote peer wants to send a file.
@@ -40,11 +39,11 @@ void sipe_ft_deallocate(struct sipe_file_transfer *ft);
  * purple_xfer_request().
  *
  * @param sipe_private Sipe core private data
- * @param msg          SIP message
+ * @param dialog       SIP dialog used for the file transfer
  * @param body         parsed SIP message body as name-value pairs
  */
 void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
-			       struct sipmsg *msg,
+			       struct sip_dialog *dialog,
 			       const GSList *body);
 
 /**
@@ -53,23 +52,20 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
  * This message is sent during the negotiation phase when parameters of the
  * transfer like IP address or TCP port are going to be set up.
  *
- * @param sipe_private Sipe core private data
+ * @param dialog       SIP dialog used for the file transfer
  * @param body         parsed SIP message body as name-value pairs
  */
-void sipe_ft_incoming_accept(struct sipe_core_private *sipe_private,
-			     const GSList *body);
+void sipe_ft_incoming_accept(struct sip_dialog *dialog, const GSList *body);
 
 /**
  * Called when remote peer cancels ongoing file transfer.
  *
  * Function dispatches the request to libpurple
  *
- * @param sipe_private Sipe core private data
- * @param body         SIP message body
+ * @param dialog       SIP dialog used for the file transfer
  * @param body         parsed SIP message body as name-value pairs
  */
-void sipe_ft_incoming_cancel(struct sipe_core_private *sipe_private,
-			     const GSList *body);
+void sipe_ft_incoming_cancel(struct sip_dialog *dialog, const GSList *body);
 
 /**
  * Parses file transfer message body and creates a list with name-value pairs

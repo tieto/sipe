@@ -3597,7 +3597,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 		    message && g_str_has_prefix(message->content_type, "text/x-msmsgsinvite"))
 		{
 			GSList *parsed_body = sipe_ft_parse_msg_body(msg->body);
-			sipe_ft_incoming_cancel(sipe_private, parsed_body);
+			sipe_ft_incoming_cancel(dialog, parsed_body);
 			sipe_utils_nameval_free(parsed_body);
 		}
 
@@ -3869,7 +3869,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 		    message && g_str_has_prefix(message->content_type, "text/x-msmsgsinvite"))
 		{
 			GSList *parsed_body = sipe_ft_parse_msg_body(message->body);
-			sipe_ft_incoming_cancel(sipe_private, parsed_body);
+			sipe_ft_incoming_cancel(dialog, parsed_body);
 			sipe_utils_nameval_free(parsed_body);
 		}
 
@@ -4472,7 +4472,7 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 
 static gboolean
 sipe_process_incoming_x_msmsgsinvite(struct sipe_core_private *sipe_private,
-				     struct sipmsg *msg,
+				     struct sip_dialog *dialog,
 				     GSList *parsed_body)
 {
 	gboolean found = FALSE;
@@ -4481,13 +4481,13 @@ sipe_process_incoming_x_msmsgsinvite(struct sipe_core_private *sipe_private,
 		const gchar *invitation_command = sipe_utils_nameval_find(parsed_body, "Invitation-Command");
 
 		if (sipe_strequal(invitation_command, "INVITE")) {
-			sipe_ft_incoming_transfer(sipe_private, msg, parsed_body);
+			sipe_ft_incoming_transfer(sipe_private, dialog, parsed_body);
 			found = TRUE;
 		} else if (sipe_strequal(invitation_command, "CANCEL")) {
-			sipe_ft_incoming_cancel(sipe_private, parsed_body);
+			sipe_ft_incoming_cancel(dialog, parsed_body);
 			found = TRUE;
 		} else if (sipe_strequal(invitation_command, "ACCEPT")) {
-			sipe_ft_incoming_accept(sipe_private, parsed_body);
+			sipe_ft_incoming_accept(dialog, parsed_body);
 			found = TRUE;
 		}
 	}
@@ -4568,8 +4568,13 @@ static void process_incoming_message(struct sipe_core_private *sipe_private,
 		send_sip_response(sipe_private, msg, 200, "OK", NULL);
 		found = TRUE;
 	} else if (g_str_has_prefix(contenttype, "text/x-msmsgsinvite")) {
+		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
+									   callid,
+									   from);
+		struct sip_dialog *dialog = sipe_dialog_find(session, from);
 		GSList *body = sipe_ft_parse_msg_body(msg->body);
-		found = sipe_process_incoming_x_msmsgsinvite(sipe_private, msg, body);
+		found = sipe_process_incoming_x_msmsgsinvite(sipe_private, dialog, body);
 		sipe_utils_nameval_free(body);
 		if (found) {
 			send_sip_response(sipe_private, msg, 200, "OK", NULL);
@@ -4844,11 +4849,12 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 				gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
 				if (tmp) {
 					gsize len;
+					struct sip_dialog *dialog = sipe_dialog_find(session, from);
 					gchar *body = (gchar *) g_base64_decode(tmp, &len);
 
 					GSList *parsed_body = sipe_ft_parse_msg_body(body);
 
-					sipe_process_incoming_x_msmsgsinvite(sipe_private, msg, parsed_body);
+					sipe_process_incoming_x_msmsgsinvite(sipe_private, dialog, parsed_body);
 					sipe_utils_nameval_free(parsed_body);
 					sipmsg_add_header(msg, "Supported", "ms-text-format"); /* accepts received message */
 				}
@@ -7750,8 +7756,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 						      g_free, (GDestroyNotify)g_hash_table_destroy);
 	sip->subscriptions = g_hash_table_new_full(g_str_hash, g_str_equal,
 						   g_free, (GDestroyNotify)sipe_subscription_free);
-	sipe_private->filetransfers = g_hash_table_new_full(g_str_hash, g_str_equal,
-							    g_free, (GDestroyNotify)sipe_ft_deallocate);
 	sip->status = g_strdup(SIPE_STATUS_ID_UNKNOWN);
 
 	return((struct sipe_core_public *)sipe_private);
@@ -7866,7 +7870,6 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_hash_table_destroy(sip->our_publications);
 	g_hash_table_destroy(sip->user_state_publications);
 	g_hash_table_destroy(sip->subscriptions);
-	g_hash_table_destroy(sipe_private->filetransfers);
 
 	if (sip->groups) {
 		GSList *entry = sip->groups;

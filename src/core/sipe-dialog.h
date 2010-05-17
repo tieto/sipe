@@ -54,6 +54,7 @@ struct sip_dialog {
 	GSList *routes;
 	gchar *request;
 	GSList *supported; /* counterparty capabilities */
+	GSList *filetransfers;
 	int cseq;
 	/** corresponds to Session-Expires SIP header value */
 	int expires;

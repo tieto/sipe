@@ -32,6 +32,7 @@
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
+#include "sipe-ft.h"
 
 void sipe_dialog_free(struct sip_dialog *dialog)
 {
@@ -53,6 +54,11 @@ void sipe_dialog_free(struct sip_dialog *dialog)
 		data = entry->data;
 		entry = g_slist_remove(entry, data);
 		g_free(data);
+	}
+
+	while (dialog->filetransfers) {
+		struct sipe_file_transfer *ft = dialog->filetransfers->data;
+		sipe_core_ft_deallocate(ft);
 	}
 
 	g_free(dialog->callid);

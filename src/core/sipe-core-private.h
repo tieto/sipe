@@ -55,9 +55,6 @@ struct sipe_core_private {
 	/* Buddies */
 	GHashTable *buddies;
 
-	/* File Transfer */
-	GHashTable *filetransfers;
-
 	/* Scheduling system */
 	GSList *timeouts;
 
