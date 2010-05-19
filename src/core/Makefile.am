@@ -30,6 +30,8 @@ libsipe_core_la_SOURCES = \
 	sipe-cal.c \
 	sipe-chat.h \
 	sipe-chat.c \
+	sipe-conf.h \
+	sipe-conf.c \
 	sipe-core-private.h \
 	sipe-core.c \
 	sipe-dialog.h \
@@ -58,9 +60,7 @@ libsipe_core_tests_la_SOURCES = \
 
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
-	sipe.c \
-	sipe-conf.h \
-	sipe-conf.c
+	sipe.c
 
 AM_CFLAGS = $(st)
 

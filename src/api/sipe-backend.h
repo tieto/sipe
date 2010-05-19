@@ -42,6 +42,7 @@ extern "C" {
 #endif
 
 /* Forward declarations */
+struct sipe_backend_session;
 struct sipe_core_public;
 struct sipe_transport_connection;
 struct sipe_file_transfer;
@@ -86,6 +87,29 @@ void sipe_backend_debug(sipe_debug_level level,
 #define SIPE_DEBUG_ERROR_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_ERROR,   msg)
 #define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
 #define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   msg)
+
+/** CHAT *********************************************************************/
+
+//void sipe_backend_chat_(struct sipe_backend_session *backend_session, );
+void sipe_backend_chat_add(struct sipe_backend_session *backend_session,
+			   const gchar *uri,
+			   gboolean is_new);
+void sipe_backend_chat_close(struct sipe_backend_session *backend_session);
+struct sipe_backend_session *sipe_backend_chat_create(struct sipe_core_public *sipe_public,
+						      int id,
+						      const gchar *title,
+						      const gchar *nick,
+						      gboolean rejoin);
+gboolean sipe_backend_chat_find(struct sipe_backend_session *backend_session,
+				const gchar *uri);
+gboolean sipe_backend_chat_is_operator(struct sipe_backend_session *backend_session,
+				       const gchar *uri);
+void sipe_backend_chat_operator(struct sipe_backend_session *backend_session,
+				const gchar *uri);
+void sipe_backend_chat_remove(struct sipe_backend_session *backend_session,
+			      const gchar *uri);
+void sipe_backend_chat_topic(struct sipe_backend_session *backend_session,
+			      const gchar *topic);
 
 /** CONNECTION ***************************************************************/
 

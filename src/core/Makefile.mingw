@@ -70,6 +70,7 @@ CLEAN_C_SRC = \
 			http-conn.c \
 			md4.c \
 			sip-transport.c \
+			sipe-conf.c \
 			sipe-core.c \
 			sipe-crypt.c \
 			sipe-digest.c \
@@ -95,6 +96,7 @@ CLEAN_C_SRC = \
 			sipe-win32dep.c
 
 PURPLE_C_SRC = \
+			../purple/purple-chat.c \
 			../purple/purple-connection.c \
 			../purple/purple-debug.c \
 			../purple/purple-dnsquery.c \
@@ -105,8 +107,7 @@ PURPLE_C_SRC = \
 			../purple/purple-schedule.c \
 			../purple/purple-setting.c \
 			../purple/purple-transport.c \
-			sipe.c \
-			sipe-conf.c
+			sipe.c
 
 C_TEST_SRC = 		sipe-xml-tests.c \
 			sip-sec-ntlm-tests.c \

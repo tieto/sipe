@@ -32,8 +32,6 @@
 
 #include <glib.h>
 
-#include "conversation.h"
-
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-transport.h"
@@ -604,7 +602,6 @@ void
 sipe_conf_add(struct sipe_core_private *sipe_private,
 	      const gchar* who)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
 	gchar *hdr;
 	gchar *conference_id;
 	gchar *contact;
@@ -629,7 +626,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	conference_id = genconfid();
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_ADD,
-		sip->focus_factory_uri,
+		sipe_private->focus_factory_uri,
 		self,
 		rand(),
 		conference_id,
@@ -640,8 +637,8 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 
 	trans = send_sip_request(sipe_private,
 				 "SERVICE",
-				 sip->focus_factory_uri,
-				 sip->focus_factory_uri,
+				 sipe_private->focus_factory_uri,
+				 sipe_private->focus_factory_uri,
 				 hdr,
 				 body,
 				 NULL,
@@ -706,7 +703,6 @@ void
 sipe_process_conference(struct sipe_core_private *sipe_private,
 			struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	sipe_xml *xn_conference_info;
 	const sipe_xml *node;
 	const sipe_xml *xn_subject;
@@ -729,25 +725,17 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	if (session->focus_uri && !session->conv) {
+	if (session->focus_uri && !session->backend_session) {
 		gchar *chat_title = sipe_chat_get_name(session->focus_uri);
 		gchar *self = sip_uri_self(sipe_private);
-		/* can't be find by chat id as it won't survive acc reinstantation */
-		PurpleConversation *conv = NULL;
 
-		if (chat_title) {
-			conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_CHAT,
-								     chat_title,
-								     sip->account);
-		}
-		/* to be able to rejoin existing chat/window */
-		if (conv && !purple_conv_chat_has_left(PURPLE_CONV_CHAT(conv))) {
-			PURPLE_CONV_CHAT(conv)->left = TRUE;
-		}
-		/* create prpl chat */
-		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
+		/* create or join existing chat */
+		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+								    session->chat_id,
+								    chat_title,
+								    self,
+								    TRUE);
 		session->chat_title = chat_title;
-		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.
@@ -759,7 +747,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	if ((xn_subject = sipe_xml_child(xn_conference_info, "conference-description/subject"))) {
 		g_free(session->subject);
 		session->subject = sipe_xml_data(xn_subject);
-		purple_conv_chat_set_topic(PURPLE_CONV_CHAT(session->conv), NULL, session->subject);
+		sipe_backend_chat_topic(session->backend_session, session->subject);
 		SIPE_DEBUG_INFO("sipe_process_conference: subject=%s", session->subject ? session->subject : "");
 	}
 
@@ -785,19 +773,15 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	for (node = sipe_xml_child(xn_conference_info, "users/user"); node; node = sipe_xml_twin(node)) {
 		const gchar *user_uri = sipe_xml_attribute(node, "entity");
 		const gchar *state = sipe_xml_attribute(node, "state");
-		gchar *role  = sipe_xml_data(sipe_xml_child(node, "roles/entry"));
-		PurpleConvChatBuddyFlags flags = PURPLE_CBFLAGS_NONE;
-		PurpleConvChat *chat = PURPLE_CONV_CHAT(session->conv);
+		gchar *role = sipe_xml_data(sipe_xml_child(node, "roles/entry"));
+		gboolean is_operator = sipe_strequal(role, "presenter");
 		gboolean is_in_im_mcu = FALSE;
 		gchar *self = sip_uri_self(sipe_private);
 
-		if (sipe_strequal(role, "presenter")) {
-			flags |= PURPLE_CBFLAGS_OP;
-		}
-
 		if (sipe_strequal("deleted", state)) {
-			if (purple_conv_chat_find_user(chat, user_uri)) {
-				purple_conv_chat_remove_user(chat, user_uri, NULL /* reason */);
+			if (sipe_backend_chat_find(session->backend_session, user_uri)) {
+				sipe_backend_chat_remove(session->backend_session,
+							 user_uri);
 			}
 		} else {
 			/* endpoints */
@@ -807,11 +791,14 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 					gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "status"));
 					if (sipe_strequal("connected", status)) {
 						is_in_im_mcu = TRUE;
-						if (!purple_conv_chat_find_user(chat, user_uri)) {
-							purple_conv_chat_add_user(chat, user_uri, NULL, flags,
-										  !just_joined && g_strcasecmp(user_uri, self));
-						} else {
-							purple_conv_chat_user_set_flags(chat, user_uri, flags);
+						if (!sipe_backend_chat_find(session->backend_session, user_uri)) {
+							sipe_backend_chat_add(session->backend_session,
+									      user_uri,
+									      !just_joined && g_strcasecmp(user_uri, self));
+						}
+						if (is_operator) {
+							sipe_backend_chat_operator(session->backend_session,
+										   user_uri);
 						}
 					}
 					g_free(status);
@@ -819,8 +806,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 				}
 			}
 			if (!is_in_im_mcu) {
-				if (purple_conv_chat_find_user(chat, user_uri)) {
-					purple_conv_chat_remove_user(chat, user_uri, NULL /* reason */);
+				if (sipe_backend_chat_find(session->backend_session, user_uri)) {
+					sipe_backend_chat_remove(session->backend_session,
+								 user_uri);
 				}
 			}
 		}
@@ -881,7 +869,7 @@ sipe_conf_immcu_closed(struct sipe_core_private *sipe_private,
 {
 	sipe_present_info(sipe_private, session,
 			  _("You have been disconnected from this conference."));
-	purple_conv_chat_clear_users(PURPLE_CONV_CHAT(session->conv));
+	sipe_backend_chat_close(session->backend_session);
 }
 
 void

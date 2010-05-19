@@ -1977,7 +1977,6 @@ static void sipe_process_registration_notify(struct sipe_core_private *sipe_priv
 static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 					 struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	sipe_xml *xn_provision_group_list;
 	const sipe_xml *node;
 
@@ -1986,10 +1985,10 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 	/* provisionGroup */
 	for (node = sipe_xml_child(xn_provision_group_list, "provisionGroup"); node; node = sipe_xml_twin(node)) {
 		if (sipe_strequal("ServerConfiguration", sipe_xml_attribute(node, "name"))) {
-			g_free(sip->focus_factory_uri);
-			sip->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
-			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sip->focus_factory_uri=%s",
-					sip->focus_factory_uri ? sip->focus_factory_uri : "");
+			g_free(sipe_private->focus_factory_uri);
+			sipe_private->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
+			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->focus_factory_uri=%s",
+					sipe_private->focus_factory_uri ? sipe_private->focus_factory_uri : "");
 			break;
 		}
 	}
@@ -3479,10 +3478,11 @@ sipe_notify_user(struct sipe_core_private *sipe_private,
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	PurpleConversation *conv;
 
-	if (!session->conv) {
+	if (!session->backend_session) {
 		conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, session->with, sip->account);
 	} else {
-		conv = session->conv;
+		/* TEMPORARY HACK!! */
+		conv = (PurpleConversation *) session->backend_session;
 	}
 	purple_conversation_write(conv, NULL, message, flags, time(NULL));
 }
@@ -3905,9 +3905,9 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 	/* add user to chat if it is a multiparty session */
 	if (session->is_multiparty) {
-		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
-			with, NULL,
-			PURPLE_CBFLAGS_NONE, TRUE);
+		sipe_backend_chat_add(session->backend_session,
+				      with,
+				      TRUE);
 	}
 
 	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)g_ascii_strcasecmp)) {
@@ -4400,7 +4400,8 @@ static void process_incoming_bye(struct sipe_core_private *sipe_private,
 	if (session->focus_uri && !g_strcasecmp(from, session->im_mcu_uri)) {
 		sipe_conf_immcu_closed(sipe_private, session);
 	} else if (session->is_multiparty) {
-		purple_conv_chat_remove_user(PURPLE_CONV_CHAT(session->conv), from, NULL);
+		sipe_backend_chat_remove(session->backend_session,
+					 from);
 	}
 
 	g_free(from);
@@ -4803,33 +4804,36 @@ static void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 	g_free(newTag);
 
-	if (is_multiparty && !session->conv) {
+	if (is_multiparty && !session->backend_session) {
 		gchar *chat_title = sipe_chat_get_name(callid);
 		gchar *self = sip_uri_self(sipe_private);
-		/* create prpl chat */
-		session->conv = serv_got_joined_chat(sip->gc, session->chat_id, chat_title);
+		/* create chat */
+		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+								    session->chat_id,
+								    chat_title, 
+								    self,
+								    FALSE);
 		session->chat_title = g_strdup(chat_title);
-		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
 		/* add self */
-		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
-					  self, NULL,
-					  PURPLE_CBFLAGS_NONE, FALSE);
+		sipe_backend_chat_add(session->backend_session,
+				      self,
+				      FALSE);
 		g_free(chat_title);
 		g_free(self);
 	}
 
 	if (is_multiparty && !was_multiparty) {
 		/* add current IM counterparty to chat */
-		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
-					  sipe_dialog_first(session)->with, NULL,
-					  PURPLE_CBFLAGS_NONE, FALSE);
+		sipe_backend_chat_add(session->backend_session,
+				      sipe_dialog_first(session)->with,
+				      FALSE);
 	}
 
 	/* add inviting party to chat */
-	if (just_joined && session->conv) {
-		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv),
-				  from, NULL,
-				  PURPLE_CBFLAGS_NONE, TRUE);
+	if (just_joined && session->backend_session) {
+		sipe_backend_chat_add(session->backend_session,
+				      from,
+				      TRUE);
 	}
 
 	/* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
@@ -7807,9 +7811,9 @@ static void sipe_connection_cleanup(struct sipe_core_private *sipe_private)
 		g_free(sip->regcallid);
 	sip->regcallid = NULL;
 
-	if (sip->focus_factory_uri)
-		g_free(sip->focus_factory_uri);
-	sip->focus_factory_uri = NULL;
+	if (sipe_private->focus_factory_uri)
+		g_free(sipe_private->focus_factory_uri);
+	sipe_private->focus_factory_uri = NULL;
 
 	sip->processing_input = FALSE;
 
@@ -8238,9 +8242,14 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session->chat_title = sipe_chat_get_name(session->callid);
 		session->roster_manager = g_strdup(self);
 
-		session->conv = serv_got_joined_chat(buddy->account->gc, session->chat_id, session->chat_title);
-		purple_conv_chat_set_nick(PURPLE_CONV_CHAT(session->conv), self);
-		purple_conv_chat_add_user(PURPLE_CONV_CHAT(session->conv), self, NULL, PURPLE_CBFLAGS_NONE, FALSE);
+		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+								    session->chat_id,
+								    session->chat_title,
+								    self,
+								    FALSE);
+		sipe_backend_chat_add(session->backend_session,
+				      self,
+				      FALSE);
 		sipe_invite(sipe_private, session, buddy->name, NULL, NULL, NULL, FALSE);
 
 		g_free(self);
@@ -8527,18 +8536,15 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	gchar *self = sip_uri_self(sipe_private);
 
 	SIPE_SESSION_FOREACH {
-		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->conv)
+		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->backend_session)
 		{
-			if (purple_conv_chat_find_user(PURPLE_CONV_CHAT(session->conv), buddy->name))
+			if (sipe_backend_chat_find(session->backend_session, buddy->name))
 			{
-				PurpleConvChatBuddyFlags flags;
-				PurpleConvChatBuddyFlags flags_us;
+				gboolean conf_op = sipe_backend_chat_is_operator(session->backend_session, self);
 
-				flags = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), buddy->name);
-				flags_us = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), self);
 				if (session->focus_uri
-				    && PURPLE_CBFLAGS_OP != (flags & PURPLE_CBFLAGS_OP)     /* Not conf OP */
-				    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
+				    && !sipe_backend_chat_is_operator(session->backend_session, buddy->name) /* Not conf OP */
+				    &&  conf_op)                                                             /* We are a conf OP */
 				{
 					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_title);
 					act = purple_menu_action_new(label,
@@ -8549,7 +8555,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				}
 
 				if (session->focus_uri
-				    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
+				    && conf_op) /* We are a conf OP */
 				{
 					gchar *label = g_strdup_printf(_("Remove from '%s'"), session->chat_title);
 					act = purple_menu_action_new(label,
@@ -8941,7 +8947,6 @@ GList *
 sipe_chat_menu(PurpleChat *chat)
 {
 	PurpleMenuAction *act;
-	PurpleConvChatBuddyFlags flags_us;
 	GList *menu = NULL;
 	struct sipe_core_private *sipe_private = PURPLE_CHAT_TO_SIPE_CORE_PRIVATE;
 	struct sip_session *session;
@@ -8952,10 +8957,9 @@ sipe_chat_menu(PurpleChat *chat)
 	if (!session) return NULL;
 
 	self = sip_uri_self(sipe_private);
-	flags_us = purple_conv_chat_user_get_flags(PURPLE_CONV_CHAT(session->conv), self);
 
-	if (session->focus_uri
-	    && PURPLE_CBFLAGS_OP == (flags_us & PURPLE_CBFLAGS_OP)) /* We are a conf OP */
+	if (session->focus_uri &&
+	    sipe_backend_chat_is_operator(session->backend_session, self))
 	{
 		if (session->locked) {
 			act = purple_menu_action_new(_("Unlock"),

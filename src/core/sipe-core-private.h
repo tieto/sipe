@@ -50,6 +50,7 @@ struct sipe_core_private {
 	gchar *username;
 	gchar *contact;
 	gchar *epid;
+	gchar *focus_factory_uri;
 	GSList *sessions;
 
 	/* Buddies */
