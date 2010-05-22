@@ -18,7 +18,7 @@ purple_media_get_active_candidates.patch
 	- should be included in version 2.8.0
 	
 libnice-Compatibility-with-OC2007-R2.patch
-	- some customizations stil needed, will check this and send to upstream asap
+	- reported upstream https://bugs.freedesktop.org/show_bug.cgi?id=28215
 
 
 Biggest show stopper now is a lack of SRTP (encrypted transfer) in Farsight library,
