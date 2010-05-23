@@ -282,7 +282,7 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 					 purple_media_get_active_remote_candidates(NULL, NULL, NULL);]
 			  	),
 				[AC_MSG_RESULT(ok)
-				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.12],
+				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.13],
 					[with_purple_vv=yes],
                                         [AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
 				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)])
