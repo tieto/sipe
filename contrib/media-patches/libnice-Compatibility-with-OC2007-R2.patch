@@ -1,4 +1,4 @@
-From b4f47a693e6359741965a78f40b1044458370038 Mon Sep 17 00:00:00 2001
+From 4459cb2ac2198e040804da3fd7d9b61083fdeb59 Mon Sep 17 00:00:00 2001
 From: Jakub Adam <jakub.adam@ktknet.cz>
 Date: Sun, 28 Mar 2010 14:53:43 +0200
 Subject: [PATCH] Compatibility with OC2007 R2
@@ -13,7 +13,7 @@ Subject: [PATCH] Compatibility with OC2007 R2
  6 files changed, 47 insertions(+), 11 deletions(-)
 
 diff --git a/agent/agent.c b/agent/agent.c
-index 19d52fa..e6c46a9 100644
+index 7deb2dd..b032a2a 100644
 --- a/agent/agent.c
 +++ b/agent/agent.c
 @@ -149,6 +149,8 @@ agent_to_ice_compatibility (NiceAgent *agent)
@@ -22,10 +22,10 @@ index 19d52fa..e6c46a9 100644
        STUN_USAGE_ICE_COMPATIBILITY_MSN :
 +	  agent->compatibility == NICE_COMPATIBILITY_OC2007R2 ?
 +      STUN_USAGE_ICE_COMPATIBILITY_OC2007R2 :
-       STUN_USAGE_ICE_COMPATIBILITY_DRAFT19;
+       STUN_USAGE_ICE_COMPATIBILITY_RFC5245;
  }
  
-@@ -833,7 +835,8 @@ nice_agent_set_property (
+@@ -835,7 +837,8 @@ nice_agent_set_property (
              STUN_COMPATIBILITY_RFC3489,
              STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
              STUN_AGENT_USAGE_FORCE_VALIDATER);
@@ -36,21 +36,22 @@ index 19d52fa..e6c46a9 100644
              STUN_COMPATIBILITY_WLM2009,
              STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
 diff --git a/agent/agent.h b/agent/agent.h
-index 922a935..8bc6acb 100644
+index 524bae2..c37bf21 100644
 --- a/agent/agent.h
 +++ b/agent/agent.h
-@@ -224,7 +224,8 @@ typedef enum
+@@ -229,8 +229,9 @@ typedef enum
    NICE_COMPATIBILITY_GOOGLE,
    NICE_COMPATIBILITY_MSN,
    NICE_COMPATIBILITY_WLM2009,
--  NICE_COMPATIBILITY_LAST = NICE_COMPATIBILITY_WLM2009
 +  NICE_COMPATIBILITY_OC2007R2,
-+  NICE_COMPATIBILITY_LAST = NICE_COMPATIBILITY_OC2007R2
+   NICE_COMPATIBILITY_DRAFT19 = NICE_COMPATIBILITY_RFC5245,
+-  NICE_COMPATIBILITY_LAST = NICE_COMPATIBILITY_WLM2009,
++  NICE_COMPATIBILITY_LAST = NICE_COMPATIBILITY_OC2007R2,
  } NiceCompatibility;
  
  /**
 diff --git a/agent/conncheck.c b/agent/conncheck.c
-index 28d4f07..ee72f71 100644
+index 30d13d3..a36b719 100644
 --- a/agent/conncheck.c
 +++ b/agent/conncheck.c
 @@ -599,7 +599,8 @@ static gboolean priv_conn_keepalive_tick_unlocked (NiceAgent *agent)
@@ -63,7 +64,7 @@ index 28d4f07..ee72f71 100644
  
              nice_debug ("Agent %p: conncheck created %d - %p",
                  agent, buf_len, p->keepalive.stun_message.buffer);
-@@ -1460,7 +1461,8 @@ size_t priv_gen_username (NiceAgent *agent, guint component_id,
+@@ -1461,7 +1462,8 @@ size_t priv_gen_username (NiceAgent *agent, guint component_id,
        len++;
        memcpy (dest + len, local, local_len);
        len += local_len;
@@ -73,7 +74,7 @@ index 28d4f07..ee72f71 100644
          dest_len >= remote_len + local_len + 4 ) {
        memcpy (dest, remote, remote_len);
        len += remote_len;
-@@ -1661,7 +1663,8 @@ int conn_check_send (NiceAgent *agent, CandidateCheckPair *pair)
+@@ -1662,7 +1664,8 @@ int conn_check_send (NiceAgent *agent, CandidateCheckPair *pair)
          uname, uname_len, password, password_len,
          cand_use, controlling, priority,
          agent->tie_breaker,
@@ -83,10 +84,10 @@ index 28d4f07..ee72f71 100644
  
      nice_debug ("Agent %p: conncheck created %d - %p", agent, buffer_len, pair->stun_message.buffer);
  
-@@ -1794,7 +1797,8 @@ static gboolean priv_schedule_triggered_check (NiceAgent *agent, Stream *stream,
+@@ -1795,7 +1798,8 @@ static gboolean priv_schedule_triggered_check (NiceAgent *agent, Stream *stream,
  	   *       aggressive nomination mode, send a new triggered
  	   *       check to nominate the pair */
- 	  if ((agent->compatibility == NICE_COMPATIBILITY_DRAFT19 ||
+ 	  if ((agent->compatibility == NICE_COMPATIBILITY_RFC5245 ||
 -                  agent->compatibility == NICE_COMPATIBILITY_WLM2009) &&
 +           agent->compatibility == NICE_COMPATIBILITY_WLM2009 ||
 +           agent->compatibility == NICE_COMPATIBILITY_OC2007R2) &&
@@ -109,7 +110,7 @@ index b9291b2..d35196f 100644
  
  
 diff --git a/stun/usages/ice.c b/stun/usages/ice.c
-index 5977296..174184d 100644
+index e469f32..53765be 100644
 --- a/stun/usages/ice.c
 +++ b/stun/usages/ice.c
 @@ -42,6 +42,7 @@
@@ -132,8 +133,8 @@ index 5977296..174184d 100644
  
    stun_agent_init_request (agent, msg, buffer, buffer_len, STUN_BINDING);
  
--  if (compatibility == STUN_USAGE_ICE_COMPATIBILITY_DRAFT19) {
-+  if (compatibility == STUN_USAGE_ICE_COMPATIBILITY_DRAFT19 ||
+-  if (compatibility == STUN_USAGE_ICE_COMPATIBILITY_RFC5245) {
++  if (compatibility == STUN_USAGE_ICE_COMPATIBILITY_RFC5245 ||
 +	  compatibility == STUN_USAGE_ICE_COMPATIBILITY_OC2007R2) {
      if (cand_use)
      {
@@ -143,13 +144,13 @@ index 5977296..174184d 100644
    }
  
 +  if (compatibility == STUN_USAGE_ICE_COMPATIBILITY_OC2007R2) {
-+	size_t identifier_len = strlen(candidate_identifier);
-+	size_t buffer_len = identifier_len;
-+	int modulo4 = identifier_len % 4;
-+	uint8_t* buf;
++    size_t identifier_len = strlen(candidate_identifier);
++    size_t buffer_len = identifier_len;
++    int modulo4 = identifier_len % 4;
++    uint8_t* buf;
 +
-+	if (modulo4)
-+		buffer_len += 4 - modulo4;
++    if (modulo4)
++        buffer_len += 4 - modulo4;
 +
 +    buf = malloc(buffer_len);
 +    memset(buf, 0, buffer_len);
@@ -168,18 +169,18 @@ index 5977296..174184d 100644
  
  }
 diff --git a/stun/usages/ice.h b/stun/usages/ice.h
-index 9fe8ea2..ad2cbe2 100644
+index 39bafaa..d9fdab2 100644
 --- a/stun/usages/ice.h
 +++ b/stun/usages/ice.h
-@@ -72,6 +72,7 @@ typedef enum {
-   STUN_USAGE_ICE_COMPATIBILITY_DRAFT19,
+@@ -78,6 +78,7 @@ typedef enum {
+   STUN_USAGE_ICE_COMPATIBILITY_RFC5245,
    STUN_USAGE_ICE_COMPATIBILITY_GOOGLE,
    STUN_USAGE_ICE_COMPATIBILITY_MSN,
 +  STUN_USAGE_ICE_COMPATIBILITY_OC2007R2,
+   STUN_USAGE_ICE_COMPATIBILITY_DRAFT19 = STUN_USAGE_ICE_COMPATIBILITY_RFC5245,
  } StunUsageIceCompatibility;
  
- 
-@@ -137,8 +138,8 @@ stun_usage_ice_conncheck_create (StunAgent *agent, StunMessage *msg,
+@@ -144,8 +145,8 @@ stun_usage_ice_conncheck_create (StunAgent *agent, StunMessage *msg,
      const uint8_t *username, const size_t username_len,
      const uint8_t *password, const size_t password_len,
      bool cand_use, bool controlling, uint32_t priority,
@@ -191,5 +192,4 @@ index 9fe8ea2..ad2cbe2 100644
  /**
   * stun_usage_ice_conncheck_process:
 -- 
-1.7.0
-
+1.7.1
