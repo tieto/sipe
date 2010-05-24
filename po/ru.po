@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-21 20:58+0300\n"
+"POT-Creation-Date: 2010-03-31 19:52+0000\n"
 "PO-Revision-Date: 2009-06-19 15:15+0000\n"
 "Last-Translator: pier11 <pier11@operamail.com>\n"
 "Language-Team: Russian <ru@li.org>\n"
@@ -17,6 +17,93 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
 "10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
+
+#. TODO: do we really want to disconnect on a failure to write?
+#: ../src/core/sipe.c:618 ../src/core/sipe.c:650
+msgid "Could not write"
+msgstr "Не удалось записать"
+
+#: ../src/core/sipe.c:674 ../src/core/sipe.c:8587
+msgid "Could not connect"
+msgstr "Не удалось установить соединение"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6025
+#, c-format
+msgid "You have been rejected by the server: %s"
+msgstr "Вы были отклонены сервером: %s"
+
+#: ../src/core/sipe.c:3161 ../src/core/sipe.c:9276 ../src/core/sipe.c:10178
+#: ../src/core/sipe.c:10508 ../src/purple/purple-plugin.c:101
+msgid "Company"
+msgstr "Компания"
+
+#: ../src/core/sipe.c:6063
+#, c-format
+msgid "Service unavailable: %s"
+msgstr "Сервис недоступен: %s"
+
+#: ../src/core/sipe.c:8410
+msgid "Invalid message signature received"
+msgstr "Получена недопустимая подпись сообщения"
+
+#: ../src/core/sipe.c:8508
+msgid "Server has disconnected"
+msgstr "Сервер прервал соединение"
+
+#: ../src/core/sipe.c:8647 ../src/core/sipe.c:8689 ../src/core/sipe.c:8741
+#: ../src/core/sipe.c:8811 ../src/core/sipe-ft.c:710
+msgid "Could not create listen socket"
+msgstr "Не удалось создать сокет для прослушивания"
+
+#: ../src/core/sipe.c:8670 ../src/core/sipe.c:8802
+msgid "Could not resolve hostname"
+msgstr "Не удалось разрешить имя хоста"
+
+#: ../src/core/sipe.c:8793
+msgid "Could not create SSL context"
+msgstr "Не удалось создать контекст SSL"
+
+#: ../src/core/sipe.c:8990
+msgid "Connecting"
+msgstr "Установка соединения"
+
+#: ../src/core/sipe.c:9282
+msgid "Email"
+msgstr "Email"
+
+#: ../src/core/sipe.c:9309
+#, c-format
+msgid "Found %d contact%s:"
+msgid_plural "Found %d contacts%s:"
+msgstr[0] "Найден %d контакт%s:"
+msgstr[1] "Найдено %d контактов%s:"
+msgstr[2] "Найдено %d контактов%s:"
+
+#: ../src/core/sipe.c:9311
+msgid " (more matched your query)"
+msgstr " (большее соответствие вашему запросу)"
+
+#: ../src/purple/purple-plugin.c:107
+msgid "Search"
+msgstr "Искать"
+
+#: ../src/purple/purple-plugin.c:111
+msgid "_Search"
+msgstr "_Искать"
+
+#: ../src/purple/purple-plugin.c:112
+msgid "_Cancel"
+msgstr "О_тменить"
+
+#: ../src/purple/purple-plugin.c:209
+msgid "Auto"
+msgstr "Автоматически"
+
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/purple/purple-plugin.c:218
+msgid "User Agent"
+msgstr "Агент пользователя"
 
 #: ../src/core/sipe.c:164
 msgid "Inactive"
@@ -86,11 +173,6 @@ msgstr "пользователь отключен"
 msgid "user moved"
 msgstr "пользователь перемещен"
 
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5644
-#, c-format
-msgid "You have been rejected by the server: %s"
-msgstr "Вы были отвергнуты сервером: %s"
-
 #: ../src/core/sipe.c:2444 ../src/core/sipe.c:5645 ../src/core/sipe.c:5664
 #: ../src/core/sipe.c:5684
 msgid "no reason given"
@@ -108,11 +190,6 @@ msgstr "Личный"
 #: ../src/core/sipe.c:2757 ../src/core/sipe.c:9341
 msgid "Team"
 msgstr "Группа"
-
-#: ../src/core/sipe.c:2758 ../src/core/sipe.c:8564 ../src/core/sipe.c:9342
-#: ../src/core/sipe.c:9660 ../src/purple/purple-plugin.c:504
-msgid "Company"
-msgstr "Организация"
 
 #: ../src/core/sipe.c:2759 ../src/core/sipe.c:9343
 msgid "Public"
@@ -195,15 +272,6 @@ msgstr "Не найден: %s. Пожалуйста, обратитесь к а�
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP-адрес либо не включен для URI назначения либо не существует"
 
-#: ../src/core/sipe.c:5684
-#, c-format
-msgid "Service unavailable: %s"
-msgstr "Служба недоступна: %s"
-
-#: ../src/core/sipe.c:8060
-msgid "Invalid message signature received"
-msgstr "Неверная подпись сообщения"
-
 #: ../src/core/sipe.c:8235
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Имя пользователя содержит недопустимые символы"
@@ -254,22 +322,6 @@ msgstr "Имя"
 #: ../src/purple/purple-plugin.c:506
 msgid "Country"
 msgstr "Страна"
-
-#: ../src/core/sipe.c:8570
-msgid "Email"
-msgstr "Электронная почта"
-
-#: ../src/core/sipe.c:8597
-#, c-format
-msgid "Found %d contact%s:"
-msgid_plural "Found %d contacts%s:"
-msgstr[0] "Найден %d контакт%s:"
-msgstr[1] "Найдены %d контакта(ов)%s:"
-msgstr[2] "Найдены %d контакта(ов)%s:"
-
-#: ../src/core/sipe.c:8599
-msgid " (more matched your query)"
-msgstr " (больше соответствует вашему запросу)"
 
 #: ../src/core/sipe.c:8747
 msgid "Status"
@@ -653,19 +705,11 @@ msgstr "Принятый ключ шифрования имеет неверны
 msgid "Received hash key has wrong size."
 msgstr "Принятый ключ хеширования имеет неверный размер."
 
-#: ../src/core/sipe-ft.c:716
-msgid "Could not create listen socket"
-msgstr "Не удалось создать listen socket"
-
 #. Macros to reduce code repetition.
 #. Translators: noun
 #: ../src/purple/purple-plugin.c:153
 msgid "Message"
 msgstr "Сообщение"
-
-#: ../src/purple/purple-plugin.c:275
-msgid "Connecting"
-msgstr "Подключение"
 
 #: ../src/purple/purple-plugin.c:359
 msgid "user@company.com"
@@ -679,10 +723,6 @@ msgstr "Имя"
 msgid "Last name"
 msgstr "Фамилия"
 
-#: ../src/purple/purple-plugin.c:510
-msgid "Search"
-msgstr "Поиск"
-
 #: ../src/purple/purple-plugin.c:511
 msgid "Search for a contact"
 msgstr "Поиск контактов"
@@ -694,14 +734,6 @@ msgid ""
 msgstr ""
 "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут "
 "игнорироваться."
-
-#: ../src/purple/purple-plugin.c:514
-msgid "_Search"
-msgstr "_Поиск"
-
-#: ../src/purple/purple-plugin.c:515
-msgid "_Cancel"
-msgstr "_Отмена"
 
 #: ../src/purple/purple-plugin.c:537
 msgid "About SIPE plugin..."
@@ -741,10 +773,6 @@ msgstr ""
 msgid "Connection type"
 msgstr "Тип подключения"
 
-#: ../src/purple/purple-plugin.c:604
-msgid "Auto"
-msgstr "Автоматический"
-
 #: ../src/purple/purple-plugin.c:605
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
@@ -752,12 +780,6 @@ msgstr "SSL/TLS"
 #: ../src/purple/purple-plugin.c:606
 msgid "TCP"
 msgstr "TCP"
-
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:612
-msgid "User Agent"
-msgstr "User Agent"
 
 #: ../src/purple/purple-plugin.c:616
 msgid "Use Kerberos"
@@ -813,14 +835,6 @@ msgstr ""
 msgid "Read error"
 msgstr "Ошибка чтения"
 
-#: ../src/purple/purple-transport.c:133
-msgid "Server has disconnected"
-msgstr "Сервер был отключен"
-
-#: ../src/purple/purple-transport.c:229
-msgid "Could not create SSL context"
-msgstr "Не удается создать контекст SSL"
-
 #: ../src/purple/purple-transport.c:241
 msgid "Could not create socket"
 msgstr "Не удалось создать сокет"
@@ -828,7 +842,3 @@ msgstr "Не удалось создать сокет"
 #: ../src/purple/purple-transport.c:296
 msgid "Write error"
 msgstr "Ошибка записи"
-
-#: ../src/purple/purple-transport.c:411
-msgid "Could not connect"
-msgstr "Не удается подключиться"
