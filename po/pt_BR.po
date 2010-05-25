@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-22 04:27+0000\n"
+"POT-Creation-Date: 2010-03-31 19:52+0000\n"
 "PO-Revision-Date: 2010-02-18 17:15-0600\n"
 "Last-Translator: Márcio Ferreira <marcio.ferreira@gmail.com>\n"
 "Language-Team: pt_BR <marcio.ferreira@gmail.com>\n"
@@ -18,14 +18,91 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
+#: ../src/core/sipe.c:166 ../src/core/sipe-cal.c:833
+msgid "Busy"
+msgstr "Ocupado"
+
+#. TODO: do we really want to disconnect on a failure to write?
+#: ../src/core/sipe.c:618 ../src/core/sipe.c:650
+msgid "Could not write"
+msgstr "Não foi possível gravar"
+
+#: ../src/core/sipe.c:674 ../src/core/sipe.c:8587
+msgid "Could not connect"
+msgstr "Não foi possível conectar"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6025
+#, c-format
+msgid "You have been rejected by the server: %s"
+msgstr "Você foi rejeitado pelo servidor: %s"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6026 ../src/core/sipe.c:6044
+#: ../src/core/sipe.c:6063
+msgid "no reason given"
+msgstr "nenhum motivo especificado"
+
+#: ../src/core/sipe.c:6063
+#, c-format
+msgid "Service unavailable: %s"
+msgstr "Serviço indisponível: %s"
+
+#: ../src/core/sipe.c:8410
+msgid "Invalid message signature received"
+msgstr "Assinatura da mensagem inválida recebida"
+
+#: ../src/core/sipe.c:8505
+msgid "SSL read error"
+msgstr "Erro de leitura de SSL"
+
+#: ../src/core/sipe.c:8508
+msgid "Server has disconnected"
+msgstr "O servidor desconectou-se"
+
+#: ../src/core/sipe.c:8647 ../src/core/sipe.c:8689 ../src/core/sipe.c:8741
+#: ../src/core/sipe.c:8811 ../src/core/sipe-ft.c:710
+msgid "Could not create listen socket"
+msgstr "Não foi possível criar soquete de escuta"
+
+#: ../src/core/sipe.c:8670 ../src/core/sipe.c:8802
+msgid "Could not resolve hostname"
+msgstr "Não foi possível resolver nome de host"
+
+#: ../src/core/sipe.c:8793
+msgid "Could not create SSL context"
+msgstr "Não foi possível criar contexto SSL"
+
+#: ../src/core/sipe.c:9282
+msgid "Email"
+msgstr "E-mail"
+
+#: ../src/core/sipe.c:9309
+#, c-format
+msgid "Found %d contact%s:"
+msgid_plural "Found %d contacts%s:"
+msgstr[0] "%d contato%s encontrado:"
+msgstr[1] "%d contatos%s encontrados:"
+
+#: ../src/core/sipe.c:9311
+msgid " (more matched your query)"
+msgstr " (mais correspondências à sua consulta)"
+
+#: ../src/purple/purple-plugin.c:107
+msgid "Search"
+msgstr "Pesquisar"
+
+#: ../src/purple/purple-plugin.c:111
+msgid "_Search"
+msgstr "_Pesquisar"
+
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/purple/purple-plugin.c:218
+msgid "User Agent"
+msgstr "Agente do Usuário"
+
 #: ../src/core/sipe.c:164
 msgid "Inactive"
 msgstr "Inativo"
-
-#: ../src/core/sipe.c:165 ../src/core/sipe-cal.c:937
-#: ../src/purple/purple-plugin.c:166
-msgid "Busy"
-msgstr "Não disponível"
 
 #: ../src/core/sipe.c:166
 msgid "Busy-Idle"
@@ -86,16 +163,6 @@ msgstr "usuário desabilitado"
 msgid "user moved"
 msgstr "usuário movido"
 
-#: ../src/core/sipe.c:2447 ../src/core/sipe.c:5648
-#, c-format
-msgid "You have been rejected by the server: %s"
-msgstr "Você foi recusado pelo servidor: %s"
-
-#: ../src/core/sipe.c:2447 ../src/core/sipe.c:5649 ../src/core/sipe.c:5668
-#: ../src/core/sipe.c:5688
-msgid "no reason given"
-msgstr "nenhum motivo foi dado"
-
 #: ../src/core/sipe.c:2758 ../src/core/sipe.c:9348
 msgid "Blocked"
 msgstr "Bloqueados"
@@ -126,30 +193,48 @@ msgstr "Desconhecido"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:3999
-msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
-msgstr "Sua mensagem ou o convite não foi entregue, possivelmente porque ele contém um hiperlink, ou outro índice que o administrador do sistema tenha bloqueado."
+msgid ""
+"Your message or invitation was not delivered, possibly because it contains a "
+"hyperlink or other content that the system administrator has blocked."
+msgstr ""
+"Sua mensagem ou o convite não foi entregue, possivelmente porque ele contém "
+"um hiperlink, ou outro índice que o administrador do sistema tenha bloqueado."
 
 #: ../src/core/sipe.c:4003
 #, c-format
-msgid "This message was not delivered to %s because the service is not available"
-msgstr "Esta mensagem não foi enviada a %s porque o serviço se encontra indisponível"
+msgid ""
+"This message was not delivered to %s because the service is not available"
+msgstr ""
+"Esta mensagem não foi enviada a %s porque o serviço se encontra indisponível"
 
 #. Busy Here
 #: ../src/core/sipe.c:4005
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr "Esta mensagem não foi enviada a %s porque um ou mais destinatários desejam não serem incomodados"
+msgid ""
+"This message was not delivered to %s because one or more recipients do not "
+"want to be disturbed"
+msgstr ""
+"Esta mensagem não foi enviada a %s porque um ou mais destinatários desejam "
+"não serem incomodados"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:4007
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
-msgstr "Esta mensagem não foi entregue ao% s porque um ou mais destinatários não suportam esse tipo de mensagem"
+msgid ""
+"This message was not delivered to %s because one or more recipients don't "
+"support this type of message"
+msgstr ""
+"Esta mensagem não foi entregue ao% s porque um ou mais destinatários não "
+"suportam esse tipo de mensagem"
 
 #: ../src/core/sipe.c:4009
 #, c-format
-msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Esta mensagem não foi enviada a %s porque um ou mais destinatários estão desconectados"
+msgid ""
+"This message was not delivered to %s because one or more recipients are "
+"offline"
+msgstr ""
+"Esta mensagem não foi enviada a %s porque um ou mais destinatários estão "
+"desconectados"
 
 #: ../src/core/sipe.c:4354
 #, c-format
@@ -172,20 +257,13 @@ msgstr "Um esquema de autenticação incompatível foi escolhido"
 #: ../src/core/sipe.c:5667
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr "Não encontrado: %s. Por favor, entre em contato com seu Administrador de Rede."
+msgstr ""
+"Não encontrado: %s. Por favor, entre em contato com seu Administrador de "
+"Rede."
 
 #: ../src/core/sipe.c:5669
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP não está habilitado para a URI de destino ou a mesma não existe"
-
-#: ../src/core/sipe.c:5688
-#, c-format
-msgid "Service unavailable: %s"
-msgstr "Servicio não disponível: %s"
-
-#: ../src/core/sipe.c:8064
-msgid "Invalid message signature received"
-msgstr "Uma assinatura de mensagem inválida foi recebida"
 
 #: ../src/core/sipe.c:8239
 msgid "SIP Exchange user name contains invalid characters"
@@ -238,21 +316,6 @@ msgstr "Nome"
 msgid "Country"
 msgstr "País"
 
-#: ../src/core/sipe.c:8574
-msgid "Email"
-msgstr "Email"
-
-#: ../src/core/sipe.c:8601
-#, c-format
-msgid "Found %d contact%s:"
-msgid_plural "Found %d contacts%s:"
-msgstr[0] "Encontrado %d contato%s:"
-msgstr[1] "Encontrados %d contatos%s:"
-
-#: ../src/core/sipe.c:8603
-msgid " (more matched your query)"
-msgstr " (mais ocorrências coincidiram com sua consulta)"
-
 #: ../src/core/sipe.c:8751
 msgid "Status"
 msgstr "Status"
@@ -284,8 +347,10 @@ msgstr "O nível de acesso"
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:9071
-msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgid ""
+"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr ""
+"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:9155
 #, c-format
@@ -493,12 +558,19 @@ msgid "Chat #%d"
 msgstr "Conversa #%d"
 
 #: ../src/core/sipe-conf.c:842
-msgid "This conference is no longer locked. Additional participants can now join."
-msgstr "Esta conferência não está mais bloqueada. Participantes adicionais podem se conectar agora."
+msgid ""
+"This conference is no longer locked. Additional participants can now join."
+msgstr ""
+"Esta conferência não está mais bloqueada. Participantes adicionais podem se "
+"conectar agora."
 
 #: ../src/core/sipe-conf.c:846
-msgid "This conference is locked. Nobody else can join the conference while it is locked."
-msgstr "Esta conferência está bloqueada. Nenhum novo participante pode se conectar enquanto a mesma se encontrar bloqueada."
+msgid ""
+"This conference is locked. Nobody else can join the conference while it is "
+"locked."
+msgstr ""
+"Esta conferência está bloqueada. Nenhum novo participante pode se conectar "
+"enquanto a mesma se encontrar bloqueada."
 
 #: ../src/core/sipe-conf.c:879
 msgid "You have been disconnected from this conference."
@@ -507,8 +579,12 @@ msgstr "Você foi desconectado desta conferência."
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:136
-msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr "Um plugin desenvolvido por terceiros que implementa uma versão do protocolo SIP/SIMPLE usado por vários produtos"
+msgid ""
+"A third-party plugin implementing extended version of SIP/SIMPLE used by "
+"various products"
+msgstr ""
+"Um plugin desenvolvido por terceiros que implementa uma versão do protocolo "
+"SIP/SIMPLE usado por vários produtos"
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:138
@@ -624,10 +700,6 @@ msgstr "Chave de encriptação recebida tem tamanho incorreto."
 msgid "Received hash key has wrong size."
 msgstr "Chave de hash recebida tem tamanho incorreto."
 
-#: ../src/core/sipe-ft.c:716
-msgid "Could not create listen socket"
-msgstr "Não foi possível criar socket de escuta"
-
 #. Macros to reduce code repetition.
 #. Translators: noun
 #: ../src/purple/purple-plugin.c:153
@@ -650,21 +722,17 @@ msgstr "Nome"
 msgid "Last name"
 msgstr "Sobrenome"
 
-#: ../src/purple/purple-plugin.c:519
-msgid "Search"
-msgstr "Buscar"
-
 #: ../src/purple/purple-plugin.c:520
 msgid "Search for a contact"
 msgstr "Buscar por um contato"
 
 #: ../src/purple/purple-plugin.c:521
-msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Insira os dados da pessoa que você deseja encontrar. Campos vazios serão ignorados"
-
-#: ../src/purple/purple-plugin.c:523
-msgid "_Search"
-msgstr "_Buscar"
+msgid ""
+"Enter the information for the person you wish to find. Empty fields will be "
+"ignored."
+msgstr ""
+"Insira os dados da pessoa que você deseja encontrar. Campos vazios serão "
+"ignorados"
 
 #: ../src/purple/purple-plugin.c:524
 msgid "_Cancel"
@@ -692,7 +760,7 @@ msgstr "Reinicializar status"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#. 
+#.
 #: ../src/purple/purple-plugin.c:612
 msgid ""
 "Login\n"
@@ -727,14 +795,6 @@ msgstr "SSL/TLS"
 msgid "TCP"
 msgstr "TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone
-#. may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
-#. option);
-#: ../src/purple/purple-plugin.c:628
-msgid "User Agent"
-msgstr "User Agent"
-
 #: ../src/purple/purple-plugin.c:632
 msgid "Use Kerberos"
 msgstr "Usar Kerberos"
@@ -742,14 +802,14 @@ msgstr "Usar Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#. 
+#.
 #: ../src/purple/purple-plugin.c:639
 msgid "Use Single Sign-On"
 msgstr "Usar Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#. 
+#.
 #: ../src/purple/purple-plugin.c:646
 msgid ""
 "Email services URL\n"
@@ -768,7 +828,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#. 
+#.
 #: ../src/purple/purple-plugin.c:655
 msgid ""
 "Email login\n"
@@ -789,14 +849,6 @@ msgstr ""
 msgid "Read error"
 msgstr "Erro de leitura"
 
-#: ../src/purple/purple-transport.c:133
-msgid "Server has disconnected"
-msgstr "O servidor desconectou"
-
-#: ../src/purple/purple-transport.c:229
-msgid "Could not create SSL context"
-msgstr "Não foi possível criar o contexto SSL"
-
 #: ../src/purple/purple-transport.c:241
 msgid "Could not create socket"
 msgstr "Não foi possível criar socket"
@@ -804,7 +856,3 @@ msgstr "Não foi possível criar socket"
 #: ../src/purple/purple-transport.c:296
 msgid "Write error"
 msgstr "Erro de gravação"
-
-#: ../src/purple/purple-transport.c:411
-msgid "Could not connect"
-msgstr "Não foi possível se conectar"

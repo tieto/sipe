@@ -3,10 +3,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: pl\n"
+"Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-21 19:42+0000\n"
-"PO-Revision-Date: 2010-04-21 21:46+0200\n"
+"POT-Creation-Date: 2010-03-31 19:52+0000\n"
+"PO-Revision-Date: 2010-03-31 22:58+0100\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -14,6 +14,77 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2;\n"
+
+#. TODO: do we really want to disconnect on a failure to write?
+#: ../src/core/sipe.c:618 ../src/core/sipe.c:650
+msgid "Could not write"
+msgstr "Nie można było zapisać"
+
+#: ../src/core/sipe.c:674 ../src/core/sipe.c:8587
+msgid "Could not connect"
+msgstr "Nie można było połączyć"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6025
+#, c-format
+msgid "You have been rejected by the server: %s"
+msgstr "Serwer odrzucił użytkownika: %s"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6026 ../src/core/sipe.c:6044
+#: ../src/core/sipe.c:6063
+msgid "no reason given"
+msgstr "nie podano przyczyny"
+
+#: ../src/core/sipe.c:6063
+#, c-format
+msgid "Service unavailable: %s"
+msgstr "Usługa niedostępna: %s"
+
+#: ../src/core/sipe.c:8647 ../src/core/sipe.c:8689 ../src/core/sipe.c:8741
+#: ../src/core/sipe.c:8811 ../src/core/sipe-ft.c:710
+msgid "Could not create listen socket"
+msgstr "Nie można było utworzyć gniazda nasłuchiwania"
+
+#: ../src/core/sipe.c:8670 ../src/core/sipe.c:8802
+msgid "Could not resolve hostname"
+msgstr "Nie można było rozwiązać nazwy hosta"
+
+#: ../src/core/sipe.c:8793
+msgid "Could not create SSL context"
+msgstr "Nie można było utworzyć kontekstu SSL"
+
+#: ../src/core/sipe.c:9282
+msgid "Email"
+msgstr "E-mail"
+
+#: ../src/core/sipe.c:9309
+#, c-format
+msgid "Found %d contact%s:"
+msgid_plural "Found %d contacts%s:"
+msgstr[0] "Znaleziono %d kontakt%s:"
+msgstr[1] "Znaleziono %d kontakty%s:"
+msgstr[2] "Znaleziono %d kontaktów%s:"
+
+#: ../src/core/sipe.c:9311
+msgid " (more matched your query)"
+msgstr " (więcej wyników zapytania)"
+
+#: ../src/purple/purple-plugin.c:107
+msgid "Search"
+msgstr "Wyszukiwanie"
+
+#: ../src/purple/purple-plugin.c:111
+msgid "_Search"
+msgstr "_Szukaj"
+
+#: ../src/purple/purple-plugin.c:209
+msgid "Auto"
+msgstr "Automatycznie"
+
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/purple/purple-plugin.c:218
+msgid "User Agent"
+msgstr "UserAgent"
 
 #: ../src/core/sipe.c:164
 msgid "Inactive"
@@ -82,16 +153,6 @@ msgstr "użytkownik został wyłączony"
 #: ../src/core/sipe.c:2443
 msgid "user moved"
 msgstr "użytkownik został przeniesiony"
-
-#: ../src/core/sipe.c:2447 ../src/core/sipe.c:5648
-#, c-format
-msgid "You have been rejected by the server: %s"
-msgstr "Użytkownik został odrzucony przez serwer: %s"
-
-#: ../src/core/sipe.c:2447 ../src/core/sipe.c:5649 ../src/core/sipe.c:5668
-#: ../src/core/sipe.c:5688
-msgid "no reason given"
-msgstr "nie podano powodu"
 
 #: ../src/core/sipe.c:2758 ../src/core/sipe.c:9348
 msgid "Blocked"
@@ -193,11 +254,6 @@ msgstr "Nie odnaleziono: %s. Proszę skontaktować się z administratorem"
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP nie jest włączony dla docelowego adresu URI lub nie istnieje"
 
-#: ../src/core/sipe.c:5688
-#, c-format
-msgid "Service unavailable: %s"
-msgstr "Usługa jest niedostępna: %s"
-
 #: ../src/core/sipe.c:8064
 msgid "Invalid message signature received"
 msgstr "Odebrano nieprawidłowy podpis wiadomości"
@@ -252,22 +308,6 @@ msgstr "Nazwa"
 #: ../src/purple/purple-plugin.c:515
 msgid "Country"
 msgstr "Kraj"
-
-#: ../src/core/sipe.c:8574
-msgid "Email"
-msgstr "Adres e-mail"
-
-#: ../src/core/sipe.c:8601
-#, c-format
-msgid "Found %d contact%s:"
-msgid_plural "Found %d contacts%s:"
-msgstr[0] "Odnaleziono %d kontakt%s:"
-msgstr[1] "Odnaleziono %d kontakty%s:"
-msgstr[2] "Odnaleziono %d kontaktów%s:"
-
-#: ../src/core/sipe.c:8603
-msgid " (more matched your query)"
-msgstr " (więcej pasowało do zapytania)"
 
 #: ../src/core/sipe.c:8751
 msgid "Status"
@@ -652,10 +692,6 @@ msgstr "Pobrany klucz szyfrowania posiada błędny rozmiar."
 msgid "Received hash key has wrong size."
 msgstr "Pobrany klucz mieszania posiada błędny rozmiar."
 
-#: ../src/core/sipe-ft.c:716
-msgid "Could not create listen socket"
-msgstr "Nie można utworzyć gniazda nasłuchiwania"
-
 #. Macros to reduce code repetition.
 #. Translators: noun
 #: ../src/purple/purple-plugin.c:153
@@ -678,10 +714,6 @@ msgstr "Imię"
 msgid "Last name"
 msgstr "Nazwisko"
 
-#: ../src/purple/purple-plugin.c:519
-msgid "Search"
-msgstr "Wyszukaj"
-
 #: ../src/purple/purple-plugin.c:520
 msgid "Search for a contact"
 msgstr "Wyszukaj kontakt"
@@ -693,10 +725,6 @@ msgid ""
 msgstr ""
 "Proszę podać informacje o wyszukiwanej osobie. Puste pola zostaną "
 "zignorowane."
-
-#: ../src/purple/purple-plugin.c:523
-msgid "_Search"
-msgstr "Wy_szukaj"
 
 #: ../src/purple/purple-plugin.c:524
 msgid "_Cancel"
@@ -747,10 +775,6 @@ msgstr ""
 msgid "Connection type"
 msgstr "Typ połączenia"
 
-#: ../src/purple/purple-plugin.c:620
-msgid "Auto"
-msgstr "Automatyczny"
-
 #: ../src/purple/purple-plugin.c:621
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
@@ -758,12 +782,6 @@ msgstr "SSL/TLS"
 #: ../src/purple/purple-plugin.c:622
 msgid "TCP"
 msgstr "TCP"
-
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:628
-msgid "User Agent"
-msgstr "Agent użytkownika"
 
 #: ../src/purple/purple-plugin.c:632
 msgid "Use Kerberos"
@@ -823,10 +841,6 @@ msgstr "Błąd odczytu"
 msgid "Server has disconnected"
 msgstr "Serwer został rozłączony"
 
-#: ../src/purple/purple-transport.c:229
-msgid "Could not create SSL context"
-msgstr "Nie można utworzyć kontekstu SSL"
-
 #: ../src/purple/purple-transport.c:241
 msgid "Could not create socket"
 msgstr "Nie można utworzyć gniazda"
@@ -834,7 +848,3 @@ msgstr "Nie można utworzyć gniazda"
 #: ../src/purple/purple-transport.c:296
 msgid "Write error"
 msgstr "Błąd zapisu"
-
-#: ../src/purple/purple-transport.c:411
-msgid "Could not connect"
-msgstr "Nie można połączyć"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-21 20:58+0300\n"
+"POT-Creation-Date: 2010-04-01 04:35+0000\n"
 "PO-Revision-Date: 2010-02-01 14:30+0800\n"
 "Last-Translator: 神州散人 <kappa8086@gmail.com>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
@@ -15,6 +15,43 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6025
+#, c-format
+msgid "You have been rejected by the server: %s"
+msgstr "您已被服务器拒绝：%s"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6026 ../src/core/sipe.c:6044
+#: ../src/core/sipe.c:6063
+msgid "no reason given"
+msgstr "未给出原因"
+
+#: ../src/core/sipe.c:8410
+msgid "Invalid message signature received"
+msgstr "收到无效消息签名"
+
+#: ../src/core/sipe.c:8508
+msgid "Server has disconnected"
+msgstr "服务器已断开连接"
+
+#: ../src/core/sipe.c:8647 ../src/core/sipe.c:8689 ../src/core/sipe.c:8741
+#: ../src/core/sipe.c:8811 ../src/core/sipe-ft.c:710
+msgid "Could not create listen socket"
+msgstr "无法创建侦听套接字"
+
+#: ../src/core/sipe.c:9273
+msgid "Name"
+msgstr "姓名"
+
+#: ../src/core/sipe.c:9309
+#, c-format
+msgid "Found %d contact%s:"
+msgid_plural "Found %d contacts%s:"
+msgstr[0] "找到 %d 个联系人%s："
+
+#: ../src/core/sipe.c:9311
+msgid " (more matched your query)"
+msgstr " （与您的查询越匹配）"
 
 #: ../src/core/sipe.c:164
 msgid "Inactive"
@@ -83,16 +120,6 @@ msgstr "用户已禁止"
 #: ../src/core/sipe.c:2440
 msgid "user moved"
 msgstr "用户已移动"
-
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5644
-#, c-format
-msgid "You have been rejected by the server: %s"
-msgstr "您被以下服务器拒绝了：%s"
-
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5645 ../src/core/sipe.c:5664
-#: ../src/core/sipe.c:5684
-msgid "no reason given"
-msgstr "没有给出原因"
 
 #: ../src/core/sipe.c:2755 ../src/core/sipe.c:9344
 msgid "Blocked"
@@ -192,10 +219,6 @@ msgstr "目标 URI 没有启用 SIP 或不存在"
 msgid "Service unavailable: %s"
 msgstr "服务不可用：%s"
 
-#: ../src/core/sipe.c:8060
-msgid "Invalid message signature received"
-msgstr "收到了无效的消息签名"
-
 #: ../src/core/sipe.c:8235
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP Exchange 用户名包含无效字符"
@@ -235,10 +258,6 @@ msgstr "无法显示搜索结果"
 msgid "User name"
 msgstr "用户名"
 
-#: ../src/core/sipe.c:8561
-msgid "Name"
-msgstr "名称"
-
 #: ../src/core/sipe.c:8567 ../src/core/sipe.c:9669
 #: ../src/purple/purple-plugin.c:506
 msgid "Country"
@@ -247,16 +266,6 @@ msgstr "国家"
 #: ../src/core/sipe.c:8570
 msgid "Email"
 msgstr "电子邮件"
-
-#: ../src/core/sipe.c:8597
-#, c-format
-msgid "Found %d contact%s:"
-msgid_plural "Found %d contacts%s:"
-msgstr[0] "已找到 %d 个联系人 %s："
-
-#: ../src/core/sipe.c:8599
-msgid " (more matched your query)"
-msgstr " (有更多与您的查询匹配)"
 
 #: ../src/core/sipe.c:8747
 msgid "Status"
@@ -635,10 +644,6 @@ msgstr "收到的加密密钥尺寸错误。"
 msgid "Received hash key has wrong size."
 msgstr "收到的散列密钥尺寸错误。"
 
-#: ../src/core/sipe-ft.c:716
-msgid "Could not create listen socket"
-msgstr "无法创建监听套接字"
-
 #. Macros to reduce code repetition.
 #. Translators: noun
 #: ../src/purple/purple-plugin.c:153
@@ -793,10 +798,6 @@ msgstr ""
 #, fuzzy
 msgid "Read error"
 msgstr "SSL 读取错误"
-
-#: ../src/purple/purple-transport.c:133
-msgid "Server has disconnected"
-msgstr "服务器已断开"
 
 #: ../src/purple/purple-transport.c:229
 msgid "Could not create SSL context"

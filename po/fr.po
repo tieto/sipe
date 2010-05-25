@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-21 20:58+0300\n"
+"POT-Creation-Date: 2010-04-01 04:35+0000\n"
 "PO-Revision-Date: 2008-12-17 11:35+0000\n"
 "Last-Translator: elequeux <Unknown>\n"
 "Language-Team: French <fr@li.org>\n"
@@ -18,14 +18,81 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
+#: ../src/core/sipe.c:166 ../src/core/sipe-cal.c:833
+msgid "Busy"
+msgstr "Occupé"
+
+#. TODO: do we really want to disconnect on a failure to write?
+#: ../src/core/sipe.c:618 ../src/core/sipe.c:650
+msgid "Could not write"
+msgstr "Impossible d'écrire"
+
+#: ../src/core/sipe.c:674 ../src/core/sipe.c:8587
+msgid "Could not connect"
+msgstr "Impossible de se connecter"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6025
+#, c-format
+msgid "You have been rejected by the server: %s"
+msgstr "Vous avez été rejeté par le serveur : %s"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6026 ../src/core/sipe.c:6044
+#: ../src/core/sipe.c:6063
+msgid "no reason given"
+msgstr "pas de raison donnée"
+
+#: ../src/core/sipe.c:6063
+#, c-format
+msgid "Service unavailable: %s"
+msgstr "Service non disponible : %s"
+
+#: ../src/core/sipe.c:8410
+msgid "Invalid message signature received"
+msgstr "Signature de message reçue non valide"
+
+#: ../src/core/sipe.c:8505
+msgid "SSL read error"
+msgstr "Erreur de lecture SSL"
+
+#: ../src/core/sipe.c:8647 ../src/core/sipe.c:8689 ../src/core/sipe.c:8741
+#: ../src/core/sipe.c:8811 ../src/core/sipe-ft.c:710
+msgid "Could not create listen socket"
+msgstr "Impossible de créer le socket d'écoute"
+
+#: ../src/core/sipe.c:8670 ../src/core/sipe.c:8802
+msgid "Could not resolve hostname"
+msgstr "Impossible de résoudre le nom de l'hôte"
+
+#: ../src/core/sipe.c:8793
+msgid "Could not create SSL context"
+msgstr "Impossible de créer contexte SSL"
+
+#: ../src/core/sipe.c:8990
+msgid "Connecting"
+msgstr "Connexion"
+
+#: ../src/core/sipe.c:9282
+msgid "Email"
+msgstr "Adresse électronique"
+
+#: ../src/core/sipe.c:9309
+#, c-format
+msgid "Found %d contact%s:"
+msgid_plural "Found %d contacts%s:"
+msgstr[0] "%d contact%s trouvé :"
+msgstr[1] "%d contacts%s trouvés :"
+
+#: ../src/core/sipe.c:9311
+msgid " (more matched your query)"
+msgstr " (il y avait plus de résultats pour votre requête)"
+
+#: ../src/purple/purple-plugin.c:111
+msgid "_Search"
+msgstr "_Recherche"
+
 #: ../src/core/sipe.c:164
 msgid "Inactive"
 msgstr "Inactif"
-
-#: ../src/core/sipe.c:165 ../src/core/sipe-cal.c:936
-#: ../src/purple/purple-plugin.c:166
-msgid "Busy"
-msgstr "Occupé(e)"
 
 #: ../src/core/sipe.c:166
 #, fuzzy
@@ -91,16 +158,6 @@ msgstr "utilisateur non permis"
 #, fuzzy
 msgid "user moved"
 msgstr "Nom d'utilisateur"
-
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5644
-#, c-format
-msgid "You have been rejected by the server: %s"
-msgstr "Le serveur a rejeté votre demande: %s"
-
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5645 ../src/core/sipe.c:5664
-#: ../src/core/sipe.c:5684
-msgid "no reason given"
-msgstr "Raison inconnue"
 
 #: ../src/core/sipe.c:2755 ../src/core/sipe.c:9344
 msgid "Blocked"
@@ -204,15 +261,6 @@ msgstr "Non trouvé : %s Merci de contacter l'Administrateur"
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr ""
 
-#: ../src/core/sipe.c:5684
-#, c-format
-msgid "Service unavailable: %s"
-msgstr "Service indisponible: %s"
-
-#: ../src/core/sipe.c:8060
-msgid "Invalid message signature received"
-msgstr "Signature du message reçu invalide"
-
 #: ../src/core/sipe.c:8235
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Le nom d'utilisateur SIP Exchange contient des caractères non valides"
@@ -262,21 +310,6 @@ msgstr "Nom"
 #: ../src/purple/purple-plugin.c:506
 msgid "Country"
 msgstr "Pays"
-
-#: ../src/core/sipe.c:8570
-msgid "Email"
-msgstr "mèl"
-
-#: ../src/core/sipe.c:8597
-#, c-format
-msgid "Found %d contact%s:"
-msgid_plural "Found %d contacts%s:"
-msgstr[0] "%d contact trouvé: %s"
-msgstr[1] "%d contacts trouvés: %s"
-
-#: ../src/core/sipe.c:8599
-msgid " (more matched your query)"
-msgstr " (suite résultats)"
 
 #: ../src/core/sipe.c:8747
 msgid "Status"
@@ -673,19 +706,11 @@ msgstr "La clé de chiffrement reçue a une longueur incorrecte."
 msgid "Received hash key has wrong size."
 msgstr "La clé de hachage reçue a une longueur incorrecte."
 
-#: ../src/core/sipe-ft.c:716
-msgid "Could not create listen socket"
-msgstr "Ne peut pas créer de socket d'écoute"
-
 #. Macros to reduce code repetition.
 #. Translators: noun
 #: ../src/purple/purple-plugin.c:153
 msgid "Message"
 msgstr "Message"
-
-#: ../src/purple/purple-plugin.c:275
-msgid "Connecting"
-msgstr "Connexion en cours"
 
 #: ../src/purple/purple-plugin.c:359
 msgid "user@company.com"
@@ -717,10 +742,6 @@ msgid ""
 msgstr ""
 "Entrez les critères de recherche de la personne. Les champs vides seront "
 "ignorés."
-
-#: ../src/purple/purple-plugin.c:514
-msgid "_Search"
-msgstr "_Rechercher"
 
 #: ../src/purple/purple-plugin.c:515
 msgid "_Cancel"
@@ -830,10 +851,6 @@ msgstr "Erreur lecture SSL"
 msgid "Server has disconnected"
 msgstr "Déconnexion du serveur"
 
-#: ../src/purple/purple-transport.c:229
-msgid "Could not create SSL context"
-msgstr "Impossible de créer le contexte SSL"
-
 #: ../src/purple/purple-transport.c:241
 #, fuzzy
 msgid "Could not create socket"
@@ -843,7 +860,3 @@ msgstr "Impossible de créer le socket"
 #, fuzzy
 msgid "Write error"
 msgstr "Erreur lecture SSL"
-
-#: ../src/purple/purple-transport.c:411
-msgid "Could not connect"
-msgstr "Impossible de se connecter."

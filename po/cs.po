@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-21 20:58+0300\n"
+"POT-Creation-Date: 2010-03-31 22:48+0300\n"
 "PO-Revision-Date: 2009-02-10 23:50+0000\n"
 "Last-Translator: Rinu <rinu@seznam.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
@@ -17,6 +17,91 @@ msgstr ""
 "X-Launchpad-Export-Date: 2009-06-22 11:28+0000\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
+
+#. TODO: do we really want to disconnect on a failure to write?
+#: ../src/core/sipe.c:618 ../src/core/sipe.c:650
+msgid "Could not write"
+msgstr "Nelze zapisovat"
+
+#: ../src/core/sipe.c:674 ../src/core/sipe.c:8587
+msgid "Could not connect"
+msgstr "Připojení nelze navázat"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6025
+#, c-format
+msgid "You have been rejected by the server: %s"
+msgstr "Následující server odmítl připojení: %s"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6026 ../src/core/sipe.c:6044
+#: ../src/core/sipe.c:6063
+msgid "no reason given"
+msgstr "bez udání důvodu"
+
+#: ../src/core/sipe.c:6063
+#, c-format
+msgid "Service unavailable: %s"
+msgstr "Služba není dostupná: %s"
+
+#: ../src/core/sipe.c:8410
+msgid "Invalid message signature received"
+msgstr "Přijatý podpis zprávy je neplatný"
+
+#: ../src/core/sipe.c:8505
+msgid "SSL read error"
+msgstr "Při čtení protokolu SSL došlo k chybě."
+
+#: ../src/core/sipe.c:8508
+msgid "Server has disconnected"
+msgstr "Došlo k odpojení serveru."
+
+#: ../src/core/sipe.c:8647 ../src/core/sipe.c:8689 ../src/core/sipe.c:8741
+#: ../src/core/sipe.c:8811 ../src/core/sipe-ft.c:710
+msgid "Could not create listen socket"
+msgstr "Soket pro naslouchání nelze vytvořit"
+
+#: ../src/core/sipe.c:8670 ../src/core/sipe.c:8802
+msgid "Could not resolve hostname"
+msgstr "Nelze rozpoznat název hostitele"
+
+#: ../src/core/sipe.c:8793
+msgid "Could not create SSL context"
+msgstr "Kontext protokolu SSL se nepodařilo vytvořit."
+
+#: ../src/core/sipe.c:8990
+msgid "Connecting"
+msgstr "Připojování"
+
+#: ../src/core/sipe.c:9273
+msgid "Name"
+msgstr "Název"
+
+#: ../src/core/sipe.c:9282
+msgid "Email"
+msgstr "E-mailová adresa"
+
+#: ../src/core/sipe.c:9311
+msgid " (more matched your query)"
+msgstr " (další shodné s dotazem)"
+
+#: ../src/purple/purple-plugin.c:107
+msgid "Search"
+msgstr "Hledat"
+
+#: ../src/purple/purple-plugin.c:112
+msgid "_Cancel"
+msgstr "_Storno"
+
+#: ../src/purple/purple-plugin.c:210
+msgid "SSL/TLS"
+msgstr "Protokol SSL/TLS"
+
+#: ../src/purple/purple-plugin.c:211
+msgid "TCP"
+msgstr "Protokol TCP"
+
+#: ../src/purple/purple-plugin.c:212
+msgid "UDP"
+msgstr "Protokol UDP"
 
 #: ../src/core/sipe.c:164
 msgid "Inactive"
@@ -85,16 +170,6 @@ msgstr "uživatel je zakázán"
 #: ../src/core/sipe.c:2440
 msgid "user moved"
 msgstr "uživatel přesunut"
-
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5644
-#, c-format
-msgid "You have been rejected by the server: %s"
-msgstr "Byl(a) jsi odmítnut(a) serverem: %s"
-
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5645 ../src/core/sipe.c:5664
-#: ../src/core/sipe.c:5684
-msgid "no reason given"
-msgstr "důvod nebyl sdělen"
 
 #: ../src/core/sipe.c:2755 ../src/core/sipe.c:9344
 msgid "Blocked"
@@ -193,15 +268,6 @@ msgstr "Uživatel %s nenalezen. Prosím kontaktujte svého administrátora"
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP není povolen pro cílové URI nebo neexistuje"
 
-#: ../src/core/sipe.c:5684
-#, c-format
-msgid "Service unavailable: %s"
-msgstr "Nedostupná služba: %s"
-
-#: ../src/core/sipe.c:8060
-msgid "Invalid message signature received"
-msgstr "Obdržen neplatný podpis zprávy"
-
 #: ../src/core/sipe.c:8235
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Uživatelské jméno pro SIP Exchange obsahuje neplatné znaky"
@@ -237,29 +303,18 @@ msgstr "Nemohu zobrazit výsledky hledání."
 msgid "User name"
 msgstr "Jméno uživatele"
 
-#: ../src/core/sipe.c:8561
-msgid "Name"
-msgstr "Jméno"
-
 #: ../src/core/sipe.c:8567 ../src/core/sipe.c:9669
 #: ../src/purple/purple-plugin.c:506
 msgid "Country"
 msgstr "Země"
 
-#: ../src/core/sipe.c:8570
-msgid "Email"
-msgstr "E-mail"
-
-#: ../src/core/sipe.c:8597
+#: ../src/core/sipe.c:9309
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
-msgstr[0] ""
-msgstr[1] ""
-
-#: ../src/core/sipe.c:8599
-msgid " (more matched your query)"
-msgstr "(vícero odpovědí odpovídá dotazu)"
+msgstr[0] "Nalezen %d kontakt%s:"
+msgstr[1] "Nalezeny %d kontakty%s:"
+msgstr[2] "Nalezeno %d kontaktů%s:"
 
 #: ../src/core/sipe.c:8747
 msgid "Status"
@@ -646,19 +701,11 @@ msgstr ""
 msgid "Received hash key has wrong size."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:716
-msgid "Could not create listen socket"
-msgstr "Nemohu vytvořit socket pro naslouchání"
-
 #. Macros to reduce code repetition.
 #. Translators: noun
 #: ../src/purple/purple-plugin.c:153
 msgid "Message"
 msgstr "Zpráva"
-
-#: ../src/purple/purple-plugin.c:275
-msgid "Connecting"
-msgstr "Navazuji spojení"
 
 #: ../src/purple/purple-plugin.c:359
 msgid "user@company.com"
@@ -671,10 +718,6 @@ msgstr "Jméno"
 #: ../src/purple/purple-plugin.c:502
 msgid "Last name"
 msgstr "Příjmení"
-
-#: ../src/purple/purple-plugin.c:510
-msgid "Search"
-msgstr "Vyhledávání"
 
 #: ../src/purple/purple-plugin.c:511
 msgid "Search for a contact"
@@ -691,10 +734,6 @@ msgstr ""
 #: ../src/purple/purple-plugin.c:514
 msgid "_Search"
 msgstr "_Hledat"
-
-#: ../src/purple/purple-plugin.c:515
-msgid "_Cancel"
-msgstr "_Zrušit"
 
 #: ../src/purple/purple-plugin.c:537
 msgid "About SIPE plugin..."
@@ -734,19 +773,11 @@ msgstr "Typ spojení"
 msgid "Auto"
 msgstr "Automaticky"
 
-#: ../src/purple/purple-plugin.c:605
-msgid "SSL/TLS"
-msgstr "SSL/TLS"
-
-#: ../src/purple/purple-plugin.c:606
-msgid "TCP"
-msgstr "TCP"
-
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:612
+#: ../src/purple/purple-plugin.c:218
 msgid "User Agent"
-msgstr ""
+msgstr "Uživatelský agent"
 
 #: ../src/purple/purple-plugin.c:616
 msgid "Use Kerberos"
@@ -795,14 +826,6 @@ msgstr ""
 msgid "Read error"
 msgstr "Chyba čtení SSL"
 
-#: ../src/purple/purple-transport.c:133
-msgid "Server has disconnected"
-msgstr "Server se odpojil"
-
-#: ../src/purple/purple-transport.c:229
-msgid "Could not create SSL context"
-msgstr "Nemohu vytvořit SSL kontext"
-
 #: ../src/purple/purple-transport.c:241
 msgid "Could not create socket"
 msgstr "Nemohu vytvořit socket"
@@ -811,7 +834,3 @@ msgstr "Nemohu vytvořit socket"
 #, fuzzy
 msgid "Write error"
 msgstr "Chyba čtení SSL"
-
-#: ../src/purple/purple-transport.c:411
-msgid "Could not connect"
-msgstr "Nemohu se připojit"

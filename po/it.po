@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-04-21 20:58+0300\n"
+"POT-Creation-Date: 2010-04-01 04:35+0000\n"
 "PO-Revision-Date: 2009-03-06 17:16+0000\n"
 "Last-Translator: Guybrush88 <Unknown>\n"
 "Language-Team: Italian <it@li.org>\n"
@@ -17,6 +17,81 @@ msgstr ""
 "X-Launchpad-Export-Date: 2009-06-19 16:20+0000\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Launchpad (build Unknown)\n"
+
+#. TODO: do we really want to disconnect on a failure to write?
+#: ../src/core/sipe.c:618 ../src/core/sipe.c:650
+msgid "Could not write"
+msgstr "Impossibile scrivere"
+
+#: ../src/core/sipe.c:674 ../src/core/sipe.c:8587
+msgid "Could not connect"
+msgstr "Impossibile connettersi"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6025
+#, c-format
+msgid "You have been rejected by the server: %s"
+msgstr "Connessione rifiutata dal server: %s"
+
+#: ../src/core/sipe.c:2848 ../src/core/sipe.c:6026 ../src/core/sipe.c:6044
+#: ../src/core/sipe.c:6063
+msgid "no reason given"
+msgstr "nessun motivo fornito"
+
+#: ../src/core/sipe.c:3161 ../src/core/sipe.c:9276 ../src/core/sipe.c:10178
+#: ../src/core/sipe.c:10508 ../src/purple/purple-plugin.c:101
+msgid "Company"
+msgstr "Società"
+
+#: ../src/core/sipe.c:6063
+#, c-format
+msgid "Service unavailable: %s"
+msgstr "Servizio non disponibile:%s"
+
+#: ../src/core/sipe.c:8410
+msgid "Invalid message signature received"
+msgstr "La firma del messaggio ricevuta non è valida"
+
+#: ../src/core/sipe.c:8647 ../src/core/sipe.c:8689 ../src/core/sipe.c:8741
+#: ../src/core/sipe.c:8811 ../src/core/sipe-ft.c:710
+msgid "Could not create listen socket"
+msgstr "Impossibile creare il socket in ascolto"
+
+#: ../src/core/sipe.c:8670 ../src/core/sipe.c:8802
+msgid "Could not resolve hostname"
+msgstr "Impossibile risolvere il nome dell'host"
+
+#: ../src/core/sipe.c:8793
+msgid "Could not create SSL context"
+msgstr "Impossibile creare il contesto SSL"
+
+#: ../src/core/sipe.c:9282
+msgid "Email"
+msgstr "E-mail"
+
+#: ../src/core/sipe.c:9309
+#, c-format
+msgid "Found %d contact%s:"
+msgid_plural "Found %d contacts%s:"
+msgstr[0] "%d contatto%s trovato:"
+msgstr[1] "%d contatti%s trovati:"
+
+#: ../src/core/sipe.c:9311
+msgid " (more matched your query)"
+msgstr " (altri risultati per l'interrogazione)"
+
+#: ../src/purple/purple-plugin.c:107
+msgid "Search"
+msgstr "Ricerca"
+
+#: ../src/purple/purple-plugin.c:209
+msgid "Auto"
+msgstr "Auto"
+
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#: ../src/purple/purple-plugin.c:218
+msgid "User Agent"
+msgstr "Agente utente"
 
 #: ../src/core/sipe.c:164
 msgid "Inactive"
@@ -86,16 +161,6 @@ msgstr "utente disabilitato"
 msgid "user moved"
 msgstr "utente spostato"
 
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5644
-#, c-format
-msgid "You have been rejected by the server: %s"
-msgstr "Sei stato rifiutato dal server: %s"
-
-#: ../src/core/sipe.c:2444 ../src/core/sipe.c:5645 ../src/core/sipe.c:5664
-#: ../src/core/sipe.c:5684
-msgid "no reason given"
-msgstr "nessuna ragione fornita"
-
 #: ../src/core/sipe.c:2755 ../src/core/sipe.c:9344
 msgid "Blocked"
 msgstr "Bloccato"
@@ -108,11 +173,6 @@ msgstr "Personali"
 #: ../src/core/sipe.c:2757 ../src/core/sipe.c:9341
 msgid "Team"
 msgstr "Team"
-
-#: ../src/core/sipe.c:2758 ../src/core/sipe.c:8564 ../src/core/sipe.c:9342
-#: ../src/core/sipe.c:9660 ../src/purple/purple-plugin.c:504
-msgid "Company"
-msgstr "Azienda"
 
 #: ../src/core/sipe.c:2759 ../src/core/sipe.c:9343
 msgid "Public"
@@ -197,15 +257,6 @@ msgstr "Non trovato: %s. Contattare l'amministratore"
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP non abilitato per la URI di destinazione oppure non esistente"
 
-#: ../src/core/sipe.c:5684
-#, c-format
-msgid "Service unavailable: %s"
-msgstr "Servizio non disponibile: %s"
-
-#: ../src/core/sipe.c:8060
-msgid "Invalid message signature received"
-msgstr "Ricevuta firma del messaggio non valida"
-
 #: ../src/core/sipe.c:8235
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Il nome utente di SIP Exchange contiene caratteri non validi"
@@ -253,21 +304,6 @@ msgstr "Nome"
 #: ../src/purple/purple-plugin.c:506
 msgid "Country"
 msgstr "Paese"
-
-#: ../src/core/sipe.c:8570
-msgid "Email"
-msgstr "Email"
-
-#: ../src/core/sipe.c:8597
-#, c-format
-msgid "Found %d contact%s:"
-msgid_plural "Found %d contacts%s:"
-msgstr[0] "Trovato %d contatto%s:"
-msgstr[1] "Trovati %d contatti%s:"
-
-#: ../src/core/sipe.c:8599
-msgid " (more matched your query)"
-msgstr "(ulteriori elementi corrispondono alla tua ricerca)"
 
 #: ../src/core/sipe.c:8747
 msgid "Status"
@@ -652,10 +688,6 @@ msgstr "La chiave di cifratura ricevuta ha una dimensione errata."
 msgid "Received hash key has wrong size."
 msgstr "L' hash ricevuto ha una dimensione errata."
 
-#: ../src/core/sipe-ft.c:716
-msgid "Could not create listen socket"
-msgstr "Non è stato possibile creare una socket di ascolto"
-
 #. Macros to reduce code repetition.
 #. Translators: noun
 #: ../src/purple/purple-plugin.c:153
@@ -677,10 +709,6 @@ msgstr "Nome"
 #: ../src/purple/purple-plugin.c:502
 msgid "Last name"
 msgstr "Cognome"
-
-#: ../src/purple/purple-plugin.c:510
-msgid "Search"
-msgstr "Cerca"
 
 #: ../src/purple/purple-plugin.c:511
 msgid "Search for a contact"
@@ -740,10 +768,6 @@ msgstr ""
 msgid "Connection type"
 msgstr "Tipo di connessione"
 
-#: ../src/purple/purple-plugin.c:604
-msgid "Auto"
-msgstr "Automatico"
-
 #: ../src/purple/purple-plugin.c:605
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
@@ -751,12 +775,6 @@ msgstr "SSL/TLS"
 #: ../src/purple/purple-plugin.c:606
 msgid "TCP"
 msgstr "TCP"
-
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:612
-msgid "User Agent"
-msgstr "User Agent"
 
 #: ../src/purple/purple-plugin.c:616
 msgid "Use Kerberos"
@@ -817,10 +835,6 @@ msgstr "Errore di lettura SSL"
 msgid "Server has disconnected"
 msgstr "Il server si è disconnesso"
 
-#: ../src/purple/purple-transport.c:229
-msgid "Could not create SSL context"
-msgstr "Non è stato possibile creare una transazione SSL"
-
 #: ../src/purple/purple-transport.c:241
 msgid "Could not create socket"
 msgstr "Errore nella creazione del socket"
@@ -829,7 +843,3 @@ msgstr "Errore nella creazione del socket"
 #, fuzzy
 msgid "Write error"
 msgstr "Errore di lettura SSL"
-
-#: ../src/purple/purple-transport.c:411
-msgid "Could not connect"
-msgstr "Errore di connessione"
