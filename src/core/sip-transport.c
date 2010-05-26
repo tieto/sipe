@@ -579,8 +579,6 @@ static void sip_transport_error(struct sipe_transport_connection *conn,
 					      SIPE_CONNECTION_ERROR_NETWORK,
 					      msg);
 	}
-	sipe_backend_transport_disconnect(conn);
-	sipe_private->transport = NULL;
 }
 
 /* server_name must be g_alloc()'ed */
