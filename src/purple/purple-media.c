@@ -69,8 +69,8 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 static void
 on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		  PurpleMediaInfoType type,
-		  SIPE_UNUSED_PARAMETER gchar *sessionid,
-		  SIPE_UNUSED_PARAMETER gchar *participant,
+		  gchar *sessionid,
+		  gchar *participant,
 		  gboolean local,
 		  struct sipe_media_call *call)
 {
@@ -100,7 +100,8 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			 * unnecessary media over network */
 			purple_media_stream_info(m->m, PURPLE_MEDIA_INFO_HOLD, NULL, NULL, TRUE);
 		}
-	} else if (type == PURPLE_MEDIA_INFO_HANGUP && call->call_hangup_cb)
+	} else if (type == PURPLE_MEDIA_INFO_HANGUP && call->call_hangup_cb
+		   && !sessionid && !participant)
 		call->call_hangup_cb(call, local);
 }
 
