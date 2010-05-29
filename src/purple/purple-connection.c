@@ -29,6 +29,12 @@
 
 #include "purple-private.h"
 
+void sipe_backend_connection_completed(struct sipe_core_public *sipe_public)
+{
+	purple_connection_set_state(sipe_public->backend_private->gc,
+				    PURPLE_CONNECTED);
+}
+
 static const guint map[SIPE_CONNECTION_ERROR_LAST] = {
 	PURPLE_CONNECTION_ERROR_NETWORK_ERROR,
 	PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
@@ -46,6 +52,10 @@ void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
 				       msg);
 }
 
+gboolean sipe_backend_connection_is_disconnecting(struct sipe_core_public *sipe_public)
+{
+	return sipe_public->backend_private->account->disconnecting;
+}
 
 /*
   Local Variables:

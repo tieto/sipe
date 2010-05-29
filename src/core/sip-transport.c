@@ -1,4 +1,4 @@
-/**
+ /**
  * @file sip-transport.c
  *
  * pidgin-sipe
@@ -44,7 +44,7 @@
  *
  * NO SIP-messages (headers) composing and processing should be outside of 
  * this module (!) Like headers: Via, Route, Contact, Authorization, etc.
- * It's all irrelated to heigher leyers responsibilities.
+ * It's all irrelevant to higher layer responsibilities.
  *
  */
  
@@ -54,6 +54,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <glib.h>
 
@@ -65,15 +66,62 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-digest.h"
 #include "sipe-nls.h"
+#include "sipe-schedule.h"
 #include "sipe-sign.h"
 #include "sipe-utils.h"
 #include "uuid.h"
 #include "sipe.h"
 
+struct sip_auth {
+	guint type;
+	struct sip_sec_context *gssapi_context;
+	gchar *gssapi_data;
+	gchar *opaque;
+	gchar *realm;
+	gchar *target;
+	int version;
+	int nc;
+	int retries;
+	int ntlm_num;
+	int expires;
+};
+
+enum sip_register_status {
+	SIP_REGISTER_NONE,
+	SIP_REGISTER_SENT,
+	SIP_REGISTER_AUTH_RECEIVED,
+	SIP_REGISTER_COMPLETED
+};
+
+/* sip-transport.c private data */
+struct sip_transport {
+	struct sipe_transport_connection *connection;
+
+	gchar *server_name;
+	guint  server_port;
+	gchar *server_version;
+
+	gchar *user_agent;
+
+	GSList *transactions;
+
+	enum sip_register_status register_status;
+	struct sip_auth registrar;
+	struct sip_auth proxy;
+
+	guint cseq;
+
+	gboolean processing_input;   /* whether full header received */
+	gboolean reregister_set;     /* whether reregister timer set */
+	gboolean reauthenticate_set; /* whether reauthenticate timer set */
+	gboolean subscribed;         /* whether subscribed to events, except buddies presence */
+};
+
 /* Keep in sync with sipe_transport_type! */
 static const char *transport_descriptor[] = { "", "tls", "tcp"};
-#define TRANSPORT_DESCRIPTOR (transport_descriptor[sipe_private->transport->type])
+#define TRANSPORT_DESCRIPTOR (transport_descriptor[transport->connection->type])
 
 static char *genbranch()
 {
@@ -82,31 +130,277 @@ static char *genbranch()
 		rand() & 0xFFFF, rand() & 0xFFFF);
 }
 
+static void sipe_auth_free(struct sip_auth *auth)
+{
+	g_free(auth->opaque);
+	auth->opaque = NULL;
+	g_free(auth->realm);
+	auth->realm = NULL;
+	g_free(auth->target);
+	auth->target = NULL;
+	auth->version = 0;
+	auth->type = AUTH_TYPE_UNSET;
+	auth->retries = 0;
+	auth->expires = 0;
+	g_free(auth->gssapi_data);
+	auth->gssapi_data = NULL;
+	sip_sec_destroy_context(auth->gssapi_context);
+	auth->gssapi_context = NULL;
+}
+
+static void sipe_make_signature(struct sipe_core_private *sipe_private,
+				struct sipmsg *msg)
+{
+	struct sip_transport *transport = sipe_private->transport;
+	if (transport->registrar.gssapi_context) {
+		struct sipmsg_breakdown msgbd;
+		gchar *signature_input_str;
+		msgbd.msg = msg;
+		sipmsg_breakdown_parse(&msgbd, transport->registrar.realm, transport->registrar.target);
+		msgbd.rand = g_strdup_printf("%08x", g_random_int());
+		transport->registrar.ntlm_num++;
+		msgbd.num = g_strdup_printf("%d", transport->registrar.ntlm_num);
+		signature_input_str = sipmsg_breakdown_get_string(transport->registrar.version, &msgbd);
+		if (signature_input_str != NULL) {
+			char *signature_hex = sip_sec_make_signature(transport->registrar.gssapi_context, signature_input_str);
+			msg->signature = signature_hex;
+			msg->rand = g_strdup(msgbd.rand);
+			msg->num = g_strdup(msgbd.num);
+			g_free(signature_input_str);
+		}
+		sipmsg_breakdown_free(&msgbd);
+	}
+}
+
+static gchar *auth_header(struct sipe_core_private *sipe_private,
+			  struct sip_auth *auth,
+			  struct sipmsg * msg)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	const char *authuser = sip->authuser;
+	gchar *ret;
+
+	if (!authuser || strlen(authuser) < 1) {
+		authuser = sipe_private->username;
+	}
+
+	if (auth->type == AUTH_TYPE_NTLM || auth->type == AUTH_TYPE_KERBEROS) { /* NTLM or Kerberos */
+		gchar *auth_protocol = (auth->type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
+		gchar *version_str;
+
+		// If we have a signature for the message, include that
+		if (msg->signature) {
+			return g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth_protocol, auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
+		}
+
+		if ((auth->type == AUTH_TYPE_NTLM && auth->nc == 3 && auth->gssapi_data && auth->gssapi_context == NULL)
+			|| (auth->type == AUTH_TYPE_KERBEROS && auth->nc == 3)) {
+			gchar *gssapi_data;
+			gchar *opaque;
+			gchar *sign_str = NULL;
+
+			gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
+							   &(auth->expires),
+							   auth->type,
+							   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
+							   sip->authdomain ? sip->authdomain : "",
+							   authuser,
+							   sip->password,
+							   auth->target,
+							   auth->gssapi_data);
+			if (!gssapi_data || !auth->gssapi_context) {
+				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+							       _("Failed to authenticate to server"));
+				return NULL;
+			}
+
+			if (auth->version > 3) {
+				sipe_make_signature(sipe_private, msg);
+				sign_str = g_strdup_printf(", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
+					msg->rand, msg->num, msg->signature);
+			} else {
+				sign_str = g_strdup("");
+			}
+
+			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
+			version_str = auth->version > 2 ? g_strdup_printf(", version=%d", auth->version) : g_strdup("");
+			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s", auth_protocol, opaque, auth->realm, auth->target, gssapi_data, version_str, sign_str);
+			g_free(opaque);
+			g_free(gssapi_data);
+			g_free(version_str);
+			g_free(sign_str);
+			return ret;
+		}
+
+		version_str = auth->version > 2 ? g_strdup_printf(", version=%d", auth->version) : g_strdup("");
+		ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s", auth_protocol, auth->realm, auth->target, version_str);
+		g_free(version_str);
+		return ret;
+
+	} else { /* Digest */
+		gchar *string;
+		gchar *hex_digest;
+		guchar digest[SIPE_DIGEST_MD5_LENGTH];
+
+		/* Calculate new session key */
+		if (!auth->opaque) {
+			SIPE_DEBUG_INFO("Digest nonce: %s realm: %s", auth->gssapi_data, auth->realm);
+			if (sip->password) {
+				/*
+				 * Calculate a session key for HTTP MD5 Digest authentation
+				 *
+				 * See RFC 2617 for more information.
+				 */
+				string = g_strdup_printf("%s:%s:%s",
+							 authuser,
+							 auth->realm,
+							 sip->password);
+				sipe_digest_md5((guchar *)string, strlen(string), digest);
+				g_free(string);
+				auth->opaque = buff_to_hex_str(digest, sizeof(digest));
+			}
+		}
+
+		/*
+		 * Calculate a response for HTTP MD5 Digest authentication
+		 *
+		 * See RFC 2617 for more information.
+		 */
+		string = g_strdup_printf("%s:%s", msg->method, msg->target);
+		sipe_digest_md5((guchar *)string, strlen(string), digest);
+		g_free(string);
+
+		hex_digest = buff_to_hex_str(digest, sizeof(digest));
+		string = g_strdup_printf("%s:%s:%s", auth->opaque, auth->gssapi_data, hex_digest);
+		g_free(hex_digest);
+		sipe_digest_md5((guchar *)string, strlen(string), digest);
+		g_free(string);
+
+		hex_digest = buff_to_hex_str(digest, sizeof(digest));
+		SIPE_DEBUG_INFO("Digest response %s", hex_digest);
+		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%08d\", response=\"%s\"", authuser, auth->realm, auth->gssapi_data, msg->target, auth->nc++, hex_digest);
+		g_free(hex_digest);
+		return ret;
+	}
+}
+
+static char *parse_attribute(const char *attrname, const char *source)
+{
+	const char *tmp, *tmp2;
+	char *retval = NULL;
+	int len = strlen(attrname);
+
+	if (g_str_has_prefix(source, attrname)) {
+		tmp = source + len;
+		tmp2 = g_strstr_len(tmp, strlen(tmp), "\"");
+		if (tmp2)
+			retval = g_strndup(tmp, tmp2 - tmp);
+		else
+			retval = g_strdup(tmp);
+	}
+
+	return retval;
+}
+
+static void fill_auth(const gchar *hdr, struct sip_auth *auth)
+{
+	int i;
+	gchar **parts;
+
+	if (!hdr) {
+		SIPE_DEBUG_ERROR_NOFORMAT("fill_auth: hdr==NULL");
+		return;
+	}
+
+	if (!g_strncasecmp(hdr, "NTLM", 4)) {
+		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type NTLM");
+		auth->type = AUTH_TYPE_NTLM;
+		hdr += 5;
+		auth->nc = 1;
+	} else	if (!g_strncasecmp(hdr, "Kerberos", 8)) {
+		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type Kerberos");
+		auth->type = AUTH_TYPE_KERBEROS;
+		hdr += 9;
+		auth->nc = 3;
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type Digest");
+		auth->type = AUTH_TYPE_DIGEST;
+		hdr += 7;
+	}
+
+	parts = g_strsplit(hdr, "\", ", 0);
+	for (i = 0; parts[i]; i++) {
+		char *tmp;
+
+		//SIPE_DEBUG_INFO("parts[i] %s", parts[i]);
+
+		if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
+			g_free(auth->gssapi_data);
+			auth->gssapi_data = tmp;
+
+			if (auth->type == AUTH_TYPE_NTLM) {
+				/* NTLM module extracts nonce from gssapi-data */
+				auth->nc = 3;
+			}
+
+		} else if ((tmp = parse_attribute("nonce=\"", parts[i]))) {
+			/* Only used with AUTH_TYPE_DIGEST */
+			g_free(auth->gssapi_data);
+			auth->gssapi_data = tmp;
+		} else if ((tmp = parse_attribute("opaque=\"", parts[i]))) {
+			g_free(auth->opaque);
+			auth->opaque = tmp;
+		} else if ((tmp = parse_attribute("realm=\"", parts[i]))) {
+			g_free(auth->realm);
+			auth->realm = tmp;
+
+			if (auth->type == AUTH_TYPE_DIGEST) {
+				/* Throw away old session key */
+				g_free(auth->opaque);
+				auth->opaque = NULL;
+				auth->nc = 1;
+			}
+		} else if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
+			g_free(auth->target);
+			auth->target = tmp;
+		} else if ((tmp = parse_attribute("version=", parts[i]))) {
+			auth->version = atoi(tmp);
+			g_free(tmp);
+		}
+		// uncomment to revert to previous functionality if version 3+ does not work.
+		// auth->version = 2;
+	}
+	g_strfreev(parts);
+
+	return;
+}
+
 static void sign_outgoing_message (struct sipmsg * msg,
 				   struct sipe_core_private *sipe_private,
 				   const gchar *method)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar * buf;
+	struct sip_transport *transport = sipe_private->transport;
+	gchar *buf;
 
-	if (sip->registrar.type == AUTH_TYPE_UNSET) {
+	if (transport->registrar.type == AUTH_TYPE_UNSET) {
 		return;
 	}
 
 	sipe_make_signature(sipe_private, msg);
 
-	if (sip->registrar.type && sipe_strequal(method, "REGISTER")) {
-		buf = auth_header(sipe_private, &sip->registrar, msg);
+	if (transport->registrar.type && sipe_strequal(method, "REGISTER")) {
+		buf = auth_header(sipe_private, &transport->registrar, msg);
 		if (buf) {
 			sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 		}
 		g_free(buf);
 	} else if (sipe_strequal(method,"SUBSCRIBE") || sipe_strequal(method,"SERVICE") || sipe_strequal(method,"MESSAGE") || sipe_strequal(method,"INVITE") || sipe_strequal(method, "ACK") || sipe_strequal(method, "NOTIFY") || sipe_strequal(method, "BYE") || sipe_strequal(method, "INFO") || sipe_strequal(method, "OPTIONS") || sipe_strequal(method, "REFER") || sipe_strequal(method, "PRACK")) {
-		sip->registrar.nc = 3;
-		sip->registrar.type = AUTH_TYPE_NTLM;
+		transport->registrar.nc = 3;
+		transport->registrar.type = AUTH_TYPE_NTLM;
 #ifdef HAVE_LIBKRB5
 		if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
-			sip->registrar.type = AUTH_TYPE_KERBEROS;
+			transport->registrar.type = AUTH_TYPE_KERBEROS;
 		}
 #else
 		/* that's why I don't like macros. It's unobvious what's hidden there */
@@ -114,7 +408,7 @@ static void sign_outgoing_message (struct sipmsg * msg,
 #endif
 
 
-		buf = auth_header(sipe_private, &sip->registrar, msg);
+		buf = auth_header(sipe_private, &transport->registrar, msg);
 		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
 	        g_free(buf);
 	} else {
@@ -122,9 +416,11 @@ static void sign_outgoing_message (struct sipmsg * msg,
 	}
 }
 
-void send_sip_response(struct sipe_core_private *sipe_private,
-		       struct sipmsg *msg, int code,
-		       const char *text, const char *body)
+void sip_transport_response(struct sipe_core_private *sipe_private,
+			    struct sipmsg *msg,
+			    guint code,
+			    const char *text,
+			    const char *body)
 {
 	gchar *name;
 	gchar *value;
@@ -164,17 +460,17 @@ void send_sip_response(struct sipe_core_private *sipe_private,
 		tmp = g_slist_next(tmp);
 	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
-	sipe_backend_transport_message(sipe_private->transport, outstr->str);
+	sipe_backend_transport_message(sipe_private->transport->connection, outstr->str);
 	g_string_free(outstr, TRUE);
 }
 
-void transactions_remove(struct sipe_core_private *sipe_private,
-			 struct transaction *trans)
+static void transactions_remove(struct sip_transport *transport,
+				struct transaction *trans)
 {
-	if (sipe_private->transactions) {
-		sipe_private->transactions = g_slist_remove(sipe_private->transactions,
-							    trans);
-		SIPE_DEBUG_INFO("SIP transactions count:%d after removal", g_slist_length(sipe_private->transactions));
+	if (transport->transactions) {
+		transport->transactions = g_slist_remove(transport->transactions,
+							 trans);
+		SIPE_DEBUG_INFO("SIP transactions count:%d after removal", g_slist_length(transport->transactions));
 
 		if (trans->msg) sipmsg_free(trans->msg);
 		if (trans->payload) {
@@ -186,31 +482,10 @@ void transactions_remove(struct sipe_core_private *sipe_private,
 	}
 }
 
-static struct transaction *
-transactions_add_buf(struct sipe_core_private *sipe_private,
-		     const struct sipmsg *msg, void *callback)
+static struct transaction *transactions_find(struct sip_transport *transport,
+					     struct sipmsg *msg)
 {
-	const gchar *call_id;
-	const gchar *cseq;
-	struct transaction *trans = g_new0(struct transaction, 1);
-
-	trans->time = time(NULL);
-	trans->msg = (struct sipmsg *)msg;
-	call_id = sipmsg_find_header(trans->msg, "Call-ID");
-	cseq = sipmsg_find_header(trans->msg, "CSeq");
-	trans->key = g_strdup_printf("<%s><%s>", call_id, cseq);
-	trans->callback = callback;
-	sipe_private->transactions = g_slist_append(sipe_private->transactions,
-						    trans);
-	SIPE_DEBUG_INFO("SIP transactions count:%d after addition", g_slist_length(sipe_private->transactions));
-	return trans;
-}
-
-struct transaction *transactions_find(struct sipe_core_private *sipe_private,
-				      struct sipmsg *msg)
-{
-	struct transaction *trans;
-	GSList *transactions = sipe_private->transactions;
+	GSList *transactions = transport->transactions;
 	const gchar *call_id = sipmsg_find_header(msg, "Call-ID");
 	const gchar *cseq = sipmsg_find_header(msg, "CSeq");
 	gchar *key;
@@ -222,22 +497,23 @@ struct transaction *transactions_find(struct sipe_core_private *sipe_private,
 
 	key = g_strdup_printf("<%s><%s>", call_id, cseq);
 	while (transactions) {
-		trans = transactions->data;
+		struct transaction *trans = transactions->data;
 		if (!g_strcasecmp(trans->key, key)) {
 			g_free(key);
 			return trans;
 		}
 		transactions = transactions->next;
 	}
-
 	g_free(key);
+
 	return NULL;
 }
 
-const gchar *
-sipe_get_useragent(struct sipe_core_private *sipe_private)
+const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_private)
 {
-	if (!sipe_private->useragent) {
+	struct sip_transport *transport = sipe_private->transport;
+
+	if (!transport->user_agent) {
 		const gchar *useragent = sipe_backend_setting(SIPE_CORE_PUBLIC,
 							      SIPE_SETTING_USER_AGENT);
 		if (is_empty(useragent)) {
@@ -287,23 +563,27 @@ sipe_get_useragent(struct sipe_core_private *sipe_private)
   #define SIPE_TARGET_ARCH "other"
 #endif
 			gchar *backend = sipe_backend_version();
-			sipe_private->useragent = g_strdup_printf("%s Sipe/" PACKAGE_VERSION " (" SIPE_TARGET_PLATFORM "-" SIPE_TARGET_ARCH "; %s)",
-								  backend,
-								  sipe_private->server_version ? sipe_private->server_version : "");
+			transport->user_agent = g_strdup_printf("%s Sipe/" PACKAGE_VERSION " (" SIPE_TARGET_PLATFORM "-" SIPE_TARGET_ARCH "; %s)",
+								backend,
+								transport->server_version ? transport->server_version : "");
 			g_free(backend);
 		} else {
-			sipe_private->useragent = g_strdup(useragent);
+			transport->user_agent = g_strdup(useragent);
 		}
 	}
-	return(sipe_private->useragent);
+	return(transport->user_agent);
 }
 
-struct transaction *
-send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
-		 const gchar *url, const gchar *to, const gchar *addheaders,
-		 const gchar *body, struct sip_dialog *dialog,
-		 TransCallback tc)
+struct transaction *sip_transport_request(struct sipe_core_private *sipe_private,
+					  const gchar *method,
+					  const gchar *url,
+					  const gchar *to,
+					  const gchar *addheaders,
+					  const gchar *body,
+					  struct sip_dialog *dialog,
+					  TransCallback callback)
 {
+	struct sip_transport *transport = sipe_private->transport;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	char *buf;
 	struct sipmsg *msg;
@@ -341,7 +621,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 		} else {
 			sip->regcallid = g_strdup(callid);
 		}
-		cseq = ++sip->cseq;
+		cseq = ++transport->cseq;
 	}
 
 	buf = g_strdup_printf("%s %s SIP/2.0\r\n"
@@ -358,7 +638,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
 			sipe_backend_network_ip_address(),
-			sipe_private->transport->client_port,
+			transport->connection->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
 			sipe_private->username,
@@ -372,7 +652,7 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 			theirepid ? theirepid : "",
 			cseq,
 			method,
-			sipe_get_useragent(sipe_private),
+			sip_transport_user_agent(sipe_private),
 			callid,
 			route,
 			addheaders ? addheaders : "",
@@ -388,32 +668,533 @@ send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
 	g_free(theirtag);
 	g_free(theirepid);
 	g_free(branch);
-	g_free(callid);
 	g_free(route);
 	g_free(epid);
 
-	sign_outgoing_message (msg, sipe_private, method);
+	sign_outgoing_message(msg, sipe_private, method);
 
-	buf = sipmsg_to_string (msg);
+	buf = sipmsg_to_string(msg);
 
 	/* add to ongoing transactions */
 	/* ACK isn't supposed to be answered ever. So we do not keep transaction for it. */
 	if (!sipe_strequal(method, "ACK")) {
-		trans = transactions_add_buf(sipe_private, msg, tc);
+		trans = g_new0(struct transaction, 1);
+		trans->callback = callback;
+		trans->msg = msg;
+		trans->key = g_strdup_printf("<%s><%d %s>", callid, cseq, method);
+		transport->transactions = g_slist_append(transport->transactions,
+							 trans);
+		SIPE_DEBUG_INFO("SIP transactions count:%d after addition", g_slist_length(transport->transactions));
 	} else {
 		sipmsg_free(msg);
 	}
-	sipe_backend_transport_message(sipe_private->transport, buf);
+	g_free(callid);
+
+	sipe_backend_transport_message(transport->connection, buf);
 	g_free(buf);
 
 	return trans;
 }
 
-void do_register_exp(struct sipe_core_private *sipe_private,
-		     int expire)
+static void sip_transport_simple_request(struct sipe_core_private *sipe_private,
+					 const gchar *method,
+					 struct sip_dialog *dialog)
 {
+	sip_transport_request(sipe_private,
+			      method,
+			      dialog->with,
+			      dialog->with,
+			      NULL,
+			      NULL,
+			      dialog,
+			      NULL);
+}
+
+void sip_transport_ack(struct sipe_core_private *sipe_private,
+		       struct sip_dialog *dialog)
+{
+	sip_transport_simple_request(sipe_private, "ACK", dialog);
+}
+
+void sip_transport_bye(struct sipe_core_private *sipe_private,
+		       struct sip_dialog *dialog)
+{
+	sip_transport_simple_request(sipe_private, "BYE", dialog);
+}
+
+void sip_transport_info(struct sipe_core_private *sipe_private,
+			const gchar *addheaders,
+			const gchar *body,
+			struct sip_dialog *dialog,
+			TransCallback callback)
+{
+	sip_transport_request(sipe_private,
+			      "INFO",
+			      dialog->with,
+			      dialog->with,
+			      addheaders,
+			      body,
+			      dialog,
+			      callback);
+}
+
+struct transaction *sip_transport_invite(struct sipe_core_private *sipe_private,
+					  const gchar *addheaders,
+					  const gchar *body,
+					  struct sip_dialog *dialog,
+					  TransCallback callback)
+{
+	return sip_transport_request(sipe_private,
+				     "INVITE",
+				     dialog->with,
+				     dialog->with,
+				     addheaders,
+				     body,
+				     dialog,
+				     callback);
+}
+
+struct transaction *sip_transport_service(struct sipe_core_private *sipe_private,
+					  const gchar *uri,
+					  const gchar *addheaders,
+					  const gchar *body,
+					  TransCallback callback)
+{
+	return sip_transport_request(sipe_private,
+				     "SERVICE",
+				     uri,
+				     uri,
+				     addheaders,
+				     body,
+				     NULL,
+				     callback);
+}
+
+void sip_transport_subscribe(struct sipe_core_private *sipe_private,
+			     const gchar *uri,
+			     const gchar *addheaders,
+			     const gchar *body,
+			     struct sip_dialog *dialog,
+			     TransCallback callback)
+{
+	sip_transport_request(sipe_private,
+			      "SUBSCRIBE",
+			      uri,
+			      uri,
+			      addheaders,
+			      body,
+			      dialog,
+			      callback);
+}
+
+static const char*
+sipe_get_auth_scheme_name(struct sipe_core_private *sipe_private)
+{
+	const char *res = "NTLM";
+#ifdef HAVE_LIBKRB5
+	if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
+		res = "Kerberos";
+	}
+#else
+	(void) sipe_private; /* make compiler happy */
+#endif
+	return res;
+}
+
+static void do_register(struct sipe_core_private *sipe_private,
+			gboolean expire);
+
+static void do_register_cb(struct sipe_core_private *sipe_private,
+			   SIPE_UNUSED_PARAMETER void *unused)
+{
+	do_register(sipe_private, FALSE);
+	sipe_private->transport->reregister_set = FALSE;
+}
+
+static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
+				 SIPE_UNUSED_PARAMETER gpointer unused)
+{
+	struct sip_transport *transport = sipe_private->transport;
+
+	/* register again when security token expires */
+	/* we have to start a new authentication as the security token
+	 * is almost expired by sending a not signed REGISTER message */
+	SIPE_DEBUG_INFO_NOFORMAT("do a full reauthentication");
+	sipe_auth_free(&transport->registrar);
+	sipe_auth_free(&transport->proxy);
+	transport->register_status = SIP_REGISTER_NONE;
+	do_register(sipe_private, FALSE);
+	transport->reauthenticate_set = FALSE;
+}
+
+static void sipe_server_register(struct sipe_core_private *sipe_private,
+				 guint type,
+				 gchar *server_name,
+				 guint server_port);
+
+static void sip_transport_default_contact(struct sipe_core_private *sipe_private)
+{
+	struct sip_transport *transport = sipe_private->transport;
+	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
+						sipe_private->username,
+						transport->connection->client_port,
+						sipe_backend_network_ip_address(),
+						TRANSPORT_DESCRIPTOR);
+}
+
+static gboolean process_register_response(struct sipe_core_private *sipe_private,
+					  struct sipmsg *msg,
+					  SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	struct sip_transport *transport = sipe_private->transport;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	gchar *tmp;
+	const gchar *expires_header;
+	int expires, i;
+        GSList *hdr = msg->headers;
+        struct sipnameval *elem;
+
+	expires_header = sipmsg_find_header(msg, "Expires");
+	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
+	SIPE_DEBUG_INFO("process_register_response: got response to REGISTER; expires = %d", expires);
+
+	switch (msg->response) {
+		case 200:
+			if (expires == 0) {
+				transport->register_status = SIP_REGISTER_NONE;
+			} else {
+				const gchar *contact_hdr;
+				gchar *gruu = NULL;
+				gchar *epid;
+				gchar *uuid;
+				gchar *timeout;
+				const gchar *server_hdr = sipmsg_find_header(msg, "Server");
+				const char *auth_scheme;
+
+				if (!transport->reregister_set) {
+					gchar *action_name = g_strdup_printf("<%s>", "registration");
+					sipe_schedule_seconds(sipe_private,
+							      action_name,
+							      NULL,
+							      expires,
+							      do_register_cb,
+							      NULL);
+					g_free(action_name);
+					transport->reregister_set = TRUE;
+				}
+
+				transport->register_status = SIP_REGISTER_COMPLETED;
+
+				if (server_hdr && !transport->server_version) {
+					transport->server_version = g_strdup(server_hdr);
+					g_free(transport->user_agent);
+					transport->user_agent = NULL;
+				}
+
+				auth_scheme = sipe_get_auth_scheme_name(sipe_private);
+				tmp = sipmsg_find_auth_header(msg, auth_scheme);
+
+				if (tmp) {
+					SIPE_DEBUG_INFO("process_register_response - Auth header: %s", tmp);
+					fill_auth(tmp, &transport->registrar);
+				}
+
+				if (!transport->reauthenticate_set) {
+					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
+					guint reauth_timeout;
+					if (transport->registrar.type == AUTH_TYPE_KERBEROS && transport->registrar.expires > 0) {
+						/* assuming normal Kerberos ticket expiration of about 8-10 hours */
+						reauth_timeout = transport->registrar.expires - 300;
+					} else {
+						/* NTLM: we have to reauthenticate as our security token expires
+						after eight hours (be five minutes early) */
+						reauth_timeout = (8 * 3600) - 300;
+					}
+					sipe_schedule_seconds(sipe_private,
+							      action_name,
+							      NULL,
+							      reauth_timeout,
+							      do_reauthenticate_cb,
+							      NULL);
+					g_free(action_name);
+					transport->reauthenticate_set = TRUE;
+				}
+
+				sipe_backend_connection_completed(SIPE_CORE_PUBLIC);
+
+				epid = get_epid(sipe_private);
+				uuid = generateUUIDfromEPID(epid);
+				g_free(epid);
+
+				// There can be multiple Contact headers (one per location where the user is logged in) so
+				// make sure to only get the one for this uuid
+				for (i = 0; (contact_hdr = sipmsg_find_header_instance (msg, "Contact", i)); i++) {
+					gchar * valid_contact = sipmsg_find_part_of_header (contact_hdr, uuid, NULL, NULL);
+					if (valid_contact) {
+						gruu = sipmsg_find_part_of_header(contact_hdr, "gruu=\"", "\"", NULL);
+						//SIPE_DEBUG_INFO("got gruu %s from contact hdr w/ right uuid: %s", gruu, contact_hdr);
+						g_free(valid_contact);
+						break;
+					} else {
+						//SIPE_DEBUG_INFO("ignoring contact hdr b/c not right uuid: %s", contact_hdr);
+					}
+				}
+				g_free(uuid);
+
+				g_free(sipe_private->contact);
+				if(gruu) {
+					sipe_private->contact = g_strdup_printf("<%s>", gruu);
+					g_free(gruu);
+				} else {
+					//SIPE_DEBUG_INFO_NOFORMAT("didn't find gruu in a Contact hdr");
+					sip_transport_default_contact(sipe_private);
+				}
+                                SIPE_CORE_PRIVATE_FLAG_UNSET(OCS2007);
+				sip->batched_support = FALSE;
+
+                                while(hdr)
+                                {
+					elem = hdr->data;
+					if (sipe_strcase_equal(elem->name, "Supported")) {
+						if (sipe_strcase_equal(elem->value, "msrtc-event-categories")) {
+							/* We interpret this as OCS2007+ indicator */
+							SIPE_CORE_PRIVATE_FLAG_SET(OCS2007);
+							SIPE_DEBUG_INFO("Supported: %s (indicates OCS2007+)", elem->value);
+						}
+						if (sipe_strcase_equal(elem->value, "adhoclist")) {
+							sip->batched_support = TRUE;
+							SIPE_DEBUG_INFO("Supported: %s", elem->value);
+						}
+					}
+                                        if (sipe_strcase_equal(elem->name, "Allow-Events")){
+						gchar **caps = g_strsplit(elem->value,",",0);
+						i = 0;
+						while (caps[i]) {
+							sip->allow_events =  g_slist_append(sip->allow_events, g_strdup(caps[i]));
+							SIPE_DEBUG_INFO("Allow-Events: %s", caps[i]);
+							i++;
+						}
+						g_strfreev(caps);
+                                        }
+                                        hdr = g_slist_next(hdr);
+                                }
+
+				/* rejoin open chats to be able to use them by continue to send messages */
+				sipe_backend_chat_rejoin_all(SIPE_CORE_PUBLIC);
+
+				/* subscriptions */
+				if (!transport->subscribed) { //do it just once, not every re-register
+
+					if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-contacts",
+								(GCompareFunc)g_ascii_strcasecmp)) {
+						sipe_subscribe_roaming_contacts(sipe_private);
+					}
+
+					/* For 2007+ it does not make sence to subscribe to:
+					 *   vnd-microsoft-roaming-ACL
+					 *   vnd-microsoft-provisioning (not v2)
+					 *   presence.wpending
+					 * These are for backward compatibility.
+					 */
+					if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
+					{
+						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-self",
+									(GCompareFunc)g_ascii_strcasecmp)) {
+							sipe_subscribe_roaming_self(sipe_private);
+						}
+						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-provisioning-v2",
+									(GCompareFunc)g_ascii_strcasecmp)) {
+							sipe_subscribe_roaming_provisioning_v2(sipe_private);
+						}
+					}
+					/* For 2005- servers */
+					else
+					{
+						//sipe_options_request(sip, sipe_private->public.sip_domain);
+
+						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL",
+									(GCompareFunc)g_ascii_strcasecmp)) {
+							sipe_subscribe_roaming_acl(sipe_private);
+						}
+						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-provisioning",
+									(GCompareFunc)g_ascii_strcasecmp)) {
+							sipe_subscribe_roaming_provisioning(sipe_private);
+						}
+						if (g_slist_find_custom(sip->allow_events, "presence.wpending",
+									(GCompareFunc)g_ascii_strcasecmp)) {
+							sipe_subscribe_presence_wpending(sipe_private,
+											 NULL);
+						}
+
+						/* For 2007+ we publish our initial statuses and calendar data only after
+						 * received our existing publications in sipe_process_roaming_self()
+						 * Only in this case we know versions of current publications made
+						 * on our behalf.
+						 */
+						/* For 2005- we publish our initial statuses only after
+						 * received our existing UserInfo data in response to
+						 * self subscription.
+						 * Only in this case we won't override existing UserInfo data
+						 * set earlier or by other client on our behalf.
+						 */
+					}
+
+					transport->subscribed = TRUE;
+				}
+
+				timeout = sipmsg_find_part_of_header(sipmsg_find_header(msg, "ms-keep-alive"),
+								     "timeout=", ";", NULL);
+				if (timeout != NULL) {
+					sscanf(timeout, "%u", &sipe_private->public.keepalive_timeout);
+					SIPE_DEBUG_INFO("server determined keep alive timeout is %u seconds",
+							sipe_private->public.keepalive_timeout);
+					g_free(timeout);
+				}
+
+				SIPE_DEBUG_INFO("process_register_response - got 200, removing CSeq: %d", transport->cseq);
+			}
+			break;
+		case 301:
+			{
+				gchar *redirect = parse_from(sipmsg_find_header(msg, "Contact"));
+
+				if (redirect && (g_strncasecmp("sip:", redirect, 4) == 0)) {
+					gchar **parts = g_strsplit(redirect + 4, ";", 0);
+					gchar **tmp;
+					gchar *hostname;
+					int port = 0;
+					guint transport = SIPE_TRANSPORT_TLS;
+					int i = 1;
+
+					tmp = g_strsplit(parts[0], ":", 0);
+					hostname = g_strdup(tmp[0]);
+					if (tmp[1]) port = strtoul(tmp[1], NULL, 10);
+					g_strfreev(tmp);
+
+					while (parts[i]) {
+						tmp = g_strsplit(parts[i], "=", 0);
+						if (tmp[1]) {
+							if (g_strcasecmp("transport", tmp[0]) == 0) {
+								if (g_strcasecmp("tcp", tmp[1]) == 0) {
+									transport = SIPE_TRANSPORT_TCP;
+								}
+							}
+						}
+						g_strfreev(tmp);
+						i++;
+					}
+					g_strfreev(parts);
+
+					/* Close old connection */
+					sipe_connection_cleanup(sipe_private);
+
+					/* Create new connection */
+					sipe_server_register(sipe_private, transport, hostname, port);
+					SIPE_DEBUG_INFO("process_register_response: redirected to host %s port %d transport %d",
+							hostname, port, transport);
+				}
+				g_free(redirect);
+			}
+			break;
+		case 401:
+			if (transport->register_status != SIP_REGISTER_AUTH_RECEIVED) {
+				const char *auth_scheme;
+				SIPE_DEBUG_INFO("REGISTER retries %d", transport->registrar.retries);
+				if (transport->registrar.retries > 3) {
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+								      _("Authentication failed"));
+					return TRUE;
+				}
+
+				auth_scheme = sipe_get_auth_scheme_name(sipe_private);
+				tmp = sipmsg_find_auth_header(msg, auth_scheme);
+
+				SIPE_DEBUG_INFO("process_register_response - Auth header: %s", tmp ? tmp : "");
+				if (!tmp) {
+					char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+								      SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
+								      tmp2);
+					g_free(tmp2);
+					return TRUE;
+				}
+				fill_auth(tmp, &transport->registrar);
+				transport->register_status = SIP_REGISTER_AUTH_RECEIVED;
+				do_register(sipe_private,
+					    sipe_backend_connection_is_disconnecting(SIPE_CORE_PUBLIC));
+			}
+			break;
+		case 403:
+			{
+				const gchar *diagnostics = sipmsg_find_header(msg, "Warning");
+				gchar **reason = NULL;
+				gchar *warning;
+				if (diagnostics != NULL) {
+					/* Example header:
+					   Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
+					*/
+					reason = g_strsplit(diagnostics, "\"", 0);
+				}
+				warning = g_strdup_printf(_("You have been rejected by the server: %s"),
+							  (reason && reason[1]) ? reason[1] : _("no reason given"));
+				g_strfreev(reason);
+
+				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+							      SIPE_CONNECTION_ERROR_INVALID_SETTINGS,
+							      warning);
+				g_free(warning);
+				return TRUE;
+			}
+			break;
+			case 404:
+			{
+				const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
+				gchar *reason = NULL;
+				gchar *warning;
+				if (diagnostics != NULL) {
+					reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
+				}
+				warning = g_strdup_printf(_("Not found: %s. Please contact your Administrator"),
+							  diagnostics ? (reason ? reason : _("no reason given")) :
+							  _("SIP is either not enabled for the destination URI or it does not exist"));
+				g_free(reason);
+
+				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+							      SIPE_CONNECTION_ERROR_INVALID_USERNAME,
+							      warning);
+				g_free(warning);
+				return TRUE;
+			}
+			break;
+                case 503:
+		case 504: /* Server time-out */
+                        {
+				const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
+				gchar *reason = NULL;
+				gchar *warning;
+				if (diagnostics != NULL) {
+					reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
+				}
+				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
+				g_free(reason);
+
+				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+							      SIPE_CONNECTION_ERROR_NETWORK,
+							      warning);
+				g_free(warning);
+				return TRUE;
+			}
+			break;
+		}
+	return TRUE;
+}
+
+static void do_register(struct sipe_core_private *sipe_private,
+			gboolean expire)
+{
+	struct sip_transport *transport = sipe_private->transport;
 	char *uri;
-	char *expires;
 	char *to;
 	char *hdr;
 	char *epid;
@@ -421,7 +1202,6 @@ void do_register_exp(struct sipe_core_private *sipe_private,
 
 	if (!sipe_private->public.sip_domain) return;
 
-	expires = expire >= 0 ? g_strdup_printf("Expires: %d\r\n", expire) : g_strdup("");
 	epid = get_epid(sipe_private);
 	uuid = generateUUIDfromEPID(epid);
 	hdr = g_strdup_printf("Contact: <sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"\r\n"
@@ -431,41 +1211,217 @@ void do_register_exp(struct sipe_core_private *sipe_private,
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
 			      sipe_backend_network_ip_address(),
-			      sipe_private->transport->client_port,
+			      transport->connection->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
-			      expires);
+			      expire ? "Expires: 0\r\n" : "");
 	g_free(uuid);
 	g_free(epid);
-	g_free(expires);
 
-	SIPE_ACCOUNT_DATA_PRIVATE->registerstatus = 1;
+	transport->register_status = SIP_REGISTER_SENT;
 
 	uri = sip_uri_from_name(sipe_private->public.sip_domain);
 	to = sip_uri_self(sipe_private);
-	send_sip_request(sipe_private, "REGISTER", uri, to, hdr, "", NULL,
-			 process_register_response);
+	sip_transport_request(sipe_private,
+			      "REGISTER",
+			      uri,
+			      to,
+			      hdr,
+			      "",
+			      NULL,
+			      process_register_response);
 	g_free(to);
 	g_free(uri);
 	g_free(hdr);
 }
 
-void do_register_cb(struct sipe_core_private *sipe_private,
-		    SIPE_UNUSED_PARAMETER void *unused)
+void sip_transport_deregister(struct sipe_core_private *sipe_private)
 {
-	do_register_exp(sipe_private, -1);
-	SIPE_ACCOUNT_DATA_PRIVATE->reregister_set = FALSE;
+	do_register(sipe_private, TRUE);
 }
 
-void do_register(struct sipe_core_private *sipe_private)
+void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 {
-	do_register_exp(sipe_private, -1);
+	struct sip_transport *transport = sipe_private->transport;
+
+	sipe_backend_transport_disconnect(transport->connection);
+
+	sipe_auth_free(&transport->registrar);
+	sipe_auth_free(&transport->proxy);
+
+	g_free(transport->server_name);
+	g_free(transport->server_version);
+	g_free(transport->user_agent);
+
+	while (transport->transactions)
+		transactions_remove(transport,
+				    transport->transactions->data);
+
+	g_free(transport);
+
+	sipe_private->transport    = NULL;
+	sipe_private->service_data = NULL;
+}
+
+guint sip_transport_port(struct sipe_core_private *sipe_private)
+{
+	return sipe_private->transport->server_port;
+}
+
+static void process_input_message(struct sipe_core_private *sipe_private,
+				  struct sipmsg *msg)
+{
+	struct sip_transport *transport = sipe_private->transport;
+	gboolean found = FALSE;
+	const char *method = msg->method ? msg->method : "NOT FOUND";
+	SIPE_DEBUG_INFO("msg->response(%d),msg->method(%s)", msg->response,method);
+	if (msg->response == 0) { /* request */
+		if (sipe_strequal(method, "MESSAGE")) {
+			process_incoming_message(sipe_private, msg);
+			found = TRUE;
+		} else if (sipe_strequal(method, "NOTIFY")) {
+			SIPE_DEBUG_INFO_NOFORMAT("send->process_incoming_notify");
+			process_incoming_notify(sipe_private, msg, TRUE, FALSE);
+			found = TRUE;
+		} else if (sipe_strequal(method, "BENOTIFY")) {
+			SIPE_DEBUG_INFO_NOFORMAT("send->process_incoming_benotify");
+			process_incoming_notify(sipe_private, msg, TRUE, TRUE);
+			found = TRUE;
+		} else if (sipe_strequal(method, "INVITE")) {
+			process_incoming_invite(sipe_private, msg);
+			found = TRUE;
+		} else if (sipe_strequal(method, "REFER")) {
+			process_incoming_refer(sipe_private, msg);
+			found = TRUE;
+		} else if (sipe_strequal(method, "OPTIONS")) {
+			process_incoming_options(sipe_private, msg);
+			found = TRUE;
+		} else if (sipe_strequal(method, "INFO")) {
+			process_incoming_info(sipe_private, msg);
+			found = TRUE;
+		} else if (sipe_strequal(method, "ACK")) {
+			// ACK's don't need any response
+			found = TRUE;
+		} else if (sipe_strequal(method, "PRACK")) {
+			found = TRUE;
+			sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+		} else if (sipe_strequal(method, "SUBSCRIBE")) {
+			// LCS 2005 sends us these - just respond 200 OK
+			found = TRUE;
+			sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+		} else if (sipe_strequal(method, "CANCEL")) {
+			process_incoming_cancel(sipe_private, msg);
+			found = TRUE;
+		} else if (sipe_strequal(method, "BYE")) {
+			process_incoming_bye(sipe_private, msg);
+			found = TRUE;
+		} else {
+			sip_transport_response(sipe_private, msg, 501, "Not implemented", NULL);
+		}
+	} else { /* response */
+		struct transaction *trans = transactions_find(transport, msg);
+		if (trans) {
+			if (msg->response == 407) {
+				gchar *resend, *auth;
+				const gchar *ptmp;
+
+				if (transport->proxy.retries > 30) return;
+				transport->proxy.retries++;
+				/* do proxy authentication */
+
+				ptmp = sipmsg_find_header(msg, "Proxy-Authenticate");
+
+				fill_auth(ptmp, &transport->proxy);
+				auth = auth_header(sipe_private, &transport->proxy, trans->msg);
+				sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
+				sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
+				g_free(auth);
+				resend = sipmsg_to_string(trans->msg);
+				/* resend request */
+				sipe_backend_transport_message(sipe_private->transport->connection, resend);
+				g_free(resend);
+			} else {
+				if (msg->response < 200) {
+					if (msg->bodylen != 0) {
+						SIPE_DEBUG_INFO("got provisional (%d) response with body", msg->response);
+						if (trans->callback) {
+							SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
+							(trans->callback)(sipe_private, msg, trans);
+						}
+					} else {
+						/* ignore provisional response */
+						SIPE_DEBUG_INFO("got provisional (%d) response, ignoring", msg->response);
+					}
+				} else {
+					transport->proxy.retries = 0;
+					if (sipe_strequal(trans->msg->method, "REGISTER")) {
+						if (msg->response == 401)
+						{
+							transport->registrar.retries++;
+						}
+						else
+						{
+							transport->registrar.retries = 0;
+						}
+                                                SIPE_DEBUG_INFO("RE-REGISTER CSeq: %d", transport->cseq);
+					} else {
+						if (msg->response == 401) {
+							gchar *resend, *auth, *ptmp;
+							const char* auth_scheme;
+
+							if (transport->registrar.retries > 4) return;
+							transport->registrar.retries++;
+
+							auth_scheme = sipe_get_auth_scheme_name(sipe_private);
+							ptmp = sipmsg_find_auth_header(msg, auth_scheme);
+
+							SIPE_DEBUG_INFO("process_input_message - Auth header: %s", ptmp ? ptmp : "");
+							if (!ptmp) {
+								char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
+								sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+											      SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
+											      tmp2);
+								g_free(tmp2);
+								return;
+							}
+
+							fill_auth(ptmp, &transport->registrar);
+							auth = auth_header(sipe_private, &transport->registrar, trans->msg);
+							sipmsg_remove_header_now(trans->msg, "Authorization");
+							sipmsg_add_header_now_pos(trans->msg, "Authorization", auth, 5);
+							g_free(auth);
+							resend = sipmsg_to_string(trans->msg);
+							/* resend request */
+							sipe_backend_transport_message(sipe_private->transport->connection, resend);
+							g_free(resend);
+						}
+					}
+
+					if (trans->callback) {
+						SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
+						/* call the callback to process response*/
+						(trans->callback)(sipe_private, msg, trans);
+					}
+
+					SIPE_DEBUG_INFO("process_input_message - removing CSeq %d", transport->cseq);
+					transactions_remove(transport, trans);
+
+				}
+			}
+			found = TRUE;
+		} else {
+			SIPE_DEBUG_INFO_NOFORMAT("received response to unknown transaction");
+		}
+	}
+	if (!found) {
+		SIPE_DEBUG_INFO("received a unknown sip message with method %s and response %d", method, msg->response);
+	}
 }
 
 static void sip_transport_input(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	struct sip_transport *transport = sipe_private->transport;
 	gchar *cur = conn->buffer;
 
 	/* according to the RFC remove CRLF at the beginning */
@@ -476,8 +1432,8 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 		sipe_utils_shrink_buffer(conn, cur);
 
 	/* Received a full Header? */
-	sip->processing_input = TRUE;
-	while (sip->processing_input &&
+	transport->processing_input = TRUE;
+	while (transport->processing_input &&
 	       ((cur = strstr(conn->buffer, "\r\n\r\n")) != NULL)) {
 		struct sipmsg *msg;
 		gchar *tmp;
@@ -511,18 +1467,18 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 		}*/
 
 		// Verify the signature before processing it
-		if (sip->registrar.gssapi_context) {
+		if (transport->registrar.gssapi_context) {
 			struct sipmsg_breakdown msgbd;
 			gchar *signature_input_str;
 			gchar *rspauth;
 			msgbd.msg = msg;
-			sipmsg_breakdown_parse(&msgbd, sip->registrar.realm, sip->registrar.target);
-			signature_input_str = sipmsg_breakdown_get_string(sip->registrar.version, &msgbd);
+			sipmsg_breakdown_parse(&msgbd, transport->registrar.realm, transport->registrar.target);
+			signature_input_str = sipmsg_breakdown_get_string(transport->registrar.version, &msgbd);
 
 			rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
 
 			if (rspauth != NULL) {
-				if (!sip_sec_verify_signature(sip->registrar.gssapi_context, signature_input_str, rspauth)) {
+				if (!sip_sec_verify_signature(transport->registrar.gssapi_context, signature_input_str, rspauth)) {
 					SIPE_DEBUG_INFO_NOFORMAT("incoming message's signature validated");
 					process_input_message(sipe_private, msg);
 				} else {
@@ -548,24 +1504,15 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 	}
 }
 
-void sip_transport_default_contact(struct sipe_core_private *sipe_private)
-{
-	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
-						sipe_private->username,
-						sipe_private->transport->client_port,
-						sipe_backend_network_ip_address(),
-						TRANSPORT_DESCRIPTOR);
-}
-
 static void sip_transport_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 	sipe_private->service_data = NULL;
-	do_register(sipe_private);
+	do_register(sipe_private, FALSE);
 }
 
 static void resolve_next_service(struct sipe_core_private *sipe_private,
-				 const struct sipe_service_data *start);
+				 const struct sip_service_data *start);
 static void sip_transport_error(struct sipe_transport_connection *conn,
 				const gchar *msg)
 {
@@ -582,7 +1529,7 @@ static void sip_transport_error(struct sipe_transport_connection *conn,
 }
 
 /* server_name must be g_alloc()'ed */
-void sipe_server_register(struct sipe_core_private *sipe_private,
+static void sipe_server_register(struct sipe_core_private *sipe_private,
 				 guint type,
 				 gchar *server_name,
 				 guint server_port)
@@ -597,21 +1544,23 @@ void sipe_server_register(struct sipe_core_private *sipe_private,
 		sip_transport_input,
 		sip_transport_error
 	};
+	struct sip_transport *transport = g_new0(struct sip_transport, 1);
 
-	sipe_private->server_name = server_name;
-	sipe_private->server_port = setup.server_port;
-	sipe_private->transport   = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,
-								   &setup);
+	transport->server_name  = server_name;
+	transport->server_port  = setup.server_port;
+	transport->connection   = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,
+								 &setup);
+	sipe_private->transport = transport;
 }
 
-struct sipe_service_data {
+struct sip_service_data {
 	const char *protocol;
 	const char *transport;
 	guint type;
 };
 
 /* Service list for autodection */
-static const struct sipe_service_data service_autodetect[] = {
+static const struct sip_service_data service_autodetect[] = {
 	{ "sipinternaltls", "tcp", SIPE_TRANSPORT_TLS }, /* for internal TLS connections */
 	{ "sipinternal",    "tcp", SIPE_TRANSPORT_TCP }, /* for internal TCP connections */
 	{ "sip",            "tls", SIPE_TRANSPORT_TLS }, /* for external TLS connections */
@@ -620,27 +1569,27 @@ static const struct sipe_service_data service_autodetect[] = {
 };
 
 /* Service list for SSL/TLS */
-static const struct sipe_service_data service_tls[] = {
+static const struct sip_service_data service_tls[] = {
 	{ "sipinternaltls", "tcp", SIPE_TRANSPORT_TLS }, /* for internal TLS connections */
 	{ "sip",            "tls", SIPE_TRANSPORT_TLS }, /* for external TLS connections */
 	{ NULL,             NULL,  0 }
 };
 
 /* Service list for TCP */
-static const struct sipe_service_data service_tcp[] = {
+static const struct sip_service_data service_tcp[] = {
 	{ "sipinternal",    "tcp", SIPE_TRANSPORT_TCP }, /* for internal TCP connections */
 	{ "sip",            "tcp", SIPE_TRANSPORT_TCP }, /*.for external TCP connections */
 	{ NULL,             NULL,  0 }
 };
 
-static const struct sipe_service_data *services[] = {
+static const struct sip_service_data *services[] = {
 	service_autodetect, /* SIPE_TRANSPORT_AUTO */
 	service_tls,        /* SIPE_TRANSPORT_TLS  */
 	service_tcp         /* SIPE_TRANSPORT_TCP  */
 };
 
 static void resolve_next_service(struct sipe_core_private *sipe_private,
-				 const struct sipe_service_data *start)
+				 const struct sip_service_data *start)
 {
 	if (start) {
 		sipe_private->service_data = start;
@@ -719,7 +1668,7 @@ void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public)
 {
 	SIPE_DEBUG_INFO("sending keep alive %d",
 			sipe_public->keepalive_timeout);
-	sipe_backend_transport_message(SIPE_CORE_PRIVATE->transport,
+	sipe_backend_transport_message(SIPE_CORE_PRIVATE->transport->connection,
 				       "\r\n\r\n");
 }
 

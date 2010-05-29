@@ -221,14 +221,12 @@ sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 	g_free(expires_hdr);
 	g_free(contact);
 
-	send_sip_request(sipe_private,
-			 "SUBSCRIBE",
-			 session->focus_uri,
-			 session->focus_uri,
-			 hdr,
-			 "",
-			 NULL,
-			 process_subscribe_response);
+	sip_transport_subscribe(sipe_private,
+				session->focus_uri,
+				hdr,
+				"",
+				NULL,
+				process_subscribe_response);
 	g_free(hdr);
 }
 
@@ -260,7 +258,7 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 	if (msg->response >= 200) {
 		/* send ACK to focus */
 		session->focus_dialog->cseq = 0;
-		send_sip_request(sipe_private, "ACK", session->focus_dialog->with, session->focus_dialog->with, NULL, NULL, session->focus_dialog, NULL);
+		sip_transport_ack(sipe_private, session->focus_dialog);
 		session->focus_dialog->outgoing_invite = NULL;
 		session->focus_dialog->is_established = TRUE;
 	}
@@ -331,14 +329,12 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		session->focus_dialog->endpoint_GUID);
 	g_free(self);
 
-	session->focus_dialog->outgoing_invite = send_sip_request(sipe_private,
-								  "INVITE",
-								  session->focus_dialog->with,
-								  session->focus_dialog->with,
-								  hdr,
-								  body,
-								  session->focus_dialog,
-								  process_invite_conf_focus_response);
+	session->focus_dialog->outgoing_invite =
+		sip_transport_invite(sipe_private,
+				     hdr,
+				     body,
+				     session->focus_dialog,
+				     process_invite_conf_focus_response);
 	g_free(body);
 	g_free(hdr);
 }
@@ -372,14 +368,11 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 		who);
 	g_free(self);
 
-	send_sip_request(sipe_private,
-			 "INFO",
-			 session->focus_dialog->with,
-			 session->focus_dialog->with,
-			 hdr,
-			 body,
-			 session->focus_dialog,
-			 NULL);
+	sip_transport_info(sipe_private,
+			   hdr,
+			   body,
+			   session->focus_dialog,
+			   NULL);
 	g_free(body);
 	g_free(hdr);
 }
@@ -413,14 +406,11 @@ sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
 		locked ? "true" : "false");
 	g_free(self);
 
-	send_sip_request(sipe_private,
-			 "INFO",
-			 session->focus_dialog->with,
-			 session->focus_dialog->with,
-			 hdr,
-			 body,
-			 session->focus_dialog,
-			 NULL);
+	sip_transport_info(sipe_private,
+			   hdr,
+			   body,
+			   session->focus_dialog,
+			   NULL);
 	g_free(body);
 	g_free(hdr);
 }
@@ -454,14 +444,11 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		who);
 	g_free(self);
 
-	send_sip_request(sipe_private,
-			 "INFO",
-			 session->focus_dialog->with,
-			 session->focus_dialog->with,
-			 hdr,
-			 body,
-			 session->focus_dialog,
-			 NULL);
+	sip_transport_info(sipe_private,
+			   hdr,
+			   body,
+			   session->focus_dialog,
+			   NULL);
 	g_free(body);
 	g_free(hdr);
 }
@@ -482,7 +469,7 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
 	if (msg->response >= 200) {
 		/* send ACK to counterparty */
 		dialog->cseq--;
-		send_sip_request(sipe_private, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+		sip_transport_ack(sipe_private, dialog);
 		dialog->outgoing_invite = NULL;
 		dialog->is_established = TRUE;
 	}
@@ -500,7 +487,7 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
 
 		/* close IM session to counterparty */
 		if (im_dialog) {
-			send_sip_request(sipe_private, "BYE", im_dialog->with, im_dialog->with, NULL, NULL, im_dialog, NULL);
+			sip_transport_bye(sipe_private, im_dialog);
 			sipe_dialog_remove(session, dialog->with);
 		}
 	}
@@ -544,14 +531,11 @@ sipe_invite_conf(struct sipe_core_private *sipe_private,
 		session->subject ? session->subject : ""
 		);
 
-	send_sip_request(sipe_private,
-			 "INVITE",
-			 dialog->with,
-			 dialog->with,
-			 hdr,
-			 body,
-			 dialog,
-			 process_invite_conf_response);
+	sip_transport_invite(sipe_private,
+			     hdr,
+			     body,
+			     dialog,
+			     process_invite_conf_response);
 
 	sipe_dialog_free(dialog);
 	g_free(body);
@@ -635,14 +619,11 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	g_free(conference_id);
 	g_free(expiry_time);
 
-	trans = send_sip_request(sipe_private,
-				 "SERVICE",
-				 sipe_private->focus_factory_uri,
-				 sipe_private->focus_factory_uri,
-				 hdr,
-				 body,
-				 NULL,
-				 process_conf_add_response);
+	trans = sip_transport_service(sipe_private,
+				      sipe_private->focus_factory_uri,
+				      hdr,
+				      body,
+				      process_conf_add_response);
 
 	payload = g_new0(struct transaction_payload, 1);
 	payload->destroy = g_free;
@@ -685,14 +666,14 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 	dialog->with = parse_from(sipmsg_find_header(msg, "From"));
 	sipe_dialog_parse(dialog, msg, FALSE);
 
-	send_sip_response(sipe_private, msg, 200, "OK", NULL);
+	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 
 	session = sipe_session_add_chat(sipe_private);
 	session->focus_uri = focus_uri;
 	session->is_multiparty = FALSE;
 
 	/* send BYE to invitor */
-	send_sip_request(sipe_private, "BYE", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+	sip_transport_bye(sipe_private, dialog);
 	sipe_dialog_free(dialog);
 
 	/* add self to conf */
@@ -882,14 +863,7 @@ conf_session_close(struct sipe_core_private *sipe_private,
 
 		if (session->focus_dialog) {
 			/* send BYE to focus */
-			send_sip_request(sipe_private,
-					 "BYE",
-					 session->focus_dialog->with,
-					 session->focus_dialog->with,
-					 NULL,
-					 NULL,
-					 session->focus_dialog,
-					 NULL);
+			sip_transport_bye(sipe_private, session->focus_dialog);
 		}
 	}
 }

@@ -26,6 +26,7 @@ struct sip_dialog;
 struct sipe_core_private;
 struct transaction;
 
+/* Transaction that can be associated with a SIP request */
 typedef gboolean (*TransCallback) (struct sipe_core_private *,
 				   struct sipmsg *,
 				   struct transaction *);
@@ -36,41 +37,66 @@ struct transaction_payload {
 };
 
 struct transaction {
-	time_t time;
-	int retries;
-	int transport; /* 0 = tcp, 1 = udp */
-	int fd;
+	TransCallback callback;
+
 	/** Not yet perfect, but surely better then plain CSeq
 	 * Format is: <Call-ID><CSeq>
 	 * (RFC3261 17.2.3 for matching server transactions: Request-URI, To tag, From tag, Call-ID, CSeq, and top Via)
 	 */
 	gchar *key;
-	struct sipmsg *msg;
-	TransCallback callback;
+        struct sipmsg *msg;
 	struct transaction_payload *payload;
 };
 
-struct transaction *transactions_find(struct sipe_core_private *sipe_private, struct sipmsg *msg);
-void transactions_remove(struct sipe_core_private *sipe_private, struct transaction *trans);
-void do_register_exp(struct sipe_core_private *sipe_private,
-		     int expire);
-void do_register_cb(struct sipe_core_private *sipe_private,
-		    void *unused);
-void do_register(struct sipe_core_private *sipe_private);
-void sip_transport_default_contact(struct sipe_core_private *sipe_private);
-/* server_name must be g_alloc()'ed */
-void sipe_server_register(struct sipe_core_private *sipe_private,
-			  guint type,
-			  gchar *server_name,
-			  guint server_port);
-void send_sip_response(struct sipe_core_private *sipe_private,
-		       struct sipmsg *msg, int code,
-		       const char *text, const char *body);
-struct transaction *
-send_sip_request(struct sipe_core_private *sipe_private, const gchar *method,
-		 const gchar *url, const gchar *to, const gchar *addheaders,
-		 const gchar *body, struct sip_dialog *dialog,
-		 TransCallback tc);
+/* Send SIP response */
+void sip_transport_response(struct sipe_core_private *sipe_private,
+			    struct sipmsg *msg,
+			    guint code,
+			    const char *text,
+			    const char *body);
+
+/* Send SIP request */
+struct transaction *sip_transport_request(struct sipe_core_private *sipe_private,
+					  const gchar *method,
+					  const gchar *url,
+					  const gchar *to,
+					  const gchar *addheaders,
+					  const gchar *body,
+					  struct sip_dialog *dialog,
+					  TransCallback callback);
+
+/* Common SIP request types */
+void sip_transport_ack(struct sipe_core_private *sipe_private,
+		       struct sip_dialog *dialog);
+void sip_transport_bye(struct sipe_core_private *sipe_private,
+		       struct sip_dialog *dialog);
+void sip_transport_info(struct sipe_core_private *sipe_private,
+			const gchar *addheaders,
+			const gchar *body,
+			struct sip_dialog *dialog,
+			TransCallback callback);
+struct transaction *sip_transport_invite(struct sipe_core_private *sipe_private,
+					 const gchar *addheaders,
+					 const gchar *body,
+					 struct sip_dialog *dialog,
+					 TransCallback callback);
+struct transaction *sip_transport_service(struct sipe_core_private *sipe_private,
+					  const gchar *uri,
+					  const gchar *addheaders,
+					  const gchar *body,
+					  TransCallback callback);
+void sip_transport_subscribe(struct sipe_core_private *sipe_private,
+			     const gchar *uri,
+			     const gchar *addheaders,
+			     const gchar *body,
+			     struct sip_dialog *dialog,
+			     TransCallback callback);
+
+/* Misc. SIP transport stuff */
+const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_private);
+guint sip_transport_port(struct sipe_core_private *sipe_private);
+void sip_transport_deregister(struct sipe_core_private *sipe_private);
+void sip_transport_disconnect(struct sipe_core_private *sipe_private);
 
 /*
   Local Variables:

@@ -239,14 +239,11 @@ sip_csta_get_features(struct sipe_core_private *sipe_private)
 		SIP_SEND_CSTA_GET_CSTA_FEATURES,
 		sip->csta->line_uri);
 
-	send_sip_request(sipe_private,
-			 "INFO",
-			 sip->csta->dialog->with,
-			 sip->csta->dialog->with,
-			 hdr,
-			 body,
-			 sip->csta->dialog,
-			 process_csta_get_features_response);
+	sip_transport_info(sipe_private,
+			   hdr, 
+			   body,
+			   sip->csta->dialog,
+			   process_csta_get_features_response);
 	g_free(body);
 	g_free(hdr);
 }
@@ -304,14 +301,11 @@ sip_csta_monitor_start(struct sipe_core_private *sipe_private)
 		SIP_SEND_CSTA_MONITOR_START,
 		sip->csta->line_uri);
 
-	send_sip_request(sipe_private,
-			 "INFO",
-			 sip->csta->dialog->with,
-			 sip->csta->dialog->with,
-			 hdr,
-			 body,
-			 sip->csta->dialog,
-			 process_csta_monitor_start_response);
+	sip_transport_info(sipe_private,
+			   hdr,
+			   body,
+			   sip->csta->dialog,
+			   process_csta_monitor_start_response);
 	g_free(body);
 	g_free(hdr);
 }
@@ -342,14 +336,11 @@ sip_csta_monitor_stop(struct sipe_core_private *sipe_private)
 		SIP_SEND_CSTA_MONITOR_STOP,
 		sip->csta->monitor_cross_ref_id);
 
-	send_sip_request(sipe_private,
-			 "INFO",
-			 sip->csta->dialog->with,
-			 sip->csta->dialog->with,
-			 hdr,
-			 body,
-			 sip->csta->dialog,
-			 NULL);
+	sip_transport_info(sipe_private,
+			   hdr,
+			   body,
+			   sip->csta->dialog,
+			   NULL);
 	g_free(body);
 	g_free(hdr);
 }
@@ -383,7 +374,7 @@ process_invite_csta_gateway_response(struct sipe_core_private *sipe_private,
 	if (msg->response >= 200) {
 		/* send ACK to CSTA */
 		sip->csta->dialog->cseq = 0;
-		send_sip_request(sipe_private, "ACK", sip->csta->dialog->with, sip->csta->dialog->with, NULL, NULL, sip->csta->dialog, NULL);
+		sip_transport_ack(sipe_private, sip->csta->dialog);
 		sip->csta->dialog->outgoing_invite = NULL;
 		sip->csta->dialog->is_established = TRUE;
 	}
@@ -464,14 +455,12 @@ sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 		SIP_SEND_CSTA_REQUEST_SYSTEM_STATUS,
 		sip->csta->line_uri);
 
-	sip->csta->dialog->outgoing_invite = send_sip_request(sipe_private,
-							      "INVITE",
-							      sip->csta->dialog->with,
-							      sip->csta->dialog->with,
-							      hdr,
-							      body,
-							      sip->csta->dialog,
-							      process_invite_csta_gateway_response);
+	sip->csta->dialog->outgoing_invite =
+		sip_transport_invite(sipe_private,
+				     hdr,
+				     body,
+				     sip->csta->dialog,
+				     process_invite_csta_gateway_response);
 	g_free(body);
 	g_free(hdr);
 }
@@ -515,14 +504,7 @@ sip_csta_close(struct sipe_core_private *sipe_private)
 
 	if (sip->csta && sip->csta->dialog) {
 		/* send BYE to CSTA */
-		send_sip_request(sipe_private,
-				 "BYE",
-				 sip->csta->dialog->with,
-				 sip->csta->dialog->with,
-				 NULL,
-				 NULL,
-				 sip->csta->dialog,
-				 NULL);
+		sip_transport_bye(sipe_private, sip->csta->dialog);
 	}
 
 	sip_csta_free(sip->csta);
@@ -603,14 +585,11 @@ sip_csta_make_call(struct sipe_core_private *sipe_private,
 		sip->csta->line_uri,
 		sip->csta->to_tel_uri);
 
-	send_sip_request(sipe_private,
-			 "INFO",
-			 sip->csta->dialog->with,
-			 sip->csta->dialog->with,
-			 hdr,
-			 body,
-			 sip->csta->dialog,
-			 process_csta_make_call_response);
+	sip_transport_info(sipe_private,
+			   hdr,
+			   body,
+			   sip->csta->dialog,
+			   process_csta_make_call_response);
 	g_free(body);
 	g_free(hdr);
 }

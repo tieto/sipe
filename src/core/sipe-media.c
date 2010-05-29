@@ -516,8 +516,11 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 
 	body = sipe_media_create_sdp(call_private);
 
-	send_sip_request(sipe_private, "INVITE", dialog->with, dialog->with, hdr, body,
-			  dialog, tc);
+	sip_transport_invite(sipe_private,
+			     hdr,
+			     body,
+			     dialog,
+			     tc);
 
 	g_free(body);
 	g_free(hdr);
@@ -644,7 +647,7 @@ send_response_with_session_description(struct sipe_media_call_private *call_priv
 {
 	gchar *body = sipe_media_create_sdp(call_private);
 	sipmsg_add_header(call_private->invitation, "Content-Type", "application/sdp");
-	send_sip_response(call_private->sipe_private, call_private->invitation, code, text, body);
+	sip_transport_response(call_private->sipe_private, call_private->invitation, code, text, body);
 	g_free(body);
 }
 
@@ -687,7 +690,7 @@ static void call_reject_cb(struct sipe_media_call *call, gboolean local)
 	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 
 	if (local) {
-		send_sip_response(call_private->sipe_private, call_private->invitation, 603, "Decline", NULL);
+		sip_transport_response(call_private->sipe_private, call_private->invitation, 603, "Decline", NULL);
 	}
 	call_private->sipe_private->media_call = NULL;
 	sipe_media_call_free(call_private);
@@ -715,8 +718,7 @@ static void call_hangup_cb(struct sipe_media_call *call, gboolean local)
 	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 
 	if (local) {
-		send_sip_request(call_private->sipe_private, "BYE", call_private->dialog->with, call_private->dialog->with,
-				 NULL, NULL, call_private->dialog, NULL);
+		sip_transport_bye(call_private->sipe_private, call_private->dialog);
 	}
 	call_private->sipe_private->media_call = NULL;
 	sipe_media_call_free(call_private);
@@ -822,7 +824,7 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 								       200, "OK");
 			}
 		} else {
-			send_sip_response(sipe_private, msg, 486, "Busy Here", NULL);
+			sip_transport_response(sipe_private, msg, 486, "Busy Here", NULL);
 		}
 		return;
 	}
@@ -844,7 +846,7 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 	sipe_backend_media_add_stream(call_private->public.backend_private, dialog->with, SIPE_MEDIA_AUDIO, !call_private->legacy_mode, FALSE);
 	sipe_backend_media_add_remote_candidates(call_private->public.backend_private, dialog->with, call_private->remote_candidates);
 
-	send_sip_response(sipe_private, call_private->invitation, 180, "Ringing", NULL);
+	sip_transport_response(sipe_private, call_private->invitation, 180, "Ringing", NULL);
 
 	// Processing continues in candidates_prepared_cb
 }
@@ -867,7 +869,7 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 
 	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &trans_cseq);
 	dialog->cseq = trans_cseq - 1;
-	send_sip_request(sipe_private, "ACK", dialog->with, dialog->with, NULL, NULL, dialog, NULL);
+	sip_transport_ack(sipe_private, dialog);
 	dialog->cseq = tmp_cseq;
 
 	return TRUE;
@@ -905,7 +907,14 @@ sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
 
 		sipe_dialog_parse(call_private->dialog, msg, TRUE);
 
-		send_sip_request(sipe_private, "PRACK", call_private->dialog->with, call_private->dialog->with, rack, NULL, call_private->dialog, NULL);
+		sip_transport_request(sipe_private,
+				      "PRACK",
+				      call_private->dialog->with,
+				      call_private->dialog->with,
+				      rack,
+				      NULL,
+				      call_private->dialog,
+				      NULL);
 		g_free(rack);
 	} else if (msg->response == 603) {
 		sipe_backend_media_reject(call_private->public.backend_private, FALSE);

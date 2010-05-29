@@ -35,25 +35,10 @@ struct sipmsg;
 struct _PurpleAccount;
 struct _PurpleConnection;
 struct _PurpleGroup;
-struct sip_sec_context;
 struct sipe_core_private;
 
 #define SIPE_TYPING_RECV_TIMEOUT 6
 #define SIPE_TYPING_SEND_TIMEOUT 4
-
-struct sip_auth {
-	guint type;
-	struct sip_sec_context *gssapi_context;
-	gchar *gssapi_data;
-	gchar *opaque;
-	gchar *realm;
-	gchar *target;
-	int version;
-	int nc;
-	int retries;
-	int ntlm_num;
-	int expires;
-};
 
 /** MS-PRES publication */
 struct sipe_publication {
@@ -93,14 +78,7 @@ struct sipe_account_data {
 	gchar *password;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
-	int cseq;
-	int registerstatus; /* 0 nothing, 1 first registration send, 2 auth received, 3 registered */
-	struct sip_auth registrar;
-	struct sip_auth proxy;
 	struct sip_csta *csta; /* For RCC - Remote Call Control */
-	gboolean reregister_set; /* whether reregister timer set */
-	gboolean reauthenticate_set; /* whether reauthenticate timer set */
-	gboolean subscribed; /* whether subscribed to events, except buddies presence */
 	gboolean subscribed_buddies; /* whether subscribed to buddies presence */
 	gboolean access_level_set; /* whether basic access level set */
 	gboolean initial_state_published; /* whether we published our initial state */
@@ -122,7 +100,6 @@ struct sipe_account_data {
 	struct _PurpleAccount *account;
 	gchar *regcallid;
 	GSList *groups;
-	gboolean processing_input;
 	struct sipe_calendar *cal;
 	gchar *email;
 	/** 2005 Custom XML piece.
@@ -202,16 +179,7 @@ sipe_invite(struct sipe_core_private *sipe_private, struct sip_session *session,
 	    const gchar *who, const gchar *msg_body, const gchar *msg_content_type,
 	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
-void sipe_make_signature(struct sipe_core_private *sipe_private,
-			 struct sipmsg *msg);
-gchar *auth_header(struct sipe_core_private *sipe_private,
-		   struct sip_auth *auth, struct sipmsg * msg);
-const gchar *sipe_get_useragent(struct sipe_core_private *sipe_private);
-void process_input_message(struct sipe_core_private *sipe_private,
-			   struct sipmsg *msg);
-gboolean process_register_response(struct sipe_core_private *sipe_private,
-				   struct sipmsg *msg,
-				   struct transaction *trans);
+void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
 gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg,
 				    struct transaction *trans);
@@ -243,6 +211,34 @@ void
 sipe_im_process_queue(struct sipe_core_private *sipe_private,
 		      struct sip_session *session);
 
+/* sipe-incoming? */
+void process_incoming_bye(struct sipe_core_private *sipe_private,
+			  struct sipmsg *msg);
+void process_incoming_cancel(struct sipe_core_private *sipe_private,
+			     struct sipmsg *msg);
+void process_incoming_info(struct sipe_core_private *sipe_private,
+			   struct sipmsg *msg);
+void process_incoming_invite(struct sipe_core_private *sipe_private,
+			     struct sipmsg *msg);
+void process_incoming_message(struct sipe_core_private *sipe_private,
+			      struct sipmsg *msg);
+void process_incoming_notify(struct sipe_core_private *sipe_private,
+			     struct sipmsg *msg,
+			     gboolean request,
+			     gboolean benotify);
+void process_incoming_options(struct sipe_core_private *sipe_private,
+			      struct sipmsg *msg);
+void process_incoming_refer(struct sipe_core_private *sipe_private,
+			    struct sipmsg *msg);
+
+/* sipe-subscribe? */
+void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
+				      void *unused);
+void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private);
+void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private);
+void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private);
+void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private);
+void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private);
 
 /*** THE BIG SPLIT END ***/
 

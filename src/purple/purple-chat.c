@@ -100,6 +100,31 @@ void sipe_backend_chat_operator(struct sipe_backend_session *backend_session,
 					PURPLE_CBFLAGS_NONE | PURPLE_CBFLAGS_OP);
 }
 
+/**
+ * Allows to send typed messages from chat window again after
+ * account reinstantiation.
+ *
+ * @TODO: is this really necessary? No other purple protocol plugin
+ *        seems to have this kind of code...
+ */
+void sipe_backend_chat_rejoin_all(struct sipe_core_public *sipe_public)
+	
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	GList *entry = purple_get_chats();
+
+	while (entry) {
+		PurpleConversation *conv = entry->data;
+		if ((purple_conversation_get_gc(conv) == purple_private->gc) &&
+		    purple_conv_chat_has_left(PURPLE_CONV_CHAT(conv))) {
+			PURPLE_CONV_CHAT(conv)->left = FALSE;
+			purple_conversation_update(conv,
+						   PURPLE_CONV_UPDATE_CHATLEFT);
+		}
+		entry = entry->next;
+	}
+}
+
 void sipe_backend_chat_remove(struct sipe_backend_session *backend_session,
 			      const gchar *uri)
 {

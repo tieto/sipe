@@ -265,27 +265,35 @@ void sipe_core_ft_deallocate(struct sipe_file_transfer *ft)
 	sipe_ft_deallocate(ft);
 }
 
+static void sipe_ft_request(struct sipe_file_transfer_private *ft_private,
+			    const gchar *body)
+{
+	struct sip_dialog *dialog = ft_private->dialog;
+	sip_transport_request(ft_private->sipe_private,
+			      "MESSAGE",
+			      dialog->with,
+			      dialog->with,
+			      "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
+			      body,
+			      dialog,
+			      NULL);
+}
+
 void sipe_core_ft_cancel(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
-	struct sip_dialog *dialog = ft_private->dialog;
 
 	gchar *body = g_strdup_printf("Invitation-Command: CANCEL\r\n"
 				      "Invitation-Cookie: %s\r\n"
 				      "Cancel-Code: REJECT\r\n",
 				      ft_private->invitation_cookie);
-
-	send_sip_request(ft_private->sipe_private, "MESSAGE", dialog->with, dialog->with,
-			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
-			 body, dialog, NULL);
-
+	sipe_ft_request(ft_private, body);
 	g_free(body);
 }
 
 void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
-	struct sip_dialog *dialog = ft_private->dialog;
 	gchar *b64_encryption_key = g_base64_encode(ft_private->encryption_key,
 						    SIPE_FT_KEY_LENGTH);
 	gchar *b64_hash_key = g_base64_encode(ft_private->hash_key,
@@ -306,10 +314,7 @@ void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
 				      b64_hash_key
                                       /*,sipe_backend_network_ip_address()*/
 		);
-
-	send_sip_request(ft_private->sipe_private, "MESSAGE", dialog->with, dialog->with,
-			 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
-			 body, dialog, NULL);
+	sipe_ft_request(ft_private, body);
 
 	g_free(body);
 	g_free(b64_hash_key);
@@ -345,9 +350,7 @@ void sipe_core_ft_incoming_accept(struct sipe_file_transfer *ft,
 	}
 
 	if (ft_private->dialog) {
-		send_sip_request(ft_private->sipe_private, "MESSAGE", ft_private->dialog->with, ft_private->dialog->with,
-				 "Content-Type: text/x-msmsgsinvite; charset=UTF-8\r\n",
-				 body, ft_private->dialog, NULL);
+		sipe_ft_request(ft_private, body);
 	}
 	g_free(body);
 }

@@ -106,12 +106,15 @@ gboolean sipe_backend_chat_is_operator(struct sipe_backend_session *backend_sess
 				       const gchar *uri);
 void sipe_backend_chat_operator(struct sipe_backend_session *backend_session,
 				const gchar *uri);
+void sipe_backend_chat_rejoin_all(struct sipe_core_public *sipe_public);
 void sipe_backend_chat_remove(struct sipe_backend_session *backend_session,
 			      const gchar *uri);
 void sipe_backend_chat_topic(struct sipe_backend_session *backend_session,
 			      const gchar *topic);
 
 /** CONNECTION ***************************************************************/
+
+void sipe_backend_connection_completed(struct sipe_core_public *sipe_public);
 
 typedef enum {
   SIPE_CONNECTION_ERROR_NETWORK = 0,
@@ -124,6 +127,8 @@ typedef enum {
 void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
 				   sipe_connection_error error,
 				   const gchar *msg);
+
+gboolean sipe_backend_connection_is_disconnecting(struct sipe_core_public *sipe_public);
 
 /** DNS QUERY ****************************************************************/
 

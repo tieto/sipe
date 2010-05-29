@@ -21,7 +21,8 @@
  */
 
 /* Forward declarations */
-struct sipe_service_data;
+struct sip_service_data;
+struct sip_transport;
 struct sipe_media_call_private;
 
 /**
@@ -37,14 +38,10 @@ struct sipe_core_private {
 	 */
 	struct sipe_core_public public;
 
-	/* SIP transport information */
-	struct sipe_transport_connection *transport;
-	const struct sipe_service_data *service_data;
+	/* sip-transport.c private data */
+	struct sip_transport *transport;
+	const struct sip_service_data *service_data;
 	guint transport_type;
-	gchar *server_name;
-	guint  server_port;
-	gchar *server_version;
-	GSList *transactions;
 
 	/* SIPE protocol information */
 	gchar *username;
@@ -58,9 +55,6 @@ struct sipe_core_private {
 
 	/* Scheduling system */
 	GSList *timeouts;
-
-	/* misc. stuff */
-	gchar *useragent;
 
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
