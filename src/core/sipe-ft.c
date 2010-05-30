@@ -261,7 +261,9 @@ void sipe_core_ft_deallocate(struct sipe_file_transfer *ft)
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	struct sip_dialog *dialog = ft_private->dialog;
 
-	dialog->filetransfers = g_slist_remove(dialog->filetransfers, ft_private);
+	if (dialog)
+		dialog->filetransfers = g_slist_remove(dialog->filetransfers, ft_private);
+
 	sipe_ft_deallocate(ft);
 }
 
