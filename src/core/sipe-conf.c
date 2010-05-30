@@ -204,31 +204,15 @@ rand_guid()
 static void
 sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 			  struct sip_session *session,
-			  const int expires)
+			  gboolean expires)
 {
-	gchar *expires_hdr = (expires >= 0) ? g_strdup_printf("Expires: %d\r\n", expires) : g_strdup("");
-	gchar *contact = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf(
-		"Event: conference\r\n"
-		"%s"
-		"Accept: application/conference-info+xml\r\n"
-		"Supported: com.microsoft.autoextend\r\n"
-		"Supported: ms-benotify\r\n"
-		"Proxy-Require: ms-benotify\r\n"
-		"Supported: ms-piggyback-first-notify\r\n"
-		"Contact: %s\r\n",
-		expires_hdr,
-		contact);
-	g_free(expires_hdr);
-	g_free(contact);
-
-	sip_transport_subscribe(sipe_private,
-				session->focus_uri,
-				hdr,
-				"",
-				NULL,
-				process_subscribe_response);
-	g_free(hdr);
+	sipe_subscribe(sipe_private,
+		       session->focus_uri,
+		       "conference",
+		       "application/conference-info+xml",
+		       expires ? "Expires: 0\r\n" : NULL,
+		       NULL,
+		       NULL);
 }
 
 /** Invite us to the focus callback */
@@ -275,7 +259,7 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 		const gchar *code = sipe_xml_attribute(xn_response, "code");
 		if (sipe_strequal(code, "success")) {
 			/* subscribe to focus */
-			sipe_subscribe_conference(sipe_private, session, -1);
+			sipe_subscribe_conference(sipe_private, session, FALSE);
 		}
 		sipe_xml_free(xn_response);
 	}
@@ -860,7 +844,7 @@ conf_session_close(struct sipe_core_private *sipe_private,
 {
 	if (session) {
 		/* unsubscribe from focus */
-		sipe_subscribe_conference(sipe_private, session, 0);
+		sipe_subscribe_conference(sipe_private, session, TRUE);
 
 		if (session->focus_dialog) {
 			/* send BYE to focus */

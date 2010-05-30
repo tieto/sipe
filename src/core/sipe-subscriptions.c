@@ -93,14 +93,14 @@ gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 /**
  * common subscription code
  */
-static void subscribe(struct sipe_core_private *sipe_private,
-		      const gchar *event,
-		      const gchar *accept,
-		      const gchar *addheaders,
-		      const gchar *body,
-		      struct sip_dialog *dialog)
+void sipe_subscribe(struct sipe_core_private *sipe_private,
+		    const gchar *uri,
+		    const gchar *event,
+		    const gchar *accept,
+		    const gchar *addheaders,
+		    const gchar *body,
+		    struct sip_dialog *dialog)
 {
-	gchar *to = sip_uri_self(sipe_private);
 	gchar *contact = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
 		"Event: %s\r\n"
@@ -118,14 +118,36 @@ static void subscribe(struct sipe_core_private *sipe_private,
 	g_free(contact);
 
 	sip_transport_subscribe(sipe_private,
-				to,
+				uri,
 				hdr,
 				body,
 				dialog,
 				process_subscribe_response);
 
 	g_free(hdr);
-	g_free(to);
+}
+
+/**
+ * common subscription code
+ */
+static void sipe_subscribe_self(struct sipe_core_private *sipe_private,
+		      const gchar *event,
+		      const gchar *accept,
+		      const gchar *addheaders,
+		      const gchar *body,
+		      struct sip_dialog *dialog)
+{
+	gchar *self = sip_uri_self(sipe_private);
+
+	sipe_subscribe(sipe_private,
+		       self,
+		       event,
+		       accept,
+		       addheaders,
+		       body,
+		       dialog);
+
+	g_free(self);
 }
 
 void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
@@ -138,12 +160,12 @@ void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("sipe_subscribe_presence_wpending: subscription dialog for: %s is %s", key, dialog ? "Not NULL" : "NULL");
 	g_free(key);
 
-	subscribe(sipe_private,
-		  "presence.wpending",
-		  "text/xml+msrtc.wpending",
-		  NULL,
-		  NULL,
-		  dialog);
+	sipe_subscribe_self(sipe_private,
+			    "presence.wpending",
+			    "text/xml+msrtc.wpending",
+			    NULL,
+			    NULL,
+			    dialog);
 }
 
 /**
@@ -151,12 +173,12 @@ void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
  */
 void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
 {
-	subscribe(sipe_private,
-		  "vnd-microsoft-roaming-ACL",
-		  "application/vnd-microsoft-roaming-acls+xml",
-		  NULL,
-		  NULL,
-		  NULL);
+	sipe_subscribe_self(sipe_private,
+			    "vnd-microsoft-roaming-ACL",
+			    "application/vnd-microsoft-roaming-acls+xml",
+			    NULL,
+			    NULL,
+			    NULL);
 }
 
 /**
@@ -164,12 +186,12 @@ void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
  */
 void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private)
 {
-	subscribe(sipe_private,
-		  "vnd-microsoft-roaming-contacts",
-		  "application/vnd-microsoft-roaming-contacts+xml",
-		  NULL,
-		  NULL,
-		  NULL);
+	sipe_subscribe_self(sipe_private,
+			    "vnd-microsoft-roaming-contacts",
+			    "application/vnd-microsoft-roaming-contacts+xml",
+			    NULL,
+			    NULL,
+			    NULL);
 }
 
 /**
@@ -177,12 +199,12 @@ void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private)
  */
 void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private)
 {
-	subscribe(sipe_private,
-		  "vnd-microsoft-provisioning",
-		  "application/vnd-microsoft-roaming-provisioning+xml",
-		  "Expires: 0\r\n",
-		  NULL,
-		  NULL);
+	sipe_subscribe_self(sipe_private,
+			    "vnd-microsoft-provisioning",
+			    "application/vnd-microsoft-roaming-provisioning+xml",
+			    "Expires: 0\r\n",
+			    NULL,
+			    NULL);
 }
 
 /**
@@ -196,16 +218,16 @@ void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private)
  */
 void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private)
 {
-	subscribe(sipe_private,
-		  "vnd-microsoft-provisioning-v2",
-		  "application/vnd-microsoft-roaming-provisioning-v2+xml",
-		  "Expires: 0\r\n"
-		  "Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n",
-		  "<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\">"
-		  "<provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/>"
-		  "<provisioningGroup name=\"ucPolicy\"/>"
-		  "</provisioningGroupList>",
-		  NULL);
+	sipe_subscribe_self(sipe_private,
+			    "vnd-microsoft-provisioning-v2",
+			    "application/vnd-microsoft-roaming-provisioning-v2+xml",
+			    "Expires: 0\r\n"
+			    "Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n",
+			    "<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\">"
+			    "<provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/>"
+			    "<provisioningGroup name=\"ucPolicy\"/>"
+			    "</provisioningGroupList>",
+			    NULL);
 }
 
 /**
@@ -219,15 +241,15 @@ void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_priva
  */
 void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private)
 {
-	subscribe(sipe_private,
-		  "vnd-microsoft-roaming-self",
-		  "application/vnd-microsoft-roaming-self+xml",
-		  "Content-Type: application/vnd-microsoft-roaming-self+xml\r\n",
-		  "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\">"
-		  "<roaming type=\"categories\"/>"
-		  "<roaming type=\"containers\"/>"
-		  "<roaming type=\"subscribers\"/></roamingList>",
-		  NULL);
+	sipe_subscribe_self(sipe_private,
+			    "vnd-microsoft-roaming-self",
+			    "application/vnd-microsoft-roaming-self+xml",
+			    "Content-Type: application/vnd-microsoft-roaming-self+xml\r\n",
+			    "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\">"
+			    "<roaming type=\"categories\"/>"
+			    "<roaming type=\"containers\"/>"
+			    "<roaming type=\"subscribers\"/></roamingList>",
+			    NULL);
 }
 
 /*

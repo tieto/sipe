@@ -35,6 +35,13 @@ gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 /**
  * Subscriptions
  */
+void sipe_subscribe(struct sipe_core_private *sipe_private,
+		    const gchar *uri,
+		    const gchar *event,
+		    const gchar *accept,
+		    const gchar *addheaders,
+		    const gchar *body,
+		    struct sip_dialog *dialog);
 void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
 				      void *unused);
 void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private);
