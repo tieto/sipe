@@ -156,10 +156,6 @@ static struct sipe_activity_map_struct
 /** @param x is sipe_activity */
 #define SIPE_ACTIVITY_I18N(x) gettext(sipe_activity_map[x].desc)
 
-
-/* Action name templates */
-#define ACTION_NAME_PRESENCE "<presence><%s>"
-
 static sipe_activity
 sipe_get_activity_by_token(const char *token)
 {
@@ -755,29 +751,6 @@ sipe_sched_calendar_status_self_publish(struct sipe_core_private *sipe_private,
 			      NULL);
 }
 
-/** Should be g_free()'d
- */
-static gchar *
-sipe_get_subscription_key(const gchar *event,
-			  const gchar *with)
-{
-	gchar *key = NULL;
-
-	if (is_empty(event)) return NULL;
-
-	if (event && sipe_strcase_equal(event, "presence")) {
-		/* Subscription is identified by ACTION_NAME_PRESENCE key */
-		key = g_strdup_printf(ACTION_NAME_PRESENCE, with);
-
-		/* @TODO drop participated buddies' just_added flag */
-	} else if (event) {
-		/* Subscription is identified by <event> key */
-		key = g_strdup_printf("<%s>", event);
-	}
-
-	return key;
-}
-
 gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg,
 				    SIPE_UNUSED_PARAMETER struct transaction *trans)
@@ -793,7 +766,7 @@ gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 		event = sipmsg_find_header(request_msg, "Event");
 	}
 
-	key = sipe_get_subscription_key(event, with);
+	key = sipe_utils_subscription_key(event, with);
 
 	/* 200 OK; 481 Call Leg Does Not Exist */
 	if (key && (msg->response == 200 || msg->response == 481)) {
@@ -917,8 +890,7 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 	g_free(contact);
 
 	/* subscribe to buddy presence */
-	/* Subscription is identified by ACTION_NAME_PRESENCE key */
-	key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
+	key = sipe_utils_presence_key(to);
 	dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
 	SIPE_DEBUG_INFO("sipe_subscribe_presence_batched_to: subscription dialog for: %s is %s", key, dialog ? "Not NULL" : "NULL");
 
@@ -1040,8 +1012,7 @@ static void sipe_subscribe_presence_single(struct sipe_core_private *sipe_privat
 	g_free(tmp);
 
 	/* subscribe to buddy presence */
-	/* Subscription is identified by ACTION_NAME_PRESENCE key */
-	key = g_strdup_printf(ACTION_NAME_PRESENCE, to);
+	key = sipe_utils_presence_key(to);
 	dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
 	SIPE_DEBUG_INFO("sipe_subscribe_presence_single: subscription dialog for: %s is %s", key, dialog ? "Not NULL" : "NULL");
 
@@ -1278,7 +1249,7 @@ void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *gr
 	}
 
 	if (g_slist_length(b->groups) < 1) {
-		gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy->name);
+		gchar *action_name = sipe_utils_presence_key(buddy->name);
 		sipe_schedule_cancel(sipe_private, action_name);
 		g_free(action_name);
 
@@ -1343,7 +1314,7 @@ sipe_buddy_subscribe_cb(char *buddy_name,
 			SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
 			struct sipe_core_private *sipe_private)
 {
-	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, buddy_name);
+	gchar *action_name = sipe_utils_presence_key(buddy_name);
 	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
 	guint time_range = (g_hash_table_size(sipe_private->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
@@ -5796,7 +5767,7 @@ static void sipe_process_presence_timeout(struct sipe_core_private *sipe_private
 					  int timeout)
 {
 	const char *ctype = sipmsg_find_header(msg, "Content-Type");
-	gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, who);
+	gchar *action_name = sipe_utils_presence_key(who);
 
 	SIPE_DEBUG_INFO("sipe_process_presence_timeout: Content-Type: %s", ctype ? ctype : "");
 
@@ -5909,7 +5880,7 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 	/* The server sends status 'terminated' */
 	if (subscription_state && strstr(subscription_state, "terminated") ) {
 		gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
-		gchar *key = sipe_get_subscription_key(event, who);
+		gchar *key = sipe_utils_subscription_key(event, who);
 
 		SIPE_DEBUG_INFO("process_incoming_notify: server says that subscription to %s was terminated.",  who);
 		g_free(who);
@@ -5947,7 +5918,7 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 				 g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
 			{
 				gchar *who = parse_from(sipmsg_find_header(msg, "To"));
-				gchar *action_name = g_strdup_printf(ACTION_NAME_PRESENCE, who);
+				gchar *action_name = sipe_utils_presence_key(who);
 
 				if (sip->batched_support) {
 					sipe_process_presence_timeout(sipe_private, msg, who, timeout);

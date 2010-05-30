@@ -403,3 +403,23 @@ void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
  * Maybe this should be fixed in libpurple or some better solution found.
  */
 const char * sipe_utils_get_suitable_local_ip(int fd);
+
+/**
+ * Generate presence key
+ *
+ * @param uri presence URI
+ *
+ * @return key string. Must be g_free()'d after use.
+ */
+gchar *sipe_utils_presence_key(const gchar *uri);
+
+/**
+ * Generate subscription key
+ *
+ * @param event event name
+ * @param uri   presence URI
+ *
+ * @return key string. Must be g_free()'d after use.
+ */
+gchar *sipe_utils_subscription_key(const gchar *event,
+				   const gchar *uri);

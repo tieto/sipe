@@ -487,6 +487,29 @@ const char * sipe_utils_get_suitable_local_ip(int fd)
 	return "0.0.0.0";
 }
 
+gchar *sipe_utils_presence_key(const gchar *uri)
+{
+	return g_strdup_printf("<presence><%s>", uri);
+}
+
+gchar *sipe_utils_subscription_key(const gchar *event,
+				   const gchar *uri)
+{
+	gchar *key = NULL;
+
+	if (!is_empty(event)) {
+		if (!g_ascii_strcasecmp(event, "presence")) {
+			/* Subscription is identified by <presence><uri> key */
+			key = sipe_utils_presence_key(uri);
+		} else {
+			/* Subscription is identified by <event> key */
+			key = g_strdup_printf("<%s>", event);
+		}
+	}
+
+	return key;
+}
+
 /*
   Local Variables:
   mode: c
