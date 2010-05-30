@@ -82,6 +82,7 @@ CLEAN_C_SRC = \
 			sipe-ft.c \
 			sipe-schedule.c \
 			sipe-session.c \
+			sipe-subscriptions.c \
 			sipe-utils.c \
 			sipe-ews.c \
 			sipmsg.c \

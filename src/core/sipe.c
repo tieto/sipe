@@ -80,6 +80,7 @@
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
+#include "sipe-subscriptions.h"
 #include "sipe-media.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -749,62 +750,6 @@ sipe_sched_calendar_status_self_publish(struct sipe_core_private *sipe_private,
 			      next_start - time(NULL),
 			      publish_calendar_status_self,
 			      NULL);
-}
-
-gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
-				    struct sipmsg *msg,
-				    SIPE_UNUSED_PARAMETER struct transaction *trans)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
-	const gchar *event = sipmsg_find_header(msg, "Event");
-	gchar *key;
-
-	/* The case with 2005 Public IM Connectivity (PIC) - no Event header */
-	if (!event) {
-		struct sipmsg *request_msg = trans->msg;
-		event = sipmsg_find_header(request_msg, "Event");
-	}
-
-	key = sipe_utils_subscription_key(event, with);
-
-	/* 200 OK; 481 Call Leg Does Not Exist */
-	if (key && (msg->response == 200 || msg->response == 481)) {
-		if (g_hash_table_lookup(sip->subscriptions, key)) {
-			g_hash_table_remove(sip->subscriptions, key);
-			SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog removed for: %s", key);
-		}
-	}
-
-	/* create/store subscription dialog if not yet */
-	if (msg->response == 200) {
-		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-		gchar *cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-
-		if (key) {
-			struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
-			g_hash_table_insert(sip->subscriptions, g_strdup(key), subscription);
-
-			subscription->dialog.callid = g_strdup(callid);
-			subscription->dialog.cseq = atoi(cseq);
-			subscription->dialog.with = g_strdup(with);
-			subscription->event = g_strdup(event);
-			sipe_dialog_parse(&subscription->dialog, msg, TRUE);
-
-			SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for: %s", key);
-		}
-
-		g_free(cseq);
-	}
-
-	g_free(key);
-	g_free(with);
-
-	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
-	{
-		process_incoming_notify(sipe_private, msg, FALSE, FALSE);
-	}
-	return TRUE;
 }
 
 static void sipe_subscribe_resource_uri(const char *name,
@@ -1578,68 +1523,6 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	}
 
 	return 0;
-}
-
- /**
-  * Subscribe roaming contacts
-  */
-void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private)
-{
-	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf(
-		"Event: vnd-microsoft-roaming-contacts\r\n"
-		"Accept: application/vnd-microsoft-roaming-contacts+xml\r\n"
-		"Supported: com.microsoft.autoextend\r\n"
-		"Supported: ms-benotify\r\n"
-		"Proxy-Require: ms-benotify\r\n"
-		"Supported: ms-piggyback-first-notify\r\n"
-		"Contact: %s\r\n", tmp);
-	g_free(tmp);
-
-	sip_transport_subscribe(sipe_private,
-				to,
-				hdr,
-				"",
-				NULL,
-				process_subscribe_response);
-	g_free(to);
-	g_free(hdr);
-}
-
-void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
-				      SIPE_UNUSED_PARAMETER void *unused)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *key;
-	struct sip_dialog *dialog;
-	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf(
-		"Event: presence.wpending\r\n"
-		"Accept: text/xml+msrtc.wpending\r\n"
-		"Supported: com.microsoft.autoextend\r\n"
-		"Supported: ms-benotify\r\n"
-		"Proxy-Require: ms-benotify\r\n"
-		"Supported: ms-piggyback-first-notify\r\n"
-		"Contact: %s\r\n", tmp);
-	g_free(tmp);
-
-	/* Subscription is identified by <event> key */
-	key = g_strdup_printf("<%s>", "presence.wpending");
-	dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
-	SIPE_DEBUG_INFO("sipe_subscribe_presence_wpending: subscription dialog for: %s is %s", key, dialog ? "Not NULL" : "NULL");
-
-	sip_transport_subscribe(sipe_private,
-				to,
-				hdr,
-				"",
-				dialog,
-				process_subscribe_response);
-
-	g_free(to);
-	g_free(hdr);
-	g_free(key);
 }
 
 /**
@@ -3009,134 +2892,6 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	}
 
 	g_free(to);
-}
-
-void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
-{
-	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf(
-		"Event: vnd-microsoft-roaming-ACL\r\n"
-		"Accept: application/vnd-microsoft-roaming-acls+xml\r\n"
-		"Supported: com.microsoft.autoextend\r\n"
-		"Supported: ms-benotify\r\n"
-		"Proxy-Require: ms-benotify\r\n"
-		"Supported: ms-piggyback-first-notify\r\n"
-		"Contact: %s\r\n", tmp);
-	g_free(tmp);
-
-	sip_transport_subscribe(sipe_private,
-				to,
-				hdr,
-				"",
-				NULL,
-				process_subscribe_response);
-	g_free(to);
-	g_free(hdr);
-}
-
-/**
-  * To request for presence information about the user, access level settings that have already been configured by the user
-  *  to control who has access to what information, and the list of contacts who currently have outstanding subscriptions.
-  *  We wait (BE)NOTIFY messages with some info change (categories,containers, subscribers)
-  */
-
-void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private)
-{
-	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf(
-		"Event: vnd-microsoft-roaming-self\r\n"
-		"Accept: application/vnd-microsoft-roaming-self+xml\r\n"
-		"Supported: ms-benotify\r\n"
-		"Proxy-Require: ms-benotify\r\n"
-		"Supported: ms-piggyback-first-notify\r\n"
-		"Contact: %s\r\n"
-		"Content-Type: application/vnd-microsoft-roaming-self+xml\r\n", tmp);
-
-	gchar *body=g_strdup(
-        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\">"
-        "<roaming type=\"categories\"/>"
-        "<roaming type=\"containers\"/>"
-        "<roaming type=\"subscribers\"/></roamingList>");
-
-	g_free(tmp);
-	sip_transport_subscribe(sipe_private,
-				to,
-				hdr,
-				body,
-				NULL,
-				process_subscribe_response);
-	g_free(body);
-	g_free(to);
-	g_free(hdr);
-}
-
-/**
-  *  For 2005 version
-  */
-void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private)
-{
-	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf(
-		"Event: vnd-microsoft-provisioning\r\n"
-		"Accept: application/vnd-microsoft-roaming-provisioning+xml\r\n"
-		"Supported: com.microsoft.autoextend\r\n"
-		"Supported: ms-benotify\r\n"
-		"Proxy-Require: ms-benotify\r\n"
-		"Supported: ms-piggyback-first-notify\r\n"
-		"Expires: 0\r\n"
-		"Contact: %s\r\n", tmp);
-
-	g_free(tmp);
-	sip_transport_subscribe(sipe_private,
-				to,
-				hdr,
-				NULL,
-				NULL,
-				process_subscribe_response);
-	g_free(to);
-	g_free(hdr);
-}
-
-/**  Subscription for provisioning information to help with initial
-   *  configuration. This subscription is a one-time query (denoted by the Expires header,
-   *  which asks for 0 seconds for the subscription lifetime). This subscription asks for server
-   *  configuration, meeting policies, and policy settings that Communicator must enforce.
-   *   TODO: for what we need this information.
-   */
-
-void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private)
-{
-	gchar *to = sip_uri_self(sipe_private);
-	gchar *tmp = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf(
-		"Event: vnd-microsoft-provisioning-v2\r\n"
-		"Accept: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n"
-		"Supported: com.microsoft.autoextend\r\n"
-		"Supported: ms-benotify\r\n"
-		"Proxy-Require: ms-benotify\r\n"
-		"Supported: ms-piggyback-first-notify\r\n"
-		"Expires: 0\r\n"
-		"Contact: %s\r\n"
-		"Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n", tmp);
-	gchar *body = g_strdup(
-	    "<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\">"
-		"<provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/>"
-		"<provisioningGroup name=\"ucPolicy\"/>"
-		"</provisioningGroupList>");
-
-	g_free(tmp);
-	sip_transport_subscribe(sipe_private,
-				to,
-				hdr,
-				body,
-				NULL,
-				process_subscribe_response);
-	g_free(body);
-	g_free(to);
-	g_free(hdr);
 }
 
 static void

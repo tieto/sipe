@@ -43,6 +43,7 @@
 #include "sipe-dialog.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
+#include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipe.h"

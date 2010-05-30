@@ -180,9 +180,6 @@ sipe_invite(struct sipe_core_private *sipe_private, struct sip_session *session,
 	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
-gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
-				    struct sipmsg *msg,
-				    struct transaction *trans);
 /* Chat module */
 void
 sipe_invite_to_chat(struct sipe_core_private *sipe_private,
@@ -230,15 +227,6 @@ void process_incoming_options(struct sipe_core_private *sipe_private,
 			      struct sipmsg *msg);
 void process_incoming_refer(struct sipe_core_private *sipe_private,
 			    struct sipmsg *msg);
-
-/* sipe-subscribe? */
-void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
-				      void *unused);
-void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private);
 
 /*** THE BIG SPLIT END ***/
 
