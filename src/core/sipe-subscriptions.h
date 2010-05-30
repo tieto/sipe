@@ -22,15 +22,22 @@
 
 /* Forward declarations */
 struct sipe_core_private;
-struct sipmsg;
-struct transaction;
 
 /**
- * Callback to process SUBSCRIBE responses
+ * Subscriptions subsystem
  */
-gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
-				    struct sipmsg *msg,
-				    struct transaction *trans);
+void sipe_subscriptions_init(struct sipe_core_private *sipe_private);
+void sipe_subscriptions_unsubscribe(struct sipe_core_private *sipe_private);
+void sipe_subscriptions_destroy(struct sipe_core_private *sipe_private);
+
+/**
+ * Remove subscription
+ *
+ * @param sipe_private SIPE core private data
+ * @param key subscription to be removed
+ */
+void sipe_subscriptions_remove(struct sipe_core_private *sipe_private,
+			       const gchar *key);
 
 /**
  * Subscriptions
@@ -42,6 +49,10 @@ void sipe_subscribe(struct sipe_core_private *sipe_private,
 		    const gchar *addheaders,
 		    const gchar *body,
 		    struct sip_dialog *dialog);
+void sipe_subscribe_presence_buddy(struct sipe_core_private *sipe_private,
+				   const gchar *uri,
+				   const gchar *request,
+				   const gchar *body);
 void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
 				      void *unused);
 void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private);

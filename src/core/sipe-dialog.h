@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,12 +62,6 @@ struct sip_dialog {
 	struct transaction *outgoing_invite;
 };
 
-/* RFC3265 subscription */
-struct sip_subscription {
-	struct sip_dialog dialog;
-	gchar *event;
-};
-
 /* Forward declaration */
 struct sip_session;
 
@@ -77,13 +71,6 @@ struct sip_session;
  * @param dialog (in) Dialog to be freed. May be NULL.
  */
 void sipe_dialog_free(struct sip_dialog *dialog);
-
-/**
- * Free subscription structure
- *
- * @param subscription (in) Subscription to be freed. May be NULL.
- */
-void sipe_subscription_free(struct sip_subscription *subscription);
 
 /**
  * Add a new, empty dialog to a session

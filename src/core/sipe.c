@@ -785,8 +785,6 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 					       gchar *resources_uri,
 					       gchar *to)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
-	gchar *key;
 	gchar *contact = get_contact(sipe_private);
 	gchar *request;
 	gchar *content;
@@ -794,7 +792,6 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 	gchar *accept = "";
         gchar *autoextend = "";
 	gchar *content_type;
-	struct sip_dialog *dialog;
 
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		require = ", categoryList";
@@ -834,22 +831,11 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 				  "Contact: %s\r\n", require, accept, autoextend, content_type, contact);
 	g_free(contact);
 
-	/* subscribe to buddy presence */
-	key = sipe_utils_presence_key(to);
-	dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
-	SIPE_DEBUG_INFO("sipe_subscribe_presence_batched_to: subscription dialog for: %s is %s", key, dialog ? "Not NULL" : "NULL");
-
-	sip_transport_subscribe(sipe_private,
-				to,
-				request,
-				content,
-				dialog,
-				process_subscribe_response);
+	sipe_subscribe_presence_buddy(sipe_private, to, request, content);
 
 	g_free(content);
 	g_free(to);
 	g_free(request);
-	g_free(key);
 }
 
 static void sipe_subscribe_presence_batched(struct sipe_core_private *sipe_private,
@@ -910,15 +896,12 @@ static void sipe_subscribe_presence_batched_routed(struct sipe_core_private *sip
 static void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 					   void *buddy_name)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *key;
 	gchar *to = sip_uri((char *)buddy_name);
 	gchar *tmp = get_contact(sipe_private);
 	gchar *request;
 	gchar *content = NULL;
         gchar *autoextend = "";
 	gchar *content_type = "";
-	struct sip_dialog *dialog;
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, to);
 	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
 
@@ -956,22 +939,11 @@ static void sipe_subscribe_presence_single(struct sipe_core_private *sipe_privat
 
 	g_free(tmp);
 
-	/* subscribe to buddy presence */
-	key = sipe_utils_presence_key(to);
-	dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
-	SIPE_DEBUG_INFO("sipe_subscribe_presence_single: subscription dialog for: %s is %s", key, dialog ? "Not NULL" : "NULL");
-
-	sip_transport_subscribe(sipe_private,
-				to,
-				request,
-				content,
-				dialog,
-				process_subscribe_response);
+	sipe_subscribe_presence_buddy(sipe_private, to, request, content);
 
 	g_free(content);
 	g_free(to);
 	g_free(request);
-	g_free(key);
 }
 
 void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
@@ -2892,32 +2864,6 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	}
 
 	g_free(to);
-}
-
-static void
-sipe_unsubscribe_cb(SIPE_UNUSED_PARAMETER gpointer key,
-		    gpointer value, gpointer user_data)
-{
-	struct sip_subscription *subscription = value;
-	struct sip_dialog *dialog = &subscription->dialog;
-	struct sipe_core_private *sipe_private = user_data;
-	gchar *tmp = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf(
-		"Event: %s\r\n"
-		"Expires: 0\r\n"
-		"Contact: %s\r\n", subscription->event, tmp);
-	g_free(tmp);
-
-	/* Rate limit to max. 25 requests per seconds */
-	g_usleep(1000000 / 25);
-
-	sip_transport_subscribe(sipe_private,
-				dialog->with,
-				hdr,
-				NULL,
-				dialog,
-				NULL);
-	g_free(hdr);
 }
 
 /* IM Session (INVITE and MESSAGE methods) */
@@ -5640,11 +5586,7 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_INFO("process_incoming_notify: server says that subscription to %s was terminated.",  who);
 		g_free(who);
 
-		if (g_hash_table_lookup(sip->subscriptions, key)) {
-			g_hash_table_remove(sip->subscriptions, key);
-			SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog removed for: %s", key);
-		}
-
+		sipe_subscriptions_remove(sipe_private, key);
 		g_free(key);
 	}
 
@@ -6784,8 +6726,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_private->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
 	sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 						      g_free, (GDestroyNotify)g_hash_table_destroy);
-	sip->subscriptions = g_hash_table_new_full(g_str_hash, g_str_equal,
-						   g_free, (GDestroyNotify)sipe_subscription_free);
+	sipe_subscriptions_init(sipe_private);
 	sip->status = g_strdup(SIPE_STATUS_ID_UNKNOWN);
 
 	return((struct sipe_core_public *)sipe_private);
@@ -6863,9 +6804,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 
 	if (PURPLE_CONNECTION_IS_CONNECTED(sip->gc)) {
-		/* unsubscribe all */
-		g_hash_table_foreach(sip->subscriptions, sipe_unsubscribe_cb, sipe_private);
-
+		sipe_subscriptions_unsubscribe(sipe_private);
 		sip_transport_deregister(sipe_private);
 	}
 
@@ -6885,7 +6824,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_hash_table_destroy(sipe_private->buddies);
 	g_hash_table_destroy(sip->our_publications);
 	g_hash_table_destroy(sip->user_state_publications);
-	g_hash_table_destroy(sip->subscriptions);
+	sipe_subscriptions_destroy(sipe_private);
 
 	if (sip->groups) {
 		GSList *entry = sip->groups;

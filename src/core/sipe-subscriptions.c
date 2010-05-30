@@ -34,11 +34,82 @@
 #include "sipe-utils.h"
 #include "sipe.h"
 
-gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
-				    struct sipmsg *msg,
-				    struct transaction *trans)
+/* RFC3265 subscription */
+struct sip_subscription {
+	struct sip_dialog dialog;
+	gchar *event;
+};
+
+static void sipe_subscription_free(struct sip_subscription *subscription)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	if (!subscription) return;
+
+	g_free(subscription->event);
+	/* NOTE: use cast to prevent BAD_FREE warning from Coverity */
+	sipe_dialog_free((struct sip_dialog *) subscription);
+}
+
+void sipe_subscriptions_init(struct sipe_core_private *sipe_private)
+{
+	sipe_private->subscriptions = g_hash_table_new_full(g_str_hash,
+							    g_str_equal,
+							    g_free,
+							    (GDestroyNotify)sipe_subscription_free);
+}
+
+static void sipe_unsubscribe_cb(SIPE_UNUSED_PARAMETER gpointer key,
+				gpointer value, gpointer user_data)
+{
+	struct sip_subscription *subscription = value;
+	struct sip_dialog *dialog = &subscription->dialog;
+	struct sipe_core_private *sipe_private = user_data;
+	gchar *contact = get_contact(sipe_private);
+	gchar *hdr = g_strdup_printf(
+		"Event: %s\r\n"
+		"Expires: 0\r\n"
+		"Contact: %s\r\n", subscription->event, contact);
+	g_free(contact);
+
+	/* Rate limit to max. 25 requests per seconds */
+	g_usleep(1000000 / 25);
+
+	sip_transport_subscribe(sipe_private,
+				dialog->with,
+				hdr,
+				NULL,
+				dialog,
+				NULL);
+
+	g_free(hdr);
+}
+
+void sipe_subscriptions_unsubscribe(struct sipe_core_private *sipe_private)
+{
+	/* unsubscribe all */
+	g_hash_table_foreach(sipe_private->subscriptions,
+			     sipe_unsubscribe_cb,
+			     sipe_private);
+
+}
+
+void sipe_subscriptions_destroy(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_destroy(sipe_private->subscriptions);
+}
+
+void sipe_subscriptions_remove(struct sipe_core_private *sipe_private,
+			       const gchar *key)
+{
+	if (g_hash_table_lookup(sipe_private->subscriptions, key)) {
+		g_hash_table_remove(sipe_private->subscriptions, key);
+		SIPE_DEBUG_INFO("sipe_subscriptions_remove: %s", key);
+	}
+}
+
+static gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
+					   struct sipmsg *msg,
+					   struct transaction *trans)
+{
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	const gchar *event = sipmsg_find_header(msg, "Event");
 	gchar *key;
@@ -53,10 +124,7 @@ gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 
 	/* 200 OK; 481 Call Leg Does Not Exist */
 	if (key && (msg->response == 200 || msg->response == 481)) {
-		if (g_hash_table_lookup(sip->subscriptions, key)) {
-			g_hash_table_remove(sip->subscriptions, key);
-			SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog removed for: %s", key);
-		}
+		sipe_subscriptions_remove(sipe_private, key);
 	}
 
 	/* create/store subscription dialog if not yet */
@@ -66,7 +134,9 @@ gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 
 		if (key) {
 			struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
-			g_hash_table_insert(sip->subscriptions, g_strdup(key), subscription);
+			g_hash_table_insert(sipe_private->subscriptions,
+					    g_strdup(key),
+					    subscription);
 
 			subscription->dialog.callid = g_strdup(callid);
 			subscription->dialog.cseq = atoi(cseq);
@@ -117,6 +187,7 @@ void sipe_subscribe(struct sipe_core_private *sipe_private,
 		contact);
 	g_free(contact);
 
+
 	sip_transport_subscribe(sipe_private,
 				uri,
 				hdr,
@@ -128,14 +199,14 @@ void sipe_subscribe(struct sipe_core_private *sipe_private,
 }
 
 /**
- * common subscription code
+ * common subscription code for self-subscriptions
  */
 static void sipe_subscribe_self(struct sipe_core_private *sipe_private,
-		      const gchar *event,
-		      const gchar *accept,
-		      const gchar *addheaders,
-		      const gchar *body,
-		      struct sip_dialog *dialog)
+				const gchar *event,
+				const gchar *accept,
+				const gchar *addheaders,
+				const gchar *body,
+				struct sip_dialog *dialog)
 {
 	gchar *self = sip_uri_self(sipe_private);
 
@@ -150,22 +221,45 @@ static void sipe_subscribe_self(struct sipe_core_private *sipe_private,
 	g_free(self);
 }
 
+static struct sip_dialog *sipe_subscribe_dialog(struct sipe_core_private *sipe_private,
+						const gchar *key)
+{
+	struct sip_dialog *dialog = g_hash_table_lookup(sipe_private->subscriptions,
+							key);
+	SIPE_DEBUG_INFO("sipe_subscribe_dialog: dialog for '%s' is %s", key, dialog ? "not NULL" : "NULL");
+	return dialog;
+}
+
+void sipe_subscribe_presence_buddy(struct sipe_core_private *sipe_private,
+				   const gchar *uri,
+				   const gchar *request,
+				   const gchar *body)
+{
+	gchar *key = sipe_utils_presence_key(uri);
+
+	sip_transport_subscribe(sipe_private,
+				uri,
+				request,
+				body,
+				sipe_subscribe_dialog(sipe_private, key),
+				process_subscribe_response);
+
+	g_free(key);
+}
+
 void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
 				      SIPE_UNUSED_PARAMETER void *unused)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *key = sipe_utils_subscription_key("presence.wpending", NULL);
-	struct sip_dialog *dialog = (struct sip_dialog *)g_hash_table_lookup(sip->subscriptions, key);
-
-	SIPE_DEBUG_INFO("sipe_subscribe_presence_wpending: subscription dialog for: %s is %s", key, dialog ? "Not NULL" : "NULL");
-	g_free(key);
 
 	sipe_subscribe_self(sipe_private,
 			    "presence.wpending",
 			    "text/xml+msrtc.wpending",
 			    NULL,
 			    NULL,
-			    dialog);
+			    sipe_subscribe_dialog(sipe_private, key));
+
+	g_free(key);
 }
 
 /**

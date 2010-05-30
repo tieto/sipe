@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,15 +68,6 @@ void sipe_dialog_free(struct sip_dialog *dialog)
 	g_free(dialog->request);
 
 	g_free(dialog);
-}
-
-void sipe_subscription_free(struct sip_subscription *subscription)
-{
-	if (!subscription) return;
-
-	g_free(subscription->event);
-	/* NOTE: use cast to prevent BAD_FREE warning from Coverity */
-	sipe_dialog_free((struct sip_dialog *) subscription);
 }
 
 struct sip_dialog *sipe_dialog_add(struct sip_session *session)

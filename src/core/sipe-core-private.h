@@ -56,6 +56,9 @@ struct sipe_core_private {
 	/* Scheduling system */
 	GSList *timeouts;
 
+	/* Active subscriptions */
+	GHashTable *subscriptions;
+
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
 

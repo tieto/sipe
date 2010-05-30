@@ -85,7 +85,6 @@ struct sipe_account_data {
 	GSList *our_publication_keys;		/* [MS-PRES] */
 	GHashTable *our_publications;		/* [MS-PRES] */
 	GHashTable *user_state_publications;	/* [MS-PRES] */
-	GHashTable *subscriptions;
 	int contacts_delta;
 	int acl_delta;
 	int presence_method_version;
