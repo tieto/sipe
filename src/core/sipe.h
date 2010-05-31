@@ -179,11 +179,6 @@ sipe_invite(struct sipe_core_private *sipe_private, struct sip_session *session,
 	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
-/* Chat module */
-void
-sipe_invite_to_chat(struct sipe_core_private *sipe_private,
-		    struct sip_session *session,
-		    const gchar *who);
 /* Session module? */
 void
 sipe_present_message_undelivered_err(struct sipe_core_private *sipe_private,
@@ -198,10 +193,6 @@ sipe_present_info(struct sipe_core_private *sipe_private,
 		  struct sip_session *session,
 		  const gchar *message);
 
-
-void
-sipe_process_pending_invite_queue(struct sipe_core_private *sipe_private,
-				  struct sip_session *session);
 
 void
 sipe_im_process_queue(struct sipe_core_private *sipe_private,

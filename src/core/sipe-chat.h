@@ -21,6 +21,8 @@
  */
 
 /* Forward declarations */
+struct sipe_core_private;
+struct sip_session;
 
 /**
  * Returns purple's chat name for provided chat identification in protocol.
@@ -43,3 +45,25 @@ sipe_chat_get_name(const gchar *proto_chat_id);
  */
 const gchar *
 sipe_chat_find_name(const gchar *chat_name);
+
+/**
+ * 
+ *
+ * @param sipe_private SIPE core private data
+ * @param session SIPE session for chat
+ */
+void
+sipe_process_pending_invite_queue(struct sipe_core_private *sipe_private,
+				  struct sip_session *session);
+
+/**
+ * Invite @who to chat
+ *
+ * @param sipe_private SIPE core private data
+ * @param session SIPE session for chat
+ * @param who URI whom to invite to chat.
+ */
+void
+sipe_invite_to_chat(struct sipe_core_private *sipe_private,
+		    struct sip_session *session,
+		    const gchar *who);
