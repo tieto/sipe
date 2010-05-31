@@ -198,6 +198,10 @@ void
 sipe_im_process_queue(struct sipe_core_private *sipe_private,
 		      struct sip_session *session);
 
+void
+sipe_session_close(struct sipe_core_private *sipe_private,
+		   struct sip_session * session);
+
 /* sipe-notify? */
 void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,

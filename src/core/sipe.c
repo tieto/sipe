@@ -3485,7 +3485,7 @@ sipe_invite(struct sipe_core_private *sipe_private,
 	g_free(contact);
 }
 
-static void
+void
 sipe_session_close(struct sipe_core_private *sipe_private,
 		   struct sip_session * session)
 {
@@ -3595,37 +3595,6 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 
 	return 1;
 }
-
-#ifdef HAVE_VV
-static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
-								const gchar *body, SIPE_UNUSED_PARAMETER gsize length)
-{
-	const gchar *type = sipe_utils_nameval_find(fields, "Content-Type");
-	const gchar *cd = sipe_utils_nameval_find(fields, "Content-Disposition");
-
-	if (!g_str_has_prefix(type, "application/sdp"))
-		return;
-
-	if (cd && !strstr(cd, "ms-proxy-2007fallback")) {
-		struct sipmsg *msg = user_data;
-		const gchar* msg_ct = sipmsg_find_header(msg, "Content-Type");
-
-		if (g_str_has_prefix(msg_ct, "application/sdp")) {
-			/* We have already found suitable alternative and set message's body
-			 * and Content-Type accordingly */
-			return;
-		}
-
-		sipmsg_remove_header_now(msg, "Content-Type");
-		sipmsg_add_header_now(msg, "Content-Type", type);
-
-		/* Replace message body with chosen alternative, so we can continue to
-		 * process it as a normal single part message. */
-		g_free(msg->body);
-		msg->body = g_strndup(body, length);
-	}
-}
-#endif
 
 /**
  * Returns 2005-style activity and Availability.

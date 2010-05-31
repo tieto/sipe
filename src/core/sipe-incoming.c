@@ -45,6 +45,7 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
+#include "sipe-mime.h"
 #include "sipe.h"
 
 void process_incoming_bye(struct sipe_core_private *sipe_private,
@@ -111,8 +112,9 @@ void process_incoming_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_private *sip
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	if (call_private &&
 	    sipe_strequal(sipe_media_get_callid(call_private), callid)) {
-		struct sip_session *session = sipe_session_find_chat_by_callid(sipe_private,
-									       callid);
+		struct sip_session *session
+			= sipe_session_find_chat_by_callid(sipe_private, callid);
+
 		sipe_media_hangup(sipe_private);
 		if (session) {
 			gchar *from = parse_from(sipmsg_find_header(msg, "From"));
@@ -229,6 +231,37 @@ static gboolean sipe_process_incoming_x_msmsgsinvite(struct sipe_core_private *s
 	}
 	return found;
 }
+
+#ifdef HAVE_VV
+static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
+				const gchar *body, SIPE_UNUSED_PARAMETER gsize length)
+{
+	const gchar *type = sipe_utils_nameval_find(fields, "Content-Type");
+	const gchar *cd = sipe_utils_nameval_find(fields, "Content-Disposition");
+
+	if (!g_str_has_prefix(type, "application/sdp"))
+		return;
+
+	if (cd && !strstr(cd, "ms-proxy-2007fallback")) {
+		struct sipmsg *msg = user_data;
+		const gchar* msg_ct = sipmsg_find_header(msg, "Content-Type");
+
+		if (g_str_has_prefix(msg_ct, "application/sdp")) {
+			/* We have already found suitable alternative and set message's body
+			 * and Content-Type accordingly */
+			return;
+		}
+
+		sipmsg_remove_header_now(msg, "Content-Type");
+		sipmsg_add_header_now(msg, "Content-Type", type);
+
+		/* Replace message body with chosen alternative, so we can continue to
+		 * process it as a normal single part message. */
+		g_free(msg->body);
+		msg->body = g_strndup(body, length);
+	}
+}
+#endif
 
 void process_incoming_invite(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
