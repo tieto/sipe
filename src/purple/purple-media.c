@@ -80,7 +80,8 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		return;
 	}
 
-	if (type == PURPLE_MEDIA_INFO_ACCEPT && call->call_accept_cb)
+	if (type == PURPLE_MEDIA_INFO_ACCEPT && call->call_accept_cb
+	    && !sessionid && !participant)
 		call->call_accept_cb(call, local);
 	else if (type == PURPLE_MEDIA_INFO_REJECT && call->call_reject_cb)
 		call->call_reject_cb(call, local);
