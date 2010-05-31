@@ -33,8 +33,6 @@ void sipe_purple_setup(struct sipe_core_public *sipe_public,
 		       PurpleConnection *gc);
 int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		 PurpleMessageFlags flags);
-unsigned int sipe_send_typing(PurpleConnection *gc, const char *who,
-			      PurpleTypingState state);
 void sipe_get_info(PurpleConnection *gc, const char *username);
 void sipe_set_status(PurpleAccount *account, PurpleStatus *status);
 void sipe_set_idle(PurpleConnection *gc, int interval);

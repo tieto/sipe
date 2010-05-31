@@ -22,9 +22,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <time.h>
+
 #include <glib.h>
 
 #include "conversation.h"
+#include "server.h"
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -92,6 +95,20 @@ gboolean sipe_backend_chat_is_operator(struct sipe_backend_session *backend_sess
 		== PURPLE_CBFLAGS_OP;
 }
 
+void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
+			       int id,
+			       const gchar *from,
+			       const gchar *html)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	serv_got_chat_in(purple_private->gc,
+			 id,
+			 from,
+			 PURPLE_MESSAGE_RECV,
+			 html,
+			 time(NULL));
+}
+						      
 void sipe_backend_chat_operator(struct sipe_backend_session *backend_session,
 				const gchar *uri)
 {

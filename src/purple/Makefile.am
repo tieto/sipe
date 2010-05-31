@@ -14,11 +14,13 @@ libsipe_backend_la_SOURCES = \
 	purple-debug.c \
 	purple-dnsquery.c \
 	purple-ft.c \
+	purple-im.c \
 	purple-markup.c \
 	purple-network.c \
 	purple-schedule.c \
 	purple-setting.c \
-	purple-transport.c
+	purple-transport.c \
+	purple-user.c
 
 libsipe_la_SOURCES = \
 	purple-plugin.c

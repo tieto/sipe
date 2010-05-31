@@ -42,6 +42,8 @@ libsipe_core_la_SOURCES = \
 	sipe-ews.c \
 	sipe-ft.h \
 	sipe-ft.c \
+	sipe-incoming.h \
+	sipe-incoming.c \
 	sipe-schedule.h \
 	sipe-schedule.c \
 	sipe-session.h \
@@ -50,6 +52,7 @@ libsipe_core_la_SOURCES = \
 	sipe-sign.c \
 	sipe-subscriptions.h \
 	sipe-subscriptions.c \
+	sipe-user.c \
 	sipe-utils.h \
 	sipe-utils.c \
 	sipe-xml.h \

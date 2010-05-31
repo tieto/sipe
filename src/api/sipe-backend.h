@@ -104,6 +104,10 @@ gboolean sipe_backend_chat_find(struct sipe_backend_session *backend_session,
 				const gchar *uri);
 gboolean sipe_backend_chat_is_operator(struct sipe_backend_session *backend_session,
 				       const gchar *uri);
+void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
+			       int id,
+			       const gchar *from,
+			       const gchar *html);
 void sipe_backend_chat_operator(struct sipe_backend_session *backend_session,
 				const gchar *uri);
 void sipe_backend_chat_rejoin_all(struct sipe_core_public *sipe_public);
@@ -184,6 +188,12 @@ gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
 					 const gchar *ip,
 					 unsigned short port_min,
 					 unsigned short port_max);
+
+/** IM ***********************************************************************/
+
+void sipe_backend_im_message(struct sipe_core_public *sipe_public,
+			     const gchar *from,
+			     const gchar *html);
 
 /** MARKUP *******************************************************************/
 
@@ -346,6 +356,13 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn);
 void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 				    const gchar *buffer);
+
+/** USER *********************************************************************/
+
+void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
+				       const gchar *from);
+void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
+					    const gchar *from);
 
 #ifdef __cplusplus
 }

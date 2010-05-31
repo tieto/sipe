@@ -327,6 +327,21 @@ static void sipe_close(PurpleConnection *gc)
 	}
 }
 
+#define SIPE_TYPING_SEND_TIMEOUT 4
+
+static unsigned int sipe_send_typing(PurpleConnection *gc,
+				     const char *who,
+				     PurpleTypingState state)
+{
+	if (state == PURPLE_NOT_TYPING)
+		return 0;
+
+	sipe_core_user_feedback_typing(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+				       who);
+
+	return SIPE_TYPING_SEND_TIMEOUT;
+}
+
 static void sipe_add_permit(PurpleConnection *gc, const char *name)
 {
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, TRUE);

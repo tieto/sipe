@@ -67,6 +67,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-digest.h"
+#include "sipe-incoming.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-sign.h"

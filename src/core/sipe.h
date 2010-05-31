@@ -37,9 +37,6 @@ struct _PurpleConnection;
 struct _PurpleGroup;
 struct sipe_core_private;
 
-#define SIPE_TYPING_RECV_TIMEOUT 6
-#define SIPE_TYPING_SEND_TIMEOUT 4
-
 /** MS-PRES publication */
 struct sipe_publication {
 	gchar *category;
@@ -192,41 +189,33 @@ void
 sipe_present_info(struct sipe_core_private *sipe_private,
 		  struct sip_session *session,
 		  const gchar *message);
-
+void
+sipe_present_err(struct sipe_core_private *sipe_private,
+		 struct sip_session *session,
+		 const gchar *message);
 
 void
 sipe_im_process_queue(struct sipe_core_private *sipe_private,
 		      struct sip_session *session);
 
-/* sipe-incoming? */
-void process_incoming_bye(struct sipe_core_private *sipe_private,
-			  struct sipmsg *msg);
-void process_incoming_cancel(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg);
-void process_incoming_info(struct sipe_core_private *sipe_private,
-			   struct sipmsg *msg);
-void process_incoming_invite(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg);
-void process_incoming_message(struct sipe_core_private *sipe_private,
-			      struct sipmsg *msg);
+/* sipe-notify? */
 void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
 			     gboolean request,
 			     gboolean benotify);
-void process_incoming_options(struct sipe_core_private *sipe_private,
-			      struct sipmsg *msg);
-void process_incoming_refer(struct sipe_core_private *sipe_private,
-			    struct sipmsg *msg);
 
 /*** THE BIG SPLIT END ***/
 
-#define SIPE_INVITE_TEXT "ms-text-format: %s; charset=UTF-8%s;ms-body=%s\r\n"
+#ifdef HAVE_GMIME
+/* pls. don't add multipart/related - it's not used in IM modality */
+#define SDP_ACCEPT_TYPES  "text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml application/ms-imdn+xml text/x-msmsgsinvite"
+#else
+/* this is a rediculous hack as Pidgin's MIME implementastion doesn't support (or have bug) in multipart/alternative */
+/* OCS/OC won't use multipart/related so we don't advertase it */
+#define SDP_ACCEPT_TYPES  "text/plain text/html image/gif application/im-iscomposing+xml application/ms-imdn+xml text/x-msmsgsinvite"
+#endif
 
-#define SIPE_SEND_TYPING \
-"<?xml version=\"1.0\"?>"\
-"<KeyboardActivity>"\
-  "<status status=\"type\" />"\
-"</KeyboardActivity>"
+#define SIPE_INVITE_TEXT "ms-text-format: %s; charset=UTF-8%s;ms-body=%s\r\n"
 
 /**
  * Publishes categories.
