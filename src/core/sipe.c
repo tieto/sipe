@@ -1613,6 +1613,19 @@ static void sipe_process_roaming_acl(struct sipe_core_private *sipe_private,
 	sipe_xml_free(xml);
 }
 
+/** MS-PRES container */
+struct sipe_container {
+	guint id;
+	guint version;
+	GSList *members;
+};
+/** MS-PRES container member */
+struct sipe_container_member {
+	/** user, domain, sameEnterprise, federated, publicCloud; everyone */
+	gchar *type;
+	gchar *value;
+};
+
 static void
 free_container_member(struct sipe_container_member *member)
 {

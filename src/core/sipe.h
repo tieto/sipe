@@ -55,19 +55,6 @@ struct sipe_publication {
 	char *free_busy_base64;
 };
 
-/** MS-PRES container */
-struct sipe_container {
-	guint id;
-	guint version;
-	GSList *members;
-};
-/** MS-PRES container member */
-struct sipe_container_member {
-	/** user, domain, sameEnterprise, federated, publicCloud; everyone */
-	gchar *type;
-	gchar *value;
-};
-
 struct sipe_account_data {
 	struct _PurpleConnection *gc;
 	gchar *authdomain;
