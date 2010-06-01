@@ -57,6 +57,11 @@ gboolean sipe_backend_connection_is_disconnecting(struct sipe_core_public *sipe_
 	return sipe_public->backend_private->account->disconnecting;
 }
 
+gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public)
+{
+	return PURPLE_CONNECTION_IS_CONNECTED(sipe_public->backend_private->gc);
+}
+
 /*
   Local Variables:
   mode: c

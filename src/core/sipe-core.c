@@ -34,10 +34,16 @@
 #include <gmime/gmime.h>
 #endif
 
+#include "sip-csta.h"
 #include "sip-sec.h"
+#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-nls.h"
+#include "sipe-session.h"
+#include "sipe-subscriptions.h"
+#include "sipe.h"
 
 void sipe_core_init(void)
 {
@@ -160,6 +166,70 @@ gchar *sipe_core_about(void)
 		/* "Localization for <language name> (<language code>): <name>" */
 		_("Original texts in English (en): SIPE developers")
 		);
+}
+
+void sipe_core_deallocate(struct sipe_core_public *sipe_public)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
+	/* leave all conversations */
+	if (sipe_private->sessions) {
+		GSList *entry;
+		while ((entry = sipe_private->sessions) != NULL) {
+			sipe_session_close(sipe_private, entry->data);
+		}
+	}
+
+	if (sip->csta) {
+		sip_csta_close(sipe_private);
+	}
+
+	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
+		sipe_subscriptions_unsubscribe(sipe_private);
+		sip_transport_deregister(sipe_private);
+	}
+
+	sipe_connection_cleanup(sipe_private);
+	g_free(sipe_private->public.sip_name);
+	g_free(sipe_private->public.sip_domain);
+	g_free(sipe_private->username);
+	g_free(sip->email);
+	g_free(sip->password);
+	g_free(sip->authdomain);
+	g_free(sip->authuser);
+	g_free(sip->status);
+	g_free(sip->note);
+	g_free(sip->user_states);
+
+	sipe_buddy_free_all(sipe_private);
+	g_hash_table_destroy(sipe_private->buddies);
+	g_hash_table_destroy(sip->our_publications);
+	g_hash_table_destroy(sip->user_state_publications);
+	sipe_subscriptions_destroy(sipe_private);
+
+	if (sip->groups) {
+		GSList *entry = sip->groups;
+		while (entry) {
+			struct sipe_group *group = entry->data;
+			g_free(group->name);
+			g_free(group);
+			entry = entry->next;
+		}
+	}
+	g_slist_free(sip->groups);
+
+	if (sip->our_publication_keys) {
+		GSList *entry = sip->our_publication_keys;
+		while (entry) {
+			g_free(entry->data);
+			entry = entry->next;
+		}
+	}
+	g_slist_free(sip->our_publication_keys);
+
+	g_free(sip);
+	g_free(sipe_private);
 }
 
 /*

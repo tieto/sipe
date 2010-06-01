@@ -176,6 +176,7 @@ sipe_invite(struct sipe_core_private *sipe_private, struct sip_session *session,
 	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
+void sipe_buddy_free_all(struct sipe_core_private *sipe_private);
 /* Session module? */
 void
 sipe_present_message_undelivered_err(struct sipe_core_private *sipe_private,
