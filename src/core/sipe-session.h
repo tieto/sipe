@@ -212,6 +212,16 @@ sipe_session_find_chat_or_im(struct sipe_core_private *sipe_private,
 			     const gchar *who);
 
 /**
+ * Close a session
+ *
+ * @param sipe_private (in) SIPE core data
+ * @param session (in) pointer to session
+ */
+void
+sipe_session_close(struct sipe_core_private *sipe_private,
+		   struct sip_session *session);
+
+/**
  * Remove a session from a SIP account
  *
  * @param sipe_private (in) SIPE core data
@@ -220,14 +230,6 @@ sipe_session_find_chat_or_im(struct sipe_core_private *sipe_private,
 void
 sipe_session_remove(struct sipe_core_private *sipe_private,
 		    struct sip_session *session);
-
-/**
- * Remove all sessions from a SIP account
- *
- * @param sipe_private (in) SIPE core data
- */
-void
-sipe_session_remove_all(struct sipe_core_private *sipe_private);
 
 /**
  * Add a message to outgoing queue.

@@ -27,7 +27,9 @@
 
 #include <glib.h>
 
+#include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
@@ -225,11 +227,22 @@ sipe_session_remove(struct sipe_core_private *sipe_private,
 }
 
 void
-sipe_session_remove_all(struct sipe_core_private *sipe_private)
+sipe_session_close(struct sipe_core_private *sipe_private,
+		   struct sip_session *session)
 {
-	GSList *entry;
-	while ((entry = sipe_private->sessions) != NULL) {
-		sipe_session_remove(sipe_private, entry->data);
+	if (session) {
+		if (session->focus_uri) {
+			sipe_conf_immcu_closed(sipe_private, session);
+			conf_session_close(sipe_private, session);
+		}
+
+		SIPE_DIALOG_FOREACH {
+			/* @TODO slow down BYE message sending rate */
+			/* @see single subscription code */
+			sip_transport_bye(sipe_private, dialog);
+		} SIPE_DIALOG_FOREACH_END;
+
+		sipe_session_remove(sipe_private, session);
 	}
 }
 

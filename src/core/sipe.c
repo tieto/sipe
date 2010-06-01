@@ -3486,35 +3486,6 @@ sipe_invite(struct sipe_core_private *sipe_private,
 }
 
 void
-sipe_session_close(struct sipe_core_private *sipe_private,
-		   struct sip_session * session)
-{
-	if (session && session->focus_uri) {
-		sipe_conf_immcu_closed(sipe_private, session);
-		conf_session_close(sipe_private, session);
-	}
-
-	if (session) {
-		SIPE_DIALOG_FOREACH {
-			/* @TODO slow down BYE message sending rate */
-			/* @see single subscription code */
-			sip_transport_bye(sipe_private, dialog);
-		} SIPE_DIALOG_FOREACH_END;
-
-		sipe_session_remove(sipe_private, session);
-	}
-}
-
-static void
-sipe_session_close_all(struct sipe_core_private *sipe_private)
-{
-	GSList *entry;
-	while ((entry = sipe_private->sessions) != NULL) {
-		sipe_session_close(sipe_private, entry->data);
-	}
-}
-
-void
 sipe_convo_closed(PurpleConnection * gc, const char *who)
 {
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
@@ -5975,8 +5946,12 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 	/* leave all conversations */
-	sipe_session_close_all(sipe_private);
-	sipe_session_remove_all(sipe_private);
+	if (sipe_private->sessions) {
+		GSList *entry;
+		while ((entry = sipe_private->sessions) != NULL) {
+			sipe_session_close(sipe_private, entry->data);
+		}
+	}
 
 	if (sip->csta) {
 		sip_csta_close(sipe_private);
