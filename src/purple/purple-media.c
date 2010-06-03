@@ -170,12 +170,18 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 }
 
 void
-sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media, gchar* participant, GList *candidates)
+sipe_backend_media_remove_stream(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media, SIPE_UNUSED_PARAMETER const gchar *participant)
+{
+	purple_media_end(media->m, NULL, NULL);
+}
+
+void
+sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media, const gchar* participant, GList *candidates)
 {
 	purple_media_add_remote_candidates(media->m, "sipe-voice", participant, candidates);
 }
 
-gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media, gchar *participant)
+gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media, const gchar *participant)
 {
 	return purple_media_is_initiator(media->m, "sipe-voice", participant);
 }

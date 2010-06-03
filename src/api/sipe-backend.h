@@ -257,11 +257,13 @@ gboolean sipe_backend_media_add_stream(struct sipe_backend_media *media,
 				       const gchar *participant,
 				       SipeMediaType type, gboolean use_nice,
 				       gboolean initiator);
+void sipe_backend_media_remove_stream(struct sipe_backend_media *media,
+									  const gchar *participant);
 void sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
-					      gchar *participant,
+					      const gchar *participant,
 					      GList *candidates);
 gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
-					 gchar *participant);
+					 const gchar *participant);
 GList *sipe_backend_media_get_active_local_candidates(struct sipe_backend_media *media,
 					gchar *participant);
 GList *sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media,
@@ -304,8 +306,8 @@ void sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *
 						 const gchar *password);
 GList* sipe_backend_get_local_candidates(struct sipe_backend_media *media,
 					 gchar *participant);
-void sipe_backend_media_hold(struct sipe_backend_media *call, gboolean local);
-void sipe_backend_media_unhold(struct sipe_backend_media *call, gboolean local);
+void sipe_backend_media_hold(struct sipe_backend_media *media, gboolean local);
+void sipe_backend_media_unhold(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local);
 
