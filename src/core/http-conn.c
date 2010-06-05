@@ -276,7 +276,10 @@ static struct sipe_transport_connection *http_conn_setup(HttpConn *http_conn,
 		http_conn_error
 	};
 
-	if (!host) return NULL;
+	if (!host) {
+		http_conn_close(http_conn, "Missing host");
+		return NULL;
+	}
 
 	return(sipe_backend_transport_connect(sipe_public, &setup));
 }
@@ -308,7 +311,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 	http_conn = g_new0(HttpConn, 1);
 	conn = http_conn_setup(http_conn, sipe_public, conn_type, host, port);
 	if (!conn) {
-		g_free(http_conn);
+		// http_conn_setup deallocates http_conn on error, don't free here
 		g_free(host);
 		g_free(url);
 		return NULL;
