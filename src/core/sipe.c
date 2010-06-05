@@ -1432,6 +1432,8 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 						buddy = g_new0(struct sipe_buddy, 1);
 						buddy->name = g_strdup(b->name);
 						g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
+
+						SIPE_DEBUG_INFO("Added SIPE buddy %s", buddy->name);
 					}
 
 					buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
