@@ -253,21 +253,21 @@ struct sipe_backend_media *sipe_backend_media_new(struct sipe_core_public *sipe_
 						  struct sipe_media_call *call,
 						  const gchar *participant,
 						  gboolean initiator);
-gboolean sipe_backend_media_add_stream(struct sipe_backend_media *media,
+struct sipe_backend_stream *sipe_backend_media_add_stream(struct sipe_backend_media *media,
 				       const gchar *participant,
 				       SipeMediaType type, gboolean use_nice,
 				       gboolean initiator);
 void sipe_backend_media_remove_stream(struct sipe_backend_media *media,
-									  const gchar *participant);
+				      struct sipe_backend_stream *stream);
 void sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
-					      const gchar *participant,
+					      struct sipe_backend_stream *stream,
 					      GList *candidates);
 gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
-					 const gchar *participant);
+					 struct sipe_backend_stream *stream);
 GList *sipe_backend_media_get_active_local_candidates(struct sipe_backend_media *media,
-					gchar *participant);
+						      struct sipe_backend_stream *stream);
 GList *sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media,
-					gchar *participant);
+						       struct sipe_backend_stream *stream);
 
 /* Codec handling */
 struct sipe_backend_codec *sipe_backend_codec_new(int id,
@@ -281,8 +281,10 @@ void sipe_backend_codec_add_optional_parameter(struct sipe_backend_codec *codec,
 					       const gchar *name,
 					       const gchar *value);
 GList *sipe_backend_codec_get_optional_parameters(struct sipe_backend_codec *codec);
-gboolean sipe_backend_set_remote_codecs(struct sipe_media_call *call, gchar *participant);
-GList* sipe_backend_get_local_codecs(struct sipe_media_call *call);
+gboolean sipe_backend_set_remote_codecs(struct sipe_media_call *call,
+					struct sipe_backend_stream *stream);
+GList* sipe_backend_get_local_codecs(struct sipe_media_call *call,
+				     struct sipe_backend_stream *stream);
 
 /* Candidate handling */
 struct sipe_backend_candidate * sipe_backend_candidate_new(const gchar *foundation,
@@ -305,7 +307,7 @@ void sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *
 						 const gchar *username,
 						 const gchar *password);
 GList* sipe_backend_get_local_candidates(struct sipe_backend_media *media,
-					 gchar *participant);
+					 struct sipe_backend_stream *stream);
 void sipe_backend_media_hold(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_unhold(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local);
