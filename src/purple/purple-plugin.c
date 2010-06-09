@@ -246,7 +246,8 @@ static void sipe_login(PurpleAccount *account)
 
 	/* login name specified? */
 	if (username_split[1] && strlen(username_split[1])) {
-		gchar **domain_user = g_strsplit(username_split[1], "\\", 2);
+		/* Allowed domain-account separators are / or \ */
+		gchar **domain_user = g_strsplit_set(username_split[1], "/\\", 2);
 		gboolean has_domain = domain_user[1] != NULL;
 		SIPE_DEBUG_INFO("sipe_login: login '%s'", username_split[1]);
 		login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
