@@ -231,6 +231,7 @@ struct sipe_media_call;
 struct sipe_backend_media;
 struct sipe_backend_codec;
 struct sipe_backend_candidate;
+struct sipe_backend_stream;
 
 struct sipe_media_call {
 	struct sipe_backend_media *backend_private;
@@ -254,9 +255,9 @@ struct sipe_backend_media *sipe_backend_media_new(struct sipe_core_public *sipe_
 						  const gchar *participant,
 						  gboolean initiator);
 struct sipe_backend_stream *sipe_backend_media_add_stream(struct sipe_backend_media *media,
-				       const gchar *participant,
-				       SipeMediaType type, gboolean use_nice,
-				       gboolean initiator);
+							  const gchar *participant,
+							  SipeMediaType type, gboolean use_nice,
+							  gboolean initiator);
 void sipe_backend_media_remove_stream(struct sipe_backend_media *media,
 				      struct sipe_backend_stream *stream);
 void sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
@@ -271,8 +272,8 @@ GList *sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media
 
 /* Codec handling */
 struct sipe_backend_codec *sipe_backend_codec_new(int id,
-				   const char *name,
-				   SipeMediaType type, guint clock_rate);
+						  const char *name,
+						  SipeMediaType type, guint clock_rate);
 void sipe_backend_codec_free(struct sipe_backend_codec *codec);
 int sipe_backend_codec_get_id(struct sipe_backend_codec *codec);
 gchar *sipe_backend_codec_get_name(struct sipe_backend_codec *codec);
@@ -288,10 +289,10 @@ GList* sipe_backend_get_local_codecs(struct sipe_media_call *call,
 
 /* Candidate handling */
 struct sipe_backend_candidate * sipe_backend_candidate_new(const gchar *foundation,
-					    SipeComponentType component,
-					    SipeCandidateType type,
-					    SipeNetworkProtocol proto,
-					    const gchar *ip, guint port);
+							   SipeComponentType component,
+							   SipeCandidateType type,
+							   SipeNetworkProtocol proto,
+							   const gchar *ip, guint port);
 void sipe_backend_candidate_free(struct sipe_backend_candidate *candidate);
 gchar *sipe_backend_candidate_get_username(struct sipe_backend_candidate *candidate);
 gchar *sipe_backend_candidate_get_password(struct sipe_backend_candidate *candidate);
