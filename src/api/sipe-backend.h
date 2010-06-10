@@ -370,6 +370,11 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
 					    const gchar *from);
 
+/** NOTIFICATIONS *************************************************************/
+
+void sipe_backend_notify_error(const gchar *title, const gchar *msg);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -39,6 +39,7 @@
 #include "sipe-media.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
+#include "sipe-nls.h"
 #include "sipe.h"
 
 struct sipe_media_call_private {
@@ -923,10 +924,24 @@ sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
 	backend_private = call_private->public.backend_private;
 	with = call_private->dialog->with;
 
-	if (msg->response == 603) {
+	if (msg->response == 603 || msg->response == 605 || msg->response == 480) {
 		// Call rejected by remote peer
+		gchar *errmsg;
+		gchar *title;
+
 		sipe_backend_media_reject(backend_private, FALSE);
 		sipe_media_send_ack(sipe_private, msg, trans);
+
+		if (msg->response > 600) {
+			title = _("Call rejected");
+			errmsg = g_strdup_printf(_("User %s rejected call"), with);
+		} else {
+			errmsg = g_strdup_printf(_("User %s is not available"), with);
+			title = _("User unavailable");
+		}
+		sipe_backend_notify_error(title, errmsg);
+		g_free(errmsg);
+
 		return TRUE;
 	}
 
