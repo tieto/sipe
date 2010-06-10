@@ -41,7 +41,6 @@ DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
 DEFINES += -DHAVE_LIBKRB5=1
 DEFINES += -DHAVE_NSS=1
 DEFINES += -DHAVE_GMIME=1
-DEFINES += -DLOCALEDIR=<...please insert correct value here...>
 
 ##
 ## INCLUDE PATHS
@@ -54,7 +53,7 @@ INCLUDE_PATHS +=	-I. \
 			-I$(GTK_TOP)/lib/glib-2.0/include \
 			-I$(LIBICONV_TOP)/include \
 			-I$(GMIME_TOP)/include/gmime-2.4 \
-			-I$(LIBXML2_TOP)/include \
+			-I$(LIBXML2_TOP)/include/libxml2 \
 			-I$(NSPR_TOP)/include \
 			-I$(NSS_TOP)/include
 
@@ -85,7 +84,6 @@ CLEAN_C_SRC = \
 			sipe-session.c \
 			sipe-subscriptions.c \
 			sipe-user.c \
-			sipe-utils.c \
 			sipe-ews.c \
 			sipmsg.c \
 			sipe-sign.c \
@@ -112,6 +110,7 @@ PURPLE_C_SRC = \
 			../purple/purple-setting.c \
 			../purple/purple-transport.c \
 			../purple/purple-user.c \
+			sipe-utils.c \
 			sipe.c
 
 C_TEST_SRC = 		sipe-xml-tests.c \

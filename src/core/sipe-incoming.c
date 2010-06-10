@@ -29,6 +29,8 @@
 
 #include <glib.h>
 
+#include "sipe-incoming.h"
+
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
@@ -56,7 +58,7 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
-#if HAVE_VV
+#ifdef HAVE_VV
 	{
 		struct sipe_media_call_private *call_private = sipe_private->media_call;
 		if (call_private &&
@@ -107,7 +109,7 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 void process_incoming_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
 			     SIPE_UNUSED_PARAMETER struct sipmsg *msg)
 {
-#if HAVE_VV
+#ifdef HAVE_VV
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	if (call_private &&

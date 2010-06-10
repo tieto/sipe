@@ -22,6 +22,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sip_dialog;
 
 /**
  * Subscriptions subsystem

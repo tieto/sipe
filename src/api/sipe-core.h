@@ -145,7 +145,7 @@ struct sipe_core_public {
  * Initialize & destroy functions for the SIPE core
  * Should be called on loading and unloading of the plugin.
  */
-void sipe_core_init(void);
+void sipe_core_init(const char *locale_dir);
 void sipe_core_destroy(void);
 
 /** Utility functions exported by the core to backends ***********************/

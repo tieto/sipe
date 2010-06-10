@@ -36,6 +36,13 @@
 #define PURPLE_PLUGINS
 #endif
 
+/* for LOCALEDIR 
+ * as it's determined on runtime, as Pidgin installation can be anywhere.
+ */
+#ifdef _WIN32
+#include "win32dep.h"
+#endif
+
 #include "accountopt.h"
 #include "blist.h"
 #include "connection.h"
@@ -643,7 +650,7 @@ static void init_plugin(PurplePlugin *plugin)
 	PurpleAccountOption *option;
 
 	/* This needs to be called first */
-	sipe_core_init();
+	sipe_core_init(LOCALEDIR);
 	purple_activity_init();
 
 	purple_plugin_register(plugin);

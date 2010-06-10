@@ -238,7 +238,7 @@ struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_p
 	return(SIPE_FILE_TRANSFER_PUBLIC);
 }
 
-void sipe_ft_deallocate(struct sipe_file_transfer *ft)
+static void sipe_ft_deallocate(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 

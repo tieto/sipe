@@ -45,14 +45,14 @@
 #include "sipe-subscriptions.h"
 #include "sipe.h"
 
-void sipe_core_init(void)
+void sipe_core_init(const char *locale_dir)
 {
 	srand(time(NULL));
 	sip_sec_init();
 
 #ifdef ENABLE_NLS
 	SIPE_DEBUG_INFO("bindtextdomain = %s",
-			bindtextdomain(PACKAGE_NAME, LOCALEDIR));
+			bindtextdomain(PACKAGE_NAME, locale_dir));
 	SIPE_DEBUG_INFO("bind_textdomain_codeset = %s",
 			bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
 	textdomain(PACKAGE_NAME);
