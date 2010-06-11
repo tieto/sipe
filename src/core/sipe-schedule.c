@@ -123,6 +123,16 @@ void sipe_schedule_mseconds(struct sipe_core_private *sipe_private,
 							      new);
 }
 
+static void sipe_schedule_remove(struct sipe_core_private *sipe_private,
+				 struct sipe_schedule *schedule)
+{
+	SIPE_DEBUG_INFO("sipe_schedule_remove: action name=%s",
+			schedule->name);
+	sipe_backend_schedule_cancel(SIPE_CORE_PUBLIC,
+				     schedule->backend_private);
+	sipe_schedule_deallocate(schedule);
+}
+
 void sipe_schedule_cancel(struct sipe_core_private *sipe_private,
 			  const gchar *name)
 {
@@ -138,10 +148,7 @@ void sipe_schedule_cancel(struct sipe_core_private *sipe_private,
 			entry = entry->next;
 			sipe_private->timeouts = g_slist_delete_link(sipe_private->timeouts,
 								     to_delete);
-			SIPE_DEBUG_INFO("sipe_schedule_cancel: action name=%s", name);
-			sipe_backend_schedule_cancel(SIPE_CORE_PUBLIC,
-						     schedule->backend_private);
-			sipe_schedule_deallocate(schedule);
+			sipe_schedule_remove(sipe_private, schedule);
 		} else {
 			entry = entry->next;
 		}
@@ -150,14 +157,16 @@ void sipe_schedule_cancel(struct sipe_core_private *sipe_private,
 
 void sipe_schedule_cancel_all(struct sipe_core_private *sipe_private)
 {
-	if (sipe_private->timeouts) {
-		GSList *entry;
-		while ((entry = sipe_private->timeouts) != NULL)
-			sipe_schedule_cancel(sipe_private,
-					     ((struct sipe_schedule *)entry->data)->name);
-	}
-}
+	GSList *entry = sipe_private->timeouts;
 
+	while (entry) {
+		sipe_schedule_remove(sipe_private, entry->data);
+		entry = entry->next;
+	}
+
+	g_slist_free(sipe_private->timeouts);
+	sipe_private->timeouts = NULL;
+}
 
 /*
   Local Variables:

@@ -1405,6 +1405,9 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 						(trans->callback)(sipe_private, msg, trans);
 					}
 
+					/* Redirect: old content of "transport" is no longer valid */
+					transport = sipe_private->transport;
+
 					SIPE_DEBUG_INFO("process_input_message - removing CSeq %d", transport->cseq);
 					transactions_remove(transport, trans);
 
@@ -1503,6 +1506,9 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 		}
 
 		sipmsg_free(msg);
+
+		/* Redirect: old content of "transport" is no longer valid */
+		transport = sipe_private->transport;
 	}
 }
 

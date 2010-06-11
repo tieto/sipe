@@ -315,7 +315,7 @@ static void sipe_login(PurpleAccount *account)
 	sipe_core_transport_sip_connect(sipe_public,
 					type,
 					username_split[0],
-					username_split[1]);
+					username_split[0] ? username_split[1] : NULL);
 	g_strfreev(username_split);
 }
 
