@@ -1,12 +1,12 @@
 # Russian translation for pidgin-sipe
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-11 06:28+0300\n"
+"POT-Creation-Date: 2010-06-11 08:40+0000\n"
 "PO-Revision-Date: 2009-06-19 15:15+0000\n"
 "Last-Translator: pier11 <pier11@operamail.com>\n"
 "Language-Team: Russian <ru@li.org>\n"
@@ -14,8 +14,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2009-06-19 15:32+0000\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
-"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
 #: ../src/core/sip-transport.c:216
@@ -152,47 +151,30 @@ msgstr "Неизвестный"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2998
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"Ваше сообщение или приглашение не было доставлено. Возможно, оно содержит "
-"гиперссылку или другое содержимое, заблоктрованное системным администратором."
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
+msgstr "Ваше сообщение или приглашение не было доставлено. Возможно, оно содержит гиперссылку или другое содержимое, заблоктрованное системным администратором."
 
 #: ../src/core/sipe.c:3002
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
+msgid "This message was not delivered to %s because the service is not available"
 msgstr "Сообщение не доставлено %s, потому что сервис недоступен"
 
 #. Busy Here
 #: ../src/core/sipe.c:3004
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
-"Сообщение не доставлено %s, поскольку один или нескольно получателей были "
-"недоступны"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Сообщение не доставлено %s, поскольку один или нескольно получателей были недоступны"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3006
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
-msgstr ""
-"Это сообщение не было доставлено %s, поскольку один или нескольно "
-"получателей не поддерживают данный тип сообщения"
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
+msgstr "Это сообщение не было доставлено %s, поскольку один или нескольно получателей не поддерживают данный тип сообщения"
 
 #: ../src/core/sipe.c:3008
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
-"Сообщение не доставлено %s, поскольку один или нескольно получателей были не "
-"в сети"
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Сообщение не доставлено %s, поскольку один или нескольно получателей были не в сети"
 
 #: ../src/core/sipe.c:3312
 #, c-format
@@ -297,11 +279,8 @@ msgstr "Уровень доступа"
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:6386
-msgid ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=%D0%A3%D1%80%D0%"
-"BE%D0%B2%D0%BD%D0%B8_%D0%B4%D0%BE%D1%81%D1%82%D1%83%D0%BF%D0%B0"
+msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=%D0%A3%D1%80%D0%BE%D0%B2%D0%BD%D0%B8_%D0%B4%D0%BE%D1%81%D1%82%D1%83%D0%BF%D0%B0"
 
 #: ../src/core/sipe.c:6468
 #, c-format
@@ -509,17 +488,12 @@ msgid "Chat #%d"
 msgstr "Чат #%d"
 
 #: ../src/core/sipe-conf.c:800
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
+msgid "This conference is no longer locked. Additional participants can now join."
 msgstr "Конференция разблокирована. Новые участники могут присоединиться."
 
 #: ../src/core/sipe-conf.c:804
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
-msgstr ""
-"Конференция заблокирована. Пока доступ к конференции заблокирован, к ней не "
-"могут присоединяться новые участники."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
+msgstr "Конференция заблокирована. Пока доступ к конференции заблокирован, к ней не могут присоединяться новые участники."
 
 #: ../src/core/sipe-conf.c:837
 msgid "You have been disconnected from this conference."
@@ -528,12 +502,8 @@ msgstr "Ведущий конференции удалил вас из конф�
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:138
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
-msgstr ""
-"Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в "
-"таких продуктах, как"
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
+msgstr "Независимый плагин реализующий расширенную версию SIP/SIMPLE используемую в таких продуктах, как"
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:140
@@ -600,7 +570,8 @@ msgstr "Авторы"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Русский перевод (ru): pier11"
 
-#. Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location
+#. Translators: (!) should be as in localized Lotus Notes to be able to
+#. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
 msgid "Location:"
 msgstr "Место:"
@@ -660,22 +631,21 @@ msgstr "Поступило сообщение неподдерживаемого
 
 #: ../src/core/sipe-media.c:936
 msgid "Call rejected"
-msgstr ""
+msgstr "Вызов отклонен"
 
 #: ../src/core/sipe-media.c:937
 #, c-format
 msgid "User %s rejected call"
-msgstr ""
+msgstr "Пользователь %s отклонил вызов"
 
 #: ../src/core/sipe-media.c:939
 #, c-format
 msgid "User %s is not available"
-msgstr ""
+msgstr "Пользователь %s недоступен"
 
 #: ../src/core/sipe-media.c:940
-#, fuzzy
 msgid "User unavailable"
-msgstr "Сервис недоступен: %s"
+msgstr "Пользователь недоступен"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -708,12 +678,8 @@ msgid "Search for a contact"
 msgstr "Поиск контактов"
 
 #: ../src/purple/purple-plugin.c:574
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Введите информацию о человеке, которого вы хотите найти. Пустые поля будут "
-"игнорироваться."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут игнорироваться."
 
 #: ../src/purple/purple-plugin.c:576
 msgid "_Search"
@@ -745,7 +711,7 @@ msgstr "Сбросить состояние"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#.
+#. 
 #: ../src/purple/purple-plugin.c:665
 msgid ""
 "Login\n"
@@ -780,8 +746,10 @@ msgstr "SSL/TLS"
 msgid "TCP"
 msgstr "TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/purple/purple-plugin.c:681
 msgid "User Agent"
 msgstr "Агент пользователя"
@@ -793,14 +761,14 @@ msgstr "Использовать Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:692
 msgid "Use Single Sign-On"
 msgstr "Использовать Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#.
+#. 
 #: ../src/purple/purple-plugin.c:699
 msgid ""
 "Email services URL\n"
@@ -819,7 +787,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#.
+#. 
 #: ../src/purple/purple-plugin.c:708
 msgid ""
 "Email login\n"
