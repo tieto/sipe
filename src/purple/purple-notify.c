@@ -1,5 +1,5 @@
 /**
- * @file purple-user.c
+ * @file purple-notify.c
  *
  * pidgin-sipe
  *

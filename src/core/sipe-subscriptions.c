@@ -24,8 +24,6 @@
 
 #include <glib.h>
 
-#include "sipe-subscriptions.h"
-
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-transport.h"
@@ -33,6 +31,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe.h"
 

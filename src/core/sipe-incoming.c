@@ -29,8 +29,6 @@
 
 #include <glib.h>
 
-#include "sipe-incoming.h"
-
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
@@ -42,6 +40,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-ft.h"
+#include "sipe-incoming.h"
 #include "sipe-media.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
