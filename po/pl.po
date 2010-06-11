@@ -5,8 +5,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-11 06:28+0300\n"
-"PO-Revision-Date: 2010-05-25 21:42+0200\n"
+"POT-Creation-Date: 2010-06-11 08:40+0000\n"
+"PO-Revision-Date: 2010-06-11 14:53+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <trans-pl@lists.fedoraproject.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,11 +17,11 @@ msgstr ""
 
 #: ../src/core/sip-transport.c:216
 msgid "Failed to authenticate to server"
-msgstr "Uwierzytelnienie do serwera nie powiodło się"
+msgstr "Uwierzytelnienie do serwera się nie powiodło"
 
 #: ../src/core/sip-transport.c:1108 ../src/core/sip-transport.c:1495
 msgid "Authentication failed"
-msgstr "Uwierzytelnienie nie powiodło się"
+msgstr "Uwierzytelnienie się nie powiodło"
 
 #: ../src/core/sip-transport.c:1117 ../src/core/sip-transport.c:1382
 msgid "Incompatible authentication scheme chosen"
@@ -195,7 +195,7 @@ msgstr ""
 #: ../src/core/sipe.c:3312
 #, c-format
 msgid "Failed to invite %s"
-msgstr "Zaproszenie %s nie powiodło się"
+msgstr "Zaproszenie %s się nie powiodło"
 
 #: ../src/core/sipe.c:5829
 msgid "SIP Exchange user name contains invalid characters"
@@ -608,12 +608,12 @@ msgstr "Położenie:"
 #: ../src/core/sipe-ft.c:642 ../src/core/sipe-ft.c:700
 #: ../src/purple/purple-ft.c:317
 msgid "Socket read failed"
-msgstr "Odczyt z gniazda nie powiódł się"
+msgstr "Odczyt z gniazda się nie powiódł"
 
 #: ../src/core/sipe-ft.c:115 ../src/core/sipe-ft.c:744
 #: ../src/core/sipe-ft.c:753
 msgid "Socket write failed"
-msgstr "Zapis do gniazda nie powiódł się"
+msgstr "Zapis do gniazda się nie powiódł"
 
 #: ../src/core/sipe-ft.c:400
 msgid "File size is different from the advertised value."
@@ -629,11 +629,11 @@ msgstr "Pobrany plik jest uszkodzony"
 
 #: ../src/core/sipe-ft.c:518
 msgid "File transfer initialization failed."
-msgstr "Zainicjowanie przesyłania pliku nie powiodło się."
+msgstr "Zainicjowanie przesyłania pliku się nie powiodło."
 
 #: ../src/core/sipe-ft.c:549
 msgid "File transfer authentication failed."
-msgstr "Uwierzytelnienie przesyłania pliku nie powiodło się."
+msgstr "Uwierzytelnienie przesyłania pliku się nie powiodło."
 
 #: ../src/core/sipe-ft.c:634 ../src/core/sipe-ft.c:652
 #: ../src/core/sipe-ft.c:714
@@ -659,22 +659,21 @@ msgstr "Odebrano wiadomość z nierozpoznaną zawartością od %s"
 
 #: ../src/core/sipe-media.c:936
 msgid "Call rejected"
-msgstr ""
+msgstr "Odrzucono rozmowę"
 
 #: ../src/core/sipe-media.c:937
 #, c-format
 msgid "User %s rejected call"
-msgstr ""
+msgstr "Użytkownik %s odrzucił rozmowę"
 
 #: ../src/core/sipe-media.c:939
 #, c-format
 msgid "User %s is not available"
-msgstr ""
+msgstr "Użytkownik %s jest niedostępny"
 
 #: ../src/core/sipe-media.c:940
-#, fuzzy
 msgid "User unavailable"
-msgstr "Usługa jest niedostępna: %s"
+msgstr "Użytkownik jest niedostępny"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
