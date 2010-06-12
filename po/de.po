@@ -808,7 +808,7 @@ msgstr "Lesefehler"
 
 #: ../src/purple/purple-transport.c:113
 msgid "Server has disconnected"
-msgstr "Server-Verbindung wurde getrennt"
+msgstr "Der Server hat die Verbindung abgebrochen"
 
 #: ../src/purple/purple-transport.c:190
 msgid "Could not connect"
@@ -816,7 +816,7 @@ msgstr "Es konnte keine Verbindung hergestellt werden"
 
 #: ../src/purple/purple-transport.c:255
 msgid "Could not create SSL context"
-msgstr "Es konnte keine SSL-Kontext erstellt werden"
+msgstr "Es konnte kein SSL-Kontext erstellt werden"
 
 #: ../src/purple/purple-transport.c:269
 msgid "Could not create socket"
