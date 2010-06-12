@@ -820,7 +820,7 @@ msgstr "Es konnte keine SSL-Kontext erstellt werden"
 
 #: ../src/purple/purple-transport.c:269
 msgid "Could not create socket"
-msgstr "Es konnte keinen Socket erzeugt werden"
+msgstr "Es konnte kein Socket erzeugt werden"
 
 #: ../src/purple/purple-transport.c:329
 msgid "Write error"
