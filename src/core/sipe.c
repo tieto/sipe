@@ -5794,7 +5794,7 @@ static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
 
 	nick1_norm = g_utf8_casefold(nick1, -1);
 	nick2_norm = g_utf8_casefold(nick2, -1);
-	equal = g_utf8_collate(nick2_norm, nick2_norm) == 0;
+	equal = g_utf8_collate(nick1_norm, nick2_norm) == 0;
 	g_free(nick2_norm);
 	g_free(nick1_norm);
 
