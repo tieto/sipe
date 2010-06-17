@@ -2,12 +2,12 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Geroen Dierckx <gwaark@yahoo.com>, 2010.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-11 06:28+0300\n"
+"POT-Creation-Date: 2010-06-11 12:54+0000\n"
 "PO-Revision-Date: 2010-04-08 10:04+0100\n"
 "Last-Translator: Geroen Dierckx <gwaark@yahoo.com>\n"
 "Language-Team: none\n"
@@ -20,7 +20,7 @@ msgstr ""
 msgid "Failed to authenticate to server"
 msgstr "Kon niet autenticeren bij de server"
 
-#: ../src/core/sip-transport.c:1108 ../src/core/sip-transport.c:1495
+#: ../src/core/sip-transport.c:1108 ../src/core/sip-transport.c:1498
 msgid "Authentication failed"
 msgstr "Authenticatie mislukt"
 
@@ -52,7 +52,7 @@ msgstr "SIP is ofwel niet aangezet voor de doel URI, ofwel bestaat hij niet"
 msgid "Service unavailable: %s"
 msgstr "Service onbeschikbaar: %s"
 
-#: ../src/core/sip-transport.c:1490
+#: ../src/core/sip-transport.c:1493
 msgid "Invalid message signature received"
 msgstr "Ongeldige handtekening van het bericht ontvangen"
 
@@ -150,48 +150,30 @@ msgstr "Onbekend"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2998
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"Uw bericht of uitnodiging werd niet afgeleverd, mogelijk bevat het een "
-"hyperlink of andere gegevens die door de systeem beheerder wordt geblokkeerd"
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
+msgstr "Uw bericht of uitnodiging werd niet afgeleverd, mogelijk bevat het een hyperlink of andere gegevens die door de systeem beheerder wordt geblokkeerd"
 
 #: ../src/core/sipe.c:3002
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
-msgstr ""
-"Dit bericht werd niet afgeleverd aan %s. De service is niet beschikbaar"
+msgid "This message was not delivered to %s because the service is not available"
+msgstr "Dit bericht werd niet afgeleverd aan %s. De service is niet beschikbaar"
 
 #. Busy Here
 #: ../src/core/sipe.c:3004
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
-"Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers niet "
-"gestoord willen worden"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers niet gestoord willen worden"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3006
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
-msgstr ""
-"Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers dit "
-"type van bericht niet ondersteunt."
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
+msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers dit type van bericht niet ondersteunt."
 
 #: ../src/core/sipe.c:3008
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
-"Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers "
-"offline zijn."
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers offline zijn."
 
 #: ../src/core/sipe.c:3312
 #, c-format
@@ -295,10 +277,8 @@ msgstr "Toegangsniveau"
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:6386
-msgid ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:6468
 #, c-format
@@ -506,19 +486,12 @@ msgid "Chat #%d"
 msgstr "Chat #%d"
 
 #: ../src/core/sipe-conf.c:800
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
-msgstr ""
-"Deze conferentie is niet langer geblokkeerd. Andere deelnemers kunnen zich "
-"nu bijvoegen."
+msgid "This conference is no longer locked. Additional participants can now join."
+msgstr "Deze conferentie is niet langer geblokkeerd. Andere deelnemers kunnen zich nu bijvoegen."
 
 #: ../src/core/sipe-conf.c:804
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
-msgstr ""
-"Deze conferentie is geblokkeerd. Andere deelnemers kunnen zich niet "
-"bijvoegen zolang ze geblokkeerd is."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
+msgstr "Deze conferentie is geblokkeerd. Andere deelnemers kunnen zich niet bijvoegen zolang ze geblokkeerd is."
 
 #: ../src/core/sipe-conf.c:837
 msgid "You have been disconnected from this conference."
@@ -527,12 +500,8 @@ msgstr "U bent niet langer verbonden met deze conferentie."
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:138
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
-msgstr ""
-"Een derde-partij plugin die een uitgebreide versie van het SIP/SIMPLE "
-"protocol implementeert, dat gebruikt wordt door meerdere producten."
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
+msgstr "Een derde-partij plugin die een uitgebreide versie van het SIP/SIMPLE protocol implementeert, dat gebruikt wordt door meerdere producten."
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:140
@@ -599,7 +568,8 @@ msgstr "Auteurs"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Originele teksten in Engels (en): SIPE ontwikkelaars"
 
-#. Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location
+#. Translators: (!) should be as in localized Lotus Notes to be able to
+#. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
 msgid "Location:"
 msgstr "Plaats:"
@@ -659,22 +629,21 @@ msgstr "Bericht ontvangen met onherkenbare inhoud van %s"
 
 #: ../src/core/sipe-media.c:936
 msgid "Call rejected"
-msgstr ""
+msgstr "Oproep geweigerd"
 
 #: ../src/core/sipe-media.c:937
 #, c-format
 msgid "User %s rejected call"
-msgstr ""
+msgstr "Gebruiker %s heeft de oproep geweigerd"
 
 #: ../src/core/sipe-media.c:939
 #, c-format
 msgid "User %s is not available"
-msgstr ""
+msgstr "Gebruiker %s is niet beschikbaar"
 
 #: ../src/core/sipe-media.c:940
-#, fuzzy
 msgid "User unavailable"
-msgstr "Service onbeschikbaar: %s"
+msgstr "Gebruiker niet beschikbaar"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -707,12 +676,8 @@ msgid "Search for a contact"
 msgstr "Contactpersoon zoeken"
 
 #: ../src/purple/purple-plugin.c:574
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Vul de informatie in voor de persoon die u probeert te vinden. Lege velden "
-"worden genegeerd."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Vul de informatie in voor de persoon die u probeert te vinden. Lege velden worden genegeerd."
 
 #: ../src/purple/purple-plugin.c:576
 msgid "_Search"
@@ -744,7 +709,7 @@ msgstr "Herinitialiseer status"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#.
+#. 
 #: ../src/purple/purple-plugin.c:665
 msgid ""
 "Login\n"
@@ -779,8 +744,10 @@ msgstr "SSL/TLS"
 msgid "TCP"
 msgstr "TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/purple/purple-plugin.c:681
 msgid "User Agent"
 msgstr "User Agent"
@@ -792,14 +759,14 @@ msgstr "Gebruik Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:692
 msgid "Use Single Sign-On"
 msgstr "Gebruik Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#.
+#. 
 #: ../src/purple/purple-plugin.c:699
 msgid ""
 "Email services URL\n"
@@ -818,7 +785,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#.
+#. 
 #: ../src/purple/purple-plugin.c:708
 msgid ""
 "Email login\n"
