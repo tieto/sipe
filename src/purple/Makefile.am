@@ -34,8 +34,8 @@ libsipe_backend_la_CFLAGS = \
         $(GLIB_CFLAGS) \
 	$(PURPLE_CFLAGS) \
 	-I$(srcdir)/../api
-	
-if !OS_WIN32
+
+if !SIPE_OS_WIN32
 libsipe_backend_la_CFLAGS += \
         $(LOCALE_CPPFLAGS)
 endif
@@ -53,7 +53,7 @@ libsipe_la_LIBADD = \
         $(GLIB_LIBS) \
 	$(PURPLE_LIBS)
 
-if OS_WIN32
+if SIPE_OS_WIN32
 libsipe_la_LIBADD += -lws2_32
 endif
 

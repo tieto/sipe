@@ -45,16 +45,11 @@ dnl ******************************
 dnl Win32
 dnl ******************************
 AC_MSG_CHECKING([for Win32])
-case "$host" in
-*-mingw*)
-	os_win32=yes
-	;;
-*)
-	os_win32=no
-	;;
-esac
+AS_CASE(["$host"],
+		[*-mingw*], [os_win32=yes],
+		[os_win32=no])
 AC_MSG_RESULT([$os_win32])
-AM_CONDITIONAL(OS_WIN32, [test $os_win32 = yes])
+AM_CONDITIONAL(SIPE_OS_WIN32, [test "x${os_win32}" = xyes])
 
 dnl checks for header files
 AC_CHECK_HEADERS([sys/sockio.h])
@@ -264,30 +259,31 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 ])
 			])
 
-dnl test program needs to be in the same location as libpurple installation for
-dnl latter to load ssl plugin referenced by RELATIVE path.
-if test "$os_win32" != yes; then
-		 dnl purple SSL support is mandatory
-		 AC_MSG_CHECKING([for purple SSL support])
-		 ac_save_LIBS=$LIBS
-		 LIBS="$PURPLE_LIBS"
-		 AC_RUN_IFELSE(
-			AC_LANG_PROGRAM([
+		 dnl test program needs to be in the same location as libpurple
+		 dnl installation for latter to load ssl plugin referenced by
+		 dnl RELATIVE path.
+		 AS_IF([test "x${os_win32}" != xyes],
+			[dnl purple SSL support is mandatory
+			 AC_MSG_CHECKING([for purple SSL support])
+			 ac_save_LIBS=$LIBS
+			 LIBS="$PURPLE_LIBS"
+			 AC_RUN_IFELSE(
+				AC_LANG_PROGRAM([
 #include <glib.h>
 #include <plugin.h>
 #include <sslconn.h>
 ],
-					[
+						[
 	purple_plugins_init();
 	purple_plugins_probe(G_MODULE_SUFFIX);
 	purple_ssl_init();
 	return(purple_ssl_is_supported()?0:1);
-					]),
-			[AC_MSG_RESULT(ok)],
-			[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
+						]),
+				[AC_MSG_RESULT(ok)],
+				[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
 ])
-			])
-fi
+				])
+		 ])
 
 		 dnl check whether enable voice and video support
 		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
