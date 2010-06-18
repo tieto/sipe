@@ -32,9 +32,13 @@ libsipe_backend_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
         $(GLIB_CFLAGS) \
-        $(LOCALE_CPPFLAGS) \
 	$(PURPLE_CFLAGS) \
 	-I$(srcdir)/../api
+	
+if !OS_WIN32
+libsipe_backend_la_CFLAGS += \
+        $(LOCALE_CPPFLAGS)
+endif
 
 libsipe_la_CFLAGS = $(libsipe_backend_la_CFLAGS)
 
@@ -48,6 +52,10 @@ libsipe_la_LIBADD = \
         $(LIBXML2_LIBS) \
         $(GLIB_LIBS) \
 	$(PURPLE_LIBS)
+
+if OS_WIN32
+libsipe_la_LIBADD += -lws2_32
+endif
 
 if SIP_SEC_KRB5
 libsipe_la_LIBADD += $(KRB5_LDFLAGS)

@@ -30,7 +30,7 @@
 
 #ifdef _WIN32
 /* for network */
-#include "libc_interface.h"
+#include "win32/libc_interface.h"
 #include <nspapi.h>
 #else
 #ifdef __APPLE__

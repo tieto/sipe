@@ -20,6 +20,8 @@ AC_INIT([pidgin-sipe], SIPE_VERSION,
 dnl setup automake and require recent enough version
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])
 
+AC_CANONICAL_HOST
+
 dnl set PACKAGE_URL for autoconf < 2.64
 AS_IF([test "x${PACKAGE_URL}" = x],
 	[AC_MSG_NOTICE([set PACKAGE_URL for autoconf < 2.64])
@@ -38,6 +40,21 @@ dnl checks for tools
 IT_PROG_INTLTOOL([0.35.0])
 AC_PROG_INSTALL
 AC_PROG_RANLIB
+
+dnl ******************************
+dnl Win32
+dnl ******************************
+AC_MSG_CHECKING([for Win32])
+case "$host" in
+*-mingw*)
+	os_win32=yes
+	;;
+*)
+	os_win32=no
+	;;
+esac
+AC_MSG_RESULT([$os_win32])
+AM_CONDITIONAL(OS_WIN32, [test $os_win32 = yes])
 
 dnl checks for header files
 AC_CHECK_HEADERS([sys/sockio.h])
@@ -247,6 +264,9 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 ])
 			])
 
+dnl test program needs to be in the same location as libpurple installation for
+dnl latter to load ssl plugin referenced by RELATIVE path.
+if test "$os_win32" != yes; then
 		 dnl purple SSL support is mandatory
 		 AC_MSG_CHECKING([for purple SSL support])
 		 ac_save_LIBS=$LIBS
@@ -267,6 +287,7 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 			[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
 ])
 			])
+fi
 
 		 dnl check whether enable voice and video support
 		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user

@@ -6,9 +6,11 @@ noinst_LTLIBRARIES = \
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
+if !OS_WIN32
 EXTRA_DIST = \
 	sipe-win32dep.h \
 	sipe-win32dep.c
+endif
 
 libsipe_core_la_SOURCES = \
 	http-conn.h \
@@ -53,17 +55,24 @@ libsipe_core_la_SOURCES = \
 	sipe-subscriptions.h \
 	sipe-subscriptions.c \
 	sipe-user.c \
-	sipe-utils.h \
-	sipe-utils.c \
 	sipe-xml.h \
 	sipe-xml.c \
 	uuid.h \
 	uuid.c
+	
+if OS_WIN32
+libsipe_core_la_SOURCES += \
+	sipe-win32dep.h \
+	sipe-win32dep.c
+endif
 
 libsipe_core_tests_la_SOURCES = \
 	sip-sec-ntlm-tests.c
 
+# sipe-utils.c contain windows networking dependency wrapped in purple
 libsipe_core_purple_la_SOURCES = \
+	sipe-utils.h \
+	sipe-utils.c \
 	sipe.h \
 	sipe.c
 

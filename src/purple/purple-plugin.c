@@ -40,7 +40,7 @@
  * as it's determined on runtime, as Pidgin installation can be anywhere.
  */
 #ifdef _WIN32
-#include "win32dep.h"
+#include "win32/win32dep.h"
 #endif
 
 #include "accountopt.h"
