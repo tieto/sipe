@@ -64,10 +64,6 @@ if SIPE_OS_WIN32
 libsipe_core_la_SOURCES += \
 	sipe-win32dep.h \
 	sipe-win32dep.c
-# sipe-utils.c contain windows networking dependency wrapped in purple
-libsipe_core_purple_la_SOURCES = \
-	sipe-utils.h \
-	sipe-utils.c
 else
 libsipe_core_la_SOURCES += \
 	sipe-utils.h \
@@ -80,6 +76,13 @@ libsipe_core_tests_la_SOURCES = \
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
 	sipe.c
+
+if SIPE_OS_WIN32
+# sipe-utils.c contain windows networking dependency wrapped in purple
+libsipe_core_purple_la_SOURCES += \
+	sipe-utils.h \
+	sipe-utils.c
+endif
 
 AM_CFLAGS = $(st)
 
