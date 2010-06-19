@@ -60,6 +60,11 @@ void sipe_backend_debug(sipe_debug_level level,
 	va_end(ap);
 }
 
+gboolean sipe_backend_debug_enabled(void)
+{
+	return purple_debug_is_enabled();
+}
+
 /*
   Local Variables:
   mode: c

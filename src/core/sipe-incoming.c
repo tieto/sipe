@@ -282,12 +282,14 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	const gchar *trig_invite    = sipmsg_find_header(msg, "TriggeredInvite");
 	const gchar *content_type   = sipmsg_find_header(msg, "Content-Type");
 	GSList *end_points = NULL;
-	char *tmp = NULL;
 	struct sip_session *session;
 	const gchar *ms_text_format;
 
-	SIPE_DEBUG_INFO("process_incoming_invite: body:\n%s!", msg->body ? tmp = fix_newlines(msg->body) : "");
-	g_free(tmp);
+	if (msg->body && sipe_backend_debug_enabled()) {
+		char *tmp = fix_newlines(msg->body);
+		SIPE_DEBUG_INFO("process_incoming_invite: body:\n%s!", tmp);
+		g_free(tmp);
+	}
 
 #ifdef HAVE_VV
 	if (g_str_has_prefix(content_type, "multipart/alternative")) {

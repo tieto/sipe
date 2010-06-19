@@ -88,6 +88,13 @@ void sipe_backend_debug(sipe_debug_level level,
 #define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
 #define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   msg)
 
+/**
+ * Check backend debugging status
+ *
+ * @return TRUE if debugging is enabled
+ */
+gboolean sipe_backend_debug_enabled(void);
+
 /** CHAT *********************************************************************/
 
 //void sipe_backend_chat_(struct sipe_backend_session *backend_session, );

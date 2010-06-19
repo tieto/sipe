@@ -4686,12 +4686,13 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 	const gchar *content_type = sipmsg_find_header(msg, "Content-Type");
 	const gchar *event = sipmsg_find_header(msg, "Event");
 	const gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
-	char *tmp;
 
-	SIPE_DEBUG_INFO("process_incoming_notify: Event: %s\n\n%s",
-			event ? event : "",
-			tmp = fix_newlines(msg->body));
-	g_free(tmp);
+	if (sipe_backend_debug_enabled()) {
+		char *tmp = fix_newlines(msg->body);
+		SIPE_DEBUG_INFO("process_incoming_notify: Event: %s\n\n%s",
+				event ? event : "", tmp);
+		g_free(tmp);
+	}
 	SIPE_DEBUG_INFO("process_incoming_notify: subscription_state: %s", subscription_state ? subscription_state : "");
 
 	/* implicit subscriptions */

@@ -1441,13 +1441,16 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 	while (transport->processing_input &&
 	       ((cur = strstr(conn->buffer, "\r\n\r\n")) != NULL)) {
 		struct sipmsg *msg;
-		gchar *tmp;
 		guint remainder;
-		time_t currtime = time(NULL);
 		cur += 2;
 		cur[0] = '\0';
-		SIPE_DEBUG_INFO("received - %s######\n%s\n#######", ctime(&currtime), tmp = fix_newlines(conn->buffer));
-		g_free(tmp);
+
+		if (sipe_backend_debug_enabled()) {
+			time_t currtime = time(NULL);
+			gchar *tmp = fix_newlines(conn->buffer);
+			SIPE_DEBUG_INFO("received - %s######\n%s\n#######", ctime(&currtime), tmp);
+			g_free(tmp);
+		}
 		msg = sipmsg_parse_header(conn->buffer);
 		cur[0] = '\r';
 		cur += 2;
