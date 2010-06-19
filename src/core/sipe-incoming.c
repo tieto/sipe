@@ -285,12 +285,6 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	struct sip_session *session;
 	const gchar *ms_text_format;
 
-	if (msg->body && sipe_backend_debug_enabled()) {
-		char *tmp = fix_newlines(msg->body);
-		SIPE_DEBUG_INFO("process_incoming_invite: body:\n%s!", tmp);
-		g_free(tmp);
-	}
-
 #ifdef HAVE_VV
 	if (g_str_has_prefix(content_type, "multipart/alternative")) {
 		sipe_mime_parts_foreach(content_type, msg->body, sipe_invite_mime_cb, msg);

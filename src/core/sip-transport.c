@@ -462,6 +462,7 @@ void sip_transport_response(struct sipe_core_private *sipe_private,
 		tmp = g_slist_next(tmp);
 	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
+	sipe_utils_message_debug("SIP", outstr->str, NULL, TRUE);
 	sipe_backend_transport_message(sipe_private->transport->connection, outstr->str);
 	g_string_free(outstr, TRUE);
 }
@@ -692,6 +693,7 @@ struct transaction *sip_transport_request(struct sipe_core_private *sipe_private
 	}
 	g_free(callid);
 
+	sipe_utils_message_debug("SIP", buf, NULL, TRUE);
 	sipe_backend_transport_message(transport->connection, buf);
 	g_free(buf);
 
@@ -1340,6 +1342,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 				g_free(auth);
 				resend = sipmsg_to_string(trans->msg);
 				/* resend request */
+				sipe_utils_message_debug("SIP", resend, NULL, TRUE);
 				sipe_backend_transport_message(sipe_private->transport->connection, resend);
 				g_free(resend);
 			} else {
@@ -1394,6 +1397,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 							g_free(auth);
 							resend = sipmsg_to_string(trans->msg);
 							/* resend request */
+							sipe_utils_message_debug("SIP", resend, NULL, TRUE);
 							sipe_backend_transport_message(sipe_private->transport->connection, resend);
 							g_free(resend);
 						}
@@ -1442,17 +1446,11 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 	       ((cur = strstr(conn->buffer, "\r\n\r\n")) != NULL)) {
 		struct sipmsg *msg;
 		guint remainder;
+
 		cur += 2;
 		cur[0] = '\0';
-
-		if (sipe_backend_debug_enabled()) {
-			time_t currtime = time(NULL);
-			gchar *tmp = fix_newlines(conn->buffer);
-			SIPE_DEBUG_INFO("received - %s######\n%s\n#######", ctime(&currtime), tmp);
-			g_free(tmp);
-		}
 		msg = sipmsg_parse_header(conn->buffer);
-		cur[0] = '\r';
+
 		cur += 2;
 		remainder = conn->buffer_used - (cur - conn->buffer);
 		if (msg && remainder >= (guint) msg->bodylen) {
@@ -1461,18 +1459,21 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			dummy[msg->bodylen] = '\0';
 			msg->body = dummy;
 			cur += msg->bodylen;
+			sipe_utils_message_debug("SIP",
+						 conn->buffer,
+						 msg->body,
+						 FALSE);
 			sipe_utils_shrink_buffer(conn, cur);
 		} else {
 			if (msg){
 				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
 				sipmsg_free(msg);
                         }
+
+			/* restore header for next try */
+			cur[-2] = '\r';
 			return;
 		}
-
-		/*if (msg->body) {
-			SIPE_DEBUG_INFO("body:\n%s", msg->body);
-		}*/
 
 		// Verify the signature before processing it
 		if (transport->registrar.gssapi_context) {
@@ -1679,6 +1680,7 @@ void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public)
 {
 	SIPE_DEBUG_INFO("sending keep alive %d",
 			sipe_public->keepalive_timeout);
+	sipe_utils_message_debug("SIP", "", NULL, TRUE);
 	sipe_backend_transport_message(SIPE_CORE_PRIVATE->transport->connection,
 				       "\r\n\r\n");
 }

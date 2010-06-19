@@ -224,11 +224,17 @@ replace(const char *st,
 	const char *replace);
 
 /**
- * Replaces \r\n to \n
- * Returns newly allocated string. Must be g_free()'d
+ * Message debugging
+ *
+ * @param type    message type description (SIP or HTTP).
+ * @param header  message header
+ * @param body    message body or NULL
+ * @param sending TRUE if outgoing message
  */
-char *
-fix_newlines(const char *st);
+void sipe_utils_message_debug(const gchar *type,
+			      const gchar *header,
+			      const gchar *body,
+			      gboolean sending);
 
 /**
  * Tests two strings for equality.

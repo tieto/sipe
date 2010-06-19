@@ -150,7 +150,6 @@ void sipe_core_destroy(void);
 
 /** Utility functions exported by the core to backends ***********************/
 gboolean sipe_strequal(const gchar *left, const gchar *right);
-char *fix_newlines(const char *st);
 
 GSList *
 sipe_utils_nameval_add(GSList *list, const gchar *name, const gchar *value);

@@ -366,6 +366,7 @@ http_conn_send0(HttpConn *http_conn,
 	}
 	g_string_append_printf(outstr, "\r\n%s", http_conn->body ? http_conn->body : "");
 
+	sipe_utils_message_debug("HTTP", outstr->str, NULL, TRUE);
 	sipe_backend_transport_message(http_conn->conn, outstr->str);
 	g_string_free(outstr, TRUE);
 }
@@ -572,18 +573,11 @@ static void http_conn_input(struct sipe_transport_connection *conn)
 	while ((cur = strstr(conn->buffer, "\r\n\r\n")) != NULL) {
 		struct sipmsg *msg;
 		guint remainder;
+
 		cur += 2;
 		cur[0] = '\0';
-
-		if (sipe_backend_debug_enabled()) {
-			time_t currtime = time(NULL);
-			char *tmp = fix_newlines(conn->buffer);
-			SIPE_DEBUG_INFO("received - %s******\n%s\n******", ctime(&currtime), tmp);
-			g_free(tmp);
-		}
-
 		msg = sipmsg_parse_header(conn->buffer);
-		cur[0] = '\r';
+
 		cur += 2;
 		remainder = conn->buffer_used - (cur - conn->buffer);
 		if (msg && remainder >= (guint) msg->bodylen) {
@@ -592,17 +586,20 @@ static void http_conn_input(struct sipe_transport_connection *conn)
 			dummy[msg->bodylen] = '\0';
 			msg->body = dummy;
 			cur += msg->bodylen;
+			sipe_utils_message_debug("HTTP",
+						 conn->buffer,
+						 msg->body,
+						 FALSE);
 			sipe_utils_shrink_buffer(conn, cur);
 		} else {
 			if (msg){
 				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
 				sipmsg_free(msg);
                         }
-			return;
-		}
 
-		if (msg->body) {
-			SIPE_DEBUG_INFO("body:\n%s", msg->body);
+			/* restore header for next try */
+			cur[-2] = '\r';
+			return;
 		}
 
 		/* important to set before callback call */

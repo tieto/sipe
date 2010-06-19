@@ -345,15 +345,6 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 {
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 
-	if (sipe_backend_debug_enabled()) {
-		time_t currtime = time(NULL);
-		char *tmp = fix_newlines(buffer);
-
-		SIPE_DEBUG_INFO("sending - %s######\n%s######",
-				ctime(&currtime), tmp );
-		g_free(tmp);
-	}
-
 	/* add packet to circular buffer */
 	purple_circ_buffer_append(transport->transmit_buffer,
 				  buffer, strlen(buffer));

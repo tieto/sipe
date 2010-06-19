@@ -240,10 +240,33 @@ replace(const char *st,
 	return res;
 }
 
-char *
-fix_newlines(const char *st)
+void sipe_utils_message_debug(const gchar *type,
+			      const gchar *header,
+			      const gchar *body,
+			      gboolean sending)
 {
-	return replace(st, "\r\n", "\n");
+	if (sipe_backend_debug_enabled()) {
+		GString *str         = g_string_new("");
+		time_t currtime      = time(NULL);
+		const char *time_str = ctime(&currtime); /* ends in "\n" */
+		const char *marker   = sending ?
+			">>>>>>>>>>" :
+			"<<<<<<<<<<";
+		gchar *tmp;
+
+		g_string_append_printf(str, "MESSAGE START %s %s - %s", marker, type, time_str);
+		g_string_append(str, tmp = replace(header, "\r\n", "\n"));
+		g_free(tmp);
+		g_string_append(str, "\n");
+		if (body) {
+			g_string_append(str, tmp = replace(body, "\r\n", "\n"));
+			g_free(tmp);
+			g_string_append(str, "\n");
+		}
+		g_string_append_printf(str, "MESSAGE END %s %s - %s", marker, type, time_str);
+		SIPE_DEBUG_INFO_NOFORMAT(str->str);
+		g_string_free(str, TRUE);
+	}
 }
 
 gboolean
