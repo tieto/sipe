@@ -219,7 +219,8 @@ Please notify the SIPE developers and provide the following information:
  host:     $host
  build:    $build
  compiler: $CC
-])])
+])],
+	[AC_MSG_WARN([cross compiling: not checking])])
 CFLAGS=$ac_save_CFLAGS
 
 dnl build option: purple backend
@@ -259,6 +260,7 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 ])
 			])
 
+		 dnl on windows
 		 dnl test program needs to be in the same location as libpurple
 		 dnl installation for latter to load ssl plugin referenced by
 		 dnl RELATIVE path.
@@ -282,7 +284,8 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 				[AC_MSG_RESULT(ok)],
 				[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
 ])
-				])
+				],
+				[AC_MSG_WARN([cross compiling: not checking])])
 		 ])
 
 		 dnl check whether enable voice and video support
@@ -304,7 +307,8 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 						[with_purple_vv=yes],
 						[AC_MSG_NOTICE(libpurple >= 2.7.0 required: disabling purple voice and video support)])],
 					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
-				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)])
+				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)],
+				[AC_MSG_WARN([cross compiling: not checking])])
 			 ])
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS],
