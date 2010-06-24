@@ -67,6 +67,17 @@ typedef enum {
 }  sipe_debug_level;
 
 /**
+ * Output debug information without formatting
+ *
+ * Shouldn't be used directly. Instead use SIPE_DEBUG_xxx() macros
+ *
+ * @param level  debug level
+ * @param msg    debug message "\n" will be automatically appended.
+ */
+void sipe_backend_debug_literal(sipe_debug_level level,
+				const gchar *msg);
+
+/**
  * Output debug information
  *
  * Shouldn't be used directly. Instead use SIPE_DEBUG_xxx() macros
@@ -80,13 +91,13 @@ void sipe_backend_debug(sipe_debug_level level,
 
 /* Convenience macros */
 #define SIPE_DEBUG_INFO(fmt, ...)        sipe_backend_debug(SIPE_DEBUG_LEVEL_INFO,    fmt, __VA_ARGS__)
-#define SIPE_DEBUG_INFO_NOFORMAT(msg)    sipe_backend_debug(SIPE_DEBUG_LEVEL_INFO,    msg)
+#define SIPE_DEBUG_INFO_NOFORMAT(msg)    sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_INFO,    msg)
 #define SIPE_DEBUG_WARNING(fmt, ...)     sipe_backend_debug(SIPE_DEBUG_LEVEL_WARNING, fmt, __VA_ARGS__)
-#define SIPE_DEBUG_WARNING_NOFORMAT(msg) sipe_backend_debug(SIPE_DEBUG_LEVEL_WARNING, msg)
+#define SIPE_DEBUG_WARNING_NOFORMAT(msg) sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_WARNING, msg)
 #define SIPE_DEBUG_ERROR(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_ERROR,   fmt, __VA_ARGS__)
-#define SIPE_DEBUG_ERROR_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_ERROR,   msg)
+#define SIPE_DEBUG_ERROR_NOFORMAT(msg)   sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_ERROR,   msg)
 #define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
-#define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   msg)
+#define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_FATAL,   msg)
 
 /**
  * Check backend debugging status

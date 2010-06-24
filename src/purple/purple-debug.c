@@ -27,19 +27,12 @@
 
 #include "sipe-backend.h"
 
-void sipe_backend_debug(sipe_debug_level level,
-			const gchar *format,
-			...)
+void sipe_backend_debug_literal(sipe_debug_level level,
+				const gchar *msg)
 {
-	va_list ap;
-
-	va_start(ap, format);
-
 	if (purple_debug_is_enabled()) {
 
 		/* purple_debug doesn't have a vprintf-like API call :-( */
-		gchar *msg = g_strdup_vprintf(format, ap);
-
 		switch (level) {
 		case SIPE_DEBUG_LEVEL_INFO:
 			purple_debug_info("sipe", "%s\n", msg);
@@ -54,6 +47,22 @@ void sipe_backend_debug(sipe_debug_level level,
 			purple_debug_fatal("sipe", "%s\n", msg);
 			break;
 		}
+	}
+}
+
+void sipe_backend_debug(sipe_debug_level level,
+			const gchar *format,
+			...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+
+	if (purple_debug_is_enabled()) {
+
+		/* purple_debug doesn't have a vprintf-like API call :-( */
+		gchar *msg = g_strdup_vprintf(format, ap);
+		sipe_backend_debug_literal(level, msg);
 		g_free(msg);
 	}
 

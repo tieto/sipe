@@ -37,6 +37,11 @@
 #include "sipe-utils.h"
 
 /* stub functions for backend API */
+void sipe_backend_debug_literal(sipe_debug_level level,
+				const gchar *msg)
+{
+	printf("DEBUG %d: %s", level, msg);
+}
 void sipe_backend_debug(sipe_debug_level level,
 			const gchar *format,
 			...)
@@ -47,7 +52,7 @@ void sipe_backend_debug(sipe_debug_level level,
 	msg = g_strdup_vprintf(format, args);
 	va_end(args);
 
-	printf("DEBUG %d: %s", level, msg);
+	sipe_backend_debug_literal(level, msg);
 	g_free(msg);
 }
 gboolean sipe_backend_debug_enabled(void)
