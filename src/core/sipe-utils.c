@@ -247,14 +247,16 @@ void sipe_utils_message_debug(const gchar *type,
 {
 	if (sipe_backend_debug_enabled()) {
 		GString *str         = g_string_new("");
-		time_t currtime      = time(NULL);
-		const char *time_str = ctime(&currtime); /* ends in "\n" */
+		GTimeVal currtime;
+		gchar *time_str;
 		const char *marker   = sending ?
 			">>>>>>>>>>" :
 			"<<<<<<<<<<";
 		gchar *tmp;
 
-		g_string_append_printf(str, "MESSAGE START %s %s - %s", marker, type, time_str);
+		g_get_current_time(&currtime);
+		time_str = g_time_val_to_iso8601(&currtime);
+		g_string_append_printf(str, "\nMESSAGE START %s %s - %s\n", marker, type, time_str);
 		g_string_append(str, tmp = replace(header, "\r\n", "\n"));
 		g_free(tmp);
 		g_string_append(str, "\n");
@@ -264,6 +266,7 @@ void sipe_utils_message_debug(const gchar *type,
 			g_string_append(str, "\n");
 		}
 		g_string_append_printf(str, "MESSAGE END %s %s - %s", marker, type, time_str);
+		g_free(time_str);
 		SIPE_DEBUG_INFO_NOFORMAT(str->str);
 		g_string_free(str, TRUE);
 	}
