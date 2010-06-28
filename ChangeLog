@@ -1,3 +1,7 @@
+version 1.10.1 "Bugfix release" (2010-06-27)
+        - Fix broken sipe_ht_equals_nick(); the broken code has been in the 1.10.0 release. As it affects the buddy list it could be the root cause for some of the "buddy appears offline" reports. (Stefan Becker)
+        - Make it compile against the final purple 2.7.0 API; (Stefan Becker)
+
 version 1.10.0 "Access Levels" (2010-04-04)
 	- Feature #2823160: Access Levels (2007+ environment). The functionality is available through contact's context menu "Access level" and also presented on contact's tooltip. Current individual access level is marked with star (*), current group access level is marked with equals sign (=). (pier11)
 	- Feature #2957811: add support for "automaton" class (Stefan Becker)

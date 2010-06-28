@@ -1,3 +1,13 @@
+pidgin-sipe (1.10.1-1) unstable; urgency=low
+
+  * New upstream version
+        - Fix broken sipe_ht_equals_nick(); the broken code has been in the 
+          1.10.0 release. As it affects the buddy list it could be the root 
+          cause for some of the "buddy appears offline" reports.
+        - Make it compile against the final purple 2.7.0 API;
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 27 Jun 2010 11:46:59 -0600
+
 pidgin-sipe (1.10.0-1) unstable; urgency=low
 
   * New upstream version
