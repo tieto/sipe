@@ -68,7 +68,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		return NULL;
 	}
 	if(strstr(parts[0],"SIP") || strstr(parts[0],"HTTP")) { /* numeric response */
-		msg->method = g_strdup(parts[2]);
+		msg->responsestr = g_strdup(parts[2]);
 		msg->response = strtol(parts[1],NULL,10);
 	} else { /* request */
 		msg->method = g_strdup(parts[0]);
@@ -90,7 +90,6 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	}
 	if(msg->response) {
 		const gchar *tmp;
-		g_free(msg->method);
 		tmp = sipmsg_find_header(msg, "CSeq");
 		if(!tmp) {
 			/* SHOULD NOT HAPPEN */
@@ -108,7 +107,8 @@ struct sipmsg *sipmsg_copy(const struct sipmsg *other) {
 	struct sipmsg *msg = g_new0(struct sipmsg, 1);
 	GSList *list;
 
-	msg->response	= other->response;
+	msg->response		= other->response;
+	msg->responsestr	= g_strdup(other->responsestr);
 	msg->method		= g_strdup(other->method);
 	msg->target		= g_strdup(other->target);
 
@@ -127,10 +127,10 @@ struct sipmsg *sipmsg_copy(const struct sipmsg *other) {
 	}
 
 	msg->bodylen	= other->bodylen;
-	msg->body		= g_memdup(other->body, other->bodylen);
+	msg->body	= g_memdup(other->body, other->bodylen);
 	msg->signature	= g_strdup(other->signature);
-	msg->rand		= g_strdup(other->rand);
-	msg->num		= g_strdup(other->num);
+	msg->rand	= g_strdup(other->rand);
+	msg->num	= g_strdup(other->num);
 
 	return msg;
 }

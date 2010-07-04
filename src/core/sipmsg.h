@@ -30,6 +30,7 @@
 
 struct sipmsg {
 	int response; /* 0 means request, otherwise response code */
+	gchar *responsestr;
 	gchar *method;
 	gchar *target;
 	GSList *headers;

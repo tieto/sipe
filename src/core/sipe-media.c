@@ -924,23 +924,33 @@ sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
 	backend_private = call_private->public.backend_private;
 	with = call_private->dialog->with;
 
-	if (msg->response == 603 || msg->response == 605 || msg->response == 480) {
-		// Call rejected by remote peer
-		gchar *errmsg;
+	if (msg->response >= 400) {
+		// Call rejected by remote peer or an error occurred
 		gchar *title;
+		GString *desc = g_string_new("");
 
 		sipe_backend_media_reject(backend_private, FALSE);
 		sipe_media_send_ack(sipe_private, msg, trans);
 
-		if (msg->response > 600) {
-			title = _("Call rejected");
-			errmsg = g_strdup_printf(_("User %s rejected call"), with);
-		} else {
-			errmsg = g_strdup_printf(_("User %s is not available"), with);
-			title = _("User unavailable");
+		switch (msg->response) {
+			case 480:
+				title = _("User unavailable");
+				g_string_append_printf(desc, _("User %s is not available"), with);
+			case 603:
+			case 605:
+				title = _("Call rejected");
+				g_string_append_printf(desc, _("User %s rejected call"), with);
+				break;
+			default:
+				title = _("Error occured");
+				g_string_append(desc, _("Unable to establish a call"));
+				break;
 		}
-		sipe_backend_notify_error(title, errmsg);
-		g_free(errmsg);
+
+		g_string_append_printf(desc, "\n%d %s", msg->response, msg->responsestr);
+
+		sipe_backend_notify_error(title, desc->str);
+		g_string_free(desc, TRUE);
 
 		return TRUE;
 	}
