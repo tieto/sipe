@@ -675,26 +675,56 @@ send_response_with_session_description(struct sipe_media_call_private *call_priv
 }
 
 static gboolean
+encryption_levels_compatible(struct sipe_media_call_private *call_private)
+{
+	const gchar *encrypion_level;
+
+	encrypion_level = sipe_utils_nameval_find(call_private->sdp_attrs,
+						  "encryption");
+
+	// Decline call if peer requires encryption as we don't support it yet.
+	return !sipe_strequal(encrypion_level, "required");
+}
+
+static void
+handle_incompatible_encryption_level(struct sipe_media_call_private *call_private)
+{
+	sipmsg_add_header(call_private->invitation, "Warning",
+			  "308 lcs.microsoft.com \"Encryption Levels not compatible\"");
+	sip_transport_response(call_private->sipe_private,
+			       call_private->invitation,
+			       488, "Encryption Levels not compatible",
+			       NULL);
+	sipe_backend_media_reject(call_private->public.backend_private, FALSE);
+	sipe_backend_notify_error(_("Unable to establish a call"),
+		_("Encryption settings of peer are incompatible with ours."));
+}
+
+static gboolean
 sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
 								   struct sipmsg *msg,
 								   struct transaction *trans);
 
 static void candidates_prepared_cb(struct sipe_media_call *call)
 {
-	struct sipe_media_call_private *call_private = (struct sipe_media_call_private *) call;
+	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 
 	if (sipe_backend_media_is_initiator(call_private->public.backend_private,
 					    call_private->voice_stream)) {
-		sipe_invite_call(call_private->sipe_private, sipe_media_process_invite_response);
-	} else {
-		if (!sipe_media_parse_remote_codecs(call_private)) {
-			g_free(call_private);
-			return;
-		}
-
-		if (!call_private->legacy_mode)
-			send_response_with_session_description(call_private, 183, "Session Progress");
+		sipe_invite_call(call_private->sipe_private,
+				 sipe_media_process_invite_response);
+		return;
 	}
+
+	if (!sipe_media_parse_remote_codecs(call_private)) {
+		g_free(call_private);
+		return;
+	}
+
+	if (   !call_private->legacy_mode
+	    && encryption_levels_compatible(SIPE_MEDIA_CALL_PRIVATE))
+		send_response_with_session_description(call_private,
+						       183, "Session Progress");
 }
 
 static void media_connected_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call_private *call_private)
@@ -704,8 +734,14 @@ static void media_connected_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call_priv
 static void call_accept_cb(struct sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		send_response_with_session_description(SIPE_MEDIA_CALL_PRIVATE,
-						       200, "OK");
+		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+
+		if (!encryption_levels_compatible(call_private)) {
+			handle_incompatible_encryption_level(call_private);
+			return;
+		}
+
+		send_response_with_session_description(call_private, 200, "OK");
 	}
 }
 
@@ -833,6 +869,12 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 									    call_private->invitation->body)) {
 				// TODO: handle error
 			}
+
+			if (!encryption_levels_compatible(call_private)) {
+				handle_incompatible_encryption_level(call_private);
+				return;
+			}
+
 			if (!sipe_media_parse_remote_codecs(call_private)) {
 				g_free(call_private);
 				return;
