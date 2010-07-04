@@ -269,6 +269,7 @@ void sipmsg_free(struct sipmsg *msg) {
 	g_free(msg->signature);
 	g_free(msg->rand);
 	g_free(msg->num);
+	g_free(msg->responsestr);
 	g_free(msg->method);
 	g_free(msg->target);
 	g_free(msg->body);
