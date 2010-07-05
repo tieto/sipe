@@ -510,12 +510,14 @@ static gboolean process_add_group_response(struct sipe_core_private *sipe_privat
 
 		sipe_group_add(sipe_private, group);
 
-		buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
-		if (buddy) {
-			buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
-		}
+		if (ctx->user_name) {
+			buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
+			if (buddy) {
+				buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
+			}
 
-		sipe_core_group_set_user(SIPE_CORE_PUBLIC, ctx->user_name);
+			sipe_core_group_set_user(SIPE_CORE_PUBLIC, ctx->user_name);
+		}
 
 		sipe_xml_free(xml);
 		return TRUE;
@@ -537,13 +539,14 @@ static void sipe_group_create (struct sipe_core_private *sipe_private,
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
 	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
 	struct group_user_context *ctx = g_new0(struct group_user_context, 1);
+	const gchar *soap_name = sipe_strequal(name, _("Other Contacts")) ? "~" : name;
 	gchar *body;
 	ctx->group_name = g_strdup(name);
 	ctx->user_name = g_strdup(who);
 	payload->destroy = sipe_group_context_destroy;
 	payload->data = ctx;
 
-	body = g_markup_printf_escaped(SIPE_SOAP_ADD_GROUP, name, sip->contacts_delta++);
+	body = g_markup_printf_escaped(SIPE_SOAP_ADD_GROUP, soap_name, sip->contacts_delta++);
 	send_soap_request_with_cb(sipe_private, NULL, body, process_add_group_response, payload);
 	g_free(body);
 }
@@ -1369,13 +1372,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 
 		// Make sure we have at least one group
 		if (g_slist_length(sip->groups) == 0) {
-			struct sipe_group * group = g_new0(struct sipe_group, 1);
-			PurpleGroup *purple_group;
-			group->name = g_strdup(_("Other Contacts"));
-			group->id = 1;
-			purple_group = purple_group_new(group->name);
-			purple_blist_add_group(purple_group, NULL);
-			sip->groups = g_slist_append(sip->groups, group);
+			sipe_group_create(sipe_private, _("Other Contacts"), NULL);
 		}
 
 		/* Parse contacts */
