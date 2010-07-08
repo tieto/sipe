@@ -505,7 +505,6 @@ msgstr "En tredje parts tillägg med stöd för den utökade versionen av SIP/SI
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:140
-#, fuzzy
 msgid "Home"
 msgstr "Hem"
 
@@ -572,14 +571,12 @@ msgstr "Originaltexter på Engelska (en): SIPE utvecklarna"
 #. Translators: (!) should be as in localized Lotus Notes to be able to
 #. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
-#, fuzzy
 msgid "Location:"
 msgstr "Plats:"
 
 #: ../src/core/sipe-ft.c:110 ../src/core/sipe-ft.c:613
 #: ../src/core/sipe-ft.c:642 ../src/core/sipe-ft.c:700
 #: ../src/purple/purple-ft.c:317
-#, fuzzy
 msgid "Socket read failed"
 msgstr "Socket läsning misslyckades"
 
