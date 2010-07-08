@@ -381,15 +381,15 @@ msgstr "Anslut grupper"
 
 #: ../src/core/sipe.c:6830
 msgid "Online help..."
-msgstr ""
+msgstr "Online hjälp ..."
 
 #: ../src/core/sipe.c:6884
 msgid "Unlock"
-msgstr ""
+msgstr "Lås upp"
 
 #: ../src/core/sipe.c:6889
 msgid "Lock"
-msgstr ""
+msgstr "Lås"
 
 #: ../src/core/sipe.c:6968 ../src/core/sipe.c:7005
 msgid "Display name"
