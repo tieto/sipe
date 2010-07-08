@@ -478,89 +478,88 @@ msgstr "%s. Utanför arbetstid mellan %.2d:%.2d"
 #: ../src/core/sipe-cal.c:1082
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
-msgstr ""
+msgstr "%s. %s till %.2d%.2d"
 
 #: ../src/core/sipe-chat.c:98
 #, c-format
 msgid "Chat #%d"
-msgstr ""
+msgstr "Chatta med  #%d"
 
 #: ../src/core/sipe-conf.c:800
 msgid "This conference is no longer locked. Additional participants can now join."
-msgstr ""
+msgstr "Denna konferens är inte längre låst. Ytterligare deltagare kan nu gå med."
 
 #: ../src/core/sipe-conf.c:804
 msgid "This conference is locked. Nobody else can join the conference while it is locked."
-msgstr ""
+msgstr "Denna konferens är låst. Ingen annan kan delta i konferensen medan den är låst."
 
 #: ../src/core/sipe-conf.c:837
-#, fuzzy
 msgid "You have been disconnected from this conference."
-msgstr "Du nekades av servern"
+msgstr "Du har kopplats bort från denna konferens."
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:138
 msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr ""
+msgstr "En tredje parts tillägg med stöd för den utökade versionen av SIP/SIMPLE som kan användas av olika produkter"
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:140
+#, fuzzy
 msgid "Home"
-msgstr ""
+msgstr "Hem"
 
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe-core.c:142
 msgid "Support"
-msgstr ""
+msgstr "Support"
 
 #. About note, part 4/13: support forum name (hyperlink text)
 #: ../src/core/sipe-core.c:144
 msgid "Help Forum"
-msgstr ""
+msgstr "Hjälp Forum"
 
 #. About note, part 5/13: bug tracker URL (label)
 #: ../src/core/sipe-core.c:146
 msgid "Report Problems"
-msgstr ""
+msgstr "Rapportera fel"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
 #: ../src/core/sipe-core.c:148
 msgid "Bug Tracker"
-msgstr ""
+msgstr "Bug Uppföljning"
 
 #. About note, part 7/13: translation service URL (label)
 #: ../src/core/sipe-core.c:150
 msgid "Translations"
-msgstr ""
+msgstr "Översättningar"
 
 #. About note, part 8/13: license type (label)
 #: ../src/core/sipe-core.c:152
 msgid "License"
-msgstr ""
+msgstr "Licenser"
 
 #. About note, part 9/13: known users
 #: ../src/core/sipe-core.c:154
 msgid "We support users in such organizations as"
-msgstr ""
+msgstr "Vi stöder användarna i sådana organisationer som"
 
 #. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
 #: ../src/core/sipe-core.c:157
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr ""
+msgstr "Hjälp oss att översätta sipe till ditt modersmål här på"
 
 #. About note, part 11/13: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
 #: ../src/core/sipe-core.c:160
 msgid " using convenient web interface"
-msgstr ""
+msgstr "använder ett bekvämt webbgränssnitt"
 
 #. About note, part 12/13: author list (header)
 #: ../src/core/sipe-core.c:162
-#, fuzzy
 msgid "Authors"
-msgstr "Automatiskt"
+msgstr "Författare"
 
 #. About note, part 13/13: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
@@ -568,57 +567,59 @@ msgstr "Automatiskt"
 #. "Localization for <language name> (<language code>): <name>"
 #: ../src/core/sipe-core.c:167
 msgid "Original texts in English (en): SIPE developers"
-msgstr ""
+msgstr "Originaltexter på Engelska (en): SIPE utvecklarna"
 
 #. Translators: (!) should be as in localized Lotus Notes to be able to
 #. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
+#, fuzzy
 msgid "Location:"
-msgstr ""
+msgstr "Plats:"
 
 #: ../src/core/sipe-ft.c:110 ../src/core/sipe-ft.c:613
 #: ../src/core/sipe-ft.c:642 ../src/core/sipe-ft.c:700
 #: ../src/purple/purple-ft.c:317
+#, fuzzy
 msgid "Socket read failed"
-msgstr ""
+msgstr "Socket läsning misslyckades"
 
 #: ../src/core/sipe-ft.c:115 ../src/core/sipe-ft.c:744
 #: ../src/core/sipe-ft.c:753
 msgid "Socket write failed"
-msgstr ""
+msgstr "Socket skriva misslyckades"
 
 #: ../src/core/sipe-ft.c:400
 msgid "File size is different from the advertised value."
-msgstr ""
+msgstr "Filstorleken skiljer sig från dess annonserade värde."
 
 #: ../src/core/sipe-ft.c:439
 msgid "Received MAC is corrupted"
-msgstr ""
+msgstr "Mottagen MAC är felaktig"
 
 #: ../src/core/sipe-ft.c:450
 msgid "Received file is corrupted"
-msgstr ""
+msgstr "Mottagna filen är skadad"
 
 #: ../src/core/sipe-ft.c:518
 msgid "File transfer initialization failed."
-msgstr ""
+msgstr "Filöverföringens initiering misslyckades."
 
 #: ../src/core/sipe-ft.c:549
 msgid "File transfer authentication failed."
-msgstr ""
+msgstr "Filöverföringens autentisering misslyckades."
 
 #: ../src/core/sipe-ft.c:634 ../src/core/sipe-ft.c:652
 #: ../src/core/sipe-ft.c:714
 msgid "Out of memory"
-msgstr ""
+msgstr "Slut på minne"
 
 #: ../src/core/sipe-ft.c:831
 msgid "Received encryption key has wrong size."
-msgstr ""
+msgstr "Mottagen krypteringsnyckel har fel storlek."
 
 #: ../src/core/sipe-ft.c:846
 msgid "Received hash key has wrong size."
-msgstr ""
+msgstr "Mottagen hash-nyckel  har fel storlek."
 
 #: ../src/core/sipe-ft.c:868
 msgid "Could not create listen socket"
@@ -627,26 +628,25 @@ msgstr "Det gick inte att skapa lyssnaruttag"
 #: ../src/core/sipe-incoming.c:646
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
-msgstr ""
+msgstr "Meddelande mottaget med okänt innehåll från %s"
 
 #: ../src/core/sipe-media.c:936
 msgid "Call rejected"
-msgstr ""
+msgstr "Samtalet avvisades"
 
 #: ../src/core/sipe-media.c:937
 #, c-format
 msgid "User %s rejected call"
-msgstr ""
+msgstr "Användare %s avvisade samtalet"
 
 #: ../src/core/sipe-media.c:939
 #, c-format
 msgid "User %s is not available"
-msgstr ""
+msgstr "Användare %s är inte tillgänglig"
 
 #: ../src/core/sipe-media.c:940
-#, fuzzy
 msgid "User unavailable"
-msgstr "Tjänsten är ej tillgänglig: %s"
+msgstr "Användare ej tillgänglig"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -660,15 +660,13 @@ msgstr "Ansluter"
 
 #: ../src/purple/purple-plugin.c:397
 msgid "user@company.com"
-msgstr ""
+msgstr "user@company.com"
 
 #: ../src/purple/purple-plugin.c:562
-#, fuzzy
 msgid "First name"
 msgstr "Förnamn"
 
 #: ../src/purple/purple-plugin.c:564
-#, fuzzy
 msgid "Last name"
 msgstr "Efternamn"
 
@@ -677,12 +675,10 @@ msgid "Search"
 msgstr "Sök"
 
 #: ../src/purple/purple-plugin.c:573
-#, fuzzy
 msgid "Search for a contact"
 msgstr "Sök efter kontakt"
 
 #: ../src/purple/purple-plugin.c:574
-#, fuzzy
 msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
 msgstr "Ange information om personen som du vill hitta. Tomma fält ignoreras."
 
@@ -696,20 +692,19 @@ msgstr "_Avbryt"
 
 #: ../src/purple/purple-plugin.c:599
 msgid "About SIPE plugin..."
-msgstr ""
+msgstr "Om SIPe plugin..."
 
 #: ../src/purple/purple-plugin.c:602
-#, fuzzy
 msgid "Contact search..."
 msgstr "Kontaktsökning..."
 
 #: ../src/purple/purple-plugin.c:605
 msgid "Republish Calendar"
-msgstr ""
+msgstr "Eterpublicera Kalender"
 
 #: ../src/purple/purple-plugin.c:608
 msgid "Reset status"
-msgstr ""
+msgstr "Återställ status"
 
 #. *
 #. * When adding new string settings please make sure to keep these
@@ -724,15 +719,19 @@ msgid ""
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr ""
+"Inloggningsnamn\n"
+" user eller DOMÄN\\ \\user eller\n"
+" user@company.com"
 
 #: ../src/purple/purple-plugin.c:669
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr ""
+"Server[:port]\n"
+"(lämna tomt för automatiskt upptäckande)"
 
 #: ../src/purple/purple-plugin.c:672
-#, fuzzy
 msgid "Connection type"
 msgstr "Anslutningstyp"
 
@@ -758,7 +757,7 @@ msgstr "Användaragent"
 
 #: ../src/purple/purple-plugin.c:685
 msgid "Use Kerberos"
-msgstr ""
+msgstr "Använd Kerberos"
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
@@ -766,7 +765,7 @@ msgstr ""
 #. 
 #: ../src/purple/purple-plugin.c:692
 msgid "Use Single Sign-On"
-msgstr ""
+msgstr "Använd \"Single Sign-On\""
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
@@ -776,12 +775,16 @@ msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr ""
+"E-post tjänstens URL\n"
+"(lämna tomt för automatiskt upptäckande)"
 
 #: ../src/purple/purple-plugin.c:702
 msgid ""
 "Email address\n"
 "(if different from Username)"
 msgstr ""
+"E-post adress\n"
+"(om annan än Användarnamn)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
@@ -791,17 +794,20 @@ msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr ""
+"E-post inloggningsnamn\n"
+" (om annan än Inloggningsnamn)"
 
 #: ../src/purple/purple-plugin.c:711
 msgid ""
 "Email password\n"
 "(if different from Password)"
 msgstr ""
+"E-post lösenord\n"
+"(om annan än lösenord)"
 
 #: ../src/purple/purple-transport.c:109
-#, fuzzy
 msgid "Read error"
-msgstr "SSL-läsfel"
+msgstr "Läsfel"
 
 #: ../src/purple/purple-transport.c:113
 msgid "Server has disconnected"
@@ -816,14 +822,12 @@ msgid "Could not create SSL context"
 msgstr "Det gick inte att skapa SSL-kontext"
 
 #: ../src/purple/purple-transport.c:269
-#, fuzzy
 msgid "Could not create socket"
-msgstr "Det gick inte att skapa uttag"
+msgstr "Kunde inte skapa en socket"
 
 #: ../src/purple/purple-transport.c:329
-#, fuzzy
 msgid "Write error"
-msgstr "SSL-läsfel"
+msgstr "Skrivfel"
 
 #~ msgid "Could not write"
 #~ msgstr "Det gick inte att skriva"
