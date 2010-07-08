@@ -393,87 +393,87 @@ msgstr "Lås"
 
 #: ../src/core/sipe.c:6968 ../src/core/sipe.c:7005
 msgid "Display name"
-msgstr ""
+msgstr "Visa namn"
 
 #: ../src/core/sipe.c:6971
 msgid "Job title"
-msgstr ""
+msgstr "Befattning"
 
 #: ../src/core/sipe.c:6974
 msgid "Office"
-msgstr ""
+msgstr "Kontor"
 
 #: ../src/core/sipe.c:6977
 msgid "Business phone"
-msgstr ""
+msgstr "Arbetstelefon"
 
 #: ../src/core/sipe.c:6983
 msgid "City"
-msgstr ""
+msgstr "Stad"
 
 #: ../src/core/sipe.c:6986
 msgid "State"
-msgstr ""
+msgstr "Stat/Region"
 
 #: ../src/core/sipe.c:6992 ../src/core/sipe.c:7019
 msgid "Email address"
-msgstr ""
+msgstr "E-postadress"
 
 #: ../src/core/sipe.c:7012
 msgid "Alias"
-msgstr ""
+msgstr "Initialer"
 
 #: ../src/core/sipe.c:7025
 msgid "Site"
-msgstr ""
+msgstr "Plats"
 
 #: ../src/core/sipe.c:7032
 msgid "Find on LinkedIn"
-msgstr ""
+msgstr "Hitta på LinkedIn"
 
 #: ../src/core/sipe.c:7039
 msgid "Device"
-msgstr ""
+msgstr "Enhet"
 
 #: ../src/core/sipe-cal.c:936
 msgid "Free"
-msgstr ""
+msgstr "Ledig"
 
 #: ../src/core/sipe-cal.c:937
 msgid "Tentative"
-msgstr ""
+msgstr "Preliminärt"
 
 #: ../src/core/sipe-cal.c:940
 msgid "No data"
-msgstr ""
+msgstr "Inga uppgifter"
 
 #: ../src/core/sipe-cal.c:1048 ../src/core/sipe-cal.c:1075
 #, c-format
 msgid "Currently %s"
-msgstr ""
+msgstr "För närvarande %s"
 
 #: ../src/core/sipe-cal.c:1054
 msgid "Outside of working hours for next 8 hours"
-msgstr ""
+msgstr "Utanför arbetstid (närmsta 8 timmarna)"
 
 #: ../src/core/sipe-cal.c:1056
 #, c-format
 msgid "%s for next 8 hours"
-msgstr ""
+msgstr "%s (närmsta 8 timmarna)"
 
 #: ../src/core/sipe-cal.c:1065
 msgid "Not working"
-msgstr ""
+msgstr "Fungerar ej"
 
 #: ../src/core/sipe-cal.c:1069
 #, c-format
 msgid "%s until %.2d:%.2d"
-msgstr ""
+msgstr "%s till och med %.2d:%.2d"
 
 #: ../src/core/sipe-cal.c:1077
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
-msgstr ""
+msgstr "%s. Utanför arbetstid mellan %.2d:%.2d"
 
 #: ../src/core/sipe-cal.c:1082
 #, c-format
