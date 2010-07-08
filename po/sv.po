@@ -92,7 +92,6 @@ msgid "Out of office"
 msgstr "Inte på kontoret"
 
 #: ../src/core/sipe.c:146
-#, fuzzy
 msgid "Urgent interruptions only"
 msgstr "Enbart brådskade ärenden får avbryta"
 
@@ -125,12 +124,12 @@ msgstr "Blockerad"
 
 #: ../src/core/sipe.c:1878 ../src/core/sipe.c:6658
 msgid "Personal"
-msgstr ""
+msgstr "Personligt"
 
 #. index 0
 #: ../src/core/sipe.c:1879 ../src/core/sipe.c:6659
 msgid "Team"
-msgstr ""
+msgstr "Team"
 
 #: ../src/core/sipe.c:1880 ../src/core/sipe.c:6020 ../src/core/sipe.c:6660
 #: ../src/core/sipe.c:6980 ../src/purple/purple-plugin.c:566
@@ -139,45 +138,45 @@ msgstr "Företag"
 
 #: ../src/core/sipe.c:1881 ../src/core/sipe.c:6661
 msgid "Public"
-msgstr ""
+msgstr "Publikt"
 
 #: ../src/core/sipe.c:1883
 msgid "Unknown"
-msgstr ""
+msgstr "Okänt"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2998
 msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
-msgstr ""
+msgstr "Ditt meddelande eller en inbjudan har inte levererats, möjligen eftersom den innehåller en hyperlänk eller annat innehåll som systemadministratören har blockerat."
 
 #: ../src/core/sipe.c:3002
 #, c-format
 msgid "This message was not delivered to %s because the service is not available"
-msgstr ""
+msgstr "Detta meddelande har inte levererats till %s eftersom tjänsten tillfälligt inte är tillgänglig."
 
 #. Busy Here
 #: ../src/core/sipe.c:3004
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr ""
+msgstr "Detta meddelande har inte levereras till %s eftersom en eller flera mottagare inte vill vara till störda."
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3006
-#, c-format
+#, c-format, fuzzy
 msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
-msgstr ""
+msgstr "Detta meddelande  har inte levererats till %s eftersom en eller flera mottagare inte stöder denna typ av meddelande"
 
 #: ../src/core/sipe.c:3008
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr ""
+msgstr "Detta meddelande har inte levereras till %s eftersom en eller flera mottagare är inte tillgängliga (Offline)"
 
 #: ../src/core/sipe.c:3312
 #, c-format
 msgid "Failed to invite %s"
-msgstr ""
+msgstr "Misslyckades att bjuda in %s"
 
 #: ../src/core/sipe.c:5829
 #, fuzzy
@@ -185,19 +184,24 @@ msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP Exchange-användarnamn får inte innehålla blanksteg"
 
 #: ../src/core/sipe.c:5837
+#, fuzzy
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr ""
+"Användarnamnet måste vara ett giltigt SIP URI\n"
+"Exempel: user@company.com"
 
 #: ../src/core/sipe.c:5847
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr ""
+"E-postadressen bör vara giltig enligt nedan\n"
+"\r\n"
+"Exempel: user@company.com"
 
 #: ../src/core/sipe.c:5856
-#, fuzzy
 msgid "SIP Exchange user name contains whitespace"
 msgstr "SIP Exchange-användarnamn får inte innehålla blanksteg"
 
@@ -209,12 +213,10 @@ msgid ""
 msgstr ""
 
 #: ../src/core/sipe.c:6008
-#, fuzzy
 msgid "Unable to display the search results"
 msgstr "Det går inte att visa sökresultatet."
 
 #: ../src/core/sipe.c:6014
-#, fuzzy
 msgid "User name"
 msgstr "Användarnamn"
 
@@ -244,11 +246,11 @@ msgstr " (flera matchade din fråga)"
 
 #: ../src/core/sipe.c:6204
 msgid "Status"
-msgstr ""
+msgstr "Status"
 
 #: ../src/core/sipe.c:6208
 msgid "Calendar"
-msgstr ""
+msgstr "Kalender"
 
 #: ../src/core/sipe.c:6214
 msgid "Meeting in"
