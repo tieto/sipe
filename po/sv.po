@@ -254,77 +254,78 @@ msgstr "Kalender"
 
 #: ../src/core/sipe.c:6214
 msgid "Meeting in"
-msgstr ""
+msgstr "Möte om"
 
 #: ../src/core/sipe.c:6218
 msgid "Meeting about"
-msgstr ""
+msgstr "Möte gällande"
 
 #: ../src/core/sipe.c:6223
 msgid "Out of office note"
-msgstr ""
+msgstr "Inte på kontoret - Notifiering"
 
 #: ../src/core/sipe.c:6223
 msgid "Note"
-msgstr ""
+msgstr "Notifiering"
 
 #: ../src/core/sipe.c:6227 ../src/core/sipe.c:6588 ../src/core/sipe.c:6657
 msgid "Access level"
-msgstr ""
+msgstr "Åtkomst nivå"
 
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:6386
 msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:6468
-#, c-format
+#, c-format, fuzzy
 msgid "Make leader of '%s'"
-msgstr ""
+msgstr "Gör ledare för \"% s\""
 
 #: ../src/core/sipe.c:6479
-#, c-format
+#, c-format, fuzzy
 msgid "Remove from '%s'"
-msgstr ""
+msgstr "Ta bort från '% s'"
 
 #: ../src/core/sipe.c:6492
-#, c-format
+#, c-format, fuzzy
 msgid "Invite to '%s'"
-msgstr ""
+msgstr "Bjud in till '% s'"
 
 #: ../src/core/sipe.c:6503
+#, fuzzy
 msgid "New chat"
-msgstr ""
+msgstr "Ny chatt"
 
 #: ../src/core/sipe.c:6514
 #, c-format
 msgid "Work %s"
-msgstr ""
+msgstr "Arbete %s"
 
 #: ../src/core/sipe.c:6527
 #, c-format
 msgid "Mobile %s"
-msgstr ""
+msgstr "Mobil %s"
 
 #: ../src/core/sipe.c:6540
 #, c-format
 msgid "Home %s"
-msgstr ""
+msgstr "Hem %s"
 
 #: ../src/core/sipe.c:6553
 #, c-format
 msgid "Other %s"
-msgstr ""
+msgstr "Övrigt %s"
 
 #: ../src/core/sipe.c:6566
 #, c-format
 msgid "Custom1 %s"
-msgstr ""
+msgstr "Anpassad1 %s"
 
 #: ../src/core/sipe.c:6578
 msgid "Send email..."
-msgstr ""
+msgstr "Skicka e-post..."
 
 #: ../src/core/sipe.c:6614
 msgid "Copy to"
