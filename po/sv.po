@@ -164,7 +164,7 @@ msgstr "Detta meddelande har inte levereras till %s eftersom en eller flera mott
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3006
-#, c-format, fuzzy
+#, c-format
 msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
 msgstr "Detta meddelande  har inte levererats till %s eftersom en eller flera mottagare inte stöder denna typ av meddelande"
 
@@ -179,12 +179,10 @@ msgid "Failed to invite %s"
 msgstr "Misslyckades att bjuda in %s"
 
 #: ../src/core/sipe.c:5829
-#, fuzzy
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP Exchange-användarnamn får inte innehålla blanksteg"
 
 #: ../src/core/sipe.c:5837
-#, fuzzy
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
@@ -211,6 +209,10 @@ msgid ""
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Example: https://domino.corp.com/maildatabase.nsf"
 msgstr ""
+"E-tjänstens webbadress ska vara giltig om det föreskrivs\n"
+"\r\n"
+"Exempel: https://exchange.corp.com/EWS/Exchange.asmx\n"
+" Exempel: https://domino.corp.com/maildatabase.nsf"
 
 #: ../src/core/sipe.c:6008
 msgid "Unable to display the search results"
@@ -279,22 +281,21 @@ msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels
 msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:6468
-#, c-format, fuzzy
+#, c-format
 msgid "Make leader of '%s'"
 msgstr "Gör ledare för \"% s\""
 
 #: ../src/core/sipe.c:6479
-#, c-format, fuzzy
+#, c-format
 msgid "Remove from '%s'"
 msgstr "Ta bort från '% s'"
 
 #: ../src/core/sipe.c:6492
-#, c-format, fuzzy
+#, c-format
 msgid "Invite to '%s'"
 msgstr "Bjud in till '% s'"
 
 #: ../src/core/sipe.c:6503
-#, fuzzy
 msgid "New chat"
 msgstr "Ny chatt"
 
@@ -329,56 +330,54 @@ msgstr "Skicka e-post..."
 
 #: ../src/core/sipe.c:6614
 msgid "Copy to"
-msgstr ""
+msgstr "Kopiera till"
 
 #: ../src/core/sipe.c:6653
-#, fuzzy
 msgid "Domain"
 msgstr "Autentisera domän"
 
 #: ../src/core/sipe.c:6669 ../src/core/sipe.c:6670
 msgid "Add new domain"
-msgstr ""
+msgstr "Lägg till ny domän"
 
 #: ../src/core/sipe.c:6671
 msgid "Add"
-msgstr ""
+msgstr "Lägg till"
 
 #: ../src/core/sipe.c:6672
-#, fuzzy
 msgid "Cancel"
-msgstr "_Avbryt"
+msgstr "Avbryt"
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe.c:6741
 msgid "Unspecify"
-msgstr ""
+msgstr "Ospecificerad"
 
 #: ../src/core/sipe.c:6764
 msgid "People in my company"
-msgstr ""
+msgstr "Personer i mitt företag"
 
 #. this is original name, don't edit
 #: ../src/core/sipe.c:6770
 msgid "People in domains connected with my company"
-msgstr ""
+msgstr "Personer i domäner kopplade till mitt företag"
 
 #: ../src/core/sipe.c:6775
 msgid "People in public domains"
-msgstr ""
+msgstr "Personer i offentliga domäner"
 
 #: ../src/core/sipe.c:6785
 #, c-format
 msgid "People at %s"
-msgstr ""
+msgstr "Personer i %s"
 
 #: ../src/core/sipe.c:6800
 msgid "Add new domain..."
-msgstr ""
+msgstr "Lägg till ny domän..."
 
 #: ../src/core/sipe.c:6823
 msgid "Access groups"
-msgstr ""
+msgstr "Anslut grupper"
 
 #: ../src/core/sipe.c:6830
 msgid "Online help..."
