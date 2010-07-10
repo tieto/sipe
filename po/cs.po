@@ -2,20 +2,20 @@
 # Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-07-10 16:13+0300\n"
+"POT-Creation-Date: 2010-07-10 14:19+0000\n"
 "PO-Revision-Date: 2009-02-10 23:50+0000\n"
 "Last-Translator: Rinu <rinu@seznam.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
-"Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2009-06-22 11:28+0000\n"
+"Language: cs\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
@@ -153,47 +153,30 @@ msgstr "Neznámý"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2995
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"Vaše zpráva nebo pozvánka nebyla doručena, pravděpodobně protože obsahuje "
-"hypertextový odkaz nebo jiný obsah, který administrátor zablokoval."
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
+msgstr "Vaše zpráva nebo pozvánka nebyla doručena, pravděpodobně protože obsahuje hypertextový odkaz nebo jiný obsah, který administrátor zablokoval."
 
 #: ../src/core/sipe.c:2999
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
+msgid "This message was not delivered to %s because the service is not available"
 msgstr "Tato zpráva nebyla uživateli %s doručena, protože služba není dostupná"
 
 #. Busy Here
 #: ../src/core/sipe.c:3001
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
-"Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů "
-"nechce být vyrušováno"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů nechce být vyrušováno"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3003
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
-msgstr ""
-"Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů "
-"nepodporuje tento typ zprávy"
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
+msgstr "Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů nepodporuje tento typ zprávy"
 
 #: ../src/core/sipe.c:3005
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
-"Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů "
-"není dostupno"
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů není dostupno"
 
 #: ../src/core/sipe.c:3309
 #, c-format
@@ -298,10 +281,8 @@ msgstr "Úroveň přístupu"
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:6378
-msgid ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:6460
 #, fuzzy, c-format
@@ -513,18 +494,12 @@ msgid "Chat #%d"
 msgstr "Chat #%d"
 
 #: ../src/core/sipe-conf.c:800
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
-msgstr ""
-"Tato konference již není uzamčená. Mohou se připojovat další účastníci."
+msgid "This conference is no longer locked. Additional participants can now join."
+msgstr "Tato konference již není uzamčená. Mohou se připojovat další účastníci."
 
 #: ../src/core/sipe-conf.c:804
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
-msgstr ""
-"Tato konference je uzamčená. Dokud tomu tak je, nikdo další se do ní nemůže "
-"připojit."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
+msgstr "Tato konference je uzamčená. Dokud tomu tak je, nikdo další se do ní nemůže připojit."
 
 #: ../src/core/sipe-conf.c:837
 msgid "You have been disconnected from this conference."
@@ -533,12 +508,8 @@ msgstr "Byl jste od této konference odpojen."
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:138
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
-msgstr ""
-"Plugin třetí strany poskytující rozšířenou verzi SIP/SIMPLE, používanou v "
-"různých produktech."
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
+msgstr "Plugin třetí strany poskytující rozšířenou verzi SIP/SIMPLE, používanou v různých produktech."
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:140
@@ -605,7 +576,8 @@ msgstr "Autoři"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Překlad do češtiny (cs): psilo a Jakub Adam"
 
-#. Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location
+#. Translators: (!) should be as in localized Lotus Notes to be able to
+#. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
 msgid "Location:"
 msgstr ""
@@ -665,11 +637,11 @@ msgstr "Obdržena zpráva s nerozpoznaným obsahem od uživatele %s"
 
 #: ../src/core/sipe-media.c:699 ../src/core/sipe-media.c:988
 msgid "Unable to establish a call"
-msgstr ""
+msgstr "Hovor nelze spojit"
 
 #: ../src/core/sipe-media.c:700
 msgid "Encryption settings of peer are incompatible with ours."
-msgstr ""
+msgstr "Nastavení šifrování na straně kontaktu není kompatibilní s naším"
 
 #: ../src/core/sipe-media.c:979
 msgid "User unavailable"
@@ -691,7 +663,7 @@ msgstr "Uživatel %s hovor odmítl "
 
 #: ../src/core/sipe-media.c:987
 msgid "Error occured"
-msgstr ""
+msgstr "Došlo k chybě"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -724,12 +696,8 @@ msgid "Search for a contact"
 msgstr "Hledat kontakt"
 
 #: ../src/purple/purple-plugin.c:574
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Zadejte informaci o osobě, kterou si přejete najít. Prázdná pole budou "
-"ignorována."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Zadejte informaci o osobě, kterou si přejete najít. Prázdná pole budou ignorována."
 
 #: ../src/purple/purple-plugin.c:576
 msgid "_Search"
@@ -761,7 +729,7 @@ msgstr "Obnovit stav"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#.
+#. 
 #: ../src/purple/purple-plugin.c:665
 msgid ""
 "Login\n"
@@ -796,8 +764,10 @@ msgstr "Protokol SSL/TLS"
 msgid "TCP"
 msgstr "Protokol TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/purple/purple-plugin.c:681
 msgid "User Agent"
 msgstr "Uživatelský agent"
@@ -809,14 +779,14 @@ msgstr "Použít Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:692
 msgid "Use Single Sign-On"
 msgstr "Použít Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#.
+#. 
 #: ../src/purple/purple-plugin.c:699
 msgid ""
 "Email services URL\n"
@@ -835,7 +805,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#.
+#. 
 #: ../src/purple/purple-plugin.c:708
 msgid ""
 "Email login\n"
