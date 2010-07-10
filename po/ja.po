@@ -850,24 +850,3 @@ msgstr "ソケットを生成できませんでした"
 #, fuzzy
 msgid "Write error"
 msgstr "SSLの読み込みエラー"
-
-
-#, fuzzy
-
-
-#, fuzzy
-
-#, fuzzy
-
-#, fuzzy
-#~ "SSL support is not installed. Either install SSL support or configure a "
-#~ "different connection type in the account editor"
-#~ "SSLサポートがインストールされていません。SSLサポートをインストールするか、"
-#~ "アカウントエディタで別な接続タイプを設定してください。"
-
-
-
-#~ "Not Found: Destination URI either not enabled for SIP or does not exist. "
-#~ "Please, contact with your Administrator"
-#~ "見つかりません: 宛先のURIがSIPに対して有効になっていないか、存在しません。"
-#~ "管理者にご連絡ください。"

@@ -871,20 +871,3 @@ msgstr "Kunde inte skapa en socket"
 #: ../src/purple/purple-transport.c:329
 msgid "Write error"
 msgstr "Skrivfel"
-
-
-
-
-
-
-#~ "SSL support is not installed. Either install SSL support or configure a "
-#~ "different connection type in the account editor"
-#~ "Det finns inget SSL-stöd installerat. Installera SSL-stödet eller "
-#~ "konfigurera en annan anslutningstyp i kontoredigeraren."
-
-
-
-#~ "Not Found: Destination URI either not enabled for SIP or does not exist. "
-#~ "Please, contact with your Administrator"
-#~ "Hittades inte: Destinations-URI är inte aktiverad för SIP eller finns "
-#~ "inte. Kontakta administratören"

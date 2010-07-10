@@ -851,24 +851,3 @@ msgstr "تعذر إنشاء مقبس"
 #, fuzzy
 msgid "Write error"
 msgstr "خطأ في قراءة SSL"
-
-
-#, fuzzy
-
-
-#, fuzzy
-
-#, fuzzy
-
-#, fuzzy
-#~ "SSL support is not installed. Either install SSL support or configure a "
-#~ "different connection type in the account editor"
-#~ "لم يتم تثبيت دعم SSL. إما أن تقوم بتثبيت دعم SSL أو تكوين نوع اتصال مختلف "
-#~ "في محرر الحسابات."
-
-
-
-#~ "Not Found: Destination URI either not enabled for SIP or does not exist. "
-#~ "Please, contact with your Administrator"
-#~ "غير موجود: إما أن يكون مُعرف URI الخاص بالوجهة غير ممكّن لـ SIP أو غير "
-#~ "موجود. الرجاء الاتصال بالمسؤول لديك"

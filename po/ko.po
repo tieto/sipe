@@ -850,24 +850,3 @@ msgstr "소켓을 생성할 수 없습니다."
 #, fuzzy
 msgid "Write error"
 msgstr "SSL 읽기 오류"
-
-
-#, fuzzy
-
-
-#, fuzzy
-
-#, fuzzy
-
-#, fuzzy
-#~ "SSL support is not installed. Either install SSL support or configure a "
-#~ "different connection type in the account editor"
-#~ "SSL 지원이 설치되지 않습니다. SSL 지원을 설치하거나 계정 편집기에서 다른 "
-#~ "연결 유형을 구성하십시오."
-
-
-
-#~ "Not Found: Destination URI either not enabled for SIP or does not exist. "
-#~ "Please, contact with your Administrator"
-#~ "찾을 수 없음: 대상 URI가 SIP에 대해 활성화되어 있지 않거나 존재하지 않습니"
-#~ "다. 관리자에게 문의하십시오."

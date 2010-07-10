@@ -855,24 +855,3 @@ msgstr "Nem sikerült létrehozni a foglalatot"
 #, fuzzy
 msgid "Write error"
 msgstr "SSL olvsási hiba"
-
-
-#, fuzzy
-
-
-#, fuzzy
-
-#, fuzzy
-
-#, fuzzy
-#~ "SSL support is not installed. Either install SSL support or configure a "
-#~ "different connection type in the account editor"
-#~ "Az SSL-támogatá nincs telepítve, Telepítse az SSL-támogatást vagy "
-#~ "állítson be más kapcsolattípust a fiókszerkesztőben."
-
-
-
-#~ "Not Found: Destination URI either not enabled for SIP or does not exist. "
-#~ "Please, contact with your Administrator"
-#~ "Nem található: A cél URI vagy nincs engedélyezve a SIP-hez vagy nem "
-#~ "létezik. Lépjen kapcsolatba a rendszergazdával."
