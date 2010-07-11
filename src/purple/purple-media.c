@@ -47,6 +47,7 @@ struct sipe_backend_stream {
 
 static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type);
 static PurpleMediaCandidateType sipe_candidate_type_to_purple(SipeCandidateType type);
+static SipeCandidateType purple_candidate_type_to_sipe(PurpleMediaCandidateType type);
 static PurpleMediaNetworkProtocol sipe_network_protocol_to_purple(SipeNetworkProtocol proto);
 static SipeNetworkProtocol purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto);
 
@@ -375,6 +376,18 @@ sipe_backend_candidate_get_port(struct sipe_backend_candidate *candidate)
 	return purple_media_candidate_get_port((PurpleMediaCandidate*)candidate);
 }
 
+gchar *
+sipe_backend_candidate_get_base_ip(struct sipe_backend_candidate *candidate)
+{
+	return purple_media_candidate_get_base_ip((PurpleMediaCandidate*)candidate);
+}
+
+guint
+sipe_backend_candidate_get_base_port(struct sipe_backend_candidate *candidate)
+{
+	return purple_media_candidate_get_base_port((PurpleMediaCandidate*)candidate);
+}
+
 guint32
 sipe_backend_candidate_get_priority(struct sipe_backend_candidate *candidate)
 {
@@ -396,7 +409,9 @@ sipe_backend_candidate_get_component_type(struct sipe_backend_candidate *candida
 SipeCandidateType
 sipe_backend_candidate_get_type(struct sipe_backend_candidate *candidate)
 {
-	return purple_media_candidate_get_candidate_type((PurpleMediaCandidate*)candidate);
+	PurpleMediaCandidateType type =
+		purple_media_candidate_get_candidate_type((PurpleMediaCandidate*)candidate);
+	return purple_candidate_type_to_sipe(type);
 }
 
 SipeNetworkProtocol
@@ -475,7 +490,20 @@ sipe_candidate_type_to_purple(SipeCandidateType type)
 		case SIPE_CANDIDATE_TYPE_HOST:	return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
 		case SIPE_CANDIDATE_TYPE_RELAY:	return PURPLE_MEDIA_CANDIDATE_TYPE_RELAY;
 		case SIPE_CANDIDATE_TYPE_SRFLX:	return PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX;
-		default:						return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
+		case SIPE_CANDIDATE_TYPE_PRFLX: return PURPLE_MEDIA_CANDIDATE_TYPE_PRFLX;
+		default:			return PURPLE_MEDIA_CANDIDATE_TYPE_HOST;
+	}
+}
+
+static SipeCandidateType
+purple_candidate_type_to_sipe(PurpleMediaCandidateType type)
+{
+	switch (type) {
+		case PURPLE_MEDIA_CANDIDATE_TYPE_HOST:	return SIPE_CANDIDATE_TYPE_HOST;
+		case PURPLE_MEDIA_CANDIDATE_TYPE_RELAY:	return SIPE_CANDIDATE_TYPE_RELAY;
+		case PURPLE_MEDIA_CANDIDATE_TYPE_SRFLX:	return SIPE_CANDIDATE_TYPE_SRFLX;
+		case PURPLE_MEDIA_CANDIDATE_TYPE_PRFLX: return SIPE_CANDIDATE_TYPE_PRFLX;
+		default:				return SIPE_CANDIDATE_TYPE_HOST;
 	}
 }
 

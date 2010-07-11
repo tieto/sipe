@@ -317,6 +317,8 @@ gchar *sipe_backend_candidate_get_password(struct sipe_backend_candidate *candid
 gchar *sipe_backend_candidate_get_foundation(struct sipe_backend_candidate *candidate);
 gchar *sipe_backend_candidate_get_ip(struct sipe_backend_candidate *candidate);
 guint sipe_backend_candidate_get_port(struct sipe_backend_candidate *candidate);
+gchar *sipe_backend_candidate_get_base_ip(struct sipe_backend_candidate *candidate);
+guint sipe_backend_candidate_get_base_port(struct sipe_backend_candidate *candidate);
 guint32 sipe_backend_candidate_get_priority(struct sipe_backend_candidate *candidate);
 void sipe_backend_candidate_set_priority(struct sipe_backend_candidate *candidate, guint32 priority);
 SipeComponentType sipe_backend_candidate_get_component_type(struct sipe_backend_candidate *candidate);

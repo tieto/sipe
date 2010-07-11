@@ -401,6 +401,7 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 		SipeComponentType component;
 		gchar *protocol;
 		gchar *type;
+		gchar *related = NULL;
 
 		component = sipe_backend_candidate_get_component_type(c);
 		port = sipe_backend_candidate_get_port(c);
@@ -427,6 +428,9 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 				break;
 			case SIPE_CANDIDATE_TYPE_SRFLX:
 				type = "srflx";
+				related = g_strdup_printf("raddr %s rport %d",
+						sipe_backend_candidate_get_base_ip(c),
+						sipe_backend_candidate_get_base_port(c));
 				break;
 			case SIPE_CANDIDATE_TYPE_PRFLX:
 				type = "prflx";
@@ -436,17 +440,19 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 				break;
 		}
 
-		tmp = g_strdup_printf("a=candidate:%s %u %s %u %s %d typ %s \r\n",
+		tmp = g_strdup_printf("a=candidate:%s %u %s %u %s %d typ %s %s\r\n",
 			sipe_backend_candidate_get_foundation(c),
 			component,
 			protocol,
 			sipe_backend_candidate_get_priority(c),
 			sipe_backend_candidate_get_ip(c),
 			port,
-			type);
+			type,
+			related ? related : "");
 
 		g_string_append(result, tmp);
 		g_free(tmp);
+		g_free(related);
 	}
 
 	r_candidates = sipe_backend_media_get_active_remote_candidates(backend_media, voice_stream);
