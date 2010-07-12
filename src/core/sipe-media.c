@@ -288,9 +288,9 @@ sipe_media_sdp_codec_ids_format(GList *codecs)
 	while (codecs) {
 		struct sipe_backend_codec *c = codecs->data;
 
-		gchar *tmp = g_strdup_printf(" %d", sipe_backend_codec_get_id(c));
-		g_string_append(result,tmp);
-		g_free(tmp);
+		g_string_append_printf(result,
+				       " %d",
+				       sipe_backend_codec_get_id(c));
 
 		codecs = codecs->next;
 	}
@@ -308,25 +308,23 @@ sipe_media_sdp_codecs_format(GList *codecs)
 		GList *params = NULL;
 		gchar *name = sipe_backend_codec_get_name(c);
 
-		gchar *tmp = g_strdup_printf("a=rtpmap:%d %s/%d\r\n",
-			sipe_backend_codec_get_id(c),
-			name,
-			sipe_backend_codec_get_clock_rate(c));
-
+		g_string_append_printf(result,
+				       "a=rtpmap:%d %s/%d\r\n",
+				       sipe_backend_codec_get_id(c),
+				       name,
+				       sipe_backend_codec_get_clock_rate(c));
 		g_free(name);
-		g_string_append(result, tmp);
-		g_free(tmp);
 
 		if ((params = sipe_backend_codec_get_optional_parameters(c))) {
-			tmp = g_strdup_printf("a=fmtp:%d",sipe_backend_codec_get_id(c));
-			g_string_append(result, tmp);
-			g_free(tmp);
+			g_string_append_printf(result,
+					       "a=fmtp:%d",
+					       sipe_backend_codec_get_id(c));
 
 			while (params) {
 				struct sipnameval* par = params->data;
-				tmp = g_strdup_printf(" %s=%s", par->name, par->value);
-				g_string_append(result, tmp);
-				g_free(tmp);
+				g_string_append_printf(result,
+						       " %s=%s",
+						       par->name, par->value);
 				params = params->next;
 			}
 			g_string_append(result, "\r\n");
@@ -356,7 +354,6 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 	gchar *username;
 	gchar *password;
 	GString *result = g_string_new("");
-	gchar *tmp;
 	guint16 rtcp_port = 0;
 
 	// If we have established candidate pairs, send them in SDP response.
@@ -387,9 +384,9 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 	username = sipe_backend_candidate_get_username(l_candidates->data);
 	password = sipe_backend_candidate_get_password(l_candidates->data);
 
-	tmp = g_strdup_printf("a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",username, password);
-	g_string_append(result, tmp);
-	g_free(tmp);
+	g_string_append_printf(result,
+			       "a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",
+			       username, password);
 
 	g_free(username);
 	g_free(password);
@@ -399,9 +396,11 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 
 		guint16 port;
 		SipeComponentType component;
-		gchar *protocol;
-		gchar *type;
+		const gchar *protocol;
+		const gchar *type;
 		gchar *related = NULL;
+		gchar *tmp_foundation;
+		gchar *tmp_ip;
 
 		component = sipe_backend_candidate_get_component_type(c);
 		port = sipe_backend_candidate_get_port(c);
@@ -427,10 +426,15 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 				type = "relay";
 				break;
 			case SIPE_CANDIDATE_TYPE_SRFLX:
-				type = "srflx";
-				related = g_strdup_printf("raddr %s rport %d",
-						sipe_backend_candidate_get_base_ip(c),
-						sipe_backend_candidate_get_base_port(c));
+				{
+					gchar *tmp;
+
+					type = "srflx";
+					related = g_strdup_printf("raddr %s rport %d",
+								  tmp = sipe_backend_candidate_get_base_ip(c),
+								  sipe_backend_candidate_get_base_port(c));
+					g_free(tmp);
+				}
 				break;
 			case SIPE_CANDIDATE_TYPE_PRFLX:
 				type = "prflx";
@@ -440,18 +444,18 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 				break;
 		}
 
-		tmp = g_strdup_printf("a=candidate:%s %u %s %u %s %d typ %s %s\r\n",
-			sipe_backend_candidate_get_foundation(c),
-			component,
-			protocol,
-			sipe_backend_candidate_get_priority(c),
-			sipe_backend_candidate_get_ip(c),
-			port,
-			type,
-			related ? related : "");
-
-		g_string_append(result, tmp);
-		g_free(tmp);
+		g_string_append_printf(result,
+				       "a=candidate:%s %u %s %u %s %d typ %s %s\r\n",
+				       tmp_foundation = sipe_backend_candidate_get_foundation(c),
+				       component,
+				       protocol,
+				       sipe_backend_candidate_get_priority(c),
+				       tmp_ip = sipe_backend_candidate_get_ip(c),
+				       port,
+				       type,
+				       related ? related : "");
+		g_free(tmp_ip);
+		g_free(tmp_foundation);
 		g_free(related);
 	}
 
@@ -462,11 +466,12 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 		g_string_append(result, "a=remote-candidates:");
 		for (cand = r_candidates; cand; cand = cand->next) {
 			struct sipe_backend_candidate *candidate = cand->data;
-			tmp = g_strdup_printf("%u %s %u ",
-								  sipe_backend_candidate_get_component_type(candidate),
-								  sipe_backend_candidate_get_ip(candidate),
-								  sipe_backend_candidate_get_port(candidate));
-			g_string_append(result, tmp);
+			gchar *tmp;
+			g_string_append_printf(result,
+					       "%u %s %u ",
+					       sipe_backend_candidate_get_component_type(candidate),
+					       tmp = sipe_backend_candidate_get_ip(candidate),
+					       sipe_backend_candidate_get_port(candidate));
 			g_free(tmp);
 		}
 		g_string_append(result, "\r\n");
@@ -476,9 +481,9 @@ sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, g
 	sipe_media_candidate_list_free(r_candidates);
 
 	if (rtcp_port != 0) {
-		tmp = g_strdup_printf("a=maxptime:200\r\na=rtcp:%u\r\n", rtcp_port);
-		g_string_append(result, tmp);
-		g_free(tmp);
+		g_string_append_printf(result,
+				       "a=maxptime:200\r\na=rtcp:%u\r\n",
+				       rtcp_port);
 	}
 
 	return g_string_free(result, FALSE);

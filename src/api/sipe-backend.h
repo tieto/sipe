@@ -294,6 +294,9 @@ struct sipe_backend_codec *sipe_backend_codec_new(int id,
 						  SipeMediaType type, guint clock_rate);
 void sipe_backend_codec_free(struct sipe_backend_codec *codec);
 int sipe_backend_codec_get_id(struct sipe_backend_codec *codec);
+/**
+ * @return codec name. Will be g_free'd() by the core.
+ */
 gchar *sipe_backend_codec_get_name(struct sipe_backend_codec *codec);
 guint sipe_backend_codec_get_clock_rate(struct sipe_backend_codec *codec);
 void sipe_backend_codec_add_optional_parameter(struct sipe_backend_codec *codec,
@@ -312,11 +315,26 @@ struct sipe_backend_candidate * sipe_backend_candidate_new(const gchar *foundati
 							   SipeNetworkProtocol proto,
 							   const gchar *ip, guint port);
 void sipe_backend_candidate_free(struct sipe_backend_candidate *candidate);
+/**
+ * @return user name. Will be g_free'd() by the core.
+ */
 gchar *sipe_backend_candidate_get_username(struct sipe_backend_candidate *candidate);
+/**
+ * @return password. Will be g_free'd() by the core.
+ */
 gchar *sipe_backend_candidate_get_password(struct sipe_backend_candidate *candidate);
+/**
+ * @return foundation. Will be g_free'd() by the core.
+ */
 gchar *sipe_backend_candidate_get_foundation(struct sipe_backend_candidate *candidate);
+/**
+ * @return IP address string. Will be g_free'd() by the core.
+ */
 gchar *sipe_backend_candidate_get_ip(struct sipe_backend_candidate *candidate);
 guint sipe_backend_candidate_get_port(struct sipe_backend_candidate *candidate);
+/**
+ * @return IP address string. Will be g_free'd() by the core.
+ */
 gchar *sipe_backend_candidate_get_base_ip(struct sipe_backend_candidate *candidate);
 guint sipe_backend_candidate_get_base_port(struct sipe_backend_candidate *candidate);
 guint32 sipe_backend_candidate_get_priority(struct sipe_backend_candidate *candidate);

@@ -285,6 +285,7 @@ sipe_backend_codec_get_id(struct sipe_backend_codec *codec)
 gchar *
 sipe_backend_codec_get_name(struct sipe_backend_codec *codec)
 {
+	/* Not explicitly documented, but return value must be g_free()'d */
 	return purple_media_codec_get_encoding_name((PurpleMediaCodec *)codec);
 }
 
@@ -349,24 +350,28 @@ sipe_backend_candidate_free(struct sipe_backend_candidate *candidate)
 gchar *
 sipe_backend_candidate_get_username(struct sipe_backend_candidate *candidate)
 {
+	/* Not explicitly documented, but return value must be g_free()'d */
 	return purple_media_candidate_get_username((PurpleMediaCandidate*)candidate);
 }
 
 gchar *
 sipe_backend_candidate_get_password(struct sipe_backend_candidate *candidate)
 {
+	/* Not explicitly documented, but return value must be g_free()'d */
 	return purple_media_candidate_get_password((PurpleMediaCandidate*)candidate);
 }
 
 gchar *
 sipe_backend_candidate_get_foundation(struct sipe_backend_candidate *candidate)
 {
+	/* Not explicitly documented, but return value must be g_free()'d */
 	return purple_media_candidate_get_foundation((PurpleMediaCandidate*)candidate);
 }
 
 gchar *
 sipe_backend_candidate_get_ip(struct sipe_backend_candidate *candidate)
 {
+	/* Not explicitly documented, but return value must be g_free()'d */
 	return purple_media_candidate_get_ip((PurpleMediaCandidate*)candidate);
 }
 
@@ -379,6 +384,7 @@ sipe_backend_candidate_get_port(struct sipe_backend_candidate *candidate)
 gchar *
 sipe_backend_candidate_get_base_ip(struct sipe_backend_candidate *candidate)
 {
+	/* Not explicitly documented, but return value must be g_free()'d */
 	return purple_media_candidate_get_base_ip((PurpleMediaCandidate*)candidate);
 }
 
