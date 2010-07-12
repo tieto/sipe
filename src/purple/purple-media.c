@@ -436,11 +436,56 @@ sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *candi
 	g_object_set(candidate, "username", username, "password", password, NULL);
 }
 
-GList*
+static GList *
+ensure_candidate_pairs(GList *candidates)
+{
+	GHashTable     *lone_cand_links;
+	GHashTableIter  iter;
+	GList	       *i;
+
+	lone_cand_links = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+
+	for (i = candidates; i; i = i->next) {
+		PurpleMediaCandidate *c = i->data;
+		gchar *foundation = purple_media_candidate_get_foundation(c);
+
+		if (g_hash_table_lookup(lone_cand_links, foundation)) {
+			g_hash_table_remove(lone_cand_links, foundation);
+			g_free(foundation);
+		} else {
+			g_hash_table_insert(lone_cand_links, foundation, i);
+		}
+	}
+
+	g_hash_table_iter_init(&iter, lone_cand_links);
+	while (g_hash_table_iter_next(&iter, NULL, (gpointer)&i)) {
+		g_object_unref(i->data);
+		candidates = g_list_delete_link(candidates, i);
+	}
+
+	g_hash_table_destroy(lone_cand_links);
+
+	return candidates;
+}
+
+GList *
 sipe_backend_get_local_candidates(struct sipe_backend_media *media,
 				  struct sipe_backend_stream *stream)
 {
-	return purple_media_get_local_candidates(media->m, stream->sessionid, stream->participant);
+	GList *candidates = purple_media_get_local_candidates(media->m,
+							      stream->sessionid,
+							      stream->participant);
+	/*
+	 * Sometimes purple will not return complete list of candidates, even
+	 * after "candidates-prepared" signal is emitted. This is a feature of
+	 * libnice, namely affecting candidates discovered via UPnP. Nice does
+	 * not wait until discovery is finished and can signal end of candidate
+	 * gathering before all responses from UPnP enabled gateways are received.
+	 *
+	 * Remove any incomplete RTP+RTCP candidate pairs from the list.
+	 */
+	candidates = ensure_candidate_pairs(candidates);
+	return candidates;
 }
 
 void
