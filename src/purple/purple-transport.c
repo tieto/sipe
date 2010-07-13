@@ -304,11 +304,9 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 	g_free(transport);
 }
 
-static void transport_canwrite_cb(gpointer data,
-				  SIPE_UNUSED_PARAMETER gint source,
-				  SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
+/* returns FALSE on write error */
+static gboolean transport_write(struct sipe_transport_purple *transport)
 {
-	struct sipe_transport_purple *transport = data;
 	gsize max_write;
 
 	max_write = purple_circ_buffer_get_max_read(transport->transmit_buffer);
@@ -322,12 +320,12 @@ static void transport_canwrite_cb(gpointer data,
 			      max_write);
 
 		if (written < 0 && errno == EAGAIN) {
-			return;
+			return TRUE;
 		} else if (written <= 0) {
 			SIPE_DEBUG_INFO_NOFORMAT("transport_canwrite_cb: written <= 0, exiting");
 			transport->error(SIPE_TRANSPORT_CONNECTION,
 					 _("Write error"));
-			return;
+			return FALSE;
 		}
 
 		purple_circ_buffer_mark_read(transport->transmit_buffer,
@@ -338,6 +336,15 @@ static void transport_canwrite_cb(gpointer data,
 		purple_input_remove(transport->transmit_handler);
 		transport->transmit_handler = 0;
 	}
+
+	return TRUE;
+}
+
+static void transport_canwrite_cb(gpointer data,
+				  SIPE_UNUSED_PARAMETER gint source,
+				  SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
+{
+	transport_write(data);
 }
 
 void sipe_backend_transport_message(struct sipe_transport_connection *conn,
@@ -356,6 +363,14 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 							       transport_canwrite_cb,
 							       transport);
 	}
+}
+
+void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
+{
+	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
+
+	while (   purple_circ_buffer_get_max_read(transport->transmit_buffer)
+	       && transport_write(transport));
 }
 
 /*

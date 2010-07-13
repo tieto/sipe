@@ -97,6 +97,7 @@ const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_private);
 guint sip_transport_port(struct sipe_core_private *sipe_private);
 void sip_transport_deregister(struct sipe_core_private *sipe_private);
 void sip_transport_disconnect(struct sipe_core_private *sipe_private);
+void sip_transport_flush(struct sipe_core_private *sipe_private);
 
 /*
   Local Variables:

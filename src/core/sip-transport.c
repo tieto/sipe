@@ -1272,6 +1272,11 @@ guint sip_transport_port(struct sipe_core_private *sipe_private)
 	return sipe_private->transport->server_port;
 }
 
+void sip_transport_flush(struct sipe_core_private *sipe_private)
+{
+	sipe_backend_transport_flush(sipe_private->transport->connection);
+}
+
 static void process_input_message(struct sipe_core_private *sipe_private,
 				  struct sipmsg *msg)
 {

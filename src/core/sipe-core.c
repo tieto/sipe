@@ -188,6 +188,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);
 		sip_transport_deregister(sipe_private);
+		sip_transport_flush(sipe_private);
 	}
 
 	sipe_connection_cleanup(sipe_private);
