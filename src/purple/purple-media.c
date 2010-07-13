@@ -436,12 +436,23 @@ sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *candi
 	g_object_set(candidate, "username", username, "password", password, NULL);
 }
 
+static void
+remove_lone_candidate_cb(SIPE_UNUSED_PARAMETER gpointer key,
+			 gpointer value,
+			 gpointer user_data)
+{
+	GList  *entry = value;
+	GList **candidates = user_data;
+
+	g_object_unref(entry->data);
+	*candidates = g_list_delete_link(*candidates, entry);
+}
+
 static GList *
 ensure_candidate_pairs(GList *candidates)
 {
-	GHashTable     *lone_cand_links;
-	GHashTableIter  iter;
-	GList	       *i;
+	GHashTable *lone_cand_links;
+	GList	   *i;
 
 	lone_cand_links = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
 
@@ -457,12 +468,7 @@ ensure_candidate_pairs(GList *candidates)
 		}
 	}
 
-	g_hash_table_iter_init(&iter, lone_cand_links);
-	while (g_hash_table_iter_next(&iter, NULL, (gpointer)&i)) {
-		g_object_unref(i->data);
-		candidates = g_list_delete_link(candidates, i);
-	}
-
+	g_hash_table_foreach(lone_cand_links, remove_lone_candidate_cb, &candidates);
 	g_hash_table_destroy(lone_cand_links);
 
 	return candidates;
