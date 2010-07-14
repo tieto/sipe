@@ -196,15 +196,7 @@ sipe_session_remove(struct sipe_core_private *sipe_private,
 	sipe_dialog_remove_all(session);
 	sipe_dialog_free(session->focus_dialog);
 
-	entry = session->outgoing_message_queue;
-	while (entry) {
-		struct queued_message *msg = entry->data;
-		g_free(msg->body);
-		g_free(msg->content_type);
-		g_free(msg);
-		entry = entry->next;
-	}
-	g_slist_free(session->outgoing_message_queue);
+	while (sipe_session_dequeue_message(session));
 
 	entry = session->pending_invite_queue;
 	while (entry) {
