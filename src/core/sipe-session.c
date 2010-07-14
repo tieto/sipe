@@ -36,7 +36,7 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 
-void
+static void
 sipe_free_queued_message(struct queued_message *message)
 {
 	g_free(message->body);
