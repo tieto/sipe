@@ -806,7 +806,7 @@ sipe_get_auth_scheme_name(struct sipe_core_private *sipe_private)
 }
 
 static void do_register(struct sipe_core_private *sipe_private,
-			gboolean expire);
+			gboolean deregister);
 
 static void do_register_cb(struct sipe_core_private *sipe_private,
 			   SIPE_UNUSED_PARAMETER void *unused)
@@ -1195,7 +1195,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 }
 
 static void do_register(struct sipe_core_private *sipe_private,
-			gboolean expire)
+			gboolean deregister)
 {
 	struct sip_transport *transport = sipe_private->transport;
 	char *uri;
@@ -1218,7 +1218,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 			      transport->connection->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
-			      expire ? "Expires: 0\r\n" : "");
+			      deregister ? "Expires: 0\r\n" : "");
 	g_free(uuid);
 	g_free(epid);
 
@@ -1237,6 +1237,13 @@ static void do_register(struct sipe_core_private *sipe_private,
 	g_free(to);
 	g_free(uri);
 	g_free(hdr);
+
+	if (deregister) {
+		/* Make sure that all messages are pushed to the server
+		   before the connection gets shut down */
+		SIPE_DEBUG_INFO_NOFORMAT("De-register from server. Flushing outstanding messages.");
+		sipe_backend_transport_flush(transport->connection);
+	}
 }
 
 void sip_transport_deregister(struct sipe_core_private *sipe_private)
@@ -1270,11 +1277,6 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 guint sip_transport_port(struct sipe_core_private *sipe_private)
 {
 	return sipe_private->transport->server_port;
-}
-
-void sip_transport_flush(struct sipe_core_private *sipe_private)
-{
-	sipe_backend_transport_flush(sipe_private->transport->connection);
 }
 
 static void process_input_message(struct sipe_core_private *sipe_private,
