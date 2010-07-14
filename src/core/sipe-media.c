@@ -549,11 +549,11 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 
 	body = sipe_media_create_sdp(call_private);
 
-	sip_transport_invite(sipe_private,
-			     hdr,
-			     body,
-			     dialog,
-			     tc);
+	dialog->outgoing_invite = sip_transport_invite(sipe_private,
+						       hdr,
+						       body,
+						       dialog,
+						       tc);
 
 	g_free(body);
 	g_free(hdr);
@@ -712,7 +712,7 @@ handle_incompatible_encryption_level(struct sipe_media_call_private *call_privat
 }
 
 static gboolean
-sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
+process_invite_call_response(struct sipe_core_private *sipe_private,
 								   struct sipmsg *msg,
 								   struct transaction *trans);
 
@@ -723,7 +723,7 @@ static void candidates_prepared_cb(struct sipe_media_call *call)
 	if (sipe_backend_media_is_initiator(call_private->public.backend_private,
 					    call_private->voice_stream)) {
 		sipe_invite_call(call_private->sipe_private,
-				 sipe_media_process_invite_response);
+				 process_invite_call_response);
 		return;
 	}
 
@@ -957,13 +957,15 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 	sip_transport_ack(sipe_private, dialog);
 	dialog->cseq = tmp_cseq;
 
+	dialog->outgoing_invite = NULL;
+
 	return TRUE;
 }
 
 static gboolean
-sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
-				   struct sipmsg *msg,
-				   struct transaction *trans)
+process_invite_call_response(struct sipe_core_private *sipe_private,
+			     struct sipmsg *msg,
+			     struct transaction *trans)
 {
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	const gchar *with;
@@ -976,6 +978,8 @@ sipe_media_process_invite_response(struct sipe_core_private *sipe_private,
 
 	backend_private = call_private->public.backend_private;
 	with = call_private->dialog->with;
+
+	call_private->dialog->outgoing_invite = NULL;
 
 	if (msg->response >= 400) {
 		// Call rejected by remote peer or an error occurred
