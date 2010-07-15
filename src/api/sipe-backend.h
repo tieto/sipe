@@ -272,6 +272,7 @@ struct sipe_backend_media *sipe_backend_media_new(struct sipe_core_public *sipe_
 						  struct sipe_media_call *call,
 						  const gchar *participant,
 						  gboolean initiator);
+void sipe_backend_media_free(struct sipe_backend_media *media);
 struct sipe_backend_stream *sipe_backend_media_add_stream(struct sipe_backend_media *media,
 							  const gchar *participant,
 							  SipeMediaType type, gboolean use_nice,

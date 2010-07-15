@@ -108,6 +108,22 @@ struct queued_message {
 struct sip_session *
 sipe_session_add_chat(struct sipe_core_private *sipe_private);
 
+#ifdef HAVE_VV
+
+/**
+ * Add a new media call session
+ *
+ * @param sipe_private (in) SIPE core data.
+ * @param who (in) remote partner.
+ *
+ * @return pointer to new session
+ */
+struct sip_session *
+sipe_session_add_call(struct sipe_core_private *sipe_private,
+		      const gchar *who);
+
+#endif
+
 /**
  * Find chat session by Call ID
  *

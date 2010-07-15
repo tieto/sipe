@@ -52,7 +52,6 @@ struct sipe_media_call_private {
 
 	struct sipe_backend_stream	*voice_stream;
 
-	gchar				*remote_ip;
 	guint16				remote_port;
 
 	GSList				*sdp_attrs;
@@ -86,10 +85,18 @@ static void
 sipe_media_call_free(struct sipe_media_call_private *call_private)
 {
 	if (call_private) {
+		sipe_backend_media_free(call_private->public.backend_private);
+		sipe_media_codec_list_free(call_private->public.remote_codecs);
+
+		if (call_private->session)
+			sipe_session_remove(call_private->sipe_private,
+					    call_private->session);
+
 		sipe_utils_nameval_free(call_private->sdp_attrs);
+
 		if (call_private->invitation)
 			sipmsg_free(call_private->invitation);
-		sipe_media_codec_list_free(call_private->public.remote_codecs);
+
 		sipe_media_candidate_list_free(call_private->remote_candidates);
 		g_free(call_private);
 	}
@@ -611,7 +618,6 @@ sipe_media_parse_sdp_attributes_and_candidates(struct sipe_media_call_private *c
 		sipe_media_candidate_list_free(call_private->remote_candidates);
 
 		call_private->sdp_attrs			= sdp_attrs;
-		call_private->remote_ip			= remote_ip;
 		call_private->remote_port		= remote_port;
 		call_private->remote_candidates	= remote_candidates;
 	} else {
@@ -796,14 +802,15 @@ static void call_hangup_cb(struct sipe_media_call *call, gboolean local)
 }
 
 static struct sipe_media_call_private *
-sipe_media_call_init(struct sipe_core_private *sipe_private, const gchar* participant, gboolean initiator)
+sipe_media_call_new(struct sipe_core_private *sipe_private,
+		    const gchar* with, gboolean initiator)
 {
 	struct sipe_media_call_private *call_private = g_new0(struct sipe_media_call_private, 1);
 
 	call_private->sipe_private = sipe_private;
 	call_private->public.backend_private = sipe_backend_media_new(SIPE_CORE_PUBLIC,
 								      SIPE_MEDIA_CALL,
-								      participant,
+								      with,
 								      initiator);
 
 	call_private->legacy_mode = FALSE;
@@ -832,7 +839,7 @@ void sipe_media_hangup(struct sipe_core_private *sipe_private)
 
 void
 sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
-			      const char *participant)
+			      const char *with)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_media_call_private *call_private;
@@ -840,21 +847,31 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 	if (sipe_private->media_call)
 		return;
 
-	call_private = sipe_media_call_init(sipe_private, participant, TRUE);
+	call_private = sipe_media_call_new(sipe_private, with, TRUE);
+
+	call_private->session = sipe_session_add_call(sipe_private, with);
+	call_private->dialog = sipe_dialog_add(call_private->session);
+	call_private->dialog->callid = gencallid();
+	call_private->dialog->with = g_strdup(call_private->session->with);
+	call_private->dialog->ourtag = gentag();
+
+	call_private->voice_stream = sipe_backend_media_add_stream(
+					call_private->public.backend_private,
+					with,
+					SIPE_MEDIA_AUDIO,
+					call_private->using_nice,
+					TRUE);
+
+	if (!call_private->voice_stream) {
+		sipe_backend_notify_error("Error occured",
+					  "Error creating media stream");
+		sipe_media_call_free(call_private);
+		return;
+	}
 
 	sipe_private->media_call = call_private;
 
-	call_private->session = sipe_session_add_chat(sipe_private);
-	call_private->dialog = sipe_dialog_add(call_private->session);
-	call_private->dialog->callid = gencallid();
-	call_private->dialog->with = g_strdup(participant);
-	call_private->dialog->ourtag = gentag();
-
-	call_private->voice_stream =
-			sipe_backend_media_add_stream(call_private->public.backend_private,
-						      participant,
-						      SIPE_MEDIA_AUDIO,
-						      call_private->using_nice, TRUE);
+	// Processing continues in candidates_prepared_cb
 }
 
 
@@ -911,7 +928,7 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 	session = sipe_session_find_or_add_chat_by_callid(sipe_private, callid);
 	dialog = sipe_media_dialog_init(session, msg);
 
-	call_private = sipe_media_call_init(sipe_private, dialog->with, FALSE);
+	call_private = sipe_media_call_new(sipe_private, dialog->with, FALSE);
 	call_private->invitation = sipmsg_copy(msg);
 	call_private->session = session;
 	call_private->dialog = dialog;

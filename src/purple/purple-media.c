@@ -45,6 +45,15 @@ struct sipe_backend_stream {
 	gchar *participant;
 };
 
+static void
+backend_stream_free(struct sipe_backend_stream *stream)
+{
+	if (stream) {
+		g_free(stream->participant);
+		g_free(stream);
+	}
+}
+
 static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type);
 static PurpleMediaCandidateType sipe_candidate_type_to_purple(SipeCandidateType type);
 static SipeCandidateType purple_candidate_type_to_sipe(PurpleMediaCandidateType type);
@@ -74,7 +83,7 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 }
 
 static struct sipe_backend_stream *
-session_find(struct sipe_backend_media *media,
+stream_find(struct sipe_backend_media *media,
 	     const gchar *sessionid,
 	     const gchar *participant)
 {
@@ -133,12 +142,10 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 				call->call_reject_cb(call, local);
 		} else if (sessionid && participant) {
 			struct sipe_backend_stream *stream;
-			stream = session_find(m, sessionid, participant);
-
+			stream = stream_find(m, sessionid, participant);
 			if (stream) {
 				m->streams = g_slist_remove(m->streams, stream);
-				g_free(stream->participant);
-				g_free(stream);
+				backend_stream_free(stream);
 			}
 		}
 	}
@@ -172,7 +179,12 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 void
 sipe_backend_media_free(struct sipe_backend_media *media)
 {
+	GSList *stream;
 	purple_media_manager_remove_media(purple_media_manager_get(), media->m);
+
+	for (stream = media->streams; stream; stream = stream->next)
+		backend_stream_free(stream->data);
+
 	g_free(media);
 }
 

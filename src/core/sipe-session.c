@@ -21,6 +21,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -57,6 +61,24 @@ sipe_session_add_chat(struct sipe_core_private *sipe_private)
 	sipe_private->sessions = g_slist_append(sipe_private->sessions, session);
 	return session;
 }
+
+#ifdef HAVE_VV
+
+struct sip_session *
+sipe_session_add_call(struct sipe_core_private *sipe_private,
+		      const gchar *who)
+{
+	struct sip_session *session = g_new0(struct sip_session, 1);
+	SIPE_DEBUG_INFO("sipe_session_add_call: new session for %s", who);
+	session->is_multiparty = FALSE;
+	session->with = g_strdup(who);
+	session->unconfirmed_messages = g_hash_table_new_full(
+		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
+	sipe_private->sessions = g_slist_append(sipe_private->sessions, session);
+	return session;
+}
+
+#endif
 
 struct sip_session *
 sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
