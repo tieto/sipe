@@ -465,6 +465,9 @@ http_conn_process_input_message(HttpConn *http_conn,
 #endif
 #endif
 		if (!ptmp) {
+			if (http_conn->callback) {
+				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
+			}
 			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
 #ifdef _WIN32
 #ifdef HAVE_LIBKRB5
@@ -477,6 +480,8 @@ http_conn_process_input_message(HttpConn *http_conn,
 #endif /* _WIN32 */
 
 			);
+			http_conn_set_close(http_conn);
+			return;
 		}
 
 		if (!http_conn->sec_ctx) {
