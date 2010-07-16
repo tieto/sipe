@@ -321,13 +321,14 @@ sipe_backend_codec_get_optional_parameters(struct sipe_backend_codec *codec)
 }
 
 gboolean
-sipe_backend_set_remote_codecs(struct sipe_media_call *call,
-			       struct sipe_backend_stream *stream)
+sipe_backend_set_remote_codecs(struct sipe_backend_media *media,
+			       struct sipe_backend_stream *stream,
+			       GList *codecs)
 {
-	return purple_media_set_remote_codecs(call->backend_private->m,
+	return purple_media_set_remote_codecs(media->m,
 					      stream->sessionid,
 					      stream->participant,
-					      call->remote_codecs);
+					      codecs);
 }
 
 GList*

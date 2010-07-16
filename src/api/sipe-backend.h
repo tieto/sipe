@@ -262,7 +262,6 @@ struct sipe_media_call {
 			       gboolean state);
 	void (*call_hangup_cb)(struct sipe_media_call *, gboolean local);
 
-	GList *remote_codecs;
 	gboolean local_on_hold;
 	gboolean remote_on_hold;
 };
@@ -304,8 +303,9 @@ void sipe_backend_codec_add_optional_parameter(struct sipe_backend_codec *codec,
 					       const gchar *name,
 					       const gchar *value);
 GList *sipe_backend_codec_get_optional_parameters(struct sipe_backend_codec *codec);
-gboolean sipe_backend_set_remote_codecs(struct sipe_media_call *call,
-					struct sipe_backend_stream *stream);
+gboolean sipe_backend_set_remote_codecs(struct sipe_backend_media *media,
+					struct sipe_backend_stream *stream,
+					GList *codecs);
 GList* sipe_backend_get_local_codecs(struct sipe_media_call *call,
 				     struct sipe_backend_stream *stream);
 
