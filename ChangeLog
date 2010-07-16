@@ -1,4 +1,7 @@
-version 1.11.0 "Lotus Domino/Calendar" (2010-XX-XX)
+version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-XX-XX)
+	- Added voice call support (Jakub Adam)
+	  * requires updated versions of libnice, farsight & pidgin
+	  * only unencrypted calls as SRTP support is missing in farsight
 	- Added integration with Lotus Domino (pier11):
 	  * Sipe can now retrieve calendar data (Meeting schedule/subject/
 	    location) from a web-enabled Lotus Domino server and publish it to
@@ -15,12 +18,24 @@ version 1.11.0 "Lotus Domino/Calendar" (2010-XX-XX)
 	    provide Domino Services URL and email address/password if it's
 	    different from SIP URI/Password settings on Basic tab.
 	- Fixed #2982424: krb5 build errors on FreeBSD (Stefan Becker)
+	- Fixed #2997639: pidgin crash after accepting cert (Stefan Becker)
+	- Fixed #3001523: Cancelling a long pending file transfer crashes Pidgin (Jakub Adam)
+	- Fixed #3029228: Calendar published at/with incorrect time (Stefan Becker)
+	- Fixed #3029929: Crash with outlook 2k3 Calendar (Stefan Becker)
+	- Fix logout from OCS (Jakub Adam)
 	- Dropped UDP transport support (Stefan Becker)
 	- Rewrote TCP & TLS transport support (Stefan Becker)
+	- HTTP improvements: GET, cookies (pier11)
 	- Alternative crypt/digest implementation based on NSS (pier11)
+	- Rewrote message debug log and implemented an analyzer script for it (Stefan Becker)
 	- More internal changes to prepare for non-purple backends (Stefan Becker)
+	- Add build option for kopete backend (Stefan Becker)
 	- New translation: Dutch (Flemish) 'nl' (fieona, ridiekel)
+	- New translation: Swedish 'sv' (Rijad)
+	- Added translations 'ar' 'hu' 'ja' 'ko' 'sv' 'zh_TW' submitted by Novell
 	- New build option: nss/mozilla-nss/microb-engine-nss for non-purple backends
+	- mingw build using standard approach, i.e. with auto* tools. (pier11)
+	- Updated Adium port (Emanuele Zattin)
 
 version 1.10.1 "Bugfix release" (2010-06-27)
         - Fix broken sipe_ht_equals_nick(); the broken code has been in the 1.10.0 release. As it affects the buddy list it could be the root cause for some of the "buddy appears offline" reports. (Stefan Becker)
