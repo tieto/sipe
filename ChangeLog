@@ -1,8 +1,8 @@
 version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-XX-XX)
-	- Added voice call support (Jakub Adam)
+	- Feature #2859239: Voice call support (Jakub Adam)
 	  * requires updated versions of libnice, farsight & pidgin
 	  * only unencrypted calls as SRTP support is missing in farsight
-	- Added integration with Lotus Domino (pier11):
+	- Feature #2945346: Lotus Notes/Domino Calendar integration (pier11):
 	  * Sipe can now retrieve calendar data (Meeting schedule/subject/
 	    location) from a web-enabled Lotus Domino server and publish it to
 	    OCS2007/LCS2005 as availability information.
@@ -29,11 +29,11 @@ version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-XX-XX)
 	- Alternative crypt/digest implementation based on NSS (pier11)
 	- Rewrote message debug log and implemented an analyzer script for it (Stefan Becker)
 	- More internal changes to prepare for non-purple backends (Stefan Becker)
-	- Add build option for kopete backend (Stefan Becker)
 	- New translation: Dutch (Flemish) 'nl' (fieona, ridiekel)
 	- New translation: Swedish 'sv' (Rijad)
 	- Added translations 'ar' 'hu' 'ja' 'ko' 'sv' 'zh_TW' submitted by Novell
 	- New build option: nss/mozilla-nss/microb-engine-nss for non-purple backends
+	- Add build option for kopete backend (Stefan Becker)
 	- mingw build using standard approach, i.e. with auto* tools. (pier11)
 	- Updated Adium port (Emanuele Zattin)
 
