@@ -15,25 +15,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2009-06-19 14:52+0000\n"
 "Language: \n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Launchpad (build Unknown)\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
 
 #: ../src/core/sip-transport.c:216
 msgid "Failed to authenticate to server"
-msgstr "Fallo autenticación con el servidor"
+msgstr "Fallo de autenticación con el servidor"
 
 #: ../src/core/sip-transport.c:1110 ../src/core/sip-transport.c:1502
 msgid "Authentication failed"
-msgstr "Autenticación fallo"
+msgstr "Fallo de autenticación"
 
 #: ../src/core/sip-transport.c:1119 ../src/core/sip-transport.c:1385
 msgid "Incompatible authentication scheme chosen"
-msgstr "Se escogió un incomptatible esquema de autenticación"
+msgstr "Seleccionado un esquema de autenticación incompatible"
 
 #: ../src/core/sip-transport.c:1143 ../src/core/sipe.c:1541
 #, c-format
 msgid "You have been rejected by the server: %s"
-msgstr "El servidor le ha rechazado: %s"
+msgstr "El servidor %s ha rechazado al usuario"
 
 #: ../src/core/sip-transport.c:1144 ../src/core/sip-transport.c:1163
 #: ../src/core/sip-transport.c:1183 ../src/core/sipe.c:1541
@@ -43,11 +43,11 @@ msgstr "no se indicó una razón"
 #: ../src/core/sip-transport.c:1162
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr "No encontro: %s. Por favor, contacta a tu administrador."
+msgstr "No encontró: %s. Por favor, contacte a su administrador"
 
 #: ../src/core/sip-transport.c:1164
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr "SIP esta no habilitado para el URI de destino o el URI no existe."
+msgstr "SIP está deshabilitado para la URI de destino o la URI no existe"
 
 #: ../src/core/sip-transport.c:1183
 #, c-format
@@ -56,7 +56,7 @@ msgstr "Servicio no disponible: %s"
 
 #: ../src/core/sip-transport.c:1497
 msgid "Invalid message signature received"
-msgstr "Firma de mensaje no válido recibida"
+msgstr "Recibida firma de mensaje no valida"
 
 #: ../src/core/sipe.c:134
 msgid "Inactive"
@@ -69,7 +69,7 @@ msgstr "Ocupado"
 
 #: ../src/core/sipe.c:136
 msgid "Busy-Idle"
-msgstr "No disponible"
+msgstr "Ocupado-Inactivo"
 
 #: ../src/core/sipe.c:138 ../src/purple/purple-plugin.c:205
 msgid "Be right back"
@@ -77,7 +77,7 @@ msgstr "Regreso en un momento"
 
 #: ../src/core/sipe.c:140
 msgid "Out to lunch"
-msgstr "Sali a comer"
+msgstr "He salido a comer"
 
 #: ../src/core/sipe.c:142
 msgid "In a call"
@@ -93,7 +93,7 @@ msgstr "En una reunión"
 
 #: ../src/core/sipe.c:145 ../src/core/sipe-cal.c:939
 msgid "Out of office"
-msgstr "Fuera de Oficina"
+msgstr "Fuera de la oficina"
 
 #: ../src/core/sipe.c:146
 msgid "Urgent interruptions only"
@@ -101,18 +101,18 @@ msgstr "Sólo interrupciones urgentes"
 
 #: ../src/core/sipe.c:316 ../src/core/sipe.c:2811
 msgid "you"
-msgstr "usted"
+msgstr "tu"
 
 #: ../src/core/sipe.c:542 ../src/core/sipe.c:1365 ../src/core/sipe.c:1375
 #: ../src/core/sipe.c:1396 ../src/core/sipe.c:5972
 msgid "Other Contacts"
-msgstr "Other Contacts"
+msgstr "Otros contactos"
 
 #. [MS-SIPREGE]
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe.c:1531
 msgid "you are already signed in at another location"
-msgstr "usted esta conectado desde otra locación"
+msgstr "ya está conectado desde otro lugar"
 
 #: ../src/core/sipe.c:1534
 msgid "user disabled"
@@ -153,18 +153,18 @@ msgstr "Desconocido"
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2995
 msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
-msgstr "Su mensaje o invitación no fue enviada, posiblemente porque contiene un hipervínculo u otro contenido que el administrador del sistema ha bloqueado."
+msgstr "Su mensaje o invitación no fue enviado, posiblemente porque contiene un hipervínculo u otro contenido que el administrador del sistema ha bloqueado."
 
 #: ../src/core/sipe.c:2999
 #, c-format
 msgid "This message was not delivered to %s because the service is not available"
-msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes están fuera de linea:"
+msgstr "Este mensaje no fue enviado a %s porque el servicio no esta disponible"
 
 #. Busy Here
 #: ../src/core/sipe.c:3001
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes están fuera de linea:"
+msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes no desean ser molestados"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3003
@@ -175,12 +175,12 @@ msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes no soporta
 #: ../src/core/sipe.c:3005
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes están fuera de linea:"
+msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes están fuera de linea"
 
 #: ../src/core/sipe.c:3309
 #, c-format
 msgid "Failed to invite %s"
-msgstr "Fallo la invitación para %s"
+msgstr "Fallo al invitar a %s"
 
 #: ../src/core/sipe.c:5821
 msgid "SIP Exchange user name contains invalid characters"
@@ -199,12 +199,12 @@ msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr ""
-"El nombre de usuario debe ser un SIP URI válido\n"
+"El nombre de usuario debe ser una URI SIP  válida\n"
 "Ejemplo: usuario@dominio.com"
 
 #: ../src/core/sipe.c:5848
 msgid "SIP Exchange user name contains whitespace"
-msgstr "Los nombres de cuentas de SIP Exchange no contienen espacios"
+msgstr "El nombre de cuenta SIP Exchange contiene espacios"
 
 #: ../src/core/sipe.c:5862
 msgid ""
