@@ -175,12 +175,12 @@ msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes no soporta
 #: ../src/core/sipe.c:3005
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes están fuera de linea"
+msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes desconectados"
 
 #: ../src/core/sipe.c:3309
 #, c-format
 msgid "Failed to invite %s"
-msgstr "Fallo al invitar a %s"
+msgstr "Fallo invitando a %s"
 
 #: ../src/core/sipe.c:5821
 msgid "SIP Exchange user name contains invalid characters"
@@ -191,7 +191,7 @@ msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr ""
-"El nombre de usuario debe ser un SIP URI válido\n"
+"El nombre de usuario debe ser una URI SIP válida\n"
 "Ejemplo: usuario@dominio.com"
 
 #: ../src/core/sipe.c:5839
@@ -199,7 +199,7 @@ msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr ""
-"El nombre de usuario debe ser una URI SIP  válida\n"
+"Si se proporciona una direccion de correo, debe ser válida\n"
 "Ejemplo: usuario@dominio.com"
 
 #: ../src/core/sipe.c:5848
@@ -212,13 +212,13 @@ msgid ""
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Example: https://domino.corp.com/maildatabase.nsf"
 msgstr ""
-"Email URL debería ser válido si se proporciona\n"
+"Si se proporciona una URL para el servicio de correo debe ser válida\n"
 "Ejemplo: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Ejemplo: https://domino.corp.com/maildatabase.nsf"
 
 #: ../src/core/sipe.c:6000
 msgid "Unable to display the search results"
-msgstr "No se puede mostrar los resultados de la búsqueda."
+msgstr "Imposible mostrar los resultados de la búsqueda."
 
 #: ../src/core/sipe.c:6006
 msgid "User name"
@@ -371,7 +371,7 @@ msgstr "Personas de dominios públicos"
 #: ../src/core/sipe.c:6777
 #, c-format
 msgid "People at %s"
-msgstr "Persona at %s"
+msgstr "Persona en %s"
 
 #: ../src/core/sipe.c:6792
 msgid "Add new domain..."
@@ -395,7 +395,7 @@ msgstr "Bloquear"
 
 #: ../src/core/sipe.c:6960 ../src/core/sipe.c:6997
 msgid "Display name"
-msgstr "Display Name"
+msgstr "Nombre completo"
 
 #: ../src/core/sipe.c:6963
 msgid "Job title"
@@ -427,7 +427,7 @@ msgstr "Alias"
 
 #: ../src/core/sipe.c:7017
 msgid "Site"
-msgstr "Site"
+msgstr "Sitio"
 
 #: ../src/core/sipe.c:7024
 msgid "Find on LinkedIn"
@@ -456,16 +456,16 @@ msgstr "Actualmente %s"
 
 #: ../src/core/sipe-cal.c:1054
 msgid "Outside of working hours for next 8 hours"
-msgstr "Fuera de trabajo por las siguientes 8 horas"
+msgstr "Fuera de horas de trabajo durante las siguientes 8 horas"
 
 #: ../src/core/sipe-cal.c:1056
 #, c-format
 msgid "%s for next 8 hours"
-msgstr "%s por las siguientes 8 horas"
+msgstr "%s durante las siguientes 8 horas"
 
 #: ../src/core/sipe-cal.c:1065
 msgid "Not working"
-msgstr "No trabajando"
+msgstr "Sin trabajar"
 
 #: ../src/core/sipe-cal.c:1069
 #, c-format
@@ -489,11 +489,11 @@ msgstr "Conversación #%d"
 
 #: ../src/core/sipe-conf.c:800
 msgid "This conference is no longer locked. Additional participants can now join."
-msgstr "Esta conferencia no esta bloqueada. Mas participantes pueden ahora unirse."
+msgstr "Esta conferencia ya no esta bloqueada. Mas participantes pueden unirse."
 
 #: ../src/core/sipe-conf.c:804
 msgid "This conference is locked. Nobody else can join the conference while it is locked."
-msgstr "Esta conferencia esta bloqueada. Nadie mas puede unirse a la conferencia mientras esta bloqueada."
+msgstr "Esta conferencia esta bloqueada. Nadie mas puede unirse a la conferencia mientras esté bloqueada."
 
 #: ../src/core/sipe-conf.c:837
 msgid "You have been disconnected from this conference."
@@ -503,7 +503,7 @@ msgstr "Usted ha sido desconectado de esta conferencia."
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:138
 msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
-msgstr "Un plugin desarrollado por terceros que implementa una versión del protocolo SIP/Simple usado por varios productos."
+msgstr "Un plugin desarrollado por terceros que implementa una versión del protocolo SIP/SIMPLE usado por varios productos."
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:140
@@ -543,7 +543,7 @@ msgstr "Licencia"
 #. About note, part 9/13: known users
 #: ../src/core/sipe-core.c:154
 msgid "We support users in such organizations as"
-msgstr "Nosotros soportamos usuarios en organizaciones como"
+msgstr "Soportamos usuarios en organizaciones como"
 
 #. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
@@ -555,7 +555,7 @@ msgstr "Por favor, ayudanos a traducir SIPE para su lenguaje nativo en"
 #. start with a space if text is not empty
 #: ../src/core/sipe-core.c:160
 msgid " using convenient web interface"
-msgstr "usando una conveniente interfaz web"
+msgstr "usando una interfaz web"
 
 #. About note, part 12/13: author list (header)
 #: ../src/core/sipe-core.c:162
@@ -574,38 +574,38 @@ msgstr "Textos originales en Ingles (en): Desarrolladores de SIPE"
 #. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
 msgid "Location:"
-msgstr "Locación:"
+msgstr "Localización:"
 
 #: ../src/core/sipe-ft.c:110 ../src/core/sipe-ft.c:613
 #: ../src/core/sipe-ft.c:642 ../src/core/sipe-ft.c:700
 #: ../src/purple/purple-ft.c:317
 msgid "Socket read failed"
-msgstr "Lectura de socket fallo"
+msgstr "Fallo en lectura de socket"
 
 #: ../src/core/sipe-ft.c:115 ../src/core/sipe-ft.c:744
 #: ../src/core/sipe-ft.c:753
 msgid "Socket write failed"
-msgstr "Escritura de socket fallo"
+msgstr "Fallo en escritura de socket"
 
 #: ../src/core/sipe-ft.c:400
 msgid "File size is different from the advertised value."
-msgstr "Tamaño del archivo es diferente del valor anunciado."
+msgstr "El tamaño del archivo es diferente del valor anunciado."
 
 #: ../src/core/sipe-ft.c:439
 msgid "Received MAC is corrupted"
-msgstr "La dirección MAC es corrupta"
+msgstr "La dirección MAC está corrupta"
 
 #: ../src/core/sipe-ft.c:450
 msgid "Received file is corrupted"
-msgstr "Archivo recibido esta corrupto"
+msgstr "El archivo recibido está corrupto"
 
 #: ../src/core/sipe-ft.c:518
 msgid "File transfer initialization failed."
-msgstr "El inicio de transferencia de archivo fallo"
+msgstr "Fallo en la inicializacion de la transferencia de archivos"
 
 #: ../src/core/sipe-ft.c:549
 msgid "File transfer authentication failed."
-msgstr "La autenticación de transferencia de archivo fallo"
+msgstr "Fallo en la autenticación de la transferencia de archivos"
 
 #: ../src/core/sipe-ft.c:634 ../src/core/sipe-ft.c:652
 #: ../src/core/sipe-ft.c:714
@@ -614,15 +614,15 @@ msgstr "Memoria insuficiente"
 
 #: ../src/core/sipe-ft.c:831
 msgid "Received encryption key has wrong size."
-msgstr "La clave cifrada recibida tiene un tamaño erroneo"
+msgstr "La clave cifrada recibida tiene un tamaño erroneo."
 
 #: ../src/core/sipe-ft.c:846
 msgid "Received hash key has wrong size."
-msgstr "La clave hash recibida tienen un tamaño incorrecto."
+msgstr "La clave hash recibida tiene un tamaño incorrecto."
 
 #: ../src/core/sipe-ft.c:868
 msgid "Could not create listen socket"
-msgstr "No es posible crear el zócalo de escucha"
+msgstr "Imposible crear el socket de escucha"
 
 #: ../src/core/sipe-incoming.c:642
 #, c-format
@@ -644,7 +644,7 @@ msgstr "Usuario no disponible"
 #: ../src/core/sipe-media.c:980
 #, c-format
 msgid "User %s is not available"
-msgstr "Usuario %s no esta disponible"
+msgstr "El usuario %s no esta disponible"
 
 #: ../src/core/sipe-media.c:983
 msgid "Call rejected"
@@ -653,7 +653,7 @@ msgstr "Llamada rechazada"
 #: ../src/core/sipe-media.c:984
 #, c-format
 msgid "User %s rejected call"
-msgstr "Usuario %s rechazo la llamada"
+msgstr "El usuario %s rechazo la llamada"
 
 #: ../src/core/sipe-media.c:987
 msgid "Error occured"
@@ -675,11 +675,11 @@ msgstr "usuario@dominio.com"
 
 #: ../src/purple/purple-plugin.c:562
 msgid "First name"
-msgstr "Display Name"
+msgstr "Nombre"
 
 #: ../src/purple/purple-plugin.c:564
 msgid "Last name"
-msgstr "Alias"
+msgstr "Apellidos"
 
 #: ../src/purple/purple-plugin.c:572
 msgid "Search"
@@ -691,7 +691,7 @@ msgstr "Buscar un contacto"
 
 #: ../src/purple/purple-plugin.c:574
 msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
-msgstr "Introduce la información para la persona que usted desea encontrar. Campos en blanco serán ignorados."
+msgstr "Introduce la información de la persona que usted desea encontrar. Los campos en blanco serán ignorados."
 
 #: ../src/purple/purple-plugin.c:576
 msgid "_Search"
@@ -764,7 +764,7 @@ msgstr "TCP"
 #. option);
 #: ../src/purple/purple-plugin.c:681
 msgid "User Agent"
-msgstr "Agente de usuarios"
+msgstr "User Agent"
 
 #: ../src/purple/purple-plugin.c:685
 msgid "Use Kerberos"
@@ -820,7 +820,7 @@ msgstr "Error de lectura"
 
 #: ../src/purple/purple-transport.c:113
 msgid "Server has disconnected"
-msgstr "El servidor se ha desconectado"
+msgstr "El servidor ha desconectado"
 
 #: ../src/purple/purple-transport.c:190
 msgid "Could not connect"
