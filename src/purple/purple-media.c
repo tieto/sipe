@@ -179,10 +179,10 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 void
 sipe_backend_media_free(struct sipe_backend_media *media)
 {
-	GSList *stream;
-	purple_media_manager_remove_media(purple_media_manager_get(), media->m);
+	GSList *stream = media->streams;
+	g_object_unref(media->m);
 
-	for (stream = media->streams; stream; stream = stream->next)
+	for (; stream; stream = g_slist_delete_link(stream, stream))
 		backend_stream_free(stream->data);
 
 	g_free(media);
@@ -228,6 +228,8 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 
 		media->streams = g_slist_append(media->streams, stream);
 	}
+
+	g_free(params);
 
 	return stream;
 }
