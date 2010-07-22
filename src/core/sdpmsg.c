@@ -186,7 +186,7 @@ parse_codecs(GSList *attrs)
 					gchar value[50];
 
 					if (sscanf(*next, "%[a-zA-Z0-9]=%s", name, value) == 2)
-						codec->attributes = sipe_utils_nameval_add(codec->attributes, name, value);
+						codec->parameters = sipe_utils_nameval_add(codec->parameters, name, value);
 
 					++next;
 				}
@@ -225,12 +225,205 @@ sdpmsg_parse_msg(gchar *msg)
 	return smsg;
 }
 
+static gchar *
+codecs_to_string(GSList *codecs)
+{
+	GString *result = g_string_new(NULL);
+
+	for (; codecs; codecs = codecs->next) {
+		struct sdpcodec *c = codecs->data;
+		GSList *params = c->parameters;
+
+		g_string_append_printf(result,
+				       "a=rtpmap:%d %s/%d\r\n",
+				       c->id,
+				       c->name,
+				       c->clock_rate);
+
+		if (params) {
+			g_string_append_printf(result, "a=fmtp:%d", c->id);
+
+			for (; params; params = params->next) {
+				struct sipnameval* par = params->data;
+				g_string_append_printf(result, " %s=%s",
+						       par->name, par->value);
+			}
+
+			g_string_append(result, "\r\n");
+		}
+	}
+
+	return g_string_free(result, FALSE);
+}
+
+static gchar *
+codec_ids_to_string(GSList *codecs)
+{
+	GString *result = g_string_new(NULL);
+
+	for (; codecs; codecs = codecs->next) {
+		struct sdpcodec *c = codecs->data;
+		g_string_append_printf(result, " %d", c->id);
+	}
+
+	return g_string_free(result, FALSE);
+}
+
+static gchar *
+candidates_to_string(GSList *candidates)
+{
+	GString *result = g_string_new("");
+
+	for (; candidates; candidates = candidates->next) {
+		struct sdpcandidate *c = candidates->data;
+		const gchar *protocol;
+		const gchar *type;
+		gchar *related = NULL;
+
+		switch (c->protocol) {
+			case SIPE_NETWORK_PROTOCOL_TCP:
+				protocol = "TCP";
+				break;
+			case SIPE_NETWORK_PROTOCOL_UDP:
+				protocol = "UDP";
+				break;
+		}
+
+		switch (c->type) {
+			case SIPE_CANDIDATE_TYPE_HOST:
+				type = "host";
+				break;
+			case SIPE_CANDIDATE_TYPE_RELAY:
+				type = "relay";
+				break;
+			case SIPE_CANDIDATE_TYPE_SRFLX:
+				type = "srflx";
+				related = g_strdup_printf("raddr %s rport %d",
+							  c->base_ip,
+							  c->base_port);
+				break;
+			case SIPE_CANDIDATE_TYPE_PRFLX:
+				type = "prflx";
+				break;
+			default:
+				// TODO: error unknown/unsupported type
+				break;
+		}
+
+		g_string_append_printf(result,
+				       "a=candidate:%s %u %s %u %s %d typ %s %s\r\n",
+				       c->foundation,
+				       c->component,
+				       protocol,
+				       c->priority,
+				       c->ip,
+				       c->port,
+				       type,
+				       related ? related : "");
+
+		g_free(related);
+	}
+
+	return g_string_free(result, FALSE);
+}
+
+static gint
+candidate_compare_by_component_id(struct sdpcandidate *c1,
+				  struct sdpcandidate *c2)
+{
+	return c1->component - c2->component;
+}
+
+static gchar *
+remote_candidates_to_string(GSList *candidates)
+{
+	GString *result = g_string_new("");
+
+	candidates = g_slist_copy(candidates);
+	candidates = g_slist_sort(candidates,
+				  (GCompareFunc)candidate_compare_by_component_id);
+
+	if (candidates) {
+		GSList *i;
+		g_string_append(result, "a=remote-candidates:");
+
+		for (i = candidates; i; i = i->next) {
+			struct sdpcandidate *c = i->data;
+			g_string_append_printf(result, "%u %s %u ",
+					       c->component, c->ip, c->port);
+		}
+
+		g_string_append(result, "\r\n");
+	}
+
+	g_slist_free(candidates);
+
+	return g_string_free(result, FALSE);
+}
+
+static gchar *
+attributes_to_string(GSList *attributes)
+{
+	GString *result = g_string_new("");
+
+	for (; attributes; attributes = attributes->next) {
+		struct sipnameval *a = attributes->data;
+		g_string_append_printf(result, "a=%s", a->name);
+		if (a->value)
+			g_string_append_printf(result, ":%s", a->value);
+		g_string_append(result, "\r\n");
+	}
+
+	return g_string_free(result, FALSE);
+}
+
+gchar *
+sdpmsg_to_string(const struct sdpmsg *msg)
+{
+	gchar *body = NULL;
+
+	gchar *codecs_str = codecs_to_string(msg->codecs);
+	gchar *codec_ids_str = codec_ids_to_string(msg->codecs);
+
+	gchar *candidates_str = msg->legacy ? g_strdup("")
+					: candidates_to_string(msg->candidates);
+	gchar *remote_candidates_str = remote_candidates_to_string(msg->remote_candidates);
+
+	gchar *attributes_str = attributes_to_string(msg->attributes);
+
+	body = g_strdup_printf(
+		"v=0\r\n"
+		"o=- 0 0 IN IP4 %s\r\n"
+		"s=session\r\n"
+		"c=IN IP4 %s\r\n"
+		"b=CT:99980\r\n"
+		"t=0 0\r\n"
+		"m=audio %d RTP/AVP%s\r\n"
+		"%s"
+		"%s"
+		"%s"
+		"%s",
+		msg->ip, msg->ip, msg->port, codec_ids_str,
+		candidates_str, remote_candidates_str,
+		codecs_str,
+		attributes_str);
+
+	g_free(codecs_str);
+	g_free(codec_ids_str);
+	g_free(candidates_str);
+	g_free(remote_candidates_str);
+	g_free(attributes_str);
+
+	return body;
+}
+
 static void
 sdpcandidate_free(struct sdpcandidate *candidate)
 {
 	if (candidate) {
 		g_free(candidate->foundation);
 		g_free(candidate->ip);
+		g_free(candidate->base_ip);
 		g_free(candidate);
 	}
 }
@@ -240,7 +433,7 @@ sdpcodec_free(struct sdpcodec *codec)
 {
 	if (codec) {
 		g_free(codec->name);
-		sipe_utils_nameval_free(codec->attributes);
+		sipe_utils_nameval_free(codec->parameters);
 		g_free(codec);
 	}
 }
@@ -256,6 +449,10 @@ sdpmsg_free(struct sdpmsg *msg)
 		for (item = msg->candidates; item; item = item->next)
 			sdpcandidate_free(item->data);
 		g_slist_free(msg->candidates);
+
+		for (item = msg->remote_candidates; item; item = item->next)
+			sdpcandidate_free(item->data);
+		g_slist_free(msg->remote_candidates);
 
 		for (item = msg->codecs; item; item = item->next)
 			sdpcodec_free(item->data);

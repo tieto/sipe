@@ -24,6 +24,7 @@
 struct sdpmsg {
 	GSList		*attributes;
 	GSList		*candidates;
+	GSList		*remote_candidates;
 	GSList		*codecs;
 
 	gchar		*ip;
@@ -43,6 +44,8 @@ struct sdpcandidate {
 	guint32			 priority;
 	gchar			*ip;
 	guint			 port;
+	gchar			*base_ip;
+	guint			 base_port;
 };
 
 struct sdpcodec {
@@ -50,7 +53,7 @@ struct sdpcodec {
 	gchar		*name;
 	gint		 clock_rate;
 	SipeMediaType	 type;
-	GSList		*attributes;
+	GSList		*parameters;
 };
 
 /**
@@ -61,6 +64,15 @@ struct sdpcodec {
  * @return New @c sdpmsg or NULL if message can not be parsed.
  */
 struct sdpmsg *sdpmsg_parse_msg(gchar *msg);
+
+/**
+ * Creates a SDP message from the @c sdpmsg structure.
+ *
+ * @param msg a @c sdpmsg
+ *
+ * @return SDP message as a character string that must be g_free'd after use.
+ */
+gchar *sdpmsg_to_string(const struct sdpmsg *msg);
 
 /**
  * Deallocates @c sdpmsg.

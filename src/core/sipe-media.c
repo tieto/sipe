@@ -97,251 +97,139 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 	}
 }
 
-static gchar *
-sipe_media_sdp_codec_ids_format(GList *codecs)
+static GSList *
+backend_candidates_to_sdpcandidate(GList *candidates)
 {
-	GString *result = g_string_new(NULL);
+	GSList *result = NULL;
+	GList *i;
 
-	while (codecs) {
-		struct sipe_backend_codec *c = codecs->data;
+	for (i = candidates; i; i = i->next) {
+		struct sipe_backend_candidate *candidate = i->data;
+		struct sdpcandidate *c = g_new(struct sdpcandidate, 1);
 
-		g_string_append_printf(result,
-				       " %d",
-				       sipe_backend_codec_get_id(c));
+		c->foundation = sipe_backend_candidate_get_foundation(candidate);
+		c->component = sipe_backend_candidate_get_component_type(candidate);
+		c->type = sipe_backend_candidate_get_type(candidate);
+		c->protocol = sipe_backend_candidate_get_protocol(candidate);
+		c->ip = sipe_backend_candidate_get_ip(candidate);
+		c->port = sipe_backend_candidate_get_port(candidate);
+		c->base_ip = sipe_backend_candidate_get_base_ip(candidate);
+		c->base_port = sipe_backend_candidate_get_base_port(candidate);
+		c->priority = sipe_backend_candidate_get_priority(candidate);
 
-		codecs = codecs->next;
+		result = g_slist_append(result, c);
 	}
 
-	return g_string_free(result, FALSE);
+	return result;
 }
 
-static gchar *
-sipe_media_sdp_codecs_format(GList *codecs)
+static struct sdpmsg *
+sipe_media_to_sdpmsg(struct sipe_media_call_private *call_private)
 {
-	GString *result = g_string_new(NULL);
+	struct sdpmsg *msg = g_new0(struct sdpmsg, 1);
+	struct sipe_backend_media *backend_media = call_private->public.backend_private;
 
-	while (codecs) {
-		struct sipe_backend_codec *c = codecs->data;
-		GList *params = NULL;
-		gchar *name = sipe_backend_codec_get_name(c);
+	GList *codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL,
+						      call_private->voice_stream);
+	GList *candidates;
 
-		g_string_append_printf(result,
-				       "a=rtpmap:%d %s/%d\r\n",
-				       sipe_backend_codec_get_id(c),
-				       name,
-				       sipe_backend_codec_get_clock_rate(c));
-		g_free(name);
+	GList *i;
+	GSList *j;
 
-		if ((params = sipe_backend_codec_get_optional_parameters(c))) {
-			g_string_append_printf(result,
-					       "a=fmtp:%d",
-					       sipe_backend_codec_get_id(c));
+	GSList *attributes = NULL;
+	guint rtcp_port;
 
-			while (params) {
-				struct sipnameval* par = params->data;
-				g_string_append_printf(result,
-						       " %s=%s",
-						       par->name, par->value);
-				params = params->next;
-			}
-			g_string_append(result, "\r\n");
+	// Process codecs
+	for (i = codecs; i; i = i->next) {
+		struct sipe_backend_codec *codec = i->data;
+		struct sdpcodec *c = g_new0(struct sdpcodec, 1);
+		GList *params;
+
+		c->id = sipe_backend_codec_get_id(codec);
+		c->name = sipe_backend_codec_get_name(codec);
+		c->clock_rate = sipe_backend_codec_get_clock_rate(codec);
+		c->type = SIPE_MEDIA_AUDIO;
+
+		params = sipe_backend_codec_get_optional_parameters(codec);
+		for (; params; params = params->next) {
+			struct sipnameval *param = params->data;
+			struct sipnameval *copy = g_new0(struct sipnameval, 1);
+
+			copy->name = g_strdup(param->name);
+			copy->value = g_strdup(param->value);
+
+			c->parameters = g_slist_append(c->parameters, copy);
 		}
 
-		codecs = codecs->next;
+		msg->codecs = g_slist_append(msg->codecs, c);
 	}
 
-	return g_string_free(result, FALSE);
-}
+	sipe_media_codec_list_free(codecs);
 
-static gint
-candidate_compare_by_component_id(struct sipe_backend_candidate *c1, struct sipe_backend_candidate *c2)
-{
-	return   sipe_backend_candidate_get_component_type(c1)
-		   - sipe_backend_candidate_get_component_type(c2);
-}
-
-static gchar *
-sipe_media_sdp_candidates_format(struct sipe_media_call_private *call_private, guint16 *local_port)
-{
-	struct sipe_backend_media *backend_media = call_private->public.backend_private;
-	struct sipe_backend_stream *voice_stream = call_private->voice_stream;
-	GList *l_candidates;
-	GList *r_candidates;
-	GList *cand;
-	gchar *username;
-	gchar *password;
-	GString *result = g_string_new("");
-	guint16 rtcp_port = 0;
-
+	// Process local candidates
 	// If we have established candidate pairs, send them in SDP response.
 	// Otherwise send all available local candidates.
-	l_candidates = sipe_backend_media_get_active_local_candidates(backend_media, voice_stream);
-	if (!l_candidates)
-		l_candidates = sipe_backend_get_local_candidates(backend_media, voice_stream);
+	candidates = sipe_backend_media_get_active_local_candidates(backend_media,
+							      call_private->voice_stream);
+	if (!candidates)
+		candidates = sipe_backend_get_local_candidates(backend_media,
+							       call_private->voice_stream);
 
-	// If in legacy mode, just fill local_port variable with local host's RTP
-	// component port and return empty string.
-	if (call_private->legacy_mode) {
-		for (cand = l_candidates; cand; cand = cand->next) {
-			struct sipe_backend_candidate *c = cand->data;
-			SipeCandidateType type = sipe_backend_candidate_get_type(c);
-			SipeComponentType component = sipe_backend_candidate_get_component_type(c);
+	msg->candidates = backend_candidates_to_sdpcandidate(candidates);
 
-			if (type == SIPE_CANDIDATE_TYPE_HOST && component == SIPE_COMPONENT_RTP) {
-				*local_port = sipe_backend_candidate_get_port(c);
-				break;
-			}
-		}
+	// Process stream attributes
+	if (!call_private->legacy_mode) {
+		struct sipe_backend_candidate *candidate = candidates->data;
 
-		sipe_media_candidate_list_free(l_candidates);
+		gchar *username = sipe_backend_candidate_get_username(candidate);
+		gchar *password = sipe_backend_candidate_get_password(candidate);
 
-		return g_string_free(result, FALSE);
+		attributes = sipe_utils_nameval_add(attributes,
+						    "ice-ufrag", username);
+		attributes = sipe_utils_nameval_add(attributes,
+						    "ice-pwd", password);
+
+		g_free(username);
+		g_free(password);
 	}
 
-	username = sipe_backend_candidate_get_username(l_candidates->data);
-	password = sipe_backend_candidate_get_password(l_candidates->data);
+	sipe_media_candidate_list_free(candidates);
 
-	g_string_append_printf(result,
-			       "a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",
-			       username, password);
+	for (j = msg->candidates; j; j = j->next) {
+		struct sdpcandidate *candidate = j->data;
 
-	g_free(username);
-	g_free(password);
-
-	for (cand = l_candidates; cand; cand = cand->next) {
-		struct sipe_backend_candidate *c = cand->data;
-
-		guint16 port;
-		SipeComponentType component;
-		const gchar *protocol;
-		const gchar *type;
-		gchar *related = NULL;
-		gchar *tmp_foundation;
-		gchar *tmp_ip;
-
-		component = sipe_backend_candidate_get_component_type(c);
-		port = sipe_backend_candidate_get_port(c);
-
-		switch (sipe_backend_candidate_get_protocol(c)) {
-			case SIPE_NETWORK_PROTOCOL_TCP:
-				protocol = "TCP";
-				break;
-			case SIPE_NETWORK_PROTOCOL_UDP:
-				protocol = "UDP";
-				break;
+		if (candidate->type == SIPE_CANDIDATE_TYPE_HOST) {
+			if (candidate->component == SIPE_COMPONENT_RTP)
+				msg->port = candidate->port;
+			else if (candidate->component == SIPE_COMPONENT_RTCP)
+				rtcp_port = candidate->port;
 		}
-
-		switch (sipe_backend_candidate_get_type(c)) {
-			case SIPE_CANDIDATE_TYPE_HOST:
-				type = "host";
-				if (component == SIPE_COMPONENT_RTP)
-					*local_port = port;
-				else if (component == SIPE_COMPONENT_RTCP)
-					rtcp_port = port;
-				break;
-			case SIPE_CANDIDATE_TYPE_RELAY:
-				type = "relay";
-				break;
-			case SIPE_CANDIDATE_TYPE_SRFLX:
-				{
-					gchar *tmp;
-
-					type = "srflx";
-					related = g_strdup_printf("raddr %s rport %d",
-								  tmp = sipe_backend_candidate_get_base_ip(c),
-								  sipe_backend_candidate_get_base_port(c));
-					g_free(tmp);
-				}
-				break;
-			case SIPE_CANDIDATE_TYPE_PRFLX:
-				type = "prflx";
-				break;
-			default:
-				// TODO: error unknown/unsupported type
-				break;
-		}
-
-		g_string_append_printf(result,
-				       "a=candidate:%s %u %s %u %s %d typ %s %s\r\n",
-				       tmp_foundation = sipe_backend_candidate_get_foundation(c),
-				       component,
-				       protocol,
-				       sipe_backend_candidate_get_priority(c),
-				       tmp_ip = sipe_backend_candidate_get_ip(c),
-				       port,
-				       type,
-				       related ? related : "");
-		g_free(tmp_ip);
-		g_free(tmp_foundation);
-		g_free(related);
 	}
 
-	r_candidates = sipe_backend_media_get_active_remote_candidates(backend_media, voice_stream);
-	r_candidates = g_list_sort(r_candidates, (GCompareFunc)candidate_compare_by_component_id);
-
-	if (r_candidates) {
-		g_string_append(result, "a=remote-candidates:");
-		for (cand = r_candidates; cand; cand = cand->next) {
-			struct sipe_backend_candidate *candidate = cand->data;
-			gchar *tmp;
-			g_string_append_printf(result,
-					       "%u %s %u ",
-					       sipe_backend_candidate_get_component_type(candidate),
-					       tmp = sipe_backend_candidate_get_ip(candidate),
-					       sipe_backend_candidate_get_port(candidate));
-			g_free(tmp);
-		}
-		g_string_append(result, "\r\n");
+	if (   call_private->public.local_on_hold
+	    || call_private->public.remote_on_hold) {
+		attributes = sipe_utils_nameval_add(attributes, "inactive", "");
 	}
 
-	sipe_media_candidate_list_free(l_candidates);
-	sipe_media_candidate_list_free(r_candidates);
-
-	if (rtcp_port != 0) {
-		g_string_append_printf(result,
-				       "a=maxptime:200\r\na=rtcp:%u\r\n",
-				       rtcp_port);
+	if (rtcp_port) {
+		gchar *tmp = g_strdup_printf("%u", rtcp_port);
+		attributes  = sipe_utils_nameval_add(attributes, "rtcp", tmp);
+		g_free(tmp);
 	}
 
-	return g_string_free(result, FALSE);
-}
+	attributes = sipe_utils_nameval_add(attributes, "encryption", "rejected");
 
-static gchar*
-sipe_media_create_sdp(struct sipe_media_call_private *call_private) {
-	GList *usable_codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL,
-							     call_private->voice_stream);
-	gchar *body = NULL;
+	msg->attributes = attributes;
+	msg->legacy = call_private->legacy_mode;
+	msg->ip = g_strdup(sipe_utils_get_suitable_local_ip(-1));
 
-	const char *ip = sipe_utils_get_suitable_local_ip(-1);
-	guint16	local_port = 0;
+	// Process remote candidates
+	candidates = sipe_backend_media_get_active_remote_candidates(backend_media,
+								     call_private->voice_stream);
+	msg->remote_candidates = backend_candidates_to_sdpcandidate(candidates);
+	sipe_media_candidate_list_free(candidates);
 
-	gchar *sdp_codecs = sipe_media_sdp_codecs_format(usable_codecs);
-	gchar *sdp_codec_ids = sipe_media_sdp_codec_ids_format(usable_codecs);
-	gchar *sdp_candidates = sipe_media_sdp_candidates_format(call_private, &local_port);
-	gchar *inactive = (call_private->public.local_on_hold ||
-			   call_private->public.remote_on_hold) ? "a=inactive\r\n" : "";
-
-	body = g_strdup_printf(
-		"v=0\r\n"
-		"o=- 0 0 IN IP4 %s\r\n"
-		"s=session\r\n"
-		"c=IN IP4 %s\r\n"
-		"b=CT:99980\r\n"
-		"t=0 0\r\n"
-		"m=audio %d RTP/AVP%s\r\n"
-		"%s"
-		"%s"
-		"%s"
-		"a=encryption:rejected\r\n"
-		,ip, ip, local_port, sdp_codec_ids, sdp_candidates, inactive, sdp_codecs);
-
-	g_free(sdp_codecs);
-	g_free(sdp_codec_ids);
-	g_free(sdp_candidates);
-
-	sipe_media_codec_list_free(usable_codecs);
-
-	return body;
+	return msg;
 }
 
 static void
@@ -352,6 +240,7 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 	gchar *body;
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_dialog *dialog = call_private->dialog;
+	struct sdpmsg *msg;
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
@@ -364,7 +253,9 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 		(call_private->public.local_on_hold || call_private->public.remote_on_hold) ? ";+sip.rendering=\"no\"" : "");
 	g_free(contact);
 
-	body = sipe_media_create_sdp(call_private);
+	msg = sipe_media_to_sdpmsg(call_private);
+	body = sdpmsg_to_string(msg);
+	sdpmsg_free(msg);
 
 	dialog->outgoing_invite = sip_transport_invite(sipe_private,
 						       hdr,
@@ -401,7 +292,9 @@ sipe_media_dialog_init(struct sip_session* session, struct sipmsg *msg)
 static void
 send_response_with_session_description(struct sipe_media_call_private *call_private, int code, gchar *text)
 {
-	gchar *body = sipe_media_create_sdp(call_private);
+	struct sdpmsg *msg = sipe_media_to_sdpmsg(call_private);
+	gchar *body = sdpmsg_to_string(msg);
+	sdpmsg_free(msg);
 	sipmsg_add_header(call_private->invitation, "Content-Type", "application/sdp");
 	sip_transport_response(call_private->sipe_private, call_private->invitation, code, text, body);
 	g_free(body);
@@ -485,7 +378,7 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 					       c->clock_rate,
 					       c->type);
 
-		for (j = c->attributes; j; j = j->next) {
+		for (j = c->parameters; j; j = j->next) {
 			struct sipnameval *attr = j->data;
 
 			sipe_backend_codec_add_optional_parameter(codec,
