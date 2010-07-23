@@ -37,6 +37,14 @@ void sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 void sipe_media_hangup(struct sipe_core_private *sipe_private);
 
 /**
- * @TODO: documentation!!!???
+ * Checks whether SIP message belongs to the session of the given media call.
+ *
+ * Test is done on the basis of the Call-ID of the message.
+ *
+ * @param call_private (in) media call data
+ * @param msg (in) a SIP message
+ *
+ * @return @c TRUE if the SIP message belongs to the media session.
  */
-gchar *sipe_media_get_callid(struct sipe_media_call_private *call_private);
+gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
+			      struct sipmsg *msg);

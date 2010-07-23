@@ -60,21 +60,6 @@ struct sipe_media_call_private {
 #define SIPE_MEDIA_CALL         ((struct sipe_media_call *) call_private)
 #define SIPE_MEDIA_CALL_PRIVATE ((struct sipe_media_call_private *) call)
 
-gchar *
-sipe_media_get_callid(struct sipe_media_call_private *call_private)
-{
-	struct sip_session *session;
-	struct sip_dialog *dialog;
-
-	session = sipe_session_find_call(call_private->sipe_private,
-					 call_private->with);
-	if (session) {
-		dialog = session->dialogs->data;
-		return dialog->callid;
-	} else
-		return NULL;
-}
-
 static void sipe_media_codec_list_free(GList *codecs)
 {
 	for (; codecs; codecs = g_list_delete_link(codecs, codecs))
@@ -585,12 +570,10 @@ void
 sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg)
 {
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sdpmsg *smsg;
 
-	if (call_private && !sipe_strequal(sipe_media_get_callid(call_private), callid)) {
+	if (call_private && !is_media_session_msg(call_private, msg)) {
 		sip_transport_response(sipe_private, msg, 486, "Busy Here", NULL);
 		return;
 	}
@@ -684,7 +667,6 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
 			     struct transaction *trans)
 {
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	const gchar *with;
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sipe_backend_media *backend_private;
@@ -692,8 +674,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	struct sip_dialog *dialog;
 	struct sdpmsg *smsg;
 
-	if (!call_private ||
-	    !sipe_strequal(sipe_media_get_callid(call_private), callid))
+	if (!is_media_session_msg(call_private, msg))
 		return FALSE;
 
 	session = sipe_session_find_call(sipe_private, call_private->with);
@@ -792,6 +773,23 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	sdpmsg_free(smsg);
 
 	return TRUE;
+}
+
+gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
+			      struct sipmsg *msg)
+{
+	if (call_private) {
+		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		struct sip_session *session;
+
+		session = sipe_session_find_call(call_private->sipe_private,
+						 call_private->with);
+		if (session) {
+			struct sip_dialog *dialog = session->dialogs->data;
+			return sipe_strequal(dialog->callid, callid);
+		}
+	}
+	return FALSE;
 }
 
 /*
