@@ -79,6 +79,11 @@ struct sip_session {
 	struct sip_dialog *focus_dialog;
 	/** Key is Message-Id */
 	GHashTable *conf_unconfirmed_messages;  
+
+	/*
+	 * Media call related fields
+	 */
+	gboolean is_call;
 };
 
 /**
@@ -121,6 +126,18 @@ sipe_session_add_chat(struct sipe_core_private *sipe_private);
 struct sip_session *
 sipe_session_add_call(struct sipe_core_private *sipe_private,
 		      const gchar *who);
+
+/**
+ * Find media call session
+ *
+ * @param sipe_private (in) SIPE core data. May be NULL.
+ * @param who (in) remote partner.
+ *
+ * @return pointer to session or NULL
+ */
+struct sip_session *
+sipe_session_find_call(struct sipe_core_private *sipe_private,
+		       const gchar *who);
 
 #endif
 

@@ -46,8 +46,7 @@ struct sipe_media_call_private {
 
 	/* private part starts here */
 	struct sipe_core_private	*sipe_private;
-	struct sip_session		*session;
-	struct sip_dialog		*dialog;
+	gchar				*with;
 
 	struct sipe_backend_stream	*voice_stream;
 
@@ -62,9 +61,18 @@ struct sipe_media_call_private {
 #define SIPE_MEDIA_CALL_PRIVATE ((struct sipe_media_call_private *) call)
 
 gchar *
-sipe_media_get_callid(struct sipe_media_call_private *call)
+sipe_media_get_callid(struct sipe_media_call_private *call_private)
 {
-	return call->dialog->callid;
+	struct sip_session *session;
+	struct sip_dialog *dialog;
+
+	session = sipe_session_find_call(call_private->sipe_private,
+					 call_private->with);
+	if (session) {
+		dialog = session->dialogs->data;
+		return dialog->callid;
+	} else
+		return NULL;
 }
 
 static void sipe_media_codec_list_free(GList *codecs)
@@ -83,16 +91,19 @@ static void
 sipe_media_call_free(struct sipe_media_call_private *call_private)
 {
 	if (call_private) {
+		struct sip_session *session;
 		sipe_backend_media_free(call_private->public.backend_private);
 
-		if (call_private->session)
-			sipe_session_remove(call_private->sipe_private,
-					    call_private->session);
+		session = sipe_session_find_call(call_private->sipe_private,
+						 call_private->with);
+		if (session)
+			sipe_session_remove(call_private->sipe_private, session);
 
 		if (call_private->invitation)
 			sipmsg_free(call_private->invitation);
 
 		sdpmsg_free(call_private->smsg);
+		g_free(call_private->with);
 		g_free(call_private);
 	}
 }
@@ -239,8 +250,12 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 	gchar *contact;
 	gchar *body;
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
-	struct sip_dialog *dialog = call_private->dialog;
+	struct sip_session *session;
+	struct sip_dialog *dialog;
 	struct sdpmsg *msg;
+
+	session = sipe_session_find_call(sipe_private, call_private->with);
+	dialog = session->dialogs->data;
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
@@ -475,7 +490,14 @@ static void call_hangup_cb(struct sipe_media_call *call, gboolean local)
 	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 
 	if (local) {
-		sip_transport_bye(call_private->sipe_private, call_private->dialog);
+		struct sip_session *session;
+		session = sipe_session_find_call(call_private->sipe_private,
+						 call_private->with);
+
+		if (session) {
+			struct sip_dialog *dialog = session->dialogs->data;
+			sip_transport_bye(call_private->sipe_private, dialog);
+		}
 	}
 	call_private->sipe_private->media_call = NULL;
 	sipe_media_call_free(call_private);
@@ -524,17 +546,21 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_media_call_private *call_private;
+	struct sip_session *session;
+	struct sip_dialog *dialog;
 
 	if (sipe_private->media_call)
 		return;
 
 	call_private = sipe_media_call_new(sipe_private, with, TRUE);
 
-	call_private->session = sipe_session_add_call(sipe_private, with);
-	call_private->dialog = sipe_dialog_add(call_private->session);
-	call_private->dialog->callid = gencallid();
-	call_private->dialog->with = g_strdup(call_private->session->with);
-	call_private->dialog->ourtag = gentag();
+	session = sipe_session_add_call(sipe_private, with);
+	dialog = sipe_dialog_add(session);
+	dialog->callid = gencallid();
+	dialog->with = g_strdup(session->with);
+	dialog->ourtag = gentag();
+
+	call_private->with = g_strdup(session->with);
 
 	call_private->voice_stream = sipe_backend_media_add_stream(
 					call_private->public.backend_private,
@@ -564,7 +590,7 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sdpmsg *smsg;
 
-	if (call_private && !sipe_strequal(call_private->dialog->callid, callid)) {
+	if (call_private && !sipe_strequal(sipe_media_get_callid(call_private), callid)) {
 		sip_transport_response(sipe_private, msg, 486, "Busy Here", NULL);
 		return;
 	}
@@ -599,10 +625,14 @@ sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
 		sdpmsg_free(smsg);
 	} else {
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
+		struct sip_session *session;
+		struct sip_dialog *dialog;
 
 		call_private = sipe_media_call_new(sipe_private, with, FALSE);
-		call_private->session = sipe_session_add_call(sipe_private, with);
-		call_private->dialog = sipe_media_dialog_init(call_private->session, msg);
+		session = sipe_session_add_call(sipe_private, with);
+		dialog = sipe_media_dialog_init(session, msg);
+
+		call_private->with = g_strdup(session->with);
 		call_private->invitation = sipmsg_copy(msg);
 		call_private->smsg = smsg;
 		call_private->voice_stream =
@@ -627,14 +657,16 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 					struct transaction *trans)
 {
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
+	struct sip_session *session;
 	struct sip_dialog *dialog;
 	int trans_cseq;
 	int tmp_cseq;
 
-	if (!call_private || !call_private->dialog)
+	session = sipe_session_find_call(sipe_private, call_private->with);
+	dialog = session->dialogs->data;
+	if (!dialog)
 		return FALSE;
 
-	dialog = call_private->dialog;
 	tmp_cseq = dialog->cseq;
 
 	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &trans_cseq);
@@ -656,16 +688,21 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	const gchar *with;
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sipe_backend_media *backend_private;
+	struct sip_session *session;
+	struct sip_dialog *dialog;
 	struct sdpmsg *smsg;
 
 	if (!call_private ||
 	    !sipe_strequal(sipe_media_get_callid(call_private), callid))
 		return FALSE;
 
-	backend_private = call_private->public.backend_private;
-	with = call_private->dialog->with;
+	session = sipe_session_find_call(sipe_private, call_private->with);
+	dialog = session->dialogs->data;
 
-	call_private->dialog->outgoing_invite = NULL;
+	backend_private = call_private->public.backend_private;
+	with = dialog->with;
+
+	dialog->outgoing_invite = NULL;
 
 	if (msg->response >= 400) {
 		// Call rejected by remote peer or an error occurred
@@ -699,7 +736,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 		return TRUE;
 	}
 
-	sipe_dialog_parse(call_private->dialog, msg, TRUE);
+	sipe_dialog_parse(dialog, msg, TRUE);
 	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
 		sipe_media_hangup(sipe_private);
@@ -719,7 +756,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 		      with,
 		      rack,
 		      NULL,
-		      call_private->dialog,
+		      dialog,
 		      NULL);
 		g_free(rack);
 	} else {

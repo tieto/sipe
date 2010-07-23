@@ -74,8 +74,26 @@ sipe_session_add_call(struct sipe_core_private *sipe_private,
 	session->with = g_strdup(who);
 	session->unconfirmed_messages = g_hash_table_new_full(
 		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
+	session->is_call = TRUE;
 	sipe_private->sessions = g_slist_append(sipe_private->sessions, session);
 	return session;
+}
+
+struct sip_session *
+sipe_session_find_call(struct sipe_core_private *sipe_private,
+		       const gchar *who)
+{
+	if (sipe_private == NULL || who == NULL) {
+		return NULL;
+	}
+
+	SIPE_SESSION_FOREACH {
+		if (session->is_call &&
+		    sipe_strcase_equal(who, session->with)) {
+			return session;
+		}
+	} SIPE_SESSION_FOREACH_END;
+	return NULL;
 }
 
 #endif
