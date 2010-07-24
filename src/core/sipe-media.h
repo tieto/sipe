@@ -26,13 +26,18 @@ struct sipe_core_private;
 struct sipe_media_call_private;
 
 /**
- * @TODO: documentation!!!
+ * Handles incoming SIP INVITE message to start a media session.
+ *
+ * @param sipe_private (in) SIPE core data.
+ * @param msg (in) a SIP INVITE message
  */
 void process_incoming_invite_call(struct sipe_core_private *sipe_private,
 				  struct sipmsg *msg);
 
 /**
- * @TODO: documentation!!!
+ * Hangs up a media session and closes all allocated resources.
+ *
+ * @param sipe_private (in) SIPE core data.
  */
 void sipe_media_hangup(struct sipe_core_private *sipe_private);
 
