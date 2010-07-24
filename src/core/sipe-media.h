@@ -51,6 +51,15 @@ void process_incoming_cancel_call(struct sipe_core_private *sipe_private,
 void sipe_media_hangup(struct sipe_core_private *sipe_private);
 
 /**
+ * Call before SIP account logs of the server. Function hangs up the call and
+ * notifies remote participant according to the actual state of call
+ * negotiation.
+ *
+ * @param call_private (in) media call data
+ */
+void sipe_media_handle_going_offline(struct sipe_media_call_private *call_private);
+
+/**
  * Checks whether SIP message belongs to the session of the given media call.
  *
  * Test is done on the basis of the Call-ID of the message.

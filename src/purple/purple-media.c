@@ -253,8 +253,13 @@ gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
 					 struct sipe_backend_stream *stream)
 {
 	return purple_media_is_initiator(media->m,
-					 stream->sessionid,
-					 stream->participant);
+					 stream ? stream->sessionid : NULL,
+					 stream ? stream->participant : NULL);
+}
+
+gboolean sipe_backend_media_accepted(struct sipe_backend_media *media)
+{
+	return purple_media_accepted(media->m, NULL, NULL);
 }
 
 GList *

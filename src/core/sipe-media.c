@@ -808,6 +808,29 @@ gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
 	return FALSE;
 }
 
+void sipe_media_handle_going_offline(struct sipe_media_call_private *call_private)
+{
+	struct sipe_backend_media *backend_private;
+
+	backend_private = call_private->public.backend_private;
+
+	if (   !sipe_backend_media_is_initiator(backend_private, NULL)
+	    && !sipe_backend_media_accepted(backend_private)) {
+		sip_transport_response(call_private->sipe_private,
+				       call_private->invitation,
+				       480, "Temporarily Unavailable", NULL);
+	} else {
+		struct sip_session *session;
+
+		session = sipe_session_find_call(call_private->sipe_private,
+						 call_private->with);
+		if (session)
+			sipe_session_close(call_private->sipe_private, session);
+	}
+
+	sipe_media_hangup(call_private->sipe_private);
+}
+
 /*
   Local Variables:
   mode: c

@@ -174,6 +174,12 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
+#ifdef HAVE_VV
+	if (sipe_private->media_call) {
+		sipe_media_handle_going_offline(sipe_private->media_call);
+	}
+#endif
+
 	/* leave all conversations */
 	if (sipe_private->sessions) {
 		GSList *entry;
@@ -181,14 +187,6 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 			sipe_session_close(sipe_private, entry->data);
 		}
 	}
-
-#ifdef HAVE_VV
-	if (sipe_private->media_call) {
-		/* This must be done after all sessions are closed, otherwise
-		 * SIP BYE is not sent to the call participant. */
-		sipe_media_hangup(sipe_private);
-	}
-#endif
 
 	if (sip->csta) {
 		sip_csta_close(sipe_private);
