@@ -28,8 +28,8 @@ struct sipe_media_call_private;
 /**
  * @TODO: documentation!!!
  */
-void sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
-				struct sipmsg *msg);
+void process_incoming_invite_call(struct sipe_core_private *sipe_private,
+				  struct sipmsg *msg);
 
 /**
  * @TODO: documentation!!!

@@ -567,8 +567,8 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 }
 
 void
-sipe_media_incoming_invite(struct sipe_core_private *sipe_private,
-			   struct sipmsg *msg)
+process_incoming_invite_call(struct sipe_core_private *sipe_private,
+			     struct sipmsg *msg)
 {
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sdpmsg *smsg;

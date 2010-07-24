@@ -294,7 +294,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 	/* Invitation to audio call */
 	if (msg->body && strstr(msg->body, "m=audio")) {
-		sipe_media_incoming_invite(sipe_private, msg);
+		process_incoming_invite_call(sipe_private, msg);
 		return;
 	}
 #endif
