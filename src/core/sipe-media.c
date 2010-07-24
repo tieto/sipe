@@ -727,8 +727,8 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 		sipe_backend_notify_error(title, desc->str);
 		g_string_free(desc, TRUE);
 
-		sipe_backend_media_reject(backend_private, FALSE);
 		sipe_media_send_ack(sipe_private, msg, trans);
+		sipe_media_hangup(sipe_private);
 
 		return TRUE;
 	}
