@@ -480,8 +480,7 @@ static void call_hangup_cb(struct sipe_media_call *call, gboolean local)
 						 call_private->with);
 
 		if (session) {
-			struct sip_dialog *dialog = session->dialogs->data;
-			sip_transport_bye(call_private->sipe_private, dialog);
+			sipe_session_close(call_private->sipe_private, session);
 		}
 	}
 	call_private->sipe_private->media_call = NULL;

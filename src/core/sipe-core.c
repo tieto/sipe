@@ -43,6 +43,7 @@
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
+#include "sipe-media.h"
 #include "sipe.h"
 
 void sipe_core_init(const char *locale_dir)
@@ -180,6 +181,14 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 			sipe_session_close(sipe_private, entry->data);
 		}
 	}
+
+#ifdef HAVE_VV
+	if (sipe_private->media_call) {
+		/* This must be done after all sessions are closed, otherwise
+		 * SIP BYE is not sent to the call participant. */
+		sipe_media_hangup(sipe_private);
+	}
+#endif
 
 	if (sip->csta) {
 		sip_csta_close(sipe_private);
