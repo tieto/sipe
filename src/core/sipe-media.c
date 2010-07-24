@@ -633,6 +633,23 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 	}
 }
 
+void process_incoming_cancel_call(struct sipe_core_private *sipe_private,
+				  struct sipmsg *msg)
+{
+	struct sipe_media_call_private *call_private = sipe_private->media_call;
+
+	// We respond to the CANCEL request with 200 OK response and
+	// with 487 Request Terminated to the remote INVITE in progress.
+	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+
+	if (call_private->invitation) {
+		sip_transport_response(sipe_private, call_private->invitation,
+				       487, "Request Terminated", NULL);
+	}
+
+	sipe_media_hangup(sipe_private);
+}
+
 static gboolean
 sipe_media_send_ack(struct sipe_core_private *sipe_private,
 					SIPE_UNUSED_PARAMETER struct sipmsg *msg,

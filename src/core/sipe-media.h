@@ -35,6 +35,15 @@ void process_incoming_invite_call(struct sipe_core_private *sipe_private,
 				  struct sipmsg *msg);
 
 /**
+ * Handles incoming SIP CANCEL message.
+ *
+ * @param sipe_private (in) SIPE core data.
+ * @param msg (in) a SIP CANCEL message
+ */
+void process_incoming_cancel_call(struct sipe_core_private *sipe_private,
+				  struct sipmsg *msg);
+
+/**
  * Hangs up a media session and closes all allocated resources.
  *
  * @param sipe_private (in) SIPE core data.

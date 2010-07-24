@@ -106,18 +106,7 @@ void process_incoming_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_private *sip
 {
 #ifdef HAVE_VV
 	if (is_media_session_msg(sipe_private->media_call, msg)) {
-		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-		struct sip_session *session
-			= sipe_session_find_chat_by_callid(sipe_private, callid);
-
-		sipe_media_hangup(sipe_private);
-		if (session) {
-			gchar *from = parse_from(sipmsg_find_header(msg, "From"));
-			sipe_dialog_remove(session, from);
-			g_free(from);
-
-			sipe_session_close(sipe_private, session);
-		}
+		process_incoming_cancel_call(sipe_private, msg);
 	}
 #endif
 }
