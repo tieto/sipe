@@ -339,6 +339,7 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	GList *backend_candidates = NULL;
 	GList *backend_codecs = NULL;
 	GSList *i;
+	gboolean result;
 
 	const gchar *username = sipe_utils_nameval_find(msg->attributes, "ice-ufrag");
 	const gchar *password = sipe_utils_nameval_find(msg->attributes, "ice-pwd");
@@ -389,15 +390,15 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 		backend_codecs = g_list_append(backend_codecs, codec);
 	}
 
-	sipe_backend_set_remote_codecs(backend_media,
-				       backend_stream,
-				       backend_codecs);
+	result = sipe_backend_set_remote_codecs(backend_media,
+						backend_stream,
+						backend_codecs);
 	sipe_media_codec_list_free(backend_codecs);
 
 	call_private->legacy_mode = msg->legacy;
 	call_private->encryption_compatible = encryption_levels_compatible(msg);
 
-	return TRUE;
+	return result;
 }
 
 static void candidates_prepared_cb(struct sipe_media_call *call)
@@ -412,6 +413,9 @@ static void candidates_prepared_cb(struct sipe_media_call *call)
 	}
 
 	if (!apply_remote_message(call_private, call_private->smsg)) {
+		sip_transport_response(call_private->sipe_private,
+				       call_private->invitation,
+				       487, "Request Terminated", NULL);
 		sipe_media_hangup(call_private->sipe_private);
 		return;
 	}
@@ -579,6 +583,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
+		sip_transport_response(sipe_private, msg,
+				       488, "Not Acceptable Here", NULL);
 		sipe_media_hangup(sipe_private);
 		return;
 	}
@@ -588,9 +594,11 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			sipmsg_free(call_private->invitation);
 		call_private->invitation = sipmsg_copy(msg);
 
-		apply_remote_message(call_private, smsg);
-
-		if (!call_private->encryption_compatible) {
+		if (!apply_remote_message(call_private, smsg)) {
+			sip_transport_response(sipe_private, msg,
+					       487, "Request Terminated", NULL);
+			sipe_media_hangup(call_private->sipe_private);
+		} else if (!call_private->encryption_compatible) {
 			handle_incompatible_encryption_level(call_private);
 		} else if (call_private->legacy_mode && !call_private->public.remote_on_hold) {
 			sipe_backend_media_hold(call_private->public.backend_private,
@@ -736,13 +744,17 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	sipe_dialog_parse(dialog, msg, TRUE);
 	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
+		sip_transport_response(sipe_private, msg,
+				       488, "Not Acceptable Here", NULL);
 		sipe_media_hangup(sipe_private);
 		return FALSE;
 	}
 
-	apply_remote_message(call_private, smsg);
-
-	if (msg->response == 183) {
+	if (!apply_remote_message(call_private, smsg)) {
+		sip_transport_response(sipe_private, msg,
+				       487, "Request Terminated", NULL);
+		sipe_media_hangup(sipe_private);
+	} else if (msg->response == 183) {
 		// Session in progress
 		const gchar *rseq = sipmsg_find_header(msg, "RSeq");
 		const gchar *cseq = sipmsg_find_header(msg, "CSeq");
