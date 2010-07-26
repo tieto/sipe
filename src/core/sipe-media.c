@@ -713,12 +713,19 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 		// Call rejected by remote peer or an error occurred
 		gchar *title;
 		GString *desc = g_string_new("");
+		gboolean append_responsestr = FALSE;
 
 		switch (msg->response) {
-			case 480:
+			case 480: {
+				const gchar *warn = sipmsg_find_header(msg, "Warning");
 				title = _("User unavailable");
-				g_string_append_printf(desc, _("User %s is not available"), with);
+
+				if (warn && g_str_has_prefix(warn, "391 lcs.microsoft.com")) {
+					g_string_append_printf(desc, _("%s does not want to be disturbed"), with);
+				} else
+					g_string_append_printf(desc, _("User %s is not available"), with);
 				break;
+			}
 			case 603:
 			case 605:
 				title = _("Call rejected");
@@ -727,10 +734,13 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 			default:
 				title = _("Error occured");
 				g_string_append(desc, _("Unable to establish a call"));
+				append_responsestr = TRUE;
 				break;
 		}
 
-		g_string_append_printf(desc, "\n%d %s", msg->response, msg->responsestr);
+		if (append_responsestr)
+			g_string_append_printf(desc, "\n%d %s",
+					       msg->response, msg->responsestr);
 
 		sipe_backend_notify_error(title, desc->str);
 		g_string_free(desc, TRUE);
