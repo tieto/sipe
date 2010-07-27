@@ -3086,6 +3086,11 @@ process_message_response(struct sipe_core_private *sipe_private,
 		    msg->response == 481) { /* Call/Transaction Does Not Exist */
 			SIPE_DEBUG_INFO_NOFORMAT("process_message_response: assuming dangling IM session, dropping it.");
 			sip_transport_bye(sipe_private, dialog);
+
+			/* We might not get a valid reply to our BYE,
+			   so make sure the dialog is removed for sure. */
+			sipe_dialog_remove(session, with);
+			dialog = NULL;
 		}
 
 		ret = FALSE;
