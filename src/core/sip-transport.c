@@ -1283,56 +1283,61 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 				  struct sipmsg *msg)
 {
 	struct sip_transport *transport = sipe_private->transport;
-	gboolean found = FALSE;
+	gboolean notfound = FALSE;
 	const char *method = msg->method ? msg->method : "NOT FOUND";
-	SIPE_DEBUG_INFO("msg->response(%d),msg->method(%s)", msg->response,method);
+
+	SIPE_DEBUG_INFO("msg->response(%d),msg->method(%s)",
+			msg->response, method);
+
 	if (msg->response == 0) { /* request */
 		if (sipe_strequal(method, "MESSAGE")) {
 			process_incoming_message(sipe_private, msg);
-			found = TRUE;
 		} else if (sipe_strequal(method, "NOTIFY")) {
 			SIPE_DEBUG_INFO_NOFORMAT("send->process_incoming_notify");
 			process_incoming_notify(sipe_private, msg, TRUE, FALSE);
-			found = TRUE;
 		} else if (sipe_strequal(method, "BENOTIFY")) {
 			SIPE_DEBUG_INFO_NOFORMAT("send->process_incoming_benotify");
 			process_incoming_notify(sipe_private, msg, TRUE, TRUE);
-			found = TRUE;
 		} else if (sipe_strequal(method, "INVITE")) {
 			process_incoming_invite(sipe_private, msg);
-			found = TRUE;
 		} else if (sipe_strequal(method, "REFER")) {
 			process_incoming_refer(sipe_private, msg);
-			found = TRUE;
 		} else if (sipe_strequal(method, "OPTIONS")) {
 			process_incoming_options(sipe_private, msg);
-			found = TRUE;
 		} else if (sipe_strequal(method, "INFO")) {
 			process_incoming_info(sipe_private, msg);
-			found = TRUE;
 		} else if (sipe_strequal(method, "ACK")) {
-			// ACK's don't need any response
-			found = TRUE;
+			/* ACK's don't need any response */
 		} else if (sipe_strequal(method, "PRACK")) {
-			found = TRUE;
 			sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 		} else if (sipe_strequal(method, "SUBSCRIBE")) {
-			// LCS 2005 sends us these - just respond 200 OK
-			found = TRUE;
+			/* LCS 2005 sends us these - just respond 200 OK */
 			sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 		} else if (sipe_strequal(method, "CANCEL")) {
 			process_incoming_cancel(sipe_private, msg);
-			found = TRUE;
 		} else if (sipe_strequal(method, "BYE")) {
 			process_incoming_bye(sipe_private, msg);
-			found = TRUE;
 		} else {
 			sip_transport_response(sipe_private, msg, 501, "Not implemented", NULL);
+			notfound = TRUE;
 		}
+
 	} else { /* response */
 		struct transaction *trans = transactions_find(transport, msg);
 		if (trans) {
-			if (msg->response == 407) {
+			if (msg->response < 200) {
+				if (msg->bodylen != 0) {
+					SIPE_DEBUG_INFO("got provisional (%d) response with body", msg->response);
+					if (trans->callback) {
+						SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
+						(trans->callback)(sipe_private, msg, trans);
+					}
+				} else {
+					/* ignore provisional response */
+					SIPE_DEBUG_INFO("got provisional (%d) response, ignoring", msg->response);
+				}
+
+			} else if (msg->response == 407) {
 				gchar *resend, *auth;
 				const gchar *ptmp;
 
@@ -1352,84 +1357,70 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 				sipe_utils_message_debug("SIP", resend, NULL, TRUE);
 				sipe_backend_transport_message(sipe_private->transport->connection, resend);
 				g_free(resend);
+
 			} else {
-				if (msg->response < 200) {
-					if (msg->bodylen != 0) {
-						SIPE_DEBUG_INFO("got provisional (%d) response with body", msg->response);
-						if (trans->callback) {
-							SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
-							(trans->callback)(sipe_private, msg, trans);
-						}
+				transport->proxy.retries = 0;
+
+				if (sipe_strequal(trans->msg->method, "REGISTER")) {
+					if (msg->response == 401) {
+						transport->registrar.retries++;
 					} else {
-						/* ignore provisional response */
-						SIPE_DEBUG_INFO("got provisional (%d) response, ignoring", msg->response);
+						transport->registrar.retries = 0;
 					}
-				} else {
-					transport->proxy.retries = 0;
-					if (sipe_strequal(trans->msg->method, "REGISTER")) {
-						if (msg->response == 401)
-						{
-							transport->registrar.retries++;
-						}
-						else
-						{
-							transport->registrar.retries = 0;
-						}
-                                                SIPE_DEBUG_INFO("RE-REGISTER CSeq: %d", transport->cseq);
-					} else {
-						if (msg->response == 401) {
-							gchar *resend, *auth, *ptmp;
-							const char* auth_scheme;
+					SIPE_DEBUG_INFO("RE-REGISTER CSeq: %d", transport->cseq);
 
-							if (transport->registrar.retries > 4) return;
-							transport->registrar.retries++;
+				} else if (msg->response == 401) {
+					gchar *resend, *auth, *ptmp;
+					const char* auth_scheme;
 
-							auth_scheme = sipe_get_auth_scheme_name(sipe_private);
-							ptmp = sipmsg_find_auth_header(msg, auth_scheme);
+					if (transport->registrar.retries > 4) return;
+					transport->registrar.retries++;
 
-							SIPE_DEBUG_INFO("process_input_message - Auth header: %s", ptmp ? ptmp : "");
-							if (!ptmp) {
-								char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
-								sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-											      SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
-											      tmp2);
-								g_free(tmp2);
-								return;
-							}
+					auth_scheme = sipe_get_auth_scheme_name(sipe_private);
+					ptmp = sipmsg_find_auth_header(msg, auth_scheme);
 
-							fill_auth(ptmp, &transport->registrar);
-							auth = auth_header(sipe_private, &transport->registrar, trans->msg);
-							sipmsg_remove_header_now(trans->msg, "Authorization");
-							sipmsg_add_header_now_pos(trans->msg, "Authorization", auth, 5);
-							g_free(auth);
-							resend = sipmsg_to_string(trans->msg);
-							/* resend request */
-							sipe_utils_message_debug("SIP", resend, NULL, TRUE);
-							sipe_backend_transport_message(sipe_private->transport->connection, resend);
-							g_free(resend);
-						}
+					SIPE_DEBUG_INFO("process_input_message - Auth header: %s", ptmp ? ptmp : "");
+					if (!ptmp) {
+						char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
+						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+									      SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
+									      tmp2);
+						g_free(tmp2);
+						return;
 					}
 
-					if (trans->callback) {
-						SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
-						/* call the callback to process response*/
-						(trans->callback)(sipe_private, msg, trans);
-					}
-
-					/* Redirect: old content of "transport" is no longer valid */
-					transport = sipe_private->transport;
-
-					SIPE_DEBUG_INFO("process_input_message - removing CSeq %d", transport->cseq);
-					transactions_remove(transport, trans);
-
+					fill_auth(ptmp, &transport->registrar);
+					auth = auth_header(sipe_private, &transport->registrar, trans->msg);
+					sipmsg_remove_header_now(trans->msg, "Authorization");
+					sipmsg_add_header_now_pos(trans->msg, "Authorization", auth, 5);
+					g_free(auth);
+					resend = sipmsg_to_string(trans->msg);
+					/* resend request */
+					sipe_utils_message_debug("SIP", resend, NULL, TRUE);
+					sipe_backend_transport_message(sipe_private->transport->connection, resend);
+					g_free(resend);
 				}
+
+				if (trans->callback) {
+					SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
+					/* call the callback to process response*/
+					(trans->callback)(sipe_private, msg, trans);
+				}
+
+				/* Redirect: old content of "transport" is no longer valid */
+				transport = sipe_private->transport;
+
+				SIPE_DEBUG_INFO("process_input_message - removing CSeq %d", transport->cseq);
+				transactions_remove(transport, trans);
 			}
-			found = TRUE;
+
 		} else {
 			SIPE_DEBUG_INFO_NOFORMAT("received response to unknown transaction");
+			notfound = TRUE;
 		}
 	}
-	if (!found) {
+
+	if (notfound) {
 		SIPE_DEBUG_INFO("received a unknown sip message with method %s and response %d", method, msg->response);
 	}
 }
