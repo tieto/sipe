@@ -16,8 +16,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2009-06-22 11:28+0000\n"
 "Language: cs\n"
-"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
 #: ../src/core/sip-transport.c:216
 msgid "Failed to authenticate to server"
@@ -154,29 +154,29 @@ msgstr "Neznámý"
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2995
 msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
-msgstr "Vaše zpráva nebo pozvánka nebyla doručena, pravděpodobně protože obsahuje hypertextový odkaz nebo jiný obsah, který administrátor zablokoval."
+msgstr "Vaše zpráva nebo pozvánka nebyla doručena, pravděpodobně obsahuje hypertextový odkaz nebo jiný obsah, který administrátor zablokoval."
 
 #: ../src/core/sipe.c:2999
 #, c-format
 msgid "This message was not delivered to %s because the service is not available"
-msgstr "Tato zpráva nebyla uživateli %s doručena, protože služba není dostupná"
+msgstr "Tato zpráva nebyla uživateli %s doručena, služba není dostupná"
 
 #. Busy Here
 #: ../src/core/sipe.c:3001
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
-msgstr "Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů nechce být vyrušováno"
+msgstr "Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů nechce být vyrušováno"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3003
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
-msgstr "Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů nepodporuje tento typ zprávy"
+msgstr "Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů nepodporuje tento typ zprávy"
 
 #: ../src/core/sipe.c:3005
 #, c-format
 msgid "This message was not delivered to %s because one or more recipients are offline"
-msgstr "Tato zpráva nebyla uživateli %s doručena, protože jeden nebo více uživatelů není dostupno"
+msgstr "Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů není dostupno"
 
 #: ../src/core/sipe.c:3314
 #, c-format
