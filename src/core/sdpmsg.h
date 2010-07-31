@@ -30,9 +30,6 @@ struct sdpmsg {
 	gchar		*ip;
 	guint		 port;
 
-	const gchar	*username;
-	const gchar	*password;
-
 	gboolean	 legacy;
 };
 

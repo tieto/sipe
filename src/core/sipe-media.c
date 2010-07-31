@@ -376,8 +376,8 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 
 		codec = sipe_backend_codec_new(c->id,
 					       c->name,
-					       c->clock_rate,
-					       c->type);
+					       c->type,
+					       c->clock_rate);
 
 		for (j = c->parameters; j; j = j->next) {
 			struct sipnameval *attr = j->data;
