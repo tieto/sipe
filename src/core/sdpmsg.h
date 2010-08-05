@@ -20,15 +20,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// TODO: support for multiple media sessions
 struct sdpmsg {
+	gchar		*ip;
+	GSList		*media;
+	gboolean	 legacy;
+};
+
+struct sdpmedia {
+	gchar		*name;
+	guint		 port;
+
 	GSList		*attributes;
 	GSList		*candidates;
-	GSList		*remote_candidates;
 	GSList		*codecs;
-
-	gchar		*ip;
-	guint		 port;
+	GSList		*remote_candidates;
 
 	gboolean	 legacy;
 };

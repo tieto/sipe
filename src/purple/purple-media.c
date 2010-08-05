@@ -35,20 +35,22 @@
 
 struct sipe_backend_media {
 	PurpleMedia *m;
-	// Prevent infinite recursion in on_stream_info_cb
-	gboolean in_recursion;
 	GSList *streams;
 };
 
 struct sipe_backend_stream {
 	gchar *sessionid;
 	gchar *participant;
+	gboolean candidates_prepared;
+	gboolean local_on_hold;
+	gboolean remote_on_hold;
 };
 
 static void
 backend_stream_free(struct sipe_backend_stream *stream)
 {
 	if (stream) {
+		g_free(stream->sessionid);
 		g_free(stream->participant);
 		g_free(stream);
 	}
@@ -66,8 +68,21 @@ on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			  SIPE_UNUSED_PARAMETER gchar *participant,
 			  struct sipe_media_call *call)
 {
-	if (call->candidates_prepared_cb)
+	struct sipe_backend_media *backend_media = call->backend_private;
+	struct sipe_backend_stream *stream;
+	stream = sipe_backend_media_get_stream_by_id(backend_media, sessionid);
+
+	stream->candidates_prepared = TRUE;
+
+	if (call->candidates_prepared_cb) {
+		GSList *streams = backend_media->streams;
+		for (; streams; streams = streams->next) {
+			struct sipe_backend_stream *s = streams->data;
+			if (!s->candidates_prepared)
+				return;
+		}
 		call->candidates_prepared_cb(call);
+	}
 }
 
 static void
@@ -82,25 +97,6 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		call->media_connected_cb(call);
 }
 
-static struct sipe_backend_stream *
-stream_find(struct sipe_backend_media *media,
-	     const gchar *sessionid,
-	     const gchar *participant)
-{
-	GSList *streams = media->streams;
-
-	while (streams) {
-		struct sipe_backend_stream *s = streams->data;
-		if (   sipe_strequal(s->sessionid, sessionid)
-		    && sipe_strequal(s->participant, participant))
-			return s;
-
-		streams = streams->next;
-	}
-
-	return NULL;
-}
-
 static void
 on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		  PurpleMediaInfoType type,
@@ -110,30 +106,38 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		  struct sipe_media_call *call)
 {
 	struct sipe_backend_media *m = call->backend_private;
-	if (m->in_recursion) {
-		m->in_recursion = FALSE;
-		return;
-	}
 
 	if (type == PURPLE_MEDIA_INFO_ACCEPT && call->call_accept_cb
 	    && !sessionid && !participant)
 		call->call_accept_cb(call, local);
-	else if (type == PURPLE_MEDIA_INFO_HOLD && call->call_hold_cb) {
-		call->call_hold_cb(call, local, TRUE);
-		if (!local) {
-			m->in_recursion = TRUE;
-			purple_media_stream_info(m->m, PURPLE_MEDIA_INFO_HOLD, NULL, NULL, TRUE);
-		}
-	} else if (type == PURPLE_MEDIA_INFO_UNHOLD && call->call_hold_cb) {
-		call->call_hold_cb(call, local, FALSE);
-		m->in_recursion = TRUE;
-		if (!call->local_on_hold && !call->remote_on_hold) {
-			purple_media_stream_info(m->m, PURPLE_MEDIA_INFO_UNHOLD, NULL, NULL, TRUE);
+	else if (type == PURPLE_MEDIA_INFO_HOLD || type == PURPLE_MEDIA_INFO_UNHOLD) {
+
+		gboolean state = (type == PURPLE_MEDIA_INFO_HOLD);
+
+		if (sessionid) {
+			// Hold specific stream
+			struct sipe_backend_stream *stream;
+			stream = sipe_backend_media_get_stream_by_id(m, sessionid);
+
+			if (local)
+				stream->local_on_hold = state;
+			else
+				stream->remote_on_hold = state;
 		} else {
-			/* Remote side is still on hold, keep local also held to prevent sending 
-			 * unnecessary media over network */
-			purple_media_stream_info(m->m, PURPLE_MEDIA_INFO_HOLD, NULL, NULL, TRUE);
+			// Hold all streams
+			GSList *i = sipe_backend_media_get_streams(m);
+			for (; i; i = i->next) {
+				struct sipe_backend_stream *stream = i->data;
+
+				if (local)
+					stream->local_on_hold = state;
+				else
+					stream->remote_on_hold = state;
+			}
 		}
+
+		if (call->call_hold_cb)
+			call->call_hold_cb(call, local, state);
 	} else if (type == PURPLE_MEDIA_INFO_HANGUP || type == PURPLE_MEDIA_INFO_REJECT) {
 		if (!sessionid && !participant) {
 			if (type == PURPLE_MEDIA_INFO_HANGUP && call->call_hangup_cb)
@@ -142,7 +146,8 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 				call->call_reject_cb(call, local);
 		} else if (sessionid && participant) {
 			struct sipe_backend_stream *stream;
-			stream = stream_find(m, sessionid, participant);
+			stream = sipe_backend_media_get_stream_by_id(m, sessionid);
+
 			if (stream) {
 				m->streams = g_slist_remove(m->streams, stream);
 				backend_stream_free(stream);
@@ -190,7 +195,8 @@ sipe_backend_media_free(struct sipe_backend_media *media)
 
 struct sipe_backend_stream *
 sipe_backend_media_add_stream(struct sipe_backend_media *media,
-			      const gchar* participant,
+			      const gchar *id,
+			      const gchar *participant,
 			      SipeMediaType type,
 			      gboolean use_nice,
 			      gboolean initiator)
@@ -200,7 +206,6 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 	GParameter *params = NULL;
 	guint params_cnt = 0;
 	gchar *transmitter;
-	gchar *sessionid;
 
 	if (use_nice) {
 		transmitter = "nice";
@@ -213,18 +218,18 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		params[1].name = "compatibility-mode";
 		g_value_init(&params[1].value, G_TYPE_UINT);
 		g_value_set_uint(&params[1].value, NICE_COMPATIBILITY_OC2007R2);
-
-		sessionid = "sipe-voice-nice";
 	} else {
+		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
-		sessionid = "sipe-voice-rawudp";
+		//sessionid = "sipe-voice-rawudp";
 	}
 
-	if (purple_media_add_stream(media->m, sessionid, participant, prpl_type,
+	if (purple_media_add_stream(media->m, id, participant, prpl_type,
 				    initiator, transmitter, params_cnt, params)) {
 		stream = g_new0(struct sipe_backend_stream, 1);
-		stream->sessionid = sessionid;
+		stream->sessionid = g_strdup(id);
 		stream->participant = g_strdup(participant);
+		stream->candidates_prepared = FALSE;
 
 		media->streams = g_slist_append(media->streams, stream);
 	}
@@ -235,9 +240,32 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 }
 
 void
-sipe_backend_media_remove_stream(struct sipe_backend_media *media, struct sipe_backend_stream *stream)
+sipe_backend_media_remove_stream(struct sipe_backend_media *media,
+				 struct sipe_backend_stream *stream)
 {
-	purple_media_end(media->m, stream->sessionid, stream->participant);
+	g_return_if_fail(media && stream);
+
+	purple_media_end(media->m, stream->sessionid, NULL);
+	media->streams = g_slist_remove(media->streams, stream);
+	backend_stream_free(stream);
+}
+
+GSList *sipe_backend_media_get_streams(struct sipe_backend_media *media)
+{
+	return media->streams;
+}
+
+struct sipe_backend_stream *
+sipe_backend_media_get_stream_by_id(struct sipe_backend_media *media,
+				    const gchar *id)
+{
+	GSList *i;
+	for (i = media->streams; i; i = i->next) {
+		struct sipe_backend_stream *stream = i->data;
+		if (sipe_strequal(stream->sessionid, id))
+			return stream;
+	}
+	return NULL;
 }
 
 void
@@ -278,6 +306,37 @@ sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media
 	return purple_media_get_active_remote_candidates(media->m,
 							 stream->sessionid,
 							 stream->participant);
+}
+
+gchar *
+sipe_backend_stream_get_id(struct sipe_backend_stream *stream)
+{
+	return stream->sessionid;
+}
+
+void sipe_backend_stream_hold(struct sipe_backend_media *media,
+			      struct sipe_backend_stream *stream,
+			      gboolean local)
+{
+	purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_HOLD,
+				 stream->sessionid, stream->participant,
+				 local);
+}
+
+void sipe_backend_stream_unhold(struct sipe_backend_media *media,
+				struct sipe_backend_stream *stream,
+				gboolean local)
+{
+	purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_UNHOLD,
+				 stream->sessionid, stream->participant,
+				 local);
+}
+
+gboolean sipe_backend_stream_is_held(struct sipe_backend_stream *stream)
+{
+	g_return_val_if_fail(stream, FALSE);
+
+	return stream->local_on_hold || stream->remote_on_hold;
 }
 
 struct sipe_backend_codec *
@@ -342,7 +401,32 @@ GList*
 sipe_backend_get_local_codecs(struct sipe_media_call *call,
 			      struct sipe_backend_stream *stream)
 {
-	return purple_media_get_codecs(call->backend_private->m, stream->sessionid);
+	GList *codecs = purple_media_get_codecs(call->backend_private->m,
+						stream->sessionid);
+	GList *i = codecs;
+
+	/*
+	 * Do not announce Theora. Its optional parameters are too long,
+	 * Communicator rejects such SDP message and does not support the codec
+	 * anyway.
+	 */
+	while (i) {
+		PurpleMediaCodec *codec = i->data;
+		gchar *encoding_name = purple_media_codec_get_encoding_name(codec);
+
+		if (sipe_strequal(encoding_name,"THEORA")) {
+			GList *tmp;
+			g_object_unref(codec);
+			tmp = i->next;
+			codecs = g_list_delete_link(codecs, i);
+			i = tmp;
+		} else
+			i = i->next;
+
+		g_free(encoding_name);
+	}
+
+	return codecs;
 }
 
 struct sipe_backend_candidate *
@@ -515,16 +599,9 @@ sipe_backend_get_local_candidates(struct sipe_backend_media *media,
 }
 
 void
-sipe_backend_media_hold(struct sipe_backend_media *media, gboolean local)
+sipe_backend_media_accept(struct sipe_backend_media *media, gboolean local)
 {
-	purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_HOLD,
-				 NULL, NULL, local);
-}
-
-void
-sipe_backend_media_unhold(struct sipe_backend_media *media, gboolean local)
-{
-	purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_UNHOLD,
+	purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_ACCEPT,
 				 NULL, NULL, local);
 }
 

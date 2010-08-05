@@ -32,36 +32,49 @@
 static gboolean
 parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 	gchar		**lines = g_strsplit(msg, "\r\n", 0);
-	GSList		*attributes = NULL;
-	gchar		**ptr;
+	gchar		**ptr = lines;
 
-	for (ptr = lines; *ptr != NULL; ++ptr) {
-		if (g_str_has_prefix(*ptr, "a=")) {
-			gchar **parts = g_strsplit(*ptr + 2, ":", 2);
-			if(!parts[0]) {
-				g_strfreev(parts);
-				g_strfreev(lines);
-				sipe_utils_nameval_free(attributes);
-				return FALSE;
-				break;
-			}
-			attributes = sipe_utils_nameval_add(attributes, parts[0], parts[1]);
-			g_strfreev(parts);
-
-		} else if (g_str_has_prefix(*ptr, "o=")) {
+	while (*ptr != NULL) {
+		if (g_str_has_prefix(*ptr, "o=")) {
 			gchar **parts = g_strsplit(*ptr + 2, " ", 6);
 			smsg->ip = g_strdup(parts[5]);
 			g_strfreev(parts);
 		} else if (g_str_has_prefix(*ptr, "m=")) {
 			gchar **parts = g_strsplit(*ptr + 2, " ", 3);
-			smsg->port = atoi(parts[1]);
+			struct sdpmedia *media = g_new0(struct sdpmedia, 1);
+
+			smsg->media = g_slist_append(smsg->media, media);
+
+			media->name = parts[0];
+			parts[0] = NULL;
+
+			media->port = atoi(parts[1]);
+
 			g_strfreev(parts);
+
+			++ptr;
+			while (ptr && g_str_has_prefix(*ptr, "a=")) {
+				parts = g_strsplit(*ptr + 2, ":", 2);
+				if(!parts[0]) {
+					g_strfreev(parts);
+					g_strfreev(lines);
+					return FALSE;
+				}
+				media->attributes = sipe_utils_nameval_add(media->attributes,
+									   parts[0],
+									   parts[1] ? parts[1] : "");
+				g_strfreev(parts);
+
+				++ptr;
+			}
+			continue;
 		}
+
+		++ptr;
 	}
 
 	g_strfreev(lines);
 
-	smsg->attributes = attributes;
 	return TRUE;
 }
 
@@ -157,7 +170,7 @@ create_legacy_candidates(gchar *ip, guint16 port)
 }
 
 static GSList *
-parse_codecs(GSList *attrs)
+parse_codecs(GSList *attrs, SipeMediaType type)
 {
 	int i = 0;
 	const gchar *attr;
@@ -173,7 +186,7 @@ parse_codecs(GSList *attrs)
 		codec->id = atoi(tokens[0]);
 		codec->name = g_strdup(tokens[1]);
 		codec->clock_rate = atoi(tokens[2]);
-		codec->type = SIPE_MEDIA_AUDIO;
+		codec->type = type;
 
 		// TODO: more secure and effective implementation
 		while((params = sipe_utils_nameval_find_instance(attrs, "fmtp", j++))) {
@@ -206,6 +219,8 @@ struct sdpmsg *
 sdpmsg_parse_msg(gchar *msg)
 {
 	struct sdpmsg *smsg = g_new0(struct sdpmsg, 1);
+	GSList *i;
+
 	smsg->legacy = FALSE;
 
 	if (!parse_attributes(smsg, msg)) {
@@ -213,14 +228,27 @@ sdpmsg_parse_msg(gchar *msg)
 		return NULL;
 	}
 
-	smsg->candidates = parse_candidates(smsg->attributes);
-	if (!smsg->candidates) {
-		// No a=candidate in SDP message, this seems to be pre-OC2007 R2 UAC
-		smsg->candidates = create_legacy_candidates(smsg->ip, smsg->port);
-		smsg->legacy = TRUE;
-	}
+	for (i = smsg->media; i; i = i->next) {
+		struct sdpmedia *media = i->data;
+		SipeMediaType type;
 
-	smsg->codecs = parse_codecs(smsg->attributes);
+		media->candidates = parse_candidates(media->attributes);
+		if (!media->candidates && media->port != 0) {
+			// No a=candidate in SDP message, this seems to be pre-OC2007 R2 UAC
+			media->candidates = create_legacy_candidates(smsg->ip, media->port);
+			smsg->legacy = TRUE;
+		}
+
+		if (sipe_strequal(media->name, "audio"))
+			type = SIPE_MEDIA_AUDIO;
+		else if (sipe_strequal(media->name, "video"))
+			type = SIPE_MEDIA_VIDEO;
+		else {
+			// TODO unknown media type
+		}
+
+		media->codecs = parse_codecs(media->attributes, type);
+	}
 
 	return smsg;
 }
@@ -369,7 +397,7 @@ attributes_to_string(GSList *attributes)
 	for (; attributes; attributes = attributes->next) {
 		struct sipnameval *a = attributes->data;
 		g_string_append_printf(result, "a=%s", a->name);
-		if (a->value)
+		if (!sipe_strequal(a->value, ""))
 			g_string_append_printf(result, ":%s", a->value);
 		g_string_append(result, "\r\n");
 	}
@@ -378,35 +406,29 @@ attributes_to_string(GSList *attributes)
 }
 
 gchar *
-sdpmsg_to_string(const struct sdpmsg *msg)
+media_to_string(const struct sdpmedia *media, gboolean legacy)
 {
-	gchar *body = NULL;
+	gchar *media_str;
 
-	gchar *codecs_str = codecs_to_string(msg->codecs);
-	gchar *codec_ids_str = codec_ids_to_string(msg->codecs);
+	gchar *codecs_str = codecs_to_string(media->codecs);
+	gchar *codec_ids_str = codec_ids_to_string(media->codecs);
 
-	gchar *candidates_str = msg->legacy ? g_strdup("")
-					: candidates_to_string(msg->candidates);
-	gchar *remote_candidates_str = remote_candidates_to_string(msg->remote_candidates);
+	gchar *candidates_str = legacy ? g_strdup("")
+				       : candidates_to_string(media->candidates);
+	gchar *remote_candidates_str = remote_candidates_to_string(media->remote_candidates);
 
-	gchar *attributes_str = attributes_to_string(msg->attributes);
+	gchar *attributes_str = attributes_to_string(media->attributes);
 
-	body = g_strdup_printf(
-		"v=0\r\n"
-		"o=- 0 0 IN IP4 %s\r\n"
-		"s=session\r\n"
-		"c=IN IP4 %s\r\n"
-		"b=CT:99980\r\n"
-		"t=0 0\r\n"
-		"m=audio %d RTP/AVP%s\r\n"
-		"%s"
-		"%s"
-		"%s"
-		"%s",
-		msg->ip, msg->ip, msg->port, codec_ids_str,
-		candidates_str, remote_candidates_str,
-		codecs_str,
-		attributes_str);
+	media_str = g_strdup_printf("m=%s %d RTP/AVP%s\r\n"
+				    "%s"
+				    "%s"
+				    "%s"
+				    "%s",
+				    media->name, media->port, codec_ids_str,
+				    candidates_str,
+				    remote_candidates_str,
+				    codecs_str,
+				    attributes_str);
 
 	g_free(codecs_str);
 	g_free(codec_ids_str);
@@ -414,7 +436,33 @@ sdpmsg_to_string(const struct sdpmsg *msg)
 	g_free(remote_candidates_str);
 	g_free(attributes_str);
 
-	return body;
+	return media_str;
+}
+
+gchar *
+sdpmsg_to_string(const struct sdpmsg *msg)
+{
+	GString *body = g_string_new(NULL);
+	GSList *i;
+
+	g_string_append_printf(
+		body,
+		"v=0\r\n"
+		"o=- 0 0 IN IP4 %s\r\n"
+		"s=session\r\n"
+		"c=IN IP4 %s\r\n"
+		"b=CT:99980\r\n"
+		"t=0 0\r\n",
+		msg->ip, msg->ip);
+
+
+	for (i = msg->media; i; i = i->next) {
+		gchar *media_str = media_to_string(i->data, msg->legacy);
+		g_string_append(body, media_str);
+		g_free(media_str);
+	}
+
+	return g_string_free(body, FALSE);
 }
 
 static void
@@ -438,27 +486,42 @@ sdpcodec_free(struct sdpcodec *codec)
 	}
 }
 
+static void
+sdpmedia_free(struct sdpmedia *media)
+{
+	if (media) {
+		GSList *item;
+
+		g_free(media->name);
+
+		sipe_utils_nameval_free(media->attributes);
+
+		for (item = media->candidates; item; item = item->next)
+			sdpcandidate_free(item->data);
+		g_slist_free(media->candidates);
+
+		for (item = media->codecs; item; item = item->next)
+			sdpcodec_free(item->data);
+		g_slist_free(media->codecs);
+
+		for (item = media->remote_candidates; item; item = item->next)
+			sdpcandidate_free(item->data);
+		g_slist_free(media->remote_candidates);
+
+		g_free(media);
+	}
+}
+
 void
 sdpmsg_free(struct sdpmsg *msg)
 {
 	if (msg) {
 		GSList *item;
 
-		sipe_utils_nameval_free(msg->attributes);
-
-		for (item = msg->candidates; item; item = item->next)
-			sdpcandidate_free(item->data);
-		g_slist_free(msg->candidates);
-
-		for (item = msg->remote_candidates; item; item = item->next)
-			sdpcandidate_free(item->data);
-		g_slist_free(msg->remote_candidates);
-
-		for (item = msg->codecs; item; item = item->next)
-			sdpcodec_free(item->data);
-		g_slist_free(msg->codecs);
-
 		g_free(msg->ip);
+		for (item = msg->media; item; item = item->next)
+			sdpmedia_free(item->data);
+		g_slist_free(msg->media);
 		g_free(msg);
 	}
 }

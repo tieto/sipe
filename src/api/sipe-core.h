@@ -260,7 +260,8 @@ void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
 
 /* media */
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
-				   const char *participant);
+				   const char *participant,
+				   gboolean with_video);
 
 /* file transfer */
 struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);

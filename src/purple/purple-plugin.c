@@ -403,14 +403,18 @@ sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 static gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
 				    SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
 {
-	sipe_core_media_initiate_call(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC, who);
+	sipe_core_media_initiate_call(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
+				      who,
+				      (type & PURPLE_MEDIA_VIDEO));
 	return TRUE;
 }
 
 static PurpleMediaCaps sipe_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account,
 					   SIPE_UNUSED_PARAMETER const char *who)
 {
-	return PURPLE_MEDIA_CAPS_AUDIO;
+	return   PURPLE_MEDIA_CAPS_AUDIO
+	       | PURPLE_MEDIA_CAPS_AUDIO_VIDEO
+	       | PURPLE_MEDIA_CAPS_MODIFY_SESSION;
 }
 #endif
 #endif
