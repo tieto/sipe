@@ -64,7 +64,7 @@ static SipeNetworkProtocol purple_network_protocol_to_sipe(PurpleMediaNetworkPro
 
 static void
 on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
-			  SIPE_UNUSED_PARAMETER gchar *sessionid,
+			  gchar *sessionid,
 			  SIPE_UNUSED_PARAMETER gchar *participant,
 			  struct sipe_media_call *call)
 {
@@ -81,7 +81,7 @@ on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			if (!s->candidates_prepared)
 				return;
 		}
-		call->candidates_prepared_cb(call);
+		call->candidates_prepared_cb(call, stream);
 	}
 }
 

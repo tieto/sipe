@@ -481,12 +481,13 @@ void do_apply_remote_message(struct sipe_media_call_private *call_private,
 						       183, "Session Progress");
 }
 
-static void candidates_prepared_cb(struct sipe_media_call *call)
+static void candidates_prepared_cb(struct sipe_media_call *call,
+				   struct sipe_backend_stream *stream)
 {
 	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 
 	if (sipe_backend_media_is_initiator(call_private->public.backend_private,
-					    NULL)) {
+					    stream)) {
 		sipe_invite_call(call_private->sipe_private,
 				 process_invite_call_response);
 		return;

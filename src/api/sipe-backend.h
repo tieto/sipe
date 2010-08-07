@@ -254,7 +254,8 @@ struct sipe_backend_stream;
 struct sipe_media_call {
 	struct sipe_backend_media *backend_private;
 
-	void (*candidates_prepared_cb)(struct sipe_media_call *);
+	void (*candidates_prepared_cb)(struct sipe_media_call *,
+				       struct sipe_backend_stream *);
 	void (*media_connected_cb)();
 	void (*call_accept_cb)(struct sipe_media_call *, gboolean local);
 	void (*call_reject_cb)(struct sipe_media_call *, gboolean local);
