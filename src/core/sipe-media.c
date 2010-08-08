@@ -373,13 +373,15 @@ update_remote_media(struct sipe_media_call_private* call_private,
 
 	backend_stream = sipe_backend_media_get_stream_by_id(backend_media,
 							     media->name);
+	if (media->port == 0) {
+		if (backend_stream)
+			sipe_backend_media_remove_stream(backend_media, backend_stream);
+		return TRUE;
+	}
+
 	if (!backend_stream)
 		return FALSE;
 
-	if (media->port == 0) {
-		sipe_backend_media_remove_stream(backend_media, backend_stream);
-		return TRUE;
-	}
 
 	for (i = media->candidates; i; i = i->next) {
 		struct sdpcandidate *c = i->data;
@@ -692,7 +694,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		gchar *id = media->name;
 		SipeMediaType type;
 
-		if (!sipe_backend_media_get_stream_by_id(backend_media, id)) {
+		if (   media->port != 0
+		    && !sipe_backend_media_get_stream_by_id(backend_media, id)) {
 			gchar *with;
 
 			if (sipe_strequal(id, "audio"))
