@@ -30,6 +30,23 @@
 #include "sipe-utils.h"
 
 static gboolean
+append_attribute(struct sdpmedia *media, gchar *attr)
+{
+	gchar **parts = g_strsplit(attr + 2, ":", 2);
+
+	if(!parts[0]) {
+		g_strfreev(parts);
+		return FALSE;
+	}
+
+	media->attributes = sipe_utils_nameval_add(media->attributes,
+						   parts[0],
+						   parts[1] ? parts[1] : "");
+	g_strfreev(parts);
+	return TRUE;
+}
+
+static gboolean
 parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 	gchar		**lines = g_strsplit(msg, "\r\n", 0);
 	gchar		**ptr = lines;
@@ -52,20 +69,14 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 
 			g_strfreev(parts);
 
-			++ptr;
-			while (ptr && g_str_has_prefix(*ptr, "a=")) {
-				parts = g_strsplit(*ptr + 2, ":", 2);
-				if(!parts[0]) {
-					g_strfreev(parts);
-					g_strfreev(lines);
-					return FALSE;
-				}
-				media->attributes = sipe_utils_nameval_add(media->attributes,
-									   parts[0],
-									   parts[1] ? parts[1] : "");
-				g_strfreev(parts);
+			while (*(++ptr) && !g_str_has_prefix(*ptr, "m=")) {
 
-				++ptr;
+				if (g_str_has_prefix(*ptr, "a=")) {
+					if (!append_attribute(media, *ptr)) {
+						g_strfreev(lines);
+						return FALSE;
+					}
+				}
 			}
 			continue;
 		}
