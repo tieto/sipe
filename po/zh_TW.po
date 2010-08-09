@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-07-29 09:31+0300\n"
+"POT-Creation-Date: 2010-08-09 10:59+0300\n"
 "PO-Revision-Date: 2010-04-08 10:58\n"
 "Last-Translator: Novell Language <language@novell.com>\n"
 "Language-Team: Novell Language <language@novell.com>\n"
@@ -136,7 +136,7 @@ msgid "Team"
 msgstr ""
 
 #: ../src/core/sipe.c:1877 ../src/core/sipe.c:6017 ../src/core/sipe.c:6657
-#: ../src/core/sipe.c:6977 ../src/purple/purple-plugin.c:566
+#: ../src/core/sipe.c:6977 ../src/purple/purple-plugin.c:570
 msgid "Company"
 msgstr "公司名稱"
 
@@ -235,7 +235,7 @@ msgid "Name"
 msgstr "名稱"
 
 #: ../src/core/sipe.c:6020 ../src/core/sipe.c:6986
-#: ../src/purple/purple-plugin.c:568
+#: ../src/purple/purple-plugin.c:572
 msgid "Country"
 msgstr "國家/地區"
 
@@ -643,40 +643,49 @@ msgstr "無法建立監聽 Socket"
 msgid "Received a message with unrecognized contents from %s"
 msgstr ""
 
-#: ../src/core/sipe-media.c:324 ../src/core/sipe-media.c:736
+#: ../src/core/sipe-media.c:352 ../src/core/sipe-media.c:833
 msgid "Unable to establish a call"
 msgstr ""
 
-#: ../src/core/sipe-media.c:325
+#: ../src/core/sipe-media.c:353
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr ""
 
-#: ../src/core/sipe-media.c:721
+#: ../src/core/sipe-media.c:627 ../src/core/sipe-media.c:637
+#: ../src/core/sipe-media.c:832
+msgid "Error occured"
+msgstr ""
+
+#: ../src/core/sipe-media.c:628
+msgid "Error creating audio stream"
+msgstr ""
+
+#: ../src/core/sipe-media.c:638
+msgid "Error creating video stream"
+msgstr ""
+
+#: ../src/core/sipe-media.c:818
 #, fuzzy
 msgid "User unavailable"
 msgstr "不提供該項服務︰%s"
 
-#: ../src/core/sipe-media.c:724
+#: ../src/core/sipe-media.c:821
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr ""
 
-#: ../src/core/sipe-media.c:726
+#: ../src/core/sipe-media.c:823
 #, c-format
 msgid "User %s is not available"
 msgstr ""
 
-#: ../src/core/sipe-media.c:731
+#: ../src/core/sipe-media.c:828
 msgid "Call rejected"
 msgstr ""
 
-#: ../src/core/sipe-media.c:732
+#: ../src/core/sipe-media.c:829
 #, c-format
 msgid "User %s rejected call"
-msgstr ""
-
-#: ../src/core/sipe-media.c:735
-msgid "Error occured"
 msgstr ""
 
 #. Macros to reduce code repetition.
@@ -693,54 +702,54 @@ msgstr "連線中"
 msgid "user@company.com"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:562
+#: ../src/purple/purple-plugin.c:566
 #, fuzzy
 msgid "First name"
 msgstr "名"
 
-#: ../src/purple/purple-plugin.c:564
+#: ../src/purple/purple-plugin.c:568
 #, fuzzy
 msgid "Last name"
 msgstr "姓"
 
-#: ../src/purple/purple-plugin.c:572
+#: ../src/purple/purple-plugin.c:576
 msgid "Search"
 msgstr "搜尋"
 
-#: ../src/purple/purple-plugin.c:573
+#: ../src/purple/purple-plugin.c:577
 #, fuzzy
 msgid "Search for a contact"
 msgstr "尋找好友"
 
-#: ../src/purple/purple-plugin.c:574
+#: ../src/purple/purple-plugin.c:578
 #, fuzzy
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "輸入想要尋找的人員資訊。將忽略空白欄位。"
 
-#: ../src/purple/purple-plugin.c:576
+#: ../src/purple/purple-plugin.c:580
 msgid "_Search"
 msgstr "搜尋(_S)"
 
-#: ../src/purple/purple-plugin.c:577
+#: ../src/purple/purple-plugin.c:581
 msgid "_Cancel"
 msgstr "取消(_C)"
 
-#: ../src/purple/purple-plugin.c:599
+#: ../src/purple/purple-plugin.c:603
 msgid "About SIPE plugin..."
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:602
+#: ../src/purple/purple-plugin.c:606
 #, fuzzy
 msgid "Contact search..."
 msgstr "好友搜尋..."
 
-#: ../src/purple/purple-plugin.c:605
+#: ../src/purple/purple-plugin.c:609
 msgid "Republish Calendar"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:608
+#: ../src/purple/purple-plugin.c:612
 msgid "Reset status"
 msgstr ""
 
@@ -751,43 +760,43 @@ msgstr ""
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #.
-#: ../src/purple/purple-plugin.c:665
+#: ../src/purple/purple-plugin.c:669
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:669
+#: ../src/purple/purple-plugin.c:673
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:672
+#: ../src/purple/purple-plugin.c:676
 #, fuzzy
 msgid "Connection type"
 msgstr "連線類型"
 
-#: ../src/purple/purple-plugin.c:673
+#: ../src/purple/purple-plugin.c:677
 msgid "Auto"
 msgstr "自動"
 
-#: ../src/purple/purple-plugin.c:674
+#: ../src/purple/purple-plugin.c:678
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:675
+#: ../src/purple/purple-plugin.c:679
 msgid "TCP"
 msgstr "TCP"
 
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:681
+#: ../src/purple/purple-plugin.c:685
 msgid "User Agent"
 msgstr "使用者代理"
 
-#: ../src/purple/purple-plugin.c:685
+#: ../src/purple/purple-plugin.c:689
 msgid "Use Kerberos"
 msgstr ""
 
@@ -795,20 +804,20 @@ msgstr ""
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #.
-#: ../src/purple/purple-plugin.c:692
+#: ../src/purple/purple-plugin.c:696
 msgid "Use Single Sign-On"
 msgstr ""
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #.
-#: ../src/purple/purple-plugin.c:699
+#: ../src/purple/purple-plugin.c:703
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:702
+#: ../src/purple/purple-plugin.c:706
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -817,13 +826,13 @@ msgstr ""
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #.
-#: ../src/purple/purple-plugin.c:708
+#: ../src/purple/purple-plugin.c:712
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:711
+#: ../src/purple/purple-plugin.c:715
 msgid ""
 "Email password\n"
 "(if different from Password)"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-07-29 09:31+0300\n"
+"POT-Creation-Date: 2010-08-09 10:59+0300\n"
 "PO-Revision-Date: 2010-04-08 10:04+0100\n"
 "Last-Translator: Geroen Dierckx <gwaark@yahoo.com>\n"
 "Language-Team: none\n"
@@ -135,7 +135,7 @@ msgid "Team"
 msgstr "Team"
 
 #: ../src/core/sipe.c:1877 ../src/core/sipe.c:6017 ../src/core/sipe.c:6657
-#: ../src/core/sipe.c:6977 ../src/purple/purple-plugin.c:566
+#: ../src/core/sipe.c:6977 ../src/purple/purple-plugin.c:570
 msgid "Company"
 msgstr "Bedrijf"
 
@@ -246,7 +246,7 @@ msgid "Name"
 msgstr "Naam"
 
 #: ../src/core/sipe.c:6020 ../src/core/sipe.c:6986
-#: ../src/purple/purple-plugin.c:568
+#: ../src/purple/purple-plugin.c:572
 msgid "Country"
 msgstr "Land"
 
@@ -658,40 +658,49 @@ msgstr "Kon geen socket openen om te luisteren"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Bericht ontvangen met onherkenbare inhoud van %s"
 
-#: ../src/core/sipe-media.c:324 ../src/core/sipe-media.c:736
+#: ../src/core/sipe-media.c:352 ../src/core/sipe-media.c:833
 msgid "Unable to establish a call"
 msgstr ""
 
-#: ../src/core/sipe-media.c:325
+#: ../src/core/sipe-media.c:353
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr ""
 
-#: ../src/core/sipe-media.c:721
+#: ../src/core/sipe-media.c:627 ../src/core/sipe-media.c:637
+#: ../src/core/sipe-media.c:832
+msgid "Error occured"
+msgstr ""
+
+#: ../src/core/sipe-media.c:628
+msgid "Error creating audio stream"
+msgstr ""
+
+#: ../src/core/sipe-media.c:638
+msgid "Error creating video stream"
+msgstr ""
+
+#: ../src/core/sipe-media.c:818
 msgid "User unavailable"
 msgstr "Gebruiker niet beschikbaar"
 
-#: ../src/core/sipe-media.c:724
+#: ../src/core/sipe-media.c:821
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr ""
 
-#: ../src/core/sipe-media.c:726
+#: ../src/core/sipe-media.c:823
 #, c-format
 msgid "User %s is not available"
 msgstr "Gebruiker %s is niet beschikbaar"
 
-#: ../src/core/sipe-media.c:731
+#: ../src/core/sipe-media.c:828
 msgid "Call rejected"
 msgstr "Oproep geweigerd"
 
-#: ../src/core/sipe-media.c:732
+#: ../src/core/sipe-media.c:829
 #, c-format
 msgid "User %s rejected call"
 msgstr "Gebruiker %s heeft de oproep geweigerd"
-
-#: ../src/core/sipe-media.c:735
-msgid "Error occured"
-msgstr ""
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -707,23 +716,23 @@ msgstr "Bezig met verbinden"
 msgid "user@company.com"
 msgstr "gebruiker@bedrijf.com"
 
-#: ../src/purple/purple-plugin.c:562
+#: ../src/purple/purple-plugin.c:566
 msgid "First name"
 msgstr "Voornaam"
 
-#: ../src/purple/purple-plugin.c:564
+#: ../src/purple/purple-plugin.c:568
 msgid "Last name"
 msgstr "Naam"
 
-#: ../src/purple/purple-plugin.c:572
+#: ../src/purple/purple-plugin.c:576
 msgid "Search"
 msgstr "Zoek"
 
-#: ../src/purple/purple-plugin.c:573
+#: ../src/purple/purple-plugin.c:577
 msgid "Search for a contact"
 msgstr "Contactpersoon zoeken"
 
-#: ../src/purple/purple-plugin.c:574
+#: ../src/purple/purple-plugin.c:578
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
@@ -731,27 +740,27 @@ msgstr ""
 "Vul de informatie in voor de persoon die u probeert te vinden. Lege velden "
 "worden genegeerd."
 
-#: ../src/purple/purple-plugin.c:576
+#: ../src/purple/purple-plugin.c:580
 msgid "_Search"
 msgstr "_Zoeken"
 
-#: ../src/purple/purple-plugin.c:577
+#: ../src/purple/purple-plugin.c:581
 msgid "_Cancel"
 msgstr "_Annuleer"
 
-#: ../src/purple/purple-plugin.c:599
+#: ../src/purple/purple-plugin.c:603
 msgid "About SIPE plugin..."
 msgstr "Over SIPE plugin..."
 
-#: ../src/purple/purple-plugin.c:602
+#: ../src/purple/purple-plugin.c:606
 msgid "Contact search..."
 msgstr "Contacten zoeken..."
 
-#: ../src/purple/purple-plugin.c:605
+#: ../src/purple/purple-plugin.c:609
 msgid "Republish Calendar"
 msgstr "Herpubliceer kalender"
 
-#: ../src/purple/purple-plugin.c:608
+#: ../src/purple/purple-plugin.c:612
 msgid "Reset status"
 msgstr "Herinitialiseer status"
 
@@ -762,7 +771,7 @@ msgstr "Herinitialiseer status"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #.
-#: ../src/purple/purple-plugin.c:665
+#: ../src/purple/purple-plugin.c:669
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -772,7 +781,7 @@ msgstr ""
 " gebruiker of DOMEIN\\gebruiker of\n"
 " gebruiker@bedrijf.com"
 
-#: ../src/purple/purple-plugin.c:669
+#: ../src/purple/purple-plugin.c:673
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -780,29 +789,29 @@ msgstr ""
 "Server[:Port]\n"
 "(laat leeg voor automatische herkenning)"
 
-#: ../src/purple/purple-plugin.c:672
+#: ../src/purple/purple-plugin.c:676
 msgid "Connection type"
 msgstr "Verbindingstype"
 
-#: ../src/purple/purple-plugin.c:673
+#: ../src/purple/purple-plugin.c:677
 msgid "Auto"
 msgstr "Automatisch"
 
-#: ../src/purple/purple-plugin.c:674
+#: ../src/purple/purple-plugin.c:678
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:675
+#: ../src/purple/purple-plugin.c:679
 msgid "TCP"
 msgstr "TCP"
 
 #. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 #. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:681
+#: ../src/purple/purple-plugin.c:685
 msgid "User Agent"
 msgstr "User Agent"
 
-#: ../src/purple/purple-plugin.c:685
+#: ../src/purple/purple-plugin.c:689
 msgid "Use Kerberos"
 msgstr "Gebruik Kerberos"
 
@@ -810,14 +819,14 @@ msgstr "Gebruik Kerberos"
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #.
-#: ../src/purple/purple-plugin.c:692
+#: ../src/purple/purple-plugin.c:696
 msgid "Use Single Sign-On"
 msgstr "Gebruik Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #.
-#: ../src/purple/purple-plugin.c:699
+#: ../src/purple/purple-plugin.c:703
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -825,7 +834,7 @@ msgstr ""
 "Email services URL\n"
 "(leeglaten om automatisch te bepalen)"
 
-#: ../src/purple/purple-plugin.c:702
+#: ../src/purple/purple-plugin.c:706
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -836,7 +845,7 @@ msgstr ""
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #.
-#: ../src/purple/purple-plugin.c:708
+#: ../src/purple/purple-plugin.c:712
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -844,7 +853,7 @@ msgstr ""
 "Email login\n"
 "(indien verschillend van Login)"
 
-#: ../src/purple/purple-plugin.c:711
+#: ../src/purple/purple-plugin.c:715
 msgid ""
 "Email password\n"
 "(if different from Password)"
