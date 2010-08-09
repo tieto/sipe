@@ -24,8 +24,6 @@
  * This code is loosely based on libpurple xmlnode.c
  */
 
-#include <stdio.h>
-#include <ctype.h>
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
@@ -52,75 +50,6 @@ struct _parser_data {
 	sipe_xml *current;
 	gboolean error;
 };
-
-static const gchar *unescape_entity(const gchar *text, guint *length)
-{
-	const char *pln;
-	int len, pound;
-	char temp[2];
-
-	if (!text || *text != '&') return NULL;
-
-#define IS_ENTITY(s)  (!g_ascii_strncasecmp(text, s, (len = sizeof(s) - 1)))
-
-	if (IS_ENTITY("&amp;"))
-		pln = "&";
-	else if (IS_ENTITY("&lt;"))
-		pln = "<";
-	else if (IS_ENTITY("&gt;"))
-		pln = ">";
-	else if (IS_ENTITY("&nbsp;"))
-		pln = " ";
-	else if (IS_ENTITY("&copy;"))
-		pln = "\302\251";      /* or use g_unichar_to_utf8(0xa9); */
-	else if (IS_ENTITY("&quot;"))
-		pln = "\"";
-	else if (IS_ENTITY("&reg;"))
-		pln = "\302\256";      /* or use g_unichar_to_utf8(0xae); */
-	else if (IS_ENTITY("&apos;"))
-		pln = "\'";
-	else if ((*(text + 1) == '#')                               &&
-		 ((sscanf(text, "&#%u%1[;]", &pound, temp) == 2) ||
-		  (sscanf(text, "&#x%x%1[;]", &pound, temp) == 2))  &&
-		 (pound != 0)) {
-		static gchar buf[7];
-		guint buflen = g_unichar_to_utf8((gunichar)pound, buf);
-		buf[buflen] = '\0';
-		pln = buf;
-
-		len = (*(text + 2) == 'x' ? 3 : 2);
-		while (isxdigit((gint) text[len])) len++;
-		if (text[len] == ';') len++;
-	} else
-		return NULL;
-
-	if (length)
-		*length = len;
-	return pln;
-}
-
-static gchar *unescape_text(const gchar *escaped)
-{
-	GString *unescaped;
-
-	if (!escaped) return NULL;
-
-	unescaped = g_string_new("");
-	while (*escaped) {
-		guint len;
-		const gchar *entity;
-
-		if ((entity = unescape_entity(escaped, &len)) != NULL) {
-			g_string_append(unescaped, entity);
-			escaped += len;
-		} else {
-			g_string_append_c(unescaped, *escaped);
-			escaped++;
-		}
-	}
-
-	return g_string_free(unescaped, FALSE);
-}
 
 static void callback_start_element(void *user_data, const xmlChar *name, const xmlChar **attrs)
 {
@@ -161,9 +90,11 @@ static void callback_start_element(void *user_data, const xmlChar *name, const x
 			if ((tmp = strchr((char *)key, ':')) != NULL) {
 				key = (xmlChar *)tmp + 1;
 			}
+			/* libxml2 decodes all entities except &amp;.
+			   &amp; is replaced by the equivalent &#38; */
 			g_hash_table_insert(node->attributes,
 					    g_strdup((gchar *) key),
-					    unescape_text((gchar *) *attrs++));
+					    replace((gchar *) *attrs++, "&#38;", "&"));
 		}
 	}
 
