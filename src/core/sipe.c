@@ -4928,7 +4928,9 @@ send_presence_soap0(struct sipe_core_private *sipe_private,
 		g_free(free_busy_base64);
 	}
 
-	user_input = !sipe_is_user_state(sipe_private) && sip->status != SIPE_STATUS_ID_AVAILABLE ? "idle" : "active";
+	user_input = (sipe_is_user_state(sipe_private) ||
+		      sipe_strequal(sip->status, SIPE_STATUS_ID_AVAILABLE)) ?
+		"active" : "idle";
 
 	/* forming resulting XML */
 	body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE,

@@ -17,6 +17,7 @@ version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-XX-XX)
 	    in account configuration (on Windows), there are options to manually
 	    provide Domino Services URL and email address/password if it's
 	    different from SIP URI/Password settings on Basic tab.
+	- Fixed #2971422: idle check for OCS2005 presence case (Stefan Becker)
 	- Fixed #2982424: krb5 build errors on FreeBSD (Stefan Becker)
 	- Fixed #2997639: pidgin crash after accepting cert (Stefan Becker)
 	- Fixed #3001523: Cancelling a long pending file transfer crashes Pidgin (Jakub Adam)
