@@ -21,6 +21,10 @@
  */
 
 #include "glib.h"
+#include "glib/gstdio.h"
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "sipe-common.h"
 
@@ -193,6 +197,28 @@ sipe_backend_media_free(struct sipe_backend_media *media)
 	g_free(media);
 }
 
+#define FS_CODECS_CONF \
+	"# Automatically created by SIPE plugin\n" \
+	"[video/H263]\n" \
+	"farsight-send-profile=videoscale ! ffmpegcolorspace ! fsvideoanyrate ! ffenc_h263 rtp-payload-size=512 ! rtph263pay mtu=512\n";
+
+static void
+ensure_codecs_conf()
+{
+	gchar *filename;
+	filename = g_build_filename(purple_user_dir(), "fs-codec.conf", NULL);
+
+	if (!g_file_test(filename, G_FILE_TEST_EXISTS)) {
+		int fd = g_open(filename, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+		gchar *fs_codecs_conf = FS_CODECS_CONF;
+		if (!fd || write(fd, fs_codecs_conf, strlen(fs_codecs_conf)) == -1)
+			SIPE_DEBUG_ERROR_NOFORMAT("Can not create fs-codec.conf!");
+		close(fd);
+	}
+
+	g_free(filename);
+}
+
 struct sipe_backend_stream *
 sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			      const gchar *id,
@@ -223,6 +249,8 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		transmitter = "rawudp";
 		//sessionid = "sipe-voice-rawudp";
 	}
+
+	ensure_codecs_conf();
 
 	if (purple_media_add_stream(media->m, id, participant, prpl_type,
 				    initiator, transmitter, params_cnt, params)) {
