@@ -302,7 +302,7 @@ your architecture or set PURPLE_CFLAGS to override the system defaults.
 					 purple_media_get_active_remote_candidates(NULL, NULL, NULL);]
 			  	),
 				[AC_MSG_RESULT(ok)
-				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.13],
+				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.14],
 					[PKG_CHECK_MODULES(PURPLE_MEDIA, [purple >= 2.7.0],
 						[with_purple_vv=yes],
 						[AC_MSG_NOTICE(libpurple >= 2.7.0 required: disabling purple voice and video support)])],
