@@ -1,45 +1,15 @@
-From 4459cb2ac2198e040804da3fd7d9b61083fdeb59 Mon Sep 17 00:00:00 2001
-From: Jakub Adam <jakub.adam@ktknet.cz>
-Date: Sun, 28 Mar 2010 14:53:43 +0200
-Subject: [PATCH] Compatibility with OC2007 R2
-
----
- agent/agent.c      |    5 ++++-
- agent/agent.h      |    3 ++-
- agent/conncheck.c  |   12 ++++++++----
- stun/stunmessage.h |    4 +++-
- stun/usages/ice.c  |   29 +++++++++++++++++++++++++++--
- stun/usages/ice.h  |    5 +++--
- 6 files changed, 47 insertions(+), 11 deletions(-)
-
-diff --git a/agent/agent.c b/agent/agent.c
-index 7deb2dd..b032a2a 100644
---- a/agent/agent.c
-+++ b/agent/agent.c
-@@ -149,6 +149,8 @@ agent_to_ice_compatibility (NiceAgent *agent)
-       STUN_USAGE_ICE_COMPATIBILITY_GOOGLE :
-       agent->compatibility == NICE_COMPATIBILITY_MSN ?
-       STUN_USAGE_ICE_COMPATIBILITY_MSN :
-+	  agent->compatibility == NICE_COMPATIBILITY_OC2007R2 ?
-+      STUN_USAGE_ICE_COMPATIBILITY_OC2007R2 :
-       STUN_USAGE_ICE_COMPATIBILITY_RFC5245;
- }
- 
-@@ -835,7 +837,8 @@ nice_agent_set_property (
-             STUN_COMPATIBILITY_RFC3489,
-             STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
-             STUN_AGENT_USAGE_FORCE_VALIDATER);
--      } else if (agent->compatibility == NICE_COMPATIBILITY_WLM2009) {
-+      } else if (agent->compatibility == NICE_COMPATIBILITY_WLM2009 ||
-+				 agent->compatibility == NICE_COMPATIBILITY_OC2007R2) {
-         stun_agent_init (&agent->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
-             STUN_COMPATIBILITY_WLM2009,
-             STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
-diff --git a/agent/agent.h b/agent/agent.h
-index 524bae2..c37bf21 100644
---- a/agent/agent.h
-+++ b/agent/agent.h
-@@ -229,8 +229,9 @@ typedef enum
+--- a/agent/agent.h 
++++ b/agent/agent.h 
+@@ -213,6 +213,8 @@
+  * @NICE_COMPATIBILITY_MSN: Use compatibility for MSN Messenger specs
+  * @NICE_COMPATIBILITY_WLM2009: Use compatibility with Windows Live Messenger
+  * 2009
++ * @NICE_COMPATIBILITY_OC2007R2: Use compatibility with Microsoft Office
++ * Communicator 2007 R2
+  * @NICE_COMPATIBILITY_DRAFT19: Use compatibility for ICE Draft 19 specs
+  * @NICE_COMPATIBILITY_LAST: Dummy last compatibility mode
+  *
+@@ -229,8 +231,9 @@
    NICE_COMPATIBILITY_GOOGLE,
    NICE_COMPATIBILITY_MSN,
    NICE_COMPATIBILITY_WLM2009,
@@ -50,11 +20,53 @@ index 524bae2..c37bf21 100644
  } NiceCompatibility;
  
  /**
-diff --git a/agent/conncheck.c b/agent/conncheck.c
-index 30d13d3..a36b719 100644
---- a/agent/conncheck.c
-+++ b/agent/conncheck.c
-@@ -599,7 +599,8 @@ static gboolean priv_conn_keepalive_tick_unlocked (NiceAgent *agent)
+@@ -681,8 +684,9 @@
+  * This function will set the value of the SOFTWARE attribute to be added to
+  * STUN requests, responses and error responses sent during connectivity checks.
+  * <para>
+- * The SOFTWARE attribute will only be added in the #NICE_COMPATIBILITY_RFC5245
+- * and #NICE_COMPATIBILITY_WLM2009 compatibility modes.
++ * The SOFTWARE attribute will only be added in the #NICE_COMPATIBILITY_RFC5245,
++ * #NICE_COMPATIBILITY_WLM2009 and #NICE_COMPATIBILITY_OC2007R2 compatibility
++ * modes.
+  *
+  * </para>
+  * <note>
+
+--- a/agent/agent.c 
++++ b/agent/agent.c 
+@@ -149,6 +149,8 @@
+       STUN_USAGE_ICE_COMPATIBILITY_GOOGLE :
+       agent->compatibility == NICE_COMPATIBILITY_MSN ?
+       STUN_USAGE_ICE_COMPATIBILITY_MSN :
++      agent->compatibility == NICE_COMPATIBILITY_OC2007R2 ?
++      STUN_USAGE_ICE_COMPATIBILITY_OC2007R2 :
+       STUN_USAGE_ICE_COMPATIBILITY_RFC5245;
+ }
+ 
+@@ -161,6 +163,8 @@
+       agent->compatibility == NICE_COMPATIBILITY_MSN ?
+       STUN_USAGE_TURN_COMPATIBILITY_MSN :
+       agent->compatibility == NICE_COMPATIBILITY_WLM2009 ?
++      STUN_USAGE_TURN_COMPATIBILITY_MSN :
++      agent->compatibility == NICE_COMPATIBILITY_OC2007R2 ?
+       STUN_USAGE_TURN_COMPATIBILITY_MSN : STUN_USAGE_TURN_COMPATIBILITY_DRAFT9;
+ }
+ 
+@@ -835,7 +839,8 @@
+             STUN_COMPATIBILITY_RFC3489,
+             STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
+             STUN_AGENT_USAGE_FORCE_VALIDATER);
+-      } else if (agent->compatibility == NICE_COMPATIBILITY_WLM2009) {
++      } else if (agent->compatibility == NICE_COMPATIBILITY_WLM2009 ||
++                 agent->compatibility == NICE_COMPATIBILITY_OC2007R2) {
+         stun_agent_init (&agent->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
+             STUN_COMPATIBILITY_WLM2009,
+             STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
+
+--- a/agent/conncheck.c 
++++ b/agent/conncheck.c 
+@@ -599,7 +599,8 @@
                  uname, uname_len, password, password_len,
                  agent->controlling_mode, agent->controlling_mode, priority,
                  agent->tie_breaker,
@@ -64,7 +76,7 @@ index 30d13d3..a36b719 100644
  
              nice_debug ("Agent %p: conncheck created %d - %p",
                  agent, buf_len, p->keepalive.stun_message.buffer);
-@@ -1461,7 +1462,8 @@ size_t priv_gen_username (NiceAgent *agent, guint component_id,
+@@ -1461,7 +1462,8 @@
        len++;
        memcpy (dest + len, local, local_len);
        len += local_len;
@@ -74,7 +86,7 @@ index 30d13d3..a36b719 100644
          dest_len >= remote_len + local_len + 4 ) {
        memcpy (dest, remote, remote_len);
        len += remote_len;
-@@ -1662,7 +1664,8 @@ int conn_check_send (NiceAgent *agent, CandidateCheckPair *pair)
+@@ -1662,7 +1664,8 @@
          uname, uname_len, password, password_len,
          cand_use, controlling, priority,
          agent->tie_breaker,
@@ -84,7 +96,7 @@ index 30d13d3..a36b719 100644
  
      nice_debug ("Agent %p: conncheck created %d - %p", agent, buffer_len, pair->stun_message.buffer);
  
-@@ -1795,7 +1798,8 @@ static gboolean priv_schedule_triggered_check (NiceAgent *agent, Stream *stream,
+@@ -1795,7 +1798,8 @@
  	   *       aggressive nomination mode, send a new triggered
  	   *       check to nominate the pair */
  	  if ((agent->compatibility == NICE_COMPATIBILITY_RFC5245 ||
@@ -94,25 +106,55 @@ index 30d13d3..a36b719 100644
                agent->controlling_mode)
  	    priv_conn_check_initiate (agent, p);
  	}
-diff --git a/stun/stunmessage.h b/stun/stunmessage.h
-index b9291b2..d35196f 100644
---- a/stun/stunmessage.h
-+++ b/stun/stunmessage.h
-@@ -288,7 +288,9 @@ typedef enum
-   STUN_ATTRIBUTE_FINGERPRINT=0x8028,    /* RFC5389 */
-   STUN_ATTRIBUTE_ICE_CONTROLLED=0x8029,    /* ICE-19 */
-   STUN_ATTRIBUTE_ICE_CONTROLLING=0x802A,    /* ICE-19 */
--  /* 0x802B-0xFFFF */      /* reserved */
-+  /* 0x802B-0x8053 */      /* reserved */
-+  STUN_ATTRIBUTE_CANDIDATE_IDENTIFIER=0x8054    /* MS-ICE2 */
-+  /* 0x8055-0xFFFF */      /* reserved */
- } StunAttribute;
+
+--- a/stun/usages/ice.h 
++++ b/stun/usages/ice.h 
+@@ -65,6 +65,8 @@
+  * implementation of ICE
+  * @STUN_USAGE_ICE_COMPATIBILITY_MSN: The ICE compatibility with MSN's
+  * implementation of ICE
++ * @STUN_USAGE_ICE_COMPATIBILITY_OC2007R2: The ICE compatibility with Microsoft
++ * Office Communicator 2007 R2 implementation of ICE
+  * @STUN_USAGE_ICE_COMPATIBILITY_DRAFT19: The ICE compatibility with draft 19
+  *
+  * This enum defines which compatibility modes this ICE usage can use
+@@ -78,6 +80,7 @@
+   STUN_USAGE_ICE_COMPATIBILITY_RFC5245,
+   STUN_USAGE_ICE_COMPATIBILITY_GOOGLE,
+   STUN_USAGE_ICE_COMPATIBILITY_MSN,
++  STUN_USAGE_ICE_COMPATIBILITY_OC2007R2,
+   STUN_USAGE_ICE_COMPATIBILITY_DRAFT19 = STUN_USAGE_ICE_COMPATIBILITY_RFC5245,
+ } StunUsageIceCompatibility;
  
+@@ -132,10 +135,14 @@
+  * ICE-CONTROLLING attribute
+  * @compatibility: The compatibility mode to use for building the conncheck
+  * request
++ * @candidate_identifier: The foundation value to put in the
++ * CANDIDATE-IDENTIFIER attribute
+  *
+  * Builds an ICE connectivity check STUN message.
+  * If the compatibility is not #STUN_USAGE_ICE_COMPATIBILITY_RFC5245, the
+  * @cand_use, @controlling, @priority and @tie arguments are not used.
++ * If the compatibility is not #STUN_USAGE_ICE_COMPATIBILITY_OC2007R2, the
++ * @candidate_identifier argument is not used.
+  * Returns: The length of the message built.
+  */
+ size_t
+@@ -144,8 +151,8 @@
+     const uint8_t *username, const size_t username_len,
+     const uint8_t *password, const size_t password_len,
+     bool cand_use, bool controlling, uint32_t priority,
+-    uint64_t tie, StunUsageIceCompatibility compatibility);
+-
++    uint64_t tie, StunUsageIceCompatibility compatibility,
++	const char *candidate_identifier);
  
-diff --git a/stun/usages/ice.c b/stun/usages/ice.c
-index e469f32..53765be 100644
---- a/stun/usages/ice.c
-+++ b/stun/usages/ice.c
+ /**
+  * stun_usage_ice_conncheck_process:
+
+--- a/stun/usages/ice.c 
++++ b/stun/usages/ice.c 
 @@ -42,6 +42,7 @@
  
  #include <string.h>
@@ -121,7 +163,7 @@ index e469f32..53765be 100644
  
  #ifdef _WIN32
  #include <winsock2.h>
-@@ -64,13 +65,15 @@ stun_usage_ice_conncheck_create (StunAgent *agent, StunMessage *msg,
+@@ -64,13 +65,15 @@
      const uint8_t *username, const size_t username_len,
      const uint8_t *password, const size_t password_len,
      bool cand_use, bool controlling, uint32_t priority,
@@ -135,14 +177,16 @@ index e469f32..53765be 100644
  
 -  if (compatibility == STUN_USAGE_ICE_COMPATIBILITY_RFC5245) {
 +  if (compatibility == STUN_USAGE_ICE_COMPATIBILITY_RFC5245 ||
-+	  compatibility == STUN_USAGE_ICE_COMPATIBILITY_OC2007R2) {
++      compatibility == STUN_USAGE_ICE_COMPATIBILITY_OC2007R2) {
      if (cand_use)
      {
        val = stun_message_append_flag (msg, STUN_ATTRIBUTE_USE_CANDIDATE);
-@@ -97,6 +100,28 @@ stun_usage_ice_conncheck_create (StunAgent *agent, StunMessage *msg,
+@@ -95,6 +98,28 @@
+         username, username_len);
+     if (val != STUN_MESSAGE_RETURN_SUCCESS)
        return 0;
-   }
- 
++  }
++
 +  if (compatibility == STUN_USAGE_ICE_COMPATIBILITY_OC2007R2) {
 +    size_t identifier_len = strlen(candidate_identifier);
 +    size_t buffer_len = identifier_len;
@@ -163,33 +207,28 @@ index e469f32..53765be 100644
 +
 +    if (val != STUN_MESSAGE_RETURN_SUCCESS)
 +		return 0;
-+  }
-+
+   }
+ 
    return stun_agent_finish_message (agent, msg, password, password_len);
- 
- }
-diff --git a/stun/usages/ice.h b/stun/usages/ice.h
-index 39bafaa..d9fdab2 100644
---- a/stun/usages/ice.h
-+++ b/stun/usages/ice.h
-@@ -78,6 +78,7 @@ typedef enum {
-   STUN_USAGE_ICE_COMPATIBILITY_RFC5245,
-   STUN_USAGE_ICE_COMPATIBILITY_GOOGLE,
-   STUN_USAGE_ICE_COMPATIBILITY_MSN,
-+  STUN_USAGE_ICE_COMPATIBILITY_OC2007R2,
-   STUN_USAGE_ICE_COMPATIBILITY_DRAFT19 = STUN_USAGE_ICE_COMPATIBILITY_RFC5245,
- } StunUsageIceCompatibility;
- 
-@@ -144,8 +145,8 @@ stun_usage_ice_conncheck_create (StunAgent *agent, StunMessage *msg,
-     const uint8_t *username, const size_t username_len,
-     const uint8_t *password, const size_t password_len,
-     bool cand_use, bool controlling, uint32_t priority,
--    uint64_t tie, StunUsageIceCompatibility compatibility);
--
-+    uint64_t tie, StunUsageIceCompatibility compatibility,
-+	const char *candidate_identifier);
- 
- /**
-  * stun_usage_ice_conncheck_process:
--- 
-1.7.1
+
+--- a/stun/stunmessage.h 
++++ b/stun/stunmessage.h 
+@@ -218,6 +218,8 @@
+  * defined by ICE draft 19
+  * @STUN_ATTRIBUTE_ICE_CONTROLLING: The ICE-CONTROLLING optional attribute as
+  * defined by ICE draft 19
++ * @STUN_ATTRIBUTE_CANDIDATE_IDENTIFIER: The CANDIDATE-IDENTIFIER attribute as
++ * defined by [MS-ICE2]
+  *
+  * Known STUN attribute types as defined by various RFCs and drafts
+  */
+@@ -288,7 +290,9 @@
+   STUN_ATTRIBUTE_FINGERPRINT=0x8028,    /* RFC5389 */
+   STUN_ATTRIBUTE_ICE_CONTROLLED=0x8029,    /* ICE-19 */
+   STUN_ATTRIBUTE_ICE_CONTROLLING=0x802A,    /* ICE-19 */
+-  /* 0x802B-0xFFFF */      /* reserved */
++  /* 0x802B-0x8053 */      /* reserved */
++  STUN_ATTRIBUTE_CANDIDATE_IDENTIFIER=0x8054    /* MS-ICE2 */
++  /* 0x8055-0xFFFF */      /* reserved */
+ } StunAttribute;
+
