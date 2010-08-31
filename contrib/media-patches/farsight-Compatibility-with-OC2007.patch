@@ -1,0 +1,33 @@
+--- a/transmitters/nice/fs-nice-stream-transmitter.c 
++++ b/transmitters/nice/fs-nice-stream-transmitter.c 
+@@ -726,7 +726,8 @@
+     }
+ 
+     if (self->priv->compatibility_mode != NICE_COMPATIBILITY_GOOGLE &&
+-        self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN)
++        self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN &&
++        self->priv->compatibility_mode != NICE_COMPATIBILITY_OC2007)
+     {
+       if (!username)
+       {
+@@ -779,7 +780,8 @@
+   }
+ 
+   if (self->priv->compatibility_mode != NICE_COMPATIBILITY_GOOGLE &&
+-        self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN)
++      self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN &&
++      self->priv->compatibility_mode != NICE_COMPATIBILITY_OC2007)
+   {
+     username = g_strdup (username);
+     password = g_strdup (password);
+@@ -1681,7 +1683,8 @@
+       GError *error = NULL;
+ 
+       if (self->priv->compatibility_mode != NICE_COMPATIBILITY_GOOGLE &&
+-          self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN)
++          self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN &&
++          self->priv->compatibility_mode != NICE_COMPATIBILITY_OC2007)
+       {
+         if (!nice_agent_set_remote_credentials (self->priv->agent->agent,
+                 self->priv->stream_id, self->priv->username,
+

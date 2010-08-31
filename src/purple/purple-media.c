@@ -240,7 +240,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		params = g_new0(GParameter, params_cnt);
 		params[0].name = "compatibility-mode";
 		g_value_init(&params[0].value, G_TYPE_UINT);
-		g_value_set_uint(&params[0].value, NICE_COMPATIBILITY_OC2007R2);
+		g_value_set_uint(&params[0].value, NICE_COMPATIBILITY_WLM2009);
 	} else {
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
