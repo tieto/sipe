@@ -2,19 +2,19 @@
 # Copyright (c) 2008 Rosetta Contributors and Canonical Ltd 2008
 # This file is distributed under the same license as the pidgin-sipe package.
 # 神州散人 <kappa8086@gmail.com>, 2009.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-08-09 10:59+0300\n"
-"PO-Revision-Date: 2010-02-01 14:30+0800\n"
+"POT-Creation-Date: 2010-08-09 08:47+0000\n"
+"PO-Revision-Date: 2010-09-02 15:00+0800\n"
 "Last-Translator: 神州散人 <kappa8086@gmail.com>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: \n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 #: ../src/core/sip-transport.c:216
@@ -151,40 +151,29 @@ msgstr "未知"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2995
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"您的消息或邀请没有被发送，原因可能是它包含了被系统管理员屏蔽的链接或其他内"
-"容。"
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
+msgstr "您的消息或邀请没有被发送，原因可能是它包含了被系统管理员屏蔽的链接或其他内容。"
 
 #: ../src/core/sipe.c:2999
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
+msgid "This message was not delivered to %s because the service is not available"
 msgstr "此消息没有被发送到 %s，因为服务不可用"
 
 #. Busy Here
 #: ../src/core/sipe.c:3001
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
 msgstr "此消息没有被发送到 %s，因为有的收信人不想被打扰"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3003
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
 msgstr "此消息没有被发送到 %s，因为有的收信人支持此消息类型"
 
 #: ../src/core/sipe.c:3005
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
+msgid "This message was not delivered to %s because one or more recipients are offline"
 msgstr "此消息没有被发送到 %s，因为有的收信人不在线"
 
 #: ../src/core/sipe.c:3314
@@ -222,6 +211,9 @@ msgid ""
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Example: https://domino.corp.com/maildatabase.nsf"
 msgstr ""
+"如果提供电子邮件服务 URL 那么它应该是有效的\n"
+"例如：https://exchange.corp.com/EWS/Exchange.asmx\n"
+"例如：https://domino.corp.com/maildatabase.nsf"
 
 #: ../src/core/sipe.c:6005
 msgid "Unable to display the search results"
@@ -285,10 +277,8 @@ msgstr "访问级别"
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:6383
-msgid ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:6465
 #, c-format
@@ -496,14 +486,11 @@ msgid "Chat #%d"
 msgstr "聊天 #%d"
 
 #: ../src/core/sipe-conf.c:800
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
+msgid "This conference is no longer locked. Additional participants can now join."
 msgstr "此会议不再锁定。其他参与者可以加入。"
 
 #: ../src/core/sipe-conf.c:804
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
 msgstr "此会议被锁定。被锁定时其他人不能加入会议。"
 
 #: ../src/core/sipe-conf.c:837
@@ -513,9 +500,7 @@ msgstr "您已被从会议中断开。"
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:139
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
 msgstr "实现用于多个产品的 SIP/SIMPLE 扩展版本的第三方插件"
 
 #. About note, part 2/13: home page URL (label)
@@ -583,10 +568,11 @@ msgstr "作者"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "中文化 (zh_CN): 神州散人"
 
-#. Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location
+#. Translators: (!) should be as in localized Lotus Notes to be able to
+#. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
 msgid "Location:"
-msgstr ""
+msgstr "位置："
 
 #: ../src/core/sipe-ft.c:110 ../src/core/sipe-ft.c:613
 #: ../src/core/sipe-ft.c:642 ../src/core/sipe-ft.c:700
@@ -643,48 +629,47 @@ msgstr "从 %s 收到含有无法识别的内容的消息"
 
 #: ../src/core/sipe-media.c:352 ../src/core/sipe-media.c:833
 msgid "Unable to establish a call"
-msgstr ""
+msgstr "无法建立通话"
 
 #: ../src/core/sipe-media.c:353
 msgid "Encryption settings of peer are incompatible with ours."
-msgstr ""
+msgstr "节点的加密设置和我们的不兼容。"
 
 #: ../src/core/sipe-media.c:627 ../src/core/sipe-media.c:637
 #: ../src/core/sipe-media.c:832
 msgid "Error occured"
-msgstr ""
+msgstr "发生了错误"
 
 #: ../src/core/sipe-media.c:628
 msgid "Error creating audio stream"
-msgstr ""
+msgstr "创建音频流错误"
 
 #: ../src/core/sipe-media.c:638
 msgid "Error creating video stream"
-msgstr ""
+msgstr "创建视频流错误"
 
 #: ../src/core/sipe-media.c:818
-#, fuzzy
 msgid "User unavailable"
-msgstr "服务不可用：%s"
+msgstr "用户不可用"
 
 #: ../src/core/sipe-media.c:821
 #, c-format
 msgid "%s does not want to be disturbed"
-msgstr ""
+msgstr "%s 不想被打扰"
 
 #: ../src/core/sipe-media.c:823
 #, c-format
 msgid "User %s is not available"
-msgstr ""
+msgstr "用户 %s 不可用"
 
 #: ../src/core/sipe-media.c:828
 msgid "Call rejected"
-msgstr ""
+msgstr "通话被拒绝"
 
 #: ../src/core/sipe-media.c:829
 #, c-format
 msgid "User %s rejected call"
-msgstr ""
+msgstr "用户 %s 拒绝了通话"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -717,9 +702,7 @@ msgid "Search for a contact"
 msgstr "搜索联系人"
 
 #: ../src/purple/purple-plugin.c:578
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
 msgstr "输入您要查找的人的信息。空字段将被忽略。"
 
 #: ../src/purple/purple-plugin.c:580
@@ -752,7 +735,7 @@ msgstr "复位状态"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#.
+#. 
 #: ../src/purple/purple-plugin.c:669
 msgid ""
 "Login\n"
@@ -787,8 +770,10 @@ msgstr "SSL/TLS"
 msgid "TCP"
 msgstr "TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. prpl_info.protocol_options = g_list_append(prpl_info.protocol_options,
+#. option);
 #: ../src/purple/purple-plugin.c:685
 msgid "User Agent"
 msgstr "用户代理"
@@ -800,14 +785,14 @@ msgstr "使用 Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:696
 msgid "Use Single Sign-On"
 msgstr "使用单点登录"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#.
+#. 
 #: ../src/purple/purple-plugin.c:703
 msgid ""
 "Email services URL\n"
@@ -826,7 +811,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#.
+#. 
 #: ../src/purple/purple-plugin.c:712
 msgid ""
 "Email login\n"
@@ -844,9 +829,8 @@ msgstr ""
 "(如果与密码不同)"
 
 #: ../src/purple/purple-transport.c:109
-#, fuzzy
 msgid "Read error"
-msgstr "SSL 读取错误"
+msgstr "读取错误"
 
 #: ../src/purple/purple-transport.c:113
 msgid "Server has disconnected"
@@ -865,6 +849,5 @@ msgid "Could not create socket"
 msgstr "无法创建套接字"
 
 #: ../src/purple/purple-transport.c:327
-#, fuzzy
 msgid "Write error"
-msgstr "SSL 读取错误"
+msgstr "写入错误"
