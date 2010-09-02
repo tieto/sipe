@@ -7,11 +7,11 @@
 
 %define purple_develname libpurple-devel
 
-%if 0%{?mandriva_version} >= 200910
+%if 0%{?mdkversion} >= 200910
 %ifarch x86_64
 %define purple_develname lib64purple-devel
 %endif
-%if 0%{?mandriva_version} >= 201000
+%if 0%{?mdkversion} >= 201000
 %ifnarch x86_64
 %define has_libnice 1
 %endif
@@ -36,7 +36,7 @@
 %define has_libnice 1
 %endif
 %endif
-%if 0%{?mandriva_version}
+%if 0%{?mdkversion}
 %define pkg_group Networking/Instant messaging
 %else
 %define pkg_group Applications/Internet
@@ -83,6 +83,11 @@ BuildRequires:  libproxy-mozjs
 BuildRequires:  PolicyKit-gnome
 %endif
 
+# For OBS's "have choice for" for Mandriva 2010.1 (and up?)
+%if 0%{?mdkversion} >= 201010
+BuildRequires:  polkit-gnome
+%endif
+
 %description
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
@@ -121,7 +126,7 @@ This package provides the protocol plugin for libpurple clients.
 %if 0%{?sles_version} == 10
 export CFLAGS="%optflags -I%{_includedir}/gssapi"
 %endif
-%if 0%{?mandriva_version}
+%if 0%{?mdkversion}
 autoreconf --verbose --install --force
 %endif
 %configure \
