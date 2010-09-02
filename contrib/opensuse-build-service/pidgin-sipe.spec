@@ -167,6 +167,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Sep 02 2010 J. D. User <jduser@noreply.com> pre-1.11.0-*git*
+- Mandriva config for OBS has changed
+
 * Tue May 04 2010 J. D. User <jduser@noreply.com> 1.10.0-*git*
 - add libnice build information discovered through OBS testing
 
