@@ -21,7 +21,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.10.1
+Version:        1.11.0
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -44,6 +44,7 @@ BuildRequires:  libxml2-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
+#BuildRequires:  libnice-devel
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
@@ -126,6 +127,12 @@ rm -rf %{buildroot}
 
 
 %changelog
+* ??? ??? ?? 2010 J. D. User <jduser@noreply.com> 1.11.0
+- update to 1.11.0
+
+* Fri Sep 02 2010 J. D. User <jduser@noreply.com> 1.10.1-*git*
+- add (commented out) BR libnice-devel
+
 * Sun Jun 27 2010 J. D. User <jduser@noreply.com> 1.10.1
 - update to 1.10.1
 

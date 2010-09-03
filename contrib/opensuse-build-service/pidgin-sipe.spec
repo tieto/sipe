@@ -167,6 +167,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* ??? ??? ?? 2010 J. D. User <jduser@noreply.com> 1.11.0
+- update to 1.11.0
+
 * Thu Sep 02 2010 J. D. User <jduser@noreply.com> pre-1.11.0-*git*
 - Mandriva config for OBS has changed
 
