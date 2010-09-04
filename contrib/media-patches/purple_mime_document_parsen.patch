@@ -1,6 +1,6 @@
---- workspace/pidgin/libpurple/mime.c	2010-03-27 20:11:19.456986210 +0100
-+++ src/pidgin-2.6.5/libpurple/mime.c	2010-03-28 15:56:46.300983807 +0200
-@@ -436,6 +436,43 @@
+--- a/libpurple/mime.c 
++++ b/libpurple/mime.c 
+@@ -436,6 +436,33 @@
  	g_free(bnd);
  }
  
@@ -8,9 +8,8 @@
 +parse_boundary(const char* ct)
 +{
 +	const char BOUNDARY[] = "boundary=";
-+	char *boundary_begin = g_strrstr(ct, BOUNDARY);
++	char *boundary_begin = g_strstr_len(ct, -1, BOUNDARY);
 +	char *boundary_end;
-+	gboolean has_quotes = FALSE;
 +
 +	if (!boundary_begin)
 +		return NULL;
@@ -18,13 +17,10 @@
 +	boundary_begin += sizeof(BOUNDARY) - 1;
 +
 +	if (*boundary_begin == '"') {
-+		has_quotes = TRUE;
-+		++boundary_begin;
-+	}
-+
-+	if (has_quotes)
-+		boundary_end = strchr(boundary_begin, '"');
-+	else {
++		boundary_end = strchr(++boundary_begin, '"');
++		if (!boundary_end)
++			return NULL;
++	} else {
 +		boundary_end = strchr(boundary_begin, ' ');
 +		if (!boundary_end) {
 +			boundary_end = strchr(boundary_begin, ';');
@@ -33,18 +29,12 @@
 +		}
 +	}
 +
-+	if (!boundary_end)
-+		return NULL;
-+
-+	char *bnd = g_malloc0(boundary_end - boundary_begin + 1);
-+	memcpy(bnd, boundary_begin, boundary_end - boundary_begin);
-+
-+	return bnd;
++	return g_strndup(boundary_begin, boundary_end - boundary_begin);
 +}
  
  PurpleMimeDocument *
  purple_mime_document_parsen(const char *buf, gsize len)
-@@ -457,9 +494,10 @@
+@@ -457,9 +484,10 @@
  	{
  		const char *ct = fields_get(&doc->fields, "content-type");
  		if(ct && purple_str_has_prefix(ct, "multipart")) {
@@ -57,5 +47,3 @@
  			}
  		}
  	}
-
- 	  	 
