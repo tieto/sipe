@@ -22,7 +22,6 @@
 
 #include <glib.h>
 
-#include "sipe-common.h"
 #include "sip-transport.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"

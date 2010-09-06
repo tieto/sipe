@@ -81,7 +81,9 @@
 #include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
+#ifdef HAVE_VV
 #include "sipe-media.h"
+#endif
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "uuid.h"
