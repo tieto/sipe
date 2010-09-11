@@ -62,6 +62,9 @@ struct sipe_core_private {
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
 
+	/* @TODO: move to purple backend when menu code moves */
+	GSList *blist_menu_containers;
+
 	/* the original data structure*/
 	struct sipe_account_data *temporary;
 };

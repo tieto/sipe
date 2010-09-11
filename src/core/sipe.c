@@ -5898,6 +5898,9 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	return((struct sipe_core_public *)sipe_private);
 }
 
+static void
+sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private);
+
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
@@ -5926,6 +5929,9 @@ void sipe_connection_cleanup(struct sipe_core_private *sipe_private)
 		}
 	}
 	g_slist_free(sip->containers);
+
+	/* libpurple memory leak workaround */
+	sipe_blist_menu_free_containers(sipe_private);
 
 	if (sipe_private->contact)
 		g_free(sipe_private->contact);
@@ -6444,15 +6450,13 @@ GList *
 sipe_buddy_menu(PurpleBuddy *buddy)
 {
 	PurpleBlistNode *g_node;
-	PurpleGroup *group, *gr_parent;
+	PurpleGroup *gr_parent;
 	PurpleMenuAction *act;
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const char *email;
-	const char *phone;
-	const char *phone_disp_str;
 	gchar *self = sip_uri_self(sipe_private);
 
 	SIPE_SESSION_FOREACH {
@@ -6507,6 +6511,8 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	menu = g_list_prepend(menu, act);
 
 	if (sip->csta && !sip->csta->line_status) {
+		const char *phone;
+		const char *phone_disp_str;
 		gchar *tmp = NULL;
 		/* work phone */
 		phone = purple_blist_node_get_string(&buddy->node, PHONE_PROP);
@@ -6595,6 +6601,8 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	/* Copy to */
 	gr_parent = purple_buddy_get_group(buddy);
 	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
+		PurpleGroup *group;
+
 		if (g_node->type != PURPLE_BLIST_GROUP_NODE)
 			continue;
 
@@ -6680,6 +6688,40 @@ sipe_buddy_menu_access_level_add_domain_cb(PurpleBuddy *buddy)
 	sipe_ask_access_domain(PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE);
 }
 
+/*
+ * Workaround for missing libpurple API to release resources allocated
+ * during blist_node_menu() callback. See also:
+ *
+ *   <http://developer.pidgin.im/ticket/12597>
+ *
+ * We remember all memory blocks in a list and deallocate them when
+ *
+ *   - the next time we enter the callback, or
+ *   - the account is disconnected
+ *
+ * That means that after the buddy menu has been closed we have unused
+ * resources but at least we don't leak them anymore...
+ */
+static void
+sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private)
+{
+	GSList *entry = sipe_private->blist_menu_containers;
+	while (entry) {
+		free_container(entry->data);
+		entry = entry->next;
+	}
+	g_slist_free(sipe_private->blist_menu_containers);
+	sipe_private->blist_menu_containers = NULL;
+}
+
+static void
+sipe_blist_menu_remember_container(struct sipe_core_private *sipe_private,
+				   struct sipe_container *container)
+{
+	sipe_private->blist_menu_containers = g_slist_prepend(sipe_private->blist_menu_containers,
+							      container);
+}
+
 static GList *
 sipe_get_access_levels_menu(struct sipe_core_private *sipe_private,
 			    const char* member_type,
@@ -6709,6 +6751,9 @@ sipe_get_access_levels_menu(struct sipe_core_private *sipe_private,
 		member->type = g_strdup(member_type);
 		member->value = g_strdup(member_value);
 
+		/* libpurple memory leak workaround */
+		sipe_blist_menu_remember_container(sipe_private, container);
+
 		/* current container/access level */
 		if (((int)containers[j]) == container_id) {
 			menu_name = is_group_access ?
@@ -6737,6 +6782,9 @@ sipe_get_access_levels_menu(struct sipe_core_private *sipe_private,
 			container->members = g_slist_append(container->members, member);
 			member->type = g_strdup(member_type);
 			member->value = g_strdup(member_value);
+
+			/* libpurple memory leak workaround */
+			sipe_blist_menu_remember_container(sipe_private, container);
 
 			/* Translators: remove (clear) previously assigned access level */
 			menu_name = g_strdup_printf(INDENT_FMT, _("Unspecify"));
@@ -6816,6 +6864,9 @@ sipe_get_access_control_menu(struct sipe_core_private *sipe_private,
 	GList *menu_access_groups = NULL;
 	char *menu_name;
 	PurpleMenuAction *act;
+
+	/* libpurple memory leak workaround */
+	sipe_blist_menu_free_containers(sipe_private);
 
 	menu_access_levels = sipe_get_access_levels_menu(sipe_private, "user", sipe_get_no_sip_uri(uri), TRUE);
 
