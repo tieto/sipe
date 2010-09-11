@@ -328,8 +328,6 @@ static void sipe_close(PurpleConnection *gc)
 
 		sipe_core_deallocate(sipe_public);
 
-		if (purple_private->dns_query)
-			purple_srv_cancel(purple_private->dns_query);
 		if (purple_private->roomlist_map)
 			g_hash_table_destroy(purple_private->roomlist_map);
 		g_free(purple_private);

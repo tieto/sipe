@@ -154,10 +154,20 @@ gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public);
 
 /** DNS QUERY ****************************************************************/
 
-void sipe_backend_dns_query(struct sipe_core_public *sipe_public,
-			    const gchar *protocol,
-			    const gchar *transport,
-			    const gchar *domain);
+typedef void (*sipe_dns_resolved_cb)(gpointer data, const gchar *hostname, guint port);
+
+struct sipe_dns_query *sipe_backend_dns_query_srv(const gchar *protocol,
+						  const gchar *transport,
+						  const gchar *domain,
+						  sipe_dns_resolved_cb callback,
+						  gpointer data);
+
+struct sipe_dns_query *sipe_backend_dns_query_a(const gchar *hostname,
+						int port,
+						sipe_dns_resolved_cb callback,
+						gpointer data);
+
+void sipe_backend_dns_query_cancel(struct sipe_dns_query *query);
 
 /** FILE TRANSFER ************************************************************/
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,

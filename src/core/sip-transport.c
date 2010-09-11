@@ -1272,6 +1272,10 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 	sipe_private->transport    = NULL;
 	sipe_private->service_data = NULL;
+
+	if (sipe_private->dns_query)
+		sipe_backend_dns_query_cancel(sipe_private->dns_query);
+
 }
 
 guint sip_transport_port(struct sipe_core_private *sipe_private)
@@ -1598,6 +1602,24 @@ static const struct sip_service_data *services[] = {
 	service_tcp         /* SIPE_TRANSPORT_TCP  */
 };
 
+static void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
+				   const gchar *hostname, guint port)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	sipe_private->dns_query = NULL;
+
+	if (hostname) {
+		SIPE_DEBUG_INFO("sipe_core_dns_resolved - SRV hostname: %s port: %d",
+				hostname, port);
+		sipe_server_register(sipe_private,
+				     sipe_private->service_data->type,
+				     g_strdup(hostname), port);
+	} else {
+		resolve_next_service(SIPE_CORE_PRIVATE, NULL);
+	}
+}
+
 static void resolve_next_service(struct sipe_core_private *sipe_private,
 				 const struct sip_service_data *start)
 {
@@ -1624,26 +1646,12 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 	}
 
 	/* Try to resolve next service */
-	sipe_backend_dns_query(SIPE_CORE_PUBLIC,
-			       sipe_private->service_data->protocol,
-			       sipe_private->service_data->transport,
-			       sipe_private->public.sip_domain);
-}
-
-void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
-			    const gchar *hostname, guint port)
-{
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	SIPE_DEBUG_INFO("sipe_core_dns_resolved - SRV hostname: %s port: %d",
-			hostname, port);
-	sipe_server_register(sipe_private,
-			     sipe_private->service_data->type,
-			     g_strdup(hostname), port);
-}
-
-void sipe_core_dns_resolve_failure(struct sipe_core_public *sipe_public)
-{
-	resolve_next_service(SIPE_CORE_PRIVATE, NULL);
+	sipe_private->dns_query = sipe_backend_dns_query_srv(
+					sipe_private->service_data->protocol,
+					sipe_private->service_data->transport,
+					sipe_private->public.sip_domain,
+					(sipe_dns_resolved_cb) sipe_core_dns_resolved,
+					SIPE_CORE_PUBLIC);
 }
 
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,

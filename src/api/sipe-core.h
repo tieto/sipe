@@ -241,18 +241,6 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public);
 
 /**
- * DNS SRV resolved hook
- *
- * @param sipe_public
- * @param hostname    SIP server hostname
- * @param port        SIP server port
- */
-void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
-			    const gchar *hostname,
-			    guint port);
-void sipe_core_dns_resolve_failure(struct sipe_core_public *sipe_public);
-
-/**
  * Create a new chat
  */
 void sipe_core_chat_create(struct sipe_core_public *sipe_public, guint id,

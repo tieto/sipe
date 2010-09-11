@@ -69,6 +69,8 @@ struct sipe_core_private {
 	/* @TODO: move to purple backend when menu code moves */
 	GSList *blist_menu_containers;
 
+	struct sipe_dns_query *dns_query;
+
 	/* the original data structure*/
 	struct sipe_account_data *temporary;
 };
