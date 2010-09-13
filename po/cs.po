@@ -285,7 +285,7 @@ msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels
 msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:6465
-#, fuzzy, c-format
+#, c-format
 msgid "Make leader of '%s'"
 msgstr "Učinit vedoucím '%s'"
 
@@ -428,7 +428,6 @@ msgid "Alias"
 msgstr "Přezdívka"
 
 #: ../src/core/sipe.c:7022
-#, fuzzy
 msgid "Site"
 msgstr "WWW stránka"
 
@@ -437,7 +436,6 @@ msgid "Find on LinkedIn"
 msgstr "Profil na LinkedIn"
 
 #: ../src/core/sipe.c:7036
-#, fuzzy
 msgid "Device"
 msgstr "Jméno zařízení"
 
@@ -446,12 +444,10 @@ msgid "Free"
 msgstr "Volný"
 
 #: ../src/core/sipe-cal.c:937
-#, fuzzy
 msgid "Tentative"
 msgstr "Nezávazně zaneprázdněn"
 
 #: ../src/core/sipe-cal.c:940
-#, fuzzy
 msgid "No data"
 msgstr "není znám stav kontaktu"
 
@@ -489,7 +485,7 @@ msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s v %.2d:%.2d"
 
 #: ../src/core/sipe-chat.c:98
-#, fuzzy, c-format
+#, c-format
 msgid "Chat #%d"
 msgstr "Chat #%d"
 
@@ -580,7 +576,7 @@ msgstr "Překlad do češtiny (cs): psilo a Jakub Adam"
 #. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
 msgid "Location:"
-msgstr ""
+msgstr "Místo"
 
 #: ../src/core/sipe-ft.c:110 ../src/core/sipe-ft.c:613
 #: ../src/core/sipe-ft.c:642 ../src/core/sipe-ft.c:700
