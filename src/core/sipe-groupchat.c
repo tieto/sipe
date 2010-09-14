@@ -52,6 +52,7 @@
 #include "sipe.h"
 
 struct sipe_groupchat {
+	struct sip_session *session;
 	guint32 envid;
 };
 
@@ -128,19 +129,40 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 void sipe_groupchat_server_init(struct sipe_core_private *sipe_private,
 				struct sip_dialog *dialog)
 {
-	gchar *xccosmsg;
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 
-	SIPE_DEBUG_INFO("sipe_groupchat_server_init: dialog %8p", dialog);
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_groupchat_server_init");
 
-	xccosmsg = generate_xccos_message(sipe_private->groupchat,
-					  "<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
-	sip_transport_info(sipe_private,
-			   "Content-Type: text/plain\r\n",
-			   xccosmsg,
-			   dialog,
-			   NULL);
+	if (!groupchat->session) {
+		/* response to initial invite */
+		gchar *xccosmsg = generate_xccos_message(sipe_private->groupchat,
+							 "<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
+		sip_transport_info(sipe_private,
+				   "Content-Type: text/plain\r\n",
+				   xccosmsg,
+				   dialog,
+				   NULL);
+		g_free(xccosmsg);
 
-	g_free(xccosmsg);
+	
+	} else {
+		/* response to group chat server invite */
+		/* TBA */
+	}
+}
+
+static void chatserver_connect(struct sipe_core_private *sipe_private,
+			       const gchar *uri)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+	struct sip_session *session = sipe_session_find_or_add_im(sipe_private,
+								  uri);
+
+	SIPE_DEBUG_INFO("chatserver_connect: uri '%s'", uri);
+	groupchat->session = session;
+
+	session->is_groupchat = TRUE;
+	sipe_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
 }
 
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
@@ -176,15 +198,15 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 		const sipe_xml *uib = sipe_xml_child(reply, "data/uib");
 		const char *chatserver_uri = sipe_xml_attribute(uib, "uri");
 
-		if (chatserver_uri) {
-			SIPE_DEBUG_INFO("process_incoming_info_groupchat: uri '%s'",
-					chatserver_uri);
-		} else {
-			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
-		}
-
 		/* drop connection to ocschat@<domain> again */
 		sipe_session_close(sipe_private, session);
+
+		if (chatserver_uri) {
+			chatserver_connect(sipe_private, chatserver_uri);
+		} else {
+			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
+			sipe_groupchat_free(sipe_private);
+		}
 
 	} else {
 		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
