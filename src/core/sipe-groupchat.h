@@ -22,9 +22,13 @@
 
 /* Forward declarations */
 struct sip_dialog;
+struct sip_session;
 struct sipe_core_private;
 
 void sipe_groupchat_free(struct sipe_core_private *sipe_private);
+void sipe_groupchat_init(struct sipe_core_private *sipe_private);
 void sipe_groupchat_server_init(struct sipe_core_private *sipe_private,
 				struct sip_dialog *dialog);
-void sipe_groupchat_init(struct sipe_core_private *sipe_private);
+void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
+				     struct sipmsg *msg,
+				     struct sip_session *session);

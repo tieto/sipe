@@ -88,7 +88,7 @@ struct sip_session {
 	/*
 	 * Group Chat related fields
 	 */
-	gboolean is_ocschat; /* initial session */
+	gboolean is_groupchat;
 };
 
 /**

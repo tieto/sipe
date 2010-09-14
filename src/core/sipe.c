@@ -3345,7 +3345,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 				      TRUE);
 	}
 
-	if (session->is_ocschat) {
+	if (session->is_groupchat) {
 		sipe_groupchat_server_init(sipe_private, dialog);
 	}
 

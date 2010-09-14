@@ -40,12 +40,15 @@
 
 #include <glib.h>
 
+#include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-groupchat.h"
 #include "sipe-session.h"
+#include "sipe-utils.h"
+#include "sipe-xml.h"
 #include "sipe.h"
 
 struct sipe_groupchat {
@@ -87,24 +90,6 @@ static gchar *generate_xccos_message(struct sipe_groupchat *groupchat,
 			       content);
 }
 
-void sipe_groupchat_server_init(struct sipe_core_private *sipe_private,
-				struct sip_dialog *dialog)
-{
-	gchar *xccosmsg;
-
-	SIPE_DEBUG_INFO("sipe_groupchat_server_init: dialog %8p", dialog);
-
-	xccosmsg = generate_xccos_message(sipe_private->groupchat,
-					  "<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
-	sip_transport_info(sipe_private,
-			   "Content-Type: text/plain\r\n",
-			   xccosmsg,
-			   dialog,
-			   NULL);
-
-	g_free(xccosmsg);
-}
-
 /**
  * Create short-lived dialog with ocschat@<domain>
  * This initiates Group Chat feature
@@ -124,7 +109,7 @@ static void sipe_invite_ocschat(struct sipe_core_private *sipe_private)
 										  chat_uri);
 			SIPE_DEBUG_INFO("sipe_invite_ocschat: domain %s", domain);
 
-			session->is_ocschat = TRUE;
+			session->is_groupchat = TRUE;
 			sipe_invite(sipe_private, session, chat_uri,
 				    NULL, NULL, NULL, FALSE);
 
@@ -138,6 +123,74 @@ static void sipe_invite_ocschat(struct sipe_core_private *sipe_private)
 void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 {
 	sipe_invite_ocschat(sipe_private);
+}
+
+void sipe_groupchat_server_init(struct sipe_core_private *sipe_private,
+				struct sip_dialog *dialog)
+{
+	gchar *xccosmsg;
+
+	SIPE_DEBUG_INFO("sipe_groupchat_server_init: dialog %8p", dialog);
+
+	xccosmsg = generate_xccos_message(sipe_private->groupchat,
+					  "<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
+	sip_transport_info(sipe_private,
+			   "Content-Type: text/plain\r\n",
+			   xccosmsg,
+			   dialog,
+			   NULL);
+
+	g_free(xccosmsg);
+}
+
+void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
+				     struct sipmsg *msg,
+				     struct sip_session *session)
+{
+	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
+	const sipe_xml *reply;
+	const gchar *id;
+
+	/* @TODO: is this always correct?*/ 
+	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+
+	if (!xml) return;
+
+	reply = sipe_xml_child(xml, "rpl");
+	if (!reply) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: no reply node found!");
+		sipe_xml_free(xml);
+		return;
+	}
+
+	id = sipe_xml_attribute(reply, "id");
+	if (!id) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: no reply ID found!");
+		sipe_xml_free(xml);
+		return;
+	}
+
+	SIPE_DEBUG_INFO("process_incoming_info_groupchat: reply '%s'", id);
+
+	if (sipe_strcase_equal(id, "rpl:requri")) {
+		const sipe_xml *uib = sipe_xml_child(reply, "data/uib");
+		const char *chatserver_uri = sipe_xml_attribute(uib, "uri");
+
+		if (chatserver_uri) {
+			SIPE_DEBUG_INFO("process_incoming_info_groupchat: uri '%s'",
+					chatserver_uri);
+		} else {
+			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
+		}
+
+		/* drop connection to ocschat@<domain> again */
+		sipe_session_close(sipe_private, session);
+
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
+	}
+
+	sipe_xml_free(xml);
 }
 
 /*

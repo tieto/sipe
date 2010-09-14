@@ -40,6 +40,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-ft.h"
+#include "sipe-groupchat.h"
 #include "sipe-incoming.h"
 #include "sipe-media.h"
 #include "sipe-nls.h"
@@ -131,6 +132,13 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 	from = parse_from(sipmsg_find_header(msg, "From"));
 	session = sipe_session_find_chat_or_im(sipe_private, callid, from);
 	if (!session) {
+		g_free(from);
+		return;
+	}
+
+	/* Group Chat uses text/plain */
+	if (session->is_groupchat) {
+		process_incoming_info_groupchat(sipe_private, msg, session);
 		g_free(from);
 		return;
 	}
