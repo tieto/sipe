@@ -2961,7 +2961,8 @@ sipe_notify_user(struct sipe_core_private *sipe_private,
 		/* TEMPORARY HACK!! */
 		conv = (PurpleConversation *) session->backend_session;
 	}
-	purple_conversation_write(conv, NULL, message, flags, time(NULL));
+	if (conv)
+		purple_conversation_write(conv, NULL, message, flags, time(NULL));
 }
 
 void
@@ -3322,6 +3323,10 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 		sipe_dialog_remove(session, with);
 
+		if (session->is_groupchat) {
+			sipe_groupchat_invite_failed(sipe_private, session);
+		}
+
 		g_free(key);
 		g_free(with);
 		return FALSE;
@@ -3346,7 +3351,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 	}
 
 	if (session->is_groupchat) {
-		sipe_groupchat_server_init(sipe_private, dialog);
+		sipe_groupchat_invite_response(sipe_private, dialog);
 	}
 
 	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)g_ascii_strcasecmp)) {

@@ -27,8 +27,10 @@ struct sipe_core_private;
 
 void sipe_groupchat_free(struct sipe_core_private *sipe_private);
 void sipe_groupchat_init(struct sipe_core_private *sipe_private);
-void sipe_groupchat_server_init(struct sipe_core_private *sipe_private,
-				struct sip_dialog *dialog);
+void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
+				  struct sip_session *session);
+void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
+				    struct sip_dialog *dialog);
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     struct sip_session *session);

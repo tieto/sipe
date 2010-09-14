@@ -126,8 +126,21 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 	sipe_invite_ocschat(sipe_private);
 }
 
-void sipe_groupchat_server_init(struct sipe_core_private *sipe_private,
-				struct sip_dialog *dialog)
+void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
+				  struct sip_session *session)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+
+	if (!groupchat->session) {
+		/* response to initial invite */
+		SIPE_DEBUG_INFO_NOFORMAT("no group chat server found.");
+		sipe_session_close(sipe_private, session);
+		sipe_groupchat_free(sipe_private);
+	}
+}
+
+void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
+				    struct sip_dialog *dialog)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 
