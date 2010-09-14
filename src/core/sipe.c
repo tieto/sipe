@@ -76,6 +76,7 @@
 #include "sipe-ews.h"
 #include "sipe-domino.h"
 #include "sipe-ft.h"
+#include "sipe-groupchat.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
@@ -2844,6 +2845,7 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	 */
 	if (!sip->initial_state_published) {
 		send_publish_category_initial(sipe_private);
+		sipe_groupchat_init(sipe_private);
 		sip->initial_state_published = TRUE;
 		/* dalayed run */
 		sipe_schedule_seconds(sipe_private,
@@ -5948,6 +5950,8 @@ void sipe_connection_cleanup(struct sipe_core_private *sipe_private)
 		sipe_cal_calendar_free(sip->cal);
 	}
 	sip->cal = NULL;
+
+	sipe_groupchat_free(sipe_private);
 }
 
 /**

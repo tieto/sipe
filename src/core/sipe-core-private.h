@@ -24,6 +24,7 @@
 struct sip_service_data;
 struct sip_transport;
 struct sipe_media_call_private;
+struct sipe_groupchat;
 
 /**
  * Private part of the Sipe data structure
@@ -61,6 +62,9 @@ struct sipe_core_private {
 
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
+
+	/* Group chat */
+	struct sipe_groupchat *groupchat;
 
 	/* @TODO: move to purple backend when menu code moves */
 	GSList *blist_menu_containers;

@@ -22,3 +22,6 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+
+void sipe_groupchat_free(struct sipe_core_private *sipe_private);
+void sipe_groupchat_init(struct sipe_core_private *sipe_private);
