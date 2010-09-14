@@ -42,14 +42,14 @@ struct sipe_backend_session;
 struct sip_session {
 	/** backend private data structure for IM or chat */
 	struct sipe_backend_session *backend_session;
- 
+
 	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
 	/** key is user (URI) */
 	GSList *dialogs;
 	/** Key is <Call-ID><CSeq><METHOD><To> */
 	GHashTable *unconfirmed_messages;
 	GSList *outgoing_message_queue;
-	
+
 	/*
 	 * Multiparty conversation related fields
 	 */
@@ -67,7 +67,7 @@ struct sip_session {
 	int bid;
 	gboolean is_voting_in_progress;
 	GSList *pending_invite_queue;
-	
+
 	/*
 	 * Conference related fields
 	 */
@@ -78,12 +78,17 @@ struct sip_session {
 	guint request_id;
 	struct sip_dialog *focus_dialog;
 	/** Key is Message-Id */
-	GHashTable *conf_unconfirmed_messages;  
+	GHashTable *conf_unconfirmed_messages;
 
 	/*
 	 * Media call related fields
 	 */
 	gboolean is_call;
+
+	/*
+	 * Group Chat related fields
+	 */
+	gboolean is_ocschat; /* initial session */
 };
 
 /**
@@ -173,7 +178,7 @@ sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
  *
  * @return pointer to session or NULL
  */
-struct sip_session * 
+struct sip_session *
 sipe_session_find_chat_by_id(struct sipe_core_private *sipe_private,
 			     int id);
 
@@ -185,7 +190,7 @@ sipe_session_find_chat_by_id(struct sipe_core_private *sipe_private,
  *
  * @return pointer to session or NULL
  */
-struct sip_session * 
+struct sip_session *
 sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
 			        const gchar *name);
 

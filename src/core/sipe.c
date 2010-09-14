@@ -3345,6 +3345,10 @@ process_invite_response(struct sipe_core_private *sipe_private,
 				      TRUE);
 	}
 
+	if (session->is_ocschat) {
+		sipe_groupchat_server_init(sipe_private, dialog);
+	}
+
 	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)g_ascii_strcasecmp)) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_response: remote system accepted message in INVITE");
 		sipe_session_dequeue_message(session);

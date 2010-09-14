@@ -35,6 +35,7 @@
  *   <???> (searches on the internet currently reveal nothing)
  */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <glib.h>
@@ -48,7 +49,7 @@
 #include "sipe.h"
 
 struct sipe_groupchat {
-	int dummy;
+	guint32 envid;
 };
 
 static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *sipe_private)
@@ -61,6 +62,7 @@ static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *
 	}
 
 	groupchat = g_new0(struct sipe_groupchat, 1);
+	groupchat->envid = rand();
 	sipe_private->groupchat = groupchat;
 
 	return(groupchat);
@@ -73,6 +75,34 @@ void sipe_groupchat_free(struct sipe_core_private *sipe_private)
 		g_free(groupchat);
 		sipe_private->groupchat = NULL;
 	}
+}
+
+static gchar *generate_xccos_message(struct sipe_groupchat *groupchat,
+				     const gchar *content)
+{
+	return g_strdup_printf("<xccos ver=\"1\" envid=\"%u\" xmlns=\"urn:parlano:xml:ns:xccos\">\r\n"
+			       "%s\r\n"
+			       "</xccos>",
+			       groupchat->envid++,
+			       content);
+}
+
+void sipe_groupchat_server_init(struct sipe_core_private *sipe_private,
+				struct sip_dialog *dialog)
+{
+	gchar *xccosmsg;
+
+	SIPE_DEBUG_INFO("sipe_groupchat_server_init: dialog %8p", dialog);
+
+	xccosmsg = generate_xccos_message(sipe_private->groupchat,
+					  "<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
+	sip_transport_info(sipe_private,
+			   "Content-Type: text/plain\r\n",
+			   xccosmsg,
+			   dialog,
+			   NULL);
+
+	g_free(xccosmsg);
 }
 
 /**
@@ -94,6 +124,7 @@ static void sipe_invite_ocschat(struct sipe_core_private *sipe_private)
 										  chat_uri);
 			SIPE_DEBUG_INFO("sipe_invite_ocschat: domain %s", domain);
 
+			session->is_ocschat = TRUE;
 			sipe_invite(sipe_private, session, chat_uri,
 				    NULL, NULL, NULL, FALSE);
 
