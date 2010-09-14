@@ -136,6 +136,11 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_INFO_NOFORMAT("no group chat server found.");
 		sipe_session_close(sipe_private, session);
 		sipe_groupchat_free(sipe_private);
+	} else {
+		/* response to group chat server invite */
+		SIPE_DEBUG_ERROR_NOFORMAT("can't connect to group chat server!");
+		sipe_session_close(sipe_private, session);
+		sipe_groupchat_free(sipe_private);
 	}
 }
 
@@ -144,7 +149,7 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_groupchat_server_init");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_groupchat_invite_response");
 
 	if (!groupchat->session) {
 		/* response to initial invite */
@@ -160,10 +165,14 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 	
 	} else {
 		/* response to group chat server invite */
+		SIPE_DEBUG_INFO_NOFORMAT("connection to group chat server established.");
 		/* TBA */
 	}
 }
 
+/**
+ * Create long term dialog with group chat server
+ */
 static void chatserver_connect(struct sipe_core_private *sipe_private,
 			       const gchar *uri)
 {
