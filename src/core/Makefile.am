@@ -44,6 +44,8 @@ libsipe_core_la_SOURCES = \
 	sipe-ews.c \
 	sipe-ft.h \
 	sipe-ft.c \
+	sipe-groupchat.h \
+	sipe-groupchat.c \
 	sipe-incoming.h \
 	sipe-incoming.c \
 	sipe-schedule.h \
