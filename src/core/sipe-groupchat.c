@@ -35,6 +35,10 @@
  *   <???> (searches on the internet currently reveal nothing)
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,6 +51,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-groupchat.h"
+#include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -209,68 +214,73 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 					       guint result,
 					       const sipe_xml *xml)
 {
-	const sipe_xml *chanib;
+	if (result != 200) {
+		gchar *msg = g_strdup_printf(_("Group Chat server response: %d"), result);
+		sipe_backend_notify_error(_("Error retrieving room list"),
+					  msg);
+		g_free(msg);
+	} else {
+		const sipe_xml *chanib;
 
-	(void) sipe_private;
-	(void) result;
+		for (chanib = sipe_xml_child(xml, "chanib");
+		     chanib;
+		     chanib = sipe_xml_twin(chanib)) {
+			const gchar *name = sipe_xml_attribute(chanib, "name");
+			const gchar *desc = sipe_xml_attribute(chanib, "description");
+			const gchar *uri  = sipe_xml_attribute(chanib, "uri");
+			const sipe_xml *node;
+			guint user_count = 0;
 
-	for (chanib = sipe_xml_child(xml, "chanib");
-	     chanib;
-	     chanib = sipe_xml_twin(chanib)) {
-		const gchar *name = sipe_xml_attribute(chanib, "name");
-		const gchar *desc = sipe_xml_attribute(chanib, "description");
-		const gchar *uri  = sipe_xml_attribute(chanib, "uri");
-		const sipe_xml *node;
-		guint user_count = 0;
+			/* information */
+			for (node = sipe_xml_child(xml, "info");
+			     node;
+			     node = sipe_xml_twin(node)) {
+				const gchar *id = sipe_xml_attribute(node, "id");
+				gchar *data;
 
-		/* information */
-		for (node = sipe_xml_child(xml, "info");
-		     node;
-		     node = sipe_xml_twin(node)) {
-			const gchar *id = sipe_xml_attribute(node, "id");
-			gchar *data;
+				if (!id) continue;
 
-			if (!id) continue;
-
-			data = sipe_xml_data(node);
-			if (data) {
-				if        (sipe_strcase_equal(id, "urn:parlano:ma:info:ucnt")) {
-					user_count = g_ascii_strtoll(data, NULL, 10);
-				} else if (sipe_strcase_equal(id, "urn:parlano:ma:info:visibilty")) {
-					/* @TODO:  sipe_strcase_equal(data, "private"); */
+				data = sipe_xml_data(node);
+				if (data) {
+					if        (sipe_strcase_equal(id, "urn:parlano:ma:info:ucnt")) {
+						user_count = g_ascii_strtoll(data, NULL, 10);
+					} else if (sipe_strcase_equal(id, "urn:parlano:ma:info:visibilty")) {
+						/* @TODO:  sipe_strcase_equal(data, "private"); */
+					}
+					g_free(data);
 				}
-				g_free(data);
 			}
-		}
 
-		/* properties */
-		for (node = sipe_xml_child(xml, "info");
-		     node;
-		     node = sipe_xml_twin(node)) {
-			const gchar *id = sipe_xml_attribute(node, "id");
-			gchar *data;
+			/* properties */
+			for (node = sipe_xml_child(xml, "info");
+			     node;
+			     node = sipe_xml_twin(node)) {
+				const gchar *id = sipe_xml_attribute(node, "id");
+				gchar *data;
 
-			if (!id) continue;
+				if (!id) continue;
 
-			data = sipe_xml_data(node);
-			if (data) {
-				gboolean value = sipe_strcase_equal(data, "true");
-				g_free(data);
+				data = sipe_xml_data(node);
+				if (data) {
+					gboolean value = sipe_strcase_equal(data, "true");
+					g_free(data);
 
-				if        (sipe_strcase_equal(id, "urn:parlano:ma:prop:filepost")) {
-					(void) value;
-				} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:invite")) {
-					(void) value;
-				} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:logged")) {
-					(void) value;
+					if        (sipe_strcase_equal(id, "urn:parlano:ma:prop:filepost")) {
+						(void) value;
+					} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:invite")) {
+						(void) value;
+					} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:logged")) {
+						(void) value;
+					}
 				}
-
 			}
-		}
 
-		SIPE_DEBUG_INFO("group chat channel '%s': '%s' (%s) with %u users",
-				name, desc, uri, user_count);
+			SIPE_DEBUG_INFO("group chat channel '%s': '%s' (%s) with %u users",
+					name, desc, uri, user_count);
+		}
 	}
+
+	sipe_backend_groupchat_room_terminate(SIPE_CORE_PUBLIC);
 }
 
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,

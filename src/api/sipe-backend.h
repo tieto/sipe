@@ -108,7 +108,6 @@ gboolean sipe_backend_debug_enabled(void);
 
 /** CHAT *********************************************************************/
 
-//void sipe_backend_chat_(struct sipe_backend_session *backend_session, );
 void sipe_backend_chat_add(struct sipe_backend_session *backend_session,
 			   const gchar *uri,
 			   gboolean is_new);
@@ -207,6 +206,13 @@ gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
 					 const gchar *ip,
 					 unsigned short port_min,
 					 unsigned short port_max);
+
+/** GROUP CHAT ***************************************************************/
+
+/**
+ * Terminate room query
+ */
+void sipe_backend_groupchat_room_terminate(struct sipe_core_public *sipe_public);
 
 /** IM ***********************************************************************/
 

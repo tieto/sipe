@@ -107,6 +107,13 @@ void sipe_roomlist_cancel(PurpleRoomlist *roomlist)
 	}
 }
 
+void sipe_backend_groupchat_room_terminate(struct sipe_core_public *sipe_public)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	purple_roomlist_set_in_progress(purple_private->roomlist, FALSE);
+	purple_roomlist_unref(purple_private->roomlist);
+	purple_private->roomlist = NULL;
+}
 
 /*
   Local Variables:
