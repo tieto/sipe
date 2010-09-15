@@ -107,6 +107,23 @@ void sipe_roomlist_cancel(PurpleRoomlist *roomlist)
 	}
 }
 
+void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
+				     const gchar *uri,
+				     const gchar *name,
+				     const gchar *description,
+				     guint users,
+				     guint32 flags)
+{
+	PurpleRoomlist *roomlist = sipe_public->backend_private->roomlist;
+	PurpleRoomlistRoom *room = purple_roomlist_room_new(PURPLE_ROOMLIST_ROOMTYPE_ROOM,
+							    name, NULL);
+	purple_roomlist_room_add_field(roomlist, room, uri);
+	purple_roomlist_room_add_field(roomlist, room, description);
+	(void) users;
+	(void) flags;
+	purple_roomlist_room_add(roomlist, room);
+}
+
 void sipe_backend_groupchat_room_terminate(struct sipe_core_public *sipe_public)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;

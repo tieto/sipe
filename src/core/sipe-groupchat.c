@@ -214,6 +214,8 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 					       guint result,
 					       const sipe_xml *xml)
 {
+	struct sipe_core_public *sipe_public = SIPE_CORE_PUBLIC;
+
 	if (result != 200) {
 		gchar *msg = g_strdup_printf(_("Group Chat server response: %d"), result);
 		sipe_backend_notify_error(_("Error retrieving room list"),
@@ -230,6 +232,7 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 			const gchar *uri  = sipe_xml_attribute(chanib, "uri");
 			const sipe_xml *node;
 			guint user_count = 0;
+			guint32 flags = 0;
 
 			/* information */
 			for (node = sipe_xml_child(xml, "info");
@@ -245,7 +248,9 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 					if        (sipe_strcase_equal(id, "urn:parlano:ma:info:ucnt")) {
 						user_count = g_ascii_strtoll(data, NULL, 10);
 					} else if (sipe_strcase_equal(id, "urn:parlano:ma:info:visibilty")) {
-						/* @TODO:  sipe_strcase_equal(data, "private"); */
+						if (sipe_strcase_equal(data, "private")) {
+							flags |= SIPE_GROUPCHAT_ROOM_PRIVATE;
+						}
 					}
 					g_free(data);
 				}
@@ -265,22 +270,29 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 					gboolean value = sipe_strcase_equal(data, "true");
 					g_free(data);
 
-					if        (sipe_strcase_equal(id, "urn:parlano:ma:prop:filepost")) {
-						(void) value;
-					} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:invite")) {
-						(void) value;
-					} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:logged")) {
-						(void) value;
+					if (value) {
+						guint32 add = 0;
+						if        (sipe_strcase_equal(id, "urn:parlano:ma:prop:filepost")) {
+							add = SIPE_GROUPCHAT_ROOM_FILEPOST;
+						} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:invite")) {
+							add = SIPE_GROUPCHAT_ROOM_INVITE;
+						} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:logged")) {
+							add = SIPE_GROUPCHAT_ROOM_LOGGED;
+						}
+						flags |= add;
 					}
 				}
 			}
 
-			SIPE_DEBUG_INFO("group chat channel '%s': '%s' (%s) with %u users",
-					name, desc, uri, user_count);
+			SIPE_DEBUG_INFO("group chat channel '%s': '%s' (%s) with %u users, flags 0x%x",
+					name, desc, uri, user_count, flags);
+			sipe_backend_groupchat_room_add(sipe_public,
+							uri, name, desc,
+							user_count, flags);
 		}
 	}
 
-	sipe_backend_groupchat_room_terminate(SIPE_CORE_PUBLIC);
+	sipe_backend_groupchat_room_terminate(sipe_public);
 }
 
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,

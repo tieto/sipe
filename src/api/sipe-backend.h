@@ -209,6 +209,27 @@ gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
 
 /** GROUP CHAT ***************************************************************/
 
+#define SIPE_GROUPCHAT_ROOM_FILEPOST 0x00000001
+#define SIPE_GROUPCHAT_ROOM_INVITE   0x00000002
+#define SIPE_GROUPCHAT_ROOM_LOGGED   0x00000004
+#define SIPE_GROUPCHAT_ROOM_PRIVATE  0x00000008
+
+/**
+ * Add a room found through room query
+ *
+ * @param uri         room URI
+ * @param name        human readable name for room
+ * @param description room description
+ * @param users       number of users in the room
+ * @param flags       SIPE_GROUPCHAT_ROOM_* flags
+ */
+void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
+				     const gchar *uri,
+				     const gchar *name,
+				     const gchar *description,
+				     guint users,
+				     guint32 flags);
+
 /**
  * Terminate room query
  */
