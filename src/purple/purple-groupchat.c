@@ -85,8 +85,10 @@ PurpleRoomlist *sipe_roomlist_get_list(PurpleConnection *gc)
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_get_list");
 
-	if (purple_private->roomlist)
+	if (purple_private->roomlist) {
 		purple_roomlist_unref(purple_private->roomlist);
+		g_hash_table_destroy(purple_private->roomlist_map);
+	}
 
 	purple_private->roomlist = roomlist = purple_roomlist_new(account);
 	purple_private->roomlist_map = g_hash_table_new_full(g_str_hash,
