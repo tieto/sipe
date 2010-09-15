@@ -128,26 +128,37 @@ void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
 				     guint32 flags)
 {
 	PurpleRoomlist *roomlist = sipe_public->backend_private->roomlist;
-	PurpleRoomlistRoom *room = purple_roomlist_room_new(PURPLE_ROOMLIST_ROOMTYPE_ROOM,
-							    name, NULL);
+	if (roomlist) {
+		PurpleRoomlistRoom *room = purple_roomlist_room_new(PURPLE_ROOMLIST_ROOMTYPE_ROOM,
+								    name, NULL);
 
-	/* The order needs to be kept in-sync with sipe_roomlist_get_list() */
-	purple_roomlist_room_add_field(roomlist, room, uri);
-	purple_roomlist_room_add_field(roomlist, room, GUINT_TO_POINTER(users));
-	purple_roomlist_room_add_field(roomlist, room, GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_INVITE));
-	purple_roomlist_room_add_field(roomlist, room, GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_PRIVATE));
-	purple_roomlist_room_add_field(roomlist, room, GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_LOGGED));
-	purple_roomlist_room_add_field(roomlist, room, description);
+		/* The order needs to be kept in-sync with sipe_roomlist_get_list() */
+		purple_roomlist_room_add_field(roomlist, room,
+					       uri);
+		purple_roomlist_room_add_field(roomlist, room,
+					       GUINT_TO_POINTER(users));
+		purple_roomlist_room_add_field(roomlist, room,
+					       GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_INVITE));
+		purple_roomlist_room_add_field(roomlist, room,
+					       GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_PRIVATE));
+		purple_roomlist_room_add_field(roomlist, room,
+					       GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_LOGGED));
+		purple_roomlist_room_add_field(roomlist, room,
+					       description);
 
-	purple_roomlist_room_add(roomlist, room);
+		purple_roomlist_room_add(roomlist, room);
+	}
 }
 
 void sipe_backend_groupchat_room_terminate(struct sipe_core_public *sipe_public)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	purple_roomlist_set_in_progress(purple_private->roomlist, FALSE);
-	purple_roomlist_unref(purple_private->roomlist);
-	purple_private->roomlist = NULL;
+	PurpleRoomlist *roomlist = purple_private->roomlist;
+	if (roomlist) {
+		purple_roomlist_set_in_progress(roomlist, FALSE);
+		purple_roomlist_unref(roomlist);
+		purple_private->roomlist = NULL;
+	}
 }
 
 /*
