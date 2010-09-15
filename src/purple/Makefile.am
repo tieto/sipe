@@ -14,6 +14,7 @@ libsipe_backend_la_SOURCES = \
 	purple-debug.c \
 	purple-dnsquery.c \
 	purple-ft.c \
+	purple-groupchat.c \
 	purple-im.c \
 	purple-markup.c \
 	purple-network.c \

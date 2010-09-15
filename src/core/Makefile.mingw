@@ -103,6 +103,7 @@ PURPLE_C_SRC = \
 			../purple/purple-debug.c \
 			../purple/purple-dnsquery.c \
 			../purple/purple-ft.c \
+			../purple/purple-groupchat.c \
 			../purple/purple-im.c \
 			../purple/purple-markup.c \
 			../purple/purple-network.c \

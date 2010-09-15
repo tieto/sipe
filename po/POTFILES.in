@@ -12,5 +12,6 @@ src/core/sipe-ft.c
 src/core/sipe-incoming.c
 src/core/sipe-media.c
 src/purple/purple-ft.c
+src/purple/purple-groupchat.c
 src/purple/purple-plugin.c
 src/purple/purple-transport.c

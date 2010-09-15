@@ -432,7 +432,7 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_tooltip_text,			/* tooltip_text */	// add custom info to contact tooltip
 	sipe_status_types,			/* away_states */
 	sipe_blist_node_menu,			/* blist_node_menu */
-	NULL,					/* chat_info */
+	sipe_chat_info,				/* chat_info */
 	NULL,					/* chat_info_defaults */
 	sipe_login,				/* login */
 	sipe_close,				/* close */
@@ -452,7 +452,7 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_add_deny,				/* rem_permit */
 	sipe_add_permit,			/* rem_deny */
 	NULL,					/* set_permit_deny */
-	NULL,					/* join_chat */
+	sipe_join_chat,				/* join_chat */
 	NULL,					/* reject_chat */
 	NULL,					/* get_chat_name */
 	sipe_chat_invite,			/* chat_invite */
@@ -474,8 +474,8 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* get_cb_real_name */	// TODO?
 	NULL,					/* set_chat_topic */
 	NULL,					/* find_blist_chat */
-	NULL,					/* roomlist_get_list */
-	NULL,					/* roomlist_cancel */
+	sipe_roomlist_get_list,			/* roomlist_get_list */
+	sipe_roomlist_cancel,			/* roomlist_cancel */
 	NULL,					/* roomlist_expand_category */
 	NULL,					/* can_receive_file */
 	sipe_ft_send_file,			/* send_file */
