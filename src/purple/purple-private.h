@@ -33,6 +33,7 @@ struct sipe_backend_private {
 	struct _PurpleConnection *gc;
 	struct _PurpleAccount *account;
 	struct _PurpleSrvQueryData *dns_query;
+	struct _PurpleRoomlist *roomlist;
 	time_t last_keepalive;
 };
 

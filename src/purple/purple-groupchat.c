@@ -59,15 +59,49 @@ void sipe_join_chat(PurpleConnection *gc, GHashTable *data)
 
 PurpleRoomlist *sipe_roomlist_get_list(PurpleConnection *gc)
 {
-	(void)gc;
+	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleAccount *account = purple_private->account;
+	PurpleRoomlist *roomlist;
+	GList *fields = NULL;
+	PurpleRoomlistField *f;
+
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_get_list");
-	return NULL;
+
+	if (purple_private->roomlist)
+		purple_roomlist_unref(purple_private->roomlist);
+
+	purple_private->roomlist = roomlist = purple_roomlist_new(account);
+
+	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_STRING,
+				      "", "uri", TRUE);
+	fields = g_list_append(fields, f);
+	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_STRING,
+				      _("Description"), "description", FALSE);
+	fields = g_list_append(fields, f);
+
+	purple_roomlist_set_fields(roomlist, fields);
+	purple_roomlist_set_in_progress(roomlist, TRUE);
+
+	/* TBA: sipe_core_groupchat_get_roomlist(....) */
+
+	return roomlist;
 }
 
 void sipe_roomlist_cancel(PurpleRoomlist *list)
 {
-	(void)list;
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_cancel");
+	PurpleAccount *account = list->account;
+	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_get_cancel");
+
+	purple_roomlist_set_in_progress(list, FALSE);
+
+	if (purple_private->roomlist == list) {
+		purple_private->roomlist = NULL;
+		purple_roomlist_unref(list);
+	}
 }
 
 
