@@ -73,8 +73,21 @@ PurpleRoomlist *sipe_roomlist_get_list(PurpleConnection *gc)
 
 	purple_private->roomlist = roomlist = purple_roomlist_new(account);
 
+	/* The order needs to be kept in-sync with sipe_backend_groupchat_room_add() */
 	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_STRING,
 				      "", "uri", TRUE);
+	fields = g_list_append(fields, f);
+	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_INT,
+				      _("Users"), "users", FALSE);
+	fields = g_list_append(fields, f);
+	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_BOOL,
+				      _("Invite"), "invite", FALSE);
+	fields = g_list_append(fields, f);
+	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_BOOL,
+				      _("Private"), "private", FALSE);
+	fields = g_list_append(fields, f);
+	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_BOOL,
+				      _("Log"), "logged", FALSE);
 	fields = g_list_append(fields, f);
 	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_STRING,
 				      _("Description"), "description", FALSE);
@@ -117,10 +130,15 @@ void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
 	PurpleRoomlist *roomlist = sipe_public->backend_private->roomlist;
 	PurpleRoomlistRoom *room = purple_roomlist_room_new(PURPLE_ROOMLIST_ROOMTYPE_ROOM,
 							    name, NULL);
+
+	/* The order needs to be kept in-sync with sipe_roomlist_get_list() */
 	purple_roomlist_room_add_field(roomlist, room, uri);
+	purple_roomlist_room_add_field(roomlist, room, GUINT_TO_POINTER(users));
+	purple_roomlist_room_add_field(roomlist, room, GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_INVITE));
+	purple_roomlist_room_add_field(roomlist, room, GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_PRIVATE));
+	purple_roomlist_room_add_field(roomlist, room, GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_LOGGED));
 	purple_roomlist_room_add_field(roomlist, room, description);
-	(void) users;
-	(void) flags;
+
 	purple_roomlist_room_add(roomlist, room);
 }
 

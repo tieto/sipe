@@ -235,7 +235,7 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 			guint32 flags = 0;
 
 			/* information */
-			for (node = sipe_xml_child(xml, "info");
+			for (node = sipe_xml_child(chanib, "info");
 			     node;
 			     node = sipe_xml_twin(node)) {
 				const gchar *id = sipe_xml_attribute(node, "id");
@@ -257,7 +257,7 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 			}
 
 			/* properties */
-			for (node = sipe_xml_child(xml, "info");
+			for (node = sipe_xml_child(chanib, "prop");
 			     node;
 			     node = sipe_xml_twin(node)) {
 				const gchar *id = sipe_xml_attribute(node, "id");
