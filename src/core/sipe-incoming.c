@@ -120,7 +120,7 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 	gchar *from;
 	struct sip_session *session;
 
-	SIPE_DEBUG_INFO("process_incoming_info: \n%s", msg->body ? msg->body : "");
+	SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info");
 
 	/* Call Control protocol */
 	if (g_str_has_prefix(contenttype, "application/csta+xml"))
