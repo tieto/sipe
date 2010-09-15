@@ -205,13 +205,82 @@ static void chatserver_command(struct sipe_core_private *sipe_private,
 	g_free(xccosmsg);
 }
 
+static void chatserver_response_channel_search(struct sipe_core_private *sipe_private,
+					       guint result,
+					       const sipe_xml *xml)
+{
+	const sipe_xml *chanib;
+
+	(void) sipe_private;
+	(void) result;
+
+	for (chanib = sipe_xml_child(xml, "chanib");
+	     chanib;
+	     chanib = sipe_xml_twin(chanib)) {
+		const gchar *name = sipe_xml_attribute(chanib, "name");
+		const gchar *desc = sipe_xml_attribute(chanib, "description");
+		const gchar *uri  = sipe_xml_attribute(chanib, "uri");
+		const sipe_xml *node;
+		guint user_count = 0;
+
+		/* information */
+		for (node = sipe_xml_child(xml, "info");
+		     node;
+		     node = sipe_xml_twin(node)) {
+			const gchar *id = sipe_xml_attribute(node, "id");
+			gchar *data;
+
+			if (!id) continue;
+
+			data = sipe_xml_data(node);
+			if (data) {
+				if        (sipe_strcase_equal(id, "urn:parlano:ma:info:ucnt")) {
+					user_count = g_ascii_strtoll(data, NULL, 10);
+				} else if (sipe_strcase_equal(id, "urn:parlano:ma:info:visibilty")) {
+					/* @TODO:  sipe_strcase_equal(data, "private"); */
+				}
+				g_free(data);
+			}
+		}
+
+		/* properties */
+		for (node = sipe_xml_child(xml, "info");
+		     node;
+		     node = sipe_xml_twin(node)) {
+			const gchar *id = sipe_xml_attribute(node, "id");
+			gchar *data;
+
+			if (!id) continue;
+
+			data = sipe_xml_data(node);
+			if (data) {
+				gboolean value = sipe_strcase_equal(data, "true");
+				g_free(data);
+
+				if        (sipe_strcase_equal(id, "urn:parlano:ma:prop:filepost")) {
+					(void) value;
+				} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:invite")) {
+					(void) value;
+				} else if (sipe_strcase_equal(id, "urn:parlano:ma:prop:logged")) {
+					(void) value;
+				}
+
+			}
+		}
+
+		SIPE_DEBUG_INFO("group chat channel '%s': '%s' (%s) with %u users",
+				name, desc, uri, user_count);
+	}
+}
+
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     struct sip_session *session)
 {
 	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
-	const sipe_xml *reply;
+	const sipe_xml *reply, *data;
 	const gchar *id;
+	guint result;
 
 	/* @TODO: is this always correct?*/ 
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
@@ -232,10 +301,15 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	SIPE_DEBUG_INFO("process_incoming_info_groupchat: reply '%s'", id);
+	result = sipe_xml_int_attribute(sipe_xml_child(reply, "resp"),
+					"code", 500);
+	data = sipe_xml_child(reply, "data");
+
+	SIPE_DEBUG_INFO("process_incoming_info_groupchat: reply '%s' result %d",
+			id, result);
 
 	if (sipe_strcase_equal(id, "rpl:requri")) {
-		const sipe_xml *uib = sipe_xml_child(reply, "data/uib");
+		const sipe_xml *uib = sipe_xml_child(data, "uib");
 		const char *chatserver_uri = sipe_xml_attribute(uib, "uri");
 
 		/* drop connection to ocschat@<domain> again */
@@ -248,6 +322,8 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 			sipe_groupchat_free(sipe_private);
 		}
 
+	} else if (sipe_strcase_equal(id, "rpl:chansrch")) {
+		chatserver_response_channel_search(sipe_private, result, data);
 	} else {
 		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
 	}
