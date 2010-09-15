@@ -286,6 +286,9 @@ gssize sipe_core_ft_read(struct sipe_file_transfer *ft, guchar **buffer,
 gssize sipe_core_ft_write(struct sipe_file_transfer *ft,
 			  const guchar *buffer, gsize size);
 
+/* group chat */
+gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
+
 /* user */
 void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,
 				    const gchar *to);

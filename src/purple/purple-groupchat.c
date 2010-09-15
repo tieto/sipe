@@ -83,24 +83,27 @@ PurpleRoomlist *sipe_roomlist_get_list(PurpleConnection *gc)
 	purple_roomlist_set_fields(roomlist, fields);
 	purple_roomlist_set_in_progress(roomlist, TRUE);
 
-	/* TBA: sipe_core_groupchat_get_roomlist(....) */
+	if (!sipe_core_groupchat_query_rooms(sipe_public)) {
+		sipe_roomlist_cancel(roomlist);
+		roomlist = NULL;
+	}
 
 	return roomlist;
 }
 
-void sipe_roomlist_cancel(PurpleRoomlist *list)
+void sipe_roomlist_cancel(PurpleRoomlist *roomlist)
 {
-	PurpleAccount *account = list->account;
+	PurpleAccount *account = roomlist->account;
 	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_get_cancel");
 
-	purple_roomlist_set_in_progress(list, FALSE);
+	purple_roomlist_set_in_progress(roomlist, FALSE);
 
-	if (purple_private->roomlist == list) {
+	if (purple_private->roomlist == roomlist) {
 		purple_private->roomlist = NULL;
-		purple_roomlist_unref(list);
+		purple_roomlist_unref(roomlist);
 	}
 }
 

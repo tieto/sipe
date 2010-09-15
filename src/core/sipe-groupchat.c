@@ -45,6 +45,7 @@
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-dialog.h"
 #include "sipe-groupchat.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
@@ -84,8 +85,8 @@ void sipe_groupchat_free(struct sipe_core_private *sipe_private)
 static gchar *generate_xccos_message(struct sipe_groupchat *groupchat,
 				     const gchar *content)
 {
-	return g_strdup_printf("<xccos ver=\"1\" envid=\"%u\" xmlns=\"urn:parlano:xml:ns:xccos\">\r\n"
-			       "%s\r\n"
+	return g_strdup_printf("<xccos ver=\"1\" envid=\"%u\" xmlns=\"urn:parlano:xml:ns:xccos\">"
+			       "%s"
 			       "</xccos>",
 			       groupchat->envid++,
 			       content);
@@ -187,6 +188,23 @@ static void chatserver_connect(struct sipe_core_private *sipe_private,
 	sipe_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
 }
 
+static void chatserver_command(struct sipe_core_private *sipe_private,
+			       const gchar *cmd)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;	
+	gchar *xccosmsg = generate_xccos_message(groupchat, cmd);
+	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
+						     groupchat->session->with);
+
+	sip_transport_info(sipe_private,
+			   "Content-Type: text/plain\r\n",
+			   xccosmsg,
+			   dialog,
+			   NULL);
+
+	g_free(xccosmsg);
+}
+
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     struct sip_session *session)
@@ -235,6 +253,23 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 	}
 
 	sipe_xml_free(xml);
+}
+
+gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	if (!sipe_private->groupchat)
+		return FALSE;
+
+	chatserver_command(sipe_private,
+			   "<cmd id=\"cmd:chansrch\" seqid=\"1\">"
+			   "<data>"
+			   "<qib qtype=\"BYNAME\" criteria=\"\" extended=\"false\"/>"
+			   "</data>"
+			   "</cmd>");
+
+	return TRUE;
 }
 
 /*
