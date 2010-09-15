@@ -370,6 +370,34 @@ gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public)
 	return TRUE;
 }
 
+void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
+			      const gchar *uri)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	gchar **parts;
+
+	if (!sipe_private->groupchat ||
+	    !g_str_has_prefix(uri, "ma-chan://"))
+		return;
+
+	/* ma-chan://<domain>/<value> */
+	parts = g_strsplit(uri, "/", 4);
+	if (parts[2] && parts[3]) {
+		gchar *cmd = g_strdup_printf("<cmd id=\"cmd:join\" seqid=\"1\">"
+					     "<data>"
+					     "<chanid key=\"0\" domain=\"%s\" value=\"%s\"/>"
+					     "</data>"
+					     "</cmd>",
+					     parts[2], parts[3]);
+		chatserver_command(sipe_private, cmd);
+		g_free(cmd);
+	} else {
+		SIPE_DEBUG_ERROR("sipe_core_groupchat_join: mal-formed URI '%s'",
+				 uri);
+	}
+	g_strfreev(parts);
+}
+
 /*
   Local Variables:
   mode: c

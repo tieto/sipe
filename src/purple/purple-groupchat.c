@@ -69,9 +69,13 @@ GHashTable *sipe_chat_info_defaults(PurpleConnection *gc,
 
 void sipe_join_chat(PurpleConnection *gc, GHashTable *data)
 {
-	(void)gc;
-	(void)data;
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_join_chat");
+	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
+	const gchar *uri = g_hash_table_lookup(data, "uri");
+
+	if (uri) {
+		SIPE_DEBUG_INFO("sipe_join_chat: uri '%s'", uri);
+		sipe_core_groupchat_join(sipe_public, uri);
+	}
 }
 
 PurpleRoomlist *sipe_roomlist_get_list(PurpleConnection *gc)
