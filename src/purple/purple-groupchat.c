@@ -50,6 +50,23 @@ GList *sipe_chat_info(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
 	return m;
 }
 
+GHashTable *sipe_chat_info_defaults(PurpleConnection *gc,
+				    const char *chat_name)
+{
+	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
+	GHashTable *uri_map = sipe_public->backend_private->roomlist_map;
+	GHashTable *defaults = g_hash_table_new_full(g_str_hash, g_str_equal,
+						     NULL, g_free);
+	const gchar *uri;
+
+	if ((chat_name != NULL) && (uri_map != NULL) &&
+	    ((uri = g_hash_table_lookup(uri_map, chat_name)) != NULL)) {
+		g_hash_table_insert(defaults, "uri", g_strdup(uri));
+	}
+
+	return defaults;
+}
+
 void sipe_join_chat(PurpleConnection *gc, GHashTable *data)
 {
 	(void)gc;
@@ -72,6 +89,9 @@ PurpleRoomlist *sipe_roomlist_get_list(PurpleConnection *gc)
 		purple_roomlist_unref(purple_private->roomlist);
 
 	purple_private->roomlist = roomlist = purple_roomlist_new(account);
+	purple_private->roomlist_map = g_hash_table_new_full(g_str_hash,
+							     g_str_equal,
+							     g_free, g_free);
 
 	/* The order needs to be kept in-sync with sipe_backend_groupchat_room_add() */
 	f = purple_roomlist_field_new(PURPLE_ROOMLIST_FIELD_STRING,
@@ -110,13 +130,13 @@ void sipe_roomlist_cancel(PurpleRoomlist *roomlist)
 	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_get_cancel");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_cancel");
 
 	purple_roomlist_set_in_progress(roomlist, FALSE);
 
 	if (purple_private->roomlist == roomlist) {
-		purple_private->roomlist = NULL;
 		purple_roomlist_unref(roomlist);
+		purple_private->roomlist = NULL;
 	}
 }
 
@@ -127,7 +147,8 @@ void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
 				     guint users,
 				     guint32 flags)
 {
-	PurpleRoomlist *roomlist = sipe_public->backend_private->roomlist;
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleRoomlist *roomlist = purple_private->roomlist;
 	if (roomlist) {
 		PurpleRoomlistRoom *room = purple_roomlist_room_new(PURPLE_ROOMLIST_ROOMTYPE_ROOM,
 								    name, NULL);
@@ -145,6 +166,10 @@ void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
 					       GUINT_TO_POINTER(flags & SIPE_GROUPCHAT_ROOM_LOGGED));
 		purple_roomlist_room_add_field(roomlist, room,
 					       description);
+
+		/* libpurple API only gives us the channel name */
+		g_hash_table_insert(purple_private->roomlist_map,
+				    g_strdup(name), g_strdup(uri)); 
 
 		purple_roomlist_room_add(roomlist, room);
 	}

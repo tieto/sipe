@@ -330,6 +330,8 @@ static void sipe_close(PurpleConnection *gc)
 
 		if (purple_private->dns_query)
 			purple_srv_cancel(purple_private->dns_query);
+		if (purple_private->roomlist_map)
+			g_hash_table_destroy(purple_private->roomlist_map);
 		g_free(purple_private);
 		gc->proto_data = NULL;
 	}
@@ -433,7 +435,7 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_status_types,			/* away_states */
 	sipe_blist_node_menu,			/* blist_node_menu */
 	sipe_chat_info,				/* chat_info */
-	NULL,					/* chat_info_defaults */
+	sipe_chat_info_defaults,		/* chat_info_defaults */
 	sipe_login,				/* login */
 	sipe_close,				/* close */
 	sipe_im_send,				/* send_im */
