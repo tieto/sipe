@@ -344,7 +344,7 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
 	const sipe_xml *reply, *resp, *data;
 	const gchar *id;
-	gchar *message = g_strdup("");
+	gchar *message;
 	guint result = 500;
 	const struct response *r;
 
@@ -371,6 +371,8 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 	if (resp) {
 		result = sipe_xml_int_attribute(resp, "code", 500);
 		message = sipe_xml_data(resp);
+	} else {
+		message = g_strdup("");
 	}
 
 	data = sipe_xml_child(reply, "data");
