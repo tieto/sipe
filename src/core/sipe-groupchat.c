@@ -326,6 +326,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		gchar *self = sip_uri_self(sipe_private);
 		int id = rand();
 		struct sipe_backend_session *bs;
+		const sipe_xml *uib;
 
 		SIPE_DEBUG_INFO("joined room '%s' '%s' (%d)",
 				title ? title : "",
@@ -343,6 +344,14 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 
 		if (topic) {
 			sipe_backend_chat_topic(bs, topic);
+		}
+
+		for (uib = sipe_xml_child(xml, "uib");
+		     uib;
+		     uib = sipe_xml_twin(uib)) {
+			const gchar *uri = sipe_xml_attribute(uib, "uri");
+			if (uri)
+				sipe_backend_chat_add(bs, uri, FALSE);
 		}
 	}
 }
