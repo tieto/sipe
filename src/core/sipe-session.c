@@ -54,6 +54,7 @@ sipe_session_add_chat(struct sipe_core_private *sipe_private)
 	struct sip_session *session = g_new0(struct sip_session, 1);
 	session->callid = gencallid();
 	session->is_multiparty = TRUE;
+	/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
 	session->chat_id = rand();
 	session->unconfirmed_messages = g_hash_table_new_full(
 		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);

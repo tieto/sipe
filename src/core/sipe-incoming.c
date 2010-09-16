@@ -330,6 +330,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		session->with = NULL;
 		was_multiparty = FALSE;
 		session->is_multiparty = TRUE;
+		/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
 		session->chat_id = rand();
 	}
 

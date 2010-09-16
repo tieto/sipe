@@ -34,3 +34,5 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     struct sip_session *session);
+gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
+			     int id, const gchar *what);

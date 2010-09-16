@@ -3571,6 +3571,9 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 
 	SIPE_DEBUG_INFO("sipe_chat_send what='%s'", what);
 
+	if (sipe_groupchat_send(sipe_private, id, what))
+		return 1;
+
 	session = sipe_session_find_chat_by_id(sipe_private, id);
 
 	// Queue the message
