@@ -60,6 +60,7 @@
 
 struct sipe_groupchat {
 	struct sip_session *session;
+	GHashTable *chats;
 	guint32 envid;
 };
 
@@ -73,6 +74,7 @@ static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *
 	}
 
 	groupchat = g_new0(struct sipe_groupchat, 1);
+	groupchat->chats = g_hash_table_new(g_int_hash, g_int_equal);
 	groupchat->envid = rand();
 	sipe_private->groupchat = groupchat;
 
@@ -83,6 +85,7 @@ void sipe_groupchat_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	if (groupchat) {
+		g_hash_table_destroy(groupchat->chats);
 		g_free(groupchat);
 		sipe_private->groupchat = NULL;
 	}
@@ -313,14 +316,24 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				     const gchar *message,
 				     const sipe_xml *xml)
 {
-	struct sipe_core_public *sipe_public = SIPE_CORE_PUBLIC;
-
 	if (result != 200) {
 		sipe_backend_notify_error(_("Error joining chat room"),
 					  message);
 	} else {
-		(void) sipe_public;
-		(void) xml;
+		const sipe_xml *chanib = sipe_xml_child(xml, "chanib");
+		const gchar *title = sipe_xml_attribute(chanib, "name");
+		gchar *self = sip_uri_self(sipe_private);
+		int id = rand();
+
+		g_hash_table_insert(sipe_private->groupchat->chats,
+				    &id, 
+				    sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+							     id,
+							     title ? title : "",
+							     self,
+							     FALSE));
+		g_free(self);
+		(void)xml;
 	}
 }
 
