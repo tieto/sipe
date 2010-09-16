@@ -44,6 +44,7 @@
 
 #include <glib.h>
 
+#include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
@@ -176,23 +177,6 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 	}
 }
 
-/**
- * Create long term dialog with group chat server
- */
-static void chatserver_connect(struct sipe_core_private *sipe_private,
-			       const gchar *uri)
-{
-	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	struct sip_session *session = sipe_session_find_or_add_im(sipe_private,
-								  uri);
-
-	SIPE_DEBUG_INFO("chatserver_connect: uri '%s'", uri);
-	groupchat->session = session;
-
-	session->is_groupchat = TRUE;
-	sipe_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
-}
-
 static void chatserver_command(struct sipe_core_private *sipe_private,
 			       const gchar *cmd)
 {
@@ -210,17 +194,45 @@ static void chatserver_command(struct sipe_core_private *sipe_private,
 	g_free(xccosmsg);
 }
 
+static void chatserver_response_uri(struct sipe_core_private *sipe_private,
+				    struct sip_session *session,
+				    SIPE_UNUSED_PARAMETER guint result,
+				    SIPE_UNUSED_PARAMETER const gchar *message,
+				    const sipe_xml *xml)
+{
+		const sipe_xml *uib = sipe_xml_child(xml, "uib");
+		const gchar *uri = sipe_xml_attribute(uib, "uri");
+
+		/* drop connection to ocschat@<domain> again */
+		sipe_session_close(sipe_private, session);
+
+		if (uri) {
+			struct sipe_groupchat *groupchat = sipe_private->groupchat;
+
+			SIPE_DEBUG_INFO("chatserver_response_uri: '%s'", uri);
+
+			groupchat->session = session = sipe_session_find_or_add_im(sipe_private,
+										   uri);
+
+			session->is_groupchat = TRUE;
+			sipe_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
+		} else {
+			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
+			sipe_groupchat_free(sipe_private);
+		}
+}
+
 static void chatserver_response_channel_search(struct sipe_core_private *sipe_private,
+					       SIPE_UNUSED_PARAMETER struct sip_session *session,
 					       guint result,
+					       const gchar *message,
 					       const sipe_xml *xml)
 {
 	struct sipe_core_public *sipe_public = SIPE_CORE_PUBLIC;
 
 	if (result != 200) {
-		gchar *msg = g_strdup_printf(_("Group Chat server response: %d"), result);
 		sipe_backend_notify_error(_("Error retrieving room list"),
-					  msg);
-		g_free(msg);
+					  message);
 	} else {
 		const sipe_xml *chanib;
 
@@ -295,14 +307,46 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 	sipe_backend_groupchat_room_terminate(sipe_public);
 }
 
+static void chatserver_response_join(struct sipe_core_private *sipe_private,
+				     SIPE_UNUSED_PARAMETER struct sip_session *session,
+				     guint result,
+				     const gchar *message,
+				     const sipe_xml *xml)
+{
+	struct sipe_core_public *sipe_public = SIPE_CORE_PUBLIC;
+
+	if (result != 200) {
+		sipe_backend_notify_error(_("Error joining chat room"),
+					  message);
+	} else {
+		(void) sipe_public;
+		(void) xml;
+	}
+}
+
+static const struct response {
+	const gchar *key;
+	void (* const handler)(struct sipe_core_private *, 
+			       struct sip_session *,
+			       guint result, const gchar *,
+			       const sipe_xml *xml);
+} response_table[] = {
+	{ "rpl:requri",   chatserver_response_uri },
+	{ "rpl:chansrch", chatserver_response_channel_search },
+	{ "rpl:join",     chatserver_response_join },
+	{ NULL, NULL }
+};
+
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     struct sip_session *session)
 {
 	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
-	const sipe_xml *reply, *data;
+	const sipe_xml *reply, *resp, *data;
 	const gchar *id;
-	guint result;
+	gchar *message = NULL;
+	guint result = 500;
+	const struct response *r;
 
 	/* @TODO: is this always correct?*/ 
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
@@ -323,33 +367,28 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	result = sipe_xml_int_attribute(sipe_xml_child(reply, "resp"),
-					"code", 500);
+	resp = sipe_xml_child(reply, "resp");
+	if (resp) {
+		result = sipe_xml_int_attribute(resp, "code", 500);
+		message = sipe_xml_data(resp);
+	}
+
 	data = sipe_xml_child(reply, "data");
 
-	SIPE_DEBUG_INFO("process_incoming_info_groupchat: reply '%s' result %d",
-			id, result);
+	SIPE_DEBUG_INFO("process_incoming_info_groupchat: reply '%s' result (%d) %s",
+			id, result, message ? message : "");
 
-	if (sipe_strcase_equal(id, "rpl:requri")) {
-		const sipe_xml *uib = sipe_xml_child(data, "uib");
-		const char *chatserver_uri = sipe_xml_attribute(uib, "uri");
-
-		/* drop connection to ocschat@<domain> again */
-		sipe_session_close(sipe_private, session);
-
-		if (chatserver_uri) {
-			chatserver_connect(sipe_private, chatserver_uri);
-		} else {
-			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
-			sipe_groupchat_free(sipe_private);
+	for (r = response_table; r->key; r++) {
+		if (sipe_strcase_equal(id, r->key)) {
+			(*r->handler)(sipe_private, session, result, message, data);
+			break;
 		}
-
-	} else if (sipe_strcase_equal(id, "rpl:chansrch")) {
-		chatserver_response_channel_search(sipe_private, result, data);
-	} else {
+	}
+	if (!r->key) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
 	}
 
+	g_free(message);
 	sipe_xml_free(xml);
 }
 
