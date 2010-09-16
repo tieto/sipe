@@ -322,18 +322,28 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 	} else {
 		const sipe_xml *chanib = sipe_xml_child(xml, "chanib");
 		const gchar *title = sipe_xml_attribute(chanib, "name");
+		const gchar *topic = sipe_xml_attribute(chanib, "topic");
 		gchar *self = sip_uri_self(sipe_private);
 		int id = rand();
+		struct sipe_backend_session *bs;
 
-		g_hash_table_insert(sipe_private->groupchat->chats,
-				    &id, 
-				    sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-							     id,
-							     title ? title : "",
-							     self,
-							     FALSE));
+		SIPE_DEBUG_INFO("joined room '%s' '%s' (%d)",
+				title ? title : "",
+				topic ? topic : "",
+				id);
+
+		bs = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+					      id,
+					      title ? title : "",
+					      self,
+					      FALSE);
 		g_free(self);
-		(void)xml;
+		g_hash_table_insert(sipe_private->groupchat->chats,
+				    &id, bs);
+
+		if (topic) {
+			sipe_backend_chat_topic(bs, topic);
+		}
 	}
 }
 
