@@ -66,12 +66,15 @@ struct sipe_groupchat {
 
 struct sipe_groupchat_room {
 	struct sipe_backend_session *backend;
+	gchar *uri;
 	int id;
 };
 
 /* GDestroyNotify */
 static void sipe_groupchat_room_free(gpointer data) {
-	g_free(data);
+	struct sipe_groupchat_room *gr = data;
+	g_free(gr->uri);
+	g_free(gr);
 }
 
 static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *sipe_private)
@@ -346,12 +349,14 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		do {
 			id = rand();
 		} while (g_hash_table_lookup(groupchat->chats, &id));
-		gr->id = id;
 
-		SIPE_DEBUG_INFO("joined room '%s' '%s' (%d)",
+		gr->uri = g_strdup(sipe_xml_attribute(chanib, "uri"));
+		gr->id  = id;
+
+		SIPE_DEBUG_INFO("joined room '%s' '%s' (%s id %d)",
 				title ? title : "",
 				topic ? topic : "",
-				id);
+				gr->uri, id);
 
 		gr->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
 						       id,
@@ -452,6 +457,8 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	struct sipe_groupchat_room *gr;
+	gchar *cmd;
+	gchar *self;
 
 	if (!groupchat)
 		return FALSE;
@@ -460,7 +467,16 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	if (!gr)
 		return FALSE;
 
-	SIPE_DEBUG_INFO("sipe_groupchat_send: (%d) %s", id, what);
+	SIPE_DEBUG_INFO("sipe_groupchat_send: (%s id %d) %s", gr->uri, id, what);
+
+	self = sip_uri_self(sipe_private);
+	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\">"
+			      "<chat>%s</chat>"
+			      "</grpchat>",
+			      gr->uri, self, what);
+	g_free(self);
+	chatserver_command(sipe_private, cmd);
+	g_free(cmd);
 
 	return TRUE;
 }
