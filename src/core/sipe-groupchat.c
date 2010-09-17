@@ -195,6 +195,17 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 	}
 }
 
+static gboolean chatserver_command_response(struct sipe_core_private *sipe_private,
+					    struct sipmsg *msg,
+					    SIPE_UNUSED_PARAMETER struct transaction *tc)
+{
+	if (msg->response != 200) {
+		SIPE_DEBUG_INFO("chatserver_command_response: failure %d", msg->response);
+		(void)sipe_private;
+	}
+	return TRUE;
+}
+
 static void chatserver_command(struct sipe_core_private *sipe_private,
 			       const gchar *cmd)
 {
@@ -207,7 +218,7 @@ static void chatserver_command(struct sipe_core_private *sipe_private,
 			   "Content-Type: text/plain\r\n",
 			   xccosmsg,
 			   dialog,
-			   NULL);
+			   chatserver_command_response);
 
 	g_free(xccosmsg);
 }
