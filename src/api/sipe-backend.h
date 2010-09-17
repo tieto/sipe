@@ -397,6 +397,18 @@ void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local)
 
 const gchar *sipe_backend_network_ip_address(void);
 
+/** NOTIFICATIONS *************************************************************/
+
+void sipe_backend_notify_message_error(struct sipe_core_public *sipe_public,
+				       struct sipe_backend_session *backend_session,
+				       const gchar *who,
+				       const gchar *message);
+void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
+				      struct sipe_backend_session *backend_session,
+				      const gchar *who,
+				      const gchar *message);
+void sipe_backend_notify_error(const gchar *title, const gchar *msg);
+
 /** SCHEDULE *****************************************************************/
 
 gpointer sipe_backend_schedule_seconds(struct sipe_core_public *sipe_public,
@@ -450,11 +462,6 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 				       const gchar *from);
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
 					    const gchar *from);
-
-/** NOTIFICATIONS *************************************************************/
-
-void sipe_backend_notify_error(const gchar *title, const gchar *msg);
-
 
 #ifdef __cplusplus
 }

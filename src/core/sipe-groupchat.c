@@ -66,8 +66,9 @@ struct sipe_groupchat {
 };
 
 struct sipe_groupchat_room {
-	struct sipe_backend_session *backend;
+	struct sipe_backend_session *backend_session;
 	gchar *uri;
+	gchar *title;
 	int id;
 };
 
@@ -81,9 +82,10 @@ struct sipe_groupchat_msg {
 
 /* GDestroyNotify */
 static void sipe_groupchat_room_free(gpointer data) {
-	struct sipe_groupchat_room *gr = data;
-	g_free(gr->uri);
-	g_free(gr);
+	struct sipe_groupchat_room *room = data;
+	g_free(room->title);
+	g_free(room->uri);
+	g_free(room);
 }
 
 /* GDestroyNotify */
@@ -247,13 +249,29 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 	}
 }
 
+/* TransCallback */
 static gboolean chatserver_command_response(struct sipe_core_private *sipe_private,
 					    struct sipmsg *msg,
-					    SIPE_UNUSED_PARAMETER struct transaction *tc)
+					    struct transaction *trans)
 {
 	if (msg->response != 200) {
+		struct sipe_groupchat_msg *gmsg = trans->payload->data;
+		struct sipe_groupchat_room *room = gmsg->room;
+
 		SIPE_DEBUG_INFO("chatserver_command_response: failure %d", msg->response);
-		(void)sipe_private;
+
+		if (room) {
+			gchar *label  = g_strdup_printf(_("This message was not delivered to chat room '%s'"),
+							room->title);
+			gchar *errmsg = g_strdup_printf("%s:\n<font color=\"#888888\"></b>%s<b></font>",
+							label, gmsg->content);
+			g_free(label);
+			sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
+							  room->backend_session,
+							  NULL,
+							  errmsg);
+			g_free(errmsg);
+		}
 	}
 	return TRUE;
 }
@@ -405,7 +423,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 					  message);
 	} else {
 		struct sipe_groupchat *groupchat = sipe_private->groupchat;
-		struct sipe_groupchat_room *gr = g_new0(struct sipe_groupchat_room, 1);
+		struct sipe_groupchat_room *room = g_new0(struct sipe_groupchat_room, 1);
 		const sipe_xml *chanib = sipe_xml_child(xml, "chanib");
 		const gchar *title = sipe_xml_attribute(chanib, "name");
 		const gchar *topic = sipe_xml_attribute(chanib, "topic");
@@ -419,26 +437,27 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 			id = rand();
 		} while (g_hash_table_lookup(groupchat->chats, &id));
 
-		gr->uri = g_strdup(sipe_xml_attribute(chanib, "uri"));
-		gr->id  = id;
+		room->uri   = g_strdup(sipe_xml_attribute(chanib, "uri"));
+		room->title = g_strdup(title ? title : "");
+		room->id    = id;
 
 		SIPE_DEBUG_INFO("joined room '%s' '%s' (%s id %d)",
-				title ? title : "",
+				room->title,
 				topic ? topic : "",
-				gr->uri, id);
+				room->uri, id);
 
-		gr->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-						       id,
-						       title ? title : "",
-						       self,
-						       FALSE);
+		room->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+								 id,
+								 room->title,
+								 self,
+								 FALSE);
 		g_free(self);
 
 		/* Don't use "id" here! Key must be in non-volatile memory. */
-		g_hash_table_insert(groupchat->chats, &gr->id, gr);
+		g_hash_table_insert(groupchat->chats, &room->id, room);
 
 		if (topic) {
-			sipe_backend_chat_topic(gr->backend, topic);
+			sipe_backend_chat_topic(room->backend_session, topic);
 		}
 
 		for (uib = sipe_xml_child(xml, "uib");
@@ -446,7 +465,8 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		     uib = sipe_xml_twin(uib)) {
 			const gchar *uri = sipe_xml_attribute(uib, "uri");
 			if (uri)
-				sipe_backend_chat_add(gr->backend, uri, FALSE);
+				sipe_backend_chat_add(room->backend_session,
+						      uri, FALSE);
 		}
 	}
 }
@@ -525,27 +545,32 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 			     int id, const gchar *what)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	struct sipe_groupchat_room *gr;
+	struct sipe_groupchat_room *room;
 	gchar *cmd;
 	gchar *self;
+	struct sipe_groupchat_msg *msg;
 
 	if (!groupchat)
 		return FALSE;
 
-	gr = g_hash_table_lookup(groupchat->chats, &id);
-	if (!gr)
+	room = g_hash_table_lookup(groupchat->chats, &id);
+	if (!room)
 		return FALSE;
 
-	SIPE_DEBUG_INFO("sipe_groupchat_send: (%s id %d) %s", gr->uri, id, what);
+	SIPE_DEBUG_INFO("sipe_groupchat_send: (%s id %d) %s",
+			room->uri, id, what);
 
 	self = sip_uri_self(sipe_private);
 	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\">"
 			      "<chat>%s</chat>"
 			      "</grpchat>",
-			      gr->uri, self, what);
+			      room->uri, self, what);
 	g_free(self);
-	chatserver_command(sipe_private, cmd);
+	msg = chatserver_command(sipe_private, cmd);
 	g_free(cmd);
+
+	msg->room    = room;
+	msg->content = g_strdup(what);
 
 	return TRUE;
 }

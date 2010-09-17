@@ -2946,31 +2946,15 @@ static void sipe_options_request(struct sipe_core_private *sipe_private,
 	g_free(request);
 }
 
-static void
-sipe_notify_user(struct sipe_core_private *sipe_private,
-		 struct sip_session *session,
-		 PurpleMessageFlags flags,
-		 const gchar *message)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleConversation *conv;
-
-	if (!session->backend_session) {
-		conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, session->with, sip->account);
-	} else {
-		/* TEMPORARY HACK!! */
-		conv = (PurpleConversation *) session->backend_session;
-	}
-	if (conv)
-		purple_conversation_write(conv, NULL, message, flags, time(NULL));
-}
-
 void
 sipe_present_info(struct sipe_core_private *sipe_private,
 		 struct sip_session *session,
 		 const gchar *message)
 {
-	sipe_notify_user(sipe_private, session, PURPLE_MESSAGE_SYSTEM, message);
+	sipe_backend_notify_message_info(SIPE_CORE_PUBLIC,
+					 session->backend_session,
+					 session->with,
+					 message);
 }
 
 void
@@ -2978,7 +2962,10 @@ sipe_present_err(struct sipe_core_private *sipe_private,
 		 struct sip_session *session,
 		 const gchar *message)
 {
-	sipe_notify_user(sipe_private, session, PURPLE_MESSAGE_ERROR, message);
+	sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
+					  session->backend_session,
+					  session->with,
+					  message);
 }
 
 void
