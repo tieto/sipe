@@ -61,7 +61,8 @@
 struct sipe_groupchat {
 	struct sip_session *session;
 	GHashTable *chats;
-	guint32 envid;
+	GHashTable *msgs;
+	guint envid;
 };
 
 struct sipe_groupchat_room {
@@ -70,11 +71,33 @@ struct sipe_groupchat_room {
 	int id;
 };
 
+struct sipe_groupchat_msg {
+	GHashTable *container;
+	struct sipe_groupchat_room *room;
+	gchar *content;
+	gchar *xccos;
+	guint envid;
+};
+
 /* GDestroyNotify */
 static void sipe_groupchat_room_free(gpointer data) {
 	struct sipe_groupchat_room *gr = data;
 	g_free(gr->uri);
 	g_free(gr);
+}
+
+/* GDestroyNotify */
+static void sipe_groupchat_msg_free(gpointer data) {
+	struct sipe_groupchat_msg *msg = data;
+	g_free(msg->content);
+	g_free(msg->xccos);
+	g_free(msg);
+}
+
+/* GDestroyNotify */
+static void sipe_groupchat_msg_remove(gpointer data) {
+	struct sipe_groupchat_msg *msg = data;
+	g_hash_table_remove(msg->container, &msg->envid);
 }
 
 static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *sipe_private)
@@ -90,6 +113,9 @@ static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *
 	groupchat->chats = g_hash_table_new_full(g_int_hash, g_int_equal,
 						 NULL,
 						 sipe_groupchat_room_free);
+	groupchat->msgs  = g_hash_table_new_full(g_int_hash, g_int_equal,
+						 NULL,
+						 sipe_groupchat_msg_free);
 	groupchat->envid = rand();
 	sipe_private->groupchat = groupchat;
 
@@ -100,20 +126,29 @@ void sipe_groupchat_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	if (groupchat) {
+		g_hash_table_destroy(groupchat->msgs);
 		g_hash_table_destroy(groupchat->chats);
 		g_free(groupchat);
 		sipe_private->groupchat = NULL;
 	}
 }
 
-static gchar *generate_xccos_message(struct sipe_groupchat *groupchat,
-				     const gchar *content)
+static struct sipe_groupchat_msg *generate_xccos_message(struct sipe_groupchat *groupchat,
+							 const gchar *content)
 {
-	return g_strdup_printf("<xccos ver=\"1\" envid=\"%u\" xmlns=\"urn:parlano:xml:ns:xccos\">"
-			       "%s"
-			       "</xccos>",
-			       groupchat->envid++,
-			       content);
+	struct sipe_groupchat_msg *msg = g_new0(struct sipe_groupchat_msg, 1);
+
+	msg->container = groupchat->msgs;
+	msg->envid     = groupchat->envid++;
+	msg->xccos     = g_strdup_printf("<xccos ver=\"1\" envid=\"%u\" xmlns=\"urn:parlano:xml:ns:xccos\">"
+					 "%s"
+					 "</xccos>",
+					 msg->envid,
+					 content);
+
+	g_hash_table_insert(groupchat->msgs, &msg->envid, msg);
+
+	return(msg);
 }
 
 /**
@@ -196,16 +231,15 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 
 	if (!groupchat->session) {
 		/* response to initial invite */
-		gchar *xccosmsg = generate_xccos_message(sipe_private->groupchat,
-							 "<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
+		struct sipe_groupchat_msg *msg = generate_xccos_message(groupchat,
+									"<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
 		sip_transport_info(sipe_private,
 				   "Content-Type: text/plain\r\n",
-				   xccosmsg,
+				   msg->xccos,
 				   dialog,
 				   NULL);
-		g_free(xccosmsg);
+		sipe_groupchat_msg_remove(msg);
 
-	
 	} else {
 		/* response to group chat server invite */
 		SIPE_DEBUG_INFO_NOFORMAT("connection to group chat server established.");
@@ -224,21 +258,27 @@ static gboolean chatserver_command_response(struct sipe_core_private *sipe_priva
 	return TRUE;
 }
 
-static void chatserver_command(struct sipe_core_private *sipe_private,
-			       const gchar *cmd)
+static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *sipe_private,
+						     const gchar *cmd)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;	
-	gchar *xccosmsg = generate_xccos_message(groupchat, cmd);
+	struct sipe_groupchat_msg *msg = generate_xccos_message(groupchat, cmd);
+
 	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
 						     groupchat->session->with);
 
-	sip_transport_info(sipe_private,
-			   "Content-Type: text/plain\r\n",
-			   xccosmsg,
-			   dialog,
-			   chatserver_command_response);
+	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+	struct transaction *trans = sip_transport_info(sipe_private,
+						       "Content-Type: text/plain\r\n",
+						       msg->xccos,
+						       dialog,
+						       chatserver_command_response);
 
-	g_free(xccosmsg);
+	payload->destroy = sipe_groupchat_msg_remove;
+	payload->data    = msg;
+	trans->payload   = payload;
+
+	return(msg);
 }
 
 static void chatserver_response_uri(struct sipe_core_private *sipe_private,

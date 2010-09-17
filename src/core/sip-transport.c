@@ -726,20 +726,20 @@ void sip_transport_bye(struct sipe_core_private *sipe_private,
 	sip_transport_simple_request(sipe_private, "BYE", dialog);
 }
 
-void sip_transport_info(struct sipe_core_private *sipe_private,
-			const gchar *addheaders,
-			const gchar *body,
-			struct sip_dialog *dialog,
-			TransCallback callback)
+struct transaction *sip_transport_info(struct sipe_core_private *sipe_private,
+				       const gchar *addheaders,
+				       const gchar *body,
+				       struct sip_dialog *dialog,
+				       TransCallback callback)
 {
-	sip_transport_request(sipe_private,
-			      "INFO",
-			      dialog->with,
-			      dialog->with,
-			      addheaders,
-			      body,
-			      dialog,
-			      callback);
+	return sip_transport_request(sipe_private,
+				     "INFO",
+				     dialog->with,
+				     dialog->with,
+				     addheaders,
+				     body,
+				     dialog,
+				     callback);
 }
 
 struct transaction *sip_transport_invite(struct sipe_core_private *sipe_private,
