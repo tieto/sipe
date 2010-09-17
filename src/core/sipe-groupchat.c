@@ -120,35 +120,53 @@ static gchar *generate_xccos_message(struct sipe_groupchat *groupchat,
  * Create short-lived dialog with ocschat@<domain>
  * This initiates Group Chat feature
  */
-static void sipe_invite_ocschat(struct sipe_core_private *sipe_private)
+void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 {
 	struct sipe_groupchat *groupchat = sipe_groupchat_allocate(sipe_private);
 
 	if (groupchat) {
-		gchar *domain = strchr(sipe_private->username, '@');
+		const gchar *setting = sipe_backend_setting(SIPE_CORE_PUBLIC,
+							    SIPE_SETTING_GROUPCHAT_USER);
+		gchar **parts = g_strsplit(is_empty(setting) ?
+					   sipe_private->username : setting,
+					   "@", 2);
+		const gchar *user = "ocschat";
+		const gchar *domain = parts[is_empty(parts[1]) ? 0 : 1];
 
-		SIPE_DEBUG_INFO("sipe_invite_ocschat: user %s", sipe_private->username);
+		SIPE_DEBUG_INFO("sipe_groupchat_init: user '%s' setting '%s' split '%s' '%s'",
+				sipe_private->username, setting,
+				parts[0] ? parts[0] : "",
+				parts[1] ? parts[1] : "");
 
-		if (domain) {
-			gchar *chat_uri = g_strdup_printf("sip:ocschat%s", domain);
+		/* Did the user specify a valid user@company.com? */
+		if (!is_empty(setting) && !is_empty(parts[1])) {
+			/* special case '@company.com' */
+			if (!is_empty(parts[0]))
+				user = parts[0];
+			domain = parts[1];
+		}
+
+		SIPE_DEBUG_INFO("sipe_groupchat_init: using '%s' '%s'",
+				user ? user : "",
+				domain ? domain: "");
+
+		if (!is_empty(user) && !is_empty(domain)) {
+			gchar *addr = g_strdup_printf("%s@%s", user, domain);
+			gchar *chat_uri = sip_uri_from_name(addr);
 			struct sip_session *session = sipe_session_find_or_add_im(sipe_private,
 										  chat_uri);
-			SIPE_DEBUG_INFO("sipe_invite_ocschat: domain %s", domain);
-
 			session->is_groupchat = TRUE;
 			sipe_invite(sipe_private, session, chat_uri,
 				    NULL, NULL, NULL, FALSE);
 
 			g_free(chat_uri);
+			g_free(addr);
 		} else {
 			sipe_groupchat_free(sipe_private);
 		}
-	}
-}
 
-void sipe_groupchat_init(struct sipe_core_private *sipe_private)
-{
-	sipe_invite_ocschat(sipe_private);
+		g_strfreev(parts);
+	}
 }
 
 void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
