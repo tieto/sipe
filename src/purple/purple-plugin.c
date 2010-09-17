@@ -721,7 +721,7 @@ static void init_plugin(PurplePlugin *plugin)
 	/** Example (federated domain): company.com      (i.e. ocschat@company.com)
 	 *  Example (non-default user): user@company.com
 	 */
-	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or\n   user@domain.com\n(leave empty for auto-discovery)"), "groupchat_user", "");
+	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or  user@company.com\n(leave empty to determine from Username)"), "groupchat_user", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 }
 
