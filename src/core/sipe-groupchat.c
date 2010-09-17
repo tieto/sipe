@@ -60,7 +60,8 @@
 
 struct sipe_groupchat {
 	struct sip_session *session;
-	GHashTable *chats;
+	GHashTable *id_to_room;
+	GHashTable *uri_to_room;
 	GHashTable *msgs;
 	guint envid;
 };
@@ -112,9 +113,10 @@ static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *
 	}
 
 	groupchat = g_new0(struct sipe_groupchat, 1);
-	groupchat->chats = g_hash_table_new_full(g_int_hash, g_int_equal,
-						 NULL,
-						 sipe_groupchat_room_free);
+	groupchat->id_to_room = g_hash_table_new_full(g_int_hash, g_int_equal,
+						      NULL,
+						      sipe_groupchat_room_free);
+	groupchat->uri_to_room = g_hash_table_new(g_str_hash, g_str_equal);
 	groupchat->msgs  = g_hash_table_new_full(g_int_hash, g_int_equal,
 						 NULL,
 						 sipe_groupchat_msg_free);
@@ -129,7 +131,8 @@ void sipe_groupchat_free(struct sipe_core_private *sipe_private)
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	if (groupchat) {
 		g_hash_table_destroy(groupchat->msgs);
-		g_hash_table_destroy(groupchat->chats);
+		g_hash_table_destroy(groupchat->uri_to_room);
+		g_hash_table_destroy(groupchat->id_to_room);
 		g_free(groupchat);
 		sipe_private->groupchat = NULL;
 	}
@@ -279,7 +282,7 @@ static gboolean chatserver_command_response(struct sipe_core_private *sipe_priva
 static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *sipe_private,
 						     const gchar *cmd)
 {
-	struct sipe_groupchat *groupchat = sipe_private->groupchat;	
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	struct sipe_groupchat_msg *msg = generate_xccos_message(groupchat, cmd);
 
 	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
@@ -435,7 +438,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		/* Find next free ID */
 		do {
 			id = rand();
-		} while (g_hash_table_lookup(groupchat->chats, &id));
+		} while (g_hash_table_lookup(groupchat->id_to_room, &id));
 
 		room->uri   = g_strdup(sipe_xml_attribute(chanib, "uri"));
 		room->title = g_strdup(title ? title : "");
@@ -454,7 +457,8 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		g_free(self);
 
 		/* Don't use "id" here! Key must be in non-volatile memory. */
-		g_hash_table_insert(groupchat->chats, &room->id, room);
+		g_hash_table_insert(groupchat->id_to_room,  &room->id, room);
+		g_hash_table_insert(groupchat->uri_to_room, room->uri, room);
 
 		if (topic) {
 			sipe_backend_chat_topic(room->backend_session, topic);
@@ -473,7 +477,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 
 static const struct response {
 	const gchar *key;
-	void (* const handler)(struct sipe_core_private *, 
+	void (* const handler)(struct sipe_core_private *,
 			       struct sip_session *,
 			       guint result, const gchar *,
 			       const sipe_xml *xml);
@@ -484,33 +488,19 @@ static const struct response {
 	{ NULL, NULL }
 };
 
-void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
-				     struct sipmsg *msg,
+static void chatserver_command_reply(struct sipe_core_private *sipe_private,
+				     const sipe_xml *reply,
 				     struct sip_session *session)
 {
-	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
-	const sipe_xml *reply, *resp, *data;
+	const sipe_xml *resp, *data;
 	const gchar *id;
 	gchar *message;
 	guint result = 500;
 	const struct response *r;
 
-	/* @TODO: is this always correct?*/ 
-	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
-
-	if (!xml) return;
-
-	reply = sipe_xml_child(xml, "rpl");
-	if (!reply) {
-		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: no reply node found!");
-		sipe_xml_free(xml);
-		return;
-	}
-
 	id = sipe_xml_attribute(reply, "id");
 	if (!id) {
-		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: no reply ID found!");
-		sipe_xml_free(xml);
+		SIPE_DEBUG_INFO_NOFORMAT("chatserver_command_reply: no reply ID found!");
 		return;
 	}
 
@@ -524,7 +514,7 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 
 	data = sipe_xml_child(reply, "data");
 
-	SIPE_DEBUG_INFO("process_incoming_info_groupchat: reply '%s' result (%d) %s",
+	SIPE_DEBUG_INFO("chatserver_command_reply: '%s' result (%d) %s",
 			id, result, message ? message : "");
 
 	for (r = response_table; r->key; r++) {
@@ -534,10 +524,62 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 		}
 	}
 	if (!r->key) {
-		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
+		SIPE_DEBUG_INFO_NOFORMAT("chatserver_command_reply: ignoring unknown response");
 	}
 
 	g_free(message);
+}
+
+static void chatserver_chatgrp_message(struct sipe_core_private *sipe_private,
+				       const sipe_xml *chatgrp)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+	const gchar *uri = sipe_xml_attribute(chatgrp, "chanUri");
+	const gchar *from = sipe_xml_attribute(chatgrp, "author");
+	gchar *text = sipe_xml_data(sipe_xml_child(chatgrp, "chat"));
+	struct sipe_groupchat_room *room;
+
+	if (!uri || !from) {
+		SIPE_DEBUG_INFO("chatserver_chatgrp_message: message '%s' received without chat room URI or author!",
+				text ? text : "");
+		g_free(text);
+		return;
+	}
+
+	room = g_hash_table_lookup(groupchat->uri_to_room, uri); 
+	if (!room) {
+		SIPE_DEBUG_INFO("chatserver_chatgrp_message: message '%s' from '%s' received from unknown chat room '%s'!",
+				text ? text : "", from, uri);
+		g_free(text);
+		return;
+	}
+
+	/* @TODO: do we need to unescape 'text'? */
+	sipe_backend_chat_message(SIPE_CORE_PUBLIC, room->id, from, text);
+
+	g_free(text);
+}
+
+void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
+				     struct sipmsg *msg,
+				     struct sip_session *session)
+{
+	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
+	const sipe_xml *node;
+
+	/* @TODO: is this always correct?*/
+	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+
+	if (!xml) return;
+
+	if        ((node = sipe_xml_child(xml, "rpl")) != NULL) {
+		chatserver_command_reply(sipe_private, node, session);
+	} else if ((node = sipe_xml_child(xml, "grpchat")) != NULL) {
+		chatserver_chatgrp_message(sipe_private, node);
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
+	}
+
 	sipe_xml_free(xml);
 }
 
@@ -553,7 +595,7 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	if (!groupchat)
 		return FALSE;
 
-	room = g_hash_table_lookup(groupchat->chats, &id);
+	room = g_hash_table_lookup(groupchat->id_to_room, &id);
 	if (!room)
 		return FALSE;
 
@@ -561,6 +603,7 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 			room->uri, id, what);
 
 	self = sip_uri_self(sipe_private);
+	/* @TODO: 'what' needs escaping! */
 	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\">"
 			      "<chat>%s</chat>"
 			      "</grpchat>",
