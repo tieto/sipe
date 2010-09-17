@@ -475,6 +475,39 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void chatserver_response_part(struct sipe_core_private *sipe_private,
+				     SIPE_UNUSED_PARAMETER struct sip_session *session,
+				     guint result,
+				     const gchar *message,
+				     const sipe_xml *xml)
+{
+	if (result != 200) {
+		SIPE_DEBUG_WARNING("chatserver_response_part: failed with %d: %s. Dropping room",
+				   result, message);
+	} else {
+		struct sipe_groupchat *groupchat = sipe_private->groupchat;
+		const gchar *uri = sipe_xml_attribute(sipe_xml_child(xml, "chanib"),
+						      "uri");
+		struct sipe_groupchat_room *room;
+
+		if (uri &&
+		    (room = g_hash_table_lookup(groupchat->uri_to_room, uri))) {
+
+			SIPE_DEBUG_INFO("leaving room '%s' (%s id %d)",
+					room->title, room->uri, room->id);
+
+			/* The order is important here! The last _remove calls the
+			   value_destroy_func callback and releases the room */
+			g_hash_table_remove(groupchat->uri_to_room, uri);
+			g_hash_table_remove(groupchat->id_to_room,  &room->id);
+
+		} else {
+			SIPE_DEBUG_WARNING("chatserver_response_part: unknown chat room uri '%s'",
+					   uri ? uri : "");
+		}
+	}
+}
+
 static const struct response {
 	const gchar *key;
 	void (* const handler)(struct sipe_core_private *,
@@ -485,6 +518,7 @@ static const struct response {
 	{ "rpl:requri",   chatserver_response_uri },
 	{ "rpl:chansrch", chatserver_response_channel_search },
 	{ "rpl:join",     chatserver_response_join },
+	{ "rpl:part",     chatserver_response_part },
 	{ NULL, NULL }
 };
 
@@ -614,6 +648,33 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 
 	msg->room    = room;
 	msg->content = g_strdup(what);
+
+	return TRUE;
+}
+
+gboolean sipe_groupchat_leave(struct sipe_core_private *sipe_private,
+			     int id)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+	struct sipe_groupchat_room *room;
+	gchar *cmd;
+
+	if (!groupchat)
+		return FALSE;
+
+	room = g_hash_table_lookup(groupchat->id_to_room, &id);
+	if (!room)
+		return FALSE;
+
+	SIPE_DEBUG_INFO("sipe_groupchat_leave: %s id %d", room->uri, id);
+
+	cmd = g_strdup_printf("<cmd id=\"cmd:part\" seqid=\"1\">"
+			      "<data>"
+			      "<chanib uri=\"%s\"/>"
+			      "</data>"
+			      "</cmd>", room->uri);
+	chatserver_command(sipe_private, cmd);
+	g_free(cmd);
 
 	return TRUE;
 }

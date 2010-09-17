@@ -36,3 +36,5 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sip_session *session);
 gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 			     int id, const gchar *what);
+gboolean sipe_groupchat_leave(struct sipe_core_private *sipe_private,
+			      int id);

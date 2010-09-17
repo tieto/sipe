@@ -3516,10 +3516,12 @@ void
 sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sip_session *session = sipe_session_find_chat_by_id(sipe_private,
-								   id);
 
-	sipe_session_close(sipe_private, session);
+	if (!sipe_groupchat_leave(sipe_private, id)) {
+		struct sip_session *session = sipe_session_find_chat_by_id(sipe_private,
+									   id);
+		sipe_session_close(sipe_private, session);
+	}
 }
 
 int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
