@@ -177,47 +177,34 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 {
 	const gchar *setting = sipe_backend_setting(SIPE_CORE_PUBLIC,
 						    SIPE_SETTING_GROUPCHAT_USER);
-	gchar **parts = g_strsplit(is_empty(setting) ?
-				   sipe_private->username : setting,
+	gboolean user_set = !is_empty(setting);
+	gchar **parts = g_strsplit(user_set ? setting : sipe_private->username,
 				   "@", 2);
+	gboolean domain_found = !is_empty(parts[1]);
 	const gchar *user = "ocschat";
-	const gchar *domain = parts[is_empty(parts[1]) ? 0 : 1];
+	const gchar *domain = parts[domain_found ? 1 : 0];
+	gchar *chat_uri;
+	struct sip_session *session;
+
+	/* User specified valid 'user@company.com' */
+	if (user_set && domain_found && !is_empty(parts[0]))
+		user = parts[0];
+
+	SIPE_DEBUG_INFO("sipe_groupchat_init: username '%s' setting '%s' split '%s'/'%s' GC user %s@%s",
+			sipe_private->username, setting, parts[0], parts[1],
+			user, domain);
 
 	if (!sipe_private->groupchat)
 		sipe_groupchat_allocate(sipe_private);
 
-	SIPE_DEBUG_INFO("sipe_groupchat_init: user '%s' setting '%s' split '%s' '%s'",
-			sipe_private->username, setting,
-			parts[0] ? parts[0] : "",
-			parts[1] ? parts[1] : "");
+	chat_uri = g_strdup_printf("sip:%s@%s", user, domain);
+	session = sipe_session_find_or_add_im(sipe_private,
+					      chat_uri);
+	session->is_groupchat = TRUE;
+	sipe_invite(sipe_private, session, chat_uri,
+		    NULL, NULL, NULL, FALSE);
 
-	/* Did the user specify a valid user@company.com? */
-	if (!is_empty(setting) && !is_empty(parts[1])) {
-		/* special case '@company.com' */
-		if (!is_empty(parts[0]))
-			user = parts[0];
-		domain = parts[1];
-	}
-
-	SIPE_DEBUG_INFO("sipe_groupchat_init: using '%s' '%s'",
-			user ? user : "",
-			domain ? domain: "");
-
-	if (!is_empty(user) && !is_empty(domain)) {
-		gchar *addr = g_strdup_printf("%s@%s", user, domain);
-		gchar *chat_uri = sip_uri_from_name(addr);
-		struct sip_session *session = sipe_session_find_or_add_im(sipe_private,
-										  chat_uri);
-		session->is_groupchat = TRUE;
-		sipe_invite(sipe_private, session, chat_uri,
-			    NULL, NULL, NULL, FALSE);
-
-		g_free(chat_uri);
-		g_free(addr);
-	} else {
-		groupchat_init_retry(sipe_private);
-	}
-
+	g_free(chat_uri);
 	g_strfreev(parts);
 }
 
