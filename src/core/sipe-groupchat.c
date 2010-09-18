@@ -53,10 +53,13 @@
 #include "sipe-dialog.h"
 #include "sipe-groupchat.h"
 #include "sipe-nls.h"
+#include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipe.h"
+
+#define GROUPCHAT_RETRY_TIMEOUT 5*60 /* seconds */
 
 struct sipe_groupchat {
 	struct sip_session *session;
@@ -103,16 +106,10 @@ static void sipe_groupchat_msg_remove(gpointer data) {
 	g_hash_table_remove(msg->container, &msg->envid);
 }
 
-static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *sipe_private)
+static void sipe_groupchat_allocate(struct sipe_core_private *sipe_private)
 {
-	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+	struct sipe_groupchat *groupchat = g_new0(struct sipe_groupchat, 1);
 
-	if (groupchat) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_groupchat_allocate: called twice. Exiting.");
-		return NULL;
-	}
-
-	groupchat = g_new0(struct sipe_groupchat, 1);
 	groupchat->id_to_room = g_hash_table_new_full(g_int_hash, g_int_equal,
 						      NULL,
 						      sipe_groupchat_room_free);
@@ -122,8 +119,6 @@ static struct sipe_groupchat *sipe_groupchat_allocate(struct sipe_core_private *
 						 sipe_groupchat_msg_free);
 	groupchat->envid = rand();
 	sipe_private->groupchat = groupchat;
-
-	return(groupchat);
 }
 
 void sipe_groupchat_free(struct sipe_core_private *sipe_private)
@@ -156,57 +151,74 @@ static struct sipe_groupchat_msg *generate_xccos_message(struct sipe_groupchat *
 	return(msg);
 }
 
+/* sipe_schedule_action */
+static void groupchat_init_retry_cb(struct sipe_core_private *sipe_private,
+				    SIPE_UNUSED_PARAMETER gpointer data)
+{
+	sipe_groupchat_init(sipe_private);
+}
+
+static void groupchat_init_retry(struct sipe_core_private *sipe_private)
+{
+	SIPE_DEBUG_INFO_NOFORMAT("groupchat_init_retry: trying again later...");
+	sipe_schedule_seconds(sipe_private,
+			      "<+grouchat-retry>",
+			      NULL,
+			      GROUPCHAT_RETRY_TIMEOUT,
+			      groupchat_init_retry_cb,
+			      NULL);
+}
+
 /**
- * Create short-lived dialog with ocschat@<domain>
- * This initiates Group Chat feature
+ * Create short-lived dialog with ocschat@<domain> (or user specified value)
+ * This initiates the Group Chat feature
  */
 void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 {
-	struct sipe_groupchat *groupchat = sipe_groupchat_allocate(sipe_private);
+	const gchar *setting = sipe_backend_setting(SIPE_CORE_PUBLIC,
+						    SIPE_SETTING_GROUPCHAT_USER);
+	gchar **parts = g_strsplit(is_empty(setting) ?
+				   sipe_private->username : setting,
+				   "@", 2);
+	const gchar *user = "ocschat";
+	const gchar *domain = parts[is_empty(parts[1]) ? 0 : 1];
 
-	if (groupchat) {
-		const gchar *setting = sipe_backend_setting(SIPE_CORE_PUBLIC,
-							    SIPE_SETTING_GROUPCHAT_USER);
-		gchar **parts = g_strsplit(is_empty(setting) ?
-					   sipe_private->username : setting,
-					   "@", 2);
-		const gchar *user = "ocschat";
-		const gchar *domain = parts[is_empty(parts[1]) ? 0 : 1];
+	if (!sipe_private->groupchat)
+		sipe_groupchat_allocate(sipe_private);
 
-		SIPE_DEBUG_INFO("sipe_groupchat_init: user '%s' setting '%s' split '%s' '%s'",
-				sipe_private->username, setting,
-				parts[0] ? parts[0] : "",
-				parts[1] ? parts[1] : "");
+	SIPE_DEBUG_INFO("sipe_groupchat_init: user '%s' setting '%s' split '%s' '%s'",
+			sipe_private->username, setting,
+			parts[0] ? parts[0] : "",
+			parts[1] ? parts[1] : "");
 
-		/* Did the user specify a valid user@company.com? */
-		if (!is_empty(setting) && !is_empty(parts[1])) {
-			/* special case '@company.com' */
-			if (!is_empty(parts[0]))
-				user = parts[0];
-			domain = parts[1];
-		}
-
-		SIPE_DEBUG_INFO("sipe_groupchat_init: using '%s' '%s'",
-				user ? user : "",
-				domain ? domain: "");
-
-		if (!is_empty(user) && !is_empty(domain)) {
-			gchar *addr = g_strdup_printf("%s@%s", user, domain);
-			gchar *chat_uri = sip_uri_from_name(addr);
-			struct sip_session *session = sipe_session_find_or_add_im(sipe_private,
-										  chat_uri);
-			session->is_groupchat = TRUE;
-			sipe_invite(sipe_private, session, chat_uri,
-				    NULL, NULL, NULL, FALSE);
-
-			g_free(chat_uri);
-			g_free(addr);
-		} else {
-			sipe_groupchat_free(sipe_private);
-		}
-
-		g_strfreev(parts);
+	/* Did the user specify a valid user@company.com? */
+	if (!is_empty(setting) && !is_empty(parts[1])) {
+		/* special case '@company.com' */
+		if (!is_empty(parts[0]))
+			user = parts[0];
+		domain = parts[1];
 	}
+
+	SIPE_DEBUG_INFO("sipe_groupchat_init: using '%s' '%s'",
+			user ? user : "",
+			domain ? domain: "");
+
+	if (!is_empty(user) && !is_empty(domain)) {
+		gchar *addr = g_strdup_printf("%s@%s", user, domain);
+		gchar *chat_uri = sip_uri_from_name(addr);
+		struct sip_session *session = sipe_session_find_or_add_im(sipe_private,
+										  chat_uri);
+		session->is_groupchat = TRUE;
+		sipe_invite(sipe_private, session, chat_uri,
+			    NULL, NULL, NULL, FALSE);
+
+		g_free(chat_uri);
+		g_free(addr);
+	} else {
+		groupchat_init_retry(sipe_private);
+	}
+
+	g_strfreev(parts);
 }
 
 void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
@@ -214,17 +226,19 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 
-	if (!groupchat->session) {
-		/* response to initial invite */
-		SIPE_DEBUG_INFO_NOFORMAT("no group chat server found.");
-		sipe_session_close(sipe_private, session);
-		sipe_groupchat_free(sipe_private);
-	} else {
+	if (groupchat->session) {
 		/* response to group chat server invite */
 		SIPE_DEBUG_ERROR_NOFORMAT("can't connect to group chat server!");
-		sipe_session_close(sipe_private, session);
-		sipe_groupchat_free(sipe_private);
+		groupchat->session = NULL;
+	} else {
+		/* response to initial invite */
+		SIPE_DEBUG_INFO_NOFORMAT("no group chat server found.");
+
+		/* @TODO: notify user *if* he set the Group Chat option... */
 	}
+
+	sipe_session_close(sipe_private, session);
+	groupchat_init_retry(sipe_private);
 }
 
 void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
@@ -326,7 +340,7 @@ static void chatserver_response_uri(struct sipe_core_private *sipe_private,
 			sipe_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
 		} else {
 			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
-			sipe_groupchat_free(sipe_private);
+			groupchat_init_retry(sipe_private);
 		}
 }
 
