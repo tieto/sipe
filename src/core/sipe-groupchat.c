@@ -63,10 +63,12 @@
 
 struct sipe_groupchat {
 	struct sip_session *session;
+	GSList *join_queue;
 	GHashTable *id_to_room;
 	GHashTable *uri_to_room;
 	GHashTable *msgs;
 	guint envid;
+	gboolean connected;
 };
 
 struct sipe_groupchat_room {
@@ -118,13 +120,26 @@ static void sipe_groupchat_allocate(struct sipe_core_private *sipe_private)
 						 NULL,
 						 sipe_groupchat_msg_free);
 	groupchat->envid = rand();
+	groupchat->connected = FALSE;
 	sipe_private->groupchat = groupchat;
+}
+
+static void sipe_groupchat_free_join_queue(struct sipe_groupchat *groupchat)
+{
+	GSList *entry = groupchat->join_queue;
+	while (entry) {
+		g_free(entry->data);
+		entry = entry->next;
+	}
+	g_slist_free(groupchat->join_queue);
+	groupchat->join_queue = NULL;
 }
 
 void sipe_groupchat_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	if (groupchat) {
+		sipe_groupchat_free_join_queue(groupchat);
 		g_hash_table_destroy(groupchat->msgs);
 		g_hash_table_destroy(groupchat->uri_to_room);
 		g_hash_table_destroy(groupchat->id_to_room);
@@ -149,24 +164,6 @@ static struct sipe_groupchat_msg *generate_xccos_message(struct sipe_groupchat *
 	g_hash_table_insert(groupchat->msgs, &msg->envid, msg);
 
 	return(msg);
-}
-
-/* sipe_schedule_action */
-static void groupchat_init_retry_cb(struct sipe_core_private *sipe_private,
-				    SIPE_UNUSED_PARAMETER gpointer data)
-{
-	sipe_groupchat_init(sipe_private);
-}
-
-static void groupchat_init_retry(struct sipe_core_private *sipe_private)
-{
-	SIPE_DEBUG_INFO_NOFORMAT("groupchat_init_retry: trying again later...");
-	sipe_schedule_seconds(sipe_private,
-			      "<+grouchat-retry>",
-			      NULL,
-			      GROUPCHAT_RETRY_TIMEOUT,
-			      groupchat_init_retry_cb,
-			      NULL);
 }
 
 /**
@@ -208,6 +205,30 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 	g_strfreev(parts);
 }
 
+/* sipe_schedule_action */
+static void groupchat_init_retry_cb(struct sipe_core_private *sipe_private,
+				    SIPE_UNUSED_PARAMETER gpointer data)
+{
+	sipe_groupchat_init(sipe_private);
+}
+
+static void groupchat_init_retry(struct sipe_core_private *sipe_private)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+
+	SIPE_DEBUG_INFO_NOFORMAT("groupchat_init_retry: trying again later...");
+
+	groupchat->session = NULL;
+	groupchat->connected = FALSE;
+
+	sipe_schedule_seconds(sipe_private,
+			      "<+grouchat-retry>",
+			      NULL,
+			      GROUPCHAT_RETRY_TIMEOUT,
+			      groupchat_init_retry_cb,
+			      NULL);
+}
+
 void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 				  struct sip_session *session)
 {
@@ -218,7 +239,6 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 	if (groupchat->session) {
 		/* response to group chat server invite */
 		SIPE_DEBUG_ERROR_NOFORMAT("can't connect to group chat server!");
-		groupchat->session = NULL;
 	} else {
 		/* response to initial invite */
 		SIPE_DEBUG_INFO_NOFORMAT("no group chat server found.");
@@ -234,6 +254,9 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 		g_free(msg);
 	}
 }
+
+static void chatserver_command_join(struct sipe_core_private *sipe_private,
+				    const gchar *uri);
 
 void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 				    struct sip_dialog *dialog)
@@ -255,8 +278,20 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 
 	} else {
 		/* response to group chat server invite */
+		GSList *entry;
+
 		SIPE_DEBUG_INFO_NOFORMAT("connection to group chat server established.");
-		/* TBA */
+
+		groupchat->connected = TRUE;
+
+		/* @TODO: replace with cmd:bjoin (batch join) */
+		/* We used g_slist_prepend() to create the list */
+		groupchat->join_queue = entry = g_slist_reverse(groupchat->join_queue);
+		while (entry) {
+			chatserver_command_join(sipe_private, entry->data);
+			entry = entry->next;
+		}
+		sipe_groupchat_free_join_queue(groupchat);
 	}
 }
 
@@ -308,6 +343,27 @@ static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *s
 	trans->payload   = payload;
 
 	return(msg);
+}
+
+static void chatserver_command_join(struct sipe_core_private *sipe_private,
+				    const gchar *uri)
+{
+	/* ma-chan://<domain>/<value> */
+	gchar **parts = g_strsplit(uri, "/", 4);
+	if (parts[2] && parts[3]) {
+		gchar *cmd = g_strdup_printf("<cmd id=\"cmd:join\" seqid=\"1\">"
+					     "<data>"
+					     "<chanid key=\"0\" domain=\"%s\" value=\"%s\"/>"
+					     "</data>"
+					     "</cmd>",
+					     parts[2], parts[3]);
+		chatserver_command(sipe_private, cmd);
+		g_free(cmd);
+	} else {
+		SIPE_DEBUG_ERROR("chatserver_command_join: mal-formed URI '%s'",
+				 uri);
+	}
+	g_strfreev(parts);
 }
 
 static void chatserver_response_uri(struct sipe_core_private *sipe_private,
@@ -690,8 +746,9 @@ gboolean sipe_groupchat_leave(struct sipe_core_private *sipe_private,
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 
-	if (!sipe_private->groupchat)
+	if (!groupchat || !groupchat->connected)
 		return FALSE;
 
 	chatserver_command(sipe_private,
@@ -708,28 +765,28 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 			      const gchar *uri)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	gchar **parts;
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 
-	if (!sipe_private->groupchat ||
-	    !g_str_has_prefix(uri, "ma-chan://"))
+	if (!g_str_has_prefix(uri, "ma-chan://"))
 		return;
 
-	/* ma-chan://<domain>/<value> */
-	parts = g_strsplit(uri, "/", 4);
-	if (parts[2] && parts[3]) {
-		gchar *cmd = g_strdup_printf("<cmd id=\"cmd:join\" seqid=\"1\">"
-					     "<data>"
-					     "<chanid key=\"0\" domain=\"%s\" value=\"%s\"/>"
-					     "</data>"
-					     "</cmd>",
-					     parts[2], parts[3]);
-		chatserver_command(sipe_private, cmd);
-		g_free(cmd);
-	} else {
-		SIPE_DEBUG_ERROR("sipe_core_groupchat_join: mal-formed URI '%s'",
-				 uri);
+	if (!groupchat) {
+		/* This happens when a user has set auto-join on a channel */
+		sipe_groupchat_allocate(sipe_private);
+		groupchat = sipe_private->groupchat;
 	}
-	g_strfreev(parts);
+
+	if (groupchat->connected) {
+		chatserver_command_join(sipe_private, uri);
+	} else {
+		/* Add it to the queue but avoid duplicates */
+		if (!g_slist_find_custom(groupchat->join_queue, uri,
+					 (GCompareFunc) g_strcmp0)) {
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_core_groupchat_join: URI queued");
+			groupchat->join_queue = g_slist_prepend(groupchat->join_queue,
+								g_strdup(uri));
+		}
+	}
 }
 
 /*
