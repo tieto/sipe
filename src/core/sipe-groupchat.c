@@ -33,6 +33,92 @@
  *   <http://go.microsoft.com/fwlink/?LinkID=159649>
  *  XML XCCOS message specification
  *   <???> (searches on the internet currently reveal nothing)
+ *
+ *
+ * @TODO:
+ *
+ *   -.cmd:getserverinfo
+ *       <sib domain="<DOMAIN>" infoType="123" />
+ *     rpl:getservinfo
+ *       <sib infoType="123"
+ *          serverTime="2010-09-14T14:26:17.6206356Z"
+ *          searchLimit="999"
+ *          messageSizeLimit="512"
+ *          storySizeLimit="4096"
+ *          rootUri="ma-cat://<DOMAIN>/<GUID>"
+ *          dbVersion="3ea3a5a8-ef36-46cf-898f-7a5133931d63"
+ *       />
+ *
+ *     is there any information in there we would need/use?
+ *
+ *   - cmd:getpref/rpl:getpref/cmd:setpref/rpl:setpref
+ *     probably useless, as libpurple stores configuration locally
+ *
+ *     can store base64 encoded "free text" in key/value fashion
+ *       <cmd id="cmd:getpref" seqid="x">
+ *         <data>
+ *           <pref label="kedzie.GroupChannels"
+ *             seqid="71"
+ *             createdefault="true" />
+ *         </data>
+ *       </cmd>
+ *       <cmd id="cmd:setpref" seqid="x">
+ *         <data>
+ *           <pref label="kedzie.GroupChannels"
+ *             seqid="71"
+ *             createdefault="false"
+ *             content="<BASE64 text>" />
+ *         </data>
+ *       </cmd>
+ *
+ *     use this to sync chats in buddy list on multiple clients?
+ *
+ *   - cmd:bjoin
+ *     see sipe_groupchat_invite_response()
+ *     triggers rpl:bccontext automatically
+ *
+ *   - cmd:bccontext
+ *     send after cmd:join to trigger rpl:bccontext
+ *
+ *   - rpl:bccontext
+ *     according to available documentation delivers channel history, etc.
+ *     [no log file examples]
+ *     can we add the history to the window when we open the window, or would
+ *     that confuse users that use history based on client log?
+ *
+ *   - cmd:getinv
+ *       <inv inviteId="1" domain="<DOMAIN>" />
+ *     rpl:getinv
+ *       ???
+ *
+ *     according to documentation should provide list of outstanding invites.
+ *     [no log file examples]
+ *     should we automatically join those channels or ask user to join/add?
+ *
+ *   - chatserver_command_reply()
+ *     needs to  support multiple <rpl> nodes, e.g. for rpl:bjoin?
+ *     [no log file examples]
+ *
+ *   - chatserver_command_message()
+ *     needs to support multiple <chatgrp> nodes?
+ *     [no log file examples]
+ *
+ *   - create/delete chat rooms
+ *     [no log file examples]
+ *     are these related to this functionality?
+ *
+ *     <cmd id="cmd:nodespermcreatechild" seqid="1">
+ *       <data />
+ *     </cmd>
+ *     <rpl id="rpl:nodespermcreatechild" seqid="1">
+ *       <commandid seqid="1" envid="xxx" />
+ *       <resp code="200">SUCCESS_OK</resp>
+ *       <data />
+ *     </rpl>
+ *
+ *   - file transfer (uses HTTPS PUT/GET via a filestore server)
+ *     [no log file examples]
+ *
  */
 
 #ifdef HAVE_CONFIG_H
