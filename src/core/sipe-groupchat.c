@@ -145,6 +145,7 @@
 
 struct sipe_groupchat {
 	struct sip_session *session;
+	gchar *domain;
 	GSList *join_queue;
 	GHashTable *id_to_room;
 	GHashTable *uri_to_room;
@@ -225,6 +226,7 @@ void sipe_groupchat_free(struct sipe_core_private *sipe_private)
 		g_hash_table_destroy(groupchat->msgs);
 		g_hash_table_destroy(groupchat->uri_to_room);
 		g_hash_table_destroy(groupchat->id_to_room);
+		g_free(groupchat->domain);
 		g_free(groupchat);
 		sipe_private->groupchat = NULL;
 	}
@@ -264,6 +266,7 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 	const gchar *domain = parts[domain_found ? 1 : 0];
 	gchar *chat_uri;
 	struct sip_session *session;
+	struct sipe_groupchat *groupchat;
 
 	/* User specified valid 'user@company.com' */
 	if (user_set && domain_found && !is_empty(parts[0]))
@@ -275,6 +278,7 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 
 	if (!sipe_private->groupchat)
 		sipe_groupchat_allocate(sipe_private);
+	groupchat = sipe_private->groupchat;
 
 	chat_uri = g_strdup_printf("sip:%s@%s", user, domain);
 	session = sipe_session_find_or_add_im(sipe_private,
@@ -282,6 +286,9 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 	session->is_groupchat = TRUE;
 	sipe_invite(sipe_private, session, chat_uri,
 		    NULL, NULL, NULL, FALSE);
+
+	g_free(groupchat->domain);
+	groupchat->domain = g_strdup(domain);
 
 	g_free(chat_uri);
 	g_strfreev(parts);
@@ -378,6 +385,8 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 
 	} else {
 		/* response to group chat server invite */
+		gchar *invcmd;
+
 		SIPE_DEBUG_INFO_NOFORMAT("connection to group chat server established.");
 
 		groupchat->connected = TRUE;
@@ -403,6 +412,15 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 			chatserver_command(sipe_private, cmd->str);
 			g_string_free(cmd, TRUE);
 		}
+
+		/* Request outstanding invites from server */
+		invcmd = g_strdup_printf("<cmd id=\"cmd:getinv\" seqid=\"1\">"
+					 "<data>"
+					 "<inv inviteId=\"1\" domain=\"%s\"/>"
+					 "</data>"
+					 "</cmd>", groupchat->domain);
+		chatserver_command(sipe_private, invcmd);
+		g_free(invcmd);
 	}
 }
 
