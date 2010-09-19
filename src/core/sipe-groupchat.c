@@ -91,10 +91,6 @@
  *     [no log file examples]
  *     should we automatically join those channels or ask user to join/add?
  *
- *   - chatserver_command_reply()
- *     needs to  support multiple <rpl> nodes, e.g. for rpl:bjoin?
- *     [no log file examples]
- *
  *   - chatserver_command_message()
  *     needs to support multiple <chatgrp> nodes?
  *     [no log file examples]
@@ -700,42 +696,44 @@ static void chatserver_command_reply(struct sipe_core_private *sipe_private,
 				     const sipe_xml *reply,
 				     struct sip_session *session)
 {
-	const sipe_xml *resp, *data;
-	const gchar *id;
-	gchar *message;
-	guint result = 500;
-	const struct response *r;
+	do {
+		const sipe_xml *resp, *data;
+		const gchar *id;
+		gchar *message;
+		guint result = 500;
+		const struct response *r;
 
-	id = sipe_xml_attribute(reply, "id");
-	if (!id) {
-		SIPE_DEBUG_INFO_NOFORMAT("chatserver_command_reply: no reply ID found!");
-		return;
-	}
-
-	resp = sipe_xml_child(reply, "resp");
-	if (resp) {
-		result = sipe_xml_int_attribute(resp, "code", 500);
-		message = sipe_xml_data(resp);
-	} else {
-		message = g_strdup("");
-	}
-
-	data = sipe_xml_child(reply, "data");
-
-	SIPE_DEBUG_INFO("chatserver_command_reply: '%s' result (%d) %s",
-			id, result, message ? message : "");
-
-	for (r = response_table; r->key; r++) {
-		if (sipe_strcase_equal(id, r->key)) {
-			(*r->handler)(sipe_private, session, result, message, data);
-			break;
+		id = sipe_xml_attribute(reply, "id");
+		if (!id) {
+			SIPE_DEBUG_INFO_NOFORMAT("chatserver_command_reply: no reply ID found!");
+			continue;
 		}
-	}
-	if (!r->key) {
-		SIPE_DEBUG_INFO_NOFORMAT("chatserver_command_reply: ignoring unknown response");
-	}
 
-	g_free(message);
+		resp = sipe_xml_child(reply, "resp");
+		if (resp) {
+			result = sipe_xml_int_attribute(resp, "code", 500);
+			message = sipe_xml_data(resp);
+		} else {
+			message = g_strdup("");
+		}
+
+		data = sipe_xml_child(reply, "data");
+
+		SIPE_DEBUG_INFO("chatserver_command_reply: '%s' result (%d) %s",
+				id, result, message ? message : "");
+
+		for (r = response_table; r->key; r++) {
+			if (sipe_strcase_equal(id, r->key)) {
+				(*r->handler)(sipe_private, session, result, message, data);
+				break;
+			}
+		}
+		if (!r->key) {
+			SIPE_DEBUG_INFO_NOFORMAT("chatserver_command_reply: ignoring unknown response");
+		}
+
+		g_free(message);
+	} while ((reply = sipe_xml_twin(reply)) != NULL);
 }
 
 static void chatserver_chatgrp_message(struct sipe_core_private *sipe_private,
