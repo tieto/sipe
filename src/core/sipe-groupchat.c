@@ -73,10 +73,6 @@
  *
  *     use this to sync chats in buddy list on multiple clients?
  *
- *   - cmd:bjoin
- *     see sipe_groupchat_invite_response()
- *     triggers rpl:bccontext automatically
- *
  *   - cmd:bccontext
  *     send after cmd:join to trigger rpl:bccontext
  *
@@ -341,8 +337,26 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 	}
 }
 
-static void chatserver_command_join(struct sipe_core_private *sipe_private,
-				    const gchar *uri);
+static gchar *generate_chanid_node(const gchar *uri, guint key)
+{
+	/* ma-chan://<domain>/<value> */
+	gchar **parts = g_strsplit(uri, "/", 4);
+	gchar *chanid = NULL;
+
+	if (parts[2] && parts[3]) {
+		chanid = g_strdup_printf("<chanid key=\"%d\" domain=\"%s\" value=\"%s\"/>",
+					 key, parts[2], parts[3]);
+	} else {
+		SIPE_DEBUG_ERROR("generate_chanid_node: mal-formed URI '%s'",
+				 uri);
+	}
+	g_strfreev(parts);
+
+	return chanid;
+}
+
+static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *sipe_private,
+						     const gchar *cmd);
 
 void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 				    struct sip_dialog *dialog)
@@ -364,20 +378,31 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 
 	} else {
 		/* response to group chat server invite */
-		GSList *entry;
-
 		SIPE_DEBUG_INFO_NOFORMAT("connection to group chat server established.");
 
 		groupchat->connected = TRUE;
 
-		/* @TODO: replace with cmd:bjoin (batch join) */
-		/* We used g_slist_prepend() to create the list */
-		groupchat->join_queue = entry = g_slist_reverse(groupchat->join_queue);
-		while (entry) {
-			chatserver_command_join(sipe_private, entry->data);
-			entry = entry->next;
+		/* Any queued joins? */
+		if (groupchat->join_queue) {
+			GString *cmd = g_string_new("<cmd id=\"cmd:bjoin\" seqid=\"1\">"
+						    "<data>");
+			GSList *entry;
+			guint i = 0;
+
+			/* We used g_slist_prepend() to create the list */
+			groupchat->join_queue = entry = g_slist_reverse(groupchat->join_queue);
+			while (entry) {
+				gchar *chanid = generate_chanid_node(entry->data, i++);
+				g_string_append(cmd, chanid);
+				g_free(chanid);
+				entry = entry->next;
+			}
+			sipe_groupchat_free_join_queue(groupchat);
+
+			g_string_append(cmd, "</data></cmd>");
+			chatserver_command(sipe_private, cmd->str);
+			g_string_free(cmd, TRUE);
 		}
-		sipe_groupchat_free_join_queue(groupchat);
 	}
 }
 
@@ -429,27 +454,6 @@ static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *s
 	trans->payload   = payload;
 
 	return(msg);
-}
-
-static void chatserver_command_join(struct sipe_core_private *sipe_private,
-				    const gchar *uri)
-{
-	/* ma-chan://<domain>/<value> */
-	gchar **parts = g_strsplit(uri, "/", 4);
-	if (parts[2] && parts[3]) {
-		gchar *cmd = g_strdup_printf("<cmd id=\"cmd:join\" seqid=\"1\">"
-					     "<data>"
-					     "<chanid key=\"0\" domain=\"%s\" value=\"%s\"/>"
-					     "</data>"
-					     "</cmd>",
-					     parts[2], parts[3]);
-		chatserver_command(sipe_private, cmd);
-		g_free(cmd);
-	} else {
-		SIPE_DEBUG_ERROR("chatserver_command_join: mal-formed URI '%s'",
-				 uri);
-	}
-	g_strfreev(parts);
 }
 
 static void chatserver_response_uri(struct sipe_core_private *sipe_private,
@@ -668,6 +672,8 @@ static const struct response {
 	{ "rpl:requri",   chatserver_response_uri },
 	{ "rpl:chansrch", chatserver_response_channel_search },
 	{ "rpl:join",     chatserver_response_join },
+	/* @TODO: does this actually work? */
+	{ "rpl:bjoin",    chatserver_response_join },
 	{ "rpl:part",     chatserver_response_part },
 	{ NULL, NULL }
 };
@@ -863,7 +869,17 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 	}
 
 	if (groupchat->connected) {
-		chatserver_command_join(sipe_private, uri);
+		/* Send it out directly */
+		gchar *chanid = generate_chanid_node(uri, 0);
+		if (chanid) {
+			gchar *cmd = g_strdup_printf("<cmd id=\"cmd:join\" seqid=\"1\">"
+						     "<data>%s</data>"
+						     "</cmd>",
+						     chanid);
+			chatserver_command(sipe_private, cmd);
+			g_free(cmd);
+			g_free(chanid);
+		}
 	} else {
 		/* Add it to the queue but avoid duplicates */
 		if (!g_slist_find_custom(groupchat->join_queue, uri,
