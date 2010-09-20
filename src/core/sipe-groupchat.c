@@ -139,6 +139,22 @@
 
 #define GROUPCHAT_RETRY_TIMEOUT 5*60 /* seconds */
 
+/**
+ * aib node - magic numbers?
+ *
+ * Example:
+ * <aib key="3984" value="0,1,2,3,4,5,7,9,10,12,13,14,15,16,17" />
+ * <aib key="12276" value="6,8,11" />
+ *
+ * "value" corresponds to the "id" attribute in uib nodes.
+ *
+ * @TODO: Confirm "guessed" meaning of the magic numbers:
+ *        3984  = normal users
+ *        12276 = channel operators
+ */
+#define GROUPCHAT_AIB_KEY_USER    "3984"
+#define GROUPCHAT_AIB_KEY_CHANOP "12276"
+
 struct sipe_groupchat {
 	struct sip_session *session;
 	gchar *domain;
@@ -583,6 +599,26 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 	sipe_backend_groupchat_room_terminate(sipe_public);
 }
 
+static gboolean is_chanop(const sipe_xml *aib)
+{
+	return sipe_strequal(sipe_xml_attribute(aib, "key"),
+			     GROUPCHAT_AIB_KEY_CHANOP);
+}
+
+static void add_user(struct sipe_groupchat_room *room,
+		     const gchar *uri,
+		     gboolean new, gboolean chanop)
+{
+	SIPE_DEBUG_INFO("add_user: %s%s%s to room %s (%s)",
+			new ? "new " : "",
+			chanop ? "chanop " : "",
+			uri,
+			room->title, room->uri);
+	sipe_backend_chat_add(room->backend_session, uri, new);
+	if (chanop)
+		sipe_backend_chat_operator(room->backend_session, uri);
+}
+
 static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				     SIPE_UNUSED_PARAMETER struct sip_session *session,
 				     guint result,
@@ -651,39 +687,22 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 							attr);
 			}
 
-			/**
-			 * User map for channel
-			 *
-			 * Example:
-			 * <aib key="3984" value="0,1,2,3,4,5,7,9,10,12,13,14,15,16,17" />
-			 * <aib key="12276" value="6,8,11" />
-			 *
-			 * "value" corresponds to the "id" attrbute in uib nodes.
-			 *
-			 * @TODO: Confirm "guessed" meaning of the magic numbers:
-			 *        3984  = normal users
-			 *        12276 = channel operators
-			 */
+			/* Process user map for channel */
 			for (aib = sipe_xml_child(node, "aib");
 			     aib;
 			     aib = sipe_xml_twin(aib)) {
 				const gchar *value = sipe_xml_attribute(aib, "value");
-				gboolean chanop = sipe_strequal(sipe_xml_attribute(aib, "key"),
-								"12276");
+				gboolean chanop = is_chanop(aib);
 				gchar **ids = g_strsplit(value, ",", 0);
 
 				if (ids) {
 					gchar **uid = ids;
 
 					while (*uid) {
-						const gchar *uri = g_hash_table_lookup(user_ids, *uid);
-						if (uri) {
-							sipe_backend_chat_add(room->backend_session,
-									      uri, FALSE);
-							if (chanop)
-								sipe_backend_chat_operator(room->backend_session,
-											   uri);
-						}
+						const gchar *uri = g_hash_table_lookup(user_ids,
+										       *uid);
+						if (uri)
+							add_user(room, uri, FALSE, chanop);
 						uid++;
 					}
 
@@ -729,6 +748,44 @@ static void chatserver_response_part(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void chatserver_notice_join(struct sipe_core_private *sipe_private,
+				   SIPE_UNUSED_PARAMETER struct sip_session *session,
+				   SIPE_UNUSED_PARAMETER guint result,
+				   SIPE_UNUSED_PARAMETER const gchar *message,
+				   const sipe_xml *xml)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+	const sipe_xml *uib;
+
+	for (uib = sipe_xml_child(xml, "uib");
+	     uib;
+	     uib = sipe_xml_twin(uib)) {
+		const gchar *uri = sipe_xml_attribute(uib, "uri");
+
+		if (uri) {
+			const sipe_xml *aib;
+
+			for (aib = sipe_xml_child(uib, "aib");
+			     aib;
+			     aib = sipe_xml_twin(aib)) {
+				const gchar *domain = sipe_xml_attribute(aib, "domain");
+				const gchar *path   = sipe_xml_attribute(aib, "value");
+
+				if (domain && path) {
+					gchar *room_uri = g_strdup_printf("ma-chan://%s/%s",
+									  domain, path);
+					struct sipe_groupchat_room *room = g_hash_table_lookup(groupchat->uri_to_room,
+											       room_uri);
+					if (room)
+						add_user(room, uri, TRUE, is_chanop(aib));
+
+					g_free(room_uri);
+				}
+			}
+		}
+	}
+}
+
 static const struct response {
 	const gchar *key;
 	void (* const handler)(struct sipe_core_private *,
@@ -741,12 +798,15 @@ static const struct response {
 	{ "rpl:join",     chatserver_response_join },
 	{ "rpl:bjoin",    chatserver_response_join },
 	{ "rpl:part",     chatserver_response_part },
+	{ "ntc:join",     chatserver_notice_join },
+	{ "ntc:bjoin",    chatserver_notice_join },
 	{ NULL, NULL }
 };
 
-static void chatserver_command_reply(struct sipe_core_private *sipe_private,
-				     const sipe_xml *reply,
-				     struct sip_session *session)
+/* Handles rpl:XXX & ntc:YYY */
+static void chatserver_response(struct sipe_core_private *sipe_private,
+				const sipe_xml *reply,
+				struct sip_session *session)
 {
 	do {
 		const sipe_xml *resp, *data;
@@ -757,7 +817,7 @@ static void chatserver_command_reply(struct sipe_core_private *sipe_private,
 
 		id = sipe_xml_attribute(reply, "id");
 		if (!id) {
-			SIPE_DEBUG_INFO_NOFORMAT("chatserver_command_reply: no reply ID found!");
+			SIPE_DEBUG_INFO_NOFORMAT("chatserver_response: no reply ID found!");
 			continue;
 		}
 
@@ -771,7 +831,7 @@ static void chatserver_command_reply(struct sipe_core_private *sipe_private,
 
 		data = sipe_xml_child(reply, "data");
 
-		SIPE_DEBUG_INFO("chatserver_command_reply: '%s' result (%d) %s",
+		SIPE_DEBUG_INFO("chatserver_response: '%s' result (%d) %s",
 				id, result, message ? message : "");
 
 		for (r = response_table; r->key; r++) {
@@ -781,7 +841,7 @@ static void chatserver_command_reply(struct sipe_core_private *sipe_private,
 			}
 		}
 		if (!r->key) {
-			SIPE_DEBUG_INFO_NOFORMAT("chatserver_command_reply: ignoring unknown response");
+			SIPE_DEBUG_INFO_NOFORMAT("chatserver_response: ignoring unknown response");
 		}
 
 		g_free(message);
@@ -830,8 +890,9 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 
 	if (!xml) return;
 
-	if        ((node = sipe_xml_child(xml, "rpl")) != NULL) {
-		chatserver_command_reply(sipe_private, node, session);
+	if        (((node = sipe_xml_child(xml, "rpl")) != NULL) ||
+		   ((node = sipe_xml_child(xml, "ntc")) != NULL)) {
+		chatserver_response(sipe_private, node, session);
 	} else if ((node = sipe_xml_child(xml, "grpchat")) != NULL) {
 		chatserver_chatgrp_message(sipe_private, node);
 	} else {
