@@ -593,17 +593,30 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		sipe_backend_notify_error(_("Error joining chat room"),
 					  message);
 	} else {
-		const sipe_xml *chanib;
+		const sipe_xml *node;
+		GHashTable *user_ids = g_hash_table_new(g_str_hash, g_str_equal);
 
-		for (chanib = sipe_xml_child(xml, "chanib");
-		     chanib;
-		     chanib = sipe_xml_twin(chanib)) {
+		/* Extract user IDs & URIs and generate ID -> URI map */
+		for (node = sipe_xml_child(xml, "uib");
+		     node;
+		     node = sipe_xml_twin(node)) {
+			const gchar *id  = sipe_xml_attribute(node, "id");
+			const gchar *uri = sipe_xml_attribute(node, "uri");
+			if (id && uri)
+				g_hash_table_insert(user_ids,
+						    (gpointer) id,
+						    (gpointer) uri);
+		}
+
+		/* Process channel data */
+		for (node = sipe_xml_child(xml, "chanib");
+		     node;
+		     node = sipe_xml_twin(node)) {
 			struct sipe_groupchat *groupchat = sipe_private->groupchat;
 			struct sipe_groupchat_room *room = g_new0(struct sipe_groupchat_room, 1);
-			const gchar *title = sipe_xml_attribute(chanib, "name");
-			const gchar *topic = sipe_xml_attribute(chanib, "topic");
 			gchar *self = sip_uri_self(sipe_private);
-			const sipe_xml *uib;
+			const sipe_xml *aib;
+			const gchar *attr;
 			int id;
 
 			/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
@@ -612,13 +625,13 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				id = rand();
 			} while (g_hash_table_lookup(groupchat->id_to_room, &id));
 
-			room->uri   = g_strdup(sipe_xml_attribute(chanib, "uri"));
-			room->title = g_strdup(title ? title : "");
+			attr = sipe_xml_attribute(node, "name");
+			room->title = g_strdup(attr ? attr : "");
+			room->uri   = g_strdup(sipe_xml_attribute(node, "uri"));
 			room->id    = id;
 
-			SIPE_DEBUG_INFO("joined room '%s' '%s' (%s id %d)",
+			SIPE_DEBUG_INFO("joined room '%s' (%s id %d)",
 					room->title,
-					topic ? topic : "",
 					room->uri, id);
 
 			room->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
@@ -632,21 +645,54 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 			g_hash_table_insert(groupchat->id_to_room,  &room->id, room);
 			g_hash_table_insert(groupchat->uri_to_room, room->uri, room);
 
-			if (topic) {
-				sipe_backend_chat_topic(room->backend_session, topic);
+			attr = sipe_xml_attribute(node, "topic");
+			if (attr) {
+				sipe_backend_chat_topic(room->backend_session,
+							attr);
 			}
 
-			/* @TODO: this can't be correct! How are users on
-			   different channels assigned to the channel??? */
-			for (uib = sipe_xml_child(xml, "uib");
-			     uib;
-			     uib = sipe_xml_twin(uib)) {
-				const gchar *uri = sipe_xml_attribute(uib, "uri");
-				if (uri)
-					sipe_backend_chat_add(room->backend_session,
-							      uri, FALSE);
+			/**
+			 * User map for channel
+			 *
+			 * Example:
+			 * <aib key="3984" value="0,1,2,3,4,5,7,9,10,12,13,14,15,16,17" />
+			 * <aib key="12276" value="6,8,11" />
+			 *
+			 * "value" corresponds to the "id" attrbute in uib nodes.
+			 *
+			 * @TODO: Confirm "guessed" meaning of the magic numbers:
+			 *        3984  = normal users
+			 *        12276 = channel operators
+			 */
+			for (aib = sipe_xml_child(node, "aib");
+			     aib;
+			     aib = sipe_xml_twin(aib)) {
+				const gchar *value = sipe_xml_attribute(aib, "value");
+				gboolean chanop = sipe_strequal(sipe_xml_attribute(aib, "key"),
+								"12276");
+				gchar **ids = g_strsplit(value, ",", 0);
+
+				if (ids) {
+					gchar **uid = ids;
+
+					while (*uid) {
+						const gchar *uri = g_hash_table_lookup(user_ids, *uid);
+						if (uri) {
+							sipe_backend_chat_add(room->backend_session,
+									      uri, FALSE);
+							if (chanop)
+								sipe_backend_chat_operator(room->backend_session,
+											   uri);
+						}
+						uid++;
+					}
+
+					g_strfreev(ids);
+				}
 			}
 		}
+
+		g_hash_table_destroy(user_ids);
 	}
 }
 
@@ -693,7 +739,6 @@ static const struct response {
 	{ "rpl:requri",   chatserver_response_uri },
 	{ "rpl:chansrch", chatserver_response_channel_search },
 	{ "rpl:join",     chatserver_response_join },
-	/* @TODO: does this actually work? */
 	{ "rpl:bjoin",    chatserver_response_join },
 	{ "rpl:part",     chatserver_response_part },
 	{ NULL, NULL }
