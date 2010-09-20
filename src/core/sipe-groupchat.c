@@ -786,6 +786,46 @@ static void chatserver_notice_join(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void chatserver_notice_part(struct sipe_core_private *sipe_private,
+				   SIPE_UNUSED_PARAMETER struct sip_session *session,
+				   SIPE_UNUSED_PARAMETER guint result,
+				   SIPE_UNUSED_PARAMETER const gchar *message,
+				   const sipe_xml *xml)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+	const sipe_xml *chanib;
+
+	for (chanib = sipe_xml_child(xml, "chanib");
+	     chanib;
+	     chanib = sipe_xml_twin(chanib)) {
+		const gchar *room_uri = sipe_xml_attribute(chanib, "uri");
+
+		if (room_uri) {
+			struct sipe_groupchat_room *room = g_hash_table_lookup(groupchat->uri_to_room,
+									       room_uri);
+
+			if (room) {
+				const sipe_xml *uib;
+
+				for (uib = sipe_xml_child(chanib, "uib");
+				     uib;
+				     uib = sipe_xml_twin(uib)) {
+					const gchar *uri = sipe_xml_attribute(uib, "uri");
+
+					if (uri) {
+						SIPE_DEBUG_INFO("remove_user: %s from room %s (%s)",
+								uri,
+								room->title, room->uri);
+						sipe_backend_chat_remove(room->backend_session,
+									 uri);
+					}
+				}
+			}
+		}
+	}
+}
+
+
 static const struct response {
 	const gchar *key;
 	void (* const handler)(struct sipe_core_private *,
@@ -800,6 +840,7 @@ static const struct response {
 	{ "rpl:part",     chatserver_response_part },
 	{ "ntc:join",     chatserver_notice_join },
 	{ "ntc:bjoin",    chatserver_notice_join },
+	{ "ntc:part",     chatserver_notice_part },
 	{ NULL, NULL }
 };
 
