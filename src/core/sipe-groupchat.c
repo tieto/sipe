@@ -593,52 +593,59 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		sipe_backend_notify_error(_("Error joining chat room"),
 					  message);
 	} else {
-		struct sipe_groupchat *groupchat = sipe_private->groupchat;
-		struct sipe_groupchat_room *room = g_new0(struct sipe_groupchat_room, 1);
-		const sipe_xml *chanib = sipe_xml_child(xml, "chanib");
-		const gchar *title = sipe_xml_attribute(chanib, "name");
-		const gchar *topic = sipe_xml_attribute(chanib, "topic");
-		gchar *self = sip_uri_self(sipe_private);
-		const sipe_xml *uib;
-		int id;
+		const sipe_xml *chanib;
 
-		/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
-		/* Find next free ID */
-		do {
-			id = rand();
-		} while (g_hash_table_lookup(groupchat->id_to_room, &id));
+		for (chanib = sipe_xml_child(xml, "chanib");
+		     chanib;
+		     chanib = sipe_xml_twin(chanib)) {
+			struct sipe_groupchat *groupchat = sipe_private->groupchat;
+			struct sipe_groupchat_room *room = g_new0(struct sipe_groupchat_room, 1);
+			const gchar *title = sipe_xml_attribute(chanib, "name");
+			const gchar *topic = sipe_xml_attribute(chanib, "topic");
+			gchar *self = sip_uri_self(sipe_private);
+			const sipe_xml *uib;
+			int id;
 
-		room->uri   = g_strdup(sipe_xml_attribute(chanib, "uri"));
-		room->title = g_strdup(title ? title : "");
-		room->id    = id;
+			/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
+			/* Find next free ID */
+			do {
+				id = rand();
+			} while (g_hash_table_lookup(groupchat->id_to_room, &id));
 
-		SIPE_DEBUG_INFO("joined room '%s' '%s' (%s id %d)",
-				room->title,
-				topic ? topic : "",
-				room->uri, id);
+			room->uri   = g_strdup(sipe_xml_attribute(chanib, "uri"));
+			room->title = g_strdup(title ? title : "");
+			room->id    = id;
 
-		room->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								 id,
-								 room->title,
-								 self,
-								 FALSE);
-		g_free(self);
+			SIPE_DEBUG_INFO("joined room '%s' '%s' (%s id %d)",
+					room->title,
+					topic ? topic : "",
+					room->uri, id);
 
-		/* Don't use "id" here! Key must be in non-volatile memory. */
-		g_hash_table_insert(groupchat->id_to_room,  &room->id, room);
-		g_hash_table_insert(groupchat->uri_to_room, room->uri, room);
+			room->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+									 id,
+									 room->title,
+									 self,
+									 FALSE);
+			g_free(self);
 
-		if (topic) {
-			sipe_backend_chat_topic(room->backend_session, topic);
-		}
+			/* Don't use "id" here! Key must be in non-volatile memory. */
+			g_hash_table_insert(groupchat->id_to_room,  &room->id, room);
+			g_hash_table_insert(groupchat->uri_to_room, room->uri, room);
 
-		for (uib = sipe_xml_child(xml, "uib");
-		     uib;
-		     uib = sipe_xml_twin(uib)) {
-			const gchar *uri = sipe_xml_attribute(uib, "uri");
-			if (uri)
-				sipe_backend_chat_add(room->backend_session,
-						      uri, FALSE);
+			if (topic) {
+				sipe_backend_chat_topic(room->backend_session, topic);
+			}
+
+			/* @TODO: this can't be correct! How are users on
+			   different channels assigned to the channel??? */
+			for (uib = sipe_xml_child(xml, "uib");
+			     uib;
+			     uib = sipe_xml_twin(uib)) {
+				const gchar *uri = sipe_xml_attribute(uib, "uri");
+				if (uri)
+					sipe_backend_chat_add(room->backend_session,
+							      uri, FALSE);
+			}
 		}
 	}
 }
