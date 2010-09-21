@@ -629,6 +629,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		sipe_backend_notify_error(_("Error joining chat room"),
 					  message);
 	} else {
+		struct sipe_groupchat *groupchat = sipe_private->groupchat;
 		const sipe_xml *node;
 		GHashTable *user_ids = g_hash_table_new(g_str_hash, g_str_equal);
 
@@ -648,65 +649,74 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 		for (node = sipe_xml_child(xml, "chanib");
 		     node;
 		     node = sipe_xml_twin(node)) {
-			struct sipe_groupchat *groupchat = sipe_private->groupchat;
-			struct sipe_groupchat_room *room = g_new0(struct sipe_groupchat_room, 1);
-			gchar *self = sip_uri_self(sipe_private);
-			const sipe_xml *aib;
-			const gchar *attr;
-			int id;
+			const gchar *uri = sipe_xml_attribute(node, "uri");
 
-			/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
-			/* Find next free ID */
-			do {
-				id = rand();
-			} while (g_hash_table_lookup(groupchat->id_to_room, &id));
+			if (uri) {
+				struct sipe_groupchat_room *room = g_hash_table_lookup(groupchat->uri_to_room,
+										       uri);
+				gboolean new = (room == NULL);
+				gchar *self = sip_uri_self(sipe_private);
+				const sipe_xml *aib;
+				const gchar *attr;
 
-			attr = sipe_xml_attribute(node, "name");
-			room->title = g_strdup(attr ? attr : "");
-			room->uri   = g_strdup(sipe_xml_attribute(node, "uri"));
-			room->id    = id;
+				if (new) {
+					/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
+					/* Find next free ID */
+					int id;
+					do {
+						id = rand();
+					} while (g_hash_table_lookup(groupchat->id_to_room, &id));
 
-			SIPE_DEBUG_INFO("joined room '%s' (%s id %d)",
-					room->title,
-					room->uri, id);
+					attr = sipe_xml_attribute(node, "name");
+					room        = g_new0(struct sipe_groupchat_room, 1);
+					room->title = g_strdup(attr ? attr : "");
+					room->uri   = g_strdup(sipe_xml_attribute(node, "uri"));
+					room->id    = id;
 
-			room->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-									 id,
-									 room->title,
-									 self,
-									 FALSE);
-			g_free(self);
+					/* Don't use "id" here! Key must be in non-volatile memory. */
+					g_hash_table_insert(groupchat->id_to_room,  &room->id, room);
+					g_hash_table_insert(groupchat->uri_to_room, room->uri, room);
+				}
 
-			/* Don't use "id" here! Key must be in non-volatile memory. */
-			g_hash_table_insert(groupchat->id_to_room,  &room->id, room);
-			g_hash_table_insert(groupchat->uri_to_room, room->uri, room);
+				SIPE_DEBUG_INFO("joined room '%s' (%s id %d)",
+						room->title,
+						room->uri,
+						room->id);
 
-			attr = sipe_xml_attribute(node, "topic");
-			if (attr) {
-				sipe_backend_chat_topic(room->backend_session,
-							attr);
-			}
+				room->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+										 room->id,
+										 room->title,
+										 self,
+										 !new);
+				g_free(self);
 
-			/* Process user map for channel */
-			for (aib = sipe_xml_child(node, "aib");
-			     aib;
-			     aib = sipe_xml_twin(aib)) {
-				const gchar *value = sipe_xml_attribute(aib, "value");
-				gboolean chanop = is_chanop(aib);
-				gchar **ids = g_strsplit(value, ",", 0);
+				attr = sipe_xml_attribute(node, "topic");
+				if (attr) {
+					sipe_backend_chat_topic(room->backend_session,
+								attr);
+				}
 
-				if (ids) {
-					gchar **uid = ids;
+				/* Process user map for channel */
+				for (aib = sipe_xml_child(node, "aib");
+				     aib;
+				     aib = sipe_xml_twin(aib)) {
+					const gchar *value = sipe_xml_attribute(aib, "value");
+					gboolean chanop = is_chanop(aib);
+					gchar **ids = g_strsplit(value, ",", 0);
 
-					while (*uid) {
-						const gchar *uri = g_hash_table_lookup(user_ids,
-										       *uid);
-						if (uri)
-							add_user(room, uri, FALSE, chanop);
-						uid++;
+					if (ids) {
+						gchar **uid = ids;
+
+						while (*uid) {
+							const gchar *uri = g_hash_table_lookup(user_ids,
+											       *uid);
+							if (uri)
+								add_user(room, uri, FALSE, chanop);
+							uid++;
+						}
+
+						g_strfreev(ids);
 					}
-
-					g_strfreev(ids);
 				}
 			}
 		}
@@ -905,7 +915,7 @@ static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	room = g_hash_table_lookup(groupchat->uri_to_room, uri); 
+	room = g_hash_table_lookup(groupchat->uri_to_room, uri);
 	if (!room) {
 		SIPE_DEBUG_INFO("chatserver_grpchat_message: message '%s' from '%s' received from unknown chat room '%s'!",
 				text ? text : "", from, uri);
