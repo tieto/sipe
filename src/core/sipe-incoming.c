@@ -331,7 +331,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		was_multiparty = FALSE;
 		session->is_multiparty = TRUE;
 		/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
-		session->chat_id = rand();
+		session->backend_id = sipe_session_get_backend_chat_id();
 	}
 
 	if (!session && is_multiparty) {
@@ -430,7 +430,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		gchar *self = sip_uri_self(sipe_private);
 		/* create chat */
 		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->chat_id,
+								    session->backend_id,
 								    chat_title, 
 								    self,
 								    FALSE);
@@ -492,7 +492,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 				if (html) {
 					if (is_multiparty) {
 						sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-									  session->chat_id,
+									  session->backend_id,
 									  from,
 									  html);
 					} else {
@@ -560,13 +560,13 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 			gchar *sender = parse_from(tmp);
 			g_free(tmp);
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->chat_id,
+						  session->backend_id,
 						  sender,
 						  html);
 			g_free(sender);
 		} else if (session && session->is_multiparty) { /* a multiparty chat */
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->chat_id,
+						  session->backend_id,
 						  from,
 						  html);
 		} else {

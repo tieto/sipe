@@ -3169,7 +3169,7 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 		if (session->is_multiparty || session->focus_uri) {
 			gchar *who = sip_uri_self(sipe_private);
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->chat_id,
+						  session->backend_id,
 						  who,
 						  msg->body);
 			g_free(who);
@@ -3518,8 +3518,8 @@ sipe_chat_leave (PurpleConnection *gc, int id)
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
 
 	if (!sipe_groupchat_leave(sipe_private, id)) {
-		struct sip_session *session = sipe_session_find_chat_by_id(sipe_private,
-									   id);
+		struct sip_session *session = sipe_session_find_chat_by_backend_id(sipe_private,
+										   id);
 		sipe_session_close(sipe_private, session);
 	}
 }
@@ -3563,7 +3563,7 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 	if (sipe_groupchat_send(sipe_private, id, what))
 		return 1;
 
-	session = sipe_session_find_chat_by_id(sipe_private, id);
+	session = sipe_session_find_chat_by_backend_id(sipe_private, id);
 
 	// Queue the message
 	if (session && session->dialogs) {
@@ -6313,7 +6313,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session->roster_manager = g_strdup(self);
 
 		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->chat_id,
+								    session->backend_id,
 								    session->chat_title,
 								    self,
 								    FALSE);

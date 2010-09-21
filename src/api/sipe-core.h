@@ -255,7 +255,7 @@ void sipe_core_dns_resolve_failure(struct sipe_core_public *sipe_public);
 /**
  * Create a new chat
  */
-void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
+void sipe_core_chat_create(struct sipe_core_public *sipe_public, guint id,
 			   const char *name);
 
 /* media */

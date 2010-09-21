@@ -113,7 +113,7 @@ void sipe_backend_chat_add(struct sipe_backend_session *backend_session,
 			   gboolean is_new);
 void sipe_backend_chat_close(struct sipe_backend_session *backend_session);
 struct sipe_backend_session *sipe_backend_chat_create(struct sipe_core_public *sipe_public,
-						      int id,
+						      guint id,
 						      const gchar *title,
 						      const gchar *nick,
 						      gboolean rejoin);
@@ -122,7 +122,7 @@ gboolean sipe_backend_chat_find(struct sipe_backend_session *backend_session,
 gboolean sipe_backend_chat_is_operator(struct sipe_backend_session *backend_session,
 				       const gchar *uri);
 void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
-			       int id,
+			       guint id,
 			       const gchar *from,
 			       const gchar *html);
 void sipe_backend_chat_operator(struct sipe_backend_session *backend_session,

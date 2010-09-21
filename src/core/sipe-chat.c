@@ -46,11 +46,11 @@
 #include "sipe-xml.h"
 #include "sipe.h"
 
-void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
+void sipe_core_chat_create(struct sipe_core_public *sipe_public, guint id,
 			   const char *name)
 {
-	struct sip_session *session = sipe_session_find_chat_by_id(SIPE_CORE_PRIVATE,
-								   id);
+	struct sip_session *session = sipe_session_find_chat_by_backend_id(SIPE_CORE_PRIVATE,
+									   id);
 
 	if (session) {
 		gchar *uri = sip_uri(name);

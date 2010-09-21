@@ -170,7 +170,7 @@ struct sipe_groupchat_room {
 	struct sipe_backend_session *backend_session;
 	gchar *uri;
 	gchar *title;
-	int id;
+	guint id;
 };
 
 struct sipe_groupchat_msg {
@@ -660,12 +660,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				const gchar *attr;
 
 				if (new) {
-					/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
-					/* Find next free ID */
-					int id;
-					do {
-						id = rand();
-					} while (g_hash_table_lookup(groupchat->id_to_room, &id));
+					guint id = sipe_session_get_backend_chat_id();
 
 					attr = sipe_xml_attribute(node, "name");
 					room        = g_new0(struct sipe_groupchat_room, 1);
