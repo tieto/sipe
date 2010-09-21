@@ -1,4 +1,4 @@
- /**
+/**
  * @file sipe-groupchat.c
  *
  * pidgin-sipe
@@ -825,7 +825,6 @@ static void chatserver_notice_part(struct sipe_core_private *sipe_private,
 	}
 }
 
-
 static const struct response {
 	const gchar *key;
 	void (* const handler)(struct sipe_core_private *,
@@ -948,8 +947,7 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	struct sipe_groupchat_room *room;
-	gchar *cmd;
-	gchar *self;
+	gchar *cmd, *self, *timestamp;
 	struct sipe_groupchat_msg *msg;
 
 	if (!groupchat)
@@ -963,11 +961,13 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 			room->uri, id, what);
 
 	self = sip_uri_self(sipe_private);
+	timestamp = sipe_utils_time_to_str(time(NULL));
 	/* @TODO: 'what' needs escaping! */
-	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\">"
+	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\" ts=\"%s\">"
 			      "<chat>%s</chat>"
 			      "</grpchat>",
-			      room->uri, self, what);
+			      room->uri, self, timestamp, what);
+	g_free(timestamp);
 	g_free(self);
 	msg = chatserver_command(sipe_private, cmd);
 	g_free(cmd);
