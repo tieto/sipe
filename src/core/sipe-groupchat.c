@@ -888,7 +888,7 @@ static void chatserver_response(struct sipe_core_private *sipe_private,
 	} while ((reply = sipe_xml_twin(reply)) != NULL);
 }
 
-static void chatserver_chatgrp_message(struct sipe_core_private *sipe_private,
+static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 				       const sipe_xml *chatgrp)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
@@ -896,9 +896,10 @@ static void chatserver_chatgrp_message(struct sipe_core_private *sipe_private,
 	const gchar *from = sipe_xml_attribute(chatgrp, "author");
 	gchar *text = sipe_xml_data(sipe_xml_child(chatgrp, "chat"));
 	struct sipe_groupchat_room *room;
+	gchar *escaped;
 
 	if (!uri || !from) {
-		SIPE_DEBUG_INFO("chatserver_chatgrp_message: message '%s' received without chat room URI or author!",
+		SIPE_DEBUG_INFO("chatserver_grpchat_message: message '%s' received without chat room URI or author!",
 				text ? text : "");
 		g_free(text);
 		return;
@@ -906,16 +907,17 @@ static void chatserver_chatgrp_message(struct sipe_core_private *sipe_private,
 
 	room = g_hash_table_lookup(groupchat->uri_to_room, uri); 
 	if (!room) {
-		SIPE_DEBUG_INFO("chatserver_chatgrp_message: message '%s' from '%s' received from unknown chat room '%s'!",
+		SIPE_DEBUG_INFO("chatserver_grpchat_message: message '%s' from '%s' received from unknown chat room '%s'!",
 				text ? text : "", from, uri);
 		g_free(text);
 		return;
 	}
 
-	/* @TODO: do we need to unescape 'text'? */
-	sipe_backend_chat_message(SIPE_CORE_PUBLIC, room->id, from, text);
-
+	/* libxml2 decodes all entities, but the backend expects HTML */
+	escaped = g_markup_escape_text(text, -1);
 	g_free(text);
+	sipe_backend_chat_message(SIPE_CORE_PUBLIC, room->id, from, escaped);
+	g_free(escaped);
 }
 
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
@@ -934,7 +936,7 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 		   ((node = sipe_xml_child(xml, "ntc")) != NULL)) {
 		chatserver_response(sipe_private, node, session);
 	} else if ((node = sipe_xml_child(xml, "grpchat")) != NULL) {
-		chatserver_chatgrp_message(sipe_private, node);
+		chatserver_grpchat_message(sipe_private, node);
 	} else {
 		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
 	}
@@ -962,7 +964,17 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 
 	self = sip_uri_self(sipe_private);
 	timestamp = sipe_utils_time_to_str(time(NULL));
-	/* @TODO: 'what' needs escaping! */
+
+	/**
+	 * 'what' is already XML-escaped, e.g.
+	 *
+	 *    " -> &quot;
+	 *    > -> &gt;
+	 *    < -> &lt;
+	 *    & -> &amp;
+	 *
+	 * No need to escape them here.
+	 */
 	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\" ts=\"%s\">"
 			      "<chat>%s</chat>"
 			      "</grpchat>",
