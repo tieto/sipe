@@ -210,11 +210,24 @@ typedef struct {
    guint8  node[6];
 } uuid_t;
 		]]],
-		[return(sizeof(uuid_t) == 16 ? 0 : 1);]),
+		[if (sizeof(uuid_t) == 16) {
+			return(0);
+		 } else {
+			printf("\n\nOoops, sizeof(uuid_t) is %" G_GSIZE_FORMAT ".\n\n", sizeof(uuid_t));
+			return(1);
+		 }]),
 	[AC_MSG_RESULT(yes)],
 	[AC_MSG_FAILURE([sizeof(uuid_t) is not 16
 
-Please notify the SIPE developers and provide the following information:
+Please notify the SIPE developers.
+
+Copy & paste all lines starting with the line
+
+  checking that sizeof(uuid_t) is 16...
+
+to the report and attach the file "config.log".
+
+Compiler information:
 
  host:     $host
  build:    $build
