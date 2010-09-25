@@ -34,6 +34,86 @@
 
 #include "purple-private.h"
 
+/**
+ * Mapping between chat sessions in SIPE core and libpurple backend
+ *
+ * PurpleAccount
+ *    This data structure is created when the user creates the account or at
+ *    startup. It lives as long as the account exists, i.e. until the user
+ *    deletes it or shutdown.
+ *
+ *    Value does not change when connection is dropped & re-created.
+ *    HAS: gc (PurpleConnection *)
+ *
+ * PurpleConversation / PurpleConvChat (sub-type)
+ *    This data structure is created by serv_got_join_chat(). It lives as long
+ *    as the user doesn't leave the chat or until shutdown.
+ *    
+ *    Value does not change when connection is dropped & re-created.
+ *    HAS: account (PurpleAccount *)
+ *    HAS: chat ID (int), must be unique
+ *    HAS: name (char *), must be unique
+ *    HAS: data (GHashTable *)
+ *
+ * PurpleConnection
+ *    This data structure is created when the connection to the service is
+ *    set up. It lives as long as the connection stays open, the user disables
+ *    the account or until shutdown.
+ *
+ *    Value *DOES NOT* survive a connection drop & re-creation.
+ *    ASSOCIATED TO: account
+ *
+ * SIPE -> libpurple API
+ *    add user:    purple_conv_chat_add_user(conv, ...)
+ *    create:      serv_got_joined_chat(gc, chat ID, name)
+ *    find user:   purple_conv_chat_find_user(conv, ...)
+ *    message:     serv_got_chat_in(gc, chat ID, ...)
+ *    remove user: purple_conv_chat_remove_user(conv, ...)
+ *    topic:       purple_conv_chat_set_topic(conv, ...)
+ *
+ * libpurple -> SIPE API
+ *    join_chat(gc, params (GHashTable *))
+ *      request to join a channel (again)                 [only Group Chat]
+ *      SIPE must call serv_got_joined_chat() on join response
+ *
+ *    reject_chat(gc, params (GHashTable *))                NOT IMPLEMENTED
+ *    get_chat_name(params (GHashTable *))                  NOT IMPLEMENTED
+ *
+ *    chat_invite(gc, chat ID,...)
+ *      invite a user to a join a chat
+ *
+ *    chat_leave(gc, chat ID)
+ *      request to leave a channel, also called on conversation destroy
+ *      SIPE must call serv_got_chat_left() immediately!
+ *
+ *    chat_whisper(gc, chat ID, ...)                        NOT IMPLEMENTED
+ *
+ *    chat_send(gc, chat ID, ...)
+ *      send a message to the channel
+ *
+ *    set_chat_topic(gc, chat ID, ...)                      NOT IMPLEMENTED
+ *      set channel topic                           [@TODO: for Group Chat]
+ *
+ *
+ * struct sipe_chat_session [@TODO: TO BE IMPLEMENTED]
+ *    Same life span as PurpleConversation
+ *    Pointer stored under key "sipe" in PurpleConversation->data
+ *    Contains information private to core to identify chat session on server
+ *
+ *    If connection is closed and THEN the conversation, then libpurple will
+ *    not call chat_leave() and this will be a dangling data structure! Core
+ *    must take care to release them at unload.
+ *
+ *    HAS: backend_session (gpointer) -> PurpleConversation
+ *
+ * struct sipe_backend_private [@TODO: TO BE IMPLEMENTED]
+ *
+ *    HAS: rejoin_chats (GList *)
+ *         created on login() for existing chats
+ *         initiate re-join calls to core (sipe_backend_chat_rejoin_all)
+ *         remove chats when joined (sipe_backend_chat_create)
+ */
+
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s) \
 	(PURPLE_CONV_CHAT(((PurpleConversation *)s)))
 
