@@ -29,6 +29,7 @@
 #include "conversation.h"
 #include "server.h"
 
+#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 
@@ -116,6 +117,11 @@
 
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s) \
 	(PURPLE_CONV_CHAT(((PurpleConversation *)s)))
+
+void sipe_backend_chat_session_destroy(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *session)
+{
+	/* Nothing to do here */
+}
 
 void sipe_backend_chat_add(struct sipe_backend_session *backend_session,
 			   const gchar *uri,

@@ -43,6 +43,7 @@ extern "C" {
 
 /* Forward declarations */
 struct sipe_backend_session;
+struct sipe_backend_chat_session;
 struct sipe_core_public;
 struct sipe_transport_connection;
 struct sipe_file_transfer;
@@ -108,6 +109,7 @@ gboolean sipe_backend_debug_enabled(void);
 
 /** CHAT *********************************************************************/
 
+void sipe_backend_chat_session_destroy(struct sipe_backend_chat_session *session);
 void sipe_backend_chat_add(struct sipe_backend_session *backend_session,
 			   const gchar *uri,
 			   gboolean is_new);

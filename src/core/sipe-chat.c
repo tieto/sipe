@@ -46,6 +46,27 @@
 #include "sipe-xml.h"
 #include "sipe.h"
 
+static GList *chat_sessions = NULL;
+
+void sipe_chat_add_session(struct sipe_chat_session *session)
+{
+	chat_sessions = g_list_prepend(chat_sessions, session);
+}
+
+void sipe_chat_remove_session(struct sipe_chat_session *session)
+{
+	chat_sessions = g_list_remove(chat_sessions, session);
+	sipe_backend_chat_session_destroy(session->backend_private);
+	g_free(session->id);
+	g_free(session);
+}
+
+void sipe_chat_destroy(void)
+{
+	while (chat_sessions)
+		sipe_chat_remove_session(chat_sessions->data);
+}
+
 void sipe_core_chat_create(struct sipe_core_public *sipe_public, guint id,
 			   const char *name)
 {

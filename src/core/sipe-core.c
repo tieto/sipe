@@ -38,6 +38,7 @@
 #include "sip-sec.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-chat.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-nls.h"
@@ -71,6 +72,7 @@ void sipe_core_init(const char *locale_dir)
 
 void sipe_core_destroy(void)
 {
+	sipe_chat_destroy();
 #ifdef HAVE_NSS
 	/* do nothing.
 	 * We don't want accedently switch off NSS possibly used by other plugin -

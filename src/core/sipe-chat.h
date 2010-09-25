@@ -23,6 +23,35 @@
 /* Forward declarations */
 struct sipe_core_private;
 struct sip_session;
+struct sipe_backend_chat_session;
+
+struct sipe_chat_session {
+	struct sipe_backend_chat_session *backend_private;
+	guint type;
+	gchar *id;
+};
+
+/**
+ * Add data for a new chat session
+ *
+ * @param session
+ */
+void
+sipe_chat_add_session(struct sipe_chat_session *session);
+
+/**
+ * Remove data for a chat session
+ *
+ * @param session
+ */
+void
+sipe_chat_remove_session(struct sipe_chat_session *session);
+
+/**
+ * Release resources on unload
+ */
+void
+sipe_chat_destroy(void);
 
 /**
  * Returns purple's chat name for provided chat identification in protocol.
