@@ -90,7 +90,7 @@ void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 	PurpleXferStatusType status = purple_xfer_get_status(xfer);
 
 	if (backend_ft->listenfd >= 0) {
-		SIPE_DEBUG_INFO("sipe_ft_free_xfer_struct: closing listening socket %d",
+		SIPE_DEBUG_INFO("sipe_backend_ft_deallocate: closing listening socket %d",
 				backend_ft->listenfd);
 		close(backend_ft->listenfd);
 	}

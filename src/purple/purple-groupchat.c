@@ -73,7 +73,7 @@ void sipe_purple_chat_join(PurpleConnection *gc, GHashTable *data)
 	const gchar *uri = g_hash_table_lookup(data, "uri");
 
 	if (uri) {
-		SIPE_DEBUG_INFO("sipe_join_chat: uri '%s'", uri);
+		SIPE_DEBUG_INFO("sipe_purple_chat_join: uri '%s'", uri);
 		sipe_core_groupchat_join(sipe_public, uri);
 	}
 }
@@ -87,7 +87,7 @@ PurpleRoomlist *sipe_purple_roomlist_get_list(PurpleConnection *gc)
 	GList *fields = NULL;
 	PurpleRoomlistField *f;
 
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_get_list");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_roomlist_get_list");
 
 	if (purple_private->roomlist)
 		purple_roomlist_unref(purple_private->roomlist);
@@ -136,7 +136,7 @@ void sipe_purple_roomlist_cancel(PurpleRoomlist *roomlist)
 	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_roomlist_cancel");
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_roomlist_cancel");
 
 	purple_roomlist_set_in_progress(roomlist, FALSE);
 
