@@ -33,7 +33,12 @@
 #include "sipe-backend.h"
 #include "sipe-core.h"
 
+#define _PurpleMessageFlags PurpleMessageFlags
 #include "purple-private.h"
+
+/* @TODO: remove after API rework! */
+#include "request.h"
+#include "core-depurple.h"
 
 /**
  * Mapping between chat sessions in SIPE core and libpurple backend
@@ -136,6 +141,26 @@ static struct sipe_chat_session* sipe_purple_chat_find(struct sipe_backend_priva
 					    SIPE_PURPLE_KEY_CHAT_SESSION);
 }
 #endif
+
+void sipe_purple_chat_invite(PurpleConnection *gc, int id,
+			     SIPE_UNUSED_PARAMETER const char *message,
+			     const char *name)
+{
+	sipe_core_chat_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, id, name);
+}
+
+void sipe_purple_chat_leave(PurpleConnection *gc, int id)
+{
+	sipe_chat_leave(gc, id);
+}
+
+int sipe_purple_chat_send(PurpleConnection *gc,
+			  int id,
+			  const char *what,
+			  PurpleMessageFlags flags)
+{
+	return sipe_chat_send(gc, id, what, flags);
+}
 
 void sipe_backend_chat_session_destroy(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *session)
 {

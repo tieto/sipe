@@ -28,6 +28,10 @@ struct _PurpleRoomlist;
 struct _PurpleSrvQueryData;
 struct _PurpleXfer;
 
+#ifndef _PurpleMessageFlags
+#define _PurpleMessageFlags int
+#endif
+
 struct sipe_backend_private {
 	struct sipe_core_public *public;
 	struct _PurpleConnection *gc;
@@ -58,6 +62,17 @@ void sipe_purple_ft_send_file(struct _PurpleConnection *gc,
  */
 struct _PurpleXfer *sipe_purple_ft_new_xfer(struct _PurpleConnection *gc,
 					    const char *who);
+
+/* libpurple chat callbacks */
+void sipe_purple_chat_invite(struct _PurpleConnection *gc,
+			     int id,
+			     const char *message,
+			     const char *name);
+void sipe_purple_chat_leave(struct _PurpleConnection *gc, int id);
+int sipe_purple_chat_send(struct _PurpleConnection *gc,
+			  int id,
+			  const char *what,
+			  _PurpleMessageFlags flags);
 
 /* libpurple chat room callbacks */
 GList *sipe_purple_chat_info(struct _PurpleConnection *gc);

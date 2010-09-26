@@ -57,13 +57,14 @@
 #include "status.h"
 #include "version.h"
 
-#include "purple-private.h"
-
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-nls.h"
 
 #include "core-depurple.h"
+
+#define _PurpleMessageFlags PurpleMessageFlags
+#include "purple-private.h"
 
 /* Backward compatibility when compiling against 2.4.x API */
 #if !PURPLE_VERSION_CHECK(2,5,0)
@@ -362,13 +363,6 @@ static void sipe_purple_add_deny(PurpleConnection *gc, const char *name)
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, FALSE);
 }
 
-static void sipe_purple_chat_invite(PurpleConnection *gc, int id,
-			     SIPE_UNUSED_PARAMETER const char *message,
-			     const char *name)
-{
-	sipe_core_chat_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, id, name);
-}
-
 static void sipe_purple_keep_alive(PurpleConnection *gc)
 {
 	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
@@ -458,9 +452,9 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* reject_chat */
 	NULL,					/* get_chat_name */
 	sipe_purple_chat_invite,		/* chat_invite */
-	sipe_chat_leave,			/* chat_leave */
+	sipe_purple_chat_leave,			/* chat_leave */
 	NULL,					/* chat_whisper */
-	sipe_chat_send,				/* chat_send */
+	sipe_purple_chat_send,			/* chat_send */
 	sipe_purple_keep_alive,			/* keepalive */
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// deprecated
