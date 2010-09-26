@@ -23,6 +23,7 @@
  */
 
 #include <time.h>
+#include <errno.h>
 
 #include <glib.h>
 
@@ -35,10 +36,6 @@
 
 #define _PurpleMessageFlags PurpleMessageFlags
 #include "purple-private.h"
-
-/* @TODO: remove after API rework! */
-#include "request.h"
-#include "core-depurple.h"
 
 /**
  * Mapping between chat sessions in SIPE core and libpurple backend
@@ -125,11 +122,10 @@
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s) \
 	(PURPLE_CONV_CHAT(((PurpleConversation *)s)))
 
-#if 0
-static struct sipe_chat_session* sipe_purple_chat_find(struct sipe_backend_private *purple_private,
+static struct sipe_chat_session *sipe_purple_chat_find(PurpleConnection *gc,
 						       int id)
 {
-	PurpleConversation *conv = purple_find_chat(purple_private->gc, id);
+	PurpleConversation *conv = purple_find_chat(gc, id);
 
 	if (!conv) {
 		SIPE_DEBUG_ERROR("sipe_purple_chat_find: can't find chat with ID %d?!?",
@@ -140,26 +136,34 @@ static struct sipe_chat_session* sipe_purple_chat_find(struct sipe_backend_priva
 	return purple_conversation_get_data(conv,
 					    SIPE_PURPLE_KEY_CHAT_SESSION);
 }
-#endif
 
 void sipe_purple_chat_invite(PurpleConnection *gc, int id,
 			     SIPE_UNUSED_PARAMETER const char *message,
 			     const char *name)
 {
-	sipe_core_chat_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, id, name);
+	struct sipe_chat_session *session = sipe_purple_chat_find(gc, id);
+	if (!session) return;
+
+	sipe_core_chat_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session, name);
 }
 
 void sipe_purple_chat_leave(PurpleConnection *gc, int id)
 {
-	sipe_chat_leave(gc, id);
+	struct sipe_chat_session *session = sipe_purple_chat_find(gc, id);
+	if (!session) return;
+
+	sipe_core_chat_leave(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session);
 }
 
 int sipe_purple_chat_send(PurpleConnection *gc,
 			  int id,
 			  const char *what,
-			  PurpleMessageFlags flags)
+			  SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
 {
-	return sipe_chat_send(gc, id, what, flags);
+	struct sipe_chat_session *session = sipe_purple_chat_find(gc, id);
+	if (!session) return -ENOTCONN;
+	sipe_core_chat_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session, what);
+	return 1;
 }
 
 void sipe_backend_chat_session_destroy(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *session)
@@ -167,7 +171,7 @@ void sipe_backend_chat_session_destroy(SIPE_UNUSED_PARAMETER struct sipe_backend
 	/* Nothing to do here */
 }
 
-void sipe_backend_chat_add(struct sipe_backend_session *backend_session,
+void sipe_backend_chat_add(struct sipe_backend_chat_session *backend_session,
 			   const gchar *uri,
 			   gboolean is_new)
 {
@@ -175,53 +179,60 @@ void sipe_backend_chat_add(struct sipe_backend_session *backend_session,
 				  uri, NULL, PURPLE_CBFLAGS_NONE, is_new);
 }
 
-void sipe_backend_chat_close(struct sipe_backend_session *backend_session)
+void sipe_backend_chat_close(struct sipe_backend_chat_session *backend_session)
 {
 	purple_conv_chat_clear_users(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session));
 }
 
-struct sipe_backend_session *sipe_backend_chat_create(struct sipe_core_public *sipe_public,
-						      guint id,
-						      const gchar *title,
-						      const gchar *nick,
-						      gboolean rejoin)
+static int sipe_purple_chat_id(PurpleConnection *gc)
+{
+	/**
+	 * A non-volatile ID counter.
+	 * Should survive connection drop & reconnect.
+	 */
+	static int chat_id = 0;
+
+	/* Find next free ID */
+	do {
+		if (++chat_id < 0) chat_id = 0;
+	} while (purple_find_chat(gc, chat_id) != NULL)
+;
+	return chat_id;
+}
+
+struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_public *sipe_public,
+							   struct sipe_chat_session *session,
+							   struct sipe_backend_chat_session *backend_session,
+							   const gchar *title,
+							   const gchar *nick)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	PurpleConversation *conv = NULL;
+	PurpleConversation *conv = (PurpleConversation *) backend_session;
 
-	if (rejoin) {
-		/* can't be find by chat id as it won't survive acc reinstantation */
-		if (title) {
-			conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_CHAT,
-								     title,
-								     purple_private->account);
-		}
-		/* to be able to rejoin existing chat/window */
-		if (conv && !purple_conv_chat_has_left(PURPLE_CONV_CHAT(conv))) {
-			PURPLE_CONV_CHAT(conv)->left = TRUE;
-		}
-	}
+	int id = conv ? 
+		purple_conv_chat_get_id(PURPLE_CONV_CHAT(conv)) :
+		sipe_purple_chat_id(purple_private->gc);
 
-	/* create prpl chat */
+	/* create/rejoin purple chat */
 	conv = serv_got_joined_chat(purple_private->gc,
 				    id,
 				    title);
 	purple_conv_chat_set_nick(PURPLE_CONV_CHAT(conv), nick);
 
-	/* @TODO: incomplete */
-	purple_conversation_set_data(conv, SIPE_PURPLE_KEY_CHAT_SESSION, NULL);
+	purple_conversation_set_data(conv,
+				     SIPE_PURPLE_KEY_CHAT_SESSION, session);
 
-	return((struct sipe_backend_session *) conv);
+	return((struct sipe_backend_chat_session *) conv);
 }
 
-gboolean sipe_backend_chat_find(struct sipe_backend_session *backend_session,
+gboolean sipe_backend_chat_find(struct sipe_backend_chat_session *backend_session,
 			    const gchar *uri)
 {
 	return purple_conv_chat_find_user(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session),
 					  uri);
 }
 
-gboolean sipe_backend_chat_is_operator(struct sipe_backend_session *backend_session,
+gboolean sipe_backend_chat_is_operator(struct sipe_backend_chat_session *backend_session,
 				       const gchar *uri)
 {
 	return (purple_conv_chat_user_get_flags(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session),
@@ -243,7 +254,7 @@ void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 			 time(NULL));
 }
 						      
-void sipe_backend_chat_operator(struct sipe_backend_session *backend_session,
+void sipe_backend_chat_operator(struct sipe_backend_chat_session *backend_session,
 				const gchar *uri)
 {
 	purple_conv_chat_user_set_flags(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session),
@@ -276,7 +287,7 @@ void sipe_backend_chat_rejoin_all(struct sipe_core_public *sipe_public)
 	}
 }
 
-void sipe_backend_chat_remove(struct sipe_backend_session *backend_session,
+void sipe_backend_chat_remove(struct sipe_backend_chat_session *backend_session,
 			      const gchar *uri)
 {
 	purple_conv_chat_remove_user(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session),
@@ -284,7 +295,7 @@ void sipe_backend_chat_remove(struct sipe_backend_session *backend_session,
 				     NULL /* reason */);
 }
 
-void sipe_backend_chat_topic(struct sipe_backend_session *backend_session,
+void sipe_backend_chat_topic(struct sipe_backend_chat_session *backend_session,
 			      const gchar *topic)
 {
 	purple_conv_chat_set_topic(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session),

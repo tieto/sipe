@@ -34,7 +34,7 @@
 
 static void notify_message(struct sipe_core_public *sipe_public,
 			   PurpleMessageFlags flags,
-			   struct sipe_backend_session *backend_session,
+			   struct sipe_backend_chat_session *backend_session,
 			   const gchar *who,
 			   const gchar *message)
 {
@@ -54,7 +54,7 @@ static void notify_message(struct sipe_core_public *sipe_public,
 }
 			   
 void sipe_backend_notify_message_error(struct sipe_core_public *sipe_public,
-				       struct sipe_backend_session *backend_session,
+				       struct sipe_backend_chat_session *backend_session,
 				       const gchar *who,
 				       const gchar *message)
 {
@@ -63,7 +63,7 @@ void sipe_backend_notify_message_error(struct sipe_core_public *sipe_public,
 }
 
 void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
-				      struct sipe_backend_session *backend_session,
+				      struct sipe_backend_chat_session *backend_session,
 				      const gchar *who,
 				      const gchar *message)
 {

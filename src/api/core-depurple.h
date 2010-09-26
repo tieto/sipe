@@ -40,9 +40,6 @@ void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
 		    PurpleGroup *group);
 void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
 		       PurpleGroup *group);
-void sipe_chat_leave(PurpleConnection *gc, int id);
-int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
-		   PurpleMessageFlags flags);
 void sipe_group_buddy(PurpleConnection *gc, const char *who,
 		      const char *old_group_name,
 		      const char *new_group_name);

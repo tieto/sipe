@@ -93,6 +93,11 @@ struct sipe_transport_connection {
 };
 
 /**
+ * Opaque data type for chat session
+ */
+struct sipe_chat_session;
+
+/**
  * File transport (public part)
  */
 struct sipe_file_transfer {
@@ -255,8 +260,22 @@ void sipe_core_dns_resolve_failure(struct sipe_core_public *sipe_public);
 /**
  * Create a new chat
  */
-void sipe_core_chat_create(struct sipe_core_public *sipe_public, guint id,
+void sipe_core_chat_create(struct sipe_core_public *sipe_public,
+			   struct sipe_chat_session *session,
 			   const char *name);
+
+/**
+ * Leave a chat
+ */
+void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
+			  struct sipe_chat_session *session);
+
+/*
+ * Send message to chat
+ */
+void sipe_core_chat_send(struct sipe_core_public *sipe_public,
+			 struct sipe_chat_session *session,
+			 const char *what);
 
 /* media */
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
