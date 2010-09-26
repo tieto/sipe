@@ -115,8 +115,27 @@
  *         remove chats when joined (sipe_backend_chat_create)
  */
 
+#define SIPE_PURPLE_KEY_CHAT_SESSION "sipe"
+
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s) \
 	(PURPLE_CONV_CHAT(((PurpleConversation *)s)))
+
+#if 0
+static struct sipe_chat_session* sipe_purple_chat_find(struct sipe_backend_private *purple_private,
+						       int id)
+{
+	PurpleConversation *conv = purple_find_chat(purple_private->gc, id);
+
+	if (!conv) {
+		SIPE_DEBUG_ERROR("sipe_purple_chat_find: can't find chat with ID %d?!?",
+				 id);
+		return NULL;
+	}
+
+	return purple_conversation_get_data(conv,
+					    SIPE_PURPLE_KEY_CHAT_SESSION);
+}
+#endif
 
 void sipe_backend_chat_session_destroy(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *session)
 {
@@ -163,6 +182,10 @@ struct sipe_backend_session *sipe_backend_chat_create(struct sipe_core_public *s
 				    id,
 				    title);
 	purple_conv_chat_set_nick(PURPLE_CONV_CHAT(conv), nick);
+
+	/* @TODO: incomplete */
+	purple_conversation_set_data(conv, SIPE_PURPLE_KEY_CHAT_SESSION, NULL);
+
 	return((struct sipe_backend_session *) conv);
 }
 
