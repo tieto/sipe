@@ -3169,7 +3169,7 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 		if (session->is_multiparty || session->focus_uri) {
 			gchar *who = sip_uri_self(sipe_private);
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->backend_id,
+						  session->chat_session->backend,
 						  who,
 						  msg->body);
 			g_free(who);
@@ -6419,7 +6419,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	gchar *self = sip_uri_self(sipe_private);
 
 	SIPE_SESSION_FOREACH {
-		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->chat_session)
+		if (!sipe_strcase_equal(self, buddy->name) && session->chat_session)
 		{
 			if (sipe_backend_chat_find(session->chat_session->backend, buddy->name))
 			{
@@ -6429,10 +6429,10 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				    && !sipe_backend_chat_is_operator(session->chat_session->backend, buddy->name) /* Not conf OP */
 				    &&  conf_op)                                                             /* We are a conf OP */
 				{
-					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_title);
+					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_session->id);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_make_leader_cb),
-								     session->chat_title, NULL);
+								     session->chat_session->id, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -6440,10 +6440,10 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				if (session->focus_uri
 				    && conf_op) /* We are a conf OP */
 				{
-					gchar *label = g_strdup_printf(_("Remove from '%s'"), session->chat_title);
+					gchar *label = g_strdup_printf(_("Remove from '%s'"), session->chat_session->id);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_remove_cb),
-								     session->chat_title, NULL);
+								     session->chat_session->id, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -6453,10 +6453,10 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				if (!session->focus_uri
 				    || (session->focus_uri && !session->locked))
 				{
-					gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_title);
+					gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_session->id);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
-								     session->chat_title, NULL);
+								     session->chat_session->id, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}

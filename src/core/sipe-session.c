@@ -33,6 +33,7 @@
 
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -48,26 +49,12 @@ sipe_free_queued_message(struct queued_message *message)
 	g_free(message);
 }
 
-guint
-sipe_session_get_backend_chat_id(void)
-{
-	/**
-	 * A non-volatile ID counter.
-	 * Should survive protocol reload.
-	 */
-	static guint chat_id = 0;
-
-	return chat_id++;
-}
-
 struct sip_session *
 sipe_session_add_chat(struct sipe_core_private *sipe_private)
 {
 	struct sip_session *session = g_new0(struct sip_session, 1);
 	session->callid = gencallid();
 	session->is_multiparty = TRUE;
-	/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
-	session->backend_id = sipe_session_get_backend_chat_id();
 	session->unconfirmed_messages = g_hash_table_new_full(
 		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
 	session->conf_unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
@@ -143,22 +130,6 @@ sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 }
 
 struct sip_session *
-sipe_session_find_chat_by_backend_id(struct sipe_core_private *sipe_private,
-				     guint id)
-{
-	if (sipe_private == NULL) {
-		return NULL;
-	}
-
-	SIPE_SESSION_FOREACH {
-		if (id == session->backend_id) {
-			return session;
-		}
-	} SIPE_SESSION_FOREACH_END;
-	return NULL;
-}
-
-struct sip_session *
 sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
 			        const gchar *name)
 {
@@ -167,8 +138,8 @@ sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
 	}
 
 	SIPE_SESSION_FOREACH {
-		if (session->chat_title &&
-		    !g_strcasecmp(name, session->chat_title)) {
+		if (session->chat_session->id &&
+		    !g_strcasecmp(name, session->chat_session->id)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;
@@ -263,7 +234,6 @@ sipe_session_remove(struct sipe_core_private *sipe_private,
 		g_hash_table_destroy(session->conf_unconfirmed_messages);
 
 	g_free(session->with);
-	g_free(session->chat_title);
 	g_free(session->callid);
 	g_free(session->roster_manager);
 	g_free(session->focus_uri);

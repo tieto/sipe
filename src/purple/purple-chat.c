@@ -241,13 +241,13 @@ gboolean sipe_backend_chat_is_operator(struct sipe_backend_chat_session *backend
 }
 
 void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
-			       guint id,
+			       struct sipe_backend_chat_session *backend_session,
 			       const gchar *from,
 			       const gchar *html)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	serv_got_chat_in(purple_private->gc,
-			 id,
+			 purple_conv_chat_get_id(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session)),
 			 from,
 			 PURPLE_MESSAGE_RECV,
 			 html,

@@ -124,7 +124,7 @@ gboolean sipe_backend_chat_find(struct sipe_backend_chat_session *backend_sessio
 gboolean sipe_backend_chat_is_operator(struct sipe_backend_chat_session *backend_session,
 				       const gchar *uri);
 void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
-			       guint id,
+			       struct sipe_backend_chat_session *backend_session,
 			       const gchar *from,
 			       const gchar *html);
 void sipe_backend_chat_operator(struct sipe_backend_chat_session *backend_session,

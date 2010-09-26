@@ -54,10 +54,6 @@ struct sip_session {
 	 * Multiparty conversation related fields
 	 */
 	gboolean is_multiparty;
-	/** backend chat id */
-	guint backend_id;
-	/** Human readable chat name */
-	gchar *chat_title;
 	/** Call-Id identifying the conversation */
 	gchar *callid; /* For multiparty conversations */
 	/** Roster Manager URI */
@@ -105,14 +101,6 @@ struct queued_message {
 	 */
 	gchar *content_type;
 };
-
-/**
- * Uniqe backend chat ID for multiparty/conference/group chat
- *
- * @return unique ID
- */
-guint
-sipe_session_get_backend_chat_id(void);
 
 /**
  * Add a new chat session
@@ -175,18 +163,6 @@ sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 struct sip_session *
 sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
 					const gchar *callid);
-
-/**
- * Find chat session by backend ID
- *
- * @param sipe_private (in) SIPE core data. May be NULL
- * @param id (in) backend Chat ID
- *
- * @return pointer to session or NULL
- */
-struct sip_session *
-sipe_session_find_chat_by_backend_id(struct sipe_core_private *sipe_private,
-				     guint id);
 
 /**
  * Find chat session by name

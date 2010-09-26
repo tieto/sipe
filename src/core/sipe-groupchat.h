@@ -23,6 +23,7 @@
 /* Forward declarations */
 struct sip_dialog;
 struct sip_session;
+struct sipe_chat_session;
 struct sipe_core_private;
 
 void sipe_groupchat_free(struct sipe_core_private *sipe_private);
@@ -35,6 +36,7 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     struct sip_session *session);
 gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
-			     int id, const gchar *what);
+			     struct sipe_chat_session *session,
+			     const gchar *what);
 gboolean sipe_groupchat_leave(struct sipe_core_private *sipe_private,
-			      int id);
+			      struct sipe_chat_session *session);
