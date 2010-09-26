@@ -126,6 +126,7 @@
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-chat.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
@@ -167,7 +168,7 @@ struct sipe_groupchat {
 };
 
 struct sipe_groupchat_room {
-	struct sipe_backend_session *backend_session;
+	struct sipe_chat_session *session;
 	gchar *uri;
 	gchar *title;
 	guint id;
@@ -454,7 +455,7 @@ static gboolean chatserver_command_response(struct sipe_core_private *sipe_priva
 							label, gmsg->content);
 			g_free(label);
 			sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
-							  room->backend_session,
+							  room->session->backend,
 							  NULL,
 							  errmsg);
 			g_free(errmsg);
@@ -614,9 +615,9 @@ static void add_user(struct sipe_groupchat_room *room,
 			chanop ? "chanop " : "",
 			uri,
 			room->title, room->uri);
-	sipe_backend_chat_add(room->backend_session, uri, new);
+	sipe_backend_chat_add(room->session->backend, uri, new);
 	if (chanop)
-		sipe_backend_chat_operator(room->backend_session, uri);
+		sipe_backend_chat_operator(room->session->backend, uri);
 }
 
 static void chatserver_response_join(struct sipe_core_private *sipe_private,
@@ -678,16 +679,16 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 						room->uri,
 						room->id);
 
-				room->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-										 room->id,
-										 room->title,
-										 self,
-										 !new);
+				room->session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+										  room->session,
+										  room->session->backend,
+										  room->title,
+										  self);
 				g_free(self);
 
 				attr = sipe_xml_attribute(node, "topic");
 				if (attr) {
-					sipe_backend_chat_topic(room->backend_session,
+					sipe_backend_chat_topic(room->session->backend,
 								attr);
 				}
 
@@ -821,7 +822,7 @@ static void chatserver_notice_part(struct sipe_core_private *sipe_private,
 						SIPE_DEBUG_INFO("remove_user: %s from room %s (%s)",
 								uri,
 								room->title, room->uri);
-						sipe_backend_chat_remove(room->backend_session,
+						sipe_backend_chat_remove(room->session->backend,
 									 uri);
 					}
 				}

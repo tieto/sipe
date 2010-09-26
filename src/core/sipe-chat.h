@@ -26,21 +26,22 @@ struct sip_session;
 struct sipe_backend_chat_session;
 
 struct sipe_chat_session {
-	struct sipe_backend_chat_session *backend_private;
-	guint type;
+	struct sipe_backend_chat_session *backend;
+	struct sip_session *session;
 	gchar *id;
+	gboolean is_groupchat;
 };
 
 /**
- * Add data for a new chat session
+ * Create a new chat session
  *
  * @param session
  */
-void
-sipe_chat_add_session(struct sipe_chat_session *session);
+struct sipe_chat_session *
+sipe_chat_create_session(const gchar *id);
 
 /**
- * Remove data for a chat session
+ * Remove a chat session
  *
  * @param session
  */

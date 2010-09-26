@@ -95,7 +95,7 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	if (session->focus_uri && !g_strcasecmp(from, session->im_mcu_uri)) {
 		sipe_conf_immcu_closed(sipe_private, session);
 	} else if (session->is_multiparty) {
-		sipe_backend_chat_remove(session->backend_session,
+		sipe_backend_chat_remove(session->chat_session->backend,
 					 from);
 	}
 
@@ -425,34 +425,36 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 	g_free(newTag);
 
-	if (is_multiparty && !session->backend_session) {
+	if (is_multiparty && !session->chat_session) {
 		gchar *chat_title = sipe_chat_get_name(callid);
 		gchar *self = sip_uri_self(sipe_private);
+
+		session->chat_session = sipe_chat_create_session(chat_title);
+		g_free(chat_title);
+
 		/* create chat */
-		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->backend_id,
-								    chat_title, 
-								    self,
-								    FALSE);
-		session->chat_title = g_strdup(chat_title);
+		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+									  session->chat_session,
+									  NULL,
+									  session->chat_session->id,
+									  self);
 		/* add self */
-		sipe_backend_chat_add(session->backend_session,
+		sipe_backend_chat_add(session->chat_session->backend,
 				      self,
 				      FALSE);
-		g_free(chat_title);
 		g_free(self);
 	}
 
 	if (is_multiparty && !was_multiparty) {
 		/* add current IM counterparty to chat */
-		sipe_backend_chat_add(session->backend_session,
+		sipe_backend_chat_add(session->chat_session->backend,
 				      sipe_dialog_first(session)->with,
 				      FALSE);
 	}
 
 	/* add inviting party to chat */
-	if (just_joined && session->backend_session) {
-		sipe_backend_chat_add(session->backend_session,
+	if (just_joined && session->chat_session) {
+		sipe_backend_chat_add(session->chat_session->backend,
 				      from,
 				      TRUE);
 	}

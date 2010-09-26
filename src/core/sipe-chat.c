@@ -48,15 +48,18 @@
 
 static GList *chat_sessions = NULL;
 
-void sipe_chat_add_session(struct sipe_chat_session *session)
+struct sipe_chat_session *sipe_chat_create_session(const gchar *id)
 {
+	struct sipe_chat_session *session = g_new0(struct sipe_chat_session, 1);
+	session->id = g_strdup(id);
 	chat_sessions = g_list_prepend(chat_sessions, session);
+	return(session);
 }
 
 void sipe_chat_remove_session(struct sipe_chat_session *session)
 {
 	chat_sessions = g_list_remove(chat_sessions, session);
-	sipe_backend_chat_session_destroy(session->backend_private);
+	sipe_backend_chat_session_destroy(session->backend);
 	g_free(session->id);
 	g_free(session);
 }
@@ -67,11 +70,11 @@ void sipe_chat_destroy(void)
 		sipe_chat_remove_session(chat_sessions->data);
 }
 
-void sipe_core_chat_create(struct sipe_core_public *sipe_public, guint id,
+void sipe_core_chat_create(struct sipe_core_public *sipe_public,
+			   struct sipe_chat_session *chat_session,
 			   const char *name)
 {
-	struct sip_session *session = sipe_session_find_chat_by_backend_id(SIPE_CORE_PRIVATE,
-									   id);
+	struct sip_session *session = chat_session->session;
 
 	if (session) {
 		gchar *uri = sip_uri(name);
@@ -79,6 +82,65 @@ void sipe_core_chat_create(struct sipe_core_public *sipe_public, guint id,
 		g_free(uri);
 	}
 }
+
+void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
+			  struct sipe_chat_session *session)
+{
+	(void)sipe_public;
+	(void)session;
+#if 0
+	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
+
+	if (!sipe_groupchat_leave(sipe_private, id)) {
+		struct sip_session *session = sipe_session_find_chat_by_backend_id(sipe_private,
+										   id);
+		sipe_session_close(sipe_private, session);
+	}
+#endif
+}
+
+void sipe_core_chat_send(struct sipe_core_public *sipe_public,
+			 struct sipe_chat_session *session,
+			 const char *what)
+{
+	(void)sipe_public;
+	(void)session;
+	(void)what;
+#if 0
+	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	struct sip_session *session;
+
+	SIPE_DEBUG_INFO("sipe_chat_send what='%s'", what);
+
+	if (sipe_groupchat_send(sipe_private, id, what))
+		return 1;
+
+	session = sipe_session_find_chat_by_backend_id(sipe_private, id);
+
+	// Queue the message
+	if (session && session->dialogs) {
+		sipe_session_enqueue_message(session,what,NULL);
+		sipe_im_process_queue(sipe_private, session);
+	} else if (sip) {
+		gchar *chat_name = purple_find_chat(sip->gc, id)->name;
+		const gchar *proto_chat_id = sipe_chat_find_name(chat_name);
+
+		SIPE_DEBUG_INFO("sipe_chat_send: chat_name='%s'", chat_name ? chat_name : "NULL");
+		SIPE_DEBUG_INFO("sipe_chat_send: proto_chat_id='%s'", proto_chat_id ? proto_chat_id : "NULL");
+
+		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+			struct sip_session *session = sipe_session_add_chat(sipe_private);
+
+			session->is_multiparty = FALSE;
+			session->focus_uri = g_strdup(proto_chat_id);
+			sipe_session_enqueue_message(session, what, NULL);
+			sipe_invite_conf_focus(sipe_private, session);
+		}
+	}
+#endif
+}
+
 
 /** See below. Same as chat_names but swapped key with values */
 static GHashTable *chat_names_inverse = NULL;

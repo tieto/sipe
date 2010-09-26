@@ -691,17 +691,16 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	if (session->focus_uri && !session->backend_session) {
-		gchar *chat_title = sipe_chat_get_name(session->focus_uri);
+	if (session->focus_uri && !session->chat_session) {
 		gchar *self = sip_uri_self(sipe_private);
+		struct sipe_chat_session *chat_session = NULL;
 
 		/* create or join existing chat */
-		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->backend_id,
-								    chat_title,
-								    self,
-								    TRUE);
-		session->chat_title = chat_title;
+		sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+					 chat_session,
+					 chat_session->backend,
+					 chat_session->id,
+					 self);
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.
@@ -713,7 +712,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	if ((xn_subject = sipe_xml_child(xn_conference_info, "conference-description/subject"))) {
 		g_free(session->subject);
 		session->subject = sipe_xml_data(xn_subject);
-		sipe_backend_chat_topic(session->backend_session, session->subject);
+		sipe_backend_chat_topic(session->chat_session->backend, session->subject);
 		SIPE_DEBUG_INFO("sipe_process_conference: subject=%s", session->subject ? session->subject : "");
 	}
 
@@ -745,8 +744,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		gchar *self = sip_uri_self(sipe_private);
 
 		if (sipe_strequal("deleted", state)) {
-			if (sipe_backend_chat_find(session->backend_session, user_uri)) {
-				sipe_backend_chat_remove(session->backend_session,
+			if (sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
+				sipe_backend_chat_remove(session->chat_session->backend,
 							 user_uri);
 			}
 		} else {
@@ -757,13 +756,13 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 					gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "status"));
 					if (sipe_strequal("connected", status)) {
 						is_in_im_mcu = TRUE;
-						if (!sipe_backend_chat_find(session->backend_session, user_uri)) {
-							sipe_backend_chat_add(session->backend_session,
+						if (!sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
+							sipe_backend_chat_add(session->chat_session->backend,
 									      user_uri,
 									      !just_joined && g_strcasecmp(user_uri, self));
 						}
 						if (is_operator) {
-							sipe_backend_chat_operator(session->backend_session,
+							sipe_backend_chat_operator(session->chat_session->backend,
 										   user_uri);
 						}
 					}
@@ -772,8 +771,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 				}
 			}
 			if (!is_in_im_mcu) {
-				if (sipe_backend_chat_find(session->backend_session, user_uri)) {
-					sipe_backend_chat_remove(session->backend_session,
+				if (sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
+					sipe_backend_chat_remove(session->chat_session->backend,
 								 user_uri);
 				}
 			}
@@ -835,7 +834,7 @@ sipe_conf_immcu_closed(struct sipe_core_private *sipe_private,
 {
 	sipe_present_info(sipe_private, session,
 			  _("You have been disconnected from this conference."));
-	sipe_backend_chat_close(session->backend_session);
+	sipe_backend_chat_close(session->chat_session->backend);
 }
 
 void

@@ -2952,7 +2952,7 @@ sipe_present_info(struct sipe_core_private *sipe_private,
 		 const gchar *message)
 {
 	sipe_backend_notify_message_info(SIPE_CORE_PUBLIC,
-					 session->backend_session,
+					 session->chat_session->backend,
 					 session->with,
 					 message);
 }
@@ -2963,7 +2963,7 @@ sipe_present_err(struct sipe_core_private *sipe_private,
 		 const gchar *message)
 {
 	sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
-					  session->backend_session,
+					  session->chat_session->backend,
 					  session->with,
 					  message);
 }
@@ -3332,7 +3332,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 	/* add user to chat if it is a multiparty session */
 	if (session->is_multiparty) {
-		sipe_backend_chat_add(session->backend_session,
+		sipe_backend_chat_add(session->chat_session->backend,
 				      with,
 				      TRUE);
 	}
@@ -3512,18 +3512,6 @@ sipe_convo_closed(PurpleConnection * gc, const char *who)
 			   sipe_session_find_im(sipe_private, who));
 }
 
-void
-sipe_chat_leave (PurpleConnection *gc, int id)
-{
-	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-
-	if (!sipe_groupchat_leave(sipe_private, id)) {
-		struct sip_session *session = sipe_session_find_chat_by_backend_id(sipe_private,
-										   id);
-		sipe_session_close(sipe_private, session);
-	}
-}
-
 int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 		 SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
 {
@@ -3548,44 +3536,6 @@ int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
 	}
 
 	g_free(uri);
-	return 1;
-}
-
-int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
-		   SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
-{
-	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sip_session *session;
-
-	SIPE_DEBUG_INFO("sipe_chat_send what='%s'", what);
-
-	if (sipe_groupchat_send(sipe_private, id, what))
-		return 1;
-
-	session = sipe_session_find_chat_by_backend_id(sipe_private, id);
-
-	// Queue the message
-	if (session && session->dialogs) {
-		sipe_session_enqueue_message(session,what,NULL);
-		sipe_im_process_queue(sipe_private, session);
-	} else if (sip) {
-		gchar *chat_name = purple_find_chat(sip->gc, id)->name;
-		const gchar *proto_chat_id = sipe_chat_find_name(chat_name);
-
-		SIPE_DEBUG_INFO("sipe_chat_send: chat_name='%s'", chat_name ? chat_name : "NULL");
-		SIPE_DEBUG_INFO("sipe_chat_send: proto_chat_id='%s'", proto_chat_id ? proto_chat_id : "NULL");
-
-		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-			struct sip_session *session = sipe_session_add_chat(sipe_private);
-
-			session->is_multiparty = FALSE;
-			session->focus_uri = g_strdup(proto_chat_id);
-			sipe_session_enqueue_message(session, what, NULL);
-			sipe_invite_conf_focus(sipe_private, session);
-		}
-	}
-
 	return 1;
 }
 
@@ -6307,17 +6257,21 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	{
 		gchar *self = sip_uri_self(sipe_private);
 		struct sip_session *session;
+		gchar *chat_title;
 
 		session = sipe_session_add_chat(sipe_private);
-		session->chat_title = sipe_chat_get_name(session->callid);
 		session->roster_manager = g_strdup(self);
 
-		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->backend_id,
-								    session->chat_title,
-								    self,
-								    FALSE);
-		sipe_backend_chat_add(session->backend_session,
+		chat_title = sipe_chat_get_name(session->callid);
+		session->chat_session = sipe_chat_create_session(chat_title);
+		g_free(chat_title);
+
+		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+									  session->chat_session,
+									  NULL,
+									  session->chat_session->id,
+									  self);
+		sipe_backend_chat_add(session->chat_session->backend,
 				      self,
 				      FALSE);
 		sipe_invite(sipe_private, session, buddy->name, NULL, NULL, NULL, FALSE);
@@ -6465,14 +6419,14 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	gchar *self = sip_uri_self(sipe_private);
 
 	SIPE_SESSION_FOREACH {
-		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->backend_session)
+		if (!sipe_strcase_equal(self, buddy->name) && session->chat_title && session->chat_session)
 		{
-			if (sipe_backend_chat_find(session->backend_session, buddy->name))
+			if (sipe_backend_chat_find(session->chat_session->backend, buddy->name))
 			{
-				gboolean conf_op = sipe_backend_chat_is_operator(session->backend_session, self);
+				gboolean conf_op = sipe_backend_chat_is_operator(session->chat_session->backend, self);
 
 				if (session->focus_uri
-				    && !sipe_backend_chat_is_operator(session->backend_session, buddy->name) /* Not conf OP */
+				    && !sipe_backend_chat_is_operator(session->chat_session->backend, buddy->name) /* Not conf OP */
 				    &&  conf_op)                                                             /* We are a conf OP */
 				{
 					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_title);
@@ -6935,7 +6889,7 @@ sipe_chat_menu(PurpleChat *chat)
 	self = sip_uri_self(sipe_private);
 
 	if (session->focus_uri &&
-	    sipe_backend_chat_is_operator(session->backend_session, self))
+	    sipe_backend_chat_is_operator(session->chat_session->backend, self))
 	{
 		if (session->locked) {
 			act = purple_menu_action_new(_("Unlock"),

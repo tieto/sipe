@@ -28,7 +28,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
-struct sipe_backend_session;
+struct sipe_chat_session;
 
 /* Helper macros to iterate over session list in a SIP account */
 #define SIPE_SESSION_FOREACH {                             \
@@ -40,8 +40,8 @@ struct sipe_backend_session;
 
 /** Correspond to multi-party conversation */
 struct sip_session {
-	/** backend private data structure for IM or chat */
-	struct sipe_backend_session *backend_session;
+	/** chat session */
+	struct sipe_chat_session *chat_session;
 
 	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
 	/** key is user (URI) */
