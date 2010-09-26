@@ -46,9 +46,9 @@ struct sipe_backend_private {
  * @param who  string identifying receiver of the file
  * @param file local file system path of the file to send
  */
-void sipe_ft_send_file(struct _PurpleConnection *gc,
-		       const char *who,
-		       const char *file);
+void sipe_purple_ft_send_file(struct _PurpleConnection *gc,
+			      const char *who,
+			      const char *file);
 
 /**
  * Creates new PurpleXfer structure representing a file transfer.
@@ -56,16 +56,16 @@ void sipe_ft_send_file(struct _PurpleConnection *gc,
  * @param gc  a PurpleConnection
  * @param who remote participant in the file transfer session
  */
-struct _PurpleXfer *sipe_ft_new_xfer(struct _PurpleConnection *gc,
-				     const char *who);
+struct _PurpleXfer *sipe_purple_ft_new_xfer(struct _PurpleConnection *gc,
+					    const char *who);
 
 /* libpurple chat room callbacks */
-GList *sipe_chat_info(struct _PurpleConnection *gc);
-GHashTable *sipe_chat_info_defaults(struct _PurpleConnection *gc,
-				    const char *chat_name);
-void sipe_join_chat(struct _PurpleConnection *gc, GHashTable *data);
-struct _PurpleRoomlist *sipe_roomlist_get_list(struct _PurpleConnection *gc);
-void sipe_roomlist_cancel(struct _PurpleRoomlist *list);
+GList *sipe_purple_chat_info(struct _PurpleConnection *gc);
+GHashTable *sipe_purple_chat_info_defaults(struct _PurpleConnection *gc,
+					   const char *chat_name);
+void sipe_purple_chat_join(struct _PurpleConnection *gc, GHashTable *data);
+struct _PurpleRoomlist *sipe_purple_roomlist_get_list(struct _PurpleConnection *gc);
+void sipe_purple_roomlist_cancel(struct _PurpleRoomlist *list);
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)

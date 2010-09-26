@@ -98,7 +98,7 @@ GHashTable *purple_to_activity = NULL;
 #define PURPLE_STATUS_TO_ACTIVITY(x) \
 	GPOINTER_TO_UINT(g_hash_table_lookup(purple_to_activity, (x)))
 
-static void purple_activity_init(void)
+static void sipe_purple_activity_init(void)
 {
 	sipe_activity index = SIPE_ACTIVITY_UNSET;
 	purple_to_activity = g_hash_table_new(g_str_hash, g_str_equal);
@@ -115,7 +115,7 @@ gchar *sipe_backend_version(void)
 	return(g_strdup_printf("Purple/%s", purple_core_get_version()));
 }
 
-static void purple_activity_destroy(void)
+static void sipe_purple_activity_destroy(void)
 {
 	g_hash_table_destroy(purple_to_activity);
 	purple_to_activity = NULL;
@@ -128,7 +128,7 @@ static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 	return "sipe";
 }
 
-static gchar *sipe_status_text(PurpleBuddy *buddy)
+static gchar *sipe_purple_status_text(PurpleBuddy *buddy)
 {
 	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 	return sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
@@ -137,7 +137,7 @@ static gchar *sipe_status_text(PurpleBuddy *buddy)
 				      purple_status_get_name(status));
 }
 
-static void sipe_tooltip_text(PurpleBuddy *buddy,
+static void sipe_purple_tooltip_text(PurpleBuddy *buddy,
 			      PurpleNotifyUserInfo *user_info,
 			      SIPE_UNUSED_PARAMETER gboolean full)
 {
@@ -157,7 +157,7 @@ static void sipe_tooltip_text(PurpleBuddy *buddy,
 	}
 }
 
-static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
+static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 {
 	PurpleStatusType *type;
 	GList *types = NULL;
@@ -221,7 +221,7 @@ static GList *sipe_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	return types;
 }
 
-static GList *sipe_blist_node_menu(PurpleBlistNode *node)
+static GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
 {
 	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
 		return sipe_buddy_menu((PurpleBuddy *) node);
@@ -232,7 +232,7 @@ static GList *sipe_blist_node_menu(PurpleBlistNode *node)
 	}
 }
 
-static void sipe_login(PurpleAccount *account)
+static void sipe_purple_login(PurpleAccount *account)
 {
 	PurpleConnection *gc   = purple_account_get_connection(account);
 	const gchar *username  = purple_account_get_username(account);
@@ -319,7 +319,7 @@ static void sipe_login(PurpleAccount *account)
 	g_strfreev(username_split);
 }
 
-static void sipe_close(PurpleConnection *gc)
+static void sipe_purple_close(PurpleConnection *gc)
 {
 	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 
@@ -339,9 +339,9 @@ static void sipe_close(PurpleConnection *gc)
 
 #define SIPE_TYPING_SEND_TIMEOUT 4
 
-static unsigned int sipe_send_typing(PurpleConnection *gc,
-				     const char *who,
-				     PurpleTypingState state)
+static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
+					    const char *who,
+					    PurpleTypingState state)
 {
 	if (state == PURPLE_NOT_TYPING)
 		return 0;
@@ -352,24 +352,24 @@ static unsigned int sipe_send_typing(PurpleConnection *gc,
 	return SIPE_TYPING_SEND_TIMEOUT;
 }
 
-static void sipe_add_permit(PurpleConnection *gc, const char *name)
+static void sipe_purple_add_permit(PurpleConnection *gc, const char *name)
 {
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, TRUE);
 }
 
-static void sipe_add_deny(PurpleConnection *gc, const char *name)
+static void sipe_purple_add_deny(PurpleConnection *gc, const char *name)
 {
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, FALSE);
 }
 
-static void sipe_chat_invite(PurpleConnection *gc, int id,
+static void sipe_purple_chat_invite(PurpleConnection *gc, int id,
 			     SIPE_UNUSED_PARAMETER const char *message,
 			     const char *name)
 {
 	sipe_core_chat_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, id, name);
 }
 
-static void sipe_keep_alive(PurpleConnection *gc)
+static void sipe_purple_keep_alive(PurpleConnection *gc)
 {
 	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
@@ -384,15 +384,15 @@ static void sipe_keep_alive(PurpleConnection *gc)
 	}
 }
 
-static void sipe_alias_buddy(PurpleConnection *gc, const char *name,
-			     SIPE_UNUSED_PARAMETER const char *alias)
+static void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
+				    SIPE_UNUSED_PARAMETER const char *alias)
 {
 	sipe_core_group_set_user(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name);
 }
 
 #if PURPLE_VERSION_CHECK(2,5,0)
 static GHashTable *
-sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
+sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 {
 	GHashTable *table;
 	table = g_hash_table_new(g_str_hash, g_str_equal);
@@ -402,8 +402,8 @@ sipe_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 
 #if PURPLE_VERSION_CHECK(2,6,0)
 #ifdef HAVE_VV
-static gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
-				    SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
+static gboolean sipe_purple_initiate_media(PurpleAccount *account, const char *who,
+					   SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
 {
 	sipe_core_media_initiate_call(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
 				      who,
@@ -411,8 +411,8 @@ static gboolean sipe_initiate_media(PurpleAccount *account, const char *who,
 	return TRUE;
 }
 
-static PurpleMediaCaps sipe_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account,
-					   SIPE_UNUSED_PARAMETER const char *who)
+static PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account,
+						  SIPE_UNUSED_PARAMETER const char *who)
 {
 	return   PURPLE_MEDIA_CAPS_AUDIO
 	       | PURPLE_MEDIA_CAPS_AUDIO_VIDEO
@@ -422,7 +422,7 @@ static PurpleMediaCaps sipe_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *
 #endif
 #endif
 
-static PurplePluginProtocolInfo prpl_info =
+static PurplePluginProtocolInfo sipe_prpl_info =
 {
 	OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
@@ -430,17 +430,17 @@ static PurplePluginProtocolInfo prpl_info =
 	NO_BUDDY_ICONS,				/* icon_spec */
 	sipe_list_icon,				/* list_icon */
 	NULL,					/* list_emblems */
-	sipe_status_text,			/* status_text */
-	sipe_tooltip_text,			/* tooltip_text */	// add custom info to contact tooltip
-	sipe_status_types,			/* away_states */
-	sipe_blist_node_menu,			/* blist_node_menu */
-	sipe_chat_info,				/* chat_info */
-	sipe_chat_info_defaults,		/* chat_info_defaults */
-	sipe_login,				/* login */
-	sipe_close,				/* close */
+	sipe_purple_status_text,		/* status_text */
+	sipe_purple_tooltip_text,		/* tooltip_text */	// add custom info to contact tooltip
+	sipe_purple_status_types,		/* away_states */
+	sipe_purple_blist_node_menu,		/* blist_node_menu */
+	sipe_purple_chat_info,			/* chat_info */
+	sipe_purple_chat_info_defaults,		/* chat_info_defaults */
+	sipe_purple_login,			/* login */
+	sipe_purple_close,			/* close */
 	sipe_im_send,				/* send_im */
 	NULL,					/* set_info */		// TODO maybe
-	sipe_send_typing,			/* send_typing */
+	sipe_purple_send_typing,		/* send_typing */
 	sipe_get_info,				/* get_info */
 	sipe_set_status,			/* set_status */
 	sipe_set_idle,				/* set_idle */
@@ -449,23 +449,23 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* add_buddies */
 	sipe_remove_buddy,			/* remove_buddy */
 	NULL,					/* remove_buddies */
-	sipe_add_permit,			/* add_permit */
-	sipe_add_deny,				/* add_deny */
-	sipe_add_deny,				/* rem_permit */
-	sipe_add_permit,			/* rem_deny */
+	sipe_purple_add_permit,			/* add_permit */
+	sipe_purple_add_deny,			/* add_deny */
+	sipe_purple_add_deny,			/* rem_permit */
+	sipe_purple_add_permit,			/* rem_deny */
 	NULL,					/* set_permit_deny */
-	sipe_join_chat,				/* join_chat */
+	sipe_purple_chat_join,			/* join_chat */
 	NULL,					/* reject_chat */
 	NULL,					/* get_chat_name */
-	sipe_chat_invite,			/* chat_invite */
+	sipe_purple_chat_invite,		/* chat_invite */
 	sipe_chat_leave,			/* chat_leave */
 	NULL,					/* chat_whisper */
 	sipe_chat_send,				/* chat_send */
-	sipe_keep_alive,			/* keepalive */
+	sipe_purple_keep_alive,			/* keepalive */
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// deprecated
 	NULL,					/* get_cb_away */	// deprecated
-	sipe_alias_buddy,			/* alias_buddy */
+	sipe_purple_alias_buddy,		/* alias_buddy */
 	sipe_group_buddy,			/* group_buddy */
 	sipe_rename_group,			/* rename_group */
 	NULL,					/* buddy_free */
@@ -476,12 +476,12 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* get_cb_real_name */	// TODO?
 	NULL,					/* set_chat_topic */
 	NULL,					/* find_blist_chat */
-	sipe_roomlist_get_list,			/* roomlist_get_list */
-	sipe_roomlist_cancel,			/* roomlist_cancel */
+	sipe_purple_roomlist_get_list,		/* roomlist_get_list */
+	sipe_purple_roomlist_cancel,		/* roomlist_cancel */
 	NULL,					/* roomlist_expand_category */
 	NULL,					/* can_receive_file */
-	sipe_ft_send_file,			/* send_file */
-	sipe_ft_new_xfer,			/* new_xfer */
+	sipe_purple_ft_send_file,		/* send_file */
+	sipe_purple_ft_new_xfer,		/* new_xfer */
 	NULL,					/* offline_message */
 	NULL,					/* whiteboard_prpl_ops */
 	NULL,					/* send_raw */
@@ -495,11 +495,11 @@ static PurplePluginProtocolInfo prpl_info =
 #endif
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
 #if PURPLE_VERSION_CHECK(2,5,0)
-	sipe_get_account_text_table,		/* get_account_text_table */
+	sipe_purple_get_account_text_table,	/* get_account_text_table */
 #if PURPLE_VERSION_CHECK(2,6,0)
 #ifdef HAVE_VV
-	sipe_initiate_media,			/* initiate_media */
-	sipe_get_media_caps,			/* get_media_caps */
+	sipe_purple_initiate_media,		/* initiate_media */
+	sipe_purple_get_media_caps,		/* get_media_caps */
 #else
 	NULL,					/* initiate_media */
 	NULL,					/* get_media_caps */
@@ -514,39 +514,39 @@ static PurplePluginProtocolInfo prpl_info =
 };
 
 /* PurplePluginInfo function calls & data structure */
-static gboolean sipe_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
+static gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 	return TRUE;
 }
 
-static gboolean sipe_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
+static gboolean sipe_purple_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 	return TRUE;
 }
 
-static void sipe_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
+static void sipe_purple_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 	GList *entry;
 
-	purple_activity_destroy();
+	sipe_purple_activity_destroy();
 	sipe_core_destroy();
 
-	entry = prpl_info.protocol_options;
+	entry = sipe_prpl_info.protocol_options;
 	while (entry) {
 		purple_account_option_destroy(entry->data);
 		entry = g_list_delete_link(entry, entry);
 	}
-	prpl_info.protocol_options = NULL;
+	sipe_prpl_info.protocol_options = NULL;
 
-	entry = prpl_info.user_splits;
+	entry = sipe_prpl_info.user_splits;
 	while (entry) {
 		purple_account_user_split_destroy(entry->data);
 		entry = g_list_delete_link(entry, entry);
 	}
-	prpl_info.user_splits = NULL;
+	sipe_prpl_info.user_splits = NULL;
 }
 
-static void sipe_show_about_plugin(PurplePluginAction *action)
+static void sipe_purple_show_about_plugin(PurplePluginAction *action)
 {
 	gchar *tmp = sipe_core_about();
 	purple_notify_formatted((PurpleConnection *) action->context,
@@ -554,7 +554,7 @@ static void sipe_show_about_plugin(PurplePluginAction *action)
 	g_free(tmp);
 }
 
-static void sipe_show_find_contact(PurplePluginAction *action)
+static void sipe_purple_show_find_contact(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
 	PurpleRequestFields *fields;
@@ -584,40 +584,40 @@ static void sipe_show_find_contact(PurplePluginAction *action)
 		purple_connection_get_account(gc), NULL, NULL, gc);
 }
 
-static void sipe_republish_calendar(PurplePluginAction *action)
+static void sipe_purple_republish_calendar(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
 	sipe_core_update_calendar(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 }
 
-static void sipe_reset_status(PurplePluginAction *action)
+static void sipe_purple_reset_status(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
 	sipe_core_reset_status(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 }
 
-static GList *sipe_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
-			   SIPE_UNUSED_PARAMETER gpointer context)
+static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
+				  SIPE_UNUSED_PARAMETER gpointer context)
 {
 	GList *menu = NULL;
 	PurplePluginAction *act;
 
-	act = purple_plugin_action_new(_("About SIPE plugin..."), sipe_show_about_plugin);
+	act = purple_plugin_action_new(_("About SIPE plugin..."), sipe_purple_show_about_plugin);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_plugin_action_new(_("Contact search..."), sipe_show_find_contact);
+	act = purple_plugin_action_new(_("Contact search..."), sipe_purple_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_plugin_action_new(_("Republish Calendar"), sipe_republish_calendar);
+	act = purple_plugin_action_new(_("Republish Calendar"), sipe_purple_republish_calendar);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_plugin_action_new(_("Reset status"), sipe_reset_status);
+	act = purple_plugin_action_new(_("Reset status"), sipe_purple_reset_status);
 	menu = g_list_prepend(menu, act);
 
 	return g_list_reverse(menu);
 }
 
-static PurplePluginInfo info = {
+static PurplePluginInfo sipe_purple_info = {
 	PURPLE_PLUGIN_MAGIC,
 	PURPLE_MAJOR_VERSION,
 	PURPLE_MINOR_VERSION,
@@ -637,27 +637,27 @@ static PurplePluginInfo info = {
 	"Stefan Becker <stefan.becker@nokia.com>, "       /**< author         */
 	"pier11 <pier11@operamail.com>",                  /**< author         */
 	PACKAGE_URL,                                      /**< homepage       */
-	sipe_plugin_load,                                 /**< load           */
-	sipe_plugin_unload,                               /**< unload         */
-	sipe_plugin_destroy,                              /**< destroy        */
+	sipe_purple_plugin_load,                          /**< load           */
+	sipe_purple_plugin_unload,                        /**< unload         */
+	sipe_purple_plugin_destroy,                       /**< destroy        */
 	NULL,                                             /**< ui_info        */
-	&prpl_info,                                       /**< extra_info     */
+	&sipe_prpl_info,                                  /**< extra_info     */
 	NULL,
-	sipe_actions,
+	sipe_purple_actions,
 	NULL,
 	NULL,
 	NULL,
 	NULL
 };
 
-static void init_plugin(PurplePlugin *plugin)
+static void sipe_purple_init_plugin(PurplePlugin *plugin)
 {
 	PurpleAccountUserSplit *split;
 	PurpleAccountOption *option;
 
 	/* This needs to be called first */
 	sipe_core_init(LOCALEDIR);
-	purple_activity_init();
+	sipe_purple_activity_init();
 
 	purple_plugin_register(plugin);
 
@@ -670,63 +670,63 @@ static void init_plugin(PurplePlugin *plugin)
 	 */
 	split = purple_account_user_split_new(_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"), NULL, ',');
 	purple_account_user_split_set_reverse(split, FALSE);
-	prpl_info.user_splits = g_list_append(prpl_info.user_splits, split);
+	sipe_prpl_info.user_splits = g_list_append(sipe_prpl_info.user_splits, split);
 
 	option = purple_account_option_string_new(_("Server[:Port]\n(leave empty for auto-discovery)"), "server", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_list_new(_("Connection type"), "transport", NULL);
 	purple_account_option_add_list_item(option, _("Auto"), "auto");
 	purple_account_option_add_list_item(option, _("SSL/TLS"), "tls");
 	purple_account_option_add_list_item(option, _("TCP"), "tcp");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);*/
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);*/
 
 	option = purple_account_option_string_new(_("User Agent"), "useragent", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 #ifdef HAVE_LIBKRB5
 	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/* Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 	 * No login/password is taken into account if this option present,
 	 * instead used default credentials stored in OS.
 	 */
 	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 #endif
 
 	/** Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 	 */
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new(_("Email address\n(if different from Username)"), "email", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/** Example (Exchange): DOMAIN\user  or  user@company.com
 	 *  Example (Domino)  : email_address
 	 */
 	option = purple_account_option_string_new(_("Email login\n(if different from Login)"), "email_login", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
 	purple_account_option_set_masked(option, TRUE);
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/** Example (federated domain): company.com      (i.e. ocschat@company.com)
 	 *  Example (non-default user): user@company.com
 	 */
 	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or  user@company.com\n(leave empty to determine from Username)"), "groupchat_user", "");
-	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 }
 
 /* This macro makes the code a purple plugin */
-PURPLE_INIT_PLUGIN(sipe, init_plugin, info);
+PURPLE_INIT_PLUGIN(sipe, sipe_purple_init_plugin, sipe_purple_info);
 
 /*
   Local Variables:

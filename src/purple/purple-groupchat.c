@@ -36,7 +36,7 @@
 
 #include "purple-private.h"
 
-GList *sipe_chat_info(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
+GList *sipe_purple_chat_info(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
 {
 	GList *m = NULL;
 	struct proto_chat_entry *pce;
@@ -50,8 +50,8 @@ GList *sipe_chat_info(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
 	return m;
 }
 
-GHashTable *sipe_chat_info_defaults(PurpleConnection *gc,
-				    const char *chat_name)
+GHashTable *sipe_purple_chat_info_defaults(PurpleConnection *gc,
+					   const char *chat_name)
 {
 	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	GHashTable *uri_map = sipe_public->backend_private->roomlist_map;
@@ -67,7 +67,7 @@ GHashTable *sipe_chat_info_defaults(PurpleConnection *gc,
 	return defaults;
 }
 
-void sipe_join_chat(PurpleConnection *gc, GHashTable *data)
+void sipe_purple_chat_join(PurpleConnection *gc, GHashTable *data)
 {
 	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	const gchar *uri = g_hash_table_lookup(data, "uri");
@@ -78,7 +78,7 @@ void sipe_join_chat(PurpleConnection *gc, GHashTable *data)
 	}
 }
 
-PurpleRoomlist *sipe_roomlist_get_list(PurpleConnection *gc)
+PurpleRoomlist *sipe_purple_roomlist_get_list(PurpleConnection *gc)
 {
 	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
@@ -123,14 +123,14 @@ PurpleRoomlist *sipe_roomlist_get_list(PurpleConnection *gc)
 	purple_roomlist_set_in_progress(roomlist, TRUE);
 
 	if (!sipe_core_groupchat_query_rooms(sipe_public)) {
-		sipe_roomlist_cancel(roomlist);
+		sipe_purple_roomlist_cancel(roomlist);
 		roomlist = NULL;
 	}
 
 	return roomlist;
 }
 
-void sipe_roomlist_cancel(PurpleRoomlist *roomlist)
+void sipe_purple_roomlist_cancel(PurpleRoomlist *roomlist)
 {
 	PurpleAccount *account = roomlist->account;
 	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
