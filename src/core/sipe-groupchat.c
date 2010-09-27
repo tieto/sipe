@@ -600,6 +600,18 @@ static void add_user(struct sipe_chat_session *chat_session,
 		sipe_backend_chat_operator(chat_session->backend, uri);
 }
 
+static void backend_join(struct sipe_core_private *sipe_private,
+			 struct sipe_chat_session *chat_session)
+{
+	gchar *self = sip_uri_self(sipe_private);
+	chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+							 chat_session,
+							 chat_session->backend,
+							 chat_session->title,
+							 self);
+	g_free(self);
+}
+
 static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				     SIPE_UNUSED_PARAMETER struct sip_session *session,
 				     guint result,
@@ -636,7 +648,6 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				struct sipe_chat_session *chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
 											     uri);
 				gboolean new = (chat_session == NULL);
-				gchar *self = sip_uri_self(sipe_private);
 				const sipe_xml *aib;
 				const gchar *attr;
 
@@ -654,13 +665,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				SIPE_DEBUG_INFO("joined room '%s' (%s)",
 						chat_session->title,
 						chat_session->id);
-
-				chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-										 chat_session,
-										 chat_session->backend,
-										 chat_session->title,
-										 self);
-				g_free(self);
+				backend_join(sipe_private, chat_session);
 
 				attr = sipe_xml_attribute(node, "topic");
 				if (attr) {
@@ -1029,16 +1034,30 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 	}
 
 	if (groupchat->connected) {
-		/* Send it out directly */
-		gchar *chanid = generate_chanid_node(uri, 0);
-		if (chanid) {
-			gchar *cmd = g_strdup_printf("<cmd id=\"cmd:join\" seqid=\"1\">"
-						     "<data>%s</data>"
-						     "</cmd>",
-						     chanid);
-			chatserver_command(sipe_private, cmd);
-			g_free(cmd);
-			g_free(chanid);
+		struct sipe_chat_session *chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
+									     uri);
+
+		/* Already joined? */
+		if (chat_session) {
+
+			/* Yes, update backend session */
+			SIPE_DEBUG_INFO("sipe_core_groupchat_join: rejoin '%s' (%s)",
+					chat_session->title,
+					chat_session->id);
+			backend_join(sipe_private, chat_session);
+
+		} else {
+			/* No, send command out directly */
+			gchar *chanid = generate_chanid_node(uri, 0);
+			if (chanid) {
+				gchar *cmd = g_strdup_printf("<cmd id=\"cmd:join\" seqid=\"1\">"
+							     "<data>%s</data>"
+							     "</cmd>",
+							     chanid);
+				chatserver_command(sipe_private, cmd);
+				g_free(cmd);
+				g_free(chanid);
+			}
 		}
 	} else {
 		/* Add it to the queue but avoid duplicates */

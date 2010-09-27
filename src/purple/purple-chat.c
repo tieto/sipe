@@ -209,18 +209,22 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleConversation *conv = (PurpleConversation *) backend_session;
 
-	int id = conv ? 
-		purple_conv_chat_get_id(PURPLE_CONV_CHAT(conv)) :
-		sipe_purple_chat_id(purple_private->gc);
+	if (conv) {
+		/* Bring existing purple chat to the front */
+		/* @TODO: This seems to work, but is it the correct way? */
+		purple_conversation_update(conv, PURPLE_CONV_UPDATE_TOPIC);
 
-	/* create/rejoin purple chat */
-	conv = serv_got_joined_chat(purple_private->gc,
-				    id,
-				    title);
+	} else {
+		/* Create new purple chat */
+		conv = serv_got_joined_chat(purple_private->gc,
+					    sipe_purple_chat_id(purple_private->gc),
+					    title);
+		purple_conversation_set_data(conv,
+					     SIPE_PURPLE_KEY_CHAT_SESSION,
+					     session);
+	}
+
 	purple_conv_chat_set_nick(PURPLE_CONV_CHAT(conv), nick);
-
-	purple_conversation_set_data(conv,
-				     SIPE_PURPLE_KEY_CHAT_SESSION, session);
 
 	return((struct sipe_backend_chat_session *) conv);
 }
