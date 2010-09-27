@@ -28,8 +28,19 @@ struct sipe_backend_chat_session;
 struct sipe_chat_session {
 	struct sipe_backend_chat_session *backend;
 	struct sip_session *session;
+
+	/*
+	 * Chat identifier (must be unique per account)
+	 *
+	 * 2007 Group chat:      channel URI
+	 * 2007 Conference:      focus URI
+	 * 2005 multiparty chat: Call-Id of the conversation
+	 */
 	gchar *id;
+
+	/* Human readable chat identifier (can have duplicates) */
 	gchar *title;
+
 	gboolean is_groupchat;
 };
 
@@ -56,26 +67,12 @@ void
 sipe_chat_destroy(void);
 
 /**
- * Returns purple's chat name for provided chat identification in protocol.
- * Stores newly created chat title if not yet exist.
- *
- * @param proto_chat_id for 2007 conference this is (gchar *) Focus URI,
- *                      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
+ * Generate a name for a new private chat.
  *
  * @return chat name. Must be g_free()'d after use
  */
 gchar *
-sipe_chat_get_name(const gchar *proto_chat_id);
-
-/**
- * Returns protocol id for provided purple's chat name
- *
- * @param chat_name chat name
- *
- * @return protocol id
- */
-const gchar *
-sipe_chat_find_name(const gchar *chat_name);
+sipe_chat_get_name(void);
 
 /**
  * 

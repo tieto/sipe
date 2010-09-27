@@ -145,57 +145,20 @@ void sipe_core_chat_send(struct sipe_core_public *sipe_public,
 }
 
 
-/** See below. Same as chat_names but swapped key with values */
-static GHashTable *chat_names_inverse = NULL;
-
 gchar *
-sipe_chat_get_name(const gchar *proto_chat_id)
+sipe_chat_get_name(void)
 {
 	/**
-	 * A non-volatile mapping of protocol's chat identification
-	 * to purple's chat-name. The latter is very important to
-	 * find/rejoin chat.
-	 *
-	 * @key for 2007 conference this is (gchar *) Focus URI
-	 *      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
-	 * @value a purple chat name.
+	 * A non-volatile ID counter.
+	 * Should survive connection drop & reconnect.
 	 */
-	static GHashTable *chat_names = NULL;
+	static guint chat_seq = 0;
 
-	/**
-	 * A non-volatile chat counter.
-	 * Should survive protocol reload.
-	 */
-	static int chat_seq = 0;
+	/* Generate next ID */
+	gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
+	SIPE_DEBUG_INFO("sipe_chat_get_name: added new: %s", chat_name);
 
-	char *chat_name = NULL;
-
-	if (!chat_names) {
-		chat_names = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-	}
-	if (!chat_names_inverse) {
-		chat_names_inverse = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-	}
-
-	if (proto_chat_id) {
-		chat_name = g_hash_table_lookup(chat_names, proto_chat_id);
-		SIPE_DEBUG_INFO("sipe_chat_get_name: lookup results: %s", chat_name ? chat_name : "NULL");
-	}
-	if (!chat_name) {
-		chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
-		g_hash_table_insert(chat_names, g_strdup(proto_chat_id), chat_name);
-		g_hash_table_insert(chat_names_inverse,  chat_name, g_strdup(proto_chat_id));
-		SIPE_DEBUG_INFO("sipe_chat_get_name: added new: %s", chat_name);
-	}
-
-	return g_strdup(chat_name);
-}
-
-const gchar *
-sipe_chat_find_name(const gchar *chat_name)
-{
-	if (!chat_names_inverse) return NULL;
-	return(g_hash_table_lookup(chat_names_inverse, chat_name));
+	return chat_name;
 }
 
 static void
