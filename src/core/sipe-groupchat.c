@@ -645,6 +645,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 					chat_session = sipe_chat_create_session(sipe_xml_attribute(node,
 												   "uri"),
 										attr ? attr : "");
+					chat_session->is_groupchat = TRUE;
 					g_hash_table_insert(groupchat->uri_to_chat_session,
 							    chat_session->id,
 							    chat_session);
@@ -934,19 +935,19 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 	sipe_xml_free(xml);
 }
 
-gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
-			     struct sipe_chat_session *chat_session,
-			     const gchar *what)
+void sipe_groupchat_send(struct sipe_core_private *sipe_private,
+			 struct sipe_chat_session *chat_session,
+			 const gchar *what)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	gchar *cmd, *self, *timestamp;
 	struct sipe_groupchat_msg *msg;
 
 	if (!groupchat || !chat_session)
-		return FALSE;
+		return;
 
-	SIPE_DEBUG_INFO("sipe_groupchat_send: (%s) %s",
-			chat_session->id, what);
+	SIPE_DEBUG_INFO("sipe_groupchat_send: '%s' to %s",
+			what, chat_session->id);
 
 	self = sip_uri_self(sipe_private);
 	timestamp = sipe_utils_time_to_str(time(NULL));
@@ -972,18 +973,16 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 
 	msg->session = chat_session;
 	msg->content = g_strdup(what);
-
-	return TRUE;
 }
 
-gboolean sipe_groupchat_leave(struct sipe_core_private *sipe_private,
-			      struct sipe_chat_session *chat_session)
+void sipe_groupchat_leave(struct sipe_core_private *sipe_private,
+			  struct sipe_chat_session *chat_session)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	gchar *cmd;
 
 	if (!groupchat || !chat_session)
-		return FALSE;
+		return;
 
 	SIPE_DEBUG_INFO("sipe_groupchat_leave: %s", chat_session->id);
 
@@ -994,8 +993,6 @@ gboolean sipe_groupchat_leave(struct sipe_core_private *sipe_private,
 			      "</cmd>", chat_session->id);
 	chatserver_command(sipe_private, cmd);
 	g_free(cmd);
-
-	return TRUE;
 }
 
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public)

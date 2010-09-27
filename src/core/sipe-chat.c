@@ -39,6 +39,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-groupchat.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
@@ -69,8 +70,12 @@ void sipe_chat_remove_session(struct sipe_chat_session *session)
 
 void sipe_chat_destroy(void)
 {
-	while (chat_sessions)
-		sipe_chat_remove_session(chat_sessions->data);
+	while (chat_sessions) {
+		struct sipe_chat_session *chat_session = chat_sessions->data;
+		SIPE_DEBUG_INFO("sipe_chat_destroy: '%s' (%s)",
+				chat_session->title, chat_session->id);
+		sipe_chat_remove_session(chat_session);
+	}
 }
 
 void sipe_core_chat_create(struct sipe_core_public *sipe_public,
@@ -87,10 +92,18 @@ void sipe_core_chat_create(struct sipe_core_public *sipe_public,
 }
 
 void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
-			  struct sipe_chat_session *session)
+			  struct sipe_chat_session *chat_session)
 {
-	(void)sipe_public;
-	(void)session;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	SIPE_DEBUG_INFO("sipe_core_chat_leave: '%s'", chat_session->title);
+
+	if (chat_session->is_groupchat) {
+		sipe_groupchat_leave(sipe_private, chat_session);
+	} else {
+		/* @TODO */
+	}
+
 #if 0
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
 
@@ -103,14 +116,21 @@ void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
 }
 
 void sipe_core_chat_send(struct sipe_core_public *sipe_public,
-			 struct sipe_chat_session *session,
+			 struct sipe_chat_session *chat_session,
 			 const char *what)
 {
-	(void)sipe_public;
-	(void)session;
-	(void)what;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	SIPE_DEBUG_INFO("sipe_core_chat_send: '%s' to '%s'",
+			what, chat_session->title);
+
+	if (chat_session->is_groupchat) {
+		sipe_groupchat_send(sipe_private, chat_session, what);
+	} else {
+		/* @TODO */
+	}
+
 #if 0
-	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sip_session *session;
 
