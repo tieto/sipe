@@ -39,6 +39,7 @@ struct sipe_backend_private {
 	struct _PurpleSrvQueryData *dns_query;
 	struct _PurpleRoomlist *roomlist;
 	GHashTable *roomlist_map; /* name -> uri */
+	GList *rejoin_chats;
 	time_t last_keepalive;
 };
 
@@ -64,6 +65,8 @@ struct _PurpleXfer *sipe_purple_ft_new_xfer(struct _PurpleConnection *gc,
 					    const char *who);
 
 /* libpurple chat callbacks */
+void sipe_purple_chat_setup_rejoin(struct sipe_backend_private *purple_private);
+void sipe_purple_chat_destroy_rejoin(struct sipe_backend_private *purple_private);
 void sipe_purple_chat_invite(struct _PurpleConnection *gc,
 			     int id,
 			     const char *message,

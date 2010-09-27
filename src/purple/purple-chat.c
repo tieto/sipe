@@ -98,7 +98,7 @@
  *      set channel topic                           [@TODO: for Group Chat]
  *
  *
- * struct sipe_chat_session [@TODO: TO BE IMPLEMENTED]
+ * struct sipe_chat_session
  *    Same life span as PurpleConversation
  *    Pointer stored under key "sipe" in PurpleConversation->data
  *    Contains information private to core to identify chat session on server
@@ -109,12 +109,11 @@
  *
  *    HAS: backend_session (gpointer) -> PurpleConversation
  *
- * struct sipe_backend_private [@TODO: TO BE IMPLEMENTED]
+ * struct sipe_backend_private
  *
  *    HAS: rejoin_chats (GList *)
  *         created on login() for existing chats
  *         initiate re-join calls to core (sipe_backend_chat_rejoin_all)
- *         remove chats when joined (sipe_backend_chat_create)
  */
 
 #define SIPE_PURPLE_KEY_CHAT_SESSION "sipe"
@@ -135,6 +134,26 @@ static struct sipe_chat_session *sipe_purple_chat_find(PurpleConnection *gc,
 
 	return purple_conversation_get_data(conv,
 					    SIPE_PURPLE_KEY_CHAT_SESSION);
+}
+
+void sipe_purple_chat_setup_rejoin(struct sipe_backend_private *purple_private)
+{
+	GList *entry = purple_get_chats();
+
+	while (entry) {
+		PurpleConversation *conv = entry->data;
+		if (purple_conversation_get_gc(conv) == purple_private->gc)
+			purple_private->rejoin_chats = g_list_prepend(purple_private->rejoin_chats,
+								      purple_conversation_get_data(conv,
+												   SIPE_PURPLE_KEY_CHAT_SESSION));
+		entry = entry->next;
+	}
+}
+
+void sipe_purple_chat_destroy_rejoin(struct sipe_backend_private *purple_private)
+{
+	g_list_free(purple_private->rejoin_chats);
+	purple_private->rejoin_chats = NULL;
 }
 
 void sipe_purple_chat_invite(PurpleConnection *gc, int id,
@@ -265,28 +284,19 @@ void sipe_backend_chat_rejoin(struct sipe_backend_chat_session *backend_session,
 }
 
 /**
- * Allows to send typed messages from chat window again after
- * account reinstantiation.
- *
- * @TODO: is this really necessary? No other purple protocol plugin
- *        seems to have this kind of code...
+ * Connection re-established: tell core what chats need to be rejoined
  */
 void sipe_backend_chat_rejoin_all(struct sipe_core_public *sipe_public)
 	
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	GList *entry = purple_get_chats();
+	GList *entry = purple_private->rejoin_chats;
 
 	while (entry) {
-		PurpleConversation *conv = entry->data;
-		if ((purple_conversation_get_gc(conv) == purple_private->gc) &&
-		    purple_conv_chat_has_left(PURPLE_CONV_CHAT(conv))) {
-			PURPLE_CONV_CHAT(conv)->left = FALSE;
-			purple_conversation_update(conv,
-						   PURPLE_CONV_UPDATE_CHATLEFT);
-		}
+		sipe_core_chat_rejoin(sipe_public, entry->data);
 		entry = entry->next;
 	}
+	sipe_purple_chat_destroy_rejoin(purple_private);
 }
 
 void sipe_backend_chat_remove(struct sipe_backend_chat_session *backend_session,

@@ -288,6 +288,8 @@ static void sipe_purple_login(PurpleAccount *account)
 	purple_private->gc = gc;
 	purple_private->account = account;
 
+	sipe_purple_chat_setup_rejoin(purple_private);
+
 #ifdef HAVE_LIBKRB5
 	if (purple_account_get_bool(account, "krb5", FALSE))
 		SIPE_CORE_FLAG_SET(KRB5);
@@ -333,6 +335,7 @@ static void sipe_purple_close(PurpleConnection *gc)
 			purple_srv_cancel(purple_private->dns_query);
 		if (purple_private->roomlist_map)
 			g_hash_table_destroy(purple_private->roomlist_map);
+		sipe_purple_chat_destroy_rejoin(purple_private);
 		g_free(purple_private);
 		gc->proto_data = NULL;
 	}

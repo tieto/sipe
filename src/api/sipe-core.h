@@ -261,20 +261,26 @@ void sipe_core_dns_resolve_failure(struct sipe_core_public *sipe_public);
  * Create a new chat
  */
 void sipe_core_chat_create(struct sipe_core_public *sipe_public,
-			   struct sipe_chat_session *session,
+			   struct sipe_chat_session *chat_session,
 			   const char *name);
+
+/**
+ * Rejoin a chat after connection re-establishment
+ */
+void sipe_core_chat_rejoin(struct sipe_core_public *sipe_public,
+			   struct sipe_chat_session *chat_session);
 
 /**
  * Leave a chat
  */
 void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
-			  struct sipe_chat_session *session);
+			  struct sipe_chat_session *chat_session);
 
 /*
  * Send message to chat
  */
 void sipe_core_chat_send(struct sipe_core_public *sipe_public,
-			 struct sipe_chat_session *session,
+			 struct sipe_chat_session *chat_session,
 			 const char *what);
 
 /* media */
