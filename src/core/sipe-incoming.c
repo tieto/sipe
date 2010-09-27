@@ -434,13 +434,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		/* create chat */
 		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
 									  session->chat_session,
-									  NULL,
 									  session->chat_session->title,
 									  self);
-		/* add self */
-		sipe_backend_chat_add(session->chat_session->backend,
-				      self,
-				      FALSE);
 		g_free(self);
 	}
 

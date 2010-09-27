@@ -600,18 +600,6 @@ static void add_user(struct sipe_chat_session *chat_session,
 		sipe_backend_chat_operator(chat_session->backend, uri);
 }
 
-static void backend_join(struct sipe_core_private *sipe_private,
-			 struct sipe_chat_session *chat_session)
-{
-	gchar *self = sip_uri_self(sipe_private);
-	chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-							 chat_session,
-							 chat_session->backend,
-							 chat_session->title,
-							 self);
-	g_free(self);
-}
-
 static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				     SIPE_UNUSED_PARAMETER struct sip_session *session,
 				     guint result,
@@ -645,27 +633,27 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 			const gchar *uri = sipe_xml_attribute(node, "uri");
 
 			if (uri) {
-				struct sipe_chat_session *chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
-											     uri);
-				gboolean new = (chat_session == NULL);
+				struct sipe_chat_session *chat_session;
+				const gchar *attr = sipe_xml_attribute(node, "name");
+				char *self = sip_uri_self(sipe_private);
 				const sipe_xml *aib;
-				const gchar *attr;
 
-				if (new) {
-					attr = sipe_xml_attribute(node, "name");
-					chat_session = sipe_chat_create_session(sipe_xml_attribute(node,
-												   "uri"),
-										attr ? attr : "");
-					chat_session->is_groupchat = TRUE;
-					g_hash_table_insert(groupchat->uri_to_chat_session,
-							    chat_session->id,
-							    chat_session);
-				}
+				chat_session = sipe_chat_create_session(sipe_xml_attribute(node,
+											   "uri"),
+									attr ? attr : "");
+				chat_session->is_groupchat = TRUE;
+				g_hash_table_insert(groupchat->uri_to_chat_session,
+						    chat_session->id,
+						    chat_session);
 
 				SIPE_DEBUG_INFO("joined room '%s' (%s)",
 						chat_session->title,
 						chat_session->id);
-				backend_join(sipe_private, chat_session);
+				chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+										 chat_session,
+										 chat_session->title,
+										 self);
+				g_free(self);
 
 				attr = sipe_xml_attribute(node, "topic");
 				if (attr) {
@@ -1039,12 +1027,14 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 
 		/* Already joined? */
 		if (chat_session) {
+			gchar *self = sip_uri_self(sipe_private);
 
 			/* Yes, update backend session */
 			SIPE_DEBUG_INFO("sipe_core_groupchat_join: rejoin '%s' (%s)",
 					chat_session->title,
 					chat_session->id);
-			backend_join(sipe_private, chat_session);
+			sipe_backend_chat_rejoin(chat_session->backend, self);
+			g_free(self);
 
 		} else {
 			/* No, send command out directly */

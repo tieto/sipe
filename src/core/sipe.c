@@ -6268,15 +6268,11 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 
 		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
 									  session->chat_session,
-									  NULL,
 									  session->chat_session->title,
 									  self);
-		sipe_backend_chat_add(session->chat_session->backend,
-				      self,
-				      FALSE);
-		sipe_invite(sipe_private, session, buddy->name, NULL, NULL, NULL, FALSE);
-
 		g_free(self);
+
+		sipe_invite(sipe_private, session, buddy->name, NULL, NULL, NULL, FALSE);
 	}
 }
 

@@ -202,30 +202,17 @@ static int sipe_purple_chat_id(PurpleConnection *gc)
 
 struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_public *sipe_public,
 							   struct sipe_chat_session *session,
-							   struct sipe_backend_chat_session *backend_session,
 							   const gchar *title,
 							   const gchar *nick)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	PurpleConversation *conv = (PurpleConversation *) backend_session;
-
-	if (conv) {
-		/* Bring existing purple chat to the front */
-		/* @TODO: This seems to work, but is it the correct way? */
-		purple_conversation_update(conv, PURPLE_CONV_UPDATE_TOPIC);
-
-	} else {
-		/* Create new purple chat */
-		conv = serv_got_joined_chat(purple_private->gc,
-					    sipe_purple_chat_id(purple_private->gc),
-					    title);
-		purple_conversation_set_data(conv,
-					     SIPE_PURPLE_KEY_CHAT_SESSION,
-					     session);
-	}
-
+	PurpleConversation *conv = serv_got_joined_chat(purple_private->gc,
+							sipe_purple_chat_id(purple_private->gc),
+							title);
+	purple_conversation_set_data(conv,
+				     SIPE_PURPLE_KEY_CHAT_SESSION,
+				     session);
 	purple_conv_chat_set_nick(PURPLE_CONV_CHAT(conv), nick);
-
 	return((struct sipe_backend_chat_session *) conv);
 }
 
@@ -264,6 +251,17 @@ void sipe_backend_chat_operator(struct sipe_backend_chat_session *backend_sessio
 	purple_conv_chat_user_set_flags(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session),
 					uri,
 					PURPLE_CBFLAGS_NONE | PURPLE_CBFLAGS_OP);
+}
+
+void sipe_backend_chat_rejoin(struct sipe_backend_chat_session *backend_session,
+			      const gchar *nick)
+{
+	PurpleConversation *conv = (PurpleConversation *) backend_session;
+
+	/* Bring existing purple chat to the front */
+	/* @TODO: This seems to work, but is it the correct way? */
+	purple_conversation_update(conv, PURPLE_CONV_UPDATE_TOPIC);
+	purple_conv_chat_set_nick(PURPLE_CONV_CHAT(conv), nick);
 }
 
 /**
