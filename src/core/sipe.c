@@ -6263,13 +6263,14 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session->roster_manager = g_strdup(self);
 
 		chat_title = sipe_chat_get_name(session->callid);
-		session->chat_session = sipe_chat_create_session(chat_title);
+		session->chat_session = sipe_chat_create_session(session->callid,
+								 chat_title);
 		g_free(chat_title);
 
 		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
 									  session->chat_session,
 									  NULL,
-									  session->chat_session->id,
+									  session->chat_session->title,
 									  self);
 		sipe_backend_chat_add(session->chat_session->backend,
 				      self,
@@ -6284,15 +6285,16 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
  * For 2007+ conference only.
  */
 static void
-sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy, const char *chat_title)
+sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy,
+				    struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
 	struct sip_session *session;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: buddy->name=%s", buddy->name);
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: chat_title=%s", chat_title);
+	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: chat_title=%s", chat_session->title);
 
-	session = sipe_session_find_chat_by_title(sipe_private, chat_title);
+	session = sipe_session_find_chat_by_title(sipe_private, chat_session->title);
 
 	sipe_conf_modify_user_role(sipe_private, session, buddy->name);
 }
@@ -6301,29 +6303,31 @@ sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy, const char *chat_title)
  * For 2007+ conference only.
  */
 static void
-sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy, const char *chat_title)
+sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy,
+			       struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
 	struct sip_session *session;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: buddy->name=%s", buddy->name);
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: chat_title=%s", chat_title);
+	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: chat_title=%s", chat_session->title);
 
-	session = sipe_session_find_chat_by_title(sipe_private, chat_title);
+	session = sipe_session_find_chat_by_title(sipe_private, chat_session->title);
 
 	sipe_conf_delete_user(sipe_private, session, buddy->name);
 }
 
 static void
-sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy, char *chat_title)
+sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy,
+			       struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
 	struct sip_session *session;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: buddy->name=%s", buddy->name);
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: chat_title=%s", chat_title);
+	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: chat_title=%s", chat_session->title);
 
-	session = sipe_session_find_chat_by_title(sipe_private, chat_title);
+	session = sipe_session_find_chat_by_title(sipe_private, chat_session->title);
 
 	sipe_invite_to_chat(sipe_private, session, buddy->name);
 }
@@ -6421,18 +6425,21 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	SIPE_SESSION_FOREACH {
 		if (!sipe_strcase_equal(self, buddy->name) && session->chat_session)
 		{
-			if (sipe_backend_chat_find(session->chat_session->backend, buddy->name))
+			struct sipe_chat_session *chat_session = session->chat_session;
+
+			if (sipe_backend_chat_find(chat_session->backend, buddy->name))
 			{
-				gboolean conf_op = sipe_backend_chat_is_operator(session->chat_session->backend, self);
+				gboolean conf_op = sipe_backend_chat_is_operator(chat_session->backend, self);
 
 				if (session->focus_uri
-				    && !sipe_backend_chat_is_operator(session->chat_session->backend, buddy->name) /* Not conf OP */
-				    &&  conf_op)                                                             /* We are a conf OP */
+				    && !sipe_backend_chat_is_operator(chat_session->backend, buddy->name) /* Not conf OP */
+				    &&  conf_op)                                                          /* We are a conf OP */
 				{
-					gchar *label = g_strdup_printf(_("Make leader of '%s'"), session->chat_session->id);
+					gchar *label = g_strdup_printf(_("Make leader of '%s'"),
+								       chat_session->title);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_make_leader_cb),
-								     session->chat_session->id, NULL);
+								     chat_session, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -6440,10 +6447,11 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				if (session->focus_uri
 				    && conf_op) /* We are a conf OP */
 				{
-					gchar *label = g_strdup_printf(_("Remove from '%s'"), session->chat_session->id);
+					gchar *label = g_strdup_printf(_("Remove from '%s'"),
+								       chat_session->title);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_remove_cb),
-								     session->chat_session->id, NULL);
+								     chat_session, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}
@@ -6453,10 +6461,11 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				if (!session->focus_uri
 				    || (session->focus_uri && !session->locked))
 				{
-					gchar *label = g_strdup_printf(_("Invite to '%s'"), session->chat_session->id);
+					gchar *label = g_strdup_printf(_("Invite to '%s'"),
+								       chat_session->title);
 					act = purple_menu_action_new(label,
 								     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
-								     session->chat_session->id, NULL);
+								     chat_session, NULL);
 					g_free(label);
 					menu = g_list_prepend(menu, act);
 				}

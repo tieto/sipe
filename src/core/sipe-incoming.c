@@ -427,14 +427,15 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		gchar *chat_title = sipe_chat_get_name(callid);
 		gchar *self = sip_uri_self(sipe_private);
 
-		session->chat_session = sipe_chat_create_session(chat_title);
+		session->chat_session = sipe_chat_create_session(callid,
+								 chat_title);
 		g_free(chat_title);
 
 		/* create chat */
 		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
 									  session->chat_session,
 									  NULL,
-									  session->chat_session->id,
+									  session->chat_session->title,
 									  self);
 		/* add self */
 		sipe_backend_chat_add(session->chat_session->backend,
@@ -703,3 +704,4 @@ void process_incoming_refer(struct sipe_core_private *sipe_private,
   tab-width: 8
   End:
 */
+ 

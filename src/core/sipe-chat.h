@@ -29,6 +29,7 @@ struct sipe_chat_session {
 	struct sipe_backend_chat_session *backend;
 	struct sip_session *session;
 	gchar *id;
+	gchar *title;
 	gboolean is_groupchat;
 };
 
@@ -38,7 +39,7 @@ struct sipe_chat_session {
  * @param session
  */
 struct sipe_chat_session *
-sipe_chat_create_session(const gchar *id);
+sipe_chat_create_session(const gchar *id, const gchar *title);
 
 /**
  * Remove a chat session

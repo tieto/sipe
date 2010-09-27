@@ -138,8 +138,8 @@ sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
 	}
 
 	SIPE_SESSION_FOREACH {
-		if (session->chat_session->id &&
-		    !g_strcasecmp(name, session->chat_session->id)) {
+		if (session->chat_session &&
+		    !g_strcasecmp(name, session->chat_session->title)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;

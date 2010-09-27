@@ -48,11 +48,13 @@
 
 static GList *chat_sessions = NULL;
 
-struct sipe_chat_session *sipe_chat_create_session(const gchar *id)
+struct sipe_chat_session *sipe_chat_create_session(const gchar *id,
+						   const gchar *title)
 {
 	struct sipe_chat_session *session = g_new0(struct sipe_chat_session, 1);
-	session->id = g_strdup(id);
-	chat_sessions = g_list_prepend(chat_sessions, session);
+	session->id    = g_strdup(id);
+	session->title = g_strdup(title);
+	chat_sessions  = g_list_prepend(chat_sessions, session);
 	return(session);
 }
 
@@ -60,6 +62,7 @@ void sipe_chat_remove_session(struct sipe_chat_session *session)
 {
 	chat_sessions = g_list_remove(chat_sessions, session);
 	sipe_backend_chat_session_destroy(session->backend);
+	g_free(session->title);
 	g_free(session->id);
 	g_free(session);
 }

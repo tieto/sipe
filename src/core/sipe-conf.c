@@ -693,13 +693,14 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 
 	if (session->focus_uri && !session->chat_session) {
 		gchar *self = sip_uri_self(sipe_private);
+		/* @TODO */
 		struct sipe_chat_session *chat_session = NULL;
 
 		/* create or join existing chat */
 		sipe_backend_chat_create(SIPE_CORE_PUBLIC,
 					 chat_session,
 					 chat_session->backend,
-					 chat_session->id,
+					 chat_session->title,
 					 self);
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -

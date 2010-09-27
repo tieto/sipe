@@ -160,31 +160,19 @@ struct sipe_groupchat {
 	struct sip_session *session;
 	gchar *domain;
 	GSList *join_queue;
-	GHashTable *uri_to_room;
+	GHashTable *uri_to_chat_session;
 	GHashTable *msgs;
 	guint envid;
 	gboolean connected;
 };
 
-struct sipe_groupchat_room {
-	struct sipe_chat_session *session;
-	gchar *title;
-};
-
 struct sipe_groupchat_msg {
 	GHashTable *container;
-	struct sipe_groupchat_room *room;
+	struct sipe_chat_session *session;
 	gchar *content;
 	gchar *xccos;
 	guint envid;
 };
-
-/* GDestroyNotify */
-static void sipe_groupchat_room_free(gpointer data) {
-	struct sipe_groupchat_room *room = data;
-	g_free(room->title);
-	g_free(room);
-}
 
 /* GDestroyNotify */
 static void sipe_groupchat_msg_free(gpointer data) {
@@ -204,12 +192,10 @@ static void sipe_groupchat_allocate(struct sipe_core_private *sipe_private)
 {
 	struct sipe_groupchat *groupchat = g_new0(struct sipe_groupchat, 1);
 
-	groupchat->uri_to_room = g_hash_table_new_full(g_str_hash, g_str_equal,
-						       NULL,
-						       sipe_groupchat_room_free);
-	groupchat->msgs  = g_hash_table_new_full(g_int_hash, g_int_equal,
-						 NULL,
-						 sipe_groupchat_msg_free);
+	groupchat->uri_to_chat_session = g_hash_table_new(g_str_hash, g_str_equal);
+	groupchat->msgs = g_hash_table_new_full(g_int_hash, g_int_equal,
+						NULL,
+						sipe_groupchat_msg_free);
 	groupchat->envid = rand();
 	groupchat->connected = FALSE;
 	sipe_private->groupchat = groupchat;
@@ -232,7 +218,7 @@ void sipe_groupchat_free(struct sipe_core_private *sipe_private)
 	if (groupchat) {
 		sipe_groupchat_free_join_queue(groupchat);
 		g_hash_table_destroy(groupchat->msgs);
-		g_hash_table_destroy(groupchat->uri_to_room);
+		g_hash_table_destroy(groupchat->uri_to_chat_session);
 		g_free(groupchat->domain);
 		g_free(groupchat);
 		sipe_private->groupchat = NULL;
@@ -438,18 +424,18 @@ static gboolean chatserver_command_response(struct sipe_core_private *sipe_priva
 {
 	if (msg->response != 200) {
 		struct sipe_groupchat_msg *gmsg = trans->payload->data;
-		struct sipe_groupchat_room *room = gmsg->room;
+		struct sipe_chat_session *chat_session = gmsg->session;
 
 		SIPE_DEBUG_INFO("chatserver_command_response: failure %d", msg->response);
 
-		if (room) {
+		if (chat_session) {
 			gchar *label  = g_strdup_printf(_("This message was not delivered to chat room '%s'"),
-							room->title);
+							chat_session->title);
 			gchar *errmsg = g_strdup_printf("%s:\n<font color=\"#888888\"></b>%s<b></font>",
 							label, gmsg->content);
 			g_free(label);
 			sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
-							  room->session->backend,
+							  chat_session->backend,
 							  NULL,
 							  errmsg);
 			g_free(errmsg);
@@ -600,7 +586,7 @@ static gboolean is_chanop(const sipe_xml *aib)
 			     GROUPCHAT_AIB_KEY_CHANOP);
 }
 
-static void add_user(struct sipe_groupchat_room *room,
+static void add_user(struct sipe_chat_session *chat_session,
 		     const gchar *uri,
 		     gboolean new, gboolean chanop)
 {
@@ -608,10 +594,10 @@ static void add_user(struct sipe_groupchat_room *room,
 			new ? "new " : "",
 			chanop ? "chanop " : "",
 			uri,
-			room->title, room->session->id);
-	sipe_backend_chat_add(room->session->backend, uri, new);
+			chat_session->title, chat_session->id);
+	sipe_backend_chat_add(chat_session->backend, uri, new);
 	if (chanop)
-		sipe_backend_chat_operator(room->session->backend, uri);
+		sipe_backend_chat_operator(chat_session->backend, uri);
 }
 
 static void chatserver_response_join(struct sipe_core_private *sipe_private,
@@ -647,38 +633,37 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 			const gchar *uri = sipe_xml_attribute(node, "uri");
 
 			if (uri) {
-				struct sipe_groupchat_room *room = g_hash_table_lookup(groupchat->uri_to_room,
-										       uri);
-				gboolean new = (room == NULL);
+				struct sipe_chat_session *chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
+											     uri);
+				gboolean new = (chat_session == NULL);
 				gchar *self = sip_uri_self(sipe_private);
 				const sipe_xml *aib;
 				const gchar *attr;
 
 				if (new) {
-
 					attr = sipe_xml_attribute(node, "name");
-					room        = g_new0(struct sipe_groupchat_room, 1);
-					room->title = g_strdup(attr ? attr : "");
-					room->session = sipe_chat_create_session(sipe_xml_attribute(node,
-												    "uri"));
-
-					g_hash_table_insert(groupchat->uri_to_room, room->session->id, room);
+					chat_session = sipe_chat_create_session(sipe_xml_attribute(node,
+												   "uri"),
+										attr ? attr : "");
+					g_hash_table_insert(groupchat->uri_to_chat_session,
+							    chat_session->id,
+							    chat_session);
 				}
 
 				SIPE_DEBUG_INFO("joined room '%s' (%s)",
-						room->title,
-						room->session->id);
+						chat_session->title,
+						chat_session->id);
 
-				room->session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-										  room->session,
-										  room->session->backend,
-										  room->title,
-										  self);
+				chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+										 chat_session,
+										 chat_session->backend,
+										 chat_session->title,
+										 self);
 				g_free(self);
 
 				attr = sipe_xml_attribute(node, "topic");
 				if (attr) {
-					sipe_backend_chat_topic(room->session->backend,
+					sipe_backend_chat_topic(chat_session->backend,
 								attr);
 				}
 
@@ -697,7 +682,10 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 							const gchar *uri = g_hash_table_lookup(user_ids,
 											       *uid);
 							if (uri)
-								add_user(room, uri, FALSE, chanop);
+								add_user(chat_session,
+									 uri,
+									 FALSE,
+									 chanop);
 							uid++;
 						}
 
@@ -724,15 +712,18 @@ static void chatserver_response_part(struct sipe_core_private *sipe_private,
 		struct sipe_groupchat *groupchat = sipe_private->groupchat;
 		const gchar *uri = sipe_xml_attribute(sipe_xml_child(xml, "chanib"),
 						      "uri");
-		struct sipe_groupchat_room *room;
+		struct sipe_chat_session *chat_session;
 
 		if (uri &&
-		    (room = g_hash_table_lookup(groupchat->uri_to_room, uri))) {
+		    (chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
+							uri))) {
 
 			SIPE_DEBUG_INFO("leaving room '%s' (%s)",
-					room->title, room->session->id);
+					chat_session->title, chat_session->id);
 
-			g_hash_table_remove(groupchat->uri_to_room, uri);
+			g_hash_table_remove(groupchat->uri_to_chat_session,
+					    uri);
+			sipe_chat_remove_session(chat_session);
 
 		} else {
 			SIPE_DEBUG_WARNING("chatserver_response_part: unknown chat room uri '%s'",
@@ -767,10 +758,13 @@ static void chatserver_notice_join(struct sipe_core_private *sipe_private,
 				if (domain && path) {
 					gchar *room_uri = g_strdup_printf("ma-chan://%s/%s",
 									  domain, path);
-					struct sipe_groupchat_room *room = g_hash_table_lookup(groupchat->uri_to_room,
-											       room_uri);
-					if (room)
-						add_user(room, uri, TRUE, is_chanop(aib));
+					struct sipe_chat_session *chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
+												     room_uri);
+					if (chat_session)
+						add_user(chat_session,
+							 uri,
+							 TRUE,
+							 is_chanop(aib));
 
 					g_free(room_uri);
 				}
@@ -794,10 +788,10 @@ static void chatserver_notice_part(struct sipe_core_private *sipe_private,
 		const gchar *room_uri = sipe_xml_attribute(chanib, "uri");
 
 		if (room_uri) {
-			struct sipe_groupchat_room *room = g_hash_table_lookup(groupchat->uri_to_room,
-									       room_uri);
+			struct sipe_chat_session *chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
+										     room_uri);
 
-			if (room) {
+			if (chat_session) {
 				const sipe_xml *uib;
 
 				for (uib = sipe_xml_child(chanib, "uib");
@@ -808,8 +802,9 @@ static void chatserver_notice_part(struct sipe_core_private *sipe_private,
 					if (uri) {
 						SIPE_DEBUG_INFO("remove_user: %s from room %s (%s)",
 								uri,
-								room->title, room->session->id);
-						sipe_backend_chat_remove(room->session->backend,
+								chat_session->title,
+								chat_session->id);
+						sipe_backend_chat_remove(chat_session->backend,
 									 uri);
 					}
 				}
@@ -888,7 +883,7 @@ static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 	const gchar *uri = sipe_xml_attribute(chatgrp, "chanUri");
 	const gchar *from = sipe_xml_attribute(chatgrp, "author");
 	gchar *text = sipe_xml_data(sipe_xml_child(chatgrp, "chat"));
-	struct sipe_groupchat_room *room;
+	struct sipe_chat_session *chat_session;
 	gchar *escaped;
 
 	if (!uri || !from) {
@@ -898,8 +893,9 @@ static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	room = g_hash_table_lookup(groupchat->uri_to_room, uri);
-	if (!room) {
+	chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
+					   uri);
+	if (!chat_session) {
 		SIPE_DEBUG_INFO("chatserver_grpchat_message: message '%s' from '%s' received from unknown chat room '%s'!",
 				text ? text : "", from, uri);
 		g_free(text);
@@ -909,7 +905,7 @@ static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 	/* libxml2 decodes all entities, but the backend expects HTML */
 	escaped = g_markup_escape_text(text, -1);
 	g_free(text);
-	sipe_backend_chat_message(SIPE_CORE_PUBLIC, room->session->backend,
+	sipe_backend_chat_message(SIPE_CORE_PUBLIC, chat_session->backend,
 				  from, escaped);
 	g_free(escaped);
 }
@@ -939,23 +935,18 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 }
 
 gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
-			     struct sipe_chat_session *session,
+			     struct sipe_chat_session *chat_session,
 			     const gchar *what)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	struct sipe_groupchat_room *room;
 	gchar *cmd, *self, *timestamp;
 	struct sipe_groupchat_msg *msg;
 
-	if (!groupchat)
-		return FALSE;
-
-	room = g_hash_table_lookup(groupchat->uri_to_room, session->id);
-	if (!room)
+	if (!groupchat || !chat_session)
 		return FALSE;
 
 	SIPE_DEBUG_INFO("sipe_groupchat_send: (%s) %s",
-			session->id, what);
+			chat_session->id, what);
 
 	self = sip_uri_self(sipe_private);
 	timestamp = sipe_utils_time_to_str(time(NULL));
@@ -973,39 +964,34 @@ gboolean sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\" ts=\"%s\">"
 			      "<chat>%s</chat>"
 			      "</grpchat>",
-			      session->id, self, timestamp, what);
+			      chat_session->id, self, timestamp, what);
 	g_free(timestamp);
 	g_free(self);
 	msg = chatserver_command(sipe_private, cmd);
 	g_free(cmd);
 
-	msg->room    = room;
+	msg->session = chat_session;
 	msg->content = g_strdup(what);
 
 	return TRUE;
 }
 
 gboolean sipe_groupchat_leave(struct sipe_core_private *sipe_private,
-			      struct sipe_chat_session *session)
+			      struct sipe_chat_session *chat_session)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	struct sipe_groupchat_room *room;
 	gchar *cmd;
 
-	if (!groupchat)
+	if (!groupchat || !chat_session)
 		return FALSE;
 
-	room = g_hash_table_lookup(groupchat->uri_to_room, session->id);
-	if (!room)
-		return FALSE;
-
-	SIPE_DEBUG_INFO("sipe_groupchat_leave: %s", session->id);
+	SIPE_DEBUG_INFO("sipe_groupchat_leave: %s", chat_session->id);
 
 	cmd = g_strdup_printf("<cmd id=\"cmd:part\" seqid=\"1\">"
 			      "<data>"
 			      "<chanib uri=\"%s\"/>"
 			      "</data>"
-			      "</cmd>", session->id);
+			      "</cmd>", chat_session->id);
 	chatserver_command(sipe_private, cmd);
 	g_free(cmd);
 
