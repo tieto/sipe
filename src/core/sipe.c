@@ -6262,7 +6262,8 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session = sipe_session_add_chat(sipe_private);
 		session->roster_manager = g_strdup(self);
 
-		session->chat_session = sipe_chat_create_session(session->callid,
+		session->chat_session = sipe_chat_create_session(SIPE_CHAT_TYPE_MULTIPARTY,
+								 session->callid,
 								 chat_title);
 		g_free(chat_title);
 

@@ -49,12 +49,14 @@
 
 static GList *chat_sessions = NULL;
 
-struct sipe_chat_session *sipe_chat_create_session(const gchar *id,
+struct sipe_chat_session *sipe_chat_create_session(enum sipe_chat_type type,
+						   const gchar *id,
 						   const gchar *title)
 {
 	struct sipe_chat_session *session = g_new0(struct sipe_chat_session, 1);
 	session->id    = g_strdup(id);
 	session->title = g_strdup(title);
+	session->type  = type;
 	chat_sessions  = g_list_prepend(chat_sessions, session);
 	return(session);
 }
@@ -98,10 +100,18 @@ void sipe_core_chat_rejoin(struct sipe_core_public *sipe_public,
 
 	SIPE_DEBUG_INFO("sipe_core_chat_rejoin: '%s'", chat_session->title);
 
-	if (chat_session->is_groupchat) {
-		sipe_groupchat_rejoin(sipe_private, chat_session);
-	} else {
+	switch (chat_session->type) {
+	case SIPE_CHAT_TYPE_MULTIPARTY:
 		/* @TODO */
+		break;
+	case SIPE_CHAT_TYPE_CONFERENCE:
+		/* @TODO */
+		break;
+	case SIPE_CHAT_TYPE_GROUPCHAT:
+		sipe_groupchat_rejoin(sipe_private, chat_session);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -112,10 +122,18 @@ void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
 
 	SIPE_DEBUG_INFO("sipe_core_chat_leave: '%s'", chat_session->title);
 
-	if (chat_session->is_groupchat) {
-		sipe_groupchat_leave(sipe_private, chat_session);
-	} else {
+	switch (chat_session->type) {
+	case SIPE_CHAT_TYPE_MULTIPARTY:
 		/* @TODO */
+		break;
+	case SIPE_CHAT_TYPE_CONFERENCE:
+		/* @TODO */
+		break;
+	case SIPE_CHAT_TYPE_GROUPCHAT:
+		sipe_groupchat_leave(sipe_private, chat_session);
+		break;
+	default:
+		break;
 	}
 
 #if 0
@@ -138,10 +156,18 @@ void sipe_core_chat_send(struct sipe_core_public *sipe_public,
 	SIPE_DEBUG_INFO("sipe_core_chat_send: '%s' to '%s'",
 			what, chat_session->title);
 
-	if (chat_session->is_groupchat) {
-		sipe_groupchat_send(sipe_private, chat_session, what);
-	} else {
+	switch (chat_session->type) {
+	case SIPE_CHAT_TYPE_MULTIPARTY:
 		/* @TODO */
+		break;
+	case SIPE_CHAT_TYPE_CONFERENCE:
+		/* @TODO */
+		break;
+	case SIPE_CHAT_TYPE_GROUPCHAT:
+		sipe_groupchat_send(sipe_private, chat_session, what);
+		break;
+	default:
+		break;
 	}
 
 #if 0

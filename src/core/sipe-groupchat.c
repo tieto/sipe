@@ -641,10 +641,10 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				const sipe_xml *aib;
 
 				if (new) {
-					chat_session = sipe_chat_create_session(sipe_xml_attribute(node,
+					chat_session = sipe_chat_create_session(SIPE_CHAT_TYPE_GROUPCHAT,
+										sipe_xml_attribute(node,
 												   "uri"),
 										attr ? attr : "");
-					chat_session->is_groupchat = TRUE;
 					g_hash_table_insert(groupchat->uri_to_chat_session,
 							    chat_session->id,
 							    chat_session);

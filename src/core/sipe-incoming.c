@@ -427,7 +427,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		gchar *self = sip_uri_self(sipe_private);
 
 		gchar *chat_title = sipe_chat_get_name();
-		session->chat_session = sipe_chat_create_session(callid,
+		session->chat_session = sipe_chat_create_session(SIPE_CHAT_TYPE_MULTIPARTY,
+								 callid,
 								 chat_title);
 		g_free(chat_title);
 
