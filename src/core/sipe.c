@@ -2952,7 +2952,7 @@ sipe_present_info(struct sipe_core_private *sipe_private,
 		 const gchar *message)
 {
 	sipe_backend_notify_message_info(SIPE_CORE_PUBLIC,
-					 session->chat_session->backend,
+					 session->chat_session ? session->chat_session->backend : NULL,
 					 session->with,
 					 message);
 }
@@ -2963,7 +2963,7 @@ sipe_present_err(struct sipe_core_private *sipe_private,
 		 const gchar *message)
 {
 	sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
-					  session->chat_session->backend,
+					  session->chat_session ? session->chat_session->backend : NULL,
 					  session->with,
 					  message);
 }
