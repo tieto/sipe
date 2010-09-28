@@ -633,26 +633,38 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 			const gchar *uri = sipe_xml_attribute(node, "uri");
 
 			if (uri) {
-				struct sipe_chat_session *chat_session;
+				struct sipe_chat_session *chat_session = g_hash_table_lookup(groupchat->uri_to_chat_session,
+											     uri);
+				gboolean new = (chat_session == NULL);
 				const gchar *attr = sipe_xml_attribute(node, "name");
 				char *self = sip_uri_self(sipe_private);
 				const sipe_xml *aib;
 
-				chat_session = sipe_chat_create_session(sipe_xml_attribute(node,
-											   "uri"),
-									attr ? attr : "");
-				chat_session->is_groupchat = TRUE;
-				g_hash_table_insert(groupchat->uri_to_chat_session,
-						    chat_session->id,
-						    chat_session);
+				if (new) {
+					chat_session = sipe_chat_create_session(sipe_xml_attribute(node,
+												   "uri"),
+										attr ? attr : "");
+					chat_session->is_groupchat = TRUE;
+					g_hash_table_insert(groupchat->uri_to_chat_session,
+							    chat_session->id,
+							    chat_session);
 
-				SIPE_DEBUG_INFO("joined room '%s' (%s)",
-						chat_session->title,
-						chat_session->id);
-				chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-										 chat_session,
-										 chat_session->title,
-										 self);
+					SIPE_DEBUG_INFO("joined room '%s' (%s)",
+							chat_session->title,
+							chat_session->id);
+					chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+											 chat_session,
+											 chat_session->title,
+											 self);
+				} else {
+					SIPE_DEBUG_INFO("rejoining room '%s' (%s)",
+							chat_session->title,
+							chat_session->id);
+					sipe_backend_chat_rejoin(SIPE_CORE_PUBLIC,
+								 chat_session->backend,
+								 self,
+								 chat_session->title);
+				}
 				g_free(self);
 
 				attr = sipe_xml_attribute(node, "topic");
@@ -1027,14 +1039,12 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 
 		/* Already joined? */
 		if (chat_session) {
-			gchar *self = sip_uri_self(sipe_private);
 
 			/* Yes, update backend session */
-			SIPE_DEBUG_INFO("sipe_core_groupchat_join: rejoin '%s' (%s)",
+			SIPE_DEBUG_INFO("sipe_core_groupchat_join: show '%s' (%s)",
 					chat_session->title,
 					chat_session->id);
-			sipe_backend_chat_rejoin(chat_session->backend, self);
-			g_free(self);
+			sipe_backend_chat_show(chat_session->backend);
 
 		} else {
 			/* No, send command out directly */
@@ -1044,6 +1054,8 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 							     "<data>%s</data>"
 							     "</cmd>",
 							     chanid);
+				SIPE_DEBUG_INFO("sipe_core_groupchat_join: join %s",
+						uri);
 				chatserver_command(sipe_private, cmd);
 				g_free(cmd);
 				g_free(chanid);
@@ -1058,6 +1070,24 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 								g_strdup(uri));
 		}
 	}
+}
+
+void sipe_groupchat_rejoin(struct sipe_core_private *sipe_private,
+			   struct sipe_chat_session *chat_session)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+
+	if (!groupchat) {
+		/* First rejoined channel after reconnect will trigger this */
+		sipe_groupchat_allocate(sipe_private);
+		groupchat = sipe_private->groupchat;
+	}
+
+	/* Remember "old" session, so that we don't recreate it at join */
+	g_hash_table_insert(groupchat->uri_to_chat_session,
+			    chat_session->id,
+			    chat_session);
+	sipe_core_groupchat_join(SIPE_CORE_PUBLIC, chat_session->id);
 }
 
 /*

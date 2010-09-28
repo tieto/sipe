@@ -36,7 +36,9 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     struct sip_session *session);
 void sipe_groupchat_send(struct sipe_core_private *sipe_private,
-			 struct sipe_chat_session *session,
+			 struct sipe_chat_session *chat_session,
 			 const gchar *what);
 void sipe_groupchat_leave(struct sipe_core_private *sipe_private,
-			  struct sipe_chat_session *session);
+			  struct sipe_chat_session *chat_session);
+void sipe_groupchat_rejoin(struct sipe_core_private *sipe_private,
+			   struct sipe_chat_session *chat_session);

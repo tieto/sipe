@@ -272,15 +272,26 @@ void sipe_backend_chat_operator(struct sipe_backend_chat_session *backend_sessio
 					PURPLE_CBFLAGS_NONE | PURPLE_CBFLAGS_OP);
 }
 
-void sipe_backend_chat_rejoin(struct sipe_backend_chat_session *backend_session,
-			      const gchar *nick)
+void sipe_backend_chat_rejoin(struct sipe_core_public *sipe_public,
+			      struct sipe_backend_chat_session *backend_session,
+			      const gchar *nick,
+			      const gchar *title)
 {
-	PurpleConversation *conv = (PurpleConversation *) backend_session;
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleConvChat *chat = BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session);
+	PurpleConversation *new;
 
-	/* Bring existing purple chat to the front */
-	/* @TODO: This seems to work, but is it the correct way? */
-	purple_conversation_update(conv, PURPLE_CONV_UPDATE_TOPIC);
-	purple_conv_chat_set_nick(PURPLE_CONV_CHAT(conv), nick);
+	/**
+	 * As the chat is marked as "left", serv_got_joined_chat() will
+	 * do a "rejoin cleanup" and return the same conversation.
+	 */
+	new = serv_got_joined_chat(purple_private->gc,
+				   purple_conv_chat_get_id(chat),
+				   title);
+	SIPE_DEBUG_INFO("sipe_backend_chat_rejoin: old %p (%p) == new %p (%p)",
+			backend_session, chat,
+			new, PURPLE_CONV_CHAT(new));
+	purple_conv_chat_set_nick(chat, nick);
 }
 
 /**
@@ -305,6 +316,14 @@ void sipe_backend_chat_remove(struct sipe_backend_chat_session *backend_session,
 	purple_conv_chat_remove_user(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session),
 				     uri,
 				     NULL /* reason */);
+}
+
+void sipe_backend_chat_show(struct sipe_backend_chat_session *backend_session)
+{
+	/* Bring existing purple chat to the front */
+	/* @TODO: This seems to the trick, but is it the correct way? */
+	purple_conversation_update((PurpleConversation *) backend_session,
+				   PURPLE_CONV_UPDATE_TOPIC);
 }
 
 void sipe_backend_chat_topic(struct sipe_backend_chat_session *backend_session,

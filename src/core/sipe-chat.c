@@ -94,9 +94,15 @@ void sipe_core_chat_create(struct sipe_core_public *sipe_public,
 void sipe_core_chat_rejoin(struct sipe_core_public *sipe_public,
 			   struct sipe_chat_session *chat_session)
 {
-	(void)sipe_public;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
 	SIPE_DEBUG_INFO("sipe_core_chat_rejoin: '%s'", chat_session->title);
+
+	if (chat_session->is_groupchat) {
+		sipe_groupchat_rejoin(sipe_private, chat_session);
+	} else {
+		/* @TODO */
+	}
 }
 
 void sipe_core_chat_leave(struct sipe_core_public *sipe_public,

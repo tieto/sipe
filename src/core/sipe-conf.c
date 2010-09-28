@@ -697,8 +697,10 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		struct sipe_chat_session *chat_session = NULL;
 
 		/* create or join existing chat */
-		sipe_backend_chat_rejoin(chat_session->backend,
-					 self);
+		sipe_backend_chat_rejoin(SIPE_CORE_PUBLIC,
+					 chat_session->backend,
+					 self,
+					 chat_session->title);
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.
