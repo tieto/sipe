@@ -92,11 +92,14 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	/* This what BYE is essentially for - terminating dialog */
 	sipe_dialog_remove_3(session, dialog);
 	sipe_dialog_free(dialog);
-	if (session->focus_uri && !g_strcasecmp(from, session->im_mcu_uri)) {
+	if (session->chat_session) {
+		if ((session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE) &&
+		    !g_strcasecmp(from, session->im_mcu_uri)) {
 		sipe_conf_immcu_closed(sipe_private, session);
-	} else if (session->is_multiparty) {
-		sipe_backend_chat_remove(session->chat_session->backend,
-					 from);
+		} else if (session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY) {
+			sipe_backend_chat_remove(session->chat_session->backend,
+						 from);
+		}
 	}
 
 	g_free(from);
@@ -182,7 +185,7 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 	else
 	{
 		/* looks like purple lacks typing notification for chat */
-		if (!session->is_multiparty && !session->focus_uri) {
+		if (!session->chat_session) {
 			sipe_xml *xn_keyboard_activity  = sipe_xml_parse(msg->body, msg->bodylen);
 			const char *status = sipe_xml_attribute(sipe_xml_child(xn_keyboard_activity, "status"),
 								"status");
@@ -325,11 +328,13 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 
 	session = sipe_session_find_chat_by_callid(sipe_private, callid);
 	/* Convert to multiparty */
-	if (session && is_multiparty && !session->is_multiparty) {
+	if (session && is_multiparty && !session->chat_session) {
 		g_free(session->with);
 		session->with = NULL;
 		was_multiparty = FALSE;
-		session->is_multiparty = TRUE;
+		session->chat_session = sipe_chat_create_session(SIPE_CHAT_TYPE_MULTIPARTY,
+								 callid,
+								 sipe_chat_get_name());
 	}
 
 	if (!session && is_multiparty) {
@@ -346,7 +351,6 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		g_free(session->callid);
 		session->callid = g_strdup(callid);
 
-		session->is_multiparty = is_multiparty;
 		if (roster_manager) {
 			session->roster_manager = g_strdup(roster_manager);
 		}
@@ -552,20 +556,22 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 		struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
 									   callid,
 									   from);
-		if (session && session->focus_uri) { /* a conference */
-			gchar *tmp = parse_from(sipmsg_find_header(msg, "Ms-Sender"));
-			gchar *sender = parse_from(tmp);
-			g_free(tmp);
-			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->chat_session->backend,
-						  sender,
-						  html);
-			g_free(sender);
-		} else if (session && session->is_multiparty) { /* a multiparty chat */
-			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->chat_session->backend,
-						  from,
-						  html);
+		if (session && session->chat_session) {
+			if (session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE) { /* a conference */
+				gchar *tmp = parse_from(sipmsg_find_header(msg, "Ms-Sender"));
+				gchar *sender = parse_from(tmp);
+				g_free(tmp);
+				sipe_backend_chat_message(SIPE_CORE_PUBLIC,
+							  session->chat_session->backend,
+							  sender,
+							  html);
+				g_free(sender);
+			} else { /* a multiparty chat */
+				sipe_backend_chat_message(SIPE_CORE_PUBLIC,
+							  session->chat_session->backend,
+							  from,
+							  html);
+			}
 		} else {
 			sipe_backend_im_message(SIPE_CORE_PUBLIC,
 						from,

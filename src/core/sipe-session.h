@@ -53,7 +53,6 @@ struct sip_session {
 	/*
 	 * Multiparty conversation related fields
 	 */
-	gboolean is_multiparty;
 	/** Call-Id identifying the conversation */
 	gchar *callid; /* For multiparty conversations */
 	/** Roster Manager URI */
@@ -65,7 +64,6 @@ struct sip_session {
 	/*
 	 * Conference related fields
 	 */
-	gchar *focus_uri;
 	gchar *im_mcu_uri;
 	gchar *subject;
 	gboolean locked;
@@ -106,11 +104,15 @@ struct queued_message {
  * Add a new chat session
  *
  * @param sipe_private (in) SIPE core data. May be NULL
+ * @param multiparty   (in) multiparty or conference
+ * @param id           (in) chat session identifier
  *
  * @return pointer to new session
  */
 struct sip_session *
-sipe_session_add_chat(struct sipe_core_private *sipe_private);
+sipe_session_add_chat(struct sipe_core_private *sipe_private,
+		      gboolean multiparty,
+		      const gchar *id);
 
 #ifdef HAVE_VV
 

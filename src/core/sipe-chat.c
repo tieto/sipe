@@ -474,7 +474,7 @@ sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 		    const gchar *who)
 {
 	/* a conference */
-	if (session->focus_uri)
+	if (session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE)
 	{
 		sipe_invite_conf(sipe_private, session, who);
 	}

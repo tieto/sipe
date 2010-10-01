@@ -207,7 +207,7 @@ sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 			  gboolean expires)
 {
 	sipe_subscribe(sipe_private,
-		       session->focus_uri,
+		       session->chat_session->id,
 		       "conference",
 		       "application/conference-info+xml",
 		       expires ? "Expires: 0\r\n" : NULL,
@@ -279,14 +279,15 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 	gchar *self;
 
 	if (session->focus_dialog && session->focus_dialog->is_established) {
-		SIPE_DEBUG_INFO("session with %s already has a dialog open", session->focus_uri);
+		SIPE_DEBUG_INFO("session with %s already has a dialog open",
+				session->chat_session->id);
 		return;
 	}
 
 	if(!session->focus_dialog) {
 		session->focus_dialog = g_new0(struct sip_dialog, 1);
 		session->focus_dialog->callid = gencallid();
-		session->focus_dialog->with = g_strdup(session->focus_uri);
+		session->focus_dialog->with = g_strdup(session->chat_session->id);
 		session->focus_dialog->endpoint_GUID = rand_guid();
 	}
 	if (!(session->focus_dialog->ourtag)) {
@@ -512,7 +513,7 @@ sipe_invite_conf(struct sipe_core_private *sipe_private,
 
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_INVITE,
-		session->focus_uri,
+		session->chat_session->id,
 		session->subject ? session->subject : ""
 		);
 
@@ -546,11 +547,12 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
 			struct sip_session *session;
 			const sipe_xml *xn_conference_info = sipe_xml_child(xn_response, "addConference/conference-info");
 
-			session = sipe_session_add_chat(sipe_private);
-			session->is_multiparty = FALSE;
-			session->focus_uri = g_strdup(sipe_xml_attribute(xn_conference_info, "entity"));
+			session = sipe_session_add_chat(sipe_private,
+							FALSE,
+							sipe_xml_attribute(xn_conference_info,
+									   "entity"));
 			SIPE_DEBUG_INFO("process_conf_add_response: session->focus_uri=%s",
-					session->focus_uri ? session->focus_uri : "");
+					session->chat_session->id);
 
 			session->pending_invite_queue = slist_insert_unique_sorted(
 				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
@@ -653,9 +655,9 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 
-	session = sipe_session_add_chat(sipe_private);
-	session->focus_uri = focus_uri;
-	session->is_multiparty = FALSE;
+	session = sipe_session_add_chat(sipe_private,
+					FALSE,
+					focus_uri);
 
 	/* send BYE to invitor */
 	sip_transport_bye(sipe_private, dialog);
@@ -691,16 +693,14 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	if (session->focus_uri && !session->chat_session) {
+	if (!session->chat_session->backend) {
 		gchar *self = sip_uri_self(sipe_private);
-		/* @TODO */
-		struct sipe_chat_session *chat_session = NULL;
 
-		/* create or join existing chat */
-		sipe_backend_chat_rejoin(SIPE_CORE_PUBLIC,
-					 chat_session->backend,
-					 self,
-					 chat_session->title);
+		/* create chat */
+		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+									  session->chat_session,
+									  session->chat_session->title,
+									  self);
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.

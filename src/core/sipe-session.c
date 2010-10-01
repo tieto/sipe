@@ -50,11 +50,17 @@ sipe_free_queued_message(struct queued_message *message)
 }
 
 struct sip_session *
-sipe_session_add_chat(struct sipe_core_private *sipe_private)
+sipe_session_add_chat(struct sipe_core_private *sipe_private,
+		      gboolean multiparty,
+		      const gchar *id)
 {
 	struct sip_session *session = g_new0(struct sip_session, 1);
 	session->callid = gencallid();
-	session->is_multiparty = TRUE;
+	session->chat_session = sipe_chat_create_session(multiparty ?
+							 SIPE_CHAT_TYPE_MULTIPARTY :
+							 SIPE_CHAT_TYPE_CONFERENCE,
+							 id ? id : session->callid,
+							 sipe_chat_get_name());
 	session->unconfirmed_messages = g_hash_table_new_full(
 		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
 	session->conf_unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
@@ -106,7 +112,7 @@ sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
 								       callid);
 	if (!session) {
 		SIPE_DEBUG_INFO("sipe_session_find_or_add_chat_by_callid: new session for %s", callid);
-		session = sipe_session_add_chat(sipe_private);
+		session = sipe_session_add_chat(sipe_private, TRUE, callid);
 		session->callid = g_strdup(callid);
 	}
 	return session;
@@ -155,8 +161,9 @@ sipe_session_find_conference(struct sipe_core_private *sipe_private,
 	}
 
 	SIPE_SESSION_FOREACH {
-		if (session->focus_uri &&
-		    sipe_strcase_equal(focus_uri, session->focus_uri)) {
+		if (session->chat_session &&
+		    (session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE) &&
+		    sipe_strcase_equal(focus_uri, session->chat_session->id)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;
@@ -187,7 +194,6 @@ sipe_session_find_or_add_im(struct sipe_core_private *sipe_private,
 	if (!session) {
 		SIPE_DEBUG_INFO("sipe_session_find_or_add_im: new session for %s", who);
 		session = g_new0(struct sip_session, 1);
-		session->is_multiparty = FALSE;
 		session->with = g_strdup(who);
 		session->unconfirmed_messages = g_hash_table_new_full(
 			g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
@@ -236,7 +242,6 @@ sipe_session_remove(struct sipe_core_private *sipe_private,
 	g_free(session->with);
 	g_free(session->callid);
 	g_free(session->roster_manager);
-	g_free(session->focus_uri);
 	g_free(session->im_mcu_uri);
 	g_free(session->subject);
 	g_free(session);
@@ -247,7 +252,8 @@ sipe_session_close(struct sipe_core_private *sipe_private,
 		   struct sip_session *session)
 {
 	if (session) {
-		if (session->focus_uri) {
+		if (session->chat_session &&
+		    (session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE)) {
 			sipe_conf_immcu_closed(sipe_private, session);
 			conf_session_close(sipe_private, session);
 		}

@@ -3166,7 +3166,7 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 		struct queued_message *msg = entry2->data;
 
 		/* for multiparty chat or conference */
-		if (session->is_multiparty || session->focus_uri) {
+		if (session->chat_session) {
 			gchar *who = sip_uri_self(sipe_private);
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
 						  session->chat_session->backend,
@@ -3331,7 +3331,8 @@ process_invite_response(struct sipe_core_private *sipe_private,
 	}
 
 	/* add user to chat if it is a multiparty session */
-	if (session->is_multiparty) {
+	if (session->chat_session &&
+	    (session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY)) {
 		sipe_backend_chat_add(session->chat_session->backend,
 				      with,
 				      TRUE);
@@ -3465,7 +3466,7 @@ sipe_invite(struct sipe_core_private *sipe_private,
 		sipe_strcase_equal(session->roster_manager, self) ? roster_manager : "",
 		referred_by_str,
 		is_triggered ? "TriggeredInvite: TRUE\r\n" : "",
-		is_triggered || session->is_multiparty ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
+		is_triggered || (session->chat_session && (session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY)) ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
 		contact,
 		ms_text_format ? ms_text_format : "");
 	g_free(ms_text_format);
@@ -6257,21 +6258,16 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 	{
 		gchar *self = sip_uri_self(sipe_private);
 		struct sip_session *session;
-		gchar *chat_title = sipe_chat_get_name();
 
-		session = sipe_session_add_chat(sipe_private);
-		session->roster_manager = g_strdup(self);
-
-		session->chat_session = sipe_chat_create_session(SIPE_CHAT_TYPE_MULTIPARTY,
-								 session->callid,
-								 chat_title);
-		g_free(chat_title);
+		session = sipe_session_add_chat(sipe_private,
+						TRUE,
+						NULL);
+		session->roster_manager = self;
 
 		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
 									  session->chat_session,
 									  session->chat_session->title,
 									  self);
-		g_free(self);
 
 		sipe_invite(sipe_private, session, buddy->name, NULL, NULL, NULL, FALSE);
 	}
@@ -6422,12 +6418,13 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 		if (!sipe_strcase_equal(self, buddy->name) && session->chat_session)
 		{
 			struct sipe_chat_session *chat_session = session->chat_session;
+			gboolean is_conf = (chat_session->type == SIPE_CHAT_TYPE_CONFERENCE);
 
 			if (sipe_backend_chat_find(chat_session->backend, buddy->name))
 			{
 				gboolean conf_op = sipe_backend_chat_is_operator(chat_session->backend, self);
 
-				if (session->focus_uri
+				if (is_conf
 				    && !sipe_backend_chat_is_operator(chat_session->backend, buddy->name) /* Not conf OP */
 				    &&  conf_op)                                                          /* We are a conf OP */
 				{
@@ -6440,7 +6437,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 					menu = g_list_prepend(menu, act);
 				}
 
-				if (session->focus_uri
+				if (is_conf
 				    && conf_op) /* We are a conf OP */
 				{
 					gchar *label = g_strdup_printf(_("Remove from '%s'"),
@@ -6454,8 +6451,8 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 			}
 			else
 			{
-				if (!session->focus_uri
-				    || (session->focus_uri && !session->locked))
+				if (!is_conf
+				    || (is_conf && !session->locked))
 				{
 					gchar *label = g_strdup_printf(_("Invite to '%s'"),
 								       chat_session->title);
@@ -6893,7 +6890,8 @@ sipe_chat_menu(PurpleChat *chat)
 
 	self = sip_uri_self(sipe_private);
 
-	if (session->focus_uri &&
+	if (session->chat_session &&
+	    (session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE) &&
 	    sipe_backend_chat_is_operator(session->chat_session->backend, self))
 	{
 		if (session->locked) {
