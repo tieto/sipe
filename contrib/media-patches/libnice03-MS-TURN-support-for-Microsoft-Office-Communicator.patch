@@ -1,0 +1,828 @@
+From 34e9da1de7190403fc6d2837b7b337eb7a545d97 Mon Sep 17 00:00:00 2001
+From: Jakub Adam <jakub.adam@ktknet.cz>
+Date: Fri, 1 Oct 2010 08:18:18 +0200
+Subject: [PATCH 3/3] MS-TURN support for Microsoft Office Communicator
+
+---
+ agent/agent.c           |   36 ++++++++++++++---
+ agent/conncheck.c       |   21 +++++++---
+ agent/discovery.c       |   19 ++++++---
+ socket/turn.c           |   94 +++++++++++++++++++++++++++++++++++++++++++++-
+ socket/turn.h           |    8 ++++
+ stun/stunagent.c        |   22 +++++++---
+ stun/stunagent.h        |   10 ++++-
+ stun/stunmessage.c      |   48 +++++++++++++++++++-----
+ stun/stunmessage.h      |   47 ++++++++++++++++++++++-
+ stun/tests/test-parse.c |   12 +++---
+ stun/usages/turn.c      |    7 +++-
+ stun/usages/turn.h      |    1 +
+ 12 files changed, 274 insertions(+), 51 deletions(-)
+
+diff --git a/agent/agent.c b/agent/agent.c
+index eb1e62c..dd780c5 100644
+--- a/agent/agent.c
++++ b/agent/agent.c
+@@ -169,7 +169,10 @@ agent_to_turn_compatibility (NiceAgent *agent)
+       agent->compatibility == NICE_COMPATIBILITY_WLM2009 ?
+       STUN_USAGE_TURN_COMPATIBILITY_MSN :
+       agent->compatibility == NICE_COMPATIBILITY_OC2007 ?
+-      STUN_USAGE_TURN_COMPATIBILITY_MSN : STUN_USAGE_TURN_COMPATIBILITY_DRAFT9;
++      STUN_USAGE_TURN_COMPATIBILITY_OC2007 :
++      agent->compatibility == NICE_COMPATIBILITY_OC2007R2 ?
++      STUN_USAGE_TURN_COMPATIBILITY_OC2007 :
++      STUN_USAGE_TURN_COMPATIBILITY_DRAFT9;
+ }
+ 
+ NiceTurnSocketCompatibility
+@@ -182,7 +185,9 @@ agent_to_turn_socket_compatibility (NiceAgent *agent)
+       agent->compatibility == NICE_COMPATIBILITY_WLM2009 ?
+       NICE_TURN_SOCKET_COMPATIBILITY_MSN :
+       agent->compatibility == NICE_COMPATIBILITY_OC2007 ?
+-      NICE_TURN_SOCKET_COMPATIBILITY_MSN :
++      NICE_TURN_SOCKET_COMPATIBILITY_OC2007 :
++      agent->compatibility == NICE_COMPATIBILITY_OC2007R2 ?
++      NICE_TURN_SOCKET_COMPATIBILITY_OC2007 :
+       NICE_TURN_SOCKET_COMPATIBILITY_DRAFT9;
+ }
+ 
+@@ -840,8 +845,7 @@ nice_agent_set_property (
+             STUN_COMPATIBILITY_RFC3489,
+             STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
+             STUN_AGENT_USAGE_IGNORE_CREDENTIALS);
+-      } else if (agent->compatibility == NICE_COMPATIBILITY_MSN ||
+-		 agent->compatibility == NICE_COMPATIBILITY_OC2007) {
++      } else if (agent->compatibility == NICE_COMPATIBILITY_MSN) {
+         stun_agent_init (&agent->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
+             STUN_COMPATIBILITY_RFC3489,
+             STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
+@@ -851,11 +855,18 @@ nice_agent_set_property (
+             STUN_COMPATIBILITY_WLM2009,
+             STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
+             STUN_AGENT_USAGE_USE_FINGERPRINT);
++      } else if (agent->compatibility == NICE_COMPATIBILITY_OC2007) {
++        stun_agent_init (&agent->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
++            STUN_COMPATIBILITY_RFC3489,
++            STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
++            STUN_AGENT_USAGE_FORCE_VALIDATER |
++            STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES);
+       } else if (agent->compatibility == NICE_COMPATIBILITY_OC2007R2) {
+         stun_agent_init (&agent->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
+             STUN_COMPATIBILITY_WLM2009,
+             STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
+-            STUN_AGENT_USAGE_USE_FINGERPRINT);
++            STUN_AGENT_USAGE_USE_FINGERPRINT |
++            STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES);
+       } else {
+         stun_agent_init (&agent->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
+             STUN_COMPATIBILITY_RFC5389,
+@@ -1329,7 +1340,10 @@ priv_add_new_candidate_discovery_stun (NiceAgent *agent,
+   cdisco->component = stream_find_component_by_id (stream, component_id);
+   cdisco->agent = agent;
+   stun_agent_init (&cdisco->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
+-      STUN_COMPATIBILITY_RFC3489, 0);
++      STUN_COMPATIBILITY_RFC3489,
++      (agent->compatibility == NICE_COMPATIBILITY_OC2007 ||
++       agent->compatibility == NICE_COMPATIBILITY_OC2007R2) ?
++        STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES : 0);
+ 
+   nice_debug ("Agent %p : Adding new srv-rflx candidate discovery %p\n",
+       agent, cdisco);
+@@ -1426,6 +1440,12 @@ priv_add_new_candidate_discovery_turn (NiceAgent *agent,
+     stun_agent_init (&cdisco->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
+         STUN_COMPATIBILITY_RFC3489,
+         STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS);
++  } else if (agent->compatibility == NICE_COMPATIBILITY_OC2007 ||
++      agent->compatibility == NICE_COMPATIBILITY_OC2007R2) {
++    stun_agent_init (&cdisco->stun_agent, STUN_MSOC_KNOWN_ATTRIBUTES,
++        STUN_COMPATIBILITY_OC2007,
++        STUN_AGENT_USAGE_LONG_TERM_CREDENTIALS |
++        STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES);
+   } else {
+     stun_agent_init (&cdisco->stun_agent, STUN_ALL_KNOWN_ATTRIBUTES,
+         STUN_COMPATIBILITY_RFC5389,
+@@ -2197,7 +2217,9 @@ _nice_agent_recv (
+ 
+   agent->media_after_tick = TRUE;
+ 
+-  if (stun_message_validate_buffer_length ((uint8_t *) buf, (size_t) len) != len)
++  if (stun_message_validate_buffer_length ((uint8_t *) buf, (size_t) len,
++      (agent->compatibility != NICE_COMPATIBILITY_OC2007 &&
++       agent->compatibility != NICE_COMPATIBILITY_OC2007R2)) != len)
+     /* If the retval is no 0, its not a valid stun packet, probably data */
+     return len;
+ 
+diff --git a/agent/conncheck.c b/agent/conncheck.c
+index 2a6d208..e53ea00 100644
+--- a/agent/conncheck.c
++++ b/agent/conncheck.c
+@@ -788,14 +788,16 @@ static void priv_turn_allocate_refresh_tick_unlocked (CandidateRefresh *cand)
+   uint8_t *password;
+   size_t password_len;
+   size_t buffer_len = 0;
++  StunUsageTurnCompatibility turn_compat =
++      agent_to_turn_compatibility (cand->agent);
+ 
+   username = (uint8_t *)cand->turn->username;
+   username_len = (size_t) strlen (cand->turn->username);
+   password = (uint8_t *)cand->turn->password;
+   password_len = (size_t) strlen (cand->turn->password);
+ 
+-  if (agent_to_turn_compatibility (cand->agent) ==
+-      STUN_USAGE_TURN_COMPATIBILITY_MSN) {
++  if (turn_compat == STUN_USAGE_TURN_COMPATIBILITY_MSN ||
++      turn_compat == STUN_USAGE_TURN_COMPATIBILITY_OC2007) {
+     username = g_base64_decode ((gchar *)username, &username_len);
+     password = g_base64_decode ((gchar *)password, &password_len);
+   }
+@@ -805,10 +807,10 @@ static void priv_turn_allocate_refresh_tick_unlocked (CandidateRefresh *cand)
+       cand->stun_resp_msg.buffer == NULL ? NULL : &cand->stun_resp_msg, -1,
+       username, username_len,
+       password, password_len,
+-      agent_to_turn_compatibility (cand->agent));
++      turn_compat);
+ 
+-  if (agent_to_turn_compatibility (cand->agent) ==
+-      STUN_USAGE_TURN_COMPATIBILITY_MSN) {
++  if (turn_compat == STUN_USAGE_TURN_COMPATIBILITY_MSN ||
++      turn_compat == STUN_USAGE_TURN_COMPATIBILITY_OC2007) {
+     g_free (cand->msn_turn_username);
+     g_free (cand->msn_turn_password);
+     cand->msn_turn_username = username;
+@@ -2328,6 +2330,11 @@ static gboolean priv_map_reply_to_relay_request (NiceAgent *agent, StunMessage *
+ 
+           if (relay_cand) {
+             priv_add_new_turn_refresh (d, relay_cand, lifetime);
++            if (agent->compatibility == NICE_COMPATIBILITY_OC2007 ||
++                agent->compatibility == NICE_COMPATIBILITY_OC2007R2) {
++                  nice_turn_socket_set_ms_realm(relay_cand->sockptr, &d->stun_message);
++                  nice_turn_socket_set_ms_connection_id(relay_cand->sockptr, resp);
++            }
+           }
+ 
+           d->stun_message.buffer = NULL;
+@@ -2347,7 +2354,9 @@ static gboolean priv_map_reply_to_relay_request (NiceAgent *agent, StunMessage *
+               STUN_ATTRIBUTE_REALM, &recv_realm_len);
+ 
+           /* check for unauthorized error response */
+-          if (agent->compatibility == NICE_COMPATIBILITY_RFC5245 &&
++          if ((agent->compatibility == NICE_COMPATIBILITY_RFC5245 ||
++               agent->compatibility == NICE_COMPATIBILITY_OC2007  ||
++               agent->compatibility == NICE_COMPATIBILITY_OC2007R2) &&
+               stun_message_get_class (resp) == STUN_ERROR &&
+               stun_message_find_error (resp, &code) ==
+               STUN_MESSAGE_RETURN_SUCCESS &&
+diff --git a/agent/discovery.c b/agent/discovery.c
+index 41211ba..d1a65d2 100644
+--- a/agent/discovery.c
++++ b/agent/discovery.c
+@@ -141,6 +141,7 @@ void refresh_free_item (gpointer data, gpointer user_data)
+   uint8_t *password;
+   size_t password_len;
+   size_t buffer_len = 0;
++  StunUsageTurnCompatibility turn_compat = agent_to_turn_compatibility (agent);
+ 
+   g_assert (user_data == NULL);
+ 
+@@ -160,7 +161,8 @@ void refresh_free_item (gpointer data, gpointer user_data)
+   password = (uint8_t *)cand->turn->password;
+   password_len = (size_t) strlen (cand->turn->password);
+ 
+-  if (agent_to_turn_compatibility (agent) == STUN_USAGE_TURN_COMPATIBILITY_MSN) {
++  if (turn_compat == STUN_USAGE_TURN_COMPATIBILITY_MSN ||
++      turn_compat == STUN_USAGE_TURN_COMPATIBILITY_OC2007) {
+     username = g_base64_decode ((gchar *)username, &username_len);
+     password = g_base64_decode ((gchar *)password, &password_len);
+   }
+@@ -188,7 +190,8 @@ void refresh_free_item (gpointer data, gpointer user_data)
+ 
+   }
+ 
+-  if (agent_to_turn_compatibility (agent) == STUN_USAGE_TURN_COMPATIBILITY_MSN) {
++  if (turn_compat == STUN_USAGE_TURN_COMPATIBILITY_MSN ||
++      turn_compat == STUN_USAGE_TURN_COMPATIBILITY_OC2007) {
+     g_free (username);
+     g_free (password);
+   }
+@@ -868,9 +871,11 @@ static gboolean priv_discovery_tick_unlocked (gpointer pointer)
+           size_t username_len = (size_t) strlen (cand->turn->username);
+           uint8_t *password = (uint8_t *)cand->turn->password;
+           size_t password_len = (size_t) strlen (cand->turn->password);
++          StunUsageTurnCompatibility turn_compat =
++              agent_to_turn_compatibility (agent);
+ 
+-          if (agent_to_turn_compatibility (agent) ==
+-              STUN_USAGE_TURN_COMPATIBILITY_MSN) {
++          if (turn_compat == STUN_USAGE_TURN_COMPATIBILITY_MSN ||
++              turn_compat == STUN_USAGE_TURN_COMPATIBILITY_OC2007) {
+             username = g_base64_decode ((gchar *)username, &username_len);
+             password = g_base64_decode ((gchar *)password, &password_len);
+           }
+@@ -882,10 +887,10 @@ static gboolean priv_discovery_tick_unlocked (gpointer pointer)
+               -1, -1,
+               username, username_len,
+               password, password_len,
+-              agent_to_turn_compatibility (agent));
++              turn_compat);
+ 
+-          if (agent_to_turn_compatibility (agent) ==
+-              STUN_USAGE_TURN_COMPATIBILITY_MSN) {
++          if (turn_compat == STUN_USAGE_TURN_COMPATIBILITY_MSN ||
++              turn_compat == STUN_USAGE_TURN_COMPATIBILITY_OC2007) {
+             g_free (cand->msn_turn_username);
+             g_free (cand->msn_turn_password);
+             cand->msn_turn_username = username;
+diff --git a/socket/turn.c b/socket/turn.c
+index 7837d5c..7ef0013 100644
+--- a/socket/turn.c
++++ b/socket/turn.c
+@@ -51,6 +51,7 @@
+ #include "agent-priv.h"
+ 
+ #define STUN_END_TIMEOUT 8000
++#define STUN_MAX_MS_REALM_LEN 128 // as defined in [MS-TURN]
+ 
+ 
+ typedef struct {
+@@ -80,6 +81,10 @@ typedef struct {
+   size_t password_len;
+   NiceTurnSocketCompatibility compatibility;
+   GQueue *send_requests;
++  uint8_t ms_realm[STUN_MAX_MS_REALM_LEN + 1];
++  uint8_t ms_connection_id[20];
++  uint32_t ms_sequence_num;
++  bool ms_connection_id_valid;
+ } TurnPriv;
+ 
+ 
+@@ -133,6 +138,13 @@ nice_turn_socket_new (NiceAgent *agent, NiceAddress *addr,
+         STUN_COMPATIBILITY_RFC3489,
+         STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
+         STUN_AGENT_USAGE_IGNORE_CREDENTIALS);
++  } else if (compatibility == NICE_TURN_SOCKET_COMPATIBILITY_OC2007) {
++      stun_agent_init (&priv->agent, STUN_ALL_KNOWN_ATTRIBUTES,
++        STUN_COMPATIBILITY_OC2007,
++        STUN_AGENT_USAGE_SHORT_TERM_CREDENTIALS |
++        STUN_AGENT_USAGE_NO_INDICATION_AUTH |
++        STUN_AGENT_USAGE_LONG_TERM_CREDENTIALS |
++        STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES);
+   }
+ 
+   priv->nice = agent;
+@@ -140,7 +152,8 @@ nice_turn_socket_new (NiceAgent *agent, NiceAddress *addr,
+   priv->current_binding = NULL;
+   priv->base_socket = base_socket;
+ 
+-  if (compatibility == NICE_TURN_SOCKET_COMPATIBILITY_MSN) {
++  if (compatibility == NICE_TURN_SOCKET_COMPATIBILITY_MSN ||
++      compatibility == NICE_TURN_SOCKET_COMPATIBILITY_OC2007) {
+     priv->username = g_base64_decode (username, &priv->username_len);
+     priv->password = g_base64_decode (password, &priv->password_len);
+   } else {
+@@ -230,6 +243,33 @@ socket_recv (NiceSocket *sock, NiceAddress *from, guint len, gchar *buf)
+     return recv_len;
+ }
+ 
++static StunMessageReturn
++stun_message_append_ms_connection_id(StunMessage *msg,
++    uint8_t *ms_connection_id, uint32_t ms_sequence_num)
++{
++  uint8_t buf[24];
++
++  memcpy(buf, ms_connection_id, 20);
++  *(uint32_t*)(buf + 20) = htonl(ms_sequence_num);
++  return stun_message_append_bytes (msg, STUN_ATTRIBUTE_MS_SEQUENCE_NUMBER,
++                                    buf, 24);
++}
++
++static void
++stun_message_ensure_ms_realm(StunMessage *msg, uint8_t *realm)
++{
++  /* With MS-TURN, original clients do not send REALM attribute in Send and Set
++   * Active Destination requests, but use it to compute MESSAGE-INTEGRITY. We
++   * simply append cached realm value to the message and use it in subsequent
++   * stun_agent_finish_message() call. Messages with this additional attribute
++   * are handled correctly on OCS Access Edge working as TURN server. */
++  if (stun_message_get_method(msg) == STUN_SEND ||
++      stun_message_get_method(msg) == STUN_OLD_SET_ACTIVE_DST) {
++    stun_message_append_bytes (msg, STUN_ATTRIBUTE_REALM, realm,
++                               strlen((char *)realm));
++  }
++}
++
+ static gboolean
+ socket_send (NiceSocket *sock, const NiceAddress *to,
+     guint len, const gchar *buf)
+@@ -301,6 +341,16 @@ socket_send (NiceSocket *sock, const NiceAddress *to,
+       }
+     }
+ 
++    if (priv->compatibility == NICE_TURN_SOCKET_COMPATIBILITY_OC2007) {
++      stun_message_append32(&msg, STUN_ATTRIBUTE_MS_VERSION, 1);
++
++      if (priv->ms_connection_id_valid)
++        stun_message_append_ms_connection_id(&msg, priv->ms_connection_id,
++            ++priv->ms_sequence_num);
++
++      stun_message_ensure_ms_realm(&msg, priv->ms_realm);
++    }
++
+     if (stun_message_append_bytes (&msg, STUN_ATTRIBUTE_DATA,
+             buf, len) != STUN_MESSAGE_RETURN_SUCCESS)
+       goto send;
+@@ -436,7 +486,8 @@ nice_turn_socket_parse_recv (NiceSocket *sock, NiceSocket **from_sock,
+             priv->current_binding_msg = NULL;
+ 
+             if (stun_message_get_class (&msg) == STUN_RESPONSE &&
+-                priv->compatibility == NICE_TURN_SOCKET_COMPATIBILITY_MSN) {
++                (priv->compatibility == NICE_TURN_SOCKET_COMPATIBILITY_MSN ||
++                 priv->compatibility == NICE_TURN_SOCKET_COMPATIBILITY_OC2007)) {
+               goto msn_google_lock;
+             } else {
+               g_free (priv->current_binding);
+@@ -815,7 +866,8 @@ priv_add_channel_binding (TurnPriv *priv, NiceAddress *peer)
+       return ret;
+     }
+     return FALSE;
+-  } else if (priv->compatibility == NICE_TURN_SOCKET_COMPATIBILITY_MSN) {
++  } else if (priv->compatibility == NICE_TURN_SOCKET_COMPATIBILITY_MSN ||
++             priv->compatibility == NICE_TURN_SOCKET_COMPATIBILITY_OC2007) {
+     TURNMessage *msg = g_new0 (TURNMessage, 1);
+     if (!stun_agent_init_request (&priv->agent, &msg->message,
+             msg->buffer, sizeof(msg->buffer), STUN_OLD_SET_ACTIVE_DST)) {
+@@ -837,6 +889,14 @@ priv_add_channel_binding (TurnPriv *priv, NiceAddress *peer)
+       }
+     }
+ 
++    if (priv->compatibility == NICE_TURN_SOCKET_COMPATIBILITY_OC2007) {
++      if (priv->ms_connection_id_valid)
++          stun_message_append_ms_connection_id(&msg->message,
++              priv->ms_connection_id, ++priv->ms_sequence_num);
++
++      stun_message_ensure_ms_realm(&msg->message, priv->ms_realm);
++    }
++
+     if (stun_message_append_addr (&msg->message,
+             STUN_ATTRIBUTE_DESTINATION_ADDRESS,
+             (struct sockaddr *)&sa, sizeof(sa)) != STUN_MESSAGE_RETURN_SUCCESS) {
+@@ -867,3 +927,31 @@ priv_add_channel_binding (TurnPriv *priv, NiceAddress *peer)
+ 
+   return FALSE;
+ }
++
++void
++nice_turn_socket_set_ms_realm(NiceSocket *sock, StunMessage *msg)
++{
++  TurnPriv *priv = (TurnPriv *)sock->priv;
++  uint16_t alen;
++  const uint8_t *realm = stun_message_find(msg, STUN_ATTRIBUTE_REALM, &alen);
++
++  if (realm && alen <= STUN_MAX_MS_REALM_LEN) {
++    memcpy(priv->ms_realm, realm, alen);
++    priv->ms_realm[alen] = '\0';
++  }
++}
++
++void
++nice_turn_socket_set_ms_connection_id (NiceSocket *sock, StunMessage *msg)
++{
++  TurnPriv *priv = (TurnPriv *)sock->priv;
++  uint16_t alen;
++  const uint8_t *ms_seq_num = stun_message_find(msg,
++      STUN_ATTRIBUTE_MS_SEQUENCE_NUMBER, &alen);
++
++  if (ms_seq_num && alen == 24) {
++      memcpy (priv->ms_connection_id, ms_seq_num, 20);
++      priv->ms_sequence_num = ntohl((uint32_t)*(ms_seq_num + 20));
++      priv->ms_connection_id_valid = TRUE;
++  }
++}
+diff --git a/socket/turn.h b/socket/turn.h
+index 9a87b00..3aa3493 100644
+--- a/socket/turn.h
++++ b/socket/turn.h
+@@ -42,10 +42,12 @@ typedef enum {
+   NICE_TURN_SOCKET_COMPATIBILITY_DRAFT9,
+   NICE_TURN_SOCKET_COMPATIBILITY_GOOGLE,
+   NICE_TURN_SOCKET_COMPATIBILITY_MSN,
++  NICE_TURN_SOCKET_COMPATIBILITY_OC2007,
+ } NiceTurnSocketCompatibility;
+ 
+ #include "socket.h"
+ #include "agent.h"
++#include "stun/stunmessage.h"
+ 
+ 
+ G_BEGIN_DECLS
+@@ -63,6 +65,12 @@ nice_turn_socket_new (NiceAgent *agent, NiceAddress *addr,
+     NiceSocket *base_socket, NiceAddress *server_addr,
+     gchar *username, gchar *password, NiceTurnSocketCompatibility compatibility);
+ 
++void
++nice_turn_socket_set_ms_realm(NiceSocket *sock, StunMessage *msg);
++
++void
++nice_turn_socket_set_ms_connection_id (NiceSocket *sock, StunMessage *msg);
++
+ 
+ G_END_DECLS
+ 
+diff --git a/stun/stunagent.c b/stun/stunagent.c
+index be2a9cf..d143599 100644
+--- a/stun/stunagent.c
++++ b/stun/stunagent.c
+@@ -117,7 +117,8 @@ StunValidationStatus stun_agent_validate (StunAgent *agent, StunMessage *msg,
+   uint8_t long_term_key[16];
+   bool long_term_key_valid = FALSE;
+ 
+-  len = stun_message_validate_buffer_length (buffer, buffer_len);
++  len = stun_message_validate_buffer_length (buffer, buffer_len,
++       !(agent->usage_flags & STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES));
+   if (len == STUN_MESSAGE_BUFFER_INVALID) {
+     return STUN_VALIDATION_NOT_STUN;
+   } else if (len == STUN_MESSAGE_BUFFER_INCOMPLETE) {
+@@ -257,7 +258,8 @@ StunValidationStatus stun_agent_validate (StunAgent *agent, StunMessage *msg,
+         memcpy (msg->long_term_key, md5, sizeof(md5));
+         msg->long_term_valid = TRUE;
+ 
+-        if (agent->compatibility == STUN_COMPATIBILITY_RFC3489) {
++        if (agent->compatibility == STUN_COMPATIBILITY_RFC3489 ||
++            agent->compatibility == STUN_COMPATIBILITY_OC2007) {
+           stun_sha1 (msg->buffer, hash + 20 - msg->buffer, hash - msg->buffer,
+               sha, md5, sizeof(md5), TRUE);
+         } else if (agent->compatibility == STUN_COMPATIBILITY_WLM2009) {
+@@ -268,7 +270,8 @@ StunValidationStatus stun_agent_validate (StunAgent *agent, StunMessage *msg,
+               hash - msg->buffer, sha, md5, sizeof(md5), FALSE);
+         }
+       } else {
+-        if (agent->compatibility == STUN_COMPATIBILITY_RFC3489) {
++        if (agent->compatibility == STUN_COMPATIBILITY_RFC3489 ||
++            agent->compatibility == STUN_COMPATIBILITY_OC2007) {
+           stun_sha1 (msg->buffer, hash + 20 - msg->buffer, hash - msg->buffer,
+               sha, key, key_len, TRUE);
+         } else if (agent->compatibility == STUN_COMPATIBILITY_WLM2009) {
+@@ -564,7 +567,8 @@ size_t stun_agent_finish_message (StunAgent *agent, StunMessage *msg,
+         return 0;
+       }
+       if (agent->usage_flags & STUN_AGENT_USAGE_LONG_TERM_CREDENTIALS) {
+-        if (agent->compatibility == STUN_COMPATIBILITY_RFC3489) {
++        if (agent->compatibility == STUN_COMPATIBILITY_RFC3489 ||
++            agent->compatibility == STUN_COMPATIBILITY_OC2007) {
+           stun_sha1 (msg->buffer, stun_message_length (msg),
+               stun_message_length (msg) - 20, ptr, md5, sizeof(md5), TRUE);
+         } else if (agent->compatibility == STUN_COMPATIBILITY_WLM2009) {
+@@ -579,7 +583,8 @@ size_t stun_agent_finish_message (StunAgent *agent, StunMessage *msg,
+               stun_message_length (msg) - 20, ptr, md5, sizeof(md5), FALSE);
+         }
+       } else {
+-        if (agent->compatibility == STUN_COMPATIBILITY_RFC3489) {
++        if (agent->compatibility == STUN_COMPATIBILITY_RFC3489 ||
++            agent->compatibility == STUN_COMPATIBILITY_OC2007) {
+           stun_sha1 (msg->buffer, stun_message_length (msg),
+               stun_message_length (msg) - 20, ptr, key, key_len, TRUE);
+         } else if (agent->compatibility == STUN_COMPATIBILITY_WLM2009) {
+@@ -671,14 +676,17 @@ stun_agent_find_unknowns (StunAgent *agent, const StunMessage * msg,
+     size_t alen = stun_getw (msg->buffer + offset + STUN_ATTRIBUTE_TYPE_LEN);
+     uint16_t atype = stun_getw (msg->buffer + offset);
+ 
+-    offset += STUN_ATTRIBUTE_VALUE_POS + stun_align (alen);
+-
+     if (!stun_optional (atype) && stun_agent_is_unknown (agent, atype))
+     {
+       stun_debug ("STUN unknown: attribute 0x%04x(%u bytes)\n",
+            (unsigned)atype, (unsigned)alen);
+       list[count++] = htons (atype);
+     }
++
++    if (!(agent->usage_flags & STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES))
++      alen = stun_align (alen);
++
++    offset += STUN_ATTRIBUTE_VALUE_POS + alen;
+   }
+ 
+   stun_debug ("STUN unknown: %u mandatory attribute(s)!\n", count);
+diff --git a/stun/stunagent.h b/stun/stunagent.h
+index 2a8fc84..e6a7eb5 100644
+--- a/stun/stunagent.h
++++ b/stun/stunagent.h
+@@ -82,6 +82,9 @@ typedef struct stun_agent_t StunAgent;
+  * @STUN_COMPATIBILITY_WLM2009: Use the STUN specifications compatible with
+  * Windows Live Messenger 2009 (a mix between RFC3489 and RFC5389, as well as
+  * a special usecase against a typo in their code)
++ * @STUN_COMPATIBILITY_OC2007: Use the STUN specifications compatible with
++ * Microsoft Office Communicator 2007 (basically RFC3489 with swapped
++ * REALM and NONCE attribute hex IDs, attributes are not aligned)
+  * @STUN_COMPATIBILITY_LAST: Dummy last compatibility mode
+  *
+  * Enum that specifies the STUN compatibility mode of the #StunAgent
+@@ -90,7 +93,8 @@ typedef enum {
+   STUN_COMPATIBILITY_RFC3489,
+   STUN_COMPATIBILITY_RFC5389,
+   STUN_COMPATIBILITY_WLM2009,
+-  STUN_COMPATIBILITY_LAST = STUN_COMPATIBILITY_WLM2009
++  STUN_COMPATIBILITY_OC2007,
++  STUN_COMPATIBILITY_LAST = STUN_COMPATIBILITY_OC2007
+ } StunCompatibility;
+ 
+ 
+@@ -157,6 +161,9 @@ typedef enum {
+  * should be (a response to a previously created request). This means that the
+  * #StunMessageIntegrityValidate callback will always be called when there is
+  * a MESSAGE-INTEGRITY attribute.
++ * @STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES: The agent should not assume STUN
++ * attributes are aligned on 32-bit boundaries when parsing messages and also
++ * do not add padding when creating messages.
+  *
+  * This enum defines a bitflag usages for a #StunAgent and they will define how
+  * the agent should behave, independently of the compatibility mode it uses.
+@@ -171,6 +178,7 @@ typedef enum {
+   STUN_AGENT_USAGE_IGNORE_CREDENTIALS        = (1 << 4),
+   STUN_AGENT_USAGE_NO_INDICATION_AUTH        = (1 << 5),
+   STUN_AGENT_USAGE_FORCE_VALIDATER           = (1 << 6),
++  STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES     = (1 << 7),
+ } StunAgentUsageFlags;
+ 
+ 
+diff --git a/stun/stunmessage.c b/stun/stunmessage.c
+index 0f677a1..5401acd 100644
+--- a/stun/stunmessage.c
++++ b/stun/stunmessage.c
+@@ -88,6 +88,14 @@ stun_message_find (const StunMessage *msg, StunAttribute type,
+   size_t length = stun_message_length (msg);
+   size_t offset = 0;
+ 
++  /* In MS-TURN, IDs of REALM and NONCE STUN attributes are swapped. */
++  if (msg->agent && msg->agent->compatibility == STUN_COMPATIBILITY_OC2007)
++  {
++    if (type == STUN_ATTRIBUTE_REALM)
++      type = STUN_ATTRIBUTE_NONCE;
++    else if (type == STUN_ATTRIBUTE_NONCE)
++      type = STUN_ATTRIBUTE_REALM;
++  }
+ 
+   offset = STUN_MESSAGE_ATTRIBUTES_POS;
+ 
+@@ -118,7 +126,9 @@ stun_message_find (const StunMessage *msg, StunAttribute type,
+         return NULL;
+     }
+ 
+-    alen = stun_align (alen);
++    if (!(msg->agent->usage_flags & STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES))
++      alen = stun_align (alen);
++
+     offset += alen;
+   }
+ 
+@@ -317,20 +327,35 @@ stun_message_append (StunMessage *msg, StunAttribute type, size_t length)
+   uint8_t *a;
+   uint16_t mlen = stun_message_length (msg);
+ 
++  /* In MS-TURN, IDs of REALM and NONCE STUN attributes are swapped. */
++  if (msg->agent && msg->agent->compatibility == STUN_COMPATIBILITY_OC2007)
++  {
++    if (type == STUN_ATTRIBUTE_NONCE)
++      type = STUN_ATTRIBUTE_REALM;
++    else if (type == STUN_ATTRIBUTE_REALM)
++      type = STUN_ATTRIBUTE_NONCE;
++  }
++
+   if ((size_t)mlen + STUN_ATTRIBUTE_HEADER_LENGTH + length > msg->buffer_len)
+     return NULL;
+ 
+ 
+   a = msg->buffer + mlen;
+   a = stun_setw (a, type);
+-  /* NOTE: If cookie is not present, we need to force the attribute length
+-   * to a multiple of 4 for compatibility with old RFC3489 */
+-  a = stun_setw (a, stun_message_has_cookie (msg) ? length : stun_align (length));
++  if (msg->agent->usage_flags & STUN_AGENT_USAGE_NO_ALIGNED_ATTRIBUTES)
++  {
++    a = stun_setw (a, length);
++  } else {
++    /* NOTE: If cookie is not present, we need to force the attribute length
++     * to a multiple of 4 for compatibility with old RFC3489 */
++    a = stun_setw (a, stun_message_has_cookie (msg) ? length : stun_align (length));
++
++    /* Add padding if needed */
++    memset (a + length, ' ', stun_padding (length));
++    mlen += stun_padding (length);
++  }
+ 
+   mlen +=  4 + length;
+-  /* Add padding if needed */
+-  memset (a + length, ' ', stun_padding (length));
+-  mlen += stun_padding (length);
+ 
+   stun_setw (msg->buffer + STUN_MESSAGE_LENGTH_POS, mlen - STUN_MESSAGE_HEADER_LENGTH);
+   return a;
+@@ -499,7 +524,8 @@ stun_message_append_error (StunMessage *msg, StunError code)
+   return STUN_MESSAGE_RETURN_SUCCESS;
+ }
+ 
+-int stun_message_validate_buffer_length (const uint8_t *msg, size_t length)
++int stun_message_validate_buffer_length (const uint8_t *msg, size_t length,
++    bool has_padding)
+ {
+   size_t mlen;
+   size_t len;
+@@ -525,7 +551,7 @@ int stun_message_validate_buffer_length (const uint8_t *msg, size_t length)
+   mlen = stun_getw (msg + STUN_MESSAGE_LENGTH_POS) +
+       STUN_MESSAGE_HEADER_LENGTH;
+ 
+-  if (stun_padding (mlen))
++  if (has_padding && stun_padding (mlen))
+   {
+     stun_debug ("STUN error: Invalid message length: %u!\n", (unsigned)mlen);
+     return STUN_MESSAGE_BUFFER_INVALID; // wrong padding
+@@ -544,7 +570,9 @@ int stun_message_validate_buffer_length (const uint8_t *msg, size_t length)
+   /* from then on, we know we have the entire packet in buffer */
+   while (len > 0)
+   {
+-    size_t alen = stun_align (stun_getw (msg + STUN_ATTRIBUTE_TYPE_LEN));
++    size_t alen = stun_getw (msg + STUN_ATTRIBUTE_TYPE_LEN);
++    if (has_padding)
++      alen = stun_align (alen);
+ 
+     /* thanks to padding check, if (end > msg) then there is not only one
+      * but at least 4 bytes left */
+diff --git a/stun/stunmessage.h b/stun/stunmessage.h
+index f92afac..b31189e 100644
+--- a/stun/stunmessage.h
++++ b/stun/stunmessage.h
+@@ -209,6 +209,8 @@ typedef enum
+  * ICE draft 19
+  * @STUN_ATTRIBUTE_OPTIONS: The OPTIONS optional attribute as defined by
+  * libjingle
++ * @STUN_ATTRIBUTE_MS_VERSION: The MS-VERSION optional attribute as defined
++ * by [MS-TURN]
+  * @STUN_ATTRIBUTE_SOFTWARE: The SOFTWARE optional attribute as defined by RFC5389
+  * @STUN_ATTRIBUTE_ALTERNATE_SERVER: The ALTERNATE-SERVER optional attribute as
+  * defined by RFC5389
+@@ -218,6 +220,8 @@ typedef enum
+  * defined by ICE draft 19
+  * @STUN_ATTRIBUTE_ICE_CONTROLLING: The ICE-CONTROLLING optional attribute as
+  * defined by ICE draft 19
++ * @STUN_ATTRIBUTE_MS_SEQUENCE_NUMBER: The MS-SEQUENCE NUMBER optional attribute
++ * as defined by [MS-TURN]
+  * @STUN_ATTRIBUTE_CANDIDATE_IDENTIFIER: The CANDIDATE-IDENTIFIER optional
+  * attribute as defined by [MS-ICE2]
+  *
+@@ -241,7 +245,9 @@ typedef enum
+   STUN_ATTRIBUTE_REFLECTED_FROM=0x000B,    /* old RFC3489 */
+   STUN_ATTRIBUTE_CHANNEL_NUMBER=0x000C,        /* TURN-12 */
+   STUN_ATTRIBUTE_LIFETIME=0x000D,      /* TURN-12 */
+-  /* 0x000E */        /* reserved (was ALTERNATE-SERVER from midcom-TURN 08 */
++  /* MS_ALTERNATE_SERVER is only used by Microsoft's dialect, probably should
++   * not to be placed in STUN_ALL_KNOWN_ATTRIBUTES */
++  STUN_ATTRIBUTE_MS_ALTERNATE_SERVER=0x000E, /* MS-TURN */
+   STUN_ATTRIBUTE_MAGIC_COOKIE=0x000F,        /* midcom-TURN 08 */
+   STUN_ATTRIBUTE_BANDWIDTH=0x0010,      /* TURN-04 */
+   STUN_ATTRIBUTE_DESTINATION_ADDRESS=0x0011,        /* midcom-TURN 08 */
+@@ -281,6 +287,7 @@ typedef enum
+   /* Optional attributes */
+   /* 0x8000-0x8021 */      /* reserved */
+   STUN_ATTRIBUTE_OPTIONS=0x8001, /* libjingle */
++  STUN_ATTRIBUTE_MS_VERSION=0x8008,    /* MS-TURN */
+   STUN_ATTRIBUTE_SOFTWARE=0x8022,      /* RFC5389 */
+   STUN_ATTRIBUTE_ALTERNATE_SERVER=0x8023,    /* RFC5389 */
+   /* 0x8024 */        /* reserved */
+@@ -290,7 +297,9 @@ typedef enum
+   STUN_ATTRIBUTE_FINGERPRINT=0x8028,    /* RFC5389 */
+   STUN_ATTRIBUTE_ICE_CONTROLLED=0x8029,    /* ICE-19 */
+   STUN_ATTRIBUTE_ICE_CONTROLLING=0x802A,    /* ICE-19 */
+-  /* 0x802B-0x8053 */      /* reserved */
++  /* 0x802B-0x804F */      /* reserved */
++  STUN_ATTRIBUTE_MS_SEQUENCE_NUMBER=0x8050,     /* MS-TURN */
++  /* 0x8051-0x8053 */      /* reserved */
+   STUN_ATTRIBUTE_CANDIDATE_IDENTIFIER=0x8054    /* MS-ICE2 */
+   /* 0x8055-0xFFFF */      /* reserved */
+ } StunAttribute;
+@@ -347,6 +356,36 @@ static const uint16_t STUN_ALL_KNOWN_ATTRIBUTES[] =
+   };
+ 
+ /**
++ * STUN_MSOC_KNOWN_ATTRIBUTES:
++ *
++ * An array containing all the currently known mandatory attributes used by
++ * Microsoft Office Communicator as defined in [MS-TURN]
++ */
++static const uint16_t STUN_MSOC_KNOWN_ATTRIBUTES[] =
++  {
++    STUN_ATTRIBUTE_MAPPED_ADDRESS,
++    STUN_ATTRIBUTE_USERNAME,
++    STUN_ATTRIBUTE_MESSAGE_INTEGRITY,
++    STUN_ATTRIBUTE_ERROR_CODE,
++    STUN_ATTRIBUTE_UNKNOWN_ATTRIBUTES,
++    STUN_ATTRIBUTE_LIFETIME,
++    STUN_ATTRIBUTE_MS_ALTERNATE_SERVER,
++    STUN_ATTRIBUTE_MAGIC_COOKIE,
++    STUN_ATTRIBUTE_BANDWIDTH,
++    STUN_ATTRIBUTE_DESTINATION_ADDRESS,
++    STUN_ATTRIBUTE_REMOTE_ADDRESS,
++    STUN_ATTRIBUTE_DATA,
++    /* REALM and NONCE have swapped hexadecimal IDs in [MS-TURN]. Libnice users
++     * or developers can still use these enumeration values in their original
++     * meanings from StunAttribute anywhere in the code, as stun_message_find()
++     * and stun_message_append() will choose correct ID in MSOC compatibility
++     * modes. */
++    STUN_ATTRIBUTE_NONCE,
++    STUN_ATTRIBUTE_REALM,
++    0
++  };
++
++/**
+  * StunTransactionId:
+  *
+  * A type that holds a STUN transaction id.
+@@ -826,6 +865,7 @@ StunMessageReturn stun_message_append_error (StunMessage * msg,
+  * stun_message_validate_buffer_length:
+  * @msg: The buffer to validate
+  * @length: The length of the buffer
++ * @has_padding: Set TRUE if attributes should be padded to multiple of 4 bytes
+  *
+  * This function will take a data buffer and will try to validate whether it is
+  * a STUN message or if it's not or if it's an incomplete STUN message and will
+@@ -835,7 +875,8 @@ StunMessageReturn stun_message_append_error (StunMessage * msg,
+  * <para> See also: #STUN_MESSAGE_BUFFER_INCOMPLETE </para>
+  * <para> See also: #STUN_MESSAGE_BUFFER_INVALID </para>
+  */
+-int stun_message_validate_buffer_length (const uint8_t *msg, size_t length);
++int stun_message_validate_buffer_length (const uint8_t *msg, size_t length,
++    bool has_padding);
+ 
+ /**
+  * stun_message_id:
+diff --git a/stun/tests/test-parse.c b/stun/tests/test-parse.c
+index e4f6813..524f7f2 100644
+--- a/stun/tests/test-parse.c
++++ b/stun/tests/test-parse.c
+@@ -73,7 +73,7 @@ static void validate (const uint8_t *msg, unsigned len)
+ 
+   do
+   {
+-    size_t vlen = stun_message_validate_buffer_length (msg, i);
++    size_t vlen = stun_message_validate_buffer_length (msg, i, TRUE);
+     if ((vlen & 3) || (vlen != ((i >= len) * len)))
+       fatal ("%u/%u short message test failed", i, len);
+   }
+@@ -242,16 +242,16 @@ static void test_message (void)
+     fatal ("Binding Error Response failed");
+ 
+ 
+-  if (stun_message_validate_buffer_length (NULL, 0) !=
++  if (stun_message_validate_buffer_length (NULL, 0, TRUE) !=
+       STUN_MESSAGE_BUFFER_INVALID)
+     fatal ("0 bytes test failed");
+-  if (stun_message_validate_buffer_length ((uint8_t *)"\xf0", 1) >= 0)
++  if (stun_message_validate_buffer_length ((uint8_t *)"\xf0", 1, TRUE) >= 0)
+     fatal ("1 byte test failed");
+-  if (stun_message_validate_buffer_length (bad1, sizeof (bad1)) >= 0)
++  if (stun_message_validate_buffer_length (bad1, sizeof (bad1), TRUE) >= 0)
+     fatal ("Badness 1 test failed");
+-  if (stun_message_validate_buffer_length (bad2, sizeof (bad2)) >= 0)
++  if (stun_message_validate_buffer_length (bad2, sizeof (bad2), TRUE) >= 0)
+     fatal ("Badness 2 test failed");
+-  if (stun_message_validate_buffer_length (bad3, sizeof (bad3)) != 0)
++  if (stun_message_validate_buffer_length (bad3, sizeof (bad3), TRUE) != 0)
+     fatal ("Badness 3 test failed");
+   validate (simple_resp, 20);
+   validate (old_ind, 20);
+diff --git a/stun/usages/turn.c b/stun/usages/turn.c
+index 64dc604..b691fbe 100644
+--- a/stun/usages/turn.c
++++ b/stun/usages/turn.c
+@@ -94,6 +94,10 @@ size_t stun_usage_turn_create (StunAgent *agent, StunMessage *msg,
+       return 0;
+   }
+ 
++  if (compatibility == STUN_USAGE_TURN_COMPATIBILITY_OC2007) {
++    stun_message_append32(msg, STUN_ATTRIBUTE_MS_VERSION, 1);
++  }
++
+   if (lifetime >= 0) {
+     if (stun_message_append32 (msg, STUN_ATTRIBUTE_LIFETIME, lifetime) !=
+         STUN_MESSAGE_RETURN_SUCCESS)
+@@ -284,7 +288,8 @@ StunUsageTurnReturn stun_usage_turn_process (StunMessage *msg,
+       stun_debug (" No MAPPED-ADDRESS: %d\n", val);
+       return STUN_USAGE_TURN_RETURN_ERROR;
+     }
+-  } else if (compatibility == STUN_USAGE_TURN_COMPATIBILITY_MSN) {
++  } else if (compatibility == STUN_USAGE_TURN_COMPATIBILITY_MSN ||
++             compatibility == STUN_USAGE_TURN_COMPATIBILITY_OC2007) {
+     val = stun_message_find_addr (msg,
+         STUN_ATTRIBUTE_MSN_MAPPED_ADDRESS, addr, addrlen);
+ 
+diff --git a/stun/usages/turn.h b/stun/usages/turn.h
+index 00374e1..f95ff6b 100644
+--- a/stun/usages/turn.h
++++ b/stun/usages/turn.h
+@@ -96,6 +96,7 @@ typedef enum {
+   STUN_USAGE_TURN_COMPATIBILITY_DRAFT9,
+   STUN_USAGE_TURN_COMPATIBILITY_GOOGLE,
+   STUN_USAGE_TURN_COMPATIBILITY_MSN,
++  STUN_USAGE_TURN_COMPATIBILITY_OC2007
+ } StunUsageTurnCompatibility;
+ 
+ /**
+-- 
+1.7.1
+
