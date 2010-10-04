@@ -1,4 +1,4 @@
-version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-XX-XX)
+version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-10-03)
 	- Feature #2859239: Voice call support (Jakub Adam)
 	  * requires updated versions of libnice, farsight & pidgin
 	  * only unencrypted calls as SRTP support is missing in farsight
