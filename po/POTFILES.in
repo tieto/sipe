@@ -9,8 +9,10 @@ src/core/sipe-conf.c
 src/core/sipe-core.c
 src/core/sipe-domino.c
 src/core/sipe-ft.c
+src/core/sipe-groupchat.c
 src/core/sipe-incoming.c
 src/core/sipe-media.c
 src/purple/purple-ft.c
+src/purple/purple-groupchat.c
 src/purple/purple-plugin.c
 src/purple/purple-transport.c

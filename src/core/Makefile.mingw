@@ -79,6 +79,7 @@ CLEAN_C_SRC = \
 			sipe-chat.c \
 			sipe-dialog.c \
 			sipe-ft.c \
+			sipe-groupchat.c \
 			sipe-incoming.c \
 			sipe-schedule.c \
 			sipe-session.c \
@@ -102,6 +103,7 @@ PURPLE_C_SRC = \
 			../purple/purple-debug.c \
 			../purple/purple-dnsquery.c \
 			../purple/purple-ft.c \
+			../purple/purple-groupchat.c \
 			../purple/purple-im.c \
 			../purple/purple-markup.c \
 			../purple/purple-network.c \

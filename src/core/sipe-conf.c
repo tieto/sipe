@@ -697,7 +697,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 
 		/* create or join existing chat */
 		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->chat_id,
+								    session->backend_id,
 								    chat_title,
 								    self,
 								    TRUE);

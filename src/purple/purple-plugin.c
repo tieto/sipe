@@ -330,6 +330,8 @@ static void sipe_close(PurpleConnection *gc)
 
 		if (purple_private->dns_query)
 			purple_srv_cancel(purple_private->dns_query);
+		if (purple_private->roomlist_map)
+			g_hash_table_destroy(purple_private->roomlist_map);
 		g_free(purple_private);
 		gc->proto_data = NULL;
 	}
@@ -432,8 +434,8 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_tooltip_text,			/* tooltip_text */	// add custom info to contact tooltip
 	sipe_status_types,			/* away_states */
 	sipe_blist_node_menu,			/* blist_node_menu */
-	NULL,					/* chat_info */
-	NULL,					/* chat_info_defaults */
+	sipe_chat_info,				/* chat_info */
+	sipe_chat_info_defaults,		/* chat_info_defaults */
 	sipe_login,				/* login */
 	sipe_close,				/* close */
 	sipe_im_send,				/* send_im */
@@ -452,7 +454,7 @@ static PurplePluginProtocolInfo prpl_info =
 	sipe_add_deny,				/* rem_permit */
 	sipe_add_permit,			/* rem_deny */
 	NULL,					/* set_permit_deny */
-	NULL,					/* join_chat */
+	sipe_join_chat,				/* join_chat */
 	NULL,					/* reject_chat */
 	NULL,					/* get_chat_name */
 	sipe_chat_invite,			/* chat_invite */
@@ -474,8 +476,8 @@ static PurplePluginProtocolInfo prpl_info =
 	NULL,					/* get_cb_real_name */	// TODO?
 	NULL,					/* set_chat_topic */
 	NULL,					/* find_blist_chat */
-	NULL,					/* roomlist_get_list */
-	NULL,					/* roomlist_cancel */
+	sipe_roomlist_get_list,			/* roomlist_get_list */
+	sipe_roomlist_cancel,			/* roomlist_cancel */
 	NULL,					/* roomlist_expand_category */
 	NULL,					/* can_receive_file */
 	sipe_ft_send_file,			/* send_file */
@@ -714,6 +716,12 @@ static void init_plugin(PurplePlugin *plugin)
 
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
 	purple_account_option_set_masked(option, TRUE);
+	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
+
+	/** Example (federated domain): company.com      (i.e. ocschat@company.com)
+	 *  Example (non-default user): user@company.com
+	 */
+	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or  user@company.com\n(leave empty to determine from Username)"), "groupchat_user", "");
 	prpl_info.protocol_options = g_list_append(prpl_info.protocol_options, option);
 }
 

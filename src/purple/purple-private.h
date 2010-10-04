@@ -24,6 +24,7 @@
 struct sipe_core_public;
 struct _PurpleAccount;
 struct _PurpleConnection;
+struct _PurpleRoomlist;
 struct _PurpleSrvQueryData;
 struct _PurpleXfer;
 
@@ -32,6 +33,8 @@ struct sipe_backend_private {
 	struct _PurpleConnection *gc;
 	struct _PurpleAccount *account;
 	struct _PurpleSrvQueryData *dns_query;
+	struct _PurpleRoomlist *roomlist;
+	GHashTable *roomlist_map; /* name -> uri */
 	time_t last_keepalive;
 };
 
@@ -55,6 +58,14 @@ void sipe_ft_send_file(struct _PurpleConnection *gc,
  */
 struct _PurpleXfer *sipe_ft_new_xfer(struct _PurpleConnection *gc,
 				     const char *who);
+
+/* libpurple chat room callbacks */
+GList *sipe_chat_info(struct _PurpleConnection *gc);
+GHashTable *sipe_chat_info_defaults(struct _PurpleConnection *gc,
+				    const char *chat_name);
+void sipe_join_chat(struct _PurpleConnection *gc, GHashTable *data);
+struct _PurpleRoomlist *sipe_roomlist_get_list(struct _PurpleConnection *gc);
+void sipe_roomlist_cancel(struct _PurpleRoomlist *list);
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)

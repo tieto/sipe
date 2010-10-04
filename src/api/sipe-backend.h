@@ -108,13 +108,12 @@ gboolean sipe_backend_debug_enabled(void);
 
 /** CHAT *********************************************************************/
 
-//void sipe_backend_chat_(struct sipe_backend_session *backend_session, );
 void sipe_backend_chat_add(struct sipe_backend_session *backend_session,
 			   const gchar *uri,
 			   gboolean is_new);
 void sipe_backend_chat_close(struct sipe_backend_session *backend_session);
 struct sipe_backend_session *sipe_backend_chat_create(struct sipe_core_public *sipe_public,
-						      int id,
+						      guint id,
 						      const gchar *title,
 						      const gchar *nick,
 						      gboolean rejoin);
@@ -123,7 +122,7 @@ gboolean sipe_backend_chat_find(struct sipe_backend_session *backend_session,
 gboolean sipe_backend_chat_is_operator(struct sipe_backend_session *backend_session,
 				       const gchar *uri);
 void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
-			       int id,
+			       guint id,
 			       const gchar *from,
 			       const gchar *html);
 void sipe_backend_chat_operator(struct sipe_backend_session *backend_session,
@@ -207,6 +206,34 @@ gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
 					 const gchar *ip,
 					 unsigned short port_min,
 					 unsigned short port_max);
+
+/** GROUP CHAT ***************************************************************/
+
+#define SIPE_GROUPCHAT_ROOM_FILEPOST 0x00000001
+#define SIPE_GROUPCHAT_ROOM_INVITE   0x00000002
+#define SIPE_GROUPCHAT_ROOM_LOGGED   0x00000004
+#define SIPE_GROUPCHAT_ROOM_PRIVATE  0x00000008
+
+/**
+ * Add a room found through room query
+ *
+ * @param uri         room URI
+ * @param name        human readable name for room
+ * @param description room description
+ * @param users       number of users in the room
+ * @param flags       SIPE_GROUPCHAT_ROOM_* flags
+ */
+void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
+				     const gchar *uri,
+				     const gchar *name,
+				     const gchar *description,
+				     guint users,
+				     guint32 flags);
+
+/**
+ * Terminate room query
+ */
+void sipe_backend_groupchat_room_terminate(struct sipe_core_public *sipe_public);
 
 /** IM ***********************************************************************/
 
@@ -370,6 +397,18 @@ void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local)
 
 const gchar *sipe_backend_network_ip_address(void);
 
+/** NOTIFICATIONS *************************************************************/
+
+void sipe_backend_notify_message_error(struct sipe_core_public *sipe_public,
+				       struct sipe_backend_session *backend_session,
+				       const gchar *who,
+				       const gchar *message);
+void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
+				      struct sipe_backend_session *backend_session,
+				      const gchar *who,
+				      const gchar *message);
+void sipe_backend_notify_error(const gchar *title, const gchar *msg);
+
 /** SCHEDULE *****************************************************************/
 
 gpointer sipe_backend_schedule_seconds(struct sipe_core_public *sipe_public,
@@ -387,6 +426,7 @@ typedef enum {
   SIPE_SETTING_EMAIL_URL = 0,
   SIPE_SETTING_EMAIL_LOGIN,
   SIPE_SETTING_EMAIL_PASSWORD,
+  SIPE_SETTING_GROUPCHAT_USER,
   SIPE_SETTING_USER_AGENT,
   SIPE_SETTING_LAST
 } sipe_setting;
@@ -422,11 +462,6 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 				       const gchar *from);
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
 					    const gchar *from);
-
-/** NOTIFICATIONS *************************************************************/
-
-void sipe_backend_notify_error(const gchar *title, const gchar *msg);
-
 
 #ifdef __cplusplus
 }

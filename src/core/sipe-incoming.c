@@ -40,6 +40,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-ft.h"
+#include "sipe-groupchat.h"
 #include "sipe-incoming.h"
 #include "sipe-media.h"
 #include "sipe-nls.h"
@@ -119,7 +120,7 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 	gchar *from;
 	struct sip_session *session;
 
-	SIPE_DEBUG_INFO("process_incoming_info: \n%s", msg->body ? msg->body : "");
+	SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info");
 
 	/* Call Control protocol */
 	if (g_str_has_prefix(contenttype, "application/csta+xml"))
@@ -131,6 +132,13 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 	from = parse_from(sipmsg_find_header(msg, "From"));
 	session = sipe_session_find_chat_or_im(sipe_private, callid, from);
 	if (!session) {
+		g_free(from);
+		return;
+	}
+
+	/* Group Chat uses text/plain */
+	if (session->is_groupchat) {
+		process_incoming_info_groupchat(sipe_private, msg, session);
 		g_free(from);
 		return;
 	}
@@ -322,7 +330,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		session->with = NULL;
 		was_multiparty = FALSE;
 		session->is_multiparty = TRUE;
-		session->chat_id = rand();
+		/* @TODO: collision-free IDs for sipe-(groupchat|incoming|session).c */
+		session->backend_id = sipe_session_get_backend_chat_id();
 	}
 
 	if (!session && is_multiparty) {
@@ -421,7 +430,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		gchar *self = sip_uri_self(sipe_private);
 		/* create chat */
 		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->chat_id,
+								    session->backend_id,
 								    chat_title, 
 								    self,
 								    FALSE);
@@ -483,7 +492,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 				if (html) {
 					if (is_multiparty) {
 						sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-									  session->chat_id,
+									  session->backend_id,
 									  from,
 									  html);
 					} else {
@@ -551,13 +560,13 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 			gchar *sender = parse_from(tmp);
 			g_free(tmp);
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->chat_id,
+						  session->backend_id,
 						  sender,
 						  html);
 			g_free(sender);
 		} else if (session && session->is_multiparty) { /* a multiparty chat */
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->chat_id,
+						  session->backend_id,
 						  from,
 						  html);
 		} else {

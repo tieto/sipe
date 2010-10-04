@@ -42,22 +42,20 @@ struct sipe_backend_session;
 struct sip_session {
 	/** backend private data structure for IM or chat */
 	struct sipe_backend_session *backend_session;
- 
+
 	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
 	/** key is user (URI) */
 	GSList *dialogs;
 	/** Key is <Call-ID><CSeq><METHOD><To> */
 	GHashTable *unconfirmed_messages;
 	GSList *outgoing_message_queue;
-	
+
 	/*
 	 * Multiparty conversation related fields
 	 */
 	gboolean is_multiparty;
-	/** purple chat id */
-	int chat_id;
-	/** purple indexes chats by names */
-	//gchar *chat_name;
+	/** backend chat id */
+	guint backend_id;
 	/** Human readable chat name */
 	gchar *chat_title;
 	/** Call-Id identifying the conversation */
@@ -67,7 +65,7 @@ struct sip_session {
 	int bid;
 	gboolean is_voting_in_progress;
 	GSList *pending_invite_queue;
-	
+
 	/*
 	 * Conference related fields
 	 */
@@ -78,12 +76,17 @@ struct sip_session {
 	guint request_id;
 	struct sip_dialog *focus_dialog;
 	/** Key is Message-Id */
-	GHashTable *conf_unconfirmed_messages;  
+	GHashTable *conf_unconfirmed_messages;
 
 	/*
 	 * Media call related fields
 	 */
 	gboolean is_call;
+
+	/*
+	 * Group Chat related fields
+	 */
+	gboolean is_groupchat;
 };
 
 /**
@@ -102,6 +105,14 @@ struct queued_message {
 	 */
 	gchar *content_type;
 };
+
+/**
+ * Uniqe backend chat ID for multiparty/conference/group chat
+ *
+ * @return unique ID
+ */
+guint
+sipe_session_get_backend_chat_id(void);
 
 /**
  * Add a new chat session
@@ -166,16 +177,16 @@ sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
 					const gchar *callid);
 
 /**
- * Find chat session by ID
+ * Find chat session by backend ID
  *
  * @param sipe_private (in) SIPE core data. May be NULL
- * @param id (in) Chat ID
+ * @param id (in) backend Chat ID
  *
  * @return pointer to session or NULL
  */
-struct sip_session * 
-sipe_session_find_chat_by_id(struct sipe_core_private *sipe_private,
-			     int id);
+struct sip_session *
+sipe_session_find_chat_by_backend_id(struct sipe_core_private *sipe_private,
+				     guint id);
 
 /**
  * Find chat session by name
@@ -185,7 +196,7 @@ sipe_session_find_chat_by_id(struct sipe_core_private *sipe_private,
  *
  * @return pointer to session or NULL
  */
-struct sip_session * 
+struct sip_session *
 sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
 			        const gchar *name);
 

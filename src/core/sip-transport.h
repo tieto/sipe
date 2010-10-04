@@ -70,11 +70,11 @@ void sip_transport_ack(struct sipe_core_private *sipe_private,
 		       struct sip_dialog *dialog);
 void sip_transport_bye(struct sipe_core_private *sipe_private,
 		       struct sip_dialog *dialog);
-void sip_transport_info(struct sipe_core_private *sipe_private,
-			const gchar *addheaders,
-			const gchar *body,
-			struct sip_dialog *dialog,
-			TransCallback callback);
+struct transaction *sip_transport_info(struct sipe_core_private *sipe_private,
+				       const gchar *addheaders,
+				       const gchar *body,
+				       struct sip_dialog *dialog,
+				       TransCallback callback);
 struct transaction *sip_transport_invite(struct sipe_core_private *sipe_private,
 					 const gchar *addheaders,
 					 const gchar *body,

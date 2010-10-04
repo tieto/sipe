@@ -76,6 +76,7 @@
 #include "sipe-ews.h"
 #include "sipe-domino.h"
 #include "sipe-ft.h"
+#include "sipe-groupchat.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
@@ -2844,6 +2845,7 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	 */
 	if (!sip->initial_state_published) {
 		send_publish_category_initial(sipe_private);
+		sipe_groupchat_init(sipe_private);
 		sip->initial_state_published = TRUE;
 		/* dalayed run */
 		sipe_schedule_seconds(sipe_private,
@@ -2944,30 +2946,15 @@ static void sipe_options_request(struct sipe_core_private *sipe_private,
 	g_free(request);
 }
 
-static void
-sipe_notify_user(struct sipe_core_private *sipe_private,
-		 struct sip_session *session,
-		 PurpleMessageFlags flags,
-		 const gchar *message)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleConversation *conv;
-
-	if (!session->backend_session) {
-		conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY, session->with, sip->account);
-	} else {
-		/* TEMPORARY HACK!! */
-		conv = (PurpleConversation *) session->backend_session;
-	}
-	purple_conversation_write(conv, NULL, message, flags, time(NULL));
-}
-
 void
 sipe_present_info(struct sipe_core_private *sipe_private,
 		 struct sip_session *session,
 		 const gchar *message)
 {
-	sipe_notify_user(sipe_private, session, PURPLE_MESSAGE_SYSTEM, message);
+	sipe_backend_notify_message_info(SIPE_CORE_PUBLIC,
+					 session->backend_session,
+					 session->with,
+					 message);
 }
 
 void
@@ -2975,7 +2962,10 @@ sipe_present_err(struct sipe_core_private *sipe_private,
 		 struct sip_session *session,
 		 const gchar *message)
 {
-	sipe_notify_user(sipe_private, session, PURPLE_MESSAGE_ERROR, message);
+	sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
+					  session->backend_session,
+					  session->with,
+					  message);
 }
 
 void
@@ -3179,7 +3169,7 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 		if (session->is_multiparty || session->focus_uri) {
 			gchar *who = sip_uri_self(sipe_private);
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
-						  session->chat_id,
+						  session->backend_id,
 						  who,
 						  msg->body);
 			g_free(who);
@@ -3320,6 +3310,10 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 		sipe_dialog_remove(session, with);
 
+		if (session->is_groupchat) {
+			sipe_groupchat_invite_failed(sipe_private, session);
+		}
+
 		g_free(key);
 		g_free(with);
 		return FALSE;
@@ -3341,6 +3335,10 @@ process_invite_response(struct sipe_core_private *sipe_private,
 		sipe_backend_chat_add(session->backend_session,
 				      with,
 				      TRUE);
+	}
+
+	if (session->is_groupchat) {
+		sipe_groupchat_invite_response(sipe_private, dialog);
 	}
 
 	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)g_ascii_strcasecmp)) {
@@ -3518,10 +3516,12 @@ void
 sipe_chat_leave (PurpleConnection *gc, int id)
 {
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sip_session *session = sipe_session_find_chat_by_id(sipe_private,
-								   id);
 
-	sipe_session_close(sipe_private, session);
+	if (!sipe_groupchat_leave(sipe_private, id)) {
+		struct sip_session *session = sipe_session_find_chat_by_backend_id(sipe_private,
+										   id);
+		sipe_session_close(sipe_private, session);
+	}
 }
 
 int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
@@ -3560,7 +3560,10 @@ int sipe_chat_send(PurpleConnection *gc, int id, const char *what,
 
 	SIPE_DEBUG_INFO("sipe_chat_send what='%s'", what);
 
-	session = sipe_session_find_chat_by_id(sipe_private, id);
+	if (sipe_groupchat_send(sipe_private, id, what))
+		return 1;
+
+	session = sipe_session_find_chat_by_backend_id(sipe_private, id);
 
 	// Queue the message
 	if (session && session->dialogs) {
@@ -5948,6 +5951,8 @@ void sipe_connection_cleanup(struct sipe_core_private *sipe_private)
 		sipe_cal_calendar_free(sip->cal);
 	}
 	sip->cal = NULL;
+
+	sipe_groupchat_free(sipe_private);
 }
 
 /**
@@ -6308,7 +6313,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session->roster_manager = g_strdup(self);
 
 		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->chat_id,
+								    session->backend_id,
 								    session->chat_title,
 								    self,
 								    FALSE);
