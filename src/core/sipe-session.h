@@ -143,6 +143,18 @@ sipe_session_find_call(struct sipe_core_private *sipe_private,
 #endif
 
 /**
+ * Find chat session
+ *
+ * @param sipe_private (in) SIPE core data. May be NULL
+ * @param chat_session (in) chat session data. May be NULL
+ *
+ * @return pointer to session or NULL
+ */
+struct sip_session *
+sipe_session_find_chat(struct sipe_core_private *sipe_private,
+		       struct sipe_chat_session *chat_session);
+
+/**
  * Find chat session by Call ID
  *
  * @param sipe_private (in) SIPE core data. May be NULL

@@ -119,6 +119,23 @@ sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
 }
 
 struct sip_session *
+sipe_session_find_chat(struct sipe_core_private *sipe_private,
+		       struct sipe_chat_session *chat_session)
+{
+	if (sipe_private == NULL || chat_session == NULL) {
+		return NULL;
+	}
+
+	SIPE_SESSION_FOREACH {
+		if (session->chat_session == chat_session) {
+			return session;
+		}
+	} SIPE_SESSION_FOREACH_END;
+	return NULL;
+
+}
+
+struct sip_session *
 sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 				 const gchar *callid)
 {

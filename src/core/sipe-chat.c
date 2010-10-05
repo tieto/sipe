@@ -158,10 +158,18 @@ void sipe_core_chat_send(struct sipe_core_public *sipe_public,
 
 	switch (chat_session->type) {
 	case SIPE_CHAT_TYPE_MULTIPARTY:
-		/* @TODO */
-		break;
 	case SIPE_CHAT_TYPE_CONFERENCE:
-		/* @TODO */
+		{
+			struct sip_session *session = sipe_session_find_chat(sipe_private,
+									     chat_session);
+
+			if (session) {
+				sipe_session_enqueue_message(session,
+							     what,
+							     NULL);
+				sipe_im_process_queue(sipe_private, session);
+			}
+		}
 		break;
 	case SIPE_CHAT_TYPE_GROUPCHAT:
 		sipe_groupchat_send(sipe_private, chat_session, what);
@@ -169,41 +177,7 @@ void sipe_core_chat_send(struct sipe_core_public *sipe_public,
 	default:
 		break;
 	}
-
-#if 0
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sip_session *session;
-
-	SIPE_DEBUG_INFO("sipe_chat_send what='%s'", what);
-
-	if (sipe_groupchat_send(sipe_private, id, what))
-		return 1;
-
-	session = sipe_session_find_chat_by_backend_id(sipe_private, id);
-
-	// Queue the message
-	if (session && session->dialogs) {
-		sipe_session_enqueue_message(session,what,NULL);
-		sipe_im_process_queue(sipe_private, session);
-	} else if (sip) {
-		gchar *chat_name = purple_find_chat(sip->gc, id)->name;
-		const gchar *proto_chat_id = sipe_chat_find_name(chat_name);
-
-		SIPE_DEBUG_INFO("sipe_chat_send: chat_name='%s'", chat_name ? chat_name : "NULL");
-		SIPE_DEBUG_INFO("sipe_chat_send: proto_chat_id='%s'", proto_chat_id ? proto_chat_id : "NULL");
-
-		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-			struct sip_session *session = sipe_session_add_chat(sipe_private);
-
-			session->is_multiparty = FALSE;
-			session->focus_uri = g_strdup(proto_chat_id);
-			sipe_session_enqueue_message(session, what, NULL);
-			sipe_invite_conf_focus(sipe_private, session);
-		}
-	}
-#endif
 }
-
 
 gchar *
 sipe_chat_get_name(void)
