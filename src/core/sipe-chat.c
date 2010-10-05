@@ -124,10 +124,15 @@ void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
 
 	switch (chat_session->type) {
 	case SIPE_CHAT_TYPE_MULTIPARTY:
-		/* @TODO */
-		break;
 	case SIPE_CHAT_TYPE_CONFERENCE:
-		/* @TODO */
+		{
+			struct sip_session *session = sipe_session_find_chat(sipe_private,
+									     chat_session);
+
+			if (session) {
+				sipe_session_close(sipe_private, session);
+			}
+		}
 		break;
 	case SIPE_CHAT_TYPE_GROUPCHAT:
 		sipe_groupchat_leave(sipe_private, chat_session);
@@ -135,16 +140,6 @@ void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
 	default:
 		break;
 	}
-
-#if 0
-	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-
-	if (!sipe_groupchat_leave(sipe_private, id)) {
-		struct sip_session *session = sipe_session_find_chat_by_backend_id(sipe_private,
-										   id);
-		sipe_session_close(sipe_private, session);
-	}
-#endif
 }
 
 void sipe_core_chat_send(struct sipe_core_public *sipe_public,
