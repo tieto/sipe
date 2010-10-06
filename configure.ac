@@ -261,7 +261,13 @@ AS_IF([test "x$enable_purple" != xno],
 void testfunc(unsigned long len)
 {
   PurpleCipherContext *rc4 = NULL;
+  guchar *plaintext = NULL;
+  gsize plaintext_length = 0;
+  guchar *encrypted_text = NULL;
+  gsize dummy;
   purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(len));
+  purple_cipher_context_encrypt(rc4, plaintext, plaintext_length,
+                                encrypted_text, &dummy);
 }
 					],
 					[testfunc(16);]),
@@ -269,7 +275,8 @@ void testfunc(unsigned long len)
 			[AC_MSG_FAILURE([conflicts found.
 
 Check that you have the correct glib/libpurple headers installed for
-your architecture or set PURPLE_CFLAGS to override the system defaults.
+your architecture or set GLIB_CFLAGS/PURPLE_CFLAGS to override the
+system defaults.
 ])
 			])
 
