@@ -105,20 +105,6 @@ sipe_session_find_call(struct sipe_core_private *sipe_private,
 #endif
 
 struct sip_session *
-sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
-					const gchar *callid)
-{
-	struct sip_session *session = sipe_session_find_chat_by_callid(sipe_private,
-								       callid);
-	if (!session) {
-		SIPE_DEBUG_INFO("sipe_session_find_or_add_chat_by_callid: new session for %s", callid);
-		session = sipe_session_add_chat(sipe_private, TRUE, callid);
-		session->callid = g_strdup(callid);
-	}
-	return session;
-}
-
-struct sip_session *
 sipe_session_find_chat(struct sipe_core_private *sipe_private,
 		       struct sipe_chat_session *chat_session)
 {

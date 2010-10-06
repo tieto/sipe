@@ -338,8 +338,12 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 
 	if (!session && is_multiparty) {
-		session = sipe_session_find_or_add_chat_by_callid(sipe_private,
-								  callid);
+		session = sipe_session_find_chat_by_callid(sipe_private,
+							   callid);
+		if (!session) {
+			session = sipe_session_add_chat(sipe_private, TRUE, callid);
+			session->callid = g_strdup(callid);
+		}
 	}
 	/* IM session */
 	from = parse_from(sipmsg_find_header(msg, "From"));

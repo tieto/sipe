@@ -167,18 +167,6 @@ sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 				 const gchar *callid);
 
 /**
- * Find or add new chat session by Call ID
- *
- * @param sipe_private (in) SIPE core data
- * @param callid (in) Call ID
- *
- * @return pointer to session
- */
-struct sip_session *
-sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
-					const gchar *callid);
-
-/**
  * Find chat session by name
  *
  * @param sipe_private (in) SIPE core data. May be NULL
