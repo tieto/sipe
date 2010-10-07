@@ -290,6 +290,19 @@ sipe_strcase_equal(const gchar *left, const gchar *right)
 	        (left != NULL && right != NULL && g_ascii_strcasecmp(left, right) == 0));
 }
 
+gint sipe_strcompare(gconstpointer a, gconstpointer b)
+{
+#if GLIB_CHECK_VERSION(2,16,0)
+	return (g_strcmp0(a, b));
+#else
+	if (!a)
+		return -(a != b);
+	if (!b)
+		return a != b;
+	return strcmp(a, b);
+#endif	
+}
+
 time_t
 sipe_utils_str_to_time(const gchar *timestamp)
 {
