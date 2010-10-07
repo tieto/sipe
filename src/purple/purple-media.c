@@ -66,26 +66,30 @@ static SipeCandidateType purple_candidate_type_to_sipe(PurpleMediaCandidateType 
 static PurpleMediaNetworkProtocol sipe_network_protocol_to_purple(SipeNetworkProtocol proto);
 static SipeNetworkProtocol purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto);
 
+struct stream_info_context {
+	struct sipe_media_call *call;
+	struct sipe_backend_media *backend_media;
+};
+
 static void
 on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			  gchar *sessionid,
 			  SIPE_UNUSED_PARAMETER gchar *participant,
-			  struct sipe_media_call *call)
+			  struct stream_info_context *ctx)
 {
-	struct sipe_backend_media *backend_media = call->backend_private;
 	struct sipe_backend_stream *stream;
-	stream = sipe_backend_media_get_stream_by_id(backend_media, sessionid);
+	stream = sipe_backend_media_get_stream_by_id(ctx->backend_media, sessionid);
 
 	stream->candidates_prepared = TRUE;
 
-	if (call->candidates_prepared_cb) {
-		GSList *streams = backend_media->streams;
+	if (ctx->call->candidates_prepared_cb) {
+		GSList *streams = ctx->backend_media->streams;
 		for (; streams; streams = streams->next) {
 			struct sipe_backend_stream *s = streams->data;
 			if (!s->candidates_prepared)
 				return;
 		}
-		call->candidates_prepared_cb(call, stream);
+		ctx->call->candidates_prepared_cb(ctx->call, stream);
 	}
 }
 
@@ -96,6 +100,7 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		    gchar *participant,
 		    struct sipe_media_call *call)
 {
+	// TODO: this should be aware of legacy backend_media
 	SIPE_DEBUG_INFO("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
 	if (state == PURPLE_MEDIA_STATE_CONNECTED && call->media_connected_cb)
 		call->media_connected_cb(call);
@@ -107,13 +112,11 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		  gchar *sessionid,
 		  gchar *participant,
 		  gboolean local,
-		  struct sipe_media_call *call)
+		  struct stream_info_context *ctx)
 {
-	struct sipe_backend_media *m = call->backend_private;
-
-	if (type == PURPLE_MEDIA_INFO_ACCEPT && call->call_accept_cb
+	if (type == PURPLE_MEDIA_INFO_ACCEPT && ctx->call->call_accept_cb
 	    && !sessionid && !participant)
-		call->call_accept_cb(call, local);
+		ctx->call->call_accept_cb(ctx->call, local);
 	else if (type == PURPLE_MEDIA_INFO_HOLD || type == PURPLE_MEDIA_INFO_UNHOLD) {
 
 		gboolean state = (type == PURPLE_MEDIA_INFO_HOLD);
@@ -121,7 +124,8 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		if (sessionid) {
 			// Hold specific stream
 			struct sipe_backend_stream *stream;
-			stream = sipe_backend_media_get_stream_by_id(m, sessionid);
+			stream = sipe_backend_media_get_stream_by_id(ctx->backend_media,
+								     sessionid);
 
 			if (local)
 				stream->local_on_hold = state;
@@ -129,7 +133,7 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 				stream->remote_on_hold = state;
 		} else {
 			// Hold all streams
-			GSList *i = sipe_backend_media_get_streams(m);
+			GSList *i = sipe_backend_media_get_streams(ctx->backend_media);
 			for (; i; i = i->next) {
 				struct sipe_backend_stream *stream = i->data;
 
@@ -140,20 +144,21 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			}
 		}
 
-		if (call->call_hold_cb)
-			call->call_hold_cb(call, local, state);
+		if (ctx->call->call_hold_cb)
+			ctx->call->call_hold_cb(ctx->call, local, state);
 	} else if (type == PURPLE_MEDIA_INFO_HANGUP || type == PURPLE_MEDIA_INFO_REJECT) {
 		if (!sessionid && !participant) {
-			if (type == PURPLE_MEDIA_INFO_HANGUP && call->call_hangup_cb)
-				call->call_hangup_cb(call, local);
-			else if (type == PURPLE_MEDIA_INFO_REJECT && call->call_reject_cb)
-				call->call_reject_cb(call, local);
+			if (type == PURPLE_MEDIA_INFO_HANGUP && ctx->call->call_hangup_cb)
+				ctx->call->call_hangup_cb(ctx->call, ctx->backend_media, local);
+			else if (type == PURPLE_MEDIA_INFO_REJECT && ctx->call->call_reject_cb)
+				ctx->call->call_reject_cb(ctx->call, local);
 		} else if (sessionid && participant) {
 			struct sipe_backend_stream *stream;
-			stream = sipe_backend_media_get_stream_by_id(m, sessionid);
+			stream = sipe_backend_media_get_stream_by_id(ctx->backend_media,
+								     sessionid);
 
 			if (stream) {
-				m->streams = g_slist_remove(m->streams, stream);
+				ctx->backend_media->streams = g_slist_remove(ctx->backend_media->streams, stream);
 				backend_stream_free(stream);
 			}
 		}
@@ -169,16 +174,24 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 	struct sipe_backend_media *media = g_new0(struct sipe_backend_media, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleMediaManager *manager = purple_media_manager_get();
+	struct stream_info_context *ctx = g_new0(struct stream_info_context, 1);
 
 	media->m = purple_media_manager_create_media(manager,
 						     purple_private->account,
 						     "fsrtpconference",
 						     participant, initiator);
 
-	g_signal_connect(G_OBJECT(media->m), "candidates-prepared",
-			 G_CALLBACK(on_candidates_prepared_cb), call);
+	ctx->call = call;
+	ctx->backend_media = media;
+
+	/* Passing the same ctx structure to all signal handlers, only the first
+	 * of them has destroy_data closure and is responsible for freeing the
+	 * context. */
+	g_signal_connect_data(G_OBJECT(media->m), "candidates-prepared",
+			      G_CALLBACK(on_candidates_prepared_cb), ctx,
+			      (GClosureNotify) g_free, 0);
 	g_signal_connect(G_OBJECT(media->m), "stream-info",
-			 G_CALLBACK(on_stream_info_cb), call);
+			 G_CALLBACK(on_stream_info_cb), ctx);
 	g_signal_connect(G_OBJECT(media->m), "state-changed",
 			 G_CALLBACK(on_state_changed_cb), call);
 
@@ -188,13 +201,15 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 void
 sipe_backend_media_free(struct sipe_backend_media *media)
 {
-	GSList *stream = media->streams;
-	g_object_unref(media->m);
+	if (media) {
+		GSList *stream = media->streams;
+		g_object_unref(media->m);
 
-	for (; stream; stream = g_slist_delete_link(stream, stream))
-		backend_stream_free(stream->data);
+		for (; stream; stream = g_slist_delete_link(stream, stream))
+			backend_stream_free(stream->data);
 
-	g_free(media);
+		g_free(media);
+	}
 }
 
 #define FS_CODECS_CONF \
@@ -224,7 +239,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			      const gchar *id,
 			      const gchar *participant,
 			      SipeMediaType type,
-			      gboolean use_nice,
+			      SipeIceVersion ice_version,
 			      gboolean initiator)
 {
 	struct sipe_backend_stream *stream = NULL;
@@ -233,14 +248,17 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 	guint params_cnt = 0;
 	gchar *transmitter;
 
-	if (use_nice) {
+	if (ice_version != SIPE_ICE_NO_ICE) {
 		transmitter = "nice";
 		params_cnt = 1;
 
 		params = g_new0(GParameter, params_cnt);
 		params[0].name = "compatibility-mode";
 		g_value_init(&params[0].value, G_TYPE_UINT);
-		g_value_set_uint(&params[0].value, NICE_COMPATIBILITY_OC2007R2);
+		g_value_set_uint(&params[0].value,
+				 ice_version == SIPE_ICE_DRAFT_6 ?
+				 NICE_COMPATIBILITY_OC2007 :
+				 NICE_COMPATIBILITY_OC2007R2);
 	} else {
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
@@ -423,10 +441,10 @@ sipe_backend_set_remote_codecs(struct sipe_backend_media *media,
 }
 
 GList*
-sipe_backend_get_local_codecs(struct sipe_media_call *call,
+sipe_backend_get_local_codecs(struct sipe_backend_media *media,
 			      struct sipe_backend_stream *stream)
 {
-	GList *codecs = purple_media_get_codecs(call->backend_private->m,
+	GList *codecs = purple_media_get_codecs(media->m,
 						stream->sessionid);
 	GList *i = codecs;
 
@@ -626,22 +644,25 @@ sipe_backend_get_local_candidates(struct sipe_backend_media *media,
 void
 sipe_backend_media_accept(struct sipe_backend_media *media, gboolean local)
 {
-	purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_ACCEPT,
-				 NULL, NULL, local);
+	if (media)
+		purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_ACCEPT,
+					 NULL, NULL, local);
 }
 
 void
 sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local)
 {
-	purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_HANGUP,
-				 NULL, NULL, local);
+	if (media)
+		purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_HANGUP,
+					 NULL, NULL, local);
 }
 
 void
 sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local)
 {
-	purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_REJECT,
-				 NULL, NULL, local);
+	if (media)
+		purple_media_stream_info(media->m, PURPLE_MEDIA_INFO_REJECT,
+					 NULL, NULL, local);
 }
 
 static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type)
