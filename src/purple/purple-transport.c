@@ -154,7 +154,7 @@ static void transport_tcp_input(gpointer data,
 	transport_common_input(transport);
 }
 
-static void transport_ssl_connect_failure(PurpleSslConnection *gsc,
+static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
 					  PurpleSslErrorType error,
 					  gpointer data)
 {
@@ -164,10 +164,6 @@ static void transport_ssl_connect_failure(PurpleSslConnection *gsc,
 	   then we don't need to do anything else */
         if (!PURPLE_CONNECTION_IS_VALID(transport->gc))
 		return;
-
-	/* Make sure the SSL connection is closed no matter what */
-	if (gsc)
-		purple_ssl_close(gsc);
 
 	transport->socket = -1;
         transport->gsc = NULL;
