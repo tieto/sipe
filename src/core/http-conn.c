@@ -176,7 +176,7 @@ static void
 http_conn_close(HttpConn *http_conn, const char *message)
 {
 	SIPE_DEBUG_INFO("http_conn_close: closing http connection: %s", message ? message : "");
-	
+
 	g_return_if_fail(http_conn);
 
 	sipe_backend_transport_disconnect(http_conn->conn);
@@ -411,20 +411,33 @@ http_conn_process_input_message(HttpConn *http_conn,
 	     http_conn->allow_redirect)
 	{
 		const char *location = sipmsg_find_header(msg, "Location");
+		gchar *host, *url;
+		guint port;
 
 		SIPE_DEBUG_INFO("http_conn_process_input_message: Redirect to: %s", location ? location : "");
+		http_conn_parse_url(location, &host, &port, &url);
 
-		http_conn->do_close = http_conn_clone(http_conn);
-		http_conn->sec_ctx = NULL;
+		if (host) {
+			http_conn->do_close = http_conn_clone(http_conn);
+			http_conn->sec_ctx = NULL;
 
-		g_free(http_conn->host);
-		g_free(http_conn->url);
-		http_conn_parse_url(location, &http_conn->host, &http_conn->port, &http_conn->url);
-		http_conn->conn = http_conn_setup(http_conn,
-						  http_conn->sipe_public,
-						  http_conn->conn_type,
-						  http_conn->host,
-						  http_conn->port);
+			g_free(http_conn->host);
+			g_free(http_conn->url);
+
+			http_conn->host = host;
+			http_conn->port = port;
+			http_conn->url  = url;
+
+			http_conn->conn = http_conn_setup(http_conn,
+							  http_conn->sipe_public,
+							  http_conn->conn_type,
+							  host,
+							  port);
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("http_conn_process_input_message: no redirect host");
+			g_free(url);
+			return;
+		}
 	}
 	/* Authentication required */
 	else if (msg->response == 401) {
