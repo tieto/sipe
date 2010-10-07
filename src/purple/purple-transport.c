@@ -253,7 +253,7 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 				       transport) == NULL) {
 			setup->error(SIPE_TRANSPORT_CONNECTION,
 				     _("Could not create SSL context"));
-			g_free(transport);
+			sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
 			return(NULL);
 		}
 	} else if (setup->type == SIPE_TRANSPORT_TCP) {
@@ -267,13 +267,13 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 					 transport) == NULL) {
 			setup->error(SIPE_TRANSPORT_CONNECTION,
 				     _("Could not create socket"));
-			g_free(transport);
+			sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
 			return(NULL);
 		}
 	} else {
 		setup->error(SIPE_TRANSPORT_CONNECTION,
 			     "This should not happen...");
-		g_free(transport);
+		sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
 		return(NULL);
 	}
 
@@ -311,7 +311,7 @@ static gboolean transport_write(struct sipe_transport_purple *transport)
 
 	max_write = purple_circ_buffer_get_max_read(transport->transmit_buffer);
 	if (max_write > 0) {
-		gssize written = transport->gsc ? 
+		gssize written = transport->gsc ?
 			(gssize) purple_ssl_write(transport->gsc,
 						  transport->transmit_buffer->outptr,
 						  max_write) :
