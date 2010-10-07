@@ -71,3 +71,20 @@ void sipe_media_handle_going_offline(struct sipe_media_call_private *call_privat
  */
 gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
 			      struct sipmsg *msg);
+
+/**
+ * Sends a request to mras URI for the credentials to the A/V edge server.
+ * Given @c sipe_core_private must have non-NULL mras_uri. When the valid
+ * response is received, media_relay_username, media_relay_password and
+ * media_relays attributes of the sipe core are filled.
+ *
+ * @param sipe_private (in) SIPE core data.
+ */
+void sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private);
+
+/**
+ * Deallocates the opaque list of media relay structures
+ *
+ * @param list (in) GSList to free
+ */
+void sipe_media_relay_list_free(GSList *list);

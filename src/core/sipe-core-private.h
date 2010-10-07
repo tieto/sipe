@@ -62,6 +62,15 @@ struct sipe_core_private {
 
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
+	/**
+	 *  Provides the necessary information on where we can obtain
+	 *  credentials for the A/V Edge server service.
+	 */
+	gchar *mras_uri;
+	gchar *media_relay_username;
+	gchar *media_relay_password;
+	GSList *media_relays;
+
 
 	/* Group chat */
 	struct sipe_groupchat *groupchat;

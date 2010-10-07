@@ -1566,6 +1566,16 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 			sipe_private->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->focus_factory_uri=%s",
 					sipe_private->focus_factory_uri ? sipe_private->focus_factory_uri : "");
+
+#ifdef HAVE_VV
+			g_free(sipe_private->mras_uri);
+			sipe_private->mras_uri = g_strstrip(sipe_xml_data(sipe_xml_child(node, "mrasUri")));
+			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->mras_uri=%s",
+					sipe_private->mras_uri ? sipe_private->mras_uri : "");
+
+			if (sipe_private->mras_uri)
+					sipe_media_get_av_edge_credentials(sipe_private);
+#endif
 			break;
 		}
 	}

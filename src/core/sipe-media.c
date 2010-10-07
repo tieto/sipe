@@ -25,6 +25,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <glib.h>
 
@@ -41,6 +42,7 @@
 #include "sipe-utils.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
+#include "sipe-xml.h"
 
 struct sipe_media_call_private {
 	struct sipe_media_call public;
@@ -1029,6 +1031,150 @@ void sipe_media_handle_going_offline(struct sipe_media_call_private *call_privat
 	}
 
 	sipe_media_hangup(call_private->sipe_private);
+}
+
+struct sipe_media_relay {
+	gchar		      *hostname;
+	uint		       udp_port;
+	uint		       tcp_port;
+	struct sipe_dns_query *dns_query;
+};
+
+static void
+sipe_media_relay_free(struct sipe_media_relay *relay)
+{
+	g_free(relay->hostname);
+	if (relay->dns_query)
+		sipe_backend_dns_query_cancel(relay->dns_query);
+	g_free(relay);
+}
+
+void
+sipe_media_relay_list_free(GSList *list)
+{
+	for (; list; list = g_slist_delete_link(list, list))
+		sipe_media_relay_free(list->data);
+}
+
+static void
+relay_ip_resolved_cb(struct sipe_media_relay* relay,
+		     const gchar *ip, SIPE_UNUSED_PARAMETER guint port)
+{
+	g_free(relay->hostname);
+	relay->hostname = g_strdup(ip);
+	relay->dns_query = NULL;
+}
+
+static gboolean
+process_get_av_edge_credentials_response(struct sipe_core_private *sipe_private,
+					 struct sipmsg *msg,
+					 SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	g_free(sipe_private->media_relay_username);
+	g_free(sipe_private->media_relay_password);
+	sipe_media_relay_list_free(sipe_private->media_relays);
+	sipe_private->media_relay_username = NULL;
+	sipe_private->media_relay_password = NULL;
+	sipe_private->media_relays = NULL;
+
+	if (msg->response >= 400) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_get_av_edge_credentials_response: SERVICE response is not 200. "
+					 "Failed to obtain A/V Edge credentials.");
+		return FALSE;
+	}
+
+	if (msg->response == 200) {
+		sipe_xml *xn_response = sipe_xml_parse(msg->body, msg->bodylen);
+
+		if (sipe_strequal("OK", sipe_xml_attribute(xn_response, "reasonPhrase"))) {
+			const sipe_xml *xn_credentials = sipe_xml_child(xn_response, "credentialsResponse/credentials");
+			const sipe_xml *xn_relays = sipe_xml_child(xn_response, "credentialsResponse/mediaRelayList");
+			const sipe_xml *item;
+			GSList *relays = NULL;
+
+			item = sipe_xml_child(xn_credentials, "username");
+			sipe_private->media_relay_username = g_strdup(sipe_xml_data(item));
+			item = sipe_xml_child(xn_credentials, "password");
+			sipe_private->media_relay_password = g_strdup(sipe_xml_data(item));
+
+			for (item = sipe_xml_child(xn_relays, "mediaRelay"); item; item = sipe_xml_twin(item)) {
+				struct sipe_media_relay *relay = g_new0(struct sipe_media_relay, 1);
+				const sipe_xml *node;
+
+				node = sipe_xml_child(item, "hostName");
+				relay->hostname = g_strdup(sipe_xml_data(node));
+
+				node = sipe_xml_child(item, "udpPort");
+				relay->udp_port = atoi(sipe_xml_data(node));
+
+				node = sipe_xml_child(item, "tcpPort");
+				relay->tcp_port = atoi(sipe_xml_data(node));
+
+				relays = g_slist_append(relays, relay);
+
+				relay->dns_query = sipe_backend_dns_query_a(
+							relay->hostname,
+							relay->udp_port,
+							(sipe_dns_resolved_cb) relay_ip_resolved_cb,
+							relay);
+
+				SIPE_DEBUG_INFO("Media relay: %s TCP: %d UDP: %d",
+						relay->hostname,
+						relay->tcp_port, relay->udp_port);
+			}
+
+			sipe_private->media_relays = relays;
+		}
+
+		sipe_xml_free(xn_response);
+	}
+
+	return TRUE;
+}
+
+void
+sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private)
+{
+	// TODO: re-request credentials after duration expires?
+	const char CRED_REQUEST_XML[] =
+		"<request requestID=\"%d\" "
+		         "from=\"%s\" "
+			 "version=\"1.0\" "
+			 "to=\"%s\" "
+			 "xmlns=\"http://schemas.microsoft.com/2006/09/sip/mrasp\" "
+			 "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
+			"<credentialsRequest credentialsRequestID=\"%d\">"
+				"<identity>%s</identity>"
+				"<location>internet</location>"
+				"<duration>480</duration>"
+			"</credentialsRequest>"
+		"</request>";
+
+	int request_id = rand();
+	gchar *self;
+	gchar *body;
+
+	if (!sipe_private->mras_uri)
+		return;
+
+	self = sip_uri_self(sipe_private);
+
+	body = g_strdup_printf(
+		CRED_REQUEST_XML,
+		request_id,
+		self,
+		sipe_private->mras_uri,
+		request_id,
+		self);
+	g_free(self);
+
+	sip_transport_service(sipe_private,
+			      sipe_private->mras_uri,
+			      "Content-Type: application/msrtc-media-relay-auth+xml\r\n",
+			      body,
+			      process_get_av_edge_credentials_response);
+
+	g_free(body);
 }
 
 /*
