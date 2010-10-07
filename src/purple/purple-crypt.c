@@ -29,11 +29,10 @@ void sipe_crypt_des(const guchar *key,
 		    const guchar *plaintext, gsize plaintext_length,
 		    guchar *encrypted_text)
 {
-	size_t dummy;
-	size_t p_length = plaintext_length; /* libpurple API makes this necessary :-( */
+	gsize dummy;
 	PurpleCipherContext *context = purple_cipher_context_new_by_name("des", NULL);
 	purple_cipher_context_set_key(context, key);
-	purple_cipher_context_encrypt(context, plaintext, p_length, encrypted_text, &dummy);
+	purple_cipher_context_encrypt(context, plaintext, plaintext_length, encrypted_text, &dummy);
 	purple_cipher_context_destroy(context);
 }
 
@@ -41,12 +40,11 @@ void sipe_crypt_rc4(const guchar *key, gsize key_length,
 		    const guchar *plaintext, gsize plaintext_length,
 		    guchar *encrypted_text)
 {
-	size_t dummy;
-	size_t p_length = plaintext_length; /* libpurple API makes this necessary :-( */
+	gsize dummy;
 	PurpleCipherContext *context = purple_cipher_context_new_by_name("rc4", NULL);
 	purple_cipher_context_set_option(context, "key_len", (gpointer)key_length);
 	purple_cipher_context_set_key(context, key);
-	purple_cipher_context_encrypt(context, plaintext, p_length, encrypted_text, &dummy);
+	purple_cipher_context_encrypt(context, plaintext, plaintext_length, encrypted_text, &dummy);
 	purple_cipher_context_destroy(context);
 }
 
@@ -64,8 +62,7 @@ void sipe_crypt_ft_stream(gpointer context,
 			  const guchar *in, gsize length,
 			  guchar *out)
 {
-	size_t tmp = length; /* libpurple API makes this necessary :-( */
-	purple_cipher_context_encrypt(context, in, tmp, out, NULL);
+	purple_cipher_context_encrypt(context, in, length, out, NULL);
 }
 
 void sipe_crypt_ft_destroy(gpointer context)

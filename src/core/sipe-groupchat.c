@@ -1064,7 +1064,7 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 	} else {
 		/* Add it to the queue but avoid duplicates */
 		if (!g_slist_find_custom(groupchat->join_queue, uri,
-					 (GCompareFunc) g_strcmp0)) {
+					 sipe_strcompare)) {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_core_groupchat_join: URI queued");
 			groupchat->join_queue = g_slist_prepend(groupchat->join_queue,
 								g_strdup(uri));

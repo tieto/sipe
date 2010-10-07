@@ -268,6 +268,24 @@ gboolean sipe_strequal(const gchar *left, const gchar *right);
 gboolean sipe_strcase_equal(const gchar *left, const gchar *right);
 
 /**
+ * Compares two strings
+ *
+ * Unlike strcmp(), this function will not crash if one or both of the
+ * strings are @c NULL.
+ *
+ * Same as g_strcmp0 (defined only for >= 2.16) to maintain
+ * our backward compatibility. The declaration is compatible to
+ * @c GCompareFunc.
+ *
+ * @param a A string
+ * @param b A string to compare with a
+ *
+ * @return negative value if a < b; zero if a = b; positive value if a > b.
+ *
+ */
+gint sipe_strcompare(gconstpointer a, gconstpointer b);
+
+/**
  * Parses a timestamp in ISO8601 format and returns a time_t.
  * Assumes UTC if no timezone specified
  *

@@ -21,7 +21,7 @@ $(DEB_CONFIGURE_SCRIPT):
 	./autogen.sh
 
 binary-post-install/pidgin-sipe::
-	rm debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
+	rm -f debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
 	rm debian/pidgin-sipe/usr/lib/purple-2/libsipe.la
 
 .PHONY: update-debian-control

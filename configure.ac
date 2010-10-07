@@ -60,11 +60,7 @@ AC_CHECK_FUNCS([])
 dnl tell pkgconfig to look in the same prefix where we're installing this to,
 dnl as that is likely where libpurple will be found if it is not in the default
 dnl pkgconfig path
-PREFIX=$ac_default_prefix
-AS_IF([test "x$prefix" != xNONE],
-	[PREFIX=$prefix])
-
-PKG_CONFIG_PATH="$PKG_CONFIG_PATH":"$PREFIX/lib/pkgconfig"
+PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:${libdir}/pkgconfig"
 export PKG_CONFIG_PATH
 
 dnl debug mode
@@ -261,7 +257,13 @@ AS_IF([test "x$enable_purple" != xno],
 void testfunc(unsigned long len)
 {
   PurpleCipherContext *rc4 = NULL;
+  guchar *plaintext = NULL;
+  gsize plaintext_length = 0;
+  guchar *encrypted_text = NULL;
+  gsize dummy;
   purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(len));
+  purple_cipher_context_encrypt(rc4, plaintext, plaintext_length,
+                                encrypted_text, &dummy);
 }
 					],
 					[testfunc(16);]),
@@ -269,7 +271,8 @@ void testfunc(unsigned long len)
 			[AC_MSG_FAILURE([conflicts found.
 
 Check that you have the correct glib/libpurple headers installed for
-your architecture or set PURPLE_CFLAGS to override the system defaults.
+your architecture or set GLIB_CFLAGS/PURPLE_CFLAGS to override the
+system defaults.
 ])
 			])
 
@@ -387,7 +390,7 @@ AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_purple_vv" != xno])
 
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
-LOCALE_CPPFLAGS='-DLOCALEDIR=\"$(prefix)/$(DATADIRNAME)/locale\"'
+LOCALE_CPPFLAGS='-DLOCALEDIR=\"$(datadir)/locale\"'
 AC_SUBST([LOCALE_CPPFLAGS])
 AC_MSG_RESULT([$LOCALE_CPPFLAGS])
 AM_GLIB_GNU_GETTEXT
