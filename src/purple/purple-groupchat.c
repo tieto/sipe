@@ -28,6 +28,7 @@
 
 #include "sipe-common.h"
 
+#include "conversation.h"
 #include "roomlist.h"
 
 #include "sipe-backend.h"
@@ -50,18 +51,46 @@ GList *sipe_purple_chat_info(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
 	return m;
 }
 
+/**
+ * This callback is called for two reasons:
+ *
+ *  a) generate the defaults for the "Add chat..." dialog initiated from the
+ *     roomlist (applies only to group chat)
+ *  b) generate the components for the creation of a PurpleChat object
+ *
+ */
 GHashTable *sipe_purple_chat_info_defaults(PurpleConnection *gc,
 					   const char *chat_name)
 {
-	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
-	GHashTable *uri_map = sipe_public->backend_private->roomlist_map;
-	GHashTable *defaults = g_hash_table_new_full(g_str_hash, g_str_equal,
-						     NULL, g_free);
-	const gchar *uri;
+	GHashTable *defaults = g_hash_table_new(g_str_hash, g_str_equal);
 
-	if ((chat_name != NULL) && (uri_map != NULL) &&
-	    ((uri = g_hash_table_lookup(uri_map, chat_name)) != NULL)) {
-		g_hash_table_insert(defaults, "uri", g_strdup(uri));
+	if (chat_name != NULL) {
+		struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
+		struct sipe_backend_private *purple_private = sipe_public->backend_private;
+		GHashTable *uri_map = purple_private->roomlist_map;
+		const gchar *uri = uri_map != NULL ?
+			g_hash_table_lookup(uri_map, chat_name) :
+			NULL;
+		PurpleConversation *conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_CHAT,
+										 chat_name,
+										 purple_private->account);
+		/* Group Chat rooms have a valid URI */
+		if (uri) {
+			g_hash_table_insert(defaults, "uri", (gpointer)uri);
+		}
+
+		/**
+		 * Remember the PurpleConversation
+		 *
+		 * libpurple API is so brain-dead that we don't receive this
+		 * information when it is known and we need it. Make our life
+		 * easier by remembering it here for later lookup....
+		 */
+		if (conv) {
+			g_hash_table_insert(defaults,
+					    SIPE_PURPLE_COMPONENT_KEY_CONVERSATION,
+					    conv);
+		}
 	}
 
 	return defaults;
@@ -175,7 +204,7 @@ void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
 
 		/* libpurple API only gives us the channel name */
 		g_hash_table_insert(purple_private->roomlist_map,
-				    g_strdup(name), g_strdup(uri)); 
+				    g_strdup(name), g_strdup(uri));
 
 		purple_roomlist_room_add(roomlist, room);
 	}

@@ -22,17 +22,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <time.h>
 #include <errno.h>
 
 #include <glib.h>
 
+#include "blist.h"
 #include "conversation.h"
 #include "server.h"
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-nls.h"
 
 #define _PurpleMessageFlags PurpleMessageFlags
 #include "purple-private.h"
@@ -51,7 +57,7 @@
  * PurpleConversation / PurpleConvChat (sub-type)
  *    This data structure is created by serv_got_join_chat(). It lives as long
  *    as the user doesn't leave the chat or until shutdown.
- *    
+ *
  *    Value does not change when connection is dropped & re-created.
  *    HAS: account (PurpleAccount *)
  *    HAS: chat ID (int), must be unique
@@ -121,6 +127,14 @@
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s) \
 	(PURPLE_CONV_CHAT(((PurpleConversation *)s)))
 
+#define PURPLE_CONV_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) conv->account->gc->proto_data)
+
+static struct sipe_chat_session *sipe_purple_chat_get_session(PurpleConversation *conv)
+{
+	return purple_conversation_get_data(conv,
+					    SIPE_PURPLE_KEY_CHAT_SESSION);
+}
+
 static struct sipe_chat_session *sipe_purple_chat_find(PurpleConnection *gc,
 						       int id)
 {
@@ -132,8 +146,7 @@ static struct sipe_chat_session *sipe_purple_chat_find(PurpleConnection *gc,
 		return NULL;
 	}
 
-	return purple_conversation_get_data(conv,
-					    SIPE_PURPLE_KEY_CHAT_SESSION);
+	return sipe_purple_chat_get_session(conv);
 }
 
 void sipe_purple_chat_setup_rejoin(struct sipe_backend_private *purple_private)
@@ -144,8 +157,7 @@ void sipe_purple_chat_setup_rejoin(struct sipe_backend_private *purple_private)
 		PurpleConversation *conv = entry->data;
 		if (purple_conversation_get_gc(conv) == purple_private->gc)
 			purple_private->rejoin_chats = g_list_prepend(purple_private->rejoin_chats,
-								      purple_conversation_get_data(conv,
-												   SIPE_PURPLE_KEY_CHAT_SESSION));
+								      sipe_purple_chat_get_session(conv));
 		entry = entry->next;
 	}
 }
@@ -183,6 +195,61 @@ int sipe_purple_chat_send(PurpleConnection *gc,
 	if (!session) return -ENOTCONN;
 	sipe_core_chat_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session, what);
 	return 1;
+}
+
+static void sipe_purple_chat_menu_unlock_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+					    PurpleConversation *conv)
+{
+	struct sipe_core_public *sipe_public = PURPLE_CONV_TO_SIPE_CORE_PUBLIC;
+	struct sipe_chat_session *chat_session = sipe_purple_chat_get_session(conv);
+	SIPE_DEBUG_INFO("sipe_purple_chat_menu_lock_cb: %p %p", conv, chat_session);
+	sipe_core_chat_modify_lock(sipe_public, chat_session, FALSE);
+}
+
+static void sipe_purple_chat_menu_lock_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+					  PurpleConversation *conv)
+{
+	struct sipe_core_public *sipe_public = PURPLE_CONV_TO_SIPE_CORE_PUBLIC;
+	struct sipe_chat_session *chat_session = sipe_purple_chat_get_session(conv);
+	SIPE_DEBUG_INFO("sipe_purple_chat_menu_lock_cb: %p %p", conv, chat_session);
+	sipe_core_chat_modify_lock(sipe_public, chat_session, TRUE);
+}
+
+GList *
+sipe_purple_chat_menu(PurpleChat *chat)
+{
+	PurpleConversation *conv = g_hash_table_lookup(chat->components,
+						       SIPE_PURPLE_COMPONENT_KEY_CONVERSATION);
+	GList *menu = NULL;
+
+	if (conv) {
+		PurpleMenuAction *act = NULL;
+
+		SIPE_DEBUG_INFO("sipe_purple_chat_menu: %p", conv);
+
+		switch (sipe_core_chat_lock_status(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+						   sipe_purple_chat_get_session(conv))) {
+		case SIPE_CHAT_LOCK_STATUS_UNLOCKED:
+			act = purple_menu_action_new(_("Lock"),
+						     PURPLE_CALLBACK(sipe_purple_chat_menu_lock_cb),
+						     conv, NULL);
+			break;
+		case SIPE_CHAT_LOCK_STATUS_LOCKED:
+			act = purple_menu_action_new(_("Unlock"),
+						     PURPLE_CALLBACK(sipe_purple_chat_menu_unlock_cb),
+						     conv, NULL);
+			break;
+		default:
+			/* Not allowed */
+			break;
+		}
+
+		if (act)
+			menu = g_list_prepend(menu, act);
+
+	}
+
+	return menu;
 }
 
 void sipe_backend_chat_session_destroy(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *session)
@@ -263,7 +330,7 @@ void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 			 html,
 			 time(NULL));
 }
-						      
+
 void sipe_backend_chat_operator(struct sipe_backend_chat_session *backend_session,
 				const gchar *uri)
 {
@@ -298,7 +365,6 @@ void sipe_backend_chat_rejoin(struct sipe_core_public *sipe_public,
  * Connection re-established: tell core what chats need to be rejoined
  */
 void sipe_backend_chat_rejoin_all(struct sipe_core_public *sipe_public)
-	
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	GList *entry = purple_private->rejoin_chats;

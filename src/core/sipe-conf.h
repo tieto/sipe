@@ -76,16 +76,6 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 			   const gchar* who);
 
 /** 
- * Modify Conference Lock.
- * Sends request to Focus.
- * INFO method is a carrier of application/cccp+xml
- */				   
-void
-sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
-				 struct sip_session *session,
-				 const gboolean locked);
-				 
-/** 
  * Ejects user from conference.
  * Sends request to Focus.
  * INFO method is a carrier of application/cccp+xml

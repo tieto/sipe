@@ -139,23 +139,6 @@ sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 }
 
 struct sip_session *
-sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
-			        const gchar *name)
-{
-	if (sipe_private == NULL || name == NULL) {
-		return NULL;
-	}
-
-	SIPE_SESSION_FOREACH {
-		if (session->chat_session &&
-		    !g_strcasecmp(name, session->chat_session->title)) {
-			return session;
-		}
-	} SIPE_SESSION_FOREACH_END;
-	return NULL;
-}
-
-struct sip_session *
 sipe_session_find_conference(struct sipe_core_private *sipe_private,
 			     const gchar *focus_uri)
 {

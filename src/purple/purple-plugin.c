@@ -227,7 +227,7 @@ static GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
 	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
 		return sipe_buddy_menu((PurpleBuddy *) node);
 	} else if(PURPLE_BLIST_NODE_IS_CHAT(node)) {
-		return sipe_chat_menu((PurpleChat *)node);
+		return sipe_purple_chat_menu((PurpleChat *)node);
 	} else {
 		return NULL;
 	}

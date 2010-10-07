@@ -6286,7 +6286,7 @@ sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy,
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: buddy->name=%s", buddy->name);
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: chat_title=%s", chat_session->title);
 
-	session = sipe_session_find_chat_by_title(sipe_private, chat_session->title);
+	session = sipe_session_find_chat(sipe_private, chat_session);
 
 	sipe_conf_modify_user_role(sipe_private, session, buddy->name);
 }
@@ -6304,7 +6304,7 @@ sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy,
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: buddy->name=%s", buddy->name);
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: chat_title=%s", chat_session->title);
 
-	session = sipe_session_find_chat_by_title(sipe_private, chat_session->title);
+	session = sipe_session_find_chat(sipe_private, chat_session);
 
 	sipe_conf_delete_user(sipe_private, session, buddy->name);
 }
@@ -6319,7 +6319,7 @@ sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy,
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: buddy->name=%s", buddy->name);
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: chat_title=%s", chat_session->title);
 
-	session = sipe_session_find_chat_by_title(sipe_private, chat_session->title);
+	session = sipe_session_find_chat(sipe_private, chat_session);
 
 	sipe_invite_to_chat(sipe_private, session, buddy->name);
 }
@@ -6848,69 +6848,6 @@ sipe_get_access_control_menu(struct sipe_core_private *sipe_private,
 	menu_access_levels = g_list_append(menu_access_levels, act);
 
 	return menu_access_levels;
-}
-
-static void
-sipe_conf_modify_lock(PurpleChat *chat, gboolean locked)
-{
-	struct sipe_core_private *sipe_private = PURPLE_CHAT_TO_SIPE_CORE_PRIVATE;
-	struct sip_session *session;
-
-	session = sipe_session_find_chat_by_title(sipe_private,
-						  (gchar *)g_hash_table_lookup(chat->components, "channel"));
-	sipe_conf_modify_conference_lock(sipe_private, session, locked);
-}
-
-static void
-sipe_chat_menu_unlock_cb(PurpleChat *chat)
-{
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_chat_menu_unlock_cb() called");
-	sipe_conf_modify_lock(chat, FALSE);
-}
-
-static void
-sipe_chat_menu_lock_cb(PurpleChat *chat)
-{
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_chat_menu_lock_cb() called");
-	sipe_conf_modify_lock(chat, TRUE);
-}
-
-GList *
-sipe_chat_menu(PurpleChat *chat)
-{
-	PurpleMenuAction *act;
-	GList *menu = NULL;
-	struct sipe_core_private *sipe_private = PURPLE_CHAT_TO_SIPE_CORE_PRIVATE;
-	struct sip_session *session;
-	gchar *self;
-
-	session = sipe_session_find_chat_by_title(sipe_private,
-						  (gchar *)g_hash_table_lookup(chat->components, "channel"));
-	if (!session) return NULL;
-
-	self = sip_uri_self(sipe_private);
-
-	if (session->chat_session &&
-	    (session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE) &&
-	    sipe_backend_chat_is_operator(session->chat_session->backend, self))
-	{
-		if (session->locked) {
-			act = purple_menu_action_new(_("Unlock"),
-						     PURPLE_CALLBACK(sipe_chat_menu_unlock_cb),
-						     NULL, NULL);
-			menu = g_list_prepend(menu, act);
-		} else {
-			act = purple_menu_action_new(_("Lock"),
-						     PURPLE_CALLBACK(sipe_chat_menu_lock_cb),
-						     NULL, NULL);
-			menu = g_list_prepend(menu, act);
-		}
-	}
-
-	menu = g_list_reverse(menu);
-
-	g_free(self);
-	return menu;
 }
 
 static gboolean

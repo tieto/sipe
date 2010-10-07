@@ -20,5 +20,6 @@ Call Control:
 
 Group Chat:
         - channel management: add, delete
+        - (?) lock/unlock channel (is this possible?)
         - file sharing: up & downloading from web server
         - ??? (unknown as we don't have XCCOS protocol specification)

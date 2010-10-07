@@ -276,12 +276,30 @@ void sipe_core_chat_rejoin(struct sipe_core_public *sipe_public,
 void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
 			  struct sipe_chat_session *chat_session);
 
-/*
+/**
  * Send message to chat
  */
 void sipe_core_chat_send(struct sipe_core_public *sipe_public,
 			 struct sipe_chat_session *chat_session,
 			 const char *what);
+
+/**
+ * Check chat lock status
+ */
+typedef enum {
+	SIPE_CHAT_LOCK_STATUS_NOT_ALLOWED = 0,
+	SIPE_CHAT_LOCK_STATUS_UNLOCKED,
+	SIPE_CHAT_LOCK_STATUS_LOCKED
+} sipe_chat_lock_status;
+sipe_chat_lock_status sipe_core_chat_lock_status(struct sipe_core_public *sipe_public,
+						 struct sipe_chat_session *chat_session);
+
+/**
+ * Lock chat
+ */
+void sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
+				struct sipe_chat_session *chat_session,
+				const gboolean locked);
 
 /* media */
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,

@@ -28,7 +28,6 @@ struct sipe_core_public;
 void sipe_search_contact_with_cb(PurpleConnection *gc,
 				 PurpleRequestFields *fields);
 GList *sipe_buddy_menu(PurpleBuddy *buddy);
-GList *sipe_chat_menu(PurpleChat *chat);
 void sipe_purple_setup(struct sipe_core_public *sipe_public,
 		       PurpleConnection *gc);
 int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
@@ -51,5 +50,4 @@ void sipe_remove_group(PurpleConnection *gc, PurpleGroup *group);
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE ((struct sipe_core_private *)account->gc->proto_data)
 #define PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE   ((struct sipe_core_private *)buddy->account->gc->proto_data)
-#define PURPLE_CHAT_TO_SIPE_CORE_PRIVATE    ((struct sipe_core_private *)chat->account->gc->proto_data)
 #define PURPLE_GC_TO_SIPE_CORE_PRIVATE      ((struct sipe_core_private *)gc->proto_data)

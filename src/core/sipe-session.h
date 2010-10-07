@@ -167,18 +167,6 @@ sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 				 const gchar *callid);
 
 /**
- * Find chat session by name
- *
- * @param sipe_private (in) SIPE core data. May be NULL
- * @param name (in) Chat name. May be NULL
- *
- * @return pointer to session or NULL
- */
-struct sip_session *
-sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
-			        const gchar *name);
-
-/**
  * Find Conference session
  *
  * @param sipe_private (in) SIPE core data. May be NULL

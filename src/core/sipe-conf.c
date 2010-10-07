@@ -363,16 +363,55 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 	g_free(hdr);
 }
 
-/** Modify Conference Lock */
-void
-sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
-				 struct sip_session *session,
-				 const gboolean locked)
+/**
+ * Check conference lock status
+ */
+sipe_chat_lock_status sipe_core_chat_lock_status(struct sipe_core_public *sipe_public,
+						 struct sipe_chat_session *chat_session)
 {
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	sipe_chat_lock_status status = SIPE_CHAT_LOCK_STATUS_NOT_ALLOWED;
+
+	if (chat_session &&
+	    (chat_session->type == SIPE_CHAT_TYPE_CONFERENCE)) {
+		struct sip_session *session = sipe_session_find_chat(sipe_private,
+								     chat_session);
+		if (session) {
+			gchar *self = sip_uri_self(sipe_private);
+
+			/* Only operators are allowed to change the lock status */
+			if (sipe_backend_chat_is_operator(chat_session->backend, self)) {
+				status = session->locked ?
+					SIPE_CHAT_LOCK_STATUS_LOCKED :
+					SIPE_CHAT_LOCK_STATUS_UNLOCKED;
+			}
+
+			g_free(self);
+		}
+	}
+
+	return(status);
+}
+
+/**
+ * Modify Conference Lock
+ * Sends request to Focus.
+ * INFO method is a carrier of application/cccp+xml
+ */
+void
+sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
+			   struct sipe_chat_session *chat_session,
+			   const gboolean locked)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 	gchar *self;
 
+	struct sip_session *session = sipe_session_find_chat(sipe_private,
+							     chat_session);
+
+	if (!session) return;
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_modify_conference_lock: no dialog with focus, exiting.");
 		return;

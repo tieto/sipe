@@ -23,6 +23,7 @@
 /* Forward declarations */
 struct sipe_core_public;
 struct _PurpleAccount;
+struct _PurpleChat;
 struct _PurpleConnection;
 struct _PurpleRoomlist;
 struct _PurpleSrvQueryData;
@@ -65,6 +66,8 @@ struct _PurpleXfer *sipe_purple_ft_new_xfer(struct _PurpleConnection *gc,
 					    const char *who);
 
 /* libpurple chat callbacks */
+#define SIPE_PURPLE_COMPONENT_KEY_CONVERSATION "_conv"
+
 void sipe_purple_chat_setup_rejoin(struct sipe_backend_private *purple_private);
 void sipe_purple_chat_destroy_rejoin(struct sipe_backend_private *purple_private);
 void sipe_purple_chat_invite(struct _PurpleConnection *gc,
@@ -76,6 +79,7 @@ int sipe_purple_chat_send(struct _PurpleConnection *gc,
 			  int id,
 			  const char *what,
 			  _PurpleMessageFlags flags);
+GList *sipe_purple_chat_menu(struct _PurpleChat *chat);
 
 /* libpurple chat room callbacks */
 GList *sipe_purple_chat_info(struct _PurpleConnection *gc);
