@@ -40,7 +40,7 @@ struct sipe_chat_session {
 	 *
 	 * 2007 Group chat:      channel URI
 	 * 2007 Conference:      focus URI
-	 * 2005 multiparty chat: Call-Id of the conversation
+	 * 2005 multiparty chat: roster manager SIP URI
 	 */
 	gchar *id;
 
@@ -92,13 +92,10 @@ sipe_process_pending_invite_queue(struct sipe_core_private *sipe_private,
 				  struct sip_session *session);
 
 /**
- * Invite @who to chat
+ * Set roster manager URI for a multiparty chat
  *
- * @param sipe_private SIPE core private data
  * @param session SIPE session for chat
- * @param who URI whom to invite to chat.
+ * @param roster_manager New roster manager URI or NULL
  */
-void
-sipe_invite_to_chat(struct sipe_core_private *sipe_private,
-		    struct sip_session *session,
-		    const gchar *who);
+void sipe_chat_set_roster_manager(struct sip_session *session,
+				  const gchar *roster_manager);

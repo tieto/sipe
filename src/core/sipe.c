@@ -3387,6 +3387,9 @@ sipe_invite(struct sipe_core_private *sipe_private,
 	gchar *roster_manager;
 	gchar *end_points;
 	gchar *referred_by_str;
+	gboolean is_multiparty =
+		session->chat_session &&
+		(session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY);
 	struct sip_dialog *dialog = sipe_dialog_find(session, who);
 
 	if (dialog && dialog->is_established) {
@@ -3473,10 +3476,10 @@ sipe_invite(struct sipe_core_private *sipe_private,
 		"%s"
 		"Contact: %s\r\n%s"
 		"Content-Type: application/sdp\r\n",
-		sipe_strcase_equal(session->roster_manager, self) ? roster_manager : "",
+		is_multiparty && sipe_strcase_equal(session->chat_session->id, self) ? roster_manager : "",
 		referred_by_str,
 		is_triggered ? "TriggeredInvite: TRUE\r\n" : "",
-		is_triggered || (session->chat_session && (session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY)) ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
+		is_triggered || is_multiparty ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
 		contact,
 		ms_text_format ? ms_text_format : "");
 	g_free(ms_text_format);
@@ -6272,13 +6275,12 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		session = sipe_session_add_chat(sipe_private,
 						NULL,
 						TRUE,
-						NULL);
-		session->roster_manager = self;
-
+						self);
 		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
 									  session->chat_session,
 									  session->chat_session->title,
 									  self);
+		g_free(self);
 
 		sipe_invite(sipe_private, session, buddy->name, NULL, NULL, NULL, FALSE);
 	}

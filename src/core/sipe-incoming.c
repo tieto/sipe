@@ -84,10 +84,11 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	if (session->roster_manager && !g_strcasecmp(from, session->roster_manager)) {
-		g_free(session->roster_manager);
-		session->roster_manager = NULL;
-	}
+	if (session->chat_session &&
+	    (session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY) &&
+	    session->chat_session->id &&
+	    !g_strcasecmp(from, session->chat_session->id))
+		sipe_chat_set_roster_manager(session, NULL);
 
 	/* This what BYE is essentially for - terminating dialog */
 	sipe_dialog_remove_3(session, dialog);
@@ -167,9 +168,9 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 			g_free(body);
 		} else if (xn_set_rm) {
 			gchar *body;
-			const char *rm = sipe_xml_attribute(xn_set_rm, "uri");
-			g_free(session->roster_manager);
-			session->roster_manager = g_strdup(rm);
+
+			sipe_chat_set_roster_manager(session,
+						     sipe_xml_attribute(xn_set_rm, "uri"));
 
 			body = g_strdup_printf(
 				"<?xml version=\"1.0\"?>\r\n"
@@ -277,6 +278,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	const gchar *content_type   = sipmsg_find_header(msg, "Content-Type");
 	GSList *end_points = NULL;
 	struct sip_session *session;
+	struct sip_dialog *dialog;
 	const gchar *ms_text_format;
 
 #ifdef HAVE_VV
@@ -326,48 +328,61 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		is_multiparty = TRUE;
 	}
 
+	/* Multiparty session */
 	session = sipe_session_find_chat_by_callid(sipe_private, callid);
-	/* Convert to multiparty */
-	if (session && is_multiparty && !session->chat_session) {
-		g_free(session->with);
-		session->with = NULL;
-		was_multiparty = FALSE;
-		session->chat_session = sipe_chat_create_session(SIPE_CHAT_TYPE_MULTIPARTY,
-								 callid,
-								 sipe_chat_get_name());
-	}
+	if (is_multiparty) {
 
-	if (!session && is_multiparty) {
-		session = sipe_session_find_chat_by_callid(sipe_private,
-							   callid);
-		if (!session) {
+		if (session) {
+			if (session->chat_session) {
+				/* Update roster manager for existing multiparty session */
+				if (roster_manager)
+					sipe_chat_set_roster_manager(session, roster_manager);
+
+			} else {
+				gchar *chat_title = sipe_chat_get_name();
+
+				/* Convert IM session to multiparty session */
+				g_free(session->with);
+				session->with = NULL;
+				was_multiparty = FALSE;
+				session->chat_session = sipe_chat_create_session(SIPE_CHAT_TYPE_MULTIPARTY,
+										 roster_manager,
+										 chat_title);
+
+				g_free(chat_title);
+			}
+		} else {
+			/* New multiparty session */
 			session = sipe_session_add_chat(sipe_private,
 							NULL,
 							TRUE,
-							callid);
-			session->callid = g_strdup(callid);
+							roster_manager);
+		}
+
+		/* Create chat */
+		if (!session->chat_session->backend) {
+			gchar *self = sip_uri_self(sipe_private);
+			session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+										  session->chat_session,
+										  session->chat_session->title,
+										  self);
+			g_free(self);
 		}
 	}
+
 	/* IM session */
 	from = parse_from(sipmsg_find_header(msg, "From"));
-	if (!session) {
+	if (!session)
 		session = sipe_session_find_or_add_im(sipe_private, from);
-	}
 
-	if (session) {
-		g_free(session->callid);
-		session->callid = g_strdup(callid);
-
-		if (roster_manager) {
-			session->roster_manager = g_strdup(roster_manager);
-		}
-	}
+	/* session is now initialized */
+	g_free(session->callid);
+	session->callid = g_strdup(callid);
 
 	if (is_multiparty && end_points) {
 		gchar *to = parse_from(sipmsg_find_header(msg, "To"));
 		GSList *entry = end_points;
 		while (entry) {
-			struct sip_dialog *dialog;
 			struct sipendpoint *end_point = entry->data;
 			entry = entry->next;
 
@@ -410,46 +425,25 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		g_slist_free(end_points);
 	}
 
-	if (session) {
-		struct sip_dialog *dialog = sipe_dialog_find(session, from);
-		if (dialog) {
-			SIPE_DEBUG_INFO_NOFORMAT("process_incoming_invite, session already has dialog!");
-			sipe_dialog_parse_routes(dialog, msg, FALSE);
-		} else {
-			dialog = sipe_dialog_add(session);
-
-			dialog->callid = g_strdup(session->callid);
-			dialog->with = g_strdup(from);
-			sipe_dialog_parse(dialog, msg, FALSE);
-
-			if (!dialog->ourtag) {
-				dialog->ourtag = newTag;
-				newTag = NULL;
-			}
-
-			just_joined = TRUE;
-		}
+	dialog = sipe_dialog_find(session, from);
+	if (dialog) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_invite, session already has dialog!");
+		sipe_dialog_parse_routes(dialog, msg, FALSE);
 	} else {
-		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_invite, failed to find or create IM session");
+		dialog = sipe_dialog_add(session);
+
+		dialog->callid = g_strdup(session->callid);
+		dialog->with = g_strdup(from);
+		sipe_dialog_parse(dialog, msg, FALSE);
+
+		if (!dialog->ourtag) {
+			dialog->ourtag = newTag;
+			newTag = NULL;
+		}
+
+		just_joined = TRUE;
 	}
 	g_free(newTag);
-
-	if (is_multiparty && !session->chat_session) {
-		gchar *self = sip_uri_self(sipe_private);
-
-		gchar *chat_title = sipe_chat_get_name();
-		session->chat_session = sipe_chat_create_session(SIPE_CHAT_TYPE_MULTIPARTY,
-								 callid,
-								 chat_title);
-		g_free(chat_title);
-
-		/* create chat */
-		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-									  session->chat_session,
-									  session->chat_session->title,
-									  self);
-		g_free(self);
-	}
 
 	if (is_multiparty && !was_multiparty) {
 		/* add current IM counterparty to chat */
@@ -482,11 +476,10 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 				gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
 				if (tmp) {
 					gsize len;
-					struct sip_dialog *dialog = sipe_dialog_find(session, from);
 					gchar *body = (gchar *) g_base64_decode(tmp, &len);
-
 					GSList *parsed_body = sipe_ft_parse_msg_body(body);
 
+					dialog = sipe_dialog_find(session, from);
 					sipe_process_incoming_x_msmsgsinvite(sipe_private, dialog, parsed_body);
 					sipe_utils_nameval_free(parsed_body);
 					sipmsg_add_header(msg, "Supported", "ms-text-format"); /* accepts received message */
@@ -691,7 +684,10 @@ void process_incoming_refer(struct sipe_core_private *sipe_private,
 	session = sipe_session_find_chat_by_callid(sipe_private, callid);
 	dialog = sipe_dialog_find(session, from);
 
-	if (!session || !dialog || !session->roster_manager || !sipe_strcase_equal(session->roster_manager, self)) {
+	if (!session || !dialog || !session->chat_session ||
+	    (session->chat_session->type != SIPE_CHAT_TYPE_MULTIPARTY) ||
+	    !session->chat_session->id ||
+	    !sipe_strcase_equal(session->chat_session->id, self)) {
 		sip_transport_response(sipe_private, msg, 500, "Server Internal Error", NULL);
 	} else {
 		sip_transport_response(sipe_private, msg, 202, "Accepted", NULL);

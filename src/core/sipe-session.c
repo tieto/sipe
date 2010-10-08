@@ -60,7 +60,7 @@ sipe_session_add_chat(struct sipe_core_private *sipe_private,
 		sipe_chat_create_session(multiparty ?
 					 SIPE_CHAT_TYPE_MULTIPARTY :
 					 SIPE_CHAT_TYPE_CONFERENCE,
-					 id ? id : session->callid,
+					 id,
 					 sipe_chat_get_name());
 	session->unconfirmed_messages = g_hash_table_new_full(
 		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
@@ -228,7 +228,6 @@ sipe_session_remove(struct sipe_core_private *sipe_private,
 
 	g_free(session->with);
 	g_free(session->callid);
-	g_free(session->roster_manager);
 	g_free(session->im_mcu_uri);
 	g_free(session->subject);
 	g_free(session);

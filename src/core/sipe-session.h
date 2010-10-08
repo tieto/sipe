@@ -55,8 +55,6 @@ struct sip_session {
 	 */
 	/** Call-Id identifying the conversation */
 	gchar *callid; /* For multiparty conversations */
-	/** Roster Manager URI */
-	gchar *roster_manager;
 	int bid;
 	gboolean is_voting_in_progress;
 	GSList *pending_invite_queue;
@@ -106,8 +104,7 @@ struct queued_message {
  * @param sipe_private (in) SIPE core data. May be NULL
  * @param chat_session (in) non-NULL to rejoin existing chat
  * @param multiparty   (in) multiparty or conference
- * @param id           (in) chat session identifier.
- *                          Maybe NULL for rejoin or new multiparty chat.
+ * @param id           (in) new chat session identifier (ignored for rejoin).
  *
  * @return pointer to new session
  */
