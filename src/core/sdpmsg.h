@@ -28,6 +28,7 @@ struct sdpmsg {
 
 struct sdpmedia {
 	gchar		*name;
+	gchar		*ip;
 	guint		 port;
 
 	GSList		*attributes;

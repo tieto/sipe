@@ -90,8 +90,8 @@ endif
 
 if SIPE_WITH_VV
 libsipe_backend_la_SOURCES += purple-media.c
-libsipe_backend_la_CFLAGS  += $(NICE_CFLAGS)
-libsipe_la_LIBADD          += $(NICE_LIBS)
+libsipe_backend_la_CFLAGS  += $(NICE_CFLAGS) $(GSTREAMER_CFLAGS) 
+libsipe_la_LIBADD          += $(NICE_LIBS) $(GSTREAMER_LIBS)
 endif
 
 TESTS = $(check_PROGRAMS)

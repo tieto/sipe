@@ -449,6 +449,9 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 					break;
 				case SIPE_CANDIDATE_TYPE_RELAY:
 					type = "relay";
+					related = g_strdup_printf("raddr %s rport %d ",
+								  c->ip,
+								  c->port);
 					break;
 				case SIPE_CANDIDATE_TYPE_SRFLX:
 					type = "srflx";
@@ -651,6 +654,7 @@ sdpmedia_free(struct sdpmedia *media)
 		GSList *item;
 
 		g_free(media->name);
+		g_free(media->ip);
 
 		sipe_utils_nameval_free(media->attributes);
 

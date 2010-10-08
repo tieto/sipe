@@ -290,6 +290,7 @@ typedef enum {
 } SipeIceVersion;
 
 typedef enum {
+	SIPE_CANDIDATE_TYPE_ANY,
 	SIPE_CANDIDATE_TYPE_HOST,
 	SIPE_CANDIDATE_TYPE_RELAY,
 	SIPE_CANDIDATE_TYPE_SRFLX,
@@ -317,6 +318,7 @@ struct sipe_backend_media;
 struct sipe_backend_codec;
 struct sipe_backend_candidate;
 struct sipe_backend_stream;
+struct sipe_backend_media_relays;
 
 struct sipe_media_call {
 	struct sipe_backend_media *backend_private;
@@ -333,18 +335,32 @@ struct sipe_media_call {
 			       struct sipe_backend_media *,gboolean local);
 };
 
+struct sipe_media_relay {
+	gchar		      *hostname;
+	guint		       udp_port;
+	guint		       tcp_port;
+	struct sipe_dns_query *dns_query;
+};
+
 /* Media handling */
 struct sipe_backend_media *sipe_backend_media_new(struct sipe_core_public *sipe_public,
 						  struct sipe_media_call *call,
 						  const gchar *participant,
 						  gboolean initiator);
 void sipe_backend_media_free(struct sipe_backend_media *media);
+
+struct sipe_backend_media_relays * sipe_backend_media_relays_convert(GSList *media_relays,
+								     gchar *username,
+								     gchar *password);
+void sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays);
+
 struct sipe_backend_stream *sipe_backend_media_add_stream(struct sipe_backend_media *media,
 							  const gchar *id,
 							  const gchar *participant,
 							  SipeMediaType type,
 							  SipeIceVersion ice_version,
-							  gboolean initiator);
+							  gboolean initiator,
+							  struct sipe_backend_media_relays *media_relays);
 void sipe_backend_media_remove_stream(struct sipe_backend_media *media,
 				      struct sipe_backend_stream *stream);
 GSList *sipe_backend_media_get_streams(struct sipe_backend_media *media);
@@ -398,7 +414,9 @@ struct sipe_backend_candidate * sipe_backend_candidate_new(const gchar *foundati
 							   SipeComponentType component,
 							   SipeCandidateType type,
 							   SipeNetworkProtocol proto,
-							   const gchar *ip, guint port);
+							   const gchar *ip, guint port,
+							   const gchar *username,
+							   const gchar *password);
 void sipe_backend_candidate_free(struct sipe_backend_candidate *candidate);
 /**
  * @return user name. Will be g_free'd() by the core.
@@ -427,9 +445,6 @@ void sipe_backend_candidate_set_priority(struct sipe_backend_candidate *candidat
 SipeComponentType sipe_backend_candidate_get_component_type(struct sipe_backend_candidate *candidate);
 SipeCandidateType sipe_backend_candidate_get_type(struct sipe_backend_candidate *candidate);
 SipeNetworkProtocol sipe_backend_candidate_get_protocol(struct sipe_backend_candidate *candidate);
-void sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *candidate,
-						 const gchar *username,
-						 const gchar *password);
 GList* sipe_backend_get_local_candidates(struct sipe_backend_media *media,
 					 struct sipe_backend_stream *stream);
 void sipe_backend_media_accept(struct sipe_backend_media *media, gboolean local);

@@ -26,6 +26,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <gst/gststructure.h>
+#include <gst/gstvalue.h>
+
 #include "sipe-common.h"
 
 #include "mediamanager.h"
@@ -234,13 +237,51 @@ ensure_codecs_conf()
 	g_free(filename);
 }
 
+struct sipe_backend_media_relays *
+sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *password)
+{
+	GValueArray *relay_info = g_value_array_new(0);
+
+	for (; media_relays; media_relays = media_relays->next) {
+		struct sipe_media_relay *relay = media_relays->data;
+		GValue value;
+		GstStructure *gst_relay_info = gst_structure_new("relay-info",
+				"ip", G_TYPE_STRING, relay->hostname,
+				"port", G_TYPE_UINT, relay->udp_port,
+				"username", G_TYPE_STRING, username,
+				"password", G_TYPE_STRING, password,
+				NULL);
+
+		if (!gst_relay_info) {
+			g_value_array_free(relay_info);
+			return NULL;
+		}
+
+		memset(&value, 0, sizeof(GValue));
+		g_value_init(&value, GST_TYPE_STRUCTURE);
+		gst_value_set_structure(&value, gst_relay_info);
+
+		relay_info = g_value_array_append(relay_info, &value);
+		gst_structure_free(gst_relay_info);
+	}
+
+	return (struct sipe_backend_media_relays *)relay_info;
+}
+
+void
+sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
+{
+	g_value_array_free((GValueArray *)media_relays);
+}
+
 struct sipe_backend_stream *
 sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			      const gchar *id,
 			      const gchar *participant,
 			      SipeMediaType type,
 			      SipeIceVersion ice_version,
-			      gboolean initiator)
+			      gboolean initiator,
+			      struct sipe_backend_media_relays *media_relays)
 {
 	struct sipe_backend_stream *stream = NULL;
 	PurpleMediaSessionType prpl_type = sipe_media_to_purple(type);
@@ -250,15 +291,23 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 
 	if (ice_version != SIPE_ICE_NO_ICE) {
 		transmitter = "nice";
-		params_cnt = 1;
+		params_cnt = 2;
 
 		params = g_new0(GParameter, params_cnt);
+
 		params[0].name = "compatibility-mode";
 		g_value_init(&params[0].value, G_TYPE_UINT);
 		g_value_set_uint(&params[0].value,
 				 ice_version == SIPE_ICE_DRAFT_6 ?
 				 NICE_COMPATIBILITY_OC2007 :
 				 NICE_COMPATIBILITY_OC2007R2);
+
+		if (media_relays) {
+			params[1].name = "relay-info";
+			g_value_init(&params[1].value, G_TYPE_VALUE_ARRAY);
+			g_value_set_boxed(&params[1].value, media_relays);
+		} else
+			--params_cnt;
 	} else {
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
@@ -476,15 +525,27 @@ struct sipe_backend_candidate *
 sipe_backend_candidate_new(const gchar *foundation,
 			   SipeComponentType component,
 			   SipeCandidateType type, SipeNetworkProtocol proto,
-			   const gchar *ip, guint port)
+			   const gchar *ip, guint port,
+			   const gchar *username,
+			   const gchar *password)
 {
-	return (struct sipe_backend_candidate *)purple_media_candidate_new(
-		foundation,
+	PurpleMediaCandidate *c = purple_media_candidate_new(
+		/* Libnice and Farsight rely on non-NULL foundation to
+		 * distinguish between candidates of a component. When NULL
+		 * foundation is passed (ie. ICE draft 6 does not use foudation),
+		 * use username instead. If no foundation is provided, Farsight
+		 * may signal an active candidate different from the one actually
+		 * in use. See Farsight's agent_new_selected_pair() in
+		 * fs-nice-stream-transmitter.h where first candidate in the
+		 * remote list is always selected when no foundation. */
+		foundation ? foundation : username,
 		component,
 		sipe_candidate_type_to_purple(type),
 		sipe_network_protocol_to_purple(proto),
 		ip,
 		port);
+	g_object_set(c, "username", username, "password", password, NULL);
+	return (struct sipe_backend_candidate *)c;
 }
 
 void
@@ -573,14 +634,6 @@ sipe_backend_candidate_get_protocol(struct sipe_backend_candidate *candidate)
 	PurpleMediaNetworkProtocol proto =
 		purple_media_candidate_get_protocol((PurpleMediaCandidate*)candidate);
 	return purple_network_protocol_to_sipe(proto);
-}
-
-void
-sipe_backend_candidate_set_username_and_pwd(struct sipe_backend_candidate *candidate,
-					    const gchar *username,
-					    const gchar *password)
-{
-	g_object_set(candidate, "username", username, "password", password, NULL);
 }
 
 static void

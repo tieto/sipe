@@ -124,6 +124,30 @@ backend_candidates_to_sdpcandidate(GList *candidates)
 	return result;
 }
 
+static void
+get_stream_ip_and_ports(GSList *candidates,
+			gchar **ip, guint *rtp_port, guint *rtcp_port,
+			SipeCandidateType type)
+{
+	*rtp_port = 0;
+	*rtcp_port = 0;
+
+	for (; candidates; candidates = candidates->next) {
+		struct sdpcandidate *candidate = candidates->data;
+
+		if (type == SIPE_CANDIDATE_TYPE_ANY || candidate->type == type) {
+			if (candidate->component == SIPE_COMPONENT_RTP) {
+				*rtp_port = candidate->port;
+				*ip = g_strdup(candidate->ip);
+			} else if (candidate->component == SIPE_COMPONENT_RTCP)
+				*rtcp_port = candidate->port;
+		}
+
+		if (*rtp_port != 0 && *rtcp_port != 0)
+			return;
+	}
+}
+
 static struct sdpmedia *
 backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 			   struct sipe_backend_stream *backend_stream)
@@ -136,7 +160,6 @@ backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 	GSList *attributes = NULL;
 	GList *candidates;
 	GList *i;
-	GSList *j;
 
 	media->name = g_strdup(sipe_backend_stream_get_id(backend_stream));
 
@@ -188,15 +211,12 @@ backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 
 	sipe_media_candidate_list_free(candidates);
 
-	for (j = media->candidates; j; j = j->next) {
-		struct sdpcandidate *candidate = j->data;
-
-		if (candidate->type == SIPE_CANDIDATE_TYPE_HOST) {
-			if (candidate->component == SIPE_COMPONENT_RTP)
-				media->port = candidate->port;
-			else if (candidate->component == SIPE_COMPONENT_RTCP)
-				rtcp_port = candidate->port;
-		}
+	get_stream_ip_and_ports(media->candidates, &media->ip, &media->port,
+				&rtcp_port, SIPE_CANDIDATE_TYPE_HOST);
+	// No usable HOST candidates, use any candidate
+	if (media->ip == NULL && media->candidates) {
+		get_stream_ip_and_ports(media->candidates, &media->ip, &media->port,
+					&rtcp_port, SIPE_CANDIDATE_TYPE_ANY);
 	}
 
 	if (sipe_backend_stream_is_held(backend_stream))
@@ -231,10 +251,12 @@ sipe_media_to_sdpmsg(struct sipe_backend_media *backend_media, SipeIceVersion ic
 		struct sdpmedia *media;
 		media = backend_stream_to_sdpmedia(backend_media, streams->data);
 		msg->media = g_slist_append(msg->media, media);
+
+		if (msg->ip == NULL)
+			msg->ip = g_strdup(media->ip);
 	}
 
 	msg->ice_version = ice_version;
-	msg->ip = g_strdup(sipe_utils_get_suitable_local_ip(-1));
 
 	return msg;
 }
@@ -419,12 +441,10 @@ update_remote_media(struct sipe_media_call_private* call_private,
 						       c->type,
 						       c->protocol,
 						       c->ip,
-						       c->port);
+						       c->port,
+						       c->username,
+						       c->password);
 		sipe_backend_candidate_set_priority(candidate, c->priority);
-
-		sipe_backend_candidate_set_username_and_pwd(candidate,
-							    c->username,
-							    c->password);
 
 		backend_candidates = g_list_append(backend_candidates, candidate);
 	}
@@ -651,6 +671,7 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 	struct sipe_media_call_private *call_private;
 	struct sipe_backend_media *backend_media;
 	struct sipe_backend_media *backend_media_legacy;
+	struct sipe_backend_media_relays *backend_media_relays;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
@@ -669,9 +690,15 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 
 	backend_media = call_private->public.backend_private;
 
+	backend_media_relays =
+		sipe_backend_media_relays_convert(sipe_private->media_relays,
+						  sipe_private->media_relay_username,
+						  sipe_private->media_relay_password);
+
 	if (!sipe_backend_media_add_stream(backend_media,
 					   "audio", with, SIPE_MEDIA_AUDIO,
-					   SIPE_ICE_RFC_5245, TRUE)) {
+					   SIPE_ICE_RFC_5245, TRUE,
+					   backend_media_relays)) {
 		sipe_backend_notify_error(_("Error occured"),
 					  _("Error creating audio stream"));
 		sipe_media_call_free(call_private);
@@ -681,7 +708,8 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 	if (   with_video
 	    && !sipe_backend_media_add_stream(backend_media,
 			    	    	      "video", with, SIPE_MEDIA_VIDEO,
-			    	    	      SIPE_ICE_RFC_5245, TRUE)) {
+			    	    	      SIPE_ICE_RFC_5245, TRUE,
+			    	    	      backend_media_relays)) {
 		sipe_backend_notify_error(_("Error occured"),
 					  _("Error creating video stream"));
 		sipe_media_call_free(call_private);
@@ -696,14 +724,18 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 
 	sipe_backend_media_add_stream(backend_media_legacy,
 				      "audio", with, SIPE_MEDIA_AUDIO,
-				      SIPE_ICE_DRAFT_6, TRUE);
+				      SIPE_ICE_DRAFT_6, TRUE,
+				      backend_media_relays);
 
 	if (with_video)
 		sipe_backend_media_add_stream(backend_media_legacy,
 						"video", with, SIPE_MEDIA_VIDEO,
-						SIPE_ICE_DRAFT_6, TRUE);
+						SIPE_ICE_DRAFT_6, TRUE,
+						backend_media_relays);
 
 	sipe_private->media_call = call_private;
+
+	sipe_backend_media_relays_free(backend_media_relays);
 
 	// Processing continues in candidates_prepared_cb
 }
@@ -714,6 +746,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 {
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sipe_backend_media *backend_media;
+	struct sipe_backend_media_relays *backend_media_relays = NULL;
 	struct sdpmsg *smsg;
 	gboolean has_new_media = FALSE;
 	GSList *i;
@@ -751,6 +784,12 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		sipmsg_free(call_private->invitation);
 	call_private->invitation = sipmsg_copy(msg);
 
+	if (smsg->media)
+		backend_media_relays = sipe_backend_media_relays_convert(
+						sipe_private->media_relays,
+						sipe_private->media_relay_username,
+						sipe_private->media_relay_password);
+
 	// Create any new media streams
 	for (i = smsg->media; i; i = i->next) {
 		struct sdpmedia *media = i->data;
@@ -772,11 +811,14 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			sipe_backend_media_add_stream(backend_media, id, with,
 						      type,
 						      smsg->ice_version,
-						      FALSE);
+						      FALSE,
+						      backend_media_relays);
 			has_new_media = TRUE;
 			g_free(with);
 		}
 	}
+
+	sipe_backend_media_relays_free(backend_media_relays);
 
 	if (has_new_media) {
 		call_private->smsg = smsg;
@@ -1032,13 +1074,6 @@ void sipe_media_handle_going_offline(struct sipe_media_call_private *call_privat
 
 	sipe_media_hangup(call_private->sipe_private);
 }
-
-struct sipe_media_relay {
-	gchar		      *hostname;
-	uint		       udp_port;
-	uint		       tcp_port;
-	struct sipe_dns_query *dns_query;
-};
 
 static void
 sipe_media_relay_free(struct sipe_media_relay *relay)
