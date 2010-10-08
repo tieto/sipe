@@ -104,13 +104,16 @@ struct queued_message {
  * Add a new chat session
  *
  * @param sipe_private (in) SIPE core data. May be NULL
+ * @param chat_session (in) non-NULL to rejoin existing chat
  * @param multiparty   (in) multiparty or conference
- * @param id           (in) chat session identifier
+ * @param id           (in) chat session identifier.
+ *                          Maybe NULL for rejoin or new multiparty chat.
  *
  * @return pointer to new session
  */
 struct sip_session *
 sipe_session_add_chat(struct sipe_core_private *sipe_private,
+		      struct sipe_chat_session *chat_session,
 		      gboolean multiparty,
 		      const gchar *id);
 

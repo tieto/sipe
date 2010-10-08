@@ -82,7 +82,7 @@ gchar *
 sipe_chat_get_name(void);
 
 /**
- * 
+ *
  *
  * @param sipe_private SIPE core private data
  * @param session SIPE session for chat

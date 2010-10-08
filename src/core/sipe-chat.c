@@ -108,7 +108,7 @@ void sipe_core_chat_invite(struct sipe_core_public *sipe_public,
 		break;
 	default:
 		break;
-	}	
+	}
 }
 
 void sipe_core_chat_rejoin(struct sipe_core_public *sipe_public,
@@ -123,7 +123,7 @@ void sipe_core_chat_rejoin(struct sipe_core_public *sipe_public,
 		/* @TODO */
 		break;
 	case SIPE_CHAT_TYPE_CONFERENCE:
-		/* @TODO */
+		sipe_conf_create(sipe_private, chat_session, NULL);
 		break;
 	case SIPE_CHAT_TYPE_GROUPCHAT:
 		sipe_groupchat_rejoin(sipe_private, chat_session);

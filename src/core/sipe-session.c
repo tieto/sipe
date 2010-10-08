@@ -3,8 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
- * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,16 +50,18 @@ sipe_free_queued_message(struct queued_message *message)
 
 struct sip_session *
 sipe_session_add_chat(struct sipe_core_private *sipe_private,
+		      struct sipe_chat_session *chat_session,
 		      gboolean multiparty,
 		      const gchar *id)
 {
 	struct sip_session *session = g_new0(struct sip_session, 1);
 	session->callid = gencallid();
-	session->chat_session = sipe_chat_create_session(multiparty ?
-							 SIPE_CHAT_TYPE_MULTIPARTY :
-							 SIPE_CHAT_TYPE_CONFERENCE,
-							 id ? id : session->callid,
-							 sipe_chat_get_name());
+	session->chat_session = chat_session ? chat_session :
+		sipe_chat_create_session(multiparty ?
+					 SIPE_CHAT_TYPE_MULTIPARTY :
+					 SIPE_CHAT_TYPE_CONFERENCE,
+					 id ? id : session->callid,
+					 sipe_chat_get_name());
 	session->unconfirmed_messages = g_hash_table_new_full(
 		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
 	session->conf_unconfirmed_messages = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);

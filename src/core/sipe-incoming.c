@@ -341,7 +341,10 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		session = sipe_session_find_chat_by_callid(sipe_private,
 							   callid);
 		if (!session) {
-			session = sipe_session_add_chat(sipe_private, TRUE, callid);
+			session = sipe_session_add_chat(sipe_private,
+							NULL,
+							TRUE,
+							callid);
 			session->callid = g_strdup(callid);
 		}
 	}
@@ -710,4 +713,3 @@ void process_incoming_refer(struct sipe_core_private *sipe_private,
   tab-width: 8
   End:
 */
- 

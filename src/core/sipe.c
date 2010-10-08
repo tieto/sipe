@@ -539,7 +539,7 @@ static void sipe_group_context_destroy(gpointer data)
 static void sipe_group_create (struct sipe_core_private *sipe_private,
 			       const gchar *name, const gchar * who)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
 	struct group_user_context *ctx = g_new0(struct group_user_context, 1);
 	const gchar *soap_name = sipe_strequal(name, _("Other Contacts")) ? "~" : name;
@@ -2046,7 +2046,7 @@ static gboolean
 sipe_is_our_publication(struct sipe_core_private *sipe_private,
 			const gchar *key)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;	
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	GSList *entry;
 
 	/* filling keys for our publications if not yet cached */
@@ -5821,7 +5821,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		*errmsg = _("SIP Exchange user name contains whitespace");
 		return NULL;
 	}
-	
+
 	/* ensure that email_url is in proper format if enabled (if provided).
 	 * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 	 * Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
@@ -6270,6 +6270,7 @@ sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
 		struct sip_session *session;
 
 		session = sipe_session_add_chat(sipe_private,
+						NULL,
 						TRUE,
 						NULL);
 		session->roster_manager = self;

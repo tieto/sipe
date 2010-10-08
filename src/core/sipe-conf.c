@@ -268,31 +268,26 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 	return TRUE;
 }
 
-/** Invite us to the focus */
-void
-sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
-		       struct sip_session *session)
+/** Create new session with Focus URI */
+struct sip_session *
+sipe_conf_create(struct sipe_core_private *sipe_private,
+		 struct sipe_chat_session *chat_session,
+		 const gchar *focus_uri)
 {
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
 	gchar *self;
+	struct sip_session *session = sipe_session_add_chat(sipe_private,
+							    chat_session,
+							    FALSE,
+							    focus_uri);
 
-	if (session->focus_dialog && session->focus_dialog->is_established) {
-		SIPE_DEBUG_INFO("session with %s already has a dialog open",
-				session->chat_session->id);
-		return;
-	}
-
-	if(!session->focus_dialog) {
-		session->focus_dialog = g_new0(struct sip_dialog, 1);
-		session->focus_dialog->callid = gencallid();
-		session->focus_dialog->with = g_strdup(session->chat_session->id);
-		session->focus_dialog->endpoint_GUID = rand_guid();
-	}
-	if (!(session->focus_dialog->ourtag)) {
-		session->focus_dialog->ourtag = gentag();
-	}
+	session->focus_dialog = g_new0(struct sip_dialog, 1);
+	session->focus_dialog->callid = gencallid();
+	session->focus_dialog->with = g_strdup(session->chat_session->id);
+	session->focus_dialog->endpoint_GUID = rand_guid();
+	session->focus_dialog->ourtag = gentag();
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
@@ -313,7 +308,6 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		session->focus_dialog->with,
 		self,
 		session->focus_dialog->endpoint_GUID);
-	g_free(self);
 
 	session->focus_dialog->outgoing_invite =
 		sip_transport_invite(sipe_private,
@@ -323,6 +317,20 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 				     process_invite_conf_focus_response);
 	g_free(body);
 	g_free(hdr);
+
+	/* Rejoin existing session? */
+	if (chat_session) {
+		SIPE_DEBUG_INFO("sipe_conf_create: rejoin '%s' (%s)",
+				chat_session->title,
+				chat_session->id);
+		sipe_backend_chat_rejoin(SIPE_CORE_PUBLIC,
+					 chat_session->backend,
+					 self,
+					 chat_session->title);
+	}
+	g_free(self);
+
+	return(session);
 }
 
 /** Modify User Role */
@@ -583,21 +591,17 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
 		if (sipe_strequal("success", sipe_xml_attribute(xn_response, "code")))
 		{
 			gchar *who = trans->payload->data;
-			struct sip_session *session;
 			const sipe_xml *xn_conference_info = sipe_xml_child(xn_response, "addConference/conference-info");
+			struct sip_session *session = sipe_conf_create(sipe_private,
+								       NULL,
+								       sipe_xml_attribute(xn_conference_info,
+											  "entity"));
 
-			session = sipe_session_add_chat(sipe_private,
-							FALSE,
-							sipe_xml_attribute(xn_conference_info,
-									   "entity"));
 			SIPE_DEBUG_INFO("process_conf_add_response: session->focus_uri=%s",
 					session->chat_session->id);
 
 			session->pending_invite_queue = slist_insert_unique_sorted(
 				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
-
-			/* add self to conf */
-			sipe_invite_conf_focus(sipe_private, session);
 		}
 		sipe_xml_free(xn_response);
 	}
@@ -665,14 +669,13 @@ void
 process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
-	struct sip_session *session = NULL;
-	struct sip_dialog *dialog = NULL;
 	sipe_xml *xn_conferencing = sipe_xml_parse(msg->body, msg->bodylen);
 	const sipe_xml *xn_focus_uri = sipe_xml_child(xn_conferencing, "focus-uri");
-	char *focus_uri = sipe_xml_data(xn_focus_uri);
+	gchar *focus_uri = sipe_xml_data(xn_focus_uri);
 	gchar *newTag = gentag();
 	const gchar *oldHeader = sipmsg_find_header(msg, "To");
 	gchar *newHeader;
+	struct sip_dialog *dialog;
 
 	sipe_xml_free(xn_conferencing);
 
@@ -694,16 +697,13 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 
-	session = sipe_session_add_chat(sipe_private,
-					FALSE,
-					focus_uri);
-
 	/* send BYE to invitor */
 	sip_transport_bye(sipe_private, dialog);
 	sipe_dialog_free(dialog);
 
 	/* add self to conf */
-	sipe_invite_conf_focus(sipe_private, session);
+	sipe_conf_create(sipe_private, NULL, focus_uri);
+	g_free(focus_uri);
 }
 
 void
