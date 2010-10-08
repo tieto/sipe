@@ -34,7 +34,6 @@ enum sipe_chat_type {
 
 struct sipe_chat_session {
 	struct sipe_backend_chat_session *backend;
-	struct sip_session *session;
 
 	/*
 	 * Chat identifier (must be unique per account)

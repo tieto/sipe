@@ -175,7 +175,7 @@ void sipe_purple_chat_invite(PurpleConnection *gc, int id,
 	struct sipe_chat_session *session = sipe_purple_chat_find(gc, id);
 	if (!session) return;
 
-	sipe_core_chat_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session, name);
+	sipe_core_chat_invite(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session, name);
 }
 
 void sipe_purple_chat_leave(PurpleConnection *gc, int id)

@@ -6324,14 +6324,11 @@ sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy,
 			       struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sip_session *session;
 
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: buddy->name=%s", buddy->name);
 	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: chat_title=%s", chat_session->title);
 
-	session = sipe_session_find_chat(sipe_private, chat_session);
-
-	sipe_invite_to_chat(sipe_private, session, buddy->name);
+	sipe_core_chat_invite(SIPE_CORE_PUBLIC, chat_session, buddy->name);
 }
 
 static void

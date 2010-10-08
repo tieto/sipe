@@ -246,9 +246,9 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public);
 
 /**
- * Create a new chat
+ * Invite to chat
  */
-void sipe_core_chat_create(struct sipe_core_public *sipe_public,
+void sipe_core_chat_invite(struct sipe_core_public *sipe_public,
 			   struct sipe_chat_session *chat_session,
 			   const char *name);
 

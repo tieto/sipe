@@ -80,17 +80,35 @@ void sipe_chat_destroy(void)
 	}
 }
 
-void sipe_core_chat_create(struct sipe_core_public *sipe_public,
+void sipe_core_chat_invite(struct sipe_core_public *sipe_public,
 			   struct sipe_chat_session *chat_session,
 			   const char *name)
 {
-	struct sip_session *session = chat_session->session;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	if (session) {
-		gchar *uri = sip_uri(name);
-		sipe_invite_to_chat(SIPE_CORE_PRIVATE, session, uri);
-		g_free(uri);
-	}
+	SIPE_DEBUG_INFO("sipe_core_chat_create: who '%s'", name);
+
+	switch (chat_session->type) {
+	case SIPE_CHAT_TYPE_MULTIPARTY:
+	case SIPE_CHAT_TYPE_CONFERENCE:
+		{
+			struct sip_session *session = sipe_session_find_chat(sipe_private,
+									     chat_session);
+
+			if (session) {
+				gchar *uri = sip_uri(name);
+				sipe_invite_to_chat(sipe_private, session, uri);
+				g_free(uri);
+			}
+		}
+		break;
+	case SIPE_CHAT_TYPE_GROUPCHAT:
+		/* @TODO */
+		SIPE_DEBUG_INFO_NOFORMAT("GROUP CHAT: INVITE NOT IMPLEMENTED!");
+		break;
+	default:
+		break;
+	}	
 }
 
 void sipe_core_chat_rejoin(struct sipe_core_public *sipe_public,
