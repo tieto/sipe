@@ -82,7 +82,6 @@ sipe_session_add_call(struct sipe_core_private *sipe_private,
 {
 	struct sip_session *session = g_new0(struct sip_session, 1);
 	SIPE_DEBUG_INFO("sipe_session_add_call: new session for %s", who);
-	session->is_multiparty = FALSE;
 	session->with = g_strdup(who);
 	session->unconfirmed_messages = g_hash_table_new_full(
 		g_str_hash, g_str_equal, g_free, (GDestroyNotify)sipe_free_queued_message);
