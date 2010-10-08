@@ -2,20 +2,20 @@
 # Copyright (c) 2009 Rosetta Contributors and Canonical Ltd 2009
 # This file is distributed under the same license as the pidgin-sipe package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin-sipe\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-10-09 00:42+0300\n"
+"POT-Creation-Date: 2010-10-08 21:45+0000\n"
 "PO-Revision-Date: 2009-02-10 23:50+0000\n"
 "Last-Translator: Rinu <rinu@seznam.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
-"Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Launchpad-Export-Date: 2009-06-22 11:28+0000\n"
+"Language: cs\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: Launchpad (build Unknown)\n"
 
@@ -153,47 +153,30 @@ msgstr "Neznámý"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2997
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"Vaše zpráva nebo pozvánka nebyla doručena, pravděpodobně obsahuje "
-"hypertextový odkaz nebo jiný obsah, který administrátor zablokoval."
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
+msgstr "Vaše zpráva nebo pozvánka nebyla doručena, pravděpodobně obsahuje hypertextový odkaz nebo jiný obsah, který administrátor zablokoval."
 
 #: ../src/core/sipe.c:3001
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
+msgid "This message was not delivered to %s because the service is not available"
 msgstr "Tato zpráva nebyla uživateli %s doručena, služba není dostupná"
 
 #. Busy Here
 #: ../src/core/sipe.c:3003
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
-"Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů nechce "
-"být vyrušováno"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů nechce být vyrušováno"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3005
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
-msgstr ""
-"Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů "
-"nepodporuje tento typ zprávy"
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
+msgstr "Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů nepodporuje tento typ zprávy"
 
 #: ../src/core/sipe.c:3007
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
-"Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů není "
-"dostupno"
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Tato zpráva nebyla uživateli %s doručena, jeden nebo více uživatelů není dostupno"
 
 #: ../src/core/sipe.c:3316
 #, c-format
@@ -298,10 +281,8 @@ msgstr "Úroveň přístupu"
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:6358
-msgid ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:6441
 #, c-format
@@ -502,18 +483,12 @@ msgid "Chat #%d"
 msgstr "Chat #%d"
 
 #: ../src/core/sipe-conf.c:838
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
-msgstr ""
-"Tato konference již není uzamčená. Mohou se připojovat další účastníci."
+msgid "This conference is no longer locked. Additional participants can now join."
+msgstr "Tato konference již není uzamčená. Mohou se připojovat další účastníci."
 
 #: ../src/core/sipe-conf.c:842
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
-msgstr ""
-"Tato konference je uzamčená. Dokud tomu tak je, nikdo další se do ní nemůže "
-"připojit."
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
+msgstr "Tato konference je uzamčená. Dokud tomu tak je, nikdo další se do ní nemůže připojit."
 
 #: ../src/core/sipe-conf.c:875
 msgid "You have been disconnected from this conference."
@@ -522,12 +497,8 @@ msgstr "Byl jste od této konference odpojen."
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:141
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
-msgstr ""
-"Plugin třetí strany poskytující rozšířenou verzi SIP/SIMPLE, používanou v "
-"různých produktech."
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
+msgstr "Plugin třetí strany poskytující rozšířenou verzi SIP/SIMPLE, používanou v různých produktech."
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:143
@@ -594,7 +565,8 @@ msgstr "Autoři"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Překlad do češtiny (cs): psilo a Jakub Adam"
 
-#. Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location
+#. Translators: (!) should be as in localized Lotus Notes to be able to
+#. extract meeting location
 #: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
 msgid "Location:"
 msgstr "Místo"
@@ -656,24 +628,28 @@ msgid ""
 "\n"
 "Please update your Account."
 msgstr ""
+"Proxy server pro skupinový chat je chybný:\n"
+"\n"
+"\t%s\n"
+"\n"
+"Opravte prosím nastavení vašeho účtu."
 
 #: ../src/core/sipe-groupchat.c:335
 msgid "Couldn't find Group Chat server!"
-msgstr ""
+msgstr "Nelze nalézt server pro skupinový chat!"
 
 #: ../src/core/sipe-groupchat.c:432
-#, fuzzy, c-format
+#, c-format
 msgid "This message was not delivered to chat room '%s'"
-msgstr "Tato zpráva nebyla uživateli %s doručena, služba není dostupná"
+msgstr "Tato zpráva nebyla doručena do místnosti „%s“"
 
 #: ../src/core/sipe-groupchat.c:507
-#, fuzzy
 msgid "Error retrieving room list"
-msgstr "Chyba při vytváření audio proudu"
+msgstr "Chyba při načítání seznamu místností"
 
 #: ../src/core/sipe-groupchat.c:610
 msgid "Error joining chat room"
-msgstr ""
+msgstr "Chyba při připojování k místnosti"
 
 #: ../src/core/sipe-incoming.c:637
 #, c-format
@@ -734,28 +710,27 @@ msgstr "Odemknout"
 
 #: ../src/purple/purple-groupchat.c:46
 msgid "_URI:"
-msgstr ""
+msgstr "_URI:"
 
 #: ../src/purple/purple-groupchat.c:136
 msgid "Users"
-msgstr ""
+msgstr "Uživatelé"
 
 #: ../src/purple/purple-groupchat.c:139
-#, fuzzy
 msgid "Invite"
-msgstr "Pozvat do '%s'"
+msgstr "Pozvat do „%s“"
 
 #: ../src/purple/purple-groupchat.c:142
 msgid "Private"
-msgstr ""
+msgstr "Soukromá"
 
 #: ../src/purple/purple-groupchat.c:145
 msgid "Log"
-msgstr ""
+msgstr "Logovaná"
 
 #: ../src/purple/purple-groupchat.c:148
 msgid "Description"
-msgstr ""
+msgstr "Popisek"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -788,12 +763,8 @@ msgid "Search for a contact"
 msgstr "Hledat kontakt"
 
 #: ../src/purple/purple-plugin.c:575
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Zadejte informaci o osobě, kterou si přejete najít. Prázdná pole budou "
-"ignorována."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Zadejte informaci o osobě, kterou si přejete najít. Prázdná pole budou ignorována."
 
 #: ../src/purple/purple-plugin.c:577
 msgid "_Search"
@@ -825,7 +796,7 @@ msgstr "Obnovit stav"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#.
+#. 
 #: ../src/purple/purple-plugin.c:666
 msgid ""
 "Login\n"
@@ -860,8 +831,10 @@ msgstr "Protokol SSL/TLS"
 msgid "TCP"
 msgstr "Protokol TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. sipe_prpl_info.protocol_options =
+#. g_list_append(sipe_prpl_info.protocol_options, option);
 #: ../src/purple/purple-plugin.c:682
 msgid "User Agent"
 msgstr "Uživatelský agent"
@@ -873,14 +846,14 @@ msgstr "Použít Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:693
 msgid "Use Single Sign-On"
 msgstr "Použít Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#.
+#. 
 #: ../src/purple/purple-plugin.c:700
 msgid ""
 "Email services URL\n"
@@ -899,7 +872,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#.
+#. 
 #: ../src/purple/purple-plugin.c:709
 msgid ""
 "Email login\n"
@@ -918,13 +891,16 @@ msgstr ""
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#.
+#. 
 #: ../src/purple/purple-plugin.c:719
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
 msgstr ""
+"Proxy server pro skupinový chat\n"
+" spolecnost.com nebo uzivatel@spolecnost.com\n"
+"(nechte prázdné pro odvození z uživatelského jména)"
 
 #: ../src/purple/purple-transport.c:109
 msgid "Read error"
