@@ -23,7 +23,7 @@
 struct sdpmsg {
 	gchar		*ip;
 	GSList		*media;
-	gboolean	 legacy;
+	SipeIceVersion	 ice_version;
 };
 
 struct sdpmedia {
@@ -34,8 +34,6 @@ struct sdpmedia {
 	GSList		*candidates;
 	GSList		*codecs;
 	GSList		*remote_candidates;
-
-	gboolean	 legacy;
 };
 
 struct sdpcandidate {
@@ -48,6 +46,8 @@ struct sdpcandidate {
 	guint			 port;
 	gchar			*base_ip;
 	guint			 base_port;
+	gchar			*username;
+	gchar			*password;
 };
 
 struct sdpcodec {

@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <glib.h>
 
@@ -91,61 +92,142 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 
 static void sdpcandidate_free(struct sdpcandidate *candidate);
 
+SipeComponentType parse_component(const gchar *str)
+{
+	switch (atoi(str)) {
+		case 1: return  SIPE_COMPONENT_RTP;
+		case 2: return  SIPE_COMPONENT_RTCP;
+		default: return SIPE_COMPONENT_NONE;
+	}
+}
+
+static gchar *
+base64_pad(const gchar* str)
+{
+	size_t str_len = strlen(str);
+	int mod = str_len % 4;
+
+	if (mod > 0) {
+		gchar *result = NULL;
+		int pad = 4 - mod;
+		gchar *ptr = result = g_malloc(str_len + pad + 1);
+
+		memcpy(ptr, str, str_len);
+		ptr += str_len;
+		memset(ptr, '=', pad);
+		ptr += pad;
+		*ptr = '\0';
+
+		return result;
+	} else
+		return g_strdup(str);
+}
+
+static struct sdpcandidate *
+parse_candidate_draft_6(gchar **tokens)
+{
+	struct sdpcandidate *candidate = g_new0(struct sdpcandidate, 1);
+
+	candidate->username = base64_pad(tokens[0]);
+	candidate->component = parse_component(tokens[1]);
+	candidate->password = base64_pad(tokens[2]);
+
+	if (sipe_strequal(tokens[3], "UDP"))
+		candidate->protocol = SIPE_NETWORK_PROTOCOL_UDP;
+	else {
+		// Ignore TCP candidates, at least for now...
+		// Also, if this is ICEv6 candidate list, candidates are dropped here
+		sdpcandidate_free(candidate);
+		return NULL;
+	}
+
+	candidate->priority = atoi(tokens[4] + 2);
+	candidate->ip = g_strdup(tokens[5]);
+	candidate->port = atoi(tokens[6]);
+
+	return candidate;
+}
+
+static struct sdpcandidate *
+parse_candidate_rfc_5245(gchar **tokens)
+{
+	struct sdpcandidate *candidate = g_new0(struct sdpcandidate, 1);
+
+	candidate->foundation = g_strdup(tokens[0]);
+	candidate->component = parse_component(tokens[1]);
+
+	if (sipe_strequal(tokens[2], "UDP"))
+		candidate->protocol = SIPE_NETWORK_PROTOCOL_UDP;
+	else {
+		// Ignore TCP candidates, at least for now...
+		// Also, if this is ICEv6 candidate list, candidates are dropped here
+		sdpcandidate_free(candidate);
+		return NULL;
+	}
+
+	candidate->priority = atoi(tokens[3]);
+	candidate->ip = g_strdup(tokens[4]);
+	candidate->port = atoi(tokens[5]);
+
+	if (sipe_strequal(tokens[7], "host"))
+		candidate->type = SIPE_CANDIDATE_TYPE_HOST;
+	else if (sipe_strequal(tokens[7], "relay"))
+		candidate->type = SIPE_CANDIDATE_TYPE_RELAY;
+	else if (sipe_strequal(tokens[7], "srflx"))
+		candidate->type = SIPE_CANDIDATE_TYPE_SRFLX;
+	else if (sipe_strequal(tokens[7], "prflx"))
+		candidate->type = SIPE_CANDIDATE_TYPE_PRFLX;
+	else {
+		sdpcandidate_free(candidate);
+		return NULL;
+	}
+
+	return candidate;
+}
+
 static GSList *
-parse_candidates(GSList *attrs)
+parse_candidates(GSList *attrs, SipeIceVersion *ice_version)
 {
 	GSList *candidates = NULL;
 	const gchar *attr;
 	int i = 0;
 
 	while ((attr = sipe_utils_nameval_find_instance(attrs, "candidate", i++))) {
-		struct sdpcandidate *candidate = g_new0(struct sdpcandidate, 1);
 		gchar **tokens = g_strsplit_set(attr, " ", 0);
 
-		candidate->foundation = g_strdup(tokens[0]);
+		if (sipe_strequal(tokens[6], "typ")) {
+			struct sdpcandidate *c = parse_candidate_rfc_5245(tokens);
 
-		switch (atoi(tokens[1])) {
-			case 1:
-				candidate->component = SIPE_COMPONENT_RTP;
-				break;
-			case 2:
-				candidate->component = SIPE_COMPONENT_RTCP;
-				break;
-			default:
-				candidate->component = SIPE_COMPONENT_NONE;
+			if (c) {
+				*ice_version = SIPE_ICE_RFC_5245;
+				candidates = g_slist_append(candidates, c);
+			}
+		} else {
+			struct sdpcandidate *c = parse_candidate_draft_6(tokens);
+			if (c) {
+				*ice_version = SIPE_ICE_DRAFT_6;
+				candidates = g_slist_append(candidates, c);
+			}
 		}
-
-		if (sipe_strequal(tokens[2], "UDP"))
-			candidate->protocol = SIPE_NETWORK_PROTOCOL_UDP;
-		else {
-			// Ignore TCP candidates, at least for now...
-			// Also, if this is ICEv6 candidate list, candidates are dropped here
-			g_strfreev(tokens);
-			sdpcandidate_free(candidate);
-			continue;
-		}
-
-		candidate->priority = atoi(tokens[3]);
-		candidate->ip = g_strdup(tokens[4]);
-		candidate->port = atoi(tokens[5]);
-
-		if (sipe_strequal(tokens[7], "host"))
-			candidate->type = SIPE_CANDIDATE_TYPE_HOST;
-		else if (sipe_strequal(tokens[7], "relay"))
-			candidate->type = SIPE_CANDIDATE_TYPE_RELAY;
-		else if (sipe_strequal(tokens[7], "srflx"))
-			candidate->type = SIPE_CANDIDATE_TYPE_SRFLX;
-		else if (sipe_strequal(tokens[7], "prflx"))
-			candidate->type = SIPE_CANDIDATE_TYPE_PRFLX;
-		else {
-			g_strfreev(tokens);
-			sdpcandidate_free(candidate);
-			continue;
-		}
-
-		candidates = g_slist_append(candidates, candidate);
 
 		g_strfreev(tokens);
+	}
+
+	if (!candidates)
+		*ice_version = SIPE_ICE_NO_ICE;
+
+	if (*ice_version == SIPE_ICE_RFC_5245) {
+		const gchar *username = sipe_utils_nameval_find(attrs, "ice-ufrag");
+		const gchar *password = sipe_utils_nameval_find(attrs, "ice-pwd");
+
+		if (username && password) {
+			GSList *i;
+			for (i = candidates; i; i = i->next) {
+				struct sdpcandidate *c = i->data;
+				c->username = g_strdup(username);
+				c->password = g_strdup(password);
+			}
+		}
 	}
 
 	return candidates;
@@ -232,8 +314,6 @@ sdpmsg_parse_msg(gchar *msg)
 	struct sdpmsg *smsg = g_new0(struct sdpmsg, 1);
 	GSList *i;
 
-	smsg->legacy = FALSE;
-
 	if (!parse_attributes(smsg, msg)) {
 		sdpmsg_free(smsg);
 		return NULL;
@@ -243,11 +323,12 @@ sdpmsg_parse_msg(gchar *msg)
 		struct sdpmedia *media = i->data;
 		SipeMediaType type;
 
-		media->candidates = parse_candidates(media->attributes);
+		media->candidates = parse_candidates(media->attributes,
+						     &smsg->ice_version);
+
 		if (!media->candidates && media->port != 0) {
-			// No a=candidate in SDP message, this seems to be pre-OC2007 R2 UAC
+			// No a=candidate in SDP message, this seems to be MSOC 2005
 			media->candidates = create_legacy_candidates(smsg->ip, media->port);
-			smsg->legacy = TRUE;
 		}
 
 		if (sipe_strequal(media->name, "audio"))
@@ -309,9 +390,41 @@ codec_ids_to_string(GSList *codecs)
 }
 
 static gchar *
-candidates_to_string(GSList *candidates)
+base64_unpad(const gchar *str)
+{
+	gchar *result = g_strdup(str);
+	gchar *ptr;
+
+	for (ptr = result + strlen(result); ptr != result; --ptr) {
+		if (*(ptr - 1) != '=') {
+			*ptr = '\0';
+			break;
+		}
+	}
+
+	return result;
+}
+
+static gint
+candidate_sort_cb(struct sdpcandidate *c1, struct sdpcandidate *c2)
+{
+	int cmp = sipe_strcompare(c1->foundation, c2->foundation);
+	if (cmp == 0) {
+		cmp = sipe_strcompare(c1->username, c2->username);
+		if (cmp == 0)
+			cmp = c1->component - c2->component;
+	}
+
+	return cmp;
+}
+
+static gchar *
+candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 {
 	GString *result = g_string_new("");
+
+	candidates = g_slist_copy(candidates);
+	candidates = g_slist_sort(candidates, (GCompareFunc)candidate_sort_cb);
 
 	for (; candidates; candidates = candidates->next) {
 		struct sdpcandidate *c = candidates->data;
@@ -328,71 +441,90 @@ candidates_to_string(GSList *candidates)
 				break;
 		}
 
-		switch (c->type) {
-			case SIPE_CANDIDATE_TYPE_HOST:
-				type = "host";
-				break;
-			case SIPE_CANDIDATE_TYPE_RELAY:
-				type = "relay";
-				break;
-			case SIPE_CANDIDATE_TYPE_SRFLX:
-				type = "srflx";
-				related = g_strdup_printf("raddr %s rport %d",
-							  c->base_ip,
-							  c->base_port);
-				break;
-			case SIPE_CANDIDATE_TYPE_PRFLX:
-				type = "prflx";
-				break;
-			default:
-				// TODO: error unknown/unsupported type
-				break;
+		if (ice_version == SIPE_ICE_RFC_5245) {
+
+			switch (c->type) {
+				case SIPE_CANDIDATE_TYPE_HOST:
+					type = "host";
+					break;
+				case SIPE_CANDIDATE_TYPE_RELAY:
+					type = "relay";
+					break;
+				case SIPE_CANDIDATE_TYPE_SRFLX:
+					type = "srflx";
+					related = g_strdup_printf("raddr %s rport %d",
+								  c->base_ip,
+								  c->base_port);
+					break;
+				case SIPE_CANDIDATE_TYPE_PRFLX:
+					type = "prflx";
+					break;
+				default:
+					// TODO: error unknown/unsupported type
+					break;
+			}
+
+			g_string_append_printf(result,
+					       "a=candidate:%s %u %s %u %s %d typ %s %s\r\n",
+					       c->foundation,
+					       c->component,
+					       protocol,
+					       c->priority,
+					       c->ip,
+					       c->port,
+					       type,
+					       related ? related : "");
+			g_free(related);
+
+		} else if (ice_version == SIPE_ICE_DRAFT_6) {
+			gchar *username = base64_unpad(c->username);
+			gchar *password = base64_unpad(c->password);
+
+			g_string_append_printf(result,
+					       "a=candidate:%s %u %s %s 0.%u %s %d\r\n",
+					       username,
+					       c->component,
+					       password,
+					       protocol,
+					       c->priority,
+					       c->ip,
+					       c->port);
+
+			g_free(username);
+			g_free(password);
 		}
-
-		g_string_append_printf(result,
-				       "a=candidate:%s %u %s %u %s %d typ %s %s\r\n",
-				       c->foundation,
-				       c->component,
-				       protocol,
-				       c->priority,
-				       c->ip,
-				       c->port,
-				       type,
-				       related ? related : "");
-
-		g_free(related);
 	}
+
+	g_slist_free(candidates);
 
 	return g_string_free(result, FALSE);
 }
 
-static gint
-candidate_compare_by_component_id(struct sdpcandidate *c1,
-				  struct sdpcandidate *c2)
-{
-	return c1->component - c2->component;
-}
-
 static gchar *
-remote_candidates_to_string(GSList *candidates)
+remote_candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 {
 	GString *result = g_string_new("");
 
 	candidates = g_slist_copy(candidates);
-	candidates = g_slist_sort(candidates,
-				  (GCompareFunc)candidate_compare_by_component_id);
+	candidates = g_slist_sort(candidates, (GCompareFunc)candidate_sort_cb);
 
 	if (candidates) {
-		GSList *i;
-		g_string_append(result, "a=remote-candidates:");
+		if (ice_version == SIPE_ICE_RFC_5245) {
+			GSList *i;
+			g_string_append(result, "a=remote-candidates:");
 
-		for (i = candidates; i; i = i->next) {
-			struct sdpcandidate *c = i->data;
-			g_string_append_printf(result, "%u %s %u ",
-					       c->component, c->ip, c->port);
+			for (i = candidates; i; i = i->next) {
+				struct sdpcandidate *c = i->data;
+				g_string_append_printf(result, "%u %s %u ",
+						       c->component, c->ip, c->port);
+			}
+
+			g_string_append(result, "\r\n");
+		} else if (ice_version == SIPE_ICE_DRAFT_6) {
+			struct sdpcandidate *c = candidates->data;
+			g_string_append_printf(result, "a=remote-candidate:%s\r\n",
+					       c->username);
 		}
-
-		g_string_append(result, "\r\n");
 	}
 
 	g_slist_free(candidates);
@@ -417,20 +549,31 @@ attributes_to_string(GSList *attributes)
 }
 
 gchar *
-media_to_string(const struct sdpmedia *media, gboolean legacy)
+media_to_string(const struct sdpmedia *media, SipeIceVersion ice_version)
 {
 	gchar *media_str;
 
 	gchar *codecs_str = codecs_to_string(media->codecs);
 	gchar *codec_ids_str = codec_ids_to_string(media->codecs);
 
-	gchar *candidates_str = legacy ? g_strdup("")
-				       : candidates_to_string(media->candidates);
-	gchar *remote_candidates_str = remote_candidates_to_string(media->remote_candidates);
+	gchar *candidates_str = candidates_to_string(media->candidates, ice_version);
+	gchar *remote_candidates_str = remote_candidates_to_string(media->remote_candidates,
+								   ice_version);
 
 	gchar *attributes_str = attributes_to_string(media->attributes);
+	gchar *credentials = NULL;
+
+	if (ice_version == SIPE_ICE_RFC_5245 && media->candidates) {
+		struct sdpcandidate *c = media->candidates->data;
+
+		credentials = g_strdup_printf("a=ice-ufrag:%s\r\n"
+					      "a=ice-pwd:%s\r\n",
+					      c->username,
+					      c->password);
+	}
 
 	media_str = g_strdup_printf("m=%s %d RTP/AVP%s\r\n"
+				    "%s"
 				    "%s"
 				    "%s"
 				    "%s"
@@ -439,13 +582,15 @@ media_to_string(const struct sdpmedia *media, gboolean legacy)
 				    candidates_str,
 				    remote_candidates_str,
 				    codecs_str,
-				    attributes_str);
+				    attributes_str,
+				    credentials ? credentials : "");
 
 	g_free(codecs_str);
 	g_free(codec_ids_str);
 	g_free(candidates_str);
 	g_free(remote_candidates_str);
 	g_free(attributes_str);
+	g_free(credentials);
 
 	return media_str;
 }
@@ -468,7 +613,7 @@ sdpmsg_to_string(const struct sdpmsg *msg)
 
 
 	for (i = msg->media; i; i = i->next) {
-		gchar *media_str = media_to_string(i->data, msg->legacy);
+		gchar *media_str = media_to_string(i->data, msg->ice_version);
 		g_string_append(body, media_str);
 		g_free(media_str);
 	}
@@ -483,6 +628,8 @@ sdpcandidate_free(struct sdpcandidate *candidate)
 		g_free(candidate->foundation);
 		g_free(candidate->ip);
 		g_free(candidate->base_ip);
+		g_free(candidate->username);
+		g_free(candidate->password);
 		g_free(candidate);
 	}
 }

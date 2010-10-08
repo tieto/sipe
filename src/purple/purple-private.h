@@ -26,7 +26,6 @@ struct _PurpleAccount;
 struct _PurpleChat;
 struct _PurpleConnection;
 struct _PurpleRoomlist;
-struct _PurpleSrvQueryData;
 struct _PurpleXfer;
 
 #ifndef _PurpleMessageFlags
@@ -37,7 +36,6 @@ struct sipe_backend_private {
 	struct sipe_core_public *public;
 	struct _PurpleConnection *gc;
 	struct _PurpleAccount *account;
-	struct _PurpleSrvQueryData *dns_query;
 	struct _PurpleRoomlist *roomlist;
 	GHashTable *roomlist_map; /* name -> uri */
 	GList *rejoin_chats;

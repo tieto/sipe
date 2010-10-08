@@ -178,10 +178,20 @@ gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public);
 
 /** DNS QUERY ****************************************************************/
 
-void sipe_backend_dns_query(struct sipe_core_public *sipe_public,
-			    const gchar *protocol,
-			    const gchar *transport,
-			    const gchar *domain);
+typedef void (*sipe_dns_resolved_cb)(gpointer data, const gchar *hostname, guint port);
+
+struct sipe_dns_query *sipe_backend_dns_query_srv(const gchar *protocol,
+						  const gchar *transport,
+						  const gchar *domain,
+						  sipe_dns_resolved_cb callback,
+						  gpointer data);
+
+struct sipe_dns_query *sipe_backend_dns_query_a(const gchar *hostname,
+						int port,
+						sipe_dns_resolved_cb callback,
+						gpointer data);
+
+void sipe_backend_dns_query_cancel(struct sipe_dns_query *query);
 
 /** FILE TRANSFER ************************************************************/
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
@@ -274,6 +284,12 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 /** MEDIA ********************************************************************/
 
 typedef enum {
+	SIPE_ICE_NO_ICE,
+	SIPE_ICE_DRAFT_6,
+	SIPE_ICE_RFC_5245
+} SipeIceVersion;
+
+typedef enum {
 	SIPE_CANDIDATE_TYPE_HOST,
 	SIPE_CANDIDATE_TYPE_RELAY,
 	SIPE_CANDIDATE_TYPE_SRFLX,
@@ -304,6 +320,7 @@ struct sipe_backend_stream;
 
 struct sipe_media_call {
 	struct sipe_backend_media *backend_private;
+	struct sipe_backend_media *backend_private_legacy;
 
 	void (*candidates_prepared_cb)(struct sipe_media_call *,
 				       struct sipe_backend_stream *);
@@ -312,7 +329,8 @@ struct sipe_media_call {
 	void (*call_reject_cb)(struct sipe_media_call *, gboolean local);
 	void (*call_hold_cb)  (struct sipe_media_call *, gboolean local,
 			       gboolean state);
-	void (*call_hangup_cb)(struct sipe_media_call *, gboolean local);
+	void (*call_hangup_cb)(struct sipe_media_call *,
+			       struct sipe_backend_media *,gboolean local);
 };
 
 /* Media handling */
@@ -324,7 +342,8 @@ void sipe_backend_media_free(struct sipe_backend_media *media);
 struct sipe_backend_stream *sipe_backend_media_add_stream(struct sipe_backend_media *media,
 							  const gchar *id,
 							  const gchar *participant,
-							  SipeMediaType type, gboolean use_nice,
+							  SipeMediaType type,
+							  SipeIceVersion ice_version,
 							  gboolean initiator);
 void sipe_backend_media_remove_stream(struct sipe_backend_media *media,
 				      struct sipe_backend_stream *stream);
@@ -371,7 +390,7 @@ GList *sipe_backend_codec_get_optional_parameters(struct sipe_backend_codec *cod
 gboolean sipe_backend_set_remote_codecs(struct sipe_backend_media *media,
 					struct sipe_backend_stream *stream,
 					GList *codecs);
-GList* sipe_backend_get_local_codecs(struct sipe_media_call *call,
+GList* sipe_backend_get_local_codecs(struct sipe_backend_media *media,
 				     struct sipe_backend_stream *stream);
 
 /* Candidate handling */

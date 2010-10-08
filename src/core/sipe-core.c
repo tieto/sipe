@@ -237,6 +237,13 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 	g_slist_free(sip->our_publication_keys);
 
+#ifdef HAVE_VV
+	g_free(sipe_private->mras_uri);
+	g_free(sipe_private->media_relay_username);
+	g_free(sipe_private->media_relay_password);
+	sipe_media_relay_list_free(sipe_private->media_relays);
+#endif
+
 	g_free(sip);
 	g_free(sipe_private);
 }
