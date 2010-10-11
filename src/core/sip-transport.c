@@ -954,6 +954,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					sip_transport_default_contact(sipe_private);
 				}
                                 SIPE_CORE_PRIVATE_FLAG_UNSET(OCS2007);
+				SIPE_CORE_PRIVATE_FLAG_UNSET(REMOTE_USER);
 				sip->batched_support = FALSE;
 
                                 while(hdr)
@@ -980,6 +981,13 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						}
 						g_strfreev(caps);
                                         }
+					if (sipe_strcase_equal(elem->name, "ms-user-logon-data")) {
+						if (sipe_strcase_equal(elem->value, "RemoteUser")) {
+							SIPE_CORE_PRIVATE_FLAG_SET(REMOTE_USER);
+							SIPE_DEBUG_INFO_NOFORMAT("ms-user-logon-data: RemoteUser (connected "
+										 "via Edge Server)");
+						}
+					}
                                         hdr = g_slist_next(hdr);
                                 }
 

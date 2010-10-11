@@ -87,7 +87,11 @@ struct sipe_core_private {
 /**
  * Flags - stored in sipe_core_public.flags but names not exported
  */
-#define SIPE_CORE_PRIVATE_FLAG_OCS2007 0x80000000 /* server is OCS2007+ */
+/* server is OCS2007+ */
+#define SIPE_CORE_PRIVATE_FLAG_OCS2007     0x80000000
+/* we are connected from outside the enterprise network boundary
+ * via Edge Server */
+#define SIPE_CORE_PRIVATE_FLAG_REMOTE_USER 0x40000000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
