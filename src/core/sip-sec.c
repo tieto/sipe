@@ -141,14 +141,16 @@ sip_sec_init_context_step(SipSecContext context,
 			g_free(in_buff.value);
 
 		if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
-			*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
 
 			if (out_buff.length > 0 && out_buff.value) {
+				*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
 				tmp = sip_sec_ntlm_message_describe(out_buff);
 				if (tmp) {
 					SIPE_DEBUG_INFO("sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
 				}
 				g_free(tmp);
+			} else {
+				*output_toked_base64 = NULL;
 			}
 
 			g_free(out_buff.value);
