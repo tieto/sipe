@@ -245,7 +245,13 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 	for (; media_relays; media_relays = media_relays->next) {
 		struct sipe_media_relay *relay = media_relays->data;
 		GValue value;
-		GstStructure *gst_relay_info = gst_structure_new("relay-info",
+		GstStructure *gst_relay_info;
+
+		/* Skip relays where IP could not be resolved. */
+		if (!relay->hostname)
+			continue;
+
+		gst_relay_info = gst_structure_new("relay-info",
 				"ip", G_TYPE_STRING, relay->hostname,
 				"port", G_TYPE_UINT, relay->udp_port,
 				"username", G_TYPE_STRING, username,

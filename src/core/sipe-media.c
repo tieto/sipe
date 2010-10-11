@@ -1095,9 +1095,18 @@ static void
 relay_ip_resolved_cb(struct sipe_media_relay* relay,
 		     const gchar *ip, SIPE_UNUSED_PARAMETER guint port)
 {
-	g_free(relay->hostname);
-	relay->hostname = g_strdup(ip);
+	gchar *hostname = relay->hostname;
 	relay->dns_query = NULL;
+
+	if (ip && port) {
+		relay->hostname = g_strdup(ip);
+		SIPE_DEBUG_INFO("Media relay %s resolved to %s.", hostname, ip);
+	} else {
+		relay->hostname = NULL;
+		SIPE_DEBUG_INFO("Unable to resolve media relay %s.", hostname);
+	}
+
+	g_free(hostname);
 }
 
 static gboolean
@@ -1180,7 +1189,7 @@ sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private)
 			 "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
 			"<credentialsRequest credentialsRequestID=\"%d\">"
 				"<identity>%s</identity>"
-				"<location>internet</location>"
+				"<location>%s</location>"
 				"<duration>480</duration>"
 			"</credentialsRequest>"
 		"</request>";
@@ -1200,7 +1209,8 @@ sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private)
 		self,
 		sipe_private->mras_uri,
 		request_id,
-		self);
+		self,
+		SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ? "internet" : "intranet");
 	g_free(self);
 
 	sip_transport_service(sipe_private,
