@@ -1094,13 +1094,13 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 		   Set ServerSigningKey to SIGNKEY(ExportedSessionKey, "Server")
 		*/
 		SIGNKEY(exported_session_key, TRUE, key);
-		*client_sign_key = (guchar *)g_strndup((gchar *)key, 16);
+		*client_sign_key = g_memdup(key, 16);
 		SIGNKEY(exported_session_key, FALSE, key);
-		*server_sign_key = (guchar *)g_strndup((gchar *)key, 16);
+		*server_sign_key = g_memdup(key, 16);
 		SEALKEY(neg_flags, exported_session_key, TRUE, key);
-		*client_seal_key = (guchar *)g_strndup((gchar *)key, 16);
+		*client_seal_key = g_memdup(key, 16);
 		SEALKEY(neg_flags, exported_session_key, FALSE, key);
-		*server_seal_key = (guchar *)g_strndup((gchar *)key, 16);
+		*server_seal_key = g_memdup(key, 16);
 	}
 
 	/* @TODO: */
