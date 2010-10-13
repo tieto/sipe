@@ -21,6 +21,7 @@
  */
 
 #ifdef _WIN32
+#include "win32/win32dep.h" /* for inet_ntop() */
 #include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>

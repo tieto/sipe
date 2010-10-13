@@ -34,6 +34,10 @@
 #include "blist.h"
 #include "conversation.h"
 #include "server.h"
+/* for ENOTCONN */
+#ifdef _WIN32
+#include "win32/win32dep.h"
+#endif 
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
