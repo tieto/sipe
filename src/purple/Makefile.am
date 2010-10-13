@@ -17,11 +17,11 @@ libsipe_backend_la_SOURCES = \
 	purple-im.c \
 	purple-markup.c \
 	purple-network.c \
+	purple-notify.c \
 	purple-schedule.c \
 	purple-setting.c \
 	purple-transport.c \
-	purple-user.c \
-	purple-notify.c
+	purple-user.c
 
 libsipe_la_SOURCES = \
 	purple-plugin.c
