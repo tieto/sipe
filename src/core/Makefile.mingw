@@ -151,7 +151,7 @@ LIBS =	\
 			-lxml2 \
 			-lnss3 \
 			-lws2_32 \
-			-lSecur32 \
+			-lsecur32 \
 			-lpurple
 	
 # These flags are used in mingw build	

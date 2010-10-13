@@ -6,7 +6,7 @@
 # Description: Top Makefile for win32 (mingw) port of LCS protocol plugin
 #
 
-export PIDGIN_TREE_TOP := ../pidgin-2.7.1
+export PIDGIN_TREE_TOP := ../pidgin-2.7.3
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
 export CFLAGS=-Werror
@@ -15,7 +15,7 @@ WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
 export VERSION := $(shell cat VERSION)
 
-.PHONY: all clean install msi dev devinst
+.PHONY: all clean install msi dev devinst nsis
 
 all: 
 	$(MAKE) -C src -f $(MINGW_MAKEFILE)
@@ -29,6 +29,7 @@ clean:
 	$(MAKE) -C po -f $(MINGW_MAKEFILE) clean
 	rm -f $(WXS_NAME).wix*
 	rm -f $(WXS_NAME)-$(VERSION).msi
+	rm -f pidgin-sipe-$(VERSION).exe
   
 rmbak:
 	rm -f *~
@@ -49,3 +50,6 @@ msi: all
 	PACKAGE_VERSION=$(VERSION) $(WIX3_HOME)/bin/candle $(WXS_NAME).wxs
 	$(WIX3_HOME)/bin/light $(WXS_NAME).wixobj
 	mv $(WXS_NAME).msi $(WXS_NAME)-$(VERSION).msi
+
+nsis: install
+	makensis -DTREETOP=..\\pidgin-2.7.3 -DVERSION=$(VERSION) pidgin-sipe.nsi
