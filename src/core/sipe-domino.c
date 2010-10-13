@@ -57,6 +57,7 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
+#include <time.h>
 
 #include <glib.h>
 
