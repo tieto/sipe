@@ -15,7 +15,7 @@ clean::
 	dh_testdir
 
 # git snapshot does not contain a configure script
-debian/stamp-autotools-files: $(DEB_CONFIGURE_SCRIPT) 
+debian/stamp-autotools-files: $(DEB_CONFIGURE_SCRIPT)
 $(DEB_BUILDDIR)/config.status: $(DEB_CONFIGURE_SCRIPT)
 
 $(DEB_CONFIGURE_SCRIPT):
