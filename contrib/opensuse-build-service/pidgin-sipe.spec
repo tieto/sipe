@@ -3,6 +3,28 @@
 # It should work on Fedora 9/10/11/12, openSUSE 11.x, RHEL5/CentOS 5, SLES/D 11 and Mandriva 2009.1/2010.
 #
 
+# Check for mingw32 cross compilation build
+#
+# Manually add this repository to your private OBS project:
+#
+#  <repository name="mingw32">
+#    <path repository="openSUSE_11.3" project="windows:mingw:win32"/>
+#    <arch>i586</arch>
+#  </repository>
+#
+# You might need to add & build mingw-pidgin package too.
+#
+%if "%{_repository}" == "mingw32"
+%define purple_sipe_mingw32 1
+%define __strip %{_mingw32_strip}
+%define __objdump %{_mingw32_objdump}
+%define _use_internal_dependency_generator 0
+%define __find_requires %{_mingw32_findrequires}
+%define __find_provides %{_mingw32_findprovides}
+%define __os_install_post %{_mingw32_debug_install_post} \
+                          %{_mingw32_install_post}
+%endif
+
 %define purple_plugin libpurple-plugin-sipe
 
 %define purple_develname libpurple-devel
@@ -53,6 +75,36 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
+%if 0%{?purple_sipe_mingw32}
+#
+# Windows cross-compilation build setup
+#
+BuildArch:      noarch
+
+BuildRequires:  mingw32-filesystem >= 23  
+BuildRequires:  mingw32-cross-gcc  
+BuildRequires:  mingw32-cross-binutils
+BuildRequires:  mingw32-libpurple-devel >= 2.4.0
+BuildRequires:  mingw32-glib2-devel >= 2.12.0
+# Required for successful autoreconf
+BuildRequires:  glib2-devel >= 2.12.0
+BuildRequires:  mingw32-libxml2-devel
+BuildRequires:  pkgconfig
+BuildRequires:  libtool
+BuildRequires:  intltool
+BuildRequires:  mingw32-gettext-runtime
+
+# For directory ownership
+BuildRequires:  mingw32-pidgin
+Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+
+# Handle .debug files
+%{_mingw32_debug_package}
+
+%else
+#
+# Standard Linux build setup
+#
 BuildRequires:  %{purple_develname} >= 2.4.0
 BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  libxml2-devel
@@ -87,6 +139,10 @@ BuildRequires:  PolicyKit-gnome
 %if 0%{?mdkversion} >= 201010
 BuildRequires:  polkit-gnome
 %endif
+
+# End Windows cross-compilation/Linux build setup
+%endif
+
 
 %description
 A third-party plugin for the Pidgin multi-protocol instant messenger.
@@ -123,6 +179,23 @@ This package provides the protocol plugin for libpurple clients.
 %setup -q
 
 %build
+%if 0%{?purple_sipe_mingw32}
+#
+# Windows cross-compilation build
+#
+%{?env_options}
+echo "lt_cv_deplibs_check_method='pass_all'" >>%{_mingw32_cache}
+autoreconf --verbose --install --force
+MINGW32_LDFLAGS="-Wl,--exclude-libs=libintl.a -Wl,--exclude-libs=libiconv.a -lws2_32"
+%{_mingw32_configure} \
+        --enable-purple \
+        --disable-telepathy
+%{_mingw32_make} %{_smp_mflags}
+
+%else
+#
+# Standard Linux build
+#
 %if 0%{?sles_version} == 10
 export CFLAGS="%optflags -I%{_includedir}/gssapi"
 %endif
@@ -135,9 +208,27 @@ autoreconf --verbose --install --force
 make %{_smp_mflags}
 make %{_smp_mflags} check
 
+# End Windows cross-compilation/Linux build setup
+%endif
+
 
 %install
+%if 0%{?purple_sipe_mingw32}
+#
+# Windows cross-compilation install
+#
+%{_mingw32_makeinstall}
+rm -f %{buildroot}%{_mingw32_libdir}/purple-2/*.dll.a
+
+%else
+#
+# Standard Linux install
+#
 %makeinstall
+
+# End Windows cross-compilation/Linux build setup
+%endif
+
 find %{buildroot} -type f -name "*.la" -delete -print
 # SLES11 defines suse_version = 1110
 %if 0%{?suse_version} && 0%{?suse_version} < 1120
@@ -153,20 +244,32 @@ rm -rf %{buildroot}
 %files -n %{purple_plugin} -f %{name}.lang
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
+%if 0%{?purple_sipe_mingw32}
+%{_mingw32_libdir}/purple-2/libsipe.dll
+%else
 %{_libdir}/purple-2/libsipe.so
+%endif
 
 
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
+%if 0%{?purple_sipe_mingw32}
+%{_mingw32_datadir}/pixmaps/pidgin/protocols/*/sipe.png
+%{_mingw32_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
+%else
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 # SLES11 defines suse_version = 1110
 %if !0%{?suse_version} || 0%{?suse_version} >= 1120
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %endif
+%endif
 
 
 %changelog
+* Fri Oct 15 2010 J. D. User <jduser@noreply.com> 1.11.0-*git*
+- add mingw32 build configuration
+
 * Sun Oct 03 2010 J. D. User <jduser@noreply.com> 1.11.0
 - update to 1.11.0
 
