@@ -1,8 +1,13 @@
 version 1.12.0 "Group Chat" (2010-XX-XX)
 	- Feature #3064877: Add support for OCS2007R2 Group Chat (Stefan Becker)
+	- Fixed #2834758: First NTLM signature check after startup fails (Stefan Becker) 
 	- Fixed #3082602: Crash on Autodiscover (Stefan Becker)
+	- added MS TURN support (Jakub Adam)
 	- More internal changes to prepare for non-purple backends (Stefan Becker)
 	- configure improvements for 64-bit: use libdir, gsize/size_t compatibility (Stefan Becker)
+	- update compiler warnings configuration for all build platforms (Stefan Becker)
+	- mingw build updates (Harris P. Kauffman, Stefan Becker)
+	- added mingw to OpenSUSE Build Service configuration (Stefan Becker)
 
 version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-10-03)
 	- Feature #2859239: Voice call support (Jakub Adam)
