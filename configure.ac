@@ -83,7 +83,7 @@ AC_ARG_ENABLE(quality-check,
 	[enable_quality_check=yes])
 
 AS_IF([test "x$enable_quality_check" = xyes],
-	[QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall -Waggregate-return -Wcast-align -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith"
+	[QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall -Waggregate-return -Wcast-align -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef"
 	 ac_save_CFLAGS=$CFLAGS
 
 	 dnl GCC >= 3.4

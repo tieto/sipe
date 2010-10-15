@@ -155,8 +155,7 @@ LIBS =	\
 			-lpurple
 	
 # These flags are used in mingw build	
-TESTS_WARN = -Werror -Wall -Waggregate-return -Wcast-align -Werror-implicit-function-declaration -Wextra -Wno-sign-compare -Wno-unused-parameter -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef
-#TESTS_WARN += -Wdeclaration-after-statement
+TESTS_WARN = -Werror -Wall -Wextra -Waggregate-return -Wcast-align -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef
 
 include $(PIDGIN_COMMON_RULES)
 
