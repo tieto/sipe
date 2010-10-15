@@ -83,29 +83,34 @@ AC_ARG_ENABLE(quality-check,
 	[enable_quality_check=yes])
 
 AS_IF([test "x$enable_quality_check" = xyes],
-	[QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall -Waggregate-return -Wcast-align -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef"
-	 ac_save_CFLAGS=$CFLAGS
+	[dnl default quality configuration
+         QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
 
-	 dnl GCC >= 3.4
-	 AC_MSG_CHECKING([if $CC supports -Wextra])
-	 CFLAGS="$QUALITY_CFLAGS -Wextra"
-	 AC_COMPILE_IFELSE(
-		AC_LANG_PROGRAM(),
-		[AC_MSG_RESULT(yes)
-		 QUALITY_CFLAGS="$QUALITY_CFLAGS -Wextra"],
-		[AC_MSG_RESULT(no)]
-	 )
-
-	 dnl declaration-after-statement (ISO C90 behaviour, as on Windows & GCC < 3)
-	 AC_MSG_CHECKING([if $CC supports -Werror=declaration-after-statement])
-	 CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"
-	 AC_COMPILE_IFELSE(
-		AC_LANG_PROGRAM(),
-		[AC_MSG_RESULT(yes)
-		 QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"],
-		[AC_MSG_RESULT(no)]
-	 )
-	 CFLAGS=$ac_save_CFLAGS])
+	 dnl enable warnings supported by the GCC on the build system
+	 for newflag in \
+			"-Wextra" \
+			"-Waggregate-return" \
+			"-Wcast-align" \
+			"-Wdeclaration-after-statement" \
+			"-Winit-self" \
+			"-Wmissing-declarations" \
+			"-Wmissing-prototypes" \
+			"-Wnested-externs" \
+			"-Wpointer-arith" \
+			"-Wundef" \
+	 ; do
+		 ac_save_CFLAGS=$CFLAGS
+		 AC_MSG_CHECKING([if $CC supports $newflag])
+		 CFLAGS="$QUALITY_CFLAGS $newflag"
+		 AC_COMPILE_IFELSE(
+			AC_LANG_PROGRAM(),
+			[AC_MSG_RESULT(yes)
+			 QUALITY_CFLAGS="$QUALITY_CFLAGS $newflag"],
+			[AC_MSG_RESULT(no)]
+	 	 )
+		 CFLAGS=$ac_save_CFLAGS
+	 done
+	])
 AC_SUBST(QUALITY_CFLAGS)
 
 dnl Check for pkg-config before using it
