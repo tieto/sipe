@@ -92,7 +92,8 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 
 static void sdpcandidate_free(struct sdpcandidate *candidate);
 
-SipeComponentType parse_component(const gchar *str)
+static SipeComponentType
+parse_component(const gchar *str)
 {
 	switch (atoi(str)) {
 		case 1: return  SIPE_COMPONENT_RTP;
@@ -551,7 +552,7 @@ attributes_to_string(GSList *attributes)
 	return g_string_free(result, FALSE);
 }
 
-gchar *
+static gchar *
 media_to_string(const struct sdpmedia *media, SipeIceVersion ice_version)
 {
 	gchar *media_str;

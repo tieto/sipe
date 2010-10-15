@@ -505,8 +505,9 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	return TRUE;
 }
 
-void do_apply_remote_message(struct sipe_media_call_private *call_private,
-			     struct sdpmsg *smsg)
+static void
+do_apply_remote_message(struct sipe_media_call_private *call_private,
+			struct sdpmsg *smsg)
 {
 	if (!apply_remote_message(call_private, smsg)) {
 		sip_transport_response(call_private->sipe_private,
