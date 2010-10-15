@@ -83,7 +83,7 @@ AC_ARG_ENABLE(quality-check,
 	[enable_quality_check=yes])
 
 AS_IF([test "x$enable_quality_check" = xyes],
-	[QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
+	[QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall -Waggregate-return -Wcast-align -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith"
 	 ac_save_CFLAGS=$CFLAGS
 
 	 dnl GCC >= 3.4
@@ -254,7 +254,7 @@ AS_IF([test "x$enable_purple" != xno],
 #include <cipher.h>
 
 /* Compile some code that has caused trouble in the past */
-void testfunc(unsigned long len)
+static void testfunc(unsigned long len)
 {
   PurpleCipherContext *rc4 = NULL;
   guchar *plaintext = NULL;
