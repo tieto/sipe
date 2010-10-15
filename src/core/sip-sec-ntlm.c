@@ -590,23 +590,23 @@ EndDefine
 
 		/* client_challenge (8) & temp (temp_len) buff */
 		int temp_len = 8+8+8+4+target_info_len+4;
-		guint8 *temp2 = g_malloc(8 + temp_len);
-		memset(temp2, 0, 8 + temp_len); /* init to 0 */
-		temp2[8+0] = 1;
-		temp2[8+1] = 1;
-		*((guint64 *)(temp2+8+8)) = GUINT64_TO_LE(time_val); /* should be int64 aligned: OK for sparc */
-		memcpy(temp2+8+16, client_challenge, 8);
-		memcpy(temp2+8+28, target_info, target_info_len);
+		guint64 *temp2 = g_malloc0(8 + temp_len);
+		((guint8 *) temp2)[8+0] = 1;
+		((guint8 *) temp2)[8+1] = 1;
+		temp2[2] = GUINT64_TO_LE(time_val); /* should be int64 aligned: OK for sparc */
+		memcpy(((guint8 *) temp2)+8+16, client_challenge, 8);
+		memcpy(((guint8 *) temp2)+8+28, target_info, target_info_len);
 
 		/* NTProofStr */
 		//Set NTProofStr to HMAC_MD5(ResponseKeyNT, ConcatenationOf(CHALLENGE_MESSAGE.ServerChallenge,temp))
 		memcpy(temp2, server_challenge, 8);
-		HMAC_MD5(response_key_nt, 16, temp2, 8+temp_len, nt_proof_str);
+		HMAC_MD5(response_key_nt, 16, (guint8*)temp2, 8+temp_len, nt_proof_str);
 
 		/* NtChallengeResponse */
 		//Set NtChallengeResponse to ConcatenationOf(NTProofStr, temp)
 		memcpy(nt_challenge_response, nt_proof_str, 16);
-		memcpy(nt_challenge_response+16, temp2+8, temp_len);
+		memcpy(nt_challenge_response+16, temp2+1, temp_len);
+		g_free(temp2);
 
 		/* SessionBaseKey */
 		//SessionBaseKey to HMAC_MD5(ResponseKeyNT, NTProofStr)
@@ -617,8 +617,6 @@ EndDefine
 		memcpy(tmp+8, client_challenge, 8);
 		HMAC_MD5(response_key_lm, 16, tmp, 16, lm_challenge_response);
 		memcpy(lm_challenge_response+16, client_challenge, 8);
-
-		g_free(temp2);
 
 #ifndef _SIPE_COMPILING_TESTS
 		/* Not used in NTLMv2 */
@@ -827,7 +825,7 @@ MAC (guint32 flags,
      unsigned long seal_key_len,
      guint32 random_pad,
      guint32 sequence,
-     unsigned char *result)
+     guint32 *result)
 {
 	guint32 *res_ptr;
 
@@ -853,41 +851,41 @@ MAC (guint32 flags,
 
 		unsigned char seal_key_ [16];
 		guchar hmac[16];
-		guchar *tmp = g_malloc(4 + buf_len);
+		guint32 *tmp = g_malloc(4 + buf_len);
 
 		/* SealingKey' = MD5(ConcatenationOf(SealingKey, SequenceNumber))
 		   RC4Init(Handle, SealingKey')
 		 */
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_DATAGRAM)) {
-			unsigned char tmp2 [16+4];
+			guint32 tmp2[4+1];
 
 			memcpy(tmp2, seal_key, seal_key_len);
-			*((guint32 *)(tmp2+16)) = GUINT32_TO_LE(sequence);
-			MD5 (tmp2, 16+4, seal_key_);
+			tmp2[4] = GUINT32_TO_LE(sequence);
+			MD5 ((guchar *)tmp2, sizeof(tmp2), seal_key_);
 		} else {
 			memcpy(seal_key_, seal_key, seal_key_len);
 		}
 
 		SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): Extented Session Security");
 
-		res_ptr = (guint32 *)result;
+		res_ptr = result;
 		res_ptr[0] = GUINT32_TO_LE(1); // 4 bytes
 		res_ptr[3] = GUINT32_TO_LE(sequence);
 
-		res_ptr = (guint32 *)tmp;
+		res_ptr = tmp;
 		res_ptr[0] = GUINT32_TO_LE(sequence);
-		memcpy(tmp+4, buf, buf_len);
+		memcpy(tmp+1, buf, buf_len);
 
-		HMAC_MD5(sign_key, sign_key_len, tmp, 4 + buf_len, hmac);
+		HMAC_MD5(sign_key, sign_key_len, (guchar *)tmp, 4 + buf_len, hmac);
+		g_free(tmp);
 
 		if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_KEY_EXCH)) {
 			SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): Key Exchange");
-			RC4K(seal_key_, seal_key_len, hmac, 8, result+4);
+			RC4K(seal_key_, seal_key_len, hmac, 8, (guchar *)(result+1));
 		} else {
 			SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): *NO* Key Exchange");
-			memcpy(result+4, hmac, 8);
+			memcpy(result+1, hmac, 8);
 		}
-		g_free(tmp);
 	} else {
 		/* The content of the first 4 bytes is irrelevant */
 		guint32 crc = CRC32(buf, strlen(buf));
@@ -899,9 +897,9 @@ MAC (guint32 flags,
 
 		SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): *NO* Extented Session Security");
 
-		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, result+4);
+		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, (guchar *)(result+1));
 
-		res_ptr = (guint32 *)result;
+		res_ptr = result;
 		// Highest four bytes are the Version
 		res_ptr[0] = GUINT32_TO_LE(0x00000001); // 4 bytes
 
@@ -925,7 +923,8 @@ sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
 			     guchar **target_info,
 			     int *target_info_len)
 {
-	struct challenge_message *cmsg = (struct challenge_message*)in_buff.value;
+	/* SipSecBuffer.value is g_malloc()'d: use (void *) to remove guint8 alignment */
+	struct challenge_message *cmsg = (void *)in_buff.value;
 	guint32 host_flags = GUINT32_FROM_LE(cmsg->flags);
 
 	/* server challenge (nonce) */
@@ -1270,13 +1269,13 @@ sip_sec_ntlm_sipe_signature_make(guint32 flags,
 				 guint32 random_pad,
 				 unsigned char *sign_key,
 				 unsigned char *seal_key,
-				 unsigned char *result)
+				 guint32 *result)
 {
 	char *res;
 
 	MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100, result);
 
-	res = buff_to_hex_str(result, 16);
+	res = buff_to_hex_str((guint8 *)result, 16);
 	SIPE_DEBUG_INFO("NTLM calculated MAC: %s", res);
 	g_free(res);
 }
@@ -1645,7 +1644,8 @@ sip_sec_ntlm_message_describe(SipSecBuffer buff)
 
 	if (buff.length == 0 || buff.value == NULL || buff.length < 12) return NULL;
 
-	msg = (struct ntlm_message *)buff.value;
+	/* SipSecBuffer.value is g_malloc()'d: use (void *) to remove guint8 alignment */
+	msg = (void *)buff.value;
 	if(!sipe_strequal("NTLMSSP", (char*)msg)) return NULL;
 
 	switch (GUINT32_FROM_LE(msg->type)) {
@@ -1803,7 +1803,10 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 					 0,
 					 ((context_ntlm) context)->client_sign_key,
 					 ((context_ntlm) context)->client_seal_key,
-					 signature->value);
+					 /* SipSecBuffer.value is g_malloc()'d: 
+					  * use (void *) to remove guint8 alignment
+					  */
+					 (void *)signature->value);
 	return SIP_SEC_E_OK;
 }
 
@@ -1816,8 +1819,9 @@ sip_sec_verify_signature__ntlm(SipSecContext context,
 			  const char *message,
 			  SipSecBuffer signature)
 {
-	guint8 mac[16];
-	guint32 random_pad = GUINT32_FROM_LE(((guint32 *) signature.value)[1]);
+	guint32 mac[4];
+	/* SipSecBuffer.value is g_malloc()'d: use (void *) to remove guint8 alignment */
+	guint32 random_pad = GUINT32_FROM_LE(((guint32 *)((void *)signature.value))[1]);
 
 	sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
 								 message,

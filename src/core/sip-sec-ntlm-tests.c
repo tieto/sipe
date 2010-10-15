@@ -53,15 +53,16 @@ static int failures = 0;
 
 gboolean sip_sec_ntlm_tests(void);
 
-static void assert_equal(const char * expected, const guchar * got, int len, gboolean stringify)
+static void assert_equal(const char * expected, gpointer got, int len, gboolean stringify)
 {
 	const gchar * res = (gchar *) got;
 	gchar to_str[len*2];
 
 	if (stringify) {
+		const guint8 *bin = got;
 		int i, j;
 		for (i = 0, j = 0; i < len; i++, j+=2) {
-			g_sprintf(&to_str[j], "%02X", (got[i]&0xff));
+			g_sprintf(&to_str[j], "%02X", (bin[i]&0xff));
 		}
 		len *= 2;
 		res = to_str;
@@ -119,7 +120,7 @@ gboolean sip_sec_ntlm_tests(void)
 	guchar client_sign_key [16];
 	guchar server_sign_key [16];
 	guchar server_seal_key [16];
-	guchar mac [16];
+	guint32 mac [4];
 	guchar text_enc [18 + 12];
 	struct sipmsg *msg;
 	struct sipmsg_breakdown msgbd;
@@ -508,7 +509,7 @@ Response:
 		msg_str, 0, exported_session_key2, exported_session_key2, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", mac, 16, TRUE);
-	sig = buff_to_hex_str(mac, 16);
+	sig = buff_to_hex_str((guint8 *)mac, 16);
 	}
 
 
@@ -693,17 +694,19 @@ Message (length 352):
 	int target_info2_len;
 	guint8 *nonce2;
 	guint8 *target_info2;
-	guint8 *buff2;
-	hex_str_to_buff("59519A1727B9CA01", &buff2);
+	guint64 *buff2;
+	/* buff2 points to correctly aligned memory. Disable alignment check */
+	hex_str_to_buff("59519A1727B9CA01", (void *)&buff2);
 	/* global var */
-	test_time_val = GUINT64_FROM_LE(*((guint64 *)buff2));
+	test_time_val = GUINT64_FROM_LE(*buff2);
 	g_free(buff2);
 
 	target_info2_len = hex_str_to_buff("02000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C0000000000", &target_info2);
 
 	hex_str_to_buff("DD1BAAF4E7E218D1", &nonce2);
 
-	hex_str_to_buff("D6AE875CB0FDAA41", &buff2);
+	/* buff2 points to correctly aligned memory. Disable alignment check */
+	hex_str_to_buff("D6AE875CB0FDAA41", (void *)&buff2);
 	/* global buff */
 	memcpy(test_client_challenge, buff2, 8);
 	g_free(buff2);
@@ -762,7 +765,7 @@ Message (length 352):
 	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000029618e9651b65a7764000000", mac, 16, TRUE);
-	sig = buff_to_hex_str(mac, 16);
+	sig = buff_to_hex_str((guint8 *)mac, 16);
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nServer response\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(response);
@@ -774,7 +777,7 @@ Message (length 352):
 	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, server_sign_key, server_seal_key, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("01000000E615438A917661BE64000000", mac, 16, TRUE);
-	sig = buff_to_hex_str(mac, 16);
+	sig = buff_to_hex_str((guint8 *)mac, 16);
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - client signing\n");
 	MAC (flags,   (gchar*)request_sig,strlen(request_sig),   client_sign_key,16,   client_seal_key,16,   0,  100, mac);

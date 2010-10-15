@@ -28,7 +28,7 @@
 #include <netinet/in.h>
 #endif
 
-#include "glib.h"
+#include <glib.h>
 
 #include "dnsquery.h"
 #include "dnssrv.h"
@@ -62,11 +62,15 @@ static void dns_a_response(GSList *hosts,
 
 	addr = g_slist_next(hosts)->data;
 	if (addr->sa_family == AF_INET6) {
-		addrdata = &((struct sockaddr_in6 *) addr)->sin6_addr;
-		port = ((struct sockaddr_in6 *) addr)->sin6_port;
+		/* OS provides addr so it must be properly aligned */
+		struct sockaddr_in6 *sin6 = (void *) addr;
+		addrdata = &sin6->sin6_addr;
+		port = sin6->sin6_port;
 	} else {
-		addrdata = &((struct sockaddr_in *) addr)->sin_addr;
-		port = ((struct sockaddr_in *) addr)->sin_port;
+		/* OS provides addr so it must be properly aligned */
+		struct sockaddr_in *sin = (void *) addr;
+		addrdata = &sin->sin_addr;
+		port = sin->sin_port;
 	}
 
 	inet_ntop(addr->sa_family, addrdata, ipstr, sizeof (ipstr));
