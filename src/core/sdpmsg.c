@@ -337,7 +337,9 @@ sdpmsg_parse_msg(gchar *msg)
 		else if (sipe_strequal(media->name, "video"))
 			type = SIPE_MEDIA_VIDEO;
 		else {
-			// TODO unknown media type
+			// Unknown media type
+			sdpmsg_free(smsg);
+			return NULL;
 		}
 
 		media->codecs = parse_codecs(media->attributes, type);
