@@ -5,6 +5,7 @@ supports voice & video):
   patches to libnice, libpurple and farsight:
 	- purple_mime_document_parsen.patch
 	- purple_media_get_active_candidates.patch
+	- purple_media_fs2_dispose.patch
 	- libnice01-Compatibility-with-MSOC-2007-R2.patch
 	- libnice02-Compatibility-with-MSOC-2007.patch
 	- libnice03-MS-TURN-support-for-Microsoft-Office-Communicator.patch
@@ -25,7 +26,10 @@ purple_mime_document_parsen.patch
 purple_media_get_active_candidates.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11830
 	- should be included in version 2.8.0
-	
+
+purple_media_fs2_dispose.patch
+	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/12758
+
 libnice01-Compatibility-with-MSOC-2007-R2.patch
 	- reported upstream https://bugs.freedesktop.org/show_bug.cgi?id=28215
 	- accepted for release libnice 0.0.14

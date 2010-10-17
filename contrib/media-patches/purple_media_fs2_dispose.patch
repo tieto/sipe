@@ -1,0 +1,23 @@
+--- a/libpurple/media/backend-fs2.c 
++++ b/libpurple/media/backend-fs2.c 
+@@ -169,8 +169,7 @@
+ 				purple_media_get_manager(priv->media));
+ 
+ 		gst_element_set_locked_state(priv->confbin, TRUE);
+-		gst_element_set_state(GST_ELEMENT(priv->confbin),
+-				GST_STATE_NULL);
++		gst_object_ref(priv->confbin);
+ 
+ 		if (pipeline) {
+ 			GstBus *bus;
+@@ -187,6 +186,10 @@
+ 					"Couldn't get the pipeline.\n");
+ 		}
+ 
++		gst_element_set_state(GST_ELEMENT(priv->confbin),
++				GST_STATE_NULL);
++		gst_object_unref(priv->confbin);
++
+ 		priv->confbin = NULL;
+ 		priv->conference = NULL;
+
