@@ -76,23 +76,20 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 		msg->to_url = sipmsg_find_part_of_header(hdr, "<", ">", empty_string);
 		msg->to_tag = sipmsg_find_part_of_header(hdr, ";tag=", ";", empty_string);
 	}
-	/*
-	   P-Asserted-Identity: "Cullen Jennings" <sip:fluffy@cisco.com>
-	   P-Asserted-Identity: tel:+14085264000
-	*/
+
 	hdr = sipmsg_find_header(msg->msg, "P-Asserted-Identity");
 	if (NULL == hdr) {
 		hdr = sipmsg_find_header(msg->msg, "P-Preferred-Identity");
 	}
 	if (NULL != hdr) {
-		gchar *tmp = sipmsg_find_part_of_header(hdr, "<", ">", empty_string);
-		if (g_ascii_strncasecmp(tmp, "sip:", 4) == 0) {
-			msg->p_assertet_identity_sip_uri = tmp;
-		} else if (g_ascii_strncasecmp(tmp, "tel:", 4) == 0){
-			msg->p_assertet_identity_tel_uri = tmp;
-		} else {
-			g_free(tmp);
-		}
+		gchar *sip_uri = NULL;
+		gchar *tel_uri = NULL;
+
+		sipmsg_parse_p_asserted_identity(hdr, &sip_uri, &tel_uri);
+		if (sip_uri)
+			msg->p_assertet_identity_sip_uri = sip_uri;
+		if (tel_uri)
+			msg->p_assertet_identity_tel_uri = tel_uri;
 	}
 
 	msg->expires = sipmsg_find_header(msg->msg, "Expires");

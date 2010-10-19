@@ -369,6 +369,45 @@ GSList *sipmsg_parse_endpoints_header(const gchar *header)
 	return(list);
 }
 
+void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
+				      gchar **tel_uri) {
+	gchar **parts;
+	gchar *part;
+	int i;
+
+	*sip_uri = NULL;
+	*tel_uri = NULL;
+
+	if (g_ascii_strncasecmp(header, "tel:", 4) == 0) {
+		*tel_uri = g_strdup(header);
+		return;
+	}
+
+	parts = g_strsplit(header, ",", 0);
+
+	for (i = 0; (part = parts[i]) != NULL; ++i) {
+		gchar *uri = sipmsg_find_part_of_header(part, "<", ">", NULL);
+		if (!uri)
+			continue;
+
+		if (g_ascii_strncasecmp(uri, "sip:", 4) == 0) {
+			if (*sip_uri)
+				SIPE_DEBUG_WARNING_NOFORMAT("More than one "
+					"sip: URI found in P-Asserted-Identity!");
+			else
+				*sip_uri = g_strdup(uri);
+		} else if (g_ascii_strncasecmp(uri, "tel:", 4) == 0){
+			if (*tel_uri)
+				SIPE_DEBUG_WARNING_NOFORMAT("More than one "
+					"tel: URI found in P-Asserted-Identity!");
+			else
+				*tel_uri = g_strdup(uri);
+		}
+	}
+
+	g_free(parts);
+}
+
 /*
  *  sipmsg_find_auth_header will return the particular WWW-Authenticate
  *  header specified by *name.
