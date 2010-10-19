@@ -58,6 +58,21 @@ void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]);
 void sipmsg_merge_new_headers(struct sipmsg *msg);
 void sipmsg_free(struct sipmsg *msg);
 GSList *sipmsg_parse_endpoints_header(const gchar *header);
+/**
+ * Parses sip: and tel: URI out of P-Asserted-Identity header from INVITE request.
+ * You must free the values.
+ *
+ * Example headers:
+ * P-Asserted-Identity: "Cullen Jennings" <sip:fluffy@cisco.com>
+ * P-Asserted-Identity: tel:+14085264000
+ * P-Asserted-Identity: "Lunch, Lucas" <sip:llucas@cisco.com>,<tel:+420123456;ext=88463>
+ *
+ * @param header (in) P-Asserted-Identity header contents
+ * @param sip_uri (out) parsed sip: URI or NULL if missing
+ * @param tel_uri (out) parsed tel: URI or NULL if missing
+ */
+void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
+				      gchar **tel_uri);
 const gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name);
 const gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which);
 gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def);
