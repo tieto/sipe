@@ -239,7 +239,7 @@ void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]) {
 			i++;
 		}
 
-		if (!keeper) {      
+		if (!keeper) {
 			GSList *to_delete = entry;
 			SIPE_DEBUG_INFO("sipmsg_strip_headers: removing %s", elem->name);
 			entry = g_slist_next(entry);
@@ -371,9 +371,7 @@ GSList *sipmsg_parse_endpoints_header(const gchar *header)
 
 void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
 				      gchar **tel_uri) {
-	gchar **parts;
-	gchar *part;
-	int i;
+	gchar **parts, **p;
 
 	*sip_uri = NULL;
 	*tel_uri = NULL;
@@ -384,28 +382,34 @@ void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
 	}
 
 	parts = g_strsplit(header, ",", 0);
-
-	for (i = 0; (part = parts[i]) != NULL; ++i) {
-		gchar *uri = sipmsg_find_part_of_header(part, "<", ">", NULL);
+	
+	for (p = parts; *p; p++) {
+		gchar *uri = sipmsg_find_part_of_header(*p, "<", ">", NULL);
 		if (!uri)
 			continue;
 
 		if (g_ascii_strncasecmp(uri, "sip:", 4) == 0) {
-			if (*sip_uri)
+			if (*sip_uri) {
 				SIPE_DEBUG_WARNING_NOFORMAT("More than one "
 					"sip: URI found in P-Asserted-Identity!");
-			else
-				*sip_uri = g_strdup(uri);
+			} else {
+				*sip_uri = uri;
+				uri = NULL;
+			}
 		} else if (g_ascii_strncasecmp(uri, "tel:", 4) == 0){
-			if (*tel_uri)
+			if (*tel_uri) {
 				SIPE_DEBUG_WARNING_NOFORMAT("More than one "
 					"tel: URI found in P-Asserted-Identity!");
-			else
-				*tel_uri = g_strdup(uri);
+			} else {
+				*tel_uri = uri;
+				uri = NULL;
+			}
 		}
+
+		g_free(uri);
 	}
 
-	g_free(parts);
+	g_strfreev(parts);
 }
 
 /*
