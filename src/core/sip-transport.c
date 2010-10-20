@@ -90,13 +90,6 @@ struct sip_auth {
 	int expires;
 };
 
-enum sip_register_status {
-	SIP_REGISTER_NONE,
-	SIP_REGISTER_SENT,
-	SIP_REGISTER_AUTH_RECEIVED,
-	SIP_REGISTER_COMPLETED
-};
-
 /* sip-transport.c private data */
 struct sip_transport {
 	struct sipe_transport_connection *connection;
@@ -109,7 +102,6 @@ struct sip_transport {
 
 	GSList *transactions;
 
-	enum sip_register_status register_status;
 	struct sip_auth registrar;
 	struct sip_auth proxy;
 
@@ -826,7 +818,6 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO_NOFORMAT("do a full reauthentication");
 	sipe_auth_free(&transport->registrar);
 	sipe_auth_free(&transport->proxy);
-	transport->register_status = SIP_REGISTER_NONE;
 	do_register(sipe_private, FALSE);
 	transport->reauthenticate_set = FALSE;
 }
@@ -864,9 +855,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 	switch (msg->response) {
 		case 200:
-			if (expires == 0) {
-				transport->register_status = SIP_REGISTER_NONE;
-			} else {
+			if (expires) {
 				const gchar *contact_hdr;
 				gchar *gruu = NULL;
 				gchar *epid;
@@ -887,8 +876,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					transport->reregister_set = TRUE;
 				}
 
-				transport->register_status = SIP_REGISTER_COMPLETED;
-
 				if (server_hdr && !transport->server_version) {
 					transport->server_version = g_strdup(server_hdr);
 					g_free(transport->user_agent);
@@ -899,7 +886,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				tmp = sipmsg_find_auth_header(msg, auth_scheme);
 
 				if (tmp) {
-					SIPE_DEBUG_INFO("process_register_response - Auth header: %s", tmp);
+					SIPE_DEBUG_INFO("process_register_response: Auth header: %s", tmp);
 					fill_auth(tmp, &transport->registrar);
 				}
 
@@ -936,11 +923,11 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					gchar * valid_contact = sipmsg_find_part_of_header (contact_hdr, uuid, NULL, NULL);
 					if (valid_contact) {
 						gruu = sipmsg_find_part_of_header(contact_hdr, "gruu=\"", "\"", NULL);
-						//SIPE_DEBUG_INFO("got gruu %s from contact hdr w/ right uuid: %s", gruu, contact_hdr);
+						//SIPE_DEBUG_INFO("process_register_response: got gruu %s from contact hdr w/ right uuid: %s", gruu, contact_hdr);
 						g_free(valid_contact);
 						break;
 					} else {
-						//SIPE_DEBUG_INFO("ignoring contact hdr b/c not right uuid: %s", contact_hdr);
+						//SIPE_DEBUG_INFO("process_register_response: ignoring contact hdr b/c not right uuid: %s", contact_hdr);
 					}
 				}
 				g_free(uuid);
@@ -950,7 +937,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					sipe_private->contact = g_strdup_printf("<%s>", gruu);
 					g_free(gruu);
 				} else {
-					//SIPE_DEBUG_INFO_NOFORMAT("didn't find gruu in a Contact hdr");
+					//SIPE_DEBUG_INFO_NOFORMAT("process_register_response: didn't find gruu in a Contact hdr");
 					sip_transport_default_contact(sipe_private);
 				}
                                 SIPE_CORE_PRIVATE_FLAG_UNSET(OCS2007);
@@ -1058,12 +1045,12 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 								     "timeout=", ";", NULL);
 				if (timeout != NULL) {
 					sscanf(timeout, "%u", &sipe_private->public.keepalive_timeout);
-					SIPE_DEBUG_INFO("server determined keep alive timeout is %u seconds",
+					SIPE_DEBUG_INFO("process_register_response: server determined keep alive timeout is %u seconds",
 							sipe_private->public.keepalive_timeout);
 					g_free(timeout);
 				}
 
-				SIPE_DEBUG_INFO("process_register_response - got 200, removing CSeq: %d", transport->cseq);
+				SIPE_DEBUG_INFO("process_register_response: got 200, removing CSeq: %d", transport->cseq);
 			}
 			break;
 		case 301:
@@ -1109,10 +1096,11 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			}
 			break;
 		case 401:
-			if (transport->register_status != SIP_REGISTER_AUTH_RECEIVED) {
+		        {
 				const char *auth_scheme;
-				SIPE_DEBUG_INFO("REGISTER retries %d", transport->registrar.retries);
+				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
 				if (transport->registrar.retries > 3) {
+					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: still not authenticated after 3 tries - giving up.");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
@@ -1122,7 +1110,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				auth_scheme = sipe_get_auth_scheme_name(sipe_private);
 				tmp = sipmsg_find_auth_header(msg, auth_scheme);
 
-				SIPE_DEBUG_INFO("process_register_response - Auth header: %s", tmp ? tmp : "");
+				SIPE_DEBUG_INFO("process_register_response: Auth header: %s", tmp ? tmp : "");
 				if (!tmp) {
 					char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
@@ -1132,7 +1120,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					return TRUE;
 				}
 				fill_auth(tmp, &transport->registrar);
-				transport->register_status = SIP_REGISTER_AUTH_RECEIVED;
 				do_register(sipe_private,
 					    sipe_backend_connection_is_disconnecting(SIPE_CORE_PUBLIC));
 			}
@@ -1230,8 +1217,6 @@ static void do_register(struct sipe_core_private *sipe_private,
 	g_free(uuid);
 	g_free(epid);
 
-	transport->register_status = SIP_REGISTER_SENT;
-
 	uri = sip_uri_from_name(sipe_private->public.sip_domain);
 	to = sip_uri_self(sipe_private);
 	sip_transport_request(sipe_private,
@@ -1298,7 +1283,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 	gboolean notfound = FALSE;
 	const char *method = msg->method ? msg->method : "NOT FOUND";
 
-	SIPE_DEBUG_INFO("msg->response(%d),msg->method(%s)",
+	SIPE_DEBUG_INFO("process_input_message: msg->response(%d),msg->method(%s)",
 			msg->response, method);
 
 	if (msg->response == 0) { /* request */
@@ -1341,12 +1326,12 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 				if (msg->bodylen != 0) {
 					SIPE_DEBUG_INFO("got provisional (%d) response with body", msg->response);
 					if (trans->callback) {
-						SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
+						SIPE_DEBUG_INFO_NOFORMAT("process_input_message: we have a transaction callback");
 						(trans->callback)(sipe_private, msg, trans);
 					}
 				} else {
 					/* ignore provisional response */
-					SIPE_DEBUG_INFO("got provisional (%d) response, ignoring", msg->response);
+					SIPE_DEBUG_INFO("process_input_message: got provisional (%d) response, ignoring", msg->response);
 				}
 
 			} else if (msg->response == 407) {
@@ -1379,7 +1364,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					} else {
 						transport->registrar.retries = 0;
 					}
-					SIPE_DEBUG_INFO("RE-REGISTER CSeq: %d", transport->cseq);
+					SIPE_DEBUG_INFO("process_input_message: RE-REGISTER CSeq: %d", transport->cseq);
 
 				} else if (msg->response == 401) {
 					gchar *resend, *auth, *ptmp;
@@ -1391,7 +1376,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					auth_scheme = sipe_get_auth_scheme_name(sipe_private);
 					ptmp = sipmsg_find_auth_header(msg, auth_scheme);
 
-					SIPE_DEBUG_INFO("process_input_message - Auth header: %s", ptmp ? ptmp : "");
+					SIPE_DEBUG_INFO("process_input_message: Auth header: %s", ptmp ? ptmp : "");
 					if (!ptmp) {
 						char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
 						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
@@ -1414,7 +1399,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 				}
 
 				if (trans->callback) {
-					SIPE_DEBUG_INFO_NOFORMAT("process_input_message - we have a transaction callback");
+					SIPE_DEBUG_INFO_NOFORMAT("process_input_message: we have a transaction callback");
 					/* call the callback to process response*/
 					(trans->callback)(sipe_private, msg, trans);
 				}
@@ -1422,12 +1407,12 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 				/* Redirect: old content of "transport" is no longer valid */
 				transport = sipe_private->transport;
 
-				SIPE_DEBUG_INFO("process_input_message - removing CSeq %d", transport->cseq);
+				SIPE_DEBUG_INFO("process_input_message: removing CSeq %d", transport->cseq);
 				transactions_remove(transport, trans);
 			}
 
 		} else {
-			SIPE_DEBUG_INFO_NOFORMAT("received response to unknown transaction");
+			SIPE_DEBUG_INFO_NOFORMAT("process_input_message: received response to unknown transaction");
 			notfound = TRUE;
 		}
 	}
@@ -1476,7 +1461,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			sipe_utils_shrink_buffer(conn, cur);
 		} else {
 			if (msg){
-				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
+				SIPE_DEBUG_INFO("sipe_transport_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
 				sipmsg_free(msg);
                         }
 
@@ -1498,19 +1483,23 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 
 			if (rspauth != NULL) {
 				if (!sip_sec_verify_signature(transport->registrar.gssapi_context, signature_input_str, rspauth)) {
-					SIPE_DEBUG_INFO_NOFORMAT("incoming message's signature validated");
+					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: signature of incoming message validated");
 					process_input_message(sipe_private, msg);
 				} else {
-					SIPE_DEBUG_INFO_NOFORMAT("incoming message's signature is invalid.");
+					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: signature of incoming message is invalid.");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_NETWORK,
 								      _("Invalid message signature received"));
 				}
 			} else if (msg->response == 401) {
-				if (sipe_strequal(msg->method, "REGISTER")) {
-					SIPE_DEBUG_INFO_NOFORMAT("RE-REGISTER rejected, triggering re-authentication");
+				if ((transport->registrar.retries < 2) &&
+				    sipe_strequal(msg->method, "REGISTER")) {
+					struct transaction *trans = transactions_find(transport, msg);
+					if (trans) transactions_remove(transport, trans);
+					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: RE-REGISTER rejected, triggering re-authentication");
 					do_reauthenticate_cb(sipe_private, NULL);
 				} else {
+					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: server rejected us - giving up");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
