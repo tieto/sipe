@@ -33,7 +33,7 @@
 #include "win32/libc_interface.h"
 #include <nspapi.h>
 #else
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__FreeBSD__)
 #include <sys/socket.h>
 #endif
 #include <unistd.h>
