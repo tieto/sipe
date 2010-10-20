@@ -35,19 +35,19 @@
  * The same with message integtity (signing). No sip-sec* code should
  * be used ourside of this module.
  *
- * SIP errors as codes(both as a return codes and network conditions) should be 
- * escalated to higher leyer (SIPE). Network conditions include no response 
+ * SIP errors as codes(both as a return codes and network conditions) should be
+ * escalated to higher leyer (SIPE). Network conditions include no response
  * within timeout interval.
  *
- * This module should support redirect internally. No escalations to higher 
+ * This module should support redirect internally. No escalations to higher
  * layers needed.
  *
- * NO SIP-messages (headers) composing and processing should be outside of 
+ * NO SIP-messages (headers) composing and processing should be outside of
  * this module (!) Like headers: Via, Route, Contact, Authorization, etc.
  * It's all irrelevant to higher layer responsibilities.
  *
  */
- 
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -1507,9 +1507,14 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 								      _("Invalid message signature received"));
 				}
 			} else if (msg->response == 401) {
+				if (sipe_strequal(msg->method, "REGISTER")) {
+					SIPE_DEBUG_INFO_NOFORMAT("RE-REGISTER rejected, triggering re-authentication");
+					do_reauthenticate_cb(sipe_private, NULL);
+				} else {
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
+				}
 			}
 			g_free(signature_input_str);
 
@@ -1544,7 +1549,7 @@ static void sip_transport_error(struct sipe_transport_connection *conn,
 	if (sipe_private->service_data) {
 		resolve_next_service(sipe_private, NULL);
 	} else {
-		sipe_backend_connection_error(SIPE_CORE_PUBLIC, 
+		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 					      SIPE_CONNECTION_ERROR_NETWORK,
 					      msg);
 	}
