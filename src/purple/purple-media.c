@@ -85,13 +85,8 @@ on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 
 	stream->candidates_prepared = TRUE;
 
-	if (ctx->call->candidates_prepared_cb) {
-		GSList *streams = ctx->backend_media->streams;
-		for (; streams; streams = streams->next) {
-			struct sipe_backend_stream *s = streams->data;
-			if (!s->candidates_prepared)
-				return;
-		}
+	if (ctx->call->candidates_prepared_cb &&
+	    sipe_backend_candidates_prepared(ctx->backend_media)) {
 		ctx->call->candidates_prepared_cb(ctx->call, stream);
 	}
 }
@@ -206,7 +201,6 @@ sipe_backend_media_free(struct sipe_backend_media *media)
 {
 	if (media) {
 		GSList *stream = media->streams;
-		g_object_unref(media->m);
 
 		for (; stream; stream = g_slist_delete_link(stream, stream))
 			backend_stream_free(stream->data);
@@ -386,6 +380,18 @@ gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
 gboolean sipe_backend_media_accepted(struct sipe_backend_media *media)
 {
 	return purple_media_accepted(media->m, NULL, NULL);
+}
+
+gboolean
+sipe_backend_candidates_prepared(struct sipe_backend_media *media)
+{
+	GSList *streams = media->streams;
+	for (; streams; streams = streams->next) {
+		struct sipe_backend_stream *s = streams->data;
+		if (!s->candidates_prepared)
+			return FALSE;
+	}
+	return TRUE;
 }
 
 GList *

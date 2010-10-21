@@ -391,20 +391,6 @@ encryption_levels_compatible(struct sdpmsg *msg)
 	return TRUE;
 }
 
-static void
-handle_incompatible_encryption_level(struct sipe_media_call_private *call_private)
-{
-	sipmsg_add_header(call_private->invitation, "Warning",
-			  "308 lcs.microsoft.com \"Encryption Levels not compatible\"");
-	sip_transport_response(call_private->sipe_private,
-			       call_private->invitation,
-			       488, "Encryption Levels not compatible",
-			       NULL);
-	sipe_backend_media_reject(call_private->public.backend_private, FALSE);
-	sipe_backend_notify_error(_("Unable to establish a call"),
-		_("Encryption settings of peer are incompatible with ours."));
-}
-
 static gboolean
 process_invite_call_response(struct sipe_core_private *sipe_private,
 								   struct sipmsg *msg,
@@ -505,7 +491,7 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	return TRUE;
 }
 
-static void
+static gboolean
 do_apply_remote_message(struct sipe_media_call_private *call_private,
 			struct sdpmsg *smsg)
 {
@@ -514,22 +500,40 @@ do_apply_remote_message(struct sipe_media_call_private *call_private,
 				       call_private->invitation,
 				       487, "Request Terminated", NULL);
 		sipe_media_hangup(call_private->sipe_private);
-		return;
+		return FALSE;
+	}
+	return TRUE;
+}
+
+// Sends an invite response when the call is accepted and local candidates were
+// prepared, otherwise does nothing. If error response is sent, call_private is
+// disposed before function returns. Returns true when response was sent.
+static gboolean
+send_invite_response_if_ready(struct sipe_media_call_private *call_private)
+{
+	struct sipe_backend_media *backend_media;
+
+	backend_media = call_private->public.backend_private;
+
+	if (!sipe_backend_media_accepted(backend_media) ||
+	    !sipe_backend_candidates_prepared(backend_media))
+		return FALSE;
+
+	if (!call_private->encryption_compatible) {
+		sipmsg_add_header(call_private->invitation, "Warning",
+			"308 lcs.microsoft.com \"Encryption Levels not compatible\"");
+		sip_transport_response(call_private->sipe_private,
+			call_private->invitation,
+			488, "Encryption Levels not compatible",
+			NULL);
+		sipe_backend_media_reject(backend_media, FALSE);
+		sipe_backend_notify_error(_("Unable to establish a call"),
+			_("Encryption settings of peer are incompatible with ours."));
+	} else {
+		send_response_with_session_description(call_private, 200, "OK");
 	}
 
-	sdpmsg_free(call_private->smsg);
-	call_private->smsg = NULL;
-
-	if (sipe_backend_media_accepted(call_private->public.backend_private)) {
-		send_response_with_session_description(call_private,
-						       200, "OK");
-		return;
-	}
-
-	if (   call_private->ice_version == SIPE_ICE_RFC_5245
-	    && call_private->encryption_compatible)
-		send_response_with_session_description(call_private,
-						       183, "Session Progress");
+	return TRUE;
 }
 
 static void candidates_prepared_cb(struct sipe_media_call *call,
@@ -545,13 +549,19 @@ static void candidates_prepared_cb(struct sipe_media_call *call,
 					    stream)) {
 		sipe_invite_call(call_private->sipe_private,
 				 process_invite_call_response);
-		return;
 	} else {
 		struct sdpmsg *smsg = call_private->smsg;
 		call_private->smsg = NULL;
 
-		do_apply_remote_message(call_private, smsg);
-		sdpmsg_free(call_private->smsg);
+		if (do_apply_remote_message(call_private, smsg) &&
+		    !send_invite_response_if_ready(call_private) &&
+		    call_private->ice_version == SIPE_ICE_RFC_5245 &&
+		    call_private->encryption_compatible) {
+			send_response_with_session_description(call_private,
+						       183, "Session Progress");
+		}
+
+		sdpmsg_free(smsg);
 	}
 }
 
@@ -562,14 +572,7 @@ static void media_connected_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call_priv
 static void call_accept_cb(struct sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
-
-		if (!call_private->encryption_compatible) {
-			handle_incompatible_encryption_level(call_private);
-			return;
-		}
-
-		send_response_with_session_description(call_private, 200, "OK");
+		send_invite_response_if_ready(SIPE_MEDIA_CALL_PRIVATE);
 	}
 }
 
@@ -822,12 +825,15 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 	sipe_backend_media_relays_free(backend_media_relays);
 
 	if (has_new_media) {
+		sdpmsg_free(call_private->smsg);
 		call_private->smsg = smsg;
 		sip_transport_response(sipe_private, call_private->invitation,
 				       180, "Ringing", NULL);
 		// Processing continues in candidates_prepared_cb
 	} else {
-		do_apply_remote_message(call_private, smsg);
+		if (do_apply_remote_message(call_private, smsg))
+			send_response_with_session_description(call_private, 200, "OK");
+
 		sdpmsg_free(smsg);
 	}
 }
