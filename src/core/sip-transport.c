@@ -1,4 +1,4 @@
- /**
+/**
  * @file sip-transport.c
  *
  * pidgin-sipe
@@ -837,6 +837,19 @@ static void sip_transport_default_contact(struct sipe_core_private *sipe_private
 						TRANSPORT_DESCRIPTOR);
 }
 
+static void sip_transport_set_reregister(struct sipe_core_private *sipe_private,
+					 struct sip_transport *transport,
+					 int expires)
+{
+	sipe_schedule_seconds(sipe_private,
+			      "<registration>",
+			      NULL,
+			      expires,
+			      do_register_cb,
+			      NULL);
+	transport->reregister_set = TRUE;
+}
+
 static gboolean process_register_response(struct sipe_core_private *sipe_private,
 					  struct sipmsg *msg,
 					  SIPE_UNUSED_PARAMETER struct transaction *trans)
@@ -865,15 +878,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				const char *auth_scheme;
 
 				if (!transport->reregister_set) {
-					gchar *action_name = g_strdup_printf("<%s>", "registration");
-					sipe_schedule_seconds(sipe_private,
-							      action_name,
-							      NULL,
-							      expires,
-							      do_register_cb,
-							      NULL);
-					g_free(action_name);
-					transport->reregister_set = TRUE;
+					sip_transport_set_reregister(sipe_private,
+								     transport,
+								     expires);
 				}
 
 				if (server_hdr && !transport->server_version) {
@@ -1091,11 +1098,17 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 		        {
 				const char *auth_scheme;
 				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
-				if (transport->registrar.retries > 3) {
+				if (transport->registrar.retries > 2) {
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: still not authenticated after 3 tries - giving up.");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
+					return TRUE;
+				}
+
+				if (transport->reauthenticate_set) {
+					SIPE_DEBUG_ERROR_NOFORMAT("process_register_response: RE-REGISTER rejected, triggering re-authentication");
+					do_reauthenticate_cb(sipe_private, NULL);
 					return TRUE;
 				}
 
@@ -1138,7 +1151,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				return TRUE;
 			}
 			break;
-			case 404:
+		case 404:
 			{
 				const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
 				gchar *reason = NULL;
@@ -1158,8 +1171,16 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				return TRUE;
 			}
 			break;
-                case 503:
 		case 504: /* Server time-out */
+			if (transport->reauthenticate_set) {
+				SIPE_DEBUG_ERROR_NOFORMAT("process_register_response: RE-REGISTER timeout, retrying later");
+				sip_transport_set_reregister(sipe_private,
+							     transport,
+							     60);
+				return TRUE;
+			}
+			/* FALLTHROUGH */
+                case 503:
                         {
 				const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
 				gchar *reason = NULL;
@@ -1479,19 +1500,22 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 								      SIPE_CONNECTION_ERROR_NETWORK,
 								      _("Invalid message signature received"));
 				}
+			} else if (sipe_strequal(msg->method, "REGISTER")) {
+				/* We must always process REGISTER responses */
+				process_input_message(sipe_private, msg);
 			} else if (msg->response == 401) {
-				if ((transport->registrar.retries < 2) &&
-				    sipe_strequal(msg->method, "REGISTER")) {
+				SIPE_DEBUG_ERROR_NOFORMAT("sip_transport_input: 401 Unauthorized response to non-REGISTER message");
+				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+							      _("Authentication failed"));
+			} else {
+				if (msg->response) {
+					/* We are not calling process_input_message(),
+					   so we need to drop the transaction here. */
 					struct transaction *trans = transactions_find(transport, msg);
 					if (trans) transactions_remove(transport, trans);
-					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: RE-REGISTER rejected, triggering re-authentication");
-					do_reauthenticate_cb(sipe_private, NULL);
-				} else {
-					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: server rejected us - giving up");
-					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-								      _("Authentication failed"));
 				}
+				SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: message without authentication data - ignoring");
 			}
 			g_free(signature_input_str);
 
