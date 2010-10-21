@@ -56,7 +56,7 @@ gboolean sip_sec_ntlm_tests(void);
 static void assert_equal(const char * expected, gpointer got, int len, gboolean stringify)
 {
 	const gchar * res = (gchar *) got;
-	gchar to_str[len*2];
+	gchar to_str[len*2 + 1];
 
 	if (stringify) {
 		const guint8 *bin = got;
