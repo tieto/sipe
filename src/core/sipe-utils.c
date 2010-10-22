@@ -500,14 +500,14 @@ const char * sipe_utils_get_suitable_local_ip(int fd)
 	int source = (fd >= 0) ? fd : socket(PF_INET,SOCK_STREAM, 0);
 
 	if (source >= 0) {
-		struct ifreq buffer[IFREQ_MAX];
+		struct ifreq *buffer = g_new0(struct ifreq, IFREQ_MAX);
 		struct ifconf ifc;
 		guint32 lhost = htonl(127 * 256 * 256 * 256 + 1);
 		guint32 llocal = htonl((169 << 24) + (254 << 16));
 		guint i;
 		static char ip[16];
 
-		ifc.ifc_len = sizeof(buffer);
+		ifc.ifc_len = sizeof(struct ifreq) * IFREQ_MAX;
 		ifc.ifc_req = buffer;
 		ioctl(source, SIOCGIFCONF, &ifc);
 
@@ -532,10 +532,12 @@ const char * sipe_utils_get_suitable_local_ip(int fd)
 						   ((add >> 8) & 255),
 						   add & 255);
 
+					g_free(buffer);
 					return ip;
 				}
 			}
 		}
+		g_free(buffer);
 	}
 
 	return "0.0.0.0";
