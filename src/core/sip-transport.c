@@ -106,6 +106,7 @@ struct sip_transport {
 	struct sip_auth proxy;
 
 	guint cseq;
+	guint register_attempt;
 
 	gboolean processing_input;   /* whether full header received */
 	gboolean reregister_set;     /* whether reregister timer set */
@@ -800,13 +801,6 @@ sipe_get_auth_scheme_name(struct sipe_core_private *sipe_private)
 static void do_register(struct sipe_core_private *sipe_private,
 			gboolean deregister);
 
-static void do_register_cb(struct sipe_core_private *sipe_private,
-			   SIPE_UNUSED_PARAMETER void *unused)
-{
-	do_register(sipe_private, FALSE);
-	sipe_private->transport->reregister_set = FALSE;
-}
-
 static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 				 SIPE_UNUSED_PARAMETER gpointer unused)
 {
@@ -818,14 +812,12 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO_NOFORMAT("do a full reauthentication");
 	sipe_auth_free(&transport->registrar);
 	sipe_auth_free(&transport->proxy);
+	sipe_schedule_cancel(sipe_private, "<registration>");
+	transport->reregister_set = FALSE;
+	transport->register_attempt = 0;
 	do_register(sipe_private, FALSE);
 	transport->reauthenticate_set = FALSE;
 }
-
-static void sipe_server_register(struct sipe_core_private *sipe_private,
-				 guint type,
-				 gchar *server_name,
-				 guint server_port);
 
 static void sip_transport_default_contact(struct sipe_core_private *sipe_private)
 {
@@ -837,8 +829,13 @@ static void sip_transport_default_contact(struct sipe_core_private *sipe_private
 						TRANSPORT_DESCRIPTOR);
 }
 
+static void do_register_cb(struct sipe_core_private *sipe_private,
+			   SIPE_UNUSED_PARAMETER void *unused)
+{
+	do_register(sipe_private, FALSE);
+}
+
 static void sip_transport_set_reregister(struct sipe_core_private *sipe_private,
-					 struct sip_transport *transport,
 					 int expires)
 {
 	sipe_schedule_seconds(sipe_private,
@@ -847,8 +844,12 @@ static void sip_transport_set_reregister(struct sipe_core_private *sipe_private,
 			      expires,
 			      do_register_cb,
 			      NULL);
-	transport->reregister_set = TRUE;
 }
+
+static void sipe_server_register(struct sipe_core_private *sipe_private,
+				 guint type,
+				 gchar *server_name,
+				 guint server_port);
 
 static gboolean process_register_response(struct sipe_core_private *sipe_private,
 					  struct sipmsg *msg,
@@ -879,8 +880,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 				if (!transport->reregister_set) {
 					sip_transport_set_reregister(sipe_private,
-								     transport,
 								     expires);
+					transport->reregister_set = TRUE;
 				}
 
 				if (server_hdr && !transport->server_version) {
@@ -1133,6 +1134,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					return TRUE;
 				}
 				fill_auth(tmp, &transport->registrar);
+				transport->reregister_set = FALSE;
+				transport->register_attempt = 0;
 				do_register(sipe_private,
 					    sipe_backend_connection_is_disconnecting(SIPE_CORE_PUBLIC));
 			}
@@ -1180,11 +1183,11 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			}
 			break;
 		case 504: /* Server time-out */
-			if (transport->reauthenticate_set) {
-				SIPE_DEBUG_ERROR_NOFORMAT("process_register_response: RE-REGISTER timeout, retrying later");
-				sip_transport_set_reregister(sipe_private,
-							     transport,
-							     60);
+			/* first attempt + 5 retries */
+			if (transport->register_attempt < 6) {
+				SIPE_DEBUG_INFO("process_register_response: RE-REGISTER timeout on attempt %d, retrying later",
+						transport->register_attempt);
+				sip_transport_set_reregister(sipe_private, 60);
 				return TRUE;
 			}
 			/* FALLTHROUGH */
@@ -1221,6 +1224,15 @@ static void do_register(struct sipe_core_private *sipe_private,
 	char *uuid;
 
 	if (!sipe_private->public.sip_domain) return;
+
+	if (!deregister) {
+		if (transport->reregister_set) {
+			transport->reregister_set = FALSE;
+			transport->register_attempt = 1;
+		} else {
+			transport->register_attempt++;
+		}
+	}
 
 	epid = get_epid(sipe_private);
 	uuid = generateUUIDfromEPID(epid);
