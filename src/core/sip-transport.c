@@ -460,9 +460,10 @@ void sip_transport_response(struct sipe_core_private *sipe_private,
 	g_string_free(outstr, TRUE);
 }
 
-static void transactions_remove(struct sip_transport *transport,
+static void transactions_remove(struct sipe_core_private *sipe_private,
 				struct transaction *trans)
 {
+	struct sip_transport *transport = sipe_private->transport;
 	if (transport->transactions) {
 		transport->transactions = g_slist_remove(transport->transactions,
 							 trans);
@@ -474,6 +475,10 @@ static void transactions_remove(struct sip_transport *transport,
 			g_free(trans->payload);
 		}
 		g_free(trans->key);
+		if (trans->timeout_key) {
+			sipe_schedule_cancel(sipe_private, trans->timeout_key);
+			g_free(trans->timeout_key);
+		}
 		g_free(trans);
 	}
 }
@@ -503,6 +508,14 @@ static struct transaction *transactions_find(struct sip_transport *transport,
 	g_free(key);
 
 	return NULL;
+}
+
+static void transaction_timeout_cb(struct sipe_core_private *sipe_private,
+				   gpointer data)
+{
+	struct transaction *trans = data;
+	(trans->timeout_callback)(sipe_private, trans->msg, trans);
+	transactions_remove(sipe_private, trans);
 }
 
 const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_private)
@@ -570,14 +583,16 @@ const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_private)
 	return(transport->user_agent);
 }
 
-struct transaction *sip_transport_request(struct sipe_core_private *sipe_private,
-					  const gchar *method,
-					  const gchar *url,
-					  const gchar *to,
-					  const gchar *addheaders,
-					  const gchar *body,
-					  struct sip_dialog *dialog,
-					  TransCallback callback)
+struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe_private,
+						  const gchar *method,
+						  const gchar *url,
+						  const gchar *to,
+						  const gchar *addheaders,
+						  const gchar *body,
+						  struct sip_dialog *dialog,
+						  TransCallback callback,
+						  guint timeout,
+						  TransCallback timeout_callback)
 {
 	struct sip_transport *transport = sipe_private->transport;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
@@ -678,6 +693,16 @@ struct transaction *sip_transport_request(struct sipe_core_private *sipe_private
 		trans->callback = callback;
 		trans->msg = msg;
 		trans->key = g_strdup_printf("<%s><%d %s>", callid, cseq, method);
+		if (timeout_callback) {
+			trans->timeout_callback = timeout_callback;
+			trans->timeout_key = g_strdup_printf("<transaction timeout>%s", trans->key);
+			sipe_schedule_seconds(sipe_private,
+					      trans->timeout_key,
+					      trans,
+					      timeout,
+					      transaction_timeout_cb,
+					      NULL);
+		}
 		transport->transactions = g_slist_append(transport->transactions,
 							 trans);
 		SIPE_DEBUG_INFO("SIP transactions count:%d after addition", g_slist_length(transport->transactions));
@@ -691,6 +716,27 @@ struct transaction *sip_transport_request(struct sipe_core_private *sipe_private
 	g_free(buf);
 
 	return trans;
+}
+
+struct transaction *sip_transport_request(struct sipe_core_private *sipe_private,
+					  const gchar *method,
+					  const gchar *url,
+					  const gchar *to,
+					  const gchar *addheaders,
+					  const gchar *body,
+					  struct sip_dialog *dialog,
+					  TransCallback callback)
+{
+	return sip_transport_request_timeout(sipe_private,
+					     method,
+					     url,
+					     to,
+					     addheaders,
+					     body,
+					     dialog,
+					     callback,
+					     0,
+					     NULL);
 }
 
 static void sip_transport_simple_request(struct sipe_core_private *sipe_private,
@@ -1291,7 +1337,7 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 	g_free(transport->user_agent);
 
 	while (transport->transactions)
-		transactions_remove(transport,
+		transactions_remove(sipe_private,
 				    transport->transactions->data);
 
 	g_free(transport);
@@ -1437,11 +1483,8 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					(trans->callback)(sipe_private, msg, trans);
 				}
 
-				/* Redirect: old content of "transport" is no longer valid */
-				transport = sipe_private->transport;
-
 				SIPE_DEBUG_INFO("process_input_message: removing CSeq %d", transport->cseq);
-				transactions_remove(transport, trans);
+				transactions_remove(sipe_private, trans);
 			}
 
 		} else {
@@ -1537,7 +1580,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 					/* We are not calling process_input_message(),
 					   so we need to drop the transaction here. */
 					struct transaction *trans = transactions_find(transport, msg);
-					if (trans) transactions_remove(transport, trans);
+					if (trans) transactions_remove(sipe_private, trans);
 				}
 				SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: message without authentication data - ignoring");
 			}

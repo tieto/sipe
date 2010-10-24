@@ -38,12 +38,14 @@ struct transaction_payload {
 
 struct transaction {
 	TransCallback callback;
+	TransCallback timeout_callback;
 
 	/** Not yet perfect, but surely better then plain CSeq
 	 * Format is: <Call-ID><CSeq>
 	 * (RFC3261 17.2.3 for matching server transactions: Request-URI, To tag, From tag, Call-ID, CSeq, and top Via)
 	 */
 	gchar *key;
+	gchar *timeout_key;
         struct sipmsg *msg;
 	struct transaction_payload *payload;
 };
@@ -64,6 +66,18 @@ struct transaction *sip_transport_request(struct sipe_core_private *sipe_private
 					  const gchar *body,
 					  struct sip_dialog *dialog,
 					  TransCallback callback);
+
+/* Send SIP request with timeout [in seconds] */
+struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe_private,
+						  const gchar *method,
+						  const gchar *url,
+						  const gchar *to,
+						  const gchar *addheaders,
+						  const gchar *body,
+						  struct sip_dialog *dialog,
+						  TransCallback callback,
+						  guint timeout,
+						  TransCallback timeout_callback);
 
 /* Common SIP request types */
 void sip_transport_ack(struct sipe_core_private *sipe_private,
