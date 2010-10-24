@@ -499,7 +499,7 @@ do_apply_remote_message(struct sipe_media_call_private *call_private,
 		sip_transport_response(call_private->sipe_private,
 				       call_private->invitation,
 				       487, "Request Terminated", NULL);
-		sipe_media_hangup(call_private->sipe_private);
+		sipe_media_hangup(call_private);
 		return FALSE;
 	}
 	return TRUE;
@@ -654,9 +654,8 @@ sipe_media_call_new(struct sipe_core_private *sipe_private,
 	return call_private;
 }
 
-void sipe_media_hangup(struct sipe_core_private *sipe_private)
+void sipe_media_hangup(struct sipe_media_call_private *call_private)
 {
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	if (call_private) {
 		// This MUST be freed first
 		sipe_backend_media_hangup(call_private->public.backend_private_legacy,
@@ -764,7 +763,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 	if (!smsg) {
 		sip_transport_response(sipe_private, msg,
 				       488, "Not Acceptable Here", NULL);
-		sipe_media_hangup(sipe_private);
+		sipe_media_hangup(call_private);
 		return;
 	}
 
@@ -852,7 +851,7 @@ void process_incoming_cancel_call(struct sipe_core_private *sipe_private,
 				       487, "Request Terminated", NULL);
 	}
 
-	sipe_media_hangup(sipe_private);
+	sipe_media_hangup(call_private);
 }
 
 static gboolean
@@ -989,7 +988,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 		g_string_free(desc, TRUE);
 
 		sipe_media_send_ack(sipe_private, msg, trans);
-		sipe_media_hangup(sipe_private);
+		sipe_media_hangup(call_private);
 
 		return TRUE;
 	}
@@ -999,7 +998,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	if (!smsg) {
 		sip_transport_response(sipe_private, msg,
 				       488, "Not Acceptable Here", NULL);
-		sipe_media_hangup(sipe_private);
+		sipe_media_hangup(call_private);
 		return FALSE;
 	}
 
@@ -1017,7 +1016,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	if (!apply_remote_message(call_private, smsg)) {
 		sip_transport_response(sipe_private, msg,
 				       487, "Request Terminated", NULL);
-		sipe_media_hangup(sipe_private);
+		sipe_media_hangup(call_private);
 	} else if (msg->response == 183) {
 		// Session in progress
 		const gchar *rseq = sipmsg_find_header(msg, "RSeq");
@@ -1079,7 +1078,7 @@ void sipe_media_handle_going_offline(struct sipe_media_call_private *call_privat
 			sipe_session_close(call_private->sipe_private, session);
 	}
 
-	sipe_media_hangup(call_private->sipe_private);
+	sipe_media_hangup(call_private);
 }
 
 static void
