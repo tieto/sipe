@@ -1259,6 +1259,25 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 	return TRUE;
 }
 
+static gboolean register_response_timeout(struct sipe_core_private *sipe_private,
+					  SIPE_UNUSED_PARAMETER struct sipmsg *msg,
+					  SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	struct sip_transport *transport = sipe_private->transport;
+	if (transport->register_attempt < 6) {
+		SIPE_DEBUG_INFO("register_response_timeout: no answer to attempt %d, retrying",
+				transport->register_attempt);
+		do_register(sipe_private, FALSE);
+	} else {
+		gchar *warning = g_strdup_printf(_("Service unavailable: %s"), _("no reason given"));
+		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+					      SIPE_CONNECTION_ERROR_NETWORK,
+					      warning);
+		g_free(warning);
+	}
+	return TRUE;
+}
+
 static void do_register(struct sipe_core_private *sipe_private,
 			gboolean deregister)
 {
@@ -1298,14 +1317,16 @@ static void do_register(struct sipe_core_private *sipe_private,
 
 	uri = sip_uri_from_name(sipe_private->public.sip_domain);
 	to = sip_uri_self(sipe_private);
-	sip_transport_request(sipe_private,
-			      "REGISTER",
-			      uri,
-			      to,
-			      hdr,
-			      "",
-			      NULL,
-			      process_register_response);
+	sip_transport_request_timeout(sipe_private,
+				      "REGISTER",
+				      uri,
+				      to,
+				      hdr,
+				      "",
+				      NULL,
+				      process_register_response,
+				      60,
+				      deregister ? NULL : register_response_timeout);
 	g_free(to);
 	g_free(uri);
 	g_free(hdr);
