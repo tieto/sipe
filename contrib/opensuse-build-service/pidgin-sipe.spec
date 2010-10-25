@@ -44,7 +44,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.11.0
+Version:        1.11.1
 Release:        1
 Source:         %{name}-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -167,8 +167,8 @@ rm -rf %{buildroot}
 
 
 %changelog
-* ??? ??? ?? 2010 J. D. User <jduser@noreply.com> 1.11.0
-- update to 1.11.0
+* Sun Oct 24 2010 J. D. User <jduser@noreply.com> 1.11.1
+- update to 1.11.1
 
 * Thu Sep 02 2010 J. D. User <jduser@noreply.com> pre-1.11.0-*git*
 - Mandriva config for OBS has changed

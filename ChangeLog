@@ -1,3 +1,12 @@
+version 1.11.1 "Hot fixes" (2010-10-24)
+	- mingw: add missing purple-notify.c to build (Stefan Becker)
+	- Fix for bug #2834758: First NTLM signature check after startup fails
+	- purple: fix memory leak in sipe_backend_transport_connect() error path
+	- Fix for bug #3082602: Crash on Autodiscover (Stefan Becker)
+	- configure: use libdir & datadir instead of prefix + path (Stefan Becker)
+	- configure: update 32-bit vs. 64-bit header conflict test (Stefan Becker)
+        - debian: build stability fix in post-install (Stefan Becker)
+
 version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-10-04)
 	- Feature #2859239: Voice call support (Jakub Adam)
 	  * requires updated versions of libnice, farsight & pidgin
