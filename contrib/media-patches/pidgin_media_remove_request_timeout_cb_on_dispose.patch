@@ -1,0 +1,12 @@
+--- a/pidgin/gtkmedia.c 
++++ b/pidgin/gtkmedia.c 
+@@ -398,6 +398,9 @@
+ 		g_object_unref(gtkmedia->priv->ui);
+ 		gtkmedia->priv->ui = NULL;
+ 	}
++
++	if (gtkmedia->priv->timeout_id != 0)
++		g_source_remove(gtkmedia->priv->timeout_id);
+ 
+ 	G_OBJECT_CLASS(parent_class)->dispose(media);
+ }

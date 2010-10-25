@@ -6,6 +6,7 @@ supports voice & video):
 	- purple_mime_document_parsen.patch
 	- purple_media_get_active_candidates.patch
 	- purple_media_fs2_dispose.patch
+	- pidgin_media_remove_request_timeout_cb_on_dispose.patch (optional)
 	- libnice01-Compatibility-with-MSOC-2007-R2.patch
 	- libnice02-Compatibility-with-MSOC-2007.patch
 	- libnice03-MS-TURN-support-for-Microsoft-Office-Communicator.patch
@@ -29,6 +30,9 @@ purple_media_get_active_candidates.patch
 
 purple_media_fs2_dispose.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/12758
+
+pidgin_media_remove_request_timeout_cb_on_dispose.patch
+	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/12806
 
 libnice01-Compatibility-with-MSOC-2007-R2.patch
 	- reported upstream https://bugs.freedesktop.org/show_bug.cgi?id=28215
