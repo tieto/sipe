@@ -1597,7 +1597,8 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 							      _("Authentication failed"));
 			} else {
-				if (msg->response) {
+				/* OCS sends provisional messages that are *not* signed */
+				if (msg->response >= 200) {
 					/* We are not calling process_input_message(),
 					   so we need to drop the transaction here. */
 					struct transaction *trans = transactions_find(transport, msg);
