@@ -2997,7 +2997,7 @@ sipe_present_message_undelivered_err(struct sipe_core_private *sipe_private,
 		label = _("Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked.");
 		g_free(msg);
 		msg = NULL;
-	} else if (sip_error == 503 || sip_error == 500 || sip_error == 504) {
+	} else if (sip_error == 500 || sip_error == 503 || sip_error == 504 || sip_error == 603) {
 		label = _("This message was not delivered to %s because the service is not available");
 	} else if (sip_error == 486) { /* Busy Here */
 		label = _("This message was not delivered to %s because one or more recipients do not want to be disturbed");
