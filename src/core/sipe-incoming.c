@@ -230,7 +230,7 @@ static gboolean sipe_process_incoming_x_msmsgsinvite(struct sipe_core_private *s
 
 #ifdef HAVE_VV
 static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
-				const gchar *body, SIPE_UNUSED_PARAMETER gsize length)
+				const gchar *body, gsize length)
 {
 	const gchar *type = sipe_utils_nameval_find(fields, "Content-Type");
 	const gchar *cd = sipe_utils_nameval_find(fields, "Content-Disposition");
@@ -255,6 +255,7 @@ static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 		 * process it as a normal single part message. */
 		g_free(msg->body);
 		msg->body = g_strndup(body, length);
+		msg->bodylen = length;
 	}
 }
 #endif
@@ -284,6 +285,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 	if (g_str_has_prefix(content_type, "multipart/alternative")) {
 		sipe_mime_parts_foreach(content_type, msg->body, sipe_invite_mime_cb, msg);
+		/* Reload Content-Type to get type of the selected message part */
+		content_type = sipmsg_find_header(msg, "Content-Type");
 	}
 #endif
 

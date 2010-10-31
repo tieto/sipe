@@ -127,7 +127,7 @@ struct sipmsg *sipmsg_copy(const struct sipmsg *other) {
 	}
 
 	msg->bodylen	= other->bodylen;
-	msg->body	= g_memdup(other->body, other->bodylen);
+	msg->body	= g_strdup(other->body);
 	msg->signature	= g_strdup(other->signature);
 	msg->rand	= g_strdup(other->rand);
 	msg->num	= g_strdup(other->num);
