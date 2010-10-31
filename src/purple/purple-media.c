@@ -229,7 +229,7 @@ sipe_backend_media_free(struct sipe_backend_media *media)
 #define FS_CODECS_CONF \
 	"# Automatically created by SIPE plugin\n" \
 	"[video/H263]\n" \
-	"farsight-send-profile=videoscale ! ffmpegcolorspace ! fsvideoanyrate ! ffenc_h263 rtp-payload-size=512 ! rtph263pay mtu=512\n";
+	"farsight-send-profile=videoscale ! ffmpegcolorspace ! fsvideoanyrate ! ffenc_h263 rtp-payload-size=30 ! rtph263pay\n";
 
 static void
 ensure_codecs_conf()
