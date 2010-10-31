@@ -26,12 +26,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <gst/gststructure.h>
-#include <gst/gstvalue.h>
-
 #include "sipe-common.h"
 
 #include "mediamanager.h"
+#include "media-gst.h"
 #include "request.h"
 #include "agent.h"
 
@@ -105,6 +103,15 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 }
 
 static void
+on_error_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
+	    gchar *message,
+	    struct stream_info_context *ctx)
+{
+	if (ctx->call->error_cb)
+		ctx->call->error_cb(ctx->call, ctx->backend_media, message);
+}
+
+static void
 on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		  PurpleMediaInfoType type,
 		  gchar *sessionid,
@@ -173,6 +180,7 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleMediaManager *manager = purple_media_manager_get();
 	struct stream_info_context *ctx = g_new0(struct stream_info_context, 1);
+	GstElement *pipeline;
 
 	media->m = purple_media_manager_create_media(manager,
 						     purple_private->account,
@@ -190,8 +198,17 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 			      (GClosureNotify) g_free, 0);
 	g_signal_connect(G_OBJECT(media->m), "stream-info",
 			 G_CALLBACK(on_stream_info_cb), ctx);
+	g_signal_connect(G_OBJECT(media->m), "error",
+			 G_CALLBACK(on_error_cb), ctx);
 	g_signal_connect(G_OBJECT(media->m), "state-changed",
 			 G_CALLBACK(on_state_changed_cb), call);
+
+	/* On error, the pipeline is no longer in PLAYING state and libpurple
+	 * will not switch it back to PLAYING, preventing any more calls until
+	 * application restart. We switch the state ourselves here to negate
+	 * effect of any error in previous call (if any). */
+	pipeline = purple_media_manager_get_pipeline(manager);
+	gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
 	return media;
 }

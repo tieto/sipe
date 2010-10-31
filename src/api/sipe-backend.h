@@ -333,6 +333,8 @@ struct sipe_media_call {
 			       gboolean state);
 	void (*call_hangup_cb)(struct sipe_media_call *,
 			       struct sipe_backend_media *,gboolean local);
+	void (*error_cb)(struct sipe_media_call *, struct sipe_backend_media *,
+			 gchar *message);
 };
 
 struct sipe_media_relay {

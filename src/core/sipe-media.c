@@ -630,6 +630,34 @@ static void call_hangup_cb(struct sipe_media_call *call,
 	}
 }
 
+static void
+error_cb(struct sipe_media_call *call, struct sipe_backend_media *backend_media,
+         gchar *message)
+{
+	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+
+	if (backend_media == call->backend_private) {
+		gchar *title = g_strdup_printf("Call with %s failed",
+					       call_private->with);
+		sipe_backend_notify_error(title, message);
+		g_free(title);
+
+		call->backend_private = NULL;
+	} else if (backend_media == call->backend_private_legacy) {
+		call->backend_private_legacy = NULL;
+	}
+
+	if (call->backend_private == NULL &&
+	    call->backend_private_legacy == NULL &&
+	    !sipe_backend_media_is_initiator(backend_media, NULL)) {
+		sip_transport_response(call_private->sipe_private,
+				       call_private->invitation,
+				       488, "Not Acceptable Here", NULL);
+	}
+
+	sipe_backend_media_hangup(backend_media, FALSE);
+}
+
 static struct sipe_media_call_private *
 sipe_media_call_new(struct sipe_core_private *sipe_private,
 		    const gchar* with, gboolean initiator)
@@ -650,6 +678,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private,
 	call_private->public.call_reject_cb         = call_reject_cb;
 	call_private->public.call_hold_cb           = call_hold_cb;
 	call_private->public.call_hangup_cb         = call_hangup_cb;
+	call_private->public.error_cb               = error_cb;
 
 	return call_private;
 }
