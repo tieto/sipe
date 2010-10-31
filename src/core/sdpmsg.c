@@ -425,12 +425,13 @@ static gchar *
 candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 {
 	GString *result = g_string_new("");
+	GSList *i;
 
 	candidates = g_slist_copy(candidates);
 	candidates = g_slist_sort(candidates, (GCompareFunc)candidate_sort_cb);
 
-	for (; candidates; candidates = candidates->next) {
-		struct sdpcandidate *c = candidates->data;
+	for (i = candidates; i; i = i->next) {
+		struct sdpcandidate *c = i->data;
 		const gchar *protocol;
 		const gchar *type;
 		gchar *related = NULL;
