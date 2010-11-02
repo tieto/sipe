@@ -4,7 +4,7 @@
  * pidgin-sipe
  *
  * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
- * Copyright (C) 2010 Jakub Adam <jakub.adam@tieto.com>
+ * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
  * This program is free software; you can redistribute it and/or modify
