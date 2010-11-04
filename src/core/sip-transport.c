@@ -1434,80 +1434,87 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					SIPE_DEBUG_INFO("process_input_message: got provisional (%d) response, ignoring", msg->response);
 				}
 
-			} else if (msg->response == 407) {
-				gchar *resend, *auth;
-				const gchar *ptmp;
+				/* Transaction not yet completed */
+				trans = NULL;
 
-				if (transport->proxy.retries > 30) return;
-				transport->proxy.retries++;
-				/* do proxy authentication */
-
-				ptmp = sipmsg_find_header(msg, "Proxy-Authenticate");
-
-				fill_auth(ptmp, &transport->proxy);
-				auth = auth_header(sipe_private, &transport->proxy, trans->msg);
-				sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
-				sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
-				g_free(auth);
-				resend = sipmsg_to_string(trans->msg);
-				/* resend request */
-				sipe_utils_message_debug("SIP", resend, NULL, TRUE);
-				sipe_backend_transport_message(sipe_private->transport->connection, resend);
-				g_free(resend);
-
-			} else {
-				transport->proxy.retries = 0;
+			} else if (msg->response == 401) { /* Unauthorized */
 
 				if (sipe_strequal(trans->msg->method, "REGISTER")) {
-					if (msg->response == 401) {
-						transport->registrar.retries++;
-					} else {
-						transport->registrar.retries = 0;
-					}
-					SIPE_DEBUG_INFO("process_input_message: RE-REGISTER CSeq: %d", transport->cseq);
-
-				} else if (msg->response == 401) {
-					gchar *resend, *auth, *ptmp;
-					const char* auth_scheme;
-
-					if (transport->registrar.retries > 4) return;
+					/* Expected response during authentication handshake */
 					transport->registrar.retries++;
+					SIPE_DEBUG_INFO("process_input_message: RE-REGISTER CSeq: %d", transport->cseq);
+				} else {
+					gchar *resend;
 
-					auth_scheme = sipe_get_auth_scheme_name(sipe_private);
-					ptmp = sipmsg_find_auth_header(msg, auth_scheme);
-
-					SIPE_DEBUG_INFO("process_input_message: Auth header: %s", ptmp ? ptmp : "");
-					if (!ptmp) {
-						char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
-						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-									      SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
-									      tmp2);
-						g_free(tmp2);
-						return;
+					/* Are we registered? */
+					if (transport->reregister_set) {
+						SIPE_DEBUG_INFO_NOFORMAT("process_input_message: 401 response to non-REGISTER message. Retrying with new authentication.");
+						sign_outgoing_message(trans->msg,
+								      sipe_private,
+								      trans->msg->method);
+					} else {
+						/**
+						 * We don't have a valid authentication at the moment.
+						 * Resend message unchanged. It will be rejected again
+						 * and hopefully by then we have a valid authentication.
+						 */
+						SIPE_DEBUG_INFO_NOFORMAT("process_input_message: 401 response to non-REGISTER message. Bouncing...");
 					}
 
-					fill_auth(ptmp, &transport->registrar);
-					auth = auth_header(sipe_private, &transport->registrar, trans->msg);
-					sipmsg_remove_header_now(trans->msg, "Authorization");
-					sipmsg_add_header_now_pos(trans->msg, "Authorization", auth, 5);
-					g_free(auth);
+					/* Resend request */
 					resend = sipmsg_to_string(trans->msg);
-					/* resend request */
 					sipe_utils_message_debug("SIP", resend, NULL, TRUE);
 					sipe_backend_transport_message(sipe_private->transport->connection, resend);
 					g_free(resend);
+
+					/* Transaction not yet completed */
+					trans = NULL;
 				}
 
+			} else if (msg->response == 407) { /* Proxy Authentication Required */
+
+				if (transport->proxy.retries > 30) {
+					SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: too many proxy authentication retries. Giving up.");
+				} else {
+					gchar *resend, *auth;
+					const gchar *ptmp;
+
+					transport->proxy.retries++;
+
+					/* do proxy authentication */
+					ptmp = sipmsg_find_header(msg, "Proxy-Authenticate");
+					fill_auth(ptmp, &transport->proxy);
+					auth = auth_header(sipe_private, &transport->proxy, trans->msg);
+					sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
+					sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
+					g_free(auth);
+
+					/* resend request */
+					resend = sipmsg_to_string(trans->msg);
+					sipe_utils_message_debug("SIP", resend, NULL, TRUE);
+					sipe_backend_transport_message(sipe_private->transport->connection, resend);
+					g_free(resend);
+
+					/* Transaction not yet completed */
+					trans = NULL;
+				}
+
+			} else {
+				transport->registrar.retries = 0;
+				transport->proxy.retries = 0;
+			}
+
+			/* Is transaction completed? */
+			if (trans) {
 				if (trans->callback) {
 					SIPE_DEBUG_INFO_NOFORMAT("process_input_message: we have a transaction callback");
-					/* call the callback to process response*/
+					/* call the callback to process response */
 					(trans->callback)(sipe_private, msg, trans);
 				}
 
 				SIPE_DEBUG_INFO("process_input_message: removing CSeq %d", transport->cseq);
 				transactions_remove(sipe_private, trans);
 			}
-
 		} else {
 			SIPE_DEBUG_INFO_NOFORMAT("process_input_message: received response to unknown transaction");
 			notfound = TRUE;
@@ -1588,14 +1595,11 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 								      SIPE_CONNECTION_ERROR_NETWORK,
 								      _("Invalid message signature received"));
 				}
-			} else if (sipe_strequal(msg->method, "REGISTER")) {
-				/* We must always process REGISTER responses */
+			} else if ((msg->response == 401) ||
+				   sipe_strequal(msg->method, "REGISTER")) {
+				/* a) Retry non-REGISTER requests with updated authentication */
+				/* b) We must always process REGISTER responses */
 				process_input_message(sipe_private, msg);
-			} else if (msg->response == 401) {
-				SIPE_DEBUG_ERROR_NOFORMAT("sip_transport_input: 401 Unauthorized response to non-REGISTER message");
-				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-							      _("Authentication failed"));
 			} else {
 				/* OCS sends provisional messages that are *not* signed */
 				if (msg->response >= 200) {
