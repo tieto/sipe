@@ -734,6 +734,7 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 		sipe_backend_notify_error(_("Error occured"),
 					  _("Error creating audio stream"));
 		sipe_media_call_free(call_private);
+		sipe_backend_media_relays_free(backend_media_relays);
 		return;
 	}
 
@@ -745,6 +746,7 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 		sipe_backend_notify_error(_("Error occured"),
 					  _("Error creating video stream"));
 		sipe_media_call_free(call_private);
+		sipe_backend_media_relays_free(backend_media_relays);
 		return;
 	}
 
