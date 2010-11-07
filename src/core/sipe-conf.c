@@ -41,6 +41,9 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#ifdef HAVE_VV
+#include "sipe-media.h"
+#endif
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
@@ -260,6 +263,11 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 		if (sipe_strequal(code, "success")) {
 			/* subscribe to focus */
 			sipe_subscribe_conference(sipe_private, session, FALSE);
+#ifdef HAVE_VV
+			if (session->is_call)
+				sipe_media_connect_conference(sipe_private,
+							      session->focus_dialog->with);
+#endif
 		}
 		sipe_xml_free(xn_response);
 	}
@@ -671,11 +679,14 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 {
 	sipe_xml *xn_conferencing = sipe_xml_parse(msg->body, msg->bodylen);
 	const sipe_xml *xn_focus_uri = sipe_xml_child(xn_conferencing, "focus-uri");
+	const sipe_xml *xn_audio = sipe_xml_child(xn_conferencing, "audio");
 	gchar *focus_uri = sipe_xml_data(xn_focus_uri);
+	gboolean audio = sipe_strequal(sipe_xml_attribute(xn_audio, "available"), "true");
 	gchar *newTag = gentag();
 	const gchar *oldHeader = sipmsg_find_header(msg, "To");
 	gchar *newHeader;
 	struct sip_dialog *dialog;
+	struct sip_session *session;
 
 	sipe_xml_free(xn_conferencing);
 
@@ -702,7 +713,8 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 	sipe_dialog_free(dialog);
 
 	/* add self to conf */
-	sipe_conf_create(sipe_private, NULL, focus_uri);
+	session = sipe_conf_create(sipe_private, NULL, focus_uri);
+	session->is_call = audio;
 	g_free(focus_uri);
 }
 

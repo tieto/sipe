@@ -774,6 +774,56 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 	// Processing continues in candidates_prepared_cb
 }
 
+void sipe_media_connect_conference(struct sipe_core_private *sipe_private,
+				   const gchar *focus_uri)
+{
+	struct sipe_backend_media_relays *backend_media_relays;
+	struct sip_session *session;
+	struct sip_dialog *dialog;
+	gchar **parts;
+	gchar *av_uri;
+
+	if (sipe_private->media_call)
+		return;
+
+	parts = g_strsplit(focus_uri, "app:conf:focus:", 2);
+	av_uri = g_strjoinv("app:conf:audio-video:", parts);
+	g_strfreev(parts);
+
+	sipe_private->media_call = sipe_media_call_new(sipe_private, av_uri, TRUE);
+
+	session = sipe_session_add_call(sipe_private, av_uri);
+	dialog = sipe_dialog_add(session);
+	dialog->callid = gencallid();
+	dialog->with = g_strdup(session->with);
+	dialog->ourtag = gentag();
+
+	g_free(av_uri);
+
+	sipe_private->media_call->with = g_strdup(session->with);
+	sipe_private->media_call->ice_version = SIPE_ICE_DRAFT_6;
+
+	backend_media_relays =
+		sipe_backend_media_relays_convert(sipe_private->media_relays,
+						  sipe_private->media_relay_username,
+						  sipe_private->media_relay_password);
+
+	if (!sipe_backend_media_add_stream(sipe_private->media_call->public.backend_private,
+					   "audio", dialog->with,
+					   SIPE_MEDIA_AUDIO,
+					   SIPE_ICE_DRAFT_6, TRUE,
+					   backend_media_relays)) {
+		sipe_backend_notify_error(_("Error occured"),
+					  _("Error creating audio stream"));
+		sipe_media_call_free(sipe_private->media_call);
+		sipe_private->media_call = NULL;
+	}
+
+	sipe_backend_media_relays_free(backend_media_relays);
+
+	// Processing continues in candidates_prepared_cb
+}
+
 void
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
