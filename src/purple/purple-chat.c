@@ -219,6 +219,19 @@ static void sipe_purple_chat_menu_lock_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat
 	sipe_core_chat_modify_lock(sipe_public, chat_session, TRUE);
 }
 
+#ifdef HAVE_VV
+
+static void sipe_purple_chat_menu_join_call_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+					       PurpleConversation *conv)
+{
+	struct sipe_core_public *sipe_public = PURPLE_CONV_TO_SIPE_CORE_PUBLIC;
+	struct sipe_chat_session *chat_session = sipe_purple_chat_get_session(conv);
+	SIPE_DEBUG_INFO("sipe_purple_chat_join_call_cb: %p %p", conv, chat_session);
+	sipe_core_media_connect_conference(sipe_public, chat_session);
+}
+
+#endif
+
 GList *
 sipe_purple_chat_menu(PurpleChat *chat)
 {
@@ -250,7 +263,16 @@ sipe_purple_chat_menu(PurpleChat *chat)
 
 		if (act)
 			menu = g_list_prepend(menu, act);
-
+#ifdef HAVE_VV
+		if (!sipe_core_media_in_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC)) {
+			act = NULL;
+			act = purple_menu_action_new(_("Join conference call"),
+						     PURPLE_CALLBACK(sipe_purple_chat_menu_join_call_cb),
+						     conv, NULL);
+			if (act)
+				menu = g_list_prepend(menu, act);
+		}
+#endif
 	}
 
 	return menu;

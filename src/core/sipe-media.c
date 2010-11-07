@@ -826,6 +826,14 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	// Processing continues in candidates_prepared_cb
 }
 
+gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
+{
+	if (sipe_public) {
+		return SIPE_CORE_PRIVATE->media_call != NULL;
+	}
+	return FALSE;
+}
+
 void
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)

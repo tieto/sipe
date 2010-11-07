@@ -302,6 +302,15 @@ void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session);
 
+/**
+ * Checks whether there is a media call in progress
+ *
+ * @param sipe_public (in) SIPE core data.
+ *
+ * @return @c TRUE if media call is in progress
+ */
+gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public);
+
 /* file transfer */
 struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);
 void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
