@@ -728,6 +728,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	const gchar *focus_uri;
 	struct sip_session *session;
 	gboolean just_joined = FALSE;
+	gboolean audio_was_added = FALSE;
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -803,22 +804,30 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 			/* endpoints */
 			const sipe_xml *endpoint;
 			for (endpoint = sipe_xml_child(node, "endpoint"); endpoint; endpoint = sipe_xml_twin(endpoint)) {
-				if (sipe_strequal("chat", sipe_xml_attribute(endpoint, "session-type"))) {
-					gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "status"));
-					if (sipe_strequal("connected", status)) {
-						is_in_im_mcu = TRUE;
-						if (!sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
-							sipe_backend_chat_add(session->chat_session->backend,
-									      user_uri,
-									      !just_joined && g_strcasecmp(user_uri, self));
-						}
-						if (is_operator) {
-							sipe_backend_chat_operator(session->chat_session->backend,
-										   user_uri);
-						}
+				const gchar *session_type;
+				gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "status"));
+				gboolean connected = sipe_strequal("connected", status);
+				g_free(status);
+
+				if (!connected)
+					continue;
+
+				session_type = sipe_xml_attribute(endpoint, "session-type");
+
+				if (sipe_strequal("chat", session_type)) {
+					is_in_im_mcu = TRUE;
+					if (!sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
+						sipe_backend_chat_add(session->chat_session->backend,
+								      user_uri,
+								      !just_joined && g_strcasecmp(user_uri, self));
 					}
-					g_free(status);
-					break;
+					if (is_operator) {
+						sipe_backend_chat_operator(session->chat_session->backend,
+									   user_uri);
+					}
+				} else if (sipe_strequal("audio-video", session_type)) {
+					if (!session->is_call)
+						audio_was_added = TRUE;
 				}
 			}
 			if (!is_in_im_mcu) {
@@ -831,6 +840,14 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		g_free(role);
 		g_free(self);
 	}
+
+#ifdef HAVE_VV
+	if (audio_was_added) {
+		session->is_call = TRUE;
+		sipe_media_connect_conference(sipe_private,
+					      session->focus_dialog->with);
+	}
+#endif
 
 	/* entity-view, locked */
 	for (node = sipe_xml_child(xn_conference_info, "conference-view/entity-view");
