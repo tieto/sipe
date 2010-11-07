@@ -34,6 +34,7 @@
 #include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sdpmsg.h"
+#include "sipe-chat.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
@@ -774,9 +775,10 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 	// Processing continues in candidates_prepared_cb
 }
 
-void sipe_media_connect_conference(struct sipe_core_private *sipe_private,
-				   const gchar *focus_uri)
+void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
+					struct sipe_chat_session *chat_session)
 {
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_backend_media_relays *backend_media_relays;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
@@ -786,7 +788,7 @@ void sipe_media_connect_conference(struct sipe_core_private *sipe_private,
 	if (sipe_private->media_call)
 		return;
 
-	parts = g_strsplit(focus_uri, "app:conf:focus:", 2);
+	parts = g_strsplit(chat_session->id, "app:conf:focus:", 2);
 	av_uri = g_strjoinv("app:conf:audio-video:", parts);
 	g_strfreev(parts);
 

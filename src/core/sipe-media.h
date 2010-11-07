@@ -44,15 +44,6 @@ void process_incoming_cancel_call(struct sipe_core_private *sipe_private,
 				  struct sipmsg *msg);
 
 /**
- * Connects to a conference call specified by given focus URI
- *
- * @param sipe_private (in) SIPE core data.
- * @param focus_uri (in) focus URI of the conference
- */
-void sipe_media_connect_conference(struct sipe_core_private *sipe_private,
-				   const gchar *focus_uri);
-
-/**
  * Hangs up a media session and closes all allocated resources.
  *
  * @param sipe_private (in) media call data.

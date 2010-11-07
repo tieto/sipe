@@ -293,6 +293,14 @@ void sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				   const char *participant,
 				   gboolean with_video);
+/**
+ * Connects to a conference call specified by given focus URI
+ *
+ * @param sipe_private (in) SIPE core data.
+ * @param chat (in) sipe_chat structure
+ */
+void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
+					struct sipe_chat_session *chat_session);
 
 /* file transfer */
 struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);
