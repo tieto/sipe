@@ -51,6 +51,12 @@
 #include "sipe-xml.h"
 #include "sipe.h"
 
+#ifdef HAVE_VV
+#define ENTITY_VIEW_AUDIO_VIDEO "<msci:entity-view entity=\"audio-video\"/>"
+#else
+#define ENTITY_VIEW_AUDIO_VIDEO
+#endif
+
 /**
  * Add Conference request to FocusFactory.
  * @param focus_factory_uri (%s) Ex.: sip:bob7@boston.local;gruu;opaque=app:conf:focusfactory
@@ -77,6 +83,7 @@
 			"</ci:conference-description>"\
 			"<msci:conference-view>"\
 				"<msci:entity-view entity=\"chat\"/>"\
+				ENTITY_VIEW_AUDIO_VIDEO \
 			"</msci:conference-view>"\
 		"</ci:conference-info>"\
 	"</addConference>"\
