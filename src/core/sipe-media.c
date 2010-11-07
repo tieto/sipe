@@ -937,14 +937,17 @@ void process_incoming_cancel_call(struct sipe_core_private *sipe_private,
 
 static gboolean
 sipe_media_send_ack(struct sipe_core_private *sipe_private,
-					SIPE_UNUSED_PARAMETER struct sipmsg *msg,
-					struct transaction *trans)
+		    struct sipmsg *msg,
+		    struct transaction *trans)
 {
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	int trans_cseq;
 	int tmp_cseq;
+
+	if (!is_media_session_msg(call_private, msg))
+		return FALSE;
 
 	session = sipe_session_find_call(sipe_private, call_private->with);
 	dialog = session->dialogs->data;
@@ -965,10 +968,12 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 
 static gboolean
 sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
-			  SIPE_UNUSED_PARAMETER struct sipmsg *msg,
+			  struct sipmsg *msg,
 			  struct transaction *trans)
 {
-	sipe_media_send_ack(sipe_private, msg, trans);
+	if (!sipe_media_send_ack(sipe_private, msg, trans))
+		return FALSE;
+
 	sipe_backend_media_accept(sipe_private->media_call->public.backend_private,
 				  FALSE);
 
