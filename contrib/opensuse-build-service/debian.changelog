@@ -1,3 +1,31 @@
+pidgin-sipe (1.11.2-1) unstable; urgency=low
+
+  * New upstream version 1.11.2 "Hot fixes II"
+        - Revert "mingw: add missing purple-notify.c to build"
+        - Sipe-sign: fix parsing of P-Asserted-Identity header
+        - Fixed memory leaks
+        - Fix #3090663: Re-authentication fails
+        - Fix #3090663: Re-authentication fails (2nd attempt)
+        - Fix #3090663: Re-authentication fails (3rd attempt)
+        - Fix #3090663: Re-authentication fails (4th attempt)
+        - Apply patch #3091490: Make 1.11.0 Compile on FreeBSD
+        - Fix #3092324: Core dump in "make check"
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Tue, 02 Nov 2010 23:48:33 -0600
+
+pidgin-sipe (1.11.1-1) unstable; urgency=low
+
+  * New upstream version 1.11.1 "Hot fixes"
+        - mingw: add missing purple-notify.c to build
+        - Fix for bug #2834758: First NTLM signature check after startup fails
+        - purple: fix memory leak in sipe_backend_transport_connect() error path
+        - Fix for bug #3082602: Crash on Autodiscover
+        - configure: use libdir & datadir instead of prefix + path
+        - configure: update 32-bit vs. 64-bit header conflict test
+        - debian: build stability fix in post-install
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 24 Oct 2010 00:00:00 +0300
+
 pidgin-sipe (1.11.0-1) unstable; urgency=low
 
   * New upstream version
