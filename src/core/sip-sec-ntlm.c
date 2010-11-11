@@ -302,7 +302,8 @@ unicode_strconvcopy(gchar *dest, const gchar *source, gsize remlen)
 {
 	gsize inbytes  = strlen(source);
 	gsize outbytes = remlen;
-	g_iconv(convert_to_utf16le, (gchar **)&source, &inbytes, &dest, &outbytes);
+	if (remlen)
+		g_iconv(convert_to_utf16le, (gchar **)&source, &inbytes, &dest, &outbytes);
 	return(remlen - outbytes);
 }
 
