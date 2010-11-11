@@ -1687,7 +1687,7 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 	context_ntlm ctx = (context_ntlm)context;
 
 	/* NTLM requires a domain, username & password */
-	if (!domain || !username || !password)
+	if (is_empty(domain) || is_empty(username) || is_empty(password))
 		return SIP_SEC_E_INTERNAL_ERROR;
 
 	ctx->domain   = g_strdup(domain);
