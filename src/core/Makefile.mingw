@@ -148,7 +148,7 @@ LIBS =	\
 			-lglib-2.0 \
 			-lgobject-2.0 \
 			-lintl \
-			-lxml2 \
+			-lxml2-2 \
 			-lnss3 \
 			-lws2_32 \
 			-lsecur32 \
