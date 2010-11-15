@@ -79,10 +79,15 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 
 	session = sipe_session_find_chat_or_im(sipe_private, callid, from);
 	if (!session) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_bye: couldn't find session. Ignoring");
 		sipe_dialog_free(dialog);
 		g_free(from);
 		return;
 	}
+
+	SIPE_DEBUG_INFO("process_incoming_bye: session found (chat ID %s)",
+			(session->chat_session && session->chat_session->id) ?
+			session->chat_session->id : "<NO CHAT>");
 
 	if (session->chat_session &&
 	    (session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY) &&
@@ -96,8 +101,11 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	if (session->chat_session) {
 		if ((session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE) &&
 		    !g_strcasecmp(from, session->im_mcu_uri)) {
-		sipe_conf_immcu_closed(sipe_private, session);
+			SIPE_DEBUG_INFO("process_incoming_bye: disconnected from conference %s",
+					session->im_mcu_uri);
+			sipe_conf_immcu_closed(sipe_private, session);
 		} else if (session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY) {
+			SIPE_DEBUG_INFO_NOFORMAT("process_incoming_bye: disconnected from multiparty chat");
 			sipe_backend_chat_remove(session->chat_session->backend,
 						 from);
 		}
