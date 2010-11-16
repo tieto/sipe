@@ -692,7 +692,6 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 	gchar *newTag = gentag();
 	const gchar *oldHeader = sipmsg_find_header(msg, "To");
 	gchar *newHeader;
-	struct sip_dialog *dialog;
 	struct sip_session *session;
 
 	sipe_xml_free(xn_conferencing);
@@ -705,19 +704,8 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 	sipmsg_add_header_now(msg, "To", newHeader);
 	g_free(newHeader);
 
-	/* temporary dialog with invitor */
-	/* take data before 'msg' will be modified by send_sip_response */
-	dialog = g_new0(struct sip_dialog, 1);
-	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
-	dialog->with = parse_from(sipmsg_find_header(msg, "From"));
-	sipe_dialog_parse(dialog, msg, FALSE);
-
+	/* acknowledge invite */
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
-
-	/* send BYE to invitor */
-	sip_transport_bye(sipe_private, dialog);
-	sipe_dialog_free(dialog);
 
 	/* add self to conf */
 	session = sipe_conf_create(sipe_private, NULL, focus_uri);
