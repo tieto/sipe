@@ -522,7 +522,6 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	g_free(from);
 
 	sipmsg_add_header(msg, "Supported", "com.microsoft.rtc-multiparty");
-	sipmsg_add_header(msg, "User-Agent", sip_transport_user_agent(sipe_private));
 	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
 	body = g_strdup_printf(
@@ -663,7 +662,6 @@ void process_incoming_options(struct sipe_core_private *sipe_private,
 	gchar *body;
 
 	sipmsg_add_header(msg, "Allow", "INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY");
-	sipmsg_add_header(msg, "User-Agent", sip_transport_user_agent(sipe_private));
 	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
 	body = g_strdup_printf(

@@ -107,7 +107,6 @@ void sip_transport_subscribe(struct sipe_core_private *sipe_private,
 			     TransCallback callback);
 
 /* Misc. SIP transport stuff */
-const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_private);
 guint sip_transport_port(struct sipe_core_private *sipe_private);
 void sip_transport_deregister(struct sipe_core_private *sipe_private);
 void sip_transport_disconnect(struct sipe_core_private *sipe_private);
