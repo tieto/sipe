@@ -41,3 +41,8 @@
 #		define G_GNUC_NULL_TERMINATED
 #	endif
 #endif
+
+#ifdef _MSC_VER
+typedef long ssize_t;
+#endif
+

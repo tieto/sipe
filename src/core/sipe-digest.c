@@ -43,7 +43,7 @@ static void sipe_digest(const SECOidTag algorithm,
 	PK11Context *context = 0;
 	SECStatus s;
 	unsigned int len;
-	
+
 	context = PK11_CreateDigestContext(algorithm);
 	s = PK11_DigestBegin(context);
 	s = PK11_DigestOp(context, data, data_length);
@@ -69,19 +69,19 @@ sipe_digest_hmac_ctx_create(CK_MECHANISM_TYPE hmacMech, const guchar *key, gsize
 	keyItem.len = key_length;
 
 	SymKey = PK11_ImportSymKey(slot, hmacMech, PK11_OriginUnwrap, CKA_SIGN,  &keyItem, NULL);
-	
+
 	/* Parameter for crypto context */
 	noParams.type = siBuffer;
 	noParams.data = NULL;
 	noParams.len = 0;
 
 	DigestContext = PK11_CreateContextBySymKey(hmacMech, CKA_SIGN, SymKey, &noParams);
-	
+
 	s = PK11_DigestBegin(DigestContext);
-	
+
 	PK11_FreeSymKey(SymKey);
 	PK11_FreeSlot(slot);
-	
+
 	return DigestContext;
 }
 

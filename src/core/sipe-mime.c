@@ -22,10 +22,11 @@
 
 #include <string.h>
 
+#include "sipe-common.h"
+
 #include <glib.h>
 #include <gmime/gmime.h>
 
-#include "sipe-common.h"
 #include "sipe-mime.h"
 
 #include "sipe-backend.h"

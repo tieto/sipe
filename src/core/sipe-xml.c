@@ -322,7 +322,7 @@ const sipe_xml *sipe_xml_twin(const sipe_xml *node)
 	for (sibling = node->sibling; sibling; sibling = sibling->sibling) {
 		if (sipe_strequal(node->name, sibling->name))
 			return sibling;
-	}		
+	}
 	return NULL;
 }
 

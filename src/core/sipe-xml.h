@@ -87,7 +87,7 @@ const gchar *sipe_xml_name(const sipe_xml *node);
 const gchar *sipe_xml_attribute(const sipe_xml *node, const gchar *attr);
 
 /**
- * Gets an attribute from the current XML node and convert it to an 
+ * Gets an attribute from the current XML node and convert it to an
  * unsigned integer.
  *
  * @param node     The node to get an attribute from.
