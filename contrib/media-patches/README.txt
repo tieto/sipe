@@ -6,6 +6,7 @@ supports voice & video):
 	- purple_mime_document_parsen.patch
 	- purple_media_get_active_candidates.patch
 	- purple_media_fs2_dispose.patch
+	- purple_SDES.patch
 	- pidgin_media_remove_request_timeout_cb_on_dispose.patch (optional)
 	- libnice01-Compatibility-with-MSOC-2007-R2.patch
 	- libnice02-Compatibility-with-MSOC-2007.patch

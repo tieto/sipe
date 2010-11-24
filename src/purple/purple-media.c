@@ -226,6 +226,26 @@ sipe_backend_media_free(struct sipe_backend_media *media)
 	}
 }
 
+void
+sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname)
+{
+	if (media) {
+		GParameter *params = g_new0(GParameter, 4);
+		params[0].name = "sdes-cname";
+		g_value_init(&params[0].value, G_TYPE_STRING);
+		g_value_set_string(&params[0].value, cname);
+		params[1].name = "sdes-name";
+		g_value_init(&params[1].value, G_TYPE_STRING);
+		g_value_set_string(&params[1].value, NULL);
+		params[2].name = "sdes-tool";
+		g_value_init(&params[2].value, G_TYPE_STRING);
+		params[3].name = NULL;
+		purple_media_set_params(media->m, params);
+
+		g_free(params);
+	}
+}
+
 #define FS_CODECS_CONF \
 	"# Automatically created by SIPE plugin\n" \
 	"[video/H263]\n" \

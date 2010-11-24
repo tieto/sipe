@@ -351,6 +351,8 @@ struct sipe_backend_media *sipe_backend_media_new(struct sipe_core_public *sipe_
 						  gboolean initiator);
 void sipe_backend_media_free(struct sipe_backend_media *media);
 
+void sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname);
+
 struct sipe_backend_media_relays * sipe_backend_media_relays_convert(GSList *media_relays,
 								     gchar *username,
 								     gchar *password);
