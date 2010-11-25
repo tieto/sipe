@@ -481,17 +481,17 @@ http_conn_process_input_message(HttpConn *http_conn,
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
-			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
 #ifdef _WIN32
 #ifdef HAVE_LIBKRB5
-				"NTLM and Negotiate authentications are"
+#define AUTHSTRING				"NTLM and Negotiate authentications are"
 #else /* !HAVE_LIBKRB5 */
-				"NTLM authentication is"
+#define AUTHSTRING				"NTLM authentication is"
 #endif /* HAVE_LIBKRB5 */
 #else /* !_WIN32 */
-				"NTLM authentication is"
+#define AUTHSTRING				"NTLM authentication is"
 #endif /* _WIN32 */
-
+			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
+					AUTHSTRING
 			);
 			http_conn_set_close(http_conn);
 			return;
