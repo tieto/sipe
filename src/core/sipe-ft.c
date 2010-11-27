@@ -48,6 +48,7 @@
 
 #define SIPE_FT_KEY_LENGTH          24
 #define SIPE_FT_CHUNK_HEADER_LENGTH  3
+#define BUFFER_SIZE 50
 
 /*
  * DO NOT CHANGE THE FOLLOWING CONSTANTS!!!
@@ -362,7 +363,6 @@ void sipe_core_ft_incoming_start(struct sipe_file_transfer *ft,
 {
 	static const guchar VER[]    = "VER MSN_SECURE_FTP\r\n";
 	static const guchar TFR[]    = "TFR\r\n";
-	const gsize BUFFER_SIZE      = 50;
 	const gsize FILE_SIZE_OFFSET = 4;
 
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
@@ -414,7 +414,6 @@ void sipe_core_ft_incoming_start(struct sipe_file_transfer *ft,
 gboolean sipe_core_ft_incoming_stop(struct sipe_file_transfer *ft)
 {
 	static const guchar BYE[] = "BYE 16777989\r\n";
-	const gsize BUFFER_SIZE   = 50;
 	const gsize MAC_OFFSET    = 4;
 
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
@@ -500,7 +499,6 @@ void sipe_core_ft_outgoing_start(struct sipe_file_transfer *ft,
 				 gsize total_size)
 {
 	static const guchar VER[] = "VER MSN_SECURE_FTP\r\n";
-	const gsize BUFFER_SIZE  = 50;
 
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	guchar buf[BUFFER_SIZE];
@@ -569,8 +567,6 @@ void sipe_core_ft_outgoing_start(struct sipe_file_transfer *ft,
 
 gboolean sipe_core_ft_outgoing_stop(struct sipe_file_transfer *ft)
 {
-	gsize BUFFER_SIZE = 50;
-
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	guchar buffer[BUFFER_SIZE];
 	gchar *mac;
