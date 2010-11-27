@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="libsipe"
-	ProjectGUID="{8B3D07F6-F4EA-4A80-8A9B-FBDC8882C755}"
+	ProjectGUID="{B299EE4A-1224-4D52-9329-F3347B014DC3}"
 	RootNamespace="libsipe"
 	TargetFrameworkVersion="196613"
 	>
@@ -250,8 +250,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(SolutionDir)/../include&quot;;&quot;$(InputDir)/../api&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PACKAGE_VERSION=\&quot;1.11.0\&quot;;_CRT_SECURE_NO_WARNINGS;PACKAGE_BUGREPORT=\&quot;https://sourceforge.net/tracker/?atid=949931&amp;group_id=194563\&quot;;PACKAGE_URL=\&quot;http://sipe.sourceforge.net/\&quot;"
+				AdditionalIncludeDirectories="&quot;$(SolutionDir)/../include&quot;;&quot;$(ProjectDir)/src/core&quot;;&quot;$(ProjectDir)/src/api&quot;;&quot;$(ProjectDir)/src/&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PACKAGE_NAME=\&quot;pidgin-sipe\&quot;;PACKAGE_VERSION=\&quot;1.7.0\&quot;;PACKAGE_URL=\&quot;http://sipe.sourceforge.net/\&quot;;PACKAGE_BUGREPORT=\&quot;https://sourceforge.net/tracker/?atid=949931\&amp;group_id=194563\&quot;;SIPE_VERSION=\&quot;1.7.1\&quot;;_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -269,7 +269,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glib-2.0.lib libxml2.lib Ws2_32.lib nss3.lib"
+				AdditionalDependencies="glib-2.0.lib gobject-2.0.lib libxml2.lib Ws2_32.lib nss3.lib gmime-2.6.lib iconv.lib libintl.lib"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -305,11 +305,57 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\src\libsipe.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl;inc;xsd"
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			>
+			<File
+				RelativePath=".\src\libsipe.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="core"
+			>
+			<File
+				RelativePath=".\src\core\http-conn.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\http-conn.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\md4.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\miranda\miranda-backend.cpp"
+				RelativePath=".\src\core\md4.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sdpmsg.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sdpmsg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-csta.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-csta.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-sec-mech.h"
 				>
 			</File>
 			<File
@@ -317,7 +363,59 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sip-sec-ntlm.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sip-sec.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-sec.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-transport.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-transport.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-buddy.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-buddy.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-cal.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-cal.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-chat.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-chat.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-conf.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-conf.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-core-private.h"
 				>
 			</File>
 			<File
@@ -329,11 +427,103 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-dialog.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-dialog.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-digest.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\miranda\sipe-miranda.cpp"
+				RelativePath=".\src\core\sipe-domino.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-domino.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-ews.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-ews.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-ft.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-ft.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-groupchat.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-groupchat.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-incoming.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-incoming.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-media.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-media.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-mime.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-schedule.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-schedule.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-session.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-session.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-sign.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-sign.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-subscriptions.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-subscriptions.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-user.c"
 				>
 			</File>
 			<File
@@ -341,14 +531,52 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-utils.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-win32dep.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-win32dep.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-xml.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-xml.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipmsg.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipmsg.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\uuid.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\uuid.h"
 				>
 			</File>
 		</Filter>
 		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			Name="api"
 			>
 			<File
 				RelativePath=".\src\api\sipe-backend.h"
@@ -367,7 +595,107 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\miranda\sipe-miranda.h"
+				RelativePath=".\src\api\sipe-digest.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\api\sipe-mime.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\api\sipe-nls.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="miranda"
+			>
+			<File
+				RelativePath=".\src\miranda\miranda-blist.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-chat.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-connection.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-debug.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-dnsquery.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-ft.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-groupchat.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-im.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-markup.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-media.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-network.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-notify.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-plugin.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-private.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-schedule.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-setting.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-transport.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-user.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-utils.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda.rc"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\sipe-miranda.c"
 				>
 			</File>
 		</Filter>
