@@ -700,6 +700,7 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("We have received invitation to Conference. Focus URI=%s", focus_uri);
 
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
+	g_free(newTag);
 	sipmsg_remove_header_now(msg, "To");
 	sipmsg_add_header_now(msg, "To", newHeader);
 	g_free(newHeader);
