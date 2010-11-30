@@ -236,12 +236,12 @@ sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname)
 		g_value_set_string(&params[0].value, cname);
 		params[1].name = "sdes-name";
 		g_value_init(&params[1].value, G_TYPE_STRING);
-		g_value_set_string(&params[1].value, NULL);
 		params[2].name = "sdes-tool";
 		g_value_init(&params[2].value, G_TYPE_STRING);
 		params[3].name = NULL;
 		purple_media_set_params(media->m, params);
 
+		g_value_unset(&params[0].value);
 		g_free(params);
 	}
 }
@@ -362,6 +362,9 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 
 		media->streams = g_slist_append(media->streams, stream);
 	}
+
+	if (media_relays)
+		g_value_unset(&params[1].value);
 
 	g_free(params);
 

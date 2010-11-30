@@ -63,9 +63,7 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 
 			smsg->media = g_slist_append(smsg->media, media);
 
-			media->name = parts[0];
-			parts[0] = NULL;
-
+			media->name = g_strdup(parts[0]);
 			media->port = atoi(parts[1]);
 
 			g_strfreev(parts);
