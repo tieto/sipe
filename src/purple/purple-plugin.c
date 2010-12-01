@@ -150,8 +150,13 @@ static void sipe_purple_tooltip_text(PurpleBuddy *buddy,
 
 	while (info) {
 		struct sipe_buddy_info *sbi = info->data;
-		purple_notify_user_info_add_pair(user_info,
-						 sbi->label, sbi->text);
+		gchar *label_esc = g_markup_escape_text(sbi->label, -1);
+		gchar *text_esc = g_markup_escape_text(sbi->text, -1);
+
+		purple_notify_user_info_add_pair(user_info, label_esc, text_esc);
+
+		g_free(label_esc);
+		g_free(text_esc);
 		g_free(sbi->text);
 		g_free(sbi);
 		info = g_slist_delete_link(info, info);
