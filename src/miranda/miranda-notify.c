@@ -49,7 +49,8 @@ void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
 	_NIF();
 }
 
-void sipe_backend_notify_error(const gchar *title, const gchar *msg)
+void sipe_backend_notify_error(const gchar *title,
+			       const gchar *msg)
 {
 	_NIF();
 }

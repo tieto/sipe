@@ -100,6 +100,7 @@ void sipe_backend_schedule_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_public 
 	if (entry && entry->sem)
 	{
 		SIPE_DEBUG_INFO("Cancelling timeout <%08x>", entry);
+		entry->cancelled = TRUE;
 		ReleaseSemaphore(entry->sem, 1, NULL);
 	}
 

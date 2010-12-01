@@ -43,14 +43,16 @@ typedef struct srv_reply_t {
         int port;
 } srv_reply;
 
-srv_reply*
-srv_lookup( const char* service, const char* protocol, const char* domain )
+srv_reply* srv_lookup(WORD wType,
+		      const gchar* service,
+		      const gchar* protocol,
+		      const gchar* domain )
 {
 	srv_reply *res = NULL;
 	HINSTANCE hDnsapi = LoadLibraryA( "dnsapi.dll" );
 	DNSQUERYA pDnsQuery;
 	DNSFREELIST pDnsRecordListFree;
-	char temp[256];
+	gchar temp[256];
 	DNS_RECORD *results = NULL;
 	DNS_STATUS status;
 
@@ -74,7 +76,7 @@ srv_lookup( const char* service, const char* protocol, const char* domain )
 	}
 
 	res = g_new0(srv_reply,1);
-	res->host = (char*)g_strdup((const gchar*)results[0].Data.Srv.pNameTarget);
+	res->host = g_strdup((const gchar*)results[0].Data.Srv.pNameTarget);
 	res->port = (int)results[0].Data.Srv.wPort;
 
 	pDnsRecordListFree(results, DnsFreeRecordList);
@@ -88,8 +90,18 @@ struct sipe_dns_query *sipe_backend_dns_query_a(const gchar *hostname,
 						sipe_dns_resolved_cb callback,
 						gpointer data)
 {
+	srv_reply* sr = srv_lookup( DNS_TYPE_A, "protocol", "transport", "domain" );
 	SIPE_DEBUG_INFO("Type A lookup for host <%s> port <%d>", hostname, port);
-	_NIF();
+
+	if (sr) {
+		callback( data, sr->host, sr->port);
+
+		g_free(sr->host);
+		g_free(sr);
+	} else {
+		callback( data, NULL, 0);
+	}
+
 	return NULL;
 }
 
@@ -99,7 +111,7 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(const gchar *protocol,
 						  sipe_dns_resolved_cb callback,
 						  gpointer data)
 {
-	srv_reply* sr = srv_lookup( protocol, transport, domain );
+	srv_reply* sr = srv_lookup( DNS_TYPE_SRV, protocol, transport, domain );
 
 	SIPE_DEBUG_INFO("Type SRV lookup for proto <%s> transport <%s> domain <%s>",
 			protocol, transport, domain);

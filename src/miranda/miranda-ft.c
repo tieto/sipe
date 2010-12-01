@@ -42,7 +42,7 @@ struct sipe_backend_file_transfer {
 };
 
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
-			   const char *errmsg)
+			   const gchar *errmsg)
 {
 	_NIF();
 }

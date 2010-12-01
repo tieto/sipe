@@ -46,7 +46,7 @@
 
 struct sipe_backend_chat_session {
 	SIPPROTO *pr;
-	char *conv;
+	gchar *conv;
 };
 
 void sipe_backend_chat_session_destroy(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *session)
@@ -93,8 +93,8 @@ void sipe_backend_chat_close(struct sipe_backend_chat_session *backend_session)
 
 	if (!backend_session)
 	{
-			SIPE_DEBUG_WARNING_NOFORMAT("Attempted to close NULL backend_session");
-			return;
+		SIPE_DEBUG_WARNING_NOFORMAT("Attempted to close NULL backend_session");
+		return;
 	}
 
 	pr = backend_session->pr;
@@ -121,7 +121,7 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 	GCSESSION gs;
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
-	char *id = g_strdup(title); /* FIXME: Generate ID */
+	gchar *id = g_strdup(title); /* FIXME: Generate ID */
 	struct sipe_backend_chat_session *conv = g_new0(struct sipe_backend_chat_session,1);
 
 	gs.cbSize = sizeof(gs);
@@ -176,12 +176,12 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 }
 
 gboolean sipe_backend_chat_find(struct sipe_backend_chat_session *backend_session,
-			    const gchar *uri)
+				const gchar *uri)
 {
 	SIPPROTO *pr = backend_session->pr;
 	GC_INFO gci = {0};
-	char *context;
-	char *user;
+	const gchar *context;
+	const gchar *user;
 
 	gci.Flags = BYID | USERS;
 	gci.pszID = mir_a2t(backend_session->conv);
@@ -224,7 +224,7 @@ void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 {
 	SIPPROTO *pr = backend_session->pr;
 	gchar *self = sip_uri_self(SIPE_CORE_PRIVATE);
-	char *msg;
+	gchar *msg;
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
 

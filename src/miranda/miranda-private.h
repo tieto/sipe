@@ -17,7 +17,6 @@ struct miranda_sipe_ack_args
         int    nAckResult;
         HANDLE hSequence;
         LPARAM pszMessage;
-		SIPPROTO *pr;
 };
 
 typedef enum
@@ -45,29 +44,34 @@ typedef struct sipe_miranda_sel_entry
 
 typedef INT_PTR (*SipSimpleServiceFunc)( SIPPROTO*, WPARAM, LPARAM );
 typedef int     (*SipSimpleEventFunc)( SIPPROTO*, WPARAM, LPARAM );
-typedef void    (*SipSimpleThreadFunc)( void* );
+typedef void    (*SipSimpleThreadFunc)( SIPPROTO*, void* );
 
 #define _PVTDATAI(sip) ((struct miranda_sipe_private_data*)sip->sipe_public.backend_private)
 #define _PVTDATA ((struct miranda_sipe_private_data*)sip->sipe_public.backend_private)
 
-#define _NIF()
+#define _NI(string) SIPE_DEBUG_INFO( "%s:%s (%d) ##NOT IMPLEMENTED## %s", __FILE__, __FUNCTION__, __LINE__, #string )
+#define _NIF() _NI("")
 
-char* sipe_miranda_getContactString(const SIPPROTO *pr, HANDLE hContact, const char* name);
-char* sipe_miranda_getString(const SIPPROTO *pr, const char* name);
-int sipe_miranda_getStaticString(const SIPPROTO *pr, HANDLE hContact, const char* valueName, char* dest, unsigned dest_len);
-DWORD sipe_miranda_getDword( const SIPPROTO *pr, HANDLE hContact, const char* name, DWORD* rv);
-gboolean sipe_miranda_get_bool(const SIPPROTO *pr, const char *name, gboolean defval);
+gchar* sipe_miranda_getContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name);
+gchar* sipe_miranda_getString(const SIPPROTO *pr, const gchar* name);
+int sipe_miranda_getStaticString(const SIPPROTO *pr, HANDLE hContact, const gchar* valueName, gchar* dest, unsigned dest_len);
+DWORD sipe_miranda_getDword( const SIPPROTO *pr, HANDLE hContact, const gchar* name, DWORD* rv);
+gboolean sipe_miranda_get_bool(const SIPPROTO *pr, const gchar *name, gboolean defval);
 
-void sipe_miranda_setContactString(const SIPPROTO *pr, HANDLE hContact, const char* name, const char* value);
-void sipe_miranda_setContactStringUtf(const SIPPROTO *pr, HANDLE hContact, const char* valueName, const char* parValue );
-void sipe_miranda_setString(const SIPPROTO *pr, const char* name, const char* value);
-void sipe_miranda_setStringUtf(const SIPPROTO *pr, const char* name, const char* value);
-int sipe_miranda_setWord(const SIPPROTO *pr, HANDLE hContact, const char* szSetting, WORD wValue);
+void sipe_miranda_setContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name, const gchar* value);
+void sipe_miranda_setContactStringUtf(const SIPPROTO *pr, HANDLE hContact, const gchar* valueName, const gchar* parValue );
+void sipe_miranda_setString(const SIPPROTO *pr, const gchar* name, const gchar* value);
+void sipe_miranda_setStringUtf(const SIPPROTO *pr, const gchar* name, const gchar* value);
+int sipe_miranda_setWord(const SIPPROTO *pr, HANDLE hContact, const gchar* szSetting, WORD wValue);
 
 struct sipe_miranda_sel_entry* sipe_miranda_input_add(HANDLE fd, sipe_miranda_input_condition cond, sipe_miranda_input_function func, gpointer user_data);
 gboolean sipe_miranda_input_remove(struct sipe_miranda_sel_entry *entry);
 
 int SendBroadcast(SIPPROTO *pr, HANDLE hContact,int type,int result,HANDLE hProcess,LPARAM lParam);
 
-char* sipe_miranda_eliminate_html(const char *string, int len);
+gchar* sipe_miranda_eliminate_html(const gchar *string, int len);
 unsigned short sipe_miranda_network_get_port_from_fd( HANDLE fd );
+
+/* Plugin interface functions */
+int sipe_miranda_SendMsg(SIPPROTO *pr, HANDLE hContact, int flags, const char* msg );
+int sipe_miranda_RecvMsg(SIPPROTO *pr, HANDLE hContact, PROTORECVEVENT* pre);

@@ -36,7 +36,7 @@
 void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 				       const gchar *from)
 {
-	HANDLE hContact = sipe_backend_find_buddy( sipe_public, from, NULL );
+	HANDLE hContact = sipe_backend_buddy_find( sipe_public, from, NULL );
 
 	if (!hContact)
 		return;
@@ -47,7 +47,7 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
 					    const gchar *from)
 {
-	HANDLE hContact = sipe_backend_find_buddy( sipe_public, from, NULL );
+	HANDLE hContact = sipe_backend_buddy_find( sipe_public, from, NULL );
 
 	if (!hContact)
 		return;

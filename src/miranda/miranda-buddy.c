@@ -1,5 +1,5 @@
 /**
- * @file miranda-blist.c
+ * @file miranda-buddy.c
  *
  * pidgin-sipe
  *
@@ -67,20 +67,20 @@ init_property_hash(void)
 {
 	info_to_property_table = g_hash_table_new(NULL, NULL);
 
-//	ADD_PROP(SIPE_INFO_DISPLAY_NAME, ALIAS_PROP);
-	ADD_PROP(SIPE_INFO_EMAIL       , "e-mail");
-	ADD_PROP(SIPE_INFO_WORK_PHONE  , "CompanyPhone");
-//	ADD_PROP(SIPE_INFO_WORK_PHONE_DISPLAY, PHONE_DISPLAY_PROP);
-//	ADD_PROP(SIPE_INFO_SITE        , SITE_PROP);
-	ADD_PROP(SIPE_INFO_COMPANY     , "Company");
-	ADD_PROP(SIPE_INFO_DEPARTMENT  , "CompanyDepartment");
-	ADD_PROP(SIPE_INFO_JOB_TITLE   , "CompanyPosition");
-//	ADD_PROP(SIPE_INFO_OFFICE      , OFFICE_PROP);
-	ADD_PROP(SIPE_INFO_STREET      , "CompanyStreet");
-	ADD_PROP(SIPE_INFO_CITY        , "CompanyCity");
-	ADD_PROP(SIPE_INFO_STATE       , "CompanyState");
-	ADD_PROP(SIPE_INFO_ZIPCODE     , "CompanyZIP");
-	ADD_PROP(SIPE_INFO_COUNTRY     , "CompanyCountry");
+//	ADD_PROP(SIPE_BUDDY_INFO_DISPLAY_NAME, ALIAS_PROP);
+	ADD_PROP(SIPE_BUDDY_INFO_EMAIL       , "e-mail");
+	ADD_PROP(SIPE_BUDDY_INFO_WORK_PHONE  , "CompanyPhone");
+//	ADD_PROP(SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY, PHONE_DISPLAY_PROP);
+//	ADD_PROP(SIPE_BUDDY_INFO_SITE        , SITE_PROP);
+	ADD_PROP(SIPE_BUDDY_INFO_COMPANY     , "Company");
+	ADD_PROP(SIPE_BUDDY_INFO_DEPARTMENT  , "CompanyDepartment");
+	ADD_PROP(SIPE_BUDDY_INFO_JOB_TITLE   , "CompanyPosition");
+//	ADD_PROP(SIPE_BUDDY_INFO_OFFICE      , OFFICE_PROP);
+	ADD_PROP(SIPE_BUDDY_INFO_STREET      , "CompanyStreet");
+	ADD_PROP(SIPE_BUDDY_INFO_CITY        , "CompanyCity");
+	ADD_PROP(SIPE_BUDDY_INFO_STATE       , "CompanyState");
+	ADD_PROP(SIPE_BUDDY_INFO_ZIPCODE     , "CompanyZIP");
+	ADD_PROP(SIPE_BUDDY_INFO_COUNTRY     , "CompanyCountry");
 
 	/* Summary values:
 SetValue(hwndDlg,IDC_NICK,hContact,szProto,"Nick",0);
@@ -132,7 +132,7 @@ mir_snprintf(idstr, SIZEOF(idstr), "MyPhone%d",i);
 	*/
 }
 
-static int SipeStatusToMiranda(const char *status) {
+static int SipeStatusToMiranda(const gchar *status) {
 
 	if (!strcmp(status, SIPE_STATUS_ID_OFFLINE))
 		return ID_STATUS_OFFLINE;
@@ -173,17 +173,17 @@ static int SipeStatusToMiranda(const char *status) {
 
 }
 
-static const char *
-sipe_info_to_miranda_property(sipe_info_fields info)
+static const gchar *
+sipe_info_to_miranda_property(sipe_buddy_info_fields info)
 {
 	if (!info_to_property_table)
 		init_property_hash();
 	return (const char *)g_hash_table_lookup(info_to_property_table, (gconstpointer)info);
 }
 
-sipe_blist_buddy sipe_backend_find_buddy(struct sipe_core_public *sipe_public,
-					 const char *name,
-					 const char *group)
+sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
+					   const gchar *name,
+					   const gchar *group)
 {
 	HANDLE hContact;
 	SIPPROTO *pr = sipe_public->backend_private;
@@ -191,7 +191,7 @@ sipe_blist_buddy sipe_backend_find_buddy(struct sipe_core_public *sipe_public,
 
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact) {
-		char* szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+		gchar* szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 		if (szProto != NULL && !lstrcmpA(szProto, pr->proto.m_szModuleName)) {
 			DBVARIANT dbv;
 			if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
@@ -211,7 +211,6 @@ sipe_blist_buddy sipe_backend_find_buddy(struct sipe_core_public *sipe_public,
 						return NULL;
 					}
 				}
-			} else {
 			}
 		}
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
@@ -220,9 +219,9 @@ sipe_blist_buddy sipe_backend_find_buddy(struct sipe_core_public *sipe_public,
 	return NULL;
 }
 
-GSList* sipe_backend_find_buddies(struct sipe_core_public *sipe_public,
-				  const char *buddy_name,
-				  const char *group_name)
+GSList* sipe_backend_buddy_find_all(struct sipe_core_public *sipe_public,
+				    const gchar *buddy_name,
+				    const gchar *group_name)
 {
 	GSList *res = NULL;
 	SIPPROTO *pr = sipe_public->backend_private;
@@ -231,7 +230,7 @@ GSList* sipe_backend_find_buddies(struct sipe_core_public *sipe_public,
 
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact) {
-		char* szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
+		gchar* szProto = (char*)CallService(MS_PROTO_GETCONTACTBASEPROTO, (WPARAM)hContact, 0);
 		if (szProto != NULL && !lstrcmpA(szProto, pr->proto.m_szModuleName)) {
 			if (DBGetContactSettingByte(hContact, pr->proto.m_szModuleName, "ChatRoom", 0) == 0) {
 				DBVARIANT dbv;
@@ -264,14 +263,14 @@ GSList* sipe_backend_find_buddies(struct sipe_core_public *sipe_public,
 	return res;
 }
 
-char* sipe_backend_buddy_get_name(struct sipe_core_public *sipe_public,
-				  const sipe_blist_buddy who)
+gchar* sipe_backend_buddy_get_name(struct sipe_core_public *sipe_public,
+				   const sipe_backend_buddy who)
 {
 	DBVARIANT dbv;
 	HANDLE hContact = (HANDLE)who;
-	char *alias;
+	gchar *alias;
 	SIPPROTO *pr = sipe_public->backend_private;
-	char *module = pr->proto.m_szModuleName;
+	const gchar *module = pr->proto.m_szModuleName;
 
 	if ( !DBGetContactSettingString( hContact, module, SIP_UNIQUEID, &dbv )) {
 		alias = g_strdup(dbv.pszVal);
@@ -282,42 +281,33 @@ char* sipe_backend_buddy_get_name(struct sipe_core_public *sipe_public,
 	return NULL;
 }
 
-char* sipe_backend_buddy_get_alias(struct sipe_core_public *sipe_public,
-				   const sipe_blist_buddy who)
+gchar* sipe_backend_buddy_get_alias(struct sipe_core_public *sipe_public,
+				    const sipe_backend_buddy who)
 {
 	DBVARIANT dbv;
 	HANDLE hContact = (HANDLE)who;
-	char *alias;
+	gchar *alias;
 	SIPPROTO *pr = sipe_public->backend_private;
-	char *module = pr->proto.m_szModuleName;
+	const gchar *module = pr->proto.m_szModuleName;
 
-	if ( !DBGetContactSettingString( hContact, module, "Nick", &dbv )) {
-		alias = g_strdup(dbv.pszVal);
-		DBFreeVariant( &dbv );
-		return alias;
-	}
-	if ( !DBGetContactSettingString( hContact, module, "Alias", &dbv )) {
-		alias = g_strdup(dbv.pszVal);
-		DBFreeVariant( &dbv );
-		return alias;
-	}
-	if ( !DBGetContactSettingString( hContact, module, SIP_UNIQUEID, &dbv )) {
-		alias = g_strdup(dbv.pszVal);
-		DBFreeVariant( &dbv );
-		return alias;
-	}
+	if ( DBGetContactSettingString( hContact, module, "Nick", &dbv )
+	  && DBGetContactSettingString( hContact, module, "Alias", &dbv )
+	  && DBGetContactSettingString( hContact, module, SIP_UNIQUEID, &dbv ))
+			return NULL;
 
-	return NULL;
+	alias = g_strdup(dbv.pszVal);
+	DBFreeVariant( &dbv );
+	return alias;
 }
 
-char* sipe_backend_buddy_get_server_alias(struct sipe_core_public *sipe_public,
-					  const sipe_blist_buddy who)
+gchar* sipe_backend_buddy_get_server_alias(struct sipe_core_public *sipe_public,
+					   const sipe_backend_buddy who)
 {
 	DBVARIANT dbv;
 	HANDLE hContact = (HANDLE)who;
 	char *alias;
 	SIPPROTO *pr = sipe_public->backend_private;
-	char *module = pr->proto.m_szModuleName;
+	const gchar *module = pr->proto.m_szModuleName;
 
 	if ( !DBGetContactSettingString( hContact, module, "Alias", &dbv )) {
 		alias = g_strdup(dbv.pszVal);
@@ -328,14 +318,14 @@ char* sipe_backend_buddy_get_server_alias(struct sipe_core_public *sipe_public,
 	return NULL;
 }
 
-char* sipe_backend_buddy_get_group_name(struct sipe_core_public *sipe_public,
-					const sipe_blist_buddy who)
+gchar* sipe_backend_buddy_get_group_name(struct sipe_core_public *sipe_public,
+					 const sipe_backend_buddy who)
 {
 	DBVARIANT dbv;
 	HANDLE hContact = (HANDLE)who;
-	char *alias;
+	gchar *alias;
 	SIPPROTO *pr = sipe_public->backend_private;
-	char *module = pr->proto.m_szModuleName;
+	const gchar *module = pr->proto.m_szModuleName;
 
 	if ( !DBGetContactSettingString( hContact, "CList", "Group", &dbv )) {
 		alias = g_strdup(dbv.pszVal);
@@ -347,7 +337,7 @@ char* sipe_backend_buddy_get_group_name(struct sipe_core_public *sipe_public,
 }
 
 void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
-				  const sipe_blist_buddy who,
+				  const sipe_backend_buddy who,
 				  const gchar *alias)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
@@ -358,7 +348,7 @@ void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
 }
 
 void sipe_backend_buddy_set_server_alias(struct sipe_core_public *sipe_public,
-					 const sipe_blist_buddy who,
+					 const sipe_backend_buddy who,
 					 const gchar *alias)
 {
 	HANDLE hContact = (HANDLE)who;
@@ -368,13 +358,13 @@ void sipe_backend_buddy_set_server_alias(struct sipe_core_public *sipe_public,
 	sipe_miranda_setContactStringUtf( pr, hContact, "Alias", alias );
 }
 
-char* sipe_backend_buddy_get_string(struct sipe_core_public *sipe_public,
-				    sipe_blist_buddy buddy,
-				    const sipe_info_fields key)
+gchar* sipe_backend_buddy_get_string(struct sipe_core_public *sipe_public,
+				     sipe_backend_buddy buddy,
+				     const sipe_buddy_info_fields key)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	char *module = pr->proto.m_szModuleName;
-	const char *prop_name = sipe_info_to_miranda_property(key);
+	const gchar *module = pr->proto.m_szModuleName;
+	const gchar *prop_name = sipe_info_to_miranda_property(key);
 	char *tmp;
 	char *prop_str;
 
@@ -389,13 +379,13 @@ char* sipe_backend_buddy_get_string(struct sipe_core_public *sipe_public,
 }
 
 void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
-				   sipe_blist_buddy buddy,
-				   const sipe_info_fields key,
-				   const char *val)
+				   sipe_backend_buddy buddy,
+				   const sipe_buddy_info_fields key,
+				   const gchar *val)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	char *module = pr->proto.m_szModuleName;
-	const char *prop_name = sipe_info_to_miranda_property(key);
+	const gchar *module = pr->proto.m_szModuleName;
+	const gchar *prop_name = sipe_info_to_miranda_property(key);
 
 	SIPE_DEBUG_INFO("miranda_sipe_buddy_set_string: buddy <%x> key <%d = %s> val <%s>", buddy, key, prop_name, val);
 	if (!prop_name)
@@ -404,10 +394,10 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 	sipe_miranda_setContactString(pr, buddy, prop_name, val);
 }
 
-sipe_blist_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
-					const char *name,
-					const char *alias,
-					const char *groupname)
+sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
+					  const gchar *name,
+					  const gchar *alias,
+					  const gchar *groupname)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
 	HANDLE hContact;
@@ -418,61 +408,61 @@ sipe_blist_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 	sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, name ); // name
 	if (alias) sipe_miranda_setContactStringUtf( pr, hContact, "Nick", alias );
 	DBWriteContactSettingString( hContact, "CList", "Group", groupname );
-	return (sipe_blist_buddy)hContact;
+	return (sipe_backend_buddy)hContact;
 }
 
 void sipe_backend_buddy_remove(struct sipe_core_public *sipe_public,
-			       const sipe_blist_buddy who)
+			       const sipe_backend_buddy who)
 {
 	CallService( MS_DB_CONTACT_DELETE, (WPARAM)who, 0 );
 }
 
-void sipe_backend_request_authorization(struct sipe_core_public *sipe_public,
-					const char *who,
-					const char *alias,
-					gboolean on_list,
-					sipe_request_authorization_cb auth_cb,
-					sipe_request_authorization_cb deny_cb,
-					void *data)
+void sipe_backend_buddy_request_authorization(struct sipe_core_public *sipe_public,
+					      const gchar *who,
+					      const gchar *alias,
+					      gboolean on_list,
+					      sipe_backend_buddy_request_authorization_cb auth_cb,
+					      sipe_backend_buddy_request_authorization_cb deny_cb,
+					      void *data)
 {
 	_NIF();
 	auth_cb(data);
 }
 
-void sipe_backend_request_add(struct sipe_core_public *sipe_public,
-			      const gchar *who,
-			      const gchar *alias)
+void sipe_backend_buddy_request_add(struct sipe_core_public *sipe_public,
+				    const gchar *who,
+				    const gchar *alias)
 {
 	_NIF();
 }
 
 gboolean sipe_backend_buddy_is_blocked(struct sipe_core_public *sipe_public,
-				       const char *who)
+				       const gchar *who)
 {
 	_NIF();
 	return FALSE;
 }
 
 void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
-				      const char *who,
-				      gboolean blocked)
+					   const gchar *who,
+					   gboolean blocked)
 {
 	_NIF();
 }
 
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
-				   const char *who,
-				   const char *status_id)
+				   const gchar *who,
+				   const gchar *status_id)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	char *module = pr->proto.m_szModuleName;
-	HANDLE hContact = sipe_backend_find_buddy(sipe_public, who, NULL);
+	const gchar *module = pr->proto.m_szModuleName;
+	HANDLE hContact = sipe_backend_buddy_find(sipe_public, who, NULL);
 
 	sipe_miranda_setWord(pr, hContact, "Status", SipeStatusToMiranda(status_id));
 }
 
-gboolean sipe_backend_group_add(struct sipe_core_public *sipe_public,
-				const char *group_name)
+gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
+				      const gchar *group_name)
 {
 	TCHAR *mir_group_name = mir_a2t(group_name);
 	HANDLE hGroup = (HANDLE)CallService(MS_CLIST_GROUPCREATE, 0, (LPARAM)mir_group_name);

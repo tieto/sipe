@@ -1,3 +1,25 @@
+/**
+ * @file miranda-utils.c
+ *
+ * pidgin-sipe
+ *
+ * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #define MIRANDA_VER 0x900
 
 #include <windows.h>
@@ -17,17 +39,17 @@ static GHashTable *entities = NULL;
 #define ADDENT(a,b) g_hash_table_insert(entities, a, b)
 
 
-char* sipe_miranda_getContactString(const SIPPROTO *pr, HANDLE hContact, const char* name)
+gchar* sipe_miranda_getContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name)
 {
 	return DBGetString( hContact, pr->proto.m_szModuleName, name );
 }
 
-char* sipe_miranda_getString(const SIPPROTO *pr, const char* name)
+gchar* sipe_miranda_getString(const SIPPROTO *pr, const gchar* name)
 {
 	return sipe_miranda_getContactString( pr, NULL, name );
 }
 
-DWORD sipe_miranda_getDword(const SIPPROTO *pr, HANDLE hContact, const char* name, DWORD* rv)
+DWORD sipe_miranda_getDword(const SIPPROTO *pr, HANDLE hContact, const gchar* name, DWORD* rv)
 {
 	DBVARIANT dbv;
 	DBCONTACTGETSETTING cgs;
@@ -47,13 +69,12 @@ DWORD sipe_miranda_getDword(const SIPPROTO *pr, HANDLE hContact, const char* nam
 
 }
 
-int sipe_miranda_setWord(const SIPPROTO *pr, HANDLE hContact, const char* szSetting, WORD wValue)
+int sipe_miranda_setWord(const SIPPROTO *pr, HANDLE hContact, const gchar* szSetting, WORD wValue)
 {
 	return DBWriteContactSettingWord(hContact, pr->proto.m_szModuleName, szSetting, wValue);
 }
 
-gboolean
-sipe_miranda_get_bool(const SIPPROTO *pr, const char *name, gboolean defval)
+gbooleanbsipe_miranda_get_bool(const SIPPROTO *pr, const gchar *name, gboolean defval)
 {
 	DWORD ret;
 
@@ -63,7 +84,7 @@ sipe_miranda_get_bool(const SIPPROTO *pr, const char *name, gboolean defval)
 	return defval;
 }
 
-int sipe_miranda_getStaticString(const SIPPROTO *pr, HANDLE hContact, const char* valueName, char* dest, unsigned dest_len)
+int sipe_miranda_getStaticString(const SIPPROTO *pr, HANDLE hContact, const gchar* valueName, gchar* dest, unsigned dest_len)
 {
 	DBVARIANT dbv;
 	DBCONTACTGETSETTING sVal;
@@ -81,22 +102,22 @@ int sipe_miranda_getStaticString(const SIPPROTO *pr, HANDLE hContact, const char
 	return (dbv.type != DBVT_ASCIIZ);
 }
 
-void sipe_miranda_setContactString(const SIPPROTO *pr, HANDLE hContact, const char* name, const char* value)
+void sipe_miranda_setContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name, const gchar* value)
 {
 	DBWriteContactSettingString(hContact, pr->proto.m_szModuleName, name, value);
 }
 
-void sipe_miranda_setContactStringUtf(const SIPPROTO *pr, HANDLE hContact, const char* valueName, const char* parValue )
+void sipe_miranda_setContactStringUtf(const SIPPROTO *pr, HANDLE hContact, const gchar* valueName, const gchar* parValue )
 {
 	DBWriteContactSettingStringUtf( hContact, pr->proto.m_szModuleName, valueName, parValue );
 }
 
-void sipe_miranda_setString(const SIPPROTO *pr, const char* name, const char* value)
+void sipe_miranda_setString(const SIPPROTO *pr, const gchar* name, const gchar* value)
 {
 	sipe_miranda_setContactString( pr, NULL, name, value );
 }
 
-void sipe_miranda_setStringUtf(const SIPPROTO *pr, const char* name, const char* value)
+void sipe_miranda_setStringUtf(const SIPPROTO *pr, const gchar* name, const gchar* value)
 {
 	sipe_miranda_setContactStringUtf( pr, NULL, name, value );
 }
@@ -112,13 +133,12 @@ static void initEntities(void)
 	ADDENT("apos","'");
 }
 
-char*
-sipe_miranda_eliminate_html(const char *string, int len)
+gchar* sipe_miranda_eliminate_html(const gchar *string, int len)
 {
-	char *tmp = (char*)mir_alloc(len + 1);
+	gchar *tmp = (char*)mir_alloc(len + 1);
 	int i,j;
 	BOOL tag = FALSE;
-	char *res;
+	gchar *res;
 
 	if (!entities)
 		initEntities();
@@ -146,8 +166,8 @@ sipe_miranda_eliminate_html(const char *string, int len)
 
 			if ((string[i] == '&') && (tkend = strstr((char*)&string[i], ";")))
 			{
-				char *rep;
-				char c = *tkend;
+				gchar *rep;
+				gchar c = *tkend;
 				*tkend = '\0';
 
 				rep = (char*)g_hash_table_lookup(entities, &string[i+1]);
@@ -183,8 +203,7 @@ sipe_miranda_eliminate_html(const char *string, int len)
 	return res;
 }
 
-unsigned short
-sipe_miranda_network_get_port_from_fd( HANDLE fd )
+unsigned short sipe_miranda_network_get_port_from_fd( HANDLE fd )
 {
 	SOCKET sock = CallService(MS_NETLIB_GETSOCKET, (WPARAM)fd, (LPARAM)0);
 
@@ -196,3 +215,11 @@ sipe_miranda_network_get_port_from_fd( HANDLE fd )
 	return sockbuf.sin_port;
 }
 
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

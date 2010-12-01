@@ -29,30 +29,20 @@
 #include "newpluginapi.h"
 #include "m_protosvc.h"
 #include "m_protoint.h"
+#include "m_netlib.h"
 
 #include "sipe-backend.h"
 #include "miranda-private.h"
 
+extern HANDLE sipe_miranda_debug_netlibuser;
+
 void sipe_backend_debug_literal(sipe_debug_level level,
 				const gchar *msg)
 {
-	FILE *fh;
-	char *str;
-
-	if (0) {
-//		str = sipe_miranda_getString(pr, "debuglog");
-	} else {
-		str = g_strdup("c:/sipsimple.log");
+	if (sipe_miranda_debug_netlibuser)
+	{
+		CallService(MS_NETLIB_LOG, (WPARAM)sipe_miranda_debug_netlibuser, (LPARAM)msg);
 	}
-
-	if (sipe_backend_debug_enabled()) {
-		if (!fopen_s(&fh, str, "a")) {
-			fprintf(fh, "<[%d]> %s\n", _getpid(), msg);
-			fclose(fh);
-		}
-	}
-	g_free(str);
-
 }
 
 void sipe_backend_debug(sipe_debug_level level,

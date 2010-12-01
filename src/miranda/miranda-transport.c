@@ -92,11 +92,16 @@ miranda_sipe_input_cb(gpointer data,
 		/* minus 1 for the string terminator */
 		readlen = conn->buffer_length - conn->buffer_used - 1;
 
-		len = Netlib_Recv(transport->fd, conn->buffer + conn->buffer_used, readlen, 0);
+		len = Netlib_Recv(transport->fd, conn->buffer + conn->buffer_used, readlen, MSG_NODUMP);
 
 		if (len == SOCKET_ERROR) {
-			SIPE_DEBUG_INFO_NOFORMAT("miranda_sipe_input_cb: read error");
+			SIPE_DEBUG_INFO("miranda_sipe_input_cb: read error");
 			transport->error(SIPE_TRANSPORT_CONNECTION, _("Read error"));
+
+			/* FIXME: not sure if this is the right spot */
+			sipe_miranda_input_remove(transport->inputhandler);
+			transport->inputhandler = NULL;
+
 			return;
 		} else if (firstread && (len == 0)) {
 			SIPE_DEBUG_ERROR_NOFORMAT("miranda_sipe_input_cb: server has disconnected");
@@ -172,6 +177,8 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 {
 	struct sipe_transport_miranda *transport = MIRANDA_TRANSPORT;
 
+	SIPE_DEBUG_INFO("Disconnecting transport <%08x>", transport);
+
 	if (!transport) return;
 
 	if (transport->inputhandler)
@@ -189,7 +196,7 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 	guint written = 0;
 
 	do {
-		int len = Netlib_Send(transport->fd, buffer + written, strlen(buffer + written), 0);
+		int len = Netlib_Send(transport->fd, buffer + written, strlen(buffer + written), MSG_NODUMP);
 
 		if (len == SOCKET_ERROR) {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_backend_transport_message: error, exiting");

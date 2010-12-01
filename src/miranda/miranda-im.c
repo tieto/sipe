@@ -34,7 +34,6 @@
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
-#include "sipe-core-private.h"
 #include "miranda-private.h"
 
 void sipe_backend_im_message(struct sipe_core_public *sipe_public,
@@ -46,9 +45,9 @@ void sipe_backend_im_message(struct sipe_core_public *sipe_public,
 	CCSDATA ccs;
 	PROTORECVEVENT pre = {0};
 	HANDLE hContact;
-	char *msg;
+	gchar *msg;
 
-	hContact = sipe_backend_find_buddy( sipe_public, from, NULL );
+	hContact = sipe_backend_buddy_find( sipe_public, from, NULL );
 	if (!hContact)
 	{
 		SIPE_DEBUG_INFO("Adding miranda contact for incoming talker <%s>", from);
@@ -73,6 +72,38 @@ void sipe_backend_im_message(struct sipe_core_public *sipe_public,
 
 	mir_free(msg);
 
+}
+
+int sipe_miranda_SendMsg(SIPPROTO *pr,
+			 HANDLE hContact,
+			 int flags,
+			 const char* msg )
+{
+	DBVARIANT dbv;
+
+	SIPE_DEBUG_INFO("SendMsg: flags <%x> msg <%s>", flags, msg);
+
+	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
+//		SendProtoAck( pr, hContact, 1, ACKRESULT_SENTREQUEST, ACKTYPE_MESSAGE, NULL );
+		sipe_im_send(pr->sip, dbv.pszVal, msg, SIPE_MESSAGE_SEND);
+		SendProtoAck( pr, hContact, 1, ACKRESULT_SUCCESS, ACKTYPE_MESSAGE, NULL );
+		DBFreeVariant(&dbv);
+	} else {
+		SendProtoAck( pr, hContact, 1, ACKRESULT_FAILED, ACKTYPE_MESSAGE, NULL );
+	}
+	return 1;
+}
+
+int sipe_miranda_RecvMsg(SIPPROTO *pr,
+			 HANDLE hContact,
+			 PROTORECVEVENT* pre)
+{
+//	char *msg = EliminateHtml( pre->szMessage, strlen(pre->szMessage));
+//	mir_free(pre->szMessage);
+//	pre->szMessage = msg;
+
+	CCSDATA ccs = { hContact, PSR_MESSAGE, 0, ( LPARAM )pre };
+	return CallService( MS_PROTO_RECVMSG, 0, ( LPARAM )&ccs );
 }
 
 /*

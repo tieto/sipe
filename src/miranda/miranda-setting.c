@@ -57,8 +57,8 @@ const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
 				  sipe_setting type)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	char *ret;
-	char *tmp;
+	gchar *ret;
+	gchar *tmp;
 
 	if (type == SIPE_SETTING_EMAIL_PASSWORD) {
 		tmp = (char*)mir_calloc(1024);
