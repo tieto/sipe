@@ -1,58 +1,59 @@
-# Copyright (C) 2006 SuSE Linux Products GmbH, Nuernberg
-# This file is distributed under the same license as the package.
-#
+# (English) English User Interface strings for pidgin-sipe.
+# Copyright (C) 2008-2010 SIPE Project <http://sipe.sourceforge.net/>
+# This file is distributed under the same license as the pidgin-sipe package.
+# 
 msgid ""
 msgstr ""
-"Project-Id-Version: pidgin-sipe\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-10-09 00:42+0300\n"
-"PO-Revision-Date: 2010-04-08 11:19\n"
-"Last-Translator: Novell Language <language@novell.com>\n"
-"Language-Team: Novell Language <language@novell.com>\n"
-"Language: \n"
+"Project-Id-Version: pidgin sipe\n"
+"Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
+"POT-Creation-Date: 2010-11-30 23:36+0200\n"
+"PO-Revision-Date: 2010-12-02 09:43+0000\n"
+"Last-Translator: stefanb <chemobejk@gmail.com>\n"
+"Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: ar\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5\n"
 
-#: ../src/core/sip-transport.c:216
+#: ../src/core/sip-transport.c:209
 msgid "Failed to authenticate to server"
 msgstr ""
 
-#: ../src/core/sip-transport.c:1110 ../src/core/sip-transport.c:1504
-#, fuzzy
+#: ../src/core/sip-transport.c:1162
 msgid "Authentication failed"
-msgstr "فشل الاتصال"
+msgstr ""
 
-#: ../src/core/sip-transport.c:1119 ../src/core/sip-transport.c:1388
+#: ../src/core/sip-transport.c:1177
 msgid "Incompatible authentication scheme chosen"
 msgstr ""
 
-#: ../src/core/sip-transport.c:1143 ../src/core/sipe.c:1544
+#: ../src/core/sip-transport.c:1202 ../src/core/sipe.c:1544
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "لقد تم رفضك من قِبل الخادم: %s"
 
-#: ../src/core/sip-transport.c:1144 ../src/core/sip-transport.c:1163
-#: ../src/core/sip-transport.c:1183 ../src/core/sipe.c:1544
+#: ../src/core/sip-transport.c:1203 ../src/core/sip-transport.c:1222
+#: ../src/core/sip-transport.c:1250 ../src/core/sip-transport.c:1274
+#: ../src/core/sipe.c:1544
 msgid "no reason given"
 msgstr "السبب غير محدد"
 
-#: ../src/core/sip-transport.c:1162
-#, fuzzy, c-format
+#: ../src/core/sip-transport.c:1221
+#, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr "غير موجود: %s. الرجاء الاتصال بالمسؤول لديك"
+msgstr ""
 
-#: ../src/core/sip-transport.c:1164
+#: ../src/core/sip-transport.c:1223
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr ""
 
-#: ../src/core/sip-transport.c:1183
+#: ../src/core/sip-transport.c:1250 ../src/core/sip-transport.c:1274
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "الخدمة غير متاحة: %s"
 
-#: ../src/core/sip-transport.c:1499
+#: ../src/core/sip-transport.c:1598
 msgid "Invalid message signature received"
 msgstr "تم استلام توقيع رسالة غير صالح"
 
@@ -66,9 +67,8 @@ msgid "Busy"
 msgstr "مشغول"
 
 #: ../src/core/sipe.c:139
-#, fuzzy
 msgid "Busy-Idle"
-msgstr "مشغول"
+msgstr ""
 
 #: ../src/core/sipe.c:141 ../src/purple/purple-plugin.c:206
 msgid "Be right back"
@@ -118,9 +118,8 @@ msgid "user disabled"
 msgstr ""
 
 #: ../src/core/sipe.c:1540
-#, fuzzy
 msgid "user moved"
-msgstr "اسم المستخدم"
+msgstr ""
 
 #: ../src/core/sipe.c:1887 ../src/core/sipe.c:6642
 msgid "Blocked"
@@ -152,38 +151,29 @@ msgstr ""
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2997
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
 msgstr ""
 
 #: ../src/core/sipe.c:3001
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
+msgid "This message was not delivered to %s because the service is not available"
 msgstr ""
 
 #. Busy Here
 #: ../src/core/sipe.c:3003
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
 msgstr ""
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3005
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
 msgstr ""
 
 #: ../src/core/sipe.c:3007
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
+msgid "This message was not delivered to %s because one or more recipients are offline"
 msgstr ""
 
 #: ../src/core/sipe.c:3316
@@ -192,9 +182,8 @@ msgid "Failed to invite %s"
 msgstr ""
 
 #: ../src/core/sipe.c:5797
-#, fuzzy
 msgid "SIP Exchange user name contains invalid characters"
-msgstr "غير مسموح باستخدام مسافات فاصلة في أسماء مستخدمي SIP Exchange"
+msgstr ""
 
 #: ../src/core/sipe.c:5805
 msgid ""
@@ -209,9 +198,8 @@ msgid ""
 msgstr ""
 
 #: ../src/core/sipe.c:5824
-#, fuzzy
 msgid "SIP Exchange user name contains whitespace"
-msgstr "غير مسموح باستخدام مسافات فاصلة في أسماء مستخدمي SIP Exchange"
+msgstr ""
 
 #: ../src/core/sipe.c:5838
 msgid ""
@@ -221,14 +209,12 @@ msgid ""
 msgstr ""
 
 #: ../src/core/sipe.c:5984
-#, fuzzy
 msgid "Unable to display the search results"
-msgstr "تعذر عرض نتائج البحث."
+msgstr ""
 
 #: ../src/core/sipe.c:5990
-#, fuzzy
 msgid "User name"
-msgstr "اسم المستخدم"
+msgstr ""
 
 #: ../src/core/sipe.c:5993
 msgid "Name"
@@ -247,8 +233,12 @@ msgstr "البريد الإلكتروني"
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
-msgstr[0] "تم العثور على %d جهة اتصال%s:"
-msgstr[1] "تم العثور على %d جهات الاتصال%s:"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
+msgstr[4] ""
+msgstr[5] ""
 
 #: ../src/core/sipe.c:6031
 msgid " (more matched your query)"
@@ -285,8 +275,7 @@ msgstr ""
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:6358
-msgid ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 msgstr ""
 
 #: ../src/core/sipe.c:6441
@@ -342,9 +331,8 @@ msgid "Copy to"
 msgstr ""
 
 #: ../src/core/sipe.c:6633
-#, fuzzy
 msgid "Domain"
-msgstr "مجال مخوّل"
+msgstr ""
 
 #: ../src/core/sipe.c:6649 ../src/core/sipe.c:6650
 msgid "Add new domain"
@@ -355,9 +343,8 @@ msgid "Add"
 msgstr ""
 
 #: ../src/core/sipe.c:6652
-#, fuzzy
 msgid "Cancel"
-msgstr "إل_غاء"
+msgstr ""
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe.c:6761
@@ -489,28 +476,22 @@ msgstr ""
 msgid "Chat #%d"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:838
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
+#: ../src/core/sipe-conf.c:863
+msgid "This conference is no longer locked. Additional participants can now join."
 msgstr ""
 
-#: ../src/core/sipe-conf.c:842
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
+#: ../src/core/sipe-conf.c:867
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
 msgstr ""
 
-#: ../src/core/sipe-conf.c:875
-#, fuzzy
+#: ../src/core/sipe-conf.c:900
 msgid "You have been disconnected from this conference."
-msgstr "لقد تم رفضك من قِبل الخادم"
+msgstr ""
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:141
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
 msgstr ""
 
 #. About note, part 2/13: home page URL (label)
@@ -567,9 +548,8 @@ msgstr ""
 
 #. About note, part 12/13: author list (header)
 #: ../src/core/sipe-core.c:165
-#, fuzzy
 msgid "Authors"
-msgstr "تلقائي"
+msgstr ""
 
 #. About note, part 13/13: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
@@ -579,19 +559,20 @@ msgstr "تلقائي"
 msgid "Original texts in English (en): SIPE developers"
 msgstr ""
 
-#. Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location
-#: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
+#. Translators: (!) should be as in localized Lotus Notes to be able to
+#. extract meeting location
+#: ../src/core/sipe-domino.c:260 ../src/core/sipe-domino.c:261
 msgid "Location:"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:110 ../src/core/sipe-ft.c:613
-#: ../src/core/sipe-ft.c:642 ../src/core/sipe-ft.c:700
+#: ../src/core/sipe-ft.c:111 ../src/core/sipe-ft.c:609
+#: ../src/core/sipe-ft.c:638 ../src/core/sipe-ft.c:696
 #: ../src/purple/purple-ft.c:317
 msgid "Socket read failed"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:115 ../src/core/sipe-ft.c:744
-#: ../src/core/sipe-ft.c:753
+#: ../src/core/sipe-ft.c:116 ../src/core/sipe-ft.c:740
+#: ../src/core/sipe-ft.c:749
 msgid "Socket write failed"
 msgstr ""
 
@@ -599,36 +580,36 @@ msgstr ""
 msgid "File size is different from the advertised value."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:439
+#: ../src/core/sipe-ft.c:438
 msgid "Received MAC is corrupted"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:450
+#: ../src/core/sipe-ft.c:449
 msgid "Received file is corrupted"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:518
+#: ../src/core/sipe-ft.c:516
 msgid "File transfer initialization failed."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:549
+#: ../src/core/sipe-ft.c:547
 msgid "File transfer authentication failed."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:634 ../src/core/sipe-ft.c:652
-#: ../src/core/sipe-ft.c:714
+#: ../src/core/sipe-ft.c:630 ../src/core/sipe-ft.c:648
+#: ../src/core/sipe-ft.c:710
 msgid "Out of memory"
 msgstr ""
 
-#: ../src/core/sipe-ft.c:831
+#: ../src/core/sipe-ft.c:827
 msgid "Received encryption key has wrong size."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:846
+#: ../src/core/sipe-ft.c:842
 msgid "Received hash key has wrong size."
 msgstr ""
 
-#: ../src/core/sipe-ft.c:868
+#: ../src/core/sipe-ft.c:864
 msgid "Could not create listen socket"
 msgstr "تعذر إنشاء مقبس استماع"
 
@@ -659,62 +640,65 @@ msgstr ""
 msgid "Error joining chat room"
 msgstr ""
 
-#: ../src/core/sipe-incoming.c:637
+#: ../src/core/sipe-incoming.c:647
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
 msgstr ""
 
-#: ../src/core/sipe-media.c:382 ../src/core/sipe-media.c:930
+#: ../src/core/sipe-media.c:531 ../src/core/sipe-media.c:1086
 msgid "Unable to establish a call"
 msgstr ""
 
-#: ../src/core/sipe-media.c:383
+#: ../src/core/sipe-media.c:532
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr ""
 
-#: ../src/core/sipe-media.c:675 ../src/core/sipe-media.c:685
-#: ../src/core/sipe-media.c:929
+#: ../src/core/sipe-media.c:751 ../src/core/sipe-media.c:763
+#: ../src/core/sipe-media.c:830 ../src/core/sipe-media.c:1085
 msgid "Error occured"
 msgstr ""
 
-#: ../src/core/sipe-media.c:676
+#: ../src/core/sipe-media.c:752 ../src/core/sipe-media.c:831
 msgid "Error creating audio stream"
 msgstr ""
 
-#: ../src/core/sipe-media.c:686
+#: ../src/core/sipe-media.c:764
 msgid "Error creating video stream"
 msgstr ""
 
-#: ../src/core/sipe-media.c:915
-#, fuzzy
+#: ../src/core/sipe-media.c:1071
 msgid "User unavailable"
-msgstr "الخدمة غير متاحة: %s"
+msgstr ""
 
-#: ../src/core/sipe-media.c:918
+#: ../src/core/sipe-media.c:1074
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr ""
 
-#: ../src/core/sipe-media.c:920
+#: ../src/core/sipe-media.c:1076
 #, c-format
 msgid "User %s is not available"
 msgstr ""
 
-#: ../src/core/sipe-media.c:925
+#: ../src/core/sipe-media.c:1081
 msgid "Call rejected"
 msgstr ""
 
-#: ../src/core/sipe-media.c:926
+#: ../src/core/sipe-media.c:1082
 #, c-format
 msgid "User %s rejected call"
 msgstr ""
 
-#: ../src/purple/purple-chat.c:233
+#: ../src/purple/purple-chat.c:250
 msgid "Lock"
 msgstr ""
 
-#: ../src/purple/purple-chat.c:238
+#: ../src/purple/purple-chat.c:255
 msgid "Unlock"
+msgstr ""
+
+#: ../src/purple/purple-chat.c:269
+msgid "Join conference call"
 msgstr ""
 
 #: ../src/purple/purple-groupchat.c:46
@@ -756,30 +740,24 @@ msgid "user@company.com"
 msgstr ""
 
 #: ../src/purple/purple-plugin.c:563
-#, fuzzy
 msgid "First name"
-msgstr "الاسم الأول"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:565
-#, fuzzy
 msgid "Last name"
-msgstr "الاسم الأخير"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:573
 msgid "Search"
 msgstr "بحث"
 
 #: ../src/purple/purple-plugin.c:574
-#, fuzzy
 msgid "Search for a contact"
-msgstr "بحث عن جهة اتصال"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:575
-#, fuzzy
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr "أدخل معلومات الشخص الذي تريد البحث عنه. سيتم تجاهل الحقول الفارغة."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:577
 msgid "_Search"
@@ -794,9 +772,8 @@ msgid "About SIPE plugin..."
 msgstr ""
 
 #: ../src/purple/purple-plugin.c:603
-#, fuzzy
 msgid "Contact search..."
-msgstr "بحث عن جهات اتصال..."
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:606
 msgid "Republish Calendar"
@@ -812,7 +789,7 @@ msgstr ""
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#.
+#. 
 #: ../src/purple/purple-plugin.c:666
 msgid ""
 "Login\n"
@@ -827,9 +804,8 @@ msgid ""
 msgstr ""
 
 #: ../src/purple/purple-plugin.c:673
-#, fuzzy
 msgid "Connection type"
-msgstr "نوع الاتصال"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:674
 msgid "Auto"
@@ -843,8 +819,10 @@ msgstr "SSL/TLS"
 msgid "TCP"
 msgstr "TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. sipe_prpl_info.protocol_options =
+#. g_list_append(sipe_prpl_info.protocol_options, option);
 #: ../src/purple/purple-plugin.c:682
 msgid "User Agent"
 msgstr "وكيل المستخدم"
@@ -856,14 +834,14 @@ msgstr ""
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:693
 msgid "Use Single Sign-On"
 msgstr ""
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#.
+#. 
 #: ../src/purple/purple-plugin.c:700
 msgid ""
 "Email services URL\n"
@@ -878,7 +856,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#.
+#. 
 #: ../src/purple/purple-plugin.c:709
 msgid ""
 "Email login\n"
@@ -893,7 +871,7 @@ msgstr ""
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#.
+#. 
 #: ../src/purple/purple-plugin.c:719
 msgid ""
 "Group Chat Proxy\n"
@@ -902,9 +880,8 @@ msgid ""
 msgstr ""
 
 #: ../src/purple/purple-transport.c:109
-#, fuzzy
 msgid "Read error"
-msgstr "خطأ في قراءة SSL"
+msgstr ""
 
 #: ../src/purple/purple-transport.c:113
 msgid "Server has disconnected"
@@ -919,11 +896,9 @@ msgid "Could not create SSL context"
 msgstr "تعذر إنشاء سياق SSL"
 
 #: ../src/purple/purple-transport.c:269
-#, fuzzy
 msgid "Could not create socket"
-msgstr "تعذر إنشاء مقبس"
+msgstr ""
 
 #: ../src/purple/purple-transport.c:327
-#, fuzzy
 msgid "Write error"
-msgstr "خطأ في قراءة SSL"
+msgstr ""

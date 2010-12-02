@@ -1,60 +1,59 @@
-# Spanish translation for pidgin-sipe
-# Copyright (c) 2009 Fixxxer
+# (English) English User Interface strings for pidgin-sipe.
+# Copyright (C) 2008-2010 SIPE Project <http://sipe.sourceforge.net/>
 # This file is distributed under the same license as the pidgin-sipe package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2009.
+# 
 msgid ""
 msgstr ""
-"Project-Id-Version: pidgin-sipe\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-10-09 00:42+0300\n"
-"PO-Revision-Date: 2010-02-18 17:01-0600\n"
-"Last-Translator: Anibal Avelar <debianmx@gmail.com>\n"
-"Language-Team: es <debianmx@gmail.com>\n"
-"Language: \n"
+"Project-Id-Version: pidgin sipe\n"
+"Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
+"POT-Creation-Date: 2010-11-30 23:36+0200\n"
+"PO-Revision-Date: 2010-12-02 09:43+0000\n"
+"Last-Translator: stefanb <chemobejk@gmail.com>\n"
+"Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2009-06-19 14:52+0000\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Launchpad (build Unknown)\n"
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../src/core/sip-transport.c:216
+#: ../src/core/sip-transport.c:209
 msgid "Failed to authenticate to server"
 msgstr "Fallo de autenticación con el servidor"
 
-#: ../src/core/sip-transport.c:1110 ../src/core/sip-transport.c:1504
+#: ../src/core/sip-transport.c:1162
 msgid "Authentication failed"
 msgstr "Fallo de autenticación"
 
-#: ../src/core/sip-transport.c:1119 ../src/core/sip-transport.c:1388
+#: ../src/core/sip-transport.c:1177
 msgid "Incompatible authentication scheme chosen"
 msgstr "Seleccionado un esquema de autenticación incompatible"
 
-#: ../src/core/sip-transport.c:1143 ../src/core/sipe.c:1544
+#: ../src/core/sip-transport.c:1202 ../src/core/sipe.c:1544
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "El servidor %s ha rechazado al usuario"
 
-#: ../src/core/sip-transport.c:1144 ../src/core/sip-transport.c:1163
-#: ../src/core/sip-transport.c:1183 ../src/core/sipe.c:1544
+#: ../src/core/sip-transport.c:1203 ../src/core/sip-transport.c:1222
+#: ../src/core/sip-transport.c:1250 ../src/core/sip-transport.c:1274
+#: ../src/core/sipe.c:1544
 msgid "no reason given"
 msgstr "no se indicó una razón"
 
-#: ../src/core/sip-transport.c:1162
+#: ../src/core/sip-transport.c:1221
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "No encontró: %s. Por favor, contacte a su administrador"
 
-#: ../src/core/sip-transport.c:1164
+#: ../src/core/sip-transport.c:1223
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP está deshabilitado para la URI de destino o la URI no existe"
 
-#: ../src/core/sip-transport.c:1183
+#: ../src/core/sip-transport.c:1250 ../src/core/sip-transport.c:1274
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Servicio no disponible: %s"
 
-#: ../src/core/sip-transport.c:1499
+#: ../src/core/sip-transport.c:1598
 msgid "Invalid message signature received"
 msgstr "Recibida firma de mensaje no valida"
 
@@ -152,46 +151,30 @@ msgstr "Desconocido"
 #. Not acceptable all.
 #. Message contents not allowed by policy
 #: ../src/core/sipe.c:2997
-msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"Su mensaje o invitación no fue enviado, posiblemente porque contiene un "
-"hipervínculo u otro contenido que el administrador del sistema ha bloqueado."
+msgid "Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked."
+msgstr "Su mensaje o invitación no fue enviado, posiblemente porque contiene un hipervínculo u otro contenido que el administrador del sistema ha bloqueado."
 
 #: ../src/core/sipe.c:3001
 #, c-format
-msgid ""
-"This message was not delivered to %s because the service is not available"
+msgid "This message was not delivered to %s because the service is not available"
 msgstr "Este mensaje no fue enviado a %s porque el servicio no esta disponible"
 
 #. Busy Here
 #: ../src/core/sipe.c:3003
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients do not "
-"want to be disturbed"
-msgstr ""
-"Este mensaje no fue enviado a %s porque uno o mas recipientes no desean ser "
-"molestados"
+msgid "This message was not delivered to %s because one or more recipients do not want to be disturbed"
+msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes no desean ser molestados"
 
 #. Unsupported media type
 #: ../src/core/sipe.c:3005
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients don't "
-"support this type of message"
-msgstr ""
-"Este mensaje no fue enviado a %s porque uno o mas recipientes no soportan "
-"este tipo de mensajes"
+msgid "This message was not delivered to %s because one or more recipients don't support this type of message"
+msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes no soportan este tipo de mensajes"
 
 #: ../src/core/sipe.c:3007
 #, c-format
-msgid ""
-"This message was not delivered to %s because one or more recipients are "
-"offline"
-msgstr ""
-"Este mensaje no fue enviado a %s porque uno o mas recipientes desconectados"
+msgid "This message was not delivered to %s because one or more recipients are offline"
+msgstr "Este mensaje no fue enviado a %s porque uno o mas recipientes desconectados"
 
 #: ../src/core/sipe.c:3316
 #, c-format
@@ -295,10 +278,8 @@ msgstr "Nivel de Acceso"
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
 #: ../src/core/sipe.c:6358
-msgid ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgid "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/core/sipe.c:6441
 #, c-format
@@ -498,33 +479,23 @@ msgstr "%s. %s en %.2d:%.2d"
 msgid "Chat #%d"
 msgstr "Conversación #%d"
 
-#: ../src/core/sipe-conf.c:838
-msgid ""
-"This conference is no longer locked. Additional participants can now join."
-msgstr ""
-"Esta conferencia ya no esta bloqueada. Mas participantes pueden unirse."
+#: ../src/core/sipe-conf.c:863
+msgid "This conference is no longer locked. Additional participants can now join."
+msgstr "Esta conferencia ya no esta bloqueada. Mas participantes pueden unirse."
 
-#: ../src/core/sipe-conf.c:842
-msgid ""
-"This conference is locked. Nobody else can join the conference while it is "
-"locked."
-msgstr ""
-"Esta conferencia esta bloqueada. Nadie mas puede unirse a la conferencia "
-"mientras esté bloqueada."
+#: ../src/core/sipe-conf.c:867
+msgid "This conference is locked. Nobody else can join the conference while it is locked."
+msgstr "Esta conferencia esta bloqueada. Nadie mas puede unirse a la conferencia mientras esté bloqueada."
 
-#: ../src/core/sipe-conf.c:875
+#: ../src/core/sipe-conf.c:900
 msgid "You have been disconnected from this conference."
 msgstr "Usted ha sido desconectado de esta conferencia."
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
 #: ../src/core/sipe-core.c:141
-msgid ""
-"A third-party plugin implementing extended version of SIP/SIMPLE used by "
-"various products"
-msgstr ""
-"Un plugin desarrollado por terceros que implementa una versión del protocolo "
-"SIP/SIMPLE usado por varios productos."
+msgid "A third-party plugin implementing extended version of SIP/SIMPLE used by various products"
+msgstr "Un plugin desarrollado por terceros que implementa una versión del protocolo SIP/SIMPLE usado por varios productos."
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:143
@@ -591,19 +562,20 @@ msgstr "Autores"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Textos originales en Ingles (en): Desarrolladores de SIPE"
 
-#. Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location
-#: ../src/core/sipe-domino.c:259 ../src/core/sipe-domino.c:260
+#. Translators: (!) should be as in localized Lotus Notes to be able to
+#. extract meeting location
+#: ../src/core/sipe-domino.c:260 ../src/core/sipe-domino.c:261
 msgid "Location:"
 msgstr "Localización:"
 
-#: ../src/core/sipe-ft.c:110 ../src/core/sipe-ft.c:613
-#: ../src/core/sipe-ft.c:642 ../src/core/sipe-ft.c:700
+#: ../src/core/sipe-ft.c:111 ../src/core/sipe-ft.c:609
+#: ../src/core/sipe-ft.c:638 ../src/core/sipe-ft.c:696
 #: ../src/purple/purple-ft.c:317
 msgid "Socket read failed"
 msgstr "Fallo en lectura de socket"
 
-#: ../src/core/sipe-ft.c:115 ../src/core/sipe-ft.c:744
-#: ../src/core/sipe-ft.c:753
+#: ../src/core/sipe-ft.c:116 ../src/core/sipe-ft.c:740
+#: ../src/core/sipe-ft.c:749
 msgid "Socket write failed"
 msgstr "Fallo en escritura de socket"
 
@@ -611,36 +583,36 @@ msgstr "Fallo en escritura de socket"
 msgid "File size is different from the advertised value."
 msgstr "El tamaño del archivo es diferente del valor anunciado."
 
-#: ../src/core/sipe-ft.c:439
+#: ../src/core/sipe-ft.c:438
 msgid "Received MAC is corrupted"
 msgstr "La dirección MAC está corrupta"
 
-#: ../src/core/sipe-ft.c:450
+#: ../src/core/sipe-ft.c:449
 msgid "Received file is corrupted"
 msgstr "El archivo recibido está corrupto"
 
-#: ../src/core/sipe-ft.c:518
+#: ../src/core/sipe-ft.c:516
 msgid "File transfer initialization failed."
 msgstr "Fallo en la inicializacion de la transferencia de archivos"
 
-#: ../src/core/sipe-ft.c:549
+#: ../src/core/sipe-ft.c:547
 msgid "File transfer authentication failed."
 msgstr "Fallo en la autenticación de la transferencia de archivos"
 
-#: ../src/core/sipe-ft.c:634 ../src/core/sipe-ft.c:652
-#: ../src/core/sipe-ft.c:714
+#: ../src/core/sipe-ft.c:630 ../src/core/sipe-ft.c:648
+#: ../src/core/sipe-ft.c:710
 msgid "Out of memory"
 msgstr "Memoria insuficiente"
 
-#: ../src/core/sipe-ft.c:831
+#: ../src/core/sipe-ft.c:827
 msgid "Received encryption key has wrong size."
 msgstr "La clave cifrada recibida tiene un tamaño erroneo."
 
-#: ../src/core/sipe-ft.c:846
+#: ../src/core/sipe-ft.c:842
 msgid "Received hash key has wrong size."
 msgstr "La clave hash recibida tiene un tamaño incorrecto."
 
-#: ../src/core/sipe-ft.c:868
+#: ../src/core/sipe-ft.c:864
 msgid "Could not create listen socket"
 msgstr "Imposible crear el socket de escucha"
 
@@ -659,76 +631,78 @@ msgid "Couldn't find Group Chat server!"
 msgstr ""
 
 #: ../src/core/sipe-groupchat.c:432
-#, fuzzy, c-format
+#, c-format
 msgid "This message was not delivered to chat room '%s'"
-msgstr "Este mensaje no fue enviado a %s porque el servicio no esta disponible"
+msgstr ""
 
 #: ../src/core/sipe-groupchat.c:507
-#, fuzzy
 msgid "Error retrieving room list"
-msgstr "Error creando el flujo de audio"
+msgstr ""
 
 #: ../src/core/sipe-groupchat.c:610
 msgid "Error joining chat room"
 msgstr ""
 
-#: ../src/core/sipe-incoming.c:637
+#: ../src/core/sipe-incoming.c:647
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Se recibió un mensaje con contenido no reconocido de %s"
 
-#: ../src/core/sipe-media.c:382 ../src/core/sipe-media.c:930
+#: ../src/core/sipe-media.c:531 ../src/core/sipe-media.c:1086
 msgid "Unable to establish a call"
 msgstr "Imposible establecer la llamada"
 
-#: ../src/core/sipe-media.c:383
+#: ../src/core/sipe-media.c:532
 msgid "Encryption settings of peer are incompatible with ours."
-msgstr ""
-"La configuración de encriptación del destino es incompatible con la nuestra."
+msgstr "La configuración de encriptación del destino es incompatible con la nuestra."
 
-#: ../src/core/sipe-media.c:675 ../src/core/sipe-media.c:685
-#: ../src/core/sipe-media.c:929
+#: ../src/core/sipe-media.c:751 ../src/core/sipe-media.c:763
+#: ../src/core/sipe-media.c:830 ../src/core/sipe-media.c:1085
 msgid "Error occured"
 msgstr "Error"
 
-#: ../src/core/sipe-media.c:676
+#: ../src/core/sipe-media.c:752 ../src/core/sipe-media.c:831
 msgid "Error creating audio stream"
 msgstr "Error creando el flujo de audio"
 
-#: ../src/core/sipe-media.c:686
+#: ../src/core/sipe-media.c:764
 msgid "Error creating video stream"
 msgstr "Error creando el flujo de video"
 
-#: ../src/core/sipe-media.c:915
+#: ../src/core/sipe-media.c:1071
 msgid "User unavailable"
 msgstr "Usuario no disponible"
 
-#: ../src/core/sipe-media.c:918
+#: ../src/core/sipe-media.c:1074
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr "%s no quiere ser molestado"
 
-#: ../src/core/sipe-media.c:920
+#: ../src/core/sipe-media.c:1076
 #, c-format
 msgid "User %s is not available"
 msgstr "El usuario %s no esta disponible"
 
-#: ../src/core/sipe-media.c:925
+#: ../src/core/sipe-media.c:1081
 msgid "Call rejected"
 msgstr "Llamada rechazada"
 
-#: ../src/core/sipe-media.c:926
+#: ../src/core/sipe-media.c:1082
 #, c-format
 msgid "User %s rejected call"
 msgstr "El usuario %s rechazo la llamada"
 
-#: ../src/purple/purple-chat.c:233
+#: ../src/purple/purple-chat.c:250
 msgid "Lock"
 msgstr "Bloquear"
 
-#: ../src/purple/purple-chat.c:238
+#: ../src/purple/purple-chat.c:255
 msgid "Unlock"
 msgstr "Desbloquear"
+
+#: ../src/purple/purple-chat.c:269
+msgid "Join conference call"
+msgstr ""
 
 #: ../src/purple/purple-groupchat.c:46
 msgid "_URI:"
@@ -739,9 +713,8 @@ msgid "Users"
 msgstr ""
 
 #: ../src/purple/purple-groupchat.c:139
-#, fuzzy
 msgid "Invite"
-msgstr "Invitar a '%s'"
+msgstr ""
 
 #: ../src/purple/purple-groupchat.c:142
 msgid "Private"
@@ -786,12 +759,8 @@ msgid "Search for a contact"
 msgstr "Buscar un contacto"
 
 #: ../src/purple/purple-plugin.c:575
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr ""
-"Introduce la información de la persona que usted desea encontrar. Los campos "
-"en blanco serán ignorados."
+msgid "Enter the information for the person you wish to find. Empty fields will be ignored."
+msgstr "Introduce la información de la persona que usted desea encontrar. Los campos en blanco serán ignorados."
 
 #: ../src/purple/purple-plugin.c:577
 msgid "_Search"
@@ -823,7 +792,7 @@ msgstr "Reinicializar status"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#.
+#. 
 #: ../src/purple/purple-plugin.c:666
 msgid ""
 "Login\n"
@@ -858,8 +827,10 @@ msgstr "SSL/TLS"
 msgid "TCP"
 msgstr "TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. sipe_prpl_info.protocol_options =
+#. g_list_append(sipe_prpl_info.protocol_options, option);
 #: ../src/purple/purple-plugin.c:682
 msgid "User Agent"
 msgstr "User Agent"
@@ -871,14 +842,14 @@ msgstr "Usar Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:693
 msgid "Use Single Sign-On"
 msgstr "Usar Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#.
+#. 
 #: ../src/purple/purple-plugin.c:700
 msgid ""
 "Email services URL\n"
@@ -895,7 +866,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#.
+#. 
 #: ../src/purple/purple-plugin.c:709
 msgid ""
 "Email login\n"
@@ -914,7 +885,7 @@ msgstr ""
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#.
+#. 
 #: ../src/purple/purple-plugin.c:719
 msgid ""
 "Group Chat Proxy\n"
