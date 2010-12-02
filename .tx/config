@@ -1,3 +1,8 @@
 [main]
 host = http://www.transifex.net
 
+[pidgin-sipe.mob]
+file_filter = po/<lang>.po
+source_file = po/pidgin-sipe.pot
+source_lang = en
+
