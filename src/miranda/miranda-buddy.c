@@ -456,9 +456,12 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 {
 	SIPPROTO *pr = sipe_public->backend_private;
 	const gchar *module = pr->proto.m_szModuleName;
-	HANDLE hContact = sipe_backend_buddy_find(sipe_public, who, NULL);
+	GSList *contacts = sipe_backend_buddy_find_all(sipe_public, who, NULL);
 
-	sipe_miranda_setWord(pr, hContact, "Status", SipeStatusToMiranda(status_id));
+	BUDDIES_FOREACH(contacts)
+		sipe_miranda_setWord(pr, hContact, "Status", SipeStatusToMiranda(status_id));
+	BUDDIES_FOREACH_END;
+
 }
 
 gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
@@ -468,6 +471,33 @@ gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 	HANDLE hGroup = (HANDLE)CallService(MS_CLIST_GROUPCREATE, 0, (LPARAM)mir_group_name);
 	mir_free(mir_group_name);
 	return (hGroup?TRUE:FALSE);
+}
+
+int sipe_miranda_buddy_delete(SIPPROTO *pr, HANDLE hContact, LPARAM lParam)
+{
+	DBVARIANT dbv;
+	char *name;
+	char *groupname;
+
+	SIPE_DEBUG_INFO("Deleting contact <%08x>", hContact);
+
+	if ( DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv ))
+		return 0;
+
+	name = g_strdup(dbv.pszVal);
+	DBFreeVariant( &dbv );
+
+	if ( DBGetContactSettingString( hContact, "CList", "Group", &dbv ))
+	{
+		g_free(name);
+		return 0;
+	}
+
+	groupname = g_strdup(dbv.pszVal);
+	DBFreeVariant( &dbv );
+
+	sipe_core_buddy_remove(pr->sip, name, groupname);
+	return 0;
 }
 
 /*

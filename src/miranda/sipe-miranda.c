@@ -66,6 +66,7 @@ static HANDLE wake_up_semaphore = NULL;
 TCHAR _tcharbuf[32768];
 TCHAR* CHAR2TCHAR( const char *chr ) {
 #ifdef UNICODE
+	if (!chr) return NULL;
 	mbstowcs( _tcharbuf, chr, strlen(chr)+1 );
 	return _tcharbuf;
 #else
@@ -76,6 +77,7 @@ TCHAR* CHAR2TCHAR( const char *chr ) {
 char _charbuf[32768];
 char* TCHAR2CHAR( const TCHAR *tchr ) {
 #ifdef UNICODE
+	if (!tchr) return NULL;
 	wcstombs( _charbuf, tchr, wcslen(tchr)+1 );
 	return _charbuf;
 #else

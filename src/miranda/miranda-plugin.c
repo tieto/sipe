@@ -661,7 +661,7 @@ static int OnGroupChange( const SIPPROTO *pr, WPARAM w, LPARAM l )
 		/* No new name => delete */
 		else if (!gi->pszNewName)
 		{
-			SIPE_DEBUG_INFO("Removing group <l%s>", gi->pszOldName);
+			SIPE_DEBUG_INFO("Removing group <%ls>", gi->pszOldName);
 			sipe_remove_group(pr->sip, TCHAR2CHAR(gi->pszOldName));
 			return 0;
 		}
@@ -675,7 +675,7 @@ static int OnGroupChange( const SIPPROTO *pr, WPARAM w, LPARAM l )
 		who = g_strdup(dbv.pszVal);
 		DBFreeVariant( &dbv );
 
-		if ( !DBGetContactSettingString( hContact, "Clist", "Group", &dbv )) {
+		if ( !DBGetContactSettingString( hContact, "CList", "Group", &dbv )) {
 			SIPE_DEBUG_INFO("Moving buddy <%s> from group <%ls> to group <%ls>", who, dbv.pszVal, gi->pszNewName);
 			sipe_core_buddy_group(pr->sip, who, dbv.pszVal, TCHAR2CHAR(gi->pszNewName));
 			DBFreeVariant( &dbv );
@@ -686,7 +686,7 @@ static int OnGroupChange( const SIPPROTO *pr, WPARAM w, LPARAM l )
 			SIPE_DEBUG_INFO("Really adding buddy <%s> to list in group <%ls>", who, gi->pszNewName);
 			newname = sipe_core_buddy_add(pr->sip, who, name);
 
-			if (!sipe_strequal(name,newname))
+			if (!sipe_strequal(who,newname))
 			{
 				sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, newname);
 			}
@@ -1204,6 +1204,7 @@ static PROTO_INTERFACE* sipsimpleProtoInit( const char* pszProtoName, const TCHA
 	HookProtoEvent(pr, ME_CLIST_GROUPCHANGE, &OnGroupChange );
 	HookProtoEvent(pr, ME_GC_EVENT, &OnChatEvent );
 	HookProtoEvent(pr, ME_CLIST_PREBUILDCONTACTMENU, &OnPreBuildContactMenu );
+	HookProtoEvent(pr, ME_DB_CONTACT_DELETED, &sipe_miranda_buddy_delete );
 
 	return (PROTO_INTERFACE*)pr;
 }

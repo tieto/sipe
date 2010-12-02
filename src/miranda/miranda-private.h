@@ -41,6 +41,13 @@ typedef struct sipe_miranda_sel_entry
 	gpointer user_data;
 };
 
+#define BUDDIES_FOREACH(list) {                \
+	GSList *entry = list;                  \
+	while (entry) {                        \
+		HANDLE hContact = entry->data; \
+		entry = entry->next;
+#define BUDDIES_FOREACH_END }}
+
 
 typedef INT_PTR (*SipSimpleServiceFunc)( SIPPROTO*, WPARAM, LPARAM );
 typedef int     (*SipSimpleEventFunc)( SIPPROTO*, WPARAM, LPARAM );
@@ -75,3 +82,6 @@ unsigned short sipe_miranda_network_get_port_from_fd( HANDLE fd );
 /* Plugin interface functions */
 int sipe_miranda_SendMsg(SIPPROTO *pr, HANDLE hContact, int flags, const char* msg );
 int sipe_miranda_RecvMsg(SIPPROTO *pr, HANDLE hContact, PROTORECVEVENT* pre);
+
+/* Plugin event functions */
+int sipe_miranda_buddy_delete(SIPPROTO *pr, HANDLE hContact, LPARAM lParam);
