@@ -5179,6 +5179,8 @@ sipe_publish_get_category_state_calendar(struct sipe_core_private *sipe_private,
 	{
 		gchar *availability_xml_str = NULL;
 		gchar *activity_xml_str = NULL;
+		gchar *escaped_subject  = event->subject  ? g_markup_escape_text(event->subject,  -1) : NULL;
+		gchar *escaped_location = event->location ? g_markup_escape_text(event->location, -1) : NULL;
 
 		if (event->cal_status == SIPE_CAL_BUSY) {
 			availability_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_AVAIL, 6500);
@@ -5204,8 +5206,8 @@ sipe_publish_get_category_state_calendar(struct sipe_core_private *sipe_private,
 					start_time_str,
 					availability_xml_str ? availability_xml_str : "",
 					activity_xml_str ? activity_xml_str : "",
-					event->subject ? event->subject : "",
-					event->location ? event->location : "",
+					escaped_subject  ? escaped_subject  : "",
+					escaped_location ? escaped_location : "",
 
 					instance,
 					publication_3 ? publication_3->version : 0,
@@ -5213,9 +5215,11 @@ sipe_publish_get_category_state_calendar(struct sipe_core_private *sipe_private,
 					start_time_str,
 					availability_xml_str ? availability_xml_str : "",
 					activity_xml_str ? activity_xml_str : "",
-					event->subject ? event->subject : "",
-					event->location ? event->location : ""
+					escaped_subject  ? escaped_subject  : "",
+					escaped_location ? escaped_location : ""
 					);
+		g_free(escaped_location);
+		g_free(escaped_subject);
 		g_free(start_time_str);
 		g_free(availability_xml_str);
 		g_free(activity_xml_str);
