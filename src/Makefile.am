@@ -12,5 +12,8 @@ if SIPE_INCLUDE_KOPETE
 SUBDIRS += kopete
 endif
 
+EXTRA_DIST = \
+	miranda
+
 MAINTAINERCLEANFILES = \
 	Makefile.in
