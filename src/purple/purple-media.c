@@ -103,10 +103,17 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 }
 
 static void
-on_error_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
-	    gchar *message,
-	    struct stream_info_context *ctx)
+capture_pipeline(PurpleMedia *media, gchar *label) {
+	PurpleMediaManager *manager = purple_media_get_manager(media);
+	GstElement *pipeline = purple_media_manager_get_pipeline(manager);
+	GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(pipeline), GST_DEBUG_GRAPH_SHOW_ALL, label);
+}
+
+static void
+on_error_cb(PurpleMedia *media, gchar *message, struct stream_info_context *ctx)
 {
+	capture_pipeline(media, "ERROR");
+
 	if (ctx->call->error_cb)
 		ctx->call->error_cb(ctx->call, ctx->backend_media, message);
 }
