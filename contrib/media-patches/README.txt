@@ -1,13 +1,13 @@
 To enable experimental voice support in SIPE (only on platforms where libpurple
 supports voice & video):
 
+- source tree of Pidgin 2.7.6 or higher is required
 - for compatibility with OC 2007, OC 2007 R2 and MS Lync 2010 RC, apply these
   patches to libnice, libpurple and farsight:
 	- purple_mime_document_parsen.patch
 	- purple_media_get_active_candidates.patch
 	- purple_media_fs2_dispose.patch
 	- purple_SDES.patch
-	- pidgin_media_remove_request_timeout_cb_on_dispose.patch (optional)
 	- libnice01-Compatibility-with-MSOC-2007-R2.patch
 	- libnice02-Compatibility-with-MSOC-2007.patch
 	- libnice03-MS-TURN-support-for-Microsoft-Office-Communicator.patch
@@ -24,16 +24,18 @@ STATUS OF PATCHES IN UPSTREAM
 
 purple_mime_document_parsen.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11598
+	- commited for future 2.7.8 release
 
 purple_media_get_active_candidates.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11830
-	- should be included in version 2.8.0
+	- commited for future 2.8.0 release
 
 purple_media_fs2_dispose.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/12758
 
 pidgin_media_remove_request_timeout_cb_on_dispose.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/12806
+	- RELEASED in Pidgin 2.7.6
 
 libnice01-Compatibility-with-MSOC-2007-R2.patch
 	- reported upstream https://bugs.freedesktop.org/show_bug.cgi?id=28215

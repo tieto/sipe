@@ -237,7 +237,8 @@ void
 sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname)
 {
 	if (media) {
-		GParameter *params = g_new0(GParameter, 4);
+		guint num_params = 3;
+		GParameter *params = g_new0(GParameter, num_params);
 		params[0].name = "sdes-cname";
 		g_value_init(&params[0].value, G_TYPE_STRING);
 		g_value_set_string(&params[0].value, cname);
@@ -245,8 +246,8 @@ sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname)
 		g_value_init(&params[1].value, G_TYPE_STRING);
 		params[2].name = "sdes-tool";
 		g_value_init(&params[2].value, G_TYPE_STRING);
-		params[3].name = NULL;
-		purple_media_set_params(media->m, params);
+
+		purple_media_set_params(media->m, num_params, params);
 
 		g_value_unset(&params[0].value);
 		g_free(params);

@@ -1,39 +1,73 @@
-From ddbe866bd982832263ab010aa7392d2b2ef7f176 Mon Sep 17 00:00:00 2001
+From 2e1f0022e9f2a411f6fa5079bb10877d89f1dcfb Mon Sep 17 00:00:00 2001
 From: Jakub Adam <jakub.adam@ktknet.cz>
 Date: Wed, 24 Nov 2010 22:19:54 +0100
 Subject: [PATCH] Allow to set SDES properties of FsRtpConference
 
 ---
- libpurple/media.c               |    7 +++++++
- libpurple/media.h               |   20 ++++++++++++++++++++
- libpurple/media/backend-fs2.c   |   34 ++++++++++++++++++++++++++++++++++
- libpurple/media/backend-iface.c |    8 ++++++++
- libpurple/media/backend-iface.h |   12 ++++++++++++
- 5 files changed, 81 insertions(+), 0 deletions(-)
+ libpurple/media.c               |   41 +++++++++++++++++++++++++++++++++
+ libpurple/media.h               |   46 +++++++++++++++++++++++++++++++++++++
+ libpurple/media/backend-fs2.c   |   48 +++++++++++++++++++++++++++++++++++++++
+ libpurple/media/backend-iface.c |   17 +++++++++++++
+ libpurple/media/backend-iface.h |   28 ++++++++++++++++++++++
+ 5 files changed, 180 insertions(+), 0 deletions(-)
 
 diff --git a/libpurple/media.c b/libpurple/media.c
-index ca79eed..854adb9 100644
+index ca79eed..c789089 100644
 --- a/libpurple/media.c
 +++ b/libpurple/media.c
-@@ -916,6 +916,13 @@ purple_media_stream_info(PurpleMedia *media, PurpleMediaInfoType type,
+@@ -916,6 +916,47 @@ purple_media_stream_info(PurpleMedia *media, PurpleMediaInfoType type,
  #endif
  }
  
-+void purple_media_set_params(PurpleMedia *media, GParameter *params)
++void
++purple_media_set_params(PurpleMedia *media,
++		guint num_params, GParameter *params)
 +{
 +#ifdef USE_VV
-+	purple_media_backend_set_params(media->priv->backend, params);
++	g_return_if_fail(PURPLE_IS_MEDIA(media));
++
++	purple_media_backend_set_params(media->priv->backend, num_params, params);
 +#endif
++}
++
++const gchar **
++purple_media_get_available_params(PurpleMedia *media)
++{
++	static const gchar *NULL_ARRAY[] = { NULL };
++#ifdef USE_VV
++	g_return_val_if_fail(PURPLE_IS_MEDIA(media), NULL_ARRAY);
++
++	return purple_media_backend_get_available_params(media->priv->backend);
++#else
++	return NULL_ARRAY;
++#endif
++}
++
++gboolean
++purple_media_param_is_supported(PurpleMedia *media, const gchar *param)
++{
++#ifdef USE_VV
++	const gchar **params;
++
++	g_return_val_if_fail(PURPLE_IS_MEDIA(media), FALSE);
++	g_return_val_if_fail(param != NULL, FALSE);
++
++	params = purple_media_backend_get_available_params(media->priv->backend);
++	for (; *params != NULL; ++params)
++		if (!strcmp(*params, param))
++			return TRUE;
++#endif
++	return FALSE;
 +}
 +
  #ifdef USE_VV
  static void
  purple_media_new_local_candidate_cb(PurpleMediaBackend *backend,
 diff --git a/libpurple/media.h b/libpurple/media.h
-index dc84f2d..0017e46 100644
+index dc84f2d..926765a 100644
 --- a/libpurple/media.h
 +++ b/libpurple/media.h
-@@ -144,6 +144,26 @@ void purple_media_stream_info(PurpleMedia *media, PurpleMediaInfoType type,
+@@ -144,6 +144,52 @@ void purple_media_stream_info(PurpleMedia *media, PurpleMediaInfoType type,
  		gboolean local);
  
  /**
@@ -49,47 +83,79 @@ index dc84f2d..0017e46 100644
 + *   - "sdes-phone"    : The PHONE to put in SDES messages
 + *
 + * @param media The media object to set the parameters on.
-+ * @param params Array of @c GParameter to pass to Farsight, terminated with
-+ *               NULL-name parameter.
++ * @param num_params The number of parameters to pass
++ * @param params Array of @c GParameter to pass
 + *
 + * @since 2.8.0
 + */
-+void purple_media_set_params(PurpleMedia *media, GParameter *params);
++void purple_media_set_params(PurpleMedia *media,
++		guint num_params, GParameter *params);
++
++/**
++ * Gets the list of optional parameters supported by the media backend.
++ *
++ * The list is owned by the @c PurpleMedia internals and should NOT be freed.
++ *
++ * @param media The media object
++ *
++ * @return NULL-terminated array of names of supported parameters.
++ *
++ * @since 2.8.0
++ */
++const gchar **purple_media_get_available_params(PurpleMedia *media);
++
++/**
++ * Checks if given optional parameter is supported by the media backend.
++ *
++ * @param media The media object
++ * @param param name of parameter
++ *
++ * @return @c TRUE if backend recognizes the parameter, @c FALSE otherwise.
++ *
++ * @since 2.8.0
++ */
++gboolean purple_media_param_is_supported(PurpleMedia *media, const gchar *param);
 +
 +/**
   * Adds a stream to a session.
   *
   * It only adds a stream to one audio session or video session as
 diff --git a/libpurple/media/backend-fs2.c b/libpurple/media/backend-fs2.c
-index fd9de82..530da67 100644
+index fd9de82..b2c84db 100644
 --- a/libpurple/media/backend-fs2.c
 +++ b/libpurple/media/backend-fs2.c
-@@ -85,6 +85,8 @@ static gboolean purple_media_backend_fs2_set_remote_codecs(
+@@ -85,6 +85,9 @@ static gboolean purple_media_backend_fs2_set_remote_codecs(
  static gboolean purple_media_backend_fs2_set_send_codec(
  		PurpleMediaBackend *self, const gchar *sess_id,
  		PurpleMediaCodec *codec);
 +static void purple_media_backend_fs2_set_params(PurpleMediaBackend *self,
-+		GParameter *params);
++		guint num_params, GParameter *params);
++static const gchar **purple_media_backend_fs2_get_available_params(void);
  
  struct _PurpleMediaBackendFs2Class
  {
-@@ -367,6 +369,7 @@ purple_media_backend_iface_init(PurpleMediaBackendIface *iface)
+@@ -367,6 +370,8 @@ purple_media_backend_iface_init(PurpleMediaBackendIface *iface)
  			purple_media_backend_fs2_get_local_candidates;
  	iface->set_remote_codecs = purple_media_backend_fs2_set_remote_codecs;
  	iface->set_send_codec = purple_media_backend_fs2_set_send_codec;
 +	iface->set_params = purple_media_backend_fs2_set_params;
++	iface->get_available_params = purple_media_backend_fs2_get_available_params;
  }
  
  static FsMediaType
-@@ -1958,6 +1961,37 @@ purple_media_backend_fs2_set_send_codec(PurpleMediaBackend *self,
+@@ -1958,6 +1963,49 @@ purple_media_backend_fs2_set_send_codec(PurpleMediaBackend *self,
  
  	return TRUE;
  }
 +
-+static void purple_media_backend_fs2_set_params(PurpleMediaBackend *self,
-+		GParameter *params)
++static void
++purple_media_backend_fs2_set_params(PurpleMediaBackend *self,
++		guint num_params, GParameter *params)
 +{
 +	PurpleMediaBackendFs2Private *priv;
++	const gchar **supported = purple_media_backend_fs2_get_available_params();
++	const gchar **p;
++	guint i;
 +
 +	g_return_if_fail(PURPLE_IS_MEDIA_BACKEND_FS2(self));
 +
@@ -102,52 +168,71 @@ index fd9de82..530da67 100644
 +		return;
 +	}
 +
-+	while (params->name != NULL) {
-+		if (!strcmp(params->name, "sdes-cname")    ||
-+		    !strcmp(params->name, "sdes-name")     ||
-+		    !strcmp(params->name, "sdes-tool")     ||
-+		    !strcmp(params->name, "sdes-email")    ||
-+		    !strcmp(params->name, "sdes-location") ||
-+		    !strcmp(params->name, "sdes-note")     ||
-+		    !strcmp(params->name, "sdes-phone"))
-+			g_object_set(priv->conference,
-+				     params->name, g_value_get_string(&params->value),
-+				     NULL);
-+		params += 1;
++	for (i = 0; i != num_params; ++i) {
++		for (p = supported; *p != NULL; ++p) {
++			if (!strcmp(params[i].name, *p)) {
++				g_object_set(priv->conference,
++						params[i].name, g_value_get_string(&params[i].value),
++						NULL);
++				break;
++			}
++		}
 +	}
++}
++
++static const gchar **
++purple_media_backend_fs2_get_available_params(void)
++{
++	static const gchar *supported_params[] = {
++		"sdes-cname", "sdes-email", "sdes-location", "sdes-name", "sdes-note",
++		"sdes-phone", "sdes-tool", NULL
++	};
++
++	return supported_params;
 +}
  #else
  GType
  purple_media_backend_fs2_get_type(void)
 diff --git a/libpurple/media/backend-iface.c b/libpurple/media/backend-iface.c
-index 9c06934..fef2f2f 100644
+index 9c06934..fd53898 100644
 --- a/libpurple/media/backend-iface.c
 +++ b/libpurple/media/backend-iface.c
-@@ -192,3 +192,11 @@ purple_media_backend_set_send_codec(PurpleMediaBackend *self,
+@@ -192,3 +192,20 @@ purple_media_backend_set_send_codec(PurpleMediaBackend *self,
  	return PURPLE_MEDIA_BACKEND_GET_INTERFACE(self)->set_send_codec(self,
  			sess_id, codec);
  }
 +
 +void
 +purple_media_backend_set_params(PurpleMediaBackend *self,
-+		GParameter *params)
++		guint num_params, GParameter *params)
 +{
 +	g_return_if_fail(PURPLE_IS_MEDIA_BACKEND(self));
-+	PURPLE_MEDIA_BACKEND_GET_INTERFACE(self)->set_params(self, params);
++	PURPLE_MEDIA_BACKEND_GET_INTERFACE(self)->set_params(self, num_params, params);
++}
++
++const gchar **
++purple_media_backend_get_available_params(PurpleMediaBackend *self)
++{
++	static const gchar *NULL_ARRAY[] = { NULL };
++
++	g_return_val_if_fail(PURPLE_IS_MEDIA_BACKEND(self), NULL_ARRAY);
++	return PURPLE_MEDIA_BACKEND_GET_INTERFACE(self)->get_available_params();
 +}
 diff --git a/libpurple/media/backend-iface.h b/libpurple/media/backend-iface.h
-index 258db85..f1edfaf 100644
+index 258db85..471eb02 100644
 --- a/libpurple/media/backend-iface.h
 +++ b/libpurple/media/backend-iface.h
-@@ -68,6 +68,7 @@ struct _PurpleMediaBackendIface
+@@ -68,6 +68,9 @@ struct _PurpleMediaBackendIface
  		GList *codecs);
  	gboolean (*set_send_codec) (PurpleMediaBackend *self,
  		const gchar *sess_id, PurpleMediaCodec *codec);
-+	void (*set_params) (PurpleMediaBackend *self, GParameter *params);
++	void (*set_params) (PurpleMediaBackend *self,
++		guint num_params, GParameter *params);
++	const gchar **(*get_available_params) (void);
  };
  
  /**
-@@ -191,6 +192,17 @@ gboolean purple_media_backend_set_remote_codecs(PurpleMediaBackend *self,
+@@ -191,6 +194,31 @@ gboolean purple_media_backend_set_remote_codecs(PurpleMediaBackend *self,
  gboolean purple_media_backend_set_send_codec(PurpleMediaBackend *self,
  		const gchar *sess_id, PurpleMediaCodec *codec);
  
@@ -155,12 +240,26 @@ index 258db85..f1edfaf 100644
 + * Sets various optional parameters of the media backend.
 + *
 + * @param self The media backend to set the parameters on.
-+ * @param params Array of @c GParameter to pass to backend, terminated with
-+ *               NULL-name parameter.
++ * @param num_params The number of parameters to pass to backend
++ * @param params Array of @c GParameter to pass to backend
 + *
 + * @since 2.8.0
 + */
-+void purple_media_backend_set_params(PurpleMediaBackend *self, GParameter *params);
++void purple_media_backend_set_params(PurpleMediaBackend *self,
++		guint num_params, GParameter *params);
++
++/**
++ * Gets the list of optional parameters supported by the media backend.
++ *
++ * The list should NOT be freed.
++ *
++ * @param self The media backend
++ *
++ * @return NULL-terminated array of names of supported parameters.
++ *
++ * @since 2.8.0
++ */
++const gchar **purple_media_backend_get_available_params(PurpleMediaBackend *self);
 +
  G_END_DECLS
  
