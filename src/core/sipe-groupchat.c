@@ -329,7 +329,7 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 	sipe_session_close(sipe_private, session);
 	groupchat_init_retry(sipe_private);
 
-	if (setting) {
+	if (!is_empty(setting)) {
 		gchar *msg = g_strdup_printf(_("Group Chat Proxy setting is incorrect:\n\n\t%s\n\nPlease update your Account."),
 					     setting);
 		sipe_backend_notify_error(_("Couldn't find Group Chat server!"), msg);
