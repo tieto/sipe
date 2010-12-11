@@ -1,4 +1,26 @@
 -------------------------------------------------------------------
+Thu Nov 18 10:39:02 CET 2010 - dimstar@opensuse.org
+
+- Update to version 1.11.2:
+  + Sipe-sign: fix parsing of P-Asserted-Identity header
+  + Fixed memory leaks
+  + sf#3090663: Re-authentication fails
+  + sf#3091490: Make 1.11.0 Compile on FreeBSD
+  + sf#3092324: Core dump in "make check"
+- Changes from version 1.11.1:
+  + sf#2834758: First NTLM signature check after startup fails
+  + purple: fix memory leak in sipe_backend_transport_connect()
+    error path
+  + sf#3082602: Crash on Autodiscover
+  + Build fixes.
+
+-------------------------------------------------------------------
+Sun Oct 17 10:07:58 UTC 2010 - dimstar@opensuse.org
+
+- Some simple preparations to enable telepathy plugin once it
+  becomes available.
+
+-------------------------------------------------------------------
 Wed Oct  6 09:02:38 UTC 2010 - john@redux.org.uk
 
 - Update to version 1.11.0.

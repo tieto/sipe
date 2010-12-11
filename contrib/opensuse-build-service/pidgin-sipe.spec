@@ -1,7 +1,17 @@
 #
 # OBS SPEC file to generate a RPM for pidgin-sipe.
-# It should work on Fedora 9/10/11/12, openSUSE 11.x, RHEL5/CentOS 5, SLES/D 11 and Mandriva 2009.1/2010.
 #
+# It has support for:
+#
+#     RedHat family (CentOS, Fedora, RHEL)
+#     Mandriva
+#     SUSE family (openSUSE, SLED, SLES)
+#     Windows (mingw32)
+#
+
+# Build options
+%define build_kopete    0
+%define build_telepathy 0
 
 # Check for mingw32 cross compilation build
 #
@@ -124,6 +134,9 @@ BuildRequires:  krb5-devel
 # For directory ownership
 BuildRequires:  pidgin
 Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+%if %{build_telepathy}
+BuildRequires:  pkgconfig(telepathy-glib)
+%endif
 Requires:       pidgin
 %if 0%{?sles_version} == 10
 BuildRequires:  gnome-keyring-devel
@@ -145,15 +158,12 @@ BuildRequires:  polkit-gnome
 
 
 %description
-A third-party plugin for the Pidgin multi-protocol instant messenger.
-It implements the extended version of SIP/SIMPLE used by various products:
+SIPE is an open source project that implements the extended version of
+SIP/SIMPLE used by various products:
 
     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
-
-With this plugin you should be able to replace your Microsoft Office
-Communicator client with Pidgin.
 
 This package provides the icon set for Pidgin.
 
@@ -165,14 +175,33 @@ License:        GPLv2+
 Obsoletes:      purple-sipe
 
 %description -n %{purple_plugin}
-A third-party plugin for the Pidgin multi-protocol instant messenger.
-It implements the extended version of SIP/SIMPLE used by various products:
+SIPE is an open source project that implements the extended version of
+SIP/SIMPLE used by various products:
 
     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
-This package provides the protocol plugin for libpurple clients.
+This package provides the third-party protocol plugin for libpurple clients.
+
+
+%if %{build_telepathy}
+%package -n telepathy-plugin-sipe
+Summary:        Telepathy connection manager for MS Office Communicator
+Group:          %{pkg_group}
+License:        GPLv2+
+
+%description -n telepathy-plugin-sipe
+SIPE is an open source project that implements the extended version of
+SIP/SIMPLE used by various products:
+
+    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package provides the connection manager for the telepathy multi-protocol
+instant messaging core.
+%endif
 
 
 %prep
@@ -189,7 +218,11 @@ autoreconf --verbose --install --force
 MINGW32_LDFLAGS="-Wl,--exclude-libs=libintl.a -Wl,--exclude-libs=libiconv.a -lws2_32"
 %{_mingw32_configure} \
         --enable-purple \
+%if %{build_telepathy}
+        --enable-telepathy
+%else
         --disable-telepathy
+%endif
 %{_mingw32_make} %{_smp_mflags}
 
 %else
@@ -204,7 +237,11 @@ autoreconf --verbose --install --force
 %endif
 %configure \
 	--enable-purple \
+%if %{build_telepathy}
+        --enable-telepathy
+%else
 	--disable-telepathy
+%endif
 make %{_smp_mflags}
 make %{_smp_mflags} check
 
@@ -266,7 +303,17 @@ rm -rf %{buildroot}
 %endif
 
 
+%if %{build_telepathy}
+%files -n telepathy-plugin-sipe
+%defattr(-, root, root)
+%{_libexecdir}/telepathy-sipe
+%endif}
+
+
 %changelog
+* Sat Dec 11 2010 J. D. User <jduser@noreply.com> 1.11.2-*git*
+- add optional subpackage for telepathy connection manager
+
 * Tue Nov 02 2010 J. D. User <jduser@noreply.com> 1.11.2
 - update to 1.11.2
 
