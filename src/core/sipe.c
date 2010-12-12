@@ -292,7 +292,6 @@ static void
 sipe_process_presence_wpending (struct sipe_core_private *sipe_private,
 				struct sipmsg * msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	sipe_xml *watchers;
 	const sipe_xml *watcher;
 	// Ensure it's either not a response (eg it's a BENOTIFY) or that it's a 200 OK response
@@ -313,16 +312,13 @@ sipe_process_presence_wpending (struct sipe_core_private *sipe_private,
 			struct sipe_auth_job * job = g_new0(struct sipe_auth_job, 1);
 			job->who = remote_user;
 			job->sipe_private = sipe_private;
-			purple_account_request_authorization(
-				sip->account,
-				remote_user,
-				_("you"), /* id */
-				alias,
-				NULL, /* message */
-				on_list,
-				sipe_auth_user_cb,
-				sipe_deny_user_cb,
-				(void *) job);
+			sipe_backend_buddy_request_authorization(SIPE_CORE_PUBLIC,
+								 remote_user,
+								 alias,
+								 on_list,
+								 sipe_auth_user_cb,
+								 sipe_deny_user_cb,
+								 (gpointer)job);
 		}
 	}
 
@@ -336,17 +332,13 @@ sipe_group_add(struct sipe_core_private *sipe_private,
 	       struct sipe_group * group)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleGroup * purple_group = purple_find_group(group->name);
-	if (!purple_group) {
-		purple_group = purple_group_new(group->name);
-		purple_blist_add_group(purple_group, NULL);
-	}
-
-	if (purple_group) {
-		group->purple_group = purple_group;
-		sip->groups = g_slist_append(sip->groups, group);
+	if (sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC,group->name))
+	{
 		SIPE_DEBUG_INFO("added group %s (id %d)", group->name, group->id);
-	} else {
+		sip->groups = g_slist_append(sip->groups, group);
+	}
+	else
+	{
 		SIPE_DEBUG_INFO("did not add group %s", group->name ? group->name : "");
 	}
 }
@@ -458,10 +450,10 @@ sipe_core_group_set_user(struct sipe_core_public *sipe_public, const gchar * who
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 	struct sipe_buddy *buddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, who);
-	PurpleBuddy *purple_buddy = purple_find_buddy (sip->account, who);
+	sipe_backend_buddy backend_buddy = sipe_backend_buddy_find(sipe_public, who, NULL);
 
-	if (buddy && purple_buddy) {
-		const char *alias = purple_buddy_get_alias(purple_buddy);
+	if (buddy && backend_buddy) {
+		gchar *alias = sipe_backend_buddy_get_alias(sipe_public, backend_buddy);
 		gchar *groups = sipe_get_buddy_groups_string(buddy);
 		if (groups) {
 			gchar *body;
@@ -474,6 +466,7 @@ sipe_core_group_set_user(struct sipe_core_public *sipe_public, const gchar * who
 			g_free(groups);
 			g_free(body);
 		}
+		g_free(alias);
 	}
 }
 
@@ -629,7 +622,7 @@ sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 
 	/* then set status_id actually */
 	SIPE_DEBUG_INFO("sipe_apply_calendar_status: to %s for %s", status_id, sbuddy->name ? sbuddy->name : "" );
-	purple_prpl_got_user_status(sip->account, sbuddy->name, status_id, NULL);
+	sipe_backend_buddy_set_status(SIPE_CORE_PUBLIC, sbuddy->name, status_id);
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sipe_private);
@@ -644,12 +637,12 @@ sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 	g_free(self_uri);
 }
 
-static void
-sipe_got_user_status(struct sipe_core_private *sipe_private,
-		     const char* uri,
-		     const char *status_id)
+void
+sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
+			   const gchar* uri,
+			   const gchar *status_id)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
 
 	if (!sbuddy) return;
@@ -660,7 +653,7 @@ sipe_got_user_status(struct sipe_core_private *sipe_private,
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		sipe_apply_calendar_status(sipe_private, sbuddy, status_id);
 	} else {
-		purple_prpl_got_user_status(sip->account, uri, status_id, NULL);
+		sipe_backend_buddy_set_status(sipe_public, uri, status_id);
 	}
 }
 
@@ -1243,42 +1236,45 @@ sipe_buddy_subscribe_cb(char *buddy_name,
 }
 
 /**
-  * Removes entries from purple buddy list
+  * Removes entries from local buddy list
   * that does not correspond ones in the roaming contact list.
   */
 static void sipe_cleanup_local_blist(struct sipe_core_private *sipe_private) {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	GSList *buddies = purple_find_buddies(sip->account, NULL);
+	GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC, NULL, NULL);
 	GSList *entry = buddies;
 	struct sipe_buddy *buddy;
-	PurpleBuddy *b;
-	PurpleGroup *g;
+	sipe_backend_buddy b;
+	gchar *bname;
+	gchar *gname;
 
-	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: overall %d Purple buddies (including clones)", g_slist_length(buddies));
+	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: overall %d backend buddies (including clones)", g_slist_length(buddies));
 	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: %d sipe buddies (unique)", g_hash_table_size(sipe_private->buddies));
 	while (entry) {
 		b = entry->data;
-		g = purple_buddy_get_group(b);
-		buddy = g_hash_table_lookup(sipe_private->buddies, b->name);
+		gname = sipe_backend_buddy_get_group_name(SIPE_CORE_PUBLIC, b);
+		bname = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC, b);
+		buddy = g_hash_table_lookup(sipe_private->buddies, bname);
+		g_free(bname);
 		if(buddy) {
 			gboolean in_sipe_groups = FALSE;
 			GSList *entry2 = buddy->groups;
 			while (entry2) {
 				struct sipe_group *group = entry2->data;
-				if (sipe_strequal(group->name, g->name)) {
+				if (sipe_strequal(group->name, gname)) {
 					in_sipe_groups = TRUE;
 					break;
 				}
 				entry2 = entry2->next;
 			}
 			if(!in_sipe_groups) {
-				SIPE_DEBUG_INFO("*** REMOVING %s from Purple group: %s as not having this group in roaming list", b->name, g->name);
-				purple_blist_remove_buddy(b);
+				SIPE_DEBUG_INFO("*** REMOVING %s from blist group: %s as not having this group in roaming list", bname, gname);
+				sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, b);
 			}
 		} else {
-				SIPE_DEBUG_INFO("*** REMOVING %s from Purple group: %s as this buddy not in roaming list", b->name, g->name);
-				purple_blist_remove_buddy(b);
+				SIPE_DEBUG_INFO("*** REMOVING %s from blist group: %s as this buddy not in roaming list", bname, gname);
+				sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, b);
 		}
+		g_free(gname);
 		entry = entry->next;
 	}
 	g_slist_free(buddies);
@@ -1295,31 +1291,15 @@ sipe_refresh_blocked_status_cb(char *buddy_name,
 			       SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
 			       struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	int container_id = sipe_find_access_level(sipe_private, "user", buddy_name, NULL);
 	gboolean blocked = (container_id == 32000);
-	gboolean blocked_in_blist = !purple_privacy_check(sip->account, buddy_name);
+	gboolean blocked_in_blist = sipe_backend_buddy_is_blocked(SIPE_CORE_PUBLIC, buddy_name);
 
 	/* SIPE_DEBUG_INFO("sipe_refresh_blocked_status_cb: buddy_name=%s, blocked=%s, blocked_in_blist=%s",
 		buddy_name, blocked ? "T" : "F", blocked_in_blist ? "T" : "F"); */
 
 	if (blocked != blocked_in_blist) {
-		if (blocked) {
-			purple_privacy_deny_add(sip->account, buddy_name, TRUE);
-		} else {
-			purple_privacy_deny_remove(sip->account, buddy_name, TRUE);
-		}
-
-		/* stupid workaround to make pidgin re-render screen to reflect our changes */
-		{
-			PurpleBuddy *pbuddy = purple_find_buddy(sip->account, buddy_name);
-			const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
-			const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
-
-			SIPE_DEBUG_INFO_NOFORMAT("sipe_refresh_blocked_status_cb: forcefully refreshing screen.");
-			sipe_got_user_status(sipe_private, buddy_name, purple_status_get_id(pstatus));
-		}
-
+		sipe_backend_buddy_set_blocked_status(SIPE_CORE_PUBLIC, buddy_name, blocked);
 	}
 }
 
@@ -1346,7 +1326,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		return FALSE;
 	}
 
-	/* Convert the contact from XML to Purple Buddies */
+	/* Convert the contact from XML to backend Buddies */
 	isc = sipe_xml_parse(msg->body, len);
 	if (!isc) {
 		return FALSE;
@@ -1412,25 +1392,26 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 				}
 
 				if (group != NULL) {
-					PurpleBuddy *b = purple_find_buddy_in_group(sip->account, buddy_name, group->purple_group);
+					gchar *b_alias;
+					sipe_backend_buddy b = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, buddy_name, group->name);
 					if (!b){
-						b = purple_buddy_new(sip->account, buddy_name, uri);
-						purple_blist_add_buddy(b, NULL, group->purple_group, NULL);
-
+						b = sipe_backend_buddy_add(SIPE_CORE_PUBLIC, buddy_name, uri, group->name);
 						SIPE_DEBUG_INFO("Created new buddy %s with alias %s", buddy_name, uri);
 					}
 
-					if (sipe_strcase_equal(uri, purple_buddy_get_alias(b))) {
+					b_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, b);
+					if (sipe_strcase_equal(uri, b_alias)) {
 						if (name != NULL && strlen(name) != 0) {
-							purple_blist_alias_buddy(b, name);
+							sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC, b, name);
 
 							SIPE_DEBUG_INFO("Replaced buddy %s alias with %s", buddy_name, name);
 						}
 					}
+					g_free(b_alias);
 
 					if (!buddy) {
 						buddy = g_new0(struct sipe_buddy, 1);
-						buddy->name = g_strdup(b->name);
+						buddy->name = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC, b);
 						g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
 
 						SIPE_DEBUG_INFO("Added SIPE buddy %s", buddy->name);
@@ -1438,7 +1419,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 
 					buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
 
-					SIPE_DEBUG_INFO("Added buddy %s to group %s", b->name, group->name);
+					SIPE_DEBUG_INFO("Added buddy %s to group %s", buddy->name, group->name);
 				} else {
 					SIPE_DEBUG_INFO("No group found for contact %s!  Unable to add to buddy list",
 							name);
@@ -2211,9 +2192,9 @@ sipe_get_first_last_names(struct sipe_core_private *sipe_private,
 			  char **last_name)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleBuddy *p_buddy;
+	sipe_backend_buddy p_buddy;
 	char *display_name;
-	const char *email;
+	gchar *email;
 	const char *first, *last;
 	char *tmp;
 	char **parts;
@@ -2221,12 +2202,12 @@ sipe_get_first_last_names(struct sipe_core_private *sipe_private,
 
 	if (!sip || !uri) return;
 
-	p_buddy = purple_find_buddy(sip->account, uri);
+	p_buddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, uri, NULL);
 
 	if (!p_buddy) return;
 
-	display_name = g_strdup(purple_buddy_get_alias(p_buddy));
-	email = purple_blist_node_get_string(&p_buddy->node, EMAIL_PROP);
+	display_name = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, p_buddy);
+	email = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC, p_buddy, SIPE_BUDDY_INFO_EMAIL);
 
 	if (!display_name && !email) return;
 
@@ -2248,6 +2229,7 @@ sipe_get_first_last_names(struct sipe_core_private *sipe_private,
 	parts = g_strsplit(display_name, " ", 0);
 
 	if (!parts[0] || !parts[1]) {
+		g_free(email);
 		g_free(display_name);
 		g_strfreev(parts);
 		return;
@@ -2269,6 +2251,7 @@ sipe_get_first_last_names(struct sipe_core_private *sipe_private,
 		*last_name = g_strstrip(g_strdup(last));
 	}
 
+	g_free(email);
 	g_free(display_name);
 	g_strfreev(parts);
 }
@@ -2283,44 +2266,47 @@ sipe_get_first_last_names(struct sipe_core_private *sipe_private,
 static void
 sipe_update_user_info(struct sipe_core_private *sipe_private,
 		      const char *uri,
-		      const char *property_name,
+		      sipe_buddy_info_fields propkey,
 		      char *property_value)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	GSList *buddies, *entry;
-
-	if (!property_name || strlen(property_name) == 0) return;
 
 	if (property_value)
 		property_value = g_strstrip(property_value);
 
-	entry = buddies = purple_find_buddies(sip->account, uri); /* all buddies in different groups */
+	entry = buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC, uri, NULL); /* all buddies in different groups */
 	while (entry) {
-		const char *prop_str;
-		const char *server_alias;
-		PurpleBuddy *p_buddy = entry->data;
+		gchar *prop_str;
+		gchar *server_alias;
+		gchar *alias;
+		sipe_backend_buddy p_buddy = entry->data;
 
 		/* for Display Name */
-		if (sipe_strequal(property_name, ALIAS_PROP)) {
-			if (property_value && sipe_is_bad_alias(uri, purple_buddy_get_alias(p_buddy))) {
+		if (propkey == SIPE_BUDDY_INFO_DISPLAY_NAME) {
+			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, p_buddy);
+			if (property_value && sipe_is_bad_alias(uri, alias)) {
 				SIPE_DEBUG_INFO("Replacing alias for %s with %s", uri, property_value);
-				purple_blist_alias_buddy(p_buddy, property_value);
+				sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC, p_buddy, property_value);
 			}
+			g_free(alias);
 
-			server_alias = purple_buddy_get_server_alias(p_buddy);
+			server_alias = sipe_backend_buddy_get_server_alias(SIPE_CORE_PUBLIC, p_buddy);
 			if (!is_empty(property_value) &&
 			   (!sipe_strequal(property_value, server_alias) || is_empty(server_alias)) )
 			{
-				purple_blist_server_alias_buddy(p_buddy, property_value);
+				SIPE_DEBUG_INFO("Replacing service alias for %s with %s", uri, property_value);
+				sipe_backend_buddy_set_server_alias(SIPE_CORE_PUBLIC, p_buddy, property_value);
 			}
+			g_free(server_alias);
 		}
 		/* for other properties */
 		else {
 			if (!is_empty(property_value)) {
-				prop_str = purple_blist_node_get_string(&p_buddy->node, property_name);
+				prop_str = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC, p_buddy, propkey);
 				if (!prop_str || !sipe_strcase_equal(prop_str, property_value)) {
-					purple_blist_node_set_string(&p_buddy->node, property_name, property_value);
+					sipe_backend_buddy_set_string(SIPE_CORE_PUBLIC, p_buddy, propkey, property_value);
 				}
+				g_free(prop_str);
 			}
 		}
 
@@ -2340,28 +2326,28 @@ sipe_update_user_info(struct sipe_core_private *sipe_private,
  */
 static void
 sipe_update_user_phone(struct sipe_core_private *sipe_private,
-		       const char *uri,
+		       const gchar *uri,
 		       const gchar *phone_type,
 		       gchar *phone,
 		       gchar *phone_display_string)
 {
-	const char *phone_node = PHONE_PROP; /* work phone by default */
-	const char *phone_display_node = PHONE_DISPLAY_PROP; /* work phone by default */
+	sipe_buddy_info_fields phone_node = SIPE_BUDDY_INFO_WORK_PHONE; /* work phone by default */
+	sipe_buddy_info_fields phone_display_node = SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY; /* work phone by default */
 
 	if(!phone || strlen(phone) == 0) return;
 
 	if ((sipe_strequal(phone_type, "mobile") ||  sipe_strequal(phone_type, "cell"))) {
-		phone_node = PHONE_MOBILE_PROP;
-		phone_display_node = PHONE_MOBILE_DISPLAY_PROP;
+		phone_node = SIPE_BUDDY_INFO_MOBILE_PHONE;
+		phone_display_node = SIPE_BUDDY_INFO_MOBILE_PHONE_DISPLAY;
 	} else if (sipe_strequal(phone_type, "home")) {
-		phone_node = PHONE_HOME_PROP;
-		phone_display_node = PHONE_HOME_DISPLAY_PROP;
+		phone_node = SIPE_BUDDY_INFO_HOME_PHONE;
+		phone_display_node = SIPE_BUDDY_INFO_HOME_PHONE_DISPLAY;
 	} else if (sipe_strequal(phone_type, "other")) {
-		phone_node = PHONE_OTHER_PROP;
-		phone_display_node = PHONE_OTHER_DISPLAY_PROP;
+		phone_node = SIPE_BUDDY_INFO_OTHER_PHONE;
+		phone_display_node = SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY;
 	} else if (sipe_strequal(phone_type, "custom1")) {
-		phone_node = PHONE_CUSTOM1_PROP;
-		phone_display_node = PHONE_CUSTOM1_DISPLAY_PROP;
+		phone_node = SIPE_BUDDY_INFO_CUSTOM1_PHONE;
+		phone_display_node = SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY;
 	}
 
 	sipe_update_user_info(sipe_private, uri, phone_node, phone);
@@ -2815,13 +2801,13 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 		display_name = g_strdup(sipe_xml_attribute(node, "displayName"));
 		uri = sip_uri_from_name(user);
 
-		sipe_update_user_info(sipe_private, uri, ALIAS_PROP, display_name);
+		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
 
 	        acknowledged= sipe_xml_attribute(node, "acknowledged");
 		if(sipe_strcase_equal(acknowledged,"false")){
                         SIPE_DEBUG_INFO("sipe_process_roaming_self: user added you %s", user);
-			if (!purple_find_buddy(sip->account, uri)) {
-				purple_account_request_add(sip->account, uri, _("you"), display_name, NULL);
+			if (!sipe_backend_buddy_find(SIPE_CORE_PUBLIC, uri, NULL)) {
+				sipe_backend_buddy_request_add(SIPE_CORE_PUBLIC, uri, display_name);
 			}
 
 		        hdr = g_strdup_printf(
@@ -3023,7 +3009,6 @@ process_message_response(struct sipe_core_private *sipe_private,
 			 struct sipmsg *msg,
 			 SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gboolean ret = TRUE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session = sipe_session_find_im(sipe_private, with);
@@ -3051,8 +3036,8 @@ process_message_response(struct sipe_core_private *sipe_private,
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response >= 400) {
-		PurpleBuddy *pbuddy;
-		const char *alias = with;
+		sipe_backend_buddy pbuddy;
+		gchar *alias = g_strdup(with);
 		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
 		int warning = -1;
 
@@ -3076,8 +3061,9 @@ process_message_response(struct sipe_core_private *sipe_private,
 			sipe_utils_nameval_free(parsed_body);
 		}
 
-		if ((pbuddy = purple_find_buddy(sip->account, with))) {
-			alias = purple_buddy_get_alias(pbuddy);
+		if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
+			g_free(alias);
+			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,pbuddy);
 		}
 
 		sipe_present_message_undelivered_err(sipe_private, session, msg->response, warning, alias, (message ? message->body : NULL));
@@ -3095,6 +3081,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 			dialog = NULL;
 		}
 
+		g_free(alias);
 		ret = FALSE;
 	} else {
 		const gchar *message_id = sipmsg_find_header(msg, "Message-Id");
@@ -3247,7 +3234,6 @@ static gboolean
 process_invite_response(struct sipe_core_private *sipe_private,
 			struct sipmsg *msg, struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session;
 	struct sip_dialog *dialog;
@@ -3281,8 +3267,8 @@ process_invite_response(struct sipe_core_private *sipe_private,
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response != 200) {
-		PurpleBuddy *pbuddy;
-		const char *alias = with;
+		sipe_backend_buddy pbuddy;
+		gchar *alias = g_strdup(with);
 		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
 		int warning = -1;
 
@@ -3306,8 +3292,9 @@ process_invite_response(struct sipe_core_private *sipe_private,
 			sipe_utils_nameval_free(parsed_body);
 		}
 
-		if ((pbuddy = purple_find_buddy(sip->account, with))) {
-			alias = purple_buddy_get_alias(pbuddy);
+		if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
+			g_free(alias);
+			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, pbuddy);
 		}
 
 		if (message) {
@@ -3326,6 +3313,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 		g_free(key);
 		g_free(with);
+		g_free(alias);
 		return FALSE;
 	}
 
@@ -3769,8 +3757,8 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					char* email = sipe_xml_data(
 						sipe_xml_child(node, "email"));
 
-					sipe_update_user_info(sipe_private, uri, ALIAS_PROP, display_name);
-					sipe_update_user_info(sipe_private, uri, EMAIL_PROP, email);
+					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
+					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_EMAIL, email);
 
 					g_free(display_name);
 					g_free(email);
@@ -3779,35 +3767,35 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 				node = sipe_xml_child(card, "company");
 				if (node) {
 					char* company = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, COMPANY_PROP, company);
+					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_COMPANY, company);
 					g_free(company);
 				}
 				/* department */
 				node = sipe_xml_child(card, "department");
 				if (node) {
 					char* department = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, DEPARTMENT_PROP, department);
+					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DEPARTMENT, department);
 					g_free(department);
 				}
 				/* title */
 				node = sipe_xml_child(card, "title");
 				if (node) {
 					char* title = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, TITLE_PROP, title);
+					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_JOB_TITLE, title);
 					g_free(title);
 				}
 				/* office */
 				node = sipe_xml_child(card, "office");
 				if (node) {
 					char* office = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, OFFICE_PROP, office);
+					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_OFFICE, office);
 					g_free(office);
 				}
 				/* site (url) */
 				node = sipe_xml_child(card, "url");
 				if (node) {
 					char* site = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, SITE_PROP, site);
+					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_SITE, site);
 					g_free(site);
 				}
 				/* phone */
@@ -3836,11 +3824,11 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 						char* zipcode = sipe_xml_data(sipe_xml_child(node, "zipcode"));
 						char* country_code = sipe_xml_data(sipe_xml_child(node, "countryCode"));
 
-						sipe_update_user_info(sipe_private, uri, ADDRESS_STREET_PROP, street);
-						sipe_update_user_info(sipe_private, uri, ADDRESS_CITY_PROP, city);
-						sipe_update_user_info(sipe_private, uri, ADDRESS_STATE_PROP, state);
-						sipe_update_user_info(sipe_private, uri, ADDRESS_ZIPCODE_PROP, zipcode);
-						sipe_update_user_info(sipe_private, uri, ADDRESS_COUNTRYCODE_PROP, country_code);
+						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_STREET, street);
+						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_CITY, city);
+						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_STATE, state);
+						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_ZIPCODE, zipcode);
+						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_COUNTRY, country_code);
 
 						g_free(street);
 						g_free(city);
@@ -4039,7 +4027,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 		}
 
 		SIPE_DEBUG_INFO("process_incoming_notify_rlmi: %s", status);
-		sipe_got_user_status(sipe_private, uri, status);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status);
 	}
 
 	sipe_xml_free(xn_categories);
@@ -4156,7 +4144,7 @@ static void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,
 	if (display_name_node) {
 		char * display_name = sipe_xml_data(display_name_node);
 
-		sipe_update_user_info(sipe_private, uri, ALIAS_PROP, display_name);
+		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
 		g_free(display_name);
 	}
 
@@ -4186,9 +4174,9 @@ static void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,
 		}
 
 		SIPE_DEBUG_INFO("process_incoming_notify_pidf: status_id(%s)", status_id);
-		sipe_got_user_status(sipe_private, uri, status_id);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status_id);
 	} else {
-		sipe_got_user_status(sipe_private, uri, SIPE_STATUS_ID_OFFLINE);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, SIPE_STATUS_ID_OFFLINE);
 	}
 
 	g_free(activity);
@@ -4330,10 +4318,10 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 		char *phone_number = xn_phone_number ? g_strdup(sipe_xml_attribute(xn_phone_number, "number")) : NULL;
 		char *tel_uri      = sip_to_tel_uri(phone_number);
 
-		sipe_update_user_info(sipe_private, uri, ALIAS_PROP, display_name);
-		sipe_update_user_info(sipe_private, uri, EMAIL_PROP, email);
-		sipe_update_user_info(sipe_private, uri, PHONE_PROP, tel_uri);
-		sipe_update_user_info(sipe_private, uri, PHONE_DISPLAY_PROP, !is_empty(phone_label) ? phone_label : phone_number);
+		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
+		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_EMAIL, email);
+		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE, tel_uri);
+		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY, !is_empty(phone_label) ? phone_label : phone_number);
 
 		g_free(tel_uri);
 		g_free(phone_label);
@@ -4493,7 +4481,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	g_free(activity);
 
 	SIPE_DEBUG_INFO("process_incoming_notify_msrtc: status(%s)", status_id);
-	sipe_got_user_status(sipe_private, uri, status_id);
+	sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status_id);
 
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) && sipe_strcase_equal(self_uri, uri)) {
 		sipe_user_info_has_updated(sipe_private, xn_userinfo);
@@ -4977,8 +4965,8 @@ process_send_presence_category_publish_response(struct sipe_core_private *sipe_p
 		}
 		sipe_xml_free(xml);
 
-		/* here we are parsing own request to figure out what publication
-		 * referensed here only by index went wrong
+		/* here we are parsing our own request to figure out what publication
+		 * referenced here only by index went wrong
 		 */
 		xml = sipe_xml_parse(trans->msg->body, trans->msg->bodylen);
 
@@ -6926,10 +6914,10 @@ process_get_info_response(struct sipe_core_private *sipe_private,
 			if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 				char *tel_uri = sip_to_tel_uri(phone_number);
 				/* trims its parameters, so call first */
-				sipe_update_user_info(sipe_private, uri, ALIAS_PROP, server_alias);
-				sipe_update_user_info(sipe_private, uri, EMAIL_PROP, email);
-				sipe_update_user_info(sipe_private, uri, PHONE_PROP, tel_uri);
-				sipe_update_user_info(sipe_private, uri, PHONE_DISPLAY_PROP, phone_number);
+				sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, server_alias);
+				sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_EMAIL, email);
+				sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE, tel_uri);
+				sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY, phone_number);
 				g_free(tel_uri);
 			}
 

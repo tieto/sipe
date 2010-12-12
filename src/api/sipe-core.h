@@ -200,6 +200,10 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const sipe_activity activity,
 			      const gchar *status_text);
 
+void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
+				const gchar* uri,
+				const gchar *status_id);
+
 /**
  * Return a list with buddy information label/text pairs
  *

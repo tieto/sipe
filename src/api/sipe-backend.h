@@ -526,6 +526,224 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
 					    const gchar *from);
 
+/** BUDDIES ******************************************************************/
+
+/* The list of properties a buddy can have */
+typedef enum
+{
+	SIPE_BUDDY_INFO_DISPLAY_NAME,
+	SIPE_BUDDY_INFO_JOB_TITLE,
+	SIPE_BUDDY_INFO_CITY,
+	SIPE_BUDDY_INFO_STATE,
+	SIPE_BUDDY_INFO_OFFICE,
+	SIPE_BUDDY_INFO_DEPARTMENT,
+	SIPE_BUDDY_INFO_COUNTRY,
+	SIPE_BUDDY_INFO_WORK_PHONE,
+	SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY,
+	SIPE_BUDDY_INFO_COMPANY,
+	SIPE_BUDDY_INFO_EMAIL,
+	SIPE_BUDDY_INFO_DEVICE,
+	SIPE_BUDDY_INFO_SITE,
+	SIPE_BUDDY_INFO_ZIPCODE,
+	SIPE_BUDDY_INFO_STREET,
+	SIPE_BUDDY_INFO_MOBILE_PHONE,
+	SIPE_BUDDY_INFO_MOBILE_PHONE_DISPLAY,
+	SIPE_BUDDY_INFO_HOME_PHONE,
+	SIPE_BUDDY_INFO_HOME_PHONE_DISPLAY,
+	SIPE_BUDDY_INFO_OTHER_PHONE,
+	SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY,
+	SIPE_BUDDY_INFO_CUSTOM1_PHONE,
+	SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY,
+} sipe_buddy_info_fields;
+
+/* Opaque token */
+typedef void* sipe_backend_buddy;
+
+/**
+ * Find a buddy in the given group of the buddy list, or anywhere on the
+ * list if @group_name is empty
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param buddy_name The name of the buddy
+ * @param group_name The name of the group to look in, or NULL for any group
+ * @return opaque handle to the buddy, or NULL if no buddy found
+ */
+sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
+					   const gchar *buddy_name,
+					   const gchar *group_name);
+
+/*
+ * Find all named buddies in the given group of the buddy list, or anywhere on the
+ * list if @group_name is empty; or all buddies if @name is empty
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param name The name of the buddy
+ * @param group_name The name of the group to look in, or NULL for any group
+ * @return GSList of opaque handles to the buddies
+ */
+GSList* sipe_backend_buddy_find_all(struct sipe_core_public *sipe_public,
+				    const gchar *buddy_name,
+				    const gchar *group_name);
+
+/**
+ * Gets the name of a contact.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The opaque handle to the contact as found by find_buddy
+ * @return The name. Must be freed.
+ */
+gchar* sipe_backend_buddy_get_name(struct sipe_core_public *sipe_public,
+				   const sipe_backend_buddy who);
+
+/**
+ * Gets the alias for a contact.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The opaque handle to the contact as found by find_buddy
+ * @return The alias. Must be gfree'd.
+ */
+gchar* sipe_backend_buddy_get_alias(struct sipe_core_public *sipe_public,
+				    const sipe_backend_buddy who);
+
+/**
+ * Gets the server alias for a contact.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The opaque handle to the contact as found by find_buddy
+ * @return The alias. Must be freed.
+ */
+gchar* sipe_backend_buddy_get_server_alias(struct sipe_core_public *sipe_public,
+					   const sipe_backend_buddy who);
+
+/**
+ * Gets the name of the group a contact belongs to.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The opaque handle to the contact as found by find_buddy
+ * @return The name. Must be freed.
+ */
+gchar* sipe_backend_buddy_get_group_name(struct sipe_core_public *sipe_public,
+					 const sipe_backend_buddy who);
+
+/**
+ * Called to retrieve a buddy-specific setting.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param buddy The handle representing the buddy
+ * @param key The name of the setting
+ * @return The value of the setting. Must be freed.
+ */
+gchar* sipe_backend_buddy_get_string(struct sipe_core_public *sipe_public,
+				     sipe_backend_buddy buddy,
+				     const sipe_buddy_info_fields key);
+
+/**
+ * Called to retrieve a buddy-specific setting.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param buddy The handle representing the buddy
+ * @param key The name of the setting
+ * @param val The value to set
+ */
+void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
+				   sipe_backend_buddy buddy,
+				   const sipe_buddy_info_fields key,
+				   const gchar *val);
+
+/**
+ * Sets the alias for a contact.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The opaque handle to the contact as found by find_buddy
+ * @param alias The location where the alias will be put
+ * case. FALSE if the buddy was not found. The value of alias will not be changed.
+ */
+void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
+				  const sipe_backend_buddy who,
+				  const gchar *alias);
+
+/*
+ * Sets the server alias for a contact.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The opaque handle to the contact as found by find_buddy
+ * @param alias The server alias of the contact
+ */
+void sipe_backend_buddy_set_server_alias(struct sipe_core_public *sipe_public,
+					 const sipe_backend_buddy who,
+					 const gchar *alias);
+
+/*
+ * Add a contact to the buddy list
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param name The name of the contact
+ * @param alias The alias of the contact
+ * @param groupname The name of the group to add this contact to
+ * @return A handle to the newly created buddy
+ */
+sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
+					  const gchar *name,
+					  const gchar *alias,
+					  const gchar *groupname);
+
+/*
+ * Remove a contact from the buddy list
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The opaque handle to the contact as found by find_buddy
+ */
+void sipe_backend_buddy_remove(struct sipe_core_public *sipe_public,
+			       const sipe_backend_buddy who);
+
+/*
+ * Notifies the user that a remote user has wants to add the local user to his
+ * or her buddy list and requires authorization to do so. 
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The name of the user that added this account
+ * @param alias The optional alias of the remote user
+ * @param on_list True if the user is already in our list
+ * @param auth_cb The callback called when the local user accepts 
+ * @param deny_cb The callback called when the local user rejects 
+ * @param data Data to be passed back to the above callbacks
+ */
+typedef void (*sipe_backend_buddy_request_authorization_cb)(void *);
+
+void sipe_backend_buddy_request_add(struct sipe_core_public *sipe_public,
+				    const gchar *who,
+				    const gchar *alias);
+
+void sipe_backend_buddy_request_authorization(struct sipe_core_public *sipe_public,
+					      const gchar *who,
+					      const gchar *alias,
+					      gboolean on_list,
+					      sipe_backend_buddy_request_authorization_cb auth_cb,
+					      sipe_backend_buddy_request_authorization_cb deny_cb,
+					      gpointer data);
+
+gboolean sipe_backend_buddy_is_blocked(struct sipe_core_public *sipe_public,
+				       const gchar *who);
+
+void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
+					   const gchar *who,
+					   gboolean blocked);
+
+void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
+				   const gchar *who,
+				   const gchar *status_id);
+
+/*
+ * Called when a new internal group is about to be added. If this returns FALSE,
+ * the group will not be added.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param group The group being added
+ * @return TRUE if everything is ok, FALSE if the group should not be added
+ */
+gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
+				      const gchar *group_name);
+
 #ifdef __cplusplus
 }
 #endif

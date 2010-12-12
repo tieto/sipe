@@ -96,7 +96,7 @@ miranda_sipe_input_cb(gpointer data,
 
 		if (len == SOCKET_ERROR) {
 			SIPE_DEBUG_INFO("miranda_sipe_input_cb: read error");
-			transport->error(SIPE_TRANSPORT_CONNECTION, _("Read error"));
+			transport->error(SIPE_TRANSPORT_CONNECTION, "Read error");
 
 			/* FIXME: not sure if this is the right spot */
 			sipe_miranda_input_remove(transport->inputhandler);
@@ -105,7 +105,7 @@ miranda_sipe_input_cb(gpointer data,
 			return;
 		} else if (firstread && (len == 0)) {
 			SIPE_DEBUG_ERROR_NOFORMAT("miranda_sipe_input_cb: server has disconnected");
-			transport->error(SIPE_TRANSPORT_CONNECTION, _("Server has disconnected"));
+			transport->error(SIPE_TRANSPORT_CONNECTION, "Server has disconnected");
 			return;
 		}
 
@@ -143,7 +143,7 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 	transport->fd = (HANDLE)CallService(MS_NETLIB_OPENCONNECTION, (WPARAM)pr->m_hServerNetlibUser, (LPARAM)&ncon);
 	if (transport->fd == NULL)  {
 		setup->error(SIPE_TRANSPORT_CONNECTION,
-			     _("Could not connect"));
+			     "Could not connect");
 		sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
 		return NULL;
 	}
@@ -155,7 +155,7 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 		if (!CallService(MS_NETLIB_STARTSSL, (WPARAM)transport->fd, 0))
 		{
 			setup->error(SIPE_TRANSPORT_CONNECTION,
-				     _("Could not negotiate SSL on connection"));
+				     "Could not negotiate SSL on connection");
 			sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
 			return NULL;
 		}
@@ -201,7 +201,7 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 		if (len == SOCKET_ERROR) {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_backend_transport_message: error, exiting");
 			transport->error(SIPE_TRANSPORT_CONNECTION,
-					 _("Write error"));
+					 "Write error");
 		}
 
 		written += len;

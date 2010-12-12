@@ -98,6 +98,7 @@ CLEAN_C_SRC = \
 			sipe-win32dep.c
 
 PURPLE_C_SRC = \
+			../purple/purple-buddy.c \
 			../purple/purple-chat.c \
 			../purple/purple-connection.c \
 			../purple/purple-debug.c \
