@@ -3113,6 +3113,9 @@ static void sipe_send_message(struct sipe_core_private *sipe_private,
 	const gchar *msgr = "";
 	gchar *tmp2 = NULL;
 
+	if (content_type == NULL)
+		content_type = "text/plain";
+
 	if (!g_str_has_prefix(content_type, "text/x-msmsgsinvite")) {
 		char *msgformat;
 		gchar *msgr_value;
@@ -3134,8 +3137,6 @@ static void sipe_send_message(struct sipe_core_private *sipe_private,
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8\r\n");
 	//hdr = g_strdup("Content-Type: text/rtf\r\n");
 	//hdr = g_strdup("Content-Type: text/plain; charset=UTF-8;msgr=WAAtAE0ATQBTAC....AoADQA\r\nSupported: timer\r\n");
-	if (content_type == NULL)
-		content_type = "text/plain";
 
 	hdr = g_strdup_printf("Contact: %s\r\nContent-Type: %s; charset=UTF-8%s\r\n", tmp, content_type, msgr);
 	g_free(tmp);
