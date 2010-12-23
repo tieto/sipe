@@ -1,10 +1,9 @@
 To enable experimental voice support in SIPE (only on platforms where libpurple
 supports voice & video):
 
-- source tree of Pidgin 2.7.6 or higher is required
+- source tree of Pidgin 2.7.8 or higher is required
 - for compatibility with OC 2007, OC 2007 R2 and MS Lync 2010 RC, apply these
   patches to libnice, libpurple and farsight:
-	- purple_mime_document_parsen.patch
 	- purple_media_get_active_candidates.patch
 	- purple_media_fs2_dispose.patch
 	- purple_SDES.patch
@@ -24,7 +23,7 @@ STATUS OF PATCHES IN UPSTREAM
 
 purple_mime_document_parsen.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11598
-	- commited for future 2.7.8 release
+	- RELEASED in Pidgin 2.7.8
 
 purple_media_get_active_candidates.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11830
