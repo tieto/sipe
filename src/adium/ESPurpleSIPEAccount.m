@@ -14,19 +14,22 @@
 #include "sipe-core.h"
 
 // taken from sipe.c
-/* Status identifiers (see also: sipe_status_types()) */
 #define SIPE_STATUS_ID_UNKNOWN     purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET)     /* Unset (primitive) */
 #define SIPE_STATUS_ID_OFFLINE     purple_primitive_get_id_from_type(PURPLE_STATUS_OFFLINE)   /* Offline (primitive) */
 #define SIPE_STATUS_ID_AVAILABLE   purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) /* Online */
 /*      PURPLE_STATUS_UNAVAILABLE: */
 #define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
+#define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
 #define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
-#define SIPE_STATUS_ID_ONPHONE     "on-the-phone"                                             /* On The Phone */
+#define SIPE_STATUS_ID_IN_MEETING  "in-a-meeting"                                             /* In a meeting */
+#define SIPE_STATUS_ID_IN_CONF     "in-a-conference"                                          /* In a conference */
+#define SIPE_STATUS_ID_ON_PHONE    "on-the-phone"                                             /* On the phone */
 #define SIPE_STATUS_ID_INVISIBLE   purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) /* Appear Offline */
 /*      PURPLE_STATUS_AWAY: */
 #define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
 #define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
 #define SIPE_STATUS_ID_AWAY        purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY)      /* Away (primitive) */
+/** Reuters status (user settable) */
 #define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
 /* ???  PURPLE_STATUS_EXTENDED_AWAY */
 /* ???  PURPLE_STATUS_MOBILE */
@@ -39,17 +42,13 @@
 	return "prpl-sipe";
 }
 
+
 - (void)configurePurpleAccount
 {
+	NSLog(@"Configure account: %x\n", account);
+
 	[super configurePurpleAccount];	
-
-	NSLog(@"AccountName: %s\n", self.purpleAccountName ? self.purpleAccountName : "NULL");
-	NSLog(@"Account: %x\n", account);
-	NSLog(@"Port: %d\n", self.port);
-	NSLog(@"Server: %@\n", self.host);
-
-	purple_account_set_username(account, self.purpleAccountName);
-
+  
 	if (self.host && [self.host length]) {
 		if (self.port) {
 			// TODO: figure out a better size for this!
@@ -61,8 +60,47 @@
 		}
 	}
 
-	// TODO: hook up the GUI to actually set this
-	purple_account_set_string(account, "transport", "tls");
+	NSString *email     = [self preferenceForKey:KEY_SIPE_EMAIL group:GROUP_ACCOUNT_STATUS];
+	NSString *emailURL  = [self preferenceForKey:KEY_SIPE_EMAIL_URL group:GROUP_ACCOUNT_STATUS];
+	NSString *emailPass = [self preferenceForKey:KEY_SIPE_EMAIL_PASSWORD group:GROUP_ACCOUNT_STATUS];
+    if (email && [email length])
+        purple_account_set_string(account, "email", [email UTF8String]);
+    if (emailURL && [emailURL length])
+        purple_account_set_string(account, "email_url", [emailURL UTF8String]);
+    if (emailPass && [emailPass length])
+        purple_account_set_string(account, "email_password", [emailPass UTF8String]);
+
+	int ctype = [[self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS] intValue];
+    const char *ctypes;
+    switch (ctype) {
+        default:
+        case 0: ctypes = "auto"; break;
+        case 1: ctypes = "tcp";  break;
+        case 2: ctypes = "tls";  break;
+    }
+    purple_account_set_string(account, "transport", ctypes);
+
+    NSString *chatProxy = [self preferenceForKey:KEY_SIPE_GROUP_CHAT_PROXY group:GROUP_ACCOUNT_STATUS];
+    NSString *userAgent = [self preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
+    if (chatProxy && [chatProxy length])
+        purple_account_set_string(account, "groupchat_user", [chatProxy UTF8String]);
+    if (userAgent && [userAgent length])
+        purple_account_set_string(account, "useragent", [userAgent UTF8String]);
+
+    
+    NSString *winLogin  = [self preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
+    
+    NSString *completeUserName = [NSString stringWithUTF8String:[self purpleAccountName]];
+    
+    if (winLogin && [winLogin length])
+        completeUserName = [NSString stringWithFormat:@"%@,%@",completeUserName, winLogin];
+    
+    purple_account_set_username(account, [completeUserName UTF8String]);
+    
+	const char *username  = purple_account_get_username(account);
+    
+    NSLog(@"AccountName: %s\n", username ? username : "NULL");
+    
 }
 
 - (const char *)purpleStatusIDForStatus:(AIStatus *)statusState
@@ -72,21 +110,24 @@
 	
     switch (statusState.statusType) {
         case AIAvailableStatusType:
-            statusID = purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE);
+            statusID = SIPE_STATUS_ID_AVAILABLE;
             break;
         case AIAwayStatusType:
-            statusID = purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY);
+            statusID = SIPE_STATUS_ID_AWAY;
             break;
 			
         case AIInvisibleStatusType:
-            statusID = purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE);
+            statusID = SIPE_STATUS_ID_INVISIBLE;
             break;
 			
         case AIOfflineStatusType:
-            statusID = purple_primitive_get_id_from_type(PURPLE_STATUS_OFFLINE);
+            statusID = SIPE_STATUS_ID_OFFLINE;
             break;
     }    
     
+	//If we didn't get a purple status type, request one from super
+	if (statusID == NULL) statusID = [super purpleStatusIDForStatus:statusState arguments:arguments];
+	
     return statusID;
 }
 
