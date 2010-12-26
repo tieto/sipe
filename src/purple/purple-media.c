@@ -257,7 +257,13 @@ sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname)
 #define FS_CODECS_CONF \
 	"# Automatically created by SIPE plugin\n" \
 	"[video/H263]\n" \
-	"farsight-send-profile=videoscale ! ffmpegcolorspace ! fsvideoanyrate ! ffenc_h263 rtp-payload-size=30 ! rtph263pay\n";
+	"farsight-send-profile=videoscale ! ffmpegcolorspace ! fsvideoanyrate ! ffenc_h263 rtp-payload-size=30 ! rtph263pay\n" \
+	"\n" \
+	"[audio/PCMA]\n" \
+	"farsight-send-profile=audioconvert ! audioresample ! audioconvert ! alawenc ! rtppcmapay min-ptime=20000000 max-ptime=20000000\n" \
+	"\n" \
+	"[audio/PCMU]\n" \
+	"farsight-send-profile=audioconvert ! audioresample ! audioconvert ! mulawenc ! rtppcmupay min-ptime=20000000 max-ptime=20000000\n";
 
 static void
 ensure_codecs_conf()
