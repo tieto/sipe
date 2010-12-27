@@ -397,6 +397,15 @@ sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 
 #if PURPLE_VERSION_CHECK(2,6,0)
 #ifdef HAVE_VV
+
+extern void capture_pipeline(gchar *label);
+
+static void
+sipe_purple_sigusr1_handler(SIPE_UNUSED_PARAMETER int signum)
+{
+	capture_pipeline("PURPLE_SIPE_PIPELINE");
+}
+
 static gboolean sipe_purple_initiate_media(PurpleAccount *account, const char *who,
 					   SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
 {
@@ -511,11 +520,23 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 /* PurplePluginInfo function calls & data structure */
 static gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
+#ifdef HAVE_VV
+	struct sigaction action;
+	memset(&action, 0, sizeof (action));
+	action.sa_handler = sipe_purple_sigusr1_handler;
+	sigaction(SIGUSR1, &action, NULL);
+#endif
 	return TRUE;
 }
 
 static gboolean sipe_purple_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
+#ifdef HAVE_VV
+	struct sigaction action;
+	memset(&action, 0, sizeof (action));
+	action.sa_handler = SIG_DFL;
+	sigaction(SIGUSR1, &action, NULL);
+#endif
 	return TRUE;
 }
 
