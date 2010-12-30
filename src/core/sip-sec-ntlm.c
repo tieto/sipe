@@ -46,6 +46,10 @@
  *    not in NTLM (LE) structures.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -288,7 +292,11 @@ struct authenticate_message {
 };
 
 #ifndef HAVE_LANGINFO_CODESET
+#ifdef __sun__
+static char SIPE_DEFAULT_CODESET[] = "US-ASCII";
+#else
 static char SIPE_DEFAULT_CODESET[] = "ANSI_X3.4-1968";
+#endif
 #endif
 
 /* Private Methods */
