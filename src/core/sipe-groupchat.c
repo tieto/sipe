@@ -266,8 +266,8 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 		user = parts[0];
 
 	SIPE_DEBUG_INFO("sipe_groupchat_init: username '%s' setting '%s' split '%s'/'%s' GC user %s@%s",
-			sipe_private->username, setting, parts[0], parts[1],
-			user, domain);
+			sipe_private->username, setting ? setting : "(null)", parts[0],
+			parts[1] ? parts[1] : "(null)", user, domain);
 
 	if (!sipe_private->groupchat)
 		sipe_groupchat_allocate(sipe_private);
