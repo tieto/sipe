@@ -1883,7 +1883,7 @@ void sip_sec_init__ntlm(void)
 	}
 
 	convert_to_utf16le = g_iconv_open("UTF-16LE", sys_cp);
-	if (convert_from_utf16le == (GIConv)-1) {
+	if (convert_to_utf16le == (GIConv)-1) {
 		SIPE_DEBUG_ERROR("g_iconv_open from %s to UTF-16LE failed",
 				 sys_cp);
 	}
