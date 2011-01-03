@@ -295,7 +295,7 @@ system defaults.
 #include <glib.h>
 #include <plugin.h>
 #include <sslconn.h>
-],
+						],
 						[
 	purple_plugins_init();
 	purple_plugins_probe(G_MODULE_SUFFIX);
@@ -314,10 +314,9 @@ system defaults.
 		       [test "x$with_vv" = xcheck],  dnl autodetect
 			 [AC_MSG_CHECKING(for purple voice and video support)
 			  AC_RUN_IFELSE(
-				AC_LANG_PROGRAM(
-					[[[
-#include <libpurple/media.h>
-					]]],
+				AC_LANG_PROGRAM([
+#include <media.h>
+					],
 					[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);
 					 purple_media_get_active_local_candidates(NULL, NULL, NULL);
 					 purple_media_get_active_remote_candidates(NULL, NULL, NULL);]
