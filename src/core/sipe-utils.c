@@ -35,6 +35,8 @@
 #else
 #if defined(__APPLE__) || defined(__FreeBSD__)
 #include <sys/socket.h>
+#elif defined(__sun__)
+#include <sys/sockio.h>
 #endif
 #include <unistd.h>
 #include <net/if.h>
