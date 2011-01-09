@@ -170,7 +170,8 @@ sipe_session_find_im(struct sipe_core_private *sipe_private,
 	}
 
 	SIPE_SESSION_FOREACH {
-		if (session->with && sipe_strcase_equal(who, session->with)) {
+		if (!session->is_call &&
+		    session->with && sipe_strcase_equal(who, session->with)) {
 			return session;
 		}
 	} SIPE_SESSION_FOREACH_END;

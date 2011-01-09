@@ -43,7 +43,7 @@ struct sip_session {
 	/** chat session */
 	struct sipe_chat_session *chat_session;
 
-	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
+	gchar *with; /* For IM or call sessions only (not multi-party) . A URI.*/
 	/** key is user (URI) */
 	GSList *dialogs;
 	/** Key is <Call-ID><CSeq><METHOD><To> */
