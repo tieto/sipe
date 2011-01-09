@@ -3373,6 +3373,7 @@ sipe_invite(struct sipe_core_private *sipe_private,
 	gchar *body;
 	gchar *self;
 	char  *ms_text_format = NULL;
+	char  *ms_conversation_id = NULL;
 	gchar *roster_manager;
 	gchar *end_points;
 	gchar *referred_by_str;
@@ -3419,6 +3420,17 @@ sipe_invite(struct sipe_core_private *sipe_private,
 				msgr = tmp = g_strdup_printf(";msgr=%s", msgr_value);
 				g_free(msgr_value);
 			}
+
+			/* When Sipe reconnects after a crash, we are not able
+			 * to send messages to contacts with which we had open
+			 * conversations when the crash occured. Server sends
+			 * error response with reason="This client has an IM
+			 * session with the same conversation ID"
+			 *
+			 * Setting random Ms-Conversation-ID prevents this problem
+			 * so we can continue the conversation. */
+			ms_conversation_id = g_strdup_printf("Ms-Conversation-ID: %u\r\n",
+							     rand() % 1000000000);
 		} else {
 			msgtext = g_strdup(msg_body);
 		}
@@ -3464,14 +3476,17 @@ sipe_invite(struct sipe_core_private *sipe_private,
 		"%s"
 		"%s"
 		"Contact: %s\r\n%s"
+		"%s"
 		"Content-Type: application/sdp\r\n",
 		is_multiparty && sipe_strcase_equal(session->chat_session->id, self) ? roster_manager : "",
 		referred_by_str,
 		is_triggered ? "TriggeredInvite: TRUE\r\n" : "",
 		is_triggered || is_multiparty ? "Require: com.microsoft.rtc-multiparty\r\n" : "",
 		contact,
-		ms_text_format ? ms_text_format : "");
+		ms_text_format ? ms_text_format : "",
+		ms_conversation_id ? ms_conversation_id : "");
 	g_free(ms_text_format);
+	g_free(ms_conversation_id);
 	g_free(self);
 
 	body = g_strdup_printf(
