@@ -438,7 +438,10 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 
 	dialog = sipe_dialog_find(session, from);
 	if (dialog) {
+		/* update existing dialog */
 		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_invite, session already has dialog!");
+		g_free(dialog->callid);
+		dialog->callid = g_strdup(session->callid);		
 		sipe_dialog_parse_routes(dialog, msg, FALSE);
 	} else {
 		dialog = sipe_dialog_add(session);
