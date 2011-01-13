@@ -1084,13 +1084,14 @@ void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group
 			b->name = g_strdup(buddy->name);
 			b->just_added = TRUE;
 			g_hash_table_insert(sipe_private->buddies, b->name, b);
-			sipe_group_buddy(gc, b->name, NULL, group->name);
 			/* @TODO should go to callback */
 			sipe_subscribe_presence_single(sipe_private,
 						       b->name);
 		} else {
 			SIPE_DEBUG_INFO("sipe_add_buddy: buddy %s already in internal list", buddy->name);
 		}
+
+		sipe_group_buddy(gc, buddy->name, NULL, group->name);
 	}
 }
 
@@ -6261,10 +6262,10 @@ sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
 
 	b = purple_find_buddy_in_group(buddy->account, buddy->name, group);
 	if (!b){
-		purple_blist_add_buddy_clone(group, buddy);
+		b = purple_blist_add_buddy_clone(group, buddy);
 	}
 
-	sipe_group_buddy(gc, buddy->name, NULL, group_name);
+	sipe_add_buddy(gc, b, group);
 }
 
 static void
