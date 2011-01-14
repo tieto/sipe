@@ -174,12 +174,11 @@ void sipe_dialog_parse_routes(struct sip_dialog *dialog,
 			gchar **part = parts;
 
 			while (*part) {
-				gchar *route = sipmsg_find_part_of_header(*part, "<", ">", NULL);
-				SIPE_DEBUG_INFO("sipe_dialog_parse_routes: route %s", route);
-				dialog->routes = g_slist_append(dialog->routes, route);
+				SIPE_DEBUG_INFO("sipe_dialog_parse_routes: route %s", *part);
+				dialog->routes = g_slist_append(dialog->routes,
+								g_strdup(*part));
 				part++;
 			}
-
 			g_strfreev(parts);
                 }
                 hdr = g_slist_next(hdr);
@@ -195,10 +194,15 @@ void sipe_dialog_parse_routes(struct sip_dialog *dialog,
 	/* logic for strict router only - RFC3261 - 12.2.1.1 */
 	/* @TODO: proper check for presence of 'lr' PARAMETER in URI */
 	if (dialog->routes && !strstr(dialog->routes->data, ";lr")) {
-		dialog->request = dialog->routes->data;
-		dialog->routes = g_slist_remove(dialog->routes, dialog->routes->data);
+		gchar *route = dialog->routes->data;
+		dialog->request = sipmsg_find_part_of_header(route, "<", ">", NULL);
+		SIPE_DEBUG_INFO("sipe_dialog_parse_routes: strict route, contact %s", dialog->request);
+		dialog->routes = g_slist_remove(dialog->routes, route);
+		g_free(route);
 		if (contact) {
-			dialog->routes = g_slist_append(dialog->routes, contact);
+			dialog->routes = g_slist_append(dialog->routes,
+							g_strdup_printf("<%s>", contact));
+			g_free(contact);
 		}
 	}
 }

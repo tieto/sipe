@@ -617,7 +617,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 		while(iter)
 		{
 			char *tmp = route;
-			route = g_strdup_printf("%sRoute: <%s>\r\n", route, (char *)iter->data);
+			route = g_strdup_printf("%sRoute: %s\r\n", route, (char *)iter->data);
 			g_free(tmp);
 			iter = g_slist_next(iter);
 		}
