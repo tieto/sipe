@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -151,9 +151,9 @@ void sipe_dialog_remove_all(struct sip_session *session)
 	}
 }
 
-void sipe_dialog_parse_routes(struct sip_dialog *dialog,
-			      const struct sipmsg *msg,
-			      gboolean outgoing)
+static void sipe_dialog_parse_routes(struct sip_dialog *dialog,
+				     const struct sipmsg *msg,
+				     gboolean outgoing)
 {
         GSList *hdr = msg->headers;
 	gchar *contact = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Contact"), "<", ">", NULL);

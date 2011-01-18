@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2011 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -323,6 +323,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	oldHeader = sipmsg_find_header(msg, "To");
 	newTag = gentag();
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
+	g_free(newTag);
 	sipmsg_remove_header_now(msg, "To");
 	sipmsg_add_header_now(msg, "To", newHeader);
 	g_free(newHeader);
@@ -438,26 +439,19 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 
 	dialog = sipe_dialog_find(session, from);
 	if (dialog) {
-		/* update existing dialog */
-		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_invite, session already has dialog!");
+		/* We need to cancel old dialog first */
+		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_invite: sending BYE for already existing dialog");
+		sip_transport_bye(sipe_private, dialog);
+
 		g_free(dialog->callid);
-		dialog->callid = g_strdup(session->callid);		
-		sipe_dialog_parse_routes(dialog, msg, FALSE);
 	} else {
 		dialog = sipe_dialog_add(session);
-
-		dialog->callid = g_strdup(session->callid);
 		dialog->with = g_strdup(from);
-		sipe_dialog_parse(dialog, msg, FALSE);
-
-		if (!dialog->ourtag) {
-			dialog->ourtag = newTag;
-			newTag = NULL;
-		}
-
 		just_joined = TRUE;
 	}
-	g_free(newTag);
+
+	dialog->callid = g_strdup(session->callid);
+	sipe_dialog_parse(dialog, msg, FALSE);
 
 	if (is_multiparty && !was_multiparty) {
 		/* add current IM counterparty to chat */
