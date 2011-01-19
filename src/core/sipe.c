@@ -3104,6 +3104,46 @@ process_message_response(struct sipe_core_private *sipe_private,
 	return ret;
 }
 
+static gboolean
+process_message_timeout(struct sipe_core_private *sipe_private,
+			struct sipmsg *msg,
+			SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+	struct sip_session *session = sipe_session_find_im(sipe_private, with);
+	gchar *cseq;
+	char *key;
+	sipe_backend_buddy pbuddy;
+	gchar *alias = NULL;
+
+	if (!session) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_message_timeout: unable to find IM session");
+		g_free(with);
+		return TRUE;
+	}
+
+	/* Remove timed-out message from unconfirmed list */
+	cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
+	key  = g_strdup_printf("<%s><%d><MESSAGE><%s>", sipmsg_find_header(msg, "Call-ID"), atoi(cseq), with);
+	g_free(cseq);
+	g_hash_table_remove(session->unconfirmed_messages, key);
+	SIPE_DEBUG_INFO("process_message_timeout: removed message %s from unconfirmed_messages(count=%d)",
+			key, g_hash_table_size(session->unconfirmed_messages));
+	g_free(key);
+
+	if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
+		alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,pbuddy);
+	}
+
+	sipe_present_message_undelivered_err(sipe_private, session, -1, -1,
+					     alias ? alias : with,
+					     msg->body);
+
+	g_free(alias);
+	g_free(with);
+	return TRUE;
+}
+
 static void sipe_send_message(struct sipe_core_private *sipe_private,
 			      struct sip_dialog *dialog,
 			      const char *msg, const char *content_type)
@@ -3143,14 +3183,16 @@ static void sipe_send_message(struct sipe_core_private *sipe_private,
 	g_free(tmp);
 	g_free(tmp2);
 
-	sip_transport_request(sipe_private,
-			      "MESSAGE",
-			      dialog->with,
-			      dialog->with,
-			      hdr,
-			      msgtext,
-			      dialog,
-			      process_message_response);
+	sip_transport_request_timeout(sipe_private,
+				      "MESSAGE",
+				      dialog->with,
+				      dialog->with,
+				      hdr,
+				      msgtext,
+				      dialog,
+				      process_message_response,
+				      60,
+				      process_message_timeout);
 	g_free(msgtext);
 	g_free(hdr);
 }
