@@ -71,7 +71,7 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	/* take data before 'msg' will be modified by sip_transport_response */
 	dialog = g_new0(struct sip_dialog, 1);
 	dialog->callid = g_strdup(callid);
-	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
+	dialog->cseq = sipmsg_parse_cseq(msg);
 	dialog->with = g_strdup(from);
 	sipe_dialog_parse(dialog, msg, FALSE);
 

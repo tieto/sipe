@@ -510,7 +510,7 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
 	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
 
 	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
+	dialog->cseq = sipmsg_parse_cseq(msg);
 	dialog->with = parse_from(sipmsg_find_header(msg, "To"));
 	sipe_dialog_parse(dialog, msg, TRUE);
 

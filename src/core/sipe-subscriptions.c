@@ -129,26 +129,19 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 	}
 
 	/* create/store subscription dialog if not yet */
-	if (msg->response == 200) {
-		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-		gchar *cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
+	if (key && (msg->response == 200)) {
+		struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
+		g_hash_table_insert(sipe_private->subscriptions,
+				    g_strdup(key),
+				    subscription);
 
-		if (key) {
-			struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
-			g_hash_table_insert(sipe_private->subscriptions,
-					    g_strdup(key),
-					    subscription);
+		subscription->dialog.callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+		subscription->dialog.cseq = sipmsg_parse_cseq(msg);
+		subscription->dialog.with = g_strdup(with);
+		subscription->event = g_strdup(event);
+		sipe_dialog_parse(&subscription->dialog, msg, TRUE);
 
-			subscription->dialog.callid = g_strdup(callid);
-			subscription->dialog.cseq = atoi(cseq);
-			subscription->dialog.with = g_strdup(with);
-			subscription->event = g_strdup(event);
-			sipe_dialog_parse(&subscription->dialog, msg, TRUE);
-
-			SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for: %s", key);
-		}
-
-		g_free(cseq);
+		SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for: %s", key);
 	}
 
 	g_free(key);

@@ -113,18 +113,6 @@ gchar *parse_from(const gchar *hdr)
 	return from;
 }
 
-int parse_cseq(const gchar *hdr)
-{
-	int res = -1;
-	gchar **items;
-	items = g_strsplit(hdr, " ", 1);
-	if (items[0]) {
-		res = atoi(items[0]);
-	}
-	g_strfreev(items);
-	return res;
-}
-
 gchar *sip_uri_from_name(const gchar *name)
 {
 	return(g_strdup_printf("sip:%s", name));

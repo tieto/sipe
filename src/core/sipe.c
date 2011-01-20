@@ -3045,7 +3045,6 @@ process_message_response(struct sipe_core_private *sipe_private,
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session = sipe_session_find_im(sipe_private, with);
 	struct sip_dialog *dialog;
-	gchar *cseq;
 	gchar *key;
 	struct queued_message *message;
 
@@ -3062,9 +3061,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 		return FALSE;
 	}
 
-	cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), atoi(cseq), with);
-	g_free(cseq);
+	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), sipmsg_parse_cseq(msg), with);
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response >= 400) {
@@ -3142,7 +3139,6 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 {
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session = sipe_session_find_im(sipe_private, with);
-	gchar *cseq;
 	gchar *key;
 	sipe_backend_buddy pbuddy;
 	gchar *alias = NULL;
@@ -3154,9 +3150,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 	}
 
 	/* Remove timed-out message from unconfirmed list */
-	cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), atoi(cseq), with);
-	g_free(cseq);
+	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), sipmsg_parse_cseq(msg), with);
 	remove_unconfirmed_message(session, key);
 	g_free(key);
 
@@ -3305,7 +3299,6 @@ process_invite_response(struct sipe_core_private *sipe_private,
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session;
 	struct sip_dialog *dialog;
-	gchar *cseq;
 	gchar *key;
 	struct queued_message *message;
 	struct sipmsg *request_msg = trans->msg;
@@ -3329,9 +3322,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 	sipe_dialog_parse(dialog, msg, TRUE);
 
-	cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-	key = get_unconfirmed_message_key(dialog->callid, atoi(cseq), NULL);
-	g_free(cseq);
+	key = get_unconfirmed_message_key(dialog->callid, sipmsg_parse_cseq(msg), NULL);
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response != 200) {

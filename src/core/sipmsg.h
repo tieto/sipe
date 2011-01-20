@@ -57,6 +57,16 @@ void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gcha
 void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]);
 void sipmsg_merge_new_headers(struct sipmsg *msg);
 void sipmsg_free(struct sipmsg *msg);
+
+/**
+ * Parses CSeq from SIP message
+ *
+ * @param msg (in) SIP message
+ *
+ * @return int type CSeq value (i.e. without method).
+ */
+int sipmsg_parse_cseq(struct sipmsg *msg);
+
 GSList *sipmsg_parse_endpoints_header(const gchar *header);
 /**
  * Parses sip: and tel: URI out of P-Asserted-Identity header from INVITE request.

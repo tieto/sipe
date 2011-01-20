@@ -333,6 +333,18 @@ gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const ch
 	return res2;
 }
 
+int sipmsg_parse_cseq(struct sipmsg *msg)
+{
+	int res = -1;
+	gchar **items;
+	items = g_strsplit(sipmsg_find_header(msg, "CSeq"), " ", 1);
+	if (items[0]) {
+		res = atoi(items[0]);
+	}
+	g_strfreev(items);
+	return res;
+}
+
 /**
  * Parse EndPoints header from INVITE request
  * Returns a list of end points: contact URI plus optional epid.
