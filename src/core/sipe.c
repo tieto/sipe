@@ -3004,6 +3004,37 @@ sipe_present_message_undelivered_err(struct sipe_core_private *sipe_private,
 	g_free(msg);
 }
 
+/* key must be g_free()'d */
+static gchar *
+get_unconfirmed_message_key(const gchar *callid,
+			    unsigned int cseq,
+			    const gchar *with)
+{
+	return(g_strdup_printf("<%s><%d><%s><%s>", callid, cseq,
+			       with ? "MESSAGE" : "INVITE",
+			       with ? with : ""));
+}
+
+static void
+insert_unconfirmed_message(struct sip_session *session,
+			   struct sip_dialog *dialog,
+			   const gchar *with,
+			   struct queued_message *message)
+{
+	gchar *key = get_unconfirmed_message_key(dialog->callid, dialog->cseq + 1, with);
+	g_hash_table_insert(session->unconfirmed_messages, key, message);
+	SIPE_DEBUG_INFO("insert_confirmed_message: added %s to list (count=%d)",
+			key, g_hash_table_size(session->unconfirmed_messages));
+}
+
+static void
+remove_unconfirmed_message(struct sip_session *session,
+			   const gchar *key)
+{
+	g_hash_table_remove(session->unconfirmed_messages, key);
+	SIPE_DEBUG_INFO("remove_unconfirmed_message: removed %s from list (count=%d)",
+			key, g_hash_table_size(session->unconfirmed_messages));
+}
 
 static gboolean
 process_message_response(struct sipe_core_private *sipe_private,
@@ -3015,7 +3046,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 	struct sip_session *session = sipe_session_find_im(sipe_private, with);
 	struct sip_dialog *dialog;
 	gchar *cseq;
-	char *key;
+	gchar *key;
 	struct queued_message *message;
 
 	if (!session) {
@@ -3032,7 +3063,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 	}
 
 	cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-	key = g_strdup_printf("<%s><%d><MESSAGE><%s>", sipmsg_find_header(msg, "Call-ID"), atoi(cseq), with);
+	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), atoi(cseq), with);
 	g_free(cseq);
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
@@ -3096,10 +3127,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 
 	}
 
-	g_hash_table_remove(session->unconfirmed_messages, key);
-	SIPE_DEBUG_INFO("process_message_response: removed message %s from unconfirmed_messages(count=%d)",
-			key, g_hash_table_size(session->unconfirmed_messages));
-
+	remove_unconfirmed_message(session, key);
 	g_free(key);
 	g_free(with);
 
@@ -3115,7 +3143,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session = sipe_session_find_im(sipe_private, with);
 	gchar *cseq;
-	char *key;
+	gchar *key;
 	sipe_backend_buddy pbuddy;
 	gchar *alias = NULL;
 
@@ -3127,11 +3155,9 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 
 	/* Remove timed-out message from unconfirmed list */
 	cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-	key  = g_strdup_printf("<%s><%d><MESSAGE><%s>", sipmsg_find_header(msg, "Call-ID"), atoi(cseq), with);
+	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), atoi(cseq), with);
 	g_free(cseq);
-	g_hash_table_remove(session->unconfirmed_messages, key);
-	SIPE_DEBUG_INFO("process_message_timeout: removed message %s from unconfirmed_messages(count=%d)",
-			key, g_hash_table_size(session->unconfirmed_messages));
+	remove_unconfirmed_message(session, key);
 	g_free(key);
 
 	if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
@@ -3220,7 +3246,6 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 		}
 
 		SIPE_DIALOG_FOREACH {
-			char *key;
 			struct queued_message *message;
 
 			if (dialog->outgoing_invite) continue; /* do not send messages as INVITE is not responded. */
@@ -3230,11 +3255,7 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 			if (msg->content_type != NULL)
 				message->content_type = g_strdup(msg->content_type);
 
-			key = g_strdup_printf("<%s><%d><MESSAGE><%s>", dialog->callid, (dialog->cseq) + 1, dialog->with);
-			g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), message);
-			SIPE_DEBUG_INFO("sipe_im_process_queue: added message %s to unconfirmed_messages(count=%d)",
-					key, g_hash_table_size(session->unconfirmed_messages));
-			g_free(key);
+			insert_unconfirmed_message(session, dialog, dialog->with, message);
 
 			sipe_send_message(sipe_private, dialog, msg->body, msg->content_type);
 		} SIPE_DIALOG_FOREACH_END;
@@ -3284,8 +3305,8 @@ process_invite_response(struct sipe_core_private *sipe_private,
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session;
 	struct sip_dialog *dialog;
-	char *cseq;
-	char *key;
+	gchar *cseq;
+	gchar *key;
 	struct queued_message *message;
 	struct sipmsg *request_msg = trans->msg;
 
@@ -3309,17 +3330,20 @@ process_invite_response(struct sipe_core_private *sipe_private,
 	sipe_dialog_parse(dialog, msg, TRUE);
 
 	cseq = sipmsg_find_part_of_header(sipmsg_find_header(msg, "CSeq"), NULL, " ", NULL);
-	key = g_strdup_printf("<%s><%d><INVITE>", dialog->callid, atoi(cseq));
+	key = get_unconfirmed_message_key(dialog->callid, atoi(cseq), NULL);
 	g_free(cseq);
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response != 200) {
 		sipe_backend_buddy pbuddy;
-		gchar *alias = g_strdup(with);
+		gchar *alias = NULL;
 		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
 		int warning = -1;
 
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_response: INVITE response not 200");
+
+		remove_unconfirmed_message(session, key);
+		g_free(key);
 
 		if (warn_hdr) {
 			gchar **parts = g_strsplit(warn_hdr, " ", 2);
@@ -3340,27 +3364,26 @@ process_invite_response(struct sipe_core_private *sipe_private,
 		}
 
 		if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
-			g_free(alias);
 			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, pbuddy);
 		}
 
 		if (message) {
-			sipe_present_message_undelivered_err(sipe_private, session, msg->response, warning, alias, message->body);
+			sipe_present_message_undelivered_err(sipe_private, session, msg->response, warning, alias ? alias : with, message->body);
 		} else {
 			gchar *tmp_msg = g_strdup_printf(_("Failed to invite %s"), alias);
 			sipe_present_err(sipe_private, session, tmp_msg);
 			g_free(tmp_msg);
 		}
+		g_free(alias);
 
 		sipe_dialog_remove(session, with);
+		g_free(with);
 
 		if (session->is_groupchat) {
 			sipe_groupchat_invite_failed(sipe_private, session);
+			/* session is no longer valid */
 		}
 
-		g_free(key);
-		g_free(with);
-		g_free(alias);
 		return FALSE;
 	}
 
@@ -3394,9 +3417,7 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 	sipe_im_process_queue(sipe_private, session);
 
-	g_hash_table_remove(session->unconfirmed_messages, key);
-	SIPE_DEBUG_INFO("process_invite_response: removed message %s from unconfirmed_messages(count=%d)",
-			key, g_hash_table_size(session->unconfirmed_messages));
+	remove_unconfirmed_message(session, key);
 
 	g_free(key);
 	g_free(with);
@@ -3449,7 +3470,6 @@ sipe_invite(struct sipe_core_private *sipe_private,
 		char *msgtext = NULL;
 		char *base64_msg;
 		const gchar *msgr = "";
-		char *key;
 		struct queued_message *message;
 		gchar *tmp = NULL;
 
@@ -3495,11 +3515,7 @@ sipe_invite(struct sipe_core_private *sipe_private,
 		if (msg_content_type != NULL)
 			message->content_type = g_strdup(msg_content_type);
 
-		key = g_strdup_printf("<%s><%d><INVITE>", dialog->callid, (dialog->cseq) + 1);
-		g_hash_table_insert(session->unconfirmed_messages, g_strdup(key), message);
-		SIPE_DEBUG_INFO("sipe_invite: added message %s to unconfirmed_messages(count=%d)",
-				key, g_hash_table_size(session->unconfirmed_messages));
-		g_free(key);
+		insert_unconfirmed_message(session, dialog, NULL, message);
 	}
 
 	contact = get_contact(sipe_private);
