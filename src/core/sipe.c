@@ -3038,7 +3038,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 
 	if (msg->response >= 400) {
 		sipe_backend_buddy pbuddy;
-		gchar *alias = g_strdup(with);
+		gchar *alias = NULL;
 		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
 		int warning = -1;
 
@@ -3063,11 +3063,13 @@ process_message_response(struct sipe_core_private *sipe_private,
 		}
 
 		if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
-			g_free(alias);
 			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,pbuddy);
 		}
 
-		sipe_present_message_undelivered_err(sipe_private, session, msg->response, warning, alias, (message ? message->body : NULL));
+		sipe_present_message_undelivered_err(sipe_private, session,
+						     msg->response, warning,
+						     alias ? alias : with,
+						     message ? message->body : NULL);
 
 		/* drop dangling IM sessions: assume that BYE from remote never reached us */
 		if (msg->response == 408 || /* Request timeout */
@@ -3092,10 +3094,11 @@ process_message_response(struct sipe_core_private *sipe_private,
 					message_id, g_hash_table_size(session->conf_unconfirmed_messages));
 		}
 
-		g_hash_table_remove(session->unconfirmed_messages, key);
-		SIPE_DEBUG_INFO("process_message_response: removed message %s from unconfirmed_messages(count=%d)",
-				key, g_hash_table_size(session->unconfirmed_messages));
 	}
+
+	g_hash_table_remove(session->unconfirmed_messages, key);
+	SIPE_DEBUG_INFO("process_message_response: removed message %s from unconfirmed_messages(count=%d)",
+			key, g_hash_table_size(session->unconfirmed_messages));
 
 	g_free(key);
 	g_free(with);
