@@ -3333,9 +3333,6 @@ process_invite_response(struct sipe_core_private *sipe_private,
 
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_response: INVITE response not 200");
 
-		remove_unconfirmed_message(session, key);
-		g_free(key);
-
 		if (warn_hdr) {
 			gchar **parts = g_strsplit(warn_hdr, " ", 2);
 			if (parts[0]) {
@@ -3366,6 +3363,10 @@ process_invite_response(struct sipe_core_private *sipe_private,
 			g_free(tmp_msg);
 		}
 		g_free(alias);
+
+		remove_unconfirmed_message(session, key);
+		/* message is no longer valid */
+		g_free(key);
 
 		sipe_dialog_remove(session, with);
 		g_free(with);
