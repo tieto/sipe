@@ -1,16 +1,12 @@
 To enable experimental voice support in SIPE (only on platforms where libpurple
 supports voice & video):
 
-- source tree of Pidgin 2.7.8 or higher is required
-- for compatibility with OC 2007, OC 2007 R2 and MS Lync 2010 RC, apply these
-  patches to libnice, libpurple and farsight:
+- libnice >= 0.1.0 and farsight2 >= 0.0.23 are required
+- source tree of Pidgin 2.7.8 or higher is required and following patches must
+  be applied:
 	- purple_media_get_active_candidates.patch
 	- purple_media_fs2_dispose.patch
 	- purple_SDES.patch
-	- libnice01-Compatibility-with-MSOC-2007-R2.patch
-	- libnice02-Compatibility-with-MSOC-2007.patch
-	- libnice03-MS-TURN-support-for-Microsoft-Office-Communicator.patch
-	- farsight-Compatibility-with-OC2007.patch
 - compile SIPE source, check that voice support is enabled in configure output
 - If you get errors on incompatible encryption levels when making a call, change
   to peer's registry is needed to allow unencrypted media transfer; use the
@@ -21,36 +17,13 @@ supports voice & video):
 STATUS OF PATCHES IN UPSTREAM
 =============================
 
-purple_mime_document_parsen.patch
-	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11598
-	- RELEASED in Pidgin 2.7.8
-
 purple_media_get_active_candidates.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11830
 	- commited for future 2.8.0 release
 
 purple_media_fs2_dispose.patch
 	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/12758
-
-pidgin_media_remove_request_timeout_cb_on_dispose.patch
-	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/12806
-	- RELEASED in Pidgin 2.7.6
-
-libnice01-Compatibility-with-MSOC-2007-R2.patch
-	- reported upstream https://bugs.freedesktop.org/show_bug.cgi?id=28215
-	- accepted for release libnice 0.0.14
-
-libnice02-Compatibility-with-MSOC-2007.patch
-	- reported upstream http://lists.freedesktop.org/archives/nice/2010-August/000365.html
-	- accepted for release libnice 0.0.14
-
-libnice03-MS-TURN-support-for-Microsoft-Office-Communicator.patch
-	- accepted for release libnice 0.0.14
-
-farsight-Compatibility-with-OC2007.patch
-	- reported upstream http://lists.freedesktop.org/archives/nice/2010-August/000365.html
-	- should be included in 0.0.22 release
-
+	- commited for future 2.7.10 release
 
 Biggest show stopper now is a lack of SRTP (encrypted transfer) in Farsight library,
 requiring Office Communicator users to change their registry settings as a

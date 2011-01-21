@@ -322,7 +322,7 @@ system defaults.
 					 purple_media_get_active_remote_candidates(NULL, NULL, NULL);]
 			  	),
 				[AC_MSG_RESULT(ok)
-				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.14],
+				 PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
 					[PKG_CHECK_MODULES(PURPLE_MEDIA, [purple >= 2.7.0],
 						[PKG_CHECK_MODULES(GSTREAMER, [gstreamer-0.10],
 							[with_purple_vv=yes],
