@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
  *
