@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -41,10 +41,10 @@
 #include "sipe-dialog.h"
 #include "sipe-digest.h"
 #include "sipe-ft.h"
+#include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
-#include "sipe.h"
 
 #define SIPE_FT_KEY_LENGTH          24
 #define SIPE_FT_CHUNK_HEADER_LENGTH  3
@@ -485,7 +485,7 @@ void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
 		sipe_im_process_queue(sipe_private, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		// Need to send the INVITE to get the outgoing dialog setup
-		sipe_invite(sipe_private, session, who, body, "text/x-msmsgsinvite", NULL, FALSE);
+		sipe_im_invite(sipe_private, session, who, body, "text/x-msmsgsinvite", NULL, FALSE);
 		dialog = sipe_dialog_find(session, who);
 	}
 

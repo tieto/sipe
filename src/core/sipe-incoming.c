@@ -41,14 +41,15 @@
 #include "sipe-dialog.h"
 #include "sipe-ft.h"
 #include "sipe-groupchat.h"
+#include "sipe-im.h"
 #include "sipe-incoming.h"
 #include "sipe-media.h"
+#include "sipe-mime.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
+#include "sipe-user.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe-mime.h"
-#include "sipe.h"
 
 void process_incoming_bye(struct sipe_core_private *sipe_private,
 			  struct sipmsg *msg)
@@ -419,7 +420,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 				just_joined = TRUE;
 
 				/* send triggered INVITE */
-				sipe_invite(sipe_private, session, dialog->with, NULL, NULL, NULL, TRUE);
+				sipe_im_invite(sipe_private, session, dialog->with, NULL, NULL, NULL, TRUE);
 			}
 		}
 		g_free(to);
@@ -643,7 +644,7 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 		if (session) {
 			gchar *errmsg = g_strdup_printf(_("Received a message with unrecognized contents from %s"),
 							from);
-			sipe_present_err(sipe_private, session, errmsg);
+			sipe_user_present_error(sipe_private, session, errmsg);
 			g_free(errmsg);
 		}
 
@@ -698,7 +699,7 @@ void process_incoming_refer(struct sipe_core_private *sipe_private,
 	} else {
 		sip_transport_response(sipe_private, msg, 202, "Accepted", NULL);
 
-		sipe_invite(sipe_private, session, refer_to, NULL, NULL, referred_by, FALSE);
+		sipe_im_invite(sipe_private, session, refer_to, NULL, NULL, referred_by, FALSE);
 	}
 
 	g_free(self);

@@ -32,4 +32,5 @@ po/stamp-it
 src/*/*.o
 src/core/*_tests
 src/purple/tests
+src/purple/tests_load
 stamp-h1

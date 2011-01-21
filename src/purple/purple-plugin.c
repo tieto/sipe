@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -339,6 +339,15 @@ static void sipe_purple_close(PurpleConnection *gc)
 	}
 }
 
+static int sipe_purple_send_im(PurpleConnection *gc,
+			       const char *who,
+			       const char *what,
+			       SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
+{
+	sipe_core_im_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who, what);
+	return 1;
+}
+
 #define SIPE_TYPING_SEND_TIMEOUT 4
 
 static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
@@ -442,7 +451,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_purple_chat_info_defaults,		/* chat_info_defaults */
 	sipe_purple_login,			/* login */
 	sipe_purple_close,			/* close */
-	sipe_im_send,				/* send_im */
+	sipe_purple_send_im,			/* send_im */
 	NULL,					/* set_info */		// TODO maybe
 	sipe_purple_send_typing,		/* send_typing */
 	sipe_get_info,				/* get_info */

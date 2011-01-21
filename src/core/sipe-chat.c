@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-groupchat.h"
+#include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
@@ -508,7 +509,7 @@ sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 		gchar *self = sip_uri_self(sipe_private);
 		if (session->chat_session->id) {
 			if (sipe_strcase_equal(session->chat_session->id, self)) {
-				sipe_invite(sipe_private, session, who, NULL, NULL, NULL, FALSE);
+				sipe_im_invite(sipe_private, session, who, NULL, NULL, NULL, FALSE);
 			} else {
 				sipe_refer(sipe_private, session, who);
 			}

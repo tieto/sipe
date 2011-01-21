@@ -46,6 +46,8 @@ libsipe_core_la_SOURCES = \
 	sipe-ft.c \
 	sipe-groupchat.h \
 	sipe-groupchat.c \
+	sipe-im.h \
+	sipe-im.c \
 	sipe-incoming.h \
 	sipe-incoming.c \
 	sipe-schedule.h \
@@ -57,6 +59,7 @@ libsipe_core_la_SOURCES = \
 	sipe-subscriptions.h \
 	sipe-subscriptions.c \
 	sipe-user.c \
+	sipe-user.h \
 	sipe-xml.h \
 	sipe-xml.c \
 	uuid.h \

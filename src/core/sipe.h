@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2007 Anibal Avelar <avelar@gmail.com>
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
@@ -152,39 +152,10 @@ send_presence_soap(struct sipe_core_private *sipe_private,
  * This way our code will not be monolithic, but potentially _reusable_. May be
  * a top of other SIP core, and/or other front-end (Telepathy framework?).
  */
-/* Forward declarations */
-struct sip_session;
-struct sip_dialog;
-struct transaction;
 
-void
-sipe_invite(struct sipe_core_private *sipe_private, struct sip_session *session,
-	    const gchar *who, const gchar *msg_body, const gchar *msg_content_type,
-	    const gchar *referred_by, const gboolean is_triggered);
 /* ??? module */
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
 void sipe_buddy_free_all(struct sipe_core_private *sipe_private);
-/* Session module? */
-void
-sipe_present_message_undelivered_err(struct sipe_core_private *sipe_private,
-				     struct sip_session *session,
-				     int sip_error,
-				     int sip_warning,
-				     const gchar *who,
-				     const gchar *message);
-
-void
-sipe_present_info(struct sipe_core_private *sipe_private,
-		  struct sip_session *session,
-		  const gchar *message);
-void
-sipe_present_err(struct sipe_core_private *sipe_private,
-		 struct sip_session *session,
-		 const gchar *message);
-
-void
-sipe_im_process_queue(struct sipe_core_private *sipe_private,
-		      struct sip_session *session);
 
 /* sipe-notify? */
 void process_incoming_notify(struct sipe_core_private *sipe_private,
@@ -193,17 +164,6 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     gboolean benotify);
 
 /*** THE BIG SPLIT END ***/
-
-#ifdef HAVE_GMIME
-/* pls. don't add multipart/related - it's not used in IM modality */
-#define SDP_ACCEPT_TYPES  "text/plain text/html image/gif multipart/alternative application/im-iscomposing+xml application/ms-imdn+xml text/x-msmsgsinvite"
-#else
-/* this is a rediculous hack as Pidgin's MIME implementastion doesn't support (or have bug) in multipart/alternative */
-/* OCS/OC won't use multipart/related so we don't advertase it */
-#define SDP_ACCEPT_TYPES  "text/plain text/html image/gif application/im-iscomposing+xml application/ms-imdn+xml text/x-msmsgsinvite"
-#endif
-
-#define SIPE_INVITE_TEXT "ms-text-format: %s; charset=UTF-8%s;ms-body=%s\r\n"
 
 /**
  * Publishes categories.

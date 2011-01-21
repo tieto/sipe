@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -131,12 +131,12 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-groupchat.h"
+#include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 #define GROUPCHAT_RETRY_TIMEOUT 5*60 /* seconds */
 
@@ -277,8 +277,8 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 	session = sipe_session_find_or_add_im(sipe_private,
 					      chat_uri);
 	session->is_groupchat = TRUE;
-	sipe_invite(sipe_private, session, chat_uri,
-		    NULL, NULL, NULL, FALSE);
+	sipe_im_invite(sipe_private, session, chat_uri,
+		       NULL, NULL, NULL, FALSE);
 
 	g_free(groupchat->domain);
 	groupchat->domain = g_strdup(domain);
@@ -488,7 +488,7 @@ static void chatserver_response_uri(struct sipe_core_private *sipe_private,
 										   uri);
 
 			session->is_groupchat = TRUE;
-			sipe_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
+			sipe_im_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
 		} else {
 			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
 			groupchat_init_retry(sipe_private);

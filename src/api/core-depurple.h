@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,8 +30,6 @@ void sipe_search_contact_with_cb(PurpleConnection *gc,
 GList *sipe_buddy_menu(PurpleBuddy *buddy);
 void sipe_purple_setup(struct sipe_core_public *sipe_public,
 		       PurpleConnection *gc);
-int sipe_im_send(PurpleConnection *gc, const char *who, const char *what,
-		 PurpleMessageFlags flags);
 void sipe_get_info(PurpleConnection *gc, const char *username);
 void sipe_set_status(PurpleAccount *account, PurpleStatus *status);
 void sipe_set_idle(PurpleConnection *gc, int interval);

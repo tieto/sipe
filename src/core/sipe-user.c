@@ -26,11 +26,72 @@
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-chat.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-nls.h"
 #include "sipe-session.h"
+#include "sipe-user.h"
 #include "sipe-utils.h"
+
+void sipe_user_present_info(struct sipe_core_private *sipe_private,
+			    struct sip_session *session,
+			    const gchar *message)
+{
+	sipe_backend_notify_message_info(SIPE_CORE_PUBLIC,
+					 session->chat_session ? session->chat_session->backend : NULL,
+					 session->with,
+					 message);
+}
+
+void sipe_user_present_error(struct sipe_core_private *sipe_private,
+			     struct sip_session *session,
+			     const gchar *message)
+{
+	sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
+					  session->chat_session ? session->chat_session->backend : NULL,
+					  session->with,
+					  message);
+}
+
+void sipe_user_present_message_undelivered(struct sipe_core_private *sipe_private,
+					   struct sip_session *session,
+					   int sip_error,
+					   int sip_warning,
+					   const gchar *who,
+					   const gchar *message)
+{
+	char *msg, *msg_tmp, *msg_tmp2;
+	const char *label;
+
+	msg_tmp = message ? sipe_backend_markup_strip_html(message) : NULL;
+	msg = msg_tmp ? g_strdup_printf("<font color=\"#888888\"></b>%s<b></font>", msg_tmp) : NULL;
+	g_free(msg_tmp);
+	/* Service unavailable; Server Internal Error; Server Time-out */
+	if (sip_error == 606 && sip_warning == 309) { /* Not acceptable all. */ /* Message contents not allowed by policy */
+		label = _("Your message or invitation was not delivered, possibly because it contains a hyperlink or other content that the system administrator has blocked.");
+		g_free(msg);
+		msg = NULL;
+	} else if (sip_error == 500 || sip_error == 503 || sip_error == 504 || sip_error == 603) {
+		label = _("This message was not delivered to %s because the service is not available");
+	} else if (sip_error == 486) { /* Busy Here */
+		label = _("This message was not delivered to %s because one or more recipients do not want to be disturbed");
+	} else if (sip_error == 415) { /* Unsupported media type */
+		label = _("This message was not delivered to %s because one or more recipients don't support this type of message");
+	} else {
+		label = _("This message was not delivered to %s because one or more recipients are offline");
+	}
+
+	msg_tmp = g_strdup_printf( "%s%s\n%s" ,
+			msg_tmp2 = g_strdup_printf(label, who ? who : ""),
+			msg ? ":" : "",
+			msg ? msg : "");
+	sipe_user_present_error(sipe_private, session, msg_tmp);
+	g_free(msg_tmp2);
+	g_free(msg_tmp);
+	g_free(msg);
+}
 
 static gboolean process_info_typing_response(struct sipe_core_private *sipe_private,
 					     struct sipmsg *msg,
