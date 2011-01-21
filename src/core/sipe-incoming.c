@@ -96,6 +96,8 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	    !g_strcasecmp(from, session->chat_session->id))
 		sipe_chat_set_roster_manager(session, NULL);
 
+	sipe_im_cancel_unconfirmed(sipe_private, session, callid, from);
+
 	/* This what BYE is essentially for - terminating dialog */
 	sipe_dialog_remove_3(session, dialog);
 	sipe_dialog_free(dialog);

@@ -39,7 +39,8 @@ struct sipe_core_private;
  *
  * @param sipe_private SIPE core private data
  * @param session      session for the IM conversation(s)
- * @param msg          message body or NULL
+ * @param who          URI of the invitee
+ * @param msg_body     message body or NULL
  * @param content_type message body MIME type
  * @param referred_by  value for Referred-By or NULL
  * @param is_triggered triggered invite or not
@@ -60,3 +61,16 @@ void sipe_im_invite(struct sipe_core_private *sipe_private,
  */
 void sipe_im_process_queue(struct sipe_core_private *sipe_private,
 			   struct sip_session *session);
+
+/**
+ * Cancel unconfirmed IM messages
+ *
+ * @param sipe_private SIPE core private data
+ * @param session      session for the IM conversation(s)
+ * @param callid       Call ID of the conversation
+ * @param with         URI of the remote party
+ */
+void sipe_im_cancel_unconfirmed(struct sipe_core_private *sipe_private,
+				struct sip_session *session,
+				const gchar *callid,
+				const gchar *with);

@@ -96,6 +96,7 @@ struct queued_message {
 	 * means default value text/plain.
 	 */
 	gchar *content_type;
+	guint cseq;
 };
 
 /**

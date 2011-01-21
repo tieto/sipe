@@ -50,17 +50,27 @@ static gchar *get_unconfirmed_message_key(const gchar *callid,
 					  unsigned int cseq,
 					  const gchar *with)
 {
-	return(g_strdup_printf("<%s><%d><%s><%s>", callid, cseq,
+	/* Keep in sync with sipe_im_cancel_unconfirmed() */
+	return(g_strdup_printf("<%s><%s><%s><%d>", callid,
 			       with ? "MESSAGE" : "INVITE",
-			       with ? with : ""));
+			       with ? with : "",
+			       cseq));
 }
 
 static void insert_unconfirmed_message(struct sip_session *session,
 				       struct sip_dialog *dialog,
 				       const gchar *with,
-				       struct queued_message *message)
+				       const gchar *body,
+				       const gchar *content_type)
 {
 	gchar *key = get_unconfirmed_message_key(dialog->callid, dialog->cseq + 1, with);
+	struct queued_message *message = g_new0(struct queued_message, 1);
+
+	message->body = g_strdup(body);
+	if (content_type != NULL)
+		message->content_type = g_strdup(content_type);
+	message->cseq = dialog->cseq + 1;
+
 	g_hash_table_insert(session->unconfirmed_messages, key, message);
 	SIPE_DEBUG_INFO("insert_confirmed_message: added %s to list (count=%d)",
 			key, g_hash_table_size(session->unconfirmed_messages));
@@ -107,6 +117,17 @@ static void sipe_refer_notify(struct sipe_core_private *sipe_private,
 	g_free(body);
 }
 
+static gchar *get_buddy_alias(struct sipe_core_private *sipe_private,
+			      const gchar *with)
+{
+	sipe_backend_buddy pbuddy;
+	gchar *alias = NULL;
+	if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
+		alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, pbuddy);
+	}
+	return(alias);
+}
+
 static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 					struct sipmsg *msg,
 					struct transaction *trans)
@@ -141,8 +162,7 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response != 200) {
-		sipe_backend_buddy pbuddy;
-		gchar *alias = NULL;
+		gchar *alias = get_buddy_alias(sipe_private, with);
 		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
 		int warning = -1;
 
@@ -164,10 +184,6 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 			GSList *parsed_body = sipe_ft_parse_msg_body(message->body);
 			sipe_ft_incoming_cancel(dialog, parsed_body);
 			sipe_utils_nameval_free(parsed_body);
-		}
-
-		if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
-			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, pbuddy);
 		}
 
 		if (message) {
@@ -303,7 +319,6 @@ sipe_im_invite(struct sipe_core_private *sipe_private,
 		char *msgtext = NULL;
 		char *base64_msg;
 		const gchar *msgr = "";
-		struct queued_message *message;
 		gchar *tmp = NULL;
 
 		if (!g_str_has_prefix(content_type, "text/x-msmsgsinvite")) {
@@ -343,12 +358,8 @@ sipe_im_invite(struct sipe_core_private *sipe_private,
 		g_free(tmp);
 		g_free(base64_msg);
 
-		message = g_new0(struct queued_message,1);
-		message->body = g_strdup(msg_body);
-		if (content_type != NULL)
-			message->content_type = g_strdup(content_type);
-
-		insert_unconfirmed_message(session, dialog, NULL, message);
+		insert_unconfirmed_message(session, dialog, NULL,
+					   msg_body, content_type);
 	}
 
 	contact = get_contact(sipe_private);
@@ -444,8 +455,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response >= 400) {
-		sipe_backend_buddy pbuddy;
-		gchar *alias = NULL;
+		gchar *alias = get_buddy_alias(sipe_private, with);
 		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
 		int warning = -1;
 
@@ -469,14 +479,11 @@ process_message_response(struct sipe_core_private *sipe_private,
 			sipe_utils_nameval_free(parsed_body);
 		}
 
-		if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
-			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,pbuddy);
-		}
-
 		sipe_user_present_message_undelivered(sipe_private, session,
 						      msg->response, warning,
 						      alias ? alias : with,
 						      message ? message->body : NULL);
+		g_free(alias);
 
 		/* drop dangling IM sessions: assume that BYE from remote never reached us */
 		if (msg->response == 408 || /* Request timeout */
@@ -491,7 +498,6 @@ process_message_response(struct sipe_core_private *sipe_private,
 			dialog = NULL;
 		}
 
-		g_free(alias);
 		ret = FALSE;
 	} else {
 		const gchar *message_id = sipmsg_find_header(msg, "Message-Id");
@@ -519,8 +525,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session = sipe_session_find_im(sipe_private, with);
 	gchar *key;
-	sipe_backend_buddy pbuddy;
-	gchar *alias = NULL;
+	gchar *alias = get_buddy_alias(sipe_private, with);
 
 	if (!session) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_message_timeout: unable to find IM session");
@@ -532,10 +537,6 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), sipmsg_parse_cseq(msg), with);
 	remove_unconfirmed_message(session, key);
 	g_free(key);
-
-	if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
-		alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,pbuddy);
-	}
 
 	sipe_user_present_message_undelivered(sipe_private, session, -1, -1,
 					      alias ? alias : with,
@@ -619,21 +620,84 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 		}
 
 		SIPE_DIALOG_FOREACH {
-			struct queued_message *message;
-
 			if (dialog->outgoing_invite) continue; /* do not send messages as INVITE is not responded. */
 
-			message = g_new0(struct queued_message,1);
-			message->body = g_strdup(msg->body);
-			if (msg->content_type != NULL)
-				message->content_type = g_strdup(msg->content_type);
-
-			insert_unconfirmed_message(session, dialog, dialog->with, message);
+			insert_unconfirmed_message(session, dialog, dialog->with,
+						   msg->body, msg->content_type);
 
 			sipe_im_send_message(sipe_private, dialog, msg->body, msg->content_type);
 		} SIPE_DIALOG_FOREACH_END;
 
 		entry2 = sipe_session_dequeue_message(session);
+	}
+}
+
+struct cancel_data {
+	const gchar *prefix;
+	GSList *list;
+};
+
+struct cancel_message {
+	const gchar *key;
+	const struct queued_message *msg;
+};
+
+static gint compare_cseq(gconstpointer a,
+			 gconstpointer b)
+{
+	return(((struct cancel_message *) a)->msg->cseq -
+	       ((struct cancel_message *) b)->msg->cseq);
+}
+
+static void cancel_callback(gpointer key,
+			    gpointer value,
+			    gpointer user_data)
+{
+	const gchar *message_key = key;
+	struct cancel_data *data = user_data;
+
+	/* Put messages with the same prefix on a list sorted by CSeq */
+	if (g_str_has_prefix(message_key, data->prefix)) {
+		struct cancel_message *msg = g_malloc(sizeof(struct cancel_message));
+		msg->key = message_key;
+		msg->msg = value;
+		data->list = g_slist_insert_sorted(data->list, msg,
+						   compare_cseq);
+	}
+}
+
+void sipe_im_cancel_unconfirmed(struct sipe_core_private *sipe_private,
+				struct sip_session *session,
+				const gchar *callid,
+				const gchar *with)
+{
+	/* Keep in sync with get_unconfirmed_message_key() */
+	gchar *prefix = g_strdup_printf("<%s><MESSAGE><%s><", callid, with);
+	struct cancel_data data = { prefix, NULL };
+
+	g_hash_table_foreach(session->unconfirmed_messages,
+			     cancel_callback,
+			     &data);
+	g_free(prefix);
+
+	if (data.list) {
+		gchar *alias = get_buddy_alias(sipe_private, with);
+		GSList *entry;
+
+		while ((entry = data.list) != NULL) {
+			struct cancel_message *cancel = entry->data;
+			data.list = g_slist_remove(data.list, cancel);
+
+			SIPE_DEBUG_INFO("sipe_im_cancel_unconfirmed: %s", cancel->key);
+			sipe_user_present_message_undelivered(sipe_private, session,
+							      -1, -1,
+							      alias ? alias : with,
+							      cancel->msg->body);
+
+			g_hash_table_remove(session->unconfirmed_messages, cancel->key);
+			g_free(cancel);
+		}
+		g_free(alias);
 	}
 }
 
