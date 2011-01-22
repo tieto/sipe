@@ -45,13 +45,22 @@
 #include "sipe-user.h"
 #include "sipe-utils.h"
 
+/*
+ * Hash key template for unconfirmed messages
+ *
+ *                                             Call-ID      Recipient URI (or empty)
+ *                                               |               |
+ *                                               |  SIP method   |    CSeq
+ *                                               |     |         |     |             */
+#define UNCONFIRMED_KEY_TEMPLATE(method, cseq) "<%s><" method "><%s><" cseq
+
 /* key must be g_free()'d */
 static gchar *get_unconfirmed_message_key(const gchar *callid,
 					  unsigned int cseq,
 					  const gchar *with)
 {
-	/* Keep in sync with sipe_im_cancel_unconfirmed() */
-	return(g_strdup_printf("<%s><%s><%s><%d>", callid,
+	return(g_strdup_printf(UNCONFIRMED_KEY_TEMPLATE("%s", "%d>"),
+			       callid,
 			       with ? "MESSAGE" : "INVITE",
 			       with ? with : "",
 			       cseq));
@@ -671,8 +680,8 @@ void sipe_im_cancel_unconfirmed(struct sipe_core_private *sipe_private,
 				const gchar *callid,
 				const gchar *with)
 {
-	/* Keep in sync with get_unconfirmed_message_key() */
-	gchar *prefix = g_strdup_printf("<%s><MESSAGE><%s><", callid, with);
+	gchar *prefix = g_strdup_printf(UNCONFIRMED_KEY_TEMPLATE("MESSAGE", ""),
+					callid, with);
 	struct cancel_data data = { prefix, NULL };
 
 	g_hash_table_foreach(session->unconfirmed_messages,
