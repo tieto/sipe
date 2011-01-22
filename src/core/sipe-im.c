@@ -610,9 +610,8 @@ static void sipe_im_send_message(struct sipe_core_private *sipe_private,
 	g_free(hdr);
 }
 
-void
-sipe_im_process_queue (struct sipe_core_private *sipe_private,
-		       struct sip_session * session)
+void sipe_im_process_queue(struct sipe_core_private *sipe_private,
+			   struct sip_session *session)
 {
 	GSList *entry2 = session->outgoing_message_queue;
 	while (entry2) {
@@ -641,12 +640,12 @@ sipe_im_process_queue (struct sipe_core_private *sipe_private,
 	}
 }
 
-struct cancel_data {
+struct unconfirmed_callback_data {
 	const gchar *prefix;
 	GSList *list;
 };
 
-struct cancel_message {
+struct unconfirmed_message {
 	const gchar *key;
 	const struct queued_message *msg;
 };
@@ -654,20 +653,20 @@ struct cancel_message {
 static gint compare_cseq(gconstpointer a,
 			 gconstpointer b)
 {
-	return(((struct cancel_message *) a)->msg->cseq -
-	       ((struct cancel_message *) b)->msg->cseq);
+	return(((struct unconfirmed_message *) a)->msg->cseq -
+	       ((struct unconfirmed_message *) b)->msg->cseq);
 }
 
-static void cancel_callback(gpointer key,
-			    gpointer value,
-			    gpointer user_data)
+static void unconfirmed_message_callback(gpointer key,
+					 gpointer value,
+					 gpointer user_data)
 {
 	const gchar *message_key = key;
-	struct cancel_data *data = user_data;
+	struct unconfirmed_callback_data *data = user_data;
 
 	/* Put messages with the same prefix on a list sorted by CSeq */
 	if (g_str_has_prefix(message_key, data->prefix)) {
-		struct cancel_message *msg = g_malloc(sizeof(struct cancel_message));
+		struct unconfirmed_message *msg = g_malloc(sizeof(struct unconfirmed_message));
 		msg->key = message_key;
 		msg->msg = value;
 		data->list = g_slist_insert_sorted(data->list, msg,
@@ -675,39 +674,78 @@ static void cancel_callback(gpointer key,
 	}
 }
 
+static void foreach_unconfirmed_message(struct sipe_core_private *sipe_private,
+					struct sip_session *session,
+					const gchar *callid,
+					const gchar *with,
+					void (*callback)(struct sipe_core_private *,
+							 struct sip_session *,
+							 const gchar *,
+							 const gchar *),
+					const gchar *callback_data)
+{
+	gchar *prefix = g_strdup_printf(UNCONFIRMED_KEY_TEMPLATE("MESSAGE", ""),
+					callid, with);
+	struct unconfirmed_callback_data data = { prefix, NULL };
+
+	/* Generate list of matching unconfirmed messages */
+	g_hash_table_foreach(session->unconfirmed_messages,
+			     unconfirmed_message_callback,
+			     &data);
+	g_free(prefix);
+
+	/* Process list unconfirmed messages */
+	if (data.list) {
+		GSList *entry;
+
+		while ((entry = data.list) != NULL) {
+			struct unconfirmed_message *unconfirmed = entry->data;
+			data.list = g_slist_remove(data.list, unconfirmed);
+
+			SIPE_DEBUG_INFO("foreach_unconfirmed_message: %s", unconfirmed->key);
+			(*callback)(sipe_private, session, unconfirmed->msg->body, callback_data);
+
+			g_hash_table_remove(session->unconfirmed_messages, unconfirmed->key);
+			g_free(unconfirmed);
+		}
+	}
+}
+
+static void cancel_callback(struct sipe_core_private *sipe_private,
+			    struct sip_session *session,
+			    const gchar *body,
+			    const gchar *with)
+{
+	sipe_user_present_message_undelivered(sipe_private, session,
+					      -1, -1, with, body);
+}
+
 void sipe_im_cancel_unconfirmed(struct sipe_core_private *sipe_private,
 				struct sip_session *session,
 				const gchar *callid,
 				const gchar *with)
 {
-	gchar *prefix = g_strdup_printf(UNCONFIRMED_KEY_TEMPLATE("MESSAGE", ""),
-					callid, with);
-	struct cancel_data data = { prefix, NULL };
+	gchar *alias = get_buddy_alias(sipe_private, with);
+	foreach_unconfirmed_message(sipe_private, session, callid, with,
+				    cancel_callback, alias ? alias : with);
+	g_free(alias);
+}
 
-	g_hash_table_foreach(session->unconfirmed_messages,
-			     cancel_callback,
-			     &data);
-	g_free(prefix);
+static void reenqueue_callback(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+			       struct sip_session *session,
+			       const gchar *body,
+			       SIPE_UNUSED_PARAMETER const gchar *with)
+{
+	sipe_session_enqueue_message(session, body, NULL);
+}
 
-	if (data.list) {
-		gchar *alias = get_buddy_alias(sipe_private, with);
-		GSList *entry;
-
-		while ((entry = data.list) != NULL) {
-			struct cancel_message *cancel = entry->data;
-			data.list = g_slist_remove(data.list, cancel);
-
-			SIPE_DEBUG_INFO("sipe_im_cancel_unconfirmed: %s", cancel->key);
-			sipe_user_present_message_undelivered(sipe_private, session,
-							      -1, -1,
-							      alias ? alias : with,
-							      cancel->msg->body);
-
-			g_hash_table_remove(session->unconfirmed_messages, cancel->key);
-			g_free(cancel);
-		}
-		g_free(alias);
-	}
+void sipe_im_reenqueue_unconfirmed(struct sipe_core_private *sipe_private,
+				   struct sip_session *session,
+				   const gchar *callid,
+				   const gchar *with)
+{
+	foreach_unconfirmed_message(sipe_private, session, callid, with,
+				    reenqueue_callback, NULL);
 }
 
 void sipe_core_im_send(struct sipe_core_public *sipe_public,

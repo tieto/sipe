@@ -446,6 +446,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_invite: sending BYE for already existing dialog");
 		sip_transport_bye(sipe_private, dialog);
 
+		sipe_im_reenqueue_unconfirmed(sipe_private, session, dialog->callid, from);
+
 		g_free(dialog->callid);
 	} else {
 		dialog = sipe_dialog_add(session);

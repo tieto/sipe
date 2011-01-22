@@ -74,3 +74,16 @@ void sipe_im_cancel_unconfirmed(struct sipe_core_private *sipe_private,
 				struct sip_session *session,
 				const gchar *callid,
 				const gchar *with);
+
+/**
+ * Re-enqueue unconfirmed IM messages
+ *
+ * @param sipe_private SIPE core private data
+ * @param session      session for the IM conversation(s)
+ * @param callid       Call ID of the conversation
+ * @param with         URI of the remote party
+ */
+void sipe_im_reenqueue_unconfirmed(struct sipe_core_private *sipe_private,
+				   struct sip_session *session,
+				   const gchar *callid,
+				   const gchar *with);
