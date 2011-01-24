@@ -744,8 +744,21 @@ void sipe_im_reenqueue_unconfirmed(struct sipe_core_private *sipe_private,
 				   const gchar *callid,
 				   const gchar *with)
 {
+	/* Remember original list, start with an empty list  */
+	GSList *first = session->outgoing_message_queue;
+	session->outgoing_message_queue = NULL;
+
+	/* Enqueue unconfirmed messages */
 	foreach_unconfirmed_message(sipe_private, session, callid, with,
 				    reenqueue_callback, NULL);
+
+	/* Append or restore original list */
+	if (session->outgoing_message_queue) {
+		GSList *last = g_slist_last(session->outgoing_message_queue);
+		last->next = first;
+	} else {
+		session->outgoing_message_queue = first;
+	}
 }
 
 void sipe_core_im_send(struct sipe_core_public *sipe_public,
