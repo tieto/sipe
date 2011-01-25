@@ -34,6 +34,7 @@
 #include <gmime/gmime.h>
 #endif
 
+#include "sipe-common.h"
 #include "sip-csta.h"
 #include "sip-sec.h"
 #include "sip-transport.h"
@@ -47,11 +48,8 @@
 #include "sipe-media.h"
 #include "sipe.h"
 
-#ifdef ENABLE_NLS
-void sipe_core_init(const char *locale_dir)
-#else
-void sipe_core_init(const char *locale_dir __attribute__ ((unused)) )
-#endif
+/* locale_dir is unused if ENABLE_NLS is not defined */
+void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
 {
 	srand(time(NULL));
 	sip_sec_init();
