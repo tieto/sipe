@@ -46,6 +46,8 @@
 
 #include <glib.h>
 
+#include <libintl.h>
+
 #include "sipe-common.h"
 
 #include "account.h"

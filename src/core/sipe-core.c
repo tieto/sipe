@@ -47,7 +47,11 @@
 #include "sipe-media.h"
 #include "sipe.h"
 
+#ifdef ENABLE_NLS
 void sipe_core_init(const char *locale_dir)
+#else
+void sipe_core_init(const char *locale_dir __attribute__ ((unused)) )
+#endif
 {
 	srand(time(NULL));
 	sip_sec_init();
