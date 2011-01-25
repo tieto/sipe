@@ -81,7 +81,7 @@ static void insert_unconfirmed_message(struct sip_session *session,
 	message->cseq = dialog->cseq + 1;
 
 	g_hash_table_insert(session->unconfirmed_messages, key, message);
-	SIPE_DEBUG_INFO("insert_confirmed_message: added %s to list (count=%d)",
+	SIPE_DEBUG_INFO("insert_unconfirmed_message: added %s to list (count=%d)",
 			key, g_hash_table_size(session->unconfirmed_messages));
 }
 
@@ -664,6 +664,8 @@ static void unconfirmed_message_callback(gpointer key,
 	const gchar *message_key = key;
 	struct unconfirmed_callback_data *data = user_data;
 
+	SIPE_DEBUG_INFO("unconfirmed_message_callback: key %s", message_key);
+
 	/* Put messages with the same prefix on a list sorted by CSeq */
 	if (g_str_has_prefix(message_key, data->prefix)) {
 		struct unconfirmed_message *msg = g_malloc(sizeof(struct unconfirmed_message));
@@ -687,6 +689,8 @@ static void foreach_unconfirmed_message(struct sipe_core_private *sipe_private,
 	gchar *prefix = g_strdup_printf(UNCONFIRMED_KEY_TEMPLATE("MESSAGE", ""),
 					callid, with);
 	struct unconfirmed_callback_data data = { prefix, NULL };
+
+	SIPE_DEBUG_INFO("foreach_unconfirmed_message: prefix %s", prefix);
 
 	/* Generate list of matching unconfirmed messages */
 	g_hash_table_foreach(session->unconfirmed_messages,
@@ -726,6 +730,10 @@ void sipe_im_cancel_unconfirmed(struct sipe_core_private *sipe_private,
 				const gchar *with)
 {
 	gchar *alias = get_buddy_alias(sipe_private, with);
+
+	SIPE_DEBUG_INFO("sipe_im_cancel_unconfirmed: with %s callid '%s'",
+			with, callid);
+
 	foreach_unconfirmed_message(sipe_private, session, callid, with,
 				    cancel_callback, alias ? alias : with);
 	g_free(alias);
@@ -747,6 +755,9 @@ void sipe_im_reenqueue_unconfirmed(struct sipe_core_private *sipe_private,
 	/* Remember original list, start with an empty list  */
 	GSList *first = session->outgoing_message_queue;
 	session->outgoing_message_queue = NULL;
+
+	SIPE_DEBUG_INFO("sipe_im_reenqueue_unconfirmed: with %s callid '%s'",
+			with, callid);
 
 	/* Enqueue unconfirmed messages */
 	foreach_unconfirmed_message(sipe_private, session, callid, with,
