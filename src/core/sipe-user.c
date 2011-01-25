@@ -30,6 +30,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-user.h"
@@ -107,6 +108,8 @@ static gboolean process_info_typing_response(struct sipe_core_private *sipe_priv
 		if (dialog) {
 			SIPE_DEBUG_INFO_NOFORMAT("process_info_typing_response: assuming dangling IM session, dropping it.");
 			sip_transport_bye(sipe_private, dialog);
+
+			sipe_im_cancel_unconfirmed(sipe_private, session, dialog->callid, with);
 
 			/* We might not get a valid reply to our BYE,
 			   so make sure the dialog is removed for sure. */
