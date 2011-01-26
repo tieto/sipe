@@ -500,6 +500,9 @@ process_message_response(struct sipe_core_private *sipe_private,
 						      message ? message->body : NULL);
 		g_free(alias);
 
+		remove_unconfirmed_message(session, key);
+		/* message is no longer valid */
+
 		/* drop dangling IM sessions: assume that BYE from remote never reached us */
 		if (msg->response == 408 || /* Request timeout */
 		    msg->response == 480 || /* Temporarily Unavailable */
@@ -523,10 +526,9 @@ process_message_response(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO("process_message_response: added message with id %s to conf_unconfirmed_messages(count=%d)",
 					message_id, g_hash_table_size(session->conf_unconfirmed_messages));
 		}
-
+		remove_unconfirmed_message(session, key);
 	}
 
-	remove_unconfirmed_message(session, key);
 	g_free(key);
 	g_free(with);
 
