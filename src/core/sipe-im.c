@@ -202,20 +202,25 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 		}
 
 		if (message) {
-			sipe_user_present_message_undelivered(sipe_private, session, msg->response, warning, alias ? alias : with, message->body);
+			/* generate error for each unprocessed message */
+			GSList *entry = session->outgoing_message_queue;
+			while (entry) {
+				struct queued_message *queued = entry->data;
+				sipe_user_present_message_undelivered(sipe_private, session, msg->response, warning, alias ? alias : with, queued->body);
+				entry = sipe_session_dequeue_message(session);
+			}
 		} else {
-			gchar *tmp_msg = g_strdup_printf(_("Failed to invite %s"), alias);
+			/* generate one error and remove all unprocessed messages */
+			gchar *tmp_msg = g_strdup_printf(_("Failed to invite %s"), alias ? alias : with);
 			sipe_user_present_error(sipe_private, session, tmp_msg);
 			g_free(tmp_msg);
+			while (sipe_session_dequeue_message(session));
 		}
 		g_free(alias);
 
 		remove_unconfirmed_message(session, key);
 		/* message is no longer valid */
 		g_free(key);
-
-		/* Remove all unprocessed messages */
-		while (sipe_session_dequeue_message(session));
 
 		sipe_dialog_remove(session, with);
 		g_free(with);
