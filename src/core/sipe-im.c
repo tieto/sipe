@@ -214,6 +214,9 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 		/* message is no longer valid */
 		g_free(key);
 
+		/* Remove all unprocessed messages */
+		while (sipe_session_dequeue_message(session));
+
 		sipe_dialog_remove(session, with);
 		g_free(with);
 
