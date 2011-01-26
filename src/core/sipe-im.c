@@ -85,12 +85,18 @@ static void insert_unconfirmed_message(struct sip_session *session,
 			key, g_hash_table_size(session->unconfirmed_messages));
 }
 
-static void remove_unconfirmed_message(struct sip_session *session,
-				       const gchar *key)
+static gboolean remove_unconfirmed_message(struct sip_session *session,
+					   const gchar *key)
 {
-	g_hash_table_remove(session->unconfirmed_messages, key);
-	SIPE_DEBUG_INFO("remove_unconfirmed_message: removed %s from list (count=%d)",
-			key, g_hash_table_size(session->unconfirmed_messages));
+	gboolean found = g_hash_table_remove(session->unconfirmed_messages, key);
+	if (found) {
+		SIPE_DEBUG_INFO("remove_unconfirmed_message: removed %s from list (count=%d)",
+				key, g_hash_table_size(session->unconfirmed_messages));
+	} else {
+		SIPE_DEBUG_INFO("remove_unconfirmed_message: key %s not found",
+				key);
+	}
+	return(found);
 }
 
 static void sipe_refer_notify(struct sipe_core_private *sipe_private,
@@ -536,7 +542,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	struct sip_session *session = sipe_session_find_im(sipe_private, with);
 	gchar *key;
-	gchar *alias = get_buddy_alias(sipe_private, with);
+	gboolean found;
 
 	if (!session) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_message_timeout: unable to find IM session");
@@ -546,14 +552,17 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 
 	/* Remove timed-out message from unconfirmed list */
 	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), sipmsg_parse_cseq(msg), with);
-	remove_unconfirmed_message(session, key);
+	found = remove_unconfirmed_message(session, key);
 	g_free(key);
 
-	sipe_user_present_message_undelivered(sipe_private, session, -1, -1,
-					      alias ? alias : with,
-					      msg->body);
+	if (found) {
+		gchar *alias = get_buddy_alias(sipe_private, with);
+		sipe_user_present_message_undelivered(sipe_private, session, -1, -1,
+						      alias ? alias : with,
+						      msg->body);
+		g_free(alias);
+	}
 
-	g_free(alias);
 	g_free(with);
 	return TRUE;
 }
