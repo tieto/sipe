@@ -478,7 +478,6 @@ process_message_response(struct sipe_core_private *sipe_private,
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response >= 400) {
-		gchar *alias = get_buddy_alias(sipe_private, with);
 		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
 		int warning = -1;
 
@@ -502,15 +501,6 @@ process_message_response(struct sipe_core_private *sipe_private,
 			sipe_utils_nameval_free(parsed_body);
 		}
 
-		sipe_user_present_message_undelivered(sipe_private, session,
-						      msg->response, warning,
-						      alias ? alias : with,
-						      message ? message->body : NULL);
-		g_free(alias);
-
-		remove_unconfirmed_message(session, key);
-		/* message is no longer valid */
-
 		/* drop dangling IM sessions: assume that BYE from remote never reached us */
 		if (msg->response == 408 || /* Request timeout */
 		    msg->response == 480 || /* Temporarily Unavailable */
@@ -518,12 +508,22 @@ process_message_response(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO_NOFORMAT("process_message_response: assuming dangling IM session, dropping it.");
 			sip_transport_bye(sipe_private, dialog);
 
+			/* current message is still on the list */
 			sipe_im_cancel_unconfirmed(sipe_private, session, dialog->callid, with);
 
 			/* We might not get a valid reply to our BYE,
 			   so make sure the dialog is removed for sure. */
 			sipe_dialog_remove(session, with);
 			dialog = NULL;
+		} else {
+			gchar *alias = get_buddy_alias(sipe_private, with);
+			sipe_user_present_message_undelivered(sipe_private, session,
+							      msg->response, warning,
+							      alias ? alias : with,
+							      message ? message->body : NULL);
+			remove_unconfirmed_message(session, key);
+			/* message is no longer valid */
+			g_free(alias);
 		}
 
 		ret = FALSE;
