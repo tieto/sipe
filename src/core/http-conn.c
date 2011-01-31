@@ -507,7 +507,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 						       http_conn->auth ? http_conn->auth->password : NULL);
 		}
 
-		if (http_conn->sec_ctx && ptmp) {
+		if (http_conn->sec_ctx) {
 			char **parts = g_strsplit(ptmp, " ", 0);
 			char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
 			ret = sip_sec_init_context_step(http_conn->sec_ctx,
