@@ -16,6 +16,7 @@
 		1C705DD512C1ED410004E43B /* libpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DD412C1ED410004E43B /* libpurple.framework */; };
 		1C705DEA12C1ED810004E43B /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DE912C1ED810004E43B /* libintl.framework */; };
 		1C705DFB12C1EDCA0004E43B /* AIUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DFA12C1EDCA0004E43B /* AIUtilities.framework */; };
+		1C822BED12F8E87500CC4AEA /* sipe-im.c in Sources */ = {isa = PBXBuildFile; fileRef = 1C822BEB12F8E87500CC4AEA /* sipe-im.c */; };
 		1CDEE46112C35DAD00790CAF /* ESSIPEAccountViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 1CDEE46012C35DAD00790CAF /* ESSIPEAccountViewController.m */; };
 		1CDEE46712C35FCA00790CAF /* ESSIPEAccountView.nib in Resources */ = {isa = PBXBuildFile; fileRef = 1CDEE46512C35FCA00790CAF /* ESSIPEAccountView.nib */; };
 		1CF260F912C2DFA00045B6CC /* purple-buddy.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F112C2DFA00045B6CC /* purple-buddy.c */; };
@@ -107,6 +108,7 @@
 		1C705DD412C1ED410004E43B /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libpurple.framework; path = /Users/mduggan/Library/Frameworks/libpurple.framework; sourceTree = "<absolute>"; };
 		1C705DE912C1ED810004E43B /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = /Users/mduggan/Library/Frameworks/libintl.framework; sourceTree = "<absolute>"; };
 		1C705DFA12C1EDCA0004E43B /* AIUtilities.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AIUtilities.framework; path = /Users/mduggan/Library/Frameworks/AIUtilities.framework; sourceTree = "<absolute>"; };
+		1C822BEB12F8E87500CC4AEA /* sipe-im.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-im.c"; sourceTree = "<group>"; };
 		1CDEE45F12C35DAD00790CAF /* ESSIPEAccountViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPEAccountViewController.h; sourceTree = "<group>"; };
 		1CDEE46012C35DAD00790CAF /* ESSIPEAccountViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESSIPEAccountViewController.m; sourceTree = "<group>"; };
 		1CDEE46612C35FCA00790CAF /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/ESSIPEAccountView.nib; sourceTree = "<group>"; };
@@ -338,6 +340,7 @@
 		B13FAB9C119D585A001CE037 /* core */ = {
 			isa = PBXGroup;
 			children = (
+				1C822BEB12F8E87500CC4AEA /* sipe-im.c */,
 				1CF2610812C2E1AA0045B6CC /* sdpmsg.c */,
 				1CF2610C12C2E1AA0045B6CC /* sipe-groupchat.c */,
 				1CF2610D12C2E1AA0045B6CC /* sipe-incoming.c */,
@@ -539,6 +542,7 @@
 				1CF2611A12C2E1AA0045B6CC /* sipe-media.c in Sources */,
 				1CF2611C12C2E1AA0045B6CC /* sipe-subscriptions.c in Sources */,
 				1CF2611D12C2E1AA0045B6CC /* sipe-user.c in Sources */,
+				1C822BED12F8E87500CC4AEA /* sipe-im.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
