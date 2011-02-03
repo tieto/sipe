@@ -505,16 +505,9 @@ process_message_response(struct sipe_core_private *sipe_private,
 		if (msg->response == 408 || /* Request timeout */
 		    msg->response == 480 || /* Temporarily Unavailable */
 		    msg->response == 481) { /* Call/Transaction Does Not Exist */
-			SIPE_DEBUG_INFO_NOFORMAT("process_message_response: assuming dangling IM session, dropping it.");
-			sip_transport_bye(sipe_private, dialog);
-
-			/* current message is still on the list */
-			sipe_im_cancel_unconfirmed(sipe_private, session, dialog->callid, with);
-
-			/* We might not get a valid reply to our BYE,
-			   so make sure the dialog is removed for sure. */
-			sipe_dialog_remove(session, with);
-			dialog = NULL;
+			sipe_im_cancel_dangling(sipe_private, session, dialog, with,
+						sipe_im_cancel_unconfirmed);
+			/* dialog is no longer valid */
 		} else {
 			gchar *alias = get_buddy_alias(sipe_private, with);
 			sipe_user_present_message_undelivered(sipe_private, session,
@@ -701,10 +694,7 @@ static void foreach_unconfirmed_message(struct sipe_core_private *sipe_private,
 					struct sip_session *session,
 					const gchar *callid,
 					const gchar *with,
-					void (*callback)(struct sipe_core_private *,
-							 struct sip_session *,
-							 const gchar *,
-							 const gchar *),
+					unconfirmed_callback callback,
 					const gchar *callback_data)
 {
 	gchar *prefix = g_strdup_printf(UNCONFIRMED_KEY_TEMPLATE("MESSAGE", ""),
@@ -818,6 +808,23 @@ void sipe_core_im_send(struct sipe_core_public *sipe_public,
 	}
 
 	g_free(uri);
+}
+
+void sipe_im_cancel_dangling(struct sipe_core_private *sipe_private,
+			     struct sip_session *session,
+			     struct sip_dialog *dialog,
+			     const gchar *with,
+			     unconfirmed_callback callback)
+{
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_im_cancel_dangling: assuming dangling IM session, dropping it.");
+	sip_transport_bye(sipe_private, dialog);
+
+	(*callback)(sipe_private, session, dialog->callid, with);
+
+	/* We might not get a valid reply to our BYE,
+	   so make sure the dialog is removed for sure. */
+	sipe_dialog_remove(session, with);
+	/* dialog is no longer valid */
 }
 
 /*

@@ -442,21 +442,15 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 
 	dialog = sipe_dialog_find(session, from);
 	if (dialog) {
-		/* We need to cancel old dialog first */
-		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_invite: sending BYE for already existing dialog");
-		sip_transport_bye(sipe_private, dialog);
-
-		sipe_im_reenqueue_unconfirmed(sipe_private, session, dialog->callid, from);
-
-		g_free(dialog->callid);
-		g_free(dialog->theirepid);
-		dialog->theirepid = NULL;
+		sipe_im_cancel_dangling(sipe_private, session, dialog, from,
+					sipe_im_reenqueue_unconfirmed);
+		/* dialog is no longer valid */
 	} else {
-		dialog = sipe_dialog_add(session);
-		dialog->with = g_strdup(from);
 		just_joined = TRUE;
 	}
 
+	dialog = sipe_dialog_add(session);
+	dialog->with = g_strdup(from);
 	dialog->callid = g_strdup(session->callid);
 	sipe_dialog_parse(dialog, msg, FALSE);
 

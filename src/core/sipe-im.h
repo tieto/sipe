@@ -87,3 +87,23 @@ void sipe_im_reenqueue_unconfirmed(struct sipe_core_private *sipe_private,
 				   struct sip_session *session,
 				   const gchar *callid,
 				   const gchar *with);
+
+typedef void (*unconfirmed_callback)(struct sipe_core_private *sipe_private,
+				     struct sip_session *session,
+				     const gchar *callid,
+				     const gchar *with);
+
+/**
+ * Close dangling IM session
+ *
+ * @param sipe_private (in) SIPE core data.
+ * @param session      (in) pointer to session
+ * @param dialog       (in) pointer to dialog
+ * @param with         (in) URI of dialog partner
+ * @param callback     (in) callback for unconfirmed message
+ */
+void sipe_im_cancel_dangling(struct sipe_core_private *sipe_private,
+			     struct sip_session *session,
+			     struct sip_dialog *dialog,
+			     const gchar *with,
+			     unconfirmed_callback callback);
