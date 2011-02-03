@@ -449,6 +449,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		sipe_im_reenqueue_unconfirmed(sipe_private, session, dialog->callid, from);
 
 		g_free(dialog->callid);
+		g_free(dialog->theirepid);
+		dialog->theirepid = NULL;
 	} else {
 		dialog = sipe_dialog_add(session);
 		dialog->with = g_strdup(from);
