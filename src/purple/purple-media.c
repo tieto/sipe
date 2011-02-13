@@ -67,25 +67,20 @@ static SipeCandidateType purple_candidate_type_to_sipe(PurpleMediaCandidateType 
 static PurpleMediaNetworkProtocol sipe_network_protocol_to_purple(SipeNetworkProtocol proto);
 static SipeNetworkProtocol purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto);
 
-struct stream_info_context {
-	struct sipe_media_call *call;
-	struct sipe_backend_media *backend_media;
-};
-
 static void
 on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			  gchar *sessionid,
 			  SIPE_UNUSED_PARAMETER gchar *participant,
-			  struct stream_info_context *ctx)
+			  struct sipe_media_call *call)
 {
 	struct sipe_backend_stream *stream;
-	stream = sipe_backend_media_get_stream_by_id(ctx->backend_media, sessionid);
+	stream = sipe_backend_media_get_stream_by_id(call->backend_private, sessionid);
 
 	stream->candidates_prepared = TRUE;
 
-	if (ctx->call->candidates_prepared_cb &&
-	    sipe_backend_candidates_prepared(ctx->backend_media)) {
-		ctx->call->candidates_prepared_cb(ctx->call, stream);
+	if (call->candidates_prepared_cb &&
+	    sipe_backend_candidates_prepared(call->backend_private)) {
+		call->candidates_prepared_cb(call, stream);
 	}
 }
 
@@ -96,7 +91,6 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		    gchar *participant,
 		    struct sipe_media_call *call)
 {
-	// TODO: this should be aware of legacy backend_media
 	SIPE_DEBUG_INFO("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
 	if (state == PURPLE_MEDIA_STATE_CONNECTED && call->media_connected_cb)
 		call->media_connected_cb(call);
@@ -115,12 +109,12 @@ capture_pipeline(gchar *label) {
 
 static void
 on_error_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media, gchar *message,
-	    struct stream_info_context *ctx)
+	    struct sipe_media_call *call)
 {
 	capture_pipeline("ERROR");
 
-	if (ctx->call->error_cb)
-		ctx->call->error_cb(ctx->call, ctx->backend_media, message);
+	if (call->error_cb)
+		call->error_cb(call, message);
 }
 
 static void
@@ -129,11 +123,11 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		  gchar *sessionid,
 		  gchar *participant,
 		  gboolean local,
-		  struct stream_info_context *ctx)
+		  struct sipe_media_call *call)
 {
-	if (type == PURPLE_MEDIA_INFO_ACCEPT && ctx->call->call_accept_cb
+	if (type == PURPLE_MEDIA_INFO_ACCEPT && call->call_accept_cb
 	    && !sessionid && !participant)
-		ctx->call->call_accept_cb(ctx->call, local);
+		call->call_accept_cb(call, local);
 	else if (type == PURPLE_MEDIA_INFO_HOLD || type == PURPLE_MEDIA_INFO_UNHOLD) {
 
 		gboolean state = (type == PURPLE_MEDIA_INFO_HOLD);
@@ -141,7 +135,7 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		if (sessionid) {
 			// Hold specific stream
 			struct sipe_backend_stream *stream;
-			stream = sipe_backend_media_get_stream_by_id(ctx->backend_media,
+			stream = sipe_backend_media_get_stream_by_id(call->backend_private,
 								     sessionid);
 
 			if (local)
@@ -150,7 +144,7 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 				stream->remote_on_hold = state;
 		} else {
 			// Hold all streams
-			GSList *i = sipe_backend_media_get_streams(ctx->backend_media);
+			GSList *i = sipe_backend_media_get_streams(call->backend_private);
 			for (; i; i = i->next) {
 				struct sipe_backend_stream *stream = i->data;
 
@@ -161,21 +155,21 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			}
 		}
 
-		if (ctx->call->call_hold_cb)
-			ctx->call->call_hold_cb(ctx->call, local, state);
+		if (call->call_hold_cb)
+			call->call_hold_cb(call, local, state);
 	} else if (type == PURPLE_MEDIA_INFO_HANGUP || type == PURPLE_MEDIA_INFO_REJECT) {
 		if (!sessionid && !participant) {
-			if (type == PURPLE_MEDIA_INFO_HANGUP && ctx->call->call_hangup_cb)
-				ctx->call->call_hangup_cb(ctx->call, ctx->backend_media, local);
-			else if (type == PURPLE_MEDIA_INFO_REJECT && ctx->call->call_reject_cb)
-				ctx->call->call_reject_cb(ctx->call, local);
+			if (type == PURPLE_MEDIA_INFO_HANGUP && call->call_hangup_cb)
+				call->call_hangup_cb(call, local);
+			else if (type == PURPLE_MEDIA_INFO_REJECT && call->call_reject_cb)
+				call->call_reject_cb(call, local);
 		} else if (sessionid && participant) {
 			struct sipe_backend_stream *stream;
-			stream = sipe_backend_media_get_stream_by_id(ctx->backend_media,
+			stream = sipe_backend_media_get_stream_by_id(call->backend_private,
 								     sessionid);
 
 			if (stream) {
-				ctx->backend_media->streams = g_slist_remove(ctx->backend_media->streams, stream);
+				call->backend_private->streams = g_slist_remove(call->backend_private->streams, stream);
 				backend_stream_free(stream);
 			}
 		}
@@ -191,7 +185,6 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 	struct sipe_backend_media *media = g_new0(struct sipe_backend_media, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleMediaManager *manager = purple_media_manager_get();
-	struct stream_info_context *ctx = g_new0(struct stream_info_context, 1);
 	GstElement *pipeline;
 
 	media->m = purple_media_manager_create_media(manager,
@@ -199,19 +192,12 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 						     "fsrtpconference",
 						     participant, initiator);
 
-	ctx->call = call;
-	ctx->backend_media = media;
-
-	/* Passing the same ctx structure to all signal handlers, only the first
-	 * of them has destroy_data closure and is responsible for freeing the
-	 * context. */
-	g_signal_connect_data(G_OBJECT(media->m), "candidates-prepared",
-			      G_CALLBACK(on_candidates_prepared_cb), ctx,
-			      (GClosureNotify) g_free, 0);
+	g_signal_connect(G_OBJECT(media->m), "candidates-prepared",
+			 G_CALLBACK(on_candidates_prepared_cb), call);
 	g_signal_connect(G_OBJECT(media->m), "stream-info",
-			 G_CALLBACK(on_stream_info_cb), ctx);
+			 G_CALLBACK(on_stream_info_cb), call);
 	g_signal_connect(G_OBJECT(media->m), "error",
-			 G_CALLBACK(on_error_cb), ctx);
+			 G_CALLBACK(on_error_cb), call);
 	g_signal_connect(G_OBJECT(media->m), "state-changed",
 			 G_CALLBACK(on_state_changed_cb), call);
 

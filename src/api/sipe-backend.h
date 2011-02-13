@@ -322,7 +322,6 @@ struct sipe_backend_media_relays;
 
 struct sipe_media_call {
 	struct sipe_backend_media *backend_private;
-	struct sipe_backend_media *backend_private_legacy;
 
 	void (*candidates_prepared_cb)(struct sipe_media_call *,
 				       struct sipe_backend_stream *);
@@ -331,10 +330,8 @@ struct sipe_media_call {
 	void (*call_reject_cb)(struct sipe_media_call *, gboolean local);
 	void (*call_hold_cb)  (struct sipe_media_call *, gboolean local,
 			       gboolean state);
-	void (*call_hangup_cb)(struct sipe_media_call *,
-			       struct sipe_backend_media *,gboolean local);
-	void (*error_cb)(struct sipe_media_call *, struct sipe_backend_media *,
-			 gchar *message);
+	void (*call_hangup_cb)(struct sipe_media_call *, gboolean local);
+	void (*error_cb)(struct sipe_media_call *, gchar *message);
 };
 
 struct sipe_media_relay {
