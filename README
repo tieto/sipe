@@ -97,6 +97,7 @@ following packages
 	libtool
 	intltool
 	libglib2.0-dev
+	libxml2-dev
 	gettext-devel
 
 Now you should be able to compile the source code with
