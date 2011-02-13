@@ -877,7 +877,6 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
-	int trans_cseq;
 	int tmp_cseq;
 
 	if (!is_media_session_msg(call_private, msg))
@@ -890,8 +889,7 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 
 	tmp_cseq = dialog->cseq;
 
-	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &trans_cseq);
-	dialog->cseq = trans_cseq - 1;
+	dialog->cseq = sip_transaction_cseq(trans) - 1;
 	sip_transport_ack(sipe_private, dialog);
 	dialog->cseq = tmp_cseq;
 

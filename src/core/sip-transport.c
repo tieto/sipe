@@ -1800,6 +1800,16 @@ void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public)
 				       "\r\n\r\n");
 }
 
+int sip_transaction_cseq(struct transaction *trans)
+{
+	int cseq;
+
+	g_return_val_if_fail(trans && trans->key, 0);
+
+	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &cseq);
+	return cseq;
+}
+
 /*
   Local Variables:
   mode: c

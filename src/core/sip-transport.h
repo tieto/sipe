@@ -111,6 +111,8 @@ guint sip_transport_port(struct sipe_core_private *sipe_private);
 void sip_transport_deregister(struct sipe_core_private *sipe_private);
 void sip_transport_disconnect(struct sipe_core_private *sipe_private);
 
+int sip_transaction_cseq(struct transaction *trans);
+
 /*
   Local Variables:
   mode: c
