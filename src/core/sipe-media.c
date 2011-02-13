@@ -269,9 +269,11 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	struct sdpmsg *msg;
+	gboolean add_2007_fallback = FALSE;
 
 	session = sipe_session_find_call(sipe_private, call_private->with);
 	dialog = session->dialogs->data;
+	add_2007_fallback = dialog->cseq == 0 && call_private->ice_version == SIPE_ICE_RFC_5245;
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
@@ -279,13 +281,43 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 		"Supported: 100rel\r\n"
 		"ms-keep-alive: UAC;hop-hop=yes\r\n"
 		"Contact: %s\r\n"
-		"Content-Type: application/sdp\r\n",
-		contact);
+		"Content-Type: %s\r\n",
+		contact,
+		add_2007_fallback ?
+			  "multipart/alternative;boundary=\"----=_NextPart_000_001E_01CB4397.0B5EB570\""
+			: "application/sdp");
 	g_free(contact);
 
 	msg = sipe_media_to_sdpmsg(call_private->public.backend_private,
 				   call_private->ice_version);
 	body = sdpmsg_to_string(msg);
+
+	if (add_2007_fallback) {
+		gchar *tmp;
+		tmp = g_strdup_printf(
+			"------=_NextPart_000_001E_01CB4397.0B5EB570\r\n"
+			"Content-Type: application/sdp\r\n"
+			"Content-Transfer-Encoding: 7bit\r\n"
+			"Content-Disposition: session; handling=optional; ms-proxy-2007fallback\r\n"
+			"\r\n"
+			"o=- 0 0 IN IP4 %s\r\n"
+			"s=session\r\n"
+			"c=IN IP4 %s\r\n"
+			"m=audio 0 RTP/AVP\r\n"
+			"\r\n"
+			"------=_NextPart_000_001E_01CB4397.0B5EB570\r\n"
+			"Content-Type: application/sdp\r\n"
+			"Content-Transfer-Encoding: 7bit\r\n"
+			"Content-Disposition: session; handling=optional\r\n"
+			"\r\n"
+			"%s"
+			"\r\n"
+			"------=_NextPart_000_001E_01CB4397.0B5EB570--\r\n",
+			msg->ip, msg->ip, body);
+		g_free(body);
+		body = tmp;
+	}
+
 	sdpmsg_free(msg);
 
 	dialog->outgoing_invite = sip_transport_invite(sipe_private,
@@ -636,12 +668,11 @@ void sipe_media_hangup(struct sipe_media_call_private *call_private)
 	}
 }
 
-void
-sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
-			      const char *with,
-			      gboolean with_video)
+static void
+sipe_media_initiate_call(struct sipe_core_private *sipe_private,
+			 const char *with, SipeIceVersion ice_version,
+			 gboolean with_video)
 {
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_media_call_private *call_private;
 	struct sipe_backend_media *backend_media;
 	struct sipe_backend_media_relays *backend_media_relays;
@@ -651,8 +682,7 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 	if (sipe_private->media_call)
 		return;
 
-	// TODO: try with SIPE_ICE_RFC_5245, then retry with v6 on failure
-	call_private = sipe_media_call_new(sipe_private, with, TRUE, SIPE_ICE_RFC_5245);
+	call_private = sipe_media_call_new(sipe_private, with, TRUE, ice_version);
 
 	session = sipe_session_add_call(sipe_private, with);
 	dialog = sipe_dialog_add(session);
@@ -697,6 +727,15 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 	sipe_backend_media_relays_free(backend_media_relays);
 
 	// Processing continues in candidates_prepared_cb
+}
+
+void
+sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
+			      const char *with,
+			      gboolean with_video)
+{
+	sipe_media_initiate_call(SIPE_CORE_PRIVATE, with,
+				 SIPE_ICE_RFC_5245, with_video);
 }
 
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
@@ -991,6 +1030,21 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				title = _("Call rejected");
 				g_string_append_printf(desc, _("User %s rejected call"), with);
 				break;
+			case 488:
+				if (call_private->ice_version == SIPE_ICE_RFC_5245 &&
+				    sip_transaction_cseq(trans) == 1) {
+					gchar *with = g_strdup(call_private->with);
+					gboolean with_video = sipe_backend_media_get_stream_by_id(backend_private, "video") != NULL;
+
+					sipe_media_hangup(call_private);
+					// We might be calling to OC 2007 instance, retry with ICEv6
+					sipe_media_initiate_call(sipe_private, with,
+								  SIPE_ICE_DRAFT_6, with_video);
+
+					g_free(with);
+					return TRUE;
+				}
+				// Break intentionally omitted
 			default:
 				title = _("Error occured");
 				g_string_append(desc, _("Unable to establish a call"));
