@@ -98,6 +98,7 @@ AS_IF([test "x$enable_quality_check" = xyes],
 			"-Wnested-externs" \
 			"-Wpointer-arith" \
 			"-Wundef" \
+			"-Wunused-but-set-variable" \
 	 ; do
 		 ac_save_CFLAGS=$CFLAGS
 		 AC_MSG_CHECKING([if $CC supports $newflag])

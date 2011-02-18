@@ -726,7 +726,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	const gchar *focus_uri;
 	struct sip_session *session;
 	gboolean just_joined = FALSE;
+#ifdef HAVE_VV
 	gboolean audio_was_added = FALSE;
+#endif
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -824,8 +826,10 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 									   user_uri);
 					}
 				} else if (sipe_strequal("audio-video", session_type)) {
+#ifdef HAVE_VV
 					if (!session->is_call)
 						audio_was_added = TRUE;
+#endif
 				}
 			}
 			if (!is_in_im_mcu) {

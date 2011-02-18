@@ -1511,16 +1511,12 @@ static void sipe_process_registration_notify(struct sipe_core_private *sipe_priv
 	if (diagnostics != NULL) {
 		reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
 	} else { // for LCS2005
-		int error_id = 0;
 		if (event && sipe_strcase_equal(event, "unregistered")) {
-			error_id = 4140; // [MS-SIPREGE]
 			//reason = g_strdup(_("User logged out")); // [MS-OCER]
 			reason = g_strdup(_("you are already signed in at another location"));
 		} else if (event && sipe_strcase_equal(event, "rejected")) {
-			error_id = 4141;
 			reason = g_strdup(_("user disabled")); // [MS-OCER]
 		} else if (event && sipe_strcase_equal(event, "deactivated")) {
-			error_id = 4142;
 			reason = g_strdup(_("user moved")); // [MS-OCER]
 		}
 	}
@@ -3645,7 +3641,6 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	const sipe_xml *xn_state;
 	const sipe_xml *xn_contact;
 	char *note;
-	char *free_activity;
 	int user_avail;
 	const char *user_avail_nil;
 	int res_avail;
@@ -3681,8 +3676,6 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 		user_avail = 0;
 		user_avail_since = 0;
 	}
-
-	free_activity = NULL;
 
 	name = sipe_xml_attribute(xn_presentity, "uri"); /* without 'sip:' prefix */
 	uri = sip_uri_from_name(name);
@@ -4837,8 +4830,8 @@ sipe_publish_get_category_cal_free_busy(struct sipe_core_private *sipe_private)
 	guint cal_data_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_CALENDAR_DATA);
 	char *fb_start_str;
 	char *free_busy_base64;
-	const char *st;
-	const char *fb;
+	/* const char *st; */
+	/* const char *fb; */
 	char *res;
 
 	/* key is <category><instance><container> */
@@ -4877,12 +4870,12 @@ sipe_publish_get_category_cal_free_busy(struct sipe_core_private *sipe_private)
 	fb_start_str = sipe_utils_time_to_str(cal->fb_start);
 	free_busy_base64 = sipe_cal_get_freebusy_base64(cal->free_busy);
 
-	st = publication_cal_300 ? publication_cal_300->fb_start_str : NULL;
-	fb = publication_cal_300 ? publication_cal_300->free_busy_base64 : NULL;
-
 	/* we will rebuplish the same data to refresh publication time,
 	 * so if data from multiple sources, most recent will be choosen
 	 */
+	// st = publication_cal_300 ? publication_cal_300->fb_start_str : NULL;
+	// fb = publication_cal_300 ? publication_cal_300->free_busy_base64 : NULL;
+	//
 	//if (sipe_strequal(st, fb_start_str) && sipe_strequal(fb, free_busy_base64))
 	//{
 	//	SIPE_DEBUG_INFO_NOFORMAT("sipe_publish_get_category_cal_free_busy: FreeBusy has NOT changed. Exiting.");

@@ -279,7 +279,6 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	const gchar *oldHeader;
 	gchar *newHeader;
 	gboolean is_multiparty = FALSE;
-	gboolean is_triggered = FALSE;
 	gboolean was_multiparty = TRUE;
 	gboolean just_joined = FALSE;
 	gchar *from;
@@ -339,7 +338,6 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		}
 	}
 	if (trig_invite && !g_strcasecmp(trig_invite, "TRUE")) {
-		is_triggered = TRUE;
 		is_multiparty = TRUE;
 	}
 

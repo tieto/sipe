@@ -125,7 +125,6 @@ gboolean sip_sec_ntlm_tests(void)
 	struct sipmsg *msg;
 	struct sipmsg_breakdown msgbd;
 	gchar *msg_str;
-	gchar *sig;
 	const char *password2;
 	const char *user2;
 	const char *domain2;
@@ -509,7 +508,7 @@ Response:
 		msg_str, 0, exported_session_key2, exported_session_key2, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", mac, 16, TRUE);
-	sig = buff_to_hex_str((guint8 *)mac, 16);
+	/* sig = buff_to_hex_str((guint8 *)mac, 16); */
 	}
 
 
@@ -765,7 +764,7 @@ Message (length 352):
 	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000029618e9651b65a7764000000", mac, 16, TRUE);
-	sig = buff_to_hex_str((guint8 *)mac, 16);
+	/* sig = buff_to_hex_str((guint8 *)mac, 16); */
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nServer response\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(response);
@@ -777,7 +776,7 @@ Message (length 352):
 	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, server_sign_key, server_seal_key, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("01000000E615438A917661BE64000000", mac, 16, TRUE);
-	sig = buff_to_hex_str((guint8 *)mac, 16);
+	/* sig = buff_to_hex_str((guint8 *)mac, 16); */
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - client signing\n");
 	MAC (flags,   (gchar*)request_sig,strlen(request_sig),   client_sign_key,16,   client_seal_key,16,   0,  100, mac);
