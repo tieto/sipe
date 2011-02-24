@@ -533,6 +533,13 @@ const char * sipe_utils_get_suitable_local_ip(int fd)
 	return "0.0.0.0";
 }
 
+gboolean sipe_utils_ip_is_private(const char *ip)
+{
+	return g_str_has_prefix(ip, "10.")      ||
+	       g_str_has_prefix(ip, "172.16.")  ||
+	       g_str_has_prefix(ip, "192.168.");
+}
+
 gchar *sipe_utils_presence_key(const gchar *uri)
 {
 	return g_strdup_printf("<presence><%s>", uri);

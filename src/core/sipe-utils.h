@@ -420,6 +420,14 @@ void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 const char * sipe_utils_get_suitable_local_ip(int fd);
 
 /**
+ * Checks whether given IP address belongs to private block as defined in RFC1918
+ *
+ * @param ip IPv4 address in "X.X.X.X" format
+ * @return @c TRUE if address is private
+ */
+gboolean sipe_utils_ip_is_private(const char *ip);
+
+/**
  * Generate presence key
  *
  * @param uri presence URI
