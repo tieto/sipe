@@ -322,7 +322,6 @@ void sipe_core_ft_cancel(struct sipe_file_transfer *ft);
 void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft);
 void sipe_core_ft_incoming_accept(struct sipe_file_transfer *ft,
 				  const gchar *who,
-				  int fd,
 				  unsigned short port);
 void sipe_core_ft_incoming_start(struct sipe_file_transfer *ft,
 				 gsize total_size);

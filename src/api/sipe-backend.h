@@ -457,6 +457,19 @@ void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local)
 
 const gchar *sipe_backend_network_ip_address(void);
 
+struct sipe_backend_listendata;
+
+typedef void (*sipe_listen_start_cb)(unsigned short port, gpointer data);
+typedef void (*sipe_client_connected_cb)(gint fd, gpointer data);
+
+struct sipe_backend_listendata *
+sipe_backend_network_listen_range(unsigned short port_min,
+				  unsigned short port_max,
+				  sipe_listen_start_cb listen_cb,
+				  sipe_client_connected_cb connect_cb,
+				  gpointer data);
+void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata);
+
 /** NOTIFICATIONS *************************************************************/
 
 void sipe_backend_notify_message_error(struct sipe_core_public *sipe_public,

@@ -326,7 +326,6 @@ void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
 
 void sipe_core_ft_incoming_accept(struct sipe_file_transfer *ft,
 				  const gchar *who,
-				  int fd,
 				  unsigned short port)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
@@ -342,7 +341,7 @@ void sipe_core_ft_incoming_accept(struct sipe_file_transfer *ft,
 			       "AuthCookie: %u\r\n"
 			       "Request-Data: IP-Address:\r\n",
 			       ft_private->invitation_cookie,
-			       sipe_utils_get_suitable_local_ip(fd),
+			       sipe_utils_get_suitable_local_ip(-1),
 			       port,
 			       ft_private->auth_cookie);
 

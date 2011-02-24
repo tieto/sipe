@@ -26,33 +26,12 @@
 #include "config.h"
 #endif
 
-#include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <time.h>
 
 #include <glib.h>
 
-#include "connection.h"
-#include "eventloop.h"
-#include "ft.h"
-#include "network.h"
 #include "request.h"
-
-#ifdef _WIN32
-/* for network */
-#include "win32/libc_interface.h"
-#include <nspapi.h>
-#else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <arpa/inet.h>
-#ifdef HAVE_SYS_SOCKIO_H
-#include <sys/sockio.h> /* SIOCGIFCONF for Solaris */
-#endif
-#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
@@ -63,8 +42,7 @@
 
 struct sipe_backend_file_transfer {
 	PurpleXfer *xfer;
-	PurpleNetworkListenData *listener;
-	int listenfd;
+	struct sipe_backend_listendata *listendata;
 };
 #define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) xfer->data)
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) xfer->account->gc->proto_data)
@@ -89,13 +67,8 @@ void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 	PurpleXfer *xfer = backend_ft->xfer;
 	PurpleXferStatusType status = purple_xfer_get_status(xfer);
 
-	if (backend_ft->listenfd >= 0) {
-		SIPE_DEBUG_INFO("sipe_backend_ft_deallocate: closing listening socket %d",
-				backend_ft->listenfd);
-		close(backend_ft->listenfd);
-	}
-	if (backend_ft->listener)
-		purple_network_listen_cancel(backend_ft->listener);
+	if (backend_ft->listendata)
+		sipe_backend_network_listen_cancel(backend_ft->listendata);
 
 	// If file transfer is not finished, cancel it
 	if (   status != PURPLE_XFER_STATUS_DONE
@@ -260,7 +233,6 @@ static void sipe_backend_private_init(struct sipe_file_transfer *ft,
 
 	ft->backend_private = backend_ft;
 	backend_ft->xfer = xfer;
-	backend_ft->listenfd = -1;
 
 	xfer->data = ft;
 }
@@ -297,52 +269,28 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 }
 
 static
-void sipe_purple_ft_client_connected(gpointer data, gint listenfd,
-			      SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
+void sipe_purple_ft_client_connected(gint fd, gpointer data)
 {
 	struct sipe_file_transfer *ft = data;
 	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
-	PurpleXfer *xfer = backend_ft->xfer;
-	struct sockaddr_in saddr;
-	socklen_t slen = sizeof (saddr);
 
-	int fd = accept(listenfd, (struct sockaddr*)&saddr, &slen);
-
-	purple_input_remove(xfer->watcher);
-	xfer->watcher = 0;
-	close(listenfd);
-	backend_ft->listenfd = -1;
+	backend_ft->listendata = NULL;
 
 	if (fd < 0) {
 		sipe_backend_ft_error(ft, _("Socket read failed"));
 		sipe_backend_ft_cancel_local(ft);
 	} else {
-		purple_xfer_start(xfer, fd, NULL, 0);
+		purple_xfer_start(backend_ft->xfer, fd, NULL, 0);
 	}
 }
 
 static
-void sipe_purple_ft_listen_socket_created(int listenfd, gpointer data)
+void sipe_purple_ft_listen_socket_created(unsigned short port, gpointer data)
 {
 	struct sipe_file_transfer *ft = data;
 	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
-	struct sockaddr_in addr;
-	socklen_t socklen = sizeof (addr);
 
-	backend_ft->listener = NULL;
-	backend_ft->listenfd = listenfd;
-
-	getsockname(listenfd, (struct sockaddr*)&addr, &socklen);
-
-	backend_ft->xfer->watcher = purple_input_add(listenfd,
-						     PURPLE_INPUT_READ,
-						     sipe_purple_ft_client_connected,
-						     ft);
-
-	sipe_core_ft_incoming_accept(ft,
-				     backend_ft->xfer->who,
-				     listenfd,
-				     ntohs(addr.sin_port));
+	sipe_core_ft_incoming_accept(ft, backend_ft->xfer->who, port);
 }
 
 gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
@@ -355,12 +303,13 @@ gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
 	if (ip && (port_min == port_max)) {
 		purple_xfer_start(backend_ft->xfer, -1, ip, port_min);
 	} else {
-		backend_ft->listener = purple_network_listen_range(port_min,
-								   port_max,
-								   SOCK_STREAM,
-								   sipe_purple_ft_listen_socket_created,
-								   ft);
-		if (!backend_ft->listener)
+		backend_ft->listendata =
+				sipe_backend_network_listen_range(port_min,
+								  port_max,
+								  sipe_purple_ft_listen_socket_created,
+								  sipe_purple_ft_client_connected,
+								  ft);
+		if (!backend_ft->listendata)
 			return FALSE;
 	}
 	return(TRUE);
