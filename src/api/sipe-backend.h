@@ -236,10 +236,19 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 			      const gchar *who,
 			      const gchar *file_name,
 			      gsize file_size);
-gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
-					 const gchar *ip,
-					 unsigned short port_min,
-					 unsigned short port_max);
+/**
+ * Begins file transfer with remote peer.
+ *
+ * You can provide either opened file descriptor to use for read/write operations
+ * or ip address and port where the backend should connect.
+ *
+ * @param ft   file transfer data
+ * @param fd   file descriptor or -1 if ip and port are used
+ * @param ip   ip address to connect of NULL when file descriptor is used
+ * @param port port to connect or 0 when file descriptor is used
+ */
+void sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
+			   const char* ip, unsigned port);
 
 /** GROUP CHAT ***************************************************************/
 

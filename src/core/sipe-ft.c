@@ -86,6 +86,8 @@ struct sipe_file_transfer_private {
 	guchar *encrypted_outbuf;
 	guchar *outbuf_ptr;
 	gsize outbuf_size;
+
+	struct sipe_backend_listendata *listendata;
 };
 #define SIPE_FILE_TRANSFER_PUBLIC  ((struct sipe_file_transfer *) ft_private)
 #define SIPE_FILE_TRANSFER_PRIVATE ((struct sipe_file_transfer_private *) ft)
@@ -245,6 +247,9 @@ static void sipe_ft_deallocate(struct sipe_file_transfer *ft)
 
 	if (ft->backend_private)
 		sipe_backend_ft_deallocate(ft);
+
+	if (ft_private->listendata)
+		sipe_backend_network_listen_cancel(ft_private->listendata);
 
 	if (ft_private->cipher_context)
 		sipe_crypt_ft_destroy(ft_private->cipher_context);
@@ -799,6 +804,29 @@ sipe_find_ft(const struct sip_dialog *dialog, const gchar *inv_cookie)
 	return NULL;
 }
 
+static void
+listen_socket_created_cb(unsigned short port, gpointer data)
+{
+	struct sipe_file_transfer_private *ft_private = data;
+	sipe_core_ft_incoming_accept(SIPE_FILE_TRANSFER_PUBLIC,
+				     ft_private->dialog->with, port);
+}
+
+static void
+client_connected_cb(gint fd, gpointer data)
+{
+	struct sipe_file_transfer *ft = data;
+
+	SIPE_FILE_TRANSFER_PRIVATE->listendata = NULL;
+
+	if (fd < 0) {
+		sipe_backend_ft_error(ft, _("Socket read failed"));
+		sipe_backend_ft_cancel_local(ft);
+	} else {
+		sipe_backend_ft_start(ft, fd, NULL, 0);
+	}
+}
+
 void sipe_ft_incoming_accept(struct sip_dialog *dialog, const GSList *body)
 {
 	const gchar *inv_cookie = sipe_utils_nameval_find(body, "Invitation-Cookie");
@@ -847,22 +875,18 @@ void sipe_ft_incoming_accept(struct sip_dialog *dialog, const GSList *body)
 
 
 		if (ip && port_str) {
-			unsigned short port = g_ascii_strtoull(port_str,
-							       NULL, 10);
-
-			sipe_backend_ft_incoming_accept(SIPE_FILE_TRANSFER_PUBLIC,
-							ip,
-							port,
-							port);
+			sipe_backend_ft_start(SIPE_FILE_TRANSFER_PUBLIC, -1, ip,
+					      g_ascii_strtoull(port_str, NULL, 10));
 		} else {
-			if (!sipe_backend_ft_incoming_accept(SIPE_FILE_TRANSFER_PUBLIC,
-							     NULL,
-							     SIPE_FT_TCP_PORT_MIN,
-							     SIPE_FT_TCP_PORT_MAX)) {
+			ft_private->listendata =
+				sipe_backend_network_listen_range(SIPE_FT_TCP_PORT_MIN,
+								  SIPE_FT_TCP_PORT_MAX,
+								  listen_socket_created_cb,
+								  client_connected_cb,
+								  ft_private);
+			if (!ft_private->listendata)
 				raise_ft_error_and_cancel(ft_private,
 							  _("Could not create listen socket"));
-				return;
-			}
 		}
 	}
 }

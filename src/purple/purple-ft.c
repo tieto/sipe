@@ -42,7 +42,6 @@
 
 struct sipe_backend_file_transfer {
 	PurpleXfer *xfer;
-	struct sipe_backend_listendata *listendata;
 };
 #define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) xfer->data)
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) xfer->account->gc->proto_data)
@@ -66,9 +65,6 @@ void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
 	PurpleXfer *xfer = backend_ft->xfer;
 	PurpleXferStatusType status = purple_xfer_get_status(xfer);
-
-	if (backend_ft->listendata)
-		sipe_backend_network_listen_cancel(backend_ft->listendata);
 
 	// If file transfer is not finished, cancel it
 	if (   status != PURPLE_XFER_STATUS_DONE
@@ -268,51 +264,12 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 	}
 }
 
-static
-void sipe_purple_ft_client_connected(gint fd, gpointer data)
-{
-	struct sipe_file_transfer *ft = data;
-	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
-
-	backend_ft->listendata = NULL;
-
-	if (fd < 0) {
-		sipe_backend_ft_error(ft, _("Socket read failed"));
-		sipe_backend_ft_cancel_local(ft);
-	} else {
-		purple_xfer_start(backend_ft->xfer, fd, NULL, 0);
-	}
-}
-
-static
-void sipe_purple_ft_listen_socket_created(unsigned short port, gpointer data)
-{
-	struct sipe_file_transfer *ft = data;
-	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
-
-	sipe_core_ft_incoming_accept(ft, backend_ft->xfer->who, port);
-}
-
-gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
-					 const gchar *ip,
-					 unsigned short port_min,
-					 unsigned short port_max)
+void
+sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
+		      const char* ip, unsigned port)
 {
 	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
-
-	if (ip && (port_min == port_max)) {
-		purple_xfer_start(backend_ft->xfer, -1, ip, port_min);
-	} else {
-		backend_ft->listendata =
-				sipe_backend_network_listen_range(port_min,
-								  port_max,
-								  sipe_purple_ft_listen_socket_created,
-								  sipe_purple_ft_client_connected,
-								  ft);
-		if (!backend_ft->listendata)
-			return FALSE;
-	}
-	return(TRUE);
+	purple_xfer_start(backend_ft->xfer, fd, ip, port);
 }
 
 void sipe_purple_ft_send_file(PurpleConnection *gc,
