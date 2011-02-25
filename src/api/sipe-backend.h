@@ -202,9 +202,9 @@ void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft);
 /**
  * Try to read up to @c size bytes from file transfer connection
  *
- * @param backend_ft backend private file transfer data.
- * @param data       buffer to read data into.
- * @param size       buffer size in bytes.
+ * @param ft   file transfer data.
+ * @param data buffer to read data into.
+ * @param size buffer size in bytes.
  *
  * @return number of bytes read or negative on failure.
  *         EAGAIN should return 0 bytes read.
@@ -216,9 +216,9 @@ gssize sipe_backend_ft_read(struct sipe_file_transfer *ft,
 /**
  * Try to write up to @c size bytes to file transfer connection
  *
- * @param backend_ft backend private file transfer data.
- * @param data       data to write
- * @param size       buffer size in bytes.
+ * @param ft   file transfer data.
+ * @param data data to write
+ * @param size buffer size in bytes.
  *
  * @return number of bytes read or negative on failure.
  *         EAGAIN should return 0 bytes written.
