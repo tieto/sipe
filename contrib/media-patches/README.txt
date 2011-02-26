@@ -2,10 +2,9 @@ To enable experimental voice support in SIPE (only on platforms where libpurple
 supports voice & video):
 
 - libnice >= 0.1.0 and farsight2 >= 0.0.23 are required
-- source tree of Pidgin 2.7.8 or higher is required and following patches must
+- source tree of Pidgin 2.7.10 or higher is required and following patches must
   be applied:
 	- purple_media_get_active_candidates.patch
-	- purple_media_fs2_dispose.patch
 	- purple_SDES.patch
 - compile SIPE source, check that voice support is enabled in configure output
 - If you get errors on incompatible encryption levels when making a call, change
@@ -18,12 +17,12 @@ STATUS OF PATCHES IN UPSTREAM
 =============================
 
 purple_media_get_active_candidates.patch
-	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11830
+	- reported as http://developer.pidgin.im/ticket/11830
 	- commited for future 2.8.0 release
 
-purple_media_fs2_dispose.patch
-	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/12758
-	- commited for future 2.7.10 release
+purple_SDES.patch
+	- reported as http://developer.pidgin.im/ticket/12981
+	- accepted for future 2.8.0 release
 
 Biggest show stopper now is a lack of SRTP (encrypted transfer) in Farsight library,
 requiring Office Communicator users to change their registry settings as a
