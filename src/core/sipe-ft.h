@@ -24,8 +24,37 @@
 
 /* Forward declarations */
 struct sipe_core_private;
-struct sipe_file_transfer;
 
+#define SIPE_FT_KEY_LENGTH 24
+
+/**
+ * File transport (private part)
+ */
+struct sipe_file_transfer_private {
+	struct sipe_file_transfer public;
+
+	struct sipe_core_private *sipe_private;
+
+	guchar encryption_key[SIPE_FT_KEY_LENGTH];
+	guchar hash_key[SIPE_FT_KEY_LENGTH];
+	unsigned auth_cookie;
+	gchar *invitation_cookie;
+
+	struct sip_dialog *dialog;
+
+	gpointer cipher_context;
+	gpointer hmac_context;
+
+	gsize bytes_remaining_chunk;
+
+	guchar *encrypted_outbuf;
+	guchar *outbuf_ptr;
+	gsize outbuf_size;
+
+	struct sipe_backend_listendata *listendata;
+};
+#define SIPE_FILE_TRANSFER_PUBLIC  ((struct sipe_file_transfer *) ft_private)
+#define SIPE_FILE_TRANSFER_PRIVATE ((struct sipe_file_transfer_private *) ft)
 
 /**
  * Deallocate file transfer data structure
@@ -76,3 +105,6 @@ void sipe_ft_incoming_cancel(struct sip_dialog *dialog, const GSList *body);
  * incorrect format
  */
 GSList *sipe_ft_parse_msg_body(const gchar *body);
+
+void sipe_ft_raise_error_and_cancel(struct sipe_file_transfer_private *ft_private,
+				    const gchar *errmsg);

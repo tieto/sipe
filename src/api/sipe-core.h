@@ -323,20 +323,20 @@ void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft);
 void sipe_core_ft_incoming_accept(struct sipe_file_transfer *ft,
 				  const gchar *who,
 				  unsigned short port);
-void sipe_core_ft_incoming_start(struct sipe_file_transfer *ft,
-				 gsize total_size);
-gboolean sipe_core_ft_incoming_stop(struct sipe_file_transfer *ft);
 void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
 				const gchar *filename, gsize size,
 				const gchar *who);
-void sipe_core_ft_outgoing_start(struct sipe_file_transfer *ft,
-				 gsize total_size);
-gboolean sipe_core_ft_outgoing_stop(struct sipe_file_transfer *ft);
-gssize sipe_core_ft_read(struct sipe_file_transfer *ft, guchar **buffer,
-			 gsize bytes_remaining, gsize bytes_available);
-gssize sipe_core_ft_write(struct sipe_file_transfer *ft,
-			  const guchar *buffer, gsize size);
 
+void sipe_core_tftp_incoming_start(struct sipe_file_transfer *ft,
+				   gsize total_size);
+gboolean sipe_core_tftp_incoming_stop(struct sipe_file_transfer *ft);
+void sipe_core_tftp_outgoing_start(struct sipe_file_transfer *ft,
+				   gsize total_size);
+gboolean sipe_core_tftp_outgoing_stop(struct sipe_file_transfer *ft);
+gssize sipe_core_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
+			   gsize bytes_remaining, gsize bytes_available);
+gssize sipe_core_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
+			    gsize size);
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
 void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,

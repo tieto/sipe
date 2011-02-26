@@ -79,6 +79,7 @@ CLEAN_C_SRC = \
 			sipe-chat.c \
 			sipe-dialog.c \
 			sipe-ft.c \
+			sipe-ft-tftp.c \
 			sipe-groupchat.c \
 			sipe-im.c \
 			sipe-incoming.c \

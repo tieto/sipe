@@ -26,6 +26,7 @@
 
 #include <glib.h>
 
+#include "sipe-core.h"
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sipe-backend.h"
