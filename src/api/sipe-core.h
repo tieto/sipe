@@ -320,9 +320,6 @@ struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_p
 void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
 void sipe_core_ft_cancel(struct sipe_file_transfer *ft);
 void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft);
-void sipe_core_ft_incoming_accept(struct sipe_file_transfer *ft,
-				  const gchar *who,
-				  unsigned short port);
 void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
 				const gchar *filename, gsize size,
 				const gchar *who);

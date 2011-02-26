@@ -250,6 +250,14 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 void sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
 			   const char* ip, unsigned port);
 
+/**
+ * Check whether file transfer is incoming or outgoing
+ *
+ * @param ft file transfer data
+ * @return @c TRUE if @c ft is incoming, otherwise @c FALSE
+ */
+gboolean sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft);
+
 /** GROUP CHAT ***************************************************************/
 
 #define SIPE_GROUPCHAT_ROOM_FILEPOST 0x00000001

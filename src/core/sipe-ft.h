@@ -35,6 +35,9 @@ struct sipe_file_transfer_private {
 
 	struct sipe_core_private *sipe_private;
 
+	gboolean peer_using_nat;
+	unsigned short port;
+
 	guchar encryption_key[SIPE_FT_KEY_LENGTH];
 	guchar hash_key[SIPE_FT_KEY_LENGTH];
 	unsigned auth_cookie;

@@ -140,67 +140,103 @@ void sipe_core_ft_cancel(struct sipe_file_transfer *ft)
 	g_free(body);
 }
 
+static void
+send_ft_accept(struct sipe_file_transfer_private *ft_private,
+	       gboolean send_enc_key,
+	       gboolean send_connect_data,
+	       gboolean sender_connect)
+{
+	GString *body = g_string_new("");
+
+	g_string_append_printf(body,
+			       "Invitation-Command: ACCEPT\r\n"
+			       "Request-Data: IP-Address:\r\n"
+			       "Invitation-Cookie: %s\r\n",
+			       ft_private->invitation_cookie);
+
+	if (send_enc_key) {
+		gchar *b64_encryption_key;
+		gchar *b64_hash_key;
+
+		b64_encryption_key = g_base64_encode(ft_private->encryption_key,
+						     SIPE_FT_KEY_LENGTH);
+		b64_hash_key = g_base64_encode(ft_private->hash_key,
+					       SIPE_FT_KEY_LENGTH);
+
+		g_string_append_printf(body,
+				       "Encryption-Key: %s\r\n"
+				       "Hash-Key: %s\r\n",
+				       b64_encryption_key,
+				       b64_hash_key);
+
+		g_free(b64_hash_key);
+		g_free(b64_encryption_key);
+	}
+
+	if (send_connect_data) {
+		g_string_append_printf(body,
+				       "IP-Address: %s\r\n"
+				       "Port: %d\r\n"
+				       "PortX: 11178\r\n"
+				       "AuthCookie: %u\r\n",
+				       sipe_utils_get_suitable_local_ip(-1),
+				       ft_private->port,
+				       ft_private->auth_cookie);
+	}
+
+	if (sender_connect) {
+		g_string_append(body,
+				"Sender-Connect: TRUE\r\n");
+	}
+
+	sipe_ft_request(ft_private, body->str);
+
+	g_string_free(body, TRUE);
+}
+
+static void
+listen_socket_created_cb(unsigned short port, gpointer data)
+{
+	struct sipe_file_transfer *ft = data;
+
+	SIPE_FILE_TRANSFER_PRIVATE->port = port;
+	SIPE_FILE_TRANSFER_PRIVATE->auth_cookie = rand() % 1000000000;
+
+	if (sipe_backend_ft_is_incoming(ft))
+		send_ft_accept(SIPE_FILE_TRANSFER_PRIVATE, TRUE, TRUE, TRUE);
+	else
+		send_ft_accept(SIPE_FILE_TRANSFER_PRIVATE, FALSE, TRUE, FALSE);
+}
+
+static void
+client_connected_cb(gint fd, gpointer data)
+{
+	struct sipe_file_transfer *ft = data;
+
+	SIPE_FILE_TRANSFER_PRIVATE->listendata = NULL;
+
+	if (fd < 0) {
+		sipe_backend_ft_error(ft, _("Socket read failed"));
+		sipe_backend_ft_cancel_local(ft);
+	} else {
+		sipe_backend_ft_start(ft, fd, NULL, 0);
+	}
+}
+
 void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
-	gchar *b64_encryption_key = g_base64_encode(ft_private->encryption_key,
-						    SIPE_FT_KEY_LENGTH);
-	gchar *b64_hash_key = g_base64_encode(ft_private->hash_key,
-					      SIPE_FT_KEY_LENGTH);
 
-	gchar *body = g_strdup_printf("Invitation-Command: ACCEPT\r\n"
-				      "Request-Data: IP-Address:\r\n"
-				      "Invitation-Cookie: %s\r\n"
-				      "Encryption-Key: %s\r\n"
-				      "Hash-Key: %s\r\n"
-				      /*"IP-Address: %s\r\n"
-					"Port: 6900\r\n"
-					"PortX: 11178\r\n"
-					"Auth-Cookie: 11111111\r\n"
-					"Sender-Connect: TRUE\r\n"*/,
-				      ft_private->invitation_cookie,
-				      b64_encryption_key,
-				      b64_hash_key
-                                      /*,sipe_backend_network_ip_address()*/
-		);
-	sipe_ft_request(ft_private, body);
-
-	g_free(body);
-	g_free(b64_hash_key);
-	g_free(b64_encryption_key);
-}
-
-void sipe_core_ft_incoming_accept(struct sipe_file_transfer *ft,
-				  const gchar *who,
-				  unsigned short port)
-{
-	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
-	gchar *body;
-
-	ft_private->auth_cookie = rand() % 1000000000;
-
-	body = g_strdup_printf("Invitation-Command: ACCEPT\r\n"
-			       "Invitation-Cookie: %s\r\n"
-			       "IP-Address: %s\r\n"
-			       "Port: %u\r\n"
-			       "PortX: 11178\r\n"
-			       "AuthCookie: %u\r\n"
-			       "Request-Data: IP-Address:\r\n",
-			       ft_private->invitation_cookie,
-			       sipe_utils_get_suitable_local_ip(-1),
-			       port,
-			       ft_private->auth_cookie);
-
-	if (!ft_private->dialog) {
-		struct sip_session *session = sipe_session_find_or_add_im(ft_private->sipe_private,
-									  who);
-		ft_private->dialog = sipe_dialog_find(session, who);
+	if (ft_private->peer_using_nat) {
+		ft_private->listendata =
+			sipe_backend_network_listen_range(SIPE_FT_TCP_PORT_MIN,
+							  SIPE_FT_TCP_PORT_MAX,
+							  listen_socket_created_cb,
+							  client_connected_cb,
+							  ft);
+	} else {
+		send_ft_accept(ft_private, TRUE, FALSE, FALSE);
 	}
-
-	if (ft_private->dialog) {
-		sipe_ft_request(ft_private, body);
-	}
-	g_free(body);
 }
 
 void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
@@ -211,17 +247,19 @@ void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
 	struct sipe_core_private *sipe_private = ft_private->sipe_private;
 	struct sip_dialog *dialog;
 
+	const gchar *ip = sipe_utils_get_suitable_local_ip(-1);
 	gchar *body = g_strdup_printf("Application-Name: File Transfer\r\n"
 				      "Application-GUID: {5D3E02AB-6190-11d3-BBBB-00C04F795683}\r\n"
 				      "Invitation-Command: INVITE\r\n"
 				      "Invitation-Cookie: %s\r\n"
 				      "Application-File: %s\r\n"
 				      "Application-FileSize: %" G_GSIZE_FORMAT "\r\n"
-				      //"Connectivity: N\r\n" TODO
+				      "%s"
 				      "Encryption: R\r\n", // TODO: non encrypted file transfer support
 				      ft_private->invitation_cookie,
 				      filename,
-				      size);
+				      size,
+				      sipe_utils_ip_is_private(ip) ? "Connectivity: N\r\n" : "");
 
 	struct sip_session *session = sipe_session_find_or_add_im(sipe_private, who);
 
@@ -257,6 +295,7 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 	generate_key(ft_private->hash_key, SIPE_FT_KEY_LENGTH);
 
 	ft_private->invitation_cookie = g_strdup(sipe_utils_nameval_find(body, "Invitation-Cookie"));
+	ft_private->peer_using_nat = sipe_strequal(sipe_utils_nameval_find(body, "Connectivity"), "N");
 
 	ft_private->dialog = dialog;
 
@@ -286,29 +325,6 @@ sipe_find_ft(const struct sip_dialog *dialog, const gchar *inv_cookie)
 			return ft_private;
 	}
 	return NULL;
-}
-
-static void
-listen_socket_created_cb(unsigned short port, gpointer data)
-{
-	struct sipe_file_transfer_private *ft_private = data;
-	sipe_core_ft_incoming_accept(SIPE_FILE_TRANSFER_PUBLIC,
-				     ft_private->dialog->with, port);
-}
-
-static void
-client_connected_cb(gint fd, gpointer data)
-{
-	struct sipe_file_transfer *ft = data;
-
-	SIPE_FILE_TRANSFER_PRIVATE->listendata = NULL;
-
-	if (fd < 0) {
-		sipe_backend_ft_error(ft, _("Socket read failed"));
-		sipe_backend_ft_cancel_local(ft);
-	} else {
-		sipe_backend_ft_start(ft, fd, NULL, 0);
-	}
 }
 
 void sipe_ft_incoming_accept(struct sip_dialog *dialog, const GSList *body)

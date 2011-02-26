@@ -247,10 +247,33 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 	}
 }
 
+static void
+connect_cb(gpointer data, gint fd, SIPE_UNUSED_PARAMETER const gchar *error_message)
+{
+	struct sipe_file_transfer *ft = data;
+
+	if (fd < 0) {
+		purple_xfer_cancel_local(PURPLE_XFER);
+		return;
+	}
+
+	purple_xfer_start(PURPLE_XFER, fd, NULL, 0);
+}
+
 void
 sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
 		      const char* ip, unsigned port)
 {
+	if (ip && port && !sipe_backend_ft_is_incoming(ft)) {
+		/* Purple accepts ip & port only for incoming file transfers.
+		 * If we want to send file with Sender-Connect = TRUE negotiated,
+		 * we have to open the connection ourselves and pass the file
+		 * descriptor to purple_xfer_start. */
+		purple_proxy_connect(NULL, PURPLE_XFER->account, ip, port,
+				     connect_cb, ft);
+		return;
+	}
+
 	purple_xfer_start(PURPLE_XFER, fd, ip, port);
 }
 
@@ -293,6 +316,12 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 	}
 
 	return xfer;
+}
+
+gboolean
+sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft)
+{
+	return purple_xfer_get_type(PURPLE_XFER) == PURPLE_XFER_RECEIVE;
 }
 
 /*
