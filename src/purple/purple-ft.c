@@ -40,16 +40,14 @@
 
 #include "purple-private.h"
 
-struct sipe_backend_file_transfer {
-	PurpleXfer *xfer;
-};
+#define PURPLE_XFER                       ((PurpleXfer *) ft->backend_private)
 #define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) xfer->data)
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) xfer->account->gc->proto_data)
 
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 			   const char *errmsg)
 {
-	PurpleXfer *xfer = ft->backend_private->xfer;
+	PurpleXfer *xfer = PURPLE_XFER;
  	purple_xfer_error(purple_xfer_get_type(xfer),
 			  xfer->account, xfer->who,
 			  errmsg);
@@ -62,8 +60,7 @@ const gchar *sipe_backend_ft_get_error(SIPE_UNUSED_PARAMETER struct sipe_file_tr
 
 void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 {
-	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
-	PurpleXfer *xfer = backend_ft->xfer;
+	PurpleXfer *xfer = PURPLE_XFER;
 	PurpleXferStatusType status = purple_xfer_get_status(xfer);
 
 	// If file transfer is not finished, cancel it
@@ -74,15 +71,13 @@ void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 		purple_xfer_set_cancel_send_fnc(xfer, NULL);
 		purple_xfer_cancel_remote(xfer);
 	}
-
-	g_free(backend_ft);
 }
 
 gssize sipe_backend_ft_read(struct sipe_file_transfer *ft,
 			    guchar *data,
 			    gsize size)
 {
-	gssize bytes_read = read(ft->backend_private->xfer->fd, data, size);
+	gssize bytes_read = read(PURPLE_XFER->fd, data, size);
 	if (bytes_read == 0) {
 		/* Sender canceled transfer before it was finished */
 		return -2;
@@ -99,8 +94,7 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 			     const guchar *data,
 			     gsize size)
 {
-	gssize bytes_written = write(ft->backend_private->xfer->fd,
-				     data, size);
+	gssize bytes_written = write(PURPLE_XFER->fd, data, size);
 	if (bytes_written == -1) {
 		if (errno == EAGAIN)
 			return 0;
@@ -112,12 +106,12 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft)
 {
-	purple_xfer_cancel_local(ft->backend_private->xfer);
+	purple_xfer_cancel_local(PURPLE_XFER);
 }
 
 void sipe_backend_ft_cancel_remote(struct sipe_file_transfer *ft)
 {
-	purple_xfer_cancel_remote(ft->backend_private->xfer);
+	purple_xfer_cancel_remote(PURPLE_XFER);
 }
 
 static void
@@ -221,17 +215,6 @@ tftp_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 
 //******************************************************************************
 
-static void sipe_backend_private_init(struct sipe_file_transfer *ft,
-				      PurpleXfer *xfer)
-{
-	struct sipe_backend_file_transfer *backend_ft = g_new0(struct sipe_backend_file_transfer, 1);
-
-	ft->backend_private = backend_ft;
-	backend_ft->xfer = xfer;
-
-	xfer->data = ft;
-}
-
 void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 			      struct sipe_file_transfer *ft,
 			      const gchar *who,
@@ -246,7 +229,8 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 			       who);
 
 	if (xfer) {
-		sipe_backend_private_init(ft, xfer);
+		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
+		xfer->data = ft;
 
 		purple_xfer_set_filename(xfer, file_name);
 		purple_xfer_set_size(xfer, file_size);
@@ -267,8 +251,7 @@ void
 sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
 		      const char* ip, unsigned port)
 {
-	struct sipe_backend_file_transfer *backend_ft = ft->backend_private;
-	purple_xfer_start(backend_ft->xfer, fd, ip, port);
+	purple_xfer_start(PURPLE_XFER, fd, ip, port);
 }
 
 void sipe_purple_ft_send_file(PurpleConnection *gc,
@@ -296,7 +279,8 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 		if (xfer) {
 			struct sipe_file_transfer *ft = sipe_core_ft_allocate(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 
-			sipe_backend_private_init(ft, xfer);
+			ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
+			xfer->data = ft;
 
 			purple_xfer_set_init_fnc(xfer, ft_outgoing_init);
 			purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
