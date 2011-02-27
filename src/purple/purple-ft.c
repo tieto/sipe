@@ -26,12 +26,18 @@
 #include "config.h"
 #endif
 
+#include <string.h>
 #include <fcntl.h>
 #include <errno.h>
 
 #include <glib.h>
 
+#include "ft.h"
 #include "request.h"
+
+#ifdef _WIN32
+#include "win32/libc_interface.h"
+#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
