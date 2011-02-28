@@ -17,7 +17,6 @@ src/core/sipe-media.c
 src/core/sipe-user.c
 src/purple/purple-buddy.c
 src/purple/purple-chat.c
-src/purple/purple-ft.c
 src/purple/purple-groupchat.c
 src/purple/purple-plugin.c
 src/purple/purple-transport.c

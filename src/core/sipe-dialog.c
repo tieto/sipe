@@ -33,7 +33,6 @@
 #include "sipe-dialog.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
-#include "sipe-ft.h"
 
 void sipe_dialog_free(struct sip_dialog *dialog)
 {

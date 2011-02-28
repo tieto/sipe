@@ -60,11 +60,6 @@ struct sipe_file_transfer_private {
 #define SIPE_FILE_TRANSFER_PRIVATE ((struct sipe_file_transfer_private *) ft)
 
 /**
- * Deallocate file transfer data structure
- */
-void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
-
-/**
  * Called when remote peer wants to send a file.
  *
  * Function initializes libpurple filetransfer API structure and calls

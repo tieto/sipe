@@ -33,7 +33,6 @@
 #include <glib.h>
 
 #include "ft.h"
-#include "request.h"
 
 #ifdef _WIN32
 #include "win32/libc_interface.h"
@@ -42,7 +41,6 @@
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
-#include "sipe-nls.h"
 
 #include "purple-private.h"
 
