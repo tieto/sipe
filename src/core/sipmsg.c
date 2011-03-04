@@ -455,7 +455,14 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	return NULL;
 }
 
-gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
+/**
+ * Parses headers-like 'msgr' attribute of INVITE's 'ms_text_format' header.
+ * Then retrieves value of 'X-MMS-IM-Format'.
+
+ * 'msgr' typically looks like:
+ * X-MMS-IM-Format: FN=Microsoft%20Sans%20Serif; EF=BI; CO=800000; CS=0; PF=22
+ */
+static gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
 	gchar *msgr2;
 	gsize msgr_dec64_len;
 	guchar *msgr_dec64;
@@ -513,7 +520,12 @@ gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format) {
 	return res;
 }
 
-gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
+static void msn_parse_format(const char *mime, char **pre_ret, char **post_ret);
+
+/**
+ * Translates X-MMS-IM format to HTML presentation.
+ */
+static gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
 	char *pre, *post;
 	gchar *res;
 
@@ -818,7 +830,7 @@ encode_spaces(const char *str)
 }
 
 void
-msn_import_html(const char *html, char **attributes, char **message)
+sipe_parse_html(const char *html, char **attributes, char **message)
 {
 	int len, retcount = 0;
 	const char *c;

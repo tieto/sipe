@@ -102,26 +102,11 @@ char *sipmsg_to_string(const struct sipmsg *msg);
 gchar *get_html_message(const gchar *ms_text_format, const gchar *body);
 
 /**
- * Parses headers-like 'msgr' attribute of INVITE's 'ms_text_format' header.
- * Then retrieves value of 'X-MMS-IM-Format'.
-
- * 'msgr' typically looks like:
- * X-MMS-IM-Format: FN=Microsoft%20Sans%20Serif; EF=BI; CO=800000; CS=0; PF=22
- */
-gchar *sipmsg_get_x_mms_im_format(gchar *msgr);
-
-/**
  * Returns UTF-16LE/'modified base64' encoded X-MMS-IM-Format
  * based on input x_mms_im_format.
  */
 gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format);
 
-/**
- * Translates X-MMS-IM format to HTML presentation.
- */
-gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body);
-
-#define sipe_parse_html            msn_import_html
 /**
  * Parses the Purple message formatting (html) into the MSN format.
  *
@@ -132,6 +117,3 @@ gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body);
  * @return The new message.
  */
 void sipe_parse_html(const char *html, char **attributes, char **message);
-
-void msn_parse_format(const char *mime, char **pre_ret, char **post_ret);
-void msn_import_html(const char *html, char **attributes, char **message);
