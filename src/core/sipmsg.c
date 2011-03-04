@@ -615,7 +615,23 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 		}
 	}
 
-	if (!g_str_has_prefix(ms_text_format, "text/html")) { // NOT html
+	if (g_str_has_prefix(ms_text_format, "text/html")) {
+		/*
+		 * HTML uses tags for formatting, not line breaks. But
+		 * clients still might render them, so we need to remove
+		 * them to avoid incorrect text rendering.
+		 */
+		gchar *d = res;
+		const gchar *s = res;
+		gchar c;
+
+		/* No ANSI C nor glib function seems to exist for this :-( */
+		while ((c = *s++))
+			if ((c != '\n') && (c != '\r'))
+				*d++ = c;
+		*d = c;
+
+	} else {
 		char *tmp = res;
 		res = g_markup_escape_text(res, -1); // as this is not html
 		g_free(tmp);
