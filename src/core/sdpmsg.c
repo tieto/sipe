@@ -659,7 +659,7 @@ sdpcodec_free(struct sdpcodec *codec)
 	}
 }
 
-static void
+void
 sdpmedia_free(struct sdpmedia *media)
 {
 	if (media) {

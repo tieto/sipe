@@ -81,3 +81,8 @@ gchar *sdpmsg_to_string(const struct sdpmsg *msg);
  * Deallocates @c sdpmsg.
  */
 void sdpmsg_free(struct sdpmsg *msg);
+
+/**
+ * Deallocates @c sdpmedia.
+ */
+void sdpmedia_free(struct sdpmedia *media);
