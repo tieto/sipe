@@ -967,18 +967,20 @@ reinvite_on_candidate_pair_cb(struct sipe_core_public *sipe_public)
 	for (; streams; streams = streams->next) {
 		struct sipe_backend_stream *s = streams->data;
 		GList *remote_candidates =  sipe_backend_media_get_active_remote_candidates(backend_media, s);
-		if (remote_candidates) {
-			sipe_media_candidate_list_free(remote_candidates);
-			continue;
-		}
+		guint components = g_list_length(remote_candidates);
 
-		sipe_schedule_mseconds(sipe_private,
-				       "<+media-reinvite-on-candidate-pair>",
-				       NULL,
-				       500,
-				       (sipe_schedule_action) reinvite_on_candidate_pair_cb,
-				       NULL);
-		return;
+		sipe_media_candidate_list_free(remote_candidates);
+
+		// We must have candidates for both (RTP + RTCP) components ready
+		if (components < 2) {
+			sipe_schedule_mseconds(sipe_private,
+					       "<+media-reinvite-on-candidate-pair>",
+					       NULL,
+					       500,
+					       (sipe_schedule_action) reinvite_on_candidate_pair_cb,
+					       NULL);
+			return;
+		}
 	}
 
 	sipe_invite_call(sipe_private, sipe_media_send_final_ack);
