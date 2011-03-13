@@ -558,23 +558,33 @@ media_to_string(const struct sdpmedia *media, SipeIceVersion ice_version)
 {
 	gchar *media_str;
 
-	gchar *codecs_str = codecs_to_string(media->codecs);
+	gchar *codecs_str = NULL;
 	gchar *codec_ids_str = codec_ids_to_string(media->codecs);
 
-	gchar *candidates_str = candidates_to_string(media->candidates, ice_version);
-	gchar *remote_candidates_str = remote_candidates_to_string(media->remote_candidates,
-								   ice_version);
+	gchar *candidates_str = NULL;
+	gchar *remote_candidates_str = NULL;
 
-	gchar *attributes_str = attributes_to_string(media->attributes);
+	gchar *attributes_str = NULL;
 	gchar *credentials = NULL;
 
-	if (ice_version == SIPE_ICE_RFC_5245 && media->candidates) {
-		struct sdpcandidate *c = media->candidates->data;
+	if (media->port != 0) {
+		codecs_str = codecs_to_string(media->codecs);
+		candidates_str = candidates_to_string(media->candidates, ice_version);
+		remote_candidates_str = remote_candidates_to_string(media->remote_candidates,
+								    ice_version);
 
-		credentials = g_strdup_printf("a=ice-ufrag:%s\r\n"
-					      "a=ice-pwd:%s\r\n",
-					      c->username,
-					      c->password);
+		attributes_str = attributes_to_string(media->attributes);
+		credentials = NULL;
+
+
+		if (ice_version == SIPE_ICE_RFC_5245 && media->candidates) {
+			struct sdpcandidate *c = media->candidates->data;
+
+			credentials = g_strdup_printf("a=ice-ufrag:%s\r\n"
+						      "a=ice-pwd:%s\r\n",
+						      c->username,
+						      c->password);
+		}
 	}
 
 	media_str = g_strdup_printf("m=%s %d RTP/AVP%s\r\n"
@@ -584,10 +594,10 @@ media_to_string(const struct sdpmedia *media, SipeIceVersion ice_version)
 				    "%s"
 				    "%s",
 				    media->name, media->port, codec_ids_str,
-				    candidates_str,
-				    remote_candidates_str,
-				    codecs_str,
-				    attributes_str,
+				    candidates_str ? candidates_str : "",
+				    remote_candidates_str ? remote_candidates_str : "",
+				    codecs_str ? codecs_str : "",
+				    attributes_str ? attributes_str : "",
 				    credentials ? credentials : "");
 
 	g_free(codecs_str);

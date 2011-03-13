@@ -1,0 +1,514 @@
+From 899581d0f148f9714ec4fcb312ab28f2b9003ce9 Mon Sep 17 00:00:00 2001
+From: Jakub Adam <jakub.adam@ktknet.cz>
+Date: Wed, 2 Mar 2011 23:40:24 +0100
+Subject: [PATCH] Allow dynamic adding and removal of audio and video streams during call
+
+---
+ libpurple/media/backend-fs2.c |  114 +++++++++++++++++++++-----
+ pidgin/gtkmedia.c             |  176 +++++++++++++++++++++++++++++++++++------
+ 2 files changed, 243 insertions(+), 47 deletions(-)
+
+diff --git a/libpurple/media/backend-fs2.c b/libpurple/media/backend-fs2.c
+index 6b43695..91d37fb 100644
+--- a/libpurple/media/backend-fs2.c
++++ b/libpurple/media/backend-fs2.c
+@@ -89,6 +89,9 @@ static void purple_media_backend_fs2_set_params(PurpleMediaBackend *self,
+ 		guint num_params, GParameter *params);
+ static const gchar **purple_media_backend_fs2_get_available_params(void);
+ 
++static void free_stream(PurpleMediaBackendFs2Stream *stream);
++static void free_session(PurpleMediaBackendFs2Session *session);
++
+ struct _PurpleMediaBackendFs2Class
+ {
+ 	GObjectClass parent_class;
+@@ -113,6 +116,8 @@ struct _PurpleMediaBackendFs2Stream
+ 	GstElement *tee;
+ 	GstElement *volume;
+ 	GstElement *level;
++	GstElement *fakesink;
++	GstElement *queue;
+ 
+ 	GList *local_candidates;
+ 	GList *remote_candidates;
+@@ -303,20 +308,7 @@ purple_media_backend_fs2_finalize(GObject *obj)
+ 	for (; priv->streams; priv->streams =
+ 			g_list_delete_link(priv->streams, priv->streams)) {
+ 		PurpleMediaBackendFs2Stream *stream = priv->streams->data;
+-
+-		/* Remove the connected_cb timeout */
+-		if (stream->connected_cb_id != 0)
+-			purple_timeout_remove(stream->connected_cb_id);
+-
+-		g_free(stream->participant);
+-
+-		if (stream->local_candidates)
+-			fs_candidate_list_destroy(stream->local_candidates);
+-
+-		if (stream->remote_candidates)
+-			fs_candidate_list_destroy(stream->remote_candidates);
+-
+-		g_free(stream);
++		free_stream(stream);
+ 	}
+ 
+ 	if (priv->sessions) {
+@@ -326,8 +318,7 @@ purple_media_backend_fs2_finalize(GObject *obj)
+ 				g_list_delete_link(sessions, sessions)) {
+ 			PurpleMediaBackendFs2Session *session =
+ 					sessions->data;
+-			g_free(session->id);
+-			g_free(session);
++			free_session(session);
+ 		}
+ 
+ 		g_hash_table_destroy(priv->sessions);
+@@ -1143,9 +1134,62 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, PurpleMediaBackendFs2 *self)
+ }
+ 
+ static void
++remove_element(GstElement *element)
++{
++	if (element) {
++		gst_element_set_locked_state(element, TRUE);
++		gst_element_set_state(element, GST_STATE_NULL);
++		gst_bin_remove(GST_BIN(GST_ELEMENT_PARENT(element)), element);
++	}
++}
++
++static void
+ state_changed_cb(PurpleMedia *media, PurpleMediaState state,
+ 		gchar *sid, gchar *name, PurpleMediaBackendFs2 *self)
+ {
++	if (state == PURPLE_MEDIA_STATE_END) {
++		PurpleMediaBackendFs2Private *priv =
++				PURPLE_MEDIA_BACKEND_FS2_GET_PRIVATE(self);
++
++		if (sid && name) {
++			PurpleMediaBackendFs2Stream *stream = get_stream(self, sid, name);
++			gst_object_unref(stream->stream);
++
++			priv->streams = g_list_remove(priv->streams, stream);
++
++			remove_element(stream->src);
++			remove_element(stream->tee);
++			remove_element(stream->volume);
++			remove_element(stream->level);
++			remove_element(stream->fakesink);
++			remove_element(stream->queue);
++
++			free_stream(stream);
++		} else if (sid && !name) {
++			PurpleMediaBackendFs2Session *session = get_session(self, sid);
++			GstPad *pad;
++
++			g_object_get(session->session, "sink-pad", &pad, NULL);
++			gst_pad_unlink(GST_PAD_PEER(pad), pad);
++			gst_object_unref(pad);
++
++			gst_object_unref(session->session);
++			g_hash_table_remove(priv->sessions, session->id);
++
++			pad = gst_pad_get_peer(session->srcpad);
++			gst_element_remove_pad(GST_ELEMENT_PARENT(pad), pad);
++			gst_object_unref(pad);
++			gst_object_unref(session->srcpad);
++
++			remove_element(session->srcvalve);
++			remove_element(session->tee);
++
++			free_session(session);
++		}
++
++		purple_media_manager_remove_output_windows(
++				purple_media_get_manager(media), media, sid, name);
++	}
+ }
+ 
+ static void
+@@ -1425,6 +1469,7 @@ create_src(PurpleMediaBackendFs2 *self, const gchar *sess_id,
+ 			  ? "success" : "failure");
+ 	gst_element_set_locked_state(session->src, FALSE);
+ 	gst_object_unref(session->src);
++	gst_object_unref(sinkpad);
+ 
+ 	gst_element_set_state(session->src, GST_STATE_PLAYING);
+ 
+@@ -1541,6 +1586,13 @@ create_session(PurpleMediaBackendFs2 *self, const gchar *sess_id,
+ 	return TRUE;
+ }
+ 
++static void
++free_session(PurpleMediaBackendFs2Session *session)
++{
++	g_free(session->id);
++	g_free(session);
++}
++
+ static gboolean
+ create_participant(PurpleMediaBackendFs2 *self, const gchar *name)
+ {
+@@ -1608,7 +1660,6 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
+ 		GstElement *sink = NULL;
+ 
+ 		if (codec->media_type == FS_MEDIA_TYPE_AUDIO) {
+-			GstElement *queue = NULL;
+ 			double output_volume = purple_prefs_get_int(
+ 					"/purple/media/audio/volume/output")/10.0;
+ 			/*
+@@ -1616,7 +1667,7 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
+ 			 *  audioconvert ! audioresample ! liveadder !
+ 			 *   audioresample ! audioconvert ! realsink
+ 			 */
+-			queue = gst_element_factory_make("queue", NULL);
++			stream->queue = gst_element_factory_make("queue", NULL);
+ 			stream->volume = gst_element_factory_make(
+ 					"volume", NULL);
+ 			g_object_set(stream->volume, "volume",
+@@ -1630,18 +1681,18 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
+ 					PURPLE_MEDIA_RECV_AUDIO, priv->media,
+ 					stream->session->id,
+ 					stream->participant);
+-			gst_bin_add(GST_BIN(priv->confbin), queue);
++			gst_bin_add(GST_BIN(priv->confbin), stream->queue);
+ 			gst_bin_add(GST_BIN(priv->confbin), stream->volume);
+ 			gst_bin_add(GST_BIN(priv->confbin), stream->level);
+ 			gst_bin_add(GST_BIN(priv->confbin), sink);
+ 			gst_element_set_state(sink, GST_STATE_PLAYING);
+ 			gst_element_set_state(stream->level, GST_STATE_PLAYING);
+ 			gst_element_set_state(stream->volume, GST_STATE_PLAYING);
+-			gst_element_set_state(queue, GST_STATE_PLAYING);
++			gst_element_set_state(stream->queue, GST_STATE_PLAYING);
+ 			gst_element_link(stream->level, sink);
+ 			gst_element_link(stream->volume, stream->level);
+-			gst_element_link(queue, stream->volume);
+-			sink = queue;
++			gst_element_link(stream->queue, stream->volume);
++			sink = stream->queue;
+ 		} else if (codec->media_type == FS_MEDIA_TYPE_VIDEO) {
+ 			stream->src = gst_element_factory_make(
+ 					"fsfunnel", NULL);
+@@ -1650,6 +1701,7 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
+ 			g_object_set(G_OBJECT(sink), "async", FALSE, NULL);
+ 			gst_bin_add(GST_BIN(priv->confbin), sink);
+ 			gst_element_set_state(sink, GST_STATE_PLAYING);
++			stream->fakesink = sink;
+ 		}
+ 		stream->tee = gst_element_factory_make("tee", NULL);
+ 		gst_bin_add_many(GST_BIN(priv->confbin),
+@@ -1819,6 +1871,24 @@ create_stream(PurpleMediaBackendFs2 *self,
+ 	return TRUE;
+ }
+ 
++static void
++free_stream(PurpleMediaBackendFs2Stream *stream)
++{
++	/* Remove the connected_cb timeout */
++	if (stream->connected_cb_id != 0)
++		purple_timeout_remove(stream->connected_cb_id);
++
++	g_free(stream->participant);
++
++	if (stream->local_candidates)
++		fs_candidate_list_destroy(stream->local_candidates);
++
++	if (stream->remote_candidates)
++		fs_candidate_list_destroy(stream->remote_candidates);
++
++	g_free(stream);
++}
++
+ static gboolean
+ purple_media_backend_fs2_add_stream(PurpleMediaBackend *self,
+ 		const gchar *sess_id, const gchar *who,
+diff --git a/pidgin/gtkmedia.c b/pidgin/gtkmedia.c
+index eec4e54..ca4e10c 100644
+--- a/pidgin/gtkmedia.c
++++ b/pidgin/gtkmedia.c
+@@ -93,7 +93,7 @@ struct _PidginMediaPrivate
+ 	GtkWidget *pause;
+ 
+ 	GtkWidget *send_progress;
+-	GtkWidget *recv_progress;
++	GHashTable *recv_progressbars;
+ 
+ 	PidginMediaState state;
+ 
+@@ -102,7 +102,7 @@ struct _PidginMediaPrivate
+ 	GtkWidget *recv_widget;
+ 	GtkWidget *button_widget;
+ 	GtkWidget *local_video;
+-	GtkWidget *remote_video;
++	GHashTable *remote_videos;
+ 
+ 	guint timeout_id;
+ 	PurpleMediaSessionType request_type;
+@@ -352,18 +352,110 @@ pidgin_media_init (PidginMedia *media)
+ 
+ 	g_signal_connect(G_OBJECT(media), "delete-event",
+ 			G_CALLBACK(pidgin_media_delete_event_cb), media);
++
++	media->priv->recv_progressbars =
++			g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
++	media->priv->remote_videos =
++			g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
++}
++
++static gchar *
++create_key(const gchar *session_id, const gchar *participant)
++{
++	return g_strdup_printf("%s_%s", session_id, participant);
++}
++
++static void
++pidgin_media_insert_widget(PidginMedia *gtkmedia, GtkWidget *widget,
++		const gchar *session_id, const gchar *participant)
++{
++	gchar *key = create_key(session_id, participant);
++	PurpleMediaSessionType type =
++			purple_media_get_session_type(gtkmedia->priv->media, session_id);
++
++	if (type & PURPLE_MEDIA_AUDIO)
++		g_hash_table_insert(gtkmedia->priv->recv_progressbars, key, widget);
++	else if (type & PURPLE_MEDIA_VIDEO)
++		g_hash_table_insert(gtkmedia->priv->remote_videos, key, widget);
++}
++
++static GtkWidget *
++pidgin_media_get_widget(PidginMedia *gtkmedia,
++		const gchar *session_id, const gchar *participant)
++{
++	GtkWidget *widget = NULL;
++	gchar *key = create_key(session_id, participant);
++	PurpleMediaSessionType type =
++			purple_media_get_session_type(gtkmedia->priv->media, session_id);
++
++	if (type & PURPLE_MEDIA_AUDIO)
++		widget = g_hash_table_lookup(gtkmedia->priv->recv_progressbars, key);
++	else if (type & PURPLE_MEDIA_VIDEO)
++		widget = g_hash_table_lookup(gtkmedia->priv->remote_videos, key);
++
++	g_free(key);
++	return widget;
++}
++
++static void
++pidgin_media_remove_widget(PidginMedia *gtkmedia,
++		const gchar *session_id, const gchar *participant)
++{
++	GtkWidget *widget = pidgin_media_get_widget(gtkmedia, session_id, participant);
++
++	if (widget) {
++		PurpleMediaSessionType type =
++				purple_media_get_session_type(gtkmedia->priv->media, session_id);
++		gchar *key = create_key(session_id, participant);
++		GtkRequisition req;
++
++		if (type & PURPLE_MEDIA_AUDIO) {
++			g_hash_table_remove(gtkmedia->priv->recv_progressbars, key);
++
++			if (g_hash_table_size(gtkmedia->priv->recv_progressbars) == 0 &&
++				gtkmedia->priv->send_progress) {
++
++				gtk_widget_destroy(gtkmedia->priv->send_progress);
++				gtkmedia->priv->send_progress = NULL;
++
++				gtk_widget_destroy(gtkmedia->priv->mute);
++				gtkmedia->priv->mute = NULL;
++			}
++		} else if (type & PURPLE_MEDIA_VIDEO) {
++			g_hash_table_remove(gtkmedia->priv->remote_videos, key);
++
++			if (g_hash_table_size(gtkmedia->priv->remote_videos) == 0 &&
++				gtkmedia->priv->local_video) {
++
++				gtk_widget_destroy(gtkmedia->priv->local_video);
++				gtkmedia->priv->local_video = NULL;
++
++				gtk_widget_destroy(gtkmedia->priv->pause);
++				gtkmedia->priv->pause = NULL;
++			}
++		}
++
++		g_free(key);
++
++		gtk_widget_destroy(widget);
++
++		gtk_widget_size_request(GTK_WIDGET(gtkmedia), &req);
++		gtk_window_resize(GTK_WINDOW(gtkmedia), req.width, req.height);
++	}
+ }
+ 
+ static void
+ level_message_cb(PurpleMedia *media, gchar *session_id, gchar *participant,
+ 		double level, PidginMedia *gtkmedia)
+ {
+-	GtkWidget *progress;
++	GtkWidget *progress = NULL;
+ 	if (participant == NULL)
+ 		progress = gtkmedia->priv->send_progress;
+ 	else
+-		progress = gtkmedia->priv->recv_progress;
+-	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), level * 5);
++		progress = pidgin_media_get_widget(gtkmedia, session_id, participant);
++
++	if (progress)
++		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), level * 5);
+ }
+ 
+ 
+@@ -402,6 +494,13 @@ pidgin_media_dispose(GObject *media)
+ 	if (gtkmedia->priv->timeout_id != 0)
+ 		g_source_remove(gtkmedia->priv->timeout_id);
+ 
++	if (gtkmedia->priv->recv_progressbars) {
++		g_hash_table_destroy(gtkmedia->priv->recv_progressbars);
++		g_hash_table_destroy(gtkmedia->priv->remote_videos);
++		gtkmedia->priv->recv_progressbars = NULL;
++		gtkmedia->priv->remote_videos = NULL;
++	}
++
+ 	G_OBJECT_CLASS(parent_class)->dispose(media);
+ }
+ 
+@@ -436,24 +535,30 @@ static gboolean
+ realize_cb_cb(PidginMediaRealizeData *data)
+ {
+ 	PidginMediaPrivate *priv = data->gtkmedia->priv;
+-	gulong window_id;
++	GdkWindow *window = NULL;
+ 
+-#ifdef _WIN32
+ 	if (data->participant == NULL)
+-		window_id = GDK_WINDOW_HWND(priv->local_video->window);
+-	else
+-		window_id = GDK_WINDOW_HWND(priv->remote_video->window);
++		window = gtk_widget_get_window(priv->local_video);
++	else {
++		GtkWidget *widget = pidgin_media_get_widget(data->gtkmedia,
++				data->session_id, data->participant);
++		if (widget)
++			window = gtk_widget_get_window(widget);
++	}
++
++	if (window) {
++		gulong window_id;
++#ifdef _WIN32
++		window_id = GDK_WINDOW_HWND(window);
+ #elif defined(HAVE_X11)
+-	if (data->participant == NULL)
+-		window_id = GDK_WINDOW_XWINDOW(priv->local_video->window);
+-	else
+-		window_id = GDK_WINDOW_XWINDOW(priv->remote_video->window);
++		window_id = GDK_WINDOW_XWINDOW(window);
+ #else
+-#	error "Unsupported windowing system"
++#		error "Unsupported windowing system"
+ #endif
+ 
+-	purple_media_set_output_window(priv->media, data->session_id,
+-			data->participant, window_id);
++		purple_media_set_output_window(priv->media, data->session_id,
++				data->participant, window_id);
++	}
+ 
+ 	g_free(data->session_id);
+ 	g_free(data->participant);
+@@ -563,9 +668,17 @@ pidgin_media_output_volume_changed(GtkRange *range, PurpleMedia *media)
+ 	purple_media_set_output_volume(media, NULL, NULL, val);
+ }
+ 
++static void
++destroy_parent_widget_cb(GtkWidget *widget, GtkWidget *parent)
++{
++	g_return_if_fail(GTK_IS_WIDGET(parent));
++
++	gtk_widget_destroy(parent);
++}
++
+ static GtkWidget *
+ pidgin_media_add_audio_widget(PidginMedia *gtkmedia,
+-		PurpleMediaSessionType type)
++		PurpleMediaSessionType type, const gchar *sid)
+ {
+ 	GtkWidget *volume_widget, *progress_parent, *volume, *progress;
+ 	double value;
+@@ -619,9 +732,14 @@ pidgin_media_add_audio_widget(PidginMedia *gtkmedia,
+ 		g_signal_connect (G_OBJECT(volume), "value-changed",
+ 				G_CALLBACK(pidgin_media_output_volume_changed),
+ 				gtkmedia->priv->media);
+-		gtkmedia->priv->recv_progress = progress;
++
++		pidgin_media_insert_widget(gtkmedia, progress, sid, gtkmedia->priv->screenname);
+ 	}
+ 
++	g_signal_connect(G_OBJECT(progress), "destroy",
++			G_CALLBACK(destroy_parent_widget_cb),
++			volume_widget);
++
+ 	gtk_widget_show_all(volume_widget);
+ 
+ 	return volume_widget;
+@@ -691,13 +809,17 @@ pidgin_media_ready_cb(PurpleMedia *media, PidginMedia *gtkmedia, const gchar *si
+ 				G_CALLBACK(realize_cb), data);
+ 		gtk_container_add(GTK_CONTAINER(aspect), remote_video);
+ 		gtk_widget_set_size_request (GTK_WIDGET(remote_video), 320, 240);
++		g_signal_connect(G_OBJECT(remote_video), "destroy",
++				G_CALLBACK(destroy_parent_widget_cb), aspect);
++
+ 		gtk_widget_show(remote_video);
+ 		gtk_widget_show(aspect);
+ 
+-		gtkmedia->priv->remote_video = remote_video;
++		pidgin_media_insert_widget(gtkmedia, remote_video,
++				data->session_id, data->participant);
+ 	}
+ 
+-	if (type & PURPLE_MEDIA_SEND_VIDEO) {
++	if (type & PURPLE_MEDIA_SEND_VIDEO && !gtkmedia->priv->local_video) {
+ 		PidginMediaRealizeData *data;
+ 		GtkWidget *aspect;
+ 		GtkWidget *local_video;
+@@ -718,6 +840,8 @@ pidgin_media_ready_cb(PurpleMedia *media, PidginMedia *gtkmedia, const gchar *si
+ 				G_CALLBACK(realize_cb), data);
+ 		gtk_container_add(GTK_CONTAINER(aspect), local_video);
+ 		gtk_widget_set_size_request (GTK_WIDGET(local_video), 80, 60);
++		g_signal_connect(G_OBJECT(local_video), "destroy",
++				G_CALLBACK(destroy_parent_widget_cb), aspect);
+ 
+ 		gtk_widget_show(local_video);
+ 		gtk_widget_show(aspect);
+@@ -736,7 +860,7 @@ pidgin_media_ready_cb(PurpleMedia *media, PidginMedia *gtkmedia, const gchar *si
+ 	if (type & PURPLE_MEDIA_RECV_AUDIO) {
+ 		gtk_box_pack_end(GTK_BOX(recv_widget),
+ 				pidgin_media_add_audio_widget(gtkmedia,
+-				PURPLE_MEDIA_RECV_AUDIO), FALSE, FALSE, 0);
++				PURPLE_MEDIA_RECV_AUDIO, sid), FALSE, FALSE, 0);
+ 	}
+ 
+ 	if (type & PURPLE_MEDIA_SEND_AUDIO) {
+@@ -751,7 +875,7 @@ pidgin_media_ready_cb(PurpleMedia *media, PidginMedia *gtkmedia, const gchar *si
+ 
+ 		gtk_box_pack_end(GTK_BOX(recv_widget),
+ 				pidgin_media_add_audio_widget(gtkmedia,
+-				PURPLE_MEDIA_SEND_AUDIO), FALSE, FALSE, 0);
++				PURPLE_MEDIA_SEND_AUDIO, NULL), FALSE, FALSE, 0);
+ 	}
+ 
+ 	if (type & PURPLE_MEDIA_AUDIO &&
+@@ -804,8 +928,10 @@ pidgin_media_state_changed_cb(PurpleMedia *media, PurpleMediaState state,
+ {
+ 	purple_debug_info("gtkmedia", "state: %d sid: %s name: %s\n",
+ 			state, sid ? sid : "(null)", name ? name : "(null)");
+-	if (sid == NULL && name == NULL) {
+-		if (state == PURPLE_MEDIA_STATE_END) {
++	if (state == PURPLE_MEDIA_STATE_END) {
++		if (sid != NULL && name != NULL) {
++			pidgin_media_remove_widget(gtkmedia, sid, name);
++		} else if (sid == NULL && name == NULL) {
+ 			pidgin_media_emit_message(gtkmedia,
+ 					_("The call has been terminated."));
+ 			gtk_widget_destroy(GTK_WIDGET(gtkmedia));
+-- 
+1.7.2.3
+

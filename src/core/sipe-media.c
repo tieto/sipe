@@ -477,7 +477,6 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 			return FALSE;
 	}
 
-	call_private->ice_version = msg->ice_version;
 	call_private->encryption_compatible = encryption_levels_compatible(msg);
 
 	return TRUE;
