@@ -41,6 +41,10 @@
 struct sipe_backend_media {
 	PurpleMedia *m;
 	GSList *streams;
+	/**
+	 * Number of media streams that were not yet locally accepted or rejected.
+	 */
+	guint unconfirmed_streams;
 };
 
 struct sipe_backend_stream {
@@ -92,8 +96,9 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		    struct sipe_media_call *call)
 {
 	SIPE_DEBUG_INFO("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
-	if (state == PURPLE_MEDIA_STATE_CONNECTED && call->media_connected_cb)
-		call->media_connected_cb(call);
+	if (state == PURPLE_MEDIA_STATE_END &&
+	    !sessionid && !participant && call->media_end_cb)
+		call->media_end_cb(call);
 }
 
 /* Used externally in purple-plugin.c. This declaration stops the compiler
@@ -125,10 +130,12 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		  gboolean local,
 		  struct sipe_media_call *call)
 {
-	if (type == PURPLE_MEDIA_INFO_ACCEPT && call->call_accept_cb
-	    && !sessionid && !participant)
-		call->call_accept_cb(call, local);
-	else if (type == PURPLE_MEDIA_INFO_HOLD || type == PURPLE_MEDIA_INFO_UNHOLD) {
+	if (type == PURPLE_MEDIA_INFO_ACCEPT) {
+		if (call->call_accept_cb && !sessionid && !participant)
+			call->call_accept_cb(call, local);
+		else if (sessionid && participant && local)
+			--call->backend_private->unconfirmed_streams;
+	} else if (type == PURPLE_MEDIA_INFO_HOLD || type == PURPLE_MEDIA_INFO_UNHOLD) {
 
 		gboolean state = (type == PURPLE_MEDIA_INFO_HOLD);
 
@@ -161,7 +168,7 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		if (!sessionid && !participant) {
 			if (type == PURPLE_MEDIA_INFO_HANGUP && call->call_hangup_cb)
 				call->call_hangup_cb(call, local);
-			else if (type == PURPLE_MEDIA_INFO_REJECT && call->call_reject_cb)
+			else if (type == PURPLE_MEDIA_INFO_REJECT && call->call_reject_cb && !local)
 				call->call_reject_cb(call, local);
 		} else if (sessionid && participant) {
 			struct sipe_backend_stream *stream;
@@ -171,6 +178,9 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			if (stream) {
 				call->backend_private->streams = g_slist_remove(call->backend_private->streams, stream);
 				backend_stream_free(stream);
+				if (local && --call->backend_private->unconfirmed_streams == 0 &&
+				    call->call_reject_cb)
+					call->call_reject_cb(call, local);
 			}
 		}
 	}
@@ -366,6 +376,8 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		stream->candidates_prepared = FALSE;
 
 		media->streams = g_slist_append(media->streams, stream);
+		if (!initiator)
+			++media->unconfirmed_streams;
 	}
 
 	if (media_relays)

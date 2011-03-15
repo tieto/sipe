@@ -7,6 +7,7 @@ supports voice & video):
 	- purple_media_get_active_candidates.patch
 	- purple_SDES.patch
 	- pidgin_media_dynamic_av.patch
+	- pidgin_media_reject_only_unaccepted_sessions.patch
 - compile SIPE source, check that voice support is enabled in configure output
 - If you get errors on incompatible encryption levels when making a call, change
   to peer's registry is needed to allow unencrypted media transfer; use the

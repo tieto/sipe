@@ -560,8 +560,13 @@ static void candidates_prepared_cb(struct sipe_media_call *call,
 	}
 }
 
-static void media_connected_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call_private *call_private)
+static void
+media_end_cb(struct sipe_media_call *call)
 {
+	g_return_if_fail(call);
+
+	SIPE_MEDIA_CALL_PRIVATE->sipe_private->media_call = NULL;
+	sipe_media_call_free(SIPE_MEDIA_CALL_PRIVATE);
 }
 
 static void call_accept_cb(struct sipe_media_call *call, gboolean local)
@@ -573,13 +578,12 @@ static void call_accept_cb(struct sipe_media_call *call, gboolean local)
 
 static void call_reject_cb(struct sipe_media_call *call, gboolean local)
 {
-	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
-
 	if (local) {
-		sip_transport_response(call_private->sipe_private, call_private->invitation, 603, "Decline", NULL);
+		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+		sip_transport_response(call_private->sipe_private,
+				       call_private->invitation,
+				       603, "Decline", NULL);
 	}
-	call_private->sipe_private->media_call = NULL;
-	sipe_media_call_free(call_private);
 }
 
 static gboolean
@@ -597,9 +601,8 @@ static void call_hold_cb(struct sipe_media_call *call,
 
 static void call_hangup_cb(struct sipe_media_call *call, gboolean local)
 {
-	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
-
 	if (local) {
+		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 		struct sip_session *session;
 		session = sipe_session_find_call(call_private->sipe_private,
 						 call_private->with);
@@ -608,9 +611,6 @@ static void call_hangup_cb(struct sipe_media_call *call, gboolean local)
 			sipe_session_close(call_private->sipe_private, session);
 		}
 	}
-
-	call_private->sipe_private->media_call = NULL;
-	sipe_media_call_free(call_private);
 }
 
 static void
@@ -655,7 +655,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private,
 	call_private->encryption_compatible = TRUE;
 
 	call_private->public.candidates_prepared_cb = candidates_prepared_cb;
-	call_private->public.media_connected_cb     = media_connected_cb;
+	call_private->public.media_end_cb           = media_end_cb;
 	call_private->public.call_accept_cb         = call_accept_cb;
 	call_private->public.call_reject_cb         = call_reject_cb;
 	call_private->public.call_hold_cb           = call_hold_cb;
