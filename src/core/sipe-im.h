@@ -107,3 +107,23 @@ void sipe_im_cancel_dangling(struct sipe_core_private *sipe_private,
 			     struct sip_dialog *dialog,
 			     const gchar *with,
 			     unconfirmed_callback callback);
+
+/**
+ * Sets a topic for IM conversation
+ *
+ * @param sipe_private (in) SIPE core data
+ * @param session      (in) pointer to session
+ * @param topic        (in) string describing conversation topic
+ */
+void sipe_im_topic(struct sipe_core_private *sipe_private,
+		   struct sip_session *session,
+		   const gchar *topic);
+
+/**
+ * Processes INFO message with application/xml+conversationinfo content type
+ *
+ * @param sipe_private (in) SIPE core data
+ * @param msg          (in) SIP INFO message
+ */
+void process_incoming_info_conversation(struct sipe_core_private *sipe_private,
+					struct sipmsg *msg);

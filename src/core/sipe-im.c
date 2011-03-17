@@ -44,6 +44,7 @@
 #include "sipe-session.h"
 #include "sipe-user.h"
 #include "sipe-utils.h"
+#include "sipe-xml.h"
 
 /*
  * Hash key template for unconfirmed messages
@@ -825,6 +826,49 @@ void sipe_im_cancel_dangling(struct sipe_core_private *sipe_private,
 	   so make sure the dialog is removed for sure. */
 	sipe_dialog_remove(session, with);
 	/* dialog is no longer valid */
+}
+
+void sipe_im_topic(struct sipe_core_private *sipe_private,
+		   struct sip_session *session,
+		   const gchar *topic)
+{
+	g_free(session->subject);
+	session->subject = g_strdup(topic);
+	sipe_backend_im_topic(SIPE_CORE_PUBLIC, session->with, topic);
+}
+
+void process_incoming_info_conversation(struct sipe_core_private *sipe_private,
+					struct sipmsg *msg)
+{
+	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
+	const gchar *from = NULL;
+	const gchar *subject = NULL;
+
+
+	if (!xml)
+		return;
+
+	if (sipe_strequal(sipe_xml_name(xml), "ConversationInfo")) {
+		const sipe_xml *node = sipe_xml_child(xml, "From");
+		if (node)
+			from = sipe_xml_attribute(node, "uri");
+
+		node = sipe_xml_child(xml, "Subject");
+		if (node)
+			subject = sipe_xml_data(node);
+	}
+
+	if (from && subject) {
+		struct sip_session *session;
+		session = sipe_session_find_im(sipe_private, from);
+
+		if (session)
+			sipe_im_topic(sipe_private, session, subject);
+	}
+
+	sipe_xml_free(xml);
+
+	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 }
 
 /*

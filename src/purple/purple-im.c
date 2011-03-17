@@ -30,6 +30,7 @@
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-nls.h"
 
 void sipe_backend_im_message(struct sipe_core_public *sipe_public,
 			     const gchar *from,
@@ -41,6 +42,34 @@ void sipe_backend_im_message(struct sipe_core_public *sipe_public,
 		    html,
 		    0,
 		    time(NULL));
+}
+
+void sipe_backend_im_topic(struct sipe_core_public *sipe_public,
+			   const gchar *with,
+			   const gchar *topic)
+{
+	PurpleAccount *account = sipe_public->backend_private->account;
+	PurpleConversation *conv;
+	gchar *msg;
+
+	/*
+	 * Ensure we have an open conversation with the buddy, otherwise
+	 * message would be lost.
+	 */
+	conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY,
+						     with,
+						     account);
+	if (!conv)
+		conv = purple_conversation_new(PURPLE_CONV_TYPE_IM,
+					       account,
+					       with);
+
+	msg = g_strdup_printf(_("Conversation subject: %s"), topic);
+	sipe_backend_notify_message_info(sipe_public,
+					 (struct sipe_backend_chat_session *)conv,
+					 with,
+					 msg);
+	g_free(msg);
 }
 
 /*

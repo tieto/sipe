@@ -143,6 +143,11 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 		process_incoming_info_csta(sipe_private, msg);
 		return;
 	}
+	else if (g_str_has_prefix(contenttype, "application/xml+conversationinfo"))
+	{
+		process_incoming_info_conversation(sipe_private, msg);
+		return;
+	}
 
 	from = parse_from(sipmsg_find_header(msg, "From"));
 	session = sipe_session_find_chat_or_im(sipe_private, callid, from);
@@ -287,6 +292,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	const gchar *end_points_hdr = sipmsg_find_header(msg, "EndPoints");
 	const gchar *trig_invite    = sipmsg_find_header(msg, "TriggeredInvite");
 	const gchar *content_type   = sipmsg_find_header(msg, "Content-Type");
+	const gchar *subject        = sipmsg_find_header(msg, "Subject");
 	GSList *end_points = NULL;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
@@ -465,6 +471,9 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 				      from,
 				      TRUE);
 	}
+
+	if (!is_multiparty && subject)
+		sipe_im_topic(sipe_private, session, subject);
 
 	/* ms-text-format: text/plain; charset=UTF-8;msgr=WAAtAE0...DIADQAKAA0ACgA;ms-body=SGk= */
 
