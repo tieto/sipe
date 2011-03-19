@@ -1,7 +1,20 @@
 #!/usr/bin/perl -w
 #
-# Fix up pidgin-sipe.pot after an update with intltool-update --pot
-# This is required to make it acceptable for Transifex
+# Fix up pidgin-sipe.pot after an update to make it acceptable for Transifex
+#
+# Transifex update procedure:
+#
+#    $ cd po
+#    $ intltool-update --pot -g pidgin-sipe     # update POT file
+#    $ ./transifex-pot-fixup.pl                 # this script
+#    $ cd ..
+#    $ tx push -s                               # update POT file on Transifex
+#
+#    [optional: update the languages you know on Transifex]
+#
+#    $ tx pull -s                               # fetch updated translations
+#    $ git add -u po/*.po po/*.pot              # add files to next commit
+#    $ git commit -e
 #
 use 5.008;
 use strict;
@@ -22,9 +35,9 @@ my @lines = ( <<"END_OF_HEADER"
 # (English) English User Interface strings for pidgin-sipe.
 # Copyright (C) 2008-2011 SIPE Project <http://sipe.sourceforge.net/>
 # This file is distributed under the same license as the pidgin-sipe package.
-#
-#
-#
+# 
+# 
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\\n"
@@ -41,27 +54,9 @@ msgstr ""
 END_OF_HEADER
 	    );
 
-my $lastid = "";
-my $multiline;
 while (<$fh>) {
   # skip header
   next if $. < 20;
-
-  # Copy original text from msgid to msgstr
-  if (/^msgstr ("")$/) {
-    if ($multiline) {
-      push(@lines, qq{msgstr ""\n}, $lastid);
-      $multiline = 0;
-    } else {
-      push(@lines, qq{msgstr "$lastid"\n});
-    }
-    next;
-  } elsif ($multiline) {
-    $lastid .= $_;
-  } elsif (/^msgid "(.*)"$/) {
-    $lastid = $1;
-    $multiline = 1 if $lastid eq "";
-  }
 
   push(@lines, $_);
 }

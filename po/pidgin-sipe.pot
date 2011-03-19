@@ -1,15 +1,15 @@
 # (English) English User Interface strings for pidgin-sipe.
 # Copyright (C) 2008-2011 SIPE Project <http://sipe.sourceforge.net/>
 # This file is distributed under the same license as the pidgin-sipe package.
-#
-#
-#
+# 
+# 
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-03-19 00:18+0000\n"
+"PO-Revision-Date: 2011-03-19 17:28+0000\n"
 "Last-Translator: stefanb <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -48,7 +48,8 @@ msgstr "Not found: %s. Please contact your Administrator"
 
 #: ../src/core/sip-transport.c:1223
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr "SIP is either not enabled for the destination URI or it does not exist"
+msgstr ""
+"SIP is either not enabled for the destination URI or it does not exist"
 
 #: ../src/core/sip-transport.c:1250 ../src/core/sip-transport.c:1274
 #, c-format
@@ -203,8 +204,8 @@ msgstr "Email"
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Found %d contact%s:"
+msgstr[1] "Found %d contacts%s:"
 
 #: ../src/core/sipe.c:5402
 msgid " (more matched your query)"
@@ -537,7 +538,8 @@ msgstr "Authors"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Original texts in English (en): SIPE developers"
 
-#. Translators: (!) should be as in localized Lotus Notes to be able to extract meeting location
+#. Translators: (!) should be as in localized Lotus Notes to be able to
+#. extract meeting location
 #: ../src/core/sipe-domino.c:260 ../src/core/sipe-domino.c:261
 msgid "Location:"
 msgstr "Location:"
@@ -682,11 +684,11 @@ msgstr "User %s rejected call"
 #. Message contents not allowed by policy
 #: ../src/core/sipe-user.c:74
 msgid ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
+"Your message or invitation was not delivered, possibly because it contains a"
+" hyperlink or other content that the system administrator has blocked."
 msgstr ""
-"Your message or invitation was not delivered, possibly because it contains a "
-"hyperlink or other content that the system administrator has blocked."
+"Your message or invitation was not delivered, possibly because it contains a"
+" hyperlink or other content that the system administrator has blocked."
 
 #: ../src/core/sipe-user.c:78
 #, c-format
@@ -837,7 +839,7 @@ msgstr "Reset status"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#.
+#. 
 #: ../src/purple/purple-plugin.c:696
 msgid ""
 "Login\n"
@@ -872,8 +874,10 @@ msgstr "SSL/TLS"
 msgid "TCP"
 msgstr "TCP"
 
-#. option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
-#. sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+#. option = purple_account_option_bool_new(_("Publish status (note: everyone
+#. may watch you)"), "doservice", TRUE);
+#. sipe_prpl_info.protocol_options =
+#. g_list_append(sipe_prpl_info.protocol_options, option);
 #: ../src/purple/purple-plugin.c:712
 msgid "User Agent"
 msgstr "User Agent"
@@ -885,14 +889,14 @@ msgstr "Use Kerberos"
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
-#.
+#. 
 #: ../src/purple/purple-plugin.c:723
 msgid "Use Single Sign-On"
 msgstr "Use Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#.
+#. 
 #: ../src/purple/purple-plugin.c:730
 msgid ""
 "Email services URL\n"
@@ -911,7 +915,7 @@ msgstr ""
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#.
+#. 
 #: ../src/purple/purple-plugin.c:739
 msgid ""
 "Email login\n"
@@ -930,7 +934,7 @@ msgstr ""
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#.
+#. 
 #: ../src/purple/purple-plugin.c:749
 msgid ""
 "Group Chat Proxy\n"
