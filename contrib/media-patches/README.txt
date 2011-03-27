@@ -28,9 +28,11 @@ purple_SDES.patch
 
 pidgin_media_dynamic_av.patch
 	- reported as http://developer.pidgin.im/ticket/13535
+	- accepted for future 2.7.12 release
 
 pidgin_media_reject_only_unaccepted_sessions.patch
 	- reported as http://developer.pidgin.im/ticket/13537
+	- accepted for future 2.7.12 release
 
 Biggest show stopper now is a lack of SRTP (encrypted transfer) in Farsight library,
 requiring Office Communicator users to change their registry settings as a
