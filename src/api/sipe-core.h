@@ -298,10 +298,10 @@ void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				   const char *participant,
 				   gboolean with_video);
 /**
- * Connects to a conference call specified by given focus URI
+ * Connects to a conference call specified by given chat session
  *
- * @param sipe_private (in) SIPE core data.
- * @param chat (in) sipe_chat structure
+ * @param sipe_public (in) SIPE core data.
+ * @param chat_session (in) chat session structure
  */
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session);
