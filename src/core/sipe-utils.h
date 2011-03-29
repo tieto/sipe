@@ -446,3 +446,12 @@ gchar *sipe_utils_presence_key(const gchar *uri);
  */
 gchar *sipe_utils_subscription_key(const gchar *event,
 				   const gchar *uri);
+
+/**
+ * Decodes a URI into a plain string.
+ *
+ * @param string the string to translate.
+ *
+ * @return the resulting string. Must be g_free()'d after use.
+ */
+gchar *sipe_utils_uri_unescape(const gchar *string);

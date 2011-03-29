@@ -563,6 +563,49 @@ gchar *sipe_utils_subscription_key(const gchar *event,
 	return key;
 }
 
+gchar *
+sipe_utils_uri_unescape(const gchar *string)
+{
+	gchar *unescaped;
+	gchar *tmp;
+
+	if (!string)
+		return NULL;
+
+#if GLIB_CHECK_VERSION(2,16,0)
+	unescaped = g_uri_unescape_string(string, NULL);
+#else
+	// based on libpurple/util.c:purple_url_decode()
+	{
+		GString *buf = g_string_new(NULL);
+		size_t len = strlen(string);
+		char hex[3];
+
+		hex[2] = '\0';
+
+		while (len--) {
+			gchar c = *string++;
+
+			if ((len >= 2) && (c == '%')) {
+				strncpy(hex, string, 2);
+				c = strtol(hex, NULL, 16);
+
+				string += 2;
+				len -= 2;
+			}
+
+			g_string_append_c(buf, c);
+		}
+
+		unescaped = g_string_free(buf, FALSE);
+	}
+#endif
+	if (unescaped && !g_utf8_validate(unescaped, -1, (const gchar **)&tmp))
+		*tmp = '\0';
+
+	return unescaped;
+}
+
 /*
   Local Variables:
   mode: c

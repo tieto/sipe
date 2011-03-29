@@ -672,44 +672,6 @@ sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg)
 #define MSG_LEN 2048
 #define BUF_LEN MSG_LEN
 
-static
-gchar *sipmsg_uri_unescape(const gchar *string)
-{
-	gchar *unescaped, *tmp;
-
-	if (!string) return(NULL);
-
-#if GLIB_CHECK_VERSION(2,16,0)
-	unescaped = g_uri_unescape_string(string, NULL);
-#else
-	/* loosely based on libpurple/util.c:purple_url_decode() */
-	{
-		gsize i = 0;
-		gsize len = strlen(string);
-
-		unescaped = g_malloc(len + 1);
-		while (len-- > 0) {
-			gchar c = *string++;
-			if ((len >= 2) && (c == '%')) {
-				char hex[3];
-				strncpy(hex, string, 2);
-				hex[2] = '\0';
-				c = strtol(hex, NULL, 16);
-				string += 2;
-				len -= 2;
-			}
-			unescaped[i++] = c;
-		}
-		unescaped[i] = '\0';
-	}
-#endif
-
-	if (!g_utf8_validate(unescaped, -1, (const gchar **)&tmp))
-		*tmp = '\0';
-
-	return(unescaped);
-}
-
 void
 msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 {
@@ -811,7 +773,7 @@ msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 		}
 	}
 
-	cur = sipmsg_uri_unescape(pre->str);
+	cur = sipe_utils_uri_unescape(pre->str);
 	g_string_free(pre, TRUE);
 
 	if (pre_ret != NULL)
@@ -819,7 +781,7 @@ msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 	else
 		g_free(cur);
 
-	cur = sipmsg_uri_unescape(post->str);
+	cur = sipe_utils_uri_unescape(post->str);
 	g_string_free(post, TRUE);
 
 	if (post_ret != NULL)
