@@ -117,3 +117,12 @@ gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format);
  * @return The new message.
  */
 void sipe_parse_html(const char *html, char **attributes, char **message);
+
+/**
+ * Extracts reason string from ms-diagnostics header of SIP message
+ *
+ * @param msg SIP message
+ *
+ * @return reason string. Must be g_free()'d after use.
+ */
+gchar *sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg);

@@ -652,7 +652,15 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 	return res;
 }
 
+gchar *
+sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg)
+{
+	const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
+	if (diagnostics)
+		return sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
 
+	return NULL;
+}
 
 
 

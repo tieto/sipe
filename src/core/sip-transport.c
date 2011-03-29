@@ -1213,11 +1213,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 		case 404:
 			{
 				const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
-				gchar *reason = NULL;
+				gchar *reason = sipmsg_get_ms_diagnostics_reason(msg);
 				gchar *warning;
-				if (diagnostics != NULL) {
-					reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
-				}
 				warning = g_strdup_printf(_("Not found: %s. Please contact your Administrator"),
 							  diagnostics ? (reason ? reason : _("no reason given")) :
 							  _("SIP is either not enabled for the destination URI or it does not exist"));
@@ -1241,12 +1238,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			/* FALLTHROUGH */
                 case 503:
                         {
-				const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
-				gchar *reason = NULL;
+				gchar *reason = sipmsg_get_ms_diagnostics_reason(msg);
 				gchar *warning;
-				if (diagnostics != NULL) {
-					reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
-				}
 				warning = g_strdup_printf(_("Service unavailable: %s"), reason ? reason : _("no reason given"));
 				g_free(reason);
 
