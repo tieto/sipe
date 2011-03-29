@@ -261,8 +261,13 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 	}
 
 	if (msg->response >= 400) {
+		gchar *reason = sipmsg_get_ms_diagnostics_reason(msg);
+
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_conf_focus_response: INVITE response is not 200. Failed to join focus.");
-		/* @TODO notify user of failure to join focus */
+		sipe_backend_notify_error(_("Failed to join the conference"),
+					  reason ? reason : _("no reason given"));
+		g_free(reason);
+
 		sipe_session_remove(sipe_private, session);
 		g_free(focus_uri);
 		return FALSE;
@@ -283,6 +288,43 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 
 	g_free(focus_uri);
 	return TRUE;
+}
+
+struct sip_session *
+sipe_core_conf_create(struct sipe_core_public *sipe_public,
+		      const gchar *focus_uri)
+{
+	gchar *buf;
+	const gchar *focus_uri_ue;
+	struct sip_session *session = NULL;
+
+	focus_uri_ue = buf = sipe_utils_uri_unescape(focus_uri);
+
+	// URI can have this prefix if it was typed in by the user
+	if (g_str_has_prefix(focus_uri_ue, "meet:"))
+		focus_uri_ue += 5;
+
+	if (!focus_uri_ue || !g_str_has_prefix(focus_uri_ue, "sip:") ||
+	    strlen(focus_uri_ue) == 4 || g_strstr_len(focus_uri_ue, -1, "%")) {
+		gchar *error = g_strdup_printf(_("\"%s\" is not a valid focus URI"),
+					       focus_uri ? focus_uri : "");
+		sipe_backend_notify_error(_("Failed to join the conference"),
+					  error);
+		g_free(error);
+	} else {
+		gchar *querystr = g_strstr_len(focus_uri_ue, -1, "?");
+		if (querystr) {
+			/* TODO: Investigate how conf-key field should be used,
+			 * ignoring for now */
+			*querystr = '\0';
+		}
+
+		session =  sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri_ue);
+	}
+
+	g_free(buf);
+
+	return session;
 }
 
 /** Create new session with Focus URI */

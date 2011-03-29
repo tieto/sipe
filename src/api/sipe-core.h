@@ -293,6 +293,18 @@ void sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
 				struct sipe_chat_session *chat_session,
 				const gboolean locked);
 
+/**
+ * Create new session with Focus URI
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @param focus_uri (in) focus URI string
+ *
+ * @return new SIP session
+ */
+struct sip_session *
+sipe_core_conf_create(struct sipe_core_public *sipe_public,
+		      const gchar *focus_uri);
+
 /* media */
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				   const char *participant,

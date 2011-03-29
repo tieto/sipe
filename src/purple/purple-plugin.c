@@ -609,6 +609,50 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 		purple_connection_get_account(gc), NULL, NULL, gc);
 }
 
+static void sipe_purple_join_conference_cb(PurpleConnection *gc,
+					   PurpleRequestFields *fields)
+{
+	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
+
+	if (entries) {
+		PurpleRequestField *field = entries->data;
+		const char *id = purple_request_field_get_id(field);
+		const char *value = purple_request_field_string_get_value(field);
+
+		if (!sipe_strequal(id, "meetingLocation"))
+			return;
+
+		sipe_core_conf_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, value);
+	}
+}
+
+static void sipe_purple_show_join_conference(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	PurpleRequestFields *fields;
+	PurpleRequestFieldGroup *group;
+	PurpleRequestField *field;
+
+	fields = purple_request_fields_new();
+	group = purple_request_field_group_new(NULL);
+	purple_request_fields_add_group(fields, group);
+
+	field = purple_request_field_string_new("meetingLocation", _("Meeting location"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+
+	purple_request_fields(gc,
+		_("Join conference"),
+		_("Join scheduled conference"),
+		_("Enter meeting location string you received in the invitation.\n"
+		  "\n"
+		  "Valid location will be something like\n"
+		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"),
+		fields,
+		_("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
+		_("_Cancel"), NULL,
+		purple_connection_get_account(gc), NULL, NULL, gc);
+}
+
 static void sipe_purple_republish_calendar(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
@@ -631,6 +675,9 @@ static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 	menu = g_list_prepend(menu, act);
 
 	act = purple_plugin_action_new(_("Contact search..."), sipe_purple_show_find_contact);
+	menu = g_list_prepend(menu, act);
+
+	act = purple_plugin_action_new(_("Join scheduled conference..."), sipe_purple_show_join_conference);
 	menu = g_list_prepend(menu, act);
 
 	act = purple_plugin_action_new(_("Republish Calendar"), sipe_purple_republish_calendar);
