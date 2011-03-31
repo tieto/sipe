@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-03-19 17:29+0000\n"
+"PO-Revision-Date: 2011-03-31 17:02+0000\n"
 "Last-Translator: stefanb <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -35,27 +35,27 @@ msgstr "Wybrano niezgodny schemat uwierzytelnienia"
 msgid "You have been rejected by the server: %s"
 msgstr "Użytkownik został odrzucony przez serwer: %s"
 
-#: ../src/core/sip-transport.c:1203 ../src/core/sip-transport.c:1222
-#: ../src/core/sip-transport.c:1250 ../src/core/sip-transport.c:1274
-#: ../src/core/sipe.c:1524
+#: ../src/core/sip-transport.c:1203 ../src/core/sip-transport.c:1219
+#: ../src/core/sip-transport.c:1243 ../src/core/sip-transport.c:1267
+#: ../src/core/sipe.c:1524 ../src/core/sipe-conf.c:268
 msgid "no reason given"
 msgstr "nie podano przyczyny"
 
-#: ../src/core/sip-transport.c:1221
+#: ../src/core/sip-transport.c:1218
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Nie odnaleziono: %s. Proszę skontaktować się z administratorem"
 
-#: ../src/core/sip-transport.c:1223
+#: ../src/core/sip-transport.c:1220
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP nie jest włączony dla docelowego adresu URI lub nie istnieje"
 
-#: ../src/core/sip-transport.c:1250 ../src/core/sip-transport.c:1274
+#: ../src/core/sip-transport.c:1243 ../src/core/sip-transport.c:1267
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Usługa jest niedostępna: %s"
 
-#: ../src/core/sip-transport.c:1598
+#: ../src/core/sip-transport.c:1591
 msgid "Invalid message signature received"
 msgstr "Odebrano nieprawidłowy podpis wiadomości"
 
@@ -445,20 +445,29 @@ msgstr "%s. %s o %.2d:%.2d"
 msgid "Chat #%d"
 msgstr "Rozmowa #%d"
 
-#: ../src/core/sipe-conf.c:869
+#: ../src/core/sipe-conf.c:267 ../src/core/sipe-conf.c:311
+msgid "Failed to join the conference"
+msgstr ""
+
+#: ../src/core/sipe-conf.c:309
+#, c-format
+msgid "\"%s\" is not a valid focus URI"
+msgstr ""
+
+#: ../src/core/sipe-conf.c:911
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr ""
 "Ta konferencja nie jest już zablokowana. Dodatkowi uczestnicy mogą teraz "
 "dołączyć."
 
-#: ../src/core/sipe-conf.c:873
+#: ../src/core/sipe-conf.c:915
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
 msgstr "Ta konferencja jest zablokowana. Nikt więcej nie może teraz dołączyć."
 
-#: ../src/core/sipe-conf.c:906
+#: ../src/core/sipe-conf.c:948
 msgid "You have been disconnected from this conference."
 msgstr "Rozłączono z tej konferencji."
 
@@ -770,7 +779,7 @@ msgstr "Opis"
 #: ../src/purple/purple-im.c:67
 #, c-format
 msgid "Conversation subject: %s"
-msgstr ""
+msgstr "Temat rozmowy: %s"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -814,23 +823,51 @@ msgstr ""
 msgid "_Search"
 msgstr "Wy_szukaj"
 
-#: ../src/purple/purple-plugin.c:608
+#: ../src/purple/purple-plugin.c:608 ../src/purple/purple-plugin.c:652
 msgid "_Cancel"
 msgstr "_Anuluj"
 
-#: ../src/purple/purple-plugin.c:630
+#: ../src/purple/purple-plugin.c:640
+msgid "Meeting location"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:644
+msgid "Join conference"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:645
+msgid "Join scheduled conference"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:646
+msgid ""
+"Enter meeting location string you received in the invitation.\n"
+"\n"
+"Valid location will be something like\n"
+"meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:651
+msgid "_Join"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:674
 msgid "About SIPE plugin..."
 msgstr "O wtyczce SIPE..."
 
-#: ../src/purple/purple-plugin.c:633
+#: ../src/purple/purple-plugin.c:677
 msgid "Contact search..."
 msgstr "Wyszukaj kontakt..."
 
-#: ../src/purple/purple-plugin.c:636
+#: ../src/purple/purple-plugin.c:680
+msgid "Join scheduled conference..."
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:683
 msgid "Republish Calendar"
 msgstr "Ponownie opublikuj kalendarz"
 
-#: ../src/purple/purple-plugin.c:639
+#: ../src/purple/purple-plugin.c:686
 msgid "Reset status"
 msgstr "Przywróć stan"
 
@@ -841,7 +878,7 @@ msgstr "Przywróć stan"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:696
+#: ../src/purple/purple-plugin.c:743
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -851,7 +888,7 @@ msgstr ""
 "   użytkownik lub DOMENA\\użytkownik lub\n"
 "   użytkownik@firma.pl"
 
-#: ../src/purple/purple-plugin.c:700
+#: ../src/purple/purple-plugin.c:747
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -859,19 +896,19 @@ msgstr ""
 "Serwer[:port]\n"
 "(należy pozostawić puste, aby wykryć automatycznie)"
 
-#: ../src/purple/purple-plugin.c:703
+#: ../src/purple/purple-plugin.c:750
 msgid "Connection type"
 msgstr "Typ połączenia"
 
-#: ../src/purple/purple-plugin.c:704
+#: ../src/purple/purple-plugin.c:751
 msgid "Auto"
 msgstr "Automatycznie"
 
-#: ../src/purple/purple-plugin.c:705
+#: ../src/purple/purple-plugin.c:752
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:706
+#: ../src/purple/purple-plugin.c:753
 msgid "TCP"
 msgstr "TCP"
 
@@ -879,11 +916,11 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:712
+#: ../src/purple/purple-plugin.c:759
 msgid "User Agent"
 msgstr "Agent użytkownika"
 
-#: ../src/purple/purple-plugin.c:716
+#: ../src/purple/purple-plugin.c:763
 msgid "Use Kerberos"
 msgstr "Użycie Kerberosa"
 
@@ -891,14 +928,14 @@ msgstr "Użycie Kerberosa"
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #. 
-#: ../src/purple/purple-plugin.c:723
+#: ../src/purple/purple-plugin.c:770
 msgid "Use Single Sign-On"
 msgstr "Użycie jednorazowego logowania"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:730
+#: ../src/purple/purple-plugin.c:777
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -906,7 +943,7 @@ msgstr ""
 "Adres URL usług e-mail\n"
 "(należy pozostawić puste, aby wykryć automatycznie)"
 
-#: ../src/purple/purple-plugin.c:733
+#: ../src/purple/purple-plugin.c:780
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -917,7 +954,7 @@ msgstr ""
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:739
+#: ../src/purple/purple-plugin.c:786
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -925,7 +962,7 @@ msgstr ""
 "Login adresu e-mail\n"
 "(jeśli różni się od loginu)"
 
-#: ../src/purple/purple-plugin.c:742
+#: ../src/purple/purple-plugin.c:789
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -936,7 +973,7 @@ msgstr ""
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:749
+#: ../src/purple/purple-plugin.c:796
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
