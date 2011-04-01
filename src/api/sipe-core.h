@@ -168,6 +168,8 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
 void
 sipe_utils_nameval_free(GSList *list);
 
+gboolean sipe_utils_is_avconf_uri(const gchar *uri);
+
 /*****************************************************************************/
 
 /**
@@ -316,7 +318,8 @@ void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
  * @param chat_session (in) chat session structure
  */
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
-					struct sipe_chat_session *chat_session);
+					struct sipe_chat_session *chat_session,
+					gboolean initiator);
 
 /**
  * Checks whether there is a media call in progress

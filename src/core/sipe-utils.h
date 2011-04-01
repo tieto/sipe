@@ -455,3 +455,12 @@ gchar *sipe_utils_subscription_key(const gchar *event,
  * @return the resulting string. Must be g_free()'d after use.
  */
 gchar *sipe_utils_uri_unescape(const gchar *string);
+
+/**
+ * Tests whether given string is a Uniform Resource Identifier of audio/video
+ * conference
+ *
+ * @param uri a string
+ * @return @c TRUE if the string represents AV conference URI
+ */
+gboolean sipe_utils_is_avconf_uri(const gchar *uri);
