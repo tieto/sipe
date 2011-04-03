@@ -1493,10 +1493,8 @@ static void sipe_process_registration_notify(struct sipe_core_private *sipe_priv
 	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 	gchar *event = NULL;
 	gchar *reason = NULL;
-	const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
 	gchar *warning;
 
-	diagnostics = diagnostics ? diagnostics : sipmsg_find_header(msg, "ms-diagnostics-public");
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_process_registration_notify: deregistration received.");
 
 	if (!g_ascii_strncasecmp(contenttype, "text/registration-event", 23)) {
@@ -1508,9 +1506,9 @@ static void sipe_process_registration_notify(struct sipe_core_private *sipe_priv
 		return;
 	}
 
-	if (diagnostics != NULL) {
-		reason = sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
-	} else { // for LCS2005
+	reason = sipmsg_get_ms_diagnostics_reason(msg);
+	reason = reason ? reason : sipmsg_get_ms_diagnostics_public_reason(msg);
+	if (!reason) { // for LCS2005
 		if (event && sipe_strcase_equal(event, "unregistered")) {
 			//reason = g_strdup(_("User logged out")); // [MS-OCER]
 			reason = g_strdup(_("you are already signed in at another location"));

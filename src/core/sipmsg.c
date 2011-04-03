@@ -652,14 +652,26 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 	return res;
 }
 
-gchar *
-sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg)
+static gchar *
+get_reason(struct sipmsg *msg, const gchar *header)
 {
-	const gchar *diagnostics = sipmsg_find_header(msg, "ms-diagnostics");
+	const gchar *diagnostics = sipmsg_find_header(msg, header);
 	if (diagnostics)
 		return sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
 
 	return NULL;
+}
+
+gchar *
+sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg)
+{
+	return get_reason(msg, "ms-diagnostics");
+}
+
+gchar *
+sipmsg_get_ms_diagnostics_public_reason(struct sipmsg *msg)
+{
+	return get_reason(msg, "ms-diagnostics-public");
 }
 
 int

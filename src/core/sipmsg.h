@@ -128,6 +128,15 @@ void sipe_parse_html(const char *html, char **attributes, char **message);
 gchar *sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg);
 
 /**
+ * Extracts reason string from ms-diagnostics-public header of SIP message
+ *
+ * @param msg SIP message
+ *
+ * @return reason string. Must be g_free()'d after use.
+ */
+gchar *sipmsg_get_ms_diagnostics_public_reason(struct sipmsg *msg);
+
+/**
  * Parses Warning header of SIP message, if present.
  *
  * @param msg (in) SIP message
