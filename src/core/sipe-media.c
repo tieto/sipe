@@ -1049,10 +1049,9 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 
 		switch (msg->response) {
 			case 480: {
-				const gchar *warn = sipmsg_find_header(msg, "Warning");
 				title = _("User unavailable");
 
-				if (warn && g_str_has_prefix(warn, "391 lcs.microsoft.com")) {
+				if (sipmsg_parse_warning(msg, NULL) == 391) {
 					g_string_append_printf(desc, _("%s does not want to be disturbed"), with);
 				} else
 					g_string_append_printf(desc, _("User %s is not available"), with);

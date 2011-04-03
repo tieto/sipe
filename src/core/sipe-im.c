@@ -179,18 +179,9 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 
 	if (msg->response != 200) {
 		gchar *alias = get_buddy_alias(sipe_private, with);
-		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
-		int warning = -1;
+		int warning = sipmsg_parse_warning(msg, NULL);
 
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_response: INVITE response not 200");
-
-		if (warn_hdr) {
-			gchar **parts = g_strsplit(warn_hdr, " ", 2);
-			if (parts[0]) {
-				warning = atoi(parts[0]);
-			}
-			g_strfreev(parts);
-		}
 
 		/* cancel file transfer as rejected by server */
 		if (msg->response == 606 &&	/* Not acceptable all. */
@@ -479,18 +470,9 @@ process_message_response(struct sipe_core_private *sipe_private,
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response >= 400) {
-		const char *warn_hdr = sipmsg_find_header(msg, "Warning");
-		int warning = -1;
+		int warning = sipmsg_parse_warning(msg, NULL);
 
 		SIPE_DEBUG_INFO_NOFORMAT("process_message_response: MESSAGE response >= 400");
-
-		if (warn_hdr) {
-			gchar **parts = g_strsplit(warn_hdr, " ", 2);
-			if (parts[0]) {
-				warning = atoi(parts[0]);
-			}
-			g_strfreev(parts);
-		}
 
 		/* cancel file transfer as rejected by server */
 		if (msg->response == 606 &&	/* Not acceptable all. */

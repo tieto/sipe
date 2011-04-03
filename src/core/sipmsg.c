@@ -662,6 +662,38 @@ sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg)
 	return NULL;
 }
 
+int
+sipmsg_parse_warning(struct sipmsg *msg, gchar **reason)
+{
+	/*
+	 * Example header:
+	 * Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
+	 */
+	const gchar *hdr = sipmsg_find_header(msg, "Warning");
+	int code = -1;
+
+	if (reason)
+		*reason = NULL;
+
+	if (hdr) {
+		gchar **parts = g_strsplit(hdr, " ", 3);
+
+		if (parts[0]) {
+			code = atoi(parts[0]);
+
+			if (reason && parts[1] && parts[2]) {
+				size_t len = strlen(parts[2]);
+				if (len > 2 && parts[2][0] == '"' && parts[2][len - 1] == '"')
+					*reason = g_strndup(parts[2] + 1, len - 2);
+			}
+		}
+
+		g_strfreev(parts);
+	}
+
+	return code;
+}
+
 
 
 //------------------------------------------------------------------------------------------

@@ -126,3 +126,14 @@ void sipe_parse_html(const char *html, char **attributes, char **message);
  * @return reason string. Must be g_free()'d after use.
  */
 gchar *sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg);
+
+/**
+ * Parses Warning header of SIP message, if present.
+ *
+ * @param msg (in) SIP message
+ * @param reason (out) parsed warning text or NULL if missing. Must be g_free()'d
+ *               after use.
+ *
+ * @return warning code or -1 if warning header is not present in message.
+ */
+int sipmsg_parse_warning(struct sipmsg *msg, gchar **reason);

@@ -1190,18 +1190,12 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			break;
 		case 403:
 			{
-				const gchar *diagnostics = sipmsg_find_header(msg, "Warning");
-				gchar **reason = NULL;
+				gchar *reason;
 				gchar *warning;
-				if (diagnostics != NULL) {
-					/* Example header:
-					   Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
-					*/
-					reason = g_strsplit(diagnostics, "\"", 0);
-				}
+				sipmsg_parse_warning(msg, &reason);
 				warning = g_strdup_printf(_("You have been rejected by the server: %s"),
-							  (reason && reason[1]) ? reason[1] : _("no reason given"));
-				g_strfreev(reason);
+							  reason ? reason : _("no reason given"));
+				g_free(reason);
 
 				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 							      SIPE_CONNECTION_ERROR_INVALID_SETTINGS,
