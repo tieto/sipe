@@ -1193,6 +1193,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				gchar *reason;
 				gchar *warning;
 				sipmsg_parse_warning(msg, &reason);
+				reason = reason ? reason : sipmsg_get_ms_diagnostics_public_reason(msg);
 				warning = g_strdup_printf(_("You have been rejected by the server: %s"),
 							  reason ? reason : _("no reason given"));
 				g_free(reason);
