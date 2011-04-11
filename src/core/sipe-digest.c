@@ -41,13 +41,12 @@ static void sipe_digest(const SECOidTag algorithm,
 			guchar *digest, gsize digest_length)
 {
 	PK11Context *context = 0;
-	SECStatus s;
 	unsigned int len;
 
 	context = PK11_CreateDigestContext(algorithm);
-	s = PK11_DigestBegin(context);
-	s = PK11_DigestOp(context, data, data_length);
-	s = PK11_DigestFinal(context, digest, &len, digest_length);
+	PK11_DigestBegin(context);
+	PK11_DigestOp(context, data, data_length);
+	PK11_DigestFinal(context, digest, &len, digest_length);
 	PK11_DestroyContext(context, PR_TRUE);
 }
 
@@ -59,7 +58,6 @@ sipe_digest_hmac_ctx_create(CK_MECHANISM_TYPE hmacMech, const guchar *key, gsize
 	SECItem noParams;
 	PK11SymKey* SymKey;
 	PK11Context* DigestContext;
-	SECStatus s;
 
 	/* For key */
 	slot = PK11_GetBestSlot(hmacMech, NULL);
@@ -77,7 +75,7 @@ sipe_digest_hmac_ctx_create(CK_MECHANISM_TYPE hmacMech, const guchar *key, gsize
 
 	DigestContext = PK11_CreateContextBySymKey(hmacMech, CKA_SIGN, SymKey, &noParams);
 
-	s = PK11_DigestBegin(DigestContext);
+	PK11_DigestBegin(DigestContext);
 
 	PK11_FreeSymKey(SymKey);
 	PK11_FreeSlot(slot);

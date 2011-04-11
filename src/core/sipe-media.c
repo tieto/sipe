@@ -855,11 +855,10 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 	if (!call_private) {
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 		struct sip_session *session;
-		struct sip_dialog *dialog;
 
 		call_private = sipe_media_call_new(sipe_private, with, FALSE, smsg->ice_version);
 		session = sipe_session_add_call(sipe_private, with);
-		dialog = sipe_media_dialog_init(session, msg);
+		sipe_media_dialog_init(session, msg);
 
 		call_private->with = g_strdup(session->with);
 		sipe_private->media_call = call_private;
