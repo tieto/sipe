@@ -1,4 +1,4 @@
-From 899581d0f148f9714ec4fcb312ab28f2b9003ce9 Mon Sep 17 00:00:00 2001
+From 3e3b71d8431017cce260b46caa1b87406f0b8eff Mon Sep 17 00:00:00 2001
 From: Jakub Adam <jakub.adam@ktknet.cz>
 Date: Wed, 2 Mar 2011 23:40:24 +0100
 Subject: [PATCH] Allow dynamic adding and removal of audio and video streams during call
@@ -9,7 +9,7 @@ Subject: [PATCH] Allow dynamic adding and removal of audio and video streams dur
  2 files changed, 243 insertions(+), 47 deletions(-)
 
 diff --git a/libpurple/media/backend-fs2.c b/libpurple/media/backend-fs2.c
-index 6b43695..91d37fb 100644
+index 9fb0bdf..e0527ac 100644
 --- a/libpurple/media/backend-fs2.c
 +++ b/libpurple/media/backend-fs2.c
 @@ -89,6 +89,9 @@ static void purple_media_backend_fs2_set_params(PurpleMediaBackend *self,
@@ -31,7 +31,7 @@ index 6b43695..91d37fb 100644
  
  	GList *local_candidates;
  	GList *remote_candidates;
-@@ -303,20 +308,7 @@ purple_media_backend_fs2_finalize(GObject *obj)
+@@ -301,20 +306,7 @@ purple_media_backend_fs2_finalize(GObject *obj)
  	for (; priv->streams; priv->streams =
  			g_list_delete_link(priv->streams, priv->streams)) {
  		PurpleMediaBackendFs2Stream *stream = priv->streams->data;
@@ -53,7 +53,7 @@ index 6b43695..91d37fb 100644
  	}
  
  	if (priv->sessions) {
-@@ -326,8 +318,7 @@ purple_media_backend_fs2_finalize(GObject *obj)
+@@ -324,8 +316,7 @@ purple_media_backend_fs2_finalize(GObject *obj)
  				g_list_delete_link(sessions, sessions)) {
  			PurpleMediaBackendFs2Session *session =
  					sessions->data;
@@ -63,7 +63,7 @@ index 6b43695..91d37fb 100644
  		}
  
  		g_hash_table_destroy(priv->sessions);
-@@ -1143,9 +1134,62 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, PurpleMediaBackendFs2 *self)
+@@ -1127,9 +1118,62 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, PurpleMediaBackendFs2 *self)
  }
  
  static void
@@ -126,7 +126,7 @@ index 6b43695..91d37fb 100644
  }
  
  static void
-@@ -1425,6 +1469,7 @@ create_src(PurpleMediaBackendFs2 *self, const gchar *sess_id,
+@@ -1398,6 +1442,7 @@ create_src(PurpleMediaBackendFs2 *self, const gchar *sess_id,
  			  ? "success" : "failure");
  	gst_element_set_locked_state(session->src, FALSE);
  	gst_object_unref(session->src);
@@ -134,7 +134,7 @@ index 6b43695..91d37fb 100644
  
  	gst_element_set_state(session->src, GST_STATE_PLAYING);
  
-@@ -1541,6 +1586,13 @@ create_session(PurpleMediaBackendFs2 *self, const gchar *sess_id,
+@@ -1514,6 +1559,13 @@ create_session(PurpleMediaBackendFs2 *self, const gchar *sess_id,
  	return TRUE;
  }
  
@@ -148,7 +148,7 @@ index 6b43695..91d37fb 100644
  static gboolean
  create_participant(PurpleMediaBackendFs2 *self, const gchar *name)
  {
-@@ -1608,7 +1660,6 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
+@@ -1581,7 +1633,6 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
  		GstElement *sink = NULL;
  
  		if (codec->media_type == FS_MEDIA_TYPE_AUDIO) {
@@ -156,7 +156,7 @@ index 6b43695..91d37fb 100644
  			double output_volume = purple_prefs_get_int(
  					"/purple/media/audio/volume/output")/10.0;
  			/*
-@@ -1616,7 +1667,7 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
+@@ -1589,7 +1640,7 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
  			 *  audioconvert ! audioresample ! liveadder !
  			 *   audioresample ! audioconvert ! realsink
  			 */
@@ -165,7 +165,7 @@ index 6b43695..91d37fb 100644
  			stream->volume = gst_element_factory_make(
  					"volume", NULL);
  			g_object_set(stream->volume, "volume",
-@@ -1630,18 +1681,18 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
+@@ -1603,18 +1654,18 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
  					PURPLE_MEDIA_RECV_AUDIO, priv->media,
  					stream->session->id,
  					stream->participant);
@@ -188,7 +188,7 @@ index 6b43695..91d37fb 100644
  		} else if (codec->media_type == FS_MEDIA_TYPE_VIDEO) {
  			stream->src = gst_element_factory_make(
  					"fsfunnel", NULL);
-@@ -1650,6 +1701,7 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
+@@ -1623,6 +1674,7 @@ src_pad_added_cb(FsStream *fsstream, GstPad *srcpad,
  			g_object_set(G_OBJECT(sink), "async", FALSE, NULL);
  			gst_bin_add(GST_BIN(priv->confbin), sink);
  			gst_element_set_state(sink, GST_STATE_PLAYING);
@@ -196,7 +196,7 @@ index 6b43695..91d37fb 100644
  		}
  		stream->tee = gst_element_factory_make("tee", NULL);
  		gst_bin_add_many(GST_BIN(priv->confbin),
-@@ -1819,6 +1871,24 @@ create_stream(PurpleMediaBackendFs2 *self,
+@@ -1792,6 +1844,24 @@ create_stream(PurpleMediaBackendFs2 *self,
  	return TRUE;
  }
  
@@ -222,7 +222,7 @@ index 6b43695..91d37fb 100644
  purple_media_backend_fs2_add_stream(PurpleMediaBackend *self,
  		const gchar *sess_id, const gchar *who,
 diff --git a/pidgin/gtkmedia.c b/pidgin/gtkmedia.c
-index eec4e54..ca4e10c 100644
+index e3b4933..06beb7b 100644
 --- a/pidgin/gtkmedia.c
 +++ b/pidgin/gtkmedia.c
 @@ -93,7 +93,7 @@ struct _PidginMediaPrivate
@@ -349,11 +349,11 @@ index eec4e54..ca4e10c 100644
  		progress = gtkmedia->priv->send_progress;
  	else
 -		progress = gtkmedia->priv->recv_progress;
--	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), level * 5);
+-	gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), level);
 +		progress = pidgin_media_get_widget(gtkmedia, session_id, participant);
 +
 +	if (progress)
-+		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), level * 5);
++		gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), level);
  }
  
  
@@ -510,5 +510,5 @@ index eec4e54..ca4e10c 100644
  					_("The call has been terminated."));
  			gtk_widget_destroy(GTK_WIDGET(gtkmedia));
 -- 
-1.7.2.3
+1.7.4.1
 
