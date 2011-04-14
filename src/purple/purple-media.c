@@ -45,7 +45,6 @@ struct sipe_backend_media {
 	 * Number of media streams that were not yet locally accepted or rejected.
 	 */
 	guint unconfirmed_streams;
-	gboolean initiator;
 };
 
 struct sipe_backend_stream {
@@ -54,9 +53,6 @@ struct sipe_backend_stream {
 	gboolean candidates_prepared;
 	gboolean local_on_hold;
 	gboolean remote_on_hold;
-	gboolean initiator;
-	gboolean local_accept;
-	gboolean remote_accept;
 };
 
 static void
@@ -137,20 +133,8 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 	if (type == PURPLE_MEDIA_INFO_ACCEPT) {
 		if (call->call_accept_cb && !sessionid && !participant)
 			call->call_accept_cb(call, local);
-		else if (sessionid) {
-			struct sipe_backend_stream *stream;
-			stream = sipe_backend_media_get_stream_by_id(call->backend_private,
-								     sessionid);
-			if (stream) {
-				if (local)
-					stream->local_accept = TRUE;
-				else
-					stream->remote_accept = TRUE;
-			}
-
-			if (participant && local)
-				--call->backend_private->unconfirmed_streams;
-		}
+		else if (sessionid && participant && local)
+			--call->backend_private->unconfirmed_streams;
 	} else if (type == PURPLE_MEDIA_INFO_HOLD || type == PURPLE_MEDIA_INFO_UNHOLD) {
 
 		gboolean state = (type == PURPLE_MEDIA_INFO_HOLD);
@@ -217,7 +201,6 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 						     purple_private->account,
 						     "fsrtpconference",
 						     participant, initiator);
-	media->initiator = sipe_utils_is_avconf_uri(participant) ? TRUE : initiator;
 
 	g_signal_connect(G_OBJECT(media->m), "candidates-prepared",
 			 G_CALLBACK(on_candidates_prepared_cb), call);
@@ -354,7 +337,6 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 {
 	struct sipe_backend_stream *stream = NULL;
 	PurpleMediaSessionType prpl_type = sipe_media_to_purple(type);
-	gboolean conference = sipe_utils_is_avconf_uri(participant);
 	GParameter *params = NULL;
 	guint params_cnt = 0;
 	gchar *transmitter;
@@ -393,9 +375,6 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		stream->sessionid = g_strdup(id);
 		stream->participant = g_strdup(participant);
 		stream->candidates_prepared = FALSE;
-		stream->initiator = conference ? TRUE : initiator;
-		stream->local_accept = stream->initiator;
-		stream->remote_accept = !stream->initiator;
 
 		media->streams = g_slist_append(media->streams, stream);
 		if (!initiator)
@@ -451,30 +430,14 @@ sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
 gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
 					 struct sipe_backend_stream *stream)
 {
-	return stream ? stream->initiator : media->initiator;
+	return purple_media_is_initiator(media->m,
+					 stream ? stream->sessionid : NULL,
+					 stream ? stream->participant : NULL);
 }
 
-gboolean sipe_backend_media_accepted(struct sipe_backend_media *media,
-				     SipeStreamEndpoint endpoint)
+gboolean sipe_backend_media_accepted(struct sipe_backend_media *media)
 {
-	GSList *i;
-	if (endpoint & SIPE_ENDPOINT_LOCAL) {
-		for (i = media->streams; i; i = i->next) {
-			struct sipe_backend_stream *stream = i->data;
-			if (!stream->local_accept)
-				return FALSE;
-		}
-	}
-
-	if (endpoint & SIPE_ENDPOINT_REMOTE) {
-		for (i = media->streams; i; i = i->next) {
-			struct sipe_backend_stream *stream = i->data;
-			if (!stream->remote_accept)
-				return FALSE;
-		}
-	}
-
-	return TRUE;
+	return purple_media_accepted(media->m, NULL, NULL);
 }
 
 gboolean

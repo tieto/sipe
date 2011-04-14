@@ -280,8 +280,7 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 			if (session->is_call)
 				sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
-								   session->chat_session,
-								   FALSE);
+								   session->chat_session);
 #endif
 		}
 		sipe_xml_free(xn_response);
@@ -890,7 +889,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	if (audio_was_added) {
 		session->is_call = TRUE;
 		sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
-						   session->chat_session, FALSE);
+						   session->chat_session);
 	}
 #endif
 

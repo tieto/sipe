@@ -503,10 +503,9 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	call_private->encryption_compatible = encryption_levels_compatible(msg);
 }
 
-// Sends an invite response when the call is locally accepted and local
-// candidates were prepared, otherwise does nothing. If error response is sent,
-// call_private is disposed before function returns. Returns true when response
-// was sent.
+// Sends an invite response when the call is accepted and local candidates were
+// prepared, otherwise does nothing. If error response is sent, call_private is
+// disposed before function returns. Returns true when response was sent.
 static gboolean
 send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 {
@@ -514,7 +513,7 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 
 	backend_media = call_private->public.backend_private;
 
-	if (!sipe_backend_media_accepted(backend_media, SIPE_ENDPOINT_LOCAL) ||
+	if (!sipe_backend_media_accepted(backend_media) ||
 	    !sipe_backend_candidates_prepared(backend_media))
 		return FALSE;
 
@@ -536,19 +535,6 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 }
 
 static void
-send_invite_if_ready(struct sipe_media_call_private *call_private)
-{
-	struct sipe_backend_media *backend_media;
-	backend_media = call_private->public.backend_private;
-
-	if (sipe_backend_media_accepted(backend_media, SIPE_ENDPOINT_LOCAL) &&
-	    sipe_backend_candidates_prepared(backend_media)) {
-		sipe_invite_call(call_private->sipe_private,
-				 process_invite_call_response);
-	}
-}
-
-static void
 candidates_prepared_cb(struct sipe_media_call *call,
 		       struct sipe_backend_stream *stream)
 {
@@ -556,7 +542,8 @@ candidates_prepared_cb(struct sipe_media_call *call,
 	struct sipe_backend_media *backend_private = call->backend_private;
 
 	if (sipe_backend_media_is_initiator(backend_private, stream)) {
-		send_invite_if_ready(call_private);
+		sipe_invite_call(call_private->sipe_private,
+				 process_invite_call_response);
 	} else {
 		struct sdpmsg *smsg = call_private->smsg;
 		call_private->smsg = NULL;
@@ -587,19 +574,14 @@ static void
 call_accept_cb(struct sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		struct sipe_backend_media *backend_private = call->backend_private;
-
-		if (sipe_backend_media_is_initiator(backend_private, NULL))
-			send_invite_if_ready(SIPE_MEDIA_CALL_PRIVATE);
-		else
-			send_invite_response_if_ready(SIPE_MEDIA_CALL_PRIVATE);
+		send_invite_response_if_ready(SIPE_MEDIA_CALL_PRIVATE);
 	}
 }
 
 static void
 call_reject_cb(struct sipe_media_call *call, gboolean local)
 {
-	if (local && !sipe_utils_is_avconf_uri(SIPE_MEDIA_CALL_PRIVATE->with)) {
+	if (local) {
 		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 		sip_transport_response(call_private->sipe_private,
 				       call_private->invitation,
@@ -639,8 +621,7 @@ error_cb(struct sipe_media_call *call, gchar *message)
 {
 	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 	gboolean initiator = sipe_backend_media_is_initiator(call->backend_private, NULL);
-	gboolean accepted = sipe_backend_media_accepted(call->backend_private,
-						        SIPE_ENDPOINT_BOTH);
+	gboolean accepted = sipe_backend_media_accepted(call->backend_private);
 
 	gchar *title = g_strdup_printf("Call with %s failed", call_private->with);
 	sipe_backend_notify_error(title, message);
@@ -768,8 +749,7 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 }
 
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
-					struct sipe_chat_session *chat_session,
-					gboolean initiator)
+					struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_backend_media_relays *backend_media_relays;
@@ -786,7 +766,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	g_strfreev(parts);
 
 	sipe_private->media_call = sipe_media_call_new(sipe_private, av_uri,
-						       initiator, SIPE_ICE_DRAFT_6);
+						       TRUE, SIPE_ICE_DRAFT_6);
 
 	session = sipe_session_add_call(sipe_private, av_uri);
 	dialog = sipe_dialog_add(session);
@@ -807,7 +787,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	if (!sipe_backend_media_add_stream(sipe_private->media_call->public.backend_private,
 					   "audio", dialog->with,
 					   SIPE_MEDIA_AUDIO,
-					   SIPE_ICE_DRAFT_6, initiator,
+					   SIPE_ICE_DRAFT_6, TRUE,
 					   backend_media_relays)) {
 		sipe_backend_notify_error(_("Error occured"),
 					  _("Error creating audio stream"));
@@ -1155,7 +1135,7 @@ void sipe_media_handle_going_offline(struct sipe_media_call_private *call_privat
 	backend_private = call_private->public.backend_private;
 
 	if (   !sipe_backend_media_is_initiator(backend_private, NULL)
-	    && !sipe_backend_media_accepted(backend_private, SIPE_ENDPOINT_BOTH)) {
+	    && !sipe_backend_media_accepted(backend_private)) {
 		sip_transport_response(call_private->sipe_private,
 				       call_private->invitation,
 				       480, "Temporarily Unavailable", NULL);

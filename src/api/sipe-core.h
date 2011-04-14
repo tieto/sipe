@@ -318,8 +318,7 @@ void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
  * @param chat_session (in) chat session structure
  */
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
-					struct sipe_chat_session *chat_session,
-					gboolean initiator);
+					struct sipe_chat_session *chat_session);
 
 /**
  * Checks whether there is a media call in progress

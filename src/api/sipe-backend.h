@@ -333,12 +333,6 @@ typedef enum {
 	SIPE_NETWORK_PROTOCOL_UDP
 } SipeNetworkProtocol;
 
-typedef enum {
-	SIPE_ENDPOINT_LOCAL  = 1,
-	SIPE_ENDPOINT_REMOTE = 2,
-	SIPE_ENDPOINT_BOTH   = SIPE_ENDPOINT_LOCAL | SIPE_ENDPOINT_REMOTE
-} SipeStreamEndpoint;
-
 struct sipe_media_call;
 struct sipe_backend_media;
 struct sipe_backend_codec;
@@ -398,8 +392,7 @@ void sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
 					      GList *candidates);
 gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
 					 struct sipe_backend_stream *stream);
-gboolean sipe_backend_media_accepted(struct sipe_backend_media *media,
-				     SipeStreamEndpoint endpoint);
+gboolean sipe_backend_media_accepted(struct sipe_backend_media *media);
 gboolean sipe_backend_candidates_prepared(struct sipe_backend_media *media);
 GList *sipe_backend_media_get_active_local_candidates(struct sipe_backend_media *media,
 						      struct sipe_backend_stream *stream);

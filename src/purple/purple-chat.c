@@ -227,7 +227,7 @@ static void sipe_purple_chat_menu_join_call_cb(SIPE_UNUSED_PARAMETER PurpleChat 
 	struct sipe_core_public *sipe_public = PURPLE_CONV_TO_SIPE_CORE_PUBLIC;
 	struct sipe_chat_session *chat_session = sipe_purple_chat_get_session(conv);
 	SIPE_DEBUG_INFO("sipe_purple_chat_join_call_cb: %p %p", conv, chat_session);
-	sipe_core_media_connect_conference(sipe_public, chat_session, TRUE);
+	sipe_core_media_connect_conference(sipe_public, chat_session);
 }
 
 #endif
