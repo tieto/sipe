@@ -24,6 +24,9 @@
 struct sip_session;
 struct sipe_core_private;
 
+/* Opaque ask context structure */
+struct sipe_user_ask_ctx;
+
 /**
  * Present error message in users session
  *
@@ -62,3 +65,34 @@ void sipe_user_present_message_undelivered(struct sipe_core_private *sipe_privat
 					   int sip_warning,
 					   const gchar *who,
 					   const gchar *message);
+
+typedef void (* SipeUserAskCb)(struct sipe_core_private *, gpointer data);
+
+/**
+ * Present a query that is to be accepted or declined by the user
+ *
+ * @param sipe_private  SIPE core private data
+ * @param message       Text of the query to be shown to user
+ * @param accept_label  Label to be displayed on UI control that accepts query
+ * @param accept_cb     callback function to be invoked when query is accepted
+ * @param decline_label Label to be displayed on UI control that declines query
+ * @param decline_cb    callback function to be invoked when query is declined
+ * @param data          custom user data
+ *
+ * @return opaque sipe_user_ask_ctx pointer that can be used to close the query
+ * before user answered it.
+ */
+struct sipe_user_ask_ctx * sipe_user_ask(struct sipe_core_private *sipe_private,
+					 const gchar *message,
+					 const gchar *accept_label,
+					 SipeUserAskCb accept_cb,
+					 const gchar *decline_label,
+					 SipeUserAskCb decline_cb,
+					 gpointer data);
+
+/**
+ * Closes the pending user query
+ *
+ * @param context sipe_user_ask_ctx pointer returned by sipe_user_ask()
+ */
+void sipe_user_close_ask(struct sipe_user_ask_ctx *context);

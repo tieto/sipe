@@ -132,6 +132,51 @@ void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,
 	}
 }
 
+struct sipe_user_ask_ctx {
+	struct sipe_core_private *sipe_private;
+	SipeUserAskCb accept_cb;
+	SipeUserAskCb decline_cb;
+	gpointer data;
+};
+
+struct sipe_user_ask_ctx * sipe_user_ask(struct sipe_core_private *sipe_private,
+					 const gchar *message,
+					 const gchar *accept_label,
+					 SipeUserAskCb accept_cb,
+					 const gchar *decline_label,
+					 SipeUserAskCb decline_cb,
+					 gpointer data)
+{
+	struct sipe_user_ask_ctx *ctx = g_new0(struct sipe_user_ask_ctx, 1);
+	ctx->sipe_private = sipe_private;
+	ctx->accept_cb = accept_cb;
+	ctx->decline_cb = decline_cb;
+	ctx->data = data;
+
+	sipe_backend_user_ask(SIPE_CORE_PUBLIC, message,
+			      accept_label, decline_label,
+			      ctx);
+
+	return ctx;
+}
+
+void sipe_core_user_ask_cb(gpointer context, gboolean accepted)
+{
+	struct sipe_user_ask_ctx *ctx = context;
+
+	if (accepted && ctx->accept_cb)
+		ctx->accept_cb(ctx->sipe_private, ctx->data);
+	else if (ctx->decline_cb)
+		ctx->decline_cb(ctx->sipe_private, ctx->data);
+
+	g_free(ctx);
+}
+
+void sipe_user_close_ask(struct sipe_user_ask_ctx *context)
+{
+	sipe_backend_user_close_ask(context);
+	g_free(context);
+}
 
 /*
   Local Variables:

@@ -362,6 +362,8 @@ void sipe_core_im_send(struct sipe_core_public *sipe_public,
 void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,
 				    const gchar *to);
 
+void sipe_core_user_ask_cb(gpointer key, gboolean accepted);
+
 #ifdef __cplusplus
 }
 #endif

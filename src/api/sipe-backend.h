@@ -556,6 +556,30 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
 					    const gchar *from);
 
+/**
+ * Present a query that is to be accepted or declined by the user
+ *
+ * @param sipe_public   The handle representing the protocol instance
+ * @param message       Text of the query to be shown to user
+ * @param accept_label  Label to be displayed on UI control that accepts query
+ * @param decline_label Label to be displayed on UI control that declines query
+ * @param key           Opaque handle uniquely identifying the query. Backend
+ *                      should store it for the case SIPE core requests the
+ *                      query to be closed prematurely.
+ */
+void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
+			   const gchar *message,
+			   const gchar *accept_label,
+			   const gchar *decline_label,
+			   gpointer key);
+
+/**
+ * Closes the pending user query
+ *
+ * @param key Opaque handle uniquely identifying the query.
+ */
+void sipe_backend_user_close_ask(gpointer key);
+
 /** BUDDIES ******************************************************************/
 
 /* The list of properties a buddy can have */

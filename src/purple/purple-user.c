@@ -22,6 +22,7 @@
 
 #include <glib.h>
 
+#include "request.h"
 #include "server.h"
 
 #include "purple-private.h"
@@ -44,6 +45,31 @@ void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	serv_got_typing_stopped(purple_private->gc, from);
+}
+
+static void ask_cb(gpointer key, int choice)
+{
+	sipe_core_user_ask_cb(key, choice == 1);
+}
+
+void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
+			   const gchar *message,
+			   const gchar *accept_label,
+			   const gchar *decline_label,
+			   gpointer key)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+
+	purple_request_action(key, "Office Communicator", message,
+			      NULL, 0, purple_private->account,
+			      NULL, NULL, key, 2,
+			      accept_label, (PurpleRequestActionCb) ask_cb,
+			      decline_label, (PurpleRequestActionCb) ask_cb);
+}
+
+void sipe_backend_user_close_ask(gpointer key)
+{
+	purple_request_close_with_handle(key);
 }
 
 /*
