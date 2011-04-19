@@ -40,6 +40,7 @@
 #include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-chat.h"
+#include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-nls.h"
@@ -191,6 +192,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 			sipe_session_close(sipe_private, entry->data);
 		}
 	}
+
+	sipe_conf_cancel_unaccepted(sipe_private, NULL);
 
 	if (sip->csta) {
 		sip_csta_close(sipe_private);

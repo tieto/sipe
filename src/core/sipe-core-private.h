@@ -50,6 +50,7 @@ struct sipe_core_private {
 	gchar *epid;
 	gchar *focus_factory_uri;
 	GSList *sessions;
+	GSList *sessions_to_accept;
 
 	/* Buddies */
 	GHashTable *buddies;

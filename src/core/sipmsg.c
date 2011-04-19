@@ -264,16 +264,18 @@ void sipmsg_merge_new_headers(struct sipmsg *msg) {
 }
 
 void sipmsg_free(struct sipmsg *msg) {
-	sipe_utils_nameval_free(msg->headers);
-	sipe_utils_nameval_free(msg->new_headers);
-	g_free(msg->signature);
-	g_free(msg->rand);
-	g_free(msg->num);
-	g_free(msg->responsestr);
-	g_free(msg->method);
-	g_free(msg->target);
-	g_free(msg->body);
-	g_free(msg);
+	if (msg) {
+		sipe_utils_nameval_free(msg->headers);
+		sipe_utils_nameval_free(msg->new_headers);
+		g_free(msg->signature);
+		g_free(msg->rand);
+		g_free(msg->num);
+		g_free(msg->responsestr);
+		g_free(msg->method);
+		g_free(msg->target);
+		g_free(msg->body);
+		g_free(msg);
+	}
 }
 
 void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name) {

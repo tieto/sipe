@@ -117,14 +117,21 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	g_free(from);
 }
 
-void process_incoming_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
-			     SIPE_UNUSED_PARAMETER struct sipmsg *msg)
+void process_incoming_cancel(struct sipe_core_private *sipe_private,
+			     struct sipmsg *msg)
 {
+	const gchar *callid;
+
 #ifdef HAVE_VV
 	if (is_media_session_msg(sipe_private->media_call, msg)) {
 		process_incoming_cancel_call(sipe_private, msg);
+		return;
 	}
 #endif
+	callid = sipmsg_find_header(msg, "Call-ID");
+
+	if (!sipe_session_find_chat_by_callid(sipe_private, callid))
+		sipe_conf_cancel_unaccepted(sipe_private, msg);
 }
 
 void process_incoming_info(struct sipe_core_private *sipe_private,

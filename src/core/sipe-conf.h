@@ -101,6 +101,17 @@ sipe_conf_immcu_closed(struct sipe_core_private *sipe_private,
 		       struct sip_session *session);
 
 /**
+ * Removes a session waiting to be accepted or declined by the user.
+ *
+ * @param sipe_private SIPE core data
+ * @param msg SIP CANCEL message. If NULL is passed, all sessions not accepted
+ *            will be canceled
+ */
+void
+sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
+			    struct sipmsg *msg);
+
+/**
  * Invokes when we leave conversation.
  * Usually by closing chat wingow.
  */

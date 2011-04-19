@@ -36,6 +36,7 @@
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-core.h"
@@ -724,24 +725,16 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	g_free(hdr);
 }
 
-void
-process_incoming_invite_conf(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg)
+static void
+accept_incoming_invite_conf(struct sipe_core_private *sipe_private,
+			    gchar *focus_uri,
+			    gboolean audio,
+			    struct sipmsg *msg)
 {
-	sipe_xml *xn_conferencing = sipe_xml_parse(msg->body, msg->bodylen);
-	const sipe_xml *xn_focus_uri = sipe_xml_child(xn_conferencing, "focus-uri");
-	const sipe_xml *xn_audio = sipe_xml_child(xn_conferencing, "audio");
-	gchar *focus_uri = sipe_xml_data(xn_focus_uri);
-	gboolean audio = sipe_strequal(sipe_xml_attribute(xn_audio, "available"), "true");
+	struct sip_session *session;
 	gchar *newTag = gentag();
 	const gchar *oldHeader = sipmsg_find_header(msg, "To");
 	gchar *newHeader;
-	struct sip_session *session;
-
-	sipe_xml_free(xn_conferencing);
-
-	/* send OK */
-	SIPE_DEBUG_INFO("We have received invitation to Conference. Focus URI=%s", focus_uri);
 
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
 	g_free(newTag);
@@ -755,8 +748,184 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 	/* add self to conf */
 	session = sipe_conf_create(sipe_private, NULL, focus_uri);
 	session->is_call = audio;
+}
+
+struct conf_accept_ctx {
+	gchar *focus_uri;
+	struct sipmsg *msg;
+	struct sipe_user_ask_ctx *ask_ctx;
+};
+
+static void
+conf_accept_ctx_free(struct conf_accept_ctx *ctx)
+{
+	g_return_if_fail(ctx != NULL);
+
+	sipmsg_free(ctx->msg);
+	g_free(ctx->focus_uri);
+	g_free(ctx);
+}
+
+static void
+conf_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+{
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	accept_incoming_invite_conf(sipe_private, ctx->focus_uri, TRUE, ctx->msg);
+	conf_accept_ctx_free(ctx);
+}
+
+static void
+conf_decline_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+{
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	sip_transport_response(sipe_private,
+			       ctx->msg,
+			       603, "Decline", NULL);
+
+	conf_accept_ctx_free(ctx);
+}
+
+void
+sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
+			    struct sipmsg *msg)
+{
+	const gchar *callid1 = msg ? sipmsg_find_header(msg, "Call-ID") : NULL;
+	GSList *it = sipe_private->sessions_to_accept;
+	while (it) {
+		struct conf_accept_ctx *ctx = it->data;
+		const gchar *callid2 = msg ? sipmsg_find_header(ctx->msg, "Call-ID") : NULL;
+
+		if (sipe_strequal(callid1, callid2)) {
+			GSList *tmp;
+
+			sip_transport_response(sipe_private, ctx->msg,
+					       487, "Request Terminated", NULL);
+
+			if (msg)
+				sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+
+			sipe_user_close_ask(ctx->ask_ctx);
+			conf_accept_ctx_free(ctx);
+
+			tmp = it;
+			it = it->next;
+
+			sipe_private->sessions_to_accept =
+				g_slist_delete_link(sipe_private->sessions_to_accept, tmp);
+
+			if (callid1)
+				break;
+		} else
+			it = it->next;
+	}
+}
+
+static void
+ask_accept_voice_conference(struct sipe_core_private *sipe_private,
+			    const gchar *focus_uri,
+			    struct sipmsg *msg,
+			    SipeUserAskCb accept_cb,
+			    SipeUserAskCb decline_cb)
+{
+	gchar **parts;
+	gchar *alias;
+	gchar *ask_msg;
+	gchar *novv_note;
+	struct conf_accept_ctx *ctx;
+
+#ifdef HAVE_VV
+	novv_note = "";
+#else
+	novv_note = _("\n\nAs this client was not compiled with voice call "
+		      "support, if you accept, you will be able to contact "
+		      "the other participants only via IM session.");
+#endif
+
+	parts = g_strsplit(focus_uri, ";", 2);
+	alias = sipe_buddy_get_alias(sipe_private, parts[0]);
+
+	ask_msg = g_strdup_printf(_("%s wants to invite you "
+				  "to the conference call%s"),
+				  alias ? alias : parts[0], novv_note);
+
+	g_free(alias);
+	g_strfreev(parts);
+
+	ctx = g_new0(struct conf_accept_ctx, 1);
+	sipe_private->sessions_to_accept =
+			g_slist_append(sipe_private->sessions_to_accept, ctx);
+
+	ctx->focus_uri = g_strdup(focus_uri);
+	ctx->msg = msg ? sipmsg_copy(msg) : NULL;
+	ctx->ask_ctx = sipe_user_ask(sipe_private, ask_msg,
+				     _("Accept"), accept_cb,
+				     _("Decline"), decline_cb,
+				     ctx);
+
+	g_free(ask_msg);
+}
+
+void
+process_incoming_invite_conf(struct sipe_core_private *sipe_private,
+			     struct sipmsg *msg)
+{
+	sipe_xml *xn_conferencing = sipe_xml_parse(msg->body, msg->bodylen);
+	const sipe_xml *xn_focus_uri = sipe_xml_child(xn_conferencing, "focus-uri");
+	const sipe_xml *xn_audio = sipe_xml_child(xn_conferencing, "audio");
+	gchar *focus_uri = sipe_xml_data(xn_focus_uri);
+	gboolean audio = sipe_strequal(sipe_xml_attribute(xn_audio, "available"), "true");
+
+	sipe_xml_free(xn_conferencing);
+
+	SIPE_DEBUG_INFO("We have received invitation to Conference. Focus URI=%s", focus_uri);
+
+	if (audio) {
+		sip_transport_response(sipe_private, msg, 180, "Ringing", NULL);
+		ask_accept_voice_conference(sipe_private, focus_uri, msg,
+					    (SipeUserAskCb) conf_accept_cb,
+					    (SipeUserAskCb) conf_decline_cb);
+
+	} else {
+		accept_incoming_invite_conf(sipe_private, focus_uri, FALSE, msg);
+	}
+
 	g_free(focus_uri);
 }
+
+#ifdef HAVE_VV
+
+static void
+call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+{
+	struct sip_session *session;
+	session = sipe_session_find_conference(sipe_private, ctx->focus_uri);
+
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	if (session) {
+		session->is_call = TRUE;
+		sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
+						   session->chat_session);
+	}
+
+	conf_accept_ctx_free(ctx);
+}
+
+static void
+call_decline_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+{
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	conf_accept_ctx_free(ctx);
+}
+
+#endif // HAVE_VV
 
 void
 sipe_process_conference(struct sipe_core_private *sipe_private,
@@ -888,8 +1057,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 	if (audio_was_added) {
 		session->is_call = TRUE;
-		sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
-						   session->chat_session);
+		ask_accept_voice_conference(sipe_private, focus_uri, NULL,
+					    (SipeUserAskCb) call_accept_cb,
+					    (SipeUserAskCb) call_decline_cb);
 	}
 #endif
 
