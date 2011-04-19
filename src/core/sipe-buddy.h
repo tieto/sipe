@@ -21,6 +21,7 @@
  */
 
 /* Forward declarations */
+struct sipe_core_private;
 struct sipe_cal_working_hours;
 
 struct sipe_buddy {
@@ -56,3 +57,16 @@ struct sipe_buddy {
 	 /** flag to control sending 'context' element in 2007 subscriptions */
 	gboolean just_added;
 };
+
+/**
+ * Tries to retrieve a real user's name associated with given SIP URI.
+ *
+ * Result must be g_free'd after use.
+ *
+ * @param sipe_private SIPE core data
+ * @param with         a SIP URI
+ *
+ * @return Name of the user if the URI is found in buddy list, otherwise @c NULL
+ */
+gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
+			    const gchar *with);

@@ -33,6 +33,7 @@
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-chat.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -133,17 +134,6 @@ static void sipe_refer_notify(struct sipe_core_private *sipe_private,
 	g_free(body);
 }
 
-static gchar *get_buddy_alias(struct sipe_core_private *sipe_private,
-			      const gchar *with)
-{
-	sipe_backend_buddy pbuddy;
-	gchar *alias = NULL;
-	if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
-		alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, pbuddy);
-	}
-	return(alias);
-}
-
 static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 					struct sipmsg *msg,
 					struct transaction *trans)
@@ -178,7 +168,7 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response != 200) {
-		gchar *alias = get_buddy_alias(sipe_private, with);
+		gchar *alias = sipe_buddy_get_alias(sipe_private, with);
 		int warning = sipmsg_parse_warning(msg, NULL);
 
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_response: INVITE response not 200");
@@ -492,7 +482,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 						sipe_im_cancel_unconfirmed);
 			/* dialog is no longer valid */
 		} else {
-			gchar *alias = get_buddy_alias(sipe_private, with);
+			gchar *alias = sipe_buddy_get_alias(sipe_private, with);
 			sipe_user_present_message_undelivered(sipe_private, session,
 							      msg->response, warning,
 							      alias ? alias : with,
@@ -542,7 +532,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 	g_free(key);
 
 	if (found) {
-		gchar *alias = get_buddy_alias(sipe_private, with);
+		gchar *alias = sipe_buddy_get_alias(sipe_private, with);
 		sipe_user_present_message_undelivered(sipe_private, session, -1, -1,
 						      alias ? alias : with,
 						      msg->body);
@@ -723,7 +713,7 @@ void sipe_im_cancel_unconfirmed(struct sipe_core_private *sipe_private,
 				const gchar *callid,
 				const gchar *with)
 {
-	gchar *alias = get_buddy_alias(sipe_private, with);
+	gchar *alias = sipe_buddy_get_alias(sipe_private, with);
 
 	SIPE_DEBUG_INFO("sipe_im_cancel_unconfirmed: with %s callid '%s'",
 			with, callid);

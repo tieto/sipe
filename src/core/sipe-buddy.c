@@ -24,6 +24,7 @@
 
 #include <glib.h>
 
+#include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -54,6 +55,17 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 	} else {
 		return NULL;
 	}
+}
+
+gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
+			    const gchar *with)
+{
+	sipe_backend_buddy pbuddy;
+	gchar *alias = NULL;
+	if ((pbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, with, NULL))) {
+		alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, pbuddy);
+	}
+	return alias;
 }
 
 /*
