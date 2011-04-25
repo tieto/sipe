@@ -292,38 +292,50 @@ ensure_codecs_conf()
 	g_free(filename);
 }
 
+static void
+append_relay(GValueArray *relay_info, const gchar *ip, guint port, gchar *type,
+	     gchar *username, gchar *password)
+{
+	GValue value;
+	GstStructure *gst_relay_info;
+
+	gst_relay_info = gst_structure_new("relay-info",
+			"ip", G_TYPE_STRING, ip,
+			"port", G_TYPE_UINT, port,
+			"relay-type", G_TYPE_STRING, type,
+			"username", G_TYPE_STRING, username,
+			"password", G_TYPE_STRING, password,
+			NULL);
+
+	if (gst_relay_info) {
+		memset(&value, 0, sizeof(GValue));
+		g_value_init(&value, GST_TYPE_STRUCTURE);
+		gst_value_set_structure(&value, gst_relay_info);
+
+		g_value_array_append(relay_info, &value);
+		gst_structure_free(gst_relay_info);
+	}
+}
+
 struct sipe_backend_media_relays *
 sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *password)
 {
 	GValueArray *relay_info = g_value_array_new(0);
 
-	for (; media_relays; media_relays = media_relays->next) {
+	for (; media_relays; media_relays = media_relays->next) {\
 		struct sipe_media_relay *relay = media_relays->data;
-		GValue value;
-		GstStructure *gst_relay_info;
 
 		/* Skip relays where IP could not be resolved. */
 		if (!relay->hostname)
 			continue;
 
-		gst_relay_info = gst_structure_new("relay-info",
-				"ip", G_TYPE_STRING, relay->hostname,
-				"port", G_TYPE_UINT, relay->udp_port,
-				"username", G_TYPE_STRING, username,
-				"password", G_TYPE_STRING, password,
-				NULL);
+		if (relay->udp_port != 0)
+			append_relay(relay_info, relay->hostname, relay->udp_port,
+				     "udp", username, password);
 
-		if (!gst_relay_info) {
-			g_value_array_free(relay_info);
-			return NULL;
-		}
-
-		memset(&value, 0, sizeof(GValue));
-		g_value_init(&value, GST_TYPE_STRUCTURE);
-		gst_value_set_structure(&value, gst_relay_info);
-
-		relay_info = g_value_array_append(relay_info, &value);
-		gst_structure_free(gst_relay_info);
+		if (relay->tcp_port != 0)
+			append_relay(relay_info, relay->hostname, relay->tcp_port,
+				     "tcp", username, password);
 	}
 
 	return (struct sipe_backend_media_relays *)relay_info;
