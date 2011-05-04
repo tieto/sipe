@@ -438,7 +438,8 @@ process_message_response(struct sipe_core_private *sipe_private,
 {
 	gboolean ret = TRUE;
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
-	struct sip_session *session = sipe_session_find_im(sipe_private, with);
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	struct sip_session *session = sipe_session_find_chat_or_im(sipe_private, callid, with);
 	struct sip_dialog *dialog;
 	gchar *key;
 	struct queued_message *message;
@@ -516,7 +517,8 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 			SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
-	struct sip_session *session = sipe_session_find_im(sipe_private, with);
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	struct sip_session *session = sipe_session_find_chat_or_im(sipe_private, callid, with);
 	gchar *key;
 	gboolean found;
 
