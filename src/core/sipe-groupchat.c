@@ -945,7 +945,7 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 			 const gchar *what)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	gchar *cmd, *self, *timestamp;
+	gchar *cmd, *self, *timestamp, *tmp;
 	struct sipe_groupchat_msg *msg;
 
 	if (!groupchat || !chat_session)
@@ -966,11 +966,16 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	 *    & -> &amp;
 	 *
 	 * No need to escape them here.
+	 *
+	 * Only exception are line breaks which are encoded as <br>.
+	 * Replace them with the correct XML tag <br/>.
 	 */
+        tmp = replace(what, "<br>", "<br/>");
 	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\" ts=\"%s\">"
 			      "<chat>%s</chat>"
 			      "</grpchat>",
-			      chat_session->id, self, timestamp, what);
+			      chat_session->id, self, timestamp, tmp);
+	g_free(tmp);
 	g_free(timestamp);
 	g_free(self);
 	msg = chatserver_command(sipe_private, cmd);
