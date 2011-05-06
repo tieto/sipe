@@ -511,6 +511,22 @@ process_message_response(struct sipe_core_private *sipe_private,
 	return ret;
 }
 
+#ifndef ENABLE_OCS2005_MESSAGE_HACK
+/*
+ * Hack to circumvent problems reported in the bug report
+ *
+ *        #3267073 - False "could not be delivered" errors
+ *
+ * The logs provided by the reporters indicate that OCS2005 clients DO NOT
+ * acknowledge our SIP MESSAGEs. Therefore the message timeout is triggered
+ * and messages are reported to the user as not delivered.
+ *
+ * Either this is a bug in the OCS2005 client or we do something wrong in our
+ * SIP MESSAGEs. This hack removes the message timeout and is provided for
+ * users who need to communicate with a still existing OCS2005 user base.
+ *
+ * Do not enable it by default!
+ */
 static gboolean
 process_message_timeout(struct sipe_core_private *sipe_private,
 			struct sipmsg *msg,
@@ -544,6 +560,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 	g_free(with);
 	return TRUE;
 }
+#endif
 
 static void sipe_im_send_message(struct sipe_core_private *sipe_private,
 				 struct sip_dialog *dialog,
@@ -585,16 +602,25 @@ static void sipe_im_send_message(struct sipe_core_private *sipe_private,
 	g_free(tmp);
 	g_free(tmp2);
 
-	sip_transport_request_timeout(sipe_private,
+#ifdef ENABLE_OCS2005_MESSAGE_HACK
+	sip_transport_request(
+#else
+	sip_transport_request_timeout(
+#endif
+				      sipe_private,
 				      "MESSAGE",
 				      dialog->with,
 				      dialog->with,
 				      hdr,
 				      msgtext,
 				      dialog,
-				      process_message_response,
+				      process_message_response
+#ifndef ENABLE_OCS2005_MESSAGE_HACK
+				      ,
 				      60,
-				      process_message_timeout);
+				      process_message_timeout
+#endif
+				     );
 	g_free(msgtext);
 	g_free(hdr);
 }

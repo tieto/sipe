@@ -238,6 +238,16 @@ Compiler information:
 	[AC_MSG_WARN([cross compiling: not checking])])
 CFLAGS=$ac_save_CFLAGS
 
+dnl build option: OCS2005 client hack
+AC_ARG_ENABLE([ocs2005-message-hack],
+	[AC_HELP_STRING([--enable-ocs2005-message-hack], [disable message timeout for OCS2005 clients
+							  which causes "false" not delivered error messages
+							  @<:@default=no@:>@])],
+	[AC_DEFINE([ENABLE_OCS2005_MESSAGE_HACK], [1],
+	           [Define to 1 to disable SIP MESSAGE timeout feature.
+		    OCS2005 clients don't seem to acknowledge MESSAGEs and
+		    disabling the timeout suppresses "false" error messages])])
+
 dnl build option: purple backend
 AC_ARG_ENABLE([purple],
 	[AC_HELP_STRING([--enable-purple], [build purple plugin @<:@default=yes@:>@])],
