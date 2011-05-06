@@ -104,7 +104,7 @@ AS_IF([test "x$enable_quality_check" = xyes],
 		 AC_MSG_CHECKING([if $CC supports $newflag])
 		 CFLAGS="$QUALITY_CFLAGS $newflag"
 		 AC_COMPILE_IFELSE(
-			AC_LANG_PROGRAM(),
+			[AC_LANG_SOURCE([[]])],
 			[AC_MSG_RESULT(yes)
 			 QUALITY_CFLAGS="$QUALITY_CFLAGS $newflag"],
 			[AC_MSG_RESULT(no)]
@@ -197,8 +197,8 @@ ac_save_CFLAGS=$CFLAGS
 CFLAGS="$GLIB_CFLAGS $QUALITY_CFLAGS"
 dnl note the [[[ quoting: our code contains []!
 AC_RUN_IFELSE(
-	AC_LANG_PROGRAM(
-		[[[
+	[AC_LANG_PROGRAM(
+		[[
 #include <glib.h>
 #include <stdio.h>
 
@@ -211,13 +211,13 @@ typedef struct {
    guint8  clock_seq_low;
    guint8  node[6];
 } uuid_t;
-		]]],
-		[if (sizeof(uuid_t) == 16) {
+		]],
+		[[if (sizeof(uuid_t) == 16) {
 			return(0);
 		 } else {
 			printf("\n\nOoops, sizeof(uuid_t) is %" G_GSIZE_FORMAT ".\n\n", sizeof(uuid_t));
 			return(1);
-		 }]),
+		 }]])],
 	[AC_MSG_RESULT(yes)],
 	[AC_MSG_FAILURE([sizeof(uuid_t) is not 16
 
@@ -265,7 +265,7 @@ AS_IF([test "x$enable_purple" != xno],
 		 ac_save_CFLAGS=$CFLAGS
 		 CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
 		 AC_COMPILE_IFELSE(
-			AC_LANG_PROGRAM([
+			[AC_LANG_PROGRAM([[
 #include <glib.h>
 #include <cipher.h>
 
@@ -281,8 +281,8 @@ static void testfunc(unsigned long len)
   purple_cipher_context_encrypt(rc4, plaintext, plaintext_length,
                                 encrypted_text, &dummy);
 }
-					],
-					[testfunc(16);]),
+					]],
+					[[testfunc(16);]])],
 			[AC_MSG_RESULT(none)],
 			[AC_MSG_FAILURE([conflicts found.
 
@@ -302,17 +302,17 @@ system defaults.
 			 ac_save_LIBS=$LIBS
 			 LIBS="$PURPLE_LIBS"
 			 AC_RUN_IFELSE(
-				AC_LANG_PROGRAM([
+				[AC_LANG_PROGRAM([[
 #include <glib.h>
 #include <plugin.h>
 #include <sslconn.h>
-						],
-						[
+						]],
+						[[
 	purple_plugins_init();
 	purple_plugins_probe(G_MODULE_SUFFIX);
 	purple_ssl_init();
 	return(purple_ssl_is_supported()?0:1);
-						]),
+						]])],
 				[AC_MSG_RESULT(ok)],
 				[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
 ])
@@ -325,13 +325,13 @@ system defaults.
 		       [test "x$with_vv" = xcheck],  dnl autodetect
 			 [AC_MSG_CHECKING(for purple voice and video support)
 			  AC_RUN_IFELSE(
-				AC_LANG_PROGRAM([
+				[AC_LANG_PROGRAM([[
 #include <media.h>
-					],
-					[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);
-					 purple_media_get_active_local_candidates(NULL, NULL, NULL);
-					 purple_media_get_active_remote_candidates(NULL, NULL, NULL);]
-			  	),
+					]],
+					[[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);
+					  purple_media_get_active_local_candidates(NULL, NULL, NULL);
+					  purple_media_get_active_remote_candidates(NULL, NULL, NULL);]]
+			  	)],
 				[AC_MSG_RESULT(ok)
 				 PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
 					[PKG_CHECK_MODULES(PURPLE_MEDIA, [purple >= 2.7.0],
