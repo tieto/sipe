@@ -88,6 +88,7 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 	return TRUE;
 }
 
+static struct sdpcandidate * sdpcandidate_copy(struct sdpcandidate *candidate);
 static void sdpcandidate_free(struct sdpcandidate *candidate);
 
 static SipeComponentType
@@ -122,8 +123,8 @@ base64_pad(const gchar* str)
 		return g_strdup(str);
 }
 
-static struct sdpcandidate *
-parse_candidate_draft_6(gchar **tokens)
+static GSList *
+parse_append_candidate_draft_6(gchar **tokens, GSList *candidates)
 {
 	struct sdpcandidate *candidate = g_new0(struct sdpcandidate, 1);
 
@@ -133,22 +134,31 @@ parse_candidate_draft_6(gchar **tokens)
 
 	if (sipe_strequal(tokens[3], "UDP"))
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_UDP;
+	else if (sipe_strequal(tokens[3], "TCP"))
+		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
 	else {
-		// Ignore TCP candidates, at least for now...
-		// Also, if this is ICEv6 candidate list, candidates are dropped here
 		sdpcandidate_free(candidate);
-		return NULL;
+		return candidates;
 	}
 
 	candidate->priority = atoi(tokens[4] + 2);
 	candidate->ip = g_strdup(tokens[5]);
 	candidate->port = atoi(tokens[6]);
 
-	return candidate;
+	candidates = g_slist_append(candidates, candidate);
+
+	// draft 6 candidates are both active and passive
+	if (candidate->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) {
+		candidate = sdpcandidate_copy(candidate);
+		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
+		candidates = g_slist_append(candidates, candidate);
+	}
+
+	return candidates;
 }
 
-static struct sdpcandidate *
-parse_candidate_rfc_5245(gchar **tokens)
+static GSList *
+parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
 {
 	struct sdpcandidate *candidate = g_new0(struct sdpcandidate, 1);
 
@@ -157,11 +167,13 @@ parse_candidate_rfc_5245(gchar **tokens)
 
 	if (sipe_strequal(tokens[2], "UDP"))
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_UDP;
+	else if (sipe_strequal(tokens[2], "TCP-ACT"))
+		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
+	else if (sipe_strequal(tokens[2], "TCP-PASS"))
+		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
 	else {
-		// Ignore TCP candidates, at least for now...
-		// Also, if this is ICEv6 candidate list, candidates are dropped here
 		sdpcandidate_free(candidate);
-		return NULL;
+		return candidates;
 	}
 
 	candidate->priority = atoi(tokens[3]);
@@ -178,10 +190,10 @@ parse_candidate_rfc_5245(gchar **tokens)
 		candidate->type = SIPE_CANDIDATE_TYPE_PRFLX;
 	else {
 		sdpcandidate_free(candidate);
-		return NULL;
+		return candidates;
 	}
 
-	return candidate;
+	return g_slist_append(candidates, candidate);
 }
 
 static GSList *
@@ -195,18 +207,13 @@ parse_candidates(GSList *attrs, SipeIceVersion *ice_version)
 		gchar **tokens = g_strsplit_set(attr, " ", 0);
 
 		if (sipe_strequal(tokens[6], "typ")) {
-			struct sdpcandidate *c = parse_candidate_rfc_5245(tokens);
-
-			if (c) {
+			candidates = parse_append_candidate_rfc_5245(tokens, candidates);
+			if (candidates)
 				*ice_version = SIPE_ICE_RFC_5245;
-				candidates = g_slist_append(candidates, c);
-			}
 		} else {
-			struct sdpcandidate *c = parse_candidate_draft_6(tokens);
-			if (c) {
+			candidates = parse_append_candidate_draft_6(tokens, candidates);
+			if (candidates)
 				*ice_version = SIPE_ICE_DRAFT_6;
-				candidates = g_slist_append(candidates, c);
-			}
 		}
 
 		g_strfreev(tokens);
@@ -434,20 +441,23 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 		const gchar *type;
 		gchar *related = NULL;
 
-		switch (c->protocol) {
-			case SIPE_NETWORK_PROTOCOL_TCP:
-				protocol = "TCP";
-				break;
-			case SIPE_NETWORK_PROTOCOL_UDP:
-				protocol = "UDP";
-				break;
-			default:
-				/* error unknown/unsupported type */
-				protocol = "UNKOWN";
-				break;
-		}
-
 		if (ice_version == SIPE_ICE_RFC_5245) {
+
+			switch (c->protocol) {
+				case SIPE_NETWORK_PROTOCOL_TCP_ACTIVE:
+					protocol = "TCP-ACT";
+					break;
+				case SIPE_NETWORK_PROTOCOL_TCP_PASSIVE:
+					protocol = "TCP-PASS";
+					break;
+				case SIPE_NETWORK_PROTOCOL_UDP:
+					protocol = "UDP";
+					break;
+				default:
+					/* error unknown/unsupported type */
+					protocol = "UNKOWN";
+					break;
+			}
 
 			switch (c->type) {
 				case SIPE_CANDIDATE_TYPE_HOST:
@@ -489,6 +499,21 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 		} else if (ice_version == SIPE_ICE_DRAFT_6) {
 			gchar *username = base64_unpad(c->username);
 			gchar *password = base64_unpad(c->password);
+
+			// TODO: remove active/passive pairs for the same host IP
+			switch (c->protocol) {
+				case SIPE_NETWORK_PROTOCOL_TCP_ACTIVE:
+				case SIPE_NETWORK_PROTOCOL_TCP_PASSIVE:
+					protocol = "TCP";
+					break;
+				case SIPE_NETWORK_PROTOCOL_UDP:
+					protocol = "UDP";
+					break;
+				default:
+					/* error unknown/unsupported type */
+					protocol = "UNKOWN";
+					break;
+			}
 
 			g_string_append_printf(result,
 					       "a=candidate:%s %u %s %s 0.%u %s %d\r\n",
@@ -648,6 +673,29 @@ sdpmsg_to_string(const struct sdpmsg *msg)
 	}
 
 	return g_string_free(body, FALSE);
+}
+
+static struct sdpcandidate *
+sdpcandidate_copy(struct sdpcandidate *candidate)
+{
+	if (candidate) {
+		struct sdpcandidate *copy = g_new0(struct sdpcandidate, 1);
+
+		copy->foundation = g_strdup(candidate->foundation);
+		copy->component  = candidate->component;
+		copy->type       = candidate->type;
+		copy->protocol   = candidate->protocol;
+		copy->priority   = candidate->priority;
+		copy->ip         = g_strdup(candidate->ip);
+		copy->port       = candidate->port;
+		copy->base_ip    = g_strdup(candidate->base_ip);
+		copy->base_port  = candidate->base_port;
+		copy->username   = g_strdup(candidate->username);
+		copy->password   = g_strdup(candidate->password);
+
+		return copy;
+	} else
+		return NULL;
 }
 
 static void
