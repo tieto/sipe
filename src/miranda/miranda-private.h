@@ -8,6 +8,8 @@ typedef struct sipe_backend_private
 	PROTO_INTERFACE proto;
 	struct sipe_core_public *sip;
 	HANDLE m_hServerNetlibUser;
+	GSList *contactMenuChatItems;
+	char _SIGNATURE[16];
 } SIPPROTO;
 
 struct miranda_sipe_ack_args
@@ -41,12 +43,12 @@ typedef struct sipe_miranda_sel_entry
 	gpointer user_data;
 };
 
-#define BUDDIES_FOREACH(list) {                \
+#define CONTACTS_FOREACH(list) {               \
 	GSList *entry = list;                  \
 	while (entry) {                        \
 		HANDLE hContact = entry->data; \
 		entry = entry->next;
-#define BUDDIES_FOREACH_END }}
+#define CONTACTS_FOREACH_END }}
 
 
 typedef INT_PTR (*SipSimpleServiceFunc)( SIPPROTO*, WPARAM, LPARAM );
@@ -79,9 +81,14 @@ int SendBroadcast(SIPPROTO *pr, HANDLE hContact,int type,int result,HANDLE hProc
 gchar* sipe_miranda_eliminate_html(const gchar *string, int len);
 unsigned short sipe_miranda_network_get_port_from_fd( HANDLE fd );
 
+/* Buddy utility functions */
+sipe_backend_buddy sipe_miranda_buddy_find(SIPPROTO *pr, const gchar *name, const gchar *group);
+GSList* sipe_miranda_buddy_find_all(SIPPROTO *pr, const gchar *buddy_name, const gchar *group_name);
+
 /* Plugin interface functions */
-int sipe_miranda_SendMsg(SIPPROTO *pr, HANDLE hContact, int flags, const char* msg );
+int sipe_miranda_SendMsg(SIPPROTO *pr, HANDLE hContact, int flags, const char* msg);
 int sipe_miranda_RecvMsg(SIPPROTO *pr, HANDLE hContact, PROTORECVEVENT* pre);
+int sipe_miranda_SetAwayMsg(SIPPROTO *pr, int m_iStatus, const PROTOCHAR* msg);
 
 /* Plugin event functions */
 int sipe_miranda_buddy_delete(SIPPROTO *pr, HANDLE hContact, LPARAM lParam);

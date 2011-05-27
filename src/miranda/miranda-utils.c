@@ -30,7 +30,7 @@
 #include "m_database.h"
 #include "m_netlib.h"
 
-#include "libsipe.h"
+#include "glib.h"
 #include "sipe-backend.h"
 #include "miranda-private.h"
 
@@ -74,7 +74,7 @@ int sipe_miranda_setWord(const SIPPROTO *pr, HANDLE hContact, const gchar* szSet
 	return DBWriteContactSettingWord(hContact, pr->proto.m_szModuleName, szSetting, wValue);
 }
 
-gbooleanbsipe_miranda_get_bool(const SIPPROTO *pr, const gchar *name, gboolean defval)
+gboolean sipe_miranda_get_bool(const SIPPROTO *pr, const gchar *name, gboolean defval)
 {
 	DWORD ret;
 

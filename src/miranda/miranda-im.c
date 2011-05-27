@@ -85,7 +85,7 @@ int sipe_miranda_SendMsg(SIPPROTO *pr,
 
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
 //		SendProtoAck( pr, hContact, 1, ACKRESULT_SENTREQUEST, ACKTYPE_MESSAGE, NULL );
-		sipe_im_send(pr->sip, dbv.pszVal, msg, SIPE_MESSAGE_SEND);
+		sipe_core_im_send(pr->sip, dbv.pszVal, msg);
 		SendProtoAck( pr, hContact, 1, ACKRESULT_SUCCESS, ACKTYPE_MESSAGE, NULL );
 		DBFreeVariant(&dbv);
 	} else {
@@ -104,6 +104,13 @@ int sipe_miranda_RecvMsg(SIPPROTO *pr,
 
 	CCSDATA ccs = { hContact, PSR_MESSAGE, 0, ( LPARAM )pre };
 	return CallService( MS_PROTO_RECVMSG, 0, ( LPARAM )&ccs );
+}
+
+void sipe_backend_im_topic(struct sipe_core_public *sipe_public,
+			   const gchar *with,
+			   const gchar *topic)
+{
+	_NIF();
 }
 
 /*

@@ -181,12 +181,11 @@ sipe_info_to_miranda_property(sipe_buddy_info_fields info)
 	return (const char *)g_hash_table_lookup(info_to_property_table, (gconstpointer)info);
 }
 
-sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
+sipe_backend_buddy sipe_miranda_buddy_find(SIPPROTO *pr,
 					   const gchar *name,
 					   const gchar *group)
 {
 	HANDLE hContact;
-	SIPPROTO *pr = sipe_public->backend_private;
 	SIPE_DEBUG_INFO("buddy_name <%s> group <%s>", name, group);
 
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
@@ -218,13 +217,18 @@ sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
 
 	return NULL;
 }
+sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
+					   const gchar *name,
+					   const gchar *group)
+{
+	return sipe_miranda_buddy_find(sipe_public->backend_private, name, group);
+}
 
-GSList* sipe_backend_buddy_find_all(struct sipe_core_public *sipe_public,
+GSList* sipe_miranda_buddy_find_all(SIPPROTO *pr,
 				    const gchar *buddy_name,
 				    const gchar *group_name)
 {
 	GSList *res = NULL;
-	SIPPROTO *pr = sipe_public->backend_private;
 	HANDLE hContact;
 	SIPE_DEBUG_INFO("buddy_name <%s> group <%d>\n", buddy_name, group_name);
 
@@ -261,6 +265,13 @@ GSList* sipe_backend_buddy_find_all(struct sipe_core_public *sipe_public,
 
 	SIPE_DEBUG_INFO("found <%d> buddies", g_slist_length(res));
 	return res;
+}
+
+GSList* sipe_backend_buddy_find_all(struct sipe_core_public *sipe_public,
+				    const gchar *buddy_name,
+				    const gchar *group_name)
+{
+	return sipe_miranda_buddy_find_all(sipe_public->backend_private, buddy_name, group_name);
 }
 
 gchar* sipe_backend_buddy_get_name(struct sipe_core_public *sipe_public,
@@ -408,6 +419,7 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 	sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, name ); // name
 	if (alias) sipe_miranda_setContactStringUtf( pr, hContact, "Nick", alias );
 	DBWriteContactSettingString( hContact, "CList", "Group", groupname );
+	sipe_miranda_setContactString( pr, hContact, "Group", groupname );
 	return (sipe_backend_buddy)hContact;
 }
 
@@ -458,9 +470,9 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 	const gchar *module = pr->proto.m_szModuleName;
 	GSList *contacts = sipe_backend_buddy_find_all(sipe_public, who, NULL);
 
-	BUDDIES_FOREACH(contacts)
+	CONTACTS_FOREACH(contacts)
 		sipe_miranda_setWord(pr, hContact, "Status", SipeStatusToMiranda(status_id));
-	BUDDIES_FOREACH_END;
+	CONTACTS_FOREACH_END;
 
 }
 

@@ -55,6 +55,34 @@ void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public
 	CallService(MS_PROTO_CONTACTISTYPING, (WPARAM)hContact, (LPARAM)0);
 }
 
+void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
+			   const gchar *message,
+			   const gchar *accept_label,
+			   const gchar *decline_label,
+			   gpointer key)
+{
+	_NIF();
+}
+
+void sipe_backend_user_close_ask(gpointer key)
+{
+	_NIF();
+}
+
+int sipe_miranda_SetAwayMsg(SIPPROTO *pr,
+	       int m_iStatus,
+	       const PROTOCHAR* msg)
+{
+	const gchar *note = TCHAR2CHAR(msg);
+
+	SIPE_DEBUG_INFO("SetAwayMsg: status <%x> msg <%ls>", m_iStatus, msg);
+	sipe_miranda_setString(pr, "note", note);
+	if (pr->sip)
+		sipe_core_set_status(pr->sip, note, MirandaStatusToSipe(pr->proto.m_iStatus));
+	return 0;
+}
+
+
 /*
   Local Variables:
   mode: c

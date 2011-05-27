@@ -42,7 +42,6 @@
 #include "m_clist.h"
 #include "m_langpack.h"
 
-#include "libsipe.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -54,6 +53,10 @@
 #include "sipe.h"
 #include "miranda-private.h"
 #include "miranda-resource.h"
+
+/* FIXME: Not here */
+void CreateProtoService(const SIPPROTO *pr, const char* szService, SipSimpleServiceFunc serviceProc);
+char* TCHAR2CHAR( const TCHAR *tchr );
 
 HANDLE sipe_miranda_debug_netlibuser = NULL;
 
@@ -307,7 +310,7 @@ INT_PTR CALLBACK DlgProcAccMgrUI(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 			{
 				char buf[100];
 
-				const SIPPROTO *pr = (const SIPPROTO *)lParam;
+				const SIPPROTO *pr = (const SIPPROTO *)GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
 
 				GetDlgItemTextA(hwndDlg, IDC_HANDLE, buf, sizeof(buf));
 				sipe_miranda_setString(pr, "username", buf);
@@ -333,6 +336,19 @@ INT_PTR CALLBACK DlgProcAccMgrUI(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
  *
  * Functions called by our service functions
  */
+static void fix_contact_groups(SIPPROTO *pr)
+{
+	GSList *contacts = sipe_miranda_buddy_find_all(pr, NULL, NULL);
+	char *group;
+
+	CONTACTS_FOREACH(contacts)
+		group = DBGetString(hContact, "CList", "Group");
+		sipe_miranda_setContactString(pr, hContact, "Group", group);
+		mir_free(group);
+	CONTACTS_FOREACH_END
+
+}
+
 static void set_if_defined(SIPPROTO *pr, GHashTable *store, HANDLE hContact, sipe_buddy_info_fields field, char *label)
 {
 	char *value = (char *)g_hash_table_lookup(store, (gpointer)field);
@@ -367,7 +383,7 @@ static INT_PTR StartChat(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 										  self);
 			g_free(self);
 
-			sipe_invite(sipe_private, session, dbv.pszVal, NULL, NULL, NULL, FALSE);
+			sipe_im_invite(sipe_private, session, dbv.pszVal, NULL, NULL, NULL, FALSE);
 	}
 		DBFreeVariant( &dbv );
 		return TRUE;
@@ -672,13 +688,15 @@ static int OnGroupChange( const SIPPROTO *pr, WPARAM w, LPARAM l )
 	}
 
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
+		gchar *oldgroup;
 		who = g_strdup(dbv.pszVal);
 		DBFreeVariant( &dbv );
 
-		if ( !DBGetContactSettingString( hContact, "CList", "Group", &dbv )) {
-			SIPE_DEBUG_INFO("Moving buddy <%s> from group <%ls> to group <%ls>", who, dbv.pszVal, gi->pszNewName);
-			sipe_core_buddy_group(pr->sip, who, dbv.pszVal, TCHAR2CHAR(gi->pszNewName));
-			DBFreeVariant( &dbv );
+		if (oldgroup = sipe_miranda_getContactString(pr, hContact, "Group"))
+		{
+			SIPE_DEBUG_INFO("Moving buddy <%s> from group <%ls> to group <%ls>", who, oldgroup, gi->pszNewName);
+			sipe_core_buddy_group(pr->sip, who, oldgroup, TCHAR2CHAR(gi->pszNewName));
+			mir_free(oldgroup);
 		} else {
 			const gchar *name = TCHAR2CHAR(gi->pszNewName);
 			const gchar *newname;
@@ -730,9 +748,57 @@ static int OnChatEvent(const SIPPROTO *pr, WPARAM w, LPARAM l )
 	return FALSE;
 }
 
-int OnPreBuildContactMenu(const SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
+int OnPreBuildContactMenu(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 {
 	HANDLE hContact = (HANDLE)wParam;
+	int chatcount = CallService(MS_GC_GETSESSIONCOUNT, 0, (LPARAM)pr->proto.m_szModuleName);
+	int idx;
+	GSList *menulist = pr->contactMenuChatItems;
+	CLISTMENUITEM mi = {0};
+	GC_INFO gci = {0};
+
+	mi.cbSize = sizeof(mi);
+	gci.pszModule = pr->proto.m_szModuleName;
+
+	for (idx=0 ; idx<chatcount ; idx++)
+	{
+		SIPE_DEBUG_INFO("Chat <%d> Menuitem <%08x>", idx, menulist);
+		gci.iItem = idx;
+		gci.Flags = BYINDEX | NAME;
+		if(!CallServiceSync( MS_GC_GETINFO, 0, (LPARAM)&gci )) {
+			if (menulist)
+			{
+				SIPE_DEBUG_INFO("Chat <%s> Menuitem <%08x>", gci.pszName, menulist);
+				mi.pszName = g_strdup_printf("Invite to %s", gci.pszName);
+				mi.flags = CMIM_NAME | CMIM_FLAGS | CMIF_NOTOFFLINE;
+				CallService(MS_CLIST_MODIFYMENUITEM, menulist->data, &mi);
+				g_free(mi.pszName);
+				menulist =  menulist->next;
+			}
+			else
+			{
+				gpointer tmp;
+				SIPE_DEBUG_INFO("Chat <%s>", gci.pszName);
+
+				mi.pszName = g_strdup_printf("Invite to %s", gci.pszName);
+				mi.flags = CMIF_NOTOFFLINE;
+				mi.position = 20+idx;
+				mi.pszService = "SIPSIMPLE/InviteToChat";
+				mi.pszContactOwner = pr->proto.m_szModuleName;
+				tmp = CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, &mi);
+				g_free(mi.pszName);
+				pr->contactMenuChatItems = g_slist_append(pr->contactMenuChatItems, tmp);
+			}
+		}
+	}
+
+	while (menulist)
+	{
+		SIPE_DEBUG_INFO("Menuitem <%08x>", menulist);
+		mi.flags = CMIM_FLAGS | CMIF_HIDDEN;
+		CallService(MS_CLIST_MODIFYMENUITEM, menulist, &mi);
+		menulist =  menulist->next;
+	}
 
 	return 0;
 }
@@ -1037,7 +1103,7 @@ static HANDLE SearchByEmail( SIPPROTO *pr, const PROTOCHAR* email )
 
 	g_hash_table_insert(query, "email", (gpointer)email);
 
-	return (HANDLE)sipe_search_contact_with_cb( pr->sip, query, sipsimple_search_contact_cb, pr);
+	return (HANDLE)sipe_core_buddy_search( pr->sip, query, sipsimple_search_contact_cb, pr);
 
 }
 
@@ -1050,13 +1116,13 @@ static HANDLE SearchByName( SIPPROTO *pr, const PROTOCHAR* nick, const PROTOCHAR
 	g_hash_table_insert(query, "givenName", (gpointer)mir_t2a(firstName));
 	g_hash_table_insert(query, "sn", (gpointer)mir_t2a(lastName));
 
-	return (HANDLE)sipe_search_contact_with_cb( pr->sip, query, sipsimple_search_contact_cb, pr);
+	return (HANDLE)sipe_core_buddy_search( pr->sip, query, sipsimple_search_contact_cb, pr);
 }
 
 static HANDLE AddToList( SIPPROTO *pr, int flags, PROTOSEARCHRESULT* psr )
 {
 	HANDLE hContact;
-	gchar *nick = g_strdup(mir_t2a(psr->nick));
+	gchar *nick = g_strdup(TCHAR2CHAR(psr->nick));
 
 	/* Prepend sip: if needed */
 	if (strncmp("sip:", nick, 4)) {
@@ -1065,7 +1131,7 @@ static HANDLE AddToList( SIPPROTO *pr, int flags, PROTOSEARCHRESULT* psr )
 		g_free(tmp);
 	}
 
-	hContact = sipe_backend_buddy_find(pr->sip, nick, NULL);
+	hContact = sipe_miranda_buddy_find(pr, nick, NULL);
 	if (hContact) {
 		g_free(nick);
 		return hContact;
@@ -1073,22 +1139,11 @@ static HANDLE AddToList( SIPPROTO *pr, int flags, PROTOSEARCHRESULT* psr )
 
 	hContact = ( HANDLE )CallService( MS_DB_CONTACT_ADD, 0, 0 );
 	CallService( MS_PROTO_ADDTOCONTACT, (WPARAM)hContact, (LPARAM)pr->proto.m_szModuleName );
-	sipe_miranda_setString( hContact, SIP_UNIQUEID, nick ); // name
-	if (psr->lastName) sipe_miranda_setStringUtf( hContact, "Nick", mir_t2a(psr->lastName) );               // server_alias
+	sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, nick ); // name
+	if (psr->lastName) sipe_miranda_setContactStringUtf( pr, hContact, "Nick", mir_t2a(psr->lastName) );               // server_alias
 
 	g_free(nick);
 	return hContact;
-}
-
-static int SetAwayMsg( SIPPROTO *pr, int m_iStatus, const PROTOCHAR* msg )
-{
-	const gchar *note = TCHAR2CHAR(msg);
-
-	SIPE_DEBUG_INFO("SetAwayMsg: status <%x> msg <%ls>", m_iStatus, msg);
-	sipe_miranda_setString(pr, "note", note);
-	if (pr->sip)
-		sipe_core_set_status(pr->sip, note, MirandaStatusToSipe(pr->proto.m_iStatus));
-	return 0;
 }
 
 static HANDLE GetAwayMsg( SIPPROTO *pr, HANDLE hContact )
@@ -1162,40 +1217,55 @@ static PROTO_INTERFACE* sipsimpleProtoInit( const char* pszProtoName, const TCHA
 
 	SIPE_DEBUG_INFO("protoname <%s> username <%ls>", pszProtoName, tszUserName);
 
+	/* To make it easy to detect when a SIPPROTO* isn't a SIPPROTO* */
+	strncpy(pr->_SIGNATURE, "AbandonAllHope..", sizeof(pr->_SIGNATURE));
+
 	pr->proto.m_iVersion = 2;
 	pr->proto.m_szModuleName = mir_strdup(pszProtoName);
 	pr->proto.m_tszUserName = mir_tstrdup(tszUserName);
 	pr->proto.m_szProtoName = mir_strdup(pszProtoName);
 
 	set_buddies_offline(pr);
+	fix_contact_groups(pr);
 
 	/* Fill the function table */
-	pr->proto.vtbl->GetCaps                = GetCaps;
-	pr->proto.vtbl->GetIcon                = GetIcon;
-	pr->proto.vtbl->OnEvent                = OnEvent;
-	pr->proto.vtbl->SetStatus              = SetStatus;
-	pr->proto.vtbl->UserIsTyping           = UserIsTyping;
-	pr->proto.vtbl->SendMsg                = sipe_miranda_SendMsg;
-	pr->proto.vtbl->RecvMsg                = sipe_miranda_RecvMsg;
+	pr->proto.vtbl->AddToList              = AddToList;
 	pr->proto.vtbl->AddToListByEvent       = AddToListByEvent;
+
 	pr->proto.vtbl->Authorize              = Authorize;
 	pr->proto.vtbl->AuthDeny               = AuthDeny;
 	pr->proto.vtbl->AuthRecv               = AuthRecv;
 	pr->proto.vtbl->AuthRequest            = AuthRequest;
+
 	pr->proto.vtbl->ChangeInfo             = ChangeInfo;
+
 	pr->proto.vtbl->FileAllow              = FileAllow;
 	pr->proto.vtbl->FileCancel             = FileCancel;
 	pr->proto.vtbl->FileDeny               = FileDeny;
 	pr->proto.vtbl->FileResume             = FileResume;
+
+	pr->proto.vtbl->GetCaps                = GetCaps;
+	pr->proto.vtbl->GetIcon                = GetIcon;
 	pr->proto.vtbl->GetInfo                = GetInfo;
+
 	pr->proto.vtbl->SearchBasic            = SearchBasic;
-	pr->proto.vtbl->SearchAdvanced         = SearchAdvanced;
-	pr->proto.vtbl->CreateExtendedSearchUI = CreateExtendedSearchUI;
 	pr->proto.vtbl->SearchByEmail          = SearchByEmail;
 	pr->proto.vtbl->SearchByName           = SearchByName;
-	pr->proto.vtbl->AddToList              = AddToList;
-	pr->proto.vtbl->SetAwayMsg             = SetAwayMsg;
+	pr->proto.vtbl->SearchAdvanced         = SearchAdvanced;
+	pr->proto.vtbl->CreateExtendedSearchUI = CreateExtendedSearchUI;
+
+	pr->proto.vtbl->RecvMsg                = sipe_miranda_RecvMsg;
+
+	pr->proto.vtbl->SendMsg                = sipe_miranda_SendMsg;
+
+	pr->proto.vtbl->SetStatus              = SetStatus;
+
 	pr->proto.vtbl->GetAwayMsg             = GetAwayMsg;
+	pr->proto.vtbl->SetAwayMsg             = sipe_miranda_SetAwayMsg;
+
+	pr->proto.vtbl->UserIsTyping           = UserIsTyping;
+
+	pr->proto.vtbl->OnEvent                = OnEvent;
 
 	/* Setup services */
 	CreateProtoService(pr, PS_CREATEACCMGRUI, &SvcCreateAccMgrUI );

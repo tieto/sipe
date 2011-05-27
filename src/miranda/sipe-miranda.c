@@ -19,7 +19,6 @@
 #include "m_netlib.h"
 #include "m_protomod.h"
 
-#include "libsipe.h"
 #include "sipe-core.h"
 #include "sipe.h"
 #include "sipe-core-private.h"
@@ -431,12 +430,6 @@ static void
 miranda_sipe_connection_cleanup(struct sipe_core_private *sip)
 {
 	SIPPROTO *pr = sip->public.backend_private;
-	_NIF();
-}
-
-static void
-miranda_sipe_notify_user(SIP_HANDLE sip, const char *name, sipe_message_flags flags, const gchar *message)
-{
 	_NIF();
 }
 

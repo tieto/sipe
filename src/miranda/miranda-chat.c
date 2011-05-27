@@ -41,7 +41,6 @@
 #include "m_utils.h"
 #include "m_system.h"
 
-#include "libsipe.h"
 #include "miranda-private.h"
 
 struct sipe_backend_chat_session {

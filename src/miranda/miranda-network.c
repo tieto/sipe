@@ -38,6 +38,32 @@ const gchar *sipe_backend_network_ip_address(void)
 	return "216.49.157.212";
 }
 
+struct sipe_backend_listendata {
+	int dummy;
+};
+
+static void
+backend_listen_cb(int listenfd, struct sipe_backend_listendata *ldata)
+{
+	_NIF();
+}
+
+struct sipe_backend_listendata *
+sipe_backend_network_listen_range(unsigned short port_min,
+				  unsigned short port_max,
+				  sipe_listen_start_cb listen_cb,
+				  sipe_client_connected_cb connect_cb,
+				  gpointer data)
+{
+	_NIF();
+	return NULL;
+}
+
+void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata)
+{
+	_NIF();
+}
+
 /*
   Local Variables:
   mode: c

@@ -102,6 +102,20 @@ gboolean sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
 	return FALSE;
 }
 
+void
+sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
+		      const char* ip, unsigned port)
+{
+	_NIF();
+}
+
+gboolean
+sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft)
+{
+	_NIF();
+	return FALSE;
+}
+
 
 /*
   Local Variables:

@@ -35,7 +35,6 @@
 #include "m_system.h"
 #include "m_database.h"
 
-#include "libsipe.h"
 #include "miranda-private.h"
 
 /**
