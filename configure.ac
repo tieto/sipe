@@ -336,7 +336,10 @@ system defaults.
 				 PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
 					[PKG_CHECK_MODULES(PURPLE_MEDIA, [purple >= 2.7.0],
 						[PKG_CHECK_MODULES(GSTREAMER, [gstreamer-0.10],
-							[with_purple_vv=yes],
+							dnl sipe-media.c uses g_slist_free_full()
+							[PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.28.0],
+								[with_purple_vv=yes],
+								[AC_MSG_NOTICE(glib2 >= 2.28.0 required: disabling purple voice and video support)])],
 							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
 						[AC_MSG_NOTICE(libpurple >= 2.7.0 required: disabling purple voice and video support)])],
 					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
