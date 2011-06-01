@@ -93,6 +93,8 @@ struct sipe_core_private {
 /* we are connected from outside the enterprise network boundary
  * via Edge Server */
 #define SIPE_CORE_PRIVATE_FLAG_REMOTE_USER 0x40000000
+/* multiple points of presence detected */
+#define SIPE_CORE_PRIVATE_FLAG_MPOP        0x20000000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)

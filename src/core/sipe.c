@@ -2493,6 +2493,7 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	int aggreg_avail = 0;
 	gboolean do_update_status = FALSE;
 	gboolean has_note_cleaned = FALSE;
+	guint clients = 0;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_process_roaming_self");
 
@@ -2501,7 +2502,6 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 
 	contact = get_contact(sipe_private);
 	to = sip_uri_self(sipe_private);
-
 
 	/* categories */
 	/* set list of categories participating in this XML */
@@ -2585,6 +2585,9 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 						key, version);
 			}
 		}
+
+		/* count clients */
+		if (sipe_strequal(name, "device")) clients++;
 
 		if (sipe_is_our_publication(sipe_private, key)) {
 			struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
@@ -2830,6 +2833,18 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 
 	g_free(contact);
 	sipe_xml_free(xml);
+
+	/* It seems that OCS always keeps a "virtual" client active,
+	 * i.e. the minimum client count is 2
+	 * @TODO: is this correct for all installations?
+	 */
+	if (clients > 2) {
+		SIPE_CORE_PRIVATE_FLAG_SET(MPOP);
+		SIPE_DEBUG_INFO("sipe_process_roaming_self: multiple clients detected (%d)",
+				clients - 1);
+	} else {
+		SIPE_CORE_PRIVATE_FLAG_UNSET(MPOP);
+	}
 
 	/* Publish initial state if not yet.
 	 * Assuming this happens on initial responce to subscription to roaming-self
