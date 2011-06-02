@@ -46,6 +46,7 @@
 #include "sipe-media.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
+#include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-user.h"
 #include "sipe-utils.h"
@@ -304,6 +305,28 @@ static void send_invite_response(struct sipe_core_private *sipe_private,
 	g_free(body);
 }
 
+static void delayed_invite_destroy(gpointer data)
+{
+	sipmsg_free(data);
+}
+static void delayed_invite_timeout(struct sipe_core_private *sipe_private,
+				   gpointer data)
+{
+	send_invite_response(sipe_private, data);
+	sipmsg_free(data);
+}
+
+static void delayed_invite_response(struct sipe_core_private *sipe_private,
+				    struct sipmsg *msg)
+{
+	sipe_schedule_seconds(sipe_private,
+			      "<delayed-invite>",
+			      sipmsg_copy(msg),
+			      10,
+			      delayed_invite_timeout,
+			      delayed_invite_destroy);
+}
+
 void process_incoming_invite(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
@@ -324,6 +347,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	const gchar *ms_text_format;
+	gboolean dont_delay = FALSE;
 
 #ifdef HAVE_VV
 	if (g_str_has_prefix(content_type, "multipart/alternative")) {
@@ -526,6 +550,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 					sipe_process_incoming_x_msmsgsinvite(sipe_private, dialog, parsed_body);
 					sipe_utils_nameval_free(parsed_body);
 					sipmsg_add_header(msg, "Supported", "ms-text-format"); /* accepts received message */
+					dont_delay = TRUE;
 				}
 				g_free(tmp);
 			}
@@ -546,6 +571,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 					}
 					g_free(html);
 					sipmsg_add_header(msg, "Supported", "ms-text-format"); /* accepts received message */
+					dont_delay = TRUE;
 				}
 			}
 		}
@@ -555,7 +581,11 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 
 	sipmsg_add_header(msg, "Supported", "com.microsoft.rtc-multiparty");
 
-	send_invite_response(sipe_private, msg);
+	if (dont_delay || !SIPE_CORE_PRIVATE_FLAG_IS(MPOP)) {
+		send_invite_response(sipe_private, msg);
+	} else {
+		delayed_invite_response(sipe_private, msg);
+	}
 }
 
 void process_incoming_message(struct sipe_core_private *sipe_private,
