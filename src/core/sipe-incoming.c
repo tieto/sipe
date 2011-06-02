@@ -283,10 +283,30 @@ static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 }
 #endif
 
+static void send_invite_response(struct sipe_core_private *sipe_private,
+				 struct sipmsg *msg)
+{
+	gchar *body = g_strdup_printf(
+		"v=0\r\n"
+		"o=- 0 0 IN IP4 %s\r\n"
+		"s=session\r\n"
+		"c=IN IP4 %s\r\n"
+		"t=0 0\r\n"
+		"m=%s %d sip sip:%s\r\n"
+		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
+		sipe_backend_network_ip_address(),
+		sipe_backend_network_ip_address(),
+		SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? "message" : "x-ms-message",
+		sip_transport_port(sipe_private),
+		sipe_private->username);
+	sipmsg_add_header(msg, "Content-Type", "application/sdp");
+	sip_transport_response(sipe_private, msg, 200, "OK", body);
+	g_free(body);
+}
+
 void process_incoming_invite(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
-	gchar *body;
 	gchar *newTag;
 	const gchar *oldHeader;
 	gchar *newHeader;
@@ -534,23 +554,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	g_free(from);
 
 	sipmsg_add_header(msg, "Supported", "com.microsoft.rtc-multiparty");
-	sipmsg_add_header(msg, "Content-Type", "application/sdp");
 
-	body = g_strdup_printf(
-		"v=0\r\n"
-		"o=- 0 0 IN IP4 %s\r\n"
-		"s=session\r\n"
-		"c=IN IP4 %s\r\n"
-		"t=0 0\r\n"
-		"m=%s %d sip sip:%s\r\n"
-		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
-		sipe_backend_network_ip_address(),
-		sipe_backend_network_ip_address(),
-		SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? "message" : "x-ms-message",
-		sip_transport_port(sipe_private),
-		sipe_private->username);
-	sip_transport_response(sipe_private, msg, 200, "OK", body);
-	g_free(body);
+	send_invite_response(sipe_private, msg);
 }
 
 void process_incoming_message(struct sipe_core_private *sipe_private,
