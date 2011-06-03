@@ -305,29 +305,50 @@ static void send_invite_response(struct sipe_core_private *sipe_private,
 	g_free(body);
 }
 
+struct sipe_delayed_invite {
+	gchar *action;
+	struct sipmsg *msg;
+};
+
 static void delayed_invite_destroy(gpointer data)
 {
-	sipmsg_free(data);
+	struct sipe_delayed_invite *delayed_invite = data;
+	sipmsg_free(delayed_invite->msg);
+	g_free(delayed_invite->action);
+	g_free(delayed_invite);
 }
+
 static void delayed_invite_timeout(struct sipe_core_private *sipe_private,
 				   gpointer data)
 {
-	send_invite_response(sipe_private, data);
-	sipmsg_free(data);
+	struct sipe_delayed_invite *delayed_invite = data;
+	send_invite_response(sipe_private, delayed_invite->msg);
+	delayed_invite_destroy(data);
 }
 
 static void delayed_invite_response(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg,
 				    const gchar *callid)
 {
-	gchar *action = g_strdup_printf("<delayed-invite-%s>", callid);
+	struct sipe_delayed_invite *delayed_invite = g_new0(struct sipe_delayed_invite, 1);
+
+	delayed_invite->action = g_strdup_printf("<delayed-invite-%s>", callid);
+	delayed_invite->msg    = sipmsg_copy(msg);
 	sipe_schedule_seconds(sipe_private,
-			      action,
-			      sipmsg_copy(msg),
+			      delayed_invite->action,
+			      delayed_invite,
 			      10,
 			      delayed_invite_timeout,
 			      delayed_invite_destroy);
-	g_free(action);
+}
+
+void sipe_incoming_cancel_delayed_invite(struct sipe_core_private *sipe_private,
+					 struct sip_dialog *dialog)
+{
+	struct sipe_delayed_invite *delayed_invite = dialog->delayed_invite;
+	dialog->delayed_invite = NULL;
+	send_invite_response(sipe_private, delayed_invite->msg);
+	sipe_schedule_cancel(sipe_private, delayed_invite->action);
 }
 
 void process_incoming_invite(struct sipe_core_private *sipe_private,

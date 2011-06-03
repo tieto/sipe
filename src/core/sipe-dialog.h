@@ -27,6 +27,7 @@
  */
 
 /* Forward declarations */
+struct sipe_delayed_invite;
 struct sipmsg;
 
 /* Helper macros to iterate over dialog list in a SIP session */
@@ -60,6 +61,7 @@ struct sip_dialog {
 	int expires;
 	gboolean is_established;
 	struct transaction *outgoing_invite;
+        struct sipe_delayed_invite *delayed_invite;
 };
 
 /* Forward declaration */

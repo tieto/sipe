@@ -41,6 +41,7 @@
 #include "sipe-ft.h"
 #include "sipe-groupchat.h"
 #include "sipe-im.h"
+#include "sipe-incoming.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-user.h"
@@ -802,6 +803,9 @@ void sipe_core_im_send(struct sipe_core_public *sipe_public,
 	sipe_session_enqueue_message(session, what, NULL);
 
 	if (dialog && !dialog->outgoing_invite) {
+                if (dialog->delayed_invite)
+			sipe_incoming_cancel_delayed_invite(sipe_private,
+							    dialog);
 		sipe_im_process_queue(sipe_private, session);
 	} else if (!dialog || !dialog->outgoing_invite) {
 		/* Need to send the INVITE to get the outgoing dialog setup */
