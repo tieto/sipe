@@ -42,6 +42,10 @@ struct sipe_backend_private {
 	time_t last_keepalive;
 };
 
+struct sipe_backend_fd {
+	int fd;
+};
+
 /**
  * Initiates outgoing file transfer, sending @c file to remote peer identified
  * by @c who.

@@ -265,7 +265,7 @@ connect_cb(gpointer data, gint fd, SIPE_UNUSED_PARAMETER const gchar *error_mess
 }
 
 void
-sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
+sipe_backend_ft_start(struct sipe_file_transfer *ft, struct sipe_backend_fd *fd,
 		      const char* ip, unsigned port)
 {
 	if (ip && port && !sipe_backend_ft_is_incoming(ft)) {
@@ -278,7 +278,7 @@ sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
 		return;
 	}
 
-	purple_xfer_start(PURPLE_XFER, fd, ip, port);
+	purple_xfer_start(PURPLE_XFER, fd ? fd->fd : -1, ip, port);
 }
 
 void sipe_purple_ft_send_file(PurpleConnection *gc,

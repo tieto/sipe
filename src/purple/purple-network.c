@@ -43,6 +43,7 @@
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
+#include "purple-private.h"
 
 const gchar *sipe_backend_network_ip_address(void)
 {
@@ -74,8 +75,11 @@ client_connected_cb(struct sipe_backend_listendata *ldata, gint listenfd,
 	close(listenfd);
 	ldata->listenfd = -1;
 
-	if (ldata->connect_cb)
-		ldata->connect_cb(fd, ldata->data);
+	if (ldata->connect_cb) {
+		struct sipe_backend_fd *sipe_fd = g_new(struct sipe_backend_fd, 1);
+		sipe_fd->fd = fd;
+		ldata->connect_cb(sipe_fd, ldata->data);
+	}
 
 	g_free(ldata);
 }
@@ -134,6 +138,18 @@ void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata)
 	if (ldata->listenfd)
 		close(ldata->listenfd);
 	g_free(ldata);
+}
+
+gboolean
+sipe_backend_fd_is_valid(struct sipe_backend_fd *fd)
+{
+	return fd && fd->fd >= 0;
+}
+
+void
+sipe_backend_fd_free(struct sipe_backend_fd *fd)
+{
+	g_free(fd);
 }
 
 /*

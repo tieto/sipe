@@ -194,6 +194,9 @@ struct sipe_dns_query *sipe_backend_dns_query_a(const gchar *hostname,
 void sipe_backend_dns_query_cancel(struct sipe_dns_query *query);
 
 /** FILE TRANSFER ************************************************************/
+
+struct sipe_backend_fd;
+
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 			   const gchar *errmsg);
 const gchar *sipe_backend_ft_get_error(struct sipe_file_transfer *ft);
@@ -243,11 +246,12 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
  * or ip address and port where the backend should connect.
  *
  * @param ft   file transfer data
- * @param fd   file descriptor or -1 if ip and port are used
+ * @param fd   opaque file descriptor pointer or NULL if ip and port are used
  * @param ip   ip address to connect of NULL when file descriptor is used
  * @param port port to connect or 0 when file descriptor is used
  */
-void sipe_backend_ft_start(struct sipe_file_transfer *ft, int fd,
+void sipe_backend_ft_start(struct sipe_file_transfer *ft,
+			   struct sipe_backend_fd *fd,
 			   const char* ip, unsigned port);
 
 /**
@@ -480,7 +484,7 @@ const gchar *sipe_backend_network_ip_address(void);
 struct sipe_backend_listendata;
 
 typedef void (*sipe_listen_start_cb)(unsigned short port, gpointer data);
-typedef void (*sipe_client_connected_cb)(gint fd, gpointer data);
+typedef void (*sipe_client_connected_cb)(struct sipe_backend_fd *fd, gpointer data);
 
 struct sipe_backend_listendata *
 sipe_backend_network_listen_range(unsigned short port_min,
@@ -489,6 +493,9 @@ sipe_backend_network_listen_range(unsigned short port_min,
 				  sipe_client_connected_cb connect_cb,
 				  gpointer data);
 void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata);
+
+gboolean sipe_backend_fd_is_valid(struct sipe_backend_fd *fd);
+void sipe_backend_fd_free(struct sipe_backend_fd *fd);
 
 /** NOTIFICATIONS *************************************************************/
 

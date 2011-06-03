@@ -210,18 +210,20 @@ listen_socket_created_cb(unsigned short port, gpointer data)
 }
 
 static void
-client_connected_cb(gint fd, gpointer data)
+client_connected_cb(struct sipe_backend_fd *fd, gpointer data)
 {
 	struct sipe_file_transfer *ft = data;
 
 	SIPE_FILE_TRANSFER_PRIVATE->listendata = NULL;
 
-	if (fd < 0) {
+	if (!sipe_backend_fd_is_valid(fd)) {
 		sipe_backend_ft_error(ft, _("Socket read failed"));
 		sipe_backend_ft_cancel_local(ft);
 	} else {
 		sipe_backend_ft_start(ft, fd, NULL, 0);
 	}
+
+	sipe_backend_fd_free(fd);
 }
 
 void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
@@ -376,7 +378,7 @@ void sipe_ft_incoming_accept(struct sip_dialog *dialog, const GSList *body)
 
 
 		if (ip && port_str) {
-			sipe_backend_ft_start(SIPE_FILE_TRANSFER_PUBLIC, -1, ip,
+			sipe_backend_ft_start(SIPE_FILE_TRANSFER_PUBLIC, NULL, ip,
 					      g_ascii_strtoull(port_str, NULL, 10));
 		} else {
 			ft_private->listendata =
