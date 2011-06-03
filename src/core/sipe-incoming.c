@@ -323,7 +323,6 @@ static void delayed_invite_timeout(struct sipe_core_private *sipe_private,
 {
 	struct sipe_delayed_invite *delayed_invite = data;
 	send_invite_response(sipe_private, delayed_invite->msg);
-	delayed_invite_destroy(data);
 }
 
 static void delayed_invite_response(struct sipe_core_private *sipe_private,
