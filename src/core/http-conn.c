@@ -596,28 +596,114 @@ static void http_conn_input(struct sipe_transport_connection *conn)
 		cur[0] = '\0';
 		msg = sipmsg_parse_header(conn->buffer);
 
-		cur += 2;
-		remainder = conn->buffer_used - (cur - conn->buffer);
-		if (msg && remainder >= (guint) msg->bodylen) {
-			char *dummy = g_malloc(msg->bodylen + 1);
-			memcpy(dummy, cur, msg->bodylen);
-			dummy[msg->bodylen] = '\0';
-			msg->body = dummy;
-			cur += msg->bodylen;
-			sipe_utils_message_debug("HTTP",
-						 conn->buffer,
-						 msg->body,
-						 FALSE);
-			sipe_utils_shrink_buffer(conn, cur);
-		} else {
-			if (msg){
-				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
-				sipmsg_free(msg);
-                        }
+		/* HTTP/1.1 Transfer-Encoding: chunked */
+		if (msg && (msg->bodylen == SIPMSG_BODYLEN_CHUNKED)) {
+			gchar *start        = cur + 2;
+			GSList *chunks      = NULL;
+			gboolean incomplete = TRUE;
 
-			/* restore header for next try */
-			cur[-2] = '\r';
-			return;
+			msg->bodylen = 0;
+			while (strlen(start) > 0) {
+				gchar *tmp;
+				guint length = strtol(start, &tmp, 16);
+				struct _chunk {
+					guint length;
+					const gchar *start;
+				} *chunk;
+
+				/* Illegal number */
+				if ((length == 0) && (start == tmp))
+					break;
+				msg->bodylen += length;
+
+				/* Chunk header not finished yet */
+				tmp = strstr(tmp, "\r\n");
+				if (tmp == NULL)
+					break;
+
+				/* Chunk not finished yet */
+				tmp += 2;
+				remainder = conn->buffer_used - (tmp - conn->buffer);
+				if (remainder < length + 2)
+					break;
+
+				/* Next chunk */
+				start = tmp + length + 2;
+
+				/* Body completed */
+				if (length == 0) {
+					gchar *dummy  = g_malloc(msg->bodylen + 1);
+					gchar *p      = dummy;
+					GSList *entry = chunks;
+
+					while (entry) {
+						chunk = entry->data;
+						memcpy(p, chunk->start, chunk->length);
+						p += chunk->length;
+						entry = entry->next;
+					}
+					p[0] = '\0';
+
+					msg->body = dummy;
+					sipe_utils_message_debug("HTTP",
+								 conn->buffer,
+								 msg->body,
+								 FALSE);
+
+					cur = start;
+					sipe_utils_shrink_buffer(conn, cur);
+
+					incomplete = FALSE;
+					break;
+				}
+
+				/* Append completed chunk */
+				chunk = g_new0(struct _chunk, 1);
+				chunk->length = length;
+				chunk->start  = tmp;
+				chunks = g_slist_append(chunks, chunk);
+			}
+
+			if (chunks) {
+				GSList *entry = chunks;
+				while (entry) {
+					g_free(entry->data);
+					entry = entry->next;
+				}
+				g_slist_free(chunks);
+			}
+
+			if (incomplete) {
+				/* restore header for next try */
+				sipmsg_free(msg);
+				cur[0] = '\r';
+				return;
+			}
+
+		} else {
+			cur += 2;
+			remainder = conn->buffer_used - (cur - conn->buffer);
+			if (msg && remainder >= (guint) msg->bodylen) {
+				char *dummy = g_malloc(msg->bodylen + 1);
+				memcpy(dummy, cur, msg->bodylen);
+				dummy[msg->bodylen] = '\0';
+				msg->body = dummy;
+				cur += msg->bodylen;
+				sipe_utils_message_debug("HTTP",
+							 conn->buffer,
+							 msg->body,
+							 FALSE);
+				sipe_utils_shrink_buffer(conn, cur);
+			} else {
+				if (msg){
+					SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
+					sipmsg_free(msg);
+				}
+
+				/* restore header for next try */
+				cur[-2] = '\r';
+				return;
+			}
 		}
 
 		/* important to set before callback call */

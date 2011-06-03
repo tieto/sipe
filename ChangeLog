@@ -1,5 +1,6 @@
 version 1.12.0 "Group Chat" (2011-XX-XX)
 	- Feature #3064877: Add support for OCS2007R2 Group Chat (Stefan Becker)
+	- Feature #3311026: Support for HTTP/1.1 Transfer-Encoding: chunked (Stefan Becker)
 	- Fixed #2834758: First NTLM signature check after startup fails (Stefan Becker) 
 	- Fixed #3082602: Crash on Autodiscover (Stefan Becker)
 	- Fixed #3090663: Re-authentication fails (Stefan Becker)

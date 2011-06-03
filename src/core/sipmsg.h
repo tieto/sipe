@@ -28,6 +28,8 @@
  * <glib.h>
  */
 
+#define SIPMSG_BODYLEN_CHUNKED -1
+
 struct sipmsg {
 	int response; /* 0 means request, otherwise response code */
 	gchar *responsestr;

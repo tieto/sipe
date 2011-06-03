@@ -86,7 +86,12 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	if (contentlength) {
 		msg->bodylen = strtol(contentlength,NULL,10);
 	} else {
-		SIPE_DEBUG_FATAL_NOFORMAT("sipmsg_parse_header(): Content-Length header not found");
+		const gchar *tmp = sipmsg_find_header(msg, "Transfer-Encoding");
+		if (tmp && sipe_strcase_equal(tmp, "chunked")) {
+			msg->bodylen = SIPMSG_BODYLEN_CHUNKED;
+		} else {
+			SIPE_DEBUG_FATAL_NOFORMAT("sipmsg_parse_header(): Content-Length header not found");
+		}
 	}
 	if(msg->response) {
 		const gchar *tmp;
