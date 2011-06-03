@@ -317,14 +317,17 @@ static void delayed_invite_timeout(struct sipe_core_private *sipe_private,
 }
 
 static void delayed_invite_response(struct sipe_core_private *sipe_private,
-				    struct sipmsg *msg)
+				    struct sipmsg *msg,
+				    const gchar *callid)
 {
+	gchar *action = g_strdup_printf("<delayed-invite-%s>", callid);
 	sipe_schedule_seconds(sipe_private,
-			      "<delayed-invite>",
+			      action,
 			      sipmsg_copy(msg),
 			      10,
 			      delayed_invite_timeout,
 			      delayed_invite_destroy);
+	g_free(action);
 }
 
 void process_incoming_invite(struct sipe_core_private *sipe_private,
@@ -584,7 +587,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	if (dont_delay || !SIPE_CORE_PRIVATE_FLAG_IS(MPOP)) {
 		send_invite_response(sipe_private, msg);
 	} else {
-		delayed_invite_response(sipe_private, msg);
+		delayed_invite_response(sipe_private, msg, session->callid);
 	}
 }
 
