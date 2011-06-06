@@ -563,19 +563,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		if (ms_text_format) {
 			if (g_str_has_prefix(ms_text_format, "text/x-msmsgsinvite"))
 			{
-				gchar *tmp = sipmsg_find_part_of_header(ms_text_format, "ms-body=", NULL, NULL);
-				if (tmp) {
-					gsize len;
-					gchar *body = (gchar *) g_base64_decode(tmp, &len);
-					GSList *parsed_body = sipe_ft_parse_msg_body(body);
-
-					dialog = sipe_dialog_find(session, from);
-					sipe_process_incoming_x_msmsgsinvite(sipe_private, dialog, parsed_body);
-					sipe_utils_nameval_free(parsed_body);
-					sipmsg_add_header(msg, "Supported", "ms-text-format"); /* accepts received message */
-					dont_delay = TRUE;
-				}
-				g_free(tmp);
+				dont_delay = TRUE;
 			}
 			else if (g_str_has_prefix(ms_text_format, "text/plain") || g_str_has_prefix(ms_text_format, "text/html"))
 			{
