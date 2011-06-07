@@ -45,6 +45,8 @@ libsipe_core_la_SOURCES = \
 	sipe-ft.h \
 	sipe-ft.c \
 	sipe-ft-tftp.c \
+	sipe-group.h \
+	sipe-group.c \
 	sipe-groupchat.h \
 	sipe-groupchat.c \
 	sipe-im.h \

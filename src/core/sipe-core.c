@@ -43,6 +43,7 @@
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-group.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"

@@ -74,6 +74,7 @@
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-group.h"
 #include "sipe-dialog.h"
 #include "sipe-ews.h"
 #include "sipe-domino.h"
@@ -181,7 +182,7 @@ static void send_presence_status(struct sipe_core_private *sipe_private,
 /**
  * @param from0	from URI (with 'sip:' prefix). Will be filled with self-URI if NULL passed.
  */
-static void
+void
 send_soap_request_with_cb(struct sipe_core_private *sipe_private,
 			  gchar *from0,
 			  gchar *body,
@@ -205,8 +206,9 @@ send_soap_request_with_cb(struct sipe_core_private *sipe_private,
 	g_free(hdr);
 }
 
-static void send_soap_request(struct sipe_core_private *sipe_private,
-			      gchar *body)
+void
+send_soap_request(struct sipe_core_private *sipe_private,
+		  gchar *body)
 {
 	send_soap_request_with_cb(sipe_private, NULL, body, NULL, NULL);
 }
@@ -329,79 +331,6 @@ sipe_process_presence_wpending (struct sipe_core_private *sipe_private,
 	return;
 }
 
-static void
-sipe_group_add(struct sipe_core_private *sipe_private,
-	       struct sipe_group * group)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	if (sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC,group->name))
-	{
-		SIPE_DEBUG_INFO("added group %s (id %d)", group->name, group->id);
-		sip->groups = g_slist_append(sip->groups, group);
-	}
-	else
-	{
-		SIPE_DEBUG_INFO("did not add group %s", group->name ? group->name : "");
-	}
-}
-
-static struct sipe_group *sipe_group_find_by_id(struct sipe_core_private *sipe_private,
-						int id)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sipe_group *group;
-	GSList *entry;
-	if (sip == NULL) {
-		return NULL;
-	}
-
-	entry = sip->groups;
-	while (entry) {
-		group = entry->data;
-		if (group->id == id) {
-			return group;
-		}
-		entry = entry->next;
-	}
-	return NULL;
-}
-
-static struct sipe_group *sipe_group_find_by_name(struct sipe_core_private *sipe_private,
-						  const gchar * name)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sipe_group *group;
-	GSList *entry;
-	if (!sip || !name) {
-		return NULL;
-	}
-
-	entry = sip->groups;
-	while (entry) {
-		group = entry->data;
-		if (sipe_strequal(group->name, name)) {
-			return group;
-		}
-		entry = entry->next;
-	}
-	return NULL;
-}
-
-static void
-sipe_group_rename(struct sipe_core_private *sipe_private,
-		  struct sipe_group *group,
-		  gchar *name)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *body;
-	SIPE_DEBUG_INFO("Renaming group %s to %s", group->name, name);
-	body = g_markup_printf_escaped(SIPE_SOAP_MOD_GROUP, group->id, name, sip->contacts_delta++);
-	send_soap_request(sipe_private, body);
-	g_free(body);
-	g_free(group->name);
-	group->name = g_strdup(name);
-}
-
 /**
  * Only appends if no such value already stored.
  * Like Set in Java.
@@ -412,11 +341,6 @@ GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc fu
 		res = g_slist_insert_sorted(list, data, func);
 	}
 	return res;
-}
-
-static int
-sipe_group_compare(struct sipe_group *group1, struct sipe_group *group2) {
-	return group1->id - group2->id;
 }
 
 /**
@@ -470,83 +394,6 @@ sipe_core_group_set_user(struct sipe_core_public *sipe_public, const gchar * who
 		}
 		g_free(alias);
 	}
-}
-
-static gboolean process_add_group_response(struct sipe_core_private *sipe_private,
-					   struct sipmsg *msg,
-					   struct transaction *trans)
-{
-	if (msg->response == 200) {
-		struct sipe_group *group;
-		struct group_user_context *ctx = trans->payload->data;
-		sipe_xml *xml;
-		const sipe_xml *node;
-		char *group_id;
-		struct sipe_buddy *buddy;
-
-		xml = sipe_xml_parse(msg->body, msg->bodylen);
-		if (!xml) {
-			return FALSE;
-		}
-
-		node = sipe_xml_child(xml, "Body/addGroup/groupID");
-		if (!node) {
-			sipe_xml_free(xml);
-			return FALSE;
-		}
-
-		group_id = sipe_xml_data(node);
-		if (!group_id) {
-			sipe_xml_free(xml);
-			return FALSE;
-		}
-
-		group = g_new0(struct sipe_group, 1);
-		group->id = (int)g_ascii_strtod(group_id, NULL);
-		g_free(group_id);
-		group->name = g_strdup(ctx->group_name);
-
-		sipe_group_add(sipe_private, group);
-
-		if (ctx->user_name) {
-			buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
-			if (buddy) {
-				buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
-			}
-
-			sipe_core_group_set_user(SIPE_CORE_PUBLIC, ctx->user_name);
-		}
-
-		sipe_xml_free(xml);
-		return TRUE;
-	}
-	return FALSE;
-}
-
-static void sipe_group_context_destroy(gpointer data)
-{
-	struct group_user_context *ctx = data;
-	g_free(ctx->group_name);
-	g_free(ctx->user_name);
-	g_free(ctx);
-}
-
-static void sipe_group_create (struct sipe_core_private *sipe_private,
-			       const gchar *name, const gchar * who)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
-	struct group_user_context *ctx = g_new0(struct group_user_context, 1);
-	const gchar *soap_name = sipe_strequal(name, _("Other Contacts")) ? "~" : name;
-	gchar *body;
-	ctx->group_name = g_strdup(name);
-	ctx->user_name = g_strdup(who);
-	payload->destroy = sipe_group_context_destroy;
-	payload->data = ctx;
-
-	body = g_markup_printf_escaped(SIPE_SOAP_ADD_GROUP, soap_name, sip->contacts_delta++);
-	send_soap_request_with_cb(sipe_private, NULL, body, process_add_group_response, payload);
-	g_free(body);
 }
 
 static void

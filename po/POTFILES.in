@@ -10,6 +10,7 @@ src/core/sipe-core.c
 src/core/sipe-domino.c
 src/core/sipe-ft.c
 src/core/sipe-ft-tftp.c
+src/core/sipe-group.c
 src/core/sipe-groupchat.c
 src/core/sipe-im.c
 src/core/sipe-incoming.c

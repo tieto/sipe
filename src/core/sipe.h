@@ -36,6 +36,8 @@ struct _PurpleAccount;
 struct _PurpleConnection;
 struct _PurpleGroup;
 struct sipe_core_private;
+struct transaction;
+struct transaction_payload;
 
 /** MS-PRES publication */
 struct sipe_publication {
@@ -102,12 +104,6 @@ struct sipe_auth_job {
 	struct sipe_core_private *sipe_private;
 };
 
-struct sipe_group {
-	gchar *name;
-	int id;
-	struct _PurpleGroup *purple_group;
-};
-
 struct group_user_context {
 	gchar * group_name;
 	gchar * user_name;
@@ -162,6 +158,15 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
 			     gboolean request,
 			     gboolean benotify);
+
+/* sipe-soap? */
+void send_soap_request_with_cb(struct sipe_core_private *sipe_private,
+			       gchar *from0,
+			       gchar *body,
+                               gboolean (*callbackb) (struct sipe_core_private *, struct sipmsg *,struct transaction *),
+			       struct transaction_payload *payload);
+
+void send_soap_request(struct sipe_core_private *sipe_private, gchar *body);
 
 /*** THE BIG SPLIT END ***/
 

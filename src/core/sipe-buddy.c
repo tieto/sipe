@@ -28,6 +28,7 @@
 #include "sipe-buddy.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-group.h"
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *name,
