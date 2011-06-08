@@ -39,7 +39,3 @@ void sipe_group_create(struct sipe_core_private *sipe_private,
 void sipe_group_add(struct sipe_core_private *sipe_private,
 		    struct sipe_group * group);
 
-void sipe_group_rename(struct sipe_core_private *sipe_private,
-		       struct sipe_group *group,
-		       gchar *name);
-

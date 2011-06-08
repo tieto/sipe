@@ -364,6 +364,14 @@ void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,
 
 void sipe_core_user_ask_cb(gpointer key, gboolean accepted);
 
+/* groups */
+void sipe_core_group_rename(struct sipe_core_public *sipe_public,
+			    const gchar *old_name,
+			    const gchar *new_name);
+
+void sipe_core_group_remove(struct sipe_core_public *sipe_public,
+			    const gchar *name);
+
 #ifdef __cplusplus
 }
 #endif

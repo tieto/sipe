@@ -394,6 +394,19 @@ static void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
 	sipe_core_group_set_user(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name);
 }
 
+static void sipe_purple_group_rename(PurpleConnection *gc,
+				     const char *old_name,
+				     PurpleGroup *group,
+				     SIPE_UNUSED_PARAMETER GList *moved_buddies)
+{
+	sipe_core_group_rename(PURPLE_GC_TO_SIPE_CORE_PUBLIC, old_name, group->name);
+}
+
+static void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
+{
+	sipe_core_group_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC, group->name);
+}
+
 #if PURPLE_VERSION_CHECK(2,5,0)
 static GHashTable *
 sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
@@ -480,12 +493,12 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* get_cb_away */	// deprecated
 	sipe_purple_alias_buddy,		/* alias_buddy */
 	sipe_group_buddy,			/* group_buddy */
-	sipe_rename_group,			/* rename_group */
+	sipe_purple_group_rename,		/* rename_group */
 	NULL,					/* buddy_free */
 	sipe_convo_closed,			/* convo_closed */
 	purple_normalize_nocase,		/* normalize */
 	NULL,					/* set_buddy_icon */
-	sipe_remove_group,			/* remove_group */
+	sipe_purple_group_remove,		/* remove_group */
 	NULL,					/* get_cb_real_name */	// TODO?
 	NULL,					/* set_chat_topic */
 	NULL,					/* find_blist_chat */

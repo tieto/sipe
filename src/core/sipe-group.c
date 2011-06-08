@@ -180,18 +180,46 @@ sipe_group_add(struct sipe_core_private *sipe_private,
 }
 
 void
-sipe_group_rename(struct sipe_core_private *sipe_private,
-		  struct sipe_group *group,
-		  gchar *name)
+sipe_core_group_rename(struct sipe_core_public *sipe_public,
+		       const gchar *old_name,
+		       const gchar *new_name)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *body;
-	SIPE_DEBUG_INFO("Renaming group %s to %s", group->name, name);
-	body = g_markup_printf_escaped(SIPE_SOAP_MOD_GROUP, group->id, name, sip->contacts_delta++);
-	send_soap_request(sipe_private, body);
-	g_free(body);
-	g_free(group->name);
-	group->name = g_strdup(name);
+	struct sipe_group *s_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, old_name);
+
+	if (s_group) {
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
+		gchar *body;
+		SIPE_DEBUG_INFO("Renaming group %s to %s", old_name, new_name);
+		body = g_markup_printf_escaped(SIPE_SOAP_MOD_GROUP, s_group->id, new_name, sip->contacts_delta++);
+		send_soap_request(SIPE_CORE_PRIVATE, body);
+		g_free(body);
+		g_free(s_group->name);
+		s_group->name = g_strdup(new_name);
+	} else {
+		SIPE_DEBUG_INFO("Cannot find group %s to rename", old_name);
+	}
+}
+
+void
+sipe_core_group_remove(struct sipe_core_public *sipe_public,
+		       const gchar *name)
+{
+	struct sipe_group * s_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, name);
+
+	if (s_group) {
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
+		gchar *body;
+		SIPE_DEBUG_INFO("Deleting group %s", name);
+		body = g_strdup_printf(SIPE_SOAP_DEL_GROUP, s_group->id, sip->contacts_delta++);
+		send_soap_request(SIPE_CORE_PRIVATE, body);
+		g_free(body);
+
+		sip->groups = g_slist_remove(sip->groups, s_group);
+		g_free(s_group->name);
+		g_free(s_group);
+	} else {
+		SIPE_DEBUG_INFO("Cannot find group %s to delete", name);
+	}
 }
 
 /*

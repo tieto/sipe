@@ -1027,42 +1027,6 @@ void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *gr
 
 }
 
-void
-sipe_rename_group(PurpleConnection *gc,
-		  const char *old_name,
-		  PurpleGroup *group,
-		  SIPE_UNUSED_PARAMETER GList *moved_buddies)
-{
-	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sipe_group * s_group = sipe_group_find_by_name(sipe_private, old_name);
-	if (s_group) {
-		sipe_group_rename(sipe_private, s_group, group->name);
-	} else {
-		SIPE_DEBUG_INFO("Cannot find group %s to rename", old_name);
-	}
-}
-
-void
-sipe_remove_group(PurpleConnection *gc, PurpleGroup *group)
-{
-	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sipe_group * s_group = sipe_group_find_by_name(sipe_private, group->name);
-	if (s_group) {
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-		gchar *body;
-		SIPE_DEBUG_INFO("Deleting group %s", group->name);
-		body = g_strdup_printf(SIPE_SOAP_DEL_GROUP, s_group->id, sip->contacts_delta++);
-		send_soap_request(sipe_private, body);
-		g_free(body);
-
-		sip->groups = g_slist_remove(sip->groups, s_group);
-		g_free(s_group->name);
-		g_free(s_group);
-	} else {
-		SIPE_DEBUG_INFO("Cannot find group %s to delete", group->name);
-	}
-}
-
 /**
   * A callback for g_hash_table_foreach
   */
