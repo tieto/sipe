@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
+
 #include "glib.h"
 #include "network.h"
 #include "eventloop.h"
@@ -70,9 +75,9 @@
  *
  * Maybe this should be fixed in libpurple or some better solution found.
  */
-static const char * get_suitable_local_ip(int fd)
+static const gchar *get_suitable_local_ip(void)
 {
-	int source = (fd >= 0) ? fd : socket(PF_INET,SOCK_STREAM, 0);
+	int source = socket(PF_INET,SOCK_STREAM, 0);
 
 	if (source >= 0) {
 		struct ifreq *buffer = g_new0(struct ifreq, IFREQ_MAX);
@@ -86,8 +91,7 @@ static const char * get_suitable_local_ip(int fd)
 		ifc.ifc_req = buffer;
 		ioctl(source, SIOCGIFCONF, &ifc);
 
-		if (fd < 0)
-			close(source);
+		close(source);
 
 		for (i = 0; i < IFREQ_MAX; i++)
 		{
@@ -122,7 +126,7 @@ const gchar *sipe_backend_network_ip_address(void)
 {
 	const gchar *ip = purple_network_get_my_ip(-1);
 	if (g_str_has_prefix(ip, "169.254."))
-		ip = get_suitable_local_ip(-1);
+		ip = get_suitable_local_ip();
 	return ip;
 }
 

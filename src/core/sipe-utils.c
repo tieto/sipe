@@ -24,27 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <time.h>
 
 #include <glib.h>
-
-#ifdef _WIN32
-/* for network */
-#include "win32/libc_interface.h"
-#include <nspapi.h>
-#else
-#if defined(__APPLE__) || defined(__FreeBSD__)
-#include <sys/socket.h>
-#elif defined(__sun__)
-#include <sys/sockio.h>
-#endif
-#include <unistd.h>
-#include <net/if.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#endif
 
 #include "sipe-backend.h"
 #include "sipe-core.h"    /* to ensure same API for backends */
