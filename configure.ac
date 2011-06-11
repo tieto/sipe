@@ -328,20 +328,18 @@ system defaults.
 				[AC_LANG_PROGRAM([[
 #include <media.h>
 					]],
-					[[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);
-					  purple_media_get_active_local_candidates(NULL, NULL, NULL);
-					  purple_media_get_active_remote_candidates(NULL, NULL, NULL);]]
+					[[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]]
 			  	)],
 				[AC_MSG_RESULT(ok)
 				 PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
-					[PKG_CHECK_MODULES(PURPLE, [purple >= 2.7.0],
+					[PKG_CHECK_MODULES(PURPLE, [purple >= 2.8.0],
 						[PKG_CHECK_MODULES(GSTREAMER, [gstreamer-0.10],
 							dnl sipe-media.c uses g_slist_free_full()
 							[PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.28.0],
 								[with_purple_vv=yes],
 								[AC_MSG_NOTICE(glib2 >= 2.28.0 required: disabling purple voice and video support)])],
 							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
-						[AC_MSG_NOTICE(libpurple >= 2.7.0 required: disabling purple voice and video support)])],
+						[AC_MSG_NOTICE(libpurple >= 2.8.0 required: disabling purple voice and video support)])],
 					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
 				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)],
 				[AC_MSG_WARN([cross compiling: not checking])])
