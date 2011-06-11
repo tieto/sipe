@@ -170,6 +170,10 @@ backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 		type = SIPE_MEDIA_VIDEO;
 	else {
 		// TODO: incompatible media, should not happen here
+		g_free(media->name);
+		g_free(media);
+		sipe_media_codec_list_free(codecs);
+		return(NULL);
 	}
 
 	// Process codecs
@@ -250,12 +254,13 @@ sipe_media_to_sdpmsg(struct sipe_media_call_private *call_private)
 	GSList *streams = sipe_backend_media_get_streams(backend_media);
 
 	for (; streams; streams = streams->next) {
-		struct sdpmedia *media;
-		media = backend_stream_to_sdpmedia(backend_media, streams->data);
-		msg->media = g_slist_append(msg->media, media);
+		struct sdpmedia *media = backend_stream_to_sdpmedia(backend_media, streams->data);
+		if (media) {
+			msg->media = g_slist_append(msg->media, media);
 
-		if (msg->ip == NULL)
-			msg->ip = g_strdup(media->ip);
+			if (msg->ip == NULL)
+				msg->ip = g_strdup(media->ip);
+		}
 	}
 
 	msg->media = g_slist_concat(msg->media, call_private->failed_media);

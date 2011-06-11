@@ -441,6 +441,10 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 			case SIPE_NETWORK_PROTOCOL_UDP:
 				protocol = "UDP";
 				break;
+			default:
+				/* error unknown/unsupported type */
+				protocol = "UNKOWN";
+				break;
 		}
 
 		if (ice_version == SIPE_ICE_RFC_5245) {
@@ -465,7 +469,8 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 					type = "prflx";
 					break;
 				default:
-					// TODO: error unknown/unsupported type
+					/* error unknown/unsupported type */
+					type = "unknown";
 					break;
 			}
 
