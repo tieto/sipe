@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,38 +32,63 @@
 #include "m_protoint.h"
 #include "miranda-private.h"
 
+void sipe_miranda_connection_destroy(SIPPROTO *pr)
+{
+	int oldStatus;
+
+	SIPE_DEBUG_INFO("valid <%d> state <%d>", pr->valid, pr->state);
+	if (!pr->valid) return;
+
+	set_buddies_offline(pr);
+	sipe_miranda_close(pr);
+	pr->state = SIPE_MIRANDA_DISCONNECTED;
+	pr->valid = FALSE;
+
+	oldStatus = pr->proto.m_iStatus;
+	pr->proto.m_iDesiredStatus = ID_STATUS_OFFLINE;
+	pr->proto.m_iStatus = pr->proto.m_iDesiredStatus;
+	sipe_miranda_SendBroadcast(pr, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)oldStatus, pr->proto.m_iStatus);
+}
+
+void sipe_miranda_connection_error_reason(SIPPROTO *pr, sipe_connection_error error, const gchar *msg)
+{
+	SIPE_DEBUG_INFO("valid <%d> state <%d> error <%d> message <%s>", pr->valid, pr->state, error, msg);
+	if (!pr->valid) return;
+	if (pr->state == SIPE_MIRANDA_DISCONNECTED) return;
+	pr->disconnecting = TRUE;
+	sipe_miranda_connection_destroy(pr);
+	pr->valid = FALSE;
+	pr->disconnecting = FALSE;
+
+}
+
 void sipe_backend_connection_completed(struct sipe_core_public *sipe_public)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	_NIF();
+	int oldStatus = pr->proto.m_iStatus;
+	pr->state = SIPE_MIRANDA_CONNECTED;
+	pr->proto.m_iStatus = pr->proto.m_iDesiredStatus;
+	sipe_miranda_SendBroadcast(pr, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)oldStatus, pr->proto.m_iStatus);
 }
 
 void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
 				   sipe_connection_error error,
 				   const gchar *msg)
 {
-	SIPPROTO *pr = sipe_public->backend_private;
-
-	int oldStatus = pr->proto.m_iStatus;
-
-	pr->proto.m_iDesiredStatus = ID_STATUS_OFFLINE;
-	pr->proto.m_iStatus = pr->proto.m_iDesiredStatus;
-	SendBroadcast(pr, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)oldStatus, pr->proto.m_iStatus);
-	/* TODO: Bring up a dialog box */
+	SIPE_DEBUG_INFO("reason <%d> message <%s>", error, msg);
+	sipe_miranda_connection_error_reason(sipe_public->backend_private, error, msg);
 }
 
 gboolean sipe_backend_connection_is_disconnecting(struct sipe_core_public *sipe_public)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	_NIF();
-	return FALSE;
+	return (pr->disconnecting);
 }
 
 gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	_NIF();
-	return TRUE;
+	return (pr->state == SIPE_MIRANDA_CONNECTED);
 }
 
 /*

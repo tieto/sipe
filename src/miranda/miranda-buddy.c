@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -202,7 +202,7 @@ sipe_backend_buddy sipe_miranda_buddy_find(SIPPROTO *pr,
 
 					if ( !DBGetContactSettingStringUtf(hContact, "CList", "Group", &dbv )) {
 						int tCompareResult = lstrcmpiA( dbv.pszVal, group );
-						SIPE_DEBUG_INFO("group compare <%s> vs <%s>\n", dbv.pszVal, group);
+						SIPE_DEBUG_INFO("group compare <%s> vs <%s>", dbv.pszVal, group);
 						DBFreeVariant( &dbv );
 						if ( !tCompareResult )
 							return hContact;
@@ -230,7 +230,7 @@ GSList* sipe_miranda_buddy_find_all(SIPPROTO *pr,
 {
 	GSList *res = NULL;
 	HANDLE hContact;
-	SIPE_DEBUG_INFO("buddy_name <%s> group <%d>\n", buddy_name, group_name);
+	SIPE_DEBUG_INFO("buddy_name <%s> group <%d>", buddy_name, group_name);
 
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact) {
@@ -508,7 +508,10 @@ int sipe_miranda_buddy_delete(SIPPROTO *pr, HANDLE hContact, LPARAM lParam)
 	groupname = g_strdup(dbv.pszVal);
 	DBFreeVariant( &dbv );
 
+	LOCK;
 	sipe_core_buddy_remove(pr->sip, name, groupname);
+	UNLOCK;
+
 	return 0;
 }
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,8 +77,10 @@ int sipe_miranda_SetAwayMsg(SIPPROTO *pr,
 
 	SIPE_DEBUG_INFO("SetAwayMsg: status <%x> msg <%ls>", m_iStatus, msg);
 	sipe_miranda_setString(pr, "note", note);
-	if (pr->sip)
+	LOCK;
+	if (pr->state == SIPE_MIRANDA_CONNECTED)
 		sipe_core_set_status(pr->sip, note, MirandaStatusToSipe(pr->proto.m_iStatus));
+	UNLOCK;
 	return 0;
 }
 

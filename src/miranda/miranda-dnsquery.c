@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,10 +43,10 @@ typedef struct srv_reply_t {
         int port;
 } srv_reply;
 
-srv_reply* srv_lookup(WORD wType,
-		      const gchar* service,
-		      const gchar* protocol,
-		      const gchar* domain )
+static srv_reply* srv_lookup(WORD wType,
+			     const gchar* service,
+			     const gchar* protocol,
+			     const gchar* domain )
 {
 	srv_reply *res = NULL;
 	HINSTANCE hDnsapi = LoadLibraryA( "dnsapi.dll" );

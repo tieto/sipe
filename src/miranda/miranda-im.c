@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,8 +84,9 @@ int sipe_miranda_SendMsg(SIPPROTO *pr,
 	SIPE_DEBUG_INFO("SendMsg: flags <%x> msg <%s>", flags, msg);
 
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
-//		SendProtoAck( pr, hContact, 1, ACKRESULT_SENTREQUEST, ACKTYPE_MESSAGE, NULL );
+		LOCK;
 		sipe_core_im_send(pr->sip, dbv.pszVal, msg);
+		UNLOCK;
 		SendProtoAck( pr, hContact, 1, ACKRESULT_SUCCESS, ACKTYPE_MESSAGE, NULL );
 		DBFreeVariant(&dbv);
 	} else {
@@ -110,7 +111,17 @@ void sipe_backend_im_topic(struct sipe_core_public *sipe_public,
 			   const gchar *with,
 			   const gchar *topic)
 {
-	_NIF();
+	SIPPROTO *pr = sipe_public->backend_private;
+	HANDLE hContact;
+
+	hContact = sipe_backend_buddy_find( sipe_public, with, NULL );
+	if (!hContact)
+	{
+		_NIF();
+	} else {
+		sipe_miranda_AddEvent(pr, hContact, SIPE_EVENTTYPE_IM_TOPIC, time(NULL), DBEF_UTF, strlen(topic), (PBYTE)topic);
+	}
+
 }
 
 /*

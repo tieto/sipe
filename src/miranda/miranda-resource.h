@@ -11,3 +11,4 @@
 #define IDC_PASSWORD                            1020
 #define IDC_LOGIN                               1021
 #define IDC_HANDLE                              1022
+#define IDC_PUBLICIP                            1023

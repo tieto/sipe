@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,14 +34,19 @@
 #include "sipe-backend.h"
 #include "miranda-private.h"
 
-extern HANDLE sipe_miranda_debug_netlibuser;
+extern HANDLE sipe_miranda_incoming_netlibuser;
+extern CRITICAL_SECTION sipe_miranda_debug_CriticalSection;
 
 void sipe_backend_debug_literal(sipe_debug_level level,
-				const gchar *msg)
+				const gchar *message)
 {
-	if (sipe_miranda_debug_netlibuser)
+	if (sipe_miranda_incoming_netlibuser)
 	{
-		CallService(MS_NETLIB_LOG, (WPARAM)sipe_miranda_debug_netlibuser, (LPARAM)msg);
+		gchar *msg = g_strdup_printf("[%5d] %s", GetCurrentThreadId(), message);
+		EnterCriticalSection(&sipe_miranda_debug_CriticalSection);
+		CallService(MS_NETLIB_LOG, (WPARAM)sipe_miranda_incoming_netlibuser, (LPARAM)msg);
+		LeaveCriticalSection(&sipe_miranda_debug_CriticalSection);
+		g_free(msg);
 	}
 }
 

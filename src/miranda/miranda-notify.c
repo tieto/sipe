@@ -1,9 +1,9 @@
 /**
- * @file miranda.c
+ * @file miranda-notify.c
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,17 +28,60 @@
 #include "newpluginapi.h"
 #include "m_protosvc.h"
 #include "m_protoint.h"
+#include "m_chat.h"
+#include "m_database.h"
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "miranda-private.h"
+
+static void notify_message(struct sipe_core_public *sipe_public,
+			   struct sipe_backend_chat_session *backend_session,
+			   const gchar *who,
+			   const gchar *message,
+			   int eventtype,
+			   const gchar *prefix
+			   )
+{
+        SIPPROTO *pr = sipe_public->backend_private;
+
+	if (backend_session)
+	{
+		GCDEST gcd = {0};
+		GCEVENT gce = {0};
+		gchar *msg;
+
+		gcd.pszModule = pr->proto.m_szModuleName;
+		gcd.pszID = backend_session->conv;
+		gcd.iType = GC_EVENT_INFORMATION;
+
+		msg = mir_alloc(strlen(message)+strlen(prefix)+1);
+		mir_snprintf(msg, strlen(message)+strlen(prefix)+1, "%s%s", prefix, message);
+
+		gce.cbSize = sizeof(gce);
+		gce.pDest = &gcd;
+		gce.pszText = msg;
+//	gce.time = mtime; // FIXME: Generate timestamp
+
+		CallService( MS_GC_EVENT, 0, (LPARAM)&gce );
+		mir_free(msg);
+
+	} else {
+		HANDLE hContact = sipe_backend_buddy_find( sipe_public, who, NULL );
+		if (hContact)
+		{
+			sipe_miranda_AddEvent(pr, hContact, eventtype, time(NULL), DBEF_UTF, strlen(message), (PBYTE)message);
+		}
+	}
+
+}
 
 void sipe_backend_notify_message_error(struct sipe_core_public *sipe_public,
 				       struct sipe_backend_chat_session *backend_session,
 				       const gchar *who,
 				       const gchar *message)
 {
-	_NIF();
+	notify_message(sipe_public, backend_session, who, message, SIPE_EVENTTYPE_ERROR_NOTIFY, "Error: ");
 }
 
 void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
@@ -46,13 +89,13 @@ void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
 				      const gchar *who,
 				      const gchar *message)
 {
-	_NIF();
+	notify_message(sipe_public, backend_session, who, message, SIPE_EVENTTYPE_INFO_NOTIFY, "Info: ");
 }
 
 void sipe_backend_notify_error(const gchar *title,
 			       const gchar *msg)
 {
-	_NIF();
+	sipe_miranda_msgbox(msg, title);
 }
 
 /*

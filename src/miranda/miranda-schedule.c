@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
  */
 
 #include <windows.h>
+#include <stdio.h>
 
 #include <glib.h>
 
@@ -30,33 +31,69 @@
 
 #include "newpluginapi.h"
 #include "m_system.h"
+#include "m_protosvc.h"
+#include "m_protoint.h"
+#include "miranda-private.h"
 
 struct time_entry {
 	gpointer core_data;
 	guint timeout;
 	HANDLE sem;
 	gboolean cancelled;
+	struct sipe_core_public *sipe_public;
+
+	/* Private. For locking only */
+	HANDLE hDoneEvent;
 };
+
+static void __stdcall
+timeout_cb_async(void *data)
+{
+	struct time_entry *entry = (struct time_entry*)data;
+        SIPPROTO *pr = entry->sipe_public->backend_private;
+
+	if (entry->cancelled == TRUE)
+	{
+		SIPE_DEBUG_INFO("Entry <%08x> already cancelled. Not calling timeout function", entry);
+	} else {
+		SIPE_DEBUG_INFO("Calling timeout function for entry <%08x>", entry);
+		LOCK;
+		sipe_core_schedule_execute(entry->core_data);
+		UNLOCK;
+	}
+	SetEvent(entry->hDoneEvent);
+}
 
 static unsigned __stdcall timeoutfunc(void* data)
 {
 	struct time_entry *entry = (struct time_entry*)data;
 	DWORD ret;
+        SIPPROTO *pr = entry->sipe_public->backend_private;
 
 	SIPE_DEBUG_INFO("timeout start; <%08x> timeout is <%d>", entry, entry->timeout);
 
 	entry->sem = CreateSemaphore(NULL, 0, 100, NULL);
 
 	ret = WaitForSingleObjectEx( entry->sem, entry->timeout, FALSE);
-	if (ret == WAIT_TIMEOUT)
-	{
-		SIPE_DEBUG_INFO("<%08x> about to run", entry);
-		sipe_core_schedule_execute(entry->core_data);
-		SIPE_DEBUG_INFO("<%08x> exiting", entry);
-	}
-	else if (entry->cancelled == TRUE)
+	if (entry->cancelled == TRUE)
 	{
 		SIPE_DEBUG_INFO("<%08x> Timeout cancelled by caller", entry);
+	}
+	else if (ret == WAIT_TIMEOUT)
+	{
+		SIPE_DEBUG_INFO("<%08x> about to run", entry);
+		if (entry->cancelled == TRUE)
+		{
+			SIPE_DEBUG_INFO("<%08x> Timeout cancelled by caller in the nick of time", entry);
+		}
+		else
+		{
+			entry->hDoneEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+			CallFunctionAsync(timeout_cb_async, entry);
+			WaitForSingleObject(entry->hDoneEvent, INFINITE);
+			CloseHandle(entry->hDoneEvent);
+		}
+		SIPE_DEBUG_INFO("<%08x> exiting", entry);
 	}
 	else
 	{
@@ -79,6 +116,7 @@ gpointer sipe_backend_schedule_mseconds(SIPE_UNUSED_PARAMETER struct sipe_core_p
 	entry->timeout = timeout;
 	entry->core_data = data;
 	entry->cancelled = FALSE;
+	entry->sipe_public = sipe_public;
 
 	CloseHandle((HANDLE) mir_forkthreadex( timeoutfunc, entry, 65536, NULL ));
 

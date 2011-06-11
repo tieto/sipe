@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@
 #include "m_protoint.h"
 #include "m_database.h"
 #include "m_netlib.h"
+#include "m_langpack.h"
+#include "m_protomod.h"
 
 #include "glib.h"
 #include "sipe-backend.h"
@@ -38,6 +40,11 @@ static GHashTable *entities = NULL;
 
 #define ADDENT(a,b) g_hash_table_insert(entities, a, b)
 
+
+gchar* sipe_miranda_getGlobalString(const gchar* name)
+{
+	return DBGetString( NULL, SIPSIMPLE_PROTOCOL_NAME, name );
+}
 
 gchar* sipe_miranda_getContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name)
 {
@@ -121,6 +128,17 @@ void sipe_miranda_setStringUtf(const SIPPROTO *pr, const gchar* name, const gcha
 {
 	sipe_miranda_setContactStringUtf( pr, NULL, name, value );
 }
+
+void sipe_miranda_setGlobalString(const gchar* name, const gchar* value)
+{
+	DBWriteContactSettingString(NULL, SIPSIMPLE_PROTOCOL_NAME, name, value);
+}
+
+void sipe_miranda_setGlobalStringUtf(const gchar* valueName, const gchar* parValue )
+{
+	DBWriteContactSettingStringUtf( NULL, SIPSIMPLE_PROTOCOL_NAME, valueName, parValue );
+}
+
 
 static void initEntities(void)
 {
@@ -213,6 +231,228 @@ unsigned short sipe_miranda_network_get_port_from_fd( HANDLE fd )
 	SIPE_DEBUG_INFO("<%x> <%x><%x><%s>", namelen, sockbuf.sin_family, sockbuf.sin_port, inet_ntoa(sockbuf.sin_addr) );
 
 	return sockbuf.sin_port;
+}
+
+/* Misc functions */
+TCHAR _tcharbuf[32768];
+TCHAR* CHAR2TCHAR( const char *chr ) {
+#ifdef UNICODE
+	if (!chr) return NULL;
+	mbstowcs( _tcharbuf, chr, strlen(chr)+1 );
+	return _tcharbuf;
+#else
+	return chr;
+#endif
+}
+
+char _charbuf[32768];
+char* TCHAR2CHAR( const TCHAR *tchr ) {
+#ifdef UNICODE
+	if (!tchr) return NULL;
+	wcstombs( _charbuf, tchr, wcslen(tchr)+1 );
+	return _charbuf;
+#else
+	return tchr;
+#endif
+}
+
+HANDLE sipe_miranda_AddEvent(const SIPPROTO *pr, HANDLE hContact, WORD wType, DWORD dwTime, DWORD flags, DWORD cbBlob, PBYTE pBlob)
+{
+	DBEVENTINFO dbei = {0};
+
+	dbei.cbSize = sizeof(dbei);
+	dbei.szModule = pr->proto.m_szModuleName;
+	dbei.timestamp = dwTime;
+	dbei.flags = flags;
+	dbei.eventType = wType;
+	dbei.cbBlob = cbBlob;
+	dbei.pBlob = pBlob;
+
+	return (HANDLE)CallService(MS_DB_EVENT_ADD, (WPARAM)hContact, (LPARAM)&dbei);
+}
+
+struct msgboxinfo {
+	TCHAR *msg;
+	TCHAR *caption;
+};
+
+static unsigned __stdcall msgboxThread(void* arg)
+{
+	struct msgboxinfo *err = (struct msgboxinfo*)arg;
+	if (!err)
+		return 0;
+
+	MessageBox(NULL, err->msg, err->caption, MB_OK);
+	mir_free(err->msg);
+	mir_free(err->caption);
+	g_free(err);
+	return 0;
+}
+
+void sipe_miranda_msgbox(const char *msg, const char *caption)
+{
+	struct msgboxinfo *info = g_new(struct msgboxinfo,1);
+
+	info->msg = mir_a2t(msg);
+	info->caption = mir_a2t(caption);
+
+	CloseHandle((HANDLE) mir_forkthreadex( msgboxThread, info, 8192, NULL ));
+}
+
+static unsigned __stdcall sendbroadcastThread(void* arg)
+{
+	ACKDATA *ack = (ACKDATA*)arg;
+	SIPE_DEBUG_INFO("delayed broadcasting result <%08x> par1 <%08x> par2 <%08x>", ack->type, ack->hProcess, ack->lParam);
+	CallServiceSync(MS_PROTO_BROADCASTACK,0,(LPARAM)ack);
+	g_free(ack);
+	return 0;
+}
+
+int sipe_miranda_SendBroadcast(SIPPROTO *pr, HANDLE hContact,int type,int result,HANDLE hProcess,LPARAM lParam)
+{
+	ACKDATA *ack = g_new0(ACKDATA, 1);
+
+	ack->cbSize = sizeof(ACKDATA);
+	ack->szModule = pr->proto.m_szModuleName;
+	ack->hContact = hContact;
+	ack->type = type;
+	ack->result = result;
+	ack->hProcess = hProcess;
+	ack->lParam = lParam;
+
+	if (pr->main_thread_id == GetCurrentThreadId())
+	{
+		int ret;
+		SIPE_DEBUG_INFO("broadcasting result <%08x> par1 <%08x> par2 <%08x>", type, hProcess, lParam);
+		ret = CallServiceSync(MS_PROTO_BROADCASTACK,0,(LPARAM)ack);
+		g_free(ack);
+		return ret;
+	}
+	else
+	{
+		CloseHandle((HANDLE) mir_forkthreadex( sendbroadcastThread, ack, 8192, NULL ));
+		return 0;
+	}
+}
+
+struct sipe_miranda_connection_info {
+	SIPPROTO *pr;
+	const gchar *server_name;
+	int server_port;
+	int timeout;
+	gboolean tls;
+	void (*callback)(HANDLE fd, void *data, const gchar *reason);
+	void *data;
+
+	/* Private. For locking only */
+	HANDLE hDoneEvent;
+	HANDLE fd;
+	const gchar *reason;
+};
+
+static void __stdcall
+connection_cb_async(void *data)
+{
+	struct sipe_miranda_connection_info *entry = (struct sipe_miranda_connection_info*)data;
+	SIPE_DEBUG_INFO("[C:%08x] Calling real connected function", entry);
+	entry->callback(entry->fd, entry->data, entry->reason);
+	SetEvent(entry->hDoneEvent);
+}
+
+static unsigned __stdcall
+sipe_miranda_connected_callback(void* data)
+{
+	struct sipe_miranda_connection_info *info = (struct sipe_miranda_connection_info*)data;
+	SIPPROTO *pr = info->pr;
+	NETLIBOPENCONNECTION ncon = {0};
+
+	ncon.cbSize = sizeof(ncon);
+	ncon.flags = NLOCF_V2;
+	ncon.szHost = info->server_name;
+	ncon.wPort = info->server_port;
+	ncon.timeout = info->timeout;
+
+	info->fd = (HANDLE)CallService(MS_NETLIB_OPENCONNECTION, (WPARAM)pr->m_hServerNetlibUser, (LPARAM)&ncon);
+	if (info->fd == NULL)  {
+		SIPE_DEBUG_INFO("[C:%08x] Connection to <%s:%d> failed", info, info->server_name, info->server_port);
+		info->reason = "Connection failed";
+
+	} else {
+		SIPE_DEBUG_INFO("[C:%08x] connected <%d>", info, (int)info->fd);
+
+		if (info->tls)
+		{
+			if (!CallService(MS_NETLIB_STARTSSL, (WPARAM)info->fd, 0))
+			{
+				Netlib_CloseHandle(info->fd);
+				info->fd = NULL;
+				info->reason = "Failed to enabled SSL";
+			} else {
+				SIPE_DEBUG_INFO("[C:%08x] SSL enabled", info);
+			}
+		} else {
+			info->reason = NULL;
+		}
+	}
+
+	info->hDoneEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	CallFunctionAsync(connection_cb_async, info);
+	WaitForSingleObject(info->hDoneEvent, INFINITE);
+	CloseHandle(info->hDoneEvent);
+
+	g_free(info);
+	return 0;
+}
+
+struct sipe_miranda_connection_info *
+sipe_miranda_connect(SIPPROTO *pr,
+		     const gchar *host,
+		     int port,
+		     gboolean tls,
+		     int timeout,
+		     void (*callback)(HANDLE fd, void *data, const gchar *reason),
+		     void *data)
+{
+	struct sipe_miranda_connection_info *info = g_new0(struct sipe_miranda_connection_info, 1);
+	SIPE_DEBUG_INFO("[C:%08x] Connecting to <%s:%d> tls <%d> timeout <%d>", info, host, port, tls, timeout);
+
+	info->pr = pr;
+	info->server_name = host;
+	info->server_port = port;
+	info->timeout = timeout;
+	info->tls = tls;
+	info->callback = callback;
+	info->data = data;
+
+	CloseHandle((HANDLE) mir_forkthreadex( sipe_miranda_connected_callback, info, 65536, NULL ));
+
+	return info;
+}
+
+struct sipe_miranda_servicedata
+{
+	const char *service;
+	WPARAM wParam;
+	LPARAM lParam;
+};
+
+static unsigned __stdcall
+sipe_miranda_service_async_callback(void* data)
+{
+	struct sipe_miranda_servicedata *svc = (struct sipe_miranda_servicedata *)data;
+	CallService(svc->service, svc->wParam, svc->lParam);
+	g_free(svc);
+	return 0;
+}
+
+void
+CallServiceAsync(const char *service, WPARAM wParam, LPARAM lParam)
+{
+	struct sipe_miranda_servicedata *svc = g_new(struct sipe_miranda_servicedata, 1);
+	svc->service = service;
+	svc->wParam = wParam;
+	svc->lParam = lParam;
+	CloseHandle((HANDLE) mir_forkthreadex( sipe_miranda_service_async_callback, svc, 65536, NULL ));
 }
 
 /*

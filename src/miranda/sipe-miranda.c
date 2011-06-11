@@ -53,38 +53,10 @@
 /* ???  PURPLE_STATUS_TUNE */
 
 /* Miranda interface globals */
-#define ENTRY_SIG 0x88442211
 
-static NETLIBSELECTEX m_select = {0};
-static GHashTable *m_readhash = NULL;
-static GHashTable *m_writehash = NULL;
-static GList *m_entries = NULL;
 static HANDLE wake_up_semaphore = NULL;
 
-/* Misc functions */
-TCHAR _tcharbuf[32768];
-TCHAR* CHAR2TCHAR( const char *chr ) {
-#ifdef UNICODE
-	if (!chr) return NULL;
-	mbstowcs( _tcharbuf, chr, strlen(chr)+1 );
-	return _tcharbuf;
-#else
-	return chr;
-#endif
-}
-
-char _charbuf[32768];
-char* TCHAR2CHAR( const TCHAR *tchr ) {
-#ifdef UNICODE
-	if (!tchr) return NULL;
-	wcstombs( _charbuf, tchr, wcslen(tchr)+1 );
-	return _charbuf;
-#else
-	return tchr;
-#endif
-}
-
-void CreateProtoService(const SIPPROTO *pr, const char* szService, SipSimpleServiceFunc serviceProc)
+void CreateProtoService(SIPPROTO *pr, const char* szService, SipSimpleServiceFunc serviceProc)
 {
 	char str[ MAXMODULELABELLENGTH ];
 
@@ -92,7 +64,7 @@ void CreateProtoService(const SIPPROTO *pr, const char* szService, SipSimpleServ
 	CreateServiceFunctionObj(str, (MIRANDASERVICEOBJ)*(void**)&serviceProc, pr);
 }
 
-HANDLE HookProtoEvent(const SIPPROTO *pr, const char* szEvent, SipSimpleEventFunc pFunc)
+HANDLE HookProtoEvent(SIPPROTO *pr, const char* szEvent, SipSimpleEventFunc pFunc)
 {
 	return HookEventObj(szEvent, (MIRANDAHOOKOBJ)*(void**)&pFunc, pr);
 }
@@ -166,45 +138,8 @@ const char *MirandaStatusToSipe(int status) {
 
 }
 
-int SendBroadcast(SIPPROTO *pr, HANDLE hContact,int type,int result,HANDLE hProcess,LPARAM lParam)
-{
-	ACKDATA ack={0};
-
-	ack.cbSize = sizeof(ACKDATA);
-	ack.szModule = pr->proto.m_szModuleName;
-	ack.hContact = hContact;
-	ack.type = type;
-	ack.result = result;
-	ack.hProcess = hProcess;
-	ack.lParam = lParam;
-	return CallService(MS_PROTO_BROADCASTACK,0,(LPARAM)&ack);
-}
-
 
 /* Protocol interface support functions */
-void
-_debuglog(const char *filename, const char *funcname, const char *fmt,...)
-{
-	va_list va;
-	char szText[32768];
-	const char *tmp;
-	FILE *fh;
-
-	for ( tmp=filename ; *tmp ; tmp++ )
-	{
-		if ((*tmp == '/') || (*tmp == '\\')) filename=tmp+1;
-	}
-
-	va_start(va,fmt);
-	vsnprintf(szText,sizeof(szText),fmt,va);
-	va_end(va);
-
-	if (!fopen_s(&fh,"c:/sipsimple.log","a")) {
-		fprintf(fh, "[%d] %22s %s: %s", _getpid(), filename, funcname, szText);
-		fclose(fh);
-	}
-}
-
 typedef struct _time_entry
 {
 	guint interval;
@@ -212,73 +147,6 @@ typedef struct _time_entry
 	gpointer data;
 	HANDLE sem;
 } time_entry;
-
-static unsigned __stdcall
-inputloop(void* data)
-{
-	int cnt;
-	struct sipe_miranda_sel_entry *entry;
-	INT_PTR lstRes;
-
-	m_select.cbSize = sizeof(m_select);
-	m_select.dwTimeout = 6000;
-
-	while( m_select.hReadConns[0] || m_select.hWriteConns[0])
-	{
-
-		SIPE_DEBUG_INFO_NOFORMAT("About to run select");
-		lstRes = CallService(MS_NETLIB_SELECTEX, 0, (LPARAM)&m_select);
-		if (lstRes < 0)
-		{
-			SIPE_DEBUG_INFO_NOFORMAT("Connection failed while waiting.");
-			break;
-		}
-		else if (lstRes == 0)
-		{
-			SIPE_DEBUG_INFO_NOFORMAT("Select Timeout.");
-			lstRes = SOCKET_ERROR;
-		}
-		else
-		{
-			SIPE_DEBUG_INFO_NOFORMAT("Back from select");
-
-			for ( cnt=0 ; m_select.hReadConns[cnt] ; cnt++ )
-			{
-				if (!m_select.hReadStatus[cnt]) continue;
-				SIPE_DEBUG_INFO("FD at position <%d> ready to read.", cnt);
-				entry = (struct sipe_miranda_sel_entry*)g_hash_table_lookup(m_readhash, (gconstpointer)m_select.hReadConns[cnt]);
-				if (!entry)
-				{
-					SIPE_DEBUG_INFO_NOFORMAT("ERROR: no read handler found.");
-					continue;
-				}
-				SIPE_DEBUG_INFO_NOFORMAT("About to call read function.");
-				entry->func( entry->user_data, (gint)m_select.hReadConns[cnt], SIPE_MIRANDA_INPUT_READ);
-				SIPE_DEBUG_INFO_NOFORMAT("read function returned.");
-			}
-
-			for ( cnt=0 ; m_select.hWriteConns[cnt] ; cnt++ )
-			{
-				if (!m_select.hWriteStatus[cnt]) continue;
-				SIPE_DEBUG_INFO("FD at position <%d> ready to write.", cnt);
-				entry = (struct sipe_miranda_sel_entry*)g_hash_table_lookup(m_writehash, (gconstpointer)m_select.hWriteConns[cnt]);
-				if (!entry)
-				{
-					SIPE_DEBUG_INFO_NOFORMAT("ERROR: no write handler found.");
-					continue;
-				}
-				SIPE_DEBUG_INFO_NOFORMAT("About to call write function.");
-				entry->func( entry->user_data, (gint)m_select.hWriteConns[cnt], SIPE_MIRANDA_INPUT_WRITE);
-				SIPE_DEBUG_INFO_NOFORMAT("write function returned.");
-			}
-		}
-
-		/* Free all removed entries */
-		while (m_entries) g_list_delete_link(m_entries, g_list_last(m_entries));
-	}
-
-	return 0;
-}
 
 /* libsipe interface functions */
 static char*
@@ -293,90 +161,6 @@ miranda_sipe_get_current_status(struct sipe_core_private *sipe_private, const ch
 
 	hContact = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, name, NULL);
 	return g_strdup(MirandaStatusToSipe(DBGetContactSettingWord( hContact, module, "Status", ID_STATUS_OFFLINE )));
-}
-
-struct sipe_miranda_sel_entry*
-sipe_miranda_input_add(HANDLE fd, sipe_miranda_input_condition cond, sipe_miranda_input_function func, gpointer user_data)
-{
-	int rcnt = 0;
-	int wcnt = 0;
-	struct sipe_miranda_sel_entry *entry;
-
-	if (!m_readhash)
-		m_readhash = g_hash_table_new(NULL, NULL);
-
-	if (!m_writehash)
-		m_writehash = g_hash_table_new(NULL, NULL);
-
-	if ((cond != SIPE_MIRANDA_INPUT_READ) && (cond != SIPE_MIRANDA_INPUT_WRITE))
-	{
-		SIPE_DEBUG_INFO("Invalid input condition <%d> cond.", cond);
-		return 0;
-	}
-
-	entry = g_new0(struct sipe_miranda_sel_entry,1);
-	entry->sig = ENTRY_SIG;
-	entry->func = func;
-	entry->user_data = user_data;
-	entry->fd = fd;
-
-	if (cond == SIPE_MIRANDA_INPUT_READ)
-	{
-		for ( rcnt=0 ; m_select.hReadConns[rcnt] && m_select.hReadConns[rcnt]!=(HANDLE)fd ; rcnt++ );
-		m_select.hReadConns[rcnt] = (HANDLE)fd;
-		g_hash_table_replace( m_readhash, (gpointer)fd, entry );
-	}
-	else if (cond == SIPE_MIRANDA_INPUT_WRITE)
-	{
-		for ( wcnt=0 ; m_select.hWriteConns[wcnt] && m_select.hWriteConns[wcnt]!=(HANDLE)fd ; wcnt++ );
-		m_select.hWriteConns[rcnt] = (HANDLE)fd;
-		g_hash_table_replace( m_writehash, (gpointer)fd, entry );
-	}
-
-	if (!(rcnt+wcnt))
-		CloseHandle((HANDLE) mir_forkthreadex( inputloop, NULL, 8192, NULL ));
-
-	SIPE_DEBUG_INFO_NOFORMAT("Added input handler.");
-	return entry;
-}
-
-gboolean
-sipe_miranda_input_remove(struct sipe_miranda_sel_entry *entry)
-{
-	int cnt;
-
-	if (!entry)
-	{
-		SIPE_DEBUG_INFO_NOFORMAT("Not a valid entry. NULL.");
-		return FALSE;
-	}
-
-	if (entry->sig != ENTRY_SIG)
-	{
-		SIPE_DEBUG_INFO("Not a valid entry. Sig is <%08x>.", entry->sig);
-		return FALSE;
-	}
-
-	if (g_hash_table_lookup(m_readhash, (gconstpointer)entry->fd) == entry)
-	{
-		for ( cnt=0 ; m_select.hReadConns[cnt] && m_select.hReadConns[cnt]!=(HANDLE)entry->fd ; cnt++ );
-		for ( ; m_select.hReadConns[cnt] ; cnt++ ) m_select.hReadConns[cnt] = m_select.hReadConns[cnt+1];
-		g_hash_table_remove(m_readhash, (gconstpointer)entry->fd);
-	}
-
-	if (g_hash_table_lookup(m_writehash, (gconstpointer)entry->fd) == entry)
-	{
-		for ( cnt=0 ; m_select.hWriteConns[cnt] && m_select.hWriteConns[cnt]!=(HANDLE)entry->fd ; cnt++ );
-		for ( ; m_select.hWriteConns[cnt] ; cnt++ ) m_select.hWriteConns[cnt] = m_select.hWriteConns[cnt+1];
-		g_hash_table_remove(m_writehash, (gconstpointer)entry->fd);
-	}
-
-	/* Add it to the list of entries that can be freed after the next select
-	 * loop in the thread that's handling the actual select
-	 */
-	g_list_append( m_entries, entry );
-
-	return TRUE;
 }
 
 static void*
@@ -433,40 +217,12 @@ miranda_sipe_connection_cleanup(struct sipe_core_private *sip)
 	_NIF();
 }
 
-static void
-__debuglog(sipe_debug_level level, const char *fmt,...)
-{
-	va_list va;
-	char szText[32768];
-	FILE *fh;
-	char *str = DBGetString( NULL, SIPSIMPLE_PROTOCOL_NAME, "debuglog");
-
-	va_start(va,fmt);
-	vsnprintf(szText,sizeof(szText),fmt,va);
-	va_end(va);
-
-	if (!str)
-		str = mir_strdup("c:/sipsimple.log");
-
-	if (!fopen_s(&fh, str, "a")) {
-		fprintf(fh, "<[%d]> %s", _getpid(), szText);
-		fclose(fh);
-	}
-	mir_free(str);
-}
-
 
 /****************************************************************************
  * Struct that defines our interface with libsipe
  ****************************************************************************/
 /* Protocol interface functions */
 int RecvContacts( SIPPROTO *pr, HANDLE hContact, PROTORECVEVENT* evt )
-{
-	_NIF();
-	return 0;
-}
-
-int RecvFile( SIPPROTO *pr, HANDLE hContact, PROTOFILEEVENT* evt )
 {
 	_NIF();
 	return 0;

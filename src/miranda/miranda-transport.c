@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,14 +60,6 @@ struct sipe_transport_miranda {
 	SIPPROTO *pr;
 };
 
-static unsigned __stdcall connected_callback(void* data)
-{
-	struct sipe_transport_miranda *transport = (struct sipe_transport_miranda*)data;
-	SIPE_DEBUG_INFO_NOFORMAT("About to call connected callback");
-	transport->connected(SIPE_TRANSPORT_CONNECTION);
-	return 0;
-}
-
 static void
 miranda_sipe_input_cb(gpointer data,
 		      SIPE_UNUSED_PARAMETER gint source,
@@ -75,9 +67,18 @@ miranda_sipe_input_cb(gpointer data,
 {
 	struct sipe_transport_miranda *transport = (struct sipe_transport_miranda *)data;
 	struct sipe_transport_connection *conn = SIPE_TRANSPORT_CONNECTION;
+	SIPPROTO *pr = transport->pr;
 	int len;
 	int readlen;
 	gboolean firstread = TRUE;
+
+	LOCK;
+
+	if (!transport->fd)
+	{
+		UNLOCK;
+		return;
+	}
 
 	do {
 		/* Increase input buffer size as needed */
@@ -96,16 +97,21 @@ miranda_sipe_input_cb(gpointer data,
 
 		if (len == SOCKET_ERROR) {
 			SIPE_DEBUG_INFO("miranda_sipe_input_cb: read error");
-			transport->error(SIPE_TRANSPORT_CONNECTION, "Read error");
+			if (transport)
+			{
+				transport->error(SIPE_TRANSPORT_CONNECTION, "Read error");
 
-			/* FIXME: not sure if this is the right spot */
-			sipe_miranda_input_remove(transport->inputhandler);
-			transport->inputhandler = NULL;
+//				/* FIXME: not sure if this is the right spot */
+				sipe_miranda_input_remove(transport->inputhandler);
+				transport->inputhandler = NULL;
+			}
 
+			UNLOCK;
 			return;
 		} else if (firstread && (len == 0)) {
 			SIPE_DEBUG_ERROR_NOFORMAT("miranda_sipe_input_cb: server has disconnected");
 			transport->error(SIPE_TRANSPORT_CONNECTION, "Server has disconnected");
+			UNLOCK;
 			return;
 		}
 
@@ -117,6 +123,26 @@ miranda_sipe_input_cb(gpointer data,
 
 	conn->buffer[conn->buffer_used] = '\0';
         transport->input(conn);
+	UNLOCK;
+}
+
+static void
+connected_callback(HANDLE fd, void* data, const gchar *reason)
+{
+	struct sipe_transport_miranda *transport = (struct sipe_transport_miranda*)data;
+	SIPPROTO *pr = transport->pr;
+
+	LOCK;
+	if (!fd)
+	{
+		transport->error(SIPE_TRANSPORT_CONNECTION, reason);
+	} else {
+		transport->fd = fd;
+		transport->public.client_port = sipe_miranda_network_get_port_from_fd( transport->fd );
+		transport->inputhandler = sipe_miranda_input_add(transport->fd, SIPE_MIRANDA_INPUT_READ, miranda_sipe_input_cb, transport );
+		transport->connected(SIPE_TRANSPORT_CONNECTION);
+	}
+	UNLOCK;
 }
 
 struct sipe_transport_connection *
@@ -128,47 +154,14 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 
 	NETLIBOPENCONNECTION ncon = {0};
 
-	ncon.cbSize = sizeof(ncon);
-	ncon.flags = NLOCF_V2;
-	ncon.szHost = setup->server_name;
-	ncon.wPort = setup->server_port;
-	ncon.timeout = 5;
-
 	transport->public.type      = setup->type;
 	transport->public.user_data = setup->user_data;
 	transport->connected        = setup->connected;
 	transport->input            = setup->input;
 	transport->error            = setup->error;
+	transport->pr               = pr;
 
-	transport->fd = (HANDLE)CallService(MS_NETLIB_OPENCONNECTION, (WPARAM)pr->m_hServerNetlibUser, (LPARAM)&ncon);
-	if (transport->fd == NULL)  {
-		setup->error(SIPE_TRANSPORT_CONNECTION,
-			     "Could not connect");
-		sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
-		return NULL;
-	}
-
-	SIPE_DEBUG_INFO("miranda_sipe_create_connection: connected %d", (int)transport->fd);
-
-	if (setup->type == SIPE_TRANSPORT_TLS)
-	{
-		if (!CallService(MS_NETLIB_STARTSSL, (WPARAM)transport->fd, 0))
-		{
-			setup->error(SIPE_TRANSPORT_CONNECTION,
-				     "Could not negotiate SSL on connection");
-			sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
-			return NULL;
-		}
-		SIPE_DEBUG_INFO_NOFORMAT("miranda_sipe_create_connection: SSL enabled");
-	}
-
-	
-	transport->public.client_port = sipe_miranda_network_get_port_from_fd( transport->fd );
-	transport->input = setup->input;
-	transport->inputhandler = sipe_miranda_input_add(transport->fd, SIPE_MIRANDA_INPUT_READ, miranda_sipe_input_cb, transport);
-
-	CloseHandle((HANDLE) mir_forkthreadex( connected_callback, transport, 65536, NULL ));
-//	transport->connected(SIPE_TRANSPORT_CONNECTION);
+	sipe_miranda_connect(pr, setup->server_name, setup->server_port, (setup->type == SIPE_TRANSPORT_TLS), 5, connected_callback, transport);
 
 	return(SIPE_TRANSPORT_CONNECTION);
 }
@@ -181,11 +174,13 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 
 	if (!transport) return;
 
+	Netlib_CloseHandle(transport->fd);
+	transport->fd = NULL;
+
 	if (transport->inputhandler)
 		sipe_miranda_input_remove(transport->inputhandler);
 
 	g_free(transport->public.buffer);
-
 	g_free(transport);
 }
 
@@ -202,6 +197,7 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_backend_transport_message: error, exiting");
 			transport->error(SIPE_TRANSPORT_CONNECTION,
 					 "Write error");
+			return;
 		}
 
 		written += len;

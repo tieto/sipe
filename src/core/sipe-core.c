@@ -27,12 +27,6 @@
 #include <stdlib.h>
 
 #include <glib.h>
-#ifdef HAVE_NSS
-#include "nss.h"
-#endif
-#ifdef HAVE_GMIME
-#include <gmime/gmime.h>
-#endif
 
 #include "sipe-common.h"
 #include "sip-csta.h"
@@ -49,6 +43,13 @@
 #include "sipe-subscriptions.h"
 #include "sipe-media.h"
 #include "sipe.h"
+
+#ifdef HAVE_NSS
+#include "nss.h"
+#endif
+#ifdef HAVE_GMIME
+#include <gmime/gmime.h>
+#endif
 
 /* locale_dir is unused if ENABLE_NLS is not defined */
 void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)

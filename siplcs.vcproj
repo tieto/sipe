@@ -251,10 +251,11 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(SolutionDir)/../include&quot;;&quot;$(ProjectDir)/src/core&quot;;&quot;$(ProjectDir)/src/api&quot;;&quot;$(ProjectDir)/src/&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PACKAGE_NAME=\&quot;pidgin-sipe\&quot;;PACKAGE_VERSION=\&quot;1.7.0\&quot;;PACKAGE_URL=\&quot;http://sipe.sourceforge.net/\&quot;;PACKAGE_BUGREPORT=\&quot;https://sourceforge.net/tracker/?atid=949931\&amp;group_id=194563\&quot;;SIPE_VERSION=\&quot;1.7.1\&quot;;_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PACKAGE_NAME=\&quot;pidgin-sipe\&quot;;PACKAGE_VERSION=\&quot;1.11.2\&quot;;PACKAGE_URL=\&quot;http://sipe.sourceforge.net/\&quot;;PACKAGE_BUGREPORT=\&quot;https://sourceforge.net/tracker/?atid=949931&amp;amp;group_id=194563\&quot;;SIPE_VERSION=\&quot;1.11.2\&quot;;_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 			/>
@@ -269,7 +270,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="glib-2.0.lib gobject-2.0.lib libxml2.lib Ws2_32.lib nss3.lib gmime-2.6.lib iconv.lib libintl.lib"
+				AdditionalDependencies="glib-2.0.lib gobject-2.0.lib libxml2.lib Ws2_32.lib nss3.lib gmime-2.6.lib iconv.lib intl.lib"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -299,26 +300,6 @@
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
-			>
-			<File
-				RelativePath=".\src\libsipe.c"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
-			<File
-				RelativePath=".\src\libsipe.h"
-				>
-			</File>
-		</Filter>
 		<Filter
 			Name="core"
 			>
@@ -463,11 +444,27 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-group.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-group.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-groupchat.c"
 				>
 			</File>
 			<File
 				RelativePath=".\src\core\sipe-groupchat.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-im.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-im.h"
 				>
 			</File>
 			<File
@@ -611,7 +608,7 @@
 			Name="miranda"
 			>
 			<File
-				RelativePath=".\src\miranda\miranda-blist.c"
+				RelativePath=".\src\miranda\miranda-buddy.c"
 				>
 			</File>
 			<File
@@ -640,6 +637,10 @@
 			</File>
 			<File
 				RelativePath=".\src\miranda\miranda-im.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\miranda\miranda-input.c"
 				>
 			</File>
 			<File

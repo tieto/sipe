@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -42,11 +42,6 @@
 #include "m_system.h"
 
 #include "miranda-private.h"
-
-struct sipe_backend_chat_session {
-	SIPPROTO *pr;
-	gchar *conv;
-};
 
 void sipe_backend_chat_session_destroy(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *session)
 {
@@ -179,7 +174,7 @@ gboolean sipe_backend_chat_find(struct sipe_backend_chat_session *backend_sessio
 {
 	SIPPROTO *pr = backend_session->pr;
 	GC_INFO gci = {0};
-	const gchar *context;
+	gchar *context;
 	const gchar *user;
 
 	gci.Flags = BYID | USERS;
