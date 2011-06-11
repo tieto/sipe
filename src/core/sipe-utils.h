@@ -407,19 +407,6 @@ gchar *sipe_utils_str_replace(const gchar *string,
 void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 			      const gchar *unread);
 /**
- * Returns local IP address suitable for connection.
- *
- * purple_network_get_my_ip() will not do this, because it might return an
- * address within 169.254.x.x range that was assigned to interface disconnected
- * from the network (when multiple network adapters are available). This is a
- * copy-paste from libpurple's network.c, only change is that link local addresses
- * are ignored.
- *
- * Maybe this should be fixed in libpurple or some better solution found.
- */
-const char * sipe_utils_get_suitable_local_ip(int fd);
-
-/**
  * Checks whether given IP address belongs to private block as defined in RFC1918
  *
  * @param ip IPv4 address in "X.X.X.X" format

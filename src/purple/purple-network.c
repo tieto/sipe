@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
 #include "glib.h"
 #include "network.h"
 #include "eventloop.h"
@@ -30,6 +31,7 @@
 #include <nspapi.h>
 #else
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/if.h>
@@ -45,9 +47,83 @@
 #include "sipe-backend.h"
 #include "purple-private.h"
 
+/*
+ * Calling sizeof(struct ifreq) isn't always correct on
+ * Mac OS X (and maybe others).
+ */
+#ifdef _SIZEOF_ADDR_IFREQ
+#  define HX_SIZE_OF_IFREQ(a) _SIZEOF_ADDR_IFREQ(a)
+#else
+#  define HX_SIZE_OF_IFREQ(a) sizeof(a)
+#endif
+
+#define IFREQ_MAX 32
+
+/**
+ * Returns local IP address suitable for connection.
+ *
+ * purple_network_get_my_ip() will not do this, because it might return an
+ * address within 169.254.x.x range that was assigned to interface disconnected
+ * from the network (when multiple network adapters are available). This is a
+ * copy-paste from libpurple's network.c, only change is that link local addresses
+ * are ignored.
+ *
+ * Maybe this should be fixed in libpurple or some better solution found.
+ */
+static const char * get_suitable_local_ip(int fd)
+{
+	int source = (fd >= 0) ? fd : socket(PF_INET,SOCK_STREAM, 0);
+
+	if (source >= 0) {
+		struct ifreq *buffer = g_new0(struct ifreq, IFREQ_MAX);
+		struct ifconf ifc;
+		guint32 lhost = htonl(127 * 256 * 256 * 256 + 1);
+		guint32 llocal = htonl((169 << 24) + (254 << 16));
+		guint i;
+		static char ip[16];
+
+		ifc.ifc_len = sizeof(struct ifreq) * IFREQ_MAX;
+		ifc.ifc_req = buffer;
+		ioctl(source, SIOCGIFCONF, &ifc);
+
+		if (fd < 0)
+			close(source);
+
+		for (i = 0; i < IFREQ_MAX; i++)
+		{
+			struct ifreq *ifr = &buffer[i];
+
+			if (ifr->ifr_addr.sa_family == AF_INET)
+			{
+				struct sockaddr_in sin;
+				memcpy(&sin, &ifr->ifr_addr, sizeof(struct sockaddr_in));
+				if (sin.sin_addr.s_addr != lhost
+				    && (sin.sin_addr.s_addr & htonl(0xFFFF0000)) != llocal)
+				{
+					long unsigned int add = ntohl(sin.sin_addr.s_addr);
+					g_snprintf(ip, 16, "%lu.%lu.%lu.%lu",
+						   ((add >> 24) & 255),
+						   ((add >> 16) & 255),
+						   ((add >> 8) & 255),
+						   add & 255);
+
+					g_free(buffer);
+					return ip;
+				}
+			}
+		}
+		g_free(buffer);
+	}
+
+	return "0.0.0.0";
+}
+
 const gchar *sipe_backend_network_ip_address(void)
 {
-	return purple_network_get_my_ip(-1);
+	const gchar *ip = purple_network_get_my_ip(-1);
+	if (g_str_has_prefix(ip, "169.254."))
+		ip = get_suitable_local_ip(-1);
+	return ip;
 }
 
 struct sipe_backend_listendata {

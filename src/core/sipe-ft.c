@@ -180,7 +180,7 @@ send_ft_accept(struct sipe_file_transfer_private *ft_private,
 				       "Port: %d\r\n"
 				       "PortX: 11178\r\n"
 				       "AuthCookie: %u\r\n",
-				       sipe_utils_get_suitable_local_ip(-1),
+				       sipe_backend_network_ip_address(),
 				       ft_private->port,
 				       ft_private->auth_cookie);
 	}
@@ -250,7 +250,7 @@ void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
 	struct sipe_core_private *sipe_private = ft_private->sipe_private;
 	struct sip_dialog *dialog;
 
-	const gchar *ip = sipe_utils_get_suitable_local_ip(-1);
+	const gchar *ip = sipe_backend_network_ip_address();
 	gchar *body = g_strdup_printf("Application-Name: File Transfer\r\n"
 				      "Application-GUID: {5D3E02AB-6190-11d3-BBBB-00C04F795683}\r\n"
 				      "Invitation-Command: INVITE\r\n"
