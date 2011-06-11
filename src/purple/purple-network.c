@@ -52,6 +52,19 @@
 #include "sipe-backend.h"
 #include "purple-private.h"
 
+#if 0
+/**
+ * @TODO: get_suitable_local_ip()
+ * 
+ * The code is most likely broken for Mac OS X as it seems that that platform
+ * returns variable-sized "struct ifreq". The new, alignment compliant code
+ * assumes a fix-sized "struct ifreq", i.e. it uses array access.
+ *
+ * If somebody is bothered by this, please provide a *VERIFIED* alternative
+ * implementation for platforms that define _SIZEOF_ADDR_IFREQ().
+ *
+ **/
+
 /*
  * Calling sizeof(struct ifreq) isn't always correct on
  * Mac OS X (and maybe others).
@@ -60,6 +73,7 @@
 #  define HX_SIZE_OF_IFREQ(a) _SIZEOF_ADDR_IFREQ(a)
 #else
 #  define HX_SIZE_OF_IFREQ(a) sizeof(a)
+#endif
 #endif
 
 #define IFREQ_MAX 32
@@ -87,6 +101,7 @@ static const gchar *get_suitable_local_ip(void)
 		guint i;
 		static char ip[16];
 
+		/* @TODO: assumes constant sizeof(struct ifreq) [see above] */
 		ifc.ifc_len = sizeof(struct ifreq) * IFREQ_MAX;
 		ifc.ifc_req = buffer;
 		ioctl(source, SIOCGIFCONF, &ifc);
@@ -95,6 +110,7 @@ static const gchar *get_suitable_local_ip(void)
 
 		for (i = 0; i < IFREQ_MAX; i++)
 		{
+			/* @TODO: assumes constant sizeof(struct ifreq) [see above] */
 			struct ifreq *ifr = &buffer[i];
 
 			if (ifr->ifr_addr.sa_family == AF_INET)
