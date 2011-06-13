@@ -2304,7 +2304,7 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	int aggreg_avail = 0;
 	gboolean do_update_status = FALSE;
 	gboolean has_note_cleaned = FALSE;
-	guint clients = 0;
+	GHashTable *devices;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_process_roaming_self");
 
@@ -2338,7 +2338,10 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 		}
 	}
 	g_slist_free(category_names);
+
 	/* filling our categories reflected in roaming data */
+	devices = g_hash_table_new_full(g_str_hash, g_str_equal,
+					g_free, NULL);
 	for (node = sipe_xml_child(xml, "categories/category"); node; node = sipe_xml_twin(node)) {
 		const char *tmp;
 		const gchar *name = sipe_xml_attribute(node, "name");
@@ -2397,8 +2400,9 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 			}
 		}
 
-		/* count clients */
-		if (sipe_strequal(name, "device")) clients++;
+		/* count each client instance only once */
+		if (sipe_strequal(name, "device"))
+			g_hash_table_replace(devices, g_strdup_printf("%u", instance), NULL);
 
 		if (sipe_is_our_publication(sipe_private, key)) {
 			struct sipe_publication *publication = g_new0(struct sipe_publication, 1);
@@ -2543,6 +2547,17 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("sipe_process_roaming_self: sip->our_publications size=%d",
 			sip->our_publications ? (int) g_hash_table_size(sip->our_publications) : -1);
 
+	/* active clients for user account */
+	if (g_hash_table_size(devices) > 1) {
+		SIPE_CORE_PRIVATE_FLAG_SET(MPOP);
+		SIPE_DEBUG_INFO("sipe_process_roaming_self: multiple clients detected (%d)",
+				g_hash_table_size(devices));
+	} else {
+		SIPE_CORE_PRIVATE_FLAG_UNSET(MPOP);
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_process_roaming_self: single client detected");
+	}
+	g_hash_table_destroy(devices);
+
 	/* containers */
 	for (node = sipe_xml_child(xml, "containers/container"); node; node = sipe_xml_twin(node)) {
 		guint id = sipe_xml_int_attribute(node, "id", 0);
@@ -2644,18 +2659,6 @@ static void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
 
 	g_free(contact);
 	sipe_xml_free(xml);
-
-	/* It seems that OCS always keeps a "virtual" client active,
-	 * i.e. the minimum client count is 2
-	 * @TODO: is this correct for all installations?
-	 */
-	if (clients > 2) {
-		SIPE_CORE_PRIVATE_FLAG_SET(MPOP);
-		SIPE_DEBUG_INFO("sipe_process_roaming_self: multiple clients detected (%d)",
-				clients - 1);
-	} else {
-		SIPE_CORE_PRIVATE_FLAG_UNSET(MPOP);
-	}
 
 	/* Publish initial state if not yet.
 	 * Assuming this happens on initial responce to subscription to roaming-self
