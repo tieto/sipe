@@ -332,18 +332,6 @@ sipe_process_presence_wpending (struct sipe_core_private *sipe_private,
 }
 
 /**
- * Only appends if no such value already stored.
- * Like Set in Java.
- */
-GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func) {
-	GSList * res = list;
-	if (!g_slist_find_custom(list, data, func)) {
-		res = g_slist_insert_sorted(list, data, func);
-	}
-	return res;
-}
-
-/**
  * Returns string like "2 4 7 8" - group ids buddy belong to.
  */
 static gchar *

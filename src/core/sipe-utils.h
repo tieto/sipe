@@ -451,3 +451,16 @@ gchar *sipe_utils_uri_unescape(const gchar *string);
  * @return @c TRUE if the string represents AV conference URI
  */
 gboolean sipe_utils_is_avconf_uri(const gchar *uri);
+
+/**
+ * Inserts in item in the list only if the value isn't already in that list
+ *
+ * @param list a singly linked list
+ * @param data the item to insert
+ * @param fund function to use to compare the values
+ *
+ * @return the new list head
+ */
+GSList *
+slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func);
+

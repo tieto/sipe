@@ -533,6 +533,19 @@ sipe_utils_is_avconf_uri(const gchar *uri)
 	return g_strstr_len(uri, -1, "app:conf:audio-video:") != NULL;
 }
 
+/**
+ * Only appends if no such value already stored.
+ * Like Set in Java.
+ */
+GSList *
+slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func) {
+	GSList * res = list;
+	if (!g_slist_find_custom(list, data, func)) {
+		res = g_slist_insert_sorted(list, data, func);
+	}
+	return res;
+}
+
 /*
   Local Variables:
   mode: c
