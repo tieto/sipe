@@ -91,6 +91,12 @@ void sipe_purple_chat_join(struct _PurpleConnection *gc, GHashTable *data);
 struct _PurpleRoomlist *sipe_purple_roomlist_get_list(struct _PurpleConnection *gc);
 void sipe_purple_roomlist_cancel(struct _PurpleRoomlist *list);
 
+/* libpurple buddy callbacks */
+void sipe_purple_group_buddy(struct _PurpleConnection *gc,
+			     const char *who,
+			     const char *old_group_name,
+			     const char *new_group_name);
+
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)
 #define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) gc->proto_data)

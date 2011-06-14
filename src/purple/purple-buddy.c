@@ -303,6 +303,14 @@ gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_pub
 	return (purple_group != NULL);
 }
 
+void sipe_purple_group_buddy(PurpleConnection *gc,
+			     const char *who,
+			     const char *old_group_name,
+			     const char *new_group_name)
+{
+	sipe_core_buddy_group(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who, old_group_name, new_group_name);
+}
+
 
 /*
   Local Variables:

@@ -492,7 +492,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* get_cb_info */	// deprecated
 	NULL,					/* get_cb_away */	// deprecated
 	sipe_purple_alias_buddy,		/* alias_buddy */
-	sipe_group_buddy,			/* group_buddy */
+	sipe_purple_group_buddy,		/* group_buddy */
 	sipe_purple_group_rename,		/* rename_group */
 	NULL,					/* buddy_free */
 	sipe_convo_closed,			/* convo_closed */

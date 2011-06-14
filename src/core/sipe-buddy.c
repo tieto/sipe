@@ -29,6 +29,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-group.h"
+#include "sipe-utils.h"
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *name,
@@ -67,6 +68,40 @@ gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
 		alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, pbuddy);
 	}
 	return alias;
+}
+
+void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
+			   const gchar *who,
+			   const gchar *old_group_name,
+			   const gchar *new_group_name)
+{
+	struct sipe_buddy * buddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, who);
+	struct sipe_group * old_group = NULL;
+	struct sipe_group * new_group;
+
+	SIPE_DEBUG_INFO("sipe_group_buddy[CB]: who:%s old_group_name:%s new_group_name:%s",
+			who ? who : "", old_group_name ? old_group_name : "", new_group_name ? new_group_name : "");
+
+	if(!buddy) { // buddy not in roaming list
+		return;
+	}
+
+	if (old_group_name) {
+		old_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, old_group_name);
+	}
+	new_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, new_group_name);
+
+	if (old_group) {
+		buddy->groups = g_slist_remove(buddy->groups, old_group);
+		SIPE_DEBUG_INFO("buddy %s removed from old group %s", who, old_group_name);
+	}
+
+	if (!new_group) {
+		sipe_group_create(SIPE_CORE_PRIVATE, new_group_name, who);
+	} else {
+		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
+		sipe_core_group_set_user(sipe_public, who);
+	}
 }
 
 /*

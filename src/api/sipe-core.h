@@ -372,6 +372,12 @@ void sipe_core_group_rename(struct sipe_core_public *sipe_public,
 void sipe_core_group_remove(struct sipe_core_public *sipe_public,
 			    const gchar *name);
 
+/* buddies */
+void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
+			   const gchar *who,
+			   const gchar *old_group_name,
+			   const gchar *new_group_name);
+
 #ifdef __cplusplus
 }
 #endif

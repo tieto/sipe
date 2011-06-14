@@ -49,3 +49,5 @@ void sipe_remove_group(PurpleConnection *gc, PurpleGroup *group);
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE ((struct sipe_core_private *)account->gc->proto_data)
 #define PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE   ((struct sipe_core_private *)buddy->account->gc->proto_data)
 #define PURPLE_GC_TO_SIPE_CORE_PRIVATE      ((struct sipe_core_private *)gc->proto_data)
+#define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) gc->proto_data)
+

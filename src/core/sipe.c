@@ -859,42 +859,6 @@ sipe_set_idle(PurpleConnection * gc,
 	}
 }
 
-void
-sipe_group_buddy(PurpleConnection *gc,
-		 const char *who,
-		 const char *old_group_name,
-		 const char *new_group_name)
-{
-	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	struct sipe_buddy * buddy = g_hash_table_lookup(sipe_private->buddies, who);
-	struct sipe_group * old_group = NULL;
-	struct sipe_group * new_group;
-
-	SIPE_DEBUG_INFO("sipe_group_buddy[CB]: who:%s old_group_name:%s new_group_name:%s",
-			who ? who : "", old_group_name ? old_group_name : "", new_group_name ? new_group_name : "");
-
-	if(!buddy) { // buddy not in roaming list
-		return;
-	}
-
-	if (old_group_name) {
-		old_group = sipe_group_find_by_name(sipe_private, old_group_name);
-	}
-	new_group = sipe_group_find_by_name(sipe_private, new_group_name);
-
-	if (old_group) {
-		buddy->groups = g_slist_remove(buddy->groups, old_group);
-		SIPE_DEBUG_INFO("buddy %s removed from old group %s", who, old_group_name);
-	}
-
-	if (!new_group) {
- 		sipe_group_create(sipe_private, new_group_name, who);
- 	} else {
-		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
-		sipe_core_group_set_user(SIPE_CORE_PUBLIC, who);
- 	}
-}
-
 void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
 {
 	SIPE_DEBUG_INFO("sipe_add_buddy[CB]: buddy:%s group:%s", buddy ? buddy->name : "", group ? group->name : "");
@@ -928,7 +892,7 @@ void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group
 			SIPE_DEBUG_INFO("sipe_add_buddy: buddy %s already in internal list", buddy->name);
 		}
 
-		sipe_group_buddy(gc, buddy->name, NULL, group->name);
+		sipe_core_buddy_group(PURPLE_GC_TO_SIPE_CORE_PUBLIC, buddy->name, NULL, group->name);
 	}
 }
 
