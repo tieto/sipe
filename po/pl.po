@@ -4,13 +4,15 @@
 # 
 # 
 # 
+# Stefan Becker <chemobejk@gmail.com>, 2011.
+# Piotr Drąg <piotrdrag@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-04-25 14:27+0000\n"
-"Last-Translator: stefanb <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2011-06-01 14:52+0000\n"
+"Last-Translator: raven <piotrdrag@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -460,19 +462,22 @@ msgid ""
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr ""
+"\n"
+"\n"
+"Ponieważ klient nie został skompilowany z obsługą rozmów głosowych, po zaakceptowaniu będzie można kontaktować się z innymi uczestnikami tylko za pomocą komunikatora."
 
 #: ../src/core/sipe-conf.c:851
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
-msgstr ""
+msgstr "Użytkownik %s chce zaprosić użytkownika do pokoju konferencji%s"
 
 #: ../src/core/sipe-conf.c:865
 msgid "Accept"
-msgstr ""
+msgstr "Zaakceptuj"
 
 #: ../src/core/sipe-conf.c:866
 msgid "Decline"
-msgstr ""
+msgstr "Odmów"
 
 #: ../src/core/sipe-conf.c:1081
 msgid ""
@@ -1030,3 +1035,5 @@ msgstr "Nie można utworzyć gniazda"
 #: ../src/purple/purple-transport.c:327
 msgid "Write error"
 msgstr "Błąd zapisu"
+
+

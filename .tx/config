@@ -1,5 +1,5 @@
 [main]
-host = http://www.transifex.net
+host = https://www.transifex.net
 
 [pidgin-sipe.mob]
 file_filter = po/<lang>.po

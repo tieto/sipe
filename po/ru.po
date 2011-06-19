@@ -4,13 +4,15 @@
 # 
 # 
 # 
+# someone328 <someone328@gmail.com>, 2011.
+# Stefan Becker <chemobejk@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-04-25 14:27+0000\n"
-"Last-Translator: stefanb <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2011-05-13 16:43+0000\n"
+"Last-Translator: someone328 <someone328@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -629,19 +631,24 @@ msgid ""
 "\n"
 "Please update your Account."
 msgstr ""
+"Настройки прокси для групппового чата не верны:\n"
+"\n"
+"»%s\n"
+"\n"
+"Пожалуйста измените настройки аккаунта."
 
 #: ../src/core/sipe-groupchat.c:335
 msgid "Couldn't find Group Chat server!"
-msgstr ""
+msgstr "Сервер группового чата не найден!"
 
 #: ../src/core/sipe-groupchat.c:432
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
-msgstr ""
+msgstr "Сообщение не было доставлено в чат канал '%s'"
 
 #: ../src/core/sipe-groupchat.c:507
 msgid "Error retrieving room list"
-msgstr ""
+msgstr "Не удалось "
 
 #: ../src/core/sipe-groupchat.c:610
 msgid "Error joining chat room"
@@ -763,19 +770,19 @@ msgstr "Разблокировать"
 
 #: ../src/purple/purple-chat.c:269
 msgid "Join conference call"
-msgstr ""
+msgstr "Присоединиться к конференции"
 
 #: ../src/purple/purple-groupchat.c:46
 msgid "_URI:"
-msgstr ""
+msgstr "_URI:"
 
 #: ../src/purple/purple-groupchat.c:136
 msgid "Users"
-msgstr ""
+msgstr "Пользователи"
 
 #: ../src/purple/purple-groupchat.c:139
 msgid "Invite"
-msgstr ""
+msgstr "Пригласить"
 
 #: ../src/purple/purple-groupchat.c:142
 msgid "Private"
@@ -783,16 +790,16 @@ msgstr ""
 
 #: ../src/purple/purple-groupchat.c:145
 msgid "Log"
-msgstr ""
+msgstr "Лог"
 
 #: ../src/purple/purple-groupchat.c:148
 msgid "Description"
-msgstr ""
+msgstr "Описание"
 
 #: ../src/purple/purple-im.c:67
 #, c-format
 msgid "Conversation subject: %s"
-msgstr ""
+msgstr "Тема обсуждения: %s"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -846,7 +853,7 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:644
 msgid "Join conference"
-msgstr ""
+msgstr "Присоединиться к конференции"
 
 #: ../src/purple/purple-plugin.c:645
 msgid "Join scheduled conference"
@@ -1016,3 +1023,5 @@ msgstr "Не удалось создать сокет"
 #: ../src/purple/purple-transport.c:327
 msgid "Write error"
 msgstr "Ошибка записи"
+
+
