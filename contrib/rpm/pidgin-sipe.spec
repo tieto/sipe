@@ -44,8 +44,8 @@ BuildRequires:  libxml2-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
-# Use --with-vv to enable Voice & Video features
-%if 0%{?_with_wv:1}
+# Use "--with vv" to enable Voice & Video features
+%if 0%{?_with_vv:1}
 BuildRequires:  libpurple-devel >= 2.8.0
 BuildRequires:  libnice-devel >= 0.1.0
 BuildRequires:  gstreamer-devel
@@ -133,7 +133,7 @@ rm -rf %{buildroot}
 
 %changelog
 * Wed Jun 22 2011 J. D. User <jduser@noreply.com> 1.11.2-*git*
-- add --with-vv option to enable Voice & Video features
+- add "--with vv" option to enable Voice & Video features
 
 * Tue Nov 02 2010 J. D. User <jduser@noreply.com> 1.11.2
 - update to 1.11.2
