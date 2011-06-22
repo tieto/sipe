@@ -47,6 +47,7 @@ BuildRequires:  gettext-devel
 # Use "--with vv" to enable Voice & Video features
 %if 0%{?_with_vv:1}
 BuildRequires:  libpurple-devel >= 2.8.0
+BuildRequires:  glib2-devel >= 2.28.0
 BuildRequires:  libnice-devel >= 0.1.0
 BuildRequires:  gstreamer-devel
 %endif
