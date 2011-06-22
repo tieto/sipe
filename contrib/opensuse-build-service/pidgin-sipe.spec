@@ -66,6 +66,9 @@
 %define pkg_group Applications/Internet
 %if 0%{?fedora} >= 11
 %define has_libnice 1
+%if 0%{?fedora} >= 15
+%define has_gstreamer 1
+%endif
 %endif
 %endif
 %if 0%{?mdkversion}
@@ -122,8 +125,12 @@ BuildRequires:  libxml2-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
+# The following two are required to enable Voice & Video features
 %if 0%{?has_libnice:1}
 BuildRequires:  libnice-devel
+%endif
+%if 0%{?has_gstreamer:1}
+BuildRequires:  gstreamer-devel
 %endif
 
 # Configurable components
@@ -311,6 +318,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Jun 22 2011 J. D. User <jduser@noreply.com> 1.11.2-*git*
+- add gstreamer-devel to enable Voice & Video features
+
 * Sat Dec 11 2010 J. D. User <jduser@noreply.com> 1.11.2-*git*
 - add optional subpackage for telepathy connection manager
 
