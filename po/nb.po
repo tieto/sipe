@@ -4,13 +4,15 @@
 # 
 # 
 # 
+# Espen Stefansen <libbe@stefansen.net>, 2011.
+# Stefan Becker <chemobejk@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-04-25 14:27+0000\n"
-"Last-Translator: stefanb <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2011-06-25 18:12+0000\n"
+"Last-Translator: libbe <libbe@stefansen.net>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -24,7 +26,7 @@ msgstr "Klarte ikke å autentisere til tjener"
 
 #: ../src/core/sip-transport.c:1162
 msgid "Authentication failed"
-msgstr ""
+msgstr "Autentisering feilet"
 
 #: ../src/core/sip-transport.c:1177
 msgid "Incompatible authentication scheme chosen"
@@ -120,7 +122,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:1865 ../src/core/sipe.c:6015
 msgid "Blocked"
-msgstr ""
+msgstr "Blokkert"
 
 #: ../src/core/sipe.c:1866 ../src/core/sipe.c:6011
 msgid "Personal"
@@ -142,7 +144,7 @@ msgstr ""
 
 #: ../src/core/sipe.c:1871
 msgid "Unknown"
-msgstr ""
+msgstr "Ukjent"
 
 #: ../src/core/sipe.c:5166
 msgid "SIP Exchange user name contains invalid characters"
@@ -154,13 +156,15 @@ msgid ""
 "Example: user@company.com"
 msgstr ""
 "Brukernavn skal være en gyldig SIP URI\n"
-"For eksempel: bruker@firma.no"
+"Eksempel: bruker@firma.no"
 
 #: ../src/core/sipe.c:5184
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr ""
+"E-postadresse skal være gyldig hvis oppgitt\n"
+"Eksempel: bruker@firma.no"
 
 #: ../src/core/sipe.c:5193
 msgid "SIP Exchange user name contains whitespace"
@@ -179,7 +183,7 @@ msgstr "Klarte ikke vise søkeresultater"
 
 #: ../src/core/sipe.c:5359
 msgid "User name"
-msgstr ""
+msgstr "Brukernavn"
 
 #: ../src/core/sipe.c:5362
 msgid "Name"
@@ -198,8 +202,8 @@ msgstr "E-post"
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Fant %d kontakt%s:"
+msgstr[1] "Fant %d kontakter%s:"
 
 #: ../src/core/sipe.c:5400
 msgid " (more matched your query)"
@@ -231,7 +235,7 @@ msgstr "Merknad"
 
 #: ../src/core/sipe.c:5575 ../src/core/sipe.c:5939 ../src/core/sipe.c:6010
 msgid "Access level"
-msgstr ""
+msgstr "Tilgangsnivå"
 
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
@@ -248,7 +252,7 @@ msgstr ""
 #: ../src/core/sipe.c:5826
 #, c-format
 msgid "Remove from '%s'"
-msgstr ""
+msgstr "Fjern fra '%s'"
 
 #: ../src/core/sipe.c:5840
 #, c-format
@@ -294,19 +298,19 @@ msgstr "Kopier til"
 
 #: ../src/core/sipe.c:6006
 msgid "Domain"
-msgstr ""
+msgstr "Domene"
 
 #: ../src/core/sipe.c:6022 ../src/core/sipe.c:6023
 msgid "Add new domain"
-msgstr ""
+msgstr "Legg til nytt domene"
 
 #: ../src/core/sipe.c:6024
 msgid "Add"
-msgstr ""
+msgstr "Legg til"
 
 #: ../src/core/sipe.c:6025
 msgid "Cancel"
-msgstr ""
+msgstr "Avbryt"
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe.c:6134
@@ -315,25 +319,25 @@ msgstr ""
 
 #: ../src/core/sipe.c:6157
 msgid "People in my company"
-msgstr ""
+msgstr "Personer i mitt firma"
 
 #. this is original name, don't edit
 #: ../src/core/sipe.c:6163
 msgid "People in domains connected with my company"
-msgstr ""
+msgstr "Personer i domener koblet til mitt firma"
 
 #: ../src/core/sipe.c:6168
 msgid "People in public domains"
-msgstr ""
+msgstr "Personer i offentlige domener"
 
 #: ../src/core/sipe.c:6178
 #, c-format
 msgid "People at %s"
-msgstr ""
+msgstr "Personer hos %s"
 
 #: ../src/core/sipe.c:6193
 msgid "Add new domain..."
-msgstr ""
+msgstr "Legg til nytt domene..."
 
 #: ../src/core/sipe.c:6219
 msgid "Access groups"
@@ -461,11 +465,11 @@ msgstr ""
 
 #: ../src/core/sipe-conf.c:865
 msgid "Accept"
-msgstr ""
+msgstr "Aksepter"
 
 #: ../src/core/sipe-conf.c:866
 msgid "Decline"
-msgstr ""
+msgstr "Avslå"
 
 #: ../src/core/sipe-conf.c:1081
 msgid ""
@@ -511,7 +515,7 @@ msgstr "Hjelpeforum (på engelsk)"
 #. About note, part 5/13: bug tracker URL (label)
 #: ../src/core/sipe-core.c:152
 msgid "Report Problems"
-msgstr ""
+msgstr "Rapporter problemer"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
 #: ../src/core/sipe-core.c:154
@@ -562,7 +566,7 @@ msgstr "Norsk oversettelse (nb): Andreas Angerman"
 #. extract meeting location
 #: ../src/core/sipe-domino.c:260 ../src/core/sipe-domino.c:261
 msgid "Location:"
-msgstr ""
+msgstr "Lokasjon:"
 
 #: ../src/core/sipe-ft.c:220 ../src/core/sipe-ft-tftp.c:108
 #: ../src/core/sipe-ft-tftp.c:388 ../src/core/sipe-ft-tftp.c:417
@@ -652,7 +656,7 @@ msgstr "Mottok en melding med ukjent innhold fra %s"
 
 #: ../src/core/sipe-media.c:528 ../src/core/sipe-media.c:1061
 msgid "Unable to establish a call"
-msgstr ""
+msgstr "Kunne ikke etablere en samtale"
 
 #: ../src/core/sipe-media.c:529
 msgid "Encryption settings of peer are incompatible with ours."
@@ -673,17 +677,17 @@ msgstr ""
 
 #: ../src/core/sipe-media.c:1031
 msgid "User unavailable"
-msgstr ""
+msgstr "Bruker utilgjengelig"
 
 #: ../src/core/sipe-media.c:1034
 #, c-format
 msgid "%s does not want to be disturbed"
-msgstr ""
+msgstr "%s ønsker ikke å bli forstyrret"
 
 #: ../src/core/sipe-media.c:1036
 #, c-format
 msgid "User %s is not available"
-msgstr ""
+msgstr "Bruker %s er ikke tilgjengelig"
 
 #: ../src/core/sipe-media.c:1041
 msgid "Call rejected"
@@ -730,6 +734,8 @@ msgid ""
 "This message was not delivered to %s because one or more recipients don't "
 "support this type of message"
 msgstr ""
+"Denne meldingen ble ikke levert til %s fordi en eller flere av mottakerne "
+"støtter ikke denne type melding"
 
 #: ../src/core/sipe-user.c:84
 #, c-format
@@ -762,23 +768,23 @@ msgstr ""
 
 #: ../src/purple/purple-groupchat.c:136
 msgid "Users"
-msgstr ""
+msgstr "Brukere"
 
 #: ../src/purple/purple-groupchat.c:139
 msgid "Invite"
-msgstr ""
+msgstr "Inviter"
 
 #: ../src/purple/purple-groupchat.c:142
 msgid "Private"
-msgstr ""
+msgstr "Privat"
 
 #: ../src/purple/purple-groupchat.c:145
 msgid "Log"
-msgstr ""
+msgstr "Logg"
 
 #: ../src/purple/purple-groupchat.c:148
 msgid "Description"
-msgstr ""
+msgstr "Beskrivelse"
 
 #: ../src/purple/purple-im.c:67
 #, c-format
@@ -801,11 +807,11 @@ msgstr "bruker@firma.no"
 
 #: ../src/purple/purple-plugin.c:593
 msgid "First name"
-msgstr ""
+msgstr "Fornavn"
 
 #: ../src/purple/purple-plugin.c:595
 msgid "Last name"
-msgstr ""
+msgstr "Etternavn"
 
 #: ../src/purple/purple-plugin.c:603
 msgid "Search"
@@ -857,7 +863,7 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:674
 msgid "About SIPE plugin..."
-msgstr "Om SIPE-programtillegget"
+msgstr "Om SIPE-programtillegget..."
 
 #: ../src/purple/purple-plugin.c:677
 msgid "Contact search..."
@@ -986,7 +992,7 @@ msgstr ""
 
 #: ../src/purple/purple-transport.c:109
 msgid "Read error"
-msgstr ""
+msgstr "Lesefeil"
 
 #: ../src/purple/purple-transport.c:113
 msgid "Server has disconnected"
@@ -1006,4 +1012,6 @@ msgstr ""
 
 #: ../src/purple/purple-transport.c:327
 msgid "Write error"
-msgstr ""
+msgstr "Skrivefeil"
+
+
