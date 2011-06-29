@@ -599,6 +599,8 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	gchar *attributes_str = NULL;
 	gchar *credentials = NULL;
 
+	gboolean uses_tcp_transport = FALSE;
+
 	if (media->port != 0) {
 		if (!sipe_strequal(msg->ip, media->ip)) {
 			media_conninfo = g_strdup_printf("c=IN IP4 %s\r\n", media->ip);
@@ -608,6 +610,13 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 		candidates_str = candidates_to_string(media->candidates, msg->ice_version);
 		remote_candidates_str = remote_candidates_to_string(media->remote_candidates,
 								    msg->ice_version);
+
+		if (media->remote_candidates) {
+			struct sdpcandidate *c = media->remote_candidates->data;
+			uses_tcp_transport =
+				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE ||
+				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
+		}
 
 		attributes_str = attributes_to_string(media->attributes);
 		credentials = NULL;
@@ -623,14 +632,14 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 		}
 	}
 
-	media_str = g_strdup_printf("m=%s %d RTP/AVP%s\r\n"
+	media_str = g_strdup_printf("m=%s %d %sRTP/AVP%s\r\n"
 				    "%s"
 				    "%s"
 				    "%s"
 				    "%s"
 				    "%s"
 				    "%s",
-				    media->name, media->port, codec_ids_str,
+				    media->name, media->port, uses_tcp_transport ? "TCP/" : "", codec_ids_str,
 				    media_conninfo ? media_conninfo : "",
 				    candidates_str ? candidates_str : "",
 				    remote_candidates_str ? remote_candidates_str : "",
