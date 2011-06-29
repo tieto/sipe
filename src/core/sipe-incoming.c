@@ -688,12 +688,18 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 		struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
 									   callid,
 									   from);
-		struct sip_dialog *dialog = sipe_dialog_find(session, from);
-		GSList *body = sipe_ft_parse_msg_body(msg->body);
-		found = sipe_process_incoming_x_msmsgsinvite(sipe_private, dialog, body);
-		sipe_utils_nameval_free(body);
-		if (found) {
-			sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+		if (session) {
+			struct sip_dialog *dialog = sipe_dialog_find(session, from);
+			GSList *body = sipe_ft_parse_msg_body(msg->body);
+			found = sipe_process_incoming_x_msmsgsinvite(sipe_private, dialog, body);
+			sipe_utils_nameval_free(body);
+			if (found) {
+				sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+			}
+		} else {
+			sip_transport_response(sipe_private, msg, 481,
+					       "Call Leg/Transaction Does Not Exist", NULL);
+			found = TRUE;
 		}
 	}
 	if (!found) {
