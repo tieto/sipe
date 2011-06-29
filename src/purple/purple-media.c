@@ -53,6 +53,7 @@ struct sipe_backend_stream {
 	gboolean candidates_prepared;
 	gboolean local_on_hold;
 	gboolean remote_on_hold;
+	gboolean accepted;
 };
 
 static void
@@ -133,8 +134,16 @@ on_stream_info_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 	if (type == PURPLE_MEDIA_INFO_ACCEPT) {
 		if (call->call_accept_cb && !sessionid && !participant)
 			call->call_accept_cb(call, local);
-		else if (sessionid && participant && local)
-			--call->backend_private->unconfirmed_streams;
+		else if (sessionid && participant) {
+			struct sipe_backend_stream *stream;
+			stream = sipe_backend_media_get_stream_by_id(call->backend_private,
+								     sessionid);
+			if (stream) {
+				if (!stream->accepted && local)
+					 --call->backend_private->unconfirmed_streams;
+				stream->accepted = TRUE;
+			}
+		}
 	} else if (type == PURPLE_MEDIA_INFO_HOLD || type == PURPLE_MEDIA_INFO_UNHOLD) {
 
 		gboolean state = (type == PURPLE_MEDIA_INFO_HOLD);
