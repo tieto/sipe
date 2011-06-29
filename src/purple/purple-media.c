@@ -347,6 +347,19 @@ sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 	g_value_array_free((GValueArray *)media_relays);
 }
 
+static guint
+stream_demultiplex_cb(const gchar *buf, SIPE_UNUSED_PARAMETER gpointer *user_data)
+{
+	guint8 payload_type = buf[1] & 0x7F;
+	if (payload_type >= 200 && payload_type <=204) {
+		// Looks like RTCP
+		return PURPLE_MEDIA_COMPONENT_RTCP;
+	} else {
+		// Looks like RTP
+		return PURPLE_MEDIA_COMPONENT_RTP;
+	}
+}
+
 struct sipe_backend_stream *
 sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			      const gchar *id,
@@ -364,7 +377,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 
 	if (ice_version != SIPE_ICE_NO_ICE) {
 		transmitter = "nice";
-		params_cnt = 3;
+		params_cnt = 4;
 
 		params = g_new0(GParameter, params_cnt);
 
@@ -382,10 +395,14 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 				 PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE |
 				 PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);
 
+		params[2].name = "demultiplex-func";
+		g_value_init(&params[2].value, G_TYPE_POINTER);
+		g_value_set_pointer(&params[2].value, stream_demultiplex_cb);
+
 		if (media_relays) {
-			params[2].name = "relay-info";
-			g_value_init(&params[2].value, G_TYPE_VALUE_ARRAY);
-			g_value_set_boxed(&params[2].value, media_relays);
+			params[3].name = "relay-info";
+			g_value_init(&params[3].value, G_TYPE_VALUE_ARRAY);
+			g_value_set_boxed(&params[3].value, media_relays);
 		} else
 			--params_cnt;
 	} else {
@@ -410,7 +427,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 	}
 
 	if (media_relays)
-		g_value_unset(&params[2].value);
+		g_value_unset(&params[3].value);
 
 	g_free(params);
 
