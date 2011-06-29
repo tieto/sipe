@@ -559,9 +559,11 @@ attributes_to_string(GSList *attributes)
 }
 
 static gchar *
-media_to_string(const struct sdpmedia *media, SipeIceVersion ice_version)
+media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 {
 	gchar *media_str;
+
+	gchar *media_conninfo = NULL;
 
 	gchar *codecs_str = NULL;
 	gchar *codec_ids_str = codec_ids_to_string(media->codecs);
@@ -573,16 +575,20 @@ media_to_string(const struct sdpmedia *media, SipeIceVersion ice_version)
 	gchar *credentials = NULL;
 
 	if (media->port != 0) {
+		if (!sipe_strequal(msg->ip, media->ip)) {
+			media_conninfo = g_strdup_printf("c=IN IP4 %s\r\n", media->ip);
+		}
+
 		codecs_str = codecs_to_string(media->codecs);
-		candidates_str = candidates_to_string(media->candidates, ice_version);
+		candidates_str = candidates_to_string(media->candidates, msg->ice_version);
 		remote_candidates_str = remote_candidates_to_string(media->remote_candidates,
-								    ice_version);
+								    msg->ice_version);
 
 		attributes_str = attributes_to_string(media->attributes);
 		credentials = NULL;
 
 
-		if (ice_version == SIPE_ICE_RFC_5245 && media->candidates) {
+		if (msg->ice_version == SIPE_ICE_RFC_5245 && media->candidates) {
 			struct sdpcandidate *c = media->candidates->data;
 
 			credentials = g_strdup_printf("a=ice-ufrag:%s\r\n"
@@ -597,14 +603,17 @@ media_to_string(const struct sdpmedia *media, SipeIceVersion ice_version)
 				    "%s"
 				    "%s"
 				    "%s"
+				    "%s"
 				    "%s",
 				    media->name, media->port, codec_ids_str,
+				    media_conninfo ? media_conninfo : "",
 				    candidates_str ? candidates_str : "",
 				    remote_candidates_str ? remote_candidates_str : "",
 				    codecs_str ? codecs_str : "",
 				    attributes_str ? attributes_str : "",
 				    credentials ? credentials : "");
 
+	g_free(media_conninfo);
 	g_free(codecs_str);
 	g_free(codec_ids_str);
 	g_free(candidates_str);
@@ -633,7 +642,7 @@ sdpmsg_to_string(const struct sdpmsg *msg)
 
 
 	for (i = msg->media; i; i = i->next) {
-		gchar *media_str = media_to_string(i->data, msg->ice_version);
+		gchar *media_str = media_to_string(msg, i->data);
 		g_string_append(body, media_str);
 		g_free(media_str);
 	}
