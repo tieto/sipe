@@ -364,7 +364,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 
 	if (ice_version != SIPE_ICE_NO_ICE) {
 		transmitter = "nice";
-		params_cnt = 2;
+		params_cnt = 3;
 
 		params = g_new0(GParameter, params_cnt);
 
@@ -375,10 +375,17 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 				 NICE_COMPATIBILITY_OC2007 :
 				 NICE_COMPATIBILITY_OC2007R2);
 
+		params[1].name = "transport-protocols";
+		g_value_init(&params[1].value, G_TYPE_UINT);
+		g_value_set_uint(&params[1].value,
+				 PURPLE_MEDIA_NETWORK_PROTOCOL_UDP |
+				 PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE |
+				 PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);
+
 		if (media_relays) {
-			params[1].name = "relay-info";
-			g_value_init(&params[1].value, G_TYPE_VALUE_ARRAY);
-			g_value_set_boxed(&params[1].value, media_relays);
+			params[2].name = "relay-info";
+			g_value_init(&params[2].value, G_TYPE_VALUE_ARRAY);
+			g_value_set_boxed(&params[2].value, media_relays);
 		} else
 			--params_cnt;
 	} else {
@@ -403,7 +410,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 	}
 
 	if (media_relays)
-		g_value_unset(&params[1].value);
+		g_value_unset(&params[2].value);
 
 	g_free(params);
 
