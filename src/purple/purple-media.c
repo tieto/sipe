@@ -20,6 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "glib.h"
 #include "glib/gstdio.h"
 #include <fcntl.h>
@@ -333,9 +337,11 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 			append_relay(relay_info, relay->hostname, relay->udp_port,
 				     "udp", username, password);
 
+#ifdef HAVE_ICE_TCP
 		if (relay->tcp_port != 0)
 			append_relay(relay_info, relay->hostname, relay->tcp_port,
 				     "tcp", username, password);
+#endif
 	}
 
 	return (struct sipe_backend_media_relays *)relay_info;
@@ -390,10 +396,15 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 
 		params[1].name = "transport-protocols";
 		g_value_init(&params[1].value, G_TYPE_UINT);
+#ifdef HAVE_ICE_TCP
 		g_value_set_uint(&params[1].value,
 				 PURPLE_MEDIA_NETWORK_PROTOCOL_UDP |
 				 PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE |
 				 PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);
+#else
+		g_value_set_uint(&params[1].value,
+				 PURPLE_MEDIA_NETWORK_PROTOCOL_UDP);
+#endif
 
 		params[2].name = "demultiplex-func";
 		g_value_init(&params[2].value, G_TYPE_POINTER);
@@ -468,8 +479,28 @@ sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
 					 struct sipe_backend_stream *stream,
 					 GList *candidates)
 {
+	GList *udp_candidates = NULL;
+
+#ifndef HAVE_ICE_TCP
+	while (candidates) {
+		PurpleMediaCandidate *candidate = candidates->data;
+		PurpleMediaNetworkProtocol proto;
+
+		proto = purple_media_candidate_get_protocol(candidate);
+		if (proto == PURPLE_MEDIA_NETWORK_PROTOCOL_UDP)
+			udp_candidates = g_list_append(udp_candidates, candidate);
+
+		candidates = candidates->next;
+	}
+
+	candidates = udp_candidates;
+#endif
+
+
 	purple_media_add_remote_candidates(media->m, stream->sessionid,
 					   stream->participant, candidates);
+
+	g_list_free(udp_candidates);
 }
 
 gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
@@ -890,10 +921,16 @@ static PurpleMediaNetworkProtocol
 sipe_network_protocol_to_purple(SipeNetworkProtocol proto)
 {
 	switch (proto) {
+#ifdef HAVE_ICE_TCP
 		case SIPE_NETWORK_PROTOCOL_TCP_ACTIVE:
 			return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE;
 		case SIPE_NETWORK_PROTOCOL_TCP_PASSIVE:
 			return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE;
+#else
+		case SIPE_NETWORK_PROTOCOL_TCP_ACTIVE:
+		case SIPE_NETWORK_PROTOCOL_TCP_PASSIVE:
+			return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP;
+#endif
 		case SIPE_NETWORK_PROTOCOL_UDP:
 			return PURPLE_MEDIA_NETWORK_PROTOCOL_UDP;
 		default:
@@ -905,10 +942,15 @@ static SipeNetworkProtocol
 purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto)
 {
 	switch (proto) {
+#ifdef HAVE_ICE_TCP
 		case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE:
 			return SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
 		case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE:
 			return SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
+#else
+		case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP:
+			return SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
+#endif
 		case PURPLE_MEDIA_NETWORK_PROTOCOL_UDP:
 			return SIPE_NETWORK_PROTOCOL_UDP;
 		default:
