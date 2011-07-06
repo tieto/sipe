@@ -763,8 +763,12 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	gchar **parts;
 	gchar *av_uri;
 
-	if (sipe_private->media_call)
+	session = sipe_session_find_chat(sipe_private, chat_session);
+
+	if (sipe_private->media_call || !session)
 		return;
+
+	session->is_call = TRUE;
 
 	parts = g_strsplit(chat_session->id, "app:conf:focus:", 2);
 	av_uri = g_strjoinv("app:conf:audio-video:", parts);

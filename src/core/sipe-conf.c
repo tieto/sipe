@@ -908,7 +908,6 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 			g_slist_remove(sipe_private->sessions_to_accept, ctx);
 
 	if (session) {
-		session->is_call = TRUE;
 		sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
 						   session->chat_session);
 	}
