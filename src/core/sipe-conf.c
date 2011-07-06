@@ -797,13 +797,17 @@ sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
 	GSList *it = sipe_private->sessions_to_accept;
 	while (it) {
 		struct conf_accept_ctx *ctx = it->data;
-		const gchar *callid2 = msg ? sipmsg_find_header(ctx->msg, "Call-ID") : NULL;
+		const gchar *callid2 = NULL;
+
+		if (msg && ctx->msg)
+			callid2 = sipmsg_find_header(ctx->msg, "Call-ID");
 
 		if (sipe_strequal(callid1, callid2)) {
 			GSList *tmp;
 
-			sip_transport_response(sipe_private, ctx->msg,
-					       487, "Request Terminated", NULL);
+			if (ctx->msg)
+				sip_transport_response(sipe_private, ctx->msg,
+						       487, "Request Terminated", NULL);
 
 			if (msg)
 				sip_transport_response(sipe_private, msg, 200, "OK", NULL);
