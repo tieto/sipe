@@ -17,6 +17,10 @@ AC_INIT([pidgin-sipe], SIPE_VERSION,
 	[https://sourceforge.net/tracker/?atid=949931&group_id=194563], [],
 	SIPE_HOMEPAGE)
 
+AC_DEFINE([SIPE_TRANSLATIONS_URL],
+	["https://www.transifex.net/projects/p/pidgin-sipe/r/mob/"],
+	[URL for submitting translations.])
+
 dnl setup automake and require recent enough version
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])
 
