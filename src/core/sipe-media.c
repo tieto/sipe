@@ -289,8 +289,6 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
-		"Supported: ms-early-media\r\n"
-		"Supported: 100rel\r\n"
 		"ms-keep-alive: UAC;hop-hop=yes\r\n"
 		"Contact: %s\r\n"
 		"Content-Type: %s\r\n",
@@ -554,14 +552,7 @@ candidates_prepared_cb(struct sipe_media_call *call,
 		call_private->smsg = NULL;
 
 		apply_remote_message(call_private, smsg);
-
-		if (!send_invite_response_if_ready(call_private) &&
-		    call_private->ice_version == SIPE_ICE_RFC_5245 &&
-		    call_private->encryption_compatible) {
-			send_response_with_session_description(call_private,
-						       183, "Session Progress");
-		}
-
+		send_invite_response_if_ready(call_private);
 		sdpmsg_free(smsg);
 	}
 }
@@ -1095,27 +1086,10 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	}
 
 	apply_remote_message(call_private, smsg);
-
-	if (msg->response == 183) {
-		// Session in progress
-		const gchar *rseq = sipmsg_find_header(msg, "RSeq");
-		const gchar *cseq = sipmsg_find_header(msg, "CSeq");
-		gchar *rack = g_strdup_printf("RAck: %s %s\r\n", rseq, cseq);
-		sip_transport_request(sipe_private,
-		      "PRACK",
-		      with,
-		      with,
-		      rack,
-		      NULL,
-		      dialog,
-		      NULL);
-		g_free(rack);
-	} else {
-		sipe_media_send_ack(sipe_private, msg, trans);
-		reinvite_on_candidate_pair_cb(SIPE_CORE_PUBLIC);
-	}
-
 	sdpmsg_free(smsg);
+
+	sipe_media_send_ack(sipe_private, msg, trans);
+	reinvite_on_candidate_pair_cb(SIPE_CORE_PUBLIC);
 
 	return TRUE;
 }

@@ -1413,16 +1413,8 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 		struct transaction *trans = transactions_find(transport, msg);
 		if (trans) {
 			if (msg->response < 200) {
-				if (msg->bodylen != 0) {
-					SIPE_DEBUG_INFO("got provisional (%d) response with body", msg->response);
-					if (trans->callback) {
-						SIPE_DEBUG_INFO_NOFORMAT("process_input_message: we have a transaction callback");
-						(trans->callback)(sipe_private, msg, trans);
-					}
-				} else {
-					/* ignore provisional response */
-					SIPE_DEBUG_INFO("process_input_message: got provisional (%d) response, ignoring", msg->response);
-				}
+				/* ignore provisional response */
+				SIPE_DEBUG_INFO("process_input_message: got provisional (%d) response, ignoring", msg->response);
 
 				/* Transaction not yet completed */
 				trans = NULL;
