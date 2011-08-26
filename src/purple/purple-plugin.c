@@ -464,6 +464,25 @@ static PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAc
 #endif
 #endif
 
+/*
+ * Simplistic source upward compatibility path for newer libpurple APIs
+ *
+ * Usually we compile with -Werror=missing-field-initializers if GCC supports
+ * it. But that means that the compilation of this structure can fail if the
+ * newer API has added additional plugin callbacks. For the benefit of the
+ * user we downgrade it to a warning here.
+ *
+ * Diagnostic #pragma was added in GCC 4.2.0
+ * Diagnostic push/pop was added in GCC 4.6.0
+ */
+#ifdef __GNUC__
+#if (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
+#if __GNUC_MINOR__ >= 6
+#pragma GCC diagnostic push
+#endif
+#pragma GCC diagnostic warning "-Wmissing-field-initializers"
+#endif
+#endif
 static PurplePluginProtocolInfo sipe_prpl_info =
 {
 	OPT_PROTO_CHAT_TOPIC,
@@ -558,6 +577,12 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 #endif
 #endif
 };
+#ifdef __GNUC__
+#if (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 6)
+#pragma GCC diagnostic pop
+#endif
+#endif
+/* Original GCC error checking restored from here on... (see above) */
 
 /* PurplePluginInfo function calls & data structure */
 static gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
