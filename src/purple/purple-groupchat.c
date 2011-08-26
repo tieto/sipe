@@ -30,6 +30,7 @@
 
 #include "conversation.h"
 #include "roomlist.h"
+#include "version.h"
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -161,7 +162,12 @@ PurpleRoomlist *sipe_purple_roomlist_get_list(PurpleConnection *gc)
 
 void sipe_purple_roomlist_cancel(PurpleRoomlist *roomlist)
 {
-	PurpleAccount *account = roomlist->account;
+	PurpleAccount *account =
+#if PURPLE_VERSION_CHECK(3,0,0)
+				 purple_roomlist_get_account(roomlist);
+#else
+				 roomlist->account;
+#endif
 	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
