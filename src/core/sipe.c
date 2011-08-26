@@ -60,6 +60,7 @@
 #include "privacy.h"
 #include "request.h"
 #include "savedstatuses.h"
+#include "version.h"
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
 
@@ -6079,32 +6080,38 @@ process_get_info_response(struct sipe_core_private *sipe_private,
 				g_free(tel_uri);
 			}
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+#define PURPLE_NOTIFY_USER_INFO_ADD_PAIR purple_notify_user_info_add_pair_html
+#else
+#define PURPLE_NOTIFY_USER_INFO_ADD_PAIR purple_notify_user_info_add_pair
+#endif
+
 			if (server_alias && strlen(server_alias) > 0) {
-				purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Display name"), server_alias);
 			}
 			if ((value = sipe_xml_attribute(mrow, "title")) && strlen(value) > 0) {
-				purple_notify_user_info_add_pair(info, _("Job title"), value);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Job title"), value);
 			}
 			if ((value = sipe_xml_attribute(mrow, "office")) && strlen(value) > 0) {
-				purple_notify_user_info_add_pair(info, _("Office"), value);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Office"), value);
 			}
 			if (phone_number && strlen(phone_number) > 0) {
-				purple_notify_user_info_add_pair(info, _("Business phone"), phone_number);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Business phone"), phone_number);
 			}
 			if ((value = sipe_xml_attribute(mrow, "company")) && strlen(value) > 0) {
-				purple_notify_user_info_add_pair(info, _("Company"), value);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Company"), value);
 			}
 			if ((value = sipe_xml_attribute(mrow, "city")) && strlen(value) > 0) {
-				purple_notify_user_info_add_pair(info, _("City"), value);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("City"), value);
 			}
 			if ((value = sipe_xml_attribute(mrow, "state")) && strlen(value) > 0) {
-				purple_notify_user_info_add_pair(info, _("State"), value);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("State"), value);
 			}
 			if ((value = sipe_xml_attribute(mrow, "country")) && strlen(value) > 0) {
-				purple_notify_user_info_add_pair(info, _("Country"), value);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Country"), value);
 			}
 			if (email && strlen(email) > 0) {
-				purple_notify_user_info_add_pair(info, _("Email address"), email);
+				PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Email address"), email);
 			}
 
 		}
@@ -6117,41 +6124,41 @@ process_get_info_response(struct sipe_core_private *sipe_private,
 		g_free(server_alias);
 		server_alias = g_strdup(purple_buddy_get_server_alias(pbuddy));
 		if (server_alias) {
-			purple_notify_user_info_add_pair(info, _("Display name"), server_alias);
+			PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Display name"), server_alias);
 		}
 	}
 
 	/* present alias if it differs from server alias */
 	if (alias && !sipe_strequal(alias, server_alias))
 	{
-		purple_notify_user_info_add_pair(info, _("Alias"), alias);
+		PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Alias"), alias);
 	}
 
 	if (is_empty(email)) {
 		g_free(email);
 		email = g_strdup(purple_blist_node_get_string(&pbuddy->node, EMAIL_PROP));
 		if (email) {
-			purple_notify_user_info_add_pair(info, _("Email address"), email);
+			PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Email address"), email);
 		}
 	}
 
 	site = purple_blist_node_get_string(&pbuddy->node, SITE_PROP);
 	if (site) {
-		purple_notify_user_info_add_pair(info, _("Site"), site);
+		PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Site"), site);
 	}
 
 	sipe_get_first_last_names(sipe_private, uri, &first_name, &last_name);
 	if (first_name && last_name) {
 		char *link = g_strconcat("http://www.linkedin.com/pub/dir/", first_name, "/", last_name, NULL);
 
-		purple_notify_user_info_add_pair(info, _("Find on LinkedIn"), link);
+		PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Find on LinkedIn"), link);
 		g_free(link);
 	}
 	g_free(first_name);
 	g_free(last_name);
 
 	if (device_name) {
-		purple_notify_user_info_add_pair(info, _("Device"), device_name);
+		PURPLE_NOTIFY_USER_INFO_ADD_PAIR(info, _("Device"), device_name);
 	}
 
 	/* show a buddy's user info in a nice dialog box */

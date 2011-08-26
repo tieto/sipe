@@ -55,6 +55,12 @@
 #include "plugin.h"
 #include "request.h"
 #include "status.h"
+/*
+ * NOTE: Currently PURPLE_VERSION_CHECK(2,y,z) returns FALSE for libpurple >= 3.0.0.
+ *       See also <http://developer.pidgin.im/ticket/14551>
+ *
+ * As a workaround an additional PURPLE_VERSION_CHECK(3,0,0) needs to be added.
+ */
 #include "version.h"
 
 #include "sipe-backend.h"
@@ -67,7 +73,7 @@
 #include "purple-private.h"
 
 /* Backward compatibility when compiling against 2.4.x API */
-#if !PURPLE_VERSION_CHECK(2,5,0)
+#if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
 #define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
 #endif
 
@@ -150,7 +156,12 @@ static void sipe_purple_tooltip_text(PurpleBuddy *buddy,
 
 	while (info) {
 		struct sipe_buddy_info *sbi = info->data;
-		purple_notify_user_info_add_pair(user_info,
+#if PURPLE_VERSION_CHECK(3,0,0)
+		purple_notify_user_info_add_pair_html(
+#else
+		purple_notify_user_info_add_pair(
+#endif
+						 user_info,
 						 sbi->label, sbi->text);
 		g_free(sbi->text);
 		g_free(sbi);
@@ -277,7 +288,12 @@ static void sipe_purple_login(PurpleAccount *account)
 	g_strfreev(username_split);
 
 	if (!sipe_public) {
-		purple_connection_error_reason(gc,
+#if PURPLE_VERSION_CHECK(3,0,0)
+		purple_connection_error(
+#else
+		purple_connection_error_reason(
+#endif
+					       gc,
 					       PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
 					       errmsg);
 		return;
@@ -407,7 +423,7 @@ static void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
 	sipe_core_group_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC, group->name);
 }
 
-#if PURPLE_VERSION_CHECK(2,5,0)
+#if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
 static GHashTable *
 sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 {
@@ -417,7 +433,7 @@ sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 	return table;
 }
 
-#if PURPLE_VERSION_CHECK(2,6,0)
+#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 #ifdef HAVE_VV
 
 extern void capture_pipeline(gchar *label);
@@ -515,14 +531,14 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* unregister_user */
 	NULL,					/* send_attention */
 	NULL,					/* get_attention_types */
-#if !PURPLE_VERSION_CHECK(2,5,0)
+#if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
 	/* Backward compatibility when compiling against 2.4.x API */
 	(void (*)(void))			/* _purple_reserved4 */
 #endif
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
-#if PURPLE_VERSION_CHECK(2,5,0)
+#if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
 	sipe_purple_get_account_text_table,	/* get_account_text_table */
-#if PURPLE_VERSION_CHECK(2,6,0)
+#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 #ifdef HAVE_VV
 	sipe_purple_initiate_media,		/* initiate_media */
 	sipe_purple_get_media_caps,		/* get_media_caps */
@@ -530,11 +546,11 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* initiate_media */
 	NULL,					/* get_media_caps */
 #endif
-#if PURPLE_VERSION_CHECK(2,7,0)
+#if PURPLE_VERSION_CHECK(2,7,0) || PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* get_moods */
 	NULL,					/* set_public_alias */
 	NULL,					/* get_public_alias */
-#if PURPLE_VERSION_CHECK(2,8,0)
+#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* add_buddy_with_invite */
 	NULL,					/* add_buddies_with_invite */
 #endif
