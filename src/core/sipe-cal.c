@@ -528,6 +528,7 @@ sipe_cal_parse_working_hours(const sipe_xml *xn_working_hours,
 
 	xn_working_period = sipe_xml_child(xn_working_hours, "WorkingPeriodArray/WorkingPeriod");
 	if (xn_working_period) {
+		/* NOTE: this can be NULL! */
 		buddy->cal_working_hours->days_of_week =
 			sipe_xml_data(sipe_xml_child(xn_working_period, "DayOfWeek"));
 
@@ -780,7 +781,8 @@ sipe_cal_get_today_work_hours(struct sipe_cal_working_hours *wh,
 	const char *tz = sipe_cal_get_tz(wh, now);
 	struct tm *remote_now_tm = sipe_localtime_tz(&now, tz);
 
-	if (!strstr(wh->days_of_week, wday_names[remote_now_tm->tm_wday])) { /* not a work day */
+	if (!(wh->days_of_week && strstr(wh->days_of_week, wday_names[remote_now_tm->tm_wday]))) {
+		/* not a work day */
 		*start = TIME_NULL;
 		*end = TIME_NULL;
 		*next_start = TIME_NULL;
@@ -796,7 +798,8 @@ sipe_cal_get_today_work_hours(struct sipe_cal_working_hours *wh,
 		time_t tom = now + 24*60*60;
 		struct tm *remote_tom_tm = sipe_localtime_tz(&tom, sipe_cal_get_tz(wh, tom));
 
-		if (!strstr(wh->days_of_week, wday_names[remote_tom_tm->tm_wday])) { /* not a work day */
+		if (!(wh->days_of_week && strstr(wh->days_of_week, wday_names[remote_tom_tm->tm_wday]))) {
+			/* not a work day */
 			*next_start = TIME_NULL;
 		}
 
