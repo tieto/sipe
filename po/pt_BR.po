@@ -4,13 +4,15 @@
 # 
 # 
 # 
+# Anibal Avelar <debianmx@gmail.com>, 2011.
+# Stefan Becker <chemobejk@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-04-25 14:27+0000\n"
-"Last-Translator: stefanb <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2011-08-28 04:45+0000\n"
+"Last-Translator: aavelar <debianmx@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -448,12 +450,12 @@ msgstr "Conversa #%d"
 
 #: ../src/core/sipe-conf.c:268 ../src/core/sipe-conf.c:312
 msgid "Failed to join the conference"
-msgstr ""
+msgstr "Falha ao participar da conferência"
 
 #: ../src/core/sipe-conf.c:310
 #, c-format
 msgid "\"%s\" is not a valid focus URI"
-msgstr ""
+msgstr "\"%s\" não é uma URI válida foco"
 
 #: ../src/core/sipe-conf.c:843
 msgid ""
@@ -461,19 +463,22 @@ msgid ""
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr ""
+"\n"
+"\n"
+"Como esse cliente não foi compilado com suporte a chamadas de voz, se você aceitar, você poderá entrar em contato com os outros participantes da sessão somente via IM."
 
 #: ../src/core/sipe-conf.c:851
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
-msgstr ""
+msgstr "%s quer convidá-lo para a chamada de conferência %s"
 
 #: ../src/core/sipe-conf.c:865
 msgid "Accept"
-msgstr ""
+msgstr "Aceitar"
 
 #: ../src/core/sipe-conf.c:866
 msgid "Decline"
-msgstr ""
+msgstr "Declínio"
 
 #: ../src/core/sipe-conf.c:1081
 msgid ""
@@ -802,7 +807,7 @@ msgstr "Descrição"
 #: ../src/purple/purple-im.c:67
 #, c-format
 msgid "Conversation subject: %s"
-msgstr ""
+msgstr "Assunto da conversa: %s"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -852,15 +857,15 @@ msgstr "_Cancelar"
 
 #: ../src/purple/purple-plugin.c:640
 msgid "Meeting location"
-msgstr ""
+msgstr "Local da reunião"
 
 #: ../src/purple/purple-plugin.c:644
 msgid "Join conference"
-msgstr ""
+msgstr "Participar de conferência"
 
 #: ../src/purple/purple-plugin.c:645
 msgid "Join scheduled conference"
-msgstr ""
+msgstr "Junte-se conferência agendada"
 
 #: ../src/purple/purple-plugin.c:646
 msgid ""
@@ -869,10 +874,14 @@ msgid ""
 "Valid location will be something like\n"
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
 msgstr ""
+"Entra em seqüência reunião local que você recebeu no convite.\n"
+"\n"
+"Localização válida será algo como ⏎\n"
+"atender:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
 
 #: ../src/purple/purple-plugin.c:651
 msgid "_Join"
-msgstr ""
+msgstr "_Juntar"
 
 #: ../src/purple/purple-plugin.c:674
 msgid "About SIPE plugin..."
@@ -884,7 +893,7 @@ msgstr "Busca de contatos..."
 
 #: ../src/purple/purple-plugin.c:680
 msgid "Join scheduled conference..."
-msgstr ""
+msgstr "Junte-se conferência agendada ..."
 
 #: ../src/purple/purple-plugin.c:683
 msgid "Republish Calendar"
@@ -1029,3 +1038,5 @@ msgstr "Não foi possível criar socket"
 #: ../src/purple/purple-transport.c:327
 msgid "Write error"
 msgstr "Erro de gravação"
+
+
