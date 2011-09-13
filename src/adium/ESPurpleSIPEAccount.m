@@ -103,11 +103,13 @@
     
 }
 
+
+/*
 - (const char *)purpleStatusIDForStatus:(AIStatus *)statusState
 							  arguments:(NSMutableDictionary *)arguments
 {
     const char    *statusID = NULL;
-	
+
     switch (statusState.statusType) {
         case AIAvailableStatusType:
             statusID = SIPE_STATUS_ID_AVAILABLE;
@@ -123,13 +125,13 @@
         case AIOfflineStatusType:
             statusID = SIPE_STATUS_ID_OFFLINE;
             break;
-    }    
-    
+    }       
 	//If we didn't get a purple status type, request one from super
 	if (statusID == NULL) statusID = [super purpleStatusIDForStatus:statusState arguments:arguments];
 	
     return statusID;
 }
+*/
 
 
 #pragma mark File transfer
