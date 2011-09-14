@@ -1,7 +1,35 @@
 -------------------------------------------------------------------
-Mon Aug 29 05:50:47 UTC 2011 - aavelar@cofradia.org
+Fri Sep  2 10:00:33 UTC 2011 - vuntz@opensuse.org
 
-- New upstream version 1.12.0 "Group Chat"
+- Update to version 1.12.0:
+  + Add support for OCS2007R2 Group Chat (sf#3064877)
+  + Support for HTTP/1.1 Transfer-Encoding: chunked (sf##3311026)
+  + Added MS TURN support
+  + Implement timeouts for SIP request. Used for REGISTER
+  + More work on Voice & Video call support
+  + Add random Ms-Conversation-ID to INVITE
+  + Fix parsing of P-Asserted-Identity header
+  + Fix several crashes (including sf#3082602, sf#3148124,
+    sf#3399007)
+  + Fix several authenticfation issues (inclusing sf#2834758,
+    sf#3090663, sf#3130915)
+  + Make it compile against the purple 2.8.x & 3.0.x APIs
+  + More internal changes to prepare for non-purple backends
+  + Updated/add Adium and Miranda ports
+  + Several build system fixes and improvements (including
+    sf#3092324, sf#3150482, sf#3091490, sf#3108246)
+  + Other bugs fixed: sf#3156430, sf#3161273, sf#3198585,
+    sf#3267073.
+- Drop pidgin-sipe-1.11.2-gcc46.patch: fixed upstream.
+- Add pkgconfig(gstreamer-0.10) and pkgconfig(nice) BuildRequires
+  on 12.1 and later (since 11.4 and earlier have a too old version
+  of libnice), to build Voice & Video call support.
+
+-------------------------------------------------------------------
+Mon May 23 08:50:03 UTC 2011 - idonmez@novell.com
+
+- Add pidgin-sipe-1.11.2-gcc46.patch: remove write-only variables
+  to fix compilation with gcc 4.6 
 
 -------------------------------------------------------------------
 Thu Nov 18 10:39:02 CET 2010 - dimstar@opensuse.org
@@ -149,16 +177,14 @@ Wed Mar 10 14:37:21 CET 2010 - dimstar@opensuse.org
 Thu Feb 18 01:58:10 CET 2010 - vuntz@opensuse.org
 
 - Update to version 1.8.1:
-  + many crash fixes for error or corner cases in calendar
+  + Many crash fixes for error or corner cases in calendar
     integration
-  + more detailed code analysis with Coverity Prevent
+  + More detailed code analysis with Coverity Prevent
   + OpenSUSE Build Service configuration files
   + Fix NTLM crash if login setting is undefined
   + Use of g_str_has_prefix() available since glib 2.2 and
     null-safe
-  + build fixes for older OS releases, e.g. Ubuntu older than 9.10
-- Changed source from .bz2 to .gz. Seems OBS for Debian doesn't
-  understand .bz2 source file.
+  + Build fixes for older OS releases.
 
 -------------------------------------------------------------------
 Thu Feb 11 01:15:00 CET 2010 - vuntz@opensuse.org
