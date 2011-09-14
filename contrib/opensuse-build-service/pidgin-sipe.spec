@@ -318,6 +318,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Aug 29 2011 J. D. User <jduser@noreply.com> 1.12.0
+- update to 1.12.0
+
 * Wed Jun 22 2011 J. D. User <jduser@noreply.com> 1.11.2-*git*
 - add gstreamer-devel to enable Voice & Video features
 
