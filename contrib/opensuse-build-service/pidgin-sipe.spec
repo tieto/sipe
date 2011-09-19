@@ -26,6 +26,7 @@
 #
 %if "%{_repository}" == "mingw32"
 %define purple_sipe_mingw32 1
+%define purple_plugin mingw32-libpurple-plugin-sipe
 %define __strip %{_mingw32_strip}
 %define __objdump %{_mingw32_objdump}
 %define _use_internal_dependency_generator 0
@@ -33,9 +34,10 @@
 %define __find_provides %{_mingw32_findprovides}
 %define __os_install_post %{_mingw32_debug_install_post} \
                           %{_mingw32_install_post}
+%else
+%define purple_plugin libpurple-plugin-sipe
 %endif
 
-%define purple_plugin libpurple-plugin-sipe
 
 %define purple_develname libpurple-devel
 
@@ -77,11 +79,15 @@
 %define pkg_group Applications/Internet
 %endif
 
+%if 0%{?purple_sipe_mingw32}
+Name:           mingw32-pidgin-sipe
+%else
 Name:           pidgin-sipe
+%endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
 Version:        1.12.0
 Release:        1
-Source:         %{name}-%{version}.tar.gz
+Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
 License:        GPLv2+
 URL:            http://sipe.sourceforge.net/
@@ -93,26 +99,24 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 # Windows cross-compilation build setup
 #
 BuildArch:      noarch
+#!BuildIgnore:   post-build-checks
 
-BuildRequires:  mingw32-filesystem >= 23  
-BuildRequires:  mingw32-cross-gcc  
+BuildRequires:  mingw32-filesystem >= 23
+BuildRequires:  mingw32-cross-gcc
 BuildRequires:  mingw32-cross-binutils
-BuildRequires:  mingw32-libpurple-devel >= 2.4.0
-BuildRequires:  mingw32-glib2-devel >= 2.12.0
-# Required for successful autoreconf
-BuildRequires:  glib2-devel >= 2.12.0
-BuildRequires:  mingw32-libxml2-devel
-BuildRequires:  pkgconfig
-BuildRequires:  libtool
-BuildRequires:  intltool
 BuildRequires:  mingw32-gettext-runtime
+BuildRequires:  mingw32-cross-pkg-config
+BuildRequires:  mingw32-glib2-devel >= 2.12.0
+BuildRequires:  mingw32-libxml2-devel
+BuildRequires:  mingw32-mozilla-nss-devel
+BuildRequires:  glib2-devel >= 2.12.0
+BuildRequires:  intltool
+BuildRequires:  mingw32-libpurple-devel >= 2.4.0
+BuildRequires:  libtool
 
 # For directory ownership
 BuildRequires:  mingw32-pidgin
 Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
-
-# Handle .debug files
-%{_mingw32_debug_package}
 
 %else
 #
@@ -165,12 +169,15 @@ BuildRequires:  polkit-gnome
 
 
 %description
-SIPE is an open source project that implements the extended version of
-SIP/SIMPLE used by various products:
+A third-party plugin for the Pidgin multi-protocol instant messenger.
+It implements the extended version of SIP/SIMPLE used by various products:
 
     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
+
+With this plugin you should be able to replace your Microsoft Office
+Communicator client with Pidgin.
 
 This package provides the icon set for Pidgin.
 
@@ -182,25 +189,33 @@ License:        GPLv2+
 Obsoletes:      purple-sipe
 
 %description -n %{purple_plugin}
-SIPE is an open source project that implements the extended version of
-SIP/SIMPLE used by various products:
+A third-party plugin for the Pidgin multi-protocol instant messenger.
+It implements the extended version of SIP/SIMPLE used by various products:
 
     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
-This package provides the third-party protocol plugin for libpurple clients.
+This package provides the protocol plugin for libpurple clients.
 
 
 %if %{build_telepathy}
+%if 0%{?purple_sipe_mingw32}
+%package -n mingw32-telepathy-plugin-sipe
+%else
 %package -n telepathy-plugin-sipe
+%endif
 Summary:        Telepathy connection manager for MS Office Communicator
 Group:          %{pkg_group}
 License:        GPLv2+
 
+%if 0%{?purple_sipe_mingw32}
+%description -n mingw32-telepathy-plugin-sipe
+%else
 %description -n telepathy-plugin-sipe
-SIPE is an open source project that implements the extended version of
-SIP/SIMPLE used by various products:
+%endif
+A third-party plugin for the Pidgin multi-protocol instant messenger.
+It implements the extended version of SIP/SIMPLE used by various products:
 
     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
     * Microsoft Live Communications Server (LCS 2003/2005)
@@ -211,8 +226,11 @@ instant messaging core.
 %endif
 
 
+%{_mingw32_debug_package}
+
+
 %prep
-%setup -q
+%setup -q -n pidgin-sipe-%{version}
 
 %build
 %if 0%{?purple_sipe_mingw32}
@@ -230,7 +248,7 @@ MINGW32_LDFLAGS="-Wl,--exclude-libs=libintl.a -Wl,--exclude-libs=libiconv.a -lws
 %else
         --disable-telepathy
 %endif
-%{_mingw32_make} %{_smp_mflags}
+%{_mingw32_make} %{_smp_mflags} || %{_mingw32_make}
 
 %else
 #
@@ -278,14 +296,14 @@ find %{buildroot} -type f -name "*.la" -delete -print
 %if 0%{?suse_version} && 0%{?suse_version} < 1120
 rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
 %endif
-%find_lang %{name}
+%find_lang pidgin-sipe
 
 
 %clean
 rm -rf %{buildroot}
 
 
-%files -n %{purple_plugin} -f %{name}.lang
+%files -n %{purple_plugin} -f pidgin-sipe.lang
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %if 0%{?purple_sipe_mingw32}
@@ -311,13 +329,21 @@ rm -rf %{buildroot}
 
 
 %if %{build_telepathy}
+%if 0%{?purple_sipe_mingw32}
+%files -n mingw32-telepathy-plugin-sipe
+%else
 %files -n telepathy-plugin-sipe
+%endif
 %defattr(-, root, root)
 %{_libexecdir}/telepathy-sipe
-%endif}
+%endif
 
 
 %changelog
+* Mon Sep 19 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- update mingw32 build
+- update descriptions
+
 * Mon Aug 29 2011 J. D. User <jduser@noreply.com> 1.12.0
 - update to 1.12.0
 
