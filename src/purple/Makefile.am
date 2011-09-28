@@ -56,7 +56,7 @@ libsipe_la_LIBADD = \
 	$(PURPLE_LIBS)
 
 if SIPE_OS_WIN32
-libsipe_la_LIBADD += -lws2_32
+libsipe_la_LIBADD += -lws2_32 -lsecur32
 endif
 
 if SIP_SEC_KRB5

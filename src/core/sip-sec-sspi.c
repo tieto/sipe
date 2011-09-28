@@ -38,7 +38,9 @@
 #define SSPI_MECH_KERBEROS  "Kerberos"
 #define SSPI_MECH_NEGOTIATE "Negotiate"
 
+#ifndef ISC_REQ_IDENTIFY
 #define ISC_REQ_IDENTIFY               0x00002000
+#endif
 
 typedef struct _context_sspi {
 	struct sip_sec_context common;
