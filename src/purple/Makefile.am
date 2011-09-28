@@ -56,6 +56,8 @@ libsipe_la_LIBADD = \
 	$(PURPLE_LIBS)
 
 if SIPE_OS_WIN32
+# HAVE_LIBKRB5 activates the code in sip-sec-sspi.c instead of sip-sec-ntlm.c
+libsipe_la_CFLAGS += -DHAVE_LIBKRB5=1
 libsipe_la_LIBADD += -lws2_32 -lsecur32
 endif
 

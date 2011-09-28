@@ -24,6 +24,12 @@
 #include <stdio.h>
 #include <windows.h>
 #include <rpc.h>
+#ifdef HAVE_CONFIG_H
+/* This should not affect Makefile.mingw builds, as it doesn't use config.h */ 
+#ifndef SECURITY_WIN32
+#define SECURITY_WIN32 1
+#endif
+#endif 
 #include <security.h>
 
 #include <glib.h>

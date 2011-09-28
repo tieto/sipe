@@ -108,7 +108,6 @@ BuildRequires:  mingw32-gettext-runtime
 BuildRequires:  mingw32-cross-pkg-config
 BuildRequires:  mingw32-glib2-devel >= 2.12.0
 BuildRequires:  mingw32-libxml2-devel
-BuildRequires:  mingw32-mozilla-nss-devel
 BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  intltool
 BuildRequires:  mingw32-libpurple-devel >= 2.4.0
@@ -340,6 +339,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Sep 28 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- remove BR mingw32-mozilla-nss-devel, not needed for SSPI.
+
 * Mon Sep 19 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - update mingw32 build
 - update descriptions
