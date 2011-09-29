@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009, 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
@@ -525,7 +525,7 @@ Define NTOWFv2(Passwd, User, UserDom) as
 EndDefine
 */
 /* out 16 bytes */
-void
+static void
 NTOWFv2 (const char* password, const char *user, const char *domain, unsigned char *result)
 {
 	unsigned char response_key_nt_v1 [16];

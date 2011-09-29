@@ -65,28 +65,36 @@ if SIP_SEC_KRB5
 libsipe_la_LIBADD += $(KRB5_LDFLAGS)
 endif
 
-check_PROGRAMS = tests tests_load
-tests_SOURCES  = tests.c
-tests_CFLAGS   = $(libsipe_la_CFLAGS)
-tests_LDADD    = \
-	../core/libsipe_core_tests.la \
-	../core/libsipe_core.la \
-	libsipe_backend.la \
-	$(PURPLE_LIBS)
+check_PROGRAMS = tests_load
 tests_load_SOURCES = tests-load.c
 tests_load_CFLAGS  = $(GMODULE_CFLAGS)
 tests_load_LDADD   = $(GMODULE_LIBS)
 
+if !SIPE_OS_WIN32
+check_PROGRAMS += tests
+tests_SOURCES   = tests.c
+tests_CFLAGS    = $(libsipe_la_CFLAGS)
+tests_LDADD     = \
+	../core/libsipe_core_tests.la \
+	../core/libsipe_core.la \
+	libsipe_backend.la \
+	$(PURPLE_LIBS)
+endif
+
 if SIPE_MIME_GMIME
 libsipe_la_LIBADD += $(GMIME_LIBS)
+if !SIPE_OS_WIN32
 tests_LDADD       += $(GMIME_LIBS)
+endif
 else
 libsipe_backend_la_SOURCES += purple-mime.c
 endif
 
 if SIPE_CRYPTO_NSS
 libsipe_la_LIBADD += $(NSS_LIBS)
+if !SIPE_OS_WIN32
 tests_LDADD       += $(NSS_LIBS)
+endif
 else
 libsipe_backend_la_SOURCES += purple-crypt.c purple-digest.c
 endif

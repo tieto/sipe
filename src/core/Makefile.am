@@ -1,16 +1,9 @@
 noinst_LTLIBRARIES = \
 	libsipe_core.la \
-	libsipe_core_tests.la \
 	libsipe_core_purple.la
 
 MAINTAINERCLEANFILES = \
 	Makefile.in
-
-if !SIPE_OS_WIN32
-EXTRA_DIST = \
-	sipe-win32dep.h \
-	sipe-win32dep.c
-endif
 
 libsipe_core_la_SOURCES = \
 	http-conn.h \
@@ -22,8 +15,6 @@ libsipe_core_la_SOURCES = \
 	sip-sec.h \
 	sip-sec.c \
 	sip-sec-mech.h \
-	sip-sec-ntlm.h \
-	sip-sec-ntlm.c \
 	sip-transport.h \
 	sip-transport.c \
 	sipe-buddy.h \
@@ -76,12 +67,17 @@ libsipe_core_la_SOURCES += \
 	sipe-win32dep.c
 else
 libsipe_core_la_SOURCES += \
+	sip-sec-ntlm.h \
+	sip-sec-ntlm.c \
 	sipe-utils.h \
 	sipe-utils.c
-endif
+
+noinst_LTLIBRARIES += \
+	libsipe_core_tests.la
 
 libsipe_core_tests_la_SOURCES = \
 	sip-sec-ntlm-tests.c
+endif
 
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
@@ -104,7 +100,9 @@ libsipe_core_la_CFLAGS = \
         $(LOCALE_CPPFLAGS) \
 	-I$(srcdir)/../api
 
+if !SIPE_OS_WIN32
 libsipe_core_tests_la_CFLAGS = $(libsipe_core_la_CFLAGS)
+endif
 
 if SIP_SEC_KRB5
 libsipe_core_la_SOURCES += sip-sec-krb5.h sip-sec-krb5.c

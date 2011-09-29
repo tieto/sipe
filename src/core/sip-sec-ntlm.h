@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -33,7 +33,3 @@ void sip_sec_destroy__ntlm(void);
  */
 gchar *
 sip_sec_ntlm_message_describe(SipSecBuffer buff);
-
-/* temporarily */
-void
-NTOWFv2 (const char* password, const char *user, const char *domain, unsigned char *result);
