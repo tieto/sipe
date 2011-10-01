@@ -6,7 +6,7 @@
 #     RedHat family (CentOS, Fedora, RHEL)
 #     Mandriva
 #     SUSE family (openSUSE, SLED, SLES)
-#     Windows (mingw32)
+#     Windows (mingw32, mingw64)
 #
 
 # Build options
@@ -18,25 +18,61 @@
 # Manually add this repository to your private OBS project:
 #
 #  <repository name="mingw32">
-#    <path repository="openSUSE_11.3" project="windows:mingw:win32"/>
+#    <path repository="openSUSE_11.4" project="windows:mingw:win32"/>
 #    <arch>i586</arch>
 #  </repository>
 #
-# You might need to add & build mingw-pidgin package too.
-#
 %if "%{_repository}" == "mingw32"
 %define purple_sipe_mingw32 1
-%define purple_plugin mingw32-libpurple-plugin-sipe
-%define __strip %{_mingw32_strip}
-%define __objdump %{_mingw32_objdump}
+%define mingw_prefix        mingw32-
+%define mingw_cache         %{_mingw32_cache}
+%define mingw_configure     %{_mingw32_configure}
+%define mingw_datadir       %{_mingw32_datadir}
+%define mingw_debug_package %{_mingw32_debug_package}
+%define mingw_ldflags       MINGW32_LDFLAGS
+%define mingw_libdir        %{_mingw32_libdir}
+%define mingw_make          %{_mingw32_make}
+%define mingw_makeinstall   %{_mingw32_makeinstall}
+%define __strip             %{_mingw32_strip}
+%define __objdump           %{_mingw32_objdump}
 %define _use_internal_dependency_generator 0
-%define __find_requires %{_mingw32_findrequires}
-%define __find_provides %{_mingw32_findprovides}
-%define __os_install_post %{_mingw32_debug_install_post} \
-                          %{_mingw32_install_post}
-%else
-%define purple_plugin libpurple-plugin-sipe
+%define __find_requires     %{_mingw32_findrequires}
+%define __find_provides     %{_mingw32_findprovides}
+%define __os_install_post   %{_mingw32_debug_install_post} \
+                            %{_mingw32_install_post}
 %endif
+
+# Check for mingw64 cross compilation build
+#
+# Manually add this repository to your private OBS project:
+#
+#  <repository name="mingw64">
+#    <path repository="openSUSE_11.4" project="windows:mingw:win64"/>
+#    <arch>i586</arch>
+#  </repository>
+#
+%if "%{_repository}" == "mingw64"
+%define purple_sipe_mingw64 1
+%define mingw_prefix        mingw64-
+%define mingw_cache         %{_mingw64_cache}
+%define mingw_configure     %{_mingw64_configure}
+%define mingw_datadir       %{_mingw64_datadir}
+%define mingw_debug_package %{_mingw64_debug_package}
+%define mingw_ldflags       MINGW64_LDFLAGS
+%define mingw_libdir        %{_mingw64_libdir}
+%define mingw_make          %{_mingw64_make}
+%define mingw_makeinstall   %{_mingw64_makeinstall}
+%define __strip             %{_mingw64_strip}
+%define __objdump           %{_mingw64_objdump}
+%define _use_internal_dependency_generator 0
+%define __find_requires     %{_mingw64_findrequires}
+%define __find_provides     %{_mingw64_findprovides}
+%define __os_install_post   %{_mingw64_debug_install_post} \
+                            %{_mingw64_install_post}
+%endif
+
+%define purple_plugin    %{?mingw_prefix:%{mingw_prefix}}libpurple-plugin-sipe
+%define telepathy_plugin %{?mingw_prefix:%{mingw_prefix}}telepathy-plugin-sipe
 
 
 %define purple_develname libpurple-devel
@@ -56,6 +92,9 @@
 %define nss_develname mozilla-nss-devel
 %if 0%{?suse_version} >= 1120
 %define has_libnice 1
+%if 0%{?suse_version} > 1140
+%define has_gstreamer 1
+%endif
 %endif
 %else
 %define nss_develname nss-devel
@@ -82,7 +121,11 @@
 %if 0%{?purple_sipe_mingw32}
 Name:           mingw32-pidgin-sipe
 %else
+%if 0%{?purple_sipe_mingw64}
+Name:           mingw64-pidgin-sipe
+%else
 Name:           pidgin-sipe
+%endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
 Version:        1.12.0
@@ -94,39 +137,32 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
-%if 0%{?purple_sipe_mingw32}
+%if 0%{?mingw_prefix:1}
 #
 # Windows cross-compilation build setup
 #
 BuildArch:      noarch
 #!BuildIgnore:   post-build-checks
 
-BuildRequires:  mingw32-filesystem >= 23
-BuildRequires:  mingw32-cross-gcc
-BuildRequires:  mingw32-cross-binutils
-BuildRequires:  mingw32-gettext-runtime
-BuildRequires:  mingw32-cross-pkg-config
-BuildRequires:  mingw32-glib2-devel >= 2.12.0
-BuildRequires:  mingw32-libxml2-devel
-BuildRequires:  glib2-devel >= 2.12.0
-BuildRequires:  intltool
-BuildRequires:  mingw32-libpurple-devel >= 2.4.0
-BuildRequires:  libtool
+BuildRequires:  %{mingw_prefix}filesystem >= 23
+BuildRequires:  %{mingw_prefix}cross-gcc
+BuildRequires:  %{mingw_prefix}cross-binutils
+BuildRequires:  %{mingw_prefix}gettext-runtime
+BuildRequires:  %{mingw_prefix}cross-pkg-config
+BuildRequires:  %{mingw_prefix}glib2-devel >= 2.12.0
+BuildRequires:  %{mingw_prefix}libxml2-devel
+BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.4.0
 
 # For directory ownership
-BuildRequires:  mingw32-pidgin
-Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+BuildRequires:  %{mingw_prefix}pidgin
 
 %else
 #
 # Standard Linux build setup
 #
 BuildRequires:  %{purple_develname} >= 2.4.0
-BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  libxml2-devel
 #BuildRequires:  %{nss_develname}
-BuildRequires:  libtool
-BuildRequires:  intltool
 BuildRequires:  gettext-devel
 # The following two are required to enable Voice & Video features
 %if 0%{?has_libnice:1}
@@ -143,7 +179,6 @@ BuildRequires:  krb5-devel
 
 # For directory ownership
 BuildRequires:  pidgin
-Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 %if %{build_telepathy}
 BuildRequires:  pkgconfig(telepathy-glib)
 %endif
@@ -165,6 +200,11 @@ BuildRequires:  polkit-gnome
 
 # End Windows cross-compilation/Linux build setup
 %endif
+
+Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+BuildRequires:  libtool
+BuildRequires:  intltool
+BuildRequires:  glib2-devel >= 2.12.0
 
 
 %description
@@ -199,20 +239,12 @@ This package provides the protocol plugin for libpurple clients.
 
 
 %if %{build_telepathy}
-%if 0%{?purple_sipe_mingw32}
-%package -n mingw32-telepathy-plugin-sipe
-%else
-%package -n telepathy-plugin-sipe
-%endif
+%package -n %{telepathy_plugin}
 Summary:        Telepathy connection manager for MS Office Communicator
 Group:          %{pkg_group}
 License:        GPLv2+
 
-%if 0%{?purple_sipe_mingw32}
-%description -n mingw32-telepathy-plugin-sipe
-%else
-%description -n telepathy-plugin-sipe
-%endif
+%description -n %{telepathy_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
@@ -225,29 +257,29 @@ instant messaging core.
 %endif
 
 
-%{_mingw32_debug_package}
+%{mingw_debug_package}
 
 
 %prep
 %setup -q -n pidgin-sipe-%{version}
 
 %build
-%if 0%{?purple_sipe_mingw32}
+%if 0%{?mingw_prefix:1}
 #
 # Windows cross-compilation build
 #
 %{?env_options}
-echo "lt_cv_deplibs_check_method='pass_all'" >>%{_mingw32_cache}
+echo "lt_cv_deplibs_check_method='pass_all'" >>%{mingw_cache}
 autoreconf --verbose --install --force
-MINGW32_LDFLAGS="-Wl,--exclude-libs=libintl.a -Wl,--exclude-libs=libiconv.a -lws2_32"
-%{_mingw32_configure} \
+%{mingw_ldflags}="-Wl,--exclude-libs=libintl.a -Wl,--exclude-libs=libiconv.a -lws2_32"
+%{mingw_configure} \
         --enable-purple \
 %if %{build_telepathy}
         --enable-telepathy
 %else
         --disable-telepathy
 %endif
-%{_mingw32_make} %{_smp_mflags} || %{_mingw32_make}
+%{mingw_make} %{_smp_mflags} || %{mingw_make}
 
 %else
 #
@@ -274,12 +306,12 @@ make %{_smp_mflags} check
 
 
 %install
-%if 0%{?purple_sipe_mingw32}
+%if 0%{?mingw_prefix:1}
 #
 # Windows cross-compilation install
 #
-%{_mingw32_makeinstall}
-rm -f %{buildroot}%{_mingw32_libdir}/purple-2/*.dll.a
+%{mingw_makeinstall}
+rm -f %{buildroot}%{mingw_libdir}/purple-2/*.dll.a
 
 %else
 #
@@ -305,8 +337,8 @@ rm -rf %{buildroot}
 %files -n %{purple_plugin} -f pidgin-sipe.lang
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
-%if 0%{?purple_sipe_mingw32}
-%{_mingw32_libdir}/purple-2/libsipe.dll
+%if 0%{?mingw_prefix:1}
+%{mingw_libdir}/purple-2/libsipe.dll
 %else
 %{_libdir}/purple-2/libsipe.so
 %endif
@@ -315,9 +347,9 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
-%if 0%{?purple_sipe_mingw32}
-%{_mingw32_datadir}/pixmaps/pidgin/protocols/*/sipe.png
-%{_mingw32_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
+%if 0%{?mingw_prefix:1}
+%{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.png
+%{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %else
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 # SLES11 defines suse_version = 1110
@@ -328,17 +360,16 @@ rm -rf %{buildroot}
 
 
 %if %{build_telepathy}
-%if 0%{?purple_sipe_mingw32}
-%files -n mingw32-telepathy-plugin-sipe
-%else
-%files -n telepathy-plugin-sipe
-%endif
+%files -n %{telepathy_plugin}
 %defattr(-, root, root)
 %{_libexecdir}/telepathy-sipe
 %endif
 
 
 %changelog
+* Sat Oct 01 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add mingw64 build
+
 * Wed Sep 28 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - remove BR mingw32-mozilla-nss-devel, not needed for SSPI.
 
