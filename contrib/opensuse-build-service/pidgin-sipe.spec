@@ -73,6 +73,7 @@
 
 %define purple_plugin    %{?mingw_prefix:%{mingw_prefix}}libpurple-plugin-sipe
 %define telepathy_plugin %{?mingw_prefix:%{mingw_prefix}}telepathy-plugin-sipe
+%define nsis_package     %{?mingw_prefix:%{mingw_prefix}}pidgin-sipe-nsis
 
 
 %define purple_develname libpurple-devel
@@ -152,6 +153,7 @@ BuildRequires:  %{mingw_prefix}cross-pkg-config
 BuildRequires:  %{mingw_prefix}glib2-devel >= 2.12.0
 BuildRequires:  %{mingw_prefix}libxml2-devel
 BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.4.0
+BuildRequires:  %{mingw_prefix}cross-nsis
 
 # For directory ownership
 BuildRequires:  %{mingw_prefix}pidgin
@@ -257,6 +259,25 @@ instant messaging core.
 %endif
 
 
+%if 0%{?mingw_prefix:1}
+%package -n %{nsis_package}
+Summary:        Windows Pidgin protocol plugin to connect to MS Office Communicator
+Group:          %{pkg_group}
+License:        GPLv2+
+
+%description -n %{nsis_package}
+A third-party plugin for the Pidgin multi-protocol instant messenger.
+It implements the extended version of SIP/SIMPLE used by various products:
+
+    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package contains the NSIS installer package of the protocol plugin
+for Pidgin on Windows.
+%endif
+
+
 %{mingw_debug_package}
 
 
@@ -313,6 +334,21 @@ make %{_smp_mflags} check
 %{mingw_makeinstall}
 rm -f %{buildroot}%{mingw_libdir}/purple-2/*.dll.a
 
+# generate NSIS installer package
+perl contrib/opensuse-build-service/generate_nsi.pl po/LINGUAS \
+	<contrib/opensuse-build-service/pidgin-sipe.nsi.template \
+	>%{buildroot}/pidgin-sipe.nsi
+( \
+	set -e; \
+	cd %{buildroot}; \
+	makensis \
+		-DVERSION=%{version} \
+		-DMINGW_LIBDIR=%{buildroot}%{mingw_libdir} \
+		-DMINGW_DATADIR=%{buildroot}%{mingw_datadir} \
+		pidgin-sipe.nsi \
+)
+rm -f %{buildroot}/pidgin-sipe.nsi
+
 %else
 #
 # Standard Linux install
@@ -366,7 +402,17 @@ rm -rf %{buildroot}
 %endif
 
 
+%if 0%{?mingw_prefix:1}
+%files -n %{nsis_package}
+%defattr(-, root, root)
+/pidgin-sipe-%{version}.exe
+%endif
+
+
 %changelog
+* Sat Oct 01 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add NSIS package for mingw builds
+
 * Sat Oct 01 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - add mingw64 build
 

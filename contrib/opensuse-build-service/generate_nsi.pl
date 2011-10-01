@@ -21,7 +21,7 @@ print STDERR "Found ", scalar(keys %languages), " language(s): ",
 while (<STDIN>) {
     if (/^;;; INSTALL_FILES_LOCALE/) {
 	print map({
-	           ("File \"\${MINGW_ROOT}\\share\\locale\\ar\\LC_MESSAGES\\pidgin-sipe.mo\"\n",
+	           ("File \"\${MINGW_DATADIR}\\locale\\ar\\LC_MESSAGES\\pidgin-sipe.mo\"\n",
 		    "SetOutPath \"\$INSTDIR\\locale\\cs\\LC_MESSAGES\"\n")
 		  } sort keys %languages);
     } elsif (/^;;; DELETE_FILES_LOCALE/) {
