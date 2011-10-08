@@ -46,13 +46,16 @@ DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/tracker/?atid=949931\&g
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
-DEFINES += -DHAVE_GMIME=1
+DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.net/projects/p/pidgin-sipe/r/mob/\"
+#DEFINES += -DENABLE_OCS2005_MESSAGE_HACK=1
 
 ifdef USE_SSPI
 DEFINES += -DHAVE_LIBKRB5=1
 else
+DEFINES += -DHAVE_GMIME=1
 DEFINES += -DHAVE_NSS=1
 endif
+
 
 ##
 ## INCLUDE PATHS
@@ -64,7 +67,6 @@ INCLUDE_PATHS +=	-I. \
 			-I$(GTK_TOP)/include/glib-2.0 \
 			-I$(GTK_TOP)/lib/glib-2.0/include \
 			-I$(LIBICONV_TOP)/include \
-			-I$(GMIME_TOP)/include/gmime-2.4 \
 			-I$(LIBXML2_TOP)/include/libxml2
 
 PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
@@ -74,7 +76,8 @@ PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
 ifdef USE_SSPI
 # nothing needed
 else
-INCLUDE_PATHS +=	-I$(NSPR_TOP)/include \
+INCLUDE_PATHS +=	-I$(GMIME_TOP)/include/gmime-2.4 \
+			-I$(NSPR_TOP)/include \
 			-I$(NSS_TOP)/include
 endif
 
@@ -106,7 +109,6 @@ CLEAN_C_SRC = 		http-conn.c \
 			sip-sec.c \
 			sip-csta.c \
 			sipe-xml.c \
-			sipe-mime.c \
 			uuid.c \
 			sipe-win32dep.c
 
@@ -133,12 +135,16 @@ C_TEST_SRC = 		sipe-xml-tests.c
 
 ifdef USE_SSPI
 CLEAN_C_SRC +=		sip-sec-sspi.c
+PURPLE_C_SRC +=		../purple/purple-crypt.c \
+			../purple/purple-digest.c \
+			../purple/purple-mime.c
 
 else
 CLEAN_C_SRC +=		md4.c \
 			sip-sec-ntlm.c \
 			sipe-crypt.c \
-			sipe-digest.c
+			sipe-digest.c \
+			sipe-mime.c
 
 C_TEST_SRC += 		sip-sec-ntlm-tests.c \
 			../purple/tests.c
@@ -158,25 +164,26 @@ TEST_OBJECTS = 		$(C_TEST_SRC:%.c=%.o)
 ##
 ## LIBRARIES
 ##
-LIB_PATHS +=		$(GMIME_TOP)/lib/libgmime-2.4.a \
-			-L$(LIBICONV_TOP)/lib \
-			-L$(GTK_TOP)/lib \
+LIB_PATHS =		-L$(GTK_TOP)/lib \
 			-L$(LIBXML2_TOP)/lib \
 			-L$(PURPLE_TOP)
 
-LIBS =			-liconv \
-			-lglib-2.0 \
+LIBS =			-lglib-2.0 \
 			-lgobject-2.0 \
 			-lintl \
-			-lxml2-2 \
+			-lxml2 \
 			-lws2_32 \
 			-lpurple
 
 ifdef USE_SSPI
+LIB_PATHS +=		$(LIBICONV_TOP)/lib/libiconv.a
 LIBS +=			-lsecur32
 else
-LIB_PATHS +=		-L$(NSS_TOP)/lib
-LIBS +=			-lnss3
+LIB_PATHS +=		$(GMIME_TOP)/lib/libgmime-2.4.a \
+			-L$(LIBICONV_TOP)/lib \
+			-L$(NSS_TOP)/lib
+LIBS +=			-lnss3 \
+			-liconv
 endif
 
 # These flags are used in mingw build

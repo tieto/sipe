@@ -6,7 +6,7 @@
 # Description: Top Makefile for win32 (mingw) port of LCS protocol plugin
 #
 
-export PIDGIN_TREE_TOP := ../pidgin-2.7.3
+export PIDGIN_TREE_TOP := ../pidgin-2.10.0
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
 export CFLAGS=-Werror
@@ -52,4 +52,4 @@ msi: all
 	mv $(WXS_NAME).msi $(WXS_NAME)-$(VERSION).msi
 
 nsis: install
-	makensis -DTREETOP=..\\pidgin-2.7.3 -DVERSION=$(VERSION) pidgin-sipe.nsi
+	makensis -DTREETOP=..\\pidgin-2.10.0 -DVERSION=$(VERSION) pidgin-sipe.nsi
