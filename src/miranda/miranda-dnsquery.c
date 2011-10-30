@@ -85,7 +85,8 @@ static srv_reply* srv_lookup(WORD wType,
 }
 
 
-struct sipe_dns_query *sipe_backend_dns_query_a(const gchar *hostname,
+struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_public,
+						const gchar *hostname,
 						int port,
 						sipe_dns_resolved_cb callback,
 						gpointer data)
@@ -105,7 +106,8 @@ struct sipe_dns_query *sipe_backend_dns_query_a(const gchar *hostname,
 	return NULL;
 }
 
-struct sipe_dns_query *sipe_backend_dns_query_srv(const gchar *protocol,
+struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_public,
+						  const gchar *protocol,
 						  const gchar *transport,
 						  const gchar *domain,
 						  sipe_dns_resolved_cb callback,

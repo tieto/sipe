@@ -33,7 +33,7 @@
 #include "sipe-core.h"
 #include "miranda-private.h"
 
-const gchar *sipe_backend_status(struct sipe_core_public *sipe_public)
+guint sipe_backend_status(struct sipe_core_public *sipe_public)
 {
 	SIPPROTO* pr = sipe_public->backend_private;
 	return MirandaStatusToSipe(pr->proto.m_iStatus);
@@ -93,10 +93,8 @@ int sipe_miranda_SetStatus( SIPPROTO *pr, int iNewStatus )
 }
 
 gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
-				      const gchar *status_id,
+				      guint activity,
 				      const gchar *message)
 {
-	sipe_miranda_SetStatus(sipe_public->backend_private, SipeStatusToMiranda(status_id));
+	sipe_miranda_SetStatus(sipe_public->backend_private, SipeStatusToMiranda(activity));
 }
-
-

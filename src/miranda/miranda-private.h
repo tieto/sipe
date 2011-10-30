@@ -152,6 +152,6 @@ HWND sipe_miranda_SearchAdvanced( SIPPROTO *pr, HWND owner );
 /* Plugin event functions */
 int sipe_miranda_buddy_delete(SIPPROTO *pr, WPARAM wParam, LPARAM lParam);
 
-int SipeStatusToMiranda(const gchar *status);
-const char *MirandaStatusToSipe(int status);
+int SipeStatusToMiranda(guint activity);
+guint MirandaStatusToSipe(int status);
 

@@ -33,6 +33,7 @@
 
 #include "glib.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 #include "miranda-private.h"
 
 /*
@@ -691,62 +692,42 @@ sipe_miranda_html2rtf(const gchar *text)
 	return tmp;
 }
 
-/* Status identifiers (see also: sipe_status_types()) */
-#define SIPE_STATUS_ID_UNKNOWN     "unset"                  /* Unset (primitive) */
-#define SIPE_STATUS_ID_OFFLINE     "offline"                /* Offline (primitive) */
-#define SIPE_STATUS_ID_AVAILABLE   "available"              /* Online */
-/*      PURPLE_STATUS_UNAVAILABLE: */
-#define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
-#define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
-#define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
-#define SIPE_STATUS_ID_IN_MEETING  "in-a-meeting"                                             /* In a meeting */
-#define SIPE_STATUS_ID_IN_CONF     "in-a-conference"                                          /* In a conference */
-#define SIPE_STATUS_ID_ON_PHONE    "on-the-phone"                                             /* On the phone */
-#define SIPE_STATUS_ID_INVISIBLE   "invisible"              /* Appear Offline */
-/*      PURPLE_STATUS_AWAY: */
-#define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
-#define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
-#define SIPE_STATUS_ID_AWAY        "away"                   /* Away (primitive) */
-/** Reuters status (user settable) */
-#define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
-/* ???  PURPLE_STATUS_EXTENDED_AWAY */
-/* ???  PURPLE_STATUS_MOBILE */
-/* ???  PURPLE_STATUS_TUNE */
+int SipeStatusToMiranda(guint activity) {
 
-int SipeStatusToMiranda(const gchar *status) {
-
-	if (!strcmp(status, SIPE_STATUS_ID_OFFLINE))
+	switch (activity)
+	{
+	case SIPE_ACTIVITY_OFFLINE:
 		return ID_STATUS_OFFLINE;
-
-	if (!strcmp(status, SIPE_STATUS_ID_AVAILABLE))
+	case SIPE_ACTIVITY_AVAILABLE:
 		return ID_STATUS_ONLINE;
-
-	if (!strcmp(status, SIPE_STATUS_ID_ON_PHONE))
+	case SIPE_ACTIVITY_ON_PHONE:
 		return ID_STATUS_ONTHEPHONE;
-
-	if (!strcmp(status, SIPE_STATUS_ID_DND))
+	case SIPE_ACTIVITY_DND:
+	case SIPE_ACTIVITY_URGENT_ONLY:
 		return ID_STATUS_DND;
-
-	if (!strcmp(status, SIPE_STATUS_ID_AWAY))
+	case SIPE_ACTIVITY_AWAY:
+	case SIPE_ACTIVITY_OOF:
 		return ID_STATUS_NA;
-
-	if (!strcmp(status, SIPE_STATUS_ID_LUNCH))
+	case SIPE_ACTIVITY_LUNCH:
 		return ID_STATUS_OUTTOLUNCH;
-
-	if (!strcmp(status, SIPE_STATUS_ID_BUSY))
+	case SIPE_ACTIVITY_BUSY:
+	case SIPE_ACTIVITY_IN_MEETING:
+	case SIPE_ACTIVITY_IN_CONF:
 		return ID_STATUS_OCCUPIED;
-
-	if (!strcmp(status, SIPE_STATUS_ID_INVISIBLE))
+	case SIPE_ACTIVITY_INVISIBLE:
 		return ID_STATUS_INVISIBLE;
-
-	if (!strcmp(status, SIPE_STATUS_ID_BRB))
+	case SIPE_ACTIVITY_BRB:
 		return ID_STATUS_AWAY;
-
-	if (!strcmp(status, SIPE_STATUS_ID_UNKNOWN))
+	case SIPE_ACTIVITY_UNSET:
 		return ID_STATUS_OFFLINE;
-
-	/* None of those? We'll have to guess. Online seems ok. */
-	return ID_STATUS_ONLINE;
+	case SIPE_ACTIVITY_INACTIVE:
+	case SIPE_ACTIVITY_ONLINE:
+	case SIPE_ACTIVITY_BUSYIDLE:
+		return ID_STATUS_ONLINE;
+	default:
+		/* None of those? We'll have to guess. Online seems ok. */
+		return ID_STATUS_ONLINE;
+	}
 
 	/* Don't have SIPE equivalent of these:
 		- ID_STATUS_FREECHAT
@@ -754,40 +735,40 @@ int SipeStatusToMiranda(const gchar *status) {
 
 }
 
-const char *MirandaStatusToSipe(int status) {
+guint MirandaStatusToSipe(int status) {
 
 	switch (status)
 	{
 	case ID_STATUS_OFFLINE:
-		return SIPE_STATUS_ID_OFFLINE;
+		return SIPE_ACTIVITY_OFFLINE;
 
 	case ID_STATUS_ONLINE:
 	case ID_STATUS_FREECHAT:
-		return SIPE_STATUS_ID_AVAILABLE;
+		return SIPE_ACTIVITY_AVAILABLE;
 
 	case ID_STATUS_ONTHEPHONE:
-		return SIPE_STATUS_ID_ON_PHONE;
+		return SIPE_ACTIVITY_ON_PHONE;
 
 	case ID_STATUS_DND:
-		return SIPE_STATUS_ID_DND;
+		return SIPE_ACTIVITY_DND;
 
 	case ID_STATUS_NA:
-		return SIPE_STATUS_ID_AWAY;
+		return SIPE_ACTIVITY_AWAY;
 
 	case ID_STATUS_AWAY:
-		return SIPE_STATUS_ID_BRB;
+		return SIPE_ACTIVITY_BRB;
 
 	case ID_STATUS_OUTTOLUNCH:
-		return SIPE_STATUS_ID_LUNCH;
+		return SIPE_ACTIVITY_LUNCH;
 
 	case ID_STATUS_OCCUPIED:
-		return SIPE_STATUS_ID_BUSY;
+		return SIPE_ACTIVITY_BUSY;
 
 	case ID_STATUS_INVISIBLE:
-		return SIPE_STATUS_ID_INVISIBLE;
+		return SIPE_ACTIVITY_INVISIBLE;
 
 	default:
-		return SIPE_STATUS_ID_UNKNOWN;
+		return SIPE_ACTIVITY_UNSET;
 	}
 
 }

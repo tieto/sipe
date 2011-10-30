@@ -69,52 +69,6 @@ void CreateProtoService(const SIPPROTO *pr, const char* szService, SipSimpleServ
 HANDLE sipe_miranda_incoming_netlibuser = NULL;
 CRITICAL_SECTION sipe_miranda_debug_CriticalSection;
 
-/* Sipe core activity <-> Miranda status mapping */
-static const gchar * const activity_to_miranda[SIPE_ACTIVITY_NUM_TYPES] = {
-	/* SIPE_ACTIVITY_UNSET       */ "unset",
-	/* SIPE_ACTIVITY_AVAILABLE   */ "available",
-	/* SIPE_ACTIVITY_ONLINE      */ "online",
-	/* SIPE_ACTIVITY_INACTIVE    */ "idle",
-	/* SIPE_ACTIVITY_BUSY        */ "busy",
-	/* SIPE_ACTIVITY_BUSYIDLE    */ "busyidle",
-	/* SIPE_ACTIVITY_DND         */ "do-not-disturb",
-	/* SIPE_ACTIVITY_BRB         */ "be-right-back",
-	/* SIPE_ACTIVITY_AWAY        */ "away",
-	/* SIPE_ACTIVITY_LUNCH       */ "out-to-lunch",
-	/* SIPE_ACTIVITY_INVISIBLE   */ "invisible",
-	/* SIPE_ACTIVITY_OFFLINE     */ "offline", 
-	/* SIPE_ACTIVITY_ON_PHONE    */ "on-the-phone",
-	/* SIPE_ACTIVITY_IN_CONF     */ "in-a-conference",
-	/* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
-	/* SIPE_ACTIVITY_OOF         */ "out-of-office",
-	/* SIPE_ACTIVITY_URGENT_ONLY */ "urgent-interruptions-only",
-};
-GHashTable *miranda_to_activity = NULL;
-#define MIRANDA_STATUS_TO_ACTIVITY(x) \
-	GPOINTER_TO_UINT(g_hash_table_lookup(miranda_to_activity, (x)))
-
-static void sipe_miranda_activity_init(void)
-{
-	guint index = SIPE_ACTIVITY_UNSET;
-	miranda_to_activity = g_hash_table_new(g_str_hash, g_str_equal);
-	while (index < SIPE_ACTIVITY_NUM_TYPES) {
-		g_hash_table_insert(miranda_to_activity,
-				    (gpointer) activity_to_miranda[index],
-				    GUINT_TO_POINTER(index));
-		index++;
-	}
-}
-
-const gchar *sipe_backend_activity_to_token(guint type)
-{
-	return(activity_to_miranda[type]);
-}
-
-guint sipe_backend_token_to_activity(const gchar *token)
-{
-	return(MIRANDA_STATUS_TO_ACTIVITY(token));
-}
-
 gchar *sipe_backend_version(void)
 {
 	char version[200];
@@ -124,12 +78,6 @@ gchar *sipe_backend_version(void)
 	}
 
 	return g_strdup_printf("Miranda %s SIPLCS " __DATE__ " " __TIME__, version );
-}
-
-static void sipe_miranda_activity_destroy(void)
-{
-	g_hash_table_destroy(miranda_to_activity);
-	miranda_to_activity = NULL;
 }
 
 /*
@@ -513,31 +461,9 @@ static INT_PTR sipe_miranda_start_chat(SIPPROTO *pr, WPARAM wParam, LPARAM lPara
 
 	DBVARIANT dbv;
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
-		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
-		{
-			LOCK;
-			sipe_conf_add(sipe_private, dbv.pszVal);
-			UNLOCK;
-		}
-		else /* 2005- multiparty chat */
-		{
-			gchar *self = sip_uri_self(sipe_private);
-			struct sip_session *session;
-
-			LOCK;
-			session = sipe_session_add_chat(sipe_private,
-							NULL,
-							TRUE,
-							self);
-			session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-										  session->chat_session,
-										  session->chat_session->title,
-										  self);
-			g_free(self);
-
-			sipe_im_invite(sipe_private, session, dbv.pszVal, NULL, NULL, NULL, FALSE);
-			UNLOCK;
-		}
+		LOCK;
+		sipe_core_buddy_new_chat(sipe_public, dbv.pszVal);
+		UNLOCK;
 		DBFreeVariant( &dbv );
 		return TRUE;
 	}
@@ -549,7 +475,6 @@ static void OnModulesLoaded(SIPPROTO *pr)
 {
 	TCHAR descr[MAX_PATH];
 	NETLIBUSER nlu = {0};
-	char service_name[200];
 	GCREGISTER gcr;
 	DBEVENTTYPEDESCR eventType = {0};
 
@@ -976,7 +901,7 @@ int OnPreBuildContactMenu(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 	mi.pszName = "New chat";
 	mi.hParentMenu = pr->contactMenuChatItems->data;
 	mi.flags = CMIF_ROOTHANDLE;
-	mi.popupPosition = NULL;
+	mi.popupPosition = 0;
 	mi.position=-10;
 	mi.pszService = g_strdup_printf("%s/StartChat", pr->proto.m_szModuleName);
 	mi.pszContactOwner = pr->proto.m_szModuleName;
@@ -1420,7 +1345,6 @@ __declspec(dllexport) int Load(PLUGINLINK *link)
 	pluginLink = link;
 
 	sipe_core_init("");
-	sipe_miranda_activity_init();
 
 	mir_getMMI( &mmi );
 
@@ -1461,7 +1385,6 @@ __declspec(dllexport) int Unload(void)
 	Netlib_CloseHandle(sipe_miranda_incoming_netlibuser);
 	sipe_miranda_incoming_netlibuser = NULL;
 	DeleteCriticalSection(&sipe_miranda_debug_CriticalSection);
-	sipe_miranda_activity_destroy();
 	sipe_core_destroy();
 	return 0;
 }

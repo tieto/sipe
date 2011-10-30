@@ -130,7 +130,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;libxml2.lib;Ws2_32.lib;nss3.lib;gmime-2.6-debug.lib;iconv.lib;intl.lib;libvlc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;libxml2.lib;Ws2_32.lib;nss3.lib;smime3.lib;nspr4.lib;gmime-2.6-debug.lib;iconv.lib;intl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
