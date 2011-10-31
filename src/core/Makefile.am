@@ -75,6 +75,8 @@ else
 libsipe_core_la_SOURCES += \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
+	sip-sec-tls-dsk.h \
+	sip-sec-tls-dsk.c \
 	sipe-utils.h \
 	sipe-utils.c
 

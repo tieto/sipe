@@ -41,9 +41,11 @@
 #include "sip-sec-mech.h"
 #ifndef _WIN32
 #include "sip-sec-ntlm.h"
+#include "sip-sec-tls-dsk.h"
 #define SIP_SEC_USE_NTLM
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
+#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
 
 #ifdef HAVE_LIBKRB5
 #include "sip-sec-krb5.h"
@@ -59,12 +61,15 @@
 #define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
+#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__sspi
 #else /* HAVE_LIBKRB5 */
 #include "sip-sec-ntlm.h"
+#include "sip-sec-tls-dsk.h"
 #define SIP_SEC_USE_NTLM
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
+#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
 #endif /* HAVE_LIBKRB5 */
 
 #endif /* _WIN32 */
@@ -94,6 +99,7 @@ sip_sec_create_context(guint type,
 		sip_sec_create_context__NTLM,      /* AUTH_TYPE_NTLM      */
 		sip_sec_create_context__Kerberos,  /* AUTH_TYPE_KERBEROS  */
 		sip_sec_create_context__Negotiate, /* AUTH_TYPE_NEGOTIATE */
+		sip_sec_create_context__TLS_DSK,   /* AUTH_TYPE_TLS_DSK   */
 	};
 
 	context = (*(auth_to_hook[type]))(type);

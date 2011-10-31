@@ -314,6 +314,8 @@ static void sipe_purple_login(PurpleAccount *account)
 	   "sso" is only available when Kerberos support is compiled in */
 	if (purple_account_get_bool(account, "sso", TRUE))
 		SIPE_CORE_FLAG_SET(SSO);
+	if (purple_account_get_bool(account, "tls-dsk", FALSE))
+		SIPE_CORE_FLAG_SET(TLS_DSK);
 
 	gc->proto_data = sipe_public;
 	sipe_purple_setup(sipe_public, gc);
@@ -828,6 +830,9 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 #endif
+
+	option = purple_account_option_bool_new(_("Use TLS-DSK"), "tls-dsk", FALSE);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/** Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf

@@ -82,6 +82,7 @@ struct sip_auth {
 	gchar *gssapi_data;
 	gchar *opaque;
 	gchar *realm;
+	gchar *sts_uri;
 	gchar *target;
 	int version;
 	int nc;
@@ -131,6 +132,8 @@ static void sipe_auth_free(struct sip_auth *auth)
 	auth->opaque = NULL;
 	g_free(auth->realm);
 	auth->realm = NULL;
+	g_free(auth->sts_uri);
+	auth->sts_uri = NULL;
 	g_free(auth->target);
 	auth->target = NULL;
 	auth->version = 0;
@@ -179,8 +182,12 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 		authuser = sipe_private->username;
 	}
 
-	if (auth->type == AUTH_TYPE_NTLM || auth->type == AUTH_TYPE_KERBEROS) { /* NTLM or Kerberos */
-		gchar *auth_protocol = (auth->type == AUTH_TYPE_NTLM ? "NTLM" : "Kerberos");
+	/* Authentication types that use 3-way handshake */
+	if (auth->type == AUTH_TYPE_NTLM ||
+	    auth->type == AUTH_TYPE_KERBEROS ||
+	    auth->type == AUTH_TYPE_TLS_DSK) {
+		gchar *auth_protocol = (auth->type == AUTH_TYPE_NTLM) ? "NTLM" :
+			                ((auth->type == AUTH_TYPE_KERBEROS) ? "Kerberos" : "TLS-DSK");
 		gchar *version_str;
 
 		// If we have a signature for the message, include that
@@ -188,8 +195,9 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 			return g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth_protocol, auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
 		}
 
-		if ((auth->type == AUTH_TYPE_NTLM && auth->nc == 3 && auth->gssapi_data && auth->gssapi_context == NULL)
-			|| (auth->type == AUTH_TYPE_KERBEROS && auth->nc == 3)) {
+		if ((auth->nc == 3) &&
+		    ((auth->type != AUTH_TYPE_NTLM) ||
+		     (auth->gssapi_data && auth->gssapi_context == NULL))) {
 			gchar *gssapi_data;
 			gchar *opaque;
 			gchar *sign_str = NULL;
@@ -218,6 +226,7 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 				sign_str = g_strdup("");
 			}
 
+			/* TBD: needed for TLS-DSK too? */
 			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
 			version_str = auth->version > 2 ? g_strdup_printf(", version=%d", auth->version) : g_strdup("");
 			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s", auth_protocol, opaque, auth->realm, auth->target, gssapi_data, version_str, sign_str);
@@ -318,6 +327,11 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 		auth->type = AUTH_TYPE_KERBEROS;
 		hdr += 9;
 		auth->nc = 3;
+	} else	if (!g_strncasecmp(hdr, "TLS-DSK", 7)) {
+		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type TLS-DSK");
+		auth->type = AUTH_TYPE_TLS_DSK;
+		hdr += 8;
+		auth->nc = 1;
 	} else {
 		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type Digest");
 		auth->type = AUTH_TYPE_DIGEST;
@@ -334,6 +348,7 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 			g_free(auth->gssapi_data);
 			auth->gssapi_data = tmp;
 
+			/* TBD: needed for TLS-DSK too? */
 			if (auth->type == AUTH_TYPE_NTLM) {
 				/* NTLM module extracts nonce from gssapi-data */
 				auth->nc = 3;
@@ -356,6 +371,10 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 				auth->opaque = NULL;
 				auth->nc = 1;
 			}
+		} else if ((tmp = parse_attribute("sts-uri=\"", parts[i]))) {
+			/* Only used with AUTH_TYPE_TLS_DSK */
+			g_free(auth->sts_uri);
+			auth->sts_uri = tmp;
 		} else if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
 			g_free(auth->target);
 			auth->target = tmp;
@@ -401,6 +420,9 @@ static void sign_outgoing_message (struct sipmsg * msg,
 		/* that's why I don't like macros. It's unobvious what's hidden there */
 		(void)sipe_private;
 #endif
+		if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
+			transport->registrar.type = AUTH_TYPE_TLS_DSK;
+		}
 
 
 		buf = auth_header(sipe_private, &transport->registrar, msg);
@@ -843,6 +865,9 @@ sipe_get_auth_scheme_name(struct sipe_core_private *sipe_private)
 #else
 	(void) sipe_private; /* make compiler happy */
 #endif
+	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
+		res = "TLS-DSK";
+	}
 	return res;
 }
 

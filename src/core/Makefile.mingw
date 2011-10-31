@@ -141,6 +141,7 @@ PURPLE_C_SRC +=		../purple/purple-mime.c
 
 else
 CLEAN_C_SRC +=		sip-sec-ntlm.c \
+			sip-sec-tls-dsk.c \
 			sipe-mime.c
 
 C_TEST_SRC += 		sip-sec-ntlm-tests.c \

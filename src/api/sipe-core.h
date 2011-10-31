@@ -113,8 +113,9 @@ struct sipe_backend_private;
 /**
  * Flags
  */
-#define SIPE_CORE_FLAG_KRB5 0x00000001 /* user enabled Kerberos 5     */
-#define SIPE_CORE_FLAG_SSO  0x00000002 /* user enabled Single-Sign On */
+#define SIPE_CORE_FLAG_KRB5    0x00000001 /* user enabled Kerberos 5     */
+#define SIPE_CORE_FLAG_SSO     0x00000002 /* user enabled Single-Sign On */
+#define SIPE_CORE_FLAG_TLS_DSK 0x00000004 /* user enabled TLS-DSK        */
 
 #define SIPE_CORE_FLAG_IS(flag)    \
 	((sipe_public->flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)

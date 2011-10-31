@@ -30,6 +30,7 @@ typedef struct sip_sec_context *SipSecContext;
 #define AUTH_TYPE_NTLM      2
 #define AUTH_TYPE_KERBEROS  3
 #define AUTH_TYPE_NEGOTIATE 4
+#define AUTH_TYPE_TLS_DSK   5
 
 /*** Sipe convenience methods ***/
 

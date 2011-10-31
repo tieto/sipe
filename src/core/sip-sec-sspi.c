@@ -26,11 +26,11 @@
 #include <windows.h>
 #include <rpc.h>
 #ifdef HAVE_CONFIG_H
-/* This should not affect Makefile.mingw builds, as it doesn't use config.h */ 
+/* This should not affect Makefile.mingw builds, as it doesn't use config.h */
 #ifndef SECURITY_WIN32
 #define SECURITY_WIN32 1
 #endif
-#endif 
+#endif
 #include <security.h>
 
 #include <glib.h>
@@ -44,6 +44,7 @@
 #define SSPI_MECH_NTLM      "NTLM"
 #define SSPI_MECH_KERBEROS  "Kerberos"
 #define SSPI_MECH_NEGOTIATE "Negotiate"
+#define SSPI_MECH_TLS_DSK   "TLS-DSK" /* educated guess :-) */
 
 #ifndef ISC_REQ_IDENTIFY
 #define ISC_REQ_IDENTIFY               0x00002000
@@ -107,9 +108,9 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		auth_identity.Password = (unsigned char*)password;
 		auth_identity.PasswordLength = strlen(password);
 	}
-	
+
 	cred_handle = g_malloc0(sizeof(CredHandle));
-	
+
 	ret = AcquireCredentialsHandle(	NULL,
 					(SEC_CHAR *)ctx->mech,
 					SECPKG_CRED_OUTBOUND,
@@ -145,7 +146,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	ULONG ret_flags;
 	context_sspi ctx = (context_sspi)context;
 	CtxtHandle* out_context = g_malloc0(sizeof(CtxtHandle));
-	
+
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
 
 	input_desc.cBuffers = 1;
@@ -203,12 +204,12 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		memmove(out_buff->value, out_token.pvBuffer, out_token.cbBuffer);
 		FreeContextBuffer(out_token.pvBuffer);
 	}
-	
+
 	ctx->ctx_sspi = out_context;
 	if (ctx->mech && !strcmp(ctx->mech, SSPI_MECH_KERBEROS)) {
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
-	
+
 	if (ret == SEC_I_CONTINUE_NEEDED) {
 		return SIP_SEC_I_CONTINUE_NEEDED;
 	} else	{
@@ -333,15 +334,16 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM : 
-			((type == AUTH_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS : SSPI_MECH_NEGOTIATE);
+	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM :
+			((type == AUTH_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS :
+			 ((type == AUTH_TYPE_NEGOTIATE) ? SSPI_MECH_NEGOTIATE : SSPI_MECH_TLS_DSK));
 
 	return((SipSecContext) context);
 }
 
 /* Utility Functions */
 
-/** 
+/**
  * Returns interval in seconds from now till provided value
  */
 static int
@@ -350,16 +352,16 @@ sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
 	SYSTEMTIME stNow;
 	FILETIME ftNow;
 	ULARGE_INTEGER uliNow, uliTo;
-	
+
 	GetLocalTime(&stNow);
 	SystemTimeToFileTime(&stNow, &ftNow);
-	
+
 	uliNow.LowPart = ftNow.dwLowDateTime;
 	uliNow.HighPart = ftNow.dwHighDateTime;
-	
+
 	uliTo.LowPart = timestamp.LowPart;
 	uliTo.HighPart = timestamp.HighPart;
-	
+
 	return (int)((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
 }
 
@@ -367,7 +369,7 @@ void
 sip_sec_sspi_print_error(const char *func,
 			 SECURITY_STATUS ret)
 {
-	char *error_message;	
+	char *error_message;
 	static char *buff;
 	int buff_length;
 
