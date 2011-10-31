@@ -251,7 +251,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(SolutionDir)/../include&quot;;&quot;$(ProjectDir)/src/core&quot;;&quot;$(ProjectDir)/src/api&quot;;&quot;$(ProjectDir)/src/&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PACKAGE_NAME=\&quot;pidgin-sipe\&quot;;PACKAGE_VERSION=\&quot;1.12.0\&quot;;PACKAGE_URL=\&quot;http://sipe.sourceforge.net/\&quot;;PACKAGE_BUGREPORT=\&quot;https://sourceforge.net/tracker/?atid=949931&amp;amp;group_id=194563\&quot;;SIPE_VERSION=\&quot;1.12.0\&quot;;_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;PACKAGE_NAME=\&quot;pidgin-sipe\&quot;;PACKAGE_VERSION=\&quot;1.12.0\&quot;;PACKAGE_URL=\&quot;http://sipe.sourceforge.net/\&quot;;PACKAGE_BUGREPORT=\&quot;https://sourceforge.net/tracker/?atid=949931&amp;amp;group_id=194563\&quot;;SIPE_VERSION=\&quot;1.12.0\&quot;;_CRT_SECURE_NO_WARNINGS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -408,6 +408,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-crypt.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-dialog.c"
 				>
 			</File>
@@ -417,6 +421,10 @@
 			</File>
 			<File
 				RelativePath=".\src\core\sipe-digest.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-digest.h"
 				>
 			</File>
 			<File
@@ -585,14 +593,6 @@
 			</File>
 			<File
 				RelativePath=".\src\api\sipe-core.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\api\sipe-crypt.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\api\sipe-digest.h"
 				>
 			</File>
 			<File

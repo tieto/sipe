@@ -40,7 +40,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  libpurple-devel >= 2.4.0
 BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  libxml2-devel
-#BuildRequires:  nss-devel
+BuildRequires:  nss-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
@@ -133,6 +133,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Oct 31 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add BR nss-devel
+
 * Mon Aug 29 2011 J. D. User <jduser@noreply.com> 1.12.0
 - update to 1.12.0
 

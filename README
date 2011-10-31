@@ -97,7 +97,12 @@ following packages
 	libtool
 	intltool
 	libglib2.0-dev
+	libglib2-devel
 	libxml2-dev
+	libxml2-devel
+	libnss3-dev
+	nss-devel
+        mozilla-nss-devel
 	gettext-devel
 
 Now you should be able to compile the source code with

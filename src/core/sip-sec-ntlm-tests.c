@@ -28,18 +28,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <stdlib.h>
 
 #include <glib.h>
 #include <glib/gprintf.h>
 
-#ifdef HAVE_NSS
 #include "nss.h"
-#endif
 
 #include "sipmsg.h"
 #include "sipe-sign.h"
@@ -137,14 +131,12 @@ gboolean sip_sec_ntlm_tests(void)
 	const gchar *response_sig;
 
 	printf ("Starting Tests\n");
-	
+
 	/* Initialization for NSS */
-#ifdef HAVE_NSS
 	if (!NSS_IsInitialized()) {
 		NSS_NoDB_Init(".");
 		SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
 	}
-#endif
 	/* Initialization for NTLM */
 	sip_sec_init__ntlm();
 
@@ -393,7 +385,7 @@ Response:
 
 
 */
-	{	
+	{
 	const guint64 time_val = 0;
 	const guint8 target_info [] = {
 		0x02, 0x00, 0x0C, 0x00, //NetBIOS Domain name, 4 bytes
@@ -488,7 +480,7 @@ Response:
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
 	{
-	char * msg2;	
+	char * msg2;
 	char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 
@@ -834,7 +826,7 @@ Message (length 352):
 
 	printf ("\n\nTesting Authentication Algorithm's v4 Signature String\n");
 	{
-	char *response_symbian = 
+	char *response_symbian =
 	"SIP/2.0 180 Ringing\r\n"
 	"Authentication-Info: NTLM rspauth=\"010000003EA8D688BA51D5CD64000000\", srand=\"1B6D47A1\", snum=\"11\", opaque=\"357E6F72\", qop=\"auth\", targetname=\"LOC-COMPANYT-FE03.COMPANY.COM\", realm=\"SIP Communications Service\"\r\n"
 	"Via: SIP/2.0/tls 192.168.44.10:50230;received=10.117.245.254;ms-received-port=50230;ms-received-cid=37ABE00\r\n"
@@ -859,10 +851,10 @@ Message (length 352):
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 
 	assert_equal (response_sig, (guchar *)msg_str, strlen(response_sig), FALSE);
-	
+
 	sipmsg_breakdown_free(&msgbd);
 	}
-	
+
 ////// UUID tests ///////
 	/* begin tests from MS-SIPRE */
 	{

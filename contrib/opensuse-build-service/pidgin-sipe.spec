@@ -152,6 +152,7 @@ BuildRequires:  %{mingw_prefix}gettext-runtime
 BuildRequires:  %{mingw_prefix}cross-pkg-config
 BuildRequires:  %{mingw_prefix}glib2-devel >= 2.12.0
 BuildRequires:  %{mingw_prefix}libxml2-devel
+BuildRequires:  %{mingw_prefix}mozilla-nss-devel
 BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.4.0
 BuildRequires:  %{mingw_prefix}cross-nsis
 
@@ -164,7 +165,7 @@ BuildRequires:  %{mingw_prefix}pidgin
 #
 BuildRequires:  %{purple_develname} >= 2.4.0
 BuildRequires:  libxml2-devel
-#BuildRequires:  %{nss_develname}
+BuildRequires:  %{nss_develname}
 BuildRequires:  gettext-devel
 # The following two are required to enable Voice & Video features
 %if 0%{?has_libnice:1}
@@ -410,6 +411,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Oct 31 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add BR nss-devel
+
 * Sat Oct 01 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - add NSIS package for mingw builds
 

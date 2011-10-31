@@ -53,7 +53,6 @@ ifdef USE_SSPI
 DEFINES += -DHAVE_LIBKRB5=1
 else
 DEFINES += -DHAVE_GMIME=1
-DEFINES += -DHAVE_NSS=1
 endif
 
 
@@ -67,7 +66,9 @@ INCLUDE_PATHS +=	-I. \
 			-I$(GTK_TOP)/include/glib-2.0 \
 			-I$(GTK_TOP)/lib/glib-2.0/include \
 			-I$(LIBICONV_TOP)/include \
-			-I$(LIBXML2_TOP)/include/libxml2
+			-I$(LIBXML2_TOP)/include/libxml2 \
+			-I$(NSPR_TOP)/include \
+			-I$(NSS_TOP)/include
 
 PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
 			-I$(PURPLE_TOP)/win32 \
@@ -76,15 +77,14 @@ PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
 ifdef USE_SSPI
 # nothing needed
 else
-INCLUDE_PATHS +=	-I$(GMIME_TOP)/include/gmime-2.4 \
-			-I$(NSPR_TOP)/include \
-			-I$(NSS_TOP)/include
+INCLUDE_PATHS +=	-I$(GMIME_TOP)/include/gmime-2.4
 endif
 
 ##
 ##  SOURCES, OBJECTS
 ##
 CLEAN_C_SRC = 		http-conn.c \
+			md4.c \
 			sip-transport.c \
 			sipe-conf.c \
 			sipe-core.c \
@@ -92,7 +92,9 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-buddy.c \
 			sipe-cal.c \
 			sipe-chat.c \
+			sipe-crypt.c \
 			sipe-dialog.c \
+			sipe-digest.c \
 			sipe-ft.c \
 			sipe-ft-tftp.c \
 			sipe-group.c \
@@ -135,15 +137,10 @@ C_TEST_SRC = 		sipe-xml-tests.c
 
 ifdef USE_SSPI
 CLEAN_C_SRC +=		sip-sec-sspi.c
-PURPLE_C_SRC +=		../purple/purple-crypt.c \
-			../purple/purple-digest.c \
-			../purple/purple-mime.c
+PURPLE_C_SRC +=		../purple/purple-mime.c
 
 else
-CLEAN_C_SRC +=		md4.c \
-			sip-sec-ntlm.c \
-			sipe-crypt.c \
-			sipe-digest.c \
+CLEAN_C_SRC +=		sip-sec-ntlm.c \
 			sipe-mime.c
 
 C_TEST_SRC += 		sip-sec-ntlm-tests.c \
@@ -166,12 +163,14 @@ TEST_OBJECTS = 		$(C_TEST_SRC:%.c=%.o)
 ##
 LIB_PATHS =		-L$(GTK_TOP)/lib \
 			-L$(LIBXML2_TOP)/lib \
+			-L$(NSS_TOP)/lib \
 			-L$(PURPLE_TOP)
 
 LIBS =			-lglib-2.0 \
 			-lgobject-2.0 \
 			-lintl \
 			-lxml2 \
+			-lnss3 \
 			-lws2_32 \
 			-lpurple
 
@@ -180,10 +179,8 @@ LIB_PATHS +=		$(LIBICONV_TOP)/lib/libiconv.a
 LIBS +=			-lsecur32
 else
 LIB_PATHS +=		$(GMIME_TOP)/lib/libgmime-2.4.a \
-			-L$(LIBICONV_TOP)/lib \
-			-L$(NSS_TOP)/lib
-LIBS +=			-lnss3 \
-			-liconv
+			-L$(LIBICONV_TOP)/lib
+LIBS +=			-liconv
 endif
 
 # These flags are used in mingw build

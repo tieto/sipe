@@ -52,6 +52,7 @@ libsipe_la_LIBADD = \
 	../core/libsipe_core_purple.la \
 	libsipe_backend.la \
         $(LIBXML2_LIBS) \
+	$(NSS_LIBS) \
         $(GLIB_LIBS) \
 	$(PURPLE_LIBS)
 
@@ -78,6 +79,7 @@ tests_LDADD     = \
 	../core/libsipe_core_tests.la \
 	../core/libsipe_core.la \
 	libsipe_backend.la \
+	$(NSS_LIBS) \
 	$(PURPLE_LIBS)
 endif
 
@@ -88,15 +90,6 @@ tests_LDADD       += $(GMIME_LIBS)
 endif
 else
 libsipe_backend_la_SOURCES += purple-mime.c
-endif
-
-if SIPE_CRYPTO_NSS
-libsipe_la_LIBADD += $(NSS_LIBS)
-if !SIPE_OS_WIN32
-tests_LDADD       += $(NSS_LIBS)
-endif
-else
-libsipe_backend_la_SOURCES += purple-crypt.c purple-digest.c
 endif
 
 if SIPE_WITH_VV

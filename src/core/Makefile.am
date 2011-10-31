@@ -8,6 +8,8 @@ MAINTAINERCLEANFILES = \
 libsipe_core_la_SOURCES = \
 	http-conn.h \
 	http-conn.c \
+	md4.h \
+	md4.c \
 	sipmsg.h \
 	sipmsg.c \
 	sip-csta.h \
@@ -27,8 +29,12 @@ libsipe_core_la_SOURCES = \
 	sipe-conf.c \
 	sipe-core-private.h \
 	sipe-core.c \
+	sipe-crypt.h \
+	sipe-crypt.c \
 	sipe-dialog.h \
 	sipe-dialog.c \
+	sipe-digest.h \
+	sipe-digest.c \
 	sipe-domino.h \
 	sipe-domino.c \
 	sipe-ews.h \
@@ -96,6 +102,7 @@ libsipe_core_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
         $(LIBXML2_CFLAGS) \
+	$(NSS_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	-I$(srcdir)/../api
@@ -112,15 +119,6 @@ endif
 if SIPE_MIME_GMIME
 libsipe_core_la_SOURCES += sipe-mime.c
 libsipe_core_la_CFLAGS  += $(GMIME_CFLAGS)
-endif
-
-if SIPE_CRYPTO_NSS
-libsipe_core_la_SOURCES += \
-	md4.h \
-	md4.c \
-	sipe-crypt.c \
-	sipe-digest.c
-libsipe_core_la_CFLAGS  += $(NSS_CFLAGS)
 endif
 
 if SIPE_OS_WIN32

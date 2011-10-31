@@ -42,9 +42,7 @@
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
 		B13FAAE4119D3D2E001CE037 /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAAE3119D3D2E001CE037 /* libintl.framework */; };
 		B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB4F119D5155001CE037 /* purple-connection.c */; };
-		B13FAB60119D5155001CE037 /* purple-crypt.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB50119D5155001CE037 /* purple-crypt.c */; };
 		B13FAB61119D5155001CE037 /* purple-debug.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB51119D5155001CE037 /* purple-debug.c */; };
-		B13FAB62119D5155001CE037 /* purple-digest.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB52119D5155001CE037 /* purple-digest.c */; };
 		B13FAB63119D5155001CE037 /* purple-dnsquery.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB53119D5155001CE037 /* purple-dnsquery.c */; };
 		B13FAB64119D5155001CE037 /* purple-markup.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB54119D5155001CE037 /* purple-markup.c */; };
 		B13FAB66119D5155001CE037 /* purple-mime.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB56119D5155001CE037 /* purple-mime.c */; };
@@ -132,9 +130,7 @@
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		B13FAAE3119D3D2E001CE037 /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = /Users/mduggan/src/adium/Frameworks/libintl.framework; sourceTree = "<absolute>"; };
 		B13FAB4F119D5155001CE037 /* purple-connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-connection.c"; sourceTree = "<group>"; };
-		B13FAB50119D5155001CE037 /* purple-crypt.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-crypt.c"; sourceTree = "<group>"; };
 		B13FAB51119D5155001CE037 /* purple-debug.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-debug.c"; sourceTree = "<group>"; };
-		B13FAB52119D5155001CE037 /* purple-digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-digest.c"; sourceTree = "<group>"; };
 		B13FAB53119D5155001CE037 /* purple-dnsquery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-dnsquery.c"; sourceTree = "<group>"; };
 		B13FAB54119D5155001CE037 /* purple-markup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-markup.c"; sourceTree = "<group>"; };
 		B13FAB56119D5155001CE037 /* purple-mime.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-mime.c"; sourceTree = "<group>"; };
@@ -321,9 +317,7 @@
 				1CF260F712C2DFA00045B6CC /* purple-notify.c */,
 				1CF260F812C2DFA00045B6CC /* purple-user.c */,
 				B13FAB4F119D5155001CE037 /* purple-connection.c */,
-				B13FAB50119D5155001CE037 /* purple-crypt.c */,
 				B13FAB51119D5155001CE037 /* purple-debug.c */,
-				B13FAB52119D5155001CE037 /* purple-digest.c */,
 				B13FAB53119D5155001CE037 /* purple-dnsquery.c */,
 				B13FAB54119D5155001CE037 /* purple-markup.c */,
 				B13FAB56119D5155001CE037 /* purple-mime.c */,
@@ -494,9 +488,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */,
-				B13FAB60119D5155001CE037 /* purple-crypt.c in Sources */,
 				B13FAB61119D5155001CE037 /* purple-debug.c in Sources */,
-				B13FAB62119D5155001CE037 /* purple-digest.c in Sources */,
 				B13FAB63119D5155001CE037 /* purple-dnsquery.c in Sources */,
 				B13FAB64119D5155001CE037 /* purple-markup.c in Sources */,
 				B13FAB66119D5155001CE037 /* purple-mime.c in Sources */,

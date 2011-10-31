@@ -180,17 +180,14 @@ AS_IF([test "x$ac_have_gmime" = xyes],
 
 dnl check for NSS
 PKG_CHECK_MODULES(NSS, [nss],
-	[ac_have_nss=yes],
+	[],
 	[PKG_CHECK_MODULES(NSS, [mozilla-nss],
-		[ac_have_nss=yes],
+		[],
 		[PKG_CHECK_MODULES(NSS, [microb-engine-nss],
-			[ac_have_nss=yes],
-			[ac_have_nss=no])
+			[],
+			[AC_ERROR([nss, mozilla-nss or microb-engine-nss package is required])])
 	])
 ])
-AM_CONDITIONAL(SIPE_CRYPTO_NSS, [test "x$ac_have_nss" = xyes])
-AS_IF([test "x$ac_have_nss" = xyes],
-	[AC_DEFINE(HAVE_NSS, 1, [Define if nss should be used in sipe.])])
 
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
@@ -379,11 +376,6 @@ AS_IF([test "x$enable_telepathy" != xno],
 			[],
 			[AC_ERROR(GMIME package is required for telepathy plugin)])
 
-		 dnl NSS is a build requirement
-		 AS_IF([test "x$ac_have_nss" = xyes],
-			[],
-			[AC_ERROR(NSS package is required for telepathy plugin)])
-
 		 dnl NOTHING IMPLEMENTED YET!!!
 		],
 		[enable_telepathy=no])])
@@ -399,11 +391,6 @@ AS_IF([test "x$enable_kopete" != xno],
 	 AS_IF([test "x$ac_have_gmime" = xyes],
 		[],
 		[AC_ERROR(GMIME package is required for kopete plugin)])
-
-	 dnl NSS is a build requirement
-	 AS_IF([test "x$ac_have_nss" = xyes],
-		[],
-		[AC_ERROR(NSS package is required for kopete plugin)])
 
 	 dnl NOTHING IMPLEMENTED YET!!!
 	],
