@@ -588,6 +588,13 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
  */
 void sipe_backend_user_close_ask(gpointer key);
 
+/**
+ * Return the NSS DB directory path for the user
+ *
+ * @return directory path. Must be freed.
+ */
+gchar *sipe_backend_user_nss_dbpath(void);
+
 /** BUDDIES ******************************************************************/
 
 /* The list of properties a buddy can have */

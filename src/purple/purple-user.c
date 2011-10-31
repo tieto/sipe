@@ -24,6 +24,7 @@
 
 #include "request.h"
 #include "server.h"
+#include "util.h"
 
 #include "purple-private.h"
 
@@ -70,6 +71,13 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 void sipe_backend_user_close_ask(gpointer key)
 {
 	purple_request_close_with_handle(key);
+}
+
+gchar *sipe_backend_user_nss_dbpath(void)
+{
+	return(g_build_filename(purple_user_dir(),
+				"certificates",
+				NULL));
 }
 
 /*
