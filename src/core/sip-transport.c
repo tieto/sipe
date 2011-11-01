@@ -170,147 +170,189 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 	}
 }
 
+static gchar *auth_header_version(struct sip_auth *auth)
+{
+	return(auth->version > 2 ?
+	       g_strdup_printf(", version=%d", auth->version) :
+	       g_strdup(""));
+}
+
+static gchar *auth_header_handshake(struct sipe_core_private *sipe_private,
+				    struct sip_auth *auth,
+				    struct sipmsg *msg,
+				    const gchar *authuser,
+				    const gchar *auth_protocol,
+				    gboolean opaque,
+				    gboolean gssapi)
+{
+	gchar *ret;
+
+	/* If we have a signature for the message, include that */
+	if (msg->signature) {
+		return(g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
+				       auth_protocol, auth->opaque,
+				       auth->realm, auth->target,
+				       msg->rand, msg->num, msg->signature));
+	}
+
+	if (gssapi) {
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+		gchar *gssapi_data;
+		gchar *opaque_str;
+		gchar *sign_str;
+		gchar *version_str;
+
+		gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
+						   &(auth->expires),
+						   auth->type,
+						   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
+						   sip->authdomain ? sip->authdomain : "",
+						   authuser,
+						   sip->password,
+						   auth->target,
+						   auth->gssapi_data);
+		if (!gssapi_data || !auth->gssapi_context) {
+			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+						      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+						      _("Failed to authenticate to server"));
+			return NULL;
+		}
+
+		if (auth->version > 3) {
+			sipe_make_signature(sipe_private, msg);
+			sign_str = g_strdup_printf(", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
+						   msg->rand, msg->num, msg->signature);
+		} else {
+			sign_str = g_strdup("");
+		}
+
+		opaque_str = opaque ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup("");
+		version_str = auth_header_version(auth);
+		ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s",
+				      auth_protocol, opaque_str,
+				      auth->realm, auth->target,
+				      gssapi_data, version_str, sign_str);
+		g_free(opaque_str);
+		g_free(gssapi_data);
+		g_free(version_str);
+		g_free(sign_str);
+	} else {
+		gchar *version_str = auth_header_version(auth);
+		ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s",
+				      auth_protocol,
+				      auth->realm, auth->target,
+				      version_str);
+		g_free(version_str);
+	}
+
+	return(ret);
+}
+
+static gchar *auth_header_digest(struct sipe_core_private *sipe_private,
+				 struct sip_auth *auth,
+				 struct sipmsg *msg,
+				 const gchar *authuser)
+{
+	gchar *string;
+	gchar *hex_digest;
+	guchar digest[SIPE_DIGEST_MD5_LENGTH];
+	gchar *ret;
+
+	/* Calculate new session key */
+	if (!auth->opaque) {
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
+		SIPE_DEBUG_INFO("Digest nonce: %s realm: %s", auth->gssapi_data, auth->realm);
+		if (sip->password) {
+			/*
+			 * Calculate a session key for HTTP MD5 Digest authentation
+			 *
+			 * See RFC 2617 for more information.
+			 */
+			string = g_strdup_printf("%s:%s:%s",
+						 authuser,
+						 auth->realm,
+						 sip->password);
+			sipe_digest_md5((guchar *)string, strlen(string), digest);
+			g_free(string);
+			auth->opaque = buff_to_hex_str(digest, sizeof(digest));
+		}
+	}
+
+	/*
+	 * Calculate a response for HTTP MD5 Digest authentication
+	 *
+	 * See RFC 2617 for more information.
+	 */
+	string = g_strdup_printf("%s:%s", msg->method, msg->target);
+	sipe_digest_md5((guchar *)string, strlen(string), digest);
+	g_free(string);
+
+	hex_digest = buff_to_hex_str(digest, sizeof(digest));
+	string = g_strdup_printf("%s:%s:%s", auth->opaque, auth->gssapi_data, hex_digest);
+	g_free(hex_digest);
+	sipe_digest_md5((guchar *)string, strlen(string), digest);
+	g_free(string);
+
+	hex_digest = buff_to_hex_str(digest, sizeof(digest));
+	SIPE_DEBUG_INFO("Digest response %s", hex_digest);
+	ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%08d\", response=\"%s\"", authuser, auth->realm, auth->gssapi_data, msg->target, auth->nc++, hex_digest);
+	g_free(hex_digest);
+	return ret;
+}
+
 static gchar *auth_header(struct sipe_core_private *sipe_private,
 			  struct sip_auth *auth,
-			  struct sipmsg * msg)
+			  struct sipmsg *msg)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const char *authuser = sip->authuser;
-	gchar *ret;
+	gchar *ret = NULL;
 
 	if (!authuser || strlen(authuser) < 1) {
 		authuser = sipe_private->username;
 	}
 
-	/* Authentication types that use 3-way handshake */
-	if (auth->type == AUTH_TYPE_NTLM ||
-	    auth->type == AUTH_TYPE_KERBEROS ||
-	    auth->type == AUTH_TYPE_TLS_DSK) {
-		gchar *auth_protocol = (auth->type == AUTH_TYPE_NTLM) ? "NTLM" :
-			                ((auth->type == AUTH_TYPE_KERBEROS) ? "Kerberos" : "TLS-DSK");
-		gchar *version_str;
+	switch (auth->type) {
+	case AUTH_TYPE_DIGEST:
+		ret = auth_header_digest(sipe_private, auth, msg, authuser);
+		break;
+	case AUTH_TYPE_NTLM:
+		ret = auth_header_handshake(sipe_private, auth, msg, authuser,
+					    "NTLM", TRUE,
+					    auth->gssapi_data && auth->gssapi_context == NULL);
+		break;
+	case AUTH_TYPE_KERBEROS:
+		ret = auth_header_handshake(sipe_private, auth, msg, authuser,
+					    "Kerberos", FALSE, TRUE);
+		break;
+	case AUTH_TYPE_TLS_DSK: {
+		gboolean valid_certificate = auth->gssapi_context != NULL;
 
-		// If we have a signature for the message, include that
-		if (msg->signature) {
-			return g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"", auth_protocol, auth->opaque, auth->realm, auth->target, msg->rand, msg->num, msg->signature);
-		}
-
-		if ((auth->nc == 3) &&
-		    ((auth->type != AUTH_TYPE_NTLM) ||
-		     (auth->gssapi_data && auth->gssapi_context == NULL))) {
-			gchar *gssapi_data;
-			gchar *opaque;
-			gchar *sign_str = NULL;
-
-			gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
-							   &(auth->expires),
-							   auth->type,
-							   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
-							   sip->authdomain ? sip->authdomain : "",
-							   authuser,
-							   sip->password,
-							   auth->target,
-							   auth->gssapi_data);
-			if (!gssapi_data || !auth->gssapi_context) {
+		if (!valid_certificate) {
+			if (auth->sts_uri) {
+				SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
+				// TBD: valid_certificate = ...
+			} else {
 				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-							       _("Failed to authenticate to server"));
-				return NULL;
-			}
-
-			if (auth->version > 3) {
-				sipe_make_signature(sipe_private, msg);
-				sign_str = g_strdup_printf(", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
-					msg->rand, msg->num, msg->signature);
-			} else {
-				sign_str = g_strdup("");
-			}
-
-			/* TBD: needed for TLS-DSK too? */
-			opaque = (auth->type == AUTH_TYPE_NTLM ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup(""));
-			version_str = auth->version > 2 ? g_strdup_printf(", version=%d", auth->version) : g_strdup("");
-			ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s", auth_protocol, opaque, auth->realm, auth->target, gssapi_data, version_str, sign_str);
-			g_free(opaque);
-			g_free(gssapi_data);
-			g_free(version_str);
-			g_free(sign_str);
-			return ret;
-		}
-
-		version_str = auth->version > 2 ? g_strdup_printf(", version=%d", auth->version) : g_strdup("");
-		ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s", auth_protocol, auth->realm, auth->target, version_str);
-		g_free(version_str);
-		return ret;
-
-	} else { /* Digest */
-		gchar *string;
-		gchar *hex_digest;
-		guchar digest[SIPE_DIGEST_MD5_LENGTH];
-
-		/* Calculate new session key */
-		if (!auth->opaque) {
-			SIPE_DEBUG_INFO("Digest nonce: %s realm: %s", auth->gssapi_data, auth->realm);
-			if (sip->password) {
-				/*
-				 * Calculate a session key for HTTP MD5 Digest authentation
-				 *
-				 * See RFC 2617 for more information.
-				 */
-				string = g_strdup_printf("%s:%s:%s",
-							 authuser,
-							 auth->realm,
-							 sip->password);
-				sipe_digest_md5((guchar *)string, strlen(string), digest);
-				g_free(string);
-				auth->opaque = buff_to_hex_str(digest, sizeof(digest));
+							      _("No URI for certificate provisioning service provided"));
 			}
 		}
-
-		/*
-		 * Calculate a response for HTTP MD5 Digest authentication
-		 *
-		 * See RFC 2617 for more information.
-		 */
-		string = g_strdup_printf("%s:%s", msg->method, msg->target);
-		sipe_digest_md5((guchar *)string, strlen(string), digest);
-		g_free(string);
-
-		hex_digest = buff_to_hex_str(digest, sizeof(digest));
-		string = g_strdup_printf("%s:%s:%s", auth->opaque, auth->gssapi_data, hex_digest);
-		g_free(hex_digest);
-		sipe_digest_md5((guchar *)string, strlen(string), digest);
-		g_free(string);
-
-		hex_digest = buff_to_hex_str(digest, sizeof(digest));
-		SIPE_DEBUG_INFO("Digest response %s", hex_digest);
-		ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%08d\", response=\"%s\"", authuser, auth->realm, auth->gssapi_data, msg->target, auth->nc++, hex_digest);
-		g_free(hex_digest);
-		return ret;
-	}
-}
-
-static char *parse_attribute(const char *attrname, const char *source)
-{
-	const char *tmp, *tmp2;
-	char *retval = NULL;
-	int len = strlen(attrname);
-
-	if (g_str_has_prefix(source, attrname)) {
-		tmp = source + len;
-		tmp2 = g_strstr_len(tmp, strlen(tmp), "\"");
-		if (tmp2)
-			retval = g_strndup(tmp, tmp2 - tmp);
-		else
-			retval = g_strdup(tmp);
+		if (valid_certificate) {
+			ret = auth_header_handshake(sipe_private, auth, msg, authuser,
+						    "TLS-DSK", TRUE, TRUE);
+		}
+	        }
+		break;
 	}
 
-	return retval;
+	return(ret);
 }
 
 static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 {
-	int i;
-	gchar **parts;
+	const gchar *param;
 
 	if (!hdr) {
 		SIPE_DEBUG_ERROR_NOFORMAT("fill_auth: hdr==NULL");
@@ -338,32 +380,54 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 		hdr += 7;
 	}
 
-	parts = g_strsplit(hdr, "\", ", 0);
-	for (i = 0; parts[i]; i++) {
-		char *tmp;
+	/* start of next parameter value */
+	while ((param = strchr(hdr, '=')) != NULL) {
+		const gchar *end;
 
-		//SIPE_DEBUG_INFO("parts[i] %s", parts[i]);
+		/* parameter value type */
+		param++;
+		if (*param == '"') {
+			/* string: xyz="..."(,) */
+			end = strchr(++param, '"');
+			if (!end) {
+				SIPE_DEBUG_ERROR("fill_auth: corrupted string parameter near '%s'", hdr);
+				break;
+			}
+		} else {
+			/* number: xyz=12345(,) */
+			end = strchr(param, ',');
+			if (!end) {
+				/* last parameter */
+				end = param + strlen(param);
+			}
+		}
 
-		if ((tmp = parse_attribute("gssapi-data=\"", parts[i]))) {
+#if 0
+		SIPE_DEBUG_INFO("fill_auth: hdr   '%s'", hdr);
+		SIPE_DEBUG_INFO("fill_auth: param '%s'", param);
+		SIPE_DEBUG_INFO("fill_auth: end   '%s'", end);
+#endif
+
+		/* parameter type */
+		if        (g_str_has_prefix(hdr, "gssapi-data=\"")) {
 			g_free(auth->gssapi_data);
-			auth->gssapi_data = tmp;
+			auth->gssapi_data = g_strndup(param, end - param);
 
 			/* TBD: needed for TLS-DSK too? */
 			if (auth->type == AUTH_TYPE_NTLM) {
 				/* NTLM module extracts nonce from gssapi-data */
 				auth->nc = 3;
 			}
-
-		} else if ((tmp = parse_attribute("nonce=\"", parts[i]))) {
+		} else if (g_str_has_prefix(hdr, "nonce=\"")) {
 			/* Only used with AUTH_TYPE_DIGEST */
 			g_free(auth->gssapi_data);
-			auth->gssapi_data = tmp;
-		} else if ((tmp = parse_attribute("opaque=\"", parts[i]))) {
+			auth->gssapi_data = g_strndup(param, end - param);
+		} else if (g_str_has_prefix(hdr, "opaque=\"")) {
 			g_free(auth->opaque);
-			auth->opaque = tmp;
-		} else if ((tmp = parse_attribute("realm=\"", parts[i]))) {
+			auth->opaque = g_strndup(param, end - param);
+		} else if (g_str_has_prefix(hdr, "realm=\"")) {
 			g_free(auth->realm);
-			auth->realm = tmp;
+			auth->realm = g_strndup(param, end - param);
 
 			if (auth->type == AUTH_TYPE_DIGEST) {
 				/* Throw away old session key */
@@ -371,21 +435,23 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 				auth->opaque = NULL;
 				auth->nc = 1;
 			}
-		} else if ((tmp = parse_attribute("sts-uri=\"", parts[i]))) {
+		} else if (g_str_has_prefix(hdr, "sts-uri=\"")) {
 			/* Only used with AUTH_TYPE_TLS_DSK */
 			g_free(auth->sts_uri);
-			auth->sts_uri = tmp;
-		} else if ((tmp = parse_attribute("targetname=\"", parts[i]))) {
+			auth->sts_uri = g_strndup(param, end - param);
+		} else if (g_str_has_prefix(hdr, "targetname=\"")) {
 			g_free(auth->target);
-			auth->target = tmp;
-		} else if ((tmp = parse_attribute("version=", parts[i]))) {
-			auth->version = atoi(tmp);
-			g_free(tmp);
+			auth->target = g_strndup(param, end - param);
+		} else if (g_str_has_prefix(hdr, "version=")) {
+			auth->version = atoi(param);
 		}
-		// uncomment to revert to previous functionality if version 3+ does not work.
-		// auth->version = 2;
+
+		/* skip to next parameter */
+		while (*end &&
+		       ((*end == '"') || (*end == ',') || (*end == ' ')))
+			end++;
+		hdr = end;
 	}
-	g_strfreev(parts);
 
 	return;
 }
@@ -416,14 +482,10 @@ static void sign_outgoing_message (struct sipmsg * msg,
 		if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
 			transport->registrar.type = AUTH_TYPE_KERBEROS;
 		}
-#else
-		/* that's why I don't like macros. It's unobvious what's hidden there */
-		(void)sipe_private;
 #endif
 		if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
 			transport->registrar.type = AUTH_TYPE_TLS_DSK;
 		}
-
 
 		buf = auth_header(sipe_private, &transport->registrar, msg);
 		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
@@ -862,8 +924,6 @@ sipe_get_auth_scheme_name(struct sipe_core_private *sipe_private)
 	if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
 		res = "Kerberos";
 	}
-#else
-	(void) sipe_private; /* make compiler happy */
 #endif
 	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
 		res = "TLS-DSK";
