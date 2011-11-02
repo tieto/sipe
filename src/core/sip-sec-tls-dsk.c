@@ -42,34 +42,32 @@
 /* Security context for TLS-DSK */
 typedef struct _context_tls_dsk {
 	struct sip_sec_context common;
-	gchar *username;
-	gchar *password;
+	gpointer certificate;
 } *context_tls_dsk;
 
 
 static sip_uint32
 sip_sec_acquire_cred__tls_dsk(SipSecContext context,
 			      SIPE_UNUSED_PARAMETER const char *domain,
-			      const char *username,
+			      SIPE_UNUSED_PARAMETER const char *username,
 			      const char *password)
 {
 	context_tls_dsk ctx = (context_tls_dsk)context;
 
-	/* TLS-DSK requires a username & password. Domain is ignored */
-	if (!is_empty(username) || is_empty(password))
+	/* TLS-DSK requires a certificate. Everything else is ignored */
+	if (!password)
 		return SIP_SEC_E_INTERNAL_ERROR;
 
-	ctx->username = g_strdup(username);
-	ctx->password = g_strdup(password);
+	ctx->certificate = (gpointer) password;
 
 	return SIP_SEC_E_OK;
 }
 
 static sip_uint32
 sip_sec_init_sec_context__tls_dsk(SipSecContext context,
-			  SipSecBuffer in_buff,
-			  SipSecBuffer *out_buff,
-			  SIPE_UNUSED_PARAMETER const char *service_name)
+				  SipSecBuffer in_buff,
+				  SipSecBuffer *out_buff,
+				  SIPE_UNUSED_PARAMETER const char *service_name)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
 
@@ -83,8 +81,8 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 
 static sip_uint32
 sip_sec_make_signature__tls_dsk(SipSecContext context,
-			const char *message,
-			SipSecBuffer *signature)
+				const char *message,
+				SipSecBuffer *signature)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
 
@@ -116,8 +114,6 @@ sip_sec_destroy_sec_context__tls_dsk(SipSecContext context)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
 
-	g_free(ctx->username);
-	g_free(ctx->password);
 	g_free(ctx);
 }
 

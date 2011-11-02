@@ -199,6 +199,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *authuser = sip->authuser;
+	gpointer password = sip->password;
 	gchar *ret;
 	gchar *gssapi_data;
 	gchar *sign_str;
@@ -209,13 +210,30 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		authuser = sipe_private->username;
 	}
 
+	/* For TLS-DSK the "password" is a certificate */
+	if (auth->type == AUTH_TYPE_TLS_DSK) {
+		password = NULL; /* TBD: fetch certificate... */
+
+		if (!password) {
+			if (auth->sts_uri) {
+				SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
+				// TBD: valid_certificate = ...
+			} else {
+				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+							      _("No URI for certificate provisioning service provided"));
+				return(NULL);
+			}
+		}
+	}
+
 	gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
 					   &(auth->expires),
 					   auth->type,
 					   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
 					   sip->authdomain ? sip->authdomain : "",
 					   authuser,
-					   sip->password,
+					   password,
 					   auth->target,
 					   auth->gssapi_data);
 	if (!gssapi_data || !auth->gssapi_context) {
@@ -287,22 +305,6 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 	 * needs to be initialized. So the check should be a no-op...
 	 */
 	} else if (!auth->gssapi_context) {
-
-		if (auth->type == AUTH_TYPE_TLS_DSK) {
-			gboolean valid_certificate = FALSE;
-
-			if (!valid_certificate) {
-				if (auth->sts_uri) {
-					SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
-					// TBD: valid_certificate = ...
-				} else {
-					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-								      _("No URI for certificate provisioning service provided"));
-				}
-			}
-		}
-
 		ret = initialize_auth_context(sipe_private, auth, msg);
 	}
 
