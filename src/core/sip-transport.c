@@ -108,6 +108,7 @@ struct sip_transport {
 	guint register_attempt;
 
 	gboolean processing_input;   /* whether full header received */
+	gboolean auth_incomplete;    /* whether authentication not completed */
 	gboolean reregister_set;     /* whether reregister timer set */
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed;         /* whether subscribed to events, except buddies presence */
@@ -222,8 +223,11 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 							      _("No URI for certificate provisioning service provided"));
-				return(NULL);
 			}
+
+			/* we can't authenticate the message yet */
+			sipe_private->transport->auth_incomplete = TRUE;
+			return(NULL);
 		}
 	}
 
@@ -676,37 +680,40 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 
 	sign_outgoing_message(sipe_private, msg);
 
-	buf = sipmsg_to_string(msg);
+	/* The authentication scheme is not ready so we can't send the message.
+	   This should only happen for REGISTER messages. */
+	if (!transport->auth_incomplete) {
+		buf = sipmsg_to_string(msg);
 
-	/* add to ongoing transactions */
-	/* ACK isn't supposed to be answered ever. So we do not keep transaction for it. */
-	if (!sipe_strequal(method, "ACK")) {
-		trans = g_new0(struct transaction, 1);
-		trans->callback = callback;
-		trans->msg = msg;
-		trans->key = g_strdup_printf("<%s><%d %s>", callid, cseq, method);
-		if (timeout_callback) {
-			trans->timeout_callback = timeout_callback;
-			trans->timeout_key = g_strdup_printf("<transaction timeout>%s", trans->key);
-			sipe_schedule_seconds(sipe_private,
-					      trans->timeout_key,
-					      trans,
-					      timeout,
-					      transaction_timeout_cb,
-					      NULL);
+		/* add to ongoing transactions */
+		/* ACK isn't supposed to be answered ever. So we do not keep transaction for it. */
+		if (!sipe_strequal(method, "ACK")) {
+			trans = g_new0(struct transaction, 1);
+			trans->callback = callback;
+			trans->msg = msg;
+			trans->key = g_strdup_printf("<%s><%d %s>", callid, cseq, method);
+			if (timeout_callback) {
+				trans->timeout_callback = timeout_callback;
+				trans->timeout_key = g_strdup_printf("<transaction timeout>%s", trans->key);
+				sipe_schedule_seconds(sipe_private,
+						      trans->timeout_key,
+						      trans,
+						      timeout,
+						      transaction_timeout_cb,
+						      NULL);
+			}
+			transport->transactions = g_slist_append(transport->transactions,
+								 trans);
+			SIPE_DEBUG_INFO("SIP transactions count:%d after addition", g_slist_length(transport->transactions));
 		}
-		transport->transactions = g_slist_append(transport->transactions,
-							 trans);
-		SIPE_DEBUG_INFO("SIP transactions count:%d after addition", g_slist_length(transport->transactions));
-	} else {
-		sipmsg_free(msg);
+
+		sipe_utils_message_debug("SIP", buf, NULL, TRUE);
+		sipe_backend_transport_message(transport->connection, buf);
+		g_free(buf);
 	}
+
+	if (!trans) sipmsg_free(msg);
 	g_free(callid);
-
-	sipe_utils_message_debug("SIP", buf, NULL, TRUE);
-	sipe_backend_transport_message(transport->connection, buf);
-	g_free(buf);
-
 	return trans;
 }
 
@@ -1275,6 +1282,8 @@ static void do_register(struct sipe_core_private *sipe_private,
 			transport->register_attempt++;
 		}
 	}
+
+	transport->auth_incomplete = FALSE;
 
 	epid = get_epid(sipe_private);
 	uuid = generateUUIDfromEPID(epid);
