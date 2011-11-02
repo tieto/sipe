@@ -175,74 +175,87 @@ static gchar *auth_header_version(struct sip_auth *auth)
 	       g_strdup(""));
 }
 
-static gchar *auth_header_handshake(struct sipe_core_private *sipe_private,
-				    struct sip_auth *auth,
-				    struct sipmsg *msg,
-				    const gchar *authuser,
-				    const gchar *auth_protocol,
-				    gboolean opaque,
-				    gboolean gssapi)
+static const gchar *const auth_type_to_protocol[] = {
+	NULL,       /* AUTH_TYPE_UNSET     */
+	"NTLM",     /* AUTH_TYPE_NTLM      */
+	"Kerberos", /* AUTH_TYPE_KERBEROS  */
+	NULL,       /* AUTH_TYPE_NEGOTIATE */
+	"TLS-DSK",  /* AUTH_TYPE_TLS_DSK   */
+};
+#define AUTH_PROTOCOLS (sizeof(auth_type_to_protocol)/sizeof(gchar *))
+
+static gchar *msg_signature_to_auth(struct sip_auth *auth,
+				    struct sipmsg *msg)
 {
+	return(g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
+			       auth_type_to_protocol[auth->type],
+			       auth->opaque, auth->realm, auth->target,
+			       msg->rand, msg->num, msg->signature));
+}
+
+static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
+				      struct sip_auth *auth,
+				      struct sipmsg *msg)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	const gchar *authuser = sip->authuser;
 	gchar *ret;
+	gchar *gssapi_data;
+	gchar *sign_str;
+	gchar *opaque_str;
+	gchar *version_str;
 
-	/* If we have a signature for the message, include that */
-	if (msg->signature) {
-		return(g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
-				       auth_protocol, auth->opaque,
-				       auth->realm, auth->target,
-				       msg->rand, msg->num, msg->signature));
+	if (!authuser || strlen(authuser) < 1) {
+		authuser = sipe_private->username;
 	}
 
-	if (gssapi) {
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-		gchar *gssapi_data;
-		gchar *opaque_str;
-		gchar *sign_str;
-		gchar *version_str;
-
-		gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
-						   &(auth->expires),
-						   auth->type,
-						   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
-						   sip->authdomain ? sip->authdomain : "",
-						   authuser,
-						   sip->password,
-						   auth->target,
-						   auth->gssapi_data);
-		if (!gssapi_data || !auth->gssapi_context) {
-			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-						      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-						      _("Failed to authenticate to server"));
-			return NULL;
-		}
-
-		if (auth->version > 3) {
-			sipe_make_signature(sipe_private, msg);
-			sign_str = g_strdup_printf(", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
-						   msg->rand, msg->num, msg->signature);
-		} else {
-			sign_str = g_strdup("");
-		}
-
-		opaque_str = opaque ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup("");
-		version_str = auth_header_version(auth);
-		ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s",
-				      auth_protocol, opaque_str,
-				      auth->realm, auth->target,
-				      gssapi_data, version_str, sign_str);
-		g_free(opaque_str);
+	gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
+					   &(auth->expires),
+					   auth->type,
+					   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
+					   sip->authdomain ? sip->authdomain : "",
+					   authuser,
+					   sip->password,
+					   auth->target,
+					   auth->gssapi_data);
+	if (!gssapi_data || !auth->gssapi_context) {
 		g_free(gssapi_data);
-		g_free(version_str);
-		g_free(sign_str);
-	} else {
-		gchar *version_str = auth_header_version(auth);
-		ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s",
-				      auth_protocol,
-				      auth->realm, auth->target,
-				      version_str);
-		g_free(version_str);
+		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+					      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+					      _("Failed to authenticate to server"));
+		return NULL;
 	}
 
+	if (auth->version > 3) {
+		sipe_make_signature(sipe_private, msg);
+		sign_str = g_strdup_printf(", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
+					   msg->rand, msg->num, msg->signature);
+	} else {
+		sign_str = g_strdup("");
+	}
+
+	opaque_str = auth->opaque ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup("");
+	version_str = auth_header_version(auth);
+	ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s",
+			      auth_type_to_protocol[auth->type], opaque_str,
+			      auth->realm, auth->target,
+			      gssapi_data, version_str, sign_str);
+	g_free(version_str);
+	g_free(opaque_str);
+	g_free(sign_str);
+	g_free(gssapi_data);
+
+	return(ret);
+}
+
+static gchar *start_auth_handshake(struct sip_auth *auth)
+{
+	gchar *version_str = auth_header_version(auth);
+	gchar *ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s",
+				     auth_type_to_protocol[auth->type],
+				     auth->realm, auth->target,
+				     version_str);
+	g_free(version_str);
 	return(ret);
 }
 
@@ -250,43 +263,47 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 			  struct sip_auth *auth,
 			  struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	const char *authuser = sip->authuser;
 	gchar *ret = NULL;
 
-	if (!authuser || strlen(authuser) < 1) {
-		authuser = sipe_private->username;
-	}
+	/*
+	 * If the message is already signed then we have an authentication
+	 * context, i.e. the authentication handshake is complete. Generate
+	 * authentication header from message signature.
+	 */
+	if (msg->signature) {
+		ret = msg_signature_to_auth(auth, msg);
 
-	switch (auth->type) {
-	case AUTH_TYPE_NTLM:
-		ret = auth_header_handshake(sipe_private, auth, msg, authuser,
-					    "NTLM", TRUE,
-					    auth->gssapi_data && auth->gssapi_context == NULL);
-		break;
-	case AUTH_TYPE_KERBEROS:
-		ret = auth_header_handshake(sipe_private, auth, msg, authuser,
-					    "Kerberos", FALSE, TRUE);
-		break;
-	case AUTH_TYPE_TLS_DSK: {
-		gboolean valid_certificate = auth->gssapi_context != NULL;
+	/*
+	 * If the message isn't signed then we don't have a initialized
+         * authentication context yet.
+	 *
+	 * Start the authentication handshake if NTLM is selected.
+	 */
+	} else if ((auth->type == AUTH_TYPE_NTLM) && !auth->gssapi_data) {
+		ret = start_auth_handshake(auth);
 
-		if (!valid_certificate) {
-			if (auth->sts_uri) {
-				SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
-				// TBD: valid_certificate = ...
-			} else {
-				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-							      _("No URI for certificate provisioning service provided"));
+	/*
+	 * We should reach this point only when the authentication context
+	 * needs to be initialized. So the check should be a no-op...
+	 */
+	} else if (!auth->gssapi_context) {
+
+		if (auth->type == AUTH_TYPE_TLS_DSK) {
+			gboolean valid_certificate = FALSE;
+
+			if (!valid_certificate) {
+				if (auth->sts_uri) {
+					SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
+					// TBD: valid_certificate = ...
+				} else {
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+								      _("No URI for certificate provisioning service provided"));
+				}
 			}
 		}
-		if (valid_certificate) {
-			ret = auth_header_handshake(sipe_private, auth, msg, authuser,
-						    "TLS-DSK", TRUE, TRUE);
-		}
-	        }
-		break;
+
+		ret = initialize_auth_context(sipe_private, auth, msg);
 	}
 
 	return(ret);
@@ -807,19 +824,17 @@ static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
 				    struct sip_auth *auth,
 				    struct sipmsg *msg)
 {
-	const gchar *auth_scheme = "NTLM";
 	auth->type = AUTH_TYPE_NTLM;
 #ifdef HAVE_LIBKRB5
 	if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
-		auth_scheme = "Kerberos";
 		auth->type = AUTH_TYPE_KERBEROS;
 	}
 #endif
 	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
-		auth_scheme = "TLS-DSK";
 		auth->type = AUTH_TYPE_TLS_DSK;
 	}
-	return(sipmsg_find_auth_header(msg, auth_scheme));
+	return(sipmsg_find_auth_header(msg,
+				       auth_type_to_protocol[auth->type]));
 }
 
 static void do_register(struct sipe_core_private *sipe_private,
@@ -1435,19 +1450,19 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					/* do proxy authentication */
 					auth_hdr = sipmsg_find_header(msg, "Proxy-Authenticate");
 					if (auth_hdr) {
-						if        (!g_strncasecmp(auth_hdr, "NTLM", 4)) {
-							SIPE_DEBUG_INFO_NOFORMAT("proxy auth: type NTLM");
-							transport->proxy.type = AUTH_TYPE_NTLM;
-						} else if (!g_strncasecmp(auth_hdr, "Kerberos", 8)) {
-							SIPE_DEBUG_INFO_NOFORMAT("proxy auth: type Kerberos");
-							transport->proxy.type = AUTH_TYPE_KERBEROS;
-						} else if (!g_strncasecmp(auth_hdr, "TLS-DSK", 7)) {
-							SIPE_DEBUG_INFO_NOFORMAT("proxy auth: type TLS-DSK");
-							transport->proxy.type = AUTH_TYPE_TLS_DSK;
-						} else {
-							SIPE_DEBUG_ERROR("Unknown proxy authentication: %s", auth_hdr);
-							transport->proxy.type = AUTH_TYPE_UNSET;
+						guint i;
+						transport->proxy.type = AUTH_TYPE_UNSET;
+						for (i = 0; i < AUTH_PROTOCOLS; i++) {
+							const gchar *protocol = auth_type_to_protocol[i];
+							if (protocol &&
+							    !g_strncasecmp(auth_hdr, protocol, strlen(protocol))) {
+								SIPE_DEBUG_INFO("proxy auth: type %s", protocol);
+								transport->proxy.type = i;
+								break;
+							}
 						}
+						if (transport->proxy.type == AUTH_TYPE_UNSET)
+							SIPE_DEBUG_ERROR("Unknown proxy authentication: %s", auth_hdr);
 						fill_auth(auth_hdr, &transport->proxy);
 					}
 					auth = auth_header(sipe_private, &transport->proxy, trans->msg);
