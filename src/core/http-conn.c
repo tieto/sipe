@@ -441,12 +441,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 	}
 	/* Authentication required */
 	else if (msg->response == 401) {
-		char *ptmp;
-#ifdef _WIN32
-#ifdef HAVE_LIBKRB5
-		char *tmp;
-#endif
-#endif
+		const gchar *auth_hdr = NULL;
 		guint auth_type;
 		const char *auth_name;
 		char *authorization;
@@ -464,20 +459,25 @@ http_conn_process_input_message(HttpConn *http_conn,
 			return;
 		}
 
-		ptmp = sipmsg_find_auth_header(msg, "NTLM");
-		auth_type = AUTH_TYPE_NTLM;
-		auth_name = "NTLM";
 #ifdef _WIN32
 #ifdef HAVE_LIBKRB5
-		tmp = sipmsg_find_auth_header(msg, "Negotiate");
-		if (tmp && http_conn->auth && http_conn->auth->use_negotiate) {
-			ptmp = tmp;
+		if (http_conn->auth && http_conn->auth->use_negotiate)
+			auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
+		if (auth_hdr) {
 			auth_type = AUTH_TYPE_NEGOTIATE;
 			auth_name = "Negotiate";
+		} else {
+#endif
+#endif
+			auth_hdr = sipmsg_find_auth_header(msg, "NTLM");
+			auth_type = AUTH_TYPE_NTLM;
+			auth_name = "NTLM";
+#ifdef _WIN32
+#ifdef HAVE_LIBKRB5
 		}
 #endif
 #endif
-		if (!ptmp) {
+		if (!auth_hdr) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
@@ -508,7 +508,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		}
 
 		if (http_conn->sec_ctx) {
-			char **parts = g_strsplit(ptmp, " ", 0);
+			char **parts = g_strsplit(auth_hdr, " ", 0);
 			char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
 			ret = sip_sec_init_context_step(http_conn->sec_ctx,
 							spn,

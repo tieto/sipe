@@ -296,24 +296,14 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 {
 	const gchar *param;
 
+	/* skip authentication identifier */
+	hdr = strchr(hdr, ' ');
 	if (!hdr) {
-		SIPE_DEBUG_ERROR_NOFORMAT("fill_auth: hdr==NULL");
+		SIPE_DEBUG_ERROR_NOFORMAT("fill_auth: corrupted authentication header");
 		return;
 	}
-
-	if (!g_strncasecmp(hdr, "NTLM", 4)) {
-		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type NTLM");
-		auth->type = AUTH_TYPE_NTLM;
-		hdr += 5;
-	} else	if (!g_strncasecmp(hdr, "Kerberos", 8)) {
-		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type Kerberos");
-		auth->type = AUTH_TYPE_KERBEROS;
-		hdr += 9;
-	} else	if (!g_strncasecmp(hdr, "TLS-DSK", 7)) {
-		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type TLS-DSK");
-		auth->type = AUTH_TYPE_TLS_DSK;
-		hdr += 8;
-	}
+	while (*hdr == ' ')
+		hdr++;
 
 	/* start of next parameter value */
 	while ((param = strchr(hdr, '=')) != NULL) {
@@ -365,8 +355,7 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 		}
 
 		/* skip to next parameter */
-		while (*end &&
-		       ((*end == '"') || (*end == ',') || (*end == ' ')))
+		while ((*end == '"') || (*end == ',') || (*end == ' '))
 			end++;
 		hdr = end;
 	}
@@ -814,19 +803,23 @@ void sip_transport_subscribe(struct sipe_core_private *sipe_private,
 			      callback);
 }
 
-static const char*
-sipe_get_auth_scheme_name(struct sipe_core_private *sipe_private)
+static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
+				    struct sip_auth *auth,
+				    struct sipmsg *msg)
 {
-	const char *res = "NTLM";
+	const gchar *auth_scheme = "NTLM";
+	auth->type = AUTH_TYPE_NTLM;
 #ifdef HAVE_LIBKRB5
 	if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
-		res = "Kerberos";
+		auth_scheme = "Kerberos";
+		auth->type = AUTH_TYPE_KERBEROS;
 	}
 #endif
 	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
-		res = "TLS-DSK";
+		auth_scheme = "TLS-DSK";
+		auth->type = AUTH_TYPE_TLS_DSK;
 	}
-	return res;
+	return(sipmsg_find_auth_header(msg, auth_scheme));
 }
 
 static void do_register(struct sipe_core_private *sipe_private,
@@ -888,7 +881,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 {
 	struct sip_transport *transport = sipe_private->transport;
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *tmp;
 	const gchar *expires_header;
 	int expires, i;
         GSList *hdr = msg->headers;
@@ -902,12 +894,12 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 		case 200:
 			if (expires) {
 				const gchar *contact_hdr;
+				const gchar *auth_hdr;
 				gchar *gruu = NULL;
 				gchar *epid;
 				gchar *uuid;
 				gchar *timeout;
 				const gchar *server_hdr = sipmsg_find_header(msg, "Server");
-				const char *auth_scheme;
 
 				if (!transport->reregister_set) {
 					sip_transport_set_reregister(sipe_private,
@@ -921,12 +913,10 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					transport->user_agent = NULL;
 				}
 
-				auth_scheme = sipe_get_auth_scheme_name(sipe_private);
-				tmp = sipmsg_find_auth_header(msg, auth_scheme);
-
-				if (tmp) {
-					SIPE_DEBUG_INFO("process_register_response: Auth header: %s", tmp);
-					fill_auth(tmp, &transport->registrar);
+				auth_hdr = get_auth_header(sipe_private, &transport->registrar, msg);
+				if (auth_hdr) {
+					SIPE_DEBUG_INFO("process_register_response: Auth header: %s", auth_hdr);
+					fill_auth(auth_hdr, &transport->registrar);
 				}
 
 				if (!transport->reauthenticate_set) {
@@ -1136,7 +1126,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			break;
 		case 401:
 		        {
-				const char *auth_scheme;
+				const char *auth_hdr;
+
 				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
 				if (transport->registrar.retries > 2) {
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: still not authenticated after 3 tries - giving up.");
@@ -1152,19 +1143,15 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					return TRUE;
 				}
 
-				auth_scheme = sipe_get_auth_scheme_name(sipe_private);
-				tmp = sipmsg_find_auth_header(msg, auth_scheme);
-
-				SIPE_DEBUG_INFO("process_register_response: Auth header: %s", tmp ? tmp : "");
-				if (!tmp) {
-					char *tmp2 = g_strconcat(_("Incompatible authentication scheme chosen"), ": ", auth_scheme, NULL);
+				auth_hdr = get_auth_header(sipe_private, &transport->registrar, msg);
+				if (!auth_hdr) {
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
-								      tmp2);
-					g_free(tmp2);
+								      _("Incompatible authentication scheme chosen"));
 					return TRUE;
 				}
-				fill_auth(tmp, &transport->registrar);
+				SIPE_DEBUG_INFO("process_register_response: Auth header: %s", auth_hdr);
+				fill_auth(auth_hdr, &transport->registrar);
 				transport->reregister_set = FALSE;
 				transport->register_attempt = 0;
 				do_register(sipe_private,
@@ -1441,13 +1428,28 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: too many proxy authentication retries. Giving up.");
 				} else {
 					gchar *resend, *auth;
-					const gchar *ptmp;
+					const gchar *auth_hdr;
 
 					transport->proxy.retries++;
 
 					/* do proxy authentication */
-					ptmp = sipmsg_find_header(msg, "Proxy-Authenticate");
-					fill_auth(ptmp, &transport->proxy);
+					auth_hdr = sipmsg_find_header(msg, "Proxy-Authenticate");
+					if (auth_hdr) {
+						if        (!g_strncasecmp(auth_hdr, "NTLM", 4)) {
+							SIPE_DEBUG_INFO_NOFORMAT("proxy auth: type NTLM");
+							transport->proxy.type = AUTH_TYPE_NTLM;
+						} else if (!g_strncasecmp(auth_hdr, "Kerberos", 8)) {
+							SIPE_DEBUG_INFO_NOFORMAT("proxy auth: type Kerberos");
+							transport->proxy.type = AUTH_TYPE_KERBEROS;
+						} else if (!g_strncasecmp(auth_hdr, "TLS-DSK", 7)) {
+							SIPE_DEBUG_INFO_NOFORMAT("proxy auth: type TLS-DSK");
+							transport->proxy.type = AUTH_TYPE_TLS_DSK;
+						} else {
+							SIPE_DEBUG_ERROR("Unknown proxy authentication: %s", auth_hdr);
+							transport->proxy.type = AUTH_TYPE_UNSET;
+						}
+						fill_auth(auth_hdr, &transport->proxy);
+					}
 					auth = auth_header(sipe_private, &transport->proxy, trans->msg);
 					if (auth) {
 						sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");

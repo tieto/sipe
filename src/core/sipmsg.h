@@ -88,7 +88,7 @@ void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
 const gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name);
 const gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which);
 gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def);
-gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
+const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name);
 char *sipmsg_to_string(const struct sipmsg *msg);
 

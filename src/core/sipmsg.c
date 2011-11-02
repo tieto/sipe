@@ -439,7 +439,7 @@ void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
  *  method such as NTLM or Kerberos
  */
 
-gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
+const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	GSList *tmp;
 	struct sipnameval *elem;
 	int name_len = strlen(name);
