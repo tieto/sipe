@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -26,11 +26,10 @@
 typedef struct sip_sec_context *SipSecContext;
 
 #define AUTH_TYPE_UNSET     0
-#define AUTH_TYPE_DIGEST    1
-#define AUTH_TYPE_NTLM      2
-#define AUTH_TYPE_KERBEROS  3
-#define AUTH_TYPE_NEGOTIATE 4
-#define AUTH_TYPE_TLS_DSK   5
+#define AUTH_TYPE_NTLM      1
+#define AUTH_TYPE_KERBEROS  2
+#define AUTH_TYPE_NEGOTIATE 3
+#define AUTH_TYPE_TLS_DSK   4
 
 /*** Sipe convenience methods ***/
 

@@ -66,7 +66,6 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
-#include "sipe-digest.h"
 #include "sipe-incoming.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
@@ -85,7 +84,6 @@ struct sip_auth {
 	gchar *sts_uri;
 	gchar *target;
 	int version;
-	int nc;
 	int retries;
 	int ntlm_num;
 	int expires;
@@ -248,64 +246,6 @@ static gchar *auth_header_handshake(struct sipe_core_private *sipe_private,
 	return(ret);
 }
 
-static gchar *auth_header_digest(struct sipe_core_private *sipe_private,
-				 struct sip_auth *auth,
-				 struct sipmsg *msg,
-				 const gchar *authuser)
-{
-	gchar *string;
-	gchar *hex_digest;
-	guchar digest[SIPE_DIGEST_MD5_LENGTH];
-	gchar *ret;
-
-	/* Calculate new session key */
-	if (!auth->opaque) {
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
-		SIPE_DEBUG_INFO("Digest nonce: %s realm: %s", auth->gssapi_data, auth->realm);
-		if (sip->password) {
-			/*
-			 * Calculate a session key for HTTP MD5 Digest authentation
-			 *
-			 * See RFC 2617 for more information.
-			 */
-			string = g_strdup_printf("%s:%s:%s",
-						 authuser,
-						 auth->realm,
-						 sip->password);
-			sipe_digest_md5((guchar *)string, strlen(string), digest);
-			g_free(string);
-			auth->opaque = buff_to_hex_str(digest, sizeof(digest));
-		} else {
-			/* We can't compute opaque and therefore no authentication */
-			return(NULL);
-		}
-
-		auth->nc = 1;
-	}
-
-	/*
-	 * Calculate a response for HTTP MD5 Digest authentication
-	 *
-	 * See RFC 2617 for more information.
-	 */
-	string = g_strdup_printf("%s:%s", msg->method, msg->target);
-	sipe_digest_md5((guchar *)string, strlen(string), digest);
-	g_free(string);
-
-	hex_digest = buff_to_hex_str(digest, sizeof(digest));
-	string = g_strdup_printf("%s:%s:%s", auth->opaque, auth->gssapi_data, hex_digest);
-	g_free(hex_digest);
-	sipe_digest_md5((guchar *)string, strlen(string), digest);
-	g_free(string);
-
-	hex_digest = buff_to_hex_str(digest, sizeof(digest));
-	SIPE_DEBUG_INFO("Digest response %s", hex_digest);
-	ret = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"%08d\", response=\"%s\"", authuser, auth->realm, auth->gssapi_data, msg->target, auth->nc++, hex_digest);
-	g_free(hex_digest);
-	return ret;
-}
-
 static gchar *auth_header(struct sipe_core_private *sipe_private,
 			  struct sip_auth *auth,
 			  struct sipmsg *msg)
@@ -319,9 +259,6 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 	}
 
 	switch (auth->type) {
-	case AUTH_TYPE_DIGEST:
-		ret = auth_header_digest(sipe_private, auth, msg, authuser);
-		break;
 	case AUTH_TYPE_NTLM:
 		ret = auth_header_handshake(sipe_private, auth, msg, authuser,
 					    "NTLM", TRUE,
@@ -376,10 +313,6 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type TLS-DSK");
 		auth->type = AUTH_TYPE_TLS_DSK;
 		hdr += 8;
-	} else {
-		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type Digest");
-		auth->type = AUTH_TYPE_DIGEST;
-		hdr += 7;
 	}
 
 	/* start of next parameter value */
@@ -414,22 +347,12 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 		if        (g_str_has_prefix(hdr, "gssapi-data=\"")) {
 			g_free(auth->gssapi_data);
 			auth->gssapi_data = g_strndup(param, end - param);
-		} else if (g_str_has_prefix(hdr, "nonce=\"")) {
-			/* Only used with AUTH_TYPE_DIGEST */
-			g_free(auth->gssapi_data);
-			auth->gssapi_data = g_strndup(param, end - param);
 		} else if (g_str_has_prefix(hdr, "opaque=\"")) {
 			g_free(auth->opaque);
 			auth->opaque = g_strndup(param, end - param);
 		} else if (g_str_has_prefix(hdr, "realm=\"")) {
 			g_free(auth->realm);
 			auth->realm = g_strndup(param, end - param);
-
-			if (auth->type == AUTH_TYPE_DIGEST) {
-				/* Throw away old session key */
-				g_free(auth->opaque);
-				auth->opaque = NULL;
-			}
 		} else if (g_str_has_prefix(hdr, "sts-uri=\"")) {
 			/* Only used with AUTH_TYPE_TLS_DSK */
 			g_free(auth->sts_uri);
