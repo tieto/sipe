@@ -276,7 +276,12 @@ static gchar *auth_header_digest(struct sipe_core_private *sipe_private,
 			sipe_digest_md5((guchar *)string, strlen(string), digest);
 			g_free(string);
 			auth->opaque = buff_to_hex_str(digest, sizeof(digest));
+		} else {
+			/* We can't compute opaque and therefore no authentication */
+			return(NULL);
 		}
+
+		auth->nc = 1;
 	}
 
 	/*
@@ -363,17 +368,14 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type NTLM");
 		auth->type = AUTH_TYPE_NTLM;
 		hdr += 5;
-		auth->nc = 1;
 	} else	if (!g_strncasecmp(hdr, "Kerberos", 8)) {
 		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type Kerberos");
 		auth->type = AUTH_TYPE_KERBEROS;
 		hdr += 9;
-		auth->nc = 3;
 	} else	if (!g_strncasecmp(hdr, "TLS-DSK", 7)) {
 		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type TLS-DSK");
 		auth->type = AUTH_TYPE_TLS_DSK;
 		hdr += 8;
-		auth->nc = 1;
 	} else {
 		SIPE_DEBUG_INFO_NOFORMAT("fill_auth: type Digest");
 		auth->type = AUTH_TYPE_DIGEST;
@@ -412,12 +414,6 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 		if        (g_str_has_prefix(hdr, "gssapi-data=\"")) {
 			g_free(auth->gssapi_data);
 			auth->gssapi_data = g_strndup(param, end - param);
-
-			/* TBD: needed for TLS-DSK too? */
-			if (auth->type == AUTH_TYPE_NTLM) {
-				/* NTLM module extracts nonce from gssapi-data */
-				auth->nc = 3;
-			}
 		} else if (g_str_has_prefix(hdr, "nonce=\"")) {
 			/* Only used with AUTH_TYPE_DIGEST */
 			g_free(auth->gssapi_data);
@@ -433,7 +429,6 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 				/* Throw away old session key */
 				g_free(auth->opaque);
 				auth->opaque = NULL;
-				auth->nc = 1;
 			}
 		} else if (g_str_has_prefix(hdr, "sts-uri=\"")) {
 			/* Only used with AUTH_TYPE_TLS_DSK */
@@ -456,9 +451,8 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 	return;
 }
 
-static void sign_outgoing_message (struct sipmsg * msg,
-				   struct sipe_core_private *sipe_private,
-				   const gchar *method)
+static void sign_outgoing_message(struct sipe_core_private *sipe_private,
+				  struct sipmsg *msg)
 {
 	struct sip_transport *transport = sipe_private->transport;
 	gchar *buf;
@@ -469,29 +463,10 @@ static void sign_outgoing_message (struct sipmsg * msg,
 
 	sipe_make_signature(sipe_private, msg);
 
-	if (transport->registrar.type && sipe_strequal(method, "REGISTER")) {
-		buf = auth_header(sipe_private, &transport->registrar, msg);
-		if (buf) {
-			sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
-		}
-		g_free(buf);
-	} else if (sipe_strequal(method,"SUBSCRIBE") || sipe_strequal(method,"SERVICE") || sipe_strequal(method,"MESSAGE") || sipe_strequal(method,"INVITE") || sipe_strequal(method, "ACK") || sipe_strequal(method, "NOTIFY") || sipe_strequal(method, "BYE") || sipe_strequal(method, "INFO") || sipe_strequal(method, "OPTIONS") || sipe_strequal(method, "REFER") || sipe_strequal(method, "PRACK")) {
-		transport->registrar.nc = 3;
-		transport->registrar.type = AUTH_TYPE_NTLM;
-#ifdef HAVE_LIBKRB5
-		if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
-			transport->registrar.type = AUTH_TYPE_KERBEROS;
-		}
-#endif
-		if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
-			transport->registrar.type = AUTH_TYPE_TLS_DSK;
-		}
-
-		buf = auth_header(sipe_private, &transport->registrar, msg);
+	buf = auth_header(sipe_private, &transport->registrar, msg);
+	if (buf) {
 		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
-	        g_free(buf);
-	} else {
-		SIPE_DEBUG_INFO("not adding auth header to msg w/ method %s", method);
+		g_free(buf);
 	}
 }
 
@@ -594,7 +569,7 @@ void sip_transport_response(struct sipe_core_private *sipe_private,
 
 	sipmsg_strip_headers(msg, keepers);
 	sipmsg_merge_new_headers(msg);
-	sign_outgoing_message(msg, sipe_private, msg->method);
+	sign_outgoing_message(sipe_private, msg);
 
 	g_string_append_printf(outstr, "SIP/2.0 %d %s\r\n", code, text);
 	tmp = msg->headers;
@@ -768,7 +743,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 	g_free(route);
 	g_free(epid);
 
-	sign_outgoing_message(msg, sipe_private, method);
+	sign_outgoing_message(sipe_private, msg);
 
 	buf = sipmsg_to_string(msg);
 
@@ -1516,9 +1491,8 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					/* Are we registered? */
 					if (transport->reregister_set) {
 						SIPE_DEBUG_INFO_NOFORMAT("process_input_message: 401 response to non-REGISTER message. Retrying with new authentication.");
-						sign_outgoing_message(trans->msg,
-								      sipe_private,
-								      trans->msg->method);
+						sign_outgoing_message(sipe_private,
+								      trans->msg);
 					} else {
 						/**
 						 * We don't have a valid authentication at the moment.
@@ -1552,9 +1526,11 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					ptmp = sipmsg_find_header(msg, "Proxy-Authenticate");
 					fill_auth(ptmp, &transport->proxy);
 					auth = auth_header(sipe_private, &transport->proxy, trans->msg);
-					sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
-					sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
-					g_free(auth);
+					if (auth) {
+						sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
+						sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
+						g_free(auth);
+					}
 
 					/* resend request */
 					resend = sipmsg_to_string(trans->msg);
