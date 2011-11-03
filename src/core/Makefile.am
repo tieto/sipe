@@ -60,6 +60,8 @@ libsipe_core_la_SOURCES = \
 	sipe-sign.c \
 	sipe-subscriptions.h \
 	sipe-subscriptions.c \
+	sipe-svc.h \
+	sipe-svc.c \
 	sipe-user.c \
 	sipe-user.h \
 	sipe-xml.h \

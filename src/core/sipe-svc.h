@@ -1,5 +1,5 @@
 /**
- * @file sipe-certificate.h
+ * @file sipe-svc.h
  *
  * pidgin-sipe
  *
@@ -29,28 +29,38 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct _sipe_xml;
 
 /**
- * Find TLS-DSK user certificate for a given target
+ * Service metadata callback
  *
- * @param sipe_private SIPE core private data
- * @param target       target name from authentication header
- *
- * @return opaque      pointer to the certificate. The caller does not own
- *                     the certificate, i.e. he must not free it!
+ * @param sipe_private  SIPE core private data
+ * @param uri           service URI     (NULL when request aborted)
+ * @param metadata      parsed XML data (NULL when request failed)
+ * @param callback_data callback data
  */
-gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
-				       const gchar *target);
-
+typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
+				 const gchar *uri,
+				 struct _sipe_xml *metadata,
+				 gpointer callback_data);
 
 /**
- * Trigger the generation of TLS-DSK user certificate for a given target
+ * Trigger fetch of service metadata
+ *
+ * @param sipe_private  SIPE core private data
+ * @param uri           service URI
+ * @param callback      callback function
+ * @param callback_data callback data
+ * @return              @c TRUE if metadata fetch was triggered
+ */
+gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
+			   const gchar *uri,
+			   sipe_svc_callback *callback,
+			   gpointer callback_data);
+
+/**
+ * Free service data
  *
  * @param sipe_private SIPE core private data
- * @param target       target name from authentication header
- * @param uri          URI for the Certificate Provisioning Service
- * @return             @c TRUE if certificate generation was triggered
  */
-gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_private,
-					   const gchar *target,
-					   const gchar *uri);
+void sipe_svc_free(struct sipe_core_private *sipe_private);

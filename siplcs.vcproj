@@ -536,6 +536,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-svc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-svc.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-user.c"
 				>
 			</File>

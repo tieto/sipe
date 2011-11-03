@@ -25,6 +25,7 @@ struct sip_service_data;
 struct sip_transport;
 struct sipe_media_call_private;
 struct sipe_groupchat;
+struct sipe_svc;
 
 /**
  * Private part of the Sipe data structure
@@ -72,7 +73,6 @@ struct sipe_core_private {
 	gchar *media_relay_password;
 	GSList *media_relays;
 
-
 	/* Group chat */
 	struct sipe_groupchat *groupchat;
 
@@ -80,6 +80,9 @@ struct sipe_core_private {
 	GSList *blist_menu_containers;
 
 	struct sipe_dns_query *dns_query;
+
+	/* Web services */
+	struct sipe_svc *svc;
 
 	/* the original data structure*/
 	struct sipe_account_data *temporary;

@@ -220,9 +220,16 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		if (!password) {
 			if (auth->sts_uri) {
 				SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
-				sipe_certificate_tls_dsk_generate(sipe_private,
-								  auth->target,
-								  auth->sts_uri);
+				if (!sipe_certificate_tls_dsk_generate(sipe_private,
+								       auth->target,
+								       auth->sts_uri)) {
+					gchar *tmp = g_strdup_printf(_("Can't request certificate from %s"),
+								     auth->sts_uri);
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+								      tmp);
+					g_free(tmp);
+				}
 			} else {
 				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,

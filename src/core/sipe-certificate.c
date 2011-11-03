@@ -29,9 +29,19 @@
  *     http://ecn.channel9.msdn.com/o9/te/Europe/2010/pptx/unc310.pptx
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 
+#include "sipe-backend.h"
+#include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-certificate.h"
+#include "sipe-nls.h"
+#include "sipe-svc.h"
+#include "sipe-xml.h"
 
 gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 				       const gchar *target)
@@ -45,14 +55,37 @@ gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 	return(NULL);
 }
 
-void sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_private,
-				       const gchar *target,
-				       const gchar *uri)
+static void certprov_metadata(struct sipe_core_private *sipe_private,
+			      const gchar *uri,
+			      sipe_xml *metadata,
+			      gpointer callback_data)
 {
-	/* temporary */
-	(void)sipe_private;
-	(void)target;
-	(void)uri;
+	if (metadata) {
+		SIPE_DEBUG_INFO("certprov_metadata: metadata for service %s retrieved successfully",
+				uri);
+		(void)sipe_private;
+	} else if (uri) {
+		gchar *tmp = g_strdup_printf(_("Can't retrieve metadata for TLS-DSK certificate provisioning URI %s"),
+					     uri);
+		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+					      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+					      tmp);
+		g_free(tmp);
+		SIPE_DEBUG_ERROR("certprov_metadata: metadata failure for service %s",
+				 uri);
+	}
+	g_free(callback_data);
+}
+
+gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_private,
+					   const gchar *target,
+					   const gchar *uri)
+{
+	gchar *data = g_strdup(target);
+	gboolean ret = sipe_svc_metadata(sipe_private, uri,
+					 certprov_metadata, data);
+	if (!ret) g_free(data);
+	return(ret);
 }
 
 /*

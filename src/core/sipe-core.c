@@ -41,6 +41,7 @@
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
+#include "sipe-svc.h"
 #include "sipe-media.h"
 #include "sipe.h"
 
@@ -211,6 +212,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	if (sip->csta) {
 		sip_csta_close(sipe_private);
 	}
+
+	sipe_svc_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);
