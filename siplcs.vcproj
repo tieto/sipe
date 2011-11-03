@@ -380,6 +380,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-certificate.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-certificate.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-chat.c"
 				>
 			</File>

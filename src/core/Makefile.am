@@ -23,6 +23,8 @@ libsipe_core_la_SOURCES = \
 	sipe-buddy.c \
 	sipe-cal.h \
 	sipe-cal.c \
+	sipe-certificate.h \
+	sipe-certificate.c \
 	sipe-chat.h \
 	sipe-chat.c \
 	sipe-conf.h \

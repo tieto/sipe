@@ -65,6 +65,7 @@
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-certificate.h"
 #include "sipe-dialog.h"
 #include "sipe-incoming.h"
 #include "sipe-nls.h"
@@ -213,12 +214,15 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 
 	/* For TLS-DSK the "password" is a certificate */
 	if (auth->type == AUTH_TYPE_TLS_DSK) {
-		password = NULL; /* TBD: fetch certificate... */
+		password = sipe_certificate_tls_dsk_find(sipe_private,
+							 auth->target);
 
 		if (!password) {
 			if (auth->sts_uri) {
 				SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
-				// TBD: valid_certificate = ...
+				sipe_certificate_tls_dsk_generate(sipe_private,
+								  auth->target,
+								  auth->sts_uri);
 			} else {
 				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
