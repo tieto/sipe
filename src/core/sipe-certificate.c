@@ -41,6 +41,7 @@
 #include "sipe-certificate.h"
 #include "sipe-nls.h"
 #include "sipe-svc.h"
+#include "sipe-utils.h"
 #include "sipe-xml.h"
 
 gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
@@ -61,9 +62,42 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 			      gpointer callback_data)
 {
 	if (metadata) {
+		const sipe_xml *node;
+
 		SIPE_DEBUG_INFO("certprov_metadata: metadata for service %s retrieved successfully",
 				uri);
-		(void)sipe_private;
+
+		/* WebTicket policies accepted by Certificate Provisiong Service */
+		for (node = sipe_xml_child(metadata, "Policy");
+		     node;
+		     node = sipe_xml_twin(node)) {
+			if (sipe_strcase_equal(sipe_xml_attribute(node, "Id"),
+					       "CertProvisioningServiceWebTicketProof_SHA1_policy")) {
+				gchar *ticket_uri;
+
+				SIPE_DEBUG_INFO_NOFORMAT("certprov_metadata: WebTicket policy found");
+
+				ticket_uri = sipe_xml_data(sipe_xml_child(node,
+									  "ExactlyOne/All/EndorsingSupportingTokens/Policy/IssuedToken/Issuer/Address"));
+				if (ticket_uri) {
+					SIPE_DEBUG_INFO("certprov_metadata: WebTicket URI %s", ticket_uri);
+
+					/* TBD.... */
+
+					g_free(ticket_uri);
+				} else {
+					gchar *tmp = g_strdup_printf(_("Can't find the WebTicket URI for TLS-DSK certificate provisioning URI %s"),
+								     uri);
+					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+								      tmp);
+					g_free(tmp);
+					SIPE_DEBUG_ERROR_NOFORMAT("certprov_metadata: no WebTicket URI found");
+				}
+				break;
+			}
+		}
+
 	} else if (uri) {
 		gchar *tmp = g_strdup_printf(_("Can't retrieve metadata for TLS-DSK certificate provisioning URI %s"),
 					     uri);
