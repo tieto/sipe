@@ -1345,20 +1345,23 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 {
 	struct sip_transport *transport = sipe_private->transport;
 
-	sipe_backend_transport_disconnect(transport->connection);
+	/* transport can be NULL during connection setup */
+	if (transport) {
+		sipe_backend_transport_disconnect(transport->connection);
 
-	sipe_auth_free(&transport->registrar);
-	sipe_auth_free(&transport->proxy);
+		sipe_auth_free(&transport->registrar);
+		sipe_auth_free(&transport->proxy);
 
-	g_free(transport->server_name);
-	g_free(transport->server_version);
-	g_free(transport->user_agent);
+		g_free(transport->server_name);
+		g_free(transport->server_version);
+		g_free(transport->user_agent);
 
-	while (transport->transactions)
-		transactions_remove(sipe_private,
-				    transport->transactions->data);
+		while (transport->transactions)
+			transactions_remove(sipe_private,
+					    transport->transactions->data);
 
-	g_free(transport);
+		g_free(transport);
+	}
 
 	sipe_private->transport    = NULL;
 	sipe_private->service_data = NULL;
