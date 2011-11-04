@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -349,6 +349,38 @@ gchar *sipe_xml_data(const sipe_xml *node)
 	if (!node || !node->data || !node->data->str) return NULL;
 	return g_strdup(node->data->str);
 }
+
+/**
+ * Set to 1 to enable debugging code and then add this line to your code:
+ *
+ *      sipe_xml_dump(node, NULL);
+ */
+#if 0
+void sipe_xml_dump(const sipe_xml *node, const gchar *path)
+{
+	const sipe_xml *child;
+	gchar *new_path;
+	if (!node) return;
+	new_path = g_strdup_printf("%s/%s", path ? path : "", node->name);
+	if (node->attributes) {
+		GList *attrs = g_hash_table_get_keys(node->attributes);
+		GString *buf = g_string_new("");
+		GList *entry = attrs;
+		while (entry) {
+			g_string_append_printf(buf, "%s ", (gchar *)entry->data);
+			entry = entry->next;
+		}
+		SIPE_DEBUG_INFO("%s [%s]", new_path, buf->str);
+		g_string_free(buf, TRUE);
+		g_list_free(attrs);
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT(new_path);
+	}
+	for (child = node->first; child; child = child->sibling)
+		sipe_xml_dump(child, new_path);
+	g_free(new_path);
+}
+#endif
 
 /*
   Local Variables:
