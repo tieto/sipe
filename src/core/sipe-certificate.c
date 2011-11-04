@@ -44,6 +44,20 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
+struct certificate_callback_data {
+	gchar *target;
+	gchar *authuser;
+};
+
+static void callback_data_free(struct certificate_callback_data *ccd)
+{
+	if (ccd) {
+		g_free(ccd->target);
+		g_free(ccd->authuser);
+		g_free(ccd);
+	}
+}
+
 gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 				       const gchar *target)
 {
@@ -61,6 +75,8 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 			      sipe_xml *metadata,
 			      gpointer callback_data)
 {
+	struct certificate_callback_data *ccd = callback_data;
+
 	if (metadata) {
 		const sipe_xml *node;
 
@@ -108,17 +124,25 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_ERROR("certprov_metadata: metadata failure for service %s",
 				 uri);
 	}
-	g_free(callback_data);
+
+	callback_data_free(ccd);
 }
 
 gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_private,
 					   const gchar *target,
+					   const gchar *authuser,
 					   const gchar *uri)
 {
-	gchar *data = g_strdup(target);
-	gboolean ret = sipe_svc_metadata(sipe_private, uri,
-					 certprov_metadata, data);
-	if (!ret) g_free(data);
+	struct certificate_callback_data *ccd = g_new0(struct certificate_callback_data, 1);
+	gboolean ret;
+
+	ccd->target   = g_strdup(target);
+	ccd->authuser = g_strdup(authuser);
+
+	ret = sipe_svc_metadata(sipe_private, uri, certprov_metadata, ccd);
+	if (!ret)
+		callback_data_free(ccd);
+
 	return(ret);
 }
 

@@ -208,7 +208,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 	gchar *opaque_str;
 	gchar *version_str;
 
-	if (!authuser || strlen(authuser) < 1) {
+	if (is_empty(authuser)) {
 		authuser = sipe_private->username;
 	}
 
@@ -222,6 +222,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
 				if (!sipe_certificate_tls_dsk_generate(sipe_private,
 								       auth->target,
+								       authuser,
 								       auth->sts_uri)) {
 					gchar *tmp = g_strdup_printf(_("Can't request certificate from %s"),
 								     auth->sts_uri);
