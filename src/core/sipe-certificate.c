@@ -70,6 +70,17 @@ gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 	return(NULL);
 }
 
+static void certificate_failure(struct sipe_core_private *sipe_private,
+				const gchar *format,
+				const gchar *parameter)
+{
+	gchar *tmp = g_strdup_printf(format, parameter);
+	sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+				      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+				      tmp);
+	g_free(tmp);
+}
+
 static void webticket_metadata(struct sipe_core_private *sipe_private,
 			       const gchar *uri,
 			       sipe_xml *metadata,
@@ -78,20 +89,48 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 	struct certificate_callback_data *ccd = callback_data;
 
 	if (metadata) {
+		const sipe_xml *node;
+
 		SIPE_DEBUG_INFO("webticket_metadata: metadata for service %s retrieved successfully",
 				uri);
 
-		/* TBD ... */
+		/* Authentication ports accepted by WebTicket Service */
+		for (node = sipe_xml_child(metadata, "service/port");
+		     node;
+		     node = sipe_xml_twin(node)) {
+			if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
+					       "WebTicketServiceAnon")) {
+				const gchar *auth_uri;
+
+				SIPE_DEBUG_INFO_NOFORMAT("webticket_metadata: authentication port found");
+
+				auth_uri = sipe_xml_attribute(sipe_xml_child(node,
+									     "address"),
+							      "location");
+				if (auth_uri) {
+					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Auth URI %s", auth_uri);
+
+					/* TBD.... */
+
+				} else {
+					certificate_failure(sipe_private,
+							    _("Can't find the WebTicket Auth URI for TLS-DSK web ticket URI %s"),
+							    uri);
+				}
+				break;
+			}
+		}
+
+		if (!node) {
+			certificate_failure(sipe_private,
+					    _("Can't find the authentication port for TLS-DSK web ticket URI %s"),
+					    uri);
+		}
 
 	} else if (uri) {
-		gchar *tmp = g_strdup_printf(_("Can't retrieve metadata for TLS-DSK web ticket URI %s"),
-					     uri);
-		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-					      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-					      tmp);
-		g_free(tmp);
-		SIPE_DEBUG_ERROR("webticket_metadata: metadata failure for service %s",
-				 uri);
+		certificate_failure(sipe_private,
+				    _("Can't retrieve metadata for TLS-DSK web ticket URI %s"),
+				    uri);
 	}
 
 	callback_data_free(ccd);
@@ -110,7 +149,7 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_INFO("certprov_metadata: metadata for service %s retrieved successfully",
 				uri);
 
-		/* WebTicket policies accepted by Certificate Provisiong Service */
+		/* WebTicket policies accepted by Certificate Provisioning Service */
 		for (node = sipe_xml_child(metadata, "Policy");
 		     node;
 		     node = sipe_xml_twin(node)) {
@@ -132,37 +171,31 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 						/* callback data passed down the line */
 						ccd = NULL;
 					} else {
-						gchar *tmp = g_strdup_printf(_("Can't request metadata from %s"),
-									     ticket_uri);
-						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-									      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-									      tmp);
-						g_free(tmp);
+						certificate_failure(sipe_private,
+								    _("Can't request metadata from %s"),
+								    ticket_uri);
 					}
 
 					g_free(ticket_uri);
 				} else {
-					gchar *tmp = g_strdup_printf(_("Can't find the WebTicket URI for TLS-DSK certificate provisioning URI %s"),
-								     uri);
-					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-								      tmp);
-					g_free(tmp);
-					SIPE_DEBUG_ERROR_NOFORMAT("certprov_metadata: no WebTicket URI found");
+					certificate_failure(sipe_private,
+							    _("Can't find the WebTicket URI for TLS-DSK certificate provisioning URI %s"),
+							    uri);
 				}
 				break;
 			}
 		}
 
+		if (!node) {
+			certificate_failure(sipe_private,
+					    _("Can't find the WebTicket Policy for TLS-DSK certificate provisioning URI %s"),
+					    uri);
+		}
+
 	} else if (uri) {
-		gchar *tmp = g_strdup_printf(_("Can't retrieve metadata for TLS-DSK certificate provisioning URI %s"),
-					     uri);
-		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-					      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-					      tmp);
-		g_free(tmp);
-		SIPE_DEBUG_ERROR("certprov_metadata: metadata failure for service %s",
-				 uri);
+		certificate_failure(sipe_private,
+				    _("Can't retrieve metadata for TLS-DSK certificate provisioning URI %s"),
+				    uri);
 	}
 
 	callback_data_free(ccd);
