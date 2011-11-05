@@ -39,6 +39,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-svc.h"
+#include "sipe-utils.h"
 #include "sipe-xml.h"
 
 /* forward declaration */
@@ -236,18 +237,41 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data)
 {
-	/* temporary */
-	(void)authuser;
-	(void)service_uri;
+	gchar *uuid = get_uuid(sipe_private);
+	gchar *soap_body = g_strdup_printf("<wst:RequestSecurityToken Context=\"%s\">"
+					   " <wst:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1</wst:TokenType>"
+					   " <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
+					   " <wsp:AppliesTo>"
+					   "  <wsa:EndpointReference>"
+					   "   <wsa:Address>%s</wsa:Address>"
+					   "  </wsa:EndpointReference>"
+					   " </wsp:AppliesTo>"
+					   " <wst:Claims dialect=\"urn:component:Microsoft.Rtc.WebAuthentication.2010:authclaims\">"
+					   "  <auth:ClaimType uri=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/uri\" optional=\"false\">"
+					   "   <auth:Value>%s</auth:Value>"
+					   "  </auth:ClaimType>"
+					   " </wst:Claims>"
+					   " <wst:Entropy>"
+					   "  <wst:BinarySecret>TBD...</wst:BinarySecret>"
+					   " </wst:Entropy>"
+					   " <wst:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/SymmetricKey</wst:KeyType>"
+					   "</wst:RequestSecurityToken>",
+					   uuid,
+					   service_uri,
+					   authuser);
 
-	return(sipe_svc_wsdl_request(sipe_private,
-				     uri,
-				     "",
-				     "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
-				      "",
-				      sipe_svc_webticket_response,
-				      callback,
-				      callback_data));
+	gboolean ret = sipe_svc_wsdl_request(sipe_private,
+					     uri,
+					     "",
+					     "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
+					     soap_body,
+					     sipe_svc_webticket_response,
+					     callback,
+					     callback_data);
+	g_free(soap_body);
+	g_free(uuid);
+
+	return(ret);
 }
 
 static void sipe_svc_metadata_response(struct svc_request *data,
