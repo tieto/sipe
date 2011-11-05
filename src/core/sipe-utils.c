@@ -117,6 +117,15 @@ get_epid(struct sipe_core_private *sipe_private)
 	return g_strdup(sipe_private->epid);
 }
 
+gchar *get_uuid(struct sipe_core_private *sipe_private)
+{
+	gchar *epid = get_epid(sipe_private);
+	gchar *uuid = generateUUIDfromEPID(epid);
+	g_free(epid);
+	return(uuid);
+}
+
+
 guint
 sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		      int publication_key)

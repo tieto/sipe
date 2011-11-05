@@ -111,6 +111,16 @@ gchar *
 get_epid(struct sipe_core_private *sipe_private);
 
 /**
+ * Returns UUID value.
+ *
+ * @param sipe_private (in) SIPE core private data
+ *
+ * @return uuid. Must be g_free()'d.
+ */
+gchar *
+get_uuid(struct sipe_core_private *sipe_private);
+
+/**
  * Generate Call ID
  *
  * @return Call ID. Must be g_free()'d.

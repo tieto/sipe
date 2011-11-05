@@ -4203,8 +4203,7 @@ sipe_publish_get_category_device(struct sipe_core_private *sipe_private)
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *uri;
 	gchar *doc;
-	gchar *epid = get_epid(sipe_private);
-	gchar *uuid = generateUUIDfromEPID(epid);
+	gchar *uuid = get_uuid(sipe_private);
 	guint device_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_DEVICE);
 	/* key is <category><instance><container> */
 	gchar *key = g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2);
@@ -4212,7 +4211,6 @@ sipe_publish_get_category_device(struct sipe_core_private *sipe_private)
 		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "device"), key);
 
 	g_free(key);
-	g_free(epid);
 
 	uri = sip_uri_self(sipe_private);
 	doc = g_strdup_printf(SIPE_PUB_XML_DEVICE,

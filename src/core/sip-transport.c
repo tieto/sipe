@@ -932,7 +932,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				const gchar *contact_hdr;
 				const gchar *auth_hdr;
 				gchar *gruu = NULL;
-				gchar *epid;
 				gchar *uuid;
 				gchar *timeout;
 				const gchar *server_hdr = sipmsg_find_header(msg, "Server");
@@ -978,9 +977,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 				sipe_backend_connection_completed(SIPE_CORE_PUBLIC);
 
-				epid = get_epid(sipe_private);
-				uuid = generateUUIDfromEPID(epid);
-				g_free(epid);
+				uuid = get_uuid(sipe_private);
 
 				// There can be multiple Contact headers (one per location where the user is logged in) so
 				// make sure to only get the one for this uuid
@@ -1281,7 +1278,6 @@ static void do_register(struct sipe_core_private *sipe_private,
 	char *uri;
 	char *to;
 	char *hdr;
-	char *epid;
 	char *uuid;
 
 	if (!sipe_private->public.sip_domain) return;
@@ -1297,8 +1293,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 
 	transport->auth_incomplete = FALSE;
 
-	epid = get_epid(sipe_private);
-	uuid = generateUUIDfromEPID(epid);
+	uuid = get_uuid(sipe_private);
 	hdr = g_strdup_printf("Contact: <sip:%s:%d;transport=%s;ms-opaque=d3470f2e1d>;methods=\"INVITE, MESSAGE, INFO, SUBSCRIBE, OPTIONS, BYE, CANCEL, NOTIFY, ACK, REFER, BENOTIFY\";proxy=replace;+sip.instance=\"<urn:uuid:%s>\"\r\n"
 				    "Supported: gruu-10, adhoclist, msrtc-event-categories, com.microsoft.msrtc.presence\r\n"
 				    "Event: registration\r\n"
@@ -1311,7 +1306,6 @@ static void do_register(struct sipe_core_private *sipe_private,
 			      uuid,
 			      deregister ? "Expires: 0\r\n" : "");
 	g_free(uuid);
-	g_free(epid);
 
 	uri = sip_uri_from_name(sipe_private->public.sip_domain);
 	to = sip_uri_self(sipe_private);
