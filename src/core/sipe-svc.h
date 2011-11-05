@@ -32,17 +32,35 @@ struct sipe_core_private;
 struct _sipe_xml;
 
 /**
- * Service metadata callback
+ * Service XML callback
  *
  * @param sipe_private  SIPE core private data
  * @param uri           service URI     (NULL when request aborted)
- * @param metadata      parsed XML data (NULL when request failed)
+ * @param xml           parsed XML data (NULL when request failed)
  * @param callback_data callback data
  */
 typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
 				 const gchar *uri,
-				 struct _sipe_xml *metadata,
+				 struct _sipe_xml *xml,
 				 gpointer callback_data);
+
+/**
+ * Trigger fetch of WebTicket security token
+ *
+ * @param sipe_private  SIPE core private data
+ * @param uri           service URI
+ * @param authuser      user name for authentication
+ * @param service_uri   request token for this service URI
+ * @param callback      callback function
+ * @param callback_data callback data
+ * @return              @c TRUE if token fetch was triggered
+ */
+gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
+			    const gchar *uri,
+			    const gchar *authuser,
+			    const gchar *service_uri,
+			    sipe_svc_callback *callback,
+			    gpointer callback_data);
 
 /**
  * Trigger fetch of service metadata

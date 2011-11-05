@@ -47,6 +47,7 @@
 struct certificate_callback_data {
 	gchar *target;
 	gchar *authuser;
+	gchar *certprov_uri;
 };
 
 static void callback_data_free(struct certificate_callback_data *ccd)
@@ -54,6 +55,7 @@ static void callback_data_free(struct certificate_callback_data *ccd)
 	if (ccd) {
 		g_free(ccd->target);
 		g_free(ccd->authuser);
+		g_free(ccd->certprov_uri);
 		g_free(ccd);
 	}
 }
@@ -79,6 +81,28 @@ static void certificate_failure(struct sipe_core_private *sipe_private,
 				      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 				      tmp);
 	g_free(tmp);
+}
+
+static void webticket_token(struct sipe_core_private *sipe_private,
+			    const gchar *uri,
+			    sipe_xml *soap_body,
+			    gpointer callback_data)
+{
+	struct certificate_callback_data *ccd = callback_data;
+
+	if (soap_body) {
+		SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
+				uri);
+
+		/* TBD.... */
+
+	} else if (uri) {
+		certificate_failure(sipe_private,
+				    _("Web ticket request to %s failed"),
+				    uri);
+	}
+
+	callback_data_free(ccd);
 }
 
 static void webticket_metadata(struct sipe_core_private *sipe_private,
@@ -110,7 +134,19 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 				if (auth_uri) {
 					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Auth URI %s", auth_uri);
 
-					/* TBD.... */
+					if (sipe_svc_webticket(sipe_private,
+							       auth_uri,
+							       ccd->authuser,
+							       ccd->certprov_uri,
+							       webticket_token,
+							       ccd)) {
+						/* callback data passed down the line */
+						ccd = NULL;
+					} else {
+						certificate_failure(sipe_private,
+								    _("Can't request security token from %s"),
+								    auth_uri);
+					}
 
 				} else {
 					certificate_failure(sipe_private,
@@ -168,6 +204,9 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 							      ticket_uri,
 							      webticket_metadata,
 							      ccd)) {
+						/* Remember for later */
+						ccd->certprov_uri = g_strdup(uri);
+
 						/* callback data passed down the line */
 						ccd = NULL;
 					} else {
