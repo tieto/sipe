@@ -234,10 +234,13 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *authuser,
 			    const gchar *service_uri,
+			    const guint8 *entropy,
+			    guint entropy_len,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data)
 {
 	gchar *uuid = get_uuid(sipe_private);
+	gchar *secret = g_base64_encode(entropy, entropy_len);
 	gchar *soap_body = g_strdup_printf("<wst:RequestSecurityToken Context=\"%s\">"
 					   " <wst:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1</wst:TokenType>"
 					   " <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
@@ -252,13 +255,14 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 					   "  </auth:ClaimType>"
 					   " </wst:Claims>"
 					   " <wst:Entropy>"
-					   "  <wst:BinarySecret>TBD...</wst:BinarySecret>"
+					   "  <wst:BinarySecret>%s</wst:BinarySecret>"
 					   " </wst:Entropy>"
 					   " <wst:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/SymmetricKey</wst:KeyType>"
 					   "</wst:RequestSecurityToken>",
 					   uuid,
 					   service_uri,
-					   authuser);
+					   authuser,
+					   secret);
 
 	gboolean ret = sipe_svc_wsdl_request(sipe_private,
 					     uri,
@@ -269,6 +273,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 					     callback,
 					     callback_data);
 	g_free(soap_body);
+	g_free(secret);
 	g_free(uuid);
 
 	return(ret);

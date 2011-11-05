@@ -51,6 +51,8 @@ typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
  * @param uri           service URI
  * @param authuser      user name for authentication
  * @param service_uri   request token for this service URI
+ * @param entropy       binary entropy bits
+ * @param entropy_len   entropy length in bytes
  * @param callback      callback function
  * @param callback_data callback data
  * @return              @c TRUE if token fetch was triggered
@@ -59,6 +61,8 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *authuser,
 			    const gchar *service_uri,
+			    const guint8 *entropy,
+			    guint entropy_len,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data);
 

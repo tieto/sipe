@@ -34,28 +34,28 @@
 #include "uuid.h"
 #include "sipe.h"
 
-/* Generate 32 random bits */
-#define RANDOM32BITS (rand() & 0xFFFF)
+/* Generate 16 random bits */
+#define RANDOM16BITS (rand() & 0xFFFF)
 
 gchar *gencallid(void)
 {
 	return g_strdup_printf("%04Xg%04Xa%04Xi%04Xm%04Xt%04Xb%04Xx%04Xx",
-			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
-			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
-			       RANDOM32BITS, RANDOM32BITS);
+			       RANDOM16BITS, RANDOM16BITS, RANDOM16BITS,
+			       RANDOM16BITS, RANDOM16BITS, RANDOM16BITS,
+			       RANDOM16BITS, RANDOM16BITS);
 }
 
 gchar *gentag(void)
 {
-	return g_strdup_printf("%04d%04d", RANDOM32BITS, RANDOM32BITS);
+	return g_strdup_printf("%04d%04d", RANDOM16BITS, RANDOM16BITS);
 }
 
 gchar *genconfid(void)
 {
 	return g_strdup_printf("%04X%04X%04X%04X%04X%04X%04X%04X",
-			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
-			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
-			       RANDOM32BITS, RANDOM32BITS);
+			       RANDOM16BITS, RANDOM16BITS, RANDOM16BITS,
+			       RANDOM16BITS, RANDOM16BITS, RANDOM16BITS,
+			       RANDOM16BITS, RANDOM16BITS);
 }
 
 gchar *get_contact(const struct sipe_core_private *sipe_private)

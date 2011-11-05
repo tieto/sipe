@@ -33,6 +33,8 @@
 #include "config.h"
 #endif
 
+#include <stdlib.h>
+
 #include <glib.h>
 
 #include "sipe-backend.h"
@@ -48,6 +50,8 @@ struct certificate_callback_data {
 	gchar *target;
 	gchar *authuser;
 	gchar *certprov_uri;
+	guint8 *entropy;
+	guint entropy_len;
 };
 
 static void callback_data_free(struct certificate_callback_data *ccd)
@@ -56,6 +60,7 @@ static void callback_data_free(struct certificate_callback_data *ccd)
 		g_free(ccd->target);
 		g_free(ccd->authuser);
 		g_free(ccd->certprov_uri);
+		g_free(ccd->entropy);
 		g_free(ccd);
 	}
 }
@@ -134,10 +139,22 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 				if (auth_uri) {
 					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Auth URI %s", auth_uri);
 
+					{
+#define CERTPROV_ENTROPY_LENGTH (256 / 8) /* in bytes */
+						guint i;
+						guint16 *p       = g_malloc(CERTPROV_ENTROPY_LENGTH);
+						ccd->entropy     = (guint8*) p;
+						ccd->entropy_len = CERTPROV_ENTROPY_LENGTH;
+						for (i = 0; i < CERTPROV_ENTROPY_LENGTH / sizeof(*p); i++)
+							*p++ = rand() & 0xFFFF;
+					}
+
 					if (sipe_svc_webticket(sipe_private,
 							       auth_uri,
 							       ccd->authuser,
 							       ccd->certprov_uri,
+							       ccd->entropy,
+							       ccd->entropy_len,
 							       webticket_token,
 							       ccd)) {
 						/* callback data passed down the line */
