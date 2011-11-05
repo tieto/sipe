@@ -45,14 +45,37 @@ typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
 				 gpointer callback_data);
 
 /**
+ * Random bytes buffer
+ */
+struct sipe_svc_random {
+  guchar *buffer;
+  guint length;   /* in bytes */
+};
+
+/**
+ * Allocate a buffer with N random bits
+ *
+ * @param random pointer to random bytes buffer
+ * @param bits   number of random bits (will be rounded up be dividable by 16)
+ */
+void sipe_svc_fill_random(struct sipe_svc_random *random,
+			  guint bits);
+
+/**
+ * Free a random bytes buffer
+ *
+ * @param random pointer to random bytes buffer
+ */
+void sipe_svc_free_random(struct sipe_svc_random *random);
+
+/**
  * Trigger fetch of WebTicket security token
  *
  * @param sipe_private  SIPE core private data
  * @param uri           service URI
  * @param authuser      user name for authentication
  * @param service_uri   request token for this service URI
- * @param entropy       binary entropy bits
- * @param entropy_len   entropy length in bytes
+ * @param entropy       random bytes buffer for entropy
  * @param callback      callback function
  * @param callback_data callback data
  * @return              @c TRUE if token fetch was triggered
@@ -61,8 +84,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *authuser,
 			    const gchar *service_uri,
-			    const guint8 *entropy,
-			    guint entropy_len,
+			    const struct sipe_svc_random *entropy,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data);
 

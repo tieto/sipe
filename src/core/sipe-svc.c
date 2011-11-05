@@ -29,6 +29,7 @@
  *     http://ecn.channel9.msdn.com/o9/te/Europe/2010/pptx/unc310.pptx
  */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <glib.h>
@@ -38,9 +39,11 @@
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-digest.h"
 #include "sipe-svc.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
+#include "sipe.h"
 
 /* forward declaration */
 struct svc_request;
@@ -96,6 +99,27 @@ static void sipe_svc_init(struct sipe_core_private *sipe_private)
 		return;
 
 	sipe_private->svc = g_new0(struct sipe_svc, 1);
+}
+
+void sipe_svc_fill_random(struct sipe_svc_random *random,
+			  guint bits)
+{
+	guint bytes = ((bits + 15) / 16) * 2;
+	guint16 *p  = g_malloc(bytes);
+
+	SIPE_DEBUG_INFO("sipe_svc_fill_random: %d bits -> %d bytes",
+			bits, bytes);
+
+	random->buffer = (guint8*) p;
+	random->length = bytes;
+
+	for (bytes /= 2; bytes; bytes--)
+		*p++ = rand() & 0xFFFF;
+}
+
+void sipe_svc_free_random(struct sipe_svc_random *random)
+{
+	g_free(random->buffer);
 }
 
 static void sipe_svc_https_response(int return_code,
@@ -189,6 +213,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      " xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2004/09/policy\""
 				      " xmlns:wsse=\"http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\""
 				      " xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\""
+				      " xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\""
 				      " >"
 				      " <soap:Header>"
 				      "  <wsa:To>%s</wsa:To>"
@@ -230,17 +255,71 @@ static void sipe_svc_webticket_response(struct svc_request *data,
 	}
 }
 
+static gchar *sipe_svc_security_username(struct sipe_core_private *sipe_private,
+					 const gchar *authuser)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	struct sipe_svc_random nonce;
+	GTimeVal now;
+	guchar digest[SIPE_DIGEST_SHA1_LENGTH];
+	guchar *buf, *p;
+	gchar *base64, *nonce_base64, *created;
+	guint len, created_len, password_len;
+	gchar *ret;
+
+	/* nonce */
+	sipe_svc_fill_random(&nonce, 256);
+	nonce_base64 = g_base64_encode(nonce.buffer, nonce.length);
+
+	/* created */
+	g_get_current_time(&now);
+	created = g_time_val_to_iso8601(&now);
+	created_len = strlen(created);
+
+	/* password */
+	password_len = strlen(sip->password);
+
+	/* nonce + created + password */
+	len = nonce.length + created_len + password_len;
+	p = buf = g_malloc(len);
+	memcpy(p, nonce.buffer, nonce.length);
+	p += nonce.length;
+	memcpy(p, created, created_len);
+	p += created_len;
+	memcpy(p, sip->password, password_len);
+
+	/* Base64( SHA-1( nonce + created + password ) ) */
+	sipe_digest_sha1(buf, len, digest);
+	base64 = g_base64_encode(digest, SIPE_DIGEST_SHA1_LENGTH);
+
+	ret = g_strdup_printf("<wsse:UsernameToken>"
+			      " <wsse:Username>%s</wsse:Username>"
+			      " <wsse:Password Type=\"...#PasswordDigest\">%s</wsse:Password>"
+			      " <wsse:Nonce>%s</wsse:Nonce>"
+			      " <wsu:Created>%s</wsu:Created>"
+			      "</wsse:UsernameToken>",
+			      authuser, base64, nonce_base64, created);
+
+	g_free(base64);
+	g_free(buf);
+	g_free(created);
+	g_free(nonce_base64);
+	sipe_svc_free_random(&nonce);
+
+	return(ret);
+}
+
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *authuser,
 			    const gchar *service_uri,
-			    const guint8 *entropy,
-			    guint entropy_len,
+			    const struct sipe_svc_random *entropy,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data)
 {
 	gchar *uuid = get_uuid(sipe_private);
-	gchar *secret = g_base64_encode(entropy, entropy_len);
+	gchar *security = sipe_svc_security_username(sipe_private, authuser);
+	gchar *secret = g_base64_encode(entropy->buffer, entropy->length);
 	gchar *soap_body = g_strdup_printf("<wst:RequestSecurityToken Context=\"%s\">"
 					   " <wst:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1</wst:TokenType>"
 					   " <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
@@ -266,7 +345,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 
 	gboolean ret = sipe_svc_wsdl_request(sipe_private,
 					     uri,
-					     "",
+					     security,
 					     "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
 					     soap_body,
 					     sipe_svc_webticket_response,
@@ -274,6 +353,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 					     callback_data);
 	g_free(soap_body);
 	g_free(secret);
+	g_free(security);
 	g_free(uuid);
 
 	return(ret);
