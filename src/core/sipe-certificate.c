@@ -181,6 +181,7 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 
 	if (metadata) {
 		const sipe_xml *node;
+		gchar *ticket_uri = NULL;
 
 		SIPE_DEBUG_INFO("certprov_metadata: metadata for service %s retrieved successfully",
 				uri);
@@ -191,7 +192,6 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 		     node = sipe_xml_twin(node)) {
 			if (sipe_strcase_equal(sipe_xml_attribute(node, "Id"),
 					       "CertProvisioningServiceWebTicketProof_SHA1_policy")) {
-				gchar *ticket_uri;
 
 				SIPE_DEBUG_INFO_NOFORMAT("certprov_metadata: WebTicket policy found");
 
@@ -199,23 +199,6 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 									  "ExactlyOne/All/EndorsingSupportingTokens/Policy/IssuedToken/Issuer/Address"));
 				if (ticket_uri) {
 					SIPE_DEBUG_INFO("certprov_metadata: WebTicket URI %s", ticket_uri);
-
-					if (sipe_svc_metadata(sipe_private,
-							      ticket_uri,
-							      webticket_metadata,
-							      ccd)) {
-						/* Remember for later */
-						ccd->certprov_uri = g_strdup(uri);
-
-						/* callback data passed down the line */
-						ccd = NULL;
-					} else {
-						certificate_failure(sipe_private,
-								    _("Can't request metadata from %s"),
-								    ticket_uri);
-					}
-
-					g_free(ticket_uri);
 				} else {
 					certificate_failure(sipe_private,
 							    _("Can't find the WebTicket URI for TLS-DSK certificate provisioning URI %s"),
@@ -225,7 +208,52 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 			}
 		}
 
-		if (!node) {
+		if (ticket_uri) {
+
+			/* Authentication ports accepted by Certificate Provisioning Service */
+			for (node = sipe_xml_child(metadata, "service/port");
+			     node;
+			     node = sipe_xml_twin(node)) {
+				if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
+						       "CertProvisioningServiceWebTicketProof_SHA1")) {
+					const gchar *auth_uri;
+
+					SIPE_DEBUG_INFO_NOFORMAT("certprov_metadata: authentication port found");
+
+					auth_uri = sipe_xml_attribute(sipe_xml_child(node,
+										     "address"),
+								      "location");
+					if (auth_uri) {
+						SIPE_DEBUG_INFO("certprov_metadata: CertProv Auth URI %s", auth_uri);
+
+						if (sipe_svc_metadata(sipe_private,
+								      ticket_uri,
+								      webticket_metadata,
+								      ccd)) {
+							/* Remember for later */
+							ccd->certprov_uri = g_strdup(auth_uri);
+
+							/* callback data passed down the line */
+							ccd = NULL;
+						} else {
+							certificate_failure(sipe_private,
+									    _("Can't request metadata from %s"),
+									    ticket_uri);
+						}
+					}
+					break;
+				}
+			}
+
+			g_free(ticket_uri);
+
+			if (!node) {
+				certificate_failure(sipe_private,
+						    _("Can't find the authentication port for TLS-DSK certificate provisioning URI %s"),
+						    uri);
+			}
+
+		} else {
 			certificate_failure(sipe_private,
 					    _("Can't find the WebTicket Policy for TLS-DSK certificate provisioning URI %s"),
 					    uri);
