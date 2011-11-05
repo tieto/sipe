@@ -41,8 +41,14 @@
 #include "sipe-svc.h"
 #include "sipe-xml.h"
 
+/* forward declaration */
+struct svc_request;
+typedef void (svc_callback)(struct svc_request *data,
+			    sipe_xml *xml);
+
 struct svc_request {
 	struct sipe_core_private *sipe_private;
+	svc_callback *internal_cb;
 	sipe_svc_callback *cb;
 	gpointer *cb_data;
 	HttpConn *conn;
@@ -91,33 +97,90 @@ static void sipe_svc_init(struct sipe_core_private *sipe_private)
 	sipe_private->svc = g_new0(struct sipe_svc, 1);
 }
 
-static void sipe_svc_webticket_response(int return_code,
-					const gchar *body,
-					SIPE_UNUSED_PARAMETER const gchar *content_type,
-					HttpConn *conn,
-					void *callback_data)
+static void sipe_svc_https_response(int return_code,
+				    const gchar *body,
+				    SIPE_UNUSED_PARAMETER const gchar *content_type,
+				    HttpConn *conn,
+				    void *callback_data)
 {
 	struct svc_request *data = callback_data;
 	struct sipe_svc *svc = data->sipe_private->svc;
 
-	SIPE_DEBUG_INFO("sipe_svc_webticket_response: code %d", return_code);
+	SIPE_DEBUG_INFO("sipe_svc_https_response: code %d", return_code);
 	http_conn_set_close(conn);
 	data->conn = NULL;
 
 	if ((return_code == 200) && body) {
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
-		/* Callback: success */
-		(*data->cb)(data->sipe_private, data->uri, xml, data->cb_data);
+		/* Internal callback: success */
+		(*data->internal_cb)(data, xml);
 		sipe_xml_free(xml);
 	} else {
-		/* Callback: failed */
-		(*data->cb)(data->sipe_private, data->uri, NULL, data->cb_data);
+		/* Internal callback: failed */
+		(*data->internal_cb)(data, NULL);
 	}
+
+	/* Internal callback has already called this */
 	data->cb = NULL;
 
 	svc->pending_requests = g_slist_remove(svc->pending_requests,
 					       data);
 	sipe_svc_request_free(data);
+}
+
+static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
+				       const gchar *method,
+				       const gchar *uri,
+				       const gchar *content_type,
+				       const gchar *body,
+				       svc_callback *internal_callback,
+				       sipe_svc_callback *callback,
+				       gpointer callback_data)
+{
+	struct svc_request *data = g_new0(struct svc_request, 1);
+	gboolean ret = FALSE;
+
+	data->sipe_private = sipe_private;
+	data->uri          = g_strdup(uri);
+
+	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
+				      NULL, /* HttpSession */
+				      method,
+				      HTTP_CONN_SSL,
+				      HTTP_CONN_NO_REDIRECT,
+				      uri,
+				      body,
+				      content_type,
+				      NULL, /* HttpConnAuth */
+				      sipe_svc_https_response,
+				      data);
+
+	if (data->conn) {
+		data->internal_cb = internal_callback;
+		data->cb          = callback;
+		data->cb_data     = callback_data;
+		sipe_svc_init(sipe_private);
+		sipe_private->svc->pending_requests = g_slist_prepend(sipe_private->svc->pending_requests,
+								      data);
+		ret = TRUE;
+	} else {
+		SIPE_DEBUG_ERROR("failed to create HTTP connection to %s", uri);
+		sipe_svc_request_free(data);
+	}
+
+	return(ret);
+}
+
+static void sipe_svc_webticket_response(struct svc_request *data,
+					sipe_xml *xml)
+{
+	if (xml) {
+		/* Callback: success */
+		(*data->cb)(data->sipe_private, data->uri, xml, data->cb_data);
+	} else {
+		/* Callback: failed */
+		(*data->cb)(data->sipe_private, data->uri, NULL, data->cb_data);
+	}
 }
 
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
@@ -127,70 +190,30 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data)
 {
-	struct svc_request *data = g_new0(struct svc_request, 1);
-	gboolean ret = FALSE;
-
-	data->sipe_private = sipe_private;
-	data->uri          = g_strdup(uri);
-
 	/* temporary */
 	(void)authuser;
 	(void)service_uri;
 
-	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
-				      NULL, /* HttpSession */
+	return(sipe_svc_https_request(sipe_private,
 				      HTTP_CONN_POST,
-				      HTTP_CONN_SSL,
-				      HTTP_CONN_NO_REDIRECT,
 				      uri,
-				      "",
 				      "text/xml",
-				      NULL, /* HttpConnAuth */
+				      "",
 				      sipe_svc_webticket_response,
-				      data);
-
-	if (data->conn) {
-		data->cb      = callback;
-		data->cb_data = callback_data;
-		sipe_private->svc->pending_requests = g_slist_prepend(sipe_private->svc->pending_requests,
-								      data);
-		ret = TRUE;
-	} else {
-		SIPE_DEBUG_ERROR("failed to create HTTP connection to %s for web ticket request",
-				 uri);
-		sipe_svc_request_free(data);
-	}
-
-	return(ret);
+				      callback,
+				      callback_data));
 }
 
-static void sipe_svc_metadata_response(int return_code,
-				       const gchar *body,
-				       SIPE_UNUSED_PARAMETER const gchar *content_type,
-				       HttpConn *conn,
-				       void *callback_data)
+static void sipe_svc_metadata_response(struct svc_request *data,
+					sipe_xml *xml)
 {
-	struct svc_request *data = callback_data;
-	struct sipe_svc *svc = data->sipe_private->svc;
-
-	SIPE_DEBUG_INFO("sipe_svc_metadata_response: code %d", return_code);
-	http_conn_set_close(conn);
-	data->conn = NULL;
-
-	if ((return_code == 200) && body) {
-		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
+	if (xml) {
 		/* Callback: success */
 		(*data->cb)(data->sipe_private, data->uri, xml, data->cb_data);
-		sipe_xml_free(xml);
 	} else {
 		/* Callback: failed */
 		(*data->cb)(data->sipe_private, data->uri, NULL, data->cb_data);
 	}
-	data->cb = NULL;
-
-	svc->pending_requests = g_slist_remove(svc->pending_requests,
-					       data);
-	sipe_svc_request_free(data);
 }
 
 gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
@@ -198,38 +221,15 @@ gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
 			   sipe_svc_callback *callback,
 			   gpointer callback_data)
 {
-	struct svc_request *data = g_new0(struct svc_request, 1);
 	gchar *mex_uri = g_strdup_printf("%s/mex", uri);
-	gboolean ret = FALSE;
-
-	data->sipe_private = sipe_private;
-	data->uri          = g_strdup(uri);
-
-	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
-				      NULL, /* HttpSession */
-				      HTTP_CONN_GET,
-				      HTTP_CONN_SSL,
-				      HTTP_CONN_NO_REDIRECT,
-				      mex_uri,
-				      "",
-				      "text",
-				      NULL, /* HttpConnAuth */
-				      sipe_svc_metadata_response,
-				      data);
-
-	if (data->conn) {
-		data->cb      = callback;
-		data->cb_data = callback_data;
-		sipe_svc_init(sipe_private);
-		sipe_private->svc->pending_requests = g_slist_prepend(sipe_private->svc->pending_requests,
-								      data);
-		ret = TRUE;
-	} else {
-		SIPE_DEBUG_ERROR("failed to create HTTP connection to %s for metadata fetch",
-				 mex_uri);
-		sipe_svc_request_free(data);
-	}
-
+	gboolean ret = sipe_svc_https_request(sipe_private,
+					      HTTP_CONN_GET,
+					      mex_uri,
+					      "text",
+					      "",
+					      sipe_svc_metadata_response,
+					      callback,
+					      callback_data);
 	g_free(mex_uri);
 	return(ret);
 }
