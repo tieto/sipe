@@ -171,6 +171,52 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 	return(ret);
 }
 
+static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
+				       const gchar *uri,
+				       const gchar *wsse_security,
+				       const gchar *soap_action,
+				       const gchar *soap_body,
+				       svc_callback *internal_callback,
+				       sipe_svc_callback *callback,
+				       gpointer callback_data)
+{
+	gchar *body = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
+				      "<soap:Envelope"
+				      " xmlns:auth=\"http://schemas.xmlsoap.org/ws/2006/12/authorization\""
+				      " xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\""
+				      " xmlns:wsa=\"http://www.w3.org/2005/08/addressing\""
+				      " xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2004/09/policy\""
+				      " xmlns:wsse=\"http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\""
+				      " xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\""
+				      " >"
+				      " <soap:Header>"
+				      "  <wsa:To>%s</wsa:To>"
+				      "  <wsa:ReplyTo>"
+				      "   <wsa:Address>http://www.w3.org/2005/08/addressing/anonymous</wsa:Address>"
+				      "  </wsa:ReplyTo>"
+				      "  <wsa:Action>%s</wsa:Action>"
+				      "  <wsse:Security>%s</wsse:Security>"
+				      " </soap:Header>"
+				      " <soap:Body>%s</soap:Body>"
+				      "</soap:Envelope>",
+				      uri,
+				      soap_action,
+				      wsse_security,
+				      soap_body);
+
+	gboolean ret = sipe_svc_https_request(sipe_private,
+				     HTTP_CONN_POST,
+				     uri,
+				     "text/xml",
+				     body,
+				     internal_callback,
+				     callback,
+				     callback_data);
+	g_free(body);
+
+	return(ret);
+}
+
 static void sipe_svc_webticket_response(struct svc_request *data,
 					sipe_xml *xml)
 {
@@ -194,10 +240,10 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 	(void)authuser;
 	(void)service_uri;
 
-	return(sipe_svc_https_request(sipe_private,
-				      HTTP_CONN_POST,
-				      uri,
-				      "text/xml",
+	return(sipe_svc_wsdl_request(sipe_private,
+				     uri,
+				     "",
+				     "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
 				      "",
 				      sipe_svc_webticket_response,
 				      callback,
