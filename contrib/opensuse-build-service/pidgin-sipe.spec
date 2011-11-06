@@ -201,6 +201,12 @@ BuildRequires:  PolicyKit-gnome
 BuildRequires:  polkit-gnome
 %endif
 
+# For OBS's "have choice for" for Mandriva 2011 (and up?)
+%if 0%{?mdkversion} >= 201100
+BuildRequires:  packagekit-gstreamer-plugin
+BuildRequires:  gnome-packagekit-common
+%endif
+
 # End Windows cross-compilation/Linux build setup
 %endif
 
@@ -411,6 +417,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Nov 06 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- fix Mandriva 2011 unresolvable BR
+
 * Mon Oct 31 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - add BR nss-devel
 
