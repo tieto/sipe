@@ -381,24 +381,8 @@ AS_IF([test "x$enable_telepathy" != xno],
 		[enable_telepathy=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, [test "x$enable_telepathy" != xno])
 
-dnl build option: kopete backend
-AC_ARG_ENABLE([kopete],
-	[AC_HELP_STRING([--enable-kopete], [build kopete plugin @<:@default=no@:>@])],
-	[],
-	[enable_kopete=no])
-AS_IF([test "x$enable_kopete" != xno],
-	[dnl GMIME is a build requirement
-	 AS_IF([test "x$ac_have_gmime" = xyes],
-		[],
-		[AC_ERROR(GMIME package is required for kopete plugin)])
-
-	 dnl NOTHING IMPLEMENTED YET!!!
-	],
-	[enable_kopete=no])
-AM_CONDITIONAL(SIPE_INCLUDE_KOPETE, [test "x$enable_kopete" != xno])
-
 dnl sanity check
-AS_IF([test "x$enable_purple" = xno -a "x$enable_telepathy" = xno -a "x$enable_kopete" = xno],
+AS_IF([test "x$enable_purple" = xno -a "x$enable_telepathy" = xno],
 	[AC_ERROR(at least one plugin must be selected
 
 If you didn't use a --enable option then please check that you have
@@ -438,7 +422,6 @@ AC_CONFIG_FILES([
 	src/api/Makefile
 	src/purple/Makefile
 	src/telepathy/Makefile
-	src/kopete/Makefile
 	])
 
 dnl generate files
@@ -469,13 +452,6 @@ AS_IF([test "x$enable_telepathy" = xno],
 	 AS_ECHO()
 	 AS_ECHO("TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS")
 	 AS_ECHO("TELEPATHY_LIBS  : $TELEPATHY_LIBS")])
-AS_ECHO()
-AS_IF([test "x$enable_kopete" = xno],
-	[AS_ECHO("Not building kopete plugin")],
-	[AS_ECHO("Build kopete plugin")
-	 AS_ECHO()
-	 AS_ECHO("NOTHING IMPLEMENTED YET!!!")
-	 AS_ECHO()])
 AS_ECHO()
 AS_IF([test "x$with_krb5" = xno],
 	[AS_ECHO("Not building with Kerberos 5 support")],

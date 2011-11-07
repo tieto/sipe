@@ -10,7 +10,6 @@
 #
 
 # Build options
-%define build_kopete    0
 %define build_telepathy 0
 
 # Check for mingw32 cross compilation build
