@@ -197,22 +197,21 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 }
 
 static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
-				       const gchar *uri,
-				       const gchar *wsse_security,
-				       const gchar *soap_action,
-				       const gchar *soap_body,
-				       svc_callback *internal_callback,
-				       sipe_svc_callback *callback,
-				       gpointer callback_data)
+				      const gchar *uri,
+				      const gchar *additional_ns,
+				      const gchar *soap_action,
+				      const gchar *wsse_security,
+				      const gchar *soap_body,
+				      svc_callback *internal_callback,
+				      sipe_svc_callback *callback,
+				      gpointer callback_data)
 {
 	gchar *body = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
-				      "<soap:Envelope"
+				      "<soap:Envelope %s"
 				      " xmlns:auth=\"http://schemas.xmlsoap.org/ws/2006/12/authorization\""
-				      " xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\""
 				      " xmlns:wsa=\"http://www.w3.org/2005/08/addressing\""
 				      " xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2004/09/policy\""
-				      " xmlns:wsse=\"http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\""
-				      " xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\""
+				      " xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\""
 				      " xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\""
 				      " >"
 				      " <soap:Header>"
@@ -225,6 +224,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      " </soap:Header>"
 				      " <soap:Body>%s</soap:Body>"
 				      "</soap:Envelope>",
+				      additional_ns,
 				      uri,
 				      soap_action,
 				      wsse_security,
@@ -253,6 +253,57 @@ static void sipe_svc_webticket_response(struct svc_request *data,
 		/* Callback: failed */
 		(*data->cb)(data->sipe_private, data->uri, NULL, data->cb_data);
 	}
+}
+
+/*
+ * This functions encodes what the Microsoft Lync client does for
+ * Office365 accounts. It will most definitely fail for internal Lync
+ * installation that use TLS-DSK instead of NTLM.
+ *
+ * But for those anonymous authentication should already have succeeded.
+ * I guess we'll have to see what happens in real life...
+ */
+gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
+				const gchar *authuser,
+				const gchar *service_uri,
+				sipe_svc_callback *callback,
+				gpointer callback_data)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	/* login.microsoftonline.com seems only to accept cleartext passwords :/ */
+	gchar *security = g_strdup_printf("<wsse:UsernameToken>"
+					  " <wsse:Username>%s</wsse:Username>"
+					  " <wsse:Password>%s</wsse:Password>"
+					  "</wsse:UsernameToken>",
+					  authuser, sip->password);
+
+	gchar *soap_body = g_strdup_printf("<ps:RequestMultipleSecurityTokens>"
+					   " <wst:RequestSecurityToken>"
+					   "  <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
+					   "  <wsp:AppliesTo>"
+					   "   <wsa:EndpointReference>"
+					   "    <wsa:Address>%s</wsa:Address>"
+					   "   </wsa:EndpointReference>"
+					   "  </wsp:AppliesTo>"
+					   " </wst:RequestSecurityToken>"
+					   "</ps:RequestMultipleSecurityTokens>",
+					   service_uri);
+
+	gboolean ret = sipe_svc_wsdl_request(sipe_private,
+					     "https://login.microsoftonline.com:443/RST2.srf",
+					     "xmlns:ps=\"http://schemas.microsoft.com/Passport/SoapServices/PPCRL\" "
+					     "xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" "
+					     "xmlns:wst=\"http://schemas.xmlsoap.org/ws/2005/02/trust\"",
+					     "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue",
+					     security,
+					     soap_body,
+					     sipe_svc_webticket_response,
+					     callback,
+					     callback_data);
+	g_free(soap_body);
+	g_free(security);
+
+	return(ret);
 }
 
 static gchar *sipe_svc_security_username(struct sipe_core_private *sipe_private,
@@ -345,8 +396,10 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 
 	gboolean ret = sipe_svc_wsdl_request(sipe_private,
 					     uri,
-					     security,
+					     "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" "
+					     "xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\"",
 					     "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
+					     security,
 					     soap_body,
 					     sipe_svc_webticket_response,
 					     callback,

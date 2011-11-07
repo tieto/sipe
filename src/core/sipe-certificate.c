@@ -47,7 +47,11 @@
 struct certificate_callback_data {
 	gchar *target;
 	gchar *authuser;
+	gchar *webticket_anon_uri;
+	gchar *webticket_fedbearer_uri;
 	gchar *certprov_uri;
+
+	gboolean tried_fedbearer;
 
 	struct sipe_svc_random entropy;
 };
@@ -57,6 +61,8 @@ static void callback_data_free(struct certificate_callback_data *ccd)
 	if (ccd) {
 		g_free(ccd->target);
 		g_free(ccd->authuser);
+		g_free(ccd->webticket_anon_uri);
+		g_free(ccd->webticket_fedbearer_uri);
 		g_free(ccd->certprov_uri);
 		sipe_svc_free_random(&ccd->entropy);
 		g_free(ccd);
@@ -100,9 +106,28 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 		/* TBD.... */
 
 	} else if (uri) {
-		certificate_failure(sipe_private,
-				    _("Web ticket request to %s failed"),
-				    uri);
+		/* Retry with federated authentication? */
+		gboolean tmp = !ccd->webticket_fedbearer_uri || ccd->tried_fedbearer;
+		if (!tmp) {
+			SIPE_DEBUG_INFO("webticket_token: anonymous authentication to service %s failed, retrying with federated authentication",
+					uri);
+
+			ccd->tried_fedbearer = TRUE;
+			tmp = sipe_svc_webticket_lmc(sipe_private,
+						     ccd->authuser,
+						     ccd->webticket_fedbearer_uri,
+						     webticket_token,
+						     ccd);
+			if (tmp) {
+				/* callback data passed down the line */
+				ccd = NULL;
+			}
+		}
+		if (!tmp) {
+			certificate_failure(sipe_private,
+					    _("Web ticket request to %s failed"),
+					    uri);
+		}
 	}
 
 	callback_data_free(ccd);
@@ -125,46 +150,59 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 		for (node = sipe_xml_child(metadata, "service/port");
 		     node;
 		     node = sipe_xml_twin(node)) {
-			if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
-					       "WebTicketServiceAnon")) {
-				const gchar *auth_uri;
+			const gchar *auth_uri = sipe_xml_attribute(sipe_xml_child(node,
+										  "address"),
+								   "location");
 
-				SIPE_DEBUG_INFO_NOFORMAT("webticket_metadata: authentication port found");
-
-				auth_uri = sipe_xml_attribute(sipe_xml_child(node,
-									     "address"),
-							      "location");
-				if (auth_uri) {
-					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Auth URI %s", auth_uri);
-
-					/* Entropy: 256 random bits */
-					sipe_svc_fill_random(&ccd->entropy, 256);
-
-					if (sipe_svc_webticket(sipe_private,
-							       auth_uri,
-							       ccd->authuser,
-							       ccd->certprov_uri,
-							       &ccd->entropy,
-							       webticket_token,
-							       ccd)) {
-						/* callback data passed down the line */
-						ccd = NULL;
-					} else {
-						certificate_failure(sipe_private,
-								    _("Can't request security token from %s"),
-								    auth_uri);
-					}
-
-				} else {
-					certificate_failure(sipe_private,
-							    _("Can't find the WebTicket Auth URI for TLS-DSK web ticket URI %s"),
-							    uri);
+			if (auth_uri) {
+				if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
+						       "WebTicketServiceAnon")) {
+					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Anon Auth URI %s", auth_uri);
+					g_free(ccd->webticket_anon_uri);
+					ccd->webticket_anon_uri = g_strdup(auth_uri);
+				} else if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
+							      "WsFedBearer")) {
+					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Anon Auth URI %s", auth_uri);
+					g_free(ccd->webticket_fedbearer_uri);
+					ccd->webticket_fedbearer_uri = g_strdup(auth_uri);
 				}
-				break;
 			}
 		}
 
-		if (!node) {
+		if (ccd->webticket_anon_uri || ccd->webticket_fedbearer_uri) {
+			gboolean success;
+
+			if (ccd->webticket_anon_uri) {
+				/* Try anonymous authentication first */
+				/* Entropy: 256 random bits */
+				sipe_svc_fill_random(&ccd->entropy, 256);
+
+				success = sipe_svc_webticket(sipe_private,
+							     ccd->webticket_anon_uri,
+							     ccd->authuser,
+							     ccd->certprov_uri,
+							     &ccd->entropy,
+							     webticket_token,
+							     ccd);
+			} else {
+				ccd->tried_fedbearer = TRUE;
+				success = sipe_svc_webticket_lmc(sipe_private,
+								 ccd->authuser,
+								 ccd->webticket_fedbearer_uri,
+								 webticket_token,
+								 ccd);
+			}
+
+			if (success) {
+				/* callback data passed down the line */
+				ccd = NULL;
+			} else {
+				certificate_failure(sipe_private,
+						    _("Can't request security token from %s"),
+						    ccd->webticket_anon_uri ? ccd->webticket_anon_uri : ccd->webticket_fedbearer_uri);
+			}
+
+		} else {
 			certificate_failure(sipe_private,
 					    _("Can't find the authentication port for TLS-DSK web ticket URI %s"),
 					    uri);

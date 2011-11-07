@@ -89,6 +89,22 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    gpointer callback_data);
 
 /**
+ * Trigger fetch of WebTicket security token from login.microsoftonline.com
+ *
+ * @param sipe_private  SIPE core private data
+ * @param authuser      user name for authentication
+ * @param service_uri   request token for this service URI
+ * @param callback      callback function
+ * @param callback_data callback data
+ * @return              @c TRUE if token fetch was triggered
+ */
+gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
+				const gchar *authuser,
+				const gchar *service_uri,
+				sipe_svc_callback *callback,
+				gpointer callback_data);
+
+/**
  * Trigger fetch of service metadata
  *
  * @param sipe_private  SIPE core private data
