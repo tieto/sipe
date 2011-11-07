@@ -55,6 +55,7 @@ struct certificate_callback_data {
 	gchar *certprov_uri;
 
 	gboolean tried_fedbearer;
+	gboolean webticket_for_certprov;
 
 	struct sipe_svc_random entropy;
 };
@@ -121,6 +122,25 @@ static gchar *extract_raw_xml(const gchar *xml,
 	return(data);
 }
 
+static gchar *generate_wsse_security(const gchar *raw,
+				     const gchar *lifetime_tag,
+				     const gchar *keydata_tag)
+{
+	gchar *lifetime = extract_raw_xml(raw, lifetime_tag, FALSE);
+	gchar *keydata  = extract_raw_xml(raw, keydata_tag, TRUE);
+	gchar *wsse_security = NULL;
+
+	if (lifetime && keydata) {
+		wsse_security = g_strdup_printf("<wsu:Timestamp>%s</wsu:Timestamp>%s",
+						lifetime, keydata);
+	}
+
+	g_free(keydata);
+	g_free(lifetime);
+
+	return(wsse_security);
+}
+
 static void webticket_token(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *raw,
@@ -131,36 +151,50 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	gboolean success = (uri == NULL); /* abort case */
 
 	if (soap_body) {
-		gchar *lifetime = extract_raw_xml(raw, "wst:Lifetime", FALSE);
-		gchar *keydata  = extract_raw_xml(raw, "EncryptedData", TRUE);
+		/* WebTicket for Certificate Provisioning Service */
+		if (ccd->webticket_for_certprov) {
+			gchar *wsse_security = generate_wsse_security(raw,
+								      "Lifetime",
+								      "saml:Assertion");
+			if (wsse_security) {
 
-		if (lifetime && keydata) {
-			gchar *webticket_xml;
+				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
+						uri);
 
-			SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
-					uri);
+				/* TBD.... */
+				SIPE_DEBUG_INFO("CertProv Key %s", wsse_security);
+				g_free(wsse_security);
 
-			/* Create security data for request */
-			webticket_xml = g_strdup_printf("<wsu:Timestamp>%s</wsu:Timestamp>%s",
-							lifetime, keydata);
-
-			success = sipe_svc_webticket(sipe_private,
-						     ccd->webticket_fedbearer_uri,
-						     ccd->authuser,
-						     webticket_xml,
-						     ccd->certprov_uri,
-						     &ccd->entropy,
-						     webticket_token,
-						     ccd);
-			if (success) {
-				/* callback data passed down the line */
-				ccd = NULL;
+				success = TRUE;
 			}
-			g_free(webticket_xml);
-		}
 
-		g_free(keydata);
-		g_free(lifetime);
+		/* WebTicket for federated authentication */
+		} else {
+			gchar *wsse_security = generate_wsse_security(raw,
+								      "wst:Lifetime",
+								      "EncryptedData");
+			if (wsse_security) {
+
+				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
+						uri);
+
+				success = sipe_svc_webticket(sipe_private,
+							     ccd->webticket_fedbearer_uri,
+							     ccd->authuser,
+							     wsse_security,
+							     ccd->certprov_uri,
+							     &ccd->entropy,
+							     webticket_token,
+							     ccd);
+				ccd->webticket_for_certprov = TRUE;
+
+				if (success) {
+					/* callback data passed down the line */
+					ccd = NULL;
+				}
+				g_free(wsse_security);
+			}
+		}
 
 	} else if (uri) {
 		/* Retry with federated authentication? */
@@ -175,6 +209,8 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 							 ccd->webticket_fedbearer_uri,
 							 webticket_token,
 							 ccd);
+			ccd->webticket_for_certprov = FALSE;
+
 			if (success) {
 				/* callback data passed down the line */
 				ccd = NULL;
@@ -244,6 +280,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 							     &ccd->entropy,
 							     webticket_token,
 							     ccd);
+				ccd->webticket_for_certprov = TRUE;
 			} else {
 				ccd->tried_fedbearer = TRUE;
 				success = sipe_svc_webticket_lmc(sipe_private,
@@ -251,6 +288,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 								 ccd->webticket_fedbearer_uri,
 								 webticket_token,
 								 ccd);
+				ccd->webticket_for_certprov = FALSE;
 			}
 
 			if (success) {
