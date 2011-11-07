@@ -84,7 +84,6 @@ endif
 ##  SOURCES, OBJECTS
 ##
 CLEAN_C_SRC = 		http-conn.c \
-			md4.c \
 			sip-transport.c \
 			sipe-conf.c \
 			sipe-core.c \
@@ -142,7 +141,8 @@ CLEAN_C_SRC +=		sip-sec-sspi.c
 PURPLE_C_SRC +=		../purple/purple-mime.c
 
 else
-CLEAN_C_SRC +=		sip-sec-ntlm.c \
+CLEAN_C_SRC +=		md4.c \
+			sip-sec-ntlm.c \
 			sip-sec-tls-dsk.c \
 			sipe-mime.c
 

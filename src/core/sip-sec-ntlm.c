@@ -69,6 +69,8 @@
 #include "sipe-digest.h"
 #include "sipe-utils.h"
 
+#include "md4.h"
+
 /* [MS-NLMP] */
 #define NTLMSSP_NEGOTIATE_UNICODE			0x00000001	/* A  */
 #define NTLMSSP_NEGOTIATE_OEM				0x00000002	/* B  */
@@ -418,7 +420,14 @@ DESL (const unsigned char *k, const unsigned char *d, unsigned char * results)
 	sipe_crypt_rc4((key), (key_len), (plain), (plain_len), (encrypted))
 
 /* out 16 bytes */
-#define MD4(d, len, result) sipe_digest_md4((d), (len), (result))
+static void MD4(const guchar *data, gsize length, guchar *digest)
+{
+	/*
+	 * From Firefox's complementing implementation for NSS.
+	 * NSS doesn't include MD4, because it is considered weak.
+	 */
+	md4sum(data, length, digest);
+}
 
 /* out 16 bytes */
 #define MD5(d, len, result) sipe_digest_md5((d), (len), (result))

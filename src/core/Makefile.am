@@ -8,8 +8,6 @@ MAINTAINERCLEANFILES = \
 libsipe_core_la_SOURCES = \
 	http-conn.h \
 	http-conn.c \
-	md4.h \
-	md4.c \
 	sipmsg.h \
 	sipmsg.c \
 	sip-csta.h \
@@ -77,6 +75,8 @@ libsipe_core_la_SOURCES += \
 	sipe-win32dep.c
 else
 libsipe_core_la_SOURCES += \
+	md4.h \
+	md4.c \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
 	sip-sec-tls-dsk.h \
