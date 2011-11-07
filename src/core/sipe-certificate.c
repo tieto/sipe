@@ -141,12 +141,21 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 					uri);
 
 			/* Create security data for request */
-			webticket_xml = g_strdup_printf("<wsu:TimeStamp>%s</wsu:TimeStamp>%s",
+			webticket_xml = g_strdup_printf("<wsu:Timestamp>%s</wsu:Timestamp>%s",
 							lifetime, keydata);
-			success = TRUE;
 
-			/* TBD.... */
-			SIPE_DEBUG_INFO("webticket_token: TOKEN\n%s", webticket_xml);
+			success = sipe_svc_webticket(sipe_private,
+						     ccd->webticket_fedbearer_uri,
+						     ccd->authuser,
+						     webticket_xml,
+						     ccd->certprov_uri,
+						     &ccd->entropy,
+						     webticket_token,
+						     ccd);
+			if (success) {
+				/* callback data passed down the line */
+				ccd = NULL;
+			}
 			g_free(webticket_xml);
 		}
 
@@ -155,8 +164,8 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 	} else if (uri) {
 		/* Retry with federated authentication? */
-		success = !ccd->webticket_fedbearer_uri || ccd->tried_fedbearer;
-		if (!success) {
+		success = ccd->webticket_fedbearer_uri && !ccd->tried_fedbearer;
+		if (success) {
 			SIPE_DEBUG_INFO("webticket_token: anonymous authentication to service %s failed, retrying with federated authentication",
 					uri);
 
@@ -212,7 +221,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 					ccd->webticket_anon_uri = g_strdup(auth_uri);
 				} else if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
 							      "WsFedBearer")) {
-					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Anon Auth URI %s", auth_uri);
+					SIPE_DEBUG_INFO("webticket_metadata: WebTicket FedBearer Auth URI %s", auth_uri);
 					g_free(ccd->webticket_fedbearer_uri);
 					ccd->webticket_fedbearer_uri = g_strdup(auth_uri);
 				}
@@ -230,6 +239,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 				success = sipe_svc_webticket(sipe_private,
 							     ccd->webticket_anon_uri,
 							     ccd->authuser,
+							     NULL,
 							     ccd->certprov_uri,
 							     &ccd->entropy,
 							     webticket_token,

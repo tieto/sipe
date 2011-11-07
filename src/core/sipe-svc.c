@@ -232,21 +232,42 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      soap_body);
 
 	gboolean ret = sipe_svc_https_request(sipe_private,
-				     HTTP_CONN_POST,
-				     uri,
-				     "text/xml",
-				     body,
-				     internal_callback,
-				     callback,
-				     callback_data);
+					      HTTP_CONN_POST,
+					      uri,
+					      "text/xml",
+					      body,
+					      internal_callback,
+					      callback,
+					      callback_data);
 	g_free(body);
 
 	return(ret);
 }
 
-static void sipe_svc_webticket_response(struct svc_request *data,
-					const gchar *raw,
-					sipe_xml *xml)
+static gboolean new_soap_req(struct sipe_core_private *sipe_private,
+			     const gchar *uri,
+			     const gchar *soap_action,
+			     const gchar *wsse_security,
+			     const gchar *soap_body,
+			     svc_callback *internal_callback,
+			     sipe_svc_callback *callback,
+			     gpointer callback_data)
+{
+	return(sipe_svc_wsdl_request(sipe_private,
+				     uri,
+				     "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" "
+				     "xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\"",
+				     soap_action,
+				     wsse_security,
+				     soap_body,
+				     internal_callback,
+				     callback,
+				     callback_data));
+}
+
+static void sipe_svc_wsdl_response(struct svc_request *data,
+				   const gchar *raw,
+				   sipe_xml *xml)
 {
 	if (xml) {
 		/* Callback: success */
@@ -299,7 +320,7 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 					     "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue",
 					     security,
 					     soap_body,
-					     sipe_svc_webticket_response,
+					     sipe_svc_wsdl_response,
 					     callback,
 					     callback_data);
 	g_free(soap_body);
@@ -365,13 +386,14 @@ static gchar *sipe_svc_security_username(struct sipe_core_private *sipe_private,
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *authuser,
+			    const gchar *wsse_security,
 			    const gchar *service_uri,
 			    const struct sipe_svc_random *entropy,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data)
 {
 	gchar *uuid = get_uuid(sipe_private);
-	gchar *security = sipe_svc_security_username(sipe_private, authuser);
+	gchar *security = NULL;
 	gchar *secret = g_base64_encode(entropy->buffer, entropy->length);
 	gchar *soap_body = g_strdup_printf("<wst:RequestSecurityToken Context=\"%s\">"
 					   " <wst:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1</wst:TokenType>"
@@ -381,9 +403,9 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 					   "   <wsa:Address>%s</wsa:Address>"
 					   "  </wsa:EndpointReference>"
 					   " </wsp:AppliesTo>"
-					   " <wst:Claims dialect=\"urn:component:Microsoft.Rtc.WebAuthentication.2010:authclaims\">"
-					   "  <auth:ClaimType uri=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/uri\" optional=\"false\">"
-					   "   <auth:Value>%s</auth:Value>"
+					   " <wst:Claims Dialect=\"urn:component:Microsoft.Rtc.WebAuthentication.2010:authclaims\">"
+					   "  <auth:ClaimType Uri=\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/uri\" Optional=\"false\">"
+					   "   <auth:Value>sip:%s</auth:Value>"
 					   "  </auth:ClaimType>"
 					   " </wst:Claims>"
 					   " <wst:Entropy>"
@@ -396,16 +418,16 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 					   authuser,
 					   secret);
 
-	gboolean ret = sipe_svc_wsdl_request(sipe_private,
-					     uri,
-					     "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" "
-					     "xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\"",
-					     "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
-					     security,
-					     soap_body,
-					     sipe_svc_webticket_response,
-					     callback,
-					     callback_data);
+	gboolean ret = new_soap_req(sipe_private,
+				    uri,
+				    "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
+				    wsse_security ?
+				    wsse_security :
+				    (security = sipe_svc_security_username(sipe_private, authuser)),
+				    soap_body,
+				    sipe_svc_wsdl_response,
+				    callback,
+				    callback_data);
 	g_free(soap_body);
 	g_free(secret);
 	g_free(security);

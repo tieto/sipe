@@ -76,6 +76,7 @@ void sipe_svc_free_random(struct sipe_svc_random *random);
  * @param sipe_private  SIPE core private data
  * @param uri           service URI
  * @param authuser      user name for authentication
+ * @param wsse_security predefined authentication token
  * @param service_uri   request token for this service URI
  * @param entropy       random bytes buffer for entropy
  * @param callback      callback function
@@ -85,6 +86,7 @@ void sipe_svc_free_random(struct sipe_svc_random *random);
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *authuser,
+			    const gchar *wsse_security,
 			    const gchar *service_uri,
 			    const struct sipe_svc_random *entropy,
 			    sipe_svc_callback *callback,
