@@ -306,7 +306,7 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	sipe_purple_chat_setup_rejoin(purple_private);
 
-#ifdef HAVE_LIBKRB5
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	if (purple_account_get_bool(account, "krb5", FALSE))
 		SIPE_CORE_FLAG_SET(KRB5);
 #endif
@@ -819,7 +819,7 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_string_new(_("User Agent"), "useragent", "");
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
-#ifdef HAVE_LIBKRB5
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 

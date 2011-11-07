@@ -459,8 +459,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			return;
 		}
 
-#ifdef _WIN32
-#ifdef HAVE_LIBKRB5
+#ifdef HAVE_SSPI
 		if (http_conn->auth && http_conn->auth->use_negotiate)
 			auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
 		if (auth_hdr) {
@@ -468,28 +467,21 @@ http_conn_process_input_message(HttpConn *http_conn,
 			auth_name = "Negotiate";
 		} else {
 #endif
-#endif
 			auth_hdr = sipmsg_find_auth_header(msg, "NTLM");
 			auth_type = AUTH_TYPE_NTLM;
 			auth_name = "NTLM";
-#ifdef _WIN32
-#ifdef HAVE_LIBKRB5
+#ifdef HAVE_SSPI
 		}
-#endif
 #endif
 		if (!auth_hdr) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
-#ifdef _WIN32
-#ifdef HAVE_LIBKRB5
+#ifdef HAVE_SSPI
 #define AUTHSTRING				"NTLM and Negotiate authentications are"
-#else /* !HAVE_LIBKRB5 */
+#else /* !HAVE_SSPI */
 #define AUTHSTRING				"NTLM authentication is"
-#endif /* HAVE_LIBKRB5 */
-#else /* !_WIN32 */
-#define AUTHSTRING				"NTLM authentication is"
-#endif /* _WIN32 */
+#endif /* HAVE_SSPI */
 			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
 					AUTHSTRING
 			);

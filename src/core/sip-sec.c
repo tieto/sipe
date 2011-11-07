@@ -55,14 +55,14 @@
 #endif
 
 #else /* _WIN32 */
-#ifdef HAVE_LIBKRB5
+#ifdef HAVE_SSPI
 #include "sip-sec-sspi.h"
 #undef SIP_SEC_USE_NTLM
 #define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
 #define sip_sec_create_context__TLS_DSK		sip_sec_create_context__sspi
-#else /* HAVE_LIBKRB5 */
+#else /* !HAVE_SSPI */
 #include "sip-sec-ntlm.h"
 #include "sip-sec-tls-dsk.h"
 #define SIP_SEC_USE_NTLM
@@ -70,7 +70,7 @@
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
 #define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
-#endif /* HAVE_LIBKRB5 */
+#endif /* HAVE_SSPI */
 
 #endif /* _WIN32 */
 

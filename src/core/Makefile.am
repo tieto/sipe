@@ -128,8 +128,7 @@ libsipe_core_la_CFLAGS  += $(GMIME_CFLAGS)
 endif
 
 if SIPE_OS_WIN32
-# HAVE_LIBKRB5 activates the code in sip-sec-sspi.c instead of sip-sec-ntlm.c
-libsipe_core_la_CFLAGS  += -DHAVE_LIBKRB5=1
+libsipe_core_la_CFLAGS  += -DHAVE_SSPI=1
 endif
 
 if SIPE_INCLUDE_PURPLE

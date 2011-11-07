@@ -607,7 +607,7 @@ static void sipe_miranda_login(SIPPROTO *pr) {
 
 	//sipe_miranda_chat_setup_rejoin(pr);
 
-#ifdef HAVE_LIBKRB5
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 //	if (purple_account_get_bool(account, "krb5", FALSE))
 //		SIPE_CORE_FLAG_SET(KRB5);
 #endif

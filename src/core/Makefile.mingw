@@ -50,7 +50,7 @@ DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.net/projects/p/pidgin
 #DEFINES += -DENABLE_OCS2005_MESSAGE_HACK=1
 
 ifdef USE_SSPI
-DEFINES += -DHAVE_LIBKRB5=1
+DEFINES += -DHAVE_SSPI=1
 else
 DEFINES += -DHAVE_GMIME=1
 endif

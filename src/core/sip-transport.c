@@ -846,7 +846,7 @@ static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg)
 {
 	auth->type = AUTH_TYPE_NTLM;
-#ifdef HAVE_LIBKRB5
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
 		auth->type = AUTH_TYPE_KERBEROS;
 	}
