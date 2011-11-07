@@ -36,11 +36,13 @@ struct _sipe_xml;
  *
  * @param sipe_private  SIPE core private data
  * @param uri           service URI     (NULL when request aborted)
+ * @param raw           raw XML data    (NULL when request failed)
  * @param xml           parsed XML data (NULL when request failed)
  * @param callback_data callback data
  */
 typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
 				 const gchar *uri,
+				 const gchar *raw,
 				 struct _sipe_xml *xml,
 				 gpointer callback_data);
 

@@ -48,6 +48,7 @@
 /* forward declaration */
 struct svc_request;
 typedef void (svc_callback)(struct svc_request *data,
+			    const gchar *raw,
 			    sipe_xml *xml);
 
 struct svc_request {
@@ -69,7 +70,7 @@ static void sipe_svc_request_free(struct svc_request *data)
 		http_conn_free(data->conn);
 	if (data->cb)
 		/* Callback: aborted */
-		(*data->cb)(data->sipe_private, NULL, NULL, data->cb_data);
+		(*data->cb)(data->sipe_private, NULL, NULL, NULL, data->cb_data);
 	g_free(data->uri);
 	g_free(data);
 }
@@ -138,11 +139,11 @@ static void sipe_svc_https_response(int return_code,
 	if ((return_code == 200) && body) {
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 		/* Internal callback: success */
-		(*data->internal_cb)(data, xml);
+		(*data->internal_cb)(data, body, xml);
 		sipe_xml_free(xml);
 	} else {
 		/* Internal callback: failed */
-		(*data->internal_cb)(data, NULL);
+		(*data->internal_cb)(data, NULL, NULL);
 	}
 
 	/* Internal callback has already called this */
@@ -244,14 +245,15 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_svc_webticket_response(struct svc_request *data,
+					const gchar *raw,
 					sipe_xml *xml)
 {
 	if (xml) {
 		/* Callback: success */
-		(*data->cb)(data->sipe_private, data->uri, xml, data->cb_data);
+		(*data->cb)(data->sipe_private, data->uri, raw, xml, data->cb_data);
 	} else {
 		/* Callback: failed */
-		(*data->cb)(data->sipe_private, data->uri, NULL, data->cb_data);
+		(*data->cb)(data->sipe_private, data->uri, NULL, NULL, data->cb_data);
 	}
 }
 
@@ -413,14 +415,15 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_svc_metadata_response(struct svc_request *data,
-					sipe_xml *xml)
+				       const gchar *raw,
+				       sipe_xml *xml)
 {
 	if (xml) {
 		/* Callback: success */
-		(*data->cb)(data->sipe_private, data->uri, xml, data->cb_data);
+		(*data->cb)(data->sipe_private, data->uri, raw, xml, data->cb_data);
 	} else {
 		/* Callback: failed */
-		(*data->cb)(data->sipe_private, data->uri, NULL, data->cb_data);
+		(*data->cb)(data->sipe_private, data->uri, NULL, NULL, data->cb_data);
 	}
 }
 

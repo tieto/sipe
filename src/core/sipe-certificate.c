@@ -33,8 +33,11 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include <glib.h>
 
+#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -92,42 +95,88 @@ static void certificate_failure(struct sipe_core_private *sipe_private,
 	g_free(tmp);
 }
 
+static gchar *extract_raw_xml(const gchar *xml,
+			      const gchar *tag,
+			      gboolean include_tag)
+{
+	gchar *tag_start = g_strdup_printf("<%s", tag);
+	gchar *tag_end   = g_strdup_printf("</%s>", tag);
+	gchar *data      = NULL;
+	const gchar *start = strstr(xml, tag_start);
+
+	if (start) {
+		const gchar *end = strstr(start + strlen(tag_start), tag_end);
+		if (end) {
+			if (include_tag) {
+				data = g_strndup(start, end + strlen(tag_end) - start);
+			} else {
+				const gchar *tmp = strchr(start + strlen(tag_start), '>') + 1;
+				data = g_strndup(tmp, end - tmp);
+			}
+		}
+	}
+
+	g_free(tag_end);
+	g_free(tag_start);
+	return(data);
+}
+
 static void webticket_token(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
+			    const gchar *raw,
 			    sipe_xml *soap_body,
 			    gpointer callback_data)
 {
 	struct certificate_callback_data *ccd = callback_data;
+	gboolean success = (uri == NULL); /* abort case */
 
 	if (soap_body) {
-		SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
-				uri);
+		gchar *lifetime = extract_raw_xml(raw, "wst:Lifetime", FALSE);
+		gchar *keydata  = extract_raw_xml(raw, "EncryptedData", TRUE);
 
-		/* TBD.... */
+		if (lifetime && keydata) {
+			gchar *webticket_xml;
+
+			SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
+					uri);
+
+			/* Create security data for request */
+			webticket_xml = g_strdup_printf("<wsu:TimeStamp>%s</wsu:TimeStamp>%s",
+							lifetime, keydata);
+			success = TRUE;
+
+			/* TBD.... */
+			SIPE_DEBUG_INFO("webticket_token: TOKEN\n%s", webticket_xml);
+			g_free(webticket_xml);
+		}
+
+		g_free(keydata);
+		g_free(lifetime);
 
 	} else if (uri) {
 		/* Retry with federated authentication? */
-		gboolean tmp = !ccd->webticket_fedbearer_uri || ccd->tried_fedbearer;
-		if (!tmp) {
+		success = !ccd->webticket_fedbearer_uri || ccd->tried_fedbearer;
+		if (!success) {
 			SIPE_DEBUG_INFO("webticket_token: anonymous authentication to service %s failed, retrying with federated authentication",
 					uri);
 
 			ccd->tried_fedbearer = TRUE;
-			tmp = sipe_svc_webticket_lmc(sipe_private,
-						     ccd->authuser,
-						     ccd->webticket_fedbearer_uri,
-						     webticket_token,
-						     ccd);
-			if (tmp) {
+			success = sipe_svc_webticket_lmc(sipe_private,
+							 ccd->authuser,
+							 ccd->webticket_fedbearer_uri,
+							 webticket_token,
+							 ccd);
+			if (success) {
 				/* callback data passed down the line */
 				ccd = NULL;
 			}
 		}
-		if (!tmp) {
-			certificate_failure(sipe_private,
-					    _("Web ticket request to %s failed"),
-					    uri);
-		}
+	}
+
+	if (!success) {
+		certificate_failure(sipe_private,
+				    _("Web ticket request to %s failed"),
+				    uri);
 	}
 
 	callback_data_free(ccd);
@@ -135,6 +184,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 static void webticket_metadata(struct sipe_core_private *sipe_private,
 			       const gchar *uri,
+			       SIPE_UNUSED_PARAMETER const gchar *raw,
 			       sipe_xml *metadata,
 			       gpointer callback_data)
 {
@@ -219,6 +269,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 
 static void certprov_metadata(struct sipe_core_private *sipe_private,
 			      const gchar *uri,
+			      SIPE_UNUSED_PARAMETER const gchar *raw,
 			      sipe_xml *metadata,
 			      gpointer callback_data)
 {
