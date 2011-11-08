@@ -96,6 +96,28 @@ static void certificate_failure(struct sipe_core_private *sipe_private,
 	g_free(tmp);
 }
 
+static void get_and_publish_cert(struct sipe_core_private *sipe_private,
+				 const gchar *uri,
+				 const gchar *raw,
+				 sipe_xml *soap_body,
+				 gpointer callback_data)
+{
+	struct certificate_callback_data *ccd = callback_data;
+
+	if (soap_body) {
+
+		/* TBD.... */
+		(void)raw;
+
+	} else if (uri) {
+		certificate_failure(sipe_private,
+				    _("Certitifcate request to %s failed"),
+				    uri);
+	}
+
+	callback_data_free(ccd);
+}
+
 static gchar *extract_raw_xml(const gchar *xml,
 			      const gchar *tag,
 			      gboolean include_tag)
@@ -161,11 +183,18 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
 						uri);
 
-				/* TBD.... */
-				SIPE_DEBUG_INFO("CertProv Key %s", wsse_security);
+				success = sipe_svc_get_and_publish_cert(sipe_private,
+									ccd->certprov_uri,
+									ccd->authuser,
+									wsse_security,
+									"", /* TBD.... */
+									get_and_publish_cert,
+									ccd);
+				if (success) {
+					/* callback data passed down the line */
+					ccd = NULL;
+				}
 				g_free(wsse_security);
-
-				success = TRUE;
 			}
 
 		/* WebTicket for federated authentication */

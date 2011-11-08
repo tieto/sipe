@@ -71,6 +71,25 @@ void sipe_svc_fill_random(struct sipe_svc_random *random,
 void sipe_svc_free_random(struct sipe_svc_random *random);
 
 /**
+ * Trigger fetch of Get & Publish certificate
+ *
+ * @param sipe_private  SIPE core private data
+ * @param uri           service URI
+ * @param wsse_security predefined authentication token
+ * @param certreq       certificate request (Base64 encoded)
+ * @param callback      callback function
+ * @param callback_data callback data
+ * @return              @c TRUE if token fetch was triggered
+ */
+gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
+				       const gchar *uri,
+				       const gchar *authuser,
+				       const gchar *wsse_security,
+				       const gchar *certreq,
+				       sipe_svc_callback *callback,
+				       gpointer callback_data);
+
+/**
  * Trigger fetch of WebTicket security token
  *
  * @param sipe_private  SIPE core private data

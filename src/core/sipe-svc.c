@@ -279,6 +279,50 @@ static void sipe_svc_wsdl_response(struct svc_request *data,
 	}
 }
 
+gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
+				       const gchar *uri,
+				       const gchar *authuser,
+				       const gchar *wsse_security,
+				       const gchar *certreq,
+				       sipe_svc_callback *callback,
+				       gpointer callback_data)
+{
+	gchar *uuid = get_uuid(sipe_private);
+	gchar *soap_body = g_strdup_printf("<GetAndPublishCert"
+					   " xmlns=\"http://schemas.microsoft.com/OCS/AuthWebServices/\""
+					   " xmlns:wstep=\"http://schemas.microsoft.com/windows/pki/2009/01/enrollment\""
+					   " DeviceId=\"{%s}\""
+					   " Entity=\"%s\""
+					   ">"
+					   " <wst:RequestSecurityToken>"
+					   "  <wst:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wst:TokenType>"
+					   "  <wst:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</wst:RequestType>"
+					   "  <wsse:BinarySecurityToken"
+					   "   ValueType=\"http://schemas.microsoft.com/OCS/AuthWebServices.xsd#PKCS10\""
+					   "   EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#Base64Binary\""
+					   "  >\r\n"
+					   "%s\r\n"					   "  </wsse:BinarySecurityToken>"
+					   "  <wstep:RequestID>27BC7543-8C9B-44A4-9D3F-67BFE8A461EA</wstep:RequestID>"
+					   " </wst:RequestSecurityToken>"
+					   "</GetAndPublishCert>",
+					   uuid,
+					   authuser,
+					   certreq);
+
+	gboolean ret = new_soap_req(sipe_private,
+				    uri,
+				    "http://schemas.microsoft.com/OCS/AuthWebServices/GetAndPublishCert",
+				    wsse_security,
+				    soap_body,
+				    sipe_svc_wsdl_response,
+				    callback,
+				    callback_data);
+	g_free(soap_body);
+	g_free(uuid);
+
+	return(ret);
+}
+
 /*
  * This functions encodes what the Microsoft Lync client does for
  * Office365 accounts. It will most definitely fail for internal Lync
