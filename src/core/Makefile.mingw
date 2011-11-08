@@ -92,9 +92,9 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-cal.c \
 			sipe-certificate.c \
 			sipe-chat.c \
-			sipe-crypt.c \
+			sipe-crypt-nss.c \
 			sipe-dialog.c \
-			sipe-digest.c \
+			sipe-digest-nss.c \
 			sipe-ft.c \
 			sipe-ft-tftp.c \
 			sipe-group.c \

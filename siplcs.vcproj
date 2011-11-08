@@ -412,7 +412,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\core\sipe-crypt.c"
+				RelativePath=".\src\core\sipe-crypt-nss.c"
 				>
 			</File>
 			<File
@@ -428,7 +428,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\core\sipe-digest.c"
+				RelativePath=".\src\core\sipe-digest-nss.c"
 				>
 			</File>
 			<File

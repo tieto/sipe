@@ -49,6 +49,7 @@ libsipe_la_LDFLAGS = \
 
 libsipe_la_LIBADD = \
 	../core/libsipe_core.la \
+	../core/libsipe_core_crypto_nss.la \
 	../core/libsipe_core_purple.la \
 	libsipe_backend.la \
         $(LIBXML2_LIBS) \
@@ -77,6 +78,7 @@ tests_CFLAGS    = $(libsipe_la_CFLAGS)
 tests_LDADD     = \
 	../core/libsipe_core_tests.la \
 	../core/libsipe_core.la \
+	../core/libsipe_core_crypto_nss.la \
 	libsipe_backend.la \
 	$(NSS_LIBS) \
 	$(PURPLE_LIBS)
@@ -93,7 +95,7 @@ endif
 
 if SIPE_WITH_VV
 libsipe_backend_la_SOURCES += purple-media.c
-libsipe_backend_la_CFLAGS  += $(NICE_CFLAGS) $(GSTREAMER_CFLAGS) 
+libsipe_backend_la_CFLAGS  += $(NICE_CFLAGS) $(GSTREAMER_CFLAGS)
 libsipe_la_LIBADD          += $(NICE_LIBS) $(GSTREAMER_LIBS)
 endif
 

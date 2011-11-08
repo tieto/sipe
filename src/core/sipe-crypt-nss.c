@@ -1,5 +1,5 @@
  /**
- * @file sipe-crypt.c
+ * @file sipe-crypt-nss.c
  *
  * pidgin-sipe
  *

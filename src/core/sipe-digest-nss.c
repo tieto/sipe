@@ -1,5 +1,5 @@
 /**
- * @file sipe-digest.c
+ * @file sipe-digest-nss.c
  *
  * pidgin-sipe
  *

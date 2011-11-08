@@ -1,5 +1,6 @@
 noinst_LTLIBRARIES = \
 	libsipe_core.la \
+	libsipe_core_crypto_nss.la \
 	libsipe_core_purple.la
 
 MAINTAINERCLEANFILES = \
@@ -30,11 +31,9 @@ libsipe_core_la_SOURCES = \
 	sipe-core-private.h \
 	sipe-core.c \
 	sipe-crypt.h \
-	sipe-crypt.c \
 	sipe-dialog.h \
 	sipe-dialog.c \
 	sipe-digest.h \
-	sipe-digest.c \
 	sipe-domino.h \
 	sipe-domino.c \
 	sipe-ews.h \
@@ -91,6 +90,10 @@ libsipe_core_tests_la_SOURCES = \
 	sip-sec-ntlm-tests.c
 endif
 
+libsipe_core_crypto_nss_la_SOURCES = \
+	sipe-crypt-nss.c \
+	sipe-digest-nss.c
+
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
 	sipe.c
@@ -108,7 +111,6 @@ libsipe_core_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
         $(LIBXML2_CFLAGS) \
-	$(NSS_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	-I$(srcdir)/../api
@@ -130,6 +132,8 @@ endif
 if SIPE_OS_WIN32
 libsipe_core_la_CFLAGS  += -DHAVE_SSPI=1
 endif
+
+libsipe_core_crypto_nss_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(NSS_CFLAGS)
 
 if SIPE_INCLUDE_PURPLE
 libsipe_core_purple_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(PURPLE_CFLAGS)
