@@ -42,6 +42,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-certificate.h"
+#include "sipe-digest.h"
 #include "sipe-nls.h"
 #include "sipe-svc.h"
 #include "sipe-utils.h"
@@ -118,6 +119,25 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 	callback_data_free(ccd);
 }
 
+static gchar *extract_raw_xml_attribute(const gchar *xml,
+					const gchar *name)
+{
+	gchar *attr_start = g_strdup_printf("%s=\"", name);
+	gchar *data       = NULL;
+	const gchar *start = strstr(xml, attr_start);
+
+	if (start) {
+		const gchar *value = start + strlen(attr_start);
+		const gchar *end = strchr(value, '"');
+		if (end) {
+			data = g_strndup(value, end - value);
+		}
+	}
+
+	g_free(attr_start);
+	return(data);
+}
+
 static gchar *extract_raw_xml(const gchar *xml,
 			      const gchar *tag,
 			      gboolean include_tag)
@@ -144,23 +164,16 @@ static gchar *extract_raw_xml(const gchar *xml,
 	return(data);
 }
 
-static gchar *generate_wsse_security(const gchar *raw,
-				     const gchar *lifetime_tag,
-				     const gchar *keydata_tag)
+static gchar *generate_timestamp(const gchar *raw,
+				 const gchar *lifetime_tag)
 {
 	gchar *lifetime = extract_raw_xml(raw, lifetime_tag, FALSE);
-	gchar *keydata  = extract_raw_xml(raw, keydata_tag, TRUE);
-	gchar *wsse_security = NULL;
-
-	if (lifetime && keydata) {
-		wsse_security = g_strdup_printf("<wsu:Timestamp>%s</wsu:Timestamp>%s",
-						lifetime, keydata);
-	}
-
-	g_free(keydata);
+	gchar *timestamp = NULL;
+	if (lifetime)
+		timestamp = g_strdup_printf("<wsu:Timestamp xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"timestamp\">%s</wsu:Timestamp>",
+					    lifetime);
 	g_free(lifetime);
-
-	return(wsse_security);
+	return(timestamp);
 }
 
 static void webticket_token(struct sipe_core_private *sipe_private,
@@ -175,9 +188,67 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	if (soap_body) {
 		/* WebTicket for Certificate Provisioning Service */
 		if (ccd->webticket_for_certprov) {
-			gchar *wsse_security = generate_wsse_security(raw,
-								      "Lifetime",
-								      "saml:Assertion");
+			gchar *timestamp = generate_timestamp(raw, "Lifetime");
+			gchar *keydata   = extract_raw_xml(raw, "saml:Assertion", TRUE);
+			gchar *wsse_security = NULL;
+
+			if (timestamp && keydata) {
+				gchar *assertionID = extract_raw_xml_attribute(keydata,
+									       "AssertionID");
+
+				if (assertionID) {
+					guchar digest[SIPE_DIGEST_SHA1_LENGTH];
+					gchar *base64;
+					gchar *signed_info;
+					gchar *signature;
+
+					/* Digest over reference element (#timestamp -> wsu:Timestamp) */
+					sipe_digest_sha1((guchar *) timestamp,
+							 strlen(timestamp),
+							 digest);
+					base64 = g_base64_encode(digest,
+								 SIPE_DIGEST_SHA1_LENGTH);
+
+					/* XML-Sig: SignedInfo for reference element */
+					signed_info = g_strdup_printf("<SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
+								      "<CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
+								      "<SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#hmac-sha1\"/>"
+								      "<Reference URI=\"#timestamp\">"
+								      "<Transforms>"
+								      "<Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
+								      "</Transforms>"
+								      "<DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>"
+								      "<DigestValue>%s</DigestValue>"
+								      "</Reference>"
+								      "</SignedInfo>",
+								      base64);
+					g_free(base64);
+
+					/* XML-Sig: Signature from SignedInfo + Key */
+					signature = g_strdup_printf("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
+								    " %s"
+								    " <SignatureValue>%s</SignatureValue>"
+								    " <KeyInfo>"
+								    "  <wsse:SecurityTokenReference wsse:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1\">"
+								    "   <wsse:KeyIdentifier ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID\">%s</wsse:KeyIdentifier>"
+								    "  </wsse:SecurityTokenReference>"
+								    " </KeyInfo>"
+								    "</Signature>",
+								    signed_info,
+								    "TBD...",
+								    assertionID);
+					g_free(signed_info);
+					g_free(assertionID);
+
+					wsse_security = g_strconcat(timestamp,
+								    keydata,
+								    signature,
+								    NULL);
+				}
+			}
+			g_free(keydata);
+			g_free(timestamp);
+
 			if (wsse_security) {
 
 				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
@@ -199,9 +270,17 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 		/* WebTicket for federated authentication */
 		} else {
-			gchar *wsse_security = generate_wsse_security(raw,
-								      "wst:Lifetime",
-								      "EncryptedData");
+			gchar *timestamp = generate_timestamp(raw, "wst:Lifetime");
+			gchar *keydata   = extract_raw_xml(raw, "EncryptedData", TRUE);
+			gchar *wsse_security = NULL;
+
+			if (timestamp && keydata) {
+				wsse_security = g_strconcat(timestamp, keydata, NULL);
+			}
+			/* no further processing needed */
+			g_free(keydata);
+			g_free(timestamp);
+
 			if (wsse_security) {
 
 				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
