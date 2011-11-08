@@ -35,6 +35,14 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
+/*
+ * Non-functional changes to remove dependencies on NSS headers
+ *
+ * Changes are flagged with __SIPE__REMOVE_NSS_DEPENDENCIES__
+ *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ */
+
 #ifndef md4_h__
 #define md4_h__
 
@@ -42,7 +50,12 @@
 extern "C" {
 #endif
 
+#ifdef __SIPE__REMOVE_NSS_DEPENDENCIES__
 #include "prtypes.h"
+#else
+typedef guint32 PRUint32;
+typedef guint8 PRUint8;
+#endif /* __SIPE__REMOVE_NSS_DEPENDENCIES__ */
 
 /**
  * md4sum - computes the MD4 sum over the input buffer per RFC 1320

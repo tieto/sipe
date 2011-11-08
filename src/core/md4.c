@@ -36,8 +36,21 @@
  * ***** END LICENSE BLOCK ***** */
 
 /*
+ * Non-functional changes to remove dependencies on NSS headers
+ *
+ * Changes are flagged with __SIPE__REMOVE_NSS_DEPENDENCIES__
+ *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ */
+
+/*
  * "clean room" MD4 implementation (see RFC 1320)
  */
+
+#ifdef __SIPE__REMOVE_NSS_DEPENDENCIES__
+#else
+#include <glib.h>
+#endif /* __SIPE__REMOVE_NSS_DEPENDENCIES__ */
 
 #include <string.h>
 #include "md4.h"
