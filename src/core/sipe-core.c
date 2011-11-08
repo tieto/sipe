@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-crypt.h"
 #include "sipe-group.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
@@ -45,8 +46,6 @@
 #include "sipe-media.h"
 #include "sipe.h"
 
-#include "nss.h"
-#include "pk11pub.h"
 #ifdef HAVE_GMIME
 #include <gmime/gmime.h>
 #endif
@@ -64,26 +63,8 @@ void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
 			bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
 	textdomain(PACKAGE_NAME);
 #endif
-	if (!NSS_IsInitialized()) {
-		gchar *tmp;
-
-		/*
-		 * I have a bad feeling about this: according to the NSS
-		 * documentation, NSS can only be initialized once.
-		 * Unfortunately there seems to be no way to initialize a
-		 * "NSS context" that could then be used by the SIPE code
-		 * to avoid colliding with other NSS users.
-		 *
-		 * This seems to work, so it'll have to do for now.
-		 */
-		if (NSS_InitReadWrite(tmp = sipe_backend_user_nss_dbpath()) == SECSuccess) {
-			/* no DB password */
-			PK11_InitPin(PK11_GetInternalKeySlot(), "", "");
-			SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
-		}
-
-		g_free(tmp);
-	}
+	/* Initialization for crypto backend (production mode) */
+	sipe_crypto_init(TRUE);
 #ifdef HAVE_GMIME
 	g_mime_init(0);
 #endif
@@ -92,10 +73,7 @@ void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
 void sipe_core_destroy(void)
 {
 	sipe_chat_destroy();
-	/* do nothing for NSS.
-	 * We don't want accedently switch off NSS possibly used by other plugin -
-	 * ssl-nss in Pidgin for example.
-	 */
+	sipe_crypto_shutdown();
 #ifdef HAVE_GMIME
 	g_mime_shutdown();
 #endif

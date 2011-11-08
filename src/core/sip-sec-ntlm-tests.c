@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  *
@@ -32,8 +33,6 @@
 
 #include <glib.h>
 #include <glib/gprintf.h>
-
-#include "nss.h"
 
 #include "sipmsg.h"
 #include "sipe-sign.h"
@@ -132,11 +131,9 @@ gboolean sip_sec_ntlm_tests(void)
 
 	printf ("Starting Tests\n");
 
-	/* Initialization for NSS */
-	if (!NSS_IsInitialized()) {
-		NSS_NoDB_Init(".");
-		SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
-	}
+	/* Initialization for crypto backend (test mode) */
+	sipe_crypto_init(FALSE);
+
 	/* Initialization for NTLM */
 	sip_sec_init__ntlm();
 

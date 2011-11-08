@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,10 +31,53 @@
 #include "nss.h"
 #include "pk11pub.h"
 
+#include "sipe-backend.h"
 #include "sipe-crypt.h"
 
+/* NSS specific initialization/shutdown */
+void sipe_crypto_init(gboolean production_mode)
+{
+	if (!NSS_IsInitialized()) {
+		/*
+		 * I have a bad feeling about this: according to the NSS
+		 * documentation, NSS can only be initialized once.
+		 * Unfortunately there seems to be no way to initialize a
+		 * "NSS context" that could then be used by the SIPE code
+		 * to avoid colliding with other NSS users.
+		 *
+		 * This seems to work, so it'll have to do for now.
+		 *
+		 * It might also be required to move this to the backend
+		 * so that the backend code can decide when it is OK to
+		 * initialize NSS.
+		 */
+		if (production_mode) {
+			gchar *tmp;
 
-/* PRIVATE methons */
+			if (NSS_InitReadWrite(tmp = sipe_backend_user_nss_dbpath()) == SECSuccess) {
+				/* no DB password */
+				PK11_InitPin(PK11_GetInternalKeySlot(), "", "");
+				SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
+			}
+
+			g_free(tmp);
+		} else {
+			/* For tests read-only mode without db is enough */
+			NSS_NoDB_Init(".");
+			SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
+		}
+	}
+}
+
+void sipe_crypto_shutdown(void)
+{
+	/* do nothing for NSS.
+	 * We don't want accedently switch off NSS possibly used by other plugin -
+	 * ssl-nss in Pidgin for example.
+	 */
+}
+
+/* PRIVATE methods */
 
 static PK11Context*
 sipe_crypt_ctx_create(CK_MECHANISM_TYPE cipherMech, const guchar *key, gsize key_length)
@@ -59,7 +103,7 @@ sipe_crypt_ctx_create(CK_MECHANISM_TYPE cipherMech, const guchar *key, gsize key
 	ivItem.data = NULL;
 	ivItem.len = 0;
 	SecParam = PK11_ParamFromIV(cipherMech, &ivItem);
-	
+
 	EncContext = PK11_CreateContextBySymKey(cipherMech, CKA_ENCRYPT, SymKey, SecParam);
 
 	PK11_FreeSymKey(SymKey);
@@ -74,7 +118,7 @@ sipe_crypt_ctx_encrypt(PK11Context* EncContext, const guchar *in, gsize length, 
 {
 	int tmp1_outlen;
 
-	PK11_CipherOp(EncContext, out, &tmp1_outlen, length, (unsigned char *)in, length);	
+	PK11_CipherOp(EncContext, out, &tmp1_outlen, length, (unsigned char *)in, length);
 }
 
 static void
@@ -97,7 +141,7 @@ sipe_crypt(CK_MECHANISM_TYPE cipherMech,
 }
 
 
-/* PUBLIC methons */
+/* PUBLIC methods */
 
 void
 sipe_crypt_des(const guchar *key,
