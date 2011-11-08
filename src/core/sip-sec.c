@@ -42,7 +42,6 @@
 #ifndef _WIN32
 #include "sip-sec-ntlm.h"
 #include "sip-sec-tls-dsk.h"
-#define SIP_SEC_USE_NTLM
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 #define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
@@ -57,7 +56,6 @@
 #else /* _WIN32 */
 #ifdef HAVE_SSPI
 #include "sip-sec-sspi.h"
-#undef SIP_SEC_USE_NTLM
 #define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
@@ -65,7 +63,6 @@
 #else /* !HAVE_SSPI */
 #include "sip-sec-ntlm.h"
 #include "sip-sec-tls-dsk.h"
-#define SIP_SEC_USE_NTLM
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
@@ -133,19 +130,8 @@ sip_sec_init_context_step(SipSecContext context,
 		SipSecBuffer out_buff = {0, NULL};
 
 		/* Not NULL for NTLM Type 2 */
-		if (input_toked_base64) {
+		if (input_toked_base64)
 			in_buff.value = g_base64_decode(input_toked_base64, &in_buff.length);
-
-#ifdef SIP_SEC_USE_NTLM
-			{
-				char *tmp = sip_sec_ntlm_message_describe(in_buff);
-				if (tmp) {
-					SIPE_DEBUG_INFO("sip_sec_init_context_step: Challenge message is:\n%s", tmp);
-				}
-				g_free(tmp);
-			}
-#endif
-		}
 
 		ret = (*context->init_context_func)(context, in_buff, &out_buff, target);
 
@@ -156,16 +142,6 @@ sip_sec_init_context_step(SipSecContext context,
 
 			if (out_buff.length > 0 && out_buff.value) {
 				*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
-
-#ifdef SIP_SEC_USE_NTLM
-				{
-					char *tmp = sip_sec_ntlm_message_describe(out_buff);
-					if (tmp) {
-						SIPE_DEBUG_INFO("sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
-					}
-					g_free(tmp);
-				}
-#endif
 			} else {
 				*output_toked_base64 = NULL;
 			}
@@ -269,14 +245,14 @@ int sip_sec_verify_signature(SipSecContext context, const char *message, const c
 /* Initialize & Destroy */
 void sip_sec_init(void)
 {
-#ifdef SIP_SEC_USE_NTLM
+#ifndef HAVE_SSPI
 	sip_sec_init__ntlm();
 #endif
 }
 
 void sip_sec_destroy(void)
 {
-#ifdef SIP_SEC_USE_NTLM
+#ifndef HAVE_SSPI
 	sip_sec_destroy__ntlm();
 #endif
 }

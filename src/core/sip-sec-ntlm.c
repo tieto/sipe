@@ -1654,17 +1654,18 @@ sip_sec_ntlm_challenge_message_describe(struct challenge_message *cmsg)
 	return g_string_free(str, FALSE);
 }
 
-gchar *
-sip_sec_ntlm_message_describe(SipSecBuffer buff)
+static void
+sip_sec_ntlm_message_describe(SipSecBuffer *buff,
+			      const gchar *type)
 {
 	struct ntlm_message *msg;
 	gchar *res = NULL;
 
-	if (buff.length == 0 || buff.value == NULL || buff.length < 12) return NULL;
+	if (buff->length == 0 || buff->value == NULL || buff->length < 12) return;
 
 	/* SipSecBuffer.value is g_malloc()'d: use (void *) to remove guint8 alignment */
-	msg = (void *)buff.value;
-	if(!sipe_strequal("NTLMSSP", (char*)msg)) return NULL;
+	msg = (void *)buff->value;
+	if(!sipe_strequal("NTLMSSP", (char*)msg)) return;
 
 	switch (GUINT32_FROM_LE(msg->type)) {
 	case 1: res = sip_sec_ntlm_negotiate_message_describe((struct negotiate_message *)msg);
@@ -1675,7 +1676,9 @@ sip_sec_ntlm_message_describe(SipSecBuffer buff)
 		break;
 	}
 
-	return res;
+	SIPE_DEBUG_INFO("sip_sec_ntlm_message_describe: %s message is:\n%s",
+			type, res);
+	g_free(res);
 }
 
 /* sip-sec-mech.h API implementation for NTLM */
@@ -1716,9 +1719,9 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 
 static sip_uint32
 sip_sec_init_sec_context__ntlm(SipSecContext context,
-			  SipSecBuffer in_buff,
-			  SipSecBuffer *out_buff,
-			  SIPE_UNUSED_PARAMETER const char *service_name)
+			       SipSecBuffer in_buff,
+			       SipSecBuffer *out_buff,
+			       SIPE_UNUSED_PARAMETER const char *service_name)
 {
 	context_ntlm ctx = (context_ntlm) context;
 
@@ -1731,6 +1734,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			out_buff->value = NULL;
 		} else {
 			sip_sec_ntlm_gen_negotiate(out_buff);
+			sip_sec_ntlm_message_describe(out_buff, "Negotiate");
 		}
 		return SIP_SEC_I_CONTINUE_NEEDED;
 
@@ -1750,6 +1754,8 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		if (!in_buff.value || !in_buff.length) {
 			return SIP_SEC_E_INTERNAL_ERROR;
 		}
+
+		sip_sec_ntlm_message_describe(&in_buff, "Challenge");
 
 		sip_sec_ntlm_parse_challenge(in_buff,
 					     &flags,
@@ -1786,6 +1792,8 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			return res;
 		}
 
+		sip_sec_ntlm_message_describe(out_buff, "Authenticate");
+
 		g_free(ctx->client_sign_key);
 		ctx->client_sign_key = client_sign_key;
 
@@ -1809,8 +1817,8 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
  */
 static sip_uint32
 sip_sec_make_signature__ntlm(SipSecContext context,
-			const char *message,
-			SipSecBuffer *signature)
+			     const char *message,
+			     SipSecBuffer *signature)
 {
 	signature->length = 16;
 	signature->value = g_malloc0(16);
@@ -1821,7 +1829,7 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 					 0,
 					 ((context_ntlm) context)->client_sign_key,
 					 ((context_ntlm) context)->client_seal_key,
-					 /* SipSecBuffer.value is g_malloc()'d: 
+					 /* SipSecBuffer.value is g_malloc()'d:
 					  * use (void *) to remove guint8 alignment
 					  */
 					 (void *)signature->value);
@@ -1834,8 +1842,8 @@ sip_sec_make_signature__ntlm(SipSecContext context,
  */
 static sip_uint32
 sip_sec_verify_signature__ntlm(SipSecContext context,
-			  const char *message,
-			  SipSecBuffer signature)
+			       const char *message,
+			       SipSecBuffer signature)
 {
 	guint32 mac[4];
 	/* SipSecBuffer.value is g_malloc()'d: use (void *) to remove guint8 alignment */

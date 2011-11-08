@@ -27,9 +27,3 @@ sip_sec_create_context__ntlm(guint type);
 
 void sip_sec_init__ntlm(void);
 void sip_sec_destroy__ntlm(void);
-
-/**
- * Describes NTML messages in human readable form
- */
-gchar *
-sip_sec_ntlm_message_describe(SipSecBuffer buff);
