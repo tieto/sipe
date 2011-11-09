@@ -100,6 +100,18 @@ static void sipe_digest_hmac_ctx_destroy(PK11Context* DigestContext)
 	PK11_DestroyContext(DigestContext, PR_TRUE);
 }
 
+static void sipe_digest_hmac(CK_MECHANISM_TYPE hmacMech,
+			     const guchar *key, gsize key_length,
+			     const guchar *data, gsize data_length,
+			     guchar *digest, gsize digest_length)
+{
+	void *DigestContext;
+
+	DigestContext = sipe_digest_hmac_ctx_create(hmacMech, key, key_length);
+	sipe_digest_hmac_ctx_append(DigestContext, data, data_length);
+	sipe_digest_hmac_ctx_digest(DigestContext, digest, digest_length);
+	sipe_digest_hmac_ctx_destroy(DigestContext);
+}
 
 
 /* PUBLIC methods */
@@ -118,12 +130,14 @@ void sipe_digest_hmac_md5(const guchar *key, gsize key_length,
 			  const guchar *data, gsize data_length,
 			  guchar *digest)
 {
-	void *DigestContext;
+	sipe_digest_hmac(CKM_MD5_HMAC, key, key_length, data, data_length, digest, SIPE_DIGEST_HMAC_MD5_LENGTH);
+}
 
-	DigestContext = sipe_digest_hmac_ctx_create(CKM_MD5_HMAC, key, key_length);
-	sipe_digest_hmac_ctx_append(DigestContext, data, data_length);
-	sipe_digest_hmac_ctx_digest(DigestContext, digest, SIPE_DIGEST_HMAC_MD5_LENGTH);
-	sipe_digest_hmac_ctx_destroy(DigestContext);
+void sipe_digest_hmac_sha1(const guchar *key, gsize key_length,
+			   const guchar *data, gsize data_length,
+			   guchar *digest)
+{
+	sipe_digest_hmac(CKM_SHA_1_HMAC, key, key_length, data, data_length, digest, SIPE_DIGEST_HMAC_SHA1_LENGTH);
 }
 
 /* Stream HMAC(SHA1) digest for file transfer */
