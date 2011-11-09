@@ -176,6 +176,111 @@ static gchar *generate_timestamp(const gchar *raw,
 	return(timestamp);
 }
 
+static gchar *generate_fedbearer_wsse(const gchar *raw)
+{
+	gchar *timestamp = generate_timestamp(raw, "wst:Lifetime");
+	gchar *keydata   = extract_raw_xml(raw, "EncryptedData", TRUE);
+	gchar *wsse_security = NULL;
+
+	if (timestamp && keydata) {
+		wsse_security = g_strconcat(timestamp, keydata, NULL);
+	}
+
+	g_free(keydata);
+	g_free(timestamp);
+	return(wsse_security);
+}
+
+static gchar *generate_sha1_proof_wsse(const gchar *raw,
+				       struct sipe_svc_random *entropy)
+{
+	gchar *timestamp = generate_timestamp(raw, "Lifetime");
+	gchar *keydata   = extract_raw_xml(raw, "saml:Assertion", TRUE);
+	gchar *wsse_security = NULL;
+
+	if (timestamp && keydata) {
+		gchar *assertionID = extract_raw_xml_attribute(keydata,
+							       "AssertionID");
+
+		if (assertionID) {
+			/* same as SIPE_DIGEST_HMAC_SHA1_LENGTH */
+			guchar digest[SIPE_DIGEST_SHA1_LENGTH];
+			gchar *base64;
+			gchar *signed_info;
+			gchar *signature;
+
+			/* Digest over reference element (#timestamp -> wsu:Timestamp) */
+			sipe_digest_sha1((guchar *) timestamp,
+					 strlen(timestamp),
+					 digest);
+			base64 = g_base64_encode(digest,
+						 SIPE_DIGEST_SHA1_LENGTH);
+
+			/* XML-Sig: SignedInfo for reference element */
+			signed_info = g_strdup_printf("<SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
+						      "<CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
+						      "<SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#hmac-sha1\"/>"
+						      "<Reference URI=\"#timestamp\">"
+						      "<Transforms>"
+						      "<Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
+						      "</Transforms>"
+						      "<DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>"
+						      "<DigestValue>%s</DigestValue>"
+						      "</Reference>"
+						      "</SignedInfo>",
+						      base64);
+			g_free(base64);
+
+			/* SignatureValue calculation */
+			/* Temporary. We need to
+			   a) extract the wrapped key from keydata
+			   b) unwrap the key (kw-aes256)
+			   c) use the key as input to HMAC(SHA-1) of signed_info
+
+			   TODO: signed_info probably needs to be in canonical form
+			*/
+			{
+				guchar key[32];
+				(void)entropy;
+				memset(key, 0, sizeof(key));
+				sipe_digest_hmac_sha1(key, sizeof(key),
+						      (guchar *)signed_info,
+						      strlen(signed_info),
+						      digest);
+			}
+			base64 = g_base64_encode(digest,
+						 SIPE_DIGEST_HMAC_SHA1_LENGTH);
+
+			/* XML-Sig: Signature from SignedInfo + Key */
+			signature = g_strdup_printf("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
+						    " %s"
+						    " <SignatureValue>%s</SignatureValue>"
+						    " <KeyInfo>"
+						    "  <wsse:SecurityTokenReference wsse:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1\">"
+						    "   <wsse:KeyIdentifier ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID\">%s</wsse:KeyIdentifier>"
+						    "  </wsse:SecurityTokenReference>"
+						    " </KeyInfo>"
+						    "</Signature>",
+						    signed_info,
+						    base64,
+						    assertionID);
+			g_free(base64);
+			g_free(signed_info);
+			g_free(assertionID);
+
+			wsse_security = g_strconcat(timestamp,
+						    keydata,
+						    signature,
+						    NULL);
+			g_free(signature);
+		}
+	}
+
+	g_free(keydata);
+	g_free(timestamp);
+	return(wsse_security);
+}
+
 static void webticket_token(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *raw,
@@ -188,66 +293,10 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	if (soap_body) {
 		/* WebTicket for Certificate Provisioning Service */
 		if (ccd->webticket_for_certprov) {
-			gchar *timestamp = generate_timestamp(raw, "Lifetime");
-			gchar *keydata   = extract_raw_xml(raw, "saml:Assertion", TRUE);
-			gchar *wsse_security = NULL;
-
-			if (timestamp && keydata) {
-				gchar *assertionID = extract_raw_xml_attribute(keydata,
-									       "AssertionID");
-
-				if (assertionID) {
-					guchar digest[SIPE_DIGEST_SHA1_LENGTH];
-					gchar *base64;
-					gchar *signed_info;
-					gchar *signature;
-
-					/* Digest over reference element (#timestamp -> wsu:Timestamp) */
-					sipe_digest_sha1((guchar *) timestamp,
-							 strlen(timestamp),
-							 digest);
-					base64 = g_base64_encode(digest,
-								 SIPE_DIGEST_SHA1_LENGTH);
-
-					/* XML-Sig: SignedInfo for reference element */
-					signed_info = g_strdup_printf("<SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
-								      "<CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
-								      "<SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#hmac-sha1\"/>"
-								      "<Reference URI=\"#timestamp\">"
-								      "<Transforms>"
-								      "<Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
-								      "</Transforms>"
-								      "<DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>"
-								      "<DigestValue>%s</DigestValue>"
-								      "</Reference>"
-								      "</SignedInfo>",
-								      base64);
-					g_free(base64);
-
-					/* XML-Sig: Signature from SignedInfo + Key */
-					signature = g_strdup_printf("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
-								    " %s"
-								    " <SignatureValue>%s</SignatureValue>"
-								    " <KeyInfo>"
-								    "  <wsse:SecurityTokenReference wsse:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1\">"
-								    "   <wsse:KeyIdentifier ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID\">%s</wsse:KeyIdentifier>"
-								    "  </wsse:SecurityTokenReference>"
-								    " </KeyInfo>"
-								    "</Signature>",
-								    signed_info,
-								    "TBD...",
-								    assertionID);
-					g_free(signed_info);
-					g_free(assertionID);
-
-					wsse_security = g_strconcat(timestamp,
-								    keydata,
-								    signature,
-								    NULL);
-				}
-			}
-			g_free(keydata);
-			g_free(timestamp);
+			/* This is a guess: our 256 bits of entropy are used
+			   as the private key to wrap the AES key */
+			gchar *wsse_security = generate_sha1_proof_wsse(raw,
+									&ccd->entropy);
 
 			if (wsse_security) {
 
@@ -270,16 +319,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 		/* WebTicket for federated authentication */
 		} else {
-			gchar *timestamp = generate_timestamp(raw, "wst:Lifetime");
-			gchar *keydata   = extract_raw_xml(raw, "EncryptedData", TRUE);
-			gchar *wsse_security = NULL;
-
-			if (timestamp && keydata) {
-				wsse_security = g_strconcat(timestamp, keydata, NULL);
-			}
-			/* no further processing needed */
-			g_free(keydata);
-			g_free(timestamp);
+			gchar *wsse_security = generate_fedbearer_wsse(raw);
 
 			if (wsse_security) {
 
