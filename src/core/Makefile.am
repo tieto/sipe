@@ -24,6 +24,7 @@ libsipe_core_la_SOURCES = \
 	sipe-cal.c \
 	sipe-certificate.h \
 	sipe-certificate.c \
+	sipe-cert-crypto.h \
 	sipe-chat.h \
 	sipe-chat.c \
 	sipe-conf.h \
@@ -91,6 +92,7 @@ libsipe_core_tests_la_SOURCES = \
 endif
 
 libsipe_core_crypto_nss_la_SOURCES = \
+	sipe-cert-crypto-nss.c \
 	sipe-crypt-nss.c \
 	sipe-digest-nss.c
 

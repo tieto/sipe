@@ -91,6 +91,7 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-buddy.c \
 			sipe-cal.c \
 			sipe-certificate.c \
+			sipe-cert-crypto-nss.c \
 			sipe-chat.c \
 			sipe-crypt-nss.c \
 			sipe-dialog.c \

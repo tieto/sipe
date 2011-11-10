@@ -388,6 +388,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-cert-crypto-nss.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-cert-crypto.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-chat.c"
 				>
 			</File>

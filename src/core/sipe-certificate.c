@@ -42,6 +42,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-certificate.h"
+#include "sipe-cert-crypto.h"
 #include "sipe-digest.h"
 #include "sipe-nls.h"
 #include "sipe-svc.h"
@@ -183,6 +184,7 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 	gchar *wsse_security = NULL;
 
 	if (timestamp && keydata) {
+		SIPE_DEBUG_INFO_NOFORMAT("generate_fedbearer_wsse: found timestamp & keydata");
 		wsse_security = g_strconcat(timestamp, keydata, NULL);
 	}
 
@@ -201,13 +203,30 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 	if (timestamp && keydata) {
 		gchar *assertionID = extract_raw_xml_attribute(keydata,
 							       "AssertionID");
+		gchar *wrapped_base64 = extract_raw_xml(keydata,
+							"e:CipherValue",
+							FALSE);
+		gsize wrapped_length;
+		guchar *wrapped = g_base64_decode(wrapped_base64, &wrapped_length);
+		gsize key_length;
+		guchar *key = sipe_cert_crypto_unwrap_kw_aes(entropy->buffer,
+							     entropy->length,
+							     wrapped,
+							     wrapped_length,
+							     &key_length);
+		g_free(wrapped);
+		g_free(wrapped_base64);
 
-		if (assertionID) {
+		SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found timestamp & keydata");
+
+		if (assertionID && key) {
 			/* same as SIPE_DIGEST_HMAC_SHA1_LENGTH */
 			guchar digest[SIPE_DIGEST_SHA1_LENGTH];
 			gchar *base64;
 			gchar *signed_info;
 			gchar *canon;
+
+			SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found assertionID and valid Base-64 encoded key");
 
 			/* Digest over reference element (#timestamp -> wsu:Timestamp) */
 			sipe_digest_sha1((guchar *) timestamp,
@@ -238,21 +257,11 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 			if (canon) {
 				gchar *signature;
 
-				/* SignatureValue calculation */
-				/* Temporary. We need to
-				   a) extract the wrapped key from keydata
-				   b) unwrap the key (kw-aes256)
-				   c) use the key as input to HMAC(SHA-1) of canon
-				*/
-				{
-					guchar key[32];
-					(void)entropy;
-					memset(key, 0, sizeof(key));
-					sipe_digest_hmac_sha1(key, sizeof(key),
-							      (guchar *)canon,
-							      strlen(canon),
-							      digest);
-				}
+				/* calculate signature */
+				sipe_digest_hmac_sha1(key, key_length,
+						      (guchar *)canon,
+						      strlen(canon),
+						      digest);
 				base64 = g_base64_encode(digest,
 							 SIPE_DIGEST_HMAC_SHA1_LENGTH);
 
@@ -279,8 +288,10 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 				g_free(signature);
 			}
 
-			g_free(assertionID);
 		}
+
+		g_free(key);
+		g_free(assertionID);
 	}
 
 	g_free(keydata);
