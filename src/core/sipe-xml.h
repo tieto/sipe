@@ -116,3 +116,15 @@ gchar *sipe_xml_data(const sipe_xml *node);
  * @param path The path to this node (can be NULL)
  */
 void sipe_xml_dump(const sipe_xml *node, const gchar *path);
+
+/* Other XML convenience functions */
+
+/**
+ * Apply "Exclusive XML Canonicalization" to a XML string
+ * See also http://www.w3.org/TR/xml-exc-c14n/
+ *
+ * @param string String with the XML to be canonicalized.
+ *
+ * @return canonicalized XML string. Must be @c g_free()'d.
+ */
+gchar *sipe_xml_exc_c14n(const gchar *string);

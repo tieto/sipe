@@ -29,6 +29,9 @@
 #include <time.h>
 
 #include "libxml/parser.h"
+#include "libxml/c14n.h"
+#include "libxml/xmlversion.h"
+
 #include "glib.h"
 
 #include "sipe-backend.h"
@@ -381,6 +384,52 @@ void sipe_xml_dump(const sipe_xml *node, const gchar *path)
 	g_free(new_path);
 }
 #endif
+
+/*
+ * Other XML convenience functions not based on libpurple xmlnode.c
+ */
+
+gchar *sipe_xml_exc_c14n(const gchar *string)
+{
+	/* Parse string to XML document */
+	xmlDocPtr doc = xmlReadMemory(string, strlen(string), "", NULL, 0);
+	gchar *canon = NULL;
+
+	if (doc) {
+		xmlChar *buffer;
+		int size;
+
+		/* Apply canonicalization */
+		size = xmlC14NDocDumpMemory(doc,
+					    NULL,
+#if LIBXML_VERSION > 20703
+					    /* new API: int mode (a xmlC14NMode) */
+					    XML_C14N_EXCLUSIVE_1_0,
+#else
+					    /* old API: int exclusive */
+					    1,
+#endif
+					    NULL,
+					    0,
+					    &buffer);
+		xmlFreeDoc(doc);
+
+		if (size >= 0) {
+			SIPE_DEBUG_INFO("sipe_xml_exc_c14n:\noriginal:      %s\ncanonicalized: %s",
+					string, buffer);
+			canon = g_strndup((gchar *) buffer, size);
+			xmlFree(buffer);
+		} else {
+			SIPE_DEBUG_ERROR("sipe_xml_exc_c14n: failed to canonicalize xml string:\n%s",
+					 string);
+		}
+	} else {
+		SIPE_DEBUG_ERROR("sipe_xml_exc_c14n: error parsing xml string:\n%s",
+				 string);
+	}
+
+	return(canon);
+}
 
 /*
   Local Variables:

@@ -207,7 +207,7 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 			guchar digest[SIPE_DIGEST_SHA1_LENGTH];
 			gchar *base64;
 			gchar *signed_info;
-			gchar *signature;
+			gchar *canon;
 
 			/* Digest over reference element (#timestamp -> wsu:Timestamp) */
 			sipe_digest_sha1((guchar *) timestamp,
@@ -231,48 +231,55 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 						      base64);
 			g_free(base64);
 
-			/* SignatureValue calculation */
-			/* Temporary. We need to
-			   a) extract the wrapped key from keydata
-			   b) unwrap the key (kw-aes256)
-			   c) use the key as input to HMAC(SHA-1) of signed_info
-
-			   TODO: signed_info probably needs to be in canonical form
-			*/
-			{
-				guchar key[32];
-				(void)entropy;
-				memset(key, 0, sizeof(key));
-				sipe_digest_hmac_sha1(key, sizeof(key),
-						      (guchar *)signed_info,
-						      strlen(signed_info),
-						      digest);
-			}
-			base64 = g_base64_encode(digest,
-						 SIPE_DIGEST_HMAC_SHA1_LENGTH);
-
-			/* XML-Sig: Signature from SignedInfo + Key */
-			signature = g_strdup_printf("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
-						    " %s"
-						    " <SignatureValue>%s</SignatureValue>"
-						    " <KeyInfo>"
-						    "  <wsse:SecurityTokenReference wsse:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1\">"
-						    "   <wsse:KeyIdentifier ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID\">%s</wsse:KeyIdentifier>"
-						    "  </wsse:SecurityTokenReference>"
-						    " </KeyInfo>"
-						    "</Signature>",
-						    signed_info,
-						    base64,
-						    assertionID);
-			g_free(base64);
+			/* XML-Sig: SignedInfo in canonical form */
+			canon = sipe_xml_exc_c14n(signed_info);
 			g_free(signed_info);
-			g_free(assertionID);
 
-			wsse_security = g_strconcat(timestamp,
-						    keydata,
-						    signature,
-						    NULL);
-			g_free(signature);
+			if (canon) {
+				gchar *signature;
+
+				/* SignatureValue calculation */
+				/* Temporary. We need to
+				   a) extract the wrapped key from keydata
+				   b) unwrap the key (kw-aes256)
+				   c) use the key as input to HMAC(SHA-1) of canon
+				*/
+				{
+					guchar key[32];
+					(void)entropy;
+					memset(key, 0, sizeof(key));
+					sipe_digest_hmac_sha1(key, sizeof(key),
+							      (guchar *)canon,
+							      strlen(canon),
+							      digest);
+				}
+				base64 = g_base64_encode(digest,
+							 SIPE_DIGEST_HMAC_SHA1_LENGTH);
+
+				/* XML-Sig: Signature from SignedInfo + Key */
+				signature = g_strdup_printf("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
+							    " %s"
+							    " <SignatureValue>%s</SignatureValue>"
+							    " <KeyInfo>"
+							    "  <wsse:SecurityTokenReference wsse:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1\">"
+							    "   <wsse:KeyIdentifier ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID\">%s</wsse:KeyIdentifier>"
+							    "  </wsse:SecurityTokenReference>"
+							    " </KeyInfo>"
+							    "</Signature>",
+							    canon,
+							    base64,
+							    assertionID);
+				g_free(base64);
+				g_free(canon);
+
+				wsse_security = g_strconcat(timestamp,
+							    keydata,
+							    signature,
+							    NULL);
+				g_free(signature);
+			}
+
+			g_free(assertionID);
 		}
 	}
 
