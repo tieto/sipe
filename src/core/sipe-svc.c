@@ -44,6 +44,7 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipe.h"
+#include "uuid.h"
 
 /* forward declaration */
 struct svc_request;
@@ -287,37 +288,52 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 				       sipe_svc_callback *callback,
 				       gpointer callback_data)
 {
+	struct sipe_svc_random id;
+	gchar *id_base64;
+	gchar *id_uuid;
 	gchar *uuid = get_uuid(sipe_private);
-	gchar *soap_body = g_strdup_printf("<GetAndPublishCert"
-					   " xmlns=\"http://schemas.microsoft.com/OCS/AuthWebServices/\""
-					   " xmlns:wstep=\"http://schemas.microsoft.com/windows/pki/2009/01/enrollment\""
-					   " DeviceId=\"{%s}\""
-					   " Entity=\"%s\""
-					   ">"
-					   " <wst:RequestSecurityToken>"
-					   "  <wst:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wst:TokenType>"
-					   "  <wst:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</wst:RequestType>"
-					   "  <wsse:BinarySecurityToken"
-					   "   ValueType=\"http://schemas.microsoft.com/OCS/AuthWebServices.xsd#PKCS10\""
-					   "   EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#Base64Binary\""
-					   "  >\r\n%s</wsse:BinarySecurityToken>"
-					   "  <wstep:RequestID>27BC7543-8C9B-44A4-9D3F-67BFE8A461EA</wstep:RequestID>"
-					   " </wst:RequestSecurityToken>"
-					   "</GetAndPublishCert>",
-					   uuid,
-					   authuser,
-					   certreq);
+	gchar *soap_body;
+	gboolean ret;
 
-	gboolean ret = new_soap_req(sipe_private,
-				    uri,
-				    "http://schemas.microsoft.com/OCS/AuthWebServices/GetAndPublishCert",
-				    wsse_security,
-				    soap_body,
-				    sipe_svc_wsdl_response,
-				    callback,
-				    callback_data);
-	g_free(soap_body);
+	/* random request ID */
+	sipe_svc_fill_random(&id, 256);
+	id_base64 = g_base64_encode(id.buffer, id.length);
+	sipe_svc_free_random(&id);
+	id_uuid = generateUUIDfromEPID(id_base64);
+	g_free(id_base64);
+
+	soap_body = g_strdup_printf("<GetAndPublishCert"
+				    " xmlns=\"http://schemas.microsoft.com/OCS/AuthWebServices/\""
+				    " xmlns:wstep=\"http://schemas.microsoft.com/windows/pki/2009/01/enrollment\""
+				    " DeviceId=\"{%s}\""
+				    " Entity=\"%s\""
+				    ">"
+				    " <wst:RequestSecurityToken>"
+				    "  <wst:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wst:TokenType>"
+				    "  <wst:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</wst:RequestType>"
+				    "  <wsse:BinarySecurityToken"
+				    "   ValueType=\"http://schemas.microsoft.com/OCS/AuthWebServices.xsd#PKCS10\""
+				    "   EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#Base64Binary\""
+				    "  >\r\n%s</wsse:BinarySecurityToken>"
+				    "  <wstep:RequestID>%s</wstep:RequestID>"
+				    " </wst:RequestSecurityToken>"
+				    "</GetAndPublishCert>",
+				    uuid,
+				    authuser,
+				    certreq,
+				    id_uuid);
+	g_free(id_uuid);
 	g_free(uuid);
+
+	ret = new_soap_req(sipe_private,
+			   uri,
+			   "http://schemas.microsoft.com/OCS/AuthWebServices/GetAndPublishCert",
+			   wsse_security,
+			   soap_body,
+			   sipe_svc_wsdl_response,
+			   callback,
+			   callback_data);
+	g_free(soap_body);
 
 	return(ret);
 }
