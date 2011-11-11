@@ -31,6 +31,37 @@
 #include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
 
+struct sipe_cert_crypto {
+	int temporary_dummy;
+};
+
+struct sipe_cert_crypto *sipe_cert_crypto_init(void)
+{
+	return(NULL);
+}
+
+void sipe_cert_crypto_free(struct sipe_cert_crypto *ssc)
+{
+	if (ssc) {
+		g_free(ssc);
+	}
+}
+
+gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
+				const gchar *subject)
+{
+	/* temporary */
+	(void)ssc;
+	(void)subject;
+	return(NULL);
+}
+
+void sipe_cert_crypto_destroy(gpointer certificate)
+{
+	/* temporary */
+	(void)certificate;
+}
+
 /*
   Local Variables:
   mode: c

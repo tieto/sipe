@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 /* Forward declarations */
 struct sip_service_data;
 struct sip_transport;
+struct sipe_certificate;
 struct sipe_media_call_private;
 struct sipe_groupchat;
 struct sipe_svc;
@@ -81,7 +82,8 @@ struct sipe_core_private {
 
 	struct sipe_dns_query *dns_query;
 
-	/* Web services */
+	/* TLS-DSK: Certificates & Web services */
+	struct sipe_certificate *certificate;
 	struct sipe_svc *svc;
 
 	/* the original data structure*/

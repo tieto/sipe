@@ -49,6 +49,69 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
+struct sipe_certificate {
+	GHashTable *certificates;
+	struct sipe_cert_crypto *backend;
+};
+
+void sipe_certificate_free(struct sipe_core_private *sipe_private)
+{
+	struct sipe_certificate *sc = sipe_private->certificate;
+
+	if (sc) {
+		g_hash_table_destroy(sc->certificates);
+		sipe_cert_crypto_free(sc->backend);
+		g_free(sc);
+	}
+}
+
+static gboolean sipe_certificate_init(struct sipe_core_private *sipe_private)
+{
+	struct sipe_certificate *sc;
+	struct sipe_cert_crypto *ssc;
+
+	if (sipe_private->certificate)
+		return(TRUE);
+
+	ssc = sipe_cert_crypto_init();
+	if (!ssc) {
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_certificate_init: crypto backend init FAILED!");
+		return(FALSE);
+	}
+
+	sc = g_new0(struct sipe_certificate, 1);
+	sc->certificates = g_hash_table_new_full(g_str_hash, g_str_equal,
+						 g_free,
+						 sipe_cert_crypto_destroy);
+	sc->backend = ssc;
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_certificate_init: DONE");
+
+	sipe_private->certificate = sc;
+	return(TRUE);
+}
+
+static gchar *create_certreq(struct sipe_core_private *sipe_private,
+			     const gchar *subject)
+{
+	if (!sipe_certificate_init(sipe_private))
+		return(NULL);
+
+	return(sipe_cert_crypto_request(sipe_private->certificate->backend,
+					subject));
+}
+
+gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
+				       const gchar *target)
+{
+	struct sipe_certificate *sc = sipe_private->certificate;
+
+	if (!target || !sc)
+		return(NULL);
+
+	return(g_hash_table_lookup(sc->certificates, target));
+}
+
 struct certificate_callback_data {
 	gchar *target;
 	gchar *authuser;
@@ -73,18 +136,6 @@ static void callback_data_free(struct certificate_callback_data *ccd)
 		sipe_svc_free_random(&ccd->entropy);
 		g_free(ccd);
 	}
-}
-
-gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
-				       const gchar *target)
-{
-	if (!target)
-		return(NULL);
-
-	/* temporary */
-	(void)sipe_private;
-
-	return(NULL);
 }
 
 static void certificate_failure(struct sipe_core_private *sipe_private,
@@ -382,20 +433,28 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 									&ccd->entropy);
 
 			if (wsse_security) {
+				gchar *certreq_base64 = create_certreq(sipe_private,
+								       ccd->authuser);
 
 				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
 						uri);
 
-				success = sipe_svc_get_and_publish_cert(sipe_private,
-									ccd->certprov_uri,
-									ccd->authuser,
-									wsse_security,
-									"", /* TBD.... */
-									get_and_publish_cert,
-									ccd);
-				if (success) {
-					/* callback data passed down the line */
-					ccd = NULL;
+				if (certreq_base64) {
+
+					SIPE_DEBUG_INFO_NOFORMAT("webticket_token: created certificate request");
+
+					success = sipe_svc_get_and_publish_cert(sipe_private,
+										ccd->certprov_uri,
+										ccd->authuser,
+										wsse_security,
+										certreq_base64,
+										get_and_publish_cert,
+										ccd);
+					if (success) {
+						/* callback data passed down the line */
+						ccd = NULL;
+					}
+					g_free(certreq_base64);
 				}
 				g_free(wsse_security);
 			}
