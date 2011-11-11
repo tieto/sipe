@@ -184,8 +184,12 @@ gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
 
 void sipe_cert_crypto_destroy(gpointer certificate)
 {
-	/* temporary */
-	(void)certificate;
+	CERT_DestroyCertificate(certificate);
+}
+
+gpointer sipe_cert_crypto_import(const gchar *base64)
+{
+	return(CERT_ConvertAndDecodeCertificate((char *) base64));
 }
 
 /*

@@ -129,6 +129,14 @@ static gchar *create_certreq(struct sipe_core_private *sipe_private,
 	return(base64);
 }
 
+static void add_certificate(struct sipe_core_private *sipe_private,
+			    const gchar *target,
+			    gpointer certificate)
+{
+	struct sipe_certificate *sc = sipe_private->certificate;
+	g_hash_table_insert(sc->certificates, g_strdup(target), certificate);
+}
+
 gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 				       const gchar *target)
 {
@@ -179,21 +187,42 @@ static void certificate_failure(struct sipe_core_private *sipe_private,
 
 static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 				 const gchar *uri,
-				 const gchar *raw,
+				 SIPE_UNUSED_PARAMETER const gchar *raw,
 				 sipe_xml *soap_body,
 				 gpointer callback_data)
 {
 	struct certificate_callback_data *ccd = callback_data;
+	gboolean success = (uri == NULL); /* abort case */
 
 	if (soap_body) {
+		gchar *cert_base64 = sipe_xml_data(sipe_xml_child(soap_body,
+								  "Body/GetAndPublishCertResponse/RequestSecurityTokenResponse/RequestedSecurityToken/BinarySecurityToken"));
 
 		SIPE_DEBUG_INFO("get_and_publish_cert: received valid SOAP message from service %s",
 				uri);
 
-		/* TBD.... */
-		(void)raw;
+		if (cert_base64) {
+			gpointer opaque = sipe_cert_crypto_import(cert_base64);
 
-	} else if (uri) {
+			SIPE_DEBUG_INFO_NOFORMAT("get_and_publish_cert: found certificate");
+
+			if (opaque) {
+				add_certificate(sipe_private,
+						ccd->target,
+						opaque);
+				SIPE_DEBUG_INFO("get_and_publish_cert: certificate for target '%s' added",
+						ccd->target);
+
+				/* TBD: retrigger REGISTER.... */
+				success = TRUE;
+			}
+
+			g_free(cert_base64);
+		}
+
+	}
+
+	if (!success) {
 		certificate_failure(sipe_private,
 				    _("Certitifcate request to %s failed"),
 				    uri);

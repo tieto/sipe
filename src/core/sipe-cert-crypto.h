@@ -65,3 +65,12 @@ gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
  * @param certificate opaque pointer to backend certificate structure
  */
 void sipe_cert_crypto_destroy(gpointer certificate);
+
+/**
+ * Import a certificate from Base64 string
+ *
+ * @param base64 Base64 encoded DER data
+ *
+ * @return opaque pointer to certificate. Must be @sipe_cert_crypto_destroy()'d.
+ */
+gpointer sipe_cert_crypto_import(const gchar *base64);
