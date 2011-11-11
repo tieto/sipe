@@ -31,11 +31,12 @@
 #include "nss.h"
 #include "pk11pub.h"
 
+#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-crypt.h"
 
 /* NSS specific initialization/shutdown */
-void sipe_crypto_init(gboolean production_mode)
+void sipe_crypto_init(SIPE_UNUSED_PARAMETER gboolean production_mode)
 {
 	if (!NSS_IsInitialized()) {
 		/*
@@ -51,21 +52,8 @@ void sipe_crypto_init(gboolean production_mode)
 		 * so that the backend code can decide when it is OK to
 		 * initialize NSS.
 		 */
-		if (production_mode) {
-			gchar *tmp;
-
-			if (NSS_InitReadWrite(tmp = sipe_backend_user_nss_dbpath()) == SECSuccess) {
-				/* no DB password */
-				PK11_InitPin(PK11_GetInternalKeySlot(), "", "");
-				SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
-			}
-
-			g_free(tmp);
-		} else {
-			/* For tests read-only mode without db is enough */
-			NSS_NoDB_Init(".");
-			SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
-		}
+		NSS_NoDB_Init(".");
+		SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
 	}
 }
 

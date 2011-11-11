@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,6 @@
 
 #include "request.h"
 #include "server.h"
-#include "util.h"
 
 #include "purple-private.h"
 
@@ -71,13 +70,6 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 void sipe_backend_user_close_ask(gpointer key)
 {
 	purple_request_close_with_handle(key);
-}
-
-gchar *sipe_backend_user_nss_dbpath(void)
-{
-	return(g_build_filename(purple_user_dir(),
-				"certificates",
-				NULL));
 }
 
 /*
