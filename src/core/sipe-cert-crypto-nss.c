@@ -27,22 +27,57 @@
 #include <glib.h>
 
 #include "pk11pub.h"
+#include "keyhi.h"
 
 #include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
 
 struct sipe_cert_crypto {
-	int temporary_dummy;
+	SECKEYPrivateKey *private;
+	SECKEYPublicKey  *public;
 };
 
 struct sipe_cert_crypto *sipe_cert_crypto_init(void)
 {
+	PK11SlotInfo *slot = PK11_GetInternalKeySlot();
+
+	if (slot) {
+		PK11RSAGenParams rsaParams;
+		struct sipe_cert_crypto *ssc = g_new0(struct sipe_cert_crypto, 1);
+
+		/* RSA parameters - should those be configurable? */
+		rsaParams.keySizeInBits = 1024;
+		rsaParams.pe            = 65537;
+
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: generate key pair, this might take a while...");
+		ssc->private = PK11_GenerateKeyPair(slot,
+						    CKM_RSA_PKCS_KEY_PAIR_GEN,
+						    &rsaParams,
+						    &ssc->public,
+						    PR_FALSE, /* not permanent */
+						    PR_TRUE,  /* sensitive */
+						    NULL);
+		if (ssc->private) {
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: key pair generated");
+			PK11_FreeSlot(slot);
+			return(ssc);
+		}
+
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: key generation failed");
+		g_free(ssc);
+		PK11_FreeSlot(slot);
+	}
+
 	return(NULL);
 }
 
 void sipe_cert_crypto_free(struct sipe_cert_crypto *ssc)
 {
 	if (ssc) {
+		if (ssc->public)
+			SECKEY_DestroyPublicKey(ssc->public);
+		if (ssc->private)
+			SECKEY_DestroyPrivateKey(ssc->private);
 		g_free(ssc);
 	}
 }
