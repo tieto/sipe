@@ -26,29 +26,10 @@
 
 #include <glib.h>
 
-#include "nss.h"
 #include "pk11pub.h"
 
 #include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
-
-guchar *sipe_cert_crypto_unwrap_kw_aes(const guchar *aes_key,
-				       gsize aes_key_len,
-				       const guchar *wrapped,
-				       gsize wrapped_len,
-				       gsize *unwrapped_len)
-{
-	/* Sanity checks */
-	if (!aes_key || !wrapped) {
-		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_unwrap_kw_aes: invalid input data");
-	}
-
-	/* temporary */
-	(void)aes_key_len;
-	(void)wrapped_len;
-	(void)unwrapped_len;
-	return(NULL);
-}
 
 /*
   Local Variables:

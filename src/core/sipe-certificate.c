@@ -108,6 +108,9 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 
 	if (soap_body) {
 
+		SIPE_DEBUG_INFO("get_and_publish_cert: received valid SOAP message from service %s",
+				uri);
+
 		/* TBD.... */
 		(void)raw;
 
@@ -193,6 +196,61 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 	return(wsse_security);
 }
 
+/* P_SHA1() - see RFC2246 "The TLS Protocol Version 1.0", Section 5 */
+static guchar *p_sha1(const guchar *secret,
+		      gsize secret_length,
+		      const guchar *seed,
+		      gsize seed_length,
+		      gsize output_length)
+{
+  guchar *output = NULL;
+
+  /*
+   * output_length ==  0     -> illegal
+   * output_length ==  1..20 -> iterations = 1
+   * output_length == 21..40 -> iterations = 2
+   */
+  if (secret && seed && (output_length > 0)) {
+    guint iterations = (output_length + SIPE_DIGEST_HMAC_SHA1_LENGTH - 1) / SIPE_DIGEST_HMAC_SHA1_LENGTH;
+    guchar *concat   = g_malloc(SIPE_DIGEST_HMAC_SHA1_LENGTH + seed_length);
+    guchar A[SIPE_DIGEST_HMAC_SHA1_LENGTH];
+    guchar *p;
+
+    SIPE_DEBUG_INFO("p_sha1: secret %" G_GSIZE_FORMAT " bytes, seed %" G_GSIZE_FORMAT " bytes",
+		    secret_length, seed_length);
+    SIPE_DEBUG_INFO("p_sha1: output %" G_GSIZE_FORMAT " bytes -> %d iterations",
+		    output_length, iterations);
+
+    /* A(1) = HMAC_SHA1(secret, A(0)), A(0) = seed */
+    sipe_digest_hmac_sha1(secret, secret_length,
+			  seed, seed_length,
+			  A);
+
+    /* Each iteration adds SIPE_DIGEST_HMAC_SHA1_LENGTH bytes */
+    p = output = g_malloc(iterations * SIPE_DIGEST_HMAC_SHA1_LENGTH);
+
+    while (iterations-- > 0) {
+      /* P_SHA1(i) = HMAC_SHA1(secret, A(i) + seed), i = 1, 2, ... */
+      guchar P[SIPE_DIGEST_HMAC_SHA1_LENGTH];
+      memcpy(concat, A, SIPE_DIGEST_HMAC_SHA1_LENGTH);
+      memcpy(concat + SIPE_DIGEST_HMAC_SHA1_LENGTH, seed, seed_length);
+      sipe_digest_hmac_sha1(secret, secret_length,
+			    concat, SIPE_DIGEST_HMAC_SHA1_LENGTH + seed_length,
+			    P);
+      memcpy(p, P, SIPE_DIGEST_HMAC_SHA1_LENGTH);
+      p += SIPE_DIGEST_HMAC_SHA1_LENGTH;
+
+      /* A(i+1) = HMAC_SHA1(secret, A(i)) */
+      sipe_digest_hmac_sha1(secret, secret_length,
+			    A, SIPE_DIGEST_HMAC_SHA1_LENGTH,
+			    A);
+    }
+    g_free(concat);
+  }
+
+  return(output);
+}
+
 static gchar *generate_sha1_proof_wsse(const gchar *raw,
 				       struct sipe_svc_random *entropy)
 {
@@ -203,19 +261,28 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 	if (timestamp && keydata) {
 		gchar *assertionID = extract_raw_xml_attribute(keydata,
 							       "AssertionID");
-		gchar *wrapped_base64 = extract_raw_xml(keydata,
-							"e:CipherValue",
-							FALSE);
-		gsize wrapped_length;
-		guchar *wrapped = g_base64_decode(wrapped_base64, &wrapped_length);
-		gsize key_length;
-		guchar *key = sipe_cert_crypto_unwrap_kw_aes(entropy->buffer,
-							     entropy->length,
-							     wrapped,
-							     wrapped_length,
-							     &key_length);
-		g_free(wrapped);
-		g_free(wrapped_base64);
+
+		/*
+		 * WS-Trust 1.3
+		 *
+		 * http://docs.oasis-open.org/ws-sx/ws-trust/200512/CK/PSHA1:
+		 *
+		 * "The key is computed using P_SHA1() from the TLS sepcification to generate
+		 *  a bit stream using entropy from both sides. The exact form is:
+		 *
+		 *       key = P_SHA1(Entropy_REQ, Entropy_RES)"
+		 */
+		gchar *entropy_res_base64 = extract_raw_xml(raw, "BinarySecret", FALSE);
+		gsize entropy_res_length;
+		guchar *entropy_response = g_base64_decode(entropy_res_base64,
+							   &entropy_res_length);
+		guchar *key = p_sha1(entropy->buffer,
+				     entropy->length,
+				     entropy_response,
+				     entropy_res_length,
+			             entropy->length);
+		g_free(entropy_response);
+		g_free(entropy_res_base64);
 
 		SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found timestamp & keydata");
 
@@ -226,7 +293,7 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 			gchar *signed_info;
 			gchar *canon;
 
-			SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found assertionID and valid Base-64 encoded key");
+			SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found assertionID and successfully computed the key");
 
 			/* Digest over reference element (#timestamp -> wsu:Timestamp) */
 			sipe_digest_sha1((guchar *) timestamp,
@@ -258,7 +325,7 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 				gchar *signature;
 
 				/* calculate signature */
-				sipe_digest_hmac_sha1(key, key_length,
+				sipe_digest_hmac_sha1(key, entropy->length,
 						      (guchar *)canon,
 						      strlen(canon),
 						      digest);
@@ -311,8 +378,6 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	if (soap_body) {
 		/* WebTicket for Certificate Provisioning Service */
 		if (ccd->webticket_for_certprov) {
-			/* This is a guess: our 256 bits of entropy are used
-			   as the private key to wrap the AES key */
 			gchar *wsse_security = generate_sha1_proof_wsse(raw,
 									&ccd->entropy);
 
