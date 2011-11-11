@@ -256,7 +256,7 @@ static gboolean new_soap_req(struct sipe_core_private *sipe_private,
 {
 	return(sipe_svc_wsdl_request(sipe_private,
 				     uri,
-				     "xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" " 
+				     "xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" "
 				     "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" "
 				     "xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\"",
 				     soap_action,
@@ -304,6 +304,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 
 	soap_body = g_strdup_printf("<GetAndPublishCert"
 				    " xmlns=\"http://schemas.microsoft.com/OCS/AuthWebServices/\""
+				    " xmlns:wst=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512/\""
 				    " xmlns:wstep=\"http://schemas.microsoft.com/windows/pki/2009/01/enrollment\""
 				    " DeviceId=\"{%s}\""
 				    " Entity=\"%s\""
