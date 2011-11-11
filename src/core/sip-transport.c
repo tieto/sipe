@@ -219,7 +219,8 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 
 		if (!password) {
 			if (auth->sts_uri) {
-				SIPE_DEBUG_INFO("tls-dsk: Certificate Provisioning URI %s", auth->sts_uri);
+				SIPE_DEBUG_INFO("initialize_auth_context: TLS-DSK Certificate Provisioning URI %s",
+						auth->sts_uri);
 				if (!sipe_certificate_tls_dsk_generate(sipe_private,
 								       auth->target,
 								       authuser,
@@ -240,6 +241,9 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 			/* we can't authenticate the message yet */
 			sipe_private->transport->auth_incomplete = TRUE;
 			return(NULL);
+		} else {
+			SIPE_DEBUG_INFO("initialize_auth_context: TLS-DSK certificate for target '%s' found.",
+					auth->target);
 		}
 	}
 
@@ -1364,6 +1368,11 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 	if (sipe_private->dns_query)
 		sipe_backend_dns_query_cancel(sipe_private->dns_query);
 
+}
+
+void sip_transport_authentication_completed(struct sipe_core_private *sipe_private)
+{
+	do_reauthenticate_cb(sipe_private, NULL);
 }
 
 guint sip_transport_port(struct sipe_core_private *sipe_private)

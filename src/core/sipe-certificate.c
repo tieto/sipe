@@ -38,6 +38,7 @@
 #include <glib.h>
 
 #include "sipe-common.h"
+#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -213,7 +214,8 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 				SIPE_DEBUG_INFO("get_and_publish_cert: certificate for target '%s' added",
 						ccd->target);
 
-				/* TBD: retrigger REGISTER.... */
+				/* Let's try this again... */
+				sip_transport_authentication_completed(sipe_private);
 				success = TRUE;
 			}
 
