@@ -26,8 +26,10 @@
 
 #include <glib.h>
 
-#include "pk11pub.h"
+#include "cert.h"
+#include "cryptohi.h"
 #include "keyhi.h"
+#include "pk11pub.h"
 
 #include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
@@ -46,7 +48,7 @@ struct sipe_cert_crypto *sipe_cert_crypto_init(void)
 		struct sipe_cert_crypto *ssc = g_new0(struct sipe_cert_crypto, 1);
 
 		/* RSA parameters - should those be configurable? */
-		rsaParams.keySizeInBits = 1024;
+		rsaParams.keySizeInBits = 2048;
 		rsaParams.pe            = 65537;
 
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: generate key pair, this might take a while...");
@@ -82,13 +84,102 @@ void sipe_cert_crypto_free(struct sipe_cert_crypto *ssc)
 	}
 }
 
+static gchar *sign_certreq(CERTCertificateRequest *certreq,
+			   SECKEYPrivateKey *private)
+{
+	PRArenaPool *arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
+	gchar *base64 = NULL;
+
+	if (arena) {
+		SECItem *encoding = SEC_ASN1EncodeItem(arena,
+						       NULL,
+						       certreq,
+						       SEC_ASN1_GET(CERT_CertificateRequestTemplate));
+
+		if (encoding) {
+			SECOidTag signtag = SEC_GetSignatureAlgorithmOidTag(private->keyType,
+									    SEC_OID_UNKNOWN);
+
+			if (signtag) {
+				SECItem raw;
+
+				if (!SEC_DerSignData(arena,
+						     &raw,
+						     encoding->data,
+						     encoding->len,
+						     private,
+						     signtag)) {
+
+					SIPE_DEBUG_INFO_NOFORMAT("sign_certreq: request signed successfully");
+					base64 = g_base64_encode(raw.data, raw.len);
+
+				} else {
+					SIPE_DEBUG_ERROR_NOFORMAT("sign_certreq: signing failed");
+				}
+			} else {
+				SIPE_DEBUG_ERROR_NOFORMAT("sign_certreq: can't find signature algorithm");
+			}
+
+			/* all memory allocated from "arena"
+			   SECITEM_FreeItem(encoding, PR_TRUE); */
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("sign_certreq: can't ASN.1 encode certreq");
+		}
+
+		PORT_FreeArena(arena, PR_TRUE);
+	} else {
+		SIPE_DEBUG_ERROR_NOFORMAT("sign_certreq: can't allocate memory");
+	}
+
+	return(base64);
+}
+
 gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
 				const gchar *subject)
 {
-	/* temporary */
-	(void)ssc;
-	(void)subject;
-	return(NULL);
+	gchar *base64 = NULL;
+	SECItem *pkd;
+
+	if (!ssc || !subject)
+		return(NULL);
+
+	pkd = SECKEY_EncodeDERSubjectPublicKeyInfo(ssc->public);
+	if (pkd) {
+		CERTSubjectPublicKeyInfo *spki = SECKEY_DecodeDERSubjectPublicKeyInfo(pkd);
+
+		if (spki) {
+			gchar *cn      = g_strdup_printf("CN=%s", subject);
+			CERTName *name = CERT_AsciiToName(cn);
+			g_free(cn);
+
+			if (name) {
+				CERTCertificateRequest *certreq = CERT_CreateCertificateRequest(name,
+												spki,
+												NULL);
+
+				if (certreq) {
+					base64 = sign_certreq(certreq, ssc->private);
+					CERT_DestroyCertificateRequest(certreq);
+				} else {
+					SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_create: certreq creation failed");
+				}
+
+				CERT_DestroyName(name);
+			} else {
+				SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_create: subject name creation failed");
+			}
+
+			SECKEY_DestroySubjectPublicKeyInfo(spki);
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_create: DER decode public key info failed");
+		}
+
+		SECITEM_FreeItem(pkd, PR_TRUE);
+	} else {
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_create: DER encode failed");
+	}
+
+	return(base64);
 }
 
 void sipe_cert_crypto_destroy(gpointer certificate)

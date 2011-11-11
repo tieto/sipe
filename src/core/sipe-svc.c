@@ -300,8 +300,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 					   "  <wsse:BinarySecurityToken"
 					   "   ValueType=\"http://schemas.microsoft.com/OCS/AuthWebServices.xsd#PKCS10\""
 					   "   EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#Base64Binary\""
-					   "  >\r\n"
-					   "%s\r\n"					   "  </wsse:BinarySecurityToken>"
+					   "  >\r\n%s</wsse:BinarySecurityToken>"
 					   "  <wstep:RequestID>27BC7543-8C9B-44A4-9D3F-67BFE8A461EA</wstep:RequestID>"
 					   " </wst:RequestSecurityToken>"
 					   "</GetAndPublishCert>",

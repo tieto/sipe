@@ -94,11 +94,39 @@ static gboolean sipe_certificate_init(struct sipe_core_private *sipe_private)
 static gchar *create_certreq(struct sipe_core_private *sipe_private,
 			     const gchar *subject)
 {
+	gchar *base64;
+
 	if (!sipe_certificate_init(sipe_private))
 		return(NULL);
 
-	return(sipe_cert_crypto_request(sipe_private->certificate->backend,
-					subject));
+	SIPE_DEBUG_INFO_NOFORMAT("create_req: generating new certificate request");
+
+	base64 = sipe_cert_crypto_request(sipe_private->certificate->backend,
+					  subject);
+	if (base64) {
+		GString *format = g_string_new(NULL);
+		gsize count     = strlen(base64);
+		const gchar *p  = base64;
+
+		/* Base64 needs to be formated correctly */
+#define CERTREQ_BASE64_LINE_LENGTH 76
+		while (count > 0) {
+			gsize chunk = count > CERTREQ_BASE64_LINE_LENGTH ?
+				CERTREQ_BASE64_LINE_LENGTH : count;
+			g_string_append_len(format, p, chunk);
+			if (chunk == CERTREQ_BASE64_LINE_LENGTH)
+				g_string_append(format, "\r\n");
+			count -= chunk;
+			p     += chunk;
+		}
+
+		/* swap Base64 buffers */
+		g_free(base64);
+		base64 = format->str;
+		g_string_free(format, FALSE);
+	}
+
+	return(base64);
 }
 
 gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
