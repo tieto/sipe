@@ -64,6 +64,9 @@ sip_sec_acquire_cred__tls_dsk(SipSecContext context,
 
 	ctx->certificate = (gpointer) password;
 
+	/* Authentication not yet completed */
+	ctx->common.is_ready = FALSE;
+
 	return SIP_SEC_E_OK;
 }
 

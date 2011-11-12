@@ -150,7 +150,8 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 				struct sipmsg *msg)
 {
 	struct sip_transport *transport = sipe_private->transport;
-	if (transport->registrar.gssapi_context) {
+	if (transport->registrar.gssapi_context &&
+	    sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
 		struct sipmsg_breakdown msgbd;
 		gchar *signature_input_str;
 		msgbd.msg = msg;
@@ -264,7 +265,8 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		return NULL;
 	}
 
-	if (auth->version > 3) {
+	if ((auth->version > 3) &&
+	    sip_sec_context_is_ready(auth->gssapi_context)) {
 		sipe_make_signature(sipe_private, msg);
 		sign_str = g_strdup_printf(", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
 					   msg->rand, msg->num, msg->signature);
@@ -1587,7 +1589,8 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 		}
 
 		// Verify the signature before processing it
-		if (transport->registrar.gssapi_context) {
+		if (transport->registrar.gssapi_context &&
+		    sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
 			struct sipmsg_breakdown msgbd;
 			gchar *signature_input_str;
 			gchar *rspauth;

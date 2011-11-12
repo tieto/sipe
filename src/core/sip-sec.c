@@ -104,6 +104,7 @@ sip_sec_create_context(guint type,
 
 		context->sso = sso;
 		context->is_connection_based = is_connection_based;
+		context->is_ready = TRUE;
 
 		ret = (*context->acquire_cred_func)(context, domain, username, password);
 		if (ret != SIP_SEC_E_OK) {
@@ -204,6 +205,11 @@ sip_sec_init_context(SipSecContext *context,
 	}
 
 	return output_toked_base64;
+}
+
+gboolean sip_sec_context_is_ready(SipSecContext context)
+{
+	return(context->is_ready != 0);
 }
 
 void
