@@ -75,3 +75,14 @@ void sipe_cert_crypto_destroy(gpointer certificate);
  * @return opaque pointer to certificate. Must be @sipe_cert_crypto_destroy()'d.
  */
 gpointer sipe_cert_crypto_import(const gchar *base64);
+
+/**
+ * Check if certificate is valid until @c offset seconds from now
+ *
+ * @param certificate opaque pointer to backend certificate structure
+ * @param offset      seconds from now
+ *
+ * @return @c TRUE if certificate is still valid at that time
+ */
+gboolean sipe_cert_crypto_valid(gpointer certificate,
+				guint offset);

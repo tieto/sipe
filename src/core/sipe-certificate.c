@@ -142,11 +142,21 @@ gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 				       const gchar *target)
 {
 	struct sipe_certificate *sc = sipe_private->certificate;
+	gpointer certificate;
 
 	if (!target || !sc)
 		return(NULL);
 
-	return(g_hash_table_lookup(sc->certificates, target));
+	certificate = g_hash_table_lookup(sc->certificates, target);
+
+	/* Let's make sure the certificate is still valid for another hour */
+	if (!sipe_cert_crypto_valid(certificate, 60 * 60)) {
+		SIPE_DEBUG_ERROR("sipe_certificate_tls_dsk_find: certificate for '%s' is invalid",
+				 target);
+		return(NULL);
+	}
+
+	return(certificate);
 }
 
 struct certificate_callback_data {

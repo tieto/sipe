@@ -192,6 +192,30 @@ gpointer sipe_cert_crypto_import(const gchar *base64)
 	return(CERT_ConvertAndDecodeCertificate((char *) base64));
 }
 
+gboolean sipe_cert_crypto_valid(gpointer certificate,
+				guint offset)
+{
+	SECCertTimeValidity validity;
+
+	if (!certificate)
+		return(FALSE);
+
+	validity = CERT_CheckCertValidTimes(certificate,
+					    /* PRTime unit is microseconds */
+					    PR_Now() + offset * PR_USEC_PER_SEC,
+					    PR_FALSE);
+
+	return((validity == secCertTimeValid) ||
+	       /*
+		* From certt.h: "validity could not be decoded from the
+		*                cert, most likely because it was NULL"
+		*
+		* Let's assume if the server sends us such a certificate
+		* that it must be valid then...
+		*/
+	       (validity == secCertTimeUndetermined));
+}
+
 /*
   Local Variables:
   mode: c
