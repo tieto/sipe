@@ -39,6 +39,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libpurple-devel >= 2.4.0
 BuildRequires:  glib2-devel >= 2.12.0
+BuildRequires:  gmime-devel
 BuildRequires:  libxml2-devel
 BuildRequires:  nss-devel
 BuildRequires:  libtool
@@ -133,6 +134,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Nov 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add BR gmime-devel
+
 * Mon Oct 31 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - add BR nss-devel
 

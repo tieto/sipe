@@ -105,6 +105,7 @@
 %endif
 %if 0%{?fedora}
 %define pkg_group Applications/Internet
+%define has_gmime 1
 %if 0%{?fedora} >= 11
 %define has_libnice 1
 %if 0%{?fedora} >= 15
@@ -166,6 +167,9 @@ BuildRequires:  %{purple_develname} >= 2.4.0
 BuildRequires:  libxml2-devel
 BuildRequires:  %{nss_develname}
 BuildRequires:  gettext-devel
+%if 0%{?has_gmime:1}
+BuildRequires:  gmime-devel
+%endif
 # The following two are required to enable Voice & Video features
 %if 0%{?has_libnice:1}
 BuildRequires:  libnice-devel
@@ -416,6 +420,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Nov 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add BR gmime-devel for Fedora to have at least one verification platform
+
 * Sun Nov 06 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - fix Mandriva 2011 unresolvable BR
 

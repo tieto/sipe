@@ -40,16 +40,13 @@
 #include "sipe-core-private.h"
 #include "sipe-crypt.h"
 #include "sipe-group.h"
+#include "sipe-mime.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
 #include "sipe-media.h"
 #include "sipe.h"
-
-#ifdef HAVE_GMIME
-#include <gmime/gmime.h>
-#endif
 
 /* locale_dir is unused if ENABLE_NLS is not defined */
 void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
@@ -66,18 +63,14 @@ void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
 #endif
 	/* Initialization for crypto backend (production mode) */
 	sipe_crypto_init(TRUE);
-#ifdef HAVE_GMIME
-	g_mime_init(0);
-#endif
+	sipe_mime_init();
 }
 
 void sipe_core_destroy(void)
 {
 	sipe_chat_destroy();
+	sipe_mime_shutdown();
 	sipe_crypto_shutdown();
-#ifdef HAVE_GMIME
-	g_mime_shutdown();
-#endif
 	sip_sec_destroy();
 }
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,16 @@
 
 #include "sipe-backend.h"
 #include "sipe-utils.h"
+
+void sipe_mime_init(void)
+{
+	g_mime_init(0);
+}
+
+void sipe_mime_shutdown(void)
+{
+	g_mime_shutdown();
+}
 
 struct gmime_callback_data {
 	sipe_mime_parts_cb callback;

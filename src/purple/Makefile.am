@@ -50,6 +50,7 @@ libsipe_la_LDFLAGS = \
 libsipe_la_LIBADD = \
 	../core/libsipe_core.la \
 	../core/libsipe_core_crypto_nss.la \
+	../core/libsipe_core_libxml2.la \
 	../core/libsipe_core_purple.la \
 	libsipe_backend.la \
         $(LIBXML2_LIBS) \
@@ -85,18 +86,29 @@ tests_LDADD     = \
 endif
 
 if SIPE_MIME_GMIME
-libsipe_la_LIBADD += $(GMIME_LIBS)
+libsipe_la_LIBADD += \
+	../core/libsipe_core_mime.la \
+	$(GMIME_LIBS)
 if !SIPE_OS_WIN32
-tests_LDADD       += $(GMIME_LIBS)
+tests_LDADD       += \
+	../core/libsipe_core_mime.la \
+	$(GMIME_LIBS)
 endif
 else
 libsipe_backend_la_SOURCES += purple-mime.c
 endif
 
 if SIPE_WITH_VV
-libsipe_backend_la_SOURCES += purple-media.c
-libsipe_backend_la_CFLAGS  += $(NICE_CFLAGS) $(GSTREAMER_CFLAGS)
-libsipe_la_LIBADD          += $(NICE_LIBS) $(GSTREAMER_LIBS)
+noinst_LTLIBRARIES            += libsipe_backend_vv.la
+libsipe_backend_vv_la_SOURCES  = purple-media.c
+libsipe_backend_vv_la_CFLAGS   = \
+	$(libsipe_backend_la_CFLAGS) \
+	$(NICE_CFLAGS) \
+	$(GSTREAMER_CFLAGS)
+libsipe_la_LIBADD             += \
+	libsipe_backend_vv.la \
+	$(NICE_LIBS) \
+	$(GSTREAMER_LIBS)
 endif
 
 TESTS = $(check_PROGRAMS)

@@ -1,6 +1,7 @@
 noinst_LTLIBRARIES = \
 	libsipe_core.la \
 	libsipe_core_crypto_nss.la \
+	libsipe_core_libxml2.la \
 	libsipe_core_purple.la
 
 MAINTAINERCLEANFILES = \
@@ -63,7 +64,6 @@ libsipe_core_la_SOURCES = \
 	sipe-user.c \
 	sipe-user.h \
 	sipe-xml.h \
-	sipe-xml.c \
 	uuid.h \
 	uuid.c
 
@@ -96,6 +96,9 @@ libsipe_core_crypto_nss_la_SOURCES = \
 	sipe-crypt-nss.c \
 	sipe-digest-nss.c
 
+libsipe_core_libxml2_la_SOURCES = \
+	sipe-xml.c
+
 libsipe_core_purple_la_SOURCES = \
 	sipe.h \
 	sipe.c
@@ -112,7 +115,6 @@ AM_CFLAGS = $(st)
 libsipe_core_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
-        $(LIBXML2_CFLAGS) \
         $(GLIB_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	-I$(srcdir)/../api
@@ -127,8 +129,9 @@ libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
 endif
 
 if SIPE_MIME_GMIME
-libsipe_core_la_SOURCES += sipe-mime.c
-libsipe_core_la_CFLAGS  += $(GMIME_CFLAGS)
+noinst_LTLIBRARIES           += libsipe_core_mime.la
+libsipe_core_mime_la_SOURCES  = sipe-mime.c
+libsipe_core_mime_la_CFLAGS   = $(libsipe_core_la_CFLAGS) $(GMIME_CFLAGS)
 endif
 
 if SIPE_OS_WIN32
@@ -136,6 +139,8 @@ libsipe_core_la_CFLAGS  += -DHAVE_SSPI=1
 endif
 
 libsipe_core_crypto_nss_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(NSS_CFLAGS)
+
+libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
 
 if SIPE_INCLUDE_PURPLE
 libsipe_core_purple_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(PURPLE_CFLAGS)
@@ -149,7 +154,11 @@ endif
 check_PROGRAMS = sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
-sipe_xml_tests_LDADD = libsipe_core.la $(LIBXML2_LIBS) $(GLIB_LIBS)
+sipe_xml_tests_LDADD = \
+	libsipe_core.la \
+	libsipe_core_libxml2.la \
+	$(LIBXML2_LIBS) \
+	$(GLIB_LIBS)
 
 # disables "caching" of memory blocks in tests
 TESTS_ENVIRONMENT = G_SLICE="always-malloc"
