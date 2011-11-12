@@ -35,9 +35,8 @@
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-tls-dsk.h"
+#include "sipe-tls.h"
 #include "sipe-utils.h"
-
-/* sip-sec-mech.h API implementation for TLS-DSK */
 
 /* Security context for TLS-DSK */
 typedef struct _context_tls_dsk {
@@ -45,6 +44,11 @@ typedef struct _context_tls_dsk {
 	gpointer certificate;
 } *context_tls_dsk;
 
+/* TLS-DSK implementation */
+
+/* TBD.... */
+
+/* sip-sec-mech.h API implementation for TLS-DSK */
 
 static sip_uint32
 sip_sec_acquire_cred__tls_dsk(SipSecContext context,

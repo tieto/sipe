@@ -552,6 +552,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-tls.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-tls.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-user.c"
 				>
 			</File>

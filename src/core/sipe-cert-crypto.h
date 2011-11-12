@@ -22,7 +22,8 @@
  */
 
 /*
- * Internal interface between sipe-certificate and the crypto implementation
+ * Internal interface between sipe-certificate/sipe-tls
+ * and the certificate crypto implementation
  */
 
 /*
