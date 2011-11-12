@@ -78,9 +78,11 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 	/* temporary */
 	(void)ctx;
 	(void)in_buff;
-	(void)out_buff;
 
-	return SIP_SEC_E_INTERNAL_ERROR;
+
+	out_buff->value = sipe_tls_client_hello(&out_buff->length);
+
+	return SIP_SEC_E_OK;
 }
 
 static sip_uint32

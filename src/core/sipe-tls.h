@@ -26,3 +26,5 @@
  *
  * <glib.h>
  */
+
+guchar *sipe_tls_client_hello(gsize *length);
