@@ -38,31 +38,265 @@
 
 #include <glib.h>
 
+#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
 #include "sipe-tls.h"
 
 /*
- * TLS message debugging
+ * TLS message parsing & debugging
  */
-static void message_debug(const guchar *bytes,
-			  gsize length,
-			  gboolean incoming)
+static void dump_hex(const guchar *bytes,
+		     gsize length,
+		     GString *str)
 {
-	if (sipe_backend_debug_enabled()) {
-		GString *str = g_string_new("");
+	gint count = -1;
 
+	while (length-- > 0) {
+		if (++count == 0) {
+			/* do nothing */;
+		} else if ((count % 16) == 0) {
+			g_string_append(str, "\n");
+		} else if ((count %  8) == 0) {
+			g_string_append(str, "  ");
+		}
+		g_string_append_printf(str, " %02X", *bytes++);
+	}
+	g_string_append(str, "\n");
+}
+
+struct parse_descriptor {
+	int temporary;
+};
+
+struct msg_descriptor {
+	guint type;
+	const gchar *description;
+	const struct parse_descriptor *parse;
+};
+
+static void free_parsed_data(gpointer parsed_data)
+{
+	if (!parsed_data)
+		return;
+}
+
+static gpointer generic_parser(const guchar *bytes,
+			       gsize length,
+			       gboolean incoming,
+			       GString *str,
+			       const struct parse_descriptor *desc,
+			       gpointer parsed_data)
+{
+	/* temporary */
+	if (str) {
+		dump_hex(bytes, length, str);
+	}
+	(void)parsed_data;
+	(void)incoming;
+	(void)desc;
+	return(NULL);
+}
+
+#define TLS_HANDSHAKE_HEADER_LENGTH           4
+#define TLS_HANDSHAKE_OFFSET_TYPE             0
+#define TLS_HANDSHAKE_TYPE_CLIENT_HELLO       1
+#define TLS_HANDSHAKE_TYPE_SERVER_HELLO       2
+#define TLS_HANDSHAKE_TYPE_CERTIFICATE       11
+#define TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ   13
+#define TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE 14
+#define TLS_HANDSHAKE_OFFSET_LENGTH           1
+
+static gpointer handshake_parse(const guchar *bytes,
+				gsize length,
+				gboolean incoming,
+				GString *str)
+{
+	static const struct msg_descriptor const handshake_descriptors[] = {
+		{ TLS_HANDSHAKE_TYPE_CLIENT_HELLO,      "Client Hello",        NULL},
+		{ TLS_HANDSHAKE_TYPE_SERVER_HELLO,      "Server Hello",        NULL},
+		{ TLS_HANDSHAKE_TYPE_CERTIFICATE,       "Certificate",         NULL},
+		{ TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ,   "Certificate Request", NULL},
+		{ TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE, "Server Hello Done",   NULL}
+	};
+#define HANDSHAKE_DESCRIPTORS (sizeof(handshake_descriptors)/sizeof(struct msg_descriptor))
+
+	gpointer parsed_data = NULL;
+	gboolean success = FALSE;
+
+	while (length > 0) {
+		const struct msg_descriptor *desc;
+		gsize msg_length;
+		guint i, msg_type;
+
+		/* header check */
+		if (length < TLS_HANDSHAKE_HEADER_LENGTH) {
+			if (str)
+				g_string_append(str, "CORRUPTED HANDSHAKE HEADER");
+			break;
+		}
+
+ 		/* msg length check */
+		msg_length = (bytes[TLS_HANDSHAKE_OFFSET_LENGTH]     << 16) +
+			     (bytes[TLS_HANDSHAKE_OFFSET_LENGTH + 1] <<  8) +
+			      bytes[TLS_HANDSHAKE_OFFSET_LENGTH + 2];
+		if (msg_length > length) {
+			if (str)
+				g_string_append(str, "HANDSHAKE MESSAGE TOO LONG");
+			break;
+		}
+
+		/* msg type */
+		msg_type = bytes[TLS_HANDSHAKE_OFFSET_TYPE];
+		for (desc = handshake_descriptors, i = 0;
+		     i < HANDSHAKE_DESCRIPTORS;
+		     desc++, i++) {
+			if (msg_type == desc->type)
+				break;
+		}
+
+		if (str)
+			g_string_append_printf(str, "TLS handshake (%" G_GSIZE_FORMAT " bytes) (%d)",
+					       msg_length, msg_type);
+
+		length -= TLS_HANDSHAKE_HEADER_LENGTH;
+		bytes  += TLS_HANDSHAKE_HEADER_LENGTH;
+
+		if (i < HANDSHAKE_DESCRIPTORS) {
+			if (str)
+				g_string_append_printf(str, "%s\n", desc->description);
+			parsed_data = generic_parser(bytes,
+						     msg_length,
+						     incoming,
+						     str,
+						     desc->parse,
+						     parsed_data);
+			/* temporary */
+#if 0
+			if (!parsed_data)
+				break;
+#endif
+		} else {
+			if (str) {
+				g_string_append(str, "ignored\n");
+				dump_hex(bytes, msg_length, str);
+			}
+		}
+
+		/* next message */
+		length -= msg_length;
+		bytes  += msg_length;
+		if (length > 0) {
+			if (str)
+				g_string_append(str, "------\n");
+		} else {
+			success = TRUE;
+		}
+	}
+
+	if (!success) {
+		free_parsed_data(parsed_data);
+		parsed_data = NULL;
+	}
+
+	return(parsed_data);
+}
+
+#define TLS_RECORD_HEADER_LENGTH   5
+#define TLS_RECORD_OFFSET_TYPE     0
+#define TLS_RECORD_TYPE_HANDSHAKE 22
+#define TLS_RECORD_OFFSET_MAJOR    1
+#define TLS_RECORD_OFFSET_MINOR    2
+#define TLS_RECORD_OFFSET_LENGTH   3
+
+/* NOTE: we don't support record fragmentation */
+static gpointer tls_record_parse(const guchar *bytes,
+				 gsize length,
+				 gboolean incoming)
+{
+	gpointer parsed_data = NULL;
+	GString *str         = NULL;
+	const gchar *version = NULL;
+	guchar major;
+	guchar minor;
+	gsize record_length;
+	guint content_type;
+
+	if (sipe_backend_debug_enabled()) {
+		str = g_string_new("");
 		g_string_append_printf(str, "TLS MESSAGE %s\n",
 				       incoming ? "INCOMING" : "OUTGOING");
+	}
 
-		/* temporary */
-		(void)bytes;
-		g_string_append_printf(str, "message length %" G_GSIZE_FORMAT " bytes",
-				       length);
+	/* truncated header check */
+	if (length < TLS_RECORD_HEADER_LENGTH) {
+		SIPE_DEBUG_ERROR("tls_record_parse: too short TLS record header (%" G_GSIZE_FORMAT " bytes)",
+				 length);
+		return(NULL);
+	}
 
+	/* protocol version check */
+	major = bytes[TLS_RECORD_OFFSET_MAJOR];
+	minor = bytes[TLS_RECORD_OFFSET_MINOR];
+	if (major < 3) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: SSL1/2 not supported");
+		return(NULL);
+	}
+	if (major == 3) {
+		switch (minor) {
+		case 0:
+			SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: SSL3.0 not supported");
+			return(NULL);
+		case 1:
+			version = "1.0 (RFC2246)";
+			break;
+		case 2:
+			version = "1.1 (RFC4346)";
+			break;
+		}
+	}
+	if (!version) {
+		/* should be backwards compatible */
+		version = "<future protocol version>";
+	}
+
+	/* record length check */
+	record_length = TLS_RECORD_HEADER_LENGTH +
+		(bytes[TLS_RECORD_OFFSET_LENGTH] << 8) +
+		bytes[TLS_RECORD_OFFSET_LENGTH + 1];
+	if (record_length > length) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: record too long");
+		return(NULL);
+	}
+
+	/* TLS record header OK */
+	if (str)
+		g_string_append_printf(str, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
+				       version, length);
+	content_type = bytes[TLS_RECORD_OFFSET_TYPE];
+	length -= TLS_RECORD_HEADER_LENGTH;
+	bytes  += TLS_RECORD_HEADER_LENGTH;
+
+	switch (content_type) {
+	case TLS_RECORD_TYPE_HANDSHAKE:
+		parsed_data = handshake_parse(bytes, length, incoming, str);
+		break;
+
+	default:
+		if (str) {
+			g_string_append_printf(str, "TLS ignored type %d\n",
+					       content_type);
+			dump_hex(bytes, length, str);
+		}
+		break;
+	}
+
+	if (str) {
 		SIPE_DEBUG_INFO_NOFORMAT(str->str);
 		g_string_free(str, TRUE);
 	}
+
+	return(parsed_data);
 }
 
 static const guchar const client_hello[] = {
@@ -163,7 +397,7 @@ guchar *sipe_tls_client_hello(gsize *out_length)
 		*p++ = rand() & 0xFF;
 
 	*out_length = sizeof(client_hello);
-	message_debug(msg, sizeof(client_hello), FALSE);
+	tls_record_parse(msg, sizeof(client_hello), FALSE);
 	return(msg);
 }
 
@@ -171,18 +405,30 @@ guchar *sipe_tls_server_hello(const guchar *incoming,
 			      gsize in_length,
 			      gsize *out_length)
 {
-	message_debug(incoming, in_length, TRUE);
+	guchar *outgoing = NULL;
+	gpointer parsed_data = tls_record_parse(incoming, in_length, TRUE);
 
+	if (!parsed_data)
+		return(NULL);
+
+	/* temporary */
 	*out_length = 0;
-	return(NULL);
+
+	tls_record_parse(outgoing, *out_length, FALSE);
+	return(outgoing);
 }
 
 gboolean sipe_tls_finished(const guchar *incoming,
 			   gsize in_length)
 {
-	message_debug(incoming, in_length, TRUE);
+	gpointer parsed_data = tls_record_parse(incoming, in_length, TRUE);
 
-	return(FALSE);
+	if (!parsed_data)
+		return(FALSE);
+
+	/* TBD: data is really not needed? */
+	free_parsed_data(parsed_data);
+	return(TRUE);
 }
 
 /*
