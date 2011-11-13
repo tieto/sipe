@@ -28,3 +28,8 @@
  */
 
 guchar *sipe_tls_client_hello(gsize *length);
+guchar *sipe_tls_server_hello(const guchar *incoming,
+			      gsize in_length,
+			      gsize *out_length);
+gboolean sipe_tls_finished(const guchar *incoming,
+			   gsize in_length);

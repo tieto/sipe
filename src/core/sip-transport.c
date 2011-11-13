@@ -203,6 +203,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 	gchar *ret;
 	gchar *gssapi_data = NULL;
 	gchar *sign_str;
+	gchar *gssapi_str;
 	gchar *opaque_str;
 	gchar *version_str;
 
@@ -215,7 +216,9 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 						       &gssapi_data,
 						       &auth->expires);
 
-		if ((status < 0) || !gssapi_data) {
+		/* If authentication is completed gssapi_data can be NULL */
+		if ((status < 0) ||
+		    !(sip_sec_context_is_ready(auth->gssapi_context) || gssapi_data)) {
 			SIPE_DEBUG_ERROR_NOFORMAT("initialize_auth_context: security context continuation failed");
 			g_free(gssapi_data);
 			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
@@ -296,16 +299,24 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		sign_str = g_strdup("");
 	}
 
+	if (gssapi_data) {
+		gssapi_str = g_strdup_printf(", gssapi-data=\"%s\"",
+					     gssapi_data);
+		g_free(gssapi_data);
+	} else {
+		gssapi_str = g_strdup("");
+	}
+
 	opaque_str = auth->opaque ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup("");
 	version_str = auth_header_version(auth);
-	ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\", gssapi-data=\"%s\"%s%s",
+	ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\"%s%s%s",
 			      auth_type_to_protocol[auth->type], opaque_str,
 			      auth->realm, auth->target,
-			      gssapi_data, version_str, sign_str);
+			      gssapi_str, version_str, sign_str);
 	g_free(version_str);
 	g_free(opaque_str);
+	g_free(gssapi_str);
 	g_free(sign_str);
-	g_free(gssapi_data);
 
 	return(ret);
 }

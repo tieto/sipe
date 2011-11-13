@@ -38,8 +38,32 @@
 
 #include <glib.h>
 
+#include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
 #include "sipe-tls.h"
+
+/*
+ * TLS message debugging
+ */
+static void message_debug(const guchar *bytes,
+			  gsize length,
+			  gboolean incoming)
+{
+	if (sipe_backend_debug_enabled()) {
+		GString *str = g_string_new("");
+
+		g_string_append_printf(str, "TLS MESSAGE %s\n",
+				       incoming ? "INCOMING" : "OUTGOING");
+
+		/* temporary */
+		(void)bytes;
+		g_string_append_printf(str, "message length %" G_GSIZE_FORMAT " bytes",
+				       length);
+
+		SIPE_DEBUG_INFO_NOFORMAT(str->str);
+		g_string_free(str, TRUE);
+	}
+}
 
 static const guchar const client_hello[] = {
 
@@ -126,7 +150,7 @@ static const guchar const client_hello[] = {
 #endif
 };
 
-guchar *sipe_tls_client_hello(gsize *length)
+guchar *sipe_tls_client_hello(gsize *out_length)
 {
 	guchar *msg = g_memdup(client_hello, sizeof(client_hello));
 	guint32 now = time(NULL);
@@ -138,8 +162,27 @@ guchar *sipe_tls_client_hello(gsize *length)
 	for (p = msg + RANDOM_OFFSET, i = 0; i < 2; i++)
 		*p++ = rand() & 0xFF;
 
-	*length = sizeof(client_hello);
+	*out_length = sizeof(client_hello);
+	message_debug(msg, sizeof(client_hello), FALSE);
 	return(msg);
+}
+
+guchar *sipe_tls_server_hello(const guchar *incoming,
+			      gsize in_length,
+			      gsize *out_length)
+{
+	message_debug(incoming, in_length, TRUE);
+
+	*out_length = 0;
+	return(NULL);
+}
+
+gboolean sipe_tls_finished(const guchar *incoming,
+			   gsize in_length)
+{
+	message_debug(incoming, in_length, TRUE);
+
+	return(FALSE);
 }
 
 /*
