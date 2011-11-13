@@ -39,9 +39,17 @@
 #include "sipe-utils.h"
 
 /* Security context for TLS-DSK */
+enum tls_dsk_state {
+	TLS_DSK_STATE_START,
+	TLS_DSK_STATE_SERVER_HELLO,
+	TLS_DSK_STATE_FINISHED,
+	TLS_DSK_STATE_COMPLETED
+};
+
 typedef struct _context_tls_dsk {
 	struct sip_sec_context common;
 	gpointer certificate;
+	enum tls_dsk_state state;
 } *context_tls_dsk;
 
 /* TLS-DSK implementation */
@@ -63,6 +71,7 @@ sip_sec_acquire_cred__tls_dsk(SipSecContext context,
 		return SIP_SEC_E_INTERNAL_ERROR;
 
 	ctx->certificate = (gpointer) password;
+	ctx->state       = TLS_DSK_STATE_START;
 
 	/* Authentication not yet completed */
 	ctx->common.is_ready = FALSE;
@@ -77,15 +86,25 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 				  SIPE_UNUSED_PARAMETER const char *service_name)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
+	sip_uint32 ret = SIP_SEC_E_INTERNAL_ERROR;
 
 	/* temporary */
-	(void)ctx;
 	(void)in_buff;
 
+	switch (ctx->state) {
+	case TLS_DSK_STATE_START:
+		out_buff->value = sipe_tls_client_hello(&out_buff->length);
+		ctx->state = TLS_DSK_STATE_SERVER_HELLO;
+		ret = SIP_SEC_E_OK;
+		break;
 
-	out_buff->value = sipe_tls_client_hello(&out_buff->length);
+	case TLS_DSK_STATE_SERVER_HELLO:
+	case TLS_DSK_STATE_FINISHED:
+	case TLS_DSK_STATE_COMPLETED:
+		break;
+	}
 
-	return SIP_SEC_E_OK;
+	return(ret);
 }
 
 static sip_uint32

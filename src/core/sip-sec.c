@@ -130,7 +130,7 @@ sip_sec_init_context_step(SipSecContext context,
 		SipSecBuffer in_buff  = {0, NULL};
 		SipSecBuffer out_buff = {0, NULL};
 
-		/* Not NULL for NTLM Type 2 */
+		/* Not NULL for NTLM Type 2 or TLS-DSK */
 		if (input_toked_base64)
 			in_buff.value = g_base64_decode(input_toked_base64, &in_buff.length);
 

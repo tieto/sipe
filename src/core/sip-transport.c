@@ -200,69 +200,91 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				      struct sip_auth *auth,
 				      struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	const gchar *authuser = sip->authuser;
-	gpointer password = sip->password;
 	gchar *ret;
-	gchar *gssapi_data;
+	gchar *gssapi_data = NULL;
 	gchar *sign_str;
 	gchar *opaque_str;
 	gchar *version_str;
 
-	if (is_empty(authuser)) {
-		authuser = sipe_private->username;
-	}
+	/* Create security context or handshake continuation? */
+	if (auth->gssapi_context) {
+		/* Perform next step in authentication handshake */
+		int status = sip_sec_init_context_step(auth->gssapi_context,
+						       auth->target,
+						       auth->gssapi_data,
+						       &gssapi_data,
+						       &auth->expires);
 
-	/* For TLS-DSK the "password" is a certificate */
-	if (auth->type == AUTH_TYPE_TLS_DSK) {
-		password = sipe_certificate_tls_dsk_find(sipe_private,
-							 auth->target);
+		if ((status < 0) || !gssapi_data) {
+			SIPE_DEBUG_ERROR_NOFORMAT("initialize_auth_context: security context continuation failed");
+			g_free(gssapi_data);
+			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+						      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+						      _("Failed to authenticate to server"));
+			return NULL;
+		}
 
-		if (!password) {
-			if (auth->sts_uri) {
-				SIPE_DEBUG_INFO("initialize_auth_context: TLS-DSK Certificate Provisioning URI %s",
-						auth->sts_uri);
-				if (!sipe_certificate_tls_dsk_generate(sipe_private,
-								       auth->target,
-								       authuser,
-								       auth->sts_uri)) {
-					gchar *tmp = g_strdup_printf(_("Can't request certificate from %s"),
-								     auth->sts_uri);
+	} else {
+		/* Create security context */
+		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+		const gchar *authuser = sip->authuser;
+		gpointer password = sip->password;
+
+		if (is_empty(authuser)) {
+			authuser = sipe_private->username;
+		}
+
+		/* For TLS-DSK the "password" is a certificate */
+		if (auth->type == AUTH_TYPE_TLS_DSK) {
+			password = sipe_certificate_tls_dsk_find(sipe_private,
+								 auth->target);
+
+			if (!password) {
+				if (auth->sts_uri) {
+					SIPE_DEBUG_INFO("initialize_auth_context: TLS-DSK Certificate Provisioning URI %s",
+							auth->sts_uri);
+					if (!sipe_certificate_tls_dsk_generate(sipe_private,
+									       auth->target,
+									       authuser,
+									       auth->sts_uri)) {
+						gchar *tmp = g_strdup_printf(_("Can't request certificate from %s"),
+									     auth->sts_uri);
+						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+									      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+									      tmp);
+						g_free(tmp);
+					}
+				} else {
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-								      tmp);
-					g_free(tmp);
+								      _("No URI for certificate provisioning service provided"));
 				}
+
+				/* we can't authenticate the message yet */
+				sipe_private->transport->auth_incomplete = TRUE;
+				return(NULL);
 			} else {
-				sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-							      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-							      _("No URI for certificate provisioning service provided"));
+				SIPE_DEBUG_INFO("initialize_auth_context: TLS-DSK certificate for target '%s' found.",
+						auth->target);
 			}
-
-			/* we can't authenticate the message yet */
-			sipe_private->transport->auth_incomplete = TRUE;
-			return(NULL);
-		} else {
-			SIPE_DEBUG_INFO("initialize_auth_context: TLS-DSK certificate for target '%s' found.",
-					auth->target);
 		}
-	}
 
-	gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
-					   &(auth->expires),
-					   auth->type,
-					   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
-					   sip->authdomain ? sip->authdomain : "",
-					   authuser,
-					   password,
-					   auth->target,
-					   auth->gssapi_data);
-	if (!gssapi_data || !auth->gssapi_context) {
-		g_free(gssapi_data);
-		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-					      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-					      _("Failed to authenticate to server"));
-		return NULL;
+		gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
+						   &(auth->expires),
+						   auth->type,
+						   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
+						   sip->authdomain ? sip->authdomain : "",
+						   authuser,
+						   password,
+						   auth->target,
+						   auth->gssapi_data);
+		if (!gssapi_data || !auth->gssapi_context) {
+			g_free(gssapi_data);
+			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+						      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+						      _("Failed to authenticate to server"));
+			return NULL;
+		}
 	}
 
 	if ((auth->version > 3) &&
@@ -324,9 +346,9 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 
 	/*
 	 * We should reach this point only when the authentication context
-	 * needs to be initialized. So the check should be a no-op...
+	 * needs to be initialized.
 	 */
-	} else if (!auth->gssapi_context) {
+	} else {
 		ret = initialize_auth_context(sipe_private, auth, msg);
 	}
 
