@@ -26,6 +26,15 @@
 
 #include <glib.h>
 
+/*
+ * Work around a compiler error in NSS 3.13.x. Let's hope they fix it for
+ * 3.14.x. See also: https://bugzilla.mozilla.org/show_bug.cgi?id=702090
+ */
+#include "nss.h"
+#if (NSS_VMAJOR == 3) && (NSS_VMINOR == 13)
+#define __GNUC_MINOR __GNUC_MINOR__
+#endif
+
 #include "cert.h"
 #include "cryptohi.h"
 #include "keyhi.h"
