@@ -27,9 +27,43 @@
  * <glib.h>
  */
 
-guchar *sipe_tls_client_hello(gsize *length);
-guchar *sipe_tls_server_hello(const guchar *incoming,
-			      gsize in_length,
-			      gsize *out_length);
-gboolean sipe_tls_finished(const guchar *incoming,
-			   gsize in_length);
+/**
+ * Public part of TLS state tracking
+ *
+ * If @c session_key != @c NULL then handshake is complete
+ */
+struct sipe_tls_state {
+  const guchar *in_buffer;
+  guchar *out_buffer;
+  gsize in_length;
+  gsize out_length;
+  guchar *session_key;
+  gsize key_length;
+};
+
+/**
+ * Initialize TLS state
+ *
+ * @param certificate opaque pointer to the user certificate
+ *
+ * @return TLS state structure
+ */
+struct sipe_tls_state *sipe_tls_start(gpointer certificate);
+
+/**
+ * Proceed to next TLS state
+ *
+ * @param state     pointer to TLS state structure
+ * @param incoming  pointer to incoming message (NULL for initial transition)
+ * @param in_length length of incoming message
+ *
+ * @return TLS state structure
+ */
+gboolean sipe_tls_next(struct sipe_tls_state *state);
+
+/**
+ * Free TLS state
+ *
+ * @param state pointer to TLS state structure
+ */
+void sipe_tls_free(struct sipe_tls_state *state);

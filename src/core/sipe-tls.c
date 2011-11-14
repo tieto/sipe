@@ -45,6 +45,23 @@
 #include "sipe-tls.h"
 
 /*
+ * Private part of TLS state tracking
+ */
+enum tls_handshake_state {
+	TLS_HANDSHAKE_STATE_START,
+	TLS_HANDSHAKE_STATE_SERVER_HELLO,
+	TLS_HANDSHAKE_STATE_FINISHED,
+	TLS_HANDSHAKE_STATE_COMPLETED,
+	TLS_HANDSHAKE_STATE_FAILED
+};
+
+struct tls_internal_state {
+	struct sipe_tls_state common;
+	gpointer certificate;
+	enum tls_handshake_state state;
+};
+
+/*
  * TLS message debugging
  */
 static void debug_hex(GString *str,
@@ -401,7 +418,7 @@ static const guchar const client_hello[] = {
 #endif
 };
 
-guchar *sipe_tls_client_hello(gsize *out_length)
+static gboolean tls_client_hello(struct tls_internal_state *state)
 {
 	guchar *msg = g_memdup(client_hello, sizeof(client_hello));
 	guint32 now = time(NULL);
@@ -413,39 +430,116 @@ guchar *sipe_tls_client_hello(gsize *out_length)
 	for (p = msg + RANDOM_OFFSET, i = 0; i < 2; i++)
 		*p++ = rand() & 0xFF;
 
-	*out_length = sizeof(client_hello);
+	state->common.out_buffer = msg;
+	state->common.out_length = sizeof(client_hello);
+	state->state             = TLS_HANDSHAKE_STATE_SERVER_HELLO;
+
 	tls_record_parse(msg, sizeof(client_hello), FALSE);
-	return(msg);
+
+	return(TRUE);
 }
 
-guchar *sipe_tls_server_hello(const guchar *incoming,
-			      gsize in_length,
-			      gsize *out_length)
+static gboolean tls_server_hello(struct tls_internal_state *state)
 {
-	guchar *outgoing = NULL;
-	gpointer parsed_data = tls_record_parse(incoming, in_length, TRUE);
+	gpointer parsed_data = tls_record_parse(state->common.in_buffer,
+						state->common.in_length,
+						TRUE);
 
 	if (!parsed_data)
-		return(NULL);
+		return(FALSE);
 
 	/* temporary */
-	*out_length = 0;
+	state->common.out_buffer = NULL;
+	state->common.out_length = 0;
+	state->state             = TLS_HANDSHAKE_STATE_FINISHED;
 
-	tls_record_parse(outgoing, *out_length, FALSE);
-	return(outgoing);
+	tls_record_parse(state->common.out_buffer,
+			 state->common.out_length,
+			 FALSE);
+
+	return(state->common.out_buffer != NULL);
 }
 
-gboolean sipe_tls_finished(const guchar *incoming,
-			   gsize in_length)
+static gboolean tls_finished(struct tls_internal_state *state)
 {
-	gpointer parsed_data = tls_record_parse(incoming, in_length, TRUE);
+	gpointer parsed_data = tls_record_parse(state->common.in_buffer,
+						state->common.in_length,
+						TRUE);
 
 	if (!parsed_data)
 		return(FALSE);
 
 	/* TBD: data is really not needed? */
 	free_parsed_data(parsed_data);
+
+	state->common.out_buffer = NULL;
+	state->common.out_length = 0;
+	state->state             = TLS_HANDSHAKE_STATE_COMPLETED;
+
+	/* temporary */
 	return(TRUE);
+}
+
+/* Public API */
+
+struct sipe_tls_state *sipe_tls_start(gpointer certificate)
+{
+	struct tls_internal_state *state;
+
+	if (!certificate)
+		return(NULL);
+
+	state = g_new0(struct tls_internal_state, 1);
+	state->certificate = certificate;
+	state->state       = TLS_HANDSHAKE_STATE_START;
+
+	return((struct sipe_tls_state *) state);
+}
+
+gboolean sipe_tls_next(struct sipe_tls_state *state)
+{
+	struct tls_internal_state *internal = (struct tls_internal_state *) state;
+	gboolean success = FALSE;
+
+	if (!state)
+		return(FALSE);
+
+	state->out_buffer = NULL;
+
+	switch (internal->state) {
+	case TLS_HANDSHAKE_STATE_START:
+		success = tls_client_hello(internal);
+		break;
+
+	case TLS_HANDSHAKE_STATE_SERVER_HELLO:
+		success = tls_server_hello(internal);
+		break;
+
+	case TLS_HANDSHAKE_STATE_FINISHED:
+		success = tls_finished(internal);
+		break;
+
+	case TLS_HANDSHAKE_STATE_COMPLETED:
+	case TLS_HANDSHAKE_STATE_FAILED:
+		/* This should not happen */
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_tls_next: called in incorrect state!");
+		break;
+	}
+
+	if (!success) {
+		internal->state = TLS_HANDSHAKE_STATE_FAILED;
+	}
+
+	return(success);
+}
+
+void sipe_tls_free(struct sipe_tls_state *state)
+{
+	if (state) {
+		g_free(state->session_key);
+		g_free(state->out_buffer);
+		g_free(state);
+	}
 }
 
 /*

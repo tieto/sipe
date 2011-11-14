@@ -39,23 +39,10 @@
 #include "sipe-utils.h"
 
 /* Security context for TLS-DSK */
-enum tls_dsk_state {
-	TLS_DSK_STATE_START,
-	TLS_DSK_STATE_SERVER_HELLO,
-	TLS_DSK_STATE_FINISHED,
-	TLS_DSK_STATE_COMPLETED,
-	TLS_DSK_STATE_FAILED
-};
-
 typedef struct _context_tls_dsk {
 	struct sip_sec_context common;
-	gpointer certificate;
-	enum tls_dsk_state state;
+	struct sipe_tls_state *state;
 } *context_tls_dsk;
-
-/* TLS-DSK implementation */
-
-/* TBD.... */
 
 /* sip-sec-mech.h API implementation for TLS-DSK */
 
@@ -67,17 +54,15 @@ sip_sec_acquire_cred__tls_dsk(SipSecContext context,
 {
 	context_tls_dsk ctx = (context_tls_dsk)context;
 
-	/* TLS-DSK requires a certificate. Everything else is ignored */
-	if (!password)
+	ctx->state = sipe_tls_start((gpointer) password);
+	if (ctx->state) {
+		/* Authentication not yet completed */
+		ctx->common.is_ready = FALSE;
+
+		return SIP_SEC_E_OK;
+	} else {
 		return SIP_SEC_E_INTERNAL_ERROR;
-
-	ctx->certificate = (gpointer) password;
-	ctx->state       = TLS_DSK_STATE_START;
-
-	/* Authentication not yet completed */
-	ctx->common.is_ready = FALSE;
-
-	return SIP_SEC_E_OK;
+	}
 }
 
 static sip_uint32
@@ -87,44 +72,32 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 				  SIPE_UNUSED_PARAMETER const char *service_name)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
+	struct sipe_tls_state *state = ctx->state;
 
-	out_buff->value = NULL;
+	state->in_buffer = in_buff.value;
+	state->in_length = in_buff.length;
 
-	switch (ctx->state) {
-	case TLS_DSK_STATE_START:
-		ctx->state = TLS_DSK_STATE_SERVER_HELLO;
-
-		out_buff->value = sipe_tls_client_hello(&out_buff->length);
-		break;
-
-	case TLS_DSK_STATE_SERVER_HELLO:
-		ctx->state = TLS_DSK_STATE_FINISHED;
-
-		out_buff->value = sipe_tls_server_hello(in_buff.value,
-							in_buff.length,
-							&out_buff->length);
-		break;
-
-	case TLS_DSK_STATE_FINISHED:
-		if (sipe_tls_finished(in_buff.value,
-				      in_buff.length)) {
+	if (sipe_tls_next(state)) {
+		if (state->session_key) {
 			/* Authentication is completed */
-			ctx->state = TLS_DSK_STATE_COMPLETED;
 			ctx->common.is_ready = TRUE;
-		} else {
-			ctx->state = TLS_DSK_STATE_FAILED;
-		}
-		break;
 
-	case TLS_DSK_STATE_COMPLETED:
-	case TLS_DSK_STATE_FAILED:
-		/* This should not happen */
-		ctx->state = TLS_DSK_STATE_FAILED;
-		break;
+			/* TBD... copy session key */
+
+			sipe_tls_free(state);
+			ctx->state = NULL;
+		} else {
+			out_buff->value  = state->out_buffer;
+			out_buff->length = state->out_length;
+			/* we take ownership of the buffer */
+			state->out_buffer = NULL;
+		}
+	} else {
+		sipe_tls_free(state);
+		ctx->state = NULL;
 	}
 
-	return(((ctx->state == TLS_DSK_STATE_COMPLETED) || out_buff->value) ?
-	       SIP_SEC_E_OK : SIP_SEC_E_INTERNAL_ERROR);
+	return((ctx->common.is_ready || ctx->state) ? SIP_SEC_E_OK : SIP_SEC_E_INTERNAL_ERROR);
 }
 
 static sip_uint32
@@ -162,6 +135,7 @@ sip_sec_destroy_sec_context__tls_dsk(SipSecContext context)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
 
+	sipe_tls_free(ctx->state);
 	g_free(ctx);
 }
 
