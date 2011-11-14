@@ -35,6 +35,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <glib.h>
 
@@ -44,13 +45,15 @@
 #include "sipe-tls.h"
 
 /*
- * TLS message parsing & debugging
+ * TLS message debugging
  */
-static void dump_hex(const guchar *bytes,
-		     gsize length,
-		     GString *str)
+static void debug_hex(GString *str,
+		      const guchar *bytes,
+		      gsize length)
 {
 	gint count = -1;
+
+	if (!str) return;
 
 	while (length-- > 0) {
 		if (++count == 0) {
@@ -65,6 +68,33 @@ static void dump_hex(const guchar *bytes,
 	g_string_append(str, "\n");
 }
 
+static void debug_print(GString *str,
+			const gchar *string)
+{
+	if (str)
+		g_string_append(str, string);
+}
+
+static void debug_printf(GString *str,
+			 const gchar *format,
+			 ...) G_GNUC_PRINTF(2, 3);
+static void debug_printf(GString *str,
+			 const gchar *format,
+			 ...)
+{
+	va_list ap;
+
+	if (!str) return;
+
+	va_start(ap, format);
+	g_string_append_vprintf(str, format, ap);
+	va_end(ap);
+}
+
+
+/*
+ * TLS message parsing
+ */
 struct parse_descriptor {
 	int temporary;
 };
@@ -89,9 +119,7 @@ static gpointer generic_parser(const guchar *bytes,
 			       gpointer parsed_data)
 {
 	/* temporary */
-	if (str) {
-		dump_hex(bytes, length, str);
-	}
+	debug_hex(str, bytes, length);
 	(void)parsed_data;
 	(void)incoming;
 	(void)desc;
@@ -131,8 +159,7 @@ static gpointer handshake_parse(const guchar *bytes,
 
 		/* header check */
 		if (length < TLS_HANDSHAKE_HEADER_LENGTH) {
-			if (str)
-				g_string_append(str, "CORRUPTED HANDSHAKE HEADER");
+			debug_print(str, "CORRUPTED HANDSHAKE HEADER");
 			break;
 		}
 
@@ -141,8 +168,7 @@ static gpointer handshake_parse(const guchar *bytes,
 			     (bytes[TLS_HANDSHAKE_OFFSET_LENGTH + 1] <<  8) +
 			      bytes[TLS_HANDSHAKE_OFFSET_LENGTH + 2];
 		if (msg_length > length) {
-			if (str)
-				g_string_append(str, "HANDSHAKE MESSAGE TOO LONG");
+			debug_print(str, "HANDSHAKE MESSAGE TOO LONG");
 			break;
 		}
 
@@ -155,16 +181,14 @@ static gpointer handshake_parse(const guchar *bytes,
 				break;
 		}
 
-		if (str)
-			g_string_append_printf(str, "TLS handshake (%" G_GSIZE_FORMAT " bytes) (%d)",
-					       msg_length, msg_type);
+		debug_printf(str, "TLS handshake (%" G_GSIZE_FORMAT " bytes) (%d)",
+			     msg_length, msg_type);
 
 		length -= TLS_HANDSHAKE_HEADER_LENGTH;
 		bytes  += TLS_HANDSHAKE_HEADER_LENGTH;
 
 		if (i < HANDSHAKE_DESCRIPTORS) {
-			if (str)
-				g_string_append_printf(str, "%s\n", desc->description);
+			debug_printf(str, "%s\n", desc->description);
 			parsed_data = generic_parser(bytes,
 						     msg_length,
 						     incoming,
@@ -177,18 +201,15 @@ static gpointer handshake_parse(const guchar *bytes,
 				break;
 #endif
 		} else {
-			if (str) {
-				g_string_append(str, "ignored\n");
-				dump_hex(bytes, msg_length, str);
-			}
+			debug_print(str, "ignored\n");
+			debug_hex(str, bytes, msg_length);
 		}
 
 		/* next message */
 		length -= msg_length;
 		bytes  += msg_length;
 		if (length > 0) {
-			if (str)
-				g_string_append(str, "------\n");
+			debug_print(str, "------\n");
 		} else {
 			success = TRUE;
 		}
@@ -224,8 +245,8 @@ static gpointer tls_record_parse(const guchar *bytes,
 
 	if (sipe_backend_debug_enabled()) {
 		str = g_string_new("");
-		g_string_append_printf(str, "TLS MESSAGE %s\n",
-				       incoming ? "INCOMING" : "OUTGOING");
+		debug_printf(str, "TLS MESSAGE %s\n",
+			     incoming ? "INCOMING" : "OUTGOING");
 	}
 
 	/* truncated header check */
@@ -270,9 +291,8 @@ static gpointer tls_record_parse(const guchar *bytes,
 	}
 
 	/* TLS record header OK */
-	if (str)
-		g_string_append_printf(str, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
-				       version, length);
+	debug_printf(str, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
+		     version, length);
 	content_type = bytes[TLS_RECORD_OFFSET_TYPE];
 	length -= TLS_RECORD_HEADER_LENGTH;
 	bytes  += TLS_RECORD_HEADER_LENGTH;
@@ -283,11 +303,8 @@ static gpointer tls_record_parse(const guchar *bytes,
 		break;
 
 	default:
-		if (str) {
-			g_string_append_printf(str, "TLS ignored type %d\n",
-					       content_type);
-			dump_hex(bytes, length, str);
-		}
+		debug_printf(str, "TLS ignored type %d\n", content_type);
+		debug_hex(str, bytes, length);
 		break;
 	}
 
