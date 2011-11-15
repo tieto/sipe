@@ -93,29 +93,10 @@ static void debug_hex(struct tls_internal_state *state)
 	g_string_append(str, "\n");
 }
 
-static void debug_print(struct tls_internal_state *state,
-			const gchar *string)
-{
-	if (state->debug)
-		g_string_append(state->debug, string);
-}
-
-static void debug_printf(struct tls_internal_state *state,
-			 const gchar *format,
-			 ...) G_GNUC_PRINTF(2, 3);
-static void debug_printf(struct tls_internal_state *state,
-			 const gchar *format,
-			 ...)
-{
-	va_list ap;
-
-	if (!state->debug) return;
-
-	va_start(ap, format);
-	g_string_append_vprintf(state->debug, format, ap);
-	va_end(ap);
-}
-
+#define debug_print(state, string) \
+	if (state->debug) g_string_append(state->debug, string)
+#define debug_printf(state, format, ...) \
+	if (state->debug) g_string_append_printf(state->debug, format, __VA_ARGS__)
 
 /*
  * TLS message parsing
