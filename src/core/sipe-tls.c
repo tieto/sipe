@@ -143,31 +143,79 @@ static gboolean parse_integer_quiet(struct tls_internal_state *state,
 	return(TRUE);
 }
 
-static gboolean parse_integer(struct tls_internal_state *state,
-			      const gchar *label,
-			      gsize length,
-			      guint *result)
-{
-	if (!parse_integer_quiet(state, label, length, result)) return(FALSE);
-	debug_printf(state, "'%s/INTEGER%" G_GSIZE_FORMAT " = %d\n",
-		     label, length, *result);
-	return(TRUE);
-}
-
 struct tls_parsed_integer {
 	guint value;
 };
-static gboolean parse_integer_store(struct tls_internal_state *state,
-				    const gchar *label,
-				    gsize length)
+static gboolean parse_integer(struct tls_internal_state *state,
+			      const gchar *label,
+			      gsize length)
 {
 	guint value;
-	if (!parse_integer(state, label, length, &value)) return(FALSE);
+	if (!parse_integer_quiet(state, label, length, &value)) return(FALSE);
+	debug_printf(state, "%s/INTEGER%" G_GSIZE_FORMAT " = %d\n",
+		     label, length, value);
 	if (state->data) {
 		struct tls_parsed_integer *save = g_new0(struct tls_parsed_integer, 1);
 		save->value = value;
 		g_hash_table_insert(state->data, (gpointer) label, save);
 	}
+	return(TRUE);
+}
+
+struct tls_parsed_array {
+	gsize length; /* bytes */
+	const guchar data[0];
+};
+static gboolean parse_array(struct tls_internal_state *state,
+			    const gchar *label,
+			    gsize length)
+{
+	if (!parse_length_check(state, label, length)) return(FALSE);
+	debug_printf(state, "%s/ARRAY[%" G_GSIZE_FORMAT "]\n",
+		     label, length);
+	if (state->data) {
+		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
+							  length);
+		save->length = length;
+		memcpy((guchar *)save->data, state->parse_buffer, length);
+		g_hash_table_insert(state->data, (gpointer) label, save);
+
+	}
+	state->parse_buffer += length;
+	state->parse_length -= length;
+	return(TRUE);
+}
+
+#define TLS_VECTOR_MAX8       255 /* 2^8  - 1 */
+#define TLS_VECTOR_MAX16    65535 /* 2^16 - 1 */
+#define TLS_VECTOR_MAX24 16777215 /* 2^24 - 1 */
+
+static gboolean parse_vector(struct tls_internal_state *state,
+			     const gchar *label,
+			     gsize min,
+			     gsize max)
+{
+	guint length;
+	if (!parse_integer_quiet(state, label,
+				 (max > TLS_VECTOR_MAX16) ? 3 :
+				 (max > TLS_VECTOR_MAX8)  ? 2 : 1,
+				 &length))
+		return(FALSE);
+	if (length < min) {
+		SIPE_DEBUG_ERROR("parse_vector: '%s' too short %d, expected %" G_GSIZE_FORMAT,
+				 label, length, min);
+		return(FALSE);
+	}
+	debug_printf(state, "%s/VECTOR<%d>\n", label, length);
+	if (state->data) {
+		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
+							  length);
+		save->length = length;
+		memcpy((guchar *)save->data, state->parse_buffer, length);
+		g_hash_table_insert(state->data, (gpointer) label, save);
+	}
+	state->parse_buffer += length;
+	state->parse_length -= length;
 	return(TRUE);
 }
 
@@ -177,10 +225,6 @@ static gboolean parse_integer_store(struct tls_internal_state *state,
 #define TLS_TYPE_FIXED  0x00
 #define TLS_TYPE_ARRAY  0x01
 #define TLS_TYPE_VECTOR 0x02
-
-#define TLS_VECTOR_MAX8       255 /* 2^8  - 1 */
-#define TLS_VECTOR_MAX16    65535 /* 2^16 - 1 */
-#define TLS_VECTOR_MAX24 16777215 /* 2^24 - 1 */
 
 struct parse_descriptor;
 typedef gboolean parse_func(struct tls_internal_state *state,
@@ -228,76 +272,43 @@ static const struct parse_descriptor const ServerHelloDone[] = {
 	TLS_PARSE_DESCRIPTOR_END
 };
 
-static gboolean parse_ignored_field(struct tls_internal_state *state,
-				    const struct parse_descriptor *desc)
-{
-	gboolean success = FALSE;
-
-	switch (desc->type) {
-	case TLS_TYPE_FIXED:
-	{
-		guint value;
-		success = parse_integer(state, desc->label, desc->max, &value);
-	}
-	break;
-
-	case TLS_TYPE_ARRAY:
-		if (parse_length_check(state, desc->label, desc->max)) {
-			/* temporary */
-			debug_printf(state, "%s/ARRAY[%" G_GSIZE_FORMAT "]\n",
-				     desc->label, desc->max);
-			debug_hex(state, desc->max);
-			state->parse_buffer += desc->max;
-			state->parse_length -= desc->max;
-			success = TRUE;
-		}
-		break;
-
-	case TLS_TYPE_VECTOR:
-	{
-		guint length;
-		if (parse_integer_quiet(state, desc->label,
-					(desc->max > TLS_VECTOR_MAX16) ? 3 :
-					(desc->max > TLS_VECTOR_MAX8)  ? 2 : 1,
-					&length)) {
-
-			if (length < desc->min) {
-				SIPE_DEBUG_ERROR("generic_parser: too short vector type %d (minimum %" G_GSIZE_FORMAT ")",
-						 length, desc->min);
-			} else {
-				/* temporary */
-				debug_printf(state, "%s/VECTOR<%d>\n",
-					     desc->label, length);
-				if (length)
-					debug_hex(state, length);
-				state->parse_buffer += length;
-				state->parse_length -= length;
-				success = TRUE;
-			}
-		}
-	}
-	break;
-
-	default:
-		SIPE_DEBUG_ERROR("generic_parser: unknown descriptor type %d",
-				 desc->type);
-		break;
-	}
-
-	return(success);
-}
-
 static gboolean generic_parser(struct tls_internal_state *state,
 			       const struct parse_descriptor *desc)
 {
 	while (desc->label) {
+
+		/* Special parser */
 		if (desc->parser) {
 			/* TBD... */
-			(void)parse_integer_store;
+
+		/* Generic parser */
 		} else {
-			if (!parse_ignored_field(state, desc))
+			gboolean success;
+
+			switch (desc->type) {
+			case TLS_TYPE_FIXED:
+				success = parse_integer(state, desc->label, desc->max);
+				break;
+
+			case TLS_TYPE_ARRAY:
+				success = parse_array(state, desc->label, desc->max);
+				break;
+
+			case TLS_TYPE_VECTOR:
+				success = parse_vector(state, desc->label, desc->min, desc->max);
+			break;
+
+			default:
+				SIPE_DEBUG_ERROR("generic_parser: unknown descriptor type %d",
+						 desc->type);
+				break;
+			}
+
+			if (!success)
 				return(FALSE);
 		}
+
+		/* next field */
 		desc++;
 	}
 
