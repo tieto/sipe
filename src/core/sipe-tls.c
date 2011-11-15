@@ -61,14 +61,15 @@ struct tls_internal_state {
 	enum tls_handshake_state state;
 	const guchar *parse_buffer;
 	gsize parse_length;
+	GString *debug;
 };
 
 /*
  * TLS message debugging
  */
-static void debug_hex(GString *str,
-		      struct tls_internal_state *state)
+static void debug_hex(struct tls_internal_state *state)
 {
+	GString *str = state->debug;
 	const guchar *bytes;
 	gsize length;
 	gint count;
@@ -92,26 +93,26 @@ static void debug_hex(GString *str,
 	g_string_append(str, "\n");
 }
 
-static void debug_print(GString *str,
+static void debug_print(struct tls_internal_state *state,
 			const gchar *string)
 {
-	if (str)
-		g_string_append(str, string);
+	if (state->debug)
+		g_string_append(state->debug, string);
 }
 
-static void debug_printf(GString *str,
+static void debug_printf(struct tls_internal_state *state,
 			 const gchar *format,
 			 ...) G_GNUC_PRINTF(2, 3);
-static void debug_printf(GString *str,
+static void debug_printf(struct tls_internal_state *state,
 			 const gchar *format,
 			 ...)
 {
 	va_list ap;
 
-	if (!str) return;
+	if (!state->debug) return;
 
 	va_start(ap, format);
-	g_string_append_vprintf(str, format, ap);
+	g_string_append_vprintf(state->debug, format, ap);
 	va_end(ap);
 }
 
@@ -137,12 +138,11 @@ static void free_parsed_data(gpointer parsed_data)
 
 static gpointer generic_parser(struct tls_internal_state *state,
 			       gboolean incoming,
-			       GString *str,
 			       const struct parse_descriptor *desc,
 			       gpointer parsed_data)
 {
 	/* temporary */
-	debug_hex(str, state);
+	debug_hex(state);
 	(void)parsed_data;
 	(void)incoming;
 	(void)desc;
@@ -159,8 +159,7 @@ static gpointer generic_parser(struct tls_internal_state *state,
 #define TLS_HANDSHAKE_OFFSET_LENGTH           1
 
 static gpointer handshake_parse(struct tls_internal_state *state,
-				gboolean incoming,
-				GString *str)
+				gboolean incoming)
 {
 	static const struct msg_descriptor const handshake_descriptors[] = {
 		{ TLS_HANDSHAKE_TYPE_CLIENT_HELLO,      "Client Hello",        NULL},
@@ -183,7 +182,7 @@ static gpointer handshake_parse(struct tls_internal_state *state,
 
 		/* header check */
 		if (length < TLS_HANDSHAKE_HEADER_LENGTH) {
-			debug_print(str, "CORRUPTED HANDSHAKE HEADER");
+			debug_print(state, "CORRUPTED HANDSHAKE HEADER");
 			break;
 		}
 
@@ -192,7 +191,7 @@ static gpointer handshake_parse(struct tls_internal_state *state,
 			     (bytes[TLS_HANDSHAKE_OFFSET_LENGTH + 1] <<  8) +
 			      bytes[TLS_HANDSHAKE_OFFSET_LENGTH + 2];
 		if (msg_length > length) {
-			debug_print(str, "HANDSHAKE MESSAGE TOO LONG");
+			debug_print(state, "HANDSHAKE MESSAGE TOO LONG");
 			break;
 		}
 
@@ -205,17 +204,16 @@ static gpointer handshake_parse(struct tls_internal_state *state,
 				break;
 		}
 
-		debug_printf(str, "TLS handshake (%" G_GSIZE_FORMAT " bytes) (%d)",
+		debug_printf(state, "TLS handshake (%" G_GSIZE_FORMAT " bytes) (%d)",
 			     msg_length, msg_type);
 
 		state->parse_buffer = bytes + TLS_HANDSHAKE_HEADER_LENGTH;
 		state->parse_length = msg_length;
 
 		if (i < HANDSHAKE_DESCRIPTORS) {
-			debug_printf(str, "%s\n", desc->description);
+			debug_printf(state, "%s\n", desc->description);
 			parsed_data = generic_parser(state,
 						     incoming,
-						     str,
 						     desc->parse,
 						     parsed_data);
 			/* temporary */
@@ -224,15 +222,15 @@ static gpointer handshake_parse(struct tls_internal_state *state,
 				break;
 #endif
 		} else {
-			debug_print(str, "ignored\n");
-			debug_hex(str, state);
+			debug_print(state, "ignored\n");
+			debug_hex(state);
 		}
 
 		/* next message */
 		bytes  += TLS_HANDSHAKE_HEADER_LENGTH + msg_length;
 		length -= TLS_HANDSHAKE_HEADER_LENGTH + msg_length;
 		if (length > 0) {
-			debug_print(str, "------\n");
+			debug_print(state, "------\n");
 		} else {
 			success = TRUE;
 		}
@@ -260,18 +258,13 @@ static gpointer tls_record_parse(struct tls_internal_state *state,
 	const guchar *bytes  = incoming ? state->common.in_buffer : state->common.out_buffer;
 	gsize length         = incoming ? state->common.in_length : state->common.out_length;
 	gpointer parsed_data = NULL;
-	GString *str         = NULL;
 	const gchar *version = NULL;
 	guchar major;
 	guchar minor;
 	gsize record_length;
 	guint content_type;
 
-	if (sipe_backend_debug_enabled()) {
-		str = g_string_new("");
-		debug_printf(str, "TLS MESSAGE %s\n",
-			     incoming ? "INCOMING" : "OUTGOING");
-	}
+	debug_printf(state, "TLS MESSAGE %s\n", incoming ? "INCOMING" : "OUTGOING");
 
 	/* truncated header check */
 	if (length < TLS_RECORD_HEADER_LENGTH) {
@@ -315,7 +308,7 @@ static gpointer tls_record_parse(struct tls_internal_state *state,
 	}
 
 	/* TLS record header OK */
-	debug_printf(str, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
+	debug_printf(state, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
 		     version, length);
 	content_type = bytes[TLS_RECORD_OFFSET_TYPE];
 	state->parse_buffer = bytes  + TLS_RECORD_HEADER_LENGTH;
@@ -323,18 +316,18 @@ static gpointer tls_record_parse(struct tls_internal_state *state,
 
 	switch (content_type) {
 	case TLS_RECORD_TYPE_HANDSHAKE:
-		parsed_data = handshake_parse(state, incoming, str);
+		parsed_data = handshake_parse(state, incoming);
 		break;
 
 	default:
-		debug_printf(str, "TLS ignored type %d\n", content_type);
-		debug_hex(str, state);
+		debug_printf(state, "TLS ignored type %d\n", content_type);
+		debug_hex(state);
 		break;
 	}
 
-	if (str) {
-		SIPE_DEBUG_INFO_NOFORMAT(str->str);
-		g_string_free(str, TRUE);
+	if (state->debug) {
+		SIPE_DEBUG_INFO_NOFORMAT(state->debug->str);
+		g_string_truncate(state->debug, 0);
 	}
 
 	return(parsed_data);
@@ -441,6 +434,9 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 	state->common.out_length = sizeof(client_hello);
 	state->state             = TLS_HANDSHAKE_STATE_SERVER_HELLO;
 
+	if (sipe_backend_debug_enabled())
+		state->debug = g_string_new("");
+
 	tls_record_parse(state, FALSE);
 
 	return(TRUE);
@@ -537,6 +533,10 @@ gboolean sipe_tls_next(struct sipe_tls_state *state)
 void sipe_tls_free(struct sipe_tls_state *state)
 {
 	if (state) {
+		struct tls_internal_state *internal = (struct tls_internal_state *) state;
+
+		if (internal->debug)
+			g_string_free(internal->debug, TRUE);
 		g_free(state->session_key);
 		g_free(state->out_buffer);
 		g_free(state);
