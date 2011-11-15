@@ -61,6 +61,7 @@ struct tls_internal_state {
 	enum tls_handshake_state state;
 	const guchar *parse_buffer;
 	gsize parse_length;
+	GHashTable *data;
 	GString *debug;
 };
 
@@ -111,23 +112,13 @@ struct msg_descriptor {
 	const struct parse_descriptor *parse;
 };
 
-static void free_parsed_data(gpointer parsed_data)
-{
-	if (!parsed_data)
-		return;
-}
-
-static gpointer generic_parser(struct tls_internal_state *state,
-			       gboolean incoming,
-			       const struct parse_descriptor *desc,
-			       gpointer parsed_data)
+static gboolean generic_parser(struct tls_internal_state *state,
+			       const struct parse_descriptor *desc)
 {
 	/* temporary */
 	debug_hex(state);
-	(void)parsed_data;
-	(void)incoming;
 	(void)desc;
-	return(NULL);
+	return(FALSE);
 }
 
 #define TLS_HANDSHAKE_HEADER_LENGTH           4
@@ -139,8 +130,7 @@ static gpointer generic_parser(struct tls_internal_state *state,
 #define TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE 14
 #define TLS_HANDSHAKE_OFFSET_LENGTH           1
 
-static gpointer handshake_parse(struct tls_internal_state *state,
-				gboolean incoming)
+static gboolean handshake_parse(struct tls_internal_state *state)
 {
 	static const struct msg_descriptor const handshake_descriptors[] = {
 		{ TLS_HANDSHAKE_TYPE_CLIENT_HELLO,      "Client Hello",        NULL},
@@ -153,8 +143,7 @@ static gpointer handshake_parse(struct tls_internal_state *state,
 
 	const guchar *bytes  = state->parse_buffer;
 	gsize length         = state->parse_length;
-	gpointer parsed_data = NULL;
-	gboolean success = FALSE;
+	gboolean success     = FALSE;
 
 	while (length > 0) {
 		const struct msg_descriptor *desc;
@@ -193,13 +182,10 @@ static gpointer handshake_parse(struct tls_internal_state *state,
 
 		if (i < HANDSHAKE_DESCRIPTORS) {
 			debug_printf(state, "%s\n", desc->description);
-			parsed_data = generic_parser(state,
-						     incoming,
-						     desc->parse,
-						     parsed_data);
+			success = generic_parser(state, desc->parse);
 			/* temporary */
 #if 0
-			if (!parsed_data)
+			if (!success)
 				break;
 #endif
 		} else {
@@ -217,12 +203,15 @@ static gpointer handshake_parse(struct tls_internal_state *state,
 		}
 	}
 
-	if (!success) {
-		free_parsed_data(parsed_data);
-		parsed_data = NULL;
-	}
+	return(success);
+}
 
-	return(parsed_data);
+static void free_parse_data(struct tls_internal_state *state)
+{
+	if (state->data) {
+		g_hash_table_destroy(state->data);
+		state->data = NULL;
+	}
 }
 
 #define TLS_RECORD_HEADER_LENGTH   5
@@ -233,17 +222,16 @@ static gpointer handshake_parse(struct tls_internal_state *state,
 #define TLS_RECORD_OFFSET_LENGTH   3
 
 /* NOTE: we don't support record fragmentation */
-static gpointer tls_record_parse(struct tls_internal_state *state,
+static gboolean tls_record_parse(struct tls_internal_state *state,
 				 gboolean incoming)
 {
 	const guchar *bytes  = incoming ? state->common.in_buffer : state->common.out_buffer;
 	gsize length         = incoming ? state->common.in_length : state->common.out_length;
-	gpointer parsed_data = NULL;
 	const gchar *version = NULL;
 	guchar major;
 	guchar minor;
 	gsize record_length;
-	guint content_type;
+	gboolean success = FALSE;
 
 	debug_printf(state, "TLS MESSAGE %s\n", incoming ? "INCOMING" : "OUTGOING");
 
@@ -251,7 +239,7 @@ static gpointer tls_record_parse(struct tls_internal_state *state,
 	if (length < TLS_RECORD_HEADER_LENGTH) {
 		SIPE_DEBUG_ERROR("tls_record_parse: too short TLS record header (%" G_GSIZE_FORMAT " bytes)",
 				 length);
-		return(NULL);
+		return(FALSE);
 	}
 
 	/* protocol version check */
@@ -259,13 +247,13 @@ static gpointer tls_record_parse(struct tls_internal_state *state,
 	minor = bytes[TLS_RECORD_OFFSET_MINOR];
 	if (major < 3) {
 		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: SSL1/2 not supported");
-		return(NULL);
+		return(FALSE);
 	}
 	if (major == 3) {
 		switch (minor) {
 		case 0:
 			SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: SSL3.0 not supported");
-			return(NULL);
+			return(FALSE);
 		case 1:
 			version = "1.0 (RFC2246)";
 			break;
@@ -285,33 +273,40 @@ static gpointer tls_record_parse(struct tls_internal_state *state,
 		bytes[TLS_RECORD_OFFSET_LENGTH + 1];
 	if (record_length > length) {
 		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: record too long");
-		return(NULL);
+		return(FALSE);
 	}
 
 	/* TLS record header OK */
 	debug_printf(state, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
 		     version, length);
-	content_type = bytes[TLS_RECORD_OFFSET_TYPE];
 	state->parse_buffer = bytes  + TLS_RECORD_HEADER_LENGTH;
 	state->parse_length = length - TLS_RECORD_HEADER_LENGTH;
 
-	switch (content_type) {
+	/* Collect parser data for incoming messages */
+	if (incoming)
+		state->data = g_hash_table_new_full(g_str_hash, g_str_equal,
+						    NULL, g_free);
+
+	switch (bytes[TLS_RECORD_OFFSET_TYPE]) {
 	case TLS_RECORD_TYPE_HANDSHAKE:
-		parsed_data = handshake_parse(state, incoming);
+		success = handshake_parse(state);
 		break;
 
 	default:
-		debug_printf(state, "TLS ignored type %d\n", content_type);
+		debug_print(state, "Unsupported TLS message\n");
 		debug_hex(state);
 		break;
 	}
+
+	if (!success)
+		free_parse_data(state);
 
 	if (state->debug) {
 		SIPE_DEBUG_INFO_NOFORMAT(state->debug->str);
 		g_string_truncate(state->debug, 0);
 	}
 
-	return(parsed_data);
+	return(success);
 }
 
 static const guchar const client_hello[] = {
@@ -425,12 +420,11 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 
 static gboolean tls_server_hello(struct tls_internal_state *state)
 {
-	gpointer parsed_data = tls_record_parse(state, TRUE);
-
-	if (!parsed_data)
+	if (!tls_record_parse(state, TRUE))
 		return(FALSE);
 
 	/* temporary */
+	free_parse_data(state);
 	state->common.out_buffer = NULL;
 	state->common.out_length = 0;
 	state->state             = TLS_HANDSHAKE_STATE_FINISHED;
@@ -442,13 +436,11 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 
 static gboolean tls_finished(struct tls_internal_state *state)
 {
-	gpointer parsed_data = tls_record_parse(state, TRUE);
-
-	if (!parsed_data)
+	if (!tls_record_parse(state, TRUE))
 		return(FALSE);
 
 	/* TBD: data is really not needed? */
-	free_parsed_data(parsed_data);
+	free_parse_data(state);
 
 	state->common.out_buffer = NULL;
 	state->common.out_length = 0;
@@ -516,6 +508,7 @@ void sipe_tls_free(struct sipe_tls_state *state)
 	if (state) {
 		struct tls_internal_state *internal = (struct tls_internal_state *) state;
 
+		free_parse_data(internal);
 		if (internal->debug)
 			g_string_free(internal->debug, TRUE);
 		g_free(state->session_key);
