@@ -42,6 +42,7 @@
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
+#include "sipe-svc.h"
 #include "sipe-tls.h"
 
 /*
@@ -59,10 +60,127 @@ struct tls_internal_state {
 	struct sipe_tls_state common;
 	gpointer certificate;
 	enum tls_handshake_state state;
-	const guchar *parse_buffer;
-	gsize parse_length;
+	guchar *msg_current;
+	gsize msg_remainder;
 	GHashTable *data;
 	GString *debug;
+	struct sipe_svc_random client_random;
+	struct sipe_svc_random server_random;
+};
+
+/*
+ * TLS messages & layout descriptors
+ */
+
+/* constants */
+#define TLS_TYPE_FIXED  0x00
+#define TLS_TYPE_ARRAY  0x01
+#define TLS_TYPE_VECTOR 0x02
+
+#define TLS_VECTOR_MAX8       255 /* 2^8  - 1 */
+#define TLS_VECTOR_MAX16    65535 /* 2^16 - 1 */
+#define TLS_VECTOR_MAX24 16777215 /* 2^24 - 1 */
+
+#define TLS_DATATYPE_RANDOM_LENGTH 32
+
+#define TLS_PROTOCOL_VERSION_1_0 0x0301
+#define TLS_PROTOCOL_VERSION_1_1 0x0302
+
+/* CipherSuites */
+#define TLS_RSA_EXPORT_WITH_RC4_40_MD5 0x0003
+#define TLS_RSA_WITH_RC4_128_MD5       0x0004
+#define TLS_RSA_WITH_RC4_128_SHA       0x0005
+
+/* CompressionMethods */
+#define TLS_COMP_METHOD_NULL 0
+
+#define TLS_RECORD_HEADER_LENGTH   5
+#define TLS_RECORD_OFFSET_TYPE     0
+#define TLS_RECORD_TYPE_HANDSHAKE 22
+#define TLS_RECORD_OFFSET_VERSION  1
+#define TLS_RECORD_OFFSET_LENGTH   3
+
+#define TLS_HANDSHAKE_HEADER_LENGTH           4
+#define TLS_HANDSHAKE_OFFSET_TYPE             0
+#define TLS_HANDSHAKE_TYPE_CLIENT_HELLO       1
+#define TLS_HANDSHAKE_TYPE_SERVER_HELLO       2
+#define TLS_HANDSHAKE_TYPE_CERTIFICATE       11
+#define TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ   13
+#define TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE 14
+#define TLS_HANDSHAKE_OFFSET_LENGTH           1
+
+struct layout_descriptor;
+typedef gboolean parse_func(struct tls_internal_state *state,
+			    const struct layout_descriptor *desc);
+
+/* Defines the strictest alignment requirement */
+struct tls_compile_integer;
+typedef void compile_func(struct tls_internal_state *state,
+			  const struct layout_descriptor *desc,
+			  const struct tls_compile_integer *data);
+
+struct layout_descriptor {
+	const gchar *label;
+	parse_func *parser;
+	compile_func *compiler;
+	guint type;
+	gsize min; /* 0 for fixed/array */
+	gsize max;
+	gsize offset;
+};
+
+#define TLS_LAYOUT_DESCRIPTOR_END { NULL, NULL, NULL, 0, 0, 0, 0 }
+#define TLS_LAYOUT_IS_VALID(desc) (desc->label)
+
+struct msg_descriptor  {
+	const struct msg_descriptor *next;
+	const gchar *description;
+	const struct layout_descriptor *layouts;
+	guint type;
+};
+
+/* parsed data */
+struct tls_parsed_integer {
+	guint value;
+};
+
+struct tls_parsed_array {
+	gsize length; /* bytes */
+	const guchar data[0];
+};
+
+/* compile data */
+struct tls_compile_integer {
+	gsize value;
+};
+
+struct tls_compile_array {
+	gsize elements; /* unused */
+	guchar placeholder[];
+};
+
+struct tls_compile_random {
+	gsize elements; /* unused */
+	guchar random[TLS_DATATYPE_RANDOM_LENGTH];
+};
+
+struct tls_compile_vector {
+	gsize elements; /* VECTOR */
+	guint placeholder[];
+};
+
+struct tls_compile_sessionid {
+	gsize elements; /* VECTOR */
+};
+
+struct tls_compile_cipher {
+	gsize elements; /* VECTOR */
+	guint suites[3];
+};
+
+struct tls_compile_compression {
+	gsize elements; /* VECTOR */
+	guint methods[1];
 };
 
 /*
@@ -78,8 +196,8 @@ static void debug_hex(struct tls_internal_state *state,
 
 	if (!str) return;
 
-	bytes  = state->parse_buffer;
-	length = alternative_length ? alternative_length : state->parse_length;
+	bytes  = state->msg_current;
+	length = alternative_length ? alternative_length : state->msg_remainder;
 	count  = -1;
 
 	while (length-- > 0) {
@@ -101,6 +219,8 @@ static void debug_hex(struct tls_internal_state *state,
 	if (state->debug) g_string_append_printf(state->debug, format, __VA_ARGS__)
 
 /*
+ * TLS data parsers
+ *
  * Low-level data conversion routines
  *
  *  - host alignment agnostic, i.e. can fetch a word from uneven address
@@ -117,15 +237,15 @@ static guint lowlevel_integer_to_host(const guchar *bytes,
 }
 
 /*
- * Simple data type parser routines
+ * Generic data type parser routines
  */
-static gboolean parse_length_check(struct tls_internal_state *state,
+static gboolean msg_remainder_check(struct tls_internal_state *state,
 				   const gchar *label,
 				   gsize length)
 {
-	if (length > state->parse_length) {
-		SIPE_DEBUG_ERROR("parse_length_check: '%s' expected %" G_GSIZE_FORMAT " bytes, remaining %" G_GSIZE_FORMAT,
-				 label, length, state->parse_length);
+	if (length > state->msg_remainder) {
+		SIPE_DEBUG_ERROR("msg_remainder_check: '%s' expected %" G_GSIZE_FORMAT " bytes, remaining %" G_GSIZE_FORMAT,
+				 label, length, state->msg_remainder);
 		return(FALSE);
 	}
 	return(TRUE);
@@ -136,16 +256,13 @@ static gboolean parse_integer_quiet(struct tls_internal_state *state,
 				    gsize length,
 				    guint *result)
 {
-	if (!parse_length_check(state, label, length)) return(FALSE);
-	*result = lowlevel_integer_to_host(state->parse_buffer, length);
-	state->parse_buffer += length;
-	state->parse_length -= length;
+	if (!msg_remainder_check(state, label, length)) return(FALSE);
+	*result = lowlevel_integer_to_host(state->msg_current, length);
+	state->msg_current   += length;
+	state->msg_remainder -= length;
 	return(TRUE);
 }
 
-struct tls_parsed_integer {
-	guint value;
-};
 static gboolean parse_integer(struct tls_internal_state *state,
 			      const gchar *label,
 			      gsize length)
@@ -162,33 +279,25 @@ static gboolean parse_integer(struct tls_internal_state *state,
 	return(TRUE);
 }
 
-struct tls_parsed_array {
-	gsize length; /* bytes */
-	const guchar data[0];
-};
 static gboolean parse_array(struct tls_internal_state *state,
 			    const gchar *label,
 			    gsize length)
 {
-	if (!parse_length_check(state, label, length)) return(FALSE);
+	if (!msg_remainder_check(state, label, length)) return(FALSE);
 	debug_printf(state, "%s/ARRAY[%" G_GSIZE_FORMAT "]\n",
 		     label, length);
 	if (state->data) {
 		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
 							  length);
 		save->length = length;
-		memcpy((guchar *)save->data, state->parse_buffer, length);
+		memcpy((guchar *)save->data, state->msg_current, length);
 		g_hash_table_insert(state->data, (gpointer) label, save);
 
 	}
-	state->parse_buffer += length;
-	state->parse_length -= length;
+	state->msg_current   += length;
+	state->msg_remainder -= length;
 	return(TRUE);
 }
-
-#define TLS_VECTOR_MAX8       255 /* 2^8  - 1 */
-#define TLS_VECTOR_MAX16    65535 /* 2^16 - 1 */
-#define TLS_VECTOR_MAX24 16777215 /* 2^24 - 1 */
 
 static gboolean parse_vector(struct tls_internal_state *state,
 			     const gchar *label,
@@ -211,71 +320,174 @@ static gboolean parse_vector(struct tls_internal_state *state,
 		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
 							  length);
 		save->length = length;
-		memcpy((guchar *)save->data, state->parse_buffer, length);
+		memcpy((guchar *)save->data, state->msg_current, length);
 		g_hash_table_insert(state->data, (gpointer) label, save);
 	}
-	state->parse_buffer += length;
-	state->parse_length -= length;
+	state->msg_current   += length;
+	state->msg_remainder -= length;
 	return(TRUE);
 }
 
 /*
- * TLS message parsing
+ * Specific data type parser routines
  */
-#define TLS_TYPE_FIXED  0x00
-#define TLS_TYPE_ARRAY  0x01
-#define TLS_TYPE_VECTOR 0x02
 
-struct parse_descriptor;
-typedef gboolean parse_func(struct tls_internal_state *state,
-			    const struct parse_descriptor *desc);
-struct parse_descriptor {
-	const gchar *label;
-	parse_func *parser;
-	guint type;
-	gsize min; /* 0 for fixed/array */
-	gsize max;
-};
+/* TBD... */
 
-#define TLS_PARSE_DESCRIPTOR_END { NULL, NULL, 0, 0, 0 }
-
-static const struct parse_descriptor const ClientHello[] = {
-	{ "Client Protocol Version", NULL, TLS_TYPE_FIXED,    0,  2 },
-	{ "Random",                  NULL, TLS_TYPE_ARRAY,    0, 32 },
-	{ "SessionID",               NULL, TLS_TYPE_VECTOR,   0, 32 },
-	{ "CipherSuite",             NULL, TLS_TYPE_VECTOR,   2, TLS_VECTOR_MAX16 },
-	{ "CompressionMethod",       NULL, TLS_TYPE_VECTOR,   1, TLS_VECTOR_MAX8  },
-	TLS_PARSE_DESCRIPTOR_END
-};
-
-static const struct parse_descriptor const ServerHello[] = {
-	{ "Server Protocol Version", NULL, TLS_TYPE_FIXED,    0,  2 },
-	{ "Random",                  NULL, TLS_TYPE_ARRAY,    0, 32 },
-	{ "SessionID",               NULL, TLS_TYPE_VECTOR,   0, 32 },
-	{ "CipherSuite",             NULL, TLS_TYPE_FIXED,    0,  2 },
-	{ "CompressionMethod",       NULL, TLS_TYPE_FIXED,    0,  1 },
-	TLS_PARSE_DESCRIPTOR_END
-};
-
-static const struct parse_descriptor const Certificate[] = {
-	{ "Certificate",             NULL, TLS_TYPE_VECTOR,   0, TLS_VECTOR_MAX24 },
-	TLS_PARSE_DESCRIPTOR_END
-};
-
-static const struct parse_descriptor const CertificateRequest[] = {
-	{ "CertificateType",         NULL, TLS_TYPE_VECTOR,   1, TLS_VECTOR_MAX8 },
-	{ "DistinguishedName",       NULL, TLS_TYPE_VECTOR,   0, TLS_VECTOR_MAX16 },
-	TLS_PARSE_DESCRIPTOR_END
-};
-
-static const struct parse_descriptor const ServerHelloDone[] = {
-	TLS_PARSE_DESCRIPTOR_END
-};
-
-static gboolean generic_parser(struct tls_internal_state *state,
-			       const struct parse_descriptor *desc)
+/*
+ * TLS data compilers
+ *
+ * Low-level data conversion routines
+ *
+ *  - host alignment agnostic, i.e. can fetch a word from uneven address
+ *  - host -> TLS host endianess conversion
+ *  - don't modify state
+ */
+static void lowlevel_integer_to_tls(guchar *bytes,
+				    gsize length,
+				    guint value)
 {
-	while (desc->label) {
+	while (length--) {
+		bytes[length] = value & 0xFF;
+		value >>= 8;
+	}
+}
+
+/*
+ * Generic data type compiler routines
+ */
+static void compile_integer(struct tls_internal_state *state,
+			    const struct layout_descriptor *desc,
+			    const struct tls_compile_integer *data)
+{
+	lowlevel_integer_to_tls(state->msg_current, desc->max, data->value);
+	state->msg_current   += desc->max;
+	state->msg_remainder += desc->max;
+}
+
+static void compile_array(struct tls_internal_state *state,
+			  const struct layout_descriptor *desc,
+			  const struct tls_compile_integer *data)
+{
+	const struct tls_compile_array *array = (struct tls_compile_array *) data;
+	memcpy(state->msg_current, array->placeholder, desc->max);
+	state->msg_current   += desc->max;
+	state->msg_remainder += desc->max;
+}
+
+static void compile_vector(struct tls_internal_state *state,
+			   const struct layout_descriptor *desc,
+			   const struct tls_compile_integer *data)
+{
+	const struct tls_compile_vector *vector = (struct tls_compile_vector *) data;
+	gsize length = vector->elements;
+	gsize length_field = (desc->max > TLS_VECTOR_MAX16) ? 3 :
+		             (desc->max > TLS_VECTOR_MAX8)  ? 2 : 1;
+
+	lowlevel_integer_to_tls(state->msg_current, length_field, length);
+	state->msg_current   += length_field;
+	state->msg_remainder += length_field;
+	memcpy(state->msg_current, vector->placeholder, length);
+	state->msg_current   += length;
+	state->msg_remainder += length;
+}
+
+static void compile_vector_int2(struct tls_internal_state *state,
+				const struct layout_descriptor *desc,
+				const struct tls_compile_integer *data)
+{
+	const struct tls_compile_vector *vector = (struct tls_compile_vector *) data;
+	gsize elements = vector->elements;
+	gsize length   = elements * sizeof(guint16);
+	gsize length_field = (desc->max > TLS_VECTOR_MAX16) ? 3 :
+		             (desc->max > TLS_VECTOR_MAX8)  ? 2 : 1;
+	const guint *p = vector->placeholder;
+
+	lowlevel_integer_to_tls(state->msg_current, length_field, length);
+	state->msg_current   += length_field;
+	state->msg_remainder += length_field;
+	while (elements--) {
+		lowlevel_integer_to_tls(state->msg_current, sizeof(guint16), *p++);
+		state->msg_current   += sizeof(guint16);
+		state->msg_remainder += sizeof(guint16);
+	}
+}
+
+/*
+ * Specific data type compiler routines
+ */
+
+/* TBD... */
+
+/*
+ * TLS handshake message layout descriptors
+ */
+struct ClientHello_host {
+	const struct tls_compile_integer protocol_version;
+	const struct tls_compile_random random;
+	const struct tls_compile_sessionid sessionid;
+	const struct tls_compile_cipher cipher;
+	const struct tls_compile_compression compression;
+};
+#define CLIENTHELLO_OFFSET(a) offsetof(struct ClientHello_host, a)
+
+static const struct layout_descriptor const ClientHello_l[] = {
+	{ "Client Protocol Version", NULL, compile_integer,     TLS_TYPE_FIXED,  0,  2,                         CLIENTHELLO_OFFSET(protocol_version) },
+	{ "Random",                  NULL, compile_array,       TLS_TYPE_ARRAY,  0, TLS_DATATYPE_RANDOM_LENGTH, CLIENTHELLO_OFFSET(random) },
+	{ "SessionID",               NULL, compile_vector,      TLS_TYPE_VECTOR, 0, 32,                         CLIENTHELLO_OFFSET(sessionid) },
+	{ "CipherSuite",             NULL, compile_vector_int2, TLS_TYPE_VECTOR, 2, TLS_VECTOR_MAX16,           CLIENTHELLO_OFFSET(cipher)},
+	{ "CompressionMethod",       NULL, compile_vector,      TLS_TYPE_VECTOR, 1, TLS_VECTOR_MAX8,            CLIENTHELLO_OFFSET(compression) },
+	TLS_LAYOUT_DESCRIPTOR_END
+};
+static const struct msg_descriptor const ClientHello_m = {
+	NULL, "Client Hello", ClientHello_l, TLS_HANDSHAKE_TYPE_CLIENT_HELLO
+};
+
+static const struct layout_descriptor const ServerHello_l[] = {
+	{ "Server Protocol Version", NULL, NULL, TLS_TYPE_FIXED,  0,  2,                         0 },
+	{ "Random",                  NULL, NULL, TLS_TYPE_ARRAY,  0, TLS_DATATYPE_RANDOM_LENGTH, 0 },
+	{ "SessionID",               NULL, NULL, TLS_TYPE_VECTOR, 0, 32,                         0 },
+	{ "CipherSuite",             NULL, NULL, TLS_TYPE_FIXED,  0,  2,                         0 },
+	{ "CompressionMethod",       NULL, NULL, TLS_TYPE_FIXED,  0,  1,                         0 },
+	TLS_LAYOUT_DESCRIPTOR_END
+};
+static const struct msg_descriptor const ServerHello_m = {
+	&ClientHello_m, "Server Hello", ServerHello_l, TLS_HANDSHAKE_TYPE_SERVER_HELLO
+};
+
+static const struct layout_descriptor const Certificate_l[] = {
+	{ "Certificate",             NULL, NULL, TLS_TYPE_VECTOR, 0, TLS_VECTOR_MAX24, 0 },
+	TLS_LAYOUT_DESCRIPTOR_END
+};
+static const struct msg_descriptor const Certificate_m = {
+	&ServerHello_m, "Certificate", Certificate_l, TLS_HANDSHAKE_TYPE_CERTIFICATE
+};
+
+static const struct layout_descriptor const CertificateRequest_l[] = {
+	{ "CertificateType",         NULL, NULL, TLS_TYPE_VECTOR, 1, TLS_VECTOR_MAX8,  0 },
+	{ "DistinguishedName",       NULL, NULL, TLS_TYPE_VECTOR, 0, TLS_VECTOR_MAX16, 0 },
+	TLS_LAYOUT_DESCRIPTOR_END
+};
+static const struct msg_descriptor const CertificateRequest_m = {
+	&Certificate_m, "Certificate Request", CertificateRequest_l, TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ
+};
+
+static const struct layout_descriptor const ServerHelloDone_l[] = {
+	TLS_LAYOUT_DESCRIPTOR_END
+};
+static const struct msg_descriptor const ServerHelloDone_m = {
+	&CertificateRequest_m, "Server Hello Done", ServerHelloDone_l, TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE
+};
+
+#define HANDSHAKE_MSG_DESCRIPTORS &ServerHelloDone_m
+
+/*
+ * TLS message parsers
+ */
+static gboolean generic_parser(struct tls_internal_state *state,
+			       const struct layout_descriptor *desc)
+{
+	while (TLS_LAYOUT_IS_VALID(desc)) {
 
 		/* Special parser */
 		if (desc->parser) {
@@ -301,6 +513,7 @@ static gboolean generic_parser(struct tls_internal_state *state,
 			default:
 				SIPE_DEBUG_ERROR("generic_parser: unknown descriptor type %d",
 						 desc->type);
+				success = FALSE;
 				break;
 			}
 
@@ -315,40 +528,16 @@ static gboolean generic_parser(struct tls_internal_state *state,
 	return(TRUE);
 }
 
-#define TLS_HANDSHAKE_HEADER_LENGTH           4
-#define TLS_HANDSHAKE_OFFSET_TYPE             0
-#define TLS_HANDSHAKE_TYPE_CLIENT_HELLO       1
-#define TLS_HANDSHAKE_TYPE_SERVER_HELLO       2
-#define TLS_HANDSHAKE_TYPE_CERTIFICATE       11
-#define TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ   13
-#define TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE 14
-#define TLS_HANDSHAKE_OFFSET_LENGTH           1
-
-struct msg_descriptor {
-	guint type;
-	const gchar *description;
-	const struct parse_descriptor *parse;
-};
-
 static gboolean handshake_parse(struct tls_internal_state *state)
 {
-	static const struct msg_descriptor const handshake_descriptors[] = {
-		{ TLS_HANDSHAKE_TYPE_CLIENT_HELLO,      "Client Hello",        ClientHello},
-		{ TLS_HANDSHAKE_TYPE_SERVER_HELLO,      "Server Hello",        ServerHello},
-		{ TLS_HANDSHAKE_TYPE_CERTIFICATE,       "Certificate",         Certificate},
-		{ TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ,   "Certificate Request", CertificateRequest},
-		{ TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE, "Server Hello Done",   ServerHelloDone}
-	};
-#define HANDSHAKE_DESCRIPTORS (sizeof(handshake_descriptors)/sizeof(struct msg_descriptor))
-
-	const guchar *bytes  = state->parse_buffer;
-	gsize length         = state->parse_length;
-	gboolean success     = FALSE;
+	const guchar *bytes = state->msg_current;
+	gsize length        = state->msg_remainder;
+	gboolean success    = FALSE;
 
 	while (length > 0) {
 		const struct msg_descriptor *desc;
 		gsize msg_length;
-		guint i, msg_type;
+		guint msg_type;
 
 		/* header check */
 		if (length < TLS_HANDSHAKE_HEADER_LENGTH) {
@@ -366,22 +555,21 @@ static gboolean handshake_parse(struct tls_internal_state *state)
 
 		/* msg type */
 		msg_type = bytes[TLS_HANDSHAKE_OFFSET_TYPE];
-		for (desc = handshake_descriptors, i = 0;
-		     i < HANDSHAKE_DESCRIPTORS;
-		     desc++, i++) {
+		for (desc = HANDSHAKE_MSG_DESCRIPTORS;
+		     desc;
+		     desc = desc->next)
 			if (msg_type == desc->type)
 				break;
-		}
 
 		debug_printf(state, "TLS handshake (%" G_GSIZE_FORMAT " bytes) (%d)",
 			     msg_length, msg_type);
 
-		state->parse_buffer = bytes + TLS_HANDSHAKE_HEADER_LENGTH;
-		state->parse_length = msg_length;
+		state->msg_current   = (guchar *) bytes + TLS_HANDSHAKE_HEADER_LENGTH;
+		state->msg_remainder = msg_length;
 
-		if (i < HANDSHAKE_DESCRIPTORS) {
+		if (desc->layouts) {
 			debug_printf(state, "%s\n", desc->description);
-			success = generic_parser(state, desc->parse);
+			success = generic_parser(state, desc->layouts);
 			if (!success)
 				break;
 		} else {
@@ -410,12 +598,6 @@ static void free_parse_data(struct tls_internal_state *state)
 	}
 }
 
-#define TLS_RECORD_HEADER_LENGTH   5
-#define TLS_RECORD_OFFSET_TYPE     0
-#define TLS_RECORD_TYPE_HANDSHAKE 22
-#define TLS_RECORD_OFFSET_MAJOR    1
-#define TLS_RECORD_OFFSET_LENGTH   3
-
 /* NOTE: we don't support record fragmentation */
 static gboolean tls_record_parse(struct tls_internal_state *state,
 				 gboolean incoming)
@@ -437,16 +619,16 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 	}
 
 	/* protocol version check */
-	version = lowlevel_integer_to_host(bytes + TLS_RECORD_OFFSET_MAJOR, 2);
-	if (version < 0x0301) {
+	version = lowlevel_integer_to_host(bytes + TLS_RECORD_OFFSET_VERSION, 2);
+	if (version < TLS_PROTOCOL_VERSION_1_0) {
 		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: SSL1/2/3 not supported");
 		return(FALSE);
 	}
 	switch (version) {
-	case 0x0301:
+	case TLS_PROTOCOL_VERSION_1_0:
 		version_str = "1.0 (RFC2246)";
 		break;
-	case 0x0302:
+	case TLS_PROTOCOL_VERSION_1_1:
 		version_str = "1.1 (RFC4346)";
 		break;
 	default:
@@ -465,8 +647,8 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 	/* TLS record header OK */
 	debug_printf(state, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
 		     version_str, length);
-	state->parse_buffer = bytes  + TLS_RECORD_HEADER_LENGTH;
-	state->parse_length = length - TLS_RECORD_HEADER_LENGTH;
+	state->msg_current   = (guchar *) bytes  + TLS_RECORD_HEADER_LENGTH;
+	state->msg_remainder = length - TLS_RECORD_HEADER_LENGTH;
 
 	/* Collect parser data for incoming messages */
 	if (incoming)
@@ -495,113 +677,115 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 	return(success);
 }
 
-static const guchar const client_hello[] = {
+/*
+ * TLS message compiler
+ */
+static void compile_msg(struct tls_internal_state *state,
+			gsize size,
+			gsize messages,
+			...)
+{
+	/* host data structures have padding so they are longer
+	 * than the compiled message. So buffer is large enough. */
+	gsize total_size = size +
+		TLS_RECORD_HEADER_LENGTH +
+		TLS_HANDSHAKE_HEADER_LENGTH * messages;
+	guchar *buffer = g_malloc0(total_size);
+	va_list ap;
 
-#if 0
-/* Extracted from log file */
-	/* TLS Record */
-	0x16,                   /* ContenType: handshake(22)        */
-	0x03, 0x01,             /* ProtocolVersion: 3.1 (= TLS 1.0) */
-	0x00, 0x48,             /* length: 72 bytes                 */
-	/* TLS Record fragment -> 72 bytes                          */
-	/* Handshake (header)                                       */
-	0x01,                   /* msg_type: client_hello(1)        */
-	0x00, 0x00, 0x44,       /* length: 68 bytes                 */
-	/* Handshake (body)                                         */
-	/* ClientHello                                              */
-	0x03, 0x01,             /* ProtocolVersion: 3.1 (= TLS 1.0) */
-	                        /* Random: (32 bytes)               */
-	0x4e, 0x81, 0xa7, 0x63, /*  uint32 gmt_unix_time            */
-	0x15, 0xfd, 0x06, 0x46, /*  random_bytes[28]                */
-	0x0a, 0xb2, 0xdf, 0xf0,
-	0x85, 0x14, 0xac, 0x60,
-	0x7e, 0xda, 0x48, 0x3c,
-	0xb2, 0xad, 0x5b, 0x0f,
-	0xf3, 0xe4, 0x4e, 0x5d,
-	0x4b, 0x9f, 0x8e, 0xd6,
-	                        /* session_id: (0..32 bytes)        */
-	0x00,                   /* = 0 -> no SessionID              */
-                                /* cipher_suites: (2..2^16-1 bytes) */
-        0x00, 0x16,             /* = 22 bytes -> 11 CipherSuites    */
-	0x00, 0x04,             /* TLS_RSA_WITH_RC4_128_MD5         */
-	0x00, 0x05,             /* TLS_RSA_WITH_RC4_128_SHA         */
-	0x00, 0x0a,             /* TLS_RSA_WITH_3DES_EDE_CBC_SHA    */
-	0x00, 0x09,             /* TLS_RSA_WITH_DES_CBC_SHA         */
-	0x00, 0x64,             /* NON-STANDARD */
-	0x00, 0x62,             /* NON-STANDARD */
-	0x00, 0x03,             /* TLS_RSA_EXPORT_WITH_RC4_40_MD5  */
-	0x00, 0x06,             /* TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5 */
-	0x00, 0x13,             /* TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA */
-	0x00, 0x12,             /* TLS_DHE_DSS_WITH_DES_CBC_SHA    */
-	0x00, 0x63,             /* NON-STANDARD */
-	                        /* compr_methods: (1..2^8-1 bytes) */
-        0x01,                   /* = 1 byte -> 1 CompressionMethod */
-        0x00,                   /* null(0)                         */
-        /* TLS Extended Client Hello (RFC3546) */
-	                        /* extensions: (0..2^16-1)         */
-	0x00, 0x05,             /* = 5 bytes                       */
-        0xff, 0x01,             /* ExtensionType: (= 0xFF01)       */
-                                /* extension_data: (0..2^16-1 byt) */
-        0x00, 0x01,             /* = 1 byte                        */
-	0x00
-#else
-	/* TLS Record */
-	0x16,                   /* ContenType: handshake(22)        */
-	0x03, 0x01,             /* ProtocolVersion: 3.1 (= TLS 1.0) */
-	0x00, 0x31,             /* length: 49 bytes                 */
-	/* TLS Record fragment -> 72 bytes                          */
-	/* Handshake (header)                                       */
-	0x01,                   /* msg_type: client_hello(1)        */
-	0x00, 0x00, 0x2d,       /* length: 45 bytes                 */
-	/* Handshake (body)                                         */
-	/* ClientHello                                              */
-	0x03, 0x01,             /* ProtocolVersion: 3.1 (= TLS 1.0) */
-	                        /* Random: (32 bytes)               */
-#define GMT_OFFSET 11
-	0x4e, 0x81, 0xa7, 0x63, /*  uint32 gmt_unix_time            */
-#define RANDOM_OFFSET 15
-	0x15, 0xfd, 0x06, 0x46, /*  random_bytes[28]                */
-	0x0a, 0xb2, 0xdf, 0xf0,
-	0x85, 0x14, 0xac, 0x60,
-	0x7e, 0xda, 0x48, 0x3c,
-	0xb2, 0xad, 0x5b, 0x0f,
-	0xf3, 0xe4, 0x4e, 0x5d,
-	0x4b, 0x9f, 0x8e, 0xd6,
-	                        /* session_id: (0..32 bytes)        */
-	0x00,                   /* = 0 -> no SessionID              */
-                                /* cipher_suites: (2..2^16-1 bytes) */
-        0x00, 0x06,             /* = 6 bytes ->  3 CipherSuites     */
-	0x00, 0x04,             /* TLS_RSA_WITH_RC4_128_MD5         */
-	0x00, 0x05,             /* TLS_RSA_WITH_RC4_128_SHA         */
-	0x00, 0x03,             /* TLS_RSA_EXPORT_WITH_RC4_40_MD5  */
-	                        /* compr_methods: (1..2^8-1 bytes) */
-        0x01,                   /* = 1 byte -> 1 CompressionMethod */
-        0x00                    /* null(0)                         */
-#endif
-};
+	SIPE_DEBUG_INFO("compile_msg: buffer size %" G_GSIZE_FORMAT,
+			total_size);
+
+	state->msg_current   = buffer + TLS_RECORD_HEADER_LENGTH;
+	state->msg_remainder = 0;
+
+	va_start(ap, messages);
+	while (messages--) {
+		const struct msg_descriptor *desc = va_arg(ap, struct msg_descriptor *);
+		const guchar *data = va_arg(ap, gpointer);
+		const struct layout_descriptor *ldesc = desc->layouts;
+		guchar *handshake = state->msg_current;
+		gsize length;
+
+		/* add TLS handshake header */
+		handshake[TLS_HANDSHAKE_OFFSET_TYPE] = desc->type;
+		state->msg_current   += TLS_HANDSHAKE_HEADER_LENGTH;
+		state->msg_remainder += TLS_HANDSHAKE_HEADER_LENGTH;
+
+		while (TLS_LAYOUT_IS_VALID(ldesc)) {
+			ldesc->compiler(state, ldesc,
+					/* Need to use (void *) here so that
+					 * the compiler doesn't check for
+					 * aligment restrictions. The data
+					 * structures *ARE* correctly aligned!
+					 */
+					(void *) (data + ldesc->offset));
+			ldesc++;
+		}
+
+		length = state->msg_current - handshake - TLS_HANDSHAKE_HEADER_LENGTH;
+		lowlevel_integer_to_tls(handshake + TLS_HANDSHAKE_OFFSET_LENGTH,
+					3, length);
+		SIPE_DEBUG_INFO("compile_msg: (%d)%s, size %" G_GSIZE_FORMAT,
+				desc->type, desc->description, length);
+
+
+	}
+	va_end(ap);
+
+	/* add TLS record header */
+	buffer[TLS_RECORD_OFFSET_TYPE] = TLS_RECORD_TYPE_HANDSHAKE;
+	lowlevel_integer_to_tls(buffer + TLS_RECORD_OFFSET_VERSION, 2,
+				TLS_PROTOCOL_VERSION_1_0);
+	lowlevel_integer_to_tls(buffer + TLS_RECORD_OFFSET_LENGTH, 2,
+				state->msg_remainder);
+
+	state->common.out_buffer = buffer;
+	state->common.out_length = state->msg_remainder + TLS_RECORD_HEADER_LENGTH;
+
+	SIPE_DEBUG_INFO("compile_msg: compiled size %" G_GSIZE_FORMAT,
+			state->common.out_length);
+}
 
 static gboolean tls_client_hello(struct tls_internal_state *state)
 {
-	guchar *msg = g_memdup(client_hello, sizeof(client_hello));
-	guint32 now = time(NULL);
+	guint32 now   = time(NULL);
 	guint32 now_N = GUINT32_TO_BE(now);
-	guchar *p;
-	guint i;
+	struct ClientHello_host msg = {
+		{ TLS_PROTOCOL_VERSION_1_0 },
+		{ 0, { } },
+		{ 0 /* empty SessionID */ },
+		{ 3,
+		  {
+			  TLS_RSA_WITH_RC4_128_MD5,
+			  TLS_RSA_WITH_RC4_128_SHA,
+			  TLS_RSA_EXPORT_WITH_RC4_40_MD5
+		  }
+		},
+		{ 1,
+		  {
+			  TLS_COMP_METHOD_NULL
+		  }
+		}
+	};
 
-	memcpy(msg + GMT_OFFSET, &now_N, sizeof(now_N));
-	for (p = msg + RANDOM_OFFSET, i = 0; i < 2; i++)
-		*p++ = rand() & 0xFF;
+	/* First 4 bytes of client_random is the current timestamp */
+	sipe_svc_fill_random(&state->client_random,
+			     TLS_DATATYPE_RANDOM_LENGTH * 8); /* -> bits */
+	memcpy(state->client_random.buffer, &now_N, sizeof(now_N));
+	memcpy((guchar *) msg.random.random, state->client_random.buffer,
+	       TLS_DATATYPE_RANDOM_LENGTH);
 
-	state->common.out_buffer = msg;
-	state->common.out_length = sizeof(client_hello);
-	state->state             = TLS_HANDSHAKE_STATE_SERVER_HELLO;
+	compile_msg(state,
+		    sizeof(msg),
+		    1,
+		    &ClientHello_m, &msg);
 
 	if (sipe_backend_debug_enabled())
 		state->debug = g_string_new("");
 
-	tls_record_parse(state, FALSE);
-
-	return(TRUE);
+	state->state = TLS_HANDSHAKE_STATE_SERVER_HELLO;
+	return(tls_record_parse(state, FALSE));
 }
 
 static gboolean tls_server_hello(struct tls_internal_state *state)
@@ -613,11 +797,9 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 	free_parse_data(state);
 	state->common.out_buffer = NULL;
 	state->common.out_length = 0;
-	state->state             = TLS_HANDSHAKE_STATE_FINISHED;
 
-	tls_record_parse(state, FALSE);
-
-	return(state->common.out_buffer != NULL);
+	state->state = TLS_HANDSHAKE_STATE_FINISHED;
+	return(tls_record_parse(state, FALSE));
 }
 
 static gboolean tls_finished(struct tls_internal_state *state)
@@ -697,6 +879,8 @@ void sipe_tls_free(struct sipe_tls_state *state)
 		free_parse_data(internal);
 		if (internal->debug)
 			g_string_free(internal->debug, TRUE);
+		sipe_svc_free_random(&internal->client_random);
+		g_free(internal->server_random.buffer);
 		g_free(state->session_key);
 		g_free(state->out_buffer);
 		g_free(state);
