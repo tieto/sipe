@@ -73,10 +73,6 @@ struct tls_internal_state {
  */
 
 /* constants */
-#define TLS_TYPE_FIXED  0x00
-#define TLS_TYPE_ARRAY  0x01
-#define TLS_TYPE_VECTOR 0x02
-
 #define TLS_VECTOR_MAX8       255 /* 2^8  - 1 */
 #define TLS_VECTOR_MAX16    65535 /* 2^16 - 1 */
 #define TLS_VECTOR_MAX24 16777215 /* 2^24 - 1 */
@@ -123,13 +119,12 @@ struct layout_descriptor {
 	const gchar *label;
 	parse_func *parser;
 	compile_func *compiler;
-	guint type;
 	gsize min; /* 0 for fixed/array */
 	gsize max;
 	gsize offset;
 };
 
-#define TLS_LAYOUT_DESCRIPTOR_END { NULL, NULL, NULL, 0, 0, 0, 0 }
+#define TLS_LAYOUT_DESCRIPTOR_END { NULL, NULL, NULL, 0, 0, 0 }
 #define TLS_LAYOUT_IS_VALID(desc) (desc->label)
 
 struct msg_descriptor  {
@@ -264,64 +259,62 @@ static gboolean parse_integer_quiet(struct tls_internal_state *state,
 }
 
 static gboolean parse_integer(struct tls_internal_state *state,
-			      const gchar *label,
-			      gsize length)
+			      const struct layout_descriptor *desc)
 {
 	guint value;
-	if (!parse_integer_quiet(state, label, length, &value)) return(FALSE);
+	if (!parse_integer_quiet(state, desc->label, desc->max, &value))
+		return(FALSE);
 	debug_printf(state, "%s/INTEGER%" G_GSIZE_FORMAT " = %d\n",
-		     label, length, value);
+		     desc->label, desc->max, value);
 	if (state->data) {
 		struct tls_parsed_integer *save = g_new0(struct tls_parsed_integer, 1);
 		save->value = value;
-		g_hash_table_insert(state->data, (gpointer) label, save);
+		g_hash_table_insert(state->data, (gpointer) desc->label, save);
 	}
 	return(TRUE);
 }
 
 static gboolean parse_array(struct tls_internal_state *state,
-			    const gchar *label,
-			    gsize length)
+			    const struct layout_descriptor *desc)
 {
-	if (!msg_remainder_check(state, label, length)) return(FALSE);
+	if (!msg_remainder_check(state, desc->label, desc->max))
+		return(FALSE);
 	debug_printf(state, "%s/ARRAY[%" G_GSIZE_FORMAT "]\n",
-		     label, length);
+		     desc->label, desc->max);
 	if (state->data) {
 		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
-							  length);
-		save->length = length;
-		memcpy((guchar *)save->data, state->msg_current, length);
-		g_hash_table_insert(state->data, (gpointer) label, save);
+							  desc->max);
+		save->length = desc->max;
+		memcpy((guchar *)save->data, state->msg_current, desc->max);
+		g_hash_table_insert(state->data, (gpointer) desc->label, save);
 
 	}
-	state->msg_current   += length;
-	state->msg_remainder -= length;
+	state->msg_current   += desc->max;
+	state->msg_remainder -= desc->max;
 	return(TRUE);
 }
 
 static gboolean parse_vector(struct tls_internal_state *state,
-			     const gchar *label,
-			     gsize min,
-			     gsize max)
+			     const struct layout_descriptor *desc)
 {
 	guint length;
-	if (!parse_integer_quiet(state, label,
-				 (max > TLS_VECTOR_MAX16) ? 3 :
-				 (max > TLS_VECTOR_MAX8)  ? 2 : 1,
+	if (!parse_integer_quiet(state, desc->label,
+				 (desc->max > TLS_VECTOR_MAX16) ? 3 :
+				 (desc->max > TLS_VECTOR_MAX8)  ? 2 : 1,
 				 &length))
 		return(FALSE);
-	if (length < min) {
+	if (length < desc->min) {
 		SIPE_DEBUG_ERROR("parse_vector: '%s' too short %d, expected %" G_GSIZE_FORMAT,
-				 label, length, min);
+				 desc->label, length, desc->min);
 		return(FALSE);
 	}
-	debug_printf(state, "%s/VECTOR<%d>\n", label, length);
+	debug_printf(state, "%s/VECTOR<%d>\n", desc->label, length);
 	if (state->data) {
 		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
 							  length);
 		save->length = length;
 		memcpy((guchar *)save->data, state->msg_current, length);
-		g_hash_table_insert(state->data, (gpointer) label, save);
+		g_hash_table_insert(state->data, (gpointer) desc->label, save);
 	}
 	state->msg_current   += length;
 	state->msg_remainder -= length;
@@ -432,11 +425,11 @@ struct ClientHello_host {
 #define CLIENTHELLO_OFFSET(a) offsetof(struct ClientHello_host, a)
 
 static const struct layout_descriptor const ClientHello_l[] = {
-	{ "Client Protocol Version", NULL, compile_integer,     TLS_TYPE_FIXED,  0,  2,                         CLIENTHELLO_OFFSET(protocol_version) },
-	{ "Random",                  NULL, compile_array,       TLS_TYPE_ARRAY,  0, TLS_DATATYPE_RANDOM_LENGTH, CLIENTHELLO_OFFSET(random) },
-	{ "SessionID",               NULL, compile_vector,      TLS_TYPE_VECTOR, 0, 32,                         CLIENTHELLO_OFFSET(sessionid) },
-	{ "CipherSuite",             NULL, compile_vector_int2, TLS_TYPE_VECTOR, 2, TLS_VECTOR_MAX16,           CLIENTHELLO_OFFSET(cipher)},
-	{ "CompressionMethod",       NULL, compile_vector,      TLS_TYPE_VECTOR, 1, TLS_VECTOR_MAX8,            CLIENTHELLO_OFFSET(compression) },
+	{ "Client Protocol Version", parse_integer, compile_integer,     0,  2,                         CLIENTHELLO_OFFSET(protocol_version) },
+	{ "Random",                  parse_array,   compile_array,       0, TLS_DATATYPE_RANDOM_LENGTH, CLIENTHELLO_OFFSET(random) },
+	{ "SessionID",               parse_vector,  compile_vector,      0, 32,                         CLIENTHELLO_OFFSET(sessionid) },
+	{ "CipherSuite",             parse_vector,  compile_vector_int2, 2, TLS_VECTOR_MAX16,           CLIENTHELLO_OFFSET(cipher)},
+	{ "CompressionMethod",       parse_vector,  compile_vector,      1, TLS_VECTOR_MAX8,            CLIENTHELLO_OFFSET(compression) },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
 static const struct msg_descriptor const ClientHello_m = {
@@ -444,11 +437,11 @@ static const struct msg_descriptor const ClientHello_m = {
 };
 
 static const struct layout_descriptor const ServerHello_l[] = {
-	{ "Server Protocol Version", NULL, NULL, TLS_TYPE_FIXED,  0,  2,                         0 },
-	{ "Random",                  NULL, NULL, TLS_TYPE_ARRAY,  0, TLS_DATATYPE_RANDOM_LENGTH, 0 },
-	{ "SessionID",               NULL, NULL, TLS_TYPE_VECTOR, 0, 32,                         0 },
-	{ "CipherSuite",             NULL, NULL, TLS_TYPE_FIXED,  0,  2,                         0 },
-	{ "CompressionMethod",       NULL, NULL, TLS_TYPE_FIXED,  0,  1,                         0 },
+	{ "Server Protocol Version", parse_integer, NULL, 0,  2,                         0 },
+	{ "Random",                  parse_array,   NULL, 0, TLS_DATATYPE_RANDOM_LENGTH, 0 },
+	{ "SessionID",               parse_vector,  NULL, 0, 32,                         0 },
+	{ "CipherSuite",             parse_integer, NULL, 0,  2,                         0 },
+	{ "CompressionMethod",       parse_integer, NULL, 0,  1,                         0 },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
 static const struct msg_descriptor const ServerHello_m = {
@@ -456,7 +449,7 @@ static const struct msg_descriptor const ServerHello_m = {
 };
 
 static const struct layout_descriptor const Certificate_l[] = {
-	{ "Certificate",             NULL, NULL, TLS_TYPE_VECTOR, 0, TLS_VECTOR_MAX24, 0 },
+	{ "Certificate",             parse_vector, NULL, 0, TLS_VECTOR_MAX24, 0 },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
 static const struct msg_descriptor const Certificate_m = {
@@ -464,8 +457,8 @@ static const struct msg_descriptor const Certificate_m = {
 };
 
 static const struct layout_descriptor const CertificateRequest_l[] = {
-	{ "CertificateType",         NULL, NULL, TLS_TYPE_VECTOR, 1, TLS_VECTOR_MAX8,  0 },
-	{ "DistinguishedName",       NULL, NULL, TLS_TYPE_VECTOR, 0, TLS_VECTOR_MAX16, 0 },
+	{ "CertificateType",         parse_vector, NULL, 1, TLS_VECTOR_MAX8,  0 },
+	{ "DistinguishedName",       parse_vector, NULL, 0, TLS_VECTOR_MAX16, 0 },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
 static const struct msg_descriptor const CertificateRequest_m = {
@@ -484,50 +477,6 @@ static const struct msg_descriptor const ServerHelloDone_m = {
 /*
  * TLS message parsers
  */
-static gboolean generic_parser(struct tls_internal_state *state,
-			       const struct layout_descriptor *desc)
-{
-	while (TLS_LAYOUT_IS_VALID(desc)) {
-
-		/* Special parser */
-		if (desc->parser) {
-			/* TBD... */
-
-		/* Generic parser */
-		} else {
-			gboolean success;
-
-			switch (desc->type) {
-			case TLS_TYPE_FIXED:
-				success = parse_integer(state, desc->label, desc->max);
-				break;
-
-			case TLS_TYPE_ARRAY:
-				success = parse_array(state, desc->label, desc->max);
-				break;
-
-			case TLS_TYPE_VECTOR:
-				success = parse_vector(state, desc->label, desc->min, desc->max);
-			break;
-
-			default:
-				SIPE_DEBUG_ERROR("generic_parser: unknown descriptor type %d",
-						 desc->type);
-				success = FALSE;
-				break;
-			}
-
-			if (!success)
-				return(FALSE);
-		}
-
-		/* next field */
-		desc++;
-	}
-
-	return(TRUE);
-}
-
 static gboolean handshake_parse(struct tls_internal_state *state)
 {
 	const guchar *bytes = state->msg_current;
@@ -568,8 +517,15 @@ static gboolean handshake_parse(struct tls_internal_state *state)
 		state->msg_remainder = msg_length;
 
 		if (desc->layouts) {
+			const struct layout_descriptor *ldesc = desc->layouts;
+
 			debug_printf(state, "%s\n", desc->description);
-			success = generic_parser(state, desc->layouts);
+			while (TLS_LAYOUT_IS_VALID(ldesc)) {
+				success = ldesc->parser(state, ldesc);
+				if (!success)
+					break;
+				ldesc++;
+			}
 			if (!success)
 				break;
 		} else {
