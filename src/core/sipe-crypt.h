@@ -37,6 +37,21 @@ void sipe_crypt_rc4(const guchar *key, gsize key_length,
 		    const guchar *plaintext, gsize plaintext_length,
 		    guchar *encrypted_text);
 
+/* plaintext & encrypted_text must point to modulus_length long spaces */
+gboolean sipe_crypt_rsa_encrypt(gpointer public, gsize modulus_length,
+				const guchar *plaintext,
+				guchar *encrypted_text);
+gboolean sipe_crypt_rsa_decrypt(gpointer private, gsize modulus_length,
+				const guchar *encrypted_text,
+				guchar *plaintext);
+/* must be g_free'd() */
+guchar *sipe_crypt_rsa_sign(gpointer private,
+			    const guchar *digest, gsize digest_length,
+			    gsize *signature_length);
+gboolean sipe_crypt_verify_rsa(gpointer public,
+			       const guchar *digest, gsize digest_length,
+			       const guchar *signature, gsize signature_length);
+
 /* Stream RC4 cipher for file transfer */
 gpointer sipe_crypt_ft_start(const guchar *key);
 void sipe_crypt_ft_stream(gpointer context,

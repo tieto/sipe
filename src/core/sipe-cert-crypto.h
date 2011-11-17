@@ -64,17 +64,29 @@ gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
  * Destroy certificate (this is a @GDestroyNotify)
  *
  * @param certificate opaque pointer to backend certificate structure
+ *                    May be @c NULL
  */
 void sipe_cert_crypto_destroy(gpointer certificate);
 
 /**
- * Import a certificate from Base64 string
+ * Decode a client certificate from Base64 string
  *
  * @param base64 Base64 encoded DER data
  *
  * @return opaque pointer to certificate. Must be @sipe_cert_crypto_destroy()'d.
  */
-gpointer sipe_cert_crypto_import(const gchar *base64);
+gpointer sipe_cert_crypto_decode(struct sipe_cert_crypto *ssc,
+				 const gchar *base64);
+
+/**
+ * Import a server certificate from DER data
+ *
+ * @param raw    DER data
+ * @param length length of DER data
+ *
+ * @return opaque pointer to certificate. Must be @sipe_cert_crypto_destroy()'d.
+ */
+gpointer sipe_cert_crypto_import(const guchar *raw, gsize length);
 
 /**
  * Check if certificate is valid until @c offset seconds from now
@@ -104,3 +116,30 @@ gsize sipe_cert_crypto_raw_length(gpointer certificate);
  * @return pointer to DER data
  */
 const guchar *sipe_cert_crypto_raw(gpointer certificate);
+
+/**
+ * Get public key for certificate
+ *
+ * @param certificate opaque pointer to backend certificate structure
+ *
+ * @return opaque pointer to backend public key structure
+ */
+gpointer sipe_cert_crypto_public_key(gpointer certificate);
+
+/**
+ * Get public key modulus length for server certificate
+ *
+ * @param certificate opaque pointer to backend certificate structure
+ *
+ * @return server public key strength
+ */
+gsize sipe_cert_crypto_modulus_length(gpointer certificate);
+
+/**
+ * Get private key for client certificate
+ *
+ * @param certificate opaque pointer to backend certificate structure
+ *
+ * @return opaque pointer to backend private key structure
+ */
+gpointer sipe_cert_crypto_private_key(gpointer certificate);

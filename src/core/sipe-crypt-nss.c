@@ -154,6 +154,77 @@ sipe_crypt_rc4(const guchar *key, gsize key_length,
 	sipe_crypt(CKM_RC4, key, key_length, plaintext, plaintext_length, encrypted_text);
 }
 
+gboolean
+sipe_crypt_rsa_encrypt(gpointer public, gsize modulus_length,
+		       const guchar *plaintext,
+		       guchar *encrypted_text)
+{
+  SECStatus result = PK11_PubEncryptRaw(public,
+					encrypted_text, (guchar *) plaintext,
+					modulus_length, NULL);
+  return(result == SECSuccess);
+}
+
+gboolean
+sipe_crypt_rsa_decrypt(gpointer private, gsize modulus_length,
+		       const guchar *encrypted_text,
+		       guchar *plaintext)
+{
+  unsigned int length;
+  SECStatus result = PK11_PubDecryptRaw(private,
+					(guchar *) encrypted_text, &length, modulus_length,
+					plaintext, modulus_length);
+  return((result == SECSuccess) && (length == modulus_length));
+}
+
+guchar *sipe_crypt_rsa_sign(gpointer private,
+		 	    const guchar *digest, gsize digest_length,
+			    gsize *signature_length)
+{
+  SECItem digItem;
+  SECItem sigItem;
+  SECStatus length;
+
+  length = PK11_SignatureLen(private);
+  if (length < 0) return(NULL);
+
+  /* digest to sign (= encrypt) with private key */
+  digItem.data = (guchar *) digest;
+  digItem.len  = digest_length;
+
+  /* signature */
+  sigItem.data = g_malloc(length);
+  sigItem.len  = length;
+
+  length = PK11_Sign(private, &sigItem, &digItem);
+  if (length != SECSuccess) {
+	  g_free(sigItem.data);
+	  return(NULL);
+  }
+
+  *signature_length = sigItem.len;
+  return(sigItem.data);
+}
+
+gboolean sipe_crypt_verify_rsa(gpointer public,
+			       const guchar *digest, gsize digest_length,
+			       const guchar *signature, gsize signature_length)
+{
+  SECItem digItem;
+  SECItem sigItem;
+
+  /* digest to verify against */
+  digItem.data = (guchar *) digest;
+  digItem.len  = digest_length;
+
+  /* signature to decrypt with public key -> digest to compare */
+  sigItem.data = (guchar *) signature;
+  sigItem.len  = signature_length;
+
+  return(PK11_Verify(public, &sigItem, &digItem, NULL) == SECSuccess);
+}
+
+
 /* Stream RC4 cipher for file transfer */
 gpointer
 sipe_crypt_ft_start(const guchar *key)

@@ -213,7 +213,8 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 				uri);
 
 		if (cert_base64) {
-			gpointer opaque = sipe_cert_crypto_import(cert_base64);
+			gpointer opaque = sipe_cert_crypto_decode(sipe_private->certificate->backend,
+								  cert_base64);
 
 			SIPE_DEBUG_INFO_NOFORMAT("get_and_publish_cert: found certificate");
 
