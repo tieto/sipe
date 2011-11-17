@@ -448,8 +448,13 @@ static const struct msg_descriptor const ServerHello_m = {
 	&ClientHello_m, "Server Hello", ServerHello_l, TLS_HANDSHAKE_TYPE_SERVER_HELLO
 };
 
+struct Certificate_host {
+	struct tls_compile_vector certificate;
+};
+#define CERTIFICATE_OFFSET(a) offsetof(struct Certificate_host, a)
+
 static const struct layout_descriptor const Certificate_l[] = {
-	{ "Certificate",             parse_vector, NULL, 0, TLS_VECTOR_MAX24, 0 },
+	{ "Certificate",             parse_vector, compile_vector, 0, TLS_VECTOR_MAX24, CERTIFICATE_OFFSET(certificate) },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
 static const struct msg_descriptor const Certificate_m = {
@@ -641,8 +646,17 @@ static void compile_msg(struct tls_internal_state *state,
 			gsize messages,
 			...)
 {
-	/* host data structures have padding so they are longer
-	 * than the compiled message. So buffer is large enough. */
+	/*
+	 * Estimate the size of the compiled message
+	 *
+	 * The data structures in the host format have zero or more padding
+	 * bytes added by the compiler to ensure correct element alignments.
+	 * So the sizeof() of the data structure is always equal or greater
+	 * than the space needed for the compiled data. By adding the space
+	 * required for the headers we arrive at a safe estimate
+	 *
+	 * Therefore we don't need space checks in the compiler functions
+	 */
 	gsize total_size = size +
 		TLS_RECORD_HEADER_LENGTH +
 		TLS_HANDSHAKE_HEADER_LENGTH * messages;
@@ -669,12 +683,14 @@ static void compile_msg(struct tls_internal_state *state,
 		state->msg_remainder += TLS_HANDSHAKE_HEADER_LENGTH;
 
 		while (TLS_LAYOUT_IS_VALID(ldesc)) {
+			/*
+			 * Avoid "cast increases required alignment" errors
+			 *
+			 * (void *) tells the compiler that we know what we're
+			 * doing, i.e. we know that the calculated address
+			 * points to correctly aligned data.
+			 */
 			ldesc->compiler(state, ldesc,
-					/* Need to use (void *) here so that
-					 * the compiler doesn't check for
-					 * aligment restrictions. The data
-					 * structures *ARE* correctly aligned!
-					 */
 					(void *) (data + ldesc->offset));
 			ldesc++;
 		}
@@ -746,13 +762,43 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 
 static gboolean tls_server_hello(struct tls_internal_state *state)
 {
+	struct tls_parsed_array *server_random;
+	struct Certificate_host *certificate;
+	gsize certificate_length = sipe_cert_crypto_raw_length(state->certificate);
+
 	if (!tls_record_parse(state, TRUE))
 		return(FALSE);
 
-	/* temporary */
+	/* check for required data fields */
+	server_random = g_hash_table_lookup(state->data, "Random");
+	if (!server_random) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_server_hello: no server random");
+		return(FALSE);
+	}
+
+	/* found all the required fields */
+	state->server_random.length = server_random->length;
+	state->server_random.buffer = g_memdup(server_random->data,
+					       server_random->length);
+
+	/* done with parsed data */
 	free_parse_data(state);
-	state->common.out_buffer = NULL;
-	state->common.out_length = 0;
+
+	/* setup our response */
+	certificate = g_malloc0(sizeof(struct Certificate_host) +
+				certificate_length);
+	certificate->certificate.elements = certificate_length;
+	memcpy(certificate->certificate.placeholder,
+	       sipe_cert_crypto_raw(state->certificate),
+	       certificate_length);
+
+	compile_msg(state,
+		    sizeof(struct Certificate_host) +
+		    certificate_length,
+		    1,
+		    &Certificate_m, certificate);
+
+	g_free(certificate);
 
 	state->state = TLS_HANDSHAKE_STATE_FINISHED;
 	return(tls_record_parse(state, FALSE));

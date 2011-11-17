@@ -48,6 +48,12 @@ struct sipe_cert_crypto {
 	SECKEYPublicKey  *public;
 };
 
+struct certificate_nss {
+	CERTCertificate *decoded;
+	guchar *raw;
+	gsize length;
+};
+
 struct sipe_cert_crypto *sipe_cert_crypto_init(void)
 {
 	PK11SlotInfo *slot = PK11_GetInternalKeySlot();
@@ -193,23 +199,39 @@ gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
 
 void sipe_cert_crypto_destroy(gpointer certificate)
 {
-	CERT_DestroyCertificate(certificate);
+	struct certificate_nss *cn = certificate;
+
+	if (cn->decoded)
+		CERT_DestroyCertificate(cn->decoded);
+	g_free(cn->raw);
+	g_free(cn);
 }
 
 gpointer sipe_cert_crypto_import(const gchar *base64)
 {
-	return(CERT_ConvertAndDecodeCertificate((char *) base64));
+	struct certificate_nss *cn = g_new0(struct certificate_nss, 1);
+
+	cn->raw     = g_base64_decode(base64, &cn->length);
+	cn->decoded = CERT_DecodeCertFromPackage((char *) cn->raw, cn->length);
+
+	if (!cn->decoded) {
+		sipe_cert_crypto_destroy(cn);
+		return(NULL);
+	}
+
+	return(cn);
 }
 
 gboolean sipe_cert_crypto_valid(gpointer certificate,
 				guint offset)
 {
+	struct certificate_nss *cn = certificate;
 	SECCertTimeValidity validity;
 
-	if (!certificate)
+	if (!cn)
 		return(FALSE);
 
-	validity = CERT_CheckCertValidTimes(certificate,
+	validity = CERT_CheckCertValidTimes(cn->decoded,
 					    /* PRTime unit is microseconds */
 					    PR_Now() + offset * PR_USEC_PER_SEC,
 					    PR_FALSE);
@@ -223,6 +245,16 @@ gboolean sipe_cert_crypto_valid(gpointer certificate,
 		* that it must be valid then...
 		*/
 	       (validity == secCertTimeUndetermined));
+}
+
+gsize sipe_cert_crypto_raw_length(gpointer certificate)
+{
+	return(((struct certificate_nss *) certificate)->length);
+}
+
+const guchar *sipe_cert_crypto_raw(gpointer certificate)
+{
+	return(((struct certificate_nss *) certificate)->raw);
 }
 
 /*

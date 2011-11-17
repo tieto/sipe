@@ -86,3 +86,21 @@ gpointer sipe_cert_crypto_import(const gchar *base64);
  */
 gboolean sipe_cert_crypto_valid(gpointer certificate,
 				guint offset);
+
+/**
+ * Return length of certificate in DER form
+ *
+ * @param certificate opaque pointer to backend certificate structure
+ *
+ * @return length in bytes
+ */
+gsize sipe_cert_crypto_raw_length(gpointer certificate);
+
+/**
+ * Return certificate in DER form
+ *
+ * @param certificate opaque pointer to backend certificate structure
+ *
+ * @return pointer to DER data
+ */
+const guchar *sipe_cert_crypto_raw(gpointer certificate);
