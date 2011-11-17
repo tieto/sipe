@@ -870,6 +870,7 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 		    &Certificate_m,       certificate,
 		    &ClientKeyExchange_m, exchange);
 
+	g_free(exchange);
 	g_free(certificate);
 
 	state->state = TLS_HANDSHAKE_STATE_FINISHED;
