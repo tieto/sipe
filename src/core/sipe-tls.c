@@ -737,6 +737,103 @@ static void compile_msg(struct tls_internal_state *state,
 			state->common.out_length);
 }
 
+static struct Certificate_host *tls_client_certificate(struct tls_internal_state *state,
+						       gsize *cumulative_length)
+{
+	struct Certificate_host *certificate;
+	gsize certificate_length = sipe_cert_crypto_raw_length(state->certificate);
+
+	/* setup our response */
+	/* Client Certificate is VECTOR_MAX24 of VECTOR_MAX24s */
+	certificate = g_malloc0(sizeof(struct Certificate_host) + 3 +
+				certificate_length);
+	certificate->certificate.elements = certificate_length + 3;
+	lowlevel_integer_to_tls((guchar *) certificate->certificate.placeholder, 3,
+				certificate_length);
+	memcpy((guchar *) certificate->certificate.placeholder + 3,
+	       sipe_cert_crypto_raw(state->certificate),
+	       certificate_length);
+
+	*cumulative_length += sizeof(struct Certificate_host) + certificate_length;
+	return(certificate);
+}
+
+static struct ClientKeyExchange_host *tls_client_key_exchange(struct tls_internal_state *state,
+							      gsize *cumulative_length)
+{
+	struct tls_parsed_array *server_random;
+	struct tls_parsed_array *server_certificate;
+	struct ClientKeyExchange_host *exchange;
+	gsize server_certificate_length;
+
+	/* check for required data fields */
+	server_random = g_hash_table_lookup(state->data, "Random");
+	if (!server_random) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: no server random");
+		return(NULL);
+	}
+	server_certificate = g_hash_table_lookup(state->data, "Certificate");
+	/* Server Certificate is VECTOR_MAX24 of VECTOR_MAX24s */
+	if (!server_certificate || (server_certificate->length < 3)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: no server certificate");
+		return(FALSE);
+	}
+	SIPE_DEBUG_INFO("tls_client_key_exchange: server certificate list %" G_GSIZE_FORMAT" bytes",
+			server_certificate->length);
+	/* first certificate is the server certificate */
+	server_certificate_length = lowlevel_integer_to_host(server_certificate->data,
+							     3);
+	SIPE_DEBUG_INFO("tls_client_key_exchange: server certificate %" G_GSIZE_FORMAT" bytes",
+			server_certificate_length);
+	if ((server_certificate_length + 3) > server_certificate->length) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: truncated server certificate");
+	}
+	state->server_certificate = sipe_cert_crypto_import(server_certificate->data + 3,
+							    server_certificate_length);
+	if (!state->server_certificate) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: corrupted server certificate");
+		return(FALSE);
+	}
+	/* server public key modulus length */
+	server_certificate_length = sipe_cert_crypto_modulus_length(state->server_certificate);
+	if (server_certificate_length < TLS_DATATYPE_PREMASTER_SECRET_LENGTH) {
+		SIPE_DEBUG_ERROR("tls_client_key_exchange: server public key strength too low (%" G_GSIZE_FORMAT ")",
+				 server_certificate_length);
+		return(FALSE);
+	}
+	SIPE_DEBUG_INFO("tls_client_key_exchange: server public key strength = %" G_GSIZE_FORMAT,
+			server_certificate_length);
+
+	/* found all the required fields */
+	state->server_random.length = server_random->length;
+	state->server_random.buffer = g_memdup(server_random->data,
+					       server_random->length);
+
+	/* ClientKeyExchange */
+	exchange = g_malloc0(sizeof(struct ClientKeyExchange_host) +
+			     server_certificate_length);
+	exchange->secret.elements = server_certificate_length;
+	sipe_svc_fill_random(&state->premaster_secret,
+			     TLS_DATATYPE_PREMASTER_SECRET_LENGTH * 8); /* bits */
+	lowlevel_integer_to_tls(state->premaster_secret.buffer, 2,
+				TLS_PROTOCOL_VERSION_1_0);
+	if (!sipe_crypt_rsa_encrypt(sipe_cert_crypto_public_key(state->server_certificate),
+				    TLS_DATATYPE_PREMASTER_SECRET_LENGTH,
+				    state->premaster_secret.buffer,
+				    (guchar *) exchange->secret.placeholder)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: encryption of pre-master secret failed");
+		g_free(exchange);
+		return(NULL);
+	}
+
+	*cumulative_length += sizeof(struct ClientKeyExchange_host) + server_certificate_length;
+	return(exchange);
+}
+
+/*
+ * TLS state handling
+ */
+
 static gboolean tls_client_hello(struct tls_internal_state *state)
 {
 	guint32 now   = time(NULL);
@@ -780,101 +877,33 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 
 static gboolean tls_server_hello(struct tls_internal_state *state)
 {
-	struct tls_parsed_array *server_random;
-	struct tls_parsed_array *server_certificate;
-	gsize server_certificate_length;
-	struct Certificate_host *certificate;
-	gsize certificate_length = sipe_cert_crypto_raw_length(state->certificate);
-	struct ClientKeyExchange_host *exchange;
+	struct Certificate_host *certificate    = NULL;
+	struct ClientKeyExchange_host *exchange = NULL;
+	gsize length = 0;
+	gboolean success = FALSE;
 
 	if (!tls_record_parse(state, TRUE))
 		return(FALSE);
 
-	/* check for required data fields */
-	server_random = g_hash_table_lookup(state->data, "Random");
-	if (!server_random) {
-		SIPE_DEBUG_ERROR_NOFORMAT("tls_server_hello: no server random");
-		return(FALSE);
-	}
-	server_certificate = g_hash_table_lookup(state->data, "Certificate");
-	/* Server Certificate is VECTOR_MAX24 of VECTOR_MAX24s */
-	if (!server_certificate || (server_certificate->length < 3)) {
-		SIPE_DEBUG_ERROR_NOFORMAT("tls_server_hello: no server certificate");
-		return(FALSE);
-	}
-	SIPE_DEBUG_INFO("tls_server_hello: server certificate list %" G_GSIZE_FORMAT" bytes",
-			server_certificate->length);
-	/* first certificate is the server certificate */
-	server_certificate_length = lowlevel_integer_to_host(server_certificate->data,
-							     3);
-	SIPE_DEBUG_INFO("tls_server_hello: server certificate %" G_GSIZE_FORMAT" bytes",
-			server_certificate_length);
-	if ((server_certificate_length + 3) > server_certificate->length) {
-		SIPE_DEBUG_ERROR_NOFORMAT("tls_server_hello: truncated server certificate");
-	}
-	state->server_certificate = sipe_cert_crypto_import(server_certificate->data + 3,
-							    server_certificate_length);
-	if (!state->server_certificate) {
-		SIPE_DEBUG_ERROR_NOFORMAT("tls_server_hello: corrupted server certificate");
-		return(FALSE);
-	}
-	/* server public key modulus length */
-	server_certificate_length = sipe_cert_crypto_modulus_length(state->server_certificate);
-	if (server_certificate_length < TLS_DATATYPE_PREMASTER_SECRET_LENGTH) {
-		SIPE_DEBUG_ERROR("tls_server_hello: server public key strength too low (%" G_GSIZE_FORMAT ")",
-				 server_certificate_length);
-		return(FALSE);
-	}
-	SIPE_DEBUG_INFO("tls_server_hello: server public key strength = %" G_GSIZE_FORMAT,
-			server_certificate_length);
+	if (((certificate = tls_client_certificate(state, &length))  != NULL) &&
+	    ((exchange    = tls_client_key_exchange(state, &length)) != NULL)) {
 
-	/* found all the required fields */
-	state->server_random.length = server_random->length;
-	state->server_random.buffer = g_memdup(server_random->data,
-					       server_random->length);
+		compile_msg(state,
+			    length,
+			    2,
+			    &Certificate_m,       certificate,
+			    &ClientKeyExchange_m, exchange);
 
-	/* done with parsed data */
-	free_parse_data(state);
-
-	/* setup our response */
-	/* Client Certificate is VECTOR_MAX24 of VECTOR_MAX24s */
-	certificate = g_malloc0(sizeof(struct Certificate_host) + 3 +
-				certificate_length);
-	certificate->certificate.elements = certificate_length + 3;
-	lowlevel_integer_to_tls((guchar *) certificate->certificate.placeholder, 3,
-				certificate_length);
-	memcpy((guchar *) certificate->certificate.placeholder + 3,
-	       sipe_cert_crypto_raw(state->certificate),
-	       certificate_length);
-
-	/* ClientKeyExchange */
-	exchange = g_malloc0(sizeof(struct ClientKeyExchange_host) +
-			     server_certificate_length);
-	exchange->secret.elements = server_certificate_length;
-	sipe_svc_fill_random(&state->premaster_secret,
-			     TLS_DATATYPE_PREMASTER_SECRET_LENGTH * 8); /* bits */
-	lowlevel_integer_to_tls(state->premaster_secret.buffer, 2,
-				TLS_PROTOCOL_VERSION_1_0);
-	if (!sipe_crypt_rsa_encrypt(sipe_cert_crypto_public_key(state->server_certificate),
-				    TLS_DATATYPE_PREMASTER_SECRET_LENGTH,
-				    state->premaster_secret.buffer,
-				    (guchar *) exchange->secret.placeholder)) {
-		/* TBD... error handling */
-		SIPE_DEBUG_ERROR_NOFORMAT("tls_server_hello: encryption of pre-master secret failed");
+		success = tls_record_parse(state, FALSE);
+		if (success)
+			state->state = TLS_HANDSHAKE_STATE_FINISHED;
 	}
-
-	compile_msg(state,
-		    sizeof(struct Certificate_host) + certificate_length +
-		    sizeof(struct ClientKeyExchange_host) + server_certificate_length,
-		    2,
-		    &Certificate_m,       certificate,
-		    &ClientKeyExchange_m, exchange);
 
 	g_free(exchange);
 	g_free(certificate);
+	free_parse_data(state);
 
-	state->state = TLS_HANDSHAKE_STATE_FINISHED;
-	return(tls_record_parse(state, FALSE));
+	return(success);
 }
 
 static gboolean tls_finished(struct tls_internal_state *state)
@@ -893,7 +922,9 @@ static gboolean tls_finished(struct tls_internal_state *state)
 	return(TRUE);
 }
 
-/* Public API */
+/*
+ * TLS public API
+ */
 
 struct sipe_tls_state *sipe_tls_start(gpointer certificate)
 {
