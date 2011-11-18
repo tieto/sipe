@@ -43,6 +43,7 @@
 #include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
 #include "sipe-crypt.h"
+#include "sipe-digest.h"
 #include "sipe-svc.h"
 #include "sipe-tls.h"
 
@@ -66,9 +67,9 @@ struct tls_internal_state {
 	GHashTable *data;
 	GString *debug;
 	gpointer server_certificate;
+	guchar *master_secret;
 	struct sipe_svc_random client_random;
 	struct sipe_svc_random server_random;
-	struct sipe_svc_random premaster_secret;
 };
 
 /*
@@ -80,9 +81,6 @@ struct tls_internal_state {
 #define TLS_VECTOR_MAX16    65535 /* 2^16 - 1 */
 #define TLS_VECTOR_MAX24 16777215 /* 2^24 - 1 */
 
-#define TLS_DATATYPE_RANDOM_LENGTH           32
-#define TLS_DATATYPE_PREMASTER_SECRET_LENGTH 48
-
 #define TLS_PROTOCOL_VERSION_1_0 0x0301
 #define TLS_PROTOCOL_VERSION_1_1 0x0302
 
@@ -93,6 +91,9 @@ struct tls_internal_state {
 
 /* CompressionMethods */
 #define TLS_COMP_METHOD_NULL 0
+
+#define TLS_STATE_RANDOM_LENGTH        32
+#define TLS_STATE_MASTER_SECRET_LENGTH 48
 
 #define TLS_RECORD_HEADER_LENGTH   5
 #define TLS_RECORD_OFFSET_TYPE     0
@@ -161,7 +162,7 @@ struct tls_compile_array {
 
 struct tls_compile_random {
 	gsize elements; /* unused */
-	guchar random[TLS_DATATYPE_RANDOM_LENGTH];
+	guchar random[TLS_STATE_RANDOM_LENGTH];
 };
 
 struct tls_compile_vector {
@@ -217,6 +218,153 @@ static void debug_hex(struct tls_internal_state *state,
 	if (state->debug) g_string_append(state->debug, string)
 #define debug_printf(state, format, ...) \
 	if (state->debug) g_string_append_printf(state->debug, format, __VA_ARGS__)
+
+/*
+ * TLS Pseudorandom Function (PRF) - RFC2246, Section 5
+ */
+static guchar *sipe_tls_p_md5(const guchar *secret,
+			      gsize secret_length,
+			      const guchar *seed,
+			      gsize seed_length,
+			      gsize output_length)
+{
+	guchar *output = NULL;
+
+	/*
+	 * output_length ==  0     -> illegal
+	 * output_length ==  1..16 -> iterations = 1
+	 * output_length == 17..32 -> iterations = 2
+	 */
+	if (secret && seed && (output_length > 0)) {
+		guint iterations = (output_length + SIPE_DIGEST_HMAC_MD5_LENGTH - 1) / SIPE_DIGEST_HMAC_MD5_LENGTH;
+		guchar *concat   = g_malloc(SIPE_DIGEST_HMAC_MD5_LENGTH + seed_length);
+		guchar A[SIPE_DIGEST_HMAC_MD5_LENGTH];
+		guchar *p;
+
+		SIPE_DEBUG_INFO("p_md5: secret %" G_GSIZE_FORMAT " bytes, seed %" G_GSIZE_FORMAT " bytes",
+				secret_length, seed_length);
+		SIPE_DEBUG_INFO("p_md5: output %" G_GSIZE_FORMAT " bytes -> %d iterations",
+				output_length, iterations);
+
+		/* A(1) = HMAC_MD5(secret, A(0)), A(0) = seed */
+		sipe_digest_hmac_md5(secret, secret_length,
+				      seed, seed_length,
+				      A);
+
+		/* Each iteration adds SIPE_DIGEST_HMAC_MD5_LENGTH bytes */
+		p = output = g_malloc(iterations * SIPE_DIGEST_HMAC_MD5_LENGTH);
+
+		while (iterations-- > 0) {
+			/* P_MD5(i) = HMAC_MD5(secret, A(i) + seed), i = 1, 2, ... */
+			guchar P[SIPE_DIGEST_HMAC_MD5_LENGTH];
+			memcpy(concat, A, SIPE_DIGEST_HMAC_MD5_LENGTH);
+			memcpy(concat + SIPE_DIGEST_HMAC_MD5_LENGTH, seed, seed_length);
+			sipe_digest_hmac_md5(secret, secret_length,
+					      concat, SIPE_DIGEST_HMAC_MD5_LENGTH + seed_length,
+					      P);
+			memcpy(p, P, SIPE_DIGEST_HMAC_MD5_LENGTH);
+			p += SIPE_DIGEST_HMAC_MD5_LENGTH;
+
+			/* A(i+1) = HMAC_MD5(secret, A(i)) */
+			sipe_digest_hmac_md5(secret, secret_length,
+					      A, SIPE_DIGEST_HMAC_MD5_LENGTH,
+					      A);
+		}
+		g_free(concat);
+	}
+
+	return(output);
+}
+
+guchar *sipe_tls_p_sha1(const guchar *secret,
+			gsize secret_length,
+			const guchar *seed,
+			gsize seed_length,
+			gsize output_length)
+{
+	guchar *output = NULL;
+
+	/*
+	 * output_length ==  0     -> illegal
+	 * output_length ==  1..20 -> iterations = 1
+	 * output_length == 21..40 -> iterations = 2
+	 */
+	if (secret && seed && (output_length > 0)) {
+		guint iterations = (output_length + SIPE_DIGEST_HMAC_SHA1_LENGTH - 1) / SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		guchar *concat   = g_malloc(SIPE_DIGEST_HMAC_SHA1_LENGTH + seed_length);
+		guchar A[SIPE_DIGEST_HMAC_SHA1_LENGTH];
+		guchar *p;
+
+		SIPE_DEBUG_INFO("p_sha1: secret %" G_GSIZE_FORMAT " bytes, seed %" G_GSIZE_FORMAT " bytes",
+				secret_length, seed_length);
+		SIPE_DEBUG_INFO("p_sha1: output %" G_GSIZE_FORMAT " bytes -> %d iterations",
+				output_length, iterations);
+
+		/* A(1) = HMAC_SHA1(secret, A(0)), A(0) = seed */
+		sipe_digest_hmac_sha1(secret, secret_length,
+				      seed, seed_length,
+				      A);
+
+		/* Each iteration adds SIPE_DIGEST_HMAC_SHA1_LENGTH bytes */
+		p = output = g_malloc(iterations * SIPE_DIGEST_HMAC_SHA1_LENGTH);
+
+		while (iterations-- > 0) {
+			/* P_SHA1(i) = HMAC_SHA1(secret, A(i) + seed), i = 1, 2, ... */
+			guchar P[SIPE_DIGEST_HMAC_SHA1_LENGTH];
+			memcpy(concat, A, SIPE_DIGEST_HMAC_SHA1_LENGTH);
+			memcpy(concat + SIPE_DIGEST_HMAC_SHA1_LENGTH, seed, seed_length);
+			sipe_digest_hmac_sha1(secret, secret_length,
+					      concat, SIPE_DIGEST_HMAC_SHA1_LENGTH + seed_length,
+					      P);
+			memcpy(p, P, SIPE_DIGEST_HMAC_SHA1_LENGTH);
+			p += SIPE_DIGEST_HMAC_SHA1_LENGTH;
+
+			/* A(i+1) = HMAC_SHA1(secret, A(i)) */
+			sipe_digest_hmac_sha1(secret, secret_length,
+					      A, SIPE_DIGEST_HMAC_SHA1_LENGTH,
+					      A);
+		}
+		g_free(concat);
+	}
+
+	return(output);
+}
+
+static guchar *sipe_tls_prf(const guchar *secret,
+			    gsize secret_length,
+			    const guchar *label,
+			    gsize label_length,
+			    const guchar *seed,
+			    gsize seed_length,
+			    gsize output_length)
+{
+	gsize half           = (secret_length + 1) / 2;
+	gsize newseed_length = label_length + seed_length;
+	/* secret: used as S1; secret2: last half of original secret (S2) */
+	guchar *secret2 = g_memdup(secret + secret_length - half, half);
+	guchar *newseed = g_malloc(newseed_length);
+	guchar *md5, *dest;
+	guchar *sha1, *src;
+
+	/*
+	 * PRF(secret, label, seed) = P_MD5(S1, label + seed) XOR
+	 *                            P_SHA-1(S2, label + seed);
+	 */
+	memcpy(newseed, label, label_length);
+	memcpy(newseed + label_length, seed, seed_length);
+	md5  = sipe_tls_p_md5(secret,   half, newseed, newseed_length, output_length);
+	sha1 = sipe_tls_p_sha1(secret2, half, newseed, newseed_length, output_length);
+	for (dest = md5, src = sha1;
+	     output_length > 0;
+	     output_length--)
+		*dest++ ^= *src++;
+
+	g_free(sha1);
+	g_free(newseed);
+	g_free(secret2);
+
+	return(md5);
+}
 
 /*
  * TLS data parsers
@@ -430,11 +578,11 @@ struct ClientHello_host {
 #define CLIENTHELLO_OFFSET(a) offsetof(struct ClientHello_host, a)
 
 static const struct layout_descriptor const ClientHello_l[] = {
-	{ "Client Protocol Version", parse_integer, compile_integer,     0,  2,                         CLIENTHELLO_OFFSET(protocol_version) },
-	{ "Random",                  parse_array,   compile_array,       0, TLS_DATATYPE_RANDOM_LENGTH, CLIENTHELLO_OFFSET(random) },
-	{ "SessionID",               parse_vector,  compile_vector,      0, 32,                         CLIENTHELLO_OFFSET(sessionid) },
-	{ "CipherSuite",             parse_vector,  compile_vector_int2, 2, TLS_VECTOR_MAX16,           CLIENTHELLO_OFFSET(cipher)},
-	{ "CompressionMethod",       parse_vector,  compile_vector,      1, TLS_VECTOR_MAX8,            CLIENTHELLO_OFFSET(compression) },
+	{ "Client Protocol Version", parse_integer, compile_integer,     0,  2,                      CLIENTHELLO_OFFSET(protocol_version) },
+	{ "Random",                  parse_array,   compile_array,       0, TLS_STATE_RANDOM_LENGTH, CLIENTHELLO_OFFSET(random) },
+	{ "SessionID",               parse_vector,  compile_vector,      0, 32,                      CLIENTHELLO_OFFSET(sessionid) },
+	{ "CipherSuite",             parse_vector,  compile_vector_int2, 2, TLS_VECTOR_MAX16,        CLIENTHELLO_OFFSET(cipher)},
+	{ "CompressionMethod",       parse_vector,  compile_vector,      1, TLS_VECTOR_MAX8,         CLIENTHELLO_OFFSET(compression) },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
 static const struct msg_descriptor const ClientHello_m = {
@@ -442,11 +590,11 @@ static const struct msg_descriptor const ClientHello_m = {
 };
 
 static const struct layout_descriptor const ServerHello_l[] = {
-	{ "Server Protocol Version", parse_integer, NULL, 0,  2,                         0 },
-	{ "Random",                  parse_array,   NULL, 0, TLS_DATATYPE_RANDOM_LENGTH, 0 },
-	{ "SessionID",               parse_vector,  NULL, 0, 32,                         0 },
-	{ "CipherSuite",             parse_integer, NULL, 0,  2,                         0 },
-	{ "CompressionMethod",       parse_integer, NULL, 0,  1,                         0 },
+	{ "Server Protocol Version", parse_integer, NULL, 0,  2,                      0 },
+	{ "Random",                  parse_array,   NULL, 0, TLS_STATE_RANDOM_LENGTH, 0 },
+	{ "SessionID",               parse_vector,  NULL, 0, 32,                      0 },
+	{ "CipherSuite",             parse_integer, NULL, 0,  2,                      0 },
+	{ "CompressionMethod",       parse_integer, NULL, 0,  1,                      0 },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
 static const struct msg_descriptor const ServerHello_m = {
@@ -765,6 +913,8 @@ static struct ClientKeyExchange_host *tls_client_key_exchange(struct tls_interna
 	struct tls_parsed_array *server_certificate;
 	struct ClientKeyExchange_host *exchange;
 	gsize server_certificate_length;
+	struct sipe_svc_random pre_master_secret;
+	guchar *random;
 
 	/* check for required data fields */
 	server_random = g_hash_table_lookup(state->data, "Random");
@@ -796,7 +946,7 @@ static struct ClientKeyExchange_host *tls_client_key_exchange(struct tls_interna
 	}
 	/* server public key modulus length */
 	server_certificate_length = sipe_cert_crypto_modulus_length(state->server_certificate);
-	if (server_certificate_length < TLS_DATATYPE_PREMASTER_SECRET_LENGTH) {
+	if (server_certificate_length < TLS_STATE_MASTER_SECRET_LENGTH) {
 		SIPE_DEBUG_ERROR("tls_client_key_exchange: server public key strength too low (%" G_GSIZE_FORMAT ")",
 				 server_certificate_length);
 		return(FALSE);
@@ -809,22 +959,53 @@ static struct ClientKeyExchange_host *tls_client_key_exchange(struct tls_interna
 	state->server_random.buffer = g_memdup(server_random->data,
 					       server_random->length);
 
+	/* Calculate master secret */
+	sipe_svc_fill_random(&pre_master_secret,
+			     TLS_STATE_MASTER_SECRET_LENGTH * 8); /* bits */
+	lowlevel_integer_to_tls(pre_master_secret.buffer, 2,
+				TLS_PROTOCOL_VERSION_1_0);
+	random = g_malloc(TLS_STATE_RANDOM_LENGTH * 2);
+	memcpy(random,
+	       state->client_random.buffer,
+	       TLS_STATE_RANDOM_LENGTH);
+	memcpy(random + TLS_STATE_RANDOM_LENGTH,
+	       state->server_random.buffer,
+	       TLS_STATE_RANDOM_LENGTH);
+	/*
+	 * master_secret = PRF(pre_master_secret, "master secret",
+	 *                     ClientHello.random + ServerHello.random)
+	 */
+	state->master_secret = sipe_tls_prf(pre_master_secret.buffer,
+					    pre_master_secret.length,
+					    (guchar *) "master secret",
+					    13,
+					    random,
+					    TLS_STATE_RANDOM_LENGTH * 2,
+					    TLS_STATE_MASTER_SECRET_LENGTH);
+	g_free(random);
+	if (state->debug) {
+		guint i = TLS_STATE_MASTER_SECRET_LENGTH;
+		guchar *p = state->master_secret;
+		g_string_append(state->debug, "tls_client_key_exchange: master secret ");
+		while (i--) g_string_append_printf(state->debug, "%02X", *p++);
+		SIPE_DEBUG_INFO_NOFORMAT(state->debug->str);
+		g_string_truncate(state->debug, 0);
+	}
+
 	/* ClientKeyExchange */
 	exchange = g_malloc0(sizeof(struct ClientKeyExchange_host) +
 			     server_certificate_length);
 	exchange->secret.elements = server_certificate_length;
-	sipe_svc_fill_random(&state->premaster_secret,
-			     TLS_DATATYPE_PREMASTER_SECRET_LENGTH * 8); /* bits */
-	lowlevel_integer_to_tls(state->premaster_secret.buffer, 2,
-				TLS_PROTOCOL_VERSION_1_0);
 	if (!sipe_crypt_rsa_encrypt(sipe_cert_crypto_public_key(state->server_certificate),
-				    TLS_DATATYPE_PREMASTER_SECRET_LENGTH,
-				    state->premaster_secret.buffer,
+				    TLS_STATE_MASTER_SECRET_LENGTH,
+				    pre_master_secret.buffer,
 				    (guchar *) exchange->secret.placeholder)) {
 		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: encryption of pre-master secret failed");
+		sipe_svc_free_random(&pre_master_secret);
 		g_free(exchange);
 		return(NULL);
 	}
+	sipe_svc_free_random(&pre_master_secret);
 
 	*cumulative_length += sizeof(struct ClientKeyExchange_host) + server_certificate_length;
 	return(exchange);
@@ -858,10 +1039,10 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 
 	/* First 4 bytes of client_random is the current timestamp */
 	sipe_svc_fill_random(&state->client_random,
-			     TLS_DATATYPE_RANDOM_LENGTH * 8); /* -> bits */
+			     TLS_STATE_RANDOM_LENGTH * 8); /* -> bits */
 	memcpy(state->client_random.buffer, &now_N, sizeof(now_N));
 	memcpy((guchar *) msg.random.random, state->client_random.buffer,
-	       TLS_DATATYPE_RANDOM_LENGTH);
+	       TLS_STATE_RANDOM_LENGTH);
 
 	compile_msg(state,
 		    sizeof(msg),
@@ -987,7 +1168,6 @@ void sipe_tls_free(struct sipe_tls_state *state)
 			g_string_free(internal->debug, TRUE);
 		sipe_svc_free_random(&internal->client_random);
 		sipe_svc_free_random(&internal->server_random);
-		sipe_svc_free_random(&internal->premaster_secret);
 		sipe_cert_crypto_destroy(internal->server_certificate);
 		g_free(state->session_key);
 		g_free(state->out_buffer);

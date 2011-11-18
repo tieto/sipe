@@ -42,6 +42,23 @@ struct sipe_tls_state {
 };
 
 /**
+ * TLS data expansion function P_SHA1(secret, seed)
+ *
+ * @param secret        pointer to binary secret
+ * @param secret_length length of secret
+ * @param seed          pointer to binary seed
+ * @param seed_length   length of seed
+ * @param output_length how much data to generate
+ *
+ * @return generated data. Must be g_free()'d
+ */
+guchar *sipe_tls_p_sha1(const guchar *secret,
+			gsize secret_length,
+			const guchar *seed,
+			gsize seed_length,
+			gsize output_length);
+
+/**
  * Initialize TLS state
  *
  * @param certificate opaque pointer to the user certificate

@@ -47,6 +47,7 @@
 #include "sipe-digest.h"
 #include "sipe-nls.h"
 #include "sipe-svc.h"
+#include "sipe-tls.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -317,61 +318,6 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 	return(wsse_security);
 }
 
-/* P_SHA1() - see RFC2246 "The TLS Protocol Version 1.0", Section 5 */
-static guchar *p_sha1(const guchar *secret,
-		      gsize secret_length,
-		      const guchar *seed,
-		      gsize seed_length,
-		      gsize output_length)
-{
-  guchar *output = NULL;
-
-  /*
-   * output_length ==  0     -> illegal
-   * output_length ==  1..20 -> iterations = 1
-   * output_length == 21..40 -> iterations = 2
-   */
-  if (secret && seed && (output_length > 0)) {
-    guint iterations = (output_length + SIPE_DIGEST_HMAC_SHA1_LENGTH - 1) / SIPE_DIGEST_HMAC_SHA1_LENGTH;
-    guchar *concat   = g_malloc(SIPE_DIGEST_HMAC_SHA1_LENGTH + seed_length);
-    guchar A[SIPE_DIGEST_HMAC_SHA1_LENGTH];
-    guchar *p;
-
-    SIPE_DEBUG_INFO("p_sha1: secret %" G_GSIZE_FORMAT " bytes, seed %" G_GSIZE_FORMAT " bytes",
-		    secret_length, seed_length);
-    SIPE_DEBUG_INFO("p_sha1: output %" G_GSIZE_FORMAT " bytes -> %d iterations",
-		    output_length, iterations);
-
-    /* A(1) = HMAC_SHA1(secret, A(0)), A(0) = seed */
-    sipe_digest_hmac_sha1(secret, secret_length,
-			  seed, seed_length,
-			  A);
-
-    /* Each iteration adds SIPE_DIGEST_HMAC_SHA1_LENGTH bytes */
-    p = output = g_malloc(iterations * SIPE_DIGEST_HMAC_SHA1_LENGTH);
-
-    while (iterations-- > 0) {
-      /* P_SHA1(i) = HMAC_SHA1(secret, A(i) + seed), i = 1, 2, ... */
-      guchar P[SIPE_DIGEST_HMAC_SHA1_LENGTH];
-      memcpy(concat, A, SIPE_DIGEST_HMAC_SHA1_LENGTH);
-      memcpy(concat + SIPE_DIGEST_HMAC_SHA1_LENGTH, seed, seed_length);
-      sipe_digest_hmac_sha1(secret, secret_length,
-			    concat, SIPE_DIGEST_HMAC_SHA1_LENGTH + seed_length,
-			    P);
-      memcpy(p, P, SIPE_DIGEST_HMAC_SHA1_LENGTH);
-      p += SIPE_DIGEST_HMAC_SHA1_LENGTH;
-
-      /* A(i+1) = HMAC_SHA1(secret, A(i)) */
-      sipe_digest_hmac_sha1(secret, secret_length,
-			    A, SIPE_DIGEST_HMAC_SHA1_LENGTH,
-			    A);
-    }
-    g_free(concat);
-  }
-
-  return(output);
-}
-
 static gchar *generate_sha1_proof_wsse(const gchar *raw,
 				       struct sipe_svc_random *entropy)
 {
@@ -397,11 +343,11 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 		gsize entropy_res_length;
 		guchar *entropy_response = g_base64_decode(entropy_res_base64,
 							   &entropy_res_length);
-		guchar *key = p_sha1(entropy->buffer,
-				     entropy->length,
-				     entropy_response,
-				     entropy_res_length,
-			             entropy->length);
+		guchar *key = sipe_tls_p_sha1(entropy->buffer,
+					      entropy->length,
+					      entropy_response,
+					      entropy_res_length,
+					      entropy->length);
 		g_free(entropy_response);
 		g_free(entropy_res_base64);
 
