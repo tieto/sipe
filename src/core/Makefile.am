@@ -140,7 +140,10 @@ if SIPE_OS_WIN32
 libsipe_core_la_CFLAGS  += -DHAVE_SSPI=1
 endif
 
-libsipe_core_crypto_nss_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(NSS_CFLAGS)
+libsipe_core_crypto_nss_la_CFLAGS = \
+	$(libsipe_core_la_CFLAGS) \
+	$(NSS_CFLAGS) \
+	$(VALGRIND_CFLAGS)
 
 libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
 

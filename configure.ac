@@ -121,6 +121,11 @@ AC_SUBST(QUALITY_CFLAGS)
 dnl Check for pkg-config before using it
 PKG_PROG_PKG_CONFIG
 
+dnl check for valgrind (optional, only needed for debugging)
+PKG_CHECK_MODULES(VALGRIND, [valgrind],
+	[AC_DEFINE(HAVE_VALGRIND, 1, [Define to 1 if you have the valgrind headers])],
+	[AC_MSG_RESULT(no)])
+
 dnl build option: with voice & video support (for all backends)
 AC_ARG_WITH(vv,
 	[AC_HELP_STRING([--with-vv],

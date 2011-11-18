@@ -24,7 +24,15 @@
  * Certificate routines implementation based on NSS.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
+
+#ifdef HAVE_VALGRIND
+#include <valgrind.h>
+#endif
 
 /*
  * Work around a compiler error in NSS 3.13.x. Let's hope they fix it for
@@ -83,8 +91,24 @@ struct sipe_cert_crypto *sipe_cert_crypto_init(void)
 		struct sipe_cert_crypto *ssc = g_new0(struct sipe_cert_crypto, 1);
 
 		/* RSA parameters - should those be configurable? */
-		rsaParams.keySizeInBits = 2048;
-		rsaParams.pe            = 65537;
+#ifdef HAVE_VALGRIND
+		/*
+		 * valgrind makes key pair generation extremely slow. At least
+		 * on my system it takes longer for the default key size than
+		 * the SIP server timeout and our next message will fail with
+		 *
+		 *     Read error: Connection reset by peer (104)
+		 *
+		 * Let's reduce the key size when we detect valgrind.
+		 */
+		if (RUNNING_ON_VALGRIND) {
+			rsaParams.keySizeInBits = 1024;
+			SIPE_DEBUG_INFO("sipe_cert_crypto_init: running on valgrind, reducing RSA key size to %d bits",
+					rsaParams.keySizeInBits);
+		} else
+#endif
+			rsaParams.keySizeInBits = 2048;
+		rsaParams.pe                    = 65537;
 
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: generate key pair, this might take a while...");
 		ssc->private = PK11_GenerateKeyPair(slot,
