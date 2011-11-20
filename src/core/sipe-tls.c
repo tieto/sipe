@@ -184,6 +184,12 @@ struct tls_compile_compression {
 	guint methods[1];
 };
 
+/* compiled message */
+struct tls_compiled_message {
+	gsize size;
+	guchar data[];
+};
+
 /*
  * TLS message debugging
  */
@@ -507,8 +513,7 @@ static void compile_integer(struct tls_internal_state *state,
 			    const struct tls_compile_integer *data)
 {
 	lowlevel_integer_to_tls(state->msg_current, desc->max, data->value);
-	state->msg_current   += desc->max;
-	state->msg_remainder += desc->max;
+	state->msg_current += desc->max;
 }
 
 static void compile_array(struct tls_internal_state *state,
@@ -517,8 +522,7 @@ static void compile_array(struct tls_internal_state *state,
 {
 	const struct tls_compile_array *array = (struct tls_compile_array *) data;
 	memcpy(state->msg_current, array->placeholder, desc->max);
-	state->msg_current   += desc->max;
-	state->msg_remainder += desc->max;
+	state->msg_current += desc->max;
 }
 
 static void compile_vector(struct tls_internal_state *state,
@@ -531,11 +535,9 @@ static void compile_vector(struct tls_internal_state *state,
 		             (desc->max > TLS_VECTOR_MAX8)  ? 2 : 1;
 
 	lowlevel_integer_to_tls(state->msg_current, length_field, length);
-	state->msg_current   += length_field;
-	state->msg_remainder += length_field;
+	state->msg_current += length_field;
 	memcpy(state->msg_current, vector->placeholder, length);
-	state->msg_current   += length;
-	state->msg_remainder += length;
+	state->msg_current += length;
 }
 
 static void compile_vector_int2(struct tls_internal_state *state,
@@ -550,12 +552,10 @@ static void compile_vector_int2(struct tls_internal_state *state,
 	const guint *p = vector->placeholder;
 
 	lowlevel_integer_to_tls(state->msg_current, length_field, length);
-	state->msg_current   += length_field;
-	state->msg_remainder += length_field;
+	state->msg_current += length_field;
 	while (elements--) {
 		lowlevel_integer_to_tls(state->msg_current, sizeof(guint16), *p++);
-		state->msg_current   += sizeof(guint16);
-		state->msg_remainder += sizeof(guint16);
+		state->msg_current += sizeof(guint16);
 	}
 }
 
@@ -807,10 +807,52 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 /*
  * TLS message compiler
  */
-static void compile_msg(struct tls_internal_state *state,
-			gsize size,
-			gsize messages,
-			...)
+static void compile_tls_record(struct tls_internal_state *state,
+			       ...)
+{
+	gsize total_size = 0;
+	guchar *current;
+	va_list ap;
+
+	/* calculate message size */
+	va_start(ap, state);
+	while (1) {
+		const struct tls_compiled_message *msg = va_arg(ap, struct tls_compiled_message *);
+		if (!msg) break;
+		total_size += msg->size;
+	}
+	va_end(ap);
+
+	SIPE_DEBUG_INFO("compile_tls_record: total size %" G_GSIZE_FORMAT,
+			total_size);
+
+	state->common.out_buffer = current = g_malloc(total_size + TLS_RECORD_HEADER_LENGTH);
+	state->common.out_length = total_size + TLS_RECORD_HEADER_LENGTH;
+
+	/* add TLS record header */
+	current[TLS_RECORD_OFFSET_TYPE] = TLS_RECORD_TYPE_HANDSHAKE;
+	lowlevel_integer_to_tls(current + TLS_RECORD_OFFSET_VERSION, 2,
+				TLS_PROTOCOL_VERSION_1_0);
+	lowlevel_integer_to_tls(current + TLS_RECORD_OFFSET_LENGTH, 2,
+				total_size);
+	current += TLS_RECORD_HEADER_LENGTH;
+
+	/* copy messages */
+	va_start(ap, state);
+	while (1) {
+		const struct tls_compiled_message *msg = va_arg(ap, struct tls_compiled_message *);
+		if (!msg) break;
+
+		memcpy(current, msg->data, msg->size);
+		current += msg->size;
+	}
+	va_end(ap);
+}
+
+static struct tls_compiled_message *compile_handshake_msg(struct tls_internal_state *state,
+							  const struct msg_descriptor *desc,
+							  gpointer data,
+							  gsize size)
 {
 	/*
 	 * Estimate the size of the compiled message
@@ -823,73 +865,49 @@ static void compile_msg(struct tls_internal_state *state,
 	 *
 	 * Therefore we don't need space checks in the compiler functions
 	 */
-	gsize total_size = size +
-		TLS_RECORD_HEADER_LENGTH +
-		TLS_HANDSHAKE_HEADER_LENGTH * messages;
-	guchar *buffer = g_malloc0(total_size);
-	va_list ap;
+	gsize total_size = sizeof(struct tls_compiled_message) +
+		size + TLS_HANDSHAKE_HEADER_LENGTH;
+	struct tls_compiled_message *msg = g_malloc(total_size);
+	guchar *handshake = msg->data;
+	const struct layout_descriptor *ldesc = desc->layouts;
+	gsize length;
 
-	SIPE_DEBUG_INFO("compile_msg: buffer size %" G_GSIZE_FORMAT,
+	SIPE_DEBUG_INFO("compile_handshake_msg: buffer size %" G_GSIZE_FORMAT,
 			total_size);
 
-	state->msg_current   = buffer + TLS_RECORD_HEADER_LENGTH;
-	state->msg_remainder = 0;
+	/* add TLS handshake header */
+	handshake[TLS_HANDSHAKE_OFFSET_TYPE] = desc->type;
+	state->msg_current = handshake  + TLS_HANDSHAKE_HEADER_LENGTH;
 
-	va_start(ap, messages);
-	while (messages--) {
-		const struct msg_descriptor *desc = va_arg(ap, struct msg_descriptor *);
-		const guchar *data = va_arg(ap, gpointer);
-		const struct layout_descriptor *ldesc = desc->layouts;
-		guchar *handshake = state->msg_current;
-		gsize length;
-
-		/* add TLS handshake header */
-		handshake[TLS_HANDSHAKE_OFFSET_TYPE] = desc->type;
-		state->msg_current   += TLS_HANDSHAKE_HEADER_LENGTH;
-		state->msg_remainder += TLS_HANDSHAKE_HEADER_LENGTH;
-
-		while (TLS_LAYOUT_IS_VALID(ldesc)) {
-			/*
-			 * Avoid "cast increases required alignment" errors
-			 *
-			 * (void *) tells the compiler that we know what we're
-			 * doing, i.e. we know that the calculated address
-			 * points to correctly aligned data.
-			 */
-			ldesc->compiler(state, ldesc,
-					(void *) (data + ldesc->offset));
-			ldesc++;
-		}
-
-		length = state->msg_current - handshake - TLS_HANDSHAKE_HEADER_LENGTH;
-		lowlevel_integer_to_tls(handshake + TLS_HANDSHAKE_OFFSET_LENGTH,
-					3, length);
-		SIPE_DEBUG_INFO("compile_msg: (%d)%s, size %" G_GSIZE_FORMAT,
-				desc->type, desc->description, length);
-
-
+	while (TLS_LAYOUT_IS_VALID(ldesc)) {
+		/*
+		 * Avoid "cast increases required alignment" errors
+		 *
+		 * (void *) tells the compiler that we know what we're
+		 * doing, i.e. we know that the calculated address
+		 * points to correctly aligned data.
+		 */
+		ldesc->compiler(state, ldesc,
+				(void *) ((guchar *) data + ldesc->offset));
+		ldesc++;
 	}
-	va_end(ap);
 
-	/* add TLS record header */
-	buffer[TLS_RECORD_OFFSET_TYPE] = TLS_RECORD_TYPE_HANDSHAKE;
-	lowlevel_integer_to_tls(buffer + TLS_RECORD_OFFSET_VERSION, 2,
-				TLS_PROTOCOL_VERSION_1_0);
-	lowlevel_integer_to_tls(buffer + TLS_RECORD_OFFSET_LENGTH, 2,
-				state->msg_remainder);
+	length = state->msg_current - handshake - TLS_HANDSHAKE_HEADER_LENGTH;
+	lowlevel_integer_to_tls(handshake + TLS_HANDSHAKE_OFFSET_LENGTH,
+				3, length);
+	SIPE_DEBUG_INFO("compile_handshake_msg: (%d)%s, size %" G_GSIZE_FORMAT,
+			desc->type, desc->description, length);
 
-	state->common.out_buffer = buffer;
-	state->common.out_length = state->msg_remainder + TLS_RECORD_HEADER_LENGTH;
+	msg->size = length + TLS_HANDSHAKE_HEADER_LENGTH;
 
-	SIPE_DEBUG_INFO("compile_msg: compiled size %" G_GSIZE_FORMAT,
-			state->common.out_length);
+	return(msg);
 }
 
-static struct Certificate_host *tls_client_certificate(struct tls_internal_state *state,
-						       gsize *cumulative_length)
+static struct tls_compiled_message *tls_client_certificate(struct tls_internal_state *state)
 {
 	struct Certificate_host *certificate;
 	gsize certificate_length = sipe_cert_crypto_raw_length(state->certificate);
+	struct tls_compiled_message *msg;
 
 	/* setup our response */
 	/* Client Certificate is VECTOR_MAX24 of VECTOR_MAX24s */
@@ -902,12 +920,14 @@ static struct Certificate_host *tls_client_certificate(struct tls_internal_state
 	       sipe_cert_crypto_raw(state->certificate),
 	       certificate_length);
 
-	*cumulative_length += sizeof(struct Certificate_host) + certificate_length;
-	return(certificate);
+	msg = compile_handshake_msg(state, &Certificate_m, certificate,
+				    sizeof(struct Certificate_host) + certificate_length);
+	g_free(certificate);
+
+	return(msg);
 }
 
-static struct ClientKeyExchange_host *tls_client_key_exchange(struct tls_internal_state *state,
-							      gsize *cumulative_length)
+static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_state *state)
 {
 	struct tls_parsed_array *server_random;
 	struct tls_parsed_array *server_certificate;
@@ -915,6 +935,7 @@ static struct ClientKeyExchange_host *tls_client_key_exchange(struct tls_interna
 	gsize server_certificate_length;
 	struct sipe_svc_random pre_master_secret;
 	guchar *random;
+	struct tls_compiled_message *msg;
 
 	/* check for required data fields */
 	server_random = g_hash_table_lookup(state->data, "Random");
@@ -1007,8 +1028,11 @@ static struct ClientKeyExchange_host *tls_client_key_exchange(struct tls_interna
 	}
 	sipe_svc_free_random(&pre_master_secret);
 
-	*cumulative_length += sizeof(struct ClientKeyExchange_host) + server_certificate_length;
-	return(exchange);
+	msg = compile_handshake_msg(state, &ClientKeyExchange_m, exchange,
+				    sizeof(struct ClientKeyExchange_host) + server_certificate_length);
+	g_free(exchange);
+
+	return(msg);
 }
 
 /*
@@ -1036,6 +1060,7 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 		  }
 		}
 	};
+	struct tls_compiled_message *cmsg;
 
 	/* First 4 bytes of client_random is the current timestamp */
 	sipe_svc_fill_random(&state->client_random,
@@ -1044,10 +1069,9 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 	memcpy((guchar *) msg.random.random, state->client_random.buffer,
 	       TLS_STATE_RANDOM_LENGTH);
 
-	compile_msg(state,
-		    sizeof(msg),
-		    1,
-		    &ClientHello_m, &msg);
+	cmsg = compile_handshake_msg(state, &ClientHello_m, &msg, sizeof(msg));
+        compile_tls_record(state, cmsg, NULL);
+	g_free(cmsg);
 
 	if (sipe_backend_debug_enabled())
 		state->debug = g_string_new("");
@@ -1058,22 +1082,17 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 
 static gboolean tls_server_hello(struct tls_internal_state *state)
 {
-	struct Certificate_host *certificate    = NULL;
-	struct ClientKeyExchange_host *exchange = NULL;
-	gsize length = 0;
+	struct tls_compiled_message *certificate = NULL;
+	struct tls_compiled_message *exchange    = NULL;
 	gboolean success = FALSE;
 
 	if (!tls_record_parse(state, TRUE))
 		return(FALSE);
 
-	if (((certificate = tls_client_certificate(state, &length))  != NULL) &&
-	    ((exchange    = tls_client_key_exchange(state, &length)) != NULL)) {
+	if (((certificate = tls_client_certificate(state))  != NULL) &&
+	    ((exchange    = tls_client_key_exchange(state)) != NULL)) {
 
-		compile_msg(state,
-			    length,
-			    2,
-			    &Certificate_m,       certificate,
-			    &ClientKeyExchange_m, exchange);
+		compile_tls_record(state, certificate, exchange, NULL);
 
 		success = tls_record_parse(state, FALSE);
 		if (success)
