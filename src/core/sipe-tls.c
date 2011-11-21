@@ -66,6 +66,8 @@ struct tls_internal_state {
 	gsize msg_remainder;
 	GHashTable *data;
 	GString *debug;
+	gpointer md5_context;
+	gpointer sha1_context;
 	gpointer server_certificate;
 	guchar *master_secret;
 	struct sipe_svc_random client_random;
@@ -777,6 +779,16 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 	state->msg_current   = (guchar *) bytes  + TLS_RECORD_HEADER_LENGTH;
 	state->msg_remainder = length - TLS_RECORD_HEADER_LENGTH;
 
+	/* Add incoming message contents to digest contexts */
+	if (incoming) {
+		sipe_digest_md5_update(state->md5_context,
+				       state->msg_current,
+				       state->msg_remainder);
+		sipe_digest_sha1_update(state->sha1_context,
+					state->msg_current,
+					state->msg_remainder);
+	}
+
 	/* Collect parser data for incoming messages */
 	if (incoming)
 		state->data = g_hash_table_new_full(g_str_hash, g_str_equal,
@@ -899,6 +911,10 @@ static struct tls_compiled_message *compile_handshake_msg(struct tls_internal_st
 			desc->type, desc->description, length);
 
 	msg->size = length + TLS_HANDSHAKE_HEADER_LENGTH;
+
+	/* update digest contexts */
+	sipe_digest_md5_update(state->md5_context, handshake, msg->size);
+	sipe_digest_sha1_update(state->sha1_context, handshake, msg->size);
 
 	return(msg);
 }
@@ -1134,8 +1150,10 @@ struct sipe_tls_state *sipe_tls_start(gpointer certificate)
 		return(NULL);
 
 	state = g_new0(struct tls_internal_state, 1);
-	state->certificate = certificate;
-	state->state       = TLS_HANDSHAKE_STATE_START;
+	state->certificate  = certificate;
+	state->state        = TLS_HANDSHAKE_STATE_START;
+	state->md5_context  = sipe_digest_md5_start();
+	state->sha1_context = sipe_digest_sha1_start();
 
 	return((struct sipe_tls_state *) state);
 }
@@ -1187,6 +1205,10 @@ void sipe_tls_free(struct sipe_tls_state *state)
 			g_string_free(internal->debug, TRUE);
 		sipe_svc_free_random(&internal->client_random);
 		sipe_svc_free_random(&internal->server_random);
+		if (internal->md5_context)
+			sipe_digest_md5_destroy(internal->md5_context);
+		if (internal->sha1_context)
+			sipe_digest_sha1_destroy(internal->sha1_context);
 		sipe_cert_crypto_destroy(internal->server_certificate);
 		g_free(state->session_key);
 		g_free(state->out_buffer);
