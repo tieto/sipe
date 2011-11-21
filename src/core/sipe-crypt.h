@@ -55,6 +55,13 @@ gboolean sipe_crypt_verify_rsa(gpointer public,
 /* Stream RC4 cipher for file transfer */
 gpointer sipe_crypt_ft_start(const guchar *key);
 void sipe_crypt_ft_stream(gpointer context,
-				  const guchar *in, gsize length,
-				  guchar *out);
+			  const guchar *in, gsize length,
+			  guchar *out);
 void sipe_crypt_ft_destroy(gpointer context);
+
+/* Stream RC4 cipher for TLS */
+gpointer sipe_crypt_tls_start(const guchar *key, gsize key_length);
+void sipe_crypt_tls_stream(gpointer context,
+			   const guchar *in, gsize length,
+			   guchar *out);
+void sipe_crypt_tls_destroy(gpointer context);

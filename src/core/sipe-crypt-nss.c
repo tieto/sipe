@@ -247,6 +247,28 @@ sipe_crypt_ft_destroy(gpointer context)
 }
 
 /*
+ * Stream RC4 cipher for TLS
+ *
+ * basically the same as for FT, but with variable key length
+ */
+gpointer sipe_crypt_tls_start(const guchar *key, gsize key_length)
+{
+	return sipe_crypt_ctx_create(CKM_RC4, key, key_length);
+}
+
+void sipe_crypt_tls_stream(gpointer context,
+			   const guchar *in, gsize length,
+			   guchar *out)
+{
+	sipe_crypt_ctx_encrypt(context, in, length, out);
+}
+
+void sipe_crypt_tls_destroy(gpointer context)
+{
+	sipe_crypt_ctx_destroy(context);
+}
+
+/*
   Local Variables:
   mode: c
   c-file-style: "bsd"
