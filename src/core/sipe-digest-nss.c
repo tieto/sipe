@@ -43,18 +43,11 @@
 
 /* PRIVATE methods */
 
-static void sipe_digest(const SECOidTag algorithm,
-			const guchar *data, gsize data_length,
-			guchar *digest, gsize digest_length)
+static PK11Context *sipe_digest_ctx_create(const SECOidTag algorithm)
 {
-	PK11Context *context = 0;
-	unsigned int len;
-
-	context = PK11_CreateDigestContext(algorithm);
+	PK11Context *context = PK11_CreateDigestContext(algorithm);
 	PK11_DigestBegin(context);
-	PK11_DigestOp(context, data, data_length);
-	PK11_DigestFinal(context, digest, &len, digest_length);
-	PK11_DestroyContext(context, PR_TRUE);
+	return(context);
 }
 
 static PK11Context*
@@ -90,21 +83,33 @@ sipe_digest_hmac_ctx_create(CK_MECHANISM_TYPE hmacMech, const guchar *key, gsize
 	return DigestContext;
 }
 
-static void sipe_digest_hmac_ctx_append(PK11Context* DigestContext, const guchar *data, gsize data_length)
+static void sipe_digest_ctx_append(PK11Context* DigestContext, const guchar *data, gsize data_length)
 {
 	PK11_DigestOp(DigestContext, data, data_length);
 }
 
-static void sipe_digest_hmac_ctx_digest(PK11Context* DigestContext, guchar *digest, gsize digest_length)
+static void sipe_digest_ctx_digest(PK11Context* DigestContext, guchar *digest, gsize digest_length)
 {
 	unsigned int len;
 
 	PK11_DigestFinal(DigestContext, digest, &len, digest_length);
 }
 
-static void sipe_digest_hmac_ctx_destroy(PK11Context* DigestContext)
+static void sipe_digest_ctx_destroy(PK11Context* DigestContext)
 {
 	PK11_DestroyContext(DigestContext, PR_TRUE);
+}
+
+static void sipe_digest(const SECOidTag algorithm,
+			const guchar *data, gsize data_length,
+			guchar *digest, gsize digest_length)
+{
+	void *DigestContext;
+
+	DigestContext = sipe_digest_ctx_create(algorithm);
+	sipe_digest_ctx_append(DigestContext, data, data_length);
+	sipe_digest_ctx_digest(DigestContext, digest, digest_length);
+	sipe_digest_ctx_destroy(DigestContext);
 }
 
 static void sipe_digest_hmac(CK_MECHANISM_TYPE hmacMech,
@@ -115,9 +120,9 @@ static void sipe_digest_hmac(CK_MECHANISM_TYPE hmacMech,
 	void *DigestContext;
 
 	DigestContext = sipe_digest_hmac_ctx_create(hmacMech, key, key_length);
-	sipe_digest_hmac_ctx_append(DigestContext, data, data_length);
-	sipe_digest_hmac_ctx_digest(DigestContext, digest, digest_length);
-	sipe_digest_hmac_ctx_destroy(DigestContext);
+	sipe_digest_ctx_append(DigestContext, data, data_length);
+	sipe_digest_ctx_digest(DigestContext, digest, digest_length);
+	sipe_digest_ctx_destroy(DigestContext);
 }
 
 
@@ -156,17 +161,58 @@ gpointer sipe_digest_ft_start(const guchar *sha1_digest)
 
 void sipe_digest_ft_update(gpointer context, const guchar *data, gsize length)
 {
-	sipe_digest_hmac_ctx_append(context, data, length);
+	sipe_digest_ctx_append(context, data, length);
 }
 
 void sipe_digest_ft_end(gpointer context, guchar *digest)
 {
-	sipe_digest_hmac_ctx_digest(context, digest, SIPE_DIGEST_FILETRANSFER_LENGTH);
+	sipe_digest_ctx_digest(context, digest, SIPE_DIGEST_FILETRANSFER_LENGTH);
 }
 
 void sipe_digest_ft_destroy(gpointer context)
 {
-	sipe_digest_hmac_ctx_destroy(context);
+	sipe_digest_ctx_destroy(context);
+}
+
+/* Stream digests, e.g. for TLS */
+gpointer sipe_digest_md5_start(void)
+{
+	return sipe_digest_ctx_create(SEC_OID_MD5);
+}
+
+void sipe_digest_md5_update(gpointer context, const guchar *data, gsize length)
+{
+	sipe_digest_ctx_append(context, data, length);
+}
+
+void sipe_digest_md5_end(gpointer context, guchar *digest)
+{
+	sipe_digest_ctx_digest(context, digest, SIPE_DIGEST_MD5_LENGTH);
+}
+
+void sipe_digest_md5_destroy(gpointer context)
+{
+	sipe_digest_ctx_destroy(context);
+}
+
+gpointer sipe_digest_sha1_start(void)
+{
+	return sipe_digest_ctx_create(SEC_OID_SHA1);
+}
+
+void sipe_digest_sha1_update(gpointer context, const guchar *data, gsize length)
+{
+	sipe_digest_ctx_append(context, data, length);
+}
+
+void sipe_digest_sha1_end(gpointer context, guchar *digest)
+{
+	sipe_digest_ctx_digest(context, digest, SIPE_DIGEST_SHA1_LENGTH);
+}
+
+void sipe_digest_sha1_destroy(gpointer context)
+{
+	sipe_digest_ctx_destroy(context);
 }
 
 /*

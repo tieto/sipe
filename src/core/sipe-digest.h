@@ -44,3 +44,13 @@ gpointer sipe_digest_ft_start(const guchar *sha1_digest);
 void sipe_digest_ft_update(gpointer context, const guchar *data, gsize length);
 void sipe_digest_ft_end(gpointer context, guchar *digest);
 void sipe_digest_ft_destroy(gpointer context);
+
+/* Stream digests, e.g. for TLS */
+gpointer sipe_digest_md5_start(void);
+void sipe_digest_md5_update(gpointer context, const guchar *data, gsize length);
+void sipe_digest_md5_end(gpointer context, guchar *digest);
+void sipe_digest_md5_destroy(gpointer context);
+gpointer sipe_digest_sha1_start(void);
+void sipe_digest_sha1_update(gpointer context, const guchar *data, gsize length);
+void sipe_digest_sha1_end(gpointer context, guchar *digest);
+void sipe_digest_sha1_destroy(gpointer context);
