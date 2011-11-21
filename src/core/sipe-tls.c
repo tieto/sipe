@@ -110,6 +110,7 @@ struct tls_internal_state {
 #define TLS_HANDSHAKE_TYPE_CERTIFICATE         11
 #define TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ     13
 #define TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE   14
+#define TLS_HANDSHAKE_TYPE_CERTIFICATE_VERIFY  15
 #define TLS_HANDSHAKE_TYPE_CLIENT_KEY_EXCHANGE 16
 #define TLS_HANDSHAKE_OFFSET_LENGTH             1
 
@@ -645,7 +646,20 @@ static const struct msg_descriptor const ClientKeyExchange_m = {
 	&ServerHelloDone_m, "Client Key Exchange", ClientKeyExchange_l, TLS_HANDSHAKE_TYPE_CLIENT_KEY_EXCHANGE
 };
 
-#define HANDSHAKE_MSG_DESCRIPTORS &ClientKeyExchange_m
+struct CertificateVerify_host {
+	struct tls_compile_vector signature;
+};
+#define CERTIFICATEVERIFY_OFFSET(a) offsetof(struct CertificateVerify_host, a)
+
+static const struct layout_descriptor const CertificateVerify_l[] = {
+	{ "Signature",               parse_vector, compile_vector, 0, TLS_VECTOR_MAX16, CERTIFICATEVERIFY_OFFSET(signature) },
+	TLS_LAYOUT_DESCRIPTOR_END
+};
+static const struct msg_descriptor const CertificateVerify_m = {
+	&ClientKeyExchange_m, "Certificate Verify", CertificateVerify_l, TLS_HANDSHAKE_TYPE_CERTIFICATE_VERIFY
+};
+
+#define HANDSHAKE_MSG_DESCRIPTORS &CertificateVerify_m
 
 /*
  * TLS message parsers
@@ -1051,6 +1065,42 @@ static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_
 	return(msg);
 }
 
+static struct tls_compiled_message *tls_certificate_verify(struct tls_internal_state *state)
+{
+	struct CertificateVerify_host *verify;
+	struct tls_compiled_message *msg;
+	guchar *digests = g_malloc(SIPE_DIGEST_MD5_LENGTH + SIPE_DIGEST_SHA1_LENGTH);
+	guchar *signature;
+	gsize length;
+
+	/* calculate digests */
+	sipe_digest_md5_end(state->md5_context, digests);
+	sipe_digest_sha1_end(state->sha1_context, digests + SIPE_DIGEST_MD5_LENGTH);
+
+	/* sign digests */
+	signature = sipe_crypt_rsa_sign(sipe_cert_crypto_private_key(state->certificate),
+					digests,
+					SIPE_DIGEST_MD5_LENGTH + SIPE_DIGEST_SHA1_LENGTH,
+					&length);
+	g_free(digests);
+	if (!signature) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_certificate_verify: signing of handshake digests failed");
+		return(NULL);
+	}
+
+	/* CertificateVerify */
+	verify = g_malloc0(sizeof(struct CertificateVerify_host) +
+			   length);
+	verify->signature.elements = length;
+	memcpy(verify->signature.placeholder, signature, length);
+
+	msg = compile_handshake_msg(state, &CertificateVerify_m, verify,
+				    sizeof(struct CertificateVerify_host) + length);
+	g_free(verify);
+
+	return(msg);
+}
+
 /*
  * TLS state handling
  */
@@ -1100,21 +1150,24 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 {
 	struct tls_compiled_message *certificate = NULL;
 	struct tls_compiled_message *exchange    = NULL;
+	struct tls_compiled_message *verify      = NULL;
 	gboolean success = FALSE;
 
 	if (!tls_record_parse(state, TRUE))
 		return(FALSE);
 
 	if (((certificate = tls_client_certificate(state))  != NULL) &&
-	    ((exchange    = tls_client_key_exchange(state)) != NULL)) {
+	    ((exchange    = tls_client_key_exchange(state)) != NULL) &&
+	    ((verify      = tls_certificate_verify(state))  != NULL)) {
 
-		compile_tls_record(state, certificate, exchange, NULL);
+		compile_tls_record(state, certificate, exchange, verify, NULL);
 
 		success = tls_record_parse(state, FALSE);
 		if (success)
 			state->state = TLS_HANDSHAKE_STATE_FINISHED;
 	}
 
+	g_free(verify);
 	g_free(exchange);
 	g_free(certificate);
 	free_parse_data(state);
