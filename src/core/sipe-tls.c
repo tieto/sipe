@@ -83,6 +83,8 @@ struct tls_internal_state {
 	void (*mac_func)(const guchar *key, gsize key_length,
 			 const guchar *data, gsize data_length,
 			 guchar *digest);
+	gpointer cipher_context;
+	guint64 sequence_number;
 };
 
 /*
@@ -908,6 +910,61 @@ static void compile_tls_record(struct tls_internal_state *state,
 	va_end(ap);
 }
 
+static void compile_encrypted_tls_record(struct tls_internal_state *state,
+					 const struct tls_compiled_message *msg)
+{
+	guchar *plaintext;
+	gsize plaintext_length;
+	guchar *mac;
+	gsize mac_length;
+	guchar *message;
+	guchar *encrypted;
+	gsize encrypted_length;
+
+	/* Create plaintext TLS record */
+	compile_tls_record(state, msg, NULL);
+	plaintext        = state->common.out_buffer;
+	plaintext_length = state->common.out_length;
+
+	/* Prepare encryption buffer */
+	encrypted_length = plaintext_length + state->mac_length;
+	SIPE_DEBUG_INFO("compile_encrypted_tls_record: total size %" G_GSIZE_FORMAT,
+			encrypted_length - TLS_RECORD_HEADER_LENGTH);
+	message          = g_malloc(encrypted_length);
+	memcpy(message, plaintext, plaintext_length);
+	lowlevel_integer_to_tls(message + TLS_RECORD_OFFSET_LENGTH, 2,
+				encrypted_length - TLS_RECORD_HEADER_LENGTH);
+
+	/* Calculate MAC */
+	mac_length = sizeof(guint64) + plaintext_length;
+	mac        = g_malloc(mac_length);
+	lowlevel_integer_to_tls(mac,
+				sizeof(guint64),
+				state->sequence_number++);
+	memcpy(mac + sizeof(guint64), plaintext, plaintext_length);
+	state->mac_func(state->client_write_mac_secret,
+			state->mac_length,
+			mac,
+			mac_length,
+			message + encrypted_length - state->mac_length);
+
+	/* Encrypt message + MAC */
+	encrypted = g_malloc(encrypted_length);
+	memcpy(encrypted, message, TLS_RECORD_HEADER_LENGTH);
+	sipe_crypt_tls_stream(state->cipher_context,
+			      message + TLS_RECORD_HEADER_LENGTH,
+			      encrypted_length - TLS_RECORD_HEADER_LENGTH,
+			      encrypted + TLS_RECORD_HEADER_LENGTH);
+
+	g_free(message);
+	g_free(mac);
+	g_free(plaintext);
+
+	/* swap buffers */
+	state->common.out_buffer = encrypted;
+	state->common.out_length = encrypted_length;
+}
+
 static struct tls_compiled_message *compile_handshake_msg(struct tls_internal_state *state,
 							  const struct msg_descriptor *desc,
 							  gpointer data,
@@ -966,6 +1023,9 @@ static struct tls_compiled_message *compile_handshake_msg(struct tls_internal_st
 	return(msg);
 }
 
+/*
+ * Specific TLS data verficiation & message compilers
+ */
 static struct tls_compiled_message *tls_client_certificate(struct tls_internal_state *state)
 {
 	struct Certificate_host *certificate;
@@ -1121,6 +1181,9 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 	state->client_write_secret     = state->key_block + 2 * state->mac_length;
 	state->server_write_secret     = state->key_block + 2 * state->mac_length + state->key_length;
 
+	/* initialize cipher context */
+	state->cipher_context = sipe_crypt_tls_start(state->client_write_secret,
+						     state->key_length);
 }
 
 static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_state *state)
@@ -1333,44 +1396,41 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 		if (success) {
 			guchar *part1      = state->common.out_buffer;
 			gsize part1_length = state->common.out_length;
+			guchar *part3;
+			gsize part3_length;
+			guchar *merged;
+			gsize length;
+			/* ChangeCipherSpec is always the same */
+			static const guchar const part2[] = {
+				TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC,
+				(TLS_PROTOCOL_VERSION_1_0 >> 8) & 0xFF,
+				TLS_PROTOCOL_VERSION_1_0 & 0xFF,
+				0x00, 0x01, /* length: 1 byte        */
+				0x01        /* change_cipher_spec(1) */
+			};
 
 			state->common.out_buffer = NULL;
 
-			/* Part 3 */
-			compile_tls_record(state, finished, NULL);
-			/* TBD: part 3 needs to be encrypted! */
-
-			success = tls_record_parse(state, FALSE);
-			if (success) {
-				guchar *part3      = state->common.out_buffer;
-				gsize part3_length = state->common.out_length;
-				/* ChangeCipherSpec is always the same */
-				static const guchar const part2[] = {
-					TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC,
-					(TLS_PROTOCOL_VERSION_1_0 >> 8) & 0xFF,
-					TLS_PROTOCOL_VERSION_1_0 & 0xFF,
-					0x00, 0x01, /* length: 1 byte        */
-					0x01        /* change_cipher_spec(1) */
-				};
-				gsize length       = part1_length +
-					sizeof(part2) +
-					part3_length;
-				guchar *merged     = g_malloc(length);
+			/* Part 3 - this is the first encrypted record */
+			compile_encrypted_tls_record(state, finished);
+			part3        = state->common.out_buffer;
+			part3_length = state->common.out_length;
 
 				/* merge TLS records */
-				memcpy(merged,                                part1, part1_length);
-				memcpy(merged + part1_length,                 part2, sizeof(part2));
-				memcpy(merged + part1_length + sizeof(part2), part3, part3_length);
-				g_free(part3);
+			length = part1_length + sizeof(part2) + part3_length;
+			merged = g_malloc(length);
 
-				/* replace output buffer with merged message */
-				state->common.out_buffer = merged;
-				state->common.out_length = length;
-
-				state->state = TLS_HANDSHAKE_STATE_FINISHED;
-			}
-
+			memcpy(merged,                                part1, part1_length);
+			memcpy(merged + part1_length,                 part2, sizeof(part2));
+			memcpy(merged + part1_length + sizeof(part2), part3, part3_length);
+			g_free(part3);
 			g_free(part1);
+
+			/* replace output buffer with merged message */
+			state->common.out_buffer = merged;
+			state->common.out_length = length;
+
+			state->state = TLS_HANDSHAKE_STATE_FINISHED;
 		}
 	}
 
@@ -1469,6 +1529,8 @@ void sipe_tls_free(struct sipe_tls_state *state)
 		sipe_svc_free_random(&internal->pre_master_secret);
 		sipe_svc_free_random(&internal->client_random);
 		sipe_svc_free_random(&internal->server_random);
+		if (internal->cipher_context)
+			sipe_crypt_tls_destroy(internal->cipher_context);
 		if (internal->md5_context)
 			sipe_digest_md5_destroy(internal->md5_context);
 		if (internal->sha1_context)
