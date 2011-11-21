@@ -94,14 +94,17 @@ struct tls_internal_state {
 /* CompressionMethods */
 #define TLS_COMP_METHOD_NULL 0
 
-#define TLS_STATE_RANDOM_LENGTH        32
-#define TLS_STATE_MASTER_SECRET_LENGTH 48
+/* various array lengths */
+#define TLS_ARRAY_RANDOM_LENGTH        32
+#define TLS_ARRAY_MASTER_SECRET_LENGTH 48
+#define TLS_ARRAY_VERIFY_LENGTH        12
 
-#define TLS_RECORD_HEADER_LENGTH   5
-#define TLS_RECORD_OFFSET_TYPE     0
-#define TLS_RECORD_TYPE_HANDSHAKE 22
-#define TLS_RECORD_OFFSET_VERSION  1
-#define TLS_RECORD_OFFSET_LENGTH   3
+#define TLS_RECORD_HEADER_LENGTH            5
+#define TLS_RECORD_OFFSET_TYPE              0
+#define TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC 20
+#define TLS_RECORD_TYPE_HANDSHAKE          22
+#define TLS_RECORD_OFFSET_VERSION           1
+#define TLS_RECORD_OFFSET_LENGTH            3
 
 #define TLS_HANDSHAKE_HEADER_LENGTH             4
 #define TLS_HANDSHAKE_OFFSET_TYPE               0
@@ -112,6 +115,7 @@ struct tls_internal_state {
 #define TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE   14
 #define TLS_HANDSHAKE_TYPE_CERTIFICATE_VERIFY  15
 #define TLS_HANDSHAKE_TYPE_CLIENT_KEY_EXCHANGE 16
+#define TLS_HANDSHAKE_TYPE_FINISHED            20
 #define TLS_HANDSHAKE_OFFSET_LENGTH             1
 
 struct layout_descriptor;
@@ -165,7 +169,12 @@ struct tls_compile_array {
 
 struct tls_compile_random {
 	gsize elements; /* unused */
-	guchar random[TLS_STATE_RANDOM_LENGTH];
+	guchar random[TLS_ARRAY_RANDOM_LENGTH];
+};
+
+struct tls_compile_verify {
+	gsize elements; /* unused */
+	guchar verify[TLS_ARRAY_VERIFY_LENGTH];
 };
 
 struct tls_compile_vector {
@@ -572,17 +581,17 @@ static void compile_vector_int2(struct tls_internal_state *state,
  * TLS handshake message layout descriptors
  */
 struct ClientHello_host {
-	const struct tls_compile_integer protocol_version;
-	const struct tls_compile_random random;
-	const struct tls_compile_sessionid sessionid;
-	const struct tls_compile_cipher cipher;
-	const struct tls_compile_compression compression;
+	struct tls_compile_integer protocol_version;
+	struct tls_compile_random random;
+	struct tls_compile_sessionid sessionid;
+	struct tls_compile_cipher cipher;
+	struct tls_compile_compression compression;
 };
 #define CLIENTHELLO_OFFSET(a) offsetof(struct ClientHello_host, a)
 
 static const struct layout_descriptor const ClientHello_l[] = {
 	{ "Client Protocol Version", parse_integer, compile_integer,     0,  2,                      CLIENTHELLO_OFFSET(protocol_version) },
-	{ "Random",                  parse_array,   compile_array,       0, TLS_STATE_RANDOM_LENGTH, CLIENTHELLO_OFFSET(random) },
+	{ "Random",                  parse_array,   compile_array,       0, TLS_ARRAY_RANDOM_LENGTH, CLIENTHELLO_OFFSET(random) },
 	{ "SessionID",               parse_vector,  compile_vector,      0, 32,                      CLIENTHELLO_OFFSET(sessionid) },
 	{ "CipherSuite",             parse_vector,  compile_vector_int2, 2, TLS_VECTOR_MAX16,        CLIENTHELLO_OFFSET(cipher)},
 	{ "CompressionMethod",       parse_vector,  compile_vector,      1, TLS_VECTOR_MAX8,         CLIENTHELLO_OFFSET(compression) },
@@ -594,7 +603,7 @@ static const struct msg_descriptor const ClientHello_m = {
 
 static const struct layout_descriptor const ServerHello_l[] = {
 	{ "Server Protocol Version", parse_integer, NULL, 0,  2,                      0 },
-	{ "Random",                  parse_array,   NULL, 0, TLS_STATE_RANDOM_LENGTH, 0 },
+	{ "Random",                  parse_array,   NULL, 0, TLS_ARRAY_RANDOM_LENGTH, 0 },
 	{ "SessionID",               parse_vector,  NULL, 0, 32,                      0 },
 	{ "CipherSuite",             parse_integer, NULL, 0,  2,                      0 },
 	{ "CompressionMethod",       parse_integer, NULL, 0,  1,                      0 },
@@ -659,7 +668,20 @@ static const struct msg_descriptor const CertificateVerify_m = {
 	&ClientKeyExchange_m, "Certificate Verify", CertificateVerify_l, TLS_HANDSHAKE_TYPE_CERTIFICATE_VERIFY
 };
 
-#define HANDSHAKE_MSG_DESCRIPTORS &CertificateVerify_m
+struct Finished_host {
+	struct tls_compile_verify verify;
+};
+#define FINISHED_OFFSET(a) offsetof(struct Finished_host, a)
+
+static const struct layout_descriptor const Finished_l[] = {
+	{ "Verify Data",             parse_array, compile_array, 0, TLS_ARRAY_VERIFY_LENGTH, FINISHED_OFFSET(verify) },
+	TLS_LAYOUT_DESCRIPTOR_END
+};
+static const struct msg_descriptor const Finished_m = {
+	&CertificateVerify_m, "Finished", Finished_l, TLS_HANDSHAKE_TYPE_FINISHED
+};
+
+#define HANDSHAKE_MSG_DESCRIPTORS &Finished_m
 
 /*
  * TLS message parsers
@@ -997,7 +1019,7 @@ static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_
 	}
 	/* server public key modulus length */
 	server_certificate_length = sipe_cert_crypto_modulus_length(state->server_certificate);
-	if (server_certificate_length < TLS_STATE_MASTER_SECRET_LENGTH) {
+	if (server_certificate_length < TLS_ARRAY_MASTER_SECRET_LENGTH) {
 		SIPE_DEBUG_ERROR("tls_client_key_exchange: server public key strength too low (%" G_GSIZE_FORMAT ")",
 				 server_certificate_length);
 		return(FALSE);
@@ -1012,16 +1034,16 @@ static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_
 
 	/* Calculate master secret */
 	sipe_svc_fill_random(&pre_master_secret,
-			     TLS_STATE_MASTER_SECRET_LENGTH * 8); /* bits */
+			     TLS_ARRAY_MASTER_SECRET_LENGTH * 8); /* bits */
 	lowlevel_integer_to_tls(pre_master_secret.buffer, 2,
 				TLS_PROTOCOL_VERSION_1_0);
-	random = g_malloc(TLS_STATE_RANDOM_LENGTH * 2);
+	random = g_malloc(TLS_ARRAY_RANDOM_LENGTH * 2);
 	memcpy(random,
 	       state->client_random.buffer,
-	       TLS_STATE_RANDOM_LENGTH);
-	memcpy(random + TLS_STATE_RANDOM_LENGTH,
+	       TLS_ARRAY_RANDOM_LENGTH);
+	memcpy(random + TLS_ARRAY_RANDOM_LENGTH,
 	       state->server_random.buffer,
-	       TLS_STATE_RANDOM_LENGTH);
+	       TLS_ARRAY_RANDOM_LENGTH);
 	/*
 	 * master_secret = PRF(pre_master_secret, "master secret",
 	 *                     ClientHello.random + ServerHello.random)
@@ -1031,11 +1053,11 @@ static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_
 					    (guchar *) "master secret",
 					    13,
 					    random,
-					    TLS_STATE_RANDOM_LENGTH * 2,
-					    TLS_STATE_MASTER_SECRET_LENGTH);
+					    TLS_ARRAY_RANDOM_LENGTH * 2,
+					    TLS_ARRAY_MASTER_SECRET_LENGTH);
 	g_free(random);
 	if (state->debug) {
-		guint i = TLS_STATE_MASTER_SECRET_LENGTH;
+		guint i = TLS_ARRAY_MASTER_SECRET_LENGTH;
 		guchar *p = state->master_secret;
 		g_string_append(state->debug, "tls_client_key_exchange: master secret ");
 		while (i--) g_string_append_printf(state->debug, "%02X", *p++);
@@ -1048,7 +1070,7 @@ static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_
 			     server_certificate_length);
 	exchange->secret.elements = server_certificate_length;
 	if (!sipe_crypt_rsa_encrypt(sipe_cert_crypto_public_key(state->server_certificate),
-				    TLS_STATE_MASTER_SECRET_LENGTH,
+				    TLS_ARRAY_MASTER_SECRET_LENGTH,
 				    pre_master_secret.buffer,
 				    (guchar *) exchange->secret.placeholder)) {
 		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: encryption of pre-master secret failed");
@@ -1101,6 +1123,38 @@ static struct tls_compiled_message *tls_certificate_verify(struct tls_internal_s
 	return(msg);
 }
 
+static struct tls_compiled_message *tls_client_finished(struct tls_internal_state *state)
+{
+	guchar *digests = g_malloc(SIPE_DIGEST_MD5_LENGTH + SIPE_DIGEST_SHA1_LENGTH);
+	guchar *verify;
+	struct tls_compiled_message *cmsg;
+	struct Finished_host msg;
+
+	/* calculate digests */
+	sipe_digest_md5_end(state->md5_context, digests);
+	sipe_digest_sha1_end(state->sha1_context, digests + SIPE_DIGEST_MD5_LENGTH);
+
+	/*
+	 * verify_data = PRF(master_secret, "client finished",
+	 *                   MD5(handshake_messages) +
+	 *                   SHA-1(handshake_messages)) [0..11];
+	 */
+	verify = sipe_tls_prf(state->master_secret,
+			      TLS_ARRAY_MASTER_SECRET_LENGTH,
+			      (guchar *) "client finished",
+			      15,
+			      digests,
+			      SIPE_DIGEST_MD5_LENGTH + SIPE_DIGEST_SHA1_LENGTH,
+			      TLS_ARRAY_VERIFY_LENGTH);
+	g_free(digests);
+	memcpy(msg.verify.verify, verify, TLS_ARRAY_VERIFY_LENGTH);
+	g_free(verify);
+
+	cmsg = compile_handshake_msg(state, &Finished_m, &msg, sizeof(msg));
+
+	return(cmsg);
+}
+
 /*
  * TLS state handling
  */
@@ -1130,10 +1184,10 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 
 	/* First 4 bytes of client_random is the current timestamp */
 	sipe_svc_fill_random(&state->client_random,
-			     TLS_STATE_RANDOM_LENGTH * 8); /* -> bits */
+			     TLS_ARRAY_RANDOM_LENGTH * 8); /* -> bits */
 	memcpy(state->client_random.buffer, &now_N, sizeof(now_N));
-	memcpy((guchar *) msg.random.random, state->client_random.buffer,
-	       TLS_STATE_RANDOM_LENGTH);
+	memcpy(msg.random.random, state->client_random.buffer,
+	       TLS_ARRAY_RANDOM_LENGTH);
 
 	cmsg = compile_handshake_msg(state, &ClientHello_m, &msg, sizeof(msg));
         compile_tls_record(state, cmsg, NULL);
@@ -1151,6 +1205,7 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 	struct tls_compiled_message *certificate = NULL;
 	struct tls_compiled_message *exchange    = NULL;
 	struct tls_compiled_message *verify      = NULL;
+	struct tls_compiled_message *finished    = NULL;
 	gboolean success = FALSE;
 
 	if (!tls_record_parse(state, TRUE))
@@ -1158,15 +1213,58 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 
 	if (((certificate = tls_client_certificate(state))  != NULL) &&
 	    ((exchange    = tls_client_key_exchange(state)) != NULL) &&
-	    ((verify      = tls_certificate_verify(state))  != NULL)) {
+	    ((verify      = tls_certificate_verify(state))  != NULL) &&
+	    ((finished    = tls_client_finished(state))     != NULL)) {
 
+		/* Part 1 */
 		compile_tls_record(state, certificate, exchange, verify, NULL);
 
 		success = tls_record_parse(state, FALSE);
-		if (success)
-			state->state = TLS_HANDSHAKE_STATE_FINISHED;
+		if (success) {
+			guchar *part1      = state->common.out_buffer;
+			gsize part1_length = state->common.out_length;
+
+			state->common.out_buffer = NULL;
+
+			/* Part 3 */
+			compile_tls_record(state, finished, NULL);
+			/* TBD: part 3 needs to be encrypted! */
+
+			success = tls_record_parse(state, FALSE);
+			if (success) {
+				guchar *part3      = state->common.out_buffer;
+				gsize part3_length = state->common.out_length;
+				/* ChangeCipherSpec is always the same */
+				static const guchar const part2[] = {
+					TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC,
+					(TLS_PROTOCOL_VERSION_1_0 >> 8) & 0xFF,
+					TLS_PROTOCOL_VERSION_1_0 & 0xFF,
+					0x00, 0x01, /* length: 1 byte        */
+					0x01        /* change_cipher_spec(1) */
+				};
+				gsize length       = part1_length +
+					sizeof(part2) +
+					part3_length;
+				guchar *merged     = g_malloc(length);
+
+				/* merge TLS records */
+				memcpy(merged,                                part1, part1_length);
+				memcpy(merged + part1_length,                 part2, sizeof(part2));
+				memcpy(merged + part1_length + sizeof(part2), part3, part3_length);
+				g_free(part3);
+
+				/* replace output buffer with merged message */
+				state->common.out_buffer = merged;
+				state->common.out_length = length;
+
+				state->state = TLS_HANDSHAKE_STATE_FINISHED;
+			}
+
+			g_free(part1);
+		}
 	}
 
+	g_free(finished);
 	g_free(verify);
 	g_free(exchange);
 	g_free(certificate);
