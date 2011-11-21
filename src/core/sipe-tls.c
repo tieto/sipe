@@ -935,18 +935,26 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 	lowlevel_integer_to_tls(message + TLS_RECORD_OFFSET_LENGTH, 2,
 				encrypted_length - TLS_RECORD_HEADER_LENGTH);
 
-	/* Calculate MAC */
+	/*
+	 * Calculate MAC
+	 *
+	 * HMAC_hash(client_write_mac_secret,
+	 *           sequence_number + type + version + length + fragment)
+	 *                             \---  == original TLS record  ---/
+	 */
 	mac_length = sizeof(guint64) + plaintext_length;
 	mac        = g_malloc(mac_length);
 	lowlevel_integer_to_tls(mac,
 				sizeof(guint64),
 				state->sequence_number++);
 	memcpy(mac + sizeof(guint64), plaintext, plaintext_length);
+	g_free(plaintext);
 	state->mac_func(state->client_write_mac_secret,
 			state->mac_length,
 			mac,
 			mac_length,
-			message + encrypted_length - state->mac_length);
+			message + plaintext_length);
+	g_free(mac);
 
 	/* Encrypt message + MAC */
 	encrypted = g_malloc(encrypted_length);
@@ -955,10 +963,7 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 			      message + TLS_RECORD_HEADER_LENGTH,
 			      encrypted_length - TLS_RECORD_HEADER_LENGTH,
 			      encrypted + TLS_RECORD_HEADER_LENGTH);
-
 	g_free(message);
-	g_free(mac);
-	g_free(plaintext);
 
 	/* swap buffers */
 	state->common.out_buffer = encrypted;
@@ -1481,7 +1486,8 @@ struct sipe_tls_state *sipe_tls_start(gpointer certificate)
 
 gboolean sipe_tls_next(struct sipe_tls_state *state)
 {
-	struct tls_internal_state *internal = (struct tls_internal_state *) state;
+	/* Avoid "cast increases required alignment" errors */
+	struct tls_internal_state *internal = (void *) state;
 	gboolean success = FALSE;
 
 	if (!state)
@@ -1519,7 +1525,8 @@ gboolean sipe_tls_next(struct sipe_tls_state *state)
 void sipe_tls_free(struct sipe_tls_state *state)
 {
 	if (state) {
-		struct tls_internal_state *internal = (struct tls_internal_state *) state;
+		/* Avoid "cast increases required alignment" errors */
+		struct tls_internal_state *internal = (void *) state;
 
 		free_parse_data(internal);
 		if (internal->debug)
