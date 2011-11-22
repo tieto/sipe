@@ -69,9 +69,9 @@ struct tls_internal_state {
 	gpointer md5_context;
 	gpointer sha1_context;
 	gpointer server_certificate;
-	struct sipe_svc_random client_random;
-	struct sipe_svc_random server_random;
-	struct sipe_svc_random pre_master_secret;
+	struct sipe_tls_random client_random;
+	struct sipe_tls_random server_random;
+	struct sipe_tls_random pre_master_secret;
 	gsize mac_length;
 	gsize key_length;
 	guchar *master_secret;
@@ -214,6 +214,30 @@ struct tls_compiled_message {
 	gsize size;
 	guchar data[];
 };
+
+/*
+ * Random byte buffers
+ */
+void sipe_tls_fill_random(struct sipe_tls_random *random,
+			  guint bits)
+{
+	guint bytes = ((bits + 15) / 16) * 2;
+	guint16 *p  = g_malloc(bytes);
+
+	SIPE_DEBUG_INFO("sipe_svc_fill_random: %d bits -> %d bytes",
+			bits, bytes);
+
+	random->buffer = (guint8*) p;
+	random->length = bytes;
+
+	for (bytes /= 2; bytes; bytes--)
+		*p++ = rand() & 0xFFFF;
+}
+
+void sipe_tls_free_random(struct sipe_tls_random *random)
+{
+	g_free(random->buffer);
+}
 
 /*
  * TLS message debugging
@@ -1122,7 +1146,7 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 	guchar *random;
 
 	/* Generate pre-master secret */
-	sipe_svc_fill_random(&state->pre_master_secret,
+	sipe_tls_fill_random(&state->pre_master_secret,
 			     TLS_ARRAY_MASTER_SECRET_LENGTH * 8); /* bits */
 	lowlevel_integer_to_tls(state->pre_master_secret.buffer, 2,
 				TLS_PROTOCOL_VERSION_1_0);
@@ -1361,7 +1385,7 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 	struct tls_compiled_message *cmsg;
 
 	/* First 4 bytes of client_random is the current timestamp */
-	sipe_svc_fill_random(&state->client_random,
+	sipe_tls_fill_random(&state->client_random,
 			     TLS_ARRAY_RANDOM_LENGTH * 8); /* -> bits */
 	memcpy(state->client_random.buffer, &now_N, sizeof(now_N));
 	memcpy(msg.random.random, state->client_random.buffer,
@@ -1533,9 +1557,9 @@ void sipe_tls_free(struct sipe_tls_state *state)
 			g_string_free(internal->debug, TRUE);
 		g_free(internal->key_block);
 		g_free(internal->master_secret);
-		sipe_svc_free_random(&internal->pre_master_secret);
-		sipe_svc_free_random(&internal->client_random);
-		sipe_svc_free_random(&internal->server_random);
+		sipe_tls_free_random(&internal->pre_master_secret);
+		sipe_tls_free_random(&internal->client_random);
+		sipe_tls_free_random(&internal->server_random);
 		if (internal->cipher_context)
 			sipe_crypt_tls_destroy(internal->cipher_context);
 		if (internal->md5_context)

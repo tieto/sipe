@@ -41,6 +41,7 @@
 #include "sipe-core-private.h"
 #include "sipe-digest.h"
 #include "sipe-svc.h"
+#include "sipe-tls.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipe.h"
@@ -101,27 +102,6 @@ static void sipe_svc_init(struct sipe_core_private *sipe_private)
 		return;
 
 	sipe_private->svc = g_new0(struct sipe_svc, 1);
-}
-
-void sipe_svc_fill_random(struct sipe_svc_random *random,
-			  guint bits)
-{
-	guint bytes = ((bits + 15) / 16) * 2;
-	guint16 *p  = g_malloc(bytes);
-
-	SIPE_DEBUG_INFO("sipe_svc_fill_random: %d bits -> %d bytes",
-			bits, bytes);
-
-	random->buffer = (guint8*) p;
-	random->length = bytes;
-
-	for (bytes /= 2; bytes; bytes--)
-		*p++ = rand() & 0xFFFF;
-}
-
-void sipe_svc_free_random(struct sipe_svc_random *random)
-{
-	g_free(random->buffer);
 }
 
 static void sipe_svc_https_response(int return_code,
@@ -288,7 +268,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 				       sipe_svc_callback *callback,
 				       gpointer callback_data)
 {
-	struct sipe_svc_random id;
+	struct sipe_tls_random id;
 	gchar *id_base64;
 	gchar *id_uuid;
 	gchar *uuid = get_uuid(sipe_private);
@@ -296,9 +276,9 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 	gboolean ret;
 
 	/* random request ID */
-	sipe_svc_fill_random(&id, 256);
+	sipe_tls_fill_random(&id, 256);
 	id_base64 = g_base64_encode(id.buffer, id.length);
-	sipe_svc_free_random(&id);
+	sipe_tls_free_random(&id);
 	id_uuid = generateUUIDfromEPID(id_base64);
 	g_free(id_base64);
 
@@ -394,7 +374,7 @@ static gchar *sipe_svc_security_username(struct sipe_core_private *sipe_private,
 					 const gchar *authuser)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sipe_svc_random nonce;
+	struct sipe_tls_random nonce;
 	GTimeVal now;
 	guchar digest[SIPE_DIGEST_SHA1_LENGTH];
 	guchar *buf, *p;
@@ -403,7 +383,7 @@ static gchar *sipe_svc_security_username(struct sipe_core_private *sipe_private,
 	gchar *ret;
 
 	/* nonce */
-	sipe_svc_fill_random(&nonce, 256);
+	sipe_tls_fill_random(&nonce, 256);
 	nonce_base64 = g_base64_encode(nonce.buffer, nonce.length);
 
 	/* created */
@@ -439,7 +419,7 @@ static gchar *sipe_svc_security_username(struct sipe_core_private *sipe_private,
 	g_free(buf);
 	g_free(created);
 	g_free(nonce_base64);
-	sipe_svc_free_random(&nonce);
+	sipe_tls_free_random(&nonce);
 
 	return(ret);
 }
@@ -449,7 +429,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *authuser,
 			    const gchar *wsse_security,
 			    const gchar *service_uri,
-			    const struct sipe_svc_random *entropy,
+			    const struct sipe_tls_random *entropy,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data)
 {

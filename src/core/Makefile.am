@@ -168,3 +168,14 @@ sipe_xml_tests_LDADD = \
 # disables "caching" of memory blocks in tests
 TESTS_ENVIRONMENT = G_SLICE="always-malloc"
 TESTS = $(check_PROGRAMS)
+
+noinst_PROGRAMS = sipe_tls_tester
+sipe_tls_tester_SOURCES = sipe-tls-tester.c
+sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
+sipe_tls_tester_LDADD = \
+	libsipe_core_la-sipe-tls.lo \
+	libsipe_core_crypto_nss_la-sipe-cert-crypto-nss.lo \
+	libsipe_core_crypto_nss_la-sipe-crypt-nss.lo \
+	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
+	$(NSS_LIBS) \
+	$(GLIB_LIBS)

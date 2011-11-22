@@ -170,7 +170,7 @@ struct certificate_callback_data {
 	gboolean tried_fedbearer;
 	gboolean webticket_for_certprov;
 
-	struct sipe_svc_random entropy;
+	struct sipe_tls_random entropy;
 };
 
 static void callback_data_free(struct certificate_callback_data *ccd)
@@ -181,7 +181,7 @@ static void callback_data_free(struct certificate_callback_data *ccd)
 		g_free(ccd->webticket_anon_uri);
 		g_free(ccd->webticket_fedbearer_uri);
 		g_free(ccd->certprov_uri);
-		sipe_svc_free_random(&ccd->entropy);
+		sipe_tls_free_random(&ccd->entropy);
 		g_free(ccd);
 	}
 }
@@ -319,7 +319,7 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 }
 
 static gchar *generate_sha1_proof_wsse(const gchar *raw,
-				       struct sipe_svc_random *entropy)
+				       struct sipe_tls_random *entropy)
 {
 	gchar *timestamp = generate_timestamp(raw, "Lifetime");
 	gchar *keydata   = extract_raw_xml(raw, "saml:Assertion", TRUE);
@@ -576,7 +576,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 			if (ccd->webticket_anon_uri) {
 				/* Try anonymous authentication first */
 				/* Entropy: 256 random bits */
-				sipe_svc_fill_random(&ccd->entropy, 256);
+				sipe_tls_fill_random(&ccd->entropy, 256);
 
 				success = sipe_svc_webticket(sipe_private,
 							     ccd->webticket_anon_uri,

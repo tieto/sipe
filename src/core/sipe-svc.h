@@ -29,6 +29,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sipe_tls_random;
 struct _sipe_xml;
 
 /**
@@ -45,30 +46,6 @@ typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
 				 const gchar *raw,
 				 struct _sipe_xml *xml,
 				 gpointer callback_data);
-
-/**
- * Random bytes buffer
- */
-struct sipe_svc_random {
-  guchar *buffer;
-  guint length;   /* in bytes */
-};
-
-/**
- * Allocate a buffer with N random bits
- *
- * @param random pointer to random bytes buffer
- * @param bits   number of random bits (will be rounded up be dividable by 16)
- */
-void sipe_svc_fill_random(struct sipe_svc_random *random,
-			  guint bits);
-
-/**
- * Free a random bytes buffer
- *
- * @param random pointer to random bytes buffer
- */
-void sipe_svc_free_random(struct sipe_svc_random *random);
 
 /**
  * Trigger fetch of Get & Publish certificate
@@ -107,7 +84,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *authuser,
 			    const gchar *wsse_security,
 			    const gchar *service_uri,
-			    const struct sipe_svc_random *entropy,
+			    const struct sipe_tls_random *entropy,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data);
 

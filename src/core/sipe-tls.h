@@ -28,6 +28,31 @@
  */
 
 /**
+ * Random bytes buffer
+ */
+struct sipe_tls_random {
+  guchar *buffer;
+  guint length;   /* in bytes */
+};
+
+/**
+ * Allocate a buffer with N random bits
+ *
+ * @param random pointer to random bytes buffer
+ * @param bits   number of random bits (will be rounded up be dividable by 16)
+ */
+void sipe_tls_fill_random(struct sipe_tls_random *random,
+			  guint bits);
+
+/**
+ * Free a random bytes buffer
+ *
+ * @param random pointer to random bytes buffer
+ */
+void sipe_tls_free_random(struct sipe_tls_random *random);
+
+
+/**
  * Public part of TLS state tracking
  *
  * If @c session_key != @c NULL then handshake is complete
