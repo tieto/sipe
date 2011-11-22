@@ -800,7 +800,6 @@ static void free_parse_data(struct tls_internal_state *state)
 	}
 }
 
-/* NOTE: we don't support record fragmentation */
 static gboolean tls_record_parse(struct tls_internal_state *state,
 				 gboolean incoming)
 {
@@ -809,73 +808,83 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 	guint version;
 	const gchar *version_str;
 	gsize record_length;
-	gboolean success = FALSE;
+	gboolean success = TRUE;
 
 	debug_printf(state, "TLS MESSAGE %s\n", incoming ? "INCOMING" : "OUTGOING");
-
-	/* truncated header check */
-	if (length < TLS_RECORD_HEADER_LENGTH) {
-		SIPE_DEBUG_ERROR("tls_record_parse: too short TLS record header (%" G_GSIZE_FORMAT " bytes)",
-				 length);
-		return(FALSE);
-	}
-
-	/* protocol version check */
-	version = lowlevel_integer_to_host(bytes + TLS_RECORD_OFFSET_VERSION, 2);
-	if (version < TLS_PROTOCOL_VERSION_1_0) {
-		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: SSL1/2/3 not supported");
-		return(FALSE);
-	}
-	switch (version) {
-	case TLS_PROTOCOL_VERSION_1_0:
-		version_str = "1.0 (RFC2246)";
-		break;
-	case TLS_PROTOCOL_VERSION_1_1:
-		version_str = "1.1 (RFC4346)";
-		break;
-	default:
-		version_str = "<future protocol version>";
-		break;
-	}
-
-	/* record length check */
-	record_length = TLS_RECORD_HEADER_LENGTH +
-		lowlevel_integer_to_host(bytes + TLS_RECORD_OFFSET_LENGTH, 2);
-	if (record_length > length) {
-		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: record too long");
-		return(FALSE);
-	}
-
-	/* TLS record header OK */
-	debug_printf(state, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
-		     version_str, length);
-	state->msg_current   = (guchar *) bytes  + TLS_RECORD_HEADER_LENGTH;
-	state->msg_remainder = length - TLS_RECORD_HEADER_LENGTH;
-
-	/* Add incoming message contents to digest contexts */
-	if (incoming) {
-		sipe_digest_md5_update(state->md5_context,
-				       state->msg_current,
-				       state->msg_remainder);
-		sipe_digest_sha1_update(state->sha1_context,
-					state->msg_current,
-					state->msg_remainder);
-	}
 
 	/* Collect parser data for incoming messages */
 	if (incoming)
 		state->data = g_hash_table_new_full(g_str_hash, g_str_equal,
 						    NULL, g_free);
 
-	switch (bytes[TLS_RECORD_OFFSET_TYPE]) {
-	case TLS_RECORD_TYPE_HANDSHAKE:
-		success = handshake_parse(state);
-		break;
+	while (success && (length > 0)) {
 
-	default:
-		debug_print(state, "Unsupported TLS message\n");
-		debug_hex(state, 0);
-		break;
+		/* truncated header check */
+		if (length < TLS_RECORD_HEADER_LENGTH) {
+			SIPE_DEBUG_ERROR("tls_record_parse: too short TLS record header (%" G_GSIZE_FORMAT " bytes)",
+					 length);
+			success = FALSE;
+			break;
+		}
+
+		/* protocol version check */
+		version = lowlevel_integer_to_host(bytes + TLS_RECORD_OFFSET_VERSION, 2);
+		if (version < TLS_PROTOCOL_VERSION_1_0) {
+			SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: SSL1/2/3 not supported");
+			success = FALSE;
+			break;
+		}
+		switch (version) {
+		case TLS_PROTOCOL_VERSION_1_0:
+			version_str = "1.0 (RFC2246)";
+			break;
+		case TLS_PROTOCOL_VERSION_1_1:
+			version_str = "1.1 (RFC4346)";
+			break;
+		default:
+			version_str = "<future protocol version>";
+			break;
+		}
+
+		/* record length check */
+		record_length = TLS_RECORD_HEADER_LENGTH +
+			lowlevel_integer_to_host(bytes + TLS_RECORD_OFFSET_LENGTH, 2);
+		if (record_length > length) {
+			SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: record too long");
+			success = FALSE;
+			break;
+		}
+
+		/* TLS record header OK */
+		debug_printf(state, "TLS %s record (%" G_GSIZE_FORMAT " bytes)\n",
+			     version_str, record_length);
+		state->msg_current   = (guchar *) bytes + TLS_RECORD_HEADER_LENGTH;
+		state->msg_remainder = record_length - TLS_RECORD_HEADER_LENGTH;
+
+		/* Add incoming message contents to digest contexts */
+		if (incoming) {
+			sipe_digest_md5_update(state->md5_context,
+					       state->msg_current,
+					       state->msg_remainder);
+			sipe_digest_sha1_update(state->sha1_context,
+						state->msg_current,
+						state->msg_remainder);
+		}
+
+		switch (bytes[TLS_RECORD_OFFSET_TYPE]) {
+		case TLS_RECORD_TYPE_HANDSHAKE:
+			success = handshake_parse(state);
+			break;
+
+		default:
+			debug_print(state, "Unsupported TLS message\n");
+			debug_hex(state, 0);
+			break;
+		}
+
+		/* next fragment */
+		bytes  += record_length;
+		length -= record_length;
 	}
 
 	if (!success)

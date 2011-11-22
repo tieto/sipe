@@ -30,10 +30,11 @@
  *    $ openssl req -new -keyout server.pem -out server.req
  *    $ openssl x509 -req -in server.req -signkey server.pem -out server.cert
  *
- * - Running the test server in one shell:
+ * - Running the test server in one shell with same parameters used by Lync:
  *
- *    $ openssl s_server -accept 8443 -debug -tls1 -cert server.cert \
- *              -key server.pem
+ *    $ openssl s_server -accept 8443 -debug -msg \
+ *              -cert server.cert -key server.pem \
+ *              -tls1 -verify 0 -cipher RC4-SHA
  *
  * - Running the test program in another shell:
  *
@@ -52,6 +53,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <poll.h>
 
 #include <glib.h>
 
@@ -92,6 +94,123 @@ void sipe_backend_debug(sipe_debug_level level,
 /*
  * Tester code
  */
+struct record {
+	gsize length;
+	guchar *msg;
+};
+
+static guchar *read_tls_record(int fd,
+			       gsize *in_length)
+{
+	GSList *fragments = NULL;
+	guchar *merged    = NULL;
+	gsize length      = 0;
+	static gchar buffer[10000];
+
+	while (1) {
+		struct pollfd fds[] = {
+			{ fd, POLLIN, 0 }
+		};
+		int result;
+		struct record *record;
+
+		/* Read one chunk */
+		result = poll(fds, 1, 500 /* [milliseconds] */);
+		if (result < 0) {
+			printf("poll failed: %s\n", strerror(errno));
+			break;
+		}
+		if (result == 0) {
+			if (!fragments) {
+				printf("timeout.\n");
+				continue;
+			} else {
+				printf("reading done.\n");
+				break;
+			}
+		}
+
+		result = read(fd, buffer, sizeof(buffer));
+		if (result < 0) {
+			printf("read failed: %s\n", strerror(errno));
+			break;
+		}
+		if (result == 0) {
+			printf("server closed connection: %s\n",
+			       strerror(errno));
+			break;
+		}
+
+		printf("received %d bytes from server\n", result);
+		record = g_new0(struct record, 1);
+		record->length  = result;
+		record->msg     = g_memdup(buffer, result);
+		length         += result;
+		fragments = g_slist_append(fragments, record);
+	}
+
+	if (fragments) {
+		GSList *elem = fragments;
+		guchar *p;
+
+		printf("received a total of %" G_GSIZE_FORMAT " bytes.\n",
+		       length);
+
+		p = merged = g_malloc(length);
+		while (elem) {
+			struct record *record = elem->data;
+
+			memcpy(p, record->msg, record->length);
+			p += record->length;
+			g_free(record->msg);
+			g_free(record);
+
+			elem = elem->next;
+		}
+
+		g_slist_free(fragments);
+	}
+
+	*in_length = length;
+	return(merged);
+}
+
+static void tls_handshake(struct sipe_tls_state *state,
+			  int fd)
+{
+	printf("TLS handshake starting...\n");
+
+	/* generate next handshake message */
+	while (sipe_tls_next(state)) {
+		int sent;
+
+		/* send buffer to server */
+		sent = write(fd, state->out_buffer, state->out_length);
+		if (sent < 0) {
+			printf("write to server failed: %s\n",
+			       strerror(errno));
+			break;
+		} else if ((unsigned int) sent < state->out_length) {
+			printf("could only write %d bytes, out of %" G_GSIZE_FORMAT "\n",
+			       sent, state->out_length);
+			break;
+		}
+
+		/* message sent, drop buffer */
+		g_free(state->out_buffer);
+		state->out_buffer = NULL;
+
+		state->in_buffer = read_tls_record(fd, &state->in_length);
+		if (!state->in_buffer) {
+			printf("end of data.\n");
+			break;
+		}
+	}
+
+	printf("TLS handshake done.\n");
+}
+
+
 static int tls_connect(const gchar *param)
 {
 	gchar **parts = g_strsplit(param, ":", 2);
@@ -179,6 +298,7 @@ int main(int argc, char *argv[])
 
 			fd = tls_connect((argc > 1) ? argv[1] : "localhost:8443");
 			if (fd >= 0) {
+				tls_handshake(state, fd);
 				close(fd);
 			}
 
