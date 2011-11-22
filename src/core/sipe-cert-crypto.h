@@ -45,19 +45,19 @@ struct sipe_cert_crypto *sipe_cert_crypto_init(void);
 /**
  * Free certificate crypto backend data
  *
- * @param ssc opaque pointer to backend private data
+ * @param scc opaque pointer to backend private data
  */
-void sipe_cert_crypto_free(struct sipe_cert_crypto *ssc);
+void sipe_cert_crypto_free(struct sipe_cert_crypto *scc);
 
 /**
  * Create a certificate request as Base64 encoded string
  *
- * @param ssc     opaque pointer to backend private data
+ * @param scc     opaque pointer to backend private data
  * @param subject subject for certificate request
  *
  * @return Base64 encoded string. Must be @g_free'd()
  */
-gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
+gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *scc,
 				const gchar *subject);
 
 /**
@@ -75,7 +75,7 @@ void sipe_cert_crypto_destroy(gpointer certificate);
  *
  * @return opaque pointer to certificate. Must be @sipe_cert_crypto_destroy()'d.
  */
-gpointer sipe_cert_crypto_decode(struct sipe_cert_crypto *ssc,
+gpointer sipe_cert_crypto_decode(struct sipe_cert_crypto *scc,
 				 const gchar *base64);
 
 /**
@@ -143,3 +143,12 @@ gsize sipe_cert_crypto_modulus_length(gpointer certificate);
  * @return opaque pointer to backend private key structure
  */
 gpointer sipe_cert_crypto_private_key(gpointer certificate);
+
+/**
+ * Create test certificate for internal key pair (ONLY USE FOR TEST CODE!!!)
+ *
+ * @param scc opaque pointer to backend private data
+ *
+ * @return opaque pointer to backend certificate structure
+ */
+gpointer sipe_cert_crypto_test_certificate(struct sipe_cert_crypto *scc);

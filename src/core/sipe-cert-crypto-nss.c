@@ -88,7 +88,7 @@ struct sipe_cert_crypto *sipe_cert_crypto_init(void)
 
 	if (slot) {
 		PK11RSAGenParams rsaParams;
-		struct sipe_cert_crypto *ssc = g_new0(struct sipe_cert_crypto, 1);
+		struct sipe_cert_crypto *scc = g_new0(struct sipe_cert_crypto, 1);
 
 		/* RSA parameters - should those be configurable? */
 #ifdef HAVE_VALGRIND
@@ -111,40 +111,41 @@ struct sipe_cert_crypto *sipe_cert_crypto_init(void)
 		rsaParams.pe                    = 65537;
 
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: generate key pair, this might take a while...");
-		ssc->private = PK11_GenerateKeyPair(slot,
+		scc->private = PK11_GenerateKeyPair(slot,
 						    CKM_RSA_PKCS_KEY_PAIR_GEN,
 						    &rsaParams,
-						    &ssc->public,
+						    &scc->public,
 						    PR_FALSE, /* not permanent */
 						    PR_TRUE,  /* sensitive */
 						    NULL);
-		if (ssc->private) {
+		if (scc->private) {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: key pair generated");
 			PK11_FreeSlot(slot);
-			return(ssc);
+			return(scc);
 		}
 
 		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: key generation failed");
-		g_free(ssc);
+		g_free(scc);
 		PK11_FreeSlot(slot);
 	}
 
 	return(NULL);
 }
 
-void sipe_cert_crypto_free(struct sipe_cert_crypto *ssc)
+void sipe_cert_crypto_free(struct sipe_cert_crypto *scc)
 {
-	if (ssc) {
-		if (ssc->public)
-			SECKEY_DestroyPublicKey(ssc->public);
-		if (ssc->private)
-			SECKEY_DestroyPrivateKey(ssc->private);
-		g_free(ssc);
+	if (scc) {
+		if (scc->public)
+			SECKEY_DestroyPublicKey(scc->public);
+		if (scc->private)
+			SECKEY_DestroyPrivateKey(scc->private);
+		g_free(scc);
 	}
 }
 
-static gchar *sign_certreq(CERTCertificateRequest *certreq,
-			   SECKEYPrivateKey *private)
+static gchar *sign_cert_or_certreq(CERTCertificate *cert,
+				   CERTCertificateRequest *certreq,
+				   SECKEYPrivateKey *private)
 {
 	PRArenaPool *arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
 	gchar *base64 = NULL;
@@ -152,7 +153,11 @@ static gchar *sign_certreq(CERTCertificateRequest *certreq,
 	if (arena) {
 		SECItem *encoding = SEC_ASN1EncodeItem(arena,
 						       NULL,
-						       certreq,
+						       cert ?
+						       (void *) cert :
+						       (void *) certreq,
+						       cert ?
+						       SEC_ASN1_GET(CERT_CertificateTemplate) :
 						       SEC_ASN1_GET(CERT_CertificateRequestTemplate));
 
 		if (encoding) {
@@ -169,40 +174,40 @@ static gchar *sign_certreq(CERTCertificateRequest *certreq,
 						     private,
 						     signtag)) {
 
-					SIPE_DEBUG_INFO_NOFORMAT("sign_certreq: request signed successfully");
+					SIPE_DEBUG_INFO_NOFORMAT("sign_cert_or_certreq: successfully signed");
 					base64 = g_base64_encode(raw.data, raw.len);
 
 				} else {
-					SIPE_DEBUG_ERROR_NOFORMAT("sign_certreq: signing failed");
+					SIPE_DEBUG_ERROR_NOFORMAT("sign_cert_or_certreq: signing failed");
 				}
 			} else {
-				SIPE_DEBUG_ERROR_NOFORMAT("sign_certreq: can't find signature algorithm");
+				SIPE_DEBUG_ERROR_NOFORMAT("sign_cert_or_certreq: can't find signature algorithm");
 			}
 
 			/* all memory allocated from "arena"
 			   SECITEM_FreeItem(encoding, PR_TRUE); */
 		} else {
-			SIPE_DEBUG_ERROR_NOFORMAT("sign_certreq: can't ASN.1 encode certreq");
+			SIPE_DEBUG_ERROR_NOFORMAT("sign_cert_or_certreq: can't ASN.1 encode data");
 		}
 
 		PORT_FreeArena(arena, PR_TRUE);
 	} else {
-		SIPE_DEBUG_ERROR_NOFORMAT("sign_certreq: can't allocate memory");
+		SIPE_DEBUG_ERROR_NOFORMAT("sign_cert_or_certreq: can't allocate memory");
 	}
 
 	return(base64);
 }
 
-gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
-				const gchar *subject)
+static CERTCertificateRequest *generate_request(struct sipe_cert_crypto *scc,
+						const gchar *subject)
 {
-	gchar *base64 = NULL;
 	SECItem *pkd;
+	CERTCertificateRequest *certreq = NULL;
 
-	if (!ssc || !subject)
+	if (!scc || !subject)
 		return(NULL);
 
-	pkd = SECKEY_EncodeDERSubjectPublicKeyInfo(ssc->public);
+	pkd = SECKEY_EncodeDERSubjectPublicKeyInfo(scc->public);
 	if (pkd) {
 		CERTSubjectPublicKeyInfo *spki = SECKEY_DecodeDERSubjectPublicKeyInfo(pkd);
 
@@ -212,30 +217,40 @@ gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *ssc,
 			g_free(cn);
 
 			if (name) {
-				CERTCertificateRequest *certreq = CERT_CreateCertificateRequest(name,
-												spki,
-												NULL);
-
-				if (certreq) {
-					base64 = sign_certreq(certreq, ssc->private);
-					CERT_DestroyCertificateRequest(certreq);
-				} else {
-					SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_create: certreq creation failed");
+				certreq = CERT_CreateCertificateRequest(name,
+									spki,
+									NULL);
+				if (!certreq) {
+					SIPE_DEBUG_ERROR_NOFORMAT("generate_request: certreq creation failed");
 				}
 
 				CERT_DestroyName(name);
 			} else {
-				SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_create: subject name creation failed");
+				SIPE_DEBUG_ERROR_NOFORMAT("generate_request: subject name creation failed");
 			}
 
 			SECKEY_DestroySubjectPublicKeyInfo(spki);
 		} else {
-			SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_create: DER decode public key info failed");
+			SIPE_DEBUG_ERROR_NOFORMAT("generate_request: DER decode public key info failed");
 		}
 
 		SECITEM_FreeItem(pkd, PR_TRUE);
 	} else {
-		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_create: DER encode failed");
+		SIPE_DEBUG_ERROR_NOFORMAT("generate_request: DER encode failed");
+	}
+
+	return(certreq);
+}
+
+gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *scc,
+				const gchar *subject)
+{
+	gchar *base64                   = NULL;
+	CERTCertificateRequest *certreq = generate_request(scc, subject);
+
+	if (certreq) {
+		base64 = sign_cert_or_certreq(NULL, certreq, scc->private);
+		CERT_DestroyCertificateRequest(certreq);
 	}
 
 	return(base64);
@@ -257,7 +272,7 @@ void sipe_cert_crypto_destroy(gpointer certificate)
 }
 
 /* generates certificate_nss in mode (a) */
-gpointer sipe_cert_crypto_decode(struct sipe_cert_crypto *ssc,
+gpointer sipe_cert_crypto_decode(struct sipe_cert_crypto *scc,
 				 const gchar *base64)
 {
 	struct certificate_nss *cn = g_new0(struct certificate_nss, 1);
@@ -270,7 +285,7 @@ gpointer sipe_cert_crypto_decode(struct sipe_cert_crypto *ssc,
 		return(NULL);
 	}
 
-	cn->key_pair = *ssc;
+	cn->key_pair = *scc;
 
 	return(cn);
 }
@@ -349,6 +364,65 @@ gsize sipe_cert_crypto_modulus_length(gpointer certificate)
 gpointer sipe_cert_crypto_private_key(gpointer certificate)
 {
 	return(((struct certificate_nss *) certificate)->key_pair.private);
+}
+
+/* Create test certificate for internal key pair (ONLY USE FOR TEST CODE!!!) */
+gpointer sipe_cert_crypto_test_certificate(struct sipe_cert_crypto *scc)
+{
+	CERTCertificateRequest *certreq = generate_request(scc, "test@test.com");
+	struct certificate_nss *cn = NULL;
+
+	if (certreq) {
+		/* self-signed */
+		CERTName *issuer = CERT_AsciiToName("CN=test@test.com");
+
+		if (issuer) {
+			/* we really don't need this certificate for long... */
+			CERTValidity *validity = CERT_CreateValidity(PR_Now(),
+								     PR_Now() + 600 * PR_USEC_PER_SEC);
+
+			if (validity) {
+				CERTCertificate *certificate = CERT_CreateCertificate(1,
+										      issuer,
+										      validity,
+										      certreq);
+
+				if (certificate) {
+					gchar *base64 = sign_cert_or_certreq(certificate,
+									     NULL,
+									     scc->private);
+
+					if (base64) {
+						cn = sipe_cert_crypto_decode(scc,
+									     base64);
+						if (!cn) {
+							SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: certificate decode failed");
+						}
+
+						g_free(base64);
+					} else {
+						SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: certificate signing failed");
+					}
+
+					CERT_DestroyCertificate(certificate);
+				} else {
+					SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: certificate creation failed");
+				}
+
+				CERT_DestroyValidity(validity);
+			} else {
+				SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: validity creation failed");
+			}
+
+			CERT_DestroyName(issuer);
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: issuer name creation failed");
+		}
+
+		CERT_DestroyCertificateRequest(certreq);
+	}
+
+	return(cn);
 }
 
 /*

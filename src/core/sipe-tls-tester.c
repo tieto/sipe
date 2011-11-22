@@ -158,25 +158,38 @@ static int tls_connect(const gchar *param)
 
 int main(int argc, char *argv[])
 {
-	int fd;
+	struct sipe_cert_crypto *scc;
 
 	sipe_crypto_init(FALSE);
 	srand(time(NULL));
 
-	fd = tls_connect((argc > 1) ? argv[1] : "localhost:8443");
-	if (fd >= 0) {
-		struct sipe_tls_state *state = sipe_tls_start(NULL);
+	scc = sipe_cert_crypto_init();
+	if (scc) {
+		gpointer certificate;
+		struct sipe_tls_state *state;
 
+		printf("SIPE cert crypto backend initialized.\n");
+
+		certificate = sipe_cert_crypto_test_certificate(scc);
+		state = sipe_tls_start(certificate);
 		if (state) {
-			printf("starting TLS handshake...\n");
+			int fd;
+
+			printf("SIPE TLS initialized.\n");
+
+			fd = tls_connect((argc > 1) ? argv[1] : "localhost:8443");
+			if (fd >= 0) {
+				close(fd);
+			}
 
 			sipe_tls_free(state);
 		}
 
-		close(fd);
+		sipe_cert_crypto_destroy(certificate);
+		sipe_cert_crypto_free(scc);
 	}
-
 	sipe_crypto_shutdown();
+
 	return(0);
 }
 
