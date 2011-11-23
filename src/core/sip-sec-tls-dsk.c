@@ -29,13 +29,16 @@
  *     http://ecn.channel9.msdn.com/o9/te/Europe/2010/pptx/unc310.pptx
  */
 
+#include <string.h>
+
 #include <glib.h>
 
 #include "sipe-common.h"
-#include "sipe-backend.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-tls-dsk.h"
+#include "sipe-backend.h"
+#include "sipe-digest.h"
 #include "sipe-tls.h"
 #include "sipe-utils.h"
 
@@ -121,13 +124,33 @@ sip_sec_make_signature__tls_dsk(SipSecContext context,
 				SipSecBuffer *signature)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
+	sip_uint32 result = SIP_SEC_E_INTERNAL_ERROR;
 
-	/* temporary */
-	(void)ctx;
-	(void)message;
-	(void)signature;
+	switch (ctx->algorithm) {
+	case SIPE_TLS_DIGEST_ALGORITHM_MD5:
+		signature->length = SIPE_DIGEST_HMAC_MD5_LENGTH;
+		signature->value  = g_malloc0(signature->length);
+		sipe_digest_hmac_md5(ctx->client_key, ctx->key_length,
+				     (guchar *) message, strlen(message),
+				     signature->value);
+		result = SIP_SEC_E_OK;
+		break;
 
-	return SIP_SEC_E_INTERNAL_ERROR;
+	case SIPE_TLS_DIGEST_ALGORITHM_SHA1:
+		signature->length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		signature->value  = g_malloc0(signature->length);
+		sipe_digest_hmac_sha1(ctx->client_key, ctx->key_length,
+				      (guchar *) message, strlen(message),
+				      signature->value);
+		result = SIP_SEC_E_OK;
+		break;
+
+	default:
+		/* this should not happen */
+		break;
+	}
+
+	return(result);
 }
 
 static sip_uint32
@@ -136,13 +159,38 @@ sip_sec_verify_signature__tls_dsk(SipSecContext context,
 				  SipSecBuffer signature)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
+	SipSecBuffer mac    = { 0, NULL };
+	sip_uint32 result   = SIP_SEC_E_INTERNAL_ERROR;
 
-	/* temporary */
-	(void)ctx;
-	(void)message;
-	(void)signature;
+	switch (ctx->algorithm) {
+	case SIPE_TLS_DIGEST_ALGORITHM_MD5:
+		mac.length = SIPE_DIGEST_HMAC_MD5_LENGTH;
+		mac.value  = g_malloc0(mac.length);
+		sipe_digest_hmac_md5(ctx->server_key, ctx->key_length,
+				     (guchar *) message, strlen(message),
+				     mac.value);
+		break;
 
-	return SIP_SEC_E_INTERNAL_ERROR;
+	case SIPE_TLS_DIGEST_ALGORITHM_SHA1:
+		mac.length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		mac.value  = g_malloc0(mac.length);
+		sipe_digest_hmac_sha1(ctx->server_key, ctx->key_length,
+				      (guchar *) message, strlen(message),
+				      mac.value);
+		break;
+
+	default:
+		/* this should not happen */
+		break;
+	}
+
+	if (mac.value) {
+		result = memcmp(signature.value, mac.value, mac.length) ?
+			SIP_SEC_E_INTERNAL_ERROR : SIP_SEC_E_OK;
+		g_free(mac.value);
+	}
+
+	return(result);
 }
 
 static void
