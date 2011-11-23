@@ -274,6 +274,21 @@ static void debug_hex(struct tls_internal_state *state,
 #define debug_printf(state, format, ...) \
 	if (state->debug) g_string_append_printf(state->debug, format, __VA_ARGS__)
 
+static void debug_secrets(struct tls_internal_state *state,
+			  const gchar *label,
+			  const guchar *secret,
+			  gsize secret_length)
+{
+	if (state->debug) {
+		g_string_append_printf(state->debug, "%s = ",
+				       label);
+		while (secret_length--)
+			g_string_append_printf(state->debug, "%02X", *secret++);
+		SIPE_DEBUG_INFO_NOFORMAT(state->debug->str);
+		g_string_truncate(state->debug, 0);
+	}
+}
+
 /*
  * TLS Pseudorandom Function (PRF) - RFC2246, Section 5
  */
@@ -385,7 +400,8 @@ guchar *sipe_tls_p_sha1(const guchar *secret,
 	return(output);
 }
 
-static guchar *sipe_tls_prf(const guchar *secret,
+static guchar *sipe_tls_prf(SIPE_UNUSED_PARAMETER struct tls_internal_state *state,
+			    const guchar *secret,
 			    gsize secret_length,
 			    const guchar *label,
 			    gsize label_length,
@@ -400,6 +416,7 @@ static guchar *sipe_tls_prf(const guchar *secret,
 	guchar *newseed = g_malloc(newseed_length);
 	guchar *md5, *dest;
 	guchar *sha1, *src;
+	gsize count;
 
 	/*
 	 * PRF(secret, label, seed) = P_MD5(S1, label + seed) XOR
@@ -407,16 +424,40 @@ static guchar *sipe_tls_prf(const guchar *secret,
 	 */
 	memcpy(newseed, label, label_length);
 	memcpy(newseed + label_length, seed, seed_length);
+#define __SIPE_TLS_CRYPTO_DEBUG
+#ifdef __SIPE_TLS_CRYPTO_DEBUG
+	debug_secrets(state, "sipe_tls_prf: secret                    ",
+		      secret,  secret_length);
+	debug_secrets(state, "sipe_tls_prf: combined seed             ",
+		      newseed, newseed_length);
+	SIPE_DEBUG_INFO("total seed length %" G_GSIZE_FORMAT,
+			newseed_length);
+	debug_secrets(state, "sipe_tls_prf: S1                        ",
+		      secret,  half);
+	debug_secrets(state, "sipe_tls_prf: S2                        ",
+		      secret2, half);
+#endif
 	md5  = sipe_tls_p_md5(secret,   half, newseed, newseed_length, output_length);
 	sha1 = sipe_tls_p_sha1(secret2, half, newseed, newseed_length, output_length);
-	for (dest = md5, src = sha1;
-	     output_length > 0;
-	     output_length--)
+#ifdef __SIPE_TLS_CRYPTO_DEBUG
+	debug_secrets(state, "sipe_tls_prf: P_md5()                   ",
+		      md5,  output_length);
+	debug_secrets(state, "sipe_tls_prf: P_sha1()                  ",
+		      sha1, output_length);
+#endif
+	for (dest = md5, src = sha1, count = output_length;
+	     count > 0;
+	     count--)
 		*dest++ ^= *src++;
 
 	g_free(sha1);
 	g_free(newseed);
 	g_free(secret2);
+
+#ifdef __SIPE_TLS_CRYPTO_DEBUG
+	debug_secrets(state, "sipe_tls_prf: PRF()                     ",
+		      md5,  output_length);
+#endif
 
 	return(md5);
 }
@@ -1134,21 +1175,6 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 	return(label != NULL);
 }
 
-static void debug_secrets(struct tls_internal_state *state,
-			  const gchar *label,
-			  const guchar *secret,
-			  gsize secret_length)
-{
-	if (state->debug) {
-		g_string_append_printf(state->debug, "tls_calculate_secrets: %s ",
-				       label);
-		while (secret_length--)
-			g_string_append_printf(state->debug, "%02X", *secret++);
-		SIPE_DEBUG_INFO_NOFORMAT(state->debug->str);
-		g_string_truncate(state->debug, 0);
-	}
-}
-
 static void tls_calculate_secrets(struct tls_internal_state *state)
 {
 	gsize length = 2 * (state->mac_length + state->key_length);
@@ -1159,7 +1185,7 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 			     TLS_ARRAY_MASTER_SECRET_LENGTH * 8); /* bits */
 	lowlevel_integer_to_tls(state->pre_master_secret.buffer, 2,
 				TLS_PROTOCOL_VERSION_1_0);
-	debug_secrets(state, "pre-master secret",
+	debug_secrets(state, "tls_calculate_secrets: pre-master secret",
 		      state->pre_master_secret.buffer,
 		      state->pre_master_secret.length);
 
@@ -1177,14 +1203,15 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 	memcpy(random + TLS_ARRAY_RANDOM_LENGTH,
 	       state->server_random.buffer,
 	       TLS_ARRAY_RANDOM_LENGTH);
-	state->master_secret = sipe_tls_prf(state->pre_master_secret.buffer,
+	state->master_secret = sipe_tls_prf(state,
+					    state->pre_master_secret.buffer,
 					    state->pre_master_secret.length,
 					    (guchar *) "master secret",
 					    13,
 					    random,
 					    TLS_ARRAY_RANDOM_LENGTH * 2,
 					    TLS_ARRAY_MASTER_SECRET_LENGTH);
-	debug_secrets(state, "master secret",
+	debug_secrets(state, "tls_calculate_secrets: master secret    ",
 		      state->master_secret,
 		      TLS_ARRAY_MASTER_SECRET_LENGTH);
 
@@ -1203,7 +1230,8 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 	memcpy(random + TLS_ARRAY_RANDOM_LENGTH,
 	       state->client_random.buffer,
 	       TLS_ARRAY_RANDOM_LENGTH);
-	state->key_block = sipe_tls_prf(state->master_secret,
+	state->key_block = sipe_tls_prf(state,
+					state->master_secret,
 					TLS_ARRAY_MASTER_SECRET_LENGTH,
 					(guchar *) "key expansion",
 					13,
@@ -1211,7 +1239,8 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 					TLS_ARRAY_RANDOM_LENGTH * 2,
 					length);
 	g_free(random);
-	debug_secrets(state, "key block", state->key_block, length);
+	debug_secrets(state, "tls_calculate_secrets: key block        ",
+		      state->key_block, length);
 
 	/* partition key block */
 	state->client_write_mac_secret = state->key_block;
@@ -1224,12 +1253,82 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 						     state->key_length);
 }
 
+#if 0 /* NOT NEEDED? */
+/* signing */
+static guchar *tls_pkcs1_private_padding(SIPE_UNUSED_PARAMETER struct tls_internal_state *state,
+					 const guchar *data,
+					 gsize data_length,
+					 gsize buffer_length)
+{
+	gsize pad_length;
+	guchar *pad_buffer;
+
+	if (data_length + 3 > buffer_length)
+		return(NULL);
+
+	pad_length = buffer_length - data_length - 3;
+	pad_buffer = g_malloc(buffer_length);
+
+	/* PKCS1 private key block padding */
+	pad_buffer[0]                       = 0; /* +1 */
+	pad_buffer[1]                       = 1; /* +2 */
+	memset(pad_buffer + 2,              0xFF, pad_length);
+	pad_buffer[2 + pad_length]          = 0; /* +3 */
+	memcpy(pad_buffer + 3 + pad_length, data, data_length);
+
+#ifdef __SIPE_TLS_CRYPTO_DEBUG
+	debug_secrets(state, "tls_pkcs1_private_padding:              ",
+		      pad_buffer, buffer_length);
+#endif
+
+	return(pad_buffer);
+}
+#endif
+
+/* encryption */
+static guchar *tls_pkcs1_public_padding(SIPE_UNUSED_PARAMETER struct tls_internal_state *state,
+					const guchar *data,
+					gsize data_length,
+					gsize buffer_length)
+{
+	gsize pad_length, random_count;
+	guchar *pad_buffer, *random;
+
+	if (data_length + 3 > buffer_length)
+		return(NULL);
+
+	pad_length = buffer_length - data_length - 3;
+	pad_buffer = g_malloc(buffer_length);
+
+	/* PKCS1 public key block padding */
+	pad_buffer[0]                       = 0; /* +1 */
+	pad_buffer[1]                       = 2; /* +2 */
+	for (random = pad_buffer + 2, random_count = pad_length;
+	     random_count > 0;
+	     random_count--) {
+		guchar byte;
+		/* non-zero random byte */
+		while ((byte = rand() & 0xFF) == 0);
+		*random++ = byte;
+	}
+	pad_buffer[2 + pad_length]          = 0; /* +3 */
+	memcpy(pad_buffer + 3 + pad_length, data, data_length);
+
+#ifdef __SIPE_TLS_CRYPTO_DEBUG
+	debug_secrets(state, "tls_pkcs1_private_padding:              ",
+		      pad_buffer, buffer_length);
+#endif
+
+	return(pad_buffer);
+}
+
 static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_state *state)
 {
 	struct tls_parsed_array *server_random;
 	struct tls_parsed_array *server_certificate;
 	struct ClientKeyExchange_host *exchange;
 	gsize server_certificate_length;
+	guchar *padded;
 	struct tls_compiled_message *msg;
 
 	/* check for required data fields */
@@ -1279,17 +1378,33 @@ static struct tls_compiled_message *tls_client_key_exchange(struct tls_internal_
 	tls_calculate_secrets(state);
 
 	/* ClientKeyExchange */
+	padded = tls_pkcs1_public_padding(state,
+					  state->pre_master_secret.buffer,
+					  state->pre_master_secret.length,
+					  server_certificate_length);
+	if (!padded) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: padding of pre-master secret failed");
+		return(NULL);
+	}
 	exchange = g_malloc0(sizeof(struct ClientKeyExchange_host) +
 			     server_certificate_length);
 	exchange->secret.elements = server_certificate_length;
 	if (!sipe_crypt_rsa_encrypt(sipe_cert_crypto_public_key(state->server_certificate),
-				    TLS_ARRAY_MASTER_SECRET_LENGTH,
-				    state->pre_master_secret.buffer,
+				    server_certificate_length,
+				    padded,
 				    (guchar *) exchange->secret.placeholder)) {
 		SIPE_DEBUG_ERROR_NOFORMAT("tls_client_key_exchange: encryption of pre-master secret failed");
 		g_free(exchange);
+		g_free(padded);
 		return(NULL);
 	}
+	g_free(padded);
+
+#ifdef __SIPE_TLS_CRYPTO_DEBUG
+	debug_secrets(state, "tls_client_key_exchange: secret (encr)  ",
+		      (guchar *) exchange->secret.placeholder,
+		      server_certificate_length);
+#endif
 
 	msg = compile_handshake_msg(state, &ClientKeyExchange_m, exchange,
 				    sizeof(struct ClientKeyExchange_host) + server_certificate_length);
@@ -1350,7 +1465,8 @@ static struct tls_compiled_message *tls_client_finished(struct tls_internal_stat
 	 *                   MD5(handshake_messages) +
 	 *                   SHA-1(handshake_messages)) [0..11];
 	 */
-	verify = sipe_tls_prf(state->master_secret,
+	verify = sipe_tls_prf(state,
+			      state->master_secret,
 			      TLS_ARRAY_MASTER_SECRET_LENGTH,
 			      (guchar *) "client finished",
 			      15,
