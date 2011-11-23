@@ -169,6 +169,8 @@ sipe_xml_tests_LDADD = \
 TESTS_ENVIRONMENT = G_SLICE="always-malloc"
 TESTS = $(check_PROGRAMS)
 
+if !SIPE_OS_WIN32
+# TODO: the code needs some TLC from a MinGW expert to compile...
 noinst_PROGRAMS = sipe_tls_tester
 sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
@@ -179,3 +181,4 @@ sipe_tls_tester_LDADD = \
 	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
 	$(NSS_LIBS) \
 	$(GLIB_LIBS)
+endif
