@@ -85,6 +85,7 @@ struct tls_internal_state {
 			 guchar *digest);
 	gpointer cipher_context;
 	guint64 sequence_number;
+	gboolean encrypted;
 };
 
 /*
@@ -913,8 +914,18 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		}
 
 		switch (bytes[TLS_RECORD_OFFSET_TYPE]) {
+		case TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC:
+			debug_print(state, "Change Cipher Spec\n");
+			if (incoming) state->encrypted = TRUE;
+			break;
+
 		case TLS_RECORD_TYPE_HANDSHAKE:
-			success = handshake_parse(state);
+			if (incoming && state->encrypted) {
+				debug_print(state, "Encrypted handshake message\n");
+				debug_hex(state, 0);
+			} else {
+				success = handshake_parse(state);
+			}
 			break;
 
 		default:
