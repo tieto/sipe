@@ -491,7 +491,7 @@ Response:
 	msg = sipmsg_parse_msg(msg2);
 
 	msgbd.msg = msg;
-	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com", NULL);
 	msg_str = sipmsg_breakdown_get_string(2, &msgbd);
 	sip_sec_ntlm_sipe_signature_make (NEGOTIATE_FLAGS_CONNLESS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,
 		msg_str, 0, exported_session_key2, exported_session_key2, mac);
@@ -747,7 +747,7 @@ Message (length 352):
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nClient request\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(request);
 	msgbd.msg = msg;
-	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 	assert_equal (request_sig, (guchar *)msg_str, strlen(request_sig), FALSE);
 	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key, mac);
@@ -758,7 +758,7 @@ Message (length 352):
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nServer response\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(response);
 	msgbd.msg = msg;
-	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 	assert_equal (response_sig, (guchar *)msg_str, strlen(response_sig), FALSE);
 	// server keys here
@@ -844,7 +844,7 @@ Message (length 352):
 
 	msg = sipmsg_parse_msg(response_symbian);
 	msgbd.msg = msg;
-	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "LOC-COMPANYT-FE03.COMPANY.COM");
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "LOC-COMPANYT-FE03.COMPANY.COM", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 
 	assert_equal (response_sig, (guchar *)msg_str, strlen(response_sig), FALSE);

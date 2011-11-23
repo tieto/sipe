@@ -81,6 +81,7 @@ struct sip_auth {
 	struct sip_sec_context *gssapi_context;
 	gchar *gssapi_data;
 	gchar *opaque;
+	const gchar *protocol;
 	gchar *realm;
 	gchar *sts_uri;
 	gchar *target;
@@ -130,6 +131,7 @@ static void sipe_auth_free(struct sip_auth *auth)
 {
 	g_free(auth->opaque);
 	auth->opaque = NULL;
+	auth->protocol = NULL;
 	g_free(auth->realm);
 	auth->realm = NULL;
 	g_free(auth->sts_uri);
@@ -155,7 +157,8 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 		struct sipmsg_breakdown msgbd;
 		gchar *signature_input_str;
 		msgbd.msg = msg;
-		sipmsg_breakdown_parse(&msgbd, transport->registrar.realm, transport->registrar.target);
+		sipmsg_breakdown_parse(&msgbd, transport->registrar.realm, transport->registrar.target,
+				       transport->registrar.protocol);
 		msgbd.rand = g_strdup_printf("%08x", g_random_int());
 		transport->registrar.ntlm_num++;
 		msgbd.num = g_strdup_printf("%d", transport->registrar.ntlm_num);
@@ -191,7 +194,7 @@ static gchar *msg_signature_to_auth(struct sip_auth *auth,
 				    struct sipmsg *msg)
 {
 	return(g_strdup_printf("%s qop=\"auth\", opaque=\"%s\", realm=\"%s\", targetname=\"%s\", crand=\"%s\", cnum=\"%s\", response=\"%s\"",
-			       auth_type_to_protocol[auth->type],
+			       auth->protocol,
 			       auth->opaque, auth->realm, auth->target,
 			       msg->rand, msg->num, msg->signature));
 }
@@ -265,6 +268,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 
 				/* we can't authenticate the message yet */
 				sipe_private->transport->auth_incomplete = TRUE;
+
 				return(NULL);
 			} else {
 				SIPE_DEBUG_INFO("initialize_auth_context: TLS-DSK certificate for target '%s' found.",
@@ -310,7 +314,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 	opaque_str = auth->opaque ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup("");
 	version_str = auth_header_version(auth);
 	ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\"%s%s%s",
-			      auth_type_to_protocol[auth->type], opaque_str,
+			      auth->protocol, opaque_str,
 			      auth->realm, auth->target,
 			      gssapi_str, version_str, sign_str);
 	g_free(version_str);
@@ -325,7 +329,7 @@ static gchar *start_auth_handshake(struct sip_auth *auth)
 {
 	gchar *version_str = auth_header_version(auth);
 	gchar *ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s",
-				     auth_type_to_protocol[auth->type],
+				     auth->protocol,
 				     auth->realm, auth->target,
 				     version_str);
 	g_free(version_str);
@@ -893,8 +897,9 @@ static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
 	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
 		auth->type = AUTH_TYPE_TLS_DSK;
 	}
-	return(sipmsg_find_auth_header(msg,
-				       auth_type_to_protocol[auth->type]));
+	auth->protocol = auth_type_to_protocol[auth->type];
+
+	return(sipmsg_find_auth_header(msg, auth->protocol));
 }
 
 static void do_register(struct sipe_core_private *sipe_private,
@@ -1524,7 +1529,8 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 							if (protocol &&
 							    !g_strncasecmp(auth_hdr, protocol, strlen(protocol))) {
 								SIPE_DEBUG_INFO("proxy auth: type %s", protocol);
-								transport->proxy.type = i;
+								transport->proxy.type     = i;
+								transport->proxy.protocol = protocol;
 								break;
 							}
 						}
@@ -1631,7 +1637,8 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			gchar *signature_input_str;
 			gchar *rspauth;
 			msgbd.msg = msg;
-			sipmsg_breakdown_parse(&msgbd, transport->registrar.realm, transport->registrar.target);
+			sipmsg_breakdown_parse(&msgbd, transport->registrar.realm, transport->registrar.target,
+					       transport->registrar.protocol);
 			signature_input_str = sipmsg_breakdown_get_string(transport->registrar.version, &msgbd);
 
 			rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
