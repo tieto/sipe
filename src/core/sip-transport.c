@@ -1201,8 +1201,11 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				const char *auth_hdr;
 
 				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
-				if (transport->registrar.retries > 2) {
-					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: still not authenticated after 3 tries - giving up.");
+				if (transport->registrar.gssapi_context                           &&
+				    sip_sec_context_is_ready(transport->registrar.gssapi_context) &&
+				    (transport->registrar.retries > 2)) {
+					SIPE_DEBUG_INFO("process_register_response: still not authenticated after %d tries - giving up.",
+							transport->registrar.retries);
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
