@@ -184,6 +184,12 @@ static void tls_handshake(struct sipe_tls_state *state,
 	while (sipe_tls_next(state)) {
 		int sent;
 
+		/* handshake completed? */
+		if (!state->out_buffer) {
+			printf("Handshake completed.\n");
+			break;
+		}
+
 		/* send buffer to server */
 		sent = write(fd, state->out_buffer, state->out_length);
 		if (sent < 0) {

@@ -1613,14 +1613,13 @@ static gboolean tls_finished(struct tls_internal_state *state)
 	if (!tls_record_parse(state, TRUE))
 		return(FALSE);
 
-	/* TBD: data is really not needed? */
+	/* we don't need the data */
 	free_parse_data(state);
 
 	state->common.out_buffer = NULL;
 	state->common.out_length = 0;
 	state->state             = TLS_HANDSHAKE_STATE_COMPLETED;
 
-	/* temporary */
 	return(TRUE);
 }
 
