@@ -32,6 +32,7 @@
 #include <glib.h>
 
 #include "sipe-common.h"
+#include "sipe-backend.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-tls-dsk.h"
@@ -42,6 +43,10 @@
 typedef struct _context_tls_dsk {
 	struct sip_sec_context common;
 	struct sipe_tls_state *state;
+	enum sipe_tls_digest_algorithm algorithm;
+	guchar *client_key;
+	guchar *server_key;
+	gsize key_length;
 } *context_tls_dsk;
 
 /* sip-sec-mech.h API implementation for TLS-DSK */
@@ -78,11 +83,21 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 	state->in_length = in_buff.length;
 
 	if (sipe_tls_next(state)) {
-		if (state->session_key) {
+		if ((state->algorithm != SIPE_TLS_DIGEST_ALGORITHM_NONE) &&
+		    state->client_key && state->server_key) {
 			/* Authentication is completed */
 			ctx->common.is_ready = TRUE;
 
-			/* TBD... copy session key */
+			/* copy key pair */
+			ctx->algorithm  = state->algorithm;
+			ctx->key_length = state->key_length;
+			ctx->client_key = g_memdup(state->client_key,
+						   state->key_length);
+			ctx->server_key = g_memdup(state->server_key,
+						   state->key_length);
+
+			SIPE_DEBUG_INFO("sip_sec_init_sec_context__tls_dsk: handshake completed, algorithm %d, key length %" G_GSIZE_FORMAT,
+					ctx->algorithm, ctx->key_length);
 
 			sipe_tls_free(state);
 			ctx->state = NULL;
@@ -136,6 +151,8 @@ sip_sec_destroy_sec_context__tls_dsk(SipSecContext context)
 	context_tls_dsk ctx = (context_tls_dsk) context;
 
 	sipe_tls_free(ctx->state);
+	g_free(ctx->client_key);
+	g_free(ctx->server_key);
 	g_free(ctx);
 }
 

@@ -76,6 +76,7 @@ struct tls_internal_state {
 	gsize key_length;
 	guchar *master_secret;
 	guchar *key_block;
+	guchar *tls_dsk_key_block;
 	const guchar *client_write_mac_secret;
 	const guchar *server_write_mac_secret;
 	const guchar *client_write_secret;
@@ -281,8 +282,8 @@ static void debug_secrets(struct tls_internal_state *state,
 			  gsize secret_length)
 {
 	if (state->debug) {
-		g_string_append_printf(state->debug, "%s = ",
-				       label);
+		g_string_append_printf(state->debug, "%s (%3" G_GSIZE_FORMAT ") = ",
+				       label, secret_length);
 		while (secret_length--)
 			g_string_append_printf(state->debug, "%02X", *secret++);
 		SIPE_DEBUG_INFO_NOFORMAT(state->debug->str);
@@ -1157,6 +1158,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->key_length = 40 / 8;
 		state->mac_func   = sipe_digest_hmac_md5;
 		label             = "MD5";
+		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		break;
 
 	case TLS_RSA_WITH_RC4_128_MD5:
@@ -1164,6 +1166,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->key_length = 128 / 8;
 		state->mac_func   = sipe_digest_hmac_md5;
 		label             = "MD5";
+		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		break;
 
 	case TLS_RSA_WITH_RC4_128_SHA:
@@ -1171,6 +1174,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->key_length = 128 / 8;
 		state->mac_func   = sipe_digest_hmac_sha1;
 		label             = "SHA-1";
+		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
 	default:
@@ -1610,11 +1614,56 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 
 static gboolean tls_finished(struct tls_internal_state *state)
 {
+	guchar *random;
+
 	if (!tls_record_parse(state, TRUE))
 		return(FALSE);
 
 	/* we don't need the data */
 	free_parse_data(state);
+
+	/*
+	 * Calculate session keys [MS-SIPAE section 3.2.5.1]
+	 *
+	 * key_material = PRF (master_secret,
+	 *                     "client EAP encryption",
+	 *                     ClientHello.random + ServerHello.random)[128]
+	 *              = 4 x 32 Bytes
+	 *
+	 * client key = key_material[3rd 32 Bytes]
+	 * server key = key_material[4th 32 Bytes]
+	 */
+	random = g_malloc(TLS_ARRAY_RANDOM_LENGTH * 2);
+	memcpy(random,
+	       state->client_random.buffer,
+	       TLS_ARRAY_RANDOM_LENGTH);
+	memcpy(random + TLS_ARRAY_RANDOM_LENGTH,
+	       state->server_random.buffer,
+	       TLS_ARRAY_RANDOM_LENGTH);
+	state->tls_dsk_key_block = sipe_tls_prf(state,
+						state->master_secret,
+						TLS_ARRAY_MASTER_SECRET_LENGTH,
+						(guchar *) "client EAP encryption",
+						21,
+						random,
+						TLS_ARRAY_RANDOM_LENGTH * 2,
+						4 * 32);
+
+#ifdef __SIPE_TLS_CRYPTO_DEBUG
+	debug_secrets(state, "tls_finished: TLS-DSK key block         ",
+		      state->tls_dsk_key_block, 4 * 32);
+#endif
+
+	state->common.client_key = state->tls_dsk_key_block + 2 * 32;
+	state->common.server_key = state->tls_dsk_key_block + 3 * 32;
+	state->common.key_length = 32;
+
+	debug_secrets(state, "tls_finished: TLS-DSK client key        ",
+		      state->common.client_key,
+		      state->common.key_length);
+	debug_secrets(state, "tls_finished: TLS-DSK server key        ",
+		      state->common.server_key,
+		      state->common.key_length);
 
 	state->common.out_buffer = NULL;
 	state->common.out_length = 0;
@@ -1639,6 +1688,7 @@ struct sipe_tls_state *sipe_tls_start(gpointer certificate)
 	state->state        = TLS_HANDSHAKE_STATE_START;
 	state->md5_context  = sipe_digest_md5_start();
 	state->sha1_context = sipe_digest_sha1_start();
+	state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_NONE;
 
 	return((struct sipe_tls_state *) state);
 }
@@ -1690,6 +1740,7 @@ void sipe_tls_free(struct sipe_tls_state *state)
 		free_parse_data(internal);
 		if (internal->debug)
 			g_string_free(internal->debug, TRUE);
+		g_free(internal->tls_dsk_key_block);
 		g_free(internal->key_block);
 		g_free(internal->master_secret);
 		sipe_tls_free_random(&internal->pre_master_secret);
@@ -1702,7 +1753,6 @@ void sipe_tls_free(struct sipe_tls_state *state)
 		if (internal->sha1_context)
 			sipe_digest_sha1_destroy(internal->sha1_context);
 		sipe_cert_crypto_destroy(internal->server_certificate);
-		g_free(state->session_key);
 		g_free(state->out_buffer);
 		g_free(state);
 	}

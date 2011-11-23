@@ -57,12 +57,19 @@ void sipe_tls_free_random(struct sipe_tls_random *random);
  *
  * If @c session_key != @c NULL then handshake is complete
  */
+enum sipe_tls_digest_algorithm {
+  SIPE_TLS_DIGEST_ALGORITHM_NONE,
+  SIPE_TLS_DIGEST_ALGORITHM_MD5,
+  SIPE_TLS_DIGEST_ALGORITHM_SHA1
+};
 struct sipe_tls_state {
   const guchar *in_buffer;
   guchar *out_buffer;
   gsize in_length;
   gsize out_length;
-  guchar *session_key;
+  enum sipe_tls_digest_algorithm algorithm;
+  const guchar *client_key;
+  const guchar *server_key;
   gsize key_length;
 };
 
