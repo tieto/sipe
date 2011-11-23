@@ -187,7 +187,15 @@ void sipe_digest_md5_update(gpointer context, const guchar *data, gsize length)
 
 void sipe_digest_md5_end(gpointer context, guchar *digest)
 {
+	unsigned int saved_length;
+	/* save context to ensure this function can be called multiple times */
+	guchar *saved = PK11_SaveContextAlloc(context,
+					      NULL,
+					      0,
+					      &saved_length);
 	sipe_digest_ctx_digest(context, digest, SIPE_DIGEST_MD5_LENGTH);
+	PK11_RestoreContext(context, saved, saved_length);
+	PORT_Free(saved);
 }
 
 void sipe_digest_md5_destroy(gpointer context)
@@ -207,7 +215,15 @@ void sipe_digest_sha1_update(gpointer context, const guchar *data, gsize length)
 
 void sipe_digest_sha1_end(gpointer context, guchar *digest)
 {
+	unsigned int saved_length;
+	/* save context to ensure this function can be called multiple times */
+	guchar *saved = PK11_SaveContextAlloc(context,
+					      NULL,
+					      0,
+					      &saved_length);
 	sipe_digest_ctx_digest(context, digest, SIPE_DIGEST_SHA1_LENGTH);
+	PK11_RestoreContext(context, saved, saved_length);
+	PORT_Free(saved);
 }
 
 void sipe_digest_sha1_destroy(gpointer context)

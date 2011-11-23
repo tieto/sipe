@@ -424,7 +424,7 @@ static guchar *sipe_tls_prf(SIPE_UNUSED_PARAMETER struct tls_internal_state *sta
 	 */
 	memcpy(newseed, label, label_length);
 	memcpy(newseed + label_length, seed, seed_length);
-#define __SIPE_TLS_CRYPTO_DEBUG
+#undef __SIPE_TLS_CRYPTO_DEBUG
 #ifdef __SIPE_TLS_CRYPTO_DEBUG
 	debug_secrets(state, "sipe_tls_prf: secret                    ",
 		      secret,  secret_length);
