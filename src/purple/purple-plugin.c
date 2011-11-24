@@ -251,6 +251,7 @@ static void sipe_purple_login(PurpleAccount *account)
 	const gchar *email     = purple_account_get_string(account, "email", NULL);
 	const gchar *email_url = purple_account_get_string(account, "email_url", NULL);
 	const gchar *transport = purple_account_get_string(account, "transport", "auto");
+	const gchar *auth      = purple_account_get_string(account, "authentication", "ntlm");
 	struct sipe_core_public *sipe_public;
 	gchar **username_split;
 	gchar *login_domain = NULL;
@@ -306,16 +307,22 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	sipe_purple_chat_setup_rejoin(purple_private);
 
+	/* map option list to flags - default is NTLM */
+	SIPE_CORE_FLAG_UNSET(KRB5);
+	SIPE_CORE_FLAG_UNSET(TLS_DSK);
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-	if (purple_account_get_bool(account, "krb5", FALSE))
+	if (sipe_strequal(auth, "krb5")) {
 		SIPE_CORE_FLAG_SET(KRB5);
+	} else
 #endif
+	if (sipe_strequal(auth, "tls-dsk")) {
+		SIPE_CORE_FLAG_SET(TLS_DSK);
+	}
+
 	/* @TODO: is this correct?
-	   "sso" is only available when Kerberos support is compiled in */
+	   "sso" is only available when Kerberos/SSPI support is compiled in */
 	if (purple_account_get_bool(account, "sso", TRUE))
 		SIPE_CORE_FLAG_SET(SSO);
-	if (purple_account_get_bool(account, "tls-dsk", FALSE))
-		SIPE_CORE_FLAG_SET(TLS_DSK);
 
 	gc->proto_data = sipe_public;
 	sipe_purple_setup(sipe_public, gc);
@@ -819,10 +826,15 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_string_new(_("User Agent"), "useragent", "");
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
+	option = purple_account_option_list_new(_("Authentication scheme"), "authentication", NULL);
+	purple_account_option_add_list_item(option, _("NTLM"), "ntlm");
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-	option = purple_account_option_bool_new(_("Use Kerberos"), "krb5", FALSE);
+	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
+#endif
+	purple_account_option_add_list_item(option, _("TLS-DSK"), "tls-dsk");
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	/* Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 	 * No login/password is taken into account if this option present,
 	 * instead used default credentials stored in OS.
@@ -830,9 +842,6 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 #endif
-
-	option = purple_account_option_bool_new(_("Use TLS-DSK"), "tls-dsk", FALSE);
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/** Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
