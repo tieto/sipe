@@ -4,12 +4,14 @@
 # 
 # 
 # 
+# Translators:
+# Stefan Becker <chemobejk@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-04-25 14:27+0000\n"
+"PO-Revision-Date: 2011-11-24 20:19+0000\n"
 "Last-Translator: stefanb <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -18,139 +20,148 @@ msgstr ""
 "Language: sv\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: ../src/core/sip-transport.c:209
+#: ../src/core/sip-transport.c:228 ../src/core/sip-transport.c:291
 msgid "Failed to authenticate to server"
 msgstr "Misslyckades att autentisera till servern"
 
-#: ../src/core/sip-transport.c:1162
+#: ../src/core/sip-transport.c:255
+#, c-format
+msgid "Can't request certificate from %s"
+msgstr ""
+
+#: ../src/core/sip-transport.c:265
+msgid "No URI for certificate provisioning service provided"
+msgstr ""
+
+#: ../src/core/sip-transport.c:1217
 msgid "Authentication failed"
 msgstr "Autentiseringen  misslyckades"
 
-#: ../src/core/sip-transport.c:1177
+#: ../src/core/sip-transport.c:1231
 msgid "Incompatible authentication scheme chosen"
 msgstr "Inkompatibelt autentiseringsschema valt"
 
-#: ../src/core/sip-transport.c:1197 ../src/core/sipe.c:1522
+#: ../src/core/sip-transport.c:1248 ../src/core/sipe.c:1286
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Du nekades av servern: %s"
 
-#: ../src/core/sip-transport.c:1198 ../src/core/sip-transport.c:1214
-#: ../src/core/sip-transport.c:1238 ../src/core/sip-transport.c:1262
-#: ../src/core/sipe.c:1522 ../src/core/sipe-conf.c:269
+#: ../src/core/sip-transport.c:1249 ../src/core/sip-transport.c:1265
+#: ../src/core/sip-transport.c:1289 ../src/core/sip-transport.c:1313
+#: ../src/core/sipe.c:1286 ../src/core/sipe-conf.c:269
 msgid "no reason given"
 msgstr "ingen motivering angiven"
 
-#: ../src/core/sip-transport.c:1213
+#: ../src/core/sip-transport.c:1264
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Hittades inte: %s. Vänligen kontakta administratören"
 
-#: ../src/core/sip-transport.c:1215
+#: ../src/core/sip-transport.c:1266
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr ""
 "SIP är antingen inte aktiverad för den destinationen (URI) eller så den "
 "finns inte"
 
-#: ../src/core/sip-transport.c:1238 ../src/core/sip-transport.c:1262
+#: ../src/core/sip-transport.c:1289 ../src/core/sip-transport.c:1313
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Tjänsten är ej tillgänglig: %s"
 
-#: ../src/core/sip-transport.c:1586
+#: ../src/core/sip-transport.c:1654
 msgid "Invalid message signature received"
 msgstr "En ogiltig meddelandesignatur togs emot"
 
-#: ../src/core/sipe.c:139
+#: ../src/core/sipe.c:141
 msgid "Inactive"
 msgstr "Inaktiv"
 
-#: ../src/core/sipe.c:140 ../src/core/sipe-cal.c:938
-#: ../src/purple/purple-plugin.c:184
+#: ../src/core/sipe.c:142 ../src/core/sipe-cal.c:941
+#: ../src/purple/purple-plugin.c:195
 msgid "Busy"
 msgstr "Upptagen"
 
-#: ../src/core/sipe.c:141
+#: ../src/core/sipe.c:143
 msgid "Busy-Idle"
 msgstr "Upptagen"
 
-#: ../src/core/sipe.c:143 ../src/purple/purple-plugin.c:206
+#: ../src/core/sipe.c:145 ../src/purple/purple-plugin.c:217
 msgid "Be right back"
 msgstr "Strax tillbaka"
 
-#: ../src/core/sipe.c:145
+#: ../src/core/sipe.c:147
 msgid "Out to lunch"
 msgstr "På lunch"
 
-#: ../src/core/sipe.c:147
+#: ../src/core/sipe.c:149
 msgid "In a call"
 msgstr "I ett telefonsamtal"
 
-#: ../src/core/sipe.c:148
+#: ../src/core/sipe.c:150
 msgid "In a conference"
 msgstr "I en konferens"
 
-#: ../src/core/sipe.c:149
+#: ../src/core/sipe.c:151
 msgid "In a meeting"
 msgstr "I ett möte"
 
-#: ../src/core/sipe.c:150 ../src/core/sipe-cal.c:939
+#: ../src/core/sipe.c:152 ../src/core/sipe-cal.c:942
 msgid "Out of office"
 msgstr "Inte på kontoret"
 
-#: ../src/core/sipe.c:151
+#: ../src/core/sipe.c:153
 msgid "Urgent interruptions only"
 msgstr "Enbart brådskade ärenden får avbryta"
 
-#: ../src/core/sipe.c:540 ../src/core/sipe.c:1351 ../src/core/sipe.c:1361
-#: ../src/core/sipe.c:1382 ../src/core/sipe.c:5325
+#: ../src/core/sipe.c:1115 ../src/core/sipe.c:1125 ../src/core/sipe.c:1146
+#: ../src/core/sipe.c:5105 ../src/core/sipe-group.c:154
 msgid "Other Contacts"
 msgstr "Övriga Kontakter"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe.c:1514
+#: ../src/core/sipe.c:1278
 msgid "you are already signed in at another location"
 msgstr "Är du redan är inloggad på en annan plats"
 
-#: ../src/core/sipe.c:1516
+#: ../src/core/sipe.c:1280
 msgid "user disabled"
 msgstr "Användaren inaktiv"
 
-#: ../src/core/sipe.c:1518
+#: ../src/core/sipe.c:1282
 msgid "user moved"
 msgstr "Användarn flyttad"
 
-#: ../src/core/sipe.c:1865 ../src/core/sipe.c:6015
+#: ../src/core/sipe.c:1629 ../src/core/sipe.c:5821
 msgid "Blocked"
 msgstr "Blockerad"
 
-#: ../src/core/sipe.c:1866 ../src/core/sipe.c:6011
+#: ../src/core/sipe.c:1630 ../src/core/sipe.c:5817
 msgid "Personal"
 msgstr "Personligt"
 
 #. index 0
-#: ../src/core/sipe.c:1867 ../src/core/sipe.c:6012
+#: ../src/core/sipe.c:1631 ../src/core/sipe.c:5818
 msgid "Team"
 msgstr "Team"
 
-#: ../src/core/sipe.c:1868 ../src/core/sipe.c:5365 ../src/core/sipe.c:6013
-#: ../src/core/sipe.c:6314 ../src/purple/purple-plugin.c:597
+#: ../src/core/sipe.c:1632 ../src/core/sipe.c:5171 ../src/core/sipe.c:5819
+#: ../src/core/sipe.c:6126 ../src/purple/purple-plugin.c:664
 msgid "Company"
 msgstr "Företag"
 
-#: ../src/core/sipe.c:1869 ../src/core/sipe.c:6014
+#: ../src/core/sipe.c:1633 ../src/core/sipe.c:5820
 msgid "Public"
 msgstr "Publikt"
 
-#: ../src/core/sipe.c:1871
+#: ../src/core/sipe.c:1635
 msgid "Unknown"
 msgstr "Okänt"
 
-#: ../src/core/sipe.c:5166
+#: ../src/core/sipe.c:4946
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP Exchange-användarnamn får inte innehålla blanksteg"
 
-#: ../src/core/sipe.c:5174
+#: ../src/core/sipe.c:4954
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
@@ -158,7 +169,7 @@ msgstr ""
 "Användarnamnet måste vara ett giltigt SIP URI\n"
 "Exempel: user@company.com"
 
-#: ../src/core/sipe.c:5184
+#: ../src/core/sipe.c:4964
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
@@ -167,11 +178,11 @@ msgstr ""
 "\n"
 "Exempel: user@company.com"
 
-#: ../src/core/sipe.c:5193
+#: ../src/core/sipe.c:4973
 msgid "SIP Exchange user name contains whitespace"
 msgstr "SIP Exchange-användarnamn får inte innehålla blanksteg"
 
-#: ../src/core/sipe.c:5207
+#: ../src/core/sipe.c:4987
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
@@ -182,265 +193,327 @@ msgstr ""
 "Exempel: https://exchange.corp.com/EWS/Exchange.asmx\n"
 " Exempel: https://domino.corp.com/maildatabase.nsf"
 
-#: ../src/core/sipe.c:5353
+#: ../src/core/sipe.c:5126 ../src/core/sipe.c:5138
+msgid "Contact search failed"
+msgstr ""
+
+#: ../src/core/sipe.c:5148
+msgid "No contacts found"
+msgstr ""
+
+#: ../src/core/sipe.c:5159
 msgid "Unable to display the search results"
 msgstr "Det går inte att visa sökresultatet."
 
-#: ../src/core/sipe.c:5359
+#: ../src/core/sipe.c:5165
 msgid "User name"
 msgstr "Användarnamn"
 
-#: ../src/core/sipe.c:5362
+#: ../src/core/sipe.c:5168
 msgid "Name"
 msgstr "Namn"
 
-#: ../src/core/sipe.c:5368 ../src/core/sipe.c:6323
-#: ../src/purple/purple-plugin.c:599
+#: ../src/core/sipe.c:5174 ../src/core/sipe.c:6135
+#: ../src/purple/purple-plugin.c:666
 msgid "Country"
 msgstr "Land"
 
-#: ../src/core/sipe.c:5371
+#: ../src/core/sipe.c:5177
 msgid "Email"
 msgstr "E-post"
 
-#: ../src/core/sipe.c:5398
+#: ../src/core/sipe.c:5204
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "Hittade %d kontakt%s:"
 msgstr[1] "Hittade %d kontakter%s:"
 
-#: ../src/core/sipe.c:5400
+#: ../src/core/sipe.c:5206
 msgid " (more matched your query)"
 msgstr " (flera matchade din fråga)"
 
-#: ../src/core/sipe.c:5551
+#: ../src/core/sipe.c:5357
 msgid "Status"
 msgstr "Status"
 
-#: ../src/core/sipe.c:5555
+#: ../src/core/sipe.c:5361
 msgid "Calendar"
 msgstr "Kalender"
 
-#: ../src/core/sipe.c:5561
+#: ../src/core/sipe.c:5367
 msgid "Meeting in"
 msgstr "Möte om"
 
-#: ../src/core/sipe.c:5566
+#: ../src/core/sipe.c:5372
 msgid "Meeting about"
 msgstr "Möte gällande"
 
-#: ../src/core/sipe.c:5571
+#: ../src/core/sipe.c:5377
 msgid "Out of office note"
 msgstr "Inte på kontoret - Notifiering"
 
-#: ../src/core/sipe.c:5571
+#: ../src/core/sipe.c:5377
 msgid "Note"
 msgstr "Notifiering"
 
-#: ../src/core/sipe.c:5575 ../src/core/sipe.c:5939 ../src/core/sipe.c:6010
+#: ../src/core/sipe.c:5381 ../src/core/sipe.c:5745 ../src/core/sipe.c:5816
 msgid "Access level"
 msgstr "Åtkomst nivå"
 
 #. * Translators: replace with URL to localized page
 #. * If it doesn't exist copy the original URL
-#: ../src/core/sipe.c:5731
+#: ../src/core/sipe.c:5537
 msgid ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 msgstr ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
-#: ../src/core/sipe.c:5814
+#: ../src/core/sipe.c:5620
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Gör ledare för \"% s\""
 
-#: ../src/core/sipe.c:5826
+#: ../src/core/sipe.c:5632
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Ta bort från '% s'"
 
-#: ../src/core/sipe.c:5840
+#: ../src/core/sipe.c:5646
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Bjud in till '% s'"
 
-#: ../src/core/sipe.c:5852
+#: ../src/core/sipe.c:5658
 msgid "New chat"
 msgstr "Ny chatt"
 
-#: ../src/core/sipe.c:5865
+#: ../src/core/sipe.c:5671
 #, c-format
 msgid "Work %s"
 msgstr "Arbete %s"
 
-#: ../src/core/sipe.c:5878
+#: ../src/core/sipe.c:5684
 #, c-format
 msgid "Mobile %s"
 msgstr "Mobil %s"
 
-#: ../src/core/sipe.c:5891
+#: ../src/core/sipe.c:5697
 #, c-format
 msgid "Home %s"
 msgstr "Hem %s"
 
-#: ../src/core/sipe.c:5904
+#: ../src/core/sipe.c:5710
 #, c-format
 msgid "Other %s"
 msgstr "Övrigt %s"
 
-#: ../src/core/sipe.c:5917
+#: ../src/core/sipe.c:5723
 #, c-format
 msgid "Custom1 %s"
 msgstr "Anpassad1 %s"
 
-#: ../src/core/sipe.c:5929
+#: ../src/core/sipe.c:5735
 msgid "Send email..."
 msgstr "Skicka e-post..."
 
-#: ../src/core/sipe.c:5967
+#: ../src/core/sipe.c:5773
 msgid "Copy to"
 msgstr "Kopiera till"
 
-#: ../src/core/sipe.c:6006
+#: ../src/core/sipe.c:5812
 msgid "Domain"
 msgstr "Autentisera domän"
 
-#: ../src/core/sipe.c:6022 ../src/core/sipe.c:6023
+#: ../src/core/sipe.c:5828 ../src/core/sipe.c:5829
 msgid "Add new domain"
 msgstr "Lägg till ny domän"
 
-#: ../src/core/sipe.c:6024
+#: ../src/core/sipe.c:5830
 msgid "Add"
 msgstr "Lägg till"
 
-#: ../src/core/sipe.c:6025
+#: ../src/core/sipe.c:5831
 msgid "Cancel"
 msgstr "Avbryt"
 
 #. Translators: remove (clear) previously assigned access level
-#: ../src/core/sipe.c:6134
+#: ../src/core/sipe.c:5940
 msgid "Unspecify"
 msgstr "Ospecificerad"
 
-#: ../src/core/sipe.c:6157
+#: ../src/core/sipe.c:5963
 msgid "People in my company"
 msgstr "Personer i mitt företag"
 
 #. this is original name, don't edit
-#: ../src/core/sipe.c:6163
+#: ../src/core/sipe.c:5969
 msgid "People in domains connected with my company"
 msgstr "Personer i domäner kopplade till mitt företag"
 
-#: ../src/core/sipe.c:6168
+#: ../src/core/sipe.c:5974
 msgid "People in public domains"
 msgstr "Personer i offentliga domäner"
 
-#: ../src/core/sipe.c:6178
+#: ../src/core/sipe.c:5984
 #, c-format
 msgid "People at %s"
 msgstr "Personer i %s"
 
-#: ../src/core/sipe.c:6193
+#: ../src/core/sipe.c:5999
 msgid "Add new domain..."
 msgstr "Lägg till ny domän..."
 
-#: ../src/core/sipe.c:6219
+#: ../src/core/sipe.c:6025
 msgid "Access groups"
 msgstr "Anslut grupper"
 
-#: ../src/core/sipe.c:6226
+#: ../src/core/sipe.c:6032
 msgid "Online help..."
 msgstr "Online hjälp ..."
 
-#: ../src/core/sipe.c:6302 ../src/core/sipe.c:6339
+#: ../src/core/sipe.c:6114 ../src/core/sipe.c:6151
 msgid "Display name"
 msgstr "Visa namn"
 
-#: ../src/core/sipe.c:6305
+#: ../src/core/sipe.c:6117
 msgid "Job title"
 msgstr "Befattning"
 
-#: ../src/core/sipe.c:6308
+#: ../src/core/sipe.c:6120
 msgid "Office"
 msgstr "Kontor"
 
-#: ../src/core/sipe.c:6311
+#: ../src/core/sipe.c:6123
 msgid "Business phone"
 msgstr "Arbetstelefon"
 
-#: ../src/core/sipe.c:6317
+#: ../src/core/sipe.c:6129
 msgid "City"
 msgstr "Stad"
 
-#: ../src/core/sipe.c:6320
+#: ../src/core/sipe.c:6132
 msgid "State"
 msgstr "Stat/Region"
 
-#: ../src/core/sipe.c:6326 ../src/core/sipe.c:6353
+#: ../src/core/sipe.c:6138 ../src/core/sipe.c:6165
 msgid "Email address"
 msgstr "E-postadress"
 
-#: ../src/core/sipe.c:6346
+#: ../src/core/sipe.c:6158
 msgid "Alias"
 msgstr "Initialer"
 
-#: ../src/core/sipe.c:6359
+#: ../src/core/sipe.c:6171
 msgid "Site"
 msgstr "Plats"
 
-#: ../src/core/sipe.c:6366
+#: ../src/core/sipe.c:6178
 msgid "Find on LinkedIn"
 msgstr "Hitta på LinkedIn"
 
-#: ../src/core/sipe.c:6373
+#: ../src/core/sipe.c:6185
 msgid "Device"
 msgstr "Enhet"
 
-#: ../src/core/sipe-cal.c:936
+#: ../src/core/sipe-cal.c:939
 msgid "Free"
 msgstr "Ledig"
 
-#: ../src/core/sipe-cal.c:937
+#: ../src/core/sipe-cal.c:940
 msgid "Tentative"
 msgstr "Preliminärt"
 
-#: ../src/core/sipe-cal.c:940
+#: ../src/core/sipe-cal.c:943
 msgid "No data"
 msgstr "Inga uppgifter"
 
-#: ../src/core/sipe-cal.c:1048 ../src/core/sipe-cal.c:1075
+#: ../src/core/sipe-cal.c:1051 ../src/core/sipe-cal.c:1078
 #, c-format
 msgid "Currently %s"
 msgstr "För närvarande %s"
 
-#: ../src/core/sipe-cal.c:1054
+#: ../src/core/sipe-cal.c:1057
 msgid "Outside of working hours for next 8 hours"
 msgstr "Utanför arbetstid (närmsta 8 timmarna)"
 
-#: ../src/core/sipe-cal.c:1056
+#: ../src/core/sipe-cal.c:1059
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "%s (närmsta 8 timmarna)"
 
-#: ../src/core/sipe-cal.c:1065
+#: ../src/core/sipe-cal.c:1068
 msgid "Not working"
 msgstr "Fungerar ej"
 
-#: ../src/core/sipe-cal.c:1069
+#: ../src/core/sipe-cal.c:1072
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s till och med %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1077
+#: ../src/core/sipe-cal.c:1080
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s. Utanför arbetstid mellan %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1082
+#: ../src/core/sipe-cal.c:1085
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s till %.2d%.2d"
+
+#: ../src/core/sipe-certificate.c:241
+#, c-format
+msgid "Certificate request to %s failed"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:529
+#, c-format
+msgid "Web ticket request to %s failed"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:605
+#, c-format
+msgid "Can't request security token from %s"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:611
+#, c-format
+msgid "Can't find the authentication port for TLS-DSK web ticket URI %s"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:617
+#, c-format
+msgid "Can't retrieve metadata for TLS-DSK web ticket URI %s"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:654
+#, c-format
+msgid ""
+"Can't find the web ticket URI for TLS-DSK certificate provisioning URI %s"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:690
+#, c-format
+msgid "Can't request metadata from %s"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:702
+#, c-format
+msgid ""
+"Can't find the authentication port for TLS-DSK certificate provisioning URI "
+"%s"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:708
+#, c-format
+msgid ""
+"Can't find the web ticket policy for TLS-DSK certificate provisioning URI %s"
+msgstr ""
+
+#: ../src/core/sipe-certificate.c:714
+#, c-format
+msgid "Can't retrieve metadata for TLS-DSK certificate provisioning URI %s"
+msgstr ""
 
 #. Generate next ID
 #: ../src/core/sipe-chat.c:232
@@ -457,33 +530,33 @@ msgstr ""
 msgid "\"%s\" is not a valid focus URI"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:843
+#: ../src/core/sipe-conf.c:847
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr ""
 
-#: ../src/core/sipe-conf.c:851
+#: ../src/core/sipe-conf.c:855
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:865
+#: ../src/core/sipe-conf.c:869
 msgid "Accept"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:866
+#: ../src/core/sipe-conf.c:870
 msgid "Decline"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:1081
+#: ../src/core/sipe-conf.c:1084
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr ""
 "Denna konferens är inte längre låst. Ytterligare deltagare kan nu gå med."
 
-#: ../src/core/sipe-conf.c:1085
+#: ../src/core/sipe-conf.c:1088
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
@@ -491,13 +564,13 @@ msgstr ""
 "Denna konferens är låst. Ingen annan kan delta i konferensen medan den är "
 "låst."
 
-#: ../src/core/sipe-conf.c:1118
+#: ../src/core/sipe-conf.c:1121
 msgid "You have been disconnected from this conference."
 msgstr "Du har kopplats bort från denna konferens."
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
-#: ../src/core/sipe-core.c:144
+#: ../src/core/sipe-core.c:130
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
@@ -506,59 +579,59 @@ msgstr ""
 " kan användas av olika produkter"
 
 #. About note, part 2/13: home page URL (label)
-#: ../src/core/sipe-core.c:146
+#: ../src/core/sipe-core.c:132
 msgid "Home"
 msgstr "Hem"
 
 #. About note, part 3/13: support forum URL (label)
-#: ../src/core/sipe-core.c:148
+#: ../src/core/sipe-core.c:134
 msgid "Support"
 msgstr "Support"
 
 #. About note, part 4/13: support forum name (hyperlink text)
-#: ../src/core/sipe-core.c:150
+#: ../src/core/sipe-core.c:136
 msgid "Help Forum"
 msgstr "Hjälp Forum"
 
 #. About note, part 5/13: bug tracker URL (label)
-#: ../src/core/sipe-core.c:152
+#: ../src/core/sipe-core.c:138
 msgid "Report Problems"
 msgstr "Rapportera fel"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
-#: ../src/core/sipe-core.c:154
+#: ../src/core/sipe-core.c:140
 msgid "Bug Tracker"
 msgstr "Bug Uppföljning"
 
 #. About note, part 7/13: translation service URL (label)
-#: ../src/core/sipe-core.c:156
+#: ../src/core/sipe-core.c:142
 msgid "Translations"
 msgstr "Översättningar"
 
 #. About note, part 8/13: license type (label)
-#: ../src/core/sipe-core.c:158
+#: ../src/core/sipe-core.c:144
 msgid "License"
 msgstr "Licenser"
 
 #. About note, part 9/13: known users
-#: ../src/core/sipe-core.c:160
+#: ../src/core/sipe-core.c:146
 msgid "We support users in such organizations as"
 msgstr "Vi stöder användarna i sådana organisationer som"
 
 #. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe-core.c:163
+#: ../src/core/sipe-core.c:149
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr "Hjälp oss att översätta sipe till ditt modersmål här på"
 
 #. About note, part 11/13: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe-core.c:166
+#: ../src/core/sipe-core.c:152
 msgid " using convenient web interface"
 msgstr "använder ett bekvämt webbgränssnitt"
 
 #. About note, part 12/13: author list (header)
-#: ../src/core/sipe-core.c:168
+#: ../src/core/sipe-core.c:154
 msgid "Authors"
 msgstr "Författare"
 
@@ -566,7 +639,7 @@ msgstr "Författare"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe-core.c:173
+#: ../src/core/sipe-core.c:159
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Originaltexter på Engelska (en): SIPE utvecklarna"
 
@@ -582,15 +655,15 @@ msgstr "Plats:"
 msgid "Socket read failed"
 msgstr "Socket läsning misslyckades"
 
-#: ../src/core/sipe-ft.c:355
+#: ../src/core/sipe-ft.c:357
 msgid "Received encryption key has wrong size."
 msgstr "Mottagen krypteringsnyckel har fel storlek."
 
-#: ../src/core/sipe-ft.c:370
+#: ../src/core/sipe-ft.c:372
 msgid "Received hash key has wrong size."
 msgstr "Mottagen hash-nyckel  har fel storlek."
 
-#: ../src/core/sipe-ft.c:390
+#: ../src/core/sipe-ft.c:392
 msgid "Could not create listen socket"
 msgstr "Det gick inte att skapa lyssnaruttag"
 
@@ -652,34 +725,34 @@ msgid "Error joining chat room"
 msgstr ""
 
 #. generate one error and remove all unprocessed messages
-#: ../src/core/sipe-im.c:196
+#: ../src/core/sipe-im.c:197
 #, c-format
 msgid "Failed to invite %s"
 msgstr "Misslyckades att bjuda in %s"
 
-#: ../src/core/sipe-incoming.c:659
+#: ../src/core/sipe-incoming.c:711
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Meddelande mottaget med okänt innehåll från %s"
 
-#: ../src/core/sipe-media.c:528 ../src/core/sipe-media.c:1061
+#: ../src/core/sipe-media.c:531 ../src/core/sipe-media.c:1061
 msgid "Unable to establish a call"
 msgstr ""
 
-#: ../src/core/sipe-media.c:529
+#: ../src/core/sipe-media.c:532
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr ""
 
-#: ../src/core/sipe-media.c:716 ../src/core/sipe-media.c:728
+#: ../src/core/sipe-media.c:712 ../src/core/sipe-media.c:724
 #: ../src/core/sipe-media.c:792 ../src/core/sipe-media.c:1060
 msgid "Error occured"
 msgstr ""
 
-#: ../src/core/sipe-media.c:717 ../src/core/sipe-media.c:793
+#: ../src/core/sipe-media.c:713 ../src/core/sipe-media.c:793
 msgid "Error creating audio stream"
 msgstr ""
 
-#: ../src/core/sipe-media.c:729
+#: ../src/core/sipe-media.c:725
 msgid "Error creating video stream"
 msgstr ""
 
@@ -771,27 +844,27 @@ msgstr "Lås upp"
 msgid "Join conference call"
 msgstr ""
 
-#: ../src/purple/purple-groupchat.c:46
+#: ../src/purple/purple-groupchat.c:47
 msgid "_URI:"
 msgstr ""
 
-#: ../src/purple/purple-groupchat.c:136
+#: ../src/purple/purple-groupchat.c:137
 msgid "Users"
 msgstr ""
 
-#: ../src/purple/purple-groupchat.c:139
+#: ../src/purple/purple-groupchat.c:140
 msgid "Invite"
 msgstr ""
 
-#: ../src/purple/purple-groupchat.c:142
+#: ../src/purple/purple-groupchat.c:143
 msgid "Private"
 msgstr ""
 
-#: ../src/purple/purple-groupchat.c:145
+#: ../src/purple/purple-groupchat.c:146
 msgid "Log"
 msgstr ""
 
-#: ../src/purple/purple-groupchat.c:148
+#: ../src/purple/purple-groupchat.c:149
 msgid "Description"
 msgstr ""
 
@@ -802,61 +875,61 @@ msgstr ""
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/purple/purple-plugin.c:171
+#: ../src/purple/purple-plugin.c:182
 msgid "Message"
 msgstr "Meddelande"
 
-#: ../src/purple/purple-plugin.c:307
+#: ../src/purple/purple-plugin.c:332
 msgid "Connecting"
 msgstr "Ansluter"
 
-#: ../src/purple/purple-plugin.c:403
+#: ../src/purple/purple-plugin.c:441
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/purple/purple-plugin.c:593
+#: ../src/purple/purple-plugin.c:660
 msgid "First name"
 msgstr "Förnamn"
 
-#: ../src/purple/purple-plugin.c:595
+#: ../src/purple/purple-plugin.c:662
 msgid "Last name"
 msgstr "Efternamn"
 
-#: ../src/purple/purple-plugin.c:603
+#: ../src/purple/purple-plugin.c:670
 msgid "Search"
 msgstr "Sök"
 
-#: ../src/purple/purple-plugin.c:604
+#: ../src/purple/purple-plugin.c:671
 msgid "Search for a contact"
 msgstr "Sök efter kontakt"
 
-#: ../src/purple/purple-plugin.c:605
+#: ../src/purple/purple-plugin.c:672
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "Ange information om personen som du vill hitta. Tomma fält ignoreras."
 
-#: ../src/purple/purple-plugin.c:607
+#: ../src/purple/purple-plugin.c:674
 msgid "_Search"
 msgstr "_Sök"
 
-#: ../src/purple/purple-plugin.c:608 ../src/purple/purple-plugin.c:652
+#: ../src/purple/purple-plugin.c:675 ../src/purple/purple-plugin.c:719
 msgid "_Cancel"
 msgstr "_Avbryt"
 
-#: ../src/purple/purple-plugin.c:640
+#: ../src/purple/purple-plugin.c:707
 msgid "Meeting location"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:644
+#: ../src/purple/purple-plugin.c:711
 msgid "Join conference"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:645
+#: ../src/purple/purple-plugin.c:712
 msgid "Join scheduled conference"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:646
+#: ../src/purple/purple-plugin.c:713
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -864,27 +937,27 @@ msgid ""
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:651
+#: ../src/purple/purple-plugin.c:718
 msgid "_Join"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:674
+#: ../src/purple/purple-plugin.c:741
 msgid "About SIPE plugin..."
 msgstr "Om SIPe plugin..."
 
-#: ../src/purple/purple-plugin.c:677
+#: ../src/purple/purple-plugin.c:744
 msgid "Contact search..."
 msgstr "Kontaktsökning..."
 
-#: ../src/purple/purple-plugin.c:680
+#: ../src/purple/purple-plugin.c:747
 msgid "Join scheduled conference..."
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:683
+#: ../src/purple/purple-plugin.c:750
 msgid "Republish Calendar"
 msgstr "Eterpublicera Kalender"
 
-#: ../src/purple/purple-plugin.c:686
+#: ../src/purple/purple-plugin.c:753
 msgid "Reset status"
 msgstr "Återställ status"
 
@@ -895,7 +968,7 @@ msgstr "Återställ status"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:743
+#: ../src/purple/purple-plugin.c:810
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -905,7 +978,7 @@ msgstr ""
 " user eller DOMÄN\\ \\user eller\n"
 " user@company.com"
 
-#: ../src/purple/purple-plugin.c:747
+#: ../src/purple/purple-plugin.c:814
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -913,19 +986,19 @@ msgstr ""
 "Server[:port]\n"
 "(lämna tomt för automatiskt upptäckande)"
 
-#: ../src/purple/purple-plugin.c:750
+#: ../src/purple/purple-plugin.c:817
 msgid "Connection type"
 msgstr "Anslutningstyp"
 
-#: ../src/purple/purple-plugin.c:751
+#: ../src/purple/purple-plugin.c:818
 msgid "Auto"
 msgstr "Automatiskt"
 
-#: ../src/purple/purple-plugin.c:752
+#: ../src/purple/purple-plugin.c:819
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:753
+#: ../src/purple/purple-plugin.c:820
 msgid "TCP"
 msgstr "TCP"
 
@@ -933,26 +1006,38 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:759
+#: ../src/purple/purple-plugin.c:826
 msgid "User Agent"
 msgstr "Användaragent"
 
-#: ../src/purple/purple-plugin.c:763
-msgid "Use Kerberos"
-msgstr "Använd Kerberos"
+#: ../src/purple/purple-plugin.c:829
+msgid "Authentication scheme"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:830
+msgid "NTLM"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:832
+msgid "Kerberos"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:834
+msgid "TLS-DSK"
+msgstr ""
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #. 
-#: ../src/purple/purple-plugin.c:770
+#: ../src/purple/purple-plugin.c:842
 msgid "Use Single Sign-On"
 msgstr "Använd \"Single Sign-On\""
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:777
+#: ../src/purple/purple-plugin.c:849
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -960,7 +1045,7 @@ msgstr ""
 "E-post tjänstens URL\n"
 "(lämna tomt för automatiskt upptäckande)"
 
-#: ../src/purple/purple-plugin.c:780
+#: ../src/purple/purple-plugin.c:852
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -971,7 +1056,7 @@ msgstr ""
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:786
+#: ../src/purple/purple-plugin.c:858
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -979,7 +1064,7 @@ msgstr ""
 "E-post inloggningsnamn\n"
 " (om annan än Inloggningsnamn)"
 
-#: ../src/purple/purple-plugin.c:789
+#: ../src/purple/purple-plugin.c:861
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -990,7 +1075,7 @@ msgstr ""
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:796
+#: ../src/purple/purple-plugin.c:868
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
@@ -1020,3 +1105,5 @@ msgstr "Kunde inte skapa en socket"
 #: ../src/purple/purple-transport.c:327
 msgid "Write error"
 msgstr "Skrivfel"
+
+
