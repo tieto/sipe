@@ -238,7 +238,7 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 
 	if (!success) {
 		certificate_failure(sipe_private,
-				    _("Certitifcate request to %s failed"),
+				    _("Certificate request to %s failed"),
 				    uri);
 	}
 
@@ -651,7 +651,7 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 					SIPE_DEBUG_INFO("certprov_metadata: WebTicket URI %s", ticket_uri);
 				} else {
 					certificate_failure(sipe_private,
-							    _("Can't find the WebTicket URI for TLS-DSK certificate provisioning URI %s"),
+							    _("Can't find the web ticket URI for TLS-DSK certificate provisioning URI %s"),
 							    uri);
 				}
 				break;
@@ -705,7 +705,7 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 
 		} else {
 			certificate_failure(sipe_private,
-					    _("Can't find the WebTicket Policy for TLS-DSK certificate provisioning URI %s"),
+					    _("Can't find the web ticket policy for TLS-DSK certificate provisioning URI %s"),
 					    uri);
 		}
 
