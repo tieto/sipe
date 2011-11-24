@@ -5118,18 +5118,44 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	gboolean more = FALSE;
 	gchar *secondary;
 
+	/* valid response? */
+	if (msg->response != 200) {
+		SIPE_DEBUG_ERROR("process_search_contact_response: request failed (%d)",
+				 msg->response);
+		purple_notify_error(sip->gc, NULL,
+				    _("Contact search failed"),
+				    NULL);
+		return(FALSE);
+	}
+
 	SIPE_DEBUG_INFO("process_search_contact_response: body:\n%s", msg->body ? msg->body : "");
 
+	/* valid XML? */
 	searchResults = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!searchResults) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_search_contact_response: no parseable searchResults");
+		purple_notify_error(sip->gc, NULL,
+				    _("Contact search failed"),
+				    NULL);
 		return FALSE;
 	}
 
-	results = purple_notify_searchresults_new();
+	/* any matches? */
+	mrow = sipe_xml_child(searchResults, "Body/Array/row");
+	if (!mrow) {
+		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: no matches");
+		purple_notify_error(sip->gc, NULL,
+				    _("No contacts found"),
+				    NULL);
 
-	if (results == NULL) {
-		SIPE_DEBUG_ERROR_NOFORMAT("purple_parse_searchreply: Unable to display the search results.");
+		sipe_xml_free(searchResults);
+		return(FALSE);
+	}
+
+	/* OK, we found something - show the results to the user */
+	results = purple_notify_searchresults_new();
+	if (!results) {
+		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: Unable to display the search results.");
 		purple_notify_error(sip->gc, NULL, _("Unable to display the search results"), NULL);
 
 		sipe_xml_free(searchResults);
@@ -5151,7 +5177,7 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	column = purple_notify_searchresults_column_new(_("Email"));
 	purple_notify_searchresults_column_add(results, column);
 
-	for (mrow =  sipe_xml_child(searchResults, "Body/Array/row"); mrow; mrow = sipe_xml_twin(mrow)) {
+	for (/* initialized above */ ; mrow; mrow = sipe_xml_twin(mrow)) {
 		GList *row = NULL;
 
 		gchar **uri_parts = g_strsplit(sipe_xml_attribute(mrow, "uri"), ":", 2);
