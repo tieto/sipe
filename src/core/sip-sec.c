@@ -209,7 +209,7 @@ sip_sec_init_context(SipSecContext *context,
 
 gboolean sip_sec_context_is_ready(SipSecContext context)
 {
-	return(context->is_ready != 0);
+	return(context && (context->is_ready != 0));
 }
 
 void

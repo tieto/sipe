@@ -152,8 +152,7 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 				struct sipmsg *msg)
 {
 	struct sip_transport *transport = sipe_private->transport;
-	if (transport->registrar.gssapi_context &&
-	    sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
+	if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
 		struct sipmsg_breakdown msgbd;
 		gchar *signature_input_str;
 		msgbd.msg = msg;
@@ -1001,6 +1000,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				if (!transport->reauthenticate_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
 					guint reauth_timeout;
+
+					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
+
 					if (transport->registrar.type == AUTH_TYPE_KERBEROS && transport->registrar.expires > 0) {
 						/* assuming normal Kerberos ticket expiration of about 8-10 hours */
 						reauth_timeout = transport->registrar.expires - 300;
@@ -1163,6 +1165,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			{
 				gchar *redirect = parse_from(sipmsg_find_header(msg, "Contact"));
 
+				SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
+
 				if (redirect && (g_strncasecmp("sip:", redirect, 4) == 0)) {
 					gchar **parts = g_strsplit(redirect + 4, ";", 0);
 					gchar **tmp;
@@ -1206,11 +1210,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				const char *auth_hdr;
 
 				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
-				if (transport->registrar.gssapi_context                           &&
-				    sip_sec_context_is_ready(transport->registrar.gssapi_context) &&
-				    (transport->registrar.retries > 2)) {
-					SIPE_DEBUG_INFO("process_register_response: still not authenticated after %d tries - giving up.",
-							transport->registrar.retries);
+				if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
+					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
@@ -1631,8 +1632,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 		}
 
 		// Verify the signature before processing it
-		if (transport->registrar.gssapi_context &&
-		    sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
+		if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
 			struct sipmsg_breakdown msgbd;
 			gchar *signature_input_str;
 			gchar *rspauth;

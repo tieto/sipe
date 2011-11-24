@@ -106,7 +106,7 @@ char *sip_sec_init_context(SipSecContext *context,
  * Check if the authentication of a security context is completed and it is
  * ready to be used for message signing and signature verification
  *
- * @param context (in) security context
+ * @param context (in) security context. May be @c NULL.
  *
  * @return @TRUE if authentication is completed
  */
