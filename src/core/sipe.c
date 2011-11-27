@@ -1,6 +1,16 @@
 /**
  * @file sipe.c
  *
+ *****************************************************************************
+ *** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ***
+ ***                                                                       ***
+ ***                       THIS MODULE IS DEPECRATED                       ***
+ ***                                                                       ***
+ ***                DO NOT ADD ANY NEW CODE TO THIS MODULE                 ***
+ ***                                                                       ***
+ *** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ***
+ *****************************************************************************
+ *
  * pidgin-sipe
  *
  * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
@@ -235,6 +245,19 @@ sipe_get_no_sip_uri(const char *sip_uri)
 	}
 }
 
+/**
+ * Set ACL for a contact
+ *
+ * @param contact  (%s) i.e. sip:user@domain.com
+ * @param rights   (%s) "AA" for allow, "BD" for deny
+ * @param deltanum (%d) deltanum
+ */
+#define SIPE_SOAP_ALLOW_DENY sipe_soap("setACE", \
+	"<m:type>USER</m:type>"\
+	"<m:mask>%s</m:mask>"\
+	"<m:rights>%s</m:rights>"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
 static void
 sipe_contact_set_acl (struct sipe_core_private *sipe_private,
 		      const gchar *who,
@@ -356,6 +379,14 @@ sipe_get_buddy_groups_string (struct sipe_buddy *buddy) {
 	g_strfreev(ids_arr);
 	return res;
 }
+
+#define SIPE_SOAP_SET_CONTACT sipe_soap("setContact", \
+	"<m:displayName>%s</m:displayName>"\
+	"<m:groups>%s</m:groups>"\
+	"<m:subscribed>%s</m:subscribed>"\
+	"<m:URI>%s</m:URI>"\
+	"<m:externalURI />"\
+	"<m:deltaNum>%d</m:deltaNum>")
 
 /**
   * Sends buddy update to server
@@ -931,6 +962,10 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_slist_free(buddy->groups);
 	g_free(buddy);
 }
+
+#define SIPE_SOAP_DEL_CONTACT sipe_soap("deleteContact", \
+	"<m:URI>%s</m:URI>"\
+	"<m:deltaNum>%d</m:deltaNum>")
 
 /**
   * Unassociates buddy from group first.
@@ -3941,6 +3976,76 @@ sipe_is_user_state(struct sipe_core_private *sipe_private)
 	return res;
 }
 
+/**
+ * OCS2005 presence XML messages
+ *
+ * Calendar publication entry
+ *
+ * @param legacy_dn		(%s) Ex.: /o=EXCHANGE/ou=BTUK02/cn=Recipients/cn=AHHBTT
+ * @param fb_start_time_str	(%s) Ex.: 2009-12-06T17:15:00Z
+ * @param free_busy_base64	(%s) Ex.: AAAAAAAAAAAAAAAAA......
+ */
+#define SIPE_SOAP_SET_PRESENCE_CALENDAR \
+"<calendarInfo xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" mailboxId=\"%s\" startTime=\"%s\" granularity=\"PT15M\">%s</calendarInfo>"
+
+/**
+ * Note publication entry
+ *
+ * @param note	(%s) Ex.: Working from home
+ */
+#define SIPE_SOAP_SET_PRESENCE_NOTE_XML  "<note>%s</note>"
+
+/**
+ * Note's OOF publication entry
+ */
+#define SIPE_SOAP_SET_PRESENCE_OOF_XML  "<oof></oof>"
+
+/**
+ * States publication entry for User State
+ *
+ * @param avail			(%d) Availability 2007-style. Ex.: 9500
+ * @param since_time_str	(%s) Ex.: 2010-01-13T10:30:05Z
+ * @param device_id		(%s) epid. Ex.: 4c77e6ec72
+ * @param activity_token	(%s) Ex.: do-not-disturb
+ */
+#define SIPE_SOAP_SET_PRESENCE_STATES \
+          "<states>"\
+            "<state avail=\"%d\" since=\"%s\" validWith=\"any-device\" deviceId=\"%s\" set=\"manual\" xsi:type=\"userState\">%s</state>"\
+          "</states>"
+
+/**
+ * Presentity publication entry.
+ *
+ * @param uri			(%s) SIP URI without 'sip:' prefix. Ex.: fox@atlanta.local
+ * @param aggr_availability	(%d) Ex.: 300
+ * @param aggr_activity		(%d) Ex.: 600
+ * @param host_name		(%s) Uppercased. Ex.: ATLANTA
+ * @param note_xml_str		(%s) XML string as SIPE_SOAP_SET_PRESENCE_NOTE_XML
+ * @param oof_xml_str		(%s) XML string as SIPE_SOAP_SET_PRESENCE_OOF_XML
+ * @param states_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_STATES
+ * @param calendar_info_xml_str	(%s) XML string as SIPE_SOAP_SET_PRESENCE_CALENDAR
+ * @param device_id		(%s) epid. Ex.: 4c77e6ec72
+ * @param since_time_str	(%s) Ex.: 2010-01-13T10:30:05Z
+ * @param since_time_str	(%s) Ex.: 2010-01-13T10:30:05Z
+ * @param user_input		(%s) active, idle
+ */
+#define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
+	"<m:presentity xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" m:uri=\"sip:%s\">"\
+	"<m:availability m:aggregate=\"%d\"/>"\
+	"<m:activity m:aggregate=\"%d\"/>"\
+	"<deviceName xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" name=\"%s\"/>"\
+	"<rtc:devicedata xmlns:rtc=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" namespace=\"rtcService\">"\
+	"<![CDATA[<caps><renders_gif/><renders_isf/></caps>]]></rtc:devicedata>"\
+	"<userInfo xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\">"\
+	"%s%s" \
+	"%s" \
+        "</userInfo>"\
+	"%s" \
+	"<device xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" deviceId=\"%s\" since=\"%s\" >"\
+		"<userInput since=\"%s\" >%s</userInput>"\
+	"</device>"\
+	"</m:presentity>")
+
 static void
 send_presence_soap0(struct sipe_core_private *sipe_private,
 		    gboolean do_publish_calendar,
@@ -4194,6 +4299,28 @@ process_send_presence_category_publish_response(struct sipe_core_private *sipe_p
 }
 
 /**
+ * Publishes 'device' category.
+ * @param instance	(%u) Ex.: 1938468728
+ * @param version	(%u) Ex.: 1
+ * @param endpointId	(%s) Ex.: C707E38E-1E10-5413-94D9-ECAC260A0269
+ * @param uri		(%s) Self URI. Ex.: sip:alice7@boston.local
+ * @param timezone	(%s) Ex.: 00:00:00+01:00
+ * @param machineName	(%s) Ex.: BOSTON-OCS07
+ */
+#define SIPE_PUB_XML_DEVICE \
+	"<publication categoryName=\"device\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
+		"<device xmlns=\"http://schemas.microsoft.com/2006/09/sip/device\" endpointId=\"%s\">"\
+			"<capabilities preferred=\"false\" uri=\"%s\">"\
+				"<text capture=\"true\" render=\"true\" publish=\"false\"/>"\
+				"<gifInk capture=\"false\" render=\"true\" publish=\"false\"/>"\
+				"<isfInk capture=\"false\" render=\"true\" publish=\"false\"/>"\
+			"</capabilities>"\
+			"<timezone>%s</timezone>"\
+			"<machineName>%s</machineName>"\
+		"</device>"\
+	"</publication>"
+
+/**
  * Returns 'device' XML part for publication.
  * Must be g_free'd after use.
  */
@@ -4227,6 +4354,52 @@ sipe_publish_get_category_device(struct sipe_core_private *sipe_private)
 
 	return doc;
 }
+
+/**
+ * Publishes 'machineState' category.
+ * @param instance	(%u) Ex.: 926460663
+ * @param version	(%u) Ex.: 22
+ * @param availability	(%d) Ex.: 3500
+ * @param instance	(%u) Ex.: 926460663
+ * @param version	(%u) Ex.: 22
+ * @param availability	(%d) Ex.: 3500
+ */
+#define SIPE_PUB_XML_STATE_MACHINE \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\">"\
+			"<availability>%d</availability>"\
+			"<endpointLocation/>"\
+		"</state>"\
+	"</publication>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"machineState\">"\
+			"<availability>%d</availability>"\
+			"<endpointLocation/>"\
+		"</state>"\
+	"</publication>"
+
+/**
+ * Publishes 'userState' category.
+ * @param instance	(%u) User. Ex.: 536870912
+ * @param version	(%u) User Container 2. Ex.: 22
+ * @param availability	(%d) User Container 2. Ex.: 15500
+ * @param instance	(%u) User. Ex.: 536870912
+ * @param version	(%u) User Container 3.Ex.: 22
+ * @param availability	(%d) User Container 3. Ex.: 15500
+ */
+#define SIPE_PUB_XML_STATE_USER \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"static\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"true\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"userState\">"\
+			"<availability>%d</availability>"\
+			"<endpointLocation/>"\
+		"</state>"\
+	"</publication>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"static\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"true\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"userState\">"\
+			"<availability>%d</availability>"\
+			"<endpointLocation/>"\
+		"</state>"\
+	"</publication>"
 
 /**
  * A service method - use
@@ -4267,6 +4440,96 @@ sipe_publish_get_category_state(struct sipe_core_private *sipe_private,
 				publication_3 ? publication_3->version : 0,
 				availability);
 }
+
+/**
+ * An availability XML entry for SIPE_PUB_XML_STATE_CALENDAR
+ * @param availability		(%d) Ex.: 6500
+ */
+#define SIPE_PUB_XML_STATE_CALENDAR_AVAIL \
+"<availability>%d</availability>"
+/**
+ * An activity XML entry for SIPE_PUB_XML_STATE_CALENDAR
+ * @param token			(%s) Ex.: in-a-meeting
+ * @param minAvailability_attr	(%s) Ex.: minAvailability="6500"
+ * @param maxAvailability_attr	(%s) Ex.: maxAvailability="8999" or none
+ */
+#define SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY \
+"<activity token=\"%s\" %s %s></activity>"
+/**
+ * Publishes 'calendarState' category.
+ * @param instance		(%u) Ex.: 1339299275
+ * @param version		(%u) Ex.: 1
+ * @param uri			(%s) Ex.: john@contoso.com
+ * @param start_time_str	(%s) Ex.: 2008-01-11T19:00:00Z
+ * @param availability		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_AVAIL
+ * @param activity		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY
+ * @param meeting_subject	(%s) Ex.: Customer Meeting
+ * @param meeting_location	(%s) Ex.: Conf Room 100
+ *
+ * @param instance		(%u) Ex.: 1339299275
+ * @param version		(%u) Ex.: 1
+ * @param uri			(%s) Ex.: john@contoso.com
+ * @param start_time_str	(%s) Ex.: 2008-01-11T19:00:00Z
+ * @param availability		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_AVAIL
+ * @param activity		(%s) XML string as SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY
+ * @param meeting_subject	(%s) Ex.: Customer Meeting
+ * @param meeting_location	(%s) Ex.: Conf Room 100
+ */
+#define SIPE_PUB_XML_STATE_CALENDAR \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" startTime=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
+			"%s"\
+			"%s"\
+			"<endpointLocation/>"\
+			"<meetingSubject>%s</meetingSubject>"\
+			"<meetingLocation>%s</meetingLocation>"\
+		"</state>"\
+	"</publication>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" uri=\"%s\" startTime=\"%s\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"calendarState\">"\
+			"%s"\
+			"%s"\
+			"<endpointLocation/>"\
+			"<meetingSubject>%s</meetingSubject>"\
+			"<meetingLocation>%s</meetingLocation>"\
+		"</state>"\
+	"</publication>"
+/**
+ * Publishes to clear 'calendarState' category
+ * @param instance		(%u) Ex.: 1251210982
+ * @param version		(%u) Ex.: 1
+ */
+#define SIPE_PUB_XML_STATE_CALENDAR_CLEAR \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"
+
+/**
+ * Publishes to clear any category
+ * @param category_name		(%s) Ex.: state
+ * @param instance		(%u) Ex.: 536870912
+ * @param container		(%u) Ex.: 3
+ * @param version		(%u) Ex.: 1
+ * @param expireType		(%s) Ex.: static
+ */
+#define SIPE_PUB_XML_PUBLICATION_CLEAR \
+	"<publication categoryName=\"%s\" instance=\"%u\" container=\"%u\" version=\"%u\" expireType=\"%s\" expires=\"0\"/>"
+
+/**
+ * Publishes 'note' category.
+ * @param instance		(%u) Ex.: 2135971629; 0 for personal
+ * @param container		(%u) Ex.: 200
+ * @param version		(%u) Ex.: 2
+ * @param type			(%s) Ex.: personal or OOF
+ * @param startTime_attr	(%s) Ex.: startTime="2008-01-11T19:00:00Z"
+ * @param endTime_attr		(%s) Ex.: endTime="2008-01-15T19:00:00Z"
+ * @param body			(%s) Ex.: In the office
+ */
+#define SIPE_PUB_XML_NOTE \
+	"<publication categoryName=\"note\" instance=\"%u\" container=\"%u\" version=\"%d\" expireType=\"static\">"\
+		"<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
+			"<body type=\"%s\" uri=\"\"%s%s>%s</body>"\
+		"</note>"\
+	"</publication>"
 
 /**
  * Only Busy and OOF calendar event are published.
@@ -4404,6 +4667,7 @@ sipe_publish_get_category_state_user(struct sipe_core_private *sipe_private)
 	return sipe_publish_get_category_state(sipe_private, TRUE);
 }
 
+
 /**
  * Returns 'note' XML part for publication.
  * Must be g_free'd after use.
@@ -4521,6 +4785,53 @@ sipe_publish_get_category_note(struct sipe_core_private *sipe_private,
 }
 
 /**
+ * Publishes 'calendarData' category's WorkingHours.
+ *
+ * @param version	        (%u)  Ex.: 1
+ * @param email	                (%s)  Ex.: alice@cosmo.local
+ * @param working_hours_xml_str	(%s)  Ex.: <WorkingHours xmlns=.....
+ *
+ * @param version	        (%u)
+ *
+ * @param version	        (%u)
+ * @param email	                (%s)
+ * @param working_hours_xml_str	(%s)
+ *
+ * @param version	        (%u)
+ * @param email	                (%s)
+ * @param working_hours_xml_str	(%s)
+ *
+ * @param version	        (%u)
+ * @param email	                (%s)
+ * @param working_hours_xml_str	(%s)
+ *
+ * @param version	        (%u)
+ */
+#define SIPE_PUB_XML_WORKING_HOURS \
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"1\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">%s"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"100\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"200\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">%s"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"300\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">%s"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"400\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">%s"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"0\" container=\"32000\" version=\"%d\" expireType=\"static\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"
+
+/**
  * Returns 'calendarData' XML part with WorkingHours for publication.
  * Must be g_free'd after use.
  */
@@ -4595,6 +4906,62 @@ sipe_publish_get_category_cal_working_hours(struct sipe_core_private *sipe_priva
 				publication_cal_32000 ? publication_cal_32000->version : 0
 			      );
 }
+
+/**
+ * Publishes 'calendarData' category's FreeBusy.
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ * @param email	                (%s)  Ex.: alice@cosmo.local
+ * @param fb_start_time_str	(%s)  Ex.: 2009-12-03T00:00:00Z
+ * @param free_busy_base64	(%s)  Ex.: AAAAAAAAAAAAAAAAAAAAA.....
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ * @param email	                (%s)  Ex.: alice@cosmo.local
+ * @param fb_start_time_str	(%s)  Ex.: 2009-12-03T00:00:00Z
+ * @param free_busy_base64	(%s)  Ex.: AAAAAAAAAAAAAAAAAAAAA.....
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ * @param email	                (%s)  Ex.: alice@cosmo.local
+ * @param fb_start_time_str	(%s)  Ex.: 2009-12-03T00:00:00Z
+ * @param free_busy_base64	(%s)  Ex.: AAAAAAAAAAAAAAAAAAAAA.....
+ *
+ * @param instance	        (%u)  Ex.: 1300372959
+ * @param version	        (%u)  Ex.: 1
+ */
+#define SIPE_PUB_XML_FREE_BUSY \
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"1\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"100\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"200\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">"\
+			"<freeBusy startTime=\"%s\" granularity=\"PT15M\" encodingVersion=\"1\">%s</freeBusy>"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"300\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">"\
+			"<freeBusy startTime=\"%s\" granularity=\"PT15M\" encodingVersion=\"1\">%s</freeBusy>"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"400\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\" mailboxID=\"%s\">"\
+			"<freeBusy startTime=\"%s\" granularity=\"PT15M\" encodingVersion=\"1\">%s</freeBusy>"\
+		"</calendarData>"\
+	"</publication>"\
+	"<publication categoryName=\"calendarData\" instance=\"%u\" container=\"32000\" version=\"%d\" expireType=\"endpoint\">"\
+		"<calendarData xmlns=\"http://schemas.microsoft.com/2006/09/sip/calendarData\"/>"\
+	"</publication>"
 
 /**
  * Returns 'calendarData' XML part with FreeBusy for publication.
@@ -4696,6 +5063,18 @@ sipe_publish_get_category_cal_free_busy(struct sipe_core_private *sipe_private)
 	g_free(free_busy_base64);
 	return res;
 }
+
+/**
+ * Publishes categories.
+ * @param uri		(%s) Self URI. Ex.: sip:alice7@boston.local
+ * @param publications	(%s) XML publications
+ */
+#define SIPE_SEND_PRESENCE \
+	"<publish xmlns=\"http://schemas.microsoft.com/2006/09/sip/rich-presence\">"\
+		"<publications uri=\"%s\">"\
+			"%s"\
+		"</publications>"\
+	"</publish>"
 
 static void send_presence_publish(struct sipe_core_private *sipe_private,
 				  const char *publications)
@@ -5213,6 +5592,21 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	sipe_xml_free(searchResults);
 	return TRUE;
 }
+
+#define SIPE_SOAP_SEARCH_CONTACT \
+	"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
+	"<SOAP-ENV:Body>" \
+	"<m:directorySearch xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\">" \
+	"<m:filter m:href=\"#searchArray\"/>"\
+	"<m:maxResults>%d</m:maxResults>"\
+	"</m:directorySearch>"\
+	"<m:Array xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" m:id=\"searchArray\">"\
+	"%s"\
+	"</m:Array>"\
+	"</SOAP-ENV:Body>"\
+	"</SOAP-ENV:Envelope>"
+
+#define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
 
 void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fields)
 {

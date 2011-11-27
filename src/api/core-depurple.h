@@ -37,13 +37,7 @@ void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
 		    PurpleGroup *group);
 void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
 		       PurpleGroup *group);
-void sipe_group_buddy(PurpleConnection *gc, const char *who,
-		      const char *old_group_name,
-		      const char *new_group_name);
-void sipe_rename_group(PurpleConnection *gc, const char *old_name,
-		       PurpleGroup *group, GList *moved_buddies);
 void sipe_convo_closed(PurpleConnection *gc, const char *who);
-void sipe_remove_group(PurpleConnection *gc, PurpleGroup *group);
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE ((struct sipe_core_private *)account->gc->proto_data)

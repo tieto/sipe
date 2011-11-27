@@ -52,7 +52,6 @@
 #include "sipe-user.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 #ifdef HAVE_VV
 #define ENTITY_VIEW_AUDIO_VIDEO "<msci:entity-view entity=\"audio-video\"/>"

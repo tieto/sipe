@@ -143,6 +143,11 @@ sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 	return NULL;
 }
 
+#define SIPE_SOAP_ADD_GROUP sipe_soap("addGroup", \
+	"<m:name>%s</m:name>"\
+	"<m:externalURI />"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
 void
 sipe_group_create(struct sipe_core_private *sipe_private,
 		  const gchar *name,
@@ -179,6 +184,12 @@ sipe_group_add(struct sipe_core_private *sipe_private,
 	}
 }
 
+#define SIPE_SOAP_MOD_GROUP sipe_soap("modifyGroup", \
+	"<m:groupID>%d</m:groupID>"\
+	"<m:name>%s</m:name>"\
+	"<m:externalURI />"\
+	"<m:deltaNum>%d</m:deltaNum>")
+
 void
 sipe_core_group_rename(struct sipe_core_public *sipe_public,
 		       const gchar *old_name,
@@ -199,6 +210,10 @@ sipe_core_group_rename(struct sipe_core_public *sipe_public,
 		SIPE_DEBUG_INFO("Cannot find group %s to rename", old_name);
 	}
 }
+
+#define SIPE_SOAP_DEL_GROUP sipe_soap("deleteGroup", \
+	"<m:groupID>%d</m:groupID>"\
+	"<m:deltaNum>%d</m:deltaNum>")
 
 void
 sipe_core_group_remove(struct sipe_core_public *sipe_public,

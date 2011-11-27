@@ -79,7 +79,7 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 	struct sipe_group * old_group = NULL;
 	struct sipe_group * new_group;
 
-	SIPE_DEBUG_INFO("sipe_group_buddy[CB]: who:%s old_group_name:%s new_group_name:%s",
+	SIPE_DEBUG_INFO("sipe_core_buddy_group: who:%s old_group_name:%s new_group_name:%s",
 			who ? who : "", old_group_name ? old_group_name : "", new_group_name ? new_group_name : "");
 
 	if(!buddy) { // buddy not in roaming list
@@ -93,7 +93,7 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 
 	if (old_group) {
 		buddy->groups = g_slist_remove(buddy->groups, old_group);
-		SIPE_DEBUG_INFO("buddy %s removed from old group %s", who, old_group_name);
+		SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy %s removed from old group %s", who, old_group_name);
 	}
 
 	if (!new_group) {

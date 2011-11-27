@@ -46,7 +46,6 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 /**
  * Invite @who to chat
