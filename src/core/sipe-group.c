@@ -162,11 +162,11 @@ sipe_group_create(struct sipe_core_private *sipe_private,
 	request = g_markup_printf_escaped("<m:name>%s</m:name>"
 					  "<m:externalURI />",
 					  soap_name);
-	sip_soap_ms_pres_request_cb(sipe_private,
-				    "addGroup",
-				    request,
-				    process_add_group_response,
-				    payload);
+	sip_soap_request_cb(sipe_private,
+			    "addGroup",
+			    request,
+			    process_add_group_response,
+			    payload);
 	g_free(request);
 }
 
@@ -202,9 +202,9 @@ sipe_core_group_rename(struct sipe_core_public *sipe_public,
 						  "<m:name>%s</m:name>"
 						  "<m:externalURI />",
 						  s_group->id, new_name);
-		sip_soap_ms_pres_request(sipe_private,
-					 "modifyGroup",
-					 request);
+		sip_soap_request(sipe_private,
+				 "modifyGroup",
+				 request);
 		g_free(request);
 
 		g_free(s_group->name);
@@ -227,9 +227,9 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 		SIPE_DEBUG_INFO("Deleting group %s", name);
 		request = g_strdup_printf("<m:groupID>%d</m:groupID>",
 					  s_group->id);
-		sip_soap_ms_pres_request(sipe_private,
-					 "deleteGroup",
-					 request);
+		sip_soap_request(sipe_private,
+				 "deleteGroup",
+				 request);
 		g_free(request);
 
 		sip->groups = g_slist_remove(sip->groups, s_group);

@@ -25,6 +25,7 @@
  *
  * Specification references:
  *
+ *   - [MS-SIP]:  http://msdn.microsoft.com/en-us/library/cc246115.aspx
  *   - [MS-PRES]: http://msdn.microsoft.com/en-us/library/cc431501.aspx
  *
  */
@@ -36,13 +37,12 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-utils.h"
-#include "sipe.h"
 
-void sip_soap_request_cb(struct sipe_core_private *sipe_private,
-			 const gchar *from,
-			 const gchar *soap,
-			 SoapTransCallback callback,
-			 struct transaction_payload *payload)
+void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
+			     const gchar *from,
+			     const gchar *soap,
+			     SoapTransCallback callback,
+			     struct transaction_payload *payload)
 {
 	gchar *contact = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
@@ -64,13 +64,13 @@ void sip_soap_request_cb(struct sipe_core_private *sipe_private,
  * delta_num != NULL: use user sip: URI as from, include deltanum and increment it
  * delta_num == NULL; use sip: URI generated from domain name as from
  */
-static void sip_soap_ms_pres_request_full(struct sipe_core_private *sipe_private,
-					  const gchar *method,
-					  const gchar *request,
-					  const gchar *additional,
-					  int *deltanum,
-					  SoapTransCallback callback,
-					  struct transaction_payload *payload)
+static void sip_soap_request_full(struct sipe_core_private *sipe_private,
+				  const gchar *method,
+				  const gchar *request,
+				  const gchar *additional,
+				  guint *deltanum,
+				  SoapTransCallback callback,
+				  struct transaction_payload *payload)
 {
 	gchar *from = deltanum ?
 		sip_uri_self(sipe_private) :
@@ -95,57 +95,55 @@ static void sip_soap_ms_pres_request_full(struct sipe_core_private *sipe_private
 				      delta,
 				      method,
 				      additional ? additional : "");
-	sip_soap_request_cb(sipe_private, from, soap, callback, payload);
+	sip_soap_raw_request_cb(sipe_private, from, soap, callback, payload);
 	g_free(soap);
 	g_free(delta);
 	g_free(from);
 }
 
-void sip_soap_ms_pres_request_cb(struct sipe_core_private *sipe_private,
-				 const gchar *method,
-				 const gchar *request,
-				 SoapTransCallback callback,
-				 struct transaction_payload *payload)
+void sip_soap_request_cb(struct sipe_core_private *sipe_private,
+			 const gchar *method,
+			 const gchar *request,
+			 SoapTransCallback callback,
+			 struct transaction_payload *payload)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	sip_soap_ms_pres_request_full(sipe_private,
-				      method,
-				      request,
-				      NULL,
-				      &sip->contacts_delta,
-				      callback,
-				      payload);
+	sip_soap_request_full(sipe_private,
+			      method,
+			      request,
+			      NULL,
+			      &sipe_private->deltanum_contacts,
+			      callback,
+			      payload);
 }
 
-void sip_soap_ms_pres_request(struct sipe_core_private *sipe_private,
-			      const gchar *method,
-			      const gchar *request)
+void sip_soap_request(struct sipe_core_private *sipe_private,
+		      const gchar *method,
+		      const gchar *request)
 {
-	sip_soap_ms_pres_request_cb(sipe_private,
-				    method,
-				    request,
-				    NULL,
-				    NULL);
+	sip_soap_request_cb(sipe_private,
+			    method,
+			    request,
+			    NULL,
+			    NULL);
 }
 
-/* This is the only user of acl_delta */
+/* This is the only user of deltanum_acl */
 void sip_soap_ocs2005_setacl(struct sipe_core_private *sipe_private,
 			     const gchar *who,
 			     gboolean allow)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *request = g_strdup_printf("<m:type>USER</m:type>"
 					 "<m:mask>%s</m:mask>"
 					 "<m:rights>%s</m:rights>",
 					 who,
 					 allow ? "AA" : "BD");
-	sip_soap_ms_pres_request_full(sipe_private,
-				      "setACE",
-				      request,
-				      NULL,
-				      &sip->acl_delta,
-				      NULL,
-				      NULL);
+	sip_soap_request_full(sipe_private,
+			      "setACE",
+			      request,
+			      NULL,
+			      &sipe_private->deltanum_acl,
+			      NULL,
+			      NULL);
 	g_free(request);
 }
 
@@ -168,13 +166,13 @@ void sip_soap_directory_search(struct sipe_core_private *sipe_private,
 					      "%s"
 					    "</m:Array>",
 					    rows);
-	sip_soap_ms_pres_request_full(sipe_private,
-				      "directorySearch",
-				      request,
-				      additional,
-				      NULL,
-				      callback,
-				      payload);
+	sip_soap_request_full(sipe_private,
+			      "directorySearch",
+			      request,
+			      additional,
+			      NULL,
+			      callback,
+			      payload);
 	g_free(additional);
 	g_free(request);
 }

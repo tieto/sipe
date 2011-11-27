@@ -41,14 +41,14 @@ typedef gboolean (*SoapTransCallback) (struct sipe_core_private *,
  * @param callback     callback function (may be @c NULL)
  * @param payload      callback data     (may be @c NULL)
  */
-void sip_soap_request_cb(struct sipe_core_private *sipe_private,
-			 const gchar *from,
-			 const gchar *soap,
-			 SoapTransCallback callback,
-			 struct transaction_payload *payload);
+void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
+			     const gchar *from,
+			     const gchar *soap,
+			     SoapTransCallback callback,
+			     struct transaction_payload *payload);
 
 /**
- * Send [MS-PRES] SOAP request with callback
+ * Send [MS-SIP] SOAP request with callback
  *
  * @param sipe_private SIPE core private data
  * @param method       [MS-PRES] method
@@ -56,25 +56,25 @@ void sip_soap_request_cb(struct sipe_core_private *sipe_private,
  * @param callback     callback function (may be @c NULL)
  * @param payload      callback data     (may be @c NULL)
  */
-void sip_soap_ms_pres_request_cb(struct sipe_core_private *sipe_private,
-				 const gchar *method,
-				 const gchar *request,
-				 SoapTransCallback callback,
-				 struct transaction_payload *payload);
+void sip_soap_request_cb(struct sipe_core_private *sipe_private,
+			 const gchar *method,
+			 const gchar *request,
+			 SoapTransCallback callback,
+			 struct transaction_payload *payload);
 
 /**
- * Send [MS-PRES] SOAP request
+ * Send [MS-SIP] SOAP request
  *
  * @param sipe_private SIPE core private data
  * @param method       [MS-PRES] method
  * @param request      [MS-PRES] request data
  */
-void sip_soap_ms_pres_request(struct sipe_core_private *sipe_private,
-			      const gchar *method,
-			      const gchar *request);
+void sip_soap_request(struct sipe_core_private *sipe_private,
+		      const gchar *method,
+		      const gchar *request);
 
 /**
- * Send [MS-PRES] setACE (set ACL for contact) SOAP request (OCS2005)
+ * Send [MS-SIP] setACE (set ACL for contact) SOAP request (OCS2005)
  *
  * @param sipe_private SIPE core private data
  * @param who          sip: URI of the contact

@@ -348,9 +348,9 @@ sipe_core_group_set_user(struct sipe_core_public *sipe_public,
 							  "<m:URI>%s</m:URI>"
 							  "<m:externalURI />",
 							  alias, groups, buddy->name);
-			sip_soap_ms_pres_request(sipe_private,
-						 "setContact",
-						 request);
+			sip_soap_request(sipe_private,
+					 "setContact",
+					 request);
 			g_free(request);
 		}
 		g_free(alias);
@@ -940,9 +940,9 @@ void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *gr
 		if (b->name) {
 			gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
 							 b->name);
-			sip_soap_ms_pres_request(sipe_private,
-						 "deleteContact",
-						 request);
+			sip_soap_request(sipe_private,
+					 "deleteContact",
+					 request);
 			g_free(request);
 		}
 
@@ -1061,7 +1061,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	const gchar *tmp = sipmsg_find_header(msg, "Event");
 	const sipe_xml *item;
 	sipe_xml *isc;
-	const gchar *contacts_delta;
+	guint delta;
 	const sipe_xml *group_node;
 	if (!g_str_has_prefix(tmp, "vnd-microsoft-roaming-contacts")) {
 		return FALSE;
@@ -1073,9 +1073,10 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		return FALSE;
 	}
 
-	contacts_delta = sipe_xml_attribute(isc, "deltaNum");
-	if (contacts_delta) {
-		sip->contacts_delta = (int)g_ascii_strtod(contacts_delta, NULL);
+	/* [MS-SIP]: deltaNum MUST be non-zero */
+	delta = sipe_xml_int_attribute(isc, "deltaNum", 0);
+	if (delta) {
+		sipe_private->deltanum_contacts = delta;
 	}
 
 	if (sipe_strequal(sipe_xml_name(isc), "contactList")) {
@@ -1322,20 +1323,17 @@ sipe_process_provisioning(struct sipe_core_private *sipe_private,
 static void sipe_process_roaming_acl(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	const gchar *contacts_delta;
+	guint delta;
 	sipe_xml *xml;
 
 	xml = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!xml)
-	{
 		return;
-	}
 
-	contacts_delta = sipe_xml_attribute(xml, "deltaNum");
-	if (contacts_delta)
-	{
-		sip->acl_delta = (int)g_ascii_strtod(contacts_delta, NULL);
+	/* [MS-SIP]: deltaNum MUST be non-zero */
+	delta = sipe_xml_int_attribute(xml, "deltaNum", 0);
+	if (delta) {
+		sipe_private->deltanum_acl = delta;
 	}
 
 	sipe_xml_free(xml);
@@ -4124,7 +4122,7 @@ send_presence_soap0(struct sipe_core_private *sipe_private,
 	g_free(since_time_str);
 	g_free(epid);
 
-	sip_soap_request_cb(sipe_private, from, body, NULL, NULL);
+	sip_soap_raw_request_cb(sipe_private, from, body, NULL, NULL);
 
 	g_free(body);
 }

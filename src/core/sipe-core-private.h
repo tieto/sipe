@@ -54,6 +54,10 @@ struct sipe_core_private {
 	GSList *sessions;
 	GSList *sessions_to_accept;
 
+	/* [MS-SIP] deltaNum counters */
+	guint deltanum_contacts;
+	guint deltanum_acl;      /* setACE (OCS2005 only) */
+
 	/* Buddies */
 	GHashTable *buddies;
 
