@@ -59,6 +59,7 @@ struct sipe_core_private {
 	guint deltanum_acl;      /* setACE (OCS2005 only) */
 
 	/* Buddies */
+	GSList *groups;
 	GHashTable *buddies;
 
 	/* Scheduling system */

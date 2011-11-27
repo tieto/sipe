@@ -1096,7 +1096,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		}
 
 		// Make sure we have at least one group
-		if (g_slist_length(sip->groups) == 0) {
+		if (g_slist_length(sipe_private->groups) == 0) {
 			sipe_group_create(sipe_private, _("Other Contacts"), NULL);
 		}
 
@@ -1129,8 +1129,8 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 				struct sipe_group *group = sipe_group_find_by_id(sipe_private, g_ascii_strtod(item_groups[i], NULL));
 
 				// If couldn't find the right group for this contact, just put them in the first group we have
-				if (group == NULL && g_slist_length(sip->groups) > 0) {
-					group = sip->groups->data;
+				if (group == NULL && g_slist_length(sipe_private->groups) > 0) {
+					group = sipe_private->groups->data;
 				}
 
 				if (group != NULL) {

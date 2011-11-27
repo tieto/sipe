@@ -91,7 +91,6 @@ struct sipe_account_data {
 	GSList *containers; /* MS-PRES containers */
 	struct _PurpleAccount *account;
 	gchar *regcallid;
-	GSList *groups;
 	struct sipe_calendar *cal;
 	gchar *email;
 	/** 2005 Custom XML piece.
@@ -110,13 +109,6 @@ struct sipe_auth_job {
 	gchar *who;
 	struct sipe_core_private *sipe_private;
 };
-
-struct group_user_context {
-	gchar * group_name;
-	gchar * user_name;
-};
-
-GSList * slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func);
 
 /**
  * Publishes self status

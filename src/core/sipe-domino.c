@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  *
  *
@@ -52,6 +52,10 @@ https://sourceforge.net/tracker/?func=detail&aid=2945346&group_id=194563&atid=94
 
 Similar functionality for iCalendar/CalDAV/Google would be great to implement too.
 */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <string.h>
 #include <ctype.h>

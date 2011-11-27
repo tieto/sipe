@@ -20,19 +20,28 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 
-#include "sipe-core.h"
-#include "sipe-core-private.h"
-#include "sipe-backend.h"
+#include "sipmsg.h"
 #include "sip-soap.h"
 #include "sip-transport.h"
-#include "sipe-xml.h"
+#include "sipe-backend.h"
 #include "sipe-buddy.h"
-#include "sipmsg.h"
+#include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-group.h"
 #include "sipe-nls.h"
-#include "sipe.h"
+#include "sipe-utils.h"
+#include "sipe-xml.h"
+
+struct group_user_context {
+	gchar *group_name;
+	gchar *user_name;
+};
 
 static void
 sipe_group_context_destroy(gpointer data)
@@ -104,14 +113,13 @@ struct sipe_group*
 sipe_group_find_by_id(struct sipe_core_private *sipe_private,
 		      int id)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_group *group;
 	GSList *entry;
-	if (sip == NULL) {
-		return NULL;
-	}
 
-	entry = sip->groups;
+	if (!sipe_private)
+		return NULL;
+
+	entry = sipe_private->groups;
 	while (entry) {
 		group = entry->data;
 		if (group->id == id) {
@@ -126,14 +134,13 @@ struct sipe_group*
 sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 			const gchar * name)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_group *group;
 	GSList *entry;
-	if (!sip || !name) {
-		return NULL;
-	}
 
-	entry = sip->groups;
+	if (!sipe_private || !name)
+		return NULL;
+
+	entry = sipe_private->groups;
 	while (entry) {
 		group = entry->data;
 		if (sipe_strequal(group->name, name)) {
@@ -174,11 +181,11 @@ void
 sipe_group_add(struct sipe_core_private *sipe_private,
 	       struct sipe_group * group)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	if (sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC,group->name))
 	{
 		SIPE_DEBUG_INFO("added group %s (id %d)", group->name, group->id);
-		sip->groups = g_slist_append(sip->groups, group);
+		sipe_private->groups = g_slist_append(sipe_private->groups,
+						      group);
 	}
 	else
 	{
@@ -222,7 +229,6 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 	struct sipe_group *s_group = sipe_group_find_by_name(sipe_private, name);
 
 	if (s_group) {
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 		gchar *request;
 		SIPE_DEBUG_INFO("Deleting group %s", name);
 		request = g_strdup_printf("<m:groupID>%d</m:groupID>",
@@ -232,7 +238,8 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 				 request);
 		g_free(request);
 
-		sip->groups = g_slist_remove(sip->groups, s_group);
+		sipe_private->groups = g_slist_remove(sipe_private->groups,
+						      s_group);
 		g_free(s_group->name);
 		g_free(s_group);
 	} else {

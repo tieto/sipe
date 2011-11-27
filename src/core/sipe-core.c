@@ -211,8 +211,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_hash_table_destroy(sip->user_state_publications);
 	sipe_subscriptions_destroy(sipe_private);
 
-	if (sip->groups) {
-		GSList *entry = sip->groups;
+	if (sipe_private->groups) {
+		GSList *entry = sipe_private->groups;
 		while (entry) {
 			struct sipe_group *group = entry->data;
 			g_free(group->name);
@@ -220,7 +220,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 			entry = entry->next;
 		}
 	}
-	g_slist_free(sip->groups);
+	g_slist_free(sipe_private->groups);
 
 	if (sip->our_publication_keys) {
 		GSList *entry = sip->our_publication_keys;
