@@ -5602,7 +5602,7 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) /* 2007+ */
 	{
-		GString* str = g_string_new(NULL);
+		GString* str;
 		gchar *publications;
 
 		if (!sip->user_state_publications || g_hash_table_size(sip->user_state_publications) == 0) {
@@ -5610,6 +5610,7 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 			return;
 		}
 
+		str = g_string_new(NULL);
 		g_hash_table_foreach(sip->user_state_publications, (GHFunc)sipe_publish_get_cat_state_user_to_clear, str);
 		publications = g_string_free(str, FALSE);
 
