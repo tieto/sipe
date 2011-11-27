@@ -356,6 +356,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sip-soap.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sip-soap.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sip-transport.c"
 				>
 			</File>

@@ -25,6 +25,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-backend.h"
+#include "sip-soap.h"
 #include "sip-transport.h"
 #include "sipe-xml.h"
 #include "sipe-buddy.h"
@@ -143,29 +144,30 @@ sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 	return NULL;
 }
 
-#define SIPE_SOAP_ADD_GROUP sipe_soap("addGroup", \
-	"<m:name>%s</m:name>"\
-	"<m:externalURI />"\
-	"<m:deltaNum>%d</m:deltaNum>")
-
 void
 sipe_group_create(struct sipe_core_private *sipe_private,
 		  const gchar *name,
-		  const gchar * who)
+		  const gchar *who)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
 	struct group_user_context *ctx = g_new0(struct group_user_context, 1);
 	const gchar *soap_name = sipe_strequal(name, _("Other Contacts")) ? "~" : name;
-	gchar *body;
+	gchar *request;
 	ctx->group_name = g_strdup(name);
 	ctx->user_name = g_strdup(who);
 	payload->destroy = sipe_group_context_destroy;
 	payload->data = ctx;
 
-	body = g_markup_printf_escaped(SIPE_SOAP_ADD_GROUP, soap_name, sip->contacts_delta++);
-	send_soap_request_with_cb(sipe_private, NULL, body, process_add_group_response, payload);
-	g_free(body);
+	/* soap_name can contain restricted characters */
+	request = g_markup_printf_escaped("<m:name>%s</m:name>"
+					  "<m:externalURI />",
+					  soap_name);
+	sip_soap_ms_pres_request_cb(sipe_private,
+				    "addGroup",
+				    request,
+				    process_add_group_response,
+				    payload);
+	g_free(request);
 }
 
 void
@@ -184,26 +186,27 @@ sipe_group_add(struct sipe_core_private *sipe_private,
 	}
 }
 
-#define SIPE_SOAP_MOD_GROUP sipe_soap("modifyGroup", \
-	"<m:groupID>%d</m:groupID>"\
-	"<m:name>%s</m:name>"\
-	"<m:externalURI />"\
-	"<m:deltaNum>%d</m:deltaNum>")
-
 void
 sipe_core_group_rename(struct sipe_core_public *sipe_public,
 		       const gchar *old_name,
 		       const gchar *new_name)
 {
-	struct sipe_group *s_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, old_name);
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_group *s_group = sipe_group_find_by_name(sipe_private, old_name);
 
 	if (s_group) {
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-		gchar *body;
+		gchar *request;
 		SIPE_DEBUG_INFO("Renaming group %s to %s", old_name, new_name);
-		body = g_markup_printf_escaped(SIPE_SOAP_MOD_GROUP, s_group->id, new_name, sip->contacts_delta++);
-		send_soap_request(SIPE_CORE_PRIVATE, body);
-		g_free(body);
+		/* new_name can contain restricted characters */
+		request = g_markup_printf_escaped("<m:groupID>%d</m:groupID>"
+						  "<m:name>%s</m:name>"
+						  "<m:externalURI />",
+						  s_group->id, new_name);
+		sip_soap_ms_pres_request(sipe_private,
+					 "modifyGroup",
+					 request);
+		g_free(request);
+
 		g_free(s_group->name);
 		s_group->name = g_strdup(new_name);
 	} else {
@@ -211,23 +214,23 @@ sipe_core_group_rename(struct sipe_core_public *sipe_public,
 	}
 }
 
-#define SIPE_SOAP_DEL_GROUP sipe_soap("deleteGroup", \
-	"<m:groupID>%d</m:groupID>"\
-	"<m:deltaNum>%d</m:deltaNum>")
-
 void
 sipe_core_group_remove(struct sipe_core_public *sipe_public,
 		       const gchar *name)
 {
-	struct sipe_group * s_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, name);
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_group *s_group = sipe_group_find_by_name(sipe_private, name);
 
 	if (s_group) {
 		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-		gchar *body;
+		gchar *request;
 		SIPE_DEBUG_INFO("Deleting group %s", name);
-		body = g_strdup_printf(SIPE_SOAP_DEL_GROUP, s_group->id, sip->contacts_delta++);
-		send_soap_request(SIPE_CORE_PRIVATE, body);
-		g_free(body);
+		request = g_strdup_printf("<m:groupID>%d</m:groupID>",
+					  s_group->id);
+		sip_soap_ms_pres_request(sipe_private,
+					 "deleteGroup",
+					 request);
+		g_free(request);
 
 		sip->groups = g_slist_remove(sip->groups, s_group);
 		g_free(s_group->name);

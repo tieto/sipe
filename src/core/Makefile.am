@@ -17,6 +17,8 @@ libsipe_core_la_SOURCES = \
 	sip-sec.h \
 	sip-sec.c \
 	sip-sec-mech.h \
+	sip-soap.h \
+	sip-soap.c \
 	sip-transport.h \
 	sip-transport.c \
 	sipe-buddy.h \

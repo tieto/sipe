@@ -84,6 +84,7 @@ endif
 ##  SOURCES, OBJECTS
 ##
 CLEAN_C_SRC = 		http-conn.c \
+			sip-soap.c \
 			sip-transport.c \
 			sipe-conf.c \
 			sipe-core.c \

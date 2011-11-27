@@ -157,23 +157,4 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     gboolean request,
 			     gboolean benotify);
 
-/* sipe-soap? */
-void send_soap_request_with_cb(struct sipe_core_private *sipe_private,
-			       gchar *from0,
-			       gchar *body,
-                               gboolean (*callbackb) (struct sipe_core_private *, struct sipmsg *,struct transaction *),
-			       struct transaction_payload *payload);
-
-void send_soap_request(struct sipe_core_private *sipe_private, gchar *body);
-
 /*** THE BIG SPLIT END ***/
-
-/* @TODO: move to function instead: sip_soap_ms_pres() */
-#define sipe_soap(method, body) \
-"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
-  "<SOAP-ENV:Body>" \
-    "<m:" method " xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\">" \
-      body \
-    "</m:" method ">" \
-  "</SOAP-ENV:Body>" \
-"</SOAP-ENV:Envelope>"

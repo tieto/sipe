@@ -77,6 +77,7 @@
 #include "http-conn.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
+#include "sip-soap.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
@@ -191,40 +192,6 @@ static void send_presence_status(struct sipe_core_private *sipe_private,
 				 void *unused);
 
 /**
- * @param from0	from URI (with 'sip:' prefix). Will be filled with self-URI if NULL passed.
- */
-void
-send_soap_request_with_cb(struct sipe_core_private *sipe_private,
-			  gchar *from0,
-			  gchar *body,
-			  TransCallback callback,
-			  struct transaction_payload *payload)
-{
-	gchar *from = from0 ? g_strdup(from0) : sip_uri_self(sipe_private);
-	gchar *contact = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
-	                             "Content-Type: application/SOAP+xml\r\n",contact);
-
-	struct transaction *trans = sip_transport_service(sipe_private,
-							  from,
-							  hdr,
-							  body,
-							  callback);
-	trans->payload = payload;
-
-	g_free(from);
-	g_free(contact);
-	g_free(hdr);
-}
-
-void
-send_soap_request(struct sipe_core_private *sipe_private,
-		  gchar *body)
-{
-	send_soap_request_with_cb(sipe_private, NULL, body, NULL, NULL);
-}
-
-/**
  * Returns pointer to URI without sip: prefix if any
  *
  * @param sip_uri SIP URI possibly with sip: prefix. Example: sip:first.last@hq.company.com
@@ -243,30 +210,6 @@ sipe_get_no_sip_uri(const char *sip_uri)
 	} else {
 		return sip_uri;
 	}
-}
-
-/**
- * Set ACL for a contact
- *
- * @param contact  (%s) i.e. sip:user@domain.com
- * @param rights   (%s) "AA" for allow, "BD" for deny
- * @param deltanum (%d) deltanum
- */
-#define SIPE_SOAP_ALLOW_DENY sipe_soap("setACE", \
-	"<m:type>USER</m:type>"\
-	"<m:mask>%s</m:mask>"\
-	"<m:rights>%s</m:rights>"\
-	"<m:deltaNum>%d</m:deltaNum>")
-
-static void
-sipe_contact_set_acl (struct sipe_core_private *sipe_private,
-		      const gchar *who,
-		      gchar *rights)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar * body = g_strdup_printf(SIPE_SOAP_ALLOW_DENY, who, rights, sip->acl_delta++);
-	send_soap_request(sipe_private, body);
-	g_free(body);
 }
 
 static void
@@ -290,7 +233,7 @@ sipe_core_contact_allow_deny (struct sipe_core_public *sipe_public,
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		sipe_change_access_level(sipe_private, (allow ? -1 : 32000), "user", sipe_get_no_sip_uri(who));
 	} else {
-		sipe_contact_set_acl(sipe_private, who, allow ? "AA" : "BD");
+		sip_soap_ocs2005_setacl(sipe_private, who, allow);
 	}
 }
 
@@ -380,37 +323,35 @@ sipe_get_buddy_groups_string (struct sipe_buddy *buddy) {
 	return res;
 }
 
-#define SIPE_SOAP_SET_CONTACT sipe_soap("setContact", \
-	"<m:displayName>%s</m:displayName>"\
-	"<m:groups>%s</m:groups>"\
-	"<m:subscribed>%s</m:subscribed>"\
-	"<m:URI>%s</m:URI>"\
-	"<m:externalURI />"\
-	"<m:deltaNum>%d</m:deltaNum>")
-
 /**
   * Sends buddy update to server
   */
 void
-sipe_core_group_set_user(struct sipe_core_public *sipe_public, const gchar * who)
+sipe_core_group_set_user(struct sipe_core_public *sipe_public,
+			 const gchar *who)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-	struct sipe_buddy *buddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, who);
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, who);
 	sipe_backend_buddy backend_buddy = sipe_backend_buddy_find(sipe_public, who, NULL);
 
 	if (buddy && backend_buddy) {
 		gchar *alias = sipe_backend_buddy_get_alias(sipe_public, backend_buddy);
 		gchar *groups = sipe_get_buddy_groups_string(buddy);
 		if (groups) {
-			gchar *body;
+			gchar *request;
 			SIPE_DEBUG_INFO("Saving buddy %s with alias %s and groups %s", who, alias, groups);
 
-			body = g_markup_printf_escaped(SIPE_SOAP_SET_CONTACT,
-						       alias, groups, "true", buddy->name, sip->contacts_delta++
-				);
-			send_soap_request(SIPE_CORE_PRIVATE, body);
-			g_free(groups);
-			g_free(body);
+			/* alias can contain restricted characters */
+			request = g_markup_printf_escaped("<m:displayName>%s</m:displayName>"
+							  "<m:groups>%s</m:groups>"
+							  "<m:subscribed>true</m:subscribed>"
+							  "<m:URI>%s</m:URI>"
+							  "<m:externalURI />",
+							  alias, groups, buddy->name);
+			sip_soap_ms_pres_request(sipe_private,
+						 "setContact",
+						 request);
+			g_free(request);
 		}
 		g_free(alias);
 	}
@@ -963,10 +904,6 @@ static void sipe_free_buddy(struct sipe_buddy *buddy)
 	g_free(buddy);
 }
 
-#define SIPE_SOAP_DEL_CONTACT sipe_soap("deleteContact", \
-	"<m:URI>%s</m:URI>"\
-	"<m:deltaNum>%d</m:deltaNum>")
-
 /**
   * Unassociates buddy from group first.
   * Then see if no groups left, removes buddy completely.
@@ -1001,10 +938,12 @@ void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *gr
 		g_hash_table_remove(sipe_private->buddies, buddy->name);
 
 		if (b->name) {
-			struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-			gchar * body = g_strdup_printf(SIPE_SOAP_DEL_CONTACT, b->name, sip->contacts_delta++);
-			send_soap_request(sipe_private, body);
-			g_free(body);
+			gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
+							 b->name);
+			sip_soap_ms_pres_request(sipe_private,
+						 "deleteContact",
+						 request);
+			g_free(request);
 		}
 
 		sipe_free_buddy(b);
@@ -4029,7 +3968,13 @@ sipe_is_user_state(struct sipe_core_private *sipe_private)
  * @param since_time_str	(%s) Ex.: 2010-01-13T10:30:05Z
  * @param user_input		(%s) active, idle
  */
-#define SIPE_SOAP_SET_PRESENCE sipe_soap("setPresence", \
+#define SIPE_SOAP_SET_PRESENCE \
+	"<s:Envelope" \
+        " xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"" \
+	" xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\"" \
+	">" \
+	"<s:Body>" \
+	"<m:setPresence>" \
 	"<m:presentity xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" m:uri=\"sip:%s\">"\
 	"<m:availability m:aggregate=\"%d\"/>"\
 	"<m:activity m:aggregate=\"%d\"/>"\
@@ -4044,7 +3989,10 @@ sipe_is_user_state(struct sipe_core_private *sipe_private)
 	"<device xmlns=\"http://schemas.microsoft.com/2002/09/sip/presence\" deviceId=\"%s\" since=\"%s\" >"\
 		"<userInput since=\"%s\" >%s</userInput>"\
 	"</device>"\
-	"</m:presentity>")
+	"</m:presentity>" \
+	"</m:setPresence>"\
+	"</s:Body>" \
+	"</s:Envelope>"
 
 static void
 send_presence_soap0(struct sipe_core_private *sipe_private,
@@ -4064,6 +4012,7 @@ send_presence_soap0(struct sipe_core_private *sipe_private,
 	gchar *states = NULL;
 	gchar *calendar_data = NULL;
 	gchar *epid = get_epid(sipe_private);
+	gchar *from = sip_uri_self(sipe_private);
 	time_t now = time(NULL);
 	gchar *since_time_str = sipe_utils_time_to_str(now);
 	const gchar *oof_note = cal ? sipe_ews_get_oof_note(cal) : NULL;
@@ -4172,12 +4121,12 @@ send_presence_soap0(struct sipe_core_private *sipe_private,
 	g_free(res_note);
 	g_free(states);
 	g_free(calendar_data);
-
-	send_soap_request(sipe_private, body);
-
-	g_free(body);
 	g_free(since_time_str);
 	g_free(epid);
+
+	sip_soap_request_cb(sipe_private, from, body, NULL, NULL);
+
+	g_free(body);
 }
 
 void
@@ -5593,19 +5542,6 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	return TRUE;
 }
 
-#define SIPE_SOAP_SEARCH_CONTACT \
-	"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">" \
-	"<SOAP-ENV:Body>" \
-	"<m:directorySearch xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\">" \
-	"<m:filter m:href=\"#searchArray\"/>"\
-	"<m:maxResults>%d</m:maxResults>"\
-	"</m:directorySearch>"\
-	"<m:Array xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\" m:id=\"searchArray\">"\
-	"%s"\
-	"</m:Array>"\
-	"</SOAP-ENV:Body>"\
-	"</SOAP-ENV:Envelope>"
-
 #define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
 
 void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fields)
@@ -5629,14 +5565,13 @@ void sipe_search_contact_with_cb(PurpleConnection *gc, PurpleRequestFields *fiel
 
 	if (i > 0) {
 		struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-		gchar *domain_uri = sip_uri_from_name(sipe_private->public.sip_domain);
 		gchar *query = g_strjoinv(NULL, attrs);
-		gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 100, query);
-		SIPE_DEBUG_INFO("sipe_search_contact_with_cb: body:\n%s", body ? body : "");
-		send_soap_request_with_cb(sipe_private, domain_uri, body,
-					  process_search_contact_response, NULL);
-		g_free(domain_uri);
-		g_free(body);
+		SIPE_DEBUG_INFO("sipe_search_contact_with_cb: rows:\n%s", query ? query : "");
+		sip_soap_directory_search(sipe_private,
+					  100,
+					  query,
+					  process_search_contact_response,
+					  NULL);
 		g_free(query);
 	}
 
@@ -6600,19 +6535,18 @@ process_get_info_response(struct sipe_core_private *sipe_private,
 void sipe_get_info(PurpleConnection *gc, const char *username)
 {
 	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-	gchar *domain_uri = sip_uri_from_name(sipe_private->public.sip_domain);
 	char *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, "msRTCSIP-PrimaryUserAddress", username);
-	gchar *body = g_strdup_printf(SIPE_SOAP_SEARCH_CONTACT, 1, row);
 	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
 
 	payload->destroy = g_free;
 	payload->data = g_strdup(username);
 
-	SIPE_DEBUG_INFO("sipe_get_contact_data: body:\n%s", body ? body : "");
-	send_soap_request_with_cb(sipe_private, domain_uri, body,
-				  process_get_info_response, payload);
-	g_free(domain_uri);
-	g_free(body);
+	SIPE_DEBUG_INFO("sipe_get_info: row: %s", row ? row : "");
+	sip_soap_directory_search(sipe_private,
+				  1,
+				  row,
+				  process_get_info_response,
+				  payload);
 	g_free(row);
 }
 
