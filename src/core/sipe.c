@@ -89,7 +89,9 @@
 #include "sipe-group.h"
 #include "sipe-dialog.h"
 #include "sipe-ews.h"
+#ifdef _WIN32
 #include "sipe-domino.h"
+#endif
 #include "sipe-groupchat.h"
 #include "sipe-im.h"
 #include "sipe-mime.h"
@@ -2099,7 +2101,10 @@ sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 	 * Can't rely that user turned the functionality on in account settings.
 	 */
 	sipe_ews_update_calendar(SIPE_CORE_PRIVATE);
+#ifdef _WIN32
+	/* @TODO: UNIX integration missing */
 	sipe_domino_update_calendar(SIPE_CORE_PRIVATE);
+#endif
 
 	/* schedule repeat */
 	sipe_schedule_seconds(SIPE_CORE_PRIVATE,

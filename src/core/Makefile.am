@@ -38,8 +38,6 @@ libsipe_core_la_SOURCES = \
 	sipe-dialog.h \
 	sipe-dialog.c \
 	sipe-digest.h \
-	sipe-domino.h \
-	sipe-domino.c \
 	sipe-ews.h \
 	sipe-ews.c \
 	sipe-ft.h \
@@ -75,6 +73,8 @@ if SIPE_OS_WIN32
 libsipe_core_la_SOURCES += \
 	sip-sec-sspi.h \
 	sip-sec-sspi.c \
+	sipe-domino.h \
+	sipe-domino.c \
 	sipe-win32dep.h \
 	sipe-win32dep.c
 else
