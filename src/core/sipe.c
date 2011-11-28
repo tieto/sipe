@@ -239,65 +239,6 @@ sipe_core_contact_allow_deny (struct sipe_core_public *sipe_public,
 	}
 }
 
-/**
- * Returns string like "2 4 7 8" - group ids buddy belong to.
- */
-static gchar *
-sipe_get_buddy_groups_string (struct sipe_buddy *buddy) {
-	int i = 0;
-	gchar *res;
-	//creating array from GList, converting int to gchar*
-	gchar **ids_arr = g_new(gchar *, g_slist_length(buddy->groups) + 1);
-	GSList *entry = buddy->groups;
-
-	if (!ids_arr) return NULL;
-
-	while (entry) {
-		struct sipe_group * group = entry->data;
-		ids_arr[i] = g_strdup_printf("%d", group->id);
-		entry = entry->next;
-		i++;
-	}
-	ids_arr[i] = NULL;
-	res = g_strjoinv(" ", ids_arr);
-	g_strfreev(ids_arr);
-	return res;
-}
-
-/**
-  * Sends buddy update to server
-  */
-void
-sipe_core_group_set_user(struct sipe_core_public *sipe_public,
-			 const gchar *who)
-{
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, who);
-	sipe_backend_buddy backend_buddy = sipe_backend_buddy_find(sipe_public, who, NULL);
-
-	if (buddy && backend_buddy) {
-		gchar *alias = sipe_backend_buddy_get_alias(sipe_public, backend_buddy);
-		gchar *groups = sipe_get_buddy_groups_string(buddy);
-		if (groups) {
-			gchar *request;
-			SIPE_DEBUG_INFO("Saving buddy %s with alias %s and groups %s", who, alias, groups);
-
-			/* alias can contain restricted characters */
-			request = g_markup_printf_escaped("<m:displayName>%s</m:displayName>"
-							  "<m:groups>%s</m:groups>"
-							  "<m:subscribed>true</m:subscribed>"
-							  "<m:URI>%s</m:URI>"
-							  "<m:externalURI />",
-							  alias, groups, buddy->name);
-			sip_soap_request(sipe_private,
-					 "setContact",
-					 request);
-			g_free(request);
-		}
-		g_free(alias);
-	}
-}
-
 static int
 sipe_get_availability_by_status(const char* sipe_status_id, char** activity_token);
 
