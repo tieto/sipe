@@ -520,6 +520,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-notify.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-notify.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-schedule.c"
 				>
 			</File>

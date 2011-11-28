@@ -16,6 +16,7 @@ src/core/sipe-groupchat.c
 src/core/sipe-im.c
 src/core/sipe-incoming.c
 src/core/sipe-media.c
+src/core/sipe-notify.c
 src/core/sipe-user.c
 src/purple/purple-buddy.c
 src/purple/purple-chat.c

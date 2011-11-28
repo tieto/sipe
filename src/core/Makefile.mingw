@@ -103,6 +103,7 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-groupchat.c \
 			sipe-im.c \
 			sipe-incoming.c \
+			sipe-notify.c \
 			sipe-schedule.c \
 			sipe-session.c \
 			sipe-subscriptions.c \

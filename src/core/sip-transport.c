@@ -69,6 +69,7 @@
 #include "sipe-dialog.h"
 #include "sipe-incoming.h"
 #include "sipe-nls.h"
+#include "sipe-notify.h"
 #include "sipe-schedule.h"
 #include "sipe-sign.h"
 #include "sipe-subscriptions.h"

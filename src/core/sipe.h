@@ -105,11 +105,6 @@ struct sipe_account_data {
 	gchar *user_states;
 };
 
-struct sipe_auth_job {
-	gchar *who;
-	struct sipe_core_private *sipe_private;
-};
-
 /**
  * Publishes self status
  * based on own calendar information,
@@ -141,10 +136,37 @@ send_presence_soap(struct sipe_core_private *sipe_private,
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
 void sipe_buddy_free_all(struct sipe_core_private *sipe_private);
 
-/* sipe-notify? */
-void process_incoming_notify(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg,
-			     gboolean request,
-			     gboolean benotify);
+/**
+ * referenced by sipe-notify.c - start
+ *
+ * all of these should be moved to sipe-notify.c
+ */
+void sipe_subscribe_poolfqdn_resource_uri(const char *host,
+					  GSList *server,
+					  struct sipe_core_private *sipe_private);
+void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private,
+				   const gchar *data,
+				   unsigned len);
+void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
+				    void *buddy_name);
+void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
+				  const gchar *data,
+				  unsigned len);
+void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,
+				  const gchar *data,
+				  unsigned len);
+void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_private,
+					gchar *resources_uri,
+					gchar *to);
+void sipe_sched_calendar_status_update(struct sipe_core_private *sipe_private,
+				       time_t calculate_from);
+void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
+			       struct sipmsg *msg);
+void sipe_process_presence_timeout(struct sipe_core_private *sipe_private,
+				   struct sipmsg *msg,
+				   const gchar *who,
+				   int timeout);
+/* referenced by sipe-notify.c - end */
+
 
 /*** THE BIG SPLIT END ***/

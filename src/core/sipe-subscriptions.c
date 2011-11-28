@@ -31,6 +31,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-notify.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe.h"
