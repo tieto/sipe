@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -39,9 +39,16 @@
 #include "sipe-core-private.h"
 #include "sipe-cal.h"
 #include "sipe-nls.h"
+#include "sipe-schedule.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipe.h"
+
+/* Calendar backends */
+#ifdef _WIN32
+#include "sipe-domino.h"
+#endif
+#include "sipe-ews.h"
 
 #define TIME_NULL   (time_t)-1
 #define IS(time)    (time != TIME_NULL)
@@ -1088,6 +1095,33 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		}
 	}
 	/* End of - Calendar: string calculations */
+}
+
+#define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
+
+void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
+{
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
+
+	/* Do in parallel.
+	 * If failed, the branch will be disabled for subsequent calls.
+	 * Can't rely that user turned the functionality on in account settings.
+	 */
+	sipe_ews_update_calendar(SIPE_CORE_PRIVATE);
+#ifdef _WIN32
+	/* @TODO: UNIX integration missing */
+	sipe_domino_update_calendar(SIPE_CORE_PRIVATE);
+#endif
+
+	/* schedule repeat */
+	sipe_schedule_seconds(SIPE_CORE_PRIVATE,
+			      "<+update-calendar>",
+			      NULL,
+			      UPDATE_CALENDAR_INTERVAL,
+			      (sipe_schedule_action)sipe_core_update_calendar,
+			      NULL);
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: finished.");
 }
 
 /*

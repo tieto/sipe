@@ -89,9 +89,6 @@
 #include "sipe-group.h"
 #include "sipe-dialog.h"
 #include "sipe-ews.h"
-#ifdef _WIN32
-#include "sipe-domino.h"
-#endif
 #include "sipe-groupchat.h"
 #include "sipe-im.h"
 #include "sipe-mime.h"
@@ -110,7 +107,6 @@
 #define SIPE_IDLE_SET_DELAY		1	/* 1 sec */
 
 #define UPDATE_CALENDAR_DELAY		1*60	/* 1 min */
-#define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
 
 /* Status identifiers (see also: sipe_status_types()) */
 #define SIPE_STATUS_ID_UNKNOWN     purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET)     /* Unset (primitive) */
@@ -1417,32 +1413,6 @@ sipe_update_user_phone(struct sipe_core_private *sipe_private,
 	if (phone_display_string) {
 		sipe_update_user_info(sipe_private, uri, phone_display_node, phone_display_string);
 	}
-}
-
-void
-sipe_core_update_calendar(struct sipe_core_public *sipe_public)
-{
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
-
-	/* Do in parallel.
-	 * If failed, the branch will be disabled for subsequent calls.
-	 * Can't rely that user turned the functionality on in account settings.
-	 */
-	sipe_ews_update_calendar(SIPE_CORE_PRIVATE);
-#ifdef _WIN32
-	/* @TODO: UNIX integration missing */
-	sipe_domino_update_calendar(SIPE_CORE_PRIVATE);
-#endif
-
-	/* schedule repeat */
-	sipe_schedule_seconds(SIPE_CORE_PRIVATE,
-			      "<+update-calendar>",
-			      NULL,
-			      UPDATE_CALENDAR_INTERVAL,
-			      (sipe_schedule_action)sipe_core_update_calendar,
-			      NULL);
-
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: finished.");
 }
 
 /**
