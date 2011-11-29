@@ -40,7 +40,6 @@
 #include "sipe-backend.h"
 #include "sipe-digest.h"
 #include "sipe-tls.h"
-#include "sipe-utils.h"
 
 /* Security context for TLS-DSK */
 typedef struct _context_tls_dsk {

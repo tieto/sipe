@@ -281,7 +281,7 @@ static void debug_secrets(struct tls_internal_state *state,
 			  const guchar *secret,
 			  gsize secret_length)
 {
-	if (state->debug) {
+	if (state->debug && secret) {
 		g_string_append_printf(state->debug, "%s (%3" G_GSIZE_FORMAT ") = ",
 				       label, secret_length);
 		while (secret_length--)
@@ -419,6 +419,13 @@ static guchar *sipe_tls_prf(SIPE_UNUSED_PARAMETER struct tls_internal_state *sta
 	guchar *md5, *dest;
 	guchar *sha1, *src;
 	gsize count;
+
+	/* make Coverity happy - lengths could be 0 */
+	if (!secret2 || !newseed) {
+		g_free(secret2);
+		g_free(newseed);
+		return(NULL);
+	}
 
 	/*
 	 * PRF(secret, label, seed) = P_MD5(S1, label + seed) XOR
@@ -669,7 +676,7 @@ struct ClientHello_host {
 };
 #define CLIENTHELLO_OFFSET(a) offsetof(struct ClientHello_host, a)
 
-static const struct layout_descriptor const ClientHello_l[] = {
+static const struct layout_descriptor ClientHello_l[] = {
 	{ "Client Protocol Version", parse_integer, compile_integer,     0,  2,                      CLIENTHELLO_OFFSET(protocol_version) },
 	{ "Random",                  parse_array,   compile_array,       0, TLS_ARRAY_RANDOM_LENGTH, CLIENTHELLO_OFFSET(random) },
 	{ "SessionID",               parse_vector,  compile_vector,      0, 32,                      CLIENTHELLO_OFFSET(sessionid) },
@@ -677,11 +684,11 @@ static const struct layout_descriptor const ClientHello_l[] = {
 	{ "CompressionMethod",       parse_vector,  compile_vector,      1, TLS_VECTOR_MAX8,         CLIENTHELLO_OFFSET(compression) },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
-static const struct msg_descriptor const ClientHello_m = {
+static const struct msg_descriptor ClientHello_m = {
 	NULL, "Client Hello", ClientHello_l, TLS_HANDSHAKE_TYPE_CLIENT_HELLO
 };
 
-static const struct layout_descriptor const ServerHello_l[] = {
+static const struct layout_descriptor ServerHello_l[] = {
 	{ "Server Protocol Version", parse_integer, NULL, 0,  2,                      0 },
 	{ "Random",                  parse_array,   NULL, 0, TLS_ARRAY_RANDOM_LENGTH, 0 },
 	{ "SessionID",               parse_vector,  NULL, 0, 32,                      0 },
@@ -689,7 +696,7 @@ static const struct layout_descriptor const ServerHello_l[] = {
 	{ "CompressionMethod",       parse_integer, NULL, 0,  1,                      0 },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
-static const struct msg_descriptor const ServerHello_m = {
+static const struct msg_descriptor ServerHello_m = {
 	&ClientHello_m, "Server Hello", ServerHello_l, TLS_HANDSHAKE_TYPE_SERVER_HELLO
 };
 
@@ -698,27 +705,27 @@ struct Certificate_host {
 };
 #define CERTIFICATE_OFFSET(a) offsetof(struct Certificate_host, a)
 
-static const struct layout_descriptor const Certificate_l[] = {
+static const struct layout_descriptor Certificate_l[] = {
 	{ "Certificate",             parse_vector, compile_vector, 0, TLS_VECTOR_MAX24, CERTIFICATE_OFFSET(certificate) },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
-static const struct msg_descriptor const Certificate_m = {
+static const struct msg_descriptor Certificate_m = {
 	&ServerHello_m, "Certificate", Certificate_l, TLS_HANDSHAKE_TYPE_CERTIFICATE
 };
 
-static const struct layout_descriptor const CertificateRequest_l[] = {
+static const struct layout_descriptor CertificateRequest_l[] = {
 	{ "CertificateType",         parse_vector, NULL, 1, TLS_VECTOR_MAX8,  0 },
 	{ "DistinguishedName",       parse_vector, NULL, 0, TLS_VECTOR_MAX16, 0 },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
-static const struct msg_descriptor const CertificateRequest_m = {
+static const struct msg_descriptor CertificateRequest_m = {
 	&Certificate_m, "Certificate Request", CertificateRequest_l, TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ
 };
 
-static const struct layout_descriptor const ServerHelloDone_l[] = {
+static const struct layout_descriptor ServerHelloDone_l[] = {
 	TLS_LAYOUT_DESCRIPTOR_END
 };
-static const struct msg_descriptor const ServerHelloDone_m = {
+static const struct msg_descriptor ServerHelloDone_m = {
 	&CertificateRequest_m, "Server Hello Done", ServerHelloDone_l, TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE
 };
 
@@ -727,11 +734,11 @@ struct ClientKeyExchange_host {
 };
 #define CLIENTKEYEXCHANGE_OFFSET(a) offsetof(struct ClientKeyExchange_host, a)
 
-static const struct layout_descriptor const ClientKeyExchange_l[] = {
+static const struct layout_descriptor ClientKeyExchange_l[] = {
 	{ "Exchange Keys",           parse_vector, compile_vector, 0, TLS_VECTOR_MAX16, CLIENTKEYEXCHANGE_OFFSET(secret) },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
-static const struct msg_descriptor const ClientKeyExchange_m = {
+static const struct msg_descriptor ClientKeyExchange_m = {
 	&ServerHelloDone_m, "Client Key Exchange", ClientKeyExchange_l, TLS_HANDSHAKE_TYPE_CLIENT_KEY_EXCHANGE
 };
 
@@ -740,11 +747,11 @@ struct CertificateVerify_host {
 };
 #define CERTIFICATEVERIFY_OFFSET(a) offsetof(struct CertificateVerify_host, a)
 
-static const struct layout_descriptor const CertificateVerify_l[] = {
+static const struct layout_descriptor CertificateVerify_l[] = {
 	{ "Signature",               parse_vector, compile_vector, 0, TLS_VECTOR_MAX16, CERTIFICATEVERIFY_OFFSET(signature) },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
-static const struct msg_descriptor const CertificateVerify_m = {
+static const struct msg_descriptor CertificateVerify_m = {
 	&ClientKeyExchange_m, "Certificate Verify", CertificateVerify_l, TLS_HANDSHAKE_TYPE_CERTIFICATE_VERIFY
 };
 
@@ -753,11 +760,11 @@ struct Finished_host {
 };
 #define FINISHED_OFFSET(a) offsetof(struct Finished_host, a)
 
-static const struct layout_descriptor const Finished_l[] = {
+static const struct layout_descriptor Finished_l[] = {
 	{ "Verify Data",             parse_array, compile_array, 0, TLS_ARRAY_VERIFY_LENGTH, FINISHED_OFFSET(verify) },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
-static const struct msg_descriptor const Finished_m = {
+static const struct msg_descriptor Finished_m = {
 	&CertificateVerify_m, "Finished", Finished_l, TLS_HANDSHAKE_TYPE_FINISHED
 };
 
@@ -805,7 +812,7 @@ static gboolean handshake_parse(struct tls_internal_state *state)
 		state->msg_current   = (guchar *) bytes + TLS_HANDSHAKE_HEADER_LENGTH;
 		state->msg_remainder = msg_length;
 
-		if (desc->layouts) {
+		if (desc && desc->layouts) {
 			const struct layout_descriptor *ldesc = desc->layouts;
 
 			debug_printf(state, "%s\n", desc->description);
@@ -1011,6 +1018,8 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 	compile_tls_record(state, msg, NULL);
 	plaintext        = state->common.out_buffer;
 	plaintext_length = state->common.out_length;
+	if (plaintext_length == 0) /* make Coverity happy */
+		return;
 
 	/* Prepare encryption buffer */
 	encrypted_length = plaintext_length + state->mac_length;
@@ -1278,7 +1287,8 @@ static guchar *tls_pkcs1_private_padding(SIPE_UNUSED_PARAMETER struct tls_intern
 	gsize pad_length;
 	guchar *pad_buffer;
 
-	if (data_length + 3 > buffer_length)
+	if (data_length + 3 > buffer_length) ||
+	    (buffer_length == 0)) /* this is dead code, but makes Coverity happy */)
 		return(NULL);
 
 	pad_length = buffer_length - data_length - 3;
@@ -1309,7 +1319,8 @@ static guchar *tls_pkcs1_public_padding(SIPE_UNUSED_PARAMETER struct tls_interna
 	gsize pad_length, random_count;
 	guchar *pad_buffer, *random;
 
-	if (data_length + 3 > buffer_length)
+	if ((data_length + 3 > buffer_length) ||
+	    (buffer_length == 0)) /* this is dead code, but makes Coverity happy */
 		return(NULL);
 
 	pad_length = buffer_length - data_length - 3;
@@ -1456,6 +1467,7 @@ static struct tls_compiled_message *tls_certificate_verify(struct tls_internal_s
 			   length);
 	verify->signature.elements = length;
 	memcpy(verify->signature.placeholder, signature, length);
+	g_free(signature);
 
 	msg = compile_handshake_msg(state, &CertificateVerify_m, verify,
 				    sizeof(struct CertificateVerify_host) + length);
@@ -1570,7 +1582,7 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 			guchar *merged;
 			gsize length;
 			/* ChangeCipherSpec is always the same */
-			static const guchar const part2[] = {
+			static const guchar part2[] = {
 				TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC,
 				(TLS_PROTOCOL_VERSION_1_0 >> 8) & 0xFF,
 				TLS_PROTOCOL_VERSION_1_0 & 0xFF,

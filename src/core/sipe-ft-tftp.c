@@ -461,16 +461,16 @@ sipe_core_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
 
 	if (ft_private->bytes_remaining_chunk == 0) {
 		gssize bytes_read;
-		guchar local_buf[16];
+		guchar local_buf[16 + 1]; /* space for string terminator */
 		guchar hdr_buf[SIPE_FT_CHUNK_HEADER_LENGTH];
-
-		memset(local_buf, 0, sizeof local_buf);
 
 		/* Check if receiver did not cancel the transfer
 		   before it is finished */
 		bytes_read = sipe_backend_ft_read(SIPE_FILE_TRANSFER_PUBLIC,
 						  local_buf,
-						  sizeof(local_buf));
+						  sizeof(local_buf) - 1);
+		local_buf[sizeof(local_buf) - 1] = '\0';
+
 		if (bytes_read < 0) {
 			sipe_backend_ft_error(SIPE_FILE_TRANSFER_PUBLIC,
 					      _("Socket read failed"));

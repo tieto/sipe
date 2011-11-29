@@ -490,6 +490,7 @@ Response:
 	msg2 = "SIP/2.0 200 OK\r\nms-keep-alive: UAS; tcp=no; hop-hop=yes; end-end=no; timeout=300\r\nAuthentication-Info: NTLM rspauth=\"0100000000000000BF2E52667DDF6DED\", srand=\"0878F41B\", snum=\"1\", opaque=\"4452DFB0\", qop=\"auth\", targetname=\"ocs1.ocs.provo.novell.com\", realm=\"SIP Communications Service\"\r\nFrom: \"Gabriel Burt\"<sip:gabriel@ocs.provo.novell.com>;tag=2947328781;epid=1234567890\r\nTo: <sip:gabriel@ocs.provo.novell.com>;tag=B816D65C2300A32CFA6D371F2AF537FD\r\nCall-ID: 8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx\r\nCSeq: 3 REGISTER\r\nVia: SIP/2.0/TLS 164.99.194.49:10409;branch=z9hG4bKE0E37DBAF252C3255BAD;received=164.99.195.20;ms-received-port=10409;ms-received-cid=1E00\r\nContact: <sip:164.99.195.20:10409;transport=tls;ms-received-cid=1E00>;expires=900\r\nExpires: 900\r\nAllow-Events: vnd-microsoft-provisioning,vnd-microsoft-roaming-contacts,vnd-microsoft-roaming-ACL,presence,presence.wpending,vnd-microsoft-roaming-self,vnd-microsoft-provisioning-v2\r\nSupported: adhoclist\r\nServer: RTC/3.0\r\nSupported: com.microsoft.msrtc.presence\r\nContent-Length: 0\r\n\r\n";
 	msg = sipmsg_parse_msg(msg2);
 
+	memset(&msgbd, 0, sizeof(struct sipmsg_breakdown));
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com", NULL);
 	msg_str = sipmsg_breakdown_get_string(2, &msgbd);
@@ -688,6 +689,7 @@ Message (length 352):
 	/* global var */
 	test_time_val = GUINT64_FROM_LE(*buff2);
 	g_free(buff2);
+	buff2 = NULL;
 
 	target_info2_len = hex_str_to_buff("02000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C0000000000", &target_info2);
 
@@ -716,7 +718,6 @@ Message (length 352):
 			 lm_challenge_response,	/* out */
 			 nt_challenge_response_v2_2,	/* out */
 			 session_base_key);	/* out */
-	g_free(nonce2);
 	g_free(target_info2);
 
 	assert_equal("A1E92EFE4E078BF7C5C0049ACC6166C2D6AE875CB0FDAA41", lm_challenge_response, 24, TRUE);
@@ -726,6 +727,7 @@ Message (length 352):
 	}
 
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce2, key_exchange_key);
+	g_free(nonce2);
 
 	}
 
@@ -746,6 +748,7 @@ Message (length 352):
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nClient request\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(request);
+	memset(&msgbd, 0, sizeof(struct sipmsg_breakdown));
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
@@ -757,6 +760,7 @@ Message (length 352):
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nServer response\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(response);
+	memset(&msgbd, 0, sizeof(struct sipmsg_breakdown));
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
@@ -843,6 +847,7 @@ Message (length 352):
 	response_sig = "<NTLM><1B6D47A1><11><SIP Communications Service><LOC-COMPANYT-FE03.COMPANY.COM><41CEg82ECa0AC8i3DD7mE673t9CF4b19DAxF780x><1><INVITE><sip:sender@company.com><2420628112><sip:recipient@company.com><7aee15546a><SIP:recipient@company.com><><><180>";
 
 	msg = sipmsg_parse_msg(response_symbian);
+	memset(&msgbd, 0, sizeof(struct sipmsg_breakdown));
 	msgbd.msg = msg;
 	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "LOC-COMPANYT-FE03.COMPANY.COM", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);

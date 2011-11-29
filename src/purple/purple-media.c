@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@
 
 #include "mediamanager.h"
 #include "media-gst.h"
-#include "request.h"
 #include "agent.h"
 
 #include "sipe-backend.h"
@@ -288,9 +287,10 @@ ensure_codecs_conf()
 	if (!g_file_test(filename, G_FILE_TEST_EXISTS)) {
 		int fd = g_open(filename, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
 		gchar *fs_codecs_conf = FS_CODECS_CONF;
-		if (!fd || write(fd, fs_codecs_conf, strlen(fs_codecs_conf)) == -1)
+		if ((fd < 0) || write(fd, fs_codecs_conf, strlen(fs_codecs_conf)) == -1)
 			SIPE_DEBUG_ERROR_NOFORMAT("Can not create fs-codec.conf!");
-		close(fd);
+		if (fd >= 0)
+			close(fd);
 	}
 
 	g_free(filename);
@@ -437,7 +437,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			++media->unconfirmed_streams;
 	}
 
-	if (media_relays)
+	if (params && media_relays)
 		g_value_unset(&params[3].value);
 
 	g_free(params);

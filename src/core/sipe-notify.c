@@ -280,7 +280,6 @@ static void sipe_cleanup_local_blist(struct sipe_core_private *sipe_private)
 		gname = sipe_backend_buddy_get_group_name(SIPE_CORE_PUBLIC, b);
 		bname = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC, b);
 		buddy = g_hash_table_lookup(sipe_private->buddies, bname);
-		g_free(bname);
 		if(buddy) {
 			gboolean in_sipe_groups = FALSE;
 			GSList *entry2 = buddy->groups;
@@ -300,6 +299,7 @@ static void sipe_cleanup_local_blist(struct sipe_core_private *sipe_private)
 				SIPE_DEBUG_INFO("*** REMOVING %s from blist group: %s as this buddy not in roaming list", bname, gname);
 				sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, b);
 		}
+		g_free(bname);
 		g_free(gname);
 		entry = entry->next;
 	}

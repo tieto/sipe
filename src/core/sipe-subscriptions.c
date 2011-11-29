@@ -36,7 +36,6 @@
 #include "sipe-schedule.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
-#include "sipe.h"
 
 /* RFC3265 subscription */
 struct sip_subscription {

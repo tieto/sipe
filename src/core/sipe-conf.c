@@ -43,9 +43,6 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-im.h"
-#ifdef HAVE_VV
-#include "sipe-media.h"
-#endif
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"

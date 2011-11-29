@@ -91,17 +91,12 @@
 #include "sipe-ews.h"
 #include "sipe-groupchat.h"
 #include "sipe-im.h"
-#include "sipe-mime.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
-#ifdef HAVE_VV
-#include "sipe-media.h"
-#endif
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "uuid.h"
 #include "sipe.h"
 
 #define SIPE_IDLE_SET_DELAY		1	/* 1 sec */
@@ -5072,6 +5067,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 							   group->name, NULL);
 		menu_groups = g_list_prepend(menu_groups, act);
 	}
+	/* Coverity complains about RESOURCE_LEAK here - no idea how to fix it */
 	menu_groups = g_list_reverse(menu_groups);
 
 	act = purple_menu_action_new(_("Copy to"),
@@ -5259,10 +5255,8 @@ sipe_get_access_groups_menu(struct sipe_core_private *sipe_private)
 {
 	GList *menu_access_groups = NULL;
 	PurpleMenuAction *act;
-	GSList *access_domains = NULL;
+	GSList *access_domains;
 	GSList *entry;
-	char *menu_name;
-	char *domain;
 
 	act = purple_menu_action_new(_("People in my company"),
 				     NULL,
@@ -5283,17 +5277,19 @@ sipe_get_access_groups_menu(struct sipe_core_private *sipe_private)
 	access_domains = sipe_get_access_domains(sipe_private);
 	entry = access_domains;
 	while (entry) {
-		domain = entry->data;
+		gchar *domain    = entry->data;
+		gchar *menu_name = g_strdup_printf(_("People at %s"), domain);
 
-		menu_name = g_strdup_printf(_("People at %s"), domain);
+		/* takes over ownership of entry->data (= domain) */
 		act = purple_menu_action_new(menu_name,
 					     NULL,
-					     NULL, sipe_get_access_levels_menu(sipe_private, "domain", g_strdup(domain), TRUE));
+					     NULL, sipe_get_access_levels_menu(sipe_private, "domain", domain, TRUE));
 		menu_access_groups = g_list_prepend(menu_access_groups, act);
 		g_free(menu_name);
 
 		entry = entry->next;
 	}
+	g_slist_free(access_domains);
 
 	/* separator */
 	/*			      People in domains connected with my company		 */

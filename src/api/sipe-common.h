@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@
 
 /* in order to remove internal.h dependency in mingw builds */
 #ifndef G_GNUC_NULL_TERMINATED
-#	if     __GNUC__ >= 4
+#	if    defined(__GNUC__) && (__GNUC__ >= 4)
 #		define G_GNUC_NULL_TERMINATED __attribute__((__sentinel__))
 #	else
 #		define G_GNUC_NULL_TERMINATED
@@ -45,4 +45,3 @@
 #ifdef _MSC_VER
 typedef long ssize_t;
 #endif
-

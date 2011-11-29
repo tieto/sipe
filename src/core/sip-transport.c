@@ -74,7 +74,6 @@
 #include "sipe-sign.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
-#include "uuid.h"
 #include "sipe.h"
 
 struct sip_auth {

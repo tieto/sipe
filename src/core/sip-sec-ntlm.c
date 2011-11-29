@@ -607,7 +607,7 @@ EndDefine
 		guint8 nt_proof_str [16];
 
 		/* client_challenge (8) & temp (temp_len) buff */
-		int temp_len = 8+8+8+4+target_info_len+4;
+		unsigned int temp_len = 8+8+8+4+target_info_len+4;
 		guint64 *temp2 = g_malloc0(8 + temp_len);
 		((guint8 *) temp2)[8+0] = 1;
 		((guint8 *) temp2)[8+1] = 1;
@@ -836,7 +836,7 @@ Version(4), RandomPad(4), Checksum(4), SeqNum(4)
 static void
 MAC (guint32 flags,
      const char *buf,
-     int buf_len,
+     unsigned int buf_len,
      unsigned char *sign_key,
      unsigned long sign_key_len,
      unsigned char *seal_key,
@@ -1041,9 +1041,11 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
 
 	if (!IS_FLAG(*flags, NEGOTIATE_FLAGS_COMMON_MIN) ||
-	    !(is_connection_based || IS_FLAG(*flags, NEGOTIATE_FLAGS_CONNLESS_EXTRA)))
+	    !(is_connection_based || IS_FLAG(*flags, NEGOTIATE_FLAGS_CONNLESS_EXTRA)) ||
+	    !nt_challenge_response) /* Coverity thinks ntlmssp_nt_resp_len could be 0 */
 	{
 		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_ntlm_gen_authenticate: received incompatible NTLM NegotiateFlags, exiting.");
+		g_free(nt_challenge_response);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
@@ -1291,7 +1293,7 @@ sip_sec_ntlm_sipe_signature_make(guint32 flags,
 {
 	char *res;
 
-	MAC(flags,  msg,strlen(msg),  sign_key,16,  seal_key,16,  random_pad, 100, result);
+	MAC(flags, msg, strlen(msg), sign_key, 16, seal_key, 16, random_pad, 100, result);
 
 	res = buff_to_hex_str((guint8 *)result, 16);
 	SIPE_DEBUG_INFO("NTLM calculated MAC: %s", res);
