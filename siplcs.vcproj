@@ -528,6 +528,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-ocs2007.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-ocs2007.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-schedule.c"
 				>
 			</File>

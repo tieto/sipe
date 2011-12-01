@@ -106,18 +106,6 @@ struct sipe_account_data {
 };
 
 /**
- * Publishes self status
- * based on own calendar information,
- * our Calendar information - FreeBusy, WorkingHours,
- * OOF note.
- *
- * For 2007+
- */
-void
-publish_calendar_status_self(struct sipe_core_private *sipe_private,
-			     void *unused);
-
-/**
  * For 2005-
  */
 void
@@ -135,6 +123,30 @@ send_presence_soap(struct sipe_core_private *sipe_private,
 /* ??? module */
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
 void sipe_buddy_free_all(struct sipe_core_private *sipe_private);
+#ifdef _SIPE_NEED_ACTIVITIES
+/* need to improve or reduce visibilty of this interface */
+const gchar *sipe_activity_to_token(sipe_activity);
+#endif
+void sipe_set_initial_status(struct sipe_core_private *sipe_private);
+void sipe_set_invisible_status(struct sipe_core_private *sipe_private);
+int sipe_get_availability_by_status(const gchar *sipe_status_id,
+				    gchar **activity_token);
+const gchar *sipe_get_status_by_availability(int avail,
+					     gchar **activity);
+void send_presence_status(struct sipe_core_private *sipe_private,
+			  gpointer unused);
+gboolean sipe_is_user_state(struct sipe_core_private *sipe_private);
+void sipe_update_user_info(struct sipe_core_private *sipe_private,
+			   const char *uri,
+			   sipe_buddy_info_fields propkey,
+			   char *property_value);
+
+/* this should be in backend? */
+void sipe_backend_account_status_and_note(struct sipe_core_private *sipe_private,
+					  const gchar *status_id);
+
+/* sipe-utils? */
+const gchar *sipe_get_no_sip_uri(const gchar *sip_uri);
 
 /**
  * referenced by sipe-notify.c - start
@@ -152,8 +164,6 @@ void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,
 				  unsigned len);
 void sipe_sched_calendar_status_update(struct sipe_core_private *sipe_private,
 				       time_t calculate_from);
-void sipe_process_roaming_self(struct sipe_core_private *sipe_private,
-			       struct sipmsg *msg);
 /* referenced by sipe-notify.c - end */
 
 

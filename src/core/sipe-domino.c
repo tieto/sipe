@@ -74,13 +74,13 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
-#include "sipe.h"
 #include "sipe-nls.h"
 #include "sipe-backend.h"
 #include "sipe-utils.h"
 #include "sipe-cal.h"
 #include "sipe-xml.h"
 #include "sipe-domino.h"
+#include "sipe.h"
 
 
 /**
@@ -283,14 +283,7 @@ sipe_domino_process_calendar_response(int return_code,
 
 		/* update SIP server */
 		cal->is_updated = TRUE;
-		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-			/* sipe.h */
-			publish_calendar_status_self(sipe_private,
-						     NULL);
-		} else {
-			/* sipe.h */
-			send_presence_soap(sipe_private, TRUE);
-		}
+		sipe_cal_presence_publish(sipe_private, TRUE);
 
 	} else if (return_code < 0) {
 		SIPE_DEBUG_INFO("sipe_domino_process_calendar_response: rather FAILURE, ret=%d", return_code);

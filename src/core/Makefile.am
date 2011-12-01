@@ -53,6 +53,8 @@ libsipe_core_la_SOURCES = \
 	sipe-incoming.c \
 	sipe-notify.h \
 	sipe-notify.c \
+	sipe-ocs2007.h \
+	sipe-ocs2007.c \
 	sipe-schedule.h \
 	sipe-schedule.c \
 	sipe-session.h \

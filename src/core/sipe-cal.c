@@ -39,6 +39,7 @@
 #include "sipe-core-private.h"
 #include "sipe-cal.h"
 #include "sipe-nls.h"
+#include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -1122,6 +1123,32 @@ void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 			      NULL);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: finished.");
+}
+
+void sipe_cal_presence_publish(struct sipe_core_private *sipe_private,
+			       gboolean do_publish_calendar)
+{
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+		if (do_publish_calendar)
+			sipe_ocs2007_presence_publish(sipe_private, NULL);
+		else
+			sipe_ocs2007_category_publish(sipe_private);
+	} else {
+		/* sipe.h */
+		send_presence_soap(sipe_private, do_publish_calendar);
+	}
+}
+
+void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private)
+{
+#define UPDATE_CALENDAR_DELAY		1*60	/* 1 min */
+
+	sipe_schedule_seconds(sipe_private,
+			      "<+update-calendar>",
+			      NULL,
+			      UPDATE_CALENDAR_DELAY,
+			      (sipe_schedule_action) sipe_core_update_calendar,
+			      NULL);
 }
 
 /*

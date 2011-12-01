@@ -48,6 +48,7 @@
 #include "sipe-mime.h"
 #include "sipe-nls.h"
 #include "sipe-notify.h"
+#include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
@@ -705,7 +706,7 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 			}
 			else if (sipe_strcase_equal(event, "vnd-microsoft-roaming-self"))
 			{
-				sipe_process_roaming_self(sipe_private, msg);
+				sipe_ocs2007_process_roaming_self(sipe_private, msg);
 			}
 			else if (sipe_strcase_equal(event, "vnd-microsoft-roaming-ACL"))
 			{

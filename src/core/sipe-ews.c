@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010, 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -596,14 +596,7 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 
 			cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 			cal->is_updated = TRUE;
-			if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-				/* sipe.h */
-				publish_calendar_status_self(sipe_private,
-							     NULL);
-			} else {
-				/* sipe.h */
-				send_presence_soap(sipe_private, TRUE);
-			}
+			sipe_cal_presence_publish(sipe_private, TRUE);
 			break;
 		}
 	}
