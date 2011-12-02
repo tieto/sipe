@@ -25,6 +25,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <glib.h>
 
@@ -40,12 +41,13 @@
 #include "sipe-core-private.h"
 #include "sipe-crypt.h"
 #include "sipe-group.h"
+#include "sipe-media.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
-#include "sipe-media.h"
+#include "sipe-utils.h"
 #include "sipe.h"
 
 /* locale_dir is unused if ENABLE_NLS is not defined */
@@ -158,6 +160,122 @@ gchar *sipe_core_about(void)
 		/* "Localization for <language name> (<language code>): <name>" */
 		_("Original texts in English (en): SIPE developers")
 		);
+}
+
+static guint sipe_ht_hash_nick(const char *nick)
+{
+	char *lc = g_utf8_strdown(nick, -1);
+	guint bucket = g_str_hash(lc);
+	g_free(lc);
+
+	return bucket;
+}
+
+static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
+{
+	char *nick1_norm = NULL;
+	char *nick2_norm = NULL;
+	gboolean equal;
+
+	if (nick1 == NULL && nick2 == NULL) return TRUE;
+	if (nick1 == NULL || nick2 == NULL    ||
+	    !g_utf8_validate(nick1, -1, NULL) ||
+	    !g_utf8_validate(nick2, -1, NULL)) return FALSE;
+
+	nick1_norm = g_utf8_casefold(nick1, -1);
+	nick2_norm = g_utf8_casefold(nick2, -1);
+	equal = g_utf8_collate(nick1_norm, nick2_norm) == 0;
+	g_free(nick2_norm);
+	g_free(nick1_norm);
+
+	return equal;
+}
+
+struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
+					    const gchar *login_domain,
+					    const gchar *login_account,
+					    const gchar *password,
+					    const gchar *email,
+					    const gchar *email_url,
+					    const gchar **errmsg)
+{
+	struct sipe_core_private *sipe_private;
+	struct sipe_account_data *sip;
+	gchar **user_domain;
+
+	SIPE_DEBUG_INFO("sipe_core_allocate: signin_name '%s'", signin_name);
+
+	/* ensure that sign-in name doesn't contain invalid characters */
+	if (strpbrk(signin_name, "\t\v\r\n") != NULL) {
+		*errmsg = _("SIP Exchange user name contains invalid characters");
+		return NULL;
+	}
+
+	/* ensure that sign-in name format is name@domain */
+	if (!strchr(signin_name, '@') ||
+	    g_str_has_prefix(signin_name, "@") ||
+	    g_str_has_suffix(signin_name, "@")) {
+		*errmsg = _("User name should be a valid SIP URI\nExample: user@company.com");
+		return NULL;
+	}
+
+	/* ensure that email format is name@domain (if provided) */
+	if (!is_empty(email) &&
+	    (!strchr(email, '@') ||
+	     g_str_has_prefix(email, "@") ||
+	     g_str_has_suffix(email, "@")))
+	{
+		*errmsg = _("Email address should be valid if provided\nExample: user@company.com");
+		return NULL;
+	}
+
+	/* ensure that user name doesn't contain spaces */
+	user_domain = g_strsplit(signin_name, "@", 2);
+	SIPE_DEBUG_INFO("sipe_core_allocate: user '%s' domain '%s'", user_domain[0], user_domain[1]);
+	if (strchr(user_domain[0], ' ') != NULL) {
+		g_strfreev(user_domain);
+		*errmsg = _("SIP Exchange user name contains whitespace");
+		return NULL;
+	}
+
+	/* ensure that email_url is in proper format if enabled (if provided).
+	 * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
+	 * Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
+	 */
+	if (!is_empty(email_url)) {
+		char *tmp = g_ascii_strdown(email_url, -1);
+		if (!g_str_has_prefix(tmp, "https://"))
+		{
+			g_free(tmp);
+			g_strfreev(user_domain);
+			*errmsg = _("Email services URL should be valid if provided\n"
+				    "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
+				    "Example: https://domino.corp.com/maildatabase.nsf");
+			return NULL;
+		}
+		g_free(tmp);
+	}
+
+	sipe_private = g_new0(struct sipe_core_private, 1);
+	sipe_private->temporary = sip = g_new0(struct sipe_account_data, 1);
+	sip->subscribed_buddies = FALSE;
+	sip->initial_state_published = FALSE;
+	sipe_private->username   = g_strdup(signin_name);
+	sip->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);
+	sip->authdomain = is_empty(login_domain)  ? NULL                  : g_strdup(login_domain);
+	sip->authuser   = is_empty(login_account) ? NULL                  : g_strdup(login_account);
+	sip->password   = g_strdup(password);
+	sipe_private->public.sip_name   = g_strdup(user_domain[0]);
+	sipe_private->public.sip_domain = g_strdup(user_domain[1]);
+	g_strfreev(user_domain);
+
+	sipe_private->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
+	sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
+						      g_free, (GDestroyNotify)g_hash_table_destroy);
+	sipe_subscriptions_init(sipe_private);
+	sipe_set_unknown_status(sipe_private);
+
+	return((struct sipe_core_public *)sipe_private);
 }
 
 void sipe_core_deallocate(struct sipe_core_public *sipe_public)

@@ -104,6 +104,19 @@ gchar *sip_uri(const gchar *string)
 	return(strstr(string, "sip:") ? g_strdup(string) : sip_uri_from_name(string));
 }
 
+const gchar *sipe_get_no_sip_uri(const gchar *sip_uri)
+{
+#define SIP_PREFIX "sip:"
+
+	if (!sip_uri) return NULL;
+
+	if (g_str_has_prefix(sip_uri, SIP_PREFIX)) {
+		return(sip_uri + strlen(SIP_PREFIX));
+	} else {
+		return sip_uri;
+	}
+}
+
 gchar *
 get_epid(struct sipe_core_private *sipe_private)
 {

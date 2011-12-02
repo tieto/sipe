@@ -41,12 +41,10 @@
  */
 
 /* Forward declarations */
-struct sipmsg;
 struct _PurpleAccount;
 struct _PurpleConnection;
 struct sipe_core_private;
-struct transaction;
-struct transaction_payload;
+struct sipe_buddy;
 
 /** MS-PRES publication */
 struct sipe_publication {
@@ -106,13 +104,6 @@ struct sipe_account_data {
 };
 
 /**
- * For 2005-
- */
-void
-send_presence_soap(struct sipe_core_private *sipe_private,
-		   gboolean do_publish_calendar);
-
-/**
  * THE BIG SPLIT - temporary interfaces
  *
  * Previously private functions in sipe.c that are
@@ -124,46 +115,49 @@ send_presence_soap(struct sipe_core_private *sipe_private,
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
 void sipe_buddy_free_all(struct sipe_core_private *sipe_private);
 #ifdef _SIPE_NEED_ACTIVITIES
-/* need to improve or reduce visibilty of this interface */
+/* need to improve or reduce visibility of this interface */
 const gchar *sipe_activity_to_token(sipe_activity);
+const gchar *sipe_activity_description(sipe_activity);
+const gchar *sipe_activity_description_from_token(const gchar *token);
 #endif
+void sipe_set_unknown_status(struct sipe_core_private *sipe_private);
 void sipe_set_initial_status(struct sipe_core_private *sipe_private);
 void sipe_set_invisible_status(struct sipe_core_private *sipe_private);
 int sipe_get_availability_by_status(const gchar *sipe_status_id,
 				    gchar **activity_token);
 const gchar *sipe_get_status_by_availability(int avail,
 					     gchar **activity);
+void sipe_get_act_avail_by_status_2005(const char *status,
+				       int *activity,
+				       int *availability);
+const gchar *sipe_get_status_by_act_avail_2005(const int activity,
+					       const int availablity,
+					       char **activity_desc);
 void send_presence_status(struct sipe_core_private *sipe_private,
 			  gpointer unused);
 gboolean sipe_is_user_state(struct sipe_core_private *sipe_private);
+gboolean sipe_is_user_available(struct sipe_core_private *sipe_private);
 void sipe_update_user_info(struct sipe_core_private *sipe_private,
 			   const char *uri,
 			   sipe_buddy_info_fields propkey,
 			   char *property_value);
+void sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
+				struct sipe_buddy *sbuddy,
+				const char *status_id);
 
 /* this should be in backend? */
 void sipe_backend_account_status_and_note(struct sipe_core_private *sipe_private,
 					  const gchar *status_id);
 
-/* sipe-utils? */
-const gchar *sipe_get_no_sip_uri(const gchar *sip_uri);
-
 /**
  * referenced by sipe-notify.c - start
- *
- * all of these should be moved to sipe-notify.c
  */
-void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private,
-				   const gchar *data,
-				   unsigned len);
-void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
-				  const gchar *data,
-				  unsigned len);
-void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,
-				  const gchar *data,
-				  unsigned len);
-void sipe_sched_calendar_status_update(struct sipe_core_private *sipe_private,
-				       time_t calculate_from);
+const gchar *sipe_get_buddy_status(struct sipe_core_private *sipe_private,
+				   const gchar *uri);
+void sipe_buddy_status_from_activity(struct sipe_core_private *sipe_private,
+				     const gchar *uri,
+				     const gchar *activity,
+				     gboolean is_online);
 /* referenced by sipe-notify.c - end */
 
 

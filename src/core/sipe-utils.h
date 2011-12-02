@@ -201,6 +201,15 @@ gchar *sip_uri_from_name(const gchar *name);
 gchar *sip_uri(const gchar *string);
 
 /**
+ * Returns pointer to URI without sip: prefix if any (doesn't allocate memory)
+ *
+ * @param sip_uri SIP URI possibly with sip: prefix. Example: sip:first.last@hq.company.com
+ *
+ * @return pointer to URL without sip: prefix. Coresponding example: first.last@hq.company.com
+ */
+const gchar *sipe_get_no_sip_uri(const gchar *sip_uri);
+
+/**
  * Tries to figure out if contact alias which stored locally
  * is just SIP URI, not a proper display name or local alias.
  *
