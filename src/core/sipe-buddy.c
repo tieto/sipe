@@ -29,14 +29,17 @@
 #include <glib.h>
 
 #include "sipe-common.h"
+#include "http-conn.h" /* sipe-cal.h requires this */
 #include "sipmsg.h"
 #include "sip-soap.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
+#include "sipe-cal.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-group.h"
 #include "sipe-nls.h"
+#include "sipe-ocs2007.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -111,6 +114,87 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
 		sipe_core_group_set_user(sipe_public, who);
 	}
+}
+
+GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
+			     const gchar *name,
+			     const gchar *status_name,
+			     gboolean is_online)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	gchar *note = NULL;
+	gboolean is_oof_note = FALSE;
+	const gchar *activity = NULL;
+	gchar *calendar = NULL;
+	const gchar *meeting_subject = NULL;
+	const gchar *meeting_location = NULL;
+	gchar *access_text = NULL;
+	GSList *info = NULL;
+
+#define SIPE_ADD_BUDDY_INFO_COMMON(l, t) \
+	{ \
+		struct sipe_buddy_info *sbi = g_malloc(sizeof(struct sipe_buddy_info)); \
+		sbi->label = (l); \
+		sbi->text = (t); \
+		info = g_slist_append(info, sbi); \
+	}
+#define SIPE_ADD_BUDDY_INFO(l, t)          SIPE_ADD_BUDDY_INFO_COMMON((l), g_markup_escape_text((t), -1))
+#define SIPE_ADD_BUDDY_INFO_NOESCAPE(l, t) SIPE_ADD_BUDDY_INFO_COMMON((l), (t))
+
+	if (sipe_public) { //happens on pidgin exit
+		struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, name);
+		if (sbuddy) {
+			note = sbuddy->note;
+			is_oof_note = sbuddy->is_oof_note;
+			activity = sbuddy->activity;
+			calendar = sipe_cal_get_description(sbuddy);
+			meeting_subject = sbuddy->meeting_subject;
+			meeting_location = sbuddy->meeting_location;
+		}
+		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+			gboolean is_group_access = FALSE;
+			const int container_id = sipe_ocs2007_find_access_level(sipe_private, "user", sipe_get_no_sip_uri(name), &is_group_access);
+			const char *access_level = sipe_ocs2007_access_level_name(container_id);
+			access_text = is_group_access ?
+				g_strdup(access_level) :
+				g_strdup_printf(SIPE_OCS2007_INDENT_MARKED_FMT,
+						access_level);
+		}
+	}
+
+	if (is_online)
+	{
+		const gchar *status_str = activity ? activity : status_name;
+
+		SIPE_ADD_BUDDY_INFO(_("Status"), status_str);
+	}
+	if (is_online && !is_empty(calendar))
+	{
+		SIPE_ADD_BUDDY_INFO(_("Calendar"), calendar);
+	}
+	g_free(calendar);
+	if (!is_empty(meeting_location))
+	{
+		SIPE_DEBUG_INFO("sipe_tooltip_text: %s meeting location: '%s'", name, meeting_location);
+		SIPE_ADD_BUDDY_INFO(_("Meeting in"), meeting_location);
+	}
+	if (!is_empty(meeting_subject))
+	{
+		SIPE_DEBUG_INFO("sipe_tooltip_text: %s meeting subject: '%s'", name, meeting_subject);
+		SIPE_ADD_BUDDY_INFO(_("Meeting about"), meeting_subject);
+	}
+	if (note)
+	{
+		SIPE_DEBUG_INFO("sipe_tooltip_text: %s note: '%s'", name, note);
+		SIPE_ADD_BUDDY_INFO_NOESCAPE(is_oof_note ? _("Out of office note") : _("Note"),
+					     g_strdup_printf("<i>%s</i>", note));
+	}
+	if (access_text) {
+		SIPE_ADD_BUDDY_INFO(_("Access level"), access_text);
+		g_free(access_text);
+	}
+
+	return(info);
 }
 
 void sipe_buddy_update_property(struct sipe_core_private *sipe_private,

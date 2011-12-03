@@ -27,6 +27,12 @@ struct sipe_container;
 struct sipe_core_private;
 
 /**
+ * Member is directly placed to access level container.
+ * For example SIP URI of user is in the container.
+ */
+#define SIPE_OCS2007_INDENT_MARKED_FMT		"* %s"
+
+/**
  * Publish status (OCS2007+)
  */
 void sipe_ocs2007_presence_publish(struct sipe_core_private *sipe_private,
