@@ -33,8 +33,6 @@ void sipe_set_status(PurpleAccount *account, PurpleStatus *status);
 void sipe_set_idle(PurpleConnection *gc, int interval);
 void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
 		    PurpleGroup *group);
-void sipe_remove_buddy(PurpleConnection *gc, PurpleBuddy *buddy,
-		       PurpleGroup *group);
 void sipe_convo_closed(PurpleConnection *gc, const char *who);
 
 /* Convenience macros */

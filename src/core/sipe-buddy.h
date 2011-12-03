@@ -59,6 +59,13 @@ struct sipe_buddy {
 };
 
 /**
+ * Free all buddy information
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_buddy_free_all(struct sipe_core_private *sipe_private);
+
+/**
  * Tries to retrieve a real user's name associated with given SIP URI.
  *
  * Result must be g_free'd after use.

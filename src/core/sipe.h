@@ -113,7 +113,6 @@ struct sipe_account_data {
 
 /* ??? module */
 void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
-void sipe_buddy_free_all(struct sipe_core_private *sipe_private);
 #ifdef _SIPE_NEED_ACTIVITIES
 /* need to improve or reduce visibility of this interface */
 const gchar *sipe_activity_to_token(sipe_activity);

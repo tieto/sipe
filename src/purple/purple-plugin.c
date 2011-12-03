@@ -36,7 +36,7 @@
 #define PURPLE_PLUGINS
 #endif
 
-/* for LOCALEDIR 
+/* for LOCALEDIR
  * as it's determined on runtime, as Pidgin installation can be anywhere.
  */
 #ifdef _WIN32
@@ -94,7 +94,7 @@ static const gchar * const activity_to_purple[SIPE_ACTIVITY_NUM_TYPES] = {
 	/* SIPE_ACTIVITY_BRB         */ "be-right-back",
 	/* SIPE_ACTIVITY_AWAY        */ "away",
 	/* SIPE_ACTIVITY_LUNCH       */ "out-to-lunch",
-	/* SIPE_ACTIVITY_OFFLINE     */ "offline", 
+	/* SIPE_ACTIVITY_OFFLINE     */ "offline",
 	/* SIPE_ACTIVITY_ON_PHONE    */ "on-the-phone",
 	/* SIPE_ACTIVITY_IN_CONF     */ "in-a-conference",
 	/* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
@@ -517,7 +517,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* change_passwd */
 	sipe_add_buddy,				/* add_buddy */
 	NULL,					/* add_buddies */
-	sipe_remove_buddy,			/* remove_buddy */
+	sipe_purple_remove_buddy,		/* remove_buddy */
 	NULL,					/* remove_buddies */
 	sipe_purple_add_permit,			/* add_permit */
 	sipe_purple_add_deny,			/* add_deny */

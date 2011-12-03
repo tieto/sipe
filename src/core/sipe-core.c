@@ -34,6 +34,7 @@
 #include "sip-sec.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-certificate.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"

@@ -40,8 +40,60 @@
 #include "sipe-group.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2007.h"
+#include "sipe-schedule.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
+
+static void buddy_free(struct sipe_buddy *buddy)
+{
+#ifndef _WIN32
+	 /*
+	  * We are calling g_hash_table_foreach_steal(). That means that no
+	  * key/value deallocation functions are called. Therefore the glib
+	  * hash code does not touch the key (buddy->name) or value (buddy)
+	  * of the to-be-deleted hash node at all. It follows that we
+	  *
+	  *   - MUST free the memory for the key ourselves and
+	  *   - ARE allowed to do it in this function
+	  *
+	  * Conclusion: glib must be broken on the Windows platform if sipe
+	  *             crashes with SIGTRAP when closing. You'll have to live
+	  *             with the memory leak until this is fixed.
+	  */
+	g_free(buddy->name);
+#endif
+	g_free(buddy->activity);
+	g_free(buddy->meeting_subject);
+	g_free(buddy->meeting_location);
+	g_free(buddy->note);
+
+	g_free(buddy->cal_start_time);
+	g_free(buddy->cal_free_busy_base64);
+	g_free(buddy->cal_free_busy);
+	g_free(buddy->last_non_cal_activity);
+
+	sipe_cal_free_working_hours(buddy->cal_working_hours);
+
+	g_free(buddy->device_name);
+	g_slist_free(buddy->groups);
+	g_free(buddy);
+}
+
+static gboolean buddy_free_cb(SIPE_UNUSED_PARAMETER gpointer key,
+			      gpointer buddy,
+			      SIPE_UNUSED_PARAMETER gpointer user_data)
+{
+	buddy_free(buddy);
+	/* We must return TRUE as the key/value have already been deleted */
+	return(TRUE);
+}
+
+void sipe_buddy_free_all(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_foreach_steal(sipe_private->buddies,
+				   buddy_free_cb,
+				   NULL);
+}
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *name,
@@ -114,6 +166,55 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
 		sipe_core_group_set_user(sipe_public, who);
 	}
+}
+
+/**
+ * Unassociates buddy from group first.
+ * Then see if no groups left, removes buddy completely.
+ * Otherwise updates buddy groups on server.
+ */
+void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
+			    const gchar *name,
+			    const gchar *group_name)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_buddy *b = g_hash_table_lookup(sipe_private->buddies,
+						   name);
+
+	if (!b) return;
+
+	if (group_name) {
+		struct sipe_group *g = sipe_group_find_by_name(sipe_private,
+							       group_name);
+		if (g) {
+			b->groups = g_slist_remove(b->groups, g);
+			SIPE_DEBUG_INFO("sipe_core_buddy_remove: buddy %s removed from group %s",
+					name, g->name);
+		}
+	}
+
+	if (g_slist_length(b->groups) < 1) {
+		gchar *action_name = sipe_utils_presence_key(name);
+		sipe_schedule_cancel(sipe_private, action_name);
+		g_free(action_name);
+
+		g_hash_table_remove(sipe_private->buddies, name);
+
+		if (b->name) {
+			gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
+							 b->name);
+			sip_soap_request(sipe_private,
+					 "deleteContact",
+					 request);
+			g_free(request);
+		}
+
+		buddy_free(b);
+	} else {
+		/* updates groups on server */
+		sipe_core_group_set_user(SIPE_CORE_PUBLIC, b->name);
+	}
+
 }
 
 GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,

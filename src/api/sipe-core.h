@@ -228,6 +228,17 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 			     const gchar *status_name,
 			     gboolean is_online);
 
+/**
+ * Remove a buddy
+ *
+ * @param sipe_public Sipe core public data structure
+ * @param name        backend-specific buddy name
+ * @param group_name  backend-specific group name
+ */
+void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
+			    const gchar *name,
+			    const gchar *group_name);
+
 void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
 				  const gchar *who, gboolean allow);
 void sipe_core_group_set_user(struct sipe_core_public *sipe_public,

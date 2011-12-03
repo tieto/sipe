@@ -307,6 +307,18 @@ gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_pub
 	return (purple_group != NULL);
 }
 
+void sipe_purple_remove_buddy(PurpleConnection *gc,
+			      PurpleBuddy *buddy,
+			      PurpleGroup *group)
+{
+	SIPE_DEBUG_INFO("sipe_purple_remove_buddy[CB]: buddy:%s group:%s", buddy ? buddy->name : "", group ? group->name : "");
+	if (!buddy) return;
+
+	sipe_core_buddy_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       buddy->name,
+			       group ? group->name : NULL);
+}
+
 void sipe_purple_group_buddy(PurpleConnection *gc,
 			     const char *who,
 			     const char *old_group_name,
@@ -314,7 +326,6 @@ void sipe_purple_group_buddy(PurpleConnection *gc,
 {
 	sipe_core_buddy_group(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who, old_group_name, new_group_name);
 }
-
 
 /*
   Local Variables:
