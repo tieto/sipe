@@ -41,6 +41,7 @@
 #include "sip-csta.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -2158,7 +2159,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		display_name = g_strdup(sipe_xml_attribute(node, "displayName"));
 		uri = sip_uri_from_name(user);
 
-		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
+		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
 
 	        acknowledged= sipe_xml_attribute(node, "acknowledged");
 		if(sipe_strcase_equal(acknowledged,"false")){

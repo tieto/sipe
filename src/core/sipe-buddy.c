@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,6 +102,57 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
 		sipe_core_group_set_user(sipe_public, who);
 	}
+}
+
+void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
+				const char *uri,
+				sipe_buddy_info_fields propkey,
+				char *property_value)
+{
+	GSList *buddies, *entry;
+
+	if (property_value)
+		property_value = g_strstrip(property_value);
+
+	entry = buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC, uri, NULL); /* all buddies in different groups */
+	while (entry) {
+		gchar *prop_str;
+		gchar *server_alias;
+		gchar *alias;
+		sipe_backend_buddy p_buddy = entry->data;
+
+		/* for Display Name */
+		if (propkey == SIPE_BUDDY_INFO_DISPLAY_NAME) {
+			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, p_buddy);
+			if (property_value && sipe_is_bad_alias(uri, alias)) {
+				SIPE_DEBUG_INFO("Replacing alias for %s with %s", uri, property_value);
+				sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC, p_buddy, property_value);
+			}
+			g_free(alias);
+
+			server_alias = sipe_backend_buddy_get_server_alias(SIPE_CORE_PUBLIC, p_buddy);
+			if (!is_empty(property_value) &&
+			   (!sipe_strequal(property_value, server_alias) || is_empty(server_alias)) )
+			{
+				SIPE_DEBUG_INFO("Replacing service alias for %s with %s", uri, property_value);
+				sipe_backend_buddy_set_server_alias(SIPE_CORE_PUBLIC, p_buddy, property_value);
+			}
+			g_free(server_alias);
+		}
+		/* for other properties */
+		else {
+			if (!is_empty(property_value)) {
+				prop_str = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC, p_buddy, propkey);
+				if (!prop_str || !sipe_strcase_equal(prop_str, property_value)) {
+					sipe_backend_buddy_set_string(SIPE_CORE_PUBLIC, p_buddy, propkey, property_value);
+				}
+				g_free(prop_str);
+			}
+		}
+
+		entry = entry->next;
+	}
+	g_slist_free(buddies);
 }
 
 /*

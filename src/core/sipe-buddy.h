@@ -70,3 +70,16 @@ struct sipe_buddy {
  */
 gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
 			    const gchar *with);
+
+/**
+ * Update the value of a buddy property with given SIP URI
+ *
+ * @param sipe_private   SIPE core data
+ * @param uri            a SIP URI
+ * @param propkey        property id (see sipe-backend.h)
+ * @param property_value new value for the property
+ */
+void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
+				const gchar *uri,
+				sipe_buddy_info_fields propkey,
+				gchar *property_value);

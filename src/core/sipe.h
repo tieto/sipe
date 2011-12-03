@@ -137,10 +137,6 @@ void send_presence_status(struct sipe_core_private *sipe_private,
 			  gpointer unused);
 gboolean sipe_is_user_state(struct sipe_core_private *sipe_private);
 gboolean sipe_is_user_available(struct sipe_core_private *sipe_private);
-void sipe_update_user_info(struct sipe_core_private *sipe_private,
-			   const char *uri,
-			   sipe_buddy_info_fields propkey,
-			   char *property_value);
 void sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 				struct sipe_buddy *sbuddy,
 				const char *status_id);

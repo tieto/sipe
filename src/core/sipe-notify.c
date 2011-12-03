@@ -196,9 +196,9 @@ sipe_update_user_phone(struct sipe_core_private *sipe_private,
 		phone_display_node = SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY;
 	}
 
-	sipe_update_user_info(sipe_private, uri, phone_node, phone);
+	sipe_buddy_update_property(sipe_private, uri, phone_node, phone);
 	if (phone_display_string) {
-		sipe_update_user_info(sipe_private, uri, phone_display_node, phone_display_string);
+		sipe_buddy_update_property(sipe_private, uri, phone_display_node, phone_display_string);
 	}
 }
 
@@ -289,10 +289,10 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 		char *phone_number = xn_phone_number ? g_strdup(sipe_xml_attribute(xn_phone_number, "number")) : NULL;
 		char *tel_uri      = sip_to_tel_uri(phone_number);
 
-		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
-		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_EMAIL, email);
-		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE, tel_uri);
-		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY, !is_empty(phone_label) ? phone_label : phone_number);
+		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
+		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_EMAIL, email);
+		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE, tel_uri);
+		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY, !is_empty(phone_label) ? phone_label : phone_number);
 
 		g_free(tel_uri);
 		g_free(phone_label);
@@ -504,8 +504,8 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					char* email = sipe_xml_data(
 						sipe_xml_child(node, "email"));
 
-					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
-					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_EMAIL, email);
+					sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
+					sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_EMAIL, email);
 
 					g_free(display_name);
 					g_free(email);
@@ -514,35 +514,35 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 				node = sipe_xml_child(card, "company");
 				if (node) {
 					char* company = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_COMPANY, company);
+					sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_COMPANY, company);
 					g_free(company);
 				}
 				/* department */
 				node = sipe_xml_child(card, "department");
 				if (node) {
 					char* department = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DEPARTMENT, department);
+					sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DEPARTMENT, department);
 					g_free(department);
 				}
 				/* title */
 				node = sipe_xml_child(card, "title");
 				if (node) {
 					char* title = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_JOB_TITLE, title);
+					sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_JOB_TITLE, title);
 					g_free(title);
 				}
 				/* office */
 				node = sipe_xml_child(card, "office");
 				if (node) {
 					char* office = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_OFFICE, office);
+					sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_OFFICE, office);
 					g_free(office);
 				}
 				/* site (url) */
 				node = sipe_xml_child(card, "url");
 				if (node) {
 					char* site = sipe_xml_data(node);
-					sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_SITE, site);
+					sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_SITE, site);
 					g_free(site);
 				}
 				/* phone */
@@ -571,11 +571,11 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 						char* zipcode = sipe_xml_data(sipe_xml_child(node, "zipcode"));
 						char* country_code = sipe_xml_data(sipe_xml_child(node, "countryCode"));
 
-						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_STREET, street);
-						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_CITY, city);
-						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_STATE, state);
-						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_ZIPCODE, zipcode);
-						sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_COUNTRY, country_code);
+						sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_STREET, street);
+						sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_CITY, city);
+						sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_STATE, state);
+						sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_ZIPCODE, zipcode);
+						sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_COUNTRY, country_code);
 
 						g_free(street);
 						g_free(city);
@@ -828,7 +828,7 @@ static void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,
 	if (display_name_node) {
 		char * display_name = sipe_xml_data(display_name_node);
 
-		sipe_update_user_info(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
+		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
 		g_free(display_name);
 	}
 
