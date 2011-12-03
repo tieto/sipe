@@ -646,6 +646,44 @@ static void sipe_purple_show_about_plugin(PurplePluginAction *action)
 	g_free(tmp);
 }
 
+static void sipe_purple_find_contact_cb(PurpleConnection *gc,
+					PurpleRequestFields *fields)
+{
+	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
+	const gchar *given_name = NULL;
+	const gchar *surname    = NULL;
+	const gchar *company    = NULL;
+	const gchar *country    = NULL;
+
+	while (entries) {
+		PurpleRequestField *field = entries->data;
+		const char *id = purple_request_field_get_id(field);
+		const char *value = purple_request_field_string_get_value(field);
+
+		SIPE_DEBUG_INFO("sipe_purple_find_contact_cb: %s = '%s'", id, value ? value : "");
+
+		if (value) {
+			if (strcmp(id, "given") == 0) {
+				given_name = value;
+			} else if (strcmp(id, "surname") == 0) {
+				surname = value;
+			} else if (strcmp(id, "company") == 0) {
+				company = value;
+			} else if (strcmp(id, "country") == 0) {
+				country = value;
+			}
+		}
+
+		entries = g_list_next(entries);
+	};
+
+	sipe_core_buddy_search(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       given_name,
+			       surname,
+			       company,
+			       country);
+}
+
 static void sipe_purple_show_find_contact(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
@@ -657,13 +695,13 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 	group = purple_request_field_group_new(NULL);
 	purple_request_fields_add_group(fields, group);
 
-	field = purple_request_field_string_new("givenName", _("First name"), NULL, FALSE);
+	field = purple_request_field_string_new("given", _("First name"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("sn", _("Last name"), NULL, FALSE);
+	field = purple_request_field_string_new("surname", _("Last name"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("c", _("Country"), NULL, FALSE);
+	field = purple_request_field_string_new("country", _("Country"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,
@@ -671,7 +709,7 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 		_("Search for a contact"),
 		_("Enter the information for the person you wish to find. Empty fields will be ignored."),
 		fields,
-		_("_Search"), G_CALLBACK(sipe_search_contact_with_cb),
+		_("_Search"), G_CALLBACK(sipe_purple_find_contact_cb),
 		_("_Cancel"), NULL,
 		purple_connection_get_account(gc), NULL, NULL, gc);
 }

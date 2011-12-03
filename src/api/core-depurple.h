@@ -25,8 +25,6 @@
  */
 struct sipe_core_public;
 
-void sipe_search_contact_with_cb(PurpleConnection *gc,
-				 PurpleRequestFields *fields);
 GList *sipe_buddy_menu(PurpleBuddy *buddy);
 void sipe_purple_setup(struct sipe_core_public *sipe_public,
 		       PurpleConnection *gc);

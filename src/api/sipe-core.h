@@ -171,6 +171,8 @@ sipe_utils_nameval_free(GSList *list);
 
 gboolean sipe_utils_is_avconf_uri(const gchar *uri);
 
+gchar *sip_uri_from_name(const gchar *name);
+
 /*****************************************************************************/
 
 /**
@@ -378,6 +380,12 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			   const gchar *who,
 			   const gchar *old_group_name,
 			   const gchar *new_group_name);
+
+void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
+			    const gchar *given_name,
+			    const gchar *surname,
+			    const gchar *company,
+			    const gchar *country);
 
 #ifdef __cplusplus
 }

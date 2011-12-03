@@ -3,6 +3,7 @@
 
 src/core/sip-transport.c
 src/core/sipe.c
+src/core/sipe-buddy.c
 src/core/sipe-cal.c
 src/core/sipe-certificate.c
 src/core/sipe-chat.c
@@ -24,4 +25,5 @@ src/purple/purple-chat.c
 src/purple/purple-groupchat.c
 src/purple/purple-im.c
 src/purple/purple-plugin.c
+src/purple/purple-search.c
 src/purple/purple-transport.c

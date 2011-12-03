@@ -20,16 +20,25 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <time.h>
 
 #include <glib.h>
 
+#include "sipe-common.h"
+#include "sipmsg.h"
+#include "sip-soap.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-group.h"
+#include "sipe-nls.h"
 #include "sipe-utils.h"
+#include "sipe-xml.h"
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *name,
@@ -153,6 +162,136 @@ void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
 		entry = entry->next;
 	}
 	g_slist_free(buddies);
+}
+
+static gboolean process_search_contact_response(struct sipe_core_private *sipe_private,
+						struct sipmsg *msg,
+						SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	struct sipe_backend_search_results *results;
+	sipe_xml *searchResults;
+	const sipe_xml *mrow;
+	guint match_count = 0;
+	gboolean more = FALSE;
+	gchar *secondary;
+
+	/* valid response? */
+	if (msg->response != 200) {
+		SIPE_DEBUG_ERROR("process_search_contact_response: request failed (%d)",
+				 msg->response);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Contact search failed"),
+					  NULL);
+		return(FALSE);
+	}
+
+	SIPE_DEBUG_INFO("process_search_contact_response: body:\n%s", msg->body ? msg->body : "");
+
+	/* valid XML? */
+	searchResults = sipe_xml_parse(msg->body, msg->bodylen);
+	if (!searchResults) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_search_contact_response: no parseable searchResults");
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Contact search failed"),
+					  NULL);
+		return(FALSE);
+	}
+
+	/* any matches? */
+	mrow = sipe_xml_child(searchResults, "Body/Array/row");
+	if (!mrow) {
+		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: no matches");
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("No contacts found"),
+					  NULL);
+
+		sipe_xml_free(searchResults);
+		return(FALSE);
+	}
+
+	/* OK, we found something - show the results to the user */
+	results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC);
+	if (!results) {
+		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: Unable to display the search results.");
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Unable to display the search results"),
+					  NULL);
+
+		sipe_xml_free(searchResults);
+		return FALSE;
+	}
+
+	for (/* initialized above */ ; mrow; mrow = sipe_xml_twin(mrow)) {
+		gchar **uri_parts = g_strsplit(sipe_xml_attribute(mrow, "uri"), ":", 2);
+		sipe_backend_search_results_add(SIPE_CORE_PUBLIC,
+						results,
+						uri_parts[1],
+						sipe_xml_attribute(mrow, "displayName"),
+						sipe_xml_attribute(mrow, "company"),
+						sipe_xml_attribute(mrow, "country"),
+						sipe_xml_attribute(mrow, "email"));
+		g_strfreev(uri_parts);
+		match_count++;
+	}
+
+	if ((mrow = sipe_xml_child(searchResults, "Body/directorySearch/moreAvailable")) != NULL) {
+		char *data = sipe_xml_data(mrow);
+		more = (g_strcasecmp(data, "true") == 0);
+		g_free(data);
+	}
+
+	secondary = g_strdup_printf(
+		dngettext(PACKAGE_NAME,
+			  "Found %d contact%s:",
+			  "Found %d contacts%s:", match_count),
+		match_count, more ? _(" (more matched your query)") : "");
+
+	sipe_backend_search_results_finalize(SIPE_CORE_PUBLIC,
+					     results,
+					     secondary);
+	g_free(secondary);
+	sipe_xml_free(searchResults);
+
+	return(TRUE);
+}
+
+#define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
+
+void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
+			    const gchar *given_name,
+			    const gchar *surname,
+			    const gchar *company,
+			    const gchar *country)
+{
+	gchar **attrs = g_new(gchar *, 5);
+	guint i = 0;
+
+	if (!attrs) return;
+
+#define ADD_QUERY_ROW(a, v) \
+	if (v) attrs[i++] = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, a, v)
+
+	ADD_QUERY_ROW("givenName", given_name);
+	ADD_QUERY_ROW("sn",        surname);
+	ADD_QUERY_ROW("company",   company);
+	ADD_QUERY_ROW("c",         country);
+
+	if (i) {
+		gchar *query;
+
+		attrs[i] = NULL;
+		query = g_strjoinv(NULL, attrs);
+		SIPE_DEBUG_INFO("sipe_core_buddy_search: rows:\n%s",
+				query ? query : "");
+		sip_soap_directory_search(SIPE_CORE_PRIVATE,
+					  100,
+					  query,
+					  process_search_contact_response,
+					  NULL);
+		g_free(query);
+	}
+
+	g_strfreev(attrs);
 }
 
 /*

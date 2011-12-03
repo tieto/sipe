@@ -527,6 +527,22 @@ gpointer sipe_backend_schedule_mseconds(struct sipe_core_public *sipe_public,
 void sipe_backend_schedule_cancel(struct sipe_core_public *sipe_public,
 				  gpointer data);
 
+/** SEARCH *******************************************************************/
+
+struct sipe_backend_search_results;
+
+struct sipe_backend_search_results *sipe_backend_search_results_start(struct sipe_core_public *sipe_public);
+void sipe_backend_search_results_add(struct sipe_core_public *sipe_public,
+				     struct sipe_backend_search_results *results,
+				     const gchar *uri,
+				     const gchar *name,
+				     const gchar *company,
+				     const gchar *country,
+				     const gchar *email);
+void sipe_backend_search_results_finalize(struct sipe_core_public *sipe_public,
+					  struct sipe_backend_search_results *results,
+					  const gchar *description);
+
 /** SETTINGS *****************************************************************/
 
 typedef enum {

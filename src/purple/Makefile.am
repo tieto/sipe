@@ -21,6 +21,7 @@ libsipe_backend_la_SOURCES = \
 	purple-network.c \
 	purple-notify.c \
 	purple-schedule.c \
+	purple-search.c \
 	purple-setting.c \
 	purple-transport.c \
 	purple-user.c
