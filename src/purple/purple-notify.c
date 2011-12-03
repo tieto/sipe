@@ -52,7 +52,7 @@ static void notify_message(struct sipe_core_public *sipe_public,
 		purple_conversation_write(conv, NULL, message, flags,
 					  time(NULL));
 }
-			   
+
 void sipe_backend_notify_message_error(struct sipe_core_public *sipe_public,
 				       struct sipe_backend_chat_session *backend_session,
 				       const gchar *who,
@@ -71,9 +71,13 @@ void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
 		       backend_session, who, message);
 }
 
-void sipe_backend_notify_error(const gchar *title, const gchar *msg)
+void sipe_backend_notify_error(struct sipe_core_public *sipe_public,
+			       const gchar *title,
+			       const gchar *msg)
 {
-	purple_notify_error(NULL, NULL, title, msg);
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+
+	purple_notify_error(purple_private->gc, NULL, title, msg);
 }
 
 /*

@@ -261,7 +261,8 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 		gchar *reason = sipmsg_get_ms_diagnostics_reason(msg);
 
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_conf_focus_response: INVITE response is not 200. Failed to join focus.");
-		sipe_backend_notify_error(_("Failed to join the conference"),
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Failed to join the conference"),
 					  reason ? reason : _("no reason given"));
 		g_free(reason);
 
@@ -305,7 +306,8 @@ sipe_core_conf_create(struct sipe_core_public *sipe_public,
 	    strlen(focus_uri_ue) == 4 || g_strstr_len(focus_uri_ue, -1, "%")) {
 		gchar *error = g_strdup_printf(_("\"%s\" is not a valid focus URI"),
 					       focus_uri ? focus_uri : "");
-		sipe_backend_notify_error(_("Failed to join the conference"),
+		sipe_backend_notify_error(sipe_public,
+					  _("Failed to join the conference"),
 					  error);
 		g_free(error);
 	} else {

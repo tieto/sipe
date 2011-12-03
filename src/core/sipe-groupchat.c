@@ -332,7 +332,9 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 	if (!is_empty(setting)) {
 		gchar *msg = g_strdup_printf(_("Group Chat Proxy setting is incorrect:\n\n\t%s\n\nPlease update your Account."),
 					     setting);
-		sipe_backend_notify_error(_("Couldn't find Group Chat server!"), msg);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Couldn't find Group Chat server!"),
+					  msg);
 		g_free(msg);
 	}
 }
@@ -504,7 +506,8 @@ static void chatserver_response_channel_search(struct sipe_core_private *sipe_pr
 	struct sipe_core_public *sipe_public = SIPE_CORE_PUBLIC;
 
 	if (result != 200) {
-		sipe_backend_notify_error(_("Error retrieving room list"),
+		sipe_backend_notify_error(sipe_public,
+					  _("Error retrieving room list"),
 					  message);
 	} else {
 		const sipe_xml *chanib;
@@ -607,7 +610,8 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 				     const sipe_xml *xml)
 {
 	if (result != 200) {
-		sipe_backend_notify_error(_("Error joining chat room"),
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Error joining chat room"),
 					  message);
 	} else {
 		struct sipe_groupchat *groupchat = sipe_private->groupchat;

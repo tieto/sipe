@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -521,15 +522,18 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 		return FALSE;
 
 	if (!call_private->encryption_compatible) {
+		struct sipe_core_private *sipe_private = call_private->sipe_private;
+
 		sipmsg_add_header(call_private->invitation, "Warning",
 			"308 lcs.microsoft.com \"Encryption Levels not compatible\"");
-		sip_transport_response(call_private->sipe_private,
+		sip_transport_response(sipe_private,
 			call_private->invitation,
 			488, "Encryption Levels not compatible",
 			NULL);
 		sipe_backend_media_reject(backend_media, FALSE);
-		sipe_backend_notify_error(_("Unable to establish a call"),
-			_("Encryption settings of peer are incompatible with ours."));
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Unable to establish a call"),
+					  _("Encryption settings of peer are incompatible with ours."));
 	} else {
 		send_response_with_session_description(call_private, 200, "OK");
 	}
@@ -616,15 +620,16 @@ static void
 error_cb(struct sipe_media_call *call, gchar *message)
 {
 	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+	struct sipe_core_private *sipe_private = call_private->sipe_private;
 	gboolean initiator = sipe_backend_media_is_initiator(call->backend_private, NULL);
 	gboolean accepted = sipe_backend_media_accepted(call->backend_private);
 
 	gchar *title = g_strdup_printf("Call with %s failed", call_private->with);
-	sipe_backend_notify_error(title, message);
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC, title, message);
 	g_free(title);
 
 	if (!initiator && !accepted) {
-		sip_transport_response(call_private->sipe_private,
+		sip_transport_response(sipe_private,
 				       call_private->invitation,
 				       488, "Not Acceptable Here", NULL);
 	}
@@ -709,7 +714,8 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 					   "audio", with, SIPE_MEDIA_AUDIO,
 					   call_private->ice_version, TRUE,
 					   backend_media_relays)) {
-		sipe_backend_notify_error(_("Error occured"),
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Error occured"),
 					  _("Error creating audio stream"));
 		sipe_media_call_free(call_private);
 		sipe_backend_media_relays_free(backend_media_relays);
@@ -721,7 +727,8 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 			    	    	      "video", with, SIPE_MEDIA_VIDEO,
 			    	    	      call_private->ice_version, TRUE,
 			    	    	      backend_media_relays)) {
-		sipe_backend_notify_error(_("Error occured"),
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Error occured"),
 					  _("Error creating video stream"));
 		sipe_media_call_free(call_private);
 		sipe_backend_media_relays_free(backend_media_relays);
@@ -789,7 +796,8 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					   SIPE_MEDIA_AUDIO,
 					   SIPE_ICE_DRAFT_6, TRUE,
 					   backend_media_relays)) {
-		sipe_backend_notify_error(_("Error occured"),
+		sipe_backend_notify_error(sipe_public,
+					  _("Error occured"),
 					  _("Error creating audio stream"));
 		sipe_media_call_free(sipe_private->media_call);
 		sipe_private->media_call = NULL;
@@ -1067,7 +1075,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 			g_string_append_printf(desc, "\n%d %s",
 					       msg->response, msg->responsestr);
 
-		sipe_backend_notify_error(title, desc->str);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC, title, desc->str);
 		g_string_free(desc, TRUE);
 
 		sipe_media_send_ack(sipe_private, msg, trans);

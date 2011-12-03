@@ -1092,9 +1092,9 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	if (msg->response != 200) {
 		SIPE_DEBUG_ERROR("process_search_contact_response: request failed (%d)",
 				 msg->response);
-		purple_notify_error(sip->gc, NULL,
-				    _("Contact search failed"),
-				    NULL);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Contact search failed"),
+					  NULL);
 		return(FALSE);
 	}
 
@@ -1104,9 +1104,9 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	searchResults = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!searchResults) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_search_contact_response: no parseable searchResults");
-		purple_notify_error(sip->gc, NULL,
-				    _("Contact search failed"),
-				    NULL);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Contact search failed"),
+					  NULL);
 		return FALSE;
 	}
 
@@ -1114,9 +1114,9 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	mrow = sipe_xml_child(searchResults, "Body/Array/row");
 	if (!mrow) {
 		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: no matches");
-		purple_notify_error(sip->gc, NULL,
-				    _("No contacts found"),
-				    NULL);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("No contacts found"),
+					  NULL);
 
 		sipe_xml_free(searchResults);
 		return(FALSE);
@@ -1126,7 +1126,9 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	results = purple_notify_searchresults_new();
 	if (!results) {
 		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: Unable to display the search results.");
-		purple_notify_error(sip->gc, NULL, _("Unable to display the search results"), NULL);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Unable to display the search results"),
+					  NULL);
 
 		sipe_xml_free(searchResults);
 		return FALSE;
