@@ -528,6 +528,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\core\sipe-ocs2005.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\core\sipe-ocs2005.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\core\sipe-ocs2007.c"
 				>
 			</File>
