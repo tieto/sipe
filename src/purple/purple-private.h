@@ -112,6 +112,8 @@ void sipe_purple_group_buddy(struct _PurpleConnection *gc,
 /* libpurple status callbacks */
 void sipe_purple_set_status(struct _PurpleAccount *account,
 			    struct _PurpleStatus *status);
+void sipe_purple_set_idle(struct _PurpleConnection *gc,
+			  int interval);
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)

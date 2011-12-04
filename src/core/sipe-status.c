@@ -151,6 +151,18 @@ gboolean sipe_status_changed_by_user(struct sipe_core_private *sipe_private)
 	return res;
 }
 
+void sipe_core_status_idle(struct sipe_core_public *sipe_public)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
+	if (sip) {
+		sip->idle_switch = time(NULL);
+		SIPE_DEBUG_INFO("sipe_core_status_idle: sip->idle_switch : %s",
+				asctime(localtime(&(sip->idle_switch))));
+	}
+}
+
 /*
   Local Variables:
   mode: c

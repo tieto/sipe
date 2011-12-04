@@ -510,7 +510,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_purple_send_typing,		/* send_typing */
 	sipe_get_info,				/* get_info */
 	sipe_purple_set_status,			/* set_status */
-	sipe_set_idle,				/* set_idle */
+	sipe_purple_set_idle,			/* set_idle */
 	NULL,					/* change_passwd */
 	sipe_purple_add_buddy,			/* add_buddy */
 	NULL,					/* add_buddies */

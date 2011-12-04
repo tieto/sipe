@@ -280,23 +280,6 @@ sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 	g_free(self_uri);
 }
 
-void
-sipe_set_idle(PurpleConnection * gc,
-	      int interval)
-{
-	SIPE_DEBUG_INFO("sipe_set_idle: interval=%d", interval);
-
-	if (gc) {
-		struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
-		if (sip) {
-			sip->idle_switch = time(NULL);
-			SIPE_DEBUG_INFO("sipe_set_idle: sip->idle_switch : %s", asctime(localtime(&(sip->idle_switch))));
-		}
-	}
-}
-
 const gchar *sipe_get_buddy_status(struct sipe_core_private *sipe_private,
 				   const gchar *uri)
 {

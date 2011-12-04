@@ -114,6 +114,13 @@ void sipe_purple_set_status(PurpleAccount *account,
 	}
 }
 
+void sipe_purple_set_idle(PurpleConnection *gc,
+			  int interval)
+{
+	SIPE_DEBUG_INFO("sipe_purple_set_idle[CB]: interval=%d", interval);
+	if (gc) sipe_core_status_idle(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+}
+
 /*
   Local Variables:
   mode: c

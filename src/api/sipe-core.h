@@ -413,6 +413,7 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  const gchar *status_id,
 			  const gchar *note);
+void sipe_core_status_idle(struct sipe_core_public *sipe_public);
 
 #ifdef __cplusplus
 }
