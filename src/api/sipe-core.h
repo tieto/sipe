@@ -409,6 +409,11 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *company,
 			    const gchar *country);
 
+/* status */
+void sipe_core_status_set(struct sipe_core_public *sipe_public,
+			  const gchar *status_id,
+			  const gchar *note);
+
 #ifdef __cplusplus
 }
 #endif

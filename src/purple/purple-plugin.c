@@ -80,9 +80,6 @@
 /* Convenience macros */
 #define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) buddy->account->gc->proto_data)
 
-/* Status attributes (see also sipe_status_types() */
-#define SIPE_STATUS_ATTR_ID_MESSAGE  "message"
-
 /* Sipe core activity <-> Purple status mapping */
 static const gchar * const activity_to_purple[SIPE_ACTIVITY_NUM_TYPES] = {
 	/* SIPE_ACTIVITY_UNSET       */ "unset",
@@ -179,7 +176,7 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 #define SIPE_ADD_STATUS(prim,id,name,user) type = purple_status_type_new_with_attrs( \
 		prim, id, name,             \
 		TRUE, user, FALSE,          \
-		SIPE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
+		SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
 		NULL);                      \
 	types = g_list_append(types, type);
 
@@ -512,7 +509,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* set_info */		// TODO maybe
 	sipe_purple_send_typing,		/* send_typing */
 	sipe_get_info,				/* get_info */
-	sipe_set_status,			/* set_status */
+	sipe_purple_set_status,			/* set_status */
 	sipe_set_idle,				/* set_idle */
 	NULL,					/* change_passwd */
 	sipe_purple_add_buddy,			/* add_buddy */

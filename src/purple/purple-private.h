@@ -28,6 +28,7 @@ struct _PurpleChat;
 struct _PurpleConnection;
 struct _PurpleGroup;
 struct _PurpleRoomlist;
+struct _PurpleStatus;
 struct _PurpleXfer;
 
 #ifndef _PurpleMessageFlags
@@ -47,6 +48,9 @@ struct sipe_backend_private {
 struct sipe_backend_fd {
 	int fd;
 };
+
+/* Status attributes */
+#define SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE "message"
 
 /**
  * Initiates outgoing file transfer, sending @c file to remote peer identified
@@ -104,6 +108,10 @@ void sipe_purple_group_buddy(struct _PurpleConnection *gc,
 			     const char *who,
 			     const char *old_group_name,
 			     const char *new_group_name);
+
+/* libpurple status callbacks */
+void sipe_purple_set_status(struct _PurpleAccount *account,
+			    struct _PurpleStatus *status);
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)

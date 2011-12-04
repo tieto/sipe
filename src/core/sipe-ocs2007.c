@@ -1617,7 +1617,7 @@ void sipe_ocs2007_presence_publish(struct sipe_core_private *sipe_private,
 void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gchar *pub_state = sipe_is_user_state(sipe_private) ?
+	gchar *pub_state = sipe_status_changed_by_user(sipe_private) ?
 				sipe_publish_get_category_state_user(sipe_private) :
 				sipe_publish_get_category_state_machine(sipe_private);
 	gchar *pub_note = sipe_publish_get_category_note(sipe_private,

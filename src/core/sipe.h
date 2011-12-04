@@ -133,7 +133,6 @@ const gchar *sipe_get_status_by_act_avail_2005(const int activity,
 					       char **activity_desc);
 void send_presence_status(struct sipe_core_private *sipe_private,
 			  gpointer unused);
-gboolean sipe_is_user_state(struct sipe_core_private *sipe_private);
 gboolean sipe_is_user_available(struct sipe_core_private *sipe_private);
 void sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 				struct sipe_buddy *sbuddy,

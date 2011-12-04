@@ -89,17 +89,13 @@
 #include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2007.h"
-#include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-status.h"
-#include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
 #define _SIPE_NEED_ACTIVITIES /* ugly hack :-( */
 #include "sipe.h"
-
-#define SIPE_IDLE_SET_DELAY		1	/* 1 sec */
 
 /* Status identifiers (see also: sipe_status_types()) */
 #define SIPE_STATUS_ID_UNKNOWN     purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET)     /* Unset (primitive) */
@@ -282,75 +278,6 @@ sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 		sipe_status_and_note(sipe_private, status_id);
 	}
 	g_free(self_uri);
-}
-
-void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
-{
-	SIPE_DEBUG_INFO("sipe_set_status: status=%s", purple_status_get_id(status));
-
-	if (!purple_status_is_active(status))
-		return;
-
-	if (account->gc) {
-		struct sipe_core_private *sipe_private = PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE;
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
-		if (sip) {
-			gchar *action_name;
-			gchar *tmp;
-			time_t now = time(NULL);
-			const char *status_id = purple_status_get_id(status);
-			const char *note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
-			sipe_activity activity = sipe_activity_from_token(status_id);
-			gboolean do_not_publish = ((now - sip->do_not_publish[activity]) <= 2);
-
-			/* when other point of presence clears note, but we are keeping
-			 * state if OOF note.
-			 */
-			if (do_not_publish && !note && sip->cal && sip->cal->oof_note) {
-				SIPE_DEBUG_INFO_NOFORMAT("sipe_set_status: enabling publication as OOF note keepers.");
-				do_not_publish = FALSE;
-			}
-
-			SIPE_DEBUG_INFO("sipe_set_status: was: sip->do_not_publish[%s]=%d [?] now(time)=%d",
-					status_id, (int)sip->do_not_publish[activity], (int)now);
-
-			sip->do_not_publish[activity] = 0;
-			SIPE_DEBUG_INFO("sipe_set_status: set: sip->do_not_publish[%s]=%d [0]",
-					status_id, (int)sip->do_not_publish[activity]);
-
-			if (do_not_publish)
-			{
-				SIPE_DEBUG_INFO_NOFORMAT("sipe_set_status: publication was switched off, exiting.");
-				return;
-			}
-
-			g_free(sip->status);
-			sip->status = g_strdup(status_id);
-
-			/* hack to escape apostrof before comparison */
-			tmp = note ? sipe_utils_str_replace(note, "'", "&apos;") : NULL;
-
-			/* this will preserve OOF flag as well */
-			if (!sipe_strequal(tmp, sip->note)) {
-				sip->is_oof_note = FALSE;
-				g_free(sip->note);
-				sip->note = g_strdup(note);
-				sip->note_since = time(NULL);
-			}
-			g_free(tmp);
-
-			/* schedule 2 sec to capture idle flag */
-			action_name = g_strdup_printf("<%s>", "+set-status");
-			sipe_schedule_seconds(sipe_private,
-					      action_name,
-					      NULL,
-					      SIPE_IDLE_SET_DELAY,
-					      send_presence_status,
-					      NULL);
-			g_free(action_name);
-		}
-	}
 }
 
 void
@@ -727,27 +654,6 @@ sipe_get_availability_by_status(const char* sipe_status_id, char** activity_toke
 	return availability;
 }
 
-/**
- * Whether user manually changed status or
- * it was changed automatically due to user
- * became inactive/active again
- */
-gboolean
-sipe_is_user_state(struct sipe_core_private *sipe_private)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gboolean res;
-	time_t now = time(NULL);
-
-	SIPE_DEBUG_INFO("sipe_is_user_state: sip->idle_switch : %s", asctime(localtime(&(sip->idle_switch))));
-	SIPE_DEBUG_INFO("sipe_is_user_state: now              : %s", asctime(localtime(&now)));
-
-	res = ((now - SIPE_IDLE_SET_DELAY * 2) >= sip->idle_switch);
-
-	SIPE_DEBUG_INFO("sipe_is_user_state: res  = %s", res ? "USER" : "MACHINE");
-	return res;
-}
-
 gboolean sipe_is_user_available(struct sipe_core_private *sipe_private)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
@@ -764,7 +670,7 @@ void send_presence_status(struct sipe_core_private *sipe_private,
 
 	SIPE_DEBUG_INFO("send_presence_status: status: %s (%s)",
 			purple_status_get_id(status) ? purple_status_get_id(status) : "",
-			sipe_is_user_state(sipe_private) ? "USER" : "MACHINE");
+			sipe_status_changed_by_user(sipe_private) ? "USER" : "MACHINE");
 
 	sipe_cal_presence_publish(sipe_private, FALSE);
 }

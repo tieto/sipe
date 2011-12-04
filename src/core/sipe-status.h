@@ -26,6 +26,7 @@ struct sipe_core_private;
 
 void sipe_status_and_note(struct sipe_core_private *sipe_private,
 			  const gchar *status_id);
+gboolean sipe_status_changed_by_user(struct sipe_core_private *sipe_private);
 
 /*
   Local Variables:

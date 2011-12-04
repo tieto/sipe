@@ -30,9 +30,6 @@
 
 #include "purple-private.h"
 
-/* Status attributes */
-#define PURPLE_STATUS_ATTR_ID_MESSAGE "message"
-
 /**
  * This method motivates Purple's Host (e.g. Pidgin) to update its UI
  * by using standard Purple's means of signals and saved statuses.
@@ -54,7 +51,7 @@ gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 	if (g_str_equal(status_id, purple_status_get_id(status)) &&
 	    sipe_strequal(message,
 			  purple_status_get_attr_string(status,
-							PURPLE_STATUS_ATTR_ID_MESSAGE)))
+							SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE)))
 	{
 		changed = FALSE;
 	}
@@ -96,6 +93,25 @@ gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 	}
 
 	return(changed);
+}
+
+void sipe_purple_set_status(PurpleAccount *account,
+			    PurpleStatus *status)
+{
+	SIPE_DEBUG_INFO("sipe_purple_set_status[CB]: status=%s",
+			purple_status_get_id(status));
+
+	if (!purple_status_is_active(status))
+		return;
+
+	if (account->gc) {
+		const gchar *status_id = purple_status_get_id(status);
+		const gchar *note      = purple_status_get_attr_string(status,
+								       SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE);
+		sipe_core_status_set(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
+				     status_id,
+				     note);
+	}
 }
 
 /*

@@ -29,7 +29,6 @@ GList *sipe_buddy_menu(PurpleBuddy *buddy);
 void sipe_purple_setup(struct sipe_core_public *sipe_public,
 		       PurpleConnection *gc);
 void sipe_get_info(PurpleConnection *gc, const char *username);
-void sipe_set_status(PurpleAccount *account, PurpleStatus *status);
 void sipe_set_idle(PurpleConnection *gc, int interval);
 void sipe_convo_closed(PurpleConnection *gc, const char *who);
 
@@ -37,5 +36,5 @@ void sipe_convo_closed(PurpleConnection *gc, const char *who);
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE ((struct sipe_core_private *)account->gc->proto_data)
 #define PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE   ((struct sipe_core_private *)buddy->account->gc->proto_data)
 #define PURPLE_GC_TO_SIPE_CORE_PRIVATE      ((struct sipe_core_private *)gc->proto_data)
-#define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) gc->proto_data)
+#define PURPLE_GC_TO_SIPE_CORE_PUBLIC       ((struct sipe_core_public *) gc->proto_data)
 

@@ -39,6 +39,7 @@
 #include "sipe-ews.h"
 #include "sipe-ocs2005.h"
 #include "sipe-schedule.h"
+#include "sipe-status.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipe.h"
@@ -224,7 +225,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 
 	/* User State */
 	if (!do_reset_status) {
-		if (sipe_is_user_state(sipe_private) && !do_publish_calendar && sip->initial_state_published)
+		if (sipe_status_changed_by_user(sipe_private) && !do_publish_calendar && sip->initial_state_published)
 		{
 			gchar *activity_token = NULL;
 			int avail_2007 = sipe_get_availability_by_status(sip->status, &activity_token);
@@ -260,7 +261,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 		g_free(free_busy_base64);
 	}
 
-	user_input = (sipe_is_user_state(sipe_private) ||
+	user_input = (sipe_status_changed_by_user(sipe_private) ||
 		      sipe_is_user_available(sipe_private)) ?
 		"active" : "idle";
 
