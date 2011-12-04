@@ -307,6 +307,37 @@ gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_pub
 	return (purple_group != NULL);
 }
 
+void sipe_purple_add_buddy(PurpleConnection *gc,
+			   PurpleBuddy *buddy,
+			   PurpleGroup *group)
+{
+	SIPE_DEBUG_INFO("sipe_purple_add_buddy[CB]: buddy:%s group:%s",
+			buddy ? buddy->name : "",
+			group ? group->name : "");
+
+	/* libpurple can call us with undefined buddy or group */
+	if (buddy && group) {
+		/*
+		 * Buddy name must be lower case as we use
+		 * purple_normalize_nocase() to compare
+		 */
+		gchar *buddy_name = g_ascii_strdown(buddy->name, -1);
+		purple_blist_rename_buddy(buddy, buddy_name);
+		g_free(buddy_name);
+
+		/* Prepend sip: if needed */
+		if (!g_str_has_prefix(buddy->name, "sip:")) {
+			gchar *buf = sip_uri_from_name(buddy->name);
+			purple_blist_rename_buddy(buddy, buf);
+			g_free(buf);
+		}
+
+		sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+				    buddy->name,
+				    group->name);
+	}
+}
+
 void sipe_purple_remove_buddy(PurpleConnection *gc,
 			      PurpleBuddy *buddy,
 			      PurpleGroup *group)

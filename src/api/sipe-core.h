@@ -229,6 +229,17 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 			     gboolean is_online);
 
 /**
+ * Add a buddy
+ *
+ * @param sipe_public Sipe core public data structure
+ * @param name        backend-specific buddy name
+ * @param group_name  backend-specific group name
+ */
+void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
+			 const gchar *name,
+			 const gchar *group_name);
+
+/**
  * Remove a buddy
  *
  * @param sipe_public Sipe core public data structure

@@ -429,43 +429,6 @@ void sipe_buddy_status_from_activity(struct sipe_core_private *sipe_private,
 	}
 }
 
-void sipe_add_buddy(PurpleConnection *gc, PurpleBuddy *buddy, PurpleGroup *group)
-{
-	SIPE_DEBUG_INFO("sipe_add_buddy[CB]: buddy:%s group:%s", buddy ? buddy->name : "", group ? group->name : "");
-
-	/* libpurple can call us with undefined buddy or group */
-	if (buddy && group) {
-		struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-
-		/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
-		gchar *buddy_name = g_ascii_strdown(buddy->name, -1);
-		purple_blist_rename_buddy(buddy, buddy_name);
-		g_free(buddy_name);
-
-		/* Prepend sip: if needed */
-		if (!g_str_has_prefix(buddy->name, "sip:")) {
-			gchar *buf = sip_uri_from_name(buddy->name);
-			purple_blist_rename_buddy(buddy, buf);
-			g_free(buf);
-		}
-
-		if (!g_hash_table_lookup(sipe_private->buddies, buddy->name)) {
-			struct sipe_buddy *b = g_new0(struct sipe_buddy, 1);
-			SIPE_DEBUG_INFO("sipe_add_buddy: adding %s", buddy->name);
-			b->name = g_strdup(buddy->name);
-			b->just_added = TRUE;
-			g_hash_table_insert(sipe_private->buddies, b->name, b);
-			/* @TODO should go to callback */
-			sipe_subscribe_presence_single(sipe_private,
-						       b->name);
-		} else {
-			SIPE_DEBUG_INFO("sipe_add_buddy: buddy %s already in internal list", buddy->name);
-		}
-
-		sipe_core_buddy_group(PURPLE_GC_TO_SIPE_CORE_PUBLIC, buddy->name, NULL, group->name);
-	}
-}
-
 /**
  * Tries to figure out user first and last name
  * based on Display Name and email properties.
@@ -1018,22 +981,26 @@ static void
 sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
 {
 	PurpleBuddy *buddy, *b;
-	PurpleConnection *gc;
 	PurpleGroup * group = purple_find_group(group_name);
 
 	g_return_if_fail(PURPLE_BLIST_NODE_IS_BUDDY(node));
 
 	buddy = (PurpleBuddy *)node;
 
-	SIPE_DEBUG_INFO("sipe_buddy_menu_copy_to_cb: copying %s to %s", buddy->name, group_name);
-	gc = purple_account_get_connection(buddy->account);
+	SIPE_DEBUG_INFO("sipe_buddy_menu_copy_to_cb: copying %s to %s",
+			buddy->name, group_name);
 
 	b = purple_find_buddy_in_group(buddy->account, buddy->name, group);
-	if (!b){
+	if (!b)
 		b = purple_blist_add_buddy_clone(group, buddy);
-	}
 
-	sipe_add_buddy(gc, b, group);
+	if (b && group) {
+		PurpleConnection *gc = purple_account_get_connection(b->account);
+
+		sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+				    b->name,
+				    group->name);
+	}
 }
 
 static void

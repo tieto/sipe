@@ -515,7 +515,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_set_status,			/* set_status */
 	sipe_set_idle,				/* set_idle */
 	NULL,					/* change_passwd */
-	sipe_add_buddy,				/* add_buddy */
+	sipe_purple_add_buddy,			/* add_buddy */
 	NULL,					/* add_buddies */
 	sipe_purple_remove_buddy,		/* remove_buddy */
 	NULL,					/* remove_buddies */

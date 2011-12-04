@@ -41,6 +41,7 @@
 #include "sipe-nls.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
+#include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -166,6 +167,35 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
 		sipe_core_group_set_user(sipe_public, who);
 	}
+}
+
+void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
+			 const gchar *name,
+			 const gchar *group_name)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	if (!g_hash_table_lookup(sipe_private->buddies, name)) {
+		struct sipe_buddy *b = g_new0(struct sipe_buddy, 1);
+
+		SIPE_DEBUG_INFO("sipe_core_buddy_add: %s", name);
+
+		b->name = g_strdup(name);
+		b->just_added = TRUE;
+		g_hash_table_insert(sipe_private->buddies, b->name, b);
+
+		/* @TODO should go to callback */
+		sipe_subscribe_presence_single(sipe_private, b->name);
+
+	} else {
+		SIPE_DEBUG_INFO("sipe_core_buddy_add: buddy %s already in internal list",
+				name);
+	}
+
+	sipe_core_buddy_group(SIPE_CORE_PUBLIC,
+			      name,
+			      NULL,
+			      group_name);
 }
 
 /**

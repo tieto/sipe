@@ -94,6 +94,9 @@ struct _PurpleRoomlist *sipe_purple_roomlist_get_list(struct _PurpleConnection *
 void sipe_purple_roomlist_cancel(struct _PurpleRoomlist *list);
 
 /* libpurple buddy callbacks */
+void sipe_purple_add_buddy(struct _PurpleConnection *gc,
+			   struct _PurpleBuddy *buddy,
+			   struct _PurpleGroup *group);
 void sipe_purple_remove_buddy(struct _PurpleConnection *gc,
 			      struct _PurpleBuddy *buddy,
 			      struct _PurpleGroup *group);
