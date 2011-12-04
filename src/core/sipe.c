@@ -285,26 +285,6 @@ sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 	g_free(self_uri);
 }
 
-void
-sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
-			   const gchar* uri,
-			   const gchar *status_id)
-{
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
-
-	if (!sbuddy) return;
-
-	/* Check if on 2005 system contact's calendar,
-	 * then set/preserve it.
-	 */
-	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		sipe_apply_calendar_status(sipe_private, sbuddy, status_id);
-	} else {
-		sipe_backend_buddy_set_status(sipe_public, uri, status_id);
-	}
-}
-
 void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 {
 	SIPE_DEBUG_INFO("sipe_set_status: status=%s", purple_status_get_id(status));

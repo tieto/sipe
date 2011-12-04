@@ -44,6 +44,7 @@
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
+#include "sipe.h"
 
 static void buddy_free(struct sipe_buddy *buddy)
 {
@@ -245,6 +246,26 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 		sipe_core_group_set_user(SIPE_CORE_PUBLIC, b->name);
 	}
 
+}
+
+void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
+				const gchar* uri,
+				const gchar *status_id)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies,
+							uri);
+
+	if (!sbuddy) return;
+
+	/* Check if on 2005 system contact's calendar,
+	 * then set/preserve it.
+	 */
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+		sipe_backend_buddy_set_status(sipe_public, uri, status_id);
+	} else {
+		sipe_apply_calendar_status(sipe_private, sbuddy, status_id);
+	}
 }
 
 GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
