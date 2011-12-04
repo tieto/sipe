@@ -24,6 +24,7 @@
 #include "config.h"
 #endif
 
+#include <string.h>
 #include <time.h>
 
 #include <glib.h>
@@ -31,7 +32,9 @@
 #include "sipe-common.h"
 #include "http-conn.h" /* sipe-cal.h requires this */
 #include "sipmsg.h"
+#include "sip-csta.h"
 #include "sip-soap.h"
+#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-cal.h"
@@ -528,6 +531,261 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 	}
 
 	g_strfreev(attrs);
+}
+
+static gboolean process_options_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					 struct sipmsg *msg,
+					 SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	if (msg->response != 200) {
+		SIPE_DEBUG_INFO("process_options_response: OPTIONS response is %d",
+				msg->response);
+		return(FALSE);
+	} else {
+		SIPE_DEBUG_INFO("process_options_response: body:\n%s",
+				msg->body ? msg->body : "");
+		return(TRUE);
+	}
+}
+
+/* Asks UA/proxy about its capabilities */
+static void sipe_options_request(struct sipe_core_private *sipe_private,
+				 const char *who)
+{
+	gchar *to = sip_uri(who);
+	gchar *contact = get_contact(sipe_private);
+	gchar *request = g_strdup_printf("Accept: application/sdp\r\n"
+					 "Contact: %s\r\n",
+					 contact);
+	g_free(contact);
+
+	sip_transport_request(sipe_private,
+			      "OPTIONS",
+			      to,
+			      to,
+			      request,
+			      NULL,
+			      NULL,
+			      process_options_response);
+
+	g_free(to);
+	g_free(request);
+}
+
+static gboolean process_get_info_response(struct sipe_core_private *sipe_private,
+					  struct sipmsg *msg,
+					  struct transaction *trans)
+{
+	const gchar *uri = trans->payload->data;
+	sipe_backend_buddy bbuddy;
+	struct sipe_backend_buddy_info *info;
+	struct sipe_buddy *sbuddy;
+	gchar *alias        = NULL;
+	gchar *device_name  = NULL;
+	gchar *server_alias = NULL;
+	gchar *phone_number = NULL;
+	gchar *email        = NULL;
+	gchar *site;
+
+	info = sipe_backend_buddy_info_start(SIPE_CORE_PUBLIC);
+	if (info) return(FALSE);
+
+	SIPE_DEBUG_INFO("Fetching %s's user info for %s",
+			uri, sipe_private->username);
+
+	bbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, uri, NULL);
+	alias = sipe_backend_buddy_get_local_alias(SIPE_CORE_PUBLIC, bbuddy);
+
+	/* will query buddy UA's capabilities and send answer to log */
+	if (sipe_backend_debug_enabled())
+		sipe_options_request(sipe_private, uri);
+
+	sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	if (sbuddy) {
+		device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
+	}
+
+	if (msg->response != 200) {
+		SIPE_DEBUG_INFO("process_get_info_response: SERVICE response is %d", msg->response);
+	} else {
+		sipe_xml *searchResults;
+		const sipe_xml *mrow;
+
+		SIPE_DEBUG_INFO("process_get_info_response: body:\n%s",
+				msg->body ? msg->body : "");
+
+		searchResults = sipe_xml_parse(msg->body, msg->bodylen);
+		if (!searchResults) {
+
+			SIPE_DEBUG_INFO_NOFORMAT("process_get_info_response: no parseable searchResults");
+
+		} else if ((mrow = sipe_xml_child(searchResults, "Body/Array/row"))) {
+			const gchar *value;
+
+			server_alias = g_strdup(sipe_xml_attribute(mrow, "displayName"));
+			email = g_strdup(sipe_xml_attribute(mrow, "email"));
+			phone_number = g_strdup(sipe_xml_attribute(mrow, "phone"));
+
+			/*
+			 * For 2007 system we will take this from ContactCard -
+			 * it has cleaner tel: URIs at least
+			 */
+			if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+				char *tel_uri = sip_to_tel_uri(phone_number);
+				/* trims its parameters, so call first */
+				sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, server_alias);
+				sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_EMAIL, email);
+				sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE, tel_uri);
+				sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY, phone_number);
+				g_free(tel_uri);
+			}
+
+			if (server_alias && strlen(server_alias) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("Display name"),
+							     server_alias);
+			}
+			if ((value = sipe_xml_attribute(mrow, "title")) && strlen(value) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("Job title"),
+							     value);
+			}
+			if ((value = sipe_xml_attribute(mrow, "office")) && strlen(value) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("Office"),
+							     value);
+			}
+			if (phone_number && strlen(phone_number) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("Business phone"),
+							     phone_number);
+			}
+			if ((value = sipe_xml_attribute(mrow, "company")) && strlen(value) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("Company"),
+							     value);
+			}
+			if ((value = sipe_xml_attribute(mrow, "city")) && strlen(value) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("City"),
+							     value);
+			}
+			if ((value = sipe_xml_attribute(mrow, "state")) && strlen(value) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("State"),
+							     value);
+			}
+			if ((value = sipe_xml_attribute(mrow, "country")) && strlen(value) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("Country"),
+							     value);
+			}
+			if (email && strlen(email) > 0) {
+				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+							     info,
+							     _("Email address"),
+							     email);
+			}
+
+		}
+		sipe_xml_free(searchResults);
+	}
+
+	sipe_backend_buddy_info_break(SIPE_CORE_PUBLIC, info);
+
+	if (is_empty(server_alias)) {
+		g_free(server_alias);
+		server_alias = sipe_backend_buddy_get_server_alias(SIPE_CORE_PUBLIC,
+								   bbuddy);
+		if (server_alias) {
+			sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+						     info,
+						     _("Display name"),
+						     server_alias);
+		}
+	}
+
+	/* present alias if it differs from server alias */
+	if (alias && !sipe_strequal(alias, server_alias))
+	{
+		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+					     info,
+					     _("Alias"),
+					     alias);
+	}
+
+	if (is_empty(email)) {
+		g_free(email);
+		email = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
+						      bbuddy,
+						      SIPE_BUDDY_INFO_EMAIL);
+		if (email) {
+			sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+						     info,
+						     _("Email address"),
+						     email);
+		}
+	}
+
+	site = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
+					     bbuddy,
+					     SIPE_BUDDY_INFO_SITE);
+	if (site) {
+		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+					     info,
+					     _("Site"),
+					     site);
+		g_free(site);
+	}
+
+	if (device_name) {
+		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+					     info,
+					     _("Device"),
+					     device_name);
+	}
+
+	sipe_backend_buddy_info_finalize(SIPE_CORE_PUBLIC, info, uri);
+
+	g_free(phone_number);
+	g_free(server_alias);
+	g_free(email);
+	g_free(device_name);
+	g_free(alias);
+
+	return TRUE;
+}
+
+/**
+ * AD search first, LDAP based
+ */
+void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
+			      const gchar *who)
+{
+	char *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW,
+					    "msRTCSIP-PrimaryUserAddress",
+					    who);
+	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+
+	SIPE_DEBUG_INFO("sipe_core_buddy_info: row: %s", row ? row : "");
+
+	payload->destroy = g_free;
+	payload->data = g_strdup(who);
+
+	sip_soap_directory_search(SIPE_CORE_PRIVATE,
+				  1,
+				  row,
+				  process_get_info_response,
+				  payload);
+	g_free(row);
 }
 
 /*

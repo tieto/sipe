@@ -28,7 +28,6 @@ struct sipe_core_public;
 GList *sipe_buddy_menu(PurpleBuddy *buddy);
 void sipe_purple_setup(struct sipe_core_public *sipe_public,
 		       PurpleConnection *gc);
-void sipe_get_info(PurpleConnection *gc, const char *username);
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PRIVATE ((struct sipe_core_private *)account->gc->proto_data)

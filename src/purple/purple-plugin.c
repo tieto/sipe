@@ -385,6 +385,12 @@ static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 	return SIPE_TYPING_SEND_TIMEOUT;
 }
 
+static void sipe_purple_get_info(PurpleConnection *gc, const char *who)
+{
+	sipe_core_buddy_get_info(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+				 who);
+}
+
 static void sipe_purple_add_permit(PurpleConnection *gc, const char *name)
 {
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, TRUE);
@@ -514,7 +520,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_purple_send_im,			/* send_im */
 	NULL,					/* set_info */		// TODO maybe
 	sipe_purple_send_typing,		/* send_typing */
-	sipe_get_info,				/* get_info */
+	sipe_purple_get_info,			/* get_info */
 	sipe_purple_set_status,			/* set_status */
 	sipe_purple_set_idle,			/* set_idle */
 	NULL,					/* change_passwd */

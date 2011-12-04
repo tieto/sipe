@@ -29,7 +29,9 @@
 #include "purple-private.h"
 
 #include "blist.h"
+#include "notify.h"
 #include "privacy.h"
+#include "version.h"
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
@@ -155,6 +157,12 @@ gchar* sipe_backend_buddy_get_server_alias(SIPE_UNUSED_PARAMETER struct sipe_cor
 					   const sipe_backend_buddy who)
 {
 	return g_strdup(purple_buddy_get_server_alias(who));
+}
+
+gchar *sipe_backend_buddy_get_local_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					  const sipe_backend_buddy who)
+{
+	return g_strdup(purple_buddy_get_local_alias(who));
 }
 
 gchar* sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -305,6 +313,44 @@ gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_pub
 	}
 
 	return (purple_group != NULL);
+}
+
+struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+	return((struct sipe_backend_buddy_info *)purple_notify_user_info_new());
+}
+
+void sipe_backend_buddy_info_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				 struct sipe_backend_buddy_info *info,
+				 const gchar *description,
+				 const gchar *value)
+{
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_notify_user_info_add_pair_html
+#else
+	purple_notify_user_info_add_pair
+#endif
+		((PurpleNotifyUserInfo *) info, description, value);
+}
+
+void sipe_backend_buddy_info_break(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				   struct sipe_backend_buddy_info *info)
+{
+	purple_notify_user_info_add_section_break((PurpleNotifyUserInfo *) info);
+}
+
+void sipe_backend_buddy_info_finalize(struct sipe_core_public *sipe_public,
+				      struct sipe_backend_buddy_info *info,
+				      const gchar *uri)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+
+	/* show a buddy's user info in a nice dialog box */
+	purple_notify_userinfo(purple_private->gc,
+			       uri,       /* buddy's URI */
+			       (PurpleNotifyUserInfo *) info,
+			       NULL,      /* callback called when dialog closed */
+			       NULL);     /* userdata for callback */
 }
 
 void sipe_purple_add_buddy(PurpleConnection *gc,

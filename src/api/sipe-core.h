@@ -411,6 +411,9 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *company,
 			    const gchar *country);
 
+void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
+			      const gchar *who);
+
 /* status */
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  const gchar *status_id,

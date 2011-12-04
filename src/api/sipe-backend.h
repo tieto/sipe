@@ -706,6 +706,17 @@ gchar* sipe_backend_buddy_get_server_alias(struct sipe_core_public *sipe_public,
 					   const sipe_backend_buddy who);
 
 /**
+ * Gets the local alias for a contact
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param uri         the budyy name
+ *
+ * @return the alias. Must be @g_free()'d.
+ */
+gchar *sipe_backend_buddy_get_local_alias(struct sipe_core_public *sipe_public,
+					  const sipe_backend_buddy who);
+
+/**
  * Gets the name of the group a contact belongs to.
  *
  * @param sipe_public The handle representing the protocol instance making the call
@@ -752,7 +763,7 @@ void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
 				  const sipe_backend_buddy who,
 				  const gchar *alias);
 
-/*
+/**
  * Sets the server alias for a contact.
  *
  * @param sipe_public The handle representing the protocol instance making the call
@@ -763,7 +774,7 @@ void sipe_backend_buddy_set_server_alias(struct sipe_core_public *sipe_public,
 					 const sipe_backend_buddy who,
 					 const gchar *alias);
 
-/*
+/**
  * Add a contact to the buddy list
  *
  * @param sipe_public The handle representing the protocol instance making the call
@@ -777,7 +788,7 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 					  const gchar *alias,
 					  const gchar *groupname);
 
-/*
+/**
  * Remove a contact from the buddy list
  *
  * @param sipe_public The handle representing the protocol instance making the call
@@ -786,16 +797,16 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 void sipe_backend_buddy_remove(struct sipe_core_public *sipe_public,
 			       const sipe_backend_buddy who);
 
-/*
+/**
  * Notifies the user that a remote user has wants to add the local user to his
- * or her buddy list and requires authorization to do so. 
+ * or her buddy list and requires authorization to do so.
  *
  * @param sipe_public The handle representing the protocol instance making the call
  * @param who The name of the user that added this account
  * @param alias The optional alias of the remote user
  * @param on_list True if the user is already in our list
- * @param auth_cb The callback called when the local user accepts 
- * @param deny_cb The callback called when the local user rejects 
+ * @param auth_cb The callback called when the local user accepts
+ * @param deny_cb The callback called when the local user rejects
  * @param data Data to be passed back to the above callbacks
  */
 typedef void (*sipe_backend_buddy_request_authorization_cb)(void *);
@@ -823,7 +834,7 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   const gchar *who,
 				   const gchar *status_id);
 
-/*
+/**
  * Called when a new internal group is about to be added. If this returns FALSE,
  * the group will not be added.
  *
@@ -834,6 +845,20 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 				      const gchar *group_name);
 
+/**
+ * Present requested buddy information to the user
+ */
+struct sipe_backend_buddy_info;
+struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(struct sipe_core_public *sipe_public);
+void sipe_backend_buddy_info_add(struct sipe_core_public *sipe_public,
+				 struct sipe_backend_buddy_info *info,
+				 const gchar *description,
+				 const gchar *value);
+void sipe_backend_buddy_info_break(struct sipe_core_public *sipe_public,
+				   struct sipe_backend_buddy_info *info);
+void sipe_backend_buddy_info_finalize(struct sipe_core_public *sipe_public,
+				      struct sipe_backend_buddy_info *info,
+				      const gchar *uri);
 #ifdef __cplusplus
 }
 #endif
