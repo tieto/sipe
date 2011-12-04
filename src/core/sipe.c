@@ -452,16 +452,6 @@ static void sipe_options_request(struct sipe_core_private *sipe_private,
 	g_free(request);
 }
 
-void
-sipe_convo_closed(PurpleConnection * gc, const char *who)
-{
-	struct sipe_core_private *sipe_private = PURPLE_GC_TO_SIPE_CORE_PRIVATE;
-
-	SIPE_DEBUG_INFO("conversation with %s closed", who);
-	sipe_session_close(sipe_private,
-			   sipe_session_find_im(sipe_private, who));
-}
-
 /**
  * Returns 2005-style activity and Availability.
  *

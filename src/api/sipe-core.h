@@ -382,6 +382,8 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 void sipe_core_im_send(struct sipe_core_public *sipe_public,
 		       const gchar *who,
 		       const gchar *what);
+void sipe_core_im_close(struct sipe_core_public *sipe_public,
+			const gchar *who);
 
 /* user */
 void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,

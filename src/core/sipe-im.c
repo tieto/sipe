@@ -815,6 +815,16 @@ void sipe_core_im_send(struct sipe_core_public *sipe_public,
 	g_free(uri);
 }
 
+void sipe_core_im_close(struct sipe_core_public *sipe_public,
+			const gchar *who)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	SIPE_DEBUG_INFO("sipe_core_im_close: conversation with %s closed", who);
+	sipe_session_close(sipe_private,
+			   sipe_session_find_im(sipe_private, who));
+}
+
 void sipe_im_cancel_dangling(struct sipe_core_private *sipe_private,
 			     struct sip_session *session,
 			     struct sip_dialog *dialog,

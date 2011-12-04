@@ -424,6 +424,12 @@ static void sipe_purple_group_rename(PurpleConnection *gc,
 	sipe_core_group_rename(PURPLE_GC_TO_SIPE_CORE_PUBLIC, old_name, group->name);
 }
 
+static void sipe_purple_convo_closed(PurpleConnection *gc,
+				     const char *who)
+{
+	sipe_core_im_close(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who);
+}
+
 static void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
 {
 	sipe_core_group_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC, group->name);
@@ -536,7 +542,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_purple_group_buddy,		/* group_buddy */
 	sipe_purple_group_rename,		/* rename_group */
 	NULL,					/* buddy_free */
-	sipe_convo_closed,			/* convo_closed */
+	sipe_purple_convo_closed,		/* convo_closed */
 	purple_normalize_nocase,		/* normalize */
 	NULL,					/* set_buddy_icon */
 	sipe_purple_group_remove,		/* remove_group */
