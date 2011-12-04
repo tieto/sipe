@@ -21,6 +21,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Forward declarations */
+struct sipe_core_private;
+
+void sipe_status_and_note(struct sipe_core_private *sipe_private,
+			  const gchar *status_id);
+
 /*
   Local Variables:
   mode: c

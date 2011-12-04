@@ -556,6 +556,12 @@ typedef enum {
 const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
 				  sipe_setting type);
 
+/** STATUS *******************************************************************/
+
+gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
+				      const gchar *status_id,
+				      const gchar *message);
+
 /** TRANSPORT ****************************************************************/
 
 typedef void transport_connected_cb(struct sipe_transport_connection *conn);

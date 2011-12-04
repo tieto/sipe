@@ -21,13 +21,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <time.h>
+
 #include <glib.h>
 
+#include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
 #include "sipe-status.h"
+#define _SIPE_NEED_ACTIVITIES
+#include "sipe.h"
 
 void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 {
@@ -36,6 +41,24 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 		sipe_ocs2007_reset_status(sipe_private);
 	else
 		sipe_ocs2005_reset_status(sipe_private);
+}
+
+void sipe_status_and_note(struct sipe_core_private *sipe_private,
+			  const gchar *status_id)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	gboolean changed = sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
+							status_id,
+							sip->note);
+
+	if (changed) {
+		sipe_activity activity = sipe_activity_from_token(status_id);
+
+		sip->do_not_publish[activity] = time(NULL);
+		SIPE_DEBUG_INFO("sipe_status_and_note: do_not_publish[%s]=%d [now]",
+				status_id,
+				(int) sip->do_not_publish[activity]);
+	}
 }
 
 /*

@@ -23,6 +23,7 @@ libsipe_backend_la_SOURCES = \
 	purple-schedule.c \
 	purple-search.c \
 	purple-setting.c \
+	purple-status.c \
 	purple-transport.c \
 	purple-user.c
 

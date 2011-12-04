@@ -137,6 +137,7 @@ PURPLE_C_SRC = 		../purple/purple-buddy.c \
 			../purple/purple-schedule.c \
 			../purple/purple-search.c \
 			../purple/purple-setting.c \
+			../purple/purple-status.c \
 			../purple/purple-transport.c \
 			../purple/purple-user.c \
 			sipe-utils.c \

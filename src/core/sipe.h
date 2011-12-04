@@ -115,6 +115,7 @@ struct sipe_account_data {
 /* need to improve or reduce visibility of this interface */
 const gchar *sipe_activity_to_token(sipe_activity);
 const gchar *sipe_activity_description(sipe_activity);
+sipe_activity sipe_activity_from_token(const gchar *token);
 const gchar *sipe_activity_description_from_token(const gchar *token);
 #endif
 void sipe_set_unknown_status(struct sipe_core_private *sipe_private);
@@ -140,10 +141,6 @@ void sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 
 /* libpurple memory leak workaround */
 void sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private);
-
-/* this should be in backend? */
-void sipe_backend_account_status_and_note(struct sipe_core_private *sipe_private,
-					  const gchar *status_id);
 
 /**
  * referenced by sipe-notify.c - start

@@ -69,7 +69,6 @@
 #include "plugin.h"
 #include "privacy.h"
 #include "request.h"
-#include "savedstatuses.h"
 #include "version.h"
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
@@ -92,6 +91,7 @@
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
+#include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -191,8 +191,7 @@ void sipe_set_invisible_status(struct sipe_core_private *sipe_private)
 	sip->status = g_strdup(SIPE_STATUS_ID_INVISIBLE);
 }
 
-static sipe_activity
-sipe_get_activity_by_token(const char *token)
+sipe_activity sipe_activity_from_token(const gchar *token)
 {
 	int i;
 
@@ -209,7 +208,7 @@ const gchar *sipe_activity_description_from_token(const gchar *token)
 {
 	if (!token) return NULL;
 
-	return sipe_activity_description(sipe_get_activity_by_token(token));
+	return sipe_activity_description(sipe_activity_from_token(token));
 }
 
 void
@@ -280,7 +279,7 @@ sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 		}
 
 		SIPE_DEBUG_INFO("sipe_apply_calendar_status: switch to '%s' for the account", sip->status);
-		sipe_backend_account_status_and_note(sipe_private, status_id);
+		sipe_status_and_note(sipe_private, status_id);
 	}
 	g_free(self_uri);
 }
@@ -302,7 +301,7 @@ void sipe_set_status(PurpleAccount *account, PurpleStatus *status)
 			time_t now = time(NULL);
 			const char *status_id = purple_status_get_id(status);
 			const char *note = purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE);
-			sipe_activity activity = sipe_get_activity_by_token(status_id);
+			sipe_activity activity = sipe_activity_from_token(status_id);
 			gboolean do_not_publish = ((now - sip->do_not_publish[activity]) <= 2);
 
 			/* when other point of presence clears note, but we are keeping
@@ -496,73 +495,6 @@ sipe_get_first_last_names(struct sipe_core_private *sipe_private,
 	g_free(email);
 	g_free(display_name);
 	g_strfreev(parts);
-}
-
-/**
- * This method motivates Purple's Host (e.g. Pidgin) to update its UI
- * by using standard Purple's means of signals and saved statuses.
- *
- * Thus all UI elements get updated: Status Button with Note, docklet.
- * This is ablolutely important as both our status and note can come
- * inbound (roaming) or be updated programmatically (e.g. based on our
- * calendar data).
- */
-void sipe_backend_account_status_and_note(struct sipe_core_private *sipe_private,
-					  const gchar *status_id)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleAccount *account = sip->account;
-	PurpleStatus *status = purple_account_get_active_status(account);
-	const gchar *message = sip->note;
-	time_t *do_not_publish = sip->do_not_publish;
-	gboolean changed = TRUE;
-
-	if (g_str_equal(status_id, purple_status_get_id(status)) &&
-	    sipe_strequal(message, purple_status_get_attr_string(status, SIPE_STATUS_ATTR_ID_MESSAGE)))
-	{
-		changed = FALSE;
-	}
-
-	if (purple_savedstatus_is_idleaway()) {
-		changed = FALSE;
-	}
-
-	if (changed) {
-		PurpleSavedStatus *saved_status;
-		const PurpleStatusType *acct_status_type =
-			purple_status_type_find_with_id(account->status_types, status_id);
-		PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
-		sipe_activity activity = sipe_get_activity_by_token(status_id);
-
-		saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
-		if (saved_status) {
-			purple_savedstatus_set_substatus(saved_status, account, acct_status_type, message);
-		}
-
-		/* If this type+message is unique then create a new transient saved status
-		 * Ref: gtkstatusbox.c
-		 */
-		if (!saved_status) {
-			GList *tmp;
-			GList *active_accts = purple_accounts_get_all_active();
-
-			saved_status = purple_savedstatus_new(NULL, primitive);
-			purple_savedstatus_set_message(saved_status, message);
-
-			for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
-				purple_savedstatus_set_substatus(saved_status,
-					(PurpleAccount *)tmp->data, acct_status_type, message);
-			}
-			g_list_free(active_accts);
-		}
-
-		do_not_publish[activity] = time(NULL);
-		SIPE_DEBUG_INFO("sipe_set_purple_account_status_and_note: do_not_publish[%s]=%d [now]",
-				status_id, (int)do_not_publish[activity]);
-
-		/* Set the status for each account */
-		purple_savedstatus_activate(saved_status);
-	}
 }
 
 /* IM Session (INVITE and MESSAGE methods) */

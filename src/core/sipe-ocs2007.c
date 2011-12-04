@@ -50,6 +50,7 @@
 #include "sipe-nls.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
+#include "sipe-status.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -2216,7 +2217,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 
 	if (do_update_status) {
 		SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: switch to '%s' for the account", sip->status);
-		sipe_backend_account_status_and_note(sipe_private, sip->status);
+		sipe_status_and_note(sipe_private, sip->status);
 	}
 
 	g_free(to);
