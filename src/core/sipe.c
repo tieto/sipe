@@ -89,7 +89,6 @@
 #include "sipe-dialog.h"
 #include "sipe-im.h"
 #include "sipe-nls.h"
-#include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
@@ -865,15 +864,6 @@ void sipe_purple_setup(struct sipe_core_public *sipe_public,
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
 	sip->gc = gc;
 	sip->account = purple_connection_get_account(gc);
-}
-
-void sipe_core_reset_status(struct sipe_core_public *sipe_public)
-{
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
-		sipe_ocs2007_reset_status(sipe_private);
-	else
-		sipe_ocs2005_reset_status(sipe_private);
 }
 
 /** for Access levels menu */

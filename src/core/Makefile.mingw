@@ -108,6 +108,7 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-ocs2007.c \
 			sipe-schedule.c \
 			sipe-session.c \
+			sipe-status.c \
 			sipe-subscriptions.c \
 			sipe-svc.c \
 			sipe-tls.c \

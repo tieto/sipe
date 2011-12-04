@@ -63,6 +63,8 @@ libsipe_core_la_SOURCES = \
 	sipe-session.c \
 	sipe-sign.h \
 	sipe-sign.c \
+	sipe-status.h \
+	sipe-status.c \
 	sipe-subscriptions.h \
 	sipe-subscriptions.c \
 	sipe-svc.h \
