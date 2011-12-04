@@ -1195,7 +1195,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					g_strfreev(parts);
 
 					/* Close old connection */
-					sipe_connection_cleanup(sipe_private);
+					sipe_core_connection_cleanup(sipe_private);
 
 					/* Create new connection */
 					sipe_server_register(sipe_private, transport, hostname, port);

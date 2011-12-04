@@ -111,8 +111,6 @@ struct sipe_account_data {
  *  - are needed by the already created new modules
  */
 
-/* ??? module */
-void sipe_connection_cleanup(struct sipe_core_private *sipe_private);
 #ifdef _SIPE_NEED_ACTIVITIES
 /* need to improve or reduce visibility of this interface */
 const gchar *sipe_activity_to_token(sipe_activity);
@@ -139,6 +137,9 @@ gboolean sipe_is_user_available(struct sipe_core_private *sipe_private);
 void sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
 				struct sipe_buddy *sbuddy,
 				const char *status_id);
+
+/* libpurple memory leak workaround */
+void sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private);
 
 /* this should be in backend? */
 void sipe_backend_account_status_and_note(struct sipe_core_private *sipe_private,

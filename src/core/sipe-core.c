@@ -30,11 +30,13 @@
 #include <glib.h>
 
 #include "sipe-common.h"
+#include "http-conn.h" /* sipe-cal.h requires this */
 #include "sip-csta.h"
 #include "sip-sec.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
+#include "sipe-cal.h"
 #include "sipe-certificate.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
@@ -42,9 +44,12 @@
 #include "sipe-core-private.h"
 #include "sipe-crypt.h"
 #include "sipe-group.h"
+#include "sipe-groupchat.h"
 #include "sipe-media.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
+#include "sipe-ocs2007.h"
+#include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
@@ -279,6 +284,49 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	return((struct sipe_core_public *)sipe_private);
 }
 
+void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+
+	g_free(sipe_private->epid);
+	sipe_private->epid = NULL;
+
+	sip_transport_disconnect(sipe_private);
+
+	sipe_schedule_cancel_all(sipe_private);
+
+	if (sip->allow_events) {
+		GSList *entry = sip->allow_events;
+		while (entry) {
+			g_free(entry->data);
+			entry = entry->next;
+		}
+	}
+	g_slist_free(sip->allow_events);
+
+	sipe_ocs2007_free(sipe_private);
+
+	sipe_blist_menu_free_containers(sipe_private);
+
+	if (sipe_private->contact)
+		g_free(sipe_private->contact);
+	sipe_private->contact = NULL;
+	if (sip->regcallid)
+		g_free(sip->regcallid);
+	sip->regcallid = NULL;
+
+	if (sipe_private->focus_factory_uri)
+		g_free(sipe_private->focus_factory_uri);
+	sipe_private->focus_factory_uri = NULL;
+
+	if (sip->cal) {
+		sipe_cal_calendar_free(sip->cal);
+	}
+	sip->cal = NULL;
+
+	sipe_groupchat_free(sipe_private);
+}
+
 void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
@@ -312,7 +360,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 		sip_transport_deregister(sipe_private);
 	}
 
-	sipe_connection_cleanup(sipe_private);
+	sipe_core_connection_cleanup(sipe_private);
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->username);

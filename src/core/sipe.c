@@ -87,7 +87,6 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
-#include "sipe-groupchat.h"
 #include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2005.h"
@@ -868,53 +867,6 @@ void sipe_purple_setup(struct sipe_core_public *sipe_public,
 	sip->account = purple_connection_get_account(gc);
 }
 
-static void
-sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private);
-
-void sipe_connection_cleanup(struct sipe_core_private *sipe_private)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
-	g_free(sipe_private->epid);
-	sipe_private->epid = NULL;
-
-	sip_transport_disconnect(sipe_private);
-
-	sipe_schedule_cancel_all(sipe_private);
-
-	if (sip->allow_events) {
-		GSList *entry = sip->allow_events;
-		while (entry) {
-			g_free(entry->data);
-			entry = entry->next;
-		}
-	}
-	g_slist_free(sip->allow_events);
-
-	sipe_ocs2007_free(sipe_private);
-
-	/* libpurple memory leak workaround */
-	sipe_blist_menu_free_containers(sipe_private);
-
-	if (sipe_private->contact)
-		g_free(sipe_private->contact);
-	sipe_private->contact = NULL;
-	if (sip->regcallid)
-		g_free(sip->regcallid);
-	sip->regcallid = NULL;
-
-	if (sipe_private->focus_factory_uri)
-		g_free(sipe_private->focus_factory_uri);
-	sipe_private->focus_factory_uri = NULL;
-
-	if (sip->cal) {
-		sipe_cal_calendar_free(sip->cal);
-	}
-	sip->cal = NULL;
-
-	sipe_groupchat_free(sipe_private);
-}
-
 void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
@@ -1445,8 +1397,7 @@ sipe_buddy_menu_access_level_add_domain_cb(PurpleBuddy *buddy)
  * That means that after the buddy menu has been closed we have unused
  * resources but at least we don't leak them anymore...
  */
-static void
-sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private)
+void sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private)
 {
 	GSList *entry = sipe_private->blist_menu_containers;
 	while (entry) {

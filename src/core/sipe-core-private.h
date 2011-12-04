@@ -127,6 +127,11 @@ struct sipe_core_private {
 #define SIPE_ACCOUNT_DATA         SIPE_CORE_PRIVATE->temporary
 #define SIPE_ACCOUNT_DATA_PRIVATE sipe_private->temporary
 
+/**
+ * sipe-core internal functions
+ */
+void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private);
+
 /*
   Local Variables:
   mode: c
