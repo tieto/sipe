@@ -163,7 +163,7 @@ gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 struct certificate_callback_data {
 	gchar *target;
 	gchar *authuser;
-	gchar *webticket_anon_uri;
+	gchar *webticket_negotiate_uri;
 	gchar *webticket_fedbearer_uri;
 	gchar *certprov_uri;
 
@@ -178,7 +178,7 @@ static void callback_data_free(struct certificate_callback_data *ccd)
 	if (ccd) {
 		g_free(ccd->target);
 		g_free(ccd->authuser);
-		g_free(ccd->webticket_anon_uri);
+		g_free(ccd->webticket_negotiate_uri);
 		g_free(ccd->webticket_fedbearer_uri);
 		g_free(ccd->certprov_uri);
 		sipe_tls_free_random(&ccd->entropy);
@@ -557,10 +557,10 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 
 			if (auth_uri) {
 				if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
-						       "WebTicketServiceAnon")) {
-					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Anon Auth URI %s", auth_uri);
-					g_free(ccd->webticket_anon_uri);
-					ccd->webticket_anon_uri = g_strdup(auth_uri);
+						       "WebTicketServiceWinNegotiate")) {
+					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Windows Negotiate Auth URI %s", auth_uri);
+					g_free(ccd->webticket_negotiate_uri);
+					ccd->webticket_negotiate_uri = g_strdup(auth_uri);
 				} else if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
 							      "WsFedBearer")) {
 					SIPE_DEBUG_INFO("webticket_metadata: WebTicket FedBearer Auth URI %s", auth_uri);
@@ -570,16 +570,18 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 			}
 		}
 
-		if (ccd->webticket_anon_uri || ccd->webticket_fedbearer_uri) {
+		if (ccd->webticket_negotiate_uri || ccd->webticket_fedbearer_uri) {
 			gboolean success;
 
-			if (ccd->webticket_anon_uri) {
-				/* Try anonymous authentication first */
-				/* Entropy: 256 random bits */
+			/* Entropy: 256 random bits */
+			if (!ccd->entropy.buffer)
 				sipe_tls_fill_random(&ccd->entropy, 256);
 
+			if (ccd->webticket_negotiate_uri) {
+				/* Try Negotiate authentication first */
+
 				success = sipe_svc_webticket(sipe_private,
-							     ccd->webticket_anon_uri,
+							     ccd->webticket_negotiate_uri,
 							     ccd->authuser,
 							     NULL,
 							     ccd->certprov_uri,
@@ -603,7 +605,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 			} else {
 				certificate_failure(sipe_private,
 						    _("Can't request security token from %s"),
-						    ccd->webticket_anon_uri ? ccd->webticket_anon_uri : ccd->webticket_fedbearer_uri);
+						    ccd->webticket_negotiate_uri ? ccd->webticket_negotiate_uri : ccd->webticket_fedbearer_uri);
 			}
 
 		} else {

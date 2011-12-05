@@ -465,6 +465,7 @@ sipe_ews_do_autodiscover(struct sipe_calendar *cal,
 				 autodiscover_url,
 				 body,
 				 "text/xml",
+				 NULL,
 				 cal->auth,
 				 sipe_ews_process_autodiscover,
 				 cal);
@@ -507,6 +508,7 @@ sipe_ews_do_avail_request(struct sipe_calendar *cal)
 					 cal->as_url,
 					 body,
 					 "text/xml; charset=UTF-8",
+					 NULL,
 					 cal->auth,
 					 sipe_ews_process_avail_response,
 					 cal);
@@ -535,6 +537,7 @@ sipe_ews_do_oof_request(struct sipe_calendar *cal)
 							  cal->oof_url,
 							  body,
 							  content_type,
+							  NULL,
 							  cal->auth,
 							  sipe_ews_process_oof_response,
 							  cal);

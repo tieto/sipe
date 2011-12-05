@@ -353,6 +353,7 @@ sipe_domino_do_calendar_request(struct sipe_calendar *cal)
 					 url,
 					 NULL, /* body */
 					 NULL, /* content-type */
+					 NULL,
 					 cal->auth,
 					 sipe_domino_process_calendar_response,
 					 cal);
@@ -472,6 +473,7 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 						  login_url,
 						  body,
 						  content_type,
+						  NULL,
 						  cal->auth,
 						  sipe_domino_process_login_response,
 						  cal);

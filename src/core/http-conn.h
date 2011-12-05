@@ -65,6 +65,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 		 const char *full_url,
 		 const char *body,
 		 const char *content_type,
+		 const gchar *additional_headers,
 		 HttpConnAuth *auth,
 		 HttpConnCallback callback,
 		 void *data);

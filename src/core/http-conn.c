@@ -68,6 +68,7 @@ struct http_conn_struct {
 	char *url;
 	char *body;
 	char *content_type;
+	const gchar *additional_headers;
 	HttpConnAuth *auth;
 	HttpConnCallback callback;
 	void *data;
@@ -293,6 +294,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 		 const char *full_url,
 		 const char *body,
 		 const char *content_type,
+		 const gchar *additional_headers,
 		 HttpConnAuth *auth,
 		 HttpConnCallback callback,
 		 void *data)
@@ -329,6 +331,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 	http_conn->url = url;
 	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
+	http_conn->additional_headers = additional_headers;
 	http_conn->auth = auth;
 	http_conn->callback = callback;
 	http_conn->data = data;
@@ -364,6 +367,10 @@ http_conn_send0(HttpConn *http_conn,
 	if (authorization) {
 		g_string_append_printf(outstr, "Authorization: %s\r\n", authorization);
 	}
+	if (http_conn->additional_headers) {
+		g_string_append(outstr, http_conn->additional_headers);
+	}
+
 	g_string_append_printf(outstr, "\r\n%s", http_conn->body ? http_conn->body : "");
 
 	sipe_utils_message_debug("HTTP", outstr->str, NULL, TRUE);

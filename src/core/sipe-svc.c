@@ -39,7 +39,6 @@
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
-#include "sipe-digest.h"
 #include "sipe-svc.h"
 #include "sipe-tls.h"
 #include "sipe-utils.h"
@@ -59,7 +58,9 @@ struct svc_request {
 	sipe_svc_callback *cb;
 	gpointer *cb_data;
 	HttpConn *conn;
+	HttpConnAuth auth;
 	gchar *uri;
+	gchar *soap_action;
 };
 
 struct sipe_svc {
@@ -73,6 +74,7 @@ static void sipe_svc_request_free(struct svc_request *data)
 	if (data->cb)
 		/* Callback: aborted */
 		(*data->cb)(data->sipe_private, NULL, NULL, NULL, data->cb_data);
+	g_free(data->soap_action);
 	g_free(data->uri);
 	g_free(data);
 }
@@ -139,16 +141,27 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				       const gchar *method,
 				       const gchar *uri,
 				       const gchar *content_type,
+				       const gchar *soap_action,
 				       const gchar *body,
 				       svc_callback *internal_callback,
 				       sipe_svc_callback *callback,
 				       gpointer callback_data)
 {
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct svc_request *data = g_new0(struct svc_request, 1);
 	gboolean ret = FALSE;
 
 	data->sipe_private = sipe_private;
 	data->uri          = g_strdup(uri);
+
+	if (soap_action)
+		data->soap_action = g_strdup_printf("SOAPAction: \"%s\"\r\n",
+						    soap_action);
+
+	/* re-use SIP credentials */
+	data->auth.domain   = sip->authdomain;
+	data->auth.user     = sip->authuser ? sip->authuser : sipe_private->username;
+	data->auth.password = sip->password;
 
 	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
 				      NULL, /* HttpSession */
@@ -158,7 +171,8 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				      uri,
 				      body,
 				      content_type,
-				      NULL, /* HttpConnAuth */
+				      data->soap_action,
+				      &data->auth,
 				      sipe_svc_https_response,
 				      data);
 
@@ -188,6 +202,20 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      sipe_svc_callback *callback,
 				      gpointer callback_data)
 {
+	/* Only generate SOAP header if we have a security token */
+	gchar *soap_header = wsse_security ?
+		g_strdup_printf("<soap:Header>"
+				" <wsa:To>%s</wsa:To>"
+				" <wsa:ReplyTo>"
+				"  <wsa:Address>http://www.w3.org/2005/08/addressing/anonymous</wsa:Address>"
+				" </wsa:ReplyTo>"
+				" <wsa:Action>%s</wsa:Action>"
+				" <wsse:Security>%s</wsse:Security>"
+				"</soap:Header>",
+				uri,
+				soap_action,
+				wsse_security) :
+		g_strdup("");
 	gchar *body = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
 				      "<soap:Envelope %s"
 				      " xmlns:auth=\"http://schemas.xmlsoap.org/ws/2006/12/authorization\""
@@ -196,30 +224,23 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      " xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\""
 				      " xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\""
 				      " >"
-				      " <soap:Header>"
-				      "  <wsa:To>%s</wsa:To>"
-				      "  <wsa:ReplyTo>"
-				      "   <wsa:Address>http://www.w3.org/2005/08/addressing/anonymous</wsa:Address>"
-				      "  </wsa:ReplyTo>"
-				      "  <wsa:Action>%s</wsa:Action>"
-				      "  <wsse:Security>%s</wsse:Security>"
-				      " </soap:Header>"
+				      "%s"
 				      " <soap:Body>%s</soap:Body>"
 				      "</soap:Envelope>",
 				      additional_ns,
-				      uri,
-				      soap_action,
-				      wsse_security,
+				      soap_header,
 				      soap_body);
 
 	gboolean ret = sipe_svc_https_request(sipe_private,
 					      HTTP_CONN_POST,
 					      uri,
 					      "text/xml",
+					      soap_action,
 					      body,
 					      internal_callback,
 					      callback,
 					      callback_data);
+	g_free(soap_header);
 	g_free(body);
 
 	return(ret);
@@ -370,60 +391,6 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 	return(ret);
 }
 
-static gchar *sipe_svc_security_username(struct sipe_core_private *sipe_private,
-					 const gchar *authuser)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sipe_tls_random nonce;
-	GTimeVal now;
-	guchar digest[SIPE_DIGEST_SHA1_LENGTH];
-	guchar *buf, *p;
-	gchar *base64, *nonce_base64, *created;
-	guint len, created_len, password_len;
-	gchar *ret;
-
-	/* nonce */
-	sipe_tls_fill_random(&nonce, 256);
-	nonce_base64 = g_base64_encode(nonce.buffer, nonce.length);
-
-	/* created */
-	g_get_current_time(&now);
-	created = g_time_val_to_iso8601(&now);
-	created_len = strlen(created);
-
-	/* password */
-	password_len = strlen(sip->password);
-
-	/* nonce + created + password */
-	len = nonce.length + created_len + password_len;
-	p = buf = g_malloc(len);
-	memcpy(p, nonce.buffer, nonce.length);
-	p += nonce.length;
-	memcpy(p, created, created_len);
-	p += created_len;
-	memcpy(p, sip->password, password_len);
-
-	/* Base64( SHA-1( nonce + created + password ) ) */
-	sipe_digest_sha1(buf, len, digest);
-	base64 = g_base64_encode(digest, SIPE_DIGEST_SHA1_LENGTH);
-
-	ret = g_strdup_printf("<wsse:UsernameToken>"
-			      " <wsse:Username>%s</wsse:Username>"
-			      " <wsse:Password Type=\"...#PasswordDigest\">%s</wsse:Password>"
-			      " <wsse:Nonce>%s</wsse:Nonce>"
-			      " <wsu:Created>%s</wsu:Created>"
-			      "</wsse:UsernameToken>",
-			      authuser, base64, nonce_base64, created);
-
-	g_free(base64);
-	g_free(buf);
-	g_free(created);
-	g_free(nonce_base64);
-	sipe_tls_free_random(&nonce);
-
-	return(ret);
-}
-
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *authuser,
@@ -462,9 +429,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 	gboolean ret = new_soap_req(sipe_private,
 				    uri,
 				    "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
-				    wsse_security ?
-				    wsse_security :
-				    (security = sipe_svc_security_username(sipe_private, authuser)),
+				    wsse_security,
 				    soap_body,
 				    sipe_svc_wsdl_response,
 				    callback,
@@ -501,6 +466,7 @@ gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
 					      mex_uri,
 					      "text",
 					      "",
+					      NULL,
 					      sipe_svc_metadata_response,
 					      callback,
 					      callback_data);

@@ -72,7 +72,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
  * @param sipe_private  SIPE core private data
  * @param uri           service URI
  * @param authuser      user name for authentication
- * @param wsse_security predefined authentication token
+ * @param wsse_security predefined authentication token. May be @c NULL
  * @param service_uri   request token for this service URI
  * @param entropy       random bytes buffer for entropy
  * @param callback      callback function
