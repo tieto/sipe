@@ -587,11 +587,11 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 	gchar *email        = NULL;
 	gchar *site;
 
-	info = sipe_backend_buddy_info_start(SIPE_CORE_PUBLIC);
-	if (info) return(FALSE);
-
 	SIPE_DEBUG_INFO("Fetching %s's user info for %s",
 			uri, sipe_private->username);
+
+	info = sipe_backend_buddy_info_start(SIPE_CORE_PUBLIC);
+	if (!info) return(FALSE);
 
 	bbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, uri, NULL);
 	alias = sipe_backend_buddy_get_local_alias(SIPE_CORE_PUBLIC, bbuddy);
@@ -775,7 +775,7 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 					    who);
 	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
 
-	SIPE_DEBUG_INFO("sipe_core_buddy_info: row: %s", row ? row : "");
+	SIPE_DEBUG_INFO("sipe_core_buddy_get_info: row: %s", row ? row : "");
 
 	payload->destroy = g_free;
 	payload->data = g_strdup(who);
