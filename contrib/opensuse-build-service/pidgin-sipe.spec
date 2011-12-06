@@ -133,7 +133,7 @@ Version:        1.12.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -236,7 +236,7 @@ This package provides the icon set for Pidgin.
 %package -n %{purple_plugin}
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 Obsoletes:      purple-sipe
 
 %description -n %{purple_plugin}
@@ -254,7 +254,7 @@ This package provides the protocol plugin for libpurple clients.
 %package -n %{telepathy_plugin}
 Summary:        Telepathy connection manager for MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 
 %description -n %{telepathy_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
@@ -273,7 +273,7 @@ instant messaging core.
 %package -n %{nsis_package}
 Summary:        Windows Pidgin protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 
 %description -n %{nsis_package}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
@@ -420,6 +420,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Dec 06 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- update GPL2 license name
+
 * Sat Nov 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - add BR gmime-devel for Fedora to have at least one verification platform
 

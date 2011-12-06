@@ -32,7 +32,7 @@ Release:        1%{?dist}
 Source:         http://downloads.sourceforge.net/sipe/%{name}-%{version}.tar.bz2
 %endif
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -78,7 +78,7 @@ This package provides the icon set for Pidgin.
 %package -n %{purple_plugin}
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 
 %description -n %{purple_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
@@ -134,6 +134,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Dec 06 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- update GPL2 license name
+
 * Sat Nov 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - add BR gmime-devel
 
