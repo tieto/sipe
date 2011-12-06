@@ -1309,7 +1309,7 @@ static gchar *sipe_publish_get_category_state(struct sipe_core_private *sipe_pri
 					      gboolean is_user_state)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	int availability = sipe_get_availability_by_status(sip->status, NULL);
+	int availability = sipe_ocs2007_availability_from_status(sip->status, NULL);
 	guint instance = is_user_state ? sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_USER) :
 					 sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_MACHINE);
 	/* key is <category><instance><container> */
@@ -2208,16 +2208,15 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 	} else if (aggreg_avail) {
 
 		if (aggreg_avail && aggreg_avail < 18000) { /* not offline */
-			g_free(sip->status);
-			sip->status = g_strdup(sipe_get_status_by_availability(aggreg_avail, NULL));
+			sipe_set_status(sipe_private,
+					sipe_ocs2007_status_from_legacy_availability(aggreg_avail));
 		} else {
 			sipe_set_invisible_status(sipe_private); /* not not let offline status switch us off */
 		}
 	}
 
 	if (do_update_status) {
-		SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: switch to '%s' for the account", sip->status);
-		sipe_status_and_note(sipe_private, sip->status);
+		sipe_status_and_note(sipe_private, NULL);
 	}
 
 	g_free(to);

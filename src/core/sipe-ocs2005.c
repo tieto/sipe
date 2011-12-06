@@ -167,8 +167,6 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_calendar* cal = sip->cal;
-	int availability = 0;
-	int activity = 0;
 	gchar *body;
 	gchar *tmp;
 	gchar *tmp2 = NULL;
@@ -195,8 +193,6 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 	if (!sip->initial_state_published ||
 	    do_reset_status)
 		sipe_set_initial_status(sipe_private);
-
-	sipe_get_act_avail_by_status_2005(sip->status, &activity, &availability);
 
 	/* Note */
 	if (pub_oof) {
@@ -227,15 +223,15 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 	if (!do_reset_status) {
 		if (sipe_status_changed_by_user(sipe_private) && !do_publish_calendar && sip->initial_state_published)
 		{
-			gchar *activity_token = NULL;
-			int avail_2007 = sipe_get_availability_by_status(sip->status, &activity_token);
+			const gchar *activity_token;
+			int avail_2007 = sipe_ocs2007_availability_from_status(sip->status,
+									       &activity_token);
 
 			states = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_STATES,
 						avail_2007,
 						since_time_str,
 						epid,
 						activity_token);
-			g_free(activity_token);
 		}
 		else /* preserve existing publication */
 		{
@@ -265,11 +261,11 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 		      sipe_is_user_available(sipe_private)) ?
 		"active" : "idle";
 
-	/* forming resulting XML */
+	/* generate XML */
 	body = g_strdup_printf(SIPE_SOAP_SET_PRESENCE,
 			       sipe_private->username,
-			       availability,
-			       activity,
+			       sipe_ocs2005_availability_from_status(sipe_private),
+			       sipe_ocs2005_activity_from_status(sipe_private),
 			       (tmp = g_ascii_strup(g_get_host_name(), -1)),
 			       res_note ? res_note : "",
 			       res_oof ? res_oof : "",

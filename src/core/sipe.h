@@ -118,19 +118,23 @@ const gchar *sipe_activity_description(sipe_activity);
 sipe_activity sipe_activity_from_token(const gchar *token);
 const gchar *sipe_activity_description_from_token(const gchar *token);
 #endif
+void sipe_set_status(struct sipe_core_private *sipe_private,
+		     const gchar *status);
 void sipe_set_unknown_status(struct sipe_core_private *sipe_private);
 void sipe_set_initial_status(struct sipe_core_private *sipe_private);
 void sipe_set_invisible_status(struct sipe_core_private *sipe_private);
-int sipe_get_availability_by_status(const gchar *sipe_status_id,
-				    gchar **activity_token);
-const gchar *sipe_get_status_by_availability(int avail,
-					     gchar **activity);
-void sipe_get_act_avail_by_status_2005(const char *status,
-				       int *activity,
-				       int *availability);
-const gchar *sipe_get_status_by_act_avail_2005(const int activity,
-					       const int availablity,
-					       char **activity_desc);
+/* OCS2007 status ID, availability & activity */
+guint sipe_ocs2007_availability_from_status(const gchar *sipe_status_id,
+					    const gchar **activity_token);
+const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability);
+const gchar *sipe_ocs2007_legacy_activity_description(guint availability);
+/* OCS2005 status ID, availability & activity */
+guint sipe_ocs2005_activity_from_status(struct sipe_core_private *sipe_private);
+guint sipe_ocs2005_availability_from_status(struct sipe_core_private *sipe_private);
+const gchar *sipe_ocs2005_status_from_activity_availability(guint activity,
+							    guint availablity);
+const gchar *sipe_ocs2005_activity_description(guint activity);
+
 void send_presence_status(struct sipe_core_private *sipe_private,
 			  gpointer unused);
 gboolean sipe_is_user_available(struct sipe_core_private *sipe_private);

@@ -53,11 +53,16 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 			  const gchar *status_id)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	gboolean changed = sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
-							status_id,
-							sip->note);
 
-	if (changed) {
+	if (!status_id)
+		status_id = sip->status;
+
+	SIPE_DEBUG_INFO("sipe_status_and_note: switch to '%s' for the account", status_id);
+
+	if (sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
+					 status_id,
+					 sip->note)) {
+		/* status has changed */
 		sipe_activity activity = sipe_activity_from_token(status_id);
 
 		sip->do_not_publish[activity] = time(NULL);
@@ -101,8 +106,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			return;
 		}
 
-		g_free(sip->status);
-		sip->status = g_strdup(status_id);
+		sipe_set_status(sipe_private, status_id);
 
 		/* hack to escape apostrof before comparison */
 		tmp = note ? sipe_utils_str_replace(note, "'", "&apos;") : NULL;

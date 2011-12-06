@@ -275,11 +275,12 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	epid = sipe_xml_attribute(xn_availability, "epid");
 	act = sipe_xml_int_attribute(xn_activity, "aggregate", 0);
 
-	status_id = sipe_get_status_by_act_avail_2005(act, avl, &activity);
-	res_avail = sipe_get_availability_by_status(status_id, NULL);
+	status_id = sipe_ocs2005_status_from_activity_availability(act, avl);
+	activity = g_strdup(sipe_ocs2005_activity_description(act));
+	res_avail = sipe_ocs2007_availability_from_status(status_id, NULL);
 	if (user_avail > res_avail) {
 		res_avail = user_avail;
-		status_id = sipe_get_status_by_availability(user_avail, NULL);
+		status_id = sipe_ocs2007_status_from_legacy_availability(user_avail);
 	}
 
 	if (xn_display_name) {
@@ -365,9 +366,9 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 			if (dev_avail_since > user_avail_since &&
 			    dev_avail >= res_avail)
 			{
+				const gchar *new_desc;
 				res_avail = dev_avail;
-				if (!is_empty(state))
-				{
+				if (!is_empty(state)) {
 					if (sipe_strequal(state, sipe_activity_to_token(SIPE_ACTIVITY_ON_PHONE))) {
 						g_free(activity);
 						activity = g_strdup(sipe_activity_description(SIPE_ACTIVITY_ON_PHONE));
@@ -380,7 +381,12 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 					}
 					activity_since = dev_avail_since;
 				}
-				status_id = sipe_get_status_by_availability(res_avail, &activity);
+				status_id = sipe_ocs2007_status_from_legacy_availability(res_avail);
+				new_desc  = sipe_ocs2007_legacy_activity_description(res_avail);
+				if (new_desc) {
+					g_free(activity);
+					activity = g_strdup(new_desc);
+				}
 			}
 			g_free(state);
 		}
@@ -444,8 +450,8 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 				sip->note_since = time(NULL);
 			}
 
-			g_free(sip->status);
-			sip->status = g_strdup(sbuddy->last_non_cal_status_id);
+			sipe_set_status(sipe_private,
+					sbuddy->last_non_cal_status_id);
 		}
 	}
 	g_free(cal_free_busy_base64);
@@ -654,7 +660,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 
 			/* activity, meeting_subject, meeting_location */
 			if (sbuddy) {
-				char *tmp = NULL;
+				const gchar *tmp;
 
 				/* activity */
 				g_free(sbuddy->activity);
@@ -703,15 +709,15 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					g_free(meeting_location);
 				}
 
-				status = sipe_get_status_by_availability(availability, &tmp);
+				status = sipe_ocs2007_status_from_legacy_availability(availability);
+				tmp    = sipe_ocs2007_legacy_activity_description(availability);
 				if (sbuddy->activity && tmp) {
-					char *tmp2 = sbuddy->activity;
+					gchar *tmp2 = sbuddy->activity;
 
 					sbuddy->activity = g_strdup_printf("%s, %s", sbuddy->activity, tmp);
-					g_free(tmp);
 					g_free(tmp2);
 				} else if (tmp) {
-					sbuddy->activity = tmp;
+					sbuddy->activity = g_strdup(tmp);
 				}
 			}
 
