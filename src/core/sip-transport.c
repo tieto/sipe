@@ -250,7 +250,6 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 							auth->sts_uri);
 					if (!sipe_certificate_tls_dsk_generate(sipe_private,
 									       auth->target,
-									       authuser,
 									       auth->sts_uri)) {
 						gchar *tmp = g_strdup_printf(_("Can't request certificate from %s"),
 									     auth->sts_uri);

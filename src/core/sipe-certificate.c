@@ -162,7 +162,6 @@ gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 
 struct certificate_callback_data {
 	gchar *target;
-	gchar *authuser;
 	gchar *webticket_negotiate_uri;
 	gchar *webticket_fedbearer_uri;
 	gchar *certprov_uri;
@@ -177,7 +176,6 @@ static void callback_data_free(struct certificate_callback_data *ccd)
 {
 	if (ccd) {
 		g_free(ccd->target);
-		g_free(ccd->authuser);
 		g_free(ccd->webticket_negotiate_uri);
 		g_free(ccd->webticket_fedbearer_uri);
 		g_free(ccd->certprov_uri);
@@ -450,7 +448,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 			if (wsse_security) {
 				gchar *certreq_base64 = create_certreq(sipe_private,
-								       ccd->authuser);
+								       sipe_private->username);
 
 				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
 						uri);
@@ -461,7 +459,6 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 					success = sipe_svc_get_and_publish_cert(sipe_private,
 										ccd->certprov_uri,
-										ccd->authuser,
 										wsse_security,
 										certreq_base64,
 										get_and_publish_cert,
@@ -486,7 +483,6 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 				success = sipe_svc_webticket(sipe_private,
 							     ccd->webticket_fedbearer_uri,
-							     ccd->authuser,
 							     wsse_security,
 							     ccd->certprov_uri,
 							     &ccd->entropy,
@@ -511,7 +507,6 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 			ccd->tried_fedbearer = TRUE;
 			success = sipe_svc_webticket_lmc(sipe_private,
-							 ccd->authuser,
 							 ccd->webticket_fedbearer_uri,
 							 webticket_token,
 							 ccd);
@@ -582,7 +577,6 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 
 				success = sipe_svc_webticket(sipe_private,
 							     ccd->webticket_negotiate_uri,
-							     ccd->authuser,
 							     NULL,
 							     ccd->certprov_uri,
 							     &ccd->entropy,
@@ -592,7 +586,6 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 			} else {
 				ccd->tried_fedbearer = TRUE;
 				success = sipe_svc_webticket_lmc(sipe_private,
-								 ccd->authuser,
 								 ccd->webticket_fedbearer_uri,
 								 webticket_token,
 								 ccd);
@@ -722,14 +715,12 @@ static void certprov_metadata(struct sipe_core_private *sipe_private,
 
 gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_private,
 					   const gchar *target,
-					   const gchar *authuser,
 					   const gchar *uri)
 {
 	struct certificate_callback_data *ccd = g_new0(struct certificate_callback_data, 1);
 	gboolean ret;
 
 	ccd->target   = g_strdup(target);
-	ccd->authuser = g_strdup(authuser);
 
 	ret = sipe_svc_metadata(sipe_private, uri, certprov_metadata, ccd);
 	if (!ret)

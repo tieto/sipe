@@ -283,7 +283,6 @@ static void sipe_svc_wsdl_response(struct svc_request *data,
 
 gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 				       const gchar *uri,
-				       const gchar *authuser,
 				       const gchar *wsse_security,
 				       const gchar *certreq,
 				       sipe_svc_callback *callback,
@@ -321,7 +320,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 				    " </wst:RequestSecurityToken>"
 				    "</GetAndPublishCert>",
 				    uuid,
-				    authuser,
+				    sipe_private->username,
 				    certreq,
 				    id_uuid);
 	g_free(id_uuid);
@@ -349,7 +348,6 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
  * I guess we'll have to see what happens in real life...
  */
 gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
-				const gchar *authuser,
 				const gchar *service_uri,
 				sipe_svc_callback *callback,
 				gpointer callback_data)
@@ -360,7 +358,8 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 					  " <wsse:Username>%s</wsse:Username>"
 					  " <wsse:Password>%s</wsse:Password>"
 					  "</wsse:UsernameToken>",
-					  authuser, sip->password);
+					  sipe_private->username,
+					  sip->password);
 
 	gchar *soap_body = g_strdup_printf("<ps:RequestMultipleSecurityTokens>"
 					   " <wst:RequestSecurityToken>"
@@ -393,7 +392,6 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
-			    const gchar *authuser,
 			    const gchar *wsse_security,
 			    const gchar *service_uri,
 			    const struct sipe_tls_random *entropy,
@@ -423,7 +421,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 					   "</wst:RequestSecurityToken>",
 					   uuid,
 					   service_uri,
-					   authuser,
+					   sipe_private->username,
 					   secret);
 
 	gboolean ret = new_soap_req(sipe_private,

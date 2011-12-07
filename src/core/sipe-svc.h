@@ -60,7 +60,6 @@ typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
  */
 gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 				       const gchar *uri,
-				       const gchar *authuser,
 				       const gchar *wsse_security,
 				       const gchar *certreq,
 				       sipe_svc_callback *callback,
@@ -71,7 +70,6 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
  *
  * @param sipe_private  SIPE core private data
  * @param uri           service URI
- * @param authuser      user name for authentication
  * @param wsse_security predefined authentication token. May be @c NULL
  * @param service_uri   request token for this service URI
  * @param entropy       random bytes buffer for entropy
@@ -81,7 +79,6 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
  */
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
-			    const gchar *authuser,
 			    const gchar *wsse_security,
 			    const gchar *service_uri,
 			    const struct sipe_tls_random *entropy,
@@ -92,14 +89,12 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
  * Trigger fetch of WebTicket security token from login.microsoftonline.com
  *
  * @param sipe_private  SIPE core private data
- * @param authuser      user name for authentication
  * @param service_uri   request token for this service URI
  * @param callback      callback function
  * @param callback_data callback data
  * @return              @c TRUE if token fetch was triggered
  */
 gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
-				const gchar *authuser,
 				const gchar *service_uri,
 				sipe_svc_callback *callback,
 				gpointer callback_data);

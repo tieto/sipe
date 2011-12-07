@@ -48,13 +48,11 @@ gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
  *
  * @param sipe_private SIPE core private data
  * @param target       target name from authentication header
- * @param authuser     authentication user name
  * @param uri          URI for the Certificate Provisioning Service
  * @return             @c TRUE if certificate generation was triggered
  */
 gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_private,
 					   const gchar *target,
-					   const gchar *authuser,
 					   const gchar *uri);
 
 /**
