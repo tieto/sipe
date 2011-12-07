@@ -51,6 +51,7 @@
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
+#include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
 #include "sipe-utils.h"
@@ -279,7 +280,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 						      g_free, (GDestroyNotify)g_hash_table_destroy);
 	sipe_subscriptions_init(sipe_private);
-	sipe_set_unknown_status(sipe_private);
+	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_UNSET);
 
 	return((struct sipe_core_public *)sipe_private);
 }

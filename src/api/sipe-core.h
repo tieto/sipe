@@ -42,31 +42,6 @@ extern "C" {
 #endif
 
 /**
- * Activity
- *   - core:    maps this to OCS protocol values
- *   - backend: maps this to backend status values
- */
-typedef enum
-{
-	SIPE_ACTIVITY_UNSET = 0,
-	SIPE_ACTIVITY_ONLINE,
-	SIPE_ACTIVITY_INACTIVE,
-	SIPE_ACTIVITY_BUSY,
-	SIPE_ACTIVITY_BUSYIDLE,
-	SIPE_ACTIVITY_DND,
-	SIPE_ACTIVITY_BRB,
-	SIPE_ACTIVITY_AWAY,
-	SIPE_ACTIVITY_LUNCH,
-	SIPE_ACTIVITY_OFFLINE,
-	SIPE_ACTIVITY_ON_PHONE,
-	SIPE_ACTIVITY_IN_CONF,
-	SIPE_ACTIVITY_IN_MEETING,
-	SIPE_ACTIVITY_OOF,
-	SIPE_ACTIVITY_URGENT_ONLY,
-	SIPE_ACTIVITY_NUM_TYPES
-} sipe_activity;
-
-/**
  * Transport type
  */
 #define SIPE_TRANSPORT_AUTO 0
@@ -190,6 +165,37 @@ void sipe_core_schedule_execute(gpointer data);
 void sipe_core_update_calendar(struct sipe_core_public *sipe_public);
 void sipe_core_reset_status(struct sipe_core_public *sipe_public);
 
+/**
+ * Activity
+ *   - core:    maps this to OCS protocol values
+ *              maps this to translated descriptions
+ *   - backend: maps this to backend status values
+ *              backend token string can be used as "ID" in protocol
+ *
+ * This is passed back-and-forth and therefore defined as list, not as enum.
+ * Can be used as array index
+ */
+#define SIPE_ACTIVITY_UNSET        0
+#define	SIPE_ACTIVITY_AVAILABLE    1
+#define SIPE_ACTIVITY_ONLINE       2
+#define SIPE_ACTIVITY_INACTIVE     3
+#define SIPE_ACTIVITY_BUSY         4
+#define SIPE_ACTIVITY_BUSYIDLE     5
+#define SIPE_ACTIVITY_DND          6
+#define SIPE_ACTIVITY_BRB          7
+#define SIPE_ACTIVITY_AWAY         8
+#define SIPE_ACTIVITY_LUNCH        9
+#define SIPE_ACTIVITY_INVISIBLE   10
+#define SIPE_ACTIVITY_OFFLINE     11
+#define SIPE_ACTIVITY_ON_PHONE    12
+#define SIPE_ACTIVITY_IN_CONF     13
+#define SIPE_ACTIVITY_IN_MEETING  14
+#define SIPE_ACTIVITY_OOF         15
+#define SIPE_ACTIVITY_URGENT_ONLY 16
+#define SIPE_ACTIVITY_NUM_TYPES   17 /* use to define array size */
+
+const gchar *sipe_core_activity_description(guint type);
+
 /* buddy actions */
 /**
  * Get status text for buddy.
@@ -203,7 +209,7 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public);
  */
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *uri,
-			      const sipe_activity activity,
+			      guint activity,
 			      const gchar *status_text);
 
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,

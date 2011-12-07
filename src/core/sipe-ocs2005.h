@@ -26,6 +26,13 @@ struct _sipe_xml;
 struct sipe_core_private;
 
 /**
+ * OCS2005 status ID, availability & activity
+ */
+const gchar *sipe_ocs2005_status_from_activity_availability(guint activity,
+							    guint availablity);
+const gchar *sipe_ocs2005_activity_description(guint activity);
+
+/**
  * Publish status (OCS2005)
  */
 void sipe_ocs2005_presence_publish(struct sipe_core_private *sipe_private,
@@ -33,6 +40,9 @@ void sipe_ocs2005_presence_publish(struct sipe_core_private *sipe_private,
 void sipe_ocs2005_reset_status(struct sipe_core_private *sipe_private);
 void sipe_ocs2005_user_info_has_updated(struct sipe_core_private *sipe_private,
 					const struct _sipe_xml *xn_userinfo);
+void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
+					struct sipe_buddy *sbuddy,
+					const char *status_id);
 void sipe_ocs2005_schedule_status_update(struct sipe_core_private *sipe_private,
 					 time_t calculate_from);
 

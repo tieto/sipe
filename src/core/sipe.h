@@ -111,36 +111,8 @@ struct sipe_account_data {
  *  - are needed by the already created new modules
  */
 
-#ifdef _SIPE_NEED_ACTIVITIES
-/* need to improve or reduce visibility of this interface */
-const gchar *sipe_activity_to_token(sipe_activity);
-const gchar *sipe_activity_description(sipe_activity);
-sipe_activity sipe_activity_from_token(const gchar *token);
-const gchar *sipe_activity_description_from_token(const gchar *token);
-#endif
-void sipe_set_status(struct sipe_core_private *sipe_private,
-		     const gchar *status);
-void sipe_set_unknown_status(struct sipe_core_private *sipe_private);
-void sipe_set_initial_status(struct sipe_core_private *sipe_private);
-void sipe_set_invisible_status(struct sipe_core_private *sipe_private);
-/* OCS2007 status ID, availability & activity */
-guint sipe_ocs2007_availability_from_status(const gchar *sipe_status_id,
-					    const gchar **activity_token);
-const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability);
-const gchar *sipe_ocs2007_legacy_activity_description(guint availability);
-/* OCS2005 status ID, availability & activity */
-guint sipe_ocs2005_activity_from_status(struct sipe_core_private *sipe_private);
-guint sipe_ocs2005_availability_from_status(struct sipe_core_private *sipe_private);
-const gchar *sipe_ocs2005_status_from_activity_availability(guint activity,
-							    guint availablity);
-const gchar *sipe_ocs2005_activity_description(guint activity);
-
 void send_presence_status(struct sipe_core_private *sipe_private,
 			  gpointer unused);
-gboolean sipe_is_user_available(struct sipe_core_private *sipe_private);
-void sipe_apply_calendar_status(struct sipe_core_private *sipe_private,
-				struct sipe_buddy *sbuddy,
-				const char *status_id);
 
 /* libpurple memory leak workaround */
 void sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private);
@@ -150,10 +122,6 @@ void sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private);
  */
 const gchar *sipe_get_buddy_status(struct sipe_core_private *sipe_private,
 				   const gchar *uri);
-void sipe_buddy_status_from_activity(struct sipe_core_private *sipe_private,
-				     const gchar *uri,
-				     const gchar *activity,
-				     gboolean is_online);
 /* referenced by sipe-notify.c - end */
 
 

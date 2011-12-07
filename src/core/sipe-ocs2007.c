@@ -54,8 +54,127 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
-#define _SIPE_NEED_ACTIVITIES /* ugly hack :-( */
 #include "sipe.h"
+
+/**
+ * 2007-style Activity and Availability.
+ *
+ * [MS-PRES] 3.7.5.5
+ *
+ * Conversion of legacyInterop elements and attributes to MSRTC elements and attributes.
+ *
+ * The values define the starting point of a range
+ */
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_ONLINE    3000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY      4500
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE  6000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY      7500
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_DND       9000 /* do not disturb */
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB      12000 /* be right back */
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2    15000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE  18000
+const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability)
+{
+	guint type;
+
+	if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_ONLINE) {
+		type = SIPE_ACTIVITY_OFFLINE;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY) {
+		type = SIPE_ACTIVITY_AVAILABLE;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE) {
+		//type = SIPE_ACTIVITY_IDLE;
+		type = SIPE_ACTIVITY_AVAILABLE;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY) {
+		type = SIPE_ACTIVITY_BUSY;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_DND) {
+		//type = SIPE_ACTIVITY_BUSYIDLE;
+		type = SIPE_ACTIVITY_BUSY;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB) {
+		type = SIPE_ACTIVITY_DND;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2) {
+		type = SIPE_ACTIVITY_BRB;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE) {
+		type = SIPE_ACTIVITY_AWAY;
+	} else {
+		type = SIPE_ACTIVITY_OFFLINE;
+	}
+
+	return(sipe_backend_activity_to_token(type));
+}
+
+const gchar *sipe_ocs2007_legacy_activity_description(guint availability)
+{
+	if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY) &&
+	    (availability <  SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE)) {
+		return(sipe_core_activity_description(SIPE_ACTIVITY_INACTIVE));
+	} else if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY) &&
+		   (availability <  SIPE_OCS2007_LEGACY_AVAILIBILITY_DND)) {
+		return(sipe_core_activity_description(SIPE_ACTIVITY_BUSYIDLE));
+	} else {
+		return(NULL);
+	}
+}
+
+/**
+ * @param sipe_status_id (in)
+ * @param activity_token (out) [only sipe-ocs2005.c/send_presence_soap()
+ *                              requests this token]
+ */
+#define SIPE_OCS2007_AVAILABILITY_UNKNOWN     0
+#define SIPE_OCS2007_AVAILABILITY_ONLINE   3500
+#define SIPE_OCS2007_AVAILABILITY_BUSY     6500
+#define SIPE_OCS2007_AVAILABILITY_DND      9500 /* do not disturb */
+#define SIPE_OCS2007_AVAILABILITY_BRB     12500 /* be right back */
+#define SIPE_OCS2007_AVAILABILITY_AWAY    15500
+#define SIPE_OCS2007_AVAILABILITY_OFFLINE 18500
+guint sipe_ocs2007_availability_from_status(const gchar *sipe_status_id,
+					    const gchar **activity_token)
+{
+	guint availability;
+	guint activity;
+
+	if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY))) {
+		availability = SIPE_OCS2007_AVAILABILITY_AWAY;
+		activity     = SIPE_ACTIVITY_AWAY;
+	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_BRB))) {
+		availability = SIPE_OCS2007_AVAILABILITY_BRB;
+		activity     = SIPE_ACTIVITY_BRB;
+	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_DND))) {
+		availability = SIPE_OCS2007_AVAILABILITY_DND;
+		activity     = SIPE_ACTIVITY_DND;
+	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY))) {
+		availability = SIPE_OCS2007_AVAILABILITY_BUSY;
+		activity     = SIPE_ACTIVITY_BUSY;
+	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE))) {
+		availability = SIPE_OCS2007_AVAILABILITY_ONLINE;
+		activity     = SIPE_ACTIVITY_ONLINE;
+	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_UNSET))) {
+		availability = SIPE_OCS2007_AVAILABILITY_UNKNOWN;
+		activity     = SIPE_ACTIVITY_UNSET;
+	} else {
+		/* Offline or invisible */
+		availability = SIPE_OCS2007_AVAILABILITY_OFFLINE;
+		activity     = SIPE_ACTIVITY_OFFLINE;
+	}
+
+	if (activity_token) {
+		*activity_token = sipe_backend_activity_to_token(activity);
+	}
+
+	return(availability);
+}
+
+gboolean sipe_ocs2007_status_is_busy(const gchar *status_id)
+{
+	return(SIPE_OCS2007_AVAILABILITY_BUSY >=
+	       sipe_ocs2007_availability_from_status(status_id, NULL));
+
+}
+
+gboolean sipe_ocs2007_availability_is_away2(guint availability)
+{
+	return(availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2);
+}
 
 static void send_presence_publish(struct sipe_core_private *sipe_private,
 				  const char *publications);
@@ -747,17 +866,18 @@ static gchar *sipe_publish_get_category_state_calendar(struct sipe_core_private 
 		gchar *escaped_location = event->location ? g_markup_escape_text(event->location, -1) : NULL;
 
 		if (event->cal_status == SIPE_CAL_BUSY) {
-			availability_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_AVAIL, 6500);
+			availability_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_AVAIL,
+							       SIPE_OCS2007_AVAILABILITY_BUSY);
 		}
 
 		if (event->cal_status == SIPE_CAL_BUSY && event->is_meeting) {
 			activity_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY,
-							   sipe_activity_to_token(SIPE_ACTIVITY_IN_MEETING),
+							   sipe_backend_activity_to_token(SIPE_ACTIVITY_IN_MEETING),
 							   "minAvailability=\"6500\"",
 							   "maxAvailability=\"8999\"");
 		} else if (event->cal_status == SIPE_CAL_OOF) {
 			activity_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY,
-							   sipe_activity_to_token(SIPE_ACTIVITY_OOF),
+							   sipe_backend_activity_to_token(SIPE_ACTIVITY_OOF),
 							   "minAvailability=\"12000\"",
 							   "");
 		}
@@ -1362,7 +1482,7 @@ static void send_publish_category_initial(struct sipe_core_private *sipe_private
 	gchar *pub_machine;
 	gchar *publications;
 
-	sipe_set_initial_status(sipe_private);
+	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_AVAILABLE);
 
 	pub_machine  = sipe_publish_get_category_state_machine(sipe_private);
 	publications = g_strdup_printf("%s%s",
@@ -1965,7 +2085,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 					event->start_time = sipe_utils_str_to_time(sipe_xml_attribute(xn_state, "startTime"));
 					if (xn_activity) {
 						if (sipe_strequal(sipe_xml_attribute(xn_activity, "token"),
-								  sipe_activity_to_token(SIPE_ACTIVITY_IN_MEETING)))
+								  sipe_backend_activity_to_token(SIPE_ACTIVITY_IN_MEETING)))
 						{
 							event->is_meeting = TRUE;
 						}
@@ -2207,11 +2327,15 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		do_update_status = FALSE;
 	} else if (aggreg_avail) {
 
-		if (aggreg_avail && aggreg_avail < 18000) { /* not offline */
-			sipe_set_status(sipe_private,
-					sipe_ocs2007_status_from_legacy_availability(aggreg_avail));
+		if (aggreg_avail &&
+		    (aggreg_avail < SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE)) {
+			/* not offline */
+			sipe_status_set_token(sipe_private,
+					      sipe_ocs2007_status_from_legacy_availability(aggreg_avail));
 		} else {
-			sipe_set_invisible_status(sipe_private); /* not not let offline status switch us off */
+			/* do not let offline status switch us off */
+			sipe_status_set_activity(sipe_private,
+						 SIPE_ACTIVITY_INVISIBLE);
 		}
 	}
 

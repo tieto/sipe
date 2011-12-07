@@ -21,24 +21,79 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <time.h>
 
 #include <glib.h>
 
+#include "sipe-common.h"
 #include "http-conn.h" /* sipe-cal.h requires this */
 #include "sipe-backend.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-nls.h"
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-status.h"
 #include "sipe-utils.h"
-#define _SIPE_NEED_ACTIVITIES
 #include "sipe.h"
 
 #define SIPE_IDLE_SET_DELAY 1 /* seconds */
+
+static struct
+{
+	guint type;
+	const gchar *desc;
+} const sipe_activity_map[SIPE_ACTIVITY_NUM_TYPES] = {
+/*
+ * This has nothing to do with Availability numbers, like 3500 (online).
+ * Just a mapping of Communicator Activities to translations
+ */
+/* @TODO: NULL means "default translation from Pidgin"?
+ *        What about other backends?                    */
+	{ SIPE_ACTIVITY_UNSET,		NULL				},
+	{ SIPE_ACTIVITY_AVAILABLE,	NULL				},
+	{ SIPE_ACTIVITY_ONLINE,		NULL				},
+	{ SIPE_ACTIVITY_INACTIVE,	N_("Inactive")			},
+	{ SIPE_ACTIVITY_BUSY,		N_("Busy")			},
+	{ SIPE_ACTIVITY_BUSYIDLE,	N_("Busy-Idle")			},
+	{ SIPE_ACTIVITY_DND,		NULL				},
+	{ SIPE_ACTIVITY_BRB,		N_("Be right back")		},
+	{ SIPE_ACTIVITY_AWAY,		NULL				},
+	{ SIPE_ACTIVITY_LUNCH,		N_("Out to lunch")		},
+	{ SIPE_ACTIVITY_INVISIBLE,	NULL				},
+	{ SIPE_ACTIVITY_OFFLINE,	NULL				},
+	{ SIPE_ACTIVITY_ON_PHONE,	N_("In a call")			},
+	{ SIPE_ACTIVITY_IN_CONF,	N_("In a conference")		},
+	{ SIPE_ACTIVITY_IN_MEETING,	N_("In a meeting")		},
+	{ SIPE_ACTIVITY_OOF,		N_("Out of office")		},
+	{ SIPE_ACTIVITY_URGENT_ONLY,	N_("Urgent interruptions only")	}
+};
+
+const gchar *sipe_core_activity_description(guint type)
+{
+	return(gettext(sipe_activity_map[type].desc));
+}
+
+void sipe_status_set_token(struct sipe_core_private *sipe_private,
+			   const gchar *status_id)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	g_free(sip->status);
+	sip->status = g_strdup(status_id);
+}
+
+void sipe_status_set_activity(struct sipe_core_private *sipe_private,
+			      guint activity)
+{
+	sipe_status_set_token(sipe_private,
+			      sipe_backend_activity_to_token(activity));
+}
 
 void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 {
@@ -63,7 +118,7 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 					 status_id,
 					 sip->note)) {
 		/* status has changed */
-		sipe_activity activity = sipe_activity_from_token(status_id);
+		guint activity = sipe_backend_token_to_activity(status_id);
 
 		sip->do_not_publish[activity] = time(NULL);
 		SIPE_DEBUG_INFO("sipe_status_and_note: do_not_publish[%s]=%d [now]",
@@ -83,7 +138,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 		gchar *action_name;
 		gchar *tmp;
 		time_t now = time(NULL);
-		sipe_activity activity = sipe_activity_from_token(status_id);
+		guint activity = sipe_backend_token_to_activity(status_id);
 		gboolean do_not_publish = ((now - sip->do_not_publish[activity]) <= 2);
 
 		/* when other point of presence clears note, but we are keeping
@@ -106,7 +161,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			return;
 		}
 
-		sipe_set_status(sipe_private, status_id);
+		sipe_status_set_token(sipe_private, status_id);
 
 		/* hack to escape apostrof before comparison */
 		tmp = note ? sipe_utils_str_replace(note, "'", "&apos;") : NULL;

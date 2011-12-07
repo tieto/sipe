@@ -82,16 +82,18 @@
 
 /* Sipe core activity <-> Purple status mapping */
 static const gchar * const activity_to_purple[SIPE_ACTIVITY_NUM_TYPES] = {
-	/* SIPE_ACTIVITY_UNSET       */ "unset",
+	/* SIPE_ACTIVITY_UNSET       */ "unset",     /* == purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET) */
+	/* SIPE_ACTIVITY_AVAILABLE   */ "available", /* == purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) */
 	/* SIPE_ACTIVITY_ONLINE      */ "online",
 	/* SIPE_ACTIVITY_INACTIVE    */ "idle",
 	/* SIPE_ACTIVITY_BUSY        */ "busy",
 	/* SIPE_ACTIVITY_BUSYIDLE    */ "busyidle",
 	/* SIPE_ACTIVITY_DND         */ "do-not-disturb",
 	/* SIPE_ACTIVITY_BRB         */ "be-right-back",
-	/* SIPE_ACTIVITY_AWAY        */ "away",
+	/* SIPE_ACTIVITY_AWAY        */ "away",      /* == purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY) */
 	/* SIPE_ACTIVITY_LUNCH       */ "out-to-lunch",
-	/* SIPE_ACTIVITY_OFFLINE     */ "offline",
+	/* SIPE_ACTIVITY_INVISIBLE   */ "invisible", /* == purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) */
+	/* SIPE_ACTIVITY_OFFLINE     */ "offline",   /* == purple_primitive_get_id_from_type(PURPLE_STATUS_OFFLINE) */
 	/* SIPE_ACTIVITY_ON_PHONE    */ "on-the-phone",
 	/* SIPE_ACTIVITY_IN_CONF     */ "in-a-conference",
 	/* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
@@ -104,7 +106,7 @@ GHashTable *purple_to_activity = NULL;
 
 static void sipe_purple_activity_init(void)
 {
-	sipe_activity index = SIPE_ACTIVITY_UNSET;
+	guint index = SIPE_ACTIVITY_UNSET;
 	purple_to_activity = g_hash_table_new(g_str_hash, g_str_equal);
 	while (index < SIPE_ACTIVITY_NUM_TYPES) {
 		g_hash_table_insert(purple_to_activity,
@@ -112,6 +114,16 @@ static void sipe_purple_activity_init(void)
 				    GUINT_TO_POINTER(index));
 		index++;
 	}
+}
+
+const gchar *sipe_backend_activity_to_token(guint type)
+{
+	return(activity_to_purple[type]);
+}
+
+guint sipe_backend_token_to_activity(const gchar *token)
+{
+	return(PURPLE_STATUS_TO_ACTIVITY(token));
 }
 
 gchar *sipe_backend_version(void)
@@ -176,7 +188,7 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Busy */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			activity_to_purple[SIPE_ACTIVITY_BUSY],
-			_("Busy"),
+			sipe_core_activity_description(SIPE_ACTIVITY_BUSY),
 			TRUE);
 
 	/* Do Not Disturb */
@@ -198,7 +210,7 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
 			activity_to_purple[SIPE_ACTIVITY_BRB],
-			_("Be right back"),
+			sipe_core_activity_description(SIPE_ACTIVITY_BRB),
 			TRUE);
 
 	/* Appear Offline */

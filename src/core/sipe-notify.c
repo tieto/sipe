@@ -54,10 +54,10 @@
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
+#include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#define _SIPE_NEED_ACTIVITIES
 #include "sipe.h"
 
 /* OCS2005 */
@@ -369,12 +369,12 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 				const gchar *new_desc;
 				res_avail = dev_avail;
 				if (!is_empty(state)) {
-					if (sipe_strequal(state, sipe_activity_to_token(SIPE_ACTIVITY_ON_PHONE))) {
+					if (sipe_strequal(state, sipe_backend_activity_to_token(SIPE_ACTIVITY_ON_PHONE))) {
 						g_free(activity);
-						activity = g_strdup(sipe_activity_description(SIPE_ACTIVITY_ON_PHONE));
+						activity = g_strdup(sipe_core_activity_description(SIPE_ACTIVITY_ON_PHONE));
 					} else if (sipe_strequal(state, "presenting")) {
 						g_free(activity);
-						activity = g_strdup(sipe_activity_description(SIPE_ACTIVITY_IN_CONF));
+						activity = g_strdup(sipe_core_activity_description(SIPE_ACTIVITY_IN_CONF));
 					} else {
 						activity = state;
 						state = NULL;
@@ -395,7 +395,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	/* oof */
 	if (xn_oof && res_avail >= 15000) { /* 12000 in 2007 */
 		g_free(activity);
-		activity = g_strdup(sipe_activity_description(SIPE_ACTIVITY_OOF));
+		activity = g_strdup(sipe_core_activity_description(SIPE_ACTIVITY_OOF));
 		activity_since = 0;
 	}
 
@@ -450,8 +450,8 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 				sip->note_since = time(NULL);
 			}
 
-			sipe_set_status(sipe_private,
-					sbuddy->last_non_cal_status_id);
+			sipe_status_set_token(sipe_private,
+					      sbuddy->last_non_cal_status_id);
 		}
 	}
 	g_free(cal_free_busy_base64);
@@ -671,13 +671,14 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 
 					/* from token */
 					if (!is_empty(token)) {
-						sbuddy->activity = g_strdup(sipe_activity_description_from_token(token));
+						sbuddy->activity = g_strdup(sipe_core_activity_description(sipe_backend_token_to_activity(token)));
 					}
 					/* from custom element */
 					if (xn_custom) {
 						char *custom = sipe_xml_data(xn_custom);
 
 						if (!is_empty(custom)) {
+							g_free(sbuddy->activity);
 							sbuddy->activity = custom;
 							custom = NULL;
 						}
@@ -782,6 +783,35 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 	}
 
 	sipe_xml_free(xn_categories);
+}
+
+static void sipe_buddy_status_from_activity(struct sipe_core_private *sipe_private,
+					    const gchar *uri,
+					    const gchar *activity,
+					    gboolean is_online)
+{
+	if (is_online) {
+		const gchar *status_id = NULL;
+		if (activity) {
+			if (sipe_strequal(activity,
+					  sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY))) {
+				status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY);
+			} else if (sipe_strequal(activity,
+						 sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY))) {
+				status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY);
+			}
+		}
+
+		if (!status_id) {
+			status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE);
+		}
+
+		SIPE_DEBUG_INFO("sipe_buddy_status_from_activity: status_id(%s)", status_id);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status_id);
+	} else {
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
+					   sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE));
+	}
 }
 
 static void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,

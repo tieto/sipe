@@ -33,16 +33,129 @@
 #include "http-conn.h" /* sipe-cal.h requires this */
 #include "sip-soap.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-ews.h"
 #include "sipe-ocs2005.h"
+#include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-status.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipe.h"
+
+/**
+ * 2005-style Activity and Availability.
+ *
+ * [MS-SIP] 2.2.1
+ *
+ * @param activity	2005 aggregated activity.    Ex.: 600
+ * @param availablity	2005 aggregated availablity. Ex.: 300
+ *
+ * The values define the starting point of a range
+ */
+#define SIPE_OCS2005_ACTIVITY_UNKNOWN       0
+#define SIPE_OCS2005_ACTIVITY_AWAY        100
+#define SIPE_OCS2005_ACTIVITY_LUNCH       150
+#define SIPE_OCS2005_ACTIVITY_IDLE        200
+#define SIPE_OCS2005_ACTIVITY_BRB         300
+#define SIPE_OCS2005_ACTIVITY_AVAILABLE   400 /* user is active */
+#define SIPE_OCS2005_ACTIVITY_ON_PHONE    500 /* user is participating in a communcation session */
+#define SIPE_OCS2005_ACTIVITY_BUSY        600
+#define SIPE_OCS2005_ACTIVITY_AWAY2       700
+#define SIPE_OCS2005_ACTIVITY_AVAILABLE2  800
+
+#define SIPE_OCS2005_AVAILABILITY_OFFLINE   0
+#define SIPE_OCS2005_AVAILABILITY_MAYBE   100
+#define SIPE_OCS2005_AVAILABILITY_ONLINE  300
+static guint sipe_ocs2005_activity_from_status(struct sipe_core_private *sipe_private)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	const gchar *status = sip->status;
+
+	if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY))) {
+		return(SIPE_OCS2005_ACTIVITY_AWAY);
+	/*} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_LUNCH))) {
+		return(SIPE_OCS2005_ACTIVITY_LUNCH); */
+	} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_BRB))) {
+		return(SIPE_OCS2005_ACTIVITY_BRB);
+	} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE))) {
+		return(SIPE_OCS2005_ACTIVITY_AVAILABLE);
+	/*} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_ON_PHONE))) {
+		return(SIPE_OCS2005_ACTIVITY_ON_PHONE); */
+	} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY)) ||
+		   sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_DND))) {
+		return(SIPE_OCS2005_ACTIVITY_BUSY);
+	} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_INVISIBLE)) ||
+		   sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE))) {
+		return(SIPE_OCS2005_ACTIVITY_AWAY);
+	} else {
+		return(SIPE_OCS2005_ACTIVITY_AVAILABLE);
+	}
+}
+
+static guint sipe_ocs2005_availability_from_status(struct sipe_core_private *sipe_private)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	const gchar *status = sip->status;
+
+	if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_INVISIBLE)) ||
+	    sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE)))
+		return(SIPE_OCS2005_AVAILABILITY_OFFLINE);
+	else
+		return(SIPE_OCS2005_AVAILABILITY_ONLINE);
+}
+
+const gchar *sipe_ocs2005_status_from_activity_availability(guint activity,
+							    guint availability)
+{
+	guint type;
+
+	if (availability < SIPE_OCS2005_AVAILABILITY_MAYBE) {
+		type = SIPE_ACTIVITY_OFFLINE;
+	} else if (activity < SIPE_OCS2005_ACTIVITY_LUNCH) {
+		type = SIPE_ACTIVITY_AWAY;
+	} else if (activity < SIPE_OCS2005_ACTIVITY_IDLE) {
+		//type = SIPE_ACTIVITY_LUNCH;
+		type = SIPE_ACTIVITY_AWAY;
+	} else if (activity < SIPE_OCS2005_ACTIVITY_BRB) {
+		//type = SIPE_ACTIVITY_IDLE;
+		type = SIPE_ACTIVITY_AWAY;
+	} else if (activity < SIPE_OCS2005_ACTIVITY_AVAILABLE) {
+		type = SIPE_ACTIVITY_BRB;
+	} else if (activity < SIPE_OCS2005_ACTIVITY_ON_PHONE) {
+		type = SIPE_ACTIVITY_AVAILABLE;
+	} else if (activity < SIPE_OCS2005_ACTIVITY_BUSY) {
+		//type = SIPE_ACTIVITY_ON_PHONE;
+		type = SIPE_ACTIVITY_BUSY;
+	} else if (activity < SIPE_OCS2005_ACTIVITY_AWAY2) {
+		type = SIPE_ACTIVITY_BUSY;
+	} else if (activity < SIPE_OCS2005_ACTIVITY_AVAILABLE2) {
+		type = SIPE_ACTIVITY_AWAY;
+	} else {
+		type = SIPE_ACTIVITY_AVAILABLE;
+	}
+
+	return(sipe_backend_activity_to_token(type));
+}
+
+const gchar *sipe_ocs2005_activity_description(guint activity)
+{
+	if ((activity >= SIPE_OCS2005_ACTIVITY_LUNCH) &&
+	    (activity <  SIPE_OCS2005_ACTIVITY_IDLE)) {
+		return(sipe_core_activity_description(SIPE_ACTIVITY_LUNCH));
+	} else if ((activity >= SIPE_OCS2005_ACTIVITY_IDLE) &&
+		   (activity <  SIPE_OCS2005_ACTIVITY_BRB)) {
+		return(sipe_core_activity_description(SIPE_ACTIVITY_INACTIVE));
+	} else if ((activity >= SIPE_OCS2005_ACTIVITY_ON_PHONE) &&
+		   (activity <  SIPE_OCS2005_ACTIVITY_BUSY)) {
+		return(sipe_core_activity_description(SIPE_ACTIVITY_ON_PHONE));
+	} else {
+		return(NULL);
+	}
+}
 
 void sipe_ocs2005_user_info_has_updated(struct sipe_core_private *sipe_private,
 					const sipe_xml *xn_userinfo)
@@ -81,6 +194,14 @@ void sipe_ocs2005_user_info_has_updated(struct sipe_core_private *sipe_private,
 		sipe_cal_delayed_calendar_update(sipe_private);
 	}
 }
+
+static gboolean sipe_is_user_available(struct sipe_core_private *sipe_private)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	return(sipe_strequal(sip->status,
+			     sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE)));
+}
+
 
 /**
  * OCS2005 presence XML messages
@@ -192,7 +313,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 
 	if (!sip->initial_state_published ||
 	    do_reset_status)
-		sipe_set_initial_status(sipe_private);
+		sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_AVAILABLE);
 
 	/* Note */
 	if (pub_oof) {
@@ -299,11 +420,81 @@ void sipe_ocs2005_reset_status(struct sipe_core_private *sipe_private)
 	return send_presence_soap(sipe_private, FALSE, TRUE);
 }
 
+void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
+					struct sipe_buddy *sbuddy,
+					const char *status_id)
+{
+	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	time_t cal_avail_since;
+	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
+	int avail;
+	gchar *self_uri;
+
+	if (!sbuddy) return;
+
+	if (cal_status < SIPE_CAL_NO_DATA) {
+		SIPE_DEBUG_INFO("sipe_apply_calendar_status: cal_status      : %d for %s", cal_status, sbuddy->name);
+		SIPE_DEBUG_INFO("sipe_apply_calendar_status: cal_avail_since : %s", asctime(localtime(&cal_avail_since)));
+	}
+
+	/* scheduled Cal update call */
+	if (!status_id) {
+		status_id = sbuddy->last_non_cal_status_id;
+		g_free(sbuddy->activity);
+		sbuddy->activity = g_strdup(sbuddy->last_non_cal_activity);
+	}
+
+	if (!status_id) {
+		SIPE_DEBUG_INFO("sipe_apply_calendar_status: status_id is NULL for %s, exiting.",
+				sbuddy->name ? sbuddy->name : "" );
+		return;
+	}
+
+	/* adjust to calendar status */
+	if (cal_status != SIPE_CAL_NO_DATA) {
+		SIPE_DEBUG_INFO("sipe_apply_calendar_status: user_avail_since: %s", asctime(localtime(&sbuddy->user_avail_since)));
+
+		if ((cal_status == SIPE_CAL_BUSY) &&
+		    (cal_avail_since > sbuddy->user_avail_since) &&
+		    sipe_ocs2007_status_is_busy(status_id)) {
+			status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY);
+			g_free(sbuddy->activity);
+			sbuddy->activity = g_strdup(sipe_core_activity_description(SIPE_ACTIVITY_IN_MEETING));
+		}
+		avail = sipe_ocs2007_availability_from_status(status_id, NULL);
+
+		SIPE_DEBUG_INFO("sipe_apply_calendar_status: activity_since  : %s", asctime(localtime(&sbuddy->activity_since)));
+		if (cal_avail_since > sbuddy->activity_since) {
+			if ((cal_status == SIPE_CAL_OOF) &&
+			    sipe_ocs2007_availability_is_away2(avail)) {
+				g_free(sbuddy->activity);
+				sbuddy->activity = g_strdup(sipe_core_activity_description(SIPE_ACTIVITY_OOF));
+			}
+		}
+	}
+
+	/* then set status_id actually */
+	SIPE_DEBUG_INFO("sipe_apply_calendar_status: to %s for %s", status_id, sbuddy->name ? sbuddy->name : "" );
+	sipe_backend_buddy_set_status(SIPE_CORE_PUBLIC, sbuddy->name, status_id);
+
+	/* set our account state to the one in roaming (including calendar info) */
+	self_uri = sip_uri_self(sipe_private);
+	if (sip->initial_state_published && sipe_strcase_equal(sbuddy->name, self_uri)) {
+		if (sipe_strequal(status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE))) {
+			/* do not let offline status switch us off */
+			status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_INVISIBLE);
+		}
+
+		sipe_status_and_note(sipe_private, status_id);
+	}
+	g_free(self_uri);
+}
+
 static void update_calendar_status_cb(SIPE_UNUSED_PARAMETER char *name,
 				      struct sipe_buddy *sbuddy,
 				      struct sipe_core_private *sipe_private)
 {
-	sipe_apply_calendar_status(sipe_private, sbuddy, NULL);
+	sipe_ocs2005_apply_calendar_status(sipe_private, sbuddy, NULL);
 }
 
 /**

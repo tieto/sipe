@@ -42,12 +42,12 @@
 #include "sipe-core-private.h"
 #include "sipe-group.h"
 #include "sipe-nls.h"
+#include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 static void buddy_free(struct sipe_buddy *buddy)
 {
@@ -102,7 +102,7 @@ void sipe_buddy_free_all(struct sipe_core_private *sipe_private)
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *uri,
-			      const sipe_activity activity,
+			      guint activity,
 			      const gchar *status_text)
 {
 	struct sipe_buddy *sbuddy;
@@ -267,7 +267,9 @@ void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		sipe_backend_buddy_set_status(sipe_public, uri, status_id);
 	} else {
-		sipe_apply_calendar_status(sipe_private, sbuddy, status_id);
+		sipe_ocs2005_apply_calendar_status(sipe_private,
+						   sbuddy,
+						   status_id);
 	}
 }
 
