@@ -250,8 +250,8 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 /**
  * Returns string like "2 4 7 8" - group ids buddy belong to.
  */
-static gchar *sipe_get_buddy_groups_string (struct sipe_buddy *buddy)
- {
+static gchar *sipe_get_buddy_groups_string(struct sipe_buddy *buddy)
+{
 	int i = 0;
 	gchar *res;
 	//creating array from GList, converting int to gchar*

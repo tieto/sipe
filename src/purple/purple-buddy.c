@@ -353,6 +353,19 @@ void sipe_backend_buddy_info_finalize(struct sipe_core_public *sipe_public,
 			       NULL);     /* userdata for callback */
 }
 
+void sipe_backend_buddy_tooltip_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				    struct sipe_backend_buddy_tooltip *tooltip,
+				    const gchar *description,
+				    const gchar *value)
+{
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_notify_user_info_add_pair_html
+#else
+	purple_notify_user_info_add_pair
+#endif
+		((PurpleNotifyUserInfo *) tooltip, description, value);
+}
+
 void sipe_purple_add_buddy(PurpleConnection *gc,
 			   PurpleBuddy *buddy,
 			   PurpleGroup *group)
@@ -368,15 +381,10 @@ void sipe_purple_add_buddy(PurpleConnection *gc,
 		 * purple_normalize_nocase() to compare
 		 */
 		gchar *buddy_name = g_ascii_strdown(buddy->name, -1);
-		purple_blist_rename_buddy(buddy, buddy_name);
+		gchar *uri        = sip_uri(buddy_name);
 		g_free(buddy_name);
-
-		/* Prepend sip: if needed */
-		if (!g_str_has_prefix(buddy->name, "sip:")) {
-			gchar *buf = sip_uri_from_name(buddy->name);
-			purple_blist_rename_buddy(buddy, buf);
-			g_free(buf);
-		}
+		purple_blist_rename_buddy(buddy, uri);
+		g_free(uri);
 
 		sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 				    buddy->name,

@@ -142,28 +142,15 @@ static gchar *sipe_purple_status_text(PurpleBuddy *buddy)
 }
 
 static void sipe_purple_tooltip_text(PurpleBuddy *buddy,
-			      PurpleNotifyUserInfo *user_info,
-			      SIPE_UNUSED_PARAMETER gboolean full)
+				     PurpleNotifyUserInfo *user_info,
+				     SIPE_UNUSED_PARAMETER gboolean full)
 {
 	const PurplePresence *presence = purple_buddy_get_presence(buddy);
-	GSList *info = sipe_core_buddy_info(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
-					    buddy->name,
-					    purple_status_get_name(purple_presence_get_active_status(presence)),
-					    purple_presence_is_online(presence));
-
-	while (info) {
-		struct sipe_buddy_info *sbi = info->data;
-#if PURPLE_VERSION_CHECK(3,0,0)
-		purple_notify_user_info_add_pair_html(
-#else
-		purple_notify_user_info_add_pair(
-#endif
-						 user_info,
-						 sbi->label, sbi->text);
-		g_free(sbi->text);
-		g_free(sbi);
-		info = g_slist_delete_link(info, info);
-	}
+	sipe_core_buddy_tooltip_info(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+				     buddy->name,
+				     purple_status_get_name(purple_presence_get_active_status(presence)),
+				     purple_presence_is_online(presence),
+				     (struct sipe_backend_buddy_tooltip *) user_info);
 }
 
 static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)

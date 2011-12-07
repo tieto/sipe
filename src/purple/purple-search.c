@@ -106,7 +106,8 @@ static void searchresults_add_buddy(PurpleConnection *gc,
 
 void sipe_backend_search_results_finalize(struct sipe_core_public *sipe_public,
 					  struct sipe_backend_search_results *results,
-					  const gchar *description)
+					  const gchar *description,
+					  SIPE_UNUSED_PARAMETER gboolean more)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleNotifySearchResults *r = (PurpleNotifySearchResults *) results;

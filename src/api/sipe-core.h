@@ -172,6 +172,7 @@ sipe_utils_nameval_free(GSList *list);
 gboolean sipe_utils_is_avconf_uri(const gchar *uri);
 
 gchar *sip_uri_from_name(const gchar *name);
+gchar *sip_uri(const gchar *string);
 
 /*****************************************************************************/
 
@@ -194,64 +195,63 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public);
  * Get status text for buddy.
  *
  * @param sipe_public Sipe core public data structure.
- * @param name        backend-specific buddy name.
+ * @param uri         SIP URI of the buddy
  * @param activity    activity value for buddy
  * @param status_text backend-specific buddy status text for activity.
  *
  * @return HTML status text for the buddy or NULL. Must be g_free()'d.
  */
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
-			      const gchar *name,
+			      const gchar *uri,
 			      const sipe_activity activity,
 			      const gchar *status_text);
 
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
-				const gchar* uri,
+				const gchar *uri,
 				const gchar *status_id);
 
 /**
- * Return a list with buddy information label/text pairs
+ * Trigger generation of buddy information label/text pairs
  *
  * @param sipe_public Sipe core public data structure.
- * @param name        backend-specific buddy name.
+ * @param uri         SIP URI of the buddy
  * @param status_text backend-specific buddy status text for ID.
  * @param is_online   backend considers buddy to be online.
- *
- * @return GSList of struct sipe_buddy_info or NULL. Must be freed by caller.
+ * @param tooltip     opaque backend identifier for tooltip info. This is the
+ *                    parameter given to @c sipe_backend_buddy_tooltip_add()
  */
-struct sipe_buddy_info {    /* must be g_free()'d */
-	const gchar *label;
-	gchar *text;        /* must be g_free()'d */
-};
-GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
-			     const gchar *name,
-			     const gchar *status_name,
-			     gboolean is_online);
+struct sipe_backend_buddy_tooltip;
+void sipe_core_buddy_tooltip_info(struct sipe_core_public *sipe_public,
+				  const gchar *uri,
+				  const gchar *status_name,
+				  gboolean is_online,
+				  struct sipe_backend_buddy_tooltip *tooltip);
 
 /**
  * Add a buddy
  *
  * @param sipe_public Sipe core public data structure
- * @param name        backend-specific buddy name
+ * @param uri         SIP URI of the buddy
  * @param group_name  backend-specific group name
  */
 void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
-			 const gchar *name,
+			 const gchar *uri,
 			 const gchar *group_name);
 
 /**
  * Remove a buddy
  *
  * @param sipe_public Sipe core public data structure
- * @param name        backend-specific buddy name
+ * @param uri         SIP URI of the buddy
  * @param group_name  backend-specific group name
  */
 void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
-			    const gchar *name,
+			    const gchar *uri,
 			    const gchar *group_name);
 
 void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
-				  const gchar *who, gboolean allow);
+				  const gchar *who,
+				  gboolean allow);
 void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
 			      const gchar * who);
 

@@ -101,7 +101,7 @@ void sipe_buddy_free_all(struct sipe_core_private *sipe_private)
 }
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
-			      const gchar *name,
+			      const gchar *uri,
 			      const sipe_activity activity,
 			      const gchar *status_text)
 {
@@ -110,7 +110,7 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 
 	if (!sipe_public) return NULL; /* happens on pidgin exit */
 
-	sbuddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, name);
+	sbuddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, uri);
 	if (!sbuddy) return NULL;
 
 	activity_str = sbuddy->activity ? sbuddy->activity :
@@ -174,17 +174,17 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 }
 
 void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
-			 const gchar *name,
+			 const gchar *uri,
 			 const gchar *group_name)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	if (!g_hash_table_lookup(sipe_private->buddies, name)) {
+	if (!g_hash_table_lookup(sipe_private->buddies, uri)) {
 		struct sipe_buddy *b = g_new0(struct sipe_buddy, 1);
 
-		SIPE_DEBUG_INFO("sipe_core_buddy_add: %s", name);
+		SIPE_DEBUG_INFO("sipe_core_buddy_add: %s", uri);
 
-		b->name = g_strdup(name);
+		b->name = g_strdup(uri);
 		b->just_added = TRUE;
 		g_hash_table_insert(sipe_private->buddies, b->name, b);
 
@@ -193,11 +193,11 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 
 	} else {
 		SIPE_DEBUG_INFO("sipe_core_buddy_add: buddy %s already in internal list",
-				name);
+				uri);
 	}
 
-	sipe_core_buddy_group(SIPE_CORE_PUBLIC,
-			      name,
+	sipe_core_buddy_group(sipe_public,
+			      uri,
 			      NULL,
 			      group_name);
 }
@@ -208,12 +208,12 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
  * Otherwise updates buddy groups on server.
  */
 void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
-			    const gchar *name,
+			    const gchar *uri,
 			    const gchar *group_name)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_buddy *b = g_hash_table_lookup(sipe_private->buddies,
-						   name);
+						   uri);
 
 	if (!b) return;
 
@@ -223,16 +223,16 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 		if (g) {
 			b->groups = g_slist_remove(b->groups, g);
 			SIPE_DEBUG_INFO("sipe_core_buddy_remove: buddy %s removed from group %s",
-					name, g->name);
+					uri, g->name);
 		}
 	}
 
 	if (g_slist_length(b->groups) < 1) {
-		gchar *action_name = sipe_utils_presence_key(name);
+		gchar *action_name = sipe_utils_presence_key(uri);
 		sipe_schedule_cancel(sipe_private, action_name);
 		g_free(action_name);
 
-		g_hash_table_remove(sipe_private->buddies, name);
+		g_hash_table_remove(sipe_private->buddies, uri);
 
 		if (b->name) {
 			gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
@@ -246,13 +246,13 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 		buddy_free(b);
 	} else {
 		/* updates groups on server */
-		sipe_core_group_set_user(SIPE_CORE_PUBLIC, b->name);
+		sipe_core_group_set_user(sipe_public, b->name);
 	}
 
 }
 
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
-				const gchar* uri,
+				const gchar *uri,
 				const gchar *status_id)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
@@ -271,10 +271,11 @@ void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 	}
 }
 
-GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
-			     const gchar *name,
-			     const gchar *status_name,
-			     gboolean is_online)
+void sipe_core_buddy_tooltip_info(struct sipe_core_public *sipe_public,
+				  const gchar *uri,
+				  const gchar *status_name,
+				  gboolean is_online,
+				  struct sipe_backend_buddy_tooltip *tooltip)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *note = NULL;
@@ -284,20 +285,18 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 	const gchar *meeting_subject = NULL;
 	const gchar *meeting_location = NULL;
 	gchar *access_text = NULL;
-	GSList *info = NULL;
 
-#define SIPE_ADD_BUDDY_INFO_COMMON(l, t) \
+#define SIPE_ADD_BUDDY_INFO(l, t) \
 	{ \
-		struct sipe_buddy_info *sbi = g_malloc(sizeof(struct sipe_buddy_info)); \
-		sbi->label = (l); \
-		sbi->text = (t); \
-		info = g_slist_append(info, sbi); \
+		gchar *tmp = g_markup_escape_text((t), -1); \
+		sipe_backend_buddy_tooltip_add(sipe_public, tooltip, (l), tmp); \
+		g_free(tmp); \
 	}
-#define SIPE_ADD_BUDDY_INFO(l, t)          SIPE_ADD_BUDDY_INFO_COMMON((l), g_markup_escape_text((t), -1))
-#define SIPE_ADD_BUDDY_INFO_NOESCAPE(l, t) SIPE_ADD_BUDDY_INFO_COMMON((l), (t))
+#define SIPE_ADD_BUDDY_INFO_NOESCAPE(l, t) \
+	sipe_backend_buddy_tooltip_add(sipe_public, tooltip, (l), (t))
 
-	if (sipe_public) { //happens on pidgin exit
-		struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, name);
+	if (sipe_public) { /* happens on pidgin exit */
+		struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
 		if (sbuddy) {
 			note = sbuddy->note;
 			is_oof_note = sbuddy->is_oof_note;
@@ -308,7 +307,10 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 		}
 		if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 			gboolean is_group_access = FALSE;
-			const int container_id = sipe_ocs2007_find_access_level(sipe_private, "user", sipe_get_no_sip_uri(name), &is_group_access);
+			const int container_id = sipe_ocs2007_find_access_level(sipe_private,
+										"user",
+										sipe_get_no_sip_uri(uri),
+										&is_group_access);
 			const char *access_level = sipe_ocs2007_access_level_name(container_id);
 			access_text = is_group_access ?
 				g_strdup(access_level) :
@@ -317,30 +319,25 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 		}
 	}
 
-	if (is_online)
-	{
+	if (is_online) {
 		const gchar *status_str = activity ? activity : status_name;
 
 		SIPE_ADD_BUDDY_INFO(_("Status"), status_str);
 	}
-	if (is_online && !is_empty(calendar))
-	{
+	if (is_online && !is_empty(calendar)) {
 		SIPE_ADD_BUDDY_INFO(_("Calendar"), calendar);
 	}
 	g_free(calendar);
-	if (!is_empty(meeting_location))
-	{
-		SIPE_DEBUG_INFO("sipe_tooltip_text: %s meeting location: '%s'", name, meeting_location);
+	if (!is_empty(meeting_location)) {
+		SIPE_DEBUG_INFO("sipe_tooltip_text: %s meeting location: '%s'", uri, meeting_location);
 		SIPE_ADD_BUDDY_INFO(_("Meeting in"), meeting_location);
 	}
-	if (!is_empty(meeting_subject))
-	{
-		SIPE_DEBUG_INFO("sipe_tooltip_text: %s meeting subject: '%s'", name, meeting_subject);
+	if (!is_empty(meeting_subject)) {
+		SIPE_DEBUG_INFO("sipe_tooltip_text: %s meeting subject: '%s'", uri, meeting_subject);
 		SIPE_ADD_BUDDY_INFO(_("Meeting about"), meeting_subject);
 	}
-	if (note)
-	{
-		SIPE_DEBUG_INFO("sipe_tooltip_text: %s note: '%s'", name, note);
+	if (note) {
+		SIPE_DEBUG_INFO("sipe_tooltip_text: %s note: '%s'", uri, note);
 		SIPE_ADD_BUDDY_INFO_NOESCAPE(is_oof_note ? _("Out of office note") : _("Note"),
 					     g_strdup_printf("<i>%s</i>", note));
 	}
@@ -348,8 +345,6 @@ GSList *sipe_core_buddy_info(struct sipe_core_public *sipe_public,
 		SIPE_ADD_BUDDY_INFO(_("Access level"), access_text);
 		g_free(access_text);
 	}
-
-	return(info);
 }
 
 void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
@@ -487,7 +482,8 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 
 	sipe_backend_search_results_finalize(SIPE_CORE_PUBLIC,
 					     results,
-					     secondary);
+					     secondary,
+					     more);
 	g_free(secondary);
 	sipe_xml_free(searchResults);
 

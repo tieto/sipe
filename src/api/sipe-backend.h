@@ -541,7 +541,8 @@ void sipe_backend_search_results_add(struct sipe_core_public *sipe_public,
 				     const gchar *email);
 void sipe_backend_search_results_finalize(struct sipe_core_public *sipe_public,
 					  struct sipe_backend_search_results *results,
-					  const gchar *description);
+					  const gchar *description,
+					  gboolean more);
 
 /** SETTINGS *****************************************************************/
 
@@ -859,6 +860,13 @@ void sipe_backend_buddy_info_break(struct sipe_core_public *sipe_public,
 void sipe_backend_buddy_info_finalize(struct sipe_core_public *sipe_public,
 				      struct sipe_backend_buddy_info *info,
 				      const gchar *uri);
+
+struct sipe_backend_buddy_tooltip;
+void sipe_backend_buddy_tooltip_add(struct sipe_core_public *sipe_public,
+				    struct sipe_backend_buddy_tooltip *tooltip,
+				    const gchar *description,
+				    const gchar *value);
+
 #ifdef __cplusplus
 }
 #endif
