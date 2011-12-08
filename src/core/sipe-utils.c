@@ -32,7 +32,6 @@
 #include "sipe-core-private.h"
 #include "sipe-utils.h"
 #include "uuid.h"
-#include "sipe.h"
 
 /* Generate 16 random bits */
 #define RANDOM16BITS (rand() & 0xFFFF)
@@ -163,7 +162,7 @@ sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		   publication_key == SIPE_PUB_NOTE_OOF)
 	{ /* First hexadecimal digit is 0x4 */
 		unsigned calendar_id = 0;
-		char *mail_hash = sipe_get_epid(SIPE_ACCOUNT_DATA_PRIVATE->email, "", "");
+		char *mail_hash = sipe_get_epid(sipe_private->email, "", "");
 
 		sscanf(mail_hash, "%08x", &calendar_id);
 		g_free(mail_hash);

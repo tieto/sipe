@@ -268,7 +268,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	SIPE_CORE_PRIVATE_FLAG_UNSET(SUBSCRIBED_BUDDIES);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(INITIAL_PUBLISH);
 	sipe_private->username   = g_strdup(signin_name);
-	sip->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);
+	sipe_private->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);
 	sip->authdomain = is_empty(login_domain)  ? NULL                  : g_strdup(login_domain);
 	sip->authuser   = is_empty(login_account) ? NULL                  : g_strdup(login_account);
 	sip->password   = g_strdup(password);
@@ -365,13 +365,13 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->username);
-	g_free(sip->email);
+	g_free(sipe_private->email);
 	g_free(sip->password);
 	g_free(sip->authdomain);
 	g_free(sip->authuser);
 	g_free(sip->status);
 	g_free(sip->note);
-	g_free(sip->user_states);
+	g_free(sipe_private->ocs2005_user_states);
 
 	sipe_buddy_free_all(sipe_private);
 	g_hash_table_destroy(sipe_private->buddies);

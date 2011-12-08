@@ -48,8 +48,11 @@ struct sipe_core_private {
 	const struct sip_service_data *service_data;
 	guint transport_type;
 
-	/* SIPE protocol information */
+	/* Account information */
 	gchar *username;
+	gchar *email;
+
+	/* SIPE protocol information */
 	gchar *contact;
 	gchar *epid;
 	gchar *focus_factory_uri;
@@ -66,6 +69,19 @@ struct sipe_core_private {
 
 	/* Calendar and related stuff */
 	struct sipe_calendar *calendar;
+
+	/*
+	 * 2005 Custom XML piece
+	 *
+	 * Possibly set by other point of presence or just other client at
+	 * earlier time. It should be preserved/modified, not overwritten.
+	 * This implies subscription to self-contact. Information kept:
+	 *
+	 * - User note
+	 * - OOF flag
+	 * - User status
+	 */
+	gchar *ocs2005_user_states;
 
 	/* Scheduling system */
 	GSList *timeouts;

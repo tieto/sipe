@@ -160,13 +160,12 @@ const gchar *sipe_ocs2005_activity_description(guint activity)
 void sipe_ocs2005_user_info_has_updated(struct sipe_core_private *sipe_private,
 					const sipe_xml *xn_userinfo)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const sipe_xml *xn_states;
 
-	g_free(sip->user_states);
-	sip->user_states = NULL;
+	g_free(sipe_private->ocs2005_user_states);
+	sipe_private->ocs2005_user_states = NULL;
 	if ((xn_states = sipe_xml_child(xn_userinfo, "states")) != NULL) {
-		gchar *orig = sip->user_states = sipe_xml_stringify(xn_states);
+		gchar *orig = sipe_private->ocs2005_user_states = sipe_xml_stringify(xn_states);
 
 		/* this is a hack-around to remove added newline after inner element,
 		 * state in this case, where it shouldn't be.
@@ -358,8 +357,8 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 		}
 		else /* preserve existing publication */
 		{
-			if (sip->user_states) {
-				states = g_strdup(sip->user_states);
+			if (sipe_private->ocs2005_user_states) {
+				states = g_strdup(sipe_private->ocs2005_user_states);
 			}
 		}
 	} else {

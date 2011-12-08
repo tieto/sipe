@@ -64,17 +64,6 @@ struct sipe_account_data {
 	GSList *containers; /* MS-PRES containers */
 	struct _PurpleAccount *account;
 	gchar *regcallid;
-	gchar *email;
-	/** 2005 Custom XML piece.
-	 * Possibly set by other point of presence or just other client at earlier time.
-	 * It should be preserved/modified, not overwritten. This implies subscription
-	 * to self-contasct.
-	 * This XML keeps OC2005:
-	 * - User note
-	 * - OOF flag
-	 * - User status
-	 */
-	gchar *user_states;
 };
 
 /**

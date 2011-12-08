@@ -220,7 +220,7 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 		cal = g_new0(struct sipe_calendar, 1);
 		cal->sipe_private = sipe_private;
 
-		cal->email = g_strdup(sip->email);
+		cal->email = g_strdup(sipe_private->email);
 
 		/* user specified a service URL? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
