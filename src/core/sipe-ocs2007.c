@@ -2179,7 +2179,8 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		}
 
 		/* userProperties published by server from AD */
-		if (!sip->csta && sipe_strequal(name, "userProperties")) {
+		if (!sipe_private->csta &&
+		    sipe_strequal(name, "userProperties")) {
 			const sipe_xml *line;
 			/* line, for Remote Call Control (RCC) */
 			for (line = sipe_xml_child(node, "userProperties/lines/line"); line; line = sipe_xml_twin(line)) {

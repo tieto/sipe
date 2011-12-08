@@ -349,7 +349,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 
 	sipe_conf_cancel_unaccepted(sipe_private, NULL);
 
-	if (sip->csta) {
+	if (sipe_private->csta) {
 		sip_csta_close(sipe_private);
 	}
 

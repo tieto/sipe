@@ -320,7 +320,6 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 	GList *menu = NULL;
 	GList *menu_groups = NULL;
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *email;
 	gchar *self = sip_uri_self(sipe_private);
 
@@ -381,7 +380,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				     NULL, NULL);
 	menu = g_list_prepend(menu, act);
 
-	if (sip->csta && !sip->csta->line_status) {
+	if (sipe_private->csta && !sipe_private->csta->line_status) {
 		gchar *phone;
 		gchar *phone_disp_str;
 		gchar *tmp = NULL;

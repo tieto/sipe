@@ -21,6 +21,7 @@
  */
 
 /* Forward declarations */
+struct sip_csta;
 struct sip_service_data;
 struct sip_transport;
 struct sipe_certificate;
@@ -84,6 +85,9 @@ struct sipe_core_private {
 
 	/* @TODO: move to purple backend when menu code moves */
 	GSList *blist_menu_containers;
+
+	/* For RCC - Remote Call Control */
+	struct sip_csta *csta;
 
 	struct sipe_dns_query *dns_query;
 

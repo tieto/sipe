@@ -44,7 +44,6 @@
 struct _PurpleAccount;
 struct _PurpleConnection;
 struct sipe_core_private;
-struct sipe_buddy;
 
 /** MS-PRES publication */
 struct sipe_publication {
@@ -71,7 +70,6 @@ struct sipe_account_data {
 	gchar *password;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
-	struct sip_csta *csta; /* For RCC - Remote Call Control */
 	GSList *our_publication_keys;		/* [MS-PRES] */
 	GHashTable *our_publications;		/* [MS-PRES] */
 	GHashTable *user_state_publications;	/* [MS-PRES] */
