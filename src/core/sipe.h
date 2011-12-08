@@ -34,14 +34,7 @@
  */
 
 /* Forward declarations */
-struct _PurpleAccount;
-struct _PurpleConnection;
 struct sipe_core_private;
-
-struct sipe_account_data {
-	struct _PurpleConnection *gc;
-	struct _PurpleAccount *account;
-};
 
 /**
  * THE BIG SPLIT - temporary interfaces

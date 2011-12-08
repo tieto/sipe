@@ -35,7 +35,6 @@ struct sipe_svc;
  *
  * This part contains the information only needed by the core
  */
-struct sipe_account_data; /* to be removed... */
 struct sipe_core_private {
 	/**
 	 * The public part is the first item, i.e. a pointer to the
@@ -135,9 +134,6 @@ struct sipe_core_private {
 	/* TLS-DSK: Certificates & Web services */
 	struct sipe_certificate *certificate;
 	struct sipe_svc *svc;
-
-	/* the original data structure*/
-	struct sipe_account_data *temporary;
 };
 
 /**
@@ -177,10 +173,6 @@ struct sipe_core_private {
 /* Convenience macros */
 #define SIPE_CORE_PRIVATE ((struct sipe_core_private *)sipe_public)
 #define SIPE_CORE_PUBLIC  ((struct sipe_core_public *)sipe_private)
-
-/* Transition macros */
-#define SIPE_ACCOUNT_DATA         SIPE_CORE_PRIVATE->temporary
-#define SIPE_ACCOUNT_DATA_PRIVATE sipe_private->temporary
 
 /**
  * sipe-core internal functions

@@ -321,7 +321,6 @@ static void sipe_purple_login(PurpleAccount *account)
 		SIPE_CORE_FLAG_SET(SSO);
 
 	gc->proto_data = sipe_public;
-	sipe_purple_setup(sipe_public, gc);
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
 		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
 	purple_connection_set_display_name(gc, sipe_public->sip_name);

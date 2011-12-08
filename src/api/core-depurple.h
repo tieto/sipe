@@ -23,11 +23,7 @@
 /*
  * This is a temporary file for the core de-purple transition period
  */
-struct sipe_core_public;
-
 GList *sipe_buddy_menu(PurpleBuddy *buddy);
-void sipe_purple_setup(struct sipe_core_public *sipe_public,
-		       PurpleConnection *gc);
 
 /* Convenience macros */
 #define PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE   ((struct sipe_core_private *)buddy->account->gc->proto_data)

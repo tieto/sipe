@@ -73,15 +73,6 @@
 
 #include "sipe.h"
 
-/* temporary function */
-void sipe_purple_setup(struct sipe_core_public *sipe_public,
-		       PurpleConnection *gc)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA;
-	sip->gc = gc;
-	sip->account = purple_connection_get_account(gc);
-}
-
 /** for Access levels menu */
 #define INDENT_FMT			"  %s"
 
@@ -546,12 +537,9 @@ sipe_ask_access_domain_cb(PurpleConnection *gc, PurpleRequestFields *fields)
 						    index);
 }
 
-static void
-sipe_ask_access_domain(struct sipe_core_private *sipe_private)
+static void sipe_buddy_menu_access_level_add_domain_cb(PurpleBuddy *buddy)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleAccount *account = sip->account;
-	PurpleConnection *gc = sip->gc;
+	PurpleConnection *gc = purple_account_get_connection(buddy->account);
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *g;
 	PurpleRequestField *f;
@@ -579,13 +567,7 @@ sipe_ask_access_domain(struct sipe_core_private *sipe_private)
 			      _("Add new domain"), NULL, fields,
 			      _("Add"), G_CALLBACK(sipe_ask_access_domain_cb),
 			      _("Cancel"), NULL,
-			      account, NULL, NULL, gc);
-}
-
-static void
-sipe_buddy_menu_access_level_add_domain_cb(PurpleBuddy *buddy)
-{
-	sipe_ask_access_domain(PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE);
+			      buddy->account, NULL, NULL, gc);
 }
 
 /*

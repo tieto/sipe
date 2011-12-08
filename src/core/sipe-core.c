@@ -207,7 +207,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    const gchar **errmsg)
 {
 	struct sipe_core_private *sipe_private;
-	struct sipe_account_data *sip;
 	gchar **user_domain;
 
 	SIPE_DEBUG_INFO("sipe_core_allocate: signin_name '%s'", signin_name);
@@ -264,7 +263,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	}
 
 	sipe_private = g_new0(struct sipe_core_private, 1);
-	sipe_private->temporary = sip = g_new0(struct sipe_account_data, 1);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(SUBSCRIBED_BUDDIES);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(INITIAL_PUBLISH);
 	sipe_private->username   = g_strdup(signin_name);
@@ -403,7 +401,6 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_media_relay_list_free(sipe_private->media_relays);
 #endif
 
-	g_free(SIPE_ACCOUNT_DATA_PRIVATE);
 	g_free(sipe_private);
 }
 
