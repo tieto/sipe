@@ -56,6 +56,24 @@
 
 #include "sipe.h"
 
+/** MS-PRES publication */
+struct sipe_publication {
+	gchar *category;
+	guint instance;
+	guint container;
+	guint version;
+	/** for 'state' category */
+	int availability;
+	/** for 'state:calendarState' category */
+	char *cal_event_hash;
+	/** for 'note' category */
+	gchar *note;
+	/** for 'calendarData' category; 300(Team) container */
+	char *working_hours_xml_str;
+	char *fb_start_str;
+	char *free_busy_base64;
+};
+
 /**
  * 2007-style Activity and Availability.
  *
