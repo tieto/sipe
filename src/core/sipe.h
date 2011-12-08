@@ -53,7 +53,6 @@ struct sipe_account_data {
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
 	int presence_method_version;
-	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
 	gchar *status;
 	gchar *note;
 	time_t note_since;

@@ -60,6 +60,9 @@ struct sipe_core_private {
 	GSList *sessions;
 	GSList *sessions_to_accept;
 
+	/* Presence */
+	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
+
 	/* [MS-SIP] deltaNum counters */
 	guint deltanum_contacts;
 	guint deltanum_acl;      /* setACE (OCS2005 only) */

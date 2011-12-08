@@ -120,10 +120,10 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 		/* status has changed */
 		guint activity = sipe_backend_token_to_activity(status_id);
 
-		sip->do_not_publish[activity] = time(NULL);
+		sipe_private->do_not_publish[activity] = time(NULL);
 		SIPE_DEBUG_INFO("sipe_status_and_note: do_not_publish[%s]=%d [now]",
 				status_id,
-				(int) sip->do_not_publish[activity]);
+				(int) sipe_private->do_not_publish[activity]);
 	}
 }
 
@@ -152,7 +152,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 		gchar *tmp;
 		time_t now = time(NULL);
 		guint activity = sipe_backend_token_to_activity(status_id);
-		gboolean do_not_publish = ((now - sip->do_not_publish[activity]) <= 2);
+		gboolean do_not_publish = ((now - sipe_private->do_not_publish[activity]) <= 2);
 
 		/* when other point of presence clears note, but we are keeping
 		 * state if OOF note.
@@ -165,12 +165,12 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			do_not_publish = FALSE;
 		}
 
-		SIPE_DEBUG_INFO("sipe_core_status_set: was: sip->do_not_publish[%s]=%d [?] now(time)=%d",
-				status_id, (int)sip->do_not_publish[activity], (int)now);
+		SIPE_DEBUG_INFO("sipe_core_status_set: was: sipe_private->do_not_publish[%s]=%d [?] now(time)=%d",
+				status_id, (int)sipe_private->do_not_publish[activity], (int)now);
 
-		sip->do_not_publish[activity] = 0;
-		SIPE_DEBUG_INFO("sipe_core_status_set: set: sip->do_not_publish[%s]=%d [0]",
-				status_id, (int)sip->do_not_publish[activity]);
+		sipe_private->do_not_publish[activity] = 0;
+		SIPE_DEBUG_INFO("sipe_core_status_set: set: sipe_private->do_not_publish[%s]=%d [0]",
+				status_id, (int)sipe_private->do_not_publish[activity]);
 
 		if (do_not_publish) {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_core_status_set: publication was switched off, exiting.");
