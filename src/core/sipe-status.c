@@ -127,6 +127,19 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 	}
 }
 
+void sipe_status_update(struct sipe_core_private *sipe_private,
+			SIPE_UNUSED_PARAMETER gpointer unused)
+{
+	const gchar *status = sipe_backend_status(SIPE_CORE_PUBLIC);
+
+	if (!status) return;
+
+	SIPE_DEBUG_INFO("sipe_status_update: status: %s (%s)", status,
+			sipe_status_changed_by_user(sipe_private) ? "USER" : "MACHINE");
+
+	sipe_cal_presence_publish(sipe_private, FALSE);
+}
+
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  const gchar *status_id,
 			  const gchar *note)
@@ -181,7 +194,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 				      action_name,
 				      NULL,
 				      SIPE_IDLE_SET_DELAY,
-				      send_presence_status,
+				      sipe_status_update,
 				      NULL);
 		g_free(action_name);
 	}

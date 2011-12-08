@@ -111,9 +111,6 @@ struct sipe_account_data {
  *  - are needed by the already created new modules
  */
 
-void send_presence_status(struct sipe_core_private *sipe_private,
-			  gpointer unused);
-
 /* libpurple memory leak workaround */
 void sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private);
 

@@ -1598,7 +1598,7 @@ static gboolean process_send_presence_category_publish_response(struct sipe_core
 		if (has_device_publication) {
 			send_publish_category_initial(sipe_private);
 		} else {
-			send_presence_status(sipe_private, NULL);
+			sipe_status_update(sipe_private, NULL);
 		}
 	}
 	return TRUE;

@@ -563,6 +563,7 @@ const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
 const gchar *sipe_backend_activity_to_token(guint type);
 guint sipe_backend_token_to_activity(const gchar *token);
 
+const gchar *sipe_backend_status(struct sipe_core_public *sipe_public);
 gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 				      const gchar *status_id,
 				      const gchar *message);

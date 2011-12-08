@@ -47,66 +47,31 @@
 #include "config.h"
 #endif
 
-#include <time.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
-
 #include <glib.h>
-
-#include <libintl.h>
 
 #include "sipe-common.h"
 
 #include "account.h"
 #include "blist.h"
 #include "connection.h"
-#include "conversation.h"
-#include "ft.h"
 #include "notify.h"
-#include "plugin.h"
-#include "privacy.h"
 #include "request.h"
 
 #include "core-depurple.h" /* Temporary for the core de-purple transition */
 
-#include "http-conn.h"
-#include "sipmsg.h"
 #include "sip-csta.h"
-#include "sip-soap.h"
 #include "sipe-backend.h"
-#include "sipe-buddy.h"
-#include "sipe-cal.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
-#include "sipe-dialog.h"
 #include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2007.h"
 #include "sipe-session.h"
-#include "sipe-status.h"
 #include "sipe-utils.h"
 
 #include "sipe.h"
-
-void send_presence_status(struct sipe_core_private *sipe_private,
-			  SIPE_UNUSED_PARAMETER gpointer unused)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleStatus * status = purple_account_get_active_status(sip->account);
-
-	if (!status) return;
-
-	SIPE_DEBUG_INFO("send_presence_status: status: %s (%s)",
-			purple_status_get_id(status) ? purple_status_get_id(status) : "",
-			sipe_status_changed_by_user(sipe_private) ? "USER" : "MACHINE");
-
-	sipe_cal_presence_publish(sipe_private, FALSE);
-}
 
 /* temporary function */
 void sipe_purple_setup(struct sipe_core_public *sipe_public,

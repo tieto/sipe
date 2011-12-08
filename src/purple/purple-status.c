@@ -30,6 +30,14 @@
 
 #include "purple-private.h"
 
+const gchar *sipe_backend_status(struct sipe_core_public *sipe_public)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleStatus *status = purple_account_get_active_status(purple_private->account);
+	if (!status) return(NULL);
+	return(purple_status_get_id(status));
+}
+
 /**
  * This method motivates Purple's Host (e.g. Pidgin) to update its UI
  * by using standard Purple's means of signals and saved statuses.
