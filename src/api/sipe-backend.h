@@ -744,7 +744,7 @@ gchar* sipe_backend_buddy_get_string(struct sipe_core_public *sipe_public,
 				     const sipe_buddy_info_fields key);
 
 /**
- * Called to retrieve a buddy-specific setting.
+ * Called to set a buddy-specific setting.
  *
  * @param sipe_public The handle representing the protocol instance making the call
  * @param buddy The handle representing the buddy
@@ -755,6 +755,17 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 				   sipe_backend_buddy buddy,
 				   const sipe_buddy_info_fields key,
 				   const gchar *val);
+
+/**
+ * Get the status token for a contact
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param uri         SIP URI of the contact
+ *
+ * @return status token
+ */
+const gchar *sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
+					   const gchar *uri);
 
 /**
  * Sets the alias for a contact.

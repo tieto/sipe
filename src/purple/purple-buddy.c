@@ -171,6 +171,16 @@ gchar* sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_
 	return g_strdup(purple_buddy_get_group((PurpleBuddy*)who)->name);
 }
 
+const gchar *sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
+					   const gchar *uri)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleBuddy *pbuddy = purple_find_buddy(purple_private->account, uri);
+	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
+	const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
+	return(purple_status_get_id(pstatus));
+}
+
 void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				  const sipe_backend_buddy who,
 				  const gchar *alias)
@@ -283,15 +293,11 @@ void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
 	}
 
 	/* stupid workaround to make pidgin re-render screen to reflect our changes */
-	{
-		PurpleBuddy *pbuddy = purple_find_buddy(purple_private->account, who);
-		const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
-		const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
-
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_backend_buddy_set_blocked_status: forcefully refreshing screen.");
-		sipe_core_buddy_got_status(sipe_public, who, purple_status_get_id(pstatus));
-	}
-
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_backend_buddy_set_blocked_status: forcefully refreshing screen.");
+	sipe_core_buddy_got_status(sipe_public,
+				   who,
+				   sipe_backend_buddy_get_status(sipe_public,
+								 who));
 }
 
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,

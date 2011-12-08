@@ -773,9 +773,11 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 	}
 
 	if (do_update_status) {
-		if (!status) { /* no status category in this update, using contact's current status */
-			status = sipe_get_buddy_status(sipe_private,
-						       uri);
+		if (!status) {
+			/* no status category in this update,
+			   using contact's current status */
+			status = sipe_backend_buddy_get_status(SIPE_CORE_PUBLIC,
+							       uri);
 		}
 
 		SIPE_DEBUG_INFO("process_incoming_notify_rlmi: %s", status);

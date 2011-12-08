@@ -117,12 +117,4 @@ void send_presence_status(struct sipe_core_private *sipe_private,
 /* libpurple memory leak workaround */
 void sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private);
 
-/**
- * referenced by sipe-notify.c - start
- */
-const gchar *sipe_get_buddy_status(struct sipe_core_private *sipe_private,
-				   const gchar *uri);
-/* referenced by sipe-notify.c - end */
-
-
 /*** THE BIG SPLIT END ***/

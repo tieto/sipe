@@ -93,16 +93,6 @@
 
 #include "sipe.h"
 
-const gchar *sipe_get_buddy_status(struct sipe_core_private *sipe_private,
-				   const gchar *uri)
-{
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	PurpleBuddy *pbuddy = purple_find_buddy((PurpleAccount *)sip->account, uri);
-	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
-	const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
-	return(purple_status_get_id(pstatus));
-}
-
 void send_presence_status(struct sipe_core_private *sipe_private,
 			  SIPE_UNUSED_PARAMETER gpointer unused)
 {
