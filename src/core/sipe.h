@@ -56,7 +56,6 @@ struct sipe_account_data {
 	gchar *status;
 	gchar *note;
 	time_t note_since;
-	time_t idle_switch;
 	struct _PurpleAccount *account;
 };
 

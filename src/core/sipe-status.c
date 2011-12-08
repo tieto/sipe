@@ -210,16 +210,15 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
  */
 gboolean sipe_status_changed_by_user(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gboolean res;
 	time_t now = time(NULL);
 
-	SIPE_DEBUG_INFO("sipe_status_changed_by_user: sip->idle_switch : %s",
-			asctime(localtime(&(sip->idle_switch))));
+	SIPE_DEBUG_INFO("sipe_status_changed_by_user: sipe_private->idle_switch : %s",
+			asctime(localtime(&(sipe_private->idle_switch))));
 	SIPE_DEBUG_INFO("sipe_status_changed_by_user: now              : %s",
 			asctime(localtime(&now)));
 
-	res = ((now - SIPE_IDLE_SET_DELAY * 2) >= sip->idle_switch);
+	res = ((now - SIPE_IDLE_SET_DELAY * 2) >= sipe_private->idle_switch);
 
 	SIPE_DEBUG_INFO("sipe_status_changed_by_user: res  = %s",
 			res ? "USER" : "MACHINE");
@@ -229,13 +228,10 @@ gboolean sipe_status_changed_by_user(struct sipe_core_private *sipe_private)
 void sipe_core_status_idle(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
-	if (sip) {
-		sip->idle_switch = time(NULL);
-		SIPE_DEBUG_INFO("sipe_core_status_idle: sip->idle_switch : %s",
-				asctime(localtime(&(sip->idle_switch))));
-	}
+	sipe_private->idle_switch = time(NULL);
+	SIPE_DEBUG_INFO("sipe_core_status_idle: sipe_private->idle_switch : %s",
+			asctime(localtime(&(sipe_private->idle_switch))));
 }
 
 /*
