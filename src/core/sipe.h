@@ -72,7 +72,6 @@ struct sipe_account_data {
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
 	struct sip_csta *csta; /* For RCC - Remote Call Control */
-	gboolean subscribed_buddies; /* whether subscribed to buddies presence */
 	GSList *our_publication_keys;		/* [MS-PRES] */
 	GHashTable *our_publications;		/* [MS-PRES] */
 	GHashTable *user_state_publications;	/* [MS-PRES] */

@@ -265,7 +265,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 
 	sipe_private = g_new0(struct sipe_core_private, 1);
 	sipe_private->temporary = sip = g_new0(struct sipe_account_data, 1);
-	sip->subscribed_buddies = FALSE;
+	SIPE_CORE_PRIVATE_FLAG_UNSET(SUBSCRIBED_BUDDIES);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(INITIAL_PUBLISH);
 	sipe_private->username   = g_strdup(signin_name);
 	sip->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);

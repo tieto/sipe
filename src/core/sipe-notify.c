@@ -1069,7 +1069,6 @@ static void sipe_buddy_subscribe_cb(char *buddy_name,
 static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_private,
 					      struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	int len = msg->bodylen;
 
 	const gchar *tmp = sipmsg_find_header(msg, "Event");
@@ -1207,7 +1206,8 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	sipe_xml_free(isc);
 
 	/* subscribe to buddies */
-	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
+		/* do it once, then count Expire field to schedule resubscribe */
 		if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
 			sipe_subscribe_presence_batched(sipe_private);
 		} else {
@@ -1215,7 +1215,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 					     (GHFunc)sipe_buddy_subscribe_cb,
 					     sipe_private);
 		}
-		sip->subscribed_buddies = TRUE;
+		SIPE_CORE_PRIVATE_FLAG_SET(SUBSCRIBED_BUDDIES);
 	}
 	/* for 2005 systems schedule contacts' status update
 	 * based on their calendar information
