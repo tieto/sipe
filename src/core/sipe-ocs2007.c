@@ -2321,10 +2321,10 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 	 * so we've already updated our roaming data in full.
 	 * Only for 2007+
 	 */
-	if (!sip->initial_state_published) {
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH)) {
 		send_publish_category_initial(sipe_private);
 		sipe_groupchat_init(sipe_private);
-		sip->initial_state_published = TRUE;
+		SIPE_CORE_PRIVATE_FLAG_SET(INITIAL_PUBLISH);
 		/* dalayed run */
 		sipe_cal_delayed_calendar_update(sipe_private);
 		do_update_status = FALSE;

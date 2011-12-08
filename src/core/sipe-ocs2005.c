@@ -188,7 +188,7 @@ void sipe_ocs2005_user_info_has_updated(struct sipe_core_private *sipe_private,
 	 * Assuming this happens on initial responce to self subscription
 	 * so we've already updated our UserInfo.
 	 */
-	if (!sip->initial_state_published) {
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH)) {
 		sipe_ocs2005_presence_publish(sipe_private, FALSE);
 		/* dalayed run */
 		sipe_cal_delayed_calendar_update(sipe_private);
@@ -311,7 +311,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 
 	SIPE_DEBUG_INFO("sip->note  : %s", sip->note ? sip->note : "");
 
-	if (!sip->initial_state_published ||
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH) ||
 	    do_reset_status)
 		sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_AVAILABLE);
 
@@ -343,8 +343,9 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 
 	/* User State */
 	if (!do_reset_status) {
-		if (sipe_status_changed_by_user(sipe_private) && !do_publish_calendar && sip->initial_state_published)
-		{
+		if (sipe_status_changed_by_user(sipe_private) &&
+		    !do_publish_calendar &&
+		    SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH)) {
 			const gchar *activity_token;
 			int avail_2007 = sipe_ocs2007_availability_from_status(sip->status,
 									       &activity_token);
@@ -364,7 +365,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 	} else {
 		/* do nothing - then User state will be erased */
 	}
-	sip->initial_state_published = TRUE;
+	SIPE_CORE_PRIVATE_FLAG_SET(INITIAL_PUBLISH);
 
 	/* CalendarInfo */
 	if (cal && (!is_empty(cal->legacy_dn) || !is_empty(cal->email)) && cal->fb_start && !is_empty(cal->free_busy))
@@ -425,7 +426,6 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 					struct sipe_buddy *sbuddy,
 					const char *status_id)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	time_t cal_avail_since;
 	int cal_status = sipe_cal_get_status(sbuddy, time(NULL), &cal_avail_since);
 	int avail;
@@ -480,7 +480,8 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sipe_private);
-	if (sip->initial_state_published && sipe_strcase_equal(sbuddy->name, self_uri)) {
+	if (SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH) &&
+	    sipe_strcase_equal(sbuddy->name, self_uri)) {
 		if (sipe_strequal(status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE))) {
 			/* do not let offline status switch us off */
 			status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_INVISIBLE);

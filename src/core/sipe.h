@@ -74,7 +74,6 @@ struct sipe_account_data {
 	struct sip_csta *csta; /* For RCC - Remote Call Control */
 	gboolean subscribed_buddies; /* whether subscribed to buddies presence */
 	gboolean access_level_set; /* whether basic access level set */
-	gboolean initial_state_published; /* whether we published our initial state */
 	GSList *our_publication_keys;		/* [MS-PRES] */
 	GHashTable *our_publications;		/* [MS-PRES] */
 	GHashTable *user_state_publications;	/* [MS-PRES] */
