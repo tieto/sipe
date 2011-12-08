@@ -61,6 +61,7 @@ struct sipe_core_private {
 	GSList *sessions_to_accept;
 
 	/* Presence */
+	gchar *status;
 	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
 	time_t idle_switch;
 

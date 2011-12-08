@@ -369,7 +369,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sip->password);
 	g_free(sip->authdomain);
 	g_free(sip->authuser);
-	g_free(sip->status);
+	g_free(sipe_private->status);
 	g_free(sip->note);
 	g_free(sipe_private->ocs2005_user_states);
 

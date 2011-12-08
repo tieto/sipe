@@ -72,8 +72,7 @@
 #define SIPE_OCS2005_AVAILABILITY_ONLINE  300
 static guint sipe_ocs2005_activity_from_status(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	const gchar *status = sip->status;
+	const gchar *status = sipe_private->status;
 
 	if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY))) {
 		return(SIPE_OCS2005_ACTIVITY_AWAY);
@@ -98,8 +97,7 @@ static guint sipe_ocs2005_activity_from_status(struct sipe_core_private *sipe_pr
 
 static guint sipe_ocs2005_availability_from_status(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	const gchar *status = sip->status;
+	const gchar *status = sipe_private->status;
 
 	if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_INVISIBLE)) ||
 	    sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE)))
@@ -196,8 +194,7 @@ void sipe_ocs2005_user_info_has_updated(struct sipe_core_private *sipe_private,
 
 static gboolean sipe_is_user_available(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	return(sipe_strequal(sip->status,
+	return(sipe_strequal(sipe_private->status,
 			     sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE)));
 }
 
@@ -346,7 +343,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 		    !do_publish_calendar &&
 		    SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH)) {
 			const gchar *activity_token;
-			int avail_2007 = sipe_ocs2007_availability_from_status(sip->status,
+			int avail_2007 = sipe_ocs2007_availability_from_status(sipe_private->status,
 									       &activity_token);
 
 			states = g_strdup_printf(SIPE_SOAP_SET_PRESENCE_STATES,

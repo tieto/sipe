@@ -1428,8 +1428,7 @@ static gchar *sipe_publish_get_category_device(struct sipe_core_private *sipe_pr
 static gchar *sipe_publish_get_category_state(struct sipe_core_private *sipe_private,
 					      gboolean is_user_state)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	int availability = sipe_ocs2007_availability_from_status(sip->status, NULL);
+	int availability = sipe_ocs2007_availability_from_status(sipe_private->status, NULL);
 	guint instance = is_user_state ? sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_USER) :
 					 sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_MACHINE);
 	/* key is <category><instance><container> */

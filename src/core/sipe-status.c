@@ -83,9 +83,8 @@ const gchar *sipe_core_activity_description(guint type)
 void sipe_status_set_token(struct sipe_core_private *sipe_private,
 			   const gchar *status_id)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	g_free(sip->status);
-	sip->status = g_strdup(status_id);
+	g_free(sipe_private->status);
+	sipe_private->status = g_strdup(status_id);
 }
 
 void sipe_status_set_activity(struct sipe_core_private *sipe_private,
@@ -110,7 +109,7 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 	if (!status_id)
-		status_id = sip->status;
+		status_id = sipe_private->status;
 
 	SIPE_DEBUG_INFO("sipe_status_and_note: switch to '%s' for the account", status_id);
 
