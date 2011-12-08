@@ -58,7 +58,6 @@ be great to implement too.
 #include "sipe-ews.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 /**
  * Autodiscover request for Exchange Web Services
@@ -608,7 +607,6 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 void
 sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
 	gboolean has_url;
 
@@ -616,16 +614,16 @@ sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
 
 	if (sipe_cal_calendar_init(sipe_private, &has_url)) {
 		if (has_url) {
-			sip->cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+			sipe_private->calendar->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		}
 	}
 
-	if (sip->cal->is_ews_disabled) {
+	if (sipe_private->calendar->is_ews_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
 		return;
 	}
 
-	sipe_ews_run_state_machine(sip->cal);
+	sipe_ews_run_state_machine(sipe_private->calendar);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: finished.");
 }

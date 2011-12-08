@@ -287,7 +287,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 			       gboolean do_reset_status)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sipe_calendar* cal = sip->cal;
+	struct sipe_calendar* cal = sipe_private->calendar;
 	gchar *body;
 	gchar *tmp;
 	gchar *tmp2 = NULL;

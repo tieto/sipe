@@ -24,6 +24,7 @@
 struct sip_csta;
 struct sip_service_data;
 struct sip_transport;
+struct sipe_calendar;
 struct sipe_certificate;
 struct sipe_media_call_private;
 struct sipe_groupchat;
@@ -62,6 +63,9 @@ struct sipe_core_private {
 	/* Buddies */
 	GSList *groups;
 	GHashTable *buddies;
+
+	/* Calendar and related stuff */
+	struct sipe_calendar *calendar;
 
 	/* Scheduling system */
 	GSList *timeouts;

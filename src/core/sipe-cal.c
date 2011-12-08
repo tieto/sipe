@@ -213,25 +213,26 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 		       gboolean *has_url)
 {
 	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	if (!sip->cal) {
+	struct sipe_calendar* cal = sipe_private->calendar;
+	if (!cal) {
 		const char *value;
 
-		sip->cal = g_new0(struct sipe_calendar, 1);
-		sip->cal->sipe_private = sipe_private;
+		cal = g_new0(struct sipe_calendar, 1);
+		cal->sipe_private = sipe_private;
 
-		sip->cal->email = g_strdup(sip->email);
+		cal->email = g_strdup(sip->email);
 
 		/* user specified a service URL? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
 		if (has_url) *has_url = !is_empty(value);
 		if (!is_empty(value)) {
-			sip->cal->as_url  = g_strdup(value);
-			sip->cal->oof_url = g_strdup(value);
-			sip->cal->domino_url  = g_strdup(value);
+			cal->as_url  = g_strdup(value);
+			cal->oof_url = g_strdup(value);
+			cal->domino_url  = g_strdup(value);
 		}
 
-		sip->cal->auth = g_new0(HttpConnAuth, 1);
-		sip->cal->auth->use_negotiate = SIPE_CORE_PUBLIC_FLAG_IS(KRB5);
+		cal->auth = g_new0(HttpConnAuth, 1);
+		cal->auth->use_negotiate = SIPE_CORE_PUBLIC_FLAG_IS(KRB5);
 
 		/* user specified email login? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
@@ -240,19 +241,19 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 			/* user specified email login domain? */
 			const char *tmp = strstr(value, "\\");
 			if (tmp) {
-				sip->cal->auth->domain = g_strndup(value, tmp - value);
-				sip->cal->auth->user   = g_strdup(tmp + 1);
+				cal->auth->domain = g_strndup(value, tmp - value);
+				cal->auth->user   = g_strdup(tmp + 1);
 			} else {
-				sip->cal->auth->user   = g_strdup(value);
+				cal->auth->user   = g_strdup(value);
 			}
-			sip->cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
+			cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
 										 SIPE_SETTING_EMAIL_PASSWORD));
 
 		} else {
 			/* re-use SIPE credentials */
-			sip->cal->auth->domain   = g_strdup(sip->authdomain);
-			sip->cal->auth->user     = g_strdup(sip->authuser);
-			sip->cal->auth->password = g_strdup(sip->password);
+			cal->auth->domain   = g_strdup(sip->authdomain);
+			cal->auth->user     = g_strdup(sip->authuser);
+			cal->auth->password = g_strdup(sip->password);
 		}
 		return TRUE;
 	}

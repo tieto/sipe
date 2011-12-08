@@ -320,10 +320,10 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 		g_free(sipe_private->focus_factory_uri);
 	sipe_private->focus_factory_uri = NULL;
 
-	if (sip->cal) {
-		sipe_cal_calendar_free(sip->cal);
+	if (sipe_private->calendar) {
+		sipe_cal_calendar_free(sipe_private->calendar);
 	}
-	sip->cal = NULL;
+	sipe_private->calendar = NULL;
 
 	sipe_groupchat_free(sipe_private);
 }

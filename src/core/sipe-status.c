@@ -157,7 +157,10 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 		/* when other point of presence clears note, but we are keeping
 		 * state if OOF note.
 		 */
-		if (do_not_publish && !note && sip->cal && sip->cal->oof_note) {
+		if (do_not_publish &&
+		    !note &&
+		    sipe_private->calendar &&
+		    sipe_private->calendar->oof_note) {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_core_status_set: enabling publication as OOF note keepers.");
 			do_not_publish = FALSE;
 		}

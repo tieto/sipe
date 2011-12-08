@@ -64,7 +64,6 @@ struct sipe_account_data {
 	GSList *containers; /* MS-PRES containers */
 	struct _PurpleAccount *account;
 	gchar *regcallid;
-	struct sipe_calendar *cal;
 	gchar *email;
 	/** 2005 Custom XML piece.
 	 * Possibly set by other point of presence or just other client at earlier time.
