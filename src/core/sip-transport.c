@@ -1049,7 +1049,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				}
                                 SIPE_CORE_PRIVATE_FLAG_UNSET(OCS2007);
 				SIPE_CORE_PRIVATE_FLAG_UNSET(REMOTE_USER);
-				sip->batched_support = FALSE;
+				SIPE_CORE_PRIVATE_FLAG_UNSET(BATCHED_SUPPORT);
 
                                 while(hdr)
                                 {
@@ -1061,7 +1061,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 							SIPE_DEBUG_INFO("Supported: %s (indicates OCS2007+)", elem->value);
 						}
 						if (sipe_strcase_equal(elem->value, "adhoclist")) {
-							sip->batched_support = TRUE;
+							SIPE_CORE_PRIVATE_FLAG_SET(BATCHED_SUPPORT);
 							SIPE_DEBUG_INFO("Supported: %s", elem->value);
 						}
 					}

@@ -85,7 +85,6 @@ struct sipe_account_data {
 	gchar *note;
 	time_t note_since;
 	time_t idle_switch;
-	gboolean batched_support; /*if there is support for batched subscription*/
 	GSList *containers; /* MS-PRES containers */
 	struct _PurpleAccount *account;
 	gchar *regcallid;

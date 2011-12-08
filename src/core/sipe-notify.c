@@ -1205,7 +1205,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 
 	/* subscribe to buddies */
 	if (!sip->subscribed_buddies) { //do it once, then count Expire field to schedule resubscribe.
-		if (sip->batched_support) {
+		if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
 			sipe_subscribe_presence_batched(sipe_private);
 		} else {
 			g_hash_table_foreach(sipe_private->buddies,
@@ -1520,7 +1520,7 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 				gchar *who = parse_from(sipmsg_find_header(msg, "To"));
 				gchar *action_name = sipe_utils_presence_key(who);
 
-				if (sip->batched_support) {
+				if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
 					sipe_process_presence_timeout(sipe_private, msg, who, timeout);
 				}
 				else {
