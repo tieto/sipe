@@ -33,13 +33,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/*
- * Interface dependencies:
- *
- * <time.h>
- * <glib.h>
- */
-
 /* Forward declarations */
 struct _PurpleAccount;
 struct _PurpleConnection;
@@ -47,9 +40,6 @@ struct sipe_core_private;
 
 struct sipe_account_data {
 	struct _PurpleConnection *gc;
-	gchar *authdomain;
-	gchar *authuser;
-	gchar *password;
 	struct _PurpleAccount *account;
 };
 

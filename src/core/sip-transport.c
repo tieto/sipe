@@ -74,7 +74,6 @@
 #include "sipe-sign.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
-#include "sipe.h"
 
 struct sip_auth {
 	guint type;
@@ -231,9 +230,8 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 
 	} else {
 		/* Create security context */
-		struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-		const gchar *authuser = sip->authuser;
-		gpointer password = sip->password;
+		const gchar *authuser = sipe_private->authuser;
+		gpointer password = sipe_private->password;
 
 		if (is_empty(authuser)) {
 			authuser = sipe_private->username;
@@ -278,7 +276,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 						   &(auth->expires),
 						   auth->type,
 						   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
-						   sip->authdomain ? sip->authdomain : "",
+						   sipe_private->authdomain ? sipe_private->authdomain : "",
 						   authuser,
 						   password,
 						   auth->target,

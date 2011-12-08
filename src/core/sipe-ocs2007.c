@@ -2233,7 +2233,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		}
 	}
 
-	SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: sip->access_level_set=%s",
+	SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: access_level_set=%s",
 			SIPE_CORE_PRIVATE_FLAG_IS(ACCESS_LEVEL_SET) ? "TRUE" : "FALSE");
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(ACCESS_LEVEL_SET) && sipe_xml_child(xml, "containers")) {
 		char *container_xmls = NULL;

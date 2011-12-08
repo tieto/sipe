@@ -269,9 +269,9 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	SIPE_CORE_PRIVATE_FLAG_UNSET(INITIAL_PUBLISH);
 	sipe_private->username   = g_strdup(signin_name);
 	sipe_private->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);
-	sip->authdomain = is_empty(login_domain)  ? NULL                  : g_strdup(login_domain);
-	sip->authuser   = is_empty(login_account) ? NULL                  : g_strdup(login_account);
-	sip->password   = g_strdup(password);
+	sipe_private->authdomain = is_empty(login_domain)  ? NULL                  : g_strdup(login_domain);
+	sipe_private->authuser   = is_empty(login_account) ? NULL                  : g_strdup(login_account);
+	sipe_private->password   = g_strdup(password);
 	sipe_private->public.sip_name   = g_strdup(user_domain[0]);
 	sipe_private->public.sip_domain = g_strdup(user_domain[1]);
 	g_strfreev(user_domain);
@@ -329,7 +329,6 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 #ifdef HAVE_VV
 	if (sipe_private->media_call) {
@@ -364,9 +363,9 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->username);
 	g_free(sipe_private->email);
-	g_free(sip->password);
-	g_free(sip->authdomain);
-	g_free(sip->authuser);
+	g_free(sipe_private->password);
+	g_free(sipe_private->authdomain);
+	g_free(sipe_private->authuser);
 	g_free(sipe_private->status);
 	g_free(sipe_private->note);
 	g_free(sipe_private->ocs2005_user_states);
@@ -404,7 +403,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_media_relay_list_free(sipe_private->media_relays);
 #endif
 
-	g_free(sip);
+	g_free(SIPE_ACCOUNT_DATA_PRIVATE);
 	g_free(sipe_private);
 }
 

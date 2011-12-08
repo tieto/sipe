@@ -50,6 +50,9 @@ struct sipe_core_private {
 
 	/* Account information */
 	gchar *username;
+	gchar *authdomain;
+	gchar *authuser;
+	gchar *password;
 	gchar *email;
 
 	/* SIPE protocol information */

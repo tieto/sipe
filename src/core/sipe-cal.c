@@ -44,7 +44,6 @@
 #include "sipe-schedule.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 /* Calendar backends */
 #ifdef _WIN32
@@ -212,12 +211,11 @@ gboolean
 sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 		       gboolean *has_url)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sipe_calendar* cal = sipe_private->calendar;
-	if (!cal) {
+	if (!sipe_private->calendar) {
+		struct sipe_calendar *cal;
 		const char *value;
 
-		cal = g_new0(struct sipe_calendar, 1);
+		sipe_private->calendar = cal = g_new0(struct sipe_calendar, 1);
 		cal->sipe_private = sipe_private;
 
 		cal->email = g_strdup(sipe_private->email);
@@ -251,9 +249,9 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 
 		} else {
 			/* re-use SIPE credentials */
-			cal->auth->domain   = g_strdup(sip->authdomain);
-			cal->auth->user     = g_strdup(sip->authuser);
-			cal->auth->password = g_strdup(sip->password);
+			cal->auth->domain   = g_strdup(sipe_private->authdomain);
+			cal->auth->user     = g_strdup(sipe_private->authuser);
+			cal->auth->password = g_strdup(sipe_private->password);
 		}
 		return TRUE;
 	}

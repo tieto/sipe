@@ -43,7 +43,6 @@
 #include "sipe-tls.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 #include "uuid.h"
 
 /* forward declaration */
@@ -147,7 +146,6 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				       sipe_svc_callback *callback,
 				       gpointer callback_data)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct svc_request *data = g_new0(struct svc_request, 1);
 	gboolean ret = FALSE;
 
@@ -159,9 +157,9 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 						    soap_action);
 
 	/* re-use SIP credentials */
-	data->auth.domain   = sip->authdomain;
-	data->auth.user     = sip->authuser ? sip->authuser : sipe_private->username;
-	data->auth.password = sip->password;
+	data->auth.domain   = sipe_private->authdomain;
+	data->auth.user     = sipe_private->authuser ? sipe_private->authuser : sipe_private->username;
+	data->auth.password = sipe_private->password;
 
 	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
 				      NULL, /* HttpSession */
@@ -352,14 +350,13 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 				sipe_svc_callback *callback,
 				gpointer callback_data)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	/* login.microsoftonline.com seems only to accept cleartext passwords :/ */
 	gchar *security = g_strdup_printf("<wsse:UsernameToken>"
 					  " <wsse:Username>%s</wsse:Username>"
 					  " <wsse:Password>%s</wsse:Password>"
 					  "</wsse:UsernameToken>",
 					  sipe_private->username,
-					  sip->password);
+					  sipe_private->password);
 
 	gchar *soap_body = g_strdup_printf("<ps:RequestMultipleSecurityTokens>"
 					   " <wst:RequestSecurityToken>"

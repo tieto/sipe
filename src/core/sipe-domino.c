@@ -80,8 +80,6 @@ Similar functionality for iCalendar/CalDAV/Google would be great to implement to
 #include "sipe-cal.h"
 #include "sipe-xml.h"
 #include "sipe-domino.h"
-#include "sipe.h"
-
 
 /**
  * POST request for Login to Domino server
@@ -562,88 +560,86 @@ sipe_domino_compose_url(const char *protocol, const char *mail_server, const cha
 void
 sipe_domino_update_calendar(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	struct sipe_calendar* cal;
+
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
 
-	if (sip) {
-		struct sipe_calendar* cal;
-		sipe_cal_calendar_init(sipe_private, NULL);
+	sipe_cal_calendar_init(sipe_private, NULL);
 
-		/* check if URL is valid if provided */
-		cal = sipe_private->calendar;
-		if (cal && !is_empty(cal->domino_url)) {
-			char *tmp = g_ascii_strdown(cal->domino_url, -1);
-			if (!g_str_has_suffix(tmp, ".nsf")) {
-				/* not valid Domino mail services URL */
-				cal->is_domino_disabled = TRUE;
-				SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: invalid Domino URI supplied, disabling.");
-			}
-			g_free(tmp);
+	/* check if URL is valid if provided */
+	cal = sipe_private->calendar;
+	if (cal && !is_empty(cal->domino_url)) {
+		char *tmp = g_ascii_strdown(cal->domino_url, -1);
+		if (!g_str_has_suffix(tmp, ".nsf")) {
+			/* not valid Domino mail services URL */
+			cal->is_domino_disabled = TRUE;
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: invalid Domino URI supplied, disabling.");
 		}
+		g_free(tmp);
+	}
 
-		/* Autodiscovery.
-		 * Searches location of notes.ini in Registry, reads it, extracts mail server and mail file,
-		 * composes HTTPS URL to Domino web, basing on that
-		 */
-		if (cal && is_empty(cal->domino_url)) {
-			char *path = NULL;
+	/* Autodiscovery.
+	 * Searches location of notes.ini in Registry, reads it, extracts mail server and mail file,
+	 * composes HTTPS URL to Domino web, basing on that
+	 */
+	if (cal && is_empty(cal->domino_url)) {
+		char *path = NULL;
 #ifdef _WIN32
-			/* fine for Notes 8.5 too */
-			path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\8.0", "NotesIniPath");
+		/* fine for Notes 8.5 too */
+		path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\8.0", "NotesIniPath");
+		if (is_empty(path)) {
+			g_free(path);
+			path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\7.0", "NotesIniPath");
 			if (is_empty(path)) {
 				g_free(path);
-				path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\7.0", "NotesIniPath");
+				path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\6.0", "NotesIniPath");
 				if (is_empty(path)) {
 					g_free(path);
-					path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\6.0", "NotesIniPath");
-					if (is_empty(path)) {
-						g_free(path);
-						path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\5.0", "NotesIniPath");
-					}
+					path = wpurple_read_reg_expand_string(HKEY_CURRENT_USER, "Software\\Lotus\\Notes\\5.0", "NotesIniPath");
 				}
 			}
-			SIPE_DEBUG_INFO("sipe_domino_update_calendar: notes.ini path:\n%s", path ? path : "");
+		}
+		SIPE_DEBUG_INFO("sipe_domino_update_calendar: notes.ini path:\n%s", path ? path : "");
 #else
-			/* How to know location of notes.ini on *NIX ? */
+		/* How to know location of notes.ini on *NIX ? */
 #endif
 
-			/* get server url */
-			if (path) {
-				char *mail_server = NULL;
-				char *mail_file = NULL;
+		/* get server url */
+		if (path) {
+			char *mail_server = NULL;
+			char *mail_file = NULL;
 
-				sipe_domino_read_notes_ini(path, &mail_server, &mail_file);
-				g_free(path);
-				SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_server=%s", mail_server ? mail_server : "");
-				SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_file=%s", mail_file ? mail_file : "");
+			sipe_domino_read_notes_ini(path, &mail_server, &mail_file);
+			g_free(path);
+			SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_server=%s", mail_server ? mail_server : "");
+			SIPE_DEBUG_INFO("sipe_domino_update_calendar: mail_file=%s", mail_file ? mail_file : "");
 
-				g_free(cal->domino_url);
-				cal->domino_url = sipe_domino_compose_url("https", mail_server, mail_file);
-				g_free(mail_server);
-				g_free(mail_file);
-				SIPE_DEBUG_INFO("sipe_domino_update_calendar: cal->domino_url=%s", cal->domino_url ? cal->domino_url : "");
-			} else {
-				/* No domino_url, no path discovered, disabling */
-				cal->is_domino_disabled = TRUE;
-				SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: Domino URI hasn't been discovered, neither provided, disabling.");
-			}
+			g_free(cal->domino_url);
+			cal->domino_url = sipe_domino_compose_url("https", mail_server, mail_file);
+			g_free(mail_server);
+			g_free(mail_file);
+			SIPE_DEBUG_INFO("sipe_domino_update_calendar: cal->domino_url=%s", cal->domino_url ? cal->domino_url : "");
+		} else {
+			/* No domino_url, no path discovered, disabling */
+			cal->is_domino_disabled = TRUE;
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: Domino URI hasn't been discovered, neither provided, disabling.");
+		}
+	}
+
+	if (cal) {
+
+		/* create session */
+		if (cal->http_session) {
+			http_conn_session_free(cal->http_session);
+		}
+		cal->http_session = http_conn_session_create();
+
+		if (cal->is_domino_disabled) {
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: disabled, exiting.");
+			return;
 		}
 
-		if (cal) {
-
-			/* create session */
-			if (cal->http_session) {
-				http_conn_session_free(cal->http_session);
-			}
-			cal->http_session = http_conn_session_create();
-
-			if (cal->is_domino_disabled) {
-				SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: disabled, exiting.");
-				return;
-			}
-
-			sipe_domino_do_login_request(cal);
-		}
+		sipe_domino_do_login_request(cal);
 	}
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: finished.");
