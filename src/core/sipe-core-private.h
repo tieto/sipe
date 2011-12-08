@@ -54,6 +54,7 @@ struct sipe_core_private {
 
 	/* SIPE protocol information */
 	gchar *contact;
+	gchar *register_callid;
 	gchar *epid;
 	gchar *focus_factory_uri;
 	GSList *sessions;

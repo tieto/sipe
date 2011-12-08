@@ -644,7 +644,6 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 						  TransCallback timeout_callback)
 {
 	struct sip_transport *transport = sipe_private->transport;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	char *buf;
 	struct sipmsg *msg;
 	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
@@ -675,11 +674,11 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 	}
 
 	if (sipe_strequal(method, "REGISTER")) {
-		if (sip->regcallid) {
+		if (sipe_private->register_callid) {
 			g_free(callid);
-			callid = g_strdup(sip->regcallid);
+			callid = g_strdup(sipe_private->register_callid);
 		} else {
-			sip->regcallid = g_strdup(callid);
+			sipe_private->register_callid = g_strdup(callid);
 		}
 		cseq = ++transport->cseq;
 	}

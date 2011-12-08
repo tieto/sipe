@@ -312,9 +312,9 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 	if (sipe_private->contact)
 		g_free(sipe_private->contact);
 	sipe_private->contact = NULL;
-	if (sip->regcallid)
-		g_free(sip->regcallid);
-	sip->regcallid = NULL;
+	if (sipe_private->register_callid)
+		g_free(sipe_private->register_callid);
+	sipe_private->register_callid = NULL;
 
 	if (sipe_private->focus_factory_uri)
 		g_free(sipe_private->focus_factory_uri);

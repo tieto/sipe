@@ -63,7 +63,6 @@ struct sipe_account_data {
 	time_t idle_switch;
 	GSList *containers; /* MS-PRES containers */
 	struct _PurpleAccount *account;
-	gchar *regcallid;
 };
 
 /**
