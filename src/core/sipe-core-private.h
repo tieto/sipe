@@ -107,6 +107,8 @@ struct sipe_core_private {
 #define SIPE_CORE_PRIVATE_FLAG_MPOP            0x20000000
 /* if there is support for batched subscription*/
 #define SIPE_CORE_PRIVATE_FLAG_BATCHED_SUPPORT 0x10000000
+/* if note is out-of-office note */
+#define SIPE_CORE_PRIVATE_FLAG_OOF_NOTE        0x08000000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)

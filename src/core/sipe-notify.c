@@ -442,7 +442,10 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 		if (sipe_strcase_equal(sbuddy->name, self_uri)) {
 			if (!sipe_strequal(sbuddy->note, sip->note)) /* not same */
 			{
-				sip->is_oof_note = sbuddy->is_oof_note;
+				if (sbuddy->is_oof_note)
+					SIPE_CORE_PRIVATE_FLAG_SET(OOF_NOTE);
+				else
+					SIPE_CORE_PRIVATE_FLAG_UNSET(OOF_NOTE);
 
 				g_free(sip->note);
 				sip->note = g_strdup(sbuddy->note);

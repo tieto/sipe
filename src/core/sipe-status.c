@@ -181,7 +181,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 
 		/* this will preserve OOF flag as well */
 		if (!sipe_strequal(tmp, sip->note)) {
-			sip->is_oof_note = FALSE;
+			SIPE_CORE_PRIVATE_FLAG_UNSET(OOF_NOTE);
 			g_free(sip->note);
 			sip->note = g_strdup(note);
 			sip->note_since = time(NULL);

@@ -321,14 +321,15 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
 		cal->published = TRUE;
 	} else if (sip->note) {
-		if (sip->is_oof_note && !oof_note) { /* stale OOF note, as it's not present in cal already */
+		if (SIPE_CORE_PRIVATE_FLAG_IS(OOF_NOTE) &&
+		    !oof_note) { /* stale OOF note, as it's not present in cal already */
 			g_free(sip->note);
 			sip->note = NULL;
-			sip->is_oof_note = FALSE;
+			SIPE_CORE_PRIVATE_FLAG_UNSET(OOF_NOTE);
 			sip->note_since = 0;
 		} else {
 			note_pub = sip->note;
-			res_oof = sip->is_oof_note ? SIPE_SOAP_SET_PRESENCE_OOF_XML : "";
+			res_oof = SIPE_CORE_PRIVATE_FLAG_IS(OOF_NOTE) ? SIPE_SOAP_SET_PRESENCE_OOF_XML : "";
 		}
 	}
 

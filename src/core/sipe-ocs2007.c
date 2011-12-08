@@ -1742,7 +1742,7 @@ void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private)
 				sipe_publish_get_category_state_machine(sipe_private);
 	gchar *pub_note = sipe_publish_get_category_note(sipe_private,
 							 sip->note,
-							 sip->is_oof_note ? "OOF" : "personal",
+							 SIPE_CORE_PRIVATE_FLAG_IS(OOF_NOTE) ? "OOF" : "personal",
 							 0,
 							 0);
 	gchar *publications;
@@ -2124,7 +2124,10 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 						g_free(sip->note);
 						sip->note = g_strdup(publication->note);
 						sip->note_since = publish_time;
-						sip->is_oof_note = sipe_strequal(sipe_xml_attribute(xn_body, "type"), "OOF");
+						if (sipe_strequal(sipe_xml_attribute(xn_body, "type"), "OOF"))
+							SIPE_CORE_PRIVATE_FLAG_SET(OOF_NOTE);
+						else
+							SIPE_CORE_PRIVATE_FLAG_UNSET(OOF_NOTE);
 
 						do_update_status = TRUE;
 					}
