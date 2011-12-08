@@ -2240,8 +2240,9 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		}
 	}
 
-	SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: sip->access_level_set=%s", sip->access_level_set ? "TRUE" : "FALSE");
-	if (!sip->access_level_set && sipe_xml_child(xml, "containers")) {
+	SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: sip->access_level_set=%s",
+			SIPE_CORE_PRIVATE_FLAG_IS(ACCESS_LEVEL_SET) ? "TRUE" : "FALSE");
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(ACCESS_LEVEL_SET) && sipe_xml_child(xml, "containers")) {
 		char *container_xmls = NULL;
 		int sameEnterpriseAL = sipe_ocs2007_find_access_level(sipe_private, "sameEnterprise", NULL, NULL);
 		int federatedAL      = sipe_ocs2007_find_access_level(sipe_private, "federated", NULL, NULL);
@@ -2259,7 +2260,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 			guint version = container ? container->version : 0;
 			sipe_send_container_members_prepare(100, version, "add", "federated", NULL, &container_xmls);
 		}
-		sip->access_level_set = TRUE;
+		SIPE_CORE_PRIVATE_FLAG_SET(ACCESS_LEVEL_SET);
 
 		if (container_xmls) {
 			sipe_send_set_container_members(sipe_private, container_xmls);
