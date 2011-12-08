@@ -64,6 +64,9 @@ struct sipe_core_private {
 	guint deltanum_contacts;
 	guint deltanum_acl;      /* setACE (OCS2005 only) */
 
+	/* [MS-PRES] */
+	GSList *containers;
+
 	/* Buddies */
 	GSList *groups;
 	GHashTable *buddies;

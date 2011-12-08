@@ -303,16 +303,14 @@ struct sipe_container *sipe_ocs2007_create_container(guint index,
 
 void sipe_ocs2007_free(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
-	if (sip->containers) {
-		GSList *entry = sip->containers;
+	if (sipe_private->containers) {
+		GSList *entry = sipe_private->containers;
 		while (entry) {
 			sipe_ocs2007_free_container((struct sipe_container *)entry->data);
 			entry = entry->next;
 		}
 	}
-	g_slist_free(sip->containers);
+	g_slist_free(sipe_private->containers);
 }
 
 /**
@@ -349,17 +347,9 @@ sipe_find_container_member(struct sipe_container *container,
 static struct sipe_container *sipe_find_container(struct sipe_core_private *sipe_private,
 						  guint id)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	struct sipe_container *container;
-	GSList *entry;
-
-	if (sip == NULL) {
-		return NULL;
-	}
-
-	entry = sip->containers;
+	GSList *entry = sipe_private->containers;
 	while (entry) {
-		container = entry->data;
+		struct sipe_container *container = entry->data;
 		if (id == container->id) {
 			return container;
 		}
@@ -524,16 +514,13 @@ int sipe_ocs2007_find_access_level(struct sipe_core_private *sipe_private,
 
 GSList *sipe_ocs2007_get_access_domains(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_container *container;
 	struct sipe_container_member *member;
 	GSList *entry;
 	GSList *entry2;
 	GSList *res = NULL;
 
-	if (!sip) return NULL;
-
-	entry = sip->containers;
+	entry = sipe_private->containers;
 	while (entry) {
 		container = entry->data;
 
@@ -2239,14 +2226,14 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		struct sipe_container *container = sipe_find_container(sipe_private, id);
 
 		if (container) {
-			sip->containers = g_slist_remove(sip->containers, container);
+			sipe_private->containers = g_slist_remove(sipe_private->containers, container);
 			SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: removed existing container id=%d v%d", container->id, container->version);
 			sipe_ocs2007_free_container(container);
 		}
 		container = g_new0(struct sipe_container, 1);
 		container->id = id;
 		container->version = sipe_xml_int_attribute(node, "version", 0);
-		sip->containers = g_slist_append(sip->containers, container);
+		sipe_private->containers = g_slist_append(sipe_private->containers, container);
 		SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: added container id=%d v%d", container->id, container->version);
 
 		for (node2 = sipe_xml_child(node, "member"); node2; node2 = sipe_xml_twin(node2)) {
