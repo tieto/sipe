@@ -287,8 +287,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
 	g_free(sipe_private->epid);
 	sipe_private->epid = NULL;
 
@@ -296,14 +294,14 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 
 	sipe_schedule_cancel_all(sipe_private);
 
-	if (sip->allow_events) {
-		GSList *entry = sip->allow_events;
+	if (sipe_private->allowed_events) {
+		GSList *entry = sipe_private->allowed_events;
 		while (entry) {
 			g_free(entry->data);
 			entry = entry->next;
 		}
 	}
-	g_slist_free(sip->allow_events);
+	g_slist_free(sipe_private->allowed_events);
 
 	sipe_ocs2007_free(sipe_private);
 

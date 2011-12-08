@@ -59,6 +59,10 @@ struct sipe_core_private {
 	gchar *focus_factory_uri;
 	GSList *sessions;
 	GSList *sessions_to_accept;
+	/* from REGISTER response: server events
+	 *  we're allowed to subscribe to
+	 */
+	GSList *allowed_events;
 
 	/* Presence */
 	gchar *status;

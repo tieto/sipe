@@ -58,7 +58,6 @@
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 /* OCS2005 */
 static void sipe_process_provisioning(struct sipe_core_private *sipe_private,
@@ -1427,7 +1426,6 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
 			     gboolean request, gboolean benotify)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *content_type = sipmsg_find_header(msg, "Content-Type");
 	const gchar *event = sipmsg_find_header(msg, "Event");
 	const gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
@@ -1505,7 +1503,7 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 			timeout = (timeout - 120) > 120 ? (timeout - 120) : timeout;
 
 			if (sipe_strcase_equal(event, "presence.wpending") &&
-			    g_slist_find_custom(sip->allow_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
+			    g_slist_find_custom(sipe_private->allowed_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp))
 			{
 				gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
 				sipe_schedule_seconds(sipe_private,
@@ -1517,7 +1515,7 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 				g_free(action_name);
 			}
 			else if (sipe_strcase_equal(event, "presence") &&
-				 g_slist_find_custom(sip->allow_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
+				 g_slist_find_custom(sipe_private->allowed_events, "presence", (GCompareFunc)g_ascii_strcasecmp))
 			{
 				gchar *who = parse_from(sipmsg_find_header(msg, "To"));
 				gchar *action_name = sipe_utils_presence_key(who);

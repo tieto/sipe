@@ -957,7 +957,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					  SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	struct sip_transport *transport = sipe_private->transport;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	const gchar *expires_header;
 	int expires, i;
         GSList *hdr = msg->headers;
@@ -1068,7 +1067,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						gchar **caps = g_strsplit(elem->value,",",0);
 						i = 0;
 						while (caps[i]) {
-							sip->allow_events =  g_slist_append(sip->allow_events, g_strdup(caps[i]));
+							sipe_private->allowed_events =  g_slist_append(sipe_private->allowed_events, g_strdup(caps[i]));
 							SIPE_DEBUG_INFO("Allow-Events: %s", caps[i]);
 							i++;
 						}
@@ -1090,7 +1089,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				/* subscriptions */
 				if (!transport->subscribed) { //do it just once, not every re-register
 
-					if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-contacts",
+					if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-contacts",
 								(GCompareFunc)g_ascii_strcasecmp)) {
 						sipe_subscribe_roaming_contacts(sipe_private);
 					}
@@ -1103,11 +1102,11 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					 */
 					if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
 					{
-						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-self",
+						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-self",
 									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_roaming_self(sipe_private);
 						}
-						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-provisioning-v2",
+						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-provisioning-v2",
 									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_roaming_provisioning_v2(sipe_private);
 						}
@@ -1117,15 +1116,15 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					{
 						//sipe_options_request(sip, sipe_private->public.sip_domain);
 
-						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-roaming-ACL",
+						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-ACL",
 									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_roaming_acl(sipe_private);
 						}
-						if (g_slist_find_custom(sip->allow_events, "vnd-microsoft-provisioning",
+						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-provisioning",
 									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_roaming_provisioning(sipe_private);
 						}
-						if (g_slist_find_custom(sip->allow_events, "presence.wpending",
+						if (g_slist_find_custom(sipe_private->allowed_events, "presence.wpending",
 									(GCompareFunc)g_ascii_strcasecmp)) {
 							sipe_subscribe_presence_wpending(sipe_private,
 											 NULL);
