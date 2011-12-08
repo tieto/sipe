@@ -54,8 +54,6 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
-#include "sipe.h"
-
 /** MS-PRES publication */
 struct sipe_publication {
 	gchar *category;
@@ -1734,12 +1732,11 @@ void sipe_ocs2007_presence_publish(struct sipe_core_private *sipe_private,
 
 void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *pub_state = sipe_status_changed_by_user(sipe_private) ?
 				sipe_publish_get_category_state_user(sipe_private) :
 				sipe_publish_get_category_state_machine(sipe_private);
 	gchar *pub_note = sipe_publish_get_category_note(sipe_private,
-							 sip->note,
+							 sipe_private->note,
 							 SIPE_CORE_PRIVATE_FLAG_IS(OOF_NOTE) ? "OOF" : "personal",
 							 0,
 							 0);
@@ -1941,7 +1938,6 @@ static void sipe_refresh_blocked_status(struct sipe_core_private *sipe_private)
 void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 				       struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *contact;
 	gchar *to;
 	sipe_xml *xml;
@@ -2004,8 +2000,8 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 
 		/* Ex. clear note: <category name="note"/> */
 		if (container == (guint)-1) {
-			g_free(sip->note);
-			sip->note = NULL;
+			g_free(sipe_private->note);
+			sipe_private->note = NULL;
 			do_update_status = TRUE;
 			continue;
 		}
@@ -2013,8 +2009,8 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		/* Ex. clear note: <category name="note" container="200"/> */
 		if (instance == (guint)-1) {
 			if (container == 200) {
-				g_free(sip->note);
-				sip->note = NULL;
+				g_free(sipe_private->note);
+				sipe_private->note = NULL;
 				do_update_status = TRUE;
 			}
 			SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: removing publications for: %s/%u", name, container);
@@ -2102,9 +2098,9 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 				if (!has_note_cleaned) {
 					has_note_cleaned = TRUE;
 
-					g_free(sip->note);
-					sip->note = NULL;
-					sip->note_since = publish_time;
+					g_free(sipe_private->note);
+					sipe_private->note = NULL;
+					sipe_private->note_since = publish_time;
 
 					do_update_status = TRUE;
 				}
@@ -2116,10 +2112,10 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 
 					publication->note = g_markup_escape_text((tmp = sipe_xml_data(xn_body)), -1);
 					g_free(tmp);
-					if (publish_time >= sip->note_since) {
-						g_free(sip->note);
-						sip->note = g_strdup(publication->note);
-						sip->note_since = publish_time;
+					if (publish_time >= sipe_private->note_since) {
+						g_free(sipe_private->note);
+						sipe_private->note = g_strdup(publication->note);
+						sipe_private->note_since = publish_time;
 						if (sipe_strequal(sipe_xml_attribute(xn_body, "type"), "OOF"))
 							SIPE_CORE_PRIVATE_FLAG_SET(OOF_NOTE);
 						else

@@ -44,7 +44,6 @@
 #include "sipe-status.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 /**
  * 2005-style Activity and Availability.
@@ -282,7 +281,6 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 			       gboolean do_publish_calendar,
 			       gboolean do_reset_status)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_calendar* cal = sipe_private->calendar;
 	gchar *body;
 	gchar *tmp;
@@ -298,14 +296,14 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 	gchar *since_time_str = sipe_utils_time_to_str(now);
 	const gchar *oof_note = cal ? sipe_ews_get_oof_note(cal) : NULL;
 	const char *user_input;
-	gboolean pub_oof = cal && oof_note && (!sip->note || cal->updated > sip->note_since);
+	gboolean pub_oof = cal && oof_note && (!sipe_private->note || cal->updated > sipe_private->note_since);
 
-	if (oof_note && sip->note) {
-		SIPE_DEBUG_INFO("cal->oof_start  : %s", asctime(localtime(&(cal->oof_start))));
-		SIPE_DEBUG_INFO("sip->note_since : %s", asctime(localtime(&(sip->note_since))));
+	if (oof_note && sipe_private->note) {
+		SIPE_DEBUG_INFO("cal->oof_start           : %s", asctime(localtime(&(cal->oof_start))));
+		SIPE_DEBUG_INFO("sipe_private->note_since : %s", asctime(localtime(&(sipe_private->note_since))));
 	}
 
-	SIPE_DEBUG_INFO("sip->note  : %s", sip->note ? sip->note : "");
+	SIPE_DEBUG_INFO("sipe_private->note  : %s", sipe_private->note ? sipe_private->note : "");
 
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH) ||
 	    do_reset_status)
@@ -316,15 +314,15 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 		note_pub = oof_note;
 		res_oof = SIPE_SOAP_SET_PRESENCE_OOF_XML;
 		cal->published = TRUE;
-	} else if (sip->note) {
+	} else if (sipe_private->note) {
 		if (SIPE_CORE_PRIVATE_FLAG_IS(OOF_NOTE) &&
 		    !oof_note) { /* stale OOF note, as it's not present in cal already */
-			g_free(sip->note);
-			sip->note = NULL;
+			g_free(sipe_private->note);
+			sipe_private->note = NULL;
 			SIPE_CORE_PRIVATE_FLAG_UNSET(OOF_NOTE);
-			sip->note_since = 0;
+			sipe_private->note_since = 0;
 		} else {
-			note_pub = sip->note;
+			note_pub = sipe_private->note;
 			res_oof = SIPE_CORE_PRIVATE_FLAG_IS(OOF_NOTE) ? SIPE_SOAP_SET_PRESENCE_OOF_XML : "";
 		}
 	}

@@ -62,8 +62,10 @@ struct sipe_core_private {
 
 	/* Presence */
 	gchar *status;
-	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
+	gchar *note;
+	time_t note_since;
 	time_t idle_switch;
+	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
 
 	/* [MS-SIP] deltaNum counters */
 	guint deltanum_contacts;

@@ -52,8 +52,6 @@ struct sipe_account_data {
 	gchar *password;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
-	gchar *note;
-	time_t note_since;
 	struct _PurpleAccount *account;
 };
 

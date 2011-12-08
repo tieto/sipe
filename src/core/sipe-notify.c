@@ -206,7 +206,6 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 					  const gchar *data,
 					  unsigned len)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	char *activity = NULL;
 	const char *epid;
 	const char *status_id = NULL;
@@ -440,17 +439,17 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 		sbuddy->last_non_cal_activity = g_strdup(sbuddy->activity);
 
 		if (sipe_strcase_equal(sbuddy->name, self_uri)) {
-			if (!sipe_strequal(sbuddy->note, sip->note)) /* not same */
+			if (!sipe_strequal(sbuddy->note, sipe_private->note)) /* not same */
 			{
 				if (sbuddy->is_oof_note)
 					SIPE_CORE_PRIVATE_FLAG_SET(OOF_NOTE);
 				else
 					SIPE_CORE_PRIVATE_FLAG_UNSET(OOF_NOTE);
 
-				g_free(sip->note);
-				sip->note = g_strdup(sbuddy->note);
+				g_free(sipe_private->note);
+				sipe_private->note = g_strdup(sbuddy->note);
 
-				sip->note_since = time(NULL);
+				sipe_private->note_since = time(NULL);
 			}
 
 			sipe_status_set_token(sipe_private,

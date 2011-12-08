@@ -41,7 +41,6 @@
 #include "sipe-schedule.h"
 #include "sipe-status.h"
 #include "sipe-utils.h"
-#include "sipe.h"
 
 #define SIPE_IDLE_SET_DELAY 1 /* seconds */
 
@@ -106,8 +105,6 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 void sipe_status_and_note(struct sipe_core_private *sipe_private,
 			  const gchar *status_id)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
 	if (!status_id)
 		status_id = sipe_private->status;
 
@@ -115,7 +112,7 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 
 	if (sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
 					 status_id,
-					 sip->note)) {
+					 sipe_private->note)) {
 		/* status has changed */
 		guint activity = sipe_backend_token_to_activity(status_id);
 
@@ -144,62 +141,58 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  const gchar *note)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
+	gchar *action_name;
+	gchar *tmp;
+	time_t now = time(NULL);
+	guint activity = sipe_backend_token_to_activity(status_id);
+	gboolean do_not_publish = ((now - sipe_private->do_not_publish[activity]) <= 2);
 
-	if (sip) {
-		gchar *action_name;
-		gchar *tmp;
-		time_t now = time(NULL);
-		guint activity = sipe_backend_token_to_activity(status_id);
-		gboolean do_not_publish = ((now - sipe_private->do_not_publish[activity]) <= 2);
-
-		/* when other point of presence clears note, but we are keeping
-		 * state if OOF note.
-		 */
-		if (do_not_publish &&
-		    !note &&
-		    sipe_private->calendar &&
-		    sipe_private->calendar->oof_note) {
-			SIPE_DEBUG_INFO_NOFORMAT("sipe_core_status_set: enabling publication as OOF note keepers.");
-			do_not_publish = FALSE;
-		}
-
-		SIPE_DEBUG_INFO("sipe_core_status_set: was: sipe_private->do_not_publish[%s]=%d [?] now(time)=%d",
-				status_id, (int)sipe_private->do_not_publish[activity], (int)now);
-
-		sipe_private->do_not_publish[activity] = 0;
-		SIPE_DEBUG_INFO("sipe_core_status_set: set: sipe_private->do_not_publish[%s]=%d [0]",
-				status_id, (int)sipe_private->do_not_publish[activity]);
-
-		if (do_not_publish) {
-			SIPE_DEBUG_INFO_NOFORMAT("sipe_core_status_set: publication was switched off, exiting.");
-			return;
-		}
-
-		sipe_status_set_token(sipe_private, status_id);
-
-		/* hack to escape apostrof before comparison */
-		tmp = note ? sipe_utils_str_replace(note, "'", "&apos;") : NULL;
-
-		/* this will preserve OOF flag as well */
-		if (!sipe_strequal(tmp, sip->note)) {
-			SIPE_CORE_PRIVATE_FLAG_UNSET(OOF_NOTE);
-			g_free(sip->note);
-			sip->note = g_strdup(note);
-			sip->note_since = time(NULL);
-		}
-		g_free(tmp);
-
-		/* schedule 2 sec to capture idle flag */
-		action_name = g_strdup("<+set-status>");
-		sipe_schedule_seconds(sipe_private,
-				      action_name,
-				      NULL,
-				      SIPE_IDLE_SET_DELAY,
-				      sipe_status_update,
-				      NULL);
-		g_free(action_name);
+	/* when other point of presence clears note, but we are keeping
+	 * state if OOF note.
+	 */
+	if (do_not_publish &&
+	    !note &&
+	    sipe_private->calendar &&
+	    sipe_private->calendar->oof_note) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_core_status_set: enabling publication as OOF note keepers.");
+		do_not_publish = FALSE;
 	}
+
+	SIPE_DEBUG_INFO("sipe_core_status_set: was: sipe_private->do_not_publish[%s]=%d [?] now(time)=%d",
+			status_id, (int)sipe_private->do_not_publish[activity], (int)now);
+
+	sipe_private->do_not_publish[activity] = 0;
+	SIPE_DEBUG_INFO("sipe_core_status_set: set: sipe_private->do_not_publish[%s]=%d [0]",
+			status_id, (int)sipe_private->do_not_publish[activity]);
+
+	if (do_not_publish) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_core_status_set: publication was switched off, exiting.");
+		return;
+	}
+
+	sipe_status_set_token(sipe_private, status_id);
+
+	/* hack to escape apostrof before comparison */
+	tmp = note ? sipe_utils_str_replace(note, "'", "&apos;") : NULL;
+
+	/* this will preserve OOF flag as well */
+	if (!sipe_strequal(tmp, sipe_private->note)) {
+		SIPE_CORE_PRIVATE_FLAG_UNSET(OOF_NOTE);
+		g_free(sipe_private->note);
+		sipe_private->note = g_strdup(note);
+		sipe_private->note_since = time(NULL);
+	}
+	g_free(tmp);
+
+	/* schedule 2 sec to capture idle flag */
+	action_name = g_strdup("<+set-status>");
+	sipe_schedule_seconds(sipe_private,
+			      action_name,
+			      NULL,
+			      SIPE_IDLE_SET_DELAY,
+			      sipe_status_update,
+			      NULL);
+	g_free(action_name);
 }
 
 /**
