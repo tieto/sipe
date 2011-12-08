@@ -52,9 +52,6 @@ struct sipe_account_data {
 	gchar *password;
 	/** Allowed server events to subscribe. From register OK response. */
 	GSList *allow_events;
-	GSList *our_publication_keys;		/* [MS-PRES] */
-	GHashTable *our_publications;		/* [MS-PRES] */
-	GHashTable *user_state_publications;	/* [MS-PRES] */
 	int presence_method_version;
 	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
 	gchar *status;

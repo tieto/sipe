@@ -823,7 +823,6 @@ static gchar *sipe_publish_get_category_state_calendar(struct sipe_core_private 
 						       const char *uri,
 						       int cal_satus)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *start_time_str;
 	int availability = 0;
 	gchar *res;
@@ -836,9 +835,9 @@ static gchar *sipe_publish_get_category_state_calendar(struct sipe_core_private 
 	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
 	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
 	struct sipe_publication *publication_2 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "state"), key_2);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_2);
 	struct sipe_publication *publication_3 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "state"), key_3);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_3);
 
 	g_free(key_2);
 	g_free(key_3);
@@ -943,7 +942,6 @@ static gchar *sipe_publish_get_category_note(struct sipe_core_private *sipe_priv
 					     time_t note_start,
 					     time_t note_end)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	guint instance = sipe_strequal("OOF", note_type) ? sipe_get_pub_instance(sipe_private, SIPE_PUB_NOTE_OOF) : 0;
 	/* key is <category><instance><container> */
 	gchar *key_note_200 = g_strdup_printf("<%s><%u><%u>", "note", instance, 200);
@@ -951,11 +949,11 @@ static gchar *sipe_publish_get_category_note(struct sipe_core_private *sipe_priv
 	gchar *key_note_400 = g_strdup_printf("<%s><%u><%u>", "note", instance, 400);
 
 	struct sipe_publication *publication_note_200 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_200);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "note"), key_note_200);
 	struct sipe_publication *publication_note_300 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_300);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "note"), key_note_300);
 	struct sipe_publication *publication_note_400 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "note"), key_note_400);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "note"), key_note_400);
 
 	char *tmp = note ? sipe_backend_markup_strip_html(note) : NULL;
 	char *n1 = tmp ? g_markup_escape_text(tmp, -1) : NULL;
@@ -1096,7 +1094,6 @@ static gchar *sipe_publish_get_category_note(struct sipe_core_private *sipe_priv
  */
 static gchar *sipe_publish_get_category_cal_working_hours(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_calendar* cal = sipe_private->calendar;
 
 	/* key is <category><instance><container> */
@@ -1108,17 +1105,17 @@ static gchar *sipe_publish_get_category_cal_working_hours(struct sipe_core_priva
 	gchar *key_cal_32000 = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 32000);
 
 	struct sipe_publication *publication_cal_1 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_1);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_1);
 	struct sipe_publication *publication_cal_100 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_100);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_100);
 	struct sipe_publication *publication_cal_200 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_200);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_200);
 	struct sipe_publication *publication_cal_300 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_300);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_300);
 	struct sipe_publication *publication_cal_400 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_400);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_400);
 	struct sipe_publication *publication_cal_32000 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_32000);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_32000);
 
 	const char *n1 = cal ? cal->working_hours_xml_str : NULL;
 	const char *n2 = publication_cal_300 ? publication_cal_300->working_hours_xml_str : NULL;
@@ -1227,7 +1224,6 @@ static gchar *sipe_publish_get_category_cal_working_hours(struct sipe_core_priva
  */
 static gchar *sipe_publish_get_category_cal_free_busy(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	struct sipe_calendar* cal = sipe_private->calendar;
 	guint cal_data_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_CALENDAR_DATA);
 	char *fb_start_str;
@@ -1245,17 +1241,17 @@ static gchar *sipe_publish_get_category_cal_free_busy(struct sipe_core_private *
 	gchar *key_cal_32000 = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 32000);
 
 	struct sipe_publication *publication_cal_1 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_1);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_1);
 	struct sipe_publication *publication_cal_100 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_100);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_100);
 	struct sipe_publication *publication_cal_200 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_200);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_200);
 	struct sipe_publication *publication_cal_300 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_300);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_300);
 	struct sipe_publication *publication_cal_400 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_400);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_400);
 	struct sipe_publication *publication_cal_32000 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "calendarData"), key_cal_32000);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_32000);
 
 	g_free(key_cal_1);
 	g_free(key_cal_100);
@@ -1350,7 +1346,6 @@ static gchar *sipe_publish_get_category_cal_free_busy(struct sipe_core_private *
  */
 static gchar *sipe_publish_get_category_device(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *uri;
 	gchar *doc;
 	gchar *uuid = get_uuid(sipe_private);
@@ -1358,7 +1353,7 @@ static gchar *sipe_publish_get_category_device(struct sipe_core_private *sipe_pr
 	/* key is <category><instance><container> */
 	gchar *key = g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2);
 	struct sipe_publication *publication =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "device"), key);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "device"), key);
 
 	g_free(key);
 
@@ -1441,9 +1436,9 @@ static gchar *sipe_publish_get_category_state(struct sipe_core_private *sipe_pri
 	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
 	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
 	struct sipe_publication *publication_2 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "state"), key_2);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_2);
 	struct sipe_publication *publication_3 =
-		g_hash_table_lookup(g_hash_table_lookup(sip->our_publications, "state"), key_3);
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_3);
 
 	g_free(key_2);
 	g_free(key_3);
@@ -1561,12 +1556,11 @@ static gboolean process_send_presence_category_publish_response(struct sipe_core
 			}
 
 			if (curVersion) { /* fault exist on this index */
-				struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 				const gchar *container = sipe_xml_attribute(node, "container");
 				const gchar *instance = sipe_xml_attribute(node, "instance");
 				/* key is <category><instance><container> */
 				gchar *key = g_strdup_printf("<%s><%s><%s>", categoryName, instance, container);
-				GHashTable *category = g_hash_table_lookup(sip->our_publications, categoryName);
+				GHashTable *category = g_hash_table_lookup(sipe_private->our_publications, categoryName);
 
 				if (category) {
 					struct sipe_publication *publication =
@@ -1590,7 +1584,7 @@ static gboolean process_send_presence_category_publish_response(struct sipe_core
 					category = g_hash_table_new_full(g_str_hash, g_str_equal,
 									 g_free, (GDestroyNotify)free_publication);
 					g_hash_table_insert(category, g_strdup(key), publication);
-					g_hash_table_insert(sip->our_publications, g_strdup(categoryName), category);
+					g_hash_table_insert(sipe_private->our_publications, g_strdup(categoryName), category);
 					SIPE_DEBUG_INFO("added lost category '%s' key '%s'", categoryName, key);
 				}
 				g_free(key);
@@ -1785,17 +1779,16 @@ static void sipe_publish_get_cat_state_user_to_clear(SIPE_UNUSED_PARAMETER const
 
 void sipe_ocs2007_reset_status(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	GString* str;
 	gchar *publications;
 
-	if (!sip->user_state_publications || g_hash_table_size(sip->user_state_publications) == 0) {
+	if (!sipe_private->user_state_publications || g_hash_table_size(sipe_private->user_state_publications) == 0) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_reset_status: no userState publications, exiting.");
 		return;
 	}
 
 	str = g_string_new(NULL);
-	g_hash_table_foreach(sip->user_state_publications, (GHFunc)sipe_publish_get_cat_state_user_to_clear, str);
+	g_hash_table_foreach(sipe_private->user_state_publications, (GHFunc)sipe_publish_get_cat_state_user_to_clear, str);
 	publications = g_string_free(str, FALSE);
 
 	send_presence_publish(sipe_private, publications);
@@ -1806,11 +1799,10 @@ void sipe_ocs2007_reset_status(struct sipe_core_private *sipe_private)
 static gboolean sipe_is_our_publication(struct sipe_core_private *sipe_private,
 					const gchar *key)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	GSList *entry;
 
 	/* filling keys for our publications if not yet cached */
-	if (!sip->our_publication_keys) {
+	if (!sipe_private->our_publication_keys) {
 		guint device_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_DEVICE);
 		guint machine_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_MACHINE);
 		guint user_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_USER);
@@ -1831,84 +1823,84 @@ static gboolean sipe_is_our_publication(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_INFO("\tCalendar WorkingHours: %u", 0);
 
 		/* device */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2));
 
 		/* state:machineState */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", machine_instance, 2));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", machine_instance, 3));
 
 		/* state:userState */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 2));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", user_instance, 3));
 
 		/* state:calendarState */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", calendar_instance, 2));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", calendar_instance, 3));
 
 		/* state:calendarState OOF */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", cal_oof_instance, 2));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", cal_oof_instance, 3));
 
 		/* note */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 200));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 300));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", 0, 400));
 
 		/* note OOF */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", note_oof_instance, 200));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", note_oof_instance, 300));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "note", note_oof_instance, 400));
 
 		/* calendarData:WorkingHours */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 1));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 100));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 200));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 300));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 400));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 32000));
 
 		/* calendarData:FreeBusy */
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 1));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 100));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 200));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 300));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 400));
-		sip->our_publication_keys = g_slist_append(sip->our_publication_keys,
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 32000));
 
-		//SIPE_DEBUG_INFO("sipe_is_our_publication: sip->our_publication_keys length=%d",
-		//	  sip->our_publication_keys ? (int) g_slist_length(sip->our_publication_keys) : -1);
+		//SIPE_DEBUG_INFO("sipe_is_our_publication: sipe_private->our_publication_keys length=%d",
+		//	  sipe_private->our_publication_keys ? (int) g_slist_length(sipe_private->our_publication_keys) : -1);
 	}
 
 	//SIPE_DEBUG_INFO("sipe_is_our_publication: key=%s", key);
 
-	entry = sip->our_publication_keys;
+	entry = sipe_private->our_publication_keys;
 	while (entry) {
 		//SIPE_DEBUG_INFO("   sipe_is_our_publication: entry->data=%s", entry->data);
 		if (sipe_strequal(entry->data, key)) {
@@ -1988,9 +1980,9 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 			const gchar *category = entry->data;
 			entry = entry->next;
 			SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: dropping category: %s", category);
-			cat_publications = g_hash_table_lookup(sip->our_publications, category);
+			cat_publications = g_hash_table_lookup(sipe_private->our_publications, category);
 			if (cat_publications) {
-				g_hash_table_remove(sip->our_publications, category);
+				g_hash_table_remove(sipe_private->our_publications, category);
 				SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: dropped category: %s", category);
 			}
 		}
@@ -2009,7 +2001,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		time_t publish_time = (tmp = sipe_xml_attribute(node, "publishTime")) ?
 			sipe_utils_str_to_time(tmp) : 0;
 		gchar *key;
-		GHashTable *cat_publications = g_hash_table_lookup(sip->our_publications, name);
+		GHashTable *cat_publications = g_hash_table_lookup(sipe_private->our_publications, name);
 
 		/* Ex. clear note: <category name="note"/> */
 		if (container == (guint)-1) {
@@ -2028,7 +2020,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 			}
 			SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: removing publications for: %s/%u", name, container);
 			sipe_remove_category_container_publications(
-				sip->our_publications, name, container);
+				sipe_private->our_publications, name, container);
 			continue;
 		}
 
@@ -2047,12 +2039,12 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 				publication->container = container;
 				publication->version   = version;
 
-				if (!sip->user_state_publications) {
-					sip->user_state_publications = g_hash_table_new_full(
-									g_str_hash, g_str_equal,
-									g_free,	(GDestroyNotify)free_publication);
+				if (!sipe_private->user_state_publications) {
+					sipe_private->user_state_publications = g_hash_table_new_full(
+						g_str_hash, g_str_equal,
+						g_free,	(GDestroyNotify)free_publication);
 				}
-				g_hash_table_insert(sip->user_state_publications, g_strdup(key), publication);
+				g_hash_table_insert(sipe_private->user_state_publications, g_strdup(key), publication);
 				SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: added to user_state_publications key=%s version=%d",
 						key, version);
 			}
@@ -2156,7 +2148,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 				cat_publications = g_hash_table_new_full(
 							g_str_hash, g_str_equal,
 							g_free,	(GDestroyNotify)free_publication);
-				g_hash_table_insert(sip->our_publications, g_strdup(name), cat_publications);
+				g_hash_table_insert(sipe_private->our_publications, g_strdup(name), cat_publications);
 				SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: added GHashTable cat=%s", name);
 			}
 			g_hash_table_insert(cat_publications, g_strdup(key), publication);
@@ -2206,8 +2198,8 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 			}
 		}
 	}
-	SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: sip->our_publications size=%d",
-			sip->our_publications ? (int) g_hash_table_size(sip->our_publications) : -1);
+	SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: sipe_private->our_publications size=%d",
+			sipe_private->our_publications ? (int) g_hash_table_size(sipe_private->our_publications) : -1);
 
 	/* active clients for user account */
 	if (g_hash_table_size(devices) > 1) {

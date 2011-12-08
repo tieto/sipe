@@ -277,8 +277,8 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	g_strfreev(user_domain);
 
 	sipe_private->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
-	sip->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
-						      g_free, (GDestroyNotify)g_hash_table_destroy);
+	sipe_private->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
+							       g_free, (GDestroyNotify)g_hash_table_destroy);
 	sipe_subscriptions_init(sipe_private);
 	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_UNSET);
 
@@ -375,8 +375,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 
 	sipe_buddy_free_all(sipe_private);
 	g_hash_table_destroy(sipe_private->buddies);
-	g_hash_table_destroy(sip->our_publications);
-	g_hash_table_destroy(sip->user_state_publications);
+	g_hash_table_destroy(sipe_private->our_publications);
+	g_hash_table_destroy(sipe_private->user_state_publications);
 	sipe_subscriptions_destroy(sipe_private);
 
 	if (sipe_private->groups) {
@@ -390,14 +390,14 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 	g_slist_free(sipe_private->groups);
 
-	if (sip->our_publication_keys) {
-		GSList *entry = sip->our_publication_keys;
+	if (sipe_private->our_publication_keys) {
+		GSList *entry = sipe_private->our_publication_keys;
 		while (entry) {
 			g_free(entry->data);
 			entry = entry->next;
 		}
 	}
-	g_slist_free(sip->our_publication_keys);
+	g_slist_free(sipe_private->our_publication_keys);
 
 #ifdef HAVE_VV
 	g_free(sipe_private->mras_uri);

@@ -66,6 +66,9 @@ struct sipe_core_private {
 
 	/* [MS-PRES] */
 	GSList *containers;
+	GSList *our_publication_keys;
+	GHashTable *our_publications;
+	GHashTable *user_state_publications;
 
 	/* Buddies */
 	GSList *groups;
