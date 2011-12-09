@@ -628,14 +628,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\core\sipe.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\core\sipe.h"
-				>
-			</File>
-			<File
 				RelativePath=".\src\core\sipmsg.c"
 				>
 			</File>

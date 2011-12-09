@@ -108,6 +108,7 @@ void sipe_purple_group_buddy(struct _PurpleConnection *gc,
 			     const char *who,
 			     const char *old_group_name,
 			     const char *new_group_name);
+GList *sipe_purple_buddy_menu(struct _PurpleBuddy *buddy);
 
 /* libpurple status callbacks */
 void sipe_purple_set_status(struct _PurpleAccount *account,
@@ -117,6 +118,7 @@ void sipe_purple_set_idle(struct _PurpleConnection *gc,
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)
+#define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) buddy->account->gc->proto_data)
 #define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) gc->proto_data)
 
 /*

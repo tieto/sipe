@@ -338,6 +338,14 @@ struct sip_session *
 sipe_core_conf_create(struct sipe_core_public *sipe_public,
 		      const gchar *focus_uri);
 
+/* buddy menu callback: parameter == chat_session */
+void sipe_core_conf_make_leader(struct sipe_core_public *sipe_public,
+				gpointer parameter,
+				const gchar *buddy_name);
+void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
+				gpointer parameter,
+				const gchar *buddy_name);
+
 /* media */
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				   const char *participant,
@@ -419,6 +427,16 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 
 void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 			      const gchar *who);
+
+void sipe_core_buddy_new_chat(struct sipe_core_public *sipe_public,
+			      const gchar *who);
+
+struct sipe_backend_buddy_menu;
+struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_public *sipe_public,
+							    const gchar *buddy,
+							    struct sipe_backend_buddy_menu *menu);
+
+void sipe_core_buddy_menu_free(struct sipe_core_public *sipe_public);
 
 /* status */
 void sipe_core_status_set(struct sipe_core_public *sipe_public,

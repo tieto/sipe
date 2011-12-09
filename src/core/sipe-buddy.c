@@ -38,13 +38,17 @@
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-cal.h"
+#include "sipe-chat.h"
+#include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-group.h"
+#include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
+#include "sipe-session.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -784,6 +788,114 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 				  process_get_info_response,
 				  payload);
 	g_free(row);
+}
+
+/* Buddy menu callbacks*/
+
+void sipe_core_buddy_new_chat(struct sipe_core_public *sipe_public,
+			      const gchar *who)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	/* 2007+ conference */
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+		sipe_conf_add(sipe_private, who);
+
+	/* 2005- multiparty chat */
+	} else {
+		gchar *self = sip_uri_self(sipe_private);
+		struct sip_session *session;
+
+		session = sipe_session_add_chat(sipe_private,
+						NULL,
+						TRUE,
+						self);
+		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+									  session->chat_session,
+									  session->chat_session->title,
+									  self);
+		g_free(self);
+
+		sipe_im_invite(sipe_private, session, who,
+			       NULL, NULL, NULL, FALSE);
+	}
+}
+
+/* Buddy menu */
+
+struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_public *sipe_public,
+							    const gchar *buddy,
+							    struct sipe_backend_buddy_menu *menu)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	gchar *self = sip_uri_self(sipe_private);
+
+ 	SIPE_SESSION_FOREACH {
+		if (!sipe_strcase_equal(self, buddy) && session->chat_session)
+		{
+			struct sipe_chat_session *chat_session = session->chat_session;
+			gboolean is_conf = (chat_session->type == SIPE_CHAT_TYPE_CONFERENCE);
+
+			if (sipe_backend_chat_find(chat_session->backend, buddy))
+			{
+				gboolean conf_op = sipe_backend_chat_is_operator(chat_session->backend, self);
+
+				if (is_conf &&
+				    /* Not conf OP */
+				    !sipe_backend_chat_is_operator(chat_session->backend, buddy) &&
+				    /* We are a conf OP */
+				    conf_op) {
+					gchar *label = g_strdup_printf(_("Make leader of '%s'"),
+								       chat_session->title);
+					menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+									   menu,
+									   label,
+									   SIPE_BUDDY_MENU_MAKE_CHAT_LEADER,
+									   chat_session);
+					g_free(label);
+				}
+
+				if (is_conf &&
+				    /* We are a conf OP */
+				    conf_op) {
+					gchar *label = g_strdup_printf(_("Remove from '%s'"),
+								       chat_session->title);
+					menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+									   menu,
+									   label,
+									   SIPE_BUDDY_MENU_REMOVE_FROM_CHAT,
+									   chat_session);
+					g_free(label);
+				}
+			}
+			else
+			{
+				if (!is_conf ||
+				    (is_conf && !session->locked)) {
+					gchar *label = g_strdup_printf(_("Invite to '%s'"),
+								       chat_session->title);
+					menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+									 menu,
+									 label,
+									 SIPE_BUDDY_MENU_INVITE_TO_CHAT,
+									 chat_session);
+					g_free(label);
+				}
+			}
+		}
+	} SIPE_SESSION_FOREACH_END;
+
+	menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+					   menu,
+					   _("New chat"),
+					   SIPE_BUDDY_MENU_NEW_CHAT,
+					   NULL);
+
+	/*--------------------- START WIP ------------------------------*/
+
+	g_free(self);
+
+	return(menu);
 }
 
 /*

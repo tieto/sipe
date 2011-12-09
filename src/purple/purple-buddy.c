@@ -418,6 +418,102 @@ void sipe_purple_group_buddy(PurpleConnection *gc,
 	sipe_core_buddy_group(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who, old_group_name, new_group_name);
 }
 
+/* Buddy Menu Handling */
+
+static void sipe_purple_buddy_make_chat_leader_cb(PurpleBuddy *buddy,
+						  gpointer parameter)
+{
+	SIPE_DEBUG_INFO("sipe_purple_buddy_make_chat_leader_cb: buddy->name=%s",
+			buddy->name);
+	sipe_core_conf_make_leader(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+				   parameter,
+				   buddy->name);
+}
+
+static void sipe_purple_buddy_remove_from_chat_cb(PurpleBuddy *buddy,
+						  gpointer parameter)
+{
+	SIPE_DEBUG_INFO("sipe_purple_buddy_remove_from_chat_cb: buddy->name=%s",
+			buddy->name);
+	sipe_core_conf_remove_from(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+				   parameter,
+				   buddy->name);
+}
+
+static void sipe_purple_buddy_invite_to_chat_cb(PurpleBuddy *buddy,
+						gpointer parameter)
+{
+	SIPE_DEBUG_INFO("sipe_purple_buddy_invite_to_chat_cb: buddy->name=%s",
+			buddy->name);
+	sipe_core_chat_invite(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+			      parameter,
+			      buddy->name);
+}
+
+static void sipe_purple_buddy_new_chat_cb(PurpleBuddy *buddy,
+					  SIPE_UNUSED_PARAMETER gpointer parameter)
+{
+	SIPE_DEBUG_INFO("sipe_purple_buddy_new_chat_cb: buddy->name=%s",
+			buddy->name);
+	sipe_core_buddy_new_chat(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+				 buddy->name);
+}
+
+typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,
+				    gpointer parameter);
+static const buddy_menu_callback callback_map[SIPE_BUDDY_MENU_TYPES] = {
+	/* SIPE_BUDDY_MENU_MAKE_CHAT_LEADER */ sipe_purple_buddy_make_chat_leader_cb,
+	/* SIPE_BUDDY_MENU_REMOVE_FROM_CHAT */ sipe_purple_buddy_remove_from_chat_cb,
+	/* SIPE_BUDDY_MENU_INVITE_TO_CHAT   */ sipe_purple_buddy_invite_to_chat_cb,
+	/* SIPE_BUDDY_MENU_NEW_CHAT         */ sipe_purple_buddy_new_chat_cb,
+};
+
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+	return(NULL);
+}
+
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+							    struct sipe_backend_buddy_menu *menu,
+							    const gchar *label,
+							    enum sipe_buddy_menu_type type,
+							    gpointer parameter)
+{
+	return((struct sipe_backend_buddy_menu *)
+	       g_list_prepend((GList *) menu,
+			      purple_menu_action_new(label,
+						     PURPLE_CALLBACK(callback_map[type]),
+						     parameter, NULL)));
+}
+
+GList *sipe_purple_buddy_menu(PurpleBuddy *buddy)
+{
+	struct sipe_core_public *sipe_public = PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC;
+
+	/*
+	 * Workaround for missing libpurple API to release resources allocated
+	 * during blist_node_menu() callback. See also:
+	 *
+	 *   <http://developer.pidgin.im/ticket/12597>
+	 *
+	 * We remember all memory blocks in a list and deallocate them when
+	 *
+	 *   - the next time we enter the callback, or
+	 *   - the account is disconnected
+	 *
+	 * That means that after the buddy menu has been closed we have unused
+	 * resources but at least we don't leak them anymore...
+	 */
+	sipe_core_buddy_menu_free(sipe_public);
+
+	/* now create the new menu... */
+	return(g_list_reverse((GList *)
+			      sipe_core_buddy_create_menu(sipe_public,
+							  buddy->name,
+							  NULL)));
+}
+
+
 /*
   Local Variables:
   mode: c

@@ -75,7 +75,6 @@
 		B13FAC0A119D585A001CE037 /* sipe-utils.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABCE119D585A001CE037 /* sipe-utils.c */; };
 		B13FAC0E119D585A001CE037 /* sipe-xml-tests.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD2119D585A001CE037 /* sipe-xml-tests.c */; };
 		B13FAC0F119D585A001CE037 /* sipe-xml.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD3119D585A001CE037 /* sipe-xml.c */; };
-		B13FAC11119D585A001CE037 /* sipe.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD5119D585A001CE037 /* sipe.c */; };
 		B13FAC13119D585A001CE037 /* sipmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD7119D585A001CE037 /* sipmsg.c */; };
 		B13FAC15119D585A001CE037 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD9119D585A001CE037 /* uuid.c */; };
 		B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAC60119D721E001CE037 /* libxml2.dylib */; };
@@ -163,7 +162,6 @@
 		B13FABCE119D585A001CE037 /* sipe-utils.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-utils.c"; sourceTree = "<group>"; };
 		B13FABD2119D585A001CE037 /* sipe-xml-tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-xml-tests.c"; sourceTree = "<group>"; };
 		B13FABD3119D585A001CE037 /* sipe-xml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-xml.c"; sourceTree = "<group>"; };
-		B13FABD5119D585A001CE037 /* sipe.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sipe.c; sourceTree = "<group>"; };
 		B13FABD7119D585A001CE037 /* sipmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sipmsg.c; sourceTree = "<group>"; };
 		B13FABD9119D585A001CE037 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = uuid.c; sourceTree = "<group>"; };
 		B13FAC60119D721E001CE037 /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
@@ -366,7 +364,6 @@
 				B13FABCE119D585A001CE037 /* sipe-utils.c */,
 				B13FABD2119D585A001CE037 /* sipe-xml-tests.c */,
 				B13FABD3119D585A001CE037 /* sipe-xml.c */,
-				B13FABD5119D585A001CE037 /* sipe.c */,
 				B13FABD7119D585A001CE037 /* sipmsg.c */,
 				B13FABD9119D585A001CE037 /* uuid.c */,
 			);
@@ -521,7 +518,6 @@
 				B13FAC0A119D585A001CE037 /* sipe-utils.c in Sources */,
 				B13FAC0E119D585A001CE037 /* sipe-xml-tests.c in Sources */,
 				B13FAC0F119D585A001CE037 /* sipe-xml.c in Sources */,
-				B13FAC11119D585A001CE037 /* sipe.c in Sources */,
 				B13FAC13119D585A001CE037 /* sipmsg.c in Sources */,
 				B13FAC15119D585A001CE037 /* uuid.c in Sources */,
 				1CF260F912C2DFA00045B6CC /* purple-buddy.c in Sources */,

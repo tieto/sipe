@@ -1,11 +1,14 @@
 noinst_LTLIBRARIES = \
 	libsipe_core.la \
 	libsipe_core_crypto_nss.la \
-	libsipe_core_libxml2.la \
-	libsipe_core_purple.la
+	libsipe_core_libxml2.la
 
 MAINTAINERCLEANFILES = \
 	Makefile.in
+
+# temporary: we don't compile it anymore, but we still need to put it into
+#            the tarball as it is required for the intltool check to pass.
+noinst_HEADERS = sipe.c
 
 libsipe_core_la_SOURCES = \
 	http-conn.h \
@@ -71,6 +74,8 @@ libsipe_core_la_SOURCES = \
 	sipe-svc.c \
 	sipe-tls.h \
 	sipe-tls.c \
+	sipe-utils.h \
+	sipe-utils.c \
 	sipe-user.c \
 	sipe-user.h \
 	sipe-xml.h \
@@ -92,9 +97,7 @@ libsipe_core_la_SOURCES += \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c \
 	sip-sec-tls-dsk.h \
-	sip-sec-tls-dsk.c \
-	sipe-utils.h \
-	sipe-utils.c
+	sip-sec-tls-dsk.c
 
 noinst_LTLIBRARIES += \
 	libsipe_core_tests.la
@@ -110,17 +113,6 @@ libsipe_core_crypto_nss_la_SOURCES = \
 
 libsipe_core_libxml2_la_SOURCES = \
 	sipe-xml.c
-
-libsipe_core_purple_la_SOURCES = \
-	sipe.h \
-	sipe.c
-
-if SIPE_OS_WIN32
-# sipe-utils.c contain windows networking dependency wrapped in purple
-libsipe_core_purple_la_SOURCES += \
-	sipe-utils.h \
-	sipe-utils.c
-endif
 
 AM_CFLAGS = $(st)
 
@@ -156,10 +148,6 @@ libsipe_core_crypto_nss_la_CFLAGS = \
 	$(VALGRIND_CFLAGS)
 
 libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
-
-if SIPE_INCLUDE_PURPLE
-libsipe_core_purple_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(PURPLE_CFLAGS)
-endif
 
 if SIPE_WITH_VV
 libsipe_core_la_SOURCES += sipe-media.h sipe-media.c \

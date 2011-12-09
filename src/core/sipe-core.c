@@ -55,7 +55,6 @@
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
 #include "sipe-utils.h"
-#include "sipe.h"
 
 /* locale_dir is unused if ENABLE_NLS is not defined */
 void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
@@ -303,7 +302,7 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 
 	sipe_ocs2007_free(sipe_private);
 
-	sipe_blist_menu_free_containers(sipe_private);
+	sipe_core_buddy_menu_free(SIPE_CORE_PUBLIC);
 
 	if (sipe_private->contact)
 		g_free(sipe_private->contact);

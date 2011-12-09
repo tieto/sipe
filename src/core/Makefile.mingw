@@ -113,6 +113,7 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-svc.c \
 			sipe-tls.c \
 			sipe-user.c \
+			sipe-utils.c \
 			sipe-ews.c \
 			sipmsg.c \
 			sipe-sign.c \
@@ -139,9 +140,7 @@ PURPLE_C_SRC = 		../purple/purple-buddy.c \
 			../purple/purple-setting.c \
 			../purple/purple-status.c \
 			../purple/purple-transport.c \
-			../purple/purple-user.c \
-			sipe-utils.c \
-			sipe.c
+			../purple/purple-user.c
 
 C_TEST_SRC = 		sipe-xml-tests.c
 

@@ -53,7 +53,6 @@ libsipe_la_LIBADD = \
 	../core/libsipe_core.la \
 	../core/libsipe_core_crypto_nss.la \
 	../core/libsipe_core_libxml2.la \
-	../core/libsipe_core_purple.la \
 	libsipe_backend.la \
         $(LIBXML2_LIBS) \
 	$(NSS_LIBS) \

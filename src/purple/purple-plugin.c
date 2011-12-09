@@ -67,8 +67,6 @@
 #include "sipe-core.h"
 #include "sipe-nls.h"
 
-#include "core-depurple.h"
-
 #define _PurpleMessageFlags PurpleMessageFlags
 #include "purple-private.h"
 
@@ -76,9 +74,6 @@
 #if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
 #define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
 #endif
-
-/* Convenience macros */
-#define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) buddy->account->gc->proto_data)
 
 /* Sipe core activity <-> Purple status mapping */
 static const gchar * const activity_to_purple[SIPE_ACTIVITY_NUM_TYPES] = {
@@ -232,7 +227,7 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 static GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
 {
 	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
-		return sipe_buddy_menu((PurpleBuddy *) node);
+		return sipe_purple_buddy_menu((PurpleBuddy *) node);
 	} else if(PURPLE_BLIST_NODE_IS_CHAT(node)) {
 		return sipe_purple_chat_menu((PurpleChat *)node);
 	} else {

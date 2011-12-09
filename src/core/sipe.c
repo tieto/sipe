@@ -4,7 +4,9 @@
  *****************************************************************************
  *** !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ***
  ***                                                                       ***
- ***                       THIS MODULE IS DEPECRATED                       ***
+ ***                   THIS MODULE IS NO LONGER COMPILED                   ***
+ ***                                                                       ***
+ ***                  YES, IT IS INTENTIONALLY BROKEN....                  ***
  ***                                                                       ***
  ***                DO NOT ADD ANY NEW CODE TO THIS MODULE                 ***
  ***                                                                       ***
@@ -42,36 +44,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <glib.h>
-
-#include "sipe-common.h"
-
-#include "account.h"
-#include "blist.h"
-#include "connection.h"
-#include "notify.h"
-#include "request.h"
-
-#include "core-depurple.h" /* Temporary for the core de-purple transition */
-
-#include "sip-csta.h"
-#include "sipe-backend.h"
-#include "sipe-chat.h"
-#include "sipe-conf.h"
-#include "sipe-core.h"
-#include "sipe-core-private.h"
-#include "sipe-im.h"
-#include "sipe-nls.h"
-#include "sipe-ocs2007.h"
-#include "sipe-session.h"
-#include "sipe-utils.h"
-
-#include "sipe.h"
 
 /** for Access levels menu */
 #define INDENT_FMT			"  %s"
@@ -153,85 +125,6 @@ sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
 }
 
 static void
-sipe_buddy_menu_chat_new_cb(PurpleBuddy *buddy)
-{
-	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_new_cb: buddy->name=%s", buddy->name);
-
-	/* 2007+ conference */
-	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
-	{
-		sipe_conf_add(sipe_private, buddy->name);
-	}
-	else /* 2005- multiparty chat */
-	{
-		gchar *self = sip_uri_self(sipe_private);
-		struct sip_session *session;
-
-		session = sipe_session_add_chat(sipe_private,
-						NULL,
-						TRUE,
-						self);
-		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-									  session->chat_session,
-									  session->chat_session->title,
-									  self);
-		g_free(self);
-
-		sipe_im_invite(sipe_private, session, buddy->name, NULL, NULL, NULL, FALSE);
-	}
-}
-
-/**
- * For 2007+ conference only.
- */
-static void
-sipe_buddy_menu_chat_make_leader_cb(PurpleBuddy *buddy,
-				    struct sipe_chat_session *chat_session)
-{
-	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sip_session *session;
-
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: buddy->name=%s", buddy->name);
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_make_leader_cb: chat_title=%s", chat_session->title);
-
-	session = sipe_session_find_chat(sipe_private, chat_session);
-
-	sipe_conf_modify_user_role(sipe_private, session, buddy->name);
-}
-
-/**
- * For 2007+ conference only.
- */
-static void
-sipe_buddy_menu_chat_remove_cb(PurpleBuddy *buddy,
-			       struct sipe_chat_session *chat_session)
-{
-	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	struct sip_session *session;
-
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: buddy->name=%s", buddy->name);
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_remove_cb: chat_title=%s", chat_session->title);
-
-	session = sipe_session_find_chat(sipe_private, chat_session);
-
-	sipe_conf_delete_user(sipe_private, session, buddy->name);
-}
-
-static void
-sipe_buddy_menu_chat_invite_cb(PurpleBuddy *buddy,
-			       struct sipe_chat_session *chat_session)
-{
-	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: buddy->name=%s", buddy->name);
-	SIPE_DEBUG_INFO("sipe_buddy_menu_chat_invite_cb: chat_title=%s", chat_session->title);
-
-	sipe_core_chat_invite(SIPE_CORE_PUBLIC, chat_session, buddy->name);
-}
-
-static void
 sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy, const char *phone)
 {
 	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
@@ -299,77 +192,15 @@ static GList *
 sipe_get_access_control_menu(struct sipe_core_private *sipe_private,
 			     const char* uri);
 
-/*
- * A menu which appear when right-clicking on buddy in contact list.
- */
-GList *
-sipe_buddy_menu(PurpleBuddy *buddy)
+struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_public *sipe_public,
+							    const gchar *buddy,
+							    struct sipe_backend_buddy_menu *menu)
 {
-	PurpleBlistNode *g_node;
-	PurpleGroup *gr_parent;
-	PurpleMenuAction *act;
-	GList *menu = NULL;
-	GList *menu_groups = NULL;
-	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
+	struct sipe_backend_buddy_menu *menu_groups = sipe_backend_buddy_menu_start(sipe_p
 	gchar *email;
-	gchar *self = sip_uri_self(sipe_private);
 
-	SIPE_SESSION_FOREACH {
-		if (!sipe_strcase_equal(self, buddy->name) && session->chat_session)
-		{
-			struct sipe_chat_session *chat_session = session->chat_session;
-			gboolean is_conf = (chat_session->type == SIPE_CHAT_TYPE_CONFERENCE);
+        /*--------------------- START WIP ------------------------------*/
 
-			if (sipe_backend_chat_find(chat_session->backend, buddy->name))
-			{
-				gboolean conf_op = sipe_backend_chat_is_operator(chat_session->backend, self);
-
-				if (is_conf
-				    && !sipe_backend_chat_is_operator(chat_session->backend, buddy->name) /* Not conf OP */
-				    &&  conf_op)                                                          /* We are a conf OP */
-				{
-					gchar *label = g_strdup_printf(_("Make leader of '%s'"),
-								       chat_session->title);
-					act = purple_menu_action_new(label,
-								     PURPLE_CALLBACK(sipe_buddy_menu_chat_make_leader_cb),
-								     chat_session, NULL);
-					g_free(label);
-					menu = g_list_prepend(menu, act);
-				}
-
-				if (is_conf
-				    && conf_op) /* We are a conf OP */
-				{
-					gchar *label = g_strdup_printf(_("Remove from '%s'"),
-								       chat_session->title);
-					act = purple_menu_action_new(label,
-								     PURPLE_CALLBACK(sipe_buddy_menu_chat_remove_cb),
-								     chat_session, NULL);
-					g_free(label);
-					menu = g_list_prepend(menu, act);
-				}
-			}
-			else
-			{
-				if (!is_conf
-				    || (is_conf && !session->locked))
-				{
-					gchar *label = g_strdup_printf(_("Invite to '%s'"),
-								       chat_session->title);
-					act = purple_menu_action_new(label,
-								     PURPLE_CALLBACK(sipe_buddy_menu_chat_invite_cb),
-								     chat_session, NULL);
-					g_free(label);
-					menu = g_list_prepend(menu, act);
-				}
-			}
-		}
-	} SIPE_SESSION_FOREACH_END;
-
-	act = purple_menu_action_new(_("New chat"),
-				     PURPLE_CALLBACK(sipe_buddy_menu_chat_new_cb),
-				     NULL, NULL);
-	menu = g_list_prepend(menu, act);
 
 	if (sipe_private->csta && !sipe_private->csta->line_status) {
 		gchar *phone;
@@ -520,10 +351,7 @@ sipe_buddy_menu(PurpleBuddy *buddy)
 				     NULL, menu_groups);
 	menu = g_list_prepend(menu, act);
 
-	menu = g_list_reverse(menu);
-
-	g_free(self);
-	return menu;
+/*--------------------- END WIP ------------------------------*/
 }
 
 static void
@@ -568,39 +396,6 @@ static void sipe_buddy_menu_access_level_add_domain_cb(PurpleBuddy *buddy)
 			      _("Add"), G_CALLBACK(sipe_ask_access_domain_cb),
 			      _("Cancel"), NULL,
 			      buddy->account, NULL, NULL, gc);
-}
-
-/*
- * Workaround for missing libpurple API to release resources allocated
- * during blist_node_menu() callback. See also:
- *
- *   <http://developer.pidgin.im/ticket/12597>
- *
- * We remember all memory blocks in a list and deallocate them when
- *
- *   - the next time we enter the callback, or
- *   - the account is disconnected
- *
- * That means that after the buddy menu has been closed we have unused
- * resources but at least we don't leak them anymore...
- */
-void sipe_blist_menu_free_containers(struct sipe_core_private *sipe_private)
-{
-	GSList *entry = sipe_private->blist_menu_containers;
-	while (entry) {
-		sipe_ocs2007_free_container(entry->data);
-		entry = entry->next;
-	}
-	g_slist_free(sipe_private->blist_menu_containers);
-	sipe_private->blist_menu_containers = NULL;
-}
-
-static void
-sipe_blist_menu_remember_container(struct sipe_core_private *sipe_private,
-				   struct sipe_container *container)
-{
-	sipe_private->blist_menu_containers = g_slist_prepend(sipe_private->blist_menu_containers,
-							      container);
 }
 
 static GList *

@@ -883,6 +883,24 @@ void sipe_backend_buddy_tooltip_add(struct sipe_core_public *sipe_public,
 				    const gchar *description,
 				    const gchar *value);
 
+/**
+ * Buddy menu creation
+ */
+enum sipe_buddy_menu_type {
+	SIPE_BUDDY_MENU_MAKE_CHAT_LEADER = 0,
+	SIPE_BUDDY_MENU_REMOVE_FROM_CHAT,
+	SIPE_BUDDY_MENU_INVITE_TO_CHAT,
+	SIPE_BUDDY_MENU_NEW_CHAT,
+	SIPE_BUDDY_MENU_TYPES
+};
+
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_start(struct sipe_core_public *sipe_public);
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_add(struct sipe_core_public *sipe_public,
+							    struct sipe_backend_buddy_menu *menu,
+							    const gchar *label,
+							    enum sipe_buddy_menu_type type,
+							    gpointer parameter);
+
 #ifdef __cplusplus
 }
 #endif

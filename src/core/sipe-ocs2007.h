@@ -59,7 +59,6 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 guint sipe_ocs2007_containers(void);
 const gchar *sipe_ocs2007_access_level_name(guint id);
 int sipe_ocs2007_container_id(guint index);
-void sipe_ocs2007_free_container(struct sipe_container *container);
 struct sipe_container *sipe_ocs2007_create_container(guint index,
 						     const gchar *member_type,
 						     const gchar *member_value,
@@ -78,6 +77,11 @@ void sipe_ocs2007_change_access_level_for_domain(struct sipe_core_private *sipe_
 						 const gchar *domain,
 						 guint index);
 GSList *sipe_ocs2007_get_access_domains(struct sipe_core_private *sipe_private);
+
+/* buddy menu */
+void sipe_ocs2007_blist_menu_remember_container(struct sipe_core_private *sipe_private,
+						struct sipe_container *container);
+
 
 /*
   Local Variables:

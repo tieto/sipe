@@ -1177,6 +1177,35 @@ sipe_process_imdn(struct sipe_core_private *sipe_private,
 	g_free(with);
 }
 
+void sipe_core_conf_make_leader(struct sipe_core_public *sipe_public,
+				gpointer parameter,
+				const gchar *buddy_name)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_chat_session *chat_session = parameter;
+	struct sip_session *session;
+
+	SIPE_DEBUG_INFO("sipe_core_conf_make_leader: chat_title=%s",
+			chat_session->title);
+
+	session = sipe_session_find_chat(sipe_private, chat_session);
+	sipe_conf_modify_user_role(sipe_private, session, buddy_name);
+}
+
+void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
+				gpointer parameter,
+				const gchar *buddy_name)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_chat_session *chat_session = parameter;
+	struct sip_session *session;
+
+	SIPE_DEBUG_INFO("sipe_core_conf_remove_from: chat_title=%s",
+			chat_session->title);
+
+	session = sipe_session_find_chat(sipe_private, chat_session);
+	sipe_conf_delete_user(sipe_private, session, buddy_name);
+}
 
 /*
   Local Variables:
