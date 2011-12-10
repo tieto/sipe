@@ -49,6 +49,26 @@
 #define DELIVERED_CSTA_STATUS           "delivered"
 #define ESTABLISHED_CSTA_STATUS         "established"
 
+/**
+ * Data model for interaction with SIP/CSTA Gateway
+ */
+struct sip_csta {
+	gchar *line_uri;
+	/** SIP/CSTA Gateway's SIP URI */
+	gchar *gateway_uri;
+	/** dialog with SIP/CSTA Gateway */
+	struct sip_dialog *dialog;
+
+	gchar *gateway_status;
+	gchar *monitor_cross_ref_id;
+
+	gchar *line_status;
+	/** destination tel: URI */
+	gchar *to_tel_uri;
+	gchar *call_id;
+	/* our device ID as reported by SIP/CSTA gateway */
+	gchar *device_id;
+};
 
 /**
  * Sends CSTA RequestSystemStatus request to SIP/CSTA Gateway.
@@ -542,9 +562,8 @@ process_csta_make_call_response(struct sipe_core_private *sipe_private,
 }
 
 /** Make Call */
-void
-sip_csta_make_call(struct sipe_core_private *sipe_private,
-		   const gchar* to_tel_uri)
+static void sip_csta_make_call(struct sipe_core_private *sipe_private,
+			       const gchar* to_tel_uri)
 {
 	gchar *hdr;
 	gchar *body;
@@ -672,7 +691,24 @@ process_incoming_info_csta(struct sipe_core_private *sipe_private,
 	sipe_xml_free(xml);
 }
 
+gboolean sip_csta_is_idle(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->csta && !sipe_private->csta->line_status);
+}
 
+void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
+			       const gchar *phone)
+{
+	if (phone) {
+		gchar *tel_uri = sip_to_tel_uri(phone);
+
+		SIPE_DEBUG_INFO("sipe_core_buddy_make_call: calling number: %s",
+				tel_uri ? tel_uri : "");
+		sip_csta_make_call(SIPE_CORE_PRIVATE, tel_uri);
+
+		g_free(tel_uri);
+	}
+}
 
 /*
   Local Variables:

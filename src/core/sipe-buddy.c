@@ -823,31 +823,67 @@ void sipe_core_buddy_new_chat(struct sipe_core_public *sipe_public,
 
 /* Buddy menu */
 
+static struct sipe_backend_buddy_menu *buddy_menu_phone(struct sipe_core_public *sipe_public,
+							struct sipe_backend_buddy_menu *menu,
+							sipe_backend_buddy buddy,
+							sipe_buddy_info_fields id_phone,
+							sipe_buddy_info_fields id_display,
+							const gchar *type)
+{
+	gchar *phone = sipe_backend_buddy_get_string(sipe_public,
+						     buddy,
+						     id_phone);
+	if (phone) {
+		gchar *display = sipe_backend_buddy_get_string(sipe_public,
+							       buddy,
+							       id_display);
+		gchar *tmp   = NULL;
+		gchar *label = g_strdup_printf("%s %s",
+					       type,
+					       display ? display :
+					       (tmp = sip_tel_uri_denormalize(phone)));
+		menu = sipe_backend_buddy_menu_add(sipe_public,
+						   menu,
+						   label,
+						   SIPE_BUDDY_MENU_MAKE_CALL,
+						   phone);
+		g_free(tmp);
+		g_free(label);
+		g_free(display);
+		g_free(phone);
+	}
+
+	return(menu);
+}
+
 struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_public *sipe_public,
-							    const gchar *buddy,
+							    const gchar *buddy_name,
 							    struct sipe_backend_buddy_menu *menu)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	sipe_backend_buddy buddy = sipe_backend_buddy_find(sipe_public,
+							   buddy_name,
+							   NULL);
 	gchar *self = sip_uri_self(sipe_private);
 
  	SIPE_SESSION_FOREACH {
-		if (!sipe_strcase_equal(self, buddy) && session->chat_session)
+		if (!sipe_strcase_equal(self, buddy_name) && session->chat_session)
 		{
 			struct sipe_chat_session *chat_session = session->chat_session;
 			gboolean is_conf = (chat_session->type == SIPE_CHAT_TYPE_CONFERENCE);
 
-			if (sipe_backend_chat_find(chat_session->backend, buddy))
+			if (sipe_backend_chat_find(chat_session->backend, buddy_name))
 			{
 				gboolean conf_op = sipe_backend_chat_is_operator(chat_session->backend, self);
 
 				if (is_conf &&
 				    /* Not conf OP */
-				    !sipe_backend_chat_is_operator(chat_session->backend, buddy) &&
+				    !sipe_backend_chat_is_operator(chat_session->backend, buddy_name) &&
 				    /* We are a conf OP */
 				    conf_op) {
 					gchar *label = g_strdup_printf(_("Make leader of '%s'"),
 								       chat_session->title);
-					menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+					menu = sipe_backend_buddy_menu_add(sipe_public,
 									   menu,
 									   label,
 									   SIPE_BUDDY_MENU_MAKE_CHAT_LEADER,
@@ -860,7 +896,7 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 				    conf_op) {
 					gchar *label = g_strdup_printf(_("Remove from '%s'"),
 								       chat_session->title);
-					menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+					menu = sipe_backend_buddy_menu_add(sipe_public,
 									   menu,
 									   label,
 									   SIPE_BUDDY_MENU_REMOVE_FROM_CHAT,
@@ -874,7 +910,7 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 				    (is_conf && !session->locked)) {
 					gchar *label = g_strdup_printf(_("Invite to '%s'"),
 								       chat_session->title);
-					menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+					menu = sipe_backend_buddy_menu_add(sipe_public,
 									 menu,
 									 label,
 									 SIPE_BUDDY_MENU_INVITE_TO_CHAT,
@@ -885,11 +921,54 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 		}
 	} SIPE_SESSION_FOREACH_END;
 
-	menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+	menu = sipe_backend_buddy_menu_add(sipe_public,
 					   menu,
 					   _("New chat"),
 					   SIPE_BUDDY_MENU_NEW_CHAT,
 					   NULL);
+
+	/* add buddy's phone numbers if we have call control */
+	if (sip_csta_is_idle(sipe_private)) {
+
+		/* work phone */
+		menu = buddy_menu_phone(sipe_public,
+					menu,
+					buddy,
+					SIPE_BUDDY_INFO_WORK_PHONE,
+					SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY,
+					_("Work"));
+		/* mobile phone */
+		menu = buddy_menu_phone(sipe_public,
+					menu,
+					buddy,
+					SIPE_BUDDY_INFO_MOBILE_PHONE,
+					SIPE_BUDDY_INFO_MOBILE_PHONE_DISPLAY,
+					_("Mobile"));
+
+		/* home phone */
+		menu = buddy_menu_phone(sipe_public,
+					menu,
+					buddy,
+					SIPE_BUDDY_INFO_HOME_PHONE,
+					SIPE_BUDDY_INFO_HOME_PHONE_DISPLAY,
+					_("Home"));
+
+		/* other phone */
+		menu = buddy_menu_phone(sipe_public,
+					menu,
+					buddy,
+					SIPE_BUDDY_INFO_OTHER_PHONE,
+					SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY,
+					_("Other"));
+
+		/* custom1 phone */
+		menu = buddy_menu_phone(sipe_public,
+					menu,
+					buddy,
+					SIPE_BUDDY_INFO_CUSTOM1_PHONE,
+					SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY,
+					_("Custom1"));
+	}
 
 	/*--------------------- START WIP ------------------------------*/
 

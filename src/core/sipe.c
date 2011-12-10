@@ -125,22 +125,6 @@ sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
 }
 
 static void
-sipe_buddy_menu_make_call_cb(PurpleBuddy *buddy, const char *phone)
-{
-	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-
-	SIPE_DEBUG_INFO("sipe_buddy_menu_make_call_cb: buddy->name=%s", buddy->name);
-	if (phone) {
-		char *tel_uri = sip_to_tel_uri(phone);
-
-		SIPE_DEBUG_INFO("sipe_buddy_menu_make_call_cb: going to call number: %s", tel_uri ? tel_uri : "");
-		sip_csta_make_call(sipe_private, tel_uri);
-
-		g_free(tel_uri);
-	}
-}
-
-static void
 sipe_buddy_menu_access_level_help_cb(PurpleBuddy *buddy)
 {
 	/** Translators: replace with URL to localized page
@@ -188,119 +172,8 @@ sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy,
 							container);
 }
 
-static GList *
-sipe_get_access_control_menu(struct sipe_core_private *sipe_private,
-			     const char* uri);
-
-struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_public *sipe_public,
-							    const gchar *buddy,
-							    struct sipe_backend_buddy_menu *menu)
-{
-	struct sipe_backend_buddy_menu *menu_groups = sipe_backend_buddy_menu_start(sipe_p
-	gchar *email;
-
         /*--------------------- START WIP ------------------------------*/
 
-
-	if (sipe_private->csta && !sipe_private->csta->line_status) {
-		gchar *phone;
-		gchar *phone_disp_str;
-		gchar *tmp = NULL;
-		/* work phone */
-		phone = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-						      buddy,
-						      SIPE_BUDDY_INFO_WORK_PHONE);
-		phone_disp_str = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-							       buddy,
-							       SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY);
-		if (phone) {
-			gchar *label = g_strdup_printf(_("Work %s"),
-				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
-			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
-			g_free(tmp);
-			tmp = NULL;
-			g_free(label);
-			menu = g_list_prepend(menu, act);
-			g_free(phone);
-		}
-		g_free(phone_disp_str);
-
-		/* mobile phone */
-		phone = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-						      buddy,
-						      SIPE_BUDDY_INFO_MOBILE_PHONE);
-		phone_disp_str = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-							       buddy,
-							       SIPE_BUDDY_INFO_MOBILE_PHONE_DISPLAY);
-		if (phone) {
-			gchar *label = g_strdup_printf(_("Mobile %s"),
-				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
-			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
-			g_free(tmp);
-			tmp = NULL;
-			g_free(label);
-			menu = g_list_prepend(menu, act);
-			g_free(phone);
-		}
-		g_free(phone_disp_str);
-
-		/* home phone */
-		phone = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-						      buddy,
-						      SIPE_BUDDY_INFO_HOME_PHONE);
-		phone_disp_str = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-							       buddy,
-							       SIPE_BUDDY_INFO_HOME_PHONE_DISPLAY);
-		if (phone) {
-			gchar *label = g_strdup_printf(_("Home %s"),
-				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
-			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
-			g_free(tmp);
-			tmp = NULL;
-			g_free(label);
-			menu = g_list_prepend(menu, act);
-			g_free(phone);
-		}
-		g_free(phone_disp_str);
-
-		/* other phone */
-		phone = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-						      buddy,
-						      SIPE_BUDDY_INFO_OTHER_PHONE);
-		phone_disp_str = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-							       buddy,
-							       SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY);
-		if (phone) {
-			gchar *label = g_strdup_printf(_("Other %s"),
-				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
-			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
-			g_free(tmp);
-			tmp = NULL;
-			g_free(label);
-			menu = g_list_prepend(menu, act);
-			g_free(phone);
-		}
-		g_free(phone_disp_str);
-
-		/* custom1 phone */
-		phone = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-						      buddy,
-						      SIPE_BUDDY_INFO_CUSTOM1_PHONE);
-		phone_disp_str = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-							       buddy,
-							       SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY);
-		if (phone) {
-			gchar *label = g_strdup_printf(_("Custom1 %s"),
-				phone_disp_str ? phone_disp_str : (tmp = sip_tel_uri_denormalize(phone)));
-			act = purple_menu_action_new(label, PURPLE_CALLBACK(sipe_buddy_menu_make_call_cb), (gpointer) phone, NULL);
-			g_free(tmp);
-			tmp = NULL;
-			g_free(label);
-			menu = g_list_prepend(menu, act);
-			g_free(phone);
-		}
-		g_free(phone_disp_str);
-	}
 
 	email = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
 					      buddy,
