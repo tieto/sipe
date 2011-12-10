@@ -434,6 +434,8 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 
 void sipe_core_buddy_new_chat(struct sipe_core_public *sipe_public,
 			      const gchar *who);
+void sipe_core_buddy_send_email(struct sipe_core_public *sipe_public,
+				const gchar *who);
 
 struct sipe_backend_buddy_menu;
 struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_public *sipe_public,

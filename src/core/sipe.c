@@ -133,37 +133,6 @@ sipe_buddy_menu_access_level_help_cb(PurpleBuddy *buddy)
 }
 
 static void
-sipe_buddy_menu_send_email_cb(PurpleBuddy *buddy)
-{
-	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	gchar *email;
-	SIPE_DEBUG_INFO("sipe_buddy_menu_send_email_cb: buddy->name=%s", buddy->name);
-
-	email = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-					      buddy,
-					      SIPE_BUDDY_INFO_EMAIL);
-	if (email)
-	{
-		char *command_line = g_strdup_printf(
-#ifdef _WIN32
-			"cmd /c start"
-#else
-			"xdg-email"
-#endif
-			" mailto:%s", email);
-		SIPE_DEBUG_INFO("sipe_buddy_menu_send_email_cb: going to call email client: %s", command_line);
-
-		g_free(email);
-		g_spawn_command_line_async(command_line, NULL);
-		g_free(command_line);
-	}
-	else
-	{
-		SIPE_DEBUG_INFO("sipe_buddy_menu_send_email_cb: no email address stored for buddy=%s", buddy->name);
-	}
-}
-
-static void
 sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy,
 				struct sipe_container *container)
 {
@@ -174,17 +143,6 @@ sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy,
 
         /*--------------------- START WIP ------------------------------*/
 
-
-	email = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-					      buddy,
-					      SIPE_BUDDY_INFO_EMAIL);
-	if (email) {
-		act = purple_menu_action_new(_("Send email..."),
-					     PURPLE_CALLBACK(sipe_buddy_menu_send_email_cb),
-					     NULL, NULL);
-		menu = g_list_prepend(menu, act);
-		g_free(email);
-	}
 
 	/* Access Level */
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {

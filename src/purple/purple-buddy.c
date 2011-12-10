@@ -467,6 +467,14 @@ static void sipe_purple_buddy_make_call_cb(PurpleBuddy *buddy,
 				  parameter);
 }
 
+static void sipe_purple_buddy_send_email_cb(PurpleBuddy *buddy,
+					    SIPE_UNUSED_PARAMETER gpointer parameter)
+{
+	SIPE_DEBUG_INFO("sipe_purple_buddy_send_email_cb: buddy->name=%s",
+			buddy->name);
+	sipe_core_buddy_send_email(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+				   buddy->name);
+}
 
 typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,
 				    gpointer parameter);
@@ -476,6 +484,7 @@ static const buddy_menu_callback callback_map[SIPE_BUDDY_MENU_TYPES] = {
 	/* SIPE_BUDDY_MENU_INVITE_TO_CHAT   */ sipe_purple_buddy_invite_to_chat_cb,
 	/* SIPE_BUDDY_MENU_NEW_CHAT         */ sipe_purple_buddy_new_chat_cb,
 	/* SIPE_BUDDY_MENU_MAKE_CALL        */ sipe_purple_buddy_make_call_cb,
+	/* SIPE_BUDDY_MENU_SEND_EMAIL       */ sipe_purple_buddy_send_email_cb,
 };
 
 struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)

@@ -821,6 +821,37 @@ void sipe_core_buddy_new_chat(struct sipe_core_public *sipe_public,
 	}
 }
 
+void sipe_core_buddy_send_email(struct sipe_core_public *sipe_public,
+				const gchar *who)
+{
+	sipe_backend_buddy buddy = sipe_backend_buddy_find(sipe_public,
+							   who,
+							   NULL);
+	gchar *email = sipe_backend_buddy_get_string(sipe_public,
+						     buddy,
+						     SIPE_BUDDY_INFO_EMAIL);
+
+	if (email) {
+		gchar *command_line = g_strdup_printf(
+#ifdef _WIN32
+			"cmd /c start"
+#else
+			"xdg-email"
+#endif
+			" mailto:%s", email);
+		g_free(email);
+
+		SIPE_DEBUG_INFO("sipe_core_buddy_send_email: going to call email client: %s",
+				command_line);
+		g_spawn_command_line_async(command_line, NULL);
+		g_free(command_line);
+
+	} else {
+		SIPE_DEBUG_INFO("sipe_core_buddy_send_email: no email address stored for buddy=%s",
+				who);
+	}
+}
+
 /* Buddy menu */
 
 static struct sipe_backend_buddy_menu *buddy_menu_phone(struct sipe_core_public *sipe_public,
@@ -920,6 +951,7 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 			}
 		}
 	} SIPE_SESSION_FOREACH_END;
+	g_free(self);
 
 	menu = sipe_backend_buddy_menu_add(sipe_public,
 					   menu,
@@ -970,9 +1002,21 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 					_("Custom1"));
 	}
 
-	/*--------------------- START WIP ------------------------------*/
+	{
+		gchar *email = sipe_backend_buddy_get_string(sipe_public,
+							     buddy,
+							     SIPE_BUDDY_INFO_EMAIL);
+		if (email) {
+			menu = sipe_backend_buddy_menu_add(sipe_public,
+							   menu,
+							   _("Send email..."),
+							   SIPE_BUDDY_MENU_SEND_EMAIL,
+							   NULL);
+			g_free(email);
+		}
+	}
 
-	g_free(self);
+	/*--------------------- START WIP ------------------------------*/
 
 	return(menu);
 }
