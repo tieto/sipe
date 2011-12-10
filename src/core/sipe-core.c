@@ -30,7 +30,6 @@
 #include <glib.h>
 
 #include "sipe-common.h"
-#include "http-conn.h" /* sipe-cal.h requires this */
 #include "sip-csta.h"
 #include "sip-sec.h"
 #include "sip-transport.h"

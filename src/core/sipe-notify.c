@@ -35,7 +35,6 @@
 #include <glib.h>
 
 #include "sipe-common.h"
-#include "http-conn.h" /* sipe-cal.h requires this */
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-soap.h"

@@ -36,7 +36,6 @@
 #include <glib.h>
 
 #include "sipe-common.h"
-#include "http-conn.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-transport.h"

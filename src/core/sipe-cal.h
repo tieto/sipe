@@ -22,6 +22,9 @@
  */
 
 /* Forward declarations */
+struct http_conn_auth;
+struct http_conn_struct;
+struct http_session_struct;
 struct sipe_buddy;
 struct sipe_core_private;
 struct _sipe_xml;
@@ -57,7 +60,7 @@ struct sipe_calendar {
 	int state;
 	char *email;
 	char *legacy_dn;
-	HttpConnAuth *auth;
+	struct http_conn_auth *auth;
 	int auto_disco_method;
 	int is_ews_disabled;
 	int is_domino_disabled;
@@ -75,8 +78,8 @@ struct sipe_calendar {
 	time_t updated;
 	gboolean published;
 
-	HttpSession *http_session;
-	HttpConn *http_conn;
+	struct http_session_struct *http_session;
+	struct http_conn_struct *http_conn;
 
 	time_t fb_start;
 	/* hex form */
