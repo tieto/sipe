@@ -54,76 +54,6 @@
  */
 #define INDENT_MARKED_INHERITED_FMT	"= %s"
 
-static PurpleBuddy *
-purple_blist_add_buddy_clone(PurpleGroup * group, PurpleBuddy * buddy)
-{
-	struct sipe_core_private *sipe_private = PURPLE_BUDDY_TO_SIPE_CORE_PRIVATE;
-	PurpleBuddy *clone;
-	gchar *server_alias, *email;
-	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
-
-	clone = sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
-				       buddy->name,
-				       buddy->alias,
-				       group->name);
-
-	server_alias = sipe_backend_buddy_get_server_alias(SIPE_CORE_PUBLIC,
-							   buddy);
-	if (server_alias) {
-		sipe_backend_buddy_set_server_alias(SIPE_CORE_PUBLIC,
-						    clone,
-						    server_alias);
-		g_free(server_alias);
-	}
-
-	email = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-					      buddy,
-					      SIPE_BUDDY_INFO_EMAIL);
-	if (email) {
-		sipe_backend_buddy_set_string(SIPE_CORE_PUBLIC,
-					      clone,
-					      SIPE_BUDDY_INFO_EMAIL,
-					      email);
-		g_free(email);
-	}
-
-	purple_presence_set_status_active(purple_buddy_get_presence(clone),
-					  purple_status_get_id(status),
-					  TRUE);
-	/* for UI to update */
-	sipe_backend_buddy_set_status(SIPE_CORE_PUBLIC,
-				      buddy->name,
-				      purple_status_get_id(status));
-
-	return clone;
-}
-
-static void
-sipe_buddy_menu_copy_to_cb(PurpleBlistNode *node, const char *group_name)
-{
-	PurpleBuddy *buddy, *b;
-	PurpleGroup * group = purple_find_group(group_name);
-
-	g_return_if_fail(PURPLE_BLIST_NODE_IS_BUDDY(node));
-
-	buddy = (PurpleBuddy *)node;
-
-	SIPE_DEBUG_INFO("sipe_buddy_menu_copy_to_cb: copying %s to %s",
-			buddy->name, group_name);
-
-	b = purple_find_buddy_in_group(buddy->account, buddy->name, group);
-	if (!b)
-		b = purple_blist_add_buddy_clone(group, buddy);
-
-	if (b && group) {
-		PurpleConnection *gc = purple_account_get_connection(b->account);
-
-		sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-				    b->name,
-				    group->name);
-	}
-}
-
 static void
 sipe_buddy_menu_access_level_help_cb(PurpleBuddy *buddy)
 {
@@ -142,8 +72,6 @@ sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy,
 }
 
         /*--------------------- START WIP ------------------------------*/
-
-
 	/* Access Level */
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		GList *menu_access_levels = sipe_get_access_control_menu(sipe_private, buddy->name);
@@ -153,37 +81,7 @@ sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy,
 					     NULL, menu_access_levels);
 		menu = g_list_prepend(menu, act);
 	}
-
-	/* Copy to */
-	gr_parent = purple_buddy_get_group(buddy);
-	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
-		PurpleGroup *group;
-
-		if (g_node->type != PURPLE_BLIST_GROUP_NODE)
-			continue;
-
-		group = (PurpleGroup *)g_node;
-		if (group == gr_parent)
-			continue;
-
-		if (purple_find_buddy_in_group(buddy->account, buddy->name, group))
-			continue;
-
-		act = purple_menu_action_new(purple_group_get_name(group),
-							   PURPLE_CALLBACK(sipe_buddy_menu_copy_to_cb),
-							   group->name, NULL);
-		menu_groups = g_list_prepend(menu_groups, act);
-	}
-	/* Coverity complains about RESOURCE_LEAK here - no idea how to fix it */
-	menu_groups = g_list_reverse(menu_groups);
-
-	act = purple_menu_action_new(_("Copy to"),
-				     NULL,
-				     NULL, menu_groups);
-	menu = g_list_prepend(menu, act);
-
-/*--------------------- END WIP ------------------------------*/
-}
+        /*--------------------- END WIP ------------------------------*/
 
 static void
 sipe_ask_access_domain_cb(PurpleConnection *gc, PurpleRequestFields *fields)

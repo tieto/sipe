@@ -505,9 +505,99 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_add(SIPE_UNUSED_PARAMETE
 						     parameter, NULL)));
 }
 
+static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
+					 const gchar *group_name)
+{
+	struct sipe_core_public *sipe_public;
+	PurpleBuddy *buddy = (PurpleBuddy *)node;
+	PurpleGroup *group;
+	PurpleBuddy *clone;
+
+	g_return_if_fail(PURPLE_BLIST_NODE_IS_BUDDY(node));
+
+	sipe_public = PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC;
+	group       = purple_find_group(group_name);
+
+	SIPE_DEBUG_INFO("sipe_purple_buddy_copy_to_cb: copying %s to %s",
+			buddy->name, group_name);
+
+	clone = purple_find_buddy_in_group(buddy->account, buddy->name, group);
+	if (!clone) {
+		clone = sipe_backend_buddy_add(sipe_public,
+					       buddy->name,
+					       buddy->alias,
+					       group->name);
+		if (clone) {
+			const gchar *tmp;
+			const gchar *key;
+			const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
+
+			tmp = purple_buddy_get_server_alias(buddy);
+			if (tmp) purple_blist_server_alias_buddy(clone, tmp);
+
+			key = sipe_buddy_info_to_purple_property(SIPE_BUDDY_INFO_EMAIL);
+			tmp = purple_blist_node_get_string(&buddy->node, key);
+			if (tmp) purple_blist_node_set_string(&clone->node,
+							      key,
+							      tmp);
+
+			tmp = purple_status_get_id(status);
+			purple_presence_set_status_active(purple_buddy_get_presence(clone),
+							  tmp,
+							  TRUE);
+
+			/* update UI */
+			purple_prpl_got_user_status(clone->account,
+						    clone->name,
+						    tmp,
+						    NULL);
+		}
+	}
+
+	if (clone && group)
+		sipe_core_buddy_add(sipe_public,
+				    clone->name,
+				    group->name);
+}
+
+static GList *sipe_purple_copy_to_menu(GList *menu,
+				       PurpleBuddy *buddy)
+{
+	GList *menu_groups = NULL;
+	PurpleGroup *gr_parent = purple_buddy_get_group(buddy);
+	PurpleBlistNode *g_node;
+
+	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
+		PurpleGroup *group = (PurpleGroup *)g_node;
+		PurpleMenuAction *act;
+
+		if ((g_node->type != PURPLE_BLIST_GROUP_NODE) ||
+		    (group == gr_parent)                      ||
+		    purple_find_buddy_in_group(buddy->account,
+					       buddy->name,
+					       group))
+			continue;
+
+		act = purple_menu_action_new(purple_group_get_name(group),
+					     PURPLE_CALLBACK(sipe_purple_buddy_copy_to_cb),
+					     group->name, NULL);
+		menu_groups = g_list_prepend(menu_groups, act);
+	}
+
+	if (menu_groups)
+		menu = g_list_prepend(menu,
+				      purple_menu_action_new(_("Copy to"),
+							     NULL,
+							     NULL,
+							     g_list_reverse(menu_groups)));
+
+	return(menu);
+}
+
 GList *sipe_purple_buddy_menu(PurpleBuddy *buddy)
 {
 	struct sipe_core_public *sipe_public = PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC;
+	GList *menu;
 
 	/*
 	 * Workaround for missing libpurple API to release resources allocated
@@ -526,10 +616,12 @@ GList *sipe_purple_buddy_menu(PurpleBuddy *buddy)
 	sipe_core_buddy_menu_free(sipe_public);
 
 	/* now create the new menu... */
-	return(g_list_reverse((GList *)
-			      sipe_core_buddy_create_menu(sipe_public,
-							  buddy->name,
-							  NULL)));
+	menu = (GList *) sipe_core_buddy_create_menu(sipe_public,
+						     buddy->name,
+						     NULL);
+	menu = sipe_purple_copy_to_menu(menu, buddy);
+
+	return(g_list_reverse(menu));
 }
 
 
