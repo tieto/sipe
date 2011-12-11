@@ -31,6 +31,7 @@
 #include "blist.h"
 #include "notify.h"
 #include "privacy.h"
+#include "request.h"
 #include "version.h"
 
 #include "sipe-common.h"
@@ -487,6 +488,55 @@ static void sipe_purple_buddy_access_level_help_cb(PurpleBuddy *buddy,
 			  _("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
 }
 
+static void sipe_purple_ask_access_domain_cb(PurpleConnection *gc,
+					     PurpleRequestFields *fields)
+{
+	const gchar *domain = purple_request_fields_get_string(fields, "access_domain");
+	guint index         = purple_request_fields_get_choice(fields, "container_id");
+	sipe_core_change_access_level_for_domain(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+						 domain,
+						 index);
+}
+
+static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
+						SIPE_UNUSED_PARAMETER gpointer parameter)
+{
+	PurpleConnection *gc = purple_account_get_connection(buddy->account);
+	PurpleRequestFields *fields;
+	PurpleRequestFieldGroup *g;
+	PurpleRequestField *f;
+
+	fields = purple_request_fields_new();
+
+	g = purple_request_field_group_new(NULL);
+	f = purple_request_field_string_new("access_domain",
+					    _("Domain"),
+					    "partner-company.com",
+					    FALSE);
+	purple_request_field_set_required(f, TRUE);
+	purple_request_field_group_add_field(g, f);
+
+	f = purple_request_field_choice_new("container_id",
+					    _("Access level"),
+					    0);
+	purple_request_field_choice_add(f, _("Personal")); /* index 0 */
+	purple_request_field_choice_add(f, _("Team"));
+	purple_request_field_choice_add(f, _("Company"));
+	purple_request_field_choice_add(f, _("Public"));
+	purple_request_field_choice_add(f, _("Blocked")); /* index 4 */
+	purple_request_field_choice_set_default_value(f, 3); /* index */
+	purple_request_field_set_required(f, TRUE);
+	purple_request_field_group_add_field(g, f);
+
+	purple_request_fields_add_group(fields, g);
+
+	purple_request_fields(gc, _("Add new domain"),
+			      _("Add new domain"), NULL, fields,
+			      _("Add"), G_CALLBACK(sipe_purple_ask_access_domain_cb),
+			      _("Cancel"), NULL,
+			      buddy->account, NULL, NULL, gc);
+}
+
 typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,
 				    gpointer parameter);
 static const buddy_menu_callback callback_map[SIPE_BUDDY_MENU_TYPES] = {
@@ -497,6 +547,8 @@ static const buddy_menu_callback callback_map[SIPE_BUDDY_MENU_TYPES] = {
 	/* SIPE_BUDDY_MENU_MAKE_CALL         */ sipe_purple_buddy_make_call_cb,
 	/* SIPE_BUDDY_MENU_SEND_EMAIL        */ sipe_purple_buddy_send_email_cb,
 	/* SIPE_BUDDY_MENU_ACCESS_LEVEL_HELP */ sipe_purple_buddy_access_level_help_cb,
+	/* SIPE_BUDDY_MENU_ADD_NEW_DOMAIN    */ sipe_purple_buddy_add_new_domain_cb,
+
 };
 
 struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
@@ -515,6 +567,15 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_add(SIPE_UNUSED_PARAMETE
 			      purple_menu_action_new(label,
 						     PURPLE_CALLBACK(callback_map[type]),
 						     parameter, NULL)));
+}
+
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_separator(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+								  struct sipe_backend_buddy_menu *menu,
+								  const gchar *label)
+{
+	return((struct sipe_backend_buddy_menu *)
+	       g_list_prepend((GList *) menu,
+			      purple_menu_action_new(label, NULL, NULL, NULL)));
 }
 
 struct sipe_backend_buddy_menu *sipe_backend_buddy_sub_menu_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,

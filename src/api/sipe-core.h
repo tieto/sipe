@@ -165,6 +165,13 @@ void sipe_core_schedule_execute(gpointer data);
 void sipe_core_update_calendar(struct sipe_core_public *sipe_public);
 void sipe_core_reset_status(struct sipe_core_public *sipe_public);
 
+/* access levels */
+void sipe_core_change_access_level_from_container(struct sipe_core_public *sipe_public,
+						  gpointer parameter);
+void sipe_core_change_access_level_for_domain(struct sipe_core_public *sipe_public,
+					      const gchar *domain,
+					      guint index);
+
 /**
  * Activity
  *   - core:    maps this to OCS protocol values

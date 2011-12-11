@@ -253,11 +253,6 @@ struct sipe_container_member {
 static const guint containers[] = {32000, 400, 300, 200, 100};
 #define CONTAINERS_LEN (sizeof(containers) / sizeof(guint))
 
-guint sipe_ocs2007_containers(void)
-{
-	return(CONTAINERS_LEN);
-}
-
 static void free_container_member(struct sipe_container_member *member)
 {
 	if (!member) return;
@@ -301,89 +296,10 @@ static void blist_menu_remember_container(struct sipe_core_private *sipe_private
 							      container);
 }
 
-/**
- * for Access levels menu
- */
-#define INDENT_FMT			"  %s"
-
-/**
- * Member is indirectly belong to access level container.
- * For example 'sameEnterprise' is in the container and user
- * belongs to that same enterprise.
- */
-#define INDENT_MARKED_INHERITED_FMT	"= %s"
-
-static struct sipe_backend_buddy_menu *access_levels_menu(struct sipe_core_private *sipe_private,
-							  struct sipe_backend_buddy_menu *menu,
-							  const gchar *member_type,
-							  const gchar *member_value,
-							  const gboolean extra_menu)
-{
-	(void) sipe_private;
-	(void) member_type;
-	(void) member_value;
-	(void) extra_menu;
-	(void) blist_menu_remember_container;
-	return(menu);
-}
-
-static struct sipe_backend_buddy_menu *access_groups_menu(struct sipe_core_private *sipe_private)
-{
-	struct sipe_backend_buddy_menu *menu = sipe_backend_buddy_menu_start(SIPE_CORE_PUBLIC);
-	(void) sipe_private;
-	return(menu);
-}
-
-struct sipe_backend_buddy_menu *sipe_ocs2007_access_control_menu(struct sipe_core_private *sipe_private,
-								 const gchar *buddy_name)
-{
-	struct sipe_backend_buddy_menu *menu = sipe_backend_buddy_menu_start(SIPE_CORE_PUBLIC);
-	gchar *label;
-
-	/*
-	 * Workaround for missing libpurple API to release resources allocated
-	 * during blist_node_menu() callback. See also:
-	 *
-	 *   <http://developer.pidgin.im/ticket/12597>
-	 *
-	 * We remember all memory blocks in a list and deallocate them when
-	 *
-	 *   - the next time we enter the callback, or
-	 *   - the account is disconnected
-	 *
-	 * That means that after the buddy menu has been closed we have unused
-	 * resources but at least we don't leak them anymore...
-	 */
-	sipe_core_buddy_menu_free(SIPE_CORE_PUBLIC);
-
-	label = g_strdup_printf(INDENT_FMT, _("Online help..."));
-	menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
-					   menu,
-					   label,
-					   SIPE_BUDDY_MENU_ACCESS_LEVEL_HELP,
-					   NULL);
-	g_free(label);
-
-	label = g_strdup_printf(INDENT_FMT, _("Access groups"));
-	menu = sipe_backend_buddy_sub_menu_add(SIPE_CORE_PUBLIC,
-					       menu,
-					       label,
-					       access_groups_menu(sipe_private));
-	g_free(label);
-
-	menu = access_levels_menu(sipe_private,
-				  menu,
-				  "user",
-				  sipe_get_no_sip_uri(buddy_name),
-				  TRUE);
-
-	return(menu);
-}
-
-struct sipe_container *sipe_ocs2007_create_container(guint index,
-						     const gchar *member_type,
-						     const gchar *member_value,
-						     gboolean is_group)
+static struct sipe_container *create_container(guint index,
+					       const gchar *member_type,
+					       const gchar *member_value,
+					       gboolean is_group)
 {
 	struct sipe_container *container = g_new0(struct sipe_container, 1);
 	struct sipe_container_member *member = g_new0(struct sipe_container_member, 1);
@@ -552,11 +468,6 @@ const gchar *sipe_ocs2007_access_level_name(guint id)
 	return _("Unknown");
 }
 
-int sipe_ocs2007_container_id(guint index)
-{
-	return(containers[index]);
-}
-
 /** Member type: user, domain, sameEnterprise, federated, publicCloud; everyone */
 int sipe_ocs2007_find_access_level(struct sipe_core_private *sipe_private,
 				   const gchar *type,
@@ -607,7 +518,7 @@ int sipe_ocs2007_find_access_level(struct sipe_core_private *sipe_private,
 	return container_id;
 }
 
-GSList *sipe_ocs2007_get_access_domains(struct sipe_core_private *sipe_private)
+static GSList *get_access_domains(struct sipe_core_private *sipe_private)
 {
 	struct sipe_container *container;
 	struct sipe_container_member *member;
@@ -750,9 +661,10 @@ void sipe_ocs2007_change_access_level(struct sipe_core_private *sipe_private,
 	g_free(container_xmls);
 }
 
-void sipe_ocs2007_change_access_level_from_container(struct sipe_core_private *sipe_private,
-						     struct sipe_container *container)
+void sipe_core_change_access_level_from_container(struct sipe_core_public *sipe_public,
+						  gpointer parameter)
 {
+	struct sipe_container *container = parameter;
 	struct sipe_container_member *member;
 
 	if (!container || !container->members) return;
@@ -764,29 +676,28 @@ void sipe_ocs2007_change_access_level_from_container(struct sipe_core_private *s
 	SIPE_DEBUG_INFO("sipe_ocs2007_change_access_level_from_container: container->id=%d, member->type=%s, member->value=%s",
 			container->id, member->type, member->value ? member->value : "");
 
-	sipe_ocs2007_change_access_level(sipe_private,
+	sipe_ocs2007_change_access_level(SIPE_CORE_PRIVATE,
 					 container->id,
 					 member->type,
 					 member->value);
 
 }
 
-void sipe_ocs2007_change_access_level_for_domain(struct sipe_core_private *sipe_private,
-						 const gchar *domain,
-						 guint index)
+void sipe_core_change_access_level_for_domain(struct sipe_core_public *sipe_public,
+					      const gchar *domain,
+					      guint index)
 {
 	/* move Blocked first */
 	guint i            = (index == 4) ? 0 : index + 1;
 	guint container_id = containers[i];
 
-	SIPE_DEBUG_INFO("sipe_ocs2007_change_access_level_from_id: domain=%s, container_id=(%d)%d",
+	SIPE_DEBUG_INFO("sipe_core_change_access_level_from_id: domain=%s, container_id=(%d)%d",
 			domain ? domain : "", index, container_id);
 
-	sipe_ocs2007_change_access_level(sipe_private,
+	sipe_ocs2007_change_access_level(SIPE_CORE_PRIVATE,
 					 container_id,
 					 "domain",
 					 domain);
-
 }
 
 /**
@@ -2438,6 +2349,149 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 	}
 
 	g_free(to);
+}
+
+/**
+ * for Access levels menu
+ */
+#define INDENT_FMT			"  %s"
+
+/**
+ * Member is indirectly belong to access level container.
+ * For example 'sameEnterprise' is in the container and user
+ * belongs to that same enterprise.
+ */
+#define INDENT_MARKED_INHERITED_FMT	"= %s"
+
+static struct sipe_backend_buddy_menu *access_levels_menu(struct sipe_core_private *sipe_private,
+							  struct sipe_backend_buddy_menu *menu,
+							  const gchar *member_type,
+							  const gchar *member_value,
+							  const gboolean extra_menu)
+{
+	if (!menu)
+		menu = sipe_backend_buddy_menu_start(SIPE_CORE_PUBLIC);
+
+	(void) member_type;
+	(void) member_value;
+	(void) extra_menu;
+	(void) blist_menu_remember_container;
+	(void) create_container;
+	return(menu);
+}
+
+static struct sipe_backend_buddy_menu *access_groups_menu(struct sipe_core_private *sipe_private)
+{
+	struct sipe_backend_buddy_menu *menu = sipe_backend_buddy_menu_start(SIPE_CORE_PUBLIC);
+	GSList *access_domains, *entry;
+
+	menu = sipe_backend_buddy_sub_menu_add(SIPE_CORE_PUBLIC,
+					       menu,
+					       _("People in my company"),
+					       access_levels_menu(sipe_private,
+								  NULL,
+								  "sameEnterprise",
+								  NULL,
+								  FALSE));
+
+	/* this is original name, don't edit */
+	menu = sipe_backend_buddy_sub_menu_add(SIPE_CORE_PUBLIC,
+					       menu,
+					       _("People in domains connected with my company"),
+					       access_levels_menu(sipe_private,
+								  NULL,
+								  "federated",
+								  NULL,
+								  FALSE));
+
+	menu = sipe_backend_buddy_sub_menu_add(SIPE_CORE_PUBLIC,
+					       menu,
+					       _("People in public domains"),
+					       access_levels_menu(sipe_private,
+								  NULL,
+								  "publicCloud",
+								  NULL,
+								  TRUE));
+
+	entry = access_domains = get_access_domains(sipe_private);
+	while (entry) {
+		gchar *domain    = entry->data;
+		gchar *menu_name = g_strdup_printf(_("People at %s"), domain);
+
+		/* takes over ownership of entry->data (= domain) */
+		menu = sipe_backend_buddy_sub_menu_add(SIPE_CORE_PUBLIC,
+						       menu,
+						       menu_name,
+						       access_levels_menu(sipe_private,
+									  NULL,
+									  "domain",
+									  domain,
+									  TRUE));
+		g_free(menu_name);
+
+		entry = entry->next;
+	}
+	g_slist_free(access_domains);
+
+	/* separator */
+	/*			                  People in domains connected with my company */
+	menu = sipe_backend_buddy_menu_separator(SIPE_CORE_PUBLIC,
+						 menu,
+						 "-------------------------------------------");
+
+	menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+					   menu,
+					   _("Add new domain..."),
+					   SIPE_BUDDY_MENU_ADD_NEW_DOMAIN,
+					   NULL);
+
+	return(menu);
+}
+
+struct sipe_backend_buddy_menu *sipe_ocs2007_access_control_menu(struct sipe_core_private *sipe_private,
+								 const gchar *buddy_name)
+{
+	struct sipe_backend_buddy_menu *menu = sipe_backend_buddy_menu_start(SIPE_CORE_PUBLIC);
+	gchar *label;
+
+	/*
+	 * Workaround for missing libpurple API to release resources allocated
+	 * during blist_node_menu() callback. See also:
+	 *
+	 *   <http://developer.pidgin.im/ticket/12597>
+	 *
+	 * We remember all memory blocks in a list and deallocate them when
+	 *
+	 *   - the next time we enter the callback, or
+	 *   - the account is disconnected
+	 *
+	 * That means that after the buddy menu has been closed we have unused
+	 * resources but at least we don't leak them anymore...
+	 */
+	sipe_core_buddy_menu_free(SIPE_CORE_PUBLIC);
+
+	label = g_strdup_printf(INDENT_FMT, _("Online help..."));
+	menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+					   menu,
+					   label,
+					   SIPE_BUDDY_MENU_ACCESS_LEVEL_HELP,
+					   NULL);
+	g_free(label);
+
+	label = g_strdup_printf(INDENT_FMT, _("Access groups"));
+	menu = sipe_backend_buddy_sub_menu_add(SIPE_CORE_PUBLIC,
+					       menu,
+					       label,
+					       access_groups_menu(sipe_private));
+	g_free(label);
+
+	menu = access_levels_menu(sipe_private,
+				  menu,
+				  "user",
+				  sipe_get_no_sip_uri(buddy_name),
+				  TRUE);
+
+	return(menu);
 }
 
 /*

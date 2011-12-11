@@ -894,6 +894,7 @@ enum sipe_buddy_menu_type {
 	SIPE_BUDDY_MENU_MAKE_CALL,
 	SIPE_BUDDY_MENU_SEND_EMAIL,
 	SIPE_BUDDY_MENU_ACCESS_LEVEL_HELP,
+	SIPE_BUDDY_MENU_ADD_NEW_DOMAIN,
 	SIPE_BUDDY_MENU_TYPES
 };
 
@@ -903,6 +904,9 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_add(struct sipe_core_pub
 							    const gchar *label,
 							    enum sipe_buddy_menu_type type,
 							    gpointer parameter);
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_separator(struct sipe_core_public *sipe_public,
+								  struct sipe_backend_buddy_menu *menu,
+								  const gchar *label);
 struct sipe_backend_buddy_menu *sipe_backend_buddy_sub_menu_add(struct sipe_core_public *sipe_public,
 								struct sipe_backend_buddy_menu *menu,
 								const gchar *label,

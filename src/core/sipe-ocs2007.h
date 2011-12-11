@@ -53,16 +53,10 @@ void sipe_ocs2007_reset_status(struct sipe_core_private *sipe_private);
 void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 				       struct sipmsg *msg);
 
-
-/* this API needs to be refactored once access level menu creation is
-   refactored correctly to the backend out of sipe.c */
-guint sipe_ocs2007_containers(void);
+/**
+ * OCS2007 Access Levels
+ */
 const gchar *sipe_ocs2007_access_level_name(guint id);
-int sipe_ocs2007_container_id(guint index);
-struct sipe_container *sipe_ocs2007_create_container(guint index,
-						     const gchar *member_type,
-						     const gchar *member_value,
-						     gboolean is_group);
 int sipe_ocs2007_find_access_level(struct sipe_core_private *sipe_private,
 				   const gchar *type,
 				   const gchar *value,
@@ -71,12 +65,6 @@ void sipe_ocs2007_change_access_level(struct sipe_core_private *sipe_private,
 				      const int container_id,
 				      const gchar *type,
 				      const gchar *value);
-void sipe_ocs2007_change_access_level_from_container(struct sipe_core_private *sipe_private,
-						     struct sipe_container *container);
-void sipe_ocs2007_change_access_level_for_domain(struct sipe_core_private *sipe_private,
-						 const gchar *domain,
-						 guint index);
-GSList *sipe_ocs2007_get_access_domains(struct sipe_core_private *sipe_private);
 
 /* buddy menu */
 struct sipe_backend_buddy_menu *sipe_ocs2007_access_control_menu(struct sipe_core_private *sipe_private,
