@@ -71,18 +71,6 @@ sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy,
 							container);
 }
 
-        /*--------------------- START WIP ------------------------------*/
-	/* Access Level */
-	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		GList *menu_access_levels = sipe_get_access_control_menu(sipe_private, buddy->name);
-
-		act = purple_menu_action_new(_("Access level"),
-					     NULL,
-					     NULL, menu_access_levels);
-		menu = g_list_prepend(menu, act);
-	}
-        /*--------------------- END WIP ------------------------------*/
-
 static void
 sipe_ask_access_domain_cb(PurpleConnection *gc, PurpleRequestFields *fields)
 {

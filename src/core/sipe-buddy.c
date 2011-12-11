@@ -1015,7 +1015,13 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 		}
 	}
 
-	/*--------------------- START WIP ------------------------------*/
+	/* access level control */
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
+		menu = sipe_backend_buddy_sub_menu_add(sipe_public,
+						       menu,
+						       _("Access level"),
+						       sipe_ocs2007_access_control_menu(sipe_private,
+											buddy_name));
 
 	return(menu);
 }

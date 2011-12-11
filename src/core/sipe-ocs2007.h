@@ -79,9 +79,8 @@ void sipe_ocs2007_change_access_level_for_domain(struct sipe_core_private *sipe_
 GSList *sipe_ocs2007_get_access_domains(struct sipe_core_private *sipe_private);
 
 /* buddy menu */
-void sipe_ocs2007_blist_menu_remember_container(struct sipe_core_private *sipe_private,
-						struct sipe_container *container);
-
+struct sipe_backend_buddy_menu *sipe_ocs2007_access_control_menu(struct sipe_core_private *sipe_private,
+								 const gchar *buddy_name);
 
 /*
   Local Variables:

@@ -505,6 +505,19 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_add(SIPE_UNUSED_PARAMETE
 						     parameter, NULL)));
 }
 
+struct sipe_backend_buddy_menu *sipe_backend_buddy_sub_menu_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+								struct sipe_backend_buddy_menu *menu,
+								const gchar *label,
+								struct sipe_backend_buddy_menu *sub)
+{
+	return((struct sipe_backend_buddy_menu *)
+	       g_list_prepend((GList *) menu,
+			      purple_menu_action_new(label,
+						     NULL,
+						     NULL,
+						     (GList *) sub)));
+}
+
 static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 					 const gchar *group_name)
 {
@@ -597,30 +610,10 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 GList *sipe_purple_buddy_menu(PurpleBuddy *buddy)
 {
 	struct sipe_core_public *sipe_public = PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC;
-	GList *menu;
-
-	/*
-	 * Workaround for missing libpurple API to release resources allocated
-	 * during blist_node_menu() callback. See also:
-	 *
-	 *   <http://developer.pidgin.im/ticket/12597>
-	 *
-	 * We remember all memory blocks in a list and deallocate them when
-	 *
-	 *   - the next time we enter the callback, or
-	 *   - the account is disconnected
-	 *
-	 * That means that after the buddy menu has been closed we have unused
-	 * resources but at least we don't leak them anymore...
-	 */
-	sipe_core_buddy_menu_free(sipe_public);
-
-	/* now create the new menu... */
-	menu = (GList *) sipe_core_buddy_create_menu(sipe_public,
-						     buddy->name,
-						     NULL);
+	GList *menu = (GList *) sipe_core_buddy_create_menu(sipe_public,
+							    buddy->name,
+							    NULL);
 	menu = sipe_purple_copy_to_menu(menu, buddy);
-
 	return(g_list_reverse(menu));
 }
 
