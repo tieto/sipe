@@ -45,23 +45,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-/** for Access levels menu */
-#define INDENT_FMT			"  %s"
-
-/** Member is indirectly belong to access level container.
- *  For example 'sameEnterprise' is in the container and user
- *  belongs to that same enterprise.
- */
-#define INDENT_MARKED_INHERITED_FMT	"= %s"
-
-static void
-sipe_buddy_menu_access_level_help_cb(PurpleBuddy *buddy)
-{
-	/** Translators: replace with URL to localized page
-	 * If it doesn't exist copy the original URL */
-	purple_notify_uri(buddy->account->gc, _("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
-}
-
 static void
 sipe_buddy_menu_access_level_cb(PurpleBuddy *buddy,
 				struct sipe_container *container)
@@ -247,39 +230,6 @@ sipe_get_access_groups_menu(struct sipe_core_private *sipe_private)
 	menu_access_groups = g_list_reverse(menu_access_groups);
 
 	return menu_access_groups;
-}
-
-static GList *
-sipe_get_access_control_menu(struct sipe_core_private *sipe_private,
-			     const char* uri)
-{
-	GList *menu_access_levels = NULL;
-	GList *menu_access_groups = NULL;
-	char *menu_name;
-	PurpleMenuAction *act;
-
-	/* libpurple memory leak workaround */
-	sipe_blist_menu_free_containers(sipe_private);
-
-	menu_access_levels = sipe_get_access_levels_menu(sipe_private, "user", sipe_get_no_sip_uri(uri), TRUE);
-
-	menu_access_groups = sipe_get_access_groups_menu(sipe_private);
-
-	menu_name = g_strdup_printf(INDENT_FMT, _("Access groups"));
-	act = purple_menu_action_new(menu_name,
-				     NULL,
-				     NULL, menu_access_groups);
-	g_free(menu_name);
-	menu_access_levels = g_list_append(menu_access_levels, act);
-
-	menu_name = g_strdup_printf(INDENT_FMT, _("Online help..."));
-	act = purple_menu_action_new(menu_name,
-				     PURPLE_CALLBACK(sipe_buddy_menu_access_level_help_cb),
-				     NULL, NULL);
-	g_free(menu_name);
-	menu_access_levels = g_list_append(menu_access_levels, act);
-
-	return menu_access_levels;
 }
 
 /*

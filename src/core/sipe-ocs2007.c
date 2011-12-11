@@ -301,10 +301,45 @@ static void blist_menu_remember_container(struct sipe_core_private *sipe_private
 							      container);
 }
 
+/**
+ * for Access levels menu
+ */
+#define INDENT_FMT			"  %s"
+
+/**
+ * Member is indirectly belong to access level container.
+ * For example 'sameEnterprise' is in the container and user
+ * belongs to that same enterprise.
+ */
+#define INDENT_MARKED_INHERITED_FMT	"= %s"
+
+static struct sipe_backend_buddy_menu *access_levels_menu(struct sipe_core_private *sipe_private,
+							  struct sipe_backend_buddy_menu *menu,
+							  const gchar *member_type,
+							  const gchar *member_value,
+							  const gboolean extra_menu)
+{
+	(void) sipe_private;
+	(void) member_type;
+	(void) member_value;
+	(void) extra_menu;
+	(void) blist_menu_remember_container;
+	return(menu);
+}
+
+static struct sipe_backend_buddy_menu *access_groups_menu(struct sipe_core_private *sipe_private)
+{
+	struct sipe_backend_buddy_menu *menu = sipe_backend_buddy_menu_start(SIPE_CORE_PUBLIC);
+	(void) sipe_private;
+	return(menu);
+}
+
 struct sipe_backend_buddy_menu *sipe_ocs2007_access_control_menu(struct sipe_core_private *sipe_private,
 								 const gchar *buddy_name)
 {
 	struct sipe_backend_buddy_menu *menu = sipe_backend_buddy_menu_start(SIPE_CORE_PUBLIC);
+	gchar *label;
+
 	/*
 	 * Workaround for missing libpurple API to release resources allocated
 	 * during blist_node_menu() callback. See also:
@@ -321,8 +356,27 @@ struct sipe_backend_buddy_menu *sipe_ocs2007_access_control_menu(struct sipe_cor
 	 */
 	sipe_core_buddy_menu_free(SIPE_CORE_PUBLIC);
 
-	(void) buddy_name;
-	(void) blist_menu_remember_container;
+	label = g_strdup_printf(INDENT_FMT, _("Online help..."));
+	menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+					   menu,
+					   label,
+					   SIPE_BUDDY_MENU_ACCESS_LEVEL_HELP,
+					   NULL);
+	g_free(label);
+
+	label = g_strdup_printf(INDENT_FMT, _("Access groups"));
+	menu = sipe_backend_buddy_sub_menu_add(SIPE_CORE_PUBLIC,
+					       menu,
+					       label,
+					       access_groups_menu(sipe_private));
+	g_free(label);
+
+	menu = access_levels_menu(sipe_private,
+				  menu,
+				  "user",
+				  sipe_get_no_sip_uri(buddy_name),
+				  TRUE);
+
 	return(menu);
 }
 
