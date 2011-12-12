@@ -440,6 +440,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_media_relay_list_free(sipe_private->media_relays);
 #endif
 
+	g_free(sipe_private->dlx_uri);
 	g_free(sipe_private);
 }
 

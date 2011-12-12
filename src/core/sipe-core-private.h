@@ -123,7 +123,7 @@ struct sipe_core_private {
 	/* Group chat */
 	struct sipe_groupchat *groupchat;
 
-	/* @TODO: move to purple backend when menu code moves */
+	/* buddy menu memory allocation */
 	GSList *blist_menu_containers;
 
 	/* For RCC - Remote Call Control */
@@ -134,6 +134,9 @@ struct sipe_core_private {
 	/* TLS-DSK: Certificates & Web services */
 	struct sipe_certificate *certificate;
 	struct sipe_svc *svc;
+
+	/* [MS-DLX] server URI */
+	gchar *dlx_uri;
 };
 
 /**

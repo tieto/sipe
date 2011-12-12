@@ -95,6 +95,11 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->focus_factory_uri=%s",
 					sipe_private->focus_factory_uri ? sipe_private->focus_factory_uri : "");
 
+			g_free(sipe_private->dlx_uri);
+			sipe_private->dlx_uri = sipe_xml_data(sipe_xml_child(node, "dlxExternalUrl"));
+			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->dlx_uri=%s",
+					sipe_private->dlx_uri ? sipe_private->dlx_uri : "");
+
 #ifdef HAVE_VV
 			g_free(sipe_private->mras_uri);
 			sipe_private->mras_uri = g_strstrip(sipe_xml_data(sipe_xml_child(node, "mrasUri")));
