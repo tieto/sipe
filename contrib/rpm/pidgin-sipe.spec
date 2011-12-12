@@ -65,7 +65,8 @@ Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
@@ -84,7 +85,8 @@ License:        GPL-2.0+
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
@@ -134,6 +136,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Dec 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- we do support Microsoft Lync Server 2010 now.
+
 * Tue Dec 06 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - update GPL2 license name
 
