@@ -1,16 +1,12 @@
 Bugs:
-	- #2834758: (sip-sec-ntlm.c) First NTLM signature check after startup fails
 
 Big Targets:
-	- Native backends other than Purple.
-	  * Separate Sipe core and Purple plugin functionality.
-	  * New backends: Telepathy, Kopete, Miranda, ???
+	- Native telepahty backend
 	- Desktop sharing/Live Meeting integration on Windows platform.
 	- Update projects site with
 	  * SIPE features
           * better/more complete screenshots
 	  * page about standards used in SIPE with references
-	  * FAQ page.
 
 Call Control:
 	- change user state to On Call when line is active and then back
