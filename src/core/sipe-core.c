@@ -176,7 +176,7 @@ gchar *sipe_core_about(void)
 		/* About note, part 1/13: introduction */
 		_("A third-party plugin implementing extended version of SIP/SIMPLE used by various products"),
 		/* About note, part 2/13: home page URL (label) */
-		_("Home"),
+		_("Home Page"),
 		/* About note, part 3/13: support forum URL (label) */
 		_("Support"),
 		/* About note, part 4/13: support forum name (hyperlink text) */
