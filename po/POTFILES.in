@@ -2,7 +2,6 @@
 [encoding: UTF-8]
 
 src/core/sip-transport.c
-src/core/sipe.c
 src/core/sipe-buddy.c
 src/core/sipe-cal.c
 src/core/sipe-certificate.c

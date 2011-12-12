@@ -488,6 +488,13 @@ static void sipe_purple_buddy_access_level_help_cb(PurpleBuddy *buddy,
 			  _("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
 }
 
+static void sipe_purple_buddy_change_access_level_cb(PurpleBuddy *buddy,
+						     gpointer parameter)
+{
+	sipe_core_change_access_level_from_container(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+						     parameter);
+}
+
 static void sipe_purple_ask_access_domain_cb(PurpleConnection *gc,
 					     PurpleRequestFields *fields)
 {
@@ -540,15 +547,15 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,
 				    gpointer parameter);
 static const buddy_menu_callback callback_map[SIPE_BUDDY_MENU_TYPES] = {
-	/* SIPE_BUDDY_MENU_MAKE_CHAT_LEADER  */ sipe_purple_buddy_make_chat_leader_cb,
-	/* SIPE_BUDDY_MENU_REMOVE_FROM_CHAT  */ sipe_purple_buddy_remove_from_chat_cb,
-	/* SIPE_BUDDY_MENU_INVITE_TO_CHAT    */ sipe_purple_buddy_invite_to_chat_cb,
-	/* SIPE_BUDDY_MENU_NEW_CHAT          */ sipe_purple_buddy_new_chat_cb,
-	/* SIPE_BUDDY_MENU_MAKE_CALL         */ sipe_purple_buddy_make_call_cb,
-	/* SIPE_BUDDY_MENU_SEND_EMAIL        */ sipe_purple_buddy_send_email_cb,
-	/* SIPE_BUDDY_MENU_ACCESS_LEVEL_HELP */ sipe_purple_buddy_access_level_help_cb,
-	/* SIPE_BUDDY_MENU_ADD_NEW_DOMAIN    */ sipe_purple_buddy_add_new_domain_cb,
-
+/* SIPE_BUDDY_MENU_MAKE_CHAT_LEADER    */ sipe_purple_buddy_make_chat_leader_cb,
+/* SIPE_BUDDY_MENU_REMOVE_FROM_CHAT    */ sipe_purple_buddy_remove_from_chat_cb,
+/* SIPE_BUDDY_MENU_INVITE_TO_CHAT      */ sipe_purple_buddy_invite_to_chat_cb,
+/* SIPE_BUDDY_MENU_NEW_CHAT            */ sipe_purple_buddy_new_chat_cb,
+/* SIPE_BUDDY_MENU_MAKE_CALL           */ sipe_purple_buddy_make_call_cb,
+/* SIPE_BUDDY_MENU_SEND_EMAIL          */ sipe_purple_buddy_send_email_cb,
+/* SIPE_BUDDY_MENU_ACCESS_LEVEL_HELP   */ sipe_purple_buddy_access_level_help_cb,
+/* SIPE_BUDDY_MENU_CHANGE_ACCESS_LEVEL */ sipe_purple_buddy_change_access_level_cb,
+/* SIPE_BUDDY_MENU_ADD_NEW_DOMAIN      */ sipe_purple_buddy_add_new_domain_cb,
 };
 
 struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)

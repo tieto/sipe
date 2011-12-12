@@ -2369,14 +2369,78 @@ static struct sipe_backend_buddy_menu *access_levels_menu(struct sipe_core_priva
 							  const gchar *member_value,
 							  const gboolean extra_menu)
 {
+	unsigned int i;
+	gboolean is_group_access = FALSE;
+	int container_id;
+
 	if (!menu)
 		menu = sipe_backend_buddy_menu_start(SIPE_CORE_PUBLIC);
 
-	(void) member_type;
-	(void) member_value;
-	(void) extra_menu;
-	(void) blist_menu_remember_container;
-	(void) create_container;
+	container_id = sipe_ocs2007_find_access_level(sipe_private,
+						      member_type,
+						      member_value,
+						      &is_group_access);
+
+	for (i = 1; i <= CONTAINERS_LEN; i++) {
+		/*
+		 * Blocked should remain in the first place
+		 * in the containers[] array.
+		 */
+		unsigned int j  = (i == CONTAINERS_LEN) ? 0 : i;
+		int container_j = containers[j];
+		const gchar *acc_level_name = sipe_ocs2007_access_level_name(container_j);
+		struct sipe_container *container = create_container(j,
+								    member_type,
+								    member_value,
+								    FALSE);
+		gchar *label;
+
+		/* libpurple memory leak workaround */
+		blist_menu_remember_container(sipe_private, container);
+
+		/* current container/access level */
+		if (container_j == container_id) {
+			label = is_group_access ?
+				g_strdup_printf(INDENT_MARKED_INHERITED_FMT, acc_level_name) :
+				g_strdup_printf(SIPE_OCS2007_INDENT_MARKED_FMT, acc_level_name);
+		} else {
+			label = g_strdup_printf(INDENT_FMT, acc_level_name);
+		}
+
+		menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+						   menu,
+						   label,
+						   SIPE_BUDDY_MENU_CHANGE_ACCESS_LEVEL,
+						   container);
+		g_free(label);
+	}
+
+	if (extra_menu && (container_id >= 0) && !is_group_access) {
+		struct sipe_container *container = create_container(0,
+									    member_type,
+									    member_value,
+									    TRUE);
+		gchar *label;
+
+		/* separator */
+		menu = sipe_backend_buddy_menu_separator(SIPE_CORE_PUBLIC,
+							 menu,
+							 "  --------------");
+
+
+		/* libpurple memory leak workaround */
+		blist_menu_remember_container(sipe_private, container);
+
+		/* Translators: remove (clear) previously assigned access level */
+		label = g_strdup_printf(INDENT_FMT, _("Unspecify"));
+		menu = sipe_backend_buddy_menu_add(SIPE_CORE_PUBLIC,
+						   menu,
+						   label,
+						   SIPE_BUDDY_MENU_CHANGE_ACCESS_LEVEL,
+						   container);
+		g_free(label);
+	}
+
 	return(menu);
 }
 

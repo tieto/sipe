@@ -6,10 +6,6 @@ noinst_LTLIBRARIES = \
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
-# temporary: we don't compile it anymore, but we still need to put it into
-#            the tarball as it is required for the intltool check to pass.
-noinst_HEADERS = sipe.c
-
 libsipe_core_la_SOURCES = \
 	http-conn.h \
 	http-conn.c \
