@@ -18,6 +18,46 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ * Some notes on the history of this project/code/copyrights:
+ *
+ *  - the project is called SIPE, but originally the code was only written
+ *    for the libpurple framework, i.e. Pidgin. Hence the package name is
+ *    "pidgin-sipe".
+ *
+ *  - in the beginning almost all of the code was located in a module
+ *    called "sipe.c". During the effort to remove the libpurple
+ *    dependencies from the SIPE core, thousands of lines of code got
+ *    shifted out of sipe.c, mostly to newly created modules and sipe.c
+ *    ceased to exist.
+ *
+ *  - it would have been tedious to track down the original author or
+ *    copyright and preserve them for each line of code that was moved.
+ *    Therefore the new modules started with a fresh copyright notice
+ *    (like the one above).
+ *
+ *  - the original copyright notices from sipe.c have been moved to this
+ *    file (see below) and *MUST* be preserved!
+ *
+ *  - if necessary the author of a line of code in question can still be
+ *    reconstructed from the git repository information.
+ *    See also "man git-blame"
+ *
+ *  - if you think your copyright should be restored for a piece of code,
+ *    then please contact the SIPE project to fix the source files ASAP.
+ *
+ *------------------- Copyright notices from "sipe.c" ---------------
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-10 pier11 <pier11@operamail.com>
+ * Copyright (C) 2008    Novell, Inc.
+ * Copyright (C) 2007-09 Anibal Avelar <debianmx@gmail.com>
+ * Copyright (C) 2005    Thomas Butter <butter@uni-mannheim.de>
+ *
+ * ***
+ * Thanks to Google's Summer of Code Program and the helpful mentors
+ * ***
+ *------------------- Copyright notices from "sipe.c" ---------------
  */
 
 #ifdef HAVE_CONFIG_H
