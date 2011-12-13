@@ -122,6 +122,9 @@ http_conn_free(HttpConn* http_conn)
 {
 	if (!http_conn) return;
 
+	/* make sure also pending connections are released */
+	sipe_backend_transport_disconnect(http_conn->conn);
+
 	/* don't free "http_conn->http_session" - client should do */
 	g_free(http_conn->method);
 	g_free(http_conn->host);
@@ -159,15 +162,6 @@ http_conn_session_free(HttpSession *http_session)
 }
 
 void
-http_conn_auth_free(struct http_conn_auth* auth)
-{
-	g_free(auth->domain);
-	g_free(auth->user);
-	g_free(auth->password);
-	g_free(auth);
-}
-
-void
 http_conn_set_close(HttpConn* http_conn)
 {
 	http_conn->do_close = http_conn;
@@ -177,10 +171,6 @@ static void
 http_conn_close(HttpConn *http_conn, const char *message)
 {
 	SIPE_DEBUG_INFO("http_conn_close: closing http connection: %s", message ? message : "");
-
-	g_return_if_fail(http_conn);
-
-	sipe_backend_transport_disconnect(http_conn->conn);
 	http_conn_free(http_conn);
 }
 

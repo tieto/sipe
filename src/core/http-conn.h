@@ -94,9 +94,6 @@ http_conn_set_close(HttpConn* http_conn);
 void
 http_conn_free(HttpConn* http_conn);
 
-void
-http_conn_auth_free(HttpConnAuth* auth);
-
 HttpSession *
 http_conn_session_create(void);
 
