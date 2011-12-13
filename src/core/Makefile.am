@@ -74,6 +74,8 @@ libsipe_core_la_SOURCES = \
 	sipe-utils.c \
 	sipe-user.c \
 	sipe-user.h \
+	sipe-webticket.h \
+	sipe-webticket.c \
 	sipe-xml.h \
 	uuid.h \
 	uuid.c

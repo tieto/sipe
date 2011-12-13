@@ -44,11 +44,9 @@
 #include "sipe-core-private.h"
 #include "sipe-certificate.h"
 #include "sipe-cert-crypto.h"
-#include "sipe-digest.h"
 #include "sipe-nls.h"
 #include "sipe-svc.h"
-#include "sipe-tls.h"
-#include "sipe-utils.h"
+#include "sipe-webticket.h"
 #include "sipe-xml.h"
 
 struct sipe_certificate {
@@ -160,30 +158,6 @@ gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 	return(certificate);
 }
 
-struct certificate_callback_data {
-	gchar *target;
-	gchar *webticket_negotiate_uri;
-	gchar *webticket_fedbearer_uri;
-	gchar *certprov_uri;
-
-	gboolean tried_fedbearer;
-	gboolean webticket_for_certprov;
-
-	struct sipe_tls_random entropy;
-};
-
-static void callback_data_free(struct certificate_callback_data *ccd)
-{
-	if (ccd) {
-		g_free(ccd->target);
-		g_free(ccd->webticket_negotiate_uri);
-		g_free(ccd->webticket_fedbearer_uri);
-		g_free(ccd->certprov_uri);
-		sipe_tls_free_random(&ccd->entropy);
-		g_free(ccd);
-	}
-}
-
 static void certificate_failure(struct sipe_core_private *sipe_private,
 				const gchar *format,
 				const gchar *parameter)
@@ -201,7 +175,7 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 				 sipe_xml *soap_body,
 				 gpointer callback_data)
 {
-	struct certificate_callback_data *ccd = callback_data;
+	gchar *target = callback_data;
 	gboolean success = (uri == NULL); /* abort case */
 
 	if (soap_body) {
@@ -219,10 +193,10 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 
 			if (opaque) {
 				add_certificate(sipe_private,
-						ccd->target,
+						target,
 						opaque);
 				SIPE_DEBUG_INFO("get_and_publish_cert: certificate for target '%s' added",
-						ccd->target);
+						target);
 
 				/* Let's try this again... */
 				sip_transport_authentication_completed(sipe_private);
@@ -240,491 +214,70 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 				    uri);
 	}
 
-	callback_data_free(ccd);
+	g_free(target);
 }
 
-static gchar *extract_raw_xml_attribute(const gchar *xml,
-					const gchar *name)
-{
-	gchar *attr_start = g_strdup_printf("%s=\"", name);
-	gchar *data       = NULL;
-	const gchar *start = strstr(xml, attr_start);
-
-	if (start) {
-		const gchar *value = start + strlen(attr_start);
-		const gchar *end = strchr(value, '"');
-		if (end) {
-			data = g_strndup(value, end - value);
-		}
-	}
-
-	g_free(attr_start);
-	return(data);
-}
-
-static gchar *extract_raw_xml(const gchar *xml,
-			      const gchar *tag,
-			      gboolean include_tag)
-{
-	gchar *tag_start = g_strdup_printf("<%s", tag);
-	gchar *tag_end   = g_strdup_printf("</%s>", tag);
-	gchar *data      = NULL;
-	const gchar *start = strstr(xml, tag_start);
-
-	if (start) {
-		const gchar *end = strstr(start + strlen(tag_start), tag_end);
-		if (end) {
-			if (include_tag) {
-				data = g_strndup(start, end + strlen(tag_end) - start);
-			} else {
-				const gchar *tmp = strchr(start + strlen(tag_start), '>') + 1;
-				data = g_strndup(tmp, end - tmp);
-			}
-		}
-	}
-
-	g_free(tag_end);
-	g_free(tag_start);
-	return(data);
-}
-
-static gchar *generate_timestamp(const gchar *raw,
-				 const gchar *lifetime_tag)
-{
-	gchar *lifetime = extract_raw_xml(raw, lifetime_tag, FALSE);
-	gchar *timestamp = NULL;
-	if (lifetime)
-		timestamp = g_strdup_printf("<wsu:Timestamp xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"timestamp\">%s</wsu:Timestamp>",
-					    lifetime);
-	g_free(lifetime);
-	return(timestamp);
-}
-
-static gchar *generate_fedbearer_wsse(const gchar *raw)
-{
-	gchar *timestamp = generate_timestamp(raw, "wst:Lifetime");
-	gchar *keydata   = extract_raw_xml(raw, "EncryptedData", TRUE);
-	gchar *wsse_security = NULL;
-
-	if (timestamp && keydata) {
-		SIPE_DEBUG_INFO_NOFORMAT("generate_fedbearer_wsse: found timestamp & keydata");
-		wsse_security = g_strconcat(timestamp, keydata, NULL);
-	}
-
-	g_free(keydata);
-	g_free(timestamp);
-	return(wsse_security);
-}
-
-static gchar *generate_sha1_proof_wsse(const gchar *raw,
-				       struct sipe_tls_random *entropy)
-{
-	gchar *timestamp = generate_timestamp(raw, "Lifetime");
-	gchar *keydata   = extract_raw_xml(raw, "saml:Assertion", TRUE);
-	gchar *wsse_security = NULL;
-
-	if (timestamp && keydata) {
-		gchar *assertionID = extract_raw_xml_attribute(keydata,
-							       "AssertionID");
-
-		/*
-		 * WS-Trust 1.3
-		 *
-		 * http://docs.oasis-open.org/ws-sx/ws-trust/200512/CK/PSHA1:
-		 *
-		 * "The key is computed using P_SHA1() from the TLS sepcification to generate
-		 *  a bit stream using entropy from both sides. The exact form is:
-		 *
-		 *       key = P_SHA1(Entropy_REQ, Entropy_RES)"
-		 */
-		gchar *entropy_res_base64 = extract_raw_xml(raw, "BinarySecret", FALSE);
-		gsize entropy_res_length;
-		guchar *entropy_response = g_base64_decode(entropy_res_base64,
-							   &entropy_res_length);
-		guchar *key = sipe_tls_p_sha1(entropy->buffer,
-					      entropy->length,
-					      entropy_response,
-					      entropy_res_length,
-					      entropy->length);
-		g_free(entropy_response);
-		g_free(entropy_res_base64);
-
-		SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found timestamp & keydata");
-
-		if (assertionID && key) {
-			/* same as SIPE_DIGEST_HMAC_SHA1_LENGTH */
-			guchar digest[SIPE_DIGEST_SHA1_LENGTH];
-			gchar *base64;
-			gchar *signed_info;
-			gchar *canon;
-
-			SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found assertionID and successfully computed the key");
-
-			/* Digest over reference element (#timestamp -> wsu:Timestamp) */
-			sipe_digest_sha1((guchar *) timestamp,
-					 strlen(timestamp),
-					 digest);
-			base64 = g_base64_encode(digest,
-						 SIPE_DIGEST_SHA1_LENGTH);
-
-			/* XML-Sig: SignedInfo for reference element */
-			signed_info = g_strdup_printf("<SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
-						      "<CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
-						      "<SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#hmac-sha1\"/>"
-						      "<Reference URI=\"#timestamp\">"
-						      "<Transforms>"
-						      "<Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
-						      "</Transforms>"
-						      "<DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>"
-						      "<DigestValue>%s</DigestValue>"
-						      "</Reference>"
-						      "</SignedInfo>",
-						      base64);
-			g_free(base64);
-
-			/* XML-Sig: SignedInfo in canonical form */
-			canon = sipe_xml_exc_c14n(signed_info);
-			g_free(signed_info);
-
-			if (canon) {
-				gchar *signature;
-
-				/* calculate signature */
-				sipe_digest_hmac_sha1(key, entropy->length,
-						      (guchar *)canon,
-						      strlen(canon),
-						      digest);
-				base64 = g_base64_encode(digest,
-							 SIPE_DIGEST_HMAC_SHA1_LENGTH);
-
-				/* XML-Sig: Signature from SignedInfo + Key */
-				signature = g_strdup_printf("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
-							    " %s"
-							    " <SignatureValue>%s</SignatureValue>"
-							    " <KeyInfo>"
-							    "  <wsse:SecurityTokenReference wsse:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1\">"
-							    "   <wsse:KeyIdentifier ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID\">%s</wsse:KeyIdentifier>"
-							    "  </wsse:SecurityTokenReference>"
-							    " </KeyInfo>"
-							    "</Signature>",
-							    canon,
-							    base64,
-							    assertionID);
-				g_free(base64);
-				g_free(canon);
-
-				wsse_security = g_strconcat(timestamp,
-							    keydata,
-							    signature,
-							    NULL);
-				g_free(signature);
-			}
-
-		}
-
-		g_free(key);
-		g_free(assertionID);
-	}
-
-	g_free(keydata);
-	g_free(timestamp);
-	return(wsse_security);
-}
-
-static void webticket_token(struct sipe_core_private *sipe_private,
-			    const gchar *uri,
-			    const gchar *raw,
-			    sipe_xml *soap_body,
-			    gpointer callback_data)
-{
-	struct certificate_callback_data *ccd = callback_data;
-	gboolean success = (uri == NULL); /* abort case */
-
-	if (soap_body) {
-		/* WebTicket for Certificate Provisioning Service */
-		if (ccd->webticket_for_certprov) {
-			gchar *wsse_security = generate_sha1_proof_wsse(raw,
-									&ccd->entropy);
-
-			if (wsse_security) {
-				gchar *certreq_base64 = create_certreq(sipe_private,
-								       sipe_private->username);
-
-				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
-						uri);
-
-				if (certreq_base64) {
-
-					SIPE_DEBUG_INFO_NOFORMAT("webticket_token: created certificate request");
-
-					success = sipe_svc_get_and_publish_cert(sipe_private,
-										ccd->certprov_uri,
-										wsse_security,
-										certreq_base64,
-										get_and_publish_cert,
-										ccd);
-					if (success) {
-						/* callback data passed down the line */
-						ccd = NULL;
-					}
-					g_free(certreq_base64);
-				}
-				g_free(wsse_security);
-			}
-
-		/* WebTicket for federated authentication */
-		} else {
-			gchar *wsse_security = generate_fedbearer_wsse(raw);
-
-			if (wsse_security) {
-
-				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from service %s",
-						uri);
-
-				success = sipe_svc_webticket(sipe_private,
-							     ccd->webticket_fedbearer_uri,
-							     wsse_security,
-							     ccd->certprov_uri,
-							     &ccd->entropy,
-							     webticket_token,
-							     ccd);
-				ccd->webticket_for_certprov = TRUE;
-
-				if (success) {
-					/* callback data passed down the line */
-					ccd = NULL;
-				}
-				g_free(wsse_security);
-			}
-		}
-
-	} else if (uri) {
-		/* Retry with federated authentication? */
-		success = ccd->webticket_fedbearer_uri && !ccd->tried_fedbearer;
-		if (success) {
-			SIPE_DEBUG_INFO("webticket_token: anonymous authentication to service %s failed, retrying with federated authentication",
-					uri);
-
-			ccd->tried_fedbearer = TRUE;
-			success = sipe_svc_webticket_lmc(sipe_private,
-							 ccd->webticket_fedbearer_uri,
-							 webticket_token,
-							 ccd);
-			ccd->webticket_for_certprov = FALSE;
-
-			if (success) {
-				/* callback data passed down the line */
-				ccd = NULL;
-			}
-		}
-	}
-
-	if (!success) {
-		certificate_failure(sipe_private,
-				    _("Web ticket request to %s failed"),
-				    uri);
-	}
-
-	callback_data_free(ccd);
-}
-
-static void webticket_metadata(struct sipe_core_private *sipe_private,
-			       const gchar *uri,
-			       SIPE_UNUSED_PARAMETER const gchar *raw,
-			       sipe_xml *metadata,
+static void certprov_webticket(struct sipe_core_private *sipe_private,
+			       const gchar *base_uri,
+			       const gchar *auth_uri,
+			       const gchar *wsse_security,
 			       gpointer callback_data)
 {
-	struct certificate_callback_data *ccd = callback_data;
+	gchar *target = callback_data;
 
-	if (metadata) {
-		const sipe_xml *node;
+	if (wsse_security) {
+		/* Got a Web Ticket for Certificate Provisioning Service */
+		gchar *certreq_base64 = create_certreq(sipe_private,
+						       sipe_private->username);
 
-		SIPE_DEBUG_INFO("webticket_metadata: metadata for service %s retrieved successfully",
-				uri);
+		SIPE_DEBUG_INFO("certprov_webticket: got ticket for %s",
+				base_uri);
 
-		/* Authentication ports accepted by WebTicket Service */
-		for (node = sipe_xml_child(metadata, "service/port");
-		     node;
-		     node = sipe_xml_twin(node)) {
-			const gchar *auth_uri = sipe_xml_attribute(sipe_xml_child(node,
-										  "address"),
-								   "location");
+		if (certreq_base64) {
 
-			if (auth_uri) {
-				if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
-						       "WebTicketServiceWinNegotiate")) {
-					SIPE_DEBUG_INFO("webticket_metadata: WebTicket Windows Negotiate Auth URI %s", auth_uri);
-					g_free(ccd->webticket_negotiate_uri);
-					ccd->webticket_negotiate_uri = g_strdup(auth_uri);
-				} else if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
-							      "WsFedBearer")) {
-					SIPE_DEBUG_INFO("webticket_metadata: WebTicket FedBearer Auth URI %s", auth_uri);
-					g_free(ccd->webticket_fedbearer_uri);
-					ccd->webticket_fedbearer_uri = g_strdup(auth_uri);
-				}
-			}
-		}
+			SIPE_DEBUG_INFO_NOFORMAT("certprov_webticket: created certificate request");
 
-		if (ccd->webticket_negotiate_uri || ccd->webticket_fedbearer_uri) {
-			gboolean success;
-
-			/* Entropy: 256 random bits */
-			if (!ccd->entropy.buffer)
-				sipe_tls_fill_random(&ccd->entropy, 256);
-
-			if (ccd->webticket_negotiate_uri) {
-				/* Try Negotiate authentication first */
-
-				success = sipe_svc_webticket(sipe_private,
-							     ccd->webticket_negotiate_uri,
-							     NULL,
-							     ccd->certprov_uri,
-							     &ccd->entropy,
-							     webticket_token,
-							     ccd);
-				ccd->webticket_for_certprov = TRUE;
-			} else {
-				ccd->tried_fedbearer = TRUE;
-				success = sipe_svc_webticket_lmc(sipe_private,
-								 ccd->webticket_fedbearer_uri,
-								 webticket_token,
-								 ccd);
-				ccd->webticket_for_certprov = FALSE;
-			}
-
-			if (success) {
+			if (sipe_svc_get_and_publish_cert(sipe_private,
+							  auth_uri,
+							  wsse_security,
+							  certreq_base64,
+							  get_and_publish_cert,
+							  target))
 				/* callback data passed down the line */
-				ccd = NULL;
-			} else {
-				certificate_failure(sipe_private,
-						    _("Can't request security token from %s"),
-						    ccd->webticket_negotiate_uri ? ccd->webticket_negotiate_uri : ccd->webticket_fedbearer_uri);
-			}
+				target = NULL;
 
-		} else {
-			certificate_failure(sipe_private,
-					    _("Can't find the authentication port for TLS-DSK web ticket URI %s"),
-					    uri);
+			g_free(certreq_base64);
 		}
 
-	} else if (uri) {
+	        if (target) {
+			certificate_failure(sipe_private,
+					    _("Certificate request to %s failed"),
+					    base_uri);
+		}
+
+	} else if (auth_uri) {
 		certificate_failure(sipe_private,
-				    _("Can't retrieve metadata for TLS-DSK web ticket URI %s"),
-				    uri);
+				    _("Web ticket request to %s failed"),
+				    base_uri);
 	}
 
-	callback_data_free(ccd);
-}
-
-static void certprov_metadata(struct sipe_core_private *sipe_private,
-			      const gchar *uri,
-			      SIPE_UNUSED_PARAMETER const gchar *raw,
-			      sipe_xml *metadata,
-			      gpointer callback_data)
-{
-	struct certificate_callback_data *ccd = callback_data;
-
-	if (metadata) {
-		const sipe_xml *node;
-		gchar *ticket_uri = NULL;
-
-		SIPE_DEBUG_INFO("certprov_metadata: metadata for service %s retrieved successfully",
-				uri);
-
-		/* WebTicket policies accepted by Certificate Provisioning Service */
-		for (node = sipe_xml_child(metadata, "Policy");
-		     node;
-		     node = sipe_xml_twin(node)) {
-			if (sipe_strcase_equal(sipe_xml_attribute(node, "Id"),
-					       "CertProvisioningServiceWebTicketProof_SHA1_policy")) {
-
-				SIPE_DEBUG_INFO_NOFORMAT("certprov_metadata: WebTicket policy found");
-
-				ticket_uri = sipe_xml_data(sipe_xml_child(node,
-									  "ExactlyOne/All/EndorsingSupportingTokens/Policy/IssuedToken/Issuer/Address"));
-				if (ticket_uri) {
-					SIPE_DEBUG_INFO("certprov_metadata: WebTicket URI %s", ticket_uri);
-				} else {
-					certificate_failure(sipe_private,
-							    _("Can't find the web ticket URI for TLS-DSK certificate provisioning URI %s"),
-							    uri);
-				}
-				break;
-			}
-		}
-
-		if (ticket_uri) {
-
-			/* Authentication ports accepted by Certificate Provisioning Service */
-			for (node = sipe_xml_child(metadata, "service/port");
-			     node;
-			     node = sipe_xml_twin(node)) {
-				if (sipe_strcase_equal(sipe_xml_attribute(node, "name"),
-						       "CertProvisioningServiceWebTicketProof_SHA1")) {
-					const gchar *auth_uri;
-
-					SIPE_DEBUG_INFO_NOFORMAT("certprov_metadata: authentication port found");
-
-					auth_uri = sipe_xml_attribute(sipe_xml_child(node,
-										     "address"),
-								      "location");
-					if (auth_uri) {
-						SIPE_DEBUG_INFO("certprov_metadata: CertProv Auth URI %s", auth_uri);
-
-						if (sipe_svc_metadata(sipe_private,
-								      ticket_uri,
-								      webticket_metadata,
-								      ccd)) {
-							/* Remember for later */
-							ccd->certprov_uri = g_strdup(auth_uri);
-
-							/* callback data passed down the line */
-							ccd = NULL;
-						} else {
-							certificate_failure(sipe_private,
-									    _("Can't request metadata from %s"),
-									    ticket_uri);
-						}
-					}
-					break;
-				}
-			}
-
-			g_free(ticket_uri);
-
-			if (!node) {
-				certificate_failure(sipe_private,
-						    _("Can't find the authentication port for TLS-DSK certificate provisioning URI %s"),
-						    uri);
-			}
-
-		} else {
-			certificate_failure(sipe_private,
-					    _("Can't find the web ticket policy for TLS-DSK certificate provisioning URI %s"),
-					    uri);
-		}
-
-	} else if (uri) {
-		certificate_failure(sipe_private,
-				    _("Can't retrieve metadata for TLS-DSK certificate provisioning URI %s"),
-				    uri);
-	}
-
-	callback_data_free(ccd);
+	g_free(target);
 }
 
 gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_private,
 					   const gchar *target,
 					   const gchar *uri)
 {
-	struct certificate_callback_data *ccd = g_new0(struct certificate_callback_data, 1);
+	gchar *tmp = g_strdup(target);
 	gboolean ret;
 
-	ccd->target   = g_strdup(target);
-
-	ret = sipe_svc_metadata(sipe_private, uri, certprov_metadata, ccd);
+	ret = sipe_webticket_request(sipe_private,
+				     uri,
+				     "CertProvisioningServiceWebTicketProof_SHA1",
+				     certprov_webticket,
+				     tmp);
 	if (!ret)
-		callback_data_free(ccd);
+		g_free(tmp);
 
 	return(ret);
 }
