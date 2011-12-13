@@ -1204,22 +1204,25 @@ process_get_av_edge_credentials_response(struct sipe_core_private *sipe_private,
 			GSList *relays = NULL;
 
 			item = sipe_xml_child(xn_credentials, "username");
-			sipe_private->media_relay_username = g_strdup(sipe_xml_data(item));
+			sipe_private->media_relay_username = sipe_xml_data(item);
 			item = sipe_xml_child(xn_credentials, "password");
-			sipe_private->media_relay_password = g_strdup(sipe_xml_data(item));
+			sipe_private->media_relay_password = sipe_xml_data(item);
 
 			for (item = sipe_xml_child(xn_relays, "mediaRelay"); item; item = sipe_xml_twin(item)) {
 				struct sipe_media_relay *relay = g_new0(struct sipe_media_relay, 1);
 				const sipe_xml *node;
+				gchar *tmp;
 
 				node = sipe_xml_child(item, "hostName");
-				relay->hostname = g_strdup(sipe_xml_data(node));
+				relay->hostname = sipe_xml_data(node);
 
 				node = sipe_xml_child(item, "udpPort");
-				relay->udp_port = atoi(sipe_xml_data(node));
+				relay->udp_port = atoi(tmp = sipe_xml_data(node));
+				g_free(tmp);
 
 				node = sipe_xml_child(item, "tcpPort");
-				relay->tcp_port = atoi(sipe_xml_data(node));
+				relay->tcp_port = atoi(tmp = sipe_xml_data(node));
+				g_free(tmp);
 
 				relays = g_slist_append(relays, relay);
 

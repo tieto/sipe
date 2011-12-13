@@ -1660,6 +1660,7 @@ static gboolean tls_finished(struct tls_internal_state *state)
 						random,
 						TLS_ARRAY_RANDOM_LENGTH * 2,
 						4 * 32);
+	g_free(random);
 
 #ifdef __SIPE_TLS_CRYPTO_DEBUG
 	debug_secrets(state, "tls_finished: TLS-DSK key block         ",
