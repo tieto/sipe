@@ -332,12 +332,14 @@ void sipe_backend_buddy_info_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *
 				 const gchar *description,
 				 const gchar *value)
 {
+	if (info) {
 #if PURPLE_VERSION_CHECK(3,0,0)
-	purple_notify_user_info_add_pair_html
+		purple_notify_user_info_add_pair_html
 #else
-	purple_notify_user_info_add_pair
+		purple_notify_user_info_add_pair
 #endif
-		((PurpleNotifyUserInfo *) info, description, value);
+			((PurpleNotifyUserInfo *) info, description, value);
+	}
 }
 
 void sipe_backend_buddy_info_break(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,

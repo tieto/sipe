@@ -663,19 +663,97 @@ static void ab_entry_response(struct sipe_core_private *sipe_private,
 			      gpointer callback_data)
 {
 	gchar *who = callback_data;
+	struct sipe_backend_buddy_info *info = NULL;
+	gchar *server_alias = NULL;
+	gchar *email        = NULL;
 
 	if (soap_body) {
+		const sipe_xml *node;
 
 		SIPE_DEBUG_INFO("ab_entry_response: received valid SOAP message from service %s",
 				uri);
+
+		info = sipe_backend_buddy_info_start(SIPE_CORE_PUBLIC);
+
+		for (node = sipe_xml_child(soap_body, "Body/SearchAbEntryResponse/SearchAbEntryResult/Items/AbEntry/Attributes/Attribute");
+		     node;
+		     node = sipe_xml_twin(node)) {
+			gchar *name  = sipe_xml_data(sipe_xml_child(node,
+								    "Name"));
+			gchar *value = sipe_xml_data(sipe_xml_child(node,
+								    "Value"));
+			const sipe_xml *values = sipe_xml_child(node,
+								"Values");
+
+			/* Single value entries */
+			if (!is_empty(value)) {
+
+				if (sipe_strcase_equal(name, "displayname")) {
+					g_free(server_alias);
+					server_alias = value;
+					value = NULL;
+					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+								    info,
+								    _("Display name"),
+								    server_alias);
+				} else if (sipe_strcase_equal(name, "mail")) {
+					g_free(email);
+					email = value;
+					value = NULL;
+					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+								    info,
+								    _("Email address"),
+								    email);
+				} else if (sipe_strcase_equal(name, "title")) {
+					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+								    info,
+								    _("Job title"),
+								    value);
+				} else if (sipe_strcase_equal(name, "title")) {
+					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+								    info,
+								    _("Job title"),
+								    value);
+				} else if (sipe_strcase_equal(name, "company")) {
+					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+								    info,
+								    _("Company"),
+								    value);
+				} else if (sipe_strcase_equal(name, "country")) {
+					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+								    info,
+								    _("Country"),
+								    value);
+				}
+
+			} else if (values) {
+				gchar *first = sipe_xml_data(sipe_xml_child(values,
+									    "string"));
+
+				if (sipe_strcase_equal(name, "telephonenumber")) {
+					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+								    info,
+								    _("Business phone"),
+								    first);
+				}
+
+				g_free(first);
+			}
+
+			g_free(value);
+			g_free(name);
+		}
 	}
 
-	/* request failed: this will show the minmum information */
+	/* this will show the minmum information */
 	get_info_finalize(sipe_private,
-			  NULL,
+			  info,
 			  who,
-			  NULL,
-			  NULL);
+			  server_alias,
+			  email);
+
+	g_free(email);
+	g_free(server_alias);
 	g_free(who);
 }
 
