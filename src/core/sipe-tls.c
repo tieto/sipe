@@ -226,7 +226,7 @@ void sipe_tls_fill_random(struct sipe_tls_random *random,
 	guint bytes = ((bits + 15) / 16) * 2;
 	guint16 *p  = g_malloc(bytes);
 
-	SIPE_DEBUG_INFO("sipe_svc_fill_random: %d bits -> %d bytes",
+	SIPE_DEBUG_INFO("sipe_tls_fill_random: %d bits -> %d bytes",
 			bits, bytes);
 
 	random->buffer = (guint8*) p;

@@ -53,6 +53,7 @@ struct webticket_callback_data {
 
 	gboolean tried_fedbearer;
 	gboolean webticket_for_service;
+	gboolean requires_signing;
 
 	struct sipe_tls_random entropy;
 
@@ -153,106 +154,114 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 	gchar *wsse_security = NULL;
 
 	if (timestamp && keydata) {
-		gchar *assertionID = extract_raw_xml_attribute(keydata,
-							       "AssertionID");
+		if (entropy) {
+			gchar *assertionID = extract_raw_xml_attribute(keydata,
+								       "AssertionID");
 
-		/*
-		 * WS-Trust 1.3
-		 *
-		 * http://docs.oasis-open.org/ws-sx/ws-trust/200512/CK/PSHA1:
-		 *
-		 * "The key is computed using P_SHA1() from the TLS sepcification to generate
-		 *  a bit stream using entropy from both sides. The exact form is:
-		 *
-		 *       key = P_SHA1(Entropy_REQ, Entropy_RES)"
-		 */
-		gchar *entropy_res_base64 = extract_raw_xml(raw, "BinarySecret", FALSE);
-		gsize entropy_res_length;
-		guchar *entropy_response = g_base64_decode(entropy_res_base64,
-							   &entropy_res_length);
-		guchar *key = sipe_tls_p_sha1(entropy->buffer,
-					      entropy->length,
-					      entropy_response,
-					      entropy_res_length,
-					      entropy->length);
-		g_free(entropy_response);
-		g_free(entropy_res_base64);
+			/*
+			 * WS-Trust 1.3
+			 *
+			 * http://docs.oasis-open.org/ws-sx/ws-trust/200512/CK/PSHA1:
+			 *
+			 * "The key is computed using P_SHA1() from the TLS sepcification to generate
+			 *  a bit stream using entropy from both sides. The exact form is:
+			 *
+			 *       key = P_SHA1(Entropy_REQ, Entropy_RES)"
+			 */
+			gchar *entropy_res_base64 = extract_raw_xml(raw, "BinarySecret", FALSE);
+			gsize entropy_res_length;
+			guchar *entropy_response = g_base64_decode(entropy_res_base64,
+								   &entropy_res_length);
+			guchar *key = sipe_tls_p_sha1(entropy->buffer,
+						      entropy->length,
+						      entropy_response,
+						      entropy_res_length,
+						      entropy->length);
+			g_free(entropy_response);
+			g_free(entropy_res_base64);
 
-		SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found timestamp & keydata");
+			SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found timestamp & keydata");
 
-		if (assertionID && key) {
-			/* same as SIPE_DIGEST_HMAC_SHA1_LENGTH */
-			guchar digest[SIPE_DIGEST_SHA1_LENGTH];
-			gchar *base64;
-			gchar *signed_info;
-			gchar *canon;
+			if (assertionID && key) {
+				/* same as SIPE_DIGEST_HMAC_SHA1_LENGTH */
+				guchar digest[SIPE_DIGEST_SHA1_LENGTH];
+				gchar *base64;
+				gchar *signed_info;
+				gchar *canon;
 
-			SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found assertionID and successfully computed the key");
+				SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found assertionID and successfully computed the key");
 
-			/* Digest over reference element (#timestamp -> wsu:Timestamp) */
-			sipe_digest_sha1((guchar *) timestamp,
-					 strlen(timestamp),
-					 digest);
-			base64 = g_base64_encode(digest,
-						 SIPE_DIGEST_SHA1_LENGTH);
-
-			/* XML-Sig: SignedInfo for reference element */
-			signed_info = g_strdup_printf("<SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
-						      "<CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
-						      "<SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#hmac-sha1\"/>"
-						      "<Reference URI=\"#timestamp\">"
-						      "<Transforms>"
-						      "<Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
-						      "</Transforms>"
-						      "<DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>"
-						      "<DigestValue>%s</DigestValue>"
-						      "</Reference>"
-						      "</SignedInfo>",
-						      base64);
-			g_free(base64);
-
-			/* XML-Sig: SignedInfo in canonical form */
-			canon = sipe_xml_exc_c14n(signed_info);
-			g_free(signed_info);
-
-			if (canon) {
-				gchar *signature;
-
-				/* calculate signature */
-				sipe_digest_hmac_sha1(key, entropy->length,
-						      (guchar *)canon,
-						      strlen(canon),
-						      digest);
+				/* Digest over reference element (#timestamp -> wsu:Timestamp) */
+				sipe_digest_sha1((guchar *) timestamp,
+						 strlen(timestamp),
+						 digest);
 				base64 = g_base64_encode(digest,
-							 SIPE_DIGEST_HMAC_SHA1_LENGTH);
+							 SIPE_DIGEST_SHA1_LENGTH);
 
-				/* XML-Sig: Signature from SignedInfo + Key */
-				signature = g_strdup_printf("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
-							    " %s"
-							    " <SignatureValue>%s</SignatureValue>"
-							    " <KeyInfo>"
-							    "  <wsse:SecurityTokenReference wsse:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1\">"
-							    "   <wsse:KeyIdentifier ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID\">%s</wsse:KeyIdentifier>"
-							    "  </wsse:SecurityTokenReference>"
-							    " </KeyInfo>"
-							    "</Signature>",
-							    canon,
-							    base64,
-							    assertionID);
+				/* XML-Sig: SignedInfo for reference element */
+				signed_info = g_strdup_printf("<SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
+							      "<CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
+							      "<SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#hmac-sha1\"/>"
+							      "<Reference URI=\"#timestamp\">"
+							      "<Transforms>"
+							      "<Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"/>"
+							      "</Transforms>"
+							      "<DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/>"
+							      "<DigestValue>%s</DigestValue>"
+							      "</Reference>"
+							      "</SignedInfo>",
+							      base64);
 				g_free(base64);
-				g_free(canon);
 
-				wsse_security = g_strconcat(timestamp,
-							    keydata,
-							    signature,
-							    NULL);
-				g_free(signature);
+				/* XML-Sig: SignedInfo in canonical form */
+				canon = sipe_xml_exc_c14n(signed_info);
+				g_free(signed_info);
+
+				if (canon) {
+					gchar *signature;
+
+					/* calculate signature */
+					sipe_digest_hmac_sha1(key, entropy->length,
+							      (guchar *)canon,
+							      strlen(canon),
+							      digest);
+					base64 = g_base64_encode(digest,
+								 SIPE_DIGEST_HMAC_SHA1_LENGTH);
+
+					/* XML-Sig: Signature from SignedInfo + Key */
+					signature = g_strdup_printf("<Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\">"
+								    " %s"
+								    " <SignatureValue>%s</SignatureValue>"
+								    " <KeyInfo>"
+								    "  <wsse:SecurityTokenReference wsse:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1\">"
+								    "   <wsse:KeyIdentifier ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.0#SAMLAssertionID\">%s</wsse:KeyIdentifier>"
+								    "  </wsse:SecurityTokenReference>"
+								    " </KeyInfo>"
+								    "</Signature>",
+								    canon,
+								    base64,
+								    assertionID);
+					g_free(base64);
+					g_free(canon);
+
+					wsse_security = g_strconcat(timestamp,
+								    keydata,
+								    signature,
+								    NULL);
+					g_free(signature);
+				}
+
 			}
 
+			g_free(key);
+			g_free(assertionID);
+		} else {
+			/* token doesn't require signature */
+			SIPE_DEBUG_INFO_NOFORMAT("generate_sha1_proof_wsse: found timestamp & keydata, no signing required");
+			wsse_security = g_strconcat(timestamp,
+						    keydata,
+						    NULL);
 		}
-
-		g_free(key);
-		g_free(assertionID);
 	}
 
 	g_free(keydata);
@@ -273,7 +282,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 		/* WebTicket for Web Service */
 		if (wcd->webticket_for_service) {
 			gchar *wsse_security = generate_sha1_proof_wsse(raw,
-									&wcd->entropy);
+									wcd->requires_signing ? &wcd->entropy : NULL);
 
 			if (wsse_security) {
 				/* callback takes ownership of wsse_security */
@@ -450,9 +459,14 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 
 				ticket_uri = sipe_xml_data(sipe_xml_child(node,
 									  "ExactlyOne/All/EndorsingSupportingTokens/Policy/IssuedToken/Issuer/Address"));
-				if (!ticket_uri)
+				if (ticket_uri) {
+					/* this token type requires signing */
+					wcd->requires_signing = TRUE;
+				} else {
+					/* try alternative token type */
 					ticket_uri = sipe_xml_data(sipe_xml_child(node,
 										  "ExactlyOne/All/SignedSupportingTokens/Policy/IssuedToken/Issuer/Address"));
+				}
 				if (ticket_uri) {
 					SIPE_DEBUG_INFO("webservice_metadata: WebTicket URI %s", ticket_uri);
 				}

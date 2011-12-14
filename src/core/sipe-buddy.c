@@ -49,6 +49,7 @@
 #include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
+#include "sipe-svc.h"
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
 #include "sipe-xml.h"
@@ -655,6 +656,29 @@ static void get_info_finalize(struct sipe_core_private *sipe_private,
 	sipe_backend_buddy_info_finalize(SIPE_CORE_PUBLIC, info, uri);
 }
 
+static void ab_entry_response(struct sipe_core_private *sipe_private,
+			      const gchar *uri,
+			      SIPE_UNUSED_PARAMETER const gchar *raw,
+			      sipe_xml *soap_body,
+			      gpointer callback_data)
+{
+	gchar *who = callback_data;
+
+	if (soap_body) {
+
+		SIPE_DEBUG_INFO("ab_entry_response: received valid SOAP message from service %s",
+				uri);
+	}
+
+	/* request failed: this will show the minmum information */
+	get_info_finalize(sipe_private,
+			  NULL,
+			  who,
+			  NULL,
+			  NULL);
+	g_free(who);
+}
+
 static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 			     const gchar *base_uri,
 			     const gchar *auth_uri,
@@ -664,30 +688,39 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 	gchar *who = callback_data;
 
 	if (wsse_security) {
+		gchar *search = g_strdup_printf("<SearchOn>msRTCSIP-PrimaryUserAddress</SearchOn>"
+						"<Value>%s</Value>",
+						who);
 
 		SIPE_DEBUG_INFO("ms_dlx_webticket: got ticket for %s",
 				base_uri);
 
-		/* TBD... MS-DLX request to auth_uri */
-		(void) auth_uri;
-		get_info_finalize(sipe_private,
-				  NULL,
-				  who,
-				  NULL,
-				  NULL);
+		if (sipe_svc_ab_entry_request(sipe_private,
+					      auth_uri,
+					      wsse_security,
+					      search,
+					      ab_entry_response,
+					      who)) {
+			/* callback data passed down the line */
+			who = NULL;
+		}
+		g_free(search);
 
 	} else {
 		/* no ticket: this will show the minmum information */
 		SIPE_DEBUG_ERROR("ms_dlx_webticket: no web ticket for %s",
 				 base_uri);
+	}
+
+	if (who) {
+		/* request failed: this will show the minmum information */
 		get_info_finalize(sipe_private,
 				  NULL,
 				  who,
 				  NULL,
 				  NULL);
+		g_free(who);
 	}
-
-	g_free(who);
 }
 
 static gboolean process_get_info_response(struct sipe_core_private *sipe_private,

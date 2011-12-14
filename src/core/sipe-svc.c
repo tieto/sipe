@@ -337,6 +337,47 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 	return(ret);
 }
 
+gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
+				   const gchar *uri,
+				   const gchar *wsse_security,
+				   const gchar *search,
+				   sipe_svc_callback *callback,
+				   gpointer callback_data)
+{
+	gboolean ret;
+	gchar *soap_body = g_strdup_printf("<SearchAbEntry"
+					   " xmlns=\"DistributionListExpander\""
+					   " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+					   " xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\""
+					   ">"
+					   " <AbEntryRequest>"
+					   "  <ChangeSearch xmlns:q1=\"DistributionListExpander\" soapenc:arrayType=\"q1:AbEntryRequest.ChangeSearchQuery[1]\">"
+					   "   <AbEntryRequest.ChangeSearchQuery>"
+					   "    %s"
+					   "   </AbEntryRequest.ChangeSearchQuery>"
+					   "  </ChangeSearch>"
+					   "  <Metadata>"
+					   "   <FromDialPad>false</FromDialPad>"
+					   "   <MaxResultNum>1</MaxResultNum>"
+					   "   <ReturnList>displayName,msRTCSIP-PrimaryUserAddress,telephoneNumber,homePhone,mobile,otherTelephone,custom1Phone,mail,company,country</ReturnList>"
+					   "  </Metadata>"
+					   " </AbEntryRequest>"
+					   "</SearchAbEntry>",
+					   search);
+
+	ret = new_soap_req(sipe_private,
+			   uri,
+			   "DistributionListExpander/IAddressBook/SearchAbEntry",
+			   wsse_security,
+			   soap_body,
+			   sipe_svc_wsdl_response,
+			   callback,
+			   callback_data);
+	g_free(soap_body);
+
+	return(ret);
+}
+
 /*
  * This functions encodes what the Microsoft Lync client does for
  * Office365 accounts. It will most definitely fail for internal Lync
