@@ -1821,6 +1821,17 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
+	/*
+	 * Initializing the certificate sub-system will trigger the generation
+	 * of a cryptographic key pair which takes time. If we do this after we
+	 * have connected to the server then there is a risk that we run into a
+	 * SIP connection timeout. So let's get this out of the way now...
+	 *
+	 * This is currently only needed if the user has selected TLS-DSK.
+	 */
+	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK))
+		sipe_certificate_init(sipe_private);
+
 	if (server) {
 		/* Use user specified server[:port] */
 		int port_number = 0;

@@ -56,6 +56,13 @@ gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_privat
 					   const gchar *uri);
 
 /**
+ * Initialize certificate data
+ *
+ * @param sipe_private SIPE core private data
+ */
+gboolean sipe_certificate_init(struct sipe_core_private *sipe_private);
+
+/**
  * Free certificate data
  *
  * @param sipe_private SIPE core private data

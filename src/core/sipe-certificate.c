@@ -65,7 +65,7 @@ void sipe_certificate_free(struct sipe_core_private *sipe_private)
 	}
 }
 
-static gboolean sipe_certificate_init(struct sipe_core_private *sipe_private)
+gboolean sipe_certificate_init(struct sipe_core_private *sipe_private)
 {
 	struct sipe_certificate *sc;
 	struct sipe_cert_crypto *ssc;
