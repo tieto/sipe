@@ -450,6 +450,9 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 
 				ticket_uri = sipe_xml_data(sipe_xml_child(node,
 									  "ExactlyOne/All/EndorsingSupportingTokens/Policy/IssuedToken/Issuer/Address"));
+				if (!ticket_uri)
+					ticket_uri = sipe_xml_data(sipe_xml_child(node,
+										  "ExactlyOne/All/SignedSupportingTokens/Policy/IssuedToken/Issuer/Address"));
 				if (ticket_uri) {
 					SIPE_DEBUG_INFO("webservice_metadata: WebTicket URI %s", ticket_uri);
 				}

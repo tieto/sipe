@@ -50,6 +50,7 @@
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
+#include "sipe-webticket.h"
 #include "sipe-xml.h"
 
 static void buddy_free(struct sipe_buddy *buddy)
@@ -573,38 +574,137 @@ static void sipe_options_request(struct sipe_core_private *sipe_private,
 	g_free(request);
 }
 
+static void get_info_finalize(struct sipe_core_private *sipe_private,
+			      struct sipe_backend_buddy_info *info,
+			      const gchar *uri,
+			      const gchar *server_alias,
+			      const gchar *email)
+{
+	sipe_backend_buddy bbuddy;
+	struct sipe_buddy *sbuddy;
+	gchar *alias;
+	gchar *value;
+
+	if (!info) {
+		info = sipe_backend_buddy_info_start(SIPE_CORE_PUBLIC);
+	} else {
+		sipe_backend_buddy_info_break(SIPE_CORE_PUBLIC, info);
+	}
+	if (!info)
+		return;
+
+	bbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, uri, NULL);
+
+	if (is_empty(server_alias)) {
+		value = sipe_backend_buddy_get_server_alias(SIPE_CORE_PUBLIC,
+							    bbuddy);
+		if (value) {
+			sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+						    info,
+						    _("Display name"),
+						    value);
+		}
+	} else {
+		value = g_strdup(server_alias);
+	}
+
+	/* present alias if it differs from server alias */
+	alias = sipe_backend_buddy_get_local_alias(SIPE_CORE_PUBLIC, bbuddy);
+	if (alias && !sipe_strequal(alias, value))
+	{
+		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+					     info,
+					     _("Alias"),
+					     alias);
+	}
+	g_free(alias);
+	g_free(value);
+
+	if (is_empty(email)) {
+		value = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
+						      bbuddy,
+						      SIPE_BUDDY_INFO_EMAIL);
+		if (value) {
+			sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+						     info,
+						     _("Email address"),
+						     value);
+			g_free(value);
+		}
+	}
+
+	value = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
+					      bbuddy,
+					      SIPE_BUDDY_INFO_SITE);
+	if (value) {
+		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+					     info,
+					     _("Site"),
+					     value);
+		g_free(value);
+	}
+
+	sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	if (sbuddy && sbuddy->device_name) {
+		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
+					     info,
+					     _("Device"),
+					     sbuddy->device_name);
+	}
+
+	sipe_backend_buddy_info_finalize(SIPE_CORE_PUBLIC, info, uri);
+}
+
+static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
+			     const gchar *base_uri,
+			     const gchar *auth_uri,
+			     const gchar *wsse_security,
+			     gpointer callback_data)
+{
+	gchar *who = callback_data;
+
+	if (wsse_security) {
+
+		SIPE_DEBUG_INFO("ms_dlx_webticket: got ticket for %s",
+				base_uri);
+
+		/* TBD... MS-DLX request to auth_uri */
+		(void) auth_uri;
+		get_info_finalize(sipe_private,
+				  NULL,
+				  who,
+				  NULL,
+				  NULL);
+
+	} else {
+		/* no ticket: this will show the minmum information */
+		SIPE_DEBUG_ERROR("ms_dlx_webticket: no web ticket for %s",
+				 base_uri);
+		get_info_finalize(sipe_private,
+				  NULL,
+				  who,
+				  NULL,
+				  NULL);
+	}
+
+	g_free(who);
+}
+
 static gboolean process_get_info_response(struct sipe_core_private *sipe_private,
 					  struct sipmsg *msg,
 					  struct transaction *trans)
 {
 	const gchar *uri = trans->payload->data;
-	sipe_backend_buddy bbuddy;
-	struct sipe_backend_buddy_info *info;
-	struct sipe_buddy *sbuddy;
-	gchar *alias        = NULL;
-	gchar *device_name  = NULL;
+	struct sipe_backend_buddy_info *info = NULL;
 	gchar *server_alias = NULL;
-	gchar *phone_number = NULL;
 	gchar *email        = NULL;
-	gchar *site;
 
 	SIPE_DEBUG_INFO("Fetching %s's user info for %s",
 			uri, sipe_private->username);
 
-	info = sipe_backend_buddy_info_start(SIPE_CORE_PUBLIC);
-	if (!info) return(FALSE);
-
-	bbuddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, uri, NULL);
-	alias = sipe_backend_buddy_get_local_alias(SIPE_CORE_PUBLIC, bbuddy);
-
 	/* will query buddy UA's capabilities and send answer to log */
 	if (sipe_backend_debug_enabled())
 		sipe_options_request(sipe_private, uri);
-
-	sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
-	if (sbuddy) {
-		device_name = sbuddy->device_name ? g_strdup(sbuddy->device_name) : NULL;
-	}
 
 	if (msg->response != 200) {
 		SIPE_DEBUG_INFO("process_get_info_response: SERVICE response is %d", msg->response);
@@ -622,6 +722,9 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 
 		} else if ((mrow = sipe_xml_child(searchResults, "Body/Array/row"))) {
 			const gchar *value;
+			gchar *phone_number;
+
+			info = sipe_backend_buddy_info_start(SIPE_CORE_PUBLIC);
 
 			server_alias = g_strdup(sipe_xml_attribute(mrow, "displayName"));
 			email = g_strdup(sipe_xml_attribute(mrow, "email"));
@@ -641,7 +744,7 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 				g_free(tel_uri);
 			}
 
-			if (server_alias && strlen(server_alias) > 0) {
+			if (!is_empty(server_alias)) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
 							     _("Display name"),
@@ -659,12 +762,13 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 							     _("Office"),
 							     value);
 			}
-			if (phone_number && strlen(phone_number) > 0) {
+			if (!is_empty(phone_number)) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
 							     _("Business phone"),
 							     phone_number);
 			}
+			g_free(phone_number);
 			if ((value = sipe_xml_attribute(mrow, "company")) && strlen(value) > 0) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
@@ -689,104 +793,74 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 							     _("Country"),
 							     value);
 			}
-			if (email && strlen(email) > 0) {
+			if (!is_empty(email)) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
 							     _("Email address"),
 							     email);
 			}
-
 		}
 		sipe_xml_free(searchResults);
 	}
 
-	sipe_backend_buddy_info_break(SIPE_CORE_PUBLIC, info);
+	/* this will show the minmum information */
+	get_info_finalize(sipe_private,
+			  info,
+			  uri,
+			  server_alias,
+			  email);
 
-	if (is_empty(server_alias)) {
-		g_free(server_alias);
-		server_alias = sipe_backend_buddy_get_server_alias(SIPE_CORE_PUBLIC,
-								   bbuddy);
-		if (server_alias) {
-			sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-						     info,
-						     _("Display name"),
-						     server_alias);
-		}
-	}
-
-	/* present alias if it differs from server alias */
-	if (alias && !sipe_strequal(alias, server_alias))
-	{
-		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-					     info,
-					     _("Alias"),
-					     alias);
-	}
-
-	if (is_empty(email)) {
-		g_free(email);
-		email = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-						      bbuddy,
-						      SIPE_BUDDY_INFO_EMAIL);
-		if (email) {
-			sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-						     info,
-						     _("Email address"),
-						     email);
-		}
-	}
-
-	site = sipe_backend_buddy_get_string(SIPE_CORE_PUBLIC,
-					     bbuddy,
-					     SIPE_BUDDY_INFO_SITE);
-	if (site) {
-		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-					     info,
-					     _("Site"),
-					     site);
-		g_free(site);
-	}
-
-	if (device_name) {
-		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-					     info,
-					     _("Device"),
-					     device_name);
-	}
-
-	sipe_backend_buddy_info_finalize(SIPE_CORE_PUBLIC, info, uri);
-
-	g_free(phone_number);
 	g_free(server_alias);
 	g_free(email);
-	g_free(device_name);
-	g_free(alias);
 
 	return TRUE;
 }
 
-/**
- * AD search first, LDAP based
- */
 void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 			      const gchar *who)
 {
-	char *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW,
-					    "msRTCSIP-PrimaryUserAddress",
-					    who);
-	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	SIPE_DEBUG_INFO("sipe_core_buddy_get_info: row: %s", row ? row : "");
+	if (sipe_private->dlx_uri) {
+		gchar *payload = g_strdup(who);
 
-	payload->destroy = g_free;
-	payload->data = g_strdup(who);
+		if (!sipe_webticket_request(sipe_private,
+					    sipe_private->dlx_uri,
+					    "AddressBookWebTicketBearer",
+					    ms_dlx_webticket,
+					    payload)) {
+			SIPE_DEBUG_ERROR("sipe_core_buddy_get_info: couldn't request webticket for %s",
+					 sipe_private->dlx_uri);
 
-	sip_soap_directory_search(SIPE_CORE_PRIVATE,
-				  1,
-				  row,
-				  process_get_info_response,
-				  payload);
-	g_free(row);
+			/* this will show the minmum information */
+			get_info_finalize(sipe_private,
+					  NULL,
+					  payload,
+					  NULL,
+					  NULL);
+
+			g_free(payload);
+		}
+	} else {
+		/* no [MS-DLX] server, use Active Directory search instead */
+		gchar *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW,
+						     "msRTCSIP-PrimaryUserAddress",
+						     who);
+		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+
+		SIPE_DEBUG_INFO("sipe_core_buddy_get_info: row: %s",
+				row ? row : "");
+
+		payload->destroy = g_free;
+		payload->data = g_strdup(who);
+
+		sip_soap_directory_search(sipe_private,
+					  1,
+					  row,
+					  process_get_info_response,
+					  payload);
+		g_free(row);
+	}
 }
 
 /* Buddy menu callbacks*/
