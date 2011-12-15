@@ -39,71 +39,38 @@
 #include "sipe-core.h"
 #include "sipe-nls.h"
 
-static GHashTable *info_to_property_table = NULL;
+static const struct {
+	const gchar *property;    /* property name to store in blist.xml */
+	const gchar *description; /* label for "Get Info" dialog */
+} buddy_info_map[] = {
+/* SIPE_BUDDY_INFO_DISPLAY_NAME          */ { "alias",                 N_("Display name")   },
+/* SIPE_BUDDY_INFO_JOB_TITLE             */ { "title",                 N_("Job title")      },
+/* SIPE_BUDDY_INFO_CITY                  */ { "address-city",          N_("City")           },
+/* SIPE_BUDDY_INFO_STATE                 */ { "address-state",         N_("State")          },
+/* SIPE_BUDDY_INFO_OFFICE                */ { "office",                N_("Office")         },
+/* SIPE_BUDDY_INFO_DEPARTMENT            */ { "department",            NULL                 },
+/* SIPE_BUDDY_INFO_COUNTRY               */ { "address-country-code",  N_("Country")        },
+/* SIPE_BUDDY_INFO_WORK_PHONE            */ { "phone",                 N_("Business phone") },
+/* SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY    */ { "phone-display",         NULL                 },
+/* SIPE_BUDDY_INFO_COMPANY               */ { "company",               N_("Company")        },
+/* SIPE_BUDDY_INFO_EMAIL                 */ { "email",                 N_("Email address")  },
+/* SIPE_BUDDY_INFO_SITE                  */ { "site",                  N_("Site")           },
+/* SIPE_BUDDY_INFO_ZIPCODE               */ { "address-zipcode",       NULL                 },
+/* SIPE_BUDDY_INFO_STREET                */ { "address-street",        NULL                 },
+/* SIPE_BUDDY_INFO_MOBILE_PHONE          */ { "phone-mobile",          NULL                 },
+/* SIPE_BUDDY_INFO_MOBILE_PHONE_DISPLAY  */ { "phone-mobile-display",  NULL                 },
+/* SIPE_BUDDY_INFO_HOME_PHONE            */ { "phone-home",            NULL                 },
+/* SIPE_BUDDY_INFO_HOME_PHONE_DISPLAY    */ { "phone-home-display",    NULL                 },
+/* SIPE_BUDDY_INFO_OTHER_PHONE           */ { "phone-other",           NULL                 },
+/* SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY   */ { "phone-other-display",   NULL                 },
+/* SIPE_BUDDY_INFO_CUSTOM1_PHONE         */ { "phone-custom1",         NULL                 },
+/* SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY */ { "phone-custom1-display", NULL                 },
+/* SIPE_BUDDY_INFO_ALIAS                 */ { NULL,                    N_("Alias")          },
+/* SIPE_BUDDY_INFO_DEVICE                */ { NULL,                    N_("Device")         },
+};
 
-/** Property names to store in blist.xml */
-#define ALIAS_PROP			"alias"
-#define EMAIL_PROP			"email"
-#define PHONE_PROP			"phone"
-#define PHONE_DISPLAY_PROP		"phone-display"
-#define PHONE_MOBILE_PROP		"phone-mobile"
-#define PHONE_MOBILE_DISPLAY_PROP	"phone-mobile-display"
-#define PHONE_HOME_PROP			"phone-home"
-#define PHONE_HOME_DISPLAY_PROP		"phone-home-display"
-#define PHONE_OTHER_PROP		"phone-other"
-#define PHONE_OTHER_DISPLAY_PROP	"phone-other-display"
-#define PHONE_CUSTOM1_PROP		"phone-custom1"
-#define PHONE_CUSTOM1_DISPLAY_PROP	"phone-custom1-display"
-#define SITE_PROP			"site"
-#define COMPANY_PROP			"company"
-#define DEPARTMENT_PROP			"department"
-#define TITLE_PROP			"title"
-#define OFFICE_PROP			"office"
-/** implies work address */
-#define ADDRESS_STREET_PROP		"address-street"
-#define ADDRESS_CITY_PROP		"address-city"
-#define ADDRESS_STATE_PROP		"address-state"
-#define ADDRESS_ZIPCODE_PROP		"address-zipcode"
-#define ADDRESS_COUNTRYCODE_PROP	"address-country-code"
-
-#define ADD_PROP(key,value) g_hash_table_insert(info_to_property_table, (gpointer)key, value)
-
-static void
-init_property_hash(void)
-{
-	info_to_property_table = g_hash_table_new(NULL, NULL);
-
-	ADD_PROP(SIPE_BUDDY_INFO_DISPLAY_NAME         , ALIAS_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_EMAIL                , EMAIL_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_WORK_PHONE           , PHONE_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY   , PHONE_DISPLAY_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_SITE                 , SITE_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_COMPANY              , COMPANY_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_DEPARTMENT           , DEPARTMENT_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_JOB_TITLE            , TITLE_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_OFFICE               , OFFICE_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_STREET               , ADDRESS_STREET_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_CITY                 , ADDRESS_CITY_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_STATE                , ADDRESS_STATE_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_ZIPCODE              , ADDRESS_ZIPCODE_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_COUNTRY              , ADDRESS_COUNTRYCODE_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_MOBILE_PHONE         , PHONE_MOBILE_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_MOBILE_PHONE_DISPLAY , PHONE_MOBILE_DISPLAY_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_HOME_PHONE           , PHONE_HOME_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_HOME_PHONE_DISPLAY   , PHONE_HOME_DISPLAY_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_OTHER_PHONE          , PHONE_OTHER_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY  , PHONE_OTHER_DISPLAY_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_CUSTOM1_PHONE        , PHONE_CUSTOM1_PROP);
-	ADD_PROP(SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY, PHONE_CUSTOM1_DISPLAY_PROP);
-}
-
-static gchar *
-sipe_buddy_info_to_purple_property(sipe_buddy_info_fields info)
-{
-	if (!info_to_property_table)
-		init_property_hash();
-	return g_hash_table_lookup(info_to_property_table, (gpointer)info);
-}
+#define buddy_info_property(i)    buddy_info_map[i].property
+#define buddy_info_description(i) gettext(buddy_info_map[i].description)
 
 sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
 					   const gchar *buddy_name,
@@ -201,7 +168,7 @@ gchar* sipe_backend_buddy_get_string(SIPE_UNUSED_PARAMETER struct sipe_core_publ
 				     const sipe_buddy_info_fields key)
 {
 	PurpleBuddy *b = (PurpleBuddy*) buddy;
-	return g_strdup(purple_blist_node_get_string(&b->node, sipe_buddy_info_to_purple_property(key)));
+	return g_strdup(purple_blist_node_get_string(&b->node, buddy_info_property(key)));
 }
 
 void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -210,7 +177,7 @@ void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public
 				   const gchar *val)
 {
 	PurpleBuddy *b = (PurpleBuddy*) buddy;
-	purple_blist_node_set_string(&b->node, sipe_buddy_info_to_purple_property(key), val);
+	purple_blist_node_set_string(&b->node, buddy_info_property(key), val);
 }
 
 sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
@@ -329,7 +296,7 @@ struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAME
 
 void sipe_backend_buddy_info_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				 struct sipe_backend_buddy_info *info,
-				 const gchar *description,
+				 sipe_buddy_info_fields key,
 				 const gchar *value)
 {
 	if (info) {
@@ -338,7 +305,9 @@ void sipe_backend_buddy_info_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *
 #else
 		purple_notify_user_info_add_pair
 #endif
-			((PurpleNotifyUserInfo *) info, description, value);
+			((PurpleNotifyUserInfo *) info,
+			 buddy_info_description(key),
+			 value);
 	}
 }
 
@@ -630,7 +599,7 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 			tmp = purple_buddy_get_server_alias(buddy);
 			if (tmp) purple_blist_server_alias_buddy(clone, tmp);
 
-			key = sipe_buddy_info_to_purple_property(SIPE_BUDDY_INFO_EMAIL);
+			key = buddy_info_property(SIPE_BUDDY_INFO_EMAIL);
 			tmp = purple_blist_node_get_string(&buddy->node, key);
 			if (tmp) purple_blist_node_set_string(&clone->node,
 							      key,

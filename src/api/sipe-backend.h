@@ -624,10 +624,13 @@ void sipe_backend_user_close_ask(gpointer key);
 
 /** BUDDIES ******************************************************************/
 
-/* The list of properties a buddy can have */
+/*
+ * sipe_backend_buddy_get/set_string(): properties a buddy can have
+ * sipe_backend_buddy_info_add():       mapped, e.g. to a string label
+ */
 typedef enum
 {
-	SIPE_BUDDY_INFO_DISPLAY_NAME,
+	SIPE_BUDDY_INFO_DISPLAY_NAME = 0,
 	SIPE_BUDDY_INFO_JOB_TITLE,
 	SIPE_BUDDY_INFO_CITY,
 	SIPE_BUDDY_INFO_STATE,
@@ -638,7 +641,6 @@ typedef enum
 	SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY,
 	SIPE_BUDDY_INFO_COMPANY,
 	SIPE_BUDDY_INFO_EMAIL,
-	SIPE_BUDDY_INFO_DEVICE,
 	SIPE_BUDDY_INFO_SITE,
 	SIPE_BUDDY_INFO_ZIPCODE,
 	SIPE_BUDDY_INFO_STREET,
@@ -650,6 +652,8 @@ typedef enum
 	SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY,
 	SIPE_BUDDY_INFO_CUSTOM1_PHONE,
 	SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY,
+	SIPE_BUDDY_INFO_ALIAS,  /* only for sipe_backend_buddy_info_add() */
+	SIPE_BUDDY_INFO_DEVICE, /* only for sipe_backend_buddy_info_add() */
 } sipe_buddy_info_fields;
 
 /* Opaque token */
@@ -869,7 +873,7 @@ struct sipe_backend_buddy_info;
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(struct sipe_core_public *sipe_public);
 void sipe_backend_buddy_info_add(struct sipe_core_public *sipe_public,
 				 struct sipe_backend_buddy_info *info,
-				 const gchar *description,
+				 sipe_buddy_info_fields key,
 				 const gchar *value);
 void sipe_backend_buddy_info_break(struct sipe_core_public *sipe_public,
 				   struct sipe_backend_buddy_info *info);

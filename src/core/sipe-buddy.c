@@ -602,7 +602,7 @@ static void get_info_finalize(struct sipe_core_private *sipe_private,
 		if (value) {
 			sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 						    info,
-						    _("Display name"),
+						    SIPE_BUDDY_INFO_DISPLAY_NAME,
 						    value);
 		}
 	} else {
@@ -615,7 +615,7 @@ static void get_info_finalize(struct sipe_core_private *sipe_private,
 	{
 		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 					     info,
-					     _("Alias"),
+					     SIPE_BUDDY_INFO_ALIAS,
 					     alias);
 	}
 	g_free(alias);
@@ -627,9 +627,9 @@ static void get_info_finalize(struct sipe_core_private *sipe_private,
 						      SIPE_BUDDY_INFO_EMAIL);
 		if (value) {
 			sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-						     info,
-						     _("Email address"),
-						     value);
+						    info,
+						    SIPE_BUDDY_INFO_EMAIL,
+						    value);
 			g_free(value);
 		}
 	}
@@ -639,18 +639,18 @@ static void get_info_finalize(struct sipe_core_private *sipe_private,
 					      SIPE_BUDDY_INFO_SITE);
 	if (value) {
 		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-					     info,
-					     _("Site"),
-					     value);
+					    info,
+					    SIPE_BUDDY_INFO_SITE,
+					    value);
 		g_free(value);
 	}
 
 	sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
 	if (sbuddy && sbuddy->device_name) {
 		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-					     info,
-					     _("Device"),
-					     sbuddy->device_name);
+					    info,
+					    SIPE_BUDDY_INFO_DEVICE,
+					    sbuddy->device_name);
 	}
 
 	sipe_backend_buddy_info_finalize(SIPE_CORE_PUBLIC, info, uri);
@@ -694,7 +694,7 @@ static void ab_entry_response(struct sipe_core_private *sipe_private,
 					value = NULL;
 					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 								    info,
-								    _("Display name"),
+								    SIPE_BUDDY_INFO_DISPLAY_NAME,
 								    server_alias);
 				} else if (sipe_strcase_equal(name, "mail")) {
 					g_free(email);
@@ -702,27 +702,22 @@ static void ab_entry_response(struct sipe_core_private *sipe_private,
 					value = NULL;
 					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 								    info,
-								    _("Email address"),
+								    SIPE_BUDDY_INFO_EMAIL,
 								    email);
 				} else if (sipe_strcase_equal(name, "title")) {
 					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 								    info,
-								    _("Job title"),
-								    value);
-				} else if (sipe_strcase_equal(name, "title")) {
-					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
-								    info,
-								    _("Job title"),
+								    SIPE_BUDDY_INFO_JOB_TITLE,
 								    value);
 				} else if (sipe_strcase_equal(name, "company")) {
 					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 								    info,
-								    _("Company"),
+								    SIPE_BUDDY_INFO_COMPANY,
 								    value);
 				} else if (sipe_strcase_equal(name, "country")) {
 					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 								    info,
-								    _("Country"),
+								    SIPE_BUDDY_INFO_COUNTRY,
 								    value);
 				}
 
@@ -733,7 +728,7 @@ static void ab_entry_response(struct sipe_core_private *sipe_private,
 				if (sipe_strcase_equal(name, "telephonenumber")) {
 					sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 								    info,
-								    _("Business phone"),
+								    SIPE_BUDDY_INFO_WORK_PHONE,
 								    first);
 				}
 
@@ -858,56 +853,56 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 			if (!is_empty(server_alias)) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("Display name"),
+							     SIPE_BUDDY_INFO_DISPLAY_NAME,
 							     server_alias);
 			}
 			if ((value = sipe_xml_attribute(mrow, "title")) && strlen(value) > 0) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("Job title"),
+							     SIPE_BUDDY_INFO_JOB_TITLE,
 							     value);
 			}
 			if ((value = sipe_xml_attribute(mrow, "office")) && strlen(value) > 0) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("Office"),
+							     SIPE_BUDDY_INFO_OFFICE,
 							     value);
 			}
 			if (!is_empty(phone_number)) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("Business phone"),
+							     SIPE_BUDDY_INFO_WORK_PHONE,
 							     phone_number);
 			}
 			g_free(phone_number);
 			if ((value = sipe_xml_attribute(mrow, "company")) && strlen(value) > 0) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("Company"),
+							     SIPE_BUDDY_INFO_COMPANY,
 							     value);
 			}
 			if ((value = sipe_xml_attribute(mrow, "city")) && strlen(value) > 0) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("City"),
+							     SIPE_BUDDY_INFO_CITY,
 							     value);
 			}
 			if ((value = sipe_xml_attribute(mrow, "state")) && strlen(value) > 0) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("State"),
+							     SIPE_BUDDY_INFO_STATE,
 							     value);
 			}
 			if ((value = sipe_xml_attribute(mrow, "country")) && strlen(value) > 0) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("Country"),
+							     SIPE_BUDDY_INFO_COUNTRY,
 							     value);
 			}
 			if (!is_empty(email)) {
 				sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 							     info,
-							     _("Email address"),
+							     SIPE_BUDDY_INFO_EMAIL,
 							     email);
 			}
 		}
