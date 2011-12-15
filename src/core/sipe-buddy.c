@@ -594,6 +594,11 @@ static void search_ab_entry_failed(struct sipe_core_private *sipe_private,
 }
 
 #define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
+#define DLX_SEARCH_ITEM							\
+	"<AbEntryRequest.ChangeSearchQuery>"				\
+	" <SearchOn>%s</SearchOn>"					\
+	" <Value>%s</Value>"						\
+	"</AbEntryRequest.ChangeSearchQuery>"
 
 void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *given_name,
@@ -602,39 +607,41 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *country)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	gchar **attrs = g_new(gchar *, 5);
+	guint i       = 0;
+	gboolean dlx  = (sipe_private->dlx_uri != NULL);
 
-	if (sipe_private->dlx_uri) {
-		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+#define ADD_QUERY_ROW(a, v)						\
+	if (v) attrs[i++] = g_markup_printf_escaped(dlx ? DLX_SEARCH_ITEM : SIPE_SOAP_SEARCH_ROW, \
+						    a,			\
+						    v)
 
-		mdd->search = g_strdup(""); /* TBD... */
-		mdd->entries         = 1;
-		mdd->max_returns     = 100;
-		mdd->callback        = search_ab_entry_response;
-		mdd->failed_callback = search_ab_entry_failed;
+	ADD_QUERY_ROW("givenName", given_name);
+	ADD_QUERY_ROW("sn",        surname);
+	ADD_QUERY_ROW("company",   company);
+	ADD_QUERY_ROW("c",         country);
+	attrs[i] = NULL;
 
-		ms_dlx_webticket_request(sipe_private, mdd);
+	if (i) {
+		gchar *query;
 
-	} else {
-		gchar **attrs = g_new(gchar *, 5);
-		guint i = 0;
+		query = g_strjoinv(NULL, attrs);
+		SIPE_DEBUG_INFO("sipe_core_buddy_search: rows:\n%s",
+				query ? query : "");
 
-		if (!attrs) return;
+		if (dlx) {
+			struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
-#define ADD_QUERY_ROW(a, v) \
-		if (v) attrs[i++] = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, a, v)
+			mdd->search          = query;
+			mdd->entries         = i;
+			mdd->max_returns     = 100;
+			mdd->callback        = search_ab_entry_response;
+			mdd->failed_callback = search_ab_entry_failed;
 
-		ADD_QUERY_ROW("givenName", given_name);
-		ADD_QUERY_ROW("sn",        surname);
-		ADD_QUERY_ROW("company",   company);
-		ADD_QUERY_ROW("c",         country);
+			ms_dlx_webticket_request(sipe_private, mdd);
 
-		if (i) {
-			gchar *query;
-
-			attrs[i] = NULL;
-			query = g_strjoinv(NULL, attrs);
-			SIPE_DEBUG_INFO("sipe_core_buddy_search: rows:\n%s",
-					query ? query : "");
+		} else {
+			/* no [MS-DLX] server, use Active Directory search instead */
 			sip_soap_directory_search(SIPE_CORE_PRIVATE,
 						  100,
 						  query,
@@ -642,9 +649,9 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 						  NULL);
 			g_free(query);
 		}
-
-		g_strfreev(attrs);
 	}
+
+	g_strfreev(attrs);
 }
 
 static void get_info_finalize(struct sipe_core_private *sipe_private,
@@ -967,11 +974,9 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 	if (sipe_private->dlx_uri) {
 		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
-		mdd->search = g_strdup_printf("<AbEntryRequest.ChangeSearchQuery>"
-					      " <SearchOn>msRTCSIP-PrimaryUserAddress</SearchOn>"
-					      " <Value>%s</Value>"
-					      "</AbEntryRequest.ChangeSearchQuery>",
-					      who);
+		mdd->search = g_markup_printf_escaped(DLX_SEARCH_ITEM,
+						      "msRTCSIP-PrimaryUserAddress",
+						      who);
 		mdd->other           = g_strdup(who);
 		mdd->entries         = 1;
 		mdd->max_returns     = 1;
