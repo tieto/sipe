@@ -497,6 +497,98 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	return(TRUE);
 }
 
+struct ms_dlx_data;
+struct ms_dlx_data {
+	gchar *search;
+	gchar *other;
+	sipe_svc_callback *callback;
+	/* must call ms_dlx_free() */
+	void (*failed_callback)(struct sipe_core_private *sipe_private,
+				struct ms_dlx_data *mdd);
+};
+
+static void ms_dlx_free(struct ms_dlx_data *mdd)
+{
+	g_free(mdd->search);
+	g_free(mdd->other);
+	g_free(mdd);
+}
+
+static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
+			     const gchar *base_uri,
+			     const gchar *auth_uri,
+			     const gchar *wsse_security,
+			     gpointer callback_data)
+{
+	struct ms_dlx_data *mdd = callback_data;
+
+	if (wsse_security) {
+		SIPE_DEBUG_INFO("ms_dlx_webticket: got ticket for %s",
+				base_uri);
+
+		if (sipe_svc_ab_entry_request(sipe_private,
+					      auth_uri,
+					      wsse_security,
+					      mdd->search,
+					      mdd->callback,
+					      mdd)) {
+			/* callback data passed down the line */
+			mdd = NULL;
+		}
+
+	} else {
+		/* no ticket: this will show the minmum information */
+		SIPE_DEBUG_ERROR("ms_dlx_webticket: no web ticket for %s",
+				 base_uri);
+	}
+
+	if (mdd)
+		mdd->failed_callback(sipe_private, mdd);
+}
+
+static void ms_dlx_webticket_request(struct sipe_core_private *sipe_private,
+				     struct ms_dlx_data *mdd)
+{
+	if (!sipe_webticket_request(sipe_private,
+				    sipe_private->dlx_uri,
+				    "AddressBookWebTicketBearer",
+				    ms_dlx_webticket,
+				    mdd)) {
+		SIPE_DEBUG_ERROR("ms_dlx_webticket_request: couldn't request webticket for %s",
+				 sipe_private->dlx_uri);
+		mdd->failed_callback(sipe_private, mdd);
+	}
+}
+
+static void search_ab_entry_response(struct sipe_core_private *sipe_private,
+				     const gchar *uri,
+				     SIPE_UNUSED_PARAMETER const gchar *raw,
+				     sipe_xml *soap_body,
+				     gpointer callback_data)
+{
+	struct ms_dlx_data *mdd = callback_data;
+
+	if (soap_body) {
+
+		SIPE_DEBUG_INFO("search_ab_entry_response: received valid SOAP message from service %s",
+				uri);
+
+		ms_dlx_free(mdd);
+
+	} else {
+		mdd->failed_callback(sipe_private, mdd);
+	}
+}
+
+static void search_ab_entry_failed(struct sipe_core_private *sipe_private,
+				   struct ms_dlx_data *mdd)
+{
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("Contact search failed"),
+				  NULL);
+	ms_dlx_free(mdd);
+}
+
 #define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
 
 void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
@@ -505,35 +597,48 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *company,
 			    const gchar *country)
 {
-	gchar **attrs = g_new(gchar *, 5);
-	guint i = 0;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	if (!attrs) return;
+	if (sipe_private->dlx_uri) {
+		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+
+		mdd->search = g_strdup(""); /* TBD... */
+		mdd->callback        = search_ab_entry_response;
+		mdd->failed_callback = search_ab_entry_failed;
+
+		ms_dlx_webticket_request(sipe_private, mdd);
+
+	} else {
+		gchar **attrs = g_new(gchar *, 5);
+		guint i = 0;
+
+		if (!attrs) return;
 
 #define ADD_QUERY_ROW(a, v) \
-	if (v) attrs[i++] = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, a, v)
+		if (v) attrs[i++] = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW, a, v)
 
-	ADD_QUERY_ROW("givenName", given_name);
-	ADD_QUERY_ROW("sn",        surname);
-	ADD_QUERY_ROW("company",   company);
-	ADD_QUERY_ROW("c",         country);
+		ADD_QUERY_ROW("givenName", given_name);
+		ADD_QUERY_ROW("sn",        surname);
+		ADD_QUERY_ROW("company",   company);
+		ADD_QUERY_ROW("c",         country);
 
-	if (i) {
-		gchar *query;
+		if (i) {
+			gchar *query;
 
-		attrs[i] = NULL;
-		query = g_strjoinv(NULL, attrs);
-		SIPE_DEBUG_INFO("sipe_core_buddy_search: rows:\n%s",
-				query ? query : "");
-		sip_soap_directory_search(SIPE_CORE_PRIVATE,
-					  100,
-					  query,
-					  process_search_contact_response,
-					  NULL);
-		g_free(query);
+			attrs[i] = NULL;
+			query = g_strjoinv(NULL, attrs);
+			SIPE_DEBUG_INFO("sipe_core_buddy_search: rows:\n%s",
+					query ? query : "");
+			sip_soap_directory_search(SIPE_CORE_PRIVATE,
+						  100,
+						  query,
+						  process_search_contact_response,
+						  NULL);
+			g_free(query);
+		}
+
+		g_strfreev(attrs);
 	}
-
-	g_strfreev(attrs);
 }
 
 static void get_info_finalize(struct sipe_core_private *sipe_private,
@@ -617,13 +722,14 @@ static void get_info_finalize(struct sipe_core_private *sipe_private,
 	sipe_backend_buddy_info_finalize(SIPE_CORE_PUBLIC, info, uri);
 }
 
-static void ab_entry_response(struct sipe_core_private *sipe_private,
-			      const gchar *uri,
-			      SIPE_UNUSED_PARAMETER const gchar *raw,
-			      sipe_xml *soap_body,
-			      gpointer callback_data)
+
+static void get_info_ab_entry_response(struct sipe_core_private *sipe_private,
+				       const gchar *uri,
+				       SIPE_UNUSED_PARAMETER const gchar *raw,
+				       sipe_xml *soap_body,
+				       gpointer callback_data)
 {
-	gchar *who = callback_data;
+	struct ms_dlx_data *mdd = callback_data;
 	struct sipe_backend_buddy_info *info = NULL;
 	gchar *server_alias = NULL;
 	gchar *email        = NULL;
@@ -631,7 +737,7 @@ static void ab_entry_response(struct sipe_core_private *sipe_private,
 	if (soap_body) {
 		const sipe_xml *node;
 
-		SIPE_DEBUG_INFO("ab_entry_response: received valid SOAP message from service %s",
+		SIPE_DEBUG_INFO("get_info_ab_entry_response: received valid SOAP message from service %s",
 				uri);
 
 		info = sipe_backend_buddy_info_start(SIPE_CORE_PUBLIC);
@@ -704,57 +810,25 @@ static void ab_entry_response(struct sipe_core_private *sipe_private,
 	/* this will show the minmum information */
 	get_info_finalize(sipe_private,
 			  info,
-			  who,
+			  mdd->other,
 			  server_alias,
 			  email);
 
 	g_free(email);
 	g_free(server_alias);
-	g_free(who);
+	ms_dlx_free(mdd);
 }
 
-static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
-			     const gchar *base_uri,
-			     const gchar *auth_uri,
-			     const gchar *wsse_security,
-			     gpointer callback_data)
+static void get_info_ab_entry_failed(struct sipe_core_private *sipe_private,
+				     struct ms_dlx_data *mdd)
 {
-	gchar *who = callback_data;
-
-	if (wsse_security) {
-		gchar *search = g_strdup_printf("<SearchOn>msRTCSIP-PrimaryUserAddress</SearchOn>"
-						"<Value>%s</Value>",
-						who);
-
-		SIPE_DEBUG_INFO("ms_dlx_webticket: got ticket for %s",
-				base_uri);
-
-		if (sipe_svc_ab_entry_request(sipe_private,
-					      auth_uri,
-					      wsse_security,
-					      search,
-					      ab_entry_response,
-					      who)) {
-			/* callback data passed down the line */
-			who = NULL;
-		}
-		g_free(search);
-
-	} else {
-		/* no ticket: this will show the minmum information */
-		SIPE_DEBUG_ERROR("ms_dlx_webticket: no web ticket for %s",
-				 base_uri);
-	}
-
-	if (who) {
-		/* request failed: this will show the minmum information */
-		get_info_finalize(sipe_private,
-				  NULL,
-				  who,
-				  NULL,
-				  NULL);
-		g_free(who);
-	}
+	/* request failed: this will show the minmum information */
+	get_info_finalize(sipe_private,
+			  NULL,
+			  mdd->other,
+			  NULL,
+			  NULL);
+	ms_dlx_free(mdd);
 }
 
 static gboolean process_get_info_response(struct sipe_core_private *sipe_private,
@@ -885,25 +959,17 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
 	if (sipe_private->dlx_uri) {
-		gchar *payload = g_strdup(who);
+		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
-		if (!sipe_webticket_request(sipe_private,
-					    sipe_private->dlx_uri,
-					    "AddressBookWebTicketBearer",
-					    ms_dlx_webticket,
-					    payload)) {
-			SIPE_DEBUG_ERROR("sipe_core_buddy_get_info: couldn't request webticket for %s",
-					 sipe_private->dlx_uri);
+		mdd->search = g_strdup_printf("<SearchOn>msRTCSIP-PrimaryUserAddress</SearchOn>"
+					      "<Value>%s</Value>",
+					      who);
+		mdd->other           = g_strdup(who);
+		mdd->callback        = get_info_ab_entry_response;
+		mdd->failed_callback = get_info_ab_entry_failed;
 
-			/* this will show the minmum information */
-			get_info_finalize(sipe_private,
-					  NULL,
-					  payload,
-					  NULL,
-					  NULL);
+		ms_dlx_webticket_request(sipe_private, mdd);
 
-			g_free(payload);
-		}
 	} else {
 		/* no [MS-DLX] server, use Active Directory search instead */
 		gchar *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW,
