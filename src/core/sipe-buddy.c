@@ -536,45 +536,6 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 	g_strfreev(attrs);
 }
 
-static gboolean process_options_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
-					 struct sipmsg *msg,
-					 SIPE_UNUSED_PARAMETER struct transaction *trans)
-{
-	if (msg->response != 200) {
-		SIPE_DEBUG_INFO("process_options_response: OPTIONS response is %d",
-				msg->response);
-		return(FALSE);
-	} else {
-		SIPE_DEBUG_INFO("process_options_response: body:\n%s",
-				msg->body ? msg->body : "");
-		return(TRUE);
-	}
-}
-
-/* Asks UA/proxy about its capabilities */
-static void sipe_options_request(struct sipe_core_private *sipe_private,
-				 const char *who)
-{
-	gchar *to = sip_uri(who);
-	gchar *contact = get_contact(sipe_private);
-	gchar *request = g_strdup_printf("Accept: application/sdp\r\n"
-					 "Contact: %s\r\n",
-					 contact);
-	g_free(contact);
-
-	sip_transport_request(sipe_private,
-			      "OPTIONS",
-			      to,
-			      to,
-			      request,
-			      NULL,
-			      NULL,
-			      process_options_response);
-
-	g_free(to);
-	g_free(request);
-}
-
 static void get_info_finalize(struct sipe_core_private *sipe_private,
 			      struct sipe_backend_buddy_info *info,
 			      const gchar *uri,
@@ -807,10 +768,6 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 
 	SIPE_DEBUG_INFO("Fetching %s's user info for %s",
 			uri, sipe_private->username);
-
-	/* will query buddy UA's capabilities and send answer to log */
-	if (sipe_backend_debug_enabled())
-		sipe_options_request(sipe_private, uri);
 
 	if (msg->response != 200) {
 		SIPE_DEBUG_INFO("process_get_info_response: SERVICE response is %d", msg->response);
