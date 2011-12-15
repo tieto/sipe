@@ -341,6 +341,8 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 				   const gchar *uri,
 				   const gchar *wsse_security,
 				   const gchar *search,
+				   guint entries,
+				   guint max_returns,
 				   sipe_svc_callback *callback,
 				   gpointer callback_data)
 {
@@ -351,19 +353,19 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 					   " xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\""
 					   ">"
 					   " <AbEntryRequest>"
-					   "  <ChangeSearch xmlns:q1=\"DistributionListExpander\" soapenc:arrayType=\"q1:AbEntryRequest.ChangeSearchQuery[1]\">"
-					   "   <AbEntryRequest.ChangeSearchQuery>"
-					   "    %s"
-					   "   </AbEntryRequest.ChangeSearchQuery>"
+					   "  <ChangeSearch xmlns:q1=\"DistributionListExpander\" soapenc:arrayType=\"q1:AbEntryRequest.ChangeSearchQuery[%d]\">"
+					   "   %s"
 					   "  </ChangeSearch>"
 					   "  <Metadata>"
 					   "   <FromDialPad>false</FromDialPad>"
-					   "   <MaxResultNum>1</MaxResultNum>"
+					   "   <MaxResultNum>%d</MaxResultNum>"
 					   "   <ReturnList>displayName,msRTCSIP-PrimaryUserAddress,title,telephoneNumber,homePhone,mobile,otherTelephone,mail,company,country</ReturnList>"
 					   "  </Metadata>"
 					   " </AbEntryRequest>"
 					   "</SearchAbEntry>",
-					   search);
+					   entries,
+					   search,
+					   max_returns);
 
 	ret = new_soap_req(sipe_private,
 			   uri,

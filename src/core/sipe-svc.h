@@ -72,6 +72,8 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
  * @param uri           service URI
  * @param wsse_security predefined authentication token
  * @param search        [MS-DLX] AbEntryRequest.ChangeSearchQuery in XML
+ * @param entries       array entries in search XML string
+ * @param max_returns   how many entries to return
  * @param callback      callback function
  * @param callback_data callback data
  * @return              @c TRUE if search was triggered
@@ -80,6 +82,8 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 				   const gchar *uri,
 				   const gchar *wsse_security,
 				   const gchar *search,
+				   guint entries,
+				   guint max_returns,
 				   sipe_svc_callback *callback,
 				   gpointer callback_data);
 

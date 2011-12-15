@@ -501,6 +501,8 @@ struct ms_dlx_data;
 struct ms_dlx_data {
 	gchar *search;
 	gchar *other;
+	guint  entries;
+	guint  max_returns;
 	sipe_svc_callback *callback;
 	/* must call ms_dlx_free() */
 	void (*failed_callback)(struct sipe_core_private *sipe_private,
@@ -530,6 +532,8 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 					      auth_uri,
 					      wsse_security,
 					      mdd->search,
+					      mdd->entries,
+					      mdd->max_returns,
 					      mdd->callback,
 					      mdd)) {
 			/* callback data passed down the line */
@@ -603,6 +607,8 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
 		mdd->search = g_strdup(""); /* TBD... */
+		mdd->entries         = 1;
+		mdd->max_returns     = 100;
 		mdd->callback        = search_ab_entry_response;
 		mdd->failed_callback = search_ab_entry_failed;
 
@@ -961,10 +967,14 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 	if (sipe_private->dlx_uri) {
 		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
-		mdd->search = g_strdup_printf("<SearchOn>msRTCSIP-PrimaryUserAddress</SearchOn>"
-					      "<Value>%s</Value>",
+		mdd->search = g_strdup_printf("<AbEntryRequest.ChangeSearchQuery>"
+					      " <SearchOn>msRTCSIP-PrimaryUserAddress</SearchOn>"
+					      " <Value>%s</Value>"
+					      "</AbEntryRequest.ChangeSearchQuery>",
 					      who);
 		mdd->other           = g_strdup(who);
+		mdd->entries         = 1;
+		mdd->max_returns     = 1;
 		mdd->callback        = get_info_ab_entry_response;
 		mdd->failed_callback = get_info_ab_entry_failed;
 
