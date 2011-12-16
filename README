@@ -24,7 +24,7 @@ The plugin has support for
     * Enhanced presence
     * Calendar integration with Exchange 2007/2010
     * Contact details information - company, phones, web site, etc.
-    * Contact search
+    * Contact search - [MS-PRES] and [MS-DLX] methods supported
     * Encrypted file transfer
     * Call initiation through PBX
     * NTLMv2, Kerberos & TLS-DSK authentication support

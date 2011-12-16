@@ -1,8 +1,10 @@
 version 1.13.0 "Lync & Office365" (2012-XX-XX)
-	- added TLS-DSK authentication scheme support (Stefan Becker)
+	- added [MS-SIPAE] TLS-DSK authentication scheme (Stefan Becker)
 	  * TLS-DSK has been introduced in Lync
-	  * it is mandatory for Office365 accounts
-	  * it has also been verified for non-public Lync installation
+	  * mandatory for Office365 accounts
+	  * also works for non-public Lync installations
+	- added [MS-DLX] based Get Info/Contact Search (Stefan Becker)
+	  * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
 	- added experimental media TCP transport (Jakub Adam)
 	- completed cleanup: core no longer requires libpurple (Stefan Becker)
 	- refactored crypto code, ie. NSS can replaced if necessary (Stefan Becker)
