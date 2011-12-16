@@ -405,97 +405,6 @@ void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
 	g_slist_free(buddies);
 }
 
-static gboolean process_search_contact_response(struct sipe_core_private *sipe_private,
-						struct sipmsg *msg,
-						SIPE_UNUSED_PARAMETER struct transaction *trans)
-{
-	struct sipe_backend_search_results *results;
-	sipe_xml *searchResults;
-	const sipe_xml *mrow;
-	guint match_count = 0;
-	gboolean more = FALSE;
-	gchar *secondary;
-
-	/* valid response? */
-	if (msg->response != 200) {
-		SIPE_DEBUG_ERROR("process_search_contact_response: request failed (%d)",
-				 msg->response);
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Contact search failed"),
-					  NULL);
-		return(FALSE);
-	}
-
-	SIPE_DEBUG_INFO("process_search_contact_response: body:\n%s", msg->body ? msg->body : "");
-
-	/* valid XML? */
-	searchResults = sipe_xml_parse(msg->body, msg->bodylen);
-	if (!searchResults) {
-		SIPE_DEBUG_INFO_NOFORMAT("process_search_contact_response: no parseable searchResults");
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Contact search failed"),
-					  NULL);
-		return(FALSE);
-	}
-
-	/* any matches? */
-	mrow = sipe_xml_child(searchResults, "Body/Array/row");
-	if (!mrow) {
-		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: no matches");
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("No contacts found"),
-					  NULL);
-
-		sipe_xml_free(searchResults);
-		return(FALSE);
-	}
-
-	/* OK, we found something - show the results to the user */
-	results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC);
-	if (!results) {
-		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: Unable to display the search results.");
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Unable to display the search results"),
-					  NULL);
-
-		sipe_xml_free(searchResults);
-		return FALSE;
-	}
-
-	for (/* initialized above */ ; mrow; mrow = sipe_xml_twin(mrow)) {
-		gchar **uri_parts = g_strsplit(sipe_xml_attribute(mrow, "uri"), ":", 2);
-		sipe_backend_search_results_add(SIPE_CORE_PUBLIC,
-						results,
-						uri_parts[1],
-						sipe_xml_attribute(mrow, "displayName"),
-						sipe_xml_attribute(mrow, "company"),
-						sipe_xml_attribute(mrow, "country"),
-						sipe_xml_attribute(mrow, "email"));
-		g_strfreev(uri_parts);
-		match_count++;
-	}
-
-	if ((mrow = sipe_xml_child(searchResults, "Body/directorySearch/moreAvailable")) != NULL) {
-		char *data = sipe_xml_data(mrow);
-		more = (g_strcasecmp(data, "true") == 0);
-		g_free(data);
-	}
-
-	secondary = g_strdup_printf(
-		dngettext(PACKAGE_NAME,
-			  "Found %d contact%s:",
-			  "Found %d contacts%s:", match_count),
-		match_count, more ? _(" (more matched your query)") : "");
-
-	sipe_backend_search_results_finalize(SIPE_CORE_PUBLIC,
-					     results,
-					     secondary,
-					     more);
-	g_free(secondary);
-	sipe_xml_free(searchResults);
-
-	return(TRUE);
-}
 
 struct ms_dlx_data;
 struct ms_dlx_data {
@@ -564,6 +473,24 @@ static void ms_dlx_webticket_request(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void search_contacts_finalize(struct sipe_core_private *sipe_private,
+				     struct sipe_backend_search_results *results,
+				     guint match_count,
+				     gboolean more)
+{
+	gchar *secondary = g_strdup_printf(
+		dngettext(PACKAGE_NAME,
+			  "Found %d contact%s:",
+			  "Found %d contacts%s:", match_count),
+		match_count, more ? _(" (more matched your query)") : "");
+
+	sipe_backend_search_results_finalize(SIPE_CORE_PUBLIC,
+					     results,
+					     secondary,
+					     more);
+	g_free(secondary);
+}
+
 static void search_ab_entry_response(struct sipe_core_private *sipe_private,
 				     const gchar *uri,
 				     SIPE_UNUSED_PARAMETER const gchar *raw,
@@ -573,10 +500,109 @@ static void search_ab_entry_response(struct sipe_core_private *sipe_private,
 	struct ms_dlx_data *mdd = callback_data;
 
 	if (soap_body) {
+		const sipe_xml *node;
+		struct sipe_backend_search_results *results;
+		GHashTable *found;
 
 		SIPE_DEBUG_INFO("search_ab_entry_response: received valid SOAP message from service %s",
 				uri);
 
+		/* any matches? */
+		node = sipe_xml_child(soap_body, "Body/SearchAbEntryResponse/SearchAbEntryResult/Items/AbEntry");
+		if (!node) {
+			SIPE_DEBUG_ERROR_NOFORMAT("search_ab_entry_response: no matches");
+			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("No contacts found"),
+					  NULL);
+			ms_dlx_free(mdd);
+			return;
+		}
+
+		/* OK, we found something - show the results to the user */
+		results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC);
+		if (!results) {
+			SIPE_DEBUG_ERROR_NOFORMAT("search_ab_entry_response: Unable to display the search results.");
+			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+						  _("Unable to display the search results"),
+						  NULL);
+			ms_dlx_free(mdd);
+			return;
+		}
+
+		/* SearchAbEntryResult can contain duplicates */
+		found = g_hash_table_new_full(g_str_hash, g_str_equal,
+					      g_free, NULL);
+
+		for (/* initialized above */ ; node; node = sipe_xml_twin(node)) {
+			const sipe_xml *attrs;
+			gchar *sip_uri     = NULL;
+			gchar *displayname = NULL;
+			gchar *company     = NULL;
+			gchar *country     = NULL;
+			gchar *email       = NULL;
+
+			for (attrs = sipe_xml_child(node, "Attributes/Attribute");
+			     attrs;
+			     attrs = sipe_xml_twin(attrs)) {
+				gchar *name  = sipe_xml_data(sipe_xml_child(attrs,
+									    "Name"));
+				gchar *value = sipe_xml_data(sipe_xml_child(attrs,
+									    "Value"));
+
+				if (!is_empty(value)) {
+					if (sipe_strcase_equal(name, "msrtcsip-primaryuseraddress")) {
+						g_free(sip_uri);
+					        sip_uri = value;
+						value = NULL;
+					} else if (sipe_strcase_equal(name, "displayname")) {
+						g_free(displayname);
+						displayname = value;
+						value = NULL;
+					} else if (sipe_strcase_equal(name, "mail")) {
+						g_free(email);
+						email = value;
+						value = NULL;
+					} else if (sipe_strcase_equal(name, "company")) {
+						g_free(company);
+						company = value;
+						value = NULL;
+					} else if (sipe_strcase_equal(name, "country")) {
+						g_free(country);
+						country = value;
+						value = NULL;
+					}
+				}
+
+				g_free(value);
+				g_free(name);
+			}
+
+			if (sip_uri && !g_hash_table_lookup(found, sip_uri)) {
+				gchar **uri_parts = g_strsplit(sip_uri, ":", 2);
+				sipe_backend_search_results_add(SIPE_CORE_PUBLIC,
+								results,
+								uri_parts[1],
+								displayname,
+								company,
+								country,
+								email);
+				g_strfreev(uri_parts);
+
+				g_hash_table_insert(found, sip_uri, (gpointer) TRUE);
+				sip_uri = NULL;
+			}
+
+			g_free(email);
+			g_free(country);
+			g_free(company);
+			g_free(displayname);
+			g_free(sip_uri);
+		}
+
+		search_contacts_finalize(sipe_private, results,
+					 g_hash_table_size(found),
+					 FALSE);
+		g_hash_table_destroy(found);
 		ms_dlx_free(mdd);
 
 	} else {
@@ -591,6 +617,87 @@ static void search_ab_entry_failed(struct sipe_core_private *sipe_private,
 				  _("Contact search failed"),
 				  NULL);
 	ms_dlx_free(mdd);
+}
+
+static gboolean process_search_contact_response(struct sipe_core_private *sipe_private,
+						struct sipmsg *msg,
+						SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	struct sipe_backend_search_results *results;
+	sipe_xml *searchResults;
+	const sipe_xml *mrow;
+	guint match_count = 0;
+	gboolean more = FALSE;
+
+	/* valid response? */
+	if (msg->response != 200) {
+		SIPE_DEBUG_ERROR("process_search_contact_response: request failed (%d)",
+				 msg->response);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Contact search failed"),
+					  NULL);
+		return(FALSE);
+	}
+
+	SIPE_DEBUG_INFO("process_search_contact_response: body:\n%s", msg->body ? msg->body : "");
+
+	/* valid XML? */
+	searchResults = sipe_xml_parse(msg->body, msg->bodylen);
+	if (!searchResults) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_search_contact_response: no parseable searchResults");
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Contact search failed"),
+					  NULL);
+		return(FALSE);
+	}
+
+	/* any matches? */
+	mrow = sipe_xml_child(searchResults, "Body/Array/row");
+	if (!mrow) {
+		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: no matches");
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("No contacts found"),
+					  NULL);
+
+		sipe_xml_free(searchResults);
+		return(FALSE);
+	}
+
+	/* OK, we found something - show the results to the user */
+	results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC);
+	if (!results) {
+		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: Unable to display the search results.");
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Unable to display the search results"),
+					  NULL);
+
+		sipe_xml_free(searchResults);
+		return FALSE;
+	}
+
+	for (/* initialized above */ ; mrow; mrow = sipe_xml_twin(mrow)) {
+		gchar **uri_parts = g_strsplit(sipe_xml_attribute(mrow, "uri"), ":", 2);
+		sipe_backend_search_results_add(SIPE_CORE_PUBLIC,
+						results,
+						uri_parts[1],
+						sipe_xml_attribute(mrow, "displayName"),
+						sipe_xml_attribute(mrow, "company"),
+						sipe_xml_attribute(mrow, "country"),
+						sipe_xml_attribute(mrow, "email"));
+		g_strfreev(uri_parts);
+		match_count++;
+	}
+
+	if ((mrow = sipe_xml_child(searchResults, "Body/directorySearch/moreAvailable")) != NULL) {
+		char *data = sipe_xml_data(mrow);
+		more = (g_strcasecmp(data, "true") == 0);
+		g_free(data);
+	}
+
+	search_contacts_finalize(sipe_private, results, match_count, more);
+	sipe_xml_free(searchResults);
+
+	return(TRUE);
 }
 
 #define SIPE_SOAP_SEARCH_ROW "<m:row m:attrib=\"%s\" m:value=\"%s\"/>"
