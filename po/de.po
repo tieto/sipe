@@ -11,8 +11,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-12-12 17:10+0000\n"
-"Last-Translator: stefanb <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2011-12-16 20:46+0000\n"
+"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -42,14 +42,14 @@ msgid "Incompatible authentication scheme chosen"
 msgstr ""
 "Sie haben ein nicht unterstütztes Authentizierungsverfahren konfiguriert"
 
-#: ../src/core/sip-transport.c:1243 ../src/core/sipe-notify.c:988
+#: ../src/core/sip-transport.c:1243 ../src/core/sipe-notify.c:993
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Sie wurden vom Server '%s' abgewiesen"
 
 #: ../src/core/sip-transport.c:1244 ../src/core/sip-transport.c:1260
 #: ../src/core/sip-transport.c:1284 ../src/core/sip-transport.c:1308
-#: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:988
+#: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:993
 msgid "no reason given"
 msgstr "Kein Grund angegeben"
 
@@ -74,266 +74,164 @@ msgstr "Der Dienst %s ist nicht verfügbar"
 msgid "Invalid message signature received"
 msgstr "Ungültige Nachrichtensignatur erhalten"
 
-#: ../src/core/sipe-buddy.c:330
+#: ../src/core/sipe-buddy.c:332
 msgid "Status"
 msgstr "Status"
 
-#: ../src/core/sipe-buddy.c:333
+#: ../src/core/sipe-buddy.c:335
 msgid "Calendar"
 msgstr "Kalender"
 
-#: ../src/core/sipe-buddy.c:338
+#: ../src/core/sipe-buddy.c:340
 msgid "Meeting in"
 msgstr "Besprechungsraum"
 
-#: ../src/core/sipe-buddy.c:342
+#: ../src/core/sipe-buddy.c:344
 msgid "Meeting about"
 msgstr "Besprechungsthema"
 
-#: ../src/core/sipe-buddy.c:346
+#: ../src/core/sipe-buddy.c:348
 msgid "Out of office note"
 msgstr "Abwesenheitsnotiz"
 
-#: ../src/core/sipe-buddy.c:346
+#: ../src/core/sipe-buddy.c:348
 msgid "Note"
 msgstr "Notiz"
 
-#: ../src/core/sipe-buddy.c:350 ../src/core/sipe-buddy.c:1022
-#: ../src/purple/purple-buddy.c:527
+#: ../src/core/sipe-buddy.c:352 ../src/core/sipe-buddy.c:1349
+#: ../src/purple/purple-buddy.c:498
 msgid "Access level"
 msgstr "Sichtbarkeitsniveau"
 
-#: ../src/core/sipe-buddy.c:422 ../src/core/sipe-buddy.c:434
-msgid "Contact search failed"
-msgstr "Suche im Adressbuch fehlgeschlagen"
-
-#: ../src/core/sipe-buddy.c:444
-msgid "No contacts found"
-msgstr "Es wurden keine Einträge gefunden"
-
-#: ../src/core/sipe-buddy.c:456
-msgid "Unable to display the search results"
-msgstr "Kann die Suchergebnisse nicht anzeigen"
-
-#: ../src/core/sipe-buddy.c:484
+#: ../src/core/sipe-buddy.c:483
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "%d Kontakt%s gefunden:"
 msgstr[1] "%d Kontakte%s gefunden:"
 
-#: ../src/core/sipe-buddy.c:486
+#: ../src/core/sipe-buddy.c:485
 msgid " (more matched your query)"
 msgstr " (es gab noch mehr Ergebnisse für Ihrer Suche)"
 
-#: ../src/core/sipe-buddy.c:647 ../src/core/sipe-buddy.c:712
-msgid "Display name"
-msgstr "Display-Name"
+#: ../src/core/sipe-buddy.c:515 ../src/core/sipe-buddy.c:659
+msgid "No contacts found"
+msgstr "Es wurden keine Einträge gefunden"
 
-#: ../src/core/sipe-buddy.c:653
-msgid "Job title"
-msgstr "Beruf"
+#: ../src/core/sipe-buddy.c:526 ../src/core/sipe-buddy.c:671
+msgid "Unable to display the search results"
+msgstr "Kann die Suchergebnisse nicht anzeigen"
 
-#: ../src/core/sipe-buddy.c:659
-msgid "Office"
-msgstr "Büro"
+#: ../src/core/sipe-buddy.c:617 ../src/core/sipe-buddy.c:637
+#: ../src/core/sipe-buddy.c:649
+msgid "Contact search failed"
+msgstr "Suche im Adressbuch fehlgeschlagen"
 
-#: ../src/core/sipe-buddy.c:665
-msgid "Business phone"
-msgstr "Geschäftstelefon"
-
-#: ../src/core/sipe-buddy.c:671 ../src/core/sipe-ocs2007.c:465
-#: ../src/purple/purple-buddy.c:531 ../src/purple/purple-plugin.c:704
-#: ../src/purple/purple-search.c:50
-msgid "Company"
-msgstr "Firma"
-
-#: ../src/core/sipe-buddy.c:677
-msgid "City"
-msgstr "Stadt"
-
-#: ../src/core/sipe-buddy.c:683
-msgid "State"
-msgstr "Provinz/Bundesland"
-
-#: ../src/core/sipe-buddy.c:689 ../src/purple/purple-plugin.c:706
-#: ../src/purple/purple-search.c:53
-msgid "Country"
-msgstr "Land"
-
-#: ../src/core/sipe-buddy.c:695 ../src/core/sipe-buddy.c:734
-msgid "Email address"
-msgstr "E-Mail Adresse"
-
-#: ../src/core/sipe-buddy.c:722
-msgid "Alias"
-msgstr "Alias"
-
-#: ../src/core/sipe-buddy.c:745
-msgid "Site"
-msgstr "Standort"
-
-#: ../src/core/sipe-buddy.c:753
-msgid "Device"
-msgstr "Gerät"
-
-#: ../src/core/sipe-buddy.c:914
+#: ../src/core/sipe-buddy.c:1241
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Ernenne zum Leiter der Konferenz '%s'"
 
-#: ../src/core/sipe-buddy.c:927
+#: ../src/core/sipe-buddy.c:1254
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Aus der Konferenz '%s' entfernen"
 
-#: ../src/core/sipe-buddy.c:941
+#: ../src/core/sipe-buddy.c:1268
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Zu der Konferenz '%s' einladen"
 
-#: ../src/core/sipe-buddy.c:957
+#: ../src/core/sipe-buddy.c:1284
 msgid "New chat"
 msgstr "Neue Konferenz"
 
-#: ../src/core/sipe-buddy.c:970
+#: ../src/core/sipe-buddy.c:1297
 msgid "Work"
 msgstr "Telefon (Arbeit)"
 
-#: ../src/core/sipe-buddy.c:977
+#: ../src/core/sipe-buddy.c:1304
 msgid "Mobile"
 msgstr "Telefon (Handy)"
 
-#: ../src/core/sipe-buddy.c:985
+#: ../src/core/sipe-buddy.c:1312
 msgid "Home"
 msgstr "Telefon (Privat)"
 
-#: ../src/core/sipe-buddy.c:993
+#: ../src/core/sipe-buddy.c:1320
 msgid "Other"
 msgstr "Telefon"
 
-#: ../src/core/sipe-buddy.c:1001
+#: ../src/core/sipe-buddy.c:1328
 msgid "Custom1"
 msgstr "Telefon (benutzerdefiniert)"
 
-#: ../src/core/sipe-buddy.c:1011
+#: ../src/core/sipe-buddy.c:1338
 msgid "Send email..."
 msgstr "Sende E-Mail..."
 
-#: ../src/core/sipe-cal.c:947
+#: ../src/core/sipe-cal.c:948
 msgid "Free"
 msgstr "Verfügbar"
 
-#: ../src/core/sipe-cal.c:948
+#: ../src/core/sipe-cal.c:949
 msgid "Tentative"
 msgstr "Vorläufig"
 
-#: ../src/core/sipe-cal.c:949 ../src/core/sipe-status.c:61
+#: ../src/core/sipe-cal.c:950 ../src/core/sipe-status.c:61
 msgid "Busy"
 msgstr "Beschäftigt"
 
-#: ../src/core/sipe-cal.c:950 ../src/core/sipe-status.c:72
+#: ../src/core/sipe-cal.c:951 ../src/core/sipe-status.c:72
 msgid "Out of office"
 msgstr "Nicht im Büro"
 
-#: ../src/core/sipe-cal.c:951
+#: ../src/core/sipe-cal.c:952
 msgid "No data"
 msgstr "Keine Angaben"
 
-#: ../src/core/sipe-cal.c:1059 ../src/core/sipe-cal.c:1086
+#: ../src/core/sipe-cal.c:1060 ../src/core/sipe-cal.c:1087
 #, c-format
 msgid "Currently %s"
 msgstr "Zurzeit %s"
 
-#: ../src/core/sipe-cal.c:1065
+#: ../src/core/sipe-cal.c:1066
 msgid "Outside of working hours for next 8 hours"
 msgstr "Nicht im Büro in den nächsten 8 Stunden"
 
-#: ../src/core/sipe-cal.c:1067
+#: ../src/core/sipe-cal.c:1068
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "%s für die nächsten 8 Stunden"
 
-#: ../src/core/sipe-cal.c:1076
+#: ../src/core/sipe-cal.c:1077
 msgid "Not working"
 msgstr "Freizeit"
 
-#: ../src/core/sipe-cal.c:1080
+#: ../src/core/sipe-cal.c:1081
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s bis %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1088
+#: ../src/core/sipe-cal.c:1089
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s. Verlässt das Büro um %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1093
+#: ../src/core/sipe-cal.c:1094
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s ab %.2d:%.2d"
 
-#: ../src/core/sipe-certificate.c:239
+#: ../src/core/sipe-certificate.c:213 ../src/core/sipe-certificate.c:254
 #, c-format
 msgid "Certificate request to %s failed"
 msgstr "Zertifikatsanforderung bei %s fehlgeschlagen"
 
-#: ../src/core/sipe-certificate.c:524
+#: ../src/core/sipe-certificate.c:260
 #, c-format
 msgid "Web ticket request to %s failed"
 msgstr "Web-Ticket-Anforderung bei %s fehlgeschlagen"
-
-#: ../src/core/sipe-certificate.c:600
-#, c-format
-msgid "Can't request security token from %s"
-msgstr "Kann kein Sicherheits-Token bei %s anfordern"
-
-#: ../src/core/sipe-certificate.c:606
-#, c-format
-msgid "Can't find the authentication port for TLS-DSK web ticket URI %s"
-msgstr "Beglaubigungsstelle für die TLS-DSK Web-Ticket-URI %s nicht gefunden"
-
-#: ../src/core/sipe-certificate.c:612
-#, c-format
-msgid "Can't retrieve metadata for TLS-DSK web ticket URI %s"
-msgstr "Metadaten-Anfrage für die TLS-DSK Web-Ticket-URI %s fehlgeschlagen"
-
-#: ../src/core/sipe-certificate.c:649
-#, c-format
-msgid ""
-"Can't find the web ticket URI for TLS-DSK certificate provisioning URI %s"
-msgstr ""
-"Web-Ticket-URI für die TLS-DSK  Zertifikatbereitstellungsdienst-URI %s nicht"
-" gefunden"
-
-#: ../src/core/sipe-certificate.c:685
-#, c-format
-msgid "Can't request metadata from %s"
-msgstr "Metadaten-Anfrage für %s fehlgeschlagen"
-
-#: ../src/core/sipe-certificate.c:697
-#, c-format
-msgid ""
-"Can't find the authentication port for TLS-DSK certificate provisioning URI "
-"%s"
-msgstr ""
-"Authentizierungsstelle für die TLS-DSK Zertifikatbereitstellungsdienst-URI "
-"%s nicht gefunden"
-
-#: ../src/core/sipe-certificate.c:703
-#, c-format
-msgid ""
-"Can't find the web ticket policy for TLS-DSK certificate provisioning URI %s"
-msgstr ""
-"Web-Ticket-Regeln für die TLS-DSK Zertifikatbereitstellungsdienst-URI %s "
-"nicht gefunden"
-
-#: ../src/core/sipe-certificate.c:709
-#, c-format
-msgid "Can't retrieve metadata for TLS-DSK certificate provisioning URI %s"
-msgstr ""
-"Metadaten-Anfrage für die TLS-DSK Zertifikatbereitstellungsdienst-URI %s "
-"fehlgeschlagen"
 
 #. Generate next ID
 #: ../src/core/sipe-chat.c:231
@@ -394,7 +292,7 @@ msgstr "Sie haben die Verbindung mit dieser Konferenz verloren."
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
-#: ../src/core/sipe-core.c:177
+#: ../src/core/sipe-core.c:178
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
@@ -403,48 +301,48 @@ msgstr ""
 "erweiterte Version des SIP/SIMPLE-Protokolls implementiert"
 
 #. About note, part 2/13: home page URL (label)
-#: ../src/core/sipe-core.c:179
+#: ../src/core/sipe-core.c:180
 msgid "Home Page"
 msgstr "Homepage"
 
 #. About note, part 3/13: support forum URL (label)
-#: ../src/core/sipe-core.c:181
+#: ../src/core/sipe-core.c:182
 msgid "Support"
 msgstr "Forum"
 
 #. About note, part 4/13: support forum name (hyperlink text)
-#: ../src/core/sipe-core.c:183
+#: ../src/core/sipe-core.c:184
 msgid "Help Forum"
 msgstr "Hilfe-Forum (in Englisch)"
 
 #. About note, part 5/13: bug tracker URL (label)
-#: ../src/core/sipe-core.c:185
+#: ../src/core/sipe-core.c:186
 msgid "Report Problems"
 msgstr "Probleme melden im"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
-#: ../src/core/sipe-core.c:187
+#: ../src/core/sipe-core.c:188
 msgid "Bug Tracker"
 msgstr "Bugtracker"
 
 #. About note, part 7/13: translation service URL (label)
-#: ../src/core/sipe-core.c:189
+#: ../src/core/sipe-core.c:190
 msgid "Translations"
 msgstr "Übersetzungen"
 
 #. About note, part 8/13: license type (label)
-#: ../src/core/sipe-core.c:191
+#: ../src/core/sipe-core.c:192
 msgid "License"
 msgstr "Lizenz"
 
 #. About note, part 9/13: known users
-#: ../src/core/sipe-core.c:193
+#: ../src/core/sipe-core.c:194
 msgid "We support users in such organizations as"
 msgstr "Wir unterstützen z.B. Benutzer in den folgenden Organisationen"
 
 #. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe-core.c:196
+#: ../src/core/sipe-core.c:197
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr ""
 "Wir bitten um Ihre Hilfe bei der Anpassung von SIPE an weitere Sprachen. Auf"
@@ -452,12 +350,12 @@ msgstr ""
 
 #. About note, part 11/13: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe-core.c:199
+#: ../src/core/sipe-core.c:200
 msgid " using convenient web interface"
 msgstr " gibt es dazu eine einfach zu erlernende Web-Benutzerschnittstelle"
 
 #. About note, part 12/13: author list (header)
-#: ../src/core/sipe-core.c:201
+#: ../src/core/sipe-core.c:202
 msgid "Authors"
 msgstr "Autoren"
 
@@ -465,15 +363,15 @@ msgstr "Autoren"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe-core.c:206
+#: ../src/core/sipe-core.c:207
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Deutsche Übersetzung (de): Stefan Becker"
 
-#: ../src/core/sipe-core.c:254
+#: ../src/core/sipe-core.c:255
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Der SIP-Exchange-Benutzername enthält unerlaubte Zeichen"
 
-#: ../src/core/sipe-core.c:262
+#: ../src/core/sipe-core.c:263
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
@@ -481,7 +379,7 @@ msgstr ""
 "Benutzername sollte eine gültige SIP URI sein\n"
 "Beispiel: benutzer@domäne.com"
 
-#: ../src/core/sipe-core.c:272
+#: ../src/core/sipe-core.c:273
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
@@ -489,11 +387,11 @@ msgstr ""
 "Falls angegeben, dann sollte der Benutzername eine gültige SIP URI sein\n"
 "Beispiel: benutzer@domäne.com"
 
-#: ../src/core/sipe-core.c:281
+#: ../src/core/sipe-core.c:282
 msgid "SIP Exchange user name contains whitespace"
 msgstr "Der SIP-Exchange-Benutzername enthält Leerzeichen"
 
-#: ../src/core/sipe-core.c:295
+#: ../src/core/sipe-core.c:296
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
@@ -557,8 +455,8 @@ msgstr "Die Authentifizierung für die Dateiübertragung ist fehlgeschlagen."
 msgid "Out of memory"
 msgstr "Es ist nicht genügend freier Speicher verfügbar."
 
-#: ../src/core/sipe-group.c:161 ../src/core/sipe-notify.c:1100
-#: ../src/core/sipe-notify.c:1110 ../src/core/sipe-notify.c:1131
+#: ../src/core/sipe-group.c:161 ../src/core/sipe-notify.c:1105
+#: ../src/core/sipe-notify.c:1115 ../src/core/sipe-notify.c:1136
 #: ../src/purple/purple-search.c:102
 msgid "Other Contacts"
 msgstr "Andere Kontakte"
@@ -653,32 +551,40 @@ msgid "User %s rejected call"
 msgstr "Der Benutzer %s hat den Anruf abgewiesen"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe-notify.c:980
+#: ../src/core/sipe-notify.c:985
 msgid "you are already signed in at another location"
 msgstr "Sie haben sich bereits von einem anderen Ort aus angemeldet"
 
-#: ../src/core/sipe-notify.c:982
+#: ../src/core/sipe-notify.c:987
 msgid "user disabled"
 msgstr "Benutzer ist gesperrt"
 
-#: ../src/core/sipe-notify.c:984
+#: ../src/core/sipe-notify.c:989
 msgid "user moved"
 msgstr "Benutzer ist auf einen neuen Server umgezogen"
 
-#: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:533
+#: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:504
 msgid "Blocked"
 msgstr "Unsichtbar"
 
-#: ../src/core/sipe-ocs2007.c:463 ../src/purple/purple-buddy.c:529
+#: ../src/core/sipe-ocs2007.c:463 ../src/purple/purple-buddy.c:500
 msgid "Personal"
 msgstr "Persönlich"
 
 #. index 0
-#: ../src/core/sipe-ocs2007.c:464 ../src/purple/purple-buddy.c:530
+#: ../src/core/sipe-ocs2007.c:464 ../src/purple/purple-buddy.c:501
 msgid "Team"
 msgstr "Arbeitsgruppe"
 
-#: ../src/core/sipe-ocs2007.c:466 ../src/purple/purple-buddy.c:532
+#. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
+#. SIPE_BUDDY_INFO_COMPANY
+#: ../src/core/sipe-ocs2007.c:465 ../src/purple/purple-buddy.c:55
+#: ../src/purple/purple-buddy.c:502 ../src/purple/purple-plugin.c:710
+#: ../src/purple/purple-search.c:50
+msgid "Company"
+msgstr "Firma"
+
+#: ../src/core/sipe-ocs2007.c:466 ../src/purple/purple-buddy.c:503
 msgid "Public"
 msgstr "Öffentlich"
 
@@ -801,33 +707,100 @@ msgstr ""
 "Diese Nachricht konnte nicht an %s zugestellt werden, da ein oder mehrere "
 "Empfänger offline sind"
 
-#: ../src/purple/purple-buddy.c:252 ../src/purple/purple-buddy.c:270
+#. SIPE_BUDDY_INFO_DISPLAY_NAME
+#: ../src/purple/purple-buddy.c:46
+msgid "Display name"
+msgstr "Display-Name"
+
+#. SIPE_BUDDY_INFO_JOB_TITLE
+#: ../src/purple/purple-buddy.c:47
+msgid "Job title"
+msgstr "Beruf"
+
+#. SIPE_BUDDY_INFO_CITY
+#: ../src/purple/purple-buddy.c:48
+msgid "City"
+msgstr "Stadt"
+
+#. SIPE_BUDDY_INFO_STATE
+#: ../src/purple/purple-buddy.c:49
+msgid "State"
+msgstr "Provinz/Bundesland"
+
+#. SIPE_BUDDY_INFO_OFFICE
+#: ../src/purple/purple-buddy.c:50
+msgid "Office"
+msgstr "Büro"
+
+#. SIPE_BUDDY_INFO_DEPARTMENT
+#. SIPE_BUDDY_INFO_COUNTRY
+#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:712
+#: ../src/purple/purple-search.c:53
+msgid "Country"
+msgstr "Land"
+
+#. SIPE_BUDDY_INFO_WORK_PHONE
+#: ../src/purple/purple-buddy.c:53
+msgid "Business phone"
+msgstr "Geschäftstelefon"
+
+#. SIPE_BUDDY_INFO_EMAIL
+#: ../src/purple/purple-buddy.c:56
+msgid "Email address"
+msgstr "E-Mail Adresse"
+
+#. SIPE_BUDDY_INFO_SITE
+#: ../src/purple/purple-buddy.c:57
+msgid "Site"
+msgstr "Standort"
+
+#. SIPE_BUDDY_INFO_ZIPCODE
+#. SIPE_BUDDY_INFO_STREET
+#. SIPE_BUDDY_INFO_MOBILE_PHONE
+#. SIPE_BUDDY_INFO_MOBILE_PHONE_DISPLAY
+#. SIPE_BUDDY_INFO_HOME_PHONE
+#. SIPE_BUDDY_INFO_HOME_PHONE_DISPLAY
+#. SIPE_BUDDY_INFO_OTHER_PHONE
+#. SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY
+#. SIPE_BUDDY_INFO_CUSTOM1_PHONE
+#. SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY
+#. SIPE_BUDDY_INFO_ALIAS
+#: ../src/purple/purple-buddy.c:68
+msgid "Alias"
+msgstr "Alias"
+
+#. SIPE_BUDDY_INFO_DEVICE
+#: ../src/purple/purple-buddy.c:69
+msgid "Device"
+msgstr "Gerät"
+
+#: ../src/purple/purple-buddy.c:219 ../src/purple/purple-buddy.c:237
 msgid "you"
 msgstr "Sie"
 
-#: ../src/purple/purple-buddy.c:488
+#: ../src/purple/purple-buddy.c:459
 msgid ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 msgstr ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
-#: ../src/purple/purple-buddy.c:520
+#: ../src/purple/purple-buddy.c:491
 msgid "Domain"
 msgstr "Domäne"
 
-#: ../src/purple/purple-buddy.c:540 ../src/purple/purple-buddy.c:541
+#: ../src/purple/purple-buddy.c:511 ../src/purple/purple-buddy.c:512
 msgid "Add new domain"
 msgstr "Neue Domäne hinzufügen"
 
-#: ../src/purple/purple-buddy.c:542
+#: ../src/purple/purple-buddy.c:513
 msgid "Add"
 msgstr "Hinzufügen"
 
-#: ../src/purple/purple-buddy.c:543
+#: ../src/purple/purple-buddy.c:514
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: ../src/purple/purple-buddy.c:682
+#: ../src/purple/purple-buddy.c:653
 msgid "Copy to"
 msgstr "Kopiere nach"
 
@@ -886,23 +859,27 @@ msgstr "Verbindungsaufbau"
 msgid "user@company.com"
 msgstr "benutzer@domäne.com"
 
-#: ../src/purple/purple-plugin.c:700
+#: ../src/purple/purple-plugin.c:704
 msgid "First name"
 msgstr "Vorname"
 
-#: ../src/purple/purple-plugin.c:702
+#: ../src/purple/purple-plugin.c:706
 msgid "Last name"
 msgstr "Nachname"
 
-#: ../src/purple/purple-plugin.c:710
+#: ../src/purple/purple-plugin.c:708 ../src/purple/purple-search.c:56
+msgid "Email"
+msgstr "E-Mail"
+
+#: ../src/purple/purple-plugin.c:716
 msgid "Search"
 msgstr "Suchen"
 
-#: ../src/purple/purple-plugin.c:711
+#: ../src/purple/purple-plugin.c:717
 msgid "Search for a contact"
 msgstr "Suche im Adressbuch"
 
-#: ../src/purple/purple-plugin.c:712
+#: ../src/purple/purple-plugin.c:718
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
@@ -910,27 +887,27 @@ msgstr ""
 "Geben Sie bitte die Informationen für die Person ein, die Sie im Adressbuch "
 "suchen möchten. Leere Felder werden ignoriert."
 
-#: ../src/purple/purple-plugin.c:714
+#: ../src/purple/purple-plugin.c:720
 msgid "_Search"
 msgstr "_Suchen"
 
-#: ../src/purple/purple-plugin.c:715 ../src/purple/purple-plugin.c:759
+#: ../src/purple/purple-plugin.c:721 ../src/purple/purple-plugin.c:765
 msgid "_Cancel"
 msgstr "_Abbrechen"
 
-#: ../src/purple/purple-plugin.c:747
+#: ../src/purple/purple-plugin.c:753
 msgid "Meeting location"
 msgstr "Konferenz-Bezeichner"
 
-#: ../src/purple/purple-plugin.c:751
+#: ../src/purple/purple-plugin.c:757
 msgid "Join conference"
 msgstr "Konferenz beitreten"
 
-#: ../src/purple/purple-plugin.c:752
+#: ../src/purple/purple-plugin.c:758
 msgid "Join scheduled conference"
 msgstr "Geplanter Konferenz beitreten"
 
-#: ../src/purple/purple-plugin.c:753
+#: ../src/purple/purple-plugin.c:759
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -942,27 +919,27 @@ msgstr ""
 "Ein gültiger Bezeichner sieht wie folgt aus\n"
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
 
-#: ../src/purple/purple-plugin.c:758
+#: ../src/purple/purple-plugin.c:764
 msgid "_Join"
 msgstr "_Beitreten"
 
-#: ../src/purple/purple-plugin.c:781
+#: ../src/purple/purple-plugin.c:787
 msgid "About SIPE plugin..."
 msgstr "Informationen zum SIPE Plugin..."
 
-#: ../src/purple/purple-plugin.c:784
+#: ../src/purple/purple-plugin.c:790
 msgid "Contact search..."
 msgstr "Suche im Adressbuch..."
 
-#: ../src/purple/purple-plugin.c:787
+#: ../src/purple/purple-plugin.c:793
 msgid "Join scheduled conference..."
 msgstr "Geplanter Konferenz beitreten..."
 
-#: ../src/purple/purple-plugin.c:790
+#: ../src/purple/purple-plugin.c:796
 msgid "Republish Calendar"
 msgstr "Ihre Kalenderdaten erneut veröffentlichen"
 
-#: ../src/purple/purple-plugin.c:793
+#: ../src/purple/purple-plugin.c:799
 msgid "Reset status"
 msgstr "Den Status zurücksetzen"
 
@@ -973,7 +950,7 @@ msgstr "Den Status zurücksetzen"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:850
+#: ../src/purple/purple-plugin.c:856
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -983,7 +960,7 @@ msgstr ""
 "Benutzer oder Domäne\\Benutzer oder\n"
 "   benutzer@domäne.com"
 
-#: ../src/purple/purple-plugin.c:854
+#: ../src/purple/purple-plugin.c:860
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
@@ -991,19 +968,19 @@ msgstr ""
 "Server[:Port]\n"
 "(Bitte leer lassen für voreingestellten Server)"
 
-#: ../src/purple/purple-plugin.c:857
+#: ../src/purple/purple-plugin.c:863
 msgid "Connection type"
 msgstr "Verbindungstyp"
 
-#: ../src/purple/purple-plugin.c:858
+#: ../src/purple/purple-plugin.c:864
 msgid "Auto"
 msgstr "Auto"
 
-#: ../src/purple/purple-plugin.c:859
+#: ../src/purple/purple-plugin.c:865
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:860
+#: ../src/purple/purple-plugin.c:866
 msgid "TCP"
 msgstr "TCP"
 
@@ -1011,23 +988,23 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:866
+#: ../src/purple/purple-plugin.c:872
 msgid "User Agent"
 msgstr "Benutzeragent"
 
-#: ../src/purple/purple-plugin.c:869
+#: ../src/purple/purple-plugin.c:875
 msgid "Authentication scheme"
 msgstr "Authentizierungsschema"
 
-#: ../src/purple/purple-plugin.c:870
+#: ../src/purple/purple-plugin.c:876
 msgid "NTLM"
 msgstr "NTLM"
 
-#: ../src/purple/purple-plugin.c:872
+#: ../src/purple/purple-plugin.c:878
 msgid "Kerberos"
 msgstr "Kerberos"
 
-#: ../src/purple/purple-plugin.c:874
+#: ../src/purple/purple-plugin.c:880
 msgid "TLS-DSK"
 msgstr "TLS-DSK"
 
@@ -1035,14 +1012,14 @@ msgstr "TLS-DSK"
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #. 
-#: ../src/purple/purple-plugin.c:882
+#: ../src/purple/purple-plugin.c:888
 msgid "Use Single Sign-On"
 msgstr "Benutze Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:889
+#: ../src/purple/purple-plugin.c:895
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
@@ -1050,7 +1027,7 @@ msgstr ""
 "E-Mail-Service URL\n"
 "(Bitte leer lassen für voreingestellten Dienst)"
 
-#: ../src/purple/purple-plugin.c:892
+#: ../src/purple/purple-plugin.c:898
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1061,7 +1038,7 @@ msgstr ""
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:898
+#: ../src/purple/purple-plugin.c:904
 msgid ""
 "Email login\n"
 "(if different from Login)"
@@ -1069,7 +1046,7 @@ msgstr ""
 "E-Mail Anmeldenamen\n"
 "(falls er sich vom Anmeldenamen unterscheiden sollte)"
 
-#: ../src/purple/purple-plugin.c:901
+#: ../src/purple/purple-plugin.c:907
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1080,7 +1057,7 @@ msgstr ""
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:908
+#: ../src/purple/purple-plugin.c:914
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
@@ -1097,10 +1074,6 @@ msgstr "Benutzername"
 #: ../src/purple/purple-search.c:47
 msgid "Name"
 msgstr "Name"
-
-#: ../src/purple/purple-search.c:56
-msgid "Email"
-msgstr "E-Mail"
 
 #: ../src/purple/purple-transport.c:109
 msgid "Read error"
