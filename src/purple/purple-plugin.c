@@ -654,6 +654,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
 	const gchar *given_name = NULL;
 	const gchar *surname    = NULL;
+	const gchar *email      = NULL;
 	const gchar *company    = NULL;
 	const gchar *country    = NULL;
 
@@ -669,6 +670,8 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 				given_name = value;
 			} else if (strcmp(id, "surname") == 0) {
 				surname = value;
+			} else if (strcmp(id, "email") == 0) {
+				email = value;
 			} else if (strcmp(id, "company") == 0) {
 				company = value;
 			} else if (strcmp(id, "country") == 0) {
@@ -682,6 +685,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 	sipe_core_buddy_search(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 			       given_name,
 			       surname,
+			       email,
 			       company,
 			       country);
 }
@@ -700,6 +704,8 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 	field = purple_request_field_string_new("given", _("First name"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 	field = purple_request_field_string_new("surname", _("Last name"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("email", _("Email"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);

@@ -710,11 +710,12 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *given_name,
 			    const gchar *surname,
+			    const gchar *email,
 			    const gchar *company,
 			    const gchar *country)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	gchar **attrs = g_new(gchar *, 5);
+	gchar **attrs = g_new(gchar *, 6);
 	guint i       = 0;
 	gboolean dlx  = (sipe_private->dlx_uri != NULL);
 
@@ -725,6 +726,7 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 
 	ADD_QUERY_ROW("givenName", given_name);
 	ADD_QUERY_ROW("sn",        surname);
+	ADD_QUERY_ROW("mail",      email);
 	ADD_QUERY_ROW("company",   company);
 	ADD_QUERY_ROW("c",         country);
 	attrs[i] = NULL;

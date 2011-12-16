@@ -433,6 +433,7 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *given_name,
 			    const gchar *surname,
+			    const gchar *email,
 			    const gchar *company,
 			    const gchar *country);
 

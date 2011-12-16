@@ -1519,7 +1519,7 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 	guint32 now_N = GUINT32_TO_BE(now);
 	struct ClientHello_host msg = {
 		{ TLS_PROTOCOL_VERSION_1_0 },
-		{ 0, { } },
+		{ 0, { 0 } },
 		{ 0 /* empty SessionID */ },
 		{ 3,
 		  {

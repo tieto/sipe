@@ -407,12 +407,12 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 void sipe_ocs2005_presence_publish(struct sipe_core_private *sipe_private,
 				   gboolean do_publish_calendar)
 {
-	return send_presence_soap(sipe_private, do_publish_calendar, FALSE);
+	send_presence_soap(sipe_private, do_publish_calendar, FALSE);
 }
 
 void sipe_ocs2005_reset_status(struct sipe_core_private *sipe_private)
 {
-	return send_presence_soap(sipe_private, FALSE, TRUE);
+	send_presence_soap(sipe_private, FALSE, TRUE);
 }
 
 void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,

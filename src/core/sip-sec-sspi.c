@@ -111,7 +111,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 
 	cred_handle = g_malloc0(sizeof(CredHandle));
 
-	ret = AcquireCredentialsHandle(	NULL,
+	ret = AcquireCredentialsHandleA(NULL,
 					(SEC_CHAR *)ctx->mech,
 					SECPKG_CRED_OUTBOUND,
 					NULL,
@@ -119,11 +119,10 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 					NULL,
 					NULL,
 					cred_handle,
-					&expiry
-					);
+					&expiry);
 
 	if (ret != SEC_E_OK) {
-		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandle", ret);
+		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandleA", ret);
 		ctx->cred_sspi = NULL;
 		return SIP_SEC_E_INTERNAL_ERROR;
 	} else {
@@ -177,23 +176,22 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		req_flags |= (ISC_REQ_DATAGRAM);
 	}
 
-	ret = InitializeSecurityContext(ctx->cred_sspi,
-					ctx->ctx_sspi,
-					(SEC_CHAR *)service_name,
-					req_flags,
-					0,
-					SECURITY_NATIVE_DREP,
-					&input_desc,
-					0,
-					out_context,
-					&output_desc,
-					&ret_flags,
-					&expiry
-					);
+	ret = InitializeSecurityContextA(ctx->cred_sspi,
+					 ctx->ctx_sspi,
+					 (SEC_CHAR *)service_name,
+					 req_flags,
+					 0,
+					 SECURITY_NATIVE_DREP,
+					 &input_desc,
+					 0,
+					 out_context,
+					 &output_desc,
+					 &ret_flags,
+					 &expiry);
 
 	if (ret != SEC_E_OK && ret != SEC_I_CONTINUE_NEEDED) {
 		sip_sec_destroy_sspi_context(ctx);
-		sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: InitializeSecurityContext", ret);
+		sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: InitializeSecurityContextA", ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 

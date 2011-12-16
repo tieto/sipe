@@ -454,6 +454,7 @@ sipe_cal_parse_std_dst(const sipe_xml *xn_std_dst_time,
       <Time>02:00:00</Time>
       <DayOrder>1</DayOrder>
       <Month>11</Month>
+      <Year>2009</Year>
       <DayOfWeek>Sunday</DayOfWeek>
     </StandardTime>
 */
