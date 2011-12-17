@@ -114,7 +114,7 @@ const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability)
 		type = SIPE_ACTIVITY_OFFLINE;
 	}
 
-	return(sipe_backend_activity_to_token(type));
+	return(sipe_status_activity_to_token(type));
 }
 
 const gchar *sipe_ocs2007_legacy_activity_description(guint availability)
@@ -148,22 +148,22 @@ guint sipe_ocs2007_availability_from_status(const gchar *sipe_status_id,
 	guint availability;
 	guint activity;
 
-	if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY))) {
+	if (sipe_strequal(sipe_status_id, sipe_status_activity_to_token(SIPE_ACTIVITY_AWAY))) {
 		availability = SIPE_OCS2007_AVAILABILITY_AWAY;
 		activity     = SIPE_ACTIVITY_AWAY;
-	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_BRB))) {
+	} else if (sipe_strequal(sipe_status_id, sipe_status_activity_to_token(SIPE_ACTIVITY_BRB))) {
 		availability = SIPE_OCS2007_AVAILABILITY_BRB;
 		activity     = SIPE_ACTIVITY_BRB;
-	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_DND))) {
+	} else if (sipe_strequal(sipe_status_id, sipe_status_activity_to_token(SIPE_ACTIVITY_DND))) {
 		availability = SIPE_OCS2007_AVAILABILITY_DND;
 		activity     = SIPE_ACTIVITY_DND;
-	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY))) {
+	} else if (sipe_strequal(sipe_status_id, sipe_status_activity_to_token(SIPE_ACTIVITY_BUSY))) {
 		availability = SIPE_OCS2007_AVAILABILITY_BUSY;
 		activity     = SIPE_ACTIVITY_BUSY;
-	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE))) {
+	} else if (sipe_strequal(sipe_status_id, sipe_status_activity_to_token(SIPE_ACTIVITY_AVAILABLE))) {
 		availability = SIPE_OCS2007_AVAILABILITY_ONLINE;
 		activity     = SIPE_ACTIVITY_ONLINE;
-	} else if (sipe_strequal(sipe_status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_UNSET))) {
+	} else if (sipe_strequal(sipe_status_id, sipe_status_activity_to_token(SIPE_ACTIVITY_UNSET))) {
 		availability = SIPE_OCS2007_AVAILABILITY_UNKNOWN;
 		activity     = SIPE_ACTIVITY_UNSET;
 	} else {
@@ -173,7 +173,7 @@ guint sipe_ocs2007_availability_from_status(const gchar *sipe_status_id,
 	}
 
 	if (activity_token) {
-		*activity_token = sipe_backend_activity_to_token(activity);
+		*activity_token = sipe_status_activity_to_token(activity);
 	}
 
 	return(availability);
@@ -882,12 +882,12 @@ static gchar *sipe_publish_get_category_state_calendar(struct sipe_core_private 
 
 		if (event->cal_status == SIPE_CAL_BUSY && event->is_meeting) {
 			activity_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY,
-							   sipe_backend_activity_to_token(SIPE_ACTIVITY_IN_MEETING),
+							   sipe_status_activity_to_token(SIPE_ACTIVITY_IN_MEETING),
 							   "minAvailability=\"6500\"",
 							   "maxAvailability=\"8999\"");
 		} else if (event->cal_status == SIPE_CAL_OOF) {
 			activity_xml_str = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_ACTIVITY,
-							   sipe_backend_activity_to_token(SIPE_ACTIVITY_OOF),
+							   sipe_status_activity_to_token(SIPE_ACTIVITY_OOF),
 							   "minAvailability=\"12000\"",
 							   "");
 		}
@@ -2085,7 +2085,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 					event->start_time = sipe_utils_str_to_time(sipe_xml_attribute(xn_state, "startTime"));
 					if (xn_activity) {
 						if (sipe_strequal(sipe_xml_attribute(xn_activity, "token"),
-								  sipe_backend_activity_to_token(SIPE_ACTIVITY_IN_MEETING)))
+								  sipe_status_activity_to_token(SIPE_ACTIVITY_IN_MEETING)))
 						{
 							event->is_meeting = TRUE;
 						}
