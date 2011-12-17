@@ -36,17 +36,48 @@
 
 extern HANDLE sipe_miranda_incoming_netlibuser;
 
+const gchar *sipe_miranda_get_local_ip(void)
+{
+	struct hostent *localHost = gethostbyname("");
+	return inet_ntoa(*(struct in_addr *)*localHost->h_addr_list);
+}
+
 const gchar *sipe_backend_network_ip_address(void)
 {
 	static gchar ip[60] = "\0";
+	WORD iptype;
+	
+	sipe_miranda_getGlobalWord("iptype", &iptype);
 
-	if (!strlen(ip)) {
-		gchar *tmp;
-		tmp = sipe_miranda_getGlobalString("public_ip");
-		SIPE_DEBUG_INFO("Retrieving public ip option for caching: <%s>", tmp);
+	if (iptype == SIPE_MIRANDA_IP_LOCAL)
+	{
+		struct hostent *localHost = gethostbyname("");
+		gchar *localIP = inet_ntoa(*(struct in_addr *)*localHost->h_addr_list);
+		strncpy(ip, localIP, 60);
+		SIPE_DEBUG_INFO("Local ip is <%s>", ip);
+	} else if (iptype == SIPE_MIRANDA_IP_MANUAL) {
+		gchar *tmp = sipe_miranda_getGlobalString("public_ip");
+		SIPE_DEBUG_INFO("Retrieving public ip option: <%s>", tmp);
 		strncpy(ip, tmp, 60);
 		mir_free(tmp);
+	} else {
+		DWORD bytesread = sizeof(ip);
+		gchar *cmd = sipe_miranda_getGlobalString("ipprog");
+		gchar *cmdline = g_strdup_printf("%s ip", cmd);
+
+		mir_free(cmd);
+		SIPE_DEBUG_INFO("Running command to retrieve ip: <%s>", cmdline);
+		if (!sipe_miranda_cmd(cmdline, ip, &bytesread))
+		{
+			SIPE_DEBUG_INFO("Could not run child program <%s> (%d)", cmdline, GetLastError());
+			g_free(cmdline);
+			return "0.0.0.0";
+		}
+
+		g_free(cmdline);
+		return ip;
 	}
+
 
 	return ip;
 }
@@ -59,27 +90,62 @@ struct sipe_backend_listendata {
 	unsigned short port_max;
 
 	HANDLE boundport;
+	HANDLE fd;
+	WORD port;
+
+	/* Private. For locking only */
+	HANDLE hDoneEvent;
+	HANDLE hDoneEventL;
 };
 
+
+static void __stdcall
+client_connected_cb_async(void *data)
+{
+	struct sipe_backend_listendata *ldata = (struct sipe_backend_listendata *)data;
+
+	SIPE_DEBUG_INFO("[CN:%08x] About to call real connect callback", ldata);
+
+	if (ldata->connect_cb)
+                ldata->connect_cb((struct sipe_backend_fd *)ldata->fd, ldata->data);
+
+	/* Can't close the handle before the SetEvent or we'll deadlock */
+	SetEvent(ldata->hDoneEvent);
+	/* MS_NETLIB_CLOSEHANDLE doesn't come back until the accept thread
+	   is done. That in turn doesn't end until the pfnNewConnectionV2
+	   function comes back. So we know that client_connected_callback
+	   will be done and it's safe to free ldata here. */
+	CallService(MS_NETLIB_CLOSEHANDLE,(WPARAM)ldata->boundport,0);
+        g_free(ldata);
+}
 
 static void client_connected_callback(HANDLE hNewConnection, DWORD dwRemoteIP, void *data)
 {
 	struct sipe_backend_listendata *ldata = (struct sipe_backend_listendata *)data;
 
-	SIPE_DEBUG_INFO("Remote connection from <%08x>", dwRemoteIP);
+	SIPE_DEBUG_INFO("[CN:%08x] Remote connection from <%08x>", ldata, dwRemoteIP);
 
-	CallServiceAsync(MS_NETLIB_CLOSEHANDLE,(WPARAM)ldata->boundport,0);
+	ldata->fd = hNewConnection;
+	ldata->hDoneEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	CallFunctionAsync(client_connected_cb_async, ldata);
+	WaitForSingleObject(ldata->hDoneEvent, INFINITE);
+	CloseHandle(ldata->hDoneEvent);
 
-	if (ldata->connect_cb)
-                ldata->connect_cb((struct sipe_backend_fd *)hNewConnection, ldata->data);
+}
 
-        g_free(ldata);
+static void __stdcall
+listen_cb_async(void *data)
+{
+	struct sipe_backend_listendata *ldata = (struct sipe_backend_listendata *)data;
+	ldata->listen_cb(ldata->port, ldata->data);
+	SetEvent(ldata->hDoneEventL);
 }
 
 static unsigned __stdcall listen_callback(void* data)
 {
 	NETLIBBIND nlb = {0};
 	NETLIBUSERSETTINGS nls = {0};
+	WORD iptype;
 	struct sipe_backend_listendata *ldata = (struct sipe_backend_listendata *)data;
 
 	nls.cbSize = sizeof(NETLIBUSERSETTINGS);
@@ -95,9 +161,30 @@ static unsigned __stdcall listen_callback(void* data)
 	SetLastError(ERROR_INVALID_PARAMETER); // this must be here - NetLib does not set any error :((
 
 	ldata->boundport = (HANDLE)CallService(MS_NETLIB_BINDPORT, (WPARAM)sipe_miranda_incoming_netlibuser, (LPARAM)&nlb);
+	ldata->port = nlb.wPort;
+
+	sipe_miranda_getGlobalWord("iptype", &iptype);
+	if (iptype == SIPE_MIRANDA_IP_PROG)
+	{
+		gchar rc[20];
+		DWORD bytesread = sizeof(rc);
+		gchar *cmd = sipe_miranda_getGlobalString("ipprog");
+		gchar *cmdline = g_strdup_printf("%s listen %d", cmd, nlb.wPort);
+		mir_free(cmd);
+
+		if (!sipe_miranda_cmd(cmdline, rc, &bytesread))
+		{
+			SIPE_DEBUG_INFO("Could not run child program <%s> (%d)", cmdline, GetLastError());
+		}
+	}
 
 	if (ldata->listen_cb)
-		ldata->listen_cb(nlb.wPort, ldata->data);
+	{
+		ldata->hDoneEventL = CreateEvent(NULL, FALSE, FALSE, NULL);
+		CallFunctionAsync(listen_cb_async, ldata);
+		WaitForSingleObject(ldata->hDoneEventL, INFINITE);
+		CloseHandle(ldata->hDoneEventL);
+	}
 
 	return 0;
 }

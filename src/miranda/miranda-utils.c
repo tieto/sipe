@@ -20,10 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define MIRANDA_VER 0x900
-
 #include <windows.h>
 
+#include "miranda-version.h"
 #include "newpluginapi.h"
 #include "m_protosvc.h"
 #include "m_protoint.h"
@@ -36,27 +35,35 @@
 #include "sipe-backend.h"
 #include "miranda-private.h"
 
+/*
+ * Table to hold HTML entities we want to convert
+ */
 static GHashTable *entities = NULL;
 
-#define ADDENT(a,b) g_hash_table_insert(entities, a, b)
 
-
-gchar* sipe_miranda_getGlobalString(const gchar* name)
+/**
+ * Various shortcut functions to get database values
+ */
+gchar*
+sipe_miranda_getGlobalString(const gchar* name)
 {
 	return DBGetString( NULL, SIPSIMPLE_PROTOCOL_NAME, name );
 }
 
-gchar* sipe_miranda_getContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name)
+gchar*
+sipe_miranda_getContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name)
 {
 	return DBGetString( hContact, pr->proto.m_szModuleName, name );
 }
 
-gchar* sipe_miranda_getString(const SIPPROTO *pr, const gchar* name)
+gchar*
+sipe_miranda_getString(const SIPPROTO *pr, const gchar* name)
 {
 	return sipe_miranda_getContactString( pr, NULL, name );
 }
 
-DWORD sipe_miranda_getDword(const SIPPROTO *pr, HANDLE hContact, const gchar* name, DWORD* rv)
+DWORD
+sipe_miranda_getDword(const SIPPROTO *pr, HANDLE hContact, const gchar* name, DWORD* rv)
 {
 	DBVARIANT dbv;
 	DBCONTACTGETSETTING cgs;
@@ -76,22 +83,61 @@ DWORD sipe_miranda_getDword(const SIPPROTO *pr, HANDLE hContact, const gchar* na
 
 }
 
-int sipe_miranda_setWord(const SIPPROTO *pr, HANDLE hContact, const gchar* szSetting, WORD wValue)
+WORD
+sipe_miranda_getGlobalWord(const gchar* name, WORD* rv)
 {
-	return DBWriteContactSettingWord(hContact, pr->proto.m_szModuleName, szSetting, wValue);
+	DBVARIANT dbv;
+	DBCONTACTGETSETTING cgs;
+
+	cgs.szModule = SIPSIMPLE_PROTOCOL_NAME;
+	cgs.szSetting = name;
+	cgs.pValue=&dbv;
+	if(CallService(MS_DB_CONTACT_GETSETTING, (WPARAM)NULL,(LPARAM)&cgs))
+		return 0;
+
+	if (rv) {
+		*rv = dbv.wVal;
+		return 1;
+	} else {
+		return dbv.wVal;
+	}
+
 }
 
-gboolean sipe_miranda_get_bool(const SIPPROTO *pr, const gchar *name, gboolean defval)
+WORD
+sipe_miranda_getWord(const SIPPROTO *pr, HANDLE hContact, const gchar* name, WORD* rv)
 {
-	DWORD ret;
+	DBVARIANT dbv;
+	DBCONTACTGETSETTING cgs;
 
-	if (sipe_miranda_getDword( pr, NULL, name, &ret ))
+	cgs.szModule = pr->proto.m_szModuleName;
+	cgs.szSetting = name;
+	cgs.pValue=&dbv;
+	if(CallService(MS_DB_CONTACT_GETSETTING,(WPARAM)hContact,(LPARAM)&cgs))
+		return 0;
+
+	if (rv) {
+		*rv = dbv.wVal;
+		return 1;
+	} else {
+		return dbv.wVal;
+	}
+
+}
+
+gboolean
+sipe_miranda_getBool(const SIPPROTO *pr, const gchar *name, gboolean defval)
+{
+	WORD ret;
+
+	if (sipe_miranda_getWord( pr, NULL, name, &ret ))
 		return ret?TRUE:FALSE;
 
 	return defval;
 }
 
-int sipe_miranda_getStaticString(const SIPPROTO *pr, HANDLE hContact, const gchar* valueName, gchar* dest, unsigned dest_len)
+int
+sipe_miranda_getStaticString(const SIPPROTO *pr, HANDLE hContact, const gchar* valueName, gchar* dest, unsigned dest_len)
 {
 	DBVARIANT dbv;
 	DBCONTACTGETSETTING sVal;
@@ -109,38 +155,69 @@ int sipe_miranda_getStaticString(const SIPPROTO *pr, HANDLE hContact, const gcha
 	return (dbv.type != DBVT_ASCIIZ);
 }
 
-void sipe_miranda_setContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name, const gchar* value)
-{
-	DBWriteContactSettingString(hContact, pr->proto.m_szModuleName, name, value);
-}
-
-void sipe_miranda_setContactStringUtf(const SIPPROTO *pr, HANDLE hContact, const gchar* valueName, const gchar* parValue )
-{
-	DBWriteContactSettingStringUtf( hContact, pr->proto.m_szModuleName, valueName, parValue );
-}
-
-void sipe_miranda_setString(const SIPPROTO *pr, const gchar* name, const gchar* value)
-{
-	sipe_miranda_setContactString( pr, NULL, name, value );
-}
-
-void sipe_miranda_setStringUtf(const SIPPROTO *pr, const gchar* name, const gchar* value)
-{
-	sipe_miranda_setContactStringUtf( pr, NULL, name, value );
-}
-
-void sipe_miranda_setGlobalString(const gchar* name, const gchar* value)
+/**
+ * Various shortcut functions to set database values
+ */
+void
+sipe_miranda_setGlobalString(const gchar* name, const gchar* value)
 {
 	DBWriteContactSettingString(NULL, SIPSIMPLE_PROTOCOL_NAME, name, value);
 }
 
-void sipe_miranda_setGlobalStringUtf(const gchar* valueName, const gchar* parValue )
+void
+sipe_miranda_setGlobalStringUtf(const gchar* valueName, const gchar* parValue )
 {
 	DBWriteContactSettingStringUtf( NULL, SIPSIMPLE_PROTOCOL_NAME, valueName, parValue );
 }
 
+void
+sipe_miranda_setContactString(const SIPPROTO *pr, HANDLE hContact, const gchar* name, const gchar* value)
+{
+	DBWriteContactSettingString(hContact, pr->proto.m_szModuleName, name, value);
+}
 
-static void initEntities(void)
+void
+sipe_miranda_setContactStringUtf(const SIPPROTO *pr, HANDLE hContact, const gchar* valueName, const gchar* parValue )
+{
+	DBWriteContactSettingStringUtf( hContact, pr->proto.m_szModuleName, valueName, parValue );
+}
+
+void
+sipe_miranda_setString(const SIPPROTO *pr, const gchar* name, const gchar* value)
+{
+	sipe_miranda_setContactString( pr, NULL, name, value );
+}
+
+void
+sipe_miranda_setStringUtf(const SIPPROTO *pr, const gchar* name, const gchar* value)
+{
+	sipe_miranda_setContactStringUtf( pr, NULL, name, value );
+}
+
+int
+sipe_miranda_setGlobalWord(const gchar* szSetting, WORD wValue)
+{
+	return DBWriteContactSettingWord(NULL, SIPSIMPLE_PROTOCOL_NAME, szSetting, wValue);
+}
+
+int
+sipe_miranda_setWord(const SIPPROTO *pr, HANDLE hContact, const gchar* szSetting, WORD wValue)
+{
+	return DBWriteContactSettingWord(hContact, pr->proto.m_szModuleName, szSetting, wValue);
+}
+
+int
+sipe_miranda_setBool(const SIPPROTO *pr, const gchar *name, gboolean value)
+{
+	return DBWriteContactSettingWord(NULL, pr->proto.m_szModuleName, name, value?1:0);
+}
+
+/*
+ * Initialize our table of HTML entities
+ */
+#define ADDENT(a,b) g_hash_table_insert(entities, a, b)
+static void
+initEntities(void)
 {
 	entities = g_hash_table_new(g_str_hash, g_str_equal);
 
@@ -151,7 +228,11 @@ static void initEntities(void)
 	ADDENT("apos","'");
 }
 
-gchar* sipe_miranda_eliminate_html(const gchar *string, int len)
+/*
+ * WARNING: Returns miranda-allocated string, not glib one
+ */
+gchar*
+sipe_miranda_eliminate_html(const gchar *string, int len)
 {
 	gchar *tmp = (char*)mir_alloc(len + 1);
 	int i,j;
@@ -213,15 +294,13 @@ gchar* sipe_miranda_eliminate_html(const gchar *string, int len)
 		}
 		tmp[j] = '\0';
 	}
-//	mir_free((void *)string);
-//	res = DemangleXml(tmp, strlennull(tmp));
-//	mir_free(tmp);
 	res = tmp;
 
 	return res;
 }
 
-unsigned short sipe_miranda_network_get_port_from_fd( HANDLE fd )
+unsigned short
+sipe_miranda_network_get_port_from_fd( HANDLE fd )
 {
 	SOCKET sock = CallService(MS_NETLIB_GETSOCKET, (WPARAM)fd, (LPARAM)0);
 
@@ -256,7 +335,8 @@ char* TCHAR2CHAR( const TCHAR *tchr ) {
 #endif
 }
 
-HANDLE sipe_miranda_AddEvent(const SIPPROTO *pr, HANDLE hContact, WORD wType, DWORD dwTime, DWORD flags, DWORD cbBlob, PBYTE pBlob)
+HANDLE
+sipe_miranda_AddEvent(const SIPPROTO *pr, HANDLE hContact, WORD wType, DWORD dwTime, DWORD flags, DWORD cbBlob, PBYTE pBlob)
 {
 	DBEVENTINFO dbei = {0};
 
@@ -276,7 +356,8 @@ struct msgboxinfo {
 	TCHAR *caption;
 };
 
-static unsigned __stdcall msgboxThread(void* arg)
+static unsigned __stdcall
+msgboxThread(void* arg)
 {
 	struct msgboxinfo *err = (struct msgboxinfo*)arg;
 	if (!err)
@@ -289,7 +370,8 @@ static unsigned __stdcall msgboxThread(void* arg)
 	return 0;
 }
 
-void sipe_miranda_msgbox(const char *msg, const char *caption)
+void
+sipe_miranda_msgbox(const char *msg, const char *caption)
 {
 	struct msgboxinfo *info = g_new(struct msgboxinfo,1);
 
@@ -299,45 +381,46 @@ void sipe_miranda_msgbox(const char *msg, const char *caption)
 	CloseHandle((HANDLE) mir_forkthreadex( msgboxThread, info, 8192, NULL ));
 }
 
-static unsigned __stdcall sendbroadcastThread(void* arg)
+char* sipe_miranda_acktype_strings[] = {
+	"ACKTYPE_MESSAGE",	"ACKTYPE_URL",		"ACKTYPE_FILE",
+	"ACKTYPE_CHAT",		"ACKTYPE_AWAYMSG",	"ACKTYPE_AUTHREQ",
+	"ACKTYPE_ADDED",	"ACKTYPE_GETINFO",	"ACKTYPE_SETINFO",
+	"ACKTYPE_LOGIN",	"ACKTYPE_SEARCH",	"ACKTYPE_NEWUSER",
+	"ACKTYPE_STATUS",	"ACKTYPE_CONTACTS",	"ACKTYPE_AVATAR",
+	"ACKTYPE_EMAIL" };
+
+char* sipe_miranda_ackresult_strings[] = {
+	"ACKRESULT_SUCCESS",	"ACKRESULT_FAILED",	"ACKRESULT_CONNECTING",
+	"ACKRESULT_CONNECTED",	"ACKRESULT_INITIALISING",	"ACKRESULT_SENTREQUEST",
+	"ACKRESULT_DATA",	"ACKRESULT_NEXTFILE",	"ACKRESULT_FILERESUME",
+	"ACKRESULT_DENIED",	"ACKRESULT_STATUS",	"ACKRESULT_LISTENING",
+	"ACKRESULT_CONNECTPROXY",	"ACKRESULT_SEARCHRESULT" };
+
+int
+sipe_miranda_SendBroadcast(SIPPROTO *pr, HANDLE hContact,int type,int result,HANDLE hProcess,LPARAM lParam)
 {
-	ACKDATA *ack = (ACKDATA*)arg;
-	SIPE_DEBUG_INFO("delayed broadcasting result <%08x> par1 <%08x> par2 <%08x>", ack->type, ack->hProcess, ack->lParam);
-	CallServiceSync(MS_PROTO_BROADCASTACK,0,(LPARAM)ack);
-	g_free(ack);
-	return 0;
-}
+	ACKDATA ack = {0};
 
-int sipe_miranda_SendBroadcast(SIPPROTO *pr, HANDLE hContact,int type,int result,HANDLE hProcess,LPARAM lParam)
-{
-	ACKDATA *ack = g_new0(ACKDATA, 1);
+	ack.cbSize = sizeof(ACKDATA);
+	ack.szModule = pr->proto.m_szModuleName;
+	ack.hContact = hContact;
+	ack.type = type;
+	ack.result = result;
+	ack.hProcess = hProcess;
+	ack.lParam = lParam;
 
-	ack->cbSize = sizeof(ACKDATA);
-	ack->szModule = pr->proto.m_szModuleName;
-	ack->hContact = hContact;
-	ack->type = type;
-	ack->result = result;
-	ack->hProcess = hProcess;
-	ack->lParam = lParam;
+	SIPE_DEBUG_INFO("broadcasting contact <%08x> type <%d:%s> result <%d:%s> par1 <%08x> par2 <%08x>",
+		hContact,
+		type, sipe_miranda_acktype_strings[type],
+		result, sipe_miranda_ackresult_strings[result>99 ? result-98 : result],
+		hProcess, lParam);
 
-	if (pr->main_thread_id == GetCurrentThreadId())
-	{
-		int ret;
-		SIPE_DEBUG_INFO("broadcasting result <%08x> par1 <%08x> par2 <%08x>", type, hProcess, lParam);
-		ret = CallServiceSync(MS_PROTO_BROADCASTACK,0,(LPARAM)ack);
-		g_free(ack);
-		return ret;
-	}
-	else
-	{
-		CloseHandle((HANDLE) mir_forkthreadex( sendbroadcastThread, ack, 8192, NULL ));
-		return 0;
-	}
+	return CallServiceSync(MS_PROTO_BROADCASTACK,0,(LPARAM)&ack);
 }
 
 struct sipe_miranda_connection_info {
 	SIPPROTO *pr;
-	const gchar *server_name;
+	gchar *server_name;
 	int server_port;
 	int timeout;
 	gboolean tls;
@@ -400,6 +483,7 @@ sipe_miranda_connected_callback(void* data)
 	WaitForSingleObject(info->hDoneEvent, INFINITE);
 	CloseHandle(info->hDoneEvent);
 
+	g_free(info->server_name);
 	g_free(info);
 	return 0;
 }
@@ -417,7 +501,7 @@ sipe_miranda_connect(SIPPROTO *pr,
 	SIPE_DEBUG_INFO("[C:%08x] Connecting to <%s:%d> tls <%d> timeout <%d>", info, host, port, tls, timeout);
 
 	info->pr = pr;
-	info->server_name = host;
+	info->server_name = g_strdup(host);
 	info->server_port = port;
 	info->timeout = timeout;
 	info->tls = tls;
@@ -429,30 +513,283 @@ sipe_miranda_connect(SIPPROTO *pr,
 	return info;
 }
 
-struct sipe_miranda_servicedata
+struct sipe_miranda_ack_args
 {
-	const char *service;
-	WPARAM wParam;
-	LPARAM lParam;
+        HANDLE hContact;
+        int    nAckType;
+        int    nAckResult;
+        HANDLE hSequence;
+        gchar *pszMessage;
+	const gchar *modname;
 };
 
 static unsigned __stdcall
-sipe_miranda_service_async_callback(void* data)
+ProtocolAckThread(struct sipe_miranda_ack_args* args)
 {
-	struct sipe_miranda_servicedata *svc = (struct sipe_miranda_servicedata *)data;
-	CallService(svc->service, svc->wParam, svc->lParam);
-	g_free(svc);
+	ProtoBroadcastAck(args->modname, args->hContact, args->nAckType, args->nAckResult, args->hSequence, (LPARAM)args->pszMessage);
+
+	if (args->nAckResult == ACKRESULT_SUCCESS)
+		SIPE_DEBUG_INFO_NOFORMAT("ProtocolAckThread: Sent ACK");
+	else if (args->nAckResult == ACKRESULT_FAILED)
+		SIPE_DEBUG_INFO_NOFORMAT("ProtocolAckThread: Sent NACK");
+
+	g_free(args->pszMessage);
+	g_free(args);
 	return 0;
 }
 
 void
-CallServiceAsync(const char *service, WPARAM wParam, LPARAM lParam)
+sipe_miranda_SendProtoAck( SIPPROTO *pr, HANDLE hContact, DWORD dwCookie, int nAckResult, int nAckType, const char* pszMessage)
 {
-	struct sipe_miranda_servicedata *svc = g_new(struct sipe_miranda_servicedata, 1);
-	svc->service = service;
-	svc->wParam = wParam;
-	svc->lParam = lParam;
-	CloseHandle((HANDLE) mir_forkthreadex( sipe_miranda_service_async_callback, svc, 65536, NULL ));
+	struct sipe_miranda_ack_args* pArgs = g_new0(struct sipe_miranda_ack_args, 1);
+
+	pArgs->hContact = hContact;
+	pArgs->hSequence = (HANDLE)dwCookie;
+	pArgs->nAckResult = nAckResult;
+	pArgs->nAckType = nAckType;
+	pArgs->pszMessage = g_strdup(pszMessage);
+	pArgs->modname = pr->proto.m_szModuleName;
+
+	CloseHandle((HANDLE) mir_forkthreadex(ProtocolAckThread, pArgs, 65536, NULL));
+}
+
+gboolean
+sipe_miranda_cmd(const gchar *cmd, gchar *buf, DWORD *maxlen)
+{
+	STARTUPINFOA si = {0};
+	PROCESS_INFORMATION pi = {0};
+	SECURITY_ATTRIBUTES sa = {0};
+	HANDLE rd,wr;
+
+	sa.nLength = sizeof(sa);
+	sa.bInheritHandle = TRUE;
+
+	if (!CreatePipe(&rd, &wr, &sa, 0))
+	{
+		SIPE_DEBUG_INFO_NOFORMAT("Could not create pipe");
+		return FALSE;
+	}
+
+	SetHandleInformation(rd, HANDLE_FLAG_INHERIT, 0);
+
+	si.cb = sizeof(si);
+	si.dwFlags = STARTF_USESTDHANDLES;
+	si.hStdOutput = wr;
+	si.hStdError = wr;
+	si.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+
+	if (!CreateProcessA(NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+	{
+		SIPE_DEBUG_INFO("Could not run child program <%s> (%d)", cmd, GetLastError());
+		return FALSE;
+	}
+
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+
+	if (!ReadFile(rd, buf, *maxlen, maxlen, NULL))
+	{
+		SIPE_DEBUG_INFO("Could not read from child program <%s>", cmd);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+gchar*
+sipe_miranda_html2rtf(const gchar *text)
+{
+	const gchar *intro = "{\\rtf1\\ansi";
+	const gchar *link1 = "{\\field{\\*\\fldinst{HYPERLINK \"";
+	const gchar *link2 = "}}{\\fldrslt {\\ul\\cf2 ";
+	gchar *tmp = g_malloc(strlen(text)+1);
+	int maxlen = strlen(text);
+	const gchar *i = text;
+	int j = 0;
+	gboolean skiptag = FALSE;
+	gboolean escape = FALSE;
+	gboolean copystring = FALSE;
+	gboolean link_stage2 = FALSE;
+
+	strncpy(tmp+j, intro, maxlen-j);
+	j += strlen(intro);
+
+	while (*i)
+	{
+		if (j+100>=maxlen) /* 100 is max substitution size */
+		{
+			maxlen += 128;
+			tmp = g_realloc(tmp, maxlen);
+		}
+		if (skiptag && !escape && *i != '>') {
+			i++;
+		} else if (skiptag && !escape) {
+			i++;
+			skiptag = FALSE;
+		} else if (copystring) {
+			if (!escape && *i == '"') copystring = FALSE;
+			if (escape) escape = FALSE;
+			else if (*i == '\\') escape = TRUE;
+			*(tmp+j) = *i;
+			j++;
+			i++;
+		} else if (link_stage2) {
+			strcpy(tmp+j, link2);
+			j += strlen(link2);
+			link_stage2 = FALSE;
+			skiptag = TRUE;
+		} else if (g_str_has_prefix(i,"<br/>"))	{
+			strcpy(tmp+j, "\\par\n");
+			j += 5;
+			i += 5;
+		} else if (g_str_has_prefix(i,"<b>")) {
+			strcpy(tmp+j, "\\b");
+			j += 2;
+			i += 3;
+		} else if (g_str_has_prefix(i,"</b>")) {
+			strcpy(tmp+j, "\\b0");
+			j += 3;
+			i += 4;
+		} else if (g_str_has_prefix(i,"<font size=\"")) {
+			strcpy(tmp+j, "\\fs36");
+			j += 5;
+			i += 12;
+			skiptag = TRUE;
+		} else if (g_str_has_prefix(i,"</font>")) {
+			strcpy(tmp+j, "\\fs20");
+			j += 5;
+			i += 7;
+		} else if (g_str_has_prefix(i,"<a href=\"")) {
+			strcpy(tmp+j, link1);
+			j += strlen(link1);
+			link_stage2 = TRUE;
+			copystring = TRUE;
+			i += 9;
+		} else if (g_str_has_prefix(i,"</a>")) {
+			strcpy(tmp+j, "}}}\\cf0 ");
+			j += 7;
+			i += 4;
+		} else if (*i == '<') {
+			skiptag = TRUE;
+		} else {
+			if (escape) {
+				escape = FALSE;
+			} else if (*i == '\\') {
+				escape = TRUE;
+			}
+			if (!skiptag)
+			{
+				*(tmp+j) = *i;
+				j++;
+			}
+			i++;
+		}
+	}
+	*(tmp+j++) = '}';
+	*(tmp+j++) = '\0';
+	tmp = g_realloc(tmp, j);
+	return tmp;
+}
+
+/* Status identifiers (see also: sipe_status_types()) */
+#define SIPE_STATUS_ID_UNKNOWN     "unset"                  /* Unset (primitive) */
+#define SIPE_STATUS_ID_OFFLINE     "offline"                /* Offline (primitive) */
+#define SIPE_STATUS_ID_AVAILABLE   "available"              /* Online */
+/*      PURPLE_STATUS_UNAVAILABLE: */
+#define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
+#define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
+#define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
+#define SIPE_STATUS_ID_IN_MEETING  "in-a-meeting"                                             /* In a meeting */
+#define SIPE_STATUS_ID_IN_CONF     "in-a-conference"                                          /* In a conference */
+#define SIPE_STATUS_ID_ON_PHONE    "on-the-phone"                                             /* On the phone */
+#define SIPE_STATUS_ID_INVISIBLE   "invisible"              /* Appear Offline */
+/*      PURPLE_STATUS_AWAY: */
+#define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
+#define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
+#define SIPE_STATUS_ID_AWAY        "away"                   /* Away (primitive) */
+/** Reuters status (user settable) */
+#define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
+/* ???  PURPLE_STATUS_EXTENDED_AWAY */
+/* ???  PURPLE_STATUS_MOBILE */
+/* ???  PURPLE_STATUS_TUNE */
+
+int SipeStatusToMiranda(const gchar *status) {
+
+	if (!strcmp(status, SIPE_STATUS_ID_OFFLINE))
+		return ID_STATUS_OFFLINE;
+
+	if (!strcmp(status, SIPE_STATUS_ID_AVAILABLE))
+		return ID_STATUS_ONLINE;
+
+	if (!strcmp(status, SIPE_STATUS_ID_ON_PHONE))
+		return ID_STATUS_ONTHEPHONE;
+
+	if (!strcmp(status, SIPE_STATUS_ID_DND))
+		return ID_STATUS_DND;
+
+	if (!strcmp(status, SIPE_STATUS_ID_AWAY))
+		return ID_STATUS_NA;
+
+	if (!strcmp(status, SIPE_STATUS_ID_LUNCH))
+		return ID_STATUS_OUTTOLUNCH;
+
+	if (!strcmp(status, SIPE_STATUS_ID_BUSY))
+		return ID_STATUS_OCCUPIED;
+
+	if (!strcmp(status, SIPE_STATUS_ID_INVISIBLE))
+		return ID_STATUS_INVISIBLE;
+
+	if (!strcmp(status, SIPE_STATUS_ID_BRB))
+		return ID_STATUS_AWAY;
+
+	if (!strcmp(status, SIPE_STATUS_ID_UNKNOWN))
+		return ID_STATUS_OFFLINE;
+
+	/* None of those? We'll have to guess. Online seems ok. */
+	return ID_STATUS_ONLINE;
+
+	/* Don't have SIPE equivalent of these:
+		- ID_STATUS_FREECHAT
+	*/
+
+}
+
+const char *MirandaStatusToSipe(int status) {
+
+	switch (status)
+	{
+	case ID_STATUS_OFFLINE:
+		return SIPE_STATUS_ID_OFFLINE;
+
+	case ID_STATUS_ONLINE:
+	case ID_STATUS_FREECHAT:
+		return SIPE_STATUS_ID_AVAILABLE;
+
+	case ID_STATUS_ONTHEPHONE:
+		return SIPE_STATUS_ID_ON_PHONE;
+
+	case ID_STATUS_DND:
+		return SIPE_STATUS_ID_DND;
+
+	case ID_STATUS_NA:
+		return SIPE_STATUS_ID_AWAY;
+
+	case ID_STATUS_AWAY:
+		return SIPE_STATUS_ID_BRB;
+
+	case ID_STATUS_OUTTOLUNCH:
+		return SIPE_STATUS_ID_LUNCH;
+
+	case ID_STATUS_OCCUPIED:
+		return SIPE_STATUS_ID_BUSY;
+
+	case ID_STATUS_INVISIBLE:
+		return SIPE_STATUS_ID_INVISIBLE;
+
+	default:
+		return SIPE_STATUS_ID_UNKNOWN;
+	}
+
 }
 
 /*

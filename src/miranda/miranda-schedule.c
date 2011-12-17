@@ -40,7 +40,8 @@ struct time_entry {
 	guint timeout;
 	HANDLE sem;
 	gboolean cancelled;
-	struct sipe_core_public *sipe_public;
+	SIPPROTO *pr;
+	void (*callback)(gpointer);
 
 	/* Private. For locking only */
 	HANDLE hDoneEvent;
@@ -50,7 +51,7 @@ static void __stdcall
 timeout_cb_async(void *data)
 {
 	struct time_entry *entry = (struct time_entry*)data;
-        SIPPROTO *pr = entry->sipe_public->backend_private;
+        SIPPROTO *pr = entry->pr;
 
 	if (entry->cancelled == TRUE)
 	{
@@ -58,7 +59,7 @@ timeout_cb_async(void *data)
 	} else {
 		SIPE_DEBUG_INFO("Calling timeout function for entry <%08x>", entry);
 		LOCK;
-		sipe_core_schedule_execute(entry->core_data);
+		entry->callback(entry->core_data);
 		UNLOCK;
 	}
 	SetEvent(entry->hDoneEvent);
@@ -68,7 +69,7 @@ static unsigned __stdcall timeoutfunc(void* data)
 {
 	struct time_entry *entry = (struct time_entry*)data;
 	DWORD ret;
-        SIPPROTO *pr = entry->sipe_public->backend_private;
+        SIPPROTO *pr = entry->pr;
 
 	SIPE_DEBUG_INFO("timeout start; <%08x> timeout is <%d>", entry, entry->timeout);
 
@@ -106,6 +107,25 @@ static unsigned __stdcall timeoutfunc(void* data)
 
 }
 
+gpointer sipe_miranda_schedule_mseconds(void (*callback)(gpointer),
+					guint timeout,
+					gpointer data)
+{
+	struct time_entry *entry;
+
+	entry = g_new0(struct time_entry,1);
+	entry->timeout = timeout;
+	entry->core_data = data;
+	entry->cancelled = FALSE;
+	entry->pr = data; /* FIXME: Assumes data = SIPPROTO * */
+	entry->callback = callback;
+
+	SIPE_DEBUG_INFO("Scheduling timeout in <%u>ms for entry <%08x>", timeout, entry);
+	CloseHandle((HANDLE) mir_forkthreadex( timeoutfunc, entry, 65536, NULL ));
+
+	return entry;
+}
+
 gpointer sipe_backend_schedule_mseconds(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					guint timeout,
 					gpointer data)
@@ -116,7 +136,8 @@ gpointer sipe_backend_schedule_mseconds(SIPE_UNUSED_PARAMETER struct sipe_core_p
 	entry->timeout = timeout;
 	entry->core_data = data;
 	entry->cancelled = FALSE;
-	entry->sipe_public = sipe_public;
+	entry->pr = sipe_public->backend_private;
+	entry->callback = sipe_core_schedule_execute;
 
 	CloseHandle((HANDLE) mir_forkthreadex( timeoutfunc, entry, 65536, NULL ));
 

@@ -31,6 +31,7 @@
 #include "m_chat.h"
 #include "m_database.h"
 
+#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "miranda-private.h"
@@ -92,7 +93,8 @@ void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
 	notify_message(sipe_public, backend_session, who, message, SIPE_EVENTTYPE_INFO_NOTIFY, "Info: ");
 }
 
-void sipe_backend_notify_error(const gchar *title,
+void sipe_backend_notify_error(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+			       const gchar *title,
 			       const gchar *msg)
 {
 	sipe_miranda_msgbox(msg, title);

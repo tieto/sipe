@@ -19,17 +19,23 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#define MIRANDA_VER 0x900
+#pragma comment(lib, "Secur32.lib")
+
+#ifdef HAVE_LIBKRB5
+#pragma comment(lib, "krb5_32.lib")
+#pragma comment(lib, "gssapi32.lib")
+#pragma comment(lib, "comerr32.lib")
+#endif
 
 #include <windows.h>
+#include <Windowsx.h>
 #include <win2k.h>
 #include <Richedit.h>
 #include <stdio.h>
 
 #include <glib.h>
 
-#include "sipe-common.h"
-
+#include "miranda-version.h"
 #include "newpluginapi.h"
 #include "m_protosvc.h"
 #include "m_protoint.h"
@@ -41,7 +47,10 @@
 #include "m_chat.h"
 #include "m_clist.h"
 #include "m_langpack.h"
+#include "m_message.h"
+#include "m_genmenu.h"
 
+#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -50,7 +59,7 @@
 #include "sipe-utils.h"
 #include "sipe-session.h"
 #include "sipe-chat.h"
-#include "sipe.h"
+
 #include "miranda-private.h"
 #include "miranda-resource.h"
 
@@ -63,6 +72,7 @@ CRITICAL_SECTION sipe_miranda_debug_CriticalSection;
 /* Sipe core activity <-> Miranda status mapping */
 static const gchar * const activity_to_miranda[SIPE_ACTIVITY_NUM_TYPES] = {
 	/* SIPE_ACTIVITY_UNSET       */ "unset",
+	/* SIPE_ACTIVITY_AVAILABLE   */ "available",
 	/* SIPE_ACTIVITY_ONLINE      */ "online",
 	/* SIPE_ACTIVITY_INACTIVE    */ "idle",
 	/* SIPE_ACTIVITY_BUSY        */ "busy",
@@ -71,6 +81,7 @@ static const gchar * const activity_to_miranda[SIPE_ACTIVITY_NUM_TYPES] = {
 	/* SIPE_ACTIVITY_BRB         */ "be-right-back",
 	/* SIPE_ACTIVITY_AWAY        */ "away",
 	/* SIPE_ACTIVITY_LUNCH       */ "out-to-lunch",
+	/* SIPE_ACTIVITY_INVISIBLE   */ "invisible",
 	/* SIPE_ACTIVITY_OFFLINE     */ "offline", 
 	/* SIPE_ACTIVITY_ON_PHONE    */ "on-the-phone",
 	/* SIPE_ACTIVITY_IN_CONF     */ "in-a-conference",
@@ -84,7 +95,7 @@ GHashTable *miranda_to_activity = NULL;
 
 static void sipe_miranda_activity_init(void)
 {
-	sipe_activity index = SIPE_ACTIVITY_UNSET;
+	guint index = SIPE_ACTIVITY_UNSET;
 	miranda_to_activity = g_hash_table_new(g_str_hash, g_str_equal);
 	while (index < SIPE_ACTIVITY_NUM_TYPES) {
 		g_hash_table_insert(miranda_to_activity,
@@ -92,6 +103,16 @@ static void sipe_miranda_activity_init(void)
 				    GUINT_TO_POINTER(index));
 		index++;
 	}
+}
+
+const gchar *sipe_backend_activity_to_token(guint type)
+{
+	return(activity_to_miranda[type]);
+}
+
+guint sipe_backend_token_to_activity(const gchar *token)
+{
+	return(MIRANDA_STATUS_TO_ACTIVITY(token));
 }
 
 gchar *sipe_backend_version(void)
@@ -124,6 +145,18 @@ struct MM_INTERFACE mmi;
 /*
  * Dialog boxes
  */
+static void
+EnableDlgItem(HWND hwndDlg, UINT control, gboolean enable)
+{
+	EnableWindow(GetDlgItem(hwndDlg, control), enable);
+}
+
+static void
+CheckDlgItem(HWND hwndDlg, UINT control, int state)
+{
+	Button_SetCheck(GetDlgItem(hwndDlg, control), state);
+}
+
 INT_PTR CALLBACK DlgProcSipSimpleOptsAbout(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 
@@ -133,9 +166,11 @@ INT_PTR CALLBACK DlgProcSipSimpleOptsAbout(HWND hwndDlg, UINT msg, WPARAM wParam
 		{
 			SIPPROTO *pr = (SIPPROTO *)lParam;
 			SETTEXTEX tex;
-			gchar *about;
+			gchar *tmp, *about;
 			LOCK;
-			about = sipe_core_about();
+			tmp = sipe_core_about();
+			about = sipe_miranda_html2rtf(tmp);
+			g_free(tmp);
 			UNLOCK;
 
 			TranslateDialogDefault(hwndDlg);
@@ -164,6 +199,8 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 		{
 			const SIPPROTO *pr = (const SIPPROTO *)lParam;
 			char *str;
+			gboolean state;
+			WORD iptype;
 
 			TranslateDialogDefault(hwndDlg);
 
@@ -171,10 +208,23 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 
 			lock++;
 
-			str = DBGetString( NULL, SIPSIMPLE_PROTOCOL_NAME, "debuglog");
-			SetDlgItemTextA(hwndDlg, IDC_DEBUGLOG, str);
-			SendDlgItemMessage(hwndDlg, IDC_DEBUGLOG, EM_SETLIMITTEXT, 100, 0);
-			mir_free(str);
+			state = sipe_miranda_getBool(pr, "sso", FALSE);
+			if (state)
+			{
+				CheckDlgItem(hwndDlg, IDC_USESSO, BST_CHECKED);
+				EnableDlgItem(hwndDlg, IDC_LOGIN, FALSE);
+				EnableDlgItem(hwndDlg, IDC_PASSWORD, FALSE);
+			} else {
+				CheckDlgItem(hwndDlg, IDC_USESSO, BST_UNCHECKED);
+				EnableDlgItem(hwndDlg, IDC_LOGIN, TRUE);
+				EnableDlgItem(hwndDlg, IDC_PASSWORD, TRUE);
+			}
+
+			state = sipe_miranda_getBool(pr, "krb5", FALSE);
+			if (state)
+				CheckDlgItem(hwndDlg, IDC_USEKRB, BST_CHECKED);
+			else
+				CheckDlgItem(hwndDlg, IDC_USEKRB, BST_UNCHECKED);
 
 			str = sipe_miranda_getString(pr, "username");
 			SetDlgItemTextA(hwndDlg, IDC_HANDLE, str);
@@ -209,6 +259,30 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 			SendDlgItemMessage(hwndDlg, IDC_PUBLICIP, EM_SETLIMITTEXT, 20, 0);
 			mir_free(str);
 
+			str = sipe_miranda_getGlobalString("ipprog");
+			SetDlgItemTextA(hwndDlg, IDC_IPPROGEXE, str);
+			SendDlgItemMessage(hwndDlg, IDC_IPPROGEXE, EM_SETLIMITTEXT, 60, 0);
+			mir_free(str);
+
+			str = sipe_miranda_get_local_ip();
+			SetDlgItemTextA(hwndDlg, IDC_IPLOCALFOUND, str);
+
+			sipe_miranda_getGlobalWord("iptype", &iptype);
+			if (iptype == SIPE_MIRANDA_IP_LOCAL)
+			{
+				CheckRadioButton(hwndDlg, IDC_IPLOCAL, IDC_IPPROG, IDC_IPLOCAL);
+				EnableDlgItem(hwndDlg, IDC_PUBLICIP, FALSE);
+				EnableDlgItem(hwndDlg, IDC_IPPROGEXE, FALSE);
+			} else if (iptype == SIPE_MIRANDA_IP_MANUAL) {
+				CheckRadioButton(hwndDlg, IDC_IPLOCAL, IDC_IPPROG, IDC_IPMANUAL);
+				EnableDlgItem(hwndDlg, IDC_PUBLICIP, TRUE);
+				EnableDlgItem(hwndDlg, IDC_IPPROGEXE, FALSE);
+			} else {
+				CheckRadioButton(hwndDlg, IDC_IPLOCAL, IDC_IPPROG, IDC_IPPROG);
+				EnableDlgItem(hwndDlg, IDC_PUBLICIP, FALSE);
+				EnableDlgItem(hwndDlg, IDC_IPPROGEXE, TRUE);
+			}
+
 			lock--;
 			return TRUE;
 		}
@@ -218,7 +292,36 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 			int code = wParam >> 16;
 			int id = wParam & 0xffff;
 
-			if (!lock && (code == EN_CHANGE || code == CBN_SELCHANGE)) {
+			if (LOWORD(wParam) == IDC_IPLOCAL)
+			{
+				CheckRadioButton(hwndDlg, IDC_IPLOCAL, IDC_IPPROG, IDC_IPLOCAL);
+				EnableDlgItem(hwndDlg, IDC_PUBLICIP, FALSE);
+				EnableDlgItem(hwndDlg, IDC_IPPROGEXE, FALSE);
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			} else if (LOWORD(wParam) == IDC_IPMANUAL) {
+				CheckRadioButton(hwndDlg, IDC_IPLOCAL, IDC_IPPROG, IDC_IPMANUAL);
+				EnableDlgItem(hwndDlg, IDC_PUBLICIP, TRUE);
+				EnableDlgItem(hwndDlg, IDC_IPPROGEXE, FALSE);
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			} else if (LOWORD(wParam) == IDC_IPPROG) {
+				CheckRadioButton(hwndDlg, IDC_IPLOCAL, IDC_IPPROG, IDC_IPPROG);
+				EnableDlgItem(hwndDlg, IDC_PUBLICIP, FALSE);
+				EnableDlgItem(hwndDlg, IDC_IPPROGEXE, TRUE);
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			} else if (LOWORD(wParam) == IDC_USEKRB) {
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			} else if (LOWORD(wParam) == IDC_USESSO) {
+				if (IsDlgButtonChecked(hwndDlg, IDC_USESSO) == BST_CHECKED)
+				{
+					EnableDlgItem(hwndDlg, IDC_LOGIN, FALSE);
+					EnableDlgItem(hwndDlg, IDC_PASSWORD, FALSE);
+					SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+				} else {
+					CheckRadioButton(hwndDlg, IDC_SSO, IDC_MSO, IDC_MSO);
+					EnableDlgItem(hwndDlg, IDC_LOGIN, TRUE);
+					EnableDlgItem(hwndDlg, IDC_PASSWORD, TRUE);
+				}
+			} else if (!lock && (code == EN_CHANGE || code == CBN_SELCHANGE)) {
 				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 			}
 			return TRUE;
@@ -232,9 +335,6 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 				TCHAR tbuf[100];
 
 				const SIPPROTO *pr = (const SIPPROTO *)GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
-
-				GetDlgItemTextA(hwndDlg, IDC_DEBUGLOG, buf, sizeof(buf));
-				DBWriteContactSettingString(NULL, SIPSIMPLE_PROTOCOL_NAME, "debuglog", buf);
 
 				GetDlgItemTextA(hwndDlg, IDC_HANDLE, buf, sizeof(buf));
 				sipe_miranda_setString(pr, "username", buf);
@@ -258,6 +358,24 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 				GetDlgItemTextA(hwndDlg, IDC_PUBLICIP, buf, sizeof(buf));
 				sipe_miranda_setGlobalString("public_ip", buf);
 
+				GetDlgItemTextA(hwndDlg, IDC_IPPROGEXE, buf, sizeof(buf));
+				sipe_miranda_setGlobalString("ipprog", buf);
+
+				if (IsDlgButtonChecked(hwndDlg, IDC_USEKRB) == BST_CHECKED)
+				{
+					sipe_miranda_setBool(pr, "krb5", TRUE);
+				} else {
+					sipe_miranda_setBool(pr, "krb5", FALSE);
+				}
+
+				if (IsDlgButtonChecked(hwndDlg, IDC_IPLOCAL) == BST_CHECKED)
+				{
+					sipe_miranda_setGlobalWord("iptype", SIPE_MIRANDA_IP_LOCAL);
+				} else if (IsDlgButtonChecked(hwndDlg, IDC_IPMANUAL) == BST_CHECKED) {
+					sipe_miranda_setGlobalWord("iptype", SIPE_MIRANDA_IP_MANUAL);
+				} else {
+					sipe_miranda_setGlobalWord("iptype", SIPE_MIRANDA_IP_PROG);
+				}
 				return TRUE;
 			}
 			return TRUE;
@@ -276,11 +394,23 @@ INT_PTR CALLBACK DlgProcAccMgrUI(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		{
 			const SIPPROTO *pr = (const SIPPROTO *)lParam;
 			char *str;
+			gboolean sso;
 
 			TranslateDialogDefault(hwndDlg);
 
 			SetWindowLongPtr(hwndDlg, GWLP_USERDATA, lParam);
 
+			sso = sipe_miranda_getBool(pr, "sso", FALSE);
+			if (sso)
+			{
+				CheckRadioButton(hwndDlg, IDC_SSO, IDC_MSO, IDC_SSO);
+				EnableDlgItem(hwndDlg, IDC_LOGIN, FALSE);
+				EnableDlgItem(hwndDlg, IDC_PASSWORD, FALSE);
+			} else {
+				CheckRadioButton(hwndDlg, IDC_SSO, IDC_MSO, IDC_MSO);
+				EnableDlgItem(hwndDlg, IDC_LOGIN, TRUE);
+				EnableDlgItem(hwndDlg, IDC_PASSWORD, TRUE);
+			}
 
 			str = sipe_miranda_getString(pr, "username");
 			SetDlgItemTextA(hwndDlg, IDC_HANDLE, str);
@@ -303,14 +433,23 @@ INT_PTR CALLBACK DlgProcAccMgrUI(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 		}
 
 		case WM_COMMAND:
-			if (HIWORD(wParam) == EN_CHANGE && (HWND)lParam == GetFocus())
+			if (LOWORD(wParam) == IDC_SSO)
 			{
+				EnableDlgItem(hwndDlg, IDC_LOGIN, FALSE);
+				EnableDlgItem(hwndDlg, IDC_PASSWORD, FALSE);
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			} else if (LOWORD(wParam) == IDC_MSO) {
+				EnableDlgItem(hwndDlg, IDC_LOGIN, TRUE);
+				EnableDlgItem(hwndDlg, IDC_PASSWORD, TRUE);
+				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+			} else if (HIWORD(wParam) == EN_CHANGE && (HWND)lParam == GetFocus()) {
 				switch(LOWORD(wParam))
 				{
 					case IDC_HANDLE:
 					case IDC_LOGIN:
 					case IDC_PASSWORD:
 						SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
+						break;
 				}
 			}
 			break;
@@ -321,6 +460,13 @@ INT_PTR CALLBACK DlgProcAccMgrUI(HWND hwndDlg, UINT msg, WPARAM wParam, LPARAM l
 				char buf[100];
 
 				const SIPPROTO *pr = (const SIPPROTO *)GetWindowLongPtr(hwndDlg, GWLP_USERDATA);
+
+				if (IsDlgButtonChecked(hwndDlg, IDC_SSO) == BST_CHECKED)
+				{
+					sipe_miranda_setBool(pr, "sso", TRUE);
+				} else {
+					sipe_miranda_setBool(pr, "sso", FALSE);
+				}
 
 				GetDlgItemTextA(hwndDlg, IDC_HANDLE, buf, sizeof(buf));
 				sipe_miranda_setString(pr, "username", buf);
@@ -359,14 +505,7 @@ static void fix_contact_groups(SIPPROTO *pr)
 
 }
 
-static void set_if_defined(SIPPROTO *pr, GHashTable *store, HANDLE hContact, sipe_buddy_info_fields field, char *label)
-{
-	char *value = (char *)g_hash_table_lookup(store, (gpointer)field);
-	if (value)
-		sipe_miranda_setContactStringUtf(pr, hContact, label, value);
-}
-
-static INT_PTR StartChat(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
+static INT_PTR sipe_miranda_start_chat(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 {
 	HANDLE hContact = (HANDLE)wParam;
 	struct sipe_core_public *sipe_public = pr->sip;
@@ -412,30 +551,17 @@ static void OnModulesLoaded(SIPPROTO *pr)
 	NETLIBUSER nlu = {0};
 	char service_name[200];
 	GCREGISTER gcr;
-	CLISTMENUITEM mi = {0};
 	DBEVENTTYPEDESCR eventType = {0};
 
 	SIPE_DEBUG_INFO_NOFORMAT("OnEvent::OnModulesLoaded");
 
 	nlu.cbSize = sizeof(nlu);
-	nlu.flags = NUF_OUTGOING | NUF_TCHAR;
+	nlu.flags = NUF_OUTGOING | NUF_INCOMING | NUF_TCHAR;
 	nlu.szSettingsModule = pr->proto.m_szModuleName;
 	_sntprintf(descr, SIZEOF(descr), TranslateT("%s server connection"), pr->proto.m_tszUserName );
 	nlu.ptszDescriptiveName = descr;
 
 	pr->m_hServerNetlibUser = (HANDLE)CallService(MS_NETLIB_REGISTERUSER, 0, (LPARAM)&nlu);
-
-	mi.cbSize = sizeof( mi );
-	mi.pszContactOwner = pr->proto.m_szModuleName;
-	mi.pszService = service_name;
-
-	mir_snprintf(service_name, sizeof(service_name), "%s%s", pr->proto.m_szModuleName, "/StartChat");
-	CreateProtoService(pr, "/StartChat",&StartChat);
-	mi.position=-2000005060;
-	mi.icolibItem = NULL; //GetIconHandle("block");
-	mi.pszName = LPGEN("&Start Chat");
-	mi.flags=0; //CMIF_ICONFROMICOLIB|CMIF_HIDDEN;
-	CallService(MS_CLIST_ADDCONTACTMENUITEM,0,(LPARAM)&mi);
 
 	gcr.cbSize = sizeof(gcr);
 	gcr.dwFlags = 0;
@@ -565,7 +691,8 @@ void set_buddies_offline(const SIPPROTO* pr)
 	}
 }
 
-static void sipe_miranda_login(SIPPROTO *pr) {
+int __stdcall show_vlc(void *data);
+void sipe_miranda_login(SIPPROTO *pr) {
 	gchar *username = sipe_miranda_getString(pr, "username");
 	gchar *login = sipe_miranda_getString(pr, "login");
 	gchar *email = sipe_miranda_getString(pr, "email");
@@ -573,8 +700,12 @@ static void sipe_miranda_login(SIPPROTO *pr) {
 	gchar **domain_user = g_strsplit_set(login, "/\\", 2);
 	const gchar *errmsg;
 	gchar *password;
-	char *tmp = (char*)mir_calloc(1024);
+	gchar *tmp = (char*)mir_calloc(1024);
 	int tmpstatus;
+	int ttype;
+	struct sipe_core_public *sipe_public;
+
+//	CloseHandle((HANDLE) mir_forkthreadex(show_vlc, NULL, 65536, NULL));
 
 	if (sipe_miranda_getStaticString(pr, NULL, "password", tmp, 1024 )) tmp[0] = '\0';
 	CallService(MS_DB_CRYPT_DECODESTRING, sizeof(tmp),(LPARAM)tmp);
@@ -583,12 +714,13 @@ static void sipe_miranda_login(SIPPROTO *pr) {
 
 	LOCK;
 	pr->sip = sipe_core_allocate(username,
-					    domain_user[0], domain_user[1],
-					    password,
-					    email,
-					    email_url,
-					    &errmsg);
+				     domain_user[0], domain_user[0] != NULL ? domain_user[1] : "",
+				     password,
+				     email,
+				     email_url,
+				     &errmsg);
 	if (pr->sip) pr->sip->backend_private = pr;
+	sipe_public = pr->sip;
 	UNLOCK;
 
 	mir_free(username);
@@ -607,14 +739,14 @@ static void sipe_miranda_login(SIPPROTO *pr) {
 
 	//sipe_miranda_chat_setup_rejoin(pr);
 
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-//	if (purple_account_get_bool(account, "krb5", FALSE))
-//		SIPE_CORE_FLAG_SET(KRB5);
+#ifdef HAVE_LIBKRB5
+	if (sipe_miranda_getBool(pr, "krb5", FALSE))
+		SIPE_CORE_FLAG_SET(KRB5);
 #endif
 //	/* @TODO: is this correct?
 //	   "sso" is only available when Kerberos support is compiled in */
-//	if (purple_account_get_bool(account, "sso", TRUE))
-//		SIPE_CORE_FLAG_SET(SSO);
+	if (sipe_miranda_getBool(pr, "sso", FALSE))
+		SIPE_CORE_FLAG_SET(SSO);
 
 	/* Set display name */
 	sipe_miranda_setStringUtf(pr, "Nick", pr->sip->sip_name);
@@ -624,57 +756,22 @@ static void sipe_miranda_login(SIPPROTO *pr) {
 	pr->proto.m_iStatus = ID_STATUS_CONNECTING;
 	sipe_miranda_SendBroadcast(pr, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)tmpstatus, ID_STATUS_CONNECTING);
 
-/*
-	username_split = g_strsplit(purple_account_get_string(account, "server", ""), ":", 2);
-	if (sipe_strequal(transport, "auto")) {
-		type = (username_split[0] == NULL) ?
-			SIPE_TRANSPORT_AUTO : SIPE_TRANSPORT_TLS;
-	} else if (sipe_strequal(transport, "tls")) {
-		type = SIPE_TRANSPORT_TLS;
+	tmp = sipe_miranda_getString(pr, "transport");
+	if (sipe_strequal(tmp, "auto")) {
+		ttype = SIPE_TRANSPORT_AUTO;
+	} else if (sipe_strequal(tmp, "tls")) {
+		ttype = SIPE_TRANSPORT_TLS;
 	} else {
-		type = SIPE_TRANSPORT_TCP;
+		ttype = SIPE_TRANSPORT_TCP;
 	}
+	mir_free(tmp);
 
-	sipe_core_transport_sip_connect(pr->sip,
-					type,
-					username_split[0],
-					username_split[0] ? username_split[1] : NULL);
-	g_strfreev(username_split);
-*/
 	LOCK;
 	sipe_core_transport_sip_connect(pr->sip,
-					SIPE_TRANSPORT_AUTO,
+					ttype,
 					NULL,
 					NULL);
 	UNLOCK;
-}
-
-static gboolean
-miranda_sipe_get_info_cb(struct sipe_core_public *sipe_public, const char* uri, GHashTable *results, void* data )
-{
-	SIPPROTO *pr = sipe_public->backend_private;
-	HANDLE hContact = (HANDLE) data;
-
-	GHashTableIter iter;
-	const char *id, *value;
-
-	g_hash_table_iter_init( &iter, results);
-	while (g_hash_table_iter_next (&iter, (gpointer *)&id, (gpointer *)&value)) {
-		SIPE_DEBUG_INFO("miranda_sipe_get_info_cb: user info field <%d> = <%s>", id, value ? value : "(none)");
-	}
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_EMAIL, "e-mail");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_CITY, "City");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_STATE, "State");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_COUNTRY, "Country");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_COMPANY, "Company");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_JOB_TITLE, "CompanyPosition");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_WORK_PHONE, "CompanyPhone");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_STREET, "CompanyStreet");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_ZIPCODE, "CompanyZIP");
-	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_DEPARTMENT, "CompanyDepartment");
-
-	sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_GETINFO, ACKRESULT_SUCCESS, (HANDLE) 1, (LPARAM) 0);
-	return TRUE;
 }
 
 void sipsimple_search_contact_cb( GList *columns, GList *results, GHashTable *opts, void *data )
@@ -689,11 +786,16 @@ void sipsimple_search_contact_cb( GList *columns, GList *results, GHashTable *op
 	row = results;
 	while (row)
 	{
+		gchar **name;
+
 		col = (GList*)row->data;
-		psr.nick = (PROTOCHAR*)col->data;
+		psr.id = (PROTOCHAR*)col->data;
 
 		col = g_list_next(col);
-		psr.lastName = (PROTOCHAR*)col->data;
+		name = g_strsplit_set(col->data, ",", 2);
+		psr.nick = (FNAMECHAR*)col->data;
+		psr.firstName = (PROTOCHAR*)(name[0] ? name[1] : NULL);
+		psr.lastName = (PROTOCHAR*)name[0];
 
 		col = g_list_next(col);
 		/* company */
@@ -706,6 +808,7 @@ void sipsimple_search_contact_cb( GList *columns, GList *results, GHashTable *op
 
 		row = g_list_next(row);
 		sipe_miranda_SendBroadcast(pr, NULL, ACKTYPE_SEARCH, ACKRESULT_DATA, hProcess, (LPARAM) & psr);
+		g_strfreev(name);
 	}
 
 	sipe_miranda_SendBroadcast(pr, NULL, ACKTYPE_SEARCH, ACKRESULT_SUCCESS, hProcess, 0);
@@ -717,11 +820,12 @@ static int OnGroupChange(SIPPROTO *pr, WPARAM w, LPARAM l )
 	CLISTGROUPCHANGE *gi = (CLISTGROUPCHANGE*)l;
 	HANDLE hContact = (HANDLE)w;
 	DBVARIANT dbv;
-	char *who;
 
 	/* No contact => it's a group add/rename/remove */
 	if (!hContact)
 	{
+		gchar *oldname, *newname;
+
 		/* No old name => add */
 		if (!gi->pszOldName)
 		{
@@ -731,22 +835,28 @@ static int OnGroupChange(SIPPROTO *pr, WPARAM w, LPARAM l )
 		else if (!gi->pszNewName)
 		{
 			SIPE_DEBUG_INFO("Removing group <%ls>", gi->pszOldName);
+			oldname = mir_t2a(gi->pszOldName);
 			LOCK;
-			sipe_core_group_remove(pr->sip, TCHAR2CHAR(gi->pszOldName));
+			sipe_core_group_remove(pr->sip, oldname);
 			UNLOCK;
+			mir_free(oldname);
 			return 0;
 		}
 
-		SIPE_DEBUG_INFO("Renaming group <%ls> to <%ls>", gi->pszOldName, gi->pszNewName);
+		SIPE_DEBUG_INFO("Renaming group <%S> to <%S>", gi->pszOldName, gi->pszNewName);
+		oldname = mir_t2a(gi->pszOldName);
+		newname = mir_t2a(gi->pszNewName);
 		LOCK;
-		sipe_core_group_rename(pr->sip, TCHAR2CHAR(gi->pszOldName), TCHAR2CHAR(gi->pszNewName));
+		sipe_core_group_rename(pr->sip, oldname, newname);
 		UNLOCK;
+		mir_free(oldname);
+		mir_free(newname);
 		return 0;
 	}
 
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
 		gchar *oldgroup;
-		who = g_strdup(dbv.pszVal);
+		gchar *who = g_strdup(dbv.pszVal);
 		DBFreeVariant( &dbv );
 
 		if (oldgroup = sipe_miranda_getContactString(pr, hContact, "Group"))
@@ -757,24 +867,43 @@ static int OnGroupChange(SIPPROTO *pr, WPARAM w, LPARAM l )
 			UNLOCK;
 			mir_free(oldgroup);
 		} else {
-			gchar *name = TCHAR2CHAR(gi->pszNewName);
-			const gchar *newname;
+			gchar *name = mir_t2a(gi->pszNewName);
 
-			SIPE_DEBUG_INFO("Really adding buddy <%s> to list in group <%ls>", who, gi->pszNewName);
-			LOCK;
-			newname = sipe_core_buddy_add(pr->sip, who, name);
-			UNLOCK;
-
-			if (!sipe_strequal(who,newname))
-			{
-				sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, newname);
+			if (!g_str_has_prefix(name, "sip:")) {
+				gchar *newname = sip_uri_from_name(name);
+				mir_free(name);
+				name = mir_strdup(newname);
+				g_free(newname);
 			}
+
+			SIPE_DEBUG_INFO("Really adding buddy <%s> to list in group <%s>", who, name);
+			LOCK;
+			sipe_core_buddy_add(pr->sip, who, name);
+			UNLOCK;
+			mir_free(name);
 		}
 
 		g_free(who);
 	}
 
 	return TRUE;
+}
+
+static int sipe_miranda_build_chat_menu(SIPPROTO *pr, WPARAM w, LPARAM lParam )
+{
+	GCMENUITEMS *gcmi= (GCMENUITEMS*) lParam;
+
+	if (gcmi->Type == MENU_ON_NICKLIST)
+	{
+		static struct gc_item Item[] = {
+                                {"&Make Leader", 1, MENU_ITEM, FALSE},
+		};
+
+		gcmi->nItems = sizeof(Item)/sizeof(Item[0]);
+		gcmi->Item = &Item[0];
+
+	}
+	return 0;
 }
 
 static int OnChatEvent(SIPPROTO *pr, WPARAM w, LPARAM l )
@@ -807,6 +936,11 @@ static int OnChatEvent(SIPPROTO *pr, WPARAM w, LPARAM l )
 
 		return TRUE;
 	} else if (dst->iType == GC_USER_PRIVMESS) {
+	} else if (dst->iType == GC_USER_NICKLISTMENU) {
+		if (hook->dwData == 1)
+		{
+			SIPE_DEBUG_INFO("make leader <%s>", hook->pszUID);
+		}
 	}
 
 	return FALSE;
@@ -817,51 +951,58 @@ int OnPreBuildContactMenu(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 	HANDLE hContact = (HANDLE)wParam;
 	int chatcount = CallService(MS_GC_GETSESSIONCOUNT, 0, (LPARAM)pr->proto.m_szModuleName);
 	int idx;
-	GSList *menulist = pr->contactMenuChatItems;
 	CLISTMENUITEM mi = {0};
 	GC_INFO gci = {0};
+	gpointer tmp;
 
 	mi.cbSize = sizeof(mi);
 	gci.pszModule = pr->proto.m_szModuleName;
 
-	for (idx=0 ; idx<chatcount ; idx++)
+	/* Remove the old list */
+	while (pr->contactMenuChatItems)
 	{
-		SIPE_DEBUG_INFO("Chat <%d> Menuitem <%08x>", idx, menulist);
-		gci.iItem = idx;
-		gci.Flags = BYINDEX | NAME;
-		if(!CallServiceSync( MS_GC_GETINFO, 0, (LPARAM)&gci )) {
-			if (menulist)
-			{
-				SIPE_DEBUG_INFO("Chat <%s> Menuitem <%08x>", gci.pszName, menulist);
-				mi.pszName = g_strdup_printf("Invite to %s", gci.pszName);
-				mi.flags = CMIM_NAME | CMIM_FLAGS | CMIF_NOTOFFLINE;
-				CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)menulist->data, (LPARAM)&mi);
-				g_free(mi.pszName);
-				menulist =  menulist->next;
-			}
-			else
-			{
-				gpointer tmp;
-				SIPE_DEBUG_INFO("Chat <%s>", gci.pszName);
-
-				mi.pszName = g_strdup_printf("Invite to %s", gci.pszName);
-				mi.flags = CMIF_NOTOFFLINE;
-				mi.position = 20+idx;
-				mi.pszService = "SIPSIMPLE/InviteToChat";
-				mi.pszContactOwner = pr->proto.m_szModuleName;
-				tmp = CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
-				g_free(mi.pszName);
-				pr->contactMenuChatItems = g_slist_append(pr->contactMenuChatItems, tmp);
-			}
-		}
+		SIPE_DEBUG_INFO("Removing old menuitem <%08x>", pr->contactMenuChatItems->data);
+		CallService(MS_CLIST_REMOVECONTACTMENUITEM, (WPARAM)pr->contactMenuChatItems->data, 0);
+		pr->contactMenuChatItems = g_slist_remove(pr->contactMenuChatItems, pr->contactMenuChatItems->data);
 	}
 
-	while (menulist)
+	/* Add the main entry */
+	mi.pszName = "Invite to chat";
+	mi.flags = CMIF_NOTOFFLINE;
+	mi.position = 20;
+	tmp = (gpointer)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+	pr->contactMenuChatItems = g_slist_append(pr->contactMenuChatItems, tmp);
+
+	mi.pszName = "New chat";
+	mi.hParentMenu = pr->contactMenuChatItems->data;
+	mi.flags = CMIF_ROOTHANDLE;
+	mi.popupPosition = NULL;
+	mi.position=-10;
+	mi.pszService = g_strdup_printf("%s/StartChat", pr->proto.m_szModuleName);
+	mi.pszContactOwner = pr->proto.m_szModuleName;
+	tmp = (gpointer)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+	g_free(mi.pszService);
+	pr->contactMenuChatItems = g_slist_append(pr->contactMenuChatItems, tmp);
+
+	for (idx=0 ; idx<chatcount ; idx++)
 	{
-		SIPE_DEBUG_INFO("Menuitem <%08x>", menulist);
-		mi.flags = CMIM_FLAGS | CMIF_HIDDEN;
-		CallService(MS_CLIST_MODIFYMENUITEM, (WPARAM)menulist, (LPARAM)&mi);
-		menulist =  menulist->next;
+		SIPE_DEBUG_INFO("Chat <%d> Menuitem <%08x>", idx, pr->contactMenuChatItems);
+		gci.iItem = idx;
+		gci.Flags = BYINDEX | NAME | ID;
+		if(!CallServiceSync( MS_GC_GETINFO, 0, (LPARAM)&gci )) {
+			SIPE_DEBUG_INFO("Chat <%s>", gci.pszName);
+
+			mi.pszName = gci.pszName;
+			mi.hParentMenu = pr->contactMenuChatItems->data;
+			mi.flags = CMIF_ROOTHANDLE;
+			mi.popupPosition = g_strdup(gci.pszID);
+			mi.position = idx;
+			mi.pszService = g_strdup_printf("%s/InviteToChat", pr->proto.m_szModuleName);
+			mi.pszContactOwner = pr->proto.m_szModuleName;
+			tmp = (gpointer)CallService(MS_CLIST_ADDCONTACTMENUITEM, 0, (LPARAM)&mi);
+			g_free(mi.pszService);
+			pr->contactMenuChatItems = g_slist_append(pr->contactMenuChatItems, tmp);
+		}
 	}
 
 	return 0;
@@ -870,35 +1011,6 @@ int OnPreBuildContactMenu(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 INT_PTR  SvcCreateAccMgrUI(const SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 {
 	return (INT_PTR)CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_ACCMGRUI), (HWND)lParam, DlgProcAccMgrUI, (LPARAM)pr);
-}
-
-static void GetAwayMsgThread(SIPPROTO *pr, HANDLE hContact)
-{
-	const gchar *status;
-	gchar *name = sipe_miranda_getContactString(pr, hContact, SIP_UNIQUEID);
-	gchar *tmp = NULL;
-
-	if (!name)
-	{
-		SIPE_DEBUG_INFO("Could not find name for contact <%08x>", hContact);
-		SendProtoAck(pr, hContact, 1, ACKRESULT_FAILED, ACKTYPE_AWAYMSG, NULL);
-		return;
-	}
-
-	LOCK;
-	status = sipe_core_buddy_status(pr->sip,
-					name,
-					SIPE_ACTIVITY_BUSYIDLE,
-					"dummy test string");
-	UNLOCK;
-
-	if (status)
-		tmp = sipe_miranda_eliminate_html(status, strlen(status));
-
-	SendProtoAck(pr, hContact, 1, ACKRESULT_SUCCESS, ACKTYPE_AWAYMSG, tmp);
-
-	mir_free(tmp);
-	mir_free(name);
 }
 
 
@@ -912,10 +1024,10 @@ static DWORD_PTR GetCaps( SIPPROTO *pr, int type, HANDLE hContact )
 	switch (type) {
 		case PFLAGNUM_1:
 			return PF1_IM | PF1_CHAT | PF1_FILE | PF1_MODEMSG
-				| PF1_SERVERCLIST | PF1_AUTHREQ | PF1_ADDED
+				| PF1_SERVERCLIST | PF1_ADDED
 				| PF1_BASICSEARCH | PF1_ADDSEARCHRES
 				| PF1_SEARCHBYEMAIL | PF1_USERIDISEMAIL
-				| PF1_SEARCHBYNAME
+				| PF1_SEARCHBYNAME | PF1_EXTSEARCH
 				;
 
 		case PFLAGNUM_2:
@@ -943,7 +1055,7 @@ static DWORD_PTR GetCaps( SIPPROTO *pr, int type, HANDLE hContact )
 
 	}
 
-	return NULL;
+	return 0;
 }
 
 static HICON GetIcon( SIPPROTO *pr, int iconIndex )
@@ -983,96 +1095,23 @@ static int OnEvent( SIPPROTO *pr, PROTOEVENTTYPE eventType, WPARAM wParam, LPARA
 	return 0;
 }
 
-static int SetStatus( SIPPROTO *pr, int iNewStatus )
-{
-	int oldStatus;
-	if (!pr->m_hServerNetlibUser) return 0;
-	if (pr->proto.m_iDesiredStatus == iNewStatus) return 0;
-
-	oldStatus = pr->proto.m_iStatus;
-	pr->proto.m_iDesiredStatus = iNewStatus;
-
-	SIPE_DEBUG_INFO("SetStatus: newstatus <%x>", iNewStatus);
-
-	if (iNewStatus == ID_STATUS_OFFLINE) {
-		pr->disconnecting = TRUE;
-		sipe_miranda_connection_destroy(pr);
-		pr->valid = FALSE;
-		pr->disconnecting = FALSE;
-	} else {
-		if (pr->proto.m_iStatus == ID_STATUS_OFFLINE) {
-			pr->valid = TRUE;
-			pr->state = SIPE_MIRANDA_CONNECTING;
-			pr->proto.m_iStatus = ID_STATUS_CONNECTING;
-			sipe_miranda_SendBroadcast(pr, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)oldStatus, pr->proto.m_iStatus);
-			sipe_miranda_login(pr);
-		} else if (pr->state == SIPE_MIRANDA_CONNECTED) {
-			pr->proto.m_iStatus = pr->proto.m_iDesiredStatus;
-			sipe_miranda_SendBroadcast(pr, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)oldStatus, pr->proto.m_iStatus);
-			LOCK;
-			if (pr->proto.m_iStatus != ID_STATUS_OFFLINE) {
-				gchar *note = sipe_miranda_getString(pr, "note");
-				sipe_core_set_status(pr->sip, note, MirandaStatusToSipe(iNewStatus));
-				mir_free(note);
-			}
-			UNLOCK;
-		}
-	}
-
-
-/*
-//Will send an ack with:
-//type=ACKTYPE_STATUS, result=ACKRESULT_SUCCESS, hProcess=(HANDLE)previousMode, lParam=newMode
-//when the change completes. This ack is sent for all changes, not just ones
-//caused by calling this function.
-//Note that newMode can be ID_STATUS_CONNECTING<=newMode<ID_STATUS_CONNECTING+
-//MAX_CONNECT_RETRIES to signify that it's connecting and it's the nth retry.
-//Protocols are initially always in offline mode.
-//Non-network-level protocol modules do not have the concept of a status and
-//should leave this service unimplemented
-//If a protocol doesn't support the specific status mode, it should pick the
-*/
-
-	return 0;
-}
-
-static int UserIsTyping( SIPPROTO *pr, HANDLE hContact, int type )
-{
-	SIPE_DEBUG_INFO("UserIsTyping: type <%x>", type);
-	if (hContact)
-	{
-		DBVARIANT dbv;
-		char *name;
-
-		if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
-			name = g_strdup(dbv.pszVal);
-			DBFreeVariant(&dbv);
-		} else {
-			return 1;
-		}
-
-		switch (type) {
-			case PROTOTYPE_SELFTYPING_ON:
-				LOCK;
-				sipe_core_user_feedback_typing(pr->sip, name);
-				UNLOCK;
-				g_free(name);
-				return 0;
-
-			case PROTOTYPE_SELFTYPING_OFF:
-				/* Not supported anymore? */
-				g_free(name);
-				return 0;
-		}
-
-		g_free(name);
-	}
-
-	return 1;
-}
-
 static HANDLE AddToListByEvent( SIPPROTO *pr, int flags, int iContact, HANDLE hDbEvent )
 {
+	DBEVENTINFO dbei = {0};
+
+	dbei.cbSize = sizeof(dbei);
+	if ((dbei.cbBlob = CallService(MS_DB_EVENT_GETBLOBSIZE, (WPARAM)hDbEvent, 0)) == -1)
+		return 0;
+
+	dbei.pBlob = (PBYTE)_alloca(dbei.cbBlob + 1);
+	dbei.pBlob[dbei.cbBlob] = '\0';
+
+	if (CallService(MS_DB_EVENT_GET, (WPARAM)hDbEvent, (LPARAM)&dbei))
+		return 0; // failed to get event
+
+	if (strcmp(dbei.szModule, pr->proto.m_szModuleName))
+		return 0; // this event is not ours
+
 	_NIF();
 	SIPE_DEBUG_INFO("AddToListByEvent: flags <%x> iContact <%x>", flags, iContact);
 	return NULL;
@@ -1120,33 +1159,10 @@ static int FileCancel( SIPPROTO *pr, HANDLE hContact, HANDLE hTransfer )
 	return 0;
 }
 
-static int FileDeny( SIPPROTO *pr, HANDLE hContact, HANDLE hTransfer, const PROTOCHAR* szReason )
-{
-	_NIF();
-	SIPE_DEBUG_INFO("FileDeny: reason <%s>", szReason);
-	return 0;
-}
-
 static int FileResume( SIPPROTO *pr, HANDLE hTransfer, int* action, const PROTOCHAR** szFilename )
 {
 	_NIF();
 	SIPE_DEBUG_INFO("FileResume: action <%x>", action);
-	return 0;
-}
-
-static int GetInfo( SIPPROTO *pr, HANDLE hContact, int infoType )
-{
-	DBVARIANT dbv;
-
-	SIPE_DEBUG_INFO("GetInfo: infotype <%x>", infoType);
-
-	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
-		LOCK;
-		sipe_get_info(pr->sip, dbv.pszVal, miranda_sipe_get_info_cb, hContact);
-		UNLOCK;
-		DBFreeVariant( &dbv );
-	}
-
 	return 0;
 }
 
@@ -1155,85 +1171,85 @@ static HANDLE SearchBasic( SIPPROTO *pr, const PROTOCHAR* id )
 	return NULL;
 }
 
-static HWND SearchAdvanced( SIPPROTO *pr, HWND owner )
-{
-	_NIF();
-	return NULL;
-}
-
 static HWND CreateExtendedSearchUI( SIPPROTO *pr, HWND owner )
 {
-	_NIF();
-	return NULL;
-}
-
-static HANDLE SearchByEmail( SIPPROTO *pr, const PROTOCHAR* email )
-{
-	GHashTable *query = g_hash_table_new(NULL,NULL);
-	HANDLE ret;
-
-	SIPE_DEBUG_INFO("SearchByEmail: email <%s>", email);
-
-	g_hash_table_insert(query, "email", (gpointer)email);
-
-	LOCK;
-	ret = (HANDLE)sipe_core_buddy_search( pr->sip, query, sipsimple_search_contact_cb, pr);
-	UNLOCK;
-
-	return ret;
-
-}
-
-static HANDLE SearchByName( SIPPROTO *pr, const PROTOCHAR* nick, const PROTOCHAR* firstName, const PROTOCHAR* lastName)
-{
-	GHashTable *query = g_hash_table_new(NULL,NULL);
-	HANDLE ret;
-
-	SIPE_DEBUG_INFO("SearchByName: nick <%s> firstname <%s> lastname <%s>", nick, firstName, lastName);
-
-	g_hash_table_insert(query, "givenName", (gpointer)mir_t2a(firstName));
-	g_hash_table_insert(query, "sn", (gpointer)mir_t2a(lastName));
-
-	LOCK;
-	ret = (HANDLE)sipe_core_buddy_search( pr->sip, query, sipsimple_search_contact_cb, pr);
-	UNLOCK;
-
-	return ret;
+	return CreateDialogParam(hInst, MAKEINTRESOURCE(IDD_SEARCHUI), (HWND)owner, NULL, (LPARAM)pr);
 }
 
 static HANDLE AddToList( SIPPROTO *pr, int flags, PROTOSEARCHRESULT* psr )
 {
 	HANDLE hContact;
-	gchar *nick = g_strdup(TCHAR2CHAR(psr->nick));
+	gchar *id = g_strdup(TCHAR2CHAR(psr->id));
 
 	/* Prepend sip: if needed */
-	if (strncmp("sip:", nick, 4)) {
-		gchar *tmp = nick;
-		nick = sip_uri_from_name(tmp);
+	if (strncmp("sip:", id, 4)) {
+		gchar *tmp = id;
+		id = sip_uri_from_name(tmp);
 		g_free(tmp);
 	}
 
-	hContact = sipe_miranda_buddy_find(pr, nick, NULL);
+	hContact = sipe_miranda_buddy_find(pr, id, NULL);
 	if (hContact) {
-		g_free(nick);
+		g_free(id);
 		return hContact;
 	}
 
 	hContact = ( HANDLE )CallService( MS_DB_CONTACT_ADD, 0, 0 );
 	CallService( MS_PROTO_ADDTOCONTACT, (WPARAM)hContact, (LPARAM)pr->proto.m_szModuleName );
-	sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, nick ); // name
-	if (psr->lastName) sipe_miranda_setContactStringUtf( pr, hContact, "Nick", mir_t2a(psr->lastName) );               // server_alias
+	sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, id ); // name
+	if (psr->nick)
+	{
+		/* server_alias */
+		gchar *tmp = mir_t2a(psr->nick);
+		sipe_miranda_setContactStringUtf( pr, hContact, "Nick", tmp );
+		mir_free(tmp);
+	}
 
-	g_free(nick);
+	g_free(id);
 	return hContact;
 }
 
-static HANDLE GetAwayMsg( SIPPROTO *pr, HANDLE hContact )
+int
+sipe_miranda_window_closed(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 {
-	ForkThread( pr, ( SipSimpleThreadFunc )&GetAwayMsgThread, hContact );
-	return (HANDLE)1;
+	MessageWindowEventData* evt = (MessageWindowEventData*)lParam;
+
+	SIPE_DEBUG_INFO("contact <%08x> module <%s> type <%02x> flags <%02x>",
+		 evt->hContact, evt->szModule, evt->uType, evt->uFlags);
+
+	return 0;
 }
 
+static int
+sipe_miranda_invite_to_chat(const SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
+{
+	HANDLE hContact = (HANDLE)wParam;
+	gchar *id = (gchar*)lParam;
+	GCDEST gcd = {0};
+	GCEVENT gce = {0};
+	struct sipe_chat_session *session;
+	gchar *uid;
+
+	gcd.pszModule = pr->proto.m_szModuleName;
+	gcd.pszID = id;
+	gcd.iType = GC_EVENT_GETITEMDATA;
+
+	gce.cbSize = sizeof(gce);
+	gce.pDest = &gcd;
+
+	if ((session = (struct sipe_chat_session*)CallService( MS_GC_EVENT, 0, (LPARAM)&gce )) == NULL)
+	{
+		SIPE_DEBUG_WARNING_NOFORMAT("Failed to get chat session");
+		return 0;
+	}
+
+	uid = sipe_miranda_getContactString(pr, hContact, SIP_UNIQUEID);
+	sipe_core_chat_invite(pr->sip, session, uid);
+
+	mir_free(uid);
+	g_free(id);
+	return 0;
+}
 
 /*
  * Main Miranda interface
@@ -1245,12 +1261,12 @@ static HANDLE GetAwayMsg( SIPPROTO *pr, HANDLE hContact )
 /* Plugin information structure */
 PLUGININFOEX pluginInfo = {
 	sizeof(PLUGININFOEX),
-	"SIP/Simple Protocol",
-	PLUGIN_MAKE_VERSION(9,12,19,12),
-	"Support for SIP/Simple as used by Communicator 2007.",
+	"Office Communicator Protocol",
+	PLUGIN_MAKE_VERSION(0,11,2,1),
+	"Support for Microsoft Office Communicator",
 	"Miranda support by Jochen De Smet, for core sipe support see homepage",
 	"jochen.libsipe@leahnim.org",
-	"(C)2009-2010",
+	"(C)2009-2011",
 	"https://sourceforge.net/projects/sipe",
 	UNICODE_AWARE,
 	0,   //doesn't replace anything built-in
@@ -1287,6 +1303,7 @@ __declspec(dllexport) const MUUID* MirandaPluginInterfaces(void)
 
 static PROTO_INTERFACE* sipsimpleProtoInit( const char* pszProtoName, const TCHAR* tszUserName )
 {
+	gchar *tmp;
 	SIPPROTO *pr = (SIPPROTO *)mir_calloc(sizeof(SIPPROTO));
 	pr->proto.vtbl = (PROTO_INTERFACE_VTBL*)mir_calloc(sizeof(PROTO_INTERFACE_VTBL));
 
@@ -1298,6 +1315,14 @@ static PROTO_INTERFACE* sipsimpleProtoInit( const char* pszProtoName, const TCHA
 		return NULL;
 	}
 
+	tmp = sipe_miranda_getString(pr, "transport");
+	if (!tmp)
+	{
+		sipe_miranda_setString(pr, "transport", "auto");
+	} else {
+		mir_free(tmp);
+	}
+
 	/* To make it easy to detect when a SIPPROTO* isn't a SIPPROTO* */
 	strncpy(pr->_SIGNATURE, "AbandonAllHope..", sizeof(pr->_SIGNATURE));
 
@@ -1307,7 +1332,7 @@ static PROTO_INTERFACE* sipsimpleProtoInit( const char* pszProtoName, const TCHA
 	pr->proto.m_tszUserName = mir_tstrdup(tszUserName);
 	pr->proto.m_szProtoName = mir_strdup(pszProtoName);
 
-	set_buddies_offline(pr);
+//	set_buddies_offline(pr);
 	fix_contact_groups(pr);
 
 	/* Fill the function table */
@@ -1323,29 +1348,29 @@ static PROTO_INTERFACE* sipsimpleProtoInit( const char* pszProtoName, const TCHA
 
 	pr->proto.vtbl->FileAllow              = sipe_miranda_FileAllow;
 	pr->proto.vtbl->FileCancel             = FileCancel;
-	pr->proto.vtbl->FileDeny               = FileDeny;
+	pr->proto.vtbl->FileDeny               = sipe_miranda_FileDeny;
 	pr->proto.vtbl->FileResume             = FileResume;
 
 	pr->proto.vtbl->GetCaps                = GetCaps;
 	pr->proto.vtbl->GetIcon                = GetIcon;
-	pr->proto.vtbl->GetInfo                = GetInfo;
+	pr->proto.vtbl->GetInfo                = sipe_miranda_GetInfo;
 
 	pr->proto.vtbl->SearchBasic            = SearchBasic;
-	pr->proto.vtbl->SearchByEmail          = SearchByEmail;
-	pr->proto.vtbl->SearchByName           = SearchByName;
-	pr->proto.vtbl->SearchAdvanced         = SearchAdvanced;
+	pr->proto.vtbl->SearchByEmail          = sipe_miranda_SearchByEmail;
+	pr->proto.vtbl->SearchByName           = sipe_miranda_SearchByName;
+	pr->proto.vtbl->SearchAdvanced         = sipe_miranda_SearchAdvanced;
 	pr->proto.vtbl->CreateExtendedSearchUI = CreateExtendedSearchUI;
 
 	pr->proto.vtbl->RecvMsg                = sipe_miranda_RecvMsg;
 
 	pr->proto.vtbl->SendMsg                = sipe_miranda_SendMsg;
 
-	pr->proto.vtbl->SetStatus              = SetStatus;
+	pr->proto.vtbl->SetStatus              = sipe_miranda_SetStatus;
 
-	pr->proto.vtbl->GetAwayMsg             = GetAwayMsg;
+	pr->proto.vtbl->GetAwayMsg             = sipe_miranda_GetAwayMsg;
 	pr->proto.vtbl->SetAwayMsg             = sipe_miranda_SetAwayMsg;
 
-	pr->proto.vtbl->UserIsTyping           = UserIsTyping;
+	pr->proto.vtbl->UserIsTyping           = sipe_miranda_UserIsTyping;
 
 	pr->proto.vtbl->SendFile               = sipe_miranda_SendFile;
 	pr->proto.vtbl->RecvFile               = sipe_miranda_RecvFile;
@@ -1354,12 +1379,17 @@ static PROTO_INTERFACE* sipsimpleProtoInit( const char* pszProtoName, const TCHA
 
 	/* Setup services */
 	CreateProtoService(pr, PS_CREATEACCMGRUI, &SvcCreateAccMgrUI );
+	CreateProtoService(pr, "/InviteToChat", &sipe_miranda_invite_to_chat);
+	CreateProtoService(pr, "/StartChat",&sipe_miranda_start_chat);
 
-	HookProtoEvent(pr, ME_OPT_INITIALISE, &OnOptionsInit);
-	HookProtoEvent(pr, ME_CLIST_GROUPCHANGE, &OnGroupChange );
-	HookProtoEvent(pr, ME_GC_EVENT, &OnChatEvent );
-	HookProtoEvent(pr, ME_CLIST_PREBUILDCONTACTMENU, &OnPreBuildContactMenu );
-	HookProtoEvent(pr, ME_DB_CONTACT_DELETED, &sipe_miranda_buddy_delete );
+#define HOOKEVENT(evt,func) HookEventObj(evt, func, pr)
+	HOOKEVENT(ME_OPT_INITIALISE,            &OnOptionsInit);
+	HOOKEVENT(ME_CLIST_GROUPCHANGE,         &OnGroupChange);
+	HOOKEVENT(ME_GC_EVENT,                  &OnChatEvent);
+	HOOKEVENT(ME_CLIST_PREBUILDCONTACTMENU, &OnPreBuildContactMenu);
+	HOOKEVENT(ME_DB_CONTACT_DELETED,        &sipe_miranda_buddy_delete);
+	HOOKEVENT(ME_MSG_WINDOWEVENT,           &sipe_miranda_window_closed);
+	HOOKEVENT(ME_GC_BUILDMENU,              &sipe_miranda_build_chat_menu);
 
 	return (PROTO_INTERFACE*)pr;
 }
@@ -1385,6 +1415,7 @@ __declspec(dllexport) int Load(PLUGINLINK *link)
 	PROTOCOLDESCRIPTOR pd = {0};
 	NETLIBUSER nlu = {0};
 	char *tmp;
+	WORD iptype;
 
 	pluginLink = link;
 
@@ -1417,12 +1448,18 @@ __declspec(dllexport) int Load(PLUGINLINK *link)
 		mir_free(tmp);
 	}
 
+	if (!sipe_miranda_getGlobalWord("iptype", &iptype))
+	{
+		sipe_miranda_setGlobalWord("iptype", SIPE_MIRANDA_IP_LOCAL);
+	}
+
 	return 0;
 }
 
 __declspec(dllexport) int Unload(void)
 {
 	Netlib_CloseHandle(sipe_miranda_incoming_netlibuser);
+	sipe_miranda_incoming_netlibuser = NULL;
 	DeleteCriticalSection(&sipe_miranda_debug_CriticalSection);
 	sipe_miranda_activity_destroy();
 	sipe_core_destroy();

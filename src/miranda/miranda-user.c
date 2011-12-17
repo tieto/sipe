@@ -24,9 +24,11 @@
 #include <stdio.h>
 #include <glib.h>
 
+#include "miranda-version.h"
 #include "newpluginapi.h"
 #include "m_protosvc.h"
 #include "m_protoint.h"
+#include "m_database.h"
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -79,9 +81,44 @@ int sipe_miranda_SetAwayMsg(SIPPROTO *pr,
 	sipe_miranda_setString(pr, "note", note);
 	LOCK;
 	if (pr->state == SIPE_MIRANDA_CONNECTED)
-		sipe_core_set_status(pr->sip, note, MirandaStatusToSipe(pr->proto.m_iStatus));
+		sipe_core_status_set(pr->sip, MirandaStatusToSipe(pr->proto.m_iStatus), note);
 	UNLOCK;
 	return 0;
+}
+
+int sipe_miranda_UserIsTyping( SIPPROTO *pr, HANDLE hContact, int type )
+{
+	SIPE_DEBUG_INFO("type <%x>", type);
+	if (hContact)
+	{
+		DBVARIANT dbv;
+		char *name;
+
+		if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
+			name = g_strdup(dbv.pszVal);
+			DBFreeVariant(&dbv);
+		} else {
+			return 1;
+		}
+
+		switch (type) {
+			case PROTOTYPE_SELFTYPING_ON:
+				LOCK;
+				sipe_core_user_feedback_typing(pr->sip, name);
+				UNLOCK;
+				g_free(name);
+				return 0;
+
+			case PROTOTYPE_SELFTYPING_OFF:
+				/* Not supported anymore? */
+				g_free(name);
+				return 0;
+		}
+
+		g_free(name);
+	}
+
+	return 1;
 }
 
 

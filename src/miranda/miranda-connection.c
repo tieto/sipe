@@ -50,16 +50,25 @@ void sipe_miranda_connection_destroy(SIPPROTO *pr)
 	sipe_miranda_SendBroadcast(pr, NULL, ACKTYPE_STATUS, ACKRESULT_SUCCESS, (HANDLE)oldStatus, pr->proto.m_iStatus);
 }
 
-void sipe_miranda_connection_error_reason(SIPPROTO *pr, sipe_connection_error error, const gchar *msg)
+static void disconnect_cb(SIPPROTO *pr)
 {
-	SIPE_DEBUG_INFO("valid <%d> state <%d> error <%d> message <%s>", pr->valid, pr->state, error, msg);
+	SIPE_DEBUG_INFO_NOFORMAT("");
 	if (!pr->valid) return;
 	if (pr->state == SIPE_MIRANDA_DISCONNECTED) return;
 	pr->disconnecting = TRUE;
 	sipe_miranda_connection_destroy(pr);
 	pr->valid = FALSE;
 	pr->disconnecting = FALSE;
+	pr->disconnect_timeout = NULL;
+}
 
+void sipe_miranda_connection_error_reason(SIPPROTO *pr, sipe_connection_error error, const gchar *msg)
+{
+	if (!pr->disconnect_timeout)
+	{
+		SIPE_DEBUG_INFO("valid <%d> state <%d> error <%d> message <%s>", pr->valid, pr->state, error, msg);
+		pr->disconnect_timeout = sipe_miranda_schedule_mseconds(disconnect_cb, 1000, pr);
+	}
 }
 
 void sipe_backend_connection_completed(struct sipe_core_public *sipe_public)

@@ -58,6 +58,8 @@ void sipe_backend_chat_add(struct sipe_backend_chat_session *backend_session,
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
 	int retval;
+	HANDLE hContact = sipe_backend_buddy_find( sipe_public, uri, NULL );
+	gchar *nick = sipe_miranda_getContactString(pr, hContact, "Nick");
 
 	SIPE_DEBUG_INFO("sipe_backend_chat_add: Adding user <%s> to chat <%s>", uri, backend_session->conv);
 
@@ -67,7 +69,7 @@ void sipe_backend_chat_add(struct sipe_backend_chat_session *backend_session,
 
 	gce.cbSize = sizeof(gce);
 	gce.pDest = &gcd;
-	gce.pszNick = uri;
+	gce.pszNick = nick;
 	gce.pszUID = uri;
 	gce.pszStatus = "Normal";
 	gce.bIsMe = !strcmp(self, uri);
@@ -77,6 +79,7 @@ void sipe_backend_chat_add(struct sipe_backend_chat_session *backend_session,
 	if (retval) {
 		SIPE_DEBUG_WARNING("sipe_backend_chat_add: Failed to add user to chat: <%d>", retval);
 	}
+	mir_free(nick);
 }
 
 void sipe_backend_chat_close(struct sipe_backend_chat_session *backend_session)
@@ -84,6 +87,7 @@ void sipe_backend_chat_close(struct sipe_backend_chat_session *backend_session)
 	SIPPROTO *pr;
 	GCEVENT gce = {0};
 	GCDEST gcd = {0};
+	struct sipe_chat_session *session;
 
 	if (!backend_session)
 	{
@@ -100,10 +104,7 @@ void sipe_backend_chat_close(struct sipe_backend_chat_session *backend_session)
 	gcd.pszID = backend_session->conv;
 	gcd.iType = GC_EVENT_CONTROL;
 
-	if (CallServiceSync( MS_GC_EVENT, SESSION_TERMINATE, (LPARAM)&gce ))
-	{
-		SIPE_DEBUG_WARNING_NOFORMAT("sipe_backend_groupchat_room_terminate: Failed to close chat session");
-	}
+	session = (struct sipe_chat_session*)CallServiceSync( MS_GC_EVENT, SESSION_TERMINATE, (LPARAM)&gce );
 }
 
 struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_public *sipe_public,
@@ -129,7 +130,7 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 
 	if (CallServiceSync( MS_GC_NEWSESSION, 0, (LPARAM)&gs ))
 	{
-		SIPE_DEBUG_ERROR("sipe_backend_chat_create: Failed to create chat session <%d> <%s>", id, title);
+		SIPE_DEBUG_ERROR("Failed to create chat session <%d> <%s>", id, title);
 	}
 
 	gcd.pszModule = pr->proto.m_szModuleName;
@@ -142,13 +143,13 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 	gce.pszStatus = "Normal";
 	if (CallService( MS_GC_EVENT, 0, (LPARAM)&gce ))
 	{
-		SIPE_DEBUG_WARNING_NOFORMAT("sipe_backend_chat_create: Failed to add normal status to chat session");
+		SIPE_DEBUG_WARNING_NOFORMAT("Failed to add normal status to chat session");
 	}
 
 	gce.pszStatus = "Presenter";
 	if (CallService( MS_GC_EVENT, 0, (LPARAM)&gce ))
 	{
-		SIPE_DEBUG_WARNING_NOFORMAT("sipe_backend_chat_create: Failed to add presenter status to chat session");
+		SIPE_DEBUG_WARNING_NOFORMAT("Failed to add presenter status to chat session");
 	}
 
 
@@ -156,11 +157,11 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 
 	if (CallServiceSync( MS_GC_EVENT, SESSION_INITDONE, (LPARAM)&gce ))
 	{
-		SIPE_DEBUG_WARNING_NOFORMAT("sipe_backend_chat_create: Failed to initdone chat session");
+		SIPE_DEBUG_WARNING_NOFORMAT("Failed to initdone chat session");
 	}
 	if (CallServiceSync( MS_GC_EVENT, SESSION_ONLINE, (LPARAM)&gce ))
 	{
-		SIPE_DEBUG_ERROR_NOFORMAT("sipe_backend_chat_create: Failed to set chat session online");
+		SIPE_DEBUG_ERROR_NOFORMAT("Failed to set chat session online");
 	}
 
 	conv->conv = id;
@@ -182,7 +183,7 @@ gboolean sipe_backend_chat_find(struct sipe_backend_chat_session *backend_sessio
 	gci.pszModule = pr->proto.m_szModuleName;
 
 	if(CallServiceSync( MS_GC_GETINFO, 0, (LPARAM)&gci )) {
-		SIPE_DEBUG_ERROR_NOFORMAT("sipe_backend_chat_find: Failed to get chat user list");
+		SIPE_DEBUG_ERROR_NOFORMAT("Failed to get chat user list");
 		return FALSE;
 	}
 
@@ -221,6 +222,8 @@ void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 	gchar *msg;
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
+	HANDLE hContact = sipe_backend_buddy_find( sipe_public, from, NULL );
+	gchar *nick = sipe_miranda_getContactString(pr, hContact, "Nick");
 
 	gcd.pszModule = pr->proto.m_szModuleName;
 	gcd.pszID = backend_session->conv;
@@ -230,7 +233,7 @@ void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 
 	gce.cbSize = sizeof(gce);
 	gce.pDest = &gcd;
-	gce.pszNick = from;
+	gce.pszNick = nick;
 	gce.pszUID = from;
 	gce.pszText = msg;
 	gce.bIsMe = !strcmp(self, from);
@@ -238,13 +241,48 @@ void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 	g_free(self);
 
 	CallService( MS_GC_EVENT, 0, (LPARAM)&gce );
+	mir_free(nick);
 	mir_free(msg);
 }
 
 void sipe_backend_chat_operator(struct sipe_backend_chat_session *backend_session,
 				const gchar *uri)
 {
-	_NIF();
+	SIPPROTO *pr;
+	GCEVENT gce = {0};
+	GCDEST gcd = {0};
+	HANDLE hContact;
+	gchar *nick;
+	struct sipe_core_public *sipe_public;
+
+	if (!backend_session)
+	{
+		SIPE_DEBUG_WARNING_NOFORMAT("Attempted to set operator on NULL backend_session");
+		return;
+	}
+
+	pr = backend_session->pr;
+	sipe_public = pr->sip;
+
+	hContact = sipe_backend_buddy_find( sipe_public, uri, NULL );
+	nick = sipe_miranda_getContactString(pr, hContact, "Nick");
+
+	gce.cbSize = sizeof(gce);
+	gce.pDest = &gcd;
+	gce.pszNick = nick;
+	gce.pszUID = uri;
+	gce.pszText = "Presenter";
+	gce.pszStatus = "Presenter";
+
+	gcd.pszModule = pr->proto.m_szModuleName;
+	gcd.pszID = backend_session->conv;
+	gcd.iType = GC_EVENT_ADDSTATUS;
+
+	if (CallServiceSync( MS_GC_EVENT, 0, (LPARAM)&gce ))
+	{
+		SIPE_DEBUG_WARNING_NOFORMAT("Failed to set presenter status");
+	}
+	mir_free(nick);
 }
 
 void sipe_backend_chat_rejoin(struct sipe_core_public *sipe_public,
@@ -271,6 +309,8 @@ void sipe_backend_chat_remove(struct sipe_backend_chat_session *backend_session,
 	gchar *self = sip_uri_self(SIPE_CORE_PRIVATE);
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
+	HANDLE hContact = sipe_backend_buddy_find( sipe_public, uri, NULL );
+	gchar *nick = sipe_miranda_getContactString(pr, hContact, "Nick");
 
 	SIPE_DEBUG_INFO("sipe_backend_chat_remove: Removing user <%s> from chat <%s>", uri, backend_session->conv);
 
@@ -280,13 +320,14 @@ void sipe_backend_chat_remove(struct sipe_backend_chat_session *backend_session,
 
 	gce.cbSize = sizeof(gce);
 	gce.pDest = &gcd;
-	gce.pszNick = uri;
+	gce.pszNick = nick;
 	gce.pszUID = uri;
 	gce.pszStatus = 0;
 	gce.bIsMe = !strcmp(self, uri);
 
 	g_free(self);
 	CallService( MS_GC_EVENT, 0, (LPARAM)&gce );
+	mir_free(nick);
 }
 
 void sipe_backend_chat_show(struct sipe_backend_chat_session *backend_session)

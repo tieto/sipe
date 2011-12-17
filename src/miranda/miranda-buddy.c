@@ -25,6 +25,7 @@
 
 #include <glib.h>
 
+#include "miranda-version.h"
 #include "newpluginapi.h"
 #include "m_protosvc.h"
 #include "m_protoint.h"
@@ -32,31 +33,11 @@
 #include "m_database.h"
 #include "m_clist.h"
 
+#include "sipe-common.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-core.h"
 #include "miranda-private.h"
-
-/* Status identifiers (see also: sipe_status_types()) */
-#define SIPE_STATUS_ID_UNKNOWN     "unset"                  /* Unset (primitive) */
-#define SIPE_STATUS_ID_OFFLINE     "offline"                /* Offline (primitive) */
-#define SIPE_STATUS_ID_AVAILABLE   "available"              /* Online */
-/*      PURPLE_STATUS_UNAVAILABLE: */
-#define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
-#define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
-#define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
-#define SIPE_STATUS_ID_IN_MEETING  "in-a-meeting"                                             /* In a meeting */
-#define SIPE_STATUS_ID_IN_CONF     "in-a-conference"                                          /* In a conference */
-#define SIPE_STATUS_ID_ON_PHONE    "on-the-phone"                                             /* On the phone */
-#define SIPE_STATUS_ID_INVISIBLE   "invisible"              /* Appear Offline */
-/*      PURPLE_STATUS_AWAY: */
-#define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
-#define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
-#define SIPE_STATUS_ID_AWAY        "away"                   /* Away (primitive) */
-/** Reuters status (user settable) */
-#define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
-/* ???  PURPLE_STATUS_EXTENDED_AWAY */
-/* ???  PURPLE_STATUS_MOBILE */
-/* ???  PURPLE_STATUS_TUNE */
 
 #define ADD_PROP(key,value) g_hash_table_insert(info_to_property_table, (gpointer)key, value)
 
@@ -132,47 +113,6 @@ mir_snprintf(idstr, SIZEOF(idstr), "MyPhone%d",i);
 	*/
 }
 
-static int SipeStatusToMiranda(const gchar *status) {
-
-	if (!strcmp(status, SIPE_STATUS_ID_OFFLINE))
-		return ID_STATUS_OFFLINE;
-
-	if (!strcmp(status, SIPE_STATUS_ID_AVAILABLE))
-		return ID_STATUS_ONLINE;
-
-	if (!strcmp(status, SIPE_STATUS_ID_ON_PHONE))
-		return ID_STATUS_ONTHEPHONE;
-
-	if (!strcmp(status, SIPE_STATUS_ID_DND))
-		return ID_STATUS_DND;
-
-	if (!strcmp(status, SIPE_STATUS_ID_AWAY))
-		return ID_STATUS_NA;
-
-	if (!strcmp(status, SIPE_STATUS_ID_LUNCH))
-		return ID_STATUS_OUTTOLUNCH;
-
-	if (!strcmp(status, SIPE_STATUS_ID_BUSY))
-		return ID_STATUS_OCCUPIED;
-
-	if (!strcmp(status, SIPE_STATUS_ID_INVISIBLE))
-		return ID_STATUS_INVISIBLE;
-
-	if (!strcmp(status, SIPE_STATUS_ID_BRB))
-		return ID_STATUS_AWAY;
-
-	if (!strcmp(status, SIPE_STATUS_ID_UNKNOWN))
-		return ID_STATUS_OFFLINE;
-
-	/* None of those? We'll have to guess. Online seems ok. */
-	return ID_STATUS_ONLINE;
-
-	/* Don't have SIPE equivalent of these:
-		- ID_STATUS_FREECHAT
-	*/
-
-}
-
 static const gchar *
 sipe_info_to_miranda_property(sipe_buddy_info_fields info)
 {
@@ -186,7 +126,6 @@ sipe_backend_buddy sipe_miranda_buddy_find(SIPPROTO *pr,
 					   const gchar *group)
 {
 	HANDLE hContact;
-	SIPE_DEBUG_INFO("buddy_name <%s> group <%s>", name, group);
 
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact) {
@@ -198,15 +137,21 @@ sipe_backend_buddy sipe_miranda_buddy_find(SIPPROTO *pr,
 				DBFreeVariant( &dbv );
 				if ( !tCompareResult ) {
 					if (!group)
+					{
+						SIPE_DEBUG_INFO("buddy_name <%s> group <%s> found <%08x>", name, group, hContact);
 						return hContact;
+					}
 
 					if ( !DBGetContactSettingStringUtf(hContact, "CList", "Group", &dbv )) {
 						int tCompareResult = lstrcmpiA( dbv.pszVal, group );
-						SIPE_DEBUG_INFO("group compare <%s> vs <%s>", dbv.pszVal, group);
 						DBFreeVariant( &dbv );
 						if ( !tCompareResult )
+						{
+							SIPE_DEBUG_INFO("buddy_name <%s> group <%s> found <%08x> in group", name, group, hContact);
 							return hContact;
+						}
 					} else {
+						SIPE_DEBUG_INFO("buddy_name <%s> group <%s> ERROR getting contact group", name, group);
 						return NULL;
 					}
 				}
@@ -215,6 +160,7 @@ sipe_backend_buddy sipe_miranda_buddy_find(SIPPROTO *pr,
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
 	}
 
+	SIPE_DEBUG_INFO("buddy_name <%s> group <%s> NOT FOUND", name, group);
 	return NULL;
 }
 sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
@@ -230,7 +176,6 @@ GSList* sipe_miranda_buddy_find_all(SIPPROTO *pr,
 {
 	GSList *res = NULL;
 	HANDLE hContact;
-	SIPE_DEBUG_INFO("buddy_name <%s> group <%d>", buddy_name, group_name);
 
 	hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDFIRST, 0, 0);
 	while (hContact) {
@@ -249,7 +194,6 @@ GSList* sipe_miranda_buddy_find_all(SIPPROTO *pr,
 
 						else if ( !DBGetContactSettingStringUtf(hContact, "CList", "Group", &dbv )) {
 							int tCompareResult = lstrcmpiA( dbv.pszVal, group_name );
-							SIPE_DEBUG_INFO("group compare <%s> vs <%s>", dbv.pszVal, group_name);
 							DBFreeVariant( &dbv );
 							if ( !tCompareResult )
 								res = g_slist_append(res, hContact);
@@ -263,7 +207,7 @@ GSList* sipe_miranda_buddy_find_all(SIPPROTO *pr,
 		hContact = (HANDLE)CallService(MS_DB_CONTACT_FINDNEXT, (WPARAM)hContact, 0);
 	}
 
-	SIPE_DEBUG_INFO("found <%d> buddies", g_slist_length(res));
+	SIPE_DEBUG_INFO("name <%s> group <%s> found <%d> buddies", buddy_name, group_name, g_slist_length(res));
 	return res;
 }
 
@@ -329,6 +273,24 @@ gchar* sipe_backend_buddy_get_server_alias(struct sipe_core_public *sipe_public,
 	return NULL;
 }
 
+gchar* sipe_backend_buddy_get_local_alias(struct sipe_core_public *sipe_public,
+					   const sipe_backend_buddy who)
+{
+	DBVARIANT dbv;
+	HANDLE hContact = (HANDLE)who;
+	char *alias;
+	SIPPROTO *pr = sipe_public->backend_private;
+	const gchar *module = pr->proto.m_szModuleName;
+
+	if ( DBGetContactSettingString( hContact, module, "Nick", &dbv )
+	  && DBGetContactSettingString( hContact, module, SIP_UNIQUEID, &dbv ))
+			return NULL;
+
+	alias = g_strdup(dbv.pszVal);
+	DBFreeVariant( &dbv );
+	return alias;
+}
+
 gchar* sipe_backend_buddy_get_group_name(struct sipe_core_public *sipe_public,
 					 const sipe_backend_buddy who)
 {
@@ -347,6 +309,12 @@ gchar* sipe_backend_buddy_get_group_name(struct sipe_core_public *sipe_public,
 	return NULL;
 }
 
+const gchar *sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
+					   const gchar *uri)
+{
+	_NIF();
+}
+
 void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
 				  const sipe_backend_buddy who,
 				  const gchar *alias)
@@ -354,7 +322,7 @@ void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
 	SIPPROTO *pr = sipe_public->backend_private;
 	HANDLE hContact = (HANDLE)who;
 
-	SIPE_DEBUG_INFO("miranda_sipe_set_buddy_alias: Set alias of contact <%x> to <%s>", who, alias);
+	SIPE_DEBUG_INFO("Set alias of contact <%08x> to <%s>", who, alias);
 	sipe_miranda_setContactStringUtf( pr, hContact, "Nick", alias );
 }
 
@@ -365,7 +333,7 @@ void sipe_backend_buddy_set_server_alias(struct sipe_core_public *sipe_public,
 	HANDLE hContact = (HANDLE)who;
 	SIPPROTO *pr = sipe_public->backend_private;
 
-	SIPE_DEBUG_INFO("Set alias of contact <%x> to <%s>", who, alias);
+	SIPE_DEBUG_INFO("Set alias of contact <%08x> to <%s>", who, alias);
 	sipe_miranda_setContactStringUtf( pr, hContact, "Alias", alias );
 }
 
@@ -398,7 +366,7 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 	const gchar *module = pr->proto.m_szModuleName;
 	const gchar *prop_name = sipe_info_to_miranda_property(key);
 
-	SIPE_DEBUG_INFO("miranda_sipe_buddy_set_string: buddy <%x> key <%d = %s> val <%s>", buddy, key, prop_name, val);
+	SIPE_DEBUG_INFO("buddy <%08x> key <%d = %s> val <%s>", buddy, key, prop_name, val);
 	if (!prop_name)
 		return;
 
@@ -413,7 +381,7 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 	SIPPROTO *pr = sipe_public->backend_private;
 	HANDLE hContact;
 
-	SIPE_DEBUG_INFO("miranda_sipe_add_buddy: Adding miranda contact for buddy <%s> alias <%s> in <%s>", name, alias, groupname);
+	SIPE_DEBUG_INFO("Adding miranda contact for buddy <%s> alias <%s> in <%s>", name, alias, groupname);
 	hContact = ( HANDLE )CallService( MS_DB_CONTACT_ADD, 0, 0 );
 	CallService( MS_PROTO_ADDTOCONTACT, ( WPARAM )hContact,( LPARAM )pr->proto.m_szModuleName );
 	sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, name ); // name
@@ -437,6 +405,57 @@ void sipe_backend_buddy_request_authorization(struct sipe_core_public *sipe_publ
 					      sipe_backend_buddy_request_authorization_cb deny_cb,
 					      void *data)
 {
+	SIPPROTO *pr = sipe_public->backend_private;
+	CCSDATA ccs;
+	PROTORECVEVENT pre = {0};
+	HANDLE hContact;
+	BYTE *pblob;
+
+	hContact = sipe_backend_buddy_find( sipe_public, who, NULL );
+	if (!hContact)
+	{
+		SIPE_DEBUG_INFO("Adding miranda contact for incoming talker <%s>", who);
+		hContact = ( HANDLE )CallService( MS_DB_CONTACT_ADD, 0, 0 );
+		CallService( MS_PROTO_ADDTOCONTACT, ( WPARAM )hContact,( LPARAM )pr->proto.m_szModuleName );
+		DBWriteContactSettingByte( hContact, "CList", "NotOnList", 1 );
+		sipe_miranda_setContactString( pr, hContact, SIP_UNIQUEID, who ); // name
+	}
+
+	ccs.szProtoService	= PSR_AUTH;
+	ccs.hContact		= hContact;
+	ccs.wParam		= 0;
+	ccs.lParam		= (LPARAM) &pre;
+
+	pre.flags		= PREF_UTF;
+	pre.timestamp		= time(NULL);
+	pre.lParam		= sizeof(DWORD)+sizeof(HANDLE)+strlen(who)+strlen(alias)+5;
+	pre.szMessage		= malloc(pre.lParam);
+
+	pblob = pre.szMessage;
+
+	*(DWORD*)pblob = 0; /* UIN */
+	pblob += sizeof(DWORD);
+
+	*(HANDLE*)pblob = hContact; /* contact */
+	pblob += sizeof(HANDLE);
+
+	strcpy(pblob, who); /* nick */
+	pblob += strlen(pblob) + 1;
+
+	strcpy(pblob, alias); /* first name */
+	pblob += strlen(pblob) + 1;
+
+	strcpy(pblob, ""); /* last name */
+	pblob += strlen(pblob) + 1;
+
+	strcpy(pblob, ""); /* email */
+	pblob += strlen(pblob) + 1;
+
+	strcpy(pblob, ""); /* msg */
+	pblob += strlen(pblob) + 1;
+
+	CallService(MS_PROTO_CHAINRECV, 0, (LPARAM)&ccs);
+
 	_NIF();
 	auth_cb(data);
 }
@@ -485,9 +504,134 @@ gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 	return (hGroup?TRUE:FALSE);
 }
 
-int sipe_miranda_buddy_delete(SIPPROTO *pr, HANDLE hContact, LPARAM lParam)
+struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+	return((struct sipe_backend_buddy_info *)g_hash_table_new_full(NULL,NULL,NULL,g_free));
+}
+
+void sipe_backend_buddy_info_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				 struct sipe_backend_buddy_info *info,
+				 sipe_buddy_info_fields description,
+				 const gchar *value)
+{
+	g_hash_table_insert((GHashTable*)info, (gpointer)description, g_strdup(value));
+}
+
+void sipe_backend_buddy_info_break(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				   struct sipe_backend_buddy_info *info)
+{
+	/* Nothin to do */
+}
+
+static void set_if_defined(SIPPROTO *pr, GHashTable *store, HANDLE hContact, sipe_buddy_info_fields field, char *label)
+{
+	char *value = (char *)g_hash_table_lookup(store, (gpointer)field);
+	if (value)
+		sipe_miranda_setContactStringUtf(pr, hContact, label, value);
+}
+
+void sipe_backend_buddy_info_finalize(struct sipe_core_public *sipe_public,
+				      struct sipe_backend_buddy_info *info,
+				      const gchar *uri)
+{
+	SIPPROTO *pr = sipe_public->backend_private;
+	HANDLE hContact = sipe_miranda_buddy_find(pr, uri, NULL); /* (HANDLE) data; */
+	DBVARIANT dbv;
+	GHashTable *results = (GHashTable*)info;
+
+	GHashTableIter iter;
+	const char *id, *value;
+
+	g_hash_table_iter_init( &iter, results);
+	while (g_hash_table_iter_next (&iter, (gpointer *)&id, (gpointer *)&value)) {
+		SIPE_DEBUG_INFO("miranda_sipe_get_info_cb: user info field <%d> = <%s>", id, value ? value : "(none)");
+	}
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_EMAIL, "e-mail");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_CITY, "City");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_STATE, "State");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_COUNTRY, "Country");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_COMPANY, "Company");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_JOB_TITLE, "CompanyPosition");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_WORK_PHONE, "CompanyPhone");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_STREET, "CompanyStreet");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_ZIPCODE, "CompanyZIP");
+	set_if_defined(pr, results, hContact, SIPE_BUDDY_INFO_DEPARTMENT, "CompanyDepartment");
+
+	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
+		GString *content = g_string_new(NULL);
+		WORD wstatus;
+		gchar *status;
+/*		GSList *info; */
+		gboolean is_online;
+
+		sipe_miranda_getWord(pr, hContact, "Status", &wstatus);
+		status = (gchar*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM)wstatus, (LPARAM)GSMDF_PREFIXONLINE);
+		is_online = g_str_has_prefix(status, "Online: ") || !g_strcasecmp(status, "Online");
+/*
+		info = sipe_core_buddy_info(sipe_public,
+					    dbv.pszVal,
+					    g_str_has_prefix(status, "Online: ") ? status+8 : status,
+					    is_online);
+
+		while (info) {
+			struct sipe_buddy_info *sbi = info->data;
+			g_string_append_printf(content, "%s: %s\r\n", sbi->label, sbi->text);
+			g_free(sbi->text);
+			g_free(sbi);
+			info = g_slist_delete_link(info, info);
+		}
+		sipe_miranda_setContactStringUtf(pr, hContact, "About", content->str);
+*/
+		g_string_free(content, TRUE);
+	}
+
+	sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_GETINFO, ACKRESULT_SUCCESS, (HANDLE) 1, (LPARAM) 0);
+}
+
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+	return(NULL);
+}
+
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+							    struct sipe_backend_buddy_menu *menu,
+							    const gchar *label,
+							    enum sipe_buddy_menu_type type,
+							    gpointer parameter)
+{
+	_NIF();
+	return(NULL);
+}
+
+struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_separator(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+								  struct sipe_backend_buddy_menu *menu,
+								  const gchar *label)
+{
+	_NIF();
+	return(NULL);
+}
+
+struct sipe_backend_buddy_menu *sipe_backend_buddy_sub_menu_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+								struct sipe_backend_buddy_menu *menu,
+								const gchar *label,
+								struct sipe_backend_buddy_menu *sub)
+{
+	_NIF();
+	return(NULL);
+}
+
+void sipe_backend_buddy_tooltip_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				    struct sipe_backend_buddy_tooltip *tooltip,
+				    const gchar *description,
+				    const gchar *value)
+{
+	_NIF();
+}
+
+int sipe_miranda_buddy_delete(SIPPROTO *pr, WPARAM wParam, LPARAM lParam)
 {
 	DBVARIANT dbv;
+	HANDLE hContact = (HANDLE)wParam;
 	char *name;
 	char *groupname;
 
@@ -511,6 +655,61 @@ int sipe_miranda_buddy_delete(SIPPROTO *pr, HANDLE hContact, LPARAM lParam)
 	LOCK;
 	sipe_core_buddy_remove(pr->sip, name, groupname);
 	UNLOCK;
+
+	return 0;
+}
+
+unsigned GetAwayMsgThread(SIPPROTO *pr, HANDLE hContact)
+{
+	const gchar *status;
+	gchar *name = sipe_miranda_getContactString(pr, hContact, SIP_UNIQUEID);
+	gchar *tmp = NULL;
+
+	if (!name)
+	{
+		SIPE_DEBUG_INFO("Could not find name for contact <%08x>", hContact);
+		sipe_miranda_SendProtoAck(pr, hContact, 1, ACKRESULT_FAILED, ACKTYPE_AWAYMSG, NULL);
+		return 0;
+	}
+
+	LOCK;
+	status = sipe_core_buddy_status(pr->sip,
+					name,
+					SIPE_ACTIVITY_BUSYIDLE,
+					"dummy test string");
+	UNLOCK;
+
+	if (status)
+		tmp = sipe_miranda_eliminate_html(status, strlen(status));
+
+	sipe_miranda_SendProtoAck(pr, hContact, 1, ACKRESULT_SUCCESS, ACKTYPE_AWAYMSG, tmp);
+
+	mir_free(tmp);
+	mir_free(name);
+	return 0;
+}
+
+HANDLE
+sipe_miranda_GetAwayMsg( SIPPROTO *pr, HANDLE hContact )
+{
+	CloseHandle((HANDLE)mir_forkthreadowner(&GetAwayMsgThread, pr, hContact, NULL ));
+	return (HANDLE)1;
+}
+
+int
+sipe_miranda_GetInfo( SIPPROTO *pr, HANDLE hContact, int infoType )
+{
+	DBVARIANT dbv;
+
+	SIPE_DEBUG_INFO("GetInfo: infotype <%x>", infoType);
+	if (!pr->sip) return 0;
+
+	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
+		LOCK;
+		sipe_core_buddy_get_info(pr->sip, dbv.pszVal);
+		UNLOCK;
+		DBFreeVariant( &dbv );
+	}
 
 	return 0;
 }

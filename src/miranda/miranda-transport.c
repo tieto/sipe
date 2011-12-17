@@ -58,7 +58,22 @@ struct sipe_transport_miranda {
 	struct sipe_miranda_sel_entry *inputhandler;
 
 	SIPPROTO *pr;
+
+	/* Private. For locking only */
+	HANDLE hDoneEvent;
 };
+
+static void __stdcall
+transport_input_cb_async(void *data)
+{
+	struct sipe_transport_miranda *transport = (struct sipe_transport_miranda *)data;
+	struct sipe_transport_connection *conn = SIPE_TRANSPORT_CONNECTION;
+	SIPPROTO *pr = transport->pr;
+	LOCK;
+        transport->input(conn);
+	UNLOCK;
+	SetEvent(transport->hDoneEvent);
+}
 
 static void
 miranda_sipe_input_cb(gpointer data,
@@ -73,6 +88,12 @@ miranda_sipe_input_cb(gpointer data,
 	gboolean firstread = TRUE;
 
 	LOCK;
+
+	if (!pr->valid)
+	{
+		UNLOCK;
+		return;
+	}
 
 	if (!transport->fd)
 	{
@@ -98,13 +119,7 @@ miranda_sipe_input_cb(gpointer data,
 		if (len == SOCKET_ERROR) {
 			SIPE_DEBUG_INFO("miranda_sipe_input_cb: read error");
 			if (transport)
-			{
 				transport->error(SIPE_TRANSPORT_CONNECTION, "Read error");
-
-//				/* FIXME: not sure if this is the right spot */
-				sipe_miranda_input_remove(transport->inputhandler);
-				transport->inputhandler = NULL;
-			}
 
 			UNLOCK;
 			return;
@@ -122,8 +137,12 @@ miranda_sipe_input_cb(gpointer data,
 	} while (len == readlen);
 
 	conn->buffer[conn->buffer_used] = '\0';
-        transport->input(conn);
 	UNLOCK;
+
+	transport->hDoneEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	CallFunctionAsync(transport_input_cb_async, transport);
+	WaitForSingleObject(transport->hDoneEvent, INFINITE);
+	CloseHandle(transport->hDoneEvent);
 }
 
 static void

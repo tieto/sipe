@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define MIRANDA_VER 0x900
-
 #include <windows.h>
 
 #include <glib.h>
@@ -29,6 +27,7 @@
 #include "sipe-core.h"
 #include "sipe-backend.h"
 
+#include "miranda-version.h"
 #include "newpluginapi.h"
 #include "m_protosvc.h"
 #include "m_protoint.h"

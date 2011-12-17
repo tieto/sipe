@@ -45,6 +45,7 @@ typedef struct sipe_miranda_sel_entry
 	HANDLE fd;
 	sipe_miranda_input_function func;
 	gpointer user_data;
+	gboolean async;
 
 	/* Private. For locking only */
 	HANDLE hDoneEvent;
@@ -58,9 +59,9 @@ input_cb_async(void *data)
 	struct sipe_miranda_sel_entry *entry = (struct sipe_miranda_sel_entry*)data;
 	if (entry->fd == NULL)
 	{
-		SIPE_DEBUG_INFO("Entry <%08x> already removed. Not calling read/write function", entry);
+		SIPE_DEBUG_INFO("[IE:%08x] Entry already removed. Not calling read/write function", entry);
 	} else {
-		SIPE_DEBUG_INFO("Calling real read/write function for entry <%08x>", entry);
+		SIPE_DEBUG_INFO("[IE:%08x] Calling real read/write function", entry);
 		entry->func(entry->user_data, entry->source, entry->cond);
 	}
 	SetEvent(entry->hDoneEvent);
@@ -78,9 +79,14 @@ inputloop(void* data)
 
 	while( m_select.hReadConns[0] || m_select.hWriteConns[0])
 	{
+		int rc=0;
+		int wc=0;
+		for ( rc=0 ; m_select.hReadConns[rc] ; rc++ );
+		for ( wc=0 ; m_select.hWriteConns[wc] ; wc++ );
 
-		SIPE_DEBUG_INFO_NOFORMAT("About to run select");
+		SIPE_DEBUG_INFO("About to run select on <%d> read and <%d> write", rc, wc);
 		lstRes = CallService(MS_NETLIB_SELECTEX, 0, (LPARAM)&m_select);
+
 		if (lstRes < 0)
 		{
 			SIPE_DEBUG_INFO_NOFORMAT("Connection failed while waiting.");
@@ -96,6 +102,7 @@ inputloop(void* data)
 
 			for ( cnt=0 ; m_select.hReadConns[cnt] ; cnt++ )
 			{
+				DWORD wr;
 				if (!m_select.hReadStatus[cnt]) continue;
 				SIPE_DEBUG_INFO("FD at position <%d> ready to read.", cnt);
 				entry = (struct sipe_miranda_sel_entry*)g_hash_table_lookup(m_readhash, (gconstpointer)m_select.hReadConns[cnt]);
@@ -104,14 +111,19 @@ inputloop(void* data)
 					SIPE_DEBUG_INFO_NOFORMAT("ERROR: no read handler found.");
 					continue;
 				}
-				SIPE_DEBUG_INFO_NOFORMAT("About to call read function.");
+				SIPE_DEBUG_INFO("[IE:%08x] About to call read function.", entry);
 				entry->source = (gint)m_select.hReadConns[cnt];
 				entry->cond = SIPE_MIRANDA_INPUT_READ;
 				entry->hDoneEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-				CallFunctionAsync(input_cb_async, entry);
-				WaitForSingleObject(entry->hDoneEvent, INFINITE);
+				if (entry->async)
+				{
+					CallFunctionAsync(input_cb_async, entry);
+					wr = WaitForSingleObject(entry->hDoneEvent, INFINITE);
+				} else {
+					input_cb_async(entry);
+				}
 				CloseHandle(entry->hDoneEvent);
-				SIPE_DEBUG_INFO_NOFORMAT("read function returned.");
+				SIPE_DEBUG_INFO("[IE:%08x] read function returned.", entry);
 			}
 
 			for ( cnt=0 ; m_select.hWriteConns[cnt] ; cnt++ )
@@ -124,14 +136,19 @@ inputloop(void* data)
 					SIPE_DEBUG_INFO_NOFORMAT("ERROR: no write handler found.");
 					continue;
 				}
-				SIPE_DEBUG_INFO_NOFORMAT("About to call write function.");
+				SIPE_DEBUG_INFO("[IE:%08x] About to call write function.", entry);
 				entry->source = (gint)m_select.hWriteConns[cnt];
 				entry->cond = SIPE_MIRANDA_INPUT_WRITE;
 				entry->hDoneEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-				CallFunctionAsync(input_cb_async, entry);
-				WaitForSingleObject(entry->hDoneEvent, INFINITE);
+				if (entry->async)
+				{
+					CallFunctionAsync(input_cb_async, entry);
+					WaitForSingleObject(entry->hDoneEvent, INFINITE);
+				} else {
+					input_cb_async(entry);
+				}
 				CloseHandle(entry->hDoneEvent);
-				SIPE_DEBUG_INFO_NOFORMAT("write function returned.");
+				SIPE_DEBUG_INFO("[IE:%08x] write function returned.", entry);
 			}
 		}
 
@@ -166,18 +183,23 @@ sipe_miranda_input_add(HANDLE fd, sipe_miranda_input_condition cond, sipe_mirand
 	entry->func = func;
 	entry->user_data = user_data;
 	entry->fd = fd;
+	entry->async = FALSE;
 
 	if (cond == SIPE_MIRANDA_INPUT_READ)
 	{
+		for ( wcnt=0 ; m_select.hWriteConns[wcnt] ; wcnt++ );
 		for ( rcnt=0 ; m_select.hReadConns[rcnt] && m_select.hReadConns[rcnt]!=(HANDLE)fd ; rcnt++ );
-		m_select.hReadConns[rcnt] = (HANDLE)fd;
 		g_hash_table_replace( m_readhash, (gpointer)fd, entry );
+		m_select.hReadStatus[rcnt] = FALSE;
+		m_select.hReadConns[rcnt] = (HANDLE)fd;
 	}
 	else if (cond == SIPE_MIRANDA_INPUT_WRITE)
 	{
+		for ( rcnt=0 ; m_select.hReadConns[rcnt] ; rcnt++ );
 		for ( wcnt=0 ; m_select.hWriteConns[wcnt] && m_select.hWriteConns[wcnt]!=(HANDLE)fd ; wcnt++ );
-		m_select.hWriteConns[rcnt] = (HANDLE)fd;
 		g_hash_table_replace( m_writehash, (gpointer)fd, entry );
+		m_select.hWriteStatus[rcnt] = FALSE;
+		m_select.hWriteConns[rcnt] = (HANDLE)fd;
 	}
 
 	if (!(rcnt+wcnt))

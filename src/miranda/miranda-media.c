@@ -49,8 +49,9 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 		       const gchar *participant,
 		       gboolean initiator)
 {
-	_NIF();
-	return NULL;
+	struct sipe_backend_media *m = g_new0(struct sipe_backend_media,1);
+
+	return m;
 }
 
 void
@@ -346,7 +347,7 @@ SipeNetworkProtocol
 sipe_backend_candidate_get_protocol(struct sipe_backend_candidate *candidate)
 {
 	_NIF();
-	return SIPE_NETWORK_PROTOCOL_TCP;
+	return SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
 }
 
 GList *

@@ -87,10 +87,10 @@ int sipe_miranda_SendMsg(SIPPROTO *pr,
 		LOCK;
 		sipe_core_im_send(pr->sip, dbv.pszVal, msg);
 		UNLOCK;
-		SendProtoAck( pr, hContact, 1, ACKRESULT_SUCCESS, ACKTYPE_MESSAGE, NULL );
+		sipe_miranda_SendProtoAck( pr, hContact, 1, ACKRESULT_SUCCESS, ACKTYPE_MESSAGE, NULL );
 		DBFreeVariant(&dbv);
 	} else {
-		SendProtoAck( pr, hContact, 1, ACKRESULT_FAILED, ACKTYPE_MESSAGE, NULL );
+		sipe_miranda_SendProtoAck( pr, hContact, 1, ACKRESULT_FAILED, ACKTYPE_MESSAGE, NULL );
 	}
 	return 1;
 }

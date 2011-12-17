@@ -1,5 +1,3 @@
-#define MIRANDA_VER 0x900
-
 #include <windows.h>
 #include <win2k.h>
 #include <Richedit.h>
@@ -7,6 +5,7 @@
 
 #include <glib.h>
 
+#include "miranda-version.h"
 #include "newpluginapi.h"
 #include "m_protosvc.h"
 #include "m_protoint.h"
@@ -20,7 +19,6 @@
 #include "m_protomod.h"
 
 #include "sipe-core.h"
-#include "sipe.h"
 #include "sipe-core-private.h"
 #include "sipe-backend.h"
 #include "sipe-utils.h"
@@ -30,31 +28,7 @@
 #include "miranda-private.h"
 #include "miranda-resource.h"
 
-/* Status identifiers (see also: sipe_status_types()) */
-#define SIPE_STATUS_ID_UNKNOWN     "unset"                  /* Unset (primitive) */
-#define SIPE_STATUS_ID_OFFLINE     "offline"                /* Offline (primitive) */
-#define SIPE_STATUS_ID_AVAILABLE   "available"              /* Online */
-/*      PURPLE_STATUS_UNAVAILABLE: */
-#define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
-#define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
-#define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
-#define SIPE_STATUS_ID_IN_MEETING  "in-a-meeting"                                             /* In a meeting */
-#define SIPE_STATUS_ID_IN_CONF     "in-a-conference"                                          /* In a conference */
-#define SIPE_STATUS_ID_ON_PHONE    "on-the-phone"                                             /* On the phone */
-#define SIPE_STATUS_ID_INVISIBLE   "invisible"              /* Appear Offline */
-/*      PURPLE_STATUS_AWAY: */
-#define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
-#define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
-#define SIPE_STATUS_ID_AWAY        "away"                   /* Away (primitive) */
-/** Reuters status (user settable) */
-#define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
-/* ???  PURPLE_STATUS_EXTENDED_AWAY */
-/* ???  PURPLE_STATUS_MOBILE */
-/* ???  PURPLE_STATUS_TUNE */
-
 /* Miranda interface globals */
-
-static HANDLE wake_up_semaphore = NULL;
 
 void CreateProtoService(SIPPROTO *pr, const char* szService, SipSimpleServiceFunc serviceProc)
 {
@@ -64,105 +38,8 @@ void CreateProtoService(SIPPROTO *pr, const char* szService, SipSimpleServiceFun
 	CreateServiceFunctionObj(str, (MIRANDASERVICEOBJ)*(void**)&serviceProc, pr);
 }
 
-HANDLE HookProtoEvent(SIPPROTO *pr, const char* szEvent, SipSimpleEventFunc pFunc)
-{
-	return HookEventObj(szEvent, (MIRANDAHOOKOBJ)*(void**)&pFunc, pr);
-}
-
-void ProtocolAckThread(SIPPROTO *pr, struct miranda_sipe_ack_args* pArguments)
-{
-	ProtoBroadcastAck(pr->proto.m_szModuleName, pArguments->hContact, pArguments->nAckType, pArguments->nAckResult, pArguments->hSequence, pArguments->pszMessage);
-
-	if (pArguments->nAckResult == ACKRESULT_SUCCESS)
-		SIPE_DEBUG_INFO_NOFORMAT("ProtocolAckThread: Sent ACK");
-	else if (pArguments->nAckResult == ACKRESULT_FAILED)
-		SIPE_DEBUG_INFO_NOFORMAT("ProtocolAckThread: Sent NACK");
-
-	g_free((gpointer)pArguments->pszMessage);
-	g_free(pArguments);
-}
-
-void ForkThread( SIPPROTO *pr, SipSimpleThreadFunc pFunc, void* arg )
-{
-	CloseHandle(( HANDLE )mir_forkthreadowner(( pThreadFuncOwner )*( void** )&pFunc, pr, arg, NULL ));
-}
-
-void SendProtoAck( SIPPROTO *pr, HANDLE hContact, DWORD dwCookie, int nAckResult, int nAckType, char* pszMessage)
-{
-	struct miranda_sipe_ack_args* pArgs = (struct miranda_sipe_ack_args*)g_malloc(sizeof(struct miranda_sipe_ack_args)); // This will be freed in the new thread
-	pArgs->hContact = hContact;
-	pArgs->hSequence = (HANDLE)dwCookie;
-	pArgs->nAckResult = nAckResult;
-	pArgs->nAckType = nAckType;
-	pArgs->pszMessage = (LPARAM)g_strdup(pszMessage);
-
-	ForkThread( pr, ( SipSimpleThreadFunc )&ProtocolAckThread, pArgs );
-}
-
-
-const char *MirandaStatusToSipe(int status) {
-
-	switch (status)
-	{
-	case ID_STATUS_OFFLINE:
-		return SIPE_STATUS_ID_OFFLINE;
-
-	case ID_STATUS_ONLINE:
-	case ID_STATUS_FREECHAT:
-		return SIPE_STATUS_ID_AVAILABLE;
-
-	case ID_STATUS_ONTHEPHONE:
-		return SIPE_STATUS_ID_ON_PHONE;
-
-	case ID_STATUS_DND:
-		return SIPE_STATUS_ID_DND;
-
-	case ID_STATUS_NA:
-		return SIPE_STATUS_ID_AWAY;
-
-	case ID_STATUS_AWAY:
-		return SIPE_STATUS_ID_BRB;
-
-	case ID_STATUS_OUTTOLUNCH:
-		return SIPE_STATUS_ID_LUNCH;
-
-	case ID_STATUS_OCCUPIED:
-		return SIPE_STATUS_ID_BUSY;
-
-	case ID_STATUS_INVISIBLE:
-		return SIPE_STATUS_ID_INVISIBLE;
-
-	default:
-		return SIPE_STATUS_ID_UNKNOWN;
-	}
-
-}
-
-
-/* Protocol interface support functions */
-typedef struct _time_entry
-{
-	guint interval;
-	GSourceFunc function;
-	gpointer data;
-	HANDLE sem;
-} time_entry;
 
 /* libsipe interface functions */
-static char*
-miranda_sipe_get_current_status(struct sipe_core_private *sipe_private, const char* name)
-{
-	SIPPROTO *pr = sipe_private->public.backend_private;
-	char *module = pr->proto.m_szModuleName;
-	HANDLE hContact;
-
-	if (!name)
-		return g_strdup(MirandaStatusToSipe(pr->proto.m_iStatus));
-
-	hContact = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, name, NULL);
-	return g_strdup(MirandaStatusToSipe(DBGetContactSettingWord( hContact, module, "Status", ID_STATUS_OFFLINE )));
-}
-
 static void*
 miranda_sipe_request_authorization(struct sipe_core_private *sipe_private, const char *who, const char *alias,
 		sipe_backend_buddy_request_authorization_cb auth_cb,
@@ -208,13 +85,6 @@ miranda_sipe_request_authorization(struct sipe_core_private *sipe_private, const
 
 	/* TODO: Store callbacks somewhere since miranda has no way to pass them on */
 	return NULL;
-}
-
-static void
-miranda_sipe_connection_cleanup(struct sipe_core_private *sip)
-{
-	SIPPROTO *pr = sip->public.backend_private;
-	_NIF();
 }
 
 
@@ -268,28 +138,3 @@ int SendAwayMsg( SIPPROTO *pr, HANDLE hContact, HANDLE hProcess, const char* msg
 	SIPE_DEBUG_INFO("SendAwayMsg: msg <%s>", msg);
 	return 0;
 }
-
-static const char *about_txt =
-"{\\rtf1\\ansi\\ansicpg1252\\deff0\\deflang1033{\\fonttbl{\\f0\\fswiss\\fcharset0 Arial;}{\\f1\\fnil\fcharset2 Symbol;}}"
-"{\\*\\generator Msftedit 5.41.15.1507;}\\viewkind4\\uc1\\pard\\b\\f0\\fs24 Sipe" SIPE_VERSION "\\fs20\\par"
-"\\b0\\par "
-"A third-party plugin implementing extended version of SIP/SIMPLE used by various products:\\par"
-"\\pard{\\pntext\\f1\\'B7\\tab}{\\*\\pn\\pnlvlblt\\pnf1\\pnindent0{\\pntxtb\'B7}}\\fi-720"
-"\\li720 MS Office Communications Server 2007 (R2)\\par"
-"{\\pntext\\f1\\'B7\\tab}MS Live Communications Server 2005/2003\\par"
-"{\\pntext\\f1\\'B7\\tab}Reuters Messaging\\par"
-"\\pard\\par "
-"Home: http://sipe.sourceforge.net\\par "
-"Support: http://sourceforge.net/projects/sipe/forums/forum/68853\\par "
-"License: GPLv2\\par "
-"\\par"
-"\\b Authors:\\b0\\par"
-" - Anibal Avelar\\par"
-" - Gabriel Burt\\par"
-" - Stefan Becker\\par"
-" - pier11\\par"
-"}";
-
-
-/* Dialogs */
-/* Event handlers */
