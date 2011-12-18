@@ -137,17 +137,18 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 void sipe_status_and_note(struct sipe_core_private *sipe_private,
 			  const gchar *status_id)
 {
+	guint activity;
+
 	if (!status_id)
 		status_id = sipe_private->status;
 
 	SIPE_DEBUG_INFO("sipe_status_and_note: switch to '%s' for the account", status_id);
 
+	activity = sipe_status_token_to_activity(status_id);
 	if (sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
-					 status_id,
+					 activity,
 					 sipe_private->note)) {
 		/* status has changed */
-		guint activity = sipe_status_token_to_activity(status_id);
-
 		sipe_private->do_not_publish[activity] = time(NULL);
 		SIPE_DEBUG_INFO("sipe_status_and_note: do_not_publish[%s]=%d [now]",
 				status_id,
@@ -158,25 +159,26 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 void sipe_status_update(struct sipe_core_private *sipe_private,
 			SIPE_UNUSED_PARAMETER gpointer unused)
 {
-	const gchar *status = sipe_backend_status(SIPE_CORE_PUBLIC);
+	guint activity = sipe_backend_status(SIPE_CORE_PUBLIC);
 
-	if (!status) return;
+	if (activity == SIPE_ACTIVITY_UNSET) return;
 
-	SIPE_DEBUG_INFO("sipe_status_update: status: %s (%s)", status,
+	SIPE_DEBUG_INFO("sipe_status_update: status: %s (%s)",
+			sipe_status_activity_to_token(activity),
 			sipe_status_changed_by_user(sipe_private) ? "USER" : "MACHINE");
 
 	sipe_cal_presence_publish(sipe_private, FALSE);
 }
 
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
-			  const gchar *status_id,
+			  guint activity,
 			  const gchar *note)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *action_name;
 	gchar *tmp;
 	time_t now = time(NULL);
-	guint activity = sipe_status_token_to_activity(status_id);
+	const gchar *status_id = sipe_status_activity_to_token(activity);
 	gboolean do_not_publish = ((now - sipe_private->do_not_publish[activity]) <= 2);
 
 	/* when other point of presence clears note, but we are keeping

@@ -221,7 +221,7 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 				const gchar *uri,
-				const gchar *status_id);
+				guint activity);
 
 /**
  * Trigger generation of buddy information label/text pairs
@@ -454,7 +454,7 @@ void sipe_core_buddy_menu_free(struct sipe_core_public *sipe_public);
 
 /* status */
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
-			  const gchar *status_id,
+			  guint activity,
 			  const gchar *note);
 void sipe_core_status_idle(struct sipe_core_public *sipe_public);
 

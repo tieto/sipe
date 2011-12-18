@@ -469,7 +469,8 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 
 	/* then set status_id actually */
 	SIPE_DEBUG_INFO("sipe_apply_calendar_status: to %s for %s", status_id, sbuddy->name ? sbuddy->name : "" );
-	sipe_backend_buddy_set_status(SIPE_CORE_PUBLIC, sbuddy->name, status_id);
+	sipe_backend_buddy_set_status(SIPE_CORE_PUBLIC, sbuddy->name,
+				      sipe_status_token_to_activity(status_id));
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sipe_private);

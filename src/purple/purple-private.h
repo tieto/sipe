@@ -52,6 +52,9 @@ struct sipe_backend_fd {
 /* Status attributes */
 #define SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE "message"
 
+const gchar *sipe_purple_activity_to_token(guint type);
+guint sipe_purple_token_to_activity(const gchar *token);
+
 /**
  * Initiates outgoing file transfer, sending @c file to remote peer identified
  * by @c who.

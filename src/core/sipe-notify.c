@@ -463,7 +463,8 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	g_free(activity);
 
 	SIPE_DEBUG_INFO("process_incoming_notify_msrtc: status(%s)", status_id);
-	sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status_id);
+	sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
+				   sipe_status_token_to_activity(status_id));
 
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) && sipe_strcase_equal(self_uri, uri)) {
 		sipe_ocs2005_user_info_has_updated(sipe_private, xn_userinfo);
@@ -778,15 +779,19 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 	}
 
 	if (do_update_status) {
-		if (!status) {
+		guint activity;
+
+		if (status) {
+			SIPE_DEBUG_INFO("process_incoming_notify_rlmi: %s", status);
+			activity = sipe_status_token_to_activity(status);
+		} else {
 			/* no status category in this update,
 			   using contact's current status */
-			status = sipe_backend_buddy_get_status(SIPE_CORE_PUBLIC,
-							       uri);
+			activity = sipe_backend_buddy_get_status(SIPE_CORE_PUBLIC,
+								 uri);
 		}
 
-		SIPE_DEBUG_INFO("process_incoming_notify_rlmi: %s", status);
-		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, activity);
 	}
 
 	sipe_xml_free(xn_categories);
@@ -814,10 +819,11 @@ static void sipe_buddy_status_from_activity(struct sipe_core_private *sipe_priva
 		}
 
 		SIPE_DEBUG_INFO("sipe_buddy_status_from_activity: status_id(%s)", status_id);
-		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status_id);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
+					   sipe_status_token_to_activity(status_id));
 	} else {
 		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
-					   sipe_status_activity_to_token(SIPE_ACTIVITY_OFFLINE));
+					   SIPE_ACTIVITY_OFFLINE);
 	}
 }
 

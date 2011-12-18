@@ -48,6 +48,7 @@
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
+#include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
 #include "sipe-utils.h"
@@ -258,7 +259,7 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 				const gchar *uri,
-				const gchar *status_id)
+				guint activity)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies,
@@ -270,11 +271,11 @@ void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 	 * then set/preserve it.
 	 */
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		sipe_backend_buddy_set_status(sipe_public, uri, status_id);
+		sipe_backend_buddy_set_status(sipe_public, uri, activity);
 	} else {
 		sipe_ocs2005_apply_calendar_status(sipe_private,
 						   sbuddy,
-						   status_id);
+						   sipe_status_activity_to_token(activity));
 	}
 }
 

@@ -117,12 +117,12 @@ static void sipe_purple_activity_shutdown(void)
 	g_hash_table_destroy(purple_token_map);
 }
 
-static const gchar *sipe_purple_activity_to_token(guint type)
+const gchar *sipe_purple_activity_to_token(guint type)
 {
 	return(activity_to_purple_map[type]);
 }
 
-static guint sipe_purple_token_to_activity(const gchar *token)
+guint sipe_purple_token_to_activity(const gchar *token)
 {
 	return(GPOINTER_TO_UINT(g_hash_table_lookup(purple_token_map, token)));
 }

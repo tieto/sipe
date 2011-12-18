@@ -139,14 +139,14 @@ gchar* sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_
 	return g_strdup(purple_buddy_get_group((PurpleBuddy*)who)->name);
 }
 
-const gchar *sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
-					   const gchar *uri)
+guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
+				    const gchar *uri)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleBuddy *pbuddy = purple_find_buddy(purple_private->account, uri);
 	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
 	const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
-	return(purple_status_get_id(pstatus));
+	return(sipe_purple_token_to_activity(purple_status_get_id(pstatus)));
 }
 
 void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -270,11 +270,13 @@ void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
 
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   const gchar *who,
-				   const gchar *status_id)
+				   guint activity)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
-	purple_prpl_got_user_status(purple_private->account, who, status_id, NULL);
+	purple_prpl_got_user_status(purple_private->account, who,
+				    sipe_purple_activity_to_token(activity),
+				    NULL);
 }
 
 gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
