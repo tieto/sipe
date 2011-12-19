@@ -12,8 +12,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-12-16 20:46+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2011-12-19 18:07+0000\n"
+"Last-Translator: Jakub Adam <jakub.adam@ktknet.cz>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -28,11 +28,11 @@ msgstr "Nepodařilo se autentizovat na serveru"
 #: ../src/core/sip-transport.c:252
 #, c-format
 msgid "Can't request certificate from %s"
-msgstr ""
+msgstr "Selhal požadavek na certifikát od %s"
 
 #: ../src/core/sip-transport.c:262
 msgid "No URI for certificate provisioning service provided"
-msgstr ""
+msgstr "Nebylo zadáno URI služby poskytující certifikáty"
 
 #: ../src/core/sip-transport.c:1212
 msgid "Authentication failed"
@@ -114,7 +114,7 @@ msgstr " (další shody s dotazem)"
 
 #: ../src/core/sipe-buddy.c:515 ../src/core/sipe-buddy.c:659
 msgid "No contacts found"
-msgstr ""
+msgstr "Žádné kontakty nebyly nalezeny"
 
 #: ../src/core/sipe-buddy.c:526 ../src/core/sipe-buddy.c:671
 msgid "Unable to display the search results"
@@ -123,7 +123,7 @@ msgstr "Nemohu zobrazit výsledky hledání."
 #: ../src/core/sipe-buddy.c:617 ../src/core/sipe-buddy.c:637
 #: ../src/core/sipe-buddy.c:649
 msgid "Contact search failed"
-msgstr ""
+msgstr "Vyhledání kontaktu selhalo"
 
 #: ../src/core/sipe-buddy.c:1241
 #, c-format
@@ -146,11 +146,11 @@ msgstr "Nový chat"
 
 #: ../src/core/sipe-buddy.c:1297
 msgid "Work"
-msgstr ""
+msgstr "Telefon do práce"
 
 #: ../src/core/sipe-buddy.c:1304
 msgid "Mobile"
-msgstr ""
+msgstr "Mobilní telefon"
 
 #: ../src/core/sipe-buddy.c:1312
 msgid "Home"
@@ -158,11 +158,11 @@ msgstr "Domů"
 
 #: ../src/core/sipe-buddy.c:1320
 msgid "Other"
-msgstr ""
+msgstr "Jiný telefon"
 
 #: ../src/core/sipe-buddy.c:1328
 msgid "Custom1"
-msgstr ""
+msgstr "Vlastní1"
 
 #: ../src/core/sipe-buddy.c:1338
 msgid "Send email..."
@@ -224,12 +224,12 @@ msgstr "%s. %s v %.2d:%.2d"
 #: ../src/core/sipe-certificate.c:213 ../src/core/sipe-certificate.c:254
 #, c-format
 msgid "Certificate request to %s failed"
-msgstr ""
+msgstr "Požadavek na certifikát od %s selhal"
 
 #: ../src/core/sipe-certificate.c:260
 #, c-format
 msgid "Web ticket request to %s failed"
-msgstr ""
+msgstr "Požadavek na Web ticket od %s selhal"
 
 #. Generate next ID
 #: ../src/core/sipe-chat.c:231
@@ -300,12 +300,12 @@ msgstr ""
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:180
 msgid "Home Page"
-msgstr ""
+msgstr "Domovská stránka"
 
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe-core.c:182
 msgid "Support"
-msgstr ""
+msgstr "Uživatelská podpora"
 
 #. About note, part 4/13: support forum name (hyperlink text)
 #: ../src/core/sipe-core.c:184
@@ -984,19 +984,19 @@ msgstr "Uživatelský agent"
 
 #: ../src/purple/purple-plugin.c:875
 msgid "Authentication scheme"
-msgstr ""
+msgstr "Ověřovací schéma"
 
 #: ../src/purple/purple-plugin.c:876
 msgid "NTLM"
-msgstr ""
+msgstr "NTLM"
 
 #: ../src/purple/purple-plugin.c:878
 msgid "Kerberos"
-msgstr ""
+msgstr "Kerberos"
 
 #: ../src/purple/purple-plugin.c:880
 msgid "TLS-DSK"
-msgstr ""
+msgstr "TLS-DSK"
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
