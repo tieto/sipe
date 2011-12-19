@@ -368,12 +368,11 @@ void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
 	entry = buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC, uri, NULL); /* all buddies in different groups */
 	while (entry) {
 		gchar *prop_str;
-		gchar *server_alias;
-		gchar *alias;
 		sipe_backend_buddy p_buddy = entry->data;
 
 		/* for Display Name */
 		if (propkey == SIPE_BUDDY_INFO_DISPLAY_NAME) {
+			gchar *alias;
 			alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, p_buddy);
 			if (property_value && sipe_is_bad_alias(uri, alias)) {
 				SIPE_DEBUG_INFO("Replacing alias for %s with %s", uri, property_value);
@@ -381,14 +380,14 @@ void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
 			}
 			g_free(alias);
 
-			server_alias = sipe_backend_buddy_get_server_alias(SIPE_CORE_PUBLIC, p_buddy);
+			alias = sipe_backend_buddy_get_server_alias(SIPE_CORE_PUBLIC, p_buddy);
 			if (!is_empty(property_value) &&
-			   (!sipe_strequal(property_value, server_alias) || is_empty(server_alias)) )
+			   (!sipe_strequal(property_value, alias) || is_empty(alias)) )
 			{
 				SIPE_DEBUG_INFO("Replacing service alias for %s with %s", uri, property_value);
 				sipe_backend_buddy_set_server_alias(SIPE_CORE_PUBLIC, p_buddy, property_value);
 			}
-			g_free(server_alias);
+			g_free(alias);
 		}
 		/* for other properties */
 		else {

@@ -496,6 +496,9 @@ static PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAc
 #endif
 static PurplePluginProtocolInfo sipe_prpl_info =
 {
+#if PURPLE_VERSION_CHECK(3,0,0)
+	sizeof(PurplePluginProtocolInfo),       /* struct_size */
+#endif
 	OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
@@ -536,7 +539,9 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_purple_keep_alive,			/* keepalive */
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// deprecated
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* get_cb_away */	// deprecated
+#endif
 	sipe_purple_alias_buddy,		/* alias_buddy */
 	sipe_purple_group_buddy,		/* group_buddy */
 	sipe_purple_group_rename,		/* rename_group */
@@ -565,7 +570,9 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	/* Backward compatibility when compiling against 2.4.x API */
 	(void (*)(void))			/* _purple_reserved4 */
 #endif
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
+#endif
 #if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
 	sipe_purple_get_account_text_table,	/* get_account_text_table */
 #if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
@@ -580,7 +587,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* get_moods */
 	NULL,					/* set_public_alias */
 	NULL,					/* get_public_alias */
-#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(2,8,0)
 	NULL,					/* add_buddy_with_invite */
 	NULL,					/* add_buddies_with_invite */
 #endif

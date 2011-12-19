@@ -32,8 +32,13 @@
 
 #include "dnsquery.h"
 #include "dnssrv.h"
+#include "version.h"
 
+#include "sipe-common.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
+
+#include "purple-private.h"
 
 struct sipe_dns_query {
 	enum {
@@ -87,16 +92,25 @@ static void dns_a_response(GSList *hosts,
 	g_free(query);
 }
 
-struct sipe_dns_query *sipe_backend_dns_query_a(const gchar *hostname,
+struct sipe_dns_query *sipe_backend_dns_query_a(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+						const gchar *hostname,
 						int port,
 						sipe_dns_resolved_cb callback,
 						gpointer data)
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
+#if PURPLE_VERSION_CHECK(3,0,0)
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+#endif
+
 	query->type = A;
 	query->callback = callback;
 	query->extradata = data;
-	query->purple_query_data = purple_dnsquery_a(hostname,
+	query->purple_query_data = purple_dnsquery_a(
+#if PURPLE_VERSION_CHECK(3,0,0)
+						     purple_private->account,
+#endif
+						     hostname,
 						     port,
 						     (PurpleDnsQueryConnectFunction) dns_a_response,
 						     query);
@@ -118,17 +132,26 @@ static void dns_srv_response(PurpleSrvResponse *resp,
 	g_free(resp);
 }
 
-struct sipe_dns_query *sipe_backend_dns_query_srv(const gchar *protocol,
+struct sipe_dns_query *sipe_backend_dns_query_srv(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+						  const gchar *protocol,
 						  const gchar *transport,
 						  const gchar *domain,
 						  sipe_dns_resolved_cb callback,
 						  gpointer data)
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
+#if PURPLE_VERSION_CHECK(3,0,0)
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+#endif
+
 	query->type = SRV;
 	query->callback = callback;
 	query->extradata = data;
-	query->purple_query_data = purple_srv_resolve(protocol,
+	query->purple_query_data = purple_srv_resolve(
+#if PURPLE_VERSION_CHECK(3,0,0)
+						      purple_private->account,
+#endif
+						      protocol,
 						      transport,
 						      domain,
 						      (PurpleSrvCallback) dns_srv_response,
@@ -144,7 +167,11 @@ void sipe_backend_dns_query_cancel(struct sipe_dns_query *query)
 			purple_dnsquery_destroy(query->purple_query_data);
 			break;
 		case SRV:
+#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
+			purple_srv_txt_query_destroy(query->purple_query_data);
+#else
 			purple_srv_cancel(query->purple_query_data);
+#endif
 			break;
 	}
 

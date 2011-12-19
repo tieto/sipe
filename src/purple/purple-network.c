@@ -29,6 +29,7 @@
 #include "glib.h"
 #include "network.h"
 #include "eventloop.h"
+#include "version.h"
 
 #ifdef _WIN32
 /* for network */
@@ -55,7 +56,7 @@
 #if 0
 /**
  * @TODO: get_suitable_local_ip()
- * 
+ *
  * The code is most likely broken for Mac OS X as it seems that that platform
  * returns variable-sized "struct ifreq". The new, alignment compliant code
  * assumes a fix-sized "struct ifreq", i.e. it uses array access.
@@ -213,7 +214,15 @@ sipe_backend_network_listen_range(unsigned short port_min,
 	ldata->connect_cb = connect_cb;
 	ldata->data = data;
 	ldata->listener = purple_network_listen_range(port_min, port_max,
+#if PURPLE_VERSION_CHECK(3,0,0)
+						      /* @TODO: does FT work with IPv6? */
+						      AF_INET,
+#endif
 						      SOCK_STREAM,
+#if PURPLE_VERSION_CHECK(3,0,0)
+						      /* @TODO: should we allow external mapping? */
+						      FALSE,
+#endif
 						      (PurpleNetworkListenCallback)backend_listen_cb,
 						      ldata);
 
