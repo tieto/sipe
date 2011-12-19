@@ -283,9 +283,10 @@ void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
 	sipe_backend_buddy backend_buddy = sipe_backend_buddy_find(sipe_public, who, NULL);
 
 	if (buddy && backend_buddy) {
-		gchar *alias = sipe_backend_buddy_get_alias(sipe_public, backend_buddy);
 		gchar *groups = sipe_get_buddy_groups_string(buddy);
+
 		if (groups) {
+			gchar *alias = sipe_backend_buddy_get_alias(sipe_public, backend_buddy);
 			gchar *request;
 			SIPE_DEBUG_INFO("Saving buddy %s with alias %s and groups %s", who, alias, groups);
 
@@ -296,12 +297,14 @@ void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
 							  "<m:URI>%s</m:URI>"
 							  "<m:externalURI />",
 							  alias, groups, buddy->name);
+			g_free(alias);
+			g_free(groups);
+
 			sip_soap_request(sipe_private,
 					 "setContact",
 					 request);
 			g_free(request);
 		}
-		g_free(alias);
 	}
 }
 
