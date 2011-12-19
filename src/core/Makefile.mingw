@@ -119,6 +119,7 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-sign.c \
 			sip-sec.c \
 			sip-csta.c \
+			sipe-webticket.c \
 			sipe-xml.c \
 			uuid.c \
 			sipe-win32dep.c
@@ -182,6 +183,8 @@ LIBS =			-lglib-2.0 \
 			-lintl \
 			-lxml2 \
 			-lnss3 \
+			-lsmime3 \
+			-llibnspr4 \
 			-lws2_32 \
 			-lpurple
 
