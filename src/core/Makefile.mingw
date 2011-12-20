@@ -184,7 +184,7 @@ LIBS =			-lglib-2.0 \
 			-lxml2 \
 			-lnss3 \
 			-lsmime3 \
-			-llibnspr4 \
+			-lnspr4 \
 			-lws2_32 \
 			-lpurple
 
