@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -34,10 +34,11 @@
 #include "blist.h"
 #include "conversation.h"
 #include "server.h"
+#include "version.h"
 /* for ENOTCONN */
 #ifdef _WIN32
 #include "win32/win32dep.h"
-#endif 
+#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
@@ -131,7 +132,11 @@
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s) \
 	(PURPLE_CONV_CHAT(((PurpleConversation *)s)))
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+#define PURPLE_CONV_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) purple_conversation_get_connection(conv)->proto_data)
+#else
 #define PURPLE_CONV_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) conv->account->gc->proto_data)
+#endif
 
 static struct sipe_chat_session *sipe_purple_chat_get_session(PurpleConversation *conv)
 {
@@ -159,7 +164,13 @@ void sipe_purple_chat_setup_rejoin(struct sipe_backend_private *purple_private)
 
 	while (entry) {
 		PurpleConversation *conv = entry->data;
-		if (purple_conversation_get_gc(conv) == purple_private->gc)
+		if (
+#if PURPLE_VERSION_CHECK(3,0,0)
+			purple_conversation_get_connection(conv)
+#else
+			purple_conversation_get_gc(conv)
+#endif
+			== purple_private->gc)
 			purple_private->rejoin_chats = g_list_prepend(purple_private->rejoin_chats,
 								      sipe_purple_chat_get_session(conv));
 		entry = entry->next;

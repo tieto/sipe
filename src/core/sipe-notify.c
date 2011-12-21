@@ -371,7 +371,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 				const gchar *new_desc;
 				res_avail = dev_avail;
 				if (!is_empty(state)) {
-					if (sipe_strequal(state, sipe_backend_activity_to_token(SIPE_ACTIVITY_ON_PHONE))) {
+					if (sipe_strequal(state, sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE))) {
 						g_free(activity);
 						activity = g_strdup(sipe_core_activity_description(SIPE_ACTIVITY_ON_PHONE));
 					} else if (sipe_strequal(state, "presenting")) {
@@ -463,7 +463,8 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	g_free(activity);
 
 	SIPE_DEBUG_INFO("process_incoming_notify_msrtc: status(%s)", status_id);
-	sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status_id);
+	sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
+				   sipe_status_token_to_activity(status_id));
 
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) && sipe_strcase_equal(self_uri, uri)) {
 		sipe_ocs2005_user_info_has_updated(sipe_private, xn_userinfo);
@@ -676,7 +677,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 
 					/* from token */
 					if (!is_empty(token)) {
-						sbuddy->activity = g_strdup(sipe_core_activity_description(sipe_backend_token_to_activity(token)));
+						sbuddy->activity = g_strdup(sipe_core_activity_description(sipe_status_token_to_activity(token)));
 					}
 					/* from custom element */
 					if (xn_custom) {
@@ -778,15 +779,19 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 	}
 
 	if (do_update_status) {
-		if (!status) {
+		guint activity;
+
+		if (status) {
+			SIPE_DEBUG_INFO("process_incoming_notify_rlmi: %s", status);
+			activity = sipe_status_token_to_activity(status);
+		} else {
 			/* no status category in this update,
 			   using contact's current status */
-			status = sipe_backend_buddy_get_status(SIPE_CORE_PUBLIC,
-							       uri);
+			activity = sipe_backend_buddy_get_status(SIPE_CORE_PUBLIC,
+								 uri);
 		}
 
-		SIPE_DEBUG_INFO("process_incoming_notify_rlmi: %s", status);
-		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, activity);
 	}
 
 	sipe_xml_free(xn_categories);
@@ -801,23 +806,24 @@ static void sipe_buddy_status_from_activity(struct sipe_core_private *sipe_priva
 		const gchar *status_id = NULL;
 		if (activity) {
 			if (sipe_strequal(activity,
-					  sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY))) {
-				status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY);
+					  sipe_status_activity_to_token(SIPE_ACTIVITY_BUSY))) {
+				status_id = sipe_status_activity_to_token(SIPE_ACTIVITY_BUSY);
 			} else if (sipe_strequal(activity,
-						 sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY))) {
-				status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY);
+						 sipe_status_activity_to_token(SIPE_ACTIVITY_AWAY))) {
+				status_id = sipe_status_activity_to_token(SIPE_ACTIVITY_AWAY);
 			}
 		}
 
 		if (!status_id) {
-			status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE);
+			status_id = sipe_status_activity_to_token(SIPE_ACTIVITY_AVAILABLE);
 		}
 
 		SIPE_DEBUG_INFO("sipe_buddy_status_from_activity: status_id(%s)", status_id);
-		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, status_id);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
+					   sipe_status_token_to_activity(status_id));
 	} else {
 		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
-					   sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE));
+					   SIPE_ACTIVITY_OFFLINE);
 	}
 }
 

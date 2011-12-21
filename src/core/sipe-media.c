@@ -1227,6 +1227,7 @@ process_get_av_edge_credentials_response(struct sipe_core_private *sipe_private,
 				relays = g_slist_append(relays, relay);
 
 				relay->dns_query = sipe_backend_dns_query_a(
+							SIPE_CORE_PUBLIC,
 							relay->hostname,
 							relay->udp_port,
 							(sipe_dns_resolved_cb) relay_ip_resolved_cb,

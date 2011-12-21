@@ -72,21 +72,21 @@ static guint sipe_ocs2005_activity_from_status(struct sipe_core_private *sipe_pr
 {
 	const gchar *status = sipe_private->status;
 
-	if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_AWAY))) {
+	if (sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_AWAY))) {
 		return(SIPE_OCS2005_ACTIVITY_AWAY);
-	/*} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_LUNCH))) {
+	/*} else if (sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_LUNCH))) {
 		return(SIPE_OCS2005_ACTIVITY_LUNCH); */
-	} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_BRB))) {
+	} else if (sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_BRB))) {
 		return(SIPE_OCS2005_ACTIVITY_BRB);
-	} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE))) {
+	} else if (sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_AVAILABLE))) {
 		return(SIPE_OCS2005_ACTIVITY_AVAILABLE);
-	/*} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_ON_PHONE))) {
+	/*} else if (sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE))) {
 		return(SIPE_OCS2005_ACTIVITY_ON_PHONE); */
-	} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY)) ||
-		   sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_DND))) {
+	} else if (sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_BUSY)) ||
+		   sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_DND))) {
 		return(SIPE_OCS2005_ACTIVITY_BUSY);
-	} else if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_INVISIBLE)) ||
-		   sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE))) {
+	} else if (sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_INVISIBLE)) ||
+		   sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_OFFLINE))) {
 		return(SIPE_OCS2005_ACTIVITY_AWAY);
 	} else {
 		return(SIPE_OCS2005_ACTIVITY_AVAILABLE);
@@ -97,8 +97,8 @@ static guint sipe_ocs2005_availability_from_status(struct sipe_core_private *sip
 {
 	const gchar *status = sipe_private->status;
 
-	if (sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_INVISIBLE)) ||
-	    sipe_strequal(status, sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE)))
+	if (sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_INVISIBLE)) ||
+	    sipe_strequal(status, sipe_status_activity_to_token(SIPE_ACTIVITY_OFFLINE)))
 		return(SIPE_OCS2005_AVAILABILITY_OFFLINE);
 	else
 		return(SIPE_OCS2005_AVAILABILITY_ONLINE);
@@ -134,7 +134,7 @@ const gchar *sipe_ocs2005_status_from_activity_availability(guint activity,
 		type = SIPE_ACTIVITY_AVAILABLE;
 	}
 
-	return(sipe_backend_activity_to_token(type));
+	return(sipe_status_activity_to_token(type));
 }
 
 const gchar *sipe_ocs2005_activity_description(guint activity)
@@ -193,7 +193,7 @@ void sipe_ocs2005_user_info_has_updated(struct sipe_core_private *sipe_private,
 static gboolean sipe_is_user_available(struct sipe_core_private *sipe_private)
 {
 	return(sipe_strequal(sipe_private->status,
-			     sipe_backend_activity_to_token(SIPE_ACTIVITY_AVAILABLE)));
+			     sipe_status_activity_to_token(SIPE_ACTIVITY_AVAILABLE)));
 }
 
 
@@ -451,7 +451,7 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 		if ((cal_status == SIPE_CAL_BUSY) &&
 		    (cal_avail_since > sbuddy->user_avail_since) &&
 		    sipe_ocs2007_status_is_busy(status_id)) {
-			status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_BUSY);
+			status_id = sipe_status_activity_to_token(SIPE_ACTIVITY_BUSY);
 			g_free(sbuddy->activity);
 			sbuddy->activity = g_strdup(sipe_core_activity_description(SIPE_ACTIVITY_IN_MEETING));
 		}
@@ -469,15 +469,16 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 
 	/* then set status_id actually */
 	SIPE_DEBUG_INFO("sipe_apply_calendar_status: to %s for %s", status_id, sbuddy->name ? sbuddy->name : "" );
-	sipe_backend_buddy_set_status(SIPE_CORE_PUBLIC, sbuddy->name, status_id);
+	sipe_backend_buddy_set_status(SIPE_CORE_PUBLIC, sbuddy->name,
+				      sipe_status_token_to_activity(status_id));
 
 	/* set our account state to the one in roaming (including calendar info) */
 	self_uri = sip_uri_self(sipe_private);
 	if (SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH) &&
 	    sipe_strcase_equal(sbuddy->name, self_uri)) {
-		if (sipe_strequal(status_id, sipe_backend_activity_to_token(SIPE_ACTIVITY_OFFLINE))) {
+		if (sipe_strequal(status_id, sipe_status_activity_to_token(SIPE_ACTIVITY_OFFLINE))) {
 			/* do not let offline status switch us off */
-			status_id = sipe_backend_activity_to_token(SIPE_ACTIVITY_INVISIBLE);
+			status_id = sipe_status_activity_to_token(SIPE_ACTIVITY_INVISIBLE);
 		}
 
 		sipe_status_and_note(sipe_private, status_id);

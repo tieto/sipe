@@ -24,6 +24,14 @@
 /* Forward declarations */
 struct sipe_core_private;
 
+/* called by sipe-core.c during plugin initialization/destruction */
+void sipe_status_init(void);
+void sipe_status_shutdown(void);
+
+/* type == SIPE_ACTIVITY_xxx (see sipe-core.h) */
+const gchar *sipe_status_activity_to_token(guint type);
+guint sipe_status_token_to_activity(const gchar *token);
+
 void sipe_status_set_token(struct sipe_core_private *sipe_private,
 			   const gchar *status_id);
 void sipe_status_set_activity(struct sipe_core_private *sipe_private,

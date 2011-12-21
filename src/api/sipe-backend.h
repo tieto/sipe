@@ -180,13 +180,15 @@ gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public);
 
 typedef void (*sipe_dns_resolved_cb)(gpointer data, const gchar *hostname, guint port);
 
-struct sipe_dns_query *sipe_backend_dns_query_srv(const gchar *protocol,
+struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_public,
+						  const gchar *protocol,
 						  const gchar *transport,
 						  const gchar *domain,
 						  sipe_dns_resolved_cb callback,
 						  gpointer data);
 
-struct sipe_dns_query *sipe_backend_dns_query_a(const gchar *hostname,
+struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_public,
+						const gchar *hostname,
 						int port,
 						sipe_dns_resolved_cb callback,
 						gpointer data);
@@ -559,13 +561,9 @@ const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
 
 /** STATUS *******************************************************************/
 
-/* type == SIPE_ACTIVITY_xxx (see sipe-core.h) */
-const gchar *sipe_backend_activity_to_token(guint type);
-guint sipe_backend_token_to_activity(const gchar *token);
-
-const gchar *sipe_backend_status(struct sipe_core_public *sipe_public);
+guint sipe_backend_status(struct sipe_core_public *sipe_public);
 gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
-				      const gchar *status_id,
+				      guint activity,
 				      const gchar *message);
 
 /** TRANSPORT ****************************************************************/
@@ -767,10 +765,10 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
  * @param sipe_public The handle representing the protocol instance making the call
  * @param uri         SIP URI of the contact
  *
- * @return status token
+ * @return activity
  */
-const gchar *sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
-					   const gchar *uri);
+guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
+				    const gchar *uri);
 
 /**
  * Sets the alias for a contact.
@@ -853,7 +851,7 @@ void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
 
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   const gchar *who,
-				   const gchar *status_id);
+				   guint activity);
 
 /**
  * Called when a new internal group is about to be added. If this returns FALSE,

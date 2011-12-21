@@ -45,33 +45,66 @@
 
 static struct
 {
-	guint type;
+	const gchar *status_id;
 	const gchar *desc;
 } const sipe_activity_map[SIPE_ACTIVITY_NUM_TYPES] = {
 /*
  * This has nothing to do with Availability numbers, like 3500 (online).
- * Just a mapping of Communicator Activities to translations
+ * Just a mapping of Communicator Activities to tokens/translations
  */
 /* @TODO: NULL means "default translation from Pidgin"?
  *        What about other backends?                    */
-	{ SIPE_ACTIVITY_UNSET,		NULL				},
-	{ SIPE_ACTIVITY_AVAILABLE,	NULL				},
-	{ SIPE_ACTIVITY_ONLINE,		NULL				},
-	{ SIPE_ACTIVITY_INACTIVE,	N_("Inactive")			},
-	{ SIPE_ACTIVITY_BUSY,		N_("Busy")			},
-	{ SIPE_ACTIVITY_BUSYIDLE,	N_("Busy-Idle")			},
-	{ SIPE_ACTIVITY_DND,		NULL				},
-	{ SIPE_ACTIVITY_BRB,		N_("Be right back")		},
-	{ SIPE_ACTIVITY_AWAY,		NULL				},
-	{ SIPE_ACTIVITY_LUNCH,		N_("Out to lunch")		},
-	{ SIPE_ACTIVITY_INVISIBLE,	NULL				},
-	{ SIPE_ACTIVITY_OFFLINE,	NULL				},
-	{ SIPE_ACTIVITY_ON_PHONE,	N_("In a call")			},
-	{ SIPE_ACTIVITY_IN_CONF,	N_("In a conference")		},
-	{ SIPE_ACTIVITY_IN_MEETING,	N_("In a meeting")		},
-	{ SIPE_ACTIVITY_OOF,		N_("Out of office")		},
-	{ SIPE_ACTIVITY_URGENT_ONLY,	N_("Urgent interruptions only")	}
+/* SIPE_ACTIVITY_UNSET       */ { "unset",                     NULL                            },
+/* SIPE_ACTIVITY_AVAILABLE   */ { "available",                 NULL                            },
+/* SIPE_ACTIVITY_ONLINE      */ { "online",                    NULL                            },
+/* SIPE_ACTIVITY_INACTIVE    */ { "idle",                      N_("Inactive")                  },
+/* SIPE_ACTIVITY_BUSY        */ { "busy",                      N_("Busy")                      },
+/* SIPE_ACTIVITY_BUSYIDLE    */ { "busyidle",                  N_("Busy-Idle")                 },
+/* SIPE_ACTIVITY_DND         */ { "do-not-disturb",            NULL                            },
+/* SIPE_ACTIVITY_BRB         */ { "be-right-back",             N_("Be right back")             },
+/* SIPE_ACTIVITY_AWAY        */ { "away",                      NULL                            },
+/* SIPE_ACTIVITY_LUNCH       */ { "out-to-lunch",              N_("Out to lunch")              },
+/* SIPE_ACTIVITY_INVISIBLE   */ { "invisible",                 NULL                            },
+/* SIPE_ACTIVITY_OFFLINE     */ { "offline",                   NULL                            },
+/* SIPE_ACTIVITY_ON_PHONE    */ { "on-the-phone",              N_("In a call")                 },
+/* SIPE_ACTIVITY_IN_CONF     */ { "in-a-conference",           N_("In a conference")           },
+/* SIPE_ACTIVITY_IN_MEETING  */ { "in-a-meeting",              N_("In a meeting")              },
+/* SIPE_ACTIVITY_OOF         */ { "out-of-office",             N_("Out of office")             },
+/* SIPE_ACTIVITY_URGENT_ONLY */ { "urgent-interruptions-only", N_("Urgent interruptions only") },
 };
+
+static GHashTable *token_map;
+
+void sipe_status_init(void)
+{
+	guint index;
+
+	token_map = g_hash_table_new(g_str_hash, g_str_equal);
+	for (index = SIPE_ACTIVITY_UNSET;
+	     index < SIPE_ACTIVITY_NUM_TYPES;
+	     index++) {
+		g_hash_table_insert(token_map,
+				    (gchar *) sipe_activity_map[index].status_id,
+				    GUINT_TO_POINTER(index));
+	}
+}
+
+void sipe_status_shutdown(void)
+{
+	g_hash_table_destroy(token_map);
+}
+
+/* type == SIPE_ACTIVITY_xxx (see sipe-core.h) */
+const gchar *sipe_status_activity_to_token(guint type)
+{
+	return(sipe_activity_map[type].status_id);
+}
+
+guint sipe_status_token_to_activity(const gchar *token)
+{
+	if (!token) return(SIPE_ACTIVITY_UNSET);
+	return(GPOINTER_TO_UINT(g_hash_table_lookup(token_map, token)));
+}
 
 const gchar *sipe_core_activity_description(guint type)
 {
@@ -89,7 +122,7 @@ void sipe_status_set_activity(struct sipe_core_private *sipe_private,
 			      guint activity)
 {
 	sipe_status_set_token(sipe_private,
-			      sipe_backend_activity_to_token(activity));
+			      sipe_status_activity_to_token(activity));
 }
 
 void sipe_core_reset_status(struct sipe_core_public *sipe_public)
@@ -104,17 +137,18 @@ void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 void sipe_status_and_note(struct sipe_core_private *sipe_private,
 			  const gchar *status_id)
 {
+	guint activity;
+
 	if (!status_id)
 		status_id = sipe_private->status;
 
 	SIPE_DEBUG_INFO("sipe_status_and_note: switch to '%s' for the account", status_id);
 
+	activity = sipe_status_token_to_activity(status_id);
 	if (sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
-					 status_id,
+					 activity,
 					 sipe_private->note)) {
 		/* status has changed */
-		guint activity = sipe_backend_token_to_activity(status_id);
-
 		sipe_private->do_not_publish[activity] = time(NULL);
 		SIPE_DEBUG_INFO("sipe_status_and_note: do_not_publish[%s]=%d [now]",
 				status_id,
@@ -125,25 +159,26 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 void sipe_status_update(struct sipe_core_private *sipe_private,
 			SIPE_UNUSED_PARAMETER gpointer unused)
 {
-	const gchar *status = sipe_backend_status(SIPE_CORE_PUBLIC);
+	guint activity = sipe_backend_status(SIPE_CORE_PUBLIC);
 
-	if (!status) return;
+	if (activity == SIPE_ACTIVITY_UNSET) return;
 
-	SIPE_DEBUG_INFO("sipe_status_update: status: %s (%s)", status,
+	SIPE_DEBUG_INFO("sipe_status_update: status: %s (%s)",
+			sipe_status_activity_to_token(activity),
 			sipe_status_changed_by_user(sipe_private) ? "USER" : "MACHINE");
 
 	sipe_cal_presence_publish(sipe_private, FALSE);
 }
 
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
-			  const gchar *status_id,
+			  guint activity,
 			  const gchar *note)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *action_name;
 	gchar *tmp;
 	time_t now = time(NULL);
-	guint activity = sipe_backend_token_to_activity(status_id);
+	const gchar *status_id = sipe_status_activity_to_token(activity);
 	gboolean do_not_publish = ((now - sipe_private->do_not_publish[activity]) <= 2);
 
 	/* when other point of presence clears note, but we are keeping

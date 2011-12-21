@@ -111,11 +111,13 @@ void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
 	/* Initialization for crypto backend (production mode) */
 	sipe_crypto_init(TRUE);
 	sipe_mime_init();
+	sipe_status_init();
 }
 
 void sipe_core_destroy(void)
 {
 	sipe_chat_destroy();
+	sipe_status_shutdown();
 	sipe_mime_shutdown();
 	sipe_crypto_shutdown();
 	sip_sec_destroy();

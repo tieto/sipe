@@ -33,6 +33,7 @@
 #include <glib.h>
 
 #include "ft.h"
+#include "version.h"
 
 #ifdef _WIN32
 #include "win32/libc_interface.h"
@@ -45,7 +46,12 @@
 #include "purple-private.h"
 
 #define PURPLE_XFER                       ((PurpleXfer *) ft->backend_private)
-#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) xfer->data)
+#if PURPLE_VERSION_CHECK(3,0,0)
+#define PURPLE_XFER_DATA                  xfer->proto_data
+#else
+#define PURPLE_XFER_DATA                  xfer->data
+#endif
+#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) PURPLE_XFER_DATA)
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) xfer->account->gc->proto_data)
 
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
@@ -129,7 +135,7 @@ ft_free_xfer_struct(PurpleXfer *xfer)
 			xfer->watcher = 0;
 		}
 		sipe_core_ft_deallocate(ft);
-		xfer->data = NULL;
+		PURPLE_XFER_DATA = NULL;
 	}
 }
 
@@ -234,7 +240,7 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 
 	if (xfer) {
 		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
-		xfer->data = ft;
+		PURPLE_XFER_DATA = ft;
 
 		purple_xfer_set_filename(xfer, file_name);
 		purple_xfer_set_size(xfer, file_size);
@@ -307,7 +313,7 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 			struct sipe_file_transfer *ft = sipe_core_ft_allocate(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 
 			ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
-			xfer->data = ft;
+			PURPLE_XFER_DATA = ft;
 
 			purple_xfer_set_init_fnc(xfer, ft_outgoing_init);
 			purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);

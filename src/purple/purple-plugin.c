@@ -76,60 +76,60 @@
 #endif
 
 /* Sipe core activity <-> Purple status mapping */
-static const gchar * const activity_to_purple[SIPE_ACTIVITY_NUM_TYPES] = {
-	/* SIPE_ACTIVITY_UNSET       */ "unset",     /* == purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET) */
-	/* SIPE_ACTIVITY_AVAILABLE   */ "available", /* == purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) */
-	/* SIPE_ACTIVITY_ONLINE      */ "online",
-	/* SIPE_ACTIVITY_INACTIVE    */ "idle",
-	/* SIPE_ACTIVITY_BUSY        */ "busy",
-	/* SIPE_ACTIVITY_BUSYIDLE    */ "busyidle",
-	/* SIPE_ACTIVITY_DND         */ "do-not-disturb",
-	/* SIPE_ACTIVITY_BRB         */ "be-right-back",
-	/* SIPE_ACTIVITY_AWAY        */ "away",      /* == purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY) */
-	/* SIPE_ACTIVITY_LUNCH       */ "out-to-lunch",
-	/* SIPE_ACTIVITY_INVISIBLE   */ "invisible", /* == purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) */
-	/* SIPE_ACTIVITY_OFFLINE     */ "offline",   /* == purple_primitive_get_id_from_type(PURPLE_STATUS_OFFLINE) */
-	/* SIPE_ACTIVITY_ON_PHONE    */ "on-the-phone",
-	/* SIPE_ACTIVITY_IN_CONF     */ "in-a-conference",
-	/* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
-	/* SIPE_ACTIVITY_OOF         */ "out-of-office",
-	/* SIPE_ACTIVITY_URGENT_ONLY */ "urgent-interruptions-only",
+static const gchar * const activity_to_purple_map[SIPE_ACTIVITY_NUM_TYPES] = {
+/* SIPE_ACTIVITY_UNSET       */ "unset",     /* == purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET) */
+/* SIPE_ACTIVITY_AVAILABLE   */ "available", /* == purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) */
+/* SIPE_ACTIVITY_ONLINE      */ "online",
+/* SIPE_ACTIVITY_INACTIVE    */ "idle",
+/* SIPE_ACTIVITY_BUSY        */ "busy",
+/* SIPE_ACTIVITY_BUSYIDLE    */ "busyidle",
+/* SIPE_ACTIVITY_DND         */ "do-not-disturb",
+/* SIPE_ACTIVITY_BRB         */ "be-right-back",
+/* SIPE_ACTIVITY_AWAY        */ "away",      /* == purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY) */
+/* SIPE_ACTIVITY_LUNCH       */ "out-to-lunch",
+/* SIPE_ACTIVITY_INVISIBLE   */ "invisible", /* == purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) */
+/* SIPE_ACTIVITY_OFFLINE     */ "offline",   /* == purple_primitive_get_id_from_type(PURPLE_STATUS_OFFLINE) */
+/* SIPE_ACTIVITY_ON_PHONE    */ "on-the-phone",
+/* SIPE_ACTIVITY_IN_CONF     */ "in-a-conference",
+/* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
+/* SIPE_ACTIVITY_OOF         */ "out-of-office",
+/* SIPE_ACTIVITY_URGENT_ONLY */ "urgent-interruptions-only",
 };
-GHashTable *purple_to_activity = NULL;
-#define PURPLE_STATUS_TO_ACTIVITY(x) \
-	GPOINTER_TO_UINT(g_hash_table_lookup(purple_to_activity, (x)))
+
+GHashTable *purple_token_map;
 
 static void sipe_purple_activity_init(void)
 {
-	guint index = SIPE_ACTIVITY_UNSET;
-	purple_to_activity = g_hash_table_new(g_str_hash, g_str_equal);
-	while (index < SIPE_ACTIVITY_NUM_TYPES) {
-		g_hash_table_insert(purple_to_activity,
-				    (gpointer) activity_to_purple[index],
+	guint index;
+
+	purple_token_map = g_hash_table_new(g_str_hash, g_str_equal);
+	for (index = SIPE_ACTIVITY_UNSET;
+	     index < SIPE_ACTIVITY_NUM_TYPES;
+	     index++) {
+		g_hash_table_insert(purple_token_map,
+				    (gchar *) activity_to_purple_map[index],
 				    GUINT_TO_POINTER(index));
-		index++;
 	}
 }
 
-const gchar *sipe_backend_activity_to_token(guint type)
+static void sipe_purple_activity_shutdown(void)
 {
-	return(activity_to_purple[type]);
+	g_hash_table_destroy(purple_token_map);
 }
 
-guint sipe_backend_token_to_activity(const gchar *token)
+const gchar *sipe_purple_activity_to_token(guint type)
 {
-	return(PURPLE_STATUS_TO_ACTIVITY(token));
+	return(activity_to_purple_map[type]);
+}
+
+guint sipe_purple_token_to_activity(const gchar *token)
+{
+	return(GPOINTER_TO_UINT(g_hash_table_lookup(purple_token_map, token)));
 }
 
 gchar *sipe_backend_version(void)
 {
 	return(g_strdup_printf("Purple/%s", purple_core_get_version()));
-}
-
-static void sipe_purple_activity_destroy(void)
-{
-	g_hash_table_destroy(purple_to_activity);
-	purple_to_activity = NULL;
 }
 
 /* PurplePluginProtocolInfo function calls & data structure */
@@ -144,7 +144,7 @@ static gchar *sipe_purple_status_text(PurpleBuddy *buddy)
 	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 	return sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
 				      buddy->name,
-				      PURPLE_STATUS_TO_ACTIVITY(purple_status_get_id(status)),
+				      sipe_purple_token_to_activity(purple_status_get_id(status)),
 				      purple_status_get_name(status));
 }
 
@@ -182,13 +182,13 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* Busy */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			activity_to_purple[SIPE_ACTIVITY_BUSY],
+			sipe_purple_activity_to_token(SIPE_ACTIVITY_BUSY),
 			sipe_core_activity_description(SIPE_ACTIVITY_BUSY),
 			TRUE);
 
 	/* Do Not Disturb */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			activity_to_purple[SIPE_ACTIVITY_DND],
+			sipe_purple_activity_to_token(SIPE_ACTIVITY_DND),
 			NULL,
 			TRUE);
 
@@ -204,7 +204,7 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 	/* Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			activity_to_purple[SIPE_ACTIVITY_BRB],
+			sipe_purple_activity_to_token(SIPE_ACTIVITY_BRB),
 			sipe_core_activity_description(SIPE_ACTIVITY_BRB),
 			TRUE);
 
@@ -496,6 +496,9 @@ static PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAc
 #endif
 static PurplePluginProtocolInfo sipe_prpl_info =
 {
+#if PURPLE_VERSION_CHECK(3,0,0)
+	sizeof(PurplePluginProtocolInfo),       /* struct_size */
+#endif
 	OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
@@ -536,7 +539,9 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_purple_keep_alive,			/* keepalive */
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// deprecated
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* get_cb_away */	// deprecated
+#endif
 	sipe_purple_alias_buddy,		/* alias_buddy */
 	sipe_purple_group_buddy,		/* group_buddy */
 	sipe_purple_group_rename,		/* rename_group */
@@ -565,7 +570,9 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	/* Backward compatibility when compiling against 2.4.x API */
 	(void (*)(void))			/* _purple_reserved4 */
 #endif
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
+#endif
 #if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
 	sipe_purple_get_account_text_table,	/* get_account_text_table */
 #if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
@@ -580,7 +587,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* get_moods */
 	NULL,					/* set_public_alias */
 	NULL,					/* get_public_alias */
-#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(2,8,0)
 	NULL,					/* add_buddy_with_invite */
 	NULL,					/* add_buddies_with_invite */
 #endif
@@ -622,7 +629,7 @@ static void sipe_purple_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugi
 {
 	GList *entry;
 
-	sipe_purple_activity_destroy();
+	sipe_purple_activity_shutdown();
 	sipe_core_destroy();
 
 	entry = sipe_prpl_info.protocol_options;

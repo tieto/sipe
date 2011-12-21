@@ -30,12 +30,12 @@
 
 #include "purple-private.h"
 
-const gchar *sipe_backend_status(struct sipe_core_public *sipe_public)
+guint sipe_backend_status(struct sipe_core_public *sipe_public)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleStatus *status = purple_account_get_active_status(purple_private->account);
-	if (!status) return(NULL);
-	return(purple_status_get_id(status));
+	if (!status) return(SIPE_ACTIVITY_UNSET);
+	return(sipe_purple_token_to_activity(purple_status_get_id(status)));
 }
 
 /**
@@ -48,12 +48,13 @@ const gchar *sipe_backend_status(struct sipe_core_public *sipe_public)
  * calendar data).
  */
 gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
-				      const gchar *status_id,
+				      guint activity,
 				      const gchar *message)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleAccount *account = purple_private->account;
 	PurpleStatus *status = purple_account_get_active_status(account);
+	const gchar *status_id = sipe_purple_activity_to_token(activity);
 	gboolean changed = TRUE;
 
 	if (g_str_equal(status_id, purple_status_get_id(status)) &&
@@ -117,7 +118,7 @@ void sipe_purple_set_status(PurpleAccount *account,
 		const gchar *note      = purple_status_get_attr_string(status,
 								       SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE);
 		sipe_core_status_set(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
-				     status_id,
+				     sipe_purple_token_to_activity(status_id),
 				     note);
 	}
 }

@@ -26,8 +26,6 @@
 
 #include <glib.h>
 
-#include "purple-private.h"
-
 #include "blist.h"
 #include "notify.h"
 #include "privacy.h"
@@ -38,6 +36,8 @@
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-nls.h"
+
+#include "purple-private.h"
 
 static const struct {
 	const gchar *property;    /* property name to store in blist.xml */
@@ -130,7 +130,13 @@ gchar* sipe_backend_buddy_get_server_alias(SIPE_UNUSED_PARAMETER struct sipe_cor
 gchar *sipe_backend_buddy_get_local_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					  const sipe_backend_buddy who)
 {
-	return g_strdup(purple_buddy_get_local_alias(who));
+	return g_strdup(
+#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
+		purple_buddy_get_local_buddy_alias
+#else
+		purple_buddy_get_local_alias
+#endif
+		(who));
 }
 
 gchar* sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -139,14 +145,14 @@ gchar* sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_
 	return g_strdup(purple_buddy_get_group((PurpleBuddy*)who)->name);
 }
 
-const gchar *sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
-					   const gchar *uri)
+guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
+				    const gchar *uri)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleBuddy *pbuddy = purple_find_buddy(purple_private->account, uri);
 	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
 	const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
-	return(purple_status_get_id(pstatus));
+	return(sipe_purple_token_to_activity(purple_status_get_id(pstatus)));
 }
 
 void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -270,11 +276,13 @@ void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
 
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   const gchar *who,
-				   const gchar *status_id)
+				   guint activity)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
-	purple_prpl_got_user_status(purple_private->account, who, status_id, NULL);
+	purple_prpl_got_user_status(purple_private->account, who,
+				    sipe_purple_activity_to_token(activity),
+				    NULL);
 }
 
 gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -346,7 +354,11 @@ void sipe_backend_buddy_tooltip_add(SIPE_UNUSED_PARAMETER struct sipe_core_publi
 
 void sipe_purple_add_buddy(PurpleConnection *gc,
 			   PurpleBuddy *buddy,
-			   PurpleGroup *group)
+			   PurpleGroup *group
+#if PURPLE_VERSION_CHECK(3,0,0)
+			   , SIPE_UNUSED_PARAMETER const gchar *message
+#endif
+	)
 {
 	SIPE_DEBUG_INFO("sipe_purple_add_buddy[CB]: buddy:%s group:%s",
 			buddy ? buddy->name : "",

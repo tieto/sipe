@@ -1807,6 +1807,7 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 
 	/* Try to resolve next service */
 	sipe_private->dns_query = sipe_backend_dns_query_srv(
+					SIPE_CORE_PUBLIC,
 					sipe_private->service_data->protocol,
 					sipe_private->service_data->transport,
 					sipe_private->public.sip_domain,
