@@ -389,17 +389,17 @@ set_completed(struct sipe_backend_file_transfer *xfer, gboolean completed)
 			if (xfer->local_filename && xfer->incoming)
 			{
 				char *local = g_markup_escape_text(xfer->local_filename, -1);
-				msg = g_strdup_printf(_("Transfer of file <A HREF=\"file://%s\">%s</A> complete"),
+				msg = g_strdup_printf("Transfer of file <A HREF=\"file://%s\">%s</A> complete",
 				                      local, filename);
 				g_free(local);
 			}
 			else
-				msg = g_strdup_printf(_("Transfer of file %s complete"),
+				msg = g_strdup_printf("Transfer of file %s complete",
 				                      filename);
 			g_free(filename);
 		}
 		else
-			msg = g_strdup(_("File transfer complete"));
+			msg = g_strdup("File transfer complete");
 
 		sipe_miranda_AddEvent(xfer->pr, xfer->hContact, SIPE_EVENTTYPE_ERROR_NOTIFY, time(NULL), DBEF_UTF, strlen(msg), (PBYTE)msg);
 		sipe_miranda_SendBroadcast(xfer->pr, xfer->hContact, ACKTYPE_FILE, ACKRESULT_SUCCESS, (HANDLE)xfer, 0);
