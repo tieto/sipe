@@ -53,12 +53,7 @@
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
-#include "sipe-core-private.h"
 #include "sipe-nls.h"
-#include "sipe-conf.h"
-#include "sipe-utils.h"
-#include "sipe-session.h"
-#include "sipe-chat.h"
 
 #include "miranda-private.h"
 #include "miranda-resource.h"
@@ -457,7 +452,6 @@ static INT_PTR sipe_miranda_start_chat(SIPPROTO *pr, WPARAM wParam, LPARAM lPara
 {
 	HANDLE hContact = (HANDLE)wParam;
 	struct sipe_core_public *sipe_public = pr->sip;
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
 	DBVARIANT dbv;
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {

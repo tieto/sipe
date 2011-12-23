@@ -555,7 +555,7 @@ sipe_miranda_SendProtoAck( SIPPROTO *pr, HANDLE hContact, DWORD dwCookie, int nA
 }
 
 gboolean
-sipe_miranda_cmd(const gchar *cmd, gchar *buf, DWORD *maxlen)
+sipe_miranda_cmd(gchar *cmd, gchar *buf, DWORD *maxlen)
 {
 	STARTUPINFOA si = {0};
 	PROCESS_INFORMATION pi = {0};
@@ -771,6 +771,13 @@ guint MirandaStatusToSipe(int status) {
 		return SIPE_ACTIVITY_UNSET;
 	}
 
+}
+
+gchar *sipe_miranda_uri_self(SIPPROTO *pr) {
+	gchar *username = sipe_miranda_getString(pr, "username");
+	gchar *uri = g_strdup_printf("sip:%s", username);
+	mir_free(username);
+	return uri;
 }
 
 /*

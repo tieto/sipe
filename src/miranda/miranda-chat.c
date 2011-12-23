@@ -30,9 +30,7 @@
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
-#include "sipe-core-private.h"
 #include "sipe-nls.h"
-#include "sipe-utils.h"
 
 #include "newpluginapi.h"
 #include "m_protosvc.h"
@@ -54,7 +52,7 @@ void sipe_backend_chat_add(struct sipe_backend_chat_session *backend_session,
 {
 	SIPPROTO *pr = backend_session->pr;
 	struct sipe_core_public *sipe_public = pr->sip;
-	gchar *self = sip_uri_self(SIPE_CORE_PRIVATE);
+	gchar *self = sipe_miranda_uri_self(pr);
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
 	int retval;
@@ -218,7 +216,7 @@ void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 			       const gchar *html)
 {
 	SIPPROTO *pr = backend_session->pr;
-	gchar *self = sip_uri_self(SIPE_CORE_PRIVATE);
+	gchar *self = sipe_miranda_uri_self(pr);
 	gchar *msg;
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
@@ -306,7 +304,7 @@ void sipe_backend_chat_remove(struct sipe_backend_chat_session *backend_session,
 {
 	SIPPROTO *pr = backend_session->pr;
 	struct sipe_core_public *sipe_public = pr->sip;
-	gchar *self = sip_uri_self(SIPE_CORE_PRIVATE);
+	gchar *self = sipe_miranda_uri_self(pr);
 	GCDEST gcd = {0};
 	GCEVENT gce = {0};
 	HANDLE hContact = sipe_backend_buddy_find( sipe_public, uri, NULL );

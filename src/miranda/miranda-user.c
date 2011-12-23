@@ -32,7 +32,6 @@
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
-#include "sipe-core-private.h"
 #include "miranda-private.h"
 
 void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,

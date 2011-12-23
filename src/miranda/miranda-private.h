@@ -116,10 +116,11 @@ gboolean sipe_miranda_input_remove(struct sipe_miranda_sel_entry *entry);
 int sipe_miranda_SendBroadcast(SIPPROTO *pr, HANDLE hContact,int type,int result,HANDLE hProcess,LPARAM lParam);
 void sipe_miranda_SendProtoAck( SIPPROTO *pr, HANDLE hContact, DWORD dwCookie, int nAckResult, int nAckType, const char* pszMessage);
 void sipe_miranda_msgbox(const char *msg, const char *caption);
+gchar *sipe_miranda_uri_self(SIPPROTO *pr);
 
 void sipe_miranda_login(SIPPROTO *pr);
 struct sipe_miranda_connection_info *sipe_miranda_connect(SIPPROTO *pr, const gchar *host, int port, gboolean tls, int timeout, void (*callback)(HANDLE fd, void *data, const gchar *reason), void *data);
-gboolean sipe_miranda_cmd(const gchar *cmd, gchar *buf, DWORD *maxlen);
+gboolean sipe_miranda_cmd(gchar *cmd, gchar *buf, DWORD *maxlen);
 
 gchar* sipe_miranda_eliminate_html(const gchar *string, int len);
 gchar* sipe_miranda_html2rtf(const gchar *text);

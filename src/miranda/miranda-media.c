@@ -32,7 +32,6 @@
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
-#include "sipe-core-private.h"
 #include "miranda-private.h"
 
 struct sipe_backend_media {

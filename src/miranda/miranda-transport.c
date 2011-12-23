@@ -30,9 +30,7 @@
 
 #include "sipe-common.h"
 #include "sipe-core.h"
-#include "sipe-core-private.h"
 #include "sipe-backend.h"
-#include "sip-transport.h"
 #include "sipe-nls.h"
 
 #include "newpluginapi.h"
