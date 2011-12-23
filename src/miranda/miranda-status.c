@@ -97,4 +97,5 @@ gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 				      const gchar *message)
 {
 	sipe_miranda_SetStatus(sipe_public->backend_private, SipeStatusToMiranda(activity));
+	return TRUE;
 }

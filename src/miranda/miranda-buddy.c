@@ -311,7 +311,12 @@ gchar* sipe_backend_buddy_get_group_name(struct sipe_core_public *sipe_public,
 guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
 					   const gchar *uri)
 {
-	_NIF();
+	SIPPROTO *pr = sipe_public->backend_private;
+	sipe_backend_buddy buddy = sipe_backend_buddy_find(sipe_public, uri, NULL);
+	WORD rv = SIPE_ACTIVITY_UNSET;
+
+	sipe_miranda_getWord(pr, buddy, "Status", &rv);
+	return MirandaStatusToSipe(rv);
 }
 
 void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
@@ -485,7 +490,6 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   guint activity)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	const gchar *module = pr->proto.m_szModuleName;
 	GSList *contacts = sipe_backend_buddy_find_all(sipe_public, who, NULL);
 
 	CONTACTS_FOREACH(contacts)

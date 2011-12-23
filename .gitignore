@@ -35,3 +35,4 @@ src/core/sipe_tls_tester
 src/purple/tests
 src/purple/tests_load
 stamp-h1
+siplcs.vcxproj.user
