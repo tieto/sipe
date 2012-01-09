@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jan  9 13:07:06 UTC 2012 - vuntz@opensuse.org
+
+- Add pidgin-sipe-no-deprecated.patch: do not use deprecated glib
+  API, to fix build on Factory.
+
+-------------------------------------------------------------------
 Fri Sep  2 10:00:33 UTC 2011 - vuntz@opensuse.org
 
 - Update to version 1.12.0:
