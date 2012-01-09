@@ -1031,7 +1031,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 					if (!sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
 						sipe_backend_chat_add(session->chat_session->backend,
 								      user_uri,
-								      !just_joined && g_strcasecmp(user_uri, self));
+								      !just_joined && g_ascii_strcasecmp(user_uri, self));
 					}
 					if (is_operator) {
 						sipe_backend_chat_operator(session->chat_session->backend,

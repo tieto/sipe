@@ -690,7 +690,7 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 
 	if ((mrow = sipe_xml_child(searchResults, "Body/directorySearch/moreAvailable")) != NULL) {
 		char *data = sipe_xml_data(mrow);
-		more = (g_strcasecmp(data, "true") == 0);
+		more = (g_ascii_strcasecmp(data, "true") == 0);
 		g_free(data);
 	}
 

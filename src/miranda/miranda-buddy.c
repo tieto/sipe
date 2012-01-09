@@ -565,7 +565,7 @@ void sipe_backend_buddy_info_finalize(struct sipe_core_public *sipe_public,
 
 		sipe_miranda_getWord(pr, hContact, "Status", &wstatus);
 		status = (gchar*)CallService(MS_CLIST_GETSTATUSMODEDESCRIPTION, (WPARAM)wstatus, (LPARAM)GSMDF_PREFIXONLINE);
-		is_online = g_str_has_prefix(status, "Online: ") || !g_strcasecmp(status, "Online");
+		is_online = g_str_has_prefix(status, "Online: ") || !g_ascii_strcasecmp(status, "Online");
 /*
 		info = sipe_core_buddy_info(sipe_public,
 					    dbv.pszVal,

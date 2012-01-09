@@ -96,6 +96,7 @@ AS_IF([test "x$enable_quality_check" = xyes],
 			"-Waggregate-return" \
 			"-Wcast-align" \
 			"-Wdeclaration-after-statement" \
+			"-Wdeprecated-declarations" \
 			"-Winit-self" \
 			"-Wmissing-declarations" \
 			"-Wmissing-prototypes" \
