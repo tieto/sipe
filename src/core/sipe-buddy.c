@@ -973,18 +973,6 @@ static void get_info_ab_entry_response(struct sipe_core_private *sipe_private,
 	ms_dlx_free(mdd);
 }
 
-static void get_info_ab_entry_failed(struct sipe_core_private *sipe_private,
-				     struct ms_dlx_data *mdd)
-{
-	/* request failed: this will show the minmum information */
-	get_info_finalize(sipe_private,
-			  NULL,
-			  mdd->other,
-			  NULL,
-			  NULL);
-	ms_dlx_free(mdd);
-}
-
 static gboolean process_get_info_response(struct sipe_core_private *sipe_private,
 					  struct sipmsg *msg,
 					  struct transaction *trans)
@@ -1105,6 +1093,27 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 	g_free(email);
 
 	return TRUE;
+}
+
+static void get_info_ab_entry_failed(struct sipe_core_private *sipe_private,
+				     struct ms_dlx_data *mdd)
+{
+	/* error using [MS-DLX] server, retry using Active Directory */
+	gchar *query = prepare_buddy_search_query(mdd->search_rows, FALSE);
+	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+
+	payload->destroy = g_free;
+	payload->data = mdd->other;
+	mdd->other = NULL;
+
+	sip_soap_directory_search(sipe_private,
+							  1,
+							  query,
+							  process_get_info_response,
+							  payload);
+
+	ms_dlx_free(mdd);
+	g_free(query);
 }
 
 void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
