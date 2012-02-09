@@ -3,6 +3,7 @@ version 1.13.0 "Lync & Office365" (2012-XX-XX)
 	  * TLS-DSK has been introduced in Lync
 	  * mandatory for Office365 accounts
 	  * also works for non-public Lync installations
+	  * does not work yet with SSPI on Windows
 	- added [MS-DLX] based Get Info/Contact Search (Stefan Becker)
 	  * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
 	- added experimental media TCP transport (Jakub Adam)
