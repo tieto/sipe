@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -13,34 +13,27 @@
 # Configuration option:
 #  - USE_SSPI defined:     NTLM, Kerberos & Single-Signon supported
 #  - USE_SSPI not defined: only NTLM without Single-Signon supported
+#             [eg.: make -f Makefile.mingw USE_SSPI= ]
 #
 USE_SSPI := 1
 
+ifdef PIDGIN_TREE_TOP
+# standalone MinGW build
 OLD_PIDGIN_TREE_TOP := $(PIDGIN_TREE_TOP)
-PIDGIN_TREE_TOP := ../$(OLD_PIDGIN_TREE_TOP)
+PIDGIN_TREE_TOP     := ../$(OLD_PIDGIN_TREE_TOP)
+else
+# MinGW cross-compile build (see contrib/mingw-cross-compile/README.txt)
+PIDGIN_TREE_TOP := ../../..
+endif
 
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
-LIBICONV_TOP	= $(WIN32_DEV_TOP)/libiconv-1.13.1-1
-GMIME_TOP	= $(WIN32_DEV_TOP)/gmime-2.4.15
-
-
 TARGET = libsipe
-TYPE = PLUGIN
+
+DLL_INSTALL_DIR = $(PURPLE_INSTALL_PLUGINS_DIR)
 
 # dump higher level defines
-DEFINES =
-
-# Static or Plugin...
-ifeq ($(TYPE),STATIC)
-  DEFINES += -DSTATIC
-  DLL_INSTALL_DIR =	$(PURPLE_INSTALL_DIR)
-else
-ifeq ($(TYPE),PLUGIN)
-  DLL_INSTALL_DIR =	$(PURPLE_INSTALL_PLUGINS_DIR)
-endif
-endif
-
+DEFINES  =
 DEFINES += -DENABLE_NLS=1
 DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/tracker/?atid=949931\&group_id=194563\"
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
@@ -51,10 +44,7 @@ DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.net/projects/p/pidgin
 
 ifdef USE_SSPI
 DEFINES += -DHAVE_SSPI=1
-else
-DEFINES += -DHAVE_GMIME=1
 endif
-
 
 ##
 ## INCLUDE PATHS
@@ -65,7 +55,6 @@ INCLUDE_PATHS +=	-I. \
 			-I$(GTK_TOP)/include \
 			-I$(GTK_TOP)/include/glib-2.0 \
 			-I$(GTK_TOP)/lib/glib-2.0/include \
-			-I$(LIBICONV_TOP)/include \
 			-I$(LIBXML2_TOP)/include/libxml2 \
 			-I$(NSPR_TOP)/include \
 			-I$(NSS_TOP)/include
@@ -73,12 +62,6 @@ INCLUDE_PATHS +=	-I. \
 PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
 			-I$(PURPLE_TOP)/win32 \
 			-I$(PIDGIN_TREE_TOP)
-
-ifdef USE_SSPI
-# nothing needed
-else
-INCLUDE_PATHS +=	-I$(GMIME_TOP)/include/gmime-2.4
-endif
 
 ##
 ##  SOURCES, OBJECTS
@@ -133,6 +116,7 @@ PURPLE_C_SRC = 		../purple/purple-buddy.c \
 			../purple/purple-groupchat.c \
 			../purple/purple-im.c \
 			../purple/purple-markup.c \
+			../purple/purple-mime.c \
 			../purple/purple-network.c \
 			../purple/purple-notify.c \
 			../purple/purple-plugin.c \
@@ -147,13 +131,10 @@ C_TEST_SRC = 		sipe-xml-tests.c
 
 ifdef USE_SSPI
 CLEAN_C_SRC +=		sip-sec-sspi.c
-PURPLE_C_SRC +=		../purple/purple-mime.c
-
 else
 CLEAN_C_SRC +=		md4.c \
 			sip-sec-ntlm.c \
-			sip-sec-tls-dsk.c \
-			sipe-mime.c
+			sip-sec-tls-dsk.c
 
 C_TEST_SRC += 		sip-sec-ntlm-tests.c \
 			../purple/tests.c
@@ -189,12 +170,7 @@ LIBS =			-lglib-2.0 \
 			-lpurple
 
 ifdef USE_SSPI
-LIB_PATHS +=		$(LIBICONV_TOP)/lib/libiconv.a
 LIBS +=			-lsecur32
-else
-LIB_PATHS +=		$(GMIME_TOP)/lib/libgmime-2.4.a \
-			-L$(LIBICONV_TOP)/lib
-LIBS +=			-liconv
 endif
 
 # These flags are used in mingw build
