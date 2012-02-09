@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -44,7 +44,7 @@
 #define SSPI_MECH_NTLM      "NTLM"
 #define SSPI_MECH_KERBEROS  "Kerberos"
 #define SSPI_MECH_NEGOTIATE "Negotiate"
-#define SSPI_MECH_TLS_DSK   "TLS-DSK" /* educated guess :-) */
+#define SSPI_MECH_TLS_DSK   "Schannel" /* SSL/TLS provider, is this correct? */
 
 #ifndef ISC_REQ_IDENTIFY
 #define ISC_REQ_IDENTIFY               0x00002000
