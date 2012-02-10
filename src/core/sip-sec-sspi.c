@@ -87,7 +87,6 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	TimeStamp expiry;
 	SEC_WINNT_AUTH_IDENTITY auth_identity;
 	context_sspi ctx = (context_sspi)context;
-	CredHandle *cred_handle;
 
 	if (username) {
 		if (!password) {
@@ -109,8 +108,11 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		auth_identity.PasswordLength = strlen(password);
 	}
 
-	cred_handle = g_malloc0(sizeof(CredHandle));
+	ctx->cred_sspi = g_malloc0(sizeof(CredHandle));
 
+	/* @TODO: this does not work for "Schannel" (TLS-DSK) as it expects
+	          a SCHANNEL_CRED datastructure, pointing to the private key
+		  and the client certificate */
 	ret = AcquireCredentialsHandleA(NULL,
 					(SEC_CHAR *)ctx->mech,
 					SECPKG_CRED_OUTBOUND,
@@ -118,15 +120,15 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 					(context->sso || !username) ? NULL : &auth_identity,
 					NULL,
 					NULL,
-					cred_handle,
+					ctx->cred_sspi,
 					&expiry);
 
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandleA", ret);
+		g_free(ctx->cred_sspi);
 		ctx->cred_sspi = NULL;
 		return SIP_SEC_E_INTERNAL_ERROR;
 	} else {
-		ctx->cred_sspi = cred_handle;
 		return SIP_SEC_E_OK;
 	}
 }
