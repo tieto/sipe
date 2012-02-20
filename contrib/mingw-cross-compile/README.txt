@@ -29,9 +29,24 @@ This will most likely work also for other Linux distros, but you'll have
 to check what names the MinGW cross-compilation packages are for your
 distro.
 
+If you are trying to build the source code from the git repository you'll
+need additional tools installed, at least:
+
+   autoconf
+   automake
+
 
 Build
 =====
+
+ - [pidgin-sipe source code from git instead from a release tarball]
+   run the following commands inside the git work area:
+
+      ./autogen.sh
+      ./configure
+      make dist-gzip
+
+   This will generate pidgin-sipe-<VERSION>.tar.gz
 
  - create an empty directory and cd into it
 
