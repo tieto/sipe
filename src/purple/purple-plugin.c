@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -306,9 +306,15 @@ static void sipe_purple_login(PurpleAccount *account)
 		SIPE_CORE_FLAG_SET(KRB5);
 	} else
 #endif
+#ifndef HAVE_SSPI
+	/*
+	 * @TODO: SSL handshake support isn't implemented in sip-sec-sspi.c.
+	 *        So ignore configuration setting for now.
+	 */
 	if (sipe_strequal(auth, "tls-dsk")) {
 		SIPE_CORE_FLAG_SET(TLS_DSK);
 	}
+#endif
 
 	/* @TODO: is this correct?
 	   "sso" is only available when Kerberos/SSPI support is compiled in */
@@ -884,7 +890,10 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
 #endif
+#ifndef HAVE_SSPI
+	/* see above */
 	purple_account_option_add_list_item(option, _("TLS-DSK"), "tls-dsk");
+#endif
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
