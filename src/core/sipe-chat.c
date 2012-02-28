@@ -418,10 +418,10 @@ process_info_response(struct sipe_core_private *sipe_private,
 				return FALSE;
 			}
 
-			if (allow && !g_strcasecmp(allow, "true")) {
+			if (allow && !g_ascii_strcasecmp(allow, "true")) {
 				SIPE_DEBUG_INFO("process_info_response: %s has voted PRO", with);
 				dialog->election_vote = 1;
-			} else if (allow && !g_strcasecmp(allow, "false")) {
+			} else if (allow && !g_ascii_strcasecmp(allow, "false")) {
 				SIPE_DEBUG_INFO("process_info_response: %s has voted CONTRA", with);
 				dialog->election_vote = -1;
 			}

@@ -1,3 +1,6 @@
+EXTRA_DIST = \
+	Makefile.mingw
+
 noinst_LTLIBRARIES = \
 	libsipe_core.la \
 	libsipe_core_crypto_nss.la \

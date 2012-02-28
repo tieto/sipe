@@ -237,7 +237,7 @@ void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]) {
 
 		elem = entry->data;
 		while (keepers[i]) {
-			if (!g_strcasecmp(elem->name, keepers[i])) {
+			if (!g_ascii_strcasecmp(elem->name, keepers[i])) {
 				keeper = TRUE;
 				break;
 			}
@@ -450,7 +450,7 @@ const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 		if (elem && elem->name &&
 		    (sipe_strcase_equal(elem->name,"WWW-Authenticate") ||
 		     sipe_strcase_equal(elem->name,"Authentication-Info")) ) {
-			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
+			if (!g_ascii_strncasecmp((gchar *)elem->value, name, name_len)) {
 				/* SIPE_DEBUG_INFO("elem->value: %s", elem->value); */
 				return elem->value;
 			}

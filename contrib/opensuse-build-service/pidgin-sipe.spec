@@ -129,7 +129,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.12.0
+Version:        1.13.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -424,6 +424,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* DDD MMM DD 2012 J. D. User <jduser@noreply.com> 1.13.0
+- update to 1.13.0
+
 * Mon Dec 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
 - we do support Microsoft Lync Server 2010 now.
 

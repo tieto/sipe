@@ -9,7 +9,9 @@ SUBDIRS += telepathy
 endif
 
 EXTRA_DIST = \
-	miranda
+	adium \
+	miranda \
+	Makefile.mingw
 
 MAINTAINERCLEANFILES = \
 	Makefile.in

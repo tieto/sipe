@@ -90,13 +90,16 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 	/* provisionGroup */
 	for (node = sipe_xml_child(xn_provision_group_list, "provisionGroup"); node; node = sipe_xml_twin(node)) {
 		if (sipe_strequal("ServerConfiguration", sipe_xml_attribute(node, "name"))) {
+			const gchar *dlx_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
+					"dlxExternalUrl" : "dlxInternalUrl";
+
 			g_free(sipe_private->focus_factory_uri);
 			sipe_private->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->focus_factory_uri=%s",
 					sipe_private->focus_factory_uri ? sipe_private->focus_factory_uri : "");
 
 			g_free(sipe_private->dlx_uri);
-			sipe_private->dlx_uri = sipe_xml_data(sipe_xml_child(node, "dlxExternalUrl"));
+			sipe_private->dlx_uri = sipe_xml_data(sipe_xml_child(node, dlx_uri_str));
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->dlx_uri=%s",
 					sipe_private->dlx_uri ? sipe_private->dlx_uri : "");
 

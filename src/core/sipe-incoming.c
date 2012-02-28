@@ -94,7 +94,7 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	if (session->chat_session &&
 	    (session->chat_session->type == SIPE_CHAT_TYPE_MULTIPARTY) &&
 	    session->chat_session->id &&
-	    !g_strcasecmp(from, session->chat_session->id))
+	    !g_ascii_strcasecmp(from, session->chat_session->id))
 		sipe_chat_set_roster_manager(session, NULL);
 
 	sipe_im_cancel_unconfirmed(sipe_private, session, callid, from);
@@ -104,7 +104,7 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	sipe_dialog_free(dialog);
 	if (session->chat_session) {
 		if ((session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE) &&
-		    !g_strcasecmp(from, session->im_mcu_uri)) {
+		    !g_ascii_strcasecmp(from, session->im_mcu_uri)) {
 			SIPE_DEBUG_INFO("process_incoming_bye: disconnected from conference %s",
 					session->im_mcu_uri);
 			sipe_conf_immcu_closed(sipe_private, session);
@@ -417,7 +417,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 			is_multiparty = TRUE;
 		}
 	}
-	if (trig_invite && !g_strcasecmp(trig_invite, "TRUE")) {
+	if (trig_invite && !g_ascii_strcasecmp(trig_invite, "TRUE")) {
 		is_multiparty = TRUE;
 	}
 
@@ -479,8 +479,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 			struct sipendpoint *end_point = entry->data;
 			entry = entry->next;
 
-			if (!g_strcasecmp(from, end_point->contact) ||
-			    !g_strcasecmp(to,   end_point->contact))
+			if (!g_ascii_strcasecmp(from, end_point->contact) ||
+			    !g_ascii_strcasecmp(to,   end_point->contact))
 				continue;
 
 			dialog = sipe_dialog_find(session, end_point->contact);

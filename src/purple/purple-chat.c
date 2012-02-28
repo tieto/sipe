@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -27,7 +27,6 @@
 #endif
 
 #include <time.h>
-#include <errno.h>
 
 #include <glib.h>
 
@@ -38,6 +37,8 @@
 /* for ENOTCONN */
 #ifdef _WIN32
 #include "win32/win32dep.h"
+#else
+#include <errno.h>
 #endif
 
 #include "sipe-common.h"

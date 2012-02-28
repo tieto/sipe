@@ -3,6 +3,7 @@ version 1.13.0 "Lync & Office365" (2012-XX-XX)
 	  * TLS-DSK has been introduced in Lync
 	  * mandatory for Office365 accounts
 	  * also works for non-public Lync installations
+	  * does not work yet with SSPI on Windows
 	- added [MS-DLX] based Get Info/Contact Search (Stefan Becker)
 	  * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
 	- added experimental media TCP transport (Jakub Adam)
@@ -16,6 +17,7 @@ version 1.13.0 "Lync & Office365" (2012-XX-XX)
 	- OBS mingw packages now use SSPI instead of NTLM (Stefan Becker)
 	- added NSIS package generation to OBS mingw packages (Stefan Becker)
 	- removed kopete backend. KDE is moving to telepathy (Stefan Becker)
+	- added MinGW cross-compilation on Linux instructions (Stefan Becker)
 
 version 1.12.0 "Group Chat" (2011-08-29)
 	- Feature #3064877: Add support for OCS2007R2 Group Chat (Stefan Becker)

@@ -611,7 +611,7 @@ static struct transaction *transactions_find(struct sip_transport *transport,
 	key = g_strdup_printf("<%s><%s>", call_id, cseq);
 	while (transactions) {
 		struct transaction *trans = transactions->data;
-		if (!g_strcasecmp(trans->key, key)) {
+		if (!g_ascii_strcasecmp(trans->key, key)) {
 			g_free(key);
 			return trans;
 		}
@@ -1162,7 +1162,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 				SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
 
-				if (redirect && (g_strncasecmp("sip:", redirect, 4) == 0)) {
+				if (redirect && (g_ascii_strncasecmp("sip:", redirect, 4) == 0)) {
 					gchar **parts = g_strsplit(redirect + 4, ";", 0);
 					gchar **tmp;
 					gchar *hostname;
@@ -1178,8 +1178,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					while (parts[i]) {
 						tmp = g_strsplit(parts[i], "=", 0);
 						if (tmp[1]) {
-							if (g_strcasecmp("transport", tmp[0]) == 0) {
-								if (g_strcasecmp("tcp", tmp[1]) == 0) {
+							if (g_ascii_strcasecmp("transport", tmp[0]) == 0) {
+								if (g_ascii_strcasecmp("tcp", tmp[1]) == 0) {
 									transport = SIPE_TRANSPORT_TCP;
 								}
 							}
@@ -1523,7 +1523,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 						for (i = 0; i < AUTH_PROTOCOLS; i++) {
 							const gchar *protocol = auth_type_to_protocol[i];
 							if (protocol &&
-							    !g_strncasecmp(auth_hdr, protocol, strlen(protocol))) {
+							    !g_ascii_strncasecmp(auth_hdr, protocol, strlen(protocol))) {
 								SIPE_DEBUG_INFO("proxy auth: type %s", protocol);
 								transport->proxy.type     = i;
 								transport->proxy.protocol = protocol;
