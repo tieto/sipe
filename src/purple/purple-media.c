@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -297,7 +297,7 @@ ensure_codecs_conf()
 }
 
 static void
-append_relay(GValueArray *relay_info, const gchar *ip, guint port, gchar *type,
+append_relay(GArray *relay_info, const gchar *ip, guint port, gchar *type,
 	     gchar *username, gchar *password)
 {
 	GValue value;
@@ -316,7 +316,7 @@ append_relay(GValueArray *relay_info, const gchar *ip, guint port, gchar *type,
 		g_value_init(&value, GST_TYPE_STRUCTURE);
 		gst_value_set_structure(&value, gst_relay_info);
 
-		g_value_array_append(relay_info, &value);
+		g_array_append_val(relay_info, value);
 		gst_structure_free(gst_relay_info);
 	}
 }
@@ -324,9 +324,9 @@ append_relay(GValueArray *relay_info, const gchar *ip, guint port, gchar *type,
 struct sipe_backend_media_relays *
 sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *password)
 {
-	GValueArray *relay_info = g_value_array_new(0);
+	GArray *relay_info = g_array_new(FALSE, FALSE, sizeof(GValue));
 
-	for (; media_relays; media_relays = media_relays->next) {\
+	for (; media_relays; media_relays = media_relays->next) {
 		struct sipe_media_relay *relay = media_relays->data;
 
 		/* Skip relays where IP could not be resolved. */
@@ -350,7 +350,13 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 void
 sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 {
-	g_value_array_free((GValueArray *)media_relays);
+	GArray *relay_info = (GArray *) media_relays;
+	guint i;
+	for (i = 0; i < relay_info->len; i++) {
+		GValue *value = &g_array_index(relay_info, GValue, i);
+		g_value_unset(value);
+	}
+	g_array_free(relay_info, TRUE);
 }
 
 static guint
@@ -412,7 +418,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 
 		if (media_relays) {
 			params[3].name = "relay-info";
-			g_value_init(&params[3].value, G_TYPE_VALUE_ARRAY);
+			g_value_init(&params[3].value, G_TYPE_ARRAY);
 			g_value_set_boxed(&params[3].value, media_relays);
 		} else
 			--params_cnt;
