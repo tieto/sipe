@@ -24,6 +24,7 @@ PIDGIN_TREE_TOP     := ../$(OLD_PIDGIN_TREE_TOP)
 else
 # MinGW cross-compile build (see contrib/mingw-cross-compile/README.txt)
 PIDGIN_TREE_TOP := ../../..
+VERSION         := $(shell cat ../../VERSION)
 endif
 
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak

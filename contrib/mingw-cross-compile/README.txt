@@ -29,11 +29,15 @@ This will most likely work also for other Linux distros, but you'll have
 to check what names the MinGW cross-compilation packages are for your
 distro.
 
-If you are trying to build the source code from the git repository you'll
-need additional tools installed, at least:
+If you are trying to build the source code from the git repository then
+you'll need additional tools installed, at least:
 
    autoconf
    automake
+
+If you want to build the NSIS installer package then you'll need to install:
+
+   mingw32-nsis
 
 
 Build
@@ -74,7 +78,7 @@ Build
 
      (to compile without SSPI support add " USE_SSPI=" to the command line)
 
-If everything goes will you should now have
+If everything goes well you should now have
 
   pidgin-sipe-<...REPLACE PIDGIN-SIPE VERSION HERE...>/src/core/libsipe.dll
 
@@ -82,3 +86,23 @@ which you can copy into your Pidgin Windows installation directory.
 
 NOTE: PLEASE make sure that there is NO OTHER libsipe.dll in that installation
       or in your PATH!
+
+
+NSIS Installer Package
+======================
+
+After you have successfully executed the build:
+
+ - run (this is one line on the command line!)
+
+     PIDGIN_TREE_TOP=.. make
+          -C pidgin-sipe-<...REPLACE PIDGIN-SIPE VERSION HERE...>
+          -f Makefile.mingw cross-compile-nsis
+
+     (to compile without SSPI support add " USE_SSPI=" to the command line)
+
+If everything goes well you should now have
+
+  pidgin-sipe-<...REPLACE PIDGIN-SIPE VERSION HERE...>.exe
+
+which you now can execute on your Windows machine.
