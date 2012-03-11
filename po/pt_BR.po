@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Anibal Avelar <debianmx@gmail.com>, 2011.
+# Anibal Avelar <debianmx@gmail.com>, 2011, 2012.
 # Stefan Becker <chemobejk@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2011-12-16 20:46+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2012-03-11 06:21+0000\n"
+"Last-Translator: Anibal Avelar <debianmx@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -28,11 +28,11 @@ msgstr "A autenticação com o servidor falhou"
 #: ../src/core/sip-transport.c:252
 #, c-format
 msgid "Can't request certificate from %s"
-msgstr ""
+msgstr "Não é possível solicitar o certificado de %s"
 
 #: ../src/core/sip-transport.c:262
 msgid "No URI for certificate provisioning service provided"
-msgstr ""
+msgstr "Não URI para o serviço de provisionamento certificado previsto"
 
 #: ../src/core/sip-transport.c:1212
 msgid "Authentication failed"
@@ -56,9 +56,7 @@ msgstr "nenhum motivo especificado"
 #: ../src/core/sip-transport.c:1259
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr ""
-"Não encontrado: %s. Por favor, entre em contato com seu Administrador de "
-"Rede."
+msgstr "Não encontrado: %s. Por favor, entre em contato com seu Administrador de Rede."
 
 #: ../src/core/sip-transport.c:1261
 msgid "SIP is either not enabled for the destination URI or it does not exist"
@@ -115,7 +113,7 @@ msgstr " (mais correspondências à sua consulta)"
 
 #: ../src/core/sipe-buddy.c:515 ../src/core/sipe-buddy.c:659
 msgid "No contacts found"
-msgstr ""
+msgstr "Nenhum contacto encontrado"
 
 #: ../src/core/sipe-buddy.c:526 ../src/core/sipe-buddy.c:671
 msgid "Unable to display the search results"
@@ -124,7 +122,7 @@ msgstr "Não foi possível exibir os resultados da busca"
 #: ../src/core/sipe-buddy.c:617 ../src/core/sipe-buddy.c:637
 #: ../src/core/sipe-buddy.c:649
 msgid "Contact search failed"
-msgstr ""
+msgstr "Busca contato falhou"
 
 #: ../src/core/sipe-buddy.c:1241
 #, c-format
@@ -147,11 +145,11 @@ msgstr "Nova conversa"
 
 #: ../src/core/sipe-buddy.c:1297
 msgid "Work"
-msgstr ""
+msgstr "Trabalhar"
 
 #: ../src/core/sipe-buddy.c:1304
 msgid "Mobile"
-msgstr ""
+msgstr "Móvel"
 
 #: ../src/core/sipe-buddy.c:1312
 msgid "Home"
@@ -159,11 +157,11 @@ msgstr "Início"
 
 #: ../src/core/sipe-buddy.c:1320
 msgid "Other"
-msgstr ""
+msgstr "Outro"
 
 #: ../src/core/sipe-buddy.c:1328
 msgid "Custom1"
-msgstr ""
+msgstr "Custom1"
 
 #: ../src/core/sipe-buddy.c:1338
 msgid "Send email..."
@@ -225,12 +223,12 @@ msgstr "%s. %s às %.2d:%.2d"
 #: ../src/core/sipe-certificate.c:213 ../src/core/sipe-certificate.c:254
 #, c-format
 msgid "Certificate request to %s failed"
-msgstr ""
+msgstr "Pedido de certificado para %s falhou"
 
 #: ../src/core/sipe-certificate.c:260
 #, c-format
 msgid "Web ticket request to %s failed"
-msgstr ""
+msgstr "Solicitação da Web bilhete para %s falhou"
 
 #. Generate next ID
 #: ../src/core/sipe-chat.c:231
@@ -252,10 +250,7 @@ msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
-msgstr ""
-"\n"
-"\n"
-"Como esse cliente não foi compilado com suporte a chamadas de voz, se você aceitar, você poderá entrar em contato com os outros participantes da sessão somente via IM."
+msgstr "\n\nComo esse cliente não foi compilado com suporte a chamadas de voz, se você aceitar, você poderá entrar em contato com os outros participantes da sessão somente via IM."
 
 #: ../src/core/sipe-conf.c:853
 #, c-format
@@ -273,17 +268,13 @@ msgstr "Declínio"
 #: ../src/core/sipe-conf.c:1082
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
-msgstr ""
-"Esta conferência não está mais bloqueada. Participantes adicionais podem se "
-"conectar agora."
+msgstr "Esta conferência não está mais bloqueada. Participantes adicionais podem se conectar agora."
 
 #: ../src/core/sipe-conf.c:1086
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
-msgstr ""
-"Esta conferência está bloqueada. Nenhum novo participante pode se conectar "
-"enquanto a mesma se encontrar bloqueada."
+msgstr "Esta conferência está bloqueada. Nenhum novo participante pode se conectar enquanto a mesma se encontrar bloqueada."
 
 #: ../src/core/sipe-conf.c:1119
 msgid "You have been disconnected from this conference."
@@ -295,19 +286,17 @@ msgstr "Você foi desconectado desta conferência."
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
-msgstr ""
-"Um plugin desenvolvido por terceiros que implementa uma versão do protocolo "
-"SIP/SIMPLE usado por vários produtos"
+msgstr "Um plugin desenvolvido por terceiros que implementa uma versão do protocolo SIP/SIMPLE usado por vários produtos"
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:180
 msgid "Home Page"
-msgstr ""
+msgstr "Homepage"
 
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe-core.c:182
 msgid "Support"
-msgstr ""
+msgstr "Apoiar"
 
 #. About note, part 4/13: support forum name (hyperlink text)
 #: ../src/core/sipe-core.c:184
@@ -372,17 +361,13 @@ msgstr "O nome de usuário SIP Exchange contém caracteres inválidos"
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
-msgstr ""
-"O nome de usuário deve ser um SIP URI válido\n"
-"Exemplo: usuario@dominio.com"
+msgstr "O nome de usuário deve ser um SIP URI válido\nExemplo: usuario@dominio.com"
 
 #: ../src/core/sipe-core.c:273
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
-msgstr ""
-"O endereço de email deve ser válido, se fornecido\n"
-"Exemplo: usuario@dominio.com"
+msgstr "O endereço de email deve ser válido, se fornecido\nExemplo: usuario@dominio.com"
 
 #: ../src/core/sipe-core.c:282
 msgid "SIP Exchange user name contains whitespace"
@@ -393,10 +378,7 @@ msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Example: https://domino.corp.com/maildatabase.nsf"
-msgstr ""
-"Email URL deberia é valida se proporciona\n"
-"Exemplo: https://exchange.corp.com/EWS/Exchange.asmx\n"
-"Exemplo: https://domino.corp.com/maildatabase.nsf"
+msgstr "Email URL deberia é valida se proporciona\nExemplo: https://exchange.corp.com/EWS/Exchange.asmx\nExemplo: https://domino.corp.com/maildatabase.nsf"
 
 #. Translators: (!) should be as in localized Lotus Notes to be able to
 #. extract meeting location
@@ -466,12 +448,7 @@ msgid ""
 "\t%s\n"
 "\n"
 "Please update your Account."
-msgstr ""
-"Grupo Chat configuração do proxy está incorreto:\n"
-"\n"
-"»%s\n"
-"\n"
-"Por favor, atualize sua conta."
+msgstr "Grupo Chat configuração do proxy está incorreto:\n\n»%s\n\nPor favor, atualize sua conta."
 
 #: ../src/core/sipe-groupchat.c:336
 msgid "Couldn't find Group Chat server!"
@@ -480,8 +457,7 @@ msgstr "Não foi possível encontrar o grupo do servidor de chat!"
 #: ../src/core/sipe-groupchat.c:434
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
-msgstr ""
-"Esta mensagem não foi enviada a %s porque o serviço se encontra indisponível"
+msgstr "Esta mensagem não foi enviada a %s porque o serviço se encontra indisponível"
 
 #: ../src/core/sipe-groupchat.c:510
 msgid "Error retrieving room list"
@@ -661,17 +637,13 @@ msgstr "Apenas interrupções urgentes"
 msgid ""
 "Your message or invitation was not delivered, possibly because it contains a"
 " hyperlink or other content that the system administrator has blocked."
-msgstr ""
-"Sua mensagem ou o convite não foi entregue, possivelmente porque ele contém "
-"um hiperlink, ou outro índice que o administrador do sistema tenha "
-"bloqueado."
+msgstr "Sua mensagem ou o convite não foi entregue, possivelmente porque ele contém um hiperlink, ou outro índice que o administrador do sistema tenha bloqueado."
 
 #: ../src/core/sipe-user.c:82
 #, c-format
 msgid ""
 "This message was not delivered to %s because the service is not available"
-msgstr ""
-"Esta mensagem não foi enviada a %s porque o serviço se encontra indisponível"
+msgstr "Esta mensagem não foi enviada a %s porque o serviço se encontra indisponível"
 
 #. Busy Here
 #: ../src/core/sipe-user.c:84
@@ -679,9 +651,7 @@ msgstr ""
 msgid ""
 "This message was not delivered to %s because one or more recipients do not "
 "want to be disturbed"
-msgstr ""
-"Esta mensagem não foi enviada a %s porque um ou mais destinatários desejam "
-"não serem incomodados"
+msgstr "Esta mensagem não foi enviada a %s porque um ou mais destinatários desejam não serem incomodados"
 
 #. Unsupported media type
 #: ../src/core/sipe-user.c:86
@@ -689,18 +659,14 @@ msgstr ""
 msgid ""
 "This message was not delivered to %s because one or more recipients don't "
 "support this type of message"
-msgstr ""
-"Esta mensagem não foi entregue ao% s porque um ou mais destinatários não "
-"suportam esse tipo de mensagem"
+msgstr "Esta mensagem não foi entregue ao% s porque um ou mais destinatários não suportam esse tipo de mensagem"
 
 #: ../src/core/sipe-user.c:88
 #, c-format
 msgid ""
 "This message was not delivered to %s because one or more recipients are "
 "offline"
-msgstr ""
-"Esta mensagem não foi enviada a %s porque um ou mais destinatários estão "
-"desconectados"
+msgstr "Esta mensagem não foi enviada a %s porque um ou mais destinatários estão desconectados"
 
 #. SIPE_BUDDY_INFO_DISPLAY_NAME
 #: ../src/purple/purple-buddy.c:46
@@ -776,8 +742,7 @@ msgstr "você"
 #: ../src/purple/purple-buddy.c:459
 msgid ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
-"https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
 #: ../src/purple/purple-buddy.c:491
 msgid "Domain"
@@ -878,9 +843,7 @@ msgstr "Buscar por um contato"
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
-msgstr ""
-"Insira os dados da pessoa que você deseja encontrar. Campos vazios serão "
-"ignorados"
+msgstr "Insira os dados da pessoa que você deseja encontrar. Campos vazios serão ignorados"
 
 #: ../src/purple/purple-plugin.c:720
 msgid "_Search"
@@ -908,11 +871,7 @@ msgid ""
 "\n"
 "Valid location will be something like\n"
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
-msgstr ""
-"Entra em seqüência reunião local que você recebeu no convite.\n"
-"\n"
-"Localização válida será algo como ⏎\n"
-"atender:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
+msgstr "Entra em seqüência reunião local que você recebeu no convite.\n\nLocalização válida será algo como ⏎\natender:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
 
 #: ../src/purple/purple-plugin.c:764
 msgid "_Join"
@@ -950,18 +909,13 @@ msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
-msgstr ""
-"Login\n"
-"   usuario o DOMINIO\\usuario o\n"
-"   usuario@dominio.com"
+msgstr "Login\n   usuario o DOMINIO\\usuario o\n   usuario@dominio.com"
 
 #: ../src/purple/purple-plugin.c:860
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
-msgstr ""
-"Servidor[:Porta]\n"
-"(deixar vazio para autoconfiguração)"
+msgstr "Servidor[:Porta]\n(deixar vazio para autoconfiguração)"
 
 #: ../src/purple/purple-plugin.c:863
 msgid "Connection type"
@@ -989,19 +943,19 @@ msgstr "Agente do Usuário"
 
 #: ../src/purple/purple-plugin.c:875
 msgid "Authentication scheme"
-msgstr ""
+msgstr "Esquema de autenticação"
 
 #: ../src/purple/purple-plugin.c:876
 msgid "NTLM"
-msgstr ""
+msgstr "NTLM"
 
 #: ../src/purple/purple-plugin.c:878
 msgid "Kerberos"
-msgstr ""
+msgstr "Kerberos"
 
 #: ../src/purple/purple-plugin.c:880
 msgid "TLS-DSK"
-msgstr ""
+msgstr "TLS-DSK"
 
 #. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
 #. * No login/password is taken into account if this option present,
@@ -1018,17 +972,13 @@ msgstr "Usar Single Sign-On"
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
-msgstr ""
-"URL dos serviços de Email\n"
-"(deixar vazio para autoconfiguração)"
+msgstr "URL dos serviços de Email\n(deixar vazio para autoconfiguração)"
 
 #: ../src/purple/purple-plugin.c:898
 msgid ""
 "Email address\n"
 "(if different from Username)"
-msgstr ""
-"Endereço de email\n"
-"(se diferente do Nome do Usuário)"
+msgstr "Endereço de email\n(se diferente do Nome do Usuário)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
@@ -1037,17 +987,13 @@ msgstr ""
 msgid ""
 "Email login\n"
 "(if different from Login)"
-msgstr ""
-"Login do email\n"
-"(se diferente do Login)"
+msgstr "Login do email\n(se diferente do Login)"
 
 #: ../src/purple/purple-plugin.c:907
 msgid ""
 "Email password\n"
 "(if different from Password)"
-msgstr ""
-"Senha do email\n"
-"(se diferente da Senha)"
+msgstr "Senha do email\n(se diferente da Senha)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
@@ -1057,10 +1003,7 @@ msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
-msgstr ""
-"Grupo Chat Proxy\n"
-"   company.com o user@company.com\n"
-"(deixe em branco para determinar a partir de Usuário)"
+msgstr "Grupo Chat Proxy\n   company.com o user@company.com\n(deixe em branco para determinar a partir de Usuário)"
 
 #: ../src/purple/purple-search.c:44
 msgid "User name"
@@ -1093,5 +1036,3 @@ msgstr "Não foi possível criar socket"
 #: ../src/purple/purple-transport.c:327
 msgid "Write error"
 msgstr "Erro de gravação"
-
-
