@@ -412,6 +412,7 @@ struct ms_dlx_data {
 	gchar  *other;
 	guint   max_returns;
 	sipe_svc_callback *callback;
+	struct sipe_svc_session *session;
 	/* must call ms_dlx_free() */
 	void (*failed_callback)(struct sipe_core_private *sipe_private,
 				struct ms_dlx_data *mdd);
@@ -425,6 +426,7 @@ static void ms_dlx_free(struct ms_dlx_data *mdd)
 		entry = entry->next;
 	}
 	g_slist_free(mdd->search_rows);
+	sipe_svc_session_close(mdd->session);
 	g_free(mdd->other);
 	g_free(mdd);
 }
@@ -484,6 +486,7 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 				base_uri);
 
 		if (sipe_svc_ab_entry_request(sipe_private,
+					      mdd->session,
 					      auth_uri,
 					      wsse_security,
 					      query,
@@ -510,6 +513,7 @@ static void ms_dlx_webticket_request(struct sipe_core_private *sipe_private,
 				     struct ms_dlx_data *mdd)
 {
 	if (!sipe_webticket_request(sipe_private,
+				    mdd->session,
 				    sipe_private->dlx_uri,
 				    "AddressBookWebTicketBearer",
 				    ms_dlx_webticket,
@@ -782,6 +786,7 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			mdd->max_returns     = 100;
 			mdd->callback        = search_ab_entry_response;
 			mdd->failed_callback = search_ab_entry_failed;
+			mdd->session         = sipe_svc_session_start();
 
 			ms_dlx_webticket_request(SIPE_CORE_PRIVATE, mdd);
 
@@ -1136,6 +1141,7 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 		mdd->max_returns     = 1;
 		mdd->callback        = get_info_ab_entry_response;
 		mdd->failed_callback = get_info_ab_entry_failed;
+		mdd->session         = sipe_svc_session_start();
 
 		ms_dlx_webticket_request(sipe_private, mdd);
 

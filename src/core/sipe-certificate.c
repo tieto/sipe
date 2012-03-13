@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -53,6 +53,20 @@ struct sipe_certificate {
 	GHashTable *certificates;
 	struct sipe_cert_crypto *backend;
 };
+
+struct certificate_callback_data {
+	gchar *target;
+	struct sipe_svc_session *session;
+};
+
+static void callback_data_free(struct certificate_callback_data *ccd)
+{
+	if (ccd) {
+		sipe_svc_session_close(ccd->session);
+		g_free(ccd->target);
+		g_free(ccd);
+	}
+}
 
 void sipe_certificate_free(struct sipe_core_private *sipe_private)
 {
@@ -175,7 +189,7 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 				 sipe_xml *soap_body,
 				 gpointer callback_data)
 {
-	gchar *target = callback_data;
+	struct certificate_callback_data *ccd = callback_data;
 	gboolean success = (uri == NULL); /* abort case */
 
 	if (soap_body) {
@@ -193,10 +207,10 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 
 			if (opaque) {
 				add_certificate(sipe_private,
-						target,
+						ccd->target,
 						opaque);
 				SIPE_DEBUG_INFO("get_and_publish_cert: certificate for target '%s' added",
-						target);
+						ccd->target);
 
 				/* Let's try this again... */
 				sip_transport_authentication_completed(sipe_private);
@@ -214,7 +228,7 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 				    uri);
 	}
 
-	g_free(target);
+	callback_data_free(ccd);
 }
 
 static void certprov_webticket(struct sipe_core_private *sipe_private,
@@ -223,7 +237,7 @@ static void certprov_webticket(struct sipe_core_private *sipe_private,
 			       const gchar *wsse_security,
 			       gpointer callback_data)
 {
-	gchar *target = callback_data;
+	struct certificate_callback_data *ccd = callback_data;
 
 	if (wsse_security) {
 		/* Got a Web Ticket for Certificate Provisioning Service */
@@ -238,18 +252,19 @@ static void certprov_webticket(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO_NOFORMAT("certprov_webticket: created certificate request");
 
 			if (sipe_svc_get_and_publish_cert(sipe_private,
+							  ccd->session,
 							  auth_uri,
 							  wsse_security,
 							  certreq_base64,
 							  get_and_publish_cert,
-							  target))
+							  ccd))
 				/* callback data passed down the line */
-				target = NULL;
+				ccd = NULL;
 
 			g_free(certreq_base64);
 		}
 
-	        if (target) {
+	        if (ccd) {
 			certificate_failure(sipe_private,
 					    _("Certificate request to %s failed"),
 					    base_uri);
@@ -261,23 +276,31 @@ static void certprov_webticket(struct sipe_core_private *sipe_private,
 				    base_uri);
 	}
 
-	g_free(target);
+	if (ccd)
+		callback_data_free(ccd);
 }
 
 gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_private,
 					   const gchar *target,
 					   const gchar *uri)
 {
-	gchar *tmp = g_strdup(target);
+	struct certificate_callback_data *ccd = g_new0(struct certificate_callback_data, 1);
 	gboolean ret;
 
+	ccd->session = sipe_svc_session_start();
+
 	ret = sipe_webticket_request(sipe_private,
+				     ccd->session,
 				     uri,
 				     "CertProvisioningServiceWebTicketProof_SHA1",
 				     certprov_webticket,
-				     tmp);
-	if (!ret)
-		g_free(tmp);
+				     ccd);
+	if (ret) {
+		ccd->target = g_strdup(target);
+
+	} else {
+		callback_data_free(ccd);
+	}
 
 	return(ret);
 }

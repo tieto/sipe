@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -59,6 +59,8 @@ struct webticket_callback_data {
 
 	sipe_webticket_callback *callback;
 	gpointer callback_data;
+
+	struct sipe_svc_session *session;
 };
 
 static void callback_data_free(struct webticket_callback_data *wcd)
@@ -305,6 +307,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 						uri);
 
 				if (sipe_svc_webticket(sipe_private,
+						       wcd->session,
 						       wcd->webticket_fedbearer_uri,
 						       wsse_security,
 						       wcd->service_auth_uri,
@@ -328,6 +331,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 			wcd->tried_fedbearer = TRUE;
 			if (sipe_svc_webticket_lmc(sipe_private,
+						   wcd->session,
 						   wcd->webticket_fedbearer_uri,
 						   webticket_token,
 						   wcd)) {
@@ -399,6 +403,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 				/* Try Negotiate authentication first */
 
 				success = sipe_svc_webticket(sipe_private,
+							     wcd->session,
 							     wcd->webticket_negotiate_uri,
 							     NULL,
 							     wcd->service_auth_uri,
@@ -409,6 +414,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 			} else {
 				wcd->tried_fedbearer = TRUE;
 				success = sipe_svc_webticket_lmc(sipe_private,
+								 wcd->session,
 								 wcd->webticket_fedbearer_uri,
 								 webticket_token,
 								 wcd);
@@ -494,6 +500,7 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 						SIPE_DEBUG_INFO("webservice_metadata: Auth URI %s", auth_uri);
 
 						if (sipe_svc_metadata(sipe_private,
+								      wcd->session,
 								      ticket_uri,
 								      webticket_metadata,
 								      wcd)) {
@@ -522,6 +529,7 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 }
 
 gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
+				struct sipe_svc_session *session,
 				const gchar *base_uri,
 				const gchar *port_name,
 				sipe_webticket_callback *callback,
@@ -529,6 +537,7 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 {
 	struct webticket_callback_data *wcd = g_new0(struct webticket_callback_data, 1);
 	gboolean ret = sipe_svc_metadata(sipe_private,
+					 session,
 					 base_uri,
 					 service_metadata,
 					 wcd);
@@ -538,6 +547,7 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 		wcd->service_port  = port_name;
 		wcd->callback      = callback;
 		wcd->callback_data = callback_data;
+		wcd->session       = session;
 	} else {
 		g_free(wcd);
 	}

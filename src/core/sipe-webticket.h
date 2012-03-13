@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sipe_svc_session;
 
 /**
  * Web Ticket callback
@@ -56,6 +57,7 @@ typedef void (sipe_webticket_callback)(struct sipe_core_private *sipe_private,
  * @return              @c TRUE if web ticket fetch was triggered
  */
 gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
+				struct sipe_svc_session *session,
 				const gchar *base_uri,
 				const gchar *port_name,
 				sipe_webticket_callback *callback,
