@@ -1,4 +1,4 @@
-version 1.13.0 "Lync & Office365" (2012-XX-XX)
+version 1.13.0 "Lync & Office365" (2012-03-14)
 	- added [MS-SIPAE] TLS-DSK authentication scheme (Stefan Becker)
 	  * TLS-DSK has been introduced in Lync
 	  * mandatory for Office365 accounts
@@ -8,7 +8,7 @@ version 1.13.0 "Lync & Office365" (2012-XX-XX)
 	  * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
 	- added experimental media TCP transport (Jakub Adam)
 	- make it compile against the latest purple 3.0.x API (Stefan Becker)
-	- make it compile against the latest glib2 3.31.x API (Stefan Becker)
+	- make it compile against the latest glib2 2.31.x API (Stefan Becker)
 	- completed cleanup: core no longer requires libpurple (Stefan Becker)
 	- refactored crypto code, ie. NSS can replaced if necessary (Stefan Becker)
 	- sipe-domino.c is no longer built under UNIX to remove dead code (Stefan Becker)

@@ -5,10 +5,12 @@ pidgin-sipe (1.13.0-1) unstable; urgency=low
 	  * TLS-DSK has been introduced in Lync
 	  * mandatory for Office365 accounts
 	  * also works for non-public Lync installations
+	  * does not work yet with SSPI on Windows
 	- added [MS-DLX] based Get Info/Contact Search (Stefan Becker)
 	  * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
 	- added experimental media TCP transport (Jakub Adam)
 	- make it compile against the latest purple 3.0.x API (Stefan Becker)
+	- make it compile against the latest glib2 2.31.x API (Stefan Becker)
 	- completed cleanup: core no longer requires libpurple (Stefan Becker)
 	- refactored crypto code, ie. NSS can replaced if necessary (Stefan Becker)
 	- sipe-domino.c is no longer built under UNIX to remove dead code (Stefan Becker)
@@ -18,8 +20,9 @@ pidgin-sipe (1.13.0-1) unstable; urgency=low
 	- OBS mingw packages now use SSPI instead of NTLM (Stefan Becker)
 	- added NSIS package generation to OBS mingw packages (Stefan Becker)
 	- removed kopete backend. KDE is moving to telepathy (Stefan Becker)
+	- added MinGW cross-compilation on Linux instructions (Stefan Becker)
 
- -- Anibal Avelar <aavelar@cofradia.org>  XXX, XX XXX 2012 00:00:00 -0500
+ -- Stefan Becker <chemobejk@gmail.com>  Wed, 14 Mar 2012 19:30:23 +0200
 
 pidgin-sipe (1.12.0-1) unstable; urgency=low
 
