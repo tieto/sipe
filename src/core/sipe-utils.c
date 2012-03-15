@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2012 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,6 +101,30 @@ gchar *sip_uri_from_name(const gchar *name)
 gchar *sip_uri(const gchar *string)
 {
 	return(strstr(string, "sip:") ? g_strdup(string) : sip_uri_from_name(string));
+}
+
+/* can't use g_uri_escape_string as it requires glib-2.0 >= 2.16.0  :-( */
+gchar *sip_uri_if_valid(const gchar *string)
+{
+	/* strip possible sip: prefix */
+	const gchar *s = sipe_get_no_sip_uri(string);
+	if (!s) return(NULL);
+
+	/* scan string for invalid URI characters */
+	while (*s) {
+		gchar c = *s++;
+
+		if (!(isascii(c) &&
+		      (isalnum(c) ||
+		       (c == '.') ||
+		       (c == '-') ||
+		       (c == '_') ||
+		       (c == '@'))))
+			return(NULL);
+	}
+
+	/* name is valid for URI, convert it */
+	return(sip_uri(string));
 }
 
 const gchar *sipe_get_no_sip_uri(const gchar *sip_uri)

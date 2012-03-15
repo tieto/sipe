@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2012 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -199,6 +199,16 @@ gchar *sip_uri_from_name(const gchar *name);
  * @return URI with sip: prefix. Must be g_free()'d.
  */
 gchar *sip_uri(const gchar *string);
+
+/**
+ * Create sip: URI from name or sip: URI. Checks for invalid characters
+ *
+ * @param string (in) name or sip: URI
+ *
+ * @return URI with sip: prefix. Returns NULL if @c string contains invalid
+ *         characters. Must be g_free()'d.
+ */
+gchar *sip_uri_if_valid(const gchar *string);
 
 /**
  * Returns pointer to URI without sip: prefix if any (doesn't allocate memory)

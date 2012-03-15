@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -371,14 +371,23 @@ void sipe_purple_add_buddy(PurpleConnection *gc,
 		 * purple_normalize_nocase() to compare
 		 */
 		gchar *buddy_name = g_ascii_strdown(buddy->name, -1);
-		gchar *uri        = sip_uri(buddy_name);
+		gchar *uri        = sip_uri_if_valid(buddy_name);
 		g_free(buddy_name);
-		purple_blist_rename_buddy(buddy, uri);
-		g_free(uri);
 
-		sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-				    buddy->name,
-				    group->name);
+		if (uri) {
+			purple_blist_rename_buddy(buddy, uri);
+			g_free(uri);
+
+			sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+					    buddy->name,
+					    group->name);
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_purple_add_buddy[CB]: buddy name is invalid for URI");
+			purple_blist_remove_buddy(buddy);
+			purple_notify_error(gc, NULL,
+					    _("User name should be a valid SIP URI\nExample: user@company.com"),
+					    NULL);
+		}
 	}
 }
 
