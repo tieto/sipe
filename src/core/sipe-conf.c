@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -836,7 +836,7 @@ ask_accept_voice_conference(struct sipe_core_private *sipe_private,
 	gchar **parts;
 	gchar *alias;
 	gchar *ask_msg;
-	gchar *novv_note;
+	const gchar *novv_note;
 	struct conf_accept_ctx *ctx;
 
 #ifdef HAVE_VV

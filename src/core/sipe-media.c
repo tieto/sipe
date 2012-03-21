@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <glib.h>
 
@@ -1030,7 +1031,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 
 	if (msg->response >= 400) {
 		// Call rejected by remote peer or an error occurred
-		gchar *title;
+		const gchar *title;
 		GString *desc = g_string_new("");
 		gboolean append_responsestr = FALSE;
 
