@@ -1,7 +1,30 @@
 -------------------------------------------------------------------
-Wed Mar 14 17:30:23 UTC 2012 - chemobejk@gmail.com
+Thu Mar 15 13:23:31 UTC 2012 - vuntz@opensuse.org
 
-- Update to version 1.13.0
+- Update to version 1.13.0:
+  + Added [MS-SIPAE] TLS-DSK authentication scheme:
+    - TLS-DSK has been introduced in Lync
+    - mandatory for Office365 accounts
+    - also works for non-public Lync installations
+    - does not work yet with SSPI on Windows
+  + Added [MS-DLX] based Get Info/Contact Search:
+    - [MS-PRES] SIP-Based Active Directory Search is disabled in
+      Lync
+  + Added experimental media TCP transport
+  + Make it compile against the latest purple 3.0.x API
+  + Make it compile against the latest glib2 2.31.x API
+  + Completed cleanup: core no longer requires libpurple
+  + Refactored crypto code, ie. NSS can replaced if necessary
+  + Removed kopete backend: KDE is moving to telepathy
+  + Build-related changes
+- Drop pidgin-sipe-no-deprecated.patch: fixed upstream.
+
+-------------------------------------------------------------------
+Thu Jan 12 08:57:16 UTC 2012 - dimstar@opensuse.org
+
+- Change gmime-2_4-devel BuildRequires to gmime-devel. This rename
+  happened long ago and was just a virtual provides by now.
+- Drop checks for openSUSE 11.1.
 
 -------------------------------------------------------------------
 Mon Jan  9 13:07:06 UTC 2012 - vuntz@opensuse.org
