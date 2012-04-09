@@ -1,3 +1,9 @@
+version 1.13.1 "Bug Fixes I" (2012-04-09)
+	- detect incompatible encryption level with Lync (Jakub Adam)
+	- purple: add URI validity check to Add Buddy callback (Stefan Becker)
+	- new translations: Romanian (ro), Turkish (tr)
+	- various build fixes (Stefan Becker)
+
 version 1.13.0 "Lync & Office365" (2012-03-14)
 	- added [MS-SIPAE] TLS-DSK authentication scheme (Stefan Becker)
 	  * TLS-DSK has been introduced in Lync
