@@ -453,8 +453,6 @@ sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 #if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 #ifdef HAVE_VV
 
-extern void capture_pipeline(gchar *label);
-
 static void
 sipe_purple_sigusr1_handler(SIPE_UNUSED_PARAMETER int signum)
 {

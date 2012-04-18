@@ -33,7 +33,6 @@
 #include "sipe-common.h"
 
 #include "mediamanager.h"
-#include "media-gst.h"
 #include "agent.h"
 
 #include "sipe-backend.h"
@@ -46,11 +45,18 @@
  * libpurple and libfarsight APIs. Therefore we need to disable the deprecated
  * warning so that the code still compiles for platforms that enable it.
  *
+ * GStreamer interfaces fail to compile on ARM architecture with -Wcast-align
+ *
  * Diagnostic #pragma was added in GCC 4.2.0
  */
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if defined(__ARMEL__) || defined(__ARMEB__)
+#pragma GCC diagnostic ignored "-Wcast-align"
 #endif
+#endif
+
+#include "media-gst.h"
 
 struct sipe_backend_media {
 	PurpleMedia *m;
@@ -116,12 +122,8 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		call->media_end_cb(call);
 }
 
-/* Used externally in purple-plugin.c. This declaration stops the compiler
- * complaining about missing prototype. */
-void capture_pipeline(gchar *label);
-
 void
-capture_pipeline(gchar *label) {
+capture_pipeline(const gchar *label) {
 	PurpleMediaManager *manager = purple_media_manager_get();
 	GstElement *pipeline = purple_media_manager_get_pipeline(manager);
 	GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(pipeline), GST_DEBUG_GRAPH_SHOW_ALL, label);

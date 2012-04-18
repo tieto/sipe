@@ -125,6 +125,9 @@ void sipe_purple_set_status(struct _PurpleAccount *account,
 void sipe_purple_set_idle(struct _PurpleConnection *gc,
 			  int interval);
 
+/* media */
+void capture_pipeline(const gchar *label);
+
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)
 #define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) buddy->account->gc->proto_data)
