@@ -59,6 +59,19 @@ struct sipe_buddy {
 };
 
 /**
+ * Creates @c sipe_buddy structure for a new buddy and adds it into the buddy
+ * list of given account. If buddy is already in the list, its existing
+ * structure is returned.
+ *
+ * @param sipe_private SIPE core data
+ * @param uri          SIP URI of a buddy
+ *
+ * @return @c sipe_buddy structure
+ */
+struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
+				  const gchar *uri);
+
+/**
  * Free all buddy information
  *
  * @param sipe_private SIPE core data

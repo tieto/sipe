@@ -1181,11 +1181,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 					g_free(b_alias);
 
 					if (!buddy) {
-						buddy = g_new0(struct sipe_buddy, 1);
-						buddy->name = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC, b);
-						g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
-
-						SIPE_DEBUG_INFO("Added SIPE buddy %s", buddy->name);
+						buddy = sipe_buddy_add(sipe_private, buddy_name);
 					}
 
 					buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
@@ -1209,13 +1205,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		/* This will resemble subscription to roaming_self in 2007 systems */
 		if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 			gchar *self_uri = sip_uri_self(sipe_private);
-			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, self_uri);
-
-			if (!buddy) {
-				buddy = g_new0(struct sipe_buddy, 1);
-				buddy->name = g_strdup(self_uri);
-				g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
-			}
+			sipe_buddy_add(sipe_private, self_uri);
 			g_free(self_uri);
 		}
 	}

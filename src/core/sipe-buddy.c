@@ -55,6 +55,23 @@
 #include "sipe-webticket.h"
 #include "sipe-xml.h"
 
+struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
+				  const gchar *uri)
+{
+	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	if (!buddy) {
+		buddy = g_new0(struct sipe_buddy, 1);
+		buddy->name = g_strdup(uri);
+		g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
+
+		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", uri);
+	} else {
+		SIPE_DEBUG_INFO("sipe_buddy_add: Buddy %s already exists", uri);
+	}
+
+	return buddy;
+}
+
 static void buddy_free(struct sipe_buddy *buddy)
 {
 #ifndef _WIN32
@@ -186,13 +203,8 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
 	if (!g_hash_table_lookup(sipe_private->buddies, uri)) {
-		struct sipe_buddy *b = g_new0(struct sipe_buddy, 1);
-
-		SIPE_DEBUG_INFO("sipe_core_buddy_add: %s", uri);
-
-		b->name = g_strdup(uri);
+		struct sipe_buddy *b = sipe_buddy_add(sipe_private, uri);
 		b->just_added = TRUE;
-		g_hash_table_insert(sipe_private->buddies, b->name, b);
 
 		/* @TODO should go to callback */
 		sipe_subscribe_presence_single(sipe_private, b->name);
