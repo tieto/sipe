@@ -1,0 +1,2 @@
+version=3
+http://repo.or.cz/w/siplcs.git/tags http://repo.or.cz/w/siplcs.git/shortlog/refs/tags/(\d+\.\d+\.\d+)
