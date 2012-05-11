@@ -24,9 +24,13 @@ config.status:
 	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) \
 	--build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr $(DEB_CONFIGURE_EXTRA_FLAGS)
 
-build: config.status build-stamp
+build: build-arch build-indep
 
-build-stamp: 
+build-arch: build-stamp
+
+build-indep: build-stamp
+
+build-stamp: config.status
 	dh_testdir
 
 	$(MAKE)
@@ -70,4 +74,4 @@ binary-arch: build install
 
 binary: binary-indep binary-arch
 
-.PHONY: build clean binary-indep binary-arch binary install
+.PHONY: build build-arch build-indep clean binary-indep binary-arch binary install
