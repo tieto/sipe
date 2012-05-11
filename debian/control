@@ -7,7 +7,7 @@ Build-Depends: quilt, debhelper (>= 7), autotools-dev, pkg-config,
  libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 2.4.0), libtool,
  intltool, libkrb5-dev, libzephyr-dev, libnss3-dev, libnice-dev,
  libgstreamer0.10-dev
-Standards-Version: 3.9.1
+Standards-Version: 3.9.3
 
 Package: pidgin-sipe
 Section: net
