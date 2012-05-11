@@ -1,0 +1,64 @@
+From 4c3f634072d507daff563125440040332b8e1410 Mon Sep 17 00:00:00 2001
+From: Jakub Adam <jakub.adam@ktknet.cz>
+Date: Sat, 7 May 2011 19:21:51 +0200
+Subject: [PATCH] Changed PurpleMediaNetworkProtocol
+
+Distinguish between TCP active and passive
+---
+ libpurple/media/enum-types.c                       |    9 ++++++---
+ libpurple/media/enum-types.h                       |    5 +++--
+ libpurple/protocols/jabber/google/google_session.c |    2 +-
+ 3 files changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/libpurple/media/enum-types.c b/libpurple/media/enum-types.c
+index 5aa5908..0383e13 100644
+--- a/libpurple/media/enum-types.c
++++ b/libpurple/media/enum-types.c
+@@ -145,9 +145,12 @@ purple_media_network_protocol_get_type()
+ 			{ PURPLE_MEDIA_NETWORK_PROTOCOL_UDP,
+ 					"PURPLE_MEDIA_NETWORK_PROTOCOL_UDP",
+ 					"udp" },
+-			{ PURPLE_MEDIA_NETWORK_PROTOCOL_TCP,
+-					"PURPLE_MEDIA_NETWORK_PROTOCOL_TCP",
+-					"tcp" },
++			{ PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE,
++					"PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE",
++					"tcp active" },
++			{ PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE,
++					"PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE",
++					"tcp passive" },
+ 			{ 0, NULL, NULL }
+ 		};
+ 		type = g_enum_register_static("PurpleMediaNetworkProtocol",
+diff --git a/libpurple/media/enum-types.h b/libpurple/media/enum-types.h
+index dd163d5..1623d18 100644
+--- a/libpurple/media/enum-types.h
++++ b/libpurple/media/enum-types.h
+@@ -81,8 +81,9 @@ typedef enum {
+ 
+ /** Media network protocols */
+ typedef enum {
+-	PURPLE_MEDIA_NETWORK_PROTOCOL_UDP,
+-	PURPLE_MEDIA_NETWORK_PROTOCOL_TCP,
++	PURPLE_MEDIA_NETWORK_PROTOCOL_UDP = 1,
++	PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE = 2,
++	PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE = 4,
+ } PurpleMediaNetworkProtocol;
+ 
+ /** Media session types */
+diff --git a/libpurple/protocols/jabber/google/google_session.c b/libpurple/protocols/jabber/google/google_session.c
+index 698df08..3a9a741 100644
+--- a/libpurple/protocols/jabber/google/google_session.c
++++ b/libpurple/protocols/jabber/google/google_session.c
+@@ -658,7 +658,7 @@ google_session_handle_candidates(JabberStream  *js, GoogleSession *session, xmln
+ 					candidate_type,
+ 					purple_strequal(protocol, "udp") ?
+ 							PURPLE_MEDIA_NETWORK_PROTOCOL_UDP :
+-							PURPLE_MEDIA_NETWORK_PROTOCOL_TCP,
++							PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE,
+ 					address,
+ 					atoi(port));
+ 			g_object_set(info, "username", xmlnode_get_attrib(cand, "username"),
+-- 
+1.7.5.4
+

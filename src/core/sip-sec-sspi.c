@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -24,6 +25,9 @@
 #include <stdio.h>
 #include <windows.h>
 #include <rpc.h>
+#ifndef SECURITY_WIN32
+#define SECURITY_WIN32 1
+#endif
 #include <security.h>
 
 #include <glib.h>
@@ -37,8 +41,11 @@
 #define SSPI_MECH_NTLM      "NTLM"
 #define SSPI_MECH_KERBEROS  "Kerberos"
 #define SSPI_MECH_NEGOTIATE "Negotiate"
+#define SSPI_MECH_TLS_DSK   "Schannel" /* SSL/TLS provider, is this correct? */
 
+#ifndef ISC_REQ_IDENTIFY
 #define ISC_REQ_IDENTIFY               0x00002000
+#endif
 
 typedef struct _context_sspi {
 	struct sip_sec_context common;
@@ -77,7 +84,6 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	TimeStamp expiry;
 	SEC_WINNT_AUTH_IDENTITY auth_identity;
 	context_sspi ctx = (context_sspi)context;
-	CredHandle *cred_handle;
 
 	if (username) {
 		if (!password) {
@@ -98,26 +104,28 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		auth_identity.Password = (unsigned char*)password;
 		auth_identity.PasswordLength = strlen(password);
 	}
-	
-	cred_handle = g_malloc0(sizeof(CredHandle));
-	
-	ret = AcquireCredentialsHandle(	NULL,
+
+	ctx->cred_sspi = g_malloc0(sizeof(CredHandle));
+
+	/* @TODO: this does not work for "Schannel" (TLS-DSK) as it expects
+	          a SCHANNEL_CRED datastructure, pointing to the private key
+		  and the client certificate */
+	ret = AcquireCredentialsHandleA(NULL,
 					(SEC_CHAR *)ctx->mech,
 					SECPKG_CRED_OUTBOUND,
 					NULL,
 					(context->sso || !username) ? NULL : &auth_identity,
 					NULL,
 					NULL,
-					cred_handle,
-					&expiry
-					);
+					ctx->cred_sspi,
+					&expiry);
 
 	if (ret != SEC_E_OK) {
-		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandle", ret);
+		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandleA", ret);
+		g_free(ctx->cred_sspi);
 		ctx->cred_sspi = NULL;
 		return SIP_SEC_E_INTERNAL_ERROR;
 	} else {
-		ctx->cred_sspi = cred_handle;
 		return SIP_SEC_E_OK;
 	}
 }
@@ -136,7 +144,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	ULONG ret_flags;
 	context_sspi ctx = (context_sspi)context;
 	CtxtHandle* out_context = g_malloc0(sizeof(CtxtHandle));
-	
+
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
 
 	input_desc.cBuffers = 1;
@@ -167,23 +175,22 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		req_flags |= (ISC_REQ_DATAGRAM);
 	}
 
-	ret = InitializeSecurityContext(ctx->cred_sspi,
-					ctx->ctx_sspi,
-					(SEC_CHAR *)service_name,
-					req_flags,
-					0,
-					SECURITY_NATIVE_DREP,
-					&input_desc,
-					0,
-					out_context,
-					&output_desc,
-					&ret_flags,
-					&expiry
-					);
+	ret = InitializeSecurityContextA(ctx->cred_sspi,
+					 ctx->ctx_sspi,
+					 (SEC_CHAR *)service_name,
+					 req_flags,
+					 0,
+					 SECURITY_NATIVE_DREP,
+					 &input_desc,
+					 0,
+					 out_context,
+					 &output_desc,
+					 &ret_flags,
+					 &expiry);
 
 	if (ret != SEC_E_OK && ret != SEC_I_CONTINUE_NEEDED) {
 		sip_sec_destroy_sspi_context(ctx);
-		sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: InitializeSecurityContext", ret);
+		sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: InitializeSecurityContextA", ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
@@ -194,12 +201,12 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		memmove(out_buff->value, out_token.pvBuffer, out_token.cbBuffer);
 		FreeContextBuffer(out_token.pvBuffer);
 	}
-	
+
 	ctx->ctx_sspi = out_context;
 	if (ctx->mech && !strcmp(ctx->mech, SSPI_MECH_KERBEROS)) {
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
-	
+
 	if (ret == SEC_I_CONTINUE_NEEDED) {
 		return SIP_SEC_I_CONTINUE_NEEDED;
 	} else	{
@@ -324,15 +331,16 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM : 
-			((type == AUTH_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS : SSPI_MECH_NEGOTIATE);
+	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM :
+			((type == AUTH_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS :
+			 ((type == AUTH_TYPE_NEGOTIATE) ? SSPI_MECH_NEGOTIATE : SSPI_MECH_TLS_DSK));
 
 	return((SipSecContext) context);
 }
 
 /* Utility Functions */
 
-/** 
+/**
  * Returns interval in seconds from now till provided value
  */
 static int
@@ -341,16 +349,16 @@ sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
 	SYSTEMTIME stNow;
 	FILETIME ftNow;
 	ULARGE_INTEGER uliNow, uliTo;
-	
+
 	GetLocalTime(&stNow);
 	SystemTimeToFileTime(&stNow, &ftNow);
-	
+
 	uliNow.LowPart = ftNow.dwLowDateTime;
 	uliNow.HighPart = ftNow.dwHighDateTime;
-	
+
 	uliTo.LowPart = timestamp.LowPart;
 	uliTo.HighPart = timestamp.HighPart;
-	
+
 	return (int)((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
 }
 
@@ -358,7 +366,7 @@ void
 sip_sec_sspi_print_error(const char *func,
 			 SECURITY_STATUS ret)
 {
-	char *error_message;	
+	char *error_message;
 	static char *buff;
 	int buff_length;
 

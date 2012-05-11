@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,16 +21,20 @@
  */
 
 /* Forward declarations */
+struct sip_csta;
 struct sip_service_data;
 struct sip_transport;
+struct sipe_calendar;
+struct sipe_certificate;
 struct sipe_media_call_private;
+struct sipe_groupchat;
+struct sipe_svc;
 
 /**
  * Private part of the Sipe data structure
  *
  * This part contains the information only needed by the core
  */
-struct sipe_account_data; /* to be removed... */
 struct sipe_core_private {
 	/**
 	 * The public part is the first item, i.e. a pointer to the
@@ -43,15 +47,61 @@ struct sipe_core_private {
 	const struct sip_service_data *service_data;
 	guint transport_type;
 
-	/* SIPE protocol information */
+	/* Account information */
 	gchar *username;
+	gchar *authdomain;
+	gchar *authuser;
+	gchar *password;
+	gchar *email;
+
+	/* SIPE protocol information */
 	gchar *contact;
+	gchar *register_callid;
 	gchar *epid;
 	gchar *focus_factory_uri;
 	GSList *sessions;
+	GSList *sessions_to_accept;
+	/* from REGISTER response: server events
+	 *  we're allowed to subscribe to
+	 */
+	GSList *allowed_events;
+
+	/* Presence */
+	gchar *status;
+	gchar *note;
+	time_t note_since;
+	time_t idle_switch;
+	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
+
+	/* [MS-SIP] deltaNum counters */
+	guint deltanum_contacts;
+	guint deltanum_acl;      /* setACE (OCS2005 only) */
+
+	/* [MS-PRES] */
+	GSList *containers;
+	GSList *our_publication_keys;
+	GHashTable *our_publications;
+	GHashTable *user_state_publications;
 
 	/* Buddies */
+	GSList *groups;
 	GHashTable *buddies;
+
+	/* Calendar and related stuff */
+	struct sipe_calendar *calendar;
+
+	/*
+	 * 2005 Custom XML piece
+	 *
+	 * Possibly set by other point of presence or just other client at
+	 * earlier time. It should be preserved/modified, not overwritten.
+	 * This implies subscription to self-contact. Information kept:
+	 *
+	 * - User note
+	 * - OOF flag
+	 * - User status
+	 */
+	gchar *ocs2005_user_states;
 
 	/* Scheduling system */
 	GSList *timeouts;
@@ -61,18 +111,54 @@ struct sipe_core_private {
 
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
+	/**
+	 *  Provides the necessary information on where we can obtain
+	 *  credentials for the A/V Edge server service.
+	 */
+	gchar *mras_uri;
+	gchar *media_relay_username;
+	gchar *media_relay_password;
+	GSList *media_relays;
 
-	/* @TODO: move to purple backend when menu code moves */
+	/* Group chat */
+	struct sipe_groupchat *groupchat;
+
+	/* buddy menu memory allocation */
 	GSList *blist_menu_containers;
 
-	/* the original data structure*/
-	struct sipe_account_data *temporary;
+	/* For RCC - Remote Call Control */
+	struct sip_csta *csta;
+
+	struct sipe_dns_query *dns_query;
+
+	/* TLS-DSK: Certificates & Web services */
+	struct sipe_certificate *certificate;
+	struct sipe_svc *svc;
+
+	/* [MS-DLX] server URI */
+	gchar *dlx_uri;
 };
 
 /**
  * Flags - stored in sipe_core_public.flags but names not exported
  */
-#define SIPE_CORE_PRIVATE_FLAG_OCS2007 0x80000000 /* server is OCS2007+ */
+/* server is OCS2007+ */
+#define SIPE_CORE_PRIVATE_FLAG_OCS2007            0x80000000
+/* we are connected from outside the enterprise network boundary
+ * via Edge Server */
+#define SIPE_CORE_PRIVATE_FLAG_REMOTE_USER        0x40000000
+/* multiple points of presence detected */
+#define SIPE_CORE_PRIVATE_FLAG_MPOP               0x20000000
+/* if there is support for batched subscription*/
+#define SIPE_CORE_PRIVATE_FLAG_BATCHED_SUPPORT    0x10000000
+/* if note is out-of-office note */
+#define SIPE_CORE_PRIVATE_FLAG_OOF_NOTE           0x08000000
+/* whether we published our initial state or not */
+#define SIPE_CORE_PRIVATE_FLAG_INITIAL_PUBLISH    0x04000000
+/* whether basic access level is set or not */
+#define SIPE_CORE_PRIVATE_FLAG_ACCESS_LEVEL_SET   0x02000000
+/* whether subscribed to buddies presence or not */
+#define SIPE_CORE_PRIVATE_FLAG_SUBSCRIBED_BUDDIES 0x01000000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
@@ -91,9 +177,10 @@ struct sipe_core_private {
 #define SIPE_CORE_PRIVATE ((struct sipe_core_private *)sipe_public)
 #define SIPE_CORE_PUBLIC  ((struct sipe_core_public *)sipe_private)
 
-/* Transition macros */
-#define SIPE_ACCOUNT_DATA         SIPE_CORE_PRIVATE->temporary
-#define SIPE_ACCOUNT_DATA_PRIVATE sipe_private->temporary
+/**
+ * sipe-core internal functions
+ */
+void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private);
 
 /*
   Local Variables:

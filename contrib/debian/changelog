@@ -1,3 +1,104 @@
+pidgin-sipe (1.13.1-1) unstable; urgency=low
+
+  * New upstream version 1.13.1 "Bug Fixes I"
+	- detect incompatible encryption level with Lync (Jakub Adam)
+	- purple: add URI validity check to Add Buddy callback (Stefan Becker)
+	- new translations: Romanian (ro), Turkish (tr)
+	- various build fixes (Stefan Becker)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Mon, 09 Apr 2012 12:29:42 +0300
+
+pidgin-sipe (1.13.0-1) unstable; urgency=low
+
+  * New upstream version 1.13.0 "Lync & Office365"
+	- added [MS-SIPAE] TLS-DSK authentication scheme (Stefan Becker)
+	  * TLS-DSK has been introduced in Lync
+	  * mandatory for Office365 accounts
+	  * also works for non-public Lync installations
+	  * does not work yet with SSPI on Windows
+	- added [MS-DLX] based Get Info/Contact Search (Stefan Becker)
+	  * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
+	- added experimental media TCP transport (Jakub Adam)
+	- make it compile against the latest purple 3.0.x API (Stefan Becker)
+	- make it compile against the latest glib2 2.31.x API (Stefan Becker)
+	- completed cleanup: core no longer requires libpurple (Stefan Becker)
+	- refactored crypto code, ie. NSS can replaced if necessary (Stefan Becker)
+	- sipe-domino.c is no longer built under UNIX to remove dead code (Stefan Becker)
+	- restricted XXX_CFLAGS to modules that need them (Stefan Becker)
+	- NSS is now a mandatory build requirement (Stefan Becker)
+	- decoupled SSPI from HAVE_LIBKRB5 flag. New flag is HAVE_SSPI (Stefan Becker)
+	- OBS mingw packages now use SSPI instead of NTLM (Stefan Becker)
+	- added NSIS package generation to OBS mingw packages (Stefan Becker)
+	- removed kopete backend. KDE is moving to telepathy (Stefan Becker)
+	- added MinGW cross-compilation on Linux instructions (Stefan Becker)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Wed, 14 Mar 2012 19:30:23 +0200
+
+pidgin-sipe (1.12.0-1) unstable; urgency=low
+
+  * New upstream version 1.12.0 "Group Chat"
+	- Feature #3064877: Add support for OCS2007R2 Group Chat (Stefan Becker)
+	- Feature #3311026: Support for HTTP/1.1 Transfer-Encoding: chunked (Stefan Becker)
+	- Fixed #2834758: First NTLM signature check after startup fails (Stefan Becker) 
+	- Fixed #3082602: Crash on Autodiscover (Stefan Becker)
+	- Fixed #3090663: Re-authentication fails (Stefan Becker)
+	- Fixed #3092324: Core dump in "make check" (psfales)
+	- Fixed #3130915: Failed to authenticate to server (Stefan Becker)
+	- Fixed #3148124: sipe segfaults during login on Solaris (Jakub Adam)
+	- Fixed #3150482: "configure --with-vv" test uses wrong include (Stefan Becker)
+	- Fixed #3156430: Messages not Delivered (rwinchsf, Stefan Becker)
+	- Fixed #3161273: Lost Connection Gives No Error Message (rwinchsf, Stefan Becker)
+	- Fixed #3198585: Extra line breaks (Stefan Becker)
+	- Fixed #3267073: False "could not be delivered" errors (sort of..., Stefan Becker)
+	- Fixed #3399007: Crash when sipe_cal_working_hours->days_of_week is NULL (Stefan Becker)
+	- Patch #3091490: Make 1.11.0 Compile on FreeBSD (jprather)
+	- Patch #3108246: Patch for better windows installer (archrival, galiven)
+	- add random Ms-Conversation-ID to INVITE (Jakub Adam)
+	- fix parsing of P-Asserted-Identity header (Jakub Adam)
+	- added MS TURN support (Jakub Adam)
+	- fix crash on zero length password in NTLM (Vladimir Ushakov)
+	- implement timeouts for SIP request. Used for REGISTER (Stefan Becker)
+	- more work on Voice & Video call support (Jakub Adam)
+        - make it compile against the purple 2.8.x & 3.0.x APIs (Stefan Becker)
+	- more internal changes to prepare for non-purple backends (Stefan Becker)
+	- added integration for transifex.net update (Stefan Becker)
+	- configure improvements for 64-bit: use libdir, gsize/size_t compatibility (Stefan Becker)
+	- update compiler warnings configuration for all build platforms (Stefan Becker)
+	- updated Adium port (Matthew Duggan)
+	- mingw build updates (Harris P. Kauffman, Stefan Becker)
+	- added miranda port (Jochen De Smet)
+	- added mingw to OpenSUSE Build Service configuration (Stefan Becker)
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Mon, 29 Aug 2011 00:50:47 -0500
+
+pidgin-sipe (1.11.2-1) unstable; urgency=low
+
+  * New upstream version 1.11.2 "Hot fixes II"
+        - Revert "mingw: add missing purple-notify.c to build"
+        - Sipe-sign: fix parsing of P-Asserted-Identity header
+        - Fixed memory leaks
+        - Fix #3090663: Re-authentication fails
+        - Fix #3090663: Re-authentication fails (2nd attempt)
+        - Fix #3090663: Re-authentication fails (3rd attempt)
+        - Fix #3090663: Re-authentication fails (4th attempt)
+        - Apply patch #3091490: Make 1.11.0 Compile on FreeBSD
+        - Fix #3092324: Core dump in "make check"
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Tue, 02 Nov 2010 23:48:33 -0600
+
+pidgin-sipe (1.11.1-1) unstable; urgency=low
+
+  * New upstream version 1.11.1 "Hot fixes"
+        - mingw: add missing purple-notify.c to build
+        - Fix for bug #2834758: First NTLM signature check after startup fails
+        - purple: fix memory leak in sipe_backend_transport_connect() error path
+        - Fix for bug #3082602: Crash on Autodiscover
+        - configure: use libdir & datadir instead of prefix + path
+        - configure: update 32-bit vs. 64-bit header conflict test
+        - debian: build stability fix in post-install
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 24 Oct 2010 00:00:00 +0300
+
 pidgin-sipe (1.11.0-1) unstable; urgency=low
 
   * New upstream version

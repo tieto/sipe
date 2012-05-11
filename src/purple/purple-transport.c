@@ -105,7 +105,7 @@ static void transport_common_input(struct sipe_transport_purple *transport)
 			/* Try again later */
 			return;
 		} else if (len < 0) {
-			SIPE_DEBUG_ERROR_NOFORMAT("Read error");
+			SIPE_DEBUG_ERROR("Read error: %s (%d)", strerror(errno), errno);
 			transport->error(SIPE_TRANSPORT_CONNECTION, _("Read error"));
 			return;
 		} else if (firstread && (len == 0)) {
@@ -322,7 +322,7 @@ static gboolean transport_write(struct sipe_transport_purple *transport)
 		if (written < 0 && errno == EAGAIN) {
 			return TRUE;
 		} else if (written <= 0) {
-			SIPE_DEBUG_INFO_NOFORMAT("transport_canwrite_cb: written <= 0, exiting");
+			SIPE_DEBUG_ERROR("Write error: %s (%d)", strerror(errno), errno);
 			transport->error(SIPE_TRANSPORT_CONNECTION,
 					 _("Write error"));
 			return FALSE;

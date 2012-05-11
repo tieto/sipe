@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,77 +39,199 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-groupchat.h"
+#include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
-void sipe_core_chat_create(struct sipe_core_public *sipe_public, int id,
+/**
+ * Invite @who to chat
+ *
+ * @param sipe_private SIPE core private data
+ * @param session SIPE session for chat
+ * @param who URI whom to invite to chat.
+ */
+static void
+sipe_invite_to_chat(struct sipe_core_private *sipe_private,
+		    struct sip_session *session,
+		    const gchar *who);
+
+static GList *chat_sessions = NULL;
+
+struct sipe_chat_session *sipe_chat_create_session(enum sipe_chat_type type,
+						   const gchar *id,
+						   const gchar *title)
+{
+	struct sipe_chat_session *session = g_new0(struct sipe_chat_session, 1);
+	if (id)
+		session->id = g_strdup(id);
+	session->title = g_strdup(title);
+	session->type  = type;
+	chat_sessions  = g_list_prepend(chat_sessions, session);
+	return(session);
+}
+
+void sipe_chat_remove_session(struct sipe_chat_session *session)
+{
+	chat_sessions = g_list_remove(chat_sessions, session);
+	sipe_backend_chat_session_destroy(session->backend);
+	g_free(session->title);
+	g_free(session->id);
+	g_free(session);
+}
+
+void sipe_chat_destroy(void)
+{
+	while (chat_sessions) {
+		struct sipe_chat_session *chat_session = chat_sessions->data;
+		SIPE_DEBUG_INFO("sipe_chat_destroy: '%s' (%s)",
+				chat_session->title, chat_session->id);
+		sipe_chat_remove_session(chat_session);
+	}
+}
+
+void sipe_core_chat_invite(struct sipe_core_public *sipe_public,
+			   struct sipe_chat_session *chat_session,
 			   const char *name)
 {
-	struct sip_session *session = sipe_session_find_chat_by_id(SIPE_CORE_PRIVATE,
-								   id);
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	if (session) {
-		gchar *uri = sip_uri(name);
-		sipe_invite_to_chat(SIPE_CORE_PRIVATE, session, uri);
-		g_free(uri);
+	SIPE_DEBUG_INFO("sipe_core_chat_create: who '%s'", name);
+
+	switch (chat_session->type) {
+	case SIPE_CHAT_TYPE_MULTIPARTY:
+	case SIPE_CHAT_TYPE_CONFERENCE:
+		{
+			struct sip_session *session = sipe_session_find_chat(sipe_private,
+									     chat_session);
+
+			if (session) {
+				gchar *uri = sip_uri(name);
+				sipe_invite_to_chat(sipe_private, session, uri);
+				g_free(uri);
+			}
+		}
+		break;
+	case SIPE_CHAT_TYPE_GROUPCHAT:
+		/* @TODO */
+		SIPE_DEBUG_INFO_NOFORMAT("GROUP CHAT: INVITE NOT IMPLEMENTED!");
+		break;
+	default:
+		break;
 	}
 }
 
-/** See below. Same as chat_names but swapped key with values */
-static GHashTable *chat_names_inverse = NULL;
+void sipe_core_chat_rejoin(struct sipe_core_public *sipe_public,
+			   struct sipe_chat_session *chat_session)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	SIPE_DEBUG_INFO("sipe_core_chat_rejoin: '%s'", chat_session->title);
+
+	switch (chat_session->type) {
+	case SIPE_CHAT_TYPE_MULTIPARTY:
+		{
+			struct sip_session *session = sipe_session_add_chat(sipe_private,
+									    chat_session,
+									    TRUE,
+									    NULL);
+			gchar *self = sip_uri_self(sipe_private);
+
+			sipe_invite_to_chat(sipe_private, session, self);
+			sipe_backend_chat_rejoin(SIPE_CORE_PUBLIC,
+						 chat_session->backend,
+						 self,
+						 chat_session->title);
+			g_free(self);
+		}
+		break;
+	case SIPE_CHAT_TYPE_CONFERENCE:
+		sipe_conf_create(sipe_private, chat_session, NULL);
+		break;
+	case SIPE_CHAT_TYPE_GROUPCHAT:
+		sipe_groupchat_rejoin(sipe_private, chat_session);
+		break;
+	default:
+		break;
+	}
+}
+
+void sipe_core_chat_leave(struct sipe_core_public *sipe_public,
+			  struct sipe_chat_session *chat_session)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	SIPE_DEBUG_INFO("sipe_core_chat_leave: '%s'", chat_session->title);
+
+	switch (chat_session->type) {
+	case SIPE_CHAT_TYPE_MULTIPARTY:
+	case SIPE_CHAT_TYPE_CONFERENCE:
+		{
+			struct sip_session *session = sipe_session_find_chat(sipe_private,
+									     chat_session);
+
+			if (session) {
+				sipe_session_close(sipe_private, session);
+			}
+		}
+		break;
+	case SIPE_CHAT_TYPE_GROUPCHAT:
+		sipe_groupchat_leave(sipe_private, chat_session);
+		break;
+	default:
+		break;
+	}
+}
+
+void sipe_core_chat_send(struct sipe_core_public *sipe_public,
+			 struct sipe_chat_session *chat_session,
+			 const char *what)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	SIPE_DEBUG_INFO("sipe_core_chat_send: '%s' to '%s'",
+			what, chat_session->title);
+
+	switch (chat_session->type) {
+	case SIPE_CHAT_TYPE_MULTIPARTY:
+	case SIPE_CHAT_TYPE_CONFERENCE:
+		{
+			struct sip_session *session = sipe_session_find_chat(sipe_private,
+									     chat_session);
+
+			if (session) {
+				sipe_session_enqueue_message(session,
+							     what,
+							     NULL);
+				sipe_im_process_queue(sipe_private, session);
+			}
+		}
+		break;
+	case SIPE_CHAT_TYPE_GROUPCHAT:
+		sipe_groupchat_send(sipe_private, chat_session, what);
+		break;
+	default:
+		break;
+	}
+}
 
 gchar *
-sipe_chat_get_name(const gchar *proto_chat_id)
+sipe_chat_get_name(void)
 {
 	/**
-	 * A non-volatile mapping of protocol's chat identification
-	 * to purple's chat-name. The latter is very important to
-	 * find/rejoin chat.
-	 *
-	 * @key for 2007 conference this is (gchar *) Focus URI
-	 *      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
-	 * @value a purple chat name.
+	 * A non-volatile ID counter.
+	 * Should survive connection drop & reconnect.
 	 */
-	static GHashTable *chat_names = NULL;
+	static guint chat_seq = 0;
 
-	/**
-	 * A non-volatile chat counter.
-	 * Should survive protocol reload.
-	 */
-	static int chat_seq = 0;
+	/* Generate next ID */
+	gchar *chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
+	SIPE_DEBUG_INFO("sipe_chat_get_name: added new: %s", chat_name);
 
-	char *chat_name = NULL;
-
-	if (!chat_names) {
-		chat_names = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-	}
-	if (!chat_names_inverse) {
-		chat_names_inverse = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
-	}
-
-	if (proto_chat_id) {
-		chat_name = g_hash_table_lookup(chat_names, proto_chat_id);
-		SIPE_DEBUG_INFO("sipe_chat_get_name: lookup results: %s", chat_name ? chat_name : "NULL");
-	}
-	if (!chat_name) {
-		chat_name = g_strdup_printf(_("Chat #%d"), ++chat_seq);
-		g_hash_table_insert(chat_names, g_strdup(proto_chat_id), chat_name);
-		g_hash_table_insert(chat_names_inverse,  chat_name, g_strdup(proto_chat_id));
-		SIPE_DEBUG_INFO("sipe_chat_get_name: added new: %s", chat_name);
-	}
-
-	return g_strdup(chat_name);
-}
-
-const gchar *
-sipe_chat_find_name(const gchar *chat_name)
-{
-	if (!chat_names_inverse) return NULL;
-	return(g_hash_table_lookup(chat_names_inverse, chat_name));
+	return chat_name;
 }
 
 static void
@@ -121,7 +243,7 @@ sipe_refer(struct sipe_core_private *sipe_private,
 	gchar *contact;
 	gchar *epid = get_epid(sipe_private);
 	struct sip_dialog *dialog = sipe_dialog_find(session,
-						     session->roster_manager);
+						     session->chat_session->id);
 	const char *ourtag = dialog && dialog->ourtag ? dialog->ourtag : NULL;
 
 	contact = get_contact(sipe_private);
@@ -140,8 +262,8 @@ sipe_refer(struct sipe_core_private *sipe_private,
 
 	sip_transport_request(sipe_private,
 			      "REFER",
-			      session->roster_manager,
-			      session->roster_manager,
+			      session->chat_session->id,
+			      session->chat_session->id,
 			      hdr,
 			      NULL,
 			      dialog,
@@ -210,18 +332,28 @@ sipe_process_pending_invite_queue(struct sipe_core_private *sipe_private,
 	}
 }
 
+void sipe_chat_set_roster_manager(struct sip_session *session,
+				  const gchar *roster_manager)
+{
+	struct sipe_chat_session *chat_session = session->chat_session;
+
+	g_free(chat_session->id);
+	chat_session->id = NULL;
+	if (roster_manager)
+		chat_session->id = g_strdup(roster_manager);
+}
+
 static void
 sipe_election_result(struct sipe_core_private *sipe_private,
 		     void *sess)
 {
 	struct sip_session *session = (struct sip_session *)sess;
-	gchar *rival;
-	gboolean has_won = TRUE;
+	const gchar *rival = NULL;
 
-	if (session->roster_manager) {
+	if (session->chat_session->id) {
 		SIPE_DEBUG_INFO(
 			"sipe_election_result: RM has already been elected in the meantime. It is %s",
-			session->roster_manager);
+			session->chat_session->id);
 		return;
 	}
 
@@ -229,23 +361,25 @@ sipe_election_result(struct sipe_core_private *sipe_private,
 
 	SIPE_DIALOG_FOREACH {
 		if (dialog->election_vote < 0) {
-			has_won = FALSE;
 			rival = dialog->with;
 			break;
 		}
 	} SIPE_DIALOG_FOREACH_END;
 
-	if (has_won) {
+	if (rival) {
+		SIPE_DEBUG_INFO("sipe_election_result: we loose RM election to %s", rival);
+	} else {
+		gchar *self = sip_uri_self(sipe_private);
+
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_election_result: we have won RM election!");
 
-		session->roster_manager = sip_uri_self(sipe_private);
+		sipe_chat_set_roster_manager(session, self);
+		g_free(self);
 
 		SIPE_DIALOG_FOREACH {
 			/* send SetRM to each chat participant*/
 			sipe_send_election_set_rm(sipe_private, dialog);
 		} SIPE_DIALOG_FOREACH_END;
-	} else {
-		SIPE_DEBUG_INFO("sipe_election_result: we loose RM election to %s", rival);
 	}
 	session->bid = 0;
 
@@ -284,10 +418,10 @@ process_info_response(struct sipe_core_private *sipe_private,
 				return FALSE;
 			}
 
-			if (allow && !g_strcasecmp(allow, "true")) {
+			if (allow && !g_ascii_strcasecmp(allow, "true")) {
 				SIPE_DEBUG_INFO("process_info_response: %s has voted PRO", with);
 				dialog->election_vote = 1;
-			} else if (allow && !g_strcasecmp(allow, "false")) {
+			} else if (allow && !g_ascii_strcasecmp(allow, "false")) {
 				SIPE_DEBUG_INFO("process_info_response: %s has voted CONTRA", with);
 				dialog->election_vote = -1;
 			}
@@ -359,27 +493,27 @@ sipe_election_start(struct sipe_core_private *sipe_private,
 			      NULL);
 }
 
-void
+static void
 sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 		    struct sip_session *session,
 		    const gchar *who)
 {
 	/* a conference */
-	if (session->focus_uri)
+	if (session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE)
 	{
 		sipe_invite_conf(sipe_private, session, who);
 	}
 	else /* a multi-party chat */
 	{
 		gchar *self = sip_uri_self(sipe_private);
-		if (session->roster_manager) {
-			if (sipe_strcase_equal(session->roster_manager, self)) {
-				sipe_invite(sipe_private, session, who, NULL, NULL, NULL, FALSE);
+		if (session->chat_session->id) {
+			if (sipe_strcase_equal(session->chat_session->id, self)) {
+				sipe_im_invite(sipe_private, session, who, NULL, NULL, NULL, FALSE);
 			} else {
 				sipe_refer(sipe_private, session, who);
 			}
 		} else {
-			SIPE_DEBUG_INFO_NOFORMAT("sipe_buddy_menu_chat_invite: no RM available");
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_invite_to_chat: no RM available");
 
 			session->pending_invite_queue = slist_insert_unique_sorted(
 				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);

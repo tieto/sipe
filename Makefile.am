@@ -1,13 +1,17 @@
 SUBDIRS = src pixmaps m4macros po
 
 EXTRA_DIST = \
+	contrib \
 	intltool-extract.in \
 	intltool-merge.in \
 	intltool-update.in \
-	AUTHORS \
-	README \
-	HACKING \
-	contrib
+	pidgin-sipe.nsi \
+	pidgin-sipe.wxs \
+	siplcs.vcxproj \
+	siplcs.vcxproj.filters \
+	Makefile.mingw \
+	po/Makefile.mingw \
+	HACKING
 
 CLEANFILES = \
 	intltool-extract \

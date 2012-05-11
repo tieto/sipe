@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -78,4 +79,6 @@ struct sip_sec_context {
 	int expires;
 	/** 0 - FALSE; otherwise TRUE */
 	int is_connection_based;
+	/** 0 - FALSE, otherwise TRUE */
+	int is_ready;
 };

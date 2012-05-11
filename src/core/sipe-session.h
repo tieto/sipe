@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
-struct sipe_backend_session;
+struct sipe_chat_session;
 
 /* Helper macros to iterate over session list in a SIP account */
 #define SIPE_SESSION_FOREACH {                             \
@@ -40,50 +40,45 @@ struct sipe_backend_session;
 
 /** Correspond to multi-party conversation */
 struct sip_session {
-	/** backend private data structure for IM or chat */
-	struct sipe_backend_session *backend_session;
- 
-	gchar *with; /* For IM sessions only (not multi-party) . A URI.*/
+	/** chat session */
+	struct sipe_chat_session *chat_session;
+
+	gchar *with; /* For IM or call sessions only (not multi-party) . A URI.*/
 	/** key is user (URI) */
 	GSList *dialogs;
 	/** Key is <Call-ID><CSeq><METHOD><To> */
 	GHashTable *unconfirmed_messages;
 	GSList *outgoing_message_queue;
-	
+
 	/*
 	 * Multiparty conversation related fields
 	 */
-	gboolean is_multiparty;
-	/** purple chat id */
-	int chat_id;
-	/** purple indexes chats by names */
-	//gchar *chat_name;
-	/** Human readable chat name */
-	gchar *chat_title;
 	/** Call-Id identifying the conversation */
 	gchar *callid; /* For multiparty conversations */
-	/** Roster Manager URI */
-	gchar *roster_manager;
 	int bid;
 	gboolean is_voting_in_progress;
 	GSList *pending_invite_queue;
-	
+
 	/*
 	 * Conference related fields
 	 */
-	gchar *focus_uri;
 	gchar *im_mcu_uri;
 	gchar *subject;
 	gboolean locked;
 	guint request_id;
 	struct sip_dialog *focus_dialog;
 	/** Key is Message-Id */
-	GHashTable *conf_unconfirmed_messages;  
+	GHashTable *conf_unconfirmed_messages;
 
 	/*
 	 * Media call related fields
 	 */
 	gboolean is_call;
+
+	/*
+	 * Group Chat related fields
+	 */
+	gboolean is_groupchat;
 };
 
 /**
@@ -101,17 +96,24 @@ struct queued_message {
 	 * means default value text/plain.
 	 */
 	gchar *content_type;
+	guint cseq;
 };
 
 /**
  * Add a new chat session
  *
  * @param sipe_private (in) SIPE core data. May be NULL
+ * @param chat_session (in) non-NULL to rejoin existing chat
+ * @param multiparty   (in) multiparty or conference
+ * @param id           (in) new chat session identifier (ignored for rejoin).
  *
  * @return pointer to new session
  */
 struct sip_session *
-sipe_session_add_chat(struct sipe_core_private *sipe_private);
+sipe_session_add_chat(struct sipe_core_private *sipe_private,
+		      struct sipe_chat_session *chat_session,
+		      gboolean multiparty,
+		      const gchar *id);
 
 #ifdef HAVE_VV
 
@@ -142,6 +144,18 @@ sipe_session_find_call(struct sipe_core_private *sipe_private,
 #endif
 
 /**
+ * Find chat session
+ *
+ * @param sipe_private (in) SIPE core data. May be NULL
+ * @param chat_session (in) chat session data. May be NULL
+ *
+ * @return pointer to session or NULL
+ */
+struct sip_session *
+sipe_session_find_chat(struct sipe_core_private *sipe_private,
+		       struct sipe_chat_session *chat_session);
+
+/**
  * Find chat session by Call ID
  *
  * @param sipe_private (in) SIPE core data. May be NULL
@@ -152,42 +166,6 @@ sipe_session_find_call(struct sipe_core_private *sipe_private,
 struct sip_session *
 sipe_session_find_chat_by_callid(struct sipe_core_private *sipe_private,
 				 const gchar *callid);
-
-/**
- * Find or add new chat session by Call ID
- *
- * @param sipe_private (in) SIPE core data
- * @param callid (in) Call ID
- *
- * @return pointer to session
- */
-struct sip_session *
-sipe_session_find_or_add_chat_by_callid(struct sipe_core_private *sipe_private,
-					const gchar *callid);
-
-/**
- * Find chat session by ID
- *
- * @param sipe_private (in) SIPE core data. May be NULL
- * @param id (in) Chat ID
- *
- * @return pointer to session or NULL
- */
-struct sip_session * 
-sipe_session_find_chat_by_id(struct sipe_core_private *sipe_private,
-			     int id);
-
-/**
- * Find chat session by name
- *
- * @param sipe_private (in) SIPE core data. May be NULL
- * @param name (in) Chat name. May be NULL
- *
- * @return pointer to session or NULL
- */
-struct sip_session * 
-sipe_session_find_chat_by_title(struct sipe_core_private *sipe_private,
-			        const gchar *name);
 
 /**
  * Find Conference session

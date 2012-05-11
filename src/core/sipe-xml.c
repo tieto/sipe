@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,9 @@
 #include <time.h>
 
 #include "libxml/parser.h"
+#include "libxml/c14n.h"
+#include "libxml/xmlversion.h"
+
 #include "glib.h"
 
 #include "sipe-backend.h"
@@ -322,7 +325,7 @@ const sipe_xml *sipe_xml_twin(const sipe_xml *node)
 	for (sibling = node->sibling; sibling; sibling = sibling->sibling) {
 		if (sipe_strequal(node->name, sibling->name))
 			return sibling;
-	}		
+	}
 	return NULL;
 }
 
@@ -348,6 +351,84 @@ gchar *sipe_xml_data(const sipe_xml *node)
 {
 	if (!node || !node->data || !node->data->str) return NULL;
 	return g_strdup(node->data->str);
+}
+
+/**
+ * Set to 1 to enable debugging code and then add this line to your code:
+ *
+ *      sipe_xml_dump(node, NULL);
+ */
+#if 0
+void sipe_xml_dump(const sipe_xml *node, const gchar *path)
+{
+	const sipe_xml *child;
+	gchar *new_path;
+	if (!node) return;
+	new_path = g_strdup_printf("%s/%s", path ? path : "", node->name);
+	if (node->attributes) {
+		GList *attrs = g_hash_table_get_keys(node->attributes);
+		GString *buf = g_string_new("");
+		GList *entry = attrs;
+		while (entry) {
+			g_string_append_printf(buf, "%s ", (gchar *)entry->data);
+			entry = entry->next;
+		}
+		SIPE_DEBUG_INFO("%s [%s]", new_path, buf->str);
+		g_string_free(buf, TRUE);
+		g_list_free(attrs);
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT(new_path);
+	}
+	for (child = node->first; child; child = child->sibling)
+		sipe_xml_dump(child, new_path);
+	g_free(new_path);
+}
+#endif
+
+/*
+ * Other XML convenience functions not based on libpurple xmlnode.c
+ */
+
+gchar *sipe_xml_exc_c14n(const gchar *string)
+{
+	/* Parse string to XML document */
+	xmlDocPtr doc = xmlReadMemory(string, strlen(string), "", NULL, 0);
+	gchar *canon = NULL;
+
+	if (doc) {
+		xmlChar *buffer;
+		int size;
+
+		/* Apply canonicalization */
+		size = xmlC14NDocDumpMemory(doc,
+					    NULL,
+#if LIBXML_VERSION > 20703
+					    /* new API: int mode (a xmlC14NMode) */
+					    XML_C14N_EXCLUSIVE_1_0,
+#else
+					    /* old API: int exclusive */
+					    1,
+#endif
+					    NULL,
+					    0,
+					    &buffer);
+		xmlFreeDoc(doc);
+
+		if (size >= 0) {
+			SIPE_DEBUG_INFO("sipe_xml_exc_c14n:\noriginal:      %s\ncanonicalized: %s",
+					string, buffer);
+			canon = g_strndup((gchar *) buffer, size);
+			xmlFree(buffer);
+		} else {
+			SIPE_DEBUG_ERROR("sipe_xml_exc_c14n: failed to canonicalize xml string:\n%s",
+					 string);
+		}
+	} else {
+		SIPE_DEBUG_ERROR("sipe_xml_exc_c14n: error parsing xml string:\n%s",
+				 string);
+	}
+
+	return(canon);
 }
 
 /*

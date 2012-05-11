@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010, 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -58,7 +58,6 @@ be great to implement too.
 #include "sipe-ews.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 /**
  * Autodiscover request for Exchange Web Services
@@ -465,6 +464,7 @@ sipe_ews_do_autodiscover(struct sipe_calendar *cal,
 				 autodiscover_url,
 				 body,
 				 "text/xml",
+				 NULL,
 				 cal->auth,
 				 sipe_ews_process_autodiscover,
 				 cal);
@@ -507,6 +507,7 @@ sipe_ews_do_avail_request(struct sipe_calendar *cal)
 					 cal->as_url,
 					 body,
 					 "text/xml; charset=UTF-8",
+					 NULL,
 					 cal->auth,
 					 sipe_ews_process_avail_response,
 					 cal);
@@ -535,6 +536,7 @@ sipe_ews_do_oof_request(struct sipe_calendar *cal)
 							  cal->oof_url,
 							  body,
 							  content_type,
+							  NULL,
 							  cal->auth,
 							  sipe_ews_process_oof_response,
 							  cal);
@@ -596,14 +598,7 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 
 			cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 			cal->is_updated = TRUE;
-			if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-				/* sipe.h */
-				publish_calendar_status_self(sipe_private,
-							     NULL);
-			} else {
-				/* sipe.h */
-				send_presence_soap(sipe_private, TRUE);
-			}
+			sipe_cal_presence_publish(sipe_private, TRUE);
 			break;
 		}
 	}
@@ -612,7 +607,6 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 void
 sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
 	gboolean has_url;
 
@@ -620,16 +614,16 @@ sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
 
 	if (sipe_cal_calendar_init(sipe_private, &has_url)) {
 		if (has_url) {
-			sip->cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+			sipe_private->calendar->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		}
 	}
 
-	if (sip->cal->is_ews_disabled) {
+	if (sipe_private->calendar->is_ews_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
 		return;
 	}
 
-	sipe_ews_run_state_machine(sip->cal);
+	sipe_ews_run_state_machine(sipe_private->calendar);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: finished.");
 }

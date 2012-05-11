@@ -17,6 +17,10 @@ AC_INIT([pidgin-sipe], SIPE_VERSION,
 	[https://sourceforge.net/tracker/?atid=949931&group_id=194563], [],
 	SIPE_HOMEPAGE)
 
+AC_DEFINE([SIPE_TRANSLATIONS_URL],
+	["https://www.transifex.net/projects/p/pidgin-sipe/r/mob/"],
+	[URL for submitting translations.])
+
 dnl setup automake and require recent enough version
 AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])
 
@@ -83,33 +87,46 @@ AC_ARG_ENABLE(quality-check,
 	[enable_quality_check=yes])
 
 AS_IF([test "x$enable_quality_check" = xyes],
-	[QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
-	 ac_save_CFLAGS=$CFLAGS
+	[dnl default quality configuration
+         QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
 
-	 dnl GCC >= 3.4
-	 AC_MSG_CHECKING([if $CC supports -Wextra])
-	 CFLAGS="$QUALITY_CFLAGS -Wextra"
-	 AC_COMPILE_IFELSE(
-		AC_LANG_PROGRAM(),
-		[AC_MSG_RESULT(yes)
-		 QUALITY_CFLAGS="$QUALITY_CFLAGS -Wextra"],
-		[AC_MSG_RESULT(no)]
-	 )
-
-	 dnl declaration-after-statement (ISO C90 behaviour, as on Windows & GCC < 3)
-	 AC_MSG_CHECKING([if $CC supports -Werror=declaration-after-statement])
-	 CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"
-	 AC_COMPILE_IFELSE(
-		AC_LANG_PROGRAM(),
-		[AC_MSG_RESULT(yes)
-		 QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror=declaration-after-statement"],
-		[AC_MSG_RESULT(no)]
-	 )
-	 CFLAGS=$ac_save_CFLAGS])
+	 dnl enable warnings supported by the GCC on the build system
+	 for newflag in \
+			"-Wextra" \
+			"-Waggregate-return" \
+			"-Wcast-align" \
+			"-Wdeclaration-after-statement" \
+			"-Wdeprecated-declarations" \
+			"-Winit-self" \
+			"-Wmaybe-uninitialized" \
+			"-Wmissing-declarations" \
+			"-Wmissing-prototypes" \
+			"-Wnested-externs" \
+			"-Wpointer-arith" \
+			"-Wundef" \
+			"-Wunused-but-set-variable" \
+	 ; do
+		 ac_save_CFLAGS=$CFLAGS
+		 AC_MSG_CHECKING([if $CC supports $newflag])
+		 CFLAGS="$QUALITY_CFLAGS $newflag"
+		 AC_COMPILE_IFELSE(
+			[AC_LANG_SOURCE([[]])],
+			[AC_MSG_RESULT(yes)
+			 QUALITY_CFLAGS="$QUALITY_CFLAGS $newflag"],
+			[AC_MSG_RESULT(no)]
+	 	 )
+		 CFLAGS=$ac_save_CFLAGS
+	 done
+	])
 AC_SUBST(QUALITY_CFLAGS)
 
 dnl Check for pkg-config before using it
 PKG_PROG_PKG_CONFIG
+
+dnl check for valgrind (optional, only needed for debugging)
+PKG_CHECK_MODULES(VALGRIND, [valgrind],
+	[AC_DEFINE(HAVE_VALGRIND, 1, [Define to 1 if you have the valgrind headers])],
+	[AC_MSG_RESULT(no)])
 
 dnl build option: with voice & video support (for all backends)
 AC_ARG_WITH(vv,
@@ -170,17 +187,14 @@ AS_IF([test "x$ac_have_gmime" = xyes],
 
 dnl check for NSS
 PKG_CHECK_MODULES(NSS, [nss],
-	[ac_have_nss=yes],
+	[],
 	[PKG_CHECK_MODULES(NSS, [mozilla-nss],
-		[ac_have_nss=yes],
+		[],
 		[PKG_CHECK_MODULES(NSS, [microb-engine-nss],
-			[ac_have_nss=yes],
-			[ac_have_nss=no])
+			[],
+			[AC_ERROR([nss, mozilla-nss or microb-engine-nss package is required])])
 	])
 ])
-AM_CONDITIONAL(SIPE_CRYPTO_NSS, [test "x$ac_have_nss" = xyes])
-AS_IF([test "x$ac_have_nss" = xyes],
-	[AC_DEFINE(HAVE_NSS, 1, [Define if nss should be used in sipe.])])
 
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
@@ -191,8 +205,8 @@ ac_save_CFLAGS=$CFLAGS
 CFLAGS="$GLIB_CFLAGS $QUALITY_CFLAGS"
 dnl note the [[[ quoting: our code contains []!
 AC_RUN_IFELSE(
-	AC_LANG_PROGRAM(
-		[[[
+	[AC_LANG_PROGRAM(
+		[[
 #include <glib.h>
 #include <stdio.h>
 
@@ -205,13 +219,13 @@ typedef struct {
    guint8  clock_seq_low;
    guint8  node[6];
 } uuid_t;
-		]]],
-		[if (sizeof(uuid_t) == 16) {
+		]],
+		[[if (sizeof(uuid_t) == 16) {
 			return(0);
 		 } else {
 			printf("\n\nOoops, sizeof(uuid_t) is %" G_GSIZE_FORMAT ".\n\n", sizeof(uuid_t));
 			return(1);
-		 }]),
+		 }]])],
 	[AC_MSG_RESULT(yes)],
 	[AC_MSG_FAILURE([sizeof(uuid_t) is not 16
 
@@ -232,6 +246,16 @@ Compiler information:
 	[AC_MSG_WARN([cross compiling: not checking])])
 CFLAGS=$ac_save_CFLAGS
 
+dnl build option: OCS2005 client hack
+AC_ARG_ENABLE([ocs2005-message-hack],
+	[AC_HELP_STRING([--enable-ocs2005-message-hack], [disable message timeout for OCS2005 clients
+							  which causes "false" not delivered error messages
+							  @<:@default=no@:>@])],
+	[AC_DEFINE([ENABLE_OCS2005_MESSAGE_HACK], [1],
+	           [Define to 1 to disable SIP MESSAGE timeout feature.
+		    OCS2005 clients don't seem to acknowledge MESSAGEs and
+		    disabling the timeout suppresses "false" error messages])])
+
 dnl build option: purple backend
 AC_ARG_ENABLE([purple],
 	[AC_HELP_STRING([--enable-purple], [build purple plugin @<:@default=yes@:>@])],
@@ -249,12 +273,12 @@ AS_IF([test "x$enable_purple" != xno],
 		 ac_save_CFLAGS=$CFLAGS
 		 CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
 		 AC_COMPILE_IFELSE(
-			AC_LANG_PROGRAM([
+			[AC_LANG_PROGRAM([[
 #include <glib.h>
 #include <cipher.h>
 
 /* Compile some code that has caused trouble in the past */
-void testfunc(unsigned long len)
+static void testfunc(unsigned long len)
 {
   PurpleCipherContext *rc4 = NULL;
   guchar *plaintext = NULL;
@@ -265,8 +289,8 @@ void testfunc(unsigned long len)
   purple_cipher_context_encrypt(rc4, plaintext, plaintext_length,
                                 encrypted_text, &dummy);
 }
-					],
-					[testfunc(16);]),
+					]],
+					[[testfunc(16);]])],
 			[AC_MSG_RESULT(none)],
 			[AC_MSG_FAILURE([conflicts found.
 
@@ -286,17 +310,17 @@ system defaults.
 			 ac_save_LIBS=$LIBS
 			 LIBS="$PURPLE_LIBS"
 			 AC_RUN_IFELSE(
-				AC_LANG_PROGRAM([
+				[AC_LANG_PROGRAM([[
 #include <glib.h>
 #include <plugin.h>
 #include <sslconn.h>
-],
-						[
+						]],
+						[[
 	purple_plugins_init();
 	purple_plugins_probe(G_MODULE_SUFFIX);
 	purple_ssl_init();
 	return(purple_ssl_is_supported()?0:1);
-						]),
+						]])],
 				[AC_MSG_RESULT(ok)],
 				[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
 ])
@@ -309,23 +333,39 @@ system defaults.
 		       [test "x$with_vv" = xcheck],  dnl autodetect
 			 [AC_MSG_CHECKING(for purple voice and video support)
 			  AC_RUN_IFELSE(
-				AC_LANG_PROGRAM(
-					[[[
-#include <libpurple/media.h>
-					]]],
-					[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);
-					 purple_media_get_active_local_candidates(NULL, NULL, NULL);
-					 purple_media_get_active_remote_candidates(NULL, NULL, NULL);]
-			  	),
+				[AC_LANG_PROGRAM([[
+#include <media.h>
+					]],
+					[[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]]
+			  	)],
 				[AC_MSG_RESULT(ok)
-				 PKG_CHECK_MODULES(NICE, [nice >= 0.0.14],
-					[PKG_CHECK_MODULES(PURPLE_MEDIA, [purple >= 2.7.0],
-						[with_purple_vv=yes],
-						[AC_MSG_NOTICE(libpurple >= 2.7.0 required: disabling purple voice and video support)])],
+				 PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
+					dnl sipe-media.c uses g_slist_free_full()
+					[PKG_CHECK_MODULES(_SIPE_MEDIA_RECHECK_PLEASE_IGNORE, [purple >= 2.8.0 glib-2.0 >= 2.28.0],
+						[PKG_CHECK_MODULES(GSTREAMER, [gstreamer-0.10],
+							[with_purple_vv=yes],
+							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
+						[AC_MSG_NOTICE(libpurple >= 2.8.0 glib2 >= 2.28.0 required: disabling purple voice and video support)])],
 					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
 				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)],
 				[AC_MSG_WARN([cross compiling: not checking])])
 			 ])
+
+		 dnl check if we have TCP media transport patches in libpurple
+		 AS_IF([test "x$with_purple_vv" != xno],
+			[
+			 AC_MSG_CHECKING(for TCP media transport)
+			 AC_COMPILE_IFELSE(
+	 			[AC_LANG_PROGRAM([[#include <media.h>]],[[return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE]])],
+				[
+				 with_purple_tcp=yes
+				 AC_DEFINE(HAVE_ICE_TCP, 1, [Define if we have support for TCP media transport.])
+				 AC_MSG_RESULT(yes)
+				],
+				[AC_MSG_RESULT(no)]
+	 		 )
+			])
+
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS],
 		[enable_purple=no])])
@@ -343,39 +383,13 @@ AS_IF([test "x$enable_telepathy" != xno],
 			[],
 			[AC_ERROR(GMIME package is required for telepathy plugin)])
 
-		 dnl NSS is a build requirement
-		 AS_IF([test "x$ac_have_nss" = xyes],
-			[],
-			[AC_ERROR(NSS package is required for telepathy plugin)])
-
 		 dnl NOTHING IMPLEMENTED YET!!!
 		],
 		[enable_telepathy=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, [test "x$enable_telepathy" != xno])
 
-dnl build option: kopete backend
-AC_ARG_ENABLE([kopete],
-	[AC_HELP_STRING([--enable-kopete], [build kopete plugin @<:@default=no@:>@])],
-	[],
-	[enable_kopete=no])
-AS_IF([test "x$enable_kopete" != xno],
-	[dnl GMIME is a build requirement
-	 AS_IF([test "x$ac_have_gmime" = xyes],
-		[],
-		[AC_ERROR(GMIME package is required for kopete plugin)])
-
-	 dnl NSS is a build requirement
-	 AS_IF([test "x$ac_have_nss" = xyes],
-		[],
-		[AC_ERROR(NSS package is required for kopete plugin)])
-
-	 dnl NOTHING IMPLEMENTED YET!!!
-	],
-	[enable_kopete=no])
-AM_CONDITIONAL(SIPE_INCLUDE_KOPETE, [test "x$enable_kopete" != xno])
-
 dnl sanity check
-AS_IF([test "x$enable_purple" = xno -a "x$enable_telepathy" = xno -a "x$enable_kopete" = xno],
+AS_IF([test "x$enable_purple" = xno -a "x$enable_telepathy" = xno],
 	[AC_ERROR(at least one plugin must be selected
 
 If you didn't use a --enable option then please check that you have
@@ -415,7 +429,6 @@ AC_CONFIG_FILES([
 	src/api/Makefile
 	src/purple/Makefile
 	src/telepathy/Makefile
-	src/kopete/Makefile
 	])
 
 dnl generate files
@@ -428,9 +441,14 @@ AS_IF([test "x$enable_purple" = xno],
 	[AS_ECHO("Build purple plugin")
 	 AS_ECHO("PURPLE_CFLAGS  : $PURPLE_CFLAGS")
 	 AS_ECHO("PURPLE_LIBS    : $PURPLE_LIBS")
+	 AS_ECHO_N("Voice and video: ")
 	 AS_IF([test "x$with_purple_vv" = xno],
-	  [AS_ECHO("Voice and video: disabled")],
-	  [AS_ECHO("Voice and video: enabled")])
+	  [AS_ECHO("disabled")],
+	  [
+	   AS_ECHO_N("enabled")
+	   AS_IF([test "x$with_purple_tcp" = xyes], [AS_ECHO_N(" with TCP transport")])
+	   AS_ECHO()
+	  ])
 	])
 AS_ECHO()
 AS_IF([test "x$enable_telepathy" = xno],
@@ -441,13 +459,6 @@ AS_IF([test "x$enable_telepathy" = xno],
 	 AS_ECHO()
 	 AS_ECHO("TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS")
 	 AS_ECHO("TELEPATHY_LIBS  : $TELEPATHY_LIBS")])
-AS_ECHO()
-AS_IF([test "x$enable_kopete" = xno],
-	[AS_ECHO("Not building kopete plugin")],
-	[AS_ECHO("Build kopete plugin")
-	 AS_ECHO()
-	 AS_ECHO("NOTHING IMPLEMENTED YET!!!")
-	 AS_ECHO()])
 AS_ECHO()
 AS_IF([test "x$with_krb5" = xno],
 	[AS_ECHO("Not building with Kerberos 5 support")],

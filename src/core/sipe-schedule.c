@@ -53,7 +53,7 @@ void sipe_core_schedule_execute(gpointer data)
 	struct sipe_schedule *expired = data;
 	struct sipe_core_private *sipe_private = expired->sipe_private;
 
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_schedule_execute: executing");
+	SIPE_DEBUG_INFO("sipe_core_schedule_execute: executing %s", expired->name);
 	sipe_private->timeouts = g_slist_remove(sipe_private->timeouts, expired);
 	SIPE_DEBUG_INFO("sipe_core_schedule_execute timeouts count %d after removal",
 			g_slist_length(sipe_private->timeouts));

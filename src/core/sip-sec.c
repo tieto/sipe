@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -39,10 +39,12 @@
 #include "sipe-utils.h"
 
 #include "sip-sec-mech.h"
-#include "sip-sec-ntlm.h"
 #ifndef _WIN32
+#include "sip-sec-ntlm.h"
+#include "sip-sec-tls-dsk.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
+#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
 
 #ifdef HAVE_LIBKRB5
 #include "sip-sec-krb5.h"
@@ -52,16 +54,20 @@
 #endif
 
 #else /* _WIN32 */
-#ifdef HAVE_LIBKRB5
+#ifdef HAVE_SSPI
 #include "sip-sec-sspi.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
-#else /* HAVE_LIBKRB5 */
+#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__sspi
+#else /* !HAVE_SSPI */
+#include "sip-sec-ntlm.h"
+#include "sip-sec-tls-dsk.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
-#endif /* HAVE_LIBKRB5 */
+#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
+#endif /* HAVE_SSPI */
 
 #endif /* _WIN32 */
 
@@ -86,10 +92,10 @@ sip_sec_create_context(guint type,
 	/* Map authentication type to module initialization hook & name */
 	static sip_sec_create_context_func const auth_to_hook[] = {
 		sip_sec_create_context__NONE,      /* AUTH_TYPE_UNSET     */
-		sip_sec_create_context__NONE,      /* AUTH_TYPE_DIGEST    */
 		sip_sec_create_context__NTLM,      /* AUTH_TYPE_NTLM      */
 		sip_sec_create_context__Kerberos,  /* AUTH_TYPE_KERBEROS  */
 		sip_sec_create_context__Negotiate, /* AUTH_TYPE_NEGOTIATE */
+		sip_sec_create_context__TLS_DSK,   /* AUTH_TYPE_TLS_DSK   */
 	};
 
 	context = (*(auth_to_hook[type]))(type);
@@ -98,6 +104,7 @@ sip_sec_create_context(guint type,
 
 		context->sso = sso;
 		context->is_connection_based = is_connection_based;
+		context->is_ready = TRUE;
 
 		ret = (*context->acquire_cred_func)(context, domain, username, password);
 		if (ret != SIP_SEC_E_OK) {
@@ -122,18 +129,10 @@ sip_sec_init_context_step(SipSecContext context,
 	if (context) {
 		SipSecBuffer in_buff  = {0, NULL};
 		SipSecBuffer out_buff = {0, NULL};
-		char *tmp;
 
-		/* Not NULL for NTLM Type 2 */
-		if (input_toked_base64) {
+		/* Not NULL for NTLM Type 2 or TLS-DSK */
+		if (input_toked_base64)
 			in_buff.value = g_base64_decode(input_toked_base64, &in_buff.length);
-
-			tmp = sip_sec_ntlm_message_describe(in_buff);
-			if (tmp) {
-				SIPE_DEBUG_INFO("sip_sec_init_context_step: Challenge message is:\n%s", tmp);
-			}
-			g_free(tmp);
-		}
 
 		ret = (*context->init_context_func)(context, in_buff, &out_buff, target);
 
@@ -141,14 +140,11 @@ sip_sec_init_context_step(SipSecContext context,
 			g_free(in_buff.value);
 
 		if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
-			*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
 
 			if (out_buff.length > 0 && out_buff.value) {
-				tmp = sip_sec_ntlm_message_describe(out_buff);
-				if (tmp) {
-					SIPE_DEBUG_INFO("sip_sec_init_context_step: Negotiate or Authenticate message is:\n%s", tmp);
-				}
-				g_free(tmp);
+				*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
+			} else {
+				*output_toked_base64 = NULL;
 			}
 
 			g_free(out_buff.value);
@@ -211,6 +207,11 @@ sip_sec_init_context(SipSecContext *context,
 	return output_toked_base64;
 }
 
+gboolean sip_sec_context_is_ready(SipSecContext context)
+{
+	return(context && (context->is_ready != 0));
+}
+
 void
 sip_sec_destroy_context(SipSecContext context)
 {
@@ -250,12 +251,16 @@ int sip_sec_verify_signature(SipSecContext context, const char *message, const c
 /* Initialize & Destroy */
 void sip_sec_init(void)
 {
+#ifndef HAVE_SSPI
 	sip_sec_init__ntlm();
+#endif
 }
 
 void sip_sec_destroy(void)
 {
+#ifndef HAVE_SSPI
 	sip_sec_destroy__ntlm();
+#endif
 }
 
 /*

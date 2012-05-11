@@ -22,6 +22,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sip_dialog;
 struct sipmsg;
 
 void process_incoming_bye(struct sipe_core_private *sipe_private,
@@ -38,3 +39,6 @@ void process_incoming_options(struct sipe_core_private *sipe_private,
 			      struct sipmsg *msg);
 void process_incoming_refer(struct sipe_core_private *sipe_private,
 			    struct sipmsg *msg);
+
+void sipe_incoming_cancel_delayed_invite(struct sipe_core_private *sipe_private,
+					 struct sip_dialog *dialog);

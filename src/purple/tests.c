@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  *
@@ -33,6 +34,15 @@
 #include "cipher.h"
 #include "debug.h"
 #include "signals.h"
+
+#include "sipe-common.h"
+#include "sipe-core.h"
+
+/* stub for purple-user.c */
+void sipe_core_user_ask_cb(SIPE_UNUSED_PARAMETER gpointer key,
+			   SIPE_UNUSED_PARAMETER gboolean accepted)
+{
+}
 
 gboolean sip_sec_ntlm_tests(void);
 

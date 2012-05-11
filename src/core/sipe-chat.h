@@ -23,31 +23,66 @@
 /* Forward declarations */
 struct sipe_core_private;
 struct sip_session;
+struct sipe_backend_chat_session;
+
+enum sipe_chat_type {
+	SIPE_CHAT_TYPE_UNKNOWN = 0,
+	SIPE_CHAT_TYPE_MULTIPARTY,
+	SIPE_CHAT_TYPE_CONFERENCE,
+	SIPE_CHAT_TYPE_GROUPCHAT
+};
+
+struct sipe_chat_session {
+	struct sipe_backend_chat_session *backend;
+
+	/*
+	 * Chat identifier (must be unique per account)
+	 *
+	 * 2007 Group chat:      channel URI
+	 * 2007 Conference:      focus URI
+	 * 2005 multiparty chat: roster manager SIP URI
+	 */
+	gchar *id;
+
+	/* Human readable chat identifier (can have duplicates) */
+	gchar *title;
+
+	enum sipe_chat_type type;
+};
 
 /**
- * Returns purple's chat name for provided chat identification in protocol.
- * Stores newly created chat title if not yet exist.
+ * Create a new chat session
  *
- * @param proto_chat_id for 2007 conference this is (gchar *) Focus URI,
- *                      for 2005 multiparty chat this is (gchar *) Call-Id of the conversation.
+ * @param session
+ */
+struct sipe_chat_session *
+sipe_chat_create_session(enum sipe_chat_type type,
+			 const gchar *id, const gchar *title);
+
+/**
+ * Remove a chat session
+ *
+ * @param session
+ */
+void
+sipe_chat_remove_session(struct sipe_chat_session *session);
+
+/**
+ * Release resources on unload
+ */
+void
+sipe_chat_destroy(void);
+
+/**
+ * Generate a name for a new private chat.
  *
  * @return chat name. Must be g_free()'d after use
  */
 gchar *
-sipe_chat_get_name(const gchar *proto_chat_id);
+sipe_chat_get_name(void);
 
 /**
- * Returns protocol id for provided purple's chat name
  *
- * @param chat_name chat name
- *
- * @return protocol id
- */
-const gchar *
-sipe_chat_find_name(const gchar *chat_name);
-
-/**
- * 
  *
  * @param sipe_private SIPE core private data
  * @param session SIPE session for chat
@@ -57,13 +92,10 @@ sipe_process_pending_invite_queue(struct sipe_core_private *sipe_private,
 				  struct sip_session *session);
 
 /**
- * Invite @who to chat
+ * Set roster manager URI for a multiparty chat
  *
- * @param sipe_private SIPE core private data
  * @param session SIPE session for chat
- * @param who URI whom to invite to chat.
+ * @param roster_manager New roster manager URI or NULL
  */
-void
-sipe_invite_to_chat(struct sipe_core_private *sipe_private,
-		    struct sip_session *session,
-		    const gchar *who);
+void sipe_chat_set_roster_manager(struct sip_session *session,
+				  const gchar *roster_manager);

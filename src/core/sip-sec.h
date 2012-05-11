@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -26,10 +26,10 @@
 typedef struct sip_sec_context *SipSecContext;
 
 #define AUTH_TYPE_UNSET     0
-#define AUTH_TYPE_DIGEST    1
-#define AUTH_TYPE_NTLM      2
-#define AUTH_TYPE_KERBEROS  3
-#define AUTH_TYPE_NEGOTIATE 4
+#define AUTH_TYPE_NTLM      1
+#define AUTH_TYPE_KERBEROS  2
+#define AUTH_TYPE_NEGOTIATE 3
+#define AUTH_TYPE_TLS_DSK   4
 
 /*** Sipe convenience methods ***/
 
@@ -103,6 +103,16 @@ char *sip_sec_init_context(SipSecContext *context,
 			   const char *input_toked_base64);
 
 /**
+ * Check if the authentication of a security context is completed and it is
+ * ready to be used for message signing and signature verification
+ *
+ * @param context (in) security context. May be @c NULL.
+ *
+ * @return @TRUE if authentication is completed
+ */
+gboolean sip_sec_context_is_ready(SipSecContext context);
+
+/**
  * A convenience method for sipe.
  * Destroys security context.
  *
@@ -114,6 +124,7 @@ void sip_sec_destroy_context(SipSecContext context);
  * A convenience method for sipe.
  * Signs incoming message.
  *
+ * @param context (in) security context
  * @param message (in) a message to sign.
  *
  * @return signature for the message. Converted to Hex null terminated string;
@@ -125,7 +136,8 @@ char *sip_sec_make_signature(SipSecContext context,
  * A convenience method for sipe.
  * Verifies signature for the message.
  *
- * @param mesage (in) which signature to verify. Null terminated string.
+ * @param context (in) security context
+ * @param message (in) which signature to verify. Null terminated string.
  * @param signature_hex (in) signature to test in Hex representation. Null terminated string. Example: "602306092A864886F71201020201011100FFFFFFFF1A306ACB7BE311827BBF7208D80D15E3"
  *
  * @return FALSE on error

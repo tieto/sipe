@@ -21,6 +21,7 @@
  */
 
 /* Forward declarations */
+struct sipe_core_private;
 struct sipe_cal_working_hours;
 
 struct sipe_buddy {
@@ -56,3 +57,36 @@ struct sipe_buddy {
 	 /** flag to control sending 'context' element in 2007 subscriptions */
 	gboolean just_added;
 };
+
+/**
+ * Free all buddy information
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_buddy_free_all(struct sipe_core_private *sipe_private);
+
+/**
+ * Tries to retrieve a real user's name associated with given SIP URI.
+ *
+ * Result must be g_free'd after use.
+ *
+ * @param sipe_private SIPE core data
+ * @param with         a SIP URI
+ *
+ * @return Name of the user if the URI is found in buddy list, otherwise @c NULL
+ */
+gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
+			    const gchar *with);
+
+/**
+ * Update the value of a buddy property with given SIP URI
+ *
+ * @param sipe_private   SIPE core data
+ * @param uri            a SIP URI
+ * @param propkey        property id (see sipe-backend.h)
+ * @param property_value new value for the property
+ */
+void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
+				const gchar *uri,
+				sipe_buddy_info_fields propkey,
+				gchar *property_value);

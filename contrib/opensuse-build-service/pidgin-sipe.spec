@@ -1,9 +1,79 @@
 #
 # OBS SPEC file to generate a RPM for pidgin-sipe.
-# It should work on Fedora 9/10/11/12, openSUSE 11.x, RHEL5/CentOS 5, SLES/D 11 and Mandriva 2009.1/2010.
+#
+# It has support for:
+#
+#     RedHat family (CentOS, Fedora, RHEL)
+#     Mandriva
+#     SUSE family (openSUSE, SLED, SLES)
+#     Windows (mingw32, mingw64)
 #
 
-%define purple_plugin libpurple-plugin-sipe
+# Build options
+%define build_telepathy 0
+
+# Check for mingw32 cross compilation build
+#
+# Manually add this repository to your private OBS project:
+#
+#  <repository name="mingw32">
+#    <path repository="openSUSE_11.4" project="windows:mingw:win32"/>
+#    <arch>i586</arch>
+#  </repository>
+#
+%if "%{_repository}" == "mingw32"
+%define purple_sipe_mingw32 1
+%define mingw_prefix        mingw32-
+%define mingw_cache         %{_mingw32_cache}
+%define mingw_configure     %{_mingw32_configure}
+%define mingw_datadir       %{_mingw32_datadir}
+%define mingw_debug_package %{_mingw32_debug_package}
+%define mingw_ldflags       MINGW32_LDFLAGS
+%define mingw_libdir        %{_mingw32_libdir}
+%define mingw_make          %{_mingw32_make}
+%define mingw_makeinstall   %{_mingw32_makeinstall}
+%define __strip             %{_mingw32_strip}
+%define __objdump           %{_mingw32_objdump}
+%define _use_internal_dependency_generator 0
+%define __find_requires     %{_mingw32_findrequires}
+%define __find_provides     %{_mingw32_findprovides}
+%define __os_install_post   %{_mingw32_debug_install_post} \
+                            %{_mingw32_install_post}
+%endif
+
+# Check for mingw64 cross compilation build
+#
+# Manually add this repository to your private OBS project:
+#
+#  <repository name="mingw64">
+#    <path repository="openSUSE_11.4" project="windows:mingw:win64"/>
+#    <arch>i586</arch>
+#  </repository>
+#
+%if "%{_repository}" == "mingw64"
+%define purple_sipe_mingw64 1
+%define mingw_prefix        mingw64-
+%define mingw_cache         %{_mingw64_cache}
+%define mingw_configure     %{_mingw64_configure}
+%define mingw_datadir       %{_mingw64_datadir}
+%define mingw_debug_package %{_mingw64_debug_package}
+%define mingw_ldflags       MINGW64_LDFLAGS
+%define mingw_libdir        %{_mingw64_libdir}
+%define mingw_make          %{_mingw64_make}
+%define mingw_makeinstall   %{_mingw64_makeinstall}
+%define __strip             %{_mingw64_strip}
+%define __objdump           %{_mingw64_objdump}
+%define _use_internal_dependency_generator 0
+%define __find_requires     %{_mingw64_findrequires}
+%define __find_provides     %{_mingw64_findprovides}
+%define __os_install_post   %{_mingw64_debug_install_post} \
+                            %{_mingw64_install_post}
+%endif
+
+%define purple_plugin    %{?mingw_prefix:%{mingw_prefix}}libpurple-plugin-sipe
+%define telepathy_plugin %{?mingw_prefix:%{mingw_prefix}}telepathy-plugin-sipe
+%define nsis_package     %{?mingw_prefix:%{mingw_prefix}}pidgin-sipe-nsis
+
 
 %define purple_develname libpurple-devel
 
@@ -22,6 +92,9 @@
 %define nss_develname mozilla-nss-devel
 %if 0%{?suse_version} >= 1120
 %define has_libnice 1
+%if 0%{?suse_version} > 1140
+%define has_gstreamer 1
+%endif
 %endif
 %else
 %define nss_develname nss-devel
@@ -32,8 +105,12 @@
 %endif
 %if 0%{?fedora}
 %define pkg_group Applications/Internet
+%define has_gmime 1
 %if 0%{?fedora} >= 11
 %define has_libnice 1
+%if 0%{?fedora} >= 15
+%define has_gstreamer 1
+%endif
 %endif
 %endif
 %if 0%{?mdkversion}
@@ -42,26 +119,63 @@
 %define pkg_group Applications/Internet
 %endif
 
+%if 0%{?purple_sipe_mingw32}
+Name:           mingw32-pidgin-sipe
+%else
+%if 0%{?purple_sipe_mingw64}
+Name:           mingw64-pidgin-sipe
+%else
 Name:           pidgin-sipe
+%endif
+%endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.11.2
+Version:        1.13.1
 Release:        1
-Source:         %{name}-%{version}.tar.gz
+Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
+%if 0%{?mingw_prefix:1}
+#
+# Windows cross-compilation build setup
+#
+BuildArch:      noarch
+#!BuildIgnore:   post-build-checks
+
+BuildRequires:  %{mingw_prefix}filesystem >= 23
+BuildRequires:  %{mingw_prefix}cross-gcc
+BuildRequires:  %{mingw_prefix}cross-binutils
+BuildRequires:  %{mingw_prefix}gettext-runtime
+BuildRequires:  %{mingw_prefix}cross-pkg-config
+BuildRequires:  %{mingw_prefix}glib2-devel >= 2.12.0
+BuildRequires:  %{mingw_prefix}libxml2-devel
+BuildRequires:  %{mingw_prefix}mozilla-nss-devel
+BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.4.0
+BuildRequires:  %{mingw_prefix}cross-nsis
+
+# For directory ownership
+BuildRequires:  %{mingw_prefix}pidgin
+
+%else
+#
+# Standard Linux build setup
+#
 BuildRequires:  %{purple_develname} >= 2.4.0
-BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  libxml2-devel
-#BuildRequires:  %{nss_develname}
-BuildRequires:  libtool
-BuildRequires:  intltool
+BuildRequires:  %{nss_develname}
 BuildRequires:  gettext-devel
+%if 0%{?has_gmime:1}
+BuildRequires:  gmime-devel
+%endif
+# The following two are required to enable Voice & Video features
 %if 0%{?has_libnice:1}
 BuildRequires:  libnice-devel
+%endif
+%if 0%{?has_gstreamer:1}
+BuildRequires:  gstreamer-devel
 %endif
 
 # Configurable components
@@ -71,7 +185,9 @@ BuildRequires:  krb5-devel
 
 # For directory ownership
 BuildRequires:  pidgin
-Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+%if %{build_telepathy}
+BuildRequires:  pkgconfig(telepathy-glib)
+%endif
 Requires:       pidgin
 %if 0%{?sles_version} == 10
 BuildRequires:  gnome-keyring-devel
@@ -88,11 +204,27 @@ BuildRequires:  PolicyKit-gnome
 BuildRequires:  polkit-gnome
 %endif
 
+# For OBS's "have choice for" for Mandriva 2011 (and up?)
+%if 0%{?mdkversion} >= 201100
+BuildRequires:  packagekit-gstreamer-plugin
+BuildRequires:  gnome-packagekit-common
+%endif
+
+# End Windows cross-compilation/Linux build setup
+%endif
+
+Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+BuildRequires:  libtool
+BuildRequires:  intltool
+BuildRequires:  glib2-devel >= 2.12.0
+
+
 %description
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
@@ -105,24 +237,89 @@ This package provides the icon set for Pidgin.
 %package -n %{purple_plugin}
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 Obsoletes:      purple-sipe
 
 %description -n %{purple_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
 This package provides the protocol plugin for libpurple clients.
 
 
+%if %{build_telepathy}
+%package -n %{telepathy_plugin}
+Summary:        Telepathy connection manager for MS Office Communicator
+Group:          %{pkg_group}
+License:        GPL-2.0+
+
+%description -n %{telepathy_plugin}
+A third-party plugin for the Pidgin multi-protocol instant messenger.
+It implements the extended version of SIP/SIMPLE used by various products:
+
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package provides the connection manager for the telepathy multi-protocol
+instant messaging core.
+%endif
+
+
+%if 0%{?mingw_prefix:1}
+%package -n %{nsis_package}
+Summary:        Windows Pidgin protocol plugin to connect to MS Office Communicator
+Group:          %{pkg_group}
+License:        GPL-2.0+
+
+%description -n %{nsis_package}
+A third-party plugin for the Pidgin multi-protocol instant messenger.
+It implements the extended version of SIP/SIMPLE used by various products:
+
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package contains the NSIS installer package of the protocol plugin
+for Pidgin on Windows.
+%endif
+
+
+%{mingw_debug_package}
+
+
 %prep
-%setup -q
+%setup -q -n pidgin-sipe-%{version}
 
 %build
+%if 0%{?mingw_prefix:1}
+#
+# Windows cross-compilation build
+#
+%{?env_options}
+echo "lt_cv_deplibs_check_method='pass_all'" >>%{mingw_cache}
+autoreconf --verbose --install --force
+%{mingw_ldflags}="-Wl,--exclude-libs=libintl.a -Wl,--exclude-libs=libiconv.a -lws2_32"
+%{mingw_configure} \
+        --enable-purple \
+%if %{build_telepathy}
+        --enable-telepathy
+%else
+        --disable-telepathy
+%endif
+%{mingw_make} %{_smp_mflags} || %{mingw_make}
+
+%else
+#
+# Standard Linux build
+#
 %if 0%{?sles_version} == 10
 export CFLAGS="%optflags -I%{_includedir}/gssapi"
 %endif
@@ -131,44 +328,156 @@ autoreconf --verbose --install --force
 %endif
 %configure \
 	--enable-purple \
+%if %{build_telepathy}
+        --enable-telepathy
+%else
 	--disable-telepathy
+%endif
 make %{_smp_mflags}
 make %{_smp_mflags} check
 
+# End Windows cross-compilation/Linux build setup
+%endif
+
 
 %install
+%if 0%{?mingw_prefix:1}
+#
+# Windows cross-compilation install
+#
+%{mingw_makeinstall}
+rm -f %{buildroot}%{mingw_libdir}/purple-2/*.dll.a
+
+# generate NSIS installer package
+perl contrib/opensuse-build-service/generate_nsi.pl po/LINGUAS \
+	<contrib/opensuse-build-service/pidgin-sipe.nsi.template \
+	>%{buildroot}/pidgin-sipe.nsi
+( \
+	set -e; \
+	cd %{buildroot}; \
+	makensis \
+		-DVERSION=%{version} \
+		-DMINGW_LIBDIR=%{buildroot}%{mingw_libdir} \
+		-DMINGW_DATADIR=%{buildroot}%{mingw_datadir} \
+		pidgin-sipe.nsi \
+)
+rm -f %{buildroot}/pidgin-sipe.nsi
+
+%else
+#
+# Standard Linux install
+#
 %makeinstall
+
+# End Windows cross-compilation/Linux build setup
+%endif
+
 find %{buildroot} -type f -name "*.la" -delete -print
 # SLES11 defines suse_version = 1110
 %if 0%{?suse_version} && 0%{?suse_version} < 1120
 rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
 %endif
-%find_lang %{name}
+%find_lang pidgin-sipe
 
 
 %clean
 rm -rf %{buildroot}
 
 
-%files -n %{purple_plugin} -f %{name}.lang
+%files -n %{purple_plugin} -f pidgin-sipe.lang
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
+%if 0%{?mingw_prefix:1}
+%{mingw_libdir}/purple-2/libsipe.dll
+%else
 %{_libdir}/purple-2/libsipe.so
+%endif
 
 
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
+%if 0%{?mingw_prefix:1}
+%{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.png
+%{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
+%else
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 # SLES11 defines suse_version = 1110
 %if !0%{?suse_version} || 0%{?suse_version} >= 1120
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %endif
+%endif
+
+
+%if %{build_telepathy}
+%files -n %{telepathy_plugin}
+%defattr(-, root, root)
+%{_libexecdir}/telepathy-sipe
+%endif
+
+
+%if 0%{?mingw_prefix:1}
+%files -n %{nsis_package}
+%defattr(-, root, root)
+/pidgin-sipe-%{version}.exe
+%endif
 
 
 %changelog
+* Mon Apr 09 2012 J. D. User <jduser@noreply.com> 1.13.1
+- update to 1.13.1
+
+* Wed Mar 14 2012 J. D. User <jduser@noreply.com> 1.13.0
+- update to 1.13.0
+
+* Mon Dec 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- we do support Microsoft Lync Server 2010 now.
+
+* Tue Dec 06 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- update GPL2 license name
+
+* Sat Nov 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add BR gmime-devel for Fedora to have at least one verification platform
+
+* Sun Nov 06 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- fix Mandriva 2011 unresolvable BR
+
+* Mon Oct 31 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add BR nss-devel
+
+* Sat Oct 01 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add NSIS package for mingw builds
+
+* Sat Oct 01 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add mingw64 build
+
+* Wed Sep 28 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- remove BR mingw32-mozilla-nss-devel, not needed for SSPI.
+
+* Mon Sep 19 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- update mingw32 build
+- update descriptions
+
+* Mon Aug 29 2011 J. D. User <jduser@noreply.com> 1.12.0
+- update to 1.12.0
+
+* Wed Jun 22 2011 J. D. User <jduser@noreply.com> 1.11.2-*git*
+- add gstreamer-devel to enable Voice & Video features
+
+* Sat Dec 11 2010 J. D. User <jduser@noreply.com> 1.11.2-*git*
+- add optional subpackage for telepathy connection manager
+
+* Tue Nov 02 2010 J. D. User <jduser@noreply.com> 1.11.2
+- update to 1.11.2
+
 * Sun Oct 24 2010 J. D. User <jduser@noreply.com> 1.11.1
 - update to 1.11.1
+
+* Fri Oct 15 2010 J. D. User <jduser@noreply.com> 1.11.0-*git*
+- add mingw32 build configuration
+
+* Sun Oct 03 2010 J. D. User <jduser@noreply.com> 1.11.0
+- update to 1.11.0
 
 * Thu Sep 02 2010 J. D. User <jduser@noreply.com> pre-1.11.0-*git*
 - Mandriva config for OBS has changed

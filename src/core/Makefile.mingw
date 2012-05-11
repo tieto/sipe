@@ -1,3 +1,6 @@
+################################### tell Emacs this is a -*- makefile-gmake -*-
+#
+# Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -5,42 +8,44 @@
 # Date 8/28/07
 # Description: Makefile for win32 (mingw) version of libsipe
 #
+###############################################################################
+#
+# Configuration option:
+#  - USE_SSPI defined:     NTLM, Kerberos & Single-Signon supported
+#  - USE_SSPI not defined: only NTLM without Single-Signon supported
+#             [eg.: make -f Makefile.mingw USE_SSPI= ]
+#
+USE_SSPI := 1
 
+ifdef PIDGIN_TREE_TOP
+# standalone MinGW build
 OLD_PIDGIN_TREE_TOP := $(PIDGIN_TREE_TOP)
-PIDGIN_TREE_TOP := ../$(OLD_PIDGIN_TREE_TOP)
+PIDGIN_TREE_TOP     := ../$(OLD_PIDGIN_TREE_TOP)
+else
+# MinGW cross-compile build (see contrib/mingw-cross-compile/README.txt)
+PIDGIN_TREE_TOP := ../../..
+VERSION         := $(shell cat ../../VERSION)
+endif
 
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
-LIBICONV_TOP	= $(WIN32_DEV_TOP)/libiconv-1.13.1-1
-GMIME_TOP	= $(WIN32_DEV_TOP)/gmime-2.4.15
-
-
 TARGET = libsipe
-TYPE = PLUGIN
+
+DLL_INSTALL_DIR = $(PURPLE_INSTALL_PLUGINS_DIR)
 
 # dump higher level defines
-DEFINES =
-
-# Static or Plugin...
-ifeq ($(TYPE),STATIC)
-  DEFINES += -DSTATIC
-  DLL_INSTALL_DIR =	$(PURPLE_INSTALL_DIR)
-else
-ifeq ($(TYPE),PLUGIN)
-  DLL_INSTALL_DIR =	$(PURPLE_INSTALL_PLUGINS_DIR)
-endif
-endif
-
+DEFINES  =
 DEFINES += -DENABLE_NLS=1
 DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/tracker/?atid=949931\&group_id=194563\"
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
-#Whether to use Windows native SSPI security package (Kerberos, NTLM; SSO)
-#or use SIPE custom NTLMv2 implementation only (No Kerberos; No SSO).
-DEFINES += -DHAVE_LIBKRB5=1
-DEFINES += -DHAVE_NSS=1
-DEFINES += -DHAVE_GMIME=1
+DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.net/projects/p/pidgin-sipe/r/mob/\"
+#DEFINES += -DENABLE_OCS2005_MESSAGE_HACK=1
+
+ifdef USE_SSPI
+DEFINES += -DHAVE_SSPI=1
+endif
 
 ##
 ## INCLUDE PATHS
@@ -51,75 +56,94 @@ INCLUDE_PATHS +=	-I. \
 			-I$(GTK_TOP)/include \
 			-I$(GTK_TOP)/include/glib-2.0 \
 			-I$(GTK_TOP)/lib/glib-2.0/include \
-			-I$(LIBICONV_TOP)/include \
-			-I$(GMIME_TOP)/include/gmime-2.4 \
 			-I$(LIBXML2_TOP)/include/libxml2 \
 			-I$(NSPR_TOP)/include \
 			-I$(NSS_TOP)/include
 
-PURPLE_INCLUDE_PATHS += \
-			-I$(PURPLE_TOP) \
+PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
 			-I$(PURPLE_TOP)/win32 \
 			-I$(PIDGIN_TREE_TOP)
 
 ##
 ##  SOURCES, OBJECTS
 ##
-CLEAN_C_SRC = \
-			http-conn.c \
-			md4.c \
+CLEAN_C_SRC = 		http-conn.c \
+			sip-soap.c \
 			sip-transport.c \
 			sipe-conf.c \
 			sipe-core.c \
-			sipe-crypt.c \
-			sipe-digest.c \
 			sipe-domino.c \
 			sipe-buddy.c \
 			sipe-cal.c \
+			sipe-certificate.c \
+			sipe-cert-crypto-nss.c \
 			sipe-chat.c \
+			sipe-crypt-nss.c \
 			sipe-dialog.c \
+			sipe-digest-nss.c \
 			sipe-ft.c \
+			sipe-ft-tftp.c \
+			sipe-group.c \
+			sipe-groupchat.c \
+			sipe-im.c \
 			sipe-incoming.c \
+			sipe-notify.c \
+			sipe-ocs2005.c \
+			sipe-ocs2007.c \
 			sipe-schedule.c \
 			sipe-session.c \
+			sipe-status.c \
 			sipe-subscriptions.c \
+			sipe-svc.c \
+			sipe-tls.c \
 			sipe-user.c \
+			sipe-utils.c \
 			sipe-ews.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
-			sip-sec-ntlm.c \
-			sip-sec-sspi.c \
 			sip-csta.c \
+			sipe-webticket.c \
 			sipe-xml.c \
-			sipe-mime.c \
 			uuid.c \
 			sipe-win32dep.c
 
-PURPLE_C_SRC = \
+PURPLE_C_SRC = 		../purple/purple-buddy.c \
 			../purple/purple-chat.c \
 			../purple/purple-connection.c \
 			../purple/purple-debug.c \
 			../purple/purple-dnsquery.c \
 			../purple/purple-ft.c \
+			../purple/purple-groupchat.c \
 			../purple/purple-im.c \
 			../purple/purple-markup.c \
+			../purple/purple-mime.c \
 			../purple/purple-network.c \
+			../purple/purple-notify.c \
 			../purple/purple-plugin.c \
 			../purple/purple-schedule.c \
+			../purple/purple-search.c \
 			../purple/purple-setting.c \
+			../purple/purple-status.c \
 			../purple/purple-transport.c \
-			../purple/purple-user.c \
-			sipe-utils.c \
-			sipe.c
+			../purple/purple-user.c
 
-C_TEST_SRC = 		sipe-xml-tests.c \
-			sip-sec-ntlm-tests.c \
-			../purple/tests.c \
+C_TEST_SRC = 		sipe-xml-tests.c
+
+ifdef USE_SSPI
+CLEAN_C_SRC +=		sip-sec-sspi.c
+else
+CLEAN_C_SRC +=		md4.c \
+			sip-sec-ntlm.c \
+			sip-sec-tls-dsk.c
+
+C_TEST_SRC += 		sip-sec-ntlm-tests.c \
+			../purple/tests.c
+endif
 
 C_SRC =			$(CLEAN_C_SRC) $(PURPLE_C_SRC)
 
-CLEAN_OBJECTS =		$(CLEAN_C_SRC:%.c=%.o)				
+CLEAN_OBJECTS =		$(CLEAN_C_SRC:%.c=%.o)
 PURPLE_OBJECTS = 	$(PURPLE_C_SRC:%.c=%.o)
 OBJECTS = 		$(CLEAN_OBJECTS) $(PURPLE_OBJECTS)
 
@@ -128,32 +152,30 @@ $(PURPLE_OBJECTS):	INCLUDE_PATHS += $(PURPLE_INCLUDE_PATHS)
 
 TEST_OBJECTS = 		$(C_TEST_SRC:%.c=%.o)
 
-
-LIB_PATHS +=	\
-			$(GMIME_TOP)/lib/libgmime-2.4.a \
-			-L$(LIBICONV_TOP)/lib \
-			-L$(GTK_TOP)/lib \
+##
+## LIBRARIES
+##
+LIB_PATHS =		-L$(GTK_TOP)/lib \
 			-L$(LIBXML2_TOP)/lib \
 			-L$(NSS_TOP)/lib \
 			-L$(PURPLE_TOP)
 
-##
-## LIBRARIES
-##
-LIBS =	\
-			-liconv \
-			-lglib-2.0 \
+LIBS =			-lglib-2.0 \
 			-lgobject-2.0 \
 			-lintl \
 			-lxml2 \
 			-lnss3 \
+			-lsmime3 \
+			-lnspr4 \
 			-lws2_32 \
-			-lSecur32 \
 			-lpurple
-	
-# These flags are used in mingw build	
-TESTS_WARN = -Werror -Wall -Waggregate-return -Wcast-align -Werror-implicit-function-declaration -Wextra -Wno-sign-compare -Wno-unused-parameter -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef
-#TESTS_WARN += -Wdeclaration-after-statement
+
+ifdef USE_SSPI
+LIBS +=			-lsecur32
+endif
+
+# These flags are used in mingw build
+TESTS_WARN = -Werror -Wall -Wextra -Waggregate-return -Wcast-align -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef
 
 include $(PIDGIN_COMMON_RULES)
 
@@ -175,22 +197,26 @@ $(TARGET).dll: $(PURPLE_DLL).a $(OBJECTS)
 clean: tests-clean
 	rm -f $(OBJECTS)
 	rm -f $(TARGET).dll
-  
+
 rmbak:
 	rm -f *~
-	
+
 install:
 	test -z "$(DLL_INSTALL_DIR)" || mkdir -p "$(DLL_INSTALL_DIR)"
 	/usr/bin/install -c $(TARGET).dll '$(DLL_INSTALL_DIR)'
-	
+
 $(TEST_OBJECTS):
 
 tests: tests-clean $(TEST_OBJECTS)
 	$(CC) sipe-utils.o uuid.o sipe-xml.o sipe-xml-tests.o -L. $(LIB_PATHS) $(LIBS) -lsipe -o sipe-xml-tests.exe
-	$(CC) ../purple/purple-debug.o ../purple/purple-markup.o ../purple/purple-network.o md4.o sipe-digest.o sipe-crypt.o sipe-mime.o sipe-sign.o sipmsg.o sipe-utils.o uuid.o sip-sec-ntlm-tests.o ../purple/tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o ../purple/tests.exe
 	./sipe-xml-tests.exe
+ifdef USE_SSPI
+# nothing to do
+else
+	$(CC) ../purple/purple-debug.o ../purple/purple-markup.o ../purple/purple-network.o md4.o sipe-digest.o sipe-crypt.o sipe-mime.o sipe-sign.o sipmsg.o sipe-utils.o uuid.o sip-sec-ntlm-tests.o ../purple/tests.o  -L. $(LIB_PATHS) $(LIBS) -lsipe -o ../purple/tests.exe
 	../purple/tests.exe
-	
+endif
+
 tests-clean:
 	rm -f $(TEST_OBJECTS)
 	rm -f sipe-xml-tests.exe ../purple/tests.exe

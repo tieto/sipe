@@ -1,3 +1,7 @@
+################################### tell Emacs this is a -*- makefile-gmake -*-
+#
+# Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+#
 # Makefile.mingw
 #
 # Author: pier11@operamail.com
@@ -5,8 +9,12 @@
 # Date 11 Nov 2009
 # Description: Top Makefile for win32 (mingw) port of LCS protocol plugin
 #
+###############################################################################
 
-export PIDGIN_TREE_TOP := ../pidgin-2.7.1
+ifndef PIDGIN_TREE_TOP
+# standalone MinGW build
+export PIDGIN_TREE_TOP := ../pidgin-2.10.0
+endif
 include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
 
 export CFLAGS=-Werror
@@ -15,13 +23,13 @@ WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
 export VERSION := $(shell cat VERSION)
 
-.PHONY: all clean install msi dev devinst
+.PHONY: all clean install msi dev devinst nsis
 
-all: 
+all:
 	$(MAKE) -C src -f $(MINGW_MAKEFILE)
 	$(MAKE) -C po -f $(MINGW_MAKEFILE)
-	
-dev: 
+
+dev:
 	$(MAKE) -C src -f $(MINGW_MAKEFILE)
 
 clean:
@@ -29,23 +37,44 @@ clean:
 	$(MAKE) -C po -f $(MINGW_MAKEFILE) clean
 	rm -f $(WXS_NAME).wix*
 	rm -f $(WXS_NAME)-$(VERSION).msi
-  
+	rm -f pidgin-sipe-$(VERSION).exe
+
 rmbak:
 	rm -f *~
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) rmbak
-	
+
 install: all
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) install
 	$(MAKE) -C po -f $(MINGW_MAKEFILE) install
 	$(MAKE) -C pixmaps -f $(MINGW_MAKEFILE) install
-	
+
 devinst: dev
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) install
-	
+
 tests: dev
 	$(MAKE) -C src -f $(MINGW_MAKEFILE) tests
-	
+
 msi: all
 	PACKAGE_VERSION=$(VERSION) $(WIX3_HOME)/bin/candle $(WXS_NAME).wxs
 	$(WIX3_HOME)/bin/light $(WXS_NAME).wixobj
 	mv $(WXS_NAME).msi $(WXS_NAME)-$(VERSION).msi
+
+nsis: install
+	makensis -DTREETOP=..\\pidgin-2.10.0 -DVERSION=$(VERSION) pidgin-sipe.nsi
+
+# MinGW cross-compile build (see contrib/mingw-cross-compile/README.txt)
+.PHONY: cross-compile-nsis
+cross-compile-nsis:
+	$(MAKE) -f Makefile.mingw install
+	mv $(PIDGIN_INSTALL_DIR)/plugins $(PIDGIN_INSTALL_DIR)/purple-2
+	perl contrib/opensuse-build-service/generate_nsi.pl po/LINGUAS \
+		<contrib/opensuse-build-service/pidgin-sipe.nsi.template \
+		>$(PIDGIN_INSTALL_DIR)/pidgin-sipe.nsi
+	set -e; cd $(PIDGIN_INSTALL_DIR); \
+	makensis \
+		-DVERSION=$(VERSION) \
+		-DMINGW_LIBDIR=. \
+		-DMINGW_DATADIR=. \
+		pidgin-sipe.nsi
+	mv $(PIDGIN_INSTALL_DIR)/pidgin-sipe-$(VERSION).exe $(PIDGIN_TREE_TOP)
+	rm -rf $(PIDGIN_INSTALL_DIR)

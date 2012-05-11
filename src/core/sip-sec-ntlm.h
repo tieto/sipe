@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -27,13 +27,3 @@ sip_sec_create_context__ntlm(guint type);
 
 void sip_sec_init__ntlm(void);
 void sip_sec_destroy__ntlm(void);
-
-/**
- * Describes NTML messages in human readable form
- */
-gchar *
-sip_sec_ntlm_message_describe(SipSecBuffer buff);
-
-/* temporarily */
-void
-NTOWFv2 (const char* password, const char *user, const char *domain, unsigned char *result);

@@ -10,6 +10,7 @@
 #
 # Configuration
 PROJECT=pidgin-sipe
+REPOSITORY="git+ssh://mob@repo.or.cz/srv/git/siplcs.git"
 BRANCH=mob
 
 # Create clone
@@ -21,8 +22,12 @@ REFERENCE=${1:+--reference $1}
 if [ -n "$1" ]; then
     echo "Using local repository under '$1'."
 fi
+if [ -n "$2" ]; then
+    REPOSITORY=$2
+fi
+echo "Cloning from repository URL '$REPOSITORY'."
 rm -rf $CLONEDIR
-git clone -n $REFERENCE git+ssh://mob@repo.or.cz/srv/git/siplcs.git $CLONEDIR
+git clone -n $REFERENCE $REPOSITORY $CLONEDIR
 cd $CLONEDIR
 git checkout -q -b $CLONEDIR origin/$BRANCH
 

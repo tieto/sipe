@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,12 +38,14 @@ struct transaction_payload {
 
 struct transaction {
 	TransCallback callback;
+	TransCallback timeout_callback;
 
 	/** Not yet perfect, but surely better then plain CSeq
 	 * Format is: <Call-ID><CSeq>
 	 * (RFC3261 17.2.3 for matching server transactions: Request-URI, To tag, From tag, Call-ID, CSeq, and top Via)
 	 */
 	gchar *key;
+	gchar *timeout_key;
         struct sipmsg *msg;
 	struct transaction_payload *payload;
 };
@@ -65,16 +67,28 @@ struct transaction *sip_transport_request(struct sipe_core_private *sipe_private
 					  struct sip_dialog *dialog,
 					  TransCallback callback);
 
+/* Send SIP request with timeout [in seconds] */
+struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe_private,
+						  const gchar *method,
+						  const gchar *url,
+						  const gchar *to,
+						  const gchar *addheaders,
+						  const gchar *body,
+						  struct sip_dialog *dialog,
+						  TransCallback callback,
+						  guint timeout,
+						  TransCallback timeout_callback);
+
 /* Common SIP request types */
 void sip_transport_ack(struct sipe_core_private *sipe_private,
 		       struct sip_dialog *dialog);
 void sip_transport_bye(struct sipe_core_private *sipe_private,
 		       struct sip_dialog *dialog);
-void sip_transport_info(struct sipe_core_private *sipe_private,
-			const gchar *addheaders,
-			const gchar *body,
-			struct sip_dialog *dialog,
-			TransCallback callback);
+struct transaction *sip_transport_info(struct sipe_core_private *sipe_private,
+				       const gchar *addheaders,
+				       const gchar *body,
+				       struct sip_dialog *dialog,
+				       TransCallback callback);
 struct transaction *sip_transport_invite(struct sipe_core_private *sipe_private,
 					 const gchar *addheaders,
 					 const gchar *body,
@@ -93,10 +107,12 @@ void sip_transport_subscribe(struct sipe_core_private *sipe_private,
 			     TransCallback callback);
 
 /* Misc. SIP transport stuff */
-const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_private);
 guint sip_transport_port(struct sipe_core_private *sipe_private);
 void sip_transport_deregister(struct sipe_core_private *sipe_private);
 void sip_transport_disconnect(struct sipe_core_private *sipe_private);
+void sip_transport_authentication_completed(struct sipe_core_private *sipe_private);
+
+int sip_transaction_cseq(struct transaction *trans);
 
 /*
   Local Variables:

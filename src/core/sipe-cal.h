@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,6 +22,9 @@
  */
 
 /* Forward declarations */
+struct http_conn_auth;
+struct http_conn_struct;
+struct http_session_struct;
 struct sipe_buddy;
 struct sipe_core_private;
 struct _sipe_xml;
@@ -57,7 +60,7 @@ struct sipe_calendar {
 	int state;
 	char *email;
 	char *legacy_dn;
-	HttpConnAuth *auth;
+	struct http_conn_auth *auth;
 	int auto_disco_method;
 	int is_ews_disabled;
 	int is_domino_disabled;
@@ -75,8 +78,8 @@ struct sipe_calendar {
 	time_t updated;
 	gboolean published;
 
-	HttpSession *http_session;
-	HttpConn *http_conn;
+	struct http_session_struct *http_session;
+	struct http_conn_struct *http_conn;
 
 	time_t fb_start;
 	/* hex form */
@@ -178,3 +181,14 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 struct sipe_cal_event*
 sipe_cal_get_event(GSList *cal_events,
 		   time_t time_in_question);
+
+/**
+ * Publish presence information
+ */
+void sipe_cal_presence_publish(struct sipe_core_private *sipe_private,
+			       gboolean do_publish_calendar);
+
+/**
+ * Schedule calendar update
+ */
+void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private);

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,46 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ * Some notes on the history of this project/code/copyrights:
+ *
+ *  - the project is called SIPE, but originally the code was only written
+ *    for the libpurple framework, i.e. Pidgin. Hence the package name is
+ *    "pidgin-sipe".
+ *
+ *  - in the beginning almost all of the code was located in a module
+ *    called "sipe.c". During the effort to remove the libpurple
+ *    dependencies from the SIPE core, thousands of lines of code got
+ *    shifted out of sipe.c, mostly to newly created modules and sipe.c
+ *    ceased to exist.
+ *
+ *  - it would have been tedious to track down the original author or
+ *    copyright and preserve them for each line of code that was moved.
+ *    Therefore the new modules started with a fresh copyright notice
+ *    (like the one above).
+ *
+ *  - the original copyright notices from sipe.c have been moved to this
+ *    file (see below) and *MUST* be preserved!
+ *
+ *  - if necessary the author of a line of code in question can still be
+ *    reconstructed from the git repository information.
+ *    See also "man git-blame"
+ *
+ *  - if you think your copyright should be restored for a piece of code,
+ *    then please contact the SIPE project to fix the source files ASAP.
+ *
+ *------------------- Copyright notices from "sipe.c" ---------------
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-10 pier11 <pier11@operamail.com>
+ * Copyright (C) 2008    Novell, Inc.
+ * Copyright (C) 2007-09 Anibal Avelar <debianmx@gmail.com>
+ * Copyright (C) 2005    Thomas Butter <butter@uni-mannheim.de>
+ *
+ * ***
+ * Thanks to Google's Summer of Code Program and the helpful mentors
+ * ***
+ *------------------- Copyright notices from "sipe.c" ---------------
  */
 
 #ifdef HAVE_CONFIG_H
@@ -25,28 +65,38 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <glib.h>
-#ifdef HAVE_NSS
-#include "nss.h"
-#endif
-#ifdef HAVE_GMIME
-#include <gmime/gmime.h>
-#endif
 
+#include "sipe-common.h"
 #include "sip-csta.h"
 #include "sip-sec.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
+#include "sipe-cal.h"
+#include "sipe-certificate.h"
+#include "sipe-chat.h"
+#include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
-#include "sipe-nls.h"
-#include "sipe-session.h"
-#include "sipe-subscriptions.h"
+#include "sipe-crypt.h"
+#include "sipe-group.h"
+#include "sipe-groupchat.h"
 #include "sipe-media.h"
-#include "sipe.h"
+#include "sipe-mime.h"
+#include "sipe-nls.h"
+#include "sipe-ocs2007.h"
+#include "sipe-schedule.h"
+#include "sipe-session.h"
+#include "sipe-status.h"
+#include "sipe-subscriptions.h"
+#include "sipe-svc.h"
+#include "sipe-utils.h"
 
-void sipe_core_init(const char *locale_dir)
+/* locale_dir is unused if ENABLE_NLS is not defined */
+void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
 {
 	srand(time(NULL));
 	sip_sec_init();
@@ -58,28 +108,18 @@ void sipe_core_init(const char *locale_dir)
 			bind_textdomain_codeset(PACKAGE_NAME, "UTF-8"));
 	textdomain(PACKAGE_NAME);
 #endif
-#ifdef HAVE_NSS
-	if (!NSS_IsInitialized()) {
-		NSS_NoDB_Init(".");
-		SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
-	}
-#endif
-#ifdef HAVE_GMIME
-	g_mime_init(0);
-#endif
+	/* Initialization for crypto backend (production mode) */
+	sipe_crypto_init(TRUE);
+	sipe_mime_init();
+	sipe_status_init();
 }
 
 void sipe_core_destroy(void)
 {
-#ifdef HAVE_NSS
-	/* do nothing.
-	 * We don't want accedently switch off NSS possibly used by other plugin -
-	 * ssl-nss in Pidgin for example.
-	 */
-#endif
-#ifdef HAVE_GMIME
-	g_mime_shutdown();
-#endif
+	sipe_chat_destroy();
+	sipe_status_shutdown();
+	sipe_mime_shutdown();
+	sipe_crypto_shutdown();
 	sip_sec_destroy();
 }
 
@@ -94,16 +134,17 @@ gchar *sipe_core_about(void)
 		"<b><font size=\"+1\">SIPE " PACKAGE_VERSION " </font></b><br/>"
 		"<br/>"
 		/* 1 */   "%s:<br/>"
-		"<li> - MS Office Communications Server 2007 R2</li><br/>"
-		"<li> - MS Office Communications Server 2007</li><br/>"
-		"<li> - MS Live Communications Server 2005</li><br/>"
-		"<li> - MS Live Communications Server 2003</li><br/>"
+		"<li> - Microsoft Lync Server 2010</li><br/>"
+		"<li> - Microsoft Office Communications Server 2007 R2</li><br/>"
+		"<li> - Microsoft Office Communications Server 2007</li><br/>"
+		"<li> - Microsoft Live Communications Server 2005</li><br/>"
+		"<li> - Microsoft Live Communications Server 2003</li><br/>"
 		"<li> - Reuters Messaging</li><br/>"
 		"<br/>"
 		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
 		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/projects/sipe/forums/forum/688534\">%s</a><br/>"
 		/* 5,6 */   "%s: <a href=\"" PACKAGE_BUGREPORT "\">%s</a><br/>"
-		/* 7 */   "%s: <a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a><br/>"
+		/* 7 */   "%s: <a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.net</a><br/>"
 		/* 8 */   "%s: GPLv2+<br/>"
 		"<br/>"
 		/* 9 */  "%s:<br/>"
@@ -122,7 +163,7 @@ gchar *sipe_core_about(void)
 		" - Alcatel-Lucent<br/>"
 		" - BT<br/>"
 		"<br/>"
-		/* 10,11 */ "%s<a href=\"https://transifex.net/projects/p/pidgin-sipe/c/mob-branch/\">Transifex.net</a>%s.<br/>"
+		/* 10,11 */ "%s<a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.net</a>%s.<br/>"
 		"<br/>"
 		/* 12 */  "<b>%s:</b><br/>"
 		" - Anibal Avelar<br/>"
@@ -138,7 +179,7 @@ gchar *sipe_core_about(void)
 		/* About note, part 1/13: introduction */
 		_("A third-party plugin implementing extended version of SIP/SIMPLE used by various products"),
 		/* About note, part 2/13: home page URL (label) */
-		_("Home"),
+		_("Home Page"),
 		/* About note, part 3/13: support forum URL (label) */
 		_("Support"),
 		/* About note, part 4/13: support forum name (hyperlink text) */
@@ -169,10 +210,164 @@ gchar *sipe_core_about(void)
 		);
 }
 
+static guint sipe_ht_hash_nick(const char *nick)
+{
+	char *lc = g_utf8_strdown(nick, -1);
+	guint bucket = g_str_hash(lc);
+	g_free(lc);
+
+	return bucket;
+}
+
+static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
+{
+	char *nick1_norm = NULL;
+	char *nick2_norm = NULL;
+	gboolean equal;
+
+	if (nick1 == NULL && nick2 == NULL) return TRUE;
+	if (nick1 == NULL || nick2 == NULL    ||
+	    !g_utf8_validate(nick1, -1, NULL) ||
+	    !g_utf8_validate(nick2, -1, NULL)) return FALSE;
+
+	nick1_norm = g_utf8_casefold(nick1, -1);
+	nick2_norm = g_utf8_casefold(nick2, -1);
+	equal = g_utf8_collate(nick1_norm, nick2_norm) == 0;
+	g_free(nick2_norm);
+	g_free(nick1_norm);
+
+	return equal;
+}
+
+struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
+					    const gchar *login_domain,
+					    const gchar *login_account,
+					    const gchar *password,
+					    const gchar *email,
+					    const gchar *email_url,
+					    const gchar **errmsg)
+{
+	struct sipe_core_private *sipe_private;
+	gchar **user_domain;
+
+	SIPE_DEBUG_INFO("sipe_core_allocate: signin_name '%s'", signin_name);
+
+	/* ensure that sign-in name doesn't contain invalid characters */
+	if (strpbrk(signin_name, "\t\v\r\n") != NULL) {
+		*errmsg = _("SIP Exchange user name contains invalid characters");
+		return NULL;
+	}
+
+	/* ensure that sign-in name format is name@domain */
+	if (!strchr(signin_name, '@') ||
+	    g_str_has_prefix(signin_name, "@") ||
+	    g_str_has_suffix(signin_name, "@")) {
+		*errmsg = _("User name should be a valid SIP URI\nExample: user@company.com");
+		return NULL;
+	}
+
+	/* ensure that email format is name@domain (if provided) */
+	if (!is_empty(email) &&
+	    (!strchr(email, '@') ||
+	     g_str_has_prefix(email, "@") ||
+	     g_str_has_suffix(email, "@")))
+	{
+		*errmsg = _("Email address should be valid if provided\nExample: user@company.com");
+		return NULL;
+	}
+
+	/* ensure that user name doesn't contain spaces */
+	user_domain = g_strsplit(signin_name, "@", 2);
+	SIPE_DEBUG_INFO("sipe_core_allocate: user '%s' domain '%s'", user_domain[0], user_domain[1]);
+	if (strchr(user_domain[0], ' ') != NULL) {
+		g_strfreev(user_domain);
+		*errmsg = _("SIP Exchange user name contains whitespace");
+		return NULL;
+	}
+
+	/* ensure that email_url is in proper format if enabled (if provided).
+	 * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
+	 * Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
+	 */
+	if (!is_empty(email_url)) {
+		char *tmp = g_ascii_strdown(email_url, -1);
+		if (!g_str_has_prefix(tmp, "https://"))
+		{
+			g_free(tmp);
+			g_strfreev(user_domain);
+			*errmsg = _("Email services URL should be valid if provided\n"
+				    "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
+				    "Example: https://domino.corp.com/maildatabase.nsf");
+			return NULL;
+		}
+		g_free(tmp);
+	}
+
+	sipe_private = g_new0(struct sipe_core_private, 1);
+	SIPE_CORE_PRIVATE_FLAG_UNSET(SUBSCRIBED_BUDDIES);
+	SIPE_CORE_PRIVATE_FLAG_UNSET(INITIAL_PUBLISH);
+	sipe_private->username   = g_strdup(signin_name);
+	sipe_private->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);
+	sipe_private->authdomain = is_empty(login_domain)  ? NULL                  : g_strdup(login_domain);
+	sipe_private->authuser   = is_empty(login_account) ? NULL                  : g_strdup(login_account);
+	sipe_private->password   = g_strdup(password);
+	sipe_private->public.sip_name   = g_strdup(user_domain[0]);
+	sipe_private->public.sip_domain = g_strdup(user_domain[1]);
+	g_strfreev(user_domain);
+
+	sipe_private->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
+	sipe_private->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
+							       g_free, (GDestroyNotify)g_hash_table_destroy);
+	sipe_subscriptions_init(sipe_private);
+	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_UNSET);
+
+	return((struct sipe_core_public *)sipe_private);
+}
+
+void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
+{
+	g_free(sipe_private->epid);
+	sipe_private->epid = NULL;
+
+	sip_transport_disconnect(sipe_private);
+
+	sipe_schedule_cancel_all(sipe_private);
+
+	if (sipe_private->allowed_events) {
+		GSList *entry = sipe_private->allowed_events;
+		while (entry) {
+			g_free(entry->data);
+			entry = entry->next;
+		}
+	}
+	g_slist_free(sipe_private->allowed_events);
+
+	sipe_ocs2007_free(sipe_private);
+
+	sipe_core_buddy_menu_free(SIPE_CORE_PUBLIC);
+
+	if (sipe_private->contact)
+		g_free(sipe_private->contact);
+	sipe_private->contact = NULL;
+	if (sipe_private->register_callid)
+		g_free(sipe_private->register_callid);
+	sipe_private->register_callid = NULL;
+
+	if (sipe_private->focus_factory_uri)
+		g_free(sipe_private->focus_factory_uri);
+	sipe_private->focus_factory_uri = NULL;
+
+	if (sipe_private->calendar) {
+		sipe_cal_calendar_free(sipe_private->calendar);
+	}
+	sipe_private->calendar = NULL;
+
+	sipe_groupchat_free(sipe_private);
+}
+
 void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 
 #ifdef HAVE_VV
 	if (sipe_private->media_call) {
@@ -188,35 +383,40 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 		}
 	}
 
-	if (sip->csta) {
+	sipe_conf_cancel_unaccepted(sipe_private, NULL);
+
+	if (sipe_private->csta) {
 		sip_csta_close(sipe_private);
 	}
+
+	sipe_certificate_free(sipe_private);
+	sipe_svc_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);
 		sip_transport_deregister(sipe_private);
 	}
 
-	sipe_connection_cleanup(sipe_private);
+	sipe_core_connection_cleanup(sipe_private);
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->username);
-	g_free(sip->email);
-	g_free(sip->password);
-	g_free(sip->authdomain);
-	g_free(sip->authuser);
-	g_free(sip->status);
-	g_free(sip->note);
-	g_free(sip->user_states);
+	g_free(sipe_private->email);
+	g_free(sipe_private->password);
+	g_free(sipe_private->authdomain);
+	g_free(sipe_private->authuser);
+	g_free(sipe_private->status);
+	g_free(sipe_private->note);
+	g_free(sipe_private->ocs2005_user_states);
 
 	sipe_buddy_free_all(sipe_private);
 	g_hash_table_destroy(sipe_private->buddies);
-	g_hash_table_destroy(sip->our_publications);
-	g_hash_table_destroy(sip->user_state_publications);
+	g_hash_table_destroy(sipe_private->our_publications);
+	g_hash_table_destroy(sipe_private->user_state_publications);
 	sipe_subscriptions_destroy(sipe_private);
 
-	if (sip->groups) {
-		GSList *entry = sip->groups;
+	if (sipe_private->groups) {
+		GSList *entry = sipe_private->groups;
 		while (entry) {
 			struct sipe_group *group = entry->data;
 			g_free(group->name);
@@ -224,18 +424,25 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 			entry = entry->next;
 		}
 	}
-	g_slist_free(sip->groups);
+	g_slist_free(sipe_private->groups);
 
-	if (sip->our_publication_keys) {
-		GSList *entry = sip->our_publication_keys;
+	if (sipe_private->our_publication_keys) {
+		GSList *entry = sipe_private->our_publication_keys;
 		while (entry) {
 			g_free(entry->data);
 			entry = entry->next;
 		}
 	}
-	g_slist_free(sip->our_publication_keys);
+	g_slist_free(sipe_private->our_publication_keys);
 
-	g_free(sip);
+#ifdef HAVE_VV
+	g_free(sipe_private->mras_uri);
+	g_free(sipe_private->media_relay_username);
+	g_free(sipe_private->media_relay_password);
+	sipe_media_relay_list_free(sipe_private->media_relays);
+#endif
+
+	g_free(sipe_private->dlx_uri);
 	g_free(sipe_private);
 }
 

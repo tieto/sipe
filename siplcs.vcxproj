@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug Unicode|Win32">
+      <Configuration>Debug Unicode</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release Unicode|Win32">
+      <Configuration>Release Unicode</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>siplcs</ProjectName>
+    <ProjectGuid>{B86C74FF-7A76-46EA-860C-9AEDD070CEAB}</ProjectGuid>
+    <RootNamespace>libsipe</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)/plugins\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)/Plugins\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">$(SolutionDir)$(Configuration)/Plugins\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">$(SolutionDir)$(Configuration)/Obj/$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">$(SolutionDir)$(Configuration)/Plugins\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">$(SolutionDir)$(Configuration)/Obj/$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(ProjectDir)/src/api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(ProjectDir)/src/api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;PACKAGE_NAME="pidgin-sipe";PACKAGE_VERSION="1.13.1";PACKAGE_URL="http://sipe.sourceforge.net/";PACKAGE_BUGREPORT="https://sourceforge.net/tracker/?atid=949931&amp;amp%3bgroup_id=194563";SIPE_VERSION="1.13.1";_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA;HAVE_LIBKRB5;SECURITY_WIN32;SIPE_TRANSLATIONS_URL="https://www.transifex.net/projects/p/pidgin-sipe/r/mob/";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;libxml2.lib;Ws2_32.lib;nss3.lib;smime3.lib;iconv.lib;intl.lib;gmime-2.6.lib;nspr4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(ProjectDir)/src/core;$(ProjectDir)/src/api;$(ProjectDir)/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;PACKAGE_NAME="pidgin-sipe";PACKAGE_VERSION="1.13.1";PACKAGE_URL="http://sipe.sourceforge.net/";SIPE_TRANSLATIONS_URL="https://www.transifex.net/projects/p/pidgin-sipe/r/mob/";PACKAGE_BUGREPORT="https://sourceforge.net/tracker/?atid=949931&amp;amp%3bgroup_id=194563";SIPE_VERSION="1.13.1";_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA;HAVE_LIBKRB5;SECURITY_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <ProgramDataBaseFileName>$(TargetDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;libxml2.lib;Ws2_32.lib;nss3.lib;smime3.lib;nspr4.lib;gmime-2.6-debug.lib;iconv.lib;intl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\core\http-conn.c" />
+    <ClCompile Include="src\core\md4.c" />
+    <ClCompile Include="src\core\sdpmsg.c" />
+    <ClCompile Include="src\core\sip-csta.c" />
+    <ClCompile Include="src\core\sip-sec-krb5.c" />
+    <ClCompile Include="src\core\sip-sec-ntlm.c" />
+    <ClCompile Include="src\core\sip-sec-sspi.c" />
+    <ClCompile Include="src\core\sip-sec-tls-dsk.c" />
+    <ClCompile Include="src\core\sip-sec.c" />
+    <ClCompile Include="src\core\sip-soap.c" />
+    <ClCompile Include="src\core\sip-transport.c" />
+    <ClCompile Include="src\core\sipe-buddy.c" />
+    <ClCompile Include="src\core\sipe-cal.c" />
+    <ClCompile Include="src\core\sipe-certificate.c" />
+    <ClCompile Include="src\core\sipe-cert-crypto-nss.c" />
+    <ClCompile Include="src\core\sipe-chat.c" />
+    <ClCompile Include="src\core\sipe-conf.c" />
+    <ClCompile Include="src\core\sipe-core.c" />
+    <ClCompile Include="src\core\sipe-crypt-nss.c" />
+    <ClCompile Include="src\core\sipe-dialog.c" />
+    <ClCompile Include="src\core\sipe-digest-nss.c" />
+    <ClCompile Include="src\core\sipe-domino.c" />
+    <ClCompile Include="src\core\sipe-ews.c" />
+    <ClCompile Include="src\core\sipe-ft-tftp.c" />
+    <ClCompile Include="src\core\sipe-ft.c" />
+    <ClCompile Include="src\core\sipe-group.c" />
+    <ClCompile Include="src\core\sipe-groupchat.c" />
+    <ClCompile Include="src\core\sipe-im.c" />
+    <ClCompile Include="src\core\sipe-incoming.c" />
+    <ClCompile Include="src\core\sipe-media.c" />
+    <ClCompile Include="src\core\sipe-mime.c" />
+    <ClCompile Include="src\core\sipe-notify.c" />
+    <ClCompile Include="src\core\sipe-ocs2005.c" />
+    <ClCompile Include="src\core\sipe-ocs2007.c" />
+    <ClCompile Include="src\core\sipe-schedule.c" />
+    <ClCompile Include="src\core\sipe-session.c" />
+    <ClCompile Include="src\core\sipe-sign.c" />
+    <ClCompile Include="src\core\sipe-status.c" />
+    <ClCompile Include="src\core\sipe-subscriptions.c" />
+    <ClCompile Include="src\core\sipe-svc.c" />
+    <ClCompile Include="src\core\sipe-tls.c" />
+    <ClCompile Include="src\core\sipe-user.c" />
+    <ClCompile Include="src\core\sipe-utils.c" />
+    <ClCompile Include="src\core\sipe-webticket.c" />
+    <ClCompile Include="src\core\sipe-win32dep.c" />
+    <ClCompile Include="src\core\sipe-xml.c" />
+    <ClCompile Include="src\core\sipmsg.c" />
+    <ClCompile Include="src\core\uuid.c" />
+    <ClCompile Include="src\miranda\miranda-buddy.c" />
+    <ClCompile Include="src\miranda\miranda-chat.c" />
+    <ClCompile Include="src\miranda\miranda-connection.c" />
+    <ClCompile Include="src\miranda\miranda-debug.c" />
+    <ClCompile Include="src\miranda\miranda-dnsquery.c" />
+    <ClCompile Include="src\miranda\miranda-ft.c" />
+    <ClCompile Include="src\miranda\miranda-groupchat.c" />
+    <ClCompile Include="src\miranda\miranda-im.c" />
+    <ClCompile Include="src\miranda\miranda-input.c" />
+    <ClCompile Include="src\miranda\miranda-markup.c" />
+    <ClCompile Include="src\miranda\miranda-media.c" />
+    <ClCompile Include="src\miranda\miranda-network.c" />
+    <ClCompile Include="src\miranda\miranda-notify.c" />
+    <ClCompile Include="src\miranda\miranda-plugin.c" />
+    <ClCompile Include="src\miranda\miranda-schedule.c" />
+    <ClCompile Include="src\miranda\miranda-search.c" />
+    <ClCompile Include="src\miranda\miranda-setting.c" />
+    <ClCompile Include="src\miranda\miranda-status.c" />
+    <ClCompile Include="src\miranda\miranda-transport.c" />
+    <ClCompile Include="src\miranda\miranda-user.c" />
+    <ClCompile Include="src\miranda\miranda-utils.c" />
+    <ClCompile Include="src\miranda\sipe-miranda.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\core\http-conn.h" />
+    <ClInclude Include="src\core\md4.h" />
+    <ClInclude Include="src\core\sdpmsg.h" />
+    <ClInclude Include="src\core\sip-csta.h" />
+    <ClInclude Include="src\core\sip-sec-krb5.h" />
+    <ClInclude Include="src\core\sip-sec-mech.h" />
+    <ClInclude Include="src\core\sip-sec-ntlm.h" />
+    <ClInclude Include="src\core\sip-sec-sspi.h" />
+    <ClInclude Include="src\core\sip-sec-tls-dsk.h" />
+    <ClInclude Include="src\core\sip-sec.h" />
+    <ClInclude Include="src\core\sip-soap.h" />
+    <ClInclude Include="src\core\sip-transport.h" />
+    <ClInclude Include="src\core\sipe-buddy.h" />
+    <ClInclude Include="src\core\sipe-cal.h" />
+    <ClInclude Include="src\core\sipe-certificate.h" />
+    <ClInclude Include="src\core\sipe-cert-crypto.h" />
+    <ClInclude Include="src\core\sipe-chat.h" />
+    <ClInclude Include="src\core\sipe-conf.h" />
+    <ClInclude Include="src\core\sipe-core-private.h" />
+    <ClInclude Include="src\core\sipe-crypt.h" />
+    <ClInclude Include="src\core\sipe-dialog.h" />
+    <ClInclude Include="src\core\sipe-digest.h" />
+    <ClInclude Include="src\core\sipe-domino.h" />
+    <ClInclude Include="src\core\sipe-ews.h" />
+    <ClInclude Include="src\core\sipe-ft.h" />
+    <ClInclude Include="src\core\sipe-group.h" />
+    <ClInclude Include="src\core\sipe-groupchat.h" />
+    <ClInclude Include="src\core\sipe-im.h" />
+    <ClInclude Include="src\core\sipe-incoming.h" />
+    <ClInclude Include="src\core\sipe-media.h" />
+    <ClInclude Include="src\core\sipe-notify.h" />
+    <ClInclude Include="src\core\sipe-ocs2005.h" />
+    <ClInclude Include="src\core\sipe-ocs2007.h" />
+    <ClInclude Include="src\core\sipe-schedule.h" />
+    <ClInclude Include="src\core\sipe-session.h" />
+    <ClInclude Include="src\core\sipe-sign.h" />
+    <ClInclude Include="src\core\sipe-status.h" />
+    <ClInclude Include="src\core\sipe-subscriptions.h" />
+    <ClInclude Include="src\core\sipe-svc.h" />
+    <ClInclude Include="src\core\sipe-tls.h" />
+    <ClInclude Include="src\core\sipe-utils.h" />
+    <ClInclude Include="src\core\sipe-webticket.h" />
+    <ClInclude Include="src\core\sipe-win32dep.h" />
+    <ClInclude Include="src\core\sipe-xml.h" />
+    <ClInclude Include="src\core\sipmsg.h" />
+    <ClInclude Include="src\core\uuid.h" />
+    <ClInclude Include="src\api\sipe-backend.h" />
+    <ClInclude Include="src\api\sipe-common.h" />
+    <ClInclude Include="src\api\sipe-core.h" />
+    <ClInclude Include="src\api\sipe-mime.h" />
+    <ClInclude Include="src\api\sipe-nls.h" />
+    <ClInclude Include="src\miranda\miranda-private.h" />
+    <ClInclude Include="src\miranda\miranda-resource.h" />
+    <ClInclude Include="src\miranda\miranda-version.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="src\miranda\miranda.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

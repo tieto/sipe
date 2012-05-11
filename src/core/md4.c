@@ -36,8 +36,21 @@
  * ***** END LICENSE BLOCK ***** */
 
 /*
+ * Non-functional changes to remove dependencies on NSS headers
+ *
+ * Changes are flagged with __SIPE__REMOVE_NSS_DEPENDENCIES__
+ *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ */
+
+/*
  * "clean room" MD4 implementation (see RFC 1320)
  */
+
+#ifdef __SIPE__REMOVE_NSS_DEPENDENCIES__
+#else
+#include <glib.h>
+#endif /* __SIPE__REMOVE_NSS_DEPENDENCIES__ */
 
 #include <string.h>
 #include "md4.h"
@@ -119,10 +132,10 @@ static void md4step(Uint32 state[4], const Uint8 *data)
   RD1(A,B,C,D, 8,3); RD1(D,A,B,C, 9,7); RD1(C,D,A,B,10,11); RD1(B,C,D,A,11,19);
   RD1(A,B,C,D,12,3); RD1(D,A,B,C,13,7); RD1(C,D,A,B,14,11); RD1(B,C,D,A,15,19);
 
-  RD2(A,B,C,D, 0,3); RD2(D,A,B,C, 4,5); RD2(C,D,A,B, 8, 9); RD2(B,C,D,A,12,13); 
-  RD2(A,B,C,D, 1,3); RD2(D,A,B,C, 5,5); RD2(C,D,A,B, 9, 9); RD2(B,C,D,A,13,13); 
-  RD2(A,B,C,D, 2,3); RD2(D,A,B,C, 6,5); RD2(C,D,A,B,10, 9); RD2(B,C,D,A,14,13); 
-  RD2(A,B,C,D, 3,3); RD2(D,A,B,C, 7,5); RD2(C,D,A,B,11, 9); RD2(B,C,D,A,15,13); 
+  RD2(A,B,C,D, 0,3); RD2(D,A,B,C, 4,5); RD2(C,D,A,B, 8, 9); RD2(B,C,D,A,12,13);
+  RD2(A,B,C,D, 1,3); RD2(D,A,B,C, 5,5); RD2(C,D,A,B, 9, 9); RD2(B,C,D,A,13,13);
+  RD2(A,B,C,D, 2,3); RD2(D,A,B,C, 6,5); RD2(C,D,A,B,10, 9); RD2(B,C,D,A,14,13);
+  RD2(A,B,C,D, 3,3); RD2(D,A,B,C, 7,5); RD2(C,D,A,B,11, 9); RD2(B,C,D,A,15,13);
 
   RD3(A,B,C,D, 0,3); RD3(D,A,B,C, 8,9); RD3(C,D,A,B, 4,11); RD3(B,C,D,A,12,15);
   RD3(A,B,C,D, 2,3); RD3(D,A,B,C,10,9); RD3(C,D,A,B, 6,11); RD3(B,C,D,A,14,15);

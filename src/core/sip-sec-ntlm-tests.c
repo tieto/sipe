@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  *
@@ -28,18 +29,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <stdlib.h>
 
 #include <glib.h>
 #include <glib/gprintf.h>
-
-#ifdef HAVE_NSS
-#include "nss.h"
-#endif
 
 #include "sipmsg.h"
 #include "sipe-sign.h"
@@ -53,15 +46,16 @@ static int failures = 0;
 
 gboolean sip_sec_ntlm_tests(void);
 
-static void assert_equal(const char * expected, const guchar * got, int len, gboolean stringify)
+static void assert_equal(const char * expected, gpointer got, int len, gboolean stringify)
 {
 	const gchar * res = (gchar *) got;
 	gchar to_str[len*2 + 1];
 
 	if (stringify) {
+		const guint8 *bin = got;
 		int i, j;
 		for (i = 0, j = 0; i < len; i++, j+=2) {
-			g_sprintf(&to_str[j], "%02X", (got[i]&0xff));
+			g_sprintf(&to_str[j], "%02X", (bin[i]&0xff));
 		}
 		len *= 2;
 		res = to_str;
@@ -119,12 +113,11 @@ gboolean sip_sec_ntlm_tests(void)
 	guchar client_sign_key [16];
 	guchar server_sign_key [16];
 	guchar server_seal_key [16];
-	guchar mac [16];
+	guint32 mac [4];
 	guchar text_enc [18 + 12];
 	struct sipmsg *msg;
 	struct sipmsg_breakdown msgbd;
 	gchar *msg_str;
-	gchar *sig;
 	const char *password2;
 	const char *user2;
 	const char *domain2;
@@ -137,14 +130,10 @@ gboolean sip_sec_ntlm_tests(void)
 	const gchar *response_sig;
 
 	printf ("Starting Tests\n");
-	
-	/* Initialization for NSS */
-#ifdef HAVE_NSS
-	if (!NSS_IsInitialized()) {
-		NSS_NoDB_Init(".");
-		SIPE_DEBUG_INFO_NOFORMAT("NSS initialised");
-	}
-#endif
+
+	/* Initialization for crypto backend (test mode) */
+	sipe_crypto_init(FALSE);
+
 	/* Initialization for NTLM */
 	sip_sec_init__ntlm();
 
@@ -393,7 +382,7 @@ Response:
 
 
 */
-	{	
+	{
 	const guint64 time_val = 0;
 	const guint8 target_info [] = {
 		0x02, 0x00, 0x0C, 0x00, //NetBIOS Domain name, 4 bytes
@@ -488,7 +477,7 @@ Response:
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
 	{
-	char * msg2;	
+	char * msg2;
 	char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 
@@ -501,14 +490,15 @@ Response:
 	msg2 = "SIP/2.0 200 OK\r\nms-keep-alive: UAS; tcp=no; hop-hop=yes; end-end=no; timeout=300\r\nAuthentication-Info: NTLM rspauth=\"0100000000000000BF2E52667DDF6DED\", srand=\"0878F41B\", snum=\"1\", opaque=\"4452DFB0\", qop=\"auth\", targetname=\"ocs1.ocs.provo.novell.com\", realm=\"SIP Communications Service\"\r\nFrom: \"Gabriel Burt\"<sip:gabriel@ocs.provo.novell.com>;tag=2947328781;epid=1234567890\r\nTo: <sip:gabriel@ocs.provo.novell.com>;tag=B816D65C2300A32CFA6D371F2AF537FD\r\nCall-ID: 8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx\r\nCSeq: 3 REGISTER\r\nVia: SIP/2.0/TLS 164.99.194.49:10409;branch=z9hG4bKE0E37DBAF252C3255BAD;received=164.99.195.20;ms-received-port=10409;ms-received-cid=1E00\r\nContact: <sip:164.99.195.20:10409;transport=tls;ms-received-cid=1E00>;expires=900\r\nExpires: 900\r\nAllow-Events: vnd-microsoft-provisioning,vnd-microsoft-roaming-contacts,vnd-microsoft-roaming-ACL,presence,presence.wpending,vnd-microsoft-roaming-self,vnd-microsoft-provisioning-v2\r\nSupported: adhoclist\r\nServer: RTC/3.0\r\nSupported: com.microsoft.msrtc.presence\r\nContent-Length: 0\r\n\r\n";
 	msg = sipmsg_parse_msg(msg2);
 
+	memset(&msgbd, 0, sizeof(struct sipmsg_breakdown));
 	msgbd.msg = msg;
-	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com");
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "ocs1.ocs.provo.novell.com", NULL);
 	msg_str = sipmsg_breakdown_get_string(2, &msgbd);
 	sip_sec_ntlm_sipe_signature_make (NEGOTIATE_FLAGS_CONNLESS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,
 		msg_str, 0, exported_session_key2, exported_session_key2, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000000000000BF2E52667DDF6DED", mac, 16, TRUE);
-	sig = buff_to_hex_str(mac, 16);
+	/* sig = buff_to_hex_str((guint8 *)mac, 16); */
 	}
 
 
@@ -693,17 +683,20 @@ Message (length 352):
 	int target_info2_len;
 	guint8 *nonce2;
 	guint8 *target_info2;
-	guint8 *buff2;
-	hex_str_to_buff("59519A1727B9CA01", &buff2);
+	guint64 *buff2;
+	/* buff2 points to correctly aligned memory. Disable alignment check */
+	hex_str_to_buff("59519A1727B9CA01", (void *)&buff2);
 	/* global var */
-	test_time_val = GUINT64_FROM_LE(*((guint64 *)buff2));
+	test_time_val = GUINT64_FROM_LE(*buff2);
 	g_free(buff2);
+	buff2 = NULL;
 
 	target_info2_len = hex_str_to_buff("02000A0043004F0053004D004F000100180043004F0053004D004F002D004F00430053002D00520032000400160063006F0073006D006F002E006C006F00630061006C000300300063006F0073006D006F002D006F00630073002D00720032002E0063006F0073006D006F002E006C006F00630061006C000500160063006F0073006D006F002E006C006F00630061006C0000000000", &target_info2);
 
 	hex_str_to_buff("DD1BAAF4E7E218D1", &nonce2);
 
-	hex_str_to_buff("D6AE875CB0FDAA41", &buff2);
+	/* buff2 points to correctly aligned memory. Disable alignment check */
+	hex_str_to_buff("D6AE875CB0FDAA41", (void *)&buff2);
 	/* global buff */
 	memcpy(test_client_challenge, buff2, 8);
 	g_free(buff2);
@@ -725,7 +718,6 @@ Message (length 352):
 			 lm_challenge_response,	/* out */
 			 nt_challenge_response_v2_2,	/* out */
 			 session_base_key);	/* out */
-	g_free(nonce2);
 	g_free(target_info2);
 
 	assert_equal("A1E92EFE4E078BF7C5C0049ACC6166C2D6AE875CB0FDAA41", lm_challenge_response, 24, TRUE);
@@ -735,6 +727,7 @@ Message (length 352):
 	}
 
 	KXKEY(flags, session_base_key, lm_challenge_response, nonce2, key_exchange_key);
+	g_free(nonce2);
 
 	}
 
@@ -755,26 +748,28 @@ Message (length 352):
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nClient request\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(request);
+	memset(&msgbd, 0, sizeof(struct sipmsg_breakdown));
 	msgbd.msg = msg;
-	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 	assert_equal (request_sig, (guchar *)msg_str, strlen(request_sig), FALSE);
 	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, client_sign_key, client_seal_key, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("0100000029618e9651b65a7764000000", mac, 16, TRUE);
-	sig = buff_to_hex_str(mac, 16);
+	/* sig = buff_to_hex_str((guint8 *)mac, 16); */
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) Message Parsing, Signing, and Verification\nServer response\n(Authentication Protocol version 4)\n");
 	msg = sipmsg_parse_msg(response);
+	memset(&msgbd, 0, sizeof(struct sipmsg_breakdown));
 	msgbd.msg = msg;
-	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local");
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "cosmo-ocs-r2.cosmo.local", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 	assert_equal (response_sig, (guchar *)msg_str, strlen(response_sig), FALSE);
 	// server keys here
 	sip_sec_ntlm_sipe_signature_make (flags, msg_str, 0, server_sign_key, server_seal_key, mac);
 	sipmsg_breakdown_free(&msgbd);
 	assert_equal ("01000000E615438A917661BE64000000", mac, 16, TRUE);
-	sig = buff_to_hex_str(mac, 16);
+	/* sig = buff_to_hex_str((guint8 *)mac, 16); */
 
 	printf ("\n\nTesting (NTLMv2 / OC 2007 R2) MAC - client signing\n");
 	MAC (flags,   (gchar*)request_sig,strlen(request_sig),   client_sign_key,16,   client_seal_key,16,   0,  100, mac);
@@ -832,7 +827,7 @@ Message (length 352):
 
 	printf ("\n\nTesting Authentication Algorithm's v4 Signature String\n");
 	{
-	char *response_symbian = 
+	char *response_symbian =
 	"SIP/2.0 180 Ringing\r\n"
 	"Authentication-Info: NTLM rspauth=\"010000003EA8D688BA51D5CD64000000\", srand=\"1B6D47A1\", snum=\"11\", opaque=\"357E6F72\", qop=\"auth\", targetname=\"LOC-COMPANYT-FE03.COMPANY.COM\", realm=\"SIP Communications Service\"\r\n"
 	"Via: SIP/2.0/tls 192.168.44.10:50230;received=10.117.245.254;ms-received-port=50230;ms-received-cid=37ABE00\r\n"
@@ -852,15 +847,16 @@ Message (length 352):
 	response_sig = "<NTLM><1B6D47A1><11><SIP Communications Service><LOC-COMPANYT-FE03.COMPANY.COM><41CEg82ECa0AC8i3DD7mE673t9CF4b19DAxF780x><1><INVITE><sip:sender@company.com><2420628112><sip:recipient@company.com><7aee15546a><SIP:recipient@company.com><><><180>";
 
 	msg = sipmsg_parse_msg(response_symbian);
+	memset(&msgbd, 0, sizeof(struct sipmsg_breakdown));
 	msgbd.msg = msg;
-	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "LOC-COMPANYT-FE03.COMPANY.COM");
+	sipmsg_breakdown_parse(&msgbd, "SIP Communications Service", "LOC-COMPANYT-FE03.COMPANY.COM", NULL);
 	msg_str = sipmsg_breakdown_get_string(4, &msgbd);
 
 	assert_equal (response_sig, (guchar *)msg_str, strlen(response_sig), FALSE);
-	
+
 	sipmsg_breakdown_free(&msgbd);
 	}
-	
+
 ////// UUID tests ///////
 	/* begin tests from MS-SIPRE */
 	{

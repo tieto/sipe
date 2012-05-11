@@ -3,8 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
- * Copyright (C) 2009 pier11 <pier11@operamail.com>
+ * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,12 +28,12 @@ struct sipe_core_private;
 /**
  * Creates conference.
  */
-void 
+void
 sipe_conf_add(struct sipe_core_private *sipe_private,
 	      const gchar* who);
 
 /**
- * Processes incoming INVITE with 
+ * Processes incoming INVITE with
  * Content-Type: application/ms-conf-invite+xml
  * i.e. invitation to join conference.
  *
@@ -43,67 +42,76 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 void
 process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg);
-			     
-/** Invite us to the focus */
-void
-sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
-		       struct sip_session *session);
-			     
-/** 
+
+/**
+ * Create new session with Focus URI
+ *
+ * @param chat_session non-NULL if we rejoin a conference
+ * @param focus_uri    non-NULL if we create a new conference
+ *
+ * @return new SIP session
+ */
+struct sip_session *
+sipe_conf_create(struct sipe_core_private *sipe_private,
+		 struct sipe_chat_session *chat_session,
+		 const gchar *focus_uri);
+
+/**
  * Process of conference state
  * Content-Type: application/conference-info+xml
  */
 void
 sipe_process_conference(struct sipe_core_private *sipe_private,
 			struct sipmsg * msg);
-			
+
 /**
  * Invites counterparty to join conference.
- */			
-void 
+ */
+void
 sipe_invite_conf(struct sipe_core_private *sipe_private,
 		 struct sip_session *session,
 		 const gchar* who);
 
-/** 
+/**
  * Modify User Role.
  * Sends request to Focus.
  * INFO method is a carrier of application/cccp+xml
- */	
+ */
 void
 sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 			   struct sip_session *session,
 			   const gchar* who);
 
-/** 
- * Modify Conference Lock.
- * Sends request to Focus.
- * INFO method is a carrier of application/cccp+xml
- */				   
-void
-sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
-				 struct sip_session *session,
-				 const gboolean locked);
-				 
-/** 
+/**
  * Ejects user from conference.
  * Sends request to Focus.
  * INFO method is a carrier of application/cccp+xml
- */				 
+ */
 void
 sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		      struct sip_session *session,
 		      const gchar* who);
 
-/** 
+/**
  * Invokes when we are ejected from conference
  * for example or conference has been timed out.
  */
 void
 sipe_conf_immcu_closed(struct sipe_core_private *sipe_private,
-		       struct sip_session *session);      
-	
-/** 
+		       struct sip_session *session);
+
+/**
+ * Removes a session waiting to be accepted or declined by the user.
+ *
+ * @param sipe_private SIPE core data
+ * @param msg SIP CANCEL message. If NULL is passed, all sessions not accepted
+ *            will be canceled
+ */
+void
+sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
+			    struct sipmsg *msg);
+
+/**
  * Invokes when we leave conversation.
  * Usually by closing chat wingow.
  */
@@ -111,10 +119,10 @@ void
 conf_session_close(struct sipe_core_private *sipe_private,
 		   struct sip_session *session);
 
-/** 
+/**
  * Invoked to process message delivery notification
  * in conference.
- */		   
+ */
 void
 sipe_process_imdn(struct sipe_core_private *sipe_private,
 		  struct sipmsg *msg);
