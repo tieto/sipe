@@ -1,3 +1,63 @@
+pidgin-sipe (1.13.1-0.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * New upstream release (Closes: #646389).
+        - detect incompatible encryption level with Lync
+        - purple: add URI validity check to Add Buddy callback
+        - new translations: Romanian (ro), Turkish (tr)
+        - various build fixes
+        - added [MS-SIPAE] TLS-DSK authentication scheme
+          * TLS-DSK has been introduced in Lync
+          * mandatory for Office365 accounts
+          * also works for non-public Lync installations
+          * does not work yet with SSPI on Windows
+        - added [MS-DLX] based Get Info/Contact Search
+          * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
+        - make it compile against the latest purple 3.0.x API
+        - make it compile against the latest glib2 2.31.x API
+        - completed cleanup: core no longer requires libpurple
+        - refactored crypto code, ie. NSS can replaced if necessary
+        - sipe-domino.c is no longer built under UNIX to remove dead code
+        - restricted XXX_CFLAGS to modules that need them
+        - NSS is now a mandatory build requirement
+        - decoupled SSPI from HAVE_LIBKRB5 flag. New flag is HAVE_SSPI
+        - OBS mingw packages now use SSPI instead of NTLM
+        - added NSIS package generation to OBS mingw packages
+        - removed kopete backend. KDE is moving to telepathy
+        - added MinGW cross-compilation on Linux instructions
+        - Feature #3064877: Add support for OCS2007R2 Group Chat
+        - Feature #3311026: Support for HTTP/1.1 Transfer-Encoding: chunked
+        - Fixed #2834758: First NTLM signature check after startup fails
+        - Fixed #3082602: Crash on Autodiscover
+        - Fixed #3090663: Re-authentication fails
+        - Fixed #3092324: Core dump in "make check"
+        - Fixed #3130915: Failed to authenticate to server
+        - Fixed #3148124: sipe segfaults during login on Solaris
+        - Fixed #3150482: "configure --with-vv" test uses wrong include
+        - Fixed #3156430: Messages not Delivered
+        - Fixed #3161273: Lost Connection Gives No Error Message
+        - Fixed #3198585: Extra line breaks
+        - Fixed #3267073: False "could not be delivered" errors
+        - Fixed #3399007: Crash when sipe_cal_working_hours->days_of_week
+          is NULL
+        - Patch #3091490: Make 1.11.0 Compile on FreeBSD
+        - Patch #3108246: Patch for better windows installer
+        - add random Ms-Conversation-ID to INVITE
+        - fix parsing of P-Asserted-Identity header
+        - added MS TURN support
+        - fix crash on zero length password in NTLM
+        - implement timeouts for SIP request. Used for REGISTER
+        - more work on Voice & Video call support
+        - make it compile against the purple 2.8.x & 3.0.x APIs
+        - more internal changes to prepare for non-purple backends
+        - added integration for transifex.net update
+        - configure improvements for 64-bit: use libdir, gsize/size_t
+          compatibility
+        - update compiler warnings configuration for all build platforms
+  * Add debian/watch file.
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 11 May 2012 14:18:15 +0200
+
 pidgin-sipe (1.11.2-1.2) unstable; urgency=low
 
   * Non-maintainer upload.
