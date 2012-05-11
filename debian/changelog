@@ -60,6 +60,7 @@ pidgin-sipe (1.13.1-0.1) unstable; urgency=low
         - gcc-4.7.patch
         - sipe-purple-2.8.0.patch
         - update-glib-2.32.patch
+  * Add libnice-dev and libgstreamer0.10-dev to Build-Depends.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 11 May 2012 14:18:15 +0200
 
