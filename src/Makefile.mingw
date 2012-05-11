@@ -1,0 +1,23 @@
+OLD_PIDGIN_TREE_TOP := $(PIDGIN_TREE_TOP)
+PIDGIN_TREE_TOP := ../$(OLD_PIDGIN_TREE_TOP)
+
+include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
+
+
+.PHONY: all clean install
+
+all:
+	$(MAKE) -C core -f $(MINGW_MAKEFILE)
+
+clean:
+	$(MAKE) -C core -f $(MINGW_MAKEFILE) clean
+
+rmbak:
+	rm -f *~
+	$(MAKE) -C core -f $(MINGW_MAKEFILE) rmbak
+
+install: all
+	$(MAKE) -C core -f $(MINGW_MAKEFILE) install
+	
+tests: all
+	$(MAKE) -C core -f $(MINGW_MAKEFILE) tests

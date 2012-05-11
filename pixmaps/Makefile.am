@@ -1,0 +1,4 @@
+SUBDIRS = 16 22 48 scalable
+
+MAINTAINERCLEANFILES = \
+	Makefile.in

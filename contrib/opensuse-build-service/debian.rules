@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/class/autotools.mk
+include /usr/share/cdbs/1/rules/debhelper.mk
+
+DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple --disable-telepathy
+
+# run tests
+DEB_MAKE_CHECK_TARGET := check
+
+# don't run unnecessary ldconfig on postinst and postrm.
+DEB_DH_MAKESHLIBS_ARGS_pidgin-sipe=-n
+
+clean::
+	dh_testdir
+
+# git snapshot does not contain a configure script
+$(DEB_BUILDDIR)/config.status: $(DEB_CONFIGURE_SCRIPT)
+
+$(DEB_CONFIGURE_SCRIPT):
+	./autogen.sh
+
+binary-post-install/pidgin-sipe::
+	rm debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
+	rm debian/pidgin-sipe/usr/lib/purple-2/libsipe.la
+
+.PHONY: update-debian-control

@@ -1,0 +1,394 @@
+version 1.11.2 "Hot fixes II" (2010-11-02)
+	- Revert "mingw: add missing purple-notify.c to build" (Anibal Avelar)
+	- Sipe-sign: fix parsing of P-Asserted-Identity header (Jakub Adam)
+	- Fixed memory leaks (Stefan Becker)
+	- Fix #3090663: Re-authentication fails (Stefan Becker)
+	- Fix #3090663: Re-authentication fails (2nd attempt) (Stefan Becker)
+	- Fix #3090663: Re-authentication fails (3rd attempt) (Stefan Becker)
+	- Fix #3090663: Re-authentication fails (4th attempt) (Stefan Becker)
+ 	- Apply patch #3091490: Make 1.11.0 Compile on FreeBSD (jprather)
+	- Fix #3092324: Core dump in "make check" (Stefan Becker)
+
+version 1.11.1 "Hot fixes" (2010-10-24)
+	- mingw: add missing purple-notify.c to build (Stefan Becker)
+	- Fix for bug #2834758: First NTLM signature check after startup fails
+	- purple: fix memory leak in sipe_backend_transport_connect() error path
+	- Fix for bug #3082602: Crash on Autodiscover (Stefan Becker)
+	- configure: use libdir & datadir instead of prefix + path (Stefan Becker)
+	- configure: update 32-bit vs. 64-bit header conflict test (Stefan Becker)
+        - debian: build stability fix in post-install (Stefan Becker)
+
+version 1.11.0 "Lotus Domino/Calendar & Voice Call" (2010-10-04)
+	- Feature #2859239: Voice call support (Jakub Adam)
+	  * requires updated versions of libnice, farsight & pidgin
+	  * only unencrypted calls as SRTP support is missing in farsight
+	- Feature #2945346: Lotus Notes/Domino Calendar integration (pier11):
+	  * Sipe can now retrieve calendar data (Meeting schedule/subject/
+	    location) from a web-enabled Lotus Domino server and publish it to
+	    OCS2007/LCS2005 as availability information.
+	  * Example: "Calendar: Currently Busy. Free at 11:30".
+	  * Team members (contacts with access level Team) will be able to see
+	    information about our current meeting (subject & location) (OCS2007).
+	  * First calendar update is scheduled 1 minute after connect,
+	  * Subsequent calendar updates happen in 30 minute intervals.
+	  * Manual calendar update can be triggered using the following menu:
+		   Accounts->{SIPE_ACCOUNT}->"Republish Calendar"
+	  * Though Domino integration can work without any additional settings 
+	    in account configuration (on Windows), there are options to manually
+	    provide Domino Services URL and email address/password if it's
+	    different from SIP URI/Password settings on Basic tab.
+	- Fixed #2971422: idle check for OCS2005 presence case (Stefan Becker)
+	- Fixed #2982424: krb5 build errors on FreeBSD (Stefan Becker)
+	- Fixed #2997639: pidgin crash after accepting cert (Stefan Becker)
+	- Fixed #3001523: Cancelling a long pending file transfer crashes Pidgin (Jakub Adam)
+	- Fixed #3002993: Group Name issues with ampersand (Stefan Becker)
+	- Fixed #3029228: Calendar published at/with incorrect time (Stefan Becker)
+	- Fixed #3029929: Crash with outlook 2k3 Calendar (Stefan Becker)
+	- Fix logout from OCS (Jakub Adam)
+	- Implement workaround for buddy list menu memory leaks (Stefan Becker)
+	- Dropped UDP transport support (Stefan Becker)
+	- Rewrote TCP & TLS transport support (Stefan Becker)
+	- HTTP improvements: GET, cookies (pier11)
+	- Alternative crypt/digest implementation based on NSS (pier11)
+	- Rewrote message debug log and implemented an analyzer script for it (Stefan Becker)
+	- More internal changes to prepare for non-purple backends (Stefan Becker)
+	- New translation: Dutch (Flemish) 'nl' (fieona, ridiekel)
+	- New translation: Swedish 'sv' (Rijad)
+	- Added translations 'ar' 'hu' 'ja' 'ko' 'sv' 'zh_TW' submitted by Novell
+	- New build option: nss/mozilla-nss/microb-engine-nss for non-purple backends
+	- Add build option for kopete backend (Stefan Becker)
+	- mingw build using standard approach, i.e. with auto* tools. (pier11)
+	- Updated Adium port (Emanuele Zattin)
+
+version 1.10.1 "Bugfix release" (2010-06-27)
+        - Fix broken sipe_ht_equals_nick(); the broken code has been in the 1.10.0 release. As it affects the buddy list it could be the root cause for some of the "buddy appears offline" reports. (Stefan Becker)
+        - Make it compile against the final purple 2.7.0 API; (Stefan Becker)
+
+version 1.10.0 "Access Levels" (2010-04-04)
+	- Feature #2823160: Access Levels (2007+ environment). The functionality is available through contact's context menu "Access level" and also presented on contact's tooltip. Current individual access level is marked with star (*), current group access level is marked with equals sign (=). (pier11)
+	- Feature #2957811: add support for "automaton" class (Stefan Becker)
+	- Feature #2972823: fail on in-line variable declarations (Stefan Becker)
+	- Fixed #2971422: handle OCS 2005 idiosyncrasy of varying SIP URI case (pier11)
+	- Fixed #2981563: Authentication protocol v4 - invalid signature of some incoming messages containing P-Asserted-Identity or P-Preferred-Identity with uppercased SIP or TEL in URI. (pier11)
+	- Fixed publication/"409 Conflict" endless looping (Stefan Becker, pier11)
+	- Prepare for Pidgin 2.7.0 (Stefan Becker, pier11)
+	- Windows build updated to gtk+2.14, gettext 0.17, libxml2 2.7.4, gcc 4.4 (pier11)
+	- Added SVG icon artwork (Jakub 'jimmac' Steiner)
+	- Many changes to configure script. Be sure to look at "configure --help"! (Stefan Becker)
+	- Many internal changes to prepare for non-purple backends (Stefan Becker)
+	- New build requirements: libxml2, glib-2.0 >= 2.12.0
+	- New build option: gmime-2.4 >= 2.4.16 or gmime-2.6 >= 2.5.2 for non-purple backends
+
+version 1.9.1 "Hot fixes" (2010-03-16)
+	- Fixed #2969327: Kerberos authentication always fails on *nix platforms (pier11)
+	- Fixed #2968287: Authentication failure in scenario when director server is Office Communications Server 2007 or above and home server is Live Communications Server 2005 (pier11)
+        - Send BYE when response to IM message is 408/480/481 (Stefan Becker)
+        - Re-enable offline status to be user settable (Stefan Becker)
+
+version 1.9.0 "File transfer & NTLMv2" (2010-03-10)
+***** Important Security Update for *nix users *****
+	- Contributed File transfer functionality. File encryption is supported. (Jakub Adam, Tomáš Hrabčík)
+	- NTLMv2 and NTLMv2 Session Security support (pier11)
+	- Implemented SIP Authentication Extensions protocol version 4 and 3 (pier11)
+	- Adoption for commercial UNIX - HP/UX, Irix, Solaris - big endian fixes and build improvements (Peter Fales, Stefan Becker)
+	- Packaged for Maemo platform (Nokia N900, etc.) at Maemo.org. Works with Pidgin from the same site. (Stefan Becker)
+	- Adoption of file transfer for Windows build (pier11)
+	- Official Debian package files in contrib (Anibal Avelar)
+	- another shot at presence update problems (Stefan Becker)
+	- fix crash caused by uninitialized security contexts (Stefan Becker)
+	- Code analysis with Coverity Prevent. (Stefan Becker)
+	- Updated translations: 'ru' (100%, pier11), 'de' (100%, Stefan Becker)
+	  'es' & 'pt_BR' (100%, Anibal Avelar)
+        - Fix for "SIP/2.0 481 Call leg unavailable" error (Anibal Avelar)
+	- Increased libpurple build requisite to >= 2.4.0
+
+version 1.8.1 "Exchange/Calendar crash fixes" (2010-02-16)
+	- many crash fixes for error or corner cases in calendar integration (pier11, Stefan Becker)
+	- more detailed code analysis with Coverity Prevent (Stefan Becker)
+	- build fixes for older libpurple/glib2 versions (pier11)
+	- OpenSUSE Build Service configuration files (pier11)
+        - Fix NTLM crash if login setting is undefined (pier11)
+        - Use of g_str_has_prefix() available since glib 2.2 and null-safe (pier11)
+
+version 1.8.0 "Exchange/Calendar" (2010-02-07)
+	- Added integration with Exchange 2007/2010. Now Sipe retrieve our Calendar data (Free/Busy, Working Hours, Meeting Subject/Location, Out-of-Office Note) from Exchange Web Services and publishes it to OCS2007/LCS2005. Thus our contacts can see our availability information based on Calendar data. For example: "Calendar: Currently Busy. Free at 11:30" or "Calendar: Currently Free. Outside of working hours at 18:00". Contacts will also see our Out-of-Office message if it's enabled in Exchange/Outlook. Team members (contacts with access level Team) will be able to see information about our current meeting - subject and location (OCS2007).
+	First call to Exchange is scheduled with 1 minute delay after Sipe start. Subsequent update intervals are 30 minutes. There is a way to manually trigger Calendar data update: Accounts->{SIPE_ACCOUNT}->"Republish Calendar" menu option.
+	Though Exchange integration can work without any additional settings in account configuration, there are options to manually provide email address if it's different from SIP URI, Exchange Services URI, email account authentication if it is different from configuration on Basic tab. (pier11)
+	- Added Calendar information to contact's tooltip. You can see it like "Calendar: Currently Tentative. Busy at 11:30" or "Calendar: Outside of working hours for next 8 hours". (pier11)
+	- 2005 presence engine has been completely rewritten. Now it supports "Do not disturb" status(taken from UserState), "In a meetinfg" status (taken from Calendar stream data, and most importantly changing autonomously in line with the stream). "In a meeting" activity reflects scheduled times of activities in Outlook/Exchange with Busy state. Updated 2007 presence engine too. Pidgin Statusbox now reflects last status and note set by our other points of presence; also updates according to our Calendar state (i.e without manual action); displays our Out-of-Office message if any. (pier11)
+	- Added "Accounts->{SIPE_ACCOUNT}->Status Reset" menu option to clean User Status set manually. The latter can override Calendar status for example. (pier11)
+	- Added "Find on LinkedIn" link on contact's User Info screen for more in-depth information about your contact if available. Both SIPE and LinkedIn.com professional network belong to enterprise domain, so match is quite good. (pier11)
+	- Enhanced custom NTLM security provider to pass connection-oriented authentication. Used in Web authentication, for example with Exchange Web Services. In contrast to connectionless (datagram) NTLM authentication type used in SIP. (pier11)
+	- Added Negotiate authentication scheme (Windows only). Used in HTTP authentication. (pier11)
+	- Contributed code for Adium port. (Matt Meissner)
+	- Added Windows Messenger 5.0 (RTC/1.2) compatibility. Though very old, some our clients use it on LCS2005. (pier11)
+	- New BusyIdle status. (pier11)
+	- Placed Sipe to Transifex.net translation portal allowing easily add/modify translations through web interface. (Stefan Becker)
+	- Updated Sipe About screen ("Accounts->{SIPE_ACCOUNT}->About SIPE plugin") with our translation page. (pier11)	
+	- New translation: Polish 'pl' (Piotr Drąg)
+	- Updated translations: 'zh_CN' (Kang Kai), 'ru' (pier11) and 'de' (Stefan Becker)
+	- Static/dynamic code analysis with Coverity Prevent, memory leaks fixes (Stefan Becker)
+	- Fixed memory leaks found with cppcheck (http://sourceforge.net/projects/cppcheck) (Edmondas Girkantas)
+	- Fixed localization on Windows platform(!) Now translations are shown. (pier11)
+	- Fix for #2907567 Note parsing issue. Incoming html markup (like < symbol) could wierdly rerender Pidgin's contacts list UI - for example to "rename" contact, or even replace contact name by group name.
+	- Fix for #2908830 Federated contacts appear to be broken. 2005 Public IM Connectivity (PIC) environment. (pier11)
+	- Fix crash when SSL connect fails (Stefan Becker)
+	- Fix for server auto-discovery (Anibal Avelar)
+	- Fix for #2912926 crash on exist. Caused by improper CSTA communications. (pier11)
+	- Fix for xdg-email invocation. (David Woodhouse)
+	- Fix for SLED 10 compilation. (pier11)
+	- Fix for OpenSolaris port - #pragma pack() issue. (Stefan Becker)
+        - Fix compilation without Kerberos (Stefan Becker)
+	- Fix for User Agent string. (pier11)
+	- Fix for compilation with Pidgin 2.6.4 and 2.6.5 on mingw. (pier11)
+        - Fixed #2944156: SIPE Authentication Causes Pidgin Crash(Stefan Becker)
+	- RPM SPEC: add Epoch: for git packages. (Stefan Becker)
+	- Remove static link build option, remove unused config.h, other build improvements. (Stefan Becker)
+	- Make tests compile again; Simplify "make tests" (Stefan Becker)
+	- Code: Take PURPLE_INIT_PLUGIN into use.(Stefan Becker)
+
+version 1.7.1 (2009-11-19)
+	- "About SIPE plugin" screen implemented. Accessible as "Accounts->{Your Account}->About SIPE plugin".
+	- New correct 'User Agent:' header in SIP messages with Purple and Sipe versions, host operating system type and processor architecture as well as OCS version. To take advantage of it - empty your old 'User Agent' setting in the account configuration.
+	- Version now stored in single place - VERSION file and used for all builds.
+	- Core - not using bodies for single subscriptions in 2005 environment. Optimized CSeq numbers usage. Beautified debug log output.
+	- Call Control - session timer for dialog with CSTA. Otherwise session with CSTA got expired after ~30 min due to no refresh. RFC4028.
+	- Call Control - removing internal alternative phone number from phone string.
+	- RPM spec file update for CentOS/RHEL 5 - purple-sipe needed a "Group" (John B.)
+	- Fixed crash in 2005 'New Chat' menu.
+	- Fixed #2886534 - routing - Request-URI/Route headers. Problem was a re-subscription failure resulting in stopping contacts' status update after approximately 8 hours.
+	- Fixed #2892842 - interference of conference invite to normal IM dialog on 2007 environment. Incoming BYE from conf invite process used to kill ongoing regular IM dialog with the same user.
+	- Fixed crash in presense processing on Reuters environment (LSC 2005) on Linux.
+	- Fixed #2882304 - 'Note' not working with LCS2005
+	- Fix for the First message in 2005 multiparty chat.
+	- Fix for initial outgoing messages - some were lost if typed too fast if dialog was not established yet.
+	- Fixed #2882658 - SIGSEGV in process_incoming_info_csta() - happened on some Cisco-Systems 7 CSTA Gateways.
+	- Fixes for SLED 10 SP2 and SP3 compilations.
+	
+version 1.7.0 "Remote Call Control" (2009-10-19)
+       - Added integration with PBX (external phones) using CSTA protocol (ECMA TR-87). Users can initiate a call by clicking on contact phones in right-click context menu. This feature should be enabled for user on the server side.
+       - Added reconnection to chat after disconnection by continue typing in the same open chat window (OCS 2007 only). Feature request #2866630.
+       - More precise errors shown on message undelivery event.
+       - Better re-subscription logic for contact status updates.
+       - 'Out of Office', 'In a Meeting', 'In a Conference', etc. contact activities are shown now in contast's status and tooltip. Also meeting subject and location are shown in 2007 environment if contact is in Team access category.
+       - New Idle status.
+       - Added 'Site' to User Info panel. Can be a link to user's corporate directory page or similar.
+       - Removed message acceptance in incoming INVITE.
+       - Fixed type errors in sip-sec-ntlm.c for Linux/Unix platforms.
+       - Added 32- and 64-bit header conflict check to configure.
+       - Removed libsipe.so from old incorrect installation location. This makes sure that DIY users don't have two copies of libsipe.so.
+       - Moved libsipe.so to the correct installation directory. The libpurple protocol plugins directory is $(libdir)/purple-2. While the name of the plugin is pidgin-sipe, it works perfectly fine with 'finch' too.
+       - Rewritten transaction payload handling. This should fix memory leaks in transaction handling.
+       - Fixed crash on reauthentication when IM window is open not Chat window
+       - Fixed warnings on compilation.
+       - Fixed memory leaks.
+       
+version 1.6.3 (2009-09-09)
+       - Added missing krb5-devel BuildRequires to the RPM spec file.
+       - Cleanup of source code compatibility for libpurple 2.4.x
+       - Fixed for msrtc statuses, bug #2843985 
+       - Fixed HTML markup in note, bug #2841095
+       - Fixed a segmentation fauls when the function sipmsg_parse_header backs
+a null value.
+       - Possible fixed a crash when SIPE account added, bug #2844545
+       - Reduced libpurple build requisite to >= 2.3.1 
+       - Fixed NetBSD compilation errors in sipe-utils.c, bug #2847380
+       - Updated zh_CN translation
+       - Fixed a crash when pidgin auto-away fires, bug #2849156
+
+version 1.6.2 (2009-08-23)
+       - Treat of 504 Server time-out error
+       - Decrease libpurple build prerequisites to >= 2.4.1
+       - Updated windows build to latest Pidgin 2.6.1
+       - Fix compilation errors against libpurple >= 2.6.0 API
+       - Publishing optimization
+       - Separate storage for subscription dialogs.
+       - Fixed '409 Conflict' case. We are extracting proper versions of our publications and updating local mirror with them.
+       - Fixed CSeq for subscription dialog.
+       - Fixed for unsubscribes
+       - Fixed for Active Directory search
+       - Make OCS2007+ conditionals self-documenting
+       - Fixed compilation problem on 64-bit and NetBSD platforms #2839689
+       - The 'context' element only for just added subscriptions #2836290
+       - Removed dependency on com_err.h  
+       - Fixed warnings on compilation.
+       - Fixed memory leaks.
+ 
+       - Updated "de" translation
+version 1.6.1 (2009-08-12)
+       - Fixed missing backslash in "es" translation file
+       - Support publication: modular publications
+       - Support publication: manual vs machine status publication
+       - Fix timeout calculation in sipe_buddy_subscribe_cb(), make sure timeout is never 0 
+       - Fixed crash in sipe_process_roaming_self()
+       - Add purple >= 2.5.0 as configuration requirement
+       - Cleanup username handling in sipe_login()
+       - Make password mandatory again
+       - Fixed memory leaks in sipe_login() error paths
+       - Removed controversial dependency in windows branch used for old MAC code
+       - Got rid of MAC in epid generation
+       - Updated "es" translation
+       - Updated "de" translation
+       - Cleaned up connection configuration and setup
+       - More precise treatment of incoming typing info
+       - Fixed improvements reported in #2833015
+       - Fixed for "message was not delivered" reported in bug #2832551
+       - Fixed for CHOWA problems reported in bug #2795132
+       - Fixed for crash reported in bug #2795132
+       - Tag all unused function parameters
+       - Added Empathy support - telepathy-haze config for sipe 
+       - Code around GCC bug on ppc platforms
+       - License file cleanup
+       - Fixed ppc64 compilation errors
+       - Many refinements to the RPM SPEC file
+       - Added convenience script to (re)build from git repository
+       - Added convenience script for creating git snapshots
+
+version 1.6.0 "Multiparty Chat" (2009-07-27)
+       - Multi-party conversation (Chat) functionality for:
+         + OCS 2007+ as a conference [MS-CONFBAS], [MS-CONFIM], [MS-CONFPRO];
+	 + LCS 2005- as a multi-party chat.
+       - Fixed our status in OCS 2007+ environment as seen by others.
+       - Asks user if he wants add counterparty which added him to his contact list (OCS 2007+). User dialog wording improvement.
+Also defined default group in Add User dialog which appear after user search in catalog.
+       - More strict compilation warnings treatment.
+       - Started code split to functional modules.
+       - Tailored subscriptions for environment - eliminated not needed subscriptions in 2007 environment.
+       - Fixed session closing on unsuccessful message delivery.
+       - More correct incoming BYE processing.
+       - Fixed stealth bug when action payload got freed. Initial bug was that contact could not be removed.
+       - Fix handling of empty note text in incoming rlmi NOTIFY.
+       - patch for FreeBSD 7.x by jprather.
+       - Fix for wrong epid generation on Windows platform in case of missing MAC.
+       - Fix for Route processing.
+       - Improvements for compilation under ppc/ppc64 platfolrm.
+       - Fixed crash if work in non-authenticating environment.
+       
+version 1.5.0 "Kerberos" (2009-06-24)
+       - Fixed bug #2800325 for crash if wrong IP manually typed into Pidgin.
+       - New Security Framework: dedicated to use plug-able security mechanisms.
+         + Added Kerberos/NTLM SSPI for Windows
+         + Added Kerberos MIT for Linux
+         + Fixed the NTLM native implementation for Linux
+       - New options on Advanced tab: Use Kerberos and Single Sign-on (for both
+ kerberos implements). 
+       - Fixed the --with-krb5 compilation option. Now pidgin-sipe can be compiled with krb5 support again.
+       - To send presence subscribe requests to poolFqdn servers
+       - Record-Route header can contain multiple routes. For CHOWA clients.
+       - Fixed 2 bugs with INVITE messages from incoming CHOWA clients.
+       - FreeBSD compatibility
+       - Fixed for 'same conversation ID' issue
+       - Fixed for Reuters(LCS2005) frequent disconnects
+       - Fixed many warnings on compilation.
+       - Fixed many potential memory leaks. Thank you Stefan
+       - Fixed I18n support and sync from launchpad
+         + Added 'it' and 'ru' translations
+         + Updated 'zh', 'cs', 'es' and 'nb' translations.
+
+version 1.4.1 (2009-06-01)
+       - Patch for spaces in Login's username
+       - Fixed bugs #2793431, #2793688 for crash in process_incoming_notify_rlmi_resub
+       - Fixed the correct presence for contacts with the presenceMode="msrtc".
+       - Simplify keep alive timeout setting code
+       - Fixed the resubscription process in LCS2005 and OCS2005.
+       - Fixed the support for batched subscription
+       - Fixed a problem when you added a new contact on OCS2007
+       - Fixed potential memory leaks. Thank you Stefan
+version 1.4.0 (2009-05-17)
+       - Simplified Account Settings Basic screen
+       - Full support for presence using Batched Category Subscription for 
+         OCS2007. [MS-PRES]
+       - Full support for presence usgin Batched Simple Subscription for 
+         LCS2005. [MS-SIP]
+       - Active Directory search for 'Get Info' screen.
+       - Buddy URI are replaced with Display Name.
+       - Added non sensitive support between the client and servers answers. 
+       - Support for deregistration [MS-SIPREGE]
+       - Support for 2007 R2 client message formatting.
+       - Re-subscription after expiration. LCS2005
+       - Added escaping to SOAP request parameters 
+       - Implemented a new scheduling system
+       - Cleanup status id handling
+       - NOTIFY and BENOTIFY similarly handled
+       - Implemented piggy-back for buddy subscription.
+       - Request for functions only supported for each kind of servers 
+         (Allow-Events) OCS2007 and LCS2005. (may be LCS2003?)
+       - Fixed many warnings on compilation.
+       - Fixed many potential memory leaks. Thank you Stefan
+       - Fixed bug #2786479: some messages could not be delivered to all users.
+       - Fixed bug #2779386: fix for invalid NTLM signature.
+
+version 1.3.4 (2009-04-13)
+       - Fix segmentation fault caused by redirect
+       - Added check for zlib.h, com_err and purple version on configure script,
+       - Added note to tooltip
+       - Added timeout of security association after eight hours as described 
+         in [MS-SIPAE] 3.2.2 Timers.
+       - Updates to enable compilation in a Cygwin/MinGW environments
+       - Fix a problem with the function purple_get_host_name() in libpurple 
+         versions <  2.5.x
+       - Support for responses with m=x-ms-message rather than m=message
+       - Support for Reuters Messaging environment (LCS2005 like)
+       - Support for message formatting (font face, style, color).
+       - Introduced invisible mode (Appear Offline). Better status support.	
+         official clients
+       - Richer status support with reference to [MS-PRES] and work of 
+       - Fix for bug #2528391: Accepts the first message from the first packet (INVITE). Counterparty's first message now can appear up to 2 sec earlier.
+       - Fixed the offline contacts problem in OCS2007 following [MS-PRES]
+       - Added notification support for undelivered messages.
+
+version 1.3.3 (2009-02-09)
+	- Implemented keep alive support. Thanks Stefan Becker
+	- Support LCS 2005 buddy auth/blocking. Thanks Gabriel Burt
+	- Fixed SSL errors. 
+	- Fixed many segmentation fault errors.
+	- Added many translation files.
+
+version 1.3.2 (2008-12-14)
+	- Added support for mingw. Thanks Carl Seutter
+	- Merge with stable branch in the git repository
+	- Fixed SSL input processing
+	- Extended contact search implementation
+	- Path to xBSD support
+
+version 1.3.1 (2008-12-09)
+	- Locale/translations support
+	- Search contacts support
+	- Code cleaned
+	- LCS 2005 fixed send/receive messages;partially fixed
+
+version 1.3 (2008-12-04)
+	- TLS/SSL support 
+        - Fixed signing messages, thanks Gabriel Burt
+	- Fixed LCS contacts with add/remove/modify, thanks Gabriel Burt
+        - Added Presence support for OCS 2007 and LCS 2005
+	- A lot of patches to fix: 
+           +TLS connections, 
+           +Send/receive messages, 
+           +Full presence, 
+           +TCP connections and optimal options in Advanced tap.
+        - A lot bugs fixed
+
+version 1.2 (2007-03-22)
+	- Finished the pidgin 2.0 porting
+	- Fixed a NTLM auth problem about the flags on challenge3.
+	- Fixed the Contact problem.
+	- Fixed the segmentation on network detection.
+	- Other minor bugs
+
+version 1.1 (2007-03-09)
+	- Fixed a bug in NOTIFY and SUBSCRIBE methods (401 error)
+	- Changed the method PUBLISH(don't aply in LCS) for SERVICE 
+	- Added new tags in transactions to cloned the LCS transactions.
+	- The MESSAGE method works. Now you can send a message to online user.
+
+version 1.0 (2007-03-04)
+	Gaim plug-in releases. First release using autoconf and automake.
+	Compiles with gaim-2beta5 (or newer). On Debian systeam you need
+	the gaim-dev package for compile it.
+
+	First version. Just added this functionalities:
+	- Authentication (just type NTLM)
+	- Presence (double sided)
+	- Retrieves all contacts from server (with groups)
+	- Delete contacts and groups

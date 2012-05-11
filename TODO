@@ -1,0 +1,31 @@
+Bugs:
+	- #2834758: (sip-sec-ntlm.c) First NTLM signature check after startup fails
+
+Big Targets:
+	- Native backends other than Purple.
+	  * Separate Sipe core and Purple plugin functionality.
+	  * New backends: Telepathy, Kopete, Miranda, ???
+	- Voice and Video support.
+	- Desktop sharing/Live Meeting integration on Windows platform.
+	- (?) Email notification.
+	- Refactoring to decouple transport/SIP layer (like has been done in http-conn.c)
+from SIP-protocol's extensions in form of XML exchange (most notably presense).
+So Sofia-SIP could serve as a backend for SIPE. Or otherwise improve SIPE transport 
+layer - timeouts.
+(In http-conn.c inputs are XML requests, outputs - XML responces or error codes.
+All lower level things like socket read/write operations, HTTP message forming, 
+NTLM/etc. authertication are all hidded behind http-conn.h API.
+So sip-ews.c and sipe-domino.c clients only operate with XML request/responce, they don't care what
+is underneath transport at all.) http://www.networkdictionary.com/protocols/osimodel.php - 7 layer
+model - that must be taught at university.
+	- Update projects site with
+	  * SIPE features
+          * better/more complete screenshots
+	  * page about standards used in SIPE with references
+	  * FAQ page.
+
+Call Control:
+	- change user state to On Call when line is active and then back
+	- answer incoming call (logs required)
+	- (?) work with multiple phone lines (not the first one)
+	- (?) Call transfer set up, other RCC features from Communicator.

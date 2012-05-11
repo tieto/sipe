@@ -1,0 +1,135 @@
+Introduction
+============
+
+pidgin-sipe is a third-party plugin for the Pidgin multi-protocol instant
+messenger. It implements the extended version of SIP/SIMPLE used by various
+products:
+
+    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+With this plugin you should be able to replace your Microsoft Office
+Communicator client with Pidgin.
+
+
+Features
+========
+
+The plugin has support for
+
+    * Instant Messaging (IM)
+    * Multiparty chat
+    * Enhanced presence
+    * Calendar integration with Exchange 2007/2010
+    * Contact details information - company, phones, web site, etc.
+    * Contact search
+    * Encrypted file transfer
+    * Call initiation through PBX
+    * Kerberos and NTLMv2 authentication, TLS support
+    * Translated to many languages
+
+
+Advantages over Office Communicator products
+============================================
+
+    * Available on broader range of platforms: Linux, *BSD, Maemo, OSX,
+      commercial UNIX, Windows.
+    * Ability to simultaneously connect to several Office Communicator 
+      accounts in addition to public IM network accounts like MSN, AOL,
+      Yahoo. For example one account is in vendor company and another is 
+      in client company.
+    * Keeps history of communications in environments without Outlook. For
+      example in companies where Lotus Notes is deployed as a default
+      groupware client instead of Outlook.
+    * Lotus Notes/Domino calendar integration. Unique to SIPE.
+    * Open development model, open source product. License is GPLv2+
+
+
+Support
+=======
+
+The Pidgin project does not support third-party plugins! If you have problems
+with this plugin then please check out the support forums:
+
+    http://sf.net/projects/sipe/forums/
+
+Bugs should be reported here:
+
+    https://sourceforge.net/tracker/?atid=949931&group_id=194563
+
+
+Localization
+============
+
+SIPE has already been localized for several languages. You can help to
+translate SIPE to your native language at Transifex:
+
+    http://transifex.net/projects/p/pidgin-sipe/c/mob-branch/
+
+The service offers a convenient web editor and automatic submission to the
+repository.
+
+
+Installing from a distribution repository
+=========================================
+
+Many Open Source OS distributions have a ready-made package "pidgin-sipe".
+Before trying to compile it from the source code yourself, you should try
+to install this package with the standard installation method provided by
+your OS.
+
+
+Do It Yourself I: compiling against "pidgin" package
+====================================================
+
+If you already have installed the "pidgin" package from your distribution
+repository and want compile pidgin-sipe from source code yourself, then you
+need to install the necessary headers first. Depending on your distribution
+you'll need to install one of the following packages
+
+	libpurple-dev
+	libpurple-devel
+
+For the compilation you'll need to install a C compiler and some of the
+following packages
+
+	libtool
+	intltool
+	libglib2.0-dev
+	gettext-devel
+
+Now you should be able to compile the source code with
+
+	./configure --prefix=/usr
+	make
+
+If you get errors then you are missing some required package. After
+successful compilation you can install pidgin-sipe with:
+
+	su -c "make install"
+
+If you get errors from configure or libtool about version conflicts then
+you need to regenerate the autoconf files. You'll need these additional
+packages
+
+	autoconf
+	automake
+
+Now you should be able to regenerate the files with
+
+	autoreconf --verbose --install --force
+
+After that go back to the configure step above.
+
+
+Do It Yourself II: compiling against self-compiled pidgin
+=========================================================
+
+If you have compiled pidgin from source code yourself then you'll have to
+specify the correct installation path in configure. Usually pidgin is
+installed in /usr/local so the following command should work
+
+	./configure --prefix=/usr/local
+
+The rest of the steps are the same as in the previous section.

@@ -1,0 +1,46 @@
+From 2c24852b1df622390b88764afbc10edcfc03a254 Mon Sep 17 00:00:00 2001
+From: Jakub Adam <jakub.adam@ktknet.cz>
+Date: Thu, 16 Sep 2010 21:59:56 +0200
+Subject: [PATCH] Compatibility with MSOC 2007
+
+---
+ transmitters/nice/fs-nice-stream-transmitter.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/transmitters/nice/fs-nice-stream-transmitter.c b/transmitters/nice/fs-nice-stream-transmitter.c
+index 25d89b6..9348209 100644
+--- a/transmitters/nice/fs-nice-stream-transmitter.c
++++ b/transmitters/nice/fs-nice-stream-transmitter.c
+@@ -726,7 +726,8 @@ fs_nice_stream_transmitter_set_remote_candidates (
+     }
+ 
+     if (self->priv->compatibility_mode != NICE_COMPATIBILITY_GOOGLE &&
+-        self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN)
++        self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN &&
++        self->priv->compatibility_mode != NICE_COMPATIBILITY_OC2007)
+     {
+       if (!username)
+       {
+@@ -779,7 +780,8 @@ fs_nice_stream_transmitter_set_remote_candidates (
+   }
+ 
+   if (self->priv->compatibility_mode != NICE_COMPATIBILITY_GOOGLE &&
+-        self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN)
++      self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN &&
++      self->priv->compatibility_mode != NICE_COMPATIBILITY_OC2007)
+   {
+     username = g_strdup (username);
+     password = g_strdup (password);
+@@ -1681,7 +1683,8 @@ agent_gathering_done_idle (gpointer data)
+       GError *error = NULL;
+ 
+       if (self->priv->compatibility_mode != NICE_COMPATIBILITY_GOOGLE &&
+-          self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN)
++          self->priv->compatibility_mode != NICE_COMPATIBILITY_MSN &&
++          self->priv->compatibility_mode != NICE_COMPATIBILITY_OC2007)
+       {
+         if (!nice_agent_set_remote_credentials (self->priv->agent->agent,
+                 self->priv->stream_id, self->priv->username,
+-- 
+1.7.1
+

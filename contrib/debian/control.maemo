@@ -1,0 +1,67 @@
+Source: pidgin-sipe
+Section: misc
+Priority: optional
+Maintainer: Stefan Becker <stefan.becker@nokia.com>
+XSBC-Original-Maintainer: Anibal Avelar <aavelar@cofradia.org>
+Homepage: http://sipe.sourceforge.net/
+# Maemo 4:  pidgin-dev needed for libpurple-dev
+Build-Depends: cdbs (>= 0.4.23-1.1), autotools-dev, debhelper (>= 5), pkg-config, libglib2.0-dev (>= 2.12.0), libxml2-dev, pidgin-dev, libpurple-dev (>= 2.4.0), libtool, intltool
+# Not in use yet: libnss3-dev
+Standards-Version: 3.8.4
+
+Package: pidgin-sipe
+Section: user/network
+Priority: optional
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Adds support to connect to Microsoft Office Communicator
+ A third-party plugin for the Pidgin multi-protocol instant messenger.
+ It implements the extended version of SIP/SIMPLE used by various products:
+ .
+     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+     * Microsoft Live Communications Server (LCS 2003/2005)
+     * Reuters Messaging
+ .
+ With this plugin you should be able to replace your Microsoft Office
+ Communicator client with Pidgin.
+XSBC-Bugtracker: https://sourceforge.net/tracker/?atid=949931&group_id=194563
+XB-Maemo-Display-Name: Pidgin protocol plugin for Office Communicator
+XB-Maemo-Icon-26:
+ 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
+ rDW+BlhyKyImPBiWAAAAAElFTkSuQmCC

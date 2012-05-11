@@ -1,0 +1,28 @@
+diff -up /usr/share/telepathy/managers/haze.manager.orig /usr/share/telepathy/managers/haze.manager
+--- /usr/share/telepathy/managers/haze.manager.orig	2009-08-14 07:49:43.000000000 +0300
++++ /usr/share/telepathy/managers/haze.manager	2010-02-24 15:11:39.331888733 +0200
+@@ -154,6 +154,24 @@ default-port=0
+ default-udp=false
+ default-useproxy=false
+ 
++[Protocol sipe]
++param-account=s required
++param-password=s required
++param-server=s
++param-transport=s
++param-useragent=s
++param-krb5=b
++param-sso=b
++param-calendar=s
++param-email_url=s
++param-email=s
++param-email_login=s
++param-email_password=s
++default-transport=tls
++default-krb5=false
++default-sso=true
++default-calendar=EXCH
++
+ [Protocol yahoo]
+ param-account=s required
+ param-password=s required

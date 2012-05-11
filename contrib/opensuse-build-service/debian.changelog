@@ -1,0 +1,93 @@
+pidgin-sipe (1.11.0-1) unstable; urgency=low
+
+  * New upstream version
+	- Feature #2859239: Voice call support (Jakub Adam)
+	- Feature #2945346: Lotus Notes/Domino Calendar integration (pier11)
+	- Many internal changes to prepare for non-purple backends (Stefan Becker)
+	- Bug fixes (various)
+	- New & updated translations (various)
+	- New build option: nss/mozilla-nss/microb-engine-nss for non-purple backends
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Fri, 03 Sep 2010 19:16:31 +0300
+
+pidgin-sipe (1.10.1-1) unstable; urgency=low
+
+  * New upstream version
+        - Fix broken sipe_ht_equals_nick(); the broken code has been in the 
+          1.10.0 release. As it affects the buddy list it could be the root 
+          cause for some of the "buddy appears offline" reports.
+        - Make it compile against the final purple 2.7.0 API;
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 27 Jun 2010 11:46:59 -0600
+
+pidgin-sipe (1.10.0-2) unstable; urgency=low
+
+  * New upstream version
+      - Feature #2823160: Access Levels (2007+ environment)
+      - Feature #2957811: add support for "automaton" class
+      - Feature #2972823: fail on in-line variable declarations
+      - Fixed #2971422: handle OCS 2005 idiosyncrasy of varying SIP URI case
+      - Fixed #2981563: Authentication protocol v4 - invalid signature of some 
+        incoming messages containing P-Asserted-Identity or P-Preferred-Identity
+        with uppercased SIP or TEL in URI.
+      - Fixed publication/"409 Conflict" endless looping
+      - Prepare for Pidgin 2.7.0
+      - Added SVG icon artwork
+      - Many changes to configure script. Be sure to look at "configure --help"
+      - Many internal changes to prepare for non-purple backends
+      - New build requirements: libxml2, glib-2.0 >= 2.12.0
+      - New build option: gmime-2.4 >= 2.4.16 or gmime-2.6 >= 2.5.2 for 
+        non-purple backends
+
+ -- pier11 <pier11@operamail.com>  Sun, 04 Apr 2010 10:52:59 -0000
+
+pidgin-sipe (1.10.0-1) unstable; urgency=low
+
+  * tests of pre-1.10.0 git 4fa20cd65e5be0e469d4aa55d861f11c5b08b816
+
+ -- pier11 <pier11@operamail.com>  Tue, 01 Apr 2010 07:34:00 -0000
+
+pidgin-sipe (1.9.1-1) unstable; urgency=low
+
+  * New upstream version (emergency release)
+      - Fixed #2969327: Kerberos authentication always fails on *nix platforms
+      - Fixed #2968287: Authentication failure in scenario when director server
+        is Office Communications Server 2007 or above and home server is 
+        Live Communications Server 2005
+      - Send BYE when response to IM message is 408/480/481
+      - Re-enable offline status to be user settable
+
+ -- pier11 <pier11@operamail.com>  Tue, 16 Mar 2010 17:41:00 -0000
+
+pidgin-sipe (1.9.0-2) unstable; urgency=low
+
+  * New upstream version
+    * File transfer functionality. File encryption is supported
+    * NTLMv2 and NTLMv2 Session Security support
+    * Implemented SIP Authentication Extensions protocol version 4 and 3
+    * Adoption for commercial UNIX - HP/UX, Irix, Solaris - big endian fixes
+    * Increased libpurple build requisite to >= 2.4.0
+  * Synced with main Debian package files in contrib/debian
+
+ -- pier11 <pier11@operamail.com>  Sun, 7 Mar 2010 20:00:00 -0000
+
+pidgin-sipe (1.8.1-1) unstable; urgency=low
+
+  * New upstream version
+    * many crash fixes for error or corner cases in calendar integration
+    * more detailed code analysis with Coverity Prevent
+    * OpenSUSE Build Service configuration files
+    * Fix NTLM crash if login setting is undefined
+    * Use of g_str_has_prefix() available since glib 2.2 and null-safe
+    * build fixes for older OS releases, e.g. Ubuntu older than 9.10.
+
+ -- pier11 <pier11@operamail.com>  Tue, 16 Feb 2010 18:24:00 -0000
+
+pidgin-sipe (1.8.0-2) unstable; urgency=low
+
+  * For OBS (openSUSE Build Service)
+  * removed unnecessary dependencies
+  * added libzephyr-dev dependency to satisfy Debian 5 "choice"
+
+ -- pier11 <pier11@operamail.com>  Mon, 08 Feb 2010 16:20:00 -0000
+
