@@ -1,0 +1,73 @@
+#!/usr/bin/make -f
+
+include /usr/share/quilt/quilt.make
+
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+CFLAGS = -Wall -g
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+        CFLAGS += -O0
+else
+        CFLAGS += -O2
+endif
+
+DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple --disable-telepathy
+ 
+# don't run unnecessary ldconfig on postinst and postrm.
+DEB_DH_MAKESHLIBS_ARGS_pidgin-sipe=-n
+
+config.status:
+	dh_testdir
+	./autogen.sh
+	CFLAGS="$(CFLAGS)" ./configure --host=$(DEB_HOST_GNU_TYPE) \
+	--build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr $(DEB_CONFIGURE_EXTRA_FLAGS)
+
+build: config.status build-stamp
+
+build-stamp: 
+	dh_testdir
+
+	$(MAKE)
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp configure-stamp
+	[ ! -f Makefile ] || $(MAKE) distclean
+	-rm -f config.sub config.guess config.log configure aclocal.m4 libtool
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k 
+	dh_installdirs
+# Add here commands to install the package into debian/gsetroot.
+	$(MAKE) install DESTDIR=$(CURDIR)/debian/pidgin-sipe
+	-rm -rf $(CURDIR)/debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
+	-rm -rf $(CURDIR)/debian/pidgin-sipe/usr/lib/purple-2/libsipe.la
+
+binary-indep: build install
+
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs ChangeLog
+	dh_installdocs
+	dh_installmenu
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+
+.PHONY: build clean binary-indep binary-arch binary install

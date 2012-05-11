@@ -1,0 +1,23 @@
+Source: pidgin-sipe
+Section: misc
+Priority: optional
+Maintainer: Anibal Avelar <aavelar@cofradia.org>
+Homepage: http://sipe.sourceforge.net/
+Build-Depends: quilt, debhelper (>= 7), autotools-dev, pkg-config, libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 2.4.0), libtool, intltool, libkrb5-dev, libzephyr-dev, libnss3-dev
+Standards-Version: 3.9.1
+
+Package: pidgin-sipe
+Section: net
+Priority: optional
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Pidgin protocol plugin to connect to MS Office Communicator
+ A third-party plugin for the Pidgin multi-protocol instant messenger.
+ It implements the extended version of SIP/SIMPLE used by various products:
+ .
+     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+     * Microsoft Live Communications Server (LCS 2003/2005)
+     * Reuters Messaging
+ .
+ With this plugin you should be able to replace your Microsoft Office
+ Communicator client with Pidgin.

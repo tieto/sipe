@@ -1,0 +1,4 @@
+sipe-purple-2.8.0.patch
+fix-werror.patch
+update-glib-2.32.patch
+gcc-4.7.patch

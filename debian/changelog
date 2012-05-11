@@ -1,0 +1,208 @@
+pidgin-sipe (1.11.2-1.2) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * update-glib-2.32.patch: Update to use glib 2.32. Replace g_strcasecmp and 
+    g_strncasecmp with g_utf8_casefold and g_utf8_collate.
+    (Closes: #665672)
+  * gcc-4.7.patch: Fix -Werror=maybe-uninitialized to build with gcc-4.7.
+    (Closes: #667323)
+
+ -- Mònica Ramírez Arceda <monica@debian.org>  Thu, 19 Apr 2012 16:46:23 +0200
+
+pidgin-sipe (1.11.2-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix "FTBFS with pdigin 2.8.0-1 in unstable": 
+    add patch sipe-purple-2.8.0.patch from archlinux, forwarded to the BTS 
+    by Islam Amer.
+    (Closes: #630638)
+  * Fix "ftbfs with gcc-4.6 -Werror":
+    add patch fix-werror.patch from peter green.
+    (Closes: #625404) (LP: #832881)
+
+ -- gregor herrmann <gregoa@debian.org>  Fri, 23 Dec 2011 15:31:52 +0100
+
+pidgin-sipe (1.11.2-1) unstable; urgency=low
+
+  * New upstream version
+        - Feature #2945346: Lotus Notes/Domino Calendar integration:
+          * Sipe can now retrieve calendar data (Meeting schedule/subject/
+            location) from a web-enabled Lotus Domino server and publish it to
+            OCS2007/LCS2005 as availability information.
+          * Example: "Calendar: Currently Busy. Free at 11:30".
+          * Team members (contacts with access level Team) will be able to see
+            information about our current meeting (subject & location) (OCS2007)
+          * First calendar update is scheduled 1 minute after connect,
+          * Subsequent calendar updates happen in 30 minute intervals.
+          * Manual calendar update can be triggered using the following menu:
+                   Accounts->{SIPE_ACCOUNT}->"Republish Calendar"
+          * Though Domino integration can work without any additional settings 
+            in account configuration (on Windows), there are options to manually
+            provide Domino Services URL and email address/password if it's
+            different from SIP URI/Password settings on Basic tab.
+        - Fixed #2971422: idle check for OCS2005 presence case
+        - Fixed #2982424: krb5 build errors on FreeBSD
+        - Fixed #2997639: pidgin crash after accepting cert
+        - Fixed #3001523: Cancelling a long pending file transfer crashes Pidgin
+        - Fixed #3002993: Group Name issues with ampersand
+        - Fixed #3029228: Calendar published at/with incorrect time
+        - Fixed #3029929: Crash with outlook 2k3 Calendar
+        - Fix logout from OCS
+        - Implement workaround for buddy list menu memory leaks
+        - Dropped UDP transport support
+        - Rewrote TCP & TLS transport support
+        - HTTP improvements: GET, cookies
+        - Alternative crypt/digest implementation based on NSS
+        - Rewrote message debug log and implemented an analyzer script for it
+        - More internal changes to prepare for non-purple backends
+        - New translations: 'nl', 'sv', 'ar', 'hu', 'ja', 'ko', 'sv', 'zh_TW'
+  * Fixed pidgin-sipe: Kerberos authentication is broken (Closes: #597437)
+  * Fixed pidgin-sipe: no dependency on pidgin (Closes: #594882)
+  * Fixed pidgin-sipe: new upstream version is available (Closes: #596799)
+  * Fixed pidgin-sipe: FTBFS: sipe.c:10050: error: missing initializer 
+    (Closes: #582998)
+  * Added dependency with the libxml2-dev package in debian/control
+  * Added dependency with libnss3-dev package in debian/control
+  * Updated with Standards-Version 3.9.1
+  * Updated the debhelper minimal version to (>= 7~) due to lintian warning
+  * Switch to dpkg-source 3.0 (quilt) format
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Tue, 02 Nov 2010 23:48:33 -0600
+
+pidgin-sipe (1.10.1-1) unstable; urgency=low
+
+  * New upstream version
+        - Fix broken sipe_ht_equals_nick(); the broken code has been in the 
+          1.10.0 release. As it affects the buddy list it could be the root 
+          cause for some of the "buddy appears offline" reports.
+        - Make it compile against the final purple 2.7.0 API;
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 27 Jun 2010 11:46:59 -0600
+
+pidgin-sipe (1.10.0-1) unstable; urgency=low
+
+  * New upstream version
+      - Feature #2823160: Access Levels (2007+ environment)
+      - Feature #2957811: add support for "automaton" class
+      - Feature #2972823: fail on in-line variable declarations
+      - Fixed #2971422: handle OCS 2005 idiosyncrasy of varying SIP URI case
+      - Fixed #2981563: Authentication protocol v4 - invalid signature of some 
+        incoming messages containing P-Asserted-Identity or P-Preferred-Identity
+        with uppercased SIP or TEL in URI.
+      - Fixed publication/"409 Conflict" endless looping
+      - Prepare for Pidgin 2.7.0
+      - Added SVG icon artwork
+      - Many changes to configure script. Be sure to look at "configure --help"
+      - Many internal changes to prepare for non-purple backends
+      - New build requirements: libxml2, glib-2.0 >= 2.12.0
+      - New build option: gmime-2.4 >= 2.4.16 or gmime-2.6 >= 2.5.2 for 
+        non-purple backends
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 04 Apr 2010 00:52:59 -0600
+
+pidgin-sipe (1.9.1-1) unstable; urgency=low
+  * New upstream version (emergency release)
+      - Fixed #2969327: Kerberos authentication always fails on *nix platforms
+      - Fixed #2968287: Authentication failure in scenario when director server
+        is Office Communications Server 2007 or above and home server is 
+        Live Communications Server 2005
+      - Send BYE when response to IM message is 408/480/481
+      - Re-enable offline status to be user settable
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Tue, 16 Mar 2010 02:13:59 -0600
+
+pidgin-sipe (1.9.0-1) unstable; urgency=low
+
+  * New upstream version (Closes: #570735)
+    * File transfer functionality. File encryption is supported
+    * NTLMv2 and NTLMv2 Session Security support
+    * Implemented SIP Authentication Extensions protocol version 4 and 3
+    * Adoption for commercial UNIX - HP/UX, Irix, Solaris - big endian fixes
+    * Increased libpurple build requisite to >= 2.4.0 
+    * many crash fixes for error or corner cases in calendar integration
+    * more detailed code analysis with Coverity Prevent
+    * build fixes for older libpurple/glib2 versions
+    * OpenSUSE Build Service configuration files
+    * Fix NTLM crash if login setting is undefined
+    * Use of g_str_has_prefix() available since glib 2.2 and null-safe
+    * build fixes for older OS releases, e.g. Ubuntu older than 9.10.
+  * Removed the file libsipe.la from the package
+  * Removed the line dh_pidgin -ppidgin-sipe from debian/rules 
+  * Added ./autogen.sh could be run from debian/rules
+  * Changed the Section from net to misc inside Source stanza in debian/control
+  * Changed the Section from net to misc inside Package stanza in debian/control
+  * Added the Priority header inside Package stanza in debian/control
+  * Updated the Description inside Package stanza in debian/control
+  * Updated the debian/copyright file with the new authors list.
+  * Updated the debian/copyright file with the correct PATH to license GPL2.
+  * Removed dependency with the libgtk2.0-dev package in debian/control
+  * Removed dependency with the comerr-dev package in debian/control
+  * Removed debian/README.debian file from the package
+  * Added dependency with the libzephyr-dev package in debian/control
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Wed, 10 Mar 2010 01:05:59 -0600
+
+pidgin-sipe (1.8.0-1) unstable; urgency=low
+
+  * New upstream version (Closes: #536100)
+    * Simplifying the authentication process using only the Basic Settings
+      screen.
+    * Added integration with Exchange 2007/2010
+    * Added Windows Messenger 5.0 (RTC/1.2) compatibility.
+    * "About SIPE plugin" screen implemented.
+    * Added Kerberos support.
+    * Added Multiparty Chat support.
+    * Fixed many bugs.
+    * Fixed many potencial memory leaks.
+    * Fixed support for LCS2005 and OCS2007 (improvementsi and bugs fixed)
+    * Added "Find on LinkedIn" link on contact's User Info screen
+    * Updated translations: "de", "pl", "ru", "cs", "da", "es", "fi", "fr, "hi",
+      "it", "nb", "ta", "zh_CN".
+    * Fixed for server auto-discovery 
+    * Fixed for User Agent string.  
+    * Added integration with PBX (external phones) using CSTA protocol
+    * Fixed for CHOWA problems
+    * Fixed for spaces in Login's username 
+    * Support for Reuters Messaging environment
+    * Support for message formatting
+    * Added notification support for undelivered messages
+    * Extended contact search implementation
+    * ... and more
+  * Fixed pidgin-sipe: urls appear w/ underscore prefix (Closes: #529523)
+  * Updated the debian/copyright file with the new authors list.
+  * Added DEB_CONFIGURE_EXTRA_FLAGS in debian/rules for extra compile flags
+  * Added dependency with the libkrb5-dev package
+  * Removed to delete the file libsipe.la from debian/rules.
+  * Removed DEB_AUTO_UPDATE_DEBIAN_CONTROL reference from debian/rules.
+  * Updated with Standards-Version 3.8.4
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 07 Feb 2010 04:48:35 -0500
+
+pidgin-sipe (1.3.3-1) unstable; urgency=low
+
+  * New upstream version (Closes: #508221)
+    * Added support for OCS 2007, LCS 2003
+    * Full support for send/receive messages
+    * Full presence support (both sides)
+    * Full support for add/remove/move contacts
+    * TLS/SSL support
+    * Search contacts full support
+    * xBSD support
+  * Added the dependency with the libpurple-dev package
+  * Added the dependency with the intltool package
+  * Added the dependency with the comerr-dev package
+  * Removed the unnecessary debian/pidgin-sipe.dirs file
+  * Changed the package description inside debian/control 
+    (Closes: #433920,#490923)
+  * Added the field Homepage inside Source stanza in debian/control file.
+  * Updated the debian/copyright file with the new authors list.
+  * Updated with Standards-Version 3.8.0
+
+ -- Anibal Avelar <aavelar@cofradia.org>  Sun, 1 Mar 2009 12:15:35 -0500
+
+pidgin-sipe (1.2-1) unstable; urgency=low
+
+  * Initial release (Closes: #418226)
+
+ -- Anibal Avelar (Fixxxer) <aavelar@cofradia.org>  Wed, 13 Jun 2007 19:12:35 -0500
+

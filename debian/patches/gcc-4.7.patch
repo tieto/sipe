@@ -1,0 +1,16 @@
+Description: Fix -Werror=maybe-uninitialized to build with gcc-4.7.
+Bug-Debian: http://bugs.debian.org/667323
+Author: Mònica Ramírez Arceda <monica@debian.org>
+Last-Update: 2012-04-25
+
+--- a/src/core/sipe-cal.c
++++ b/src/core/sipe-cal.c
+@@ -664,7 +664,7 @@
+ 	const char* free_busy;
+ 	int ret = SIPE_CAL_NO_DATA;
+ 	time_t state_since;
+-	int index;
++	int index = 0;
+ 
+ 	if (!buddy || !buddy->cal_start_time || !buddy->cal_granularity) {
+ 		SIPE_DEBUG_INFO("sipe_cal_get_status: no calendar data1 for %s, exiting",
