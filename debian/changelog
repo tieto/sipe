@@ -64,6 +64,7 @@ pidgin-sipe (1.13.1-0.1) unstable; urgency=low
   * Bump Standards-Version to 3.9.3.
   * Fix lintian warning debian-rules-missing-recommended-target.
   * Remove usage of quilt.
+  * Add Vcs-* fields to debian/control.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 11 May 2012 14:18:15 +0200
 

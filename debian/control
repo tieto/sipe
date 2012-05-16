@@ -8,6 +8,8 @@ Build-Depends: debhelper (>= 7), autotools-dev, pkg-config,
  intltool, libkrb5-dev, libzephyr-dev, libnss3-dev, libnice-dev,
  libgstreamer0.10-dev
 Standards-Version: 3.9.3
+Vcs-Git: git://anonscm.debian.org/collab-maint/pidgin-sipe.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/pidgin-sipe.git
 
 Package: pidgin-sipe
 Section: net
