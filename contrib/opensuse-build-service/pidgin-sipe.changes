@@ -1,7 +1,12 @@
 -------------------------------------------------------------------
-Mon Apr 09 09:29:42 UTC 2012 - chemobejk@gmail.com
+Mon Apr  9 18:51:47 UTC 2012 - dimstar@opensuse.org
 
-- Update to version 1.13.1
+- Update to version 1.13.1:
+  + Detect incompatible encryption level with Lync
+  + purple: add URI validity check to Add Buddy callback
+  + Various build fixes
+  + Updated translations.
+- Drop pidgin-sipe-gcc47.patch: fixed upstream.
 
 -------------------------------------------------------------------
 Sat Mar 24 23:13:09 UTC 2012 - dimstar@opensuse.org
