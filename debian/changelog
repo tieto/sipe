@@ -63,6 +63,7 @@ pidgin-sipe (1.13.1-0.1) unstable; urgency=low
   * Add libnice-dev and libgstreamer0.10-dev to Build-Depends.
   * Bump Standards-Version to 3.9.3.
   * Fix lintian warning debian-rules-missing-recommended-target.
+  * Remove usage of quilt.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 11 May 2012 14:18:15 +0200
 

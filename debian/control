@@ -3,7 +3,7 @@ Section: misc
 Priority: optional
 Maintainer: Anibal Avelar <aavelar@cofradia.org>
 Homepage: http://sipe.sourceforge.net/
-Build-Depends: quilt, debhelper (>= 7), autotools-dev, pkg-config,
+Build-Depends: debhelper (>= 7), autotools-dev, pkg-config,
  libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 2.4.0), libtool,
  intltool, libkrb5-dev, libzephyr-dev, libnss3-dev, libnice-dev,
  libgstreamer0.10-dev
