@@ -1081,8 +1081,13 @@ static struct tls_compiled_message *compile_handshake_msg(struct tls_internal_st
 	 *
 	 * Therefore we don't need space checks in the compiler functions
 	 */
+	/*
+	 * Workaround: The above statement is false. In reality vector objects
+	 * consume more memory for length fields, therefore 2*size workaround
+	 * applied to prevent buffer overflow.
+         */
 	gsize total_size = sizeof(struct tls_compiled_message) +
-		size + TLS_HANDSHAKE_HEADER_LENGTH;
+		2*size + TLS_HANDSHAKE_HEADER_LENGTH;
 	struct tls_compiled_message *msg = g_malloc(total_size);
 	guchar *handshake = msg->data;
 	const struct layout_descriptor *ldesc = desc->layouts;
