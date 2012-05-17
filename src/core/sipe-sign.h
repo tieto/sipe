@@ -43,7 +43,8 @@ struct sipmsg_breakdown {
 	//response code
 };
 
-void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target);
+void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target,
+			    const gchar *protocol);
 gchar*
 sipmsg_breakdown_get_string(int version,
 			    struct sipmsg_breakdown * msgbd);

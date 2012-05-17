@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ const gchar *sipe_xml_name(const sipe_xml *node);
 const gchar *sipe_xml_attribute(const sipe_xml *node, const gchar *attr);
 
 /**
- * Gets an attribute from the current XML node and convert it to an 
+ * Gets an attribute from the current XML node and convert it to an
  * unsigned integer.
  *
  * @param node     The node to get an attribute from.
@@ -100,10 +100,31 @@ guint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
 			     guint fallback);
 
 /**
- * Gets escaped data from the curretn XML node.
+ * Gets escaped data from the current XML node.
  *
  * @param node The node to get data from.
  *
  * @return The data from the node or @c NULL. Must be @c g_free()'d.
  */
 gchar *sipe_xml_data(const sipe_xml *node);
+
+/**
+ * For debugging while writing XML processing code.
+ * NOTE: the code for this function is flagged out by default!
+ *
+ * @param node The node to start dumping from
+ * @param path The path to this node (can be NULL)
+ */
+void sipe_xml_dump(const sipe_xml *node, const gchar *path);
+
+/* Other XML convenience functions */
+
+/**
+ * Apply "Exclusive XML Canonicalization" to a XML string
+ * See also http://www.w3.org/TR/xml-exc-c14n/
+ *
+ * @param string String with the XML to be canonicalized.
+ *
+ * @return canonicalized XML string. Must be @c g_free()'d.
+ */
+gchar *sipe_xml_exc_c14n(const gchar *string);

@@ -1,0 +1,395 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="core">
+      <UniqueIdentifier>{0f7082ea-15e2-4067-b9ba-b9b12a41ef5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api">
+      <UniqueIdentifier>{0e9e11e0-1f11-49f8-8f6c-403264973d12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="miranda">
+      <UniqueIdentifier>{1985067e-9fcc-4a0e-a02a-79ae17f356cf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\core\http-conn.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\md4.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sdpmsg.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-csta.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-sec-krb5.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-sec-ntlm.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-sec-sspi.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-sec.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-soap.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-transport.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-buddy.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-cal.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-certificate.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-cert-crypto-nss.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-chat.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-conf.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-core.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-crypt-nss.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-dialog.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-digest-nss.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-domino.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-ews.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-ft-tftp.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-ft.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-group.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-groupchat.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-im.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-incoming.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-media.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-mime.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-notify.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-ocs2005.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-ocs2007.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-schedule.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-session.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-sign.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-status.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-subscriptions.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-svc.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-tls.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-user.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-utils.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-win32dep.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-xml.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipmsg.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\uuid.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-buddy.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-chat.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-connection.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-debug.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-dnsquery.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-ft.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-groupchat.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-im.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-input.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-markup.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-media.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-network.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-notify.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-plugin.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-schedule.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-setting.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-transport.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-user.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-utils.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\sipe-miranda.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-search.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\miranda\miranda-status.c">
+      <Filter>miranda</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sipe-webticket.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-sec-tls-dsk.c">
+      <Filter>core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\core\http-conn.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\md4.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sdpmsg.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-csta.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-sec-krb5.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-sec-mech.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-sec-ntlm.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-sec-sspi.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-sec.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-soap.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-transport.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-buddy.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-cal.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-certificate.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-cert-crypto.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-chat.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-conf.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-core-private.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-crypt.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-dialog.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-digest.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-domino.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-ews.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-ft.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-group.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-groupchat.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-im.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-incoming.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-media.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-notify.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-ocs2005.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-ocs2007.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-schedule.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-session.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-sign.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-status.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-subscriptions.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-svc.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-tls.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-utils.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-win32dep.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-xml.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipmsg.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\uuid.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\api\sipe-backend.h">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\api\sipe-common.h">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\api\sipe-core.h">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\api\sipe-mime.h">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\api\sipe-nls.h">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\miranda\miranda-private.h">
+      <Filter>miranda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\miranda\miranda-resource.h">
+      <Filter>miranda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\miranda\miranda-version.h">
+      <Filter>miranda</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-webticket.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-sec-tls-dsk.h">
+      <Filter>core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="src\miranda\miranda.rc">
+      <Filter>miranda</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

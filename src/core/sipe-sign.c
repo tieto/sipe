@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,7 +31,8 @@
 
 static gchar * const empty_string = "";
 
-void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target)
+void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target,
+			    const gchar *protocol)
 {
 	const gchar * hdr;
 	if (msg == NULL || msg->msg == NULL) {
@@ -53,7 +55,7 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 		msg->realm  = sipmsg_find_part_of_header(hdr, "realm=\"", "\"", empty_string);
 		msg->target_name = sipmsg_find_part_of_header(hdr, "targetname=\"", "\"", empty_string);
 	} else {
-		msg->protocol = strstr(target, "sip/") ? g_strdup("Kerberos") : g_strdup("NTLM");
+		msg->protocol = g_strdup(protocol);
 		msg->realm = g_strdup(realm);
 		msg->target_name = g_strdup(target);
 	}

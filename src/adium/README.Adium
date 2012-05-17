@@ -1,0 +1,56 @@
+Compiling SIPE plugin for Adium
+===============================
+
+To compile the Adium plugin you will need XCode, then to get and compile:
+
+* Adium 1.5+ code:        http://trac.adium.im/wiki/GettingNewestAdiumSource
+* libnss 3.12.6+libnspr:  https://developer.mozilla.org/NSS_3.12.6_release_notes
+
+1. Build Adium
+--------------
+
+Adium 1.5 should compile out-of-the-box.  Build the Release build, then link
+the required frameworks into your home directory.  The frameworks you need are:
+ * glib, gobject, intl, purple (pre-packaged in Adium source)
+ * AIUtilities, Adium, AdiumLibpurple (build with Adium)
+
+(These steps assume you put source in ~/src/, so change that appropriately)
+
+$ cd ~/Library/Frameworks 
+$ for x in glib gobject intl purple; do ln -s ~/src/adium/Frameworks/lib$x.framework lib$x.framework; done
+$ for x in AIUtilities Adium AdiumLibpurple; do ln -s ~/src/adium/build/Release/$x.framework $x.framework; done
+
+2. Build libnss and libnspr
+---------------------------
+
+$ cd nss-3.12.6/mozilla/security/nss
+$ USE_64=1 make nss_build_all install
+$ mkdir ~/lib ~/include
+$ cp -LR ../../dist/Darwin*/lib/* ~/lib
+$ cp -LR ../../dist/Darwin*/include/* ../../dist/public/* ~/include
+
+(There may be an easier way to do this, if so please update the instructions)
+
+3. Build SIPEAdiumPlugin.xcodeproj and test it
+----------------------------------------------
+
+Load the project in XCode hit build!
+
+Test by linking the framework into the Adium plugins directory:
+
+$ cd "~/Library/Application Support/Adium 2.0/PlugIns/"
+$ ln -s ~/src/siplcs/src/adium/build/Release/SIPEAdiumPlugin.AdiumLibpurplePlugin SIPEAdiumPlugin.AdiumLibpurplePlugin
+
+Now fire up Adium and add an Office Communicator account type.
+
+
+Other Notes
+===========
+
+Older versions of SIPE (1.12.x) worked with Adium 1.4.x, but as of SIPE 1.13.0,
+libnss is no longer optional.  The 32-bit version of libnss is difficult to
+build on MacOS, so Adium 1.5 (which compiles as x86_64) is required.  If you
+can build the 32-bit version of libnss and libnspr build, the plugin API is
+still compatible with Adium 1.4.  To make a 1.4-compatible version, change the
+Architecture back to 32-Bit under Targets -> pidgin-sipe -> Get Info -> Build.
+

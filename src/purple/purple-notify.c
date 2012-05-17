@@ -20,13 +20,64 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <time.h>
+
 #include <glib.h>
 
+#include "conversation.h"
 #include "notify.h"
 
-void sipe_backend_notify_error(const gchar *title, const gchar *msg)
+#include "sipe-backend.h"
+#include "sipe-core.h"
+
+#include "purple-private.h"
+
+static void notify_message(struct sipe_core_public *sipe_public,
+			   PurpleMessageFlags flags,
+			   struct sipe_backend_chat_session *backend_session,
+			   const gchar *who,
+			   const gchar *message)
 {
-	purple_notify_error(NULL, NULL, title, msg);
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleConversation *conv;
+
+	if (backend_session) {
+		conv = (PurpleConversation *) backend_session;
+	} else {
+		conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY,
+							     who,
+							     purple_private->account);
+	}
+	if (conv)
+		purple_conversation_write(conv, NULL, message, flags,
+					  time(NULL));
+}
+
+void sipe_backend_notify_message_error(struct sipe_core_public *sipe_public,
+				       struct sipe_backend_chat_session *backend_session,
+				       const gchar *who,
+				       const gchar *message)
+{
+	notify_message(sipe_public, PURPLE_MESSAGE_ERROR,
+		       backend_session, who, message);
+}
+
+void sipe_backend_notify_message_info(struct sipe_core_public *sipe_public,
+				      struct sipe_backend_chat_session *backend_session,
+				      const gchar *who,
+				      const gchar *message)
+{
+	notify_message(sipe_public, PURPLE_MESSAGE_SYSTEM,
+		       backend_session, who, message);
+}
+
+void sipe_backend_notify_error(struct sipe_core_public *sipe_public,
+			       const gchar *title,
+			       const gchar *msg)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+
+	purple_notify_error(purple_private->gc, NULL, title, msg);
 }
 
 /*

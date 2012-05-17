@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
  *
@@ -27,6 +27,8 @@
  *
  * <glib.h>
  */
+
+#define SIPMSG_BODYLEN_CHUNKED -1
 
 struct sipmsg {
 	int response; /* 0 means request, otherwise response code */
@@ -57,6 +59,16 @@ void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gcha
 void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]);
 void sipmsg_merge_new_headers(struct sipmsg *msg);
 void sipmsg_free(struct sipmsg *msg);
+
+/**
+ * Parses CSeq from SIP message
+ *
+ * @param msg (in) SIP message
+ *
+ * @return int type CSeq value (i.e. without method).
+ */
+int sipmsg_parse_cseq(struct sipmsg *msg);
+
 GSList *sipmsg_parse_endpoints_header(const gchar *header);
 /**
  * Parses sip: and tel: URI out of P-Asserted-Identity header from INVITE request.
@@ -76,7 +88,7 @@ void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
 const gchar *sipmsg_find_header(const struct sipmsg *msg, const gchar *name);
 const gchar *sipmsg_find_header_instance(const struct sipmsg *msg, const gchar *name, int which);
 gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const char * after, const char * def);
-gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
+const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name);
 void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name);
 char *sipmsg_to_string(const struct sipmsg *msg);
 
@@ -92,26 +104,11 @@ char *sipmsg_to_string(const struct sipmsg *msg);
 gchar *get_html_message(const gchar *ms_text_format, const gchar *body);
 
 /**
- * Parses headers-like 'msgr' attribute of INVITE's 'ms_text_format' header.
- * Then retrieves value of 'X-MMS-IM-Format'.
-
- * 'msgr' typically looks like:
- * X-MMS-IM-Format: FN=Microsoft%20Sans%20Serif; EF=BI; CO=800000; CS=0; PF=22
- */
-gchar *sipmsg_get_x_mms_im_format(gchar *msgr);
-
-/**
  * Returns UTF-16LE/'modified base64' encoded X-MMS-IM-Format
  * based on input x_mms_im_format.
  */
 gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format);
 
-/**
- * Translates X-MMS-IM format to HTML presentation.
- */
-gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body);
-
-#define sipe_parse_html            msn_import_html
 /**
  * Parses the Purple message formatting (html) into the MSN format.
  *
@@ -123,5 +120,31 @@ gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body);
  */
 void sipe_parse_html(const char *html, char **attributes, char **message);
 
-void msn_parse_format(const char *mime, char **pre_ret, char **post_ret);
-void msn_import_html(const char *html, char **attributes, char **message);
+/**
+ * Extracts reason string from ms-diagnostics header of SIP message
+ *
+ * @param msg SIP message
+ *
+ * @return reason string. Must be g_free()'d after use.
+ */
+gchar *sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg);
+
+/**
+ * Extracts reason string from ms-diagnostics-public header of SIP message
+ *
+ * @param msg SIP message
+ *
+ * @return reason string. Must be g_free()'d after use.
+ */
+gchar *sipmsg_get_ms_diagnostics_public_reason(struct sipmsg *msg);
+
+/**
+ * Parses Warning header of SIP message, if present.
+ *
+ * @param msg (in) SIP message
+ * @param reason (out) parsed warning text or NULL if missing. Must be g_free()'d
+ *               after use.
+ *
+ * @return warning code or -1 if warning header is not present in message.
+ */
+int sipmsg_parse_warning(struct sipmsg *msg, gchar **reason);

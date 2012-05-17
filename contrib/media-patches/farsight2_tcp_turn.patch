@@ -1,0 +1,200 @@
+From b8939d724427102f4450dd43b3467dc2b543afa8 Mon Sep 17 00:00:00 2001
+From: Jakub Adam <jakub.adam@ktknet.cz>
+Date: Mon, 9 May 2011 00:05:19 +0200
+Subject: [PATCH] Patch needed for TURN relay TCP transport support
+
+stream: Allow to set allowed stream transport protocols
+
+nice stream transmitter: Add "demultiplex-func" property
+---
+ gst-libs/gst/farsight/fs-candidate.h           |   10 ++-
+ gst/fsmsnconference/fs-msn-connection.c        |    2 +-
+ transmitters/nice/fs-nice-stream-transmitter.c |   77 +++++++++++++++++++++++-
+ 3 files changed, 84 insertions(+), 5 deletions(-)
+
+diff --git a/gst-libs/gst/farsight/fs-candidate.h b/gst-libs/gst/farsight/fs-candidate.h
+index d829a22..7913867 100644
+--- a/gst-libs/gst/farsight/fs-candidate.h
++++ b/gst-libs/gst/farsight/fs-candidate.h
+@@ -59,14 +59,18 @@ typedef enum
+ /**
+  * FsNetworkProtocol:
+  * @FS_NETWORK_PROTOCOL_UDP: A UDP based protocol
+- * @FS_NETWORK_PROTOCOL_TCP: A TCP based protocol
++ * @FS_NETWORK_PROTOCOL_TCP_ACTIVE: A TCP based protocol, will attempt to open
++ *                                  outbound connection
++ * @FS_NETWORK_PROTOCOL_TCP_PASSIVE: A TCP based protocol, will listen for
++ *                                   incoming connections
+  *
+  * An enum for the base IP protocol
+  */
+ typedef enum
+ {
+-  FS_NETWORK_PROTOCOL_UDP,
+-  FS_NETWORK_PROTOCOL_TCP
++  FS_NETWORK_PROTOCOL_UDP = 1,
++  FS_NETWORK_PROTOCOL_TCP_ACTIVE = 2,
++  FS_NETWORK_PROTOCOL_TCP_PASSIVE = 4
+ } FsNetworkProtocol;
+ 
+ /**
+diff --git a/gst/fsmsnconference/fs-msn-connection.c b/gst/fsmsnconference/fs-msn-connection.c
+index 65e786d..78994b2 100644
+--- a/gst/fsmsnconference/fs-msn-connection.c
++++ b/gst/fsmsnconference/fs-msn-connection.c
+@@ -533,7 +533,7 @@ fs_msn_open_listening_port_unlock (FsMsnConnection *self, guint16 port,
+        item = g_list_next (item))
+   {
+     candidate = fs_candidate_new (self->local_recipient_id, 1,
+-        FS_CANDIDATE_TYPE_HOST, FS_NETWORK_PROTOCOL_TCP, item->data, port);
++        FS_CANDIDATE_TYPE_HOST, FS_NETWORK_PROTOCOL_TCP_PASSIVE, item->data, port);
+     candidate->username = g_strdup (session_id);
+ 
+     g_signal_emit (self, signals[SIGNAL_NEW_LOCAL_CANDIDATE], 0, candidate);
+diff --git a/transmitters/nice/fs-nice-stream-transmitter.c b/transmitters/nice/fs-nice-stream-transmitter.c
+index bd5dcbc..725b339 100644
+--- a/transmitters/nice/fs-nice-stream-transmitter.c
++++ b/transmitters/nice/fs-nice-stream-transmitter.c
+@@ -67,7 +67,9 @@ enum
+   PROP_COMPATIBILITY_MODE,
+   PROP_ASSOCIATE_ON_SOURCE,
+   PROP_RELAY_INFO,
+-  PROP_DEBUG
++  PROP_DEBUG,
++  PROP_TRANSPORT_PROTOCOLS,
++  PROP_DEMULTIPLEX_FUNC
+ };
+ 
+ struct _FsNiceStreamTransmitterPrivate
+@@ -84,6 +86,7 @@ struct _FsNiceStreamTransmitterPrivate
+   gboolean controlling_mode;
+ 
+   guint compatibility_mode;
++  guint transport_protocols;
+ 
+   GMutex *mutex;
+ 
+@@ -117,6 +120,8 @@ struct _FsNiceStreamTransmitterPrivate
+   gboolean gathered;
+ 
+   NiceGstStream *gststream;
++
++  NiceAgentDemultiplexFunc demultiplex_func;
+ };
+ 
+ #define FS_NICE_STREAM_TRANSMITTER_GET_PRIVATE(o)  \
+@@ -348,6 +353,23 @@ fs_nice_stream_transmitter_class_init (FsNiceStreamTransmitterClass *klass)
+           FALSE,
+           G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
+ 
++  g_object_class_install_property (gobject_class, PROP_TRANSPORT_PROTOCOLS,
++      g_param_spec_uint (
++          "transport-protocols",
++          "Allowed transport protocols",
++          "Protocols that can be used for stream transport specified as OR-ed "
++          "values of FsNetworkProtocol",
++          0, G_MAXINT,
++          FS_NETWORK_PROTOCOL_UDP,
++          G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
++
++  g_object_class_install_property (gobject_class, PROP_DEMULTIPLEX_FUNC,
++      g_param_spec_pointer(
++          "demultiplex-func",
++          "Stream component demultiplexing function",
++          "Callback function separating stream components on multiplexed"
++          "connections",
++          G_PARAM_WRITABLE | G_PARAM_STATIC_STRINGS));
+ }
+ 
+ static void
+@@ -412,6 +434,38 @@ fs_nice_stream_transmitter_dispose (GObject *object)
+ }
+ 
+ static void
++fs_nice_stream_transmitter_set_transport_protocols (
++    FsNiceStreamTransmitter *self,
++    FsNetworkProtocol protocols)
++{
++  NiceCandidateTransport nice_protocols = 0;
++  guint stream_id;
++
++  FS_NICE_STREAM_TRANSMITTER_LOCK (self);
++  stream_id = self->priv->stream_id;
++  FS_NICE_STREAM_TRANSMITTER_UNLOCK (self);
++
++  if (stream_id) {
++    if (protocols & FS_NETWORK_PROTOCOL_TCP_ACTIVE)
++      nice_protocols |= NICE_CANDIDATE_TRANSPORT_TCP_ACTIVE;
++    if (protocols & FS_NETWORK_PROTOCOL_TCP_PASSIVE)
++      nice_protocols |= NICE_CANDIDATE_TRANSPORT_TCP_PASSIVE;
++    if (protocols & FS_NETWORK_PROTOCOL_UDP)
++      nice_protocols |= NICE_CANDIDATE_TRANSPORT_UDP;
++
++    nice_agent_set_stream_transport (self->priv->agent->agent, stream_id,
++        nice_protocols);
++  }
++}
++
++static void
++fs_nice_stream_transmitter_attach_demultiplexer (FsNiceStreamTransmitter *self)
++{
++  nice_agent_attach_demultiplexer (self->priv->agent->agent,
++        self->priv->stream_id, self->priv->demultiplex_func, NULL);
++}
++
++static void
+ fs_nice_stream_transmitter_stop (FsStreamTransmitter *streamtransmitter)
+ {
+   FsNiceStreamTransmitter *self =
+@@ -568,6 +622,14 @@ fs_nice_stream_transmitter_set_property (GObject *object,
+         nice_debug_disable (TRUE);
+       }
+       break;
++    case PROP_TRANSPORT_PROTOCOLS:
++      self->priv->transport_protocols = g_value_get_uint (value);
++      break;
++    case PROP_DEMULTIPLEX_FUNC:
++      self->priv->demultiplex_func = g_value_get_pointer(value);
++      if (self->priv->agent)
++        fs_nice_stream_transmitter_attach_demultiplexer(self);
++      break;
+     default:
+       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+       break;
+@@ -601,6 +663,10 @@ fs_network_protocol_to_nice_candidate_protocol (FsNetworkProtocol proto)
+   {
+     case FS_NETWORK_PROTOCOL_UDP:
+       return NICE_CANDIDATE_TRANSPORT_UDP;
++    case FS_NETWORK_PROTOCOL_TCP_ACTIVE:
++      return NICE_CANDIDATE_TRANSPORT_TCP_ACTIVE;
++    case FS_NETWORK_PROTOCOL_TCP_PASSIVE:
++      return NICE_CANDIDATE_TRANSPORT_TCP_PASSIVE;
+     default:
+       GST_WARNING ("Invalid Fs network protocol type %u", proto);
+       return NICE_CANDIDATE_TRANSPORT_UDP;
+@@ -982,6 +1048,10 @@ nice_candidate_transport_to_fs_network_protocol (NiceCandidateTransport trans)
+   {
+     case NICE_CANDIDATE_TRANSPORT_UDP:
+       return FS_NETWORK_PROTOCOL_UDP;
++    case NICE_CANDIDATE_TRANSPORT_TCP_ACTIVE:
++      return FS_NETWORK_PROTOCOL_TCP_ACTIVE;
++    case NICE_CANDIDATE_TRANSPORT_TCP_PASSIVE:
++      return FS_NETWORK_PROTOCOL_TCP_PASSIVE;
+     default:
+       GST_WARNING ("Invalid Nice network transport type %u", trans);
+       return FS_NETWORK_PROTOCOL_UDP;
+@@ -1379,6 +1449,11 @@ fs_nice_stream_transmitter_build (FsNiceStreamTransmitter *self,
+     }
+   }
+ 
++  fs_nice_stream_transmitter_set_transport_protocols(self,
++      self->priv->transport_protocols);
++  if (self->priv->demultiplex_func)
++    fs_nice_stream_transmitter_attach_demultiplexer (self);
++
+   self->priv->state_changed_handler_id = g_signal_connect_object (agent->agent,
+       "component-state-changed", G_CALLBACK (agent_state_changed), self, 0);
+   self->priv->gathering_done_handler_id = g_signal_connect_object (agent->agent,
+-- 
+1.7.5.4
+

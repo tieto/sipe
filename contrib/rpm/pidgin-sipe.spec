@@ -21,7 +21,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.11.2
+Version:        1.13.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -32,19 +32,26 @@ Release:        1%{?dist}
 Source:         http://downloads.sourceforge.net/sipe/%{name}-%{version}.tar.bz2
 %endif
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires:  libpurple-devel >= 2.4.0
 BuildRequires:  glib2-devel >= 2.12.0
+BuildRequires:  gmime-devel
 BuildRequires:  libxml2-devel
-#BuildRequires:  nss-devel
+BuildRequires:  nss-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
-#BuildRequires:  libnice-devel
+# Use "--with vv" to enable Voice & Video features
+%if 0%{?_with_vv:1}
+BuildRequires:  libpurple-devel >= 2.8.0
+BuildRequires:  glib2-devel >= 2.28.0
+BuildRequires:  libnice-devel >= 0.1.0
+BuildRequires:  gstreamer-devel
+%endif
 
 # Configurable components
 %if !0%{?_without_kerberos:1}
@@ -58,7 +65,8 @@ Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
@@ -71,13 +79,14 @@ This package provides the icon set for Pidgin.
 %package -n %{purple_plugin}
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0+
 
 %description -n %{purple_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
@@ -127,11 +136,38 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Apr 09 2012 J. D. User <jduser@noreply.com> 1.13.1
+- update to 1.13.1
+
+* Wed Mar 14 2012 J. D. User <jduser@noreply.com> 1.13.0
+- update to 1.13.0
+
+* Mon Dec 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- we do support Microsoft Lync Server 2010 now.
+
+* Tue Dec 06 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- update GPL2 license name
+
+* Sat Nov 12 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add BR gmime-devel
+
+* Mon Oct 31 2011 J. D. User <jduser@noreply.com> 1.12.0-*git*
+- add BR nss-devel
+
+* Mon Aug 29 2011 J. D. User <jduser@noreply.com> 1.12.0
+- update to 1.12.0
+
+* Wed Jun 22 2011 J. D. User <jduser@noreply.com> 1.11.2-*git*
+- add "--with vv" option to enable Voice & Video features
+
 * Tue Nov 02 2010 J. D. User <jduser@noreply.com> 1.11.2
 - update to 1.11.2
 
 * Sun Oct 24 2010 J. D. User <jduser@noreply.com> 1.11.1
 - update to 1.11.1
+
+* Sun Oct 04 2010 J. D. User <jduser@noreply.com> 1.11.0
+- update to 1.11.0
 
 * Fri Sep 02 2010 J. D. User <jduser@noreply.com> 1.10.1-*git*
 - add (commented out) BR libnice-devel

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 Jakub Adam <jakub.adam@tieto.com>
+ * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,19 +23,18 @@
 struct sdpmsg {
 	gchar		*ip;
 	GSList		*media;
-	gboolean	 legacy;
+	SipeIceVersion	 ice_version;
 };
 
 struct sdpmedia {
 	gchar		*name;
+	gchar		*ip;
 	guint		 port;
 
 	GSList		*attributes;
 	GSList		*candidates;
 	GSList		*codecs;
 	GSList		*remote_candidates;
-
-	gboolean	 legacy;
 };
 
 struct sdpcandidate {
@@ -48,6 +47,8 @@ struct sdpcandidate {
 	guint			 port;
 	gchar			*base_ip;
 	guint			 base_port;
+	gchar			*username;
+	gchar			*password;
 };
 
 struct sdpcodec {
@@ -80,3 +81,8 @@ gchar *sdpmsg_to_string(const struct sdpmsg *msg);
  * Deallocates @c sdpmsg.
  */
 void sdpmsg_free(struct sdpmsg *msg);
+
+/**
+ * Deallocates @c sdpmedia.
+ */
+void sdpmedia_free(struct sdpmedia *media);

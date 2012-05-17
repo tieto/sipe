@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -39,9 +39,17 @@
 #include "sipe-core-private.h"
 #include "sipe-cal.h"
 #include "sipe-nls.h"
+#include "sipe-ocs2005.h"
+#include "sipe-ocs2007.h"
+#include "sipe-schedule.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
+
+/* Calendar backends */
+#ifdef _WIN32
+#include "sipe-domino.h"
+#endif
+#include "sipe-ews.h"
 
 #define TIME_NULL   (time_t)-1
 #define IS(time)    (time != TIME_NULL)
@@ -203,26 +211,26 @@ gboolean
 sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 		       gboolean *has_url)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	if (!sip->cal) {
+	if (!sipe_private->calendar) {
+		struct sipe_calendar *cal;
 		const char *value;
 
-		sip->cal = g_new0(struct sipe_calendar, 1);
-		sip->cal->sipe_private = sipe_private;
+		sipe_private->calendar = cal = g_new0(struct sipe_calendar, 1);
+		cal->sipe_private = sipe_private;
 
-		sip->cal->email = g_strdup(sip->email);
+		cal->email = g_strdup(sipe_private->email);
 
 		/* user specified a service URL? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
 		if (has_url) *has_url = !is_empty(value);
 		if (!is_empty(value)) {
-			sip->cal->as_url  = g_strdup(value);
-			sip->cal->oof_url = g_strdup(value);
-			sip->cal->domino_url  = g_strdup(value);
+			cal->as_url  = g_strdup(value);
+			cal->oof_url = g_strdup(value);
+			cal->domino_url  = g_strdup(value);
 		}
 
-		sip->cal->auth = g_new0(HttpConnAuth, 1);
-		sip->cal->auth->use_negotiate = SIPE_CORE_PUBLIC_FLAG_IS(KRB5);
+		cal->auth = g_new0(HttpConnAuth, 1);
+		cal->auth->use_negotiate = SIPE_CORE_PUBLIC_FLAG_IS(KRB5);
 
 		/* user specified email login? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
@@ -231,19 +239,19 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 			/* user specified email login domain? */
 			const char *tmp = strstr(value, "\\");
 			if (tmp) {
-				sip->cal->auth->domain = g_strndup(value, tmp - value);
-				sip->cal->auth->user   = g_strdup(tmp + 1);
+				cal->auth->domain = g_strndup(value, tmp - value);
+				cal->auth->user   = g_strdup(tmp + 1);
 			} else {
-				sip->cal->auth->user   = g_strdup(value);
+				cal->auth->user   = g_strdup(value);
 			}
-			sip->cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
+			cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
 										 SIPE_SETTING_EMAIL_PASSWORD));
 
 		} else {
 			/* re-use SIPE credentials */
-			sip->cal->auth->domain   = g_strdup(sip->authdomain);
-			sip->cal->auth->user     = g_strdup(sip->authuser);
-			sip->cal->auth->password = g_strdup(sip->password);
+			cal->auth->domain   = g_strdup(sipe_private->authdomain);
+			cal->auth->user     = g_strdup(sipe_private->authuser);
+			cal->auth->password = g_strdup(sipe_private->password);
 		}
 		return TRUE;
 	}
@@ -446,6 +454,7 @@ sipe_cal_parse_std_dst(const sipe_xml *xn_std_dst_time,
       <Time>02:00:00</Time>
       <DayOrder>1</DayOrder>
       <Month>11</Month>
+      <Year>2009</Year>
       <DayOfWeek>Sunday</DayOfWeek>
     </StandardTime>
 */
@@ -528,6 +537,7 @@ sipe_cal_parse_working_hours(const sipe_xml *xn_working_hours,
 
 	xn_working_period = sipe_xml_child(xn_working_hours, "WorkingPeriodArray/WorkingPeriod");
 	if (xn_working_period) {
+		/* NOTE: this can be NULL! */
 		buddy->cal_working_hours->days_of_week =
 			sipe_xml_data(sipe_xml_child(xn_working_period, "DayOfWeek"));
 
@@ -664,7 +674,7 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 	const char* free_busy;
 	int ret = SIPE_CAL_NO_DATA;
 	time_t state_since;
-	int index;
+	int index = -1;
 
 	if (!buddy || !buddy->cal_start_time || !buddy->cal_granularity) {
 		SIPE_DEBUG_INFO("sipe_cal_get_status: no calendar data1 for %s, exiting",
@@ -780,7 +790,8 @@ sipe_cal_get_today_work_hours(struct sipe_cal_working_hours *wh,
 	const char *tz = sipe_cal_get_tz(wh, now);
 	struct tm *remote_now_tm = sipe_localtime_tz(&now, tz);
 
-	if (!strstr(wh->days_of_week, wday_names[remote_now_tm->tm_wday])) { /* not a work day */
+	if (!(wh->days_of_week && strstr(wh->days_of_week, wday_names[remote_now_tm->tm_wday]))) {
+		/* not a work day */
 		*start = TIME_NULL;
 		*end = TIME_NULL;
 		*next_start = TIME_NULL;
@@ -796,7 +807,8 @@ sipe_cal_get_today_work_hours(struct sipe_cal_working_hours *wh,
 		time_t tom = now + 24*60*60;
 		struct tm *remote_tom_tm = sipe_localtime_tz(&tom, sipe_cal_get_tz(wh, tom));
 
-		if (!strstr(wh->days_of_week, wday_names[remote_tom_tm->tm_wday])) { /* not a work day */
+		if (!(wh->days_of_week && strstr(wh->days_of_week, wday_names[remote_tom_tm->tm_wday]))) {
+			/* not a work day */
 			*next_start = TIME_NULL;
 		}
 
@@ -1085,6 +1097,59 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 		}
 	}
 	/* End of - Calendar: string calculations */
+}
+
+#define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
+
+void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
+{
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
+
+	/* Do in parallel.
+	 * If failed, the branch will be disabled for subsequent calls.
+	 * Can't rely that user turned the functionality on in account settings.
+	 */
+	sipe_ews_update_calendar(SIPE_CORE_PRIVATE);
+#ifdef _WIN32
+	/* @TODO: UNIX integration missing */
+	sipe_domino_update_calendar(SIPE_CORE_PRIVATE);
+#endif
+
+	/* schedule repeat */
+	sipe_schedule_seconds(SIPE_CORE_PRIVATE,
+			      "<+update-calendar>",
+			      NULL,
+			      UPDATE_CALENDAR_INTERVAL,
+			      (sipe_schedule_action)sipe_core_update_calendar,
+			      NULL);
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: finished.");
+}
+
+void sipe_cal_presence_publish(struct sipe_core_private *sipe_private,
+			       gboolean do_publish_calendar)
+{
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+		if (do_publish_calendar)
+			sipe_ocs2007_presence_publish(sipe_private, NULL);
+		else
+			sipe_ocs2007_category_publish(sipe_private);
+	} else {
+		sipe_ocs2005_presence_publish(sipe_private,
+					      do_publish_calendar);
+	}
+}
+
+void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private)
+{
+#define UPDATE_CALENDAR_DELAY		1*60	/* 1 min */
+
+	sipe_schedule_seconds(sipe_private,
+			      "<+update-calendar>",
+			      NULL,
+			      UPDATE_CALENDAR_DELAY,
+			      (sipe_schedule_action) sipe_core_update_calendar,
+			      NULL);
 }
 
 /*

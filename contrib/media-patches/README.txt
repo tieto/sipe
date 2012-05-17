@@ -1,50 +1,34 @@
-To enable experimental voice support in SIPE (on non-Windows platforms only):
+To enable voice support in SIPE (only on platforms where libpurple supports
+voice & video):
 
-- for compatibility with OC 2007 R2, apply these patches to libnice and libpurple:
-	- purple_mime_document_parsen.patch
-	- purple_media_get_active_candidates.patch
-	- libnice01-Compatibility-with-MSOC-2007-R2.patch 
+- pidgin >= 2.8.0, libnice >= 0.1.0 and farsight2 >= 0.0.26 are required
 - compile SIPE source, check that voice support is enabled in configure output
-- If you get errors on incompatible encryption levels when making a call with
-  Office Communicator 2007 R2 peer, change to peer's registry is needed to allow
-  unencrypted media transfer, use the attached .reg file. Encryption can be also
-  already set as optional, depending on your domain policy configuration, in this
-  case registry change is not needed. 
+- If you get errors on incompatible encryption levels when making a call, change
+  to peer's registry is needed to allow unencrypted media transfer; use the
+  attached .reg file. Encryption can be also already set as optional, depending
+  on your domain policy configuration, in this case registry change is not needed. 
 - now you can try to make a voice call 
-
-- compatibility with OC 2007 (first release) is still being developed in SIPE,
-  applying related patches to libnice and libgstfarsight has no effect for now.
-- also MS-TURN support is intended for some SIPE release after 1.11.0
-
-STATUS OF PATCHES IN UPSTREAM
-=============================
-
-purple_mime_document_parsen.patch
-	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11598
-
-purple_media_get_active_candidates.patch
-	- reported to libpurple developers as ticket http://developer.pidgin.im/ticket/11830
-	- should be included in version 2.8.0
-	
-libnice01-Compatibility-with-MSOC-2007-R2.patch
-	- reported upstream https://bugs.freedesktop.org/show_bug.cgi?id=28215
-	- should be included in libnice 0.0.14
-
-libnice02-Compatibility-with-MSOC-2007.patch
-	- reported upstream http://lists.freedesktop.org/archives/nice/2010-August/000365.html
-	- should be included in libnice 0.0.14
-
-libnice03-MS-TURN-support-for-Microsoft-Office-Communicator.patch
-	- actively collaborating on improving the patch to be acceptable for merge
-	- possibly will be included in libnice 0.0.14
-
-farsight-Compatibility-with-OC2007.patch
-	- reported upstream http://lists.freedesktop.org/archives/nice/2010-August/000365.html
-	- actively collaborating on improving the patch to be acceptable for merge
-
 
 Biggest show stopper now is a lack of SRTP (encrypted transfer) in Farsight library,
 requiring Office Communicator users to change their registry settings as a
 workaround is unacceptable. According to FS website, someone is working on
-this, but no results are available so far. UPDATE: in some environments unencrypted
+this, but no results are available so far. In some environments unencrypted
 calls can be allowed by domain policy, so not all users are affected.
+
+Experimental TCP transport with TURN relay
+==========================================
+
+This feature can in some circumstances increase the chance of successful
+establishment of media connection. Might be required in network configuration
+where relay is the only possible way how clients can communicate and UDP
+transport is disabled on TURN server or blocked by firewall.
+
+It is optional because libnice, farsight2 and libpurple must have applied
+additional patches that are located in this directory:
+
+ libnice_msoc_tcp_relay.patch
+ farsight2_tcp_turn.patch
+ purple_tcp_act_pass.patch
+
+SIPE configure script will detect whether patched libraries are available on the 
+system and enable the feature for compilation accordingly.

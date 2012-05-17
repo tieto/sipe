@@ -27,6 +27,16 @@
 #include "sipe-mime.h"
 #include "sipe-core.h"
 
+void sipe_mime_init(void)
+{
+	/* Nothing to do */
+}
+
+void sipe_mime_shutdown(void)
+{
+	/* Nothing to do */
+}
+
 static
 GSList * mime_fields_to_nameval(PurpleMimePart* part)
 {

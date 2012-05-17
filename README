@@ -5,7 +5,8 @@ pidgin-sipe is a third-party plugin for the Pidgin multi-protocol instant
 messenger. It implements the extended version of SIP/SIMPLE used by various
 products:
 
-    * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
@@ -23,10 +24,11 @@ The plugin has support for
     * Enhanced presence
     * Calendar integration with Exchange 2007/2010
     * Contact details information - company, phones, web site, etc.
-    * Contact search
+    * Contact search - [MS-PRES] and [MS-DLX] methods supported
     * Encrypted file transfer
     * Call initiation through PBX
-    * Kerberos and NTLMv2 authentication, TLS support
+    * NTLMv2, Kerberos & TLS-DSK authentication support
+    * TLS encryption support
     * Translated to many languages
 
 
@@ -65,7 +67,7 @@ Localization
 SIPE has already been localized for several languages. You can help to
 translate SIPE to your native language at Transifex:
 
-    http://transifex.net/projects/p/pidgin-sipe/c/mob-branch/
+    https://www.transifex.net/projects/p/pidgin-sipe/r/mob/
 
 The service offers a convenient web editor and automatic submission to the
 repository.
@@ -97,6 +99,12 @@ following packages
 	libtool
 	intltool
 	libglib2.0-dev
+	libglib2-devel
+	libxml2-dev
+	libxml2-devel
+	libnss3-dev
+	nss-devel
+        mozilla-nss-devel
 	gettext-devel
 
 Now you should be able to compile the source code with

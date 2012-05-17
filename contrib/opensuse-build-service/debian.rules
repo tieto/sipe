@@ -15,13 +15,14 @@ clean::
 	dh_testdir
 
 # git snapshot does not contain a configure script
+debian/stamp-autotools-files: $(DEB_CONFIGURE_SCRIPT)
 $(DEB_BUILDDIR)/config.status: $(DEB_CONFIGURE_SCRIPT)
 
 $(DEB_CONFIGURE_SCRIPT):
 	./autogen.sh
 
 binary-post-install/pidgin-sipe::
-	rm debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
+	rm -f debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
 	rm debian/pidgin-sipe/usr/lib/purple-2/libsipe.la
 
 .PHONY: update-debian-control

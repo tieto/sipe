@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * Implements Remote Call Control (RCC) feature for
@@ -44,12 +44,31 @@
 #include "sipe-schedule.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
 
 #define ORIGINATED_CSTA_STATUS          "originated"
 #define DELIVERED_CSTA_STATUS           "delivered"
 #define ESTABLISHED_CSTA_STATUS         "established"
 
+/**
+ * Data model for interaction with SIP/CSTA Gateway
+ */
+struct sip_csta {
+	gchar *line_uri;
+	/** SIP/CSTA Gateway's SIP URI */
+	gchar *gateway_uri;
+	/** dialog with SIP/CSTA Gateway */
+	struct sip_dialog *dialog;
+
+	gchar *gateway_status;
+	gchar *monitor_cross_ref_id;
+
+	gchar *line_status;
+	/** destination tel: URI */
+	gchar *to_tel_uri;
+	gchar *call_id;
+	/* our device ID as reported by SIP/CSTA gateway */
+	gchar *device_id;
+};
 
 /**
  * Sends CSTA RequestSystemStatus request to SIP/CSTA Gateway.
@@ -190,13 +209,12 @@ sip_csta_initialize(struct sipe_core_private *sipe_private,
 		    const gchar *line_uri,
 		    const gchar *server)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	if(!sip->csta) {
-		sip->csta = g_new0(struct sip_csta, 1);
-		sip->csta->line_uri = g_strdup(line_uri);
-		sip->csta->gateway_uri = g_strdup(server);
+	if(!sipe_private->csta) {
+		sipe_private->csta = g_new0(struct sip_csta, 1);
+		sipe_private->csta->line_uri = g_strdup(line_uri);
+		sipe_private->csta->gateway_uri = g_strdup(server);
 	} else {
-		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_initialize: sip->csta is already instantiated, exiting.");
+		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_initialize: sipe_private->csta is already instantiated, exiting.");
 	}
 }
 
@@ -222,11 +240,10 @@ process_csta_get_features_response(SIPE_UNUSED_PARAMETER struct sipe_core_privat
 static void
 sip_csta_get_features(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 
-	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
+	if (!sipe_private->csta || !sipe_private->csta->dialog || !sipe_private->csta->dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_get_features: no dialog with CSTA, exiting.");
 		return;
 	}
@@ -237,12 +254,12 @@ sip_csta_get_features(struct sipe_core_private *sipe_private)
 
 	body = g_strdup_printf(
 		SIP_SEND_CSTA_GET_CSTA_FEATURES,
-		sip->csta->line_uri);
+		sipe_private->csta->line_uri);
 
 	sip_transport_info(sipe_private,
-			   hdr, 
+			   hdr,
 			   body,
-			   sip->csta->dialog,
+			   sipe_private->csta->dialog,
 			   process_csta_get_features_response);
 	g_free(body);
 	g_free(hdr);
@@ -254,12 +271,10 @@ process_csta_monitor_start_response(struct sipe_core_private *sipe_private,
 				    struct sipmsg *msg,
 				    SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
 	SIPE_DEBUG_INFO("process_csta_monitor_start_response:\n%s", msg->body ? msg->body : "");
 
-	if (!sip->csta) {
-		SIPE_DEBUG_INFO_NOFORMAT("process_csta_monitor_start_response: sip->csta is not initializzed, exiting");
+	if (!sipe_private->csta) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_csta_monitor_start_response: sipe_private->csta is not initializzed, exiting");
 		return FALSE;
 	}
 
@@ -270,10 +285,10 @@ process_csta_monitor_start_response(struct sipe_core_private *sipe_private,
 	}
 	else if (msg->response == 200) {
 		sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
-		g_free(sip->csta->monitor_cross_ref_id);
-		sip->csta->monitor_cross_ref_id = sipe_xml_data(sipe_xml_child(xml, "monitorCrossRefID"));
+		g_free(sipe_private->csta->monitor_cross_ref_id);
+		sipe_private->csta->monitor_cross_ref_id = sipe_xml_data(sipe_xml_child(xml, "monitorCrossRefID"));
 		SIPE_DEBUG_INFO("process_csta_monitor_start_response: monitor_cross_ref_id=%s",
-				sip->csta->monitor_cross_ref_id ? sip->csta->monitor_cross_ref_id : "");
+				sipe_private->csta->monitor_cross_ref_id ? sipe_private->csta->monitor_cross_ref_id : "");
 		sipe_xml_free(xml);
 	}
 
@@ -284,11 +299,10 @@ process_csta_monitor_start_response(struct sipe_core_private *sipe_private,
 static void
 sip_csta_monitor_start(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 
-	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
+	if (!sipe_private->csta || !sipe_private->csta->dialog || !sipe_private->csta->dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_monitor_start: no dialog with CSTA, exiting.");
 		return;
 	}
@@ -299,12 +313,12 @@ sip_csta_monitor_start(struct sipe_core_private *sipe_private)
 
 	body = g_strdup_printf(
 		SIP_SEND_CSTA_MONITOR_START,
-		sip->csta->line_uri);
+		sipe_private->csta->line_uri);
 
 	sip_transport_info(sipe_private,
 			   hdr,
 			   body,
-			   sip->csta->dialog,
+			   sipe_private->csta->dialog,
 			   process_csta_monitor_start_response);
 	g_free(body);
 	g_free(hdr);
@@ -314,16 +328,15 @@ sip_csta_monitor_start(struct sipe_core_private *sipe_private)
 static void
 sip_csta_monitor_stop(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 
-	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
+	if (!sipe_private->csta || !sipe_private->csta->dialog || !sipe_private->csta->dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_monitor_stop: no dialog with CSTA, exiting.");
 		return;
 	}
 
-	if (!sip->csta->monitor_cross_ref_id) {
+	if (!sipe_private->csta->monitor_cross_ref_id) {
 		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_monitor_stop: no monitor_cross_ref_id, exiting.");
 		return;
 	}
@@ -334,12 +347,12 @@ sip_csta_monitor_stop(struct sipe_core_private *sipe_private)
 
 	body = g_strdup_printf(
 		SIP_SEND_CSTA_MONITOR_STOP,
-		sip->csta->monitor_cross_ref_id);
+		sipe_private->csta->monitor_cross_ref_id);
 
 	sip_transport_info(sipe_private,
 			   hdr,
 			   body,
-			   sip->csta->dialog,
+			   sipe_private->csta->dialog,
 			   NULL);
 	g_free(body);
 	g_free(hdr);
@@ -355,28 +368,26 @@ process_invite_csta_gateway_response(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
 	SIPE_DEBUG_INFO("process_invite_csta_gateway_response:\n%s", msg->body ? msg->body : "");
 
-	if (!sip->csta) {
-		SIPE_DEBUG_INFO_NOFORMAT("process_invite_csta_gateway_response: sip->csta is not initializzed, exiting");
+	if (!sipe_private->csta) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_invite_csta_gateway_response: sipe_private->csta is not initializzed, exiting");
 		return FALSE;
 	}
 
-	if (!sip->csta->dialog) {
+	if (!sipe_private->csta->dialog) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_csta_gateway_response: GSTA dialog is NULL, exiting");
 		return FALSE;
 	}
 
-	sipe_dialog_parse(sip->csta->dialog, msg, TRUE);
+	sipe_dialog_parse(sipe_private->csta->dialog, msg, TRUE);
 
 	if (msg->response >= 200) {
 		/* send ACK to CSTA */
-		sip->csta->dialog->cseq = 0;
-		sip_transport_ack(sipe_private, sip->csta->dialog);
-		sip->csta->dialog->outgoing_invite = NULL;
-		sip->csta->dialog->is_established = TRUE;
+		sipe_private->csta->dialog->cseq = 0;
+		sip_transport_ack(sipe_private, sipe_private->csta->dialog);
+		sipe_private->csta->dialog->outgoing_invite = NULL;
+		sipe_private->csta->dialog->is_established = TRUE;
 	}
 
 	if (msg->response >= 400) {
@@ -387,28 +398,28 @@ process_invite_csta_gateway_response(struct sipe_core_private *sipe_private,
 	else if (msg->response == 200) {
 		sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
 
-		g_free(sip->csta->gateway_status);
-		sip->csta->gateway_status = sipe_xml_data(sipe_xml_child(xml, "systemStatus"));
+		g_free(sipe_private->csta->gateway_status);
+		sipe_private->csta->gateway_status = sipe_xml_data(sipe_xml_child(xml, "systemStatus"));
 		SIPE_DEBUG_INFO("process_invite_csta_gateway_response: gateway_status=%s",
-				sip->csta->gateway_status ? sip->csta->gateway_status : "");
-		if (sipe_strcase_equal(sip->csta->gateway_status, "normal")) {
-			if (!sip->csta->monitor_cross_ref_id) {
+				sipe_private->csta->gateway_status ? sipe_private->csta->gateway_status : "");
+		if (sipe_strcase_equal(sipe_private->csta->gateway_status, "normal")) {
+			if (!sipe_private->csta->monitor_cross_ref_id) {
 				sip_csta_get_features(sipe_private);
 				sip_csta_monitor_start(sipe_private);
 			}
 		} else {
 			SIPE_DEBUG_INFO("process_invite_csta_gateway_response: ERROR: CSTA status is %s, won't continue.",
-					sip->csta->gateway_status);
+					sipe_private->csta->gateway_status);
 			/* @TODO notify user of failure to join CSTA */
 		}
 		sipe_xml_free(xml);
 
 		/* schedule re-invite. RFC4028 */
-		if (sip->csta->dialog->expires) {
+		if (sipe_private->csta->dialog->expires) {
 			sipe_schedule_seconds(sipe_private,
 					      "<+csta>",
 					      NULL,
-					      sip->csta->dialog->expires - 60, /* 1 minute earlier */
+					      sipe_private->csta->dialog->expires - 60, /* 1 minute earlier */
 					      sipe_invite_csta_gateway,
 					      NULL);
 		}
@@ -423,23 +434,22 @@ static void
 sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 			 SIPE_UNUSED_PARAMETER gpointer unused)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
 
-	if (!sip->csta) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_invite_csta_gateway: sip->csta is uninitialized, exiting");
+	if (!sipe_private->csta) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_invite_csta_gateway: sipe_private->csta is uninitialized, exiting");
 		return;
 	}
 
-	if(!sip->csta->dialog) {
-		sip->csta->dialog = g_new0(struct sip_dialog, 1);
-		sip->csta->dialog->callid = gencallid();
-		sip->csta->dialog->with = g_strdup(sip->csta->gateway_uri);
+	if(!sipe_private->csta->dialog) {
+		sipe_private->csta->dialog = g_new0(struct sip_dialog, 1);
+		sipe_private->csta->dialog->callid = gencallid();
+		sipe_private->csta->dialog->with = g_strdup(sipe_private->csta->gateway_uri);
 	}
-	if (!(sip->csta->dialog->ourtag)) {
-		sip->csta->dialog->ourtag = gentag();
+	if (!(sipe_private->csta->dialog->ourtag)) {
+		sipe_private->csta->dialog->ourtag = gentag();
 	}
 
 	contact = get_contact(sipe_private);
@@ -453,13 +463,13 @@ sipe_invite_csta_gateway(struct sipe_core_private *sipe_private,
 
 	body = g_strdup_printf(
 		SIP_SEND_CSTA_REQUEST_SYSTEM_STATUS,
-		sip->csta->line_uri);
+		sipe_private->csta->line_uri);
 
-	sip->csta->dialog->outgoing_invite =
+	sipe_private->csta->dialog->outgoing_invite =
 		sip_transport_invite(sipe_private,
 				     hdr,
 				     body,
-				     sip->csta->dialog,
+				     sipe_private->csta->dialog,
 				     process_invite_csta_gateway_response);
 	g_free(body);
 	g_free(hdr);
@@ -497,17 +507,16 @@ sip_csta_free(struct sip_csta *csta)
 void
 sip_csta_close(struct sipe_core_private *sipe_private)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-	if (sip->csta) {
+	if (sipe_private->csta) {
 		sip_csta_monitor_stop(sipe_private);
 	}
 
-	if (sip->csta && sip->csta->dialog) {
+	if (sipe_private->csta && sipe_private->csta->dialog) {
 		/* send BYE to CSTA */
-		sip_transport_bye(sipe_private, sip->csta->dialog);
+		sip_transport_bye(sipe_private, sipe_private->csta->dialog);
 	}
 
-	sip_csta_free(sip->csta);
+	sip_csta_free(sipe_private->csta);
 }
 
 
@@ -518,12 +527,10 @@ process_csta_make_call_response(struct sipe_core_private *sipe_private,
 				struct sipmsg *msg,
 				SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
-
 	SIPE_DEBUG_INFO("process_csta_make_call_response:\n%s", msg->body ? msg->body : "");
 
-	if (!sip->csta) {
-		SIPE_DEBUG_INFO_NOFORMAT("process_csta_make_call_response: sip->csta is not initializzed, exiting");
+	if (!sipe_private->csta) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_csta_make_call_response: sipe_private->csta is not initializzed, exiting");
 		return FALSE;
 	}
 
@@ -542,10 +549,10 @@ process_csta_make_call_response(struct sipe_core_private *sipe_private,
 		xml = sipe_xml_parse(msg->body, msg->bodylen);
 		xn_calling_device = sipe_xml_child(xml, "callingDevice");
 		device_id = sipe_xml_data(sipe_xml_child(xn_calling_device, "deviceID"));
-		if (sipe_strequal(sip->csta->line_uri, device_id)) {
-			g_free(sip->csta->call_id);
-			sip->csta->call_id = sipe_xml_data(sipe_xml_child(xn_calling_device, "callID"));
-			SIPE_DEBUG_INFO("process_csta_make_call_response: call_id=%s", sip->csta->call_id ? sip->csta->call_id : "");
+		if (sipe_strequal(sipe_private->csta->line_uri, device_id)) {
+			g_free(sipe_private->csta->call_id);
+			sipe_private->csta->call_id = sipe_xml_data(sipe_xml_child(xn_calling_device, "callID"));
+			SIPE_DEBUG_INFO("process_csta_make_call_response: call_id=%s", sipe_private->csta->call_id ? sipe_private->csta->call_id : "");
 		}
 		g_free(device_id);
 		sipe_xml_free(xml);
@@ -555,11 +562,9 @@ process_csta_make_call_response(struct sipe_core_private *sipe_private,
 }
 
 /** Make Call */
-void
-sip_csta_make_call(struct sipe_core_private *sipe_private,
-		   const gchar* to_tel_uri)
+static void sip_csta_make_call(struct sipe_core_private *sipe_private,
+			       const gchar* to_tel_uri)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 
@@ -568,13 +573,13 @@ sip_csta_make_call(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	if (!sip->csta || !sip->csta->dialog || !sip->csta->dialog->is_established) {
+	if (!sipe_private->csta || !sipe_private->csta->dialog || !sipe_private->csta->dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sip_csta_make_call: no dialog with CSTA, exiting.");
 		return;
 	}
 
-	g_free(sip->csta->to_tel_uri);
-	sip->csta->to_tel_uri = g_strdup(to_tel_uri);
+	g_free(sipe_private->csta->to_tel_uri);
+	sipe_private->csta->to_tel_uri = g_strdup(to_tel_uri);
 
 	hdr = g_strdup(
 		"Content-Disposition: signal;handling=required\r\n"
@@ -582,13 +587,13 @@ sip_csta_make_call(struct sipe_core_private *sipe_private,
 
 	body = g_strdup_printf(
 		SIP_SEND_CSTA_MAKE_CALL,
-		sip->csta->line_uri,
-		sip->csta->to_tel_uri);
+		sipe_private->csta->line_uri,
+		sipe_private->csta->to_tel_uri);
 
 	sip_transport_info(sipe_private,
 			   hdr,
 			   body,
-			   sip->csta->dialog,
+			   sipe_private->csta->dialog,
 			   process_csta_make_call_response);
 	g_free(body);
 	g_free(hdr);
@@ -642,7 +647,6 @@ void
 process_incoming_info_csta(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg)
 {
-	struct sipe_account_data *sip = SIPE_ACCOUNT_DATA_PRIVATE;
 	gchar *monitor_cross_ref_id;
 	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
 
@@ -650,7 +654,7 @@ process_incoming_info_csta(struct sipe_core_private *sipe_private,
 
 	monitor_cross_ref_id = sipe_xml_data(sipe_xml_child(xml, "monitorCrossRefID"));
 
-	if(!sip->csta || !sipe_strequal(monitor_cross_ref_id, sip->csta->monitor_cross_ref_id))
+	if(!sipe_private->csta || !sipe_strequal(monitor_cross_ref_id, sipe_private->csta->monitor_cross_ref_id))
 	{
 		SIPE_DEBUG_INFO("process_incoming_info_csta: monitorCrossRefID (%s) does not match, exiting",
 				monitor_cross_ref_id ? monitor_cross_ref_id : "");
@@ -659,25 +663,25 @@ process_incoming_info_csta(struct sipe_core_private *sipe_private,
 	{
 		if (sipe_strequal(sipe_xml_name(xml), "OriginatedEvent"))
 		{
-			sip_csta_update_id_and_status(sip->csta,
+			sip_csta_update_id_and_status(sipe_private->csta,
 						      sipe_xml_child(xml, "originatedConnection"),
 						      ORIGINATED_CSTA_STATUS);
 		}
 		else if (sipe_strequal(sipe_xml_name(xml), "DeliveredEvent"))
 		{
-			sip_csta_update_id_and_status(sip->csta,
+			sip_csta_update_id_and_status(sipe_private->csta,
 						      sipe_xml_child(xml, "connection"),
 						      DELIVERED_CSTA_STATUS);
 		}
 		else if (sipe_strequal(sipe_xml_name(xml), "EstablishedEvent"))
 		{
-			sip_csta_update_id_and_status(sip->csta,
+			sip_csta_update_id_and_status(sipe_private->csta,
 						      sipe_xml_child(xml, "establishedConnection"),
 						      ESTABLISHED_CSTA_STATUS);
 		}
 		else if (sipe_strequal(sipe_xml_name(xml), "ConnectionClearedEvent"))
 		{
-			sip_csta_update_id_and_status(sip->csta,
+			sip_csta_update_id_and_status(sipe_private->csta,
 						      sipe_xml_child(xml, "droppedConnection"),
 						      NULL);
 		}
@@ -687,7 +691,24 @@ process_incoming_info_csta(struct sipe_core_private *sipe_private,
 	sipe_xml_free(xml);
 }
 
+gboolean sip_csta_is_idle(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->csta && !sipe_private->csta->line_status);
+}
 
+void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
+			       const gchar *phone)
+{
+	if (phone) {
+		gchar *tel_uri = sip_to_tel_uri(phone);
+
+		SIPE_DEBUG_INFO("sipe_core_buddy_make_call: calling number: %s",
+				tel_uri ? tel_uri : "");
+		sip_csta_make_call(SIPE_CORE_PRIVATE, tel_uri);
+
+		g_free(tel_uri);
+	}
+}
 
 /*
   Local Variables:

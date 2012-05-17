@@ -281,18 +281,17 @@ sip_sec_krb5_print_gss_error0(char *func,
 			     OM_uint32 status,
 			     int type)
 {
-	OM_uint32 ret;
 	OM_uint32 minor;
 	OM_uint32 message_context = 0;
 	gss_buffer_desc status_string;
 
 	do {
-		ret = gss_display_status(&minor,
-					 status,
-					 type,
-					 GSS_C_NO_OID,
-					 &message_context,
-					 &status_string);
+		gss_display_status(&minor,
+				   status,
+				   type,
+				   GSS_C_NO_OID,
+				   &message_context,
+				   &status_string);
 
 		printf("GSS-API error in %s (%s): %s\n", func, (type == GSS_C_GSS_CODE ? "GSS" : "Mech"), (char *)status_string.value);
 		gss_release_buffer(&minor, &status_string);

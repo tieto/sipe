@@ -10,7 +10,10 @@
 
 #import <AIUtilities/AICharacterSetAdditions.h>
 #import <AIUtilities/AIImageAdditions.h>
+#import <Adium/AIStatusControllerProtocol.h>
+#import <AISharedAdium.h>
 
+#import "ESSIPEAccountViewController.h"
 #import "ESPurpleSIPEAccount.h"
 #import "ESSIPEService.h"
 
@@ -22,6 +25,10 @@
 - (Class)accountClass
 {
 	return [ESPurpleSIPEAccount class];
+}
+
+- (AIAccountViewController *)accountViewController{
+    return [ESSIPEAccountViewController accountViewController];
 }
 
 //Service Description --------------------------------------------------------------------------------------------------
@@ -48,15 +55,16 @@
 
 - (NSString *)UIDPlaceholder
 {
-	return @"first.last.company.com@company.net";
+	return @"username@company.com,DOMAIN\\username";
 }
+
 
 - (NSCharacterSet *)allowedCharacters
 {
 	NSMutableCharacterSet *allowedCharacters = [[NSCharacterSet alphanumericCharacterSet] mutableCopy];
 	NSCharacterSet *returnSet;
 	
-	[allowedCharacters addCharactersInString:@"._@-()[]^%#|\\`=,"];
+	[allowedCharacters addCharactersInString:@"._@-()[]^%#|/\\`=,"];
 	returnSet = [allowedCharacters immutableCopy];
 	
 	return [returnSet autorelease];
@@ -88,6 +96,26 @@
 #pragma mark Service Properties
 
 - (BOOL)canCreateGroupChats
+{
+	return YES;
+}
+
+- (AIServiceImportance)serviceImportance{
+	return AIServiceSecondary;
+}
+
+- (void)registerStatuses{
+	[adium.statusController registerStatus:STATUS_NAME_AVAILABLE
+                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_AVAILABLE]
+                                    ofType:AIAvailableStatusType
+                                forService:self];
+}
+- (BOOL)supportsPassword
+{
+	return YES;
+}
+
+- (BOOL)requiresPassword
 {
 	return YES;
 }

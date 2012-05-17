@@ -1,17 +1,235 @@
 -------------------------------------------------------------------
-Thu Feb 11 01:15:00 CET 2010 - pier11@operamail.com
+Mon Apr 09 09:29:42 UTC 2012 - chemobejk@gmail.com
+
+- Update to version 1.13.1
+
+-------------------------------------------------------------------
+Sat Mar 24 23:13:09 UTC 2012 - dimstar@opensuse.org
+
+- Add pidgin-sipe-gcc47.patch: Fix build with gcc 4.7; taken from
+  git.
+
+-------------------------------------------------------------------
+Thu Mar 15 13:23:31 UTC 2012 - vuntz@opensuse.org
+
+- Update to version 1.13.0:
+  + Added [MS-SIPAE] TLS-DSK authentication scheme:
+    - TLS-DSK has been introduced in Lync
+    - mandatory for Office365 accounts
+    - also works for non-public Lync installations
+    - does not work yet with SSPI on Windows
+  + Added [MS-DLX] based Get Info/Contact Search:
+    - [MS-PRES] SIP-Based Active Directory Search is disabled in
+      Lync
+  + Added experimental media TCP transport
+  + Make it compile against the latest purple 3.0.x API
+  + Make it compile against the latest glib2 2.31.x API
+  + Completed cleanup: core no longer requires libpurple
+  + Refactored crypto code, ie. NSS can replaced if necessary
+  + Removed kopete backend: KDE is moving to telepathy
+  + Build-related changes
+- Drop pidgin-sipe-no-deprecated.patch: fixed upstream.
+
+-------------------------------------------------------------------
+Thu Jan 12 08:57:16 UTC 2012 - dimstar@opensuse.org
+
+- Change gmime-2_4-devel BuildRequires to gmime-devel. This rename
+  happened long ago and was just a virtual provides by now.
+- Drop checks for openSUSE 11.1.
+
+-------------------------------------------------------------------
+Mon Jan  9 13:07:06 UTC 2012 - vuntz@opensuse.org
+
+- Add pidgin-sipe-no-deprecated.patch: do not use deprecated glib
+  API, to fix build on Factory.
+
+-------------------------------------------------------------------
+Fri Sep  2 10:00:33 UTC 2011 - vuntz@opensuse.org
+
+- Update to version 1.12.0:
+  + Add support for OCS2007R2 Group Chat (sf#3064877)
+  + Support for HTTP/1.1 Transfer-Encoding: chunked (sf##3311026)
+  + Added MS TURN support
+  + Implement timeouts for SIP request. Used for REGISTER
+  + More work on Voice & Video call support
+  + Add random Ms-Conversation-ID to INVITE
+  + Fix parsing of P-Asserted-Identity header
+  + Fix several crashes (including sf#3082602, sf#3148124,
+    sf#3399007)
+  + Fix several authenticfation issues (inclusing sf#2834758,
+    sf#3090663, sf#3130915)
+  + Make it compile against the purple 2.8.x & 3.0.x APIs
+  + More internal changes to prepare for non-purple backends
+  + Updated/add Adium and Miranda ports
+  + Several build system fixes and improvements (including
+    sf#3092324, sf#3150482, sf#3091490, sf#3108246)
+  + Other bugs fixed: sf#3156430, sf#3161273, sf#3198585,
+    sf#3267073.
+- Drop pidgin-sipe-1.11.2-gcc46.patch: fixed upstream.
+- Add pkgconfig(gstreamer-0.10) and pkgconfig(nice) BuildRequires
+  on 12.1 and later (since 11.4 and earlier have a too old version
+  of libnice), to build Voice & Video call support.
+
+-------------------------------------------------------------------
+Mon May 23 08:50:03 UTC 2011 - idonmez@novell.com
+
+- Add pidgin-sipe-1.11.2-gcc46.patch: remove write-only variables
+  to fix compilation with gcc 4.6 
+
+-------------------------------------------------------------------
+Thu Nov 18 10:39:02 CET 2010 - dimstar@opensuse.org
+
+- Update to version 1.11.2:
+  + Sipe-sign: fix parsing of P-Asserted-Identity header
+  + Fixed memory leaks
+  + sf#3090663: Re-authentication fails
+  + sf#3091490: Make 1.11.0 Compile on FreeBSD
+  + sf#3092324: Core dump in "make check"
+- Changes from version 1.11.1:
+  + sf#2834758: First NTLM signature check after startup fails
+  + purple: fix memory leak in sipe_backend_transport_connect()
+    error path
+  + sf#3082602: Crash on Autodiscover
+  + Build fixes.
+
+-------------------------------------------------------------------
+Sun Oct 17 10:07:58 UTC 2010 - dimstar@opensuse.org
+
+- Some simple preparations to enable telepathy plugin once it
+  becomes available.
+
+-------------------------------------------------------------------
+Wed Oct  6 09:02:38 UTC 2010 - john@redux.org.uk
+
+- Update to version 1.11.0.
+  + Feature sf#2945346 - added Lotus Notes/Domino Calendar
+    integration.
+  + Fixed sf#2971422: idle check for OCS2005 presence case (Stefan
+    Becker)
+  + Fixed sf#2982424: krb5 build errors on FreeBSD (Stefan Becker)
+  + Fixed sf#2997639: pidgin crash after accepting cert (Stefan
+    Becker)
+  + Fixed sf#3001523: Cancelling a long pending file transfer
+    crashes Pidgin (Jakub Adam)
+  + Fixed sf#3002993: Group Name issues with ampersand (Stefan
+    Becker)
+  + Fixed sf#3029228: Calendar published at/with incorrect time
+    (Stefan Becker)
+  + Fixed sf#3029929: Crash with outlook 2k3 Calendar (Stefan
+    Becker)
+  + Fix logout from OCS (Jakub Adam)
+  + Implement workaround for buddy list menu memory leaks
+    (Stefan Becker)
+  + Dropped UDP transport support (Stefan Becker)
+  + Rewrote TCP & TLS transport support (Stefan Becker)
+  + HTTP improvements: GET, cookies (pier11)
+  + Alternative crypt/digest implementation based on NSS (pier11)
+  + Rewrote message debug log and implemented an analyzer script
+    for it (Stefan Becker)
+  + More internal changes to prepare for non-purple backends
+    (Stefan Becker)
+  + New translation: Dutch (Flemish) 'nl' (fieona, ridiekel)
+  + New translation: Swedish 'sv' (Rijad)
+  + Added translations 'ar' 'hu' 'ja' 'ko' 'sv' 'zh_TW' submitted
+    by Novell
+  + New build option: nss/mozilla-nss/microb-engine-nss for
+    non-purple backends
+  + Add build option for kopete backend (Stefan Becker)
+  + Updated Adium port (Emanuele Zattin)
+
+-------------------------------------------------------------------
+Tue Jun 29 10:38:37 UTC 2010 - john@redux.org.uk
+
+- Update to version 1.10.1
+  + Fixed bug in the SIPE buddy list hash table functionality
+    reported by a RHEL5 user.
+  + Fixed Pidgin 2.7.0 API compatibility.
+
+-------------------------------------------------------------------
+Tue Jun 15 21:30:52 UTC 2010 - john@redux.org.uk
+
+- Fix openSUSE 11.1 build by removing unnecessary BuildRequires.
+
+-------------------------------------------------------------------
+Fri Jun  4 17:28:29 CEST 2010 - sbrabec@suse.cz
+
+- Added support for translation-update-upstream (FATE#301344).
+
+-------------------------------------------------------------------
+Sun Apr 04 13:30:00 BST 2010 - pier11@operamail.com
+
+- Update to version 1.10.0:
+  + Feature sf#2823160: Access Levels (2007+ environment)
+  + Feature sf#2957811: add support for "automaton" class
+  + Feature sf#2972823: fail on in-line variable declarations
+  + Fixed sf#2971422: handle OCS 2005 idiosyncrasy of varying SIP
+    URI case
+  + Fixed sf#2981563: Authentication protocol v4 - invalid
+    signature of some incoming messages containing
+    P-Asserted-Identity or P-Preferred-Identity with uppercased SIP
+    or TEL in URI.
+  + Fixed publication/"409 Conflict" endless looping
+  + Prepare for Pidgin 2.7.0
+  + Added SVG icon artwork
+  + Many changes to configure script. Be sure to look at "configure
+    --help"
+  + Many internal changes to prepare for non-purple backends
+  + New build requirements: libxml2, glib-2.0 >= 2.12.0
+  + New build option: gmime-2.4 >= 2.4.16 or gmime-2.6 >= 2.5.2 for
+    non-purple backends
+- Add BuildRequires: glib2-devel >= 2.12.0
+- Add --enable-purple --disable-telepathy to configure
+- Add %check section.
+- Add %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg with
+  workarounds for SLE11, openSUSE 11.0/1 don't have
+  pidgin/protocols/scalable directory.
+
+-------------------------------------------------------------------
+Wed Mar 17 22:11:51 CET 2010 - dimstar@opensuse.org
+
+- Update to version 1.9.1:
+  + sf#2969327: Kerberos authentication always fails on *nix
+    platforms
+  + sf#2968287: Authentication failure in scenario when director
+    server is Office Communications Server 2007 or above and home
+    server is Live Communications Server 2005
+  + Send BYE when response to IM message is 408/480/481
+  + Re-enable offline status to be user settable.
+
+-------------------------------------------------------------------
+Wed Mar 10 14:37:21 CET 2010 - dimstar@opensuse.org
+
+- Update to version 1.9.0:
+  + Contributed File transfer functionality. File encryption is
+    supported.
+  + NTLMv2 and NTLMv2 Session Security support
+  + Implemented SIP Authentication Extensions protocol version 4
+    and 3
+  + Adoption for commercial UNIX - HP/UX, Irix, Solaris - big
+    endian fixes and build improvements
+  + Packaged for Maemo platform (Nokia N900, etc.) at Maemo.org.
+    Works with Pidgin from the same site.
+  + Adoption of file transfer for Windows build
+  + Official Debian package files in contrib
+  + another shot at presence update problems
+  + fix crash caused by uninitialized security contexts
+  + Code analysis with Coverity Prevent.
+  + Fix for "SIP/2.0 481 Call leg unavailable" error 
+  + Increased libpurple build requisite to >= 2.4.0
+  + Updated translations.
+
+-------------------------------------------------------------------
+Thu Feb 18 01:58:10 CET 2010 - vuntz@opensuse.org
 
 - Update to version 1.8.1:
-  + many crash fixes for error or corner cases in calendar
+  + Many crash fixes for error or corner cases in calendar
     integration
-  + more detailed code analysis with Coverity Prevent
+  + More detailed code analysis with Coverity Prevent
   + OpenSUSE Build Service configuration files
   + Fix NTLM crash if login setting is undefined
   + Use of g_str_has_prefix() available since glib 2.2 and
     null-safe
-  + build fixes for older OS releases, e.g. Ubuntu older than 9.10
-- Changed source from .bz2 to .gz. Seems OBS for Debian doesn't
-  understand .bz2 source file.
+  + Build fixes for older OS releases.
 
 -------------------------------------------------------------------
 Thu Feb 11 01:15:00 CET 2010 - vuntz@opensuse.org

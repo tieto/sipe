@@ -8,9 +8,10 @@ if SIPE_INCLUDE_TELEPATHY
 SUBDIRS += telepathy
 endif
 
-if SIPE_INCLUDE_KOPETE
-SUBDIRS += kopete
-endif
+EXTRA_DIST = \
+	adium \
+	miranda \
+	Makefile.mingw
 
 MAINTAINERCLEANFILES = \
 	Makefile.in

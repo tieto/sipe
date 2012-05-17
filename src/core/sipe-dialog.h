@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-11 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
  */
 
 /* Forward declarations */
+struct sipe_delayed_invite;
 struct sipmsg;
 
 /* Helper macros to iterate over dialog list in a SIP session */
@@ -60,6 +61,7 @@ struct sip_dialog {
 	int expires;
 	gboolean is_established;
 	struct transaction *outgoing_invite;
+        struct sipe_delayed_invite *delayed_invite;
 };
 
 /* Forward declaration */
@@ -131,17 +133,6 @@ void sipe_dialog_remove_all(struct sip_session *session);
  * @param session (in)
  */
 #define sipe_dialog_first(session) ((struct sip_dialog *)session->dialogs->data)
-
-/**
- * Update routes in a dialog from a message
- *
- * @param dialog   (in,out) dialog to fill
- * @param msg      (in)     mesage
- * @param outgoing (in)     outgoing or incoming message
- */
-void sipe_dialog_parse_routes(struct sip_dialog *dialog,
-			      const struct sipmsg *msg,
-			      gboolean outgoing);
 
 /**
  * Fill dialog structure from SIP message

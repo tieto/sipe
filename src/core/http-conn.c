@@ -68,6 +68,7 @@ struct http_conn_struct {
 	char *url;
 	char *body;
 	char *content_type;
+	const gchar *additional_headers;
 	HttpConnAuth *auth;
 	HttpConnCallback callback;
 	void *data;
@@ -121,6 +122,9 @@ http_conn_free(HttpConn* http_conn)
 {
 	if (!http_conn) return;
 
+	/* make sure also pending connections are released */
+	sipe_backend_transport_disconnect(http_conn->conn);
+
 	/* don't free "http_conn->http_session" - client should do */
 	g_free(http_conn->method);
 	g_free(http_conn->host);
@@ -158,15 +162,6 @@ http_conn_session_free(HttpSession *http_session)
 }
 
 void
-http_conn_auth_free(struct http_conn_auth* auth)
-{
-	g_free(auth->domain);
-	g_free(auth->user);
-	g_free(auth->password);
-	g_free(auth);
-}
-
-void
 http_conn_set_close(HttpConn* http_conn)
 {
 	http_conn->do_close = http_conn;
@@ -176,10 +171,6 @@ static void
 http_conn_close(HttpConn *http_conn, const char *message)
 {
 	SIPE_DEBUG_INFO("http_conn_close: closing http connection: %s", message ? message : "");
-
-	g_return_if_fail(http_conn);
-
-	sipe_backend_transport_disconnect(http_conn->conn);
 	http_conn_free(http_conn);
 }
 
@@ -293,6 +284,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 		 const char *full_url,
 		 const char *body,
 		 const char *content_type,
+		 const gchar *additional_headers,
 		 HttpConnAuth *auth,
 		 HttpConnCallback callback,
 		 void *data)
@@ -329,6 +321,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 	http_conn->url = url;
 	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
+	http_conn->additional_headers = additional_headers;
 	http_conn->auth = auth;
 	http_conn->callback = callback;
 	http_conn->data = data;
@@ -364,6 +357,10 @@ http_conn_send0(HttpConn *http_conn,
 	if (authorization) {
 		g_string_append_printf(outstr, "Authorization: %s\r\n", authorization);
 	}
+	if (http_conn->additional_headers) {
+		g_string_append(outstr, http_conn->additional_headers);
+	}
+
 	g_string_append_printf(outstr, "\r\n%s", http_conn->body ? http_conn->body : "");
 
 	sipe_utils_message_debug("HTTP", outstr->str, NULL, TRUE);
@@ -441,12 +438,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 	}
 	/* Authentication required */
 	else if (msg->response == 401) {
-		char *ptmp;
-#ifdef _WIN32
-#ifdef HAVE_LIBKRB5
-		char *tmp;
-#endif
-#endif
+		const gchar *auth_hdr = NULL;
 		guint auth_type;
 		const char *auth_name;
 		char *authorization;
@@ -464,34 +456,31 @@ http_conn_process_input_message(HttpConn *http_conn,
 			return;
 		}
 
-		ptmp = sipmsg_find_auth_header(msg, "NTLM");
-		auth_type = AUTH_TYPE_NTLM;
-		auth_name = "NTLM";
-#ifdef _WIN32
-#ifdef HAVE_LIBKRB5
-		tmp = sipmsg_find_auth_header(msg, "Negotiate");
-		if (tmp && http_conn->auth && http_conn->auth->use_negotiate) {
-			ptmp = tmp;
+#ifdef HAVE_SSPI
+		if (http_conn->auth && http_conn->auth->use_negotiate)
+			auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
+		if (auth_hdr) {
 			auth_type = AUTH_TYPE_NEGOTIATE;
 			auth_name = "Negotiate";
+		} else {
+#endif
+			auth_hdr = sipmsg_find_auth_header(msg, "NTLM");
+			auth_type = AUTH_TYPE_NTLM;
+			auth_name = "NTLM";
+#ifdef HAVE_SSPI
 		}
 #endif
-#endif
-		if (!ptmp) {
+		if (!auth_hdr) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
+#ifdef HAVE_SSPI
+#define AUTHSTRING				"NTLM and Negotiate authentications are"
+#else /* !HAVE_SSPI */
+#define AUTHSTRING				"NTLM authentication is"
+#endif /* HAVE_SSPI */
 			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
-#ifdef _WIN32
-#ifdef HAVE_LIBKRB5
-				"NTLM and Negotiate authentications are"
-#else /* !HAVE_LIBKRB5 */
-				"NTLM authentication is"
-#endif /* HAVE_LIBKRB5 */
-#else /* !_WIN32 */
-				"NTLM authentication is"
-#endif /* _WIN32 */
-
+					AUTHSTRING
 			);
 			http_conn_set_close(http_conn);
 			return;
@@ -508,7 +497,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		}
 
 		if (http_conn->sec_ctx) {
-			char **parts = g_strsplit(ptmp, " ", 0);
+			char **parts = g_strsplit(auth_hdr, " ", 0);
 			char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
 			ret = sip_sec_init_context_step(http_conn->sec_ctx,
 							spn,
@@ -596,28 +585,114 @@ static void http_conn_input(struct sipe_transport_connection *conn)
 		cur[0] = '\0';
 		msg = sipmsg_parse_header(conn->buffer);
 
-		cur += 2;
-		remainder = conn->buffer_used - (cur - conn->buffer);
-		if (msg && remainder >= (guint) msg->bodylen) {
-			char *dummy = g_malloc(msg->bodylen + 1);
-			memcpy(dummy, cur, msg->bodylen);
-			dummy[msg->bodylen] = '\0';
-			msg->body = dummy;
-			cur += msg->bodylen;
-			sipe_utils_message_debug("HTTP",
-						 conn->buffer,
-						 msg->body,
-						 FALSE);
-			sipe_utils_shrink_buffer(conn, cur);
-		} else {
-			if (msg){
-				SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
-				sipmsg_free(msg);
-                        }
+		/* HTTP/1.1 Transfer-Encoding: chunked */
+		if (msg && (msg->bodylen == SIPMSG_BODYLEN_CHUNKED)) {
+			gchar *start        = cur + 2;
+			GSList *chunks      = NULL;
+			gboolean incomplete = TRUE;
 
-			/* restore header for next try */
-			cur[-2] = '\r';
-			return;
+			msg->bodylen = 0;
+			while (strlen(start) > 0) {
+				gchar *tmp;
+				guint length = strtol(start, &tmp, 16);
+				struct _chunk {
+					guint length;
+					const gchar *start;
+				} *chunk;
+
+				/* Illegal number */
+				if ((length == 0) && (start == tmp))
+					break;
+				msg->bodylen += length;
+
+				/* Chunk header not finished yet */
+				tmp = strstr(tmp, "\r\n");
+				if (tmp == NULL)
+					break;
+
+				/* Chunk not finished yet */
+				tmp += 2;
+				remainder = conn->buffer_used - (tmp - conn->buffer);
+				if (remainder < length + 2)
+					break;
+
+				/* Next chunk */
+				start = tmp + length + 2;
+
+				/* Body completed */
+				if (length == 0) {
+					gchar *dummy  = g_malloc(msg->bodylen + 1);
+					gchar *p      = dummy;
+					GSList *entry = chunks;
+
+					while (entry) {
+						chunk = entry->data;
+						memcpy(p, chunk->start, chunk->length);
+						p += chunk->length;
+						entry = entry->next;
+					}
+					p[0] = '\0';
+
+					msg->body = dummy;
+					sipe_utils_message_debug("HTTP",
+								 conn->buffer,
+								 msg->body,
+								 FALSE);
+
+					cur = start;
+					sipe_utils_shrink_buffer(conn, cur);
+
+					incomplete = FALSE;
+					break;
+				}
+
+				/* Append completed chunk */
+				chunk = g_new0(struct _chunk, 1);
+				chunk->length = length;
+				chunk->start  = tmp;
+				chunks = g_slist_append(chunks, chunk);
+			}
+
+			if (chunks) {
+				GSList *entry = chunks;
+				while (entry) {
+					g_free(entry->data);
+					entry = entry->next;
+				}
+				g_slist_free(chunks);
+			}
+
+			if (incomplete) {
+				/* restore header for next try */
+				sipmsg_free(msg);
+				cur[0] = '\r';
+				return;
+			}
+
+		} else {
+			cur += 2;
+			remainder = conn->buffer_used - (cur - conn->buffer);
+			if (msg && remainder >= (guint) msg->bodylen) {
+				char *dummy = g_malloc(msg->bodylen + 1);
+				memcpy(dummy, cur, msg->bodylen);
+				dummy[msg->bodylen] = '\0';
+				msg->body = dummy;
+				cur += msg->bodylen;
+				sipe_utils_message_debug("HTTP",
+							 conn->buffer,
+							 msg->body,
+							 FALSE);
+				sipe_utils_shrink_buffer(conn, cur);
+			} else {
+				if (msg){
+					SIPE_DEBUG_INFO("process_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
+					sipmsg_free(msg);
+				}
+
+				/* restore header for next try */
+				cur[-2] = '\r';
+				return;
+			}
 		}
 
 		/* important to set before callback call */

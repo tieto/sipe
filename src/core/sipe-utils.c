@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2012 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,55 +24,37 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <time.h>
 
 #include <glib.h>
-
-#ifdef _WIN32
-/* for network */
-#include "win32/libc_interface.h"
-#include <nspapi.h>
-#else
-#if defined(__APPLE__) || defined(__FreeBSD__)
-#include <sys/socket.h>
-#endif
-#include <unistd.h>
-#include <net/if.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#endif
 
 #include "sipe-backend.h"
 #include "sipe-core.h"    /* to ensure same API for backends */
 #include "sipe-core-private.h"
 #include "sipe-utils.h"
 #include "uuid.h"
-#include "sipe.h"
 
-/* Generate 32 random bits */
-#define RANDOM32BITS (rand() & 0xFFFF)
+/* Generate 16 random bits */
+#define RANDOM16BITS (rand() & 0xFFFF)
 
 gchar *gencallid(void)
 {
 	return g_strdup_printf("%04Xg%04Xa%04Xi%04Xm%04Xt%04Xb%04Xx%04Xx",
-			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
-			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
-			       RANDOM32BITS, RANDOM32BITS);
+			       RANDOM16BITS, RANDOM16BITS, RANDOM16BITS,
+			       RANDOM16BITS, RANDOM16BITS, RANDOM16BITS,
+			       RANDOM16BITS, RANDOM16BITS);
 }
 
 gchar *gentag(void)
 {
-	return g_strdup_printf("%04d%04d", RANDOM32BITS, RANDOM32BITS);
+	return g_strdup_printf("%04d%04d", RANDOM16BITS, RANDOM16BITS);
 }
 
 gchar *genconfid(void)
 {
 	return g_strdup_printf("%04X%04X%04X%04X%04X%04X%04X%04X",
-			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
-			       RANDOM32BITS, RANDOM32BITS, RANDOM32BITS,
-			       RANDOM32BITS, RANDOM32BITS);
+			       RANDOM16BITS, RANDOM16BITS, RANDOM16BITS,
+			       RANDOM16BITS, RANDOM16BITS, RANDOM16BITS,
+			       RANDOM16BITS, RANDOM16BITS);
 }
 
 gchar *get_contact(const struct sipe_core_private *sipe_private)
@@ -111,18 +93,6 @@ gchar *parse_from(const gchar *hdr)
 	return from;
 }
 
-int parse_cseq(const gchar *hdr)
-{
-	int res = -1;
-	gchar **items;
-	items = g_strsplit(hdr, " ", 1);
-	if (items[0]) {
-		res = atoi(items[0]);
-	}
-	g_strfreev(items);
-	return res;
-}
-
 gchar *sip_uri_from_name(const gchar *name)
 {
 	return(g_strdup_printf("sip:%s", name));
@@ -131,6 +101,43 @@ gchar *sip_uri_from_name(const gchar *name)
 gchar *sip_uri(const gchar *string)
 {
 	return(strstr(string, "sip:") ? g_strdup(string) : sip_uri_from_name(string));
+}
+
+/* can't use g_uri_escape_string as it requires glib-2.0 >= 2.16.0  :-( */
+gchar *sip_uri_if_valid(const gchar *string)
+{
+	/* strip possible sip: prefix */
+	const gchar *s = sipe_get_no_sip_uri(string);
+	if (!s) return(NULL);
+
+	/* scan string for invalid URI characters */
+	while (*s) {
+		gchar c = *s++;
+
+		if (!(isascii(c) &&
+		      (isalnum(c) ||
+		       (c == '.') ||
+		       (c == '-') ||
+		       (c == '_') ||
+		       (c == '@'))))
+			return(NULL);
+	}
+
+	/* name is valid for URI, convert it */
+	return(sip_uri(string));
+}
+
+const gchar *sipe_get_no_sip_uri(const gchar *sip_uri)
+{
+#define SIP_PREFIX "sip:"
+
+	if (!sip_uri) return NULL;
+
+	if (g_str_has_prefix(sip_uri, SIP_PREFIX)) {
+		return(sip_uri + strlen(SIP_PREFIX));
+	} else {
+		return sip_uri;
+	}
 }
 
 gchar *
@@ -145,6 +152,15 @@ get_epid(struct sipe_core_private *sipe_private)
 	}
 	return g_strdup(sipe_private->epid);
 }
+
+gchar *get_uuid(struct sipe_core_private *sipe_private)
+{
+	gchar *epid = get_epid(sipe_private);
+	gchar *uuid = generateUUIDfromEPID(epid);
+	g_free(epid);
+	return(uuid);
+}
+
 
 guint
 sipe_get_pub_instance(struct sipe_core_private *sipe_private,
@@ -170,7 +186,7 @@ sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		   publication_key == SIPE_PUB_NOTE_OOF)
 	{ /* First hexadecimal digit is 0x4 */
 		unsigned calendar_id = 0;
-		char *mail_hash = sipe_get_epid(SIPE_ACCOUNT_DATA_PRIVATE->email, "", "");
+		char *mail_hash = sipe_get_epid(sipe_private->email, "", "");
 
 		sscanf(mail_hash, "%08x", &calendar_id);
 		g_free(mail_hash);
@@ -288,6 +304,19 @@ sipe_strcase_equal(const gchar *left, const gchar *right)
 {
 	return ((left == NULL && right == NULL) ||
 	        (left != NULL && right != NULL && g_ascii_strcasecmp(left, right) == 0));
+}
+
+gint sipe_strcompare(gconstpointer a, gconstpointer b)
+{
+#if GLIB_CHECK_VERSION(2,16,0)
+	return (g_strcmp0(a, b));
+#else
+	if (!a)
+		return -(a != b);
+	if (!b)
+		return a != b;
+	return strcmp(a, b);
+#endif	
 }
 
 time_t
@@ -470,61 +499,11 @@ void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 	memmove(conn->buffer, unread, conn->buffer_used + 1);
 }
 
-/*
- * Calling sizeof(struct ifreq) isn't always correct on
- * Mac OS X (and maybe others).
- */
-#ifdef _SIZEOF_ADDR_IFREQ
-#  define HX_SIZE_OF_IFREQ(a) _SIZEOF_ADDR_IFREQ(a)
-#else
-#  define HX_SIZE_OF_IFREQ(a) sizeof(a)
-#endif
-
-const char * sipe_utils_get_suitable_local_ip(int fd)
+gboolean sipe_utils_ip_is_private(const char *ip)
 {
-	int source = (fd >= 0) ? fd : socket(PF_INET,SOCK_STREAM, 0);
-
-	if (source >= 0) {
-		char buffer[1024];
-		static char ip[16];
-		char *tmp;
-		struct ifconf ifc;
-		guint32 lhost = htonl(127 * 256 * 256 * 256 + 1);
-		guint32 llocal = htonl((169 << 24) + (254 << 16));
-
-		ifc.ifc_len = sizeof(buffer);
-		ifc.ifc_req = (struct ifreq *)buffer;
-		ioctl(source, SIOCGIFCONF, &ifc);
-
-		if (fd < 0)
-			close(source);
-
-		tmp = buffer;
-		while (tmp < buffer + ifc.ifc_len)
-		{
-			struct ifreq *ifr = (struct ifreq *)tmp;
-			tmp += HX_SIZE_OF_IFREQ(*ifr);
-
-			if (ifr->ifr_addr.sa_family == AF_INET)
-			{
-				struct sockaddr_in *sinptr = (struct sockaddr_in *)&ifr->ifr_addr;
-				if (sinptr->sin_addr.s_addr != lhost
-				    && (sinptr->sin_addr.s_addr & htonl(0xFFFF0000)) != llocal)
-				{
-					long unsigned int add = ntohl(sinptr->sin_addr.s_addr);
-					g_snprintf(ip, 16, "%lu.%lu.%lu.%lu",
-						   ((add >> 24) & 255),
-						   ((add >> 16) & 255),
-						   ((add >> 8) & 255),
-						   add & 255);
-
-					return ip;
-				}
-			}
-		}
-	}
-
-	return "0.0.0.0";
+	return g_str_has_prefix(ip, "10.")      ||
+	       g_str_has_prefix(ip, "172.16.")  ||
+	       g_str_has_prefix(ip, "192.168.");
 }
 
 gchar *sipe_utils_presence_key(const gchar *uri)
@@ -548,6 +527,68 @@ gchar *sipe_utils_subscription_key(const gchar *event,
 	}
 
 	return key;
+}
+
+gchar *
+sipe_utils_uri_unescape(const gchar *string)
+{
+	gchar *unescaped;
+	gchar *tmp;
+
+	if (!string)
+		return NULL;
+
+#if GLIB_CHECK_VERSION(2,16,0)
+	unescaped = g_uri_unescape_string(string, NULL);
+#else
+	// based on libpurple/util.c:purple_url_decode()
+	{
+		GString *buf = g_string_new(NULL);
+		size_t len = strlen(string);
+		char hex[3];
+
+		hex[2] = '\0';
+
+		while (len--) {
+			gchar c = *string++;
+
+			if ((len >= 2) && (c == '%')) {
+				strncpy(hex, string, 2);
+				c = strtol(hex, NULL, 16);
+
+				string += 2;
+				len -= 2;
+			}
+
+			g_string_append_c(buf, c);
+		}
+
+		unescaped = g_string_free(buf, FALSE);
+	}
+#endif
+	if (unescaped && !g_utf8_validate(unescaped, -1, (const gchar **)&tmp))
+		*tmp = '\0';
+
+	return unescaped;
+}
+
+gboolean
+sipe_utils_is_avconf_uri(const gchar *uri)
+{
+	return g_strstr_len(uri, -1, "app:conf:audio-video:") != NULL;
+}
+
+/**
+ * Only appends if no such value already stored.
+ * Like Set in Java.
+ */
+GSList *
+slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func) {
+	GSList * res = list;
+	if (!g_slist_find_custom(list, data, func)) {
+		res = g_slist_insert_sorted(list, data, func);
+	}
+	return res;
 }
 
 /*

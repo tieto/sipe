@@ -65,6 +65,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 		 const char *full_url,
 		 const char *body,
 		 const char *content_type,
+		 const gchar *additional_headers,
 		 HttpConnAuth *auth,
 		 HttpConnCallback callback,
 		 void *data);
@@ -92,9 +93,6 @@ http_conn_set_close(HttpConn* http_conn);
 
 void
 http_conn_free(HttpConn* http_conn);
-
-void
-http_conn_auth_free(HttpConnAuth* auth);
 
 HttpSession *
 http_conn_session_create(void);

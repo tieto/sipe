@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -36,17 +36,25 @@
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
+#include "sipe-user.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-#include "sipe.h"
+
+#ifdef HAVE_VV
+#define ENTITY_VIEW_AUDIO_VIDEO "<msci:entity-view entity=\"audio-video\"/>"
+#else
+#define ENTITY_VIEW_AUDIO_VIDEO
+#endif
 
 /**
  * Add Conference request to FocusFactory.
@@ -74,6 +82,7 @@
 			"</ci:conference-description>"\
 			"<msci:conference-view>"\
 				"<msci:entity-view entity=\"chat\"/>"\
+				ENTITY_VIEW_AUDIO_VIDEO \
 			"</msci:conference-view>"\
 		"</ci:conference-info>"\
 	"</addConference>"\
@@ -207,7 +216,7 @@ sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 			  gboolean expires)
 {
 	sipe_subscribe(sipe_private,
-		       session->focus_uri,
+		       session->chat_session->id,
 		       "conference",
 		       "application/conference-info+xml",
 		       expires ? "Expires: 0\r\n" : NULL,
@@ -249,8 +258,14 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 	}
 
 	if (msg->response >= 400) {
+		gchar *reason = sipmsg_get_ms_diagnostics_reason(msg);
+
 		SIPE_DEBUG_INFO_NOFORMAT("process_invite_conf_focus_response: INVITE response is not 200. Failed to join focus.");
-		/* @TODO notify user of failure to join focus */
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Failed to join the conference"),
+					  reason ? reason : _("no reason given"));
+		g_free(reason);
+
 		sipe_session_remove(sipe_private, session);
 		g_free(focus_uri);
 		return FALSE;
@@ -260,6 +275,11 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 		if (sipe_strequal(code, "success")) {
 			/* subscribe to focus */
 			sipe_subscribe_conference(sipe_private, session, FALSE);
+#ifdef HAVE_VV
+			if (session->is_call)
+				sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
+								   session->chat_session);
+#endif
 		}
 		sipe_xml_free(xn_response);
 	}
@@ -268,30 +288,64 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 	return TRUE;
 }
 
-/** Invite us to the focus */
-void
-sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
-		       struct sip_session *session)
+struct sip_session *
+sipe_core_conf_create(struct sipe_core_public *sipe_public,
+		      const gchar *focus_uri)
+{
+	gchar *buf;
+	const gchar *focus_uri_ue;
+	struct sip_session *session = NULL;
+
+	focus_uri_ue = buf = sipe_utils_uri_unescape(focus_uri);
+
+	// URI can have this prefix if it was typed in by the user
+	if (g_str_has_prefix(focus_uri_ue, "meet:"))
+		focus_uri_ue += 5;
+
+	if (!focus_uri_ue || !g_str_has_prefix(focus_uri_ue, "sip:") ||
+	    strlen(focus_uri_ue) == 4 || g_strstr_len(focus_uri_ue, -1, "%")) {
+		gchar *error = g_strdup_printf(_("\"%s\" is not a valid focus URI"),
+					       focus_uri ? focus_uri : "");
+		sipe_backend_notify_error(sipe_public,
+					  _("Failed to join the conference"),
+					  error);
+		g_free(error);
+	} else {
+		gchar *querystr = g_strstr_len(focus_uri_ue, -1, "?");
+		if (querystr) {
+			/* TODO: Investigate how conf-key field should be used,
+			 * ignoring for now */
+			*querystr = '\0';
+		}
+
+		session =  sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri_ue);
+	}
+
+	g_free(buf);
+
+	return session;
+}
+
+/** Create new session with Focus URI */
+struct sip_session *
+sipe_conf_create(struct sipe_core_private *sipe_private,
+		 struct sipe_chat_session *chat_session,
+		 const gchar *focus_uri)
 {
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
 	gchar *self;
+	struct sip_session *session = sipe_session_add_chat(sipe_private,
+							    chat_session,
+							    FALSE,
+							    focus_uri);
 
-	if (session->focus_dialog && session->focus_dialog->is_established) {
-		SIPE_DEBUG_INFO("session with %s already has a dialog open", session->focus_uri);
-		return;
-	}
-
-	if(!session->focus_dialog) {
-		session->focus_dialog = g_new0(struct sip_dialog, 1);
-		session->focus_dialog->callid = gencallid();
-		session->focus_dialog->with = g_strdup(session->focus_uri);
-		session->focus_dialog->endpoint_GUID = rand_guid();
-	}
-	if (!(session->focus_dialog->ourtag)) {
-		session->focus_dialog->ourtag = gentag();
-	}
+	session->focus_dialog = g_new0(struct sip_dialog, 1);
+	session->focus_dialog->callid = gencallid();
+	session->focus_dialog->with = g_strdup(session->chat_session->id);
+	session->focus_dialog->endpoint_GUID = rand_guid();
+	session->focus_dialog->ourtag = gentag();
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
@@ -312,7 +366,6 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 		session->focus_dialog->with,
 		self,
 		session->focus_dialog->endpoint_GUID);
-	g_free(self);
 
 	session->focus_dialog->outgoing_invite =
 		sip_transport_invite(sipe_private,
@@ -322,6 +375,20 @@ sipe_invite_conf_focus(struct sipe_core_private *sipe_private,
 				     process_invite_conf_focus_response);
 	g_free(body);
 	g_free(hdr);
+
+	/* Rejoin existing session? */
+	if (chat_session) {
+		SIPE_DEBUG_INFO("sipe_conf_create: rejoin '%s' (%s)",
+				chat_session->title,
+				chat_session->id);
+		sipe_backend_chat_rejoin(SIPE_CORE_PUBLIC,
+					 chat_session->backend,
+					 self,
+					 chat_session->title);
+	}
+	g_free(self);
+
+	return(session);
 }
 
 /** Modify User Role */
@@ -362,16 +429,55 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 	g_free(hdr);
 }
 
-/** Modify Conference Lock */
-void
-sipe_conf_modify_conference_lock(struct sipe_core_private *sipe_private,
-				 struct sip_session *session,
-				 const gboolean locked)
+/**
+ * Check conference lock status
+ */
+sipe_chat_lock_status sipe_core_chat_lock_status(struct sipe_core_public *sipe_public,
+						 struct sipe_chat_session *chat_session)
 {
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	sipe_chat_lock_status status = SIPE_CHAT_LOCK_STATUS_NOT_ALLOWED;
+
+	if (chat_session &&
+	    (chat_session->type == SIPE_CHAT_TYPE_CONFERENCE)) {
+		struct sip_session *session = sipe_session_find_chat(sipe_private,
+								     chat_session);
+		if (session) {
+			gchar *self = sip_uri_self(sipe_private);
+
+			/* Only operators are allowed to change the lock status */
+			if (sipe_backend_chat_is_operator(chat_session->backend, self)) {
+				status = session->locked ?
+					SIPE_CHAT_LOCK_STATUS_LOCKED :
+					SIPE_CHAT_LOCK_STATUS_UNLOCKED;
+			}
+
+			g_free(self);
+		}
+	}
+
+	return(status);
+}
+
+/**
+ * Modify Conference Lock
+ * Sends request to Focus.
+ * INFO method is a carrier of application/cccp+xml
+ */
+void
+sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
+			   struct sipe_chat_session *chat_session,
+			   const gboolean locked)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *hdr;
 	gchar *body;
 	gchar *self;
 
+	struct sip_session *session = sipe_session_find_chat(sipe_private,
+							     chat_session);
+
+	if (!session) return;
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_modify_conference_lock: no dialog with focus, exiting.");
 		return;
@@ -447,7 +553,7 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
 	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
 
 	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
+	dialog->cseq = sipmsg_parse_cseq(msg);
 	dialog->with = parse_from(sipmsg_find_header(msg, "To"));
 	sipe_dialog_parse(dialog, msg, TRUE);
 
@@ -512,7 +618,7 @@ sipe_invite_conf(struct sipe_core_private *sipe_private,
 
 	body = g_strdup_printf(
 		SIPE_SEND_CONF_INVITE,
-		session->focus_uri,
+		session->chat_session->id,
 		session->subject ? session->subject : ""
 		);
 
@@ -543,20 +649,17 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
 		if (sipe_strequal("success", sipe_xml_attribute(xn_response, "code")))
 		{
 			gchar *who = trans->payload->data;
-			struct sip_session *session;
 			const sipe_xml *xn_conference_info = sipe_xml_child(xn_response, "addConference/conference-info");
+			struct sip_session *session = sipe_conf_create(sipe_private,
+								       NULL,
+								       sipe_xml_attribute(xn_conference_info,
+											  "entity"));
 
-			session = sipe_session_add_chat(sipe_private);
-			session->is_multiparty = FALSE;
-			session->focus_uri = g_strdup(sipe_xml_attribute(xn_conference_info, "entity"));
 			SIPE_DEBUG_INFO("process_conf_add_response: session->focus_uri=%s",
-					session->focus_uri ? session->focus_uri : "");
+					session->chat_session->id);
 
 			session->pending_invite_queue = slist_insert_unique_sorted(
 				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
-
-			/* add self to conf */
-			sipe_invite_conf_focus(sipe_private, session);
 		}
 		sipe_xml_free(xn_response);
 	}
@@ -620,50 +723,210 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	g_free(hdr);
 }
 
-void
-process_incoming_invite_conf(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg)
+static void
+accept_incoming_invite_conf(struct sipe_core_private *sipe_private,
+			    gchar *focus_uri,
+			    gboolean audio,
+			    struct sipmsg *msg)
 {
-	struct sip_session *session = NULL;
-	struct sip_dialog *dialog = NULL;
-	sipe_xml *xn_conferencing = sipe_xml_parse(msg->body, msg->bodylen);
-	const sipe_xml *xn_focus_uri = sipe_xml_child(xn_conferencing, "focus-uri");
-	char *focus_uri = sipe_xml_data(xn_focus_uri);
+	struct sip_session *session;
 	gchar *newTag = gentag();
 	const gchar *oldHeader = sipmsg_find_header(msg, "To");
 	gchar *newHeader;
 
-	sipe_xml_free(xn_conferencing);
-
-	/* send OK */
-	SIPE_DEBUG_INFO("We have received invitation to Conference. Focus URI=%s", focus_uri);
-
 	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
+	g_free(newTag);
 	sipmsg_remove_header_now(msg, "To");
 	sipmsg_add_header_now(msg, "To", newHeader);
 	g_free(newHeader);
 
-	/* temporary dialog with invitor */
-	/* take data before 'msg' will be modified by send_sip_response */
-	dialog = g_new0(struct sip_dialog, 1);
-	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-	dialog->cseq = parse_cseq(sipmsg_find_header(msg, "CSeq"));
-	dialog->with = parse_from(sipmsg_find_header(msg, "From"));
-	sipe_dialog_parse(dialog, msg, FALSE);
-
+	/* acknowledge invite */
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 
-	session = sipe_session_add_chat(sipe_private);
-	session->focus_uri = focus_uri;
-	session->is_multiparty = FALSE;
-
-	/* send BYE to invitor */
-	sip_transport_bye(sipe_private, dialog);
-	sipe_dialog_free(dialog);
-
 	/* add self to conf */
-	sipe_invite_conf_focus(sipe_private, session);
+	session = sipe_conf_create(sipe_private, NULL, focus_uri);
+	session->is_call = audio;
 }
+
+struct conf_accept_ctx {
+	gchar *focus_uri;
+	struct sipmsg *msg;
+	struct sipe_user_ask_ctx *ask_ctx;
+};
+
+static void
+conf_accept_ctx_free(struct conf_accept_ctx *ctx)
+{
+	g_return_if_fail(ctx != NULL);
+
+	sipmsg_free(ctx->msg);
+	g_free(ctx->focus_uri);
+	g_free(ctx);
+}
+
+static void
+conf_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+{
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	accept_incoming_invite_conf(sipe_private, ctx->focus_uri, TRUE, ctx->msg);
+	conf_accept_ctx_free(ctx);
+}
+
+static void
+conf_decline_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+{
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	sip_transport_response(sipe_private,
+			       ctx->msg,
+			       603, "Decline", NULL);
+
+	conf_accept_ctx_free(ctx);
+}
+
+void
+sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
+			    struct sipmsg *msg)
+{
+	const gchar *callid1 = msg ? sipmsg_find_header(msg, "Call-ID") : NULL;
+	GSList *it = sipe_private->sessions_to_accept;
+	while (it) {
+		struct conf_accept_ctx *ctx = it->data;
+		const gchar *callid2 = NULL;
+
+		if (msg && ctx->msg)
+			callid2 = sipmsg_find_header(ctx->msg, "Call-ID");
+
+		if (sipe_strequal(callid1, callid2)) {
+			GSList *tmp;
+
+			if (ctx->msg)
+				sip_transport_response(sipe_private, ctx->msg,
+						       487, "Request Terminated", NULL);
+
+			if (msg)
+				sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+
+			sipe_user_close_ask(ctx->ask_ctx);
+			conf_accept_ctx_free(ctx);
+
+			tmp = it;
+			it = it->next;
+
+			sipe_private->sessions_to_accept =
+				g_slist_delete_link(sipe_private->sessions_to_accept, tmp);
+
+			if (callid1)
+				break;
+		} else
+			it = it->next;
+	}
+}
+
+static void
+ask_accept_voice_conference(struct sipe_core_private *sipe_private,
+			    const gchar *focus_uri,
+			    struct sipmsg *msg,
+			    SipeUserAskCb accept_cb,
+			    SipeUserAskCb decline_cb)
+{
+	gchar **parts;
+	gchar *alias;
+	gchar *ask_msg;
+	const gchar *novv_note;
+	struct conf_accept_ctx *ctx;
+
+#ifdef HAVE_VV
+	novv_note = "";
+#else
+	novv_note = _("\n\nAs this client was not compiled with voice call "
+		      "support, if you accept, you will be able to contact "
+		      "the other participants only via IM session.");
+#endif
+
+	parts = g_strsplit(focus_uri, ";", 2);
+	alias = sipe_buddy_get_alias(sipe_private, parts[0]);
+
+	ask_msg = g_strdup_printf(_("%s wants to invite you "
+				  "to the conference call%s"),
+				  alias ? alias : parts[0], novv_note);
+
+	g_free(alias);
+	g_strfreev(parts);
+
+	ctx = g_new0(struct conf_accept_ctx, 1);
+	sipe_private->sessions_to_accept =
+			g_slist_append(sipe_private->sessions_to_accept, ctx);
+
+	ctx->focus_uri = g_strdup(focus_uri);
+	ctx->msg = msg ? sipmsg_copy(msg) : NULL;
+	ctx->ask_ctx = sipe_user_ask(sipe_private, ask_msg,
+				     _("Accept"), accept_cb,
+				     _("Decline"), decline_cb,
+				     ctx);
+
+	g_free(ask_msg);
+}
+
+void
+process_incoming_invite_conf(struct sipe_core_private *sipe_private,
+			     struct sipmsg *msg)
+{
+	sipe_xml *xn_conferencing = sipe_xml_parse(msg->body, msg->bodylen);
+	const sipe_xml *xn_focus_uri = sipe_xml_child(xn_conferencing, "focus-uri");
+	const sipe_xml *xn_audio = sipe_xml_child(xn_conferencing, "audio");
+	gchar *focus_uri = sipe_xml_data(xn_focus_uri);
+	gboolean audio = sipe_strequal(sipe_xml_attribute(xn_audio, "available"), "true");
+
+	sipe_xml_free(xn_conferencing);
+
+	SIPE_DEBUG_INFO("We have received invitation to Conference. Focus URI=%s", focus_uri);
+
+	if (audio) {
+		sip_transport_response(sipe_private, msg, 180, "Ringing", NULL);
+		ask_accept_voice_conference(sipe_private, focus_uri, msg,
+					    (SipeUserAskCb) conf_accept_cb,
+					    (SipeUserAskCb) conf_decline_cb);
+
+	} else {
+		accept_incoming_invite_conf(sipe_private, focus_uri, FALSE, msg);
+	}
+
+	g_free(focus_uri);
+}
+
+#ifdef HAVE_VV
+
+static void
+call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+{
+	struct sip_session *session;
+	session = sipe_session_find_conference(sipe_private, ctx->focus_uri);
+
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	if (session) {
+		sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
+						   session->chat_session);
+	}
+
+	conf_accept_ctx_free(ctx);
+}
+
+static void
+call_decline_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+{
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	conf_accept_ctx_free(ctx);
+}
+
+#endif // HAVE_VV
 
 void
 sipe_process_conference(struct sipe_core_private *sipe_private,
@@ -675,6 +938,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	const gchar *focus_uri;
 	struct sip_session *session;
 	gboolean just_joined = FALSE;
+#ifdef HAVE_VV
+	gboolean audio_was_added = FALSE;
+#endif
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -691,17 +957,14 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	if (session->focus_uri && !session->backend_session) {
-		gchar *chat_title = sipe_chat_get_name(session->focus_uri);
+	if (!session->chat_session->backend) {
 		gchar *self = sip_uri_self(sipe_private);
 
-		/* create or join existing chat */
-		session->backend_session = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
-								    session->chat_id,
-								    chat_title,
-								    self,
-								    TRUE);
-		session->chat_title = chat_title;
+		/* create chat */
+		session->chat_session->backend = sipe_backend_chat_create(SIPE_CORE_PUBLIC,
+									  session->chat_session,
+									  session->chat_session->title,
+									  self);
 		just_joined = TRUE;
 		/* @TODO ask for full state (re-subscribe) if it was a partial one -
 		 * this is to obtain full list of conference participants.
@@ -713,7 +976,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	if ((xn_subject = sipe_xml_child(xn_conference_info, "conference-description/subject"))) {
 		g_free(session->subject);
 		session->subject = sipe_xml_data(xn_subject);
-		sipe_backend_chat_topic(session->backend_session, session->subject);
+		sipe_backend_chat_topic(session->chat_session->backend, session->subject);
 		SIPE_DEBUG_INFO("sipe_process_conference: subject=%s", session->subject ? session->subject : "");
 	}
 
@@ -745,35 +1008,45 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		gchar *self = sip_uri_self(sipe_private);
 
 		if (sipe_strequal("deleted", state)) {
-			if (sipe_backend_chat_find(session->backend_session, user_uri)) {
-				sipe_backend_chat_remove(session->backend_session,
+			if (sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
+				sipe_backend_chat_remove(session->chat_session->backend,
 							 user_uri);
 			}
 		} else {
 			/* endpoints */
 			const sipe_xml *endpoint;
 			for (endpoint = sipe_xml_child(node, "endpoint"); endpoint; endpoint = sipe_xml_twin(endpoint)) {
-				if (sipe_strequal("chat", sipe_xml_attribute(endpoint, "session-type"))) {
-					gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "status"));
-					if (sipe_strequal("connected", status)) {
-						is_in_im_mcu = TRUE;
-						if (!sipe_backend_chat_find(session->backend_session, user_uri)) {
-							sipe_backend_chat_add(session->backend_session,
-									      user_uri,
-									      !just_joined && g_strcasecmp(user_uri, self));
-						}
-						if (is_operator) {
-							sipe_backend_chat_operator(session->backend_session,
-										   user_uri);
-						}
+				const gchar *session_type;
+				gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "status"));
+				gboolean connected = sipe_strequal("connected", status);
+				g_free(status);
+
+				if (!connected)
+					continue;
+
+				session_type = sipe_xml_attribute(endpoint, "session-type");
+
+				if (sipe_strequal("chat", session_type)) {
+					is_in_im_mcu = TRUE;
+					if (!sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
+						sipe_backend_chat_add(session->chat_session->backend,
+								      user_uri,
+								      !just_joined && g_ascii_strcasecmp(user_uri, self));
 					}
-					g_free(status);
-					break;
+					if (is_operator) {
+						sipe_backend_chat_operator(session->chat_session->backend,
+									   user_uri);
+					}
+				} else if (sipe_strequal("audio-video", session_type)) {
+#ifdef HAVE_VV
+					if (!session->is_call)
+						audio_was_added = TRUE;
+#endif
 				}
 			}
 			if (!is_in_im_mcu) {
-				if (sipe_backend_chat_find(session->backend_session, user_uri)) {
-					sipe_backend_chat_remove(session->backend_session,
+				if (sipe_backend_chat_find(session->chat_session->backend, user_uri)) {
+					sipe_backend_chat_remove(session->chat_session->backend,
 								 user_uri);
 				}
 			}
@@ -781,6 +1054,15 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		g_free(role);
 		g_free(self);
 	}
+
+#ifdef HAVE_VV
+	if (audio_was_added) {
+		session->is_call = TRUE;
+		ask_accept_voice_conference(sipe_private, focus_uri, NULL,
+					    (SipeUserAskCb) call_accept_cb,
+					    (SipeUserAskCb) call_decline_cb);
+	}
+#endif
 
 	/* entity-view, locked */
 	for (node = sipe_xml_child(xn_conference_info, "conference-view/entity-view");
@@ -796,12 +1078,12 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 				gboolean prev_locked = session->locked;
 				session->locked = sipe_strequal(locked, "true");
 				if (prev_locked && !session->locked) {
-					sipe_present_info(sipe_private, session,
-						_("This conference is no longer locked. Additional participants can now join."));
+					sipe_user_present_info(sipe_private, session,
+							       _("This conference is no longer locked. Additional participants can now join."));
 				}
 				if (!prev_locked && session->locked) {
-					sipe_present_info(sipe_private, session,
-						_("This conference is locked. Nobody else can join the conference while it is locked."));
+					sipe_user_present_info(sipe_private, session,
+							       _("This conference is locked. Nobody else can join the conference while it is locked."));
 				}
 
 				SIPE_DEBUG_INFO("sipe_process_conference: session->locked=%s",
@@ -822,7 +1104,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 			dialog->with = g_strdup(session->im_mcu_uri);
 
 			/* send INVITE to IM MCU */
-			sipe_invite(sipe_private, session, dialog->with, NULL, NULL, NULL, FALSE);
+			sipe_im_invite(sipe_private, session, dialog->with, NULL, NULL, NULL, FALSE);
 		}
 	}
 
@@ -833,9 +1115,9 @@ void
 sipe_conf_immcu_closed(struct sipe_core_private *sipe_private,
 		       struct sip_session *session)
 {
-	sipe_present_info(sipe_private, session,
-			  _("You have been disconnected from this conference."));
-	sipe_backend_chat_close(session->backend_session);
+	sipe_user_present_info(sipe_private, session,
+			       _("You have been disconnected from this conference."));
+	sipe_backend_chat_close(session->chat_session->backend);
 }
 
 void
@@ -881,7 +1163,7 @@ sipe_process_imdn(struct sipe_core_private *sipe_private,
 	for (node = sipe_xml_child(xn_imdn, "recipient"); node; node = sipe_xml_twin(node)) {
 		gchar *tmp = parse_from(sipe_xml_attribute(node, "uri"));
 		gchar *uri = parse_from(tmp);
-		sipe_present_message_undelivered_err(sipe_private, session, -1, -1, uri, message);
+		sipe_user_present_message_undelivered(sipe_private, session, -1, -1, uri, message);
 		g_free(tmp);
 		g_free(uri);
 	}
@@ -895,6 +1177,35 @@ sipe_process_imdn(struct sipe_core_private *sipe_private,
 	g_free(with);
 }
 
+void sipe_core_conf_make_leader(struct sipe_core_public *sipe_public,
+				gpointer parameter,
+				const gchar *buddy_name)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_chat_session *chat_session = parameter;
+	struct sip_session *session;
+
+	SIPE_DEBUG_INFO("sipe_core_conf_make_leader: chat_title=%s",
+			chat_session->title);
+
+	session = sipe_session_find_chat(sipe_private, chat_session);
+	sipe_conf_modify_user_role(sipe_private, session, buddy_name);
+}
+
+void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
+				gpointer parameter,
+				const gchar *buddy_name)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_chat_session *chat_session = parameter;
+	struct sip_session *session;
+
+	SIPE_DEBUG_INFO("sipe_core_conf_remove_from: chat_title=%s",
+			chat_session->title);
+
+	session = sipe_session_find_chat(sipe_private, chat_session);
+	sipe_conf_delete_user(sipe_private, session, buddy_name);
+}
 
 /*
   Local Variables:

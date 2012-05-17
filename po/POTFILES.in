@@ -2,15 +2,28 @@
 [encoding: UTF-8]
 
 src/core/sip-transport.c
-src/core/sipe.c
+src/core/sipe-buddy.c
 src/core/sipe-cal.c
+src/core/sipe-certificate.c
 src/core/sipe-chat.c
 src/core/sipe-conf.c
 src/core/sipe-core.c
 src/core/sipe-domino.c
 src/core/sipe-ft.c
+src/core/sipe-ft-tftp.c
+src/core/sipe-group.c
+src/core/sipe-groupchat.c
+src/core/sipe-im.c
 src/core/sipe-incoming.c
 src/core/sipe-media.c
-src/purple/purple-ft.c
+src/core/sipe-notify.c
+src/core/sipe-ocs2007.c
+src/core/sipe-status.c
+src/core/sipe-user.c
+src/purple/purple-buddy.c
+src/purple/purple-chat.c
+src/purple/purple-groupchat.c
+src/purple/purple-im.c
 src/purple/purple-plugin.c
+src/purple/purple-search.c
 src/purple/purple-transport.c

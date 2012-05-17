@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
@@ -86,7 +86,12 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	if (contentlength) {
 		msg->bodylen = strtol(contentlength,NULL,10);
 	} else {
-		SIPE_DEBUG_FATAL_NOFORMAT("sipmsg_parse_header(): Content-Length header not found");
+		const gchar *tmp = sipmsg_find_header(msg, "Transfer-Encoding");
+		if (tmp && sipe_strcase_equal(tmp, "chunked")) {
+			msg->bodylen = SIPMSG_BODYLEN_CHUNKED;
+		} else {
+			SIPE_DEBUG_FATAL_NOFORMAT("sipmsg_parse_header(): Content-Length header not found");
+		}
 	}
 	if(msg->response) {
 		const gchar *tmp;
@@ -127,7 +132,7 @@ struct sipmsg *sipmsg_copy(const struct sipmsg *other) {
 	}
 
 	msg->bodylen	= other->bodylen;
-	msg->body	= g_memdup(other->body, other->bodylen);
+	msg->body	= g_strdup(other->body);
 	msg->signature	= g_strdup(other->signature);
 	msg->rand	= g_strdup(other->rand);
 	msg->num	= g_strdup(other->num);
@@ -232,7 +237,7 @@ void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]) {
 
 		elem = entry->data;
 		while (keepers[i]) {
-			if (!g_strcasecmp(elem->name, keepers[i])) {
+			if (!g_ascii_strcasecmp(elem->name, keepers[i])) {
 				keeper = TRUE;
 				break;
 			}
@@ -264,16 +269,18 @@ void sipmsg_merge_new_headers(struct sipmsg *msg) {
 }
 
 void sipmsg_free(struct sipmsg *msg) {
-	sipe_utils_nameval_free(msg->headers);
-	sipe_utils_nameval_free(msg->new_headers);
-	g_free(msg->signature);
-	g_free(msg->rand);
-	g_free(msg->num);
-	g_free(msg->responsestr);
-	g_free(msg->method);
-	g_free(msg->target);
-	g_free(msg->body);
-	g_free(msg);
+	if (msg) {
+		sipe_utils_nameval_free(msg->headers);
+		sipe_utils_nameval_free(msg->new_headers);
+		g_free(msg->signature);
+		g_free(msg->rand);
+		g_free(msg->num);
+		g_free(msg->responsestr);
+		g_free(msg->method);
+		g_free(msg->target);
+		g_free(msg->body);
+		g_free(msg);
+	}
 }
 
 void sipmsg_remove_header_now(struct sipmsg *msg, const gchar *name) {
@@ -331,6 +338,18 @@ gchar *sipmsg_find_part_of_header(const char *hdr, const char * before, const ch
 	res2 = g_strdup(tmp);
 	//printf("returning %s\n", res2);
 	return res2;
+}
+
+int sipmsg_parse_cseq(struct sipmsg *msg)
+{
+	int res = -1;
+	gchar **items;
+	items = g_strsplit(sipmsg_find_header(msg, "CSeq"), " ", 1);
+	if (items[0]) {
+		res = atoi(items[0]);
+	}
+	g_strfreev(items);
+	return res;
 }
 
 /**
@@ -420,7 +439,7 @@ void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
  *  method such as NTLM or Kerberos
  */
 
-gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
+const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	GSList *tmp;
 	struct sipnameval *elem;
 	int name_len = strlen(name);
@@ -431,7 +450,7 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 		if (elem && elem->name &&
 		    (sipe_strcase_equal(elem->name,"WWW-Authenticate") ||
 		     sipe_strcase_equal(elem->name,"Authentication-Info")) ) {
-			if (!g_strncasecmp((gchar *)elem->value, name, name_len)) {
+			if (!g_ascii_strncasecmp((gchar *)elem->value, name, name_len)) {
 				/* SIPE_DEBUG_INFO("elem->value: %s", elem->value); */
 				return elem->value;
 			}
@@ -443,7 +462,14 @@ gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	return NULL;
 }
 
-gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
+/**
+ * Parses headers-like 'msgr' attribute of INVITE's 'ms_text_format' header.
+ * Then retrieves value of 'X-MMS-IM-Format'.
+
+ * 'msgr' typically looks like:
+ * X-MMS-IM-Format: FN=Microsoft%20Sans%20Serif; EF=BI; CO=800000; CS=0; PF=22
+ */
+static gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
 	gchar *msgr2;
 	gsize msgr_dec64_len;
 	guchar *msgr_dec64;
@@ -501,7 +527,12 @@ gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format) {
 	return res;
 }
 
-gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
+static void msn_parse_format(const char *mime, char **pre_ret, char **post_ret);
+
+/**
+ * Translates X-MMS-IM format to HTML presentation.
+ */
+static gchar *sipmsg_apply_x_mms_im_format(const char *x_mms_im_format, gchar *body) {
 	char *pre, *post;
 	gchar *res;
 
@@ -591,7 +622,23 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 		}
 	}
 
-	if (!g_str_has_prefix(ms_text_format, "text/html")) { // NOT html
+	if (g_str_has_prefix(ms_text_format, "text/html")) {
+		/*
+		 * HTML uses tags for formatting, not line breaks. But
+		 * clients still might render them, so we need to remove
+		 * them to avoid incorrect text rendering.
+		 */
+		gchar *d = res;
+		const gchar *s = res;
+		gchar c;
+
+		/* No ANSI C nor glib function seems to exist for this :-( */
+		while ((c = *s++))
+			if ((c != '\n') && (c != '\r'))
+				*d++ = c;
+		*d = c;
+
+	} else {
 		char *tmp = res;
 		res = g_markup_escape_text(res, -1); // as this is not html
 		g_free(tmp);
@@ -612,7 +659,59 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 	return res;
 }
 
+static gchar *
+get_reason(struct sipmsg *msg, const gchar *header)
+{
+	const gchar *diagnostics = sipmsg_find_header(msg, header);
+	if (diagnostics)
+		return sipmsg_find_part_of_header(diagnostics, "reason=\"", "\"", NULL);
 
+	return NULL;
+}
+
+gchar *
+sipmsg_get_ms_diagnostics_reason(struct sipmsg *msg)
+{
+	return get_reason(msg, "ms-diagnostics");
+}
+
+gchar *
+sipmsg_get_ms_diagnostics_public_reason(struct sipmsg *msg)
+{
+	return get_reason(msg, "ms-diagnostics-public");
+}
+
+int
+sipmsg_parse_warning(struct sipmsg *msg, gchar **reason)
+{
+	/*
+	 * Example header:
+	 * Warning: 310 lcs.microsoft.com "You are currently not using the recommended version of the client"
+	 */
+	const gchar *hdr = sipmsg_find_header(msg, "Warning");
+	int code = -1;
+
+	if (reason)
+		*reason = NULL;
+
+	if (hdr) {
+		gchar **parts = g_strsplit(hdr, " ", 3);
+
+		if (parts[0]) {
+			code = atoi(parts[0]);
+
+			if (reason && parts[1] && parts[2]) {
+				size_t len = strlen(parts[2]);
+				if (len > 2 && parts[2][0] == '"' && parts[2][len - 1] == '"')
+					*reason = g_strndup(parts[2] + 1, len - 2);
+			}
+		}
+
+		g_strfreev(parts);
+	}
+
+	return code;
+}
 
 
 
@@ -623,44 +722,6 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 /* from internal.h */
 #define MSG_LEN 2048
 #define BUF_LEN MSG_LEN
-
-static
-gchar *sipmsg_uri_unescape(const gchar *string)
-{
-	gchar *unescaped, *tmp;
-
-	if (!string) return(NULL);
-
-#if GLIB_CHECK_VERSION(2,16,0)
-	unescaped = g_uri_unescape_string(string, NULL);
-#else
-	/* loosely based on libpurple/util.c:purple_url_decode() */
-	{
-		gsize i = 0;
-		gsize len = strlen(string);
-
-		unescaped = g_malloc(len + 1);
-		while (len-- > 0) {
-			gchar c = *string++;
-			if ((len >= 2) && (c == '%')) {
-				char hex[3];
-				strncpy(hex, string, 2);
-				hex[2] = '\0';
-				c = strtol(hex, NULL, 16);
-				string += 2;
-				len -= 2;
-			}
-			unescaped[i++] = c;
-		}
-		unescaped[i] = '\0';
-	}
-#endif
-
-	if (!g_utf8_validate(unescaped, -1, (const gchar **)&tmp))
-		*tmp = '\0';
-
-	return(unescaped);
-}
 
 void
 msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
@@ -763,7 +824,7 @@ msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 		}
 	}
 
-	cur = sipmsg_uri_unescape(pre->str);
+	cur = sipe_utils_uri_unescape(pre->str);
 	g_string_free(pre, TRUE);
 
 	if (pre_ret != NULL)
@@ -771,7 +832,7 @@ msn_parse_format(const char *mime, char **pre_ret, char **post_ret)
 	else
 		g_free(cur);
 
-	cur = sipmsg_uri_unescape(post->str);
+	cur = sipe_utils_uri_unescape(post->str);
 	g_string_free(post, TRUE);
 
 	if (post_ret != NULL)
@@ -806,7 +867,7 @@ encode_spaces(const char *str)
 }
 
 void
-msn_import_html(const char *html, char **attributes, char **message)
+sipe_parse_html(const char *html, char **attributes, char **message)
 {
 	int len, retcount = 0;
 	const char *c;

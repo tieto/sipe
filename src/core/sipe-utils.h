@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2012 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,6 +111,16 @@ gchar *
 get_epid(struct sipe_core_private *sipe_private);
 
 /**
+ * Returns UUID value.
+ *
+ * @param sipe_private (in) SIPE core private data
+ *
+ * @return uuid. Must be g_free()'d.
+ */
+gchar *
+get_uuid(struct sipe_core_private *sipe_private);
+
+/**
  * Generate Call ID
  *
  * @return Call ID. Must be g_free()'d.
@@ -164,15 +174,6 @@ gchar *get_contact(const struct sipe_core_private *sipe_private);
 gchar *parse_from(const gchar *hdr);
 
 /**
- * Parses CSeq from SIP header
- *
- * @param hdr (in) CSeqm header
- *
- * @return int type CSeq value (i.e. without method).
- */
-int parse_cseq(const gchar *hdr);
-
-/**
  * Create sip: URI from name
  *
  * @param name (in)
@@ -198,6 +199,25 @@ gchar *sip_uri_from_name(const gchar *name);
  * @return URI with sip: prefix. Must be g_free()'d.
  */
 gchar *sip_uri(const gchar *string);
+
+/**
+ * Create sip: URI from name or sip: URI. Checks for invalid characters
+ *
+ * @param string (in) name or sip: URI
+ *
+ * @return URI with sip: prefix. Returns NULL if @c string contains invalid
+ *         characters. Must be g_free()'d.
+ */
+gchar *sip_uri_if_valid(const gchar *string);
+
+/**
+ * Returns pointer to URI without sip: prefix if any (doesn't allocate memory)
+ *
+ * @param sip_uri SIP URI possibly with sip: prefix. Example: sip:first.last@hq.company.com
+ *
+ * @return pointer to URL without sip: prefix. Coresponding example: first.last@hq.company.com
+ */
+const gchar *sipe_get_no_sip_uri(const gchar *sip_uri);
 
 /**
  * Tries to figure out if contact alias which stored locally
@@ -266,6 +286,24 @@ gboolean sipe_strequal(const gchar *left, const gchar *right);
  *
  */
 gboolean sipe_strcase_equal(const gchar *left, const gchar *right);
+
+/**
+ * Compares two strings
+ *
+ * Unlike strcmp(), this function will not crash if one or both of the
+ * strings are @c NULL.
+ *
+ * Same as g_strcmp0 (defined only for >= 2.16) to maintain
+ * our backward compatibility. The declaration is compatible to
+ * @c GCompareFunc.
+ *
+ * @param a A string
+ * @param b A string to compare with a
+ *
+ * @return negative value if a < b; zero if a = b; positive value if a > b.
+ *
+ */
+gint sipe_strcompare(gconstpointer a, gconstpointer b);
 
 /**
  * Parses a timestamp in ISO8601 format and returns a time_t.
@@ -398,17 +436,12 @@ gchar *sipe_utils_str_replace(const gchar *string,
 void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 			      const gchar *unread);
 /**
- * Returns local IP address suitable for connection.
+ * Checks whether given IP address belongs to private block as defined in RFC1918
  *
- * purple_network_get_my_ip() will not do this, because it might return an
- * address within 169.254.x.x range that was assigned to interface disconnected
- * from the network (when multiple network adapters are available). This is a
- * copy-paste from libpurple's network.c, only change is that link local addresses
- * are ignored.
- *
- * Maybe this should be fixed in libpurple or some better solution found.
+ * @param ip IPv4 address in "X.X.X.X" format
+ * @return @c TRUE if address is private
  */
-const char * sipe_utils_get_suitable_local_ip(int fd);
+gboolean sipe_utils_ip_is_private(const char *ip);
 
 /**
  * Generate presence key
@@ -429,3 +462,34 @@ gchar *sipe_utils_presence_key(const gchar *uri);
  */
 gchar *sipe_utils_subscription_key(const gchar *event,
 				   const gchar *uri);
+
+/**
+ * Decodes a URI into a plain string.
+ *
+ * @param string the string to translate.
+ *
+ * @return the resulting string. Must be g_free()'d after use.
+ */
+gchar *sipe_utils_uri_unescape(const gchar *string);
+
+/**
+ * Tests whether given string is a Uniform Resource Identifier of audio/video
+ * conference
+ *
+ * @param uri a string
+ * @return @c TRUE if the string represents AV conference URI
+ */
+gboolean sipe_utils_is_avconf_uri(const gchar *uri);
+
+/**
+ * Inserts in item in the list only if the value isn't already in that list
+ *
+ * @param list a singly linked list
+ * @param data the item to insert
+ * @param fund function to use to compare the values
+ *
+ * @return the new list head
+ */
+GSList *
+slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func);
+
