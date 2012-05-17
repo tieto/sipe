@@ -62,7 +62,8 @@ pidgin-sipe (1.13.1-0.1) unstable; urgency=low
         - update-glib-2.32.patch
   * Add libnice-dev and libgstreamer0.10-dev to Build-Depends.
   * Bump Standards-Version to 3.9.3.
-  * Fix lintian warning debian-rules-missing-recommended-target.
+  * Fix lintian warnings debian-rules-missing-recommended-target
+    and binary-control-field-duplicates-source.
   * Remove usage of quilt.
   * Add Vcs-* fields to debian/control.
 

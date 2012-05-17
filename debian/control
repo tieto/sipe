@@ -13,7 +13,6 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/pidgin-sipe.git
 
 Package: pidgin-sipe
 Section: net
-Priority: optional
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Pidgin protocol plugin to connect to MS Office Communicator
