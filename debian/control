@@ -16,6 +16,7 @@ Package: pidgin-sipe
 Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: gstreamer0.10-ffmpeg, gstreamer0.10-x
 Description: Pidgin protocol plugin to connect to MS Office Communicator
  A third-party plugin for the Pidgin multi-protocol instant messenger.
  It implements the extended version of SIP/SIMPLE used by various products:

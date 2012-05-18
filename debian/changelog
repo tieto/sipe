@@ -60,6 +60,8 @@ pidgin-sipe (1.13.1-1) unstable; urgency=low
         - sipe-purple-2.8.0.patch
         - update-glib-2.32.patch
   * Add libnice-dev and libgstreamer0.10-dev to Build-Depends.
+  * Recommend gstreamer0.10-x and gstreamer0.10-ffmpeg packages for
+    Voice&Video support.
   * Bump Standards-Version to 3.9.3.
   * Fix lintian warnings debian-rules-missing-recommended-target
     and binary-control-field-duplicates-source.
