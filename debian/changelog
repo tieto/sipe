@@ -1,6 +1,5 @@
-pidgin-sipe (1.13.1-0.1) unstable; urgency=low
+pidgin-sipe (1.13.1-1) unstable; urgency=low
 
-  * Non-maintainer upload.
   * New upstream release (Closes: #646389).
         - detect incompatible encryption level with Lync
         - purple: add URI validity check to Add Buddy callback
@@ -66,6 +65,7 @@ pidgin-sipe (1.13.1-0.1) unstable; urgency=low
     and binary-control-field-duplicates-source.
   * Remove usage of quilt.
   * Add Vcs-* fields to debian/control.
+  * Add Jakub Adam to Uploaders.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 11 May 2012 14:18:15 +0200
 
