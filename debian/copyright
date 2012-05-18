@@ -1,58 +1,37 @@
-This work was packaged for Debian by:
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: The SIPE Project - Pidgin plugin for Microsoft LCS/OCS
+Source: http://repo.or.cz/w/siplcs.git
 
-  Anibal Avelar <aavelar@cofradia.org> on Wed, 13 Jun 2007 19:12:35 -0500.
+Files: *
+Copyright: 2007-2010, Anibal Avelar <debianmx@gmail.com>
+           2010-2012, Jakub Adam <jakub.adam@ktknet.cz>
+           2008, Novell, Inc.
+           2009-2010, pier11 <pier11@operamail.com>
+           2007-2012, SIPE Project
+           2011-2012, Stefan Becker <chemobejk@gmail.com>
+           2005, Thomas Butter <butter@uni-mannheim.de>
+           2010, Tomáš Hrabčík <tomas.hrabcik@tieto.com>
+License: GPL-2+
 
-It was downloaded from:
+Files: debian/*
+Copyright: 2007, Anibal Avelar <aavelar@cofradia.org>
+           2012, Jakub Adam <jakub.adam@ktknet.cz>
+License: GPL-2+
 
-  <http://sourceforge.net/projects/sipe/files/>
-
-Upstream Authors:
-
-  Anibal Avelar <debianmx@gmail.com>
-  Stefan Becker <stefan.becker@nokia.com>
-  pier11        <pier11@operamail.com>
-  Jakub Adam    <jakub.adam@tieto.com>
-  Tomáš Hrabčík <tomas.hrabcik@tieto.com>
-  Gabriel Burt  <gburt@novell.com> (retired)
-  Daniel Beichl <daniel_beichl@gmx.net> (retired)
-
-  Based on the initial SIP/SIMPLE gaim protocol plugin by:
-
-  Thomas Butter <butter@uni-mannheim.de>
-
-Copyright:
-
-  Copyright (C) 2010      Jakub Adam
-  Copyright (C) 2010      Tomáš Hrabčík
-  Copyright (C) 2009-2010 pier11
-  Copyright (C) 2008      Novell, Inc.
-  Copyright (C) 2007-2010 SIPE Project
-  Copyright (C) 2007-2010 Anibal Avelar
-  Copyright (C) 2005      Thomas Butter
-
-License:
-
-  This package is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This package is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this package; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
-
-On Debian systems, the complete text of the GNU General Public
-License version 2 can be found in `/usr/share/common-licenses/GPL-2'.
-
-Debian packaging is:
-
-   Copyright (C) 2007 Anibal Avelar <aavelar@cofradia.org>
-
-You can redistribute it and/or modify it under the terms of the
-GNU General Public License as published by Free Software Foundation;
-either version 2 of the License, or (at your option) any later version.
+License: GPL-2+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this package; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+ .
+ On Debian systems, the complete text of the GNU General Public
+ License version 2 can be found in `/usr/share/common-licenses/GPL-2'.

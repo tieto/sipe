@@ -68,6 +68,7 @@ pidgin-sipe (1.13.1-1) unstable; urgency=low
   * Remove usage of quilt.
   * Add Vcs-* fields to debian/control.
   * Add Jakub Adam to Uploaders.
+  * Updated debian/copyright and converted to machine-readable format.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 11 May 2012 14:18:15 +0200
 
