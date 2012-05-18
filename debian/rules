@@ -39,7 +39,10 @@ clean:
 	dh_testroot
 	rm -f build-stamp configure-stamp
 	[ ! -f Makefile ] || $(MAKE) distclean
-	-rm -f config.sub config.guess config.log configure aclocal.m4 libtool
+	-rm -f config.sub config.guess config.log configure aclocal.m4 libtool \
+	  INSTALL compile config.h.in depcomp install-sh intltool-extract.in \
+	  intltool-merge.in intltool-update.in ltmain.sh missing mkinstalldirs
+	find \( -name Makefile.in -o -name Makefile.in.in \) -delete
 	dh_clean
 
 install: build
