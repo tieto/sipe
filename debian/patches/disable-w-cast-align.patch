@@ -1,0 +1,42 @@
+From: Stefan Becker <chemobejk@gmail.com>
+Date: Wed, 18 Apr 2012 13:17:18 +0300
+Subject: disable-w-cast-align
+
+gstreamer interfaces don't compile with -Wcast-align on ARM, MIPS
+and SPARC targets. Disable this warning in purple-media.c.
+---
+ src/purple/purple-media.c |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/src/purple/purple-media.c b/src/purple/purple-media.c
+index df91569..25f09c9 100644
+--- a/src/purple/purple-media.c
++++ b/src/purple/purple-media.c
+@@ -33,7 +33,6 @@
+ #include "sipe-common.h"
+ 
+ #include "mediamanager.h"
+-#include "media-gst.h"
+ #include "agent.h"
+ 
+ #include "sipe-backend.h"
+@@ -46,12 +45,19 @@
+  * libpurple and libfarsight APIs. Therefore we need to disable the deprecated
+  * warning so that the code still compiles for platforms that enable it.
+  *
++ * GStreamer interfaces fail to compile on ARM architecture with -Wcast-align
++ *
+  * Diagnostic #pragma was added in GCC 4.2.0
+  */
+ #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
+ #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
++#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__)
++#pragma GCC diagnostic ignored "-Wcast-align"
++#endif
+ #endif
+ 
++#include "media-gst.h"
++
+ struct sipe_backend_media {
+ 	PurpleMedia *m;
+ 	GSList *streams;
