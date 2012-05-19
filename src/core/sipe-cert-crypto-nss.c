@@ -164,7 +164,7 @@ static gchar *sign_cert_or_certreq(CERTCertificate *cert,
 			SECOidTag signtag = SEC_GetSignatureAlgorithmOidTag(private->keyType,
 									    SEC_OID_UNKNOWN);
 
-			if (signtag) {
+			if (signtag != SEC_OID_UNKNOWN) {
 				SECItem raw;
 
 				if (!SEC_DerSignData(arena,
@@ -388,20 +388,30 @@ gpointer sipe_cert_crypto_test_certificate(struct sipe_cert_crypto *scc)
 										      certreq);
 
 				if (certificate) {
-					gchar *base64 = sign_cert_or_certreq(certificate,
-									     NULL,
-									     scc->private);
+					SECOidTag signtag = SEC_GetSignatureAlgorithmOidTag(scc->private->keyType,
+											    SEC_OID_UNKNOWN);
 
-					if (base64) {
-						cn = sipe_cert_crypto_decode(scc,
-									     base64);
-						if (!cn) {
-							SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: certificate decode failed");
+					if ((signtag != SEC_OID_UNKNOWN) &&
+					    (SECOID_SetAlgorithmID(certificate->arena,
+								   &certificate->signature,
+								   signtag, 0) == SECSuccess)) {
+						gchar *base64 = sign_cert_or_certreq(certificate,
+										     NULL,
+										     scc->private);
+
+						if (base64) {
+							cn = sipe_cert_crypto_decode(scc,
+										     base64);
+							if (!cn) {
+								SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: certificate decode failed");
+							}
+
+							g_free(base64);
+						} else {
+							SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: certificate signing failed");
 						}
-
-						g_free(base64);
 					} else {
-						SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: certificate signing failed");
+						SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_test_certificate: setting certificate signature algorithm ID failed");
 					}
 
 					CERT_DestroyCertificate(certificate);
