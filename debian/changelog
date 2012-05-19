@@ -1,6 +1,6 @@
 pidgin-sipe (1.13.1-1) unstable; urgency=low
 
-  * New upstream release (Closes: #646389).
+  * New upstream release (Closes: #646389 #672607).
         - detect incompatible encryption level with Lync
         - purple: add URI validity check to Add Buddy callback
         - new translations: Romanian (ro), Turkish (tr)
