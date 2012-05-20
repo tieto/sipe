@@ -51,7 +51,7 @@
  */
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#if defined(__ARMEL__) || defined(__ARMEB__)
+#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__)
 #pragma GCC diagnostic ignored "-Wcast-align"
 #endif
 #endif
