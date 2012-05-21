@@ -817,6 +817,20 @@ gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
 	return FALSE;
 }
 
+void sipe_core_media_test_call(struct sipe_core_public *sipe_public)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	if (!sipe_private->test_call_bot_uri) {
+		sipe_backend_notify_error(sipe_public,
+					  _("Unable to establish a call"),
+					  _("Audio Test Service is not available."));
+		return;
+	}
+
+	sipe_core_media_initiate_call(sipe_public,
+				      sipe_private->test_call_bot_uri, FALSE);
+}
+
 void
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)

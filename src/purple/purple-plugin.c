@@ -750,6 +750,14 @@ static void sipe_purple_join_conference_cb(PurpleConnection *gc,
 	}
 }
 
+#ifdef HAVE_VV
+static void sipe_purple_test_call(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	sipe_core_media_test_call(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+}
+#endif
+
 static void sipe_purple_show_join_conference(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
@@ -800,6 +808,11 @@ static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 
 	act = purple_plugin_action_new(_("Contact search..."), sipe_purple_show_find_contact);
 	menu = g_list_prepend(menu, act);
+
+#ifdef HAVE_VV
+	act = purple_plugin_action_new(_("Test call"), sipe_purple_test_call);
+	menu = g_list_prepend(menu, act);
+#endif
 
 	act = purple_plugin_action_new(_("Join scheduled conference..."), sipe_purple_show_join_conference);
 	menu = g_list_prepend(menu, act);

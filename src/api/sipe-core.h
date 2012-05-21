@@ -379,6 +379,13 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
  */
 gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public);
 
+/**
+ * Checks voice quality by making a call to the test service
+ *
+ * @param sipe_public (in) SIPE core data.
+ */
+void sipe_core_media_test_call(struct sipe_core_public *sipe_public);
+
 /* file transfer */
 struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);
 void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
