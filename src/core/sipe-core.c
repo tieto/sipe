@@ -436,6 +436,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_slist_free(sipe_private->our_publication_keys);
 
 #ifdef HAVE_VV
+	g_free(sipe_private->test_call_bot_uri);
 	g_free(sipe_private->mras_uri);
 	g_free(sipe_private->media_relay_username);
 	g_free(sipe_private->media_relay_password);
