@@ -35,6 +35,11 @@
 #include "mediamanager.h"
 #include "agent.h"
 
+#ifdef _WIN32
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
+#endif
+
 #include "sipe-backend.h"
 #include "sipe-core.h"
 

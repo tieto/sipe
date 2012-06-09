@@ -36,7 +36,8 @@
 #include "version.h"
 
 #ifdef _WIN32
-#include "win32/libc_interface.h"
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
 #endif
 
 #include "sipe-common.h"
