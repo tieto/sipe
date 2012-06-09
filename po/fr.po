@@ -13,7 +13,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2012-06-08 23:35+0000\n"
+"PO-Revision-Date: 2012-06-09 14:21+0000\n"
 "Last-Translator: Stéphane Aulery <lkppo@free.fr>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -90,7 +90,7 @@ msgstr "Réunion au sujet de"
 
 #: ../src/core/sipe-buddy.c:348
 msgid "Out of office note"
-msgstr "Sortie du bureau (office note)"
+msgstr "Sortie du bureau (message automatique)"
 
 #: ../src/core/sipe-buddy.c:348
 msgid "Note"
@@ -166,7 +166,7 @@ msgstr "Personnalisé1"
 
 #: ../src/core/sipe-buddy.c:1338
 msgid "Send email..."
-msgstr "Envoyer un email ..."
+msgstr "Envoyer un email..."
 
 #: ../src/core/sipe-cal.c:948
 msgid "Free"
@@ -327,7 +327,7 @@ msgstr "Licence"
 #. About note, part 9/13: known users
 #: ../src/core/sipe-core.c:194
 msgid "We support users in such organizations as"
-msgstr "Nous fournissons des services pour les utilisateurs de plusieurs organisations tel que"
+msgstr "Nous fournissons des services aux utilisateurs de plusieurs organisations tel que"
 
 #. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
@@ -379,7 +379,7 @@ msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Example: https://domino.corp.com/maildatabase.nsf"
-msgstr "Les URL de services email doivent être validées si elle est indiquées\nExemple : https://exchange.corp.com/EWS/Exchange.asmx⏎ Exemple : https://domino.corp.com/maildatabase.nsf"
+msgstr "L'URL des services email doit être valide si elle est indiquée\nExemple : https://exchange.corp.com/EWS/Exchange.asmx\nExemple : https://domino.corp.com/maildatabase.nsf"
 
 #. Translators: (!) should be as in localized Lotus Notes to be able to
 #. extract meeting location
@@ -872,7 +872,7 @@ msgid ""
 "\n"
 "Valid location will be something like\n"
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"
-msgstr "Entrer l'adresse du lieu de réunion que vous avez reçu avec l'invitation.\n\nUne adresse valide ressemble à\nmeet:sip:quelquun@entreprise.com;gruu;opaque=app:conf:focus:id:abcdef1234"
+msgstr "Saisissez l'adresse du lieu de réunion que vous avez reçu avec l'invitation.\n\nUne adresse valide ressemble à\nmeet:sip:quelquun@entreprise.com;gruu;opaque=app:conf:focus:id:abcdef1234"
 
 #: ../src/purple/purple-plugin.c:764
 msgid "_Join"
