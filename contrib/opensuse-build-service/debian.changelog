@@ -1,3 +1,14 @@
+pidgin-sipe (1.13.2-1) unstable; urgency=low
+
+  * New upstream version 1.13.2 "Bug Fixes II" (2012-06-10)
+	- tls: fix buffer overrun (Oleksandr Hryshchuk, Stefan Becker)
+	- win32: fix TCP connections (Stefan Becker)
+	- nsis: fix broken locale installation (Stefan Becker)
+	- updated translations: French (fr)
+	- various build fixes (Stefan Becker, Jakub Adam)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sun, 10 Jun 2012 15:53:00 +0300
+
 pidgin-sipe (1.13.1-1) unstable; urgency=low
 
   * New upstream version 1.13.1 "Bug Fixes I"
