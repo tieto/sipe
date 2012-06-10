@@ -7,16 +7,16 @@
 # Check this page for latest MinGW/Pidgin URLs if you get fetch errors!
 #
 # update Pidgin version here
-export PIDGIN_VERSION=2.10.1
+export PIDGIN_VERSION=2.10.4
 
 # must be absolute path
-export PIDGIN_DEV_ROOT=$(pwd -P)/build
+export PIDGIN_DEV_ROOT=$(pwd -P)/build-${PIDGIN_VERSION}
 export SOURCES_DIR=${PIDGIN_DEV_ROOT}/sources/
 export DEV_DIR=${PIDGIN_DEV_ROOT}/win32-dev
 export MINGW_DIR=${DEV_DIR}/mingw
 export PIDGIN_DIR=${PIDGIN_DEV_ROOT}/pidgin-${PIDGIN_VERSION}
 
-exec >fetch.log
+exec >fetch-${PIDGIN_VERSION}.log
 set -e
 
 echo 1>&2 create directory tree...
@@ -51,7 +51,7 @@ wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/libxml2-dev_
 wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/libxml2_2.7.4-1_win32.zip
 wget -nv http://developer.pidgin.im/static/win32/tcl-8.4.5.tar.gz
 wget -nv http://developer.pidgin.im/static/win32/gtkspell-2.0.16.tar.bz2
-wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/enchant_1.5.0-2_win32.zip
+wget -nv http://developer.pidgin.im/static/win32/enchant_1.6.0_win32.zip
 wget -nv http://developer.pidgin.im/static/win32/nss-3.12.5-nspr-4.8.2.tar.gz
 wget -nv http://developer.pidgin.im/static/win32/silc-toolkit-1.1.8.tar.gz
 wget -nv http://developer.pidgin.im/static/win32/meanwhile-1.0.2_daa2-win32.zip
@@ -65,7 +65,7 @@ unzip ${SOURCES_DIR}/gettext-tools-0.17.zip -d ${DEV_DIR}/gettext-0.17
 unzip ${SOURCES_DIR}/gettext-runtime-0.17-1.zip -d ${DEV_DIR}/gettext-0.17
 unzip ${SOURCES_DIR}/libxml2-dev_2.7.4-1_win32.zip -d ${DEV_DIR}/libxml2-2.7.4
 unzip ${SOURCES_DIR}/libxml2_2.7.4-1_win32.zip -d ${DEV_DIR}/libxml2-2.7.4
-unzip ${SOURCES_DIR}/enchant_1.5.0-2_win32.zip -d ${DEV_DIR}/enchant_1.5.0-2_win32
+unzip ${SOURCES_DIR}/enchant_1.6.0_win32.zip -d ${DEV_DIR}/enchant_1.6.0_win32
 unzip ${SOURCES_DIR}/meanwhile-1.0.2_daa2-win32.zip -d ${DEV_DIR}
 unzip ${SOURCES_DIR}/cyrus-sasl-2.1.22-daa1.zip -d ${DEV_DIR}
 unzip ${SOURCES_DIR}/intltool_0.40.4-1_win32.zip -d ${DEV_DIR}/intltool_0.40.4-1_win32
