@@ -6,14 +6,15 @@
 # 
 # Translators:
 # Anibal Avelar <debianmx@gmail.com>, 2012.
+# Bruno Martins <bmomartins@gmail.com>, 2012.
 # Filipe Boleto <fboleto@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2012-03-11 06:26+0000\n"
-"Last-Translator: Anibal Avelar <debianmx@gmail.com>\n"
+"PO-Revision-Date: 2012-06-15 22:58+0000\n"
+"Last-Translator: Bruno Martins <bmomartins@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -36,11 +37,11 @@ msgstr "Não URI para o serviço de provisionamento certificado previsto"
 
 #: ../src/core/sip-transport.c:1212
 msgid "Authentication failed"
-msgstr "Autenticacao falhou"
+msgstr "Autenticação falhou"
 
 #: ../src/core/sip-transport.c:1226
 msgid "Incompatible authentication scheme chosen"
-msgstr "Método de autenticação seleccionado errado"
+msgstr "O método de autenticação escolhido é incompatível"
 
 #: ../src/core/sip-transport.c:1243 ../src/core/sipe-notify.c:993
 #, c-format
@@ -51,25 +52,25 @@ msgstr "O pedido foi rejeitado pelo servidor: %s"
 #: ../src/core/sip-transport.c:1284 ../src/core/sip-transport.c:1308
 #: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:993
 msgid "no reason given"
-msgstr "Nenhuma razao aprensetada "
+msgstr "nenhuma razão apresentada"
 
 #: ../src/core/sip-transport.c:1259
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr "Nao foi encontrado: %s. Por favor contacte o seu Administrador "
+msgstr "Não encontrado: %s. Por favor contacte o seu administrador "
 
 #: ../src/core/sip-transport.c:1261
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr "Sip não está ligado para o endereço URI ou não existe "
+msgstr "Ou o SIP não está habilitado no URI de destino, ou não existe"
 
 #: ../src/core/sip-transport.c:1284 ../src/core/sip-transport.c:1308
 #, c-format
 msgid "Service unavailable: %s"
-msgstr "Serviço indesponível: %s"
+msgstr "Serviço indisponível: %s"
 
 #: ../src/core/sip-transport.c:1649
 msgid "Invalid message signature received"
-msgstr "Invalida mensagem de assinatura recebida "
+msgstr "Recebida uma assinatura de mensagem inválida"
 
 #: ../src/core/sipe-buddy.c:332
 msgid "Status"
@@ -438,7 +439,7 @@ msgstr "Sem memória"
 #: ../src/core/sipe-notify.c:1115 ../src/core/sipe-notify.c:1136
 #: ../src/purple/purple-search.c:102
 msgid "Other Contacts"
-msgstr "Outros contactos"
+msgstr "Outros Contactos"
 
 #: ../src/core/sipe-groupchat.c:333
 #, c-format
@@ -529,7 +530,7 @@ msgstr "Já está ligado noutro local"
 
 #: ../src/core/sipe-notify.c:987
 msgid "user disabled"
-msgstr "Utilizador desactivo"
+msgstr "Utilizador desabilitado"
 
 #: ../src/core/sipe-notify.c:989
 msgid "user moved"
@@ -558,7 +559,7 @@ msgstr "Empresa"
 
 #: ../src/core/sipe-ocs2007.c:466 ../src/purple/purple-buddy.c:503
 msgid "Public"
-msgstr "Publico"
+msgstr "Público"
 
 #: ../src/core/sipe-ocs2007.c:468
 msgid "Unknown"
@@ -600,7 +601,7 @@ msgstr "Grupos de acesso "
 
 #: ../src/core/sipe-status.c:60
 msgid "Inactive"
-msgstr "Inactivo"
+msgstr "Inativo"
 
 #: ../src/core/sipe-status.c:62
 msgid "Busy-Idle"
@@ -608,11 +609,11 @@ msgstr "Ocupado-Ocioso"
 
 #: ../src/core/sipe-status.c:64
 msgid "Be right back"
-msgstr "Volto ja "
+msgstr "Volto já"
 
 #: ../src/core/sipe-status.c:66
 msgid "Out to lunch"
-msgstr "Fora para almoco "
+msgstr "Ausente para almoço"
 
 #: ../src/core/sipe-status.c:69
 msgid "In a call"
@@ -620,7 +621,7 @@ msgstr "Numa chamada"
 
 #: ../src/core/sipe-status.c:70
 msgid "In a conference"
-msgstr "Numa conferência "
+msgstr "Numa conferência"
 
 #: ../src/core/sipe-status.c:71
 msgid "In a meeting"
@@ -628,7 +629,7 @@ msgstr "Numa reunião"
 
 #: ../src/core/sipe-status.c:73
 msgid "Urgent interruptions only"
-msgstr "Interrupções urgentes apenas"
+msgstr "Apenas interrupções urgentes"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -737,7 +738,7 @@ msgstr "Dispositivo"
 
 #: ../src/purple/purple-buddy.c:219 ../src/purple/purple-buddy.c:237
 msgid "you"
-msgstr "você"
+msgstr "tu"
 
 #: ../src/purple/purple-buddy.c:459
 msgid ""
