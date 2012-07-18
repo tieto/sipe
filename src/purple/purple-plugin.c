@@ -778,7 +778,9 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 		_("Enter meeting location string you received in the invitation.\n"
 		  "\n"
 		  "Valid location will be something like\n"
-		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"),
+		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+		  "or\n"
+		  "https://meet.company.com/someone/abcdef1234"),
 		fields,
 		_("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
 		_("_Cancel"), NULL,
