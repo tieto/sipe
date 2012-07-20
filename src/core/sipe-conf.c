@@ -294,6 +294,9 @@ parse_ocs_focus_uri(const gchar *uri)
 	const gchar *confkey;
 	size_t uri_len;
 
+	if (!uri)
+		return NULL;
+
 	// URI can have this prefix if it was typed in by the user
 	if (g_str_has_prefix(uri, "meet:")) {
 		uri += 5;
@@ -322,6 +325,9 @@ parse_lync_join_url(const gchar *uri)
 	gchar *focus_uri = NULL;
 	gchar **parts;
 	int parts_count = 0;
+
+	if (!uri)
+		return NULL;
 
 	if (g_str_has_prefix(uri, "https://")) {
 		uri += 8;
