@@ -425,6 +425,7 @@ struct ms_dlx_data {
 	guint   max_returns;
 	sipe_svc_callback *callback;
 	struct sipe_svc_session *session;
+	gchar *wsse_security;
 	/* must call ms_dlx_free() */
 	void (*failed_callback)(struct sipe_core_private *sipe_private,
 				struct ms_dlx_data *mdd);
@@ -440,6 +441,7 @@ static void ms_dlx_free(struct ms_dlx_data *mdd)
 	g_slist_free(mdd->search_rows);
 	sipe_svc_session_close(mdd->session);
 	g_free(mdd->other);
+	g_free(mdd->wsse_security);
 	g_free(mdd);
 }
 
@@ -506,6 +508,10 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 					      mdd->max_returns,
 					      mdd->callback,
 					      mdd)) {
+
+			/* keep webticket security token for potential further use */
+			mdd->wsse_security = g_strdup(wsse_security);
+
 			/* callback data passed down the line */
 			mdd = NULL;
 		}
