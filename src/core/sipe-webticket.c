@@ -94,36 +94,10 @@ static gchar *extract_raw_xml_attribute(const gchar *xml,
 	return(data);
 }
 
-static gchar *extract_raw_xml(const gchar *xml,
-			      const gchar *tag,
-			      gboolean include_tag)
-{
-	gchar *tag_start = g_strdup_printf("<%s", tag);
-	gchar *tag_end   = g_strdup_printf("</%s>", tag);
-	gchar *data      = NULL;
-	const gchar *start = strstr(xml, tag_start);
-
-	if (start) {
-		const gchar *end = strstr(start + strlen(tag_start), tag_end);
-		if (end) {
-			if (include_tag) {
-				data = g_strndup(start, end + strlen(tag_end) - start);
-			} else {
-				const gchar *tmp = strchr(start + strlen(tag_start), '>') + 1;
-				data = g_strndup(tmp, end - tmp);
-			}
-		}
-	}
-
-	g_free(tag_end);
-	g_free(tag_start);
-	return(data);
-}
-
 static gchar *generate_timestamp(const gchar *raw,
 				 const gchar *lifetime_tag)
 {
-	gchar *lifetime = extract_raw_xml(raw, lifetime_tag, FALSE);
+	gchar *lifetime = sipe_xml_extract_raw(raw, lifetime_tag, FALSE);
 	gchar *timestamp = NULL;
 	if (lifetime)
 		timestamp = g_strdup_printf("<wsu:Timestamp xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"timestamp\">%s</wsu:Timestamp>",
@@ -135,7 +109,7 @@ static gchar *generate_timestamp(const gchar *raw,
 static gchar *generate_fedbearer_wsse(const gchar *raw)
 {
 	gchar *timestamp = generate_timestamp(raw, "wst:Lifetime");
-	gchar *keydata   = extract_raw_xml(raw, "EncryptedData", TRUE);
+	gchar *keydata   = sipe_xml_extract_raw(raw, "EncryptedData", TRUE);
 	gchar *wsse_security = NULL;
 
 	if (timestamp && keydata) {
@@ -152,7 +126,7 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 				       struct sipe_tls_random *entropy)
 {
 	gchar *timestamp = generate_timestamp(raw, "Lifetime");
-	gchar *keydata   = extract_raw_xml(raw, "saml:Assertion", TRUE);
+	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
 	gchar *wsse_security = NULL;
 
 	if (timestamp && keydata) {
@@ -170,7 +144,7 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 			 *
 			 *       key = P_SHA1(Entropy_REQ, Entropy_RES)"
 			 */
-			gchar *entropy_res_base64 = extract_raw_xml(raw, "BinarySecret", FALSE);
+			gchar *entropy_res_base64 = sipe_xml_extract_raw(raw, "BinarySecret", FALSE);
 			gsize entropy_res_length;
 			guchar *entropy_response = g_base64_decode(entropy_res_base64,
 								   &entropy_res_length);
