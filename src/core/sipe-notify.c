@@ -92,6 +92,8 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 		if (sipe_strequal("ServerConfiguration", sipe_xml_attribute(node, "name"))) {
 			const gchar *dlx_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
 					"dlxExternalUrl" : "dlxInternalUrl";
+			const gchar *addressbook_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
+					"absExternalServerUrl" : "absInternalServerUrl";
 
 			g_free(sipe_private->focus_factory_uri);
 			sipe_private->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
@@ -102,6 +104,11 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 			sipe_private->dlx_uri = sipe_xml_data(sipe_xml_child(node, dlx_uri_str));
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->dlx_uri=%s",
 					sipe_private->dlx_uri ? sipe_private->dlx_uri : "");
+
+			g_free(sipe_private->addressbook_uri);
+			sipe_private->addressbook_uri = sipe_xml_data(sipe_xml_child(node, addressbook_uri_str));
+			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->addressbook_uri=%s",
+					sipe_private->addressbook_uri ? sipe_private->addressbook_uri : "");
 
 #ifdef HAVE_VV
 			g_free(sipe_private->test_call_bot_uri);

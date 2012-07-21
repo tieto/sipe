@@ -138,6 +138,9 @@ struct sipe_core_private {
 
 	/* [MS-DLX] server URI */
 	gchar *dlx_uri;
+
+	/* Addressbook server URI */
+	gchar *addressbook_uri;
 };
 
 /**
