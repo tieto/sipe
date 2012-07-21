@@ -126,7 +126,7 @@ void sipe_svc_session_close(struct sipe_svc_session *session)
 
 static void sipe_svc_https_response(int return_code,
 				    const gchar *body,
-				    SIPE_UNUSED_PARAMETER const gchar *content_type,
+				    SIPE_UNUSED_PARAMETER GSList *headers,
 				    HttpConn *conn,
 				    void *callback_data)
 {

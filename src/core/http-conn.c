@@ -528,7 +528,6 @@ http_conn_process_input_message(HttpConn *http_conn,
 	/* Other response */
 	else {
 		const char *set_cookie_hdr;
-		const char *content_type = sipmsg_find_header(msg, "Content-Type");
 		http_conn->retries = 0;
 
 		/* Set cookies.
@@ -562,7 +561,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		}
 
 		if (http_conn->callback) {
-			(*http_conn->callback)(msg->response, msg->body, content_type, http_conn, http_conn->data);
+			(*http_conn->callback)(msg->response, msg->body, msg->headers, http_conn, http_conn->data);
 		}
 	}
 }
