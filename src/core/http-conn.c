@@ -68,7 +68,7 @@ struct http_conn_struct {
 	char *url;
 	char *body;
 	char *content_type;
-	const gchar *additional_headers;
+	gchar *additional_headers;
 	HttpConnAuth *auth;
 	HttpConnCallback callback;
 	void *data;
@@ -104,6 +104,7 @@ http_conn_clone(HttpConn* http_conn)
 	res->url = g_strdup(http_conn->url);
 	res->body = g_strdup(http_conn->body);
 	res->content_type = g_strdup(http_conn->content_type);
+	res->additional_headers = g_strdup(http_conn->additional_headers);
 	res->auth = http_conn->auth;
 	res->callback = http_conn->callback;
 	res->data = http_conn->data;
@@ -131,6 +132,7 @@ http_conn_free(HttpConn* http_conn)
 	g_free(http_conn->url);
 	g_free(http_conn->body);
 	g_free(http_conn->content_type);
+	g_free(http_conn->additional_headers);
 
 	if (http_conn->sec_ctx) {
 		sip_sec_destroy_context(http_conn->sec_ctx);
@@ -321,7 +323,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 	http_conn->url = url;
 	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
-	http_conn->additional_headers = additional_headers;
+	http_conn->additional_headers = g_strdup(additional_headers);
 	http_conn->auth = auth;
 	http_conn->callback = callback;
 	http_conn->data = data;
