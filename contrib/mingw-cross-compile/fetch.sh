@@ -7,7 +7,7 @@
 # Check this page for latest MinGW/Pidgin URLs if you get fetch errors!
 #
 # update Pidgin version here
-export PIDGIN_VERSION=2.10.4
+export PIDGIN_VERSION=2.10.5
 
 # must be absolute path
 export PIDGIN_DEV_ROOT=$(pwd -P)/build-${PIDGIN_VERSION}
