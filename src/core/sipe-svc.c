@@ -386,7 +386,7 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 					   "  <Metadata>"
 					   "   <FromDialPad>false</FromDialPad>"
 					   "   <MaxResultNum>%d</MaxResultNum>"
-					   "   <ReturnList>displayName,msRTCSIP-PrimaryUserAddress,title,telephoneNumber,homePhone,mobile,otherTelephone,mail,company,country</ReturnList>"
+					   "   <ReturnList>displayName,msRTCSIP-PrimaryUserAddress,title,telephoneNumber,homePhone,mobile,otherTelephone,mail,company,country,photoRelPath,photoSize,photoHash</ReturnList>"
 					   "  </Metadata>"
 					   " </AbEntryRequest>"
 					   "</SearchAbEntry>",

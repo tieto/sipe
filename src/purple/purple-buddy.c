@@ -285,6 +285,33 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				    NULL);
 }
 
+void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
+				  const gchar *who,
+				  gpointer photo_data,
+				  gsize data_len,
+				  const gchar *photo_hash)
+{
+	PurpleAccount *account = sipe_public->backend_private->account;
+
+	purple_buddy_icons_set_for_user(account, who, photo_data,
+					data_len, photo_hash);
+}
+
+const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_public,
+					       const gchar *who)
+{
+	PurpleAccount *account = sipe_public->backend_private->account;
+	const gchar *result = NULL;
+
+	PurpleBuddyIcon *icon = purple_buddy_icons_find(account, who);
+	if (icon) {
+		result = purple_buddy_icon_get_checksum(icon);
+		purple_buddy_icon_unref(icon);
+	}
+
+	return result;
+}
+
 gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				      const gchar *group_name)
 {

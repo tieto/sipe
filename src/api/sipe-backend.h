@@ -857,6 +857,34 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   guint activity);
 
 /**
+ * Gives backend a photo image associated with a SIP URI. Backend has ownership
+ * of the data and must free it when not needed.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The name of the user whose photo is being set
+ * @param image_data The photo image data, must be g_free()'d by backend
+ * @param image_len Size of the image in Bytes
+ * @param photo_hash A data checksum provided by the server
+ */
+void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
+				  const gchar *who,
+				  gpointer image_data,
+				  gsize image_len,
+				  const gchar *photo_hash);
+
+/**
+ * Retrieves a photo hash stored together with image data by
+ * @c sipe_backend_buddy_set_photo. Value is used by the core to detect photo
+ * file changes on server.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The name of the user whose photo hash to retrieve
+ * @return a photo hash (may be NULL)
+ */
+const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_public,
+					       const gchar *who);
+
+/**
  * Called when a new internal group is about to be added. If this returns FALSE,
  * the group will not be added.
  *
