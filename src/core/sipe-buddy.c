@@ -72,7 +72,7 @@ struct photo_response_data {
  * Any pending photo requests to addressbook server are freed when account
  * disconnects.
  */
-GSList *pending_photo_requests = NULL;
+static GSList *pending_photo_requests = NULL;
 
 static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			      const gchar *uri);
