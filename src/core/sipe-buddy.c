@@ -64,16 +64,6 @@ struct photo_response_data {
 	HttpConn *conn;
 };
 
-/*
- * Intentionally not creating relation between photo request and sipe_buddy, in
- * future we might want to download our acount's photo (not having a sipe_buddy)
- * or get photos of people not in our buddy list (e.g. during contact search).
- *
- * Any pending photo requests to addressbook server are freed when account
- * disconnects.
- */
-static GSList *pending_photo_requests = NULL;
-
 static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			      const gchar *uri);
 static void photo_response_data_free(struct photo_response_data *data);
@@ -143,21 +133,17 @@ static gboolean buddy_free_cb(SIPE_UNUSED_PARAMETER gpointer key,
 
 void sipe_buddy_free_all(struct sipe_core_private *sipe_private)
 {
-	GSList *list = pending_photo_requests;
-
 	g_hash_table_foreach_steal(sipe_private->buddies,
 				   buddy_free_cb,
 				   NULL);
 
 	/* core is being deallocated, remove all its pending photo requests */
-	while (list) {
-		struct photo_response_data *data = list->data;
-		list = g_slist_next(list);
-		if (data->sipe_private == sipe_private) {
-			pending_photo_requests =
-				g_slist_remove(pending_photo_requests, data);
-			photo_response_data_free(data);
-		}
+	while (sipe_private->pending_photo_requests) {
+		struct photo_response_data *data =
+			sipe_private->pending_photo_requests->data;
+		sipe_private->pending_photo_requests =
+			g_slist_remove(sipe_private->pending_photo_requests, data);
+		photo_response_data_free(data);
 	}
 }
 
@@ -1237,6 +1223,7 @@ static void process_buddy_photo_response(int return_code, const char *body,
 		GSList *headers, SIPE_UNUSED_PARAMETER HttpConn *conn, void *data)
 {
 	struct photo_response_data *rdata = (struct photo_response_data *)data;
+	struct sipe_core_private *sipe_private = rdata->sipe_private;
 
 	if (return_code == 200) {
 		const gchar *len_str = sipe_utils_nameval_find(headers, "Content-Length");
@@ -1245,7 +1232,7 @@ static void process_buddy_photo_response(int return_code, const char *body,
 			gpointer photo = g_new(char, photo_size);
 			memcpy(photo, body, photo_size);
 
-			sipe_backend_buddy_set_photo(&rdata->sipe_private->public,
+			sipe_backend_buddy_set_photo(SIPE_CORE_PUBLIC,
 						     rdata->who,
 						     photo,
 						     photo_size,
@@ -1253,7 +1240,8 @@ static void process_buddy_photo_response(int return_code, const char *body,
 		}
 	}
 
-	pending_photo_requests = g_slist_remove(pending_photo_requests, rdata);
+	sipe_private->pending_photo_requests =
+		g_slist_remove(sipe_private->pending_photo_requests, rdata);
 	photo_response_data_free(rdata);
 }
 
@@ -1346,7 +1334,8 @@ static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
 			data);
 
 		if (data->conn) {
-			pending_photo_requests = g_slist_append(pending_photo_requests, data);
+			sipe_private->pending_photo_requests =
+				g_slist_append(sipe_private->pending_photo_requests, data);
 		} else {
 			photo_response_data_free(data);
 		}
