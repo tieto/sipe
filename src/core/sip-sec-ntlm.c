@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009, 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
@@ -523,9 +523,12 @@ NTOWFv1 (const char* password, SIPE_UNUSED_PARAMETER const char *user, SIPE_UNUS
 	int len_u = 2 * strlen(password); // utf16 should not be more
 	unsigned char *unicode_password = g_malloc(len_u);
 
-	len_u = unicode_strconvcopy((gchar *)unicode_password, password, len_u);
-	MD4 (unicode_password, len_u, result);
-	g_free(unicode_password);
+	/* well, if allocation failed the rest will crash & burn soon anyway... */
+	if (unicode_password) {
+		len_u = unicode_strconvcopy((gchar *)unicode_password, password, len_u);
+		MD4 (unicode_password, len_u, result);
+		g_free(unicode_password);
+	}
 }
 
 /*

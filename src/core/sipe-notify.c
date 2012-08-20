@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1075,18 +1075,24 @@ static void sipe_buddy_subscribe_cb(char *buddy_name,
 				    SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
 				    struct sipe_core_private *sipe_private)
 {
-	gchar *action_name = sipe_utils_presence_key(buddy_name);
-	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
 	guint time_range = (g_hash_table_size(sipe_private->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
-	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
 
-	sipe_schedule_mseconds(sipe_private,
-			       action_name,
-			       g_strdup(buddy_name),
-			       timeout,
-			       sipe_subscribe_presence_single,
-			       g_free);
-	g_free(action_name);
+	/*
+	 * g_hash_table_size() can never return 0, otherwise this function
+	 * wouldn't be called :-) But to keep Coverity happy...
+	 */
+	if (time_range) {
+		gchar *action_name = sipe_utils_presence_key(buddy_name);
+		guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
+
+		sipe_schedule_mseconds(sipe_private,
+				       action_name,
+				       g_strdup(buddy_name),
+				       timeout,
+				       sipe_subscribe_presence_single,
+				       g_free);
+		g_free(action_name);
+	}
 }
 
 static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_private,

@@ -1230,13 +1230,16 @@ static void process_buddy_photo_response(int return_code, const char *body,
 		if (len_str) {
 			gsize photo_size = atoi(len_str);
 			gpointer photo = g_new(char, photo_size);
-			memcpy(photo, body, photo_size);
 
-			sipe_backend_buddy_set_photo(SIPE_CORE_PUBLIC,
-						     rdata->who,
-						     photo,
-						     photo_size,
-						     rdata->photo_hash);
+			if (photo) {
+				memcpy(photo, body, photo_size);
+
+				sipe_backend_buddy_set_photo(SIPE_CORE_PUBLIC,
+							     rdata->who,
+							     photo,
+							     photo_size,
+							     rdata->photo_hash);
+			}
 		}
 	}
 

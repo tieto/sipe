@@ -438,6 +438,11 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
 		//sessionid = "sipe-voice-rawudp";
+
+		/* To avoid Coverity FORWARD_NULL warning. params_cnt is
+		 * still 0 so this is a no-op. libpurple API documentation
+		 * doesn't specify if params can be NULL or not. */
+		params = g_new0(GParameter, 1);
 	}
 
 	ensure_codecs_conf();
@@ -455,7 +460,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			++media->unconfirmed_streams;
 	}
 
-	if (params && media_relays)
+	if ((params_cnt > 2) && media_relays)
 		g_value_unset(&params[3].value);
 
 	g_free(params);
