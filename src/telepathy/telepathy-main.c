@@ -20,13 +20,82 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdlib.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <glib-object.h>
+#include <telepathy-glib/base-connection-manager.h>
+#include <telepathy-glib/run.h>
+
+G_BEGIN_DECLS
+/*
+ * Connection manager type - data structures
+ */
+typedef struct _SipeConnectionManagerClass {
+	TpBaseConnectionManagerClass parent_class;
+} SipeConnectionManagerClass;
+
+typedef struct _SipeConnectionManager {
+	TpBaseConnectionManager parent;
+} SipeConnectionManager;
+
+/*
+ * Connection manager type - type macros
+ */
+static GType sipe_connection_manager_get_type(void);
+#define SIPE_TYPE_CONNECTION_MANAGER \
+	(sipe_connection_manager_get_type())
+#define SIPE_CONNECTION_MANAGER(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST((obj), SIPE_TYPE_CONNECTION_MANAGER, \
+				    SipeConnectionManager))
+#define SIPE_CONNECTION_MANAGER_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST((klass), SIPE_TYPE_CONNECTION_MANAGER, \
+				 SipeConnectionManagerClass))
+#define SIPE_IS_CONNECTION_MANAGER(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE((obj), SIPE_TYPE_CONNECTION_MANAGER))
+#define SIPE_IS_CONNECTION_MANAGER_CLASS(klass)\
+	(G_TYPE_CHECK_CLASS_TYPE((klass), SIPE_TYPE_CONNECTION_MANAGER))
+#define SIPE_CONNECTION_MANAGER_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS ((obj), SIPE_TYPE_CONNECTION_MANAGER, \
+				    SipeConnectionManagerClass))
+G_END_DECLS
+
+G_DEFINE_TYPE(SipeConnectionManager,
+	      sipe_connection_manager,
+	      TP_TYPE_BASE_CONNECTION_MANAGER)
+
+static void sipe_connection_manager_class_init(SipeConnectionManagerClass *klass)
+{
+	GObjectClass *object_class               = G_OBJECT_CLASS(klass);
+	TpBaseConnectionManagerClass *base_class = (TpBaseConnectionManagerClass *)klass;
+
+	object_class->constructed   = NULL;
+	object_class->finalize      = NULL;
+
+	base_class->new_connection  = NULL;
+	base_class->cm_dbus_name    = "sipe";
+	base_class->protocol_params = NULL;
+}
+
+static void sipe_connection_manager_init(SipeConnectionManager *self)
+{
+	(void)self;
+}
+
+static TpBaseConnectionManager *construct_cm(void)
+{
+	return((TpBaseConnectionManager *)
+	       g_object_new(SIPE_TYPE_CONNECTION_MANAGER, NULL));
+}
 
 int main(int argc, char *argv[])
 {
-	(void)argc;
-	(void)argv;
-	return(0);
+	return(tp_run_connection_manager("sipe",
+					 PACKAGE_VERSION,
+					 construct_cm,
+					 argc,
+					 argv));
 }
 
 /*

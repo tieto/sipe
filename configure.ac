@@ -382,6 +382,9 @@ AS_IF([test "x$enable_telepathy" != xno],
 		 AS_IF([test "x$ac_have_gmime" = xyes],
 			[],
 			[AC_ERROR(GMIME package is required for telepathy plugin)])
+
+		 dnl telepathy is based on GObject
+		 PKG_CHECK_MODULES(GOBJECT, [gobject-2.0])
 		],
 		[enable_telepathy=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, [test "x$enable_telepathy" != xno])
