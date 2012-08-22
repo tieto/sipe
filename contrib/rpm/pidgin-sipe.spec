@@ -10,14 +10,16 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20100207git96eee8a
+%define git       20120822gitd376f2f
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
 %endif
 
-%define purple_plugin purple-sipe
-%define pkg_group     Applications/Internet
+%define purple_plugin    purple-sipe
+%define telepathy_plugin telepathy-sipe
+%define common_files     sipe-common
+%define pkg_group        Applications/Internet
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
@@ -42,6 +44,7 @@ BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  gmime-devel
 BuildRequires:  libxml2-devel
 BuildRequires:  nss-devel
+BuildRequires:  telepathy-glib-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
@@ -80,6 +83,7 @@ This package provides the icon set for Pidgin.
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
 License:        GPL-2.0+
+Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{purple_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
@@ -91,6 +95,36 @@ It implements the extended version of SIP/SIMPLE used by various products:
     * Reuters Messaging
 
 This package provides the protocol plugin for libpurple clients.
+
+
+%package -n %{telepathy_plugin}
+Summary:        Telepathy communication manager to connect to MS Office Communicator
+Group:          %{pkg_group}
+License:        GPL-2.0+
+Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
+
+%description -n %{telepathy_plugin}
+A Telepathy communication manager that implements the extended version of
+SIP/SIMPLE used by various products:
+
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package provides the protocol support for Telepathy clients.
+
+
+%package -n %{common_files}
+Summary:        Common files for SIPE protocol plugins
+Group:          %{pkg_group}
+License:        GPL-2.0+
+BuildArch:      noarch
+
+%description -n %{common_files}
+This package provides common files for the SIPE protocol plugins:
+
+    * Localisation
 
 
 %prep
@@ -107,7 +141,7 @@ This package provides the protocol plugin for libpurple clients.
 %endif
 %configure \
 	--enable-purple \
-	--disable-telepathy
+	--enable-telepathy
 make %{_smp_mflags}
 make %{_smp_mflags} check
 
@@ -122,10 +156,21 @@ find %{buildroot} -type f -name "*.la" -delete -print
 rm -rf %{buildroot}
 
 
-%files -n %{purple_plugin} -f %{name}.lang
+%files -n %{purple_plugin}
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %{_libdir}/purple-2/libsipe.so
+
+
+%files -n %{telepathy_plugin}
+%defattr(-,root,root,-)
+%doc AUTHORS ChangeLog COPYING NEWS README TODO
+%{_datadir}/dbus-1/services/*.sipe.service
+%{_libexecdir}/telepathy-sipe
+
+
+%files -n %{common_files} -f %{name}.lang
+%defattr(-,root,root,-)
 
 
 %files
@@ -136,6 +181,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Aug 22 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- add telepathy-sipe & sipe-common packages
+
 * Sun Aug 19 2012 J. D. User <jduser@noreply.com> 1.13.3
 - update to 1.13.3
 
