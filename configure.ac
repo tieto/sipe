@@ -427,6 +427,7 @@ AC_CONFIG_FILES([
 	src/api/Makefile
 	src/purple/Makefile
 	src/telepathy/Makefile
+	src/telepathy/data/Makefile
 	])
 
 dnl generate files

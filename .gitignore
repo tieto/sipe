@@ -35,4 +35,5 @@ src/core/sipe_tls_tester
 src/purple/tests
 src/purple/tests_load
 src/telepathy/telepathy-sipe
+src/telepathy/data/org.freedesktop.Telepathy.ConnectionManager.sipe.service
 stamp-h1
