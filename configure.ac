@@ -377,13 +377,11 @@ AC_ARG_ENABLE([telepathy],
 	[],
 	[enable_telepathy=yes])
 AS_IF([test "x$enable_telepathy" != xno],
-	[PKG_CHECK_MODULES(TELEPATHY, [telepathy-glib],
+	[PKG_CHECK_MODULES(TELEPATHY_GLIB, [telepathy-glib],
 		[dnl GMIME is a build requirement
 		 AS_IF([test "x$ac_have_gmime" = xyes],
 			[],
 			[AC_ERROR(GMIME package is required for telepathy plugin)])
-
-		 dnl NOTHING IMPLEMENTED YET!!!
 		],
 		[enable_telepathy=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, [test "x$enable_telepathy" != xno])
@@ -436,7 +434,7 @@ AC_OUTPUT()
 
 dnl additional info for the user
 AS_ECHO()
-AS_IF([test "x$enable_purple" = xno], 
+AS_IF([test "x$enable_purple" = xno],
 	[AS_ECHO("Not building purple plugin")],
 	[AS_ECHO("Build purple plugin")
 	 AS_ECHO("PURPLE_CFLAGS  : $PURPLE_CFLAGS")
@@ -454,11 +452,8 @@ AS_ECHO()
 AS_IF([test "x$enable_telepathy" = xno],
 	[AS_ECHO("Not building telepathy plugin")],
 	[AS_ECHO("Build telepathy plugin")
-	 AS_ECHO()
-	 AS_ECHO("NOTHING IMPLEMENTED YET!!!")
-	 AS_ECHO()
-	 AS_ECHO("TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS")
-	 AS_ECHO("TELEPATHY_LIBS  : $TELEPATHY_LIBS")])
+	 AS_ECHO("TELEPATHY_GLIB_CFLAGS: $TELEPATHY_GLIB_CFLAGS")
+	 AS_ECHO("TELEPATHY_GLIB_LIBS  : $TELEPATHY_GLIB_LIBS")])
 AS_ECHO()
 AS_IF([test "x$with_krb5" = xno],
 	[AS_ECHO("Not building with Kerberos 5 support")],

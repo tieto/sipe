@@ -34,4 +34,5 @@ src/core/*_tests
 src/core/sipe_tls_tester
 src/purple/tests
 src/purple/tests_load
+src/telepathy/telepathy-sipe
 stamp-h1
