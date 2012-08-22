@@ -28,6 +28,9 @@
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/run.h>
 
+#include "sipe-backend.h"
+#include "telepathy-private.h"
+
 G_BEGIN_DECLS
 /*
  * Connection manager type - data structures
@@ -65,16 +68,28 @@ G_DEFINE_TYPE(SipeConnectionManager,
 	      sipe_connection_manager,
 	      TP_TYPE_BASE_CONNECTION_MANAGER)
 
+static void sipe_connection_manager_constructed(GObject *object)
+{
+	/* always chain up to the parent constructor first */
+	G_OBJECT_CLASS(sipe_connection_manager_parent_class)->constructed(object);
+}
+
+static void sipe_connection_manager_finalize(GObject *object)
+{
+	/* always chain up to the parent constructor last */
+	G_OBJECT_CLASS(sipe_connection_manager_parent_class)->finalize(object);
+}
+
 static void sipe_connection_manager_class_init(SipeConnectionManagerClass *klass)
 {
 	GObjectClass *object_class               = G_OBJECT_CLASS(klass);
 	TpBaseConnectionManagerClass *base_class = (TpBaseConnectionManagerClass *)klass;
 
-	object_class->constructed   = NULL;
-	object_class->finalize      = NULL;
+	object_class->constructed   = sipe_connection_manager_constructed;
+	object_class->finalize      = sipe_connection_manager_finalize;
 
 	base_class->new_connection  = NULL;
-	base_class->cm_dbus_name    = "sipe";
+	base_class->cm_dbus_name    = SIPE_TELEPATHY_DOMAIN;
 	base_class->protocol_params = NULL;
 }
 
@@ -91,11 +106,23 @@ static TpBaseConnectionManager *construct_cm(void)
 
 int main(int argc, char *argv[])
 {
-	return(tp_run_connection_manager("sipe",
-					 PACKAGE_VERSION,
-					 construct_cm,
-					 argc,
-					 argv));
+	int rc;
+
+	g_type_init();
+	sipe_telepathy_debug_init();
+
+	sipe_backend_debug(SIPE_DEBUG_LEVEL_INFO,
+			   "initializing - version %s",
+			   PACKAGE_VERSION);
+
+	rc = tp_run_connection_manager(SIPE_TELEPATHY_DOMAIN,
+				       PACKAGE_VERSION,
+				       construct_cm,
+				       argc,
+				       argv);
+
+	sipe_telepathy_debug_finalize();
+	return(rc);
 }
 
 /*

@@ -6,6 +6,7 @@ MAINTAINERCLEANFILES = \
 libexec_PROGRAMS = telepathy-sipe
 
 telepathy_sipe_SOURCES = \
+	telepathy-debug.c \
 	telepathy-main.c
 
 AM_CFLAGS = $(st)
