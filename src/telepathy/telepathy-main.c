@@ -26,6 +26,7 @@
 
 #include <glib-object.h>
 #include <telepathy-glib/base-connection-manager.h>
+#include <telepathy-glib/base-protocol.h>
 #include <telepathy-glib/run.h>
 
 #include "sipe-backend.h"
@@ -46,7 +47,7 @@ typedef struct _SipeConnectionManager {
 /*
  * Connection manager type - type macros
  */
-static GType sipe_connection_manager_get_type(void);
+static GType sipe_connection_manager_get_type(void) G_GNUC_CONST;
 #define SIPE_TYPE_CONNECTION_MANAGER \
 	(sipe_connection_manager_get_type())
 #define SIPE_CONNECTION_MANAGER(obj) \
@@ -62,22 +63,62 @@ static GType sipe_connection_manager_get_type(void);
 #define SIPE_CONNECTION_MANAGER_GET_CLASS(obj) \
 	(G_TYPE_INSTANCE_GET_CLASS ((obj), SIPE_TYPE_CONNECTION_MANAGER, \
 				    SipeConnectionManagerClass))
+
+
+/*
+ * Protocol type - data structures
+ */
+typedef struct _SipeProtocolClass {
+	TpBaseProtocolClass parent_class;
+} SipeProtocolClass;
+
+typedef struct _SipeProtocol {
+	TpBaseProtocol parent;
+} SipeProtocol;
+
+/*
+ * Protocol type - type macros
+ */
+static GType sipe_protocol_get_type(void) G_GNUC_CONST;
+#define SIPE_TYPE_PROTOCOL \
+	(sipe_protocol_get_type())
+#define SIPE_PROTOCOL(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST((obj), SIPE_TYPE_PROTOCOL, \
+				    SipeProtocol))
+#define SIPE_PROTOCOL_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_CAST((klass), SIPE_TYPE_PROTOCOL,	\
+				 SipeProtocolClass))
+#define SIPE_IS_PROTOCOL(obj) \
+	(G_TYPE_CHECK_INSTANCE_TYPE((obj), SIPE_TYPE_PROTOCOL))
+#define SIPE_IS_PROTOCOL_CLASS(klass) \
+	(G_TYPE_CHECK_CLASS_TYPE((klass), SIPE_TYPE_PROTOCOL))
+#define SIPE_PROTOCOL_GET_CLASS(obj) \
+	(G_TYPE_INSTANCE_GET_CLASS((obj), SIPE_TYPE_PROTOCOL,	\
+				   SipeProtocolClass))
 G_END_DECLS
 
+
+/*
+ * Connection manager type - implementation
+ */
 G_DEFINE_TYPE(SipeConnectionManager,
 	      sipe_connection_manager,
 	      TP_TYPE_BASE_CONNECTION_MANAGER)
 
 static void sipe_connection_manager_constructed(GObject *object)
 {
+	SipeConnectionManager *self   = SIPE_CONNECTION_MANAGER(object);
+	TpBaseConnectionManager *base = (TpBaseConnectionManager *) self;
+	TpBaseProtocol *protocol;
+
 	/* always chain up to the parent constructor first */
 	G_OBJECT_CLASS(sipe_connection_manager_parent_class)->constructed(object);
-}
 
-static void sipe_connection_manager_finalize(GObject *object)
-{
-	/* always chain up to the parent constructor last */
-	G_OBJECT_CLASS(sipe_connection_manager_parent_class)->finalize(object);
+	protocol = g_object_new(SIPE_TYPE_PROTOCOL,
+				"name", SIPE_TELEPATHY_DOMAIN,
+				NULL);
+	tp_base_connection_manager_add_protocol(base, protocol);
+	g_object_unref(protocol);
 }
 
 static void sipe_connection_manager_class_init(SipeConnectionManagerClass *klass)
@@ -86,7 +127,6 @@ static void sipe_connection_manager_class_init(SipeConnectionManagerClass *klass
 	TpBaseConnectionManagerClass *base_class = (TpBaseConnectionManagerClass *)klass;
 
 	object_class->constructed   = sipe_connection_manager_constructed;
-	object_class->finalize      = sipe_connection_manager_finalize;
 
 	base_class->new_connection  = NULL;
 	base_class->cm_dbus_name    = SIPE_TELEPATHY_DOMAIN;
@@ -98,6 +138,28 @@ static void sipe_connection_manager_init(SipeConnectionManager *self)
 	(void)self;
 }
 
+
+/*
+ * Protocol type - implementation
+ */
+G_DEFINE_TYPE(SipeProtocol,
+	      sipe_protocol,
+	      TP_TYPE_BASE_PROTOCOL)
+
+static void sipe_protocol_class_init(SipeProtocolClass *klass)
+{
+	(void)klass;
+}
+
+static void sipe_protocol_init(SipeProtocol *self)
+{
+	(void)self;
+}
+
+
+/*
+ * Entry point
+ */
 static TpBaseConnectionManager *construct_cm(void)
 {
 	return((TpBaseConnectionManager *)
