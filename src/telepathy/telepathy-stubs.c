@@ -29,6 +29,10 @@
  * Ordering copied from sipe-backend.h
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 
 #include "sipe-backend.h"
@@ -178,6 +182,11 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(SIPE_UNUSED_PARAMETER struct s
 						  SIPE_UNUSED_PARAMETER const gchar *domain,
 						  SIPE_UNUSED_PARAMETER sipe_dns_resolved_cb callback,
 						  SIPE_UNUSED_PARAMETER gpointer data) { return(NULL); }
+struct sipe_dns_query *sipe_backend_dns_query_a(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+						SIPE_UNUSED_PARAMETER const gchar *hostname,
+						SIPE_UNUSED_PARAMETER int port,
+						SIPE_UNUSED_PARAMETER sipe_dns_resolved_cb callback,
+						SIPE_UNUSED_PARAMETER gpointer data) { return(NULL); }
 void sipe_backend_dns_query_cancel(SIPE_UNUSED_PARAMETER struct sipe_dns_query *query) {}
 
 /** FILE TRANSFER ************************************************************/
@@ -222,6 +231,99 @@ void sipe_backend_im_topic(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_p
 gchar *sipe_backend_markup_css_property(SIPE_UNUSED_PARAMETER SIPE_UNUSED_PARAMETER const gchar *style,
 					SIPE_UNUSED_PARAMETER const gchar *option) { return(g_strdup("")); }
 gchar *sipe_backend_markup_strip_html(SIPE_UNUSED_PARAMETER SIPE_UNUSED_PARAMETER const gchar *html) { return(g_strdup("")); }
+
+/** MEDIA ********************************************************************/
+#ifdef HAVE_VV
+struct sipe_backend_media *sipe_backend_media_new(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+						  SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
+						  SIPE_UNUSED_PARAMETER const gchar *participant,
+						  SIPE_UNUSED_PARAMETER gboolean initiator) { return(NULL); }
+void sipe_backend_media_free(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) {}
+void sipe_backend_media_set_cname(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+				  SIPE_UNUSED_PARAMETER gchar *cname) {}
+struct sipe_backend_media_relays * sipe_backend_media_relays_convert(SIPE_UNUSED_PARAMETER GSList *media_relays,
+								     SIPE_UNUSED_PARAMETER gchar *username,
+								     SIPE_UNUSED_PARAMETER gchar *password) { return(NULL); }
+void sipe_backend_media_relays_free(SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays) {}
+struct sipe_backend_stream *sipe_backend_media_add_stream(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+							  SIPE_UNUSED_PARAMETER const gchar *id,
+							  SIPE_UNUSED_PARAMETER const gchar *participant,
+							  SIPE_UNUSED_PARAMETER SipeMediaType type,
+							  SIPE_UNUSED_PARAMETER SipeIceVersion ice_version,
+							  SIPE_UNUSED_PARAMETER gboolean initiator,
+							  SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays) { return(NULL); }
+void sipe_backend_media_remove_stream(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+				      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) {}
+GSList *sipe_backend_media_get_streams(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(NULL); }
+struct sipe_backend_stream *sipe_backend_media_get_stream_by_id(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+								SIPE_UNUSED_PARAMETER const gchar *id) { return(NULL); }
+void sipe_backend_media_add_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+					      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+					      SIPE_UNUSED_PARAMETER GList *candidates) {}
+gboolean sipe_backend_media_is_initiator(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+					 SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(FALSE); }
+gboolean sipe_backend_media_accepted(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(FALSE); }
+gboolean sipe_backend_candidates_prepared(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(FALSE); }
+GList *sipe_backend_media_get_active_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+						      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
+GList *sipe_backend_media_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+						       SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
+const gchar *sipe_backend_stream_get_id(SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(""); }
+void sipe_backend_stream_hold(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+			      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+			      SIPE_UNUSED_PARAMETER gboolean local) {}
+void sipe_backend_stream_unhold(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+				SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+				SIPE_UNUSED_PARAMETER gboolean local) {}
+gboolean sipe_backend_stream_is_held(SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(FALSE); }
+struct sipe_backend_codec *sipe_backend_codec_new(SIPE_UNUSED_PARAMETER int id,
+						  SIPE_UNUSED_PARAMETER const char *name,
+						  SIPE_UNUSED_PARAMETER SipeMediaType type,
+						  SIPE_UNUSED_PARAMETER guint clock_rate) { return(NULL); }
+void sipe_backend_codec_free(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) {}
+int sipe_backend_codec_get_id(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(0); }
+gchar *sipe_backend_codec_get_name(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(g_strdup("")); }
+guint sipe_backend_codec_get_clock_rate(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(0); }
+void sipe_backend_codec_add_optional_parameter(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec,
+					       SIPE_UNUSED_PARAMETER const gchar *name,
+					       SIPE_UNUSED_PARAMETER const gchar *value) {}
+GList *sipe_backend_codec_get_optional_parameters(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(NULL); }
+gboolean sipe_backend_set_remote_codecs(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+					SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+					SIPE_UNUSED_PARAMETER GList *codecs) { return(FALSE); }
+GList* sipe_backend_get_local_codecs(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+				     SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
+struct sipe_backend_candidate * sipe_backend_candidate_new(SIPE_UNUSED_PARAMETER const gchar *foundation,
+							   SIPE_UNUSED_PARAMETER SipeComponentType component,
+							   SIPE_UNUSED_PARAMETER SipeCandidateType type,
+							   SIPE_UNUSED_PARAMETER SipeNetworkProtocol proto,
+							   SIPE_UNUSED_PARAMETER const gchar *ip,
+							   SIPE_UNUSED_PARAMETER guint port,
+							   SIPE_UNUSED_PARAMETER const gchar *username,
+							   SIPE_UNUSED_PARAMETER const gchar *password) { return(NULL); }
+void sipe_backend_candidate_free(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) {}
+gchar *sipe_backend_candidate_get_username(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(g_strdup("")); }
+gchar *sipe_backend_candidate_get_password(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(g_strdup("")); }
+gchar *sipe_backend_candidate_get_foundation(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(g_strdup("")); }
+gchar *sipe_backend_candidate_get_ip(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(g_strdup("127.0.0.1")); }
+guint sipe_backend_candidate_get_port(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(0); }
+gchar *sipe_backend_candidate_get_base_ip(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(g_strdup("127.0.0.1")); }
+guint sipe_backend_candidate_get_base_port(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(0); }
+guint32 sipe_backend_candidate_get_priority(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(0); }
+void sipe_backend_candidate_set_priority(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate,
+					 SIPE_UNUSED_PARAMETER guint32 priority) {}
+SipeComponentType sipe_backend_candidate_get_component_type(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(SIPE_COMPONENT_NONE); }
+SipeCandidateType sipe_backend_candidate_get_type(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(SIPE_CANDIDATE_TYPE_ANY); }
+SipeNetworkProtocol sipe_backend_candidate_get_protocol(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(SIPE_NETWORK_PROTOCOL_TCP_ACTIVE); }
+GList* sipe_backend_get_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+					 SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
+void sipe_backend_media_accept(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+			       SIPE_UNUSED_PARAMETER gboolean local) {}
+void sipe_backend_media_hangup(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+			       SIPE_UNUSED_PARAMETER gboolean local) {}
+void sipe_backend_media_reject(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+			       SIPE_UNUSED_PARAMETER gboolean local) {}
+#endif
 
 /** NETWORK ******************************************************************/
 

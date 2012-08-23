@@ -569,7 +569,7 @@ sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media
 							 stream->participant);
 }
 
-gchar *
+const gchar *
 sipe_backend_stream_get_id(struct sipe_backend_stream *stream)
 {
 	return stream->sessionid;

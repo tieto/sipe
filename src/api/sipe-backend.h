@@ -407,7 +407,7 @@ GList *sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media
 						       struct sipe_backend_stream *stream);
 
 /* Stream handling */
-gchar *sipe_backend_stream_get_id(struct sipe_backend_stream *stream);
+const gchar *sipe_backend_stream_get_id(struct sipe_backend_stream *stream);
 SipeMediaType sipe_backend_stream_get_type(struct sipe_backend_stream *stream);
 void sipe_backend_stream_hold(struct sipe_backend_media *media,
 			      struct sipe_backend_stream *stream,
