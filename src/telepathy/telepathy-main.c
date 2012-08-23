@@ -27,9 +27,11 @@
 #include <glib-object.h>
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/run.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "sipe-backend.h"
 #include "sipe-common.h"
+#include "sipe-core.h"
 #include "telepathy-private.h"
 
 G_BEGIN_DECLS
@@ -121,6 +123,7 @@ int main(int argc, char *argv[])
 
 	g_type_init();
 	sipe_telepathy_debug_init();
+	sipe_core_init(LOCALEDIR);
 
 	sipe_backend_debug(SIPE_DEBUG_LEVEL_INFO,
 			   "initializing - version %s",
@@ -132,8 +135,23 @@ int main(int argc, char *argv[])
 				       argc,
 				       argv);
 
+	sipe_core_destroy();
 	sipe_telepathy_debug_finalize();
 	return(rc);
+}
+
+gchar *sipe_backend_version(void)
+{
+	/*
+	 * @TODO: this is the version of telepathy-glib we have compiled this
+	 *        code against, not the version of "telepathy" which is
+	 *        currently running. How to get this? Is it even possible?
+	 *
+	 * requires telepathy-glib >= 0.19
+	return(g_strdup_printf("telepathy-glib/%d.%d.%d",
+			       TP_MAJOR_VERSION, TP_MINOR_VERSION, TP_MICRO_VERSION));
+	*/
+	return(g_strdup("Telepathy"));
 }
 
 /*
