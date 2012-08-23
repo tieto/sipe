@@ -29,11 +29,12 @@
 #include <telepathy-glib/run.h>
 
 #include "sipe-backend.h"
+#include "sipe-common.h"
 #include "telepathy-private.h"
 
 G_BEGIN_DECLS
 /*
- * Connection manager type - data structures
+ * Connection manager class - data structures
  */
 typedef struct _SipeConnectionManagerClass {
 	TpBaseConnectionManagerClass parent_class;
@@ -44,7 +45,7 @@ typedef struct _SipeConnectionManager {
 } SipeConnectionManager;
 
 /*
- * Connection manager type - type macros
+ * Connection manager class - type macros
  */
 static GType sipe_connection_manager_get_type(void) G_GNUC_CONST;
 #define SIPE_TYPE_CONNECTION_MANAGER \
@@ -64,14 +65,16 @@ static GType sipe_connection_manager_get_type(void) G_GNUC_CONST;
 				    SipeConnectionManagerClass))
 G_END_DECLS
 
-
 /*
- * Connection manager type - implementation
+ * Connection manager class - type definition
  */
 G_DEFINE_TYPE(SipeConnectionManager,
 	      sipe_connection_manager,
 	      TP_TYPE_BASE_CONNECTION_MANAGER)
 
+/*
+ * Connection manager class - instance methods
+ */
 static void sipe_connection_manager_constructed(GObject *object)
 {
 	SipeConnectionManager *self   = SIPE_CONNECTION_MANAGER(object);
@@ -83,6 +86,9 @@ static void sipe_connection_manager_constructed(GObject *object)
 	sipe_telepathy_protocol_init(base);
 }
 
+/*
+ * Connection manager class - type implementation
+ */
 static void sipe_connection_manager_class_init(SipeConnectionManagerClass *klass)
 {
 	GObjectClass *object_class               = G_OBJECT_CLASS(klass);
@@ -95,9 +101,8 @@ static void sipe_connection_manager_class_init(SipeConnectionManagerClass *klass
 	base_class->protocol_params = NULL;
 }
 
-static void sipe_connection_manager_init(SipeConnectionManager *self)
+static void sipe_connection_manager_init(SIPE_UNUSED_PARAMETER SipeConnectionManager *self)
 {
-	(void)self;
 }
 
 

@@ -27,3 +27,4 @@ src/purple/purple-im.c
 src/purple/purple-plugin.c
 src/purple/purple-search.c
 src/purple/purple-transport.c
+src/telepathy/telepathy-protocol.c

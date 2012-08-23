@@ -20,15 +20,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#include <string.h>
+
+#include <dbus/dbus-protocol.h>
 #include <glib-object.h>
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/base-protocol.h>
 
+#include "sipe-common.h"
+#include "sipe-nls.h"
 #include "telepathy-private.h"
 
 G_BEGIN_DECLS
 /*
- * Protocol type - data structures
+ * Protocol class - data structures
  */
 typedef struct _SipeProtocolClass {
 	TpBaseProtocolClass parent_class;
@@ -39,7 +48,7 @@ typedef struct _SipeProtocol {
 } SipeProtocol;
 
 /*
- * Protocol type - type macros
+ * Protocol class - type macros
  */
 static GType sipe_protocol_get_type(void) G_GNUC_CONST;
 #define SIPE_TYPE_PROTOCOL \
@@ -59,22 +68,104 @@ static GType sipe_protocol_get_type(void) G_GNUC_CONST;
 				   SipeProtocolClass))
 G_END_DECLS
 
-
 /*
- * Protocol type - implementation
+ * Protocol class - type definition
  */
 G_DEFINE_TYPE(SipeProtocol,
 	      sipe_protocol,
 	      TP_TYPE_BASE_PROTOCOL)
 
-static void sipe_protocol_class_init(SipeProtocolClass *klass)
+/*
+ * Protocol class - instance methods
+ */
+/*
+ * @TODO: parameter filtering doesn't seem to work: these functions aren't
+ *        called at all - why?
+ */
+static gboolean parameter_filter_account(SIPE_UNUSED_PARAMETER const TpCMParamSpec *paramspec,
+					 GValue *value,
+					 GError **error)
 {
-	(void)klass;
+	const gchar *str = g_value_get_string(value);
+
+	if ((str == NULL) ||
+	    (strchr(str, '@') == NULL)) {
+		g_set_error(error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+			    _("User name should be a valid SIP URI\nExample: user@company.com"));
+		return(FALSE);
+	}
+	return(TRUE);
 }
 
-static void sipe_protocol_init(SipeProtocol *self)
+static const TpCMParamSpec *get_parameters(SIPE_UNUSED_PARAMETER TpBaseProtocol *self)
 {
-	(void)self;
+/* ISO C99 Designated Initializers silences -Wmissing-field-initializers */
+#define SIPE_PROTOCOL_PARAMETER(_name, _dtype, _gtype, _flags, _default, _filter) \
+	{                             \
+		.name   = (_name),    \
+		.dtype  = (_dtype),   \
+		.gtype  = (_gtype),   \
+		.flags  = (_flags),   \
+		.def    = (_default), \
+		.filter = (_filter),  \
+	}
+
+	static const TpCMParamSpec const sipe_parameters[] = {
+		SIPE_PROTOCOL_PARAMETER("account",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+					NULL,
+					parameter_filter_account),
+		SIPE_PROTOCOL_PARAMETER("login",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+					NULL,
+					tp_cm_param_filter_string_nonempty),
+		SIPE_PROTOCOL_PARAMETER("password",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER | TP_CONN_MGR_PARAM_FLAG_SECRET,
+					NULL,
+					tp_cm_param_filter_string_nonempty),
+		SIPE_PROTOCOL_PARAMETER("server",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					0,
+					NULL,
+					NULL /* can be empty */),
+		SIPE_PROTOCOL_PARAMETER("port",
+					DBUS_TYPE_UINT16_AS_STRING,
+					G_TYPE_UINT,
+					TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
+					GUINT_TO_POINTER(0),
+					NULL),
+		/* @TODO: this should be combo auto/ssl/tcp */
+		SIPE_PROTOCOL_PARAMETER("transport",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
+					"auto",
+					tp_cm_param_filter_string_nonempty),
+		SIPE_PROTOCOL_PARAMETER(NULL, NULL, 0, 0, NULL, NULL)
+	};
+
+	return(sipe_parameters);
+}
+
+/*
+ * Protocol class - type implementation
+ */
+static void sipe_protocol_class_init(SipeProtocolClass *klass)
+{
+	TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) klass;
+
+	base_class->get_parameters = get_parameters;
+}
+
+static void sipe_protocol_init(SIPE_UNUSED_PARAMETER SipeProtocol *self)
+{
 }
 
 /* add protocol to connection manager */
