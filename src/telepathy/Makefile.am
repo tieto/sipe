@@ -7,7 +7,8 @@ libexec_PROGRAMS = telepathy-sipe
 
 telepathy_sipe_SOURCES = \
 	telepathy-debug.c \
-	telepathy-main.c
+	telepathy-main.c \
+	telepathy-protocol.c
 
 AM_CFLAGS = $(st)
 
