@@ -301,6 +301,7 @@ static void sipe_purple_login(PurpleAccount *account)
 	/* map option list to flags - default is NTLM */
 	SIPE_CORE_FLAG_UNSET(KRB5);
 	SIPE_CORE_FLAG_UNSET(TLS_DSK);
+	SIPE_CORE_FLAG_UNSET(SSO);
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	if (sipe_strequal(auth, "krb5")) {
 		SIPE_CORE_FLAG_SET(KRB5);

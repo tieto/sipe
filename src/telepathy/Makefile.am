@@ -6,6 +6,7 @@ MAINTAINERCLEANFILES = \
 libexec_PROGRAMS = telepathy-sipe
 
 telepathy_sipe_SOURCES = \
+	telepathy-connection.c \
 	telepathy-debug.c \
 	telepathy-main.c \
 	telepathy-private.h \

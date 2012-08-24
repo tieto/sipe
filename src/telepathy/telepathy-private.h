@@ -21,10 +21,17 @@
  */
 
 /* Forward declarations */
+struct _TpBaseConnection;
 struct _TpBaseConnectionManager;
+struct _TpBaseProtocol;
 
 /* constants */
 #define SIPE_TELEPATHY_DOMAIN "sipe"
+
+/* connection */
+struct _TpBaseConnection *sipe_telepathy_connection_new(struct _TpBaseProtocol *protocol,
+							GHashTable *params,
+							GError **error);
 
 /* debugging */
 void sipe_telepathy_debug_init(void);

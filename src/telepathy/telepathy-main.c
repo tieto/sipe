@@ -125,9 +125,7 @@ int main(int argc, char *argv[])
 	sipe_telepathy_debug_init();
 	sipe_core_init(LOCALEDIR);
 
-	sipe_backend_debug(SIPE_DEBUG_LEVEL_INFO,
-			   "initializing - version %s",
-			   PACKAGE_VERSION);
+	SIPE_DEBUG_INFO("main: initializing - version %s", PACKAGE_VERSION);
 
 	rc = tp_run_connection_manager(SIPE_TELEPATHY_DOMAIN,
 				       PACKAGE_VERSION,

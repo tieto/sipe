@@ -162,6 +162,7 @@ static void sipe_protocol_class_init(SipeProtocolClass *klass)
 	TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) klass;
 
 	base_class->get_parameters = get_parameters;
+	base_class->new_connection = sipe_telepathy_connection_new;
 }
 
 static void sipe_protocol_init(SIPE_UNUSED_PARAMETER SipeProtocol *self)
