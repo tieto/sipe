@@ -1,0 +1,11 @@
+MAINTAINERCLEANFILES = Makefile.in
+DISTCLEANFILES       = im-sipe.$(pixmapext)
+EXTRA_DIST           = sipe.$(pixmapext)
+
+empathyappsiconsdir    = $(datadir)/empathy/icons/hicolor/$(pixmapsize)/apps
+empathyappsicons_DATA  = im-sipe.$(pixmapext)
+pidginprotocolpixdir   = $(datadir)/pixmaps/pidgin/protocols/$(pixmapsize)
+pidginprotocolpix_DATA = sipe.$(pixmapext)
+
+im-sipe.$(pixmapext): $(srcdir)/sipe.$(pixmapext)
+	cp $< $@

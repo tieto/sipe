@@ -1,3 +1,3 @@
-pixmapsize = 48
+pixmapsize = 24
 pixmapext  = png
 include $(srcdir)/../Makefile.common.am

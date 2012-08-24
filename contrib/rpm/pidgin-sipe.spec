@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20120822gitd376f2f
+%define git       20120824git1788cfd
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -19,6 +19,7 @@
 %define purple_plugin    purple-sipe
 %define telepathy_plugin telepathy-sipe
 %define common_files     sipe-common
+%define empathy_files    empathy-sipe
 %define pkg_group        Applications/Internet
 
 Name:           pidgin-sipe
@@ -97,6 +98,24 @@ It implements the extended version of SIP/SIMPLE used by various products:
 This package provides the protocol plugin for libpurple clients.
 
 
+%package -n %{empathy_files}
+Summary:        Telepathy communication manager to connect to MS Office Communicator
+Group:          %{pkg_group}
+License:        GPL-2.0+
+Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+
+%description -n %{empathy_files}
+A Telepathy communication manager that implements the extended version of
+SIP/SIMPLE used by various products:
+
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package provides the icon set for Empathy.
+
+
 %package -n %{telepathy_plugin}
 Summary:        Telepathy communication manager to connect to MS Office Communicator
 Group:          %{pkg_group}
@@ -149,6 +168,10 @@ make %{_smp_mflags} check
 %install
 %makeinstall
 find %{buildroot} -type f -name "*.la" -delete -print
+# Pidgin doesn't have 24 or 32 pixel icons
+rm -f \
+   %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
+   %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
 %find_lang %{name}
 
 
@@ -169,6 +192,13 @@ rm -rf %{buildroot}
 %{_libexecdir}/telepathy-sipe
 
 
+%files -n %{empathy_files}
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING
+%{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.png
+%{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.svg
+
+
 %files -n %{common_files} -f %{name}.lang
 %defattr(-,root,root,-)
 
@@ -181,6 +211,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Aug 24 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- add empathy-sipe package
+
 * Wed Aug 22 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
 - add telepathy-sipe & sipe-common packages
 

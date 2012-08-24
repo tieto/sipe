@@ -1,4 +1,4 @@
-SUBDIRS = 16 22 48 scalable
+SUBDIRS = 16 22 24 32 48 scalable
 
 EXTRA_DIST = \
 	Makefile.mingw

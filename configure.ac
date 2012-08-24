@@ -423,6 +423,8 @@ AC_CONFIG_FILES([
 	po/Makefile.in
 	pixmaps/16/Makefile
 	pixmaps/22/Makefile
+	pixmaps/24/Makefile
+	pixmaps/32/Makefile
 	pixmaps/48/Makefile
 	pixmaps/scalable/Makefile
 	src/Makefile
