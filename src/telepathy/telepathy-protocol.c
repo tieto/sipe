@@ -30,8 +30,11 @@
 #include <glib-object.h>
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/base-protocol.h>
+#include <telepathy-glib/telepathy-glib.h>
 
+#include "sipe-backend.h"
 #include "sipe-common.h"
+#include "sipe-core.h"
 #include "sipe-nls.h"
 #include "telepathy-private.h"
 
@@ -90,7 +93,7 @@ static gboolean parameter_filter_account(SIPE_UNUSED_PARAMETER const TpCMParamSp
 
 	if ((str == NULL) ||
 	    (strchr(str, '@') == NULL)) {
-		g_set_error(error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+		g_set_error(error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
 			    _("User name should be a valid SIP URI\nExample: user@company.com"));
 		return(FALSE);
 	}
@@ -154,6 +157,69 @@ static const TpCMParamSpec *get_parameters(SIPE_UNUSED_PARAMETER TpBaseProtocol 
 	return(sipe_parameters);
 }
 
+static gchar *normalize_contact(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
+				const gchar *contact,
+				GError **error)
+{
+	gchar *uri = sip_uri_if_valid(contact);
+	if (!uri)
+		g_set_error(error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
+			    _("User name should be a valid SIP URI\nExample: user@company.com"));
+	return(uri);
+}
+
+static gchar *identify_account(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
+			       GHashTable *asv,
+			       SIPE_UNUSED_PARAMETER GError **error)
+{
+	return(g_strdup(tp_asv_get_string(asv, "account")));
+}
+
+static GStrv get_interfaces(SIPE_UNUSED_PARAMETER TpBaseProtocol *base)
+{
+	return(g_new0(gchar *, 1));
+}
+
+static void get_connection_details(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
+				   GStrv *connection_interfaces,
+				   GType **channel_managers,
+				   gchar **icon_name,
+				   gchar **english_name,
+				   gchar **vcard_field)
+{
+	SIPE_DEBUG_INFO_NOFORMAT("get_connection_details");
+
+	if (connection_interfaces) {
+		static const gchar * const interfaces[] = {
+			/* @TODO */
+			NULL
+		};
+		*connection_interfaces = g_strdupv((GStrv) interfaces);
+	}
+	if (channel_managers) {
+		static const GType const types[] = {
+			/* @TODO */
+			G_TYPE_INVALID
+		};
+		*channel_managers = g_memdup(types, sizeof(types));
+	}
+	if (icon_name)
+		*icon_name    = g_strdup("im-" SIPE_TELEPATHY_DOMAIN);
+	if (english_name)
+		*english_name = g_strdup("Office Communicator");
+	if (vcard_field)
+		*vcard_field  = g_strdup("x-" SIPE_TELEPATHY_DOMAIN);
+}
+
+static GStrv dup_authentication_types(SIPE_UNUSED_PARAMETER TpBaseProtocol *self)
+{
+	static const gchar * const types[] = {
+		/* @TODO */
+		NULL
+	};
+	return(g_strdupv((GStrv) types));
+}
+
 /*
  * Protocol class - type implementation
  */
@@ -161,8 +227,13 @@ static void sipe_protocol_class_init(SipeProtocolClass *klass)
 {
 	TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) klass;
 
-	base_class->get_parameters = get_parameters;
-	base_class->new_connection = sipe_telepathy_connection_new;
+	base_class->get_parameters           = get_parameters;
+	base_class->new_connection           = sipe_telepathy_connection_new;
+	base_class->normalize_contact        = normalize_contact;
+	base_class->identify_account         = identify_account;
+	base_class->get_interfaces           = get_interfaces;
+	base_class->get_connection_details   = get_connection_details;
+	base_class->dup_authentication_types = dup_authentication_types;
 }
 
 static void sipe_protocol_init(SIPE_UNUSED_PARAMETER SipeProtocol *self)
