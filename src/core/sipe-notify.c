@@ -128,6 +128,13 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 		}
 	}
 	sipe_xml_free(xn_provision_group_list);
+
+	if (sipe_private->dlx_uri && sipe_private->addressbook_uri) {
+		/* Some buddies might have been added before we received this
+		 * provisioning notify with DLX and addressbook URIs. Now we can
+		 * trigger an update of their photos. */
+		sipe_buddy_refresh_photos(sipe_private);
+	}
 }
 
 static void process_incoming_notify_rlmi_resub(struct sipe_core_private *sipe_private,

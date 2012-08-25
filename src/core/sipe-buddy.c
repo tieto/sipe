@@ -1377,6 +1377,20 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void buddy_refresh_photos_cb(gpointer uri,
+				    SIPE_UNUSED_PARAMETER gpointer value,
+				    gpointer sipe_private)
+{
+	buddy_fetch_photo(sipe_private, uri);
+}
+
+void sipe_buddy_refresh_photos(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_foreach(sipe_private->buddies,
+			     buddy_refresh_photos_cb,
+			     sipe_private);
+}
+
 /* Buddy menu callbacks*/
 
 void sipe_core_buddy_new_chat(struct sipe_core_public *sipe_public,

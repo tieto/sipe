@@ -103,3 +103,10 @@ void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
 				const gchar *uri,
 				sipe_buddy_info_fields propkey,
 				gchar *property_value);
+
+/**
+ * Triggers a download of all buddy photos that were changed on the server.
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_buddy_refresh_photos(struct sipe_core_private *sipe_private);
