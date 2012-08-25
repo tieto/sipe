@@ -26,6 +26,7 @@ missing
 mkinstalldirs
 /INSTALL
 m4macros/Makefile.in
+pixmaps/*/im-sipe.*
 po/POTFILES
 po/stamp-it
 *.gmo
