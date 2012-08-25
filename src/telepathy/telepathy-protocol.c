@@ -162,6 +162,9 @@ static gchar *normalize_contact(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
 				GError **error)
 {
 	gchar *uri = sip_uri_if_valid(contact);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::normalize_contact");
+
 	if (!uri)
 		g_set_error(error, TP_ERROR, TP_ERROR_INVALID_HANDLE,
 			    _("User name should be a valid SIP URI\nExample: user@company.com"));
@@ -172,11 +175,15 @@ static gchar *identify_account(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
 			       GHashTable *asv,
 			       SIPE_UNUSED_PARAMETER GError **error)
 {
+	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::identify_account");
+
 	return(g_strdup(tp_asv_get_string(asv, "account")));
 }
 
 static GStrv get_interfaces(SIPE_UNUSED_PARAMETER TpBaseProtocol *base)
 {
+	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::get_interfaces");
+
 	return(g_new0(gchar *, 1));
 }
 
@@ -187,7 +194,7 @@ static void get_connection_details(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
 				   gchar **english_name,
 				   gchar **vcard_field)
 {
-	SIPE_DEBUG_INFO_NOFORMAT("get_connection_details");
+	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::get_connection_details");
 
 	if (connection_interfaces) {
 		static const gchar * const interfaces[] = {
@@ -217,6 +224,9 @@ static GStrv dup_authentication_types(SIPE_UNUSED_PARAMETER TpBaseProtocol *self
 		/* @TODO */
 		NULL
 	};
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::dup_authentication_types");
+
 	return(g_strdupv((GStrv) types));
 }
 
@@ -226,6 +236,8 @@ static GStrv dup_authentication_types(SIPE_UNUSED_PARAMETER TpBaseProtocol *self
 static void sipe_protocol_class_init(SipeProtocolClass *klass)
 {
 	TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) klass;
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::class_init");
 
 	base_class->get_parameters           = get_parameters;
 	base_class->new_connection           = sipe_telepathy_connection_new;
@@ -238,6 +250,7 @@ static void sipe_protocol_class_init(SipeProtocolClass *klass)
 
 static void sipe_protocol_init(SIPE_UNUSED_PARAMETER SipeProtocol *self)
 {
+	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::init");
 }
 
 /* add protocol to connection manager */

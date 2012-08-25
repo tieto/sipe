@@ -82,6 +82,8 @@ static void sipe_connection_manager_constructed(GObject *object)
 	SipeConnectionManager *self   = SIPE_CONNECTION_MANAGER(object);
 	TpBaseConnectionManager *base = (TpBaseConnectionManager *) self;
 
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnectionManager::constructed");
+
 	/* always chain up to the parent constructor first */
 	G_OBJECT_CLASS(sipe_connection_manager_parent_class)->constructed(object);
 
@@ -96,6 +98,8 @@ static void sipe_connection_manager_class_init(SipeConnectionManagerClass *klass
 	GObjectClass *object_class               = G_OBJECT_CLASS(klass);
 	TpBaseConnectionManagerClass *base_class = (TpBaseConnectionManagerClass *)klass;
 
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnectionManager::class_init");
+
 	object_class->constructed   = sipe_connection_manager_constructed;
 
 	base_class->new_connection  = NULL;
@@ -105,6 +109,7 @@ static void sipe_connection_manager_class_init(SipeConnectionManagerClass *klass
 
 static void sipe_connection_manager_init(SIPE_UNUSED_PARAMETER SipeConnectionManager *self)
 {
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnectionManager::init");
 }
 
 

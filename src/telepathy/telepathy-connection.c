@@ -43,6 +43,9 @@ typedef struct _SipeConnectionClass {
 typedef struct _SipeConnection {
 	TpBaseConnection parent;
 	struct sipe_core_public *public;
+	gchar *server;
+	gchar *port;
+	guint  transport;
 } SipeConnection;
 
 /*
@@ -76,17 +79,46 @@ G_DEFINE_TYPE(SipeConnection,
 /*
  * Connection class - instance methods
  */
+static gboolean start_connecting(TpBaseConnection *base,
+				 SIPE_UNUSED_PARAMETER GError **error)
+{
+	SipeConnection *self = SIPE_CONNECTION(base);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::start_connecting");
+
+	g_return_val_if_fail(self->public, FALSE);
+
+	tp_base_connection_change_status(base, TP_CONNECTION_STATUS_CONNECTING,
+					 TP_CONNECTION_STATUS_REASON_REQUESTED);
+
+	sipe_core_transport_sip_connect(self->public,
+					self->transport,
+					self->server,
+					self->port);
+	return(TRUE);
+}
+
+static void shut_down(TpBaseConnection *base)
+{
+	SipeConnection *self = SIPE_CONNECTION(base);
+	struct sipe_core_public *sipe_public = self->public;
+
+	SIPE_DEBUG_INFO("SipeConnection::shut_down: closing %p", sipe_public);
+
+	if (sipe_public)
+	    sipe_core_deallocate(sipe_public);
+}
+
 static void sipe_connection_finalize(GObject *object)
 {
-    SipeConnection *self = SIPE_CONNECTION(object);
-    struct sipe_core_public *sipe_public = self->public;
+	SipeConnection *self = SIPE_CONNECTION(object);
 
-    SIPE_DEBUG_INFO("sipe_connection_finalize: closing %p", sipe_public);
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::finalize");
 
-    if (sipe_public)
-	    sipe_core_deallocate(sipe_public);
+	g_free(self->port);
+	g_free(self->server);
 
-    G_OBJECT_CLASS(sipe_connection_parent_class)->finalize(object);
+	G_OBJECT_CLASS(sipe_connection_parent_class)->finalize(object);
 }
 
 /*
@@ -94,13 +126,20 @@ static void sipe_connection_finalize(GObject *object)
  */
 static void sipe_connection_class_init(SipeConnectionClass *klass)
 {
-    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+	GObjectClass *object_class = G_OBJECT_CLASS(klass);
+	TpBaseConnectionClass *base_class = TP_BASE_CONNECTION_CLASS(klass);
 
-    object_class->finalize = sipe_connection_finalize;
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::class_init");
+
+	object_class->finalize = sipe_connection_finalize;
+
+	base_class->start_connecting = start_connecting;
+	base_class->shut_down        = shut_down;
 }
 
 static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)
 {
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::init");
 }
 
 /* create new connection object and attach it to SIPE core */
@@ -120,9 +159,10 @@ TpBaseConnection *sipe_telepathy_connection_new(SIPE_UNUSED_PARAMETER TpBaseProt
 	gchar *login_domain  = NULL;
 	gchar *login_account = NULL;
 	const gchar *errmsg;
-	guint type;
+	guint port;
 	gboolean valid;
-	gchar *port = NULL;
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_telepathy_connection_new");
 
 	/* login name specified? */
 	if (login && strlen(login)) {
@@ -166,27 +206,27 @@ TpBaseConnection *sipe_telepathy_connection_new(SIPE_UNUSED_PARAMETER TpBaseProt
 	/* @TODO: add parameters for these */
 
 	/* server name */
-	if (!server || (strlen(server) == 0))
-		server = NULL;
+	if (server && strlen(server))
+		conn->server = g_strdup(server);
+	else
+		conn->server = NULL;
 
 	/* server port: core expects a string */
-	type = tp_asv_get_uint32(params, "port", &valid);
+	port = tp_asv_get_uint32(params, "port", &valid);
 	if (valid)
-		port = g_strdup_printf("%d", type);
+		conn->port = g_strdup_printf("%d", port);
+	else
+		conn->port = NULL;
 
 	/* transport type */
 	if (sipe_strequal(transport, "auto")) {
-		type = server ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_AUTO;
+		conn->transport = conn->server ?
+			SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_AUTO;
 	} else if (sipe_strequal(transport, "tls")) {
-		type = SIPE_TRANSPORT_TLS;
+		conn->transport = SIPE_TRANSPORT_TLS;
 	} else {
-		type = SIPE_TRANSPORT_TCP;
+		conn->transport = SIPE_TRANSPORT_TCP;
 	}
-	sipe_core_transport_sip_connect(sipe_public,
-					type,
-					server,
-					port);
-	g_free(port);
 
 	return(TP_BASE_CONNECTION(conn));
 }
