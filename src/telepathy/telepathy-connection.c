@@ -143,24 +143,17 @@ static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)
 }
 
 /* create new connection object and attach it to SIPE core */
-TpBaseConnection *sipe_telepathy_connection_new(SIPE_UNUSED_PARAMETER TpBaseProtocol *protocol,
+TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 						GHashTable *params,
 						GError **error)
 {
 	const gchar *password  = tp_asv_get_string(params, "password");
 	const gchar *login     = tp_asv_get_string(params, "login");
-	const gchar *server    = tp_asv_get_string(params, "server");
-	const gchar *transport = tp_asv_get_string(params, "transport");
-	SipeConnection *conn   = g_object_new(SIPE_TYPE_CONNECTION,
-					      "protocol", SIPE_TELEPATHY_DOMAIN,
-					      "password", password,
-					      NULL);
+	gchar *login_domain    = NULL;
+	gchar *login_account   = NULL;
+	TpBaseConnection *base = NULL;
 	struct sipe_core_public *sipe_public;
-	gchar *login_domain  = NULL;
-	gchar *login_account = NULL;
 	const gchar *errmsg;
-	guint port;
-	gboolean valid;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_telepathy_connection_new");
 
@@ -189,46 +182,55 @@ TpBaseConnection *sipe_telepathy_connection_new(SIPE_UNUSED_PARAMETER TpBaseProt
 
 	SIPE_DEBUG_INFO("sipe_telepathy_connection_new: created %p", sipe_public);
 
-	if (!sipe_public) {
+	if (sipe_public) {
+		const gchar *server    = tp_asv_get_string(params, "server");
+		const gchar *transport = tp_asv_get_string(params, "transport");
+		SipeConnection *conn   = g_object_new(SIPE_TYPE_CONNECTION,
+						      "protocol", tp_base_protocol_get_name(protocol),
+						      NULL);
+		guint port;
+		gboolean valid;
+
+		/* initialize backend private data */
+		sipe_public->backend_private = (struct sipe_backend_private *) conn;
+		conn->public                 = sipe_public;
+
+		/* map option list to flags - default is NTLM */
+		SIPE_CORE_FLAG_UNSET(KRB5);
+		SIPE_CORE_FLAG_UNSET(TLS_DSK);
+		SIPE_CORE_FLAG_UNSET(SSO);
+		/* @TODO: add parameters for these */
+
+		/* server name */
+		if (server && strlen(server))
+			conn->server = g_strdup(server);
+		else
+			conn->server = NULL;
+
+		/* server port: core expects a string */
+		port = tp_asv_get_uint32(params, "port", &valid);
+		if (valid)
+			conn->port = g_strdup_printf("%d", port);
+		else
+			conn->port = NULL;
+
+		/* transport type */
+		if (sipe_strequal(transport, "auto")) {
+			conn->transport = conn->server ?
+				SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_AUTO;
+		} else if (sipe_strequal(transport, "tls")) {
+			conn->transport = SIPE_TRANSPORT_TLS;
+		} else {
+			conn->transport = SIPE_TRANSPORT_TCP;
+		}
+
+		base = TP_BASE_CONNECTION(conn);
+
+	} else
 		g_set_error_literal(error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
 				    errmsg);
-		g_object_unref(G_OBJECT(conn));
-		return NULL;
-	}
 
-	sipe_public->backend_private = (struct sipe_backend_private *) conn;
-	conn->public                 = sipe_public;
-
-	/* map option list to flags - default is NTLM */
-	SIPE_CORE_FLAG_UNSET(KRB5);
-	SIPE_CORE_FLAG_UNSET(TLS_DSK);
-	SIPE_CORE_FLAG_UNSET(SSO);
-	/* @TODO: add parameters for these */
-
-	/* server name */
-	if (server && strlen(server))
-		conn->server = g_strdup(server);
-	else
-		conn->server = NULL;
-
-	/* server port: core expects a string */
-	port = tp_asv_get_uint32(params, "port", &valid);
-	if (valid)
-		conn->port = g_strdup_printf("%d", port);
-	else
-		conn->port = NULL;
-
-	/* transport type */
-	if (sipe_strequal(transport, "auto")) {
-		conn->transport = conn->server ?
-			SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_AUTO;
-	} else if (sipe_strequal(transport, "tls")) {
-		conn->transport = SIPE_TRANSPORT_TLS;
-	} else {
-		conn->transport = SIPE_TRANSPORT_TCP;
-	}
-
-	return(TP_BASE_CONNECTION(conn));
+	return(base);
 }
 
 
