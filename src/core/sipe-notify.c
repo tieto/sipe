@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -92,6 +92,8 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 		if (sipe_strequal("ServerConfiguration", sipe_xml_attribute(node, "name"))) {
 			const gchar *dlx_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
 					"dlxExternalUrl" : "dlxInternalUrl";
+			const gchar *addressbook_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
+					"absExternalServerUrl" : "absInternalServerUrl";
 
 			g_free(sipe_private->focus_factory_uri);
 			sipe_private->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
@@ -103,7 +105,17 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->dlx_uri=%s",
 					sipe_private->dlx_uri ? sipe_private->dlx_uri : "");
 
+			g_free(sipe_private->addressbook_uri);
+			sipe_private->addressbook_uri = sipe_xml_data(sipe_xml_child(node, addressbook_uri_str));
+			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->addressbook_uri=%s",
+					sipe_private->addressbook_uri ? sipe_private->addressbook_uri : "");
+
 #ifdef HAVE_VV
+			g_free(sipe_private->test_call_bot_uri);
+			sipe_private->test_call_bot_uri = sipe_xml_data(sipe_xml_child(node, "botSipUriForTestCall"));
+			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->test_call_bot_uri=%s",
+					sipe_private->test_call_bot_uri ? sipe_private->test_call_bot_uri : "");
+
 			g_free(sipe_private->mras_uri);
 			sipe_private->mras_uri = g_strstrip(sipe_xml_data(sipe_xml_child(node, "mrasUri")));
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->mras_uri=%s",
@@ -116,6 +128,13 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 		}
 	}
 	sipe_xml_free(xn_provision_group_list);
+
+	if (sipe_private->dlx_uri && sipe_private->addressbook_uri) {
+		/* Some buddies might have been added before we received this
+		 * provisioning notify with DLX and addressbook URIs. Now we can
+		 * trigger an update of their photos. */
+		sipe_buddy_refresh_photos(sipe_private);
+	}
 }
 
 static void process_incoming_notify_rlmi_resub(struct sipe_core_private *sipe_private,
@@ -1063,18 +1082,24 @@ static void sipe_buddy_subscribe_cb(char *buddy_name,
 				    SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
 				    struct sipe_core_private *sipe_private)
 {
-	gchar *action_name = sipe_utils_presence_key(buddy_name);
-	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
 	guint time_range = (g_hash_table_size(sipe_private->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
-	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
 
-	sipe_schedule_mseconds(sipe_private,
-			       action_name,
-			       g_strdup(buddy_name),
-			       timeout,
-			       sipe_subscribe_presence_single,
-			       g_free);
-	g_free(action_name);
+	/*
+	 * g_hash_table_size() can never return 0, otherwise this function
+	 * wouldn't be called :-) But to keep Coverity happy...
+	 */
+	if (time_range) {
+		gchar *action_name = sipe_utils_presence_key(buddy_name);
+		guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
+
+		sipe_schedule_mseconds(sipe_private,
+				       action_name,
+				       g_strdup(buddy_name),
+				       timeout,
+				       sipe_subscribe_presence_single,
+				       g_free);
+		g_free(action_name);
+	}
 }
 
 static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_private,
@@ -1176,11 +1201,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 					g_free(b_alias);
 
 					if (!buddy) {
-						buddy = g_new0(struct sipe_buddy, 1);
-						buddy->name = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC, b);
-						g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
-
-						SIPE_DEBUG_INFO("Added SIPE buddy %s", buddy->name);
+						buddy = sipe_buddy_add(sipe_private, buddy_name);
 					}
 
 					buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
@@ -1204,13 +1225,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		/* This will resemble subscription to roaming_self in 2007 systems */
 		if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 			gchar *self_uri = sip_uri_self(sipe_private);
-			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, self_uri);
-
-			if (!buddy) {
-				buddy = g_new0(struct sipe_buddy, 1);
-				buddy->name = g_strdup(self_uri);
-				g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
-			}
+			sipe_buddy_add(sipe_private, self_uri);
 			g_free(self_uri);
 		}
 	}

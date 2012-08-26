@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -674,7 +674,7 @@ sipe_cal_get_status(struct sipe_buddy *buddy,
 	const char* free_busy;
 	int ret = SIPE_CAL_NO_DATA;
 	time_t state_since;
-	int index;
+	int index = -1;
 
 	if (!buddy || !buddy->cal_start_time || !buddy->cal_granularity) {
 		SIPE_DEBUG_INFO("sipe_cal_get_status: no calendar data1 for %s, exiting",

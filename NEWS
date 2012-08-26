@@ -1,18 +1,6 @@
-version 1.13.0 "Lync & Office365" (2012-XX-XX)
-	- added [MS-SIPAE] TLS-DSK authentication scheme (Stefan Becker)
-	  * TLS-DSK has been introduced in Lync
-	  * mandatory for Office365 accounts
-	  * also works for non-public Lync installations
-	- added [MS-DLX] based Get Info/Contact Search (Stefan Becker)
-	  * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
-	- added experimental media TCP transport (Jakub Adam)
-	- make it compile against the latest purple 3.0.x API (Stefan Becker)
-	- completed cleanup: core no longer requires libpurple (Stefan Becker)
-	- refactored crypto code, ie. NSS can replaced if necessary (Stefan Becker)
-	- sipe-domino.c is no longer built under UNIX to remove dead code (Stefan Becker)
-	- restricted XXX_CFLAGS to modules that need them (Stefan Becker)
-	- NSS is now a mandatory build requirement (Stefan Becker)
-	- decoupled SSPI from HAVE_LIBKRB5 flag. New flag is HAVE_SSPI (Stefan Becker)
-	- OBS mingw packages now use SSPI instead of NTLM (Stefan Becker)
-	- added NSIS package generation to OBS mingw packages (Stefan Becker)
-	- removed kopete backend. KDE is moving to telepathy (Stefan Becker)
+version 1.13.3 "Bug Fixes III" (2012-08-19)
+	- Fixed #3537084: OpenBSD build issue (Stefan Becker)
+	- Fixed #3543294: Support Lync 2010 meet URLs (Jakub Adam)
+	- revert to legacy MSOC protocol on Lync FT invitation (Jakub Adam)
+	- fix broken busy->available status switch (Stefan Becker)
+	- updated translations: Portuguese (pt)

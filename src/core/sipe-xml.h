@@ -128,3 +128,16 @@ void sipe_xml_dump(const sipe_xml *node, const gchar *path);
  * @return canonicalized XML string. Must be @c g_free()'d.
  */
 gchar *sipe_xml_exc_c14n(const gchar *string);
+
+/**
+ * Extracts raw data between a pair of XML tags.
+ *
+ * @param xml XML document
+ * @param tag XML tag enclosing the data
+ * @param include_tag whether the enclosing tags should be included in the result
+ *
+ * @return a first substring from the XML document enclosed by @c tag.
+ * Must be @c g_free()'d.
+ */
+gchar *sipe_xml_extract_raw(const gchar *xml, const gchar *tag,
+			    gboolean include_tag);

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -36,7 +36,8 @@
 #include "version.h"
 
 #ifdef _WIN32
-#include "win32/libc_interface.h"
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
 #endif
 
 #include "sipe-common.h"
@@ -186,7 +187,7 @@ ft_outgoing_init(PurpleXfer *xfer)
 	sipe_core_ft_outgoing_init(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
 				   purple_xfer_get_filename(xfer),
 				   purple_xfer_get_size(xfer),
-				   xfer->who); 
+				   xfer->who);
 }
 
 static void
@@ -196,7 +197,8 @@ tftp_outgoing_start(PurpleXfer *xfer)
 	int flags = fcntl(xfer->fd, F_GETFL, 0);
 	if (flags == -1)
 		flags = 0;
-	fcntl(xfer->fd, F_SETFL, flags | O_NONBLOCK);
+	/* @TODO: ignoring potential error return - how to handle? */
+	(void) fcntl(xfer->fd, F_SETFL, flags | O_NONBLOCK);
 
 	sipe_core_tftp_outgoing_start(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
 				      xfer->size);

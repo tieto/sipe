@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "config.h" /* coverity[hfa: FALSE] */
 #endif
 
 #include <string.h>
@@ -32,8 +32,8 @@
 #include "version.h"
 
 #ifdef _WIN32
-/* for network */
-#include "win32/libc_interface.h"
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
 #include <nspapi.h>
 #else
 #include <sys/types.h>
@@ -191,7 +191,8 @@ backend_listen_cb(int listenfd, struct sipe_backend_listendata *ldata)
 	ldata->listener = NULL;
 	ldata->listenfd = listenfd;
 
-	getsockname(listenfd, (struct sockaddr*)&addr, &socklen);
+	/* ignore error code */
+	(void) getsockname(listenfd, (struct sockaddr*)&addr, &socklen);
 	if (ldata->listen_cb)
 		ldata->listen_cb(ntohs(addr.sin_port), ldata->data);
 

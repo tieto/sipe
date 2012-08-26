@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sipe_svc_session;
 struct sipe_tls_random;
 struct _sipe_xml;
 
@@ -48,6 +49,20 @@ typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
 				 gpointer callback_data);
 
 /**
+ * Start a session of related service requests
+ *
+ * @return Opaque session pointer
+ */
+struct sipe_svc_session *sipe_svc_session_start(void);
+
+/**
+ * Close a session of related service requests
+ *
+ * @param session Opaque session pointer
+ */
+void sipe_svc_session_close(struct sipe_svc_session *session);
+
+/**
  * Trigger fetch of Get & Publish certificate
  *
  * @param sipe_private  SIPE core private data
@@ -59,6 +74,7 @@ typedef void (sipe_svc_callback)(struct sipe_core_private *sipe_private,
  * @return              @c TRUE if certificate fetch was triggered
  */
 gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
+				       struct sipe_svc_session *session,
 				       const gchar *uri,
 				       const gchar *wsse_security,
 				       const gchar *certreq,
@@ -79,6 +95,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
  * @return              @c TRUE if search was triggered
  */
 gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
+				   struct sipe_svc_session *session,
 				   const gchar *uri,
 				   const gchar *wsse_security,
 				   const gchar *search,
@@ -100,6 +117,7 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
  * @return              @c TRUE if token fetch was triggered
  */
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
+			    struct sipe_svc_session *session,
 			    const gchar *uri,
 			    const gchar *wsse_security,
 			    const gchar *service_uri,
@@ -117,6 +135,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
  * @return              @c TRUE if token fetch was triggered
  */
 gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
+				struct sipe_svc_session *session,
 				const gchar *service_uri,
 				sipe_svc_callback *callback,
 				gpointer callback_data);
@@ -131,6 +150,7 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
  * @return              @c TRUE if metadata fetch was triggered
  */
 gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
+			   struct sipe_svc_session *session,
 			   const gchar *uri,
 			   sipe_svc_callback *callback,
 			   gpointer callback_data);

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -66,6 +66,10 @@ struct sipe_svc {
 	GSList *pending_requests;
 };
 
+struct sipe_svc_session {
+	HttpSession *session;
+};
+
 static void sipe_svc_request_free(struct svc_request *data)
 {
 	if (data->conn)
@@ -105,9 +109,24 @@ static void sipe_svc_init(struct sipe_core_private *sipe_private)
 	sipe_private->svc = g_new0(struct sipe_svc, 1);
 }
 
+struct sipe_svc_session *sipe_svc_session_start(void)
+{
+	struct sipe_svc_session *session = g_new0(struct sipe_svc_session, 1);
+	session->session = http_conn_session_create();
+	return(session);
+}
+
+void sipe_svc_session_close(struct sipe_svc_session *session)
+{
+	if (session) {
+		http_conn_session_free(session->session);
+		g_free(session);
+	}
+}
+
 static void sipe_svc_https_response(int return_code,
 				    const gchar *body,
-				    SIPE_UNUSED_PARAMETER const gchar *content_type,
+				    SIPE_UNUSED_PARAMETER GSList *headers,
 				    HttpConn *conn,
 				    void *callback_data)
 {
@@ -138,6 +157,7 @@ static void sipe_svc_https_response(int return_code,
 
 static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				       const gchar *method,
+				       struct sipe_svc_session *session,
 				       const gchar *uri,
 				       const gchar *content_type,
 				       const gchar *soap_action,
@@ -162,7 +182,7 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 	data->auth.password = sipe_private->password;
 
 	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
-				      NULL, /* HttpSession */
+				      session->session,
 				      method,
 				      HTTP_CONN_SSL,
 				      HTTP_CONN_NO_REDIRECT,
@@ -191,6 +211,7 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 }
 
 static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
+				      struct sipe_svc_session *session,
 				      const gchar *uri,
 				      const gchar *additional_ns,
 				      const gchar *soap_action,
@@ -231,6 +252,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 
 	gboolean ret = sipe_svc_https_request(sipe_private,
 					      HTTP_CONN_POST,
+					      session,
 					      uri,
 					      "text/xml",
 					      soap_action,
@@ -245,6 +267,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 }
 
 static gboolean new_soap_req(struct sipe_core_private *sipe_private,
+			     struct sipe_svc_session *session,
 			     const gchar *uri,
 			     const gchar *soap_action,
 			     const gchar *wsse_security,
@@ -254,6 +277,7 @@ static gboolean new_soap_req(struct sipe_core_private *sipe_private,
 			     gpointer callback_data)
 {
 	return(sipe_svc_wsdl_request(sipe_private,
+				     session,
 				     uri,
 				     "xmlns:saml=\"urn:oasis:names:tc:SAML:1.0:assertion\" "
 				     "xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\" "
@@ -280,6 +304,7 @@ static void sipe_svc_wsdl_response(struct svc_request *data,
 }
 
 gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
+				       struct sipe_svc_session *session,
 				       const gchar *uri,
 				       const gchar *wsse_security,
 				       const gchar *certreq,
@@ -325,6 +350,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 	g_free(uuid);
 
 	ret = new_soap_req(sipe_private,
+			   session,
 			   uri,
 			   "http://schemas.microsoft.com/OCS/AuthWebServices/GetAndPublishCert",
 			   wsse_security,
@@ -338,6 +364,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
 }
 
 gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
+				   struct sipe_svc_session *session,
 				   const gchar *uri,
 				   const gchar *wsse_security,
 				   const gchar *search,
@@ -359,7 +386,7 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 					   "  <Metadata>"
 					   "   <FromDialPad>false</FromDialPad>"
 					   "   <MaxResultNum>%d</MaxResultNum>"
-					   "   <ReturnList>displayName,msRTCSIP-PrimaryUserAddress,title,telephoneNumber,homePhone,mobile,otherTelephone,mail,company,country</ReturnList>"
+					   "   <ReturnList>displayName,msRTCSIP-PrimaryUserAddress,title,telephoneNumber,homePhone,mobile,otherTelephone,mail,company,country,photoRelPath,photoSize,photoHash</ReturnList>"
 					   "  </Metadata>"
 					   " </AbEntryRequest>"
 					   "</SearchAbEntry>",
@@ -368,6 +395,7 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 					   max_returns);
 
 	ret = new_soap_req(sipe_private,
+			   session,
 			   uri,
 			   "DistributionListExpander/IAddressBook/SearchAbEntry",
 			   wsse_security,
@@ -389,6 +417,7 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
  * I guess we'll have to see what happens in real life...
  */
 gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
+				struct sipe_svc_session *session,
 				const gchar *service_uri,
 				sipe_svc_callback *callback,
 				gpointer callback_data)
@@ -414,6 +443,7 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 					   service_uri);
 
 	gboolean ret = sipe_svc_wsdl_request(sipe_private,
+					     session,
 					     "https://login.microsoftonline.com:443/RST2.srf",
 					     "xmlns:ps=\"http://schemas.microsoft.com/Passport/SoapServices/PPCRL\" "
 					     "xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" "
@@ -431,6 +461,7 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 }
 
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
+			    struct sipe_svc_session *session,
 			    const gchar *uri,
 			    const gchar *wsse_security,
 			    const gchar *service_uri,
@@ -465,6 +496,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 					   secret);
 
 	gboolean ret = new_soap_req(sipe_private,
+				    session,
 				    uri,
 				    "http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue",
 				    wsse_security,
@@ -494,6 +526,7 @@ static void sipe_svc_metadata_response(struct svc_request *data,
 }
 
 gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
+			   struct sipe_svc_session *session,
 			   const gchar *uri,
 			   sipe_svc_callback *callback,
 			   gpointer callback_data)
@@ -501,6 +534,7 @@ gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
 	gchar *mex_uri = g_strdup_printf("%s/mex", uri);
 	gboolean ret = sipe_svc_https_request(sipe_private,
 					      HTTP_CONN_GET,
+					      session,
 					      mex_uri,
 					      "text",
 					      NULL,

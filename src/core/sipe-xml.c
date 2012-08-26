@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -344,7 +344,7 @@ guint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
 			     guint fallback)
 {
 	const gchar *value = sipe_xml_attribute(node, attr);
-	return(value ? g_ascii_strtoll(value, NULL, 10) : fallback);
+	return(value ? g_ascii_strtoull(value, NULL, 10) : fallback);
 }
 
 gchar *sipe_xml_data(const sipe_xml *node)
@@ -429,6 +429,31 @@ gchar *sipe_xml_exc_c14n(const gchar *string)
 	}
 
 	return(canon);
+}
+
+gchar *sipe_xml_extract_raw(const gchar *xml, const gchar *tag,
+			    gboolean include_tag)
+{
+	gchar *tag_start = g_strdup_printf("<%s", tag);
+	gchar *tag_end = g_strdup_printf("</%s>", tag);
+	gchar *data = NULL;
+	const gchar *start = strstr(xml, tag_start);
+
+	if (start) {
+		const gchar *end = strstr(start + strlen(tag_start), tag_end);
+		if (end) {
+			if (include_tag) {
+				data = g_strndup(start, end + strlen(tag_end) - start);
+			} else {
+				const gchar *tmp = strchr(start + strlen(tag_start), '>') + 1;
+				data = g_strndup(tmp, end - tmp);
+			}
+		}
+	}
+
+	g_free(tag_end);
+	g_free(tag_start);
+	return data;
 }
 
 /*

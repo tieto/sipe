@@ -1,4 +1,10 @@
-ifneq ($(wildcard /usr/bin/i686-pc-mingw32-*),)
+ifneq ($(wildcard /bin/i686-w64-mingw32-*),)
+# Fedora 17+
+CC       := /bin/i686-w64-mingw32-gcc
+STRIP    := /bin/i686-w64-mingw32-strip
+WINDRES  := /bin/i686-w64-mingw32-windres
+EXTUTILS := /usr/share/perl5/ExtUtils
+else ifneq ($(wildcard /usr/bin/i686-pc-mingw32-*),)
 # Fedora
 CC       := /usr/bin/i686-pc-mingw32-gcc
 STRIP    := /usr/bin/i686-pc-mingw32-strip

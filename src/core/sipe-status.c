@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -145,14 +145,19 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("sipe_status_and_note: switch to '%s' for the account", status_id);
 
 	activity = sipe_status_token_to_activity(status_id);
-	if (sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
-					 activity,
-					 sipe_private->note)) {
+	if (sipe_backend_status_changed(SIPE_CORE_PUBLIC,
+					activity,
+					sipe_private->note)) {
 		/* status has changed */
 		sipe_private->do_not_publish[activity] = time(NULL);
 		SIPE_DEBUG_INFO("sipe_status_and_note: do_not_publish[%s]=%d [now]",
 				status_id,
 				(int) sipe_private->do_not_publish[activity]);
+
+		/* update backend status */
+		sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
+					     activity,
+					     sipe_private->note);
 	}
 }
 

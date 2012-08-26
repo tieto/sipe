@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <glib.h>
 
@@ -816,6 +817,20 @@ gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
 	return FALSE;
 }
 
+void sipe_core_media_test_call(struct sipe_core_public *sipe_public)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	if (!sipe_private->test_call_bot_uri) {
+		sipe_backend_notify_error(sipe_public,
+					  _("Unable to establish a call"),
+					  _("Audio Test Service is not available."));
+		return;
+	}
+
+	sipe_core_media_initiate_call(sipe_public,
+				      sipe_private->test_call_bot_uri, FALSE);
+}
+
 void
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
@@ -1030,7 +1045,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 
 	if (msg->response >= 400) {
 		// Call rejected by remote peer or an error occurred
-		gchar *title;
+		const gchar *title;
 		GString *desc = g_string_new("");
 		gboolean append_responsestr = FALSE;
 
@@ -1049,7 +1064,25 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				title = _("Call rejected");
 				g_string_append_printf(desc, _("User %s rejected call"), with);
 				break;
-			case 488:
+			case 488: {
+				/* Check for incompatible encryption levels error.
+				 *
+				 * MS Lync 2010:
+				 * 488 Not Acceptable Here
+				 * ms-client-diagnostics: 52017;reason="Encryption levels dont match"
+				 *
+				 * older clients (and SIPE itself):
+				 * 488 Encryption Levels not compatible
+				 */
+				const gchar *ms_diag = sipmsg_find_header(msg, "ms-client-diagnostics");
+
+				if (sipe_strequal(msg->responsestr, "Encryption Levels not compatible") ||
+				    (ms_diag && g_str_has_prefix(ms_diag, "52017;"))) {
+					title = _("Unable to establish a call");
+					g_string_append(desc, _("Encryption settings of peer are incompatible with ours."));
+					break;
+				}
+
 				if (call_private->ice_version == SIPE_ICE_RFC_5245 &&
 				    sip_transaction_cseq(trans) == 1) {
 					gchar *with = g_strdup(call_private->with);
@@ -1064,6 +1097,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 					return TRUE;
 				}
 				// Break intentionally omitted
+			}
 			default:
 				title = _("Error occured");
 				g_string_append(desc, _("Unable to establish a call"));

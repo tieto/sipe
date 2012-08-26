@@ -111,6 +111,7 @@ struct sipe_core_private {
 
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
+	gchar *test_call_bot_uri;
 	/**
 	 *  Provides the necessary information on where we can obtain
 	 *  credentials for the A/V Edge server service.
@@ -137,6 +138,12 @@ struct sipe_core_private {
 
 	/* [MS-DLX] server URI */
 	gchar *dlx_uri;
+
+	/* Addressbook server URI */
+	gchar *addressbook_uri;
+
+	/* Pending photo download HTTP requests */
+	GSList *pending_photo_requests;
 };
 
 /**

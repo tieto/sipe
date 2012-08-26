@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,14 @@
  */
 
 #ifdef _WIN32
-#include "win32/win32dep.h" /* for inet_ntop() */
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
 #include <ws2tcpip.h>
 #else
-#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 #include <glib.h>

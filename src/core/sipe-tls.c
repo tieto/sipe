@@ -1144,7 +1144,7 @@ static struct tls_compiled_message *tls_client_certificate(struct tls_internal_s
 	       certificate_length);
 
 	msg = compile_handshake_msg(state, &Certificate_m, certificate,
-				    sizeof(struct Certificate_host) + certificate_length);
+				    sizeof(struct Certificate_host) + certificate_length + 3);
 	g_free(certificate);
 
 	return(msg);

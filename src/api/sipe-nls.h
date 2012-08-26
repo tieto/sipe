@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,4 +25,6 @@
 #else
 #define _(String) ((const char *) (String))
 #define N_(String) ((const char *) (String))
+#define gettext(String) ((const char *) (String))
+#define dngettext(package, StringS, StringP, p) ((const char *) ((p) ? (StringP) : (StringS)))
 #endif /* ENABLE_NLS */

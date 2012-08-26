@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -57,7 +57,7 @@
 
 #include <glib.h>
 
-#include "sipe-common.h"
+#include "sipe-common.h" /* coverity[hfa: FALSE] */
 #include "sipe-backend.h"
 #include "sipe-cert-crypto.h"
 #include "sipe-crypt.h"

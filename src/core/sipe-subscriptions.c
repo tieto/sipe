@@ -303,8 +303,6 @@ void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private)
  * Expires header, which asks for 0 seconds for the subscription lifetime).
  * This subscription asks for server configuration, meeting policies, and
  * policy settings that Communicator must enforce.
- *
- * @TODO: for what do we need this information?
  */
 void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private)
 {

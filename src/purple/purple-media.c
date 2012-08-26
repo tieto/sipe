@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,13 +33,35 @@
 #include "sipe-common.h"
 
 #include "mediamanager.h"
-#include "media-gst.h"
 #include "agent.h"
+
+#ifdef _WIN32
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
+#endif
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
 
 #include "purple-private.h"
+
+/*
+ * GValueArray has been marked deprecated in glib 2.32 but it is still used by
+ * libpurple and libfarsight APIs. Therefore we need to disable the deprecated
+ * warning so that the code still compiles for platforms that enable it.
+ *
+ * GStreamer interfaces fail to compile on ARM architecture with -Wcast-align
+ *
+ * Diagnostic #pragma was added in GCC 4.2.0
+ */
+#if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__)
+#pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#endif
+
+#include "media-gst.h"
 
 struct sipe_backend_media {
 	PurpleMedia *m;
@@ -105,12 +127,8 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		call->media_end_cb(call);
 }
 
-/* Used externally in purple-plugin.c. This declaration stops the compiler
- * complaining about missing prototype. */
-void capture_pipeline(gchar *label);
-
 void
-capture_pipeline(gchar *label) {
+capture_pipeline(const gchar *label) {
 	PurpleMediaManager *manager = purple_media_manager_get();
 	GstElement *pipeline = purple_media_manager_get_pipeline(manager);
 	GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(pipeline), GST_DEBUG_GRAPH_SHOW_ALL, label);
@@ -420,6 +438,11 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
 		//sessionid = "sipe-voice-rawudp";
+
+		/* To avoid Coverity FORWARD_NULL warning. params_cnt is
+		 * still 0 so this is a no-op. libpurple API documentation
+		 * doesn't specify if params can be NULL or not. */
+		params = g_new0(GParameter, 1);
 	}
 
 	ensure_codecs_conf();
@@ -437,7 +460,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			++media->unconfirmed_streams;
 	}
 
-	if (params && media_relays)
+	if ((params_cnt > 2) && media_relays)
 		g_value_unset(&params[3].value);
 
 	g_free(params);

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,9 +92,20 @@ int sipe_miranda_SetStatus( SIPPROTO *pr, int iNewStatus )
 	return 0;
 }
 
-gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
-				      guint activity,
-				      const gchar *message)
+gboolean sipe_backend_status_changed(struct sipe_core_public *sipe_public,
+				     guint activity,
+				     const gchar *message)
+{
+	SIPPROTO *pr = sipe_public->backend_private;
+	int iNewStatus = SipeStatusToMiranda(activity);
+	if (!pr->m_hServerNetlibUser) return FALSE;
+	if (pr->proto.m_iDesiredStatus == iNewStatus) return FALSE;
+	return(TRUE);
+}
+
+void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
+				  guint activity,
+				  const gchar *message)
 {
 	sipe_miranda_SetStatus(sipe_public->backend_private, SipeStatusToMiranda(activity));
 	return TRUE;

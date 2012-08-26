@@ -284,6 +284,28 @@ static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 }
 #endif
 
+static void sipe_invite_mime_mixed_cb(gpointer user_data, const GSList *fields,
+	SIPE_UNUSED_PARAMETER const gchar *body, SIPE_UNUSED_PARAMETER gsize length)
+{
+	const gchar *ctype = sipe_utils_nameval_find(fields, "Content-Type");
+
+	/* Lync 2010 file transfer */
+	if (g_str_has_prefix(ctype, "application/ms-filetransfer+xml")) {
+		struct sipmsg *msg = user_data;
+
+		sipmsg_remove_header_now(msg, "Content-Type");
+		sipmsg_add_header_now(msg, "Content-Type", ctype);
+
+		/* Right now, we do not care about the message body, only detect new
+		 * file transfer protocol from Content-Type and reply with
+		 * 488 Not Acceptable Here to force the old MSOC behavior.
+		 *
+		 * TODO: Extend sipmsg so that it supports multipart messages, as to
+		 * implement the new protocol, we need access to both parts of the
+		 * message for further processing. */
+	}
+}
+
 static void send_invite_response(struct sipe_core_private *sipe_private,
 				 struct sipmsg *msg)
 {
@@ -379,6 +401,18 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 		content_type = sipmsg_find_header(msg, "Content-Type");
 	}
 #endif
+
+	if (g_str_has_prefix(content_type, "multipart/mixed")) {
+		sipe_mime_parts_foreach(content_type, msg->body, sipe_invite_mime_mixed_cb, msg);
+		/* Reload Content-Type to get type of the selected message part */
+		content_type = sipmsg_find_header(msg, "Content-Type");
+	}
+
+	/* Lync 2010 file transfer */
+	if (g_str_has_prefix(content_type, "application/ms-filetransfer+xml")) {
+		sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
+		return;
+	}
 
 	/* Invitation to join conference */
 	if (g_str_has_prefix(content_type, "application/ms-conf-invite+xml")) {

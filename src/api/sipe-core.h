@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -147,7 +147,7 @@ sipe_utils_nameval_free(GSList *list);
 gboolean sipe_utils_is_avconf_uri(const gchar *uri);
 
 gchar *sip_uri_from_name(const gchar *name);
-gchar *sip_uri(const gchar *string);
+gchar *sip_uri_if_valid(const gchar *string);
 
 /*****************************************************************************/
 
@@ -378,6 +378,13 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
  * @return @c TRUE if media call is in progress
  */
 gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public);
+
+/**
+ * Checks voice quality by making a call to the test service
+ *
+ * @param sipe_public (in) SIPE core data.
+ */
+void sipe_core_media_test_call(struct sipe_core_public *sipe_public);
 
 /* file transfer */
 struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);

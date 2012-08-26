@@ -1,3 +1,35 @@
+pidgin-sipe (1.13.3-1) unstable; urgency=low
+
+  * New upstream version 1.13.3 "Bug Fixes III" (2012-08-19)
+	- Fixed #3537084: OpenBSD build issue (Stefan Becker)
+	- Fixed #3543294: Support Lync 2010 meet URLs (Jakub Adam)
+	- revert to legacy MSOC protocol on Lync FT invitation (Jakub Adam)
+	- fix broken busy->available status switch (Stefan Becker)
+	- updated translations: Portuguese (pt)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sun, 19 Aug 2012 12:03:00 +0300
+
+pidgin-sipe (1.13.2-1) unstable; urgency=low
+
+  * New upstream version 1.13.2 "Bug Fixes II" (2012-06-10)
+	- tls: fix buffer overrun (Oleksandr Hryshchuk, Stefan Becker)
+	- win32: fix TCP connections (Stefan Becker)
+	- nsis: fix broken locale installation (Stefan Becker)
+	- updated translations: French (fr)
+	- various build fixes (Stefan Becker, Jakub Adam)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sun, 10 Jun 2012 15:48:00 +0300
+
+pidgin-sipe (1.13.1-1) unstable; urgency=low
+
+  * New upstream version 1.13.1 "Bug Fixes I"
+	- detect incompatible encryption level with Lync (Jakub Adam)
+	- purple: add URI validity check to Add Buddy callback (Stefan Becker)
+	- new translations: Romanian (ro), Turkish (tr)
+	- various build fixes (Stefan Becker)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Mon, 09 Apr 2012 12:29:42 +0300
+
 pidgin-sipe (1.13.0-1) unstable; urgency=low
 
   * New upstream version 1.13.0 "Lync & Office365"
@@ -5,10 +37,12 @@ pidgin-sipe (1.13.0-1) unstable; urgency=low
 	  * TLS-DSK has been introduced in Lync
 	  * mandatory for Office365 accounts
 	  * also works for non-public Lync installations
+	  * does not work yet with SSPI on Windows
 	- added [MS-DLX] based Get Info/Contact Search (Stefan Becker)
 	  * [MS-PRES] SIP-Based Active Directory Search is disabled in Lync
 	- added experimental media TCP transport (Jakub Adam)
 	- make it compile against the latest purple 3.0.x API (Stefan Becker)
+	- make it compile against the latest glib2 2.31.x API (Stefan Becker)
 	- completed cleanup: core no longer requires libpurple (Stefan Becker)
 	- refactored crypto code, ie. NSS can replaced if necessary (Stefan Becker)
 	- sipe-domino.c is no longer built under UNIX to remove dead code (Stefan Becker)
@@ -18,8 +52,9 @@ pidgin-sipe (1.13.0-1) unstable; urgency=low
 	- OBS mingw packages now use SSPI instead of NTLM (Stefan Becker)
 	- added NSIS package generation to OBS mingw packages (Stefan Becker)
 	- removed kopete backend. KDE is moving to telepathy (Stefan Becker)
+	- added MinGW cross-compilation on Linux instructions (Stefan Becker)
 
- -- Anibal Avelar <aavelar@cofradia.org>  XXX, XX XXX 2012 00:00:00 -0500
+ -- Stefan Becker <chemobejk@gmail.com>  Wed, 14 Mar 2012 19:30:23 +0200
 
 pidgin-sipe (1.12.0-1) unstable; urgency=low
 

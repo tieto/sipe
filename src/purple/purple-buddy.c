@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -285,6 +285,33 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				    NULL);
 }
 
+void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
+				  const gchar *who,
+				  gpointer photo_data,
+				  gsize data_len,
+				  const gchar *photo_hash)
+{
+	PurpleAccount *account = sipe_public->backend_private->account;
+
+	purple_buddy_icons_set_for_user(account, who, photo_data,
+					data_len, photo_hash);
+}
+
+const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_public,
+					       const gchar *who)
+{
+	PurpleAccount *account = sipe_public->backend_private->account;
+	const gchar *result = NULL;
+
+	PurpleBuddyIcon *icon = purple_buddy_icons_find(account, who);
+	if (icon) {
+		result = purple_buddy_icon_get_checksum(icon);
+		purple_buddy_icon_unref(icon);
+	}
+
+	return result;
+}
+
 gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				      const gchar *group_name)
 {
@@ -371,14 +398,23 @@ void sipe_purple_add_buddy(PurpleConnection *gc,
 		 * purple_normalize_nocase() to compare
 		 */
 		gchar *buddy_name = g_ascii_strdown(buddy->name, -1);
-		gchar *uri        = sip_uri(buddy_name);
+		gchar *uri        = sip_uri_if_valid(buddy_name);
 		g_free(buddy_name);
-		purple_blist_rename_buddy(buddy, uri);
-		g_free(uri);
 
-		sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-				    buddy->name,
-				    group->name);
+		if (uri) {
+			purple_blist_rename_buddy(buddy, uri);
+			g_free(uri);
+
+			sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+					    buddy->name,
+					    group->name);
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_purple_add_buddy[CB]: buddy name is invalid for URI");
+			purple_blist_remove_buddy(buddy);
+			purple_notify_error(gc, NULL,
+					    _("User name should be a valid SIP URI\nExample: user@company.com"),
+					    NULL);
+		}
 	}
 }
 

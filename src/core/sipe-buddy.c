@@ -24,11 +24,13 @@
 #include "config.h"
 #endif
 
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include <glib.h>
 
+#include "http-conn.h"
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
@@ -54,6 +56,36 @@
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
 #include "sipe-xml.h"
+
+struct photo_response_data {
+	struct sipe_core_private *sipe_private;
+	gchar *who;
+	gchar *photo_hash;
+	HttpConn *conn;
+};
+
+static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
+			      const gchar *uri);
+static void photo_response_data_free(struct photo_response_data *data);
+
+struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
+				  const gchar *uri)
+{
+	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	if (!buddy) {
+		buddy = g_new0(struct sipe_buddy, 1);
+		buddy->name = g_strdup(uri);
+		g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
+
+		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", uri);
+
+		buddy_fetch_photo(sipe_private, uri);
+	} else {
+		SIPE_DEBUG_INFO("sipe_buddy_add: Buddy %s already exists", uri);
+	}
+
+	return buddy;
+}
 
 static void buddy_free(struct sipe_buddy *buddy)
 {
@@ -104,6 +136,15 @@ void sipe_buddy_free_all(struct sipe_core_private *sipe_private)
 	g_hash_table_foreach_steal(sipe_private->buddies,
 				   buddy_free_cb,
 				   NULL);
+
+	/* core is being deallocated, remove all its pending photo requests */
+	while (sipe_private->pending_photo_requests) {
+		struct photo_response_data *data =
+			sipe_private->pending_photo_requests->data;
+		sipe_private->pending_photo_requests =
+			g_slist_remove(sipe_private->pending_photo_requests, data);
+		photo_response_data_free(data);
+	}
 }
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
@@ -186,13 +227,8 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
 	if (!g_hash_table_lookup(sipe_private->buddies, uri)) {
-		struct sipe_buddy *b = g_new0(struct sipe_buddy, 1);
-
-		SIPE_DEBUG_INFO("sipe_core_buddy_add: %s", uri);
-
-		b->name = g_strdup(uri);
+		struct sipe_buddy *b = sipe_buddy_add(sipe_private, uri);
 		b->just_added = TRUE;
-		g_hash_table_insert(sipe_private->buddies, b->name, b);
 
 		/* @TODO should go to callback */
 		sipe_subscribe_presence_single(sipe_private, b->name);
@@ -412,6 +448,8 @@ struct ms_dlx_data {
 	gchar  *other;
 	guint   max_returns;
 	sipe_svc_callback *callback;
+	struct sipe_svc_session *session;
+	gchar *wsse_security;
 	/* must call ms_dlx_free() */
 	void (*failed_callback)(struct sipe_core_private *sipe_private,
 				struct ms_dlx_data *mdd);
@@ -425,7 +463,9 @@ static void ms_dlx_free(struct ms_dlx_data *mdd)
 		entry = entry->next;
 	}
 	g_slist_free(mdd->search_rows);
+	sipe_svc_session_close(mdd->session);
 	g_free(mdd->other);
+	g_free(mdd->wsse_security);
 	g_free(mdd);
 }
 
@@ -484,6 +524,7 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 				base_uri);
 
 		if (sipe_svc_ab_entry_request(sipe_private,
+					      mdd->session,
 					      auth_uri,
 					      wsse_security,
 					      query,
@@ -491,6 +532,10 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 					      mdd->max_returns,
 					      mdd->callback,
 					      mdd)) {
+
+			/* keep webticket security token for potential further use */
+			mdd->wsse_security = g_strdup(wsse_security);
+
 			/* callback data passed down the line */
 			mdd = NULL;
 		}
@@ -510,6 +555,7 @@ static void ms_dlx_webticket_request(struct sipe_core_private *sipe_private,
 				     struct ms_dlx_data *mdd)
 {
 	if (!sipe_webticket_request(sipe_private,
+				    mdd->session,
 				    sipe_private->dlx_uri,
 				    "AddressBookWebTicketBearer",
 				    ms_dlx_webticket,
@@ -782,6 +828,7 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			mdd->max_returns     = 100;
 			mdd->callback        = search_ab_entry_response;
 			mdd->failed_callback = search_ab_entry_failed;
+			mdd->session         = sipe_svc_session_start();
 
 			ms_dlx_webticket_request(SIPE_CORE_PRIVATE, mdd);
 
@@ -1136,6 +1183,7 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 		mdd->max_returns     = 1;
 		mdd->callback        = get_info_ab_entry_response;
 		mdd->failed_callback = get_info_ab_entry_failed;
+		mdd->session         = sipe_svc_session_start();
 
 		ms_dlx_webticket_request(sipe_private, mdd);
 
@@ -1159,6 +1207,188 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 					  payload);
 		g_free(row);
 	}
+}
+
+static void photo_response_data_free(struct photo_response_data *data)
+{
+	g_free(data->who);
+	g_free(data->photo_hash);
+	if (data->conn) {
+		http_conn_free(data->conn);
+	}
+	g_free(data);
+}
+
+static void process_buddy_photo_response(int return_code, const char *body,
+		GSList *headers, SIPE_UNUSED_PARAMETER HttpConn *conn, void *data)
+{
+	struct photo_response_data *rdata = (struct photo_response_data *)data;
+	struct sipe_core_private *sipe_private = rdata->sipe_private;
+
+	if (return_code == 200) {
+		const gchar *len_str = sipe_utils_nameval_find(headers, "Content-Length");
+		if (len_str) {
+			gsize photo_size = atoi(len_str);
+			gpointer photo = g_new(char, photo_size);
+
+			if (photo) {
+				memcpy(photo, body, photo_size);
+
+				sipe_backend_buddy_set_photo(SIPE_CORE_PUBLIC,
+							     rdata->who,
+							     photo,
+							     photo_size,
+							     rdata->photo_hash);
+			}
+		}
+	}
+
+	sipe_private->pending_photo_requests =
+		g_slist_remove(sipe_private->pending_photo_requests, rdata);
+	photo_response_data_free(rdata);
+}
+
+static gchar *create_x_ms_webticket_header(const gchar *wsse_security)
+{
+	gchar *assertion = sipe_xml_extract_raw(wsse_security, "saml:Assertion", TRUE);
+	gchar *wsse_security_base64;
+	gchar *x_ms_webticket_header;
+
+	if (!assertion) {
+		return NULL;
+	}
+
+	wsse_security_base64 = g_base64_encode((const guchar *)assertion,
+			strlen(assertion));
+	x_ms_webticket_header = g_strdup_printf("X-MS-WebTicket: opaque=%s\r\n",
+			wsse_security_base64);
+
+	g_free(assertion);
+	g_free(wsse_security_base64);
+
+	return x_ms_webticket_header;
+}
+
+static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
+					const gchar *uri,
+					SIPE_UNUSED_PARAMETER const gchar *raw,
+					sipe_xml *soap_body,
+					gpointer callback_data)
+{
+	struct ms_dlx_data *mdd = callback_data;
+	gchar *photo_rel_path = NULL;
+	gchar *photo_hash = NULL;
+	const gchar *photo_hash_old =
+		sipe_backend_buddy_get_photo_hash(SIPE_CORE_PUBLIC, mdd->other);
+
+	if (soap_body) {
+		const sipe_xml *node;
+
+		SIPE_DEBUG_INFO("get_photo_ab_entry_response: received valid SOAP message from service %s",
+				uri);
+
+		for (node = sipe_xml_child(soap_body, "Body/SearchAbEntryResponse/SearchAbEntryResult/Items/AbEntry/Attributes/Attribute");
+		     node;
+		     node = sipe_xml_twin(node)) {
+			gchar *name  = sipe_xml_data(sipe_xml_child(node, "Name"));
+			gchar *value = sipe_xml_data(sipe_xml_child(node, "Value"));
+
+			if (!is_empty(value)) {
+				if (sipe_strcase_equal(name, "PhotoRelPath")) {
+					g_free(photo_rel_path);
+					photo_rel_path = value;
+					value = NULL;
+				} else if (sipe_strcase_equal(name, "PhotoHash")) {
+					g_free(photo_hash);
+					photo_hash = value;
+					value = NULL;
+				}
+			}
+
+			g_free(value);
+			g_free(name);
+		}
+	}
+
+	if (sipe_private->addressbook_uri && photo_rel_path &&
+	    photo_hash && !sipe_strequal(photo_hash, photo_hash_old)) {
+		gchar *photo_url = g_strdup_printf("%s/%s",
+				sipe_private->addressbook_uri, photo_rel_path);
+		gchar *x_ms_webticket_header = create_x_ms_webticket_header(mdd->wsse_security);
+
+		struct photo_response_data *data = g_new(struct photo_response_data, 1);
+		data->sipe_private = sipe_private;
+		data->who = g_strdup(mdd->other);
+		data->photo_hash = photo_hash;
+		photo_hash = NULL;
+
+		data->conn = http_conn_create(
+			SIPE_CORE_PUBLIC,
+			NULL, /* HttpSession */
+			HTTP_CONN_GET,
+			HTTP_CONN_SSL,
+			HTTP_CONN_NO_REDIRECT,
+			photo_url,
+			NULL, /* body */
+			NULL, /* content-type */
+			x_ms_webticket_header,
+			NULL, /* auth */
+			process_buddy_photo_response,
+			data);
+
+		if (data->conn) {
+			sipe_private->pending_photo_requests =
+				g_slist_append(sipe_private->pending_photo_requests, data);
+		} else {
+			photo_response_data_free(data);
+		}
+
+		g_free(x_ms_webticket_header);
+		g_free(photo_url);
+	}
+
+	g_free(photo_rel_path);
+	g_free(photo_hash);
+	ms_dlx_free(mdd);
+}
+
+static void get_photo_ab_entry_failed(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+				      struct ms_dlx_data *mdd)
+{
+	ms_dlx_free(mdd);
+}
+
+static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
+			      const gchar *uri)
+{
+	if (sipe_private->dlx_uri && sipe_private->addressbook_uri) {
+		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+
+		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
+		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup(uri));
+
+		mdd->other           = g_strdup(uri);
+		mdd->max_returns     = 1;
+		mdd->callback        = get_photo_ab_entry_response;
+		mdd->failed_callback = get_photo_ab_entry_failed;
+		mdd->session         = sipe_svc_session_start();
+
+		ms_dlx_webticket_request(sipe_private, mdd);
+	}
+}
+
+static void buddy_refresh_photos_cb(gpointer uri,
+				    SIPE_UNUSED_PARAMETER gpointer value,
+				    gpointer sipe_private)
+{
+	buddy_fetch_photo(sipe_private, uri);
+}
+
+void sipe_buddy_refresh_photos(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_foreach(sipe_private->buddies,
+			     buddy_refresh_photos_cb,
+			     sipe_private);
 }
 
 /* Buddy menu callbacks*/

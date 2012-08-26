@@ -98,6 +98,7 @@ AS_IF([test "x$enable_quality_check" = xyes],
 			"-Wdeclaration-after-statement" \
 			"-Wdeprecated-declarations" \
 			"-Winit-self" \
+			"-Wmaybe-uninitialized" \
 			"-Wmissing-declarations" \
 			"-Wmissing-prototypes" \
 			"-Wnested-externs" \

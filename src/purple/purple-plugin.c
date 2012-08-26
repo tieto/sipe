@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -306,9 +306,15 @@ static void sipe_purple_login(PurpleAccount *account)
 		SIPE_CORE_FLAG_SET(KRB5);
 	} else
 #endif
+#ifndef HAVE_SSPI
+	/*
+	 * @TODO: SSL handshake support isn't implemented in sip-sec-sspi.c.
+	 *        So ignore configuration setting for now.
+	 */
 	if (sipe_strequal(auth, "tls-dsk")) {
 		SIPE_CORE_FLAG_SET(TLS_DSK);
 	}
+#endif
 
 	/* @TODO: is this correct?
 	   "sso" is only available when Kerberos/SSPI support is compiled in */
@@ -446,8 +452,6 @@ sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 
 #if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 #ifdef HAVE_VV
-
-extern void capture_pipeline(gchar *label);
 
 static void
 sipe_purple_sigusr1_handler(SIPE_UNUSED_PARAMETER int signum)
@@ -746,6 +750,14 @@ static void sipe_purple_join_conference_cb(PurpleConnection *gc,
 	}
 }
 
+#ifdef HAVE_VV
+static void sipe_purple_test_call(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	sipe_core_media_test_call(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+}
+#endif
+
 static void sipe_purple_show_join_conference(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
@@ -766,7 +778,9 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 		_("Enter meeting location string you received in the invitation.\n"
 		  "\n"
 		  "Valid location will be something like\n"
-		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"),
+		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+		  "or\n"
+		  "https://meet.company.com/someone/abcdef1234"),
 		fields,
 		_("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
 		_("_Cancel"), NULL,
@@ -796,6 +810,11 @@ static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 
 	act = purple_plugin_action_new(_("Contact search..."), sipe_purple_show_find_contact);
 	menu = g_list_prepend(menu, act);
+
+#ifdef HAVE_VV
+	act = purple_plugin_action_new(_("Test call"), sipe_purple_test_call);
+	menu = g_list_prepend(menu, act);
+#endif
 
 	act = purple_plugin_action_new(_("Join scheduled conference..."), sipe_purple_show_join_conference);
 	menu = g_list_prepend(menu, act);
@@ -884,7 +903,10 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
 #endif
+#ifndef HAVE_SSPI
+	/* see above */
 	purple_account_option_add_list_item(option, _("TLS-DSK"), "tls-dsk");
+#endif
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)

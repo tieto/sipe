@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -288,40 +288,106 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 	return TRUE;
 }
 
-struct sip_session *
-sipe_core_conf_create(struct sipe_core_public *sipe_public,
-		      const gchar *focus_uri)
+static gchar *
+parse_ocs_focus_uri(const gchar *uri)
 {
-	gchar *buf;
-	const gchar *focus_uri_ue;
-	struct sip_session *session = NULL;
+	const gchar *confkey;
+	size_t uri_len;
 
-	focus_uri_ue = buf = sipe_utils_uri_unescape(focus_uri);
+	if (!uri)
+		return NULL;
 
 	// URI can have this prefix if it was typed in by the user
-	if (g_str_has_prefix(focus_uri_ue, "meet:"))
-		focus_uri_ue += 5;
+	if (g_str_has_prefix(uri, "meet:")) {
+		uri += 5;
+	}
 
-	if (!focus_uri_ue || !g_str_has_prefix(focus_uri_ue, "sip:") ||
-	    strlen(focus_uri_ue) == 4 || g_strstr_len(focus_uri_ue, -1, "%")) {
-		gchar *error = g_strdup_printf(_("\"%s\" is not a valid focus URI"),
-					       focus_uri ? focus_uri : "");
+	uri_len = strlen(uri);
+
+	if (!uri || !g_str_has_prefix(uri, "sip:") ||
+		uri_len == 4 || g_strstr_len(uri, -1, "%")) {
+		return NULL;
+	}
+
+	confkey = g_strstr_len(uri, -1, "?");
+	if (confkey) {
+		/* TODO: Investigate how conf-key field should be used,
+		 * ignoring for now */
+		uri_len = confkey - uri;
+	}
+
+	return g_strndup(uri, uri_len);
+}
+
+static gchar *
+parse_lync_join_url(const gchar *uri)
+{
+	gchar *focus_uri = NULL;
+	gchar **parts;
+	int parts_count = 0;
+
+	if (!uri)
+		return NULL;
+
+	if (g_str_has_prefix(uri, "https://")) {
+		uri += 8;
+	} else if (g_str_has_prefix(uri, "http://")) {
+		uri += 7;
+	}
+
+	parts = g_strsplit(uri, "/", 0);
+
+	for (parts_count = 0; parts[parts_count]; ++parts_count);
+	if (parts_count >= 3) {
+		gchar *base_url = parts[0];
+		gchar *conference_id = parts[parts_count - 1];
+		gchar *organizer_alias = parts[parts_count - 2];
+
+		gchar **url_parts = g_strsplit(base_url, ".", 0);
+		int url_parts_count = 0;
+		for (url_parts_count = 0; url_parts[url_parts_count]; ++url_parts_count);
+
+		if (url_parts_count >= 3) {
+			focus_uri = g_strdup_printf("sip:%s@%s.%s;gruu;opaque=app:conf:focus:id:%s",
+					organizer_alias,
+					url_parts[url_parts_count - 2], url_parts[url_parts_count - 1],
+					conference_id);
+		}
+
+		g_strfreev(url_parts);
+	}
+
+	g_strfreev(parts);
+
+	return focus_uri;
+}
+
+struct sip_session *
+sipe_core_conf_create(struct sipe_core_public *sipe_public,
+		      const gchar *uri)
+{
+	gchar *uri_ue = sipe_utils_uri_unescape(uri);
+	gchar *focus_uri;
+	struct sip_session *session = NULL;
+
+	focus_uri = parse_ocs_focus_uri(uri_ue);
+	if (!focus_uri) {
+		focus_uri = parse_lync_join_url(uri_ue);
+	}
+
+	if (focus_uri) {
+		session = sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri);
+		g_free(focus_uri);
+	} else {
+		gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
+					       uri ? uri : "");
 		sipe_backend_notify_error(sipe_public,
 					  _("Failed to join the conference"),
 					  error);
 		g_free(error);
-	} else {
-		gchar *querystr = g_strstr_len(focus_uri_ue, -1, "?");
-		if (querystr) {
-			/* TODO: Investigate how conf-key field should be used,
-			 * ignoring for now */
-			*querystr = '\0';
-		}
-
-		session =  sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri_ue);
 	}
 
-	g_free(buf);
+	g_free(uri_ue);
 
 	return session;
 }
@@ -836,7 +902,7 @@ ask_accept_voice_conference(struct sipe_core_private *sipe_private,
 	gchar **parts;
 	gchar *alias;
 	gchar *ask_msg;
-	gchar *novv_note;
+	const gchar *novv_note;
 	struct conf_accept_ctx *ctx;
 
 #ifdef HAVE_VV
