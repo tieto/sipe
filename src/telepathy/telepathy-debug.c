@@ -18,20 +18,82 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ ******************************************************************************
+ *
+ * How to collect debugging information
+ *
+ * Run the connection manager from the command line like this:
+ *
+ *    $ G_MESSAGES_DEBUG="all" SIPE_PERSIST=1 \
+ *      SIPE_DEBUG=[space separated keyword list \
+ *      [SIPE_TIMING=1] [SIPE_LOGFILE="..."] \
+ *      telepathy-sipe
+ *
+ * G_MESSAGES_DEBUG=all: make debug & informational messages visible
+ *
+ * SIPE_PERSISTS=1     : keep the CM running permanently,
+ *                       [otherwise the one installed in the system will
+ *                       be started automatically by D-Bus when needed]
+ *
+ * SIPE_DEBUG=...      :
+ *    all        - enable all sipe & telepathy-glib messages
+ *    sipe       - enable only sipe messages
+ *    "sipe ..." - enable sipe and some telepathy-glib messages
+ *
+ * SIPE_TIMING=1       : enable time stamps
+ *                       [recommeded for any usable log file]
+ *
+ * SIPE_LOGFILE="..."  : redirect output to this file
+ *                       [prepend file name with "+" to enable append mode]
+ *
+ ******************************************************************************
  */
 
 #include <stdarg.h>
 
+#include <glib.h>
 #include <telepathy-glib/debug-sender.h>
+#include <telepathy-glib/telepathy-glib.h>
 
 #include "sipe-backend.h"
 #include "telepathy-private.h"
 
+#define SIPE_TELEPATHY_DEBUG 1
+
 static TpDebugSender *debug;
+static guint          flags = 0;
 
 void sipe_telepathy_debug_init(void)
 {
+	static const GDebugKey const keys[] = {
+		/* This simulates pidgin's --debug flag, i.e. we only see
+		 * output from SIPE if this is set.
+		 *
+		 *  @TODO: we could make this more finely grained, i.e.
+		 *         which levels should be visible
+		 */
+		{ "sipe", SIPE_TELEPATHY_DEBUG },
+	};
+	const gchar *env_flags = g_getenv("SIPE_DEBUG");
+
+	/* Telepathy debugger */
 	debug = tp_debug_sender_dup();
+
+	/* divert g_log_default_handler() output to a logfile */
+	tp_debug_divert_messages(g_getenv("SIPE_LOGFILE"));
+
+	/* sipe & telepathy-glib debugging flags */
+	if (env_flags) flags |= g_parse_debug_string(env_flags, keys, 1);
+	tp_debug_set_flags(env_flags);
+
+	/* add time stamps to debug output */
+	if (g_getenv("SIPE_TIMING"))
+		g_log_set_default_handler(tp_debug_timestamped_log_handler, NULL);
+
+	/* enable test mode */
+	if (g_getenv("SIPE_PERSIST"))
+		tp_debug_set_persistent(TRUE);
 }
 
 void sipe_telepathy_debug_finalize(void)
@@ -40,40 +102,50 @@ void sipe_telepathy_debug_finalize(void)
 }
 
 static const GLogLevelFlags debug_level_mapping[] = {
-	G_LOG_LEVEL_INFO,     /* SIPE_DEBUG_LEVEL_INFO */
+	G_LOG_LEVEL_DEBUG,    /* SIPE_DEBUG_LEVEL_INFO    */
 	G_LOG_LEVEL_WARNING,  /* SIPE_DEBUG_LEVEL_WARNING */
 	G_LOG_LEVEL_CRITICAL, /* SIPE_DEBUG_LEVEL_ERROR   */
-	G_LOG_LEVEL_ERROR,    /* SIPE_DEBUG_LEVEL_FATAL   */
+	G_LOG_LEVEL_ERROR,    /* SIPE_DEBUG_LEVEL_FATAL, this will abort! */
 };
 
 void sipe_backend_debug_literal(sipe_debug_level level,
 				const gchar *msg)
 {
-	GTimeVal now;
-	g_get_current_time(&now);
-	tp_debug_sender_add_message(debug, &now, SIPE_TELEPATHY_DOMAIN,
-				    debug_level_mapping[level], msg);
+	if (flags & SIPE_TELEPATHY_DEBUG) {
+		GLogLevelFlags g_level = debug_level_mapping[level];
+		GTimeVal now;
+		g_log(SIPE_TELEPATHY_DOMAIN, g_level, "%s", msg);
+		g_get_current_time(&now);
+		tp_debug_sender_add_message(debug, &now,
+					    SIPE_TELEPATHY_DOMAIN,
+					    g_level,
+					    msg);
+	}
 }
 
 void sipe_backend_debug(sipe_debug_level level,
 			const gchar *format,
 			...)
 {
-	GTimeVal now;
 	va_list ap;
 
 	va_start(ap, format);
-	g_get_current_time(&now);
-	tp_debug_sender_add_message_vprintf(debug, &now, NULL,
-					    SIPE_TELEPATHY_DOMAIN,
-					    debug_level_mapping[level],
-					    format, ap);
+	if (flags & SIPE_TELEPATHY_DEBUG) {
+		GLogLevelFlags g_level = debug_level_mapping[level];
+		GTimeVal now;
+		g_logv(SIPE_TELEPATHY_DOMAIN, g_level, format, ap);
+		g_get_current_time(&now);
+		tp_debug_sender_add_message_vprintf(debug, &now, NULL,
+						    SIPE_TELEPATHY_DOMAIN,
+						    g_level,
+						    format, ap);
+	}
 	va_end(ap);
 }
 
 gboolean sipe_backend_debug_enabled(void)
 {
-	return(TRUE);
+	return(flags & SIPE_TELEPATHY_DEBUG);
 }
 
 /*
