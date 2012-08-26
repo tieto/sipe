@@ -124,6 +124,14 @@ static void shut_down(TpBaseConnection *base)
 
 	if (sipe_public)
 	    sipe_core_deallocate(sipe_public);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::shut_down: core deallocated");
+}
+
+static GPtrArray *create_channel_managers(SIPE_UNUSED_PARAMETER TpBaseConnection *base)
+{
+	/* @TODO */
+	return(g_ptr_array_sized_new(0));
 }
 
 static void sipe_connection_finalize(GObject *object)
@@ -150,9 +158,10 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 
 	object_class->finalize = sipe_connection_finalize;
 
-	base_class->create_handle_repos = create_handle_repos;
-	base_class->start_connecting    = start_connecting;
-	base_class->shut_down           = shut_down;
+	base_class->create_handle_repos     = create_handle_repos;
+	base_class->start_connecting        = start_connecting;
+	base_class->shut_down               = shut_down;
+	base_class->create_channel_managers = create_channel_managers;
 }
 
 static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)
