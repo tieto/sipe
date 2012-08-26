@@ -1,6 +1,6 @@
 #
 # Example SPEC file to generate a RPM for pidgin-sipe.
-# It should work out-of-the-box on Fedora 10/11 and RHEL5.
+# It should work out-of-the-box on Fedora 10+ or RHEL5+.
 #
 %if 0%{?_with_git:1}
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20120824git1788cfd
+%define git       20120826gite7aaa07
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -56,8 +56,13 @@ BuildRequires:  glib2-devel >= 2.28.0
 BuildRequires:  libnice-devel >= 0.1.0
 BuildRequires:  gstreamer-devel
 %endif
+# Use "--without telepathy" to disable telepathy
+%if !0%{?_without_telepathy:1}
+BuildRequires:  glib2-devel >= 2.22.0
+%endif
 
 # Configurable components
+# Use "--without kerberos" to disable krb5
 %if !0%{?_without_kerberos:1}
 BuildRequires:  krb5-devel
 %endif
@@ -98,6 +103,7 @@ It implements the extended version of SIP/SIMPLE used by various products:
 This package provides the protocol plugin for libpurple clients.
 
 
+%if !0%{?_without_telepathy:1}
 %package -n %{empathy_files}
 Summary:        Telepathy communication manager to connect to MS Office Communicator
 Group:          %{pkg_group}
@@ -132,6 +138,7 @@ SIP/SIMPLE used by various products:
     * Reuters Messaging
 
 This package provides the protocol support for Telepathy clients.
+%endif
 
 
 %package -n %{common_files}
@@ -160,7 +167,11 @@ This package provides common files for the SIPE protocol plugins:
 %endif
 %configure \
 	--enable-purple \
+%if !0%{?_without_telepathy:1}
 	--enable-telepathy
+%else
+	--disable-telepathy
+%endif
 make %{_smp_mflags}
 make %{_smp_mflags} check
 
@@ -185,18 +196,20 @@ rm -rf %{buildroot}
 %{_libdir}/purple-2/libsipe.so
 
 
-%files -n %{telepathy_plugin}
-%defattr(-,root,root,-)
-%doc AUTHORS ChangeLog COPYING NEWS README TODO
-%{_datadir}/dbus-1/services/*.sipe.service
-%{_libexecdir}/telepathy-sipe
-
-
+%if !0%{?_without_telepathy:1}
 %files -n %{empathy_files}
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.png
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.svg
+
+
+%files -n %{telepathy_plugin}
+%defattr(-,root,root,-)
+%doc AUTHORS ChangeLog COPYING NEWS README TODO
+%{_datadir}/dbus-1/services/*.sipe.service
+%{_libexecdir}/telepathy-sipe
+%endif
 
 
 %files -n %{common_files} -f %{name}.lang
@@ -211,6 +224,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Aug 26 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- telepathy now requires glib-2.0 >= 2.22.0
+- use "--without telepathy" to disable telepathy packages
+
 * Fri Aug 24 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
 - add empathy-sipe package
 

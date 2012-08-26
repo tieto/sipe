@@ -174,21 +174,6 @@ void sipe_backend_connection_error(SIPE_UNUSED_PARAMETER struct sipe_core_public
 gboolean sipe_backend_connection_is_disconnecting(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(FALSE); }
 gboolean sipe_backend_connection_is_valid(SIPE_UNUSED_PARAMETER SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(TRUE); }
 
-/** DNS QUERY ****************************************************************/
-
-struct sipe_dns_query *sipe_backend_dns_query_srv(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-						  SIPE_UNUSED_PARAMETER const gchar *protocol,
-						  SIPE_UNUSED_PARAMETER const gchar *transport,
-						  SIPE_UNUSED_PARAMETER const gchar *domain,
-						  SIPE_UNUSED_PARAMETER sipe_dns_resolved_cb callback,
-						  SIPE_UNUSED_PARAMETER gpointer data) { return(NULL); }
-struct sipe_dns_query *sipe_backend_dns_query_a(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-						SIPE_UNUSED_PARAMETER const gchar *hostname,
-						SIPE_UNUSED_PARAMETER int port,
-						SIPE_UNUSED_PARAMETER sipe_dns_resolved_cb callback,
-						SIPE_UNUSED_PARAMETER gpointer data) { return(NULL); }
-void sipe_backend_dns_query_cancel(SIPE_UNUSED_PARAMETER struct sipe_dns_query *query) {}
-
 /** FILE TRANSFER ************************************************************/
 
 void sipe_backend_ft_error(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,

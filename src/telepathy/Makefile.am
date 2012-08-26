@@ -8,6 +8,7 @@ libexec_PROGRAMS = telepathy-sipe
 telepathy_sipe_SOURCES = \
 	telepathy-connection.c \
 	telepathy-debug.c \
+	telepathy-dnsquery.c \
 	telepathy-main.c \
 	telepathy-private.h \
 	telepathy-protocol.c \
