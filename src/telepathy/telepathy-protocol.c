@@ -100,6 +100,8 @@ static gboolean parameter_filter_account(SIPE_UNUSED_PARAMETER const TpCMParamSp
 	return(TRUE);
 }
 
+static const TpCMParamSpec *get_parameters(SIPE_UNUSED_PARAMETER TpBaseProtocol *self)
+{
 /* ISO C99 Designated Initializers silences -Wmissing-field-initializers */
 #define SIPE_PROTOCOL_PARAMETER(_name, _dtype, _gtype, _flags, _default, _filter) \
 	{                             \
@@ -111,71 +113,48 @@ static gboolean parameter_filter_account(SIPE_UNUSED_PARAMETER const TpCMParamSp
 		.filter = (_filter),  \
 	}
 
-static const TpCMParamSpec const sipe_parameters[] = {
-	SIPE_PROTOCOL_PARAMETER("account",
-				DBUS_TYPE_STRING_AS_STRING,
-				G_TYPE_STRING,
-				TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
-				NULL,
-				parameter_filter_account),
-	SIPE_PROTOCOL_PARAMETER("login",
-				DBUS_TYPE_STRING_AS_STRING,
-				G_TYPE_STRING,
-				TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
-				NULL,
-				tp_cm_param_filter_string_nonempty),
-	SIPE_PROTOCOL_PARAMETER("password",
-				DBUS_TYPE_STRING_AS_STRING,
-				G_TYPE_STRING,
-				TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER | TP_CONN_MGR_PARAM_FLAG_SECRET,
-				NULL,
-				tp_cm_param_filter_string_nonempty),
-	SIPE_PROTOCOL_PARAMETER("server",
-				DBUS_TYPE_STRING_AS_STRING,
-				G_TYPE_STRING,
-				0,
-				NULL,
-				NULL /* can be empty */),
-	SIPE_PROTOCOL_PARAMETER("port",
-				DBUS_TYPE_UINT16_AS_STRING,
-				G_TYPE_UINT,
-				TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
-				GUINT_TO_POINTER(0),
-				NULL),
-	/* @TODO: this should be combo auto/ssl/tcp */
-	SIPE_PROTOCOL_PARAMETER("transport",
-				DBUS_TYPE_STRING_AS_STRING,
-				G_TYPE_STRING,
-				TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
-				"auto",
-				tp_cm_param_filter_string_nonempty),
-	SIPE_PROTOCOL_PARAMETER(NULL, NULL, 0, 0, NULL, NULL)
-};
+	static const TpCMParamSpec const sipe_parameters[] = {
+		SIPE_PROTOCOL_PARAMETER("account",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+					NULL,
+					parameter_filter_account),
+		SIPE_PROTOCOL_PARAMETER("login",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER,
+					NULL,
+					tp_cm_param_filter_string_nonempty),
+		SIPE_PROTOCOL_PARAMETER("password",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_REQUIRED | TP_CONN_MGR_PARAM_FLAG_REGISTER | TP_CONN_MGR_PARAM_FLAG_SECRET,
+					NULL,
+					tp_cm_param_filter_string_nonempty),
+		SIPE_PROTOCOL_PARAMETER("server",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					0,
+					NULL,
+					NULL /* can be empty */),
+		SIPE_PROTOCOL_PARAMETER("port",
+					DBUS_TYPE_UINT16_AS_STRING,
+					G_TYPE_UINT,
+					TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
+					GUINT_TO_POINTER(0),
+					NULL),
+		/* @TODO: this should be combo auto/ssl/tcp */
+		SIPE_PROTOCOL_PARAMETER("transport",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
+					"auto",
+					tp_cm_param_filter_string_nonempty),
+		SIPE_PROTOCOL_PARAMETER(NULL, NULL, 0, 0, NULL, NULL)
+	};
 
-static const TpCMParamSpec *get_parameters(SIPE_UNUSED_PARAMETER TpBaseProtocol *self)
-{
 	return(sipe_parameters);
-}
-
-static TpBaseConnection *connection_new(TpBaseProtocol *protocol,
-					GHashTable *params,
-					GError **error)
-{
-	TpBaseConnection *conn = sipe_telepathy_connection_new(protocol,
-							       params,
-							       error);
-	if (conn) {
-		const TpCMParamSpec *param;
-		for (param = sipe_parameters; param->name; param++) {
-			const GValue *value = g_hash_table_lookup(params,
-								  param->name);
-			if (value)
-				g_object_set_property(G_OBJECT(conn),
-						      param->name,
-						      value);
-		}
-	}
-	return(conn);
 }
 
 /* non-static, because it is re-used by connection object */
@@ -262,7 +241,7 @@ static void sipe_protocol_class_init(SipeProtocolClass *klass)
 	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::class_init");
 
 	base_class->get_parameters           = get_parameters;
-	base_class->new_connection           = connection_new;
+	base_class->new_connection           = sipe_telepathy_connection_new;
 	base_class->normalize_contact        = sipe_telepathy_protocol_normalize_contact;
 	base_class->identify_account         = identify_account;
 	base_class->get_interfaces           = get_interfaces;
