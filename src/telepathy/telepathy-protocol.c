@@ -178,9 +178,10 @@ static TpBaseConnection *connection_new(TpBaseProtocol *protocol,
 	return(conn);
 }
 
-static gchar *normalize_contact(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
-				const gchar *contact,
-				GError **error)
+/* non-static, because it is re-used by connection object */
+gchar *sipe_telepathy_protocol_normalize_contact(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
+						 const gchar *contact,
+						 GError **error)
 {
 	gchar *uri = sip_uri_if_valid(contact);
 
@@ -262,7 +263,7 @@ static void sipe_protocol_class_init(SipeProtocolClass *klass)
 
 	base_class->get_parameters           = get_parameters;
 	base_class->new_connection           = connection_new;
-	base_class->normalize_contact        = normalize_contact;
+	base_class->normalize_contact        = sipe_telepathy_protocol_normalize_contact;
 	base_class->identify_account         = identify_account;
 	base_class->get_interfaces           = get_interfaces;
 	base_class->get_connection_details   = get_connection_details;

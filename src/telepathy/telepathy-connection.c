@@ -25,6 +25,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-protocol.h>
+#include <telepathy-glib/handle-repo-dynamic.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "sipe-backend.h"
@@ -79,6 +80,22 @@ G_DEFINE_TYPE(SipeConnection,
 /*
  * Connection class - instance methods
  */
+static gchar *normalize_contact(SIPE_UNUSED_PARAMETER TpHandleRepoIface *repo,
+				const gchar *id,
+				SIPE_UNUSED_PARAMETER gpointer context,
+				GError **error)
+{
+	return(sipe_telepathy_protocol_normalize_contact(NULL, id, error));
+}
+
+static void create_handle_repos(SIPE_UNUSED_PARAMETER TpBaseConnection *conn,
+				TpHandleRepoIface *repos[NUM_TP_HANDLE_TYPES])
+{
+	repos[TP_HANDLE_TYPE_CONTACT] = tp_dynamic_handle_repo_new(TP_HANDLE_TYPE_CONTACT,
+								   normalize_contact,
+								   NULL);
+}
+
 static gboolean start_connecting(TpBaseConnection *base,
 				 SIPE_UNUSED_PARAMETER GError **error)
 {
@@ -133,8 +150,9 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 
 	object_class->finalize = sipe_connection_finalize;
 
-	base_class->start_connecting = start_connecting;
-	base_class->shut_down        = shut_down;
+	base_class->create_handle_repos = create_handle_repos;
+	base_class->start_connecting    = start_connecting;
+	base_class->shut_down           = shut_down;
 }
 
 static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)

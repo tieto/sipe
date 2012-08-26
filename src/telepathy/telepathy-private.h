@@ -39,6 +39,10 @@ void sipe_telepathy_debug_finalize(void);
 
 /* protocol */
 void sipe_telepathy_protocol_init(struct _TpBaseConnectionManager *cm);
+gchar *sipe_telepathy_protocol_normalize_contact(struct _TpBaseProtocol *self,
+						 const gchar *contact,
+						 GError **error);
+
 
 /*
   Local Variables:
