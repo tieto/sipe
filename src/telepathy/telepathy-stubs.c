@@ -172,7 +172,6 @@ void sipe_backend_connection_error(SIPE_UNUSED_PARAMETER struct sipe_core_public
 				   SIPE_UNUSED_PARAMETER  sipe_connection_error error,
 				   SIPE_UNUSED_PARAMETER const gchar *msg) {}
 gboolean sipe_backend_connection_is_disconnecting(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(FALSE); }
-gboolean sipe_backend_connection_is_valid(SIPE_UNUSED_PARAMETER SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(TRUE); }
 
 /** FILE TRANSFER ************************************************************/
 

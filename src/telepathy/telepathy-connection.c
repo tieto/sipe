@@ -47,6 +47,7 @@ typedef struct _SipeConnection {
 	gchar *server;
 	gchar *port;
 	guint  transport;
+	gboolean is_valid;
 } SipeConnection;
 
 /*
@@ -228,6 +229,9 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		SIPE_CORE_FLAG_UNSET(SSO);
 		/* @TODO: add parameters for these */
 
+		/* no connection yet */
+		conn->is_valid = FALSE;
+
 		/* server name */
 		if (server && strlen(server))
 			conn->server = g_strdup(server);
@@ -260,6 +264,14 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 	return(base);
 }
 
+
+/*
+ * Backend adaptor functions
+ */
+gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public) {
+	SipeConnection *conn = (SipeConnection *) sipe_public->backend_private;
+	return(conn->is_valid);
+}
 
 /*
   Local Variables:
