@@ -36,6 +36,7 @@
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-nls.h"
+
 #include "telepathy-private.h"
 
 G_BEGIN_DECLS

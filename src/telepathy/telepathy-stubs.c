@@ -377,15 +377,6 @@ void sipe_backend_status_and_note(SIPE_UNUSED_PARAMETER struct sipe_core_public 
 				  SIPE_UNUSED_PARAMETER guint activity,
 				  SIPE_UNUSED_PARAMETER const gchar *message) {}
 
-/** TRANSPORT ****************************************************************/
-
-struct sipe_transport_connection *sipe_backend_transport_connect(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-								 SIPE_UNUSED_PARAMETER const sipe_connect_setup *setup) { return(NULL); }
-void sipe_backend_transport_disconnect(SIPE_UNUSED_PARAMETER struct sipe_transport_connection *conn) {}
-void sipe_backend_transport_message(SIPE_UNUSED_PARAMETER struct sipe_transport_connection *conn,
-				    SIPE_UNUSED_PARAMETER const gchar *buffer) {}
-void sipe_backend_transport_flush(SIPE_UNUSED_PARAMETER struct sipe_transport_connection *conn) {}
-
 /** USER *********************************************************************/
 
 void sipe_backend_user_feedback_typing(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,

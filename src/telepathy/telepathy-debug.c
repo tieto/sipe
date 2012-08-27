@@ -57,6 +57,7 @@
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "sipe-backend.h"
+
 #include "telepathy-private.h"
 
 #define SIPE_TELEPATHY_DEBUG 1

@@ -32,7 +32,7 @@ struct _TpBaseProtocol;
 struct sipe_backend_private {
 	struct sipe_core_public *public;
 	struct _SipeConnection *connection;
-	gboolean is_valid;
+	gpointer transport;
 };
 
 /* connection */

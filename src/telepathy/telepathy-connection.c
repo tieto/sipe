@@ -31,6 +31,7 @@
 #include "sipe-backend.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
+
 #include "telepathy-private.h"
 
 G_BEGIN_DECLS
@@ -214,7 +215,7 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		sipe_public->backend_private  = telepathy_private;
 		telepathy_private->public     = sipe_public;
 		telepathy_private->connection = conn;
-		telepathy_private->is_valid   = FALSE;
+		telepathy_private->transport  = NULL;
 
 		/* map option list to flags - default is NTLM */
 		SIPE_CORE_FLAG_UNSET(KRB5);
@@ -259,8 +260,7 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
  * Backend adaptor functions
  */
 gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public) {
-	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
-	return(telepathy_private->is_valid);
+	return(sipe_public->backend_private->transport != NULL);
 }
 
 /*
