@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ static srv_reply* srv_lookup(WORD wType,
 
 struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_public,
 						const gchar *hostname,
-						int port,
+						guint port,
 						sipe_dns_resolved_cb callback,
 						gpointer data)
 {

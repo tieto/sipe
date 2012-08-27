@@ -189,7 +189,7 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_
 
 struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_public,
 						const gchar *hostname,
-						int port,
+						guint port,
 						sipe_dns_resolved_cb callback,
 						gpointer data);
 

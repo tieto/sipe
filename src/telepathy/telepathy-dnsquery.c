@@ -112,7 +112,7 @@ static void dns_a_response(GObject *resolver,
 
 struct sipe_dns_query *sipe_backend_dns_query_a(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 						const gchar *hostname,
-						int port,
+						guint port,
 						sipe_dns_resolved_cb callback,
 						gpointer data)
 {
