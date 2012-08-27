@@ -39,29 +39,10 @@ struct sipe_transport_telepathy {
 	transport_error_cb *error;
 	struct sipe_backend_private *private;
 	GSocketConnection *socket;
-	GIOStream *tls;
 };
 
 #define TELEPATHY_TRANSPORT ((struct sipe_transport_telepathy *) conn)
 #define SIPE_TRANSPORT_CONNECTION ((struct sipe_transport_connection *) transport)
-
-static void tls_handshake_finished(GObject *connection,
-				   GAsyncResult *result,
-				   gpointer data)
-{
-	struct sipe_transport_telepathy *transport = data;
-	GError *error = NULL;
-
-	if (g_tls_connection_handshake_finish(G_TLS_CONNECTION(connection),
-					      result,
-					      &error)) {
-		SIPE_DEBUG_INFO_NOFORMAT("tls_handshake_finished: using TLS");
-		transport->connected(SIPE_TRANSPORT_CONNECTION);
-	} else {
-		SIPE_DEBUG_ERROR("tls_handshake_finished: failed: %s", error->message);
-		transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
-	}
-}
 
 static void socket_connected(GObject *client,
 			     GAsyncResult *result,
@@ -75,27 +56,8 @@ static void socket_connected(GObject *client,
 							   &error);
 
 	if (transport->socket) {
-		if (transport->public.type == SIPE_TRANSPORT_TCP) {
-			SIPE_DEBUG_INFO_NOFORMAT("socket_connected: using TCP");
-			transport->connected(SIPE_TRANSPORT_CONNECTION);
-		} else {
-			SIPE_DEBUG_INFO_NOFORMAT("socket_connected: enabling TLS");
-			transport->tls = g_tls_client_connection_new(G_IO_STREAM(transport->socket),
-								     NULL,
-								     &error);
-			if (transport->tls) {
-				SIPE_DEBUG_INFO_NOFORMAT("socket_connected: starting TLS handshake");
-				g_tls_connection_handshake_async(G_TLS_CONNECTION(transport->tls),
-								 0,
-								 NULL,
-								 tls_handshake_finished,
-								 transport);
-			} else {
-				SIPE_DEBUG_ERROR("socket_connected: TLS failure: %s", error->message);
-				transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
-			}
-		}
-
+		SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
+		transport->connected(SIPE_TRANSPORT_CONNECTION);
 	} else {
 		SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
 		transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
@@ -121,6 +83,17 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 	if ((setup->type == SIPE_TRANSPORT_TLS) ||
 	    (setup->type == SIPE_TRANSPORT_TCP)) {
 		GSocketClient *client = g_socket_client_new();
+
+		/* request TLS connection */
+		if (setup->type == SIPE_TRANSPORT_TLS) {
+			SIPE_DEBUG_INFO_NOFORMAT("using TLS");
+			g_socket_client_set_tls(client,
+						setup->type == SIPE_TRANSPORT_TLS);
+			/* @TODO certificate handling - now accept all*/
+			g_socket_client_set_tls_validation_flags(client, 0);
+		} else
+			SIPE_DEBUG_INFO_NOFORMAT("using TCP");
+
 		g_socket_client_connect_async(client,
 					      g_network_address_new(setup->server_name,
 								    setup->server_port),
@@ -148,8 +121,6 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 
 	if (!transport) return;
 
-	if (transport->tls)
-		g_object_unref(transport->tls);
 	if (transport->socket)
 		g_object_unref(transport->socket);
 
