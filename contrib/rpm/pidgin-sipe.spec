@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20120826gite7aaa07
+%define git       20120827git97ae22e
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -20,6 +20,7 @@
 %define telepathy_plugin telepathy-sipe
 %define common_files     sipe-common
 %define empathy_files    empathy-sipe
+%define ktp_files        ktp-accounts-kcm-sipe
 %define pkg_group        Applications/Internet
 
 Name:           pidgin-sipe
@@ -122,6 +123,24 @@ SIP/SIMPLE used by various products:
 This package provides the icon set for Empathy.
 
 
+%package -n %{ktp_files}
+Summary:        Telepathy communication manager to connect to MS Office Communicator
+Group:          %{pkg_group}
+License:        GPL-2.0+
+Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+
+%description -n %{ktp_files}
+A Telepathy communication manager that implements the extended version of
+SIP/SIMPLE used by various products:
+
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package provides the profile for KTP account manager.
+
+
 %package -n %{telepathy_plugin}
 Summary:        Telepathy communication manager to connect to MS Office Communicator
 Group:          %{pkg_group}
@@ -204,6 +223,12 @@ rm -rf %{buildroot}
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.svg
 
 
+%files -n %{ktp_files}
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING
+%{_datadir}/telepathy/profiles/sipe.profile
+
+
 %files -n %{telepathy_plugin}
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
@@ -224,6 +249,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Aug 27 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- add ktp-accounts-kcm-sipe package
+
 * Sun Aug 26 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
 - telepathy now requires glib-2.0 >= 2.22.0
 - use "--without telepathy" to disable telepathy packages
