@@ -20,6 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
 
 #include <glib.h>
@@ -28,6 +32,7 @@
 #include "sipe-backend.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
+#include "sipe-nls.h"
 
 #include "telepathy-private.h"
 
@@ -48,6 +53,56 @@ struct sipe_transport_telepathy {
 #define TELEPATHY_TRANSPORT ((struct sipe_transport_telepathy *) conn)
 #define SIPE_TRANSPORT_CONNECTION ((struct sipe_transport_connection *) transport)
 
+#define BUFFER_SIZE_INCREMENT 4096
+
+static void read_completed(GObject *stream,
+			   GAsyncResult *result,
+			   gpointer data)
+{
+	struct sipe_transport_telepathy *transport = data;
+	struct sipe_transport_connection *conn = SIPE_TRANSPORT_CONNECTION;
+
+	if (conn->buffer_length < conn->buffer_used + BUFFER_SIZE_INCREMENT) {
+		conn->buffer_length += BUFFER_SIZE_INCREMENT;
+		conn->buffer = g_realloc(conn->buffer, conn->buffer_length);
+		SIPE_DEBUG_INFO("read_completed: new buffer length %" G_GSIZE_FORMAT,
+				conn->buffer_length);
+	}
+
+	/* callback result is valid */
+	if (result) {
+		GError *error = NULL;
+		gssize len    = g_input_stream_read_finish(G_INPUT_STREAM(stream),
+							   result,
+							   &error);
+
+		if (len < 0) {
+			SIPE_DEBUG_ERROR("read error: %s", error->message);
+			transport->error(conn, error->message);
+			g_error_free(error);
+			return;
+		} else if (len == 0) {
+			SIPE_DEBUG_ERROR_NOFORMAT("Server has disconnected");
+			transport->error(conn, _("Server has disconnected"));
+			return;
+		}
+
+		/* Forward data to core */
+		conn->buffer_used               += len;
+		conn->buffer[conn->buffer_used]  = '\0';
+		transport->input(conn);
+	}
+
+	/* setup next read */
+	g_input_stream_read_async(G_INPUT_STREAM(stream),
+				  conn->buffer + conn->buffer_used,
+				  conn->buffer_length - conn->buffer_used - 1,
+				  G_PRIORITY_DEFAULT,
+				  NULL,
+				  read_completed,
+				  transport);
+}
+
 static void socket_connected(GObject *client,
 			     GAsyncResult *result,
 			     gpointer data)
@@ -63,6 +118,8 @@ static void socket_connected(GObject *client,
 		SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
 		transport->istream = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
 		transport->ostream = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
+		/* this sets up the async read handler */
+		read_completed(G_OBJECT(transport->istream), NULL, transport);
 		transport->connected(SIPE_TRANSPORT_CONNECTION);
 	} else {
 		SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
@@ -160,7 +217,7 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 	g_output_stream_write_async(transport->ostream,
 				    buffer,
 				    strlen(buffer),
-				    0, /* priority */
+				    G_PRIORITY_DEFAULT,
 				    NULL,
 				    write_completed,
 				    transport);
