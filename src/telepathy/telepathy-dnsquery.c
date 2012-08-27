@@ -38,10 +38,10 @@ static void dns_srv_response(GObject *resolver,
 			     GAsyncResult *result,
 			     gpointer data)
 {
-	GError *error                = NULL;
-	GList *targets               = g_resolver_lookup_service_finish(G_RESOLVER(resolver),
-									result,
-									&error);
+	GError *error  = NULL;
+	GList *targets = g_resolver_lookup_service_finish(G_RESOLVER(resolver),
+							  result,
+							  &error);
 	struct sipe_dns_query *query = data;
 
 	if (targets) {
@@ -53,6 +53,7 @@ static void dns_srv_response(GObject *resolver,
 	} else {
 		SIPE_DEBUG_INFO("dns_srv_response: failed: %s",
 				error ? error->message : "UNKNOWN");
+		g_error_free(error);
 		query->callback(query->extradata, NULL, 0);
 	}
 	g_object_unref(query->cancel);
@@ -89,10 +90,10 @@ static void dns_a_response(GObject *resolver,
 			   GAsyncResult *result,
 			   gpointer data)
 {
-	GError *error                = NULL;
-	GList *addresses             = g_resolver_lookup_by_name_finish(G_RESOLVER(resolver),
-									result,
-									&error);
+	GError *error    = NULL;
+	GList *addresses = g_resolver_lookup_by_name_finish(G_RESOLVER(resolver),
+							    result,
+							    &error);
 	struct sipe_dns_query *query = data;
 
 	if (addresses) {
@@ -104,6 +105,7 @@ static void dns_a_response(GObject *resolver,
 	} else {
 		SIPE_DEBUG_INFO("dns_a_response: failed: %s",
 				error ? error->message : "UNKNOWN");
+		g_error_free(error);
 		query->callback(query->extradata, NULL, 0);
 	}
 	g_object_unref(query->cancel);

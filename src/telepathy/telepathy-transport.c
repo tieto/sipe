@@ -20,6 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
+
 #include <glib.h>
 #include <gio/gio.h>
 
@@ -39,6 +41,8 @@ struct sipe_transport_telepathy {
 	transport_error_cb *error;
 	struct sipe_backend_private *private;
 	GSocketConnection *socket;
+	GInputStream *istream;
+	GOutputStream *ostream;
 };
 
 #define TELEPATHY_TRANSPORT ((struct sipe_transport_telepathy *) conn)
@@ -57,6 +61,8 @@ static void socket_connected(GObject *client,
 
 	if (transport->socket) {
 		SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
+		transport->istream = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
+		transport->ostream = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
 		transport->connected(SIPE_TRANSPORT_CONNECTION);
 	} else {
 		SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
@@ -131,15 +137,39 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 	g_free(transport);
 }
 
-void sipe_backend_transport_message(SIPE_UNUSED_PARAMETER struct sipe_transport_connection *conn,
-				    SIPE_UNUSED_PARAMETER const gchar *buffer)
+static void write_completed(GObject *stream,
+			    GAsyncResult *result,
+			    gpointer data)
 {
-	/* @TODO */
+	struct sipe_transport_telepathy *transport = data;
+	GError                          *error     = NULL;
+
+	g_output_stream_write_finish(G_OUTPUT_STREAM(stream), result, &error);
+
+	if (error) {
+		SIPE_DEBUG_ERROR("write error: %s", error->message);
+		transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+		g_error_free(error);
+	}
 }
 
-void sipe_backend_transport_flush(SIPE_UNUSED_PARAMETER struct sipe_transport_connection *conn)
+void sipe_backend_transport_message(struct sipe_transport_connection *conn,
+				    const gchar *buffer)
 {
-	/* @TODO */
+	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
+	g_output_stream_write_async(transport->ostream,
+				    buffer,
+				    strlen(buffer),
+				    0, /* priority */
+				    NULL,
+				    write_completed,
+				    transport);
+}
+
+void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
+{
+	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
+	g_output_stream_flush(transport->ostream, NULL, NULL);
 }
 
 /*
