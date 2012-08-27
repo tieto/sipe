@@ -336,17 +336,6 @@ void sipe_backend_notify_error(SIPE_UNUSED_PARAMETER struct sipe_core_public *si
 			       SIPE_UNUSED_PARAMETER const gchar *title,
 			       SIPE_UNUSED_PARAMETER const gchar *msg) {}
 
-/** SCHEDULE *****************************************************************/
-
-gpointer sipe_backend_schedule_seconds(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				       SIPE_UNUSED_PARAMETER guint timeout,
-				       SIPE_UNUSED_PARAMETER gpointer data) { return(NULL); }
-gpointer sipe_backend_schedule_mseconds(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-					SIPE_UNUSED_PARAMETER guint timeout,
-					SIPE_UNUSED_PARAMETER gpointer data) { return(NULL); }
-void sipe_backend_schedule_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				  SIPE_UNUSED_PARAMETER gpointer data) {}
-
 /** SEARCH *******************************************************************/
 
 struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(NULL); }

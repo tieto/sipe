@@ -12,6 +12,7 @@ telepathy_sipe_SOURCES = \
 	telepathy-main.c \
 	telepathy-private.h \
 	telepathy-protocol.c \
+	telepathy-schedule.c \
 	telepathy-stubs.c \
 	telepathy-transport.c
 
