@@ -58,7 +58,7 @@ BuildRequires:  gstreamer-devel
 %endif
 # Use "--without telepathy" to disable telepathy
 %if !0%{?_without_telepathy:1}
-BuildRequires:  glib2-devel >= 2.22.0
+BuildRequires:  glib2-devel >= 2.28.0
 %endif
 
 # Configurable components

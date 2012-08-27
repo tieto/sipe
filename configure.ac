@@ -386,8 +386,11 @@ AS_IF([test "x$enable_telepathy" != xno],
 		 dnl telepathy is based on GObject
 		 PKG_CHECK_MODULES(GOBJECT, [gobject-2.0])
 
-		 dnl telepathy uses GResolver from gio
-		 PKG_CHECK_MODULES(GIO, [gio-2.0 >= 2.22.0])
+		 dnl telepathy uses from gio:
+		 dnl  - GIOStream      (>= 2.22.0)
+		 dnl  - GResolver      (>= 2.22.0)
+		 dnl  - GTlsConnection (>= 2.28.0)
+		 PKG_CHECK_MODULES(GIO, [gio-2.0 >= 2.28.0])
 		],
 		[enable_telepathy=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, [test "x$enable_telepathy" != xno])
