@@ -26,6 +26,7 @@
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-protocol.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
+#include <telepathy-glib/simple-password-manager.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "sipe-backend.h"
@@ -44,7 +45,13 @@ typedef struct _SipeConnectionClass {
 
 typedef struct _SipeConnection {
 	TpBaseConnection parent;
+
+	TpSimplePasswordManager *password_manager;
+
 	struct sipe_backend_private private;
+	gchar *account;
+	gchar *login;
+	gchar *password;
 	gchar *server;
 	gchar *port;
 	guint  transport;
@@ -87,24 +94,130 @@ static void create_handle_repos(SIPE_UNUSED_PARAMETER TpBaseConnection *conn,
 								   NULL);
 }
 
-static gboolean start_connecting(TpBaseConnection *base,
-				 SIPE_UNUSED_PARAMETER GError **error)
+static gboolean connect_to_core(SipeConnection *self,
+				GError **error)
 {
-	SipeConnection *self                 = SIPE_CONNECTION(base);
-	struct sipe_core_public *sipe_public = self->private.public;
+	gchar *login_domain  = NULL;
+	gchar *login_account = NULL;
+	struct sipe_core_public *sipe_public;
+	const gchar *errmsg;
+
+	/* login name specified? */
+	if (self->login && strlen(self->login)) {
+		/* Allowed domain-account separators are / or \ */
+		gchar **domain_user = g_strsplit_set(self->login, "/\\", 2);
+		gboolean has_domain = domain_user[1] != NULL;
+		SIPE_DEBUG_INFO("connect_to_core: login '%s'", self->login);
+		login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
+		login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
+		SIPE_DEBUG_INFO("connect_to_core: auth domain '%s' user '%s'",
+				login_domain ? login_domain : "",
+				login_account);
+		g_strfreev(domain_user);
+	}
+
+	sipe_public = sipe_core_allocate(self->account,
+					 login_domain, login_account,
+					 self->password,
+					 NULL, /* @TODO: email     */
+					 NULL, /* @TODO: email_url */
+					 &errmsg);
+	g_free(login_domain);
+	g_free(login_account);
+
+	SIPE_DEBUG_INFO("connect_to_core: created %p", sipe_public);
+
+	if (sipe_public) {
+		struct sipe_backend_private *telepathy_private = &self->private;
+
+		/* initialize backend private data */
+		sipe_public->backend_private  = telepathy_private;
+		telepathy_private->public     = sipe_public;
+		telepathy_private->connection = self;
+		telepathy_private->transport  = NULL;
+
+		/* map option list to flags - default is NTLM */
+		SIPE_CORE_FLAG_UNSET(KRB5);
+		SIPE_CORE_FLAG_UNSET(TLS_DSK);
+		SIPE_CORE_FLAG_UNSET(SSO);
+		/* @TODO: add parameters for these */
+
+		sipe_core_transport_sip_connect(sipe_public,
+						self->transport,
+						self->server,
+						self->port);
+
+		return(TRUE);
+	} else {
+		g_set_error_literal(error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
+				    errmsg);
+		return(FALSE);
+	}
+}
+
+static void password_manager_cb(GObject *source,
+				GAsyncResult *result,
+				gpointer data)
+{
+	SipeConnection   *self  = data;
+	TpBaseConnection *base  = TP_BASE_CONNECTION(self);
+	GError         *error   = NULL;
+	const GString *password = tp_simple_password_manager_prompt_finish(
+		TP_SIMPLE_PASSWORD_MANAGER(source),
+		result,
+		&error);
+
+	if (error) {
+		SIPE_DEBUG_ERROR("password_manager_cb: failed: %s",
+				 error->message);
+
+		if (base->status != TP_CONNECTION_STATUS_DISCONNECTED) {
+			tp_base_connection_disconnect_with_dbus_error(base,
+								      tp_error_get_dbus_name(error->code),
+								      NULL,
+								      TP_CONNECTION_STATUS_REASON_AUTHENTICATION_FAILED);
+		}
+		g_error_free(error);
+	} else {
+
+		g_free(self->password);
+		self->password = g_strdup(password->str);
+
+		if (!connect_to_core(self, &error)) {
+			if (base->status != TP_CONNECTION_STATUS_DISCONNECTED) {
+				tp_base_connection_disconnect_with_dbus_error(base,
+									      tp_error_get_dbus_name(error->code),
+									      NULL,
+									      TP_CONNECTION_STATUS_REASON_AUTHENTICATION_FAILED);
+			}
+			g_error_free(error);
+		}
+	}
+}
+
+static gboolean start_connecting(TpBaseConnection *base,
+				 GError **error)
+{
+	SipeConnection *self = SIPE_CONNECTION(base);
+	gboolean        rc   = TRUE;
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::start_connecting");
-
-	g_return_val_if_fail(sipe_public, FALSE);
 
 	tp_base_connection_change_status(base, TP_CONNECTION_STATUS_CONNECTING,
 					 TP_CONNECTION_STATUS_REASON_REQUESTED);
 
-	sipe_core_transport_sip_connect(sipe_public,
-					self->transport,
-					self->server,
-					self->port);
-	return(TRUE);
+	/* we need a password */
+	if (self->password)
+		rc = connect_to_core(self, error);
+	else {
+		SIPE_DEBUG_INFO("SipeConnection::start_connecting: requesting password from user: %p",
+			self->password_manager);
+		tp_simple_password_manager_prompt_async(self->password_manager,
+							password_manager_cb,
+							self);
+	}
+
+	return(rc);
 }
 
 static void shut_down(TpBaseConnection *base)
@@ -120,10 +233,19 @@ static void shut_down(TpBaseConnection *base)
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::shut_down: core deallocated");
 }
 
-static GPtrArray *create_channel_managers(SIPE_UNUSED_PARAMETER TpBaseConnection *base)
+static GPtrArray *create_channel_managers(TpBaseConnection *base)
 {
-	/* @TODO */
-	return(g_ptr_array_sized_new(0));
+	SipeConnection *self = SIPE_CONNECTION(base);
+	GPtrArray *channel_managers = g_ptr_array_new();
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::create_channel_managers");
+
+	self->password_manager = tp_simple_password_manager_new(base);
+	g_ptr_array_add(channel_managers, self->password_manager);
+	SIPE_DEBUG_INFO("SipeConnection::create_channel_managers: password %p",
+			self->password_manager);
+
+	return(channel_managers);
 }
 
 static void sipe_connection_finalize(GObject *object)
@@ -134,6 +256,9 @@ static void sipe_connection_finalize(GObject *object)
 
 	g_free(self->port);
 	g_free(self->server);
+	g_free(self->password);
+	g_free(self->login);
+	g_free(self->account);
 
 	G_OBJECT_CLASS(sipe_connection_parent_class)->finalize(object);
 }
@@ -161,98 +286,56 @@ static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::init");
 }
 
-/* create new connection object and attach it to SIPE core */
+/* create new connection object */
 TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 						GHashTable *params,
-						GError **error)
+						SIPE_UNUSED_PARAMETER GError **error)
 {
 	const gchar *password  = tp_asv_get_string(params, "password");
-	const gchar *login     = tp_asv_get_string(params, "login");
-	gchar *login_domain    = NULL;
-	gchar *login_account   = NULL;
-	TpBaseConnection *base = NULL;
-	struct sipe_core_public *sipe_public;
-	const gchar *errmsg;
+	const gchar *server    = tp_asv_get_string(params, "server");
+	const gchar *transport = tp_asv_get_string(params, "transport");
+	SipeConnection *conn   = g_object_new(SIPE_TYPE_CONNECTION,
+					      "protocol", tp_base_protocol_get_name(protocol),
+					      NULL);
+	guint port;
+	gboolean valid;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_telepathy_connection_new");
 
-	/* login name specified? */
-	if (login && strlen(login)) {
-		/* Allowed domain-account separators are / or \ */
-		gchar **domain_user = g_strsplit_set(login, "/\\", 2);
-		gboolean has_domain = domain_user[1] != NULL;
-		SIPE_DEBUG_INFO("sipe_telepathy_connection_new: login '%s'", login);
-		login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
-		login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
-		SIPE_DEBUG_INFO("sipe_telepathy_connection_new: auth domain '%s' user '%s'",
-				login_domain ? login_domain : "",
-				login_account);
-		g_strfreev(domain_user);
+	/* account & login are required fields */
+	conn->account = g_strdup(tp_asv_get_string(params, "account"));
+	conn->login   = g_strdup(tp_asv_get_string(params, "login"));
+
+	/* password */
+	if (password && strlen(password))
+		conn->password = g_strdup(password);
+	else
+		conn->password = NULL;
+
+	/* server name */
+	if (server && strlen(server))
+		conn->server = g_strdup(server);
+	else
+		conn->server = NULL;
+
+	/* server port: core expects a string */
+	port = tp_asv_get_uint32(params, "port", &valid);
+	if (valid)
+		conn->port = g_strdup_printf("%d", port);
+	else
+		conn->port = NULL;
+
+	/* transport type */
+	if (sipe_strequal(transport, "auto")) {
+		conn->transport = conn->server ?
+			SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_AUTO;
+	} else if (sipe_strequal(transport, "tls")) {
+		conn->transport = SIPE_TRANSPORT_TLS;
+	} else {
+		conn->transport = SIPE_TRANSPORT_TCP;
 	}
 
-	sipe_public = sipe_core_allocate(tp_asv_get_string(params, "account"),
-					 login_domain, login_account,
-					 password,
-					 NULL, /* @TODO: email     */
-					 NULL, /* @TODO: email_url */
-					 &errmsg);
-	g_free(login_domain);
-	g_free(login_account);
-
-	SIPE_DEBUG_INFO("sipe_telepathy_connection_new: created %p", sipe_public);
-
-	if (sipe_public) {
-		const gchar *server    = tp_asv_get_string(params, "server");
-		const gchar *transport = tp_asv_get_string(params, "transport");
-		SipeConnection *conn   = g_object_new(SIPE_TYPE_CONNECTION,
-						      "protocol", tp_base_protocol_get_name(protocol),
-						      NULL);
-		struct sipe_backend_private *telepathy_private = &conn->private;
-		guint port;
-		gboolean valid;
-
-		/* initialize backend private data */
-		sipe_public->backend_private  = telepathy_private;
-		telepathy_private->public     = sipe_public;
-		telepathy_private->connection = conn;
-		telepathy_private->transport  = NULL;
-
-		/* map option list to flags - default is NTLM */
-		SIPE_CORE_FLAG_UNSET(KRB5);
-		SIPE_CORE_FLAG_UNSET(TLS_DSK);
-		SIPE_CORE_FLAG_UNSET(SSO);
-		/* @TODO: add parameters for these */
-
-		/* server name */
-		if (server && strlen(server))
-			conn->server = g_strdup(server);
-		else
-			conn->server = NULL;
-
-		/* server port: core expects a string */
-		port = tp_asv_get_uint32(params, "port", &valid);
-		if (valid)
-			conn->port = g_strdup_printf("%d", port);
-		else
-			conn->port = NULL;
-
-		/* transport type */
-		if (sipe_strequal(transport, "auto")) {
-			conn->transport = conn->server ?
-				SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_AUTO;
-		} else if (sipe_strequal(transport, "tls")) {
-			conn->transport = SIPE_TRANSPORT_TLS;
-		} else {
-			conn->transport = SIPE_TRANSPORT_TCP;
-		}
-
-		base = TP_BASE_CONNECTION(conn);
-
-	} else
-		g_set_error_literal(error, TP_ERROR, TP_ERROR_INVALID_ARGUMENT,
-				    errmsg);
-
-	return(base);
+	return(TP_BASE_CONNECTION(conn));
 }
 
 
