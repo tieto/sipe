@@ -21,12 +21,19 @@
  */
 
 /* Forward declarations */
+struct _SipeConnection;
 struct _TpBaseConnection;
 struct _TpBaseConnectionManager;
 struct _TpBaseProtocol;
 
 /* constants */
 #define SIPE_TELEPATHY_DOMAIN "sipe"
+
+struct sipe_backend_private {
+	struct sipe_core_public *public;
+	struct _SipeConnection *connection;
+	gboolean is_valid;
+};
 
 /* connection */
 struct _TpBaseConnection *sipe_telepathy_connection_new(struct _TpBaseProtocol *protocol,

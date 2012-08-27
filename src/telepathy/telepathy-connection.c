@@ -43,11 +43,10 @@ typedef struct _SipeConnectionClass {
 
 typedef struct _SipeConnection {
 	TpBaseConnection parent;
-	struct sipe_core_public *public;
+	struct sipe_backend_private private;
 	gchar *server;
 	gchar *port;
 	guint  transport;
-	gboolean is_valid;
 } SipeConnection;
 
 /*
@@ -100,16 +99,17 @@ static void create_handle_repos(SIPE_UNUSED_PARAMETER TpBaseConnection *conn,
 static gboolean start_connecting(TpBaseConnection *base,
 				 SIPE_UNUSED_PARAMETER GError **error)
 {
-	SipeConnection *self = SIPE_CONNECTION(base);
+	SipeConnection *self                 = SIPE_CONNECTION(base);
+	struct sipe_core_public *sipe_public = self->private.public;
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::start_connecting");
 
-	g_return_val_if_fail(self->public, FALSE);
+	g_return_val_if_fail(sipe_public, FALSE);
 
 	tp_base_connection_change_status(base, TP_CONNECTION_STATUS_CONNECTING,
 					 TP_CONNECTION_STATUS_REASON_REQUESTED);
 
-	sipe_core_transport_sip_connect(self->public,
+	sipe_core_transport_sip_connect(sipe_public,
 					self->transport,
 					self->server,
 					self->port);
@@ -119,7 +119,7 @@ static gboolean start_connecting(TpBaseConnection *base,
 static void shut_down(TpBaseConnection *base)
 {
 	SipeConnection *self = SIPE_CONNECTION(base);
-	struct sipe_core_public *sipe_public = self->public;
+	struct sipe_core_public *sipe_public = self->private.public;
 
 	SIPE_DEBUG_INFO("SipeConnection::shut_down: closing %p", sipe_public);
 
@@ -216,21 +216,21 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		SipeConnection *conn   = g_object_new(SIPE_TYPE_CONNECTION,
 						      "protocol", tp_base_protocol_get_name(protocol),
 						      NULL);
+		struct sipe_backend_private *telepathy_private = &conn->private;
 		guint port;
 		gboolean valid;
 
 		/* initialize backend private data */
-		sipe_public->backend_private = (struct sipe_backend_private *) conn;
-		conn->public                 = sipe_public;
+		sipe_public->backend_private  = telepathy_private;
+		telepathy_private->public     = sipe_public;
+		telepathy_private->connection = conn;
+		telepathy_private->is_valid   = FALSE;
 
 		/* map option list to flags - default is NTLM */
 		SIPE_CORE_FLAG_UNSET(KRB5);
 		SIPE_CORE_FLAG_UNSET(TLS_DSK);
 		SIPE_CORE_FLAG_UNSET(SSO);
 		/* @TODO: add parameters for these */
-
-		/* no connection yet */
-		conn->is_valid = FALSE;
 
 		/* server name */
 		if (server && strlen(server))
@@ -269,8 +269,8 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
  * Backend adaptor functions
  */
 gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public) {
-	SipeConnection *conn = (SipeConnection *) sipe_public->backend_private;
-	return(conn->is_valid);
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	return(telepathy_private->is_valid);
 }
 
 /*
