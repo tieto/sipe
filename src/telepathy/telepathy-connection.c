@@ -58,16 +58,6 @@ static GType sipe_connection_get_type(void) G_GNUC_CONST;
 #define SIPE_CONNECTION(obj) \
 	(G_TYPE_CHECK_INSTANCE_CAST((obj), SIPE_TYPE_CONNECTION, \
 				    SipeConnection))
-#define SIPE_CONNECTION_CLASS(klass) \
-	(G_TYPE_CHECK_CLASS_CAST((klass), SIPE_TYPE_CONNECTION,	\
-				 SipeConnectionClass))
-#define SIPE_IS_CONNECTION(obj) \
-	(G_TYPE_CHECK_INSTANCE_TYPE((obj), SIPE_TYPE_CONNECTION))
-#define SIPE_IS_CONNECTION_CLASS(klass) \
-	(G_TYPE_CHECK_CLASS_TYPE((klass), SIPE_TYPE_CONNECTION))
-#define SIPE_CONNECTION_GET_CLASS(obj) \
-	(G_TYPE_INSTANCE_GET_CLASS((obj), SIPE_TYPE_CONNECTION,	\
-				   SipeConnectionClass))
 G_END_DECLS
 
 /*
@@ -124,7 +114,7 @@ static void shut_down(TpBaseConnection *base)
 	SIPE_DEBUG_INFO("SipeConnection::shut_down: closing %p", sipe_public);
 
 	if (sipe_public)
-	    sipe_core_deallocate(sipe_public);
+		sipe_core_deallocate(sipe_public);
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::shut_down: core deallocated");
 }

@@ -59,16 +59,6 @@ static GType sipe_protocol_get_type(void) G_GNUC_CONST;
 #define SIPE_PROTOCOL(obj) \
 	(G_TYPE_CHECK_INSTANCE_CAST((obj), SIPE_TYPE_PROTOCOL, \
 				    SipeProtocol))
-#define SIPE_PROTOCOL_CLASS(klass) \
-	(G_TYPE_CHECK_CLASS_CAST((klass), SIPE_TYPE_PROTOCOL,	\
-				 SipeProtocolClass))
-#define SIPE_IS_PROTOCOL(obj) \
-	(G_TYPE_CHECK_INSTANCE_TYPE((obj), SIPE_TYPE_PROTOCOL))
-#define SIPE_IS_PROTOCOL_CLASS(klass) \
-	(G_TYPE_CHECK_CLASS_TYPE((klass), SIPE_TYPE_PROTOCOL))
-#define SIPE_PROTOCOL_GET_CLASS(obj) \
-	(G_TYPE_INSTANCE_GET_CLASS((obj), SIPE_TYPE_PROTOCOL,	\
-				   SipeProtocolClass))
 G_END_DECLS
 
 /*
