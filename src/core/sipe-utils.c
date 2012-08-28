@@ -147,7 +147,7 @@ get_epid(struct sipe_core_private *sipe_private)
 		gchar *self_sip_uri = sip_uri_self(sipe_private);
 		sipe_private->epid = sipe_get_epid(self_sip_uri,
 						   g_get_host_name(),
-						   sipe_backend_network_ip_address());
+						   sipe_backend_network_ip_address(SIPE_CORE_PUBLIC));
 		g_free(self_sip_uri);
 	}
 	return g_strdup(sipe_private->epid);

@@ -139,7 +139,7 @@ static const gchar *get_suitable_local_ip(void)
 	return "0.0.0.0";
 }
 
-const gchar *sipe_backend_network_ip_address(void)
+const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 	const gchar *ip = purple_network_get_my_ip(-1);
 	if (g_str_has_prefix(ip, "169.254."))

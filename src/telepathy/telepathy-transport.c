@@ -186,6 +186,7 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 
 	if (transport->socket)
 		g_object_unref(transport->socket);
+	transport->socket = NULL;
 
 	/* connection to the server dropped? */
 	if (transport->private->transport == transport)
@@ -228,6 +229,40 @@ void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
 	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
 	g_output_stream_flush(transport->ostream, NULL, NULL);
 }
+
+const gchar *sipe_backend_network_ip_address(struct sipe_core_public *sipe_public)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	const gchar *ipstr = telepathy_private->ipaddress;
+
+	/* address cached? */
+	if (!ipstr) {
+		struct sipe_transport_telepathy *transport = telepathy_private->transport;
+
+		/* default if everything should fail */
+		ipstr = "127.0.0.1";
+
+		/* connection to server established - get local IP from socket */
+		if (transport && transport->socket) {
+			GSocketAddress *saddr = g_socket_connection_get_local_address(transport->socket,
+										      NULL);
+
+			if (saddr) {
+				GInetAddress *iaddr = g_inet_socket_address_get_address(G_INET_SOCKET_ADDRESS(saddr));
+
+				if (iaddr) {
+					/* cache address string */
+					ipstr = telepathy_private->ipaddress = g_inet_address_to_string(iaddr);
+					SIPE_DEBUG_INFO("sipe_backend_network_ip_address: %s", ipstr);
+				}
+				g_object_unref(saddr);
+			}
+		}
+	}
+
+	return(ipstr);
+}
+
 
 /*
   Local Variables:

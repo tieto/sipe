@@ -25,6 +25,7 @@ struct _SipeConnection;
 struct _TpBaseConnection;
 struct _TpBaseConnectionManager;
 struct _TpBaseProtocol;
+struct sipe_transport_telepathy;
 
 /* constants */
 #define SIPE_TELEPATHY_DOMAIN "sipe"
@@ -32,7 +33,8 @@ struct _TpBaseProtocol;
 struct sipe_backend_private {
 	struct sipe_core_public *public;
 	struct _SipeConnection *connection;
-	gpointer transport;
+	struct sipe_transport_telepathy *transport;
+	gchar *ipaddress;
 };
 
 /* connection */

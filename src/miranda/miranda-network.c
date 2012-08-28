@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,8 @@
 #include "m_system.h"
 #include "m_netlib.h"
 
+#include "sipe-common.h"
+#include "sipe-core.h"
 #include "sipe-backend.h"
 #include "miranda-private.h"
 
@@ -42,11 +44,11 @@ const gchar *sipe_miranda_get_local_ip(void)
 	return inet_ntoa(*(struct in_addr *)*localHost->h_addr_list);
 }
 
-const gchar *sipe_backend_network_ip_address(void)
+const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 	static gchar ip[60] = "\0";
 	WORD iptype;
-	
+
 	sipe_miranda_getGlobalWord("iptype", &iptype);
 
 	if (iptype == SIPE_MIRANDA_IP_LOCAL)

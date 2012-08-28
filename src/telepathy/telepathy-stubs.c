@@ -311,7 +311,6 @@ void sipe_backend_media_reject(SIPE_UNUSED_PARAMETER struct sipe_backend_media *
 
 /** NETWORK ******************************************************************/
 
-const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER void) { return("127.0.0.1"); }
 struct sipe_backend_listendata *sipe_backend_network_listen_range(SIPE_UNUSED_PARAMETER unsigned short port_min,
 								  SIPE_UNUSED_PARAMETER unsigned short port_max,
 								  SIPE_UNUSED_PARAMETER sipe_listen_start_cb listen_cb,

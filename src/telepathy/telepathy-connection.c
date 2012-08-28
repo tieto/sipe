@@ -135,6 +135,7 @@ static gboolean connect_to_core(SipeConnection *self,
 		telepathy_private->public     = sipe_public;
 		telepathy_private->connection = self;
 		telepathy_private->transport  = NULL;
+		telepathy_private->ipaddress  = NULL;
 
 		/* map option list to flags - default is NTLM */
 		SIPE_CORE_FLAG_UNSET(KRB5);
@@ -246,12 +247,18 @@ static gboolean start_connecting(TpBaseConnection *base,
 static void shut_down(TpBaseConnection *base)
 {
 	SipeConnection *self = SIPE_CONNECTION(base);
-	struct sipe_core_public *sipe_public = self->private.public;
+	struct sipe_backend_private *telepathy_private = &self->private;
+	struct sipe_core_public *sipe_public           = telepathy_private->public;
 
 	SIPE_DEBUG_INFO("SipeConnection::shut_down: closing %p", sipe_public);
 
 	if (sipe_public)
 		sipe_core_deallocate(sipe_public);
+	telepathy_private->public    = NULL;
+	telepathy_private->transport = NULL;
+
+	g_free(telepathy_private->ipaddress);
+	telepathy_private->ipaddress = NULL;
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::shut_down: core deallocated");
 }
