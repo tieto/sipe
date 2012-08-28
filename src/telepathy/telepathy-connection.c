@@ -162,7 +162,7 @@ static void password_manager_cb(GObject *source,
 {
 	SipeConnection   *self  = data;
 	TpBaseConnection *base  = TP_BASE_CONNECTION(self);
-	GError         *error   = NULL;
+	GError *error           = NULL;
 	const GString *password = tp_simple_password_manager_prompt_finish(
 		TP_SIMPLE_PASSWORD_MANAGER(source),
 		result,
@@ -229,6 +229,7 @@ static gboolean start_connecting(TpBaseConnection *base,
 					&self->password,
 					NULL, error)) {
 			SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::start_connecting - got password");
+			g_strchomp(self->password);
 			rc = connect_to_core(self, error);
 		} else {
 			SIPE_DEBUG_ERROR("SipeConnection::start_connecting: %s",
