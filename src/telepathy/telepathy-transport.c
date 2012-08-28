@@ -115,15 +115,31 @@ static void socket_connected(GObject *client,
 							   &error);
 
 	if (transport->socket) {
-		SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
-		transport->istream = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
-		transport->ostream = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
-		/* this sets up the async read handler */
-		read_completed(G_OBJECT(transport->istream), NULL, transport);
-		transport->connected(SIPE_TRANSPORT_CONNECTION);
+		GSocketAddress *saddr = g_socket_connection_get_local_address(transport->socket,
+									      &error);
+
+		if (saddr) {
+			SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
+
+			transport->public.client_port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(saddr));
+			g_object_unref(saddr);
+
+			transport->istream = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
+			transport->ostream = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
+			/* this sets up the async read handler */
+			read_completed(G_OBJECT(transport->istream), NULL, transport);
+			transport->connected(SIPE_TRANSPORT_CONNECTION);
+		} else {
+			g_object_unref(transport->socket);
+			transport->socket = NULL;
+			SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
+			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+			g_error_free(error);
+		}
 	} else {
 		SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
 		transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+		g_error_free(error);
 	}
 }
 
