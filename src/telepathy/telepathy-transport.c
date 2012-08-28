@@ -45,6 +45,7 @@ struct sipe_transport_telepathy {
 	transport_input_cb *input;
 	transport_error_cb *error;
 	struct sipe_backend_private *private;
+	GCancellable *cancel;
 	GSocketConnection *socket;
 	GInputStream *istream;
 	GOutputStream *ostream;
@@ -64,8 +65,6 @@ static void read_completed(GObject *stream,
 	struct sipe_transport_telepathy *transport = data;
 	struct sipe_transport_connection *conn = SIPE_TRANSPORT_CONNECTION;
 
-	SIPE_DEBUG_INFO_NOFORMAT("read_completed: entry");
-
 	do {
 		if (conn->buffer_length < conn->buffer_used + BUFFER_SIZE_INCREMENT) {
 			conn->buffer_length += BUFFER_SIZE_INCREMENT;
@@ -83,7 +82,8 @@ static void read_completed(GObject *stream,
 
 			if (len < 0) {
 				SIPE_DEBUG_ERROR("read error: %s", error->message);
-				transport->error(conn, error->message);
+				if (transport->error)
+					transport->error(conn, error->message);
 				g_error_free(error);
 				return;
 			} else if (len == 0) {
@@ -109,7 +109,7 @@ static void read_completed(GObject *stream,
 				  conn->buffer + conn->buffer_used,
 				  conn->buffer_length - conn->buffer_used - 1,
 				  G_PRIORITY_DEFAULT,
-				  NULL,
+				  transport->cancel,
 				  read_completed,
 				  transport);
 }
@@ -125,35 +125,50 @@ static void socket_connected(GObject *client,
 							   result,
 							   &error);
 
-	if (transport->socket) {
-		GSocketAddress *saddr = g_socket_connection_get_local_address(transport->socket,
-									      &error);
+	if (error) {
+		SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
+		if (transport->error)
+			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+		g_error_free(error);
+	} else {
+		/*
+		 * It seems that cancellation does not always lead to an
+		 * error. Check additionally if the error callback is valid.
+		 */
+		if (transport->error) {
+			GSocketAddress *saddr = g_socket_connection_get_local_address(transport->socket,
+										      &error);
 
-		if (saddr) {
-			SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
+			if (saddr) {
+				SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
 
-			transport->public.client_port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(saddr));
-			g_object_unref(saddr);
+				transport->public.client_port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(saddr));
+				g_object_unref(saddr);
 
-			transport->istream    = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
-			transport->ostream    = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
-			transport->buffers    = NULL;
-			transport->is_writing = FALSE;
+				transport->istream    = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
+				transport->ostream    = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
+				transport->buffers    = NULL;
+				transport->is_writing = FALSE;
 
-			/* this sets up the async read handler */
-			read_completed(G_OBJECT(transport->istream), NULL, transport);
-			transport->connected(SIPE_TRANSPORT_CONNECTION);
+				/* this sets up the async read handler */
+				read_completed(G_OBJECT(transport->istream), NULL, transport);
+				transport->connected(SIPE_TRANSPORT_CONNECTION);
+
+				/* the first connection is always to the server */
+				if (transport->private->transport == NULL)
+					transport->private->transport = transport;
+
+			} else {
+				g_object_unref(transport->socket);
+				transport->socket = NULL;
+				SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
+				transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+				g_error_free(error);
+			}
 		} else {
 			g_object_unref(transport->socket);
 			transport->socket = NULL;
-			SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
-			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
-			g_error_free(error);
 		}
-	} else {
-		SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
-		transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
-		g_error_free(error);
 	}
 }
 
@@ -161,7 +176,6 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 								 const sipe_connect_setup *setup)
 {
 	struct sipe_transport_telepathy *transport = g_new0(struct sipe_transport_telepathy, 1);
-	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
 
 	SIPE_DEBUG_INFO("sipe_backend_transport_connect - hostname: %s port: %d",
 			setup->server_name, setup->server_port);
@@ -171,7 +185,7 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 	transport->connected        = setup->connected;
 	transport->input            = setup->input;
 	transport->error            = setup->error;
-	transport->private          = telepathy_private;
+	transport->private          = sipe_public->backend_private;
 
 	if ((setup->type == SIPE_TRANSPORT_TLS) ||
 	    (setup->type == SIPE_TRANSPORT_TCP)) {
@@ -187,10 +201,11 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 		} else
 			SIPE_DEBUG_INFO_NOFORMAT("using TCP");
 
+		transport->cancel = g_cancellable_new();
 		g_socket_client_connect_async(client,
 					      g_network_address_new(setup->server_name,
 								    setup->server_port),
-					      NULL,
+					      transport->cancel,
 					      socket_connected,
 					      transport);
 		g_object_unref(client);
@@ -201,11 +216,26 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 		return(NULL);
 	}
 
-	/* the first connection is always to the server */
-	if (telepathy_private->transport == NULL)
-		telepathy_private->transport = transport;
-
 	return(SIPE_TRANSPORT_CONNECTION);
+}
+
+static void close_completed(GObject *stream,
+			    GAsyncResult *result,
+			    gpointer data)
+{
+	struct sipe_transport_telepathy *transport = data;
+	SIPE_DEBUG_INFO("close_completed: transport %p", data);
+	g_io_stream_close_finish(G_IO_STREAM(stream), result, NULL);
+	g_object_unref(transport->cancel);
+	g_object_unref(stream);
+	g_free(transport);
+}
+
+static gboolean free_transport(gpointer data)
+{
+	SIPE_DEBUG_INFO("free_transport %p", data);
+	g_free(data);
+	return(FALSE);
 }
 
 void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
@@ -215,21 +245,33 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 
 	if (!transport) return;
 
+	/* connection to the server dropped? */
+	if (transport->private->transport == transport)
+		transport->private->transport = NULL;
+
+	/* free unflushed buffers */
 	for (entry = transport->buffers; entry; entry = entry->next)
 		g_free(entry->data);
 	g_slist_free(transport->buffers);
 	transport->buffers    = NULL;
 	transport->is_writing = FALSE;
 
+	/* cancel outstanding asynchronous operations */
+	if (transport->cancel) {
+		/* error callback is invalid now, do no longer call! */
+		transport->error = NULL;
+		g_cancellable_cancel(transport->cancel);
+	}
+
+	/* queue transport to be deleted */
 	if (transport->socket)
-		g_object_unref(transport->socket);
-	transport->socket = NULL;
-
-	/* connection to the server dropped? */
-	if (transport->private->transport == transport)
-		transport->private->transport = NULL;
-
-	g_free(transport);
+		g_io_stream_close_async(G_IO_STREAM(transport->socket),
+					G_PRIORITY_DEFAULT,
+					NULL,
+					close_completed,
+					transport);
+        else
+		g_idle_add(free_transport, transport);
 }
 
 static void do_write(struct sipe_transport_telepathy *transport,
@@ -245,7 +287,8 @@ static void write_completed(GObject *stream,
 
 	if (error) {
 		SIPE_DEBUG_ERROR("write error: %s", error->message);
-		transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+		if (transport->error)
+			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
 		g_error_free(error);
 	} else {
 		/* more to write? */
@@ -270,7 +313,7 @@ static void do_write(struct sipe_transport_telepathy *transport,
 				    buffer,
 				    strlen(buffer),
 				    G_PRIORITY_DEFAULT,
-				    NULL,
+				    transport->cancel,
 				    write_completed,
 				    transport);
 }

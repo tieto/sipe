@@ -54,7 +54,8 @@ static void dns_srv_response(GObject *resolver,
 		SIPE_DEBUG_INFO("dns_srv_response: failed: %s",
 				error ? error->message : "UNKNOWN");
 		g_error_free(error);
-		query->callback(query->extradata, NULL, 0);
+		if (query->callback)
+			query->callback(query->extradata, NULL, 0);
 	}
 	g_object_unref(query->cancel);
 	g_free(query);
@@ -106,7 +107,8 @@ static void dns_a_response(GObject *resolver,
 		SIPE_DEBUG_INFO("dns_a_response: failed: %s",
 				error ? error->message : "UNKNOWN");
 		g_error_free(error);
-		query->callback(query->extradata, NULL, 0);
+		if (query->callback)
+			query->callback(query->extradata, NULL, 0);
 	}
 	g_object_unref(query->cancel);
 	g_free(query);
@@ -139,6 +141,8 @@ struct sipe_dns_query *sipe_backend_dns_query_a(SIPE_UNUSED_PARAMETER struct sip
 
 void sipe_backend_dns_query_cancel(struct sipe_dns_query *query)
 {
+	/* callback is invalid now, do no longer call! */
+	query->callback = NULL;
 	g_cancellable_cancel(query->cancel);
 }
 
