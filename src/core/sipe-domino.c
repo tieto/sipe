@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  *
  *
@@ -171,12 +171,13 @@ sipe_domino_get_free_busy(time_t fb_start,
 
 static void
 sipe_domino_process_calendar_response(int return_code,
-				 const char *body,
-				 const char *content_type,
-				 HttpConn *conn,
-				 void *data)
+				      const char *body,
+				      GSList *headers,
+				      HttpConn *conn,
+				      void *data)
 {
 	struct sipe_calendar *cal = data;
+	const gchar *content_type = sipe_utils_nameval_find(headers, "Content-Type");
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_process_calendar_response: cb started.");
 
@@ -372,7 +373,7 @@ static void
 sipe_domino_process_login_response(int return_code,
 				   /* temporary? */
 				   SIPE_UNUSED_PARAMETER const char *body,
-				   SIPE_UNUSED_PARAMETER const char *content_type,
+				   SIPE_UNUSED_PARAMETER GSList *headers,
 				   HttpConn *conn,
 				   void *data)
 {
