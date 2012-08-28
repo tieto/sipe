@@ -64,36 +64,45 @@ static void read_completed(GObject *stream,
 	struct sipe_transport_telepathy *transport = data;
 	struct sipe_transport_connection *conn = SIPE_TRANSPORT_CONNECTION;
 
-	if (conn->buffer_length < conn->buffer_used + BUFFER_SIZE_INCREMENT) {
-		conn->buffer_length += BUFFER_SIZE_INCREMENT;
-		conn->buffer = g_realloc(conn->buffer, conn->buffer_length);
-		SIPE_DEBUG_INFO("read_completed: new buffer length %" G_GSIZE_FORMAT,
-				conn->buffer_length);
-	}
+	SIPE_DEBUG_INFO_NOFORMAT("read_completed: entry");
 
-	/* callback result is valid */
-	if (result) {
-		GError *error = NULL;
-		gssize len    = g_input_stream_read_finish(G_INPUT_STREAM(stream),
-							   result,
-							   &error);
-
-		if (len < 0) {
-			SIPE_DEBUG_ERROR("read error: %s", error->message);
-			transport->error(conn, error->message);
-			g_error_free(error);
-			return;
-		} else if (len == 0) {
-			SIPE_DEBUG_ERROR_NOFORMAT("Server has disconnected");
-			transport->error(conn, _("Server has disconnected"));
-			return;
+	do {
+		if (conn->buffer_length < conn->buffer_used + BUFFER_SIZE_INCREMENT) {
+			conn->buffer_length += BUFFER_SIZE_INCREMENT;
+			conn->buffer = g_realloc(conn->buffer, conn->buffer_length);
+			SIPE_DEBUG_INFO("read_completed: new buffer length %" G_GSIZE_FORMAT,
+					conn->buffer_length);
 		}
 
-		/* Forward data to core */
-		conn->buffer_used               += len;
-		conn->buffer[conn->buffer_used]  = '\0';
-		transport->input(conn);
-	}
+		/* callback result is valid */
+		if (result) {
+			GError *error = NULL;
+			gssize len    = g_input_stream_read_finish(G_INPUT_STREAM(stream),
+								   result,
+								   &error);
+
+			if (len < 0) {
+				SIPE_DEBUG_ERROR("read error: %s", error->message);
+				transport->error(conn, error->message);
+				g_error_free(error);
+				return;
+			} else if (len == 0) {
+				SIPE_DEBUG_ERROR_NOFORMAT("Server has disconnected");
+				transport->error(conn, _("Server has disconnected"));
+				return;
+			}
+
+			/* Forward data to core */
+			conn->buffer_used               += len;
+			conn->buffer[conn->buffer_used]  = '\0';
+			transport->input(conn);
+
+			/* we processed the result */
+			result = NULL;
+		}
+
+		/* buffer too short? */
+	} while (conn->buffer_length - conn->buffer_used - 1 == 0);
 
 	/* setup next read */
 	g_input_stream_read_async(G_INPUT_STREAM(stream),
