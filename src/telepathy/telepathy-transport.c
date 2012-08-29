@@ -81,14 +81,18 @@ static void read_completed(GObject *stream,
 								   &error);
 
 			if (len < 0) {
-				SIPE_DEBUG_ERROR("read error: %s", error->message);
+				SIPE_DEBUG_ERROR("read_completed: error: %s", error->message);
 				if (transport->error)
 					transport->error(conn, error->message);
 				g_error_free(error);
 				return;
 			} else if (len == 0) {
-				SIPE_DEBUG_ERROR_NOFORMAT("Server has disconnected");
+				SIPE_DEBUG_ERROR_NOFORMAT("read_completed: server has disconnected");
 				transport->error(conn, _("Server has disconnected"));
+				return;
+			} else if (g_cancellable_is_cancelled(transport->cancel)) {
+				/* read completed when transport was disconnected */
+				SIPE_DEBUG_INFO_NOFORMAT("read_completed: cancelled");
 				return;
 			}
 
@@ -130,44 +134,40 @@ static void socket_connected(GObject *client,
 		if (transport->error)
 			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
 		g_error_free(error);
+	} else if (g_cancellable_is_cancelled(transport->cancel)) {
+		/* connect already succeeded when transport was disconnected */
+		g_object_unref(transport->socket);
+		transport->socket = NULL;
+		SIPE_DEBUG_INFO_NOFORMAT("socket_connected: succeeded, but cancelled");
 	} else {
-		/*
-		 * It seems that cancellation does not always lead to an
-		 * error. Check additionally if the error callback is valid.
-		 */
-		if (transport->error) {
-			GSocketAddress *saddr = g_socket_connection_get_local_address(transport->socket,
-										      &error);
+		GSocketAddress *saddr = g_socket_connection_get_local_address(transport->socket,
+									      &error);
 
-			if (saddr) {
-				SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
+		if (saddr) {
+			SIPE_DEBUG_INFO_NOFORMAT("socket_connected: success");
 
-				transport->public.client_port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(saddr));
-				g_object_unref(saddr);
+			transport->public.client_port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(saddr));
+			g_object_unref(saddr);
 
-				transport->istream    = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
-				transport->ostream    = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
-				transport->buffers    = NULL;
-				transport->is_writing = FALSE;
+			transport->istream    = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
+			transport->ostream    = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
+			transport->buffers    = NULL;
+			transport->is_writing = FALSE;
 
-				/* this sets up the async read handler */
-				read_completed(G_OBJECT(transport->istream), NULL, transport);
-				transport->connected(SIPE_TRANSPORT_CONNECTION);
+			/* this sets up the async read handler */
+			read_completed(G_OBJECT(transport->istream), NULL, transport);
+			transport->connected(SIPE_TRANSPORT_CONNECTION);
 
-				/* the first connection is always to the server */
-				if (transport->private->transport == NULL)
-					transport->private->transport = transport;
+			/* the first connection is always to the server */
+			if (transport->private->transport == NULL)
+				transport->private->transport = transport;
 
-			} else {
-				g_object_unref(transport->socket);
-				transport->socket = NULL;
-				SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
-				transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
-				g_error_free(error);
-			}
 		} else {
 			g_object_unref(transport->socket);
 			transport->socket = NULL;
+			SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
+			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+			g_error_free(error);
 		}
 	}
 }
@@ -219,6 +219,16 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 	return(SIPE_TRANSPORT_CONNECTION);
 }
 
+static gboolean free_transport(gpointer data)
+{
+	struct sipe_transport_telepathy *transport = data;
+	SIPE_DEBUG_INFO("free_transport %p", transport);
+	if (transport->cancel)
+		g_object_unref(transport->cancel);
+	g_free(transport);
+	return(FALSE);
+}
+
 static void close_completed(GObject *stream,
 			    GAsyncResult *result,
 			    gpointer data)
@@ -226,16 +236,7 @@ static void close_completed(GObject *stream,
 	struct sipe_transport_telepathy *transport = data;
 	SIPE_DEBUG_INFO("close_completed: transport %p", data);
 	g_io_stream_close_finish(G_IO_STREAM(stream), result, NULL);
-	g_object_unref(transport->cancel);
-	g_object_unref(stream);
-	g_free(transport);
-}
-
-static gboolean free_transport(gpointer data)
-{
-	SIPE_DEBUG_INFO("free_transport %p", data);
-	g_free(data);
-	return(FALSE);
+	free_transport(transport);
 }
 
 void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
@@ -244,6 +245,9 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 	GSList *entry;
 
 	if (!transport) return;
+
+	/* error callback is invalid now, do no longer call! */
+	transport->error = NULL;
 
 	/* connection to the server dropped? */
 	if (transport->private->transport == transport)
@@ -257,11 +261,8 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 	transport->is_writing = FALSE;
 
 	/* cancel outstanding asynchronous operations */
-	if (transport->cancel) {
-		/* error callback is invalid now, do no longer call! */
-		transport->error = NULL;
+	if (transport->cancel)
 		g_cancellable_cancel(transport->cancel);
-	}
 
 	/* queue transport to be deleted */
 	if (transport->socket)
@@ -286,10 +287,14 @@ static void write_completed(GObject *stream,
 	g_output_stream_write_finish(G_OUTPUT_STREAM(stream), result, &error);
 
 	if (error) {
-		SIPE_DEBUG_ERROR("write error: %s", error->message);
+		SIPE_DEBUG_ERROR("write_completed: error: %s", error->message);
 		if (transport->error)
 			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
 		g_error_free(error);
+	} else if (g_cancellable_is_cancelled(transport->cancel)) {
+		/* write completed when transport was disconnected */
+		SIPE_DEBUG_INFO_NOFORMAT("write_completed: cancelled");
+		transport->is_writing = FALSE;
 	} else {
 		/* more to write? */
 		if (transport->buffers) {
