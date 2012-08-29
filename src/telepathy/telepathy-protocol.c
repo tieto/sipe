@@ -30,6 +30,7 @@
 #include <glib-object.h>
 #include <telepathy-glib/base-connection-manager.h>
 #include <telepathy-glib/base-protocol.h>
+#include <telepathy-glib/simple-password-manager.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "sipe-backend.h"
@@ -95,13 +96,17 @@ static const TpCMParamSpec *get_parameters(SIPE_UNUSED_PARAMETER TpBaseProtocol 
 {
 /* ISO C99 Designated Initializers silences -Wmissing-field-initializers */
 #define SIPE_PROTOCOL_PARAMETER(_name, _dtype, _gtype, _flags, _default, _filter) \
-	{                             \
-		.name   = (_name),    \
-		.dtype  = (_dtype),   \
-		.gtype  = (_gtype),   \
-		.flags  = (_flags),   \
-		.def    = (_default), \
-		.filter = (_filter),  \
+	{                                  \
+		.name        = (_name),    \
+		.dtype       = (_dtype),   \
+		.gtype       = (_gtype),   \
+		.flags       = (_flags),   \
+		.def         = (_default), \
+		.offset      = 0,          \
+		.filter      = (_filter),  \
+		.filter_data = NULL,       \
+		.setter_data = NULL,       \
+		._future1    = NULL,       \
 	}
 
 	static const TpCMParamSpec const sipe_parameters[] = {
@@ -209,8 +214,9 @@ static void get_connection_details(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
 		*connection_interfaces = g_strdupv((GStrv) interfaces);
 	}
 	if (channel_managers) {
-		static const GType const types[] = {
+		GType types[] = {
 			/* @TODO */
+			TP_TYPE_SIMPLE_PASSWORD_MANAGER,
 			G_TYPE_INVALID
 		};
 		*channel_managers = g_memdup(types, sizeof(types));

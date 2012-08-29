@@ -253,35 +253,12 @@ static gboolean start_connecting(TpBaseConnection *base,
 	if (self->password)
 		rc = connect_to_core(self, error);
 	else {
-#if 0
-/* this doesn't work. Nobody has a clue why */
+		/* @TODO: this doesn't work, i.e. UI doesn't show a dialog */
 		SIPE_DEBUG_INFO("SipeConnection::start_connecting: requesting password from user: %p",
-			self->password_manager);
+				self->password_manager);
 		tp_simple_password_manager_prompt_async(self->password_manager,
 							password_manager_cb,
 							self);
-#else
-/* MAJOR HACK */
-		gchar *password_file = g_strdup_printf("%s/.sipe-password",
-						       g_getenv("HOME"));
-		SIPE_DEBUG_INFO("SipeConnection::start_connecting - password file %s",
-				password_file);
-		rc = FALSE;
-		if (g_file_get_contents(password_file,
-					&self->password,
-					NULL, error)) {
-			SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::start_connecting - got password");
-			g_strchomp(self->password);
-			rc = connect_to_core(self, error);
-		} else {
-			SIPE_DEBUG_ERROR("SipeConnection::start_connecting: %s",
-					 (*error)->message);
-		}
-		g_free(password_file);
-
-		/* to make compiler happy */
-		(void)password_manager_cb;
-#endif
 	}
 
 	return(rc);
