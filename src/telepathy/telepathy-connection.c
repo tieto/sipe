@@ -451,10 +451,14 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
  */
 void sipe_backend_connection_completed(struct sipe_core_public *sipe_public)
 {
-    SipeConnection *self = SIPE_PUBLIC_TO_CONNECTION;
-    tp_base_connection_change_status(TP_BASE_CONNECTION(self),
-				     TP_CONNECTION_STATUS_CONNECTED,
-				     TP_CONNECTION_STATUS_REASON_REQUESTED);
+    SipeConnection *self   = SIPE_PUBLIC_TO_CONNECTION;
+    TpBaseConnection *base = TP_BASE_CONNECTION(self);
+
+    /* we are only allowed to do this once */
+    if (base->status != TP_CONNECTION_STATUS_CONNECTED)
+	    tp_base_connection_change_status(base,
+					     TP_CONNECTION_STATUS_CONNECTED,
+					     TP_CONNECTION_STATUS_REASON_REQUESTED);
 }
 
 void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
