@@ -153,13 +153,13 @@ static void socket_connected(GObject *client,
 			transport->istream = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
 			transport->ostream = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
 
-			/* this sets up the async read handler */
-			read_completed(G_OBJECT(transport->istream), NULL, transport);
-			transport->connected(SIPE_TRANSPORT_CONNECTION);
-
 			/* the first connection is always to the server */
 			if (transport->private->transport == NULL)
 				transport->private->transport = transport;
+
+			/* this sets up the async read handler */
+			read_completed(G_OBJECT(transport->istream), NULL, transport);
+			transport->connected(SIPE_TRANSPORT_CONNECTION);
 
 		} else {
 			g_object_unref(transport->socket);
