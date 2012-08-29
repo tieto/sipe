@@ -248,7 +248,7 @@ static void close_completed(GObject *stream,
 	struct sipe_transport_telepathy *transport = data;
 	SIPE_DEBUG_INFO("close_completed: transport %p", data);
 	g_io_stream_close_finish(G_IO_STREAM(stream), result, NULL);
-	free_transport(transport);
+	g_idle_add(free_transport, transport);
 }
 
 static void do_close(struct sipe_transport_telepathy *transport)
@@ -270,6 +270,8 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
 
 	if (!transport) return;
+
+	SIPE_DEBUG_INFO("sipe_backend_transport_disconnect: %p", transport);
 
 	/* error callback is invalid now, do no longer call! */
 	transport->error = NULL;
