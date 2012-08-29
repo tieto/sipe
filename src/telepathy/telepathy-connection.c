@@ -188,13 +188,13 @@ static void password_manager_cb(GObject *source,
 		result,
 		&error);
 
-	if (error) {
+	if (password == NULL) {
 		SIPE_DEBUG_ERROR("password_manager_cb: failed: %s",
-				 error->message);
+				 error ? error->message : "UNKNOWN");
 
 		if (base->status != TP_CONNECTION_STATUS_DISCONNECTED) {
 			tp_base_connection_disconnect_with_dbus_error(base,
-								      tp_error_get_dbus_name(error->code),
+								      error ? tp_error_get_dbus_name(error->code) : "",
 								      NULL,
 								      TP_CONNECTION_STATUS_REASON_AUTHENTICATION_FAILED);
 		}

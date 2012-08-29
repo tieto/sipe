@@ -82,9 +82,10 @@ static void read_completed(GObject *stream,
 								   &error);
 
 			if (len < 0) {
-				SIPE_DEBUG_ERROR("read_completed: error: %s", error->message);
+				const gchar *msg = error ? error->message : "UNKNOWN";
+				SIPE_DEBUG_ERROR("read_completed: error: %s", msg);
 				if (transport->error)
-					transport->error(conn, error->message);
+					transport->error(conn, msg);
 				g_error_free(error);
 				return;
 			} else if (len == 0) {
@@ -131,9 +132,10 @@ static void socket_connected(GObject *client,
 							   &error);
 
 	if (error) {
-		SIPE_DEBUG_ERROR("socket_connected: failed: %s", error->message);
+		const gchar *msg = error ? error->message : "UNKNOWN";
+		SIPE_DEBUG_ERROR("socket_connected: failed: %s", msg);
 		if (transport->error)
-			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+			transport->error(SIPE_TRANSPORT_CONNECTION, msg);
 		g_error_free(error);
 	} else if (g_cancellable_is_cancelled(transport->cancel)) {
 		/* connect already succeeded when transport was disconnected */
@@ -308,13 +310,15 @@ static void write_completed(GObject *stream,
 {
 	struct sipe_transport_telepathy *transport = data;
 	GError                          *error     = NULL;
+	gssize written = g_output_stream_write_finish(G_OUTPUT_STREAM(stream),
+						      result,
+						      &error);
 
-	g_output_stream_write_finish(G_OUTPUT_STREAM(stream), result, &error);
-
-	if (error) {
-		SIPE_DEBUG_ERROR("write_completed: error: %s", error->message);
+	if ((written < 0) || error) {
+		const gchar *msg = error ? error->message : "UNKNOWN";
+		SIPE_DEBUG_ERROR("write_completed: error: %s", msg);
 		if (transport->error)
-			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
+			transport->error(SIPE_TRANSPORT_CONNECTION, msg);
 		g_error_free(error);
 
 		/* error during flush: give up and close transport */
