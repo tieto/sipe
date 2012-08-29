@@ -444,7 +444,7 @@ void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
 {
     SipeConnection *self   = SIPE_PUBLIC_TO_CONNECTION;
     TpBaseConnection *base = TP_BASE_CONNECTION(self);
-    GHashTable *details    = tp_asv_new("debug-message", G_TYPE_STRING, msg,
+    GHashTable *details    = tp_asv_new("server-message", G_TYPE_STRING, msg,
 					NULL);
     TpConnectionStatusReason reason;
     const gchar *name;
