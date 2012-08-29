@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -389,7 +389,6 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 		sip_csta_close(sipe_private);
 	}
 
-	sipe_certificate_free(sipe_private);
 	sipe_svc_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
@@ -398,6 +397,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 
 	sipe_core_connection_cleanup(sipe_private);
+	sipe_certificate_free(sipe_private);
+
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->username);

@@ -113,6 +113,7 @@ struct sip_transport {
 	gboolean reregister_set;     /* whether reregister timer set */
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed;         /* whether subscribed to events, except buddies presence */
+	gboolean deregister;         /* whether in deregistration */
 };
 
 /* Keep in sync with sipe_transport_type! */
@@ -201,12 +202,21 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				      struct sip_auth *auth,
 				      struct sipmsg *msg)
 {
+	struct sip_transport *transport = sipe_private->transport;
 	gchar *ret;
 	gchar *gssapi_data = NULL;
 	gchar *sign_str;
 	gchar *gssapi_str;
 	gchar *opaque_str;
 	gchar *version_str;
+
+	/*
+	 * If transport is de-registering when we reach this point then we
+	 * are in the middle of the previous authentication context setup
+	 * attempt. So we shouldn't try another attempt.
+	 */
+	if (transport->deregister)
+		return NULL;
 
 	/* Create security context or handshake continuation? */
 	if (auth->gssapi_context) {
@@ -263,7 +273,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				}
 
 				/* we can't authenticate the message yet */
-				sipe_private->transport->auth_incomplete = TRUE;
+				transport->auth_incomplete = TRUE;
 
 				return(NULL);
 			} else {
@@ -1334,6 +1344,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 		}
 	}
 
+	transport->deregister      = deregister;
 	transport->auth_incomplete = FALSE;
 
 	uuid = get_uuid(sipe_private);
