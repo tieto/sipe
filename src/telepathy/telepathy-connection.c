@@ -20,6 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
 
 #include <glib-object.h>
@@ -55,6 +59,7 @@ typedef struct _SipeConnection {
 	gchar *server;
 	gchar *port;
 	guint  transport;
+	gchar *authentication;
 	gboolean is_disconnecting;
 } SipeConnection;
 
@@ -143,8 +148,19 @@ static gboolean connect_to_core(SipeConnection *self,
 		/* map option list to flags - default is NTLM */
 		SIPE_CORE_FLAG_UNSET(KRB5);
 		SIPE_CORE_FLAG_UNSET(TLS_DSK);
+#ifdef HAVE_LIBKRB5
+		if (sipe_strequal(self->authentication, "krb5")) {
+			SIPE_DEBUG_INFO_NOFORMAT("connect_to_core: KRB5 selected");
+			SIPE_CORE_FLAG_SET(KRB5);
+		} else
+#endif
+		if (sipe_strequal(self->authentication, "tls-dsk")) {
+			SIPE_DEBUG_INFO_NOFORMAT("connect_to_core: TLS-DSK selected");
+			SIPE_CORE_FLAG_SET(TLS_DSK);
+		}
+
+		/* @TODO: add parameter for SSO */
 		SIPE_CORE_FLAG_UNSET(SSO);
-		/* @TODO: add parameters for these */
 
 		sipe_core_transport_sip_connect(sipe_public,
 						self->transport,
@@ -324,6 +340,7 @@ static void sipe_connection_finalize(GObject *object)
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::finalize");
 
+	g_free(self->authentication);
 	g_free(self->port);
 	g_free(self->server);
 	g_free(self->password);
@@ -361,12 +378,10 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 						GHashTable *params,
 						SIPE_UNUSED_PARAMETER GError **error)
 {
-	const gchar *password  = tp_asv_get_string(params, "password");
-	const gchar *server    = tp_asv_get_string(params, "server");
-	const gchar *transport = tp_asv_get_string(params, "transport");
-	SipeConnection *conn   = g_object_new(SIPE_TYPE_CONNECTION,
-					      "protocol", tp_base_protocol_get_name(protocol),
-					      NULL);
+	SipeConnection *conn = g_object_new(SIPE_TYPE_CONNECTION,
+					    "protocol", tp_base_protocol_get_name(protocol),
+					    NULL);
+	const gchar *value;
 	guint port;
 	gboolean valid;
 
@@ -380,14 +395,16 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 	conn->login   = g_strdup(tp_asv_get_string(params, "login"));
 
 	/* password */
-	if (password && strlen(password))
-		conn->password = g_strdup(password);
+	value = tp_asv_get_string(params, "password");
+	if (value && strlen(value))
+		conn->password = g_strdup(value);
 	else
 		conn->password = NULL;
 
 	/* server name */
-	if (server && strlen(server))
-		conn->server = g_strdup(server);
+	value = tp_asv_get_string(params, "server");
+	if (value && strlen(value))
+		conn->server = g_strdup(value);
 	else
 		conn->server = NULL;
 
@@ -399,14 +416,23 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		conn->port = NULL;
 
 	/* transport type */
-	if (sipe_strequal(transport, "auto")) {
+	value = tp_asv_get_string(params, "transport");
+	if (sipe_strequal(value, "auto")) {
 		conn->transport = conn->server ?
 			SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_AUTO;
-	} else if (sipe_strequal(transport, "tls")) {
+	} else if (sipe_strequal(value, "tls")) {
 		conn->transport = SIPE_TRANSPORT_TLS;
 	} else {
 		conn->transport = SIPE_TRANSPORT_TCP;
 	}
+
+	/* authentication type */
+	value = tp_asv_get_string(params, "authentication");
+	if (value && strlen(value) && strcmp(value, "ntlm"))
+		conn->authentication = g_strdup(value);
+	else
+		conn->authentication = NULL; /* NTLM is default */
+
 
 	return(TP_BASE_CONNECTION(conn));
 }

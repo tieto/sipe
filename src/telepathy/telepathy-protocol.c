@@ -142,6 +142,13 @@ static const TpCMParamSpec *get_parameters(SIPE_UNUSED_PARAMETER TpBaseProtocol 
 					TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
 					"auto",
 					tp_cm_param_filter_string_nonempty),
+		/* @TODO: this should be combo ntlm/krb5/tls-dsk */
+		SIPE_PROTOCOL_PARAMETER("authentication",
+					DBUS_TYPE_STRING_AS_STRING,
+					G_TYPE_STRING,
+					TP_CONN_MGR_PARAM_FLAG_HAS_DEFAULT,
+					"ntlm",
+					tp_cm_param_filter_string_nonempty),
 		SIPE_PROTOCOL_PARAMETER(NULL, NULL, 0, 0, NULL, NULL)
 	};
 
