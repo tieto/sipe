@@ -253,9 +253,7 @@ static gboolean start_connecting(TpBaseConnection *base,
 	if (self->password)
 		rc = connect_to_core(self, error);
 	else {
-		/* @TODO: this doesn't work, i.e. UI doesn't show a dialog */
-		SIPE_DEBUG_INFO("SipeConnection::start_connecting: requesting password from user: %p",
-				self->password_manager);
+		SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::start_connecting: requesting password from user");
 		tp_simple_password_manager_prompt_async(self->password_manager,
 							password_manager_cb,
 							self);
@@ -306,8 +304,6 @@ static GPtrArray *create_channel_managers(TpBaseConnection *base)
 
 	self->password_manager = tp_simple_password_manager_new(base);
 	g_ptr_array_add(channel_managers, self->password_manager);
-	SIPE_DEBUG_INFO("SipeConnection::create_channel_managers: password %p",
-			self->password_manager);
 
 	return(channel_managers);
 }
@@ -332,6 +328,12 @@ static void sipe_connection_finalize(GObject *object)
 /*
  * Connection class - type implementation
  */
+static const gchar *interfaces_always_present[] = {
+	/* @TODO */
+	TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+	NULL
+};
+
 static void sipe_connection_class_init(SipeConnectionClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS(klass);
@@ -345,6 +347,8 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 	base_class->start_connecting        = start_connecting;
 	base_class->shut_down               = shut_down;
 	base_class->create_channel_managers = create_channel_managers;
+
+	base_class->interfaces_always_present = interfaces_always_present;
 }
 
 static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)
