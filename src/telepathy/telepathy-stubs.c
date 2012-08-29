@@ -165,14 +165,6 @@ void sipe_backend_chat_show(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_sessi
 void sipe_backend_chat_topic(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *backend_session,
 			     SIPE_UNUSED_PARAMETER const gchar *topic) {}
 
-/** CONNECTION ***************************************************************/
-
-void sipe_backend_connection_completed(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) {}
-void sipe_backend_connection_error(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				   SIPE_UNUSED_PARAMETER  sipe_connection_error error,
-				   SIPE_UNUSED_PARAMETER const gchar *msg) {}
-gboolean sipe_backend_connection_is_disconnecting(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(FALSE); }
-
 /** FILE TRANSFER ************************************************************/
 
 void sipe_backend_ft_error(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
@@ -376,7 +368,7 @@ void sipe_backend_user_ask(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_p
 			   SIPE_UNUSED_PARAMETER const gchar *accept_label,
 			   SIPE_UNUSED_PARAMETER const gchar *decline_label,
 			   SIPE_UNUSED_PARAMETER gpointer key) {}
-void sipe_backend_user_close_ask(SIPE_UNUSED_PARAMETER SIPE_UNUSED_PARAMETER gpointer key) {}
+void sipe_backend_user_close_ask(SIPE_UNUSED_PARAMETER gpointer key) {}
 
 /*
   Local Variables:
