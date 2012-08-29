@@ -59,6 +59,7 @@ typedef struct _SipeConnection {
 	gchar *server;
 	gchar *port;
 	guint  transport;
+	gchar *user_agent;
 	gchar *authentication;
 	gboolean is_disconnecting;
 } SipeConnection;
@@ -341,6 +342,7 @@ static void sipe_connection_finalize(GObject *object)
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::finalize");
 
 	g_free(self->authentication);
+	g_free(self->user_agent);
 	g_free(self->port);
 	g_free(self->server);
 	g_free(self->password);
@@ -426,13 +428,19 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		conn->transport = SIPE_TRANSPORT_TCP;
 	}
 
+	/* User-Agent: override */
+	value = tp_asv_get_string(params, "useragent");
+	if (value && strlen(value))
+		conn->user_agent = g_strdup(value);
+	else
+		conn->user_agent = NULL;
+
 	/* authentication type */
 	value = tp_asv_get_string(params, "authentication");
 	if (value && strlen(value) && strcmp(value, "ntlm"))
 		conn->authentication = g_strdup(value);
 	else
 		conn->authentication = NULL; /* NTLM is default */
-
 
 	return(TP_BASE_CONNECTION(conn));
 }
@@ -507,6 +515,26 @@ gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public)
 {
 	return(!sipe_backend_connection_is_disconnecting(sipe_public));
 }
+
+const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
+				  sipe_setting type)
+{
+	SipeConnection *self = SIPE_PUBLIC_TO_CONNECTION;
+	const gchar *value;
+
+	switch (type) {
+	case SIPE_SETTING_USER_AGENT:
+		value = self->user_agent;
+		break;
+	default:
+		/* @TODO: update when settings are implemented */
+		value = NULL;
+		break;
+	}
+
+	return(value);
+}
+
 
 /*
   Local Variables:

@@ -342,11 +342,6 @@ void sipe_backend_search_results_finalize(SIPE_UNUSED_PARAMETER struct sipe_core
 					  SIPE_UNUSED_PARAMETER const gchar *description,
 					  SIPE_UNUSED_PARAMETER gboolean more) {}
 
-/** SETTINGS *****************************************************************/
-
-const gchar *sipe_backend_setting(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				  SIPE_UNUSED_PARAMETER sipe_setting type) { return(NULL); }
-
 /** STATUS *******************************************************************/
 
 guint sipe_backend_status(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(SIPE_ACTIVITY_AVAILABLE); }
