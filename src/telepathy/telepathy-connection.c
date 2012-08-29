@@ -204,8 +204,30 @@ static gboolean start_connecting(TpBaseConnection *base,
 {
 	SipeConnection *self = SIPE_CONNECTION(base);
 	gboolean        rc   = TRUE;
+	gchar          *uri  = sipe_telepathy_protocol_normalize_contact(NULL,
+									 self->account,
+									 error);
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::start_connecting");
+
+	/* set up mandatory self-handle */
+	if (uri) {
+		base->self_handle = tp_handle_ensure(tp_base_connection_get_handles(base,
+										    TP_HANDLE_TYPE_CONTACT),
+						     uri,
+						     NULL,
+						     error);
+		g_free(uri);
+		if (!base->self_handle) {
+			SIPE_DEBUG_ERROR("SipeConnection::start_connecting: self handle creation failed: %s",
+					 (*error)->message);
+			return(FALSE);
+		}
+	} else {
+		SIPE_DEBUG_ERROR("SipeConnection::start_connecting: %s",
+				 (*error)->message);
+		return(FALSE);
+	}
 
 	tp_base_connection_change_status(base, TP_CONNECTION_STATUS_CONNECTING,
 					 TP_CONNECTION_STATUS_REASON_REQUESTED);
