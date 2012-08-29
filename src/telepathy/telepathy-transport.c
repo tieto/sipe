@@ -51,6 +51,7 @@ struct sipe_transport_telepathy {
 	GOutputStream *ostream;
 	GSList *buffers;
 	gboolean is_writing;
+	gboolean do_flush;
 };
 
 #define TELEPATHY_TRANSPORT ((struct sipe_transport_telepathy *) conn)
@@ -149,10 +150,8 @@ static void socket_connected(GObject *client,
 			transport->public.client_port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(saddr));
 			g_object_unref(saddr);
 
-			transport->istream    = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
-			transport->ostream    = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
-			transport->buffers    = NULL;
-			transport->is_writing = FALSE;
+			transport->istream = g_io_stream_get_input_stream(G_IO_STREAM(transport->socket));
+			transport->ostream = g_io_stream_get_output_stream(G_IO_STREAM(transport->socket));
 
 			/* this sets up the async read handler */
 			read_completed(G_OBJECT(transport->istream), NULL, transport);
@@ -186,6 +185,9 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 	transport->input            = setup->input;
 	transport->error            = setup->error;
 	transport->private          = sipe_public->backend_private;
+	transport->buffers          = NULL;
+	transport->is_writing       = FALSE;
+	transport->do_flush         = FALSE;
 
 	if ((setup->type == SIPE_TRANSPORT_TLS) ||
 	    (setup->type == SIPE_TRANSPORT_TCP)) {
@@ -222,10 +224,20 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 static gboolean free_transport(gpointer data)
 {
 	struct sipe_transport_telepathy *transport = data;
+	GSList *entry;
+
 	SIPE_DEBUG_INFO("free_transport %p", transport);
+
+	/* free unflushed buffers */
+	for (entry = transport->buffers; entry; entry = entry->next)
+		g_free(entry->data);
+	g_slist_free(transport->buffers);
+
 	if (transport->cancel)
 		g_object_unref(transport->cancel);
+
 	g_free(transport);
+
 	return(FALSE);
 }
 
@@ -239,40 +251,51 @@ static void close_completed(GObject *stream,
 	free_transport(transport);
 }
 
+static void do_close(struct sipe_transport_telepathy *transport)
+{
+	SIPE_DEBUG_INFO("do_close: %p", transport);
+
+	/* cancel outstanding asynchronous operations */
+	transport->do_flush = FALSE;
+	g_cancellable_cancel(transport->cancel);
+	g_io_stream_close_async(G_IO_STREAM(transport->socket),
+				G_PRIORITY_DEFAULT,
+				NULL,
+				close_completed,
+				transport);
+}
+
 void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 {
 	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
-	GSList *entry;
 
 	if (!transport) return;
 
 	/* error callback is invalid now, do no longer call! */
 	transport->error = NULL;
 
-	/* connection to the server dropped? */
+	/* dropping connection to the server? */
 	if (transport->private->transport == transport)
 		transport->private->transport = NULL;
 
-	/* free unflushed buffers */
-	for (entry = transport->buffers; entry; entry = entry->next)
-		g_free(entry->data);
-	g_slist_free(transport->buffers);
-	transport->buffers    = NULL;
-	transport->is_writing = FALSE;
+	/* already connected? */
+	if (transport->socket) {
 
-	/* cancel outstanding asynchronous operations */
-	if (transport->cancel)
-		g_cancellable_cancel(transport->cancel);
-
-	/* queue transport to be deleted */
-	if (transport->socket)
-		g_io_stream_close_async(G_IO_STREAM(transport->socket),
-					G_PRIORITY_DEFAULT,
-					NULL,
-					close_completed,
+		/* flush required? */
+		if (transport->do_flush && transport->is_writing)
+			SIPE_DEBUG_INFO("sipe_backend_transport_disconnect: %p needs flushing",
 					transport);
-        else
+		else
+			do_close(transport);
+
+	} else {
+		/* cancel outstanding connect operation */
+		if (transport->cancel)
+			g_cancellable_cancel(transport->cancel);
+
+		/* queue transport to be deleted */
 		g_idle_add(free_transport, transport);
+	}
 }
 
 static void do_write(struct sipe_transport_telepathy *transport,
@@ -291,6 +314,11 @@ static void write_completed(GObject *stream,
 		if (transport->error)
 			transport->error(SIPE_TRANSPORT_CONNECTION, error->message);
 		g_error_free(error);
+
+		/* error during flush: give up and close transport */
+		if (transport->do_flush)
+			do_close(transport);
+
 	} else if (g_cancellable_is_cancelled(transport->cancel)) {
 		/* write completed when transport was disconnected */
 		SIPE_DEBUG_INFO_NOFORMAT("write_completed: cancelled");
@@ -304,9 +332,14 @@ static void write_completed(GObject *stream,
 							    buffer);
 			do_write(transport, buffer);
 			g_free(buffer);
-		} else
+		} else {
 			/* no, we're done for now... */
 			transport->is_writing = FALSE;
+
+			/* flush completed */
+			if (transport->do_flush)
+				do_close(transport);
+		}
 	}
 }
 
@@ -338,9 +371,10 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 		do_write(transport, buffer);
 }
 
-void sipe_backend_transport_flush(SIPE_UNUSED_PARAMETER struct sipe_transport_connection *conn)
+void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
 {
-	/* @TODO? */
+	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
+	transport->do_flush = TRUE;
 }
 
 const gchar *sipe_backend_network_ip_address(struct sipe_core_public *sipe_public)
