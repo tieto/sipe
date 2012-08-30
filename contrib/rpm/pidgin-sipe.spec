@@ -106,13 +106,13 @@ This package provides the protocol plugin for libpurple clients.
 
 %if !0%{?_without_telepathy:1}
 %package -n %{empathy_files}
-Summary:        Telepathy communication manager to connect to MS Office Communicator
+Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
 License:        GPL-2.0+
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{empathy_files}
-A Telepathy communication manager that implements the extended version of
+A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
     * Microsoft Lync Server 2010
@@ -124,13 +124,13 @@ This package provides the icon set for Empathy.
 
 
 %package -n %{ktp_files}
-Summary:        Telepathy communication manager to connect to MS Office Communicator
+Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
 License:        GPL-2.0+
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{ktp_files}
-A Telepathy communication manager that implements the extended version of
+A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
     * Microsoft Lync Server 2010
@@ -142,13 +142,13 @@ This package provides the profile for KTP account manager.
 
 
 %package -n %{telepathy_plugin}
-Summary:        Telepathy communication manager to connect to MS Office Communicator
+Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
 License:        GPL-2.0+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{telepathy_plugin}
-A Telepathy communication manager that implements the extended version of
+A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
     * Microsoft Lync Server 2010
