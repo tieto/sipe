@@ -1,4 +1,5 @@
 pixmapsize = scalable
+pixmapinst = scalable
 pixmapext  = svg
 include $(srcdir)/../Makefile.common.am
 
