@@ -30,7 +30,6 @@
 #include <gio/gio.h>
 
 #include "sipe-backend.h"
-#include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-nls.h"
 
@@ -131,7 +130,7 @@ static void socket_connected(GObject *client,
 							   result,
 							   &error);
 
-	if (error) {
+	if (transport->socket == NULL) {
 		const gchar *msg = error ? error->message : "UNKNOWN";
 		SIPE_DEBUG_ERROR("socket_connected: failed: %s", msg);
 		if (transport->error)

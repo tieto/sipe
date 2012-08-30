@@ -25,7 +25,6 @@
 
 #include "sipe-backend.h"
 #include "sipe-common.h"
-#include "sipe-core.h"
 
 struct sipe_dns_query {
 	sipe_dns_resolved_cb  callback;
