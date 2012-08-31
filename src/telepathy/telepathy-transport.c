@@ -91,6 +91,10 @@ static void read_completed(GObject *stream,
 				SIPE_DEBUG_ERROR_NOFORMAT("read_completed: server has disconnected");
 				transport->error(conn, _("Server has disconnected"));
 				return;
+			} else if (transport->do_flush) {
+				/* read completed while disconnected transport is flushing */
+				SIPE_DEBUG_INFO_NOFORMAT("read_completed: ignored during flushing");
+				return;
 			} else if (g_cancellable_is_cancelled(transport->cancel)) {
 				/* read completed when transport was disconnected */
 				SIPE_DEBUG_INFO_NOFORMAT("read_completed: cancelled");
