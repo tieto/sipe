@@ -21,6 +21,8 @@
  */
 
 /* Forward declarations */
+struct _GObject;
+struct _GObjectClass;
 struct _SipeConnection;
 struct _TpBaseConnection;
 struct _TpBaseConnectionManager;
@@ -33,6 +35,12 @@ struct sipe_transport_telepathy;
 struct sipe_backend_private {
 	struct sipe_core_public *public;
 	struct _SipeConnection *connection;
+
+	/* status */
+	guint activity;
+	gchar *message;
+
+	/* transport */
 	struct sipe_transport_telepathy *transport;
 	gchar *ipaddress;
 };
@@ -41,6 +49,7 @@ struct sipe_backend_private {
 struct _TpBaseConnection *sipe_telepathy_connection_new(struct _TpBaseProtocol *protocol,
 							GHashTable *params,
 							GError **error);
+struct sipe_backend_private *sipe_telepathy_connection_private(GObject *object);
 
 /* debugging */
 void sipe_telepathy_debug_init(void);
@@ -51,6 +60,10 @@ void sipe_telepathy_protocol_init(struct _TpBaseConnectionManager *cm);
 gchar *sipe_telepathy_protocol_normalize_contact(struct _TpBaseProtocol *self,
 						 const gchar *contact,
 						 GError **error);
+
+/* status */
+void sipe_telepathy_status_init(struct _GObjectClass *object_class,
+				gsize struct_offset);
 
 
 /*

@@ -106,7 +106,6 @@ static const TpCMParamSpec *get_parameters(SIPE_UNUSED_PARAMETER TpBaseProtocol 
 		.filter      = (_filter),  \
 		.filter_data = NULL,       \
 		.setter_data = NULL,       \
-		._future1    = NULL,       \
 	}
 
 	static const TpCMParamSpec const sipe_parameters[] = {

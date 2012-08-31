@@ -45,10 +45,12 @@ G_BEGIN_DECLS
  */
 typedef struct _SipeConnectionClass {
 	TpBaseConnectionClass parent_class;
+	TpPresenceMixinClass presence_mixin;
 } SipeConnectionClass;
 
 typedef struct _SipeConnection {
 	TpBaseConnection parent;
+	TpPresenceMixin presence_mixin;
 
 	TpSimplePasswordManager *password_manager;
 
@@ -80,9 +82,15 @@ G_END_DECLS
 /*
  * Connection class - type definition
  */
-G_DEFINE_TYPE(SipeConnection,
-	      sipe_connection,
-	      TP_TYPE_BASE_CONNECTION)
+G_DEFINE_TYPE_WITH_CODE(SipeConnection,
+			sipe_connection,
+			TP_TYPE_BASE_CONNECTION,
+			G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
+					       tp_presence_mixin_iface_init);
+			G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+					       tp_presence_mixin_simple_presence_iface_init)
+	)
+
 
 /*
  * Connection class - instance methods
@@ -143,6 +151,8 @@ static gboolean connect_to_core(SipeConnection *self,
 		sipe_public->backend_private  = telepathy_private;
 		telepathy_private->public     = sipe_public;
 		telepathy_private->connection = self;
+		telepathy_private->activity   = SIPE_ACTIVITY_UNSET;
+		telepathy_private->message    = NULL;
 		telepathy_private->transport  = NULL;
 		telepathy_private->ipaddress  = NULL;
 
@@ -279,6 +289,9 @@ static gboolean disconnect_from_core(gpointer data)
 	g_free(telepathy_private->ipaddress);
 	telepathy_private->ipaddress = NULL;
 
+	g_free(telepathy_private->message);
+	telepathy_private->message   = NULL;
+
 	SIPE_DEBUG_INFO_NOFORMAT("disconnect_from_core: core deallocated");
 
 	/* now it is OK to destroy the connection object */
@@ -308,6 +321,20 @@ static GPtrArray *create_channel_managers(TpBaseConnection *base)
 	return(channel_managers);
 }
 
+static void sipe_connection_constructed(GObject *object)
+{
+	void (*chain_up)(GObject *) = G_OBJECT_CLASS(sipe_connection_parent_class)->constructed;
+
+	if (chain_up)
+		chain_up(object);
+
+	tp_presence_mixin_init(object,
+			       G_STRUCT_OFFSET(SipeConnection,
+					       presence_mixin));
+	/* @TODO when contacts are implemented
+	tp_presence_mixin_simple_presence_register_with_contacts_mixin(object); */
+}
+
 static void sipe_connection_finalize(GObject *object)
 {
 	SipeConnection *self = SIPE_CONNECTION(object);
@@ -330,7 +357,9 @@ static void sipe_connection_finalize(GObject *object)
  */
 static const gchar *interfaces_always_present[] = {
 	/* @TODO */
+	TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
 	TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
+	TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
 	NULL
 };
 
@@ -341,7 +370,8 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::class_init");
 
-	object_class->finalize = sipe_connection_finalize;
+	object_class->constructed = sipe_connection_constructed;
+	object_class->finalize    = sipe_connection_finalize;
 
 	base_class->create_handle_repos     = create_handle_repos;
 	base_class->start_connecting        = start_connecting;
@@ -349,6 +379,10 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 	base_class->create_channel_managers = create_channel_managers;
 
 	base_class->interfaces_always_present = interfaces_always_present;
+
+	sipe_telepathy_status_init(object_class,
+				   G_STRUCT_OFFSET(SipeConnectionClass, presence_mixin));
+	tp_presence_mixin_simple_presence_init_dbus_properties(object_class);
 }
 
 static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)
@@ -426,65 +460,74 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 	return(TP_BASE_CONNECTION(conn));
 }
 
+struct sipe_backend_private *sipe_telepathy_connection_private(GObject *object)
+{
+	SipeConnection *self = SIPE_CONNECTION(object);
+	/* connected to core already? */
+	if (self->private.public)
+		return(&self->private);
+	else
+		return(NULL);
+}
 
 /*
  * Backend adaptor functions
  */
 void sipe_backend_connection_completed(struct sipe_core_public *sipe_public)
 {
-    SipeConnection *self   = SIPE_PUBLIC_TO_CONNECTION;
-    TpBaseConnection *base = TP_BASE_CONNECTION(self);
+	SipeConnection *self   = SIPE_PUBLIC_TO_CONNECTION;
+	TpBaseConnection *base = TP_BASE_CONNECTION(self);
 
-    /* we are only allowed to do this once */
-    if (base->status != TP_CONNECTION_STATUS_CONNECTED)
-	    tp_base_connection_change_status(base,
-					     TP_CONNECTION_STATUS_CONNECTED,
-					     TP_CONNECTION_STATUS_REASON_REQUESTED);
+	/* we are only allowed to do this once */
+	if (base->status != TP_CONNECTION_STATUS_CONNECTED)
+		tp_base_connection_change_status(base,
+						 TP_CONNECTION_STATUS_CONNECTED,
+						 TP_CONNECTION_STATUS_REASON_REQUESTED);
 }
 
 void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
 				   sipe_connection_error error,
 				   const gchar *msg)
 {
-    SipeConnection *self   = SIPE_PUBLIC_TO_CONNECTION;
-    TpBaseConnection *base = TP_BASE_CONNECTION(self);
-    GHashTable *details    = tp_asv_new("server-message", G_TYPE_STRING, msg,
-					NULL);
-    TpConnectionStatusReason reason;
-    const gchar *name;
+	SipeConnection *self   = SIPE_PUBLIC_TO_CONNECTION;
+	TpBaseConnection *base = TP_BASE_CONNECTION(self);
+	GHashTable *details    = tp_asv_new("server-message", G_TYPE_STRING, msg,
+					    NULL);
+	TpConnectionStatusReason reason;
+	const gchar *name;
 
-    self->is_disconnecting = TRUE;
+	self->is_disconnecting = TRUE;
 
-    switch (error) {
-    case SIPE_CONNECTION_ERROR_NETWORK:
-	    reason = TP_CONNECTION_STATUS_REASON_NETWORK_ERROR;
-	    if (base->status == TP_CONNECTION_STATUS_CONNECTING)
-		    name = TP_ERROR_STR_CONNECTION_FAILED;
-	    else
-		    name = TP_ERROR_STR_CONNECTION_LOST;
-	    break;
+	switch (error) {
+	case SIPE_CONNECTION_ERROR_NETWORK:
+		reason = TP_CONNECTION_STATUS_REASON_NETWORK_ERROR;
+		if (base->status == TP_CONNECTION_STATUS_CONNECTING)
+			name = TP_ERROR_STR_CONNECTION_FAILED;
+		else
+			name = TP_ERROR_STR_CONNECTION_LOST;
+		break;
 
-    case SIPE_CONNECTION_ERROR_INVALID_USERNAME:
-    case SIPE_CONNECTION_ERROR_INVALID_SETTINGS:
-    case SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED:
-    case SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE:
-	    /* copied from haze code. I agree there should be better ones */
-	    reason = TP_CONNECTION_STATUS_REASON_AUTHENTICATION_FAILED;
-	    name   = TP_ERROR_STR_AUTHENTICATION_FAILED;
-	    break;
+	case SIPE_CONNECTION_ERROR_INVALID_USERNAME:
+	case SIPE_CONNECTION_ERROR_INVALID_SETTINGS:
+	case SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED:
+	case SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE:
+		/* copied from haze code. I agree there should be better ones */
+		reason = TP_CONNECTION_STATUS_REASON_AUTHENTICATION_FAILED;
+		name   = TP_ERROR_STR_AUTHENTICATION_FAILED;
+		break;
 
-    default:
-	    reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
-	    name   = TP_ERROR_STR_DISCONNECTED;
-	    break;
-    }
+	default:
+		reason = TP_CONNECTION_STATUS_REASON_NONE_SPECIFIED;
+		name   = TP_ERROR_STR_DISCONNECTED;
+		break;
+	}
 
-    SIPE_DEBUG_ERROR("sipe_backend_connection_error: %s (%s)", name, msg);
-    tp_base_connection_disconnect_with_dbus_error(base,
-						  name,
-						  details,
-						  reason);
-    g_hash_table_unref(details);
+	SIPE_DEBUG_ERROR("sipe_backend_connection_error: %s (%s)", name, msg);
+	tp_base_connection_disconnect_with_dbus_error(base,
+						      name,
+						      details,
+						      reason);
+	g_hash_table_unref(details);
 }
 
 gboolean sipe_backend_connection_is_disconnecting(struct sipe_core_public *sipe_public)

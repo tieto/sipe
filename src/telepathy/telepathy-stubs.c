@@ -342,16 +342,6 @@ void sipe_backend_search_results_finalize(SIPE_UNUSED_PARAMETER struct sipe_core
 					  SIPE_UNUSED_PARAMETER const gchar *description,
 					  SIPE_UNUSED_PARAMETER gboolean more) {}
 
-/** STATUS *******************************************************************/
-
-guint sipe_backend_status(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(SIPE_ACTIVITY_AVAILABLE); }
-gboolean sipe_backend_status_changed(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				     SIPE_UNUSED_PARAMETER guint activity,
-				     SIPE_UNUSED_PARAMETER const gchar *message) { return(FALSE); }
-void sipe_backend_status_and_note(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				  SIPE_UNUSED_PARAMETER guint activity,
-				  SIPE_UNUSED_PARAMETER const gchar *message) {}
-
 /** USER *********************************************************************/
 
 void sipe_backend_user_feedback_typing(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
