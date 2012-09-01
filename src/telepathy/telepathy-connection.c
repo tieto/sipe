@@ -29,7 +29,9 @@
 #include <glib-object.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-protocol.h>
+#include <telepathy-glib/contacts-mixin.h>
 #include <telepathy-glib/handle-repo-dynamic.h>
+#include <telepathy-glib/presence-mixin.h>
 #include <telepathy-glib/simple-password-manager.h>
 #include <telepathy-glib/telepathy-glib.h>
 
@@ -45,11 +47,13 @@ G_BEGIN_DECLS
  */
 typedef struct _SipeConnectionClass {
 	TpBaseConnectionClass parent_class;
+	TpContactsMixinClass contacts_mixin;
 	TpPresenceMixinClass presence_mixin;
 } SipeConnectionClass;
 
 typedef struct _SipeConnection {
 	TpBaseConnection parent;
+	TpContactsMixinClass contacts_mixin;
 	TpPresenceMixin presence_mixin;
 
 	TpSimplePasswordManager *password_manager;
@@ -85,11 +89,13 @@ G_END_DECLS
 G_DEFINE_TYPE_WITH_CODE(SipeConnection,
 			sipe_connection,
 			TP_TYPE_BASE_CONNECTION,
-			G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
-					       tp_presence_mixin_iface_init);
-			G_IMPLEMENT_INTERFACE (TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
-					       tp_presence_mixin_simple_presence_iface_init)
-	)
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
+					      tp_contacts_mixin_iface_init);
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
+					      tp_presence_mixin_iface_init);
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
+					      tp_presence_mixin_simple_presence_iface_init)
+)
 
 
 /*
@@ -328,11 +334,14 @@ static void sipe_connection_constructed(GObject *object)
 	if (chain_up)
 		chain_up(object);
 
+	tp_contacts_mixin_init(object,
+			       G_STRUCT_OFFSET(SipeConnection, contacts_mixin));
+	tp_base_connection_register_with_contacts_mixin(TP_BASE_CONNECTION(object));
+
 	tp_presence_mixin_init(object,
 			       G_STRUCT_OFFSET(SipeConnection,
 					       presence_mixin));
-	/* @TODO when contacts are implemented
-	tp_presence_mixin_simple_presence_register_with_contacts_mixin(object); */
+	tp_presence_mixin_simple_presence_register_with_contacts_mixin(object);
 }
 
 static void sipe_connection_finalize(GObject *object)
@@ -340,6 +349,8 @@ static void sipe_connection_finalize(GObject *object)
 	SipeConnection *self = SIPE_CONNECTION(object);
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::finalize");
+
+	tp_contacts_mixin_finalize(object);
 
 	g_free(self->authentication);
 	g_free(self->user_agent);
@@ -357,6 +368,7 @@ static void sipe_connection_finalize(GObject *object)
  */
 static const gchar *interfaces_always_present[] = {
 	/* @TODO */
+	TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
 	TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
 	TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
 	TP_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
@@ -380,8 +392,12 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 
 	base_class->interfaces_always_present = interfaces_always_present;
 
+	tp_contacts_mixin_class_init(object_class,
+				     G_STRUCT_OFFSET(SipeConnectionClass,
+						     contacts_mixin));
 	sipe_telepathy_status_init(object_class,
-				   G_STRUCT_OFFSET(SipeConnectionClass, presence_mixin));
+				   G_STRUCT_OFFSET(SipeConnectionClass,
+						   presence_mixin));
 	tp_presence_mixin_simple_presence_init_dbus_properties(object_class);
 }
 
