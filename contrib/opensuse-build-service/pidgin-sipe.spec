@@ -9,6 +9,9 @@
 #     Windows (mingw32, mingw64)
 #
 
+# Build options
+%undefine build_telepathy
+
 # Check for mingw32 cross compilation build
 #
 # Manually add this repository to your private OBS project:
@@ -160,6 +163,9 @@ BuildRequires:  %{mingw_prefix}cross-nsis
 
 # For directory ownership
 BuildRequires:  %{mingw_prefix}pidgin
+
+# Make sure telepathy is disabled for Windows builds
+%undefine build_telepathy
 
 %else
 #
@@ -518,6 +524,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Sep 02 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- really disable telepathy for Windows cross-compilation builds
+
 * Thu Aug 30 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
 - updates to enable telepathy build
 
