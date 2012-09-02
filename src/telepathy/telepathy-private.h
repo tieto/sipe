@@ -26,6 +26,7 @@ struct _GObjectClass;
 struct _SipeConnection;
 struct _TpBaseConnection;
 struct _TpBaseConnectionManager;
+struct _TpBaseContactList;
 struct _TpBaseProtocol;
 struct sipe_transport_telepathy;
 
@@ -44,6 +45,9 @@ struct sipe_backend_private {
 	struct sipe_transport_telepathy *transport;
 	gchar *ipaddress;
 };
+
+/* buddy */
+struct _TpBaseContactList *sipe_telepathy_contact_list_new(struct _TpBaseConnection *connection);
 
 /* connection */
 struct _TpBaseConnection *sipe_telepathy_connection_new(struct _TpBaseProtocol *protocol,

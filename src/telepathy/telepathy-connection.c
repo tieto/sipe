@@ -57,6 +57,7 @@ typedef struct _SipeConnection {
 	TpPresenceMixin presence_mixin;
 
 	TpSimplePasswordManager *password_manager;
+	TpBaseContactList *contact_list;
 
 	struct sipe_backend_private private;
 	gchar *account;
@@ -91,6 +92,8 @@ G_DEFINE_TYPE_WITH_CODE(SipeConnection,
 			TP_TYPE_BASE_CONNECTION,
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
 					      tp_contacts_mixin_iface_init);
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
+					      tp_base_contact_list_mixin_list_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
 					      tp_presence_mixin_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
@@ -321,6 +324,9 @@ static GPtrArray *create_channel_managers(TpBaseConnection *base)
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::create_channel_managers");
 
+	self->contact_list = sipe_telepathy_contact_list_new(base);
+	g_ptr_array_add(channel_managers, self->contact_list);
+
 	self->password_manager = tp_simple_password_manager_new(base);
 	g_ptr_array_add(channel_managers, self->password_manager);
 
@@ -329,6 +335,7 @@ static GPtrArray *create_channel_managers(TpBaseConnection *base)
 
 static void sipe_connection_constructed(GObject *object)
 {
+	TpBaseConnection *base = TP_BASE_CONNECTION(object);
 	void (*chain_up)(GObject *) = G_OBJECT_CLASS(sipe_connection_parent_class)->constructed;
 
 	if (chain_up)
@@ -336,7 +343,9 @@ static void sipe_connection_constructed(GObject *object)
 
 	tp_contacts_mixin_init(object,
 			       G_STRUCT_OFFSET(SipeConnection, contacts_mixin));
-	tp_base_connection_register_with_contacts_mixin(TP_BASE_CONNECTION(object));
+	tp_base_connection_register_with_contacts_mixin(base);
+
+	tp_base_contact_list_mixin_register_with_contacts_mixin(base);
 
 	tp_presence_mixin_init(object,
 			       G_STRUCT_OFFSET(SipeConnection,
@@ -368,6 +377,7 @@ static void sipe_connection_finalize(GObject *object)
  */
 static const gchar *interfaces_always_present[] = {
 	/* @TODO */
+	TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
 	TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
 	TP_IFACE_CONNECTION_INTERFACE_REQUESTS,
