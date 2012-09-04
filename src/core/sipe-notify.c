@@ -1112,6 +1112,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	sipe_xml *isc;
 	guint delta;
 	const sipe_xml *group_node;
+
 	if (!g_str_has_prefix(tmp, "vnd-microsoft-roaming-contacts")) {
 		return FALSE;
 	}
@@ -1129,6 +1130,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	}
 
 	if (sipe_strequal(sipe_xml_name(isc), "contactList")) {
+
+		/* Start processing contact list */
+		sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
 
 		/* Parse groups */
 		for (group_node = sipe_xml_child(isc, "group"); group_node; group_node = sipe_xml_twin(group_node)) {
@@ -1228,6 +1232,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 			sipe_buddy_add(sipe_private, self_uri);
 			g_free(self_uri);
 		}
+
+		/* Finished processing contact list */
+		sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
 	}
 	sipe_xml_free(isc);
 

@@ -797,6 +797,24 @@ void sipe_backend_buddy_set_server_alias(struct sipe_core_public *sipe_public,
 					 const gchar *alias);
 
 /**
+ * Start processing buddy list
+ *
+ * Will be called every time we receive a buddy list in roaming contacts
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ */
+void sipe_backend_buddy_list_processing_start(struct sipe_core_public *sipe_public);
+
+/**
+ * Finished processing buddy list
+ *
+ * Will be called every time we receive a buddy list in roaming contacts
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ */
+void sipe_backend_buddy_list_processing_finish(struct sipe_core_public *sipe_public);
+
+/**
  * Add a contact to the buddy list
  *
  * @param sipe_public The handle representing the protocol instance making the call

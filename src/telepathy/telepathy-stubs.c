@@ -72,6 +72,7 @@ void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public 
 void sipe_backend_buddy_set_server_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					 SIPE_UNUSED_PARAMETER const sipe_backend_buddy who,
 					 SIPE_UNUSED_PARAMETER const gchar *alias) {}
+void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) {}
 sipe_backend_buddy sipe_backend_buddy_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					  SIPE_UNUSED_PARAMETER const gchar *name,
 					  SIPE_UNUSED_PARAMETER const gchar *alias,
@@ -103,8 +104,6 @@ void sipe_backend_buddy_set_photo(SIPE_UNUSED_PARAMETER struct sipe_core_public 
 				  SIPE_UNUSED_PARAMETER const gchar *photo_hash) {}
 const gchar *sipe_backend_buddy_get_photo_hash(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					       SIPE_UNUSED_PARAMETER const gchar *who) { return(""); }
-gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				      SIPE_UNUSED_PARAMETER const gchar *group_name) { return(FALSE); }
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) {  return(NULL); }
 void sipe_backend_buddy_info_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				 SIPE_UNUSED_PARAMETER struct sipe_backend_buddy_info *info,

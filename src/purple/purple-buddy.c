@@ -186,6 +186,14 @@ void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public
 	purple_blist_node_set_string(&b->node, buddy_info_property(key), val);
 }
 
+void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
+void sipe_backend_buddy_list_processing_finish(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
 sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 					  const gchar *name,
 					  const gchar *alias,

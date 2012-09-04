@@ -56,8 +56,9 @@ typedef struct _SipeConnection {
 	TpContactsMixinClass contacts_mixin;
 	TpPresenceMixin presence_mixin;
 
+	/* channel managers */
 	TpSimplePasswordManager *password_manager;
-	TpBaseContactList *contact_list;
+	struct _SipeContactList *contact_list;
 
 	struct sipe_backend_private private;
 	gchar *account;
@@ -92,6 +93,8 @@ G_DEFINE_TYPE_WITH_CODE(SipeConnection,
 			TP_TYPE_BASE_CONNECTION,
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
 					      tp_contacts_mixin_iface_init);
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS,
+					      tp_base_contact_list_mixin_groups_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
 					      tp_base_contact_list_mixin_list_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
@@ -157,13 +160,14 @@ static gboolean connect_to_core(SipeConnection *self,
 		struct sipe_backend_private *telepathy_private = &self->private;
 
 		/* initialize backend private data */
-		sipe_public->backend_private  = telepathy_private;
-		telepathy_private->public     = sipe_public;
-		telepathy_private->connection = self;
-		telepathy_private->activity   = SIPE_ACTIVITY_UNSET;
-		telepathy_private->message    = NULL;
-		telepathy_private->transport  = NULL;
-		telepathy_private->ipaddress  = NULL;
+		sipe_public->backend_private    = telepathy_private;
+		telepathy_private->public       = sipe_public;
+		telepathy_private->contact_list = self->contact_list;
+		telepathy_private->connection   = self;
+		telepathy_private->activity     = SIPE_ACTIVITY_UNSET;
+		telepathy_private->message      = NULL;
+		telepathy_private->transport    = NULL;
+		telepathy_private->ipaddress    = NULL;
 
 		/* map option list to flags - default is NTLM */
 		SIPE_CORE_FLAG_UNSET(KRB5);
@@ -377,6 +381,7 @@ static void sipe_connection_finalize(GObject *object)
  */
 static const gchar *interfaces_always_present[] = {
 	/* @TODO */
+	TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
 	TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
@@ -409,6 +414,7 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 				   G_STRUCT_OFFSET(SipeConnectionClass,
 						   presence_mixin));
 	tp_presence_mixin_simple_presence_init_dbus_properties(object_class);
+	tp_base_contact_list_mixin_class_init(base_class);
 }
 
 static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)

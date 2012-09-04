@@ -79,14 +79,41 @@ static gboolean status_available(SIPE_UNUSED_PARAMETER GObject *object,
 	return(statuses[index].name != NULL);
 }
 
-static GHashTable *get_contact_statuses(SIPE_UNUSED_PARAMETER GObject *object,
-					SIPE_UNUSED_PARAMETER const GArray *contacts,
+static GHashTable *get_contact_statuses(GObject *object,
+					const GArray *contacts,
 					SIPE_UNUSED_PARAMETER GError **error)
 {
+	TpBaseConnection *base = TP_BASE_CONNECTION(object);
 	GHashTable *status_table = g_hash_table_new(g_direct_hash,
 						    g_direct_equal);
-	/* @TODO */
-	SIPE_DEBUG_INFO_NOFORMAT("get_contact_statuses: NOT IMPLEMENTED!");
+	guint i;
+
+	for (i = 0; i < contacts->len; i++) {
+		TpHandle contact = g_array_index(contacts, guint, i);
+		guint activity;
+		GHashTable *parameters;
+
+		/* we get our own status from the connection, and everyone
+		 *  else's status from the contact lists */
+		if (contact == tp_base_connection_get_self_handle(base)) {
+			struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(object);
+			activity = telepathy_private->activity;
+		} else {
+			/* @TODO */
+			activity = SIPE_ACTIVITY_UNSET;
+		}
+
+		parameters = g_hash_table_new_full(g_str_hash,
+						   g_str_equal,
+						   NULL,
+						   (GDestroyNotify) tp_g_value_slice_free);
+		g_hash_table_insert(status_table,
+				    GUINT_TO_POINTER(contact),
+				    tp_presence_status_new(activity,
+							   parameters));
+		g_hash_table_unref(parameters);
+	}
+
 	return(status_table);
 }
 

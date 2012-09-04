@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -370,6 +370,14 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 		return;
 
 	sipe_miranda_setContactString(pr, buddy, prop_name, val);
+}
+
+void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
+void sipe_backend_buddy_list_processing_finish(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
 }
 
 sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
