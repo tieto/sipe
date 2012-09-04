@@ -41,6 +41,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-media.h"
+#include "sipe-ocs2007.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-nls.h"
@@ -562,12 +563,22 @@ candidates_prepared_cb(struct sipe_media_call *call,
 	}
 }
 
+static void phone_state_publish(struct sipe_core_private *sipe_private)
+{
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+		sipe_ocs2007_phone_state_publish(sipe_private);
+	} else {
+		// TODO: OCS 2005 support. Is anyone still using it at all?
+	}
+}
+
 static void
 media_end_cb(struct sipe_media_call *call)
 {
 	g_return_if_fail(call);
 
 	SIPE_MEDIA_CALL_PRIVATE->sipe_private->media_call = NULL;
+	phone_state_publish(SIPE_MEDIA_CALL_PRIVATE->sipe_private);
 	sipe_media_call_free(SIPE_MEDIA_CALL_PRIVATE);
 }
 
@@ -577,6 +588,7 @@ call_accept_cb(struct sipe_media_call *call, gboolean local)
 	if (local) {
 		send_invite_response_if_ready(SIPE_MEDIA_CALL_PRIVATE);
 	}
+	phone_state_publish(SIPE_MEDIA_CALL_PRIVATE->sipe_private);
 }
 
 static void

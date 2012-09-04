@@ -304,7 +304,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	res_avail = sipe_ocs2007_availability_from_status(status_id, NULL);
 	if (user_avail > res_avail) {
 		res_avail = user_avail;
-		status_id = sipe_ocs2007_status_from_legacy_availability(user_avail);
+		status_id = sipe_ocs2007_status_from_legacy_availability(user_avail, NULL);
 	}
 
 	if (xn_display_name) {
@@ -405,7 +405,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 					}
 					activity_since = dev_avail_since;
 				}
-				status_id = sipe_ocs2007_status_from_legacy_availability(res_avail);
+				status_id = sipe_ocs2007_status_from_legacy_availability(res_avail, NULL);
 				new_desc  = sipe_ocs2007_legacy_activity_description(res_avail);
 				if (new_desc) {
 					g_free(activity);
@@ -738,7 +738,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					g_free(meeting_location);
 				}
 
-				status = sipe_ocs2007_status_from_legacy_availability(availability);
+				status = sipe_ocs2007_status_from_legacy_availability(availability, NULL);
 				tmp    = sipe_ocs2007_legacy_activity_description(availability);
 				if (sbuddy->activity && tmp) {
 					gchar *tmp2 = sbuddy->activity;

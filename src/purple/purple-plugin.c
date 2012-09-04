@@ -192,6 +192,12 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			NULL,
 			TRUE);
 
+	/* In a call */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_purple_activity_to_token(SIPE_ACTIVITY_ON_PHONE),
+			sipe_core_activity_description(SIPE_ACTIVITY_ON_PHONE),
+			FALSE);
+
 	/* Away */
 	/* Goes first in the list as
 	 * purple picks the first status with the AWAY type

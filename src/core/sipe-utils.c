@@ -191,6 +191,8 @@ sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		sscanf(mail_hash, "%08x", &calendar_id);
 		g_free(mail_hash);
 		res = (calendar_id >> 4) | 0x40000000;
+	} else if (publication_key == SIPE_PUB_STATE_PHONE_VOIP) {	/* First hexadecimal digit is 0x8 */
+		res = (res >> 4) | 0x80000000;
 	}
 
 	return res;

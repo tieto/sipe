@@ -82,7 +82,15 @@ struct sipe_transport_connection;
  * Availability and activity for RCC call connect/disconnect or participant count changes from 0 to 2, 2 to N, N to 2, 2 to 0.
  * First hexadecimal digit is 0x7; remaining seven hexadecimal digits are unique per device.
  */
-#define SIPE_PUB_STATE_PHONE	7
+#define SIPE_PUB_STATE_PHONE_RCC	7
+/**
+ * state
+ * VOIP Phone State
+ *
+ * Availability and activity for VOIP call connect/disconnect or participant count changes from 0 to 2, 2 to N, N to 2, 2 to 0.
+ * First hexadecimal digit is 0x8; remaining seven hexadecimal digits uniquely define the SIP URI and device.
+ */
+#define SIPE_PUB_STATE_PHONE_VOIP	8
 /**
  * calendarData
  * Free/busy data
