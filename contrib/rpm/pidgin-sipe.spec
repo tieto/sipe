@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20120827git97ae22e
+%define git       20120905gitcc6065b
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -46,7 +46,6 @@ BuildRequires:  glib2-devel >= 2.12.0
 BuildRequires:  gmime-devel
 BuildRequires:  libxml2-devel
 BuildRequires:  nss-devel
-BuildRequires:  telepathy-glib-devel
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
@@ -59,6 +58,7 @@ BuildRequires:  gstreamer-devel
 %endif
 # Use "--without telepathy" to disable telepathy
 %if !0%{?_without_telepathy:1}
+BuildRequires:  telepathy-glib-devel >= 0.14.0
 BuildRequires:  glib2-devel >= 2.28.0
 %endif
 
@@ -249,6 +249,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Sep 05 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- BR telepathy-glib-devel >= 0.14.0
+
 * Mon Aug 27 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
 - add ktp-accounts-kcm-sipe package
 
