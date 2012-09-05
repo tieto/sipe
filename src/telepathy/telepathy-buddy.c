@@ -31,6 +31,18 @@
 
 #include "telepathy-private.h"
 
+struct telepathy_buddy {
+	const gchar *uri;   /* borrowed from contact_list->buddies key */
+	GHashTable *groups; /* keys are borrowed from contact_list->groups */
+	TpHandle handle;
+};
+
+struct telepathy_buddy_entry {
+	const gchar *uri;   /* borrowed from telepathy_buddy->uri */
+	const gchar *group; /* borrowed from contact_list->groups key */
+	gchar *alias;
+};
+
 G_BEGIN_DECLS
 /*
  * Contact List class - data structures
@@ -46,6 +58,8 @@ typedef struct _SipeContactList {
 	TpHandleRepoIface *contact_repo;
 	TpHandleSet *contacts;
 
+	GHashTable *buddies;
+	GHashTable *buddy_handles;
 	GHashTable *groups;
 
 	gboolean initial_received;
@@ -123,6 +137,9 @@ static void sipe_contact_list_dispose(GObject *object)
 
 	tp_clear_pointer(&self->contacts, tp_handle_set_destroy);
 	tp_clear_object(&self->connection);
+	/* NOTE: the order is important due to borrowing of keys! */
+	tp_clear_pointer(&self->buddy_handles, g_hash_table_unref);
+	tp_clear_pointer(&self->buddies, g_hash_table_unref);
 	tp_clear_pointer(&self->groups, g_hash_table_unref);
 
 	if (chain_up)
@@ -146,12 +163,16 @@ static void sipe_contact_list_class_init(SipeContactListClass *klass)
 	base_class->dup_states   = dup_states;
 }
 
+static void buddy_free(gpointer data);
 static void sipe_contact_list_init(SIPE_UNUSED_PARAMETER SipeContactList *self)
 {
 	SIPE_DEBUG_INFO_NOFORMAT("SipeContactList::init");
 
-	self->groups = g_hash_table_new_full(g_str_hash, g_str_equal,
-					     g_free, NULL);
+	self->buddies       = g_hash_table_new_full(g_str_hash, g_str_equal,
+						    g_free, buddy_free);
+	self->buddy_handles = g_hash_table_new(g_direct_hash, g_direct_equal);
+	self->groups        = g_hash_table_new_full(g_str_hash, g_str_equal,
+						    g_free, NULL);
 
 	self->initial_received = FALSE;
 }
@@ -180,27 +201,44 @@ static GStrv dup_groups(TpBaseContactList *contact_list)
 }
 
 static TpHandleSet *dup_group_members(TpBaseContactList *contact_list,
-				      SIPE_UNUSED_PARAMETER const gchar *group)
+				      const gchar *group_name)
 {
 	SipeContactList *self = SIPE_CONTACT_LIST(contact_list);
 	TpHandleSet *members  = tp_handle_set_new(self->contact_repo);
+	GHashTableIter iter;
+	struct telepathy_buddy *buddy;
 
-	/* @TODO */
-	SIPE_DEBUG_INFO_NOFORMAT("SipeContactList::dup_group_members - NOT IMPLEMENTED");
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactList::dup_group_members called");
+
+	g_hash_table_iter_init(&iter, self->buddies);
+	while (g_hash_table_iter_next(&iter, NULL, (gpointer) &buddy))
+		if (g_hash_table_lookup(buddy->groups, group_name))
+			tp_handle_set_add(members, buddy->handle);
 
 	return(members);
 }
 
 static GStrv dup_contact_groups(TpBaseContactList *contact_list,
-				SIPE_UNUSED_PARAMETER TpHandle contact)
+				TpHandle contact)
 {
-	SipeContactList *self = SIPE_CONTACT_LIST(contact_list);
-	GPtrArray *groups     = g_ptr_array_sized_new(
+	SipeContactList *self         = SIPE_CONTACT_LIST(contact_list);
+	GPtrArray *groups             = g_ptr_array_sized_new(
 		g_hash_table_size(self->groups) + 1);
+	struct telepathy_buddy *buddy = g_hash_table_lookup(self->buddy_handles,
+							    GUINT_TO_POINTER(contact));
 
-	/* @TODO */
-	SIPE_DEBUG_INFO_NOFORMAT("SipeContactList::dup_contact_groups - NOT IMPLEMENTED");
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactList::dup_contact_groups called");
 
+	if (buddy) {
+		GHashTableIter iter;
+		const gchar *group_name;
+
+		g_hash_table_iter_init(&iter, buddy->groups);
+		while (g_hash_table_iter_next(&iter,
+					      (gpointer) &group_name,
+					      NULL))
+			g_ptr_array_add(groups, g_strdup(group_name));
+	}
 	g_ptr_array_add(groups, NULL);
 
 	return((GStrv) g_ptr_array_free(groups, FALSE));
@@ -224,6 +262,100 @@ SipeContactList *sipe_telepathy_contact_list_new(TpBaseConnection *connection)
 /*
  * Backend adaptor functions
  */
+sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
+					   const gchar *buddy_name,
+					   const gchar *group_name)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	struct telepathy_buddy *buddy                  = g_hash_table_lookup(telepathy_private->contact_list->buddies,
+									     buddy_name);
+	if (!buddy)
+		return(NULL);
+
+	if (group_name) {
+		return(g_hash_table_lookup(buddy->groups, group_name));
+	} else {
+		/* just return the first entry */
+		GHashTableIter iter;
+		gpointer value;
+		g_hash_table_iter_init(&iter, buddy->groups);
+		g_hash_table_iter_next(&iter, NULL, &value);
+		return(value);
+	}
+}
+
+static GSList *buddy_add_all(struct telepathy_buddy *buddy, GSList *list)
+{
+	GHashTableIter iter;
+	struct telepathy_buddy_entry *buddy_entry;
+
+	if (!buddy)
+		return(list);
+
+	g_hash_table_iter_init(&iter, buddy->groups);
+	while (g_hash_table_iter_next(&iter, NULL, (gpointer) &buddy_entry))
+		list = g_slist_prepend(list, buddy_entry);
+
+	return(list);
+}
+
+GSList *sipe_backend_buddy_find_all(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				    const gchar *buddy_name,
+				    const gchar *group_name)
+{
+	GSList *result = NULL;
+
+	/* NOTE: group_name != NULL not implemented in purple either */
+	if (!group_name) {
+		struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+		GHashTable *buddies                            = telepathy_private->contact_list->buddies;
+
+		if (buddy_name) {
+			result = buddy_add_all(g_hash_table_lookup(buddies,
+								   buddy_name),
+					       result);
+		} else {
+			GHashTableIter biter;
+			struct telepathy_buddy *buddy;
+
+			g_hash_table_iter_init(&biter, telepathy_private->contact_list->buddies);
+			while (g_hash_table_iter_next(&biter, NULL, (gpointer) &buddy))
+				result = buddy_add_all(buddy, result);
+		}
+	}
+
+	return(result);
+}
+
+gchar *sipe_backend_buddy_get_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				   const sipe_backend_buddy who)
+{
+	return(g_strdup(((struct telepathy_buddy_entry *) who)->uri));
+}
+
+gchar *sipe_backend_buddy_get_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				    const sipe_backend_buddy who)
+{
+	return(g_strdup(((struct telepathy_buddy_entry *) who)->alias));
+}
+
+gchar *sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					 const sipe_backend_buddy who)
+{
+	return(g_strdup(((struct telepathy_buddy_entry *) who)->group));
+}
+
+void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				  const sipe_backend_buddy who,
+				  const gchar *alias)
+{
+	struct telepathy_buddy_entry *buddy_entry = who;
+	g_free(buddy_entry->alias);
+	buddy_entry->alias = g_strdup(alias);
+
+	/* @TODO: emit signal? */
+}
+
 void sipe_backend_buddy_list_processing_finish(struct sipe_core_public *sipe_public)
 {
 	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
@@ -234,6 +366,106 @@ void sipe_backend_buddy_list_processing_finish(struct sipe_core_public *sipe_pub
 		contact_list->initial_received = TRUE;
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_backend_buddy_list_processing_finish called");
 		tp_base_contact_list_set_list_received(TP_BASE_CONTACT_LIST(contact_list));
+	}
+}
+
+static void buddy_free(gpointer data)
+{
+	struct telepathy_buddy *buddy = data;
+	g_hash_table_destroy(buddy->groups);
+	g_free(buddy);
+}
+
+static void buddy_entry_free(gpointer data)
+{
+	struct telepathy_buddy_entry *buddy_entry = data;
+	g_free(buddy_entry->alias);
+	g_free(buddy_entry);
+}
+
+sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
+					  const gchar *name,
+					  const gchar *alias,
+					  const gchar *group_name)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	SipeContactList *contact_list                  = telepathy_private->contact_list;
+	const gchar *group                             = g_hash_table_lookup(contact_list->groups,
+									     group_name);
+	struct telepathy_buddy *buddy                  = g_hash_table_lookup(contact_list->buddies,
+									     name);
+	struct telepathy_buddy_entry *buddy_entry;
+
+	if (!group)
+		return(NULL);
+
+	if (!buddy) {
+		buddy         = g_new0(struct telepathy_buddy, 1);
+		buddy->uri    = g_strdup(name); /* reused as key */
+		buddy->groups = g_hash_table_new_full(g_str_hash, g_str_equal,
+						      NULL, buddy_entry_free);
+		buddy->handle = tp_handle_ensure(contact_list->contact_repo,
+						 buddy->uri, NULL, NULL);
+		tp_handle_set_add(contact_list->contacts, buddy->handle);
+		g_hash_table_insert(contact_list->buddies,
+				    (gchar *) buddy->uri, /* owned by hash table */
+				    buddy);
+		g_hash_table_insert(contact_list->buddy_handles,
+				    GUINT_TO_POINTER(buddy->handle),
+				    buddy);
+	}
+
+	buddy_entry = g_hash_table_lookup(buddy->groups, group);
+	if (!buddy_entry) {
+		buddy_entry        = g_new0(struct telepathy_buddy_entry, 1);
+		buddy_entry->uri   = buddy->uri;
+		buddy_entry->group = group;
+		buddy_entry->alias = g_strdup(alias);
+		g_hash_table_insert(buddy->groups,
+				    (gchar *) group, /* key is borrowed */
+				    buddy_entry);
+	}
+
+	if (contact_list->initial_received) {
+		/* @TODO: emit signal? */
+	}
+
+	return(buddy_entry);
+}
+
+void sipe_backend_buddy_remove(struct sipe_core_public *sipe_public,
+			       const sipe_backend_buddy who)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	SipeContactList *contact_list                  = telepathy_private->contact_list;
+	struct telepathy_buddy_entry *remove_entry     = who;
+	struct telepathy_buddy       *buddy            = g_hash_table_lookup(contact_list->buddies,
+									     remove_entry->uri);
+
+	if (buddy) {
+		struct telepathy_buddy_entry *buddy_entry = g_hash_table_lookup(buddy->groups,
+										remove_entry->group);
+
+		if (buddy_entry == remove_entry) {
+			/* match found -> remove this entry */
+			g_hash_table_remove(buddy->groups,
+					    remove_entry->group);
+
+			if (g_hash_table_size(buddy->groups) == 0) {
+				/* removed from last group -> drop this buddy */
+				tp_handle_set_remove(contact_list->contacts,
+						     buddy->handle);
+				g_hash_table_remove(contact_list->buddy_handles,
+						    GUINT_TO_POINTER(buddy->handle));
+				g_hash_table_remove(contact_list->buddies,
+						    remove_entry->uri);
+
+			}
+
+			if (contact_list->initial_received) {
+				/* @TODO: emit signal? */
+			}
+		}
 	}
 }
 

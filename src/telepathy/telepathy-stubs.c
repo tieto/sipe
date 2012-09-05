@@ -41,22 +41,10 @@
 
 /** BUDDIES ******************************************************************/
 
-sipe_backend_buddy sipe_backend_buddy_find(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-					   SIPE_UNUSED_PARAMETER const gchar *buddy_name,
-					   SIPE_UNUSED_PARAMETER const gchar *group_name) { return(NULL); }
-GSList *sipe_backend_buddy_find_all(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				    SIPE_UNUSED_PARAMETER const gchar *buddy_name,
-				    SIPE_UNUSED_PARAMETER const gchar *group_name) { return(NULL); }
-gchar *sipe_backend_buddy_get_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				   SIPE_UNUSED_PARAMETER const sipe_backend_buddy who) { return(NULL); }
-gchar *sipe_backend_buddy_get_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				    SIPE_UNUSED_PARAMETER const sipe_backend_buddy who) { return(NULL); }
 gchar *sipe_backend_buddy_get_server_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					   SIPE_UNUSED_PARAMETER const sipe_backend_buddy who) { return(NULL); }
 gchar *sipe_backend_buddy_get_local_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					  SIPE_UNUSED_PARAMETER const sipe_backend_buddy who) { return(NULL); }
-gchar *sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-					 SIPE_UNUSED_PARAMETER const sipe_backend_buddy who) { return(NULL); }
 gchar *sipe_backend_buddy_get_string(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				     SIPE_UNUSED_PARAMETER sipe_backend_buddy buddy,
 				     SIPE_UNUSED_PARAMETER const sipe_buddy_info_fields key) { return(NULL); }
@@ -66,19 +54,10 @@ void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public
 				   SIPE_UNUSED_PARAMETER const gchar *val) {}
 guint sipe_backend_buddy_get_status(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				    SIPE_UNUSED_PARAMETER const gchar *uri) { return(SIPE_ACTIVITY_AVAILABLE); }
-void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				  SIPE_UNUSED_PARAMETER const sipe_backend_buddy who,
-				  SIPE_UNUSED_PARAMETER const gchar *alias) {}
 void sipe_backend_buddy_set_server_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					 SIPE_UNUSED_PARAMETER const sipe_backend_buddy who,
 					 SIPE_UNUSED_PARAMETER const gchar *alias) {}
 void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) {}
-sipe_backend_buddy sipe_backend_buddy_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-					  SIPE_UNUSED_PARAMETER const gchar *name,
-					  SIPE_UNUSED_PARAMETER const gchar *alias,
-					  SIPE_UNUSED_PARAMETER const gchar *groupname) { return(NULL); }
-void sipe_backend_buddy_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-			       SIPE_UNUSED_PARAMETER const sipe_backend_buddy who) {}
 void sipe_backend_buddy_request_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				    SIPE_UNUSED_PARAMETER const gchar *who,
 				    SIPE_UNUSED_PARAMETER const gchar *alias) {}
