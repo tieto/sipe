@@ -88,9 +88,12 @@ G_END_DECLS
 /*
  * Connection class - type definition
  */
+static void init_aliasing (gpointer, gpointer);
 G_DEFINE_TYPE_WITH_CODE(SipeConnection,
 			sipe_connection,
 			TP_TYPE_BASE_CONNECTION,
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,
+					      init_aliasing);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
 					      tp_contacts_mixin_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS,
@@ -337,6 +340,25 @@ static GPtrArray *create_channel_managers(TpBaseConnection *base)
 	return(channel_managers);
 }
 
+static void aliasing_fill_contact_attributes(GObject *object,
+					     const GArray *contacts,
+					     GHashTable *attributes)
+{
+	SipeConnection *self = SIPE_CONNECTION(object);
+	guint i;
+
+	for (i = 0; i < contacts->len; i++) {
+		TpHandle contact = g_array_index(contacts, guint, i);
+
+		tp_contacts_mixin_set_contact_attribute(attributes,
+							contact,
+							TP_TOKEN_CONNECTION_INTERFACE_ALIASING_ALIAS,
+							tp_g_value_slice_new_string(
+								sipe_telepathy_buddy_get_alias(self->contact_list,
+											       contact)));
+	}
+}
+
 static void sipe_connection_constructed(GObject *object)
 {
 	TpBaseConnection *base = TP_BASE_CONNECTION(object);
@@ -350,6 +372,10 @@ static void sipe_connection_constructed(GObject *object)
 	tp_base_connection_register_with_contacts_mixin(base);
 
 	tp_base_contact_list_mixin_register_with_contacts_mixin(base);
+
+	tp_contacts_mixin_add_contact_attributes_iface(object,
+						       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+						       aliasing_fill_contact_attributes);
 
 	tp_presence_mixin_init(object,
 			       G_STRUCT_OFFSET(SipeConnection,
@@ -381,6 +407,7 @@ static void sipe_connection_finalize(GObject *object)
  */
 static const gchar *interfaces_always_present[] = {
 	/* @TODO */
+	TP_IFACE_CONNECTION_INTERFACE_ALIASING,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
@@ -420,6 +447,150 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 static void sipe_connection_init(SIPE_UNUSED_PARAMETER SipeConnection *self)
 {
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::init");
+}
+
+/*
+ * Connection class - interface implementation
+ *
+ * Contact aliases
+ */
+static void get_alias_flags(TpSvcConnectionInterfaceAliasing *aliasing,
+			    DBusGMethodInvocation *context)
+{
+	TpBaseConnection *base = TP_BASE_CONNECTION(aliasing);
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::get_alias_flags called");
+
+	tp_svc_connection_interface_aliasing_return_from_get_alias_flags(context,
+									 TP_CONNECTION_ALIAS_FLAG_USER_SET);
+}
+
+static void get_aliases(TpSvcConnectionInterfaceAliasing *aliasing,
+			const GArray *contacts,
+			DBusGMethodInvocation *context)
+{
+	SipeConnection *self            = SIPE_CONNECTION(aliasing);
+	TpBaseConnection *base          = TP_BASE_CONNECTION(aliasing);
+	TpHandleRepoIface *contact_repo = tp_base_connection_get_handles(base,
+									 TP_HANDLE_TYPE_CONTACT);
+	GError *error                   = NULL;
+	GHashTable *result;
+	guint i;
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::get_aliases called");
+
+	if (!tp_handles_are_valid(contact_repo, contacts, FALSE, &error)) {
+		dbus_g_method_return_error(context, error);
+		g_error_free(error);
+		return;
+	}
+
+	result = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+	for (i = 0; i < contacts->len; i++) {
+		TpHandle contact   = g_array_index(contacts, TpHandle, i);
+		const gchar *alias = sipe_telepathy_buddy_get_alias(self->contact_list,
+								    contact);
+		g_hash_table_insert(result,
+				    GUINT_TO_POINTER(contact),
+				    (gchar *) alias);
+	}
+
+	tp_svc_connection_interface_aliasing_return_from_get_aliases(context,
+								     result);
+	g_hash_table_unref(result);
+}
+
+static void request_aliases(TpSvcConnectionInterfaceAliasing *aliasing,
+			    const GArray *contacts,
+			    DBusGMethodInvocation *context)
+{
+	SipeConnection *self            = SIPE_CONNECTION(aliasing);
+	TpBaseConnection *base          = TP_BASE_CONNECTION(aliasing);
+	TpHandleRepoIface *contact_repo = tp_base_connection_get_handles(base,
+									 TP_HANDLE_TYPE_CONTACT);
+	GError *error                   = NULL;
+	GPtrArray *result;
+	gchar **strings;
+	guint i;
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::request_aliases called");
+
+	if (!tp_handles_are_valid(contact_repo, contacts, FALSE, &error)) {
+		dbus_g_method_return_error(context, error);
+		g_error_free(error);
+		return;
+	}
+
+	result = g_ptr_array_sized_new(contacts->len + 1);
+
+	for (i = 0; i < contacts->len; i++) {
+		TpHandle contact   = g_array_index(contacts, TpHandle, i);
+		const gchar *alias = sipe_telepathy_buddy_get_alias(self->contact_list,
+								    contact);
+		g_ptr_array_add(result, (gchar *) alias);
+	}
+
+	g_ptr_array_add(result, NULL);
+	strings = (gchar **) g_ptr_array_free(result, FALSE);
+
+	tp_svc_connection_interface_aliasing_return_from_request_aliases(context,
+									 (const gchar **) strings);
+	g_free(strings);
+}
+
+static void set_aliases(TpSvcConnectionInterfaceAliasing *aliasing,
+			GHashTable *aliases,
+			DBusGMethodInvocation *context)
+{
+	SipeConnection *self            = SIPE_CONNECTION(aliasing);
+	TpBaseConnection *base          = TP_BASE_CONNECTION(aliasing);
+	TpHandleRepoIface *contact_repo = tp_base_connection_get_handles(base,
+									 TP_HANDLE_TYPE_CONTACT);
+	GHashTableIter iter;
+	gpointer key, value;
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::set_aliases called");
+
+	g_hash_table_iter_init(&iter, aliases);
+
+	while (g_hash_table_iter_next(&iter, &key, NULL)) {
+		GError *error = NULL;
+
+		if (!tp_handle_is_valid(contact_repo,
+					GPOINTER_TO_UINT(key),
+					&error)) {
+			dbus_g_method_return_error(context, error);
+			g_error_free(error);
+			return;
+		}
+	}
+
+	g_hash_table_iter_init(&iter, aliases);
+
+	while (g_hash_table_iter_next(&iter, &key, &value)) {
+		sipe_telepathy_buddy_set_alias(self->contact_list,
+					       GPOINTER_TO_UINT(key),
+					       value);
+	}
+
+	tp_svc_connection_interface_aliasing_return_from_set_aliases(context);
+}
+
+static void init_aliasing(gpointer iface,
+			  SIPE_UNUSED_PARAMETER gpointer iface_data)
+{
+	TpSvcConnectionInterfaceAliasingClass *klass = iface;
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::init_aliasing called");
+
+	tp_svc_connection_interface_aliasing_implement_get_alias_flags(klass, get_alias_flags);
+	tp_svc_connection_interface_aliasing_implement_request_aliases(klass, request_aliases);
+	tp_svc_connection_interface_aliasing_implement_get_aliases(klass, get_aliases);
+	tp_svc_connection_interface_aliasing_implement_set_aliases(klass, set_aliases);
 }
 
 /* create new connection object */

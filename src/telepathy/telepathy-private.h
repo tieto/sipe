@@ -53,6 +53,11 @@ struct sipe_backend_private {
 
 /* buddy */
 struct _SipeContactList *sipe_telepathy_contact_list_new(struct _TpBaseConnection *connection);
+const gchar *sipe_telepathy_buddy_get_alias(struct _SipeContactList *contact_list,
+					    const guint contact);
+void sipe_telepathy_buddy_set_alias(struct _SipeContactList *contact_list,
+				    const guint contact,
+				    const gchar *alias);
 
 /* connection */
 struct _TpBaseConnection *sipe_telepathy_connection_new(struct _TpBaseProtocol *protocol,

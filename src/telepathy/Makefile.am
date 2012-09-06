@@ -25,6 +25,7 @@ telepathy_sipe_CFLAGS = \
 	$(QUALITY_CFLAGS) \
 	$(LOCALE_CPPFLAGS) \
 	$(TELEPATHY_GLIB_CFLAGS) \
+	$(DBUS_GLIB_CFLAGS) \
 	$(GIO_CFLAGS) \
 	$(GOBJECT_CFLAGS) \
 	$(GLIB_CFLAGS) \
@@ -39,6 +40,7 @@ telepathy_sipe_LDADD = \
 	$(LIBXML2_LIBS) \
 	$(NSS_LIBS) \
 	$(TELEPATHY_GLIB_LIBS) \
+	$(DBUS_GLIB_LIBS) \
 	$(GIO_LIBS) \
 	$(GOBJECT_LIBS) \
 	$(GLIB_LIBS)
