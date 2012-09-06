@@ -76,37 +76,38 @@ struct sipe_publication {
  *
  * [MS-PRES] 3.7.5.5
  *
- * Conversion of legacyInterop elements and attributes to MSRTC elements and attributes.
+ * Conversion of legacyInterop availability ranges and activity tokens into
+ * SIPE activity tokens. The descriptions of availability ranges are defined at:
  *
- * The values define the starting point of a range
+ * http://msdn.microsoft.com/en-us/library/lync/dd941370%28v=office.13%29.aspx
+ *
+ * The values define the starting point of a range.
  */
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_ONLINE    3000
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY      4500
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE  6000
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY      7500
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_DND       9000 /* do not disturb */
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB      12000 /* be right back */
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2    15000
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE  18000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE      3000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE_IDLE 4500
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY           6000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSYIDLE       7500
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_DND            9000 /* do not disturb */
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB           12000 /* be right back */
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY          15000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE       18000
 const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability)
 {
 	guint type;
 
-	if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_ONLINE) {
+	if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE) {
 		type = SIPE_ACTIVITY_OFFLINE;
-	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY) {
-		type = SIPE_ACTIVITY_AVAILABLE;
-	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE) {
-		//type = SIPE_ACTIVITY_IDLE;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE_IDLE) {
 		type = SIPE_ACTIVITY_AVAILABLE;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY) {
+		type = SIPE_ACTIVITY_INACTIVE;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSYIDLE) {
 		type = SIPE_ACTIVITY_BUSY;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_DND) {
-		//type = SIPE_ACTIVITY_BUSYIDLE;
-		type = SIPE_ACTIVITY_BUSY;
+		type = SIPE_ACTIVITY_BUSYIDLE;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB) {
 		type = SIPE_ACTIVITY_DND;
-	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2) {
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY) {
 		type = SIPE_ACTIVITY_BRB;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE) {
 		type = SIPE_ACTIVITY_AWAY;
@@ -114,15 +115,15 @@ const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability)
 		type = SIPE_ACTIVITY_OFFLINE;
 	}
 
-	return(sipe_status_activity_to_token(type));
+	return sipe_status_activity_to_token(type);
 }
 
 const gchar *sipe_ocs2007_legacy_activity_description(guint availability)
 {
-	if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY) &&
-	    (availability <  SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE)) {
+	if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE_IDLE) &&
+	    (availability <  SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY)) {
 		return(sipe_core_activity_description(SIPE_ACTIVITY_INACTIVE));
-	} else if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY) &&
+	} else if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSYIDLE) &&
 		   (availability <  SIPE_OCS2007_LEGACY_AVAILIBILITY_DND)) {
 		return(sipe_core_activity_description(SIPE_ACTIVITY_BUSYIDLE));
 	} else {
@@ -186,9 +187,9 @@ gboolean sipe_ocs2007_status_is_busy(const gchar *status_id)
 
 }
 
-gboolean sipe_ocs2007_availability_is_away2(guint availability)
+gboolean sipe_ocs2007_availability_is_away(guint availability)
 {
-	return(availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2);
+	return(availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY);
 }
 
 static void send_presence_publish(struct sipe_core_private *sipe_private,
