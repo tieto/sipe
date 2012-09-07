@@ -14,6 +14,7 @@ telepathy_sipe_SOURCES = \
 	telepathy-private.h \
 	telepathy-protocol.c \
 	telepathy-schedule.c \
+	telepathy-search.c \
 	telepathy-status.c \
 	telepathy-stubs.c \
 	telepathy-transport.c

@@ -337,6 +337,8 @@ static GPtrArray *create_channel_managers(TpBaseConnection *base)
 	self->password_manager = tp_simple_password_manager_new(base);
 	g_ptr_array_add(channel_managers, self->password_manager);
 
+	g_ptr_array_add(channel_managers, sipe_telepathy_search_new(base));
+
 	return(channel_managers);
 }
 

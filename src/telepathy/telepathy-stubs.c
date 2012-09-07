@@ -305,21 +305,6 @@ void sipe_backend_notify_error(SIPE_UNUSED_PARAMETER struct sipe_core_public *si
 			       SIPE_UNUSED_PARAMETER const gchar *title,
 			       SIPE_UNUSED_PARAMETER const gchar *msg) {}
 
-/** SEARCH *******************************************************************/
-
-struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(NULL); }
-void sipe_backend_search_results_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				     SIPE_UNUSED_PARAMETER struct sipe_backend_search_results *results,
-				     SIPE_UNUSED_PARAMETER const gchar *uri,
-				     SIPE_UNUSED_PARAMETER const gchar *name,
-				     SIPE_UNUSED_PARAMETER const gchar *company,
-				     SIPE_UNUSED_PARAMETER const gchar *country,
-				     SIPE_UNUSED_PARAMETER const gchar *email) {}
-void sipe_backend_search_results_finalize(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-					  SIPE_UNUSED_PARAMETER struct sipe_backend_search_results *results,
-					  SIPE_UNUSED_PARAMETER const gchar *description,
-					  SIPE_UNUSED_PARAMETER gboolean more) {}
-
 /** USER *********************************************************************/
 
 void sipe_backend_user_feedback_typing(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,

@@ -216,6 +216,7 @@ static void get_connection_details(SIPE_UNUSED_PARAMETER TpBaseProtocol *self,
 		GType types[] = {
 			/* @TODO */
 			TP_TYPE_SIMPLE_PASSWORD_MANAGER,
+			SIPE_TYPE_SEARCH_MANAGER,
 			G_TYPE_INVALID
 		};
 		*channel_managers = g_memdup(types, sizeof(types));
@@ -245,7 +246,7 @@ static GStrv dup_authentication_types(SIPE_UNUSED_PARAMETER TpBaseProtocol *self
  */
 static void sipe_protocol_class_init(SipeProtocolClass *klass)
 {
-	TpBaseProtocolClass *base_class = (TpBaseProtocolClass *) klass;
+	TpBaseProtocolClass *base_class = TP_BASE_PROTOCOL_CLASS(klass);
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeProtocol::class_init");
 

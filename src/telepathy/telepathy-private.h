@@ -75,6 +75,11 @@ gchar *sipe_telepathy_protocol_normalize_contact(struct _TpBaseProtocol *self,
 						 const gchar *contact,
 						 GError **error);
 
+/* contact search */
+GType sipe_search_manager_get_type(void);
+#define SIPE_TYPE_SEARCH_MANAGER (sipe_search_manager_get_type())
+struct _GObject *sipe_telepathy_search_new(struct _TpBaseConnection *connection);
+
 /* status */
 void sipe_telepathy_status_init(struct _GObjectClass *object_class,
 				gsize struct_offset);
