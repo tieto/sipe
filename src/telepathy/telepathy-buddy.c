@@ -35,13 +35,13 @@ struct telepathy_buddy {
 	const gchar *uri;   /* borrowed from contact_list->buddies key */
 	GHashTable *groups; /* keys are borrowed from contact_list->groups */
 	TpHandle handle;
+	/* @TODO: server vs. local alias - what do we need to support? */
 	gchar *alias;
 };
 
 struct telepathy_buddy_entry {
-	const gchar *uri;   /* borrowed from telepathy_buddy->uri */
-	const gchar *group; /* borrowed from contact_list->groups key */
-	const gchar *alias; /* borrowed from telepathy_buddy->alias */
+	struct telepathy_buddy *buddy; /* pointer to parent */
+	const gchar *group;            /* borrowed from contact_list->groups key */
 };
 
 G_BEGIN_DECLS
@@ -275,17 +275,8 @@ static void update_alias(struct telepathy_buddy *buddy,
 			 const gchar *alias)
 {
 	if (buddy) {
-		GHashTableIter iter;
-		struct telepathy_buddy_entry *buddy_entry;
-
 		g_free(buddy->alias);
 		buddy->alias = g_strdup(alias);
-
-		g_hash_table_iter_init(&iter, buddy->groups);
-		while (g_hash_table_iter_next(&iter,
-					      NULL,
-					      (gpointer) &buddy_entry))
-			buddy_entry->alias = buddy->alias;
 	}
 }
 
@@ -369,13 +360,13 @@ GSList *sipe_backend_buddy_find_all(SIPE_UNUSED_PARAMETER struct sipe_core_publi
 gchar *sipe_backend_buddy_get_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				   const sipe_backend_buddy who)
 {
-	return(g_strdup(((struct telepathy_buddy_entry *) who)->uri));
+	return(g_strdup(((struct telepathy_buddy_entry *) who)->buddy->uri));
 }
 
 gchar *sipe_backend_buddy_get_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				    const sipe_backend_buddy who)
 {
-	return(g_strdup(((struct telepathy_buddy_entry *) who)->alias));
+	return(g_strdup(((struct telepathy_buddy_entry *) who)->buddy->alias));
 }
 
 gchar *sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -384,15 +375,12 @@ gchar *sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_
 	return(g_strdup(((struct telepathy_buddy_entry *) who)->group));
 }
 
-void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
+void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				  const sipe_backend_buddy who,
 				  const gchar *alias)
 {
-	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
 	struct telepathy_buddy_entry *buddy_entry      = who;
-	struct telepathy_buddy *buddy                  = g_hash_table_lookup(telepathy_private->contact_list->buddies,
-									     buddy_entry->uri);
-	update_alias(buddy, alias);
+	update_alias(buddy_entry->buddy, alias);
 
 	/* @TODO: emit signal? */
 }
@@ -454,9 +442,8 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 	buddy_entry = g_hash_table_lookup(buddy->groups, group);
 	if (!buddy_entry) {
 		buddy_entry        = g_new0(struct telepathy_buddy_entry, 1);
-		buddy_entry->uri   = buddy->uri;
+		buddy_entry->buddy = buddy;
 		buddy_entry->group = group;
-		buddy_entry->alias = buddy->alias;
 		g_hash_table_insert(buddy->groups,
 				    (gchar *) group, /* key is borrowed */
 				    buddy_entry);
@@ -475,33 +462,25 @@ void sipe_backend_buddy_remove(struct sipe_core_public *sipe_public,
 	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
 	SipeContactList *contact_list                  = telepathy_private->contact_list;
 	struct telepathy_buddy_entry *remove_entry     = who;
-	struct telepathy_buddy       *buddy            = g_hash_table_lookup(contact_list->buddies,
-									     remove_entry->uri);
+	struct telepathy_buddy       *buddy            = remove_entry->buddy;
 
-	if (buddy) {
-		struct telepathy_buddy_entry *buddy_entry = g_hash_table_lookup(buddy->groups,
-										remove_entry->group);
+	g_hash_table_remove(buddy->groups,
+			    remove_entry->group);
+	/* remove_entry is invalid */
 
-		if (buddy_entry == remove_entry) {
-			/* match found -> remove this entry */
-			g_hash_table_remove(buddy->groups,
-					    remove_entry->group);
+	if (g_hash_table_size(buddy->groups) == 0) {
+		/* removed from last group -> drop this buddy */
+		tp_handle_set_remove(contact_list->contacts,
+				     buddy->handle);
+		g_hash_table_remove(contact_list->buddy_handles,
+				    GUINT_TO_POINTER(buddy->handle));
+		g_hash_table_remove(contact_list->buddies,
+				    buddy->uri);
 
-			if (g_hash_table_size(buddy->groups) == 0) {
-				/* removed from last group -> drop this buddy */
-				tp_handle_set_remove(contact_list->contacts,
-						     buddy->handle);
-				g_hash_table_remove(contact_list->buddy_handles,
-						    GUINT_TO_POINTER(buddy->handle));
-				g_hash_table_remove(contact_list->buddies,
-						    remove_entry->uri);
+	}
 
-			}
-
-			if (contact_list->initial_received) {
-				/* @TODO: emit signal? */
-			}
-		}
+	if (contact_list->initial_received) {
+		/* @TODO: emit signal? */
 	}
 }
 
