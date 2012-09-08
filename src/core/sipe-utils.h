@@ -481,15 +481,6 @@ gchar *sipe_utils_subscription_key(const gchar *event,
 gchar *sipe_utils_uri_unescape(const gchar *string);
 
 /**
- * Tests whether given string is a Uniform Resource Identifier of audio/video
- * conference
- *
- * @param uri a string
- * @return @c TRUE if the string represents AV conference URI
- */
-gboolean sipe_utils_is_avconf_uri(const gchar *uri);
-
-/**
  * Inserts in item in the list only if the value isn't already in that list
  *
  * @param list a singly linked list

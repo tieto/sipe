@@ -574,12 +574,6 @@ sipe_utils_uri_unescape(const gchar *string)
 	return unescaped;
 }
 
-gboolean
-sipe_utils_is_avconf_uri(const gchar *uri)
-{
-	return g_strstr_len(uri, -1, "app:conf:audio-video:") != NULL;
-}
-
 /**
  * Only appends if no such value already stored.
  * Like Set in Java.

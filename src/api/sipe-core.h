@@ -144,8 +144,6 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
 void
 sipe_utils_nameval_free(GSList *list);
 
-gboolean sipe_utils_is_avconf_uri(const gchar *uri);
-
 gchar *sip_uri_from_name(const gchar *name);
 gchar *sip_uri_if_valid(const gchar *string);
 

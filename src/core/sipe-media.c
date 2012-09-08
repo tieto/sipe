@@ -1188,6 +1188,11 @@ void sipe_media_handle_going_offline(struct sipe_media_call_private *call_privat
 	sipe_media_hangup(call_private);
 }
 
+gboolean sipe_media_is_conference_call(struct sipe_media_call_private *call_private)
+{
+	return g_strstr_len(call_private->with, -1, "app:conf:audio-video:") != NULL;
+}
+
 static void
 sipe_media_relay_free(struct sipe_media_relay *relay)
 {
