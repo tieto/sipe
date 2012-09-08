@@ -46,6 +46,7 @@
 #include "sipe-core-private.h"
 #include "sipe-ews.h"
 #include "sipe-groupchat.h"
+#include "sipe-media.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
@@ -93,6 +94,7 @@ struct sipe_publication {
 #define SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE       18000
 
 #define SIPE_OCS2007_ACTIVITY_ON_PHONE "on-the-phone"
+#define SIPE_OCS2007_ACTIVITY_IN_CONFERENCE "in-a-conference"
 
 const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability,
 							  const gchar *activity)
@@ -108,6 +110,8 @@ const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability,
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSYIDLE) {
 		if (sipe_strequal(activity, SIPE_OCS2007_ACTIVITY_ON_PHONE)) {
 			type = SIPE_ACTIVITY_ON_PHONE;
+		} else if (sipe_strequal(activity, SIPE_OCS2007_ACTIVITY_IN_CONFERENCE)) {
+			type = SIPE_ACTIVITY_IN_CONF;
 		} else {
 			type = SIPE_ACTIVITY_BUSY;
 		}
@@ -830,21 +834,27 @@ static void schedule_publish_update(struct sipe_core_private *sipe_private,
  * Publishes 'phoneState' category.
  * @param instance		(%u) Ex.: 1339299275
  * @param version		(%u) Ex.: 1
+ * @param availability		(%u) Ex.: 6500
+ * @param token			(%s) Ex.: on-the-phone
+ * @param minAvailability	(%u) generally same as availability
  *
  * @param instance		(%u) Ex.: 1339299275
  * @param version		(%u) Ex.: 1
+ * @param availability          (%u) Ex.: 6500
+ * @param token			(%s) Ex.: on-the-phone
+ * @param minAvailability	(%u) generally same as availability
  */
 #define SIPE_PUB_XML_STATE_PHONE \
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
 		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"phoneState\">"\
-			"<availability>6500</availability>"\
-			"<activity token=\"on-the-phone\" minAvailability=\"6500\" maxAvailability=\"8999\"/>"\
+			"<availability>%u</availability>"\
+			"<activity token=\"%s\" minAvailability=\"%u\" maxAvailability=\"8999\"/>"\
 		"</state>"\
 	"</publication>"\
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\">"\
 		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"phoneState\">"\
-			"<availability>6500</availability>"\
-			"<activity token=\"on-the-phone\" minAvailability=\"6500\" maxAvailability=\"8999\"/>"\
+			"<availability>%u</availability>"\
+			"<activity token=\"%s\" minAvailability=\"%u\" maxAvailability=\"8999\"/>"\
 		"</state>"\
 	"</publication>"
 
@@ -1811,10 +1821,27 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 	g_free(key_2);
 	g_free(key_3);
 
-	publications = g_strdup_printf((sipe_private->media_call) ?
-			SIPE_PUB_XML_STATE_PHONE : SIPE_PUB_XML_STATE_CALENDAR_PHONE_CLEAR,
-			instance, publication_2 ? publication_2->version : 0,
-			instance, publication_3 ? publication_3->version : 0);
+	if (sipe_private->media_call) {
+		guint availability;
+		const gchar *token;
+		if (sipe_media_is_conference_call(sipe_private->media_call)) {
+			availability = 7000;
+			token = "in-a-conference";
+		} else {
+			availability = 6500;
+			token = "on-the-phone";
+		}
+
+		publications = g_strdup_printf(SIPE_PUB_XML_STATE_PHONE,
+				instance, publication_2 ? publication_2->version : 0,
+				availability, token, availability,
+				instance, publication_3 ? publication_3->version : 0,
+				availability, token, availability);
+	} else {
+		publications = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_PHONE_CLEAR,
+				instance, publication_2 ? publication_2->version : 0,
+				instance, publication_3 ? publication_3->version : 0);
+	}
 
 	send_presence_publish(sipe_private, publications);
 	g_free(publications);
