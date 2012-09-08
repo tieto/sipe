@@ -194,11 +194,12 @@ static void search_channel_closed_cb(SipeSearchChannel *channel,
 
 static GObject *search_channel_new(GObject *connection);
 static gboolean create_channel(TpChannelManager *manager,
-			       SIPE_UNUSED_PARAMETER gpointer request_token,
+			       gpointer request_token,
 			       GHashTable *request_properties)
 {
 	SipeSearchManager *self = SIPE_SEARCH_MANAGER(manager);
 	GObject *channel;
+	GSList *request_tokens;
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeSearchManager::create_channel");
 
@@ -207,13 +208,20 @@ static gboolean create_channel(TpChannelManager *manager,
 		       TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH))
 		return(FALSE);
 
-
+	/* create new search channel */
 	channel = search_channel_new(self->connection);
 	g_hash_table_insert(self->channels, channel, NULL);
 	g_signal_connect(channel,
 			 "closed",
 			 (GCallback) search_channel_closed_cb,
 			 self);
+
+	/* publish new channel */
+	request_tokens = g_slist_prepend(NULL, request_token);
+	tp_channel_manager_emit_new_channel(self,
+					    TP_EXPORTABLE_CHANNEL(channel),
+					    request_tokens);
+	g_slist_free(request_tokens);
 
 	return(TRUE);
 }
@@ -284,6 +292,11 @@ static void fill_immutable_properties(TpBaseChannel *channel,
 						      NULL);
 }
 
+static gchar *get_object_path_suffix(TpBaseChannel *base)
+{
+	return(g_strdup_printf ("SearchChannel_%p", base));
+}
+
 static GPtrArray *get_interfaces(TpBaseChannel *self)
 {
 	GPtrArray *interfaces = TP_BASE_CHANNEL_CLASS(sipe_search_channel_parent_class)->get_interfaces(self);
@@ -312,8 +325,8 @@ static void sipe_search_channel_class_init(SipeSearchChannelClass *klass)
 {
 	static TpDBusPropertiesMixinPropImpl props[] = {
 		{
-			.name        = "SearchKeys",
-			.getter_data = "search-keys",
+			.name        = "AvailableSearchKeys",
+			.getter_data = "available-search-keys",
 			.setter_data = NULL
 		},
 		{ NULL }
@@ -331,12 +344,13 @@ static void sipe_search_channel_class_init(SipeSearchChannelClass *klass)
 	base_class->channel_type       = TP_IFACE_CHANNEL_TYPE_CONTACT_SEARCH;
 	base_class->target_handle_type = TP_HANDLE_TYPE_NONE;
 	base_class->fill_immutable_properties = fill_immutable_properties;
+	base_class->get_object_path_suffix    = get_object_path_suffix;
 	base_class->interfaces         = NULL;
 	base_class->get_interfaces     = get_interfaces;
 	base_class->close              = tp_base_channel_destroyed;
 
-	ps = g_param_spec_boxed("search-keys",
-				"Search keys",
+	ps = g_param_spec_boxed("available-search-keys",
+				"Available search keys",
 				"The set of search keys supported by this channel",
 				G_TYPE_STRV,
 				G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
@@ -382,6 +396,14 @@ static void search_channel_search(TpSvcChannelTypeContactSearch *channel,
 	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(self->connection);
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeSearchChannel::search");
+	{
+		/* temporary debug */
+		GHashTableIter iter;
+		const gchar *key, *value;
+		g_hash_table_iter_init(&iter, terms);
+		while (g_hash_table_iter_next(&iter, (gpointer) &key, (gpointer) &value))
+			SIPE_DEBUG_INFO("search: %s -> %s", key, value);
+	}
 
 	/* @TODO: we need a parameter to pass "self" into the search */
 	sipe_core_buddy_search(telepathy_private->public,
@@ -412,6 +434,7 @@ static GObject *search_channel_new(GObject *connection)
 	SipeSearchChannel *self = g_object_new(SIPE_TYPE_SEARCH_CHANNEL,
 					       "connection", connection,
 					       NULL);
+
 	self->connection = g_object_ref(connection);
 
 	tp_base_channel_register(TP_BASE_CHANNEL(self));
