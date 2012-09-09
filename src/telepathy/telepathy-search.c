@@ -65,6 +65,7 @@ typedef struct _SipeSearchChannel {
         TpBaseChannel parent;
 
 	GObject *connection;
+	TpChannelContactSearchState state;
 } SipeSearchChannel;
 
 /*
@@ -187,6 +188,7 @@ static void type_foreach_channel_class(GType type,
 static void search_channel_closed_cb(SipeSearchChannel *channel,
 				     SipeSearchManager *self)
 {
+	SIPE_DEBUG_INFO("SipeSearchManager::search_channel_close_cb: %p", channel);
 	tp_channel_manager_emit_channel_closed_for_object(self,
 							  (TpExportableChannel *) channel);
 	g_hash_table_remove(self->channels, channel);
@@ -378,16 +380,23 @@ static void sipe_search_channel_init(SIPE_UNUSED_PARAMETER SipeSearchChannel *se
  * Contact search
  */
 static void search_channel_state(SipeSearchChannel *self,
-				 gboolean completed)
+				 TpChannelContactSearchState new_state,
+				 const gchar *msg)
 {
 	GHashTable *details = g_hash_table_new(g_str_hash, g_str_equal);
+
+	if (msg) {
+		  GValue v = { 0, };
+		  g_value_init(&v, G_TYPE_STRING);
+		  g_value_set_static_string(&v, msg);
+		  g_hash_table_insert (details, "debug-message", &v);
+	}
 	tp_svc_channel_type_contact_search_emit_search_state_changed(self,
-								     completed ?
-								     TP_CHANNEL_CONTACT_SEARCH_STATE_COMPLETED :
-								     TP_CHANNEL_CONTACT_SEARCH_STATE_IN_PROGRESS,
-								     "",
+								     new_state,
+								     msg ? msg : "",
 								     details);
 	g_hash_table_unref(details);
+	self->state = new_state;
 }
 
 static void search_channel_search(TpSvcChannelTypeContactSearch *channel,
@@ -395,30 +404,42 @@ static void search_channel_search(TpSvcChannelTypeContactSearch *channel,
 				  DBusGMethodInvocation *context)
 {
 	SipeSearchChannel *self = SIPE_SEARCH_CHANNEL(channel);
-	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(self->connection);
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeSearchChannel::search");
-	{
-		/* temporary debug */
-		GHashTableIter iter;
-		const gchar *key, *value;
-		g_hash_table_iter_init(&iter, terms);
-		while (g_hash_table_iter_next(&iter, (gpointer) &key, (gpointer) &value))
-			SIPE_DEBUG_INFO("search: %s -> %s", key, value);
+
+	if (self->state == TP_CHANNEL_CONTACT_SEARCH_STATE_NOT_STARTED) {
+		struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(self->connection);
+
+		{
+			/* temporary debug */
+			GHashTableIter iter;
+			const gchar *key, *value;
+			g_hash_table_iter_init(&iter, terms);
+			while (g_hash_table_iter_next(&iter, (gpointer) &key, (gpointer) &value))
+				SIPE_DEBUG_INFO("search: %s -> %s", key, value);
+		}
+
+		sipe_core_buddy_search(telepathy_private->public,
+				       (struct sipe_backend_search_token *) self,
+				       g_hash_table_lookup(terms, "x-n-given"),
+				       g_hash_table_lookup(terms, "x-n-family"),
+				       g_hash_table_lookup(terms, "email"),
+				       g_hash_table_lookup(terms, "x-org-name"),
+				       g_hash_table_lookup(terms, "x-adr-country"));
+
+		/* only switch to "in progress" if the above didn't fail */
+		if (self->state == TP_CHANNEL_CONTACT_SEARCH_STATE_NOT_STARTED)
+			search_channel_state(self,
+					     TP_CHANNEL_CONTACT_SEARCH_STATE_IN_PROGRESS,
+					     NULL);
+
+		tp_svc_channel_type_contact_search_return_from_search(context);
+	} else {
+		GError *error = g_error_new(TP_ERROR, TP_ERROR_NOT_AVAILABLE,
+					    "invalid search state");
+		dbus_g_method_return_error(context, error);
+		g_error_free(error);
 	}
-
-	/* @TODO: we need a parameter to pass "self" into the search */
-	sipe_core_buddy_search(telepathy_private->public,
-			       (struct sipe_backend_search_token *) self,
-			       g_hash_table_lookup(terms, "x-n-given"),
-			       g_hash_table_lookup(terms, "x-n-family"),
-			       g_hash_table_lookup(terms, "email"),
-			       g_hash_table_lookup(terms, "x-org-name"),
-			       g_hash_table_lookup(terms, "x-adr-country"));
-
-	search_channel_state(self, FALSE);
-
-	tp_svc_channel_type_contact_search_return_from_search(context);
 }
 
 static void contact_search_iface_init(gpointer g_iface,
@@ -439,6 +460,7 @@ static GObject *search_channel_new(GObject *connection)
 					       NULL);
 
 	self->connection = g_object_ref(connection);
+	self->state      = TP_CHANNEL_CONTACT_SEARCH_STATE_NOT_STARTED;
 
 	tp_base_channel_register(TP_BASE_CHANNEL(self));
 
@@ -449,18 +471,20 @@ static GObject *search_channel_new(GObject *connection)
  * Backend adaptor functions
  */
 void sipe_backend_search_failed(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token,
-				SIPE_UNUSED_PARAMETER const gchar *msg)
+				struct sipe_backend_search_token *token,
+				const gchar *msg)
 {
+	SIPE_DEBUG_INFO("sipe_backend_search_failed: %s", msg);
+	search_channel_state(SIPE_SEARCH_CHANNEL(token),
+			     TP_CHANNEL_CONTACT_SEARCH_STATE_FAILED,
+			     msg);
 }
 
 struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-								      SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token)
+								      struct sipe_backend_search_token *token)
 {
-	/* @TODO: we need a parameter to pass "self" into the search
-	   return(self);
-	 */
-	return(NULL);
+	/* pass token forward */
+	return((struct sipe_backend_search_results *) token);
 }
 
 void sipe_backend_search_results_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -472,21 +496,20 @@ void sipe_backend_search_results_add(SIPE_UNUSED_PARAMETER struct sipe_core_publ
 				     SIPE_UNUSED_PARAMETER const gchar *email)
 {
 	/* @TODO
-	 * SipeSearchChannel *self = results;
+	 * SipeSearchChannel *self = SIPE_SEARCH_CHANNEL(results);
 	 * tp_svc_channel_type_contact_search_emit_search_result_received(self,
 	 *                                                                results);
 	 */
 }
 
 void sipe_backend_search_results_finalize(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-					  SIPE_UNUSED_PARAMETER struct sipe_backend_search_results *results,
+					  struct sipe_backend_search_results *results,
 					  SIPE_UNUSED_PARAMETER const gchar *description,
 					  SIPE_UNUSED_PARAMETER gboolean more)
 {
-	/* @TODO
-	 * SipeSearchChannel *self = results;
-	 * search_channel_state(self, FALSE);
-	 */
+	search_channel_state(SIPE_SEARCH_CHANNEL(results),
+			     TP_CHANNEL_CONTACT_SEARCH_STATE_COMPLETED,
+			     NULL);
 }
 
 
