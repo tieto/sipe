@@ -532,8 +532,13 @@ void sipe_backend_schedule_cancel(struct sipe_core_public *sipe_public,
 /** SEARCH *******************************************************************/
 
 struct sipe_backend_search_results;
+struct sipe_backend_search_token;
 
-struct sipe_backend_search_results *sipe_backend_search_results_start(struct sipe_core_public *sipe_public);
+void sipe_backend_search_failed(struct sipe_core_public *sipe_public,
+				struct sipe_backend_search_token *token,
+				const gchar *msg);
+struct sipe_backend_search_results *sipe_backend_search_results_start(struct sipe_core_public *sipe_public,
+								      struct sipe_backend_search_token *token);
 void sipe_backend_search_results_add(struct sipe_core_public *sipe_public,
 				     struct sipe_backend_search_results *results,
 				     const gchar *uri,

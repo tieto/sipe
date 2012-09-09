@@ -707,6 +707,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 	};
 
 	sipe_core_buddy_search(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       NULL,
 			       given_name,
 			       surname,
 			       email,

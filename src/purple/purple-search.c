@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,15 @@
 
 #include "purple-private.h"
 
-struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+void sipe_backend_search_failed(struct sipe_core_public *sipe_public,
+				SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token,
+				const gchar *msg)
+{
+	sipe_backend_notify_error(sipe_public, msg, NULL);
+}
+
+struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+								      SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token)
 {
 	PurpleNotifySearchResults *results = purple_notify_searchresults_new();
 

@@ -450,6 +450,7 @@ struct ms_dlx_data {
 	sipe_svc_callback *callback;
 	struct sipe_svc_session *session;
 	gchar *wsse_security;
+	struct sipe_backend_search_token *token;
 	/* must call ms_dlx_free() */
 	void (*failed_callback)(struct sipe_core_private *sipe_private,
 				struct ms_dlx_data *mdd);
@@ -604,20 +605,21 @@ static void search_ab_entry_response(struct sipe_core_private *sipe_private,
 		node = sipe_xml_child(soap_body, "Body/SearchAbEntryResponse/SearchAbEntryResult/Items/AbEntry");
 		if (!node) {
 			SIPE_DEBUG_ERROR_NOFORMAT("search_ab_entry_response: no matches");
-			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("No contacts found"),
-					  NULL);
+			sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+						   mdd->token,
+						   _("No contacts found"));
 			ms_dlx_free(mdd);
 			return;
 		}
 
 		/* OK, we found something - show the results to the user */
-		results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC);
+		results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC,
+							    mdd->token);
 		if (!results) {
 			SIPE_DEBUG_ERROR_NOFORMAT("search_ab_entry_response: Unable to display the search results.");
-			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-						  _("Unable to display the search results"),
-						  NULL);
+			sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+						   mdd->token,
+						   _("Unable to display the search results"));
 			ms_dlx_free(mdd);
 			return;
 		}
@@ -705,8 +707,9 @@ static void search_ab_entry_response(struct sipe_core_private *sipe_private,
 
 static gboolean process_search_contact_response(struct sipe_core_private *sipe_private,
 						struct sipmsg *msg,
-						SIPE_UNUSED_PARAMETER struct transaction *trans)
+						struct transaction *trans)
 {
+	struct sipe_backend_search_token *token = trans->payload->data;
 	struct sipe_backend_search_results *results;
 	sipe_xml *searchResults;
 	const sipe_xml *mrow;
@@ -717,9 +720,9 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	if (msg->response != 200) {
 		SIPE_DEBUG_ERROR("process_search_contact_response: request failed (%d)",
 				 msg->response);
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Contact search failed"),
-					  NULL);
+		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+					   token,
+					   _("Contact search failed"));
 		return(FALSE);
 	}
 
@@ -729,9 +732,9 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	searchResults = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!searchResults) {
 		SIPE_DEBUG_INFO_NOFORMAT("process_search_contact_response: no parseable searchResults");
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Contact search failed"),
-					  NULL);
+		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+					   token,
+					   _("Contact search failed"));
 		return(FALSE);
 	}
 
@@ -739,21 +742,22 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	mrow = sipe_xml_child(searchResults, "Body/Array/row");
 	if (!mrow) {
 		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: no matches");
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("No contacts found"),
-					  NULL);
+		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+					   token,
+					   _("No contacts found"));
 
 		sipe_xml_free(searchResults);
 		return(FALSE);
 	}
 
 	/* OK, we found something - show the results to the user */
-	results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC);
+	results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC,
+						    trans->payload->data);
 	if (!results) {
 		SIPE_DEBUG_ERROR_NOFORMAT("process_search_contact_response: Unable to display the search results.");
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Unable to display the search results"),
-					  NULL);
+		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+					   token,
+					   _("Unable to display the search results"));
 
 		sipe_xml_free(searchResults);
 		return FALSE;
@@ -784,22 +788,33 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 	return(TRUE);
 }
 
-static void search_ab_entry_failed(struct sipe_core_private *sipe_private,
-				   struct ms_dlx_data *mdd)
+static void search_soap_request(struct sipe_core_private *sipe_private,
+				struct sipe_backend_search_token *token,
+				GSList *search_rows)
 {
-	/* error using [MS-DLX] server, retry using Active Directory */
-	gchar *query = prepare_buddy_search_query(mdd->search_rows, FALSE);
+	gchar *query = prepare_buddy_search_query(search_rows, FALSE);
+	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+
+	payload->data = token;
 
 	sip_soap_directory_search(sipe_private,
 				  100,
 				  query,
 				  process_search_contact_response,
-				  NULL);
-	ms_dlx_free(mdd);
+				  payload);
 	g_free(query);
 }
 
+static void search_ab_entry_failed(struct sipe_core_private *sipe_private,
+				   struct ms_dlx_data *mdd)
+{
+	/* error using [MS-DLX] server, retry using Active Directory */
+	search_soap_request(sipe_private, mdd->token, mdd->search_rows);
+	ms_dlx_free(mdd);
+}
+
 void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
+			    struct sipe_backend_search_token *token,
 			    const gchar *given_name,
 			    const gchar *surname,
 			    const gchar *email,
@@ -829,22 +844,19 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			mdd->callback        = search_ab_entry_response;
 			mdd->failed_callback = search_ab_entry_failed;
 			mdd->session         = sipe_svc_session_start();
+			mdd->token           = token;
 
 			ms_dlx_webticket_request(SIPE_CORE_PRIVATE, mdd);
 
 		} else {
-			gchar *query = prepare_buddy_search_query(query_rows, FALSE);
-
 			/* no [MS-DLX] server, use Active Directory search instead */
-			sip_soap_directory_search(SIPE_CORE_PRIVATE,
-						  100,
-						  query,
-						  process_search_contact_response,
-						  NULL);
-			g_free(query);
+			search_soap_request(SIPE_CORE_PRIVATE, token, query_rows);
 			g_slist_free(query_rows);
 		}
-	}
+	} else
+		sipe_backend_search_failed(sipe_public,
+					   token,
+					   _("Invalid contact search query"));
 }
 
 static void get_info_finalize(struct sipe_core_private *sipe_private,

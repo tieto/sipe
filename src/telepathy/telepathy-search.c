@@ -409,6 +409,7 @@ static void search_channel_search(TpSvcChannelTypeContactSearch *channel,
 
 	/* @TODO: we need a parameter to pass "self" into the search */
 	sipe_core_buddy_search(telepathy_private->public,
+			       (struct sipe_backend_search_token *) self,
 			       g_hash_table_lookup(terms, "x-n-given"),
 			       g_hash_table_lookup(terms, "x-n-family"),
 			       g_hash_table_lookup(terms, "email"),
@@ -447,7 +448,14 @@ static GObject *search_channel_new(GObject *connection)
 /*
  * Backend adaptor functions
  */
-struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+void sipe_backend_search_failed(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token,
+				SIPE_UNUSED_PARAMETER const gchar *msg)
+{
+}
+
+struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+								      SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token)
 {
 	/* @TODO: we need a parameter to pass "self" into the search
 	   return(self);

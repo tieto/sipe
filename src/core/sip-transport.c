@@ -593,7 +593,8 @@ static void transactions_remove(struct sipe_core_private *sipe_private,
 
 		if (trans->msg) sipmsg_free(trans->msg);
 		if (trans->payload) {
-			(*trans->payload->destroy)(trans->payload->data);
+			if (trans->payload->destroy)
+				(*trans->payload->destroy)(trans->payload->data);
 			g_free(trans->payload);
 		}
 		g_free(trans->key);
