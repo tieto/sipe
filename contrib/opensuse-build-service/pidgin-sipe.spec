@@ -97,7 +97,9 @@
 %define has_libnice 1
 %if 0%{?suse_version} > 1140
 %define has_gstreamer 1
+%if 0%{?suse_version} > 1210
 %define build_telepathy 1
+%endif
 %endif
 %endif
 %else
@@ -113,8 +115,10 @@
 %define has_libnice 1
 %if 0%{?fedora} >= 15
 %define has_gstreamer 1
+%if 0%{?fedora} >= 17
 %define build_telepathy 1
 %define build_ktp 1
+%endif
 %endif
 %endif
 %endif
@@ -184,7 +188,7 @@ BuildRequires:  gstreamer-devel
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
-BuildRequires:  telepathy-glib-devel >= 0.14.0
+BuildRequires:  telepathy-glib-devel >= 0.18.0
 BuildRequires:  gmime-devel
 BuildRequires:  glib2-devel >= 2.28.0
 %endif
@@ -524,6 +528,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Sep 09 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- BR telepathy-glib-devel >= 0.18.0
+
 * Wed Sep 05 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
 - BR telepathy-glib-devel >= 0.14.0
 

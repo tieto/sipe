@@ -377,7 +377,7 @@ AC_ARG_ENABLE([telepathy],
 	[],
 	[enable_telepathy=yes])
 AS_IF([test "x$enable_telepathy" != xno],
-	[PKG_CHECK_MODULES(TELEPATHY_GLIB, [telepathy-glib >= 0.14.0],
+	[PKG_CHECK_MODULES(TELEPATHY_GLIB, [telepathy-glib >= 0.18.0],
 		[dnl GMIME is a build requirement
 		 AS_IF([test "x$ac_have_gmime" = xyes],
 			[],

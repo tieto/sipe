@@ -329,7 +329,9 @@ static void sipe_search_channel_class_init(SipeSearchChannelClass *klass)
 			.getter_data = "available-search-keys",
 			.setter_data = NULL
 		},
-		{ NULL }
+		{
+			.name        = NULL
+		}
 	};
 	GObjectClass *object_class     = G_OBJECT_CLASS(klass);
 	TpBaseChannelClass *base_class = TP_BASE_CHANNEL_CLASS(klass);
