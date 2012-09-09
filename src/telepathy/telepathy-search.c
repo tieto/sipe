@@ -20,6 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
+
 #include <glib-object.h>
 #include <telepathy-glib/svc-channel.h>
 #include <telepathy-glib/telepathy-glib.h>
@@ -29,6 +31,15 @@
 #include "sipe-core.h"
 
 #include "telepathy-private.h"
+
+/* vCard/Telepathy search field names */
+#define SIPE_TELEPATHY_SEARCH_KEY_FIRST    "x-n-given"
+#define SIPE_TELEPATHY_SEARCH_KEY_LAST     "x-n-family"
+#define SIPE_TELEPATHY_SEARCH_KEY_EMAIL    "email"
+#define SIPE_TELEPATHY_SEARCH_KEY_COMPANY  "x-org-name"
+#define SIPE_TELEPATHY_SEARCH_KEY_COUNTRY  "x-adr-country"
+#define SIPE_TELEPATHY_SEARCH_KEY_FULLNAME "fn"
+#define SIPE_TELEPATHY_SEARCH_KEY_BLOB     "" /* one big search box */
 
 G_BEGIN_DECLS
 /*
@@ -65,6 +76,7 @@ typedef struct _SipeSearchChannel {
         TpBaseChannel parent;
 
 	GObject *connection;
+	GHashTable *results;
 	TpChannelContactSearchState state;
 } SipeSearchChannel;
 
@@ -267,11 +279,13 @@ static void get_property(GObject *object,
 	case CHANNEL_PROP_SEARCH_KEYS: {
 		/* vCard/Telepathy search field names */
 		static const gchar const *search_keys[] = {
-			"x-n-given",     /* First  */
-			"x-n-family",    /* Last   */
-			"email",         /* E-Mail */
-			"x-org-name",    /* Company? */
-			"x-adr-country", /* Country */
+			SIPE_TELEPATHY_SEARCH_KEY_FIRST,
+			SIPE_TELEPATHY_SEARCH_KEY_LAST,
+			SIPE_TELEPATHY_SEARCH_KEY_EMAIL,
+			SIPE_TELEPATHY_SEARCH_KEY_COMPANY,
+			SIPE_TELEPATHY_SEARCH_KEY_COUNTRY,
+			SIPE_TELEPATHY_SEARCH_KEY_FULLNAME,
+			SIPE_TELEPATHY_SEARCH_KEY_BLOB,
 			NULL
 		};
 		g_value_set_boxed(value, search_keys);
@@ -307,15 +321,23 @@ static GPtrArray *get_interfaces(TpBaseChannel *self)
 
 static void sipe_search_channel_constructed(GObject *object)
 {
+	SipeSearchChannel *self     = SIPE_SEARCH_CHANNEL(object);
 	void (*chain_up)(GObject *) = G_OBJECT_CLASS(sipe_search_channel_parent_class)->constructed;
 
 	if (chain_up)
 		chain_up(object);
+
+	self->results = NULL;
 }
 
 static void sipe_search_channel_finalize(GObject *object)
 {
+	SipeSearchChannel *self = SIPE_SEARCH_CHANNEL(object);
+
 	SIPE_DEBUG_INFO_NOFORMAT("SipeSearchChannel::finalize");
+
+	if (self->results)
+		g_hash_table_unref(self->results);
 
 	G_OBJECT_CLASS(sipe_search_channel_parent_class)->finalize(object);
 }
@@ -408,24 +430,71 @@ static void search_channel_search(TpSvcChannelTypeContactSearch *channel,
 	SIPE_DEBUG_INFO_NOFORMAT("SipeSearchChannel::search");
 
 	if (self->state == TP_CHANNEL_CONTACT_SEARCH_STATE_NOT_STARTED) {
+		const gchar *first   = g_hash_table_lookup(terms,
+							  SIPE_TELEPATHY_SEARCH_KEY_FIRST);
+		const gchar *last    = g_hash_table_lookup(terms,
+							   SIPE_TELEPATHY_SEARCH_KEY_LAST);
+		const gchar *email   = g_hash_table_lookup(terms,
+							   SIPE_TELEPATHY_SEARCH_KEY_EMAIL);
+		const gchar *company = g_hash_table_lookup(terms,
+							   SIPE_TELEPATHY_SEARCH_KEY_COMPANY);
+		const gchar *country = g_hash_table_lookup(terms,
+							   SIPE_TELEPATHY_SEARCH_KEY_COUNTRY);
 		struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(self->connection);
+		gchar **split = NULL;
 
-		{
-			/* temporary debug */
-			GHashTableIter iter;
-			const gchar *key, *value;
-			g_hash_table_iter_init(&iter, terms);
-			while (g_hash_table_iter_next(&iter, (gpointer) &key, (gpointer) &value))
-				SIPE_DEBUG_INFO("search: %s -> %s", key, value);
+		/* did the requester honor our "AvailableSearchKeys"? */
+		if (!(first || last || email || company || country)) {
+			const gchar *alternative = g_hash_table_lookup(terms,
+								       SIPE_TELEPATHY_SEARCH_KEY_FULLNAME);
+
+			/* No. Did he give a full name instead? */
+			if (alternative) {
+				SIPE_DEBUG_INFO("SipeSearchChannel::search: full name given: '%s'",
+						alternative);
+
+				/* assume:
+				 *  - one word  -> first name
+				 *  - two words -> first & last name
+				 */
+				split = g_strsplit(alternative, " ", 3);
+				if (split[0]) {
+					first = split[0];
+					if (split[1])
+						last = split[1];
+				}
+
+			/* No. Did he give a "on big search box" instead? */
+			} else if ((alternative = g_hash_table_lookup(terms,
+								      SIPE_TELEPATHY_SEARCH_KEY_BLOB))
+				   != NULL) {
+
+				SIPE_DEBUG_INFO("SipeSearchChannel::search: one big search box given: '%s'",
+						alternative);
+				/* assume:
+				 *  - one word with '@' -> email
+				 *  - one word          -> first name
+				 *  - two words         -> first & last name
+				 */
+				split = g_strsplit(alternative, " ", 3);
+				if (split[0]) {
+					if (strchr(split[0], '@')) {
+						email = split[0];
+					} else {
+						first = split[0];
+						if (split[1])
+							last = split[1];
+					}
+				}
+
+			} else
+				SIPE_DEBUG_ERROR_NOFORMAT("SipeSearchChannel::search: no valid terms found");
 		}
 
 		sipe_core_buddy_search(telepathy_private->public,
 				       (struct sipe_backend_search_token *) self,
-				       g_hash_table_lookup(terms, "x-n-given"),
-				       g_hash_table_lookup(terms, "x-n-family"),
-				       g_hash_table_lookup(terms, "email"),
-				       g_hash_table_lookup(terms, "x-org-name"),
-				       g_hash_table_lookup(terms, "x-adr-country"));
+				       first, last, email, company, country);
+		g_strfreev(split);
 
 		/* only switch to "in progress" if the above didn't fail */
 		if (self->state == TP_CHANNEL_CONTACT_SEARCH_STATE_NOT_STARTED)
@@ -480,26 +549,73 @@ void sipe_backend_search_failed(SIPE_UNUSED_PARAMETER struct sipe_core_public *s
 			     msg);
 }
 
+static void free_info(GPtrArray *info)
+{
+	g_boxed_free(TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST, info);
+}
+
 struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 								      struct sipe_backend_search_token *token)
 {
-	/* pass token forward */
-	return((struct sipe_backend_search_results *) token);
+	SipeSearchChannel *self = SIPE_SEARCH_CHANNEL(token);
+
+	self->results = g_hash_table_new_full(g_str_hash, g_str_equal,
+					      g_free,
+					      (GDestroyNotify) free_info);
+
+	return((struct sipe_backend_search_results *) self);
+}
+
+/* adds: the Contact_Info_Field (field_name, [], values) */
+static void add_search_result(GPtrArray *info,
+			      const gchar *field_name,
+			      const gchar *field_value)
+{
+	if (field_value) {
+		static const gchar **empty = { NULL };
+		GValueArray *field         = g_value_array_new(3);
+		const gchar *components[]  = { field_value, NULL };
+		GValue *value;
+
+		SIPE_DEBUG_INFO("add_search_result: %s = '%s'",
+				field_name, field_value);
+
+		g_value_array_append(field, NULL);
+		value = g_value_array_get_nth(field, 0);
+		g_value_init(value, G_TYPE_STRING);
+		g_value_set_static_string(value, field_name);
+
+		g_value_array_append(field, NULL);
+		value = g_value_array_get_nth(field, 1);
+		g_value_init(value, G_TYPE_STRV);
+		g_value_set_static_boxed(value, empty);
+
+		g_value_array_append(field, NULL);
+		value = g_value_array_get_nth(field, 2);
+		g_value_init(value, G_TYPE_STRV);
+		g_value_set_boxed(value, components);
+
+		g_ptr_array_add(info, field);
+	}
 }
 
 void sipe_backend_search_results_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				     SIPE_UNUSED_PARAMETER struct sipe_backend_search_results *results,
-				     SIPE_UNUSED_PARAMETER const gchar *uri,
-				     SIPE_UNUSED_PARAMETER const gchar *name,
-				     SIPE_UNUSED_PARAMETER const gchar *company,
-				     SIPE_UNUSED_PARAMETER const gchar *country,
-				     SIPE_UNUSED_PARAMETER const gchar *email)
+				     struct sipe_backend_search_results *results,
+				     const gchar *uri,
+				     const gchar *name,
+				     const gchar *company,
+				     const gchar *country,
+				     const gchar *email)
 {
-	/* @TODO
-	 * SipeSearchChannel *self = SIPE_SEARCH_CHANNEL(results);
-	 * tp_svc_channel_type_contact_search_emit_search_result_received(self,
-	 *                                                                results);
-	 */
+	SipeSearchChannel *self = SIPE_SEARCH_CHANNEL(results);
+	GPtrArray *info         = g_ptr_array_new();
+
+	add_search_result(info, SIPE_TELEPATHY_SEARCH_KEY_FULLNAME, name);
+	add_search_result(info, SIPE_TELEPATHY_SEARCH_KEY_COMPANY,  company);
+	add_search_result(info, SIPE_TELEPATHY_SEARCH_KEY_COUNTRY,  country);
+	add_search_result(info, SIPE_TELEPATHY_SEARCH_KEY_EMAIL,    email);
+
+	g_hash_table_insert(self->results, g_strdup(uri), info);
 }
 
 void sipe_backend_search_results_finalize(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -507,7 +623,11 @@ void sipe_backend_search_results_finalize(SIPE_UNUSED_PARAMETER struct sipe_core
 					  SIPE_UNUSED_PARAMETER const gchar *description,
 					  SIPE_UNUSED_PARAMETER gboolean more)
 {
-	search_channel_state(SIPE_SEARCH_CHANNEL(results),
+	SipeSearchChannel *self = SIPE_SEARCH_CHANNEL(results);
+
+	tp_svc_channel_type_contact_search_emit_search_result_received(self,
+								       self->results);
+	search_channel_state(self,
 			     TP_CHANNEL_CONTACT_SEARCH_STATE_COMPLETED,
 			     NULL);
 }
