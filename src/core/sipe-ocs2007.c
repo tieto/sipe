@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -93,9 +93,6 @@ struct sipe_publication {
 #define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY          15000
 #define SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE       18000
 
-#define SIPE_OCS2007_ACTIVITY_ON_PHONE "on-the-phone"
-#define SIPE_OCS2007_ACTIVITY_IN_CONFERENCE "in-a-conference"
-
 const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability,
 							  const gchar *activity)
 {
@@ -108,13 +105,10 @@ const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability,
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY) {
 		type = SIPE_ACTIVITY_INACTIVE;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSYIDLE) {
-		if (sipe_strequal(activity, SIPE_OCS2007_ACTIVITY_ON_PHONE)) {
-			type = SIPE_ACTIVITY_ON_PHONE;
-		} else if (sipe_strequal(activity, SIPE_OCS2007_ACTIVITY_IN_CONFERENCE)) {
-			type = SIPE_ACTIVITY_IN_CONF;
-		} else {
+		type = sipe_status_token_to_activity(activity);
+		if ((type != SIPE_ACTIVITY_ON_PHONE) &&
+		    (type != SIPE_ACTIVITY_IN_CONF))
 			type = SIPE_ACTIVITY_BUSY;
-		}
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_DND) {
 		type = SIPE_ACTIVITY_BUSYIDLE;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB) {
@@ -1826,10 +1820,10 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 		const gchar *token;
 		if (sipe_media_is_conference_call(sipe_private->media_call)) {
 			availability = 7000;
-			token = "in-a-conference";
+			token = sipe_status_activity_to_token(SIPE_ACTIVITY_IN_CONF);
 		} else {
 			availability = 6500;
-			token = "on-the-phone";
+			token = sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE);
 		}
 
 		publications = g_strdup_printf(SIPE_PUB_XML_STATE_PHONE,
