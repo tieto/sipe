@@ -1815,6 +1815,7 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 	g_free(key_2);
 	g_free(key_3);
 
+#ifdef HAVE_VV
 	if (sipe_private->media_call) {
 		guint availability;
 		const gchar *token;
@@ -1831,7 +1832,9 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 				availability, token, availability,
 				instance, publication_3 ? publication_3->version : 0,
 				availability, token, availability);
-	} else {
+	} else
+#endif
+	{
 		publications = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_PHONE_CLEAR,
 				instance, publication_2 ? publication_2->version : 0,
 				instance, publication_3 ? publication_3->version : 0);
