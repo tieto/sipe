@@ -919,6 +919,18 @@ gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 				      const gchar *group_name);
 
 /**
+ * Called when a new internal group has been renamed
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param old_name old name of the group
+ * @param new_name new name of the group
+ * @return TRUE if the group was found and renamed
+ */
+gboolean sipe_backend_buddy_group_rename(struct sipe_core_public *sipe_public,
+					 const gchar *old_name,
+					 const gchar *new_name);
+
+/**
  * Present requested buddy information to the user
  */
 struct sipe_backend_buddy_info;

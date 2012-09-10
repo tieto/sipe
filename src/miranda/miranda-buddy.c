@@ -511,6 +511,14 @@ gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 	return (hGroup?TRUE:FALSE);
 }
 
+gboolean sipe_backend_buddy_group_rename(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					 SIPE_UNUSED_PARAMETER const gchar *old_name,
+					 SIPE_UNUSED_PARAMETER const gchar *new_name)
+{
+	/* @TODO */
+	return(FALSE);
+}
+
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 	return((struct sipe_backend_buddy_info *)g_hash_table_new_full(NULL,NULL,NULL,g_free));

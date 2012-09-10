@@ -1235,6 +1235,184 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 
 		/* Finished processing contact list */
 		sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
+
+	} else if (sipe_strequal(sipe_xml_name(isc), "contactDelta")) {
+
+		/* @TODO: Parse new groups
+		 *
+		 *  <addedGroup id="3" name="testnewgroup" externalURI=""  />
+		 */
+		for (group_node = sipe_xml_child(isc, "addedGroup"); group_node; group_node = sipe_xml_twin(group_node)) {
+			const char *name = sipe_xml_attribute(group_node, "name");
+			SIPE_DEBUG_INFO("Add new group '%s' - NOT IMPLEMENTED", name);
+		}
+
+		/* Parse modified groups */
+		for (group_node = sipe_xml_child(isc, "modifiedGroup"); group_node; group_node = sipe_xml_twin(group_node)) {
+			struct sipe_group *group = sipe_group_find_by_id(sipe_private,
+									 (int)g_ascii_strtod(sipe_xml_attribute(group_node, "id"),
+											     NULL));
+			if (group) {
+				const char *name = sipe_xml_attribute(group_node, "name");
+
+				if (g_str_has_prefix(name, "~")) {
+					name = _("Other Contacts");
+				}
+
+				if (!(is_empty(name) ||
+				      sipe_strequal(group->name, name)) &&
+				    sipe_group_rename(sipe_private,
+						      group,
+						      name))
+					SIPE_DEBUG_INFO("Replaced group %d name with %s", group->id, name);
+			}
+		}
+
+		/* @TODO: Parse deleted groups
+		 *
+		 *  <deletedGroup id="2"  />
+		 */
+		for (group_node = sipe_xml_child(isc, "deletedGroup"); group_node; group_node = sipe_xml_twin(group_node)) {
+			const char *id = sipe_xml_attribute(group_node, "id");
+			SIPE_DEBUG_INFO("Delete group ID %s - NOT IMPLEMENTED", id);
+		}
+
+		/* @TODO: Parse new buddies
+		 *
+		 * <addedContact uri="sip:test1user@domain.com" name="Test User" groups="1" subscribed="true" externalURI=""  />
+		 */
+		for (item = sipe_xml_child(isc, "addedContact"); item; item = sipe_xml_twin(item)) {
+			const gchar *uri = sipe_xml_attribute(item, "uri");
+			SIPE_DEBUG_INFO("Add new buddy %s - NOT IMPLEMENTED", uri);
+		}
+
+		/* Parse modified contacts */
+		for (item = sipe_xml_child(isc, "modifiedContact"); item; item = sipe_xml_twin(item)) {
+			const gchar *uri = sipe_xml_attribute(item, "uri");
+			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
+								       uri);
+
+			if (buddy) {
+				sipe_backend_buddy b = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+									       uri,
+									       NULL);
+
+				if (b) {
+					const gchar *name = sipe_xml_attribute(item, "name");
+					gchar *b_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,
+										      b);
+					gchar **item_groups;
+					int i = 0;
+					GSList *found = NULL;
+					GSList *entry;
+
+					/* new alias? */
+					if (!(is_empty(name) ||
+					      sipe_strequal(b_alias, name))) {
+						sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC,
+									     b,
+									     name);
+						SIPE_DEBUG_INFO("Replaced buddy %s alias with %s", b_alias, name);
+					}
+					g_free(b_alias);
+
+					item_groups = g_strsplit(sipe_xml_attribute(item,
+										    "groups"),
+								 " ", 0);
+					/* added to groups? */
+					if (item_groups) {
+						while (item_groups[i]) {
+							struct sipe_group *group = sipe_group_find_by_id(sipe_private,
+													 g_ascii_strtod(item_groups[i],
+															NULL));
+
+							/* ignore unkown groups */
+							if (group) {
+								sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+														  uri,
+														  group->name);
+
+								/* add group to found list */
+								found = g_slist_prepend(found, group);
+
+								/* buddy NOT in this group? */
+								if (!oldb) {
+									b_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,
+													       b);
+									SIPE_DEBUG_INFO("Adding buddy %s (alias %s) to new group %s", uri, b_alias, group->name);
+									sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
+											       uri,
+											       b_alias,
+											       group->name);
+									g_free(b_alias);
+
+									buddy->groups = slist_insert_unique_sorted(buddy->groups,
+														   group,
+														   (GCompareFunc) sipe_group_compare);
+								}
+							}
+
+							/* next group */
+							i++;
+						}
+						g_strfreev(item_groups);
+					}
+
+ 					/* removed from groups? */
+					entry = buddy->groups;
+					while (entry) {
+						GSList *remove_link = entry;
+						struct sipe_group *group = remove_link->data;
+
+						/* next buddy group */
+						entry = entry->next;
+
+						/* old group NOT found in new list? */
+						if (g_slist_find(found, group) == NULL) {
+							sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+													  uri,
+													  group->name);
+							SIPE_DEBUG_INFO("Removing buddy %s from group %s", uri, group->name);
+							/* this should never be NULL */
+							if (oldb)
+								sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+											  oldb);
+							buddy->groups = g_slist_remove_link(buddy->groups,
+											    remove_link);
+						}
+					}
+					g_slist_free(found);
+				}
+			}
+		}
+
+		/* Parse deleted contacts */
+		for (item = sipe_xml_child(isc, "deletedContact"); item; item = sipe_xml_twin(item)) {
+			const gchar *uri = sipe_xml_attribute(item, "uri");
+			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
+								       uri);
+
+			if (buddy) {
+				GSList *entry = buddy->groups;
+
+				SIPE_DEBUG_INFO("Removing buddy %s", uri);
+				while (entry) {
+					struct sipe_group *group = entry->data;
+					sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+											  uri,
+											  group->name);
+					/* this should never be NULL */
+					if (oldb)
+						sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+									  oldb);
+
+					/* next buddy group */
+					entry = entry->next;
+				}
+				sipe_buddy_remove(sipe_private, buddy);
+			}
+		}
+
 	}
 	sipe_xml_free(isc);
 

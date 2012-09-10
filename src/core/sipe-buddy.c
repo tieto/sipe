@@ -244,6 +244,18 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 			      group_name);
 }
 
+void sipe_buddy_remove(struct sipe_core_private *sipe_private,
+		       struct sipe_buddy *buddy)
+{
+	gchar *action_name = sipe_utils_presence_key(buddy->name);
+	sipe_schedule_cancel(sipe_private, action_name);
+	g_free(action_name);
+
+	g_hash_table_remove(sipe_private->buddies, buddy->name);
+
+	buddy_free(buddy);
+}
+
 /**
  * Unassociates buddy from group first.
  * Then see if no groups left, removes buddy completely.
@@ -270,22 +282,13 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 	}
 
 	if (g_slist_length(b->groups) < 1) {
-		gchar *action_name = sipe_utils_presence_key(uri);
-		sipe_schedule_cancel(sipe_private, action_name);
-		g_free(action_name);
-
-		g_hash_table_remove(sipe_private->buddies, uri);
-
-		if (b->name) {
-			gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
-							 b->name);
-			sip_soap_request(sipe_private,
-					 "deleteContact",
-					 request);
-			g_free(request);
-		}
-
-		buddy_free(b);
+		gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
+						 b->name);
+		sip_soap_request(sipe_private,
+				 "deleteContact",
+				 request);
+		g_free(request);
+		sipe_buddy_remove(sipe_private, b);
 	} else {
 		/* updates groups on server */
 		sipe_core_group_set_user(sipe_public, b->name);

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,6 +70,15 @@ struct sipe_buddy {
  */
 struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 				  const gchar *uri);
+
+/**
+ * Cancels buddy subscriptions and then deletes the buddy
+ *
+ * @param sipe_private SIPE core data
+ * @param buddy        @c sipe_buddy structure to remove
+ */
+void sipe_buddy_remove(struct sipe_core_private *sipe_private,
+		       struct sipe_buddy *buddy);
 
 /**
  * Free all buddy information

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -175,6 +175,20 @@ sipe_group_create(struct sipe_core_private *sipe_private,
 			    process_add_group_response,
 			    payload);
 	g_free(request);
+}
+
+gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
+			   struct sipe_group *group,
+			   const gchar *name)
+{
+	gboolean renamed = sipe_backend_buddy_group_rename(SIPE_CORE_PUBLIC,
+							   group->name,
+							   name);
+	if (renamed) {
+		g_free(group->name);
+		group->name = g_strdup(name);
+	}
+	return(renamed);
 }
 
 void
