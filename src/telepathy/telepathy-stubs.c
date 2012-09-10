@@ -52,8 +52,6 @@ void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public
 				   SIPE_UNUSED_PARAMETER sipe_backend_buddy buddy,
 				   SIPE_UNUSED_PARAMETER const sipe_buddy_info_fields key,
 				   SIPE_UNUSED_PARAMETER const gchar *val) {}
-guint sipe_backend_buddy_get_status(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				    SIPE_UNUSED_PARAMETER const gchar *uri) { return(SIPE_ACTIVITY_AVAILABLE); }
 void sipe_backend_buddy_set_server_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					 SIPE_UNUSED_PARAMETER const sipe_backend_buddy who,
 					 SIPE_UNUSED_PARAMETER const gchar *alias) {}
@@ -73,9 +71,6 @@ gboolean sipe_backend_buddy_is_blocked(SIPE_UNUSED_PARAMETER struct sipe_core_pu
 void sipe_backend_buddy_set_blocked_status(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					   SIPE_UNUSED_PARAMETER const gchar *who,
 					   SIPE_UNUSED_PARAMETER gboolean blocked) {}
-void sipe_backend_buddy_set_status(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				   SIPE_UNUSED_PARAMETER const gchar *who,
-				   SIPE_UNUSED_PARAMETER guint activity) {}
 void sipe_backend_buddy_set_photo(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				  SIPE_UNUSED_PARAMETER const gchar *who,
 				  SIPE_UNUSED_PARAMETER gpointer image_data,

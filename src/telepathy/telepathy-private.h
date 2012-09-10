@@ -58,6 +58,8 @@ const gchar *sipe_telepathy_buddy_get_alias(struct _SipeContactList *contact_lis
 void sipe_telepathy_buddy_set_alias(struct _SipeContactList *contact_list,
 				    const guint contact,
 				    const gchar *alias);
+guint sipe_telepathy_buddy_get_presence(struct _SipeContactList *contact_list,
+					guint contact);
 
 /* connection */
 struct _TpBaseConnection *sipe_telepathy_connection_new(struct _TpBaseProtocol *protocol,

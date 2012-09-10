@@ -83,6 +83,7 @@ static GHashTable *get_contact_statuses(GObject *object,
 					const GArray *contacts,
 					SIPE_UNUSED_PARAMETER GError **error)
 {
+	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(object);
 	TpBaseConnection *base = TP_BASE_CONNECTION(object);
 	GHashTable *status_table = g_hash_table_new(g_direct_hash,
 						    g_direct_equal);
@@ -96,11 +97,11 @@ static GHashTable *get_contact_statuses(GObject *object,
 		/* we get our own status from the connection, and everyone
 		 *  else's status from the contact lists */
 		if (contact == tp_base_connection_get_self_handle(base)) {
-			struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(object);
 			activity = telepathy_private->activity;
 		} else {
 			/* @TODO */
-			activity = SIPE_ACTIVITY_UNSET;
+			activity = sipe_telepathy_buddy_get_presence(telepathy_private->contact_list,
+								     contact);
 		}
 
 		parameters = g_hash_table_new_full(g_str_hash,

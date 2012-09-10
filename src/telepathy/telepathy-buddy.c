@@ -33,10 +33,12 @@
 
 struct telepathy_buddy {
 	const gchar *uri;   /* borrowed from contact_list->buddies key */
-	GHashTable *groups; /* keys are borrowed from contact_list->groups */
+	GHashTable *groups; /* key: group name, value: buddy_entry */
+                            /* keys are borrowed from contact_list->groups */
 	TpHandle handle;
 	/* @TODO: server vs. local alias - what do we need to support? */
 	gchar *alias;
+	guint activity;
 };
 
 struct telepathy_buddy_entry {
@@ -59,9 +61,9 @@ typedef struct _SipeContactList {
 	TpHandleRepoIface *contact_repo;
 	TpHandleSet *contacts;
 
-	GHashTable *buddies;
-	GHashTable *buddy_handles;
-	GHashTable *groups;
+	GHashTable *buddies;       /* key: SIP URI,    value: buddy */
+	GHashTable *buddy_handles; /* key: TpHandle,   value: buddy */
+	GHashTable *groups;        /* key: group name, value: buddy */
 
 	gboolean initial_received;
 } SipeContactList;
@@ -262,7 +264,7 @@ SipeContactList *sipe_telepathy_contact_list_new(TpBaseConnection *connection)
 
 /* get & set alias for a contact  */
 const gchar *sipe_telepathy_buddy_get_alias(SipeContactList *contact_list,
-					    const TpHandle contact)
+					    TpHandle contact)
 {
 	struct telepathy_buddy *buddy = g_hash_table_lookup(contact_list->buddy_handles,
 							    GUINT_TO_POINTER(contact));
@@ -280,13 +282,24 @@ static void update_alias(struct telepathy_buddy *buddy,
 	}
 }
 
-void sipe_telepathy_buddy_set_alias(struct _SipeContactList *contact_list,
+void sipe_telepathy_buddy_set_alias(SipeContactList *contact_list,
 				    const guint contact,
 				    const gchar *alias)
 {
 	struct telepathy_buddy *buddy = g_hash_table_lookup(contact_list->buddy_handles,
 							    GUINT_TO_POINTER(contact));
 	update_alias(buddy, alias);
+}
+
+/* get presence status for a contact */
+guint sipe_telepathy_buddy_get_presence(SipeContactList *contact_list,
+					const TpHandle contact)
+{
+	struct telepathy_buddy *buddy = g_hash_table_lookup(contact_list->buddy_handles,
+							    GUINT_TO_POINTER(contact));
+	if (!buddy)
+		return(SIPE_ACTIVITY_UNSET);
+	return(buddy->activity);
 }
 
 /*
@@ -375,6 +388,18 @@ gchar *sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_
 	return(g_strdup(((struct telepathy_buddy_entry *) who)->group));
 }
 
+guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
+				    const gchar *uri)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	struct telepathy_buddy *buddy                  = g_hash_table_lookup(telepathy_private->contact_list->buddies,
+									     uri);
+
+	if (!buddy)
+		return(SIPE_ACTIVITY_UNSET);
+	return(buddy->activity);
+}
+
 void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				  const sipe_backend_buddy who,
 				  const gchar *alias)
@@ -423,13 +448,14 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 		return(NULL);
 
 	if (!buddy) {
-		buddy         = g_new0(struct telepathy_buddy, 1);
-		buddy->uri    = g_strdup(name); /* reused as key */
-		buddy->groups = g_hash_table_new_full(g_str_hash, g_str_equal,
-						      NULL, g_free);
-		buddy->alias  = g_strdup(alias);
-		buddy->handle = tp_handle_ensure(contact_list->contact_repo,
-						 buddy->uri, NULL, NULL);
+		buddy           = g_new0(struct telepathy_buddy, 1);
+		buddy->uri      = g_strdup(name); /* reused as key */
+		buddy->groups   = g_hash_table_new_full(g_str_hash, g_str_equal,
+							NULL, g_free);
+		buddy->alias    = g_strdup(alias);
+		buddy->activity = SIPE_ACTIVITY_OFFLINE;
+		buddy->handle   = tp_handle_ensure(contact_list->contact_repo,
+						   buddy->uri, NULL, NULL);
 		tp_handle_set_add(contact_list->contacts, buddy->handle);
 		g_hash_table_insert(contact_list->buddies,
 				    (gchar *) buddy->uri, /* owned by hash table */
@@ -482,6 +508,29 @@ void sipe_backend_buddy_remove(struct sipe_core_public *sipe_public,
 	if (contact_list->initial_received) {
 		/* @TODO: emit signal? */
 	}
+}
+
+void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
+				   const gchar *uri,
+				   guint activity)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	SipeContactList *contact_list                  = telepathy_private->contact_list;
+	struct telepathy_buddy *buddy                  = g_hash_table_lookup(contact_list->buddies,
+									     uri);
+	TpPresenceStatus *status;
+
+	if (!buddy)
+		return;
+	buddy->activity = activity;
+
+	SIPE_DEBUG_INFO("sipe_backend_buddy_set_status: %s to %d", uri, activity);
+
+	/* emit status update signal */
+	status = tp_presence_status_new(activity, NULL);
+	tp_presence_mixin_emit_one_presence_update(G_OBJECT(telepathy_private->connection),
+						   buddy->handle, status);
+	tp_presence_status_free(status);
 }
 
 gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
