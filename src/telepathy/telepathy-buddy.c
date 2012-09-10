@@ -36,8 +36,7 @@ struct telepathy_buddy {
 	GHashTable *groups; /* key: group name, value: buddy_entry */
                             /* keys are borrowed from contact_list->groups */
 	TpHandle handle;
-	/* @TODO: server vs. local alias - what do we need to support? */
-	gchar *alias;
+	gchar *alias;       /* value stored on the server */
 	guint activity;
 };
 
@@ -389,6 +388,20 @@ gchar *sipe_backend_buddy_get_alias(SIPE_UNUSED_PARAMETER struct sipe_core_publi
 	return(g_strdup(((struct telepathy_buddy_entry *) who)->buddy->alias));
 }
 
+gchar *sipe_backend_buddy_get_server_alias(struct sipe_core_public *sipe_public,
+					   const sipe_backend_buddy who)
+{
+	/* server alias is the same as alias */
+	return(sipe_backend_buddy_get_alias(sipe_public, who));
+}
+
+gchar *sipe_backend_buddy_get_local_alias(struct sipe_core_public *sipe_public,
+					  const sipe_backend_buddy who)
+{
+	/* server alias is the same as alias */
+	return(sipe_backend_buddy_get_alias(sipe_public, who));
+}
+
 gchar *sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					 const sipe_backend_buddy who)
 {
@@ -411,10 +424,22 @@ void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public 
 				  const sipe_backend_buddy who,
 				  const gchar *alias)
 {
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	SipeContactList *contact_list                  = telepathy_private->contact_list;
 	struct telepathy_buddy_entry *buddy_entry      = who;
+
 	update_alias(buddy_entry->buddy, alias);
 
-	/* @TODO: emit signal? */
+	if (contact_list->initial_received) {
+		/* @TODO: emit signal? */
+	}
+}
+
+void sipe_backend_buddy_set_server_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					 SIPE_UNUSED_PARAMETER const sipe_backend_buddy who,
+					 SIPE_UNUSED_PARAMETER const gchar *alias)
+{
+	/* server alias is the same as alias. Ignore this */
 }
 
 void sipe_backend_buddy_list_processing_finish(struct sipe_core_public *sipe_public)
