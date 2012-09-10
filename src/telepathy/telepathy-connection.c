@@ -665,6 +665,28 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 	return(TP_BASE_CONNECTION(conn));
 }
 
+void sipe_telepathy_connection_alias_updated(TpBaseConnection *connection,
+					     guint contact,
+					     const gchar *alias)
+{
+	GPtrArray *aliases = g_ptr_array_sized_new(1);
+	GValueArray *pair  = g_value_array_new(2);
+
+	g_value_array_append(pair, NULL);
+	g_value_array_append(pair, NULL);
+	g_value_init(pair->values + 0, G_TYPE_UINT);
+	g_value_init(pair->values + 1, G_TYPE_STRING);
+	g_value_set_uint(pair->values + 0, contact);
+	g_value_set_string(pair->values + 1, alias);
+	g_ptr_array_add(aliases, pair);
+
+	tp_svc_connection_interface_aliasing_emit_aliases_changed(SIPE_CONNECTION(connection),
+								  aliases);
+
+	g_ptr_array_unref(aliases);
+	g_value_array_free(pair);
+}
+
 struct sipe_backend_private *sipe_telepathy_connection_private(GObject *object)
 {
 	SipeConnection *self = SIPE_CONNECTION(object);

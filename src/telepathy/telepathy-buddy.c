@@ -420,18 +420,23 @@ guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
 	return(buddy->activity);
 }
 
-void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
 				  const sipe_backend_buddy who,
 				  const gchar *alias)
 {
 	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
 	SipeContactList *contact_list                  = telepathy_private->contact_list;
 	struct telepathy_buddy_entry *buddy_entry      = who;
+	struct telepathy_buddy *buddy                  = buddy_entry->buddy;
 
-	update_alias(buddy_entry->buddy, alias);
+	update_alias(buddy, alias);
 
 	if (contact_list->initial_received) {
-		/* @TODO: emit signal? */
+		SIPE_DEBUG_INFO("sipe_backend_buddy_set_alias: %s changed to '%s'",
+				buddy->uri, alias);
+		sipe_telepathy_connection_alias_updated(contact_list->connection,
+						        buddy->handle,
+							alias);
 	}
 }
 

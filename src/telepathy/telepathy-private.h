@@ -65,6 +65,9 @@ guint sipe_telepathy_buddy_get_presence(struct _SipeContactList *contact_list,
 struct _TpBaseConnection *sipe_telepathy_connection_new(struct _TpBaseProtocol *protocol,
 							GHashTable *params,
 							GError **error);
+void sipe_telepathy_connection_alias_updated(struct _TpBaseConnection *connection,
+					     guint contact,
+					     const gchar *alias);
 struct sipe_backend_private *sipe_telepathy_connection_private(GObject *object);
 
 /* debugging */
