@@ -289,6 +289,13 @@ void sipe_telepathy_buddy_set_alias(SipeContactList *contact_list,
 	struct telepathy_buddy *buddy = g_hash_table_lookup(contact_list->buddy_handles,
 							    GUINT_TO_POINTER(contact));
 	update_alias(buddy, alias);
+
+	/* tell core about the alias change */
+	if (buddy) {
+		struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(G_OBJECT(contact_list->connection));
+		sipe_core_group_set_user(telepathy_private->public,
+					 buddy->uri);
+	}
 }
 
 /* get presence status for a contact */
