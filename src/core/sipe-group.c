@@ -93,9 +93,8 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 			buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
 			if (buddy) {
 				buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
+				sipe_group_update_buddy(sipe_private, buddy);
 			}
-
-			sipe_core_group_set_user(SIPE_CORE_PUBLIC, ctx->user_name);
 		}
 
 		sipe_xml_free(xml);
@@ -305,37 +304,60 @@ static gchar *sipe_get_buddy_groups_string(struct sipe_buddy *buddy)
 /**
  * Sends buddy update to server
  */
-void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
-			      const gchar *who)
+static void send_buddy_update(struct sipe_core_private *sipe_private,
+			      struct sipe_buddy *buddy,
+			      const gchar *alias)
 {
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, who);
-	sipe_backend_buddy backend_buddy = sipe_backend_buddy_find(sipe_public, who, NULL);
+	gchar *groups = sipe_get_buddy_groups_string(buddy);
 
-	if (buddy && backend_buddy) {
-		gchar *groups = sipe_get_buddy_groups_string(buddy);
+	if (groups) {
+		gchar *request;
+		SIPE_DEBUG_INFO("Saving buddy %s with alias '%s' and groups '%s'",
+				buddy->name, alias, groups);
 
-		if (groups) {
-			gchar *alias = sipe_backend_buddy_get_alias(sipe_public, backend_buddy);
-			gchar *request;
-			SIPE_DEBUG_INFO("Saving buddy %s with alias %s and groups %s", who, alias, groups);
+		/* alias can contain restricted characters */
+		request = g_markup_printf_escaped("<m:displayName>%s</m:displayName>"
+						  "<m:groups>%s</m:groups>"
+						  "<m:subscribed>true</m:subscribed>"
+						  "<m:URI>%s</m:URI>"
+						  "<m:externalURI />",
+						  alias, groups, buddy->name);
+		g_free(groups);
 
-			/* alias can contain restricted characters */
-			request = g_markup_printf_escaped("<m:displayName>%s</m:displayName>"
-							  "<m:groups>%s</m:groups>"
-							  "<m:subscribed>true</m:subscribed>"
-							  "<m:URI>%s</m:URI>"
-							  "<m:externalURI />",
-							  alias, groups, buddy->name);
+		sip_soap_request(sipe_private,
+				 "setContact",
+				 request);
+		g_free(request);
+	}
+}
+
+/* indicates that buddy information on the server needs updating */
+void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
+			     struct sipe_buddy *buddy)
+{
+	if (buddy) {
+		sipe_backend_buddy backend_buddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+									   buddy->name,
+									   NULL);
+		if (backend_buddy) {
+			gchar *alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,
+								    backend_buddy);
+			send_buddy_update(sipe_private, buddy, alias);
 			g_free(alias);
-			g_free(groups);
-
-			sip_soap_request(sipe_private,
-					 "setContact",
-					 request);
-			g_free(request);
 		}
 	}
+}
+
+void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
+			       const gchar *who,
+			       const gchar *alias)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
+						       who);
+
+	if (buddy)
+		send_buddy_update(sipe_private, buddy, alias);
 }
 
 /*

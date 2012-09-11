@@ -50,3 +50,7 @@ void sipe_group_free(struct sipe_core_private *sipe_private,
 /* remove group from core & backend */
 void sipe_group_remove(struct sipe_core_private *sipe_private,
 		       struct sipe_group *group);
+
+/* update alias/group list for a buddy on the server */
+void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
+			     struct sipe_buddy *buddy);

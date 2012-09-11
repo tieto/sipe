@@ -263,8 +263,9 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
 				  const gchar *who,
 				  gboolean allow);
-void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
-			      const gchar * who);
+void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
+			       const gchar *who,
+			       const gchar *alias);
 
 /**
  * Setup core data

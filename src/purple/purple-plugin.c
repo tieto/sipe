@@ -429,9 +429,9 @@ static void sipe_purple_keep_alive(PurpleConnection *gc)
 }
 
 static void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
-				    SIPE_UNUSED_PARAMETER const char *alias)
+				    const char *alias)
 {
-	sipe_core_group_set_user(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name);
+	sipe_core_group_set_alias(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, alias);
 }
 
 static void sipe_purple_group_rename(PurpleConnection *gc,

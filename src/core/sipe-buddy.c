@@ -216,7 +216,7 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 		sipe_group_create(SIPE_CORE_PRIVATE, new_group_name, who);
 	} else {
 		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
-		sipe_core_group_set_user(sipe_public, who);
+		sipe_group_update_buddy(SIPE_CORE_PRIVATE, buddy);
 	}
 }
 
@@ -291,7 +291,7 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 		sipe_buddy_remove(sipe_private, b);
 	} else {
 		/* updates groups on server */
-		sipe_core_group_set_user(sipe_public, b->name);
+		sipe_group_update_buddy(sipe_private, b);
 	}
 
 }

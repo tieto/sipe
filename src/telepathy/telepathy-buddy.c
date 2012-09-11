@@ -292,8 +292,9 @@ void sipe_telepathy_buddy_set_alias(SipeContactList *contact_list,
 	/* tell core about the alias change */
 	if (buddy) {
 		struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(G_OBJECT(contact_list->connection));
-		sipe_core_group_set_user(telepathy_private->public,
-					 buddy->uri);
+		sipe_core_group_set_alias(telepathy_private->public,
+					  buddy->uri,
+					  alias);
 	}
 }
 
