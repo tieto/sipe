@@ -417,15 +417,10 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_subscriptions_destroy(sipe_private);
 
 	if (sipe_private->groups) {
-		GSList *entry = sipe_private->groups;
-		while (entry) {
-			struct sipe_group *group = entry->data;
-			g_free(group->name);
-			g_free(group);
-			entry = entry->next;
-		}
+		GSList *entry;
+		while ((entry = sipe_private->groups) != NULL)
+			sipe_group_free(sipe_private, entry->data);
 	}
-	g_slist_free(sipe_private->groups);
 
 	if (sipe_private->our_publication_keys) {
 		GSList *entry = sipe_private->our_publication_keys;

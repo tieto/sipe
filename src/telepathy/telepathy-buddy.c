@@ -589,6 +589,18 @@ gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 	return(group != NULL);
 }
 
+void sipe_backend_buddy_group_remove(struct sipe_core_public *sipe_public,
+				     const gchar *group_name)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	SipeContactList *contact_list                  = telepathy_private->contact_list;
+
+	g_hash_table_remove(contact_list->groups, group_name);
+
+	if (contact_list->initial_received) {
+		/* @TODO: emit signal? */
+	}
+}
 
 /*
   Local Variables:

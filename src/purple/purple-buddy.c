@@ -342,6 +342,14 @@ gboolean sipe_backend_buddy_group_rename(SIPE_UNUSED_PARAMETER struct sipe_core_
 	return(purple_group != NULL);
 }
 
+void sipe_backend_buddy_group_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				     const gchar *group_name)
+{
+	PurpleGroup *purple_group = purple_find_group(group_name);
+	if (purple_group)
+		purple_blist_remove_group(purple_group);
+}
+
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 	return((struct sipe_backend_buddy_info *)purple_notify_user_info_new());

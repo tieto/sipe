@@ -912,7 +912,7 @@ const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_pub
  * the group will not be added.
  *
  * @param sipe_public The handle representing the protocol instance making the call
- * @param group The group being added
+ * @param group_name  The group being added
  * @return TRUE if everything is ok, FALSE if the group should not be added
  */
 gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
@@ -929,6 +929,17 @@ gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 gboolean sipe_backend_buddy_group_rename(struct sipe_core_public *sipe_public,
 					 const gchar *old_name,
 					 const gchar *new_name);
+
+/**
+ * Called when a new internal group should be deleted
+ *
+ * NOTE: this will only be called on empty groups.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param group_name  The group that should be removed
+ */
+void sipe_backend_buddy_group_remove(struct sipe_core_public *sipe_public,
+				     const gchar *group_name);
 
 /**
  * Present requested buddy information to the user

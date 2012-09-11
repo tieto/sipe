@@ -43,4 +43,10 @@ gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
 void sipe_group_add(struct sipe_core_private *sipe_private,
 		    struct sipe_group * group);
 
+/* remove group from core and free the data structure */
+void sipe_group_free(struct sipe_core_private *sipe_private,
+		     struct sipe_group *group);
 
+/* remove group from core & backend */
+void sipe_group_remove(struct sipe_core_private *sipe_private,
+		       struct sipe_group *group);

@@ -1269,15 +1269,6 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 			}
 		}
 
-		/* @TODO: Process deleted groups
-		 *
-		 *  <deletedGroup id="2"  />
-		 */
-		for (group_node = sipe_xml_child(isc, "deletedGroup"); group_node; group_node = sipe_xml_twin(group_node)) {
-			const gchar *id = sipe_xml_attribute(group_node, "id");
-			SIPE_DEBUG_INFO("Delete group ID %s - NOT IMPLEMENTED", id);
-		}
-
 		/* @TODO: Process new buddies
 		 *
 		 * <addedContact uri="sip:test1user@domain.com" name="Test User" groups="1" subscribed="true" externalURI=""  />
@@ -1408,6 +1399,24 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 				sipe_buddy_remove(sipe_private, buddy);
 			}
 		}
+
+		/* Process deleted groups
+		 *
+		 * NOTE: all buddies will already have been removed from the
+		 *       group prior to this. The log shows that OCS actually
+		 *       sends two separate updates when you delete a group:
+		 *
+		 *         - first one with "modifiedContact" removing buddies
+		 *           from the group, leaving it empty, and
+		 *
+		 *         - then one with "deletedGroup" removing the group
+		 */
+		for (group_node = sipe_xml_child(isc, "deletedGroup"); group_node; group_node = sipe_xml_twin(group_node))
+			sipe_group_remove(sipe_private,
+					  sipe_group_find_by_id(sipe_private,
+								(int)g_ascii_strtod(sipe_xml_attribute(group_node, "id"),
+										    NULL)));
+
 	}
 	sipe_xml_free(isc);
 

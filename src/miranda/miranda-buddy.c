@@ -519,6 +519,12 @@ gboolean sipe_backend_buddy_group_rename(SIPE_UNUSED_PARAMETER struct sipe_core_
 	return(FALSE);
 }
 
+void sipe_backend_buddy_group_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				     SIPE_UNUSED_PARAMETER const gchar *group_name)
+{
+	/* @TODO */
+}
+
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 	return((struct sipe_backend_buddy_info *)g_hash_table_new_full(NULL,NULL,NULL,g_free));
