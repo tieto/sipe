@@ -1102,6 +1102,24 @@ static void sipe_buddy_subscribe_cb(char *buddy_name,
 	}
 }
 
+/* Replace "~" with localized version of "Other Contacts" */
+static const gchar *get_group_name(const sipe_xml *node)
+{
+	const gchar *name = sipe_xml_attribute(node, "name");
+	return(g_str_has_prefix(name, "~") ? _("Other Contacts") : name);
+}
+
+static void add_new_group(struct sipe_core_private *sipe_private,
+			  const sipe_xml *node)
+{
+	struct sipe_group *group = g_new0(struct sipe_group, 1);
+
+	group->name = g_strdup(get_group_name(node));
+	group->id = (int)g_ascii_strtod(sipe_xml_attribute(node, "id"), NULL);
+
+	sipe_group_add(sipe_private, group);
+}
+
 static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_private,
 					      struct sipmsg *msg)
 {
@@ -1136,20 +1154,10 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
 
 		/* Parse groups */
-		for (group_node = sipe_xml_child(isc, "group"); group_node; group_node = sipe_xml_twin(group_node)) {
-			struct sipe_group * group = g_new0(struct sipe_group, 1);
-			const char *name = sipe_xml_attribute(group_node, "name");
+		for (group_node = sipe_xml_child(isc, "group"); group_node; group_node = sipe_xml_twin(group_node))
+			add_new_group(sipe_private, group_node);
 
-			if (g_str_has_prefix(name, "~")) {
-				name = _("Other Contacts");
-			}
-			group->name = g_strdup(name);
-			group->id = (int)g_ascii_strtod(sipe_xml_attribute(group_node, "id"), NULL);
-
-			sipe_group_add(sipe_private, group);
-		}
-
-		// Make sure we have at least one group
+		/* Make sure we have at least one group */
 		if (g_slist_length(sipe_private->groups) == 0) {
 			sipe_group_create(sipe_private, _("Other Contacts"), NULL);
 		}
@@ -1240,14 +1248,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	/* Process buddy list updates */
 	} else if (sipe_strequal(sipe_xml_name(isc), "contactDelta")) {
 
-		/* @TODO: Process new groups
-		 *
-		 *  <addedGroup id="3" name="testnewgroup" externalURI=""  />
-		 */
-		for (group_node = sipe_xml_child(isc, "addedGroup"); group_node; group_node = sipe_xml_twin(group_node)) {
-			const char *name = sipe_xml_attribute(group_node, "name");
-			SIPE_DEBUG_INFO("Add new group '%s' - NOT IMPLEMENTED", name);
-		}
+		/* Process new groups */
+		for (group_node = sipe_xml_child(isc, "addedGroup"); group_node; group_node = sipe_xml_twin(group_node))
+			add_new_group(sipe_private, group_node);
 
 		/* Process modified groups */
 		for (group_node = sipe_xml_child(isc, "modifiedGroup"); group_node; group_node = sipe_xml_twin(group_node)) {
@@ -1255,11 +1258,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 									 (int)g_ascii_strtod(sipe_xml_attribute(group_node, "id"),
 											     NULL));
 			if (group) {
-				const char *name = sipe_xml_attribute(group_node, "name");
-
-				if (g_str_has_prefix(name, "~")) {
-					name = _("Other Contacts");
-				}
+				const gchar *name = get_group_name(group_node);
 
 				if (!(is_empty(name) ||
 				      sipe_strequal(group->name, name)) &&
@@ -1275,7 +1274,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		 *  <deletedGroup id="2"  />
 		 */
 		for (group_node = sipe_xml_child(isc, "deletedGroup"); group_node; group_node = sipe_xml_twin(group_node)) {
-			const char *id = sipe_xml_attribute(group_node, "id");
+			const gchar *id = sipe_xml_attribute(group_node, "id");
 			SIPE_DEBUG_INFO("Delete group ID %s - NOT IMPLEMENTED", id);
 		}
 
