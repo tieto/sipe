@@ -411,6 +411,13 @@ AS_IF([test "x$with_purple_vv" != xno],
 	[AC_DEFINE(HAVE_VV, 1, [Define if voice & video is enabled.])])
 AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_purple_vv" != xno])
 
+dnl these code parts rely on interfaces that require GValueArray. This
+dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
+dnl is no backward compatible replacement implementation possible
+AS_IF([test "x$with_purple_vv" != xno -o "x$enable_telepathy" != xno],
+	[AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_28,
+                   [We need GValueArray for which no replacement is available])])
+
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
 LOCALE_CPPFLAGS='-DLOCALEDIR=\"$(datadir)/locale\"'

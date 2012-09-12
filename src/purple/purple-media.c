@@ -46,16 +46,11 @@
 #include "purple-private.h"
 
 /*
- * GValueArray has been marked deprecated in glib 2.32 but it is still used by
- * libpurple and libfarsight APIs. Therefore we need to disable the deprecated
- * warning so that the code still compiles for platforms that enable it.
- *
  * GStreamer interfaces fail to compile on ARM architecture with -Wcast-align
  *
  * Diagnostic #pragma was added in GCC 4.2.0
  */
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__)
 #pragma GCC diagnostic ignored "-Wcast-align"
 #endif
