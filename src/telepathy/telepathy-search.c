@@ -405,14 +405,10 @@ static void search_channel_state(SipeSearchChannel *self,
 				 TpChannelContactSearchState new_state,
 				 const gchar *msg)
 {
-	GHashTable *details = g_hash_table_new(g_str_hash, g_str_equal);
+	GHashTable *details = tp_asv_new(NULL, NULL);
 
-	if (msg) {
-		  GValue v = { 0, };
-		  g_value_init(&v, G_TYPE_STRING);
-		  g_value_set_static_string(&v, msg);
-		  g_hash_table_insert (details, "debug-message", &v);
-	}
+	if (msg)
+		tp_asv_set_string(details, "debug-message", msg);
 	tp_svc_channel_type_contact_search_emit_search_state_changed(self,
 								     new_state,
 								     msg ? msg : "",
