@@ -288,7 +288,9 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 
 	session = sipe_session_find_call(sipe_private, call_private->with);
 	dialog = session->dialogs->data;
-	add_2007_fallback = dialog->cseq == 0 && call_private->ice_version == SIPE_ICE_RFC_5245;
+	add_2007_fallback = dialog->cseq == 0 &&
+		call_private->ice_version == SIPE_ICE_RFC_5245 &&
+		!sipe_strequal(call_private->with, sipe_private->test_call_bot_uri);
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
