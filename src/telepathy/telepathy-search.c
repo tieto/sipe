@@ -105,7 +105,7 @@ G_DEFINE_TYPE_WITH_CODE(SipeSearchManager,
 /*
  * Search Manager class - type definition
  */
-static void contact_search_iface_init (gpointer, gpointer);
+static void contact_search_iface_init(gpointer, gpointer);
 G_DEFINE_TYPE_WITH_CODE(SipeSearchChannel,
 			sipe_search_channel,
 			TP_TYPE_BASE_CHANNEL,
@@ -245,12 +245,14 @@ static void channel_manager_iface_init(gpointer g_iface,
 {
 	TpChannelManagerIface *iface = g_iface;
 
-	iface->foreach_channel            = foreach_channel;
-	iface->type_foreach_channel_class = type_foreach_channel_class;
-	iface->create_channel             = create_channel;
-	iface->request_channel            = create_channel;
+#define IMPLEMENT(x, y) iface->x = y
+	IMPLEMENT(foreach_channel,            foreach_channel);
+	IMPLEMENT(type_foreach_channel_class, type_foreach_channel_class);
+	IMPLEMENT(create_channel,             create_channel);
+	IMPLEMENT(request_channel,            create_channel);
 	/* Ensuring these channels doesn't really make much sense. */
-	iface->ensure_channel             = NULL;
+	IMPLEMENT(ensure_channel,             NULL);
+#undef IMPLEMENT
 }
 
 /* create new search manager object */
@@ -512,8 +514,11 @@ static void contact_search_iface_init(gpointer g_iface,
 {
 	TpSvcChannelTypeContactSearchClass *klass = g_iface;
 
-	tp_svc_channel_type_contact_search_implement_search(klass, search_channel_search);
+#define IMPLEMENT(x) tp_svc_channel_type_contact_search_implement_##x( \
+		klass, search_channel_##x)
+	IMPLEMENT(search);
 	/* we don't support stopping a search */
+#undef IMPLEMENT
 }
 
 /* create new search channel object */

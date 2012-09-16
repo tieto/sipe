@@ -47,6 +47,7 @@ G_BEGIN_DECLS
  */
 typedef struct _SipeConnectionClass {
 	TpBaseConnectionClass parent_class;
+	TpDBusPropertiesMixinClass properties_class;
 	TpContactsMixinClass contacts_mixin;
 	TpPresenceMixinClass presence_mixin;
 } SipeConnectionClass;
@@ -70,6 +71,8 @@ typedef struct _SipeConnection {
 	gchar *user_agent;
 	gchar *authentication;
 	gboolean is_disconnecting;
+
+	GPtrArray *contact_info_fields;
 } SipeConnection;
 
 #define SIPE_PUBLIC_TO_CONNECTION sipe_public->backend_private->connection
@@ -98,12 +101,16 @@ G_DEFINE_TYPE_WITH_CODE(SipeConnection,
 					      tp_contacts_mixin_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS,
 					      tp_base_contact_list_mixin_groups_iface_init);
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_INFO,
+					      sipe_telepathy_contact_info_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_LIST,
 					      tp_base_contact_list_mixin_list_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_PRESENCE,
 					      tp_presence_mixin_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_SIMPLE_PRESENCE,
-					      tp_presence_mixin_simple_presence_iface_init)
+					      tp_presence_mixin_simple_presence_iface_init);
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_DBUS_PROPERTIES,
+					      tp_dbus_properties_mixin_iface_init);
 )
 
 
@@ -361,8 +368,25 @@ static void aliasing_fill_contact_attributes(GObject *object,
 	}
 }
 
+static void contact_info_properties_getter(GObject *object,
+					   SIPE_UNUSED_PARAMETER GQuark interface,
+					   GQuark name,
+					   GValue *value,
+					   gpointer getter_data)
+{
+	GQuark fields = g_quark_from_static_string("SupportedFields");
+
+	if (name == fields)
+		g_value_set_boxed(value,
+				  SIPE_CONNECTION(object)->contact_info_fields);
+	else
+		g_value_set_uint(value,
+				 GPOINTER_TO_UINT(getter_data));
+}
+
 static void sipe_connection_constructed(GObject *object)
 {
+	SipeConnection *self   = SIPE_CONNECTION(object);
 	TpBaseConnection *base = TP_BASE_CONNECTION(object);
 	void (*chain_up)(GObject *) = G_OBJECT_CLASS(sipe_connection_parent_class)->constructed;
 
@@ -383,6 +407,8 @@ static void sipe_connection_constructed(GObject *object)
 			       G_STRUCT_OFFSET(SipeConnection,
 					       presence_mixin));
 	tp_presence_mixin_simple_presence_register_with_contacts_mixin(object);
+
+	self->contact_info_fields = sipe_telepathy_contact_info_fields();
 }
 
 static void sipe_connection_finalize(GObject *object)
@@ -392,6 +418,8 @@ static void sipe_connection_finalize(GObject *object)
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::finalize");
 
 	tp_contacts_mixin_finalize(object);
+	tp_presence_mixin_finalize(object);
+	g_boxed_free(TP_ARRAY_TYPE_FIELD_SPECS, self->contact_info_fields);
 
 	g_free(self->authentication);
 	g_free(self->user_agent);
@@ -411,6 +439,7 @@ static const gchar *interfaces_always_present[] = {
 	/* @TODO */
 	TP_IFACE_CONNECTION_INTERFACE_ALIASING,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
+	TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACTS,
 	TP_IFACE_CONNECTION_INTERFACE_PRESENCE,
@@ -423,6 +452,17 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS(klass);
 	TpBaseConnectionClass *base_class = TP_BASE_CONNECTION_CLASS(klass);
+	static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+		{
+			/* 0 */
+			.name   = TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
+			.getter = contact_info_properties_getter,
+			.setter = NULL,
+		},
+	};
+
+	/* initalize non-constant fields */
+	prop_interfaces[0].props = sipe_telepathy_contact_info_props();
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::class_init");
 
@@ -436,6 +476,10 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 
 	base_class->interfaces_always_present = interfaces_always_present;
 
+	klass->properties_class.interfaces = prop_interfaces;
+	tp_dbus_properties_mixin_class_init(object_class,
+					    G_STRUCT_OFFSET(SipeConnectionClass,
+							    properties_class));
 	tp_contacts_mixin_class_init(object_class,
 				     G_STRUCT_OFFSET(SipeConnectionClass,
 						     contacts_mixin));

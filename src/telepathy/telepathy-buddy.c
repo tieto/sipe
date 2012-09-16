@@ -248,9 +248,11 @@ static GStrv dup_contact_groups(TpBaseContactList *contact_list,
 
 static void contact_group_list_iface_init(TpContactGroupListInterface *iface)
 {
-	iface->dup_groups         = dup_groups;
-	iface->dup_group_members  = dup_group_members;
-	iface->dup_contact_groups = dup_contact_groups;
+#define IMPLEMENT(x) iface->x = x
+	IMPLEMENT(dup_groups);
+	IMPLEMENT(dup_group_members);
+	IMPLEMENT(dup_contact_groups);
+#undef IMPLEMENT
 }
 
 /* create new contact list object */
@@ -307,6 +309,138 @@ guint sipe_telepathy_buddy_get_presence(SipeContactList *contact_list,
 	if (!buddy)
 		return(SIPE_ACTIVITY_UNSET);
 	return(buddy->activity);
+}
+
+static void get_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
+			     SIPE_UNUSED_PARAMETER const GArray *contacts,
+			     DBusGMethodInvocation *context)
+{
+	TpBaseConnection *base = TP_BASE_CONNECTION(iface);
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::get_contact_info called");
+}
+
+static void refresh_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
+				 SIPE_UNUSED_PARAMETER const GArray *contacts,
+				 DBusGMethodInvocation *context)
+{
+	TpBaseConnection *base = TP_BASE_CONNECTION(iface);
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::refresh_contact_info called");
+}
+
+static void request_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
+				 SIPE_UNUSED_PARAMETER guint contact,
+				 DBusGMethodInvocation *context)
+{
+	TpBaseConnection *base = TP_BASE_CONNECTION(iface);
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::request_contact_info called");
+}
+
+static void set_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
+			     SIPE_UNUSED_PARAMETER const GPtrArray *contact_info,
+			     DBusGMethodInvocation *context)
+{
+	TpBaseConnection *base = TP_BASE_CONNECTION(iface);
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::set_contact_info called");
+}
+
+void sipe_telepathy_contact_info_iface_init(gpointer g_iface,
+					    SIPE_UNUSED_PARAMETER gpointer iface_data)
+{
+	TpSvcConnectionInterfaceContactInfoClass *klass = g_iface;
+
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_info_implement_##x( \
+		klass, x)
+	IMPLEMENT(get_contact_info);
+	IMPLEMENT(refresh_contact_info);
+	IMPLEMENT(request_contact_info);
+	IMPLEMENT(set_contact_info);
+#undef IMPLEMENT
+}
+
+static const gchar *const sipe_to_vcard_field[SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY + 1] = {
+/* SIPE_BUDDY_INFO_DISPLAY_NAME          */ "fn",
+/* SIPE_BUDDY_INFO_JOB_TITLE             */ "title",
+/* SIPE_BUDDY_INFO_CITY                  */ NULL,
+/* SIPE_BUDDY_INFO_STATE                 */ NULL,
+/* SIPE_BUDDY_INFO_OFFICE                */ NULL,
+/* SIPE_BUDDY_INFO_DEPARTMENT            */ NULL,
+/* SIPE_BUDDY_INFO_COUNTRY               */ NULL,
+/* SIPE_BUDDY_INFO_WORK_PHONE            */ "tel",
+/* SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY    */ NULL,
+/* SIPE_BUDDY_INFO_COMPANY               */ "org",
+/* SIPE_BUDDY_INFO_EMAIL                 */ "email",
+/* SIPE_BUDDY_INFO_SITE                  */ NULL,
+/* SIPE_BUDDY_INFO_ZIPCODE               */ NULL,
+/* SIPE_BUDDY_INFO_STREET                */ NULL,
+/* SIPE_BUDDY_INFO_MOBILE_PHONE          */ NULL,
+/* SIPE_BUDDY_INFO_MOBILE_PHONE_DISPLAY  */ NULL,
+/* SIPE_BUDDY_INFO_HOME_PHONE            */ NULL,
+/* SIPE_BUDDY_INFO_HOME_PHONE_DISPLAY    */ NULL,
+/* SIPE_BUDDY_INFO_OTHER_PHONE           */ NULL,
+/* SIPE_BUDDY_INFO_OTHER_PHONE_DISPLAY   */ NULL,
+/* SIPE_BUDDY_INFO_CUSTOM1_PHONE         */ NULL,
+/* SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY */ NULL,
+};
+
+GPtrArray *sipe_telepathy_contact_info_fields(void)
+{
+	GPtrArray *fields = dbus_g_type_specialized_construct(TP_ARRAY_TYPE_FIELD_SPECS);
+	guint i;
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::contact_info_fields called");
+
+	for (i = 0; i <= SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY; i++) {
+		const gchar *vcard_name       = sipe_to_vcard_field[i];
+		GValueArray *va;
+
+		/* unsupported field */
+		if (!vcard_name)
+			continue;
+
+		va = tp_value_array_build(4,
+					  G_TYPE_STRING, vcard_name,
+					  G_TYPE_STRV,   NULL,
+					  G_TYPE_UINT,   0, /* tp_flags  */
+					  G_TYPE_UINT,   1, /* max_times */
+					  G_TYPE_INVALID);
+		g_ptr_array_add (fields, va);
+	}
+
+	return(fields);
+}
+
+/* TpDBusPropertiesMixinPropImpl is a broken typedef */
+gpointer sipe_telepathy_contact_info_props(void)
+{
+	static TpDBusPropertiesMixinPropImpl props[] = {
+		{
+			.name        = "ContactInfoFlags",
+			.getter_data = GUINT_TO_POINTER(0),
+			/* @TODO .getter_data = GUINT_TO_POINTER(TP_CONTACT_INFO_FLAG_CAN_SET), */
+			.setter_data = NULL,
+		},
+		{
+			.name        = "SupportedFields",
+			.getter_data = NULL,
+			.setter_data = NULL,
+		},
+		{
+			.name        = NULL
+		}
+	};
+	return(props);
 }
 
 /*
