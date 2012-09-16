@@ -739,6 +739,21 @@ sipe_miranda_GetInfo( SIPPROTO *pr, HANDLE hContact, int infoType )
 	return 0;
 }
 
+void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
+				  const gchar *who,
+				  gpointer photo_data,
+				  gsize data_len,
+				  const gchar *photo_hash)
+{
+}
+
+const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_public,
+					       const gchar *who)
+{
+	const gchar *result = NULL;
+	return result;
+}
+
 /*
   Local Variables:
   mode: c
