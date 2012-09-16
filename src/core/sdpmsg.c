@@ -621,6 +621,7 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	gchar *candidates_str = NULL;
 	gchar *remote_candidates_str = NULL;
 
+	gchar *tcp_setup_str = NULL;
 	gchar *attributes_str = NULL;
 	gchar *credentials = NULL;
 
@@ -641,11 +642,15 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 			uses_tcp_transport =
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE ||
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
+			if (uses_tcp_transport) {
+				tcp_setup_str = g_strdup_printf(
+					"a=connection:existing\r\n"
+					"a=setup:%s\r\n",
+					(c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) ? "passive" : "active");
+			}
 		}
 
 		attributes_str = attributes_to_string(media->attributes);
-		credentials = NULL;
-
 
 		if (msg->ice_version == SIPE_ICE_RFC_5245 && media->candidates) {
 			struct sdpcandidate *c = media->candidates->data;
@@ -663,11 +668,13 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 				    "%s"
 				    "%s"
 				    "%s"
+				    "%s"
 				    "%s",
 				    media->name, media->port, uses_tcp_transport ? "TCP/" : "", codec_ids_str,
 				    media_conninfo ? media_conninfo : "",
 				    candidates_str ? candidates_str : "",
 				    remote_candidates_str ? remote_candidates_str : "",
+				    tcp_setup_str ? tcp_setup_str : "",
 				    codecs_str ? codecs_str : "",
 				    attributes_str ? attributes_str : "",
 				    credentials ? credentials : "");
@@ -677,6 +684,7 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	g_free(codec_ids_str);
 	g_free(candidates_str);
 	g_free(remote_candidates_str);
+	g_free(tcp_setup_str);
 	g_free(attributes_str);
 	g_free(credentials);
 
