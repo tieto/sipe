@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -113,6 +113,7 @@ struct sip_transport {
 	gboolean reregister_set;     /* whether reregister timer set */
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed;         /* whether subscribed to events, except buddies presence */
+	gboolean deregister;         /* whether in deregistration */
 };
 
 /* Keep in sync with sipe_transport_type! */
@@ -201,12 +202,21 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				      struct sip_auth *auth,
 				      struct sipmsg *msg)
 {
+	struct sip_transport *transport = sipe_private->transport;
 	gchar *ret;
 	gchar *gssapi_data = NULL;
 	gchar *sign_str;
 	gchar *gssapi_str;
 	gchar *opaque_str;
 	gchar *version_str;
+
+	/*
+	 * If transport is de-registering when we reach this point then we
+	 * are in the middle of the previous authentication context setup
+	 * attempt. So we shouldn't try another attempt.
+	 */
+	if (transport->deregister)
+		return NULL;
 
 	/* Create security context or handshake continuation? */
 	if (auth->gssapi_context) {
@@ -263,7 +273,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				}
 
 				/* we can't authenticate the message yet */
-				sipe_private->transport->auth_incomplete = TRUE;
+				transport->auth_incomplete = TRUE;
 
 				return(NULL);
 			} else {
@@ -583,7 +593,8 @@ static void transactions_remove(struct sipe_core_private *sipe_private,
 
 		if (trans->msg) sipmsg_free(trans->msg);
 		if (trans->payload) {
-			(*trans->payload->destroy)(trans->payload->data);
+			if (trans->payload->destroy)
+				(*trans->payload->destroy)(trans->payload->data);
 			g_free(trans->payload);
 		}
 		g_free(trans->key);
@@ -694,7 +705,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 			method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
-			sipe_backend_network_ip_address(),
+			sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
 			transport->connection->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
@@ -924,7 +935,7 @@ static void sip_transport_default_contact(struct sipe_core_private *sipe_private
 	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
 						sipe_private->username,
 						transport->connection->client_port,
-						sipe_backend_network_ip_address(),
+						sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
 						TRANSPORT_DESCRIPTOR);
 }
 
@@ -1334,6 +1345,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 		}
 	}
 
+	transport->deregister      = deregister;
 	transport->auth_incomplete = FALSE;
 
 	uuid = get_uuid(sipe_private);
@@ -1343,7 +1355,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 				    "Allow-Events: presence\r\n"
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
-			      sipe_backend_network_ip_address(),
+			      sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
 			      transport->connection->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,

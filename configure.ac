@@ -377,13 +377,22 @@ AC_ARG_ENABLE([telepathy],
 	[],
 	[enable_telepathy=yes])
 AS_IF([test "x$enable_telepathy" != xno],
-	[PKG_CHECK_MODULES(TELEPATHY, [telepathy-glib],
+	[PKG_CHECK_MODULES(TELEPATHY_GLIB, [telepathy-glib >= 0.18.0],
 		[dnl GMIME is a build requirement
 		 AS_IF([test "x$ac_have_gmime" = xyes],
 			[],
 			[AC_ERROR(GMIME package is required for telepathy plugin)])
 
-		 dnl NOTHING IMPLEMENTED YET!!!
+		 dnl telepathy is based on GObject & D-Bus GLib
+		 PKG_CHECK_MODULES(GOBJECT, [gobject-2.0])
+		 PKG_CHECK_MODULES(DBUS_GLIB, [dbus-glib-1])
+
+		 dnl telepathy uses from gio:
+		 dnl  - GIOStream      (>= 2.22.0)
+		 dnl  - GResolver      (>= 2.22.0)
+		 dnl  - GTlsConnection (>= 2.28.0)
+		 PKG_CHECK_MODULES(GIO, [gio-2.0 >= 2.28.0])
+
 		],
 		[enable_telepathy=no])])
 AM_CONDITIONAL(SIPE_INCLUDE_TELEPATHY, [test "x$enable_telepathy" != xno])
@@ -401,6 +410,13 @@ dnl enable voice & video support if any backend supports it
 AS_IF([test "x$with_purple_vv" != xno],
 	[AC_DEFINE(HAVE_VV, 1, [Define if voice & video is enabled.])])
 AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_purple_vv" != xno])
+
+dnl these code parts rely on interfaces that require GValueArray. This
+dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
+dnl is no backward compatible replacement implementation possible
+AS_IF([test "x$with_purple_vv" != xno -o "x$enable_telepathy" != xno],
+	[AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_28,
+                   [We need GValueArray for which no replacement is available])])
 
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
@@ -422,6 +438,8 @@ AC_CONFIG_FILES([
 	po/Makefile.in
 	pixmaps/16/Makefile
 	pixmaps/22/Makefile
+	pixmaps/24/Makefile
+	pixmaps/32/Makefile
 	pixmaps/48/Makefile
 	pixmaps/scalable/Makefile
 	src/Makefile
@@ -429,6 +447,7 @@ AC_CONFIG_FILES([
 	src/api/Makefile
 	src/purple/Makefile
 	src/telepathy/Makefile
+	src/telepathy/data/Makefile
 	])
 
 dnl generate files
@@ -436,7 +455,7 @@ AC_OUTPUT()
 
 dnl additional info for the user
 AS_ECHO()
-AS_IF([test "x$enable_purple" = xno], 
+AS_IF([test "x$enable_purple" = xno],
 	[AS_ECHO("Not building purple plugin")],
 	[AS_ECHO("Build purple plugin")
 	 AS_ECHO("PURPLE_CFLAGS  : $PURPLE_CFLAGS")
@@ -454,11 +473,8 @@ AS_ECHO()
 AS_IF([test "x$enable_telepathy" = xno],
 	[AS_ECHO("Not building telepathy plugin")],
 	[AS_ECHO("Build telepathy plugin")
-	 AS_ECHO()
-	 AS_ECHO("NOTHING IMPLEMENTED YET!!!")
-	 AS_ECHO()
-	 AS_ECHO("TELEPATHY_CFLAGS: $TELEPATHY_CFLAGS")
-	 AS_ECHO("TELEPATHY_LIBS  : $TELEPATHY_LIBS")])
+	 AS_ECHO("TELEPATHY_GLIB_CFLAGS: $TELEPATHY_GLIB_CFLAGS")
+	 AS_ECHO("TELEPATHY_GLIB_LIBS  : $TELEPATHY_GLIB_LIBS")])
 AS_ECHO()
 AS_IF([test "x$with_krb5" = xno],
 	[AS_ECHO("Not building with Kerberos 5 support")],

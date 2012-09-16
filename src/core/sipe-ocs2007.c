@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,7 @@
 #include "sipe-core-private.h"
 #include "sipe-ews.h"
 #include "sipe-groupchat.h"
+#include "sipe-media.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2007.h"
 #include "sipe-schedule.h"
@@ -76,37 +77,43 @@ struct sipe_publication {
  *
  * [MS-PRES] 3.7.5.5
  *
- * Conversion of legacyInterop elements and attributes to MSRTC elements and attributes.
+ * Conversion of legacyInterop availability ranges and activity tokens into
+ * SIPE activity tokens. The descriptions of availability ranges are defined at:
  *
- * The values define the starting point of a range
+ * http://msdn.microsoft.com/en-us/library/lync/dd941370%28v=office.13%29.aspx
+ *
+ * The values define the starting point of a range.
  */
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_ONLINE    3000
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY      4500
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE  6000
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY      7500
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_DND       9000 /* do not disturb */
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB      12000 /* be right back */
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2    15000
-#define SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE  18000
-const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability)
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE      3000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE_IDLE 4500
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY           6000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSYIDLE       7500
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_DND            9000 /* do not disturb */
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB           12000 /* be right back */
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY          15000
+#define SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE       18000
+
+const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability,
+							  const gchar *activity)
 {
 	guint type;
 
-	if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_ONLINE) {
+	if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE) {
 		type = SIPE_ACTIVITY_OFFLINE;
-	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY) {
-		type = SIPE_ACTIVITY_AVAILABLE;
-	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE) {
-		//type = SIPE_ACTIVITY_IDLE;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE_IDLE) {
 		type = SIPE_ACTIVITY_AVAILABLE;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY) {
-		type = SIPE_ACTIVITY_BUSY;
+		type = SIPE_ACTIVITY_INACTIVE;
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSYIDLE) {
+		type = sipe_status_token_to_activity(activity);
+		if ((type != SIPE_ACTIVITY_ON_PHONE) &&
+		    (type != SIPE_ACTIVITY_IN_CONF))
+			type = SIPE_ACTIVITY_BUSY;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_DND) {
-		//type = SIPE_ACTIVITY_BUSYIDLE;
-		type = SIPE_ACTIVITY_BUSY;
+		type = SIPE_ACTIVITY_BUSYIDLE;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_BRB) {
 		type = SIPE_ACTIVITY_DND;
-	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2) {
+	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY) {
 		type = SIPE_ACTIVITY_BRB;
 	} else if (availability < SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE) {
 		type = SIPE_ACTIVITY_AWAY;
@@ -114,15 +121,15 @@ const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability)
 		type = SIPE_ACTIVITY_OFFLINE;
 	}
 
-	return(sipe_status_activity_to_token(type));
+	return sipe_status_activity_to_token(type);
 }
 
 const gchar *sipe_ocs2007_legacy_activity_description(guint availability)
 {
-	if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY) &&
-	    (availability <  SIPE_OCS2007_LEGACY_AVAILIBILITY_ON_PHONE)) {
+	if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AVAILABLE_IDLE) &&
+	    (availability <  SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY)) {
 		return(sipe_core_activity_description(SIPE_ACTIVITY_INACTIVE));
-	} else if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSY) &&
+	} else if ((availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_BUSYIDLE) &&
 		   (availability <  SIPE_OCS2007_LEGACY_AVAILIBILITY_DND)) {
 		return(sipe_core_activity_description(SIPE_ACTIVITY_BUSYIDLE));
 	} else {
@@ -186,9 +193,9 @@ gboolean sipe_ocs2007_status_is_busy(const gchar *status_id)
 
 }
 
-gboolean sipe_ocs2007_availability_is_away2(guint availability)
+gboolean sipe_ocs2007_availability_is_away(guint availability)
 {
-	return(availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY2);
+	return(availability >= SIPE_OCS2007_LEGACY_AVAILIBILITY_AWAY);
 }
 
 static void send_presence_publish(struct sipe_core_private *sipe_private,
@@ -782,11 +789,11 @@ static void schedule_publish_update(struct sipe_core_private *sipe_private,
 		"</state>"\
 	"</publication>"
 /**
- * Publishes to clear 'calendarState' category
+ * Publishes to clear 'calendarState' and 'phoneState' category
  * @param instance		(%u) Ex.: 1251210982
  * @param version		(%u) Ex.: 1
  */
-#define SIPE_PUB_XML_STATE_CALENDAR_CLEAR \
+#define SIPE_PUB_XML_STATE_CALENDAR_PHONE_CLEAR \
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"\
 	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\" expires=\"0\"/>"
 
@@ -816,6 +823,33 @@ static void schedule_publish_update(struct sipe_core_private *sipe_private,
 		"<note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\">"\
 			"<body type=\"%s\" uri=\"\"%s%s>%s</body>"\
 		"</note>"\
+	"</publication>"
+/**
+ * Publishes 'phoneState' category.
+ * @param instance		(%u) Ex.: 1339299275
+ * @param version		(%u) Ex.: 1
+ * @param availability		(%u) Ex.: 6500
+ * @param token			(%s) Ex.: on-the-phone
+ * @param minAvailability	(%u) generally same as availability
+ *
+ * @param instance		(%u) Ex.: 1339299275
+ * @param version		(%u) Ex.: 1
+ * @param availability          (%u) Ex.: 6500
+ * @param token			(%s) Ex.: on-the-phone
+ * @param minAvailability	(%u) generally same as availability
+ */
+#define SIPE_PUB_XML_STATE_PHONE \
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"2\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"phoneState\">"\
+			"<availability>%u</availability>"\
+			"<activity token=\"%s\" minAvailability=\"%u\" maxAvailability=\"8999\"/>"\
+		"</state>"\
+	"</publication>"\
+	"<publication categoryName=\"state\" instance=\"%u\" container=\"3\" version=\"%u\" expireType=\"endpoint\">"\
+		"<state xmlns=\"http://schemas.microsoft.com/2006/09/sip/state\" manual=\"false\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"phoneState\">"\
+			"<availability>%u</availability>"\
+			"<activity token=\"%s\" minAvailability=\"%u\" maxAvailability=\"8999\"/>"\
+		"</state>"\
 	"</publication>"
 
 /**
@@ -921,7 +955,7 @@ static gchar *sipe_publish_get_category_state_calendar(struct sipe_core_private 
 	}
 	else /* including !event, SIPE_CAL_FREE, SIPE_CAL_TENTATIVE */
 	{
-		res = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_CLEAR,
+		res = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_PHONE_CLEAR,
 					instance,
 					publication_2 ? publication_2->version : 0,
 
@@ -1766,6 +1800,50 @@ void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private)
 	g_free(publications);
 }
 
+void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
+{
+	gchar *publications = NULL;
+	guint instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_PHONE_VOIP);
+
+	/* key is <category><instance><container> */
+	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
+	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
+	struct sipe_publication *publication_2 =
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_2);
+	struct sipe_publication *publication_3 =
+		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_3);
+	g_free(key_2);
+	g_free(key_3);
+
+#ifdef HAVE_VV
+	if (sipe_private->media_call) {
+		guint availability;
+		const gchar *token;
+		if (sipe_media_is_conference_call(sipe_private->media_call)) {
+			availability = 7000;
+			token = sipe_status_activity_to_token(SIPE_ACTIVITY_IN_CONF);
+		} else {
+			availability = 6500;
+			token = sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE);
+		}
+
+		publications = g_strdup_printf(SIPE_PUB_XML_STATE_PHONE,
+				instance, publication_2 ? publication_2->version : 0,
+				availability, token, availability,
+				instance, publication_3 ? publication_3->version : 0,
+				availability, token, availability);
+	} else
+#endif
+	{
+		publications = g_strdup_printf(SIPE_PUB_XML_STATE_CALENDAR_PHONE_CLEAR,
+				instance, publication_2 ? publication_2->version : 0,
+				instance, publication_3 ? publication_3->version : 0);
+	}
+
+	send_presence_publish(sipe_private, publications);
+	g_free(publications);
+}
+
 static void sipe_publish_get_cat_state_user_to_clear(SIPE_UNUSED_PARAMETER const char *name,
 						     gpointer value,
 						     GString* str)
@@ -1807,13 +1885,14 @@ static gboolean sipe_is_our_publication(struct sipe_core_private *sipe_private,
 
 	/* filling keys for our publications if not yet cached */
 	if (!sipe_private->our_publication_keys) {
-		guint device_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_DEVICE);
-		guint machine_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_MACHINE);
-		guint user_instance 	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_USER);
-		guint calendar_instance	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_CALENDAR);
-		guint cal_oof_instance	= sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_CALENDAR_OOF);
-		guint cal_data_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_CALENDAR_DATA);
-		guint note_oof_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_NOTE_OOF);
+		guint device_instance	  = sipe_get_pub_instance(sipe_private, SIPE_PUB_DEVICE);
+		guint machine_instance	  = sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_MACHINE);
+		guint user_instance	  = sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_USER);
+		guint calendar_instance	  = sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_CALENDAR);
+		guint cal_oof_instance	  = sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_CALENDAR_OOF);
+		guint phone_voip_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_STATE_PHONE_VOIP);
+		guint cal_data_instance	  = sipe_get_pub_instance(sipe_private, SIPE_PUB_CALENDAR_DATA);
+		guint note_oof_instance	  = sipe_get_pub_instance(sipe_private, SIPE_PUB_NOTE_OOF);
 
 		SIPE_DEBUG_INFO_NOFORMAT("* Our Publication Instances *");
 		SIPE_DEBUG_INFO("\tDevice               : %u\t0x%08X", device_instance, device_instance);
@@ -1821,6 +1900,7 @@ static gboolean sipe_is_our_publication(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_INFO("\tUser Stare           : %u\t0x%08X", user_instance, user_instance);
 		SIPE_DEBUG_INFO("\tCalendar State       : %u\t0x%08X", calendar_instance, calendar_instance);
 		SIPE_DEBUG_INFO("\tCalendar OOF State   : %u\t0x%08X", cal_oof_instance, cal_oof_instance);
+		SIPE_DEBUG_INFO("\tVOIP Phone State     : %u\t0x%08X", phone_voip_instance, phone_voip_instance);
 		SIPE_DEBUG_INFO("\tCalendar FreeBusy    : %u\t0x%08X", cal_data_instance, cal_data_instance);
 		SIPE_DEBUG_INFO("\tOOF Note             : %u\t0x%08X", note_oof_instance, note_oof_instance);
 		SIPE_DEBUG_INFO("\tNote                 : %u", 0);
@@ -1853,6 +1933,12 @@ static gboolean sipe_is_our_publication(struct sipe_core_private *sipe_private,
 			g_strdup_printf("<%s><%u><%u>", "state", cal_oof_instance, 2));
 		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
 			g_strdup_printf("<%s><%u><%u>", "state", cal_oof_instance, 3));
+
+		/* state:phoneState */
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "state", phone_voip_instance, 2));
+		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
+			g_strdup_printf("<%s><%u><%u>", "state", phone_voip_instance, 3));
 
 		/* note */
 		sipe_private->our_publication_keys = g_slist_append(sipe_private->our_publication_keys,
@@ -1955,6 +2041,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
         char *uri;
 	GSList *category_names = NULL;
 	int aggreg_avail = 0;
+	gchar *activity_token = NULL;
 	gboolean do_update_status = FALSE;
 	gboolean has_note_cleaned = FALSE;
 	GHashTable *devices;
@@ -2162,6 +2249,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		/* aggregateState (not an our publication) from 2-nd container */
 		if (sipe_strequal(name, "state") && container == 2) {
 			const sipe_xml *xn_state = sipe_xml_child(node, "state");
+			const sipe_xml *xn_activity = sipe_xml_child(xn_state, "activity");
 
 			if (xn_state && sipe_strequal(sipe_xml_attribute(xn_state, "type"), "aggregateState")) {
 				const sipe_xml *xn_avail = sipe_xml_child(xn_state, "availability");
@@ -2175,6 +2263,10 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 				}
 
 				do_update_status = TRUE;
+			}
+
+			if (xn_activity) {
+				activity_token = g_strdup(sipe_xml_attribute(xn_activity, "token"));
 			}
 		}
 
@@ -2336,7 +2428,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		    (aggreg_avail < SIPE_OCS2007_LEGACY_AVAILIBILITY_OFFLINE)) {
 			/* not offline */
 			sipe_status_set_token(sipe_private,
-					      sipe_ocs2007_status_from_legacy_availability(aggreg_avail));
+					      sipe_ocs2007_status_from_legacy_availability(aggreg_avail, activity_token));
 		} else {
 			/* do not let offline status switch us off */
 			sipe_status_set_activity(sipe_private,
@@ -2349,6 +2441,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 	}
 
 	g_free(to);
+	g_free(activity_token);
 }
 
 /**

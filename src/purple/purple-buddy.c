@@ -186,6 +186,14 @@ void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public
 	purple_blist_node_set_string(&b->node, buddy_info_property(key), val);
 }
 
+void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
+void sipe_backend_buddy_list_processing_finish(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
 sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 					  const gchar *name,
 					  const gchar *alias,
@@ -322,6 +330,24 @@ gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_pub
 	}
 
 	return (purple_group != NULL);
+}
+
+gboolean sipe_backend_buddy_group_rename(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					 const gchar *old_name,
+					 const gchar *new_name)
+{
+	PurpleGroup *purple_group = purple_find_group(old_name);
+	if (purple_group)
+		purple_blist_rename_group(purple_group, new_name);
+	return(purple_group != NULL);
+}
+
+void sipe_backend_buddy_group_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				     const gchar *group_name)
+{
+	PurpleGroup *purple_group = purple_find_group(group_name);
+	if (purple_group)
+		purple_blist_remove_group(purple_group);
 }
 
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)

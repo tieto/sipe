@@ -192,6 +192,18 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			NULL,
 			TRUE);
 
+	/* In a call */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_purple_activity_to_token(SIPE_ACTIVITY_ON_PHONE),
+			sipe_core_activity_description(SIPE_ACTIVITY_ON_PHONE),
+			FALSE);
+
+	/* In a conference call  */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_purple_activity_to_token(SIPE_ACTIVITY_IN_CONF),
+			sipe_core_activity_description(SIPE_ACTIVITY_IN_CONF),
+			FALSE);
+
 	/* Away */
 	/* Goes first in the list as
 	 * purple picks the first status with the AWAY type
@@ -301,6 +313,7 @@ static void sipe_purple_login(PurpleAccount *account)
 	/* map option list to flags - default is NTLM */
 	SIPE_CORE_FLAG_UNSET(KRB5);
 	SIPE_CORE_FLAG_UNSET(TLS_DSK);
+	SIPE_CORE_FLAG_UNSET(SSO);
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	if (sipe_strequal(auth, "krb5")) {
 		SIPE_CORE_FLAG_SET(KRB5);
@@ -416,9 +429,9 @@ static void sipe_purple_keep_alive(PurpleConnection *gc)
 }
 
 static void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
-				    SIPE_UNUSED_PARAMETER const char *alias)
+				    const char *alias)
 {
-	sipe_core_group_set_user(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name);
+	sipe_core_group_set_alias(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, alias);
 }
 
 static void sipe_purple_group_rename(PurpleConnection *gc,
@@ -694,6 +707,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 	};
 
 	sipe_core_buddy_search(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       NULL,
 			       given_name,
 			       surname,
 			       email,

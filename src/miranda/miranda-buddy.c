@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -377,6 +377,14 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 	sipe_miranda_setContactString(pr, buddy, prop_name, val);
 }
 
+void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
+void sipe_backend_buddy_list_processing_finish(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
 sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 					  const gchar *name,
 					  const gchar *alias,
@@ -505,6 +513,20 @@ gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 	HANDLE hGroup = (HANDLE)CallService(MS_CLIST_GROUPCREATE, 0, (LPARAM)mir_group_name);
 	mir_free(mir_group_name);
 	return (hGroup?TRUE:FALSE);
+}
+
+gboolean sipe_backend_buddy_group_rename(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					 SIPE_UNUSED_PARAMETER const gchar *old_name,
+					 SIPE_UNUSED_PARAMETER const gchar *new_name)
+{
+	/* @TODO */
+	return(FALSE);
+}
+
+void sipe_backend_buddy_group_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				     SIPE_UNUSED_PARAMETER const gchar *group_name)
+{
+	/* @TODO */
 }
 
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)

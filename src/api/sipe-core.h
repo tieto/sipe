@@ -144,8 +144,6 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
 void
 sipe_utils_nameval_free(GSList *list);
 
-gboolean sipe_utils_is_avconf_uri(const gchar *uri);
-
 gchar *sip_uri_from_name(const gchar *name);
 gchar *sip_uri_if_valid(const gchar *string);
 
@@ -265,8 +263,9 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
 				  const gchar *who,
 				  gboolean allow);
-void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
-			      const gchar * who);
+void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
+			       const gchar *who,
+			       const gchar *alias);
 
 /**
  * Setup core data
@@ -437,7 +436,9 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			   const gchar *old_group_name,
 			   const gchar *new_group_name);
 
+struct sipe_backend_search_token;
 void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
+			    struct sipe_backend_search_token *token,
 			    const gchar *given_name,
 			    const gchar *surname,
 			    const gchar *email,

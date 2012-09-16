@@ -10,7 +10,7 @@
 #
 
 # Build options
-%define build_telepathy 0
+%undefine build_telepathy
 
 # Check for mingw32 cross compilation build
 #
@@ -73,6 +73,9 @@
 %define purple_plugin    %{?mingw_prefix:%{mingw_prefix}}libpurple-plugin-sipe
 %define telepathy_plugin %{?mingw_prefix:%{mingw_prefix}}telepathy-plugin-sipe
 %define nsis_package     %{?mingw_prefix:%{mingw_prefix}}pidgin-sipe-nsis
+%define common_files     sipe-common
+%define empathy_files    empathy-sipe
+%define ktp_files        ktp-accounts-kcm-sipe
 
 
 %define purple_develname libpurple-devel
@@ -94,6 +97,9 @@
 %define has_libnice 1
 %if 0%{?suse_version} > 1140
 %define has_gstreamer 1
+%if 0%{?suse_version} > 1210
+%define build_telepathy 1
+%endif
 %endif
 %endif
 %else
@@ -105,11 +111,14 @@
 %endif
 %if 0%{?fedora}
 %define pkg_group Applications/Internet
-%define has_gmime 1
 %if 0%{?fedora} >= 11
 %define has_libnice 1
 %if 0%{?fedora} >= 15
 %define has_gstreamer 1
+%if 0%{?fedora} >= 17
+%define build_telepathy 1
+%define build_ktp 1
+%endif
 %endif
 %endif
 %endif
@@ -159,6 +168,9 @@ BuildRequires:  %{mingw_prefix}cross-nsis
 # For directory ownership
 BuildRequires:  %{mingw_prefix}pidgin
 
+# Make sure telepathy is disabled for Windows builds
+%undefine build_telepathy
+
 %else
 #
 # Standard Linux build setup
@@ -167,15 +179,18 @@ BuildRequires:  %{purple_develname} >= 2.4.0
 BuildRequires:  libxml2-devel
 BuildRequires:  %{nss_develname}
 BuildRequires:  gettext-devel
-%if 0%{?has_gmime:1}
-BuildRequires:  gmime-devel
-%endif
 # The following two are required to enable Voice & Video features
 %if 0%{?has_libnice:1}
 BuildRequires:  libnice-devel
 %endif
 %if 0%{?has_gstreamer:1}
 BuildRequires:  gstreamer-devel
+%endif
+# Requirements for telepathy backend
+%if 0%{?build_telepathy:1}
+BuildRequires:  telepathy-glib-devel >= 0.18.0
+BuildRequires:  gmime-devel
+BuildRequires:  glib2-devel >= 2.28.0
 %endif
 
 # Configurable components
@@ -185,7 +200,8 @@ BuildRequires:  krb5-devel
 
 # For directory ownership
 BuildRequires:  pidgin
-%if %{build_telepathy}
+%if 0%{?build_telepathy:1}
+BuildRequires:  empathy
 BuildRequires:  pkgconfig(telepathy-glib)
 %endif
 Requires:       pidgin
@@ -239,6 +255,9 @@ Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
 License:        GPL-2.0+
 Obsoletes:      purple-sipe
+%if 0%{?build_telepathy:1}
+Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
+%endif
 
 %description -n %{purple_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
@@ -252,23 +271,74 @@ It implements the extended version of SIP/SIMPLE used by various products:
 This package provides the protocol plugin for libpurple clients.
 
 
-%if %{build_telepathy}
-%package -n %{telepathy_plugin}
-Summary:        Telepathy connection manager for MS Office Communicator
+%if 0%{?build_telepathy:1}
+%package -n %{empathy_files}
+Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
 License:        GPL-2.0+
+Requires:       empathy
+Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
-%description -n %{telepathy_plugin}
-A third-party plugin for the Pidgin multi-protocol instant messenger.
-It implements the extended version of SIP/SIMPLE used by various products:
+%description -n %{empathy_files}
+A Telepathy connection manager that implements the extended version of
+SIP/SIMPLE used by various products:
 
     * Microsoft Lync Server 2010
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
-This package provides the connection manager for the telepathy multi-protocol
-instant messaging core.
+This package provides the icon set for Empathy.
+
+
+%if 0%{?build_ktp:1}
+%package -n %{ktp_files}
+Summary:        Telepathy connection manager to connect to MS Office Communicator
+Group:          %{pkg_group}
+License:        GPL-2.0+
+Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
+
+%description -n %{ktp_files}
+A Telepathy connection manager that implements the extended version of
+SIP/SIMPLE used by various products:
+
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package provides the profile for KTP account manager.
+%endif
+
+
+%package -n %{telepathy_plugin}
+Summary:        Telepathy connection manager to connect to MS Office Communicator
+Group:          %{pkg_group}
+License:        GPL-2.0+
+Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
+
+%description -n %{telepathy_plugin}
+A Telepathy connection manager that implements the extended version of
+SIP/SIMPLE used by various products:
+
+    * Microsoft Lync Server 2010
+    * Microsoft Office Communications Server (OCS 2007/2007 R2)
+    * Microsoft Live Communications Server (LCS 2003/2005)
+    * Reuters Messaging
+
+This package provides the protocol support for Telepathy clients.
+
+
+%package -n %{common_files}
+Summary:        Common files for SIPE protocol plugins
+Group:          %{pkg_group}
+License:        GPL-2.0+
+BuildArch:      noarch
+
+%description -n %{common_files}
+This package provides common files for the SIPE protocol plugins:
+
+    * Localisation
 %endif
 
 
@@ -309,7 +379,7 @@ autoreconf --verbose --install --force
 %{mingw_ldflags}="-Wl,--exclude-libs=libintl.a -Wl,--exclude-libs=libiconv.a -lws2_32"
 %{mingw_configure} \
         --enable-purple \
-%if %{build_telepathy}
+%if 0%{?build_telepathy:1}
         --enable-telepathy
 %else
         --disable-telepathy
@@ -328,7 +398,7 @@ autoreconf --verbose --install --force
 %endif
 %configure \
 	--enable-purple \
-%if %{build_telepathy}
+%if 0%{?build_telepathy:1}
         --enable-telepathy
 %else
 	--disable-telepathy
@@ -377,6 +447,15 @@ find %{buildroot} -type f -name "*.la" -delete -print
 %if 0%{?suse_version} && 0%{?suse_version} < 1120
 rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
 %endif
+# Pidgin doesn't have 24 or 32 pixel icons
+rm -f \
+   %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
+   %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
+%if 0%{?build_telepathy:1}
+%if !0%{?build_ktp:1}
+rm -r %{buildroot}%{_datadir}/telepathy
+%endif
+%endif
 %find_lang pidgin-sipe
 
 
@@ -384,13 +463,45 @@ rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
 rm -rf %{buildroot}
 
 
+%if 0%{?build_telepathy:1}
+%files -n %{purple_plugin}
+%else
 %files -n %{purple_plugin} -f pidgin-sipe.lang
+%endif
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %if 0%{?mingw_prefix:1}
 %{mingw_libdir}/purple-2/libsipe.dll
 %else
 %{_libdir}/purple-2/libsipe.so
+%endif
+
+
+%if 0%{?build_telepathy:1}
+%files -n %{empathy_files}
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING
+%{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.png
+%{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.svg
+
+
+%if 0%{?build_ktp:1}
+%files -n %{ktp_files}
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING
+%{_datadir}/telepathy/profiles/sipe.profile
+%endif
+
+
+%files -n %{telepathy_plugin}
+%defattr(-,root,root,-)
+%doc AUTHORS ChangeLog COPYING NEWS README TODO
+%{_datadir}/dbus-1/services/*.sipe.service
+%{_libexecdir}/telepathy-sipe
+
+
+%files -n %{common_files} -f pidgin-sipe.lang
+%defattr(-,root,root,-)
 %endif
 
 
@@ -409,13 +520,6 @@ rm -rf %{buildroot}
 %endif
 
 
-%if %{build_telepathy}
-%files -n %{telepathy_plugin}
-%defattr(-, root, root)
-%{_libexecdir}/telepathy-sipe
-%endif
-
-
 %if 0%{?mingw_prefix:1}
 %files -n %{nsis_package}
 %defattr(-, root, root)
@@ -424,6 +528,18 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Sep 09 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- BR telepathy-glib-devel >= 0.18.0
+
+* Wed Sep 05 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- BR telepathy-glib-devel >= 0.14.0
+
+* Sun Sep 02 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- really disable telepathy for Windows cross-compilation builds
+
+* Thu Aug 30 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- updates to enable telepathy build
+
 * Sun Aug 19 2012 J. D. User <jduser@noreply.com> 1.13.3
 - update to 1.13.3
 

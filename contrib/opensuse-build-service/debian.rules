@@ -3,7 +3,13 @@
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
 
-DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple --disable-telepathy
+DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple
+# detect if package telepathy-glib is available
+ifneq ($(shell pkg-config --exists telepathy-glib && echo FOUND),)
+DEB_CONFIGURE_EXTRA_FLAGS += --enable-telepathy
+else
+DEB_CONFIGURE_EXTRA_FLAGS += --disable-telepathy
+endif
 
 # run tests
 DEB_MAKE_CHECK_TARGET := check
@@ -23,6 +29,8 @@ $(DEB_CONFIGURE_SCRIPT):
 
 binary-post-install/pidgin-sipe::
 	rm -f debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
+	rm -r debian/pidgin-sipe/usr/share/pixmaps/pidgin/protocols/24
+	rm -r debian/pidgin-sipe/usr/share/pixmaps/pidgin/protocols/32
 	rm debian/pidgin-sipe/usr/lib/purple-2/libsipe.la
 
 .PHONY: update-debian-control
