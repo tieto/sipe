@@ -431,6 +431,7 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 {
 	GString *result = g_string_new("");
 	GSList *i;
+	GSList *processed_tcp_candidates = NULL;
 
 	candidates = g_slist_copy(candidates);
 	candidates = g_slist_sort(candidates, (GCompareFunc)candidate_sort_cb);
@@ -497,23 +498,46 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 			g_free(related);
 
 		} else if (ice_version == SIPE_ICE_DRAFT_6) {
-			gchar *username = base64_unpad(c->username);
-			gchar *password = base64_unpad(c->password);
+			gchar *username;
+			gchar *password;
 
-			// TODO: remove active/passive pairs for the same host IP
 			switch (c->protocol) {
 				case SIPE_NETWORK_PROTOCOL_TCP_ACTIVE:
-				case SIPE_NETWORK_PROTOCOL_TCP_PASSIVE:
-					protocol = "TCP";
+				case SIPE_NETWORK_PROTOCOL_TCP_PASSIVE: {
+					GSList *prev_cand = processed_tcp_candidates;
+					for (; prev_cand; prev_cand = prev_cand->next) {
+						struct sdpcandidate *c2 = (struct sdpcandidate *)prev_cand->data;
+
+						if (sipe_strequal(c->ip, c2->ip) &&
+						    c->component == c2->component) {
+							break;
+						}
+					}
+
+					if (prev_cand) {
+						protocol = NULL;
+					} else {
+						protocol = "TCP";
+						processed_tcp_candidates =
+							g_slist_append(processed_tcp_candidates, c);
+					}
 					break;
+				}
 				case SIPE_NETWORK_PROTOCOL_UDP:
 					protocol = "UDP";
 					break;
 				default:
-					/* error unknown/unsupported type */
-					protocol = "UNKNOWN";
+					/* unknown/unsupported type, ignore */
+					protocol = NULL;
 					break;
 			}
+
+			if (!protocol) {
+				continue;
+			}
+
+			username = base64_unpad(c->username);
+			password = base64_unpad(c->password);
 
 			g_string_append_printf(result,
 					       "a=candidate:%s %u %s %s 0.%u %s %d\r\n",
@@ -531,6 +555,7 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 	}
 
 	g_slist_free(candidates);
+	g_slist_free(processed_tcp_candidates);
 
 	return g_string_free(result, FALSE);
 }
