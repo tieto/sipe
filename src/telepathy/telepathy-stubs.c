@@ -64,6 +64,7 @@ gboolean sipe_backend_buddy_is_blocked(SIPE_UNUSED_PARAMETER struct sipe_core_pu
 void sipe_backend_buddy_set_blocked_status(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					   SIPE_UNUSED_PARAMETER const gchar *who,
 					   SIPE_UNUSED_PARAMETER gboolean blocked) {}
+gboolean sipe_backend_uses_photo(void) { return(FALSE); }
 void sipe_backend_buddy_set_photo(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				  SIPE_UNUSED_PARAMETER const gchar *who,
 				  gpointer image_data,

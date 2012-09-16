@@ -293,6 +293,11 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				    NULL);
 }
 
+gboolean sipe_backend_uses_photo(void)
+{
+	return TRUE;
+}
+
 void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
 				  const gchar *who,
 				  gpointer photo_data,

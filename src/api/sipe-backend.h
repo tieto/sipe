@@ -880,6 +880,15 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   guint activity);
 
 /**
+ * Checks whether backend has a capability to use buddy photos. If this function
+ * returns @c FALSE, SIPE core will not attempt to download the photos from
+ * server to save bandwidth.
+ *
+ * @return @c TRUE if backend is photo capable, otherwise @FALSE
+ */
+gboolean sipe_backend_uses_photo(void);
+
+/**
  * Gives backend a photo image associated with a SIP URI. Backend has ownership
  * of the data and must free it when not needed.
  *
