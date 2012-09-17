@@ -314,64 +314,6 @@ guint sipe_telepathy_buddy_get_presence(SipeContactList *contact_list,
 	return(buddy->activity);
 }
 
-static void get_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
-			     SIPE_UNUSED_PARAMETER const GArray *contacts,
-			     DBusGMethodInvocation *context)
-{
-	TpBaseConnection *base = TP_BASE_CONNECTION(iface);
-
-	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
-
-	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::get_contact_info called");
-}
-
-static void refresh_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
-				 SIPE_UNUSED_PARAMETER const GArray *contacts,
-				 DBusGMethodInvocation *context)
-{
-	TpBaseConnection *base = TP_BASE_CONNECTION(iface);
-
-	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
-
-	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::refresh_contact_info called");
-}
-
-static void request_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
-				 SIPE_UNUSED_PARAMETER guint contact,
-				 DBusGMethodInvocation *context)
-{
-	TpBaseConnection *base = TP_BASE_CONNECTION(iface);
-
-	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
-
-	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::request_contact_info called");
-}
-
-static void set_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
-			     SIPE_UNUSED_PARAMETER const GPtrArray *contact_info,
-			     DBusGMethodInvocation *context)
-{
-	TpBaseConnection *base = TP_BASE_CONNECTION(iface);
-
-	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
-
-	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::set_contact_info called");
-}
-
-void sipe_telepathy_contact_info_iface_init(gpointer g_iface,
-					    SIPE_UNUSED_PARAMETER gpointer iface_data)
-{
-	TpSvcConnectionInterfaceContactInfoClass *klass = g_iface;
-
-#define IMPLEMENT(x) tp_svc_connection_interface_contact_info_implement_##x( \
-		klass, x)
-	IMPLEMENT(get_contact_info);
-	IMPLEMENT(refresh_contact_info);
-	IMPLEMENT(request_contact_info);
-	IMPLEMENT(set_contact_info);
-#undef IMPLEMENT
-}
-
 static const gchar *const sipe_to_vcard_field[SIPE_INFO_FIELD_MAX] = {
 /* SIPE_BUDDY_INFO_DISPLAY_NAME          */ "fn",
 /* SIPE_BUDDY_INFO_JOB_TITLE             */ "title",
@@ -396,6 +338,131 @@ static const gchar *const sipe_to_vcard_field[SIPE_INFO_FIELD_MAX] = {
 /* SIPE_BUDDY_INFO_CUSTOM1_PHONE         */ NULL,
 /* SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY */ NULL,
 };
+
+static GPtrArray *convert_contact_info(GHashTable *buddies,
+				       TpHandle contact)
+{
+	struct telepathy_buddy *buddy = g_hash_table_lookup(buddies,
+							    GUINT_TO_POINTER(contact));
+	GPtrArray *info = NULL;
+
+	if (buddy) {
+		guint i;
+
+		SIPE_DEBUG_INFO("SipeContactInfo::convert_contact_info: info for %s",
+				buddy->uri);
+
+		info = dbus_g_type_specialized_construct(
+			TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
+
+		for (i = 0; i < SIPE_INFO_FIELD_MAX; i++) {
+			const gchar *name  = sipe_to_vcard_field[i];
+			const gchar *value = buddy->info[i];
+
+			if (name && value) {
+				const gchar *const field_values[2] = { value, NULL };
+				g_ptr_array_add(info,
+						tp_value_array_build(3,
+								     G_TYPE_STRING, name,
+								     G_TYPE_STRV,   NULL,
+								     G_TYPE_STRV,   field_values,
+								     G_TYPE_INVALID));
+			}
+		}
+	}
+
+	return(info);
+}
+
+static void get_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
+			     const GArray *contacts,
+			     DBusGMethodInvocation *context)
+{
+	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(G_OBJECT(iface));
+	GHashTable *buddies     = telepathy_private->contact_list->buddy_handles;
+	TpBaseConnection *base  = TP_BASE_CONNECTION(iface);
+	TpHandleRepoIface *repo = tp_base_connection_get_handles(base,
+								 TP_HANDLE_TYPE_CONTACT);
+	GError *error           = NULL;
+	GHashTable *infos;
+	guint i;
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::get_contact_info called");
+
+	if (!tp_handles_are_valid(repo, contacts, FALSE, &error)) {
+		dbus_g_method_return_error(context, error);
+		g_error_free(error);
+		return;
+	}
+
+	infos = dbus_g_type_specialized_construct(TP_HASH_TYPE_CONTACT_INFO_MAP);
+
+	for (i = 0; i < contacts->len; i++) {
+		TpHandle contact = g_array_index(contacts, TpHandle, i);
+		GPtrArray *info  = convert_contact_info(buddies, contact);
+
+		if (info)
+			g_hash_table_insert(infos,
+					    GUINT_TO_POINTER(contact),
+					    info);
+	}
+
+	tp_svc_connection_interface_contact_info_return_from_get_contact_info(context,
+									      infos);
+	g_boxed_free(TP_HASH_TYPE_CONTACT_INFO_MAP, infos);
+}
+
+static void request_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
+				 guint contact,
+				 DBusGMethodInvocation *context)
+{
+	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(G_OBJECT(iface));
+	GHashTable *buddies     = telepathy_private->contact_list->buddy_handles;
+	TpBaseConnection *base  = TP_BASE_CONNECTION(iface);
+	TpHandleRepoIface *repo = tp_base_connection_get_handles(base,
+								 TP_HANDLE_TYPE_CONTACT);
+	GError *error           = NULL;
+	GPtrArray *info;
+
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(base, context);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeContactInfo::request_contact_info called");
+
+	if (!tp_handle_is_valid(repo, contact, &error)) {
+		dbus_g_method_return_error(context, error);
+		g_error_free(error);
+		return;
+	}
+
+	info  = convert_contact_info(buddies, contact);
+	if (!info) {
+		dbus_g_method_return_error(context, error);
+		g_error_free(error);
+		return;
+	}
+
+	tp_svc_connection_interface_contact_info_return_from_request_contact_info(context,
+										  info);
+	g_boxed_free(TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST, info);
+}
+
+void sipe_telepathy_contact_info_iface_init(gpointer g_iface,
+					    SIPE_UNUSED_PARAMETER gpointer iface_data)
+{
+	TpSvcConnectionInterfaceContactInfoClass *klass = g_iface;
+
+#define IMPLEMENT(x) tp_svc_connection_interface_contact_info_implement_##x( \
+		klass, x)
+	IMPLEMENT(get_contact_info);
+	/* Information is provided by the server: can't implement
+	   IMPLEMENT(refresh_contact_info); */
+	IMPLEMENT(request_contact_info);
+	/* Information is provided by the server: can't implement
+	   IMPLEMENT(set_contact_info); */
+#undef IMPLEMENT
+}
 
 GPtrArray *sipe_telepathy_contact_info_fields(void)
 {
