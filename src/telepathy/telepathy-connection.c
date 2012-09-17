@@ -47,7 +47,7 @@ G_BEGIN_DECLS
  */
 typedef struct _SipeConnectionClass {
 	TpBaseConnectionClass parent_class;
-	TpDBusPropertiesMixinClass properties_class;
+	TpDBusPropertiesMixinClass properties_mixin;
 	TpContactsMixinClass contacts_mixin;
 	TpPresenceMixinClass presence_mixin;
 } SipeConnectionClass;
@@ -459,6 +459,10 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 			.getter = contact_info_properties_getter,
 			.setter = NULL,
 		},
+		{
+			/* LAST! */
+			.name   = NULL,
+		}
 	};
 
 	/* initalize non-constant fields */
@@ -476,10 +480,10 @@ static void sipe_connection_class_init(SipeConnectionClass *klass)
 
 	base_class->interfaces_always_present = interfaces_always_present;
 
-	klass->properties_class.interfaces = prop_interfaces;
+	klass->properties_mixin.interfaces = prop_interfaces;
 	tp_dbus_properties_mixin_class_init(object_class,
 					    G_STRUCT_OFFSET(SipeConnectionClass,
-							    properties_class));
+							    properties_mixin));
 	tp_contacts_mixin_class_init(object_class,
 				     G_STRUCT_OFFSET(SipeConnectionClass,
 						     contacts_mixin));
