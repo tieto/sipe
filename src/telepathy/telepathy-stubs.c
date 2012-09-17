@@ -41,13 +41,6 @@
 
 /** BUDDIES ******************************************************************/
 
-gchar *sipe_backend_buddy_get_string(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				     SIPE_UNUSED_PARAMETER sipe_backend_buddy buddy,
-				     SIPE_UNUSED_PARAMETER const sipe_buddy_info_fields key) { return(NULL); }
-void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				   SIPE_UNUSED_PARAMETER sipe_backend_buddy buddy,
-				   SIPE_UNUSED_PARAMETER const sipe_buddy_info_fields key,
-				   SIPE_UNUSED_PARAMETER const gchar *val) {}
 void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) {}
 void sipe_backend_buddy_request_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				    SIPE_UNUSED_PARAMETER const gchar *who,

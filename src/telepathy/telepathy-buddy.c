@@ -31,12 +31,15 @@
 
 #include "telepathy-private.h"
 
+#define SIPE_INFO_FIELD_MAX (SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY + 1)
+
 struct telepathy_buddy {
 	const gchar *uri;   /* borrowed from contact_list->buddies key */
 	GHashTable *groups; /* key: group name, value: buddy_entry */
                             /* keys are borrowed from contact_list->groups */
 	TpHandle handle;
-	gchar *alias;       /* value stored on the server */
+	/* includes alias as stored on the server */
+	gchar *info[SIPE_INFO_FIELD_MAX];
 	guint activity;
 };
 
@@ -271,15 +274,15 @@ const gchar *sipe_telepathy_buddy_get_alias(SipeContactList *contact_list,
 							    GUINT_TO_POINTER(contact));
 	if (!buddy)
 		return(NULL);
-	return(buddy->alias);
+	return(buddy->info[SIPE_BUDDY_INFO_DISPLAY_NAME]);
 }
 
 static void update_alias(struct telepathy_buddy *buddy,
 			 const gchar *alias)
 {
 	if (buddy) {
-		g_free(buddy->alias);
-		buddy->alias = g_strdup(alias);
+		g_free(buddy->info[SIPE_BUDDY_INFO_DISPLAY_NAME]);
+		buddy->info[SIPE_BUDDY_INFO_DISPLAY_NAME] = g_strdup(alias);
 	}
 }
 
@@ -369,7 +372,7 @@ void sipe_telepathy_contact_info_iface_init(gpointer g_iface,
 #undef IMPLEMENT
 }
 
-static const gchar *const sipe_to_vcard_field[SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY + 1] = {
+static const gchar *const sipe_to_vcard_field[SIPE_INFO_FIELD_MAX] = {
 /* SIPE_BUDDY_INFO_DISPLAY_NAME          */ "fn",
 /* SIPE_BUDDY_INFO_JOB_TITLE             */ "title",
 /* SIPE_BUDDY_INFO_CITY                  */ NULL,
@@ -520,7 +523,7 @@ gchar *sipe_backend_buddy_get_name(SIPE_UNUSED_PARAMETER struct sipe_core_public
 gchar *sipe_backend_buddy_get_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				    const sipe_backend_buddy who)
 {
-	return(g_strdup(((struct telepathy_buddy_entry *) who)->buddy->alias));
+	return(g_strdup(((struct telepathy_buddy_entry *) who)->buddy->info[SIPE_BUDDY_INFO_DISPLAY_NAME]));
 }
 
 gchar *sipe_backend_buddy_get_server_alias(struct sipe_core_public *sipe_public,
@@ -541,6 +544,44 @@ gchar *sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_
 					 const sipe_backend_buddy who)
 {
 	return(g_strdup(((struct telepathy_buddy_entry *) who)->group));
+}
+
+gchar *sipe_backend_buddy_get_string(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				     sipe_backend_buddy who,
+				     const sipe_buddy_info_fields key)
+{
+	struct telepathy_buddy_entry *buddy_entry = who;
+	struct telepathy_buddy *buddy             = buddy_entry->buddy;
+
+	if (key >= SIPE_INFO_FIELD_MAX)
+		return(NULL);
+	return(g_strdup(buddy->info[key]));
+}
+
+void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
+				   sipe_backend_buddy who,
+				   const sipe_buddy_info_fields key,
+				   const gchar *val)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	SipeContactList *contact_list                  = telepathy_private->contact_list;
+	struct telepathy_buddy_entry *buddy_entry      = who;
+	struct telepathy_buddy *buddy                  = buddy_entry->buddy;
+
+	if (key >= SIPE_INFO_FIELD_MAX)
+		return;
+
+	SIPE_DEBUG_INFO("sipe_backend_buddy_set_string: %s replacing info %d: %s -> %s",
+			buddy->uri, key,
+			buddy->info[key] ? buddy->info[key]: "<UNDEFINED>",
+			val);
+
+	g_free(buddy->info[key]);
+	buddy->info[key] = g_strdup(val);
+
+	if (contact_list->initial_received) {
+		/* @TODO: emit signal? */
+	}
 }
 
 guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
@@ -598,8 +639,10 @@ void sipe_backend_buddy_list_processing_finish(struct sipe_core_public *sipe_pub
 static void buddy_free(gpointer data)
 {
 	struct telepathy_buddy *buddy = data;
+	guint i;
 	g_hash_table_destroy(buddy->groups);
-	g_free(buddy->alias);
+	for (i = 0; i < SIPE_INFO_FIELD_MAX; i++)
+		g_free(buddy->info[i]);
 	g_free(buddy);
 }
 
@@ -624,7 +667,7 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 		buddy->uri      = g_strdup(name); /* reused as key */
 		buddy->groups   = g_hash_table_new_full(g_str_hash, g_str_equal,
 							NULL, g_free);
-		buddy->alias    = g_strdup(alias);
+		buddy->info[SIPE_BUDDY_INFO_DISPLAY_NAME] = g_strdup(alias);
 		buddy->activity = SIPE_ACTIVITY_OFFLINE;
 		buddy->handle   = tp_handle_ensure(contact_list->contact_repo,
 						   buddy->uri, NULL, NULL);
