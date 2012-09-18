@@ -2378,6 +2378,7 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		uri = sip_uri_from_name(user);
 
 		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
+		sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
 
 	        acknowledged= sipe_xml_attribute(node, "acknowledged");
 		if(sipe_strcase_equal(acknowledged,"false")){

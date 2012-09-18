@@ -768,6 +768,17 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 				   const gchar *val);
 
 /**
+ * Called after one ore more buddy-specific settings have been updated.
+ *
+ * Can be used by the backend to trigger an UI update event
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param uri         SIP URI of the contact
+ */
+void sipe_backend_buddy_refresh_properties(struct sipe_core_public *sipe_public,
+					   const gchar *uri);
+
+/**
  * Get the status token for a contact
  *
  * @param sipe_public The handle representing the protocol instance making the call

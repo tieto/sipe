@@ -41,6 +41,8 @@
 
 /** BUDDIES ******************************************************************/
 
+void sipe_backend_buddy_refresh_properties(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					   SIPE_UNUSED_PARAMETER const gchar *uri) {}
 void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) {}
 void sipe_backend_buddy_request_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				    SIPE_UNUSED_PARAMETER const gchar *who,

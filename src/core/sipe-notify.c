@@ -340,6 +340,9 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 		}
 	}
 
+	if (xn_display_name || xn_contact)
+		sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
+
 	/* devicePresence */
 	for (node = sipe_xml_child(xn_presentity, "devices/devicePresence"); node; node = sipe_xml_twin(node)) {
 		const sipe_xml *xn_device_name;
@@ -816,6 +819,8 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, activity);
 	}
 
+	sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
+
 	sipe_xml_free(xn_categories);
 }
 
@@ -901,6 +906,8 @@ static void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,
 
 		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
 		g_free(display_name);
+
+		sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
 	}
 
 	if ((tuple = sipe_xml_child(pidf, "tuple"))) {

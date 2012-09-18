@@ -1088,6 +1088,9 @@ static gboolean process_get_info_response(struct sipe_core_private *sipe_private
 				sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE, tel_uri);
 				sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY, phone_number);
 				g_free(tel_uri);
+
+				sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC,
+								      uri);
 			}
 
 			if (!is_empty(server_alias)) {

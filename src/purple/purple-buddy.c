@@ -186,6 +186,12 @@ void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public
 	purple_blist_node_set_string(&b->node, buddy_info_property(key), val);
 }
 
+void sipe_backend_buddy_refresh_properties(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					   SIPE_UNUSED_PARAMETER const gchar *uri)
+{
+	/* nothing to do here: already taken care of by libpurple */
+}
+
 void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 }

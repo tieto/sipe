@@ -377,6 +377,12 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 	sipe_miranda_setContactString(pr, buddy, prop_name, val);
 }
 
+void sipe_backend_buddy_refresh_properties(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					   SIPE_UNUSED_PARAMETER const gchar *uri)
+{
+	/* nothing to do here: already taken care of by Miranda */
+}
+
 void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 }
