@@ -339,18 +339,12 @@ static const gchar *const sipe_to_vcard_field[SIPE_INFO_FIELD_MAX] = {
 /* SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY */ NULL,
 };
 
-static GPtrArray *convert_contact_info(GHashTable *buddies,
-				       TpHandle contact)
+static GPtrArray *convert_contact_info(struct telepathy_buddy *buddy)
 {
-	struct telepathy_buddy *buddy = g_hash_table_lookup(buddies,
-							    GUINT_TO_POINTER(contact));
 	GPtrArray *info = NULL;
 
 	if (buddy) {
 		guint i;
-
-		SIPE_DEBUG_INFO("SipeContactInfo::convert_contact_info: info for %s",
-				buddy->uri);
 
 		info = dbus_g_type_specialized_construct(
 			TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST);
@@ -361,6 +355,10 @@ static GPtrArray *convert_contact_info(GHashTable *buddies,
 
 			if (name && value) {
 				const gchar *const field_values[2] = { value, NULL };
+
+				SIPE_DEBUG_INFO("SipeContactInfo::convert_contact_info: %s: (%2d)%s = '%s'",
+						buddy->uri, i, name, value);
+
 				g_ptr_array_add(info,
 						tp_value_array_build(3,
 								     G_TYPE_STRING, name,
@@ -401,7 +399,9 @@ static void get_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
 
 	for (i = 0; i < contacts->len; i++) {
 		TpHandle contact = g_array_index(contacts, TpHandle, i);
-		GPtrArray *info  = convert_contact_info(buddies, contact);
+		struct telepathy_buddy *buddy = g_hash_table_lookup(buddies,
+								    GUINT_TO_POINTER(contact));
+		GPtrArray *info  = convert_contact_info(buddy);
 
 		if (info)
 			g_hash_table_insert(infos,
@@ -419,7 +419,8 @@ static void request_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
 				 DBusGMethodInvocation *context)
 {
 	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(G_OBJECT(iface));
-	GHashTable *buddies     = telepathy_private->contact_list->buddy_handles;
+	struct telepathy_buddy *buddy = g_hash_table_lookup(telepathy_private->contact_list->buddy_handles,
+							    GUINT_TO_POINTER(contact));
 	TpBaseConnection *base  = TP_BASE_CONNECTION(iface);
 	TpHandleRepoIface *repo = tp_base_connection_get_handles(base,
 								 TP_HANDLE_TYPE_CONTACT);
@@ -436,7 +437,7 @@ static void request_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
 		return;
 	}
 
-	info  = convert_contact_info(buddies, contact);
+	info  = convert_contact_info(buddy);
 	if (!info) {
 		dbus_g_method_return_error(context, error);
 		g_error_free(error);
@@ -648,6 +649,22 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 
 	if (contact_list->initial_received) {
 		/* @TODO: emit signal? */
+	}
+}
+
+void sipe_backend_buddy_refresh_properties(struct sipe_core_public *sipe_public,
+					   const gchar *uri)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	struct telepathy_buddy *buddy                  = g_hash_table_lookup(telepathy_private->contact_list->buddies,
+									     uri);
+	GPtrArray *info                                = convert_contact_info(buddy);
+
+	if (info) {
+		tp_svc_connection_interface_contact_info_emit_contact_info_changed(telepathy_private->connection,
+										   buddy->handle,
+										   info);
+		g_boxed_free(TP_ARRAY_TYPE_CONTACT_INFO_FIELD_LIST, info);
 	}
 }
 
