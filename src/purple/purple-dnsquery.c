@@ -102,16 +102,22 @@ struct sipe_dns_query *sipe_backend_dns_query_a(SIPE_UNUSED_PARAMETER struct sip
 						gpointer data)
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
-#if PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 #endif
 
 	query->type = A;
 	query->callback = callback;
 	query->extradata = data;
-	query->purple_query_data = purple_dnsquery_a(
+	query->purple_query_data =
 #if PURPLE_VERSION_CHECK(3,0,0)
+					purple_dnsquery_a(
 						     purple_private->account,
+#elif PURPLE_VERSION_CHECK(2,8,0)
+					purple_dnsquery_a_account(
+						     purple_private->account,
+#else
+					purple_dnsquery_a(
 #endif
 						     hostname,
 						     port,
@@ -143,16 +149,22 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(SIPE_UNUSED_PARAMETER struct s
 						  gpointer data)
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
-#if PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 #endif
 
 	query->type = SRV;
 	query->callback = callback;
 	query->extradata = data;
-	query->purple_query_data = purple_srv_resolve(
+	query->purple_query_data =
 #if PURPLE_VERSION_CHECK(3,0,0)
+					purple_srv_resolve(
 						      purple_private->account,
+#elif PURPLE_VERSION_CHECK(2,8,0)
+					purple_srv_resolve_account(
+						      purple_private->account,
+#else
+					purple_srv_resolve(
 #endif
 						      protocol,
 						      transport,
