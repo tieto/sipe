@@ -42,6 +42,9 @@ struct sipe_backend_private {
 	/* connection */
 	struct _SipeConnection *connection;
 
+	/* photo */
+	gchar *cache_dir;
+
 	/* status */
 	guint activity;
 	gchar *message;

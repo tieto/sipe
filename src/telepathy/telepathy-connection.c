@@ -25,8 +25,10 @@
 #endif
 
 #include <string.h>
+#include <sys/stat.h>
 
 #include <glib-object.h>
+#include <glib/gstdio.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-protocol.h>
 #include <telepathy-glib/contacts-mixin.h>
@@ -175,9 +177,24 @@ static gboolean connect_to_core(SipeConnection *self,
 		telepathy_private->contact_list = self->contact_list;
 		telepathy_private->connection   = self;
 		telepathy_private->activity     = SIPE_ACTIVITY_UNSET;
+		telepathy_private->cache_dir    = g_build_path(G_DIR_SEPARATOR_S,
+							       g_get_user_cache_dir(),
+							       "telepathy",
+							       "sipe",
+							       self->account,
+							       NULL);
 		telepathy_private->message      = NULL;
 		telepathy_private->transport    = NULL;
 		telepathy_private->ipaddress    = NULL;
+
+		/* make sure cache directory exists */
+		if (!g_file_test(telepathy_private->cache_dir,
+				 G_FILE_TEST_IS_DIR) &&
+		    (g_mkdir_with_parents(telepathy_private->cache_dir,
+					  S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH)
+		     == 0))
+			SIPE_DEBUG_INFO("connect_to_core: created cache directory %s",
+					telepathy_private->cache_dir);
 
 		/* map option list to flags - default is NTLM */
 		SIPE_CORE_FLAG_UNSET(KRB5);
@@ -314,6 +331,9 @@ static gboolean disconnect_from_core(gpointer data)
 
 	g_free(telepathy_private->message);
 	telepathy_private->message   = NULL;
+
+	g_free(telepathy_private->cache_dir);
+	telepathy_private->cache_dir = NULL;
 
 	SIPE_DEBUG_INFO_NOFORMAT("disconnect_from_core: core deallocated");
 

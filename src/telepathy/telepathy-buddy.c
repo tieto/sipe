@@ -20,7 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
+
 #include <glib-object.h>
+#include <glib/gstdio.h>
 #include <telepathy-glib/base-connection.h>
 #include <telepathy-glib/base-contact-list.h>
 #include <telepathy-glib/telepathy-glib.h>
@@ -40,6 +43,7 @@ struct telepathy_buddy {
 	TpHandle handle;
 	/* includes alias as stored on the server */
 	gchar *info[SIPE_INFO_FIELD_MAX];
+	gchar *hash;        /* photo hash */
 	guint activity;
 };
 
@@ -727,6 +731,7 @@ static void buddy_free(gpointer data)
 	g_hash_table_destroy(buddy->groups);
 	for (i = 0; i < SIPE_INFO_FIELD_MAX; i++)
 		g_free(buddy->info[i]);
+	g_free(buddy->hash);
 	g_free(buddy);
 }
 
@@ -752,6 +757,7 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 		buddy->groups   = g_hash_table_new_full(g_str_hash, g_str_equal,
 							NULL, g_free);
 		buddy->info[SIPE_BUDDY_INFO_DISPLAY_NAME] = g_strdup(alias);
+		buddy->hash     = NULL;
 		buddy->activity = SIPE_ACTIVITY_OFFLINE;
 		buddy->handle   = tp_handle_ensure(contact_list->contact_repo,
 						   buddy->uri, NULL, NULL);
@@ -830,6 +836,86 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 	tp_presence_mixin_emit_one_presence_update(G_OBJECT(telepathy_private->connection),
 						   buddy->handle, status);
 	tp_presence_status_free(status);
+}
+
+gboolean sipe_backend_uses_photo(void)
+{
+	return(TRUE);
+}
+
+void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
+				  const gchar *uri,
+				  gpointer image_data,
+				  gsize image_len,
+				  const gchar *photo_hash)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	struct telepathy_buddy *buddy                  = g_hash_table_lookup(telepathy_private->contact_list->buddies,
+									     uri);
+
+	if (buddy) {
+		char *hash_file = g_build_filename(telepathy_private->cache_dir,
+						   uri,
+						   NULL);
+
+		/* does this buddy already have a photo? -> delete it */
+		if (buddy->hash) {
+			char *photo_file = g_build_filename(telepathy_private->cache_dir,
+							    buddy->hash,
+							    NULL);
+			g_remove(photo_file);
+			g_free(photo_file);
+			g_free(buddy->hash);
+			buddy->hash = NULL;
+		}
+
+		/* update hash file */
+		if (g_file_set_contents(hash_file,
+					photo_hash,
+					strlen(photo_hash),
+					NULL)) {
+			char *photo_file = g_build_filename(telepathy_private->cache_dir,
+							    photo_hash,
+							    NULL);
+			buddy->hash = g_strdup(photo_hash);
+			g_file_set_contents(photo_file,
+					    image_data,
+					    image_len,
+					    NULL);
+
+			/* @TODO: trigger avatar update/creation */
+
+			g_free(photo_file);
+		}
+
+		g_free(hash_file);
+	}
+
+	g_free(image_data);
+}
+
+const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_public,
+					       const gchar *uri)
+{
+	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
+	struct telepathy_buddy *buddy                  = g_hash_table_lookup(telepathy_private->contact_list->buddies,
+									     uri);
+
+	if (!buddy)
+		return(NULL);
+
+	if (!buddy->hash) {
+		char *hash_file = g_build_filename(telepathy_private->cache_dir,
+						   uri,
+						   NULL);
+		/* returned memory is owned & freed by buddy */
+		if (g_file_get_contents(hash_file, &buddy->hash, NULL, NULL)) {
+			/* @TODO: trigger creation of avatar for buddy */
+		}
+		g_free(hash_file);
+	}
+
+	return(buddy->hash);
 }
 
 gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
