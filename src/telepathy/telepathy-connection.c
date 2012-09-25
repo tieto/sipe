@@ -99,6 +99,8 @@ G_DEFINE_TYPE_WITH_CODE(SipeConnection,
 			TP_TYPE_BASE_CONNECTION,
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_ALIASING,
 					      init_aliasing);
+			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_AVATARS,
+					      sipe_telepathy_avatars_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACTS,
 					      tp_contacts_mixin_iface_init);
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CONNECTION_INTERFACE_CONTACT_GROUPS,
@@ -388,6 +390,26 @@ static void aliasing_fill_contact_attributes(GObject *object,
 	}
 }
 
+static void avatars_fill_contact_attributes(GObject *object,
+					    const GArray *contacts,
+					    GHashTable *attributes)
+{
+	SipeConnection *self = SIPE_CONNECTION(object);
+	guint i;
+
+	for (i = 0; i < contacts->len; i++) {
+		TpHandle contact = g_array_index(contacts, guint, i);
+		const gchar *hash = sipe_telepathy_buddy_get_hash(self->contact_list,
+								  contact);
+
+		if (!hash) hash = "";
+		tp_contacts_mixin_set_contact_attribute(attributes,
+							contact,
+							TP_IFACE_CONNECTION_INTERFACE_AVATARS"/token",
+							tp_g_value_slice_new_string(hash));
+	}
+}
+
 static void contact_info_properties_getter(GObject *object,
 					   SIPE_UNUSED_PARAMETER GQuark interface,
 					   GQuark name,
@@ -422,6 +444,9 @@ static void sipe_connection_constructed(GObject *object)
 	tp_contacts_mixin_add_contact_attributes_iface(object,
 						       TP_IFACE_CONNECTION_INTERFACE_ALIASING,
 						       aliasing_fill_contact_attributes);
+	tp_contacts_mixin_add_contact_attributes_iface(object,
+						       TP_IFACE_CONNECTION_INTERFACE_AVATARS,
+						       avatars_fill_contact_attributes);
 
 	tp_presence_mixin_init(object,
 			       G_STRUCT_OFFSET(SipeConnection,
@@ -458,6 +483,7 @@ static void sipe_connection_finalize(GObject *object)
 static const gchar *interfaces_always_present[] = {
 	/* @TODO */
 	TP_IFACE_CONNECTION_INTERFACE_ALIASING,
+	TP_IFACE_CONNECTION_INTERFACE_AVATARS,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACT_GROUPS,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACT_INFO,
 	TP_IFACE_CONNECTION_INTERFACE_CONTACT_LIST,

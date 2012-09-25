@@ -61,8 +61,12 @@ const gchar *sipe_telepathy_buddy_get_alias(struct _SipeContactList *contact_lis
 void sipe_telepathy_buddy_set_alias(struct _SipeContactList *contact_list,
 				    const guint contact,
 				    const gchar *alias);
+const gchar *sipe_telepathy_buddy_get_hash(struct _SipeContactList *contact_list,
+					   const guint contact);
 guint sipe_telepathy_buddy_get_presence(struct _SipeContactList *contact_list,
 					guint contact);
+void sipe_telepathy_avatars_iface_init(gpointer g_iface,
+				       gpointer iface_data);
 void sipe_telepathy_contact_info_iface_init(gpointer g_iface,
 					    gpointer iface_data);
 GPtrArray *sipe_telepathy_contact_info_fields(void);

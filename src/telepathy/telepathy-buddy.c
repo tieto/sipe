@@ -307,6 +307,17 @@ void sipe_telepathy_buddy_set_alias(SipeContactList *contact_list,
 	}
 }
 
+/* get photo hash for a contact */
+const gchar *sipe_telepathy_buddy_get_hash(struct _SipeContactList *contact_list,
+					   const guint contact)
+{
+	struct telepathy_buddy *buddy = g_hash_table_lookup(contact_list->buddy_handles,
+							    GUINT_TO_POINTER(contact));
+	if (!buddy)
+		return(NULL);
+	return(buddy->hash);
+}
+
 /* get presence status for a contact */
 guint sipe_telepathy_buddy_get_presence(SipeContactList *contact_list,
 					const TpHandle contact)
@@ -316,6 +327,49 @@ guint sipe_telepathy_buddy_get_presence(SipeContactList *contact_list,
 	if (!buddy)
 		return(SIPE_ACTIVITY_UNSET);
 	return(buddy->activity);
+}
+
+/* @TODO: are other MIME types supported by OCS? */
+static const char * mimetypes[] = {
+	"image/jpeg",
+	NULL
+};
+
+/* @TODO: are these correct or even needed? */
+#define AVATAR_MIN_PX       16
+#define AVATAR_MAX_PX      256
+#define AVATAR_MAX_BYTES 32768
+
+static void get_avatar_requirements(TpSvcConnectionInterfaceAvatars *iface,
+				    DBusGMethodInvocation *context)
+{
+	TP_BASE_CONNECTION_ERROR_IF_NOT_CONNECTED(TP_BASE_CONNECTION(iface),
+						  context);
+
+	tp_svc_connection_interface_avatars_return_from_get_avatar_requirements(
+		context,
+		mimetypes,
+		AVATAR_MIN_PX, AVATAR_MIN_PX,
+		AVATAR_MAX_PX, AVATAR_MAX_PX,
+		AVATAR_MAX_BYTES);
+}
+
+void sipe_telepathy_avatars_iface_init(gpointer g_iface,
+				       SIPE_UNUSED_PARAMETER gpointer iface_data)
+{
+	TpSvcConnectionInterfaceAvatarsClass *klass = g_iface;
+
+#define IMPLEMENT(x) tp_svc_connection_interface_avatars_implement_##x( \
+		klass, x)
+	IMPLEMENT(get_avatar_requirements);
+	/* Information is provided by server: can't implement
+	   IMPLEMENT(get_avatar_tokens);
+	   IMPLEMENT(get_known_avatar_tokens);
+	   IMPLEMENT(request_avatar);
+	   IMPLEMENT(request_avatars);
+	   IMPLEMENT(set_avatar);
+	   IMPLEMENT(clear_avatar); */
+#undef IMPLEMENT
 }
 
 static const gchar *const sipe_to_vcard_field[SIPE_INFO_FIELD_MAX] = {
@@ -843,6 +897,30 @@ gboolean sipe_backend_uses_photo(void)
 	return(TRUE);
 }
 
+static void buddy_photo_updated(struct sipe_backend_private *telepathy_private,
+				struct telepathy_buddy *buddy,
+				const gchar *photo,
+				gsize photo_len)
+{
+	GArray *array = g_array_new(FALSE, FALSE, sizeof(gchar));
+
+	SIPE_DEBUG_INFO("buddy_photo_updated: %s (%" G_GSIZE_FORMAT ")",
+			buddy->uri, photo_len);
+
+	g_array_append_vals(array, photo, photo_len);
+
+	tp_svc_connection_interface_avatars_emit_avatar_updated(telepathy_private->connection,
+								buddy->handle,
+								buddy->hash);
+	tp_svc_connection_interface_avatars_emit_avatar_retrieved(telepathy_private->connection,
+								  buddy->handle,
+								  buddy->hash,
+								  array,
+								  /* @TODO: is this correct? */
+								  "image/jpeg");
+	g_array_unref(array);
+}
+
 void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
 				  const gchar *uri,
 				  gpointer image_data,
@@ -854,9 +932,9 @@ void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
 									     uri);
 
 	if (buddy) {
-		char *hash_file = g_build_filename(telepathy_private->cache_dir,
-						   uri,
-						   NULL);
+		gchar *hash_file = g_build_filename(telepathy_private->cache_dir,
+						    uri,
+						    NULL);
 
 		/* does this buddy already have a photo? -> delete it */
 		if (buddy->hash) {
@@ -874,16 +952,19 @@ void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
 					photo_hash,
 					strlen(photo_hash),
 					NULL)) {
-			char *photo_file = g_build_filename(telepathy_private->cache_dir,
-							    photo_hash,
-							    NULL);
+			gchar *photo_file = g_build_filename(telepathy_private->cache_dir,
+							     photo_hash,
+							     NULL);
 			buddy->hash = g_strdup(photo_hash);
 			g_file_set_contents(photo_file,
 					    image_data,
 					    image_len,
 					    NULL);
 
-			/* @TODO: trigger avatar update/creation */
+			buddy_photo_updated(telepathy_private,
+					    buddy,
+					    image_data,
+					    image_len);
 
 			g_free(photo_file);
 		}
@@ -905,12 +986,27 @@ const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_pub
 		return(NULL);
 
 	if (!buddy->hash) {
-		char *hash_file = g_build_filename(telepathy_private->cache_dir,
-						   uri,
-						   NULL);
+		gchar *hash_file = g_build_filename(telepathy_private->cache_dir,
+						    uri,
+						    NULL);
 		/* returned memory is owned & freed by buddy */
 		if (g_file_get_contents(hash_file, &buddy->hash, NULL, NULL)) {
-			/* @TODO: trigger creation of avatar for buddy */
+			gchar *photo_file = g_build_filename(telepathy_private->cache_dir,
+							    buddy->hash,
+							    NULL);
+			gchar *image_data = NULL;
+			gsize image_len;
+
+			if (g_file_get_contents(photo_file,
+						&image_data,
+						&image_len,
+						NULL))
+				buddy_photo_updated(telepathy_private,
+						    buddy,
+						    image_data,
+						    image_len);
+			g_free(image_data);
+			g_free(photo_file);
 		}
 		g_free(hash_file);
 	}
