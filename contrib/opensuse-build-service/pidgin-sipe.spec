@@ -184,11 +184,11 @@ BuildRequires:  gettext-devel
 BuildRequires:  libnice-devel
 %endif
 %if 0%{?has_gstreamer:1}
-BuildRequires:  gstreamer-devel
+BuildRequires:  pkgconfig(gstreamer-0.10)
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
-BuildRequires:  telepathy-glib-devel >= 0.18.0
+BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
 BuildRequires:  gmime-devel
 BuildRequires:  glib2-devel >= 2.28.0
 %endif
@@ -202,7 +202,6 @@ BuildRequires:  krb5-devel
 BuildRequires:  pidgin
 %if 0%{?build_telepathy:1}
 BuildRequires:  empathy
-BuildRequires:  pkgconfig(telepathy-glib)
 %endif
 Requires:       pidgin
 %if 0%{?sles_version} == 10
@@ -528,6 +527,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Sep 25 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
+- change BR gstreamer-devel to pkgconfig(gstreamer-0.10)
+
 * Sun Sep 09 2012 J. D. User <jduser@noreply.com> 1.13.3-*git*
 - BR telepathy-glib-devel >= 0.18.0
 
