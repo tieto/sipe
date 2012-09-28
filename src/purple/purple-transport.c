@@ -27,7 +27,9 @@
 #include <errno.h>
 #include <string.h>
 #include <time.h>
+#ifdef HAVE_UNISTD
 #include <unistd.h>
+#endif
 
 #include <glib.h>
 

@@ -47,7 +47,9 @@
 #endif
 #endif
 
+#ifdef HAVE_UNISTD
 #include <unistd.h>
+#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
