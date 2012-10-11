@@ -516,7 +516,12 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 #if PURPLE_VERSION_CHECK(3,0,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
 #endif
-	OPT_PROTO_CHAT_TOPIC,
+#ifdef HAVE_LIBKRB5
+        OPT_PROTO_CHAT_TOPIC
+        | OPT_PROTO_PASSWORD_OPTIONAL,
+#else
+        OPT_PROTO_CHAT_TOPIC,
+#endif
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	NO_BUDDY_ICONS,				/* icon_spec */
