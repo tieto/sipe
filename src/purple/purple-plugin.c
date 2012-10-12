@@ -516,12 +516,16 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 #if PURPLE_VERSION_CHECK(3,0,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
 #endif
-#ifdef HAVE_LIBKRB5
-        OPT_PROTO_CHAT_TOPIC
-        | OPT_PROTO_PASSWORD_OPTIONAL,
-#else
-        OPT_PROTO_CHAT_TOPIC,
-#endif
+	/*
+	 * NOTE: Do *NOT* add OPT_PROTO_PASSWORD_OPTIONAL here, because it
+	 *       breaks the "ask for password" functionality for non-Kerberos
+	 *       users when Kerberos is compiled in!
+	 *
+	 * Kerberos users: I know this sucks. If you don't like it, then
+	 * please improve libpurple to make this a run-time feature instead
+	 * of a compile-time feature.
+	 */
+	OPT_PROTO_CHAT_TOPIC,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	NO_BUDDY_ICONS,				/* icon_spec */
