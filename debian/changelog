@@ -12,6 +12,7 @@ pidgin-sipe (1.13.3-1) UNRELEASED; urgency=low
         - updated translations: French (fr)
         - various build fixes
   * Removed disable-w-cast-align.patch (applied upstream).
+  * Override false binary-without-manpage lintian warning.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 08 Nov 2012 21:21:15 +0100
 
