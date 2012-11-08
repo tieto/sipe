@@ -57,7 +57,7 @@ Build
  - run contrib/mingw-cross-compile/fetch.sh from pidgin-sipe source
    * make sure to check for fetch & unpack errors before proceeding!
 
- - cd into build/pidgin-<...REPLACE PIDGIN VERSION HERE...>
+ - cd into build-<...REPLACE PIDGIN VERSION HERE...>/pidgin-<...REPLACE PIDGIN VERSION HERE...>
 
  - copy/unpack pidgin-sipe source code tree into into current directory
 

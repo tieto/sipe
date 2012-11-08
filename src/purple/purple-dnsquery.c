@@ -21,12 +21,14 @@
  */
 
 #ifdef _WIN32
-#include "win32/win32dep.h" /* for inet_ntop() */
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
 #include <ws2tcpip.h>
 #else
-#include <arpa/inet.h>
-#include <netinet/in.h>
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 #include <glib.h>

@@ -40,6 +40,11 @@
 #include "proxy.h"
 #include "sslconn.h"
 
+#ifdef _WIN32
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
+#endif
+
 #include "purple-private.h"
 
 #include "sipe-backend.h"

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,22 +38,12 @@ guint sipe_backend_status(struct sipe_core_public *sipe_public)
 	return(sipe_purple_token_to_activity(purple_status_get_id(status)));
 }
 
-/**
- * This method motivates Purple's Host (e.g. Pidgin) to update its UI
- * by using standard Purple's means of signals and saved statuses.
- *
- * Thus all UI elements get updated: Status Button with Note, docklet.
- * This is ablolutely important as both our status and note can come
- * inbound (roaming) or be updated programmatically (e.g. based on our
- * calendar data).
- */
-gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
-				      guint activity,
-				      const gchar *message)
+gboolean sipe_backend_status_changed(struct sipe_core_public *sipe_public,
+				     guint activity,
+				     const gchar *message)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	PurpleAccount *account = purple_private->account;
-	PurpleStatus *status = purple_account_get_active_status(account);
+	PurpleStatus *status = purple_account_get_active_status(purple_private->account);
 	const gchar *status_id = sipe_purple_activity_to_token(activity);
 	gboolean changed = TRUE;
 
@@ -69,39 +59,54 @@ gboolean sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 		changed = FALSE;
 	}
 
-	if (changed) {
-		PurpleSavedStatus *saved_status;
-		const PurpleStatusType *acct_status_type =
-			purple_status_type_find_with_id(account->status_types, status_id);
-		PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
+	return(changed);
+}
 
-		saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
-		if (saved_status) {
-			purple_savedstatus_set_substatus(saved_status, account, acct_status_type, message);
-		}
+/**
+ * This method motivates Purple's Host (e.g. Pidgin) to update its UI
+ * by using standard Purple's means of signals and saved statuses.
+ *
+ * Thus all UI elements get updated: Status Button with Note, docklet.
+ * This is ablolutely important as both our status and note can come
+ * inbound (roaming) or be updated programmatically (e.g. based on our
+ * calendar data).
+ */
+void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
+				  guint activity,
+				  const gchar *message)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleAccount *account = purple_private->account;
+	const gchar *status_id = sipe_purple_activity_to_token(activity);
+	PurpleSavedStatus *saved_status;
+	const PurpleStatusType *acct_status_type =
+		purple_status_type_find_with_id(account->status_types, status_id);
+	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
 
-		/* If this type+message is unique then create a new transient saved status
-		 * Ref: gtkstatusbox.c
-		 */
-		if (!saved_status) {
-			GList *tmp;
-			GList *active_accts = purple_accounts_get_all_active();
-
-			saved_status = purple_savedstatus_new(NULL, primitive);
-			purple_savedstatus_set_message(saved_status, message);
-
-			for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
-				purple_savedstatus_set_substatus(saved_status,
-					(PurpleAccount *)tmp->data, acct_status_type, message);
-			}
-			g_list_free(active_accts);
-		}
-
-		/* Set the status for each account */
-		purple_savedstatus_activate(saved_status);
+	saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
+	if (saved_status) {
+		purple_savedstatus_set_substatus(saved_status, account, acct_status_type, message);
 	}
 
-	return(changed);
+	/* If this type+message is unique then create a new transient saved status
+	 * Ref: gtkstatusbox.c
+	 */
+	if (!saved_status) {
+		GList *tmp;
+		GList *active_accts = purple_accounts_get_all_active();
+
+		saved_status = purple_savedstatus_new(NULL, primitive);
+		purple_savedstatus_set_message(saved_status, message);
+
+		for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
+			purple_savedstatus_set_substatus(saved_status,
+							 (PurpleAccount *)tmp->data, acct_status_type, message);
+		}
+		g_list_free(active_accts);
+	}
+
+	/* Set the status for each account */
+	purple_savedstatus_activate(saved_status);
 }
 
 void sipe_purple_set_status(PurpleAccount *account,
