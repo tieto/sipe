@@ -6,4 +6,6 @@ then
 	--divert /usr/bin/pidgin.orig /usr/bin/pidgin
 fi
 
+#DEBHELPER#
+
 exit 0
