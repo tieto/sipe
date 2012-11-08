@@ -1,3 +1,19 @@
+pidgin-sipe (1.13.3-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+        - Fixed #3537084: OpenBSD build issue
+        - Fixed #3543294: Support Lync 2010 meet URLs
+        - revert to legacy MSOC protocol on Lync FT invitation
+        - fix broken busy->available status switch
+        - updated translations: Portuguese (pt)
+        - tls: fix buffer overrun
+        - win32: fix TCP connections
+        - nsis: fix broken locale installation
+        - updated translations: French (fr)
+        - various build fixes
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 08 Nov 2012 21:21:15 +0100
+
 pidgin-sipe (1.13.1-2.1) unstable; urgency=low
 
   * Non-maintainer upload.
