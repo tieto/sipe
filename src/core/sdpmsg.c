@@ -455,7 +455,7 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 					break;
 				default:
 					/* error unknown/unsupported type */
-					protocol = "UNKOWN";
+					protocol = "UNKNOWN";
 					break;
 			}
 
@@ -511,7 +511,7 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 					break;
 				default:
 					/* error unknown/unsupported type */
-					protocol = "UNKOWN";
+					protocol = "UNKNOWN";
 					break;
 			}
 

@@ -32,8 +32,8 @@
 #include "version.h"
 
 #ifdef _WIN32
-/* for network */
-#include "win32/libc_interface.h"
+/* wrappers for write() & friends for socket handling */
+#include "win32/win32dep.h"
 #include <nspapi.h>
 #else
 #include <sys/types.h>
