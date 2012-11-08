@@ -1,0 +1,2 @@
+debian/extra/pidgin usr/bin
+debian/extra/pidgin-sipe etc/default

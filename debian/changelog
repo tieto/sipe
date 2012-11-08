@@ -1,3 +1,10 @@
+pidgin-sipe (1.13.1-2.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * added patch to help putting workaround in place (Closes: #642199)
+
+ -- Dominique Dumont <dod@debian.org>  Mon, 29 Oct 2012 13:07:17 +0100
+
 pidgin-sipe (1.13.1-2) unstable; urgency=low
 
   * Fix FTBFS on ARM, MIPS and SPARC.

@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+if [ "$1" = install ] || [ "$1" = upgrade ]
+then
+    dpkg-divert --add --package pidgin-sipe --rename \
+	--divert /usr/bin/pidgin.orig /usr/bin/pidgin
+fi
+
+exit 0

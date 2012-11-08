@@ -1,0 +1,10 @@
+#!/bin/bash
+
+CONF=/etc/default/pidgin-sipe
+
+if [[ -r $CONF ]]
+then
+	. $CONF 
+fi
+
+/usr/bin/pidgin.orig $*

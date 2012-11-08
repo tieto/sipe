@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+if [ "$1" = remove ]
+then
+    dpkg-divert --remove --package pidgin-sipe --rename \
+	--divert /usr/bin/pidgin.orig /usr/bin/pidgin
+fi
+
+exit 0

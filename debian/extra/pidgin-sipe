@@ -1,0 +1,11 @@
+# uncomment the export line below if you have problem connecting
+# to a Microsoft server.
+
+# export NSS_SSL_CBC_RANDOM_IV=0
+
+
+# For more details, see
+# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=642199
+# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=681593
+# https://bugzilla.mozilla.org/show_bug.cgi?id=702111
+

@@ -51,6 +51,9 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 # Add here commands to install the package into debian/gsetroot.
+	dh_install debian/extra/pidgin usr/bin
+	dh_install debian/extra/pidgin-sipe etc/default
+
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/pidgin-sipe
 	-rm -rf $(CURDIR)/debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
 	-rm -rf $(CURDIR)/debian/pidgin-sipe/usr/lib/purple-2/libsipe.la
