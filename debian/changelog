@@ -15,6 +15,7 @@ pidgin-sipe (1.13.3-1) unstable; urgency=low
   * Override false binary-without-manpage lintian warning.
   * Enable binary hardening.
   * Fix maintainer-script-lacks-debhelper-token lintian warning.
+  * Bump Standards-Version to 3.9.4.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 16 Nov 2012 14:09:07 +0100
 
