@@ -1,4 +1,4 @@
-pidgin-sipe (1.13.3-1) UNRELEASED; urgency=low
+pidgin-sipe (1.13.3-1) unstable; urgency=low
 
   * New upstream release.
         - Fixed #3537084: OpenBSD build issue
@@ -16,7 +16,7 @@ pidgin-sipe (1.13.3-1) UNRELEASED; urgency=low
   * Enable binary hardening.
   * Fix maintainer-script-lacks-debhelper-token lintian warning.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 08 Nov 2012 21:21:15 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 16 Nov 2012 14:09:07 +0100
 
 pidgin-sipe (1.13.1-2.1) unstable; urgency=low
 
