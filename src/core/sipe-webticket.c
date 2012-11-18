@@ -343,10 +343,34 @@ static void realminfo(struct sipe_core_private *sipe_private,
 		      gpointer callback_data)
 {
 	struct webticket_callback_data *wcd = callback_data;
+	gchar *failure_msg = NULL;
 
 	if (realminfo) {
+		/* detect ADFS setup. See also:
+		 *
+		 *   http://en.wikipedia.org/wiki/Active_Directory_Federation_Services
+		 *
+		 * NOTE: this is based on observed behaviour.
+		 *       It is unkown if this is documented somewhere...
+		 */
+		gchar *sts_auth_url = sipe_xml_data(sipe_xml_child(realminfo,
+								   "STSAuthURL"));
+
 		SIPE_DEBUG_INFO("realminfo: data for user %s retrieved successfully",
 				sipe_private->username);
+
+		if (sts_auth_url) {
+			failure_msg = g_strdup_printf("ADFS setup detected [%s]!\n"
+						      "Support for ADFS authentication is not implemented yet, sorry.",
+						      sts_auth_url);
+			g_free(sts_auth_url);
+		}
+	}
+
+	/* don't fail if we didn't receive valid RealmInfo XML data */
+	if (!failure_msg) {
+
+		SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
 
 		if (sipe_svc_webticket_lmc(sipe_private,
 					   wcd->session,
@@ -363,10 +387,11 @@ static void realminfo(struct sipe_core_private *sipe_private,
 			      wcd->service_uri,
 			      uri ? uri : NULL,
 			      NULL,
-			      NULL,
+			      failure_msg,
 			      wcd->callback_data);
 		callback_data_free(wcd);
 	}
+	g_free(failure_msg);
 }
 
 static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
