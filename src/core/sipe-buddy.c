@@ -517,6 +517,7 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 			     const gchar *base_uri,
 			     const gchar *auth_uri,
 			     const gchar *wsse_security,
+			     SIPE_UNUSED_PARAMETER const gchar *failure_msg,
 			     gpointer callback_data)
 {
 	struct ms_dlx_data *mdd = callback_data;

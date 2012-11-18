@@ -266,6 +266,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 					      wcd->service_uri,
 					      wcd->service_auth_uri,
 					      wsse_security,
+					      NULL,
 					      wcd->callback_data);
 				failed = FALSE;
 				g_free(wsse_security);
@@ -322,6 +323,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 			wcd->callback(sipe_private,
 				      wcd->service_uri,
 				      uri ? uri : NULL,
+				      NULL,
 				      NULL,
 				      wcd->callback_data);
 		}
@@ -406,6 +408,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 		wcd->callback(sipe_private,
 			      wcd->service_uri,
 			      uri ? uri : NULL,
+			      NULL,
 			      NULL,
 			      wcd->callback_data);
 		callback_data_free(wcd);
@@ -496,6 +499,7 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 		wcd->callback(sipe_private,
 			      wcd->service_uri,
 			      uri ? uri : NULL,
+			      NULL,
 			      NULL,
 			      wcd->callback_data);
 		callback_data_free(wcd);
