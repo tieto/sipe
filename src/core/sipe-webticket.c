@@ -245,6 +245,8 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 	return(wsse_security);
 }
 
+static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
+				   struct webticket_callback_data *wcd);
 static void webticket_token(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *raw,
@@ -304,14 +306,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO("webticket_token: anonymous authentication to service %s failed, retrying with federated authentication",
 					uri);
 
-			wcd->tried_fedbearer = TRUE;
-			if (sipe_svc_webticket_lmc(sipe_private,
-						   wcd->session,
-						   wcd->webticket_fedbearer_uri,
-						   webticket_token,
-						   wcd)) {
-				wcd->webticket_for_service = FALSE;
-
+			if (initiate_fedbearer(sipe_private, wcd)) {
 				/* callback data passed down the line */
 				wcd = NULL;
 			}
@@ -339,6 +334,20 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 		}
 		callback_data_free(wcd);
 	}
+}
+
+static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
+				   struct webticket_callback_data *wcd)
+{
+	gboolean success = sipe_svc_webticket_lmc(sipe_private,
+						  wcd->session,
+						  wcd->webticket_fedbearer_uri,
+						  webticket_token,
+						  wcd);
+	wcd->tried_fedbearer       = TRUE;
+	wcd->webticket_for_service = FALSE;
+
+	return(success);
 }
 
 static void webticket_metadata(struct sipe_core_private *sipe_private,
@@ -398,13 +407,8 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 							     wcd);
 				wcd->webticket_for_service = TRUE;
 			} else {
-				wcd->tried_fedbearer = TRUE;
-				success = sipe_svc_webticket_lmc(sipe_private,
-								 wcd->session,
-								 wcd->webticket_fedbearer_uri,
-								 webticket_token,
-								 wcd);
-				wcd->webticket_for_service = FALSE;
+				success = initiate_fedbearer(sipe_private,
+							     wcd);
 			}
 
 			if (success) {
