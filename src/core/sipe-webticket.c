@@ -336,14 +336,46 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void realminfo(struct sipe_core_private *sipe_private,
+		      SIPE_UNUSED_PARAMETER const gchar *uri,
+		      SIPE_UNUSED_PARAMETER const gchar *raw,
+		      sipe_xml *realminfo,
+		      gpointer callback_data)
+{
+	struct webticket_callback_data *wcd = callback_data;
+
+	if (realminfo) {
+		SIPE_DEBUG_INFO("realminfo: data for user %s retrieved successfully",
+				sipe_private->username);
+
+		if (sipe_svc_webticket_lmc(sipe_private,
+					   wcd->session,
+					   wcd->webticket_fedbearer_uri,
+					   webticket_token,
+					   wcd)) {
+			/* callback data passed down the line */
+			wcd = NULL;
+		}
+	}
+
+	if (wcd) {
+		wcd->callback(sipe_private,
+			      wcd->service_uri,
+			      uri ? uri : NULL,
+			      NULL,
+			      NULL,
+			      wcd->callback_data);
+		callback_data_free(wcd);
+	}
+}
+
 static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
 				   struct webticket_callback_data *wcd)
 {
-	gboolean success = sipe_svc_webticket_lmc(sipe_private,
-						  wcd->session,
-						  wcd->webticket_fedbearer_uri,
-						  webticket_token,
-						  wcd);
+	gboolean success = sipe_svc_realminfo(sipe_private,
+					      wcd->session,
+					      realminfo,
+					      wcd);
 	wcd->tried_fedbearer       = TRUE;
 	wcd->webticket_for_service = FALSE;
 

@@ -66,6 +66,7 @@ void sipe_svc_session_close(struct sipe_svc_session *session);
  * Trigger fetch of Get & Publish certificate
  *
  * @param sipe_private  SIPE core private data
+ * @param session       opaque session pointer
  * @param uri           service URI
  * @param wsse_security predefined authentication token
  * @param certreq       certificate request (Base64 encoded)
@@ -85,6 +86,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
  * Trigger [MS-DLX] address book entry search
  *
  * @param sipe_private  SIPE core private data
+ * @param session       opaque session pointer
  * @param uri           service URI
  * @param wsse_security predefined authentication token
  * @param search        [MS-DLX] AbEntryRequest.ChangeSearchQuery in XML
@@ -108,6 +110,7 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
  * Trigger fetch of WebTicket security token
  *
  * @param sipe_private  SIPE core private data
+ * @param session       opaque session pointer
  * @param uri           service URI
  * @param wsse_security predefined authentication token. May be @c NULL
  * @param service_uri   request token for this service URI
@@ -129,6 +132,7 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
  * Trigger fetch of WebTicket security token from login.microsoftonline.com
  *
  * @param sipe_private  SIPE core private data
+ * @param session       opaque session pointer
  * @param service_uri   request token for this service URI
  * @param callback      callback function
  * @param callback_data callback data
@@ -141,9 +145,24 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 				gpointer callback_data);
 
 /**
+ * Trigger fetch of RealmInfo data from login.microsoftonline.com
+ *
+ * @param sipe_private  SIPE core private data
+ * @param session       opaque session pointer
+ * @param callback      callback function
+ * @param callback_data callback data
+ * @return              @c TRUE if data fetch was triggered
+ */
+gboolean sipe_svc_realminfo(struct sipe_core_private *sipe_private,
+			    struct sipe_svc_session *session,
+			    sipe_svc_callback *callback,
+			    gpointer callback_data);
+
+/**
  * Trigger fetch of service metadata
  *
  * @param sipe_private  SIPE core private data
+ * @param session       opaque session pointer
  * @param uri           service URI
  * @param callback      callback function
  * @param callback_data callback data

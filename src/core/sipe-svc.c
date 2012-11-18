@@ -525,6 +525,27 @@ static void sipe_svc_metadata_response(struct svc_request *data,
 	}
 }
 
+gboolean sipe_svc_realminfo(struct sipe_core_private *sipe_private,
+			    struct sipe_svc_session *session,
+			    sipe_svc_callback *callback,
+			    gpointer callback_data)
+{
+	gchar *realminfo_uri = g_strdup_printf("https://login.microsoftonline.com/getuserrealm.srf?login=%s&xml=1",
+					       sipe_private->username);
+	gboolean ret = sipe_svc_https_request(sipe_private,
+					      HTTP_CONN_GET,
+					      session,
+					      realminfo_uri,
+					      "text",
+					      NULL,
+					      NULL,
+					      sipe_svc_metadata_response,
+					      callback,
+					      callback_data);
+	g_free(realminfo_uri);
+	return(ret);
+}
+
 gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
 			   struct sipe_svc_session *session,
 			   const gchar *uri,
