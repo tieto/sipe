@@ -320,12 +320,22 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 	if (wcd) {
 		if (failed) {
+			gchar *failure_msg = NULL;
+
+			if (soap_body) {
+				failure_msg = sipe_xml_data(sipe_xml_child(soap_body,
+									   "Body/Fault/Detail/error/internalerror/text"));
+				/* XML data can end in &#x000D;&#x000A; */
+				g_strstrip(failure_msg);
+			}
+
 			wcd->callback(sipe_private,
 				      wcd->service_uri,
 				      uri ? uri : NULL,
 				      NULL,
-				      NULL,
+				      failure_msg,
 				      wcd->callback_data);
+			g_free(failure_msg);
 		}
 		callback_data_free(wcd);
 	}
