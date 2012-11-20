@@ -29,6 +29,7 @@
  */
 
 #include <string.h>
+#include <time.h>
 
 #include <glib.h>
 
@@ -66,6 +67,7 @@ struct webticket_callback_data {
 struct webticket_token {
 	gchar *auth_uri;
 	gchar *token;
+	time_t expires;
 };
 
 struct sipe_webticket {
@@ -111,11 +113,13 @@ static void sipe_webticket_init(struct sipe_core_private *sipe_private)
 static void cache_token(struct sipe_core_private *sipe_private,
 			const gchar *service_uri,
 			const gchar *auth_uri,
-			gchar *token)
+			gchar *token,
+			time_t expires)
 {
 	struct webticket_token *wt = g_new0(struct webticket_token, 1);
 	wt->auth_uri = g_strdup(auth_uri);
 	wt->token    = token;
+	wt->expires  = expires;
 	g_hash_table_insert(sipe_private->webticket->cache,
 			    g_strdup(service_uri),
 			    wt);
@@ -124,9 +128,20 @@ static void cache_token(struct sipe_core_private *sipe_private,
 static const struct webticket_token *cache_hit(struct sipe_core_private *sipe_private,
 					       const gchar *service_uri)
 {
+	const struct webticket_token *wt;
+
 	sipe_webticket_init(sipe_private);
-	return(g_hash_table_lookup(sipe_private->webticket->cache,
-				   service_uri));
+
+	/* make sure a cached Web Ticket is still valid for 60 seconds */
+	wt = g_hash_table_lookup(sipe_private->webticket->cache,
+				 service_uri);
+	if (wt && (wt->expires < time(NULL) + 60)) {
+		SIPE_DEBUG_INFO("cache_hit: cached token for URI %s has expired",
+				service_uri);
+		wt = NULL;
+	}
+
+	return(wt);
 }
 
 static void callback_data_free(struct webticket_callback_data *wcd)
@@ -203,13 +218,18 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 }
 
 static gchar *generate_sha1_proof_wsse(const gchar *raw,
-				       struct sipe_tls_random *entropy)
+				       struct sipe_tls_random *entropy,
+				       time_t *expires)
 {
 	gchar *timestamp = generate_timestamp(raw, "Lifetime");
 	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
 	gchar *wsse_security = NULL;
 
 	if (timestamp && keydata) {
+		gchar *expires_string = sipe_xml_extract_raw(timestamp,
+							     "Expires",
+							     FALSE);
+
 		if (entropy) {
 			gchar *assertionID = extract_raw_xml_attribute(keydata,
 								       "AssertionID");
@@ -318,6 +338,12 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 						    keydata,
 						    NULL);
 		}
+
+		*expires = 0;
+		if (expires_string) {
+			*expires = sipe_utils_str_to_time(expires_string);
+			g_free(expires_string);
+		}
 	}
 
 	g_free(keydata);
@@ -339,15 +365,18 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	if (soap_body) {
 		/* WebTicket for Web Service */
 		if (wcd->webticket_for_service) {
+			time_t expires;
 			gchar *wsse_security = generate_sha1_proof_wsse(raw,
-									wcd->requires_signing ? &wcd->entropy : NULL);
+									wcd->requires_signing ? &wcd->entropy : NULL,
+									&expires);
 
 			if (wsse_security) {
 				/* cache takes ownership of wsse_security */
 				cache_token(sipe_private,
 					    wcd->service_uri,
 					    wcd->service_auth_uri,
-					    wsse_security);
+					    wsse_security,
+					    expires);
 				callback_execute(sipe_private,
 						 wcd,
 						 wcd->service_auth_uri,
