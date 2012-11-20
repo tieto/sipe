@@ -75,6 +75,20 @@ static void callback_data_free(struct webticket_callback_data *wcd)
 	}
 }
 
+static void callback_execute(struct sipe_core_private *sipe_private,
+			     struct webticket_callback_data *wcd,
+			     const gchar *auth_uri,
+			     const gchar *wsse_security,
+			     const gchar *failure_msg)
+{
+	wcd->callback(sipe_private,
+		      wcd->service_uri,
+		      auth_uri,
+		      wsse_security,
+		      failure_msg,
+		      wcd->callback_data);
+}
+
 static gchar *extract_raw_xml_attribute(const gchar *xml,
 					const gchar *name)
 {
@@ -263,13 +277,11 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 									wcd->requires_signing ? &wcd->entropy : NULL);
 
 			if (wsse_security) {
-				/* callback takes ownership of wsse_security */
-				wcd->callback(sipe_private,
-					      wcd->service_uri,
-					      wcd->service_auth_uri,
-					      wsse_security,
-					      NULL,
-					      wcd->callback_data);
+				callback_execute(sipe_private,
+						 wcd,
+						 wcd->service_auth_uri,
+						 wsse_security,
+						 NULL);
 				failed = FALSE;
 				g_free(wsse_security);
 			}
@@ -324,12 +336,11 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 				g_strstrip(failure_msg);
 			}
 
-			wcd->callback(sipe_private,
-				      wcd->service_uri,
-				      uri ? uri : NULL,
-				      NULL,
-				      failure_msg,
-				      wcd->callback_data);
+			callback_execute(sipe_private,
+					 wcd,
+					 uri,
+					 NULL,
+					 failure_msg);
 			g_free(failure_msg);
 		}
 		callback_data_free(wcd);
@@ -383,12 +394,11 @@ static void realminfo(struct sipe_core_private *sipe_private,
 	}
 
 	if (wcd) {
-		wcd->callback(sipe_private,
-			      wcd->service_uri,
-			      uri ? uri : NULL,
-			      NULL,
-			      failure_msg,
-			      wcd->callback_data);
+		callback_execute(sipe_private,
+				 wcd,
+				 uri,
+				 NULL,
+				 failure_msg);
 		callback_data_free(wcd);
 	}
 	g_free(failure_msg);
@@ -476,12 +486,11 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 	}
 
 	if (wcd) {
-		wcd->callback(sipe_private,
-			      wcd->service_uri,
-			      uri ? uri : NULL,
-			      NULL,
-			      NULL,
-			      wcd->callback_data);
+		callback_execute(sipe_private,
+				 wcd,
+				 uri,
+				 NULL,
+				 NULL);
 		callback_data_free(wcd);
 	}
 }
@@ -567,12 +576,11 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 	}
 
 	if (wcd) {
-		wcd->callback(sipe_private,
-			      wcd->service_uri,
-			      uri ? uri : NULL,
-			      NULL,
-			      NULL,
-			      wcd->callback_data);
+		callback_execute(sipe_private,
+				 wcd,
+				 uri,
+				 NULL,
+				 NULL);
 		callback_data_free(wcd);
 	}
 }
