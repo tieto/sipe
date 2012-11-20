@@ -63,6 +63,72 @@ struct webticket_callback_data {
 	struct sipe_svc_session *session;
 };
 
+struct webticket_token {
+	gchar *auth_uri;
+	gchar *token;
+};
+
+struct sipe_webticket {
+	GHashTable *cache;
+};
+
+void sipe_webticket_free(struct sipe_core_private *sipe_private)
+{
+	struct sipe_webticket *webticket = sipe_private->webticket;
+	if (!webticket)
+		return;
+
+	if (webticket->cache)
+		g_hash_table_destroy(webticket->cache);
+	g_free(webticket);
+	sipe_private->webticket = NULL;
+}
+
+static void free_token(gpointer data)
+{
+	struct webticket_token *wt = data;
+	g_free(wt->auth_uri);
+	g_free(wt->token);
+	g_free(wt);
+}
+
+static void sipe_webticket_init(struct sipe_core_private *sipe_private)
+{
+	struct sipe_webticket *webticket;
+
+	if (sipe_private->webticket)
+		return;
+
+	sipe_private->webticket = webticket = g_new0(struct sipe_webticket, 1);
+
+	webticket->cache = g_hash_table_new_full(g_str_hash,
+						 g_str_equal,
+						 g_free,
+						 free_token);
+}
+
+/* takes ownership of "token" */
+static void cache_token(struct sipe_core_private *sipe_private,
+			const gchar *service_uri,
+			const gchar *auth_uri,
+			gchar *token)
+{
+	struct webticket_token *wt = g_new0(struct webticket_token, 1);
+	wt->auth_uri = g_strdup(auth_uri);
+	wt->token    = token;
+	g_hash_table_insert(sipe_private->webticket->cache,
+			    g_strdup(service_uri),
+			    wt);
+}
+
+static const struct webticket_token *cache_hit(struct sipe_core_private *sipe_private,
+					       const gchar *service_uri)
+{
+	sipe_webticket_init(sipe_private);
+	return(g_hash_table_lookup(sipe_private->webticket->cache,
+				   service_uri));
+}
+
 static void callback_data_free(struct webticket_callback_data *wcd)
 {
 	if (wcd) {
@@ -277,13 +343,17 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 									wcd->requires_signing ? &wcd->entropy : NULL);
 
 			if (wsse_security) {
+				/* cache takes ownership of wsse_security */
+				cache_token(sipe_private,
+					    wcd->service_uri,
+					    wcd->service_auth_uri,
+					    wsse_security);
 				callback_execute(sipe_private,
 						 wcd,
 						 wcd->service_auth_uri,
 						 wsse_security,
 						 NULL);
 				failed = FALSE;
-				g_free(wsse_security);
 			}
 
 		/* WebTicket for federated authentication */
@@ -592,21 +662,38 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 				sipe_webticket_callback *callback,
 				gpointer callback_data)
 {
-	struct webticket_callback_data *wcd = g_new0(struct webticket_callback_data, 1);
-	gboolean ret = sipe_svc_metadata(sipe_private,
-					 session,
-					 base_uri,
-					 service_metadata,
-					 wcd);
+	const struct webticket_token *wt = cache_hit(sipe_private, base_uri);
+	gboolean ret;
 
-	if (ret) {
-		wcd->service_uri   = g_strdup(base_uri);
-		wcd->service_port  = port_name;
-		wcd->callback      = callback;
-		wcd->callback_data = callback_data;
-		wcd->session       = session;
+	/* cache hit for this URI? */
+	if (wt) {
+		SIPE_DEBUG_INFO("sipe_webticket_request: using cached token for URI %s (Auth URI %s)",
+				base_uri, wt->auth_uri);
+		callback(sipe_private,
+			 base_uri,
+			 wt->auth_uri,
+			 wt->token,
+			 NULL,
+			 callback_data);
+		ret = TRUE;
 	} else {
-		g_free(wcd);
+		struct webticket_callback_data *wcd = g_new0(struct webticket_callback_data, 1);
+
+		ret = sipe_svc_metadata(sipe_private,
+					session,
+					base_uri,
+					service_metadata,
+					wcd);
+
+		if (ret) {
+			wcd->service_uri   = g_strdup(base_uri);
+			wcd->service_port  = port_name;
+			wcd->callback      = callback;
+			wcd->callback_data = callback_data;
+			wcd->session       = session;
+		} else {
+			g_free(wcd);
+		}
 	}
 
 	return(ret);

@@ -51,6 +51,9 @@ typedef void (sipe_webticket_callback)(struct sipe_core_private *sipe_private,
 /**
  * Request a Web Ticket for Web Service URI
  *
+ * NOTE: the callback can be called immediately if the Web Ticket is cached.
+ *       The callback data must therefore be properly initialized already.
+ *
  * @param sipe_private  SIPE core private data
  * @param base_uri      Web Service base URI
  * @param port_name     Web Service authentication port name
@@ -64,3 +67,10 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 				const gchar *port_name,
 				sipe_webticket_callback *callback,
 				gpointer callback_data);
+
+/**
+ * Free webticket data
+ *
+ * @param sipe_private SIPE core private data
+ */
+void sipe_webticket_free(struct sipe_core_private *sipe_private);

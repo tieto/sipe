@@ -94,6 +94,7 @@
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
 #include "sipe-utils.h"
+#include "sipe-webticket.h"
 
 /* locale_dir is unused if ENABLE_NLS is not defined */
 void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
@@ -389,6 +390,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 		sip_csta_close(sipe_private);
 	}
 
+	sipe_webticket_free(sipe_private);
 	sipe_svc_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
