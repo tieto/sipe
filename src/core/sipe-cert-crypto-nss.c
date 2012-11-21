@@ -341,6 +341,26 @@ gboolean sipe_cert_crypto_valid(gpointer certificate,
 	       (validity == secCertTimeUndetermined));
 }
 
+guint sipe_cert_crypto_expires(gpointer certificate)
+{
+	struct certificate_nss *cn = certificate;
+	PRTime now, notAfter;
+
+	if (!cn ||
+	    (CERT_GetCertTimes(cn->decoded,
+			       &now, /* can't be NULL */
+			       &notAfter) != SECSuccess))
+		return(0);
+
+	/* Sanity check */
+	now = PR_Now();
+	if (notAfter < now)
+		return(0);
+
+	/* PRTime unit is microseconds */
+	return((notAfter - now) / PR_USEC_PER_SEC);
+}
+
 gsize sipe_cert_crypto_raw_length(gpointer certificate)
 {
 	return(((struct certificate_nss *) certificate)->length);

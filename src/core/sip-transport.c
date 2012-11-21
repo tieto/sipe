@@ -1005,22 +1005,21 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 				if (!transport->reauthenticate_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
-					guint reauth_timeout;
+					guint reauth_timeout = transport->registrar.expires;
 
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
 
-					if (transport->registrar.type == AUTH_TYPE_KERBEROS && transport->registrar.expires > 0) {
-						/* assuming normal Kerberos ticket expiration of about 8-10 hours */
-						reauth_timeout = transport->registrar.expires - 300;
-					} else {
-						/* NTLM: we have to reauthenticate as our security token expires
-						after eight hours (be five minutes early) */
-						reauth_timeout = (8 * 3600) - 300;
+					/* Does authentication scheme provide valid expiration time? */
+					if (reauth_timeout <= (5 * 60)) {
+						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: no expiration time - using default of 8 hours");
+						reauth_timeout = 8 * 60 * 60;
 					}
+
+					/* schedule reauthentication 5 minutes before expiration */
 					sipe_schedule_seconds(sipe_private,
 							      action_name,
 							      NULL,
-							      reauth_timeout,
+							      reauth_timeout - 5 * 60,
 							      do_reauthenticate_cb,
 							      NULL);
 					g_free(action_name);

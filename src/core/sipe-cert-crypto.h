@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -98,6 +98,15 @@ gpointer sipe_cert_crypto_import(const guchar *raw, gsize length);
  */
 gboolean sipe_cert_crypto_valid(gpointer certificate,
 				guint offset);
+
+/**
+ * Return how many seconds until the certificate expires
+ *
+ * @param certificate opaque pointer to backend certificate structure
+ *
+ * @return offset in seconds
+ */
+guint sipe_cert_crypto_expires(gpointer certificate);
 
 /**
  * Return length of certificate in DER form
