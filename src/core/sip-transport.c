@@ -1215,17 +1215,18 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				const char *auth_hdr;
 
 				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
+
+				if (transport->reauthenticate_set) {
+					SIPE_DEBUG_ERROR_NOFORMAT("process_register_response: RE-REGISTER rejected, triggering re-authentication");
+					do_reauthenticate_cb(sipe_private, NULL);
+					return TRUE;
+				}
+
 				if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
-					return TRUE;
-				}
-
-				if (transport->reauthenticate_set) {
-					SIPE_DEBUG_ERROR_NOFORMAT("process_register_response: RE-REGISTER rejected, triggering re-authentication");
-					do_reauthenticate_cb(sipe_private, NULL);
 					return TRUE;
 				}
 
