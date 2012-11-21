@@ -390,8 +390,9 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 		sip_csta_close(sipe_private);
 	}
 
-	sipe_webticket_free(sipe_private);
+	/* pending service requests must be cancelled first */
 	sipe_svc_free(sipe_private);
+	sipe_webticket_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);

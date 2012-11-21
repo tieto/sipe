@@ -44,6 +44,11 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
+struct webticket_queued_data {
+	sipe_webticket_callback *callback;
+	gpointer callback_data;
+};
+
 struct webticket_callback_data {
 	gchar *service_uri;
 	const gchar *service_port;
@@ -62,6 +67,8 @@ struct webticket_callback_data {
 	gpointer callback_data;
 
 	struct sipe_svc_session *session;
+
+	GSList *queued;
 };
 
 struct webticket_token {
@@ -72,6 +79,7 @@ struct webticket_token {
 
 struct sipe_webticket {
 	GHashTable *cache;
+	GHashTable *pending;
 };
 
 void sipe_webticket_free(struct sipe_core_private *sipe_private)
@@ -80,6 +88,8 @@ void sipe_webticket_free(struct sipe_core_private *sipe_private)
 	if (!webticket)
 		return;
 
+	if (webticket->pending)
+		g_hash_table_destroy(webticket->pending);
 	if (webticket->cache)
 		g_hash_table_destroy(webticket->cache);
 	g_free(webticket);
@@ -103,10 +113,12 @@ static void sipe_webticket_init(struct sipe_core_private *sipe_private)
 
 	sipe_private->webticket = webticket = g_new0(struct sipe_webticket, 1);
 
-	webticket->cache = g_hash_table_new_full(g_str_hash,
-						 g_str_equal,
-						 g_free,
-						 free_token);
+	webticket->cache   = g_hash_table_new_full(g_str_hash,
+						   g_str_equal,
+						   g_free,
+						   free_token);
+	webticket->pending = g_hash_table_new(g_str_hash,
+					      g_str_equal);
 }
 
 /* takes ownership of "token" */
@@ -144,6 +156,7 @@ static const struct webticket_token *cache_hit(struct sipe_core_private *sipe_pr
 	return(wt);
 }
 
+/* frees just the main request data, when this is called "queued" is cleared */
 static void callback_data_free(struct webticket_callback_data *wcd)
 {
 	if (wcd) {
@@ -156,18 +169,55 @@ static void callback_data_free(struct webticket_callback_data *wcd)
 	}
 }
 
+static void queue_request(struct webticket_callback_data *wcd,
+			  sipe_webticket_callback *callback,
+			  gpointer callback_data)
+{
+	struct webticket_queued_data *wqd = g_new0(struct webticket_queued_data, 1);
+
+	wqd->callback      = callback;
+	wqd->callback_data = callback_data;
+
+	wcd->queued = g_slist_prepend(wcd->queued, wqd);
+}
+
 static void callback_execute(struct sipe_core_private *sipe_private,
 			     struct webticket_callback_data *wcd,
 			     const gchar *auth_uri,
 			     const gchar *wsse_security,
 			     const gchar *failure_msg)
 {
+	GSList *entry = wcd->queued;
+
+	/* complete main request */
 	wcd->callback(sipe_private,
 		      wcd->service_uri,
 		      auth_uri,
 		      wsse_security,
 		      failure_msg,
 		      wcd->callback_data);
+
+	/* complete queued requests */
+	while (entry) {
+		struct webticket_queued_data *wqd = entry->data;
+
+		SIPE_DEBUG_INFO("callback_execute: completing queue request URI %s (Auth URI %s)",
+				wcd->service_uri, auth_uri);
+		wqd->callback(sipe_private,
+			      wcd->service_uri,
+			      auth_uri,
+			      wsse_security,
+			      failure_msg,
+			      wqd->callback_data);
+
+		g_free(wqd);
+		entry = entry->next;
+	}
+	g_slist_free(wcd->queued);
+
+	/* drop request from pending hash */
+	g_hash_table_remove(sipe_private->webticket->pending,
+			    wcd->service_uri);
 }
 
 static gchar *extract_raw_xml_attribute(const gchar *xml,
@@ -706,22 +756,37 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 			 callback_data);
 		ret = TRUE;
 	} else {
-		struct webticket_callback_data *wcd = g_new0(struct webticket_callback_data, 1);
+		GHashTable *pending = sipe_private->webticket->pending;
+		struct webticket_callback_data *wcd = g_hash_table_lookup(pending,
+									  base_uri);
 
-		ret = sipe_svc_metadata(sipe_private,
-					session,
-					base_uri,
-					service_metadata,
-					wcd);
-
-		if (ret) {
-			wcd->service_uri   = g_strdup(base_uri);
-			wcd->service_port  = port_name;
-			wcd->callback      = callback;
-			wcd->callback_data = callback_data;
-			wcd->session       = session;
+		/* is there already a pending request for this URI? */
+		if (wcd) {
+			SIPE_DEBUG_INFO("sipe_webticket_request: pending request found for URI %s - queueing",
+					base_uri);
+			queue_request(wcd, callback, callback_data);
+			ret = TRUE;
 		} else {
-			g_free(wcd);
+			wcd = g_new0(struct webticket_callback_data, 1);
+
+			ret = sipe_svc_metadata(sipe_private,
+						session,
+						base_uri,
+						service_metadata,
+						wcd);
+
+			if (ret) {
+				wcd->service_uri   = g_strdup(base_uri);
+				wcd->service_port  = port_name;
+				wcd->callback      = callback;
+				wcd->callback_data = callback_data;
+				wcd->session       = session;
+				g_hash_table_insert(pending,
+						    wcd->service_uri, /* borrowed */
+						    wcd);             /* borrowed */
+			} else {
+				g_free(wcd);
+			}
 		}
 	}
 
