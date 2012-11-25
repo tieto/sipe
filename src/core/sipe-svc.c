@@ -408,28 +408,15 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 	return(ret);
 }
 
-/*
- * This functions encodes what the Microsoft Lync client does for
- * Office365 accounts. It will most definitely fail for internal Lync
- * installation that use TLS-DSK instead of NTLM.
- *
- * But for those anonymous authentication should already have succeeded.
- * I guess we'll have to see what happens in real life...
- */
-gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
-				struct sipe_svc_session *session,
-				const gchar *service_uri,
-				sipe_svc_callback *callback,
-				gpointer callback_data)
+/* Requests to login.microsoftonline.com & ADFS */
+static gboolean request_passport(struct sipe_core_private *sipe_private,
+				 struct sipe_svc_session *session,
+				 const gchar *service_uri,
+				 const gchar *auth_uri,
+				 const gchar *wsse_security,
+				 sipe_svc_callback *callback,
+				 gpointer callback_data)
 {
-	/* login.microsoftonline.com seems only to accept cleartext passwords :/ */
-	gchar *security = g_strdup_printf("<wsse:UsernameToken>"
-					  " <wsse:Username>%s</wsse:Username>"
-					  " <wsse:Password>%s</wsse:Password>"
-					  "</wsse:UsernameToken>",
-					  sipe_private->username,
-					  sipe_private->password);
-
 	gchar *soap_body = g_strdup_printf("<ps:RequestMultipleSecurityTokens>"
 					   " <wst:RequestSecurityToken>"
 					   "  <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
@@ -444,20 +431,92 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 
 	gboolean ret = sipe_svc_wsdl_request(sipe_private,
 					     session,
-					     "https://login.microsoftonline.com:443/RST2.srf",
+					     auth_uri,
 					     "xmlns:ps=\"http://schemas.microsoft.com/Passport/SoapServices/PPCRL\" "
 					     "xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" "
 					     "xmlns:wst=\"http://schemas.xmlsoap.org/ws/2005/02/trust\"",
 					     "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue",
-					     security,
+					     wsse_security,
 					     soap_body,
 					     sipe_svc_wsdl_response,
 					     callback,
 					     callback_data);
 	g_free(soap_body);
-	g_free(security);
 
 	return(ret);
+}
+
+static gboolean request_user_password(struct sipe_core_private *sipe_private,
+				      struct sipe_svc_session *session,
+				      const gchar *service_uri,
+				      const gchar *auth_uri,
+				      sipe_svc_callback *callback,
+				      gpointer callback_data)
+{
+	/* Only cleartext passwords seem to be accepted... */
+	gchar *wsse_security = g_strdup_printf("<wsse:UsernameToken>"
+					       " <wsse:Username>%s</wsse:Username>"
+					       " <wsse:Password>%s</wsse:Password>"
+					       "</wsse:UsernameToken>",
+					       sipe_private->username,
+					       sipe_private->password);
+
+	gboolean ret = request_passport(sipe_private,
+					session,
+					service_uri,
+					auth_uri,
+					wsse_security,
+					callback,
+					callback_data);
+	g_free(wsse_security);
+
+	return(ret);
+}
+
+gboolean sipe_svc_webticket_adfs(struct sipe_core_private *sipe_private,
+				 struct sipe_svc_session *session,
+				 const gchar *adfs_uri,
+				 sipe_svc_callback *callback,
+				 gpointer callback_data)
+{
+	return(request_user_password(sipe_private,
+				     session,
+				     "urn:federation:MicrosoftOnline",
+				     adfs_uri,
+				     callback,
+				     callback_data));
+}
+
+#define LMC_URI "https://login.microsoftonline.com:443/RST2.srf"
+
+gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
+				struct sipe_svc_session *session,
+				const gchar *service_uri,
+				sipe_svc_callback *callback,
+				gpointer callback_data)
+{
+	return(request_user_password(sipe_private,
+				     session,
+				     service_uri,
+				     LMC_URI,
+				     callback,
+				     callback_data));
+}
+
+gboolean sipe_svc_webticket_lmc_federated(struct sipe_core_private *sipe_private,
+					  struct sipe_svc_session *session,
+					  const gchar *wsse_security,
+					  const gchar *service_uri,
+					  sipe_svc_callback *callback,
+					  gpointer callback_data)
+{
+	return(request_passport(sipe_private,
+				session,
+				service_uri,
+				LMC_URI,
+				wsse_security,
+				callback,
+				callback_data));
 }
 
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
@@ -470,7 +529,6 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    gpointer callback_data)
 {
 	gchar *uuid = get_uuid(sipe_private);
-	gchar *security = NULL;
 	gchar *secret = g_base64_encode(entropy->buffer, entropy->length);
 	gchar *soap_body = g_strdup_printf("<wst:RequestSecurityToken Context=\"%s\">"
 					   " <wst:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1</wst:TokenType>"
@@ -506,7 +564,6 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 				    callback_data);
 	g_free(soap_body);
 	g_free(secret);
-	g_free(security);
 	g_free(uuid);
 
 	return(ret);

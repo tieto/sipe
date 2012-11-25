@@ -58,6 +58,7 @@ struct webticket_callback_data {
 	gchar *webticket_fedbearer_uri;
 
 	gboolean tried_fedbearer;
+	gboolean webticket_for_federation;
 	gboolean webticket_for_service;
 	gboolean requires_signing;
 
@@ -435,6 +436,32 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 				failed = FALSE;
 			}
 
+		/* WebTicket from ADFS for federared authentication */
+		} else if (wcd->webticket_for_federation) {
+			time_t expires;
+			gchar *wsse_security = generate_sha1_proof_wsse(raw,
+									NULL,
+									&expires);
+
+			if (wsse_security) {
+
+				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from ADFS %s",
+						uri);
+
+				if (sipe_svc_webticket_lmc_federated(sipe_private,
+								     wcd->session,
+								     wsse_security,
+								     wcd->webticket_fedbearer_uri,
+								     webticket_token,
+								     wcd)) {
+					wcd->webticket_for_service = TRUE;
+
+					/* callback data passed down the line */
+					wcd = NULL;
+				}
+				g_free(wsse_security);
+			}
+
 		/* WebTicket for federated authentication */
 		} else {
 			gchar *wsse_security = generate_fedbearer_wsse(raw);
@@ -497,13 +524,13 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 }
 
 static void realminfo(struct sipe_core_private *sipe_private,
-		      SIPE_UNUSED_PARAMETER const gchar *uri,
+		      const gchar *uri,
 		      SIPE_UNUSED_PARAMETER const gchar *raw,
 		      sipe_xml *realminfo,
 		      gpointer callback_data)
 {
 	struct webticket_callback_data *wcd = callback_data;
-	gchar *failure_msg = NULL;
+	gboolean failed = FALSE;
 
 	if (realminfo) {
 		/* detect ADFS setup. See also:
@@ -520,15 +547,28 @@ static void realminfo(struct sipe_core_private *sipe_private,
 				sipe_private->username);
 
 		if (sts_auth_url) {
-			failure_msg = g_strdup_printf("ADFS setup detected [%s]!\n"
-						      "Support for ADFS authentication is not implemented yet, sorry.",
-						      sts_auth_url);
+
+			SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
+					sts_auth_url);
+
+			if (sipe_svc_webticket_adfs(sipe_private,
+						    wcd->session,
+						    sts_auth_url,
+						    webticket_token,
+						    wcd)) {
+				wcd->webticket_for_federation = TRUE;
+
+				/* callback data passed down the line */
+				wcd = NULL;
+			} else
+				failed = TRUE;
+
 			g_free(sts_auth_url);
 		}
 	}
 
 	/* don't fail if we didn't receive valid RealmInfo XML data */
-	if (!failure_msg) {
+	if (wcd && !failed) {
 
 		SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
 
@@ -547,10 +587,9 @@ static void realminfo(struct sipe_core_private *sipe_private,
 				 wcd,
 				 uri,
 				 NULL,
-				 failure_msg);
+				 NULL);
 		callback_data_free(wcd);
 	}
-	g_free(failure_msg);
 }
 
 static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
@@ -560,8 +599,9 @@ static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
 					      wcd->session,
 					      realminfo,
 					      wcd);
-	wcd->tried_fedbearer       = TRUE;
-	wcd->webticket_for_service = FALSE;
+	wcd->tried_fedbearer          = TRUE;
+	wcd->webticket_for_federation = FALSE;
+	wcd->webticket_for_service    = FALSE;
 
 	return(success);
 }

@@ -129,6 +129,22 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    gpointer callback_data);
 
 /**
+ * Trigger fetch of WebTicket security token from ADFS of a federated domain
+ *
+ * @param sipe_private  SIPE core private data
+ * @param session       opaque session pointer
+ * @param adfs_uri      ADFS authentication URI
+ * @param callback      callback function
+ * @param callback_data callback data
+ * @return              @c TRUE if token fetch was triggered
+ */
+gboolean sipe_svc_webticket_adfs(struct sipe_core_private *sipe_private,
+				 struct sipe_svc_session *session,
+				 const gchar *adfs_uri,
+				 sipe_svc_callback *callback,
+				 gpointer callback_data);
+
+/**
  * Trigger fetch of WebTicket security token from login.microsoftonline.com
  *
  * @param sipe_private  SIPE core private data
@@ -143,6 +159,25 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 				const gchar *service_uri,
 				sipe_svc_callback *callback,
 				gpointer callback_data);
+
+/**
+ * Trigger fetch of WebTicket security token from login.microsoftonline.com
+ * using a Web Ticket acquired
+ *
+ * @param sipe_private  SIPE core private data
+ * @param session       opaque session pointer
+ * @param wsse_security predefined authentication token. May be @c NULL
+ * @param service_uri   request token for this service URI
+ * @param callback      callback function
+ * @param callback_data callback data
+ * @return              @c TRUE if token fetch was triggered
+ */
+gboolean sipe_svc_webticket_lmc_federated(struct sipe_core_private *sipe_private,
+					  struct sipe_svc_session *session,
+					  const gchar *wsse_security,
+					  const gchar *service_uri,
+					  sipe_svc_callback *callback,
+					  gpointer callback_data);
 
 /**
  * Trigger fetch of RealmInfo data from login.microsoftonline.com
