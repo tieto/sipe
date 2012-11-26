@@ -799,7 +799,6 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	g_free(av_uri);
 
 	sipe_private->media_call->with = g_strdup(session->with);
-	sipe_private->media_call->ice_version = SIPE_ICE_DRAFT_6;
 
 	backend_media_relays =
 		sipe_backend_media_relays_convert(sipe_private->media_relays,
@@ -809,8 +808,8 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	if (!sipe_backend_media_add_stream(sipe_private->media_call->public.backend_private,
 					   "audio", dialog->with,
 					   SIPE_MEDIA_AUDIO,
-					   SIPE_ICE_DRAFT_6, TRUE,
-					   backend_media_relays)) {
+					   sipe_private->media_call->ice_version,
+					   TRUE, backend_media_relays)) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
