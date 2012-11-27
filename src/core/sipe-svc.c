@@ -417,6 +417,7 @@ static gboolean request_passport(struct sipe_core_private *sipe_private,
 				 const gchar *auth_uri,
 				 const gchar *wsse_security,
 				 const gchar *content_type,
+				 const gchar *request_extension,
 				 sipe_svc_callback *callback,
 				 gpointer callback_data)
 {
@@ -427,8 +428,10 @@ static gboolean request_passport(struct sipe_core_private *sipe_private,
 					   "   <wsa:Address>%s</wsa:Address>"
 					   "  </wsa:EndpointReference>"
 					   " </wsp:AppliesTo>"
+					   " %s"
 					   "</wst:RequestSecurityToken>",
-					   service_uri);
+					   service_uri,
+					   request_extension ? request_extension : "");
 
 	gboolean ret = sipe_svc_wsdl_request(sipe_private,
 					     session,
@@ -452,6 +455,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 				      const gchar *service_uri,
 				      const gchar *auth_uri,
 				      const gchar *content_type,
+				      const gchar *request_extension,
 				      sipe_svc_callback *callback,
 				      gpointer callback_data)
 {
@@ -469,6 +473,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 					auth_uri,
 					wsse_security,
 					content_type,
+					request_extension,
 					callback,
 					callback_data);
 	g_free(wsse_security);
@@ -488,6 +493,7 @@ gboolean sipe_svc_webticket_adfs(struct sipe_core_private *sipe_private,
 				     adfs_uri,
 				     /* ADFS is special, *sigh* */
 				     "application/soap+xml; charset=utf-8",
+				     "<wst:KeyType>http://schemas.xmlsoap.org/ws/2005/05/identity/NoProofKey</wst:KeyType>",
 				     callback,
 				     callback_data));
 }
@@ -505,6 +511,7 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 				     service_uri,
 				     LMC_URI,
 				     NULL,
+				     NULL,
 				     callback,
 				     callback_data));
 }
@@ -521,6 +528,7 @@ gboolean sipe_svc_webticket_lmc_federated(struct sipe_core_private *sipe_private
 				service_uri,
 				LMC_URI,
 				wsse_security,
+				NULL,
 				NULL,
 				callback,
 				callback_data));
