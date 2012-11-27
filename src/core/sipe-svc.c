@@ -217,6 +217,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      const gchar *soap_action,
 				      const gchar *wsse_security,
 				      const gchar *soap_body,
+				      const gchar *content_type,
 				      svc_callback *internal_callback,
 				      sipe_svc_callback *callback,
 				      gpointer callback_data)
@@ -254,7 +255,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 					      HTTP_CONN_POST,
 					      session,
 					      uri,
-					      "text/xml",
+					      content_type ? content_type : "text/xml",
 					      soap_action,
 					      body,
 					      internal_callback,
@@ -285,6 +286,7 @@ static gboolean new_soap_req(struct sipe_core_private *sipe_private,
 				     soap_action,
 				     wsse_security,
 				     soap_body,
+				     NULL,
 				     internal_callback,
 				     callback,
 				     callback_data));
@@ -414,6 +416,7 @@ static gboolean request_passport(struct sipe_core_private *sipe_private,
 				 const gchar *service_uri,
 				 const gchar *auth_uri,
 				 const gchar *wsse_security,
+				 const gchar *content_type,
 				 sipe_svc_callback *callback,
 				 gpointer callback_data)
 {
@@ -438,6 +441,7 @@ static gboolean request_passport(struct sipe_core_private *sipe_private,
 					     "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue",
 					     wsse_security,
 					     soap_body,
+					     content_type,
 					     sipe_svc_wsdl_response,
 					     callback,
 					     callback_data);
@@ -450,6 +454,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 				      struct sipe_svc_session *session,
 				      const gchar *service_uri,
 				      const gchar *auth_uri,
+				      const gchar *content_type,
 				      sipe_svc_callback *callback,
 				      gpointer callback_data)
 {
@@ -466,6 +471,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 					service_uri,
 					auth_uri,
 					wsse_security,
+					content_type,
 					callback,
 					callback_data);
 	g_free(wsse_security);
@@ -483,6 +489,8 @@ gboolean sipe_svc_webticket_adfs(struct sipe_core_private *sipe_private,
 				     session,
 				     "urn:federation:MicrosoftOnline",
 				     adfs_uri,
+				     /* ADFS is special, *sigh* */
+				     "application/soap+xml; charset=utf-8",
 				     callback,
 				     callback_data));
 }
@@ -499,6 +507,7 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 				     session,
 				     service_uri,
 				     LMC_URI,
+				     NULL,
 				     callback,
 				     callback_data));
 }
@@ -515,6 +524,7 @@ gboolean sipe_svc_webticket_lmc_federated(struct sipe_core_private *sipe_private
 				service_uri,
 				LMC_URI,
 				wsse_security,
+				NULL,
 				callback,
 				callback_data));
 }
