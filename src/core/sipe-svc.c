@@ -420,22 +420,19 @@ static gboolean request_passport(struct sipe_core_private *sipe_private,
 				 sipe_svc_callback *callback,
 				 gpointer callback_data)
 {
-	gchar *soap_body = g_strdup_printf("<ps:RequestMultipleSecurityTokens>"
-					   " <wst:RequestSecurityToken>"
-					   "  <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
-					   "  <wsp:AppliesTo>"
-					   "   <wsa:EndpointReference>"
-					   "    <wsa:Address>%s</wsa:Address>"
-					   "   </wsa:EndpointReference>"
-					   "  </wsp:AppliesTo>"
-					   " </wst:RequestSecurityToken>"
-					   "</ps:RequestMultipleSecurityTokens>",
+	gchar *soap_body = g_strdup_printf("<wst:RequestSecurityToken>"
+					   " <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
+					   " <wsp:AppliesTo>"
+					   "  <wsa:EndpointReference>"
+					   "   <wsa:Address>%s</wsa:Address>"
+					   "  </wsa:EndpointReference>"
+					   " </wsp:AppliesTo>"
+					   "</wst:RequestSecurityToken>",
 					   service_uri);
 
 	gboolean ret = sipe_svc_wsdl_request(sipe_private,
 					     session,
 					     auth_uri,
-					     "xmlns:ps=\"http://schemas.microsoft.com/Passport/SoapServices/PPCRL\" "
 					     "xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" "
 					     "xmlns:wst=\"http://schemas.xmlsoap.org/ws/2005/02/trust\"",
 					     "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue",
