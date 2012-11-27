@@ -58,9 +58,13 @@ struct webticket_callback_data {
 	gchar *webticket_fedbearer_uri;
 
 	gboolean tried_fedbearer;
-	gboolean webticket_for_federation;
-	gboolean webticket_for_service;
 	gboolean requires_signing;
+	enum {
+		TOKEN_STATE_NONE       = 0,
+		TOKEN_STATE_SERVICE,
+		TOKEN_STATE_FEDERATION,
+		TOKEN_STATE_FED_BEARER,
+	} token_state;
 
 	struct sipe_tls_random entropy;
 
@@ -430,8 +434,13 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	gboolean failed = TRUE;
 
 	if (soap_body) {
-		/* WebTicket for Web Service */
-		if (wcd->webticket_for_service) {
+		switch (wcd->token_state) {
+		case TOKEN_STATE_NONE:
+			SIPE_DEBUG_INFO_NOFORMAT("webticket_token: ILLEGAL STATE - should not happen...");
+			break;
+
+		case TOKEN_STATE_SERVICE: {
+			/* WebTicket for Web Service */
 			time_t expires;
 			gchar *wsse_security = generate_sha1_proof_wsse(raw,
 									wcd->requires_signing ? &wcd->entropy : NULL,
@@ -451,9 +460,11 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 						 NULL);
 				failed = FALSE;
 			}
+			break;
+		}
 
-		/* WebTicket from ADFS for federared authentication */
-		} else if (wcd->webticket_for_federation) {
+		case TOKEN_STATE_FEDERATION: {
+			/* WebTicket from ADFS for federated authentication */
 			gchar *wsse_security = generate_federation_wsse(raw);
 
 			if (wsse_security) {
@@ -467,16 +478,18 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 								     wcd->webticket_fedbearer_uri,
 								     webticket_token,
 								     wcd)) {
-					wcd->webticket_for_service = TRUE;
+					wcd->token_state = TOKEN_STATE_FED_BEARER;
 
 					/* callback data passed down the line */
 					wcd = NULL;
 				}
 				g_free(wsse_security);
 			}
+			break;
+		}
 
-		/* WebTicket for federated authentication */
-		} else {
+		case TOKEN_STATE_FED_BEARER: {
+			/* WebTicket for federated authentication */
 			gchar *wsse_security = generate_fedbearer_wsse(raw);
 
 			if (wsse_security) {
@@ -492,13 +505,17 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 						       &wcd->entropy,
 						       webticket_token,
 						       wcd)) {
-					wcd->webticket_for_service = TRUE;
+					wcd->token_state = TOKEN_STATE_SERVICE;
 
 					/* callback data passed down the line */
 					wcd = NULL;
 				}
 				g_free(wsse_security);
 			}
+			break;
+		}
+
+		/* end of: switch (wcd->token_state) { */
 		}
 
 	} else if (uri) {
@@ -569,7 +586,7 @@ static void realminfo(struct sipe_core_private *sipe_private,
 						    sts_auth_url,
 						    webticket_token,
 						    wcd)) {
-				wcd->webticket_for_federation = TRUE;
+				wcd->token_state = TOKEN_STATE_FEDERATION;
 
 				/* callback data passed down the line */
 				wcd = NULL;
@@ -590,6 +607,8 @@ static void realminfo(struct sipe_core_private *sipe_private,
 					   wcd->webticket_fedbearer_uri,
 					   webticket_token,
 					   wcd)) {
+			wcd->token_state = TOKEN_STATE_FED_BEARER;
+
 			/* callback data passed down the line */
 			wcd = NULL;
 		}
@@ -613,8 +632,6 @@ static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
 					      realminfo,
 					      wcd);
 	wcd->tried_fedbearer          = TRUE;
-	wcd->webticket_for_federation = FALSE;
-	wcd->webticket_for_service    = FALSE;
 
 	return(success);
 }
@@ -674,7 +691,7 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 							     &wcd->entropy,
 							     webticket_token,
 							     wcd);
-				wcd->webticket_for_service = TRUE;
+				wcd->token_state = TOKEN_STATE_SERVICE;
 			} else {
 				success = initiate_fedbearer(sipe_private,
 							     wcd);
@@ -834,6 +851,7 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 				wcd->callback      = callback;
 				wcd->callback_data = callback_data;
 				wcd->session       = session;
+				wcd->token_state   = TOKEN_STATE_NONE;
 				g_hash_table_insert(pending,
 						    wcd->service_uri, /* borrowed */
 						    wcd);             /* borrowed */
