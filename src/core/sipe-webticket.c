@@ -268,6 +268,22 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 	return(wsse_security);
 }
 
+static gchar *generate_federation_wsse(const gchar *raw)
+{
+	gchar *timestamp = generate_timestamp(raw, "t:Lifetime");
+	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
+	gchar *wsse_security = NULL;
+
+	if (timestamp && keydata) {
+		SIPE_DEBUG_INFO_NOFORMAT("generate_federation_wsse: found timestamp & keydata");
+		wsse_security = g_strconcat(timestamp, keydata, NULL);
+	}
+
+	g_free(keydata);
+	g_free(timestamp);
+	return(wsse_security);
+}
+
 static gchar *generate_sha1_proof_wsse(const gchar *raw,
 				       struct sipe_tls_random *entropy,
 				       time_t *expires)
@@ -438,10 +454,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 		/* WebTicket from ADFS for federared authentication */
 		} else if (wcd->webticket_for_federation) {
-			time_t expires;
-			gchar *wsse_security = generate_sha1_proof_wsse(raw,
-									NULL,
-									&expires);
+			gchar *wsse_security = generate_federation_wsse(raw);
 
 			if (wsse_security) {
 
