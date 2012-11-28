@@ -638,42 +638,38 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 		/* note */
 		else if (sipe_strequal(attrVar, "note"))
 		{
-			if (uri) {
-				struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+			if (!has_note_cleaned) {
+				has_note_cleaned = TRUE;
 
-				if (!has_note_cleaned) {
-					has_note_cleaned = TRUE;
+				g_free(sbuddy->note);
+				sbuddy->note = NULL;
+				sbuddy->is_oof_note = FALSE;
+				sbuddy->note_since = publish_time;
 
-					g_free(sbuddy->note);
-					sbuddy->note = NULL;
-					sbuddy->is_oof_note = FALSE;
+				do_update_status = TRUE;
+			}
+			if (publish_time >= sbuddy->note_since) {
+				/* clean up in case no 'note' element is supplied
+				 * which indicate note removal in client
+				 */
+				g_free(sbuddy->note);
+				sbuddy->note = NULL;
+				sbuddy->is_oof_note = FALSE;
+				sbuddy->note_since = publish_time;
+
+				xn_node = sipe_xml_child(xn_category, "note/body");
+				if (xn_node) {
+					char *tmp;
+					sbuddy->note = g_markup_escape_text((tmp = sipe_xml_data(xn_node)), -1);
+					g_free(tmp);
+					sbuddy->is_oof_note = sipe_strequal(sipe_xml_attribute(xn_node, "type"), "OOF");
 					sbuddy->note_since = publish_time;
 
-					do_update_status = TRUE;
+					SIPE_DEBUG_INFO("process_incoming_notify_rlmi: uri(%s), note(%s)",
+							uri, sbuddy->note ? sbuddy->note : "");
 				}
-				if (sbuddy && (publish_time >= sbuddy->note_since)) {
-					/* clean up in case no 'note' element is supplied
-					 * which indicate note removal in client
-					 */
-					g_free(sbuddy->note);
-					sbuddy->note = NULL;
-					sbuddy->is_oof_note = FALSE;
-					sbuddy->note_since = publish_time;
-
-					xn_node = sipe_xml_child(xn_category, "note/body");
-					if (xn_node) {
-						char *tmp;
-						sbuddy->note = g_markup_escape_text((tmp = sipe_xml_data(xn_node)), -1);
-						g_free(tmp);
-						sbuddy->is_oof_note = sipe_strequal(sipe_xml_attribute(xn_node, "type"), "OOF");
-						sbuddy->note_since = publish_time;
-
-						SIPE_DEBUG_INFO("process_incoming_notify_rlmi: uri(%s), note(%s)",
-								uri, sbuddy->note ? sbuddy->note : "");
-					}
-					/* to trigger UI refresh in case no status info is supplied in this update */
-					do_update_status = TRUE;
-				}
+				/* to trigger UI refresh in case no status info is supplied in this update */
+				do_update_status = TRUE;
 			}
 		}
 		/* state */
@@ -685,7 +681,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 			const sipe_xml *xn_activity;
 			const sipe_xml *xn_meeting_subject;
 			const sipe_xml *xn_meeting_location;
-			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sipe_private->buddies, uri) : NULL;
+			const gchar *legacy_activity;
 
 			xn_node = sipe_xml_child(xn_category, "state");
 			if (!xn_node) continue;
@@ -699,68 +695,63 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 			availability = atoi(tmp);
 			g_free(tmp);
 
-			/* activity, meeting_subject, meeting_location */
-			if (sbuddy) {
-				const gchar *tmp;
+			/* activity */
+			g_free(sbuddy->activity);
+			sbuddy->activity = NULL;
+			if (xn_activity) {
+				const char *token = sipe_xml_attribute(xn_activity, "token");
+				const sipe_xml *xn_custom = sipe_xml_child(xn_activity, "custom");
 
-				/* activity */
-				g_free(sbuddy->activity);
-				sbuddy->activity = NULL;
-				if (xn_activity) {
-					const char *token = sipe_xml_attribute(xn_activity, "token");
-					const sipe_xml *xn_custom = sipe_xml_child(xn_activity, "custom");
-
-					/* from token */
-					if (!is_empty(token)) {
-						sbuddy->activity = g_strdup(sipe_core_activity_description(sipe_status_token_to_activity(token)));
-					}
-					/* from custom element */
-					if (xn_custom) {
-						char *custom = sipe_xml_data(xn_custom);
-
-						if (!is_empty(custom)) {
-							g_free(sbuddy->activity);
-							sbuddy->activity = custom;
-							custom = NULL;
-						}
-						g_free(custom);
-					}
+				/* from token */
+				if (!is_empty(token)) {
+					sbuddy->activity = g_strdup(sipe_core_activity_description(sipe_status_token_to_activity(token)));
 				}
-				/* meeting_subject */
-				g_free(sbuddy->meeting_subject);
-				sbuddy->meeting_subject = NULL;
-				if (xn_meeting_subject) {
-					char *meeting_subject = sipe_xml_data(xn_meeting_subject);
+				/* from custom element */
+				if (xn_custom) {
+					char *custom = sipe_xml_data(xn_custom);
 
-					if (!is_empty(meeting_subject)) {
-						sbuddy->meeting_subject = meeting_subject;
-						meeting_subject = NULL;
+					if (!is_empty(custom)) {
+						g_free(sbuddy->activity);
+						sbuddy->activity = custom;
+						custom = NULL;
 					}
-					g_free(meeting_subject);
+					g_free(custom);
 				}
-				/* meeting_location */
-				g_free(sbuddy->meeting_location);
-				sbuddy->meeting_location = NULL;
-				if (xn_meeting_location) {
-					char *meeting_location = sipe_xml_data(xn_meeting_location);
+			}
+			/* meeting_subject */
+			g_free(sbuddy->meeting_subject);
+			sbuddy->meeting_subject = NULL;
+			if (xn_meeting_subject) {
+				char *meeting_subject = sipe_xml_data(xn_meeting_subject);
 
-					if (!is_empty(meeting_location)) {
-						sbuddy->meeting_location = meeting_location;
-						meeting_location = NULL;
-					}
-					g_free(meeting_location);
+				if (!is_empty(meeting_subject)) {
+					sbuddy->meeting_subject = meeting_subject;
+					meeting_subject = NULL;
 				}
+				g_free(meeting_subject);
+			}
+			/* meeting_location */
+			g_free(sbuddy->meeting_location);
+			sbuddy->meeting_location = NULL;
+			if (xn_meeting_location) {
+				char *meeting_location = sipe_xml_data(xn_meeting_location);
 
-				status = sipe_ocs2007_status_from_legacy_availability(availability, NULL);
-				tmp    = sipe_ocs2007_legacy_activity_description(availability);
-				if (sbuddy->activity && tmp) {
-					gchar *tmp2 = sbuddy->activity;
-
-					sbuddy->activity = g_strdup_printf("%s, %s", sbuddy->activity, tmp);
-					g_free(tmp2);
-				} else if (tmp) {
-					sbuddy->activity = g_strdup(tmp);
+				if (!is_empty(meeting_location)) {
+					sbuddy->meeting_location = meeting_location;
+					meeting_location = NULL;
 				}
+				g_free(meeting_location);
+			}
+
+			status = sipe_ocs2007_status_from_legacy_availability(availability, NULL);
+			legacy_activity = sipe_ocs2007_legacy_activity_description(availability);
+			if (sbuddy->activity && legacy_activity) {
+				gchar *tmp2 = sbuddy->activity;
+
+				sbuddy->activity = g_strdup_printf("%s, %s", sbuddy->activity, legacy_activity);
+				g_free(tmp2);
+			} else if (legacy_activity) {
+				sbuddy->activity = g_strdup(legacy_activity);
 			}
 
 			do_update_status = TRUE;
@@ -768,11 +759,10 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 		/* calendarData */
 		else if(sipe_strequal(attrVar, "calendarData"))
 		{
-			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sipe_private->buddies, uri) : NULL;
 			const sipe_xml *xn_free_busy = sipe_xml_child(xn_category, "calendarData/freeBusy");
 			const sipe_xml *xn_working_hours = sipe_xml_child(xn_category, "calendarData/WorkingHours");
 
-			if (sbuddy && xn_free_busy) {
+			if (xn_free_busy) {
 				if (!has_free_busy_cleaned) {
 					has_free_busy_cleaned = TRUE;
 
@@ -807,7 +797,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 				}
 			}
 
-			if (sbuddy && xn_working_hours) {
+			if (xn_working_hours) {
 				sipe_cal_parse_working_hours(xn_working_hours, sbuddy);
 			}
 		}
