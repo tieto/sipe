@@ -506,6 +506,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					 unsigned len)
 {
 	const char *uri;
+	struct sipe_buddy *sbuddy = NULL;
 	sipe_xml *xn_categories;
 	const sipe_xml *xn_category;
 	const char *status = NULL;
@@ -515,6 +516,15 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 
 	xn_categories = sipe_xml_parse(data, len);
 	uri = sipe_xml_attribute(xn_categories, "uri"); /* with 'sip:' prefix */
+	if (uri) {
+		sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	}
+
+	if (!sbuddy) {
+		/* Got presence of a buddy not in our contact list, ignore. */
+		sipe_xml_free(xn_categories);
+		return;
+	}
 
 	for (xn_category = sipe_xml_child(xn_categories, "category");
 		 xn_category ;
