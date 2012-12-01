@@ -85,6 +85,10 @@ struct webticket_token {
 struct sipe_webticket {
 	GHashTable *cache;
 	GHashTable *pending;
+
+	gchar *webticket_adfs_uri;
+
+	gboolean retrieved_realminfo;
 };
 
 void sipe_webticket_free(struct sipe_core_private *sipe_private)
@@ -93,6 +97,7 @@ void sipe_webticket_free(struct sipe_core_private *sipe_private)
 	if (!webticket)
 		return;
 
+	g_free(webticket->webticket_adfs_uri);
 	if (webticket->pending)
 		g_hash_table_destroy(webticket->pending);
 	if (webticket->cache)
@@ -553,14 +558,43 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	}
 }
 
+static gboolean fedbearer_authentication(struct sipe_core_private *sipe_private,
+					 struct webticket_callback_data *wcd)
+{
+	struct sipe_webticket *webticket = sipe_private->webticket;
+	gboolean success;
+
+	if (webticket->webticket_adfs_uri) {
+		if ((success = sipe_svc_webticket_adfs(sipe_private,
+						       wcd->session,
+						       webticket->webticket_adfs_uri,
+						       webticket_token,
+						       wcd)))
+			wcd->token_state = TOKEN_STATE_FEDERATION;
+	} else {
+		if ((success = sipe_svc_webticket_lmc(sipe_private,
+						      wcd->session,
+						      wcd->webticket_fedbearer_uri,
+						      webticket_token,
+						      wcd)))
+			wcd->token_state = TOKEN_STATE_FED_BEARER;
+	}
+
+	/* If TRUE then callback data has been passed down the line */
+	return(success);
+}
+
 static void realminfo(struct sipe_core_private *sipe_private,
 		      const gchar *uri,
 		      SIPE_UNUSED_PARAMETER const gchar *raw,
 		      sipe_xml *realminfo,
 		      gpointer callback_data)
 {
+	struct sipe_webticket *webticket = sipe_private->webticket;
 	struct webticket_callback_data *wcd = callback_data;
-	gboolean failed = FALSE;
+
+	/* Only try retrieving of RealmInfo once */
+	webticket->retrieved_realminfo = TRUE;
 
 	if (realminfo) {
 		/* detect ADFS setup. See also:
@@ -570,51 +604,20 @@ static void realminfo(struct sipe_core_private *sipe_private,
 		 * NOTE: this is based on observed behaviour.
 		 *       It is unkown if this is documented somewhere...
 		 */
-		gchar *sts_auth_url = sipe_xml_data(sipe_xml_child(realminfo,
-								   "STSAuthURL"));
-
 		SIPE_DEBUG_INFO("realminfo: data for user %s retrieved successfully",
 				sipe_private->username);
 
-		if (sts_auth_url) {
-
-			SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
-					sts_auth_url);
-
-			if (sipe_svc_webticket_adfs(sipe_private,
-						    wcd->session,
-						    sts_auth_url,
-						    webticket_token,
-						    wcd)) {
-				wcd->token_state = TOKEN_STATE_FEDERATION;
-
-				/* callback data passed down the line */
-				wcd = NULL;
-			} else
-				failed = TRUE;
-
-			g_free(sts_auth_url);
-		}
+		webticket->webticket_adfs_uri = sipe_xml_data(sipe_xml_child(realminfo,
+									     "STSAuthURL"));
 	}
 
-	/* don't fail if we didn't receive valid RealmInfo XML data */
-	if (wcd && !failed) {
-
+	if (webticket->webticket_adfs_uri)
+		SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
+				webticket->webticket_adfs_uri);
+	else
 		SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
 
-		if (sipe_svc_webticket_lmc(sipe_private,
-					   wcd->session,
-					   wcd->webticket_fedbearer_uri,
-					   webticket_token,
-					   wcd)) {
-			wcd->token_state = TOKEN_STATE_FED_BEARER;
-
-			/* callback data passed down the line */
-			wcd = NULL;
-		}
-	}
-
-	if (wcd) {
+	if (!fedbearer_authentication(sipe_private, wcd)) {
 		callback_execute(sipe_private,
 				 wcd,
 				 uri,
@@ -627,11 +630,19 @@ static void realminfo(struct sipe_core_private *sipe_private,
 static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
 				   struct webticket_callback_data *wcd)
 {
-	gboolean success = sipe_svc_realminfo(sipe_private,
-					      wcd->session,
-					      realminfo,
-					      wcd);
-	wcd->tried_fedbearer          = TRUE;
+	gboolean success;
+
+	if (sipe_private->webticket->retrieved_realminfo) {
+		/* skip retrieval and go to authentication */
+		success = fedbearer_authentication(sipe_private, wcd);
+	} else {
+		success = sipe_svc_realminfo(sipe_private,
+					     wcd->session,
+					     realminfo,
+					     wcd);
+	}
+
+	wcd->tried_fedbearer = TRUE;
 
 	return(success);
 }
