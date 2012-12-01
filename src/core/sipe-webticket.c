@@ -87,6 +87,8 @@ struct sipe_webticket {
 	GHashTable *pending;
 
 	gchar *webticket_adfs_uri;
+	gchar *adfs_token;
+	time_t adfs_token_expires;
 
 	gboolean retrieved_realminfo;
 };
@@ -98,6 +100,7 @@ void sipe_webticket_free(struct sipe_core_private *sipe_private)
 		return;
 
 	g_free(webticket->webticket_adfs_uri);
+	g_free(webticket->adfs_token);
 	if (webticket->pending)
 		g_hash_table_destroy(webticket->pending);
 	if (webticket->cache)
@@ -277,20 +280,38 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 	return(wsse_security);
 }
 
-static gchar *generate_federation_wsse(const gchar *raw)
+static void generate_federation_wsse(struct sipe_webticket *webticket,
+				     const gchar *raw)
 {
 	gchar *timestamp = generate_timestamp(raw, "t:Lifetime");
 	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
-	gchar *wsse_security = NULL;
+
+
+	/* clear old ADFS token */
+	g_free(webticket->adfs_token);
+	webticket->adfs_token = NULL;
 
 	if (timestamp && keydata) {
-		SIPE_DEBUG_INFO_NOFORMAT("generate_federation_wsse: found timestamp & keydata");
-		wsse_security = g_strconcat(timestamp, keydata, NULL);
+		gchar *expires_string = sipe_xml_extract_raw(timestamp,
+							     "wsu:Expires",
+							     FALSE);
+
+		if (expires_string) {
+
+			SIPE_DEBUG_INFO("generate_federation_wsse: found timestamp & keydata, expires %s",
+					expires_string);
+
+			/* cache ADFS token */
+			webticket->adfs_token         = g_strconcat(timestamp,
+								    keydata,
+								    NULL);
+			webticket->adfs_token_expires = sipe_utils_str_to_time(expires_string);
+			g_free(expires_string);
+		}
 	}
 
 	g_free(keydata);
 	g_free(timestamp);
-	return(wsse_security);
 }
 
 static gchar *generate_sha1_proof_wsse(const gchar *raw,
@@ -427,6 +448,8 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 	return(wsse_security);
 }
 
+static gboolean federated_authentication(struct sipe_core_private *sipe_private,
+					 struct webticket_callback_data *wcd);
 static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
 				   struct webticket_callback_data *wcd);
 static void webticket_token(struct sipe_core_private *sipe_private,
@@ -468,30 +491,23 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 			break;
 		}
 
-		case TOKEN_STATE_FEDERATION: {
+		case TOKEN_STATE_FEDERATION:
 			/* WebTicket from ADFS for federated authentication */
-			gchar *wsse_security = generate_federation_wsse(raw);
+			generate_federation_wsse(sipe_private->webticket,
+						 raw);
 
-			if (wsse_security) {
+			if (sipe_private->webticket->adfs_token) {
 
 				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from ADFS %s",
 						uri);
 
-				if (sipe_svc_webticket_lmc_federated(sipe_private,
-								     wcd->session,
-								     wsse_security,
-								     wcd->webticket_fedbearer_uri,
-								     webticket_token,
-								     wcd)) {
-					wcd->token_state = TOKEN_STATE_FED_BEARER;
-
+				if (federated_authentication(sipe_private,
+							     wcd)) {
 					/* callback data passed down the line */
 					wcd = NULL;
 				}
-				g_free(wsse_security);
 			}
 			break;
-		}
 
 		case TOKEN_STATE_FED_BEARER: {
 			/* WebTicket for federated authentication */
@@ -558,13 +574,37 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	}
 }
 
+static gboolean federated_authentication(struct sipe_core_private *sipe_private,
+					 struct webticket_callback_data *wcd)
+{
+	gboolean success;
+
+	if ((success = sipe_svc_webticket_lmc_federated(sipe_private,
+							wcd->session,
+							sipe_private->webticket->adfs_token,
+							wcd->webticket_fedbearer_uri,
+							webticket_token,
+							wcd)))
+		wcd->token_state = TOKEN_STATE_FED_BEARER;
+
+	/* If TRUE then callback data has been passed down the line */
+	return(success);
+}
+
 static gboolean fedbearer_authentication(struct sipe_core_private *sipe_private,
 					 struct webticket_callback_data *wcd)
 {
 	struct sipe_webticket *webticket = sipe_private->webticket;
 	gboolean success;
 
-	if (webticket->webticket_adfs_uri) {
+	/* make sure a cached ADFS token is still valid for 60 seconds */
+	if (webticket->adfs_token &&
+	    (webticket->adfs_token_expires >= time(NULL) + 60)) {
+
+		SIPE_DEBUG_INFO_NOFORMAT("fedbearer_authentication: reusing cached ADFS token");
+		success = federated_authentication(sipe_private, wcd);
+
+	} else if (webticket->webticket_adfs_uri) {
 		if ((success = sipe_svc_webticket_adfs(sipe_private,
 						       wcd->session,
 						       webticket->webticket_adfs_uri,
