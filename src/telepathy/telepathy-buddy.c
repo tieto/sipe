@@ -590,9 +590,10 @@ sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
 	} else {
 		/* just return the first entry */
 		GHashTableIter iter;
-		gpointer value;
+		gpointer value = NULL;
 		g_hash_table_iter_init(&iter, buddy->groups);
-		g_hash_table_iter_next(&iter, NULL, &value);
+		/* make Coverity happy: as buddy != NULL this can't fail */
+		(void) g_hash_table_iter_next(&iter, NULL, &value);
 		return(value);
 	}
 }
@@ -941,7 +942,7 @@ void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
 			char *photo_file = g_build_filename(telepathy_private->cache_dir,
 							    buddy->hash,
 							    NULL);
-			g_remove(photo_file);
+			(void) g_remove(photo_file);
 			g_free(photo_file);
 			g_free(buddy->hash);
 			buddy->hash = NULL;
